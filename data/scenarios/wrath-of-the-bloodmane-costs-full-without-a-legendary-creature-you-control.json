@@ -87,7 +87,7 @@
     "step": "PrecombatMain"
   },
   "description": "CR 601.2f: Wrath of the Bloodmane costs its full {2}{R} when alice controls only a nonlegendary creature and a legendary artifact, and the legendary creature is bob's",
-  "note": "The refused twin of wrath-of-the-bloodmane-costs-one-less-with-a-legendary-creature-and-deals-four-to-a-planeswalker, on its two Mountains: Grizzly Bears is a creature but not legendary, Krark's Thumb legendary but no creature, Isamaru bob's.",
+  "note": "The refused twin of wrath-of-the-bloodmane-costs-one-less-with-a-legendary-creature-and-deals-four-to-a, on its two Mountains: Grizzly Bears is a creature but not legendary, Krark's Thumb legendary but no creature, Isamaru bob's.",
   "timeline": [
     {
       "player": "alice",

@@ -3594,7 +3594,7 @@ installPermissionEntry caster permission spell gs = case permission of
 -- installPermissionEntry's reason. Event.reenter re-keys no such row, so a
 -- spell that becomes a permanent leaves it behind (CR 400.7). Nothing for a
 -- cast made under no permission or one stating none.
--- the-great-work-makes-treasures-then-exiles-each-spell-cast-from-any-graveyard-this-way-and-returns-urabrask
+-- the-great-work-makes-treasures-then-exiles-each-spell-cast-from-any-graveyard-this-way-and
 -- proves it on a spell that resolves, one countered and one cast from hand.
 installPermissionExile :: PlayerId -> Maybe (ObjectId, CastFromZone.CastFromZone) -> ObjectId -> GameState -> GameState
 installPermissionExile caster permission spell gs = case permission of

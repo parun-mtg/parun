@@ -4542,7 +4542,7 @@ apply settle batch applied batchPrevented candidate event =
             --
             -- With the entry's `settle`, so Lich's draws in place of a gain made
             -- in this payment's place settle between them (CR 614.11a):
-            -- cr-614-11a-forbidden-crypt-s-loss-meets-lich-s-mirror-between-the-draws-of-a-life-payment-on-entry
+            -- cr-614-11a-forbidden-crypt-s-loss-meets-lich-s-mirror-between-the-draws-of-a-life-payment-on
             -- proves it.
             EntryPrice.PayLife n -> do
               answer <-
@@ -7264,7 +7264,7 @@ putOwnCounters oid kind n = do
 -- The view answers a GONE object from last known information (CR 608.2h), since
 -- a slot can name one: web-slinging's returned creature, a new object in a hand
 -- (CR 400.7). The scenario
--- scarlet-spider-ben-reilly-web-slung-enters-with-counters-equal-to-the-returned-creatures-mana-value
+-- scarlet-spider-ben-reilly-web-slung-enters-with-counters-equal-to-the-returned-creatures-mana
 -- proves it.
 placeEntryCounters :: ReplacementCandidate -> ObjectId -> Map (CounterKind.CounterKind Keyword.Type.Keyword) Quantity.Type.Quantity -> Game ()
 placeEntryCounters candidate oid counters = do
@@ -12170,7 +12170,7 @@ drawSeries first settle spent pid n = Maybe.catMaybes <$> traverse one (List.gen
 -- CR 614.5: each draw is offered to none of the rows that applied to the
 -- instruction, so a draw a replacement makes in that draw's place is not either
 -- (Quantum Riddler's ruling). The scenario
--- quantum-riddler-applied-to-an-instruction-does-not-apply-again-to-teferi-s-ageless-insight-s-draws
+-- quantum-riddler-applied-to-an-instruction-does-not-apply-again-to-teferi-s-ageless-insight-s
 -- proves it.
 drawInstruction :: Settle.Settle -> DrawKind.DrawKind -> Set CandidateId -> PlayerId -> Natural -> Game ()
 drawInstruction settle first spent pid n = Monad.void (drawInstructionReturning settle first spent pid n)
