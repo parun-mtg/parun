@@ -1,0 +1,155 @@
+{
+  "board": {
+    "active": "alice",
+    "seats": [
+      {
+        "battlefield": [
+          {
+            "card": "Invasion of Gobakhan",
+            "face": "Lightshield Array",
+            "label": "array"
+          },
+          {
+            "card": "Grizzly Bears",
+            "label": "bears"
+          }
+        ],
+        "library": [
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          }
+        ],
+        "name": "alice"
+      },
+      {
+        "battlefield": [
+          {
+            "card": "Hill Giant",
+            "label": "giant"
+          }
+        ],
+        "library": [
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          }
+        ],
+        "name": "bob"
+      }
+    ],
+    "step": "PrecombatMain"
+  },
+  "description": "Sacrificing Lightshield Array gives the creatures alice controls hexproof and indestructible until end of turn",
+  "final": [
+    {
+      "Keywords": {
+        "count": 1,
+        "keyword": {
+          "type": "Hexproof"
+        },
+        "object": "$bears"
+      }
+    },
+    {
+      "Keywords": {
+        "count": 1,
+        "keyword": {
+          "type": "Indestructible"
+        },
+        "object": "$bears"
+      }
+    },
+    {
+      "Keywords": {
+        "count": 0,
+        "keyword": {
+          "type": "Hexproof"
+        },
+        "object": "$giant"
+      }
+    },
+    {
+      "Keywords": {
+        "count": 0,
+        "keyword": {
+          "type": "Indestructible"
+        },
+        "object": "$giant"
+      }
+    },
+    {
+      "Count": {
+        "card": "Invasion of Gobakhan",
+        "count": 1,
+        "player": "alice",
+        "zone": "Graveyard"
+      }
+    }
+  ],
+  "note": "alice's Grizzly Bears gains both; bob's Hill Giant gains neither.",
+  "timeline": [
+    {
+      "do": {
+        "Activate": {
+          "object": "$array"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": "Pass",
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": "Pass",
+      "player": "bob",
+      "step": "PrecombatMain",
+      "turn": 1
+    }
+  ]
+}
