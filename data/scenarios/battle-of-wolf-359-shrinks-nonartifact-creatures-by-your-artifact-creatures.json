@@ -1,0 +1,29 @@
+{
+  "board": {
+    "active": "alice",
+    "seats": [
+      {
+        "name": "alice",
+        "battlefield": [{ "card": "Ornithopter", "label": "thopter" }, { "card": "Memnite", "label": "memnite" }, { "card": "Grizzly Bears", "label": "bears" }, { "card": "Swamp", "label": "s1" }, { "card": "Swamp", "label": "s2" }, { "card": "Swamp", "label": "s3" }, { "card": "Swamp", "label": "s4" }, { "card": "Swamp", "label": "s5" }],
+        "hand": [{ "card": "Battle of Wolf 359", "label": "battle" }],
+        "library": [{ "card": "Island" }, { "card": "Island" }, { "card": "Island" }, { "card": "Island" }, { "card": "Island" }, { "card": "Island" }]
+      },
+      {
+        "name": "bob",
+        "battlefield": [{ "card": "Hill Giant", "label": "giant" }, { "card": "Bronze Sable", "label": "sable" }],
+        "library": [{ "card": "Island" }, { "card": "Island" }, { "card": "Island" }, { "card": "Island" }, { "card": "Island" }, { "card": "Island" }]
+      }
+    ],
+    "step": "PrecombatMain"
+  },
+  "description": "CR 608.2h, 611.2c: Battle of Wolf 359 gives each nonartifact creature -X/-X until end of turn, X the artifact creatures its caster controls",
+  "note": "Alice controls two artifact creatures; bob's Bronze Sable, an artifact creature he controls, does not raise X to 3. Hill Giant ends 1/1 and alice's own Grizzly Bears dies; the artifact creatures on both sides are untouched.",
+  "timeline": [
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "do": { "Cast": { "object": "$battle", "mana": ["$s1", "$s2", "$s3", "$s4", "$s5"] } } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "do": "Pass" },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "check": { "PowerToughness": { "object": "$giant", "power": 1, "toughness": 1 } } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "check": { "Count": { "card": "Grizzly Bears", "count": 1, "player": "alice", "zone": "Graveyard" } } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "check": { "PowerToughness": { "object": "$sable", "power": 2, "toughness": 1 } } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "check": { "PowerToughness": { "object": "$memnite", "power": 1, "toughness": 1 } } }
+  ]
+}

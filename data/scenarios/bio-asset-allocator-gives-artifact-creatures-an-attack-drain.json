@@ -1,0 +1,33 @@
+{
+  "board": {
+    "active": "alice",
+    "seats": [
+      {
+        "name": "alice",
+        "battlefield": [{ "card": "Bio-Asset Allocator", "label": "allocator" }, { "card": "Ornithopter", "label": "thopter", "ready": true }, { "card": "Grizzly Bears", "label": "bears", "ready": true }],
+        "library": [{ "card": "Island" }, { "card": "Island" }, { "card": "Island" }, { "card": "Island" }, { "card": "Island" }, { "card": "Island" }]
+      },
+      {
+        "name": "bob",
+        "library": [{ "card": "Island" }, { "card": "Island" }, { "card": "Island" }, { "card": "Island" }, { "card": "Island" }, { "card": "Island" }]
+      },
+      {
+        "name": "carol",
+        "library": [{ "card": "Island" }, { "card": "Island" }, { "card": "Island" }, { "card": "Island" }, { "card": "Island" }, { "card": "Island" }]
+      }
+    ],
+    "step": "PrecombatMain"
+  },
+  "description": "CR 613.1f, 508.1m: Bio-Asset Allocator gives each artifact creature its controller controls \"whenever this creature attacks, each opponent loses 1 life and you gain 1 life\"",
+  "note": "The Ornithopter and the Grizzly Bears both attack; only the Ornithopter is an artifact, so one trigger: each of two opponents loses 1 and alice gains 1.",
+  "timeline": [
+    { "turn": 1, "step": "DeclareAttackers", "player": "alice", "do": { "Attack": ["$thopter", "$bears"] } },
+    { "turn": 1, "step": "DeclareAttackers", "player": "alice", "do": { "Answer": { "prompt": "ChooseAttackTarget", "with": ["Player", "bob"] } } },
+    { "turn": 1, "step": "DeclareAttackers", "player": "alice", "do": { "Answer": { "prompt": "ChooseAttackTarget", "with": ["Player", "bob"] } } },
+    { "turn": 1, "step": "DeclareAttackers", "player": "alice", "check": { "View": { "of": "Stack", "is": ["trigger of $thopter"] } } },
+    { "turn": 1, "step": "DeclareAttackers", "player": "alice", "do": "Pass" },
+    { "turn": 1, "step": "DeclareAttackers", "player": "alice", "check": { "Life": { "player": "bob", "life": 19 } } },
+    { "turn": 1, "step": "DeclareAttackers", "player": "alice", "check": { "Life": { "player": "carol", "life": 19 } } },
+    { "turn": 1, "step": "DeclareAttackers", "player": "alice", "check": { "Life": { "player": "alice", "life": 21 } } }
+  ]
+}

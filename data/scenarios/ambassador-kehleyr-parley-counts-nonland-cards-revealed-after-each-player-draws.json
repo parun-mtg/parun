@@ -1,0 +1,32 @@
+{
+  "board": {
+    "active": "alice",
+    "seats": [
+      {
+        "name": "alice",
+        "battlefield": [{ "card": "Ambassador K'Ehleyr", "label": "ambassador" }],
+        "library": [{ "card": "Hill Giant" }, { "card": "Island" }, { "card": "Island" }, { "card": "Island" }, { "card": "Island" }, { "card": "Island" }]
+      },
+      {
+        "name": "bob",
+        "library": [{ "card": "Plains" }, { "card": "Island" }, { "card": "Island" }, { "card": "Island" }, { "card": "Island" }, { "card": "Island" }]
+      },
+      {
+        "name": "carol",
+        "library": [{ "card": "Shock" }, { "card": "Island" }, { "card": "Island" }, { "card": "Island" }, { "card": "Island" }, { "card": "Island" }]
+      }
+    ],
+    "step": "PrecombatMain"
+  },
+  "description": "CR 701.20a, 121.1, 608.2h: Parley reveals each player's top card, each player draws, then the count reads the cards revealed",
+  "note": "Alice and carol reveal nonland cards, bob a land, so two counters; each player then holds the card they revealed. The count is read after the draw from the cards revealed, not from the libraries, whose new tops are all Islands: a count of the library tops would give none.",
+  "timeline": [
+    { "turn": 1, "step": "BeginningOfCombat", "player": "alice", "check": { "View": { "of": "Stack", "is": ["trigger of $ambassador"] } } },
+    { "turn": 1, "step": "BeginningOfCombat", "player": "alice", "do": "Pass" },
+    { "turn": 1, "step": "BeginningOfCombat", "player": "alice", "check": { "Counters": { "count": 2, "kind": { "type": "PlusOnePlusOne" }, "object": "$ambassador" } } },
+    { "turn": 1, "step": "BeginningOfCombat", "player": "alice", "check": { "Count": { "card": "Hill Giant", "count": 1, "player": "alice", "zone": "Hand" } } },
+    { "turn": 1, "step": "BeginningOfCombat", "player": "alice", "check": { "Count": { "card": "Plains", "count": 1, "player": "bob", "zone": "Hand" } } },
+    { "turn": 1, "step": "BeginningOfCombat", "player": "alice", "check": { "Count": { "card": "Shock", "count": 1, "player": "carol", "zone": "Hand" } } },
+    { "turn": 1, "step": "BeginningOfCombat", "player": "alice", "check": { "View": { "of": "Witnessed", "player": "bob", "is": ["Hill Giant", "Plains", "Shock"] } } }
+  ]
+}

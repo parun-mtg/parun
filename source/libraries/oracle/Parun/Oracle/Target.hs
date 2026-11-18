@@ -97,12 +97,12 @@ data Reference = MkReference
 
 -- | Whether a description of many objects reads "each" or "all": damage is
 -- dealt to "each creature" and destruction is of "all creatures". A
--- continuous effect's objects read "all" only when described by their noun
--- alone, and may drop it then: "All creatures get -1/-1" (Night of Souls'
--- Betrayal), "Soldier creatures have vigilance" (Mobilization); free, "other"
--- alone may take it (Shefet Archfiend's "All other creatures"); but "Black
--- creatures get +1/+1" (Bad Moon) and "Creatures you control get +1/+1"
--- (Glorious Anthem).
+-- continuous effect's objects may read "all" unless a qualifier describes
+-- them, and may drop it: "All creatures get -1/-1" (Night of Souls'
+-- Betrayal), "Soldier creatures have vigilance" (Mobilization), "All other
+-- creatures" (Shefet Archfiend), "All nonartifact creatures" (Battle of Wolf
+-- 359), "Black creatures get +1/+1" (Bad Moon); but only "Creatures you
+-- control get +1/+1" (Glorious Anthem).
 data Determiner
   = Each
   | All
@@ -404,10 +404,9 @@ object context determiner ref = case ref of
     Affected -> do
       p <- Filter.phrase f (keyword context)
       text <- Filter.describe Filter.Plural permanent p
-      let other = Filter.MkQualifier (Text.pack "other") (Text.pack "other")
-          bare = null (Filter.adjectives p) && null (Filter.qualifiers p)
-          others = not bare && all (== other) (Filter.adjectives p) && null (Filter.qualifiers p)
-      [MkReference w [] Filter.Plural [] | w <- if bare then [Text.pack "all " <> text, text] else [text] <> [Text.pack "all " <> text | others]]
+      let bare = null (Filter.adjectives p) && null (Filter.qualifiers p)
+          adjectival = not bare && null (Filter.qualifiers p)
+      [MkReference w [] Filter.Plural [] | w <- if bare then [Text.pack "all " <> text, text] else [text] <> [Text.pack "all " <> text | adjectival]]
   ObjectRef.EachCardInGraveyard e
     | determiner == All,
       EachCardInGraveyard.filter e == Filter.Type.And [],

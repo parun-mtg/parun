@@ -1,0 +1,42 @@
+{
+  "board": {
+    "active": "alice",
+    "seats": [
+      {
+        "name": "alice",
+        "battlefield": [{ "card": "Hill Giant", "label": "giant" }, { "card": "Plains", "label": "p1" }, { "card": "Plains", "label": "p2" }, { "card": "Plains", "label": "p3" }],
+        "hand": [{ "card": "Balance of Terror", "label": "saga" }],
+        "library": [{ "card": "Island" }, { "card": "Island" }, { "card": "Island" }, { "card": "Island" }, { "card": "Island" }, { "card": "Island" }]
+      },
+      {
+        "name": "bob",
+        "battlefield": [{ "card": "Sol Ring", "label": "ring" }, { "card": "Grizzly Bears", "label": "bears" }],
+        "library": [{ "card": "Island" }, { "card": "Island" }, { "card": "Island" }, { "card": "Island" }, { "card": "Island" }, { "card": "Island" }]
+      }
+    ],
+    "step": "PrecombatMain"
+  },
+  "description": "CR 715.2c, 603.7a, 715.4: Balance of Terror's chapter I destroys up to one other target artifact or enchantment; chapter II exiles another permanent its controller controls and returns it at the beginning of the next end step",
+  "note": "Chapter I cannot target bob's Grizzly Bears, a creature, and destroys his Sol Ring. Chapter II cannot target bob's Bears (not alice's) or the Saga itself (not other); it exiles alice's Hill Giant, which is still in exile after combat and back at the end step's start. Chapter III's trigger is let go with no target, and the Saga is then sacrificed.",
+  "timeline": [
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "do": { "Cast": { "object": "$saga", "mana": ["$p1", "$p2", "$p3"] } } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "do": "Pass" },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "refuse": { "ChooseTargets": { "target": ["$bears"] } } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "do": { "ChooseTargets": { "target": ["$ring"] } } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "do": "Pass" },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "check": { "Count": { "card": "Sol Ring", "count": 1, "player": "bob", "zone": "Graveyard" } } },
+    { "turn": 2, "step": "DeclareAttackers", "player": "bob", "do": { "Attack": [] } },
+    { "turn": 3, "step": "PrecombatMain", "player": "alice", "refuse": { "ChooseTargets": { "target": ["$bears"] } } },
+    { "turn": 3, "step": "PrecombatMain", "player": "alice", "refuse": { "ChooseTargets": { "target": ["Balance of Terror"] } } },
+    { "turn": 3, "step": "PrecombatMain", "player": "alice", "do": { "ChooseTargets": { "target": ["$giant"] } } },
+    { "turn": 3, "step": "PrecombatMain", "player": "alice", "do": "Pass" },
+    { "turn": 3, "step": "PostcombatMain", "player": "alice", "check": { "Count": { "card": "Hill Giant", "count": 1, "player": "alice", "zone": "Exile" } } },
+    { "turn": 3, "step": "EndStep", "player": "alice", "check": { "View": { "of": "Stack", "is": ["trigger of Balance of Terror"] } } },
+    { "turn": 3, "step": "EndStep", "player": "alice", "do": "Pass" },
+    { "turn": 3, "step": "EndStep", "player": "alice", "check": { "Count": { "card": "Hill Giant", "count": 1, "player": "alice", "zone": "Battlefield" } } },
+    { "turn": 4, "step": "DeclareAttackers", "player": "bob", "do": { "Attack": [] } },
+    { "turn": 5, "step": "PrecombatMain", "player": "alice", "do": { "ChooseTargets": { "target": [] } } },
+    { "turn": 5, "step": "PrecombatMain", "player": "alice", "do": "Pass" },
+    { "turn": 5, "step": "PrecombatMain", "player": "alice", "check": { "Count": { "card": "Balance of Terror", "count": 1, "player": "alice", "zone": "Graveyard" } } }
+  ]
+}

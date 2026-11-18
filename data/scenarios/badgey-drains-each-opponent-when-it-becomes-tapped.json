@@ -1,0 +1,32 @@
+{
+  "board": {
+    "active": "alice",
+    "seats": [
+      {
+        "name": "alice",
+        "battlefield": [{ "card": "Badgey, Malicious Glitch", "label": "badgey", "ready": true }],
+        "library": [{ "card": "Island" }, { "card": "Island" }, { "card": "Island" }, { "card": "Island" }, { "card": "Island" }, { "card": "Island" }]
+      },
+      {
+        "name": "bob",
+        "library": [{ "card": "Island" }, { "card": "Island" }, { "card": "Island" }, { "card": "Island" }, { "card": "Island" }, { "card": "Island" }]
+      },
+      {
+        "name": "carol",
+        "library": [{ "card": "Island" }, { "card": "Island" }, { "card": "Island" }, { "card": "Island" }, { "card": "Island" }, { "card": "Island" }]
+      }
+    ],
+    "step": "PrecombatMain"
+  },
+  "description": "CR 508.1f, 603.2: Badgey becoming tapped as it attacks makes each opponent lose 1 life and its controller gain 1",
+  "note": "Three seats so each opponent is two players: bob and carol each lose 1 as the trigger resolves, before combat damage, and alice gains 1 once.",
+  "timeline": [
+    { "turn": 1, "step": "DeclareAttackers", "player": "alice", "do": { "Attack": ["$badgey"] } },
+    { "turn": 1, "step": "DeclareAttackers", "player": "alice", "do": { "Answer": { "prompt": "ChooseAttackTarget", "with": ["Player", "bob"] } } },
+    { "turn": 1, "step": "DeclareAttackers", "player": "alice", "check": { "View": { "of": "Stack", "is": ["trigger of $badgey"] } } },
+    { "turn": 1, "step": "DeclareAttackers", "player": "alice", "do": "Pass" },
+    { "turn": 1, "step": "DeclareAttackers", "player": "alice", "check": { "Life": { "player": "bob", "life": 19 } } },
+    { "turn": 1, "step": "DeclareAttackers", "player": "alice", "check": { "Life": { "player": "carol", "life": 19 } } },
+    { "turn": 1, "step": "DeclareAttackers", "player": "alice", "check": { "Life": { "player": "alice", "life": 21 } } }
+  ]
+}

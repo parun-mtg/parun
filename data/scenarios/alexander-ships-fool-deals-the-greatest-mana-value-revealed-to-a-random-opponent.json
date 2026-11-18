@@ -1,0 +1,33 @@
+{
+  "board": {
+    "active": "alice",
+    "seats": [
+      {
+        "name": "alice",
+        "battlefield": [{ "card": "Alexander, Ship's Fool", "label": "alexander" }],
+        "library": [{ "card": "Grizzly Bears" }, { "card": "Island" }, { "card": "Island" }, { "card": "Island" }, { "card": "Island" }, { "card": "Island" }]
+      },
+      {
+        "name": "bob",
+        "library": [{ "card": "Plains" }, { "card": "Serra Angel" }, { "card": "Island" }, { "card": "Island" }, { "card": "Island" }, { "card": "Island" }]
+      },
+      {
+        "name": "carol",
+        "library": [{ "card": "Hill Giant" }, { "card": "Island" }, { "card": "Island" }, { "card": "Island" }, { "card": "Island" }, { "card": "Island" }]
+      }
+    ],
+    "step": "PrecombatMain"
+  },
+  "description": "CR 701.20a, 608.2h, 120.3: Alexander's Parley deals the greatest mana value among the revealed cards to the random opponent chosen",
+  "note": "The revealed cards have mana values 2, 0 and 4, so carol's Hill Giant sets X to 4. Bob's new top card, Serra Angel at 5, comes up only after the draw, so reading the libraries then would deal 5. The random opponent is bob, answered by name; carol takes nothing.",
+  "timeline": [
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "do": { "Activate": { "object": "$alexander" } } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "do": "Pass" },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "do": { "Answer": { "prompt": "RandomPlayer", "with": "bob" } } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "check": { "Life": { "player": "bob", "life": 16 } } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "check": { "Life": { "player": "carol", "life": 20 } } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "check": { "Life": { "player": "alice", "life": 20 } } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "check": { "Count": { "card": "Plains", "count": 1, "player": "bob", "zone": "Hand" } } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "check": { "Count": { "card": "Grizzly Bears", "count": 1, "player": "alice", "zone": "Hand" } } }
+  ]
+}

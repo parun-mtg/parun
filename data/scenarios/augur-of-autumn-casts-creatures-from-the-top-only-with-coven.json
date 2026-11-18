@@ -1,0 +1,30 @@
+{
+  "board": {
+    "active": "alice",
+    "seats": [
+      {
+        "name": "alice",
+        "battlefield": [{ "card": "Augur of Autumn", "label": "augur" }, { "card": "Hill Giant", "label": "giant" }, { "card": "Grizzly Bears", "label": "bears" }],
+        "hand": [{ "card": "Ornithopter", "label": "thopter" }],
+        "library": [{ "card": "Memnite", "label": "memnite" }, { "card": "Forest", "label": "forest" }, { "card": "Island" }, { "card": "Island" }, { "card": "Island" }, { "card": "Island" }]
+      },
+      {
+        "name": "bob",
+        "library": [{ "card": "Island" }, { "card": "Island" }, { "card": "Island" }, { "card": "Island" }, { "card": "Island" }, { "card": "Island" }]
+      }
+    ],
+    "step": "PrecombatMain"
+  },
+  "description": "CR 207.2c, 601.3, 305.1: Augur of Autumn's coven lets its controller cast creature spells from the top of their library only while they control three creatures with different powers; lands are played from there regardless",
+  "note": "Augur and Grizzly Bears share power 2 beside Hill Giant's 3: two different powers, so the top Memnite cannot be cast. Ornithopter, power 0, makes three, and the Memnite then is. The Forest under it is played from the top.",
+  "timeline": [
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "refuse": { "Cast": { "object": "$memnite" } } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "do": { "Cast": { "object": "$thopter" } } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "do": "Pass" },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "do": { "Cast": { "object": "$memnite" } } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "do": "Pass" },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "check": { "Count": { "card": "Memnite", "count": 1, "player": "alice", "zone": "Battlefield" } } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "do": { "PlayLand": "$forest" } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "check": { "Count": { "card": "Forest", "count": 1, "player": "alice", "zone": "Battlefield" } } }
+  ]
+}
