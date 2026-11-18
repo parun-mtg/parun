@@ -418,6 +418,8 @@ library codec
     Parun.Codec.CasualtySpec
     Parun.Codec.Cause
     Parun.Codec.CausedBy
+    Parun.Codec.ChangeCount
+    Parun.Codec.ChangeCountSpec
     Parun.Codec.ChangeMode
     Parun.Codec.ChangeModeSpec
     Parun.Codec.ChangeTargets
@@ -3016,6 +3018,7 @@ library types
     Parun.Types.Casualty
     Parun.Types.Cause
     Parun.Types.CausedBy
+    Parun.Types.ChangeCount
     Parun.Types.ChangeMode
     Parun.Types.ChangeTargets
     Parun.Types.ChangeText

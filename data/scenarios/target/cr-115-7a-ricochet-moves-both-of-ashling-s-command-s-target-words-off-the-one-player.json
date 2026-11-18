@@ -1,0 +1,199 @@
+{
+  "board": {
+    "active": "bob",
+    "seats": [
+      {
+        "battlefield": [
+          {
+            "card": "Ricochet",
+            "label": "ricochet"
+          }
+        ],
+        "library": [
+          {
+            "card": "Plains"
+          },
+          {
+            "card": "Plains"
+          },
+          {
+            "card": "Plains"
+          },
+          {
+            "card": "Plains"
+          }
+        ],
+        "name": "alice"
+      },
+      {
+        "battlefield": [
+          {
+            "card": "Island",
+            "label": "m1"
+          },
+          {
+            "card": "Island",
+            "label": "m2"
+          },
+          {
+            "card": "Island",
+            "label": "m3"
+          },
+          {
+            "card": "Island",
+            "label": "m4"
+          },
+          {
+            "card": "Mountain",
+            "label": "m5"
+          }
+        ],
+        "hand": [
+          {
+            "card": "Ashling's Command",
+            "label": "command"
+          }
+        ],
+        "library": [
+          {
+            "card": "Plains"
+          },
+          {
+            "card": "Plains"
+          },
+          {
+            "card": "Plains"
+          },
+          {
+            "card": "Plains"
+          }
+        ],
+        "name": "bob"
+      },
+      {
+        "library": [
+          {
+            "card": "Plains"
+          },
+          {
+            "card": "Plains"
+          },
+          {
+            "card": "Plains"
+          },
+          {
+            "card": "Plains"
+          }
+        ],
+        "name": "carol"
+      }
+    ],
+    "step": "PrecombatMain"
+  },
+  "description": "CR 115.7a Ricochet moves both of Ashling's Command's target words off the one player",
+  "final": [
+    {
+      "Count": {
+        "card": "Plains",
+        "count": 2,
+        "player": "carol",
+        "zone": "Hand"
+      }
+    },
+    {
+      "Count": {
+        "card": "Treasure Token",
+        "count": 2,
+        "player": "carol",
+        "zone": "Battlefield"
+      }
+    },
+    {
+      "Count": {
+        "card": "Plains",
+        "count": 0,
+        "player": "alice",
+        "zone": "Hand"
+      }
+    },
+    {
+      "Count": {
+        "card": "Treasure Token",
+        "count": 0,
+        "player": "alice",
+        "zone": "Battlefield"
+      }
+    },
+    {
+      "View": {
+        "is": [],
+        "of": "Stack"
+      }
+    }
+  ],
+  "note": "Bob casts Ashling's Command with both of its \"target player\" modes at alice (draw two, two Treasures), a spell that targets a single player, so alice's Ricochet triggers. Rolls bob 4, carol 1, alice 5: carol is lowest, and \"change the target\" moves every target or none (CR 115.7a), so both words move to carol unasked rather than one of them at alice's choice.",
+  "timeline": [
+    {
+      "do": {
+        "Cast": {
+          "mana": [
+            "$m1",
+            "$m2",
+            "$m3",
+            "$m4",
+            "$m5"
+          ],
+          "modes": [
+            1,
+            3
+          ],
+          "object": "$command",
+          "targetsBySlot": {
+            "drawer": [
+              "$alice"
+            ],
+            "enriched": [
+              "$alice"
+            ]
+          }
+        }
+      },
+      "player": "bob",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": {
+        "Answer": {
+          "prompt": "RollDie",
+          "with": 4
+        }
+      },
+      "player": "bob",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": {
+        "Answer": {
+          "prompt": "RollDie",
+          "with": 1
+        }
+      },
+      "player": "bob",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": {
+        "Answer": {
+          "prompt": "RollDie",
+          "with": 5
+        }
+      },
+      "player": "bob",
+      "step": "PrecombatMain",
+      "turn": 1
+    }
+  ]
+}

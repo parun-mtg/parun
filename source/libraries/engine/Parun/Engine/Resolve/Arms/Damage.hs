@@ -1647,30 +1647,37 @@ rollDieArm throwDice runSubgame resolving source controller legal rollDie = do
       -- (CR 706.1), in APNAP order, until one is lowest (docs/decisions.md,
       -- "Who rerolls Ricochet's tie"). Bounded by the tie alone: an answerer
       -- that ties forever never ends it, as a die that did would not. Each
-      -- reroll is a roll a "whenever you roll" trigger sees.
-      breakTies current =
-        case fmap minimum (NonEmpty.nonEmpty (fmap snd (usedBy current))) of
-          Just low
-            | let tied = [roller | (roller, n) <- usedBy current, n == low],
-              length tied > 1 -> do
-                again <- Monad.forM tied rollOne
+      -- reroll is a roll a "whenever you roll" trigger sees. Each round is
+      -- judged among the `contenders` alone, the players the last tie left:
+      -- a standing result outside it neither wins nor ties, as the scenario
+      -- cr-706-1-the-players-tied-for-the-lowest-roll-reroll-until-one-is-lowest--bystander
+      -- proves. Returns the renewed table, the lowest contenders and the
+      -- rerolls.
+      breakTies contenders current =
+        let standing = [(roller, n) | (roller, n) <- usedBy current, roller `elem` contenders]
+            lowest = case fmap minimum (NonEmpty.nonEmpty (fmap snd standing)) of
+              Just low -> [roller | (roller, n) <- standing, n == low]
+              Nothing -> []
+         in if length lowest > 1
+              then do
+                again <- Monad.forM lowest rollOne
                 let renewed row@(roller, _, _, _) = Maybe.fromMaybe row (List.find (\(r, _, _, _) -> r == roller) again)
-                (settled, later) <- breakTies (fmap renewed current)
-                pure (settled, again <> later)
-          _ -> pure (current, [])
+                (settled, winners, later) <- breakTies lowest (fmap renewed current)
+                pure (settled, winners, again <> later)
+              else pure (current, lowest, [])
   opening <- Monad.forM rollers rollOne
-  (rolled, rerolled) <- case fmap RollExtreme.end (RollDie.extreme rollDie) of
-    Just RollEnd.LowestBreakingTies -> breakTies opening
-    Just RollEnd.Highest -> pure (opening, [])
-    Nothing -> pure (opening, [])
+  (rolled, lowest, rerolled) <- case fmap RollExtreme.end (RollDie.extreme rollDie) of
+    Just RollEnd.LowestBreakingTies -> breakTies rollers opening
+    Just RollEnd.Highest -> pure (opening, [], [])
+    Nothing -> pure (opening, [], [])
   let kept = usedBy rolled
   Foldable.for_ (NonEmpty.nonEmpty (fmap snd kept)) $ \results -> do
     State.modify' (Common.bindAmountSlot resolving source (RollDie.slot rollDie) (maximum results))
     Foldable.for_ (RollDie.extreme rollDie) $ \(RollExtreme.MkRollExtreme end slot) -> do
-      let n = case end of
-            RollEnd.Highest -> maximum results
-            RollEnd.LowestBreakingTies -> minimum results
-      State.modify' (Common.bindPlayerSlot resolving slot (Set.fromList [roller | (roller, m) <- kept, m == n]))
+      let extremes = case end of
+            RollEnd.Highest -> [roller | (roller, m) <- kept, m == maximum results]
+            RollEnd.LowestBreakingTies -> lowest
+      State.modify' (Common.bindPlayerSlot resolving slot (Set.fromList extremes))
   Foldable.for_ (opening <> rerolled) $ \(roller, _, (throwers, thrown), _) ->
     Monad.unless (null thrown) (Common.recordRoll roller throwers thrown)
   -- CR 706.1: each roller's total, filed against the rolling ability for

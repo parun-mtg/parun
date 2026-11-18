@@ -974,12 +974,12 @@ chooseNewTargets resolving source controller legal = Common.retargetEach (Common
 -- once, against the resolving effect's own bindings, as the players or the
 -- objects it names.
 changeTargets :: ObjectId -> ObjectId -> PlayerId -> Map.Map SlotName (Set Recipient) -> ChangeTargets.ChangeTargets -> Game ()
-changeTargets resolving source controller legal (ChangeTargets.MkChangeTargets ref onto) = do
+changeTargets resolving source controller legal (ChangeTargets.MkChangeTargets ref count onto) = do
   gs <- State.get
   let named = flip fmap onto $ \recipients -> case recipients of
         RecipientRef.Players who -> any (`elem` playerRefPlayers legal resolving source controller gs who) . Recipient.playerOf
         RecipientRef.Permanents objects -> any (`elem` objectRefObjects legal resolving controller source gs objects) . Recipient.objectOf
-  Common.retargetEach (Common.changeTargetsFor named source controller) legal resolving controller source ref
+  Common.retargetEach (Common.changeTargetsFor count named source controller) legal resolving controller source ref
 
 -- CR 107.3a: each named object still on the stack takes its new X; one that
 -- left keeps no X to change. A stated quantity is read once, as the

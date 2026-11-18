@@ -141,6 +141,7 @@ import qualified Parun.Types.CastRepetition as CastRepetition
 import qualified Parun.Types.CastingPermission as CastingPermission
 import qualified Parun.Types.CastingRestriction as CastingRestriction
 import qualified Parun.Types.CausedBy as CausedBy
+import qualified Parun.Types.ChangeCount as ChangeCount
 import qualified Parun.Types.ChangeTargets as ChangeTargets
 import qualified Parun.Types.ChangeText as ChangeText
 import qualified Parun.Types.CharacteristicPT as CharacteristicPT
@@ -879,7 +880,7 @@ objectRefPositions =
         ("for-each", Effect.ForEach (ForEach.MkForEach (plantedRef "fe") LoopMembers.Every (SlotName.MkSlotName (Text.pack "each")) Seq.empty False Nothing Nothing), [plantedRef "fe"]),
         ("heal", Effect.Heal (plantedRef "he"), [plantedRef "he"]),
         ("choose-new-targets", Effect.ChooseNewTargets (plantedRef "cnt"), [plantedRef "cnt"]),
-        ("change-targets", Effect.ChangeTargets (ChangeTargets.MkChangeTargets (plantedRef "ct") (Just (RecipientRef.Permanents (plantedRef "cto")))), [plantedRef "ct", plantedRef "cto"]),
+        ("change-targets", Effect.ChangeTargets (ChangeTargets.MkChangeTargets (plantedRef "ct") ChangeCount.One (Just (RecipientRef.Permanents (plantedRef "cto")))), [plantedRef "ct", plantedRef "cto"]),
         ("exchange-values", Effect.ExchangeValues (ExchangeValues.MkExchangeValues (ExchangedValue.Power (plantedRef "xv-power")) (ExchangedValue.Toughness (plantedRef "xv-toughness")) Duration.Indefinite), [plantedRef "xv-power", plantedRef "xv-toughness"])
       ]
 
@@ -931,7 +932,7 @@ playerRefPositions =
         ("gain-player-counters", Effect.GainPlayerCounters (PlayerCounters.MkPlayerCounters (plantedPlayer "gp") PlayerCounterKind.Rad one), [plantedPlayer "gp"]),
         ("remove-player-counters", Effect.RemovePlayerCounters (RemovePlayerCounters.MkRemovePlayerCounters (plantedPlayer "rp") PlayerCounterKind.Rad one Nothing), [plantedPlayer "rp"]),
         ("require-attack", Effect.RequireAttack (RequireAttack.MkRequireAttack Duration.UntilEndOfTurn (RestrictedCreatures.Named (plantedRef "ra")) (Just (RecipientRef.Players (plantedPlayer "ra-defender")))), [plantedPlayer "ra-defender"]),
-        ("change-targets", Effect.ChangeTargets (ChangeTargets.MkChangeTargets (plantedRef "ct") (Just (RecipientRef.Players (plantedPlayer "ct-onto")))), [plantedPlayer "ct-onto"]),
+        ("change-targets", Effect.ChangeTargets (ChangeTargets.MkChangeTargets (plantedRef "ct") ChangeCount.Every (Just (RecipientRef.Players (plantedPlayer "ct-onto")))), [plantedPlayer "ct-onto"]),
         ("gain-control", Effect.GainControl (GainControl.MkGainControl Duration.Indefinite (plantedRef "gc") Nothing (plantedPlayer "gc")), [plantedPlayer "gc"]),
         ("join-attack", Effect.JoinAttack (JoinAttack.MkJoinAttack (plantedRef "ja") (plantedPlayer "ja")), [plantedPlayer "ja"]),
         ("blight", Effect.Blight (Blight.MkBlight (plantedPlayer "bl") one Nothing), [plantedPlayer "bl"]),

@@ -44,6 +44,7 @@
                       {
                         "type": "ChangeTargets",
                         "value": {
+                          "count": "One",
                           "objects": {
                             "type": "InSlot",
                             "value": "redirected"

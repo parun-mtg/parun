@@ -178,6 +178,7 @@ import qualified Parun.Codec.CastingPermissionSpec
 import qualified Parun.Codec.CastingRestrictionSpec
 import qualified Parun.Codec.CastingSpec
 import qualified Parun.Codec.CasualtySpec
+import qualified Parun.Codec.ChangeCountSpec
 import qualified Parun.Codec.ChangeModeSpec
 import qualified Parun.Codec.ChangeTextSpec
 import qualified Parun.Codec.ChangeWordSpec
@@ -1336,6 +1337,7 @@ spec s reference corpus = do
   Parun.Codec.CoinFlippedSpec.spec s
   Parun.Codec.CoinReadingSpec.spec s
   Parun.Codec.ColorAmongSpec.spec s
+  Parun.Codec.ChangeCountSpec.spec s
   Parun.Codec.ChangeModeSpec.spec s
   Parun.Codec.ChoiceDistinctSpec.spec s
   Parun.Codec.ChoiceOrdinalSpec.spec s

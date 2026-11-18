@@ -2828,7 +2828,8 @@ Entries are ordered by the first rule each cites.
   others: "change the target of that spell" speaks of one target.
 - **Site**: `Parun.Engine.Resolve.Arms.Damage.rollDieArm`'s `breakTies`, under
   `Parun.Types.RollEnd.LowestBreakingTies`, proved by the scenario
-  `cr-706-1-the-players-tied-for-the-lowest-roll-reroll-until-one-is-lowest`.
+  `cr-706-1-the-players-tied-for-the-lowest-roll-reroll-until-one-is-lowest`
+  and its `--bystander` leg.
 - **Issue**: #3990.
 
 ## When reversing a turn's phases takes effect
