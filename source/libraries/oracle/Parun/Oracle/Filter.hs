@@ -113,7 +113,9 @@ phraseJoining joining f named = case f of
   -- After any card type: "artifact tokens", "target creature token" (CR 111.1).
   Filter.IsToken -> [noun (Text.pack "token") (Just (Text.pack "tokens"))]
   Filter.HasAttached (Filter.HasSubtype Subtype.Aura) -> [adjective (Text.pack "enchanted")]
-  Filter.HasAttached (Filter.HasSubtype Subtype.Equipment) -> [adjective (Text.pack "equipped")]
+  -- Free: "equipped creatures you control" (Blacksmith's Talent) or "creatures
+  -- you control that are equipped" (Hexgold Hoverwings).
+  Filter.HasAttached (Filter.HasSubtype Subtype.Equipment) -> [adjective (Text.pack "equipped"), qualifier (Text.pack "that's equipped") (Text.pack "that are equipped")]
   Filter.IsTapped -> [adjective (Text.pack "tapped")]
   Filter.Not Filter.IsTapped -> [adjective (Text.pack "untapped")]
   Filter.IsAttacking Nothing -> [adjective (Text.pack "attacking")]
