@@ -1,11 +1,8 @@
 {
-  "description": "CR 608.2d: Green Sun's Twilight with X of 5 or more announces the hand and puts both chosen cards there",
   "board": {
     "active": "alice",
-    "step": "PrecombatMain",
     "seats": [
       {
-        "name": "alice",
         "battlefield": [
           {
             "card": "Forest",
@@ -66,10 +63,10 @@
           {
             "card": "Mountain"
           }
-        ]
+        ],
+        "name": "alice"
       },
       {
-        "name": "bob",
         "library": [
           {
             "card": "Island"
@@ -77,19 +74,17 @@
           {
             "card": "Island"
           }
-        ]
+        ],
+        "name": "bob"
       }
-    ]
+    ],
+    "step": "PrecombatMain"
   },
+  "description": "CR 608.2d: Green Sun's Twilight with X of 5 or more announces the hand and puts both chosen cards there",
   "timeline": [
     {
-      "turn": 1,
-      "step": "PrecombatMain",
-      "player": "alice",
       "do": {
         "Cast": {
-          "object": "$twilight",
-          "x": 5,
           "mana": [
             "$f1",
             "$f2",
@@ -97,31 +92,33 @@
             "$f4",
             "$f5",
             "$f6"
-          ]
+          ],
+          "object": "$twilight",
+          "x": 5
         }
-      }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
     },
     {
-      "turn": 1,
-      "step": "PrecombatMain",
+      "do": "Pass",
       "player": "alice",
-      "do": "Pass"
+      "step": "PrecombatMain",
+      "turn": 1
     },
     {
-      "turn": 1,
-      "step": "PrecombatMain",
-      "player": "alice",
       "do": {
         "Answer": {
           "prompt": "ChooseClause",
           "with": 1
         }
-      }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
     },
     {
-      "turn": 1,
-      "step": "PrecombatMain",
-      "player": "alice",
       "do": {
         "Answer": {
           "prompt": "ChooseCardsFromAmong",
@@ -129,12 +126,12 @@
             "Hill Giant"
           ]
         }
-      }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
     },
     {
-      "turn": 1,
-      "step": "PrecombatMain",
-      "player": "alice",
       "do": {
         "Answer": {
           "prompt": "ChooseCardsFromAmong",
@@ -142,49 +139,87 @@
             "Plains"
           ]
         }
-      }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
     },
     {
-      "turn": 1,
-      "step": "PrecombatMain",
+      "do": {
+        "Answer": {
+          "prompt": "Shuffle",
+          "with": [
+            "Grizzly Bears",
+            "Shock",
+            "Swamp",
+            "Lightning Bolt"
+          ]
+        }
+      },
       "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
       "check": {
         "View": {
+          "is": [
+            "Mountain",
+            "Lightning Bolt",
+            "Swamp",
+            "Shock",
+            "Grizzly Bears"
+          ],
           "of": "Zone",
           "player": "alice",
-          "zone": "Hand",
+          "zone": "Library"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "View": {
           "is": [
             "Hill Giant",
             "Plains"
-          ]
+          ],
+          "of": "Zone",
+          "player": "alice",
+          "zone": "Hand"
         }
-      }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
     },
     {
-      "turn": 1,
-      "step": "PrecombatMain",
-      "player": "alice",
       "check": {
         "Count": {
-          "player": "alice",
-          "zone": "Battlefield",
           "card": "Hill Giant",
-          "count": 0
+          "count": 0,
+          "player": "alice",
+          "zone": "Battlefield"
         }
-      }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
     },
     {
-      "turn": 1,
-      "step": "PrecombatMain",
-      "player": "alice",
       "check": {
         "Count": {
-          "player": "alice",
-          "zone": "Battlefield",
           "card": "Plains",
-          "count": 0
+          "count": 0,
+          "player": "alice",
+          "zone": "Battlefield"
         }
-      }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
     }
   ]
 }

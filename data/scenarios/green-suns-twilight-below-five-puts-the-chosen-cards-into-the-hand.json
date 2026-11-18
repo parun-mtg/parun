@@ -1,11 +1,8 @@
 {
-  "description": "CR 608.2c: Green Sun's Twilight with X below 5 reveals X plus one and puts the chosen creature and land cards into its controller's hand, asking no destination",
   "board": {
     "active": "alice",
-    "step": "PrecombatMain",
     "seats": [
       {
-        "name": "alice",
         "battlefield": [
           {
             "card": "Forest",
@@ -37,10 +34,10 @@
           {
             "card": "Mountain"
           }
-        ]
+        ],
+        "name": "alice"
       },
       {
-        "name": "bob",
         "library": [
           {
             "card": "Island"
@@ -48,36 +45,36 @@
           {
             "card": "Island"
           }
-        ]
+        ],
+        "name": "bob"
       }
-    ]
+    ],
+    "step": "PrecombatMain"
   },
+  "description": "CR 608.2c: Green Sun's Twilight with X below 5 reveals X plus one and puts the chosen creature and land cards into its controller's hand, asking no destination",
   "timeline": [
     {
-      "turn": 1,
-      "step": "PrecombatMain",
-      "player": "alice",
       "do": {
         "Cast": {
-          "object": "$twilight",
-          "x": 1,
           "mana": [
             "$f1",
             "$f2"
-          ]
+          ],
+          "object": "$twilight",
+          "x": 1
         }
-      }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
     },
     {
-      "turn": 1,
-      "step": "PrecombatMain",
+      "do": "Pass",
       "player": "alice",
-      "do": "Pass"
+      "step": "PrecombatMain",
+      "turn": 1
     },
     {
-      "turn": 1,
-      "step": "PrecombatMain",
-      "player": "alice",
       "do": {
         "Answer": {
           "prompt": "ChooseCardsFromAmong",
@@ -85,12 +82,12 @@
             "Grizzly Bears"
           ]
         }
-      }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
     },
     {
-      "turn": 1,
-      "step": "PrecombatMain",
-      "player": "alice",
       "do": {
         "Answer": {
           "prompt": "ChooseCardsFromAmong",
@@ -98,55 +95,58 @@
             "Plains"
           ]
         }
-      }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
     },
     {
-      "turn": 1,
-      "step": "PrecombatMain",
-      "player": "alice",
       "check": {
         "View": {
-          "of": "Zone",
-          "player": "alice",
-          "zone": "Hand",
           "is": [
             "Grizzly Bears",
             "Plains"
-          ]
-        }
-      }
-    },
-    {
-      "turn": 1,
-      "step": "PrecombatMain",
-      "player": "alice",
-      "check": {
-        "View": {
+          ],
           "of": "Zone",
           "player": "alice",
-          "zone": "Battlefield",
+          "zone": "Hand"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "View": {
           "is": [
-            "Forest",
-            "Forest"
-          ]
-        }
-      }
-    },
-    {
-      "turn": 1,
-      "step": "PrecombatMain",
-      "player": "alice",
-      "check": {
-        "View": {
+            "$f1",
+            "$f2"
+          ],
           "of": "Zone",
           "player": "alice",
-          "zone": "Library",
+          "zone": "Battlefield"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "View": {
           "is": [
             "Shock",
             "Mountain"
-          ]
+          ],
+          "of": "Zone",
+          "player": "alice",
+          "zone": "Library"
         }
-      }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
     }
   ]
 }
