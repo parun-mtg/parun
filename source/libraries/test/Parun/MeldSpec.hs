@@ -91,6 +91,7 @@ import qualified Parun.Types.Prompt as Prompt
 import qualified Parun.Types.Recipient as Recipient
 import qualified Parun.Types.Regenerability as Regenerability
 import qualified Parun.Types.Scope as Scope
+import qualified Parun.Types.Settle as Settle
 import qualified Parun.Types.SlotName as SlotName
 import qualified Parun.Types.Source as Source
 import qualified Parun.Types.StepBegan as StepBegan
@@ -464,7 +465,7 @@ spec s registry = Spec.describe s "Meld" $ do
                   }
             }
         woven = S.runPure (aimedAt eggId) ready (S.cast S.alice weaveId >> Stack.resolveTop >> Engine.settleForPriority)
-        sacrificed = S.runPure S.identityAnswer woven (Event.sacrifice (pure ()) S.alice gId >> Engine.settleForPriority)
+        sacrificed = S.runPure S.identityAnswer woven (Event.sacrifice Settle.none S.alice gId >> Engine.settleForPriority)
         placed = S.runPure S.identityAnswer sacrificed (Stack.resolveTop >> Engine.settleForPriority)
         endStep = Phase.Ending EndingStep.EndStep
         atEnd =
@@ -668,7 +669,7 @@ spec s registry = Spec.describe s "Meld" $ do
     case mMelded of
       Nothing -> Spec.assertFailure s "expected the melding ability to put one permanent onto the battlefield"
       Just meldedId -> do
-        let dead = S.runPure S.identityAnswer board (Event.destroy (pure ()) Regenerability.Regenerable [meldedId])
+        let dead = S.runPure S.identityAnswer board (Event.destroy Settle.none Regenerability.Regenerable [meldedId])
             settled = S.runPure S.identityAnswer dead Engine.settleForPriority
             after = S.runPure S.identityAnswer settled (Stack.resolveTop >> Stack.resolveTop)
         Spec.assertEqWith
@@ -698,7 +699,7 @@ spec s registry = Spec.describe s "Meld" $ do
     case mMelded of
       Nothing -> Spec.assertFailure s "expected the melding ability to put one permanent onto the battlefield"
       Just meldedId -> do
-        let dead = S.runPure S.identityAnswer board (Event.destroy (pure ()) Regenerability.Regenerable [meldedId])
+        let dead = S.runPure S.identityAnswer board (Event.destroy Settle.none Regenerability.Regenerable [meldedId])
             reported = [(fmap S.nameOf (Game.cardOf oid dead), change) | c <- Foldable.toList (Ante.ownershipChanges dead), let oid = OwnershipChange.object c; change = (OwnershipChange.startingOwner c, OwnershipChange.owner c)]
         Spec.assertEqWith s "CR 108.3 only the Garrison changed owner, bob's to begin and alice's now" reported [(Just (CardName.MkCardName (Text.pack "Hanweir Garrison")), (S.bob, S.alice))]
         let whileMelded = [(fmap (S.nameOf . Printing.card) (Game.printingOf (OwnershipChange.card c) board), OwnershipChange.object c) | c <- Foldable.toList (Ante.ownershipChanges board)]
@@ -731,7 +732,7 @@ spec s registry = Spec.describe s "Meld" $ do
     case mMelded of
       Nothing -> Spec.assertFailure s "expected the melding ability to put one permanent onto the battlefield"
       Just meldedId -> do
-        let dead = S.runPure S.identityAnswer board (Event.destroy (pure ()) Regenerability.Regenerable [meldedId])
+        let dead = S.runPure S.identityAnswer board (Event.destroy Settle.none Regenerability.Regenerable [meldedId])
             settled = S.runPure S.identityAnswer dead Engine.settleForPriority
             -- SIX resolutions over a stack of three, so the counter assertion
             -- below reads a drained stack: capping the resolutions at the
@@ -765,7 +766,7 @@ spec s registry = Spec.describe s "Meld" $ do
         handNames gs = Maybe.mapMaybe (\oid -> fmap S.nameOf (Game.cardOf oid gs)) (Game.zoneMembers Zone.Hand S.alice gs)
     case (mMelded, Projection.abilitiesOf noRestId board) of
       (Just meldedId, [ability]) -> do
-        let dead order = S.runPure (ordering order) board (Event.destroy (pure ()) Regenerability.Regenerable [meldedId])
+        let dead order = S.runPure (ordering order) board (Event.destroy Settle.none Regenerability.Regenerable [meldedId])
             after order = S.runPure S.identityAnswer (dead order) (do Activate.activateAbility S.alice noRestId ability; Stack.resolveTop)
         Spec.assertEqWith s "CR 713.8 / 700.4 the trailing Garrison returns to alice's hand" (handNames (after [1, 0])) [S.printingName garrison]
         Spec.assertEqWith s "and so does the leading one, on the other arrangement" (handNames (after [0, 1])) [S.printingName garrison]
@@ -795,7 +796,7 @@ spec s registry = Spec.describe s "Meld" $ do
     case mMelded of
       Nothing -> Spec.assertFailure s "expected the melding ability to put one permanent onto the battlefield"
       Just meldedId -> do
-        let dead = S.runPure S.identityAnswer board (Event.destroy (pure ()) Regenerability.Regenerable [meldedId])
+        let dead = S.runPure S.identityAnswer board (Event.destroy Settle.none Regenerability.Regenerable [meldedId])
             settled = S.runPure S.identityAnswer dead Engine.settleForPriority
             after = S.runPure S.identityAnswer settled Stack.resolveTop
         Spec.assertEqWith s "CR 713.8c the trigger exiled both cards" (List.sort (exileNames after)) bothNames

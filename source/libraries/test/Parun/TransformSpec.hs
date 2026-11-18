@@ -113,6 +113,7 @@ import qualified Parun.Types.Printing as Printing
 import qualified Parun.Types.ProjectedCharacteristics as PC
 import qualified Parun.Types.Prompt as Prompt
 import qualified Parun.Types.Recipient as Recipient
+import qualified Parun.Types.Settle as Settle
 import qualified Parun.Types.StepBegan as StepBegan
 import qualified Parun.Types.Subtype as Subtype
 import qualified Parun.Types.TransformTrigger as TransformTrigger
@@ -567,7 +568,7 @@ enterTransformedSpec s registry = Spec.describe s "Entering the battlefield tran
     let transformed = EntryRiders.defaultValue {EntryRiders.transformed = True}
         put riders printing =
           let (board, oid) = S.handOne printing emptyBoard
-           in (oid, S.runPure S.identityAnswer board (Monad.void (Event.changeZoneEntering (pure ()) oid Zone.Battlefield LibraryPosition.defaultValue riders (Just S.alice))))
+           in (oid, S.runPure S.identityAnswer board (Monad.void (Event.changeZoneEntering Settle.none oid Zone.Battlefield LibraryPosition.defaultValue riders (Just S.alice))))
         (refusedId, refused) = put transformed piker
         (_, entered) = put EntryRiders.defaultValue piker
         (_, turned) = put transformed gargoyle

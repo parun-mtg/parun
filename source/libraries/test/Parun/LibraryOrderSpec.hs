@@ -85,6 +85,7 @@ import qualified Parun.Types.Recipient as Recipient
 import qualified Parun.Types.RemoveCounters as RemoveCounters
 import qualified Parun.Types.Response as Response
 import qualified Parun.Types.Revealed as Revealed
+import qualified Parun.Types.Settle as Settle
 import qualified Parun.Types.Sickness as Sickness
 import qualified Parun.Types.SlotArity as SlotArity
 import qualified Parun.Types.SlotName as SlotName
@@ -1385,7 +1386,7 @@ exileUntilMonarchSpec s registry = Spec.describe s "ExileUntilMonarch" $ do
             (Map.singleton slot (Set.singleton (Recipient.ToCreature oid)))
             (jailerExile slot)
         exiled = snd (Engine.runGamePure S.identityAnswer base exile)
-        settled = snd (Engine.runGamePure S.identityAnswer exiled (MoveDuration.returnDue (pure ())))
+        settled = snd (Engine.runGamePure S.identityAnswer exiled (MoveDuration.returnDue Settle.none))
     Spec.assertEqWith s "the watch was registered" (Map.size (GameState.movedUntil exiled)) 1
     Spec.assertEqWith s "bob is still the monarch, unchanged" (GameState.monarch settled) (Just S.bob)
     Spec.assertEqWith s "nothing came back to the battlefield" (Set.size (GameState.battlefield settled)) 0
@@ -1412,9 +1413,9 @@ exileUntilMonarchSpec s registry = Spec.describe s "ExileUntilMonarch" $ do
         -- Monarch.crown and not a write to GameState.monarch, because that is
         -- where a crowning marks the watches now -- a bare field write is not a
         -- crowning at all.
-        alicesCrown = snd (Engine.runGamePure S.identityAnswer (Monarch.crown S.alice exiled) (MoveDuration.returnDue (pure ())))
+        alicesCrown = snd (Engine.runGamePure S.identityAnswer (Monarch.crown S.alice exiled) (MoveDuration.returnDue Settle.none))
         -- bob deals combat damage to the monarch (CR 726.3) and takes it back.
-        bobsCrown = snd (Engine.runGamePure S.identityAnswer (Monarch.crown S.bob alicesCrown) (MoveDuration.returnDue (pure ())))
+        bobsCrown = snd (Engine.runGamePure S.identityAnswer (Monarch.crown S.bob alicesCrown) (MoveDuration.returnDue Settle.none))
     Spec.assertEqWith s "alice holding the crown does not discharge the watch" (Map.size (GameState.movedUntil alicesCrown)) 1
     Spec.assertEqWith s "nor return the creature" (Set.size (GameState.battlefield alicesCrown)) 0
     Spec.assertEqWith s "bob retaking it does return the creature" (Set.size (GameState.battlefield bobsCrown)) 1
@@ -1439,7 +1440,7 @@ exileUntilMonarchSpec s registry = Spec.describe s "ExileUntilMonarch" $ do
         exiled = snd (Engine.runGamePure S.identityAnswer base exile)
         -- CR 726.4's third sentence is the only way back to no monarch, and it
         -- crowns nobody, so this is a bare field write by construction.
-        noMonarch = snd (Engine.runGamePure S.identityAnswer exiled {GameState.monarch = Nothing} (MoveDuration.returnDue (pure ())))
+        noMonarch = snd (Engine.runGamePure S.identityAnswer exiled {GameState.monarch = Nothing} (MoveDuration.returnDue Settle.none))
     Spec.assertEqWith s "the watch is still armed" (Map.size (GameState.movedUntil noMonarch)) 1
     Spec.assertEqWith s "and nothing returned" (Set.size (GameState.battlefield noMonarch)) 0
 
@@ -1572,7 +1573,7 @@ optionalEffectSpec s registry =
             [ability] -> do
               let cycled = S.runPure takeOptional gs (Activate.activateAbility S.alice worthyId ability)
                   placed = S.runPure takeOptional cycled Engine.settleForPriority
-                  gone = S.runPure S.identityAnswer placed (Event.changeZone (pure ()) piker Zone.Graveyard)
+                  gone = S.runPure S.identityAnswer placed (Event.changeZone Settle.none piker Zone.Graveyard)
                   ((_, after), transcript) = Replay.record takeOptional gone Stack.resolveTop
               Spec.assertEqWith s "the trigger left the stack" (length (TurnRegisters.stack (GameState.turn after))) (length (TurnRegisters.stack (GameState.turn placed)) - 1)
               Spec.assertEqWith s "and no may was ever asked" (filter isOptionalResponse transcript) []

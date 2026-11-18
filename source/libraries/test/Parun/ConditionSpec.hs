@@ -66,6 +66,7 @@ import qualified Parun.Types.Prompt as Prompt
 import qualified Parun.Types.Quantity as Quantity.Type
 import qualified Parun.Types.Recipient as Recipient
 import qualified Parun.Types.Scope as Scope
+import qualified Parun.Types.Settle as Settle
 import qualified Parun.Types.StepBegan as StepBegan
 import qualified Parun.Types.StoredEffects as StoredEffects
 import qualified Parun.Types.Subtype as Subtype
@@ -762,7 +763,7 @@ enterFromHand oid gs =
             { TurnRegisters.priority = Just S.alice
             }
       }
-    (Event.changeZone (pure ()) oid Zone.Battlefield >> Engine.settleForPriority >> Stack.resolveTop >> Engine.settleForPriority)
+    (Event.changeZone Settle.none oid Zone.Battlefield >> Engine.settleForPriority >> Stack.resolveTop >> Engine.settleForPriority)
 
 -- How many times a player has scried this turn (CR 701.22b's scry event).
 scriesBy :: PlayerId.PlayerId -> GameState.GameState -> Int

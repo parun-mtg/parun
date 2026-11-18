@@ -16,7 +16,6 @@ module Parun.Engine.Dungeon where
 import qualified Control.Monad as Monad
 import qualified Control.Monad.Trans.State.Strict as State
 import qualified Data.Foldable as Foldable
-import qualified Data.List as List
 import qualified Data.Map.Strict as Map
 import qualified Data.Maybe as Maybe
 import qualified Data.Sequence as Seq
@@ -25,6 +24,7 @@ import qualified Parun.Engine.Card as Card
 import qualified Parun.Engine.Event as Event
 import qualified Parun.Engine.Game as Game
 import qualified Parun.Engine.Mint as Mint
+import qualified Parun.Engine.Projection as Projection
 import qualified Parun.Extra.Natural as Natural
 import qualified Parun.Types.Card as Card.Type
 import qualified Parun.Types.CardType as CardType
@@ -54,25 +54,28 @@ import qualified Parun.Types.TypeLine as TypeLine
 import qualified Parun.Types.VentureMarkerEntered as VentureMarkerEntered
 import qualified Parun.Types.Zone as Zone
 
--- | CR 309.1 \/ 205.2a: is this a dungeon card? Read off the PRINTED type line
--- rather than the projection, because CR 309.2c keeps a dungeon in the command
--- zone and this reader takes the printed card (#4711) -- and because CR 309.2c
--- makes a dungeon card never a permanent, so an effect worded for permanents
--- never reaches it.
-isDungeonFace :: Face.Face Card.Type.Card -> Bool
-isDungeonFace face = Set.member CardType.Dungeon (TypeLine.types (Face.typeLine face))
+-- | CR 309.1 \/ 205.2a: is this object a dungeon card? Projected, since a copy
+-- or type-changing effect (CR 613.1a, 613.1d) reaches a card in any zone: a
+-- dungeon Bombardment made a sorcery named Missile is no dungeon until the
+-- effect ends.
+-- data/scenarios/dungeon/cr-309-2a-bombardment-makes-a-dungeon-a-missile-so-a-venture-starts-another.json
+-- proves it.
+isDungeon :: ObjectId -> GameState.GameState -> Bool
+isDungeon oid gs = Set.member CardType.Dungeon (Projection.cardTypesOf oid gs)
 
--- | CR 309.3: the dungeon card this player owns in the command zone, if any. "A
--- player can own only one dungeon card in the command zone at a time", so the
--- first hit is the answer; `venture` is the only writer and honours the rule by
--- entering a dungeon only when this is Nothing.
+-- | CR 309.3: the dungeon card this player owns in the command zone, if any;
+-- `venture` is the only writer and enters a dungeon only when this is Nothing.
 --
 -- Sliced by OWNER, which is CR 309.2a's own word -- a dungeon is put into the
 -- command zone by the player who owns it, and nothing moves it afterwards.
+--
+-- The one carrying the venture marker wins: an effect that ends
+-- can leave two, and `enter` took CR 309.4a's single marker off the other.
 inDungeon :: PlayerId -> GameState.GameState -> Maybe ObjectId
 inDungeon pid gs =
-  let dungeon oid = fmap isDungeonFace (Game.faceOf oid gs) == Just True
-   in List.find dungeon (Game.zoneMembers Zone.Command pid gs)
+  let dungeons = filter (`isDungeon` gs) (Game.zoneMembers Zone.Command pid gs)
+      marked oid = Maybe.isJust (Object.ventureRoom =<< Game.lookupObject oid gs)
+   in Maybe.listToMaybe (filter marked dungeons <> dungeons)
 
 -- | CR 309.4: the rooms printed on a dungeon card, topmost first. Empty for
 -- anything that is not a dungeon, which is how every other command-zone resident
@@ -207,7 +210,10 @@ enter :: PlayerId -> Maybe Subtype.Subtype -> Game ()
 enter pid quality = do
   gs0 <- State.get
   let owned = maybe Set.empty Player.dungeons (Map.lookup pid (GameState.players gs0))
-      eligible = Set.filter (enterable quality gs0) owned
+      -- CR 309.2a's "from outside the game": a card of the supply already in
+      -- the command zone is not, whatever it is now.
+      inGame = Set.fromList [printingId | oid <- Game.zoneMembers Zone.Command pid gs0, Just (Source.OfCard printingId) <- [fmap Object.source (Game.lookupObject oid gs0)]]
+      eligible = Set.filter (enterable quality gs0) (Set.difference owned inGame)
   picked <- Game.chooseAmong Prompt.ChooseDungeon pid (Set.toAscList eligible)
   Monad.forM_ picked $ \printingId -> do
     -- Re-read, because the choice above wrote the answer into the transcript:
@@ -222,13 +228,16 @@ enter pid quality = do
               -- zone, they put their venture marker on the topmost room".
               Object.ventureRoom = Just RoomIndex.topmost
             }
+        -- CR 309.4a's "their venture marker" is one marker, so it leaves any
+        -- other command-zone card of theirs.
+        unmarked o = if Object.owner o == pid && Object.zone o == Zone.Command then o {Object.ventureRoom = Nothing} else o
         gs3 =
           Game.insertIntoZone
             Zone.Command
             LibraryPosition.defaultValue
             pid
             oid
-            gs2 {GameState.objects = Map.insert oid obj (GameState.objects gs2)}
+            gs2 {GameState.objects = Map.insert oid obj (fmap unmarked (GameState.objects gs2))}
     State.put (Event.recordEvent (GameEvent.VentureMarkerEntered (VentureMarkerEntered.MkVentureMarkerEntered pid oid RoomIndex.topmost)) gs3)
 
 -- CR 309.5b \/ 701.49c: remove a finished dungeon card from the game. Also the

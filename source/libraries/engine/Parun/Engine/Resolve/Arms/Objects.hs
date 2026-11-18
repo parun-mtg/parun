@@ -148,6 +148,7 @@ import qualified Parun.Types.PlayerRelation as PlayerRelation
 import qualified Parun.Types.PreventAllDamage as PreventAllDamage
 import qualified Parun.Types.PreventNextDamage as PreventNextDamage
 import qualified Parun.Types.PreventionRider as PreventionRider
+import qualified Parun.Types.Printing as Printing
 import qualified Parun.Types.Prohibit as Prohibit
 import qualified Parun.Types.ProjectedCharacteristics as PC
 import qualified Parun.Types.Prompt as Prompt
@@ -167,6 +168,7 @@ import qualified Parun.Types.Scaling as Scaling
 import qualified Parun.Types.SetClassLevel as SetClassLevel
 import qualified Parun.Types.SetHalfLocked as SetHalfLocked
 import qualified Parun.Types.SetX as SetX
+import qualified Parun.Types.Settle as Settle
 import qualified Parun.Types.ShownDie as ShownDie
 import qualified Parun.Types.SkipPhase as SkipPhase
 import Parun.Types.SlotName (SlotName)
@@ -181,7 +183,7 @@ import qualified Parun.Types.Uses as Uses
 import qualified Parun.Types.WithCounters as WithCounters
 import qualified Parun.Types.Zone as Zone
 
-create :: Game () -> ObjectId -> ObjectId -> PlayerId -> Map.Map SlotName (Set Recipient) -> Map.Map SlotName (Set Recipient) -> Create.Create Card.Type.Card (GrantedAbility.GrantedAbility Card.Type.Card) -> Game ()
+create :: Settle.Settle -> ObjectId -> ObjectId -> PlayerId -> Map.Map SlotName (Set Recipient) -> Map.Map SlotName (Set Recipient) -> Create.Create Card.Type.Card (GrantedAbility.GrantedAbility Card.Type.Card) -> Game ()
 create settle resolving source controller legal chosen (Create.MkCreate quantity card entry mSlot creator linked die) = do
   gs <- State.get
   let viewOf = effectViewOf resolving source legal gs
@@ -279,7 +281,7 @@ create settle resolving source controller legal chosen (Create.MkCreate quantity
 -- The conjurer is the resolving CONTROLLER (CR 109.5's "you"). Not implemented:
 -- a printing that states one instead, which is a shape rather than one card --
 -- Parun.Types.Conjure lists the two forms (#3970).
-conjure :: Game () -> ObjectId -> ObjectId -> PlayerId -> Map.Map SlotName (Set Recipient) -> Conjure.Conjure Card.Type.Card -> Game ()
+conjure :: Settle.Settle -> ObjectId -> ObjectId -> PlayerId -> Map.Map SlotName (Set Recipient) -> Conjure.Conjure Card.Type.Card -> Game ()
 conjure settle resolving source controller legal (Conjure.MkConjure quantity cards selection destination mSlot) = do
   gs <- State.get
   let viewOf = effectViewOf resolving source legal gs
@@ -444,7 +446,7 @@ conjure settle resolving source controller legal (Conjure.MkConjure quantity car
     _ -> pure []
   Common.bindObjects resolving mSlot conjured
 
-createCopy :: Game () -> ObjectId -> ObjectId -> PlayerId -> Map.Map SlotName (Set Recipient) -> Map.Map SlotName (Set Recipient) -> CreateCopy.CreateCopy (GrantedAbility.GrantedAbility Card.Type.Card) -> Game ()
+createCopy :: Settle.Settle -> ObjectId -> ObjectId -> PlayerId -> Map.Map SlotName (Set Recipient) -> Map.Map SlotName (Set Recipient) -> CreateCopy.CreateCopy (GrantedAbility.GrantedAbility Card.Type.Card) -> Game ()
 createCopy settle resolving source controller legal chosen (CreateCopy.MkCreateCopy quantity ref entry mSlot exceptions creator linked) = do
   -- Asked before the board is read (CR 608.2d), so Twilight Diviner's "a copy
   -- of one of them" is chosen. Common.LastKnown, since the copy only reads its
@@ -529,12 +531,14 @@ createCopy settle resolving source controller legal chosen (CreateCopy.MkCreateC
   Monad.when linked (State.modify' (\g -> foldr (Common.linkEntrant resolving source) g minted))
   Common.bindObjects resolving mSlot minted
 
-becomeCopy :: ObjectId -> ObjectId -> PlayerId -> Map.Map SlotName (Set Recipient) -> Map.Map SlotName (Set Recipient) -> BecomeCopy.BecomeCopy (GrantedAbility.GrantedAbility Card.Type.Card) -> Game ()
+becomeCopy :: ObjectId -> ObjectId -> PlayerId -> Map.Map SlotName (Set Recipient) -> Map.Map SlotName (Set Recipient) -> BecomeCopy.BecomeCopy Card.Type.Card (GrantedAbility.GrantedAbility Card.Type.Card) -> Game ()
 becomeCopy resolving source controller legal chosen (BecomeCopy.MkBecomeCopy original subjectRef duration exceptions newTargets) = do
   -- CR 108.1: a NAMED original is the card the Oracle reference gives the
-  -- name, looked up before the board below is read.
+  -- name, looked up before the board below is read. A DEFINED one is the
+  -- effect's own card, interned as a token's is (Event.createTokens).
   named <- case original of
     CopyOriginal.Named name -> Game.lookUpCard name
+    CopyOriginal.Defined card -> fmap Just (State.state (Game.intern (Printing.ofCard card)))
     CopyOriginal.OfObject _ -> pure Nothing
   -- Asked before the board is read (CR 608.2d), createCopy's reason: Volatile
   -- Chimera's "choose a card at random". The scenario
@@ -543,16 +547,19 @@ becomeCopy resolving source controller legal chosen (BecomeCopy.MkBecomeCopy ori
   originals <- case original of
     CopyOriginal.OfObject ref -> Common.askingObjects Common.LastKnown resolving source controller legal chosen ref
     CopyOriginal.Named _ -> pure []
+    CopyOriginal.Defined _ -> pure []
   let onStackIn g oid = List.find ((== Zone.Stack) . Object.zone) (Game.lookupObject oid g)
       -- The copiable values, and the original's stack incarnation whose
-      -- choices CR 707.2 hands on. A named card's are read off a
+      -- choices CR 707.2 hands on. A named or defined card's are read off a
       -- counterfactual board holding it (Event.mintOutside), which is
       -- thrown away with the read; it is on no stack, so it hands on none.
+      outside gs = fmap (\printingId -> let (oid, board) = Event.mintOutside controller printingId gs in (Event.copiedSnapshot oid board, Nothing)) named
       copiedOriginal gs = case original of
         CopyOriginal.OfObject _ -> case originals of
           [oid] -> Just (Event.copiedSnapshotWithLastKnown oid gs, onStackIn gs oid)
           _ -> Nothing
-        CopyOriginal.Named _ -> fmap (\printingId -> let (oid, board) = Event.mintOutside controller printingId gs in (Event.copiedSnapshot oid board, Nothing)) named
+        CopyOriginal.Named _ -> outside gs
+        CopyOriginal.Defined _ -> outside gs
   before <- State.get
   State.modify' $ \gs ->
     -- CR 707.1: each named subject becomes a copy of the named original, in
@@ -2046,7 +2053,7 @@ mentor source controller legal slot = case legalOne slot legal >>= Recipient.obj
 -- The sacrifice and the marker are ONE event (Event.simultaneously): rule
 -- 702.110b makes the sacrifice the exploit, so CR 603.10a's look-back offers
 -- an exploiter that sacrificed itself its own trigger.
-exploit :: Game () -> ObjectId -> ObjectId -> PlayerId -> Map.Map SlotName (Set Recipient) -> Game ()
+exploit :: Settle.Settle -> ObjectId -> ObjectId -> PlayerId -> Map.Map SlotName (Set Recipient) -> Game ()
 exploit settle resolving source controller legal = do
   gs <- State.get
   let candidates =
@@ -2207,7 +2214,7 @@ unattach resolving source controller legal chosen ref = do
   movers <- Common.askingObjects Common.Present resolving source controller legal chosen ref
   Event.simultaneously (Monad.forM_ movers Event.detach)
 
-exileHaunting :: Game () -> ObjectId -> Map.Map SlotName (Set Recipient) -> ExileHaunting.ExileHaunting -> Game ()
+exileHaunting :: Settle.Settle -> ObjectId -> Map.Map SlotName (Set Recipient) -> ExileHaunting.ExileHaunting -> Game ()
 exileHaunting settle resolving legal (ExileHaunting.MkExileHaunting card slot) =
   case legalOne slot legal of
     Just recipient -> case Recipient.objectOf recipient of

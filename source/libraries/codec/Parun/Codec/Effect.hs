@@ -256,7 +256,7 @@ codec cardCodec abilityCodec =
           Arm.payload "Conjure" conjureCodec Effect.Conjure (\x -> case x of Effect.Conjure y -> Just y; _ -> Nothing),
           Arm.payload "CreateCopy" (CreateCopy.codec abilityCodec) Effect.CreateCopy (\x -> case x of Effect.CreateCopy y -> Just y; _ -> Nothing),
           Arm.payload "CopyStackObject" (CopyStackObject.codec abilityCodec) Effect.CopyStackObject (\x -> case x of Effect.CopyStackObject y -> Just y; _ -> Nothing),
-          Arm.payload "BecomeCopy" (BecomeCopy.codec abilityCodec) Effect.BecomeCopy (\x -> case x of Effect.BecomeCopy y -> Just y; _ -> Nothing),
+          Arm.payload "BecomeCopy" (BecomeCopy.codec cardCodec abilityCodec) Effect.BecomeCopy (\x -> case x of Effect.BecomeCopy y -> Just y; _ -> Nothing),
           Arm.payload "Replace" replaceCodec Effect.Replace (\x -> case x of Effect.Replace y -> Just y; _ -> Nothing),
           Arm.payload "SkipPhase" SkipPhase.codec Effect.SkipPhase (\x -> case x of Effect.SkipPhase y -> Just y; _ -> Nothing),
           Arm.payload "PreventNextDamage" preventCodec Effect.PreventNextDamage (\x -> case x of Effect.PreventNextDamage y -> Just y; _ -> Nothing),

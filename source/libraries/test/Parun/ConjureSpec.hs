@@ -77,6 +77,7 @@ import qualified Parun.Types.Printing as Printing
 import qualified Parun.Types.Prompt as Prompt
 import qualified Parun.Types.Recipient as Recipient
 import qualified Parun.Types.Regenerability as Regenerability
+import qualified Parun.Types.Settle as Settle
 import qualified Parun.Types.Staged as Staged
 import qualified Parun.Types.StepBegan as StepBegan
 import qualified Parun.Types.TapState as TapState
@@ -397,7 +398,7 @@ spec s registry = Spec.describe s "Parun.Conjure" $ do
       Nothing -> Spec.assertFailure s "the Clone left the battlefield unexpectedly"
       Just (duplicate, conjured) -> do
         let (pikerId, withPiker) = S.addPermanent piker S.alice conjured
-            discarded = S.runPure S.identityAnswer withPiker (Event.discard (pure ()) DiscardCause.Ordinary S.alice duplicate)
+            discarded = S.runPure S.identityAnswer withPiker (Event.discard Settle.none DiscardCause.Ordinary S.alice duplicate)
             hasty = Projection.hasKeyword Keyword.Haste pikerId
         Spec.assertEqWith
           s
@@ -422,13 +423,13 @@ spec s registry = Spec.describe s "Parun.Conjure" $ do
     case conjuredDuplicate clone reflections ghastId board of
       Nothing -> Spec.assertFailure s "the Clone left the battlefield unexpectedly"
       Just (duplicate, conjured) -> do
-        let discarded = S.runPure S.identityAnswer conjured (Event.discard (pure ()) DiscardCause.Ordinary S.alice duplicate)
+        let discarded = S.runPure S.identityAnswer conjured (Event.discard Settle.none DiscardCause.Ordinary S.alice duplicate)
             (forestId, withForest) = S.addHandCard forest S.alice discarded
             answer :: Prompt.Prompt r -> r
             answer p = case p of
               Prompt.ChooseOptional {} -> OptionalDecision.Exercises
               _ -> S.identityAnswer p
-            played = S.runPure answer withForest (Cast.playLand (pure ()) True S.alice forestId Nothing)
+            played = S.runPure answer withForest (Cast.playLand Settle.none True S.alice forestId Nothing)
             onStack = S.runPure answer played Engine.settleForPriority
             resolved = S.runPure answer onStack (Stack.resolveTop >> Engine.settleForPriority)
         Spec.assertEqWith
@@ -449,7 +450,7 @@ spec s registry = Spec.describe s "Parun.Conjure" $ do
     case conjuredDuplicate clone reflections wurmId board of
       Nothing -> Spec.assertFailure s "the Clone left the battlefield unexpectedly"
       Just (duplicate, conjured) -> do
-        let discarded = S.runPure S.identityAnswer conjured (Event.discard (pure ()) DiscardCause.Ordinary S.alice duplicate)
+        let discarded = S.runPure S.identityAnswer conjured (Event.discard Settle.none DiscardCause.Ordinary S.alice duplicate)
         Spec.assertEqWith
           s
           "CR 702.35a the duplicate went to exile, not the graveyard: (in exile, in the graveyard)"
@@ -528,7 +529,7 @@ spec s registry = Spec.describe s "Parun.Conjure" $ do
         (_, board0) = S.addPermanent gyox S.alice (Setup.emptyGame S.bothPlayers)
         (giantId, board1) = S.addPermanent giant S.alice board0
         oiled = S.addCounter oil 2 giantId board1
-        final = settleTriggers (S.runPure S.identityAnswer oiled (Event.destroy (pure ()) Regenerability.Regenerable [giantId]))
+        final = settleTriggers (S.runPure S.identityAnswer oiled (Event.destroy Settle.none Regenerability.Regenerable [giantId]))
     Spec.assertEqWith
       s
       "two Hill Giants were shuffled into alice's library"
@@ -550,7 +551,7 @@ spec s registry = Spec.describe s "Parun.Conjure" $ do
     island <- S.printingOf s registry "Island"
     reference <- mapM (S.cardOf s registry) ["Calim, Djinn Emperor", "Goblin Piker"]
     let (inHand, board) = S.addHandCard calim S.alice (islandsInLibrary island 10 (Setup.emptyGame S.bothPlayers))
-        discarded = S.runPure S.identityAnswer board (Event.discard (pure ()) DiscardCause.Ordinary S.alice inHand)
+        discarded = S.runPure S.identityAnswer board (Event.discard Settle.none DiscardCause.Ordinary S.alice inHand)
         (final, asked) = conjureDepthRun reference 1 discarded
     Spec.assertEqWith
       s

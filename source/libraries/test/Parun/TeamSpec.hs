@@ -77,6 +77,7 @@ import qualified Parun.Types.PlayerId as PlayerId
 import qualified Parun.Types.Printing as Printing
 import qualified Parun.Types.Prompt as Prompt
 import qualified Parun.Types.Recipient as Recipient
+import qualified Parun.Types.Settle as Settle
 import qualified Parun.Types.Source as Source
 import qualified Parun.Types.StackObjectKind as StackObjectKind
 import qualified Parun.Types.StepBegan as StepBegan
@@ -173,8 +174,8 @@ spec s registry = Spec.describe s "Teams" $ do
     let (_, g0) = S.addPermanent leyline S.alice (twoTeams S.fourPlayerGame)
         (teammates, g1) = S.addLibraryCard piker S.bob g0
         (opponents, g2) = S.addLibraryCard piker S.carol g1
-        after = S.runPure S.identityAnswer g2 (Event.changeZone (pure ()) teammates Zone.Graveyard)
-        alsoAfter = S.runPure S.identityAnswer after (Event.changeZone (pure ()) opponents Zone.Graveyard)
+        after = S.runPure S.identityAnswer g2 (Event.changeZone Settle.none teammates Zone.Graveyard)
+        alsoAfter = S.runPure S.identityAnswer after (Event.changeZone Settle.none opponents Zone.Graveyard)
     Spec.assertEqWith s "CR 102.3 bob's card reached bob's graveyard" (length (Game.zoneMembers Zone.Graveyard S.bob alsoAfter)) 1
     Spec.assertEqWith s "and nothing of bob's was exiled" (length (Game.zoneMembers Zone.Exile S.bob alsoAfter)) 0
     Spec.assertEqWith s "CR 614.1a carol's was exiled instead" (length (Game.zoneMembers Zone.Exile S.carol alsoAfter)) 1

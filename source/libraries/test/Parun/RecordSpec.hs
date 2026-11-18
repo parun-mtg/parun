@@ -51,6 +51,7 @@ import qualified Parun.Types.Reply as Reply
 import qualified Parun.Types.Result as Result
 import qualified Parun.Types.RuleFamily as RuleFamily
 import qualified Parun.Types.Scenario as Scenario.Type
+import qualified Parun.Types.Settle as Settle
 import qualified Parun.Types.Terminal as Terminal
 import qualified Parun.Types.Timed as Timed
 import qualified Parun.Types.TurnRegisters as TurnRegisters
@@ -100,7 +101,7 @@ spec s registry = Spec.describe s "Record" $ do
     let (first, g1) = S.addPermanent piker S.alice (Setup.emptyGame S.bothPlayers)
         (second, g2) = S.addPermanent piker S.alice g1
         (live, g3) = S.addPermanent piker S.alice g2
-        gs = S.runPure S.identityAnswer g3 (Event.destroy (pure ()) Regenerability.Regenerable [first, second])
+        gs = S.runPure S.identityAnswer g3 (Event.destroy Settle.none Regenerability.Regenerable [first, second])
         departed = Reference.Printed Existence.Departed (CardName.MkCardName (Text.pack "Goblin Piker"))
         -- Each destroyed Piker's card is a live object in the graveyard, so
         -- the live permanent is the third of its name.

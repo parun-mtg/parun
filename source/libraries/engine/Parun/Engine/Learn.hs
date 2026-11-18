@@ -38,6 +38,7 @@ import Parun.Types.PlayerId (PlayerId)
 import qualified Parun.Types.PlayerInstruction as PlayerInstruction
 import qualified Parun.Types.Prompt as Prompt
 import qualified Parun.Types.ProposedEvent as ProposedEvent
+import qualified Parun.Types.Settle as Settle
 import qualified Parun.Types.Subtype as Subtype
 import qualified Parun.Types.Zone as Zone
 
@@ -71,7 +72,7 @@ lessonFromOutside =
 --
 -- `settle` is Event.drawSeries', for a sequence a replacement makes in the
 -- draw's place (CR 614.11a).
-learn :: Game () -> PlayerId -> ObjectId -> ObjectId -> Game ()
+learn :: Settle.Settle -> PlayerId -> ObjectId -> ObjectId -> Game ()
 learn settle pid resolving source = do
   outcome <- Event.applyReplacementsIn settle Nothing Set.empty Set.empty (ProposedEvent.WouldPerform PlayerInstruction.Learn Nothing pid 1)
   Monad.forM_ (outcome >>= Replacement.asPerformed PlayerInstruction.Learn) $ \(learner, times) ->
@@ -105,7 +106,7 @@ learn settle pid resolving source = do
 -- the draw always follows it.
 --
 -- `settle` is `learn`'s.
-learnOnce :: Game () -> PlayerId -> ObjectId -> ObjectId -> Game ()
+learnOnce :: Settle.Settle -> PlayerId -> ObjectId -> ObjectId -> Game ()
 learnOnce settle pid resolving source = do
   gs <- State.get
   let hand = Game.cardsIn Zone.Hand pid gs

@@ -23,6 +23,7 @@ import Parun.Types.ObjectId (ObjectId)
 import qualified Parun.Types.PlayerActed as PlayerActed
 import qualified Parun.Types.PlayerAction as PlayerAction
 import Parun.Types.PlayerId (PlayerId)
+import qualified Parun.Types.Settle as Settle
 import qualified Parun.Types.SideDeck as SideDeck
 import qualified Parun.Types.Subtype as Subtype
 import qualified Parun.Types.Zone as Zone
@@ -41,7 +42,7 @@ controlsSubtype subtype pid gs = any (\oid -> Set.member subtype (Projection.sub
 -- battlefield under their control. GameEvent.PlayerActed is recorded only when
 -- the card reached the battlefield, since an entry prevented or replaced opens
 -- nothing that triggers (CR 701.51c).
-open :: Game () -> PlayerId -> Game ()
+open :: Settle.Settle -> PlayerId -> Game ()
 open settle pid = do
   entered <- enterTop settle SideDeck.Attraction pid
   Monad.unless (null entered) $
@@ -52,7 +53,7 @@ open settle pid = do
 -- what reached it. Through Event.changeZoneEntering, so an entry replacement or
 -- prohibition applies as to any other entry (CR 701.51c). An empty deck moves
 -- nothing (CR 609.3; the FAQ for an empty Contraption deck).
-enterTop :: Game () -> SideDeck.SideDeck -> PlayerId -> Game [ObjectId]
+enterTop :: Settle.Settle -> SideDeck.SideDeck -> PlayerId -> Game [ObjectId]
 enterTop settle kind pid = do
   gs <- State.get
   case Game.sideDeckOf kind pid gs of

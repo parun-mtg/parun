@@ -83,6 +83,7 @@ import qualified Parun.Types.Prompt as Prompt
 import qualified Parun.Types.Recipient as Recipient
 import qualified Parun.Types.Response as Response
 import qualified Parun.Types.Result as Result
+import qualified Parun.Types.Settle as Settle
 import qualified Parun.Types.Sickness as Sickness
 import qualified Parun.Types.SlotName as SlotName
 import qualified Parun.Types.Source as Source
@@ -148,7 +149,7 @@ objectFactSpec s registry = Spec.describe s "ObjectFacts" $ do
 -- deterministic and cached (batch-recipe.md).
 afterMountainMoved :: Printing.Printing -> GameState.GameState
 afterMountainMoved mountain =
-  S.runPure S.identityAnswer (S.oneMountainState mountain Phase.PrecombatMain) (Event.changeZone (pure ()) (ObjectId.MkObjectId 0) Zone.Battlefield)
+  S.runPure S.identityAnswer (S.oneMountainState mountain Phase.PrecombatMain) (Event.changeZone Settle.none (ObjectId.MkObjectId 0) Zone.Battlefield)
 
 gameSpec :: (Monad m, Monad n) => Spec.Spec m n -> Registry.Registry m -> n ()
 gameSpec s registry = Spec.describe s "Game" $ do
@@ -195,7 +196,7 @@ gameSpec s registry = Spec.describe s "Game" $ do
                   (ObjectId.MkObjectId 0)
                   (GameState.objects base)
             }
-        moved = S.runPure S.identityAnswer stamped (Event.changeZone (pure ()) (ObjectId.MkObjectId 0) Zone.Battlefield)
+        moved = S.runPure S.identityAnswer stamped (Event.changeZone Settle.none (ObjectId.MkObjectId 0) Zone.Battlefield)
         landed = Map.elems (Map.filter (\o -> Object.zone o == Zone.Battlefield) (GameState.objects moved))
     Spec.assertEqWith s "reset" (fmap Object.bindings landed) [Map.empty]
 
@@ -204,7 +205,7 @@ gameSpec s registry = Spec.describe s "Game" $ do
     mountain <- S.printingOf s registry "Mountain"
     let (oid, gs) = S.addPermanent piker S.bob (S.landsInPlay mountain 1)
         before = Bookkeeping.nextTimestamp (GameState.bookkeeping gs)
-        movedState = S.runPure S.identityAnswer gs (Event.changeZone (pure ()) oid Zone.Graveyard)
+        movedState = S.runPure S.identityAnswer gs (Event.changeZone Settle.none oid Zone.Graveyard)
         movedId = case Game.zoneMembers Zone.Graveyard S.bob movedState of
           i : _ -> i
           [] -> ObjectId.MkObjectId 999
@@ -1779,7 +1780,7 @@ sindbadCombat mountain sindbad subgamesSoFar =
       living = atLife S.carol 9 (atLife S.bob 13 (atLife S.alice 20 stocked))
       before = living {GameState.match = (GameState.match living) {MatchScope.subgamesThisMatch = subgamesSoFar}}
       atDamage = S.runToStep (Phase.Combat CombatStep.CombatDamage) sindbadAnswer before
-      fought = S.runPure sindbadAnswer atDamage (Damage.dealCombatDamage (pure ()))
+      fought = S.runPure sindbadAnswer atDamage (Damage.dealCombatDamage Settle.none)
       placed = S.runPure sindbadAnswer fought Engine.settleForPriority
       after = S.runPure sindbadAnswer placed Engine.priorityLoop
    in (before, placed, after)

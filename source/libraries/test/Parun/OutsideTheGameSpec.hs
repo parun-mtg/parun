@@ -107,6 +107,7 @@ import qualified Parun.Types.ReplacementEffect as ReplacementEffect
 import qualified Parun.Types.ReplacementEntry as ReplacementEntry
 import qualified Parun.Types.Response as Response
 import qualified Parun.Types.SearchPlace as SearchPlace
+import qualified Parun.Types.Settle as Settle
 import qualified Parun.Types.ShownComponent as ShownComponent
 import qualified Parun.Types.SlotName as SlotName
 import qualified Parun.Types.Source as Source
@@ -820,7 +821,7 @@ spec s registry = Spec.describe s "Parun.Engine.Event (CR 400.11)" $ do
     piker <- S.printingOf s registry "Goblin Piker"
     signInBlood <- S.printingOf s registry "Sign in Blood"
     let (unarmed, _) = ringBoard plains ring piker signInBlood False
-        after = S.runPure S.identityAnswer unarmed (Event.drawCard (pure ()) S.alice)
+        after = S.runPure S.identityAnswer unarmed (Event.drawCard Settle.none S.alice)
     Spec.assertEqWith s "CR 121.1 she drew the library card" (printingsIn Zone.Hand S.alice after) [piker]
     Spec.assertEqWith s "which came off her library" (length (Game.zoneMembers Zone.Library S.alice after)) 1
     Spec.assertEqWith s "CR 400.11b and nothing was taken out of the pool" (Map.size (poolOf S.alice after)) 1
@@ -841,7 +842,7 @@ spec s registry = Spec.describe s "Parun.Engine.Event (CR 400.11)" $ do
     piker <- S.printingOf s registry "Goblin Piker"
     giant <- S.printingOf s registry "Hill Giant"
     let (board, pumped, plain) = djinnBoard plains djinn piker giant
-        drawn preferred = S.runPure (preferringRow preferred) board (Event.drawCard (pure ()) S.alice)
+        drawn preferred = S.runPure (preferringRow preferred) board (Event.drawCard Settle.none S.alice)
         viaPumped = drawn pumped
         viaPlain = drawn plain
     Spec.assertEqWith s "setup: the Djinns' powers are four and three" (Projection.powerOf pumped board, Projection.powerOf plain board) (Just 4, Just 3)
@@ -850,7 +851,7 @@ spec s registry = Spec.describe s "Parun.Engine.Event (CR 400.11)" $ do
     Spec.assertEqWith s "CR 616.1 through the smaller Djinn nothing did" (printingsIn Zone.Hand S.alice viaPlain) []
     Spec.assertEqWith s "CR 400.11b the Giant left the pool only the first way" (Map.size (poolOf S.alice viaPumped), Map.size (poolOf S.alice viaPlain)) (0, 1)
     Spec.assertEqWith s "CR 614.6 both ways the draw was replaced" (length (Game.zoneMembers Zone.Library S.alice viaPumped), length (Game.zoneMembers Zone.Library S.alice viaPlain)) (2, 2)
-    Spec.assertBool s (wasAskedToReplace (answersFor (preferringRow pumped) board (Event.drawCard (pure ()) S.alice))) "a ChooseReplacement was raised"
+    Spec.assertBool s (wasAskedToReplace (answersFor (preferringRow pumped) board (Event.drawCard Settle.none S.alice))) "a ChooseReplacement was raised"
   -- The other side of the classification: two Rings of Ma'rûf, both activated,
   -- install two rows alike in `effect` whose filter (`And []`) reads nothing of
   -- either Ring, so either one brings in the same card and there is nothing to
@@ -866,8 +867,8 @@ spec s registry = Spec.describe s "Parun.Engine.Event (CR 400.11)" $ do
           ability : _ -> S.runPure S.identityAnswer g1 (Activate.activateAbility S.alice secondId ability >> Stack.resolveTop)
           [] -> g1
     Spec.assertEqWith s "setup: both Rings were exiled, so both rows stand" (Set.member secondId (GameState.battlefield twice), length (StoredEffects.replacements (GameState.stored twice))) (False, 2)
-    Spec.assertBool s (not (wasAskedToReplace (answersFor S.identityAnswer twice (Event.drawCard (pure ()) S.alice)))) "no ChooseReplacement was raised"
-    Spec.assertEqWith s "CR 400.11c and the card she owns outside the game reached her hand" (printingsIn Zone.Hand S.alice (S.runPure S.identityAnswer twice (Event.drawCard (pure ()) S.alice))) [signInBlood]
+    Spec.assertBool s (not (wasAskedToReplace (answersFor S.identityAnswer twice (Event.drawCard Settle.none S.alice)))) "no ChooseReplacement was raised"
+    Spec.assertEqWith s "CR 400.11c and the card she owns outside the game reached her hand" (printingsIn Zone.Hand S.alice (S.runPure S.identityAnswer twice (Event.drawCard Settle.none S.alice))) [signInBlood]
   -- The two Rings' rows again, each re-aimed at a filter reading the source's
   -- COLOURS (Filter.Shares Color Source) and re-sourced onto a red Goblin
   -- Piker and a blue Coral Merfolk. A direct board: no card writes
@@ -892,12 +893,12 @@ spec s registry = Spec.describe s "Parun.Engine.Event (CR 400.11)" $ do
             row {ActiveReplacement.effect = ReplacementEffect.DrawR (DrawR.MkDrawR w e (DrawRewrite.FromOutsideTheGame p {FromOutsideTheGame.filter = Filter.Shares Trait.Color Anchor.Source}))}
           _ -> row
         board = g3 {GameState.stored = (GameState.stored g3) {StoredEffects.replacements = zipWith (\src row -> (sharing row) {ActiveReplacement.source = src}) [red, blue] (StoredEffects.replacements (GameState.stored g3))}}
-        drawn preferred = S.runPure (preferringRow preferred) board (Event.drawCard (pure ()) S.alice)
+        drawn preferred = S.runPure (preferringRow preferred) board (Event.drawCard Settle.none S.alice)
     Spec.assertEqWith s "setup: two rows stand, sourced on the Piker and the Merfolk" (fmap ActiveReplacement.source (StoredEffects.replacements (GameState.stored board))) [red, blue]
     -- THE BEHAVIOUR, ahead of every proxy.
     Spec.assertEqWith s "CR 616.1 through the red Piker's row the Hill Giant reached her hand" (printingsIn Zone.Hand S.alice (drawn red)) [giant]
     Spec.assertEqWith s "CR 616.1 through the blue Merfolk's row nothing did" (printingsIn Zone.Hand S.alice (drawn blue)) []
-    Spec.assertBool s (wasAskedToReplace (answersFor (preferringRow red) board (Event.drawCard (pure ()) S.alice))) "a ChooseReplacement was raised"
+    Spec.assertBool s (wasAskedToReplace (answersFor (preferringRow red) board (Event.drawCard Settle.none S.alice))) "a ChooseReplacement was raised"
   -- CR 407.3: "when not playing for ante ... these cards can't be brought into
   -- the game from outside the game". Contract from Below is a sorcery, so
   -- Burning Wish's filter admits it; the pair differs only in the setting.

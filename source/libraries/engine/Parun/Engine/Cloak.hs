@@ -34,6 +34,7 @@ import qualified Parun.Types.LibraryPosition as LibraryPosition
 import qualified Parun.Types.Object as Object
 import Parun.Types.ObjectId (ObjectId)
 import Parun.Types.PlayerId (PlayerId)
+import qualified Parun.Types.Settle as Settle
 import qualified Parun.Types.Zone as Zone
 
 -- | CR 701.58a's second and third sentences as one rider: the 2\/2 with ward {2}
@@ -78,7 +79,7 @@ riders =
 --
 -- The result is the permanent the cloak put onto the battlefield, none when the
 -- move was cancelled or replaced elsewhere, for the arm's slot.
-cloak :: Game () -> PlayerId -> ObjectId -> Game [ObjectId]
+cloak :: Settle.Settle -> PlayerId -> ObjectId -> Game [ObjectId]
 cloak settle cloaker card = do
   entered <- Event.changeZoneEntering settle card Zone.Battlefield LibraryPosition.defaultValue riders (Just cloaker)
   after <- State.get

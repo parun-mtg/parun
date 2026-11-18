@@ -5,8 +5,8 @@ import qualified Parun.Codec.RollDie as RollDie
 import qualified Parun.JsonCodec.Common as Common
 import qualified Parun.Spec as Spec
 import qualified Parun.Types.DiceReading as DiceReading
+import qualified Parun.Types.PlayerRef as PlayerRef
 import qualified Parun.Types.PlayerRelation as PlayerRelation
-import qualified Parun.Types.PlayerScope as PlayerScope
 import qualified Parun.Types.Quantity as Quantity
 import qualified Parun.Types.RollDie as RollDie
 import qualified Parun.Types.SlotName as SlotName
@@ -27,7 +27,7 @@ spec s = Spec.describe s "Parun.Codec.RollDie" $ do
           RollDie.reading = DiceReading.ChooseOne,
           RollDie.slot = SlotName.MkSlotName (Text.pack "result"),
           RollDie.other = Nothing,
-          RollDie.roller = PlayerScope.Related PlayerRelation.You,
+          RollDie.roller = PlayerRef.Relative PlayerRelation.You,
           RollDie.highest = Nothing,
           RollDie.store = Nothing
         }
@@ -46,7 +46,7 @@ spec s = Spec.describe s "Parun.Codec.RollDie" $ do
           RollDie.reading = DiceReading.ChooseOne,
           RollDie.slot = SlotName.MkSlotName (Text.pack "result"),
           RollDie.other = Nothing,
-          RollDie.roller = PlayerScope.Related PlayerRelation.You,
+          RollDie.roller = PlayerRef.Relative PlayerRelation.You,
           RollDie.highest = Nothing,
           RollDie.store = Nothing
         }
@@ -66,7 +66,7 @@ spec s = Spec.describe s "Parun.Codec.RollDie" $ do
           RollDie.reading = DiceReading.ChooseOne,
           RollDie.slot = SlotName.MkSlotName (Text.pack "chosen"),
           RollDie.other = Just (SlotName.MkSlotName (Text.pack "other")),
-          RollDie.roller = PlayerScope.Related PlayerRelation.You,
+          RollDie.roller = PlayerRef.Relative PlayerRelation.You,
           RollDie.highest = Nothing,
           RollDie.store = Nothing
         }
@@ -85,7 +85,7 @@ spec s = Spec.describe s "Parun.Codec.RollDie" $ do
           RollDie.reading = DiceReading.Total,
           RollDie.slot = SlotName.MkSlotName (Text.pack "total"),
           RollDie.other = Nothing,
-          RollDie.roller = PlayerScope.Related PlayerRelation.You,
+          RollDie.roller = PlayerRef.Relative PlayerRelation.You,
           RollDie.highest = Nothing,
           RollDie.store = Nothing
         }
@@ -104,11 +104,11 @@ spec s = Spec.describe s "Parun.Codec.RollDie" $ do
           RollDie.reading = DiceReading.ChooseOne,
           RollDie.slot = SlotName.MkSlotName (Text.pack "result"),
           RollDie.other = Nothing,
-          RollDie.roller = PlayerScope.Related PlayerRelation.AnyPlayer,
+          RollDie.roller = PlayerRef.Relative PlayerRelation.AnyPlayer,
           RollDie.highest = Just (SlotName.MkSlotName (Text.pack "highest")),
           RollDie.store = Nothing
         }
-      " {\"highest\":\"highest\",\"roller\":{\"type\":\"AnyPlayer\"},\"sides\":20,\"slot\":\"result\"} "
+      " {\"highest\":\"highest\",\"roller\":{\"type\":\"Relative\",\"value\":\"AnyPlayer\"},\"sides\":20,\"slot\":\"result\"} "
   -- CR 706.8a's store, Centaur of Attention's wire form: the field elides
   -- everywhere else.
   Spec.it s "five dice stored on the permanent" $
@@ -123,7 +123,7 @@ spec s = Spec.describe s "Parun.Codec.RollDie" $ do
           RollDie.reading = DiceReading.ChooseOne,
           RollDie.slot = SlotName.MkSlotName (Text.pack "result"),
           RollDie.other = Nothing,
-          RollDie.roller = PlayerScope.Related PlayerRelation.You,
+          RollDie.roller = PlayerRef.Relative PlayerRelation.You,
           RollDie.highest = Nothing,
           RollDie.store = Just (SlotName.MkSlotName (Text.pack "self"))
         }
@@ -143,7 +143,7 @@ spec s = Spec.describe s "Parun.Codec.RollDie" $ do
           RollDie.reading = DiceReading.ChooseOne,
           RollDie.slot = SlotName.MkSlotName (Text.pack "result"),
           RollDie.other = Nothing,
-          RollDie.roller = PlayerScope.Related PlayerRelation.You,
+          RollDie.roller = PlayerRef.Relative PlayerRelation.You,
           RollDie.highest = Nothing,
           RollDie.store = Nothing
         }

@@ -102,6 +102,7 @@ import qualified Parun.Types.Recipient as Recipient
 import qualified Parun.Types.Regenerability as Regenerability
 import qualified Parun.Types.RestrictedCreatures as RestrictedCreatures
 import qualified Parun.Types.RoomHalf as RoomHalf
+import qualified Parun.Types.Settle as Settle
 import qualified Parun.Types.SlotName as SlotName
 import qualified Parun.Types.SpellWasCast as SpellWasCast
 import qualified Parun.Types.StepBegan as StepBegan
@@ -1206,7 +1207,7 @@ spec s registry = Spec.describe s "Sticker" $ do
           Engine.settleForPriority
           Stack.resolveTop
           Engine.settleForPriority
-          Event.destroy (pure ()) Regenerability.Regenerable [ballsId]
+          Event.destroy Settle.none Regenerability.Regenerable [ballsId]
           drain
         ((_, after), _) = State.runState (Engine.runGame (naming how) entered respond) []
     Spec.assertEqWith s "CR 701.8 Balls of Fire is in alice's graveyard" (length (Game.zoneMembers Zone.Graveyard S.alice after)) 1
@@ -2037,7 +2038,7 @@ spec s registry = Spec.describe s "Sticker" $ do
       (Just hostId, melded_) -> do
         let stickered = Sticker.put S.alice hostId (aliceSticker 1 StickerKind.Art 0) Nothing melded_
             idOf card = Map.lookup card (Bookkeeping.printingIds (GameState.bookkeeping stickered))
-            dies keep = State.runState (Engine.runGame (keeping (idOf keep) S.identityAnswer) stickered (Event.destroy (pure ()) Regenerability.Regenerable [hostId])) 0
+            dies keep = State.runState (Engine.runGame (keeping (idOf keep) S.identityAnswer) stickered (Event.destroy Settle.none Regenerability.Regenerable [hostId])) 0
             ((_, g), askedKeeper) = dies rats
             ((_, g'), _) = dies scavengers
             kindsOf card board = concatMap (\oid -> stickerKindsOn oid board) (namedIn Zone.Graveyard card board)
@@ -2089,7 +2090,7 @@ spec s registry = Spec.describe s "Sticker" $ do
           Prompt.ChooseCost _ _ _ candidates _ -> mutateKicked candidates
           _ -> MutateSpec.mutatingAt MutateSide.Over bearsId p
         merged = S.runPure answer board (S.cast S.alice card >> drain)
-        ((_, g), askedKeeper) = State.runState (Engine.runGame (keeping (Map.lookup bears (Bookkeeping.printingIds (GameState.bookkeeping merged))) S.identityAnswer) merged (Event.destroy (pure ()) Regenerability.Regenerable [bearsId])) 0
+        ((_, g), askedKeeper) = State.runState (Engine.runGame (keeping (Map.lookup bears (Bookkeeping.printingIds (GameState.bookkeeping merged))) S.identityAnswer) merged (Event.destroy Settle.none Regenerability.Regenerable [bearsId])) 0
         kindsOf c = concatMap (\oid -> stickerKindsOn oid g) (namedIn Zone.Graveyard c g)
     Spec.assertEqWith s "CR 123.5c the Bears card keeps the P/T sticker, the Cubwarden card has none" (kindsOf bears, kindsOf cubwarden) ([StickerKind.PowerToughness], [])
     Spec.assertEqWith s "alice was asked" (askedKeeper > 0) True

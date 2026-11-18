@@ -30,6 +30,7 @@ import qualified Parun.Types.GameState as GameState
 import Parun.Types.ObjectId (ObjectId)
 import Parun.Types.PlayerId (PlayerId)
 import qualified Parun.Types.Prompt as Prompt
+import qualified Parun.Types.Settle as Settle
 import qualified Parun.Types.TapState as TapState
 
 -- | CR 701.36a's candidate set: every creature token this player controls.
@@ -65,7 +66,7 @@ candidates pid gs =
 -- entry loop and CR 111.5's rollback point are the ones every token gets. CR
 -- 707.2 copies no counters and rule 701.36a states no riders, so the copy enters
 -- untapped and bare.
-populate :: Game () -> PlayerId -> ObjectId -> Game ()
+populate :: Settle.Settle -> PlayerId -> ObjectId -> Game ()
 populate settle pid resolving = do
   gs <- State.get
   chosen <- Game.chooseAmong (\decider asked pool -> Prompt.ChoosePermanent decider asked resolving pool Seq.empty) pid (candidates pid gs)

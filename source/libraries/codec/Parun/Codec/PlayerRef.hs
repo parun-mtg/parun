@@ -1,6 +1,7 @@
 module Parun.Codec.PlayerRef where
 
 import qualified Parun.Codec.AttackingPlayers as AttackingPlayers
+import qualified Parun.Codec.ExiledPile as ExiledPile
 import qualified Parun.Codec.Holder as Holder
 import qualified Parun.Codec.Hop as Hop
 import qualified Parun.Codec.ObjectId as ObjectId
@@ -14,6 +15,7 @@ import qualified Parun.JsonCodec.Arm as Arm
 import qualified Parun.JsonCodec.Codec as Codec
 import qualified Parun.JsonCodec.Common as Common
 import qualified Parun.JsonCodec.Fields as Fields
+import qualified Parun.Types.ExiledPile as ExiledPile
 import qualified Parun.Types.Holder as Holder
 import qualified Parun.Types.Hop as Hop
 import qualified Parun.Types.ObjectId as ObjectId
@@ -57,6 +59,9 @@ codec =
       -- A grant's own reference, which a card writes: Takklemaggot's "that
       -- player".
       Arm.payload "AtGrant" codec PlayerRef.AtGrant (\x -> case x of PlayerRef.AtGrant y -> Just y; _ -> Nothing),
+      -- CR 607.2a's linked exile, which a card writes: GO TO JAIL names "the
+      -- exiled card's owner".
+      Arm.payload "OwnersOfExiledBy" ownersOfExiledBy (uncurry PlayerRef.OwnersOfExiledBy) (\x -> case x of PlayerRef.OwnersOfExiledBy y z -> Just (y, z); _ -> Nothing),
       Arm.payload "PlayerHostOfBound" SlotName.codec PlayerRef.PlayerHostOfBound (\x -> case x of PlayerRef.PlayerHostOfBound y -> Just y; _ -> Nothing),
       Arm.payload "AttackedByBound" SlotName.codec PlayerRef.AttackedByBound (\x -> case x of PlayerRef.AttackedByBound y -> Just y; _ -> Nothing),
       Arm.payload "ChosenPlayerOfBound" (Common.tuple SlotName.codec PlayerChoice.codec) (uncurry PlayerRef.ChosenPlayerOfBound) (\x -> case x of PlayerRef.ChosenPlayerOfBound y z -> Just (y, z); _ -> Nothing),
@@ -82,6 +87,7 @@ tagOf x = case x of
   PlayerRef.Candidate {} -> "Candidate"
   PlayerRef.HolderOfBound {} -> "HolderOfBound"
   PlayerRef.HoldersOfBound {} -> "HoldersOfBound"
+  PlayerRef.OwnersOfExiledBy {} -> "OwnersOfExiledBy"
   PlayerRef.PlayerHostOfBound {} -> "PlayerHostOfBound"
   PlayerRef.AttackedByBound {} -> "AttackedByBound"
   PlayerRef.HolderOfObject {} -> "HolderOfObject"
@@ -108,3 +114,12 @@ holderOfObject =
     (,)
       <$> Fields.required "holder" Holder.codec fst
       <*> Fields.required "object" ObjectId.codec snd
+
+-- | The linked-exile read keyed by name: which pile, and the slot naming the
+-- object the pile is linked to.
+ownersOfExiledBy :: Codec.Codec (ExiledPile.ExiledPile, SlotName.SlotName)
+ownersOfExiledBy =
+  Fields.object $
+    (,)
+      <$> Fields.required "pile" ExiledPile.codec fst
+      <*> Fields.required "slot" SlotName.codec snd

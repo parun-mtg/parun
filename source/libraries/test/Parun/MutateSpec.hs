@@ -113,6 +113,7 @@ import qualified Parun.Types.ReplacementEntry as ReplacementEntry
 import qualified Parun.Types.RevealCause as RevealCause
 import qualified Parun.Types.Revealed as Revealed
 import qualified Parun.Types.RoomHalf as RoomHalf
+import qualified Parun.Types.Settle as Settle
 import qualified Parun.Types.ShownComponent as ShownComponent
 import qualified Parun.Types.Sickness as Sickness
 import qualified Parun.Types.Source as Source
@@ -565,7 +566,7 @@ spec s registry = Spec.describe s "Mutate" $ do
         covered = S.runPure (doublingAt host) after (passes 4)
         -- The merged permanent dies, and the stack drains: Midnight Reaper's
         -- trigger if it fired, then whatever else waited.
-        dies gs = S.runPure (doublingAt host) gs (Event.destroy (pure ()) Regenerability.Regenerable [host] >> passes 6)
+        dies gs = S.runPure (doublingAt host) gs (Event.destroy Settle.none Regenerability.Regenerable [host] >> passes 6)
         isForest oid gs = Set.member Subtype.Forest (Projection.subtypesOf oid gs)
     Spec.assertBool s (not (isForest host after)) "CR 731.2d/111.13 the copy on top is a token, so Ashaya passes the merged permanent by"
     Spec.assertEqWith s "CR 731.2d/111.13 so Midnight Reaper does not trigger as it dies" (S.lifeOf S.alice (dies after)) (Just 20)
@@ -663,7 +664,7 @@ spec s registry = Spec.describe s "Mutate" $ do
               (asMergeOfCardAndToken oid pid base)
                 { GameState.players = Map.adjust (\p -> p {Player.commander = Set.fromList (Maybe.maybeToList (Game.lookupObject oid base >>= Object.identity))}) S.alice (GameState.players (asMergeOfCardAndToken oid pid base))
                 }
-            after = snd (S.runPureWith returningCommander board (Event.changeZoneReturning (pure ()) oid Zone.Hand))
+            after = snd (S.runPureWith returningCommander board (Event.changeZoneReturning Settle.none oid Zone.Hand))
         Spec.assertEqWith
           s
           "CR 903.9c one card goes to the command zone, and the token component interned under the same printing does not follow it"
@@ -693,7 +694,7 @@ spec s registry = Spec.describe s "Mutate" $ do
         mergedAt side = merging side cat secondBoard secondSpell
         dead side =
           let (_, withLeyline) = S.addPermanent leyline S.bob (mergedAt side)
-           in S.runPure S.identityAnswer withLeyline (Event.destroy (pure ()) Regenerability.Regenerable [cat] >> Engine.settleForPriority)
+           in S.runPure S.identityAnswer withLeyline (Event.destroy Settle.none Regenerability.Regenerable [cat] >> Engine.settleForPriority)
         exiledNames gs = Maybe.mapMaybe (\oid -> fmap S.nameOf (Game.cardOf oid gs)) (Set.toList (GameState.exile gs))
         cubwardenName = CardName.MkCardName (Text.pack "Cubwarden")
         died gs = [() | GameEvent.Moved m <- S.eventsOf gs, Moved.change m == ZoneChange.MkZoneChange cat (ZoneChange.object (Moved.change m)) Zone.Battlefield Zone.Graveyard]
@@ -731,7 +732,7 @@ spec s registry = Spec.describe s "Mutate" $ do
         reversingFor who p = case p of
           Prompt.OrderTimestamps _ pid oids | Just pid == who -> reverse (zipWith const [0 ..] oids)
           _ -> S.identityAnswer p
-        dead who = S.runPure (reversingFor who) withLeyline (Event.destroy (pure ()) Regenerability.Regenerable [cat] >> Engine.settleForPriority)
+        dead who = S.runPure (reversingFor who) withLeyline (Event.destroy Settle.none Regenerability.Regenerable [cat] >> Engine.settleForPriority)
         stamps gs = fmap Object.timestamp (Maybe.mapMaybe (`Game.lookupObject` gs) (Set.toAscList (GameState.exile gs)))
         canonical = dead Nothing
         reversed = dead (Just S.bob)
@@ -765,7 +766,7 @@ spec s registry = Spec.describe s "Mutate" $ do
         picking chosen p = case p of
           Prompt.ChooseReplacement _ _ entries -> maybe 0 Int.toNaturalSaturating (List.findIndex ((== chosen) . ReplacementEntry.source) entries)
           _ -> S.identityAnswer p
-        dead chosen = S.runPure (picking chosen) enchanting (Event.destroy (pure ()) Regenerability.Regenerable [cat] >> Engine.settleForPriority)
+        dead chosen = S.runPure (picking chosen) enchanting (Event.destroy Settle.none Regenerability.Regenerable [cat] >> Engine.settleForPriority)
         exiledNames gs = Maybe.mapMaybe (\oid -> fmap S.nameOf (Game.cardOf oid gs)) (Set.toList (GameState.exile gs))
         cubwardenName = CardName.MkCardName (Text.pack "Cubwarden")
         reveals gs = length [() | GameEvent.Revealed r <- S.eventsOf gs, Revealed.cause r == RevealCause.Ordinary]
@@ -800,7 +801,7 @@ spec s registry = Spec.describe s "Mutate" $ do
         aimed p = case p of
           Prompt.ChooseTargets _ _ _ sets -> fmap (Set.filter (\r -> Recipient.objectOf r == Just victim || r == Recipient.ToPlayer S.bob) . snd) sets
           _ -> S.identityAnswer p
-        dies oid gs = S.runPure aimed gs (Event.destroy (pure ()) Regenerability.Regenerable [oid] >> Engine.settleForPriority >> Stack.resolveTop >> Engine.settleForPriority)
+        dies oid gs = S.runPure aimed gs (Event.destroy Settle.none Regenerability.Regenerable [oid] >> Engine.settleForPriority >> Stack.resolveTop >> Engine.settleForPriority)
         exiled = dies host merged
         drained = dies victim exiled
         exileNames gs = List.sort (Maybe.mapMaybe (\oid -> fmap S.nameOf (Game.cardOf oid gs)) (Set.toList (GameState.exile gs)))

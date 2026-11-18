@@ -69,6 +69,7 @@ import qualified Parun.Types.Prompt as Prompt
 import qualified Parun.Types.Quantity as Quantity.Type
 import qualified Parun.Types.Recipient as Recipient
 import qualified Parun.Types.Scope as Scope
+import qualified Parun.Types.Settle as Settle
 import qualified Parun.Types.SlotName as SlotName
 import qualified Parun.Types.StepBegan as StepBegan
 import qualified Parun.Types.Subtype as Subtype
@@ -933,7 +934,7 @@ leftBattlefieldSpec s registry =
                 )
             settled = S.runPure S.identityAnswer began Engine.settleForPriority
          in S.runPure S.identityAnswer settled Engine.priorityLoop
-      bounce oid gs = S.runPure S.identityAnswer gs (Event.changeZone (pure ()) oid Zone.Hand)
+      bounce oid gs = S.runPure S.identityAnswer gs (Event.changeZone Settle.none oid Zone.Hand)
       board producer = do
         watcher <- S.printingOf s registry producer
         hillGiant <- S.printingOf s registry "Hill Giant"
@@ -969,7 +970,7 @@ leftBattlefieldSpec s registry =
         Spec.it s "CR 603.6c a nonland token entering is no permanent leaving, so Insatiable Skittermaw gets no counter" $ do
           (skittermawId, _, _, ready) <- board "Insatiable Skittermaw"
           hillGiant <- S.printingOf s registry "Hill Giant"
-          let minted = S.runPure S.identityAnswer ready (Event.createTokens (pure ()) S.bob (Printing.card hillGiant) Nothing Nothing 1 TapState.Untapped Map.empty Nothing Set.empty)
+          let minted = S.runPure S.identityAnswer ready (Event.createTokens Settle.none S.bob (Printing.card hillGiant) Nothing Nothing 1 TapState.Untapped Map.empty Nothing Set.empty)
           Spec.assertEqWith s "CR 603.6c a Hill Giant token entered and nothing left, so no counter" (S.counterOf CounterKind.PlusOnePlusOne skittermawId (endStepOf minted)) 0
           Spec.assertEqWith s "setup: the token is on the battlefield beside bob's Hill Giant" (length (Game.zoneMembers Zone.Battlefield S.bob minted)) 3
         Spec.it s "CR 603.6c Minthara counts a permanent alice controlled leaving, not the same one while bob controlled it" $ do

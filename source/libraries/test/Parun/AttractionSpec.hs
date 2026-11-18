@@ -63,6 +63,7 @@ import qualified Parun.Types.Prompt as Prompt
 import qualified Parun.Types.Recipient as Recipient
 import qualified Parun.Types.ReplacementEffect as ReplacementEffect
 import qualified Parun.Types.ReplacementOrigin as ReplacementOrigin
+import qualified Parun.Types.Settle as Settle
 import qualified Parun.Types.SideDeck as SideDeck
 import qualified Parun.Types.SourceChoices as SourceChoices
 import qualified Parun.Types.Subtype as Subtype
@@ -231,9 +232,9 @@ junkyardSpec s registry = Spec.describe s "The junkyard" $ do
     piker <- S.printingOf s registry "Goblin Piker"
     cars <- S.printingOf s registry "Bumper Cars"
     let (gs, mine, _, attraction) = visitBoard piker (carsA cars)
-        binned = S.runPure S.identityAnswer gs (Event.changeZone (pure ()) attraction Zone.Graveyard)
-        exiled = S.runPure S.identityAnswer gs (Event.changeZone (pure ()) attraction Zone.Exile)
-        creature = S.runPure S.identityAnswer gs (Event.changeZone (pure ()) mine Zone.Graveyard)
+        binned = S.runPure S.identityAnswer gs (Event.changeZone Settle.none attraction Zone.Graveyard)
+        exiled = S.runPure S.identityAnswer gs (Event.changeZone Settle.none attraction Zone.Exile)
+        creature = S.runPure S.identityAnswer gs (Event.changeZone Settle.none mine Zone.Graveyard)
         faceUp = Set.toList (GameState.command binned)
     Spec.assertEqWith s "CR 718.6: not in the graveyard" (Game.zoneMembers Zone.Graveyard S.alice binned) []
     Spec.assertEqWith s "CR 718.6a: face up in the command zone, still lit" (fmap (`Game.lightsOf` binned) faceUp) [Set.fromList [2, 3, 6]]
@@ -244,14 +245,14 @@ junkyardSpec s registry = Spec.describe s "The junkyard" $ do
     piker <- S.printingOf s registry "Goblin Piker"
     cars <- S.printingOf s registry "Bumper Cars"
     let (gs, _, _, attraction) = visitBoard piker (carsA cars)
-        bounced = S.runPure S.identityAnswer gs (Event.changeZone (pure ()) attraction Zone.Hand)
+        bounced = S.runPure S.identityAnswer gs (Event.changeZone Settle.none attraction Zone.Hand)
     Spec.assertEqWith s "not in hand" (Game.zoneMembers Zone.Hand S.alice bounced) []
     Spec.assertEqWith s "but in the command zone" (Set.size (GameState.command bounced)) 1
   Spec.it s "CR 718.6a a junkyard card does not function" $ do
     piker <- S.printingOf s registry "Goblin Piker"
     cars <- S.printingOf s registry "Bumper Cars"
     let (gs, mine, _, attraction) = visitBoard piker (carsA cars)
-        binned = S.runPure S.identityAnswer gs (Event.changeZone (pure ()) attraction Zone.Graveyard)
+        binned = S.runPure S.identityAnswer gs (Event.changeZone Settle.none attraction Zone.Graveyard)
     Spec.assertEqWith s "no roll: alice controls no Attraction" (snd (visitWith [3] mine binned)) []
 
 -- CR 728.2 / 730.2a / 730.5a: a new game.

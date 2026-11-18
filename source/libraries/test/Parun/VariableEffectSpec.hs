@@ -47,6 +47,7 @@ import qualified Parun.Types.Printing as Printing
 import qualified Parun.Types.Prompt as Prompt
 import qualified Parun.Types.Recipient as Recipient
 import qualified Parun.Types.Response as Response
+import qualified Parun.Types.Settle as Settle
 import qualified Parun.Types.StepBegan as StepBegan
 import qualified Parun.Types.Subtype as Subtype
 import qualified Parun.Types.TapState as TapState
@@ -139,7 +140,7 @@ multiTargetSpec s registry = Spec.describe s "MultiTarget" $ do
         -- The trigger is PLACED (CR 603.3, targets announced) and then one of them
         -- leaves, so CR 608.2b has something to re-validate when it resolves.
         placed = S.runPure answer gs Engine.settleForPriority
-        gone = S.runPure answer placed (Event.changeZone (pure ()) wallId Zone.Graveyard)
+        gone = S.runPure answer placed (Event.changeZone Settle.none wallId Zone.Graveyard)
         after = S.runPure answer gone Stack.resolveTop
     Spec.assertEqWith s "the surviving target took its counter" (plusCountersOn pikerId after) (Just 1)
     Spec.assertBool s (not (Set.member wallId (GameState.battlefield after))) "and the other one is gone"

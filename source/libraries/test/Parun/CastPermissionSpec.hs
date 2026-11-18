@@ -72,6 +72,7 @@ import qualified Parun.Types.Printing as Printing
 import qualified Parun.Types.Prompt as Prompt
 import qualified Parun.Types.Recipient as Recipient
 import qualified Parun.Types.Regenerability as Regenerability
+import qualified Parun.Types.Settle as Settle
 import qualified Parun.Types.StoredEffects as StoredEffects
 import qualified Parun.Types.Subtype as Subtype
 import qualified Parun.Types.TapState as TapState
@@ -111,7 +112,7 @@ extraLandDropsSpec s registry =
                       TurnRegisters.priority = Just S.alice
                     }
               }
-          gone = S.runPure S.identityAnswer (playEveryLand ready) (Event.destroy (pure ()) Regenerability.Regenerable [explorationId])
+          gone = S.runPure S.identityAnswer (playEveryLand ready) (Event.destroy Settle.none Regenerability.Regenerable [explorationId])
       Spec.assertEqWith s "two lands were played while it stood" (GameState.landsPlayed gone) (Map.singleton S.alice 2)
       Spec.assertEqWith s "the allowance is back to one" (PlayerEffect.landPlaysAllowed S.alice gone) (Just 1)
       Spec.assertEqWith s "and CR 305.2b refuses a third" (filter isPlay (Action.legalActions S.alice gone)) []
@@ -1488,7 +1489,7 @@ arrivedBetween before after = Set.toList (Set.difference (GameState.battlefield 
 -- resolves.
 diesAndResolves :: ObjectId.ObjectId -> GameState.GameState -> GameState.GameState
 diesAndResolves oid gs =
-  let killed = S.runPure S.identityAnswer gs (Event.destroy (pure ()) Regenerability.Regenerable [oid])
+  let killed = S.runPure S.identityAnswer gs (Event.destroy Settle.none Regenerability.Regenerable [oid])
       placed = S.runPure S.identityAnswer killed Engine.settleForPriority
    in S.runPure S.identityAnswer placed Stack.resolveTop
 
@@ -1769,7 +1770,7 @@ uriangerSpec s registry =
     Spec.it s "CR 305.1 playing a land from exile with Urianger gains 2 life, and playing one from hand does not" $ do
       (exiledIsland, handIsland, gs) <- uriangerPlayBoard s registry "Island" 0
       let landPlayFrom oid =
-            let played = S.runPure exilingAnswer gs (Cast.playLand (pure ()) False S.alice oid Nothing)
+            let played = S.runPure exilingAnswer gs (Cast.playLand Settle.none False S.alice oid Nothing)
              in S.runPure exilingAnswer played (Engine.settleForPriority >> Monad.void Stack.resolveTop)
           offered oid = any (isPlayOf oid) (Action.legalActions S.alice gs)
       -- The gameplay-level claims, first.

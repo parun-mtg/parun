@@ -2304,7 +2304,9 @@ data MintedKind
     MintedMeld
   | -- | Alchemy's conjured card, which Parun.Types.Conjure carries inline -- every
     -- candidate of them, a printed spellbook holding more than one. A real card
-    -- (it is not CR 111.1's token), so it has card types like any other.
+    -- (it is not CR 111.1's token), so it has card types like any other. Also
+    -- the card a copy effect defines (Bombardment's Missile), whose
+    -- characteristics real cards take.
     MintedCard
   deriving (Eq, Ord, Show)
 
@@ -2318,7 +2320,7 @@ effectMintedFaces effect =
             Children.effectLeaves
               { Children.onEffect = Const.Const . effectMintedFaces,
                 Children.onReplacement = \replacement -> Const.Const (concatMap effectMintedFaces (replacementEffectRiders replacement) <> replacementMintedFaces replacement),
-                Children.onCard = tagged (case effect of Effect.CreateEmblem {} -> MintedEmblem; _ -> MintedToken),
+                Children.onCard = tagged (case effect of Effect.CreateEmblem {} -> MintedEmblem; Effect.BecomeCopy {} -> MintedCard; _ -> MintedToken),
                 Children.onConjured = tagged MintedCard,
                 Children.onMelded = tagged MintedMeld,
                 Children.onAbility = Const.Const . concatMap effectMintedFaces . foldMap (Modal.allEffects . TriggeredAbility.modal) . carriedTrigger
@@ -3413,11 +3415,13 @@ conjureCardsAmount cards = case cards of
   ConjureCards.Duplicate {} -> []
   ConjureCards.Reference from -> Maybe.maybeToList (FromReference.amount from)
 
--- A named original carries no filter.
-copyOriginalFilters :: CopyOriginal.CopyOriginal -> [(Framing, Filter.Type.Filter Keyword.Keyword)]
+-- A named original carries no filter, and a defined one's are its card's,
+-- walked by the BecomeCopy arm of the effect collector.
+copyOriginalFilters :: CopyOriginal.CopyOriginal card -> [(Framing, Filter.Type.Filter Keyword.Keyword)]
 copyOriginalFilters original = case original of
   CopyOriginal.OfObject ref -> objectRefFilters ref
   CopyOriginal.Named _ -> []
+  CopyOriginal.Defined _ -> []
 
 -- TAGGED pairs, PR #2739's reader's test: a path from here reaches
 -- keywordFilters, through the CounterKind a depth's Quantity may name.
@@ -5431,7 +5435,7 @@ effectFilters effect = case effect of
   -- The exceptions beside them carry Filters through a KEYWORD, and frame them
   -- themselves (copyExceptionFilters) -- EntryRewrite's AsCopy arm takes the same
   -- walk over the same list.
-  Effect.BecomeCopy (BecomeCopy.MkBecomeCopy original subject duration exceptions _) -> frame SourceHostFramed (copyOriginalFilters original <> objectRefFilters subject) <> frame Unframed (foldMap durationFilters duration) <> concatMap copyExceptionFilters exceptions
+  Effect.BecomeCopy (BecomeCopy.MkBecomeCopy original subject duration exceptions _) -> frame SourceHostFramed (copyOriginalFilters original <> objectRefFilters subject) <> frame Unframed (foldMap durationFilters duration) <> concatMap copyExceptionFilters exceptions <> concat [overFaces cardFilters card | CopyOriginal.Defined card <- [original]]
   -- BOTH refs, CreateCopy's arm above: an EachMatching Filter is card text, and
   -- CR 707.10d's candidates are named by one.
   Effect.CopyStackObject (CopyStackObject.MkCopyStackObject ref targets quantity _ exceptions _) -> frame Unframed (quantityFilters quantity) <> frame SourceHostFramed (objectRefFilters ref <> copyTargetsFilters targets) <> concatMap copyExceptionFilters exceptions
@@ -6307,8 +6311,14 @@ lintSpec s registry corpus = Spec.describe s "Lint" $ do
           _ -> False
         offends effect = case effect of
           Effect.RollDie rollDie ->
-            (Maybe.isJust (RollDie.other rollDie) && (RollDie.count rollDie /= Quantity.Type.Literal 2 || RollDie.ignore rollDie /= 0 || RollDie.reading rollDie == DiceReading.Total || RollDie.roller rollDie /= PlayerScope.Related PlayerRelation.You))
+            (Maybe.isJust (RollDie.other rollDie) && (RollDie.count rollDie /= Quantity.Type.Literal 2 || RollDie.ignore rollDie /= 0 || RollDie.reading rollDie == DiceReading.Total || not (oneRoller (RollDie.roller rollDie))))
               || (RollDie.reading rollDie == DiceReading.Both && Maybe.isNothing (RollDie.other rollDie))
+          _ -> False
+        -- CR 109.5's "you" or one seat a slot names (GO TO JAIL's "that
+        -- player"); any other reference may name several.
+        oneRoller ref = case ref of
+          PlayerRef.Relative PlayerRelation.You -> True
+          PlayerRef.InSlot _ -> True
           _ -> False
         offenders = filter (anyFace (any offends . cardResolutionEffects) . Printing.card) ps
     -- A guard, since a pool binding no other result at all would pass saying

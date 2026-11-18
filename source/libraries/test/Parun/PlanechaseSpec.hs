@@ -83,6 +83,7 @@ import qualified Parun.Types.Prompt as Prompt
 import qualified Parun.Types.Recipient as Recipient
 import qualified Parun.Types.Regenerability as Regenerability
 import qualified Parun.Types.ReturnEnding as ReturnEnding
+import qualified Parun.Types.Settle as Settle
 import qualified Parun.Types.SideDeck as SideDeck
 import qualified Parun.Types.SlotName as SlotName
 import qualified Parun.Types.Source as Source
@@ -399,7 +400,7 @@ spec s registry = Spec.describe s "Parun.Engine.Planechase" $ do
     let (carols, withCarols) = S.addPermanent piker S.carol board
         (bobs, withBobs) = S.addPermanent piker S.bob withCarols
         ranged = S.withRange 1 (inMain S.alice (S.giveControl bobs S.dave withBobs))
-        died = S.runPure S.identityAnswer ranged (Event.destroy (pure ()) Regenerability.Regenerable [carols, bobs] >> Engine.settleForPriority)
+        died = S.runPure S.identityAnswer ranged (Event.destroy Settle.none Regenerability.Regenerable [carols, bobs] >> Engine.settleForPriority)
     Spec.assertEqWith s "both Pikers were exiled and neither reached a graveyard" (fmap (\pid -> (length (Game.zoneMembers Zone.Exile pid died), length (Game.zoneMembers Zone.Graveyard pid died))) [S.bob, S.carol]) [(1, 0), (1, 0)]
     Spec.assertEqWith s "CR 614.6 carol and dave, the controllers, lost 2 each" (fmap (`S.lifeOf` died) [S.alice, S.bob, S.carol, S.dave]) (fmap Just [20, 20, 18, 18])
     Spec.assertBool s (not (Game.inRangeOf S.alice S.carol ranged)) "carol is outside alice's range"
@@ -1044,7 +1045,7 @@ raidersSpec s registry = Spec.describe s "Raiders' Allegiance" $ do
                 }
             )
         hit target = DamageEvent.MkDamageEvent pikerId (Recipient.ToPlayer target) 1 0 False False False 0 Nothing Nothing mempty False mempty mempty mempty mempty Nothing mempty mempty Nothing
-        damaged = S.runPure S.identityAnswer (begin Phase.PrecombatMain stocked) (Damage.applyDamage (pure ()) [hit S.bob DamageKind.Combat, hit S.carol DamageKind.Combat, hit S.dave DamageKind.Noncombat])
+        damaged = S.runPure S.identityAnswer (begin Phase.PrecombatMain stocked) (Damage.applyDamage Settle.none [hit S.bob DamageKind.Combat, hit S.carol DamageKind.Combat, hit S.dave DamageKind.Noncombat])
         raided = S.runPure S.identityAnswer (begin Phase.PostcombatMain damaged) Engine.priorityLoop
     Spec.assertEqWith s "CR 510.2 two players took combat damage: alice has two point counters" (S.playerCounterOf PlayerCounterKind.Point S.alice raided) 2
     Spec.assertEqWith s "and two Pirates" (controllersNamed "Pirate Token" raided) [Just S.alice, Just S.alice]
@@ -1071,7 +1072,7 @@ raidersSpec s registry = Spec.describe s "Raiders' Allegiance" $ do
                 }
             )
         hit source target = DamageEvent.MkDamageEvent source (Recipient.ToPlayer target) 1 0 False False False 0 Nothing Nothing mempty False mempty mempty mempty mempty Nothing mempty mempty Nothing DamageKind.Combat
-        damaged = S.runPure S.identityAnswer (begin Phase.PrecombatMain ranged) (Damage.applyDamage (pure ()) [hit alicePiker S.bob, hit davePiker S.carol])
+        damaged = S.runPure S.identityAnswer (begin Phase.PrecombatMain ranged) (Damage.applyDamage Settle.none [hit alicePiker S.bob, hit davePiker S.carol])
         raided = S.runPure S.identityAnswer (begin Phase.PostcombatMain damaged) Engine.priorityLoop
     Spec.assertEqWith s "CR 801.18 two players took combat damage: alice has two point counters" (S.playerCounterOf PlayerCounterKind.Point S.alice raided) 2
     Spec.assertBool s (not (Game.inRangeOf S.alice S.carol ranged)) "carol is outside alice's range"
@@ -1263,7 +1264,7 @@ planeswalkSpec s registry = Spec.describe s "CR 901.11" $ do
     board <- planarBoard s registry ["Agyrem", "Tazeem"]
     let (lionsId, b1) = S.addPermanent lions S.bob (inMain S.alice board)
         (bearId, stocked) = S.addPermanent bears S.alice b1
-        died = S.runPure S.identityAnswer stocked (Event.simultaneously (Event.changeZone (pure ()) lionsId Zone.Graveyard >> Event.changeZone (pure ()) bearId Zone.Graveyard) >> Engine.priorityLoop)
+        died = S.runPure S.identityAnswer stocked (Event.simultaneously (Event.changeZone Settle.none lionsId Zone.Graveyard >> Event.changeZone Settle.none bearId Zone.Graveyard) >> Engine.priorityLoop)
         ended = endStep S.alice died
     Spec.assertEqWith s "both wait in their owners' graveyards until the end step" (zoneNames Zone.Graveyard S.bob died, zoneNames Zone.Graveyard S.alice died) ([cardName "Savannah Lions"], [cardName "Grizzly Bears"])
     Spec.assertEqWith s "CR 603.7 the white Savannah Lions returns under bob's control" (controllersNamed "Savannah Lions" ended) [Just S.bob]

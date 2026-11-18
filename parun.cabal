@@ -3749,6 +3749,7 @@ library types
     Parun.Types.SetHalfLocked
     Parun.Types.SetOwner
     Parun.Types.SetPowerToughness
+    Parun.Types.Settle
     Parun.Types.SetX
     Parun.Types.ShownCards
     Parun.Types.ShownComponent

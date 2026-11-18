@@ -71,6 +71,7 @@ import qualified Parun.Types.ObjectId as ObjectId
 import qualified Parun.Types.Phase as Phase
 import qualified Parun.Types.Printing as Printing
 import qualified Parun.Types.Regenerability as Regenerability
+import qualified Parun.Types.Settle as Settle
 import qualified Parun.Types.StepBegan as StepBegan
 import qualified Parun.Types.Subtype as Subtype
 import qualified Parun.Types.TurnRegisters as TurnRegisters
@@ -255,7 +256,7 @@ gorgonsKissSpec s registry = Spec.describe s "Case of the Gorgon's Kiss" $ do
     let run n =
           let (caseId, withCase) = S.addPermanent gorgonsKiss S.alice (Setup.emptyGame S.bothPlayers)
               (pikers, filled) = List.foldl' (\(ids, g) _ -> let (i, g2) = S.addPermanent piker S.alice g in (ids <> [i], g2)) ([], withCase) [1 .. n :: Int]
-              dead = S.runPure S.identityAnswer filled (Event.destroy (pure ()) Regenerability.Regenerable pikers)
+              dead = S.runPure S.identityAnswer filled (Event.destroy Settle.none Regenerability.Regenerable pikers)
            in (caseId, throughEndStep dead)
         (solvedId, solved) = run 3
         (unsolvedId, unsolved) = run 2

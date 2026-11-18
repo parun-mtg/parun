@@ -1,0 +1,28 @@
+{
+  "description": "CR 702.184c Gomif's speed grant substitutes no toughness",
+  "note": "Gomif, Fast Racer grants its controller SpeedBeyondFour, not Tapestry Warden's StationsUsingToughness: Horned Turtle (1/4) stations Lumen-Class Frigate with its power, one charge counter, not four.",
+  "board": {
+    "seats": [
+      {
+        "name": "alice",
+        "speed": 1,
+        "battlefield": [
+          { "card": "Lumen-Class Frigate", "label": "frigate", "ready": true },
+          { "card": "Gomif, Fast Racer", "label": "gomif", "ready": true },
+          { "card": "Horned Turtle", "label": "turtle", "ready": true }
+        ]
+      },
+      { "name": "bob" }
+    ],
+    "active": "alice",
+    "step": "PrecombatMain"
+  },
+  "timeline": [
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "do": { "Answer": { "prompt": "ChooseTaps", "with": ["$turtle"] } } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "do": { "Activate": { "object": "$frigate", "ability": 0 } } }
+  ],
+  "final": [
+    { "Tapped": { "object": "$turtle", "tapped": true } },
+    { "Counters": { "object": "$frigate", "kind": { "type": "Named", "value": "charge" }, "count": 1 } }
+  ]
+}

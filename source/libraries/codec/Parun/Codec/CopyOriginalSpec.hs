@@ -14,13 +14,19 @@ spec s = Spec.describe s "Parun.Codec.CopyOriginal" $ do
   Spec.it s "OfObject" $
     Common.assertCodec
       s
-      CopyOriginal.codec
+      (CopyOriginal.codec Common.text)
       (CopyOriginal.OfObject (ObjectRef.InSlot (SlotName.MkSlotName (Text.pack "became"))))
       " {\"type\":\"OfObject\",\"value\":{\"type\":\"InSlot\",\"value\":\"became\"}} "
   Spec.it s "Named" $
     Common.assertCodec
       s
-      CopyOriginal.codec
+      (CopyOriginal.codec Common.text)
       (CopyOriginal.Named (CardName.MkCardName (Text.pack "Lightning Bolt")))
       " {\"type\":\"Named\",\"value\":\"Lightning Bolt\"} "
-  Spec.it s "has a schema" $ Common.assertHasSchema s CopyOriginal.codec
+  Spec.it s "Defined" $
+    Common.assertCodec
+      s
+      (CopyOriginal.codec Common.text)
+      (CopyOriginal.Defined (Text.pack "Missile"))
+      " {\"type\":\"Defined\",\"value\":\"Missile\"} "
+  Spec.it s "has a schema" $ Common.assertHasSchema s (CopyOriginal.codec Common.text)

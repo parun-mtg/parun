@@ -41,6 +41,7 @@ import qualified Parun.Types.PlayerInstruction as PlayerInstruction
 import qualified Parun.Types.ProjectedCharacteristics as PC
 import qualified Parun.Types.Prompt as Prompt
 import qualified Parun.Types.ProposedEvent as ProposedEvent
+import qualified Parun.Types.Settle as Settle
 import qualified Parun.Types.SideDeck as SideDeck
 import qualified Parun.Types.Subtype as Subtype
 
@@ -50,7 +51,7 @@ import qualified Parun.Types.Subtype as Subtype
 -- each Contraption apart ("you choose individually for each one"). Proposed
 -- first as WouldPerform, so a row can change how many. An empty deck
 -- assembles nothing and loses nobody the game.
-assemble :: Game () -> Maybe ObjectId -> PlayerId -> Game ()
+assemble :: Settle.Settle -> Maybe ObjectId -> PlayerId -> Game ()
 assemble settle assembler pid = do
   outcome <- Event.applyReplacements (ProposedEvent.WouldPerform PlayerInstruction.Assemble assembler pid 1)
   Monad.forM_ (outcome >>= Replacement.asPerformed PlayerInstruction.Assemble) $ \(assembling, times) ->
@@ -60,7 +61,7 @@ assemble settle assembler pid = do
 -- controller picks, so the card is face up when the choice is put and an entry
 -- a replacement kept off the battlefield asks nothing. Three sprockets are
 -- always three candidates, so the prompt is never elided.
-assembleOne :: Game () -> PlayerId -> Game ()
+assembleOne :: Settle.Settle -> PlayerId -> Game ()
 assembleOne settle pid = do
   entered <- Attraction.enterTop settle SideDeck.Contraption pid
   Monad.forM_ entered $ \oid -> do
