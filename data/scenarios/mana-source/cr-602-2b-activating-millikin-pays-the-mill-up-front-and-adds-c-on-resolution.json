@@ -128,7 +128,12 @@
                 "type": "Colorless"
               },
               "tags": [
-                "Artifact"
+                {
+                  "CardType": "Artifact"
+                },
+                {
+                  "CardType": "Creature"
+                }
               ],
               "retention": "Ordinary",
               "restriction": null,

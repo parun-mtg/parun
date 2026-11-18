@@ -18,6 +18,6 @@
     {"turn": 1, "step": "DeclareAttackers", "player": "alice", "check": {"View": {"of": "Stack", "is": ["trigger of $student", "trigger of $student"]}}},
     {"turn": 1, "step": "DeclareAttackers", "player": "alice", "do": "Pass"},
     {"turn": 1, "step": "DeclareAttackers", "player": "alice", "do": "Pass"},
-    {"turn": 1, "step": "DeclareAttackers", "player": "alice", "check": {"View": {"of": "ManaPool", "player": "alice", "is": [{"manaType": {"type": "Colored", "value": "Red"}, "tags": [], "retention": "UntilEndOfCombat", "restriction": null, "rider": null, "sourceChoices": null}, {"manaType": {"type": "Colored", "value": "Red"}, "tags": [], "retention": "UntilEndOfCombat", "restriction": null, "rider": null, "sourceChoices": null}]}}}
+    {"turn": 1, "step": "DeclareAttackers", "player": "alice", "check": {"View": {"of": "ManaPool", "player": "alice", "is": [{"manaType": {"type": "Colored", "value": "Red"}, "tags": [{"CardType": "Creature"}], "retention": "UntilEndOfCombat", "restriction": null, "rider": null, "sourceChoices": null}, {"manaType": {"type": "Colored", "value": "Red"}, "tags": [{"CardType": "Creature"}], "retention": "UntilEndOfCombat", "restriction": null, "rider": null, "sourceChoices": null}]}}}
   ]
 }

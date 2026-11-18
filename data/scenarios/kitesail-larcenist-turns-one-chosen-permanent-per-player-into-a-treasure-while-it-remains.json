@@ -258,7 +258,7 @@
                 },
                 "tags": [
                   {"Subtype": "Treasure"},
-                  "Artifact"
+                  {"CardType": "Artifact"}
                 ],
                 "retention": "Ordinary",
                 "restriction": null,
@@ -299,7 +299,7 @@
               },
               "tags": [
                 {"Subtype": "Treasure"},
-                "Artifact"
+                {"CardType": "Artifact"}
               ],
               "retention": "Ordinary",
               "restriction": null,

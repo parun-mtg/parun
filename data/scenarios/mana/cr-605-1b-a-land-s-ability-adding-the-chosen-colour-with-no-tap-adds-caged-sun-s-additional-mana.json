@@ -140,7 +140,11 @@
                 "type": "Colored",
                 "value": "Black"
               },
-              "tags": [],
+              "tags": [
+                {
+                  "CardType": "Creature"
+                }
+              ],
               "retention": "Ordinary",
               "restriction": null,
               "rider": null,
@@ -152,7 +156,9 @@
                 "value": "Black"
               },
               "tags": [
-                "Artifact"
+                {
+                  "CardType": "Artifact"
+                }
               ],
               "retention": "Ordinary",
               "restriction": null,
@@ -245,7 +251,11 @@
                 "type": "Colored",
                 "value": "Black"
               },
-              "tags": [],
+              "tags": [
+                {
+                  "CardType": "Creature"
+                }
+              ],
               "retention": "Ordinary",
               "restriction": null,
               "rider": null,
@@ -257,7 +267,9 @@
                 "value": "Black"
               },
               "tags": [
-                "Artifact"
+                {
+                  "CardType": "Artifact"
+                }
               ],
               "retention": "Ordinary",
               "restriction": null,

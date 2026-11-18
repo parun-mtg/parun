@@ -178,7 +178,9 @@
                 "type": "Colorless"
               },
               "tags": [
-                "Artifact"
+                {
+                  "CardType": "Artifact"
+                }
               ],
               "retention": "Ordinary",
               "restriction": null,
@@ -190,7 +192,9 @@
                 "type": "Colorless"
               },
               "tags": [
-                "Artifact"
+                {
+                  "CardType": "Artifact"
+                }
               ],
               "retention": "Ordinary",
               "restriction": null,
@@ -202,7 +206,9 @@
                 "type": "Colorless"
               },
               "tags": [
-                "Artifact"
+                {
+                  "CardType": "Artifact"
+                }
               ],
               "retention": "Ordinary",
               "restriction": null,

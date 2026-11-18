@@ -305,11 +305,12 @@ unitName unit =
   let notes =
         [Text.pack "from a snow source" | Set.member ProductionTag.Snow (ManaUnit.tags unit)]
           <> [Text.pack ("from a " <> show st) | ProductionTag.Subtype st <- Set.toList (ManaUnit.tags unit)]
-          <> [Text.pack "from an artifact" | Set.member ProductionTag.Artifact (ManaUnit.tags unit)]
+          <> [Text.pack "from " <> article (Text.toLower (Text.pack (show ct))) | ProductionTag.CardType ct <- Set.toList (ManaUnit.tags unit)]
           <> [Text.pack "kept until end of turn" | ManaUnit.retention unit == ManaRetention.UntilEndOfTurn]
           <> [Text.pack "kept until end of combat" | ManaUnit.retention unit == ManaRetention.UntilEndOfCombat]
           <> [Text.pack "restricted" | Maybe.isJust (ManaUnit.restriction unit)]
           <> [Text.pack "with an effect when spent" | Maybe.isJust (ManaUnit.rider unit) || Maybe.isJust (ManaUnit.spendTrigger unit)]
+      article noun = (if Text.take 1 noun `elem` fmap Text.singleton "aeiou" then Text.pack "an " else Text.pack "a ") <> noun
    in Text.pack "{" <> Render.manaType (ManaUnit.manaType unit) <> Text.pack "}" <> (if null notes then Text.empty else Text.pack " (" <> Text.intercalate (Text.pack ", ") notes <> Text.pack ")")
 
 -- | A mana source as an offer names it, beside the mana types of each yield.

@@ -299,7 +299,7 @@
                 "sourceChoices": null,
                 "tags": [
                   {"Subtype": "Treasure"},
-                  "Artifact"
+                  {"CardType": "Artifact"}
                 ]
               }
             ]

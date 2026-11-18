@@ -22,9 +22,9 @@
     {"turn": 3, "step": "PrecombatMain", "player": "alice", "check": {"Count": {"card": "The Notary Hobbits", "player": "alice", "zone": "Battlefield", "count": 3}}},
     {"turn": 3, "step": "PrecombatMain", "player": "alice", "do": {"Take": {"action": "ActivateManaAbility The Notary Hobbits#2"}}},
     {"turn": 3, "step": "PrecombatMain", "player": "alice", "check": {"View": {"of": "ManaPool", "player": "alice", "is": [
-      {"manaType": {"type": "Colorless"}, "tags": [], "retention": "Ordinary", "restriction": null, "rider": null, "sourceChoices": null},
-      {"manaType": {"type": "Colorless"}, "tags": [], "retention": "Ordinary", "restriction": null, "rider": null, "sourceChoices": null},
-      {"manaType": {"type": "Colorless"}, "tags": [], "retention": "Ordinary", "restriction": null, "rider": null, "sourceChoices": null},
-      {"manaType": {"type": "Colorless"}, "tags": [], "retention": "Ordinary", "restriction": null, "rider": null, "sourceChoices": null}]}}}
+      {"manaType": {"type": "Colorless"}, "tags": [{"CardType": "Creature"}], "retention": "Ordinary", "restriction": null, "rider": null, "sourceChoices": null},
+      {"manaType": {"type": "Colorless"}, "tags": [{"CardType": "Creature"}], "retention": "Ordinary", "restriction": null, "rider": null, "sourceChoices": null},
+      {"manaType": {"type": "Colorless"}, "tags": [{"CardType": "Creature"}], "retention": "Ordinary", "restriction": null, "rider": null, "sourceChoices": null},
+      {"manaType": {"type": "Colorless"}, "tags": [{"CardType": "Creature"}], "retention": "Ordinary", "restriction": null, "rider": null, "sourceChoices": null}]}}}
   ]
 }

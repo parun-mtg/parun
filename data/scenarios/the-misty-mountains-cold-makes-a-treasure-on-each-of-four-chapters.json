@@ -142,7 +142,7 @@
                 "rider": null,
                 "sourceChoices": null,
                 "tags": [
-                  "Artifact",
+                  {"CardType": "Artifact"},
                   {"Subtype": "Treasure"}
                 ]
               }
@@ -189,7 +189,7 @@
                 "rider": null,
                 "sourceChoices": null,
                 "tags": [
-                  "Artifact",
+                  {"CardType": "Artifact"},
                   {"Subtype": "Treasure"}
                 ]
               }
@@ -250,7 +250,7 @@
                 "rider": null,
                 "sourceChoices": null,
                 "tags": [
-                  "Artifact",
+                  {"CardType": "Artifact"},
                   {"Subtype": "Treasure"}
                 ]
               }

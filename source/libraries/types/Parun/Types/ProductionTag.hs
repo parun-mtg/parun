@@ -1,5 +1,6 @@
 module Parun.Types.ProductionTag where
 
+import qualified Parun.Types.CardType as CardType
 import qualified Parun.Types.Subtype as Subtype
 
 -- | A fact about the EVENT that produced one unit of mana, captured as the mana is
@@ -33,12 +34,12 @@ data ProductionTag
     -- Stamped only for the subtypes Parun.Engine.Mana.taggedSubtypes lists, which
     -- Parun.FilterPositionLintSpec holds every card to.
     Subtype Subtype.Subtype
-  | -- | "Mana from an artifact" (Shadow the Hedgehog): the mana's source (CR
-    -- 106.3) was a permanent with CR 205.2a's artifact card type.
+  | -- | "Mana from an artifact" (Shadow the Hedgehog), "mana from creatures"
+    -- (Inga and Esika): the mana's source (CR 106.3) was a permanent with that
+    -- card type (CR 205.2a).
     --
     -- Subtype's posture one axis over, and uncoined by the rules for the same
-    -- reason: plain card text over CR 106.3's source, read off the card TYPE
-    -- where the arm above reads CR 205.3g's subtype and Snow reads CR 205.4g's
-    -- supertype.
-    Artifact
+    -- reason. Stamped only for the card types Parun.Engine.Mana.taggedCardTypes
+    -- lists.
+    CardType CardType.CardType
   deriving (Eq, Ord, Show)

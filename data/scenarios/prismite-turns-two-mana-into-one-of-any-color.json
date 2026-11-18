@@ -78,7 +78,12 @@
                   "value": "Blue"
                 },
                 "tags": [
-                  "Artifact"
+                  {
+                    "CardType": "Artifact"
+                  },
+                  {
+                    "CardType": "Creature"
+                  }
                 ],
                 "retention": "Ordinary",
                 "restriction": null,
@@ -104,7 +109,12 @@
                 "value": "Blue"
               },
               "tags": [
-                "Artifact"
+                {
+                  "CardType": "Artifact"
+                },
+                {
+                  "CardType": "Creature"
+                }
               ],
               "retention": "Ordinary",
               "restriction": null,

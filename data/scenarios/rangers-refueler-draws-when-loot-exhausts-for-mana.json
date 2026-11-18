@@ -29,9 +29,9 @@
           "mana": ["$loot", "$forest"],
           "yields": [
             [
-              {"manaType": {"type": "Colored", "value": "White"}, "restriction": null, "retention": "Ordinary", "rider": null, "sourceChoices": null, "tags": []},
-              {"manaType": {"type": "Colored", "value": "White"}, "restriction": null, "retention": "Ordinary", "rider": null, "sourceChoices": null, "tags": []},
-              {"manaType": {"type": "Colored", "value": "White"}, "restriction": null, "retention": "Ordinary", "rider": null, "sourceChoices": null, "tags": []}
+              {"manaType": {"type": "Colored", "value": "White"}, "restriction": null, "retention": "Ordinary", "rider": null, "sourceChoices": null, "tags": [{"CardType": "Creature"}]},
+              {"manaType": {"type": "Colored", "value": "White"}, "restriction": null, "retention": "Ordinary", "rider": null, "sourceChoices": null, "tags": [{"CardType": "Creature"}]},
+              {"manaType": {"type": "Colored", "value": "White"}, "restriction": null, "retention": "Ordinary", "rider": null, "sourceChoices": null, "tags": [{"CardType": "Creature"}]}
             ]
           ]
         }

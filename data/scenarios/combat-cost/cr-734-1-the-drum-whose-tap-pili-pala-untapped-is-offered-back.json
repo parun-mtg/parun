@@ -317,7 +317,12 @@
                 "value": "White"
               },
               "tags": [
-                "Artifact"
+                {
+                  "CardType": "Artifact"
+                },
+                {
+                  "CardType": "Creature"
+                }
               ],
               "retention": "Ordinary",
               "restriction": null,

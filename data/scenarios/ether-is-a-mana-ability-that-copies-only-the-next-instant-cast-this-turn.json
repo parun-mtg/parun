@@ -32,7 +32,7 @@
     {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"View": {"of": "Offered", "player": "alice", "is": ["Pass", "Cast $shock", "Cast $bolt", "ActivateManaAbility $ether", "ActivateManaAbility $m1", "ActivateManaAbility $m2"]}}},
     {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": {"Take": {"action": "ActivateManaAbility $ether"}}},
     {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"View": {"of": "Stack", "is": []}}},
-    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"View": {"of": "ManaPool", "player": "alice", "is": [{"manaType": {"type": "Colored", "value": "Blue"}, "tags": ["Artifact"], "retention": "Ordinary", "restriction": null, "rider": null, "sourceChoices": null}]}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"View": {"of": "ManaPool", "player": "alice", "is": [{"manaType": {"type": "Colored", "value": "Blue"}, "tags": [{"CardType": "Artifact"}], "retention": "Ordinary", "restriction": null, "rider": null, "sourceChoices": null}]}}},
     {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"Count": {"player": "alice", "zone": "Exile", "card": "Ether", "count": 1}}},
     {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": {"Cast": {"object": "$shock", "targets": ["$bob"], "mana": ["$m1", null]}}},
     {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"View": {"of": "Stack", "is": ["trigger of $ether", "Shock"]}}},

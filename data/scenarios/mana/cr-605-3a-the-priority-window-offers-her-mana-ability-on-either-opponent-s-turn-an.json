@@ -74,7 +74,11 @@
               "manaType": {
                 "type": "Colorless"
               },
-              "tags": [],
+              "tags": [
+                {
+                  "CardType": "Creature"
+                }
+              ],
               "retention": "Ordinary",
               "restriction": null,
               "rider": null,
@@ -84,7 +88,11 @@
               "manaType": {
                 "type": "Colorless"
               },
-              "tags": [],
+              "tags": [
+                {
+                  "CardType": "Creature"
+                }
+              ],
               "retention": "Ordinary",
               "restriction": null,
               "rider": null,
