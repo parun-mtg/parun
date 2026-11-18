@@ -2578,24 +2578,11 @@ recordCounteredWith source acquisition logged gs =
 -- CR 609.1's cause for an instruction of the spell or ability resolving as
 -- `resolving`, which Event.causedBy stamps on the moves and discards it makes.
 --
--- CR 702.72c's half is the keyword: the family of a keyword `source` has whose
--- expansion mints the triggered ability resolving, so "championed" reads an
--- exile as a champion ability's. A CLASSIFICATION of the ability, never of the
--- instruction. Read off the source as it stands, so one that has lost the
--- keyword, or left, names none -- and has lost the ability asking, too.
+-- CR 702.72c's half is the keyword, Event.keywordOf's, so "championed" reads
+-- an exile as a champion ability's.
 causeOf :: ObjectId -> ObjectId -> PlayerId -> GameState -> Cause.Cause
 causeOf resolving source controller gs =
-  let minted ability =
-        Maybe.listToMaybe
-          [ family
-          | (held, count) <- Map.toList (Projection.keywordsOf source gs),
-            elem ability (Keyword.abilitiesFor held count),
-            Just family <- [Keyword.familyOf held]
-          ]
-      represented = case fmap Object.source (Game.lookupObject resolving gs) of
-        Just (Source.OfTrigger triggered) -> minted (TriggeredAbilitySource.ability triggered)
-        _ -> Nothing
-   in Cause.MkCause {Cause.controller = controller, Cause.source = source, Cause.keyword = represented}
+  Cause.MkCause {Cause.controller = controller, Cause.source = source, Cause.keyword = Event.keywordOf resolving gs}
 
 -- CR 607.2a's link, filed as the instruction that made it finishes: every card
 -- that ARRIVED in exile while the effect ran is filed against that effect's

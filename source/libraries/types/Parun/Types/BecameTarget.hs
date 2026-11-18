@@ -1,5 +1,6 @@
 module Parun.Types.BecameTarget where
 
+import qualified Parun.Types.KeywordFamily as KeywordFamily
 import qualified Parun.Types.ObjectId as ObjectId
 import qualified Parun.Types.PlayerId as PlayerId
 import qualified Parun.Types.Recipient as Recipient
@@ -48,6 +49,11 @@ data BecameTarget = MkBecameTarget
     -- Countering.controller's reason: the targeting object can leave the stack
     -- before anything reads this, and re-deriving would then read control at the
     -- scan boundary rather than at the event.
-    controller :: PlayerId.PlayerId
+    controller :: PlayerId.PlayerId,
+    -- | CR 702.165a: the family of the keyword that represents `source`, for a
+    -- triggered ability a keyword of its source mints (Event.keywordOf);
+    -- Nothing for every other spell or ability. Captured at the event, for
+    -- `controller`'s reason.
+    keyword :: Maybe KeywordFamily.KeywordFamily
   }
   deriving (Eq, Ord, Show)
