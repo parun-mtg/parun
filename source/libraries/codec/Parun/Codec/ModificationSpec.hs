@@ -478,6 +478,13 @@ spec s = Spec.describe s "Parun.Codec.Modification" $ do
       codec
       Modification.LoyaltyIsToughness
       " {\"type\":\"LoyaltyIsToughness\"} "
+  -- CR 701.15b: Koloth, Tribble Hunter's "are goaded".
+  Spec.it s "Goaded" $
+    Common.assertCodec
+      s
+      codec
+      Modification.Goaded
+      " {\"type\":\"Goaded\"} "
   -- layer 6, CR 613.1f: a whole quoted activated ability, Presence of Gond's
   -- "{T}: Create a 1/1 green Elf Warrior creature token" reduced to its cost.
   Spec.it s "GainAbility" $

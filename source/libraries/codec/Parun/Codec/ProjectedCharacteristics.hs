@@ -34,6 +34,7 @@ import qualified Parun.Codec.LentKeyword as LentKeyword
 import qualified Parun.Codec.Loyalty as Loyalty
 import qualified Parun.Codec.ManaCost as ManaCost
 import qualified Parun.Codec.Modal as Modal
+import qualified Parun.Codec.PlayerId as PlayerId
 import qualified Parun.Codec.PlayerStaticAbility as PlayerStaticAbility
 import qualified Parun.Codec.PrintedReplacement as PrintedReplacement
 import qualified Parun.Codec.RuleAbilities as RuleAbilities
@@ -100,6 +101,7 @@ codec = Fields.object $ do
   combatDamageAmount <- Fields.defaulted "combatDamageAmount" Nothing (Common.maybe CombatDamageAmount.codec) PC.combatDamageAmount
   combatDamageOptions <- Fields.defaulted "combatDamageOptions" Map.empty (Common.keyedList (Common.keyValue CombatDamageOption.codec CombatDamageObligation.codec)) PC.combatDamageOptions
   controllerGrants <- Fields.defaulted "controllerGrants" Set.empty (Common.set ControllerGrant.codec) PC.controllerGrants
+  goadedBy <- Fields.defaulted "goadedBy" Set.empty (Common.set PlayerId.codec) PC.goadedBy
   tapCounts <- Fields.defaulted "tapCounts" Map.empty (Common.keyedList (Common.keyValue TapKeyword.codec (Common.list TapCount.codec))) PC.tapCounts
   loyaltyIsToughness <- Fields.defaulted "loyaltyIsToughness" False Common.boolean PC.loyaltyIsToughness
   additionalCosts <- Fields.defaulted "additionalCosts" [] (Common.list (CostComponent.codec Keyword.codec)) PC.additionalCosts
@@ -163,6 +165,7 @@ codec = Fields.object $ do
         PC.combatDamageAmount = combatDamageAmount,
         PC.combatDamageOptions = combatDamageOptions,
         PC.controllerGrants = controllerGrants,
+        PC.goadedBy = goadedBy,
         PC.tapCounts = tapCounts,
         PC.loyaltyIsToughness = loyaltyIsToughness,
         PC.additionalCosts = additionalCosts,

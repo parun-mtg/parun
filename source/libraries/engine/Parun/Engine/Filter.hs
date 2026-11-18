@@ -391,6 +391,9 @@ data View = MkView
     -- CR 506.7: did an effect require this candidate to attack as this combat
     -- phase's attackers were declared? Membership of Combat.hadToAttack.
     hadToAttackThisCombat :: Bool,
+    -- | CR 701.15b: is the candidate goaded? Object.goadedBy or PC.goadedBy
+    -- non-empty.
+    goaded :: Bool,
     -- CR 121.1, 701.17a: how this candidate left a library earlier this turn.
     -- LAZY for `declaredThisTurn`'s reason -- nothing forces it unless a Filter
     -- contains LeftLibraryThisTurn.
@@ -1150,6 +1153,7 @@ nobodyView =
       declaredAttackerThisCombat = False,
       declaredBlockerThisCombat = False,
       hadToAttackThisCombat = False,
+      goaded = False,
       -- CR 701.17a mills CARDS, and a player is not one.
       leftLibraryThisTurn = Set.empty,
       -- CR 120.1 lets a player BE dealt damage, so unlike the two fields above
@@ -2840,6 +2844,8 @@ matches context view predicate = case predicate of
   -- CR 506.7: the same record's requirement half, written as attackers were
   -- declared, so a goad applied since never makes it True.
   Filter.HadToAttackThisCombat -> hadToAttackThisCombat view
+  -- CR 701.15b: either carrier of the designation, as the view builder folds them.
+  Filter.IsGoaded -> goaded view
   -- CR 121.1, 701.17a: the same look-back, over how cards left a library. Like the
   -- atom above it cannot stop being true within a turn, and unlike it the
   -- candidate can stop EXISTING -- CR 400.7 mints a new object the moment the card
@@ -3542,6 +3548,7 @@ manaValueThresholds predicate = case predicate of
   Filter.DeclaredAttackedThisCombat _ -> []
   Filter.DeclaredBlockerThisCombat -> []
   Filter.HadToAttackThisCombat -> []
+  Filter.IsGoaded -> []
   Filter.LeftLibraryThisTurn _ -> []
   Filter.CantPayKeywordCost _ -> []
   Filter.DealtDamageThisTurn _ by _ -> foldMap manaValueThresholds by
@@ -3737,6 +3744,7 @@ statesAQuality predicate = case predicate of
   Filter.DeclaredAttackedThisCombat _ -> True
   Filter.DeclaredBlockerThisCombat -> True
   Filter.HadToAttackThisCombat -> True
+  Filter.IsGoaded -> True
   Filter.LeftLibraryThisTurn _ -> True
   Filter.CantPayKeywordCost _ -> True
   Filter.DealtDamageThisTurn {} -> True
@@ -3934,6 +3942,7 @@ readsSourceValues predicate = case predicate of
   Filter.DeclaredAttackedThisCombat _ -> False
   Filter.DeclaredBlockerThisCombat -> False
   Filter.HadToAttackThisCombat -> False
+  Filter.IsGoaded -> False
   Filter.LeftLibraryThisTurn _ -> False
   Filter.CantPayKeywordCost _ -> False
   Filter.DealtDamageThisTurn _ by _ -> any readsSourceValues by
@@ -4073,6 +4082,7 @@ talliesWhatHappened predicate = case predicate of
   Filter.DeclaredAttackedThisCombat {} -> False
   Filter.DeclaredBlockerThisCombat {} -> False
   Filter.HadToAttackThisCombat {} -> False
+  Filter.IsGoaded {} -> False
   Filter.LeftLibraryThisTurn {} -> False
   Filter.CantPayKeywordCost {} -> False
   -- Tymna the Weaver's ruling counts a player dealt combat damage who then

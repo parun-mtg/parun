@@ -654,6 +654,7 @@ filterChildren children predicate = case predicate of
   Filter.DeclaredAttackerThisCombat -> pure predicate
   Filter.DeclaredBlockerThisCombat -> pure predicate
   Filter.HadToAttackThisCombat -> pure predicate
+  Filter.IsGoaded -> pure predicate
   Filter.DeclaredThisTurn _ -> pure predicate
   Filter.CouldAttackThisTurn -> pure predicate
   Filter.LeftLibraryThisTurn _ -> pure predicate
@@ -3777,6 +3778,7 @@ modificationChildren c modification = case modification of
   Modification.GrantsController _ -> pure modification
   Modification.TapsCounting {} -> pure modification
   Modification.LoyaltyIsToughness -> pure modification
+  Modification.Goaded -> pure modification
   Modification.Intensify quantity -> Modification.Intensify <$> modificationQuantity c quantity
 
 -- | A combat restriction's children (CR 508.1c, 509.1b). Its name, limit,
