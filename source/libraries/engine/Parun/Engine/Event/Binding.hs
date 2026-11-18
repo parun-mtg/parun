@@ -123,6 +123,8 @@ import qualified Parun.Types.TappedForManaTrigger as TappedForManaTrigger
 import qualified Parun.Types.TappedPermanent as TappedPermanent
 import qualified Parun.Types.TappedToPay as TappedToPay
 import qualified Parun.Types.TargetedSubject as TargetedSubject
+import qualified Parun.Types.TransformTrigger as TransformTrigger
+import qualified Parun.Types.Transformed as Transformed
 import Parun.Types.TriggerCondition (TriggerCondition)
 import qualified Parun.Types.TriggerCondition as TriggerCondition
 import qualified Parun.Types.TriggerSource as TriggerSource
@@ -360,6 +362,11 @@ eventBindingsOver board gs bearerBecame becameInGraveyard bearer you cond event 
   (TriggerCondition.TurnedFaceUp trigger, GameEvent.TurnedFaceUp t) -> case TurnedFaceUpTrigger.permanent trigger of
     ActingPermanent.Self -> maybe Map.empty (\x -> Binding.fromChoices Map.empty (Just x) Seq.empty) (TurnedFaceUp.announcedX t)
     ActingPermanent.Matching _ -> Binding.setBecame (TurnedFaceUp.object t) Map.empty
+  -- CR 701.27f's "put a +1/+1 counter on it" (Norn's Inquisitor): the
+  -- permanent that transformed, a Matching TurnedFaceUp's slot for its reason.
+  -- A Self subject IS the bearer, which CR 113.7a's source slot names.
+  (TriggerCondition.Transforms (TransformTrigger.MkTransformTrigger (ActingPermanent.Matching _) _), GameEvent.Transformed t) ->
+    Binding.setBecame (Transformed.object t) Map.empty
   -- Foe-Razer Regent's "put two +1/+1 counters on it": the actor, CR 400.7e's
   -- slot as the printed word, the Matching TurnedFaceUp reading above. Per
   -- occurrence only: a OneOrMore batch's one slot would name one of several
@@ -1798,16 +1805,13 @@ eventBindingSlots cond = case cond of
     slots : rest -> List.foldl' Set.intersection slots rest
   TriggerCondition.CausedBy narrowed -> eventBindingSlots (CausedBy.condition narrowed)
   TriggerCondition.TurnedFaceUp trigger -> fst (turnedFaceUpSlots (TurnedFaceUpTrigger.permanent trigger))
-  -- A deliberate empty under either subject. A Self one for a Self
-  -- TurnedFaceUp's reason one step further on: CR 701.27f's event names the
-  -- permanent that transformed, which CR 113.7a's source slot already names,
-  -- and the face it turned into is a NAME rather than an object for a slot to
-  -- hold. A Matching one because a Matching TurnedFaceUp (turnedFaceUpSlots) is
-  -- where the difference would show if a card asked for one: Cult of the Waxing
-  -- Moon's payload names the permanent that turned over nowhere, so there is no
-  -- subject to claim a slot for. Norn's Inquisitor's "put a +1/+1 counter on
-  -- it" is what would take CR 400.7e's slot, exactly as Pine Walker does there.
-  TriggerCondition.Transforms _ -> Set.empty
+  -- A Self subject binds nothing: CR 701.27f's event names the permanent that
+  -- transformed, which CR 113.7a's source slot already names, and the face it
+  -- turned into is a NAME rather than an object for a slot to hold. A Matching
+  -- one binds the permanent (eventBindings' arm), Norn's Inquisitor's "it".
+  TriggerCondition.Transforms t -> case TransformTrigger.permanent t of
+    ActingPermanent.Self -> Set.empty
+    ActingPermanent.Matching _ -> Set.singleton Binding.became
   TriggerCondition.FaceDownPermanentLeavesRevealed -> Set.empty
   -- A deliberate empty: Valeron Wardens draws a card and names no "it", so there
   -- is no subject to claim a slot for. A Matching TurnedFaceUp
