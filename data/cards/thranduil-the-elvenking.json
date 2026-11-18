@@ -47,10 +47,22 @@
               "type": "GainCardAbilities",
               "value": {
                 "cards": {
-                  "type": "HasSubtype",
-                  "value": "Elf"
+                  "type": "And",
+                  "value": [
+                    {
+                      "type": "HasSubtype",
+                      "value": "Elf"
+                    },
+                    {
+                      "type": "HeldBy",
+                      "value": {
+                        "holder": "Owner",
+                        "relation": "You"
+                      }
+                    }
+                  ]
                 },
-                "from": "InYourGraveyard"
+                "from": "InGraveyards"
               }
             }
           ]
