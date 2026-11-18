@@ -15,7 +15,7 @@
         }
       ],
       "name": "Lt. Cmdr. Geordi La Forge",
-      "oracleText": "",
+      "oracleText": "If you would put one or more charge counters on an artifact you control, put twice that many charge counters on that artifact instead.",
       "power": {
         "type": "Literal",
         "value": 3
