@@ -1,0 +1,23 @@
+{
+  "description": "Lt. Arex, Ever-Adapting draws three cards as it enters and puts up to three land cards from hand onto the battlefield tapped; its power and toughness count differently named lands",
+  "note": "Forest, Island and Plains are in play; the draw brings Island, Hill Giant and Swamp. Alice puts in Mountain, Swamp and the drawn Island, leaving a Wastes: five names, the second Island repeating one.",
+  "board": {
+    "active": "alice",
+    "seats": [
+      {"name": "alice", "battlefield": [{"card": "Forest", "label": "f1"}, {"card": "Island", "label": "i1"}, {"card": "Plains", "label": "p1"}], "hand": [{"card": "Lt. Arex, Ever-Adapting", "label": "arex"}, {"card": "Mountain", "label": "mountain"}, {"card": "Wastes", "label": "wastes"}], "manaPool": "GUCCCC", "library": [{"card": "Island"}, {"card": "Hill Giant"}, {"card": "Swamp"}, {"card": "Plains"}, {"card": "Plains"}]},
+      {"name": "bob", "library": [{"card": "Serra Angel"}, {"card": "Serra Angel"}, {"card": "Serra Angel"}]}
+    ],
+    "step": "PrecombatMain"
+  },
+  "timeline": [
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": {"Cast": {"object": "$arex", "mana": ["$f1", null]}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": "Pass"},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": "Pass"},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": {"Answer": {"prompt": "ChooseCardsInHand", "with": ["$mountain", "Swamp", "Island#2"]}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": {"OrderTimestamps": ["Mountain", "Island#2", "Swamp"]}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"Tapped": {"object": "Mountain", "tapped": true}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"Count": {"card": "Wastes", "count": 1, "player": "alice", "zone": "Hand"}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"Count": {"card": "Hill Giant", "count": 1, "player": "alice", "zone": "Hand"}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"PowerToughness": {"object": "Lt. Arex, Ever-Adapting", "power": 5, "toughness": 5}}}
+  ]
+}

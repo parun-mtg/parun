@@ -1,0 +1,19 @@
+{
+  "description": "Locutus of Borg, with lifelink, gives each artifact creature its controller controls a Borg token whenever it deals combat damage to a player",
+  "note": "Locutus and Memnite are artifact creatures and each makes a Borg; Grizzly Bears does not. Locutus's 3 lifelink damage gains 3.",
+  "board": {
+    "active": "alice",
+    "seats": [
+      {"name": "alice", "battlefield": [{"card": "Locutus of Borg", "label": "locutus", "ready": true}, {"card": "Memnite", "label": "memnite", "ready": true}, {"card": "Grizzly Bears", "label": "bears", "ready": true}], "library": [{"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}]},
+      {"name": "bob", "library": [{"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}]}
+    ],
+    "step": "BeginningOfCombat"
+  },
+  "timeline": [
+    {"turn": 1, "step": "DeclareAttackers", "player": "alice", "do": {"Attack": ["$locutus", "$memnite", "$bears"]}},
+    {"turn": 1, "step": "CombatDamage", "player": "alice", "do": {"OrderTriggers": ["$locutus", "$memnite"]}},
+    {"turn": 1, "step": "EndOfCombat", "player": "alice", "check": {"Count": {"card": "Borg Token", "count": 2, "player": "alice", "zone": "Battlefield"}}},
+    {"turn": 1, "step": "EndOfCombat", "player": "alice", "check": {"Life": {"player": "alice", "life": 23}}},
+    {"turn": 1, "step": "EndOfCombat", "player": "alice", "check": {"Life": {"player": "bob", "life": 14}}}
+  ]
+}

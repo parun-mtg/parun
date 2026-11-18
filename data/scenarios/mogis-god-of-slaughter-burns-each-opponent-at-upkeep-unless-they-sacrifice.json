@@ -1,0 +1,26 @@
+{
+  "description": "CR 700.5: Mogis, God of Slaughter is a creature only at devotion seven to black and red, and at each opponent's upkeep deals 2 damage to that player unless they sacrifice a creature",
+  "note": "Mogis, Gray Merchant and two Raging Goblins make six black and red symbols, and the Bears' green one is not counted; a third Goblin makes seven. Bob keeps his Bears and takes 2; carol sacrifices hers and takes none. Alice's own upkeep is not an opponent's.",
+  "board": {
+    "active": "alice",
+    "seats": [
+      {"name": "alice", "battlefield": [{"card": "Mogis, God of Slaughter", "label": "mogis"}, {"card": "Gray Merchant of Asphodel"}, {"card": "Raging Goblin"}, {"card": "Raging Goblin"}, {"card": "Grizzly Bears"}], "hand": [{"card": "Raging Goblin", "label": "third"}], "manaPool": "R", "library": [{"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}]},
+      {"name": "bob", "battlefield": [{"card": "Grizzly Bears", "label": "bobbears"}], "library": [{"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}]},
+      {"name": "carol", "battlefield": [{"card": "Grizzly Bears", "label": "carolbears"}], "library": [{"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}]}
+    ],
+    "step": "PrecombatMain"
+  },
+  "timeline": [
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"Types": {"object": "$mogis", "types": ["Enchantment"]}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": {"Cast": {"object": "$third"}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": "Pass"},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"Types": {"object": "$mogis", "types": ["Creature", "Enchantment"]}}},
+    {"turn": 1, "step": "DeclareAttackers", "player": "alice", "do": {"Attack": []}},
+    {"turn": 2, "step": "Upkeep", "player": "bob", "do": {"ChooseToPay": {"decision": "Declines"}}},
+    {"turn": 2, "step": "Upkeep", "player": "bob", "check": {"Life": {"player": "bob", "life": 18}}},
+    {"turn": 2, "step": "DeclareAttackers", "player": "bob", "do": {"Attack": []}},
+    {"turn": 3, "step": "Upkeep", "player": "carol", "do": {"ChooseToPay": {"decision": "Pays"}}},
+    {"turn": 3, "step": "Upkeep", "player": "carol", "check": {"Life": {"player": "carol", "life": 20}}},
+    {"turn": 3, "step": "Upkeep", "player": "carol", "check": {"Count": {"card": "Grizzly Bears", "count": 1, "player": "carol", "zone": "Graveyard"}}}
+  ]
+}

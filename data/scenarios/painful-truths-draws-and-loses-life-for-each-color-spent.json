@@ -1,0 +1,18 @@
+{
+  "description": "Painful Truths, paid with black, red and blue, draws three cards and loses 3 life",
+  "note": "Three colors of mana pay its three-unit cost, so X is 3; a count of mana units would also say 3, so the pool is all colored and distinct.",
+  "board": {
+    "active": "alice",
+    "seats": [
+      {"name": "alice", "hand": [{"card": "Painful Truths", "label": "truths"}], "manaPool": "BRU", "library": [{"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}]},
+      {"name": "bob", "library": [{"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}]}
+    ],
+    "step": "PrecombatMain"
+  },
+  "timeline": [
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": {"Cast": {"object": "$truths"}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": "Pass"},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"Count": {"card": "Island", "count": 3, "player": "alice", "zone": "Hand"}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"Life": {"player": "alice", "life": 17}}}
+  ]
+}

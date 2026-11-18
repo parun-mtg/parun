@@ -1,0 +1,24 @@
+{
+  "description": "CR 701.44a: Lieutenant Hikaru Sulu explores when it becomes tapped, and {2}{U} makes target creature unblockable this turn",
+  "note": "Attacking taps Sulu; the revealed Hill Giant is no land, so Sulu gets a counter and the Giant goes to the graveyard. Then Sulu targets itself and bob, whose ready Bears could otherwise block, is asked for no block.",
+  "board": {
+    "active": "alice",
+    "seats": [
+      {"name": "alice", "battlefield": [{"card": "Lieutenant Hikaru Sulu", "label": "sulu", "ready": true}, {"card": "Island", "label": "i1"}, {"card": "Island", "label": "i2"}, {"card": "Island", "label": "i3"}], "library": [{"card": "Hill Giant"}, {"card": "Plains"}, {"card": "Plains"}, {"card": "Plains"}]},
+      {"name": "bob", "battlefield": [{"card": "Grizzly Bears", "label": "bears", "ready": true}], "library": [{"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}]}
+    ],
+    "step": "BeginningOfCombat"
+  },
+  "timeline": [
+    {"turn": 1, "step": "DeclareAttackers", "player": "alice", "do": {"Attack": ["$sulu"]}},
+    {"turn": 1, "step": "DeclareAttackers", "player": "alice", "check": {"View": {"of": "Stack", "is": ["trigger of $sulu"]}}},
+    {"turn": 1, "step": "DeclareAttackers", "player": "alice", "do": "Pass"},
+    {"turn": 1, "step": "DeclareAttackers", "player": "alice", "do": {"Answer": {"prompt": "ChooseExplore", "with": "Exercises"}}},
+    {"turn": 1, "step": "DeclareAttackers", "player": "alice", "check": {"Counters": {"object": "$sulu", "kind": {"type": "PlusOnePlusOne"}, "count": 1}}},
+    {"turn": 1, "step": "DeclareAttackers", "player": "alice", "check": {"Count": {"card": "Hill Giant", "count": 1, "player": "alice", "zone": "Graveyard"}}},
+    {"turn": 1, "step": "DeclareAttackers", "player": "alice", "do": {"Activate": {"object": "$sulu", "targets": ["$sulu"], "mana": ["$i1", "$i2", "$i3"]}}},
+    {"turn": 1, "step": "DeclareAttackers", "player": "alice", "do": "Pass"},
+    {"turn": 1, "step": "EndOfCombat", "player": "alice", "check": {"Blockers": {"attacker": "$sulu", "blockers": null}}},
+    {"turn": 1, "step": "EndOfCombat", "player": "alice", "check": {"Life": {"player": "bob", "life": 16}}}
+  ]
+}

@@ -1,0 +1,27 @@
+{
+  "description": "CR 701.23a: Perilous Landscape sacrifices to put a basic Island, Mountain or Plains card onto the battlefield tapped, and cycles for {U}{R}{W}",
+  "note": "The Swamp and Forest are basic but none of the three types; neither is offered. The Mountain enters tapped. Cycling then draws the card the shuffle put on top, Hill Giant.",
+  "board": {
+    "active": "alice",
+    "seats": [
+      {"name": "alice", "battlefield": [{"card": "Perilous Landscape", "label": "fetch"}, {"card": "Island", "label": "i1"}, {"card": "Mountain", "label": "m1"}, {"card": "Plains", "label": "p1"}], "hand": [{"card": "Perilous Landscape", "label": "cycled"}], "library": [{"card": "Swamp", "label": "swamp"}, {"card": "Forest", "label": "forest"}, {"card": "Mountain", "label": "mountain"}, {"card": "Hill Giant", "label": "hg"}, {"card": "Serra Angel"}, {"card": "Llanowar Elves"}]},
+      {"name": "bob", "library": [{"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}]}
+    ],
+    "step": "PrecombatMain"
+  },
+  "timeline": [
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": {"Activate": {"object": "$fetch", "ability": 1}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": "Pass"},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "refuse": {"Answer": {"prompt": "Search", "with": ["$swamp"]}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "refuse": {"Answer": {"prompt": "Search", "with": ["$forest"]}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": {"Answer": {"prompt": "Search", "with": ["$mountain"]}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": {"Answer": {"prompt": "Shuffle", "with": ["$hg", "$swamp", "$forest", "Serra Angel", "Llanowar Elves"]}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"Tapped": {"object": "$m1", "tapped": false}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"Tapped": {"object": "Mountain#2", "tapped": true}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"Count": {"card": "Perilous Landscape", "count": 1, "player": "alice", "zone": "Graveyard"}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": {"Activate": {"object": "$cycled", "mana": ["$i1", "$m1", "$p1"]}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": "Pass"},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"Count": {"card": "Perilous Landscape", "count": 2, "player": "alice", "zone": "Graveyard"}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"Count": {"card": "Hill Giant", "count": 1, "player": "alice", "zone": "Hand"}}}
+  ]
+}

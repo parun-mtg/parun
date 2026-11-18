@@ -1,0 +1,30 @@
+{
+  "description": "Mikaeus, the Lunarch enters with X +1/+1 counters, removes one to put one on each other creature its controller controls, and taps to put one on itself",
+  "note": "Cast with X 3 on turn 1; on turn 3 the removal ability counters the Bears but not Mikaeus or bob's Hill Giant; on turn 5 the tap ability counters only Mikaeus.",
+  "board": {
+    "active": "alice",
+    "seats": [
+      {"name": "alice", "battlefield": [{"card": "Grizzly Bears", "label": "bears"}], "hand": [{"card": "Mikaeus, the Lunarch", "label": "mikaeus"}], "manaPool": "WWWW", "library": [{"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}]},
+      {"name": "bob", "battlefield": [{"card": "Hill Giant", "label": "giant"}], "library": [{"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}]}
+    ],
+    "step": "PrecombatMain"
+  },
+  "timeline": [
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": {"Cast": {"object": "$mikaeus", "x": 3}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": "Pass"},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"Counters": {"object": "Mikaeus, the Lunarch", "kind": {"type": "PlusOnePlusOne"}, "count": 3}}},
+    {"turn": 2, "step": "DeclareAttackers", "player": "bob", "do": {"Attack": []}},
+    {"turn": 4, "step": "DeclareAttackers", "player": "bob", "do": {"Attack": []}},
+    {"turn": 3, "step": "DeclareAttackers", "player": "alice", "do": {"Attack": []}},
+    {"turn": 3, "step": "PrecombatMain", "player": "alice", "do": {"Activate": {"object": "Mikaeus, the Lunarch", "ability": 1, "costOrder": [0, 1]}}},
+    {"turn": 3, "step": "PrecombatMain", "player": "alice", "check": {"Counters": {"object": "Mikaeus, the Lunarch", "kind": {"type": "PlusOnePlusOne"}, "count": 2}}},
+    {"turn": 3, "step": "PrecombatMain", "player": "alice", "do": "Pass"},
+    {"turn": 3, "step": "PrecombatMain", "player": "alice", "check": {"Counters": {"object": "$bears", "kind": {"type": "PlusOnePlusOne"}, "count": 1}}},
+    {"turn": 3, "step": "PrecombatMain", "player": "alice", "check": {"Counters": {"object": "Mikaeus, the Lunarch", "kind": {"type": "PlusOnePlusOne"}, "count": 2}}},
+    {"turn": 3, "step": "PrecombatMain", "player": "alice", "check": {"Counters": {"object": "$giant", "kind": {"type": "PlusOnePlusOne"}, "count": 0}}},
+    {"turn": 5, "step": "PrecombatMain", "player": "alice", "do": {"Activate": {"object": "Mikaeus, the Lunarch", "ability": 0}}},
+    {"turn": 5, "step": "PrecombatMain", "player": "alice", "do": "Pass"},
+    {"turn": 5, "step": "PrecombatMain", "player": "alice", "check": {"Counters": {"object": "Mikaeus, the Lunarch", "kind": {"type": "PlusOnePlusOne"}, "count": 3}}},
+    {"turn": 5, "step": "PrecombatMain", "player": "alice", "check": {"Counters": {"object": "$bears", "kind": {"type": "PlusOnePlusOne"}, "count": 1}}}
+  ]
+}

@@ -1,0 +1,27 @@
+{
+  "description": "Lieutenant Nyota Uhura exiles the top X cards of target opponent's library, X the number of differently named lands its controller controls, casts an instant or sorcery among them free, and bottoms the rest",
+  "note": "Four differently named lands (the second Island repeats a name) make X 4: Lightning Bolt, Grizzly Bears, Divination and Forest are exiled, the Plains below are not. Bolt is cast at bob; the other three go to the bottom of carol's library, not Bolt, which is in her graveyard.",
+  "board": {
+    "active": "alice",
+    "seats": [
+      {"name": "alice", "battlefield": [{"card": "Lieutenant Nyota Uhura", "label": "uhura", "ready": true}, {"card": "Island", "label": "i1"}, {"card": "Island", "label": "i2"}, {"card": "Mountain", "label": "m1"}, {"card": "Forest", "label": "f1"}, {"card": "Swamp", "label": "s1"}], "library": [{"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}]},
+      {"name": "bob", "library": [{"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}]},
+      {"name": "carol", "library": [{"card": "Lightning Bolt"}, {"card": "Grizzly Bears"}, {"card": "Divination"}, {"card": "Forest"}, {"card": "Plains"}, {"card": "Plains"}]}
+    ],
+    "step": "PrecombatMain"
+  },
+  "timeline": [
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": {"Activate": {"object": "$uhura", "targets": ["$carol"], "mana": ["$i1", "$i2", "$m1", "$f1", null]}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": "Pass"},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": {"Answer": {"prompt": "OfferedCast", "with": "Exercises"}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": {"Answer": {"prompt": "ChooseOfferedCastSpell", "with": ["Lightning Bolt", "Lightning Bolt"]}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": {"ChooseTargets": {"target": ["$bob"]}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": {"Answer": {"prompt": "Shuffle", "with": ["Divination", "Forest#2", "Grizzly Bears"]}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": "Pass"},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"Life": {"player": "bob", "life": 17}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"Count": {"card": "Lightning Bolt", "count": 1, "player": "carol", "zone": "Graveyard"}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"View": {"of": "Zone", "player": "carol", "zone": "Exile", "is": []}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"Count": {"card": "Lightning Bolt", "count": 0, "player": "carol", "zone": "Library"}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"View": {"of": "Zone", "player": "carol", "zone": "Library", "is": ["Plains", "Plains#2", "Grizzly Bears", "Forest#2", "Divination"]}}}
+  ]
+}
