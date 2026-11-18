@@ -1459,11 +1459,13 @@ conjureCardsChildren c cards = case cards of
   ConjureCards.Duplicate ref -> fmap ConjureCards.Duplicate (onObjectRef c ref)
   ConjureCards.Reference (FromReference.MkFromReference predicate amount) -> fmap ConjureCards.Reference (FromReference.MkFromReference <$> onFilter c predicate <*> traverse (onQuantity c) amount)
 
--- | A copy's original: the object it is read off, or a name (CR 707.2).
-copyOriginalChildren :: (Applicative f) => EffectChildren card ability f -> CopyOriginal.CopyOriginal -> f CopyOriginal.CopyOriginal
+-- | A copy's original: the object it is read off, a name, or a card the effect
+-- defines (CR 707.2).
+copyOriginalChildren :: (Applicative f) => EffectChildren card ability f -> CopyOriginal.CopyOriginal card -> f (CopyOriginal.CopyOriginal card)
 copyOriginalChildren c original = case original of
   CopyOriginal.OfObject ref -> fmap CopyOriginal.OfObject (onObjectRef c ref)
-  CopyOriginal.Named _ -> pure original
+  CopyOriginal.Named name -> pure (CopyOriginal.Named name)
+  CopyOriginal.Defined card -> fmap CopyOriginal.Defined (onCard c card)
 
 -- | A stack copy's targets: CR 707.10d's candidates, where a ref names them.
 copyTargetsChildren :: (Applicative f) => EffectChildren card ability f -> CopyTargets.CopyTargets -> f CopyTargets.CopyTargets

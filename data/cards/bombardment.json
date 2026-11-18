@@ -1,0 +1,113 @@
+{
+  "faces": [
+    {
+      "manaCost": [
+        {
+          "type": "OfType",
+          "value": {
+            "type": "Colored",
+            "value": "Red"
+          }
+        }
+      ],
+      "name": "Bombardment",
+      "oracleText": "Until end of turn, cards you own that aren't on the battlefield lose all card types, costs, names, and abilities and become red sorceries named Missile that cost {R} with \"Missile deals 2 damage to any target.\"",
+      "spell": {
+        "modes": [
+          {
+            "clauses": [
+              {
+                "effects": [
+                  {
+                    "type": "BecomeCopy",
+                    "value": {
+                      "duration": {
+                        "type": "UntilEndOfTurn"
+                      },
+                      "original": {
+                        "type": "Defined",
+                        "value": {
+                          "faces": [
+                            {
+                              "manaCost": [
+                                {
+                                  "type": "OfType",
+                                  "value": {
+                                    "type": "Colored",
+                                    "value": "Red"
+                                  }
+                                }
+                              ],
+                              "name": "Missile",
+                              "oracleText": "Missile deals 2 damage to any target.",
+                              "spell": {
+                                "modes": [
+                                  {
+                                    "clauses": [
+                                      {
+                                        "effects": [
+                                          {
+                                            "type": "DealDamage",
+                                            "value": {
+                                              "parts": [
+                                                {
+                                                  "quantity": {
+                                                    "type": "Literal",
+                                                    "value": 2
+                                                  },
+                                                  "ref": {
+                                                    "type": "InSlot",
+                                                    "value": "target"
+                                                  }
+                                                }
+                                              ]
+                                            }
+                                          }
+                                        ]
+                                      }
+                                    ],
+                                    "targetSlots": {
+                                      "target": {
+                                        "pool": {
+                                          "type": "AnyTarget"
+                                        }
+                                      }
+                                    }
+                                  }
+                                ]
+                              },
+                              "typeLine": {
+                                "types": [
+                                  "Sorcery"
+                                ]
+                              }
+                            }
+                          ]
+                        }
+                      },
+                      "subject": {
+                        "type": "EachCardYouOwn",
+                        "value": {
+                          "type": "Not",
+                          "value": {
+                            "type": "IsInZone",
+                            "value": "Battlefield"
+                          }
+                        }
+                      }
+                    }
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "typeLine": {
+        "types": [
+          "Sorcery"
+        ]
+      }
+    }
+  ]
+}

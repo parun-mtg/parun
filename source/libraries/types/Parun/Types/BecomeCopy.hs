@@ -26,6 +26,9 @@ import qualified Parun.Types.ObjectRef as ObjectRef
 -- `bindings` on the move, and Parun.Engine.Cast stamps the stack incarnation a
 -- fresh binding map besides.
 --
+-- Not implemented: Bombardment's rulings that a card cast as its Missile stays
+-- one (#8554) and that a Missile keeps its own supertypes (#8555).
+--
 -- A SPELL on the stack is the third noun in CR 707.1's list: it resolves the
 -- copied text (Parun.Engine.Projection.View.spellFaceOf) with the original's
 -- choices (CR 707.2, Parun.Engine.Resolve.Common.acquireChoices), which Synthetic
@@ -54,8 +57,8 @@ import qualified Parun.Types.ObjectRef as ObjectRef
 -- Parun.Engine.Projection.View.stampedSnapshotOf layers over the stamp -- so CR
 -- 707.3 holds on both roads and only the stored one can end. A stamp made while
 -- a row stands takes its subject out of the row (CR 613.7).
-data BecomeCopy ability = MkBecomeCopy
-  { original :: CopyOriginal.CopyOriginal,
+data BecomeCopy card ability = MkBecomeCopy
+  { original :: CopyOriginal.CopyOriginal card,
     subject :: ObjectRef.ObjectRef,
     -- | CR 611.2a: how long the copy lasts, absent on a card that states no
     -- duration.

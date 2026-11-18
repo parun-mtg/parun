@@ -148,6 +148,7 @@ import qualified Parun.Types.PlayerRelation as PlayerRelation
 import qualified Parun.Types.PreventAllDamage as PreventAllDamage
 import qualified Parun.Types.PreventNextDamage as PreventNextDamage
 import qualified Parun.Types.PreventionRider as PreventionRider
+import qualified Parun.Types.Printing as Printing
 import qualified Parun.Types.Prohibit as Prohibit
 import qualified Parun.Types.ProjectedCharacteristics as PC
 import qualified Parun.Types.Prompt as Prompt
@@ -525,12 +526,14 @@ createCopy settle resolving source controller legal chosen (CreateCopy.MkCreateC
   Monad.when linked (State.modify' (\g -> foldr (Common.linkEntrant resolving source) g minted))
   Common.bindObjects resolving mSlot minted
 
-becomeCopy :: ObjectId -> ObjectId -> PlayerId -> Map.Map SlotName (Set Recipient) -> Map.Map SlotName (Set Recipient) -> BecomeCopy.BecomeCopy (GrantedAbility.GrantedAbility Card.Type.Card) -> Game ()
+becomeCopy :: ObjectId -> ObjectId -> PlayerId -> Map.Map SlotName (Set Recipient) -> Map.Map SlotName (Set Recipient) -> BecomeCopy.BecomeCopy Card.Type.Card (GrantedAbility.GrantedAbility Card.Type.Card) -> Game ()
 becomeCopy resolving source controller legal chosen (BecomeCopy.MkBecomeCopy original subjectRef duration exceptions newTargets) = do
   -- CR 108.1: a NAMED original is the card the Oracle reference gives the
-  -- name, looked up before the board below is read.
+  -- name, looked up before the board below is read. A DEFINED one is the
+  -- effect's own card, interned as a token's is (Event.createTokens).
   named <- case original of
     CopyOriginal.Named name -> Game.lookUpCard name
+    CopyOriginal.Defined card -> fmap Just (State.state (Game.intern (Printing.ofCard card)))
     CopyOriginal.OfObject _ -> pure Nothing
   -- Asked before the board is read (CR 608.2d), createCopy's reason: Volatile
   -- Chimera's "choose a card at random". The scenario
@@ -539,16 +542,19 @@ becomeCopy resolving source controller legal chosen (BecomeCopy.MkBecomeCopy ori
   originals <- case original of
     CopyOriginal.OfObject ref -> Common.askingObjects Common.LastKnown resolving source controller legal chosen ref
     CopyOriginal.Named _ -> pure []
+    CopyOriginal.Defined _ -> pure []
   let onStackIn g oid = List.find ((== Zone.Stack) . Object.zone) (Game.lookupObject oid g)
       -- The copiable values, and the original's stack incarnation whose
-      -- choices CR 707.2 hands on. A named card's are read off a
+      -- choices CR 707.2 hands on. A named or defined card's are read off a
       -- counterfactual board holding it (Event.mintOutside), which is
       -- thrown away with the read; it is on no stack, so it hands on none.
+      outside gs = fmap (\printingId -> let (oid, board) = Event.mintOutside controller printingId gs in (Event.copiedSnapshot oid board, Nothing)) named
       copiedOriginal gs = case original of
         CopyOriginal.OfObject _ -> case originals of
           [oid] -> Just (Event.copiedSnapshotWithLastKnown oid gs, onStackIn gs oid)
           _ -> Nothing
-        CopyOriginal.Named _ -> fmap (\printingId -> let (oid, board) = Event.mintOutside controller printingId gs in (Event.copiedSnapshot oid board, Nothing)) named
+        CopyOriginal.Named _ -> outside gs
+        CopyOriginal.Defined _ -> outside gs
   before <- State.get
   State.modify' $ \gs ->
     -- CR 707.1: each named subject becomes a copy of the named original, in

@@ -21,7 +21,7 @@ spec s = Spec.describe s "Parun.Codec.BecomeCopy" $ do
   Spec.it s "MkBecomeCopy, both keys" $
     Common.assertCodec
       s
-      (BecomeCopy.codec Common.text)
+      (BecomeCopy.codec Common.text Common.text)
       ( BecomeCopy.MkBecomeCopy
           { BecomeCopy.original = CopyOriginal.OfObject (ObjectRef.InSlot (SlotName.MkSlotName (Text.pack "became"))),
             BecomeCopy.subject = ObjectRef.EachMatching Filter.IsSource,
@@ -37,7 +37,7 @@ spec s = Spec.describe s "Parun.Codec.BecomeCopy" $ do
   Spec.it s "MkBecomeCopy, with an exception" $
     Common.assertCodec
       s
-      (BecomeCopy.codec Common.text)
+      (BecomeCopy.codec Common.text Common.text)
       ( BecomeCopy.MkBecomeCopy
           { BecomeCopy.original = CopyOriginal.OfObject (ObjectRef.InSlot (SlotName.MkSlotName (Text.pack "became"))),
             BecomeCopy.subject = ObjectRef.EachMatching Filter.IsSource,
@@ -53,7 +53,7 @@ spec s = Spec.describe s "Parun.Codec.BecomeCopy" $ do
   Spec.it s "MkBecomeCopy, with a duration" $
     Common.assertCodec
       s
-      (BecomeCopy.codec Common.text)
+      (BecomeCopy.codec Common.text Common.text)
       ( BecomeCopy.MkBecomeCopy
           { BecomeCopy.original = CopyOriginal.OfObject (ObjectRef.InSlot (SlotName.MkSlotName (Text.pack "copied"))),
             BecomeCopy.subject = ObjectRef.EachMatching Filter.IsSource,
@@ -63,4 +63,4 @@ spec s = Spec.describe s "Parun.Codec.BecomeCopy" $ do
           }
       )
       " {\"duration\":{\"type\":\"UntilEndOfTurn\"},\"original\":{\"type\":\"OfObject\",\"value\":{\"type\":\"InSlot\",\"value\":\"copied\"}},\"subject\":{\"type\":\"EachMatching\",\"value\":{\"type\":\"IsSource\"}}} "
-  Spec.it s "has a schema" $ Common.assertHasSchema s (BecomeCopy.codec Common.text)
+  Spec.it s "has a schema" $ Common.assertHasSchema s (BecomeCopy.codec Common.text Common.text)
