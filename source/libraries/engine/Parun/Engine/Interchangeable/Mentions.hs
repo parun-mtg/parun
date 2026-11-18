@@ -70,7 +70,6 @@ import qualified Parun.Types.ActiveLaterPayment as ActiveLaterPayment
 import qualified Parun.Types.ActiveReplacement as ActiveReplacement
 import qualified Parun.Types.Affected as Affected
 import qualified Parun.Types.AffectedPlayers as AffectedPlayers
-import qualified Parun.Types.AimedAt as AimedAt
 import qualified Parun.Types.AimedPlayers as AimedPlayers
 import qualified Parun.Types.AlternativeCost as AlternativeCost
 import qualified Parun.Types.AsCopy as AsCopy
@@ -373,10 +372,6 @@ affectedPlayersNames :: (Monoid r) => Asking r -> (player -> r) -> AffectedPlaye
 affectedPlayersNames _asking onPlayer x = case x of
   AffectedPlayers.Scoped _playerScope -> mempty
   AffectedPlayers.Named player -> onPlayer player
-
-aimedAtNames :: (Monoid r) => Asking r -> AimedAt.AimedAt -> r
-aimedAtNames asking x = case x of
-  AimedAt.MkAimedAt defenders _kinds -> aimedPlayersNames asking defenders
 
 aimedPlayersNames :: (Monoid r) => Asking r -> AimedPlayers.AimedPlayers -> r
 aimedPlayersNames asking x = case x of
@@ -702,7 +697,7 @@ effectNames asking onCard onAbility =
           Children.onAffectedPlayers = Const.Const . affectedPlayersNames asking (slotNames asking),
           Children.onOnset = Const.Const . onsetNames asking,
           Children.onMoveDuration = Const.Const . moveDurationNames asking,
-          Children.onAimedAt = Const.Const . aimedAtNames asking,
+          Children.onAimedPlayers = Const.Const . aimedPlayersNames asking,
           Children.onChosenPermanents = Const.Const . chosenPermanentsNames asking,
           -- A subtype names no object and reads no history.
           Children.onSubtype = const (Const.Const mempty)

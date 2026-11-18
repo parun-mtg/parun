@@ -715,7 +715,10 @@ attackCeiling candidates gs =
 --     defending player is not enough on its own -- Game.attackTargetKind is the other
 --     half of the key. Blazing Archon writes OfPlayer alone, which is why a
 --     planeswalker its controller controls stays attackable under it, and what
---     tells that restriction from a blanket "can't attack".
+--     tells that restriction from a blanket "can't attack". A stored one
+--     naming a permanents filter (Jace, Multiverse Architect's "Jaces you
+--     control") is keyed by the permanent instead
+--     (CombatRestriction.cantAttackPermanent).
 --   * The GATED one (Armored Galleon, "can't attack unless defending player
 --     controls an Island") names the DEFENDING PLAYER of the announcement and
 --     nothing more, which CR 508.5 and CR 802.2a read off the planeswalker's
@@ -745,6 +748,10 @@ barredAnnouncements candidates gs =
         AttackTarget.OfBattle oid -> Just oid
       unattackable = CombatRestriction.cantBeAttacked [(oid, d) | target <- targets, Just oid <- [permanentOf target], Just d <- [targetDefender target gs]] gs
       unattackableAt target = Maybe.maybe False (`Set.member` unattackable) (permanentOf target)
+      -- CR 508.1c: an announcement naming a permanent a stored restriction
+      -- bars by a filter (Jace, Multiverse Architect's "Jaces you control").
+      aimedPermanents = CombatRestriction.cantAttackPermanent candidates [(oid, d, Game.attackTargetKind target) | target <- targets, Just oid <- [permanentOf target], Just d <- [targetDefender target gs]] gs
+      aimedPermanentAt oid target = Maybe.maybe False (\p -> Set.member (oid, p) aimedPermanents) (permanentOf target)
       -- CR 302.6 / 702.3b through CR 508.1b: a creature canAttackGiven admitted
       -- on a waiver bound to what it attacks (Frenzied Saddlebrute's "your
       -- opponents and planeswalkers your opponents control") is barred from
@@ -766,7 +773,7 @@ barredAnnouncements candidates gs =
         ( do
             oid <- candidates
             target <- targets
-            Monad.guard (aimedAt oid target || gatedAt oid target || unattackableAt target || outOfReach oid target)
+            Monad.guard (aimedAt oid target || aimedPermanentAt oid target || gatedAt oid target || unattackableAt target || outOfReach oid target)
             pure (oid, target)
         )
 

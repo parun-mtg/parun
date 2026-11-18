@@ -551,18 +551,21 @@ objectProhibitionNames oid row = case row of
   ActiveObjectProhibition.MkActiveObjectProhibition source _controller _timestamp expiry _what affected ->
     source == oid || Monoid.getAny (Mentions.expiryNames (unread oid) expiry) || restrictedNames oid affected
 
--- AimedAt names players and target kinds, never an object.
+-- AimedAt names players and target kinds, and objects only through its
+-- permanents filter.
 attackProhibitionNames :: ObjectId -> ActiveAttackProhibition.ActiveAttackProhibition -> Bool
 attackProhibitionNames oid row = case row of
   ActiveAttackProhibition.MkActiveAttackProhibition source _controller _timestamp expiry affected aimedAt ->
-    source == oid || Monoid.getAny (Mentions.expiryNames (unread oid) expiry) || restrictedNames oid affected || maybe False aimedAtNames aimedAt
+    source == oid || Monoid.getAny (Mentions.expiryNames (unread oid) expiry) || restrictedNames oid affected || maybe False (aimedAtNames oid) aimedAt
 
-aimedAtNames :: AimedAt.AimedAt -> Bool
-aimedAtNames aimed = case aimed of
-  AimedAt.MkAimedAt defenders _kinds -> case defenders of
-    AimedPlayers.Scoped _scope -> False
-    AimedPlayers.EachInSlot _slot -> False
-    AimedPlayers.BoundPlayer _player -> False
+aimedAtNames :: ObjectId -> AimedAt.AimedAt -> Bool
+aimedAtNames oid aimed = case aimed of
+  AimedAt.MkAimedAt defenders _kinds permanents ->
+    let players = case defenders of
+          AimedPlayers.Scoped _scope -> False
+          AimedPlayers.EachInSlot _slot -> False
+          AimedPlayers.BoundPlayer _player -> False
+     in players || any (Monoid.getAny . Mentions.filterNames (unread oid)) permanents
 
 evasionNames :: ObjectId -> ActiveEvasion.ActiveEvasion -> Bool
 evasionNames oid row = case row of

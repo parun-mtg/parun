@@ -1,0 +1,118 @@
+{
+  "board": {
+    "active": "bob",
+    "seats": [
+      {
+        "battlefield": [
+          {
+            "card": "Jace, Multiverse Architect",
+            "counters": [
+              {
+                "key": {
+                  "type": "Loyalty"
+                },
+                "value": 4
+              }
+            ],
+            "label": "architect"
+          }
+        ],
+        "name": "alice"
+      },
+      {
+        "battlefield": [
+          {
+            "card": "Goblin Piker",
+            "label": "piker",
+            "ready": true
+          },
+          {
+            "card": "Wastes",
+            "label": "w1"
+          },
+          {
+            "card": "Wastes",
+            "label": "w2"
+          }
+        ],
+        "name": "bob"
+      },
+      {
+        "name": "carol"
+      }
+    ],
+    "step": "PrecombatMain"
+  },
+  "description": "CR 508.1c: bob pays {2} to Jace, Multiverse Architect's trigger, so his Piker may attack the Architect",
+  "timeline": [
+    {
+      "do": {
+        "ChooseToPay": {
+          "decision": "Pays",
+          "mana": [
+            "$w1",
+            "$w2"
+          ]
+        }
+      },
+      "player": "bob",
+      "step": "BeginningOfCombat",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Tapped": {
+          "object": "$w2",
+          "tapped": true
+        }
+      },
+      "player": "bob",
+      "step": "BeginningOfCombat",
+      "turn": 1
+    },
+    {
+      "do": {
+        "Attack": [
+          "$piker"
+        ]
+      },
+      "player": "bob",
+      "step": "DeclareAttackers",
+      "turn": 1
+    },
+    {
+      "do": {
+        "ChooseAttackTarget": "$architect"
+      },
+      "player": "bob",
+      "step": "DeclareAttackers",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Attackers": {
+          "attackers": {
+            "$piker": "$architect"
+          }
+        }
+      },
+      "player": "bob",
+      "step": "DeclareAttackers",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Counters": {
+          "count": 2,
+          "kind": {
+            "type": "Loyalty"
+          },
+          "object": "$architect"
+        }
+      },
+      "player": "bob",
+      "step": "EndOfCombat",
+      "turn": 1
+    }
+  ]
+}

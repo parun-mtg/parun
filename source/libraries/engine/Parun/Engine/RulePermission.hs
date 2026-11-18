@@ -75,7 +75,10 @@ waivers candidates gs =
       -- slot names nobody, a static ability having no resolution to fill one.
       reach source permission = case RulePermission.against permission of
         Nothing -> Nothing
-        Just (AimedAt.MkAimedAt defenders kinds) ->
+        -- Unprinted: a permanents filter on a waiver would need a reach
+        -- keyed by permanent; Parun.FilterPositionLintSpec's "CR 508.1c no
+        -- card writes a permanents filter on a rule permission" keeps it out.
+        Just (AimedAt.MkAimedAt defenders kinds _) ->
           let players = case (defenders, Projection.controllerOf source gs) of
                 (AimedPlayers.Scoped scope, Just you) -> filter (\pid -> PlayerEffect.inScopeWithin (Just source) (Just you) pid you gs scope) (GameState.seating gs)
                 (AimedPlayers.BoundPlayer bound, _) -> [bound]

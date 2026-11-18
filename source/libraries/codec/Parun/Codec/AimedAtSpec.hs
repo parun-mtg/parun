@@ -7,8 +7,10 @@ import qualified Parun.Spec as Spec
 import qualified Parun.Types.AimedAt as AimedAt
 import qualified Parun.Types.AimedPlayers as AimedPlayers
 import qualified Parun.Types.AttackTargetKind as AttackTargetKind
+import qualified Parun.Types.Filter as Filter
 import qualified Parun.Types.PlayerRelation as PlayerRelation
 import qualified Parun.Types.PlayerScope as PlayerScope
+import qualified Parun.Types.Subtype as Subtype
 
 spec :: (Monad m, Monad n) => Spec.Spec m n -> n ()
 spec s = Spec.describe s "Parun.Codec.AimedAt" $ do
@@ -18,8 +20,20 @@ spec s = Spec.describe s "Parun.Codec.AimedAt" $ do
       AimedAt.codec
       ( AimedAt.MkAimedAt
           { AimedAt.defenders = AimedPlayers.Scoped (PlayerScope.Related PlayerRelation.You),
-            AimedAt.kinds = Set.fromList [AttackTargetKind.OfPlayer, AttackTargetKind.OfPlaneswalker]
+            AimedAt.kinds = Set.fromList [AttackTargetKind.OfPlayer, AttackTargetKind.OfPlaneswalker],
+            AimedAt.permanents = Nothing
           }
       )
       " {\"defenders\":{\"type\":\"Scoped\",\"value\":{\"type\":\"You\"}},\"kinds\":[\"OfPlayer\",\"OfPlaneswalker\"]} "
+  Spec.it s "MkAimedAt, with permanents" $
+    Common.assertCodec
+      s
+      AimedAt.codec
+      ( AimedAt.MkAimedAt
+          { AimedAt.defenders = AimedPlayers.Scoped (PlayerScope.Related PlayerRelation.You),
+            AimedAt.kinds = Set.singleton AttackTargetKind.OfPlaneswalker,
+            AimedAt.permanents = Just (Filter.HasSubtype Subtype.Jace)
+          }
+      )
+      " {\"defenders\":{\"type\":\"Scoped\",\"value\":{\"type\":\"You\"}},\"kinds\":[\"OfPlaneswalker\"],\"permanents\":{\"type\":\"HasSubtype\",\"value\":\"Jace\"}} "
   Spec.it s "has a schema" $ Common.assertHasSchema s AimedAt.codec

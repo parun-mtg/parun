@@ -80,6 +80,7 @@ import qualified Parun.Types.AgainstExiledPile as AgainstExiledPile
 import qualified Parun.Types.AgainstLastCardExiledWith as AgainstLastCardExiledWith
 import qualified Parun.Types.AgainstSlot as AgainstSlot
 import qualified Parun.Types.Aggregation as Aggregation
+import qualified Parun.Types.AimedAt as AimedAt
 import qualified Parun.Types.AloneUnless as AloneUnless
 import qualified Parun.Types.AlternativeCost as AlternativeCost
 import qualified Parun.Types.Amass as Amass
@@ -5615,9 +5616,10 @@ effectFilters effect = case effect of
   Effect.RequireBlock (RequireBlock.MkRequireBlock duration blocker attacker _) -> frame Unframed (durationFilters duration) <> restrictedFilters blocker <> foldMap restrictedFilters attacker
   -- RequireBlock's arm one axis narrower.
   Effect.Prohibit (Prohibit.MkProhibit _ duration affected) -> frame Unframed (durationFilters duration) <> restrictedFilters affected
-  -- The AimedAt is a PlayerScope and CR 506.3 kinds, no Filter in either.
-  Effect.ForbidAttack (ForbidAttack.MkForbidAttack duration affected _) ->
-    frame Unframed (durationFilters duration) <> restrictedFilters affected
+  -- The AimedAt's permanents filter is a stored class beside the affected one,
+  -- baked and read alike.
+  Effect.ForbidAttack (ForbidAttack.MkForbidAttack duration affected aimedAt) ->
+    frame Unframed (durationFilters duration) <> restrictedFilters affected <> fmap ((,) StoredClassFramed) (Maybe.maybeToList (aimedAt >>= AimedAt.permanents))
   -- ForbidAttack's Matching arm, read at
   -- Parun.Engine.CombatRestriction.storedEvasions.
   Effect.ForbidBeingBlocked (ForbidBeingBlocked.MkForbidBeingBlocked duration f barred) -> frame Unframed (durationFilters duration) <> fmap ((,) StoredClassFramed) [f, barred]

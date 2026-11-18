@@ -1,0 +1,42 @@
+{
+  "description": "CR 508.1c: bob declines to pay {2}, so his Piker can't attack alice's Jaces but may attack her Freyalise, alice, carol or carol's Jace",
+  "note": "Three seats so carol's Jace, a Jace alice does not control, stays attackable; alice's Jace Beleren is barred beside the Architect itself, and her Freyalise is a planeswalker of another subtype.",
+  "board": {
+    "active": "bob",
+    "step": "PrecombatMain",
+    "seats": [
+      {
+        "name": "alice",
+        "battlefield": [
+          { "card": "Jace, Multiverse Architect", "label": "architect", "counters": [{ "key": { "type": "Loyalty" }, "value": 4 }] },
+          { "card": "Jace Beleren", "label": "beleren", "counters": [{ "key": { "type": "Loyalty" }, "value": 3 }] },
+          { "card": "Freyalise, Llanowar's Fury", "label": "freyalise", "counters": [{ "key": { "type": "Loyalty" }, "value": 5 }] }
+        ]
+      },
+      {
+        "name": "bob",
+        "battlefield": [
+          { "card": "Goblin Piker", "label": "piker", "ready": true },
+          { "card": "Wastes", "label": "w1" },
+          { "card": "Wastes", "label": "w2" }
+        ]
+      },
+      {
+        "name": "carol",
+        "battlefield": [
+          { "card": "Jace Beleren", "label": "carolsjace", "counters": [{ "key": { "type": "Loyalty" }, "value": 6 }] }
+        ]
+      }
+    ]
+  },
+  "timeline": [
+    { "turn": 1, "step": "BeginningOfCombat", "player": "bob", "do": { "ChooseToPay": { "decision": "Declines" } } },
+    { "turn": 1, "step": "DeclareAttackers", "player": "bob", "do": { "Attack": ["$piker"] } },
+    { "turn": 1, "step": "DeclareAttackers", "player": "bob", "check": { "View": { "of": "Prompt", "is": { "kind": "ChooseAttackTarget", "offer": { "source": "$piker", "options": [["Player", "carol"], ["Planeswalker", "$carolsjace"], ["Player", "alice"], ["Planeswalker", "$freyalise"]] } } } } },
+    { "turn": 1, "step": "DeclareAttackers", "player": "bob", "refuse": { "ChooseAttackTarget": "$architect" } },
+    { "turn": 1, "step": "DeclareAttackers", "player": "bob", "refuse": { "ChooseAttackTarget": "$beleren" } },
+    { "turn": 1, "step": "DeclareAttackers", "player": "bob", "do": { "ChooseAttackTarget": "$freyalise" } },
+    { "turn": 1, "step": "DeclareAttackers", "player": "bob", "check": { "Attackers": { "attackers": { "$piker": "$freyalise" } } } },
+    { "turn": 1, "step": "DeclareAttackers", "player": "bob", "check": { "Tapped": { "object": "$w1", "tapped": false } } }
+  ]
+}
