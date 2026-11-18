@@ -1545,8 +1545,10 @@ slotsOf effect = joinTwo (joinTwo (joinSlots (fmap objectRefSlots (effectObjectR
   Effect.AttachAll (AttachAll.MkAttachAll _ destination) -> filterSlotsOf destination
   -- CR 730.1/730.1b: the slot is a DEFINITION (the subgame's winner), not a read.
   Effect.PlaySubgame _ -> Map.empty
-  -- A DEFINITION too: chosen as this effect is applied (CR 608.2d), never read.
-  Effect.ChoosePlayer _ -> Map.empty
+  -- The slot is a DEFINITION, chosen as this effect is applied (CR 608.2d); the
+  -- excluded players are a READ at arity MANY, as EachPlayerExcept's are.
+  Effect.ChoosePlayer choice -> maybe Map.empty (\slot -> Map.singleton slot SlotArity.Many) (ChoosePlayer.excluding choice)
+  -- A DEFINITION only, for ChoosePlayer's reason.
   Effect.ChooseGroup _ -> Map.empty
   Effect.ChoosePlayerAtRandom _ -> Map.empty
   -- The slot is a DEFINITION; the reads are the ceiling's and the Filter's, and
@@ -2418,8 +2420,9 @@ ownSlotsAreExhaustive effect = case effect of
   Effect.AttachAll (AttachAll.MkAttachAll _ _) -> True
   -- CR 730.1b: a DEFINITION, and the subgame reads no binding of the outer game.
   Effect.PlaySubgame _ -> True
-  -- PlaySubgame's answer: a definition reads no slot.
+  -- slotsOf reports the excluded players' slot, the whole of what it reads.
   Effect.ChoosePlayer _ -> True
+  -- PlaySubgame's answer: a definition reads no slot.
   Effect.ChooseGroup _ -> True
   Effect.ChoosePlayerAtRandom _ -> True
   Effect.ChoosePermanents choice -> all Quantity.slotsAreExhaustive (chosenPermanentsQuantities (ChoosePermanents.permanents choice))
