@@ -2910,9 +2910,10 @@ staticAbilityChildren c (StaticAbility.MkStaticAbility affected condition functi
 
 -- | A player static ability's children.
 playerStaticAbilityChildren :: (Applicative f) => AbilityChildren card ability effect f -> PlayerStaticAbility.PlayerStaticAbility -> f PlayerStaticAbility.PlayerStaticAbility
-playerStaticAbilityChildren c (PlayerStaticAbility.MkPlayerStaticAbility players condition name effect) =
+playerStaticAbilityChildren c (PlayerStaticAbility.MkPlayerStaticAbility players condition functionsFrom name effect) =
   PlayerStaticAbility.MkPlayerStaticAbility players
     <$> traverse (abilityCondition c) condition
+    <*> pure functionsFrom
     <*> pure name
     <*> abilityPlayerEffect c effect
 

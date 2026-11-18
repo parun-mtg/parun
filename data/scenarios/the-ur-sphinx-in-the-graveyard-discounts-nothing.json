@@ -1,0 +1,14 @@
+{
+  "description": "CR 113.6b: The Ur-Sphinx's eminence names only the command zone and the battlefield, so from alice's graveyard it leaves Conundrum Sphinx at {2}{U}{U}, beyond three Islands",
+  "board": {
+    "active": "alice",
+    "step": "PrecombatMain",
+    "seats": [
+      {"name": "alice", "battlefield": [{"card": "Island", "label": "i1"}, {"card": "Island", "label": "i2"}, {"card": "Island", "label": "i3"}], "hand": [{"card": "Conundrum Sphinx", "label": "sphinx"}], "graveyard": [{"card": "The Ur-Sphinx", "label": "ur"}]},
+      {"name": "bob"}
+    ]
+  },
+  "timeline": [
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"View": {"of": "Offered", "player": "alice", "is": ["Pass", "ActivateManaAbility $i1", "ActivateManaAbility $i2", "ActivateManaAbility $i3"]}}}
+  ]
+}

@@ -1,9 +1,11 @@
 module Parun.Types.PlayerStaticAbility where
 
+import qualified Data.Set as Set
 import qualified Parun.Types.AbilityName as AbilityName
 import qualified Parun.Types.Condition as Condition
 import qualified Parun.Types.PlayerEffect as PlayerEffect
 import qualified Parun.Types.PlayerScope as PlayerScope
+import qualified Parun.Types.Zone as Zone
 
 -- | A card's printed player/rules-modifying static ability (CR 604.1/604.2: a
 -- static ability creates a continuous effect active while its permanent is on
@@ -34,6 +36,14 @@ data PlayerStaticAbility = MkPlayerStaticAbility
     -- reads the finished projection, the answer CR 702.178a's max speed gate takes
     -- for the same reason.
     condition :: Maybe Condition.Condition,
+    -- | CR 113.6b: the zones the ability's own text says it functions from
+    -- (The Ur-Sphinx's eminence: the command zone and the battlefield), with
+    -- Parun.Types.StaticAbility.functionsFrom's reading: empty leaves CR
+    -- 113.6's default standing, and a stated set replaces it.
+    --
+    -- Unprinted: any zone but the battlefield and the command zone.
+    -- Parun.Codec.PlayerStaticAbility refuses it.
+    functionsFrom :: Set.Set Zone.Zone,
     -- | CR 116.2d: the name this face gives the ability, so its own
     -- SpecialAction.IgnoreThisUntilEndOfTurn can say WHICH effect a payment
     -- ignores -- "the effect from that ability", singular. Parun.Types.AbilityName
