@@ -4249,6 +4249,8 @@ movesAtMostOne ref = case ref of
     atMostOne count && case chooser of
       Chooser.TheController -> True
       Chooser.EachInScope -> False
+      -- One card per graveyard, so EachInScope's answer.
+      Chooser.TheControllerInEach -> False
       -- One seat, so one graveyard and one card -- TheController's
       -- answer with the chooser named by a slot instead of by CR
       -- 608.2c.

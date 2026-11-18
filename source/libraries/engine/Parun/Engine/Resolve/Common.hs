@@ -1168,6 +1168,10 @@ chosenCardsInGraveyard legal resolving controller source (ChosenCardInGraveyard.
     Chooser.EachInScope ->
       fmap (fmap snd . Foldable.toList) . Monad.foldM (\made pid -> pick made pid (graveyardCardsOf context gs pid filter_)) Seq.empty $
         Target.zoneScopePlayers (Plane.rangePerspective source controller gs) (Just controller) legal scope gs
+    -- EachInScope's fold with the controller asked at every graveyard.
+    Chooser.TheControllerInEach ->
+      fmap (fmap snd . Foldable.toList) . Monad.foldM (\made pid -> pick made controller (graveyardCardsOf context gs pid filter_)) Seq.empty $
+        Target.zoneScopePlayers (Plane.rangePerspective source controller gs) (Just controller) legal scope gs
     -- ONE chooser, read out of the slot a ChoosePlayer bound,
     -- choosing out of their own graveyard. Through playerRefPlayers so
     -- the slot is read as every other is (CR 608.2b): an unfilled,
@@ -3972,6 +3976,7 @@ effectIsImpossible asked resolving source controller legal gs effect = case effe
               _ -> []
             Chooser.TheController -> graveyardCards context legal source controller gs scope filter_
             Chooser.EachInScope -> graveyardCards context legal source controller gs scope filter_
+            Chooser.TheControllerInEach -> graveyardCards context legal source controller gs scope filter_
           _ -> objectRefObjects legal resolving controller source gs ref
         owns pid oid = fmap Object.owner (Game.lookupObject oid gs) == Just pid
         placeable pid = any (\oid -> owns pid oid && not (null (Sticker.offered pid oid kinds (ticketCapOf resolving source controller legal gs cap) free gs))) named
@@ -4033,12 +4038,13 @@ effectIsImpossible asked resolving source controller legal gs effect = case effe
         let holders = handChoosers legal resolving source controller gs player
          in not (null holders) && all (\pid -> null (handCardsOf context gs pid filter_)) holders
       ObjectRef.ChosenCardInGraveyard (ChosenCardInGraveyard.MkChosenCardInGraveyard chooser scope filter_ count _) ->
-        mustPick count && case chooser of
-          Chooser.TheController -> null (graveyardCards context legal source controller gs scope filter_)
-          Chooser.EachInScope ->
-            let scoped = Target.zoneScopePlayers (Plane.rangePerspective source controller gs) (Just controller) legal scope gs
-             in not (null scoped) && all (\pid -> null (graveyardCardsOf context gs pid filter_)) scoped
-          Chooser.BoundInSlot _ -> False
+        let scoped = Target.zoneScopePlayers (Plane.rangePerspective source controller gs) (Just controller) legal scope gs
+            eachScopedEmpty = not (null scoped) && all (\pid -> null (graveyardCardsOf context gs pid filter_)) scoped
+         in mustPick count && case chooser of
+              Chooser.TheController -> null (graveyardCards context legal source controller gs scope filter_)
+              Chooser.EachInScope -> eachScopedEmpty
+              Chooser.TheControllerInEach -> eachScopedEmpty
+              Chooser.BoundInSlot _ -> False
       ObjectRef.ChosenCardFromAmong (ChosenCardFromAmong.MkChosenCardFromAmong slot filter_ count _ _ _ _ _ _ _) ->
         mustPick count && maybe False (null . matchingFromAmong legal resolving controller source gs filter_ . stillPresent gs) (fromAmongBound slot)
       ObjectRef.ChosenPermanents choice -> mustPick (ChosenPermanents.count choice) && null (chosenCandidates legal resolving controller source gs choice)
