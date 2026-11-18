@@ -5795,13 +5795,17 @@ apply settle batch applied batchPrevented candidate event =
           Replacement.consume identity_
           gs <- State.get
           let matched lot = Replacement.reachesLot pat lot && Replacement.matchesTokenLot gs (Replacement.candidateContext gs candidate) (TokenPattern.whatToken pat) pid lot
+              -- Each token of a scaled lot is its own die: docs/decisions.md,
+              -- "Whether Die creatures a doubled creation makes share a die".
               scaleLot factor lot
                 | matched lot = lot {TokenLot.count = Replacement.scale gs candidate factor (TokenLot.count lot)}
                 | otherwise = lot
               scaled = maybe lots (\factor -> fmap (scaleLot factor) lots) scaling
               lotOf card n = TokenLot.MkTokenLot {TokenLot.card = card, TokenLot.copy = Nothing, TokenLot.count = n, TokenLot.byEffect = True, TokenLot.die = Nothing}
+              -- A substitute is a different token (CR 614.6): the replaced
+              -- token, and the die it would have been, never exist.
               swapFor card copy lot
-                | matched lot = lot {TokenLot.card = card, TokenLot.copy = copy}
+                | matched lot = lot {TokenLot.card = card, TokenLot.copy = copy, TokenLot.die = Nothing}
                 | otherwise = lot
               appended = case plus of
                 Nothing -> scaled

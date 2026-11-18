@@ -22,7 +22,7 @@ data TokenLot = MkTokenLot
     byEffect :: Bool,
     -- | The die each token of this lot IS (Parun.Types.Create's `die`), which
     -- Parun.Engine.Game.tokenOfLot stamps on it. Nothing for a lot a
-    -- replacement appended: a different token, no die behind it.
+    -- replacement appended or swapped in: a different token, no die behind it.
     die :: Maybe (ShownDie.ShownDie Natural.Natural)
   }
   deriving (Eq, Ord, Show)

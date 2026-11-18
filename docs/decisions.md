@@ -2683,3 +2683,26 @@ Entries are ordered by the first rule each cites.
   `data/cards/pippa-duchess-of-dice.json`, proved by the scenario
   `pippa-duchess-of-dice-s-die-creature-copied-by-a-clone-is-no-die`.
 - **Issue**: #6221.
+
+## Whether Die creatures a doubled creation makes share a die
+
+- **Question**: Pippa, Duchess of Dice's rulings have one die "not already in
+  the game" represent the Die creature. Under Doubling Season the ability makes
+  two Die tokens: is each its own die, do they share one, or is only one a die?
+- **Rules**: CR 111.1, 614.1a, 706.2, 707.2; Pippa's rulings of 2020-02-29
+  speak of one creature only. CR of 2026-11-06.
+- **Decision**: Each token is its own die, showing the result rolled, so a
+  reroll of one leaves the other as it was.
+- **Rejected**: One shared die: a die represents one creature in the rulings,
+  and a reroll of one creature would change another. Only one token a die: the
+  other is still "a Die creature token" with power and toughness equal to its
+  result, and with no die it would be 0/0.
+- **Also**: a Die token that becomes a copy afterward (Essence of the Wild,
+  Cytoshape) keeps its die: it is the same object, and CR 707.2 changes only
+  its copiable values. A token created in its place by a replacement (CR 614.6)
+  is a different token, never the die.
+- **Site**: `Parun.Engine.Event.apply`'s `TokenR` arm (`scaleLot` keeps the
+  lot's die, `swapFor` drops it), proved by the scenarios
+  `pippa-duchess-of-dice-s-die-creatures-doubled-by-doubling-season-are-each-their-own-die`
+  and `pippa-duchess-of-dice-s-die-creature-replaced-by-holo-engineer-s-illusion-is-no-die`.
+- **Issue**: #8563.
