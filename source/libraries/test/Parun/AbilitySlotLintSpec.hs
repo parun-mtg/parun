@@ -657,7 +657,8 @@ armingEventSlots card =
 -- The third half: the reserved slot an ACTIVATED arming ability's own cost
 -- bound as it was paid (CR 400.7j), which Parun.Engine.Activate folds onto the
 -- ability and CR 603.7c then captures -- Calim, Djinn Emperor's reflexive "return
--- Calim from your graveyard" reading Binding.discardedCard -- and the player its
+-- Calim from your graveyard" reading Binding.discardedCard, The Guardian of
+-- Forever's "that card" reading Binding.sacrificedPermanent -- and the player its
 -- announcement chose (CR 115.10a, Lodestone Bauble's "that player"). LOOSE about
 -- which activated ability armed, armingTargetSlots' caveat.
 armingCostSlots :: Face.Face Card.Type.Card -> Set.Set SlotName.SlotName
@@ -666,7 +667,7 @@ armingCostSlots card =
     ( fmap
         ( \ability ->
             let cost = ActivatedAbility.cost ability
-             in Set.fromList ([Binding.discardedCard | discardsAsCost cost] <> [Binding.exiledCard | exilesCardAsCost cost] <> foldMap (pure . PlayerSlot.slot) (ActivatedAbility.chosenPlayer ability))
+             in Set.fromList ([Binding.discardedCard | discardsAsCost cost] <> [Binding.sacrificedPermanent | sacrificesAsCost cost] <> [Binding.exiledCard | exilesCardAsCost cost] <> foldMap (pure . PlayerSlot.slot) (ActivatedAbility.chosenPlayer ability))
         )
         (Face.activatedAbilities card)
     )
@@ -1006,6 +1007,12 @@ abilitySlotLintSpec s registry corpus = Spec.describe s "Lint" $ do
             }
     Spec.assertBool s (not (cardOffends (nesting True))) "a delayed ability reading the event slot of the delayed ability arming it is accepted"
     Spec.assertBool s (cardOffends (nesting False)) "and one reading the event slot of a delayed ability arming nothing is caught"
+    -- armingCostSlots' sacrifice half, put to The Guardian of Forever and the
+    -- same card with its cost's sacrifice stripped.
+    guardian <- S.combinedFace <$> S.printingOf s registry "The Guardian of Forever"
+    let unsacrificed face = face {Face.activatedAbilities = fmap (\ability -> ability {ActivatedAbility.cost = (ActivatedAbility.cost ability) {Cost.Type.components = []}}) (Face.activatedAbilities face)}
+    Spec.assertBool s (not (cardOffends guardian)) "a delayed ability reading the activation's sacrificed permanent is accepted"
+    Spec.assertBool s (cardOffends (unsacrificed guardian)) "and the same read under a cost sacrificing nothing is caught"
     Spec.assertEqWith s "no dangling delayed-ability slot" (fmap (S.nameOf . Printing.card) offenders) []
   -- A delayed ability may not DECLARE a target slot under a name its own card
   -- already DEFINES, because the two would land in one slot and the reader would
