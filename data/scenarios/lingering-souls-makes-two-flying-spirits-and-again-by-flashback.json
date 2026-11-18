@@ -1,0 +1,206 @@
+{
+ "description": "CR 702.34a, 111.1: Lingering Souls creates two 1/1 white flying Spirits, and its flashback casts it again from the graveyard and exiles it",
+ "note": "Cast from hand with {W}{W}{W}, then for {1}{B} from the graveyard with two Swamps: four Spirits, and the card ends in exile.",
+ "board": {
+  "active": "alice",
+  "step": "PrecombatMain",
+  "seats": [
+   {
+    "name": "alice",
+    "hand": [
+     {
+      "card": "Lingering Souls",
+      "label": "souls"
+     }
+    ],
+    "battlefield": [
+     {
+      "card": "Swamp",
+      "label": "s1"
+     },
+     {
+      "card": "Swamp",
+      "label": "s2"
+     }
+    ],
+    "manaPool": "WWW",
+    "library": [
+     {
+      "card": "Island"
+     },
+     {
+      "card": "Island"
+     },
+     {
+      "card": "Island"
+     },
+     {
+      "card": "Island"
+     },
+     {
+      "card": "Island"
+     },
+     {
+      "card": "Island"
+     }
+    ]
+   },
+   {
+    "name": "bob",
+    "library": [
+     {
+      "card": "Island"
+     },
+     {
+      "card": "Island"
+     },
+     {
+      "card": "Island"
+     },
+     {
+      "card": "Island"
+     },
+     {
+      "card": "Island"
+     },
+     {
+      "card": "Island"
+     }
+    ]
+   }
+  ]
+ },
+ "timeline": [
+  {
+   "turn": 1,
+   "step": "PrecombatMain",
+   "player": "alice",
+   "do": {
+    "Cast": {
+     "object": "$souls",
+     "mana": [
+      null
+     ]
+    }
+   }
+  },
+  {
+   "turn": 1,
+   "step": "PrecombatMain",
+   "player": "alice",
+   "do": "Pass"
+  },
+  {
+   "turn": 1,
+   "step": "PrecombatMain",
+   "player": "alice",
+   "check": {
+    "Count": {
+     "card": "Spirit Token",
+     "count": 2,
+     "player": "alice",
+     "zone": "Battlefield"
+    }
+   }
+  },
+  {
+   "turn": 1,
+   "step": "PrecombatMain",
+   "player": "alice",
+   "check": {
+    "PowerToughness": {
+     "object": "Spirit Token",
+     "power": 1,
+     "toughness": 1
+    }
+   }
+  },
+  {
+   "turn": 1,
+   "step": "PrecombatMain",
+   "player": "alice",
+   "check": {
+    "Keywords": {
+     "object": "Spirit Token",
+     "keyword": {
+      "type": "Flying"
+     },
+     "count": 1
+    }
+   }
+  },
+  {
+   "turn": 1,
+   "step": "PrecombatMain",
+   "player": "alice",
+   "check": {
+    "View": {
+     "of": "Colors",
+     "object": "Spirit Token",
+     "is": [
+      "White"
+     ]
+    }
+   }
+  },
+  {
+   "turn": 1,
+   "step": "PrecombatMain",
+   "player": "alice",
+   "check": {
+    "Count": {
+     "card": "Lingering Souls",
+     "count": 1,
+     "player": "alice",
+     "zone": "Graveyard"
+    }
+   }
+  },
+  {
+   "turn": 1,
+   "step": "PrecombatMain",
+   "player": "alice",
+   "do": {
+    "Cast": {
+     "object": "Lingering Souls",
+     "mana": [
+      "$s1",
+      "$s2"
+     ]
+    }
+   }
+  },
+  {
+   "turn": 1,
+   "step": "PrecombatMain",
+   "player": "alice",
+   "do": "Pass"
+  },
+  {
+   "turn": 1,
+   "step": "PrecombatMain",
+   "player": "alice",
+   "check": {
+    "Count": {
+     "card": "Spirit Token",
+     "count": 4,
+     "player": "alice",
+     "zone": "Battlefield"
+    }
+   }
+  },
+  {
+   "turn": 1,
+   "step": "PrecombatMain",
+   "player": "alice",
+   "check": {
+    "Count": {
+     "card": "Lingering Souls",
+     "count": 1,
+     "player": "alice",
+     "zone": "Exile"
+    }
+   }
+  }
+ ]
+}
