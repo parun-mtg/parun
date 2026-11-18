@@ -71,7 +71,7 @@
     ]
   },
   "description": "CR 608.2h: Ertai Resurrected counters an activated ability, and the ability's controller draws",
-  "note": "Prodigal Pyromancer's ability aims 1 damage at alice; Ertai, flashed in, counters it with its first mode, alice stays at 20, and bob, who controlled the ability now gone from the stack, draws a Forest.",
+  "note": "Prodigal Pyromancer's ability aims 1 damage at alice; Ertai, flashed in, counters it with its first mode, alice stays at 20, and bob, who controlled the ability now gone from the stack, draws a Forest; the mode's one legal target is bound unasked.",
   "timeline": [
     {
       "turn": 1,
@@ -123,18 +123,6 @@
           "prompt": "ChooseModes",
           "with": [
             0
-          ]
-        }
-      }
-    },
-    {
-      "turn": 1,
-      "step": "PrecombatMain",
-      "player": "alice",
-      "do": {
-        "ChooseTargets": {
-          "countered": [
-            "ability of $pyro"
           ]
         }
       }

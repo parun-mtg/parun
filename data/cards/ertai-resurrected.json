@@ -164,8 +164,8 @@
       ],
       "typeLine": {
         "subtypes": [
-          "Phyrexian",
           "Human",
+          "Phyrexian",
           "Wizard"
         ],
         "supertypes": [

@@ -76,7 +76,7 @@
     ]
   },
   "description": "CR 701.6a: Ertai Resurrected counters a spell, and the spell's controller draws",
-  "note": "Bob's Lightning Bolt aims at alice; Ertai, flashed in, counters it with its first mode, the Bolt goes to bob's graveyard, alice stays at 20, and bob draws a Forest.",
+  "note": "Bob's Lightning Bolt aims at alice; Ertai, flashed in, counters it with its first mode, the Bolt goes to bob's graveyard, alice stays at 20, and bob draws a Forest; the mode's one legal target is bound unasked.",
   "timeline": [
     {
       "turn": 1,
@@ -131,18 +131,6 @@
           "prompt": "ChooseModes",
           "with": [
             0
-          ]
-        }
-      }
-    },
-    {
-      "turn": 1,
-      "step": "PrecombatMain",
-      "player": "alice",
-      "do": {
-        "ChooseTargets": {
-          "countered": [
-            "$bolt"
           ]
         }
       }

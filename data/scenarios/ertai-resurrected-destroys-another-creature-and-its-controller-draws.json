@@ -70,7 +70,7 @@
     ]
   },
   "description": "CR 701.8a: Ertai Resurrected destroys another creature, and its controller draws",
-  "note": "Ertai's second mode destroys bob's Grizzly Bears, and bob draws a Forest.",
+  "note": "Ertai's second mode destroys bob's Grizzly Bears, and bob draws a Forest; the mode's one legal target is bound unasked.",
   "timeline": [
     {
       "turn": 1,
@@ -103,18 +103,6 @@
           "prompt": "ChooseModes",
           "with": [
             1
-          ]
-        }
-      }
-    },
-    {
-      "turn": 1,
-      "step": "PrecombatMain",
-      "player": "alice",
-      "do": {
-        "ChooseTargets": {
-          "destroyed": [
-            "$bears"
           ]
         }
       }
