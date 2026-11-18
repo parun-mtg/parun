@@ -301,7 +301,7 @@ subtype s =
 -- | An English plural.
 pluralOf :: Text.Text -> Text.Text
 pluralOf word =
-  let irregular = [("Plains", "Plains"), ("Elf", "Elves"), ("Merfolk", "Merfolk"), ("Treefolk", "Treefolk"), ("Dwarf", "Dwarves"), ("Wolf", "Wolves"), ("Werewolf", "Werewolves"), ("Mouse", "Mice"), ("Fungus", "Fungi"), ("Ox", "Oxen"), ("Thief", "Thieves"), ("Spacecraft", "Spacecraft")]
+  let irregular = [("Plains", "Plains"), ("Elf", "Elves"), ("Merfolk", "Merfolk"), ("Treefolk", "Treefolk"), ("Dwarf", "Dwarves"), ("Wolf", "Wolves"), ("Werewolf", "Werewolves"), ("Mouse", "Mice"), ("Fungus", "Fungi"), ("Ox", "Oxen"), ("Thief", "Thieves"), ("Spacecraft", "Spacecraft"), ("Equipment", "Equipment")]
       ends suffix = Text.isSuffixOf (Text.pack suffix) word
    in case lookup (Text.unpack word) irregular of
         Just p -> Text.pack p

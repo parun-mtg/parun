@@ -1,0 +1,57 @@
+{
+  "faces": [
+    {
+      "keywords": [
+        {
+          "type": "Trample"
+        },
+        {
+          "type": "Affinity",
+          "value": {
+            "type": "HasSubtype",
+            "value": "Equipment"
+          }
+        }
+      ],
+      "manaCost": [
+        {
+          "type": "Generic",
+          "value": 5
+        },
+        {
+          "type": "OfType",
+          "value": {
+            "type": "Colored",
+            "value": "Red"
+          }
+        },
+        {
+          "type": "OfType",
+          "value": {
+            "type": "Colored",
+            "value": "Red"
+          }
+        }
+      ],
+      "name": "Oxidda Finisher",
+      "oracleText": "Affinity for Equipment (This spell costs {1} less to cast for each Equipment you control.)\nTrample",
+      "power": {
+        "type": "Literal",
+        "value": 7
+      },
+      "toughness": {
+        "type": "Literal",
+        "value": 5
+      },
+      "typeLine": {
+        "subtypes": [
+          "Ogre",
+          "Rebel"
+        ],
+        "types": [
+          "Creature"
+        ]
+      }
+    }
+  ]
+}

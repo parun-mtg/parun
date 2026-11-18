@@ -1,0 +1,162 @@
+{
+  "faces": [
+    {
+      "keywords": [
+        {
+          "type": "BattleCry"
+        }
+      ],
+      "manaCost": [
+        {
+          "type": "Generic",
+          "value": 2
+        },
+        {
+          "type": "OfType",
+          "value": {
+            "type": "Colored",
+            "value": "White"
+          }
+        },
+        {
+          "type": "OfType",
+          "value": {
+            "type": "Colored",
+            "value": "Black"
+          }
+        }
+      ],
+      "name": "Ria Ivor, Bane of Bladehold",
+      "oracleText": "Battle cry (Whenever this creature attacks, each other attacking creature gets +1/+0 until end of turn.)\nAt the beginning of combat on your turn, the next time target creature would deal combat damage to one or more players this combat, prevent that damage. If damage is prevented this way, create that many 1/1 colorless Phyrexian Mite artifact creature tokens with toxic 1 and \"This token can't block.\"",
+      "power": {
+        "type": "Literal",
+        "value": 3
+      },
+      "toughness": {
+        "type": "Literal",
+        "value": 4
+      },
+      "triggeredAbilities": [
+        {
+          "condition": {
+            "type": "StepBegins",
+            "value": {
+              "phase": {
+                "type": "Combat",
+                "value": "BeginningOfCombat"
+              },
+              "scope": {
+                "type": "PlayersTurn",
+                "value": {
+                  "type": "Relative",
+                  "value": "You"
+                }
+              }
+            }
+          },
+          "modal": {
+            "modes": [
+              {
+                "clauses": [
+                  {
+                    "effects": [
+                      {
+                        "type": "NextDamageInstance",
+                        "value": {
+                          "direction": "DealtBy",
+                          "duration": {
+                            "type": "UntilEndOfCombat"
+                          },
+                          "kind": "Combat",
+                          "ref": {
+                            "type": "InSlot",
+                            "value": "target"
+                          },
+                          "riders": [
+                            {
+                              "type": "Create",
+                              "value": {
+                                "card": {
+                                  "faces": [
+                                    {
+                                      "combatRestrictions": [
+                                        {
+                                          "type": "CantBlock",
+                                          "value": {
+                                            "affected": {
+                                              "type": "Matching",
+                                              "value": {
+                                                "type": "IsSource"
+                                              }
+                                            }
+                                          }
+                                        }
+                                      ],
+                                      "keywords": [
+                                        {
+                                          "type": "Toxic",
+                                          "value": 1
+                                        }
+                                      ],
+                                      "name": "Phyrexian Mite Token",
+                                      "power": {
+                                        "type": "Literal",
+                                        "value": 1
+                                      },
+                                      "toughness": {
+                                        "type": "Literal",
+                                        "value": 1
+                                      },
+                                      "typeLine": {
+                                        "subtypes": [
+                                          "Mite",
+                                          "Phyrexian"
+                                        ],
+                                        "types": [
+                                          "Artifact",
+                                          "Creature"
+                                        ]
+                                      }
+                                    }
+                                  ]
+                                },
+                                "quantity": {
+                                  "type": "InSlot",
+                                  "value": "thatMuch"
+                                }
+                              }
+                            }
+                          ],
+                          "whoRecipient": "AnyPlayer"
+                        }
+                      }
+                    ]
+                  }
+                ],
+                "targetSlots": {
+                  "target": {
+                    "pool": {
+                      "type": "Creatures"
+                    }
+                  }
+                }
+              }
+            ]
+          }
+        }
+      ],
+      "typeLine": {
+        "subtypes": [
+          "Knight",
+          "Phyrexian"
+        ],
+        "supertypes": [
+          "Legendary"
+        ],
+        "types": [
+          "Creature"
+        ]
+      }
+    }
+  ]
+}
