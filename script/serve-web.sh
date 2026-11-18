@@ -7,9 +7,10 @@
 # (script/serve-web.caddyfile):
 #   nix develop .#wasm --command script/serve-web.sh [DIR] [PORT]
 # Caddy signs the certificates with its own local authority. A browser warns
-# until it trusts that authority: on this machine, run `caddy trust` once (it
-# asks for your password); on another device, install the root certificate from
-# Caddy's data directory (pki/authorities/local/root.crt) and trust it.
+# until it trusts that authority: on this machine, run `caddy trust` once in
+# another shell while this runs (it asks for your password); on another
+# device, install the root certificate from Caddy's data directory
+# (pki/authorities/local/root.crt) and trust it.
 set -euo pipefail
 dir=${1:-dist-web}
 port=${2:-8443}

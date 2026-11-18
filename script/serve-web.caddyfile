@@ -1,9 +1,9 @@
 # The web client's local server (script/serve-web.sh): every address in SITES
 # over https, with certificates from Caddy's own local authority, and each
 # response compressed. Trusting the authority is a separate, one-time step
-# (`caddy trust`), never a side effect of serving.
+# (`caddy trust` while this runs; it reaches Caddy's admin endpoint on
+# localhost:2019), never a side effect of serving.
 {
-	admin off
 	persist_config off
 	auto_https disable_redirects
 	local_certs
