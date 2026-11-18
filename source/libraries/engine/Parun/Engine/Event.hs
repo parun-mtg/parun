@@ -85,6 +85,7 @@ import qualified Parun.Types.AbilityTriggered as AbilityTriggered
 import qualified Parun.Types.AbilityWasActivated as AbilityWasActivated
 import qualified Parun.Types.Acquisition as Acquisition
 import qualified Parun.Types.ActiveCopy as ActiveCopy
+import qualified Parun.Types.ActiveCopyCast as ActiveCopyCast
 import qualified Parun.Types.ActiveReplacement as ActiveReplacement
 import qualified Parun.Types.Affected as Affected
 import qualified Parun.Types.AnyNumberOf as AnyNumberOf
@@ -185,6 +186,7 @@ import qualified Parun.Types.EntryRiders as EntryRiders
 import qualified Parun.Types.EventGroup as EventGroup
 import qualified Parun.Types.ExileFromGraveyard as ExileFromGraveyard
 import qualified Parun.Types.ExileLink as ExileLink
+import qualified Parun.Types.ExilePlayPermission as ExilePlayPermission
 import qualified Parun.Types.Expiry as Expiry.Type
 import qualified Parun.Types.ExtraTurn as ExtraTurn
 import qualified Parun.Types.Face as Face
@@ -2149,8 +2151,31 @@ standIn pid printingId card gs =
 -- A melded or merged main-game permanent is not stood in for: it is one object
 -- of several cards, and CR 601.2a and 305.1 move one card. docs/decisions.md,
 -- "Whether a subgame's play permission reaches a merged main-game permanent".
+--
+-- Beside them, `standInCopies`'s copies for the player's StoredEffects.copyCasts
+-- rows.
 offerOutside :: PlayerId -> GameState.GameState -> GameState.GameState
-offerOutside pid gs0 =
+offerOutside pid gs0 = standInCopies pid (offerOwned pid gs0)
+
+-- CR 601.3 / 707.13: one copy outside the game (`mintOutside`) for each of
+-- `pid`'s StoredEffects.copyCasts rows, carrying the row's permission so the
+-- cast road reads it as any held one (Expiry.openPermissions), and filed in
+-- GameState.copyStandIns under the row's stamp, so the cast spends that row
+-- (`castFromOutside`) and an uncast copy is discarded with the stand-ins.
+standInCopies :: PlayerId -> GameState.GameState -> GameState.GameState
+standInCopies pid gs =
+  let held row = ExilePlayPermission.player (ActiveCopyCast.permission row) == pid
+      standInRow g row =
+        let (oid, g1) = mintOutside pid (ActiveCopyCast.printing row) g
+         in g1
+              { GameState.objects = Map.adjust (\o -> o {Object.playPermissions = [ActiveCopyCast.permission row]}) oid (GameState.objects g1),
+                GameState.copyStandIns = Map.insert oid (ActiveCopyCast.timestamp row) (GameState.copyStandIns g1)
+              }
+   in Foldable.foldl' standInRow gs (filter held (StoredEffects.copyCasts (GameState.stored gs)))
+
+-- `offerOutside`'s stand-ins for the cards `pid` owns outside the game.
+offerOwned :: PlayerId -> GameState.GameState -> GameState.GameState
+offerOwned pid gs0 =
   let gs = discardOutsideFinds gs0
       standing card = case card of
         OutsideCard.InPool printingId -> Just (printingId, Nothing)
@@ -2169,7 +2194,7 @@ offerOutside pid gs0 =
 -- CR 400.11: `discardOutsideFinds`, sparing the stand-in a chosen priority
 -- action names.
 keepOutsideFind :: Maybe ObjectId -> GameState.GameState -> GameState.GameState
-keepOutsideFind kept gs = Foldable.foldl' (flip forgetFound) gs (filter ((/= kept) . Just) (Map.keys (GameState.outsideFinds gs)))
+keepOutsideFind kept gs = Foldable.foldl' (flip forgetFound) gs (filter ((/= kept) . Just) (standIns gs))
 
 -- CR 305.1 / 400.11b: play the land a stand-in names (`offerOutside`), its card
 -- brought in onto the battlefield under `pid` with the face `shown` up (CR
@@ -2217,15 +2242,21 @@ bringFound oid card pid dest position = do
 -- CR 400.11: the objects `holdFound` left that no clause brought in, discarded
 -- as the resolution ends, their cards still outside the game.
 discardOutsideFinds :: GameState.GameState -> GameState.GameState
-discardOutsideFinds gs = Foldable.foldl' (flip forgetFound) gs (Map.keys (GameState.outsideFinds gs))
+discardOutsideFinds gs = Foldable.foldl' (flip forgetFound) gs (standIns gs)
 
--- One `holdFound` object, gone.
+-- The objects `holdFound` and `offerOutside` stood in, `standInCopies`'s among
+-- them.
+standIns :: GameState.GameState -> [ObjectId]
+standIns gs = Map.keys (GameState.outsideFinds gs) <> Map.keys (GameState.copyStandIns gs)
+
+-- One `holdFound` or `offerOutside` object, gone.
 forgetFound :: ObjectId -> GameState.GameState -> GameState.GameState
 forgetFound oid gs =
   gs
     { GameState.objects = Map.delete oid (GameState.objects gs),
       GameState.outsideCopies = Set.delete oid (GameState.outsideCopies gs),
-      GameState.outsideFinds = Map.delete oid (GameState.outsideFinds gs)
+      GameState.outsideFinds = Map.delete oid (GameState.outsideFinds gs),
+      GameState.copyStandIns = Map.delete oid (GameState.copyStandIns gs)
     }
 
 -- CR 400.11c: the cards an answer to Prompt.ChooseFromOutsideTheGame brings in,
@@ -2277,6 +2308,11 @@ bringIn :: (Zone.Zone, LibraryPosition.LibraryPosition) -> PlayerId -> PrintingI
 bringIn (zone, position) pid printingId gs =
   let (oid, gs1) = mintCard pid Nothing printingId zone position TapState.Untapped gs
    in (oid, spendFromPool pid printingId gs1)
+
+-- CR 601.3: the StoredEffects.copyCasts row stamped `stamp`, spent by the one
+-- cast it allows.
+dropCopyCast :: Timestamp.Timestamp -> GameState.GameState -> GameState.GameState
+dropCopyCast stamp gs = gs {GameState.stored = (GameState.stored gs) {StoredEffects.copyCasts = filter ((/= stamp) . ActiveCopyCast.timestamp) (StoredEffects.copyCasts (GameState.stored gs))}}
 
 -- CR 400.11b / 730.4a: spend a card `owner` brings in from outside the game:
 -- one copy out of their pool (`spendFromPool`), or the entry of a game on hold,
@@ -8154,13 +8190,16 @@ castFromOutside caster oid requestedDest shown facing = do
                     Object.facing = if arrived then facing else Facing.FaceUp
                   }
           -- CR 400.11b / 730.4a: a stand-in's card (`offerOutside`) is
-          -- brought in, so it is spent.
+          -- brought in, so it is spent; a `standInCopies` copy spends the one
+          -- cast its row allows.
           let spend g = maybe g (\card -> spendOutside (Object.owner obj) card g) (Map.lookup oid (GameState.outsideFinds g))
+              spendRow g = maybe g (`dropCopyCast` g) (Map.lookup oid (GameState.copyStandIns g))
           State.modify' $ \g ->
-            (spend g)
+            (spendRow (spend g))
               { GameState.objects = Map.delete oid (GameState.objects g),
                 GameState.outsideCopies = Set.delete oid (GameState.outsideCopies g),
-                GameState.outsideFinds = Map.delete oid (GameState.outsideFinds g)
+                GameState.outsideFinds = Map.delete oid (GameState.outsideFinds g),
+                GameState.copyStandIns = Map.delete oid (GameState.copyStandIns g)
               }
           fmap Seq.singleton (placeObject (Object.owner obj) mkObj dest LibraryPosition.defaultValue)
 

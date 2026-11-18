@@ -5,6 +5,7 @@ import qualified Parun.Types.ActiveAttackProhibition as ActiveAttackProhibition
 import qualified Parun.Types.ActiveAttackRequirement as ActiveAttackRequirement
 import qualified Parun.Types.ActiveBlockRequirement as ActiveBlockRequirement
 import qualified Parun.Types.ActiveCopy as ActiveCopy
+import qualified Parun.Types.ActiveCopyCast as ActiveCopyCast
 import qualified Parun.Types.ActiveEvasion as ActiveEvasion
 import qualified Parun.Types.ActiveLaterPayment as ActiveLaterPayment
 import qualified Parun.Types.ActiveObjectProhibition as ActiveObjectProhibition
@@ -63,6 +64,9 @@ data StoredEffects = MkStoredEffects
     laterPayments :: [ActiveLaterPayment.ActiveLaterPayment],
     -- | CR 603.7: delayed triggered abilities awaiting their event, in creation
     -- order; not cleared at turn handoff.
+    -- | CR 601.3 / 707.12: the standing permissions to cast a copy of a named
+    -- card (Parun.Types.GrantCopyCast), each spent by the one cast it allows.
+    copyCasts :: [ActiveCopyCast.ActiveCopyCast],
     delayedTriggers :: Seq.Seq DelayedTrigger.DelayedTrigger,
     -- | CR 615.5: prevention applications whose additional effect has not run
     -- yet, drained by Resolve.runPreventionRiders before the next state-based

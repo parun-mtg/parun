@@ -45,6 +45,7 @@ import qualified Parun.Types.ActiveAttackProhibition as ActiveAttackProhibition
 import qualified Parun.Types.ActiveAttackRequirement as ActiveAttackRequirement
 import qualified Parun.Types.ActiveBlockRequirement as ActiveBlockRequirement
 import qualified Parun.Types.ActiveCopy as ActiveCopy
+import qualified Parun.Types.ActiveCopyCast as ActiveCopyCast
 import qualified Parun.Types.ActiveEvasion as ActiveEvasion
 import qualified Parun.Types.ActiveLaterPayment as ActiveLaterPayment
 import qualified Parun.Types.ActiveObjectProhibition as ActiveObjectProhibition
@@ -827,6 +828,7 @@ rowExpiry edit kind row = case kind of
   StoredKind.Evasion -> withExpiry edit ActiveEvasion.source ActiveEvasion.expiry (\x e -> x {ActiveEvasion.expiry = e}) row
   StoredKind.IgnoredAbility -> withExpiry edit IgnoredAbility.source IgnoredAbility.expiry (\x e -> x {IgnoredAbility.expiry = e}) row
   StoredKind.LaterPayment -> withExpiry edit (PreventionRider.source . ActiveLaterPayment.payoff) ActiveLaterPayment.expiry (\x e -> x {ActiveLaterPayment.expiry = e}) row
+  StoredKind.CopyCast -> withExpiry edit (ExilePlayPermission.source . ActiveCopyCast.permission) (ExilePlayPermission.expiry . ActiveCopyCast.permission) (\x e -> x {ActiveCopyCast.permission = (ActiveCopyCast.permission x) {ExilePlayPermission.expiry = e}}) row
   StoredKind.DelayedTrigger -> case DelayedTrigger.expiry row of
     Nothing -> pure (Just row)
     Just e -> fmap (fmap (\e' -> row {DelayedTrigger.expiry = Just e'})) (edit (DelayedTrigger.source row) e)

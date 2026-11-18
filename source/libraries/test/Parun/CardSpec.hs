@@ -287,6 +287,7 @@ import qualified Parun.Types.FromReference as FromReference
 import qualified Parun.Types.GainControl as GainControl
 import qualified Parun.Types.GameLossR as GameLossR
 import qualified Parun.Types.GameState as GameState
+import qualified Parun.Types.GrantCopyCast as GrantCopyCast
 import qualified Parun.Types.GrantLookAtExiled as GrantLookAtExiled
 import qualified Parun.Types.GrantPlayFromExile as GrantPlayFromExile
 import qualified Parun.Types.GrantZone as GrantZone
@@ -949,7 +950,7 @@ playerRefPositions =
         ("discard-any-number", Effect.Discard (Discard.AnyNumber (AnyNumberDiscard.MkAnyNumberDiscard (plantedPlayer "da") (AnyNumberMatching.MkAnyNumberMatching (Filter.Type.And []) Nothing) Nothing)), [plantedPlayer "da"]),
         ("player-sacrifices", Effect.PlayerSacrifices (PlayerSacrifices.MkPlayerSacrifices (plantedPlayer "ps") Nothing (Filter.Type.And []) one Nothing), [plantedPlayer "ps"]),
         ("flip-coin", Effect.FlipCoin FlipCoin.MkFlipCoin {FlipCoin.count = one, FlipCoin.reading = CoinReading.Heads, FlipCoin.slot = SlotName.MkSlotName (Text.pack "fc"), FlipCoin.misses = Nothing, FlipCoin.flipper = plantedPlayer "fc"}, [plantedPlayer "fc"]),
-        ("choose-card-name", Effect.ChooseCardName (ChooseCardName.MkChooseCardName (plantedPlayer "cn") (Filter.Type.And []) Nothing), [plantedPlayer "cn"]),
+        ("choose-card-name", Effect.ChooseCardName (ChooseCardName.MkChooseCardName (plantedPlayer "cn") (Filter.Type.And []) Nothing CardSelection.ByChoice), [plantedPlayer "cn"]),
         ("for-each-starting-with", Effect.ForEach (ForEach.MkForEach (ObjectRef.Players (PlayersWho.MkPlayersWho (PlayerRef.Relative PlayerRelation.AnyPlayer) Nothing Nothing)) LoopMembers.Every (SlotName.MkSlotName (Text.pack "each")) Seq.empty False Nothing (Just (plantedPlayer "fe-start"))), [plantedPlayer "fe-start"]),
         ("repeat", Effect.Repeat (Repeat.MkRepeat (Again.AskPlayer (plantedPlayer "rp-chooser")) Seq.empty Nothing (Just (plantedPlayer "rp-other")) Seq.empty), [plantedPlayer "rp-chooser", plantedPlayer "rp-other"]),
         ("choose-number", Effect.ChooseNumber (ChooseNumber.MkChooseNumber (SlotName.MkSlotName (Text.pack "number")) Nothing (plantedPlayer "cn-chooser")), [plantedPlayer "cn-chooser"]),
@@ -5278,7 +5279,7 @@ effectFilters effect = case effect of
   -- restriction against the cards it holds, which are in the game, but a
   -- filter a printed face can answer those can too, so this frame is the
   -- stricter of the two.
-  Effect.ChooseCardName (ChooseCardName.MkChooseCardName _ restriction _) -> outsideTheGameFramed [restriction]
+  Effect.ChooseCardName (ChooseCardName.MkChooseCardName _ restriction _ _) -> outsideTheGameFramed [restriction]
   Effect.ChooseQuality choice -> chosenQualityFilters (ChooseQuality.quality choice)
   -- THE one wish-framed position. CR 400.11c's filter is matched against a
   -- PRINTED FACE (Parun.Engine.Projection.View.viewOfCard) rather than against an
@@ -5588,6 +5589,7 @@ effectFilters effect = case effect of
   -- Nor do card names.
   Effect.OfferNamedCopy {} -> []
   Effect.OfferNotedCopy {} -> []
+  Effect.GrantCopyCast grant -> frame Unframed (durationFilters (GrantCopyCast.duration grant)) <> foldMap conditionFilters (GrantCopyCast.recopy grant)
   -- All THREE positions the opcode can hold a Filter in: the reference, CR 118.9's
   -- stated alternative cost, and CR 702.85a's `restriction`. The cost half is SlotlessCostFramed, and NOT because
   -- the announcement has no slots: CR 608.2g sends the offered cast through rule

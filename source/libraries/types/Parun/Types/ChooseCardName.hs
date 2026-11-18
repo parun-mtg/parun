@@ -1,5 +1,6 @@
 module Parun.Types.ChooseCardName where
 
+import qualified Parun.Types.CardSelection as CardSelection
 import qualified Parun.Types.Filter as Filter
 import qualified Parun.Types.Keyword as Keyword
 import qualified Parun.Types.PlayerRef as PlayerRef
@@ -22,6 +23,10 @@ import qualified Parun.Types.SlotName as SlotName
 data ChooseCardName = MkChooseCardName
   { player :: PlayerRef.PlayerRef,
     restriction :: Filter.Filter Keyword.Keyword,
-    among :: Maybe SlotName.SlotName
+    among :: Maybe SlotName.SlotName,
+    -- | Whether the chooser picks the name or randomness does: Discord, Lord of
+    -- Disharmony's "choose a random nonland Magic card name" draws among the
+    -- names the choice would offer.
+    selection :: CardSelection.CardSelection
   }
   deriving (Eq, Ord, Show)

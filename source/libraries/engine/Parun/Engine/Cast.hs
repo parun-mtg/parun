@@ -51,6 +51,7 @@ import qualified Parun.Extra.Integer as Integer
 import qualified Parun.Extra.Natural as Natural
 import qualified Parun.Types.AbilityName as AbilityName
 import qualified Parun.Types.ActiveCopy as ActiveCopy
+import qualified Parun.Types.ActiveCopyCast as ActiveCopyCast
 import qualified Parun.Types.ActivePlayerEffect as ActivePlayerEffect
 import qualified Parun.Types.ActiveReplacement as ActiveReplacement
 import qualified Parun.Types.Affected as Affected
@@ -1505,14 +1506,19 @@ candidateInZone pid oid name proposed candidate =
   let board = proposedFor pid oid (CandidateCost.keyword candidate) proposed
    in case (Game.zoneOf oid board, proposedFace oid name board) of
         (Just zone, Just face) -> permittedFrom pid oid face board zone
-        (Nothing, Just _) -> permittedOutside pid oid board
+        (Nothing, Just _) -> permittedOutside pid oid name board
         _ -> False
 
 -- CR 400.11 / 601.3: may this player cast this stand-in for a card outside the
 -- game (Event.offerOutside)? Only a CastFrom permission opening outside the game
--- allows it; no rule does.
-permittedOutside :: PlayerId -> ObjectId -> GameState -> Bool
-permittedOutside pid oid gs = not (null (PlayerEffect.castPermissionsFrom pid CastOrigin.OutsideTheGame oid gs))
+-- allows it, or, for a copy a StoredEffects.copyCasts row stands in
+-- (GameState.copyStandIns), the open permission the copy carries; no rule does.
+-- That row's is a permission to cast "a spell with that name", so it admits
+-- only the face `name` is the row's name.
+permittedOutside :: PlayerId -> ObjectId -> CardName.CardName -> GameState -> Bool
+permittedOutside pid oid name gs =
+  not (null (PlayerEffect.castPermissionsFrom pid CastOrigin.OutsideTheGame oid gs))
+    || (fmap ActiveCopyCast.name (Game.copyCastOf oid gs) == Just name && not (null (Expiry.openPermissions pid oid gs)))
 
 -- CR 601.3: the zones a spell can be cast from at all, in the engine's
 -- canonical order -- what castableSpells scans, and the list inCastableZone
@@ -1890,7 +1896,7 @@ inCastableZone pid oid name gs =
     Nothing -> False
     -- Membership first, so only the zone the object lies in pays for its
     -- permission (#4698).
-    Just face -> any (\zone -> elem oid (zoneCandidates zone pid gs) && permittedFrom pid oid face gs zone) castZones || permittedOutside pid oid gs
+    Just face -> any (\zone -> elem oid (zoneCandidates zone pid gs) && permittedFrom pid oid face gs zone) castZones || permittedOutside pid oid name gs
 
 -- CR 205.4e: a legendary instant or sorcery can't be cast unless its caster
 -- controls a legendary creature or a legendary planeswalker.

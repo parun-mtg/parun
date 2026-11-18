@@ -64,6 +64,7 @@ import qualified Parun.Types.ForbidAttack as ForbidAttack
 import qualified Parun.Types.ForbidBeingBlocked as ForbidBeingBlocked
 import qualified Parun.Types.FromOutsideTheGame as FromOutsideTheGame
 import qualified Parun.Types.GainControl as GainControl
+import qualified Parun.Types.GrantCopyCast as GrantCopyCast
 import qualified Parun.Types.GrantLookAtExiled as GrantLookAtExiled
 import qualified Parun.Types.GrantPlayFromExile as GrantPlayFromExile
 import qualified Parun.Types.Guess as Guess
@@ -914,6 +915,10 @@ data Effect card ability
     -- rulebook's and is minted by Parun.Engine.Airbend rather than through this
     -- opcode.
     GrantPlayFromExile GrantPlayFromExile.GrantPlayFromExile
+  | -- | CR 601.3 / 707.12: grant a standing permission to cast one copy of the
+    -- card with the name the resolution chose, created outside the game as CR
+    -- 707.13's is (Discord, Lord of Disharmony).
+    GrantCopyCast GrantCopyCast.GrantCopyCast
   | -- | CR 406.3: the payload's player (CR 109.5's "you" unless it names
     -- another) may look at the face-down exiled cards the payload names, for
     -- as long as they remain in exile (Extract Power), and

@@ -35,6 +35,7 @@ import qualified Parun.Types.ActiveAttackProhibition as ActiveAttackProhibition
 import qualified Parun.Types.ActiveAttackRequirement as ActiveAttackRequirement
 import qualified Parun.Types.ActiveBlockRequirement as ActiveBlockRequirement
 import qualified Parun.Types.ActiveCopy as ActiveCopy
+import qualified Parun.Types.ActiveCopyCast as ActiveCopyCast
 import qualified Parun.Types.ActiveEvasion as ActiveEvasion
 import qualified Parun.Types.ActiveObjectProhibition as ActiveObjectProhibition
 import qualified Parun.Types.ActivePlayerEffect as ActivePlayerEffect
@@ -58,6 +59,7 @@ import qualified Parun.Types.DamageDirection as DamageDirection
 import qualified Parun.Types.DamageEvent as DamageEvent
 import qualified Parun.Types.EntryLink as EntryLink
 import qualified Parun.Types.ExileLink as ExileLink
+import qualified Parun.Types.ExilePlayPermission as ExilePlayPermission
 import qualified Parun.Types.GameEvent as GameEvent
 import Parun.Types.GameState (GameState)
 import qualified Parun.Types.GameState as GameState
@@ -430,6 +432,9 @@ rowNames oid gs kind row = case kind of
   StoredKind.Replacement -> Mentions.activeReplacementNames (searched oid) row
   StoredKind.DelayedTrigger -> Mentions.delayedTriggerNames (searched oid) row
   StoredKind.LaterPayment -> Mentions.activeLaterPaymentNames (searched oid) row
+  -- Names its source and the ability its recopy copies, neither a filter nor a
+  -- slot.
+  StoredKind.CopyCast -> Monoid.Any (ExilePlayPermission.source (ActiveCopyCast.permission row) == oid || ActiveCopyCast.ability row == oid)
   StoredKind.PendingPreventionRider -> Mentions.preventionNames (searched oid) row
   StoredKind.PendingReplacementEffect -> Mentions.pendingDamageEffectNames (searched oid) row
   StoredKind.PendingSkipEffect -> Mentions.pendingDamageEffectNames (searched oid) (PendingSkipEffect.pending row)
@@ -691,6 +696,7 @@ namedByRelation oid gs =
         || maybe False (\picks -> any (Set.member oid) (RepeatPicks.picked picks) || any (Set.member oid) (RepeatPicks.refused picks)) (Bookkeeping.repeatPicks (GameState.bookkeeping gs))
         || elem oid (GameState.revealedTops gs)
         || Set.member oid (GameState.outsideCopies gs)
+        || keyed (GameState.copyStandIns gs)
         || any (triggeredNames oid) (History.triggeredThisGame (GameState.history gs))
         || any (triggeredNames oid) (TurnRegisters.instructionsTakenThisTurn (GameState.turn gs))
         || any (triggeredNames oid) [record | GameEvent.AbilityTriggered record <- fmap LoggedEvent.event (Foldable.toList (TurnRegisters.events (GameState.turn gs)))]

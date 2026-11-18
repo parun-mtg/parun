@@ -154,6 +154,8 @@ library codec
     Parun.Codec.ActiveBlockRequirement
     Parun.Codec.ActiveBlockRequirementSpec
     Parun.Codec.ActiveCopy
+    Parun.Codec.ActiveCopyCast
+    Parun.Codec.ActiveCopyCastSpec
     Parun.Codec.ActiveCopySpec
     Parun.Codec.ActiveEvasion
     Parun.Codec.ActiveEvasionSpec
@@ -1008,6 +1010,8 @@ library codec
     Parun.Codec.GameState
     Parun.Codec.Gift
     Parun.Codec.GiftSpec
+    Parun.Codec.GrantCopyCast
+    Parun.Codec.GrantCopyCastSpec
     Parun.Codec.GrantedAbility
     Parun.Codec.GrantedAbilitySpec
     Parun.Codec.GrantLookAtExiled
@@ -2868,6 +2872,7 @@ library types
     Parun.Types.ActiveAttackRequirement
     Parun.Types.ActiveBlockRequirement
     Parun.Types.ActiveCopy
+    Parun.Types.ActiveCopyCast
     Parun.Types.ActiveEvasion
     Parun.Types.ActiveLaterPayment
     Parun.Types.ActiveObjectProhibition
@@ -3345,6 +3350,7 @@ library types
     Parun.Types.GameState
     Parun.Types.Generator
     Parun.Types.Gift
+    Parun.Types.GrantCopyCast
     Parun.Types.GrantedAbility
     Parun.Types.GrantLookAtExiled
     Parun.Types.GrantPlayFromExile

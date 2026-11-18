@@ -1819,6 +1819,14 @@ priorityDecision trail = do
                           let completion = Completion.MkCompletion {Completion.announcement = Nothing, Completion.paid = Fragmented.paid Nothing post}
                               completed = if Cost.touchedLibrary pre post then Nothing else Just completion
                           Monad.when (any refusing completed) (Cost.restoreKeepingLibraryActions pre >> Game.noteUndoing p Undoing.RepeatedLoop)
+                          -- CR 707.10 / 601.2i: a copy a StoredEffects.copyCasts
+                          -- row allowed has become cast where the cast spent the
+                          -- row (Event.castFromOutside), and the row's recopy
+                          -- runs as it does.
+                          cast <- State.get
+                          let row = Game.copyCastOf oid pre
+                              spentRow r = List.notElem r (StoredEffects.copyCasts (GameState.stored cast))
+                          Monad.forM_ (List.filter spentRow (Maybe.maybeToList row)) (Resolve.recopyAbility playSubgame)
                           grantAfterAction gs p
                           pure (PriorityWindow.Open (Fragmented.complete completed trail'))
                         -- CR 116.2b / 702.37e / 701.40b: a special action, so

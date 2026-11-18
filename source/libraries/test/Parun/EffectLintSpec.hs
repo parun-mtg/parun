@@ -142,6 +142,7 @@ import qualified Parun.Types.ForEach as ForEach
 import qualified Parun.Types.ForbidAttack as ForbidAttack
 import qualified Parun.Types.ForbidBeingBlocked as ForbidBeingBlocked
 import qualified Parun.Types.GainControl as GainControl
+import qualified Parun.Types.GrantCopyCast as GrantCopyCast
 import qualified Parun.Types.GrantLookAtExiled as GrantLookAtExiled
 import qualified Parun.Types.GrantPlayFromExile as GrantPlayFromExile
 import qualified Parun.Types.GrantedAbility as GrantedAbility
@@ -1747,6 +1748,7 @@ effectObjectRefs effect =
         -- Nor here: the opcode names cards by name.
         Effect.OfferNamedCopy {} -> []
         Effect.OfferNotedCopy {} -> []
+        Effect.GrantCopyCast {} -> []
         -- Word of Command's "choose a card from it", out of the hand it looked at.
         -- And Arcane Savant's "a card you exiled with cards named Arcane Savant",
         -- chosen in exile.
@@ -4074,6 +4076,7 @@ begunWindows card =
         Effect.ForbidAttack e -> Just (ForbidAttack.duration e)
         Effect.RequireAttack e -> Just (RequireAttack.duration e)
         Effect.GrantPlayFromExile e -> Just (GrantPlayFromExile.duration e)
+        Effect.GrantCopyCast e -> Just (GrantCopyCast.duration e)
         Effect.SkipPhase e -> Just (SkipPhase.duration e)
         Effect.Prohibit e -> Just (Prohibit.duration e)
         _ -> Nothing

@@ -25,6 +25,7 @@ import qualified Parun.Engine.Binding as Binding
 import qualified Parun.Engine.Card as Card
 import qualified Parun.Engine.Cast as Cast
 import qualified Parun.Engine.Combat as Combat
+import qualified Parun.Engine.Condition as Condition
 import qualified Parun.Engine.Cost as Cost
 import qualified Parun.Engine.Decide as Decide
 import qualified Parun.Engine.Dice as Dice
@@ -52,6 +53,7 @@ import qualified Parun.Types.AbilityName as AbilityName
 import qualified Parun.Types.AbilityWasActivated as AbilityWasActivated
 import qualified Parun.Types.ActivatedAbility as ActivatedAbility
 import qualified Parun.Types.ActivationRestriction as ActivationRestriction.Type
+import qualified Parun.Types.ActiveCopyCast as ActiveCopyCast
 import qualified Parun.Types.Binding as Binding.Type
 import qualified Parun.Types.CandidateCost as CandidateCost
 import qualified Parun.Types.Card as Card.Type
@@ -63,12 +65,15 @@ import qualified Parun.Types.ClauseIndex as ClauseIndex
 import qualified Parun.Types.CoinFace as CoinFace
 import qualified Parun.Types.Combat as Combat.Type
 import qualified Parun.Types.ControlDuration as ControlDuration
+import qualified Parun.Types.CopyStackObject as CopyStackObject
+import qualified Parun.Types.CopyTargets as CopyTargets
 import qualified Parun.Types.Cost as Cost.Type
 import qualified Parun.Types.Decider as Decider
 import qualified Parun.Types.DieResult as DieResult
 import Parun.Types.Effect (Effect)
 import qualified Parun.Types.Effect as Effect
 import qualified Parun.Types.ExileLink as ExileLink
+import qualified Parun.Types.ExilePlayPermission as ExilePlayPermission
 import qualified Parun.Types.Face as Face
 import qualified Parun.Types.FaceDownCharacteristics as FaceDownCharacteristics
 import qualified Parun.Types.FaceDownReason as FaceDownReason
@@ -90,6 +95,7 @@ import qualified Parun.Types.ModeIndex as ModeIndex
 import qualified Parun.Types.ModifiedRoll as ModifiedRoll
 import qualified Parun.Types.Object as Object
 import Parun.Types.ObjectId (ObjectId)
+import qualified Parun.Types.ObjectRef as ObjectRef
 import qualified Parun.Types.OptionalDecision as OptionalDecision
 import qualified Parun.Types.PayGate as PayGate
 import qualified Parun.Types.PayObligation as PayObligation
@@ -107,6 +113,8 @@ import qualified Parun.Types.PlayerActed as PlayerActed
 import qualified Parun.Types.PlayerAction as PlayerAction
 import qualified Parun.Types.PlayerControl as PlayerControl
 import Parun.Types.PlayerId (PlayerId)
+import qualified Parun.Types.PlayerRef as PlayerRef
+import qualified Parun.Types.PlayerRelation as PlayerRelation
 import qualified Parun.Types.Prevention as Prevention
 import qualified Parun.Types.PreventionRider as PreventionRider
 import qualified Parun.Types.PrintingId as PrintingId
@@ -602,6 +610,7 @@ applyOneEffect runSubgame resolving source controller legal chosen effect = case
   Effect.OfferNamedCopy payload -> Zones.offerNamedCopy offerOutsideCopy runSubgame resolving source controller legal payload
   Effect.OfferNotedCopy payload -> Zones.offerNotedCopy offerOutsideCopy runSubgame resolving source controller legal payload
   Effect.GrantPlayFromExile payload -> Zones.grantPlayFromExile resolving source controller legal payload
+  Effect.GrantCopyCast payload -> Zones.grantCopyCast resolving source controller legal payload
   Effect.GrantLookAtExiled payload -> Zones.grantLookAtExiled resolving source controller legal payload
   Effect.MakePlotted payload -> Zones.makePlotted resolving source controller legal payload
   Effect.MakeForetold payload -> Zones.makeForetold resolving source controller legal payload
@@ -801,6 +810,33 @@ runPreventionRider runSubgame prevention = Foldable.for_ (Prevention.rider preve
 runLaterPayment :: Game Result -> PreventionRider.PreventionRider -> Game ()
 runLaterPayment runSubgame payoff =
   Monad.void (runCarrying runSubgame (PreventionRider.source payoff) (PreventionRider.controller payoff) Map.empty (PreventionRider.targets payoff) (PreventionRider.effects payoff))
+
+-- CR 707.10: a StoredEffects.copyCasts row's "if you cast a spell this way,
+-- copy this ability if ...", run as the spell it allowed becomes cast (CR
+-- 601.2i), and no delayed triggered ability, the sentence having no "when" or
+-- "at" (CR 603.7). The ability is the one that stored the row, by its stack id, which
+-- Game.cease archived as it left the stack, so it is copied off
+-- Snapshots.stackArchive as CR 702.50a's epic copies its spell; the holder
+-- copies it, and the condition is asked of the row's source then.
+-- runLaterPayment's environment: `source` is resolving and source, and the
+-- ability is the one slot. Discord, Lord of Disharmony's scenarios prove it.
+recopyAbility :: Game Result -> ActiveCopyCast.ActiveCopyCast -> Game ()
+recopyAbility runSubgame row = Monad.forM_ (ActiveCopyCast.recopy row) $ \condition -> do
+  gs <- State.get
+  let permission = ActiveCopyCast.permission row
+      source = ExilePlayPermission.source permission
+      holder = ExilePlayPermission.player permission
+      copyIt =
+        CopyStackObject.MkCopyStackObject
+          { CopyStackObject.ref = ObjectRef.InSlot Binding.thisAbility,
+            CopyStackObject.targets = CopyTargets.Copied,
+            CopyStackObject.quantity = Quantity.Type.Literal 1,
+            CopyStackObject.copier = PlayerRef.Relative PlayerRelation.You,
+            CopyStackObject.exceptions = [],
+            CopyStackObject.slot = Nothing
+          }
+  Monad.when (Condition.holds (Projection.fullView gs) (Projection.sourceContext gs (Just holder) source) gs source condition) $
+    Monad.void (runCarrying runSubgame source holder Map.empty (Map.singleton Binding.thisAbility (Set.singleton (Recipient.ToObject (ActiveCopyCast.ability row)))) [Effect.CopyStackObject copyIt])
 
 -- CR 614.1c: run the effects of every as-enters rewrite that has applied and not
 -- run yet. Drains StoredEffects.pendingEntryEffects, which Parun.Engine.Event filled

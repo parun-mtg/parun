@@ -271,6 +271,7 @@ import qualified Parun.Types.FullText as FullText
 import qualified Parun.Types.GainControl as GainControl
 import qualified Parun.Types.GameLossR as GameLossR
 import qualified Parun.Types.Gift as Gift
+import qualified Parun.Types.GrantCopyCast as GrantCopyCast
 import qualified Parun.Types.GrantLookAtExiled as GrantLookAtExiled
 import qualified Parun.Types.GrantPlayFromExile as GrantPlayFromExile
 import qualified Parun.Types.GrantedAbility as GrantedAbility
@@ -1321,8 +1322,8 @@ effectChildren c effect = case effect of
       anotherCounter x = case x of
         AnotherCounter.EachKind named -> AnotherCounter.EachKind <$> onSlot c named
         AnotherCounter.ChosenKind named -> AnotherCounter.ChosenKind <$> onSlot c named
-  Effect.ChooseCardName (ChooseCardName.MkChooseCardName who restriction among) ->
-    fmap Effect.ChooseCardName (ChooseCardName.MkChooseCardName <$> onPlayer c who <*> onFilter c restriction <*> traverse (onSlot c) among)
+  Effect.ChooseCardName (ChooseCardName.MkChooseCardName who restriction among selection) ->
+    fmap Effect.ChooseCardName (ChooseCardName.MkChooseCardName <$> onPlayer c who <*> onFilter c restriction <*> traverse (onSlot c) among <*> pure selection)
   Effect.ChooseQuality (ChooseQuality.MkChooseQuality quality linked secret) -> fmap Effect.ChooseQuality (ChooseQuality.MkChooseQuality <$> chosenQualityChildren (onSubtype c) (onFilter c) quality <*> pure linked <*> pure secret)
   Effect.Bolster quantity -> fmap Effect.Bolster (onQuantity c quantity)
   Effect.Amass (Amass.MkAmass who quantity kind named) -> fmap Effect.Amass (Amass.MkAmass <$> onPlayer c who <*> onQuantity c quantity <*> pure kind <*> traverse (onSlot c) named)
@@ -1377,6 +1378,8 @@ effectChildren c effect = case effect of
       )
   Effect.OfferNamedCopy _ -> pure effect
   Effect.OfferNotedCopy offer -> fmap Effect.OfferNotedCopy (castOfferChildren c offer)
+  Effect.GrantCopyCast (GrantCopyCast.MkGrantCopyCast duration who spending recopy) ->
+    fmap Effect.GrantCopyCast (GrantCopyCast.MkGrantCopyCast <$> onDuration c duration <*> onPlayer c who <*> pure spending <*> traverse (onCondition c) recopy)
   Effect.GrantPlayFromExile (GrantPlayFromExile.MkGrantPlayFromExile duration who ref spending alternativeCost condition verb increase increaseUnless landEnters spellEnters upTo keywords zone) ->
     fmap
       Effect.GrantPlayFromExile

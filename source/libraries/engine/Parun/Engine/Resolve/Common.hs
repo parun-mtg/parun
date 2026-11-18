@@ -3974,6 +3974,7 @@ effectIsImpossible asked resolving source controller legal gs effect = case effe
   Effect.OfferNamedCopy {} -> False
   Effect.OfferNotedCopy {} -> False
   Effect.GrantPlayFromExile {} -> False
+  Effect.GrantCopyCast {} -> False
   Effect.GrantLookAtExiled {} -> False
   Effect.MakePlotted {} -> False
   Effect.MakeForetold {} -> False

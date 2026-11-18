@@ -76,6 +76,7 @@ import qualified Parun.Codec.ForbidAttack as ForbidAttack
 import qualified Parun.Codec.ForbidBeingBlocked as ForbidBeingBlocked
 import qualified Parun.Codec.FromOutsideTheGame as FromOutsideTheGame
 import qualified Parun.Codec.GainControl as GainControl
+import qualified Parun.Codec.GrantCopyCast as GrantCopyCast
 import qualified Parun.Codec.GrantLookAtExiled as GrantLookAtExiled
 import qualified Parun.Codec.GrantPlayFromExile as GrantPlayFromExile
 import qualified Parun.Codec.Guess as Guess
@@ -345,6 +346,7 @@ codec cardCodec abilityCodec =
           Arm.payload "OfferNamedCopy" (Common.nonEmpty CardName.codec) Effect.OfferNamedCopy (\x -> case x of Effect.OfferNamedCopy y -> Just y; _ -> Nothing),
           Arm.payload "OfferNotedCopy" CastOffer.codec Effect.OfferNotedCopy (\x -> case x of Effect.OfferNotedCopy y -> Just y; _ -> Nothing),
           Arm.payload "GrantPlayFromExile" GrantPlayFromExile.codec Effect.GrantPlayFromExile (\x -> case x of Effect.GrantPlayFromExile y -> Just y; _ -> Nothing),
+          Arm.payload "GrantCopyCast" GrantCopyCast.codec Effect.GrantCopyCast (\x -> case x of Effect.GrantCopyCast y -> Just y; _ -> Nothing),
           Arm.payload "GrantLookAtExiled" GrantLookAtExiled.codec Effect.GrantLookAtExiled (\x -> case x of Effect.GrantLookAtExiled y -> Just y; _ -> Nothing),
           Arm.payload "MakePlotted" ObjectRef.codec Effect.MakePlotted (\x -> case x of Effect.MakePlotted y -> Just y; _ -> Nothing),
           Arm.payload "MakeForetold" MakeForetold.codec Effect.MakeForetold (\x -> case x of Effect.MakeForetold y -> Just y; _ -> Nothing),
@@ -542,6 +544,7 @@ tagOf x = case x of
   Effect.OfferNamedCopy {} -> "OfferNamedCopy"
   Effect.OfferNotedCopy {} -> "OfferNotedCopy"
   Effect.GrantPlayFromExile {} -> "GrantPlayFromExile"
+  Effect.GrantCopyCast {} -> "GrantCopyCast"
   Effect.GrantLookAtExiled {} -> "GrantLookAtExiled"
   Effect.MakePlotted {} -> "MakePlotted"
   Effect.MakeForetold {} -> "MakeForetold"

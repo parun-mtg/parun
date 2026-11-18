@@ -165,6 +165,7 @@ import qualified Parun.Types.GainControl as GainControl
 import qualified Parun.Types.GameLossR as GameLossR
 import Parun.Types.GameState (GameState)
 import qualified Parun.Types.GameState as GameState
+import qualified Parun.Types.GrantCopyCast as GrantCopyCast
 import qualified Parun.Types.GrantLookAtExiled as GrantLookAtExiled
 import qualified Parun.Types.GrantPlayFromExile as GrantPlayFromExile
 import qualified Parun.Types.GrantedAbility as GrantedAbility
@@ -1014,7 +1015,7 @@ effectPlayerRefs effect = case effect of
   Effect.Proliferate _ -> []
   Effect.Rethrow -> []
   Effect.RerollStoredResults _ -> []
-  Effect.ChooseCardName (ChooseCardName.MkChooseCardName ref _ _) -> [ref]
+  Effect.ChooseCardName (ChooseCardName.MkChooseCardName ref _ _ _) -> [ref]
   Effect.ChooseQuality _ -> []
   Effect.Bolster {} -> []
   Effect.Amass (Amass.Type.MkAmass ref _ _ _) -> [ref]
@@ -1061,6 +1062,7 @@ effectPlayerRefs effect = case effect of
   Effect.OfferNotedCopy {} -> []
   -- CR 601.3's "that player", the seat the permission is written for.
   Effect.GrantPlayFromExile x -> durationPlayerRefs (GrantPlayFromExile.duration x) <> [GrantPlayFromExile.player x]
+  Effect.GrantCopyCast x -> durationPlayerRefs (GrantCopyCast.duration x) <> [GrantCopyCast.player x]
   -- CR 406.3's looker.
   Effect.GrantLookAtExiled x -> [GrantLookAtExiled.player x]
   Effect.MakePlotted {} -> []
@@ -1239,7 +1241,7 @@ slotsOf effect = joinTwo (joinTwo (joinSlots (fmap objectRefSlots (effectObjectR
   -- CHOOSER's slot is effectPlayerRefs' half, joined at the head above (Petra
   -- Sphinx's "target player").
   -- The group the names are drawn from, ChosenCardFromAmong's read.
-  Effect.ChooseCardName (ChooseCardName.MkChooseCardName _ _ among) -> foldMap (`Map.singleton` SlotArity.Many) among
+  Effect.ChooseCardName (ChooseCardName.MkChooseCardName _ _ among _) -> foldMap (`Map.singleton` SlotArity.Many) among
   Effect.ChooseQuality _ -> Map.empty
   -- No slot: the card comes from outside the game, where CR 400.11c lets nothing
   -- target and so nothing was announced (CR 601.2c).
@@ -1577,6 +1579,7 @@ slotsOf effect = joinTwo (joinTwo (joinSlots (fmap objectRefSlots (effectObjectR
   Effect.OfferNamedCopy {} -> Map.empty
   Effect.OfferNotedCopy {} -> Map.empty
   Effect.GrantPlayFromExile grant -> joinTwo (durationSlots (GrantPlayFromExile.duration grant)) (maybe Map.empty conditionSlots (GrantPlayFromExile.condition grant))
+  Effect.GrantCopyCast grant -> joinTwo (durationSlots (GrantCopyCast.duration grant)) (maybe Map.empty conditionSlots (GrantCopyCast.recopy grant))
   -- What the BODY reads from outside the loop, and what its per-member gate
   -- reads (modeSlots' payer, multiplier and basis). The loop's own member slot
   -- and what an earlier body instruction bound are the loop's own definitions
@@ -2429,6 +2432,7 @@ ownSlotsAreExhaustive effect = case effect of
   Effect.OfferNamedCopy {} -> True
   Effect.OfferNotedCopy {} -> True
   Effect.GrantPlayFromExile grant -> durationSlotsAreExhaustive (GrantPlayFromExile.duration grant) && all conditionSlotsAreExhaustive (GrantPlayFromExile.condition grant)
+  Effect.GrantCopyCast grant -> durationSlotsAreExhaustive (GrantCopyCast.duration grant) && all conditionSlotsAreExhaustive (GrantCopyCast.recopy grant)
   -- PreventNextDamage's answer for the body, plus its own ref's: a PlayerRef
   -- nested in the DEPTH is one slotsOf cannot see.
   Effect.ForEach (ForEach.MkForEach _ _ _ body _ gate _) -> all slotsAreExhaustive body && all (\g -> all Quantity.slotsAreExhaustive (PayGate.perEach g) && all Quantity.slotsAreExhaustive (PayGate.x g)) gate
@@ -2719,6 +2723,7 @@ hasRead wanted =
         Effect.OfferNamedCopy {} -> False
         Effect.OfferNotedCopy {} -> False
         Effect.GrantPlayFromExile {} -> False
+        Effect.GrantCopyCast {} -> False
         -- CR 608.2f's body is an effect list like any other, so an X inside it counts.
         Effect.ForEach (ForEach.MkForEach _ _ _ body _ _ _) -> hasRead wanted (Foldable.toList body)
         Effect.ForEachNumber (ForEachNumber.MkForEachNumber upTo _ body) -> Quantity.hasRead wanted upTo || hasRead wanted (Foldable.toList body)
@@ -3027,6 +3032,7 @@ boundSlots effect = case effect of
   Effect.OfferNamedCopy {} -> Set.empty
   Effect.OfferNotedCopy {} -> Set.empty
   Effect.GrantPlayFromExile {} -> Set.empty
+  Effect.GrantCopyCast {} -> Set.empty
   -- The loop's member slot, plus every name the BODY authors -- which the loop
   -- really does leave bound once it is over, to the union across its members
   -- (Parun.Engine.Resolve.Arms.Zones's arm).

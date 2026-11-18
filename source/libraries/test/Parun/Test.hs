@@ -53,6 +53,7 @@ import qualified Parun.Codec.ActivatorSpec
 import qualified Parun.Codec.ActiveAttackProhibitionSpec
 import qualified Parun.Codec.ActiveAttackRequirementSpec
 import qualified Parun.Codec.ActiveBlockRequirementSpec
+import qualified Parun.Codec.ActiveCopyCastSpec
 import qualified Parun.Codec.ActiveCopySpec
 import qualified Parun.Codec.ActiveEvasionSpec
 import qualified Parun.Codec.ActiveLaterPaymentSpec
@@ -464,6 +465,7 @@ import qualified Parun.Codec.GameLossRSpec
 import qualified Parun.Codec.GameOutcomeSpec
 import qualified Parun.Codec.GameSettingsSpec
 import qualified Parun.Codec.GiftSpec
+import qualified Parun.Codec.GrantCopyCastSpec
 import qualified Parun.Codec.GrantLookAtExiledSpec
 import qualified Parun.Codec.GrantPlayFromExileSpec
 import qualified Parun.Codec.GrantZoneSpec
@@ -1186,6 +1188,7 @@ spec s reference corpus = do
   Parun.Codec.ActiveAttackRequirementSpec.spec s
   Parun.Codec.ActiveBlockRequirementSpec.spec s
   Parun.Codec.ActiveCopySpec.spec s
+  Parun.Codec.ActiveCopyCastSpec.spec s
   Parun.Codec.ActiveEvasionSpec.spec s
   Parun.Codec.ActiveLaterPaymentSpec.spec s
   Parun.Codec.ActiveObjectProhibitionSpec.spec s
@@ -1610,6 +1613,7 @@ spec s reference corpus = do
   Parun.Codec.GiftSpec.spec s
   Parun.Codec.GrantedAbilitySpec.spec s
   Parun.Codec.GrantLookAtExiledSpec.spec s
+  Parun.Codec.GrantCopyCastSpec.spec s
   Parun.Codec.GrantPlayFromExileSpec.spec s
   Parun.Codec.GrantZoneSpec.spec s
   Parun.Codec.GraveyardOrderSpec.spec s
