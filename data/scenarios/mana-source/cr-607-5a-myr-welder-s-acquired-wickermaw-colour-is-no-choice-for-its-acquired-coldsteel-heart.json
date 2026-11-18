@@ -42,9 +42,9 @@
     { "turn": 3, "step": "PrecombatMain", "player": "alice", "do": "Pass" },
     { "turn": 3, "step": "PrecombatMain", "player": "alice", "check": { "Count": { "player": "alice", "zone": "Exile", "card": "Coldsteel Heart", "count": 1 } } },
     { "turn": 5, "step": "PrecombatMain", "player": "alice", "check": { "View": { "of": "Offered", "player": "alice", "is": ["Pass", "ActivateManaAbility $welder", "ActivateManaAbility $swamp"] } } },
-    { "turn": 5, "step": "PrecombatMain", "player": "alice", "do": { "Take": { "action": "ActivateManaAbility $welder", "mana": ["$swamp", null], "yields": [[{ "manaType": { "type": "Colored", "value": "Blue" }, "restriction": null, "retention": "Ordinary", "rider": null, "sourceChoices": null, "tags": [{"CardType": "Artifact"}] }]] } } },
+    { "turn": 5, "step": "PrecombatMain", "player": "alice", "do": { "Take": { "action": "ActivateManaAbility $welder", "mana": ["$swamp", null], "yields": [[{ "manaType": { "type": "Colored", "value": "Blue" }, "restriction": null, "retention": "Ordinary", "rider": null, "sourceChoices": null, "tags": [{"CardType": "Artifact"}, {"CardType": "Creature"}] }]] } } },
     { "turn": 5, "step": "PrecombatMain", "player": "alice", "check": { "View": { "of": "Colors", "object": "$welder", "is": ["Blue"] } } },
     { "turn": 5, "step": "PrecombatMain", "player": "alice", "do": { "Take": { "action": "ActivateManaAbility $welder" } } },
-    { "turn": 5, "step": "PrecombatMain", "player": "alice", "check": { "View": { "of": "ManaPool", "player": "alice", "is": [{ "manaType": { "type": "Colored", "value": "Blue" }, "tags": [{"CardType": "Artifact"}], "retention": "Ordinary", "restriction": null, "rider": null, "sourceChoices": null }] } } }
+    { "turn": 5, "step": "PrecombatMain", "player": "alice", "check": { "View": { "of": "ManaPool", "player": "alice", "is": [{ "manaType": { "type": "Colored", "value": "Blue" }, "tags": [{"CardType": "Artifact"}, {"CardType": "Creature"}], "retention": "Ordinary", "restriction": null, "rider": null, "sourceChoices": null }] } } }
   ]
 }

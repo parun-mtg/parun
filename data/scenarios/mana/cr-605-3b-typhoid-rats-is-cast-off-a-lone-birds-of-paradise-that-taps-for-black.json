@@ -44,7 +44,11 @@
                   "type": "Colored",
                   "value": "Black"
                 },
-                "tags": [],
+                "tags": [
+                  {
+                    "CardType": "Creature"
+                  }
+                ],
                 "retention": "Ordinary",
                 "restriction": null,
                 "rider": null,

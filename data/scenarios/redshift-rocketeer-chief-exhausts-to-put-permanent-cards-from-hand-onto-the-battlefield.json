@@ -115,11 +115,11 @@
     {
       "do": {
         "Activate": {
+          "object": "$red",
           "ability": 1,
           "mana": [
             "$red"
           ],
-          "object": "$red",
           "yields": [
             [
               {
@@ -127,32 +127,40 @@
                   "type": "Colored",
                   "value": "Red"
                 },
+                "tags": [
+                  {
+                    "CardType": "Creature"
+                  }
+                ],
+                "retention": "Ordinary",
                 "restriction": {
                   "activations": {
                     "type": "And",
                     "value": []
                   }
                 },
-                "retention": "Ordinary",
                 "rider": null,
-                "sourceChoices": null,
-                "tags": []
+                "sourceChoices": null
               },
               {
                 "manaType": {
                   "type": "Colored",
                   "value": "Red"
                 },
+                "tags": [
+                  {
+                    "CardType": "Creature"
+                  }
+                ],
+                "retention": "Ordinary",
                 "restriction": {
                   "activations": {
                     "type": "And",
                     "value": []
                   }
                 },
-                "retention": "Ordinary",
                 "rider": null,
-                "sourceChoices": null,
-                "tags": []
+                "sourceChoices": null
               }
             ]
           ]

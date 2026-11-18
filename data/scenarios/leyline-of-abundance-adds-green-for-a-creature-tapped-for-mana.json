@@ -137,7 +137,11 @@
                 "type": "Colored",
                 "value": "Green"
               },
-              "tags": [],
+              "tags": [
+                {
+                  "CardType": "Creature"
+                }
+              ],
               "retention": "Ordinary",
               "restriction": null,
               "rider": null,
@@ -182,7 +186,11 @@
                 "type": "Colored",
                 "value": "Green"
               },
-              "tags": [],
+              "tags": [
+                {
+                  "CardType": "Creature"
+                }
+              ],
               "retention": "Ordinary",
               "restriction": null,
               "rider": null,

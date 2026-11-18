@@ -80,6 +80,7 @@
     {
       "do": {
         "Activate": {
+          "object": "$class",
           "ability": 1,
           "mana": [
             "$shivan",
@@ -88,7 +89,6 @@
             "$g3",
             "$g4"
           ],
-          "object": "$class",
           "yields": [
             [
               {
@@ -96,6 +96,12 @@
                   "type": "Colored",
                   "value": "Red"
                 },
+                "tags": [
+                  {
+                    "CardType": "Creature"
+                  }
+                ],
+                "retention": "Ordinary",
                 "restriction": {
                   "casts": {
                     "type": "Or",
@@ -115,10 +121,8 @@
                     "value": "ClassLevel"
                   }
                 },
-                "retention": "Ordinary",
                 "rider": null,
-                "sourceChoices": null,
-                "tags": []
+                "sourceChoices": null
               }
             ],
             [
@@ -127,6 +131,12 @@
                   "type": "Colored",
                   "value": "Blue"
                 },
+                "tags": [
+                  {
+                    "CardType": "Creature"
+                  }
+                ],
+                "retention": "Ordinary",
                 "restriction": {
                   "casts": {
                     "type": "Or",
@@ -146,10 +156,8 @@
                     "value": "ClassLevel"
                   }
                 },
-                "retention": "Ordinary",
                 "rider": null,
-                "sourceChoices": null,
-                "tags": []
+                "sourceChoices": null
               }
             ],
             [
@@ -158,6 +166,12 @@
                   "type": "Colored",
                   "value": "Blue"
                 },
+                "tags": [
+                  {
+                    "CardType": "Creature"
+                  }
+                ],
+                "retention": "Ordinary",
                 "restriction": {
                   "casts": {
                     "type": "Or",
@@ -177,10 +191,8 @@
                     "value": "ClassLevel"
                   }
                 },
-                "retention": "Ordinary",
                 "rider": null,
-                "sourceChoices": null,
-                "tags": []
+                "sourceChoices": null
               }
             ],
             [
@@ -189,6 +201,12 @@
                   "type": "Colored",
                   "value": "Blue"
                 },
+                "tags": [
+                  {
+                    "CardType": "Creature"
+                  }
+                ],
+                "retention": "Ordinary",
                 "restriction": {
                   "casts": {
                     "type": "Or",
@@ -208,10 +226,8 @@
                     "value": "ClassLevel"
                   }
                 },
-                "retention": "Ordinary",
                 "rider": null,
-                "sourceChoices": null,
-                "tags": []
+                "sourceChoices": null
               }
             ],
             [
@@ -220,6 +236,12 @@
                   "type": "Colored",
                   "value": "Blue"
                 },
+                "tags": [
+                  {
+                    "CardType": "Creature"
+                  }
+                ],
+                "retention": "Ordinary",
                 "restriction": {
                   "casts": {
                     "type": "Or",
@@ -239,10 +261,8 @@
                     "value": "ClassLevel"
                   }
                 },
-                "retention": "Ordinary",
                 "rider": null,
-                "sourceChoices": null,
-                "tags": []
+                "sourceChoices": null
               }
             ]
           ]

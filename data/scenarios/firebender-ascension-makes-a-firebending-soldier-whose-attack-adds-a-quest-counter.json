@@ -22,6 +22,6 @@
     {"turn": 3, "step": "DeclareAttackers", "player": "alice", "check": {"Counters": {"object": "Firebender Ascension", "kind": {"type": "Named", "value": "quest"}, "count": 1}}},
     {"turn": 3, "step": "DeclareAttackers", "player": "alice", "check": {"View": {"of": "Stack", "is": ["trigger of Soldier Token"]}}},
     {"turn": 3, "step": "DeclareAttackers", "player": "alice", "do": "Pass"},
-    {"turn": 3, "step": "DeclareAttackers", "player": "alice", "check": {"View": {"of": "ManaPool", "player": "alice", "is": [{"manaType": {"type": "Colored", "value": "Red"}, "tags": [], "retention": "UntilEndOfCombat", "restriction": null, "rider": null, "sourceChoices": null}]}}}
+    {"turn": 3, "step": "DeclareAttackers", "player": "alice", "check": {"View": {"of": "ManaPool", "player": "alice", "is": [{"manaType": {"type": "Colored", "value": "Red"}, "tags": [{"CardType": "Creature"}], "retention": "UntilEndOfCombat", "restriction": null, "rider": null, "sourceChoices": null}]}}}
   ]
 }

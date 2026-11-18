@@ -156,12 +156,12 @@
     {
       "do": {
         "Cast": {
-          "mana": [
-            "$hall"
-          ],
           "object": "$bolt",
           "targets": [
             "$bob"
+          ],
+          "mana": [
+            "$hall"
           ],
           "yields": [
             [
@@ -170,6 +170,12 @@
                   "type": "Colored",
                   "value": "Red"
                 },
+                "tags": [
+                  {
+                    "CardType": "Creature"
+                  }
+                ],
+                "retention": "Ordinary",
                 "restriction": {
                   "casts": {
                     "type": "Or",
@@ -185,10 +191,8 @@
                     ]
                   }
                 },
-                "retention": "Ordinary",
                 "rider": null,
-                "sourceChoices": null,
-                "tags": []
+                "sourceChoices": null
               }
             ]
           ]

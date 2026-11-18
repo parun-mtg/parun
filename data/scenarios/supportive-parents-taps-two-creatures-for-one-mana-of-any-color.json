@@ -96,13 +96,13 @@
     {
       "do": {
         "Cast": {
-          "mana": [
-            "$parents",
-            null
-          ],
           "object": "$shock",
           "targets": [
             "$bob"
+          ],
+          "mana": [
+            "$parents",
+            null
           ],
           "yields": [
             [
@@ -111,11 +111,15 @@
                   "type": "Colored",
                   "value": "Red"
                 },
-                "restriction": null,
+                "tags": [
+                  {
+                    "CardType": "Creature"
+                  }
+                ],
                 "retention": "Ordinary",
+                "restriction": null,
                 "rider": null,
-                "sourceChoices": null,
-                "tags": []
+                "sourceChoices": null
               }
             ]
           ]

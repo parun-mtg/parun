@@ -111,33 +111,45 @@
                   "type": "Colored",
                   "value": "Blue"
                 },
-                "restriction": null,
+                "tags": [
+                  {
+                    "CardType": "Creature"
+                  }
+                ],
                 "retention": "Ordinary",
+                "restriction": null,
                 "rider": null,
-                "sourceChoices": null,
-                "tags": []
+                "sourceChoices": null
               },
               {
                 "manaType": {
                   "type": "Colored",
                   "value": "Blue"
                 },
-                "restriction": null,
+                "tags": [
+                  {
+                    "CardType": "Creature"
+                  }
+                ],
                 "retention": "Ordinary",
+                "restriction": null,
                 "rider": null,
-                "sourceChoices": null,
-                "tags": []
+                "sourceChoices": null
               },
               {
                 "manaType": {
                   "type": "Colored",
                   "value": "Red"
                 },
-                "restriction": null,
+                "tags": [
+                  {
+                    "CardType": "Creature"
+                  }
+                ],
                 "retention": "Ordinary",
+                "restriction": null,
                 "rider": null,
-                "sourceChoices": null,
-                "tags": []
+                "sourceChoices": null
               }
             ]
           ]
@@ -158,7 +170,11 @@
                 "type": "Colored",
                 "value": "Blue"
               },
-              "tags": [],
+              "tags": [
+                {
+                  "CardType": "Creature"
+                }
+              ],
               "retention": "Ordinary",
               "restriction": null,
               "rider": null,
@@ -169,7 +185,11 @@
                 "type": "Colored",
                 "value": "Blue"
               },
-              "tags": [],
+              "tags": [
+                {
+                  "CardType": "Creature"
+                }
+              ],
               "retention": "Ordinary",
               "restriction": null,
               "rider": null,
@@ -180,7 +200,11 @@
                 "type": "Colored",
                 "value": "Red"
               },
-              "tags": [],
+              "tags": [
+                {
+                  "CardType": "Creature"
+                }
+              ],
               "retention": "Ordinary",
               "restriction": null,
               "rider": null,

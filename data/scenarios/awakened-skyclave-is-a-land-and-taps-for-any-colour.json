@@ -97,12 +97,12 @@
     {
       "do": {
         "Cast": {
-          "mana": [
-            "$clave"
-          ],
           "object": "$shock",
           "targets": [
             "$bob"
+          ],
+          "mana": [
+            "$clave"
           ],
           "yields": [
             [
@@ -111,11 +111,15 @@
                   "type": "Colored",
                   "value": "Red"
                 },
-                "restriction": null,
+                "tags": [
+                  {
+                    "CardType": "Creature"
+                  }
+                ],
                 "retention": "Ordinary",
+                "restriction": null,
                 "rider": null,
-                "sourceChoices": null,
-                "tags": []
+                "sourceChoices": null
               }
             ]
           ]

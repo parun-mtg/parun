@@ -98,12 +98,12 @@
     {
       "do": {
         "Cast": {
-          "mana": [
-            "$bandit"
-          ],
           "object": "$shock1",
           "targets": [
             "$bob"
+          ],
+          "mana": [
+            "$bandit"
           ],
           "yields": [
             [
@@ -112,11 +112,15 @@
                   "type": "Colored",
                   "value": "Red"
                 },
-                "restriction": null,
+                "tags": [
+                  {
+                    "CardType": "Creature"
+                  }
+                ],
                 "retention": "Ordinary",
+                "restriction": null,
                 "rider": null,
-                "sourceChoices": null,
-                "tags": []
+                "sourceChoices": null
               }
             ]
           ]
@@ -188,12 +192,12 @@
     {
       "do": {
         "Cast": {
-          "mana": [
-            "$bandit"
-          ],
           "object": "$shock2",
           "targets": [
             "$bob"
+          ],
+          "mana": [
+            "$bandit"
           ],
           "yields": [
             [
@@ -202,11 +206,15 @@
                   "type": "Colored",
                   "value": "Red"
                 },
-                "restriction": null,
+                "tags": [
+                  {
+                    "CardType": "Creature"
+                  }
+                ],
                 "retention": "Ordinary",
+                "restriction": null,
                 "rider": null,
-                "sourceChoices": null,
-                "tags": []
+                "sourceChoices": null
               }
             ]
           ]

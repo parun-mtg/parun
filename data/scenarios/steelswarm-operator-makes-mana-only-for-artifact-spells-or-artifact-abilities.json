@@ -174,9 +174,7 @@
                 "retention": "Ordinary",
                 "rider": null,
                 "sourceChoices": null,
-                "tags": [
-                  {"CardType": "Artifact"}
-                ]
+                "tags": [{"CardType": "Artifact"}, {"CardType": "Creature"}]
               }
             ]
           ]
@@ -284,9 +282,7 @@
                 "retention": "Ordinary",
                 "rider": null,
                 "sourceChoices": null,
-                "tags": [
-                  {"CardType": "Artifact"}
-                ]
+                "tags": [{"CardType": "Artifact"}, {"CardType": "Creature"}]
               },
               {
                 "manaType": {
@@ -302,9 +298,7 @@
                 "retention": "Ordinary",
                 "rider": null,
                 "sourceChoices": null,
-                "tags": [
-                  {"CardType": "Artifact"}
-                ]
+                "tags": [{"CardType": "Artifact"}, {"CardType": "Creature"}]
               }
             ]
           ]

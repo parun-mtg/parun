@@ -1,6 +1,6 @@
 {
   "description": "CR 734.1 reversing the older of two Manaforge Cinder activations keeps the newer",
-  "note": "alice pays the Knight's {B}{B} with the Cinder twice, each {1} from a Swamp, taking {B} then {R}, which cannot pay the second {B}, and stops. Asked newest first, she keeps the second Cinder activation and its Swamp, then reverses the first and its Swamp: {R} floats and the first Swamp is untapped. One activation is counted, so she activates the Cinder twice more, paying with the {R} and the first Swamp, and a fourth is not offered though the third Swamp could pay for it.",
+  "note": "alice pays the Knight's {B}{B} with the Cinder twice, each {1} from a Swamp (the second spend answered, the first Cinder's {B} being creature mana), taking {B} then {R}, which cannot pay the second {B}, and stops. Asked newest first, she keeps the second Cinder activation, whose Swamp is not offered since its mana paid for it, then reverses the first and its Swamp: {R} floats and the first Swamp is untapped. One activation is counted, so she activates the Cinder twice more, paying with the {R} and the first Swamp, and a fourth is not offered though the third Swamp could pay for it.",
   "board": {
     "seats": [
       {
@@ -61,7 +61,7 @@
                   "type": "Colored",
                   "value": "Black"
                 },
-                "tags": [],
+                "tags": [{"CardType": "Creature"}],
                 "retention": "Ordinary",
                 "restriction": null,
                 "rider": null,
@@ -74,7 +74,7 @@
                   "type": "Colored",
                   "value": "Red"
                 },
-                "tags": [],
+                "tags": [{"CardType": "Creature"}],
                 "retention": "Ordinary",
                 "restriction": null,
                 "rider": null,
@@ -91,8 +91,18 @@
       "player": "alice",
       "do": {
         "Answer": {
-          "prompt": "ReverseManaAbilities",
-          "with": "Declines"
+          "prompt": "ChooseManaToSpend",
+          "with": {
+            "manaType": {
+              "type": "Colored",
+              "value": "Black"
+            },
+            "tags": [],
+            "retention": "Ordinary",
+            "restriction": null,
+            "rider": null,
+            "sourceChoices": null
+          }
         }
       }
     },
@@ -143,7 +153,7 @@
                 "type": "Colored",
                 "value": "Red"
               },
-              "tags": [],
+              "tags": [{"CardType": "Creature"}],
               "retention": "Ordinary",
               "restriction": null,
               "rider": null,
@@ -207,7 +217,7 @@
                   "type": "Colored",
                   "value": "Black"
                 },
-                "tags": [],
+                "tags": [{"CardType": "Creature"}],
                 "retention": "Ordinary",
                 "restriction": null,
                 "rider": null,
@@ -236,7 +246,7 @@
                   "type": "Colored",
                   "value": "Black"
                 },
-                "tags": [],
+                "tags": [{"CardType": "Creature"}],
                 "retention": "Ordinary",
                 "restriction": null,
                 "rider": null,
@@ -244,6 +254,27 @@
               }
             ]
           ]
+        }
+      }
+    },
+    {
+      "turn": 1,
+      "step": "PrecombatMain",
+      "player": "alice",
+      "do": {
+        "Answer": {
+          "prompt": "ChooseManaToSpend",
+          "with": {
+            "manaType": {
+              "type": "Colored",
+              "value": "Black"
+            },
+            "tags": [],
+            "retention": "Ordinary",
+            "restriction": null,
+            "rider": null,
+            "sourceChoices": null
+          }
         }
       }
     },
@@ -261,7 +292,7 @@
                 "type": "Colored",
                 "value": "Black"
               },
-              "tags": [],
+              "tags": [{"CardType": "Creature"}],
               "retention": "Ordinary",
               "restriction": null,
               "rider": null,
@@ -272,7 +303,7 @@
                 "type": "Colored",
                 "value": "Black"
               },
-              "tags": [],
+              "tags": [{"CardType": "Creature"}],
               "retention": "Ordinary",
               "restriction": null,
               "rider": null,

@@ -139,10 +139,10 @@
     {
       "do": {
         "Cast": {
+          "object": "$sword",
           "mana": [
             "$ronin"
           ],
-          "object": "$sword",
           "yields": [
             [
               {
@@ -150,6 +150,12 @@
                   "type": "Colored",
                   "value": "Black"
                 },
+                "tags": [
+                  {
+                    "CardType": "Creature"
+                  }
+                ],
+                "retention": "Ordinary",
                 "restriction": {
                   "casts": {
                     "type": "HasSubtype",
@@ -160,16 +166,20 @@
                     "value": "Equip"
                   }
                 },
-                "retention": "Ordinary",
                 "rider": null,
-                "sourceChoices": null,
-                "tags": []
+                "sourceChoices": null
               },
               {
                 "manaType": {
                   "type": "Colored",
                   "value": "Black"
                 },
+                "tags": [
+                  {
+                    "CardType": "Creature"
+                  }
+                ],
+                "retention": "Ordinary",
                 "restriction": {
                   "casts": {
                     "type": "HasSubtype",
@@ -180,10 +190,8 @@
                     "value": "Equip"
                   }
                 },
-                "retention": "Ordinary",
                 "rider": null,
-                "sourceChoices": null,
-                "tags": []
+                "sourceChoices": null
               }
             ]
           ]

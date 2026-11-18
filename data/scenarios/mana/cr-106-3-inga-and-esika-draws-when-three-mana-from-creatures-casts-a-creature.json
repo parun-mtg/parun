@@ -99,7 +99,8 @@
           "mana": [
             "$b1",
             "$b2",
-            "$f"
+            "$f",
+            null
           ],
           "yields": [
             [
@@ -145,19 +146,6 @@
                 "rider": null,
                 "sourceChoices": null
               }
-            ],
-            [
-              {
-                "manaType": {
-                  "type": "Colored",
-                  "value": "Green"
-                },
-                "tags": [],
-                "retention": "Ordinary",
-                "restriction": null,
-                "rider": null,
-                "sourceChoices": null
-              }
             ]
           ]
         }
@@ -171,7 +159,7 @@
         "View": {
           "of": "Stack",
           "is": [
-            "Centaur Courser"
+            "Centaur Courser#2"
           ]
         }
       }
@@ -287,7 +275,7 @@
           "of": "Stack",
           "is": [
             "trigger of $inga",
-            "Centaur Courser"
+            "Centaur Courser#2"
           ]
         }
       }

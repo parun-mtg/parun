@@ -57,11 +57,11 @@
     {
       "do": {
         "Activate": {
+          "object": "$chrono",
           "mana": [
             "$elves",
             null
           ],
-          "object": "$chrono",
           "yields": [
             [
               {
@@ -69,6 +69,12 @@
                   "type": "Colored",
                   "value": "Green"
                 },
+                "tags": [
+                  {
+                    "CardType": "Creature"
+                  }
+                ],
+                "retention": "Ordinary",
                 "restriction": {
                   "activations": {
                     "type": "And",
@@ -84,10 +90,8 @@
                     ]
                   }
                 },
-                "retention": "Ordinary",
                 "rider": null,
-                "sourceChoices": null,
-                "tags": []
+                "sourceChoices": null
               }
             ]
           ]

@@ -93,14 +93,14 @@
     {
       "do": {
         "Cast": {
-          "mana": [
-            "$emperor"
-          ],
           "object": "$ball",
           "targets": [
             "$bob"
           ],
           "x": 3,
+          "mana": [
+            "$emperor"
+          ],
           "yields": [
             [
               {
@@ -108,6 +108,12 @@
                   "type": "Colored",
                   "value": "Red"
                 },
+                "tags": [
+                  {
+                    "CardType": "Creature"
+                  }
+                ],
+                "retention": "Ordinary",
                 "restriction": {
                   "casts": {
                     "type": "Not",
@@ -117,10 +123,8 @@
                     }
                   }
                 },
-                "retention": "Ordinary",
                 "rider": null,
-                "sourceChoices": null,
-                "tags": []
+                "sourceChoices": null
               }
             ]
           ]

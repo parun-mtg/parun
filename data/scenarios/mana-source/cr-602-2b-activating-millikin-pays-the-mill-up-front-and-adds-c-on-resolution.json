@@ -127,9 +127,7 @@
               "manaType": {
                 "type": "Colorless"
               },
-              "tags": [
-                {"CardType": "Artifact"}
-              ],
+              "tags": [{"CardType": "Artifact"}, {"CardType": "Creature"}],
               "retention": "Ordinary",
               "restriction": null,
               "rider": null,

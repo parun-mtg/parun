@@ -44,9 +44,9 @@
     {"turn": 5, "step": "PrecombatMain", "player": "alice", "do": "Pass"},
     {"turn": 5, "step": "PrecombatMain", "player": "alice", "do": {"Answer": {"prompt": "ChooseManaType", "with": {"type": "Colored", "value": "Blue"}}}},
     {"turn": 5, "step": "PrecombatMain", "player": "alice", "check": {"View": {"of": "Colors", "object": "$welder", "is": ["Blue"]}}},
-    {"turn": 5, "step": "PrecombatMain", "player": "alice", "check": {"View": {"of": "ManaPool", "player": "alice", "is": [{"manaType": {"type": "Colored", "value": "Blue"}, "tags": [{"CardType": "Artifact"}], "retention": "Ordinary", "restriction": null, "rider": null, "sourceChoices": null}]}}},
+    {"turn": 5, "step": "PrecombatMain", "player": "alice", "check": {"View": {"of": "ManaPool", "player": "alice", "is": [{"manaType": {"type": "Colored", "value": "Blue"}, "tags": [{"CardType": "Artifact"}, {"CardType": "Creature"}], "retention": "Ordinary", "restriction": null, "rider": null, "sourceChoices": null}]}}},
     {"turn": 5, "step": "PrecombatMain", "player": "alice", "do": {"Take": {"action": "ActivateManaAbility $welder"}}},
     {"turn": 5, "step": "PrecombatMain", "player": "alice", "check": {"Tapped": {"object": "$welder", "tapped": true}}},
-    {"turn": 5, "step": "PrecombatMain", "player": "alice", "check": {"View": {"of": "ManaPool", "player": "alice", "is": [{"manaType": {"type": "Colored", "value": "Blue"}, "tags": [{"CardType": "Artifact"}], "retention": "Ordinary", "restriction": null, "rider": null, "sourceChoices": null}]}}}
+    {"turn": 5, "step": "PrecombatMain", "player": "alice", "check": {"View": {"of": "ManaPool", "player": "alice", "is": [{"manaType": {"type": "Colored", "value": "Blue"}, "tags": [{"CardType": "Artifact"}, {"CardType": "Creature"}], "retention": "Ordinary", "restriction": null, "rider": null, "sourceChoices": null}]}}}
   ]
 }
