@@ -119,7 +119,7 @@ spec s = Spec.describe s "Parun.Codec.Quantity" $ do
     Common.assertCodec
       s
       Quantity.codec
-      (Quantity.ManaSymbolCount (ManaSymbolKind.ColoredSymbol Color.Blue))
+      (Quantity.ManaSymbolCount (ManaSymbolKind.ColoredSymbol (Just Color.Blue)))
       " {\"type\":\"ManaSymbolCount\",\"value\":{\"type\":\"ColoredSymbol\",\"value\":\"Blue\"}} "
   -- A number an earlier effect of the same resolution bound into a slot. Unlike
   -- X it carries the slot name on the wire, nested under Plus here since
