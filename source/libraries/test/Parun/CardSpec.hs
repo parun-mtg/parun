@@ -2218,6 +2218,7 @@ reservedSlots =
       Binding.attackingPlayer,
       Binding.damagersController,
       Binding.combatDamager,
+      Binding.combatDamagers,
       Binding.mentoredCreature,
       Binding.exploitedCreature,
       Binding.attachedHost,
@@ -3827,6 +3828,7 @@ modificationFilters modification = case modification of
   Modification.AssignCombatDamage _ -> []
   Modification.GrantsController _ -> []
   Modification.LoyaltyIsToughness -> []
+  Modification.Goaded -> []
   -- The permanent each keyword's cost sits on, card text like any other.
   Modification.TapsCounting keywords _ -> unframed (Map.elems keywords)
   -- An enum payload holds neither.

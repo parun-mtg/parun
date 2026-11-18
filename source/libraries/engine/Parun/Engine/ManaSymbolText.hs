@@ -69,7 +69,7 @@ isOfKind kind manaSymbol = case (kind, manaSymbol) of
   (ManaSymbolKind.VariableSymbol, ManaSymbol.Variable) -> True
   (ManaSymbolKind.PhyrexianSymbol, ManaSymbol.Phyrexian _) -> True
   (ManaSymbolKind.PhyrexianSymbol, ManaSymbol.HybridPhyrexian _) -> True
-  (ManaSymbolKind.ColoredSymbol color, _) -> elem color (symbolColors manaSymbol)
+  (ManaSymbolKind.ColoredSymbol color, _) -> maybe (not . null) elem color (symbolColors manaSymbol)
   _ -> False
 
 -- CR 202.2b: only a coloured mana symbol carries a colour; colourless is not a

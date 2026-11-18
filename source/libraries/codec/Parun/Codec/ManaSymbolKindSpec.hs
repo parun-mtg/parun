@@ -24,7 +24,13 @@ spec s = Spec.describe s "Parun.Codec.ManaSymbolKind" $ do
     Common.assertCodec
       s
       ManaSymbolKind.codec
-      (ManaSymbolKind.ColoredSymbol Color.Blue)
+      (ManaSymbolKind.ColoredSymbol (Just Color.Blue))
       " {\"type\":\"ColoredSymbol\",\"value\":\"Blue\"} "
+  Spec.it s "ColoredSymbol of any colour" $
+    Common.assertCodec
+      s
+      ManaSymbolKind.codec
+      (ManaSymbolKind.ColoredSymbol Nothing)
+      " {\"type\":\"ColoredSymbol\",\"value\":null} "
   Spec.it s "has a schema" $
     Common.assertHasSchema s ManaSymbolKind.codec

@@ -3601,12 +3601,22 @@ castsPerPlayer events =
 -- progress, Engine.beginTurn clearing it at the handoff; the newest of
 -- History.pastTurns is the one before, whoever's it was. None on the game's
 -- first turn; the second turn's holds the pre-game entries too.
-turnLog :: WhichTurn.WhichTurn -> GameState -> Seq.Seq LoggedEvent.LoggedEvent
-turnLog which gs = case which of
-  WhichTurn.ThisTurn -> TurnRegisters.events (GameState.turn gs)
-  WhichTurn.LastTurn -> case Seq.viewr (History.pastTurns (GameState.history gs)) of
+-- SinceOwnLastTurn's "your" is the perspective's: every turn after their own
+-- last one (ownLastTurn), then the live log; the whole game before their first
+-- turn has ended (docs/decisions.md, "What "since your last turn ended" spans
+-- before your first turn"), and none for a reading no perspective frames.
+turnLog :: WhichTurn.WhichTurn -> Maybe PlayerId -> GameState -> Seq.Seq LoggedEvent.LoggedEvent
+turnLog which perspective gs = case which of
+  WhichTurn.ThisTurn -> live
+  WhichTurn.LastTurn -> case Seq.viewr past of
     _ Seq.:> newest -> PastTurn.events newest
     Seq.EmptyR -> Seq.empty
+  WhichTurn.SinceOwnLastTurn -> case perspective of
+    Just you -> foldMap PastTurn.events (Seq.drop (maybe 0 (+ 1) (ownLastTurn you gs)) past) <> live
+    Nothing -> Seq.empty
+  where
+    past = History.pastTurns (GameState.history gs)
+    live = TurnRegisters.events (GameState.turn gs)
 
 -- CR 102.1 / 805.4: the player's own most recent finished turn, as its index
 -- in History.pastTurns: the newest whose active players hold them. Nothing
@@ -4335,11 +4345,11 @@ freerunningDamageThisTurn pid gs =
 -- PlayersDealtDamage arm, which counts the seats it answers True for. The turn's extent is
 -- turnLog's: Parun.Engine.Engine.beginTurnOf moves the log aside at the handoff.
 -- A kind narrows the question to that damage alone (CR 510.2's combat damage),
--- and a card type to a source's that had it.
-wasDealtDamage :: WhichTurn.WhichTurn -> Maybe DamageKind.DamageKind -> Maybe CardType.CardType -> GameState -> PlayerId -> Bool
-wasDealtDamage which kind by gs pid =
+-- and a card type to a source's that had it. The perspective is turnLog's.
+wasDealtDamage :: WhichTurn.WhichTurn -> Maybe PlayerId -> Maybe DamageKind.DamageKind -> Maybe CardType.CardType -> GameState -> PlayerId -> Bool
+wasDealtDamage which perspective kind by gs pid =
   let counts event = damagedPlayer event == Just pid && eventCounts kind by event
-   in any (counts . LoggedEvent.event) (turnLog which gs)
+   in any (counts . LoggedEvent.event) (turnLog which perspective gs)
 
 -- Parun.Types.DealtDamage's "which damage counts", the one reading of its `kind`
 -- and `by`. Nothing admits every event.

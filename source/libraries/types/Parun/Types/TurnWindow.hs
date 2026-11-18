@@ -24,7 +24,8 @@ import qualified Parun.Types.Timestamp as Timestamp
 -- the only engine module that may case on this type, the standing
 -- Parun.Engine.Expiry has over Expiry, save Expiry.dropAtCleanup's lapse;
 -- Parun.Engine.Engine.beginTurn asks it for the transitions at the one moment
--- they can happen.
+-- they can happen, and Parun.Engine.Engine.enterStep for InCombatPhase's as a
+-- combat phase is reached.
 data TurnWindow
   = -- | Onset.Immediately: no turn restriction at all, which is CR 603.7a's floor
     -- and the common case. The
@@ -73,7 +74,8 @@ data TurnWindow
     OnExtraTurn Timestamp.Timestamp
   | -- | Onset.FromThatCombatPhase: this turn's combat phase with this many
     -- combat phases behind it in the schedule (Parun.Engine.Turn.addedCombatPhase),
-    -- and no other. Dropped as the next turn begins.
+    -- and no other. Dropped as that phase is skipped
+    -- (Parun.Engine.Event.reachCombatPhase), and as the next turn begins.
     InCombatPhase Natural.Natural
   | -- | CR 514.2: a stated duration ended in this event group, whose events it still sees.
     Lapsed EventGroup.EventGroup

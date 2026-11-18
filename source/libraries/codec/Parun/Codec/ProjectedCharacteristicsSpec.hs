@@ -45,6 +45,7 @@ import qualified Parun.Types.ManaType as ManaType
 import qualified Parun.Types.Modal as Modal
 import qualified Parun.Types.Modification as Modification
 import qualified Parun.Types.PlayerEffect as PlayerEffect
+import qualified Parun.Types.PlayerId as PlayerId
 import qualified Parun.Types.PlayerRelation as PlayerRelation
 import qualified Parun.Types.PlayerScope as PlayerScope
 import qualified Parun.Types.PlayerStaticAbility as PlayerStaticAbility
@@ -125,6 +126,7 @@ testCharacteristics =
       PC.combatDamageAmount = Just CombatDamageAmount.EqualToToughness,
       PC.combatDamageOptions = Map.singleton CombatDamageOption.ToDefendingCreature CombatDamageObligation.Optional,
       PC.controllerGrants = Set.singleton ControllerGrant.SpeedBeyondFour,
+      PC.goadedBy = Set.singleton (PlayerId.MkPlayerId 2),
       PC.tapCounts = Map.fromList [(TapKeyword.Crew, [(Filter.HasSubtype Subtype.Vehicle, TapCount.GreaterBy 2), (Filter.HasSubtype Subtype.Vehicle, TapCount.Multiplied 3)]), (TapKeyword.Station, [(Filter.HasSubtype Subtype.Spacecraft, TapCount.UsingToughness)])],
       PC.loyaltyIsToughness = True,
       -- Parun.Codec.FaceSpec's own values for the four cost fields.
@@ -199,6 +201,7 @@ testCharacteristicsJson =
     <> "\"combatDamageAmount\":\"EqualToToughness\","
     <> "\"combatDamageOptions\":[{\"key\":\"ToDefendingCreature\",\"value\":\"Optional\"}],"
     <> "\"controllerGrants\":[\"SpeedBeyondFour\"],"
+    <> "\"goadedBy\":[2],"
     <> "\"tapCounts\":[{\"key\":\"Crew\",\"value\":[{\"key\":{\"type\":\"HasSubtype\",\"value\":\"Vehicle\"},\"value\":{\"type\":\"GreaterBy\",\"value\":2}},{\"key\":{\"type\":\"HasSubtype\",\"value\":\"Vehicle\"},\"value\":{\"type\":\"Multiplied\",\"value\":3}}]},{\"key\":\"Station\",\"value\":[{\"key\":{\"type\":\"HasSubtype\",\"value\":\"Spacecraft\"},\"value\":{\"type\":\"UsingToughness\"}}]}],"
     <> "\"loyaltyIsToughness\":true,"
     <> "\"additionalCosts\":[{\"type\":\"TapThis\"}],"
@@ -265,6 +268,7 @@ minimalCharacteristics =
       PC.combatDamageAmount = Nothing,
       PC.combatDamageOptions = Map.empty,
       PC.controllerGrants = Set.empty,
+      PC.goadedBy = Set.empty,
       PC.tapCounts = Map.empty,
       PC.loyaltyIsToughness = False,
       PC.additionalCosts = [],

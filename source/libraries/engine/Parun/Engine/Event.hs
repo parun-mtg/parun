@@ -13166,6 +13166,33 @@ settleOnsets begun gs =
         TurnWindow.Lapsed _ -> False
    in gs {GameState.stored = (GameState.stored gs) {StoredEffects.delayedTriggers = Seq.filter live (fmap settled (StoredEffects.delayedTriggers (GameState.stored gs)))}}
 
+-- CR 500.8 / 614.10a: a combat phase has been reached -- it begins, or CR
+-- 500.11 skips it -- so retire every "at the beginning of that combat" entry
+-- whose phase it can no longer be: one naming this phase when it is skipped,
+-- since a skipped phase's trigger event never happens, and one naming more
+-- phases than are left behind this one. Retired here rather than at the next
+-- turn because a combat phase added behind this one later in the turn brings
+-- delayedArmed's count back round to the gone phase's. The delayed twin of
+-- Expiry.reachCombatPhase.
+--
+-- Unprinted: no card skips a beginning of combat step alone, so an entry whose
+-- phase begins fires there and needs no pin.
+--
+-- Scenario
+-- cr-614-10a-world-at-war-s-trigger-is-spent-with-its-skipped-combat-phase
+-- proves it.
+reachCombatPhase :: Bool -> GameState -> GameState
+reachCombatPhase begins gs =
+  let behind = Turn.combatPhasesIn (TurnRegisters.remaining (GameState.turn gs))
+      live entry = case DelayedTrigger.window entry of
+        TurnWindow.InCombatPhase named -> named < behind || (named == behind && begins)
+        TurnWindow.AnyTurn -> True
+        TurnWindow.NextTurnOf _ -> True
+        TurnWindow.OnTurn _ -> True
+        TurnWindow.OnExtraTurn _ -> True
+        TurnWindow.Lapsed _ -> True
+   in gs {GameState.stored = (GameState.stored gs) {StoredEffects.delayedTriggers = Seq.filter live (StoredEffects.delayedTriggers (GameState.stored gs))}}
+
 -- Everything that has triggered and is not yet on the stack, from all three
 -- sources, plus the delayed store as it stands afterwards. One function, so
 -- Parun.Engine.Engine never needs to know how many sources there are.

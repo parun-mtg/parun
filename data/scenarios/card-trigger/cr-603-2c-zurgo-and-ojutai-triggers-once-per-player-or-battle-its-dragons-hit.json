@@ -1,0 +1,57 @@
+{
+  "description": "CR 603.2c Zurgo and Ojutai triggers once per player or battle its Dragons hit, each offering back only the Dragons that hit it",
+  "note": "Zurgo and Brimstone Dragon attack bob, Adult Gold Dragon and Dragon Moose each attack a battle bob protects, and the non-Dragon Goblin Piker attacks bob too: three triggers, one per player or battle hit (the card's 2023-04-14 ruling). Bob's trigger offers Zurgo and Brimstone Dragon, never the Piker; each battle's offers the one Dragon that hit it.",
+  "board": {
+    "seats": [
+      {
+        "name": "alice",
+        "battlefield": [
+          { "card": "Zurgo and Ojutai", "label": "zurgo", "ready": true },
+          { "card": "Brimstone Dragon", "label": "brimstone", "ready": true },
+          { "card": "Adult Gold Dragon", "label": "gold", "ready": true },
+          { "card": "Dragon Moose", "label": "moose", "ready": true },
+          { "card": "Goblin Piker", "label": "piker", "ready": true },
+          { "card": "Invasion of Dominaria", "label": "invasion", "protector": "bob", "counters": [{ "key": { "type": "Defense" }, "value": 9 }] },
+          { "card": "Invasion of Ergamon", "label": "ergamon", "protector": "bob", "counters": [{ "key": { "type": "Defense" }, "value": 8 }] }
+        ],
+        "library": [{ "card": "Forest" }, { "card": "Swamp" }, { "card": "Island" }, { "card": "Plains" }, { "card": "Mountain" }, { "card": "Wastes" }, { "card": "Forest" }, { "card": "Forest" }]
+      },
+      {
+        "name": "bob",
+        "library": [{ "card": "Island" }, { "card": "Island" }, { "card": "Island" }, { "card": "Island" }]
+      }
+    ],
+    "active": "alice",
+    "step": "BeginningOfCombat"
+  },
+  "timeline": [
+    { "turn": 1, "step": "DeclareAttackers", "player": "alice", "do": { "Attack": ["$zurgo", "$brimstone", "$gold", "$moose", "$piker"] } },
+    { "turn": 1, "step": "DeclareAttackers", "player": "alice", "source": "$zurgo", "do": { "ChooseAttackTarget": "$bob" } },
+    { "turn": 1, "step": "DeclareAttackers", "player": "alice", "source": "$brimstone", "do": { "ChooseAttackTarget": "$bob" } },
+    { "turn": 1, "step": "DeclareAttackers", "player": "alice", "source": "$gold", "do": { "ChooseAttackTarget": "$invasion" } },
+    { "turn": 1, "step": "DeclareAttackers", "player": "alice", "source": "$moose", "do": { "ChooseAttackTarget": "$ergamon" } },
+    { "turn": 1, "step": "DeclareAttackers", "player": "alice", "source": "$piker", "do": { "ChooseAttackTarget": "$bob" } },
+    { "turn": 1, "step": "CombatDamage", "player": "alice", "do": { "OrderTriggers": ["$zurgo", "$zurgo", "$zurgo"] } },
+    { "turn": 1, "step": "CombatDamage", "player": "alice", "do": { "Answer": { "prompt": "ChooseCardFromAmong", "with": "Forest" } } },
+    { "turn": 1, "step": "CombatDamage", "player": "alice", "do": { "Answer": { "prompt": "ArrangeLibraryArrivals", "with": [1, 0] } } },
+    { "turn": 1, "step": "CombatDamage", "player": "alice", "check": { "View": { "of": "Prompt", "is": { "kind": "ChooseCardsFromAmong", "offer": { "source": "$zurgo", "purpose": "CardsFromAmong", "earlier": [], "least": 0, "most": 1, "among": ["$zurgo", "$brimstone"] } } } } },
+    { "turn": 1, "step": "CombatDamage", "player": "alice", "do": { "Answer": { "prompt": "ChooseCardsFromAmong", "with": ["$brimstone"] } } },
+    { "turn": 1, "step": "CombatDamage", "player": "alice", "do": { "Answer": { "prompt": "ChooseCardFromAmong", "with": "Mountain" } } },
+    { "turn": 1, "step": "CombatDamage", "player": "alice", "do": { "Answer": { "prompt": "ArrangeLibraryArrivals", "with": [1, 0] } } },
+    { "turn": 1, "step": "CombatDamage", "player": "alice", "check": { "View": { "of": "Prompt", "is": { "kind": "ChooseCardsFromAmong", "offer": { "source": "$zurgo", "purpose": "CardsFromAmong", "earlier": [], "least": 0, "most": 1, "among": ["$moose"] } } } } },
+    { "turn": 1, "step": "CombatDamage", "player": "alice", "do": { "Answer": { "prompt": "ChooseCardsFromAmong", "with": [] } } },
+    { "turn": 1, "step": "CombatDamage", "player": "alice", "do": { "Answer": { "prompt": "ChooseCardFromAmong", "with": "Forest" } } },
+    { "turn": 1, "step": "CombatDamage", "player": "alice", "do": { "Answer": { "prompt": "ArrangeLibraryArrivals", "with": [1, 0] } } },
+    { "turn": 1, "step": "CombatDamage", "player": "alice", "check": { "View": { "of": "Prompt", "is": { "kind": "ChooseCardsFromAmong", "offer": { "source": "$zurgo", "purpose": "CardsFromAmong", "earlier": [], "least": 0, "most": 1, "among": ["$gold"] } } } } },
+    { "turn": 1, "step": "CombatDamage", "player": "alice", "do": { "Answer": { "prompt": "ChooseCardsFromAmong", "with": ["$gold"] } } },
+    { "turn": 1, "step": "EndOfCombat", "player": "alice", "check": { "Count": { "player": "alice", "zone": "Hand", "card": "Brimstone Dragon", "count": 1 } } },
+    { "turn": 1, "step": "EndOfCombat", "player": "alice", "check": { "Count": { "player": "alice", "zone": "Hand", "card": "Adult Gold Dragon", "count": 1 } } },
+    { "turn": 1, "step": "EndOfCombat", "player": "alice", "check": { "Count": { "player": "alice", "zone": "Battlefield", "card": "Dragon Moose", "count": 1 } } },
+    { "turn": 1, "step": "EndOfCombat", "player": "alice", "check": { "Count": { "player": "alice", "zone": "Battlefield", "card": "Zurgo and Ojutai", "count": 1 } } },
+    { "turn": 1, "step": "EndOfCombat", "player": "alice", "check": { "Count": { "player": "alice", "zone": "Hand", "card": "Forest", "count": 2 } } },
+    { "turn": 1, "step": "EndOfCombat", "player": "alice", "check": { "Count": { "player": "alice", "zone": "Hand", "card": "Mountain", "count": 1 } } },
+    { "turn": 1, "step": "EndOfCombat", "player": "alice", "check": { "Counters": { "object": "$invasion", "kind": { "type": "Defense" }, "count": 5 } } },
+    { "turn": 1, "step": "EndOfCombat", "player": "alice", "check": { "Counters": { "object": "$ergamon", "kind": { "type": "Defense" }, "count": 5 } } },
+    { "turn": 1, "step": "EndOfCombat", "player": "alice", "check": { "Life": { "player": "bob", "life": 8 } } }
+  ]
+}

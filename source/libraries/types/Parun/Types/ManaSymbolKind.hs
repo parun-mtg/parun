@@ -9,7 +9,7 @@ data ManaSymbolKind
     VariableSymbol
   | -- | CR 107.4g: {H}, any of the fifteen Phyrexian mana symbols (Rage Extractor).
     PhyrexianSymbol
-  | -- | CR 107.4e / 107.4f: a mana symbol of that colour, hybrid and Phyrexian
-    -- included (Namor the Sub-Mariner).
-    ColoredSymbol Color.Color
+  | -- | CR 107.4e / 107.4f: a mana symbol of that colour, or of any colour for
+    -- Nothing, hybrid and Phyrexian included (Namor the Sub-Mariner).
+    ColoredSymbol (Maybe Color.Color)
   deriving (Eq, Ord, Show)

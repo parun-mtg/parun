@@ -1787,8 +1787,8 @@ inertChoosers effect =
   [ref | (allowed, ref) <- effectObjectRefs effect, Just question <- [questionOf ref], question `notElem` allowed]
 
 -- An ObjectRef.AllOf written anywhere but a move's ref, a play grant's, a
--- loop's, a damage instruction's, a destruction's, a shuffle-in's or a copy's
--- candidates'. MoveToZone gathers it
+-- loop's, a damage instruction's, a destruction's, a shuffle-in's, a
+-- modification's or a copy's candidates'. MoveToZone gathers it
 -- member by member (Parun.Engine.Resolve.Arms.Zones's gather), and
 -- GrantPlayFromExile reads its ref
 -- through
@@ -1804,6 +1804,9 @@ inertChoosers effect =
 -- Destroy reads its ref through askingObjects, whose AllOf arm is the union
 -- too -- Loyal Sentry's "that creature and this creature" in one batch, proved
 -- by the scenario loyal-sentry-destroys-both-creatures-at-once.
+-- ModifyTarget reads its ref through askingObjects too -- Kang, Suspicious
+-- Captain's "Kang and that creature", proved by the goad scenario
+-- kang-suspicious-captain-goads-for-as-long-as-bob-controls-kang.
 -- ShuffleIntoLibrary reads its ref through objectRefObjects too -- Timetwister's
 -- "their hand and graveyard" as one move and one shuffle, proved by
 -- Parun.MassEffectSpec's Timetwister group.
@@ -1821,6 +1824,7 @@ strayAllOf effect = case effect of
   Effect.ForEach {} -> False
   Effect.DealDamage {} -> False
   Effect.Destroy {} -> False
+  Effect.ModifyTarget {} -> False
   Effect.ShuffleIntoLibrary {} -> False
   Effect.CopyStackObject x -> case CopyStackObject.targets x of
     CopyTargets.ForEach _ -> holdsAllOf (CopyStackObject.ref x)
@@ -2611,7 +2615,7 @@ effectLintSpec s registry corpus = Spec.describe s "Lint" $ do
     -- Exhume, Elvish Piper, Commune with the Gods and Merfolk Spy print them.
     Spec.assertBool s asks "the pool has a card asking a player to pick a card"
     Spec.assertEqWith s "a chosen card under an opcode that cannot ask (CR 608.2d)" (fmap (S.nameOf . Printing.card) offenders) []
-  Spec.it s "no AllOf outside a move, a play grant, a loop, a damage instruction, a destruction, a shuffle-in or a copy's candidates" $ do
+  Spec.it s "no AllOf outside a move, a play grant, a loop, a damage instruction, a destruction, a shuffle-in, a modification or a copy's candidates" $ do
     ps <- S.allPrintings s corpus
     let offenders = filter (anyFace (any strayAllOf . cardAuthoredEffects) . Printing.card) ps
         moved = any (anyFace (any (any (isAllOf . snd) . effectObjectRefs) . cardAuthoredEffects) . Printing.card) ps

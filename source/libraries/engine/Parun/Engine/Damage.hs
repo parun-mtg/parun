@@ -1714,7 +1714,7 @@ dealCombatDamage settle = do
 -- as many words: "all combat damage that's been assigned is dealt
 -- simultaneously". CR 603.2c's batch conditions are what a board can read that
 -- with -- TriggerCondition.PermanentsDealDamageToPlayer fires once per
--- damaged player of the step where its per-damager twin fires once per event, and Parun.Engine.Event's
+-- damaged player or battle of the step where its per-damager twin fires once per event, and Parun.Engine.Event's
 -- batchScoped is that fork. The life loss and counter removals processDamage
 -- records ride inside the bracket too: CR 120.3's results of the damage,
 -- simultaneous with it. Lifelink's gains do NOT: CR 702.15e makes each source's

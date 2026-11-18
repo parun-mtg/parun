@@ -56,7 +56,7 @@ viewFor pid gs =
       PlayerView.stack = Maybe.mapMaybe (objectView pid gs) (TurnRegisters.stack (GameState.turn gs)),
       PlayerView.parkedStacks = fmap (Maybe.mapMaybe (objectView pid gs) . TurnRegisters.stack) (GameState.parkedTurns gs),
       PlayerView.witnessed = witnessedIn (TurnRegisters.events (GameState.turn gs)),
-      PlayerView.witnessedLastTurn = witnessedIn (Game.turnLog WhichTurn.LastTurn gs),
+      PlayerView.witnessedLastTurn = witnessedIn (Game.turnLog WhichTurn.LastTurn Nothing gs),
       PlayerView.result = GameState.result gs,
       PlayerView.undone = Map.lookup pid (Bookkeeping.undone (GameState.bookkeeping gs))
     }

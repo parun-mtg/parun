@@ -2647,7 +2647,8 @@ enterStep = do
     Just selector -> Event.beginsPhase (SkipWindow.PartOfTurn selector) active
   -- CR 500.8: "during that combat phase" opens or ends here, where its phase is
   -- reached and the skip has been answered.
-  Monad.when (beginning == Just PhaseSelector.CombatPhase) (State.modify' (Expiry.reachCombatPhase phaseBegins))
+  -- So does "at the beginning of that combat".
+  Monad.when (beginning == Just PhaseSelector.CombatPhase) (State.modify' (Event.reachCombatPhase phaseBegins . Expiry.reachCombatPhase phaseBegins))
   if not phaseBegins
     then Nothing <$ skipWholePhase phase
     else do

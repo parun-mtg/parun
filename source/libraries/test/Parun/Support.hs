@@ -2012,6 +2012,7 @@ stubView table oid =
                 Filter.declaredAttackerThisCombat = False,
                 Filter.declaredBlockerThisCombat = False,
                 Filter.hadToAttackThisCombat = False,
+                Filter.goaded = False,
                 Filter.leftLibraryThisTurn = Set.empty,
                 Filter.dealtDamageThisTurn = [],
                 Filter.lostLifeThisTurn = False,

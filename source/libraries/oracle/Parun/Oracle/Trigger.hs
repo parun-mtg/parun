@@ -487,6 +487,7 @@ lifeChanged tally =
     which = case LifeTally.turn tally of
       WhichTurn.ThisTurn -> "this turn"
       WhichTurn.LastTurn -> "last turn"
+      WhichTurn.SinceOwnLastTurn -> "since your last turn"
 
 -- | The ability word (CR 207.2c) Oracle text may print before an ability
 -- whose condition this is. Free for hellbent: printed (Slaughterhouse

@@ -1469,6 +1469,18 @@ damagersController = SlotName.MkSlotName (Text.pack "thatDamagersController")
 combatDamager :: SlotName
 combatDamager = SlotName.MkSlotName (Text.pack "thatDamager")
 
+-- CR 603.2c: the reserved slot under which a batch damage trigger's damagers
+-- are bound -- Zurgo and Ojutai's "return one of THOSE DRAGONS". Stamped by
+-- Parun.Engine.Event.Binding.eventBindings off each GameEvent.DamageDealt a
+-- TriggerCondition.PermanentsDealDamageToPlayer matched, which batchBindings
+-- appends into one occurrence's group.
+--
+-- A GROUP (Binding.objects), `attackingCreatures`' reason, beside the singular
+-- `combatDamager` that one event's damager takes: named, never targeted, and
+-- unordered.
+combatDamagers :: SlotName
+combatDamagers = SlotName.MkSlotName (Text.pack "thoseDamagers")
+
 -- CR 702.134c: the reserved slot under which the creature that WAS MENTORED is
 -- bound -- Aegis of the Legion's "put a shield counter on that creature". Stamped
 -- by Parun.Engine.Event.Binding.eventBindings off GameEvent.Mentored, alongside
@@ -1722,6 +1734,10 @@ setDamagersController pid = Map.insert damagersController (toPlayer pid)
 -- Bind an object under the reserved combatDamager slot (CR 510.2).
 setCombatDamager :: ObjectId -> Map SlotName Binding -> Map SlotName Binding
 setCombatDamager oid = Map.insert combatDamager (toObject oid)
+
+-- Bind objects under the reserved combatDamagers slot (CR 603.2c).
+setCombatDamagers :: Seq ObjectId -> Map SlotName Binding -> Map SlotName Binding
+setCombatDamagers oids = Map.insert combatDamagers (toObjects oids)
 
 -- Bind an object under the reserved mentoredCreature slot (CR 702.134c).
 setMentoredCreature :: ObjectId -> Map SlotName Binding -> Map SlotName Binding

@@ -470,6 +470,8 @@ data Modification ability
   | -- | CR 510.1b-c: this creature assigns all its combat damage where the
     -- option says instead, at its controller's choice or regardless.
     AssignCombatDamageAs CombatDamageObligation.CombatDamageObligation CombatDamageOption.CombatDamageOption
+  | -- | CR 701.15b: this creature is goaded by the controller of this effect's source.
+    Goaded
   | -- | CR 702.184c / 702.179d: while this object's controller controls it, that
     -- player has the grant (Tapestry Warden, Gomif, Fast Racer). Self-only, like
     -- DestructionR: a fact about the controller, not a set of affected permanents.

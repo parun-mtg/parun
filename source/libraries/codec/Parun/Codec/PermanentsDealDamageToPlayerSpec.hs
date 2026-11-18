@@ -23,7 +23,8 @@ spec s = Spec.describe s "Parun.Codec.PermanentsDealDamageToPlayer" $ do
             PermanentsDealDamageToPlayer.kind = Just DamageKind.Combat,
             PermanentsDealDamageToPlayer.recipient = PlayerRelation.You,
             PermanentsDealDamageToPlayer.oneOrMorePlayers = False,
-            PermanentsDealDamageToPlayer.anyController = False
+            PermanentsDealDamageToPlayer.anyController = False,
+            PermanentsDealDamageToPlayer.orBattle = False
           }
       )
       " {\"filter\":{\"type\":\"HeldBy\",\"value\":{\"holder\":\"Controller\",\"relation\":\"Opponent\"}},\"kind\":\"Combat\",\"recipient\":\"You\"} "
@@ -38,7 +39,8 @@ spec s = Spec.describe s "Parun.Codec.PermanentsDealDamageToPlayer" $ do
             PermanentsDealDamageToPlayer.kind = Nothing,
             PermanentsDealDamageToPlayer.recipient = PlayerRelation.AnyPlayer,
             PermanentsDealDamageToPlayer.oneOrMorePlayers = True,
-            PermanentsDealDamageToPlayer.anyController = False
+            PermanentsDealDamageToPlayer.anyController = False,
+            PermanentsDealDamageToPlayer.orBattle = False
           }
       )
       " {\"filter\":{\"type\":\"HeldBy\",\"value\":{\"holder\":\"Controller\",\"relation\":\"You\"}},\"oneOrMorePlayers\":true,\"recipient\":\"AnyPlayer\"} "
@@ -52,8 +54,24 @@ spec s = Spec.describe s "Parun.Codec.PermanentsDealDamageToPlayer" $ do
             PermanentsDealDamageToPlayer.kind = Just DamageKind.Combat,
             PermanentsDealDamageToPlayer.recipient = PlayerRelation.You,
             PermanentsDealDamageToPlayer.oneOrMorePlayers = False,
-            PermanentsDealDamageToPlayer.anyController = True
+            PermanentsDealDamageToPlayer.anyController = True,
+            PermanentsDealDamageToPlayer.orBattle = False
           }
       )
       " {\"anyController\":true,\"filter\":{\"type\":\"And\",\"value\":[]},\"kind\":\"Combat\",\"recipient\":\"You\"} "
+  -- Zurgo and Ojutai's "to a player or battle".
+  Spec.it s "MkPermanentsDealDamageToPlayer, or battle" $
+    Common.assertCodec
+      s
+      PermanentsDealDamageToPlayer.codec
+      ( PermanentsDealDamageToPlayer.MkPermanentsDealDamageToPlayer
+          { PermanentsDealDamageToPlayer.filter = Filter.And [],
+            PermanentsDealDamageToPlayer.kind = Just DamageKind.Combat,
+            PermanentsDealDamageToPlayer.recipient = PlayerRelation.AnyPlayer,
+            PermanentsDealDamageToPlayer.oneOrMorePlayers = False,
+            PermanentsDealDamageToPlayer.anyController = False,
+            PermanentsDealDamageToPlayer.orBattle = True
+          }
+      )
+      " {\"filter\":{\"type\":\"And\",\"value\":[]},\"kind\":\"Combat\",\"orBattle\":true,\"recipient\":\"AnyPlayer\"} "
   Spec.it s "has a schema" $ Common.assertHasSchema s PermanentsDealDamageToPlayer.codec

@@ -1497,7 +1497,7 @@ dealtDamageThisTurn oid = damageThisTurn ((== Just oid) . Game.damagedObject)
 damageThisTurn :: (GameEvent.GameEvent -> Bool) -> GameState -> [DamageEvent.DamageEvent]
 damageThisTurn admits gs =
   [ ev
-  | logged <- Foldable.toList (Game.turnLog WhichTurn.ThisTurn gs),
+  | logged <- Foldable.toList (Game.turnLog WhichTurn.ThisTurn Nothing gs),
     admits (LoggedEvent.event logged),
     GameEvent.DamageDealt ev <- [LoggedEvent.event logged]
   ]
@@ -1784,6 +1784,9 @@ viewOfSnapshot deploy mController mOwner isToken counters zone home lapsed snaps
       Filter.declaredAttackerThisCombat = False,
       Filter.declaredBlockerThisCombat = False,
       Filter.hadToAttackThisCombat = False,
+      -- CR 701.15b: a designation, not a characteristic. Not implemented: a
+      -- departed creature's goaded designation (#8669).
+      Filter.goaded = False,
       -- CR 701.17a mills a CARD, and this view describes a snapshot rather than
       -- an object -- there is no id here for the turn's mills to have named.
       Filter.leftLibraryThisTurn = Set.empty,
