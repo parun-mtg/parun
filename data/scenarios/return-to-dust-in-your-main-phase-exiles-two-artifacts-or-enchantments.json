@@ -1,0 +1,25 @@
+{
+  "description": "CR 601.2c, 505.1: Return to Dust cast during your main phase offers a second target and exiles both",
+  "board": {
+    "active": "alice",
+    "step": "PostcombatMain",
+    "seats": [
+      {
+        "name": "alice",
+        "manaPool": "WWWW",
+        "hand": [{"card": "Return to Dust", "label": "dust"}]
+      },
+      {
+        "name": "bob",
+        "battlefield": [{"card": "Sol Ring", "label": "ring"}, {"card": "Glorious Anthem", "label": "anthem"}]
+      }
+    ]
+  },
+  "timeline": [
+    {"turn": 1, "step": "PostcombatMain", "player": "alice", "refuse": {"Cast": {"object": "$dust", "targetsBySlot": {"target": ["$ring"], "other": ["$ring"]}}}},
+    {"turn": 1, "step": "PostcombatMain", "player": "alice", "do": {"Cast": {"object": "$dust", "targetsBySlot": {"target": ["$ring"], "other": ["$anthem"]}}}},
+    {"turn": 1, "step": "PostcombatMain", "player": "alice", "do": "Pass"},
+    {"turn": 1, "step": "PostcombatMain", "player": "alice", "check": {"Count": {"player": "bob", "zone": "Exile", "card": "Sol Ring", "count": 1}}},
+    {"turn": 1, "step": "PostcombatMain", "player": "alice", "check": {"Count": {"player": "bob", "zone": "Exile", "card": "Glorious Anthem", "count": 1}}}
+  ]
+}

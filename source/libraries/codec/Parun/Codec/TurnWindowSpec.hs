@@ -43,6 +43,12 @@ spec s = Spec.describe s "Parun.Codec.TurnWindow" $ do
       TurnWindow.codec
       (TurnWindow.OnExtraTurn (Timestamp.MkTimestamp 12))
       " {\"type\":\"OnExtraTurn\",\"value\":12} "
+  Spec.it s "InCombatPhase counts the combat phases behind the one it names" $
+    Common.assertCodec
+      s
+      TurnWindow.codec
+      (TurnWindow.InCombatPhase 1)
+      " {\"type\":\"InCombatPhase\",\"value\":1} "
   Spec.it s "Lapsed names the event group its duration ended in" $
     Common.assertCodec
       s

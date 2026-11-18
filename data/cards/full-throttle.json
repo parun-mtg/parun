@@ -73,10 +73,12 @@
                 "effects": [
                   {
                     "type": "AddPhases",
-                    "value": [
-                      "ExtraCombat",
-                      "ExtraCombat"
-                    ]
+                    "value": {
+                      "phases": [
+                        "ExtraCombat",
+                        "ExtraCombat"
+                      ]
+                    }
                   },
                   {
                     "type": "ArmDelayedTrigger",

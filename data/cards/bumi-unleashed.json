@@ -140,9 +140,11 @@
                       },
                       {
                         "type": "AddPhases",
-                        "value": [
-                          "ExtraCombat"
-                        ]
+                        "value": {
+                          "phases": [
+                            "ExtraCombat"
+                          ]
+                        }
                       },
                       {
                         "type": "ForbidAttack",

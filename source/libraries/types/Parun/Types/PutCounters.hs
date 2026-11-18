@@ -37,7 +37,10 @@ import qualified Parun.Types.SlotName as SlotName
 -- way". Destroy's field, for Destroy's reason: it is the funnel's answer, so a
 -- placement CR 614 replaced down to none (Vorinclex, Monstrous Raider) or CR
 -- 101.2 forbade (Solemnity) does not count. Nothing is bound when nothing was
--- placed; absent for a placement that is never looked back at.
+-- placed; absent for a placement that is never looked back at. Beside them
+-- rides the number of counters settled in all, read as Quantity.InSlot, the
+-- Parun.Types.Counter slot's shape: Guinan, Ancient Advisor's "if you put two or
+-- more +1/+1 counters on creatures this way".
 data PutCounters = MkPutCounters
   { kind :: CounterKind.CounterKind Keyword.Keyword,
     quantity :: Quantity.Quantity,

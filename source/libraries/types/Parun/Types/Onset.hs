@@ -1,5 +1,6 @@
 module Parun.Types.Onset where
 
+import qualified Parun.Types.PhaseAnchor as PhaseAnchor
 import qualified Parun.Types.PlayerRef as PlayerRef
 
 -- | CR 603.7: when a delayed triggered ability BECOMES ARMED, as the card says it
@@ -57,4 +58,8 @@ data Onset
     -- would become "your next turn". Parun.Engine.Event.armOnset names the turn by
     -- its ExtraTurn.createdAt.
     FromThatExtraTurn
+  | -- | CR 500.8: "that combat", the combat phase the same resolution just
+    -- added after this anchor (World at War). Parun.Engine.Event.armOnset names
+    -- it as Parun.Engine.Turn.addedCombatPhase does.
+    FromThatCombatPhase PhaseAnchor.PhaseAnchor
   deriving (Eq, Ord, Show)

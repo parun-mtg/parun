@@ -14,6 +14,7 @@ module Parun.Codec.Effect where
 
 import qualified Data.Typeable as Typeable
 import qualified Parun.Codec.ActivateManaAbilities as ActivateManaAbilities
+import qualified Parun.Codec.AddPhases as AddPhases
 import qualified Parun.Codec.AffectPlayers as AffectPlayers
 import qualified Parun.Codec.Amass as Amass
 import qualified Parun.Codec.AnotherCounter as AnotherCounter
@@ -67,7 +68,6 @@ import qualified Parun.Codec.ExchangeOwnership as ExchangeOwnership
 import qualified Parun.Codec.ExchangeValues as ExchangeValues
 import qualified Parun.Codec.ExchangeZones as ExchangeZones
 import qualified Parun.Codec.ExileHaunting as ExileHaunting
-import qualified Parun.Codec.ExtraPhase as ExtraPhase
 import qualified Parun.Codec.Fight as Fight
 import qualified Parun.Codec.FlipCoin as FlipCoin
 import qualified Parun.Codec.ForEach as ForEach
@@ -293,7 +293,7 @@ codec cardCodec abilityCodec =
           Arm.payload "Flip" ObjectRef.codec Effect.Flip (\x -> case x of Effect.Flip y -> Just y; _ -> Nothing),
           Arm.payload "Meld" meldCodec Effect.Meld (\x -> case x of Effect.Meld y -> Just y; _ -> Nothing),
           Arm.payload "PhaseOut" PhaseOut.codec Effect.PhaseOut (\x -> case x of Effect.PhaseOut y -> Just y; _ -> Nothing),
-          Arm.payload "AddPhases" (Common.list ExtraPhase.codec) Effect.AddPhases (\x -> case x of Effect.AddPhases y -> Just y; _ -> Nothing),
+          Arm.payload "AddPhases" AddPhases.codec Effect.AddPhases (\x -> case x of Effect.AddPhases y -> Just y; _ -> Nothing),
           Arm.payload "AddStep" Phase.codec Effect.AddStep (\x -> case x of Effect.AddStep y -> Just y; _ -> Nothing),
           Arm.nullary "EndTurn" Effect.EndTurn,
           Arm.nullary "EndCombatPhase" Effect.EndCombatPhase,

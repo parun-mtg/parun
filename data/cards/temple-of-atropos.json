@@ -28,9 +28,11 @@
                     "effects": [
                       {
                         "type": "AddPhases",
-                        "value": [
-                          "ExtraBeginning"
-                        ]
+                        "value": {
+                          "phases": [
+                            "ExtraBeginning"
+                          ]
+                        }
                       }
                     ]
                   }
