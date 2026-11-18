@@ -50,6 +50,7 @@ import qualified Parun.JsonCodec.Codec as Codec
 import qualified Parun.JsonCodec.Common as Common
 import qualified Parun.JsonCodec.Fields as Fields
 import qualified Parun.Types.Arithmetic as Arithmetic
+import qualified Parun.Types.AttackWindow as AttackWindow
 import qualified Parun.Types.ControlWindow as ControlWindow
 import qualified Parun.Types.PlayerAction as PlayerActionType
 import qualified Parun.Types.PlayerRef as PlayerRefType
@@ -186,7 +187,8 @@ codec =
       Arm.nullary "ClassLevel" Quantity.ClassLevel,
       -- CR 508.3b's record, with only a PlayerRef on the wire: what is counted
       -- comes from the combat record rather than from anything the card names.
-      Arm.payload "OpponentsAttacked" PlayerRef.codec Quantity.OpponentsAttacked (\x -> case x of Quantity.OpponentsAttacked y -> Just y; _ -> Nothing),
+      Arm.payload "OpponentsAttackedThisCombat" PlayerRef.codec (Quantity.OpponentsAttacked AttackWindow.ThisCombat) (\x -> case x of Quantity.OpponentsAttacked AttackWindow.ThisCombat y -> Just y; _ -> Nothing),
+      Arm.payload "OpponentsAttackedThisTurn" PlayerRef.codec (Quantity.OpponentsAttacked AttackWindow.ThisTurn) (\x -> case x of Quantity.OpponentsAttacked AttackWindow.ThisTurn y -> Just y; _ -> Nothing),
       -- CR 508.1a's declaration tally, with only a PlayerRef on the wire for the
       -- arm above's reason: what is counted comes from the event log rather than
       -- from anything the card names, and the turn is the log's extent rather than
@@ -199,7 +201,7 @@ codec =
       -- CR 121.1's draws, CR 603.1b's bending verbs, CR 700.17's dilemmas, CR
       -- 700.13's crimes and CR 305.2a's land plays, with only a PlayerRef on the wire
       -- (beside the acts done and the origins a land play is not counted from) for
-      -- OpponentsAttacked's reason: what is counted comes from the turn's record
+      -- OpponentsAttackedThisTurn's reason: what is counted comes from the turn's record
       -- rather than from anything the card names, and the turn is the record's
       -- extent rather than a window a card could state.
       Arm.payload "CardsDiscardedThisTurn" PlayerRef.codec (Quantity.TalliedThisTurn TurnTally.CardsDiscarded) (\x -> case x of Quantity.TalliedThisTurn TurnTally.CardsDiscarded y -> Just y; _ -> Nothing),
@@ -371,7 +373,8 @@ tagOf x = case x of
   Quantity.ControlGained ControlWindow.ThisTurn _ -> "ControlGainedThisTurn"
   Quantity.PlayedBy {} -> "PlayedBy"
   Quantity.ClassLevel {} -> "ClassLevel"
-  Quantity.OpponentsAttacked {} -> "OpponentsAttacked"
+  Quantity.OpponentsAttacked AttackWindow.ThisCombat _ -> "OpponentsAttackedThisCombat"
+  Quantity.OpponentsAttacked AttackWindow.ThisTurn _ -> "OpponentsAttackedThisTurn"
   Quantity.AttackersDeclaredThisTurn {} -> "AttackersDeclaredThisTurn"
   Quantity.AttackersDeclaredThisCombat {} -> "AttackersDeclaredThisCombat"
   Quantity.AttackedInLastTurnOf {} -> "AttackedInLastTurnOf"

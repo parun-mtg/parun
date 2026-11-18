@@ -35,6 +35,7 @@ import qualified Parun.Types.AgainstSlot as AgainstSlot
 import qualified Parun.Types.Arithmetic as Arithmetic
 import qualified Parun.Types.AtMost as AtMost
 import qualified Parun.Types.AttackTarget as AttackTarget
+import qualified Parun.Types.AttackWindow as AttackWindow
 import qualified Parun.Types.Card as Card
 import qualified Parun.Types.CardType as CardType
 import qualified Parun.Types.CastFrom as CastFrom
@@ -885,8 +886,16 @@ evaluateAgainst viewOf context gs announcedOn mOid mView quantity =
         -- An EMPTY record answers 0 rather than Nothing: no attack declared is an
         -- answered question, and outside a combat phase the cleared record (CR 511.3)
         -- says the same thing. What is unanswered is only the reference.
-        Quantity.OpponentsAttacked ref -> case playersOf ref of
-          Just [pid] -> Just (toInteger (length (filter (attackedOpponent (Game.teams gs) pid) (Set.toList (Map.findWithDefault Set.empty pid (Combat.declaredAttackedBy (TurnRegisters.combat (GameState.turn gs))))))))
+        --
+        -- AttackWindow.ThisTurn reads the turn's log instead, which CR 511.3 does not
+        -- clear and an additional combat phase (CR 500.8) adds to: battlefront's
+        -- "opponents you attacked this turn" (Korok, Liberated Rage).
+        Quantity.OpponentsAttacked window ref -> case playersOf ref of
+          Just [pid] ->
+            let attacked = case window of
+                  AttackWindow.ThisCombat -> Map.findWithDefault Set.empty pid (Combat.declaredAttackedBy (TurnRegisters.combat (GameState.turn gs)))
+                  AttackWindow.ThisTurn -> Game.attackedThisTurnBy gs pid
+             in Just (toInteger (length (filter (attackedOpponent (Game.teams gs) pid) (Set.toList attacked))))
           _ -> Nothing
         -- CR 508.1a / 608.2i: how many creatures that player has declared as attackers
         -- this turn -- rule 207.2c's raid, compared against 1. OpponentsAttacked's arm
@@ -1861,7 +1870,7 @@ talliesWhatHappened quantity = case quantity of
   Quantity.ControlGained _ _ -> False
   Quantity.PlayedBy _ -> False
   Quantity.DamageDealtThisTurn _ -> False
-  Quantity.OpponentsAttacked _ -> False
+  Quantity.OpponentsAttacked _ _ -> False
   Quantity.AttackersDeclaredThisTurn _ -> False
   Quantity.AttackersDeclaredThisCombat -> False
   Quantity.AttackedInLastTurnOf _ -> False

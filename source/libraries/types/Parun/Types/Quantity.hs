@@ -9,6 +9,7 @@ import qualified Parun.Types.AgainstLastCardExiledWith as AgainstLastCardExiledW
 import qualified Parun.Types.AgainstSlot as AgainstSlot
 import qualified Parun.Types.Arithmetic as Arithmetic
 import qualified Parun.Types.AtMost as AtMost
+import qualified Parun.Types.AttackWindow as AttackWindow
 import qualified Parun.Types.CastFrom as CastFrom
 import qualified Parun.Types.CommanderColors as CommanderColors
 import qualified Parun.Types.CompletedDungeon as CompletedDungeon
@@ -266,11 +267,13 @@ data Quantity
     -- GameState.cardsPlayed.
     PlayedBy PlayerRef.PlayerRef
   | -- | CR 508.3b: how many of that player's opponents were declared attacked
-    -- this combat (Combat.declaredAttacked) -- rule 702.121a's melee.
+    -- within that window -- this combat for rule 702.121a's melee
+    -- (Combat.declaredAttackedBy), this turn for rule 207.2c's battlefront (the
+    -- turn's GameEvent.BecameAttacked log).
     --
     -- That player's own attacks: under the shared team turns option each player
     -- on the active team is an attacking player (CR 805.10a).
-    OpponentsAttacked PlayerRef.PlayerRef
+    OpponentsAttacked AttackWindow.AttackWindow PlayerRef.PlayerRef
   | -- | CR 508.1a / 608.2i: how many creatures that player declared as attackers
     -- this turn, folded from the turn-scoped GameEvent.AttackerDeclared log.
     --
