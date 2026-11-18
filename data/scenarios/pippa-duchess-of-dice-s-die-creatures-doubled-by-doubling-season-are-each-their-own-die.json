@@ -47,9 +47,6 @@
   "note": "docs/decisions.md, \"Whether Die creatures a doubled creation makes share a die\": Doubling Season makes two Die tokens, each its own die showing Pippa's 3. Goblin Bookie rerolls one of them to 6, and the other stays 3/3.",
   "timeline": [
     {
-      "player": "alice",
-      "step": "PrecombatMain",
-      "turn": 1,
       "do": {
         "Activate": {
           "ability": 0,
@@ -61,40 +58,40 @@
           ],
           "object": "$pippa"
         }
-      }
-    },
-    {
+      },
       "player": "alice",
       "step": "PrecombatMain",
-      "turn": 1,
-      "do": "Pass"
+      "turn": 1
     },
     {
+      "do": "Pass",
       "player": "alice",
       "step": "PrecombatMain",
-      "turn": 1,
+      "turn": 1
+    },
+    {
       "do": {
         "Answer": {
           "prompt": "RollDie",
           "with": 3
         }
-      }
-    },
-    {
+      },
       "player": "alice",
       "step": "PrecombatMain",
-      "turn": 1,
+      "turn": 1
+    },
+    {
       "do": {
         "Answer": {
           "prompt": "Rethrow",
           "with": "Declines"
         }
-      }
-    },
-    {
+      },
       "player": "alice",
       "step": "PrecombatMain",
-      "turn": 1,
+      "turn": 1
+    },
+    {
       "check": {
         "Count": {
           "card": "Die Token",
@@ -102,12 +99,12 @@
           "player": "alice",
           "zone": "Battlefield"
         }
-      }
-    },
-    {
+      },
       "player": "alice",
       "step": "PrecombatMain",
-      "turn": 1,
+      "turn": 1
+    },
+    {
       "do": {
         "Activate": {
           "ability": 0,
@@ -116,70 +113,73 @@
           ],
           "object": "$bookie"
         }
-      }
-    },
-    {
+      },
       "player": "alice",
       "step": "PrecombatMain",
-      "turn": 1,
-      "do": "Pass"
+      "turn": 1
     },
     {
+      "do": "Pass",
       "player": "alice",
       "step": "PrecombatMain",
-      "turn": 1,
+      "turn": 1
+    },
+    {
       "do": {
         "Answer": {
           "prompt": "ChoosePermanent",
           "with": "Die Token"
         }
-      }
-    },
-    {
+      },
       "player": "alice",
       "step": "PrecombatMain",
-      "turn": 1,
+      "turn": 1
+    },
+    {
       "do": {
         "Answer": {
           "prompt": "RollDie",
           "with": 6
         }
-      }
-    },
-    {
+      },
       "player": "alice",
       "step": "PrecombatMain",
-      "turn": 1,
+      "turn": 1
+    },
+    {
       "check": {
         "View": {
           "is": [],
           "of": "Stack"
         }
-      }
-    },
-    {
+      },
       "player": "alice",
       "step": "PrecombatMain",
-      "turn": 1,
+      "turn": 1
+    },
+    {
       "check": {
         "PowerToughness": {
           "object": "Die Token",
           "power": 6,
           "toughness": 6
         }
-      }
-    },
-    {
+      },
       "player": "alice",
       "step": "PrecombatMain",
-      "turn": 1,
+      "turn": 1
+    },
+    {
       "check": {
         "PowerToughness": {
           "object": "Die Token#2",
           "power": 3,
           "toughness": 3
         }
-      }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
     }
   ]
 }

@@ -51,9 +51,6 @@
   "note": "Esix replaces the Die token with a copy of Grizzly Bears (CR 614.6): the Die token never exists, so the Bears token is no die. With no die on the battlefield, Goblin Bookie is not offered at priority. It is offered inside Pippa's roll, and declined there.",
   "timeline": [
     {
-      "player": "alice",
-      "step": "PrecombatMain",
-      "turn": 1,
       "do": {
         "Activate": {
           "ability": 0,
@@ -65,62 +62,62 @@
           ],
           "object": "$pippa"
         }
-      }
-    },
-    {
+      },
       "player": "alice",
       "step": "PrecombatMain",
-      "turn": 1,
-      "do": "Pass"
+      "turn": 1
     },
     {
+      "do": "Pass",
       "player": "alice",
       "step": "PrecombatMain",
-      "turn": 1,
+      "turn": 1
+    },
+    {
       "do": {
         "Answer": {
           "prompt": "RollDie",
           "with": 4
         }
-      }
-    },
-    {
+      },
       "player": "alice",
       "step": "PrecombatMain",
-      "turn": 1,
+      "turn": 1
+    },
+    {
       "do": {
         "Answer": {
           "prompt": "Rethrow",
           "with": "Declines"
         }
-      }
-    },
-    {
+      },
       "player": "alice",
       "step": "PrecombatMain",
-      "turn": 1,
+      "turn": 1
+    },
+    {
       "do": {
         "Answer": {
           "prompt": "ChooseSubstitute",
           "with": "Exercises"
         }
-      }
-    },
-    {
+      },
       "player": "alice",
       "step": "PrecombatMain",
-      "turn": 1,
+      "turn": 1
+    },
+    {
       "do": {
         "Answer": {
           "prompt": "ChoosePermanent",
           "with": "Grizzly Bears"
         }
-      }
-    },
-    {
+      },
       "player": "alice",
       "step": "PrecombatMain",
-      "turn": 1,
+      "turn": 1
+    },
+    {
       "check": {
         "Count": {
           "card": "Die Token",
@@ -128,12 +125,12 @@
           "player": "alice",
           "zone": "Battlefield"
         }
-      }
-    },
-    {
+      },
       "player": "alice",
       "step": "PrecombatMain",
-      "turn": 1,
+      "turn": 1
+    },
+    {
       "check": {
         "Count": {
           "card": "Grizzly Bears",
@@ -141,21 +138,25 @@
           "player": "alice",
           "zone": "Battlefield"
         }
-      }
-    },
-    {
+      },
       "player": "alice",
       "step": "PrecombatMain",
-      "turn": 1,
+      "turn": 1
+    },
+    {
       "check": {
         "View": {
-          "of": "Offered",
-          "player": "alice",
           "is": [
-            "Pass"
-          ]
+            "Pass",
+            "ActivateManaAbility $m"
+          ],
+          "of": "Offered",
+          "player": "alice"
         }
-      }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
     }
   ]
 }
