@@ -1991,6 +1991,7 @@ stubView table oid =
                 -- is vacuously False against this stub.
                 Filter.castFrom = Nothing,
                 Filter.castBy = Nothing,
+                Filter.protector = Nothing,
                 -- CR 115.1: the stub is of a permanent, which targets nothing.
                 Filter.targets = Set.empty,
                 Filter.targetViews = Map.empty,

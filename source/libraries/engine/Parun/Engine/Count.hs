@@ -1316,6 +1316,7 @@ lastZoned gs oid view = case Game.lastKnownOf oid gs of
 -- FACE DOWN by Cryptic Pursuit's (data/scenarios/cryptic-pursuit).
 -- attackingBattleProtector answers Nothing, since no card asks it of a departed
 -- attacker, and `blockStatus` too, whose one printing asks a CR 608.2i question.
+-- PROTECTOR is the record's, unproved: no card asks it of a departed battle.
 --
 -- `oid` is the id it had, so the turn's log still answers what it did while it
 -- existed (CR 608.2i) -- it attacked, it was dealt damage, it entered -- and
@@ -1371,6 +1372,8 @@ lastKnownView peers oid gs lastKnown =
             Just (AttackTarget.OfPlaneswalker _) -> Map.lookup oid (Combat.removedDefending (TurnRegisters.combat (GameState.turn gs)))
             _ -> Nothing,
           Filter.blocking = LastKnown.blocking lastKnown,
+          -- CR 310.9e / 608.2h: who protected it as it left.
+          Filter.protector = LastKnown.protector lastKnown,
           Filter.paidCosts = LastKnown.paidCosts lastKnown,
           Filter.castUsing = LastKnown.castUsing lastKnown,
           -- CR 601.2h / 608.2h: what was spent to cast it, as it left -- a
@@ -1749,6 +1752,7 @@ viewOfSnapshot deploy mController mOwner isToken counters zone home lapsed snaps
       -- SpellCast arm supplies it off the event, as it does the owner.
       Filter.castFrom = Nothing,
       Filter.castBy = Nothing,
+      Filter.protector = Nothing,
       -- CR 115.1: a snapshot is of an object that has left the stack or never
       -- was on it, and records no announcement -- `zone` above's reason.
       Filter.targets = Set.empty,

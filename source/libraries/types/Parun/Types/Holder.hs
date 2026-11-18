@@ -8,4 +8,6 @@ data Holder
     Owner
   | -- | CR 400.7d / 601.2a: who cast the spell this permanent was.
     Caster
+  | -- | CR 310.9e: the player who protects it, a battle.
+    Protector
   deriving (Bounded, Enum, Eq, Ord, Show)

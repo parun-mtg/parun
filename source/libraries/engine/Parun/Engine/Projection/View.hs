@@ -182,6 +182,7 @@ viewOfCardLapsed lapsed face =
           -- False against it -- `zone` above's reason.
           Filter.castFrom = Nothing,
           Filter.castBy = Nothing,
+          Filter.protector = Nothing,
           -- CR 115.1: a printed face is on no stack and targets nothing.
           Filter.targets = Set.empty,
           Filter.targetViews = Map.empty,
@@ -540,6 +541,9 @@ viewOfCharacteristics peers oid pc controller counters gs =
       -- CR 400.7d off the OBJECT beside it: the caster is a second stamp, which
       -- a controller CR 616.1 rewrote on entry does not move (Gather Specimens).
       Filter.castBy = Game.casterOf oid gs,
+      -- CR 310.9e off the OBJECT: a stored designation, not a characteristic,
+      -- which CR 310.9g keeps through a copy effect or the loss of the type.
+      Filter.protector = Object.protector =<< Game.lookupObject oid gs,
       -- CR 115.1 off the OBJECT's bindings, live: CR 601.2c fixed the targets and
       -- CR 115.7 can move them, so nothing here is a stamp. Empty for an id
       -- naming nothing and for everything off the stack.

@@ -241,6 +241,10 @@ data View = MkView
     -- candidate permanent was -- what Holder.Caster reads, off
     -- Parun.Engine.Game.casterOf. Nothing wherever `castFrom` above is.
     castBy :: Maybe PlayerId.PlayerId,
+    -- CR 310.9e: the candidate's protector, what Holder.Protector reads, off
+    -- Object.protector (or LastKnown.protector). Nothing for anything not a
+    -- battle as it entered (CR 310.9a), and for a player or a printed face.
+    protector :: Maybe PlayerId.PlayerId,
     -- CR 115.1: what the candidate TARGETS, for a spell or ability on the stack
     -- -- the recipients CR 601.2c (602.2b, 603.3d) chose, read live off the
     -- object's target-slot bindings by Parun.Engine.Projection.View.targetsOfStackObject
@@ -1112,6 +1116,7 @@ nobodyView =
       -- CR 601.2a casts an OBJECT; a player was never cast either.
       castFrom = Nothing,
       castBy = Nothing,
+      protector = Nothing,
       -- CR 115.1: a player is never on the stack, so targets nothing.
       targets = Set.empty,
       targetViews = Map.empty,
@@ -2221,13 +2226,15 @@ parityOf :: Integer -> Parity.Parity
 parityOf n = if even n then Parity.Even else Parity.Odd
 
 -- The player a holder atom reads off the candidate: its controller (CR 110.2),
--- Nothing for a player view and for a card in a hidden zone (CR 108.4), or its
--- owner (CR 108.3), Nothing off an object.
+-- Nothing for a player view and for a card in a hidden zone (CR 108.4), its
+-- owner (CR 108.3), Nothing off an object, its caster, or its protector (CR
+-- 310.9e), Nothing off anything that entered as no battle.
 heldBy :: Holder.Holder -> View -> Maybe PlayerId.PlayerId
 heldBy holder view = case holder of
   Holder.Controller -> controller view
   Holder.Owner -> owner view
   Holder.Caster -> castBy view
+  Holder.Protector -> protector view
 
 -- CR 105.2 / 205.3i / 205.3m / 709.4a: Filter.Shares' reading of each pair, as
 -- the test of a candidate against the anchored object's values, or against each member's
@@ -2269,6 +2276,7 @@ sharesAnchored trait anchor = case anchor of
     Trait.LandType -> Nothing
   Anchor.Bound (Just Holder.Owner) _ -> Nothing
   Anchor.Bound (Just Holder.Caster) _ -> Nothing
+  Anchor.Bound (Just Holder.Protector) _ -> Nothing
   Anchor.Bound Nothing slot -> case trait of
     -- A slot naming nothing leaves the bound side empty.
     Trait.Name -> Just (\context view -> meets (names view) (Map.findWithDefault Set.empty slot (slotNames context)))
@@ -2803,7 +2811,7 @@ matches context view predicate = case predicate of
   -- different player for every Siege (CR 310.12a), which Parun.BattleSpec's
   -- Synthetic Bulwark Snare trio is the board for.
   Filter.IsAttackingBattle relation -> case (attackingBattleProtector view, perspective context) of
-    (Just protector, Just p) -> PlayerRelation.holds (teams context) relation p protector
+    (Just guard, Just p) -> PlayerRelation.holds (teams context) relation p guard
     _ -> False
   -- CR 509.1g: the same live read IsAttacking is, off the other map. Never the
   -- question Parun.Engine.Combat.isBlocked asks: CR 509.1h keeps an attacker

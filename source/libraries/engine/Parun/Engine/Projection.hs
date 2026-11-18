@@ -4387,12 +4387,14 @@ everyAspect = Set.fromList [minBound .. maxBound]
 
 -- The candidate's controller, or nothing for its owner: only CR 407.3's ante
 -- cards change an owner, by a one-shot write, so no Modification writes
--- Object.owner. Nothing for its caster either, a CR 400.7d stamp.
+-- Object.owner. Nothing for its caster either, a CR 400.7d stamp, nor its
+-- protector, a CR 310.9a designation no Modification writes.
 holderReads :: Holder.Holder -> Set Aspect
 holderReads holder = case holder of
   Holder.Controller -> Set.singleton Controller
   Holder.Owner -> Set.empty
   Holder.Caster -> Set.empty
+  Holder.Protector -> Set.empty
 
 -- CR 208.1 / 613.4: power and toughness are layer 7's, and CR 105.2's colours
 -- layer 5's (CR 613.1e); CR 202.3 reads the mana cost, which layer 1 alone sets
