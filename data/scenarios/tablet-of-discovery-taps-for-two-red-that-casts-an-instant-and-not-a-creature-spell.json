@@ -46,7 +46,7 @@
                   "value": "Red"
                 },
                 "tags": [
-                  "Artifact"
+                  {"CardType": "Artifact"}
                 ],
                 "retention": "Ordinary",
                 "restriction": {
@@ -73,7 +73,7 @@
                   "value": "Red"
                 },
                 "tags": [
-                  "Artifact"
+                  {"CardType": "Artifact"}
                 ],
                 "retention": "Ordinary",
                 "restriction": {
@@ -114,7 +114,7 @@
                 "value": "Red"
               },
               "tags": [
-                "Artifact"
+                {"CardType": "Artifact"}
               ],
               "retention": "Ordinary",
               "restriction": {
@@ -141,7 +141,7 @@
                 "value": "Red"
               },
               "tags": [
-                "Artifact"
+                {"CardType": "Artifact"}
               ],
               "retention": "Ordinary",
               "restriction": {

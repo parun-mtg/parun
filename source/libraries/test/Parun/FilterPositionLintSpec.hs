@@ -17,6 +17,7 @@ import qualified Data.Set as Set
 import qualified Data.Text as Text
 import Parun.CardSpec (Framing (ActivationCostFramed, AffectedSetFramed, AttachDestination, AttachingHostFramed, ChosenSourceFramed, ClauseGateFramed, EntryAttachDestination, HandSweepFramed, InTargetSlot, InterveningFramed, KeywordFramed, LifeLossAmountFramed, ManaRestrictionFramed, MillTallyFramed, MintedTargetSlot, OutsideTheGameFramed, PlayerEffectFramed, RepeatGateFramed, ReplacementRowFramed, SearchFramed, SlotlessCostFramed, SourceHostFramed, SpentOnFramed, StandingHostFramed, StoredClassFramed, StoredPlayerEffectFramed, TriggerConditionFramed, Unframed), Surveyed, anyFace, cardAuthoredEffects, cardCounts, cardFilters, cardResolutionEffects, conditionFilters, costComponentFilters, counterKindFilters, durationFilters, effectFilters, entryRewriteFilters, filterSlotsReadSingly, framedSlotsReadSingly, keywordFilters, modalFilters, objectRefFilters, oneEffectTrigger, oneFaced, payGateFilters, quantityFilters, replacementEffectFilters, riderFilters, survey, surveyedFace, surveyedFilters, surveyedPool, triggerConditionFilters, turnUpRewriteFilters)
 import qualified Parun.Codec.Card as Card
+import qualified Parun.Codec.CardType as CardType.Codec
 import qualified Parun.Codec.Face as Face.Codec
 import qualified Parun.Codec.Filter as Filter.Codec
 import qualified Parun.Codec.Keyword as Keyword.Codec
@@ -1651,15 +1652,15 @@ assertAuthors s registry pool label counts authors = do
   Spec.assertEqWith s "and they are the pool's only ones: unlisted authors" [filed p | (p, faces) <- pool, uncurry (+) (facesCount faces) > 0, filed p `Set.notMember` listed] []
   Spec.assertEqWith s "and they are the pool's only ones" (sum (fmap (uncurry (+) . facesCount . snd) pool)) (sum (fmap snd authors))
 
--- Every ProductionTag.Subtype in a card's encoding, by Parun.Codec.ProductionTag's
--- keyed spelling: the one-key object {"Subtype": ...}, which no other codec a card
--- reaches writes.
-productionTagSubtypes :: Face.Face Card.Type.Card -> [Value.Value]
-productionTagSubtypes = go . Codec.encode (Face.Codec.codec Card.codec)
+-- Every ProductionTag payload under that key in a card's encoding, by
+-- Parun.Codec.ProductionTag's keyed spelling: the one-key object {"Subtype": ...}
+-- or {"CardType": ...}, which no other codec a card reaches writes.
+productionTagPayloads :: String -> Face.Face Card.Type.Card -> [Value.Value]
+productionTagPayloads key = go . Codec.encode (Face.Codec.codec Card.codec)
   where
     go value = case value of
       Value.Object o -> case Object.unwrap o of
-        [p] | String.unwrap (Pair.name p) == Text.pack "Subtype" -> [Pair.value p]
+        [p] | String.unwrap (Pair.name p) == Text.pack key -> [Pair.value p]
         ps -> concatMap (go . Pair.value) ps
       Value.Array a -> concatMap go (Array.unwrap a)
       Value.String _ -> []
@@ -1667,12 +1668,16 @@ productionTagSubtypes = go . Codec.encode (Face.Codec.codec Card.codec)
       Value.Boolean _ -> []
       Value.Number _ -> []
 
--- A face asking about mana from a subtype Parun.Engine.Mana.productionTagsGiven
--- never stamps, which would answer 0 however the spell was paid for.
-untaggedSubtypeOffends :: Face.Face Card.Type.Card -> Bool
-untaggedSubtypeOffends = any (`notElem` stamped) . productionTagSubtypes
+-- A face asking about mana from a subtype or card type
+-- Parun.Engine.Mana.productionTagsGiven never stamps, which would answer 0
+-- however the spell was paid for.
+untaggedTagOffends :: Face.Face Card.Type.Card -> Bool
+untaggedTagOffends face =
+  any (`notElem` stampedSubtypes) (productionTagPayloads "Subtype" face)
+    || any (`notElem` stampedCardTypes) (productionTagPayloads "CardType" face)
   where
-    stamped = fmap (Codec.encode Subtype.Codec.codec) (Set.toList Mana.taggedSubtypes)
+    stampedSubtypes = fmap (Codec.encode Subtype.Codec.codec) (Set.toList Mana.taggedSubtypes)
+    stampedCardTypes = fmap (Codec.encode CardType.Codec.codec) (Set.toList Mana.taggedCardTypes)
 
 -- How many Filter.IsFaceDown atoms an encoding asks of an object that may have
 -- left a zone other than the battlefield, read off its CR 608.2h record
@@ -4316,25 +4321,31 @@ filterPositionLintSpec s registry corpus = Spec.describe s "Lint" $ do
                 ]
             }
     Spec.assertEqWith s "and one in an affected set is seen" (counts (survey planted)) (0, 1)
-  -- CR 106.3: a unit records only the subtypes Mana.taggedSubtypes lists, so a
-  -- card asking about mana from any other subtype would read 0 for every payment.
-  Spec.it s "CR 106.3 no card asks about mana from a subtype the engine does not stamp" $ do
+  -- CR 106.3: a unit records only the subtypes Mana.taggedSubtypes and card
+  -- types Mana.taggedCardTypes list, so a card asking about mana from any other
+  -- would read 0 for every payment.
+  Spec.it s "CR 106.3 no card asks about mana from a subtype or card type the engine does not stamp" $ do
     ps <- S.allPrintings s corpus
-    let offenders = filter (anyFace untaggedSubtypeOffends . Printing.card) ps
-    Spec.assertEqWith s "every production-tag subtype is stamped" (fmap (S.nameOf . Printing.card) offenders) []
-    -- Not vacuous: Bat Colony's Cave is seen and accepted, and the same count
-    -- over a Forest is rejected.
+    let offenders = filter (anyFace untaggedTagOffends . Printing.card) ps
+    Spec.assertEqWith s "every production-tag subtype and card type is stamped" (fmap (S.nameOf . Printing.card) offenders) []
+    -- Not vacuous: Bat Colony's Cave and Shadow the Hedgehog's artifact are seen
+    -- and accepted, and the same count over a Forest or a land is rejected.
     colony <- S.printingOf s registry "Bat Colony"
-    Spec.assertBool s (not (null (productionTagSubtypes (S.combinedFace colony)))) "Bat Colony's Cave tag is seen"
-    Spec.assertBool s (not (untaggedSubtypeOffends (S.combinedFace colony))) "and accepted"
+    Spec.assertBool s (not (null (productionTagPayloads "Subtype" (S.combinedFace colony)))) "Bat Colony's Cave tag is seen"
+    Spec.assertBool s (not (untaggedTagOffends (S.combinedFace colony))) "and accepted"
+    shadow <- S.printingOf s registry "Shadow the Hedgehog"
+    Spec.assertBool s (not (null (productionTagPayloads "CardType" (S.combinedFace shadow)))) "Shadow the Hedgehog's artifact tag is seen"
+    Spec.assertBool s (not (untaggedTagOffends (S.combinedFace shadow))) "and accepted"
     piker <- S.printingOf s registry "Goblin Piker"
     let counting tag =
           (S.combinedFace piker)
             { Face.spell =
-                Mint.oneModeTargeting Map.empty (Seq.singleton (Effect.Draw (Draw.MkDraw (PlayerRef.Relative PlayerRelation.You) (Quantity.Type.ManaSpent (ManaSpent.Tagged (ProductionTag.Subtype tag))) Nothing Nothing)))
+                Mint.oneModeTargeting Map.empty (Seq.singleton (Effect.Draw (Draw.MkDraw (PlayerRef.Relative PlayerRelation.You) (Quantity.Type.ManaSpent (ManaSpent.Tagged tag)) Nothing Nothing)))
             }
-    Spec.assertBool s (untaggedSubtypeOffends (counting Subtype.Forest)) "a count of mana from a Forest is an offence"
-    Spec.assertBool s (not (untaggedSubtypeOffends (counting Subtype.Cave))) "and the same count from a Cave is not"
+    Spec.assertBool s (untaggedTagOffends (counting (ProductionTag.Subtype Subtype.Forest))) "a count of mana from a Forest is an offence"
+    Spec.assertBool s (not (untaggedTagOffends (counting (ProductionTag.Subtype Subtype.Cave)))) "and the same count from a Cave is not"
+    Spec.assertBool s (untaggedTagOffends (counting (ProductionTag.CardType CardType.Land))) "a count of mana from a land is an offence"
+    Spec.assertBool s (not (untaggedTagOffends (counting (ProductionTag.CardType CardType.Creature)))) "and the same count from a creature is not"
   -- CR 608.2h: a face-down spell or exiled card that leaves its zone is filed
   -- face up (Parun.Engine.Event.lastKnownFrom), so IsFaceDown asked of that
   -- record would be a silent False. Battlefield departures are filed right:

@@ -33,6 +33,7 @@ import qualified Parun.Support as S
 import qualified Parun.Types.ActivatedAbility as ActivatedAbility
 import qualified Parun.Types.Card as Card.Type
 import qualified Parun.Types.CardName as CardName
+import qualified Parun.Types.CardType as CardType
 import qualified Parun.Types.Color as Color
 import qualified Parun.Types.CounterKind as CounterKind
 import qualified Parun.Types.Face as Face
@@ -2012,7 +2013,7 @@ forswornPaladinSpec s registry = Spec.describe s "ForswornPaladin" $ do
             tagsOn oid gs = foldMap ManaUnit.tags (foldMap (Mana.Type.unwrap . Object.manaSpent) (Game.lookupObject oid gs))
         -- CR 205.3g makes Treasure an artifact subtype, so the same unit carries
         -- CR 205.2a's artifact tag beside it; both are read off the one source.
-        Spec.assertEqWith s "the ability object remembers a Treasure tag" (tagsOn abilityId onStack) (Set.fromList [ProductionTag.Subtype Subtype.Treasure, ProductionTag.Artifact])
+        Spec.assertEqWith s "the ability object remembers a Treasure tag" (tagsOn abilityId onStack) (Set.fromList [ProductionTag.Subtype Subtype.Treasure, ProductionTag.CardType CardType.Artifact])
         Spec.assertEqWith s "and the Paladin, whose ability it is, remembers nothing" (tagsOn paladinId onStack) Set.empty
         Spec.assertEqWith s "and three mana paid the {2}{B}" (length (foldMap (Mana.Type.unwrap . Object.manaSpent) (Game.lookupObject abilityId onStack))) 3
         Spec.assertBool s (abilityId /= paladinId) "setup: CR 602.2a's ability object is not the permanent whose ability it is"

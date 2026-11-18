@@ -109,7 +109,7 @@
                 "rider": null,
                 "sourceChoices": null,
                 "tags": [
-                  "Artifact"
+                  {"CardType": "Artifact"}
                 ]
               },
               {
@@ -122,7 +122,7 @@
                 "rider": null,
                 "sourceChoices": null,
                 "tags": [
-                  "Artifact"
+                  {"CardType": "Artifact"}
                 ]
               }
             ]

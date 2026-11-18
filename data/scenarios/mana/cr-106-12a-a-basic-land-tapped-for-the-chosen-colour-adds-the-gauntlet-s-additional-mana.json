@@ -151,7 +151,7 @@
                 "value": "Green"
               },
               "tags": [
-                "Artifact"
+                {"CardType": "Artifact"}
               ],
               "retention": "Ordinary",
               "restriction": null,
@@ -213,7 +213,7 @@
                 "value": "Green"
               },
               "tags": [
-                "Artifact"
+                {"CardType": "Artifact"}
               ],
               "retention": "Ordinary",
               "restriction": null,
@@ -275,7 +275,7 @@
                 "value": "Green"
               },
               "tags": [
-                "Artifact"
+                {"CardType": "Artifact"}
               ],
               "retention": "Ordinary",
               "restriction": null,
@@ -365,7 +365,7 @@
                 "value": "Green"
               },
               "tags": [
-                "Artifact"
+                {"CardType": "Artifact"}
               ],
               "retention": "Ordinary",
               "restriction": null,
@@ -406,7 +406,7 @@
                 "value": "Green"
               },
               "tags": [
-                "Artifact"
+                {"CardType": "Artifact"}
               ],
               "retention": "Ordinary",
               "restriction": null,

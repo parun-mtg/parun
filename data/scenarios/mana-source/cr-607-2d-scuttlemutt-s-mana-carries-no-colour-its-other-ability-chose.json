@@ -42,10 +42,10 @@
     {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": {"Answer": {"prompt": "ChooseColor", "with": "Blue"}}},
     {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"View": {"of": "Colors", "object": "$bears", "is": ["Blue"]}}},
     {"turn": 1, "step": "DeclareAttackers", "player": "alice", "do": {"Attack": []}},
-    {"turn": 3, "step": "PrecombatMain", "player": "alice", "do": {"Take": {"action": "ActivateManaAbility $mutt", "yields": [[{"manaType": {"type": "Colored", "value": "Blue"}, "restriction": null, "retention": "Ordinary", "rider": null, "sourceChoices": null, "tags": ["Artifact"]}]]}}},
+    {"turn": 3, "step": "PrecombatMain", "player": "alice", "do": {"Take": {"action": "ActivateManaAbility $mutt", "yields": [[{"manaType": {"type": "Colored", "value": "Blue"}, "restriction": null, "retention": "Ordinary", "rider": null, "sourceChoices": null, "tags": [{"CardType": "Artifact"}]}]]}}},
     {"turn": 3, "step": "PrecombatMain", "player": "alice", "do": {"Take": {"action": "ActivateManaAbility $mox"}}},
-    {"turn": 3, "step": "PrecombatMain", "player": "alice", "check": {"View": {"of": "ManaPool", "player": "alice", "is": [{"manaType": {"type": "Colored", "value": "Blue"}, "tags": ["Artifact"], "retention": "Ordinary", "restriction": null, "rider": null, "sourceChoices": null}, {"manaType": {"type": "Colored", "value": "Blue"}, "tags": ["Artifact"], "retention": "Ordinary", "restriction": null, "rider": null, "sourceChoices": null}]}}},
+    {"turn": 3, "step": "PrecombatMain", "player": "alice", "check": {"View": {"of": "ManaPool", "player": "alice", "is": [{"manaType": {"type": "Colored", "value": "Blue"}, "tags": [{"CardType": "Artifact"}], "retention": "Ordinary", "restriction": null, "rider": null, "sourceChoices": null}, {"manaType": {"type": "Colored", "value": "Blue"}, "tags": [{"CardType": "Artifact"}], "retention": "Ordinary", "restriction": null, "rider": null, "sourceChoices": null}]}}},
     {"turn": 3, "step": "PrecombatMain", "player": "alice", "do": {"Cast": {"object": "$men"}}},
-    {"turn": 3, "step": "PrecombatMain", "player": "alice", "check": {"View": {"of": "ManaPool", "player": "alice", "is": [{"manaType": {"type": "Colored", "value": "Blue"}, "tags": ["Artifact"], "retention": "Ordinary", "restriction": null, "rider": null, "sourceChoices": null}]}}}
+    {"turn": 3, "step": "PrecombatMain", "player": "alice", "check": {"View": {"of": "ManaPool", "player": "alice", "is": [{"manaType": {"type": "Colored", "value": "Blue"}, "tags": [{"CardType": "Artifact"}], "retention": "Ordinary", "restriction": null, "rider": null, "sourceChoices": null}]}}}
   ]
 }

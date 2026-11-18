@@ -152,7 +152,7 @@
                 "value": "Black"
               },
               "tags": [
-                "Artifact"
+                {"CardType": "Artifact"}
               ],
               "retention": "Ordinary",
               "restriction": null,
@@ -257,7 +257,7 @@
                 "value": "Black"
               },
               "tags": [
-                "Artifact"
+                {"CardType": "Artifact"}
               ],
               "retention": "Ordinary",
               "restriction": null,

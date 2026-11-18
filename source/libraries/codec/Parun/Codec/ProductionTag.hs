@@ -1,5 +1,6 @@
 module Parun.Codec.ProductionTag where
 
+import qualified Parun.Codec.CardType as CardType
 import qualified Parun.Codec.Subtype as Subtype
 import qualified Parun.JsonCodec.Arm as Arm
 import qualified Parun.JsonCodec.Codec as Codec
@@ -13,11 +14,11 @@ codec =
     tagOf
     [ Arm.nullary "Snow" ProductionTag.Snow,
       Arm.payload "Subtype" Subtype.codec ProductionTag.Subtype (\x -> case x of ProductionTag.Subtype y -> Just y; _ -> Nothing),
-      Arm.nullary "Artifact" ProductionTag.Artifact
+      Arm.payload "CardType" CardType.codec ProductionTag.CardType (\x -> case x of ProductionTag.CardType y -> Just y; _ -> Nothing)
     ]
 
 tagOf :: ProductionTag.ProductionTag -> String
 tagOf x = case x of
   ProductionTag.Snow -> "Snow"
   ProductionTag.Subtype {} -> "Subtype"
-  ProductionTag.Artifact -> "Artifact"
+  ProductionTag.CardType {} -> "CardType"

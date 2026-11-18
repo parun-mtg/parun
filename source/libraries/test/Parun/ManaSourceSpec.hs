@@ -995,7 +995,7 @@ aliceMain gs =
 -- what separates them: the Spring and the Powder are both artifacts, so either
 -- board's mana would carry it.
 retainedColorless :: ManaUnit.ManaUnit
-retainedColorless = (plainOf ManaType.Colorless) {ManaUnit.retention = ManaRetention.UntilEndOfTurn, ManaUnit.tags = Set.singleton ProductionTag.Artifact}
+retainedColorless = (plainOf ManaType.Colorless) {ManaUnit.retention = ManaRetention.UntilEndOfTurn, ManaUnit.tags = Set.singleton (ProductionTag.CardType CardType.Artifact)}
 
 -- CR 106.6's OTHER subject, and the one no card in the pool reached before: a
 -- restriction over ACTIVATIONS rather than over casts. Omen Hawker ({U} 1/1

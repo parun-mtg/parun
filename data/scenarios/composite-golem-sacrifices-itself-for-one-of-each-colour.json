@@ -67,7 +67,7 @@
                 "value": "White"
               },
               "tags": [
-                "Artifact"
+                {"CardType": "Artifact"}
               ],
               "retention": "Ordinary",
               "restriction": null,
@@ -80,7 +80,7 @@
                 "value": "Blue"
               },
               "tags": [
-                "Artifact"
+                {"CardType": "Artifact"}
               ],
               "retention": "Ordinary",
               "restriction": null,
@@ -93,7 +93,7 @@
                 "value": "Black"
               },
               "tags": [
-                "Artifact"
+                {"CardType": "Artifact"}
               ],
               "retention": "Ordinary",
               "restriction": null,
@@ -106,7 +106,7 @@
                 "value": "Red"
               },
               "tags": [
-                "Artifact"
+                {"CardType": "Artifact"}
               ],
               "retention": "Ordinary",
               "restriction": null,
@@ -119,7 +119,7 @@
                 "value": "Green"
               },
               "tags": [
-                "Artifact"
+                {"CardType": "Artifact"}
               ],
               "retention": "Ordinary",
               "restriction": null,

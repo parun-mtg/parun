@@ -92,7 +92,7 @@
                 "retention": "Ordinary",
                 "rider": null,
                 "sourceChoices": null,
-                "tags": ["Artifact"]
+                "tags": [{"CardType": "Artifact"}]
               }
             ]
           ]
@@ -125,7 +125,7 @@
                 "retention": "Ordinary",
                 "rider": null,
                 "sourceChoices": null,
-                "tags": ["Artifact"]
+                "tags": [{"CardType": "Artifact"}]
               }
             ]
           ]

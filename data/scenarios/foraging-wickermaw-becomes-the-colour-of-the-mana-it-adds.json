@@ -82,7 +82,7 @@
                 "rider": null,
                 "sourceChoices": null,
                 "tags": [
-                  "Artifact"
+                  {"CardType": "Artifact"}
                 ]
               }
             ]
@@ -103,7 +103,7 @@
                 "value": "Blue"
               },
               "tags": [
-                "Artifact"
+                {"CardType": "Artifact"}
               ],
               "retention": "Ordinary",
               "restriction": null,

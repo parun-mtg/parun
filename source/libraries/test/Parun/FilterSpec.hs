@@ -391,7 +391,7 @@ castFromGraveyard = blackCreature {Filter.zone = Just Zone.Stack, Filter.castFro
 -- else -- Shadow the Hedgehog's condition, and the one axis the TagWasSpent cases
 -- vary.
 paidWithArtifactMana :: Filter.View
-paidWithArtifactMana = blackCreature {Filter.zone = Just Zone.Stack, Filter.manaSpentTagColors = Map.singleton ProductionTag.Artifact Set.empty}
+paidWithArtifactMana = blackCreature {Filter.zone = Just Zone.Stack, Filter.manaSpentTagColors = Map.singleton (ProductionTag.CardType CardType.Artifact) Set.empty}
 
 -- A SPELL on the stack aimed at creature 9 and at player 1 -- `blackCreature`
 -- moved to the stack and given targets, which is what the two Targets cases
@@ -2552,19 +2552,19 @@ spec s = Spec.describe s "Parun.Engine.Filter" $ do
   -- paid for it and does not when land mana did; these cases pin the atom itself.
   Spec.describe s "TagWasSpent" $ do
     Spec.it s "matches a tag the candidate's payment carried and no other" $ do
-      Spec.assertBool s (Filter.matches self paidWithArtifactMana (Filter.Type.TagWasSpent ProductionTag.Artifact)) "the view's own recorded tag"
+      Spec.assertBool s (Filter.matches self paidWithArtifactMana (Filter.Type.TagWasSpent (ProductionTag.CardType CardType.Artifact))) "the view's own recorded tag"
       Spec.assertBool s (not (Filter.matches self paidWithArtifactMana (Filter.Type.TagWasSpent (ProductionTag.Subtype Subtype.Treasure)))) "and not a different one"
 
     -- The pair that makes the atom discriminating: two views differing in the
     -- recorded tag set alone, so neither answer can come from anything else.
     Spec.it s "a payment that carried no tag does not match" $
-      Spec.assertBool s (not (Filter.matches self (paidWithArtifactMana {Filter.manaSpentTagColors = Map.empty}) (Filter.Type.TagWasSpent ProductionTag.Artifact))) "the same spell, paid off an untagged source"
+      Spec.assertBool s (not (Filter.matches self (paidWithArtifactMana {Filter.manaSpentTagColors = Map.empty}) (Filter.Type.TagWasSpent (ProductionTag.CardType CardType.Artifact)))) "the same spell, paid off an untagged source"
 
     -- Vacuously False with nothing to ask: a player is not an object (CR 109.1)
     -- and an object nothing was paid for carries an empty record.
     Spec.it s "a player candidate and an unpaid-for object are vacuously false" $ do
-      Spec.assertBool s (not (Filter.matches self aPlayer (Filter.Type.TagWasSpent ProductionTag.Artifact))) "player"
-      Spec.assertBool s (not (Filter.matches self blackCreature (Filter.Type.TagWasSpent ProductionTag.Artifact))) "and a permanent nothing paid for"
+      Spec.assertBool s (not (Filter.matches self aPlayer (Filter.Type.TagWasSpent (ProductionTag.CardType CardType.Artifact)))) "player"
+      Spec.assertBool s (not (Filter.matches self blackCreature (Filter.Type.TagWasSpent (ProductionTag.CardType CardType.Artifact)))) "and a permanent nothing paid for"
 
   -- CR 702.33d / 702.33h. The gameplay-level proof is Parun.StickerSpec's Hallar,
   -- the Firefletcher case; these pin the atom over each kicker kind.
