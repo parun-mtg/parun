@@ -1911,9 +1911,11 @@ spec s registry = Spec.describe s "Parun.Engine.Target" $ do
   -- mana value equal to the total power of those creatures." SYNTHETIC for
   -- Counted Verdict's reason.
   --
-  -- A Total bound is not answered exactly past the cap (related to #6139): thirty
-  -- Goblin Pikers (power 2) total only even numbers, never the Rats' mana value
-  -- 1, yet the open bound offers the Rats and the gate passes past the cap.
+  -- Unprinted: an exact answer past the cap for a Total bound, which
+  -- Parun.AbilitySlotLintSpec's "no card writes a sibling bound only the capped
+  -- search answers" keeps out of every card but this one. Thirty Goblin Pikers
+  -- (power 2) total only even numbers, never the Rats' mana value 1, yet the
+  -- open bound offers the Rats and the gate passes past the cap.
   Spec.it s "CR 601.2c past the cap a non-Members sibling-count mode is offered, and the attempt is reversed" $ do
     verdict <- S.printingOf s registry "Synthetic Total Verdict"
     countedBoard s registry "Synthetic Total Verdict" (replicate 30 "Goblin Piker") "Hill Giant" $ \mine giant board verdictId -> do
