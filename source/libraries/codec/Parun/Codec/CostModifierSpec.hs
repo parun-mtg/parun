@@ -87,6 +87,18 @@ spec s = Spec.describe s "Parun.Codec.CostModifier" $ do
               && Either.isLeft (decodeUnlock ",\"onlyNth\":{\"scope\":{\"type\":\"PlayersTurn\",\"value\":{\"type\":\"Relative\",\"value\":\"You\"}},\"ordinal\":1}")
           )
           "expected a decode failure only beside a target criterion or an ordinal"
+  Spec.it s "refuses an optional addition to an activation or counting anything" $
+    let decodeOptional subject extra = Codec.decode CostModifier.codec =<< Common.parse (Text.pack ("{\"subject\":" <> subject <> ",\"matching\":{\"type\":\"IsSource\"}" <> extra <> ",\"change\":{\"type\":\"Add\",\"value\":{\"components\":[],\"optional\":{\"amount\":[]}}}}"))
+        spells = "{\"type\":\"Spells\"}"
+     in Spec.assertBool
+          s
+          ( Either.isRight (decodeOptional spells "")
+              && Either.isLeft (decodeOptional "{\"type\":\"Activations\",\"value\":{}}" "")
+              && Either.isLeft (decodeOptional spells ",\"whichTargets\":{\"type\":\"IsSource\"}")
+              && Either.isLeft (decodeOptional spells ",\"perTarget\":{\"matching\":{\"type\":\"IsSource\"}}")
+              && Either.isLeft (decodeOptional spells ",\"perEach\":{\"type\":\"Literal\",\"value\":1}")
+          )
+          "expected a decode failure only beside an activation, a target criterion or a count"
   Spec.it s "has a schema" $ Common.assertHasSchema s CostModifier.codec
 
 -- An activation reduction limited to the nth each turn, its criteria as given.

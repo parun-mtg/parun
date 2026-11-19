@@ -43,6 +43,7 @@ import qualified Parun.Spec as Spec
 import Parun.SpecialActionSpec (humiliatedBoard)
 import qualified Parun.Support as S
 import qualified Parun.Types.Action as A
+import qualified Parun.Types.AppliedReduction as AppliedReduction
 import qualified Parun.Types.BeginningStep as BeginningStep
 import qualified Parun.Types.BuybackDecision as BuybackDecision
 import qualified Parun.Types.CandidateCost as CandidateCost
@@ -3705,7 +3706,7 @@ theBlue = ManaSymbol.OfType (ManaType.Colored Color.Blue)
 -- Cast.entwineOffer's and Cast.announceOptionalCosts' candidate list: each
 -- candidate cost beside the CR 601.2f reductions it brings, which is empty for
 -- every candidate but CR 702.119a's emerge.
-candidatePairs :: [CandidateCost.CandidateCost] -> [([ManaCost.ManaCost], Cost.Type.Cost Keyword.Keyword)]
+candidatePairs :: [CandidateCost.CandidateCost] -> [([AppliedReduction.AppliedReduction], Cost.Type.Cost Keyword.Keyword)]
 candidatePairs = fmap (\candidate -> (CandidateCost.reductions candidate, CandidateCost.cost candidate))
 
 -- CR 601.2b's announcement answered by naming a cost's mana.

@@ -57,12 +57,18 @@ spec s = Spec.describe s "Parun.Codec.CostChange" $ do
     Common.assertCodec
       s
       CostChange.codec
-      (CostChange.Type.Add (CostAddition.MkCostAddition [CostComponent.Sacrifice (Sacrifice.MkSacrifice (ObjectCount.Exactly (CostAmount.Fixed 1)) (Filter.HasCardType CardType.Land) Set.empty)] CostScale.Once))
+      (CostChange.Type.Add (CostAddition.MkCostAddition [CostComponent.Sacrifice (Sacrifice.MkSacrifice (ObjectCount.Exactly (CostAmount.Fixed 1)) (Filter.HasCardType CardType.Land) Set.empty)] CostScale.Once Nothing))
       " {\"type\":\"Add\",\"value\":{\"components\":[{\"type\":\"Sacrifice\",\"value\":{\"count\":{\"type\":\"Fixed\",\"value\":1},\"whichPermanents\":{\"type\":\"HasCardType\",\"value\":\"Land\"}}}]}} "
   Spec.it s "Add, Drought's scale" $
     Common.assertCodec
       s
       CostChange.codec
-      (CostChange.Type.Add (CostAddition.MkCostAddition [] (CostScale.PerColoredSymbol Color.Black)))
+      (CostChange.Type.Add (CostAddition.MkCostAddition [] (CostScale.PerColoredSymbol Color.Black) Nothing))
       " {\"type\":\"Add\",\"value\":{\"components\":[],\"scale\":{\"type\":\"PerColoredSymbol\",\"value\":\"Black\"}}} "
+  Spec.it s "Add, Defiler of Dreams' optional life with its reduction" $
+    Common.assertCodec
+      s
+      CostChange.codec
+      (CostChange.Type.Add (CostAddition.MkCostAddition [CostComponent.PayLife (CostAmount.Fixed 2)] CostScale.Once (Just (AppliedReduction.MkAppliedReduction (ManaCost.MkManaCost [ManaSymbol.OfType (ManaType.Colored Color.Blue)]) 0 True))))
+      " {\"type\":\"Add\",\"value\":{\"components\":[{\"type\":\"PayLife\",\"value\":{\"type\":\"Fixed\",\"value\":2}}],\"optional\":{\"amount\":[{\"type\":\"OfType\",\"value\":{\"type\":\"Colored\",\"value\":\"Blue\"}}],\"coloredOnly\":true}}} "
   Spec.it s "has a schema" $ Common.assertHasSchema s CostChange.codec

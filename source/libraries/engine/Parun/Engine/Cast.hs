@@ -55,6 +55,7 @@ import qualified Parun.Types.ActiveCopyCast as ActiveCopyCast
 import qualified Parun.Types.ActivePlayerEffect as ActivePlayerEffect
 import qualified Parun.Types.ActiveReplacement as ActiveReplacement
 import qualified Parun.Types.Affected as Affected
+import qualified Parun.Types.AppliedReduction as AppliedReduction
 import qualified Parun.Types.Binding as Binding.Type
 import qualified Parun.Types.BuybackDecision as BuybackDecision
 import qualified Parun.Types.CandidateCost as CandidateCost
@@ -548,7 +549,7 @@ chosenBy chooser face = case Face.modeChooser face of
 -- `among` narrows those values to the ones the rest of the announcement
 -- admits: `const id` once the targets are not in question, fillableXs at an
 -- offer gate.
-payableCost :: (Cost Keyword -> [Natural] -> [Natural]) -> Maybe (Seq.Seq ModeIndex.ModeIndex) -> [ManaCost.ManaCost] -> ManaSpending -> PlayerId -> ObjectId -> GameState -> Cost Keyword -> Bool
+payableCost :: (Cost Keyword -> [Natural] -> [Natural]) -> Maybe (Seq.Seq ModeIndex.ModeIndex) -> [AppliedReduction.AppliedReduction] -> ManaSpending -> PlayerId -> ObjectId -> GameState -> Cost Keyword -> Bool
 payableCost among modes extra spending pid oid gs cost = any (\x -> payableCostAt modes x extra spending pid oid gs cost) (among cost (gateXs pid oid gs cost))
 
 -- The values of X a gate asks a cost at, in ascending order: Activatable.gateXs',
@@ -656,14 +657,14 @@ readsAnnouncedX pid oid cost gs =
 -- and ahead of the substitutes, which is where castProposed pays them
 -- (Cost.assistable): a caster with one Forest may propose Charging Binox beside a
 -- player holding seven Plains. Off Cost.spellKeywords, as castProposed reads it.
-payableCostAt :: Maybe (Seq.Seq ModeIndex.ModeIndex) -> Natural -> [ManaCost.ManaCost] -> ManaSpending -> PlayerId -> ObjectId -> GameState -> Cost Keyword -> Bool
+payableCostAt :: Maybe (Seq.Seq ModeIndex.ModeIndex) -> Natural -> [AppliedReduction.AppliedReduction] -> ManaSpending -> PlayerId -> ObjectId -> GameState -> Cost Keyword -> Bool
 payableCostAt modes x extra spending pid oid gs =
   let pcs = Projection.projectAll gs
    in payableCostAtGiven modes pcs (Cost.supplyManaSourcesGiven (Cost.manaActivationsGiven (PlayerEffect.applying pid gs)) (Projection.controlGrants gs) pcs pid gs) x extra spending pid oid gs
 
 -- `payableCost` with the board's projection and CR 601.2g supply sweep handed
 -- in, so an enumeration over a hand builds the projection once (#435).
-payableCostGiven :: (Cost Keyword -> [Natural] -> [Natural]) -> Map.Map ObjectId PC.ProjectedCharacteristics -> Mana.Sources -> [ManaCost.ManaCost] -> ManaSpending -> PlayerId -> ObjectId -> GameState -> Cost Keyword -> Bool
+payableCostGiven :: (Cost Keyword -> [Natural] -> [Natural]) -> Map.Map ObjectId PC.ProjectedCharacteristics -> Mana.Sources -> [AppliedReduction.AppliedReduction] -> ManaSpending -> PlayerId -> ObjectId -> GameState -> Cost Keyword -> Bool
 payableCostGiven among pcs sources extra spending pid oid gs cost = any (\x -> payableCostAtGiven Nothing pcs sources x extra spending pid oid gs cost) (among cost (gateXs pid oid gs cost))
 
 -- `payableCostAt` with the projection and sweep handed in.
@@ -677,7 +678,7 @@ payableCostGiven among pcs sources extra spending pid oid gs cost = any (\x -> p
 -- names, bound on the spell as castProposed binds the announced one: the cast is
 -- legal if SOME announcement complies (CR 601.2), and a reduction reading the
 -- count makes its least value its dearest.
-payableCostAtGiven :: Maybe (Seq.Seq ModeIndex.ModeIndex) -> Map.Map ObjectId PC.ProjectedCharacteristics -> Mana.Sources -> Natural -> [ManaCost.ManaCost] -> ManaSpending -> PlayerId -> ObjectId -> GameState -> Cost Keyword -> Bool
+payableCostAtGiven :: Maybe (Seq.Seq ModeIndex.ModeIndex) -> Map.Map ObjectId PC.ProjectedCharacteristics -> Mana.Sources -> Natural -> [AppliedReduction.AppliedReduction] -> ManaSpending -> PlayerId -> ObjectId -> GameState -> Cost Keyword -> Bool
 payableCostAtGiven modes pcs sources x extra spending pid oid gs cost =
   any
     ((\counts -> payableCountedAtGiven modes pcs sources x extra spending pid oid (bindAnnounced counts oid gs) (Cost.substituteCounts counts cost)) . Map.fromList)
@@ -707,7 +708,7 @@ bindAnnounced counts oid gs
   | otherwise = gs {GameState.objects = Map.adjust (\o -> o {Object.bindings = Map.union (Binding.fromAnnounced counts) (Object.bindings o)}) oid (GameState.objects gs)}
 
 -- `payableCostAtGiven` once every count beside X is announced.
-payableCountedAtGiven :: Maybe (Seq.Seq ModeIndex.ModeIndex) -> Map.Map ObjectId PC.ProjectedCharacteristics -> Mana.Sources -> Natural -> [ManaCost.ManaCost] -> ManaSpending -> PlayerId -> ObjectId -> GameState -> Cost Keyword -> Bool
+payableCountedAtGiven :: Maybe (Seq.Seq ModeIndex.ModeIndex) -> Map.Map ObjectId PC.ProjectedCharacteristics -> Mana.Sources -> Natural -> [AppliedReduction.AppliedReduction] -> ManaSpending -> PlayerId -> ObjectId -> GameState -> Cost Keyword -> Bool
 payableCountedAtGiven modes pcs sources x extra spending pid oid gs cost =
   let substituted = Cost.substituteX x cost
       assisted = Cost.assistable (PaymentSubject.Casting oid) pid oid gs
@@ -922,7 +923,7 @@ castAimable key announced x pid oid gs = case Game.faceOf oid gs of
 -- criterion compares against it (Activatable.criterionReadsX), Nahiri's
 -- Sacrifice's being payable only at the mana values on the board. Those are the
 -- greatest payable X among `gateXs`.
-affordableX :: Seq.Seq ModeIndex.ModeIndex -> Maybe Natural -> [ManaCost.ManaCost] -> ManaSpending -> PlayerId -> ObjectId -> GameState -> Cost Keyword -> Natural
+affordableX :: Seq.Seq ModeIndex.ModeIndex -> Maybe Natural -> [AppliedReduction.AppliedReduction] -> ManaSpending -> PlayerId -> ObjectId -> GameState -> Cost Keyword -> Natural
 affordableX modes mCeiling extra spending pid oid gs cost
   | readsAnnouncedX pid oid cost gs || Activatable.criterionReadsX cost = Maybe.fromMaybe 0 (Maybe.listToMaybe (reverse (filter payableAt (gateXs pid oid gs cost))))
   | otherwise = Cost.greatestPayableX mCeiling payableAt cost
@@ -1015,7 +1016,7 @@ modeCostTotal costs chosen =
 -- time castSpell asks, CR 601.2a has already moved the card to the stack, and
 -- parun offers a candidate cost BY ZONE (flashback's only from a graveyard), so
 -- the list has to come from the proposal. See castSpell.
-entwineOffer :: ManaSpending -> PlayerId -> ObjectId -> [([ManaCost.ManaCost], Cost Keyword)] -> GameState -> Maybe (Cost Keyword)
+entwineOffer :: ManaSpending -> PlayerId -> ObjectId -> [([AppliedReduction.AppliedReduction], Cost Keyword)] -> GameState -> Maybe (Cost Keyword)
 entwineOffer spending pid oid candidates gs = case Game.faceOf oid gs of
   Nothing -> Nothing
   Just face -> do
@@ -1076,7 +1077,7 @@ withOptionalPayments paid candidate =
 -- together are payable. How high a multikicker count may go is not gated here at
 -- all -- the answer is honoured and then measured, which is Prompt.ChooseX's
 -- posture, and castProposed rejects a cast whose announced total nothing can pay.
-announceOptionalCosts :: [Keyword] -> Seq.Seq ModeIndex.ModeIndex -> ManaSpending -> PlayerId -> ObjectId -> [(Maybe Keyword, ([ManaCost.ManaCost], Cost Keyword))] -> [(Keyword, Natural)] -> GameState -> Game (Map.Map Keyword (Map.Map KeywordInstance.KeywordInstance Natural))
+announceOptionalCosts :: [Keyword] -> Seq.Seq ModeIndex.ModeIndex -> ManaSpending -> PlayerId -> ObjectId -> [(Maybe Keyword, ([AppliedReduction.AppliedReduction], Cost Keyword))] -> [(Keyword, Natural)] -> GameState -> Game (Map.Map Keyword (Map.Map KeywordInstance.KeywordInstance Natural))
 announceOptionalCosts held modes spending pid sid candidates offers gs =
   let -- Priced on the board this one more declaration and the candidate would
       -- make (CR 601.2c's slots, castAimable).
@@ -3424,7 +3425,7 @@ candidatesWithWays pid oid name proposed candidates = case proposedFace oid name
 -- CR 118.8 / 601.2f / 118.14 / 118.9: the additional costs, the reductions, the
 -- spending and the alternative cost each way a cast could be made under would
 -- bring, one empty row where there is none to choose among.
-wayCosts :: Maybe [Maybe (ObjectId, CastFromZone.CastFromZone)] -> [([CostComponent.CostComponent Keyword], [ManaCost.ManaCost], ManaSpending, Maybe PermissionCost.PermissionCost)]
+wayCosts :: Maybe [Maybe (ObjectId, CastFromZone.CastFromZone)] -> [([CostComponent.CostComponent Keyword], [AppliedReduction.AppliedReduction], ManaSpending, Maybe PermissionCost.PermissionCost)]
 wayCosts ways = case Maybe.fromMaybe [] ways of
   [] -> [([], [], ManaSpending.AsProduced, Nothing)]
   options -> fmap (\way -> (PlayerEffect.permissionCosts way, PlayerEffect.permissionReductions way, PlayerEffect.permissionSpending way, PlayerEffect.permissionAlternative way)) options
@@ -3459,7 +3460,7 @@ underAlternative allowed face alternative candidate = case alternative of
 
 -- wayCosts at the gate, asked of the board castSpellWith asks: no spell's rider
 -- weighed, since the gate prices a cast and such a rider is no price.
-permissionCostChoices :: PlayerId -> ObjectId -> Face.Face Card.Type.Card -> GameState -> Maybe Keyword -> [([CostComponent.CostComponent Keyword], [ManaCost.ManaCost], ManaSpending, Maybe PermissionCost.PermissionCost)]
+permissionCostChoices :: PlayerId -> ObjectId -> Face.Face Card.Type.Card -> GameState -> Maybe Keyword -> [([CostComponent.CostComponent Keyword], [AppliedReduction.AppliedReduction], ManaSpending, Maybe PermissionCost.PermissionCost)]
 permissionCostChoices pid oid face gs = wayCosts . candidateWays (const False) pid oid (Game.zoneOf oid gs) face gs
 
 -- CR 601.2f: `cost` with a permission's additional costs added to it.

@@ -2404,7 +2404,7 @@ costChangeChildren :: (Applicative f) => PlayerEffectChildren f -> CostChange.Co
 costChangeChildren c change = case change of
   CostChange.Increase _ -> pure change
   CostChange.Reduce _ -> pure change
-  CostChange.Add (CostAddition.MkCostAddition components scale) -> fmap CostChange.Add (CostAddition.MkCostAddition <$> traverse (playerCostComponent c) components <*> costScaleChildren c scale)
+  CostChange.Add (CostAddition.MkCostAddition components scale optional) -> fmap CostChange.Add (CostAddition.MkCostAddition <$> traverse (playerCostComponent c) components <*> costScaleChildren c scale <*> pure optional)
 
 -- | How often an addition applies: only a per-symbol scale names a colour.
 costScaleChildren :: (Applicative f) => PlayerEffectChildren f -> CostScale.CostScale -> f CostScale.CostScale

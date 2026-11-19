@@ -1,5 +1,6 @@
 module Parun.Types.CostAddition where
 
+import qualified Parun.Types.AppliedReduction as AppliedReduction
 import qualified Parun.Types.CostComponent as CostComponent
 import qualified Parun.Types.CostScale as CostScale
 import qualified Parun.Types.Keyword as Keyword
@@ -9,6 +10,10 @@ import qualified Parun.Types.Keyword as Keyword
 -- times they join the cost (Drought's "for each black mana symbol").
 data CostAddition = MkCostAddition
   { components :: [CostComponent.CostComponent Keyword.Keyword],
-    scale :: CostScale.CostScale
+    scale :: CostScale.CostScale,
+    -- | CR 118.8a / 601.2b: Just when the caster MAY pay it, carrying the
+    -- reduction a cast paying it gets (Defiler of Dreams); Nothing when it is
+    -- owed (Drought).
+    optional :: Maybe AppliedReduction.AppliedReduction
   }
   deriving (Eq, Ord, Show)

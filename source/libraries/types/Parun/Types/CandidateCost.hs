@@ -3,10 +3,10 @@ module Parun.Types.CandidateCost where
 import qualified Control.Monad as Monad
 import Numeric.Natural (Natural)
 import qualified Parun.Types.AbilityName as AbilityName
+import qualified Parun.Types.AppliedReduction as AppliedReduction
 import qualified Parun.Types.Cost as Cost
 import qualified Parun.Types.FreeCast as FreeCast
 import qualified Parun.Types.Keyword as Keyword
-import qualified Parun.Types.ManaCost as ManaCost
 import qualified Parun.Types.ObjectId as ObjectId
 
 -- | CR 601.2b: one of the costs a spell may be cast for, together with WHAT
@@ -53,8 +53,9 @@ data CandidateCost = MkCandidateCost
     -- cast and the total that prices it cannot disagree.
     --
     -- Empty wherever the rule that offered it states no reduction. CR 702.48a's is the
-    -- sacrificed permanent's whole mana cost, colored symbols included.
-    reductions :: [ManaCost.ManaCost],
+    -- sacrificed permanent's whole mana cost, colored symbols included; a paid
+    -- optional addition's keeps its own confinement (Defiler of Dreams).
+    reductions :: [AppliedReduction.AppliedReduction],
     -- | CR 702.48a / 601.3c / 601.3d: this candidate may be announced any time
     -- its caster could cast an instant, whatever the card's own window.
     instantSpeed :: Bool,

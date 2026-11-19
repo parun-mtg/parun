@@ -16,6 +16,7 @@ import qualified Parun.JsonCodec.Codec as Codec
 import qualified Parun.JsonCodec.Common as Common
 import qualified Parun.JsonCodec.Fields as Fields
 import qualified Parun.Types.ActivationCriteria as ActivationCriteria
+import qualified Parun.Types.CostAddition as CostAddition
 import qualified Parun.Types.CostChange as CostChange.Type
 import qualified Parun.Types.CostModifier as CostModifier
 import qualified Parun.Types.CostSubject as CostSubject.Type
@@ -36,7 +37,11 @@ import qualified Parun.Types.TurnOrdinal as TurnOrdinal.Type
 -- before CR 601.2c announces the targets -- Scryfall o:"abilities"
 -- o:"activate that target" o:"additional", 2026-10-10, no printing; and a
 -- target criterion or an ordinal on an unlock, which CR 709.5e gives neither
--- (Inquisitive Glimmer is the one printing, MTGJSON 2026-11-15).
+-- (Inquisitive Glimmer is the one printing, MTGJSON 2026-11-15); and an
+-- optional addition other than to a spell or beside a target criterion or a
+-- `perEach`, which Parun.Engine.Cost.withOptionalAdditions offers at CR 601.2b
+-- unrepeated -- none of its printings (the five Defilers, Chorus of the
+-- Conclave; MTGJSON 2026-11-19) names a target, a count or an activation.
 codec :: Codec.Codec CostModifier.CostModifier
 codec = Fields.objectWith check $ do
   subject <- Fields.required "subject" CostSubject.codec CostModifier.subject
@@ -76,4 +81,8 @@ codec = Fields.objectWith check $ do
     additionCheck modifier = case (CostModifier.subject modifier, CostModifier.change modifier) of
       (CostSubject.Type.Activations _, CostChange.Type.Add _)
         | Maybe.isJust (CostModifier.whichTargets modifier) || Maybe.isJust (CostModifier.perTarget modifier) -> Left (Text.pack "CostModifier: an addition to an activation cannot read its targets")
+      (subject, CostChange.Type.Add addition)
+        | Maybe.isJust (CostAddition.optional addition),
+          subject /= CostSubject.Type.Spells || Maybe.isJust (CostModifier.whichTargets modifier) || Maybe.isJust (CostModifier.perTarget modifier) || Maybe.isJust (CostModifier.perEach modifier) ->
+            Left (Text.pack "CostModifier: an optional addition is offered to a spell at CR 601.2b, counting nothing")
       _ -> Right modifier

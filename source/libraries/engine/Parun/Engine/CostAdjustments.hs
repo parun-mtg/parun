@@ -27,7 +27,7 @@ import qualified Parun.Types.ManaType as ManaType
 -- Piercer's miracle). All stay COSTS rather than becoming CR 601.2f reductions
 -- -- grantedForetellCost's haddock is where that is argued.
 reducedManaCost :: ManaCost.ManaCost -> ManaCost.ManaCost -> ManaCost.ManaCost
-reducedManaCost amount = applyAdjustments (plusReductions [amount] noAdjustments)
+reducedManaCost amount = applyAdjustments (plusReductions [AppliedReduction.MkAppliedReduction amount 0 False] noAdjustments)
 
 -- CR 601.2f with nothing in it: the board's own increases and reductions are the
 -- caster's business in Parun.Engine.Cost, and reducedManaCost's amount is the
@@ -42,18 +42,12 @@ noAdjustments =
 
 -- CR 601.2f: the reductions a CANDIDATE COST brings with it
 -- (Parun.Types.CandidateCost's @reductions@) folded into the adjustments the board
--- states -- rule 702.119a's, rule 702.180a's and rule 702.48a's.
---
--- Unfloored and unconfined, Parun.Engine.Cost.spellAdjustments' reading of Thrasta's sentence:
--- rule 702.119a states neither restriction, so CR 601.2f's own {0} and CR
--- 118.7b-d's spill both stand.
-plusReductions :: [ManaCost.ManaCost] -> CostAdjustments.CostAdjustments -> CostAdjustments.CostAdjustments
-plusReductions amounts adjustments =
-  adjustments
-    { CostAdjustments.reductions =
-        CostAdjustments.reductions adjustments
-          <> fmap (\amount -> AppliedReduction.MkAppliedReduction amount 0 False) amounts
-    }
+-- states -- rule 702.119a's, rule 702.180a's and rule 702.48a's, each unfloored
+-- and unconfined since none states a restriction, and a paid optional addition's
+-- (Defiler of Dreams), confined as its card says.
+plusReductions :: [AppliedReduction.AppliedReduction] -> CostAdjustments.CostAdjustments -> CostAdjustments.CostAdjustments
+plusReductions extra adjustments =
+  adjustments {CostAdjustments.reductions = CostAdjustments.reductions adjustments <> extra}
 
 -- The arithmetic half, pure and board-free.
 --
