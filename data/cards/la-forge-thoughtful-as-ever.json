@@ -68,9 +68,12 @@
                                     }
                                   },
                                   {
-                                    "type": "CountersPutThisTurn",
+                                    "type": "CountersMovedThisTurn",
                                     "value": {
-                                      "putter": "You"
+                                      "motion": {
+                                        "type": "Put",
+                                        "value": "You"
+                                      }
                                     }
                                   }
                                 ]

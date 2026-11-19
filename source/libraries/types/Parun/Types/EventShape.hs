@@ -13,10 +13,10 @@ import qualified Parun.Types.Zone as Zone
 -- SpellCast, which names its own (Parun.Types.CastWindow).
 --
 -- Only the zone changes, GameEvent.LeftTheGame, the cast, the attacker
--- declaration, the counter placement, the sacrifice, the turn face up, combat
--- damage dealt by a source and damage to a permanent have a shape: every other
--- GameEvent constructor is recorded in the log with no EventShape arm, so a
--- count cannot fold over any of them (#162).
+-- declaration, the counter placement and removal, the sacrifice, the turn face
+-- up, combat damage dealt by a source and damage to a permanent have a shape:
+-- every other GameEvent constructor is recorded in the log with no EventShape
+-- arm, so a count cannot fold over any of them (#162).
 --
 -- That is not the same as the log being unreadable for those events, and the
 -- readers that exist do not come through here. A fold is the wrong instrument
@@ -77,11 +77,13 @@ data EventShape keyword
     -- it. A creature put onto the battlefield attacking never "attacked"
     -- (CR 508.4).
     AttackerDeclared AttackWindow.AttackWindow
-  | -- | CR 122.6 / 608.2i: counters of one kind were put on an object, each
-    -- member the object as they landed -- Lasting Tarfire's "you put a counter
-    -- on a creature this turn". Filter.CountersPutThisTurn asks a member that
-    -- one placement's putter and kind.
-    CountersPut
+  | -- | CR 122.6 / 608.2i: counters of one kind were put on or removed from an
+    -- object, each member the object as they moved -- Lasting Tarfire's "you put
+    -- a counter on a creature this turn", Churning Reservoir's "an oil counter
+    -- was removed from a permanent you controlled this turn".
+    -- Filter.CountersMovedThisTurn asks a member that one move's direction and
+    -- kind.
+    CountersMoved
   | -- | CR 701.21a / 608.2i: a permanent was sacrificed, each member the
     -- permanent as it last existed, its controller the player who sacrificed
     -- it (Dargo, the Shipwrecker).

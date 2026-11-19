@@ -25,8 +25,8 @@ data HistoryRead
     CoinFlips
   | -- | Spells convoked (CR 702.51a).
     Convokes
-  | -- | Counters put on objects (CR 122.6).
-    CounterPlacements
+  | -- | Counters put on or removed from objects and players (CR 122).
+    CounterMoves
   | -- | Vehicles crewed, and creatures crewing them (CR 702.122a).
     Crews
   | -- | Crimes committed (CR 700.13).

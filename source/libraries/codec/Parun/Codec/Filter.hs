@@ -18,6 +18,7 @@ import qualified Parun.Codec.Color as Color
 import qualified Parun.Codec.ControlMargin as ControlMargin
 import qualified Parun.Codec.CounterKind as CounterKind
 import qualified Parun.Codec.CounterLinked as CounterLinked
+import qualified Parun.Codec.CounterMotion as CounterMotion
 import qualified Parun.Codec.DamageKind as DamageKind
 import qualified Parun.Codec.DealtDamageTo as DealtDamageTo
 import qualified Parun.Codec.DeclaredRole as DeclaredRole
@@ -58,6 +59,7 @@ import qualified Parun.Types.BoundReading as BoundReading
 import qualified Parun.Types.ChoiceOrdinal as ChoiceOrdinal
 import qualified Parun.Types.ControlMargin as ControlMargin
 import qualified Parun.Types.CounterKind as CounterKind
+import qualified Parun.Types.CounterMotion as CounterMotion
 import qualified Parun.Types.DamageKind as DamageKind.Type
 import qualified Parun.Types.Filter as Filter
 import qualified Parun.Types.Holder as Holder
@@ -172,7 +174,7 @@ codec keywordCodec =
       Arm.payload "ActedThisTurn" PermanentAction.codec Filter.ActedThisTurn (\x -> case x of Filter.ActedThisTurn y -> Just y; _ -> Nothing),
       Arm.payload "DealtDamageTo" DealtDamageTo.codec Filter.DealtDamageTo (\x -> case x of Filter.DealtDamageTo y -> Just y; _ -> Nothing),
       Arm.payload "EnteredThisTurn" EnteredZone.codec Filter.EnteredThisTurn (\x -> case x of Filter.EnteredThisTurn y -> Just y; _ -> Nothing),
-      Arm.payload "CountersPutThisTurn" (countersPutThisTurn keywordCodec) (uncurry Filter.CountersPutThisTurn) (\x -> case x of Filter.CountersPutThisTurn r k -> Just (r, k); _ -> Nothing),
+      Arm.payload "CountersMovedThisTurn" (countersMovedThisTurn keywordCodec) (uncurry Filter.CountersMovedThisTurn) (\x -> case x of Filter.CountersMovedThisTurn m k -> Just (m, k); _ -> Nothing),
       Arm.nullary "ControlledSinceTurnBegan" Filter.ControlledSinceTurnBegan,
       -- Recursive for Controls' reason: the payload describes the
       -- HOST, and a card author writes it exactly as they write any other filter.
@@ -289,12 +291,13 @@ hasCounters keywordCodec =
       <$> Fields.defaulted "atLeast" 1 Common.natural fst
       <*> Fields.required "kind" (CounterKind.codec keywordCodec) snd
 
--- | Who put the counters, related to the perspective, and their kind.
-countersPutThisTurn :: (Typeable.Typeable keyword, Eq keyword) => Codec.Codec keyword -> Codec.Codec (PlayerRelation.PlayerRelation, Maybe (CounterKind.CounterKind keyword))
-countersPutThisTurn keywordCodec =
+-- | Which way the counters moved, a put's putter related to the perspective,
+-- and their kind.
+countersMovedThisTurn :: (Typeable.Typeable keyword, Eq keyword) => Codec.Codec keyword -> Codec.Codec (CounterMotion.CounterMotion, Maybe (CounterKind.CounterKind keyword))
+countersMovedThisTurn keywordCodec =
   Fields.object $
     (,)
-      <$> Fields.required "putter" PlayerRelation.codec fst
+      <$> Fields.required "motion" CounterMotion.codec fst
       <*> Fields.defaulted "kind" Nothing (Common.maybe (CounterKind.codec keywordCodec)) snd
 
 -- | Which of the candidate's players, and how it relates to the perspective.
@@ -419,7 +422,7 @@ tagOf x = case x of
   Filter.ActedThisTurn {} -> "ActedThisTurn"
   Filter.DealtDamageTo {} -> "DealtDamageTo"
   Filter.EnteredThisTurn {} -> "EnteredThisTurn"
-  Filter.CountersPutThisTurn {} -> "CountersPutThisTurn"
+  Filter.CountersMovedThisTurn {} -> "CountersMovedThisTurn"
   Filter.ControlledSinceTurnBegan {} -> "ControlledSinceTurnBegan"
   Filter.AttachedTo {} -> "AttachedTo"
   Filter.BeforeMove {} -> "BeforeMove"

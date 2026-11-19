@@ -382,7 +382,7 @@ drain oid gs =
 -- Record CR 310.12b's trigger event on the drained battle, unscanned: the removal
 -- of its last two defense counters.
 removal :: ObjectId.ObjectId -> GameState.GameState -> GameState.GameState
-removal battle = Event.recordEvent (GameEvent.CountersRemoved (CounterChange.MkCounterChange battle CounterKind.Defense 2 0))
+removal battle gs = maybe gs (\snapshot -> Event.recordEvent (GameEvent.CountersRemoved (CounterChange.MkCounterChange battle CounterKind.Defense 2 0 snapshot)) gs) (Projection.objectSnapshot battle gs)
 
 -- Answer CR 508.1b's announcement with the given battle whenever it is offered,
 -- and everything else aggressively -- so the DeclareAttackers prompt takes every

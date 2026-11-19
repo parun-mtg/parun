@@ -2031,7 +2031,7 @@ stubView table oid =
                 Filter.convokedThisTurn = Set.empty,
                 -- CR 702.171c: nor any saddling, for the same reason.
                 Filter.saddledThisTurn = Set.empty,
-                Filter.countersPutThisTurn = Set.empty,
+                Filter.countersMovedThisTurn = Set.empty,
                 -- CR 120.1: nor any damage.
                 Filter.dealtDamageTo = Set.empty,
                 Filter.dealtDamageEarlier = Set.empty,

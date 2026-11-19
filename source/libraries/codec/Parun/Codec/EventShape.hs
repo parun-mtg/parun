@@ -23,7 +23,7 @@ codec keywordCodec =
       Arm.payload "CardArrivedIn" CardArrivedIn.codec EventShape.CardArrivedIn (\x -> case x of EventShape.CardArrivedIn y -> Just y; _ -> Nothing),
       Arm.payload "SpellCast" CastWindow.codec EventShape.SpellCast (\x -> case x of EventShape.SpellCast y -> Just y; _ -> Nothing),
       Arm.payload "AttackerDeclared" AttackWindow.codec EventShape.AttackerDeclared (\x -> case x of EventShape.AttackerDeclared y -> Just y; _ -> Nothing),
-      Arm.nullary "CountersPut" EventShape.CountersPut,
+      Arm.nullary "CountersMoved" EventShape.CountersMoved,
       Arm.nullary "Sacrificed" EventShape.Sacrificed,
       Arm.nullary "TurnedFaceUp" EventShape.TurnedFaceUp,
       Arm.payload "SourceDealtDamage" (SourceDealtDamage.codec keywordCodec) EventShape.SourceDealtDamage (\x -> case x of EventShape.SourceDealtDamage y -> Just y; _ -> Nothing),
@@ -37,7 +37,7 @@ tagOf x = case x of
   EventShape.CardArrivedIn {} -> "CardArrivedIn"
   EventShape.SpellCast {} -> "SpellCast"
   EventShape.AttackerDeclared {} -> "AttackerDeclared"
-  EventShape.CountersPut -> "CountersPut"
+  EventShape.CountersMoved -> "CountersMoved"
   EventShape.Sacrificed -> "Sacrificed"
   EventShape.TurnedFaceUp -> "TurnedFaceUp"
   EventShape.SourceDealtDamage {} -> "SourceDealtDamage"

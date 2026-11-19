@@ -57,12 +57,12 @@ spec s = Spec.describe s "Parun.Codec.EventShape" $ do
       (EventShape.AttackerDeclared AttackWindow.ThisCombat)
       " {\"type\":\"AttackerDeclared\",\"value\":\"ThisCombat\"} "
   -- CR 122.6: payloadless.
-  Spec.it s "CountersPut" $
+  Spec.it s "CountersMoved" $
     Common.assertCodec
       s
       (EventShape.codec Keyword.codec)
-      EventShape.CountersPut
-      " {\"type\":\"CountersPut\"} "
+      EventShape.CountersMoved
+      " {\"type\":\"CountersMoved\"} "
   -- CR 701.21a: payloadless too.
   Spec.it s "Sacrificed" $
     Common.assertCodec

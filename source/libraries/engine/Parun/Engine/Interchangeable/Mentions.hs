@@ -329,7 +329,7 @@ filterNames asking criterion = case criterion of
   Filter.EnteredThisTurn (EnteredZone.MkEnteredZone to _from _window) -> keyed asking <> history asking (if to == Zone.Battlefield then HistoryRead.Entries else HistoryRead.Moves)
   Filter.BeforeMove nested -> keyed asking <> history asking HistoryRead.Moves <> filterNames asking nested
   Filter.TappedForManaThisTurn nested -> keyed asking <> history asking HistoryRead.TapsForMana <> filterNames asking nested
-  Filter.CountersPutThisTurn _ _ -> keyed asking <> history asking HistoryRead.CounterPlacements
+  Filter.CountersMovedThisTurn _ _ -> keyed asking <> history asking HistoryRead.CounterMoves
   Filter.BecameSource -> keyed asking <> history asking HistoryRead.Moves
   Filter.EnteredWithSource -> keyed asking
   Filter.CounterLinkedToSource _moved -> keyed asking <> counterLinks asking
@@ -737,7 +737,7 @@ eventShapeNames asking x = case x of
   EventShape.CardArrivedIn _cardArrivedIn -> history asking HistoryRead.Moves
   EventShape.SpellCast _castWindow -> history asking HistoryRead.Casts
   EventShape.AttackerDeclared _attackWindow -> history asking HistoryRead.Attacks
-  EventShape.CountersPut -> history asking HistoryRead.CounterPlacements
+  EventShape.CountersMoved -> history asking HistoryRead.CounterMoves
   EventShape.Sacrificed -> history asking HistoryRead.Sacrifices
   EventShape.TurnedFaceUp -> history asking HistoryRead.FaceUpTurns
   EventShape.SourceDealtDamage _sourceDealtDamage -> history asking HistoryRead.Damage

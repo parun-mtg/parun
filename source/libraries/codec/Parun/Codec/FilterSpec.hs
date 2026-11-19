@@ -24,6 +24,7 @@ import qualified Parun.Types.Comparison as Comparison
 import qualified Parun.Types.ControlMargin as ControlMargin
 import qualified Parun.Types.CounterKind as CounterKind
 import qualified Parun.Types.CounterLinked as CounterLinked
+import qualified Parun.Types.CounterMotion as CounterMotion
 import qualified Parun.Types.DamageKind as DamageKind
 import qualified Parun.Types.DamagedParty as DamagedParty
 import qualified Parun.Types.DealtDamageTo as DealtDamageTo
@@ -567,18 +568,18 @@ spec s = Spec.describe s "Parun.Codec.Filter" $ do
       codec
       (Filter.ActedThisTurn PermanentAction.Fight)
       " {\"type\":\"ActedThisTurn\",\"value\":\"Fight\"} "
-  Spec.it s "CountersPutThisTurn" $
+  Spec.it s "CountersMovedThisTurn" $
     Common.assertCodec
       s
       codec
-      (Filter.CountersPutThisTurn PlayerRelation.You (Just CounterKind.PlusOnePlusOne))
-      " {\"type\":\"CountersPutThisTurn\",\"value\":{\"kind\":{\"type\":\"PlusOnePlusOne\"},\"putter\":\"You\"}} "
-  Spec.it s "CountersPutThisTurn of any kind" $
+      (Filter.CountersMovedThisTurn (CounterMotion.Put PlayerRelation.You) (Just CounterKind.PlusOnePlusOne))
+      " {\"type\":\"CountersMovedThisTurn\",\"value\":{\"kind\":{\"type\":\"PlusOnePlusOne\"},\"motion\":{\"type\":\"Put\",\"value\":\"You\"}}} "
+  Spec.it s "CountersMovedThisTurn of any kind" $
     Common.assertCodec
       s
       codec
-      (Filter.CountersPutThisTurn PlayerRelation.You Nothing)
-      " {\"type\":\"CountersPutThisTurn\",\"value\":{\"putter\":\"You\"}} "
+      (Filter.CountersMovedThisTurn CounterMotion.Removed Nothing)
+      " {\"type\":\"CountersMovedThisTurn\",\"value\":{\"motion\":{\"type\":\"Removed\"}}} "
   Spec.it s "DealtDamageTo" $
     Common.assertCodec
       s

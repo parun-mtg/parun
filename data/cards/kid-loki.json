@@ -35,12 +35,15 @@
                   }
                 },
                 {
-                  "type": "CountersPutThisTurn",
+                  "type": "CountersMovedThisTurn",
                   "value": {
                     "kind": {
                       "type": "PlusOnePlusOne"
                     },
-                    "putter": "You"
+                    "motion": {
+                      "type": "Put",
+                      "value": "You"
+                    }
                   }
                 }
               ]
