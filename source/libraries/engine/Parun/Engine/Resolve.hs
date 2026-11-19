@@ -457,7 +457,8 @@ resolveSpellWith runSubgame oid = do
                                   (taken, made) <- if branch then exercises (namedByCouldnt indexedClauses cIdx) oid oid effectController idx cIdx boundNowForMay legalNowForMay seats committed prior clause else pure (False, prior)
                                   -- CR 118.12: then the cost paid on resolution, against the
                                   -- START-of-resolution targets to match CR 608.2b's single
-                                  -- re-validation. Both maps are projected into THIS
+                                  -- re-validation, to which Common.gateCostOf adds the slots
+                                  -- earlier clauses bound (CR 608.2c). Both maps are projected into THIS
                                   -- instance's view (CR 700.2d) after legality is decided,
                                   -- since deciding it after the rename would miss in `slots`.
                                   before <- State.get
@@ -960,7 +961,8 @@ resolveChosenModes runSubgame stackId srcId modes = do
                                 attempt seats prior (answersIn, ranIn) = do
                                   (taken, made) <- if branch then exercises (namedByCouldnt indexedClauses cIdx) stackId srcId effectController idx cIdx boundNowForMay legalNowForMay seats committed prior clause else pure (False, prior)
                                   -- CR 118.12: then the cost paid on resolution, against the
-                                  -- START-of-resolution slots.
+                                  -- START-of-resolution slots, to which Common.gateCostOf
+                                  -- adds those earlier clauses bound (CR 608.2c).
                                   before <- State.get
                                   (admitted, answers2) <- if taken then payGateAdmits runSubgame stackId srcId effectController idx cIdx (instanceView legal) seats committed answersIn clause else pure (False, answersIn)
                                   Monad.when admitted (asCostWhenNamed indexedClauses cIdx (Common.applyClauseEffects stackId srcId applyOne (Foldable.toList (Clause.effects clause))))
