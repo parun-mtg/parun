@@ -1,0 +1,196 @@
+{
+  "faces": [
+    {
+      "manaCost": [
+        {
+          "type": "Generic",
+          "value": 3
+        },
+        {
+          "type": "OfType",
+          "value": {
+            "type": "Colored",
+            "value": "Black"
+          }
+        }
+      ],
+      "name": "Hostile Negotiations",
+      "oracleText": "Exile the top three cards of your library in a face-down pile, then exile the top three cards of your library in another face-down pile. Look at the cards in each pile, then turn a pile of your choice face up. An opponent chooses one of those piles. Put that pile into your hand and the other into your graveyard. You lose 3 life.",
+      "spell": {
+        "modes": [
+          {
+            "clauses": [
+              {
+                "effects": [
+                  {
+                    "type": "MoveToZone",
+                    "value": {
+                      "ref": {
+                        "type": "TopOfLibrary",
+                        "value": {
+                          "count": {
+                            "type": "Literal",
+                            "value": 3
+                          },
+                          "player": {
+                            "type": "Relative",
+                            "value": "You"
+                          }
+                        }
+                      },
+                      "riders": {
+                        "exiledFaceDown": true
+                      },
+                      "slot": "firstPile",
+                      "zone": "Exile"
+                    }
+                  },
+                  {
+                    "type": "MoveToZone",
+                    "value": {
+                      "ref": {
+                        "type": "TopOfLibrary",
+                        "value": {
+                          "count": {
+                            "type": "Literal",
+                            "value": 3
+                          },
+                          "player": {
+                            "type": "Relative",
+                            "value": "You"
+                          }
+                        }
+                      },
+                      "riders": {
+                        "exiledFaceDown": true
+                      },
+                      "slot": "secondPile",
+                      "zone": "Exile"
+                    }
+                  }
+                ]
+              },
+              {
+                "effects": [
+                  {
+                    "type": "LookAt",
+                    "value": {
+                      "ref": {
+                        "type": "InSlot",
+                        "value": "firstPile"
+                      },
+                      "slot": "looked"
+                    }
+                  },
+                  {
+                    "type": "LookAt",
+                    "value": {
+                      "ref": {
+                        "type": "InSlot",
+                        "value": "secondPile"
+                      },
+                      "slot": "looked"
+                    }
+                  },
+                  {
+                    "type": "ChooseGroup",
+                    "value": {
+                      "among": {
+                        "type": "Piles",
+                        "value": [
+                          "firstPile",
+                          "secondPile"
+                        ]
+                      },
+                      "slot": "faceUpPile"
+                    }
+                  },
+                  {
+                    "type": "TurnFaceUp",
+                    "value": "faceUpPile"
+                  }
+                ]
+              },
+              {
+                "effects": [
+                  {
+                    "type": "ChooseGroup",
+                    "value": {
+                      "among": {
+                        "type": "Piles",
+                        "value": [
+                          "firstPile",
+                          "secondPile"
+                        ]
+                      },
+                      "chooser": {
+                        "type": "Relative",
+                        "value": "Opponent"
+                      },
+                      "slot": "chosenPile"
+                    }
+                  }
+                ]
+              },
+              {
+                "effects": [
+                  {
+                    "type": "MoveToZone",
+                    "value": {
+                      "ref": {
+                        "type": "InSlot",
+                        "value": "chosenPile"
+                      },
+                      "zone": "Hand"
+                    }
+                  },
+                  {
+                    "type": "MoveToZone",
+                    "value": {
+                      "ref": {
+                        "type": "AllOf",
+                        "value": [
+                          {
+                            "type": "InSlot",
+                            "value": "firstPile"
+                          },
+                          {
+                            "type": "InSlot",
+                            "value": "secondPile"
+                          }
+                        ]
+                      },
+                      "zone": "Graveyard"
+                    }
+                  }
+                ]
+              },
+              {
+                "effects": [
+                  {
+                    "type": "LoseLife",
+                    "value": {
+                      "player": {
+                        "type": "Relative",
+                        "value": "You"
+                      },
+                      "quantity": {
+                        "type": "Literal",
+                        "value": 3
+                      }
+                    }
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "typeLine": {
+        "types": [
+          "Instant"
+        ]
+      }
+    }
+  ]
+}

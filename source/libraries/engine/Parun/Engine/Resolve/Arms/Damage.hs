@@ -1489,21 +1489,25 @@ choosePermanents resolving source controller legal (ChoosePermanents.MkChoosePer
 -- earlier instruction bound, asked as Prompt.ChoosePile. Piles alike are one
 -- candidate, which is not asked: the label is read only through its pile.
 -- The prompt names the object the choice is for, where the payload says.
--- Proved by the raging-river scenarios.
+-- Proved by the raging-river scenarios; an opponent chooser by the
+-- cr-700-3-hostile-negotiations scenario.
 chooseGroup :: ObjectId -> ObjectId -> PlayerId -> Map.Map SlotName (Set Recipient) -> ChooseGroup.ChooseGroup -> Game ()
-chooseGroup resolving source controller legal (ChooseGroup.MkChooseGroup among slot about) = do
+chooseGroup resolving source controller legal (ChooseGroup.MkChooseGroup among slot about chooser) = do
   subject <- State.gets (\gs -> Maybe.fromMaybe source (Maybe.listToMaybe . objectRefObjects legal resolving controller source gs =<< about))
-  members <- case among of
-    Grouping.Sectors -> do
-      picked <- Game.chooseAmong (\decider who -> Prompt.ChooseDesignation decider who subject) controller (NonEmpty.toList Sector.sectors)
+  -- CR 608.2d: the seat the chooser names picks; one naming nobody picks nothing (CR 101.3).
+  seat <- Common.askedChooser resolving source controller legal chooser
+  members <- case (seat, among) of
+    (Nothing, _) -> pure []
+    (Just who, Grouping.Sectors) -> do
+      picked <- Game.chooseAmong (\decider asked -> Prompt.ChooseDesignation decider asked subject) who (NonEmpty.toList Sector.sectors)
       gs <- State.get
       let inSector sector oid = maybe False (Set.member sector . Object.designations) (Game.lookupObject oid gs)
       pure (foldMap (\sector -> filter (inSector sector) (Set.toList (GameState.battlefield gs))) picked)
-    Grouping.Piles slots -> do
+    (Just who, Grouping.Piles slots) -> do
       gs <- State.get
       let piles = ListUtils.nubOrd [Set.fromList (objectRefObjects legal resolving controller source gs (ObjectRef.InSlot pile)) | pile <- NonEmpty.toList slots]
       earlier <- State.gets (Maybe.fromMaybe Seq.empty . Scratch.loopPicks . GameState.scratch)
-      foldMap Set.toList <$> Game.chooseAmong (\decider asked offered -> Prompt.ChoosePile decider asked subject offered earlier) controller piles
+      foldMap Set.toList <$> Game.chooseAmong (\decider asked offered -> Prompt.ChoosePile decider asked subject offered earlier) who piles
   Monad.unless (null members) (State.modify' (Common.bindObjectsSlot resolving slot (Seq.fromList members)))
 
 -- CR 706.1: roll a die of the stated kind, and bind CR 706.4's result at the
@@ -2140,10 +2144,18 @@ turnFaceDown resolving source controller legal (TurnFaceDown.MkTurnFaceDown ref 
 --
 -- The effect's controller is who turns it (Parun.Types.TurnedFaceUp), whoever
 -- controls the permanent: Hauntwoods Shrieker reaches an opponent's.
+--
+-- CR 406.3: a card exiled face down is turned face up in exile, after which
+-- any player may examine it (Hostile Negotiations' "turn a pile of your choice
+-- face up"). Proved by Parun.BoardEffectSpec's HostileNegotiations case.
 turnFaceUp :: ObjectId -> ObjectId -> PlayerId -> Map.Map SlotName (Set Recipient) -> SlotName -> Game ()
 turnFaceUp resolving source controller legal slot = do
   gs <- State.get
-  Monad.mapM_ (Event.turnFaceUpByEffect controller) (objectRefObjects legal resolving controller source gs (ObjectRef.InSlot slot))
+  let named = objectRefObjects legal resolving controller source gs (ObjectRef.InSlot slot)
+      exiledDown oid = Game.zoneOf oid gs == Just Zone.Exile && maybe False Object.exiledFaceDown (Game.lookupObject oid gs)
+      (exiled, permanents) = List.partition exiledDown named
+  State.modify' (\g -> g {GameState.objects = List.foldl' (flip (Map.adjust (\o -> o {Object.exiledFaceDown = False}))) (GameState.objects g) exiled})
+  Monad.mapM_ (Event.turnFaceUpByEffect controller) permanents
 
 removeFromCombat :: ObjectId -> ObjectId -> PlayerId -> Map.Map SlotName (Set Recipient) -> RemoveFromCombat.RemoveFromCombat -> Game ()
 removeFromCombat resolving source controller legal (RemoveFromCombat.MkRemoveFromCombat ref unblocking) =
