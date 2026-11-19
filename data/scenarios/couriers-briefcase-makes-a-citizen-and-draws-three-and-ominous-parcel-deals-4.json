@@ -3,7 +3,6 @@
     "active": "alice",
     "seats": [
       {
-        "name": "alice",
         "battlefield": [
           {
             "card": "Forest",
@@ -81,10 +80,10 @@
           {
             "card": "Wastes"
           }
-        ]
+        ],
+        "name": "alice"
       },
       {
-        "name": "bob",
         "battlefield": [
           {
             "card": "Mossbeard Ancient",
@@ -101,7 +100,8 @@
           {
             "card": "Island"
           }
-        ]
+        ],
+        "name": "bob"
       }
     ],
     "step": "PrecombatMain"
@@ -112,12 +112,12 @@
     {
       "do": {
         "Cast": {
-          "object": "$case",
           "mana": [
             "$f1",
             "$f2",
             null
-          ]
+          ],
+          "object": "$case"
         }
       },
       "player": "alice",
@@ -164,7 +164,6 @@
     {
       "do": {
         "Activate": {
-          "object": "Courier's Briefcase",
           "ability": 1,
           "mana": [
             "$w",
@@ -173,7 +172,8 @@
             "$r",
             "$g",
             null
-          ]
+          ],
+          "object": "Courier's Briefcase"
         }
       },
       "player": "alice",
@@ -215,7 +215,6 @@
     {
       "do": {
         "Activate": {
-          "object": "$parcel",
           "ability": 1,
           "mana": [
             "$x1",
@@ -225,6 +224,7 @@
             "$x5",
             null
           ],
+          "object": "$parcel",
           "targets": [
             "$moss"
           ]

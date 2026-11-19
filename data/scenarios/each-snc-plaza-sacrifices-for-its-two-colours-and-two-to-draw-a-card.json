@@ -3,7 +3,6 @@
     "active": "alice",
     "seats": [
       {
-        "name": "alice",
         "battlefield": [
           {
             "card": "Botanical Plaza",
@@ -165,10 +164,10 @@
           {
             "card": "Wastes"
           }
-        ]
+        ],
+        "name": "alice"
       },
       {
-        "name": "bob",
         "library": [
           {
             "card": "Island"
@@ -179,18 +178,18 @@
           {
             "card": "Island"
           }
-        ]
+        ],
+        "name": "bob"
       }
     ],
     "step": "PrecombatMain"
   },
-  "description": "CR 602.2 / 121.1 / 701.21a: each of the five SNC tri-coloured-set plazas pays {2} and its two colours, taps and sacrifices itself to draw a card",
-  "note": "Each plaza is paid with basics of its own two colours so the activation reads each cost; the hand's Wastes count reads each draw.",
+  "description": "CR 602.2 / 121.1 / 701.21a: each of the five SNC sacrifice lands pays {2} and its two colours, taps and sacrifices itself to draw a card",
+  "note": "Each plaza is paid with basics of its own two colours and two Wastes, and the pool is read empty afterwards, so a cheaper cost would leave a mana floating; the hand's Wastes count reads each draw.",
   "timeline": [
     {
       "do": {
         "Activate": {
-          "object": "$bot",
           "ability": 1,
           "mana": [
             "$x1",
@@ -198,7 +197,8 @@
             "$g1",
             "$w1",
             null
-          ]
+          ],
+          "object": "$bot"
         }
       },
       "player": "alice",
@@ -238,9 +238,20 @@
       "turn": 1
     },
     {
+      "check": {
+        "View": {
+          "is": [],
+          "of": "ManaPool",
+          "player": "alice"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
       "do": {
         "Activate": {
-          "object": "$rac",
           "ability": 1,
           "mana": [
             "$x3",
@@ -248,7 +259,8 @@
             "$r1",
             "$g2",
             null
-          ]
+          ],
+          "object": "$rac"
         }
       },
       "player": "alice",
@@ -288,9 +300,20 @@
       "turn": 1
     },
     {
+      "check": {
+        "View": {
+          "is": [],
+          "of": "ManaPool",
+          "player": "alice"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
       "do": {
         "Activate": {
-          "object": "$sky",
           "ability": 1,
           "mana": [
             "$x5",
@@ -298,7 +321,8 @@
             "$w2",
             "$u1",
             null
-          ]
+          ],
+          "object": "$sky"
         }
       },
       "player": "alice",
@@ -338,9 +362,20 @@
       "turn": 1
     },
     {
+      "check": {
+        "View": {
+          "is": [],
+          "of": "ManaPool",
+          "player": "alice"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
       "do": {
         "Activate": {
-          "object": "$tra",
           "ability": 1,
           "mana": [
             "$x7",
@@ -348,7 +383,8 @@
             "$b1",
             "$r2",
             null
-          ]
+          ],
+          "object": "$tra"
         }
       },
       "player": "alice",
@@ -388,9 +424,20 @@
       "turn": 1
     },
     {
+      "check": {
+        "View": {
+          "is": [],
+          "of": "ManaPool",
+          "player": "alice"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
       "do": {
         "Activate": {
-          "object": "$wat",
           "ability": 1,
           "mana": [
             "$x9",
@@ -398,7 +445,8 @@
             "$u2",
             "$b2",
             null
-          ]
+          ],
+          "object": "$wat"
         }
       },
       "player": "alice",
@@ -431,6 +479,18 @@
           "count": 5,
           "player": "alice",
           "zone": "Hand"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "View": {
+          "is": [],
+          "of": "ManaPool",
+          "player": "alice"
         }
       },
       "player": "alice",
