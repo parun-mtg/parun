@@ -1026,6 +1026,11 @@ headingOf shown request = case Text.unpack (Question.kind question) of
   "ChooseExert" -> Just (Text.pack "Exert " <> self <> Text.pack " as it attacks?")
   "OfferedCast" -> Just (Text.pack "Cast " <> Maybe.fromMaybe self (Protocol.field "name" offer >>= Offer.textOf) <> Text.pack "?")
   "ChoosePlayPermission" -> Just (Text.pack "Choose the permission to play " <> self <> Text.pack " by.")
+  "ChooseCompanion" -> Just (Text.pack "Reveal a companion? It waits outside the game, and you may put it into your hand for {3}.")
+  "OpeningHandAction" -> Just (Text.pack "Before the game begins: use a card in your opening hand?")
+  "MulliganAction" -> Just (Text.pack "Before you take a mulligan: use a card in your hand?")
+  "KeepHand" -> Just (Text.pack "Choose the hand to keep.")
+  "ChooseForage" -> Just (Text.pack "Forage for " <> self <> Text.pack ": exile three cards from your graveyard, or sacrifice a Food?")
   _ -> Nothing
   where
     question = Request.question request

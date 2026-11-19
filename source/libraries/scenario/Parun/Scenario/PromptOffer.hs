@@ -282,7 +282,9 @@ offerOf namer gs prompt = case prompt of
   Prompt.ChooseSticker _ _ source stickers -> choosing namer prompt "options" (Just source) [] (NonEmpty.toList stickers)
   Prompt.ChooseStickerOrNone _ _ source stickers -> choosing namer prompt "options" (Just source) [] (orNone stickers)
   Prompt.ChooseNamePosition _ _ source positions -> choosing namer prompt "options" (Just source) [] (NonEmpty.toList positions)
-  Prompt.ChooseCompanion _ _ companions -> choosing namer prompt "options" Nothing [] (orNone companions)
+  -- CR 702.139a: each companion by its card, and under @"entries"@ its name,
+  -- then none.
+  Prompt.ChooseCompanion _ _ companions -> choosing namer prompt "options" Nothing [("entries", R.Array (fmap (R.Text . outsideName gs) (NonEmpty.toList companions) <> [R.Text (Text.pack "No companion")]))] (orNone companions)
   Prompt.ChooseRoom _ _ source rooms -> choosing namer prompt "options" (Just source) [] (NonEmpty.toList rooms)
   Prompt.ChooseHalf _ _ source names -> choosing namer prompt "options" (Just source) [] (NonEmpty.toList names)
   Prompt.ChooseLegend _ _ candidates -> choosing namer prompt "options" Nothing [] (NonEmpty.toList candidates)

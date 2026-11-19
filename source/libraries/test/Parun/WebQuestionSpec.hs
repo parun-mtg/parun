@@ -19,6 +19,7 @@ import Numeric.Natural (Natural)
 import qualified Parun.Codec.ManaType as Codec.ManaType
 import qualified Parun.Codec.Reply as Codec.Reply
 import qualified Parun.Engine.Event as Event
+import qualified Parun.Engine.Game as Game
 import qualified Parun.Engine.PlayerView as PlayerView
 import qualified Parun.Engine.Projection as Projection
 import qualified Parun.Engine.Setup as Setup
@@ -34,29 +35,39 @@ import qualified Parun.Scenario.PromptOffer as PromptOffer
 import qualified Parun.Spec as Spec
 import qualified Parun.Support as S
 import qualified Parun.Types.Action as Action
+import qualified Parun.Types.AnyNumberOf as AnyNumberOf
 import qualified Parun.Types.BeginningStep as BeginningStep
+import qualified Parun.Types.Card as Card.Type
 import qualified Parun.Types.Color as Color
 import qualified Parun.Types.Cost as Cost
 import qualified Parun.Types.CounterKind as CounterKind
+import qualified Parun.Types.CounterKindFor as CounterKindFor
 import qualified Parun.Types.Daytime as Daytime
 import qualified Parun.Types.Decider as Decider
+import qualified Parun.Types.Designation as Designation
 import qualified Parun.Types.Dividing as Dividing
+import qualified Parun.Types.Face as Face
 import qualified Parun.Types.GameEvent as GameEvent
 import qualified Parun.Types.GameState as GameState
 import qualified Parun.Types.GraveyardArrangement as GraveyardArrangement
+import qualified Parun.Types.HandActionIndex as HandActionIndex
 import qualified Parun.Types.Keyword as Keyword
 import qualified Parun.Types.Looked as Looked
 import qualified Parun.Types.ManaCost as ManaCost
 import qualified Parun.Types.ManaSymbol as ManaSymbol
 import qualified Parun.Types.ManaType as ManaType
+import qualified Parun.Types.MoveSpread as MoveSpread
 import qualified Parun.Types.Object as Object
 import qualified Parun.Types.ObjectId as ObjectId
+import qualified Parun.Types.ObjectView as ObjectView
+import qualified Parun.Types.OutsideCard as OutsideCard
 import qualified Parun.Types.PayOffer as PayOffer
 import qualified Parun.Types.PaymentDecision as PaymentDecision
 import qualified Parun.Types.Phase as Phase
 import qualified Parun.Types.Player as Player
 import qualified Parun.Types.PlayerCounterKind as PlayerCounterKind
 import qualified Parun.Types.PlayerView as PlayerView.Type
+import qualified Parun.Types.Printing as Printing
 import qualified Parun.Types.Prompt as Prompt
 import qualified Parun.Types.Question as Question
 import qualified Parun.Types.Recipient as Recipient
@@ -208,6 +219,45 @@ spec s registry = Spec.describe s "WebQuestion" $ do
     Spec.assertBool s (Text.isInfixOf (Text.pack "<span class=\"k\">Energy</span>3") page) "energy"
     Spec.assertBool s (Text.isInfixOf (Text.pack "title=\"Loyalty\">5</span>") page) "loyalty is its counters"
     Spec.assertBool s (not (Text.isInfixOf (Text.pack "5 loyalty") page)) "not a badge too"
+
+  Spec.it s "the kinds no scenario answers yet have forms too, a companion by its name" $ do
+    bears <- S.printingOf s registry "Grizzly Bears"
+    lutri <- S.printingOf s registry "Lutri, the Spellchaser"
+    let (a, g1) = S.addPermanent bears S.alice (Setup.emptyGame S.bothPlayers)
+        (b, g2) = S.addPermanent bears S.alice g1
+        (card, g3) = S.addObjectIn Zone.Hand bears S.alice g2
+        (companion, gs) = Game.intern lutri g3
+        decider = Decider.MkDecider S.alice
+        plusOne = CounterKind.PlusOnePlusOne
+        typedFor :: Prompt.Prompt r -> Bool
+        typedFor prompt = Question.Web.answersTyped (requestFor gs prompt)
+        companionPage = Html.content (Question.Web.view (requestFor gs (Prompt.ChooseCompanion decider S.alice (pure (OutsideCard.InPool companion)))) Question.Web.blank)
+    Spec.assertEqWith
+      s
+      "typed"
+      [ typedFor (Prompt.ChooseCounterKind decider S.alice (CounterKindFor.MovedBetween a b) (pure plusOne)),
+        typedFor (Prompt.ChooseMovedCounterOrNone decider S.alice a b (pure plusOne)),
+        typedFor (Prompt.ChooseDistributedMovedCounters decider S.alice a MoveSpread.AnyNumber (Map.singleton plusOne 2) (pure b)),
+        typedFor (Prompt.ChooseForage decider S.alice a),
+        typedFor (Prompt.ChooseAnyNumber decider S.alice a AnyNumberOf.ToSacrifice [a, b] Nothing Seq.empty),
+        typedFor (Prompt.KeepHand decider S.alice (pure [card])),
+        typedFor (Prompt.MulliganAction decider S.alice [(card, HandActionIndex.MkHandActionIndex 0)]),
+        typedFor (Prompt.OpeningHandAction decider S.alice [(card, HandActionIndex.MkHandActionIndex 0)]),
+        typedFor (Prompt.ChooseDesignation decider S.alice a (pure Designation.Renowned)),
+        typedFor (Prompt.ChooseNamePosition decider S.alice a (pure 1)),
+        typedFor (Prompt.ChooseCompanion decider S.alice (pure (OutsideCard.InPool companion)))
+      ]
+      (replicate 11 False)
+    Spec.assertBool s (Text.isInfixOf (Text.pack "Lutri, the Spellchaser") companionPage) ("the companion by name: " <> Text.unpack companionPage)
+
+  Spec.it s "a double-faced card's sheet reads its other face too" $ do
+    jace <- S.printingOf s registry "Jace, Vryn's Prodigy"
+    let (oid, gs) = S.addPermanent jace S.alice (Setup.emptyGame S.bothPlayers)
+        lookUp name = Right (if any ((== name) . Face.name) (Card.Type.faces (Printing.card jace)) then Just (Printing.card jace) else Nothing) :: Either () (Maybe Card.Type.Card)
+        shown = List.find ((== oid) . ObjectView.object) (PlayerView.Type.battlefield (PlayerView.viewFor S.alice gs))
+        text = maybe (Right []) (Card.oracle lookUp) shown
+    Spec.assertBool s (either (const False) (elem (Text.pack "Jace, Telepath Unbound (other face):")) text) ("the back face: " <> show text)
+    Spec.assertEqWith s "the face up first" (fmap (take 1) text) (Right [Text.pack "Jace, Vryn's Prodigy:"])
 
   Spec.it s "CR 104.3a the turn bar carries the auto-pass level and the settings button, whose concession passes while the seat may" $ do
     let request = requestFor (Setup.emptyGame S.bothPlayers) (Prompt.ChooseAction (Decider.MkDecider S.alice) S.alice [Action.Pass])

@@ -7,6 +7,7 @@ module Parun.Web.Card where
 import qualified Data.Char as Char
 import qualified Data.Containers.ListUtils as ListUtils
 import qualified Data.Foldable as Foldable
+import qualified Data.List as List
 import qualified Data.Map.Strict as Map
 import qualified Data.Maybe as Maybe
 import qualified Data.Set as Set
@@ -261,8 +262,13 @@ oracle :: (CardName.CardName -> Either e (Maybe Card.Card)) -> ObjectView.Object
 oracle lookUp o = do
   let names = Render.cardNames o
   looked <- traverse lookUp (Set.toList names)
-  let faces = concatMap (filter (\f -> Set.member (Face.name f) names) . Foldable.toList . Card.faces) (ListUtils.nubOrd (Maybe.catMaybes looked))
-      lines' f = [CardName.unwrap (Face.name f) <> Text.pack ":" | length faces > 1] <> foldMap Text.lines (Face.oracleText f)
+  -- Every face printed on the card, those it shows first: a double-faced
+  -- card's other face, a flip card's other half and an adventure are on the
+  -- card for anyone who sees it to read.
+  let every = concatMap (Foldable.toList . Card.faces) (ListUtils.nubOrd (Maybe.catMaybes looked))
+      (shown, others) = List.partition (\f -> Set.member (Face.name f) names) every
+      faces = shown <> others
+      lines' f = [CardName.unwrap (Face.name f) <> Text.pack (if Set.member (Face.name f) names || null shown then ":" else " (other face):") | length faces > 1] <> foldMap Text.lines (Face.oracleText f)
   pure (if null faces then foldMap abilityLines (ObjectView.characteristics o) else concatMap lines' faces)
 
 -- | What an object no card data prints says, an emblem's abilities (CR
