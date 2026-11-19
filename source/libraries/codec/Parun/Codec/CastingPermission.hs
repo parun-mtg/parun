@@ -8,6 +8,7 @@ import qualified Parun.Codec.CostComponent as CostComponent
 import qualified Parun.Codec.Keyword as Keyword
 import qualified Parun.Codec.KeywordFamily as KeywordFamily
 import qualified Parun.Codec.ManaCost as ManaCost
+import qualified Parun.Codec.PermissionCost as PermissionCost
 import qualified Parun.Codec.WithCounters as WithCounters
 import qualified Parun.Codec.Zone as Zone
 import qualified Parun.JsonCodec.Arm as Arm
@@ -22,19 +23,20 @@ codec =
   Arm.tagged
     tagOf
     [ Arm.nullary "CastFromLibraryWhileSearching" CastingPermission.CastFromLibraryWhileSearching,
-      Arm.payload "CastFrom" castFrom (\(z, k, f, c, w) -> CastingPermission.CastFrom z k f c w) (\x -> case x of CastingPermission.CastFrom z k f c w -> Just (z, k, f, c, w); _ -> Nothing),
+      Arm.payload "CastFrom" castFrom (\(z, k, f, c, w, a) -> CastingPermission.CastFrom z k f c w a) (\x -> case x of CastingPermission.CastFrom z k f c w a -> Just (z, k, f, c, w, a); _ -> Nothing),
       Arm.nullary "PlayFromGraveyard" CastingPermission.PlayFromGraveyard,
       Arm.payload "CastAsThoughItHadFlash" flash (\(c, m, k, a) -> CastingPermission.CastAsThoughItHadFlash c m k a) (\x -> case x of CastingPermission.CastAsThoughItHadFlash c m k a -> Just (c, m, k, a); _ -> Nothing)
     ]
   where
     castFrom =
       Fields.objectWith printedZone $
-        (,,,,)
-          <$> Fields.required "from" Zone.codec (\(z, _, _, _, _) -> z)
-          <*> Fields.defaulted "condition" Nothing (Common.maybe Condition.codec) (\(_, k, _, _, _) -> k)
-          <*> Fields.defaulted "using" Nothing (Common.maybe KeywordFamily.codec) (\(_, _, f, _, _) -> f)
-          <*> Fields.defaulted "additionalCosts" [] (Common.list (CostComponent.codec Keyword.codec)) (\(_, _, _, c, _) -> c)
-          <*> Fields.defaulted "entersWith" Nothing (Common.maybe WithCounters.codec) (\(_, _, _, _, w) -> w)
+        (,,,,,)
+          <$> Fields.required "from" Zone.codec (\(z, _, _, _, _, _) -> z)
+          <*> Fields.defaulted "condition" Nothing (Common.maybe Condition.codec) (\(_, k, _, _, _, _) -> k)
+          <*> Fields.defaulted "using" Nothing (Common.maybe KeywordFamily.codec) (\(_, _, f, _, _, _) -> f)
+          <*> Fields.defaulted "additionalCosts" [] (Common.list (CostComponent.codec Keyword.codec)) (\(_, _, _, c, _, _) -> c)
+          <*> Fields.defaulted "entersWith" Nothing (Common.maybe WithCounters.codec) (\(_, _, _, _, w, _) -> w)
+          <*> Fields.defaulted "alternativeCost" Nothing (Common.maybe PermissionCost.codec) (\(_, _, _, _, _, a) -> a)
     flash =
       Fields.object $
         (,,,)
@@ -51,14 +53,14 @@ tagOf x = case x of
   CastingPermission.CastAsThoughItHadFlash {} -> "CastAsThoughItHadFlash"
 
 -- Unprinted: a CastFrom naming a zone other than a graveyard or exile, or exile
--- beside a condition, a family, a cost or counters, none of which the cast
--- gate or pricing reads outside a graveyard. Parun.Codec.CastingPermissionSpec's
--- "rejects" cases prove the refusal.
+-- beside a condition, a family, a cost, an alternative cost or counters, none of
+-- which the cast gate or pricing reads outside a graveyard.
+-- Parun.Codec.CastingPermissionSpec's "rejects" cases prove the refusal.
 printedZone ::
-  (Zone.Type.Zone, Maybe a, Maybe b, [c], Maybe d) ->
-  Either Text.Text (Zone.Type.Zone, Maybe a, Maybe b, [c], Maybe d)
-printedZone permission@(zone, condition, family, costs, entersWith) = case zone of
+  (Zone.Type.Zone, Maybe a, Maybe b, [c], Maybe d, Maybe e) ->
+  Either Text.Text (Zone.Type.Zone, Maybe a, Maybe b, [c], Maybe d, Maybe e)
+printedZone permission@(zone, condition, family, costs, entersWith, alternative) = case zone of
   Zone.Type.Graveyard -> Right permission
   Zone.Type.Exile
-    | Maybe.isNothing condition && Maybe.isNothing family && null costs && Maybe.isNothing entersWith -> Right permission
-  _ -> Left (Text.pack "CastFrom: a zone other than a graveyard or exile, or exile beside a condition, family, cost or counters, is unprinted and not supported")
+    | Maybe.isNothing condition && Maybe.isNothing family && null costs && Maybe.isNothing entersWith && Maybe.isNothing alternative -> Right permission
+  _ -> Left (Text.pack "CastFrom: a zone other than a graveyard or exile, or exile beside a condition, family, cost, alternative cost or counters, is unprinted and not supported")

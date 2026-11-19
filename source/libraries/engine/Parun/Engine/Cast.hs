@@ -3345,7 +3345,7 @@ entryRewriting slot rewrite = ReplacementEffect.EntryR (EntryR.MkEntryR (Filter.
 -- blitz ability") opens the zone for that cost alone.
 castWays :: (ObjectId -> Bool) -> PlayerId -> ObjectId -> CastOrigin.CastOrigin -> Face.Face Card.Type.Card -> GameState -> Maybe Keyword -> [Maybe (ObjectId, CastFromZone.CastFromZone)]
 castWays rides pid oid origin face gs castFor =
-  let named = ownedBy pid oid gs && any (\family -> (castFor >>= Keyword.familyOf) == Just family) [family | CastingPermission.CastFrom Zone.Graveyard _ (Just family) [] Nothing <- Cost.permissionsOf oid face gs]
+  let named = ownedBy pid oid gs && any (\family -> (castFor >>= Keyword.familyOf) == Just family) [family | CastingPermission.CastFrom Zone.Graveyard _ (Just family) [] Nothing Nothing <- Cost.permissionsOf oid face gs]
       ownOpen = case origin of
         CastOrigin.FromZone Zone.Exile -> exileOpen pid oid face gs
         CastOrigin.FromZone Zone.Graveyard -> permitsCastUnderPermission pid oid face gs || PlayerEffect.mayPlayFromOwnGraveyard Map.empty PermissionVerb.Cast pid oid gs || named
@@ -3360,8 +3360,9 @@ castWays rides pid oid origin face gs castFor =
       own = if origin == CastOrigin.FromZone Zone.Graveyard && ownedBy pid oid gs then ownPayingWays oid face gs else []
    in PlayerEffect.castPermissionOptions rides ownOpen own pid origin oid gs
 
--- CR 118.8 / 601.3: each graveyard permission the card carries for itself that
--- states an additional cost or entry counters (Cost.addsToItsCast), as the
+-- CR 118.8 / 118.9 / 601.3: each graveyard permission the card carries for
+-- itself that states an additional cost, an alternative cost or entry counters
+-- (Cost.addsToItsCast), as the
 -- unlimited CastFrom row a way is: the choice among ways is what lets a cast
 -- under another permission skip that cost and those counters.
 ownPayingWays :: ObjectId -> Face.Face Card.Type.Card -> GameState -> [(Maybe ObjectId, CastFromZone.CastFromZone)]
@@ -3376,7 +3377,7 @@ ownPayingWays oid face gs =
           CastFromZone.additionalCosts = additional,
           CastFromZone.reduction = 0,
           CastFromZone.spending = ManaSpending.AsProduced,
-          CastFromZone.alternativeCost = Nothing,
+          CastFromZone.alternativeCost = alternative,
           CastFromZone.entersWith = entersWith,
           CastFromZone.exiledInstead = False,
           CastFromZone.amount = Nothing,
@@ -3384,7 +3385,7 @@ ownPayingWays oid face gs =
           CastFromZone.outsideTheGame = False
         }
     )
-  | permission@(CastingPermission.CastFrom Zone.Graveyard _ _ additional entersWith) <- Cost.permissionsOf oid face gs,
+  | permission@(CastingPermission.CastFrom Zone.Graveyard _ _ additional entersWith alternative) <- Cost.permissionsOf oid face gs,
     Cost.addsToItsCast permission
   ]
 

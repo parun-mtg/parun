@@ -1,0 +1,151 @@
+{
+  "faces": [
+    {
+      "castingPermissions": [
+        {
+          "type": "CastFrom",
+          "value": {
+            "additionalCosts": [
+              {
+                "type": "MoveCardsFromGraveyard",
+                "value": {
+                  "count": {
+                    "type": "Fixed",
+                    "value": 4
+                  },
+                  "whichCards": {
+                    "type": "Not",
+                    "value": {
+                      "type": "IsSource"
+                    }
+                  }
+                }
+              }
+            ],
+            "alternativeCost": {
+              "type": "InsteadOfManaCost",
+              "value": [
+                {
+                  "type": "Generic",
+                  "value": 3
+                },
+                {
+                  "type": "OfType",
+                  "value": {
+                    "type": "Colored",
+                    "value": "Red"
+                  }
+                }
+              ]
+            },
+            "from": "Graveyard"
+          }
+        }
+      ],
+      "keywords": [
+        {
+          "type": "Haste"
+        }
+      ],
+      "manaCost": [
+        {
+          "type": "Generic",
+          "value": 2
+        },
+        {
+          "type": "OfType",
+          "value": {
+            "type": "Colored",
+            "value": "Red"
+          }
+        }
+      ],
+      "name": "Squee, Dubious Monarch",
+      "oracleText": "Haste\nWhenever Squee attacks, create a 1/1 red Goblin creature token that's tapped and attacking.\nYou may cast this card from your graveyard by paying {3}{R} and exiling four other cards from your graveyard rather than paying its mana cost.",
+      "power": {
+        "type": "Literal",
+        "value": 2
+      },
+      "toughness": {
+        "type": "Literal",
+        "value": 2
+      },
+      "triggeredAbilities": [
+        {
+          "condition": {
+            "type": "Attacks",
+            "value": {
+              "type": "Attacker",
+              "value": {}
+            }
+          },
+          "modal": {
+            "modes": [
+              {
+                "clauses": [
+                  {
+                    "effects": [
+                      {
+                        "type": "Create",
+                        "value": {
+                          "card": {
+                            "faces": [
+                              {
+                                "colorIndicator": [
+                                  "Red"
+                                ],
+                                "name": "Goblin Token",
+                                "power": {
+                                  "type": "Literal",
+                                  "value": 1
+                                },
+                                "toughness": {
+                                  "type": "Literal",
+                                  "value": 1
+                                },
+                                "typeLine": {
+                                  "subtypes": [
+                                    "Goblin"
+                                  ],
+                                  "types": [
+                                    "Creature"
+                                  ]
+                                }
+                              }
+                            ]
+                          },
+                          "quantity": {
+                            "type": "Literal",
+                            "value": 1
+                          },
+                          "riders": {
+                            "attacking": {
+                              "type": "Chosen"
+                            },
+                            "tapped": "Tapped"
+                          }
+                        }
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          }
+        }
+      ],
+      "typeLine": {
+        "subtypes": [
+          "Goblin",
+          "Noble"
+        ],
+        "supertypes": [
+          "Legendary"
+        ],
+        "types": [
+          "Creature"
+        ]
+      }
+    }
+  ]
+}
