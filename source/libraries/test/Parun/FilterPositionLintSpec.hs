@@ -2492,6 +2492,7 @@ filterPositionLintSpec s registry corpus = Spec.describe s "Lint" $ do
             ("Extract a Confession", 1),
             ("Fall of the Impostor", 1),
             ("Flare of Malice", 1),
+            ("Gix's Command", 1),
             ("Highcliff Felidar", 1),
             ("Juxtapose", 2),
             ("Kraven the Hunter", 1), -- a Leaves trigger
