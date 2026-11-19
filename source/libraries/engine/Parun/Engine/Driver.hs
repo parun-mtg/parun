@@ -70,9 +70,10 @@ drive observers answerer budget stop gs = do
       (_, next) <- Engine.runGameAsked (ask observers answerer) gs Engine.runStep
       drive observers answerer (budget - 1) stop next
 
--- | CR 724.1: the player whose choice a prompt asks for, which another player
--- makes while controlling them (deciderOf); Nothing for a prompt no seat answers
--- and for Concede, which a player always answers themselves (CR 724.6).
+-- | The player a prompt's choice is for, whom deciderOf may differ from: a
+-- player controlling them (CR 724.1) or a chooser an effect names (Odric,
+-- Master Tactician); Nothing for a prompt no seat answers and for Concede,
+-- which a player always answers themselves (CR 724.6).
 subjectOf :: Prompt.Prompt r -> Maybe PlayerId.PlayerId
 subjectOf prompt = case prompt of
   Prompt.ChooseAction _ pid _ -> Just pid

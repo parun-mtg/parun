@@ -17,6 +17,7 @@ import qualified Parun.Codec.Reference as Codec.Reference
 import qualified Parun.Codec.Reply as Codec.Reply
 import qualified Parun.Codec.Request as Codec.Request
 import qualified Parun.Engine.Combat as Combat
+import qualified Parun.Engine.Decide as Decide
 import qualified Parun.Engine.Driver as Driver
 import qualified Parun.Engine.PlayerView as PlayerView
 import qualified Parun.Extra.Integer as Integer
@@ -30,6 +31,7 @@ import qualified Parun.Scenario.PromptOffer as PromptOffer
 import qualified Parun.Scenario.Reply as Reply
 import qualified Parun.Types.Answerer as Answerer
 import qualified Parun.Types.Asked as Asked
+import qualified Parun.Types.Decider as Decider
 import qualified Parun.Types.GameState as GameState
 import qualified Parun.Types.Label as Label
 import qualified Parun.Types.ObjectId as ObjectId
@@ -121,7 +123,7 @@ requestFor asked =
 questionOf :: GameState.GameState -> Prompt.Prompt r -> Maybe Question.Question
 questionOf gs prompt =
   fmap
-    (\seat -> Question.MkQuestion seat (Scenario.Prompt.kindOf prompt) (PromptOffer.offerOf namer gs prompt) (Monad.mfilter (/= seat) (Driver.subjectOf prompt)))
+    (\seat -> Question.MkQuestion seat (Scenario.Prompt.kindOf prompt) (PromptOffer.offerOf namer gs prompt) (Monad.mfilter (\subject -> subject /= seat && Decide.deciderFor subject gs == Decider.MkDecider seat) (Driver.subjectOf prompt)))
     (Driver.deciderOf prompt)
 
 decodeAnswer :: Prompt.Prompt r -> R.Reply -> Either Text.Text r

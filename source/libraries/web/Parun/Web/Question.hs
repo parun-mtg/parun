@@ -623,8 +623,10 @@ picker request = do
         MkPicker
           [MkGroup (Text.pack "Change the word") from 1 1 True, MkGroup (Text.pack "to") to 1 1 True]
           ( \chosen -> case chosen of
-              [[a], [b]] | a /= b -> Right (R.Array [a, b])
-              _ -> Left (Text.pack "Choose two different words.")
+              [[a], [b]]
+                | a == b -> Left (Text.pack "Choose two different words.")
+                | Offer.swapAllowed offer a b -> Right (R.Array [a, b])
+              _ -> Left (Text.pack "Choose two words of the same kind, the new one allowed.")
           )
           (Text.pack "Change")
     -- CR 700.3: each creature into one of the piles, any of them empty.

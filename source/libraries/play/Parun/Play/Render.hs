@@ -273,7 +273,7 @@ cardName o =
   let shown = case ObjectView.characteristics o of
         Nothing | Maybe.isNothing (ObjectView.face o) -> Text.pack "a hidden card"
         Just c | names <- Set.toList (ProjectedCharacteristics.names c), not (null names) -> joined names
-        -- A Room with both doors locked has neither half's name (CR 709.5c).
+        -- A Room with both doors locked has neither half's name (CR 709.5).
         Just c | Just whole <- ProjectedCharacteristics.halves c -> joined (fmap Face.name (Foldable.toList (Card.faces whole))) <> Text.pack " (locked)"
         _ -> Text.pack "a face-down card"
       joined = Text.intercalate (Text.pack " // ") . fmap CardName.unwrap
@@ -286,7 +286,7 @@ cardName o =
 cardNames :: ObjectView.ObjectView -> Set.Set CardName.CardName
 cardNames o = maybe (foldMap readable (ObjectView.characteristics o)) ProjectedCharacteristics.names (ObjectView.face o)
   where
-    -- A Room's locked halves still print their text (CR 709.5c).
+    -- A Room's locked halves still print their text (CR 709.5).
     readable c = ProjectedCharacteristics.names c <> foldMap (Set.fromList . fmap Face.name . Foldable.toList . Card.faces) (ProjectedCharacteristics.halves c)
 
 -- | An object in full, as the seat sees it: its summary, its characteristics

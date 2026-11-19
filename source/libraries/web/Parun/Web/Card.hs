@@ -223,7 +223,10 @@ badges o =
     <> [Element.el "span" ["badge", "counter"] [] [Element.text (Text.pack (show n <> " ") <> Render.counterName kind)] | (kind, n) <- Map.toList (ObjectView.counters o), n > 0, not (cornered kind)]
   where
     -- The corner shows these (stats).
-    cornered kind = kind `elem` [CounterKind.Loyalty, CounterKind.Defense] && Maybe.isJust (ObjectView.characteristics o)
+    cornered kind = case (kind, ObjectView.characteristics o) of
+      (CounterKind.Loyalty, Just c) -> Maybe.isJust (ProjectedCharacteristics.loyalty c)
+      (CounterKind.Defense, Just c) -> Maybe.isJust (ProjectedCharacteristics.defense c)
+      _ -> False
 
 -- | Power and toughness, loyalty or defense, as printed in the corner.
 stats :: ObjectView.ObjectView -> [Html.Html msg]

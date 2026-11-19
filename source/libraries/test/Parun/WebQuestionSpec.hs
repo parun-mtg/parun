@@ -151,6 +151,7 @@ spec s registry = Spec.describe s "WebQuestion" $ do
         request = requestFor gs prompt
         picks = picking request [Question.Web.MkToggle 0 0, Question.Web.MkToggle 1 1]
     Spec.assertEqWith s "white to blue" (answered prompt request picks) (Right (TextWord.ColorWord Color.White, TextWord.ColorWord Color.Blue))
+    Spec.assertEqWith s "two families" (Question.Web.step (requestFor gs (Prompt.ChooseWordSwap (Decider.MkDecider S.alice) S.alice source (SlotName.MkSlotName (Text.pack "target")) (Set.fromList [WordFamily.Color, WordFamily.BasicLandType]) Set.empty)) (Set.fromList [(0, 1), (1, 6)]) Question.Web.MkSubmit Text.empty) (Question.Web.MkRefused (Text.pack "Choose two words of the same kind, the new one allowed."))
     Spec.assertEqWith s "the same word twice" (Question.Web.step request (picking request [Question.Web.MkToggle 0 0, Question.Web.MkToggle 1 0]) Question.Web.MkSubmit Text.empty) (Question.Web.MkRefused (Text.pack "Choose two different words."))
 
   Spec.it s "CR 700.3 creatures divided into piles start in the first" $ do
@@ -179,13 +180,16 @@ spec s registry = Spec.describe s "WebQuestion" $ do
 
   Spec.it s "CR 724.1 a choice made for a controlled player says whose it is" $ do
     let gs0 = Setup.emptyGame S.bothPlayers
-        gs = gs0 {GameState.turn = (GameState.turn gs0) {TurnRegisters.activePlayer = S.bob}}
+        gs = gs0 {GameState.turn = (GameState.turn gs0) {TurnRegisters.activePlayer = S.bob}, GameState.control = S.turnControl S.alice S.bob}
         request = requestFor gs (Prompt.ChooseAction (Decider.MkDecider S.alice) S.bob [Action.Pass])
         page = Html.content (Question.Web.view request Question.Web.blank)
     Spec.assertEqWith s "for" (Question.for (Request.question request)) (Just S.bob)
     Spec.assertBool s (Text.isInfixOf (Text.pack "You're deciding for Player 2, whom you control.") page) "banner"
     Spec.assertBool s (Text.isInfixOf (Text.pack "Player 2's turn, which you control.") page) "the turn is the seat's to play"
     Spec.assertBool s (Text.isInfixOf (Text.pack "Pass the screen to Player 1, deciding for Player 2.") (Html.content (Question.Web.handOff request))) "the hand-off says so"
+    -- Odric, Master Tactician's chooser decides blocks for a player it does
+    -- not control.
+    Spec.assertEqWith s "chosen for, not controlled" (Question.for (Request.question (requestFor gs0 (Prompt.DeclareBlockers (Decider.MkDecider S.alice) S.bob [] [])))) Nothing
     Spec.assertEqWith s "the seat's own" (Question.for (Request.question (requestFor gs (Prompt.ChooseAction (Decider.MkDecider S.alice) S.alice [Action.Pass])))) Nothing
 
   Spec.it s "CR 726.1 / 732.1 / 306.5c the table shows the game's designations, player counters, and a walker's loyalty counters" $ do

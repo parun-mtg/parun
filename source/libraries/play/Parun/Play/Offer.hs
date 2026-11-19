@@ -445,6 +445,15 @@ wordSwap offer = do
       option w = (encoded Codec.TextWord.codec w, wordName w)
   pure (fmap option words', fmap option (filter (`Set.notMember` forbidden) words'))
 
+-- | Whether a ChooseWordSwap offer lets this pair stand (CR 612.2): both words
+-- one family's, and the new one not forbidden (Parun.Engine.TextWord.swappable).
+swapAllowed :: R.Reply -> R.Reply -> R.Reply -> Bool
+swapAllowed offer from to = Maybe.fromMaybe False $ do
+  families <- Protocol.field "families" offer >>= decoded (Common.set Codec.WordFamily.codec)
+  let forbidden = Maybe.fromMaybe Set.empty (Protocol.field "forbidden" offer >>= decoded (Common.set Codec.TextWord.codec))
+  pair <- (,) <$> decoded Codec.TextWord.codec from <*> decoded Codec.TextWord.codec to
+  pure (TextWord.Engine.swappable families forbidden pair)
+
 -- | A word a text change swaps, as Oracle text prints it.
 wordName :: TextWord.TextWord -> Text.Text
 wordName word = case word of
