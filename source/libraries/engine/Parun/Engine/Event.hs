@@ -5745,8 +5745,9 @@ apply settle batch applied batchPrevented candidate event =
     --
     -- CR 614.1a / 101.2: Melira, the Living Cure's "and you can't get
     -- additional poison counters this turn" is part of the modified event, so
-    -- the bar is installed HERE, as the row applies: a later placement in the
-    -- same batch meets it (its ruling), while this event, already past
+    -- the bar is installed HERE, as the row applies: every other placement in
+    -- the same batch meets it whatever its order (its ruling; putPlayerCounters'
+    -- second pass), while this event, already past
     -- putPlayerCounters' prohibition check, is not stopped by it -- so a
     -- Vorinclex applied after it still doubles the one counter. Proved by
     -- data/scenarios/melira-the-living-cure-*.
@@ -7473,42 +7474,61 @@ resolveCounters cause oid kind n = do
   pure (outcome >>= Replacement.asCounters)
 
 -- CR 122.1 / 122.6: putCounters' player half -- the ONE place a player's counters
--- go up. Answers how many actually landed, which is not what was asked for: the
--- CR 616.1 loop may have grown the placement (Vorinclex, Monstrous Raider's
--- doubling), shrunk it or erased it. Nobody reads the answer yet; it is the shape
--- putCounters already has, and dropping it would make the two funnels disagree
--- about their own event.
+-- go up. Takes a batch of simultaneous placements, one each (cause, player, kind,
+-- count), and answers how many actually landed for each, which is not what was
+-- asked for: the CR 616.1 loop may have grown the placement (Vorinclex, Monstrous
+-- Raider's doubling), shrunk it or erased it. Nobody reads the answer yet; it is
+-- the shape putCounters already has, and dropping it would make the two funnels
+-- disagree about their own event.
+--
+-- Two passes, so the batch's outcome does not depend on its order: every
+-- placement is settled first, then written. A placement that a bar installed by a
+-- SIBLING's replacement now prohibits is not written (docs/decisions.md, "Whether
+-- simultaneous poison counters meet Melira, the Living Cure's bar"): in Two-Headed
+-- Giant a teammate settled before alice's Melira applies is stopped as one settled
+-- after it, which the gate alone stops. The bar a placement's own replacement
+-- installed never stops it (the CounterR arm's reason). Proved by
+-- data/scenarios/team/cr-810-10c-melira-the-living-cure-s-bar-stops-a-teammate-s-simultaneous-poison*.
 --
 -- Records GameEvent.PlayerCountersPut, putCounters' CountersPut for a player,
 -- which a counter trigger whose holder admits players reads (All Will Be One).
-putPlayerCounters :: CounterCause.CounterCause -> PlayerId -> PlayerCounterKind.PlayerCounterKind -> Natural -> Game Natural
-putPlayerCounters cause pid kind n = do
-  -- CR 101.2 with CR 122.1: a player an effect in force says can't get counters
-  -- gets none (Solemnity, Melira, Sylvok Outcast). putCountersWithin's gate on
-  -- the player axis, ahead of CR 616.1's loop for CR 614.17c's reason.
-  prohibited <- State.gets (PlayerEffect.prohibitsCounters pid kind)
-  resolved <- if prohibited then pure Nothing else resolvePlayerCounters cause pid kind n
-  case resolved of
+putPlayerCounters :: [(CounterCause.CounterCause, PlayerId, PlayerCounterKind.PlayerCounterKind, Natural)] -> Game [Natural]
+putPlayerCounters placements = do
+  settled <- Monad.forM placements $ \(cause, pid, kind, n) -> do
+    -- CR 101.2 with CR 122.1: a player an effect in force says can't get counters
+    -- gets none (Solemnity, Melira, Sylvok Outcast). putCountersWithin's gate on
+    -- the player axis, ahead of CR 616.1's loop for CR 614.17c's reason.
+    prohibited <- State.gets (PlayerEffect.prohibitsCounters pid kind)
+    resolved <- if prohibited then pure Nothing else resolvePlayerCounters cause pid kind n
+    -- Past the gate, a prohibition in force now is one this placement's own
+    -- replacement installed.
+    ownBar <- State.gets (\gs -> any (\(target, settledKind, _) -> PlayerEffect.prohibitsCounters target settledKind gs) resolved)
+    pure (cause, resolved, ownBar)
+  Monad.forM settled $ \(cause, resolved, ownBar) -> case resolved of
     Nothing -> pure 0
     Just (target, settledKind, settledCount)
       | settledCount == 0 -> pure 0
       | otherwise -> do
-          -- Zero is the guard putCounters puts on its own write, and the two
-          -- shrinking scalings are what make it reachable here: half of one
-          -- counter, rounded down, and one counter minus one, are replacements
-          -- that remove the event.
-          --
-          -- CR 810.10: the counters happen to the player and land on their
-          -- team's shared count, which every sharer holds (Game.counterSharers).
-          --
-          -- One event, for the player the placement named: the sharers' count is
-          -- one count (CR 810.10), so "before" is the target's.
-          State.modify' $ \gs ->
-            let bump p = p {Player.counters = Map.insertWith (+) settledKind settledCount (Player.counters p)}
-                before = maybe 0 (Map.findWithDefault 0 settledKind . Player.counters) (Map.lookup target (GameState.players gs))
-                placed = PlayerCountersPlaced.MkPlayerCountersPlaced (CounterCause.putter cause) target settledKind before (before + settledCount)
-             in recordEvent (GameEvent.PlayerCountersPut placed) gs {GameState.players = List.foldl' (flip (Map.adjust bump)) (GameState.players gs) (Game.counterSharers settledKind target gs)}
-          pure settledCount
+          barred <- State.gets (PlayerEffect.prohibitsCounters target settledKind)
+          if barred && not ownBar
+            then pure 0
+            else do
+              -- Zero is the guard putCounters puts on its own write, and the two
+              -- shrinking scalings are what make it reachable here: half of one
+              -- counter, rounded down, and one counter minus one, are replacements
+              -- that remove the event.
+              --
+              -- CR 810.10: the counters happen to the player and land on their
+              -- team's shared count, which every sharer holds (Game.counterSharers).
+              --
+              -- One event, for the player the placement named: the sharers' count is
+              -- one count (CR 810.10), so "before" is the target's.
+              State.modify' $ \gs ->
+                let bump p = p {Player.counters = Map.insertWith (+) settledKind settledCount (Player.counters p)}
+                    before = maybe 0 (Map.findWithDefault 0 settledKind . Player.counters) (Map.lookup target (GameState.players gs))
+                    placed = PlayerCountersPlaced.MkPlayerCountersPlaced (CounterCause.putter cause) target settledKind before (before + settledCount)
+                 in recordEvent (GameEvent.PlayerCountersPut placed) gs {GameState.players = List.foldl' (flip (Map.adjust bump)) (GameState.players gs) (Game.counterSharers settledKind target gs)}
+              pure settledCount
 
 -- CR 101.2 / 514.2: `pid` can't get counters of `kind` until cleanup, a
 -- CounterR's barsAdditional. The row's controller controls the effect, the

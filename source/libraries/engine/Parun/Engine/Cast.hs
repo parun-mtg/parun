@@ -4860,7 +4860,7 @@ castProposed perform baseSpending pid oid sid printedFace castFrom preparedFor k
                           -- (Wicker Picker's ruling).
                           stickerKicks <- State.gets (maybe 0 (\o -> sum [sum n | (Keyword.Type.StickerKicker {}, n) <- Map.toList (Object.paidCosts o)]) . Game.lookupObject sid)
                           Monad.forM_ [1 .. stickerKicks] $ \_ -> do
-                            Monad.void (Event.putPlayerCounters (CounterCause.ByPayment pid) pid PlayerCounterKind.Ticket 1)
+                            Monad.void (Event.putPlayerCounters [(CounterCause.ByPayment pid, pid, PlayerCounterKind.Ticket, 1)])
                             Monad.void (Sticker.place True pid sid (Set.fromList [minBound .. maxBound]) Nothing False)
                           -- CR 700.14: the mana this payment spent, against the
                           -- caster's running total, recorded at the payment as
