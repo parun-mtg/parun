@@ -27,8 +27,10 @@
                   {
                     "type": "OrTapped",
                     "value": {
-                      "type": "PayLife",
-                      "value": 2
+                      "price": {
+                        "type": "PayLife",
+                        "value": 2
+                      }
                     }
                   }
                 ]

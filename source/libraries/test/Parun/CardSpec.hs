@@ -386,6 +386,7 @@ import qualified Parun.Types.OnePer as OnePer
 import qualified Parun.Types.Onset as Onset
 import qualified Parun.Types.Operand as Operand
 import qualified Parun.Types.OrElse as OrElse
+import qualified Parun.Types.OrTapped as OrTapped
 import qualified Parun.Types.PayGate as PayGate
 import qualified Parun.Types.PerCreature as PerCreature
 import qualified Parun.Types.PerTarget as PerTarget
@@ -4377,6 +4378,13 @@ copyExceptionFilters exception = case exception of
   -- grantedStaticAbilities, which keep its Framing (copyGrants).
   CopyException.GainAbility _ -> []
 
+-- CR 614.1c's price for an untapped entry: a reveal's or a behold's criterion.
+entryPriceFilters :: EntryPrice.EntryPrice -> [(Framing, Filter.Type.Filter Keyword.Keyword)]
+entryPriceFilters price = case price of
+  EntryPrice.PayLife _ -> []
+  EntryPrice.Reveal f -> unframed [f]
+  EntryPrice.Behold f -> unframed [f]
+
 -- CR 208.2b's entry option. The P/T pair narrows nothing; the keywords reach a
 -- Filter apiece, copyExceptionFilters' road one rule over.
 entryOptionFilters :: EntryOption.EntryOption -> [(Framing, Filter.Type.Filter Keyword.Keyword)]
@@ -4405,8 +4413,9 @@ entryRewriteFilters :: EntryRewrite.EntryRewrite (GrantedAbility.GrantedAbility 
 entryRewriteFilters entryRewrite = case entryRewrite of
   EntryRewrite.ChooseCardNames f -> unframed [f]
   EntryRewrite.ChooseCardName f -> unframed [f]
-  EntryRewrite.OrTapped (EntryPrice.Reveal f) -> unframed [f]
-  EntryRewrite.OrTapped (EntryPrice.Behold f) -> unframed [f]
+  -- The price's criterion over a card in hand or a beheld object, unframed, and
+  -- the waiver's Condition (Fortified Beachhead's "you control a Soldier").
+  EntryRewrite.OrTapped (OrTapped.MkOrTapped price unless_) -> entryPriceFilters price <> foldMap conditionFilters unless_
   -- CR 614.1c's as-enters exile carries a criterion over a CARD IN A GRAVEYARD
   -- (Living Lore's "an instant or sorcery card"), the reveal's axis one zone over
   -- and unframed with it.
@@ -4457,7 +4466,6 @@ entryRewriteFilters entryRewrite = case entryRewrite of
   EntryRewrite.EntersTapState _ -> []
   EntryRewrite.Prepared -> []
   EntryRewrite.EntersAttacking -> []
-  EntryRewrite.OrTapped (EntryPrice.PayLife _) -> []
   -- The cap is a Quantity, reaching Filters the way withCountersFilters' do.
   EntryRewrite.PayAnyLife cap -> foldMap quantityFilters cap
   EntryRewrite.EntersTransformed -> []

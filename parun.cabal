@@ -1351,6 +1351,8 @@ library codec
     Parun.Codec.OptionalitySpec
     Parun.Codec.OrElse
     Parun.Codec.OrElseSpec
+    Parun.Codec.OrTapped
+    Parun.Codec.OrTappedSpec
     Parun.Codec.OtherCandidates
     Parun.Codec.OtherCandidatesSpec
     Parun.Codec.OutsideCard
@@ -3575,6 +3577,7 @@ library types
     Parun.Types.OptionalDecision
     Parun.Types.Optionality
     Parun.Types.OrElse
+    Parun.Types.OrTapped
     Parun.Types.OtherCandidates
     Parun.Types.OutsideCard
     Parun.Types.OutsideDestination

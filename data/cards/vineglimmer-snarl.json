@@ -70,19 +70,21 @@
               "rewrite": {
                 "type": "OrTapped",
                 "value": {
-                  "type": "Reveal",
-                  "value": {
-                    "type": "Or",
-                    "value": [
-                      {
-                        "type": "HasSubtype",
-                        "value": "Forest"
-                      },
-                      {
-                        "type": "HasSubtype",
-                        "value": "Island"
-                      }
-                    ]
+                  "price": {
+                    "type": "Reveal",
+                    "value": {
+                      "type": "Or",
+                      "value": [
+                        {
+                          "type": "HasSubtype",
+                          "value": "Forest"
+                        },
+                        {
+                          "type": "HasSubtype",
+                          "value": "Island"
+                        }
+                      ]
+                    }
                   }
                 }
               }

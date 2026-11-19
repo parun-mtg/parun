@@ -628,6 +628,7 @@ import qualified Parun.Codec.OperandSpec
 import qualified Parun.Codec.OptionalDecisionSpec
 import qualified Parun.Codec.OptionalitySpec
 import qualified Parun.Codec.OrElseSpec
+import qualified Parun.Codec.OrTappedSpec
 import qualified Parun.Codec.OtherCandidatesSpec
 import qualified Parun.Codec.OutsideCardSpec
 import qualified Parun.Codec.OutsideDestinationSpec
@@ -1771,6 +1772,7 @@ spec s reference corpus = do
   Parun.Codec.CombatDamageOptionSpec.spec s
   Parun.Codec.OptionalitySpec.spec s
   Parun.Codec.OrElseSpec.spec s
+  Parun.Codec.OrTappedSpec.spec s
   Parun.Codec.OutsideCardSpec.spec s
   Parun.Codec.OutsideDestinationSpec.spec s
   Parun.Codec.OutsidePickSpec.spec s

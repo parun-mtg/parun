@@ -119,8 +119,10 @@
               "rewrite": {
                 "type": "OrTapped",
                 "value": {
-                  "type": "PayLife",
-                  "value": 3
+                  "price": {
+                    "type": "PayLife",
+                    "value": 3
+                  }
                 }
               }
             }

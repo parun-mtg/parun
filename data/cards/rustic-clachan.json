@@ -73,10 +73,12 @@
               "rewrite": {
                 "type": "OrTapped",
                 "value": {
-                  "type": "Reveal",
-                  "value": {
-                    "type": "HasSubtype",
-                    "value": "Kithkin"
+                  "price": {
+                    "type": "Reveal",
+                    "value": {
+                      "type": "HasSubtype",
+                      "value": "Kithkin"
+                    }
                   }
                 }
               }

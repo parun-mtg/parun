@@ -6,10 +6,10 @@ import qualified Parun.Codec.ChosenQuality as ChosenQuality
 import qualified Parun.Codec.EntersWith as EntersWith
 import qualified Parun.Codec.EntryFlip as EntryFlip
 import qualified Parun.Codec.EntryOption as EntryOption
-import qualified Parun.Codec.EntryPrice as EntryPrice
 import qualified Parun.Codec.ExileFromGraveyard as ExileFromGraveyard
 import qualified Parun.Codec.Filter as Filter
 import qualified Parun.Codec.Keyword as Keyword
+import qualified Parun.Codec.OrTapped as OrTapped
 import qualified Parun.Codec.PlayerRelation as PlayerRelation
 import qualified Parun.Codec.Quantity as Quantity
 import qualified Parun.Codec.SacrificeAnyNumber as SacrificeAnyNumber
@@ -62,7 +62,7 @@ codec abilityCodec effectCodec =
       Arm.nullary "Prepared" EntryRewrite.Prepared,
       Arm.nullary "EntersAttacking" EntryRewrite.EntersAttacking,
       Arm.nullary "EntersTransformed" EntryRewrite.EntersTransformed,
-      Arm.payload "OrTapped" EntryPrice.codec EntryRewrite.OrTapped (\x -> case x of EntryRewrite.OrTapped y -> Just y; _ -> Nothing),
+      Arm.payload "OrTapped" OrTapped.codec EntryRewrite.OrTapped (\x -> case x of EntryRewrite.OrTapped y -> Just y; _ -> Nothing),
       -- Optional: the absent "value" key is the uncapped "any amount".
       Arm.optionalPayload "PayAnyLife" Quantity.codec EntryRewrite.PayAnyLife (\x -> case x of EntryRewrite.PayAnyLife y -> Just y; _ -> Nothing),
       Arm.payload "SacrificeAnyNumber" SacrificeAnyNumber.codec EntryRewrite.SacrificeAnyNumber (\x -> case x of EntryRewrite.SacrificeAnyNumber y -> Just y; _ -> Nothing),

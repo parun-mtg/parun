@@ -643,7 +643,8 @@ rewriteReplacementEffect pairs =
           Children.replacementCounterKind = Identity.Identity . Filter.rewriteCounterKind pairs,
           Children.replacementDamage = Identity.Identity . rewriteDamagePattern pairs,
           Children.replacementCounters = Identity.Identity . rewriteWithCounters pairs,
-          Children.replacementCopy = Identity.Identity . rewriteAsCopy pairs
+          Children.replacementCopy = Identity.Identity . rewriteAsCopy pairs,
+          Children.replacementCondition = Identity.Identity . rewriteCondition pairs
         }
 
 -- CR 612.1 through a copy or entry payload: Parun.Engine.Children's traversal

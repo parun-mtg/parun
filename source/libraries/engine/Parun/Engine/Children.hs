@@ -363,6 +363,7 @@ import qualified Parun.Types.Onset as Onset
 import qualified Parun.Types.Operand as Operand
 import qualified Parun.Types.Optionality as Optionality
 import qualified Parun.Types.OrElse as OrElse
+import qualified Parun.Types.OrTapped as OrTapped
 import qualified Parun.Types.PaidExpiry as PaidExpiry
 import qualified Parun.Types.PayGate as PayGate
 import qualified Parun.Types.PendingEntryEffect as PendingEntryEffect
@@ -2445,7 +2446,9 @@ data ReplacementChildren card ability effect f = MkReplacementChildren
     -- | An "as a copy" rewrite (CR 707.5), whole.
     replacementCopy :: AsCopy.AsCopy ability effect -> f (AsCopy.AsCopy ability effect),
     -- | The events the engine looks back over to apply the replacement.
-    replacementLooksBack :: HistoryRead.HistoryRead -> f ()
+    replacementLooksBack :: HistoryRead.HistoryRead -> f (),
+    -- | A Condition a rewrite asks as it applies (CR 614.1c), whole.
+    replacementCondition :: Condition.Condition -> f Condition.Condition
   }
 
 -- | Every child of a replacement effect left as it is: the base a walk overrides.
@@ -2466,7 +2469,8 @@ replacementLeaves =
       replacementDamage = pure,
       replacementCounters = pure,
       replacementCopy = pure,
-      replacementLooksBack = const (pure ())
+      replacementLooksBack = const (pure ()),
+      replacementCondition = pure
     }
 
 -- | A ReplacementEffect's children, its payload matched positionally.
@@ -2541,7 +2545,7 @@ entryRewriteChildren c rewrite = case rewrite of
   EntryRewrite.EntersTapState _ -> pure rewrite
   EntryRewrite.Prepared -> pure rewrite
   EntryRewrite.EntersAttacking -> pure rewrite
-  EntryRewrite.OrTapped price -> EntryRewrite.OrTapped <$> entryPriceChildren c price
+  EntryRewrite.OrTapped (OrTapped.MkOrTapped price unless_) -> fmap EntryRewrite.OrTapped (OrTapped.MkOrTapped <$> entryPriceChildren c price <*> traverse (replacementCondition c) unless_)
   EntryRewrite.PayAnyLife cap -> EntryRewrite.PayAnyLife <$> traverse (replacementQuantity c) cap
   EntryRewrite.EntersTransformed -> pure rewrite
   EntryRewrite.RunEffects effects -> EntryRewrite.RunEffects <$> traverse (replacementEffect c) effects

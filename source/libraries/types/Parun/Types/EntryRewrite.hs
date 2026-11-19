@@ -8,10 +8,10 @@ import qualified Parun.Types.ChosenQuality as ChosenQuality
 import qualified Parun.Types.EntersWith as EntersWith
 import qualified Parun.Types.EntryFlip as EntryFlip
 import qualified Parun.Types.EntryOption as EntryOption
-import qualified Parun.Types.EntryPrice as EntryPrice
 import qualified Parun.Types.ExileFromGraveyard as ExileFromGraveyard
 import qualified Parun.Types.Filter as Filter
 import qualified Parun.Types.Keyword as Keyword
+import qualified Parun.Types.OrTapped as OrTapped
 import qualified Parun.Types.PlayerRelation as PlayerRelation
 import qualified Parun.Types.Quantity as Quantity
 import qualified Parun.Types.SacrificeAnyNumber as SacrificeAnyNumber
@@ -176,7 +176,7 @@ data EntryRewrite ability effect
   | -- | CR 614.1c / Razorgrass Field, Rustic Clachan: "you may [price]. If you
     -- don't, it enters tapped" -- the arm above's rewrite with a price on
     -- avoiding it.
-    OrTapped EntryPrice.EntryPrice
+    OrTapped OrTapped.OrTapped
   | -- | CR 614.1c / 119.4 / 607.2g / Phyrexian Processor: pay any amount of
     -- life as this enters, at most the Quantity (Nameless Race), written to
     -- Object.chosenNumber.
