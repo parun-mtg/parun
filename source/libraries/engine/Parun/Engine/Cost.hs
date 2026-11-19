@@ -6042,8 +6042,14 @@ paySubstitutingReadingThen refuses slots perform began earlier moment subject an
           else payManaWindowThen perform Set.empty announced subject spending pid announceMana manaCost
       pure $ do
         (paidMana, substitutes, own) <- settle
+        -- CR 119.4b / 601.2h: life an effect forbids paying toward this
+        -- subject (Karn's Sylex) is an unpayable cost, read on the board the
+        -- window left. The gates refuse it ahead of the cast; this is what
+        -- refuses a cost CR 601.2f added after them (Terror of the Peaks's).
+        -- data/scenarios/cant-pay-life proves it.
+        forbidsLife <- State.gets (\gs -> lifeOwedBy pid gs (Cost.components cost) > 0 && PlayerEffect.prohibitsPayingLife subject pid gs)
         paidOwn <-
-          if paidMana
+          if paidMana && not forbidsLife
             then payComponents perform moment announced slots pid oid (Cost.components cost)
             else pure Payment.Unpaid
         -- The convoking taps are paid as a group of their own so that their

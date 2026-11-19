@@ -1,0 +1,80 @@
+{
+  "board": {
+    "active": "alice",
+    "seats": [
+      {
+        "battlefield": [
+          {
+            "card": "Swamp",
+            "label": "swamp"
+          },
+          {
+            "card": "Swamp",
+            "label": "swamp-2"
+          },
+          {
+            "card": "Swamp",
+            "label": "swamp-3"
+          }
+        ],
+        "hand": [
+          {
+            "card": "Toxic Deluge",
+            "label": "toxic-deluge"
+          }
+        ],
+        "name": "alice"
+      },
+      {
+        "battlefield": [
+          {
+            "card": "Karn's Sylex",
+            "tapped": true
+          }
+        ],
+        "name": "bob"
+      }
+    ],
+    "step": "PrecombatMain"
+  },
+  "description": "CR 119.4b under Karn's Sylex Toxic Deluge is refused at X=1",
+  "final": [
+    {
+      "Life": {
+        "life": 20,
+        "player": "alice"
+      }
+    }
+  ],
+  "timeline": [
+    {
+      "player": "alice",
+      "refuse": {
+        "Cast": {
+          "mana": [
+            "$swamp",
+            "$swamp-2",
+            "$swamp-3"
+          ],
+          "object": "$toxic-deluge",
+          "x": 1
+        }
+      },
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Count": {
+          "card": "Toxic Deluge",
+          "count": 1,
+          "player": "alice",
+          "zone": "Hand"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    }
+  ]
+}
