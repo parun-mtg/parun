@@ -1,0 +1,91 @@
+{
+  "faces": [
+    {
+      "keywords": [
+        {
+          "type": "Flying"
+        }
+      ],
+      "manaCost": [
+        {
+          "type": "Generic",
+          "value": 3
+        },
+        {
+          "type": "OfType",
+          "value": {
+            "type": "Colored",
+            "value": "Black"
+          }
+        },
+        {
+          "type": "OfType",
+          "value": {
+            "type": "Colored",
+            "value": "Black"
+          }
+        }
+      ],
+      "name": "Angel of Suffering",
+      "oracleText": "Flying\nIf damage would be dealt to you, prevent that damage and mill twice that many cards.",
+      "power": {
+        "type": "Literal",
+        "value": 5
+      },
+      "replacementEffects": [
+        {
+          "effect": {
+            "type": "DamageR",
+            "value": {
+              "matching": {
+                "whoRecipient": {
+                  "type": "You"
+                }
+              },
+              "rewrite": {
+                "type": "PreventAll"
+              },
+              "riders": [
+                {
+                  "type": "Mill",
+                  "value": {
+                    "player": {
+                      "type": "Relative",
+                      "value": "You"
+                    },
+                    "quantity": {
+                      "type": "Times",
+                      "value": {
+                        "factor": {
+                          "type": "Literal",
+                          "value": 2
+                        },
+                        "quantity": {
+                          "type": "InSlot",
+                          "value": "thatMuch"
+                        }
+                      }
+                    }
+                  }
+                }
+              ]
+            }
+          }
+        }
+      ],
+      "toughness": {
+        "type": "Literal",
+        "value": 3
+      },
+      "typeLine": {
+        "subtypes": [
+          "Angel",
+          "Nightmare"
+        ],
+        "types": [
+          "Creature"
+        ]
+      }
+    }
+  ]
+}
