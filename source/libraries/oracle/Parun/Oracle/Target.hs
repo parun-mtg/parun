@@ -194,7 +194,11 @@ amounts context q = case q of
     -- control").
     let inclusive = [Text.replace orWord (Text.pack " and/or ") one | Text.isInfixOf orWord one]
         orWord = Text.pack " or "
-    fmap (\o -> MkAmount (ForEach 1 o) ms) (one : inclusive) <> [MkAmount (EqualTo (Text.pack "the number of " <> many)) ms]
+        -- Free: a plural instant-or-sorcery count reads "and" (Enigma Drake's
+        -- power, Cosmic Epiphany's draw).
+        spells = Text.pack "instant or sorcery cards"
+        jointly = [Text.replace spells (Text.pack "instant and sorcery cards") many | Text.isInfixOf spells many]
+    fmap (\o -> MkAmount (ForEach 1 o) ms) (one : inclusive) <> fmap (\m -> MkAmount (EqualTo (Text.pack "the number of " <> m)) ms) (many : jointly)
   Quantity.Arithmetic (Arithmetic.Times (Times.MkTimes (Quantity.Literal f) (Quantity.Count c)))
     | f > 1 -> do
         (one, _, ms) <- counting context c
