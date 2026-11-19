@@ -405,7 +405,7 @@ asking kind offer = (requestFor (Setup.emptyGame S.bothPlayers) (Prompt.ChooseAc
 -- first answer to the kind (a stop counts entries, not prompts, so a few
 -- either side).
 corpusSpec :: Spec.Spec IO n -> Registry.Registry IO -> n ()
-corpusSpec s registry = Spec.it s "every kind of question the scenarios answer has a form" $ do
+corpusSpec s registry = Spec.describe s "WebQuestion" . Spec.it s "every kind of question the scenarios answer has a form" $ do
   root <- Load.defaultRoot
   paths <- Load.listRoot root
   firsts <-
@@ -427,6 +427,27 @@ corpusSpec s registry = Spec.it s "every kind of question the scenarios answer h
         pure [(Question.kind (Request.question request), path) | Right (Stop.MkBefore _ _ asked) <- stops, Just request <- [Protocol.requestFor asked], Question.kind (Request.question request) /= Text.pack "Concede", Question.Web.answersTyped request]
       _ -> pure []
   Spec.assertEqWith s "typed" (ListUtils.nubOrd found) []
+
+-- | CR 730.1a: a question a subgame raises says so, in its request and on
+-- the turn bar; the main game's does not.
+subgameSpec :: Spec.Spec IO n -> Registry.Registry IO -> n ()
+subgameSpec s registry = Spec.describe s "WebQuestion" . Spec.it s "CR 730.1a a subgame's question is marked as one" $ do
+  root <- Load.defaultRoot
+  bytes <- ByteString.readFile (root <> "/game/cr-730-1b-730-3-gameplay-alice-casts-a-subgame-spell-bob-decks-bob-loses-3.json")
+  case Load.parse bytes of
+    Left problem -> Spec.assertFailure s (Text.unpack problem)
+    Right scenario -> do
+      let at i = do
+            stop <- Scenario.replay registry (Just i) scenario
+            pure $ case stop of
+              Right (Stop.MkBefore _ _ asked) -> Protocol.requestFor asked
+              _ -> Nothing
+      before <- at 0
+      -- Entry 5 keeps a hand in the subgame (CR 730.2).
+      inside <- at 5
+      Spec.assertEqWith s "the main game" (fmap Request.depth before) (Just 0)
+      Spec.assertEqWith s "the subgame" (fmap Request.depth inside) (Just 1)
+      Spec.assertBool s (maybe False (Text.isInfixOf (Text.pack "class=\"subgame\"") . Html.toText . (`Question.Web.view` Question.Web.blank)) inside) "the turn bar says so"
 
 -- | The prompt kinds a scenario's text names in its answers.
 kindsIn :: Text.Text -> [Text.Text]
