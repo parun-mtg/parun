@@ -1,0 +1,32 @@
+{
+  "faces": [
+    {
+      "name": "Molten Tributary",
+      "oracleText": "({T}: Add {U} or {R}.)\nThis land enters tapped.",
+      "replacementEffects": [
+        {
+          "effect": {
+            "type": "EntryR",
+            "value": {
+              "matching": {
+                "type": "IsSource"
+              },
+              "rewrite": {
+                "type": "Tapped"
+              }
+            }
+          }
+        }
+      ],
+      "typeLine": {
+        "subtypes": [
+          "Island",
+          "Mountain"
+        ],
+        "types": [
+          "Land"
+        ]
+      }
+    }
+  ]
+}
