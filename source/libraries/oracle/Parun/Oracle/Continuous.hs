@@ -266,9 +266,12 @@ static context attached enchants a
        in case StaticAbility.condition a of
             -- Free: an ability word the effect earns (Song of Stupefaction's
             -- fathomless descent).
-            Nothing -> do
-              stated <- fmap Prose.sentence (body context)
-              stated : [word <> stated | word <- Trigger.effectWord stated]
+            Nothing ->
+              ( do
+                  stated <- fmap Prose.sentence (body context)
+                  stated : [word <> stated | word <- Trigger.effectWord stated]
+              )
+                <> hostIs
             Just c -> do
               words' <- Trigger.condition context c
               word <- Trigger.abilityWord words'
@@ -289,6 +292,27 @@ static context attached enchants a
               let openings = [Text.pack "As long as " <> words' <> Text.pack ", "] <> [Text.pack "During your turn, " | words' == Text.pack "it's your turn"]
               [word <> opening <> opened <> Text.pack "." | opening <- openings] <> [word <> Prose.sentence (full <> Text.pack " as long as " <> after)]
   | otherwise = []
+  where
+    -- Free: the attached creature's own supertype or colour as the condition,
+    -- which then calls it "it" (Hero's Heirloom's "As long as equipped
+    -- creature is legendary, it has trample and haste.").
+    hostIs = do
+      word <- Maybe.maybeToList attached
+      qualities <- case StaticAbility.affected a of
+        Affected.Matching (Filter.Type.And fs)
+          | elem hosted fs,
+            [Filter.Type.HasCardType creature] <- filter (\f -> f /= hosted && Maybe.isNothing (quality f)) fs,
+            Filter.cardType Filter.Singular creature == Text.pack "creature" ->
+              [Maybe.mapMaybe quality fs]
+        _ -> []
+      Monad.guard (not (null qualities))
+      (verb, defined) <- modifications Static Filter.Singular False context {Target.self = Text.pack "it"} (Foldable.toList (StaticAbility.modifications a))
+      [Prose.sentence (Text.pack "as long as " <> word <> Text.pack " creature is " <> Prose.listing "and" qualities <> Text.pack ", it " <> verb <> defined)]
+    hosted = Filter.Type.HasAttached Filter.Type.IsSource
+    quality f = case f of
+      Filter.Type.HasSupertype s -> Just (Filter.supertype s)
+      Filter.Type.HasColor c -> Just (Filter.color c)
+      _ -> Nothing
 
 -- | A face's static abilities and combat restrictions, an unconditional
 -- change to power and toughness and a "can't be blocked" or "can't block" of
