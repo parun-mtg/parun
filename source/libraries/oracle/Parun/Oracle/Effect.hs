@@ -992,7 +992,12 @@ effect context e = case e of
           Target.ForEach n each' -> do
             (_, phrase) <- added (ManaAddition.production a) (Quantity.Literal n)
             [(Described, phrase <> Text.pack " for each " <> each')]
-          Target.EqualTo _ -> []
+          -- One colour for every unit: "Add X mana of any one color, where X
+          -- is ..." (Deathbloom Ritualist, CR 105.4).
+          Target.EqualTo equal
+            | ManaAddition.production a == ManaProduction.AnyColor ColorSpread.OneColor ->
+                [(Described, Text.pack "X mana of any one color, where X is " <> equal)]
+            | otherwise -> []
         [MkPredicate Nothing (Text.pack "add " <> phrase) [] (Target.names amount') (Just symbols) False]
   Effect.MoveToZone m -> moved context m
   -- A token that IS a die (Create.die) has no wording yet, so it renders nothing.
