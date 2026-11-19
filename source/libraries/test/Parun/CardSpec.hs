@@ -4346,12 +4346,13 @@ playerEffectFilters playerEffect = case playerEffect of
 
 -- CR 707.9's "except ..." clauses. The GainKeywords arm reaches a Filter
 -- through the keyword it names, and a defined power and toughness through its
--- Counts; CR 707.9b's other arms name a pair of literals, a name, colours, the
--- absence of a mana cost, and sets over the parts of CR 205.1's type line, none
--- of which narrows anything.
+-- Counts; CR 707.9b's other arms name a pair of literals or the copier's own, a
+-- name, colours, the absence of a mana cost, and sets over the parts of CR
+-- 205.1's type line, none of which narrows anything.
 copyExceptionFilters :: CopyException.CopyException (GrantedAbility.GrantedAbility Card.Type.Card) -> [(Framing, Filter.Type.Filter Keyword.Keyword)]
 copyExceptionFilters exception = case exception of
   CopyException.SetPowerToughness (CopyPowerToughness.Numbers _) -> []
+  CopyException.SetPowerToughness CopyPowerToughness.Own -> []
   -- AffectedSetFramed for cardFilters' characteristic-defining reason.
   CopyException.SetPowerToughness (CopyPowerToughness.Defined defined) ->
     frame AffectedSetFramed (concatMap quantityFilters [CharacteristicPT.power defined, CharacteristicPT.toughness defined])

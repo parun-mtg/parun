@@ -98,7 +98,9 @@ import qualified Parun.Types.ControlSides as ControlSides
 import qualified Parun.Types.ControlSlots as ControlSlots
 import qualified Parun.Types.ControllerRelation as ControllerRelation
 import qualified Parun.Types.CopyClause as CopyClause
+import qualified Parun.Types.CopyException as CopyException
 import qualified Parun.Types.CopyOriginal as CopyOriginal
+import qualified Parun.Types.CopyPowerToughness as CopyPowerToughness
 import qualified Parun.Types.CopyStackObject as CopyStackObject
 import qualified Parun.Types.CopyTargets as CopyTargets
 import qualified Parun.Types.Cost as Cost.Type
@@ -4014,6 +4016,21 @@ effectLintSpec s registry corpus = Spec.describe s "Lint" $ do
     Spec.assertBool s (not (anyFace untilUsedOffends (Printing.card berserker))) "the real Hardened Berserker is accepted"
     Spec.assertBool s (untilUsedOffends (planted prohibition)) "a prohibition no cast uses up is rejected"
     Spec.assertBool s (untilUsedOffends (planted pump)) "a continuous effect on an object is rejected"
+  -- CR 707.9b, swept over the pool. See ownPowerToughnessOffends.
+  Spec.it s "CR 707.9b no card writes an own power and toughness on a copy with no earlier object" $ do
+    ps <- S.allPrintings s corpus
+    let offenders = filter (anyFace ownPowerToughnessOffends . Printing.card) ps
+    Spec.assertEqWith s "an own power and toughness sits only where the copy has earlier values" (fmap (S.nameOf . Printing.card) offenders) []
+  -- The REJECTING direction: Applied Geometry's token with its 0/0 restated.
+  Spec.it s "the lint itself catches an own power and toughness on a token copy" $ do
+    geometry <- S.printingOf s registry "Applied Geometry"
+    let restate exception = case exception of
+          CopyException.SetPowerToughness _ -> CopyException.SetPowerToughness CopyPowerToughness.Own
+          _ -> exception
+        restated = [Effect.CreateCopy e {CreateCopy.exceptions = fmap restate (CreateCopy.exceptions e)} | Effect.CreateCopy e <- concatMap cardAuthoredEffects (Card.Type.faces (Printing.card geometry))]
+        planted = (vanillaFace "Planted" instantLine) {Face.spell = Mint.oneMode (Seq.fromList restated)}
+    Spec.assertBool s (not (anyFace ownPowerToughnessOffends (Printing.card geometry))) "the real Applied Geometry is accepted"
+    Spec.assertBool s (ownPowerToughnessOffends planted) "a token copy taking its own power and toughness is rejected"
   -- CR 611.2a, swept over the pool. See oncePerEffectOffends.
   Spec.it s "CR 611.2a no card writes OncePerEffect where no stored row carries it" $ do
     ps <- S.allPrintings s corpus
@@ -4164,6 +4181,19 @@ storedOncePerEffects card =
         Effect.AffectPlayers (AffectPlayers.MkAffectPlayers _ _ (PlayerEffect.CastFrom grant)) -> CastFromZone.limit grant == PermissionLimit.OncePerEffect
         _ -> False
    in length (filter stored (cardAuthoredEffects card))
+
+-- CR 707.9b: CopyPowerToughness.Own reads the copying object's own values
+-- (Projection.View.applyCopyException), which a token copy (CR 707.1) or a copy
+-- of a stack object has none of, so the engine copies the numbers unchanged.
+-- No printed card writes either, and this keeps it out of card data.
+ownPowerToughnessOffends :: Face.Face Card.Type.Card -> Bool
+ownPowerToughnessOffends card =
+  let own exception = exception == CopyException.SetPowerToughness CopyPowerToughness.Own
+      offends effect = case effect of
+        Effect.CreateCopy e -> any own (CreateCopy.exceptions e)
+        Effect.CopyStackObject e -> any own (CopyStackObject.exceptions e)
+        _ -> False
+   in any offends (cardAuthoredEffects card)
 
 -- CR 611.2a: Duration.UntilUsed arms Expiry.WhenUsed, which only
 -- Parun.Engine.PlayerEffect.spentByCast and spentByLandPlay end early, and only

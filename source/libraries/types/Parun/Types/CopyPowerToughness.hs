@@ -14,4 +14,8 @@ data CopyPowerToughness
     -- applied in layer 7a (Colossal Clone Master's "it has 'This creature's
     -- power and toughness are each equal to ...'").
     Defined CharacteristicPT.CharacteristicPT
+  | -- | CR 707.9b: the copying object's own copiable numbers, read before it
+    -- copies (Hulking Metamorph's "equal to this creature's power and
+    -- toughness").
+    Own
   deriving (Eq, Ord, Show)

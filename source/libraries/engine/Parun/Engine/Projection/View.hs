@@ -1150,14 +1150,16 @@ withCopyExceptions this own exceptions pc =
 
 -- CR 707.9: an exception with the copy effect's context answered, so it means
 -- the same thing re-applied later with none. GainThisAbility becomes the ability
--- it pointed at (CR 707.9a) and DontCopy the value it retained (CR 707.9c),
--- supertypes as a clear and a re-add; each drops where applyCopyException's own
--- arm does nothing. One arm per constructor, applyCopyException's reason: a new
--- one that reads the context has to be decided here.
+-- it pointed at (CR 707.9a), DontCopy the value it retained (CR 707.9c),
+-- supertypes as a clear and a re-add, and an Own power and toughness the numbers
+-- it read (CR 707.9b); each drops where applyCopyException's own arm does
+-- nothing. One arm per constructor, applyCopyException's reason: a new one that
+-- reads the context has to be decided here.
 --
--- Those two arms are a regression fence: Vesuvan Doppelganger and Unstable
--- Shapeshifter would reach them by copying an animated Room, and no test builds
--- that board.
+-- Those three arms are a regression fence: only a rebuild of a Room's copied
+-- halves (rebuiltStampOf) re-applies a settled list, which Vesuvan Doppelganger,
+-- Unstable Shapeshifter and Hulking Metamorph reach by copying an animated Room,
+-- and no test builds that board.
 settleCopyException :: Maybe Source.Source -> Maybe ProjectedCharacteristics -> CopyException.CopyException (GrantedAbility.GrantedAbility Card.Type.Card) -> [CopyException.CopyException (GrantedAbility.GrantedAbility Card.Type.Card)]
 settleCopyException this own exception = case exception of
   CopyException.GainThisAbility -> case this of
@@ -1168,6 +1170,9 @@ settleCopyException this own exception = case exception of
     Just mine -> case retained of
       RetainedCharacteristic.Colors -> [CopyException.SetColors ChangeMode.Replace (PC.colors mine)]
       RetainedCharacteristic.Supertypes -> [CopyException.RemoveSupertypes (Set.fromList [minBound .. maxBound]), CopyException.AddSupertypes (PC.supertypes mine)]
+    Nothing -> []
+  CopyException.SetPowerToughness CopyPowerToughness.Own -> case own >>= \mine -> SetPowerToughness.MkSetPowerToughness <$> PC.power mine <*> PC.toughness mine of
+    Just numbers -> [CopyException.SetPowerToughness (CopyPowerToughness.Numbers numbers)]
     Nothing -> []
   CopyException.SetPowerToughness _ -> [exception]
   CopyException.GainKeywords _ -> [exception]
@@ -1293,6 +1298,30 @@ applyCopyException this own snapshot exception = case exception of
   -- prove it.
   CopyException.SetPowerToughness (CopyPowerToughness.Defined defined) ->
     snapshot {PC.characteristicPT = Just defined}
+  -- CR 707.9b with the subject's own copiable numbers, which on the CR 707.5
+  -- entry road are its printed ones, or its inset frame's when cast prototyped
+  -- (CR 719.3b, withPrototype): Hulking Metamorph's ruling, "use the appropriate
+  -- printed power and toughness (either 7/7 or 3/3)". CR 707.9d's strip is the
+  -- Numbers arm's. The scenarios
+  -- hulking-metamorph-cast-prototyped-enters-as-a-3-3-artifact-copy and
+  -- hulking-metamorph-cast-normally-enters-as-a-7-7-artifact-copy prove it, and
+  -- a-clone-of-a-prototyped-hulking-metamorph-copy-is-a-3-3-artifact-too that a
+  -- copy of the copy keeps the numbers (CR 707.9b).
+  --
+  -- Unprinted: Nothing for `own` is a copy with no earlier object (CR 707.1's
+  -- token, a copy of a stack object), whose "this creature" no printed card
+  -- writes; it copies the numbers unchanged. Parun.EffectLintSpec's
+  -- ownPowerToughnessOffends keeps it out of card data.
+  CopyException.SetPowerToughness CopyPowerToughness.Own -> case own of
+    Nothing -> snapshot
+    Just mine ->
+      snapshot
+        { PC.power = PC.power mine,
+          PC.toughness = PC.toughness mine,
+          PC.basePower = PC.power mine,
+          PC.baseToughness = PC.toughness mine,
+          PC.characteristicPT = Nothing
+        }
   -- CR 707.9a: the gained abilities become part of the copiable values "along
   -- with any other abilities that were copied", so this ADDS rather than sets.
   -- unionWith (+) and not a plain union, Replacement.applyEntryOption's reason:

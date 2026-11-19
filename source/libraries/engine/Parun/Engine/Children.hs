@@ -4072,6 +4072,7 @@ copyClauseChildren c (CopyClause.MkCopyClause condition exceptions counters copi
 copyExceptionChildren :: (Applicative f) => CopyChildren ability effect f -> CopyException.CopyException ability -> f (CopyException.CopyException ability)
 copyExceptionChildren c exception = case exception of
   CopyException.SetPowerToughness (CopyPowerToughness.Numbers _) -> pure exception
+  CopyException.SetPowerToughness CopyPowerToughness.Own -> pure exception
   CopyException.SetPowerToughness (CopyPowerToughness.Defined defined) -> CopyException.SetPowerToughness . CopyPowerToughness.Defined <$> characteristicPTChildren (copyQuantity c) defined
   CopyException.GainKeywords keywords -> CopyException.GainKeywords <$> traverseSet (copyKeyword c) keywords
   CopyException.GainThisAbility -> pure exception
