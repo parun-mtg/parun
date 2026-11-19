@@ -549,6 +549,28 @@ instructions context es = case es of
                 fmap (pt :) (instructions (noting context (e : run)) others)
             )
               <> apart
+  -- Placements on two objects, the verb shared: "put a +1/+1 counter on each
+  -- creature you control and a loyalty counter on each planeswalker you
+  -- control" (Brokers Ascendancy). Free: the first apart, below.
+  e@(Effect.PutCounters p) : f@(Effect.PutCounters q) : others
+    | Maybe.isNothing (PutCounters.totalAtMost p),
+      Maybe.isNothing (PutCounters.totalAtMost q),
+      not (placedOn p f) ->
+        let paired = do
+              first <- Target.object context Target.Each (PutCounters.ref p)
+              second <- Target.object (noting context [e]) Target.Each (PutCounters.ref q)
+              these <- counters (Target.keyword context) (PutCounters.kind p) (PutCounters.quantity p)
+              those <- counters (Target.keyword context) (PutCounters.kind q) (PutCounters.quantity q)
+              let put = Text.pack "put " <> these <> Text.pack " on " <> Target.wording first <> Text.pack " and " <> those <> Text.pack " on " <> Target.wording second
+              pure (MkPredicate Nothing put [] (Target.mentions first <> Target.mentions second) Nothing False)
+            apart = do
+              pe <- effect context e
+              fmap (pe :) (instructions (noting context [e]) (f : others))
+         in ( do
+                pt <- paired
+                fmap (pt :) (instructions (noting context [e, f]) others)
+            )
+              <> apart
   e : rest
     | Just refs <- returnOf context e -> do
         p <- returned context refs
