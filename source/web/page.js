@@ -156,6 +156,7 @@ function apply(json) {
   document.body.classList.remove("busy");
   const hadSheet = root.querySelector(".sheet-backdrop:not(.peek) .sheet") !== null;
   const before = lives();
+  const docked = dockHeight();
   const focused = document.activeElement;
   unkey();
   if (tapped !== null) {
@@ -189,6 +190,7 @@ function apply(json) {
         throw new Error(`unknown patch ${patch.op}`);
     }
   }
+  holdDock(docked);
   floatChanges(before);
   announce();
   rekey();
@@ -202,6 +204,24 @@ function apply(json) {
     if (returnTo?.isConnected) returnTo.focus({ preventScroll: true });
     returnTo = null;
   }
+}
+
+// While the game goes on without the seat (Parun.Web.Question.watching), the
+// dock under the hand keeps the height it had, so the hand and board above it
+// hold still through a pass of many steps; the next question sizes it afresh.
+function dock() {
+  return root.querySelector("main.game > .side");
+}
+
+function dockHeight() {
+  return dock()?.getBoundingClientRect().height ?? 0;
+}
+
+function holdDock(height) {
+  const side = dock();
+  if (!side) return;
+  if (side.querySelector(".prompt > .waiting")) side.style.minHeight = `${height}px`;
+  else side.style.removeProperty("min-height");
 }
 
 // The child indices from the view's root to the node, dotted; null outside it.
