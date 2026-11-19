@@ -4,6 +4,8 @@
 -- with it.
 module Parun.Web.Card where
 
+import qualified Control.Applicative as Applicative
+import qualified Control.Monad as Monad
 import qualified Data.Char as Char
 import qualified Data.Containers.ListUtils as ListUtils
 import qualified Data.Foldable as Foldable
@@ -12,13 +14,17 @@ import qualified Data.Map.Strict as Map
 import qualified Data.Maybe as Maybe
 import qualified Data.Set as Set
 import qualified Data.Text as Text
+import qualified Parun.Engine.Projection.View as Projection.View
+import qualified Parun.Engine.Subtype as Subtype
 import qualified Parun.Oracle as Oracle
-import qualified Parun.Oracle.Continuous as Oracle.Continuous
+import qualified Parun.Oracle.Cost as Oracle.Cost
+import qualified Parun.Oracle.Face as Oracle.Face
 import qualified Parun.Oracle.Keyword as Oracle.Keyword
 import qualified Parun.Play.Render as Render
 import qualified Parun.Types.Card as Card
 import qualified Parun.Types.CardName as CardName
 import qualified Parun.Types.CardType as CardType
+import qualified Parun.Types.CharacteristicColors as CharacteristicColors
 import qualified Parun.Types.ClassLevel as ClassLevel
 import qualified Parun.Types.Color as Color
 import qualified Parun.Types.CounterKind as CounterKind
@@ -35,6 +41,7 @@ import qualified Parun.Types.Recipient as Recipient
 import qualified Parun.Types.RoomHalf as RoomHalf
 import qualified Parun.Types.RoomIndex as RoomIndex
 import qualified Parun.Types.TapState as TapState
+import qualified Parun.Types.TypeLine as TypeLine
 import qualified Parun.Web.Attribute as Attribute
 import qualified Parun.Web.Element as Element
 import qualified Parun.Web.Html as Html
@@ -256,9 +263,11 @@ stats o = case ObjectView.characteristics o of
           <> foldMap (\l -> [Element.el "span" ["pt", "loyalty"] [Element.attr "title" (Text.pack "Loyalty")] [Element.string (maybe (loyalty l) show (counted CounterKind.Loyalty))]]) (ProjectedCharacteristics.loyalty c)
           <> foldMap (\d -> [Element.el "span" ["pt", "defense"] [Element.attr "title" (Text.pack "Defense")] [Element.string (maybe (show (Defense.unwrap d)) show (counted CounterKind.Defense))]]) (ProjectedCharacteristics.defense c)
 
--- | The printed Oracle text of the faces the seat may read the object by
+-- | The Oracle text of the faces the seat may read the object by
 -- (Render.cardNames), each line apart, a face's name heading its own where
--- there are several; or why the card data could not say.
+-- there are several; or why the card data could not say. The face the
+-- object is says what its abilities are now (wording); every other face says
+-- what is printed on it.
 oracle :: (CardName.CardName -> Either e (Maybe Card.Card)) -> ObjectView.ObjectView -> Either e [Text.Text]
 oracle lookUp o = do
   let names = Render.cardNames o
@@ -269,20 +278,122 @@ oracle lookUp o = do
   let every = concatMap (Foldable.toList . Card.faces) (ListUtils.nubOrd (Maybe.catMaybes looked))
       (shown, others) = List.partition (\f -> Set.member (Face.name f) names) every
       faces = shown <> others
-      lines' f = [CardName.unwrap (Face.name f) <> Text.pack (if Set.member (Face.name f) names || null shown then ":" else " (other face):") | length faces > 1] <> foldMap Text.lines (Face.oracleText f)
-  pure (if null faces then foldMap abilityLines (ObjectView.characteristics o) else concatMap lines' faces)
+      -- The characteristics the names came from (Render.cardNames).
+      now = ObjectView.face o Applicative.<|> ObjectView.characteristics o
+      -- Several faces shown at once share one set of abilities, which no one
+      -- face's can be compared with: not implemented (#8956).
+      body f = case (now, shown) of
+        (Just c, [one]) | Face.name one == Face.name f -> said c f
+        _ -> printed f
+      lines' f = [CardName.unwrap (Face.name f) <> Text.pack (if Set.member (Face.name f) names || null shown then ":" else " (other face):") | length faces > 1] <> body f
+  pure (if null faces then foldMap abilityLines now else concatMap lines' faces)
+
+-- | A face's printed Oracle text, a line each.
+printed :: Face.Face Card.Card -> [Text.Text]
+printed = foldMap Text.lines . Face.oracleText
+
+-- | What a face says of the object's abilities `c` (CR 113.1a): its printed
+-- text while they are the printed face's, the renderer's wording of them once
+-- they differ, and otherwise its printed text under a note that it may be out
+-- of date.
+said :: ProjectedCharacteristics.ProjectedCharacteristics -> Face.Face Card.Card -> [Text.Text]
+said c face = case wording c face of
+  MkAsPrinted -> printed face
+  MkWorded [] -> [Text.pack "It has no abilities."]
+  MkWorded worded -> worded
+  -- Not implemented: wording an ability the renderer can't (#8955).
+  MkUnworded -> Text.pack "Its abilities have changed; this text may be out of date." : printed face
+
+-- | How a face's text stands to the object's abilities now.
+data Wording
+  = -- | They are the face's printed abilities.
+    MkAsPrinted
+  | -- | They differ, and the renderer words every one, a line each.
+    MkWorded [Text.Text]
+  | -- | They differ, and the renderer can't word one.
+    MkUnworded
+  deriving (Eq, Show)
+
+-- | Whether the abilities `c` gives the object are the printed face's,
+-- compared as card data (current) together with CR 305.6's intrinsic mana
+-- abilities, and if not whether the renderer words each.
+wording :: ProjectedCharacteristics.ProjectedCharacteristics -> Face.Face Card.Card -> Wording
+wording c face
+  | not unworded, now == face, intrinsicNow == intrinsicPrinted = MkAsPrinted
+  | unworded = MkUnworded
+  | otherwise = maybe MkUnworded (MkWorded . (<> fmap intrinsic intrinsicNow)) (traverse Maybe.listToMaybe (Oracle.faceAbilities now))
+  where
+    now = current c face
+    printedLine = Face.typeLine face
+    intrinsicPrinted = Subtype.intrinsicMana (TypeLine.types printedLine) (TypeLine.subtypes printedLine)
+    intrinsicNow = Subtype.intrinsicManaOf c
+    intrinsic t = Text.pack "({T}: Add {" <> Oracle.Cost.manaType t <> Text.pack "}.)"
+    -- The lists no layer writes (Parun.Types.ProjectedCharacteristics), which
+    -- hold the printed text even where CR 305.7 strips it outside the fold.
+    unwritten =
+      not (null (ProjectedCharacteristics.staticAbilities c))
+        || not (null (ProjectedCharacteristics.playerAbilities c))
+        || ProjectedCharacteristics.ruleAbilities c /= mempty
+        || not (null (ProjectedCharacteristics.specialActions c))
+    unworded =
+      -- What no face field holds.
+      not (null (ProjectedCharacteristics.lentKeywords c))
+        || not (null (ProjectedCharacteristics.grantedSpendManaAsThough c))
+        -- A characteristic-defining P/T other than the printed one, which
+        -- the projection holds with its star already substituted.
+        || maybe False (\pt -> Just pt /= Projection.View.seedCharacteristicPT face) (ProjectedCharacteristics.characteristicPT c)
+        -- A land whose basic land types changed may have lost the text the
+        -- unwritten lists hold, which the projection doesn't record: not
+        -- implemented (#8957).
+        || (intrinsicNow /= intrinsicPrinted && not (ProjectedCharacteristics.lostAllAbilities c) && unwritten)
+
+-- | The face with the abilities `c` gives the object written over its own
+-- (CR 613.1f): the lists the layers write as they stand, the lists no layer
+-- writes gone under a layer-6 wipe (ProjectedCharacteristics.lostAllAbilities),
+-- and the grants beside them.
+current :: ProjectedCharacteristics.ProjectedCharacteristics -> Face.Face Card.Card -> Face.Face Card.Card
+current c face =
+  let lost = ProjectedCharacteristics.lostAllAbilities c
+      kept :: (Monoid a) => a -> a
+      kept xs = if lost then mempty else xs
+      colours = do
+        defined <- Face.characteristicColors face
+        Monad.guard (not lost && (ProjectedCharacteristics.definesChosenColor c || not (CharacteristicColors.chosen defined)))
+        pure defined
+   in Projection.View.withRuleAbilities
+        (kept (ProjectedCharacteristics.ruleAbilities c) <> ProjectedCharacteristics.grantedRuleAbilities c)
+        face
+          { Face.keywords = ProjectedCharacteristics.keywords c,
+            -- Any other characteristic-defining P/T is unworded (wording).
+            Face.characteristicPT = if ProjectedCharacteristics.characteristicPT c == Projection.View.seedCharacteristicPT face then Face.characteristicPT face else Nothing,
+            Face.characteristicColors = colours,
+            Face.staticAbilities = kept (ProjectedCharacteristics.staticAbilities c) <> fmap snd (ProjectedCharacteristics.grantedStaticAbilities c),
+            Face.playerAbilities = kept (ProjectedCharacteristics.playerAbilities c) <> fmap snd (ProjectedCharacteristics.grantedPlayerAbilities c),
+            Face.specialActions = kept (ProjectedCharacteristics.specialActions c),
+            Face.spell = ProjectedCharacteristics.spell c,
+            Face.activatedAbilities = ProjectedCharacteristics.activatedAbilities c,
+            Face.replacementEffects = ProjectedCharacteristics.replacementEffects c,
+            Face.triggeredAbilities = ProjectedCharacteristics.triggeredAbilities c,
+            Face.delayedAbilities = ProjectedCharacteristics.delayedAbilities c,
+            Face.enchant = ProjectedCharacteristics.enchant c,
+            Face.castingPermissions = ProjectedCharacteristics.castingPermissions c,
+            Face.counterability = ProjectedCharacteristics.counterability c,
+            Face.copyability = ProjectedCharacteristics.copyability c,
+            Face.additionalCosts = kept (ProjectedCharacteristics.additionalCosts c),
+            Face.additionalCostChoices = kept (ProjectedCharacteristics.additionalCostChoices c),
+            Face.alternativeCosts = kept (ProjectedCharacteristics.alternativeCosts c) <> ProjectedCharacteristics.grantedAlternativeCosts c,
+            Face.costReductions = kept (ProjectedCharacteristics.costReductions c) <> ProjectedCharacteristics.grantedCostReductions c,
+            Face.castingRestrictions = kept (ProjectedCharacteristics.castingRestrictions c)
+          }
 
 -- | What an object no card data prints says, an emblem's abilities (CR
--- 114.3) say: each rendered as Oracle text words it, where it is.
+-- 114.3) say: each the renderer words, and a note when it can't word one.
 abilityLines :: ProjectedCharacteristics.ProjectedCharacteristics -> [Text.Text]
 abilityLines c =
-  let self = Text.intercalate (Text.pack " // ") (fmap CardName.unwrap (Set.toList (ProjectedCharacteristics.names c)))
-      context = Oracle.contextOf self []
-   in concatMap (take 1) $
-        fmap (Oracle.Continuous.static context Nothing []) (ProjectedCharacteristics.staticAbilities c)
-          <> fmap (Oracle.Continuous.playerRule context) (ProjectedCharacteristics.playerAbilities c)
-          <> fmap (Oracle.activated context) (ProjectedCharacteristics.activatedAbilities c)
-          <> fmap (Oracle.triggered context False) (ProjectedCharacteristics.triggeredAbilities c)
+  let self = CardName.MkCardName (Text.intercalate (Text.pack " // ") (fmap CardName.unwrap (Set.toList (ProjectedCharacteristics.names c))))
+      bare = Oracle.Face.bare self Nothing Nothing Set.empty TypeLine.empty Nothing Nothing Map.empty
+      worded = Oracle.faceAbilities (current c bare)
+   in concatMap (take 1) worded <> [Text.pack "It has abilities this can't word yet." | any null worded]
 
 -- | What the sheet shows of the object it reads.
 data Reading = MkReading
