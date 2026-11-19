@@ -1,0 +1,155 @@
+{
+  "faces": [
+    {
+      "manaCost": [],
+      "name": "Thran Portal",
+      "oracleText": "This land enters tapped unless you control two or fewer other lands.\nAs this land enters, choose a basic land type.\nThis land is the chosen type in addition to its other types.\nMana abilities of this land cost an additional 1 life to activate.",
+      "playerAbilities": [
+        {
+          "effect": {
+            "type": "ModifyCost",
+            "value": {
+              "change": {
+                "type": "Add",
+                "value": {
+                  "components": [
+                    {
+                      "type": "PayLife",
+                      "value": {
+                        "type": "Fixed",
+                        "value": 1
+                      }
+                    }
+                  ]
+                }
+              },
+              "matching": {
+                "type": "IsSource"
+              },
+              "subject": {
+                "type": "Activations",
+                "value": {
+                  "whichKind": "ManaAbility"
+                }
+              }
+            }
+          },
+          "scope": {
+            "type": "AnyPlayer"
+          }
+        }
+      ],
+      "replacementEffects": [
+        {
+          "condition": {
+            "type": "Compares",
+            "value": {
+              "comparison": "AtLeast",
+              "measured": {
+                "type": "Count",
+                "value": {
+                  "aggregation": {
+                    "type": "Members"
+                  },
+                  "filter": {
+                    "type": "And",
+                    "value": [
+                      {
+                        "type": "Not",
+                        "value": {
+                          "type": "IsSource"
+                        }
+                      },
+                      {
+                        "type": "HasCardType",
+                        "value": "Land"
+                      },
+                      {
+                        "type": "HeldBy",
+                        "value": {
+                          "holder": "Controller",
+                          "relation": "You"
+                        }
+                      }
+                    ]
+                  },
+                  "scope": {
+                    "type": "InZone",
+                    "value": {
+                      "player": {
+                        "type": "Relative",
+                        "value": "AnyPlayer"
+                      },
+                      "zone": "Battlefield"
+                    }
+                  }
+                }
+              },
+              "threshold": {
+                "type": "Literal",
+                "value": 3
+              }
+            }
+          },
+          "effect": {
+            "type": "EntryR",
+            "value": {
+              "matching": {
+                "type": "IsSource"
+              },
+              "rewrite": {
+                "type": "Tapped"
+              }
+            }
+          }
+        },
+        {
+          "effect": {
+            "type": "EntryR",
+            "value": {
+              "matching": {
+                "type": "IsSource"
+              },
+              "rewrite": {
+                "type": "ChooseQuality",
+                "value": {
+                  "type": "Subtype",
+                  "value": {
+                    "family": "BasicLandType"
+                  }
+                }
+              }
+            }
+          }
+        }
+      ],
+      "staticAbilities": [
+        {
+          "affected": {
+            "type": "Matching",
+            "value": {
+              "type": "IsSource"
+            }
+          },
+          "modifications": [
+            {
+              "type": "ChosenSubtype",
+              "value": {
+                "family": "BasicLandType",
+                "mode": "InAddition"
+              }
+            }
+          ]
+        }
+      ],
+      "typeLine": {
+        "subtypes": [
+          "Gate"
+        ],
+        "types": [
+          "Land"
+        ]
+      }
+    }
+  ]
+}

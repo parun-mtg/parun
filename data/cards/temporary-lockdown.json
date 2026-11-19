@@ -1,0 +1,86 @@
+{
+  "faces": [
+    {
+      "manaCost": [
+        {
+          "type": "Generic",
+          "value": 1
+        },
+        {
+          "type": "OfType",
+          "value": {
+            "type": "Colored",
+            "value": "White"
+          }
+        },
+        {
+          "type": "OfType",
+          "value": {
+            "type": "Colored",
+            "value": "White"
+          }
+        }
+      ],
+      "name": "Temporary Lockdown",
+      "oracleText": "When this enchantment enters, exile each nonland permanent with mana value 2 or less until this enchantment leaves the battlefield.",
+      "triggeredAbilities": [
+        {
+          "condition": {
+            "type": "Enters",
+            "value": {}
+          },
+          "modal": {
+            "modes": [
+              {
+                "clauses": [
+                  {
+                    "effects": [
+                      {
+                        "type": "MoveToZone",
+                        "value": {
+                          "duration": "UntilSourceLeavesTheBattlefield",
+                          "ref": {
+                            "type": "EachMatching",
+                            "value": {
+                              "type": "And",
+                              "value": [
+                                {
+                                  "type": "Not",
+                                  "value": {
+                                    "type": "HasCardType",
+                                    "value": "Land"
+                                  }
+                                },
+                                {
+                                  "type": "Measures",
+                                  "value": {
+                                    "comparison": "AtMost",
+                                    "measure": "ManaValue",
+                                    "operand": {
+                                      "type": "Literal",
+                                      "value": 2
+                                    }
+                                  }
+                                }
+                              ]
+                            }
+                          },
+                          "zone": "Exile"
+                        }
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          }
+        }
+      ],
+      "typeLine": {
+        "types": [
+          "Enchantment"
+        ]
+      }
+    }
+  ]
+}

@@ -1,0 +1,392 @@
+{
+  "faces": [
+    {
+      "keywords": [
+        {
+          "type": "ReadAhead"
+        }
+      ],
+      "manaCost": [
+        {
+          "type": "Generic",
+          "value": 2
+        },
+        {
+          "type": "OfType",
+          "value": {
+            "type": "Colored",
+            "value": "Blue"
+          }
+        },
+        {
+          "type": "OfType",
+          "value": {
+            "type": "Colored",
+            "value": "Blue"
+          }
+        }
+      ],
+      "name": "The Phasing of Zhalfir",
+      "oracleText": "Read ahead (Choose a chapter and start with that many lore counters. Add one after your draw step. Skipped chapters don't trigger. Sacrifice after III.)\nI, II — Another target nonland permanent phases out. It can't phase in for as long as you control this Saga.\nIII — Destroy all creatures. For each creature destroyed this way, its controller creates a 2/2 black Phyrexian creature token.",
+      "triggeredAbilities": [
+        {
+          "condition": {
+            "type": "CountersChange",
+            "value": {
+              "kind": {
+                "type": "OfKind",
+                "value": {
+                  "type": "Lore"
+                }
+              },
+              "motion": {
+                "type": "Put",
+                "value": "AnyPlayer"
+              },
+              "threshold": 1
+            }
+          },
+          "modal": {
+            "modes": [
+              {
+                "clauses": [
+                  {
+                    "effects": [
+                      {
+                        "type": "Prohibit",
+                        "value": {
+                          "affected": {
+                            "type": "Named",
+                            "value": {
+                              "type": "InSlot",
+                              "value": "target"
+                            }
+                          },
+                          "duration": {
+                            "type": "ForAsLongAs",
+                            "value": {
+                              "type": "Compares",
+                              "value": {
+                                "comparison": "Exactly",
+                                "measured": {
+                                  "type": "Count",
+                                  "value": {
+                                    "aggregation": {
+                                      "type": "Members"
+                                    },
+                                    "filter": {
+                                      "type": "And",
+                                      "value": [
+                                        {
+                                          "type": "IsSource"
+                                        },
+                                        {
+                                          "type": "HeldBy",
+                                          "value": {
+                                            "holder": "Controller",
+                                            "relation": "You"
+                                          }
+                                        }
+                                      ]
+                                    },
+                                    "scope": {
+                                      "type": "InZone",
+                                      "value": {
+                                        "player": {
+                                          "type": "Relative",
+                                          "value": "AnyPlayer"
+                                        },
+                                        "zone": "Battlefield"
+                                      }
+                                    }
+                                  }
+                                },
+                                "threshold": {
+                                  "type": "Literal",
+                                  "value": 1
+                                }
+                              }
+                            }
+                          },
+                          "what": {
+                            "type": "PhaseIn"
+                          }
+                        }
+                      },
+                      {
+                        "type": "PhaseOut",
+                        "value": {
+                          "ref": {
+                            "type": "InSlot",
+                            "value": "target"
+                          }
+                        }
+                      }
+                    ]
+                  }
+                ],
+                "targetSlots": {
+                  "target": {
+                    "filter": {
+                      "type": "And",
+                      "value": [
+                        {
+                          "type": "Not",
+                          "value": {
+                            "type": "HasCardType",
+                            "value": "Land"
+                          }
+                        },
+                        {
+                          "type": "Not",
+                          "value": {
+                            "type": "IsSource"
+                          }
+                        }
+                      ]
+                    },
+                    "pool": {
+                      "type": "Permanents"
+                    }
+                  }
+                }
+              }
+            ]
+          }
+        },
+        {
+          "condition": {
+            "type": "CountersChange",
+            "value": {
+              "kind": {
+                "type": "OfKind",
+                "value": {
+                  "type": "Lore"
+                }
+              },
+              "motion": {
+                "type": "Put",
+                "value": "AnyPlayer"
+              },
+              "threshold": 2
+            }
+          },
+          "modal": {
+            "modes": [
+              {
+                "clauses": [
+                  {
+                    "effects": [
+                      {
+                        "type": "Prohibit",
+                        "value": {
+                          "affected": {
+                            "type": "Named",
+                            "value": {
+                              "type": "InSlot",
+                              "value": "target"
+                            }
+                          },
+                          "duration": {
+                            "type": "ForAsLongAs",
+                            "value": {
+                              "type": "Compares",
+                              "value": {
+                                "comparison": "Exactly",
+                                "measured": {
+                                  "type": "Count",
+                                  "value": {
+                                    "aggregation": {
+                                      "type": "Members"
+                                    },
+                                    "filter": {
+                                      "type": "And",
+                                      "value": [
+                                        {
+                                          "type": "IsSource"
+                                        },
+                                        {
+                                          "type": "HeldBy",
+                                          "value": {
+                                            "holder": "Controller",
+                                            "relation": "You"
+                                          }
+                                        }
+                                      ]
+                                    },
+                                    "scope": {
+                                      "type": "InZone",
+                                      "value": {
+                                        "player": {
+                                          "type": "Relative",
+                                          "value": "AnyPlayer"
+                                        },
+                                        "zone": "Battlefield"
+                                      }
+                                    }
+                                  }
+                                },
+                                "threshold": {
+                                  "type": "Literal",
+                                  "value": 1
+                                }
+                              }
+                            }
+                          },
+                          "what": {
+                            "type": "PhaseIn"
+                          }
+                        }
+                      },
+                      {
+                        "type": "PhaseOut",
+                        "value": {
+                          "ref": {
+                            "type": "InSlot",
+                            "value": "target"
+                          }
+                        }
+                      }
+                    ]
+                  }
+                ],
+                "targetSlots": {
+                  "target": {
+                    "filter": {
+                      "type": "And",
+                      "value": [
+                        {
+                          "type": "Not",
+                          "value": {
+                            "type": "HasCardType",
+                            "value": "Land"
+                          }
+                        },
+                        {
+                          "type": "Not",
+                          "value": {
+                            "type": "IsSource"
+                          }
+                        }
+                      ]
+                    },
+                    "pool": {
+                      "type": "Permanents"
+                    }
+                  }
+                }
+              }
+            ]
+          }
+        },
+        {
+          "condition": {
+            "type": "CountersChange",
+            "value": {
+              "kind": {
+                "type": "OfKind",
+                "value": {
+                  "type": "Lore"
+                }
+              },
+              "motion": {
+                "type": "Put",
+                "value": "AnyPlayer"
+              },
+              "threshold": 3
+            }
+          },
+          "modal": {
+            "modes": [
+              {
+                "clauses": [
+                  {
+                    "effects": [
+                      {
+                        "type": "Destroy",
+                        "value": {
+                          "permanents": "destroyed",
+                          "ref": {
+                            "type": "EachMatching",
+                            "value": {
+                              "type": "HasCardType",
+                              "value": "Creature"
+                            }
+                          },
+                          "regenerability": "Regenerable"
+                        }
+                      },
+                      {
+                        "type": "ForEach",
+                        "value": {
+                          "body": [
+                            {
+                              "type": "Create",
+                              "value": {
+                                "card": {
+                                  "faces": [
+                                    {
+                                      "colorIndicator": [
+                                        "Black"
+                                      ],
+                                      "name": "Phyrexian Token",
+                                      "power": {
+                                        "type": "Literal",
+                                        "value": 2
+                                      },
+                                      "toughness": {
+                                        "type": "Literal",
+                                        "value": 2
+                                      },
+                                      "typeLine": {
+                                        "subtypes": [
+                                          "Phyrexian"
+                                        ],
+                                        "types": [
+                                          "Creature"
+                                        ]
+                                      }
+                                    }
+                                  ]
+                                },
+                                "creator": {
+                                  "type": "HolderOfBound",
+                                  "value": {
+                                    "holder": "Controller",
+                                    "hop": "Itself",
+                                    "slot": "victim"
+                                  }
+                                },
+                                "quantity": {
+                                  "type": "Literal",
+                                  "value": 1
+                                }
+                              }
+                            }
+                          ],
+                          "ref": {
+                            "type": "InSlot",
+                            "value": "destroyed"
+                          },
+                          "slot": "victim"
+                        }
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          }
+        }
+      ],
+      "typeLine": {
+        "subtypes": [
+          "Saga"
+        ],
+        "types": [
+          "Enchantment"
+        ]
+      }
+    }
+  ]
+}

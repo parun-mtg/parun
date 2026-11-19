@@ -1,0 +1,200 @@
+{
+  "faces": [
+    {
+      "activatedAbilities": [
+        {
+          "cost": {
+            "components": [
+              {
+                "type": "TapThis"
+              }
+            ],
+            "mana": [
+              {
+                "type": "Generic",
+                "value": 3
+              },
+              {
+                "type": "OfType",
+                "value": {
+                  "type": "Colored",
+                  "value": "Black"
+                }
+              }
+            ]
+          },
+          "modal": {
+            "modes": [
+              {
+                "clauses": [
+                  {
+                    "effects": [
+                      {
+                        "type": "Discard",
+                        "value": {
+                          "type": "Counted",
+                          "value": {
+                            "player": {
+                              "type": "Relative",
+                              "value": "Opponent"
+                            },
+                            "quantity": {
+                              "type": "Literal",
+                              "value": 1
+                            }
+                          }
+                        }
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          },
+          "restrictions": [
+            {
+              "type": "SorcerySpeed"
+            }
+          ]
+        }
+      ],
+      "manaCost": [
+        {
+          "type": "Generic",
+          "value": 1
+        },
+        {
+          "type": "OfType",
+          "value": {
+            "type": "Colored",
+            "value": "Black"
+          }
+        }
+      ],
+      "name": "The Raven Man",
+      "oracleText": "At the beginning of each end step, if a player discarded a card this turn, create a 1/1 black Bird creature token with flying and \"This token can't block.\"\n{3}{B}, {T}: Each opponent discards a card. Activate only as a sorcery.",
+      "power": {
+        "type": "Literal",
+        "value": 2
+      },
+      "toughness": {
+        "type": "Literal",
+        "value": 1
+      },
+      "triggeredAbilities": [
+        {
+          "condition": {
+            "type": "StepBegins",
+            "value": {
+              "phase": {
+                "type": "Ending",
+                "value": "EndStep"
+              },
+              "scope": {
+                "type": "PlayersTurn",
+                "value": {
+                  "type": "Relative",
+                  "value": "AnyPlayer"
+                }
+              }
+            }
+          },
+          "intervening": {
+            "type": "Compares",
+            "value": {
+              "comparison": "AtLeast",
+              "measured": {
+                "type": "CardsDiscardedThisTurn",
+                "value": {
+                  "type": "Relative",
+                  "value": "AnyPlayer"
+                }
+              },
+              "threshold": {
+                "type": "Literal",
+                "value": 1
+              }
+            }
+          },
+          "modal": {
+            "modes": [
+              {
+                "clauses": [
+                  {
+                    "effects": [
+                      {
+                        "type": "Create",
+                        "value": {
+                          "card": {
+                            "faces": [
+                              {
+                                "colorIndicator": [
+                                  "Black"
+                                ],
+                                "combatRestrictions": [
+                                  {
+                                    "type": "CantBlock",
+                                    "value": {
+                                      "affected": {
+                                        "type": "Matching",
+                                        "value": {
+                                          "type": "IsSource"
+                                        }
+                                      }
+                                    }
+                                  }
+                                ],
+                                "keywords": [
+                                  {
+                                    "type": "Flying"
+                                  }
+                                ],
+                                "name": "Bird Token",
+                                "power": {
+                                  "type": "Literal",
+                                  "value": 1
+                                },
+                                "toughness": {
+                                  "type": "Literal",
+                                  "value": 1
+                                },
+                                "typeLine": {
+                                  "subtypes": [
+                                    "Bird"
+                                  ],
+                                  "types": [
+                                    "Creature"
+                                  ]
+                                }
+                              }
+                            ]
+                          },
+                          "quantity": {
+                            "type": "Literal",
+                            "value": 1
+                          }
+                        }
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          }
+        }
+      ],
+      "typeLine": {
+        "subtypes": [
+          "Human",
+          "Wizard"
+        ],
+        "supertypes": [
+          "Legendary"
+        ],
+        "types": [
+          "Creature"
+        ]
+      }
+    }
+  ]
+}

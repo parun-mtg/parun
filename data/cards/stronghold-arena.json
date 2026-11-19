@@ -1,0 +1,200 @@
+{
+  "faces": [
+    {
+      "keywords": [
+        {
+          "type": "Kicker",
+          "value": {
+            "mana": [
+              {
+                "type": "OfType",
+                "value": {
+                  "type": "Colored",
+                  "value": "White"
+                }
+              }
+            ]
+          }
+        },
+        {
+          "type": "Kicker",
+          "value": {
+            "mana": [
+              {
+                "type": "OfType",
+                "value": {
+                  "type": "Colored",
+                  "value": "Green"
+                }
+              }
+            ]
+          }
+        }
+      ],
+      "manaCost": [
+        {
+          "type": "Generic",
+          "value": 1
+        },
+        {
+          "type": "OfType",
+          "value": {
+            "type": "Colored",
+            "value": "Black"
+          }
+        }
+      ],
+      "name": "Stronghold Arena",
+      "oracleText": "Kicker {G} and/or {W} (You may pay an additional {G} and/or {W} as you cast this spell.)\nWhen this enchantment enters, you gain 3 life for each time it was kicked.\nWhenever one or more creatures you control deal combat damage to a player, you may reveal the top card of your library and put it into your hand. If you do, you lose life equal to its mana value.",
+      "triggeredAbilities": [
+        {
+          "condition": {
+            "type": "Enters",
+            "value": {}
+          },
+          "modal": {
+            "modes": [
+              {
+                "clauses": [
+                  {
+                    "effects": [
+                      {
+                        "type": "GainLife",
+                        "value": {
+                          "player": {
+                            "type": "Relative",
+                            "value": "You"
+                          },
+                          "quantity": {
+                            "type": "Times",
+                            "value": {
+                              "factor": {
+                                "type": "Literal",
+                                "value": 3
+                              },
+                              "quantity": {
+                                "type": "TimesPaid",
+                                "value": {
+                                  "type": "Printed",
+                                  "value": "Kicker"
+                                }
+                              }
+                            }
+                          }
+                        }
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "condition": {
+            "type": "PermanentsDealDamageToPlayer",
+            "value": {
+              "filter": {
+                "type": "And",
+                "value": [
+                  {
+                    "type": "HasCardType",
+                    "value": "Creature"
+                  },
+                  {
+                    "type": "HeldBy",
+                    "value": {
+                      "holder": "Controller",
+                      "relation": "You"
+                    }
+                  }
+                ]
+              },
+              "kind": "Combat",
+              "recipient": "AnyPlayer"
+            }
+          },
+          "modal": {
+            "modes": [
+              {
+                "clauses": [
+                  {
+                    "effects": [
+                      {
+                        "type": "Reveal",
+                        "value": {
+                          "ref": {
+                            "type": "TopOfLibrary",
+                            "value": {
+                              "count": {
+                                "type": "Literal",
+                                "value": 1
+                              },
+                              "player": {
+                                "type": "Relative",
+                                "value": "You"
+                              }
+                            }
+                          },
+                          "slot": "revealed"
+                        }
+                      },
+                      {
+                        "type": "MoveToZone",
+                        "value": {
+                          "ref": {
+                            "type": "InSlot",
+                            "value": "revealed"
+                          },
+                          "slot": "put",
+                          "zone": "Hand"
+                        }
+                      },
+                      {
+                        "type": "LoseLife",
+                        "value": {
+                          "player": {
+                            "type": "Relative",
+                            "value": "You"
+                          },
+                          "quantity": {
+                            "type": "Count",
+                            "value": {
+                              "aggregation": {
+                                "type": "Total",
+                                "value": {
+                                  "type": "Measure",
+                                  "value": "ManaValue"
+                                }
+                              },
+                              "filter": {
+                                "type": "IsBound",
+                                "value": "put"
+                              },
+                              "scope": {
+                                "type": "OverBound",
+                                "value": "put"
+                              }
+                            }
+                          }
+                        }
+                      }
+                    ],
+                    "optionality": {
+                      "type": "Optional"
+                    }
+                  }
+                ]
+              }
+            ]
+          }
+        }
+      ],
+      "typeLine": {
+        "types": [
+          "Enchantment"
+        ]
+      }
+    }
+  ]
+}

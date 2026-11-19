@@ -1,0 +1,226 @@
+{
+  "board": {
+    "active": "alice",
+    "seats": [
+      {
+        "battlefield": [
+          {
+            "card": "Swamp",
+            "label": "s1"
+          },
+          {
+            "card": "Swamp",
+            "label": "s2"
+          },
+          {
+            "card": "Swamp",
+            "label": "s3"
+          },
+          {
+            "card": "Swamp",
+            "label": "s4"
+          },
+          {
+            "card": "The Raven Man",
+            "label": "raven",
+            "ready": true
+          },
+          {
+            "card": "Wall of Wood",
+            "label": "wall"
+          }
+        ],
+        "hand": [],
+        "library": [
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          }
+        ],
+        "name": "alice"
+      },
+      {
+        "battlefield": [
+          {
+            "card": "Grizzly Bears",
+            "label": "bbear",
+            "ready": true
+          }
+        ],
+        "hand": [
+          {
+            "card": "Hill Giant",
+            "label": "bcard"
+          }
+        ],
+        "library": [
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          }
+        ],
+        "name": "bob"
+      }
+    ],
+    "step": "PrecombatMain"
+  },
+  "description": "CR 603.4 / 509.1b: The Raven Man's sorcery-speed activation makes each opponent discard a card; at the beginning of each end step, if a player discarded a card this turn, it creates a 1/1 black Bird with flying and \"This token can't block\"",
+  "note": "bob's turn, with no discard, makes no second Bird. The Bird is offered as no blocker while the Wall of Wood blocks.",
+  "timeline": [
+    {
+      "do": {
+        "Activate": {
+          "mana": [
+            "$s1",
+            "$s2",
+            "$s3",
+            "$s4"
+          ],
+          "object": "$raven"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": "Pass",
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Count": {
+          "card": "Hill Giant",
+          "count": 1,
+          "player": "bob",
+          "zone": "Graveyard"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": "Pass",
+      "player": "alice",
+      "step": "EndStep",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Count": {
+          "card": "Bird Token",
+          "count": 1,
+          "player": "alice",
+          "zone": "Battlefield"
+        }
+      },
+      "player": "alice",
+      "step": "EndStep",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Keywords": {
+          "count": 1,
+          "keyword": {
+            "type": "Flying"
+          },
+          "object": "Bird Token"
+        }
+      },
+      "player": "alice",
+      "step": "EndStep",
+      "turn": 1
+    },
+    {
+      "check": {
+        "PowerToughness": {
+          "object": "Bird Token",
+          "power": 1,
+          "toughness": 1
+        }
+      },
+      "player": "alice",
+      "step": "EndStep",
+      "turn": 1
+    },
+    {
+      "do": {
+        "Attack": [
+          "$bbear"
+        ]
+      },
+      "player": "bob",
+      "step": "DeclareAttackers",
+      "turn": 2
+    },
+    {
+      "player": "alice",
+      "refuse": {
+        "Block": {
+          "Bird Token": [
+            "$bbear"
+          ]
+        }
+      },
+      "step": "DeclareBlockers",
+      "turn": 2
+    },
+    {
+      "do": {
+        "Block": {
+          "$wall": [
+            "$bbear"
+          ]
+        }
+      },
+      "player": "alice",
+      "step": "DeclareBlockers",
+      "turn": 2
+    },
+    {
+      "check": {
+        "Count": {
+          "card": "Bird Token",
+          "count": 1,
+          "player": "alice",
+          "zone": "Battlefield"
+        }
+      },
+      "player": "alice",
+      "step": "Upkeep",
+      "turn": 3
+    }
+  ]
+}

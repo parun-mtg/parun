@@ -1,0 +1,410 @@
+{
+  "faces": [
+    {
+      "keywords": [
+        {
+          "type": "ReadAhead"
+        }
+      ],
+      "manaCost": [
+        {
+          "type": "Generic",
+          "value": 5
+        },
+        {
+          "type": "OfType",
+          "value": {
+            "type": "Colored",
+            "value": "Green"
+          }
+        },
+        {
+          "type": "OfType",
+          "value": {
+            "type": "Colored",
+            "value": "Green"
+          }
+        }
+      ],
+      "name": "The World Spell",
+      "oracleText": "Read ahead (Choose a chapter and start with that many lore counters. Add one after your draw step. Skipped chapters don't trigger. Sacrifice after III.)\nI, II — Look at the top seven cards of your library. You may reveal a non-Saga permanent card from among them and put it into your hand. Put the rest on the bottom of your library in a random order.\nIII — Put up to two non-Saga permanent cards from your hand onto the battlefield.",
+      "triggeredAbilities": [
+        {
+          "condition": {
+            "type": "CountersChange",
+            "value": {
+              "kind": {
+                "type": "OfKind",
+                "value": {
+                  "type": "Lore"
+                }
+              },
+              "motion": {
+                "type": "Put",
+                "value": "AnyPlayer"
+              },
+              "threshold": 1
+            }
+          },
+          "modal": {
+            "modes": [
+              {
+                "clauses": [
+                  {
+                    "effects": [
+                      {
+                        "type": "LookAt",
+                        "value": {
+                          "ref": {
+                            "type": "TopOfLibrary",
+                            "value": {
+                              "count": {
+                                "type": "Literal",
+                                "value": 7
+                              },
+                              "player": {
+                                "type": "Relative",
+                                "value": "You"
+                              }
+                            }
+                          },
+                          "slot": "looked"
+                        }
+                      }
+                    ]
+                  },
+                  {
+                    "effects": [
+                      {
+                        "type": "Reveal",
+                        "value": {
+                          "ref": {
+                            "type": "ChosenCardFromAmong",
+                            "value": {
+                              "filter": {
+                                "type": "And",
+                                "value": [
+                                  {
+                                    "type": "Or",
+                                    "value": [
+                                      {
+                                        "type": "HasCardType",
+                                        "value": "Artifact"
+                                      },
+                                      {
+                                        "type": "HasCardType",
+                                        "value": "Battle"
+                                      },
+                                      {
+                                        "type": "HasCardType",
+                                        "value": "Creature"
+                                      },
+                                      {
+                                        "type": "HasCardType",
+                                        "value": "Enchantment"
+                                      },
+                                      {
+                                        "type": "HasCardType",
+                                        "value": "Land"
+                                      },
+                                      {
+                                        "type": "HasCardType",
+                                        "value": "Planeswalker"
+                                      }
+                                    ]
+                                  },
+                                  {
+                                    "type": "Not",
+                                    "value": {
+                                      "type": "HasSubtype",
+                                      "value": "Saga"
+                                    }
+                                  }
+                                ]
+                              },
+                              "slot": "looked"
+                            }
+                          },
+                          "slot": "taken"
+                        }
+                      },
+                      {
+                        "type": "MoveToZone",
+                        "value": {
+                          "ref": {
+                            "type": "InSlot",
+                            "value": "taken"
+                          },
+                          "zone": "Hand"
+                        }
+                      }
+                    ],
+                    "optionality": {
+                      "type": "Optional"
+                    }
+                  },
+                  {
+                    "effects": [
+                      {
+                        "type": "MoveToZone",
+                        "value": {
+                          "placement": {
+                            "type": "RandomOrder",
+                            "value": "Bottom"
+                          },
+                          "ref": {
+                            "type": "InSlot",
+                            "value": "looked"
+                          },
+                          "zone": "Library"
+                        }
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "condition": {
+            "type": "CountersChange",
+            "value": {
+              "kind": {
+                "type": "OfKind",
+                "value": {
+                  "type": "Lore"
+                }
+              },
+              "motion": {
+                "type": "Put",
+                "value": "AnyPlayer"
+              },
+              "threshold": 2
+            }
+          },
+          "modal": {
+            "modes": [
+              {
+                "clauses": [
+                  {
+                    "effects": [
+                      {
+                        "type": "LookAt",
+                        "value": {
+                          "ref": {
+                            "type": "TopOfLibrary",
+                            "value": {
+                              "count": {
+                                "type": "Literal",
+                                "value": 7
+                              },
+                              "player": {
+                                "type": "Relative",
+                                "value": "You"
+                              }
+                            }
+                          },
+                          "slot": "looked"
+                        }
+                      }
+                    ]
+                  },
+                  {
+                    "effects": [
+                      {
+                        "type": "Reveal",
+                        "value": {
+                          "ref": {
+                            "type": "ChosenCardFromAmong",
+                            "value": {
+                              "filter": {
+                                "type": "And",
+                                "value": [
+                                  {
+                                    "type": "Or",
+                                    "value": [
+                                      {
+                                        "type": "HasCardType",
+                                        "value": "Artifact"
+                                      },
+                                      {
+                                        "type": "HasCardType",
+                                        "value": "Battle"
+                                      },
+                                      {
+                                        "type": "HasCardType",
+                                        "value": "Creature"
+                                      },
+                                      {
+                                        "type": "HasCardType",
+                                        "value": "Enchantment"
+                                      },
+                                      {
+                                        "type": "HasCardType",
+                                        "value": "Land"
+                                      },
+                                      {
+                                        "type": "HasCardType",
+                                        "value": "Planeswalker"
+                                      }
+                                    ]
+                                  },
+                                  {
+                                    "type": "Not",
+                                    "value": {
+                                      "type": "HasSubtype",
+                                      "value": "Saga"
+                                    }
+                                  }
+                                ]
+                              },
+                              "slot": "looked"
+                            }
+                          },
+                          "slot": "taken"
+                        }
+                      },
+                      {
+                        "type": "MoveToZone",
+                        "value": {
+                          "ref": {
+                            "type": "InSlot",
+                            "value": "taken"
+                          },
+                          "zone": "Hand"
+                        }
+                      }
+                    ],
+                    "optionality": {
+                      "type": "Optional"
+                    }
+                  },
+                  {
+                    "effects": [
+                      {
+                        "type": "MoveToZone",
+                        "value": {
+                          "placement": {
+                            "type": "RandomOrder",
+                            "value": "Bottom"
+                          },
+                          "ref": {
+                            "type": "InSlot",
+                            "value": "looked"
+                          },
+                          "zone": "Library"
+                        }
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "condition": {
+            "type": "CountersChange",
+            "value": {
+              "kind": {
+                "type": "OfKind",
+                "value": {
+                  "type": "Lore"
+                }
+              },
+              "motion": {
+                "type": "Put",
+                "value": "AnyPlayer"
+              },
+              "threshold": 3
+            }
+          },
+          "modal": {
+            "modes": [
+              {
+                "clauses": [
+                  {
+                    "effects": [
+                      {
+                        "type": "MoveToZone",
+                        "value": {
+                          "ref": {
+                            "type": "ChosenCardInHand",
+                            "value": {
+                              "count": {
+                                "type": "UpTo",
+                                "value": {
+                                  "type": "Literal",
+                                  "value": 2
+                                }
+                              },
+                              "filter": {
+                                "type": "And",
+                                "value": [
+                                  {
+                                    "type": "Or",
+                                    "value": [
+                                      {
+                                        "type": "HasCardType",
+                                        "value": "Artifact"
+                                      },
+                                      {
+                                        "type": "HasCardType",
+                                        "value": "Battle"
+                                      },
+                                      {
+                                        "type": "HasCardType",
+                                        "value": "Creature"
+                                      },
+                                      {
+                                        "type": "HasCardType",
+                                        "value": "Enchantment"
+                                      },
+                                      {
+                                        "type": "HasCardType",
+                                        "value": "Land"
+                                      },
+                                      {
+                                        "type": "HasCardType",
+                                        "value": "Planeswalker"
+                                      }
+                                    ]
+                                  },
+                                  {
+                                    "type": "Not",
+                                    "value": {
+                                      "type": "HasSubtype",
+                                      "value": "Saga"
+                                    }
+                                  }
+                                ]
+                              },
+                              "player": {
+                                "type": "Relative",
+                                "value": "You"
+                              }
+                            }
+                          },
+                          "zone": "Battlefield"
+                        }
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          }
+        }
+      ],
+      "typeLine": {
+        "subtypes": [
+          "Saga"
+        ],
+        "types": [
+          "Enchantment"
+        ]
+      }
+    }
+  ]
+}

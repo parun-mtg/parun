@@ -1,0 +1,214 @@
+{
+  "board": {
+    "active": "alice",
+    "seats": [
+      {
+        "battlefield": [
+          {
+            "card": "Plains",
+            "label": "p1"
+          },
+          {
+            "card": "Plains",
+            "label": "p2"
+          }
+        ],
+        "hand": [
+          {
+            "card": "Thran Portal",
+            "label": "portal"
+          },
+          {
+            "card": "Thran Portal",
+            "label": "portal2"
+          },
+          {
+            "card": "Merfolk of the Pearl Trident",
+            "label": "opt"
+          }
+        ],
+        "library": [
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          }
+        ],
+        "name": "alice"
+      },
+      {
+        "battlefield": [],
+        "hand": [],
+        "library": [
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          }
+        ],
+        "name": "bob"
+      }
+    ],
+    "step": "PrecombatMain"
+  },
+  "description": "CR 614.1d / 305.7 / 605.1a: Thran Portal enters tapped unless you control two or fewer other lands, is the basic land type chosen as it enters in addition to Gate, and its mana abilities cost an additional 1 life",
+  "note": "The first Portal, beside two Plains, enters untapped and taps for {U} as an Island at the cost of 1 life; the second, beside three lands, enters tapped.",
+  "timeline": [
+    {
+      "do": {
+        "PlayLand": "$portal"
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": {
+        "Answer": {
+          "prompt": "ChooseBasicLandType",
+          "with": "Island"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Tapped": {
+          "object": "Thran Portal#2",
+          "tapped": false
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Subtypes": {
+          "object": "Thran Portal#2",
+          "subtypes": [
+            "Gate",
+            "Island"
+          ]
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": {
+        "Cast": {
+          "mana": [
+            "Thran Portal#2",
+            null
+          ],
+          "object": "$opt"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": "Pass",
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Life": {
+          "life": 19,
+          "player": "alice"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": {
+        "PlayLand": "$portal2"
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 3
+    },
+    {
+      "do": {
+        "Answer": {
+          "prompt": "ChooseReplacement",
+          "with": 0
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 3
+    },
+    {
+      "do": {
+        "Answer": {
+          "prompt": "ChooseBasicLandType",
+          "with": "Swamp"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 3
+    },
+    {
+      "check": {
+        "Tapped": {
+          "object": "Thran Portal#2",
+          "tapped": true
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 3
+    },
+    {
+      "check": {
+        "Subtypes": {
+          "object": "Thran Portal#2",
+          "subtypes": [
+            "Gate",
+            "Swamp"
+          ]
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 3
+    }
+  ]
+}

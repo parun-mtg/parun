@@ -1,0 +1,145 @@
+{
+  "faces": [
+    {
+      "keywords": [
+        {
+          "type": "Kicker",
+          "value": {
+            "mana": [
+              {
+                "type": "Generic",
+                "value": 2
+              },
+              {
+                "type": "OfType",
+                "value": {
+                  "type": "Colored",
+                  "value": "White"
+                }
+              }
+            ]
+          }
+        }
+      ],
+      "manaCost": [
+        {
+          "type": "OfType",
+          "value": {
+            "type": "Colored",
+            "value": "Green"
+          }
+        }
+      ],
+      "name": "Strength of the Coalition",
+      "oracleText": "Kicker {2}{W} (You may pay an additional {2}{W} as you cast this spell.)\nTarget creature you control gets +2/+2 until end of turn. If this spell was kicked, put a +1/+1 counter on each creature you control.",
+      "spell": {
+        "modes": [
+          {
+            "clauses": [
+              {
+                "effects": [
+                  {
+                    "type": "ModifyTarget",
+                    "value": {
+                      "duration": {
+                        "type": "UntilEndOfTurn"
+                      },
+                      "modification": {
+                        "type": "ModifyPowerToughness",
+                        "value": {
+                          "power": {
+                            "type": "Literal",
+                            "value": 2
+                          },
+                          "toughness": {
+                            "type": "Literal",
+                            "value": 2
+                          }
+                        }
+                      },
+                      "ref": {
+                        "type": "InSlot",
+                        "value": "target"
+                      }
+                    }
+                  }
+                ]
+              },
+              {
+                "condition": {
+                  "type": "Compares",
+                  "value": {
+                    "comparison": "AtLeast",
+                    "measured": {
+                      "type": "TimesPaid",
+                      "value": {
+                        "type": "Printed",
+                        "value": "Kicker"
+                      }
+                    },
+                    "threshold": {
+                      "type": "Literal",
+                      "value": 1
+                    }
+                  }
+                },
+                "effects": [
+                  {
+                    "type": "PutCounters",
+                    "value": {
+                      "kind": {
+                        "type": "PlusOnePlusOne"
+                      },
+                      "quantity": {
+                        "type": "Literal",
+                        "value": 1
+                      },
+                      "ref": {
+                        "type": "EachMatching",
+                        "value": {
+                          "type": "And",
+                          "value": [
+                            {
+                              "type": "HasCardType",
+                              "value": "Creature"
+                            },
+                            {
+                              "type": "HeldBy",
+                              "value": {
+                                "holder": "Controller",
+                                "relation": "You"
+                              }
+                            }
+                          ]
+                        }
+                      }
+                    }
+                  }
+                ]
+              }
+            ],
+            "targetSlots": {
+              "target": {
+                "filter": {
+                  "type": "HeldBy",
+                  "value": {
+                    "holder": "Controller",
+                    "relation": "You"
+                  }
+                },
+                "pool": {
+                  "type": "Creatures"
+                }
+              }
+            }
+          }
+        ]
+      },
+      "typeLine": {
+        "types": [
+          "Instant"
+        ]
+      }
+    }
+  ]
+}

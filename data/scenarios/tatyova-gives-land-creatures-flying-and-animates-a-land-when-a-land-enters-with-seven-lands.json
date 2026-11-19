@@ -1,0 +1,246 @@
+{
+  "board": {
+    "active": "alice",
+    "seats": [
+      {
+        "battlefield": [
+          {
+            "card": "Forest",
+            "label": "f1"
+          },
+          {
+            "card": "Forest",
+            "label": "f2"
+          },
+          {
+            "card": "Island",
+            "label": "i1"
+          },
+          {
+            "card": "Island",
+            "label": "i2"
+          },
+          {
+            "card": "Dryad Arbor",
+            "label": "arbor"
+          },
+          {
+            "card": "Tatyova, Steward of Tides",
+            "label": "tat",
+            "ready": true
+          }
+        ],
+        "hand": [
+          {
+            "card": "Forest",
+            "label": "hf1"
+          },
+          {
+            "card": "Forest",
+            "label": "hf2"
+          }
+        ],
+        "library": [
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          }
+        ],
+        "name": "alice"
+      },
+      {
+        "battlefield": [],
+        "hand": [],
+        "library": [
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          }
+        ],
+        "name": "bob"
+      }
+    ],
+    "step": "PrecombatMain"
+  },
+  "description": "CR 603.4 / 613.1d / 613.1f: Tatyova, Steward of Tides gives land creatures you control flying, and a land entering under your control while you control seven or more lands makes up to one target land a 3/3 Elemental creature with haste that is still a land",
+  "note": "The sixth land makes no trigger; the seventh, on alice's next turn, does. The animated Forest gains flying from Tatyova's first ability.",
+  "timeline": [
+    {
+      "check": {
+        "Keywords": {
+          "count": 1,
+          "keyword": {
+            "type": "Flying"
+          },
+          "object": "$arbor"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Keywords": {
+          "count": 0,
+          "keyword": {
+            "type": "Flying"
+          },
+          "object": "$tat"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": {
+        "PlayLand": "$hf1"
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "View": {
+          "is": [],
+          "of": "Stack"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": {
+        "Attack": []
+      },
+      "player": "alice",
+      "step": "DeclareAttackers",
+      "turn": 1
+    },
+    {
+      "do": {
+        "PlayLand": "$hf2"
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 3
+    },
+    {
+      "do": {
+        "ChooseTargets": {
+          "land": [
+            "$f1"
+          ]
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 3
+    },
+    {
+      "do": "Pass",
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 3
+    },
+    {
+      "check": {
+        "PowerToughness": {
+          "object": "$f1",
+          "power": 3,
+          "toughness": 3
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 3
+    },
+    {
+      "check": {
+        "Keywords": {
+          "count": 1,
+          "keyword": {
+            "type": "Haste"
+          },
+          "object": "$f1"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 3
+    },
+    {
+      "check": {
+        "Keywords": {
+          "count": 1,
+          "keyword": {
+            "type": "Flying"
+          },
+          "object": "$f1"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 3
+    },
+    {
+      "check": {
+        "Types": {
+          "object": "$f1",
+          "types": [
+            "Creature",
+            "Land"
+          ]
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 3
+    },
+    {
+      "check": {
+        "Subtypes": {
+          "object": "$f1",
+          "subtypes": [
+            "Elemental",
+            "Forest"
+          ]
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 3
+    }
+  ]
+}

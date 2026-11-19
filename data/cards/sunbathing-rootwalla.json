@@ -1,0 +1,161 @@
+{
+  "faces": [
+    {
+      "activatedAbilities": [
+        {
+          "cost": {
+            "mana": [
+              {
+                "type": "Generic",
+                "value": 3
+              },
+              {
+                "type": "OfType",
+                "value": {
+                  "type": "Colored",
+                  "value": "Green"
+                }
+              }
+            ]
+          },
+          "modal": {
+            "modes": [
+              {
+                "clauses": [
+                  {
+                    "effects": [
+                      {
+                        "type": "ModifyTarget",
+                        "value": {
+                          "duration": {
+                            "type": "UntilEndOfTurn"
+                          },
+                          "modification": {
+                            "type": "ModifyPowerToughness",
+                            "value": {
+                              "power": {
+                                "type": "Count",
+                                "value": {
+                                  "aggregation": {
+                                    "type": "Distinct",
+                                    "value": "BasicLandTypes"
+                                  },
+                                  "filter": {
+                                    "type": "And",
+                                    "value": [
+                                      {
+                                        "type": "HasCardType",
+                                        "value": "Land"
+                                      },
+                                      {
+                                        "type": "HeldBy",
+                                        "value": {
+                                          "holder": "Controller",
+                                          "relation": "You"
+                                        }
+                                      }
+                                    ]
+                                  },
+                                  "scope": {
+                                    "type": "InZone",
+                                    "value": {
+                                      "player": {
+                                        "type": "Relative",
+                                        "value": "AnyPlayer"
+                                      },
+                                      "zone": "Battlefield"
+                                    }
+                                  }
+                                }
+                              },
+                              "toughness": {
+                                "type": "Count",
+                                "value": {
+                                  "aggregation": {
+                                    "type": "Distinct",
+                                    "value": "BasicLandTypes"
+                                  },
+                                  "filter": {
+                                    "type": "And",
+                                    "value": [
+                                      {
+                                        "type": "HasCardType",
+                                        "value": "Land"
+                                      },
+                                      {
+                                        "type": "HeldBy",
+                                        "value": {
+                                          "holder": "Controller",
+                                          "relation": "You"
+                                        }
+                                      }
+                                    ]
+                                  },
+                                  "scope": {
+                                    "type": "InZone",
+                                    "value": {
+                                      "player": {
+                                        "type": "Relative",
+                                        "value": "AnyPlayer"
+                                      },
+                                      "zone": "Battlefield"
+                                    }
+                                  }
+                                }
+                              }
+                            }
+                          },
+                          "ref": {
+                            "type": "InSlot",
+                            "value": "self"
+                          }
+                        }
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          },
+          "restrictions": [
+            {
+              "type": "TimesEachTurn",
+              "value": 1
+            }
+          ]
+        }
+      ],
+      "manaCost": [
+        {
+          "type": "Generic",
+          "value": 1
+        },
+        {
+          "type": "OfType",
+          "value": {
+            "type": "Colored",
+            "value": "Green"
+          }
+        }
+      ],
+      "name": "Sunbathing Rootwalla",
+      "oracleText": "Domain — {3}{G}: Until end of turn, this creature gets +1/+1 for each basic land type among lands you control. Activate only once each turn.",
+      "power": {
+        "type": "Literal",
+        "value": 2
+      },
+      "toughness": {
+        "type": "Literal",
+        "value": 2
+      },
+      "typeLine": {
+        "subtypes": [
+          "Lizard"
+        ],
+        "types": [
+          "Creature"
+        ]
+      }
+    }
+  ]
+}

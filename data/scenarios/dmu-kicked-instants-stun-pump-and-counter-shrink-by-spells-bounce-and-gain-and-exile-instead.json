@@ -1,0 +1,673 @@
+{
+  "board": {
+    "active": "alice",
+    "seats": [
+      {
+        "battlefield": [
+          {
+            "card": "Plains",
+            "label": "p1"
+          },
+          {
+            "card": "Plains",
+            "label": "p2"
+          },
+          {
+            "card": "Plains",
+            "label": "p3"
+          },
+          {
+            "card": "Plains",
+            "label": "p4"
+          },
+          {
+            "card": "Island",
+            "label": "i1"
+          },
+          {
+            "card": "Island",
+            "label": "i2"
+          },
+          {
+            "card": "Island",
+            "label": "i3"
+          },
+          {
+            "card": "Island",
+            "label": "i4"
+          },
+          {
+            "card": "Forest",
+            "label": "f1"
+          },
+          {
+            "card": "Forest",
+            "label": "f2"
+          },
+          {
+            "card": "Forest",
+            "label": "f3"
+          },
+          {
+            "card": "Forest",
+            "label": "f4"
+          },
+          {
+            "card": "Swamp",
+            "label": "s1"
+          },
+          {
+            "card": "Swamp",
+            "label": "s2"
+          },
+          {
+            "card": "Swamp",
+            "label": "s3"
+          },
+          {
+            "card": "Swamp",
+            "label": "s4"
+          },
+          {
+            "card": "Mountain",
+            "label": "m1"
+          },
+          {
+            "card": "Mountain",
+            "label": "m2"
+          },
+          {
+            "card": "Mountain",
+            "label": "m3"
+          },
+          {
+            "card": "Mountain",
+            "label": "m4"
+          },
+          {
+            "card": "Mountain",
+            "label": "m5"
+          },
+          {
+            "card": "Mountain",
+            "label": "m6"
+          },
+          {
+            "card": "Mountain",
+            "label": "m7"
+          },
+          {
+            "card": "Mountain",
+            "label": "m8"
+          },
+          {
+            "card": "Mountain",
+            "label": "m9"
+          },
+          {
+            "card": "Mountain",
+            "label": "m10"
+          },
+          {
+            "card": "Mountain",
+            "label": "m11"
+          },
+          {
+            "card": "Mountain",
+            "label": "m12"
+          },
+          {
+            "card": "Llanowar Elves",
+            "label": "elf"
+          },
+          {
+            "card": "Wall of Wood",
+            "label": "wall"
+          }
+        ],
+        "graveyard": [
+          {
+            "card": "Divination"
+          }
+        ],
+        "hand": [
+          {
+            "card": "Stall for Time",
+            "label": "stall"
+          },
+          {
+            "card": "Strength of the Coalition",
+            "label": "strength"
+          },
+          {
+            "card": "Tribute to Urborg",
+            "label": "tribute"
+          },
+          {
+            "card": "Tribute to Urborg",
+            "label": "tribute2"
+          },
+          {
+            "card": "Tolarian Geyser",
+            "label": "geyser"
+          },
+          {
+            "card": "Tear Asunder",
+            "label": "tear"
+          },
+          {
+            "card": "Tear Asunder",
+            "label": "tear2"
+          }
+        ],
+        "library": [
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          }
+        ],
+        "name": "alice"
+      },
+      {
+        "battlefield": [
+          {
+            "card": "Grizzly Bears",
+            "label": "bear1"
+          },
+          {
+            "card": "Grizzly Bears",
+            "label": "bear2"
+          },
+          {
+            "card": "Colossal Dreadmaw",
+            "label": "maw"
+          },
+          {
+            "card": "Colossal Dreadmaw",
+            "label": "maw2"
+          },
+          {
+            "card": "Ornithopter",
+            "label": "thopter"
+          }
+        ],
+        "hand": [],
+        "library": [
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          }
+        ],
+        "name": "bob"
+      }
+    ],
+    "step": "PrecombatMain"
+  },
+  "description": "CR 702.33d / 608.2c / 601.2c: kicked, Stall for Time stuns the creatures it taps, Strength of the Coalition puts a +1/+1 counter on each creature you control, Tribute to Urborg shrinks by each instant and sorcery card in your graveyard, Tolarian Geyser gains 3 life, and Tear Asunder exiles a nonland permanent instead of an artifact or enchantment",
+  "note": "The kicked Tribute counts Stall for Time, Strength of the Coalition and Divination (-5/-5 total on a 6/6); the unkicked one, cast after it, gets only -2/-2. Unkicked, Tear Asunder offers only the Ornithopter, bound unasked; kicked, it exiles a creature.",
+  "timeline": [
+    {
+      "do": {
+        "Answer": {
+          "prompt": "ChooseKicker",
+          "with": 1
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": {
+        "Cast": {
+          "mana": [
+            "$p1",
+            "$i1",
+            "$m1",
+            "$m2",
+            "$m3",
+            null
+          ],
+          "object": "$stall",
+          "targets": [
+            "$bear1",
+            "$bear2"
+          ]
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": "Pass",
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Tapped": {
+          "object": "$bear1",
+          "tapped": true
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Counters": {
+          "count": 1,
+          "kind": {
+            "type": "Stun"
+          },
+          "object": "$bear1"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Counters": {
+          "count": 1,
+          "kind": {
+            "type": "Stun"
+          },
+          "object": "$bear2"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Count": {
+          "card": "Island",
+          "count": 1,
+          "player": "alice",
+          "zone": "Hand"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": {
+        "Answer": {
+          "prompt": "ChooseKicker",
+          "with": 1
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": {
+        "Cast": {
+          "mana": [
+            "$f1",
+            "$p2",
+            "$m4",
+            "$m5",
+            null
+          ],
+          "object": "$strength",
+          "targets": [
+            "$elf"
+          ]
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": "Pass",
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "PowerToughness": {
+          "object": "$elf",
+          "power": 4,
+          "toughness": 4
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Counters": {
+          "count": 1,
+          "kind": {
+            "type": "PlusOnePlusOne"
+          },
+          "object": "$wall"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Counters": {
+          "count": 1,
+          "kind": {
+            "type": "PlusOnePlusOne"
+          },
+          "object": "$elf"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": {
+        "Answer": {
+          "prompt": "ChooseKicker",
+          "with": 1
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": {
+        "Cast": {
+          "mana": [
+            "$s1",
+            "$i2",
+            "$m6",
+            "$m7",
+            null
+          ],
+          "object": "$tribute",
+          "targets": [
+            "$maw"
+          ]
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": "Pass",
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "PowerToughness": {
+          "object": "$maw",
+          "power": 1,
+          "toughness": 1
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": {
+        "Answer": {
+          "prompt": "ChooseKicker",
+          "with": 0
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": {
+        "Cast": {
+          "mana": [
+            "$s2",
+            "$m8",
+            null
+          ],
+          "object": "$tribute2",
+          "targets": [
+            "$maw2"
+          ]
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": "Pass",
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "PowerToughness": {
+          "object": "$maw2",
+          "power": 4,
+          "toughness": 4
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": {
+        "Answer": {
+          "prompt": "ChooseKicker",
+          "with": 1
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": {
+        "Cast": {
+          "mana": [
+            "$i3",
+            "$p3",
+            "$m9",
+            "$m10",
+            null
+          ],
+          "object": "$geyser",
+          "targets": [
+            "$bear1"
+          ]
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": "Pass",
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Count": {
+          "card": "Grizzly Bears",
+          "count": 1,
+          "player": "bob",
+          "zone": "Hand"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Life": {
+          "life": 23,
+          "player": "alice"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Count": {
+          "card": "Island",
+          "count": 2,
+          "player": "alice",
+          "zone": "Hand"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": {
+        "Answer": {
+          "prompt": "ChooseKicker",
+          "with": 0
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": {
+        "Cast": {
+          "mana": [
+            "$f2",
+            "$m11",
+            null
+          ],
+          "object": "$tear"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": "Pass",
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Count": {
+          "card": "Ornithopter",
+          "count": 1,
+          "player": "bob",
+          "zone": "Exile"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": {
+        "Answer": {
+          "prompt": "ChooseKicker",
+          "with": 1
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": {
+        "Cast": {
+          "mana": [
+            "$f3",
+            "$s3",
+            "$m12",
+            "$p4",
+            null
+          ],
+          "object": "$tear2",
+          "targetsBySlot": {
+            "permanent": [
+              "$bear2"
+            ]
+          }
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": "Pass",
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Count": {
+          "card": "Grizzly Bears",
+          "count": 1,
+          "player": "bob",
+          "zone": "Exile"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    }
+  ]
+}
