@@ -1,0 +1,97 @@
+{
+  "description": "CR 605.1a under Karn's Sylex Mana Confluence still pays life for Mutagenic Growth",
+  "note": "The Phyrexian symbol's own 2 life is barred, so it is paid with mana; the mana ability making that mana still pays its 1 life.",
+  "board": {
+    "seats": [
+      {
+        "name": "alice",
+        "battlefield": [
+          {
+            "card": "Mana Confluence",
+            "label": "mana-confluence",
+            "ready": true
+          },
+          {
+            "card": "Goblin Piker",
+            "label": "goblin-piker",
+            "ready": true
+          },
+          {
+            "card": "Karn's Sylex",
+            "tapped": true
+          }
+        ],
+        "hand": [
+          {
+            "card": "Mutagenic Growth",
+            "label": "mutagenic-growth"
+          }
+        ]
+      },
+      {
+        "name": "bob"
+      }
+    ],
+    "active": "alice",
+    "step": "PrecombatMain"
+  },
+  "timeline": [
+    {
+      "turn": 1,
+      "step": "PrecombatMain",
+      "player": "alice",
+      "do": {
+        "Cast": {
+          "object": "$mutagenic-growth",
+          "mana": [
+            "$mana-confluence"
+          ],
+          "yields": [
+            [
+              {
+                "manaType": {
+                  "type": "Colored",
+                  "value": "Green"
+                },
+                "tags": [],
+                "retention": "Ordinary",
+                "restriction": null,
+                "rider": null,
+                "sourceChoices": null
+              }
+            ]
+          ]
+        }
+      }
+    }
+  ],
+  "final": [
+    {
+      "Life": {
+        "player": "alice",
+        "life": 19
+      }
+    },
+    {
+      "Count": {
+        "player": "alice",
+        "zone": "Graveyard",
+        "card": "Mutagenic Growth",
+        "count": 1
+      }
+    },
+    {
+      "Tapped": {
+        "object": "$mana-confluence",
+        "tapped": true
+      }
+    },
+    {
+      "PowerToughness": {
+        "object": "$goblin-piker",
+        "power": 4,
+        "toughness": 3
+      }
+    }
+  ]
+}

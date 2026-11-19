@@ -28,6 +28,11 @@ data ForbiddenAct
     -- data\/scenarios\/cant-draw proves the draw step's draw, an effect's, a
     -- replaced one, an offered one and the limit's.
     DrawMoreThan Natural.Natural
+  | -- | CR 119.4b / 601.2h / 602.2b / Karn's Sylex: paying life toward the cost
+    -- of a spell or of an activated ability that isn't a mana ability.
+    --
+    -- The scenarios under data\/scenarios\/cant-pay-life prove it.
+    PayLifeToCastOrActivate
   | -- | CR 726.1 / 101.2 / Jared Carthalion, True Heir.
     BecomeMonarch
   deriving (Eq, Ord, Show)

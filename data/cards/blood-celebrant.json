@@ -1,0 +1,78 @@
+{
+  "faces": [
+    {
+      "activatedAbilities": [
+        {
+          "cost": {
+            "components": [
+              {
+                "type": "PayLife",
+                "value": {
+                  "type": "Fixed",
+                  "value": 1
+                }
+              }
+            ],
+            "mana": [
+              {
+                "type": "OfType",
+                "value": {
+                  "type": "Colored",
+                  "value": "Black"
+                }
+              }
+            ]
+          },
+          "modal": {
+            "modes": [
+              {
+                "clauses": [
+                  {
+                    "effects": [
+                      {
+                        "type": "AddMana",
+                        "value": {
+                          "production": {
+                            "type": "AnyColor"
+                          }
+                        }
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          }
+        }
+      ],
+      "manaCost": [
+        {
+          "type": "OfType",
+          "value": {
+            "type": "Colored",
+            "value": "Black"
+          }
+        }
+      ],
+      "name": "Blood Celebrant",
+      "oracleText": "{B}, Pay 1 life: Add one mana of any color.",
+      "power": {
+        "type": "Literal",
+        "value": 1
+      },
+      "toughness": {
+        "type": "Literal",
+        "value": 1
+      },
+      "typeLine": {
+        "subtypes": [
+          "Cleric",
+          "Human"
+        ],
+        "types": [
+          "Creature"
+        ]
+      }
+    }
+  ]
+}

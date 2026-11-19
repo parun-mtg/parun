@@ -1,0 +1,78 @@
+{
+  "description": "CR 119.4b under Karn's Sylex Toxic Deluge is cast at X=0",
+  "board": {
+    "seats": [
+      {
+        "name": "alice",
+        "battlefield": [
+          {
+            "card": "Swamp",
+            "label": "swamp",
+            "ready": true
+          },
+          {
+            "card": "Swamp",
+            "label": "swamp-2",
+            "ready": true
+          },
+          {
+            "card": "Swamp",
+            "label": "swamp-3",
+            "ready": true
+          }
+        ],
+        "hand": [
+          {
+            "card": "Toxic Deluge",
+            "label": "toxic-deluge"
+          }
+        ]
+      },
+      {
+        "name": "bob",
+        "battlefield": [
+          {
+            "card": "Karn's Sylex",
+            "tapped": true
+          }
+        ]
+      }
+    ],
+    "active": "alice",
+    "step": "PrecombatMain"
+  },
+  "timeline": [
+    {
+      "turn": 1,
+      "step": "PrecombatMain",
+      "player": "alice",
+      "do": {
+        "Cast": {
+          "object": "$toxic-deluge",
+          "x": 0,
+          "mana": [
+            "$swamp",
+            "$swamp-2",
+            "$swamp-3"
+          ]
+        }
+      }
+    }
+  ],
+  "final": [
+    {
+      "Life": {
+        "player": "alice",
+        "life": 20
+      }
+    },
+    {
+      "Count": {
+        "player": "alice",
+        "zone": "Graveyard",
+        "card": "Toxic Deluge",
+        "count": 1
+      }
+    }
+  ]
+}

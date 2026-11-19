@@ -1,0 +1,54 @@
+{
+  "description": "CR 107.4f with no mana Karn's Sylex leaves Mutagenic Growth uncastable",
+  "board": {
+    "seats": [
+      {
+        "name": "alice",
+        "battlefield": [
+          {
+            "card": "Goblin Piker",
+            "ready": true
+          },
+          {
+            "card": "Karn's Sylex",
+            "tapped": true
+          }
+        ],
+        "hand": [
+          {
+            "card": "Mutagenic Growth"
+          }
+        ]
+      },
+      {
+        "name": "bob"
+      }
+    ],
+    "active": "alice",
+    "step": "PrecombatMain"
+  },
+  "timeline": [
+    {
+      "turn": 1,
+      "step": "PrecombatMain",
+      "player": "alice",
+      "check": {
+        "View": {
+          "of": "Offered",
+          "player": "alice",
+          "is": [
+            "Pass"
+          ]
+        }
+      }
+    }
+  ],
+  "final": [
+    {
+      "Life": {
+        "player": "alice",
+        "life": 20
+      }
+    }
+  ]
+}

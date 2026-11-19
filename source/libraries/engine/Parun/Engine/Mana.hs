@@ -48,6 +48,7 @@ import qualified Parun.Engine.SourceContext as SourceContext
 import qualified Parun.Engine.Subtype as Subtype.Engine
 import qualified Parun.Extra.Integer as Integer
 import qualified Parun.Extra.Natural as Natural
+import qualified Parun.Types.AbilityKind as AbilityKind
 import qualified Parun.Types.AbilityName as AbilityName
 import qualified Parun.Types.Acquisition as Acquisition
 import qualified Parun.Types.ActivatedAbility as ActivatedAbility
@@ -2049,13 +2050,13 @@ admitsUnder subject pid gs =
   let paidFor = case subject of
         PaymentSubject.ForNeither -> Nothing
         PaymentSubject.Casting oid -> Just (ManaRestriction.casts, oid)
-        PaymentSubject.Activating oid _ _ _ -> Just (ManaRestriction.activations, oid)
+        PaymentSubject.Activating oid _ _ _ _ -> Just (ManaRestriction.activations, oid)
         PaymentSubject.Unlocking oid -> Just (ManaRestriction.unlocks, oid)
         PaymentSubject.TurningFaceUp oid -> Just (ManaRestriction.turnsFaceUp, oid)
       -- CR 717.2c: the one half asked of the ABILITY rather than of an object --
       -- its keyword stamp against the designator, no view needed.
       byKeyword restriction = case subject of
-        PaymentSubject.Activating _ _ stamp _ -> any (\designator -> any (Keyword.Engine.designates designator) stamp) (ManaRestriction.keywordActivations restriction)
+        PaymentSubject.Activating _ _ _ stamp _ -> any (\designator -> any (Keyword.Engine.designates designator) stamp) (ManaRestriction.keywordActivations restriction)
         _ -> False
       asked = fmap (\(half, oid) -> (half, Filter.contextIn gs (Just pid) Nothing, Projection.viewOfObject oid gs)) paidFor
    in \unit ->
@@ -2082,7 +2083,7 @@ subjectAllows subject manaType = maybe True (Set.member manaType) (narrowingOf s
 -- The types an activation's subject narrows its payment to, if any.
 narrowingOf :: PaymentSubject.PaymentSubject -> Maybe (Set.Set ManaType)
 narrowingOf subject = case subject of
-  PaymentSubject.Activating _ _ _ types -> types
+  PaymentSubject.Activating _ _ _ _ types -> types
   _ -> Nothing
 
 -- CR 601.2a before CR 601.2g: a source activated DURING this payment makes its
@@ -2963,8 +2964,16 @@ canPayCommitting subject capacity spending pid committed committedEnergy claimed
 -- A cost the pool and the plain sources pay is answered by plainPayable,
 -- also without the walk, and one the board's mana ceiling cannot reach by
 -- ceilingAdmits; the walk then answers only what those two leave.
+--
+-- CR 119.4b: where an effect says `pid` can't pay life toward this subject's
+-- cost (PlayerEffect.prohibitsPayingLife), only a cost committing none is
+-- payable. A Phyrexian symbol's life is committed too by the time a cast or an
+-- activation asks (`completions`, `announce`), so CR 601.2b's offer refuses
+-- its life route here; the mana abilities paying for the cost keep their own
+-- subjects and their own life. data/scenarios/cant-pay-life proves it.
 canPayCommittingGiven :: PaymentSubject.PaymentSubject -> ManaSpending -> Sources -> Map.Map ObjectId PC.ProjectedCharacteristics -> PlayerId -> Natural -> Natural -> [Claim] -> ManaCost -> GameState -> Bool
 canPayCommittingGiven subject spending sources pcs pid committed committedEnergy claimed cost gs
+  | committed > 0 && PlayerEffect.prohibitsPayingLife subject pid gs = False
   | any demandsNothing (resolutions spending cost) = activatingNothing pid committed committedEnergy claimed gs
   | plainPayable subject spending sources pid committed committedEnergy claimed cost gs = True
   | not (ceilingAdmits subject spending sources pid cost gs) = False
@@ -3805,7 +3814,7 @@ payableResolutionsGiven subject spending swept pcs pid committed committedEnergy
       -- A nested source's subject carries no keyword stamp: Sorcerer Class's
       -- CR 717.2c clause names a class level bar, whose ability sets a level and
       -- so is no mana ability (CR 605.1a).
-      subjects = Set.toList (Set.fromList (subject : fmap (\oid -> PaymentSubject.Activating oid Nothing Nothing Nothing) sources))
+      subjects = Set.toList (Set.fromList (subject : fmap (\oid -> PaymentSubject.Activating oid AbilityKind.ManaAbility Nothing Nothing Nothing) sources))
       admittedBy = fmap (\each -> (each, admitsUnder each pid gs)) subjects
       -- A unit carrying no CR 106.6 restriction is admitted by every payment
       -- whose ability does not narrow its types (subjectAllows), and those are
@@ -3844,7 +3853,7 @@ payableResolutionsGiven subject spending swept pcs pid committed committedEnergy
       -- the proof.
       activatingAt = Map.filter (not . null) (Map.fromList [(key, sourceActivating swept oid lender) | key@(oid, lender) <- ListUtils.nubOrd (fmap fst (concat options))])
       servesAt subjectAt position = case Map.lookup position subjectAt of
-        Just (PaymentSubject.Activating oid _ _ _, lender) | Just extra <- Map.lookup (oid, lender) activatingAt -> serves . rewriteSupply (clauses <> extra)
+        Just (PaymentSubject.Activating oid _ _ _ _, lender) | Just extra <- Map.lookup (oid, lender) activatingAt -> serves . rewriteSupply (clauses <> extra)
         _ -> serves
       pooled = fmap (rewriteSupply clauses . supplyOf admitting) (unitsOf (Game.poolOf pid gs))
       suppliesAt limit oid = manaSuppliesGiven limit capacity (sourceWatch swept) (sourceRewrites swept) pcs pid (sourceBorrowed swept oid) oid gs
@@ -3969,7 +3978,7 @@ payableResolutionsGiven subject spending swept pcs pid committed committedEnergy
               <> concatMap (\(k, (_, option)) -> fmap ((,) k) (optionSupplies option)) ranked,
             concatMap (\(k, (_, option)) -> fmap ((,) k) (optionDemands option)) ranked,
             costPosition,
-            Map.fromList ((costPosition, (subject, Nothing)) : fmap (\(k, ((oid, lender), _)) -> (k, (PaymentSubject.Activating oid Nothing Nothing Nothing, lender))) ranked),
+            Map.fromList ((costPosition, (subject, Nothing)) : fmap (\(k, ((oid, lender), _)) -> (k, (PaymentSubject.Activating oid AbilityKind.ManaAbility Nothing Nothing Nothing, lender))) ranked),
             sum (fmap (optionLife . snd) taken),
             concatMap (\(k, (_, option)) -> fmap ((,) k) (optionDoublings option)) ranked
           )

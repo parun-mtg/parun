@@ -4434,8 +4434,8 @@ prohibitsGainingLife pid gs = any (\member -> forbids (== ForbiddenAct.GainLife)
 
 -- CR 101.2 / 614.17: does an effect say `pid` can't perform an act `reaches`
 -- names? The one reading of PlayerEffect.Cant, behind prohibitsGainingLife,
--- prohibitsLosingLife, prohibitsDrawingCards and prohibitsBecomingMonarch, which
--- say who else is asked.
+-- prohibitsLosingLife, prohibitsDrawingCards, prohibitsPayingLife and
+-- prohibitsBecomingMonarch, which say who else is asked.
 --
 -- A DISJUNCTION, CR 101.2's posture: one applicable "can't" outranks every
 -- permission, so a second changes no answer and CR 613.11's timestamp order has
@@ -4446,8 +4446,8 @@ forbids reaches pid gs =
         PlayerEffect.Cant forbidden -> reaches forbidden
         -- Every other arm is about casting, playing, targeting, countering,
         -- searching, paying, keeping mana, rule 702 protection or how a coin
-        -- flip came out, and forbids no act of CR 119.7's, 119.8's, 121.3's or
-        -- 726.1's -- LoseLifeForUnspentMana included, which CHARGES life rather
+        -- flip came out, and forbids no act of CR 119.4b's, 119.7's, 119.8's,
+        -- 121.3's or 726.1's -- LoseLifeForUnspentMana included, which CHARGES life rather
         -- than saying anything about whether a charge may land.
         PlayerEffect.CantCastSpells -> False
         PlayerEffect.CantActivateAbilities {} -> False
@@ -4548,8 +4548,25 @@ prohibitsDrawingCards count pid gs =
         ForbiddenAct.DrawMoreThan limit -> drawn + count > limit
         ForbiddenAct.GainLife -> False
         ForbiddenAct.LoseLife -> False
+        ForbiddenAct.PayLifeToCastOrActivate -> False
         ForbiddenAct.BecomeMonarch -> False
    in forbids reaches pid gs
+
+-- CR 119.4b / 601.2h / 602.2b: does an effect say `pid` can't pay life toward
+-- the cost `subject` names? Only a spell's and a non-mana ability's (Karn's
+-- Sylex): a mana ability's cost, a special action's and CR 118.12's
+-- resolution-time payment stay payable, the card's 2022-09-09 rulings. Read by
+-- Parun.Engine.Mana.canPayCommittingGiven, which every payability question
+-- about a cost's life reaches.
+prohibitsPayingLife :: PaymentSubject.PaymentSubject -> PlayerId -> GameState -> Bool
+prohibitsPayingLife subject pid gs =
+  let toward = case subject of
+        PaymentSubject.Casting _ -> True
+        PaymentSubject.Activating _ kind _ _ _ -> kind == AbilityKind.NonManaAbility
+        PaymentSubject.Unlocking _ -> False
+        PaymentSubject.TurningFaceUp _ -> False
+        PaymentSubject.ForNeither -> False
+   in toward && forbids (== ForbiddenAct.PayLifeToCastOrActivate) pid gs
 
 -- CR 104.2b / 104.3: does an effect say this player can't win, or can't lose,
 -- the game? Read by Parun.Engine.Sba's CR 704.5 losses and Parun.Engine.Resolve.Effect's
@@ -4752,7 +4769,7 @@ spendManaAsThoughForGiven general pid subject gs = case subject of
           SpendScope.Activating _ -> False
      in [clause | (source, clause) <- spendManaAsThoughRows pid gs, namesSpell (contextFor (Just pid) source gs) clause]
           <> filter (namesSpell (Filter.contextIn gs (Just pid) Nothing)) (PC.grantedSpendManaAsThough (Projection.project oid gs))
-  PaymentSubject.Activating oid named _ _ -> general <> spendManaAsThoughActivating (spendManaAsThoughRows pid gs) pid oid (Binding.acquiredSource =<< named) gs
+  PaymentSubject.Activating oid _ named _ _ -> general <> spendManaAsThoughActivating (spendManaAsThoughRows pid gs) pid oid (Binding.acquiredSource =<< named) gs
   PaymentSubject.Unlocking {} -> general
   PaymentSubject.TurningFaceUp {} -> general
   PaymentSubject.ForNeither -> general

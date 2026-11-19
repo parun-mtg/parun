@@ -440,7 +440,7 @@ activateAbilityWith refused runSubgame pid srcId ability = Event.announcing . Ev
           -- (Cost.substitutedManas): a half this offer makes payable is a half
           -- CR 601.2b leaves to the payer rather than to the fallback.
           let totalledCost = Cost.plusComponents gathered announcedAtX
-          (announcedCost, _) <- Cost.announce (PaymentSubject.Activating srcId (ActivatedAbility.name ability) stamp spendable) ManaSpending.AsProduced pid srcId (Cost.substitutedManas (Cost.statedSubstitutions (Cost.Type.components totalledCost) Map.empty pid srcId gs) (Cost.totalManas gathered)) totalledCost
+          (announcedCost, _) <- Cost.announce (PaymentSubject.Activating srcId AbilityKind.NonManaAbility (ActivatedAbility.name ability) stamp spendable) ManaSpending.AsProduced pid srcId (Cost.substitutedManas (Cost.statedSubstitutions (Cost.Type.components totalledCost) Map.empty pid srcId gs) (Cost.totalManas gathered)) totalledCost
           (chosen, drawn, seats) <- Target.chooseTargets (ActivatedAbility.name ability) pid abilId srcId seed (Maybe.fromMaybe 0 mAmount) slots sets
           if not (Target.selectionLegal StackObjectKind.ActivatedAbility (ActivatedAbility.name ability) (Just pid) seed srcId (Maybe.fromMaybe 0 mAmount) slots sets chosen gs)
             then reject -- the whole activation is a no-op
@@ -543,7 +543,7 @@ activateAbilityWith refused runSubgame pid srcId ability = Event.announcing . Ev
               -- (Cost.paySubstituting). The bindings the substitution makes are
               -- dropped -- no printing reads back which permanents a waterbend
               -- cost tapped, where CR 702.51c's convoke does.
-              (payment, _) <- Cost.paySubstituting (refused . completedBy) (Resolve.performManaAbility runSubgame) before [] PaymentMoment.OutsideResolution (PaymentSubject.Activating srcId (ActivatedAbility.name ability) stamp spendable) (Just abilId) ManaSpending.AsProduced pid srcId (Cost.announceSubstitutions Cost.statedSubstitutions pid srcId) paidCost
+              (payment, _) <- Cost.paySubstituting (refused . completedBy) (Resolve.performManaAbility runSubgame) before [] PaymentMoment.OutsideResolution (PaymentSubject.Activating srcId AbilityKind.NonManaAbility (ActivatedAbility.name ability) stamp spendable) (Just abilId) ManaSpending.AsProduced pid srcId (Cost.announceSubstitutions Cost.statedSubstitutions pid srcId) paidCost
               completed <- State.gets completedBy
               case payment of
                 -- CR 602.2b / 601.2i: record that the ability has become
@@ -567,7 +567,7 @@ activateAbilityWith refused runSubgame pid srcId ability = Event.announcing . Ev
                   -- (Object.manaSpentOnX), split off CR 601.2f's total the mana
                   -- was spent against, an increase's included.
                   xNow <- State.gets (Game.lookupObject abilId Monad.>=> (Binding.amountOf Binding.variableX . Object.bindings))
-                  Cost.recordXShares (PaymentSubject.Activating srcId (ActivatedAbility.name ability) stamp spendable) pid abilId (Slots.hasRead StaticRead.ReadsManaSpentOnX (Modal.allEffects (ActivatedAbility.modal ability))) ((\x paid -> Cost.splitX Nothing x CostAdjustments.Engine.noAdjustments paid paid) <$> xNow <*> Cost.Type.mana paidCost)
+                  Cost.recordXShares (PaymentSubject.Activating srcId AbilityKind.NonManaAbility (ActivatedAbility.name ability) stamp spendable) pid abilId (Slots.hasRead StaticRead.ReadsManaSpentOnX (Modal.allEffects (ActivatedAbility.modal ability))) ((\x paid -> Cost.splitX Nothing x CostAdjustments.Engine.noAdjustments paid paid) <$> xNow <*> Cost.Type.mana paidCost)
                   -- CR 602.5b: record that THIS ability of this permanent has now
                   -- been activated, which is the whole of both counted riders'
                   -- storage -- see ActivationRestriction.recordActivation, the
