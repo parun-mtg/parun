@@ -2623,6 +2623,7 @@ filterPositionLintSpec s registry corpus = Spec.describe s "Lint" $ do
         ("Stuck in Summoner's Sanctum", 1), -- Tractor Beam's entering tap
         ("Fire-Rim Form", 1), -- Super Speed's wording
         ("Captain's Tutelage", 1), -- Super Speed's wording
+        ("Military Discipline", 1), -- Super Speed's wording
         ("Colossification", 1), -- Claustrophobia's entering tap
         ("Kitnap", 2), -- Claustrophobia's entering tap and the stun counters the gift gates
         ("Fae Flight", 1), -- Aquitect's Defenses' entering hexproof
