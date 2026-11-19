@@ -1,0 +1,146 @@
+{
+  "faces": [
+    {
+      "activatedAbilities": [
+        {
+          "cost": {
+            "mana": [
+              {
+                "type": "Generic",
+                "value": 3
+              },
+              {
+                "type": "OfType",
+                "value": {
+                  "type": "Colored",
+                  "value": "Red"
+                }
+              }
+            ]
+          },
+          "modal": {
+            "modes": [
+              {
+                "clauses": [
+                  {
+                    "effects": [
+                      {
+                        "type": "MoveToZone",
+                        "value": {
+                          "ref": {
+                            "type": "ChosenCardInHand",
+                            "value": {
+                              "filter": {
+                                "type": "HasCardType",
+                                "value": "Artifact"
+                              },
+                              "player": {
+                                "type": "Relative",
+                                "value": "You"
+                              }
+                            }
+                          },
+                          "slot": "artifact",
+                          "zone": "Battlefield"
+                        }
+                      },
+                      {
+                        "type": "ModifyTarget",
+                        "value": {
+                          "duration": {
+                            "type": "Indefinite"
+                          },
+                          "modification": {
+                            "type": "GainKeyword",
+                            "value": {
+                              "type": "Haste"
+                            }
+                          },
+                          "ref": {
+                            "type": "InSlot",
+                            "value": "artifact"
+                          }
+                        }
+                      },
+                      {
+                        "type": "ArmDelayedTrigger",
+                        "value": {
+                          "ability": {
+                            "type": "Triggered",
+                            "value": {
+                              "condition": {
+                                "type": "StepBegins",
+                                "value": {
+                                  "phase": {
+                                    "type": "Ending",
+                                    "value": "EndStep"
+                                  },
+                                  "scope": {
+                                    "type": "PlayersTurn",
+                                    "value": {
+                                      "type": "Relative",
+                                      "value": "AnyPlayer"
+                                    }
+                                  }
+                                }
+                              },
+                              "modal": {
+                                "modes": [
+                                  {
+                                    "clauses": [
+                                      {
+                                        "effects": [
+                                          {
+                                            "type": "Sacrifice",
+                                            "value": {
+                                              "ref": {
+                                                "type": "InSlot",
+                                                "value": "artifact"
+                                              }
+                                            }
+                                          }
+                                        ]
+                                      }
+                                    ]
+                                  }
+                                ]
+                              }
+                            }
+                          },
+                          "name": "sacrifice it"
+                        }
+                      }
+                    ],
+                    "optionality": {
+                      "type": "Optional"
+                    }
+                  }
+                ]
+              }
+            ]
+          }
+        }
+      ],
+      "manaCost": [
+        {
+          "type": "Generic",
+          "value": 3
+        },
+        {
+          "type": "OfType",
+          "value": {
+            "type": "Colored",
+            "value": "Red"
+          }
+        }
+      ],
+      "name": "Arms Race",
+      "oracleText": "{3}{R}: You may put an artifact card from your hand onto the battlefield. That artifact gains haste. Sacrifice it at the beginning of the next end step.",
+      "typeLine": {
+        "types": [
+          "Enchantment"
+        ]
+      }
+    }
+  ]
+}

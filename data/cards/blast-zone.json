@@ -1,0 +1,196 @@
+{
+  "faces": [
+    {
+      "activatedAbilities": [
+        {
+          "cost": {
+            "components": [
+              {
+                "type": "TapThis"
+              }
+            ],
+            "mana": []
+          },
+          "modal": {
+            "modes": [
+              {
+                "clauses": [
+                  {
+                    "effects": [
+                      {
+                        "type": "AddMana",
+                        "value": {
+                          "production": {
+                            "type": "OfType",
+                            "value": {
+                              "type": "Colorless"
+                            }
+                          }
+                        }
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "cost": {
+            "components": [
+              {
+                "type": "TapThis"
+              }
+            ],
+            "mana": [
+              {
+                "type": "Variable"
+              },
+              {
+                "type": "Variable"
+              }
+            ]
+          },
+          "modal": {
+            "modes": [
+              {
+                "clauses": [
+                  {
+                    "effects": [
+                      {
+                        "type": "PutCounters",
+                        "value": {
+                          "kind": {
+                            "type": "Named",
+                            "value": "charge"
+                          },
+                          "quantity": {
+                            "type": "InSlot",
+                            "value": "X"
+                          },
+                          "ref": {
+                            "type": "InSlot",
+                            "value": "self"
+                          }
+                        }
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "cost": {
+            "components": [
+              {
+                "type": "TapThis"
+              },
+              {
+                "type": "SacrificeThis"
+              }
+            ],
+            "mana": [
+              {
+                "type": "Generic",
+                "value": 3
+              }
+            ]
+          },
+          "modal": {
+            "modes": [
+              {
+                "clauses": [
+                  {
+                    "effects": [
+                      {
+                        "type": "BindAmount",
+                        "value": {
+                          "quantity": {
+                            "type": "ObjectCounters",
+                            "value": {
+                              "type": "Named",
+                              "value": "charge"
+                            }
+                          },
+                          "slot": "charges"
+                        }
+                      },
+                      {
+                        "type": "Destroy",
+                        "value": {
+                          "ref": {
+                            "type": "EachMatching",
+                            "value": {
+                              "type": "And",
+                              "value": [
+                                {
+                                  "type": "Not",
+                                  "value": {
+                                    "type": "HasCardType",
+                                    "value": "Land"
+                                  }
+                                },
+                                {
+                                  "type": "Measures",
+                                  "value": {
+                                    "comparison": "Exactly",
+                                    "measure": "ManaValue",
+                                    "operand": {
+                                      "type": "AmountInSlot",
+                                      "value": "charges"
+                                    }
+                                  }
+                                }
+                              ]
+                            }
+                          },
+                          "regenerability": "Regenerable"
+                        }
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          }
+        }
+      ],
+      "name": "Blast Zone",
+      "oracleText": "This land enters with a charge counter on it.\n{T}: Add {C}.\n{X}{X}, {T}: Put X charge counters on this land.\n{3}, {T}, Sacrifice this land: Destroy each nonland permanent with mana value equal to the number of charge counters on this land.",
+      "replacementEffects": [
+        {
+          "effect": {
+            "type": "EntryR",
+            "value": {
+              "matching": {
+                "type": "IsSource"
+              },
+              "rewrite": {
+                "type": "WithCounters",
+                "value": [
+                  {
+                    "count": {
+                      "type": "Literal",
+                      "value": 1
+                    },
+                    "kind": {
+                      "type": "Named",
+                      "value": "charge"
+                    }
+                  }
+                ]
+              }
+            }
+          }
+        }
+      ],
+      "typeLine": {
+        "types": [
+          "Land"
+        ]
+      }
+    }
+  ]
+}

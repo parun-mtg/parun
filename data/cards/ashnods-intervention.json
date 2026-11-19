@@ -1,0 +1,133 @@
+{
+  "faces": [
+    {
+      "manaCost": [
+        {
+          "type": "OfType",
+          "value": {
+            "type": "Colored",
+            "value": "Black"
+          }
+        }
+      ],
+      "name": "Ashnod's Intervention",
+      "oracleText": "Until end of turn, target creature gets +2/+0 and gains \"When this creature dies or is put into exile from the battlefield, return it to its owner's hand.\"",
+      "spell": {
+        "modes": [
+          {
+            "clauses": [
+              {
+                "effects": [
+                  {
+                    "type": "ModifyTarget",
+                    "value": {
+                      "duration": {
+                        "type": "UntilEndOfTurn"
+                      },
+                      "modification": {
+                        "type": "ModifyPowerToughness",
+                        "value": {
+                          "power": {
+                            "type": "Literal",
+                            "value": 2
+                          },
+                          "toughness": {
+                            "type": "Literal",
+                            "value": 0
+                          }
+                        }
+                      },
+                      "ref": {
+                        "type": "InSlot",
+                        "value": "target"
+                      }
+                    }
+                  },
+                  {
+                    "type": "ModifyTarget",
+                    "value": {
+                      "duration": {
+                        "type": "UntilEndOfTurn"
+                      },
+                      "modification": {
+                        "type": "GainAbility",
+                        "value": {
+                          "type": "Triggered",
+                          "value": {
+                            "condition": {
+                              "type": "AnyOf",
+                              "value": [
+                                {
+                                  "type": "Leaves",
+                                  "value": {
+                                    "destinations": [
+                                      {
+                                        "zone": "Graveyard"
+                                      }
+                                    ]
+                                  }
+                                },
+                                {
+                                  "type": "Leaves",
+                                  "value": {
+                                    "destinations": [
+                                      {
+                                        "zone": "Exile"
+                                      }
+                                    ]
+                                  }
+                                }
+                              ]
+                            },
+                            "modal": {
+                              "modes": [
+                                {
+                                  "clauses": [
+                                    {
+                                      "effects": [
+                                        {
+                                          "type": "MoveToZone",
+                                          "value": {
+                                            "ref": {
+                                              "type": "InSlot",
+                                              "value": "became"
+                                            },
+                                            "zone": "Hand"
+                                          }
+                                        }
+                                      ]
+                                    }
+                                  ]
+                                }
+                              ]
+                            }
+                          }
+                        }
+                      },
+                      "ref": {
+                        "type": "InSlot",
+                        "value": "target"
+                      }
+                    }
+                  }
+                ]
+              }
+            ],
+            "targetSlots": {
+              "target": {
+                "pool": {
+                  "type": "Creatures"
+                }
+              }
+            }
+          }
+        ]
+      },
+      "typeLine": {
+        "types": [
+          "Instant"
+        ]
+      }
+    }
+  ]
+}
