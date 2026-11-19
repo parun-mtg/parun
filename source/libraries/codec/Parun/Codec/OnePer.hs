@@ -2,6 +2,7 @@ module Parun.Codec.OnePer where
 
 import qualified Parun.Codec.Filter as Filter
 import qualified Parun.Codec.Keyword as Keyword
+import qualified Parun.Codec.KeywordTally as KeywordTally
 import qualified Parun.JsonCodec.Arm as Arm
 import qualified Parun.JsonCodec.Codec as Codec
 import qualified Parun.Types.OnePer as OnePer
@@ -11,7 +12,7 @@ codec =
   Arm.tagged
     tagOf
     [ Arm.payload "ColorAmong" (Filter.codec Keyword.codec) OnePer.ColorAmong (\x -> case x of OnePer.ColorAmong y -> Just y; _ -> Nothing),
-      Arm.nullary "CardType" OnePer.CardType
+      Arm.optionalPayload "CardType" (KeywordTally.codec Keyword.codec) OnePer.CardType (\x -> case x of OnePer.CardType y -> Just y; _ -> Nothing)
     ]
 
 tagOf :: OnePer.OnePer -> String

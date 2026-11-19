@@ -3489,11 +3489,18 @@ objectRefChildren c ref = case ref of
   ObjectRef.FromAnywhere (FromAnywhere.MkFromAnywhere bound among reach) -> refLooksBack c HistoryRead.Moves *> fmap ObjectRef.FromAnywhere (FromAnywhere.MkFromAnywhere <$> refSlot c bound <*> traverse (refSlot c) among <*> pure reach)
   ObjectRef.AllOf refs -> ObjectRef.AllOf <$> traverse (refNested c) refs
 
--- | A per-quality bound's children: the Filter whose permanents give the colors.
+-- | A per-quality bound's children: the Filter whose permanents give the
+-- colors, or the tally whose members give the card types, visited as the
+-- members Count it reads as.
 onePerChildren :: (Applicative f) => ObjectRefChildren f -> OnePer.OnePer -> f OnePer.OnePer
 onePerChildren c per = case per of
   OnePer.ColorAmong among -> OnePer.ColorAmong <$> refFilter c among
-  OnePer.CardType -> pure OnePer.CardType
+  OnePer.CardType Nothing -> pure per
+  OnePer.CardType (Just (KeywordTally.MkKeywordTally within filter_)) ->
+    let back whole = case whole of
+          Quantity.Count (Count.MkCount within' filter' _) -> OnePer.CardType (Just (KeywordTally.MkKeywordTally within' filter'))
+          _ -> per
+     in back <$> refQuantity c (Quantity.Count (Count.MkCount within filter_ Aggregation.Members))
 
 -- | A battlefield choice's children (CR 608.2d): what it picks among, who
 -- picks, how many and within what total.

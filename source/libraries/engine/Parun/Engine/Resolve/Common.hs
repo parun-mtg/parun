@@ -69,6 +69,7 @@ import qualified Parun.Types.ActivatedAbility as ActivatedAbility
 import qualified Parun.Types.ActivatedAbilitySource as ActivatedAbilitySource
 import qualified Parun.Types.ActiveReplacement as ActiveReplacement
 import qualified Parun.Types.Affected as Affected
+import qualified Parun.Types.Aggregation as Aggregation
 import qualified Parun.Types.Ante as Ante
 import qualified Parun.Types.AnyNumberDiscard as AnyNumberDiscard
 import qualified Parun.Types.AnyNumberMatching as AnyNumberMatching
@@ -108,6 +109,7 @@ import qualified Parun.Types.CopyStackObject as CopyStackObject
 import qualified Parun.Types.Cost as Cost.Type
 import qualified Parun.Types.CostBasis as CostBasis
 import qualified Parun.Types.CostChoice as CostChoice
+import qualified Parun.Types.Count as Count.Type
 import qualified Parun.Types.CountedDiscard as CountedDiscard
 import qualified Parun.Types.CounterCause as CounterCause
 import qualified Parun.Types.CounterChange as CounterChange
@@ -159,6 +161,7 @@ import qualified Parun.Types.HowMany as HowMany
 import qualified Parun.Types.InherentTriggerSource as InherentTriggerSource
 import qualified Parun.Types.Keyword as Keyword.Type
 import qualified Parun.Types.KeywordFamily as KeywordFamily
+import qualified Parun.Types.KeywordTally as KeywordTally
 import qualified Parun.Types.LastKnown as LastKnown
 import qualified Parun.Types.LentCards as LentCards
 import qualified Parun.Types.LentKeyword as LentKeyword
@@ -2380,7 +2383,8 @@ chooseCardsInHand resolving source controller legal (ChosenCardInHand.MkChosenCa
 -- 107.2, 107.1b). pickCounted asks it, and holds the picks within the ref's
 -- total where it states one, and to a card for each value where it states a
 -- onePer: the colors (CR 105.1) of the permanents a ColorAmong's Filter
--- matches, read here off the projection, or every card type (CR 205.2a), each
+-- matches, read here off the projection, or every card type (CR 205.2a), or
+-- those among a CardType tally's members (Hurkyl, Master Wizard's), each
 -- pick answering for one value of its own that no other pick answers for. A
 -- card of two of them answers for either (CR 105.2b, 205.2a): an artifact
 -- creature beside a creature, Portent of Calamity's. And to picks sharing no value on a differentIn axis, read off the
@@ -2422,7 +2426,10 @@ chooseCardFromAmong offered resolving source controller legal chosen (ChosenCard
         OnePer.ColorAmong among ->
           let palette = foldMap colorsOf (battlefieldMatching legal resolving controller source gs among)
            in \taken oid -> distinctlyAssigned (fmap (Set.toList . Set.intersection palette . colorsOf) (oid : taken))
-        OnePer.CardType -> \taken oid -> distinctlyAssigned (fmap (Set.toList . foldMap Filter.cardTypes . viewOf) (oid : taken))
+        OnePer.CardType among ->
+          let present (KeywordTally.MkKeywordTally within inner) cardType = maybe False (> 0) (weighs source (Quantity.Type.Count (Count.Type.MkCount within (Filter.Type.And [inner, Filter.Type.HasCardType cardType]) Aggregation.Members)))
+              answerable = maybe id (\tally -> Set.intersection (Set.fromList (List.filter (present tally) [minBound .. maxBound]))) among
+           in \taken oid -> distinctlyAssigned (fmap (Set.toList . answerable . foldMap Filter.cardTypes . viewOf) (oid : taken))
       apart taken oid = length (differing differentIn gs (oid : taken)) == length taken + 1
       bounds = Foldable.toList (fmap (withinTotal weighs amount) total) <> Foldable.toList (fmap oneEach onePer) <> [apart | not (Set.null differentIn)]
       admits = if null bounds then Nothing else Just (\taken oid -> all (\bound -> bound taken oid) bounds)

@@ -3,8 +3,9 @@ module Parun.Types.KeywordTally where
 import qualified Parun.Types.Filter as Filter
 import qualified Parun.Types.Scope as Scope
 
--- | The payload of Parun.Types.KeywordCount's Tally arm: Parun.Types.Count's scope
--- and filter, counted by members.
+-- | The payload of Parun.Types.KeywordCount's Tally arm and of
+-- Parun.Types.OnePer's CardType: Parun.Types.Count's scope and filter, read by
+-- members.
 --
 -- Not Parun.Types.Count itself, which names Keyword concretely and so cannot sit
 -- inside one. PARAMETRIC in the keyword for Parun.Types.Devour's reason.

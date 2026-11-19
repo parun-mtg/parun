@@ -1,0 +1,228 @@
+{
+  "board": {
+    "active": "alice",
+    "seats": [
+      {
+        "battlefield": [
+          {
+            "card": "Hurkyl, Master Wizard",
+            "label": "hurkyl"
+          }
+        ],
+        "hand": [
+          {
+            "card": "Ornithopter",
+            "label": "thopter"
+          },
+          {
+            "card": "Lightning Bolt",
+            "label": "bolt"
+          }
+        ],
+        "library": [
+          {
+            "card": "Memnite",
+            "label": "memnite"
+          },
+          {
+            "card": "Divination",
+            "label": "dv"
+          },
+          {
+            "card": "Shock",
+            "label": "shock"
+          },
+          {
+            "card": "Forest",
+            "label": "forest"
+          },
+          {
+            "card": "Giant Growth",
+            "label": "growth"
+          },
+          {
+            "card": "Jace Beleren",
+            "label": "below"
+          },
+          {
+            "card": "Island",
+            "label": "below2"
+          }
+        ],
+        "manaPool": "R",
+        "name": "alice"
+      },
+      {
+        "library": [
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          }
+        ],
+        "name": "bob"
+      }
+    ],
+    "step": "PrecombatMain"
+  },
+  "description": "Hurkyl, Master Wizard offers a card only of a card type among the noncreature spells you've cast this turn: after Ornithopter and Lightning Bolt, an instant is taken and an artifact or a sorcery is refused.",
+  "note": "CR 608.2d, 205.2a. Ornithopter is an artifact creature spell, so its types answer for nothing; Lightning Bolt answers for instant alone. Once Shock answers for instant, Giant Growth fits no type left, so a further prompt would be unscheduled and fail the run.",
+  "timeline": [
+    {
+      "do": {
+        "Cast": {
+          "object": "$thopter"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": "Pass",
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": {
+        "Cast": {
+          "object": "$bolt",
+          "targets": [
+            "$bob"
+          ]
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": "Pass",
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": "Pass",
+      "player": "alice",
+      "step": "EndStep",
+      "turn": 1
+    },
+    {
+      "player": "alice",
+      "refuse": {
+        "Answer": {
+          "prompt": "ChooseCardsFromAmong",
+          "with": [
+            "$memnite"
+          ]
+        }
+      },
+      "step": "EndStep",
+      "turn": 1
+    },
+    {
+      "player": "alice",
+      "refuse": {
+        "Answer": {
+          "prompt": "ChooseCardsFromAmong",
+          "with": [
+            "$dv"
+          ]
+        }
+      },
+      "step": "EndStep",
+      "turn": 1
+    },
+    {
+      "do": {
+        "Answer": {
+          "prompt": "ChooseCardsFromAmong",
+          "with": [
+            "$shock"
+          ]
+        }
+      },
+      "player": "alice",
+      "step": "EndStep",
+      "turn": 1
+    },
+    {
+      "do": {
+        "Answer": {
+          "prompt": "Shuffle",
+          "with": [
+            "$growth",
+            "$memnite",
+            "$forest",
+            "$dv"
+          ]
+        }
+      },
+      "player": "alice",
+      "step": "EndStep",
+      "turn": 1
+    },
+    {
+      "check": {
+        "View": {
+          "is": [
+            "Shock"
+          ],
+          "of": "Zone",
+          "player": "alice",
+          "zone": "Hand"
+        }
+      },
+      "player": "alice",
+      "step": "EndStep",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Count": {
+          "card": "Memnite",
+          "count": 1,
+          "player": "alice",
+          "zone": "Library"
+        }
+      },
+      "player": "alice",
+      "step": "EndStep",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Count": {
+          "card": "Divination",
+          "count": 1,
+          "player": "alice",
+          "zone": "Library"
+        }
+      },
+      "player": "alice",
+      "step": "EndStep",
+      "turn": 1
+    }
+  ]
+}
