@@ -105,7 +105,7 @@ replay page name =
           let moveTo target = if target == at then go at stop viewer Nothing else reach target >>= \next -> go target next viewer Nothing
               readingOf object pinned = do
                 board <- Web.Replay.board frame
-                o <- Map.lookup object (Render.objects board)
+                o <- Render.recalled board object
                 pure (Web.Card.MkReading object (either (pure . Text.pack . Exception.displayException) id (Web.Card.oracle lookUp o)) pinned)
               held = maybe False Web.Card.pinned reading
           case event of

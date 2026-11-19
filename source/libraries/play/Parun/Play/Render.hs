@@ -344,8 +344,41 @@ objects view =
       <> concat (PlayerView.parkedStacks view)
       <> concatMap (\s -> SeatView.hand s <> SeatView.library s <> SeatView.graveyard s <> SeatView.exile s) (PlayerView.seats view)
 
+-- | An object by id as the view shows it, or else as the last witnessed move,
+-- look or reveal of it showed it: its characteristics then and no status, so
+-- a card looked at in a library can be read. A snapshot names no owner, so
+-- the viewer stands in, which no reader of a recalled object shows.
+recalled :: PlayerView.PlayerView -> ObjectId.ObjectId -> Maybe ObjectView.ObjectView
+recalled view oid = case Map.lookup oid (objects view) of
+  Just o -> Just o
+  Nothing -> flip fmap (Map.lookup oid (snapshots view)) $ \c ->
+    ObjectView.MkObjectView
+      { ObjectView.object = oid,
+        ObjectView.owner = PlayerView.viewer view,
+        ObjectView.controller = Nothing,
+        ObjectView.tapped = TapState.Untapped,
+        ObjectView.damage = 0,
+        ObjectView.counters = Map.empty,
+        ObjectView.attachedTo = Nothing,
+        ObjectView.characteristics = Just c,
+        ObjectView.face = Nothing,
+        ObjectView.foretellCostReduction = Nothing,
+        ObjectView.ability = Nothing,
+        ObjectView.targets = [],
+        ObjectView.summoningSick = False,
+        ObjectView.chosenColors = Map.empty,
+        ObjectView.chosenColorless = Map.empty,
+        ObjectView.chosenSubtype = Map.empty,
+        ObjectView.chosenCardType = Map.empty,
+        ObjectView.chosenNames = Map.empty,
+        ObjectView.chosenPlayers = Map.empty,
+        ObjectView.chosenNumber = Map.empty,
+        ObjectView.chosenObjects = Map.empty
+      }
+
 -- | An object by id, named as the view shows it, or else as the last witnessed
--- move of it showed it, so one that has since left still has a name.
+-- move, look or reveal of it showed it, so one that has since left or is
+-- hidden again still has a name.
 named :: PlayerView.PlayerView -> ObjectId.ObjectId -> Text.Text
 named view oid = Maybe.fromMaybe (Text.pack ("object " <> show (ObjectId.unwrap oid))) (knownName view oid)
 
@@ -385,20 +418,26 @@ located view oid =
         )
         (PlayerView.seats view)
 
--- | An object's name, if the view shows it or a witnessed move of it.
+-- | An object's name, if the view shows it or a witnessed move, look or
+-- reveal of it did.
 knownName :: PlayerView.PlayerView -> ObjectId.ObjectId -> Maybe Text.Text
 knownName view oid = case Map.lookup oid (objects view) of
   Just o -> Just (nameOf view o)
   Nothing -> fmap PromptOffer.snapshotName (Map.lookup oid (snapshots view))
 
--- | What each witnessed move showed the object it moved as, by
--- either end's id, the latest winning.
+-- | What each witnessed move, look (CR 701.20e) or reveal (CR 701.20a)
+-- showed its object as, a move by either end's id, the latest winning: a
+-- library card looked at keeps its name while the view hides it.
 snapshots :: PlayerView.PlayerView -> Map.Map ObjectId.ObjectId ProjectedCharacteristics.ProjectedCharacteristics
 snapshots view =
   Map.fromList
-    [ (oid, Moved.characteristics m)
-    | GameEvent.Moved m <- fmap LoggedEvent.event (witnessed view),
-      oid <- ZoneChange.departed (Moved.change m) : Foldable.toList (Moved.arrivals m)
+    [ shown
+    | happened <- fmap LoggedEvent.event (witnessed view),
+      shown <- case happened of
+        GameEvent.Moved m -> [(oid, Moved.characteristics m) | oid <- ZoneChange.departed (Moved.change m) : Foldable.toList (Moved.arrivals m)]
+        GameEvent.Looked l -> [(Looked.card l, Looked.characteristics l)]
+        GameEvent.Revealed r -> [(Revealed.card r, Revealed.characteristics r)]
+        _ -> []
     ]
 
 -- | The entries the view says the seat witnessed, last turn's and this

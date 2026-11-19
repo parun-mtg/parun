@@ -11,6 +11,7 @@ import qualified Data.Text as Text
 import Numeric.Natural (Natural)
 import qualified Parun.Codec.ManaType as Codec.ManaType
 import qualified Parun.Codec.Reply as Codec.Reply
+import qualified Parun.Engine.Event as Event
 import qualified Parun.Engine.PlayerView as PlayerView
 import qualified Parun.Engine.Projection as Projection
 import qualified Parun.Engine.Setup as Setup
@@ -24,7 +25,9 @@ import qualified Parun.Types.Action as Action
 import qualified Parun.Types.BeginningStep as BeginningStep
 import qualified Parun.Types.Color as Color
 import qualified Parun.Types.Decider as Decider
+import qualified Parun.Types.GameEvent as GameEvent
 import qualified Parun.Types.GameState as GameState
+import qualified Parun.Types.Looked as Looked
 import qualified Parun.Types.ManaType as ManaType
 import qualified Parun.Types.ObjectId as ObjectId
 import qualified Parun.Types.Phase as Phase
@@ -175,11 +178,13 @@ spec s registry = Spec.describe s "WebQuestion" $ do
     Spec.assertEqWith s "too few" (Question.Web.step request Set.empty Question.Web.MkSubmit Text.empty) (Question.Web.MkRefused (Text.pack "Choose 1 target for object 9 (target): pick 1."))
     Spec.assertEqWith s "one" (Question.Web.step request (picking request [Question.Web.MkToggle 0 0]) Question.Web.MkSubmit Text.empty) (Question.Web.MkReplied (R.Array [R.Array [slot, R.Array [R.Text (Text.pack "$1")]]]))
 
-  Spec.it s "CR 603.3b triggered abilities are ordered by tapping each in turn, answered once all are" $ do
-    let request = asking (Text.pack "OrderTriggers") (R.Array [R.Object [(Text.pack "source", R.Text (Text.pack "$1"))], R.Object [(Text.pack "source", R.Text (Text.pack "$2"))]])
+  Spec.it s "CR 603.3b triggered abilities are ordered by tapping each in turn, answered by Done" $ do
+    let request = asking (Text.pack "OrderTriggers") (R.Array [R.Object [(Text.pack "source", R.Text (Text.pack "$1"))], R.Object [(Text.pack "source", R.Text (Text.pack "$2"))], R.Object [(Text.pack "source", R.Text (Text.pack "$3"))]])
     Spec.assertEqWith s "first" (Question.Web.step request Set.empty (Question.Web.MkToggle 0 1) Text.empty) (Question.Web.MkPicking (Set.singleton (0, 1)))
-    Spec.assertEqWith s "last" (Question.Web.step request (Set.singleton (0, 1)) (Question.Web.MkToggle 0 0) Text.empty) (Question.Web.MkReplied (R.Array [R.Number 1, R.Number 0]))
-    Spec.assertEqWith s "again" (Question.Web.step request (Set.singleton (0, 1)) (Question.Web.MkToggle 0 1) Text.empty) (Question.Web.MkPicking (Set.singleton (0, 1)))
+    Spec.assertEqWith s "the last waits for Done" (picking request [Question.Web.MkToggle 0 1, Question.Web.MkToggle 0 2, Question.Web.MkToggle 0 0]) (Set.fromList [(0, 1), (1, 2), (2, 0)])
+    Spec.assertEqWith s "done" (Question.Web.step request (Set.fromList [(0, 1), (1, 2), (2, 0)]) Question.Web.MkSubmit Text.empty) (Question.Web.MkReplied (R.Array [R.Number 1, R.Number 2, R.Number 0]))
+    Spec.assertEqWith s "a placed item is taken out, those after it moving up" (picking request [Question.Web.MkToggle 0 1, Question.Web.MkToggle 0 2, Question.Web.MkToggle 0 1]) (Set.singleton (0, 2))
+    Spec.assertEqWith s "the rest follow in the order offered" (Question.Web.step request (Set.singleton (0, 2)) Question.Web.MkSubmit Text.empty) (Question.Web.MkReplied (R.Array [R.Number 2, R.Number 0, R.Number 1]))
 
   Spec.it s "CR 510.1c combat damage goes to a lone recipient unasked, and among several adds up to the total" $ do
     let offer recipients = R.Object [(Text.pack "source", R.Text (Text.pack "$9")), (Text.pack "lethal", R.Array [R.Array [r, R.Number 1] | r <- recipients]), (Text.pack "paid", R.Array []), (Text.pack "total", R.Number 3)]
@@ -205,16 +210,32 @@ spec s registry = Spec.describe s "WebQuestion" $ do
     let one = R.Text (Text.pack "$1")
         two = R.Text (Text.pack "$2")
         request = asking (Text.pack "ChooseScry") (R.Object [(Text.pack "from", R.Array [one, two])])
-    Spec.assertEqWith s "placed" (Question.Web.step request (picking request [Question.Web.MkToggle 1 0]) (Question.Web.MkToggle 0 1) Text.empty) (Question.Web.MkReplied (R.Array [R.Array [one], R.Array [two]]))
-    Spec.assertEqWith s "half" (Question.Web.step request Set.empty (Question.Web.MkToggle 0 1) Text.empty) (Question.Web.MkPicking (Set.singleton (0, 1)))
+    Spec.assertEqWith s "placed" (Question.Web.step request (picking request [Question.Web.MkToggle 1 0, Question.Web.MkToggle 0 1]) Question.Web.MkSubmit Text.empty) (Question.Web.MkReplied (R.Array [R.Array [one], R.Array [two]]))
+    Spec.assertEqWith s "the last waits for Done" (picking request [Question.Web.MkToggle 1 0, Question.Web.MkToggle 0 1]) (Set.fromList [(1, 0), (2, 1)])
+    Spec.assertEqWith s "a placed card is taken out" (picking request [Question.Web.MkToggle 1 0, Question.Web.MkToggle 0 1, Question.Web.MkToggle 1 0]) (Set.singleton (0, 1))
+    Spec.assertEqWith s "the untapped stay on top below those placed there" (Question.Web.step request (Set.singleton (1, 1)) Question.Web.MkSubmit Text.empty) (Question.Web.MkReplied (R.Array [R.Array [two], R.Array [one]]))
 
   Spec.it s "an offer listing an order is ordered by tapping, an offer listing options is one tap, and a range is a number" $ do
     let ordered = asking (Text.pack "OrderTimestamps") (R.Object [(Text.pack "order", R.Array [R.Text (Text.pack "a"), R.Text (Text.pack "b")])])
         listed = asking (Text.pack "ChooseWhatever") (R.Object [(Text.pack "options", R.Array [R.Text (Text.pack "Up"), R.Text (Text.pack "Down")])])
         ranged = asking (Text.pack "ChooseNumber") (R.Object [(Text.pack "least", R.Number 1), (Text.pack "greatest", R.Number 3)])
-    Spec.assertEqWith s "ordered" (Question.Web.step ordered (Set.singleton (0, 1)) (Question.Web.MkToggle 0 0) Text.empty) (Question.Web.MkReplied (R.Array [R.Number 1, R.Number 0]))
+    Spec.assertEqWith s "ordered" (Question.Web.step ordered (picking ordered [Question.Web.MkToggle 0 1, Question.Web.MkToggle 0 0]) Question.Web.MkSubmit Text.empty) (Question.Web.MkReplied (R.Array [R.Number 1, R.Number 0]))
     Spec.assertBool s (Text.pack "<button type=\"button\">Up</button><button type=\"button\">Down</button>" `Text.isInfixOf` Html.toText (Question.Web.view listed Question.Web.blank)) "listed"
     Spec.assertBool s (Text.pack "<button type=\"button\">1</button><button type=\"button\">2</button><button type=\"button\">3</button>" `Text.isInfixOf` Html.toText (Question.Web.view ranged Question.Web.blank)) "ranged"
+
+  Spec.it s "CR 701.20e library cards looked at are listed, linked and read by name while arranged" $ do
+    bears <- S.printingOf s registry "Grizzly Bears"
+    mountain <- S.printingOf s registry "Mountain"
+    let (one, g1) = S.addObjectIn Zone.Library bears S.alice (Setup.emptyGame S.bothPlayers)
+        (two, g2) = S.addObjectIn Zone.Library mountain S.alice g1
+        look oid = Event.recordEvent (GameEvent.Looked (Looked.MkLooked oid (Projection.project oid g2) (Set.singleton S.alice)))
+        request = requestFor (look two (look one g2)) (Prompt.ArrangeLibraryCards (Decider.MkDecider S.alice) S.alice [one, two])
+        tap picked label = let view = Question.Web.view request Question.Web.blank {Question.Web.selected = picked} in Html.labelled (Text.pack "button") (Text.pack label) view >>= \path -> Html.handler (Text.pack "click") path view
+        reading = Question.Web.view request Question.Web.blank {Question.Web.reading = Just (Card.MkReading one [] True)}
+    Spec.assertEqWith s "listed by name" (tap Set.empty "Mountain") (Just (Question.Web.MkToggle 0 1))
+    Spec.assertEqWith s "placed, then Done" (tap (Set.singleton (0, 1)) "Done") (Just Question.Web.MkSubmit)
+    Spec.assertEqWith s "linked" (fmap (Map.lookup (Text.pack "Grizzly Bears") . Log.linkable) (Request.view request)) (Just (Just one))
+    Spec.assertBool s (maybe False (Text.isInfixOf (Text.pack "Grizzly Bears") . Html.toText) (Html.search (\html -> Text.pack "<section class=\"sheet" `Text.isPrefixOf` Html.toText html) reading >>= \path -> Html.at path reading)) "read"
 
   Spec.it s "a card name is typed as itself" $ do
     let request = asking (Text.pack "ChooseCardName") R.Null
