@@ -113,6 +113,16 @@ spec s registry = Spec.describe s "WebQuestion" $ do
           Html.handler (Text.pack "click") (at <> path) reading
     Spec.assertEqWith s "sheet action" action (Just (Question.Web.MkAnswer (R.Number 1)))
 
+  Spec.it s "CR 702.21a a permanent's sheet lists a keyword too long for its tile" $ do
+    dragon <- S.printingOf s registry "Archive Dragon"
+    let (oid, gs) = S.addPermanent dragon S.alice (Setup.emptyGame S.bothPlayers)
+        request = requestFor gs (Prompt.ChooseAction (Decider.MkDecider S.alice) S.alice [Action.Pass])
+        board = Html.toText (Question.Web.view request Question.Web.blank)
+        reading = Question.Web.view request Question.Web.blank {Question.Web.reading = Just (Card.MkReading oid [] True)}
+        sheet = maybe Text.empty Html.toText (Html.search (\html -> Text.pack "<section class=\"sheet" `Text.isPrefixOf` Html.toText html) reading >>= (`Html.at` reading))
+    Spec.assertBool s (Text.pack "Keyword abilities: Flying, Ward {2}" `Text.isInfixOf` sheet) "the sheet lists ward"
+    Spec.assertBool s (not (Text.pack "Ward {2}" `Text.isInfixOf` board)) "the tile leaves it out"
+
   Spec.it s "CR 601.2d a division starts one to each target and the rest to the first, and reads as the engine's" $ do
     bears <- S.printingOf s registry "Grizzly Bears"
     let (a, g1) = S.addPermanent bears S.bob (Setup.emptyGame S.bothPlayers)

@@ -62,7 +62,7 @@ tile view cue o = case ObjectView.characteristics o of
       ([Element.attr "type" (Text.pack "button"), Element.attr "aria-label" (summary view cue o), Element.on "click" (tap cue)] <> peeking cue)
       [ Element.el "span" ["top"] [] $ [Element.el "span" ["name"] [] [Element.text (Render.nameOf view o)]] <> foldMap (pure . Mana.cost) (ObjectView.characteristics o >>= ProjectedCharacteristics.manaCost),
         -- On the table, what a permanent can do says more than its subtypes.
-        case keywords o of
+        case tileKeywords o of
           [] -> Element.el "span" ["type"] [] [Element.text (typeLine o)]
           words' -> Element.el "span" ["type", "keywords"] [] [Element.text (Text.intercalate (Text.pack ", ") words')],
         Element.el "span" ["foot"] [] (states view o <> badges o <> stats o)
@@ -138,15 +138,18 @@ targetedBy view oid = [Render.nameOf view item | item <- PlayerView.stack view, 
 targetingPlayer :: PlayerView.PlayerView -> PlayerId.PlayerId -> [Text.Text]
 targetingPlayer view pid = [Render.nameOf view item | item <- PlayerView.stack view, Recipient.ToPlayer pid `elem` ObjectView.targets item]
 
--- | The keyword abilities the object has now, as Oracle text prints each,
--- those short enough for a tile; granted ones included.
+-- | The keyword abilities the object has now, as Oracle text prints each;
+-- granted ones included.
 keywords :: ObjectView.ObjectView -> [Text.Text]
 keywords o = case ObjectView.characteristics o of
   Nothing -> []
   Just c ->
     let self = Text.intercalate (Text.pack " // ") (fmap CardName.unwrap (Set.toList (ProjectedCharacteristics.names c)))
-        short t = Text.length t <= 18 && not (Text.any (== '{') t)
-     in ListUtils.nubOrd (concatMap (filter short . take 1 . Oracle.Keyword.printed self) (Map.keys (ProjectedCharacteristics.keywords c)))
+     in ListUtils.nubOrd (concatMap (take 1 . Oracle.Keyword.printed self) (Map.keys (ProjectedCharacteristics.keywords c)))
+
+-- | The keywords short enough for a tile; the sheet lists them all.
+tileKeywords :: ObjectView.ObjectView -> [Text.Text]
+tileKeywords = filter (\t -> Text.length t <= 18 && not (Text.any (== '{') t)) . keywords
 
 -- | The handlers a previewing tile has.
 peeking :: Cue msg -> [Attribute.Attribute msg]
@@ -172,7 +175,7 @@ summary view cue o =
         | elem "chosen" (marks cue) = [Text.pack "chosen"]
         | elem "choosable" (marks cue) = [Text.pack "can be chosen"]
         | otherwise = []
-      kind = case keywords o of
+      kind = case tileKeywords o of
         [] -> [typeLine o]
         words' -> [typeLine o, Text.intercalate (Text.pack ", ") words']
    in Text.intercalate (Text.pack ", ") ([Render.nameOf view o] <> kind <> pt <> doing <> action)
