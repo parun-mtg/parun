@@ -1,0 +1,32 @@
+{
+  "faces": [
+    {
+      "name": "Geothermal Bog",
+      "oracleText": "({T}: Add {B} or {R}.)\nThis land enters tapped.",
+      "replacementEffects": [
+        {
+          "effect": {
+            "type": "EntryR",
+            "value": {
+              "matching": {
+                "type": "IsSource"
+              },
+              "rewrite": {
+                "type": "Tapped"
+              }
+            }
+          }
+        }
+      ],
+      "typeLine": {
+        "subtypes": [
+          "Mountain",
+          "Swamp"
+        ],
+        "types": [
+          "Land"
+        ]
+      }
+    }
+  ]
+}

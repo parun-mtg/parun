@@ -1,0 +1,32 @@
+{
+  "faces": [
+    {
+      "name": "Sunlit Marsh",
+      "oracleText": "({T}: Add {W} or {B}.)\nThis land enters tapped.",
+      "replacementEffects": [
+        {
+          "effect": {
+            "type": "EntryR",
+            "value": {
+              "matching": {
+                "type": "IsSource"
+              },
+              "rewrite": {
+                "type": "Tapped"
+              }
+            }
+          }
+        }
+      ],
+      "typeLine": {
+        "subtypes": [
+          "Plains",
+          "Swamp"
+        ],
+        "types": [
+          "Land"
+        ]
+      }
+    }
+  ]
+}

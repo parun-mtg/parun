@@ -1,0 +1,32 @@
+{
+  "faces": [
+    {
+      "name": "Sacred Peaks",
+      "oracleText": "({T}: Add {R} or {W}.)\nThis land enters tapped.",
+      "replacementEffects": [
+        {
+          "effect": {
+            "type": "EntryR",
+            "value": {
+              "matching": {
+                "type": "IsSource"
+              },
+              "rewrite": {
+                "type": "Tapped"
+              }
+            }
+          }
+        }
+      ],
+      "typeLine": {
+        "subtypes": [
+          "Mountain",
+          "Plains"
+        ],
+        "types": [
+          "Land"
+        ]
+      }
+    }
+  ]
+}

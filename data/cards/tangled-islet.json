@@ -1,0 +1,32 @@
+{
+  "faces": [
+    {
+      "name": "Tangled Islet",
+      "oracleText": "({T}: Add {G} or {U}.)\nThis land enters tapped.",
+      "replacementEffects": [
+        {
+          "effect": {
+            "type": "EntryR",
+            "value": {
+              "matching": {
+                "type": "IsSource"
+              },
+              "rewrite": {
+                "type": "Tapped"
+              }
+            }
+          }
+        }
+      ],
+      "typeLine": {
+        "subtypes": [
+          "Forest",
+          "Island"
+        ],
+        "types": [
+          "Land"
+        ]
+      }
+    }
+  ]
+}

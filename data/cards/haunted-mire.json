@@ -1,0 +1,32 @@
+{
+  "faces": [
+    {
+      "name": "Haunted Mire",
+      "oracleText": "({T}: Add {B} or {G}.)\nThis land enters tapped.",
+      "replacementEffects": [
+        {
+          "effect": {
+            "type": "EntryR",
+            "value": {
+              "matching": {
+                "type": "IsSource"
+              },
+              "rewrite": {
+                "type": "Tapped"
+              }
+            }
+          }
+        }
+      ],
+      "typeLine": {
+        "subtypes": [
+          "Forest",
+          "Swamp"
+        ],
+        "types": [
+          "Land"
+        ]
+      }
+    }
+  ]
+}
