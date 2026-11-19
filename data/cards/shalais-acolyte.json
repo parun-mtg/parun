@@ -3,6 +3,9 @@
     {
       "keywords": [
         {
+          "type": "Flying"
+        },
+        {
           "type": "Kicker",
           "value": {
             "mana": [
@@ -19,9 +22,6 @@
               }
             ]
           }
-        },
-        {
-          "type": "Flying"
         }
       ],
       "manaCost": [

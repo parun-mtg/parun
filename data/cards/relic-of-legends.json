@@ -50,6 +50,12 @@
                         "value": "Creature"
                       },
                       {
+                        "type": "Not",
+                        "value": {
+                          "type": "IsTapped"
+                        }
+                      },
+                      {
                         "type": "HasSupertype",
                         "value": "Legendary"
                       },
@@ -58,12 +64,6 @@
                         "value": {
                           "holder": "Controller",
                           "relation": "You"
-                        }
-                      },
-                      {
-                        "type": "Not",
-                        "value": {
-                          "type": "IsTapped"
                         }
                       }
                     ]
