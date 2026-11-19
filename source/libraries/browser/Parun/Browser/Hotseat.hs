@@ -202,15 +202,16 @@ exchange lookUp page seatRef request = do
     IORef.writeIORef seatRef state {paying = Maybe.isJust auto, skipping = if skipping state == turn then skipping state else Nothing}
     let seat = Question.seat $ Request.question request
         -- The board as it stands, while the seat is not asked: redrawn only
-        -- when what it shows changed, not at every pass of priority.
+        -- when what it shows changed, not at every pass of priority, and
+        -- only while the screen faces the seat, else what it last showed stays.
         watch how reply = do
           traced how
           Monad.forM_ (Request.view request) $ \shown -> do
             now <- IORef.readIORef seatRef
             let seen = shown {PlayerView.priority = Nothing}
-            Monad.when (watched now /= Just seen) $ do
+            Monad.when (watched now /= Just seen) . Monad.forM_ (Web.Question.watching (facing now) request (Web.Question.blank {Web.Question.logged = loggedFor seat now, Web.Question.fresh = freshOf seat now, Web.Question.level = level now})) $ \board -> do
               IORef.writeIORef seatRef now {watched = Just seen}
-              Browser.display page . fmap Right $ Web.Question.watching request (Web.Question.blank {Web.Question.logged = loggedFor seat now, Web.Question.fresh = freshOf seat now, Web.Question.level = level now})
+              Browser.display page (fmap Right board)
           pure reply
         conceded = if conceding state && kind == Text.pack "Concede" then Just (R.Text (Text.pack "Concedes")) else Nothing
     reply <- case (Monad.mplus conceded (Web.Question.automatic (level state) request), auto, skipped) of

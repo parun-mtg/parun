@@ -268,16 +268,18 @@ view request screen =
 
 -- | The page while the game goes on without the seat: a request it was not
 -- asked (Hotseat answers it), its board shown as it stands, and in place of
--- a question what the game is waiting on.
-watching :: Request.Request -> Screen -> Html.Html Event
-watching request screen =
+-- a question what the game is waiting on; nothing unless the screen faces
+-- (the first) the seat asked, since the board shows that seat's hidden cards.
+watching :: Maybe PlayerId.PlayerId -> Request.Request -> Screen -> Maybe (Html.Html Event)
+watching facing request screen = do
+  Monad.guard $ facing == Just (Question.seat (Request.question request))
   let status = case Request.view request of
         Just b
           | not (null (PlayerView.stack b)) -> "Resolving\x2026"
           | PlayerView.active b /= PlayerView.viewer b -> Text.unpack (Render.player (PlayerView.active b)) <> " is taking their turn\x2026"
         _ -> "Moving on\x2026"
-   in table request screen (barControls (level screen) False Nothing) (Board.MkMarks (\o -> Card.MkCue [] (MkRead (ObjectView.object o)) Nothing) (const Nothing)) $
-        news (Request.view request) (viewerOf request) screen <> [Element.el "p" ["waiting"] [] [Element.el "span" ["spinner", "small"] [Element.attr "aria-hidden" (Text.pack "true")] [], Element.string status]]
+  pure . table request screen (barControls (level screen) False Nothing) (Board.MkMarks (\o -> Card.MkCue [] (MkRead (ObjectView.object o)) Nothing) (const Nothing)) $
+    news (Request.view request) (viewerOf request) screen <> [Element.el "p" ["waiting"] [] [Element.el "span" ["spinner", "small"] [Element.attr "aria-hidden" (Text.pack "true")] [], Element.string status]]
 
 -- | A subgame's mark on the turn bar (CR 730.1a), and how deep it is.
 subgameChip :: Natural -> [Html.Html msg]
