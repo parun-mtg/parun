@@ -1,0 +1,301 @@
+{
+  "board": {
+    "active": "alice",
+    "seats": [
+      {
+        "battlefield": [
+          {
+            "card": "Meticulous Excavation",
+            "label": "dig"
+          },
+          {
+            "card": "Grizzly Bears",
+            "label": "bears"
+          },
+          {
+            "card": "Mountain",
+            "label": "m1",
+            "ready": true
+          },
+          {
+            "card": "Plains",
+            "label": "w1",
+            "ready": true
+          },
+          {
+            "card": "Plains",
+            "label": "w2",
+            "ready": true
+          },
+          {
+            "card": "Wastes",
+            "label": "p1",
+            "ready": true
+          },
+          {
+            "card": "Wastes",
+            "label": "p2",
+            "ready": true
+          },
+          {
+            "card": "Wastes",
+            "label": "p3",
+            "ready": true
+          },
+          {
+            "card": "Wastes",
+            "label": "p4",
+            "ready": true
+          },
+          {
+            "card": "Wastes",
+            "label": "p5",
+            "ready": true
+          },
+          {
+            "card": "Wastes",
+            "label": "p6",
+            "ready": true
+          },
+          {
+            "card": "Wastes",
+            "label": "p7",
+            "ready": true
+          },
+          {
+            "card": "Wastes",
+            "label": "p8",
+            "ready": true
+          },
+          {
+            "card": "Wastes",
+            "label": "p9",
+            "ready": true
+          }
+        ],
+        "graveyard": [
+          {
+            "card": "Mishra's Juggernaut",
+            "label": "jug"
+          }
+        ],
+        "library": [
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          }
+        ],
+        "name": "alice"
+      },
+      {
+        "battlefield": [],
+        "library": [
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          }
+        ],
+        "name": "bob"
+      }
+    ],
+    "step": "PrecombatMain"
+  },
+  "description": "CR 702.84a / 608.2c: Meticulous Excavation exiles an unearthed Mishra's Juggernaut and returns that card to hand, past unearth's exile replacement, and returns a Grizzly Bears to hand directly",
+  "note": "A bounce of the unearthed Juggernaut alone would leave it in exile (CR 702.84a's replacement), so the Juggernaut in hand proves the exile-then-return branch; the Bears in hand proves the branch for a permanent without unearth.",
+  "timeline": [
+    {
+      "do": {
+        "Activate": {
+          "ability": 0,
+          "mana": [
+            "$m1",
+            "$p1",
+            "$p2",
+            "$p3",
+            "$p4",
+            "$p5",
+            null
+          ],
+          "object": "$jug"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": "Pass",
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Count": {
+          "card": "Mishra's Juggernaut",
+          "count": 1,
+          "player": "alice",
+          "zone": "Battlefield"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": {
+        "Activate": {
+          "ability": 0,
+          "mana": [
+            "$w1",
+            "$p6",
+            "$p7",
+            null
+          ],
+          "object": "$dig",
+          "targets": [
+            "Mishra's Juggernaut"
+          ]
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": "Pass",
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Count": {
+          "card": "Mishra's Juggernaut",
+          "count": 1,
+          "player": "alice",
+          "zone": "Hand"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Count": {
+          "card": "Mishra's Juggernaut",
+          "count": 0,
+          "player": "alice",
+          "zone": "Exile"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": {
+        "Activate": {
+          "ability": 0,
+          "mana": [
+            "$w2",
+            "$p8",
+            "$p9"
+          ],
+          "object": "$dig",
+          "targets": [
+            "$bears"
+          ]
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": "Pass",
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Count": {
+          "card": "Grizzly Bears",
+          "count": 1,
+          "player": "alice",
+          "zone": "Hand"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Count": {
+          "card": "Grizzly Bears",
+          "count": 0,
+          "player": "alice",
+          "zone": "Exile"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    }
+  ]
+}

@@ -1,0 +1,107 @@
+{
+  "faces": [
+    {
+      "manaCost": [
+        {
+          "type": "Generic",
+          "value": 6
+        },
+        {
+          "type": "OfType",
+          "value": {
+            "type": "Colored",
+            "value": "Blue"
+          }
+        },
+        {
+          "type": "OfType",
+          "value": {
+            "type": "Colored",
+            "value": "Blue"
+          }
+        }
+      ],
+      "name": "One with the Multiverse",
+      "oracleText": "You may look at the top card of your library any time.\nYou may play lands and cast spells from the top of your library.\nOnce during each of your turns, you may cast a spell from your hand or the top of your library without paying its mana cost.",
+      "playerAbilities": [
+        {
+          "effect": {
+            "type": "Shows",
+            "value": {
+              "cards": "TopOfLibrary",
+              "to": "ThatPlayer"
+            }
+          },
+          "scope": {
+            "type": "You"
+          }
+        },
+        {
+          "effect": {
+            "type": "PlayLandsFrom",
+            "value": {
+              "player": {
+                "type": "Relative",
+                "value": "You"
+              },
+              "zone": "Library"
+            }
+          },
+          "scope": {
+            "type": "You"
+          }
+        },
+        {
+          "effect": {
+            "type": "CastFrom",
+            "value": {
+              "from": {
+                "player": {
+                  "type": "Relative",
+                  "value": "You"
+                },
+                "zone": "Library"
+              },
+              "matching": {
+                "type": "And",
+                "value": []
+              }
+            }
+          },
+          "scope": {
+            "type": "You"
+          }
+        },
+        {
+          "effect": {
+            "type": "PayRatherThanManaCost",
+            "value": {
+              "limit": "OnceEachOfYourTurns",
+              "spells": {
+                "type": "Or",
+                "value": [
+                  {
+                    "type": "IsInZone",
+                    "value": "Hand"
+                  },
+                  {
+                    "type": "IsInZone",
+                    "value": "Library"
+                  }
+                ]
+              }
+            }
+          },
+          "scope": {
+            "type": "You"
+          }
+        }
+      ],
+      "typeLine": {
+        "types": [
+          "Enchantment"
+        ]
+      }
+    }
+  ]
+}

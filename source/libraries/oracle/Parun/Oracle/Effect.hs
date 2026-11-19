@@ -822,8 +822,16 @@ joined context predicates = case predicates of
     | implied p || implied q -> apart <> apartRestated <> together <> togetherX <> thenImperative <> andImperative <> imperativeAnd <> imperativeThen <> eachDoes
     -- Free: "and" (Vampiric Feast), two sentences (Soul Shred) or, after an
     -- instruction naming no subject, ", then" (Rust Harvester).
-    | otherwise -> together <> apart <> togetherX <> durationFirst <> durationFirstX <> subjectlessThen
+    | otherwise -> together <> apart <> togetherX <> durationFirst <> durationFirstX <> subjectlessThen <> sourceAgain
     where
+      -- Free: the source, named, then called "it" as the next instruction's
+      -- subject, which drops it (Penregon Strongbull's "This creature gets
+      -- +1/+1 until end of turn and deals 1 damage to each opponent").
+      sourceAgain =
+        [ (Prose.sentence (clauseText p <> Text.pack " and " <> verb q) <> trailing q, allMentions p <> mentions q)
+        | fmap Target.wording (subject p) == Just (Target.self context),
+          fmap (\r -> (Target.wording r, Target.antecedents r)) (subject q) == Just (Text.pack "it", [])
+        ]
       -- Free for one duration read twice: after each verb, above, or once ahead
       -- of both (Rookie Mistake).
       durationFirst =

@@ -1,0 +1,71 @@
+{
+  "faces": [
+    {
+      "keywords": [
+        {
+          "type": "Unearth",
+          "value": {
+            "mana": [
+              {
+                "type": "OfType",
+                "value": {
+                  "type": "Colored",
+                  "value": "Green"
+                }
+              },
+              {
+                "type": "OfType",
+                "value": {
+                  "type": "Colored",
+                  "value": "Green"
+                }
+              }
+            ]
+          }
+        }
+      ],
+      "manaCost": [
+        {
+          "type": "Generic",
+          "value": 5
+        }
+      ],
+      "name": "Perennial Behemoth",
+      "oracleText": "You may play lands from your graveyard.\nUnearth {G}{G} ({G}{G}: Return this card from your graveyard to the battlefield. It gains haste. Exile it at the beginning of the next end step or if it would leave the battlefield. Unearth only as a sorcery.)",
+      "playerAbilities": [
+        {
+          "effect": {
+            "type": "PlayLandsFrom",
+            "value": {
+              "player": {
+                "type": "Relative",
+                "value": "You"
+              },
+              "zone": "Graveyard"
+            }
+          },
+          "scope": {
+            "type": "You"
+          }
+        }
+      ],
+      "power": {
+        "type": "Literal",
+        "value": 2
+      },
+      "toughness": {
+        "type": "Literal",
+        "value": 7
+      },
+      "typeLine": {
+        "subtypes": [
+          "Beast"
+        ],
+        "types": [
+          "Artifact",
+          "Creature"
+        ]
+      }
+    }
+  ]
+}
