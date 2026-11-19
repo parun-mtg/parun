@@ -1,0 +1,107 @@
+{
+  "board": {
+    "active": "alice",
+    "seats": [
+      {
+        "battlefield": [
+          {
+            "card": "Barkweave Crusher",
+            "label": "crusher",
+            "ready": true
+          },
+          {
+            "card": "Guardian of New Benalia",
+            "label": "guardian",
+            "ready": true
+          }
+        ],
+        "library": [
+          {
+            "card": "Craw Wurm",
+            "label": "first"
+          },
+          {
+            "card": "Lava Axe",
+            "label": "second"
+          },
+          {
+            "card": "Opt",
+            "label": "third"
+          }
+        ],
+        "name": "alice"
+      },
+      {
+        "library": [
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          }
+        ],
+        "name": "bob"
+      }
+    ],
+    "step": "BeginningOfCombat"
+  },
+  "description": "CR 702.154c: Guardian of New Benalia tapped for another creature's enlist did not enlist, so it does not scry",
+  "note": "The Crusher enlists the Guardian: only enlist's own pump triggers, so no trigger ordering or scry is asked and the library is untouched.",
+  "timeline": [
+    {
+      "do": {
+        "Attack": [
+          "$crusher"
+        ]
+      },
+      "player": "alice",
+      "step": "DeclareAttackers",
+      "turn": 1
+    },
+    {
+      "do": {
+        "Answer": {
+          "prompt": "ChooseEnlist",
+          "with": "$guardian"
+        }
+      },
+      "player": "alice",
+      "step": "DeclareAttackers",
+      "turn": 1
+    },
+    {
+      "do": "Pass",
+      "player": "alice",
+      "step": "DeclareAttackers",
+      "turn": 1
+    },
+    {
+      "check": {
+        "View": {
+          "is": [
+            "$first",
+            "$second",
+            "$third"
+          ],
+          "of": "Zone",
+          "player": "alice",
+          "zone": "Library"
+        }
+      },
+      "player": "alice",
+      "step": "DeclareAttackers",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Life": {
+          "life": 16,
+          "player": "bob"
+        }
+      },
+      "player": "alice",
+      "step": "EndOfCombat",
+      "turn": 1
+    }
+  ]
+}

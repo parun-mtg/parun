@@ -32,6 +32,7 @@ import qualified Parun.Types.DamagePrevented as DamagePrevented
 import qualified Parun.Types.DieResult as DieResult
 import qualified Parun.Types.Discarded as Discarded
 import qualified Parun.Types.Drew as Drew
+import qualified Parun.Types.Enlisted as Enlisted
 import qualified Parun.Types.Expended as Expended
 import qualified Parun.Types.Exploited as Exploited
 import qualified Parun.Types.FacedDilemma as FacedDilemma
@@ -379,6 +380,9 @@ data GameEvent
     -- saddle ability's cost. Crewed's relation one keyword over, kept apart so
     -- that neither reads as the other.
     Saddled Saddling.Saddling
+  | -- | CR 702.154c: a creature ENLISTED another, tapping it to pay its enlist
+    -- cost (CR 508.1g). Mentored's two ids, enlister first.
+    Enlisted Enlisted.Enlisted
   | -- | CR 701.21a: a permanent was SACRIFICED, and by whom. Emitted by
     -- Parun.Engine.Event.sacrifice, the one funnel every sacrifice goes through,
     -- and distinct from the Moved event the same sacrifice records: CR 700.4

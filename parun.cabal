@@ -855,6 +855,8 @@ library codec
     Parun.Codec.EndingStepSpec
     Parun.Codec.EndTurnSignal
     Parun.Codec.EndTurnSignalSpec
+    Parun.Codec.Enlisted
+    Parun.Codec.EnlistedSpec
     Parun.Codec.EnteredZone
     Parun.Codec.EnteredZoneSpec
     Parun.Codec.EnteringTogether
@@ -3280,6 +3282,7 @@ library types
     Parun.Types.Emperors
     Parun.Types.EndingStep
     Parun.Types.EndTurnSignal
+    Parun.Types.Enlisted
     Parun.Types.EnteredZone
     Parun.Types.EnteringTogether
     Parun.Types.EntersTrigger

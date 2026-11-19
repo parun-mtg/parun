@@ -58,6 +58,7 @@ import qualified Parun.Types.Discarded as Discarded
 import qualified Parun.Types.DraftNote as DraftNote
 import qualified Parun.Types.Drew as Drew
 import qualified Parun.Types.EndingStep as EndingStep
+import qualified Parun.Types.Enlisted as Enlisted
 import qualified Parun.Types.Expended as Expended
 import qualified Parun.Types.Exploited as Exploited
 import qualified Parun.Types.Face as Face
@@ -549,6 +550,7 @@ event view logged = case LoggedEvent.event logged of
   GameEvent.Crewed c -> by (Crewing.crewedBy c) "crews" "crew" (Crewing.vehicle c)
   GameEvent.BecameCrewed c -> said [name (Crewing.vehicle c), Text.pack "becomes crewed"]
   GameEvent.Saddled c -> by (Saddling.saddledBy c) "saddles" "saddle" (Saddling.mount c)
+  GameEvent.Enlisted e -> said [name (Enlisted.enlister e), Text.pack "enlists", name (Enlisted.enlisted e)]
   GameEvent.PermanentSacrificed p -> said [player (PermanentWasSacrificed.player p), Text.pack "sacrifices", name (PermanentWasSacrificed.permanent p)]
   GameEvent.ControlChanged c -> said [player (ControlChanged.after c), Text.pack "gains control of", name (ControlChanged.object c)]
   GameEvent.VentureMarkerEntered v -> said [player (VentureMarkerEntered.player v), Text.pack "moves their venture marker in", name (VentureMarkerEntered.dungeon v)]

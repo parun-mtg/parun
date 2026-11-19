@@ -114,6 +114,7 @@ witnessed pid logged = case LoggedEvent.event logged of
   GameEvent.Crewed {} -> Visibility.Visible
   GameEvent.BecameCrewed {} -> Visibility.Visible
   GameEvent.Saddled {} -> Visibility.Visible
+  GameEvent.Enlisted {} -> Visibility.Visible
   GameEvent.PermanentSacrificed {} -> Visibility.Visible
   GameEvent.AbilityTriggered {} -> Visibility.Visible -- CR 603.3: it goes on the stack
   GameEvent.ControlChanged {} -> Visibility.Visible

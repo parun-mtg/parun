@@ -389,6 +389,7 @@ import qualified Parun.Codec.EmergeSpec
 import qualified Parun.Codec.EmperorsSpec
 import qualified Parun.Codec.EndTurnSignalSpec
 import qualified Parun.Codec.EndingStepSpec
+import qualified Parun.Codec.EnlistedSpec
 import qualified Parun.Codec.EnteredZoneSpec
 import qualified Parun.Codec.EnteringTogetherSpec
 import qualified Parun.Codec.EntersTriggerSpec
@@ -1585,6 +1586,7 @@ spec s reference corpus = do
   Parun.Codec.ExileHauntingSpec.spec s
   Parun.Codec.CounterLinkSpec.spec s
   Parun.Codec.CounterLinkedSpec.spec s
+  Parun.Codec.EnlistedSpec.spec s
   Parun.Codec.EntryLinkSpec.spec s
   Parun.Codec.ExileLinkSpec.spec s
   Parun.Codec.ExileLookerSpec.spec s

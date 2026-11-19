@@ -1050,6 +1050,7 @@ snapshotView viewOf context gs shape event = case event of
   GameEvent.BecameCrewed _ -> Nothing
   GameEvent.Convoked _ -> Nothing
   GameEvent.Saddled _ -> Nothing
+  GameEvent.Enlisted {} -> Nothing
   GameEvent.Crewed _ -> Nothing
   -- CR 701.21a / 608.2h: the permanent as it last existed on the battlefield,
   -- the view TriggerCondition.PermanentSacrificed takes of the same event

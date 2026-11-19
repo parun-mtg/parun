@@ -11,10 +11,12 @@ codec =
   Arm.tagged
     tagOf
     [ Arm.payload "Vehicle" TriggerFrequency.codec CrewRole.Vehicle (\x -> case x of CrewRole.Vehicle y -> Just y; _ -> Nothing),
-      Arm.payload "Crewer" KeywordFamily.codec CrewRole.Crewer (\x -> case x of CrewRole.Crewer y -> Just y; _ -> Nothing)
+      Arm.payload "Crewer" KeywordFamily.codec CrewRole.Crewer (\x -> case x of CrewRole.Crewer y -> Just y; _ -> Nothing),
+      Arm.nullary "Enlister" CrewRole.Enlister
     ]
 
 tagOf :: CrewRole.CrewRole -> String
 tagOf x = case x of
   CrewRole.Vehicle {} -> "Vehicle"
   CrewRole.Crewer {} -> "Crewer"
+  CrewRole.Enlister -> "Enlister"
