@@ -1947,7 +1947,8 @@ filterPositionLintSpec s registry corpus = Spec.describe s "Lint" $ do
         ("Infinite Obliteration", 1), -- its own search
         ("Necromentia", 1), -- its own search
         ("Sphinx Ambassador", 1), -- its move clause's gate
-        ("Diviner's Lockbox", 1) -- its sacrifice clause's gate
+        ("Diviner's Lockbox", 1), -- its sacrifice clause's gate
+        ("The Stone Brain", 1) -- its own search, Ancient Vendetta's shape
       ]
   -- CR 702.16k's chosen player and CR 123.6's carrier stickers in the same
   -- frame one atom over: answerable only where a protection quality is read,
@@ -2218,7 +2219,8 @@ filterPositionLintSpec s registry corpus = Spec.describe s "Lint" $ do
         ("Kitsune, Dragon's Daughter", 2), -- both target slots, Run Away Together's shape
         ("Trial of Agony", 1), -- its second target slot, Sorrow's Path's shape
         ("Fear, Fire, Foes!", 1), -- its damage's object, relative to the target's controller
-        ("Legions to Ashes", 1) -- its exile's object, relative to the target's controller
+        ("Legions to Ashes", 1), -- its exile's object, relative to the target's controller
+        ("The Fall of Kroog", 1) -- its land target slot, Cloak and Dagger, Entwined's shape
       ]
     -- The REJECTING direction, hand-built for the reason every sibling lint's is:
     -- a card that offends must not be loadable, so no file can carry one. Buried

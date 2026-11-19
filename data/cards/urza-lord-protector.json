@@ -1,0 +1,668 @@
+{
+  "faces": [
+    {
+      "activatedAbilities": [
+        {
+          "cost": {
+            "mana": [
+              {
+                "type": "Generic",
+                "value": 7
+              }
+            ]
+          },
+          "modal": {
+            "modes": [
+              {
+                "clauses": [
+                  {
+                    "condition": {
+                      "type": "All",
+                      "value": [
+                        {
+                          "type": "Compares",
+                          "value": {
+                            "comparison": "AtLeast",
+                            "measured": {
+                              "type": "Count",
+                              "value": {
+                                "aggregation": {
+                                  "type": "Members"
+                                },
+                                "filter": {
+                                  "type": "And",
+                                  "value": [
+                                    {
+                                      "type": "IsSource"
+                                    },
+                                    {
+                                      "type": "HeldBy",
+                                      "value": {
+                                        "holder": "Owner",
+                                        "relation": "You"
+                                      }
+                                    },
+                                    {
+                                      "type": "HeldBy",
+                                      "value": {
+                                        "holder": "Controller",
+                                        "relation": "You"
+                                      }
+                                    }
+                                  ]
+                                },
+                                "scope": {
+                                  "type": "InZone",
+                                  "value": {
+                                    "player": {
+                                      "type": "Relative",
+                                      "value": "AnyPlayer"
+                                    },
+                                    "zone": "Battlefield"
+                                  }
+                                }
+                              }
+                            },
+                            "threshold": {
+                              "type": "Literal",
+                              "value": 1
+                            }
+                          }
+                        },
+                        {
+                          "type": "Compares",
+                          "value": {
+                            "comparison": "AtLeast",
+                            "measured": {
+                              "type": "Count",
+                              "value": {
+                                "aggregation": {
+                                  "type": "Members"
+                                },
+                                "filter": {
+                                  "type": "And",
+                                  "value": [
+                                    {
+                                      "type": "HasCardType",
+                                      "value": "Artifact"
+                                    },
+                                    {
+                                      "type": "HasName",
+                                      "value": "The Mightstone and Weakstone"
+                                    },
+                                    {
+                                      "type": "HeldBy",
+                                      "value": {
+                                        "holder": "Owner",
+                                        "relation": "You"
+                                      }
+                                    },
+                                    {
+                                      "type": "HeldBy",
+                                      "value": {
+                                        "holder": "Controller",
+                                        "relation": "You"
+                                      }
+                                    }
+                                  ]
+                                },
+                                "scope": {
+                                  "type": "InZone",
+                                  "value": {
+                                    "player": {
+                                      "type": "Relative",
+                                      "value": "AnyPlayer"
+                                    },
+                                    "zone": "Battlefield"
+                                  }
+                                }
+                              }
+                            },
+                            "threshold": {
+                              "type": "Literal",
+                              "value": 1
+                            }
+                          }
+                        }
+                      ]
+                    },
+                    "effects": [
+                      {
+                        "type": "MoveToZone",
+                        "value": {
+                          "ref": {
+                            "type": "AllOf",
+                            "value": [
+                              {
+                                "type": "ChosenPermanents",
+                                "value": {
+                                  "filter": {
+                                    "type": "And",
+                                    "value": [
+                                      {
+                                        "type": "HasCardType",
+                                        "value": "Artifact"
+                                      },
+                                      {
+                                        "type": "HasName",
+                                        "value": "The Mightstone and Weakstone"
+                                      },
+                                      {
+                                        "type": "HeldBy",
+                                        "value": {
+                                          "holder": "Owner",
+                                          "relation": "You"
+                                        }
+                                      },
+                                      {
+                                        "type": "HeldBy",
+                                        "value": {
+                                          "holder": "Controller",
+                                          "relation": "You"
+                                        }
+                                      }
+                                    ]
+                                  }
+                                }
+                              },
+                              {
+                                "type": "EachMatching",
+                                "value": {
+                                  "type": "IsSource"
+                                }
+                              }
+                            ]
+                          },
+                          "slot": "melded",
+                          "zone": "Exile"
+                        }
+                      },
+                      {
+                        "type": "Meld",
+                        "value": {
+                          "objects": {
+                            "type": "InSlot",
+                            "value": "melded"
+                          },
+                          "result": {
+                            "faces": [
+                              {
+                                "activatedAbilities": [
+                                  {
+                                    "cost": {
+                                      "components": [
+                                        {
+                                          "type": "AddLoyaltyToThis",
+                                          "value": 2
+                                        }
+                                      ],
+                                      "mana": []
+                                    },
+                                    "modal": {
+                                      "modes": [
+                                        {
+                                          "clauses": [
+                                            {
+                                              "effects": [
+                                                {
+                                                  "type": "AffectPlayers",
+                                                  "value": {
+                                                    "duration": {
+                                                      "type": "UntilEndOfTurn"
+                                                    },
+                                                    "effect": {
+                                                      "type": "ModifyCost",
+                                                      "value": {
+                                                        "change": {
+                                                          "type": "Reduce",
+                                                          "value": {
+                                                            "amount": [
+                                                              {
+                                                                "type": "Generic",
+                                                                "value": 2
+                                                              }
+                                                            ]
+                                                          }
+                                                        },
+                                                        "matching": {
+                                                          "type": "Or",
+                                                          "value": [
+                                                            {
+                                                              "type": "HasCardType",
+                                                              "value": "Artifact"
+                                                            },
+                                                            {
+                                                              "type": "HasCardType",
+                                                              "value": "Instant"
+                                                            },
+                                                            {
+                                                              "type": "HasCardType",
+                                                              "value": "Sorcery"
+                                                            }
+                                                          ]
+                                                        },
+                                                        "subject": {
+                                                          "type": "Spells"
+                                                        }
+                                                      }
+                                                    },
+                                                    "players": {
+                                                      "type": "Scoped",
+                                                      "value": {
+                                                        "type": "You"
+                                                      }
+                                                    }
+                                                  }
+                                                },
+                                                {
+                                                  "type": "GainLife",
+                                                  "value": {
+                                                    "player": {
+                                                      "type": "Relative",
+                                                      "value": "You"
+                                                    },
+                                                    "quantity": {
+                                                      "type": "Literal",
+                                                      "value": 2
+                                                    }
+                                                  }
+                                                }
+                                              ]
+                                            }
+                                          ]
+                                        }
+                                      ]
+                                    }
+                                  },
+                                  {
+                                    "cost": {
+                                      "components": [
+                                        {
+                                          "type": "AddLoyaltyToThis",
+                                          "value": 1
+                                        }
+                                      ],
+                                      "mana": []
+                                    },
+                                    "modal": {
+                                      "modes": [
+                                        {
+                                          "clauses": [
+                                            {
+                                              "effects": [
+                                                {
+                                                  "type": "Draw",
+                                                  "value": {
+                                                    "player": {
+                                                      "type": "Relative",
+                                                      "value": "You"
+                                                    },
+                                                    "quantity": {
+                                                      "type": "Literal",
+                                                      "value": 2
+                                                    }
+                                                  }
+                                                }
+                                              ]
+                                            },
+                                            {
+                                              "effects": [
+                                                {
+                                                  "type": "Discard",
+                                                  "value": {
+                                                    "type": "Counted",
+                                                    "value": {
+                                                      "player": {
+                                                        "type": "Relative",
+                                                        "value": "You"
+                                                      },
+                                                      "quantity": {
+                                                        "type": "Literal",
+                                                        "value": 1
+                                                      }
+                                                    }
+                                                  }
+                                                }
+                                              ]
+                                            }
+                                          ]
+                                        }
+                                      ]
+                                    }
+                                  },
+                                  {
+                                    "cost": {
+                                      "components": [
+                                        {
+                                          "type": "AddLoyaltyToThis",
+                                          "value": 0
+                                        }
+                                      ],
+                                      "mana": []
+                                    },
+                                    "modal": {
+                                      "modes": [
+                                        {
+                                          "clauses": [
+                                            {
+                                              "effects": [
+                                                {
+                                                  "type": "Create",
+                                                  "value": {
+                                                    "card": {
+                                                      "faces": [
+                                                        {
+                                                          "name": "Soldier Token",
+                                                          "power": {
+                                                            "type": "Literal",
+                                                            "value": 1
+                                                          },
+                                                          "toughness": {
+                                                            "type": "Literal",
+                                                            "value": 1
+                                                          },
+                                                          "typeLine": {
+                                                            "subtypes": [
+                                                              "Soldier"
+                                                            ],
+                                                            "types": [
+                                                              "Artifact",
+                                                              "Creature"
+                                                            ]
+                                                          }
+                                                        }
+                                                      ]
+                                                    },
+                                                    "quantity": {
+                                                      "type": "Literal",
+                                                      "value": 2
+                                                    }
+                                                  }
+                                                }
+                                              ]
+                                            }
+                                          ]
+                                        }
+                                      ]
+                                    }
+                                  },
+                                  {
+                                    "cost": {
+                                      "components": [
+                                        {
+                                          "type": "RemoveLoyaltyFromThis",
+                                          "value": {
+                                            "type": "Fixed",
+                                            "value": 3
+                                          }
+                                        }
+                                      ],
+                                      "mana": []
+                                    },
+                                    "modal": {
+                                      "modes": [
+                                        {
+                                          "clauses": [
+                                            {
+                                              "effects": [
+                                                {
+                                                  "type": "MoveToZone",
+                                                  "value": {
+                                                    "ref": {
+                                                      "type": "InSlot",
+                                                      "value": "target"
+                                                    },
+                                                    "zone": "Exile"
+                                                  }
+                                                }
+                                              ]
+                                            }
+                                          ],
+                                          "targetSlots": {
+                                            "target": {
+                                              "filter": {
+                                                "type": "Not",
+                                                "value": {
+                                                  "type": "HasCardType",
+                                                  "value": "Land"
+                                                }
+                                              },
+                                              "pool": {
+                                                "type": "Permanents"
+                                              }
+                                            }
+                                          }
+                                        }
+                                      ]
+                                    }
+                                  },
+                                  {
+                                    "cost": {
+                                      "components": [
+                                        {
+                                          "type": "RemoveLoyaltyFromThis",
+                                          "value": {
+                                            "type": "Fixed",
+                                            "value": 10
+                                          }
+                                        }
+                                      ],
+                                      "mana": []
+                                    },
+                                    "modal": {
+                                      "modes": [
+                                        {
+                                          "clauses": [
+                                            {
+                                              "effects": [
+                                                {
+                                                  "type": "ModifyTarget",
+                                                  "value": {
+                                                    "duration": {
+                                                      "type": "UntilEndOfTurn"
+                                                    },
+                                                    "modification": {
+                                                      "type": "GainKeyword",
+                                                      "value": {
+                                                        "type": "Indestructible"
+                                                      }
+                                                    },
+                                                    "ref": {
+                                                      "type": "EachMatching",
+                                                      "value": {
+                                                        "type": "And",
+                                                        "value": [
+                                                          {
+                                                            "type": "Or",
+                                                            "value": [
+                                                              {
+                                                                "type": "HasCardType",
+                                                                "value": "Artifact"
+                                                              },
+                                                              {
+                                                                "type": "HasCardType",
+                                                                "value": "Planeswalker"
+                                                              }
+                                                            ]
+                                                          },
+                                                          {
+                                                            "type": "HeldBy",
+                                                            "value": {
+                                                              "holder": "Controller",
+                                                              "relation": "You"
+                                                            }
+                                                          }
+                                                        ]
+                                                      }
+                                                    }
+                                                  }
+                                                },
+                                                {
+                                                  "type": "Destroy",
+                                                  "value": {
+                                                    "ref": {
+                                                      "type": "EachMatching",
+                                                      "value": {
+                                                        "type": "Not",
+                                                        "value": {
+                                                          "type": "HasCardType",
+                                                          "value": "Land"
+                                                        }
+                                                      }
+                                                    },
+                                                    "regenerability": "Regenerable"
+                                                  }
+                                                }
+                                              ]
+                                            }
+                                          ]
+                                        }
+                                      ]
+                                    }
+                                  }
+                                ],
+                                "loyalty": {
+                                  "type": "Literal",
+                                  "value": 7
+                                },
+                                "name": "Urza, Planeswalker",
+                                "playerAbilities": [
+                                  {
+                                    "effect": {
+                                      "type": "LoyaltyGrant",
+                                      "value": {
+                                        "permanents": {
+                                          "type": "IsSource"
+                                        },
+                                        "relaxes": {
+                                          "type": "TimesEachTurn",
+                                          "value": 2
+                                        }
+                                      }
+                                    },
+                                    "scope": {
+                                      "type": "You"
+                                    }
+                                  }
+                                ],
+                                "typeLine": {
+                                  "subtypes": [
+                                    "Urza"
+                                  ],
+                                  "supertypes": [
+                                    "Legendary"
+                                  ],
+                                  "types": [
+                                    "Planeswalker"
+                                  ]
+                                }
+                              }
+                            ]
+                          }
+                        }
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          },
+          "restrictions": [
+            {
+              "type": "SorcerySpeed"
+            }
+          ]
+        }
+      ],
+      "manaCost": [
+        {
+          "type": "Generic",
+          "value": 1
+        },
+        {
+          "type": "OfType",
+          "value": {
+            "type": "Colored",
+            "value": "White"
+          }
+        },
+        {
+          "type": "OfType",
+          "value": {
+            "type": "Colored",
+            "value": "Blue"
+          }
+        }
+      ],
+      "name": "Urza, Lord Protector",
+      "oracleText": "Artifact, instant, and sorcery spells you cast cost {1} less to cast.\n{7}: If you both own and control Urza, Lord Protector and an artifact named The Mightstone and Weakstone, exile them, then meld them into Urza, Planeswalker. Activate only as a sorcery.",
+      "playerAbilities": [
+        {
+          "effect": {
+            "type": "ModifyCost",
+            "value": {
+              "change": {
+                "type": "Reduce",
+                "value": {
+                  "amount": [
+                    {
+                      "type": "Generic",
+                      "value": 1
+                    }
+                  ]
+                }
+              },
+              "matching": {
+                "type": "Or",
+                "value": [
+                  {
+                    "type": "HasCardType",
+                    "value": "Artifact"
+                  },
+                  {
+                    "type": "HasCardType",
+                    "value": "Instant"
+                  },
+                  {
+                    "type": "HasCardType",
+                    "value": "Sorcery"
+                  }
+                ]
+              },
+              "subject": {
+                "type": "Spells"
+              }
+            }
+          },
+          "scope": {
+            "type": "You"
+          }
+        }
+      ],
+      "power": {
+        "type": "Literal",
+        "value": 2
+      },
+      "toughness": {
+        "type": "Literal",
+        "value": 4
+      },
+      "typeLine": {
+        "subtypes": [
+          "Artificer",
+          "Human"
+        ],
+        "supertypes": [
+          "Legendary"
+        ],
+        "types": [
+          "Creature"
+        ]
+      }
+    }
+  ],
+  "layout": {
+    "type": "Meld",
+    "value": "The Mightstone and Weakstone"
+  }
+}
