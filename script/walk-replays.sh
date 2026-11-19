@@ -1,12 +1,13 @@
 #!/usr/bin/env bash
 # Walks scenarios through the web client's replay (?scenario=…) headlessly,
 # over WebDriver, and saves a screenshot of every position as each seat sees
-# it: OUT/NAME/POSITION-SEAT.png. With no arguments, every scenario in
+# it: OUT/NAME/POSITION-SEAT.png, the same bytes each run, so two runs (before
+# and after a change) compare file by file. With no arguments, every scenario in
 # data/scenario-manifest.json; else each argument is a theme of it or a
 # scenario's name. Serve the client first (script/serve-web.sh), and allow
 # remote automation in Safari Technology Preview once (its Develop menu, or
 # `safaridriver --enable`):
-#   script/walk-replays.sh [-u URL] [-o OUT] [-d SAFARIDRIVER] [THEME|NAME]...
+#   script/walk-replays.sh [-u URL] [-o OUT] [-d SAFARIDRIVER] [-p PORT] [THEME|NAME]...
 set -euo pipefail
 url=https://localhost:8443/
 out=_scratch/replays
@@ -18,7 +19,7 @@ while getopts u:o:d:p: flag; do
     o) out=$OPTARG ;;
     d) driver=$OPTARG ;;
     p) port=$OPTARG ;;
-    *) sed -n '2,9p' "$0" >&2; exit 2 ;;
+    *) sed -n '2,10p' "$0" >&2; exit 2 ;;
   esac
 done
 shift $((OPTIND - 1))
@@ -86,14 +87,14 @@ for name in "${names[@]}"; do
     call GET /screenshot | jq -r . | base64 -d >"$out/$name/message.png"
     continue
   fi
-  # Transitions finish at once, so a screenshot shows where each settles.
-  run 'document.documentElement.dataset.motion = "reduced"; return null;' >/dev/null
   last=$(jq -r '.last' <<<"$shown")
   seats=$(jq -r '.seats | length' <<<"$shown")
   for at in $(seq 0 "$last"); do
     for seat in $(seq 0 $((seats - 1))); do
       run "document.querySelectorAll(\"#app .seats button\")[$seat].click(); document.activeElement?.blur(); return null;" >/dev/null
-      shown=$(until_shown "const s = (() => { $state })(); return s?.seats?.[$seat]?.[1] && s.at === $at ? s : null;")
+      # Motion reduced and every animation ended, so the same position
+      # screenshots the same way each run.
+      shown=$(until_shown "document.documentElement.dataset.motion = 'reduced'; const s = (() => { $state })(); return s?.seats?.[$seat]?.[1] && s.at === $at && document.getAnimations().every((a) => a.playState !== 'running') ? s : null;")
       label=$(jq -r ".seats[$seat][0]" <<<"$shown")
       call GET /screenshot | jq -r . | base64 -d >"$out/$name/$(printf %03d "$at")-$label.png"
     done
