@@ -45,8 +45,8 @@ spec s = Spec.describe s "Parun.Codec.CostChange" $ do
     Common.assertCodec
       s
       CostChange.codec
-      (CostChange.Type.Reduce (AppliedReduction.MkAppliedReduction (ManaCost.MkManaCost [ManaSymbol.OfType (ManaType.Colored Color.White)]) 0 (Just ManaFilter.Colored)))
-      " {\"type\":\"Reduce\",\"value\":{\"amount\":[{\"type\":\"OfType\",\"value\":{\"type\":\"Colored\",\"value\":\"White\"}}],\"reducesOnly\":{\"type\":\"Colored\"}}} "
+      (CostChange.Type.Reduce (AppliedReduction.MkAppliedReduction (ManaCost.MkManaCost [ManaSymbol.OfType (ManaType.Colored Color.White)]) 0 (Just (ManaFilter.NotOfType ManaType.Colorless))))
+      " {\"type\":\"Reduce\",\"value\":{\"amount\":[{\"type\":\"OfType\",\"value\":{\"type\":\"Colored\",\"value\":\"White\"}}],\"reducesOnly\":{\"type\":\"NotOfType\",\"value\":{\"type\":\"Colorless\"}}}} "
   Spec.it s "Reduce, Heartstone's floor" $
     Common.assertCodec
       s

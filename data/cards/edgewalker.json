@@ -48,7 +48,10 @@
                     }
                   ],
                   "reducesOnly": {
-                    "type": "Colored"
+                    "type": "NotOfType",
+                    "value": {
+                      "type": "Colorless"
+                    }
                   }
                 }
               },

@@ -11,7 +11,6 @@ codec =
     tagOf
     [ Arm.nullary "Any" ManaFilter.Any,
       Arm.payload "OfType" ManaType.codec ManaFilter.OfType (\x -> case x of ManaFilter.OfType y -> Just y; _ -> Nothing),
-      Arm.nullary "Colored" ManaFilter.Colored,
       Arm.payload "NotOfType" ManaType.codec ManaFilter.NotOfType (\x -> case x of ManaFilter.NotOfType y -> Just y; _ -> Nothing)
     ]
 
@@ -19,5 +18,4 @@ tagOf :: ManaFilter.ManaFilter -> String
 tagOf x = case x of
   ManaFilter.Any {} -> "Any"
   ManaFilter.OfType {} -> "OfType"
-  ManaFilter.Colored {} -> "Colored"
   ManaFilter.NotOfType {} -> "NotOfType"
