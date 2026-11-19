@@ -1,0 +1,43 @@
+{
+  "Control": [
+    "game/cr-305-2a-gameplay-word-of-command-makes-bob-play-a-land-on-his-turn",
+    "game/cr-724-1a-gameplay-word-of-command-over-a-mindslaver-hands-bob-back-to-alice",
+    "game/cr-724-2-gameplay-alice-controls-bob-again-while-the-forced-spell-resolves"
+  ],
+  "Designations": [
+    "monarch-attacked-bob",
+    "initiative/cr-727-2-a-trampler-that-trades-with-its-blocker-still-hands-the-initiative-over",
+    "daytime/cr-732-1-702-145c-tovolar-s-upkeep-trigger-makes-it-night-and-transforms-him",
+    "dungeon/cr-309-7-acererak-having-completed-nothing-returns-to-hand",
+    "ring/cr-701-54a-two-players-each-keep-their-own-ring-bearer",
+    "marsh-viper-gives-two-poison-only-when-it-hits-a-player",
+    "ajani-resolute-emblem-gives-your-creatures-plus-two"
+  ],
+  "Hidden information": [
+    "visibility/cr-708-5-a-face-down-spell-is-seen-by-its-caster-alone",
+    "face-down/cr-701-40b-a-manifested-creature-card-is-turned-face-up"
+  ],
+  "Multiplayer": [
+    "departure/cr-104-2a-one-departure-does-not-decide-a-three-player-game",
+    "monarch-attacked-carol",
+    "emperor/cr-809-3c-a-player-can-attack-only-an-opponent-seated",
+    "commander/cr-903-8-a-commander-is-cast-from-the-command-zone",
+    "planechase/cr-706-2b-monitor-monitor-rerolls-the-planar-die"
+  ],
+  "Rewritten cards": [
+    "text-change/cr-612-2-a-sleight-of-mind-answered-with-a-land-type-leaves-the-wraith-swampwalking",
+    "power-toughness/cr-612-1-a-magical-hack-makes-nightmare-s-cda-count-islands",
+    "projection/cr-612-6-volraths-shapeshifter-as-shapeshifter-chooses-and-reads-its-own-number",
+    "saga/cr-613-1f-history-of-benalia-under-opalescence-and-humility-enters-with-no-lore",
+    "cost/cr-613-1-blood-moon-shrinks-the-graveyard-nightmare-to-a-1-1",
+    "face-down/cr-614-1c-608-2h-the-reanimated-ixidron-s-power-is-read-after",
+    "meld/cr-202-3c-a-copy-of-a-melded-permanent-has-mana-value-0"
+  ],
+  "Whole-game effects": [
+    "game/cr-730-1b-gameplay-shahrazad-s-non-winners-each-lose-half-their-own-life-rounded-up",
+    "game/cr-728-1-727-2-727-4-gameplay-bob-activates-a-restart-and-the-game-rebuilds-from",
+    "outside-the-game/cr-400-11c-burning-wish-puts-the-sorcery-it-revealed-from-outside-the-game-into-her-hand",
+    "combat/cr-725-1-siren-s-call-still-means-bob-at-alice-s-end-step-after-time-stop",
+    "sphinx-of-the-second-sun-adds-a-beginning-phase-that-neither-settles-nor-grants-a-land"
+  ]
+}

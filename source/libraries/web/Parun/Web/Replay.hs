@@ -1,7 +1,7 @@
 -- | A scenario replayed on the page (#8821): the table at one position of
 -- its timeline as a chosen seat sees it, a scrubber over the positions, the
--- entry the run takes next and the question it answers, and the list of
--- scenarios to open.
+-- entry the run takes next and the question it answers, the list of
+-- scenarios to open, and how a game played on from a position ended.
 module Parun.Web.Replay where
 
 import qualified Data.Bifunctor as Bifunctor
@@ -120,6 +120,8 @@ controls frame =
             step "Last position" "\x23ED" ">" count (at < count)
           ],
         Element.el "p" ["position"] [] [Element.string (if at < count then "Before entry " <> show (at + 1) <> " of " <> show count else "After all " <> show count <> " entries")],
+        -- Parun.Browser.Replay.branch, on a page of its own.
+        Element.el "a" ["branch"] [Element.attr "href" (Text.pack "?scenario=" <> name frame <> Text.pack ("&at=" <> show at <> "&branch"))] [Element.string "Play on from here"],
         Element.el
           "div"
           ["segmented", "seats"]
@@ -151,18 +153,46 @@ sheet frame = do
   o <- Map.lookup (Card.object r) (Render.objects b)
   pure (Card.sheet b o r [] (MkTable Web.Question.MkClose))
 
--- | The list of scenarios: a filter, then the names matching it, each a
--- link that opens it, the first `shown` of them.
-picker :: Text.Text -> [Text.Text] -> Html.Html Event
-picker typed names =
-  let matching = filter (Text.isInfixOf (Text.toLower typed) . Text.toLower) names
+-- | The list of scenarios: a filter, then the names matching it, those the
+-- manifest names first under their themes (Parun.Scenario.Load.parseManifest),
+-- then every one, each a link that opens it, the first `shown` of them.
+picker :: Text.Text -> Map.Map Text.Text [Text.Text] -> [Text.Text] -> Html.Html Event
+picker typed themes names =
+  let matches = Text.isInfixOf (Text.toLower typed) . Text.toLower
+      matching = filter matches names
       shown = 200 :: Int
+      links = Element.keyed "ul" ["scenario-list"] [] . fmap (\n -> (n, Element.el "li" [] [] [Element.el "a" [] [Element.attr "href" (Text.pack "?scenario=" <> n)] [Element.text n]]))
+      featured = [Element.el "section" ["theme"] [] [Element.el "h2" [] [] [Element.text theme], links listed] | (theme, named) <- Map.toList themes, let listed = filter matches named, not (null listed)]
    in Element.el
         "main"
         ["message", "scenarios"]
         []
-        [ Element.el "h1" [] [] [Element.string "Scenarios"],
-          Element.el "input" ["search"] [Element.attr "type" (Text.pack "search"), Element.attr "placeholder" (Text.pack "Filter scenarios"), Element.attr "autocomplete" (Text.pack "off"), Element.attr "aria-label" (Text.pack "Filter scenarios"), Element.on "input" MkSearch] [],
-          Element.el "p" ["count"] [] [Element.string (show (length matching) <> " of " <> show (length names) <> (if length matching > shown then ", the first " <> show shown <> " shown" else ""))],
-          Element.keyed "ul" ["scenario-list"] [] [(n, Element.el "li" [] [] [Element.el "a" [] [Element.attr "href" (Text.pack "?scenario=" <> n)] [Element.text n]]) | n <- take shown matching]
-        ]
+        ( [ Element.el "h1" [] [] [Element.string "Scenarios"],
+            Element.el "input" ["search"] [Element.attr "type" (Text.pack "search"), Element.attr "placeholder" (Text.pack "Filter scenarios"), Element.attr "autocomplete" (Text.pack "off"), Element.attr "aria-label" (Text.pack "Filter scenarios"), Element.on "input" MkSearch] []
+          ]
+            <> featured
+            <> [Element.el "h2" [] [] [Element.string "Every scenario"] | not (null featured)]
+            <> [ Element.el "p" ["count"] [] [Element.string (show (length matching) <> " of " <> show (length names) <> (if length matching > shown then ", the first " <> show shown <> " shown" else ""))],
+                 links (take shown matching)
+               ]
+        )
+
+-- | How a game played on from a position ended (Parun.Browser.Replay.branch),
+-- with links back to that position and to play on from it again.
+ended :: Text.Text -> Natural -> [Text.Text] -> Html.Html msg
+ended named at said =
+  let back = Text.pack "?scenario=" <> named <> Text.pack ("&at=" <> show at)
+   in Element.el
+        "main"
+        ["message", "branch-ended"]
+        []
+        ( [Element.el "p" [] [] [Element.text line] | line <- said]
+            <> [ Element.el
+                   "p"
+                   ["ending-actions"]
+                   []
+                   [ Element.el "a" [] [Element.attr "href" back] [Element.string "Back to the replay"],
+                     Element.el "a" ["primary"] [Element.attr "href" (back <> Text.pack "&branch")] [Element.string "Play on again"]
+                   ]
+               ]
+        )

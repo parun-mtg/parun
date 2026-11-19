@@ -20,6 +20,7 @@ data-files:
   legalities.json
   oracle-unrendered/*.txt
   printings.json
+  scenario-manifest.json
   scenarios/**/*.json
   sticker-sheets/*.json
 

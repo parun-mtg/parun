@@ -4,7 +4,9 @@
 -- scenarios under data/scenarios are its gameplay-level cases.
 module Parun.ScenarioSpec where
 
+import qualified Control.Monad as Monad
 import qualified Control.Monad.IO.Class as MonadIO
+import qualified Control.Monad.Trans.Class as Trans
 import qualified Control.Monad.Trans.State.Strict as State
 import qualified Data.ByteString as ByteString
 import qualified Data.Foldable as Foldable
@@ -36,6 +38,7 @@ import qualified Parun.Support as S
 import qualified Parun.Trustworthy.Directory as Directory
 import qualified Parun.Types.Action as A
 import qualified Parun.Types.Answer as Answer
+import qualified Parun.Types.Answerer as Answerer
 import qualified Parun.Types.Asked as Asked
 import qualified Parun.Types.AttackersAre as AttackersAre
 import qualified Parun.Types.BeginningStep as BeginningStep
@@ -44,6 +47,7 @@ import qualified Parun.Types.CandidateCost as CandidateCost
 import qualified Parun.Types.CardName as CardName
 import qualified Parun.Types.Check as Check
 import qualified Parun.Types.Choices as Choices
+import qualified Parun.Types.CombatStep as CombatStep
 import qualified Parun.Types.Concession as Concession
 import qualified Parun.Types.Cost as Cost
 import qualified Parun.Types.Decider as Decider
@@ -67,6 +71,7 @@ import qualified Parun.Types.Readiness as Readiness
 import qualified Parun.Types.Recipient as Recipient
 import qualified Parun.Types.Reference as Reference
 import qualified Parun.Types.Reply as Reply
+import qualified Parun.Types.Result as Result
 import qualified Parun.Types.Scenario as Scenario.Type
 import qualified Parun.Types.ScenarioFailure as ScenarioFailure
 import qualified Parun.Types.Seat as Seat
@@ -832,18 +837,11 @@ spec s registry = Spec.describe s "Scenario" $ do
   -- The web client's replay (Parun.Browser.Replay) reaches each position by
   -- the run itself: before each entry in the order taken, then the end.
   Spec.it s "a replay stops before the entry it reaches, and at the end past the last" $ do
-    let json =
-          "{\"description\":\"x\",\"board\":{\"seats\":[{\"name\":\"alice\",\"manaPool\":\"RR\",\"hand\":[{\"card\":\"Goblin Piker\",\"label\":\"piker\"}],\"library\":[{\"card\":\"Mountain\"}]},{\"name\":\"bob\",\"library\":[{\"card\":\"Mountain\"}]}],\"active\":\"alice\",\"step\":\"PrecombatMain\"},"
-            <> "\"timeline\":[{\"turn\":1,\"step\":\"PrecombatMain\",\"player\":\"alice\",\"do\":{\"Cast\":{\"object\":\"$piker\"}}},"
-            <> "{\"turn\":1,\"step\":\"PrecombatMain\",\"player\":\"alice\",\"do\":\"Pass\"},"
-            <> "{\"turn\":1,\"step\":\"PrecombatMain\",\"player\":\"alice\",\"check\":{\"Count\":{\"player\":\"alice\",\"zone\":\"Battlefield\",\"card\":\"Goblin Piker\",\"count\":1}}}]}"
-        piker = CardName.MkCardName (Text.pack "Goblin Piker")
+    let piker = CardName.MkCardName (Text.pack "Goblin Piker")
         described stop = case stop of
           Stop.MkBefore taken timed asked -> (Just (taken, timed, Scenario.Prompt.kindOf (Asked.prompt asked)), S.countOnBattlefieldByName piker S.alice (Stop.state stop))
           Stop.MkEnded gs -> (Nothing, S.countOnBattlefieldByName piker S.alice gs)
-    scenario <- case Common.parse (Text.pack json) >>= Codec.decode Codec.Scenario.codec of
-      Left problem -> Spec.assertFailure s (Text.unpack problem)
-      Right decoded -> pure decoded
+    scenario <- either (Spec.assertFailure s . Text.unpack) pure pikerReplay
     let entry k = Foldable.toList (Seq.lookup k (Scenario.Type.timeline scenario))
         priority = Text.pack "ChooseAction"
     stops <- traverse (\k -> Scenario.replay registry k scenario) [Just 0, Just 1, Just 2, Just 3, Nothing]
@@ -858,11 +856,30 @@ spec s registry = Spec.describe s "Scenario" $ do
         Right (Nothing, 1)
       ]
 
+  -- The web client's branch (Parun.Browser.Replay.branch) plays on by hand
+  -- from where the replay stops: the question the stop shows, or past the
+  -- last entry the step after the one the timeline is spent in.
+  Spec.it s "a branch hands over at the replay's stop and plays on to the game's end" $ do
+    scenario <- either (Spec.assertFailure s . Text.unpack) pure pikerReplay
+    let piker = CardName.MkCardName (Text.pack "Goblin Piker")
+        -- The hand passes and declines, noting each question's state.
+        played at =
+          State.runStateT
+            (Scenario.branch (Registry.hoist Trans.lift registry) at (Answerer.MkAnswerer (\asked -> Scenario.quietAnswer (Asked.prompt asked) <$ State.modify' (Seq.|> Asked.game asked))) scenario)
+            Seq.empty
+        handed (outcome, asked) = (fmap GameState.result outcome, Seq.lookup 0 asked)
+        described gs = (TurnRegisters.phase (GameState.turn gs), S.countOnBattlefieldByName piker S.alice gs)
+    stop <- Scenario.replay registry (Just 1) scenario
+    (atOne, atEnd) <- (,) <$> fmap handed (played 1) <*> fmap handed (played 3)
+    Spec.assertEqWith s "the first question the hand answers is the stop's" (snd atOne) (either (const Nothing) (Just . Stop.state) stop)
+    Spec.assertEqWith s "past the last entry, the hand starts in the next step" (fmap described (snd atEnd)) (Just (Phase.Combat CombatStep.BeginningOfCombat, 1))
+    Spec.assertEqWith s "both play on until Bob draws from an empty library" (fst atOne, fst atEnd) (Right (Just (Result.Won S.alice)), Right (Just (Result.Won S.alice)))
+
 -- Every scenario under data/scenarios: each file matches the schema parun
 -- emits for it, and runs clean.
 -- The corpus is one directory per source spec, so a root's scenarios are every
 -- .json file beneath it, ascending by path.
-loadSpec :: Spec.Spec IO n -> n ()
+loadSpec :: (Monad n) => Spec.Spec IO n -> n ()
 loadSpec s = Spec.describe s "Parun.Scenario.Load" $ do
   Spec.it s "listRoot finds scenarios in subdirectories, ascending by path" $ do
     found <- S.withCorpusDir "scenario-load-nested" [("b.json", Text.pack "{}"), ("notes.txt", Text.empty)] $ \dir -> do
@@ -871,6 +888,14 @@ loadSpec s = Spec.describe s "Parun.Scenario.Load" $ do
       listed <- Load.listRoot dir
       pure (fmap (drop (length dir)) listed)
     Spec.assertEqWith s "both .json files, the nested one included" found ["/b.json", "/sub/a.json"]
+
+  -- The web client's replay lists it first (Parun.Web.Replay.picker).
+  Spec.it s "the replay's manifest names only scenarios that exist" $ do
+    root <- Load.defaultRoot
+    contents <- Load.manifestPath >>= ByteString.readFile
+    themes <- either (Spec.assertFailure s . Text.unpack) pure (Load.parseManifest contents)
+    missing <- Monad.filterM (fmap not . Directory.doesFileExist . (\name -> root <> "/" <> Text.unpack name <> ".json")) (concat (Map.elems themes))
+    Spec.assertEqWith s "the names with no file" missing []
 
 -- A run looks up the cards it places and the names the engine asks, nothing
 -- else: over a root holding a malformed file, a lookup that misses reaches
@@ -991,6 +1016,18 @@ scenarioCase s registry path =
     name = reverse (takeWhile (/= '/') (reverse path))
 
 -- One scenario decoded and run, failing the case if it will not decode.
+
+-- | A board where Alice casts Goblin Piker, passes, and sees it on the
+-- battlefield; each seat's library holds one Mountain.
+pikerReplay :: Either Text.Text Scenario.Type.Scenario
+pikerReplay = Common.parse (Text.pack json) >>= Codec.decode Codec.Scenario.codec
+  where
+    json =
+      "{\"description\":\"x\",\"board\":{\"seats\":[{\"name\":\"alice\",\"manaPool\":\"RR\",\"hand\":[{\"card\":\"Goblin Piker\",\"label\":\"piker\"}],\"library\":[{\"card\":\"Mountain\"}]},{\"name\":\"bob\",\"library\":[{\"card\":\"Mountain\"}]}],\"active\":\"alice\",\"step\":\"PrecombatMain\"},"
+        <> "\"timeline\":[{\"turn\":1,\"step\":\"PrecombatMain\",\"player\":\"alice\",\"do\":{\"Cast\":{\"object\":\"$piker\"}}},"
+        <> "{\"turn\":1,\"step\":\"PrecombatMain\",\"player\":\"alice\",\"do\":\"Pass\"},"
+        <> "{\"turn\":1,\"step\":\"PrecombatMain\",\"player\":\"alice\",\"check\":{\"Count\":{\"player\":\"alice\",\"zone\":\"Battlefield\",\"card\":\"Goblin Piker\",\"count\":1}}}]}"
+
 runJson :: (Monad m) => Spec.Spec m n -> Registry.Registry m -> String -> m (Either ScenarioFailure.ScenarioFailure GameState.GameState)
 runJson s registry json = case Common.parse (Text.pack json) >>= Codec.decode Codec.Scenario.codec of
   Left problem -> Spec.assertFailure s (Text.unpack problem)

@@ -80,12 +80,12 @@ const query = new URLSearchParams(location.search);
 const data = await gunzip("./data.tar.gz");
 phase(`fetched ${data.length} bytes`);
 const tree = untar(data);
-// A replay (?scenario=…, Parun.Browser.Replay) mounts data/scenarios too,
-// fetched only then.
+// A replay (?scenario=…, Parun.Browser.Replay) mounts data/scenarios and
+// its manifest too, fetched only then.
 if (query.has("scenario")) {
   const scenarios = await gunzip("./scenarios.tar.gz");
   phase(`fetched ${scenarios.length} bytes of scenarios`);
-  tree.set("scenarios", untar(scenarios).get("scenarios"));
+  for (const [name, node] of untar(scenarios)) tree.set(name, node);
 }
 const mounted = new PreopenDirectory("/data", inodes(tree));
 phase("unpacked");
@@ -96,9 +96,9 @@ const tracing = query.has("trace");
 // A rematch's decks (?mine=…&theirs=…) skip the lobby, and a shared seed
 // (&seed=…) shuffles as before (Parun.Web.Ending). A replay names its
 // scenario, the empty name for the list of them, and may name a position
-// (&at=…).
+// (&at=…) and play on from it (&branch).
 // The auto-pass level the page kept (page.js) goes in as parun_level.
-const passed = ["mine", "theirs", "seed", "level", "scenario", "at"].filter((key) => query.has(key)).map((key) => `parun_${key}=${query.get(key)}`);
+const passed = ["mine", "theirs", "seed", "level", "scenario", "at", "branch"].filter((key) => query.has(key)).map((key) => `parun_${key}=${query.get(key)}`);
 const wasi = new WASI([], ["parun_datadir=/data", ...(tracing ? ["parun_trace=1"] : []), ...passed], [
   new OpenFile(new File([])),
   ConsoleStdout.lineBuffered((line) => console.log(line)),
