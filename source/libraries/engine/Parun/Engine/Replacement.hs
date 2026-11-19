@@ -948,7 +948,13 @@ matchesPrinted viewOf gs event candidate =
         -- attachment, which `scopes` reads off the board.
         (ReplacementEffect.DestructionR (DestructionR.MkDestructionR matching rewrite), ProposedEvent.WouldBeDestroyed oid regenerability cause) ->
           maybe (scopes gs rewrite src oid) (\f -> matchesFiltered viewOf gs candidate f oid) matching && admits regenerability cause rewrite
-        (ReplacementEffect.CounterR (CounterR.MkCounterR pat _ _), ProposedEvent.WouldPutCounters cause oid kind _) ->
+        -- CR 616.1f: every counter row reads "one or more", so an event an
+        -- earlier row cut to zero (Vorinclex's halving of one) is no longer
+        -- one it would apply to; the player arm below and
+        -- matchingEnteringCounters gate likewise. Proved by the scenarios
+        -- hardened-scales-adds-nothing-to-counters-vorinclex-already-halved-to-zero
+        -- and melira-applies-to-no-poison-counter-vorinclex-already-halved-to-zero.
+        (ReplacementEffect.CounterR (CounterR.MkCounterR pat _ _), ProposedEvent.WouldPutCounters cause oid kind n) ->
           -- Our own encoding convention, not a rule: `whichKind = Nothing` means
           -- any kind, never no kind.
           --
@@ -956,7 +962,8 @@ matchesPrinted viewOf gs event candidate =
           -- given counters in another zone is none of its business, whatever
           -- its filter says. Proved by the scenario
           -- vorinclex-leaves-the-dream-counter-on-a-card-in-exile-alone.
-          maybe True (== kind) (CounterPattern.whichKind pat)
+          n > 0
+            && maybe True (== kind) (CounterPattern.whichKind pat)
             && Set.member oid (GameState.battlefield gs)
             && matchesPutter gs candidate (CounterPattern.subject pat) cause
             && matchesController gs candidate (CounterPattern.whose pat) oid
@@ -967,8 +974,9 @@ matchesPrinted viewOf gs event candidate =
         -- Parun.Types.CounterPattern), so Hardened Scales stays off a poison
         -- counter without saying so. `whichPlayerKind` is the player domain's
         -- kind (Melira, the Living Cure's "poison counters").
-        (ReplacementEffect.CounterR (CounterR.MkCounterR pat _ _), ProposedEvent.WouldPutPlayerCounters cause pid kind _) ->
-          Maybe.isNothing (CounterPattern.whichKind pat)
+        (ReplacementEffect.CounterR (CounterR.MkCounterR pat _ _), ProposedEvent.WouldPutPlayerCounters cause pid kind n) ->
+          n > 0
+            && Maybe.isNothing (CounterPattern.whichKind pat)
             && maybe True (== kind) (CounterPattern.whichPlayerKind pat)
             && matchesPutter gs candidate (CounterPattern.subject pat) cause
             && maybe False (\rel -> matchesPlayer gs candidate rel pid) (CounterPattern.onWho pat)
@@ -2157,7 +2165,7 @@ matchingEnteringCounters gs candidate pat oid =
   where
     admitted named pending
       | maybe False (matchesPutter gs candidate (CounterPattern.subject pat) . CounterCause.ByEffect) (enteringPutter gs oid named) =
-          Map.filterWithKey (\k _ -> maybe True (== k) (CounterPattern.whichKind pat) && not (CounterRestriction.prohibited oid k gs)) pending
+          Map.filterWithKey (\k v -> v > 0 && maybe True (== k) (CounterPattern.whichKind pat) && not (CounterRestriction.prohibited oid k gs)) pending
       | otherwise = Map.empty
 
 -- CR 614.1a: apply a scaling to a number. "Plus one" and "twice that many" are
