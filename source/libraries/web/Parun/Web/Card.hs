@@ -283,7 +283,8 @@ oracle lookUp o = do
       -- Several faces shown at once share one set of abilities, which no one
       -- face's can be compared with: not implemented (#8956).
       body f = case (now, shown) of
-        (Just c, [one]) | Face.name one == Face.name f -> said c f
+        -- Face down, the card looked at has no own effects to compare with.
+        (Just c, [one]) | Face.name one == Face.name f -> said (if Maybe.isJust (ObjectView.face o) then Nothing else ObjectView.ownEffects o) c f
         _ -> printed f
       lines' f = [CardName.unwrap (Face.name f) <> Text.pack (if Set.member (Face.name f) names || null shown then ":" else " (other face):") | length faces > 1] <> body f
   pure (if null faces then foldMap abilityLines now else concatMap lines' faces)
@@ -293,11 +294,11 @@ printed :: Face.Face Card.Card -> [Text.Text]
 printed = foldMap Text.lines . Face.oracleText
 
 -- | What a face says of the object's abilities `c` (CR 113.1a): its printed
--- text while they are the printed face's, the renderer's wording of them once
--- they differ, and otherwise its printed text under a note that it may be out
--- of date.
-said :: ProjectedCharacteristics.ProjectedCharacteristics -> Face.Face Card.Card -> [Text.Text]
-said c face = case wording c face of
+-- text while they are what the face says (wording), the renderer's wording of
+-- them once they differ, and otherwise its printed text under a note that it
+-- may be out of date.
+said :: Maybe ProjectedCharacteristics.ProjectedCharacteristics -> ProjectedCharacteristics.ProjectedCharacteristics -> Face.Face Card.Card -> [Text.Text]
+said own c face = case wording own c face of
   MkAsPrinted -> printed face
   MkWorded [] -> [Text.pack "It has no abilities."]
   MkWorded worded -> worded
@@ -314,12 +315,15 @@ data Wording
     MkUnworded
   deriving (Eq, Show)
 
--- | Whether the abilities `c` gives the object are the printed face's,
+-- | Whether the abilities `c` gives the object are what its face says,
 -- compared as card data (current) together with CR 305.6's intrinsic mana
--- abilities, and if not whether the renderer words each.
-wording :: ProjectedCharacteristics.ProjectedCharacteristics -> Face.Face Card.Card -> Wording
-wording c face
-  | not unworded, now == face, intrinsicNow == intrinsicPrinted = MkAsPrinted
+-- abilities, and if not whether the renderer words each. What the face says
+-- is the object under its own static abilities alone (ObjectView.ownEffects,
+-- `own`), where one applies to it: a Sliver's grant to itself is its printed
+-- text, as Karlov Watchdog's "during your turn" is.
+wording :: Maybe ProjectedCharacteristics.ProjectedCharacteristics -> ProjectedCharacteristics.ProjectedCharacteristics -> Face.Face Card.Card -> Wording
+wording own c face
+  | now == baseline, intrinsicNow == intrinsicBaseline, extras c == maybe (mempty, mempty, Projection.View.seedCharacteristicPT face) extras own = MkAsPrinted
   | unworded = MkUnworded
   | otherwise = maybe MkUnworded (MkWorded . (<> fmap intrinsic intrinsicNow)) (traverse Maybe.listToMaybe (Oracle.faceAbilities now))
   where
@@ -327,6 +331,10 @@ wording c face
     printedLine = Face.typeLine face
     intrinsicPrinted = Subtype.intrinsicMana (TypeLine.types printedLine) (TypeLine.subtypes printedLine)
     intrinsicNow = Subtype.intrinsicManaOf c
+    baseline = maybe face (`current` face) own
+    intrinsicBaseline = maybe intrinsicPrinted Subtype.intrinsicManaOf own
+    -- What `current` leaves out.
+    extras p = (ProjectedCharacteristics.lentKeywords p, ProjectedCharacteristics.grantedSpendManaAsThough p, ProjectedCharacteristics.characteristicPT p)
     intrinsic t = Text.pack "({T}: Add {" <> Oracle.Cost.manaType t <> Text.pack "}.)"
     -- The lists no layer writes (Parun.Types.ProjectedCharacteristics), which
     -- hold the printed text even where CR 305.7 strips it outside the fold.
@@ -345,7 +353,7 @@ wording c face
         -- A land whose basic land types changed may have lost the text the
         -- unwritten lists hold, which the projection doesn't record: not
         -- implemented (#8957).
-        || (intrinsicNow /= intrinsicPrinted && not (ProjectedCharacteristics.lostAllAbilities c) && unwritten)
+        || (intrinsicNow /= intrinsicBaseline && not (ProjectedCharacteristics.lostAllAbilities c) && unwritten)
 
 -- | The face with the abilities `c` gives the object written over its own
 -- (CR 613.1f): the lists the layers write as they stand, the lists no layer

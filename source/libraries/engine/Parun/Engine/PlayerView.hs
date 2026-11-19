@@ -125,7 +125,8 @@ seatView pid gs seat = do
 
 -- | CR 110.5: an object's status for anyone; its characteristics (as projected,
 -- CR 613) for a seat that may see them, which for a face-down permanent or
--- spell is every seat (CR 708.2); the card behind a face-down object for a
+-- spell is every seat (CR 708.2), and beside them its characteristics under
+-- its own static abilities alone; the card behind a face-down object for a
 -- seat that may look at it (CR 406.3, 708.5), and the foretell cost it was
 -- given with it (CR 702.143e); what an ability came from; what a stack
 -- object targets, which CR 601.2c / 602.2b / 603.3d announce to every seat;
@@ -143,6 +144,11 @@ objectView pid gs oid = do
       secrets = Map.keysSet (Map.filter unprivy (Object.chosenPlayers object))
       chosen :: Chosen.Chosen a -> Map.Map Acquisition.Acquisition a
       chosen field = if public || seen then Map.withoutKeys (Game.objectChoices field object) secrets else Map.empty
+      shown = public || (seen && not faceDown)
+      gathered = Projection.gather gs
+      -- The parts of the object's own static abilities (CR 604.1): an effect
+      -- this object's text applies to itself is what that text says.
+      own = filter (maybe False ((== oid) . fst) . Projection.gEffect) gathered
   pure
     ObjectView.MkObjectView
       { ObjectView.object = oid,
@@ -153,12 +159,16 @@ objectView pid gs oid = do
         ObjectView.counters = Object.counters object,
         ObjectView.attachedTo = Object.attachedTo object,
         ObjectView.characteristics =
-          if public || (seen && not faceDown)
-            then Just (Projection.project oid gs)
+          if shown
+            then Just (Projection.projectFrom gathered oid gs)
             else Nothing,
         ObjectView.face =
           if seen && faceDown
             then Just (Projection.projectShown oid gs)
+            else Nothing,
+        ObjectView.ownEffects =
+          if shown && not (null own)
+            then Just (Projection.projectFrom own oid gs)
             else Nothing,
         ObjectView.foretellCostReduction =
           if seen

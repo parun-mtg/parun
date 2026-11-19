@@ -265,6 +265,19 @@ spec s registry = Spec.describe s "WebQuestion" $ do
     Spec.assertBool s (either (const False) (elem (Text.pack "Jace, Telepath Unbound (other face):")) text) ("the back face: " <> show text)
     Spec.assertEqWith s "the face up first" (fmap (take 1) text) (Right [Text.pack "Jace, Vryn's Prodigy:"])
 
+  Spec.it s "CR 604.1 an ability a permanent's own static ability grants it reads as printed: a Sliver and Karlov Watchdog alone"
+    . Monad.forM_ ["Karlov Watchdog", "Sentinel Sliver"]
+    $ \name -> do
+      printing <- S.printingOf s registry name
+      let (oid, gs) = S.addPermanent printing S.alice (Setup.emptyGame S.bothPlayers)
+          card = Printing.card printing
+          lookUp n = Right (if any ((== n) . Face.name) (Card.Type.faces card) then Just card else Nothing) :: Either () (Maybe Card.Type.Card)
+          shown = List.find ((== oid) . ObjectView.object) (PlayerView.Type.battlefield (PlayerView.viewFor S.alice gs))
+          printedText = foldMap Text.lines (Face.oracleText (NonEmpty.head (Card.Type.faces card)))
+      Spec.assertEqWith s (name <> ": the sheet") (fmap (Card.oracle lookUp) shown) (Just (Right printedText))
+      -- On alice's turn the grant applies, and the view carries it.
+      Spec.assertBool s (Maybe.isJust (shown >>= ObjectView.ownEffects)) (name <> ": its own effects apply")
+
   Spec.it s "CR 305.7 / 305.6 a land Blood Moon strips reads as the Mountain's intrinsic mana ability" $ do
     tomb <- S.printingOf s registry "Ancient Tomb"
     moon <- S.printingOf s registry "Blood Moon"

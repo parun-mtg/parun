@@ -92,6 +92,8 @@ spec s = Spec.describe s "Parun.Codec.ObjectView" $ do
   -- CR 716.3d: a card exiled as its Adventure resolved.
   Spec.it s "a card on an adventure" $
     Common.assertCodec s ObjectView.codec hidden {ObjectView.onAdventure = True} (init hiddenJson <> ",\"onAdventure\":true}")
+  Spec.it s "an object its own static abilities affect" $
+    Common.assertCodec s ObjectView.codec hidden {ObjectView.ownEffects = Just ProjectedCharacteristicsSpec.testCharacteristics} (init hiddenJson <> ",\"ownEffects\":" <> ProjectedCharacteristicsSpec.testCharacteristicsJson <> "}")
   Spec.it s "has a schema" $ Common.assertHasSchema s ObjectView.codec
 
 -- Tapped and damaged, so neither status key encodes a default.
@@ -108,6 +110,7 @@ hidden =
       ObjectView.characteristics = Nothing,
       ObjectView.face = Nothing,
       ObjectView.foretellCostReduction = Nothing,
+      ObjectView.ownEffects = Nothing,
       ObjectView.ability = Nothing,
       ObjectView.targets = [],
       ObjectView.summoningSick = False,
