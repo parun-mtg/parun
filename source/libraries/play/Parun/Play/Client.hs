@@ -409,6 +409,53 @@ choice view question = Maybe.fromMaybe generic $ case Text.unpack (Question.kind
       ( [Offer.objectName view source <> wording, Text.pack "  1. Yes", Text.pack "  2. No"],
         fmap (\i -> optionalDecision (if i == 1 then OptionalDecision.Exercises else OptionalDecision.Declines)) . one 2
       )
+  -- CR 118.12 / 101.4b: the cost, after what earlier payers answered and the
+  -- member a loop's offer is for (CR 608.2f).
+  "ChooseToPay" -> do
+    let self = foldMap (Offer.objectName view) (Protocol.field "source" offer)
+        others = filter (\line -> not (Text.isPrefixOf (Text.pack "Cost:") line || Text.isPrefixOf (Text.pack "Earlier:") line)) (Offer.told view self offer)
+    pure
+      ( payersTold view self offer <> others <> [self <> Text.pack ": pay " <> foldMap (Offer.candidateName self) (Protocol.field "cost" offer) <> Text.pack "?", Text.pack "  1. Pay", Text.pack "  2. Don't pay"],
+        fmap (\i -> R.Text (Text.pack (if i == 1 then "Pays" else "Declines"))) . one 2
+      )
+  -- CR 608.2c: whether the hidden card is as the guess's source says.
+  "ChooseGuess" -> do
+    source <- Protocol.field "source" offer
+    pure
+      ( [Offer.objectName view source <> Text.pack ": guess whether the hidden card is as its text says.", Text.pack "  1. It is", Text.pack "  2. It isn't"],
+        fmap (\i -> R.Text (Text.pack (if i == 1 then "Holds" else "DoesNotHold"))) . one 2
+      )
+  -- CR 612.2: the word to change, then the word it becomes, each by number or
+  -- as printed; one the new word may not be is marked.
+  "ChooseWordSwap" -> do
+    (from, to) <- Offer.wordSwap offer
+    let size = Natural.length from
+        self = foldMap (Offer.objectName view) (Protocol.field "source" offer)
+        marked (w, name) = if w `elem` fmap fst to then name else name <> Text.pack " (can't be the new word)"
+        word token = case numbers token of
+          Right [i] | i >= 1 && i <= size -> Just (pickFrom (fmap fst from) i)
+          _ -> fst <$> List.find ((== Text.toCaseFold token) . Text.toCaseFold . snd) from
+        wrong = Text.pack ("Type two different numbers from 1 to " <> show size <> ", or two words, the old word first; both of one kind, and the new one allowed.")
+    pure
+      ( Text.concat [Text.pack "Choose the words ", self, Text.pack " swaps: type the word to change, then the word it becomes, by number or as printed, such as 1 2:"] : numbered (fmap marked from),
+        \typed -> case traverse word (Text.words typed) of
+          Just [a, b] | a /= b, Offer.swapAllowed offer a b -> Right (R.Array [a, b])
+          _ -> Left wrong
+      )
+  -- CR 700.3: a pile number per creature, in the order shown, any pile empty
+  -- (CR 700.3d).
+  "DividePiles" -> do
+    from <- Protocol.field "from" offer >>= Protocol.arrayOf
+    count <- Protocol.field "count" offer >>= Protocol.naturalOf
+    let wrong = Text.pack ("Type " <> show (length from) <> " pile numbers from 1 to " <> show count <> ", one per creature, separated by spaces.")
+    pure
+      ( Text.pack ("Divide the creatures into " <> show count <> " piles: type a pile number from 1 to " <> show count <> " for each, separated by spaces:") : numbered (fmap (Offer.listedName view) from),
+        \typed -> case numbers typed of
+          Right picked
+            | length picked == length from && all (\k -> k >= 1 && k <= count) picked ->
+                Right (R.Array [R.Array [creature | (creature, k') <- zip from picked, k' == k] | k <- [1 .. count]])
+          _ -> Left wrong
+      )
   -- CR 510.1c-d: one amount per recipient, in the order offered, beside how
   -- much of its lethal damage other creatures already assign (CR 702.19b-c).
   "AssignCombatDamage" -> do
