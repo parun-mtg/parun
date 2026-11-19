@@ -1,0 +1,51 @@
+{
+  "faces": [
+    {
+      "keywords": [
+        {
+          "type": "Vigilance"
+        },
+        {
+          "type": "Affinity",
+          "value": {
+            "type": "HasCardType",
+            "value": "Creature"
+          }
+        }
+      ],
+      "manaCost": [
+        {
+          "type": "Generic",
+          "value": 5
+        },
+        {
+          "type": "OfType",
+          "value": {
+            "type": "Colored",
+            "value": "White"
+          }
+        }
+      ],
+      "name": "Argivian Phalanx",
+      "oracleText": "Affinity for creatures (This spell costs {1} less to cast for each creature you control.)\nVigilance (Attacking doesn't cause this creature to tap.)",
+      "power": {
+        "type": "Literal",
+        "value": 4
+      },
+      "toughness": {
+        "type": "Literal",
+        "value": 4
+      },
+      "typeLine": {
+        "subtypes": [
+          "Human",
+          "Kor",
+          "Soldier"
+        ],
+        "types": [
+          "Creature"
+        ]
+      }
+    }
+  ]
+}

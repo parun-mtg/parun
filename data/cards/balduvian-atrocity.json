@@ -1,0 +1,204 @@
+{
+  "faces": [
+    {
+      "keywords": [
+        {
+          "type": "Kicker",
+          "value": {
+            "mana": [
+              {
+                "type": "OfType",
+                "value": {
+                  "type": "Colored",
+                  "value": "Red"
+                }
+              }
+            ]
+          }
+        },
+        {
+          "type": "Menace"
+        }
+      ],
+      "manaCost": [
+        {
+          "type": "Generic",
+          "value": 2
+        },
+        {
+          "type": "OfType",
+          "value": {
+            "type": "Colored",
+            "value": "Black"
+          }
+        }
+      ],
+      "name": "Balduvian Atrocity",
+      "oracleText": "Kicker {R} (You may pay an additional {R} as you cast this spell.)\nMenace\nWhen this creature enters, if it was kicked, return target creature card with mana value 3 or less from your graveyard to the battlefield. It gains haste. Sacrifice it at the beginning of the next end step.",
+      "power": {
+        "type": "Literal",
+        "value": 2
+      },
+      "toughness": {
+        "type": "Literal",
+        "value": 3
+      },
+      "triggeredAbilities": [
+        {
+          "condition": {
+            "type": "Enters",
+            "value": {}
+          },
+          "intervening": {
+            "type": "Compares",
+            "value": {
+              "comparison": "AtLeast",
+              "measured": {
+                "type": "TimesPaid",
+                "value": {
+                  "type": "Printed",
+                  "value": "Kicker"
+                }
+              },
+              "threshold": {
+                "type": "Literal",
+                "value": 1
+              }
+            }
+          },
+          "modal": {
+            "modes": [
+              {
+                "clauses": [
+                  {
+                    "effects": [
+                      {
+                        "type": "MoveToZone",
+                        "value": {
+                          "ref": {
+                            "type": "InSlot",
+                            "value": "target"
+                          },
+                          "slot": "returned",
+                          "zone": "Battlefield"
+                        }
+                      },
+                      {
+                        "type": "ModifyTarget",
+                        "value": {
+                          "duration": {
+                            "type": "Indefinite"
+                          },
+                          "modification": {
+                            "type": "GainKeyword",
+                            "value": {
+                              "type": "Haste"
+                            }
+                          },
+                          "ref": {
+                            "type": "InSlot",
+                            "value": "returned"
+                          }
+                        }
+                      },
+                      {
+                        "type": "ArmDelayedTrigger",
+                        "value": {
+                          "ability": {
+                            "type": "Triggered",
+                            "value": {
+                              "condition": {
+                                "type": "StepBegins",
+                                "value": {
+                                  "phase": {
+                                    "type": "Ending",
+                                    "value": "EndStep"
+                                  },
+                                  "scope": {
+                                    "type": "PlayersTurn",
+                                    "value": {
+                                      "type": "Relative",
+                                      "value": "AnyPlayer"
+                                    }
+                                  }
+                                }
+                              },
+                              "modal": {
+                                "modes": [
+                                  {
+                                    "clauses": [
+                                      {
+                                        "effects": [
+                                          {
+                                            "type": "Sacrifice",
+                                            "value": {
+                                              "ref": {
+                                                "type": "InSlot",
+                                                "value": "returned"
+                                              }
+                                            }
+                                          }
+                                        ]
+                                      }
+                                    ]
+                                  }
+                                ]
+                              }
+                            }
+                          },
+                          "name": "sacrifice it"
+                        }
+                      }
+                    ]
+                  }
+                ],
+                "targetSlots": {
+                  "target": {
+                    "filter": {
+                      "type": "And",
+                      "value": [
+                        {
+                          "type": "HasCardType",
+                          "value": "Creature"
+                        },
+                        {
+                          "type": "Measures",
+                          "value": {
+                            "comparison": "AtMost",
+                            "measure": "ManaValue",
+                            "operand": {
+                              "type": "Literal",
+                              "value": 3
+                            }
+                          }
+                        }
+                      ]
+                    },
+                    "pool": {
+                      "type": "CardsInGraveyard",
+                      "value": {
+                        "type": "Scoped",
+                        "value": {
+                          "type": "You"
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            ]
+          }
+        }
+      ],
+      "typeLine": {
+        "subtypes": [
+          "Berserker",
+          "Phyrexian"
+        ],
+        "types": [
+          "Creature"
+        ]
+      }
+    }
+  ]
+}
