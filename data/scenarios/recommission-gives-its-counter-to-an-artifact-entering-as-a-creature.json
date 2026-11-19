@@ -88,10 +88,7 @@
     {
       "do": {
         "Cast": {
-          "object": "$rec",
-          "targets": [
-            "$stone"
-          ]
+          "object": "$rec"
         }
       },
       "player": "alice",
