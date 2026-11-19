@@ -3,12 +3,15 @@
 module Parun.Codec.ObjectView where
 
 import qualified Data.Map.Strict as Map
+import qualified Data.Set as Set
 import qualified Parun.Codec.AbilityView as AbilityView
 import qualified Parun.Codec.Acquisition as Acquisition
 import qualified Parun.Codec.CardName as CardName
 import qualified Parun.Codec.CardType as CardType
+import qualified Parun.Codec.ClassLevel as ClassLevel
 import qualified Parun.Codec.Color as Color
 import qualified Parun.Codec.CounterKind as CounterKind
+import qualified Parun.Codec.Designation as Designation
 import qualified Parun.Codec.Keyword as Keyword
 import qualified Parun.Codec.ManaCost as ManaCost
 import qualified Parun.Codec.ObjectId as ObjectId
@@ -16,6 +19,8 @@ import qualified Parun.Codec.PlayerChoice as PlayerChoice
 import qualified Parun.Codec.PlayerId as PlayerId
 import qualified Parun.Codec.ProjectedCharacteristics as ProjectedCharacteristics
 import qualified Parun.Codec.Recipient as Recipient
+import qualified Parun.Codec.RoomHalf as RoomHalf
+import qualified Parun.Codec.RoomIndex as RoomIndex
 import qualified Parun.Codec.Subtype as Subtype
 import qualified Parun.Codec.TapState as TapState
 import qualified Parun.JsonCodec.Codec as Codec
@@ -45,6 +50,12 @@ codec = Fields.object $ do
   ability <- Fields.required "ability" (Common.maybe AbilityView.codec) ObjectView.ability
   targets <- Fields.required "targets" (Common.list Recipient.codec) ObjectView.targets
   summoningSick <- Fields.defaulted "summoningSick" False Common.boolean ObjectView.summoningSick
+  ringBearerFor <- Fields.defaulted "ringBearerFor" Nothing (Common.maybe PlayerId.codec) ObjectView.ringBearerFor
+  protector <- Fields.defaulted "protector" Nothing (Common.maybe PlayerId.codec) ObjectView.protector
+  classLevel <- Fields.defaulted "classLevel" Nothing (Common.maybe ClassLevel.codec) ObjectView.classLevel
+  unlockedHalves <- Fields.defaulted "unlockedHalves" Set.empty (Common.set RoomHalf.codec) ObjectView.unlockedHalves
+  designations <- Fields.defaulted "designations" Set.empty (Common.set Designation.codec) ObjectView.designations
+  ventureRoom <- Fields.defaulted "ventureRoom" Nothing (Common.maybe RoomIndex.codec) ObjectView.ventureRoom
   chosenColors <- Fields.defaulted "chosenColors" Map.empty (Common.keyedList (Common.keyValue Acquisition.codec (Common.set Color.codec))) ObjectView.chosenColors
   chosenColorless <- Fields.defaulted "chosenColorless" Map.empty (Common.keySet Acquisition.codec) ObjectView.chosenColorless
   chosenSubtype <- Fields.defaulted "chosenSubtype" Map.empty (Common.keyedList (Common.keyValue Acquisition.codec (Common.nonEmpty Subtype.codec))) ObjectView.chosenSubtype
@@ -68,6 +79,12 @@ codec = Fields.object $ do
         ObjectView.ability = ability,
         ObjectView.targets = targets,
         ObjectView.summoningSick = summoningSick,
+        ObjectView.ringBearerFor = ringBearerFor,
+        ObjectView.protector = protector,
+        ObjectView.classLevel = classLevel,
+        ObjectView.unlockedHalves = unlockedHalves,
+        ObjectView.designations = designations,
+        ObjectView.ventureRoom = ventureRoom,
         ObjectView.chosenColors = chosenColors,
         ObjectView.chosenColorless = chosenColorless,
         ObjectView.chosenSubtype = chosenSubtype,

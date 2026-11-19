@@ -277,11 +277,14 @@ offerOf namer gs prompt = case prompt of
   Prompt.ChooseCardInGraveyard _ _ source cards earlier -> choosing namer prompt "options" (Just source) [("earlier", Reply.encode (Reply.seqOf (Reply.pairOf Reply.player Reply.object)) namer earlier)] (NonEmpty.toList cards)
   Prompt.ChooseCardInHand _ _ source cards -> choosing namer prompt "options" (Just source) [] (NonEmpty.toList cards)
   Prompt.ChooseCardFromAmong _ _ source cards -> choosing namer prompt "options" (Just source) (departed namer gs (NonEmpty.toList cards)) (NonEmpty.toList cards)
-  Prompt.ChooseDungeon _ _ dungeons -> choosing namer prompt "options" Nothing [] (NonEmpty.toList dungeons)
+  -- CR 309.2a: each dungeon by its printing, and under @"entries"@ its name.
+  Prompt.ChooseDungeon _ _ dungeons -> choosing namer prompt "options" Nothing [("entries", R.Array (fmap (R.Text . printingName gs) (NonEmpty.toList dungeons)))] (NonEmpty.toList dungeons)
   Prompt.ChooseSticker _ _ source stickers -> choosing namer prompt "options" (Just source) [] (NonEmpty.toList stickers)
   Prompt.ChooseStickerOrNone _ _ source stickers -> choosing namer prompt "options" (Just source) [] (orNone stickers)
   Prompt.ChooseNamePosition _ _ source positions -> choosing namer prompt "options" (Just source) [] (NonEmpty.toList positions)
-  Prompt.ChooseCompanion _ _ companions -> choosing namer prompt "options" Nothing [] (orNone companions)
+  -- CR 702.139a: each companion by its card, and under @"entries"@ its name,
+  -- then none.
+  Prompt.ChooseCompanion _ _ companions -> choosing namer prompt "options" Nothing [("entries", R.Array (fmap (R.Text . outsideName gs) (NonEmpty.toList companions) <> [R.Text (Text.pack "No companion")]))] (orNone companions)
   Prompt.ChooseRoom _ _ source rooms -> choosing namer prompt "options" (Just source) [] (NonEmpty.toList rooms)
   Prompt.ChooseHalf _ _ source names -> choosing namer prompt "options" (Just source) [] (NonEmpty.toList names)
   Prompt.ChooseLegend _ _ candidates -> choosing namer prompt "options" Nothing [] (NonEmpty.toList candidates)

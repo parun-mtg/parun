@@ -2,12 +2,14 @@ module Parun.Types.SeatView where
 
 import qualified Data.Map.Strict as Map
 import qualified Data.Sequence as Seq
+import qualified Data.Set as Set
 import qualified Numeric.Natural as Natural
 import qualified Parun.Types.CardName as CardName
 import qualified Parun.Types.DraftNote as DraftNote
 import qualified Parun.Types.Mana as Mana
 import qualified Parun.Types.ObjectView as ObjectView
 import qualified Parun.Types.PlayerCounterKind as PlayerCounterKind
+import qualified Parun.Types.PlayerDesignation as PlayerDesignation
 import qualified Parun.Types.PlayerId as PlayerId
 
 -- | CR 400.2: one player's zones and totals as one seat sees them, a hidden
@@ -23,6 +25,14 @@ data SeatView = MkSeatView
     graveyard :: [ObjectView.ObjectView],
     exile :: [ObjectView.ObjectView],
     manaPool :: Mana.Mana,
+    -- | CR 701.54c: how many times the Ring has tempted the player.
+    ringTemptations :: Natural.Natural,
+    -- | CR 702.179b: the player's speed, Nothing while they have none.
+    speed :: Maybe Natural.Natural,
+    -- | CR 702.131c / 702.195b: the city's blessing and the enduring story.
+    designations :: Set.Set PlayerDesignation.PlayerDesignation,
+    -- | CR 309.7: how many dungeons the player has completed.
+    completedDungeons :: Natural.Natural,
     -- | CR 905.2b: Player.draftNotes, which every seat may look at.
     draftNotes :: Map.Map CardName.CardName (Seq.Seq DraftNote.DraftNote)
   }

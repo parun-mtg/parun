@@ -2,6 +2,7 @@ module Parun.Codec.ObjectViewSpec where
 
 import qualified Data.List.NonEmpty as NonEmpty
 import qualified Data.Map.Strict as Map
+import qualified Data.Set as Set
 import qualified Parun.Codec.ObjectView as ObjectView
 import qualified Parun.Codec.ProjectedCharacteristicsSpec as ProjectedCharacteristicsSpec
 import qualified Parun.Codec.TriggeredAbilitySourceSpec as TriggeredAbilitySourceSpec
@@ -9,6 +10,8 @@ import qualified Parun.JsonCodec.Common as Common
 import qualified Parun.Spec as Spec
 import qualified Parun.Types.AbilityView as AbilityView
 import qualified Parun.Types.Acquisition as Acquisition
+import qualified Parun.Types.ClassLevel as ClassLevel
+import qualified Parun.Types.Designation as Designation
 import qualified Parun.Types.ManaCost as ManaCost
 import qualified Parun.Types.ManaSymbol as ManaSymbol
 import qualified Parun.Types.ObjectId as ObjectId
@@ -16,6 +19,8 @@ import qualified Parun.Types.ObjectView as ObjectView
 import qualified Parun.Types.PlayerChoice as PlayerChoice
 import qualified Parun.Types.PlayerId as PlayerId
 import qualified Parun.Types.Recipient as Recipient
+import qualified Parun.Types.RoomHalf as RoomHalf
+import qualified Parun.Types.RoomIndex as RoomIndex
 import qualified Parun.Types.StackedAbility as StackedAbility
 import qualified Parun.Types.Subtype as Subtype
 import qualified Parun.Types.TapState as TapState
@@ -77,6 +82,13 @@ spec s = Spec.describe s "Parun.Codec.ObjectView" $ do
           }
       )
       (init hiddenJson <> ",\"chosenSubtype\":[{\"key\":{\"type\":\"Own\"},\"value\":[\"Merfolk\"]}],\"chosenPlayers\":[{\"key\":{\"type\":\"Own\"},\"value\":[{\"key\":{\"type\":\"SecretChooser\"},\"value\":0}]}]}")
+  -- CR 701.54b / 310.9 / 717.2b / 709.5c / 720.3b / 309.4.
+  Spec.it s "a permanent's designations" $
+    Common.assertCodec
+      s
+      ObjectView.codec
+      hidden {ObjectView.ringBearerFor = Just (PlayerId.MkPlayerId 1), ObjectView.protector = Just (PlayerId.MkPlayerId 0), ObjectView.classLevel = Just (ClassLevel.MkClassLevel 2), ObjectView.unlockedHalves = Set.singleton RoomHalf.LeftHalf, ObjectView.designations = Set.singleton Designation.Solved, ObjectView.ventureRoom = Just (RoomIndex.MkRoomIndex 3)}
+      (init hiddenJson <> ",\"ringBearerFor\":1,\"protector\":0,\"classLevel\":2,\"unlockedHalves\":[\"LeftHalf\"],\"designations\":[\"Solved\"],\"ventureRoom\":3}")
   Spec.it s "has a schema" $ Common.assertHasSchema s ObjectView.codec
 
 -- Tapped and damaged, so neither status key encodes a default.
@@ -96,6 +108,12 @@ hidden =
       ObjectView.ability = Nothing,
       ObjectView.targets = [],
       ObjectView.summoningSick = False,
+      ObjectView.ringBearerFor = Nothing,
+      ObjectView.protector = Nothing,
+      ObjectView.classLevel = Nothing,
+      ObjectView.unlockedHalves = Set.empty,
+      ObjectView.designations = Set.empty,
+      ObjectView.ventureRoom = Nothing,
       ObjectView.chosenColors = Map.empty,
       ObjectView.chosenColorless = Map.empty,
       ObjectView.chosenSubtype = Map.empty,

@@ -14,4 +14,5 @@ codec = Fields.object $ do
   seat <- Fields.required "seat" PlayerId.codec Question.seat
   kind <- Fields.required "kind" Common.text Question.kind
   offer <- Fields.required "offer" Reply.codec Question.offer
-  pure Question.MkQuestion {Question.seat = seat, Question.kind = kind, Question.offer = offer}
+  for <- Fields.defaulted "for" Nothing (Common.maybe PlayerId.codec) Question.for
+  pure Question.MkQuestion {Question.seat = seat, Question.kind = kind, Question.offer = offer, Question.for = for}

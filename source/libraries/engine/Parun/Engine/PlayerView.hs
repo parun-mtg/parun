@@ -56,12 +56,17 @@ viewFor pid gs =
       PlayerView.priority = TurnRegisters.priority (GameState.turn gs),
       PlayerView.seats = Maybe.mapMaybe (seatView pid gs) (GameState.seating gs),
       PlayerView.battlefield = Maybe.mapMaybe (objectView pid gs) (Foldable.toList (GameState.battlefield gs)),
+      PlayerView.phasedOut = Maybe.mapMaybe (objectView pid gs) (Map.keys (GameState.phasedOut gs)),
+      PlayerView.command = Maybe.mapMaybe (objectView pid gs) (Foldable.toList (GameState.command gs)),
       PlayerView.stack = Maybe.mapMaybe (objectView pid gs) (TurnRegisters.stack (GameState.turn gs)),
       PlayerView.attackers = Combat.attackers (TurnRegisters.combat (GameState.turn gs)),
       PlayerView.blockers = Combat.blockers (TurnRegisters.combat (GameState.turn gs)),
       PlayerView.parkedStacks = fmap (Maybe.mapMaybe (objectView pid gs) . TurnRegisters.stack) (GameState.parkedTurns gs),
       PlayerView.witnessed = witnessedIn (TurnRegisters.events (GameState.turn gs)),
       PlayerView.witnessedLastTurn = witnessedIn (Game.turnLog WhichTurn.LastTurn Nothing gs),
+      PlayerView.monarch = GameState.monarch gs,
+      PlayerView.initiative = GameState.initiative gs,
+      PlayerView.daytime = GameState.daytime gs,
       PlayerView.result = GameState.result gs,
       PlayerView.undone = Map.lookup pid (Bookkeeping.undone (GameState.bookkeeping gs))
     }
@@ -91,6 +96,10 @@ seatView pid gs seat = do
         SeatView.graveyard = public Zone.Graveyard,
         SeatView.exile = public Zone.Exile,
         SeatView.manaPool = Map.findWithDefault (Mana.MkMana []) seat (GameState.manaPool gs),
+        SeatView.ringTemptations = Player.ringTemptations player,
+        SeatView.speed = Player.speed player,
+        SeatView.designations = Player.designations player,
+        SeatView.completedDungeons = Player.completedDungeons player,
         SeatView.draftNotes = Player.draftNotes player
       }
 
@@ -141,6 +150,12 @@ objectView pid gs oid = do
           Game.zoneOf oid gs == Just Zone.Battlefield
             && Set.member CardType.Creature (Projection.cardTypesOf oid gs)
             && not (Summoning.settledOrHasty (Maybe.fromMaybe (Object.owner object) (Projection.View.controllerOf oid gs)) oid gs),
+        ObjectView.ringBearerFor = Object.ringBearerFor object,
+        ObjectView.protector = Object.protector object,
+        ObjectView.classLevel = Object.classLevel object,
+        ObjectView.unlockedHalves = Object.unlockedHalves object,
+        ObjectView.designations = Object.designations object,
+        ObjectView.ventureRoom = Object.ventureRoom object,
         ObjectView.chosenColors = chosen Chosen.Colors,
         ObjectView.chosenColorless = chosen Chosen.Colorless,
         ObjectView.chosenSubtype = chosen Chosen.Subtype,

@@ -126,7 +126,7 @@ controls frame =
           "div"
           ["segmented", "seats"]
           [Element.attr "role" (Text.pack "group"), Element.attr "aria-label" (Text.pack "View as")]
-          [ Element.el "button" ["on" | pid == viewer frame] [Element.attr "type" (Text.pack "button"), Element.attr "aria-pressed" (Text.pack (if pid == viewer frame then "true" else "false")), Element.on "click" (MkSeat pid)] [Element.text label]
+          [ Element.el "button" ["on" | pid == viewer frame] [Element.attr "type" (Text.pack "button"), Element.attr "title" (label <> Text.pack " is " <> Render.player pid <> Text.pack " on the table"), Element.attr "aria-pressed" (Text.pack (if pid == viewer frame then "true" else "false")), Element.on "click" (MkSeat pid)] [Element.text label]
           | (pid, label) <- seats frame
           ]
       ]

@@ -3,11 +3,13 @@
 module Parun.Codec.SeatView where
 
 import qualified Data.Map.Strict as Map
+import qualified Data.Set as Set
 import qualified Parun.Codec.CardName as CardName
 import qualified Parun.Codec.DraftNote as DraftNote
 import qualified Parun.Codec.Mana as Mana
 import qualified Parun.Codec.ObjectView as ObjectView
 import qualified Parun.Codec.PlayerCounterKind as PlayerCounterKind
+import qualified Parun.Codec.PlayerDesignation as PlayerDesignation
 import qualified Parun.Codec.PlayerId as PlayerId
 import qualified Parun.JsonCodec.Codec as Codec
 import qualified Parun.JsonCodec.Common as Common
@@ -27,6 +29,10 @@ codec = Fields.object $ do
   graveyard <- Fields.required "graveyard" (Common.list ObjectView.codec) SeatView.graveyard
   exile <- Fields.required "exile" (Common.list ObjectView.codec) SeatView.exile
   manaPool <- Fields.required "manaPool" Mana.codec SeatView.manaPool
+  ringTemptations <- Fields.defaulted "ringTemptations" 0 Common.natural SeatView.ringTemptations
+  speed <- Fields.defaulted "speed" Nothing (Common.maybe Common.natural) SeatView.speed
+  designations <- Fields.defaulted "designations" Set.empty (Common.set PlayerDesignation.codec) SeatView.designations
+  completedDungeons <- Fields.defaulted "completedDungeons" 0 Common.natural SeatView.completedDungeons
   draftNotes <- Fields.defaulted "draftNotes" Map.empty (Common.keyedList (Common.keyValue CardName.codec (Common.seq DraftNote.codec))) SeatView.draftNotes
   pure
     SeatView.MkSeatView
@@ -40,5 +46,9 @@ codec = Fields.object $ do
         SeatView.graveyard = graveyard,
         SeatView.exile = exile,
         SeatView.manaPool = manaPool,
+        SeatView.ringTemptations = ringTemptations,
+        SeatView.speed = speed,
+        SeatView.designations = designations,
+        SeatView.completedDungeons = completedDungeons,
         SeatView.draftNotes = draftNotes
       }

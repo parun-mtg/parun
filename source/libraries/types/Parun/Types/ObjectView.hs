@@ -8,8 +8,10 @@ import qualified Parun.Types.AbilityView as AbilityView
 import qualified Parun.Types.Acquisition as Acquisition
 import qualified Parun.Types.CardName as CardName
 import qualified Parun.Types.CardType as CardType
+import qualified Parun.Types.ClassLevel as ClassLevel
 import qualified Parun.Types.Color as Color
 import qualified Parun.Types.CounterKind as CounterKind
+import qualified Parun.Types.Designation as Designation
 import qualified Parun.Types.Keyword as Keyword
 import qualified Parun.Types.ManaCost as ManaCost
 import qualified Parun.Types.ObjectId as ObjectId
@@ -17,6 +19,8 @@ import qualified Parun.Types.PlayerChoice as PlayerChoice
 import qualified Parun.Types.PlayerId as PlayerId
 import qualified Parun.Types.ProjectedCharacteristics as ProjectedCharacteristics
 import qualified Parun.Types.Recipient as Recipient
+import qualified Parun.Types.RoomHalf as RoomHalf
+import qualified Parun.Types.RoomIndex as RoomIndex
 import qualified Parun.Types.Subtype as Subtype
 import qualified Parun.Types.TapState as TapState
 
@@ -42,6 +46,19 @@ data ObjectView = MkObjectView
     targets :: [Recipient.Recipient],
     -- | CR 302.6: a creature on the battlefield that can't attack or pay {T} or {Q} costs yet, its controller not having controlled it since their most recent turn began and it lacking haste.
     summoningSick :: Bool,
+    -- | CR 701.54b: the player the permanent is the Ring-bearer for.
+    ringBearerFor :: Maybe PlayerId.PlayerId,
+    -- | CR 310.9: a battle's protector.
+    protector :: Maybe PlayerId.PlayerId,
+    -- | CR 717.2b: a Class's level, Nothing where it was never levelled.
+    classLevel :: Maybe ClassLevel.ClassLevel,
+    -- | CR 709.5c: a Room's unlocked halves.
+    unlockedHalves :: Set.Set RoomHalf.RoomHalf,
+    -- | CR 702.112b / 701.37b / 701.60b / 720.3b and the rest of
+    -- Parun.Types.Designation: the permanent's designations.
+    designations :: Set.Set Designation.Designation,
+    -- | CR 309.4: the room of a dungeon its venture marker is on.
+    ventureRoom :: Maybe RoomIndex.RoomIndex,
     -- | CR 607.2d: Object.chosenColors, less a secret choice (PlayerChoice.SecretChooser) the seat is not privy to (CR 724.4).
     chosenColors :: Map.Map Acquisition.Acquisition (Set.Set Color.Color),
     -- | CR 607.2d: Object.chosenColorless, less a secret choice the seat is not privy to.

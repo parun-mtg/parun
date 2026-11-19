@@ -14,4 +14,5 @@ codec = Fields.object $ do
   view <- Fields.required "view" (Common.maybe PlayerView.codec) Request.view
   question <- Fields.required "question" Question.codec Request.question
   problem <- Fields.required "problem" (Common.maybe Common.text) Request.problem
-  pure Request.MkRequest {Request.view = view, Request.question = question, Request.problem = problem}
+  depth <- Fields.defaulted "depth" 0 Common.natural Request.depth
+  pure Request.MkRequest {Request.view = view, Request.question = question, Request.problem = problem, Request.depth = depth}

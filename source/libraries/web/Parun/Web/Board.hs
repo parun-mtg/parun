@@ -4,14 +4,17 @@
 -- attachments tucked behind it; graveyards and exile open on a tap.
 module Parun.Web.Board where
 
+import qualified Data.Char as Char
 import qualified Data.List as List
 import qualified Data.Map.Strict as Map
 import qualified Data.Maybe as Maybe
+import qualified Data.Set as Set
 import qualified Data.Text as Text
 import qualified Parun.Play.Render as Render
 import qualified Parun.Types.BeginningStep as BeginningStep
 import qualified Parun.Types.CardType as CardType
 import qualified Parun.Types.CombatStep as CombatStep
+import qualified Parun.Types.Daytime as Daytime
 import qualified Parun.Types.EndingStep as EndingStep
 import qualified Parun.Types.Mana as Mana
 import qualified Parun.Types.ManaUnit as ManaUnit
@@ -19,6 +22,7 @@ import qualified Parun.Types.ObjectId as ObjectId
 import qualified Parun.Types.ObjectView as ObjectView
 import qualified Parun.Types.Phase as Phase
 import qualified Parun.Types.PlayerCounterKind as PlayerCounterKind
+import qualified Parun.Types.PlayerDesignation as PlayerDesignation
 import qualified Parun.Types.PlayerId as PlayerId
 import qualified Parun.Types.PlayerView as PlayerView
 import qualified Parun.Types.Recipient as Recipient
@@ -49,12 +53,22 @@ turnBar controls board =
               "p"
               ["turn-label"]
               []
-              [ Element.el "strong" [] [] [Element.string ("Turn " <> show (PlayerView.turn board))],
-                Element.text (Text.pack " \x00b7 " <> (if yours then Text.pack "Your " else possessive (PlayerView.active board)) <> Render.phase (PlayerView.phase board))
-              ],
+              ( [ Element.el "strong" [] [] [Element.string ("Turn " <> show (PlayerView.turn board))],
+                  Element.text (Text.pack " \x00b7 " <> (if yours then Text.pack "Your " else possessive (PlayerView.active board)) <> Render.phase (PlayerView.phase board))
+                ]
+                  <> foldMap (pure . daytime) (PlayerView.daytime board)
+              ),
             Element.el "ol" ["phases"] [Element.attr "aria-hidden" (Text.pack "true")] [Element.el "li" [if i == current then "now" else if i < current then "past" else ""] [] [Element.string label] | (i, label) <- zip [0 :: Integer ..] ["Begin", "Main", "Combat", "Main 2", "End"]]
           ]
           <> controls
+
+-- | Day or night (CR 732.1), beside the turn.
+daytime :: Daytime.Daytime -> Html.Html msg
+daytime d =
+  let (cls, label, tip) = case d of
+        Daytime.Day -> ("day", "\x2600\xFE0E Day", "It is day (CR 732)")
+        Daytime.Night -> ("night", "\x263E Night", "It is night (CR 732)")
+   in Element.el "span" ["daytime", cls] [Element.attr "title" (Text.pack tip)] [Element.string label]
 
 possessive :: PlayerId.PlayerId -> Text.Text
 possessive pid = name pid <> Text.pack "'s "
@@ -121,6 +135,11 @@ seatArea :: Marks msg -> PlayerView.PlayerView -> Bool -> SeatView.SeatView -> H
 seatArea marks board own s =
   let pid = SeatView.player s
       permanents = filter ((== Just pid) . ObjectView.controller) (PlayerView.battlefield board)
+      -- CR 702.26b: phased out, beside the permanents of the seat it phased
+      -- out under; and the seat's own in the command zone (CR 408.1).
+      controllerOr o = Maybe.fromMaybe (ObjectView.owner o) (ObjectView.controller o)
+      phased = filter ((== pid) . controllerOr) (PlayerView.phasedOut board)
+      commanded = filter ((== pid) . controllerOr) (PlayerView.command board)
       onBattlefield = Map.fromList [(ObjectView.object o, o) | o <- PlayerView.battlefield board]
       -- An attachment rides with the permanent it is attached to, when that
       -- is on the battlefield; otherwise it stands alone.
@@ -155,8 +174,10 @@ seatArea marks board own s =
       row cls objects = [Element.keyed "div" ["row", cls] [] (concatMap group (List.groupBy alike (Render.ordered board objects))) | not (null objects)]
       front = row "front" creatures
       back = row "back" (others <> lands)
-      field = Element.el "div" ["battlefield"] [] (if own then front <> back else back <> front)
-      empty = [Element.el "p" ["empty"] [] [Element.string "No permanents"] | null permanents]
+      labelled cls title objects = [Element.el "div" ["row", cls] [Element.attr "aria-label" (Text.pack title)] (Element.el "span" ["row-label"] [] [Element.string title] : fmap tileOf objects) | not (null objects)]
+      extra = labelled "phased" "Phased out" phased <> labelled "command" "Command zone" commanded
+      field = Element.el "div" ["battlefield"] [] (if own then front <> back <> extra else extra <> back <> front)
+      empty = [Element.el "p" ["empty"] [] [Element.string "No permanents"] | null permanents, null phased, null commanded]
    in Element.el
         "section"
         ["seat", if own then "you" else "opponent", if PlayerView.active board == pid then "active" else ""]
@@ -171,7 +192,18 @@ seatHead marks board own s =
       identity = case seat marks pid of
         Just cue -> Element.button (["who"] <> Card.marks cue) (Card.tap cue) [Element.text label, lifeBox]
         Nothing -> Element.el "div" ["who"] [] [Element.text label, lifeBox]
-      poison = Map.findWithDefault 0 PlayerCounterKind.Poison (SeatView.counters s)
+      chip cls k v tip = Element.el "span" ["count", cls] [Element.attr "title" (Text.pack tip)] ([Element.el "span" ["k"] [] [Element.string k]] <> [Element.string v | not (null v)])
+      counterWord kind = Text.unpack (Render.spaced (Text.pack (show kind)))
+      -- The seat's designations (CR 726.1, 727.1, 701.54c, 702.179b,
+      -- 702.131c, 702.195b, 309.7) and player counters (CR 122.1).
+      designations =
+        [chip "monarch" "\x265B Monarch" "" "The monarch draws a card at the beginning of their end step (CR 726)" | PlayerView.monarch board == Just pid]
+          <> [chip "initiative" "Initiative" "" "Has the initiative: ventures into Undercity on taking it and at their upkeep (CR 727)" | PlayerView.initiative board == Just pid]
+          <> [chip "ring" "The Ring" (show (SeatView.ringTemptations s)) "Times the Ring has tempted this player (CR 701.54)" | SeatView.ringTemptations s > 0]
+          <> [chip "speed" "Speed" (show n) "Speed (CR 702.179)" | Just n <- [SeatView.speed s]]
+          <> [chip "blessing" (designationName d) "" (designationTip d) | d <- Set.toList (SeatView.designations s)]
+          <> [chip "dungeons" "Dungeons" (show (SeatView.completedDungeons s)) "Dungeons completed (CR 309.7)" | SeatView.completedDungeons s > 0]
+          <> [chip (if kind == PlayerCounterKind.Poison then "poison" else "player-counter") (capitalized (counterWord kind)) (show n) (counterWord kind <> " counters") | (kind, n) <- Map.toList (SeatView.counters s), n > 0]
       pool = Mana.unwrap (SeatView.manaPool s)
       aimed = Card.targetingPlayer board pid
    in Element.el "div" (["seat-head"] <> ["targeted" | not (null aimed)]) [Element.attr "title" (Text.pack "Targeted by " <> Render.listing aimed) | not (null aimed)] $
@@ -183,7 +215,7 @@ seatHead marks board own s =
             ( [ Element.el "span" ["count"] [Element.attr "title" (Text.pack "Cards in hand")] [Element.el "span" ["k"] [] [Element.string "Hand"], Element.string (show (SeatView.handSize s))],
                 Element.el "span" ["count"] [Element.attr "title" (Text.pack "Cards in library")] [Element.el "span" ["k"] [] [Element.string "Library"], Element.string (show (SeatView.librarySize s))]
               ]
-                <> [Element.el "span" ["count", "poison"] [] [Element.el "span" ["k"] [] [Element.string "Poison"], Element.string (show poison)] | poison > 0]
+                <> designations
                 <> pile marks board "Graveyard" (SeatView.graveyard s)
                 <> pile marks board "Exile" (SeatView.exile s)
             )
@@ -193,6 +225,21 @@ seatHead marks board own s =
           <> [Element.el "div" ["seen"] [] (Element.el "span" ["k"] [] [Element.string "Library, top first"] : fmap (\o -> Card.tile board (object marks o) o) (SeatView.library s)) | not (null (SeatView.library s))]
   where
     unit u = Text.pack "{" <> Render.manaType (ManaUnit.manaType u) <> Text.pack "}"
+
+designationName :: PlayerDesignation.PlayerDesignation -> String
+designationName d = case d of
+  PlayerDesignation.CitysBlessing -> "City's blessing"
+  PlayerDesignation.EnduringStory -> "Enduring story"
+
+designationTip :: PlayerDesignation.PlayerDesignation -> String
+designationTip d = case d of
+  PlayerDesignation.CitysBlessing -> "Has the city's blessing (CR 702.131)"
+  PlayerDesignation.EnduringStory -> "Has an enduring story (CR 702.195)"
+
+capitalized :: String -> String
+capitalized word = case word of
+  c : rest -> Char.toUpper c : rest
+  [] -> []
 
 -- | A public pile, a chip opening to its cards; nothing while it is empty.
 pile :: Marks msg -> PlayerView.PlayerView -> String -> [ObjectView.ObjectView] -> [Html.Html msg]

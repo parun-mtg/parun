@@ -70,6 +70,193 @@ drive observers answerer budget stop gs = do
       (_, next) <- Engine.runGameAsked (ask observers answerer) gs Engine.runStep
       drive observers answerer (budget - 1) stop next
 
+-- | The player a prompt's choice is for, whom deciderOf may differ from: a
+-- player controlling them (CR 724.1) or a chooser an effect names (Odric,
+-- Master Tactician); Nothing for a prompt no seat answers and for Concede,
+-- which a player always answers themselves (CR 724.6).
+subjectOf :: Prompt.Prompt r -> Maybe PlayerId.PlayerId
+subjectOf prompt = case prompt of
+  Prompt.ChooseAction _ pid _ -> Just pid
+  Prompt.Concede {} -> Nothing
+  Prompt.ChooseTurnMarker _ pid _ -> Just pid
+  Prompt.Shuffle {} -> Nothing
+  Prompt.RandomFirstPlayer {} -> Nothing
+  Prompt.RandomObject {} -> Nothing
+  Prompt.RandomStickerSheet {} -> Nothing
+  Prompt.RandomCard {} -> Nothing
+  Prompt.ChooseConjuredCard _ pid _ -> Just pid
+  Prompt.RandomDepth {} -> Nothing
+  Prompt.RandomPlayer {} -> Nothing
+  Prompt.RollDie {} -> Nothing
+  Prompt.LookUpCard {} -> Nothing
+  Prompt.ReferenceCards {} -> Nothing
+  Prompt.ReferenceNames {} -> Nothing
+  Prompt.ChooseDieResult _ pid _ _ -> Just pid
+  Prompt.ChooseStoredRerolls _ pid _ _ -> Just pid
+  Prompt.Rethrow _ pid _ _ -> Just pid
+  Prompt.RerollDice _ pid _ _ -> Just pid
+  Prompt.AdjustDieRoll _ pid _ _ _ -> Just pid
+  Prompt.ChooseRollModifier _ pid _ -> Just pid
+  Prompt.FlipCoin {} -> Nothing
+  Prompt.CallCoin _ pid -> Just pid
+  Prompt.ChooseCoinResult _ pid _ -> Just pid
+  Prompt.ChooseDiscard _ pid _ _ _ -> Just pid
+  Prompt.ChooseScry _ pid _ -> Just pid
+  Prompt.ChooseSurveil _ pid _ -> Just pid
+  Prompt.ChooseFateseal _ pid _ _ -> Just pid
+  Prompt.ChooseExplore _ pid _ _ -> Just pid
+  Prompt.ChooseDefender _ pid _ -> Just pid
+  Prompt.ChooseManaSource _ pid _ _ -> Just pid
+  Prompt.ChooseExtraManaSource _ pid _ -> Just pid
+  Prompt.ReverseManaAbilities _ pid _ -> Just pid
+  Prompt.PayLifeForMana _ pid _ _ -> Just pid
+  Prompt.ChooseManaYield _ pid _ _ -> Just pid
+  Prompt.ChooseManaToSpend _ pid _ -> Just pid
+  Prompt.ChooseManaSpentOnX _ pid _ _ -> Just pid
+  Prompt.ChooseProliferate _ pid _ _ -> Just pid
+  Prompt.ChooseRedistribution _ pid _ -> Just pid
+  Prompt.ChooseRingBearer _ pid _ -> Just pid
+  Prompt.ChooseBolster _ pid _ _ -> Just pid
+  Prompt.ChooseAmass _ pid _ _ -> Just pid
+  Prompt.ChooseBlight _ pid _ _ -> Just pid
+  Prompt.ChooseBehold _ pid _ _ -> Just pid
+  Prompt.ChooseVote _ pid _ _ _ -> Just pid
+  Prompt.ChooseCounterKind _ pid _ _ -> Just pid
+  Prompt.ChooseMovedCounters _ pid _ _ _ -> Just pid
+  Prompt.ChooseMovedCountersAtLeastOne _ pid _ _ _ -> Just pid
+  Prompt.ChooseDistributedMovedCounters _ pid _ _ _ _ -> Just pid
+  Prompt.ChooseMovedCounterOrNone _ pid _ _ _ -> Just pid
+  Prompt.ChoosePaidEnergy _ pid _ _ -> Just pid
+  Prompt.ChooseNumber _ pid _ _ _ _ -> Just pid
+  Prompt.ChooseReadAheadChapter _ pid _ _ -> Just pid
+  Prompt.ChooseDamageSource _ pid _ _ -> Just pid
+  Prompt.ChooseDelayedTriggerEvent _ pid _ _ -> Just pid
+  Prompt.ChooseCardInGraveyard _ pid _ _ _ -> Just pid
+  Prompt.ChooseCardInHand _ pid _ _ -> Just pid
+  Prompt.ChooseCardFromAmong _ pid _ _ -> Just pid
+  Prompt.ChooseDungeon _ pid _ -> Just pid
+  Prompt.ChooseSticker _ pid _ _ -> Just pid
+  Prompt.ChooseStickerOrNone _ pid _ _ -> Just pid
+  Prompt.ChooseNamePosition _ pid _ _ -> Just pid
+  Prompt.ChooseCompanion _ pid _ -> Just pid
+  Prompt.ChooseFromOutsideTheGame _ pid _ _ _ -> Just pid
+  Prompt.ChooseRoom _ pid _ _ -> Just pid
+  Prompt.ChooseHalf _ pid _ _ -> Just pid
+  Prompt.ChooseLegend _ pid _ -> Just pid
+  Prompt.DeclareAttackers _ pid _ -> Just pid
+  Prompt.ChooseAttackTarget _ pid _ _ -> Just pid
+  Prompt.DeclareBands _ pid _ -> Just pid
+  Prompt.ChooseExert _ pid _ -> Just pid
+  Prompt.ChooseEnlist _ pid _ _ -> Just pid
+  Prompt.ChooseRerolledDie _ pid _ _ -> Just pid
+  Prompt.ChooseEncode _ pid _ _ -> Just pid
+  Prompt.DeclareBlockers _ pid _ _ -> Just pid
+  Prompt.DividePiles _ pid _ _ -> Just pid
+  Prompt.AssignCombatDamage _ pid _ _ _ _ -> Just pid
+  Prompt.ChooseCombatDamageOption _ pid _ _ -> Just pid
+  Prompt.ChooseTargets _ pid _ _ -> Just pid
+  Prompt.AnnounceTargets _ pid _ _ -> Just pid
+  Prompt.ChooseWordSwap _ pid _ _ _ _ -> Just pid
+  Prompt.ChooseSubtype _ pid _ _ _ -> Just pid
+  Prompt.ChooseParity _ pid _ -> Just pid
+  Prompt.ChooseWord _ pid _ _ -> Just pid
+  Prompt.ChooseSearchZones _ pid _ -> Just pid
+  Prompt.Search _ pid _ _ -> Just pid
+  Prompt.CastWhileSearching _ pid _ -> Just pid
+  Prompt.ChooseX _ pid _ _ _ _ -> Just pid
+  Prompt.ChooseEntwine _ pid _ _ -> Just pid
+  Prompt.ChooseMutateSide _ pid _ _ -> Just pid
+  Prompt.ChooseForage _ pid _ -> Just pid
+  Prompt.ChooseLearn _ pid _ _ -> Just pid
+  Prompt.ChooseTimeTravel _ pid _ _ -> Just pid
+  Prompt.ChooseClash _ pid _ _ _ _ -> Just pid
+  Prompt.ChooseKicker _ pid _ _ _ _ -> Just pid
+  Prompt.ChooseBuyback _ pid _ _ -> Just pid
+  Prompt.ChooseSplice _ pid _ _ -> Just pid
+  Prompt.ChooseAssistant _ pid _ _ -> Just pid
+  Prompt.ChooseAssistAmount _ pid _ _ -> Just pid
+  Prompt.ReturnCommander _ pid _ -> Just pid
+  Prompt.ChooseCommandZoneOfferFirst _ pid _ -> Just pid
+  Prompt.ChooseLibraryEnd _ pid _ _ -> Just pid
+  Prompt.ArrangeLibraryArrivals _ pid _ _ -> Just pid
+  Prompt.ArrangeLibraryCards _ pid _ -> Just pid
+  Prompt.ArrangeGraveyardArrivals _ pid _ -> Just pid
+  Prompt.ChooseModes _ pid _ _ _ -> Just pid
+  Prompt.ChooseCopyTarget _ pid _ _ -> Just pid
+  Prompt.ChooseEntryOption _ pid _ _ -> Just pid
+  Prompt.ChooseRiot _ pid _ -> Just pid
+  Prompt.ChooseUnleash _ pid _ -> Just pid
+  Prompt.ChooseTribute _ pid _ _ -> Just pid
+  Prompt.ChoosePayLifeOnEntry _ pid _ _ -> Just pid
+  Prompt.ChooseRevealOnEntry _ pid _ _ -> Just pid
+  Prompt.ChooseColor _ pid _ _ -> Just pid
+  Prompt.ChooseDesignation _ pid _ _ -> Just pid
+  Prompt.ChooseManaType _ pid _ _ -> Just pid
+  Prompt.ChooseCardType _ pid _ _ -> Just pid
+  Prompt.ChooseCardName _ pid _ _ _ -> Just pid
+  Prompt.ChooseGuess _ pid _ _ -> Just pid
+  Prompt.ChooseOpponent _ pid _ _ _ -> Just pid
+  Prompt.ChooseProtector _ pid _ _ -> Just pid
+  Prompt.ChoosePlayer _ pid _ _ -> Just pid
+  Prompt.ChooseActivePlayer _ pid _ -> Just pid
+  Prompt.OrderTriggers _ pid _ -> Just pid
+  Prompt.OrderDamage _ pid _ -> Just pid
+  Prompt.AllocateDamage _ pid _ _ -> Just pid
+  Prompt.ChooseReplacement _ pid _ -> Just pid
+  Prompt.ChooseDredge _ pid _ _ -> Just pid
+  Prompt.ChooseLandOrNonland _ pid _ -> Just pid
+  Prompt.ChooseRedirect _ pid _ _ -> Just pid
+  Prompt.ChooseSubstitute _ pid _ -> Just pid
+  Prompt.ChooseSacrifices _ pid _ _ _ _ -> Just pid
+  Prompt.ChooseExilesFromGraveyard _ pid _ _ _ -> Just pid
+  Prompt.ChooseMaterials _ pid _ _ _ _ -> Just pid
+  Prompt.ChooseExilesTotalling _ pid _ _ _ _ _ _ -> Just pid
+  Prompt.ChooseAnyNumber _ pid _ _ _ _ _ -> Just pid
+  Prompt.ChoosePile _ pid _ _ _ -> Just pid
+  Prompt.ChoosePermanent _ pid _ _ _ -> Just pid
+  Prompt.ChooseTapsForTotalPower _ pid _ _ _ -> Just pid
+  Prompt.ChooseTaps _ pid _ _ _ _ -> Just pid
+  Prompt.ChooseReturns _ pid _ _ _ -> Just pid
+  Prompt.ChooseExiles _ pid _ _ _ -> Just pid
+  Prompt.ChooseCounterRemoval _ pid _ _ -> Just pid
+  Prompt.ChooseCounterRemovalAmong _ pid _ _ _ -> Just pid
+  Prompt.ChooseCounterRemovalAtLeast _ pid _ _ _ -> Just pid
+  Prompt.ChooseCounterRemovalUpTo _ pid _ _ _ -> Just pid
+  Prompt.ChooseDistribution _ pid _ _ _ -> Just pid
+  Prompt.ChooseDivision _ pid _ _ _ -> Just pid
+  Prompt.ChooseMixedCounterRemoval _ pid _ _ _ _ -> Just pid
+  Prompt.ChooseAttachment _ pid _ _ -> Just pid
+  Prompt.ChooseTurnUpAttachment _ pid _ -> Just pid
+  Prompt.ChooseCost _ pid _ _ _ -> Just pid
+  Prompt.ChoosePlayPermission _ pid _ _ -> Just pid
+  Prompt.ChooseHeldPermission _ pid _ _ -> Just pid
+  Prompt.OrderCostComponents _ pid _ _ -> Just pid
+  Prompt.OrderCombatTolls _ pid _ -> Just pid
+  Prompt.OrderComponentCards _ pid _ _ -> Just pid
+  Prompt.ChooseStickerKeeper _ pid _ -> Just pid
+  Prompt.OrderForEach _ pid _ _ -> Just pid
+  Prompt.ChooseLoopMembers _ pid _ _ _ -> Just pid
+  Prompt.ChooseRepeat _ pid _ _ -> Just pid
+  Prompt.OrderTimestamps _ pid _ -> Just pid
+  Prompt.OrderManaActivations _ pid _ -> Just pid
+  Prompt.KeepHand _ pid _ -> Just pid
+  Prompt.DeclareMulligan _ pid _ -> Just pid
+  Prompt.Bottom _ pid _ _ -> Just pid
+  Prompt.MulliganAction _ pid _ -> Just pid
+  Prompt.OpeningHandAction _ pid _ -> Just pid
+  Prompt.ChooseOptional _ pid _ _ _ _ -> Just pid
+  Prompt.ChooseClause _ pid _ _ _ _ _ -> Just pid
+  Prompt.OfferedCast _ pid _ _ -> Just pid
+  Prompt.ChooseOfferedCastSpell _ pid _ -> Just pid
+  Prompt.OfferedMiracleReveal _ pid _ _ _ -> Just pid
+  Prompt.OfferedExtra _ pid _ _ -> Just pid
+  Prompt.ChooseToPay _ pid _ _ _ _ -> Just pid
+  Prompt.AnnouncePhyrexianPayment _ pid _ _ _ -> Just pid
+  Prompt.AnnounceHybridPayment _ pid _ _ _ -> Just pid
+  Prompt.AnnounceHybridHalf _ pid _ _ _ -> Just pid
+  Prompt.ChooseHybridHalf _ pid _ _ _ -> Just pid
+  Prompt.ChooseReducedCost _ pid _ _ -> Just pid
+
 -- WHO ANSWERS a prompt: the Decider it carries, which CR 724.5 makes the seat
 -- that makes every choice a controlled player would make. Not the PlayerId the
 -- prompt is about; the two differ only while a CR 724.1 or CR 724.2 effect is
