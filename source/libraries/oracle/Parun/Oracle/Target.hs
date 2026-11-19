@@ -232,6 +232,7 @@ measure m = case m of
   Measure.LockedDoors -> []
   Measure.ModesChosen -> []
   Measure.ActivatedAbilityCount -> []
+  Measure.TotalToxicValue -> [Text.pack "total toxic value"]
 
 -- | What a name or pronoun owns: "its", "Spark's".
 possessive :: Text.Text -> Text.Text

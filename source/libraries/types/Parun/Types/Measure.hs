@@ -31,4 +31,6 @@ data Measure
     ModesChosen
   | -- | CR 602.1 / 113.2c: how many activated abilities the object has, each instance counting.
     ActivatedAbilityCount
+  | -- | CR 702.164b: the sum of the N of every toxic ability the object has.
+    TotalToxicValue
   deriving (Bounded, Enum, Eq, Ord, Show)

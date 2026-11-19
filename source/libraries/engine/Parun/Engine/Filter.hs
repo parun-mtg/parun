@@ -144,13 +144,12 @@ data View = MkView
     supertypes :: Set.Set Supertype.Supertype,
     colors :: Set.Set Color.Color,
     subtypes :: Set.Set Subtype.Subtype,
-    -- CR 702: the keyword abilities the candidate has. A SET and not the
-    -- projection's Map Keyword Natural, because neither reader needs the count:
-    -- HasKeyword asks membership, and HasKeywordFamily scans for a key whose
-    -- family matches. Read from the PROJECTION on the battlefield and from the
+    -- CR 702: the keyword abilities the candidate has, each with how many
+    -- instances it has: HasKeyword asks membership, and Measure.TotalToxicValue
+    -- sums (CR 702.164b). Read from the PROJECTION on the battlefield and from the
     -- printed card off it, so a creature that gains flying at layer 6 matches and
     -- a Humility'd one (CR 613.1f) does not.
-    keywords :: Set.Set Keyword.Type.Keyword,
+    keywords :: Map.Map Keyword.Type.Keyword Natural.Natural,
     power :: Maybe Integer,
     -- CR 208.1: the candidate's toughness, read exactly as `power` above is and
     -- Nothing in exactly the same places -- a permanent with no toughness box, a
@@ -1106,7 +1105,7 @@ nobodyView =
       subtypes = Set.empty,
       -- CR 702.1: a keyword ability is an ability OF AN OBJECT, and CR 109.1's
       -- list of what an object is has no player in it.
-      keywords = Set.empty,
+      keywords = Map.empty,
       power = Nothing,
       toughness = Nothing,
       basePower = Nothing,
@@ -2171,6 +2170,8 @@ measureOf measure = case measure of
   Measure.LockedDoors -> Just . toInteger . Set.size . lockedHalves
   Measure.ModesChosen -> fmap toInteger . modesChosen
   Measure.ActivatedAbilityCount -> Just . toInteger . length . activatedAbilityKinds
+  -- CR 702.164b: 0 for an object with no toxic ability.
+  Measure.TotalToxicValue -> Just . toInteger . Keyword.totalToxicValue . keywords
 
 -- CR 306.5a: the printed loyalty a view carries for an object in zone `at`, Nothing
 -- on the battlefield (CR 306.5c). A printed X is 0 (CR 107.2) unless the stack
@@ -2443,7 +2444,7 @@ matches context view predicate = case predicate of
   -- of read HasCardType is -- off the projection where there is one, which is what
   -- makes "target creature with flying" (Plummet, CR 702.9) track a grant and a
   -- Humility alike rather than the printed type line.
-  Filter.HasKeyword k -> Set.member k (keywords view)
+  Filter.HasKeyword k -> Map.member k (keywords view)
   -- CR 702.164a and CR 702.14a: the same read one step coarser, asking which
   -- keyword each ability IS rather than how it is written -- so Flensing Raptor's
   -- "creature you control with toxic" reaches toxic 1 and toxic 3 alike.
@@ -2454,7 +2455,7 @@ matches context view predicate = case predicate of
   -- repository's recurring bug, and the set being scanned is a single object's
   -- abilities, never the board.
   Filter.HasKeywordFamily f ->
-    any ((== Just f) . Keyword.familyOf) (keywords view)
+    any ((== Just f) . Keyword.familyOf) (Map.keys (keywords view))
   -- CR 208.1 / 202.3: one comparison, whatever is measured and whatever it is
   -- measured against. False unless BOTH numbers are readable: an object with no
   -- power (CR 208.3) is not "a creature with power 2 or less", and an operand
@@ -3489,6 +3490,7 @@ manaValueThresholds predicate = case predicate of
       Measure.LockedDoors -> []
       Measure.ModesChosen -> []
       Measure.ActivatedAbilityCount -> []
+      Measure.TotalToxicValue -> []
       -- Reads power or toughness against the literal, so it bounds nothing.
       Measure.Power -> []
       Measure.Toughness -> []

@@ -2595,12 +2595,21 @@ battlefieldAbilitiesOf :: Map Keyword Natural -> [ActivatedAbility Card (Granted
 battlefieldAbilitiesOf counts = concatMap (uncurry battlefieldAbilitiesFor) (Map.toAscList counts)
 
 -- | CR 702.1d: the keywords an object has, whole (PC.keywords) or through a
--- lending card's abilities alone (PC.lentKeywords). The membership a Filter
--- asks; a keyword's own static ability reads PC.keywords, which a lent one is
--- not in. data/scenarios/koh-the-face-stealer-with-borrowed-flanking-is-a-creature-with-flanking.json
+-- lending card's abilities alone (PC.lentKeywords), each lending one instance.
+-- What a Filter reads; a keyword's own static ability reads PC.keywords, which
+-- a lent one is not in. data/scenarios/koh-the-face-stealer-with-borrowed-flanking-is-a-creature-with-flanking.json
 -- proves the second half.
-heldBy :: PC.ProjectedCharacteristics -> Set Keyword
-heldBy pc = Map.keysSet (PC.keywords pc) <> Set.fromList (fmap LentKeyword.keyword (PC.lentKeywords pc))
+heldBy :: PC.ProjectedCharacteristics -> Map Keyword Natural
+heldBy pc = Map.unionWith (+) (PC.keywords pc) (Map.fromListWith (+) [(LentKeyword.keyword lent, 1) | lent <- PC.lentKeywords pc])
+
+-- | CR 702.164b: a creature's total toxic value sums the N of every toxic
+-- ability it has, with no redundancy clause -- which is why keywords are counted.
+totalToxicValue :: Map Keyword Natural -> Natural
+totalToxicValue keywords =
+  let value keyword count = case keyword of
+        Keyword.Toxic n -> n * count
+        _ -> 0
+   in sum (Map.elems (Map.mapWithKey value keywords))
 
 -- | CR 702.1: whether a card lending its activated abilities, and its
 -- triggered ones where `triggered`, lends an ability of this keyword. One
