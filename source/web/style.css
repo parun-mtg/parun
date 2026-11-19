@@ -2286,14 +2286,26 @@ body.tracing footer.diagnostics {
 
 /* ---------- Scenario replay (Parun.Web.Replay) ---------- */
 
+/* The replay's controls keep their height while a long form scrolls. */
+.replay .prompt > * {
+  flex-shrink: 0;
+}
+
+/* The steps in a row, the scrubber the whole width beneath them. */
 .replay .scrubber {
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
   gap: 0.4em;
 }
 
-.replay .scrubber input[type="range"] {
+.replay .scrubber button {
   flex: 1;
+}
+
+.replay .scrubber input[type="range"] {
+  order: 1;
+  flex-basis: 100%;
   min-width: 0;
 }
 
@@ -2328,4 +2340,8 @@ main.scenarios {
   gap: 0.25em;
   font-size: 0.9rem;
   overflow-wrap: anywhere;
+}
+
+.scenario-list a {
+  color: var(--link);
 }
