@@ -4533,7 +4533,9 @@ apply settle batch applied batchPrevented candidate event =
       -- Projection.boardAsEntering, CR 614.12's board, as
       -- Projection.printedRowLives asks a row's own condition.
       -- data/scenarios/fortified-beachhead-enters-untapped-declining-the-reveal-while-controlling-a-soldier.json
-      -- proves both halves.
+      -- proves both halves; fortified-beachhead-made-a-soldier-as-it-enters-does-not-count-itself
+      -- and fortified-beachhead-returned-beside-a-soldier-does-not-count-it
+      -- prove the board.
       EntryRewrite.OrTapped (OrTapped.MkOrTapped price unless_) -> do
         Replacement.consume (ReplacementCandidate.identity candidate)
         gs <- State.get
