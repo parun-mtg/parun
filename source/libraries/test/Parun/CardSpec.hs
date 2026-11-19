@@ -4104,7 +4104,7 @@ triggerConditionFilters triggerCondition = case triggerCondition of
   TriggerCondition.CountersChange (CounterTrigger.MkCounterTrigger kind _ holder _ _ _) ->
     whichCountersFilters kind <> case holder of
       CounterHolder.Self -> []
-      CounterHolder.Permanent f -> unframed [f]
+      CounterHolder.Permanent f _ -> unframed [f]
   TriggerCondition.SelfBecomesClassLevel _ -> []
   -- CR 601.2i's "whenever you cast a [type] spell" carries one directly, over
   -- the spell rather than over a permanent; "this spell" names the bearer and

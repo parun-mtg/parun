@@ -1472,6 +1472,8 @@ library codec
     Parun.Codec.PlayerCounters
     Parun.Codec.PlayerCountersAre
     Parun.Codec.PlayerCountersAreSpec
+    Parun.Codec.PlayerCountersPlaced
+    Parun.Codec.PlayerCountersPlacedSpec
     Parun.Codec.PlayerCountersSpec
     Parun.Codec.PlayerCounterTally
     Parun.Codec.PlayerCounterTallySpec
@@ -3647,6 +3649,7 @@ library types
     Parun.Types.PlayerCounterKind
     Parun.Types.PlayerCounters
     Parun.Types.PlayerCountersAre
+    Parun.Types.PlayerCountersPlaced
     Parun.Types.PlayerCounterTally
     Parun.Types.PlayerDesignation
     Parun.Types.PlayerDesignationTally

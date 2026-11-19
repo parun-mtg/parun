@@ -95,6 +95,7 @@ import qualified Parun.Types.Player as Player
 import qualified Parun.Types.PlayerActed as PlayerActed
 import qualified Parun.Types.PlayerAction as PlayerAction
 import qualified Parun.Types.PlayerCounterKind as PlayerCounterKind
+import qualified Parun.Types.PlayerCountersPlaced as PlayerCountersPlaced
 import qualified Parun.Types.PlayerId as PlayerId
 import qualified Parun.Types.PlayerView as PlayerView
 import qualified Parun.Types.ProjectedCharacteristics as ProjectedCharacteristics
@@ -492,6 +493,7 @@ event view logged = case LoggedEvent.event logged of
   GameEvent.ChoiceRevealed c -> said [player (SecretChoice.player c), Text.pack "reveals the chosen", Maybe.fromMaybe (Text.pack (show (SecretChoice.subtype c))) (Subtype.creatureTypeWord (SecretChoice.subtype c))]
   GameEvent.AbilityCountered c -> said [name (Countering.countered c), Text.pack "is countered"]
   GameEvent.CountersPut c -> said [player (CountersPlaced.putter c), Text.pack "puts", counters (CountersPlaced.after c `less` CountersPlaced.before c) (CountersPlaced.kind c), Text.pack "on", name (CountersPlaced.object c)]
+  GameEvent.PlayerCountersPut c -> said [player (PlayerCountersPlaced.putter c), Text.pack "puts", count (PlayerCountersPlaced.after c `less` PlayerCountersPlaced.before c) (Char.toLower <$> show (PlayerCountersPlaced.kind c) <> " counter"), Text.pack "on", player (PlayerCountersPlaced.player c)]
   GameEvent.CountersRemoved c ->
     let n = CounterChange.before c `less` CounterChange.after c
      in said [counters n (CounterChange.kind c), Text.pack (if n == 1 then "is removed from" else "are removed from"), name (CounterChange.object c)]

@@ -52,6 +52,7 @@ import qualified Parun.Types.PermanentActed as PermanentActed
 import qualified Parun.Types.PermanentWasSacrificed as PermanentWasSacrificed
 import qualified Parun.Types.PlanarDieRolled as PlanarDieRolled
 import qualified Parun.Types.PlayerActed as PlayerActed
+import qualified Parun.Types.PlayerCountersPlaced as PlayerCountersPlaced
 import qualified Parun.Types.PlayerId as PlayerId
 import qualified Parun.Types.Revealed as Revealed
 import qualified Parun.Types.Saddling as Saddling
@@ -306,6 +307,10 @@ data GameEvent
     -- a placement that landed nothing recording no event; removal is
     -- CountersRemoved below rather than the pair reversed.
     CountersPut CountersPlaced.CountersPlaced
+  | -- | CR 122.1: one or more counters were put on a PLAYER, CountersPut's player
+    -- half. Recorded by Parun.Engine.Event.putPlayerCounters, for the player the
+    -- placement named and not for each CR 810.10 sharer.
+    PlayerCountersPut PlayerCountersPlaced.PlayerCountersPlaced
   | -- | Counters were REMOVED from an object -- CountersPut's mirror, shaped the
     -- same way because CR 310.12b's Siege ability asks whether the LAST counter
     -- came off. Recorded by three paths: CR 120.3h's and CR 120.3c's damage to a

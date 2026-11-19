@@ -1097,6 +1097,8 @@ snapshotView viewOf context gs shape event = case event of
     EventShape.TurnedFaceUp -> Nothing
     EventShape.SourceDealtDamage {} -> Nothing
     EventShape.PermanentDealtDamage -> Nothing
+  -- CR 122.1's counters on a player name no object.
+  GameEvent.PlayerCountersPut {} -> Nothing
   -- CR 122.1's removal names an object by id and snapshots no characteristics,
   -- and no EventShape names it.
   GameEvent.CountersRemoved {} -> Nothing

@@ -154,6 +154,7 @@ import qualified Parun.Types.PlanarDieRolled as PlanarDieRolled
 import qualified Parun.Types.Player as Player
 import qualified Parun.Types.PlayerActed as PlayerActed
 import qualified Parun.Types.PlayerActsOn as PlayerActsOn
+import qualified Parun.Types.PlayerCountersPlaced as PlayerCountersPlaced
 import qualified Parun.Types.PlayerDrawsNthCard as PlayerDrawsNthCard
 import qualified Parun.Types.PlayerExpends as PlayerExpends
 import Parun.Types.PlayerId (PlayerId)
@@ -588,19 +589,23 @@ isMainPhase phase = case phase of
   Phase.Combat _ -> False
   Phase.Ending _ -> False
 
--- CR 122: the object, count before and count after of a counter event moving
+-- CR 122: the holder, count before and count after of a counter event moving
 -- the trigger's kind (any kind for WhichCounters.OfAnyKind, CR 122.1) its way,
--- CR 122.6a's putter read against `you`; Nothing for every other event.
+-- CR 122.6a's putter read against `you`; Nothing for every other event. A
+-- player holder is admitted by OfAnyKind alone, WhichCounters naming object
+-- kinds only (Parun.Types.PlayerCounterKind is disjoint from them).
 --
 -- CR 122.6: a placement off the battlefield is not "counters put on" anything,
 -- asked of the event's snapshot so a card's filter need not ask a zone of a
 -- permanent the counter killed (the mikey-and-leo scenarios prove both).
-countersMoved :: GameState -> PlayerId -> CounterTrigger.CounterTrigger -> GameEvent -> Maybe (ObjectId, Natural, Natural)
+countersMoved :: GameState -> PlayerId -> CounterTrigger.CounterTrigger -> GameEvent -> Maybe (Either PlayerId ObjectId, Natural, Natural)
 countersMoved gs you counterTrigger event = case (CounterTrigger.motion counterTrigger, event) of
   (CounterMotion.Put relation, GameEvent.CountersPut (CountersPlaced.MkCountersPlaced putter oid kind before after snapshot))
-    | wanted kind && ObjectSnapshot.zone snapshot == Zone.Battlefield && PlayerRelation.holds (Game.teams gs) relation you putter -> Just (oid, before, after)
+    | wanted kind && ObjectSnapshot.zone snapshot == Zone.Battlefield && PlayerRelation.holds (Game.teams gs) relation you putter -> Just (Right oid, before, after)
+  (CounterMotion.Put relation, GameEvent.PlayerCountersPut (PlayerCountersPlaced.MkPlayerCountersPlaced putter pid _ before after))
+    | CounterTrigger.kind counterTrigger == WhichCounters.OfAnyKind && PlayerRelation.holds (Game.teams gs) relation you putter -> Just (Left pid, before, after)
   (CounterMotion.Removed, GameEvent.CountersRemoved (CounterChange.MkCounterChange oid kind before after))
-    | wanted kind -> Just (oid, before, after)
+    | wanted kind -> Just (Right oid, before, after)
   _ -> Nothing
   where
     wanted = admitsKind (CounterTrigger.kind counterTrigger)
@@ -612,13 +617,14 @@ admitsKind which kind = case which of
   WhichCounters.OfAnyKind -> True
 
 -- CR 122.6: the first event this turn that put counters of a kind the trigger
--- names on this permanent, on the battlefield as countersMoved asks; Nothing
--- for none. Stalwart Successor names any kind, U.S.S. Enterprise-D, Galaxy-Class
--- charge counters.
-firstPlacementOn :: WhichCounters.WhichCounters Keyword.Type.Keyword -> ObjectId -> GameState -> Maybe GameEvent
-firstPlacementOn which oid gs =
+-- names on this permanent, on the battlefield as countersMoved asks, or on
+-- this player; Nothing for none. Stalwart Successor names any kind, U.S.S.
+-- Enterprise-D, Galaxy-Class charge counters.
+firstPlacementOn :: WhichCounters.WhichCounters Keyword.Type.Keyword -> Either PlayerId ObjectId -> GameState -> Maybe GameEvent
+firstPlacementOn which holder gs =
   let placedOnIt event = case event of
-        GameEvent.CountersPut placed -> CountersPlaced.object placed == oid && admitsKind which (CountersPlaced.kind placed) && ObjectSnapshot.zone (CountersPlaced.snapshot placed) == Zone.Battlefield
+        GameEvent.CountersPut placed -> holder == Right (CountersPlaced.object placed) && admitsKind which (CountersPlaced.kind placed) && ObjectSnapshot.zone (CountersPlaced.snapshot placed) == Zone.Battlefield
+        GameEvent.PlayerCountersPut placed -> holder == Left (PlayerCountersPlaced.player placed) && which == WhichCounters.OfAnyKind
         _ -> False
    in Foldable.find placedOnIt (fmap LoggedEvent.event (TurnRegisters.events (GameState.turn gs)))
 
@@ -1077,6 +1083,7 @@ anyTriggerReads event = case event of
   GameEvent.LifeGained {} -> True
   GameEvent.AbilityActivated {} -> True
   GameEvent.CountersPut {} -> True
+  GameEvent.PlayerCountersPut {} -> True
   GameEvent.CountersRemoved {} -> True
   GameEvent.HalfUnlocked {} -> True
   GameEvent.TurnedFaceUp {} -> True
@@ -1662,6 +1669,8 @@ armMatches bindings frozen board atEvent beforeEvent groupEvents gs bearer you c
   -- holder. The bearer by id, or a permanent the Filter admits, read through
   -- viewWithLastKnown (CR 608.2h) so the CR 704.5f victim a -1/-1 counter made
   -- still matches; the bearer frames that match as the Filter.Context's source.
+  -- A player holder is admitted only by the holder's relation, read against
+  -- `you` (All Will Be One's "a permanent or player").
   --
   -- No "one or more" conjunct: each counter record exists only where its count
   -- changed, and settleCounters records one per settled placement. How many
@@ -1680,15 +1689,17 @@ armMatches bindings frozen board atEvent beforeEvent groupEvents gs bearer you c
   -- asked after `after == n`, so it is forced only where the readings differ.
   TriggerCondition.CountersChange counterTrigger -> case countersMoved gs you counterTrigger event of
     Nothing -> False
-    Just (oid, before, after) ->
-      ( case CounterTrigger.holder counterTrigger of
-          CounterHolder.Self -> oid == bearer
-          CounterHolder.Permanent f -> maybe False (\view -> Filter.matches bearerContext view f) (Projection.viewWithLastKnown oid gs oid)
+    Just (holder, before, after) ->
+      ( case (CounterTrigger.holder counterTrigger, holder) of
+          (CounterHolder.Self, _) -> holder == Right bearer
+          (CounterHolder.Permanent f _, Right oid) -> maybe False (\view -> Filter.matches bearerContext view f) (Projection.viewWithLastKnown oid gs oid)
+          (CounterHolder.Permanent _ players, Left pid) -> maybe False (\relation -> PlayerRelation.holds (Game.teams gs) relation you pid) players
       )
-        && case (CounterTrigger.motion counterTrigger, CounterTrigger.threshold counterTrigger) of
-          (_, Nothing) -> True
-          (CounterMotion.Put _, Just n) -> Saga.chapterTriggers (Saga.readAheadRestricted (Projection.project oid gs) gs oid) before after n
-          (CounterMotion.Removed, Just n) -> after <= n && n < before
+        && case (CounterTrigger.motion counterTrigger, CounterTrigger.threshold counterTrigger, holder) of
+          (_, Nothing, _) -> True
+          (CounterMotion.Put _, Just n, Right oid) -> Saga.chapterTriggers (Saga.readAheadRestricted (Projection.project oid gs) gs oid) before after n
+          (CounterMotion.Put _, Just n, Left _) -> before < n && n <= after
+          (CounterMotion.Removed, Just n, _) -> after <= n && n < before
         -- "If it's the first time counters have been put on that creature this
         -- turn" (CR 603.4) asks about the triggering event, so it reads the same
         -- on resolution and is matched here, as "for the first time each turn"
@@ -1699,7 +1710,7 @@ armMatches bindings frozen board atEvent beforeEvent groupEvents gs bearer you c
         && case CounterTrigger.frequency counterTrigger of
           TriggerFrequency.EveryTime -> True
           TriggerFrequency.FirstTimeEachTurn ->
-            maybe True (`elem` (if event `elem` groupEvents then groupEvents else [event])) (firstPlacementOn (CounterTrigger.kind counterTrigger) oid gs)
+            maybe True (`elem` (if event `elem` groupEvents then groupEvents else [event])) (firstPlacementOn (CounterTrigger.kind counterTrigger) holder gs)
   -- CR 717.2a: the BEARER's class level crossed N going up. "When this Class
   -- becomes level N" is printed inside the level-N section, so CR 717.2a's static
   -- half is what grants it, and CR 603.10 is what lets it see its own arrival:

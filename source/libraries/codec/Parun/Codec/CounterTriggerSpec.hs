@@ -37,14 +37,14 @@ spec s = Spec.describe s "Parun.Codec.CounterTrigger" $ do
     Common.assertCodec
       s
       CounterTrigger.codec
-      (CounterTrigger.MkCounterTrigger (WhichCounters.OfKind CounterKind.PlusOnePlusOne) (CounterMotion.Put PlayerRelation.AnyPlayer) (CounterHolder.Permanent (Filter.HasCardType CardType.Creature)) Nothing CounterGrouping.EachBatch TriggerFrequency.EveryTime)
+      (CounterTrigger.MkCounterTrigger (WhichCounters.OfKind CounterKind.PlusOnePlusOne) (CounterMotion.Put PlayerRelation.AnyPlayer) (CounterHolder.Permanent (Filter.HasCardType CardType.Creature) Nothing) Nothing CounterGrouping.EachBatch TriggerFrequency.EveryTime)
       " {\"kind\":{\"type\":\"OfKind\",\"value\":{\"type\":\"PlusOnePlusOne\"}},\"motion\":{\"type\":\"Put\",\"value\":\"AnyPlayer\"},\"holder\":{\"type\":\"Permanent\",\"value\":{\"type\":\"HasCardType\",\"value\":\"Creature\"}},\"grouping\":\"EachBatch\"} "
   -- The Great Goblin's "one or more counters", of no kind.
   Spec.it s "any kind writes its tag" $
     Common.assertCodec
       s
       CounterTrigger.codec
-      (CounterTrigger.MkCounterTrigger WhichCounters.OfAnyKind (CounterMotion.Put PlayerRelation.You) (CounterHolder.Permanent (Filter.HasSubtype Subtype.Army)) Nothing CounterGrouping.EachPermanent TriggerFrequency.EveryTime)
+      (CounterTrigger.MkCounterTrigger WhichCounters.OfAnyKind (CounterMotion.Put PlayerRelation.You) (CounterHolder.Permanent (Filter.HasSubtype Subtype.Army) Nothing) Nothing CounterGrouping.EachPermanent TriggerFrequency.EveryTime)
       " {\"kind\":{\"type\":\"OfAnyKind\"},\"motion\":{\"type\":\"Put\",\"value\":\"You\"},\"holder\":{\"type\":\"Permanent\",\"value\":{\"type\":\"HasSubtype\",\"value\":\"Army\"}}} "
   -- Stalwart Successor's "the first time counters have been put on that
   -- creature this turn".
@@ -52,6 +52,6 @@ spec s = Spec.describe s "Parun.Codec.CounterTrigger" $ do
     Common.assertCodec
       s
       CounterTrigger.codec
-      (CounterTrigger.MkCounterTrigger WhichCounters.OfAnyKind (CounterMotion.Put PlayerRelation.AnyPlayer) (CounterHolder.Permanent (Filter.HasCardType CardType.Creature)) Nothing CounterGrouping.EachPermanent TriggerFrequency.FirstTimeEachTurn)
+      (CounterTrigger.MkCounterTrigger WhichCounters.OfAnyKind (CounterMotion.Put PlayerRelation.AnyPlayer) (CounterHolder.Permanent (Filter.HasCardType CardType.Creature) Nothing) Nothing CounterGrouping.EachPermanent TriggerFrequency.FirstTimeEachTurn)
       " {\"kind\":{\"type\":\"OfAnyKind\"},\"motion\":{\"type\":\"Put\",\"value\":\"AnyPlayer\"},\"holder\":{\"type\":\"Permanent\",\"value\":{\"type\":\"HasCardType\",\"value\":\"Creature\"}},\"frequency\":\"FirstTimeEachTurn\"} "
   Spec.it s "has a schema" $ Common.assertHasSchema s CounterTrigger.codec

@@ -3527,6 +3527,7 @@ castOf event = case event of
   GameEvent.LifeLost {} -> Nothing
   GameEvent.LifeGained {} -> Nothing
   GameEvent.CountersPut {} -> Nothing
+  GameEvent.PlayerCountersPut {} -> Nothing
   GameEvent.CountersRemoved {} -> Nothing
   GameEvent.ControlChanged {} -> Nothing
   GameEvent.VentureMarkerEntered {} -> Nothing
@@ -3733,6 +3734,7 @@ abilityResolved event = case event of
   GameEvent.LifeLost {} -> Nothing
   GameEvent.LifeGained {} -> Nothing
   GameEvent.CountersPut {} -> Nothing
+  GameEvent.PlayerCountersPut {} -> Nothing
   GameEvent.CountersRemoved {} -> Nothing
   GameEvent.ControlChanged {} -> Nothing
   GameEvent.VentureMarkerEntered {} -> Nothing
@@ -3830,6 +3832,7 @@ discardOf event = case event of
   GameEvent.LifeLost {} -> Nothing
   GameEvent.LifeGained {} -> Nothing
   GameEvent.CountersPut {} -> Nothing
+  GameEvent.PlayerCountersPut {} -> Nothing
   GameEvent.CountersRemoved {} -> Nothing
   GameEvent.ControlChanged {} -> Nothing
   GameEvent.VentureMarkerEntered {} -> Nothing
@@ -4073,6 +4076,7 @@ movedChange event = case event of
   GameEvent.LifeLost {} -> Nothing
   GameEvent.LifeGained {} -> Nothing
   GameEvent.CountersPut {} -> Nothing
+  GameEvent.PlayerCountersPut {} -> Nothing
   GameEvent.CountersRemoved {} -> Nothing
   GameEvent.ControlChanged {} -> Nothing
   GameEvent.VentureMarkerEntered {} -> Nothing
@@ -4189,6 +4193,7 @@ damageDealt event = case event of
   GameEvent.AbilityCountered _ -> Nothing
   GameEvent.AbilityActivated _ -> Nothing
   GameEvent.CountersPut {} -> Nothing
+  GameEvent.PlayerCountersPut {} -> Nothing
   GameEvent.CountersRemoved {} -> Nothing
   GameEvent.ControlChanged {} -> Nothing
   GameEvent.VentureMarkerEntered {} -> Nothing
@@ -4490,6 +4495,7 @@ lifeChangeOf direction event = case event of
   GameEvent.AbilityCountered _ -> Nothing
   GameEvent.AbilityActivated _ -> Nothing
   GameEvent.CountersPut {} -> Nothing
+  GameEvent.PlayerCountersPut {} -> Nothing
   GameEvent.CountersRemoved {} -> Nothing
   GameEvent.ControlChanged {} -> Nothing
   GameEvent.VentureMarkerEntered {} -> Nothing

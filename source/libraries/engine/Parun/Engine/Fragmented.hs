@@ -495,6 +495,7 @@ permanentActed action event = case event of
 countersPut :: GameEvent -> Bool
 countersPut event = case event of
   GameEvent.CountersPut {} -> True
+  GameEvent.PlayerCountersPut {} -> True
   _ -> False
 
 milled :: GameEvent -> Bool

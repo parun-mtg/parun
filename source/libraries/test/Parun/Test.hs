@@ -685,6 +685,7 @@ import qualified Parun.Codec.PlayerControlSpec
 import qualified Parun.Codec.PlayerCounterKindSpec
 import qualified Parun.Codec.PlayerCounterTallySpec
 import qualified Parun.Codec.PlayerCountersAreSpec
+import qualified Parun.Codec.PlayerCountersPlacedSpec
 import qualified Parun.Codec.PlayerCountersSpec
 import qualified Parun.Codec.PlayerDesignationSpec
 import qualified Parun.Codec.PlayerDesignationTallySpec
@@ -1823,6 +1824,7 @@ spec s reference corpus = do
   Parun.Codec.PlayerControlSpec.spec s
   Parun.Codec.PlayerCounterKindSpec.spec s
   Parun.Codec.PlayerCountersAreSpec.spec s
+  Parun.Codec.PlayerCountersPlacedSpec.spec s
   Parun.Codec.PlayerCountersSpec.spec s
   Parun.Codec.PlayerCounterTallySpec.spec s
   Parun.Codec.DealtDamageSpec.spec s
