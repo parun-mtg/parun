@@ -22,7 +22,7 @@ issue; an expressible card not yet in the pool is a plain card add.
 | Sleight of Mind | Swapping a colour word in a spell's or permanent's text: filters, protection, set colours, token colours, written mana types (CR 612.2) | Proven: `data/scenarios/text-change/`, a Clone of the changed permanent keeping the printed word (CR 707.2) |
 | Ixidron | Mass face-down on entry; a count of face-down creatures as P/T (CR 708.2, 614.1c, 614.12) | Proven: `FaceDownSpec` |
 | Hanweir Battlements + Hanweir Garrison | Meld: two cards, one permanent, leaving as two (CR 701.42, 713.1, 713.8) | Proven: `MeldSpec` |
-| Teferi's Protection | Player protection from everything, a life lock and mass phasing, all until your next turn (CR 702.16j, 119.7, 119.8, 702.26) | Expressible, not in pool |
+| Teferi's Protection | Player protection from everything, a life lock and mass phasing, all until your next turn (CR 702.16j, 119.7, 119.8, 702.26) | Proven: `data/scenarios/teferis-protection-*` |
 | Karn Liberated | Restarting the game, sparing linked exiles (CR 728, 607.2a) | Proven: `GameSpec` "CR 728.5/728.4 gameplay" |
 | Shahrazad | A subgame inside a resolution (CR 730) | Proven: `GameSpec` "CR 730" gameplay cases |
 | Burning Wish | Cards from outside the game, including the main game from inside a subgame (CR 400.11, 730.4a) | Proven: `OutsideTheGameSpec`, with meld and merge via Living Wish |
@@ -35,18 +35,19 @@ issue; an expressible card not yet in the pool is a plain card add.
 | Palace Jailer | The monarch, and a duration that waits for an opponent to be crowned, outliving its source (CR 726, 610.3d) | Proven: `LibraryOrderSpec` "CR 726" cases, `GameSpec` M5.6d gate |
 | Acererak the Archlich | Dungeons: command-zone cards, completion read by name behind an intervening "if" (CR 309.7, 701.49, 603.4) | Proven: `data/scenarios/dungeon/cr-309-7-acererak-*`; its attack trigger is untested (#4788) |
 | Melira, Sylvok Outcast | Poison: a "can't" overriding infect's results while the damage is still dealt (CR 101.2, 702.90, 702.15b) | Partial: `CounterRestrictionSpec` with spell-placed counters; infect damage untested (#4789) |
-| Worldgorger Dragon + Animate Dead | A mandatory loop making new objects each pass; a draw only with no optional action (CR 104.4b, 733.4, 303.4f) | Expressible, Dragon not in pool; the axis is proven by `GameSpec` `mandatoryLoopBoardSpec` with Sporemound |
+| Worldgorger Dragon + Animate Dead | A mandatory loop making new objects each pass; a draw only with no optional action (CR 104.4b, 733.4, 303.4f) | Proven: the axis by `GameSpec` `mandatoryLoopBoardSpec` with Sporemound; the Dragon's exile and return by `data/scenarios/worldgorger-dragon-*` |
 | Lich's Mirror | Replacing a loss of the game (CR 614.1a, 104.3, 104.4a) | Proven: `data/scenarios/game-outcome/*lich-s-mirror*`, `data/scenarios/team/cr-810-8a-lich-s-mirror-*`; a permanent the same check moves goes where its controller chooses (`cr-616-1-lich-s-mirror-*`) |
 | Panglacial Wurm | Casting from a hidden zone mid-resolution, while searching (CR 601.3, 608.2g) | Proven: `CastSpec`, `data/scenarios/cast/cr-601-3-*` |
 | Stifle | Countering an ability on the stack (CR 701.6a, 113.9) | Proven: `CounterspellSpec` `stifleSpec` |
 | Chains of Mephistopheles | A draw replacement whose replacement draws again; per-draw-step exception (CR 614.5, 616.1f) | Proven: `data/scenarios/replacement/*chains-of-mephistopheles*` |
-| Knowledge Pool | A cast trigger exiling the spell into a linked pool, then the caster casting another pooled card mid-resolution (CR 601.2i, 607.2a, 608.2g, 118.12) | Expressible, not in pool |
+| Knowledge Pool | A cast trigger exiling the spell into a linked pool, then the caster casting another pooled card mid-resolution (CR 601.2i, 607.2a, 608.2g, 118.12) | Proven: `data/scenarios/knowledge-pool-*`, the CR 118.12 gate by the countered spell |
 | Doubling Season | Effect-only replacements on tokens and counters, ordered by the affected player against others; costs untouched (CR 614.16, 616.1) | Proven: `data/scenarios/replacement/cr-616-1-*` with Hardened Scales, planeswalker loyalty scenarios |
 | Wear // Tear | Split-card characteristics varying by zone; fuse casting both halves from hand (CR 709.4, 702.102) | Proven: `CastRestrictionSpec` `wearTearSpec`; hand-only gate untested (#4791) |
 | Nacatl War-Pride | A requirement obeyed only by exactly one blocker, maximised across token copies (CR 509.1c) | Proven: `data/scenarios/nacatl-war-pride-*` |
 | Deflection | Changing a spell's single target (CR 115.7a, 601.2c) | Proven: `TargetSpec` `deflectionSpec` |
-| Fork | Copying a spell with a colour exception and new targets (CR 707.10, 707.9b) | Expressible, not in pool |
-| Isochron Scepter | Linked imprint; casting a copy of an exiled card, repeatably (CR 607.2a, 707.12) | Expressible, not in pool |
+| Fork | Copying a spell with a colour exception and new targets (CR 707.10, 707.9b) | Proven: `data/scenarios/fork-copies-a-green-spell-as-red-with-a-new-target.json` |
+| Isochron Scepter | Linked imprint; casting a copy of an exiled card, repeatably (CR 607.2a, 707.12) | Proven: `data/scenarios/isochron-scepter-*` |
+| Brightclimb Pathway | A modal double-faced card with two land faces, played as either (CR 712.9) | Proven: `data/scenarios/brightclimb-pathway-*` |
 
 ## Rules written for one card
 

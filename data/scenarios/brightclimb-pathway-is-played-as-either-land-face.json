@@ -1,0 +1,22 @@
+{
+  "description": "CR 712.9: a modal double-faced card with two land faces is offered as a land play once per face, and enters with the chosen face up",
+  "note": "alice plays Brightclimb Pathway as Grimclimb Pathway and taps it for {B} to cast Disfigure on bob's Grizzly Bears; on turn 3 she plays the second Pathway as Brightclimb, counted under its own face name. The runner names a double-faced object by its front face, so the Grimclimb permanent is Brightclimb Pathway#2.",
+  "board": {
+    "active": "alice",
+    "step": "PrecombatMain",
+    "seats": [
+      {"name": "alice", "hand": [{"card": "Brightclimb Pathway", "label": "path"}, {"card": "Brightclimb Pathway", "label": "path2"}, {"card": "Disfigure", "label": "disfigure"}, {"card": "Disfigure", "label": "disfigure2"}], "library": [{"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}]},
+      {"name": "bob", "battlefield": [{"card": "Grizzly Bears", "label": "bears"}, {"card": "Grizzly Bears", "label": "bears2"}], "library": [{"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}]}
+    ]
+  },
+  "timeline": [
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": {"Take": {"action": "PlayLand $path Grimclimb Pathway"}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": {"Cast": {"object": "$disfigure", "mana": ["Brightclimb Pathway#2"], "targets": ["$bears"]}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": "Pass"},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"Count": {"player": "bob", "zone": "Graveyard", "card": "Grizzly Bears", "count": 1}}},
+    {"turn": 2, "step": "DeclareAttackers", "player": "bob", "do": {"Attack": []}},
+    {"turn": 3, "step": "PrecombatMain", "player": "alice", "do": {"Take": {"action": "PlayLand $path2 Brightclimb Pathway"}}},
+    {"turn": 3, "step": "PrecombatMain", "player": "alice", "check": {"Count": {"player": "alice", "zone": "Battlefield", "card": "Brightclimb Pathway", "count": 1}}},
+    {"turn": 3, "step": "PrecombatMain", "player": "alice", "check": {"Count": {"player": "alice", "zone": "Battlefield", "card": "Grimclimb Pathway", "count": 1}}}
+  ]
+}

@@ -1,0 +1,28 @@
+{
+  "description": "CR 607.2a / 603.6c: Worldgorger Dragon exiles every other permanent its controller controls as it enters, and returns those cards to the battlefield under their owners' control when it leaves",
+  "note": "alice's six Mountains and Grizzly Bears go to exile; bob's Island stays. bob Unsummons the Dragon on his turn and all seven come back.",
+  "board": {
+    "active": "alice",
+    "step": "PrecombatMain",
+    "seats": [
+      {"name": "alice", "battlefield": [{"card": "Mountain", "label": "m0"}, {"card": "Mountain", "label": "m1"}, {"card": "Mountain", "label": "m2"}, {"card": "Mountain", "label": "m3"}, {"card": "Mountain", "label": "m4"}, {"card": "Mountain", "label": "m5"}, {"card": "Grizzly Bears", "label": "bears"}], "hand": [{"card": "Worldgorger Dragon", "label": "dragon"}], "library": [{"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}]},
+      {"name": "bob", "battlefield": [{"card": "Island", "label": "i"}], "hand": [{"card": "Unsummon", "label": "unsummon"}], "library": [{"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}]}
+    ]
+  },
+  "timeline": [
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": {"Cast": {"object": "$dragon", "mana": ["$m0", "$m1", "$m2", "$m3", "$m4", "$m5"]}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": "Pass"},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": "Pass"},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"Count": {"player": "alice", "zone": "Exile", "card": "Mountain", "count": 6}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"Count": {"player": "alice", "zone": "Exile", "card": "Grizzly Bears", "count": 1}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"Count": {"player": "bob", "zone": "Battlefield", "card": "Island", "count": 1}}},
+    {"turn": 2, "step": "PrecombatMain", "player": "bob", "do": {"Cast": {"object": "$unsummon", "mana": ["$i"]}}},
+    {"turn": 2, "step": "PrecombatMain", "player": "bob", "do": "Pass"},
+    {"turn": 2, "step": "PrecombatMain", "player": "bob", "do": "Pass"},
+    {"turn": 2, "step": "PrecombatMain", "player": "alice", "do": {"OrderTimestamps": ["Mountain", "Mountain#2", "Mountain#3", "Mountain#4", "Mountain#5", "Mountain#6", "Grizzly Bears"]}},
+    {"turn": 2, "step": "PrecombatMain", "player": "bob", "check": {"Count": {"player": "alice", "zone": "Hand", "card": "Worldgorger Dragon", "count": 1}}},
+    {"turn": 2, "step": "PrecombatMain", "player": "bob", "check": {"Count": {"player": "alice", "zone": "Battlefield", "card": "Mountain", "count": 6}}},
+    {"turn": 2, "step": "PrecombatMain", "player": "bob", "check": {"Count": {"player": "alice", "zone": "Battlefield", "card": "Grizzly Bears", "count": 1}}},
+    {"turn": 2, "step": "PrecombatMain", "player": "bob", "check": {"Count": {"player": "alice", "zone": "Exile", "card": "Mountain", "count": 0}}}
+  ]
+}
