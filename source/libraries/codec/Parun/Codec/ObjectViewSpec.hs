@@ -2,7 +2,9 @@ module Parun.Codec.ObjectViewSpec where
 
 import qualified Data.List.NonEmpty as NonEmpty
 import qualified Data.Map.Strict as Map
+import qualified Data.Sequence as Seq
 import qualified Data.Set as Set
+import qualified Data.Text as Text
 import qualified Parun.Codec.ObjectView as ObjectView
 import qualified Parun.Codec.ProjectedCharacteristicsSpec as ProjectedCharacteristicsSpec
 import qualified Parun.Codec.TriggeredAbilitySourceSpec as TriggeredAbilitySourceSpec
@@ -10,6 +12,7 @@ import qualified Parun.JsonCodec.Common as Common
 import qualified Parun.Spec as Spec
 import qualified Parun.Types.AbilityView as AbilityView
 import qualified Parun.Types.Acquisition as Acquisition
+import qualified Parun.Types.CardName as CardName
 import qualified Parun.Types.ClassLevel as ClassLevel
 import qualified Parun.Types.Designation as Designation
 import qualified Parun.Types.ManaCost as ManaCost
@@ -94,6 +97,9 @@ spec s = Spec.describe s "Parun.Codec.ObjectView" $ do
     Common.assertCodec s ObjectView.codec hidden {ObjectView.onAdventure = True} (init hiddenJson <> ",\"onAdventure\":true}")
   Spec.it s "an object its own static abilities affect" $
     Common.assertCodec s ObjectView.codec hidden {ObjectView.ownEffects = Just ProjectedCharacteristicsSpec.testCharacteristics} (init hiddenJson <> ",\"ownEffects\":" <> ProjectedCharacteristicsSpec.testCharacteristicsJson <> "}")
+  -- CR 731.2 / 708.5: a card merged under it and a face-down one the seat may not look at.
+  Spec.it s "a merged permanent" $
+    Common.assertCodec s ObjectView.codec hidden {ObjectView.merged = Seq.fromList [Just (CardName.MkCardName (Text.pack "Silent Arbiter")), Nothing]} (init hiddenJson <> ",\"merged\":[\"Silent Arbiter\",null]}")
   Spec.it s "has a schema" $ Common.assertHasSchema s ObjectView.codec
 
 -- Tapped and damaged, so neither status key encodes a default.
@@ -111,6 +117,7 @@ hidden =
       ObjectView.face = Nothing,
       ObjectView.foretellCostReduction = Nothing,
       ObjectView.ownEffects = Nothing,
+      ObjectView.merged = Seq.empty,
       ObjectView.ability = Nothing,
       ObjectView.targets = [],
       ObjectView.summoningSick = False,

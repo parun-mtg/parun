@@ -5,6 +5,7 @@ module Parun.Engine.PlayerView where
 
 import qualified Data.Foldable as Foldable
 import qualified Data.List as List
+import qualified Data.List.NonEmpty as NonEmpty
 import qualified Data.Map.Strict as Map
 import qualified Data.Maybe as Maybe
 import qualified Data.Sequence as Seq
@@ -21,16 +22,21 @@ import qualified Parun.Types.AbilityView as AbilityView
 import qualified Parun.Types.Acquisition as Acquisition
 import qualified Parun.Types.ActivatedAbilitySource as ActivatedAbilitySource
 import qualified Parun.Types.Bookkeeping as Bookkeeping
+import qualified Parun.Types.Card as Card
+import qualified Parun.Types.CardName as CardName
 import qualified Parun.Types.CardType as CardType
 import qualified Parun.Types.Chosen as Chosen
 import qualified Parun.Types.Combat as Combat
+import qualified Parun.Types.ComponentCard as ComponentCard
 import qualified Parun.Types.ExilePlayPermission as ExilePlayPermission
+import qualified Parun.Types.Face as Face
 import qualified Parun.Types.Facing as Facing
 import qualified Parun.Types.GameState as GameState
 import qualified Parun.Types.InherentTriggerSource as InherentTriggerSource
 import qualified Parun.Types.LoggedEvent as LoggedEvent
 import qualified Parun.Types.Mana as Mana
 import qualified Parun.Types.MatchScope as MatchScope
+import qualified Parun.Types.MergeComponent as MergeComponent
 import qualified Parun.Types.Object as Object
 import qualified Parun.Types.ObjectId as ObjectId
 import qualified Parun.Types.ObjectView as ObjectView
@@ -39,7 +45,9 @@ import qualified Parun.Types.Player as Player
 import qualified Parun.Types.PlayerChoice as PlayerChoice
 import qualified Parun.Types.PlayerId as PlayerId
 import qualified Parun.Types.PlayerView as PlayerView
+import qualified Parun.Types.ProjectedCharacteristics as ProjectedCharacteristics
 import qualified Parun.Types.SeatView as SeatView
+import qualified Parun.Types.ShownComponent as ShownComponent
 import qualified Parun.Types.Source as Source
 import qualified Parun.Types.StackedAbility as StackedAbility
 import qualified Parun.Types.TriggeredAbilitySource as TriggeredAbilitySource
@@ -125,9 +133,10 @@ seatView pid gs seat = do
 
 -- | CR 110.5: an object's status for anyone; its characteristics (as projected,
 -- CR 613) for a seat that may see them, which for a face-down permanent or
--- spell is every seat (CR 708.2), and beside them its characteristics under
--- its own static abilities alone; the card behind a face-down object for a
--- seat that may look at it (CR 406.3, 708.5), and the foretell cost it was
+-- spell is every seat (CR 708.2); the card behind a face-down object for a
+-- seat that may look at it (CR 406.3, 708.5), and beside whichever of the two
+-- the seat gets its characteristics under its own static abilities alone; the
+-- cards merged under a merged permanent (CR 731.2); the foretell cost it was
 -- given with it (CR 702.143e); what an ability came from; what a stack
 -- object targets, which CR 601.2c / 602.2b / 603.3d announce to every seat;
 -- and what the object has chosen (CR 607.2d), for a seat that sees it, less a
@@ -148,7 +157,25 @@ objectView pid gs oid = do
       gathered = Projection.gather gs
       -- The parts of the object's own static abilities (CR 604.1): an effect
       -- this object's text applies to itself is what that text says.
-      own = filter (maybe False ((== oid) . fst) . Projection.gEffect) gathered
+      ownOf = filter (maybe False ((== oid) . fst) . Projection.gEffect)
+      own = ownOf gathered
+      -- The card a face-down object is, on the board that shows it.
+      looked = Projection.shownBoard oid gs
+      lookedGathered = Projection.gather looked
+      lookedOwn = ownOf lookedGathered
+      -- CR 731.2: the components under the topmost one.
+      under = case Object.source object of
+        Source.OfMerge components -> NonEmpty.tail components
+        _ -> []
+      -- CR 702.140e: a merged permanent's copiable values hold every
+      -- component's abilities, which are its cards' printed text.
+      isMerged = not (null under)
+      -- A face-up component is public (CR 400.2); a face-down one is seen by
+      -- whoever could look at the permanent were it face down (CR 708.5).
+      mayLookAt component =
+        not (Facing.isFaceDown (ShownComponent.facing component))
+          || Visibility.sees pid oid gs {GameState.objects = Map.insert oid object {Object.facing = ShownComponent.facing component} (GameState.objects gs)} == Visibility.Type.Visible
+      named component = if mayLookAt component then fmap Just (componentName gs component) else Just Nothing
   pure
     ObjectView.MkObjectView
       { ObjectView.object = oid,
@@ -164,12 +191,13 @@ objectView pid gs oid = do
             else Nothing,
         ObjectView.face =
           if seen && faceDown
-            then Just (Projection.projectShown oid gs)
+            then Just (Projection.projectFrom lookedGathered oid looked)
             else Nothing,
         ObjectView.ownEffects =
-          if shown && not (null own)
-            then Just (Projection.projectFrom own oid gs)
-            else Nothing,
+          if seen && faceDown
+            then if isMerged || not (null lookedOwn) then Just (Projection.projectFrom lookedOwn oid looked) else Nothing
+            else if shown && (isMerged || not (null own)) then Just (Projection.projectFrom own oid gs) else Nothing,
+        ObjectView.merged = Seq.fromList (Maybe.mapMaybe named under),
         ObjectView.foretellCostReduction =
           if seen
             then Object.foretellCostReduction object
@@ -196,6 +224,16 @@ objectView pid gs oid = do
         ObjectView.chosenNumber = chosen Chosen.Number,
         ObjectView.chosenObjects = chosen Chosen.Objects
       }
+
+-- | CR 731.2: a component of a merged permanent by the face it shows: its
+-- own (ShownComponent.face), a conjured duplicate's name (Object.duplicate),
+-- or else its card's front face.
+componentName :: GameState.GameState -> ShownComponent.ShownComponent -> Maybe CardName.CardName
+componentName gs component = case ShownComponent.face component of
+  Just face -> Just face
+  Nothing -> case ShownComponent.component component of
+    MergeComponent.OfCard card | Just duplicate <- ComponentCard.duplicate card -> Set.lookupMin (ProjectedCharacteristics.names duplicate)
+    other -> fmap (Face.name . NonEmpty.head . Card.faces) (Game.cardOfPrinting (Game.printingOfComponent other) gs)
 
 -- | CR 113.7a / 602.2a: an ability on the stack by its source, where `pid` may
 -- know that object: one in a public zone, one `pid` sees in a hidden zone, or

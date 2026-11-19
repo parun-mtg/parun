@@ -2,6 +2,7 @@ module Parun.Types.ObjectView where
 
 import qualified Data.List.NonEmpty as NonEmpty
 import qualified Data.Map.Strict as Map
+import qualified Data.Sequence as Seq
 import qualified Data.Set as Set
 import qualified Numeric.Natural as Natural
 import qualified Parun.Types.AbilityView as AbilityView
@@ -38,8 +39,10 @@ data ObjectView = MkObjectView
     characteristics :: Maybe ProjectedCharacteristics.ProjectedCharacteristics,
     -- | CR 406.3 / 708.5: the card a face-down object is, for a seat that may look at it.
     face :: Maybe ProjectedCharacteristics.ProjectedCharacteristics,
-    -- | CR 613.1: its characteristics under its own static abilities alone, where one applies to it and the seat sees them: what its printed text says it has.
+    -- | CR 613.1 / 702.140e: the characteristics `face`, or else `characteristics`, holds under its own static abilities alone, where one applies to it or it is merged: what its printed text, or its cards', says it has.
     ownEffects :: Maybe ProjectedCharacteristics.ProjectedCharacteristics,
+    -- | CR 731.2 / 702.140e: the cards and tokens under a merged permanent's topmost one, top to bottom, each by the face it shows, and Nothing for a face-down one the seat may not look at (CR 708.5).
+    merged :: Seq.Seq (Maybe CardName.CardName),
     -- | CR 702.143d / 702.143e: what a granted foretell cost takes off the card's mana cost, for a seat that may look at it.
     foretellCostReduction :: Maybe ManaCost.ManaCost,
     -- | CR 113.7a / 602.2a: what an ability on the stack came from, and Nothing for anything else.

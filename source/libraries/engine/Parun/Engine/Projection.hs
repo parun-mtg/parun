@@ -5569,14 +5569,19 @@ project oid gs = projectFrom (gather gs) oid gs
 -- Reflection made a copy is revealed with its merge" proves a merge's under a
 -- later one.
 projectShown :: ObjectId -> GameState -> ProjectedCharacteristics
-projectShown oid gs = case Game.lookupObject oid gs of
+projectShown oid gs = project oid (shownBoard oid gs)
+
+-- | The counterfactual board projectShown reads `oid` on, and the board itself
+-- where `oid` is neither face down nor exiled face down.
+shownBoard :: ObjectId -> GameState -> GameState
+shownBoard oid gs = case Game.lookupObject oid gs of
   Just obj
     | Object.exiledFaceDown obj ->
-        project oid gs {GameState.objects = Map.insert oid obj {Object.exiledFaceDown = False} (GameState.objects gs)}
+        gs {GameState.objects = Map.insert oid obj {Object.exiledFaceDown = False} (GameState.objects gs)}
     | Facing.isFaceDown (Object.facing obj) ->
         let card = (Game.withFacing Facing.FaceUp obj) {Object.bindings = Binding.withoutCopyEffect (Object.bindings obj)}
-         in project oid (Game.supersedeStoredCopies (Set.singleton oid) gs {GameState.objects = Map.insert oid card (GameState.objects gs)})
-  _ -> project oid gs
+         in Game.supersedeStoredCopies (Set.singleton oid) gs {GameState.objects = Map.insert oid card (GameState.objects gs)}
+  _ -> gs
 
 -- | One object as it stands on this board, through the projection; Nothing
 -- where it does not exist.
