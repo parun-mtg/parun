@@ -69,6 +69,21 @@ spec s registry = Spec.describe s "WebQuestion" $ do
           Html.handler (Text.pack "click") (at <> path) reading
     Spec.assertEqWith s "sheet action" action (Just (Question.Web.MkAnswer (R.Number 1)))
 
+  Spec.it s "CR 104.3a the turn bar carries the auto-pass level and the settings button, whose concession passes while the seat may" $ do
+    let request = requestFor (Setup.emptyGame S.bothPlayers) (Prompt.ChooseAction (Decider.MkDecider S.alice) S.alice [Action.Pass])
+        asked = Question.Web.view request Question.Web.blank
+        watched = Question.Web.watching request Question.Web.blank
+        within prefix = Html.search (\node -> Text.pack prefix `Text.isPrefixOf` Html.toText node)
+        conceding html = within "<button class=\"settings-button\"" html >>= \path -> Html.handler (Text.pack "concede") path html
+        bar html = within "<div class=\"turn-bar" html >>= \path -> Html.at path html
+        prompt = within "<section class=\"prompt\"" asked >>= \path -> Html.at path asked
+        level html = bar html >>= \inner -> Html.labelled (Text.pack "button") (Text.pack "Auto") inner >>= \path -> Html.handler (Text.pack "click") path inner
+    Spec.assertEqWith s "the menu's Concede passes" (fmap (\event -> Question.Web.step request Set.empty event Text.empty) (conceding asked)) (Just (Question.Web.MkReplied (R.Number 0)))
+    Spec.assertEqWith s "no concession while watching" (conceding watched) Nothing
+    Spec.assertEqWith s "the level is chosen in the turn bar" (level asked) (Just (Question.Web.MkLevel Question.Web.MkAutoPass))
+    Spec.assertBool s (maybe False (Text.isInfixOf (Text.pack "aria-pressed=\"false\" disabled=\"\">Auto</button>") . Html.toText) (bar watched)) "inert while watching"
+    Spec.assertBool s (maybe False (\p -> not (any (`Text.isInfixOf` Html.content p) [Text.pack "Auto-pass", Text.pack "Concede"])) prompt) "the prompt carries neither"
+
   Spec.it s "CR 602.1a an activated ability is offered by its Oracle text" $ do
     sorcerer <- S.printingOf s registry "Prodigal Sorcerer"
     let (oid, gs) = S.addPermanent sorcerer S.alice (Setup.emptyGame S.bothPlayers)

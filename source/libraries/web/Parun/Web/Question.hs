@@ -235,11 +235,10 @@ blank = MkScreen Set.empty Nothing Seq.empty 0 Nothing MkStandard
 -- and the sheet of the card being read.
 view :: Request.Request -> Screen -> Html.Html Event
 view request screen =
-  table request screen (cues request (selected screen) (focus screen)) $
+  table request screen (barControls (level screen) True (MkConcede <$ passIndex request)) (cues request (selected screen) (focus screen)) $
     [Element.el "p" ["problem"] [Element.attr "role" (Text.pack "alert")] [Html.text problem] | problem <- Maybe.maybeToList (Request.problem request)]
       <> news (Request.view request) (viewerOf request) screen
       <> form request (selected screen)
-      <> [footer (level screen) (Maybe.isJust (passIndex request))]
 
 -- | The page while the game goes on without the seat: a request it was not
 -- asked (Hotseat answers it), its board shown as it stands, and in place of
@@ -251,21 +250,54 @@ watching request screen =
           | not (null (PlayerView.stack b)) -> "Resolving\x2026"
           | PlayerView.active b /= PlayerView.viewer b -> Text.unpack (Render.player (PlayerView.active b)) <> " is taking their turn\x2026"
         _ -> "Moving on\x2026"
-   in table request screen (Board.MkMarks (\o -> Card.MkCue [] (MkRead (ObjectView.object o)) Nothing) (const Nothing)) $
+   in table request screen (barControls (level screen) False Nothing) (Board.MkMarks (\o -> Card.MkCue [] (MkRead (ObjectView.object o)) Nothing) (const Nothing)) $
         news (Request.view request) (viewerOf request) screen <> [Element.el "p" ["waiting"] [] [Element.el "span" ["spinner", "small"] [Element.attr "aria-hidden" (Text.pack "true")] [], Element.string status]]
 
--- | The prompt's foot: the level control, and conceding where the seat
--- has priority to.
-footer :: Level -> Bool -> Html.Html Event
-footer current concedable =
+-- | The turn bar's controls: the auto-pass level, chosen from a disclosure
+-- beside the phases and inert unless the seat is asked (a tap made while it
+-- watches is dropped), and the settings button, whose menu's Concede
+-- (CR 104.3a) sends the event given where the seat may concede.
+barControls :: Level -> Bool -> Maybe Event -> [Html.Html Event]
+barControls current asked concede =
+  [ Element.el
+      "details"
+      ["auto-pass"]
+      []
+      [ Element.el "summary" [] [Element.attr "title" (Text.pack "Automatic passing")] [Element.el "span" ["k"] [] [Element.string "Auto-pass"], Element.string (snd (levelName current))],
+        Element.el
+          "div"
+          ["segmented"]
+          [Element.attr "role" (Text.pack "group"), Element.attr "aria-label" (Text.pack "Automatic passing")]
+          [ Element.el
+              "button"
+              ["on" | l == current]
+              ([Element.attr "type" (Text.pack "button"), Element.attr "data-level" (Text.pack (fst (levelName l))), Element.attr "aria-pressed" (Text.pack (if l == current then "true" else "false")), Element.on "click" (MkLevel l)] <> [Element.attr "disabled" Text.empty | not asked])
+              [Element.string (snd (levelName l))]
+          | l <- [minBound .. maxBound]
+          ]
+      ],
+    settingsButton concede
+  ]
+
+-- | The settings button page.js opens its menu from, on the game screen's
+-- turn bar; the menu's Concede sends the event given, where there is one.
+settingsButton :: Maybe msg -> Html.Html msg
+settingsButton concede =
   Element.el
-    "div"
-    ["levels"]
-    [Element.attr "role" (Text.pack "group"), Element.attr "aria-label" (Text.pack "Automatic passing")]
-    $ [Element.el "button" ["concede"] [Element.attr "type" (Text.pack "button"), Element.attr "data-confirm" (Text.pack "Concede this game?"), Element.on "click" MkConcede] [Element.string "Concede"] | concedable]
-      <> [ Element.el "span" ["k"] [] [Element.string "Auto-pass"],
-           Element.el "div" ["segmented"] [] [Element.el "button" ["on" | l == current] [Element.attr "type" (Text.pack "button"), Element.attr "data-level" (Text.pack (fst (levelName l))), Element.attr "aria-pressed" (Text.pack (if l == current then "true" else "false")), Element.on "click" (MkLevel l)] [Element.string (snd (levelName l))] | l <- [minBound .. maxBound]]
-         ]
+    "button"
+    ["settings-button"]
+    ( [Element.attr "type" (Text.pack "button"), Element.attr "aria-label" (Text.pack "Settings"), Element.attr "aria-haspopup" (Text.pack "true"), Element.attr "aria-controls" (Text.pack "settings"), Element.attr "data-settings" Text.empty]
+        <> foldMap (\event -> [Element.attr "data-concede" Text.empty, Element.on "concede" event]) concede
+    )
+    -- The gear index.html's own settings button draws off the game screen.
+    [ Element.el
+        "svg"
+        []
+        [Element.attr "viewBox" (Text.pack "0 0 24 24"), Element.attr "aria-hidden" (Text.pack "true"), Element.attr "focusable" (Text.pack "false")]
+        [Element.el "path" [] [Element.attr "d" (Text.pack gear), Element.attr "fill" (Text.pack "currentColor"), Element.attr "fill-rule" (Text.pack "evenodd")] []]
+    ]
+  where
+    gear = "M9.58 4.17L10.14 1.16L13.86 1.16L14.42 4.17L15.83 4.75L18.35 3.02L20.98 5.65L19.25 8.17L19.83 9.58L22.84 10.14L22.84 13.86L19.83 14.42L19.25 15.83L20.98 18.35L18.35 20.98L15.83 19.25L14.42 19.83L13.86 22.84L10.14 22.84L9.58 19.83L8.17 19.25L5.65 20.98L3.02 18.35L4.75 15.83L4.17 14.42L1.16 13.86L1.16 10.14L4.17 9.58L4.75 8.17L3.02 5.65L5.65 3.02L8.17 4.75ZM12 8.4A3.6 3.6 0 1 0 12 15.6A3.6 3.6 0 1 0 12 8.4Z"
 
 -- | The links a log entry's names make: to the sheet of each object the
 -- view shows.
@@ -276,12 +308,13 @@ linksOf = fmap (\b -> (Log.linkable b, MkRead))
 viewerOf :: Request.Request -> PlayerId.PlayerId
 viewerOf request = maybe (Question.seat (Request.question request)) PlayerView.viewer (Request.view request)
 
--- | The game screen around a prompt's contents.
-table :: Request.Request -> Screen -> Board.Marks Event -> [Html.Html Event] -> Html.Html Event
-table request screen marks prompt =
+-- | The game screen around a prompt's contents, the turn bar carrying the
+-- controls given.
+table :: Request.Request -> Screen -> [Html.Html Event] -> Board.Marks Event -> [Html.Html Event] -> Html.Html Event
+table request screen controls marks prompt =
   let board = Request.view request
    in Element.el "main" ["game"] [] $
-        foldMap (\b -> [Board.turnBar b]) board
+        foldMap (\b -> [Board.turnBar controls b]) board
           <> [Element.el "div" ["play-area"] [] (foldMap (\b -> [Board.view marks b]) board)]
           <> foldMap (Board.hand marks) board
           <> [ Element.el "aside" ["side"] [] $

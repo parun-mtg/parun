@@ -35,25 +35,26 @@ data Marks msg = MkMarks
     seat :: PlayerId.PlayerId -> Maybe (Card.Cue msg)
   }
 
--- | The turn bar: whose turn, which step, and the phases as a strip with
--- the current one lit.
-turnBar :: PlayerView.PlayerView -> Html.Html msg
-turnBar board =
+-- | The turn bar: whose turn, which step, the phases as a strip with the
+-- current one lit, and the controls given after them.
+turnBar :: [Html.Html msg] -> PlayerView.PlayerView -> Html.Html msg
+turnBar controls board =
   let yours = PlayerView.active board == PlayerView.viewer board
       current = phaseIndex (PlayerView.phase board)
    in Element.el
         "div"
         ["turn-bar", if yours then "yours" else "theirs"]
         []
-        [ Element.el
-            "p"
-            ["turn-label"]
-            []
-            [ Element.el "strong" [] [] [Element.string ("Turn " <> show (PlayerView.turn board))],
-              Element.text (Text.pack " \x00b7 " <> (if yours then Text.pack "Your " else possessive (PlayerView.active board)) <> Render.phase (PlayerView.phase board))
-            ],
-          Element.el "ol" ["phases"] [Element.attr "aria-hidden" (Text.pack "true")] [Element.el "li" [if i == current then "now" else if i < current then "past" else ""] [] [Element.string label] | (i, label) <- zip [0 :: Integer ..] ["Begin", "Main", "Combat", "Main 2", "End"]]
-        ]
+        $ [ Element.el
+              "p"
+              ["turn-label"]
+              []
+              [ Element.el "strong" [] [] [Element.string ("Turn " <> show (PlayerView.turn board))],
+                Element.text (Text.pack " \x00b7 " <> (if yours then Text.pack "Your " else possessive (PlayerView.active board)) <> Render.phase (PlayerView.phase board))
+              ],
+            Element.el "ol" ["phases"] [Element.attr "aria-hidden" (Text.pack "true")] [Element.el "li" [if i == current then "now" else if i < current then "past" else ""] [] [Element.string label] | (i, label) <- zip [0 :: Integer ..] ["Begin", "Main", "Combat", "Main 2", "End"]]
+          ]
+          <> controls
 
 possessive :: PlayerId.PlayerId -> Text.Text
 possessive pid = name pid <> Text.pack "'s "
