@@ -34,7 +34,7 @@
         }
       ],
       "name": "Blue Mage's Cane",
-      "oracleText": "Job select (When this Equipment enters, create a 1/1 colorless Hero creature token, then attach this to it.)\nEquipped creature gets +0/+2, is a Wizard in addition to its other types, and has \"Whenever this creature attacks, exile up to one target instant or sorcery card from defending player's graveyard. If you do, copy it. You may cast the copy by paying {3} rather than paying its mana cost.\"\nSpirit of the Whalaqee — Equip {2}",
+      "oracleText": "Job select\nEquipped creature gets +0/+2, is a Wizard in addition to its other types, and has \"Whenever this creature attacks, exile up to one target instant or sorcery card from defending player's graveyard. If you do, copy it. You may cast the copy by paying {3} rather than paying its mana cost.\"\nSpirit of the Whalaqee — Equip {2}",
       "staticAbilities": [
         {
           "affected": {

@@ -165,6 +165,18 @@ spec s corpus = Spec.describe s "Parun.Ingest" $ do
       (Right known, Right (Just card)) -> Spec.assertEq s (Face.oracleText (NonEmpty.head (Card.faces (Ingest.stamp known (unstamped card))))) (Just (Text.pack own))
       _ -> Spec.assertFailure s "Replenish: no texts or no card"
 
+  -- `parun ingest` rewrites a pool file its stamp changes, so a hand-written
+  -- text must be MTGJSON's verbatim: Blue Mage's Cane's prints Job select
+  -- without the reminder its siblings carry (#8814). The record is MTGJSON's,
+  -- checked against Scryfall.
+  Spec.it s "stamp leaves a hand-written card's Oracle text as the pool holds it" $ do
+    registry <- Registry.defaultRoot >>= Registry.fileRegistry
+    cane <- Registry.named registry "Blue Mage's Cane"
+    let json = "[{\"card\":\"Blue Mage's Cane\",\"name\":\"Blue Mage's Cane\",\"text\":\"Job select\\nEquipped creature gets +0/+2, is a Wizard in addition to its other types, and has \\\"Whenever this creature attacks, exile up to one target instant or sorcery card from defending player's graveyard. If you do, copy it. You may cast the copy by paying {3} rather than paying its mana cost.\\\"\\nSpirit of the Whalaqee \8212 Equip {2}\"}]"
+    case (Common.parse (Text.pack json) >>= Ingest.texts, cane) of
+      (Right known, Right (Just card)) -> Spec.assertEq s (Ingest.stamp known card) card
+      _ -> Spec.assertFailure s "Blue Mage's Cane: no texts or no card"
+
   -- mtgish's AST for Dragon Engine predates its Dragon subtype; Maro's star
   -- is the translation's to keep.
   Spec.it s "reprint takes the printed characteristics from the record" $ do
