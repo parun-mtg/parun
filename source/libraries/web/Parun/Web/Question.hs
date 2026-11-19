@@ -779,6 +779,8 @@ form request picked = case Text.unpack (Question.kind question) of
         let (passes, others) = List.partition (isPass . snd) (Offer.distinct shown options')
             -- A mana ability is in its permanent's sheet, not the list.
             rest = filter (not . isManaAbility . snd) others
+            -- Two abilities of one source read alike as phrases.
+            reminders = ListUtils.nubOrd (fmap (Offer.actionPhrase shown . snd) rest)
             controlled = Question.for question
             -- CR 724.1: a turn the seat controls is played as its own.
             yours = PlayerView.active shown == PlayerView.viewer shown || controlled == Just (PlayerView.active shown)
@@ -795,7 +797,7 @@ form request picked = case Text.unpack (Question.kind question) of
               [ nudge (Text.pack "You have " <> foldMap (\u -> Text.pack "{" <> Render.manaType (ManaUnit.manaType u) <> Text.pack "}") floating <> Text.pack " unspent. It empties when this step ends.")
               | not (null floating)
               ]
-                <> [ nudge (Text.pack "Before ending your turn: you can still " <> Render.listing (fmap (Text.toLower . Offer.actionName shown . snd) (take 3 rest)) <> (if length rest > 3 then Text.pack ", and more." else Text.pack "."))
+                <> [ nudge (Text.pack "Before you pass: you can still " <> Render.listing (take 3 reminders) <> (if length reminders > 3 then Text.pack ", and more." else Text.pack "."))
                    | yours,
                      settled,
                      not (null rest)

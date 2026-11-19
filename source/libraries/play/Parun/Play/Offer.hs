@@ -185,8 +185,7 @@ decoded codec = either (const Nothing) Just . Codec.decode codec . Codec.Reply.t
 actionName :: PlayerView.PlayerView -> R.Reply -> Text.Text
 actionName view action =
   let object = fmap (objectName view) (Protocol.field "object" action)
-      name = Protocol.field "name" action >>= textOf
-      subject = Maybe.fromMaybe Text.empty (Monad.mplus name object)
+      subject = Maybe.fromMaybe Text.empty (actionSubject view action)
    in case maybe "" Text.unpack (Protocol.field "action" action >>= textOf) of
         "Pass" -> Text.pack "Pass"
         "PlayLand" -> Text.pack "Play " <> subject
@@ -204,6 +203,17 @@ actionName view action =
         -- CR 702.170a: which plot cost is paid.
         "Plot" -> Text.pack "Plot " <> subject <> foldMap (\c -> Text.pack " for " <> candidateName subject c) (Protocol.field "cost" action)
         kind -> Render.spaced (Text.pack kind) <> maybe Text.empty (Text.pack " " <>) object
+
+-- | An action as a verb phrase within a sentence: the label's own case bar
+-- its first letter, and an activation by its source alone.
+actionPhrase :: PlayerView.PlayerView -> R.Reply -> Text.Text
+actionPhrase view action
+  | (Protocol.field "action" action >>= textOf) == Just (Text.pack "Activate") = Text.pack "activate " <> Maybe.fromMaybe Text.empty (actionSubject view action)
+  | otherwise = maybe Text.empty (\(c, rest) -> Text.cons (Char.toLower c) rest) (Text.uncons (actionName view action))
+
+-- | What an action acts on: the name the offer gives, else its object's.
+actionSubject :: PlayerView.PlayerView -> R.Reply -> Maybe Text.Text
+actionSubject view action = Monad.mplus (Protocol.field "name" action >>= textOf) (fmap (objectName view) (Protocol.field "object" action))
 
 -- | A list's options as shown, each beside its index in the list: an option
 -- is dropped when an earlier one plays, casts or plots a card in the seat's
