@@ -209,7 +209,7 @@ exchange lookUp page seatRef request = do
             let seen = shown {PlayerView.priority = Nothing}
             Monad.when (watched now /= Just seen) $ do
               IORef.writeIORef seatRef now {watched = Just seen}
-              Browser.display page . fmap Right $ Web.Question.watching request (Web.Question.blank {Web.Question.logged = logged now, Web.Question.fresh = freshOf now})
+              Browser.display page . fmap Right $ Web.Question.watching request (Web.Question.blank {Web.Question.logged = logged now, Web.Question.fresh = freshOf now, Web.Question.level = level now})
           pure reply
         conceded = if conceding state && kind == Text.pack "Concede" then Just (R.Text (Text.pack "Concedes")) else Nothing
     reply <- case (Monad.mplus conceded (Web.Question.automatic (level state) request), auto, skipped) of

@@ -37,7 +37,8 @@ function note(line) {
 }
 
 // The settings menu: theme (the system's unless one is picked), card size
-// and motion, each kept and applied as an attribute of the page's root.
+// and motion, each kept and applied as an attribute of the page's root. It
+// opens from the game's turn bar (data-settings), else from its own button.
 const settingsButton = document.getElementById("settings-button");
 const settings = document.getElementById("settings");
 const dark = matchMedia("(prefers-color-scheme: dark)");
@@ -65,21 +66,55 @@ settings.addEventListener("change", async ({ target }) => {
 dark.addEventListener("change", () => {
   if (localStorage.getItem("parun-theme") === null) document.documentElement.dataset.theme = systemTheme();
 });
+// The button the menu opens from: the turn bar's during a game.
+function gear() {
+  return root.querySelector("[data-settings]") ?? settingsButton;
+}
+// Ties the menu to the button it opens from, which a patch may have
+// replaced, and offers Concede during a game: enabled where the view gives
+// the turn bar's button a "concede" event, while the seat has priority.
+function syncSettings() {
+  const from = gear();
+  for (const button of new Set([settingsButton, from])) button.setAttribute("aria-expanded", String(!settings.hidden && button === from));
+  if (from === settingsButton) settings.removeAttribute("style");
+  else {
+    const box = from.getBoundingClientRect();
+    settings.style.position = "fixed";
+    settings.style.top = `${box.bottom + 6}px`;
+    settings.style.right = `${document.documentElement.clientWidth - box.right}px`;
+    settings.style.bottom = "auto";
+  }
+  const conceding = root.querySelector("[data-concede]");
+  concede.hidden = root.querySelector("main.game:not(.replay)") === null;
+  concedeButton.disabled = conceding === null;
+  document.getElementById("concede-why").hidden = conceding !== null;
+}
 function openSettings(open) {
   settings.hidden = !open;
-  settingsButton.setAttribute("aria-expanded", String(open));
+  syncSettings();
   if (open) settings.querySelector("input:checked")?.focus();
 }
 settingsButton.addEventListener("click", () => openSettings(settings.hidden));
 document.addEventListener("click", (event) => {
-  if (!settings.hidden && !event.target.closest(".chrome")) openSettings(false);
+  if (!settings.hidden && !event.target.closest(".chrome, [data-settings]")) openSettings(false);
+  for (const open of root.querySelectorAll("details.auto-pass[open]")) if (!open.contains(event.target)) open.open = false;
 });
 document.addEventListener("keydown", (event) => {
   if (event.key === "Escape" && !settings.hidden) {
     event.preventDefault();
     openSettings(false);
-    settingsButton.focus();
+    gear().focus();
   }
+});
+const concede = settings.querySelector(".concede");
+const concedeButton = document.getElementById("concede-button");
+concedeButton.addEventListener("click", () => {
+  const conceding = root.querySelector("[data-concede]");
+  if (conceding === null || !confirm("Concede this game?")) return;
+  openSettings(false);
+  document.body.classList.add("busy");
+  tapped = performance.now();
+  engine.postMessage({ type: "concede", path: pathOf(conceding), value: "" });
 });
 let tapped = null;
 
@@ -191,6 +226,7 @@ function apply(json) {
     }
   }
   holdDock(docked);
+  syncSettings();
   floatChanges(before);
   announce();
   rekey();
@@ -238,12 +274,18 @@ for (const type of events) {
   root.addEventListener(type, (event) => {
     const path = pathOf(event.target);
     if (path === null) return;
-    // An auto-pass level tapped is kept for the next game.
+    // The turn bar's settings button opens the menu, the page's own.
+    if (type === "click" && event.target.closest("[data-settings]")) {
+      openSettings(settings.hidden);
+      return;
+    }
+    // An auto-pass level tapped is kept for the next game, and closes its
+    // menu.
     const chosen = type === "click" ? event.target.closest("[data-level]") : null;
-    if (chosen) localStorage.setItem("parun-level", chosen.dataset.level);
-    // A button that asks first (data-confirm) sends nothing unless confirmed.
-    const asking = type === "click" ? event.target.closest("[data-confirm]") : null;
-    if (asking && !confirm(asking.dataset.confirm)) return;
+    if (chosen) {
+      localStorage.setItem("parun-level", chosen.dataset.level);
+      chosen.closest("details").open = false;
+    }
     // A tap shows the page busy until the engine next patches it.
     if (type === "click" && event.target.closest("button")) {
       document.body.classList.add("busy");
@@ -320,8 +362,8 @@ function unkey() {
 
 // Gives the main button Enter, then numbers 1 to 9 and 0 the buttons an
 // open card sheet offers, or else the prompt's: in the order shown, but the
-// main button, any with a key of the view's, the news's card links, the
-// damage rows' amounts and the auto-pass foot. A prompt's numbers follow its own buttons, so the same
+// main button, any with a key of the view's, the news's card links and the
+// damage rows' amounts. A prompt's numbers follow its own buttons, so the same
 // kind of prompt numbers alike; a meaning that recurs has its letter.
 function rekey() {
   const give = (button, key) => {
@@ -332,7 +374,7 @@ function rekey() {
   const main = sheet ? null : mainButton();
   if (main && !main.hasAttribute("aria-keyshortcuts")) give(main, "Enter");
   const candidates = sheet ? sheet.querySelectorAll(".sheet-actions button") : root.querySelectorAll(".prompt button");
-  const numbered = Array.from(candidates).filter((button) => button !== main && !button.disabled && !button.hasAttribute("aria-keyshortcuts") && !button.closest(".levels, .news, .segmented"));
+  const numbered = Array.from(candidates).filter((button) => button !== main && !button.disabled && !button.hasAttribute("aria-keyshortcuts") && !button.closest(".news, .segmented"));
   // Buttons that are numbers themselves (choosing X) each take their own digit.
   if (numbered.length > 0 && numbered.every((button) => /^\d+$/.test(button.textContent))) {
     for (const button of numbered) if (/^\d$/.test(button.textContent)) give(button, button.textContent);
@@ -374,7 +416,11 @@ document.addEventListener("keydown", (event) => {
   if (!settings.hidden || shortcuts.open) return;
   const sheet = openSheet();
   if (event.key === "Escape") {
-    root.querySelector(".sheet button.close")?.click();
+    const levels = root.querySelector("details.auto-pass[open]");
+    if (levels) {
+      levels.open = false;
+      levels.querySelector("summary").focus();
+    } else root.querySelector(".sheet button.close")?.click();
     return;
   }
   // Tab stays within an open card sheet, as within any dialog.

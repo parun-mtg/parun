@@ -197,7 +197,8 @@ button {
   text-align: center;
 }
 
-#app button:disabled {
+#app button:disabled,
+.chrome button:disabled {
   opacity: 0.45;
   cursor: not-allowed;
   box-shadow: none;
@@ -720,6 +721,8 @@ main.game {
 }
 
 .turn-label {
+  flex: 1 1 auto;
+  min-width: 0;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -752,7 +755,84 @@ main.game {
   font-weight: 700;
 }
 
+/* The auto-pass level, a menu beside the phases (Parun.Web.Question's
+   barControls). */
+.auto-pass {
+  position: relative;
+  flex: none;
+}
+
+.auto-pass > summary {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35em;
+  min-height: 34px;
+  padding: 0 0.7em;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  background: var(--surface-2);
+  cursor: pointer;
+  list-style: none;
+  white-space: nowrap;
+  font-size: 0.78rem;
+}
+
+.auto-pass > summary::-webkit-details-marker {
+  display: none;
+}
+
+.auto-pass > summary::after {
+  content: "\25BE";
+  color: var(--muted);
+}
+
+.auto-pass > summary .k {
+  color: var(--muted);
+}
+
+.auto-pass > .segmented {
+  position: absolute;
+  z-index: 55;
+  top: calc(100% + 0.4em);
+  right: 0;
+  flex-direction: column;
+  flex-wrap: nowrap;
+  min-width: 10em;
+  background: var(--surface);
+  box-shadow: var(--sheet-shadow);
+}
+
+#app .auto-pass > .segmented button {
+  border-right: 0;
+  border-bottom: 1px solid var(--border);
+  text-align: left;
+}
+
+#app .auto-pass > .segmented button:last-child {
+  border-bottom: 0;
+}
+
+#app .turn-bar .settings-button {
+  flex: none;
+  width: 34px;
+  height: 34px;
+  min-height: 34px;
+  padding: 0;
+  border-radius: 50%;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.turn-bar .settings-button > svg {
+  width: 22px;
+  height: 22px;
+}
+
 @media (max-width: 420px) {
+  .auto-pass > summary .k {
+    display: none;
+  }
   .phases li:not(.now) {
     width: 8px;
     height: 8px;
@@ -1278,24 +1358,6 @@ details.pile[open] {
 }
 
 
-.levels {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  justify-content: flex-end;
-  gap: 0.3em 0.6em;
-  margin-top: 0.2em;
-  padding-top: 0.5em;
-  border-top: 1px dashed var(--border);
-  font-size: 0.82rem;
-}
-
-#app .levels .segmented button {
-  min-height: 34px;
-  padding: 0.2em 0.6em;
-  font-size: 0.8rem;
-}
-
 #app button.card.c-land {
   min-height: calc(var(--card-w) * 0.5);
 }
@@ -1489,19 +1551,6 @@ details.pile[open] {
   color: var(--muted);
   font-weight: 600;
   margin-top: 0.3em;
-}
-
-#app button.concede {
-  margin-right: auto;
-  min-height: 34px;
-  padding: 0.2em 0.8em;
-  border: 0;
-  background: none;
-  box-shadow: none;
-  color: var(--muted);
-  font-size: 0.8rem;
-  text-decoration: underline;
-  text-align: center;
 }
 
 .nudge {
@@ -2112,9 +2161,9 @@ kbd {
   gap: 0.4em;
 }
 
-body:has(main.game) .chrome {
-  top: calc(0.2em + env(safe-area-inset-top));
-  bottom: auto;
+/* The game's turn bar carries its own (page.js opens the menu beneath it). */
+body:has(main.game) #settings-button {
+  display: none;
 }
 
 #settings-button {
@@ -2150,11 +2199,6 @@ body:has(main.game) .chrome {
   font-size: 0.9rem;
 }
 
-body:has(main.game) #settings {
-  top: calc(100% + 0.4em);
-  bottom: auto;
-}
-
 #settings .about {
   margin: 0.2em 0 0;
   padding-top: 0.5em;
@@ -2167,8 +2211,25 @@ body:has(main.game) #settings {
   color: var(--link);
 }
 
-#settings[hidden] {
+#settings[hidden],
+#settings .concede[hidden],
+#concede-why[hidden] {
   display: none;
+}
+
+#settings .concede {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.2em 0.8em;
+  padding-top: 0.5em;
+  border-top: 1px solid var(--border);
+}
+
+#concede-why {
+  margin: 0;
+  font-size: 0.8rem;
+  color: var(--muted);
 }
 
 #settings fieldset {
@@ -2231,10 +2292,6 @@ body:has(main.game) #settings {
   transition-duration: 0.001s !important;
 }
 
-
-body:has(main.game) .turn-bar {
-  padding-right: calc(3.2em + env(safe-area-inset-right));
-}
 
 footer.diagnostics {
   display: none;

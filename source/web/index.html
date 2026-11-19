@@ -72,6 +72,12 @@
           <label><input type="radio" name="notify" value="on"> On</label>
         </fieldset>
         <button type="button" id="keys-button" class="keys-only" aria-keyshortcuts="?">Keyboard shortcuts</button>
+        <!-- During a game only (page.js): concedes through the turn bar's
+             settings button (Parun.Web.Question.settingsButton). -->
+        <div class="concede" hidden>
+          <button type="button" id="concede-button" aria-describedby="concede-why">Concede</button>
+          <p id="concede-why">You can concede when you have priority.</p>
+        </div>
         <p class="about">Parun <span title="@COMMIT@">@VERSION@</span> · <a href="https://github.com/parun-mtg/parun" target="_blank" rel="noopener">GitHub</a> · <a href="?scenario">Scenarios</a></p>
       </div>
     </div>
