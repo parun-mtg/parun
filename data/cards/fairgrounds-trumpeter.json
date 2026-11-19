@@ -63,12 +63,15 @@
                         }
                       },
                       {
-                        "type": "CountersPutThisTurn",
+                        "type": "CountersMovedThisTurn",
                         "value": {
                           "kind": {
                             "type": "PlusOnePlusOne"
                           },
-                          "putter": "AnyPlayer"
+                          "motion": {
+                            "type": "Put",
+                            "value": "AnyPlayer"
+                          }
                         }
                       }
                     ]
@@ -76,7 +79,7 @@
                   "scope": {
                     "type": "InHistory",
                     "value": {
-                      "type": "CountersPut"
+                      "type": "CountersMoved"
                     }
                   }
                 }

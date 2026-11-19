@@ -422,7 +422,7 @@ records reading event = case reading of
   HistoryRead.Casts -> Maybe.isJust (Game.castOf event)
   HistoryRead.CoinFlips -> coinFlipped event
   HistoryRead.Convokes -> convoked event
-  HistoryRead.CounterPlacements -> countersPut event
+  HistoryRead.CounterMoves -> countersMoved event
   HistoryRead.Crews -> crewed event
   HistoryRead.Crimes -> Maybe.isJust (Game.criminal event)
   HistoryRead.Damage -> dealtDamage event
@@ -492,10 +492,11 @@ permanentActed action event = case event of
   GameEvent.PermanentActed acted -> PermanentActed.action acted == action
   _ -> False
 
-countersPut :: GameEvent -> Bool
-countersPut event = case event of
+countersMoved :: GameEvent -> Bool
+countersMoved event = case event of
   GameEvent.CountersPut {} -> True
   GameEvent.PlayerCountersPut {} -> True
+  GameEvent.CountersRemoved {} -> True
   _ -> False
 
 milled :: GameEvent -> Bool

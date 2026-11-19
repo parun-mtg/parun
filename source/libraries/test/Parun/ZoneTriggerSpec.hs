@@ -1891,8 +1891,8 @@ representativeEvents cond =
               onPermanent = case (motion, threshold) of
                 (CounterMotion.Put _, Just n) -> GameEvent.CountersPut (CountersPlaced.MkCountersPlaced S.alice departed kind 0 n (S.permanentSnapshot departed S.alice 0))
                 (CounterMotion.Put _, Nothing) -> GameEvent.CountersPut (CountersPlaced.MkCountersPlaced S.alice departed kind 0 1 (S.permanentSnapshot departed S.alice 0))
-                (CounterMotion.Removed, Just n) -> GameEvent.CountersRemoved (CounterChange.MkCounterChange departed kind (n + 2) n)
-                (CounterMotion.Removed, Nothing) -> GameEvent.CountersRemoved (CounterChange.MkCounterChange departed kind 3 1)
+                (CounterMotion.Removed, Just n) -> GameEvent.CountersRemoved (CounterChange.MkCounterChange departed kind (n + 2) n (S.permanentSnapshot departed S.alice 0))
+                (CounterMotion.Removed, Nothing) -> GameEvent.CountersRemoved (CounterChange.MkCounterChange departed kind 3 1 (S.permanentSnapshot departed S.alice 0))
               onPlayer = GameEvent.PlayerCountersPut (PlayerCountersPlaced.MkPlayerCountersPlaced S.alice S.bob PlayerCounterKind.Poison 0 (Maybe.fromMaybe 1 threshold))
            in case (holder, motion, which) of
                 (CounterHolder.Permanent _ (Just _), CounterMotion.Put _, WhichCounters.OfAnyKind) -> noTable onPermanent NonEmpty.:| [noTable onPlayer]

@@ -670,7 +670,7 @@ filterChildren children predicate = case predicate of
   Filter.ActedThisTurn _ -> pure predicate
   Filter.DealtDamageTo asked -> fmap Filter.DealtDamageTo (dealtDamageToChildren children asked)
   Filter.EnteredThisTurn _ -> pure predicate
-  Filter.CountersPutThisTurn relation kind -> fmap (Filter.CountersPutThisTurn relation) (traverse (counterKindChildren children) kind)
+  Filter.CountersMovedThisTurn motion kind -> fmap (Filter.CountersMovedThisTurn motion) (traverse (counterKindChildren children) kind)
   Filter.ControlledSinceTurnBegan -> pure predicate
   Filter.AttachedTo f -> fmap Filter.AttachedTo (nest children f)
   Filter.BeforeMove f -> fmap Filter.BeforeMove (nest children f)
@@ -1718,7 +1718,7 @@ triggerConditionChildren c condition = case condition of
               )
           <*> pure threshold
           <*> pure grouping
-          <*> triggerFrequency c HistoryRead.CounterPlacements frequency
+          <*> triggerFrequency c HistoryRead.CounterMoves frequency
       )
   TriggerCondition.SelfBecomesClassLevel _ -> pure condition
   TriggerCondition.SpellCast (SpellCast.MkSpellCast spell turn zone ordinal phase copies while_) ->

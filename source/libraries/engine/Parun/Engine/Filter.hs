@@ -46,6 +46,7 @@ import qualified Parun.Types.Cost as Cost
 import qualified Parun.Types.CostComponent as CostComponent
 import qualified Parun.Types.CounterKind as CounterKind
 import qualified Parun.Types.CounterLinked as CounterLinked
+import qualified Parun.Types.CounterMotion as CounterMotion
 import qualified Parun.Types.DamageEvent as DamageEvent
 import qualified Parun.Types.DamageKind as DamageKind
 import qualified Parun.Types.DamagedParty as DamagedParty
@@ -463,11 +464,13 @@ data View = MkView
     -- `crewedThisTurn` above's shape and laziness, one keyword over, and a field
     -- of its own so a saddler never satisfies CrewedThisTurn.
     saddledThisTurn :: Set.Set ObjectId.ObjectId,
-    -- CR 122.6 / 122.6a: who put which kinds of counters on this candidate
-    -- earlier this turn? Every GameEvent.CountersPut naming it, LAZY for
-    -- `crewedThisTurn`'s reason; CountersPutThisTurn relates the putter to the
-    -- perspective, which the builders that fill this field do not hold.
-    countersPutThisTurn :: Set.Set (PlayerId.PlayerId, CounterKind.CounterKind Keyword.Type.Keyword),
+    -- CR 122: which kinds of counters moved on this candidate earlier this
+    -- turn, each beside its putter (CR 122.6a) or Nothing for a removal, which
+    -- CR 122 gives no actor? Every GameEvent.CountersPut and
+    -- GameEvent.CountersRemoved naming it, LAZY for `crewedThisTurn`'s reason;
+    -- CountersMovedThisTurn relates the putter to the perspective, which the
+    -- builders that fill this field do not hold.
+    countersMovedThisTurn :: Set.Set (Maybe PlayerId.PlayerId, CounterKind.CounterKind Keyword.Type.Keyword),
     -- CR 120.1 / 608.2i: whom did this candidate deal damage to earlier this
     -- turn? Every recipient of a GameEvent.DamageDealt it was the source of,
     -- each beside that event's CR 510 / 608 kind and the recipient's card types
@@ -1194,7 +1197,7 @@ nobodyView =
       crewedThisTurn = Set.empty,
       convokedThisTurn = Set.empty,
       saddledThisTurn = Set.empty,
-      countersPutThisTurn = Set.empty,
+      countersMovedThisTurn = Set.empty,
       -- CR 120.2: any object can deal damage, but a player is not an object.
       dealtDamageTo = Set.empty,
       dealtDamageEarlier = Set.empty,
@@ -2959,14 +2962,18 @@ matches context view predicate = case predicate of
      in case arrival of
           Just moved -> MovedBetween.to moved == to && (Set.null from || Set.member (MovedBetween.from moved) from)
           Nothing -> False
-  -- CR 122.6 / 122.6a: the same look-back over the counter placements, the
+  -- CR 122.6 / 122.6a: the same look-back over the counters moved, a put's
   -- putter answered against the perspective as IsAttackingPlayer's seat is. The
-  -- field holds the candidate's own id's placements, so CR 400.7's new object
-  -- starts with none; a kind of Nothing admits any. Vacuously False for a
-  -- match no perspective frames.
-  Filter.CountersPutThisTurn relation kind -> case perspective context of
-    Just you -> any (\(putter, placed) -> all (== placed) kind && PlayerRelation.holds (teams context) relation you putter) (countersPutThisTurn view)
-    Nothing -> False
+  -- field holds the candidate's own id's moves, so CR 400.7's new object
+  -- starts with none; a kind of Nothing admits any. A put is vacuously False
+  -- for a match no perspective frames; a removal names no player to frame.
+  Filter.CountersMovedThisTurn motion kind ->
+    let moved admits = any (\(mover, placed) -> all (== placed) kind && admits mover) (countersMovedThisTurn view)
+     in case motion of
+          CounterMotion.Put relation -> case perspective context of
+            Just you -> moved (maybe False (PlayerRelation.holds (teams context) relation you))
+            Nothing -> False
+          CounterMotion.Removed -> moved Maybe.isNothing
   -- CR 702.122c: the same look-back asked of a RELATION rather than of one
   -- subject. A Candidate crewer: the candidate's own field says which Vehicles
   -- it crewed, and the SOURCE on the context says which one the card's "it"
@@ -3600,7 +3607,7 @@ manaValueThresholds predicate = case predicate of
   Filter.ActedThisTurn _ -> []
   Filter.DealtDamageTo _ -> []
   Filter.EnteredThisTurn _ -> []
-  Filter.CountersPutThisTurn _ _ -> []
+  Filter.CountersMovedThisTurn _ _ -> []
   Filter.CrewedThisTurn _ -> []
   Filter.ConvokedSourceThisTurn -> []
   Filter.SaddledSourceThisTurn -> []
@@ -3798,7 +3805,7 @@ statesAQuality predicate = case predicate of
   Filter.ActedThisTurn _ -> True
   Filter.DealtDamageTo _ -> True
   Filter.EnteredThisTurn _ -> True
-  Filter.CountersPutThisTurn _ _ -> True
+  Filter.CountersMovedThisTurn _ _ -> True
   Filter.CrewedThisTurn _ -> True
   Filter.ConvokedSourceThisTurn -> True
   Filter.SaddledSourceThisTurn -> True
@@ -3998,7 +4005,7 @@ readsSourceValues predicate = case predicate of
   Filter.ActedThisTurn _ -> False
   Filter.DealtDamageTo _ -> False
   Filter.EnteredThisTurn _ -> False
-  Filter.CountersPutThisTurn _ _ -> False
+  Filter.CountersMovedThisTurn _ _ -> False
   Filter.CrewedThisTurn _ -> False
   Filter.ConvokedSourceThisTurn -> False
   Filter.SaddledSourceThisTurn -> False
@@ -4142,7 +4149,7 @@ talliesWhatHappened predicate = case predicate of
   Filter.ActedThisTurn {} -> False
   Filter.DealtDamageTo {} -> False
   Filter.EnteredThisTurn {} -> False
-  Filter.CountersPutThisTurn {} -> False
+  Filter.CountersMovedThisTurn {} -> False
   Filter.CrewedThisTurn {} -> False
   Filter.ConvokedSourceThisTurn {} -> False
   Filter.SaddledSourceThisTurn {} -> False

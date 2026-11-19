@@ -604,7 +604,7 @@ countersMoved gs you counterTrigger event = case (CounterTrigger.motion counterT
     | wanted kind && ObjectSnapshot.zone snapshot == Zone.Battlefield && PlayerRelation.holds (Game.teams gs) relation you putter -> Just (Right oid, before, after)
   (CounterMotion.Put relation, GameEvent.PlayerCountersPut (PlayerCountersPlaced.MkPlayerCountersPlaced putter pid _ before after))
     | CounterTrigger.kind counterTrigger == WhichCounters.OfAnyKind && PlayerRelation.holds (Game.teams gs) relation you putter -> Just (Left pid, before, after)
-  (CounterMotion.Removed, GameEvent.CountersRemoved (CounterChange.MkCounterChange oid kind before after))
+  (CounterMotion.Removed, GameEvent.CountersRemoved (CounterChange.MkCounterChange oid kind before after _))
     | wanted kind -> Just (Right oid, before, after)
   _ -> Nothing
   where

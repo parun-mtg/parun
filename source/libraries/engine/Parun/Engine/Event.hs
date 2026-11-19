@@ -7431,9 +7431,11 @@ removeCountersPure oid kind n gs
            in -- Nothing to remove is nothing to record: an event for a removal that
               -- did not happen would fire a counter-watching trigger off nothing,
               -- which is the guard putCounters puts on its own write.
-              if before == 0
-                then gs
-                else recordEvent (GameEvent.CountersRemoved (CounterChange.MkCounterChange oid kind before after)) dropped
+              -- The snapshot is the object as the counters left, before the
+              -- write, as putCounters' is the object as they landed.
+              case Projection.objectSnapshot oid gs of
+                Just snapshot | before > 0 -> recordEvent (GameEvent.CountersRemoved (CounterChange.MkCounterChange oid kind before after snapshot)) dropped
+                _ -> gs
 
 -- CR 122.6: settle a proposed counter placement. Nothing means none are put on.
 --

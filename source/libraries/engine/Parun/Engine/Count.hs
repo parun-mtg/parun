@@ -53,6 +53,7 @@ import qualified Parun.Types.ControlMargin as ControlMargin
 import qualified Parun.Types.Convoking as Convoking
 import qualified Parun.Types.Copyability as Copyability
 import qualified Parun.Types.Count as Count.Type
+import qualified Parun.Types.CounterChange as CounterChange
 import qualified Parun.Types.CounterKind as CounterKind
 import qualified Parun.Types.Counterability as Counterability
 import qualified Parun.Types.CountersPlaced as CountersPlaced
@@ -884,7 +885,7 @@ snapshotView viewOf context gs shape event = case event of
         else Nothing
     EventShape.SpellCast _ -> Nothing
     EventShape.AttackerDeclared _ -> Nothing
-    EventShape.CountersPut -> Nothing
+    EventShape.CountersMoved -> Nothing
     EventShape.Sacrificed -> Nothing
     EventShape.TurnedFaceUp -> Nothing
     EventShape.SourceDealtDamage {} -> Nothing
@@ -921,7 +922,7 @@ snapshotView viewOf context gs shape event = case event of
     EventShape.CardArrivedIn {} -> Nothing
     EventShape.SpellCast _ -> Nothing
     EventShape.AttackerDeclared _ -> Nothing
-    EventShape.CountersPut -> Nothing
+    EventShape.CountersMoved -> Nothing
     EventShape.Sacrificed -> Nothing
     EventShape.TurnedFaceUp -> Nothing
   -- CR 615.13's record names two ids, a recipient and an amount, and snapshots no
@@ -959,7 +960,7 @@ snapshotView viewOf context gs shape event = case event of
     -- too would count one cast twice.
     EventShape.CardArrivedIn {} -> Nothing
     EventShape.AttackerDeclared _ -> Nothing
-    EventShape.CountersPut -> Nothing
+    EventShape.CountersMoved -> Nothing
     EventShape.Sacrificed -> Nothing
     EventShape.TurnedFaceUp -> Nothing
     EventShape.SourceDealtDamage {} -> Nothing
@@ -1005,7 +1006,7 @@ snapshotView viewOf context gs shape event = case event of
     EventShape.MovedFrom {} -> Nothing
     EventShape.CardArrivedIn {} -> Nothing
     EventShape.SpellCast _ -> Nothing
-    EventShape.CountersPut -> Nothing
+    EventShape.CountersMoved -> Nothing
     EventShape.Sacrificed -> Nothing
     EventShape.TurnedFaceUp -> Nothing
     EventShape.SourceDealtDamage {} -> Nothing
@@ -1037,7 +1038,7 @@ snapshotView viewOf context gs shape event = case event of
     EventShape.CardArrivedIn {} -> Nothing
     EventShape.SpellCast _ -> Nothing
     EventShape.AttackerDeclared _ -> Nothing
-    EventShape.CountersPut -> Nothing
+    EventShape.CountersMoved -> Nothing
     EventShape.Sacrificed -> Nothing
     EventShape.SourceDealtDamage {} -> Nothing
     EventShape.PermanentDealtDamage -> Nothing
@@ -1061,7 +1062,7 @@ snapshotView viewOf context gs shape event = case event of
     EventShape.CardArrivedIn {} -> Nothing
     EventShape.SpellCast _ -> Nothing
     EventShape.AttackerDeclared _ -> Nothing
-    EventShape.CountersPut -> Nothing
+    EventShape.CountersMoved -> Nothing
     EventShape.TurnedFaceUp -> Nothing
     EventShape.SourceDealtDamage {} -> Nothing
     EventShape.PermanentDealtDamage -> Nothing
@@ -1072,8 +1073,8 @@ snapshotView viewOf context gs shape event = case event of
   -- CR 122.6 / 608.2i: the object as the counters landed, off the event's
   -- snapshot, so a creature the counter killed still had one put on it (the
   -- scenario lasting-tarfire-counts-a-creature-its-counter-killed). The one
-  -- placement this event is stands in for the object's whole turn of them, so
-  -- Filter.CountersPutThisTurn answers for this putter and this kind alone.
+  -- placement this event is stands in for the object's whole turn of moves, so
+  -- Filter.CountersMovedThisTurn answers for this putter and this kind alone.
   --
   -- CR 122.6: only a placement on the battlefield, an entering object's
   -- included, is "counters put on an object"; a suspended card's time counters
@@ -1082,10 +1083,10 @@ snapshotView viewOf context gs shape event = case event of
   -- Asked of the snapshot, since a last-known view holds no zone for a card's
   -- IsInZone to read.
   GameEvent.CountersPut placed -> case shape of
-    EventShape.CountersPut
+    EventShape.CountersMoved
       | ObjectSnapshot.zone (CountersPlaced.snapshot placed) == Zone.Battlefield ->
           fmap
-            (\view -> (asSnapshotted gs (CountersPlaced.snapshot placed) view) {Filter.countersPutThisTurn = Set.singleton (CountersPlaced.putter placed, CountersPlaced.kind placed)})
+            (\view -> (asSnapshotted gs (CountersPlaced.snapshot placed) view) {Filter.countersMovedThisTurn = Set.singleton (Just (CountersPlaced.putter placed), CountersPlaced.kind placed)})
             (orLastKnown viewOf gs (CountersPlaced.object placed))
       | otherwise -> Nothing
     EventShape.MovedBetween {} -> Nothing
@@ -1099,9 +1100,29 @@ snapshotView viewOf context gs shape event = case event of
     EventShape.PermanentDealtDamage -> Nothing
   -- CR 122.1's counters on a player name no object.
   GameEvent.PlayerCountersPut {} -> Nothing
-  -- CR 122.1's removal names an object by id and snapshots no characteristics,
-  -- and no EventShape names it.
-  GameEvent.CountersRemoved {} -> Nothing
+  -- CR 122 / 608.2i: the placement's arm above run backwards -- the object as
+  -- the counters left, under the controller it had then (the scenario
+  -- churning-reservoir-stays-inactive-after-an-opponent-s-oil-counter-is-removed-even-once-stolen).
+  -- Only from a permanent, as Churning Reservoir's "removed from a permanent"
+  -- says (CR 110.1); no scenario observes that half, no printed card putting
+  -- an oil counter on a card off the battlefield (Scryfall `o:"oil counter"
+  -- o:exile`, 2026-11-19).
+  GameEvent.CountersRemoved change -> case shape of
+    EventShape.CountersMoved
+      | ObjectSnapshot.zone (CounterChange.snapshot change) == Zone.Battlefield ->
+          fmap
+            (\view -> (asSnapshotted gs (CounterChange.snapshot change) view) {Filter.countersMovedThisTurn = Set.singleton (Nothing, CounterChange.kind change)})
+            (orLastKnown viewOf gs (CounterChange.object change))
+      | otherwise -> Nothing
+    EventShape.MovedBetween {} -> Nothing
+    EventShape.MovedFrom {} -> Nothing
+    EventShape.CardArrivedIn {} -> Nothing
+    EventShape.SpellCast _ -> Nothing
+    EventShape.AttackerDeclared _ -> Nothing
+    EventShape.Sacrificed -> Nothing
+    EventShape.TurnedFaceUp -> Nothing
+    EventShape.SourceDealtDamage {} -> Nothing
+    EventShape.PermanentDealtDamage -> Nothing
   -- A control change names two players and one object by id, snapshots no
   -- characteristics, and no EventShape names it.
   GameEvent.ControlChanged {} -> Nothing
@@ -1185,7 +1206,7 @@ snapshotView viewOf context gs shape event = case event of
     EventShape.MovedFrom {} -> Nothing
     EventShape.SpellCast _ -> Nothing
     EventShape.AttackerDeclared _ -> Nothing
-    EventShape.CountersPut -> Nothing
+    EventShape.CountersMoved -> Nothing
     EventShape.Sacrificed -> Nothing
     EventShape.TurnedFaceUp -> Nothing
     EventShape.SourceDealtDamage {} -> Nothing
@@ -1222,7 +1243,7 @@ oncePerObject shape = case shape of
   EventShape.CardArrivedIn {} -> False
   EventShape.SpellCast _ -> False
   EventShape.AttackerDeclared _ -> False
-  EventShape.CountersPut -> False
+  EventShape.CountersMoved -> False
   EventShape.Sacrificed -> False
   EventShape.TurnedFaceUp -> False
 
@@ -1426,7 +1447,7 @@ lastKnownView peers oid gs lastKnown =
           Filter.crewedThisTurn = crewedThisTurn oid gs,
           Filter.convokedThisTurn = convokedThisTurn oid gs,
           Filter.saddledThisTurn = saddledThisTurn oid gs,
-          Filter.countersPutThisTurn = countersPutThisTurn oid gs,
+          Filter.countersMovedThisTurn = countersMovedThisTurn oid gs,
           Filter.dealtDamageTo = dealtDamageTo oid gs,
           Filter.dealtDamageEarlier = dealtDamageEarlier oid gs,
           -- CR 603.10a: what was attached to it as it left, which the next CR
@@ -1562,16 +1583,20 @@ saddledThisTurn oid gs =
         _ -> Nothing
    in Set.fromList (Maybe.mapMaybe (saddledByIt . LoggedEvent.event) (Foldable.toList (TurnRegisters.events (GameState.turn gs))))
 
--- CR 122.6 / 122.6a: who put which kinds of counters on this object this
--- turn. Event.putCounters records a placement that landed nothing as no event,
--- so a counter a replacement removed entirely was never put.
-countersPutThisTurn :: ObjectId -> GameState -> Set.Set (PlayerId, CounterKind.CounterKind Keyword.Type.Keyword)
-countersPutThisTurn oid gs =
-  let putOnIt event = case event of
+-- CR 122.6 / 122.6a: which kinds of counters moved on this object this turn,
+-- a put beside its putter and a removal beside Nothing. Event.putCounters
+-- records a placement that landed nothing as no event, so a counter a
+-- replacement removed entirely was never put; Event.removeCounters likewise
+-- records no removal of nothing.
+countersMovedThisTurn :: ObjectId -> GameState -> Set.Set (Maybe PlayerId, CounterKind.CounterKind Keyword.Type.Keyword)
+countersMovedThisTurn oid gs =
+  let movedOnIt event = case event of
         GameEvent.CountersPut placed
-          | CountersPlaced.object placed == oid -> Just (CountersPlaced.putter placed, CountersPlaced.kind placed)
+          | CountersPlaced.object placed == oid -> Just (Just (CountersPlaced.putter placed), CountersPlaced.kind placed)
+        GameEvent.CountersRemoved change
+          | CounterChange.object change == oid -> Just (Nothing, CounterChange.kind change)
         _ -> Nothing
-   in Set.fromList (Maybe.mapMaybe (putOnIt . LoggedEvent.event) (Foldable.toList (TurnRegisters.events (GameState.turn gs))))
+   in Set.fromList (Maybe.mapMaybe (movedOnIt . LoggedEvent.event) (Foldable.toList (TurnRegisters.events (GameState.turn gs))))
 
 -- CR 120.1 / 608.2i: whom this object dealt damage to this turn -- every
 -- recipient of a damage event it was the source of, through
@@ -1833,7 +1858,7 @@ viewOfSnapshot deploy mController mOwner isToken counters zone home lapsed snaps
       Filter.crewedThisTurn = Set.empty,
       Filter.convokedThisTurn = Set.empty,
       Filter.saddledThisTurn = Set.empty,
-      Filter.countersPutThisTurn = Set.empty,
+      Filter.countersMovedThisTurn = Set.empty,
       Filter.dealtDamageTo = Set.empty,
       Filter.dealtDamageEarlier = Set.empty,
       -- CR 302.6 asks about an OBJECT under a player's control; this view

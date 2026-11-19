@@ -378,8 +378,11 @@ spec s = Spec.describe s "Parun.Codec.GameEvent" $ do
     Common.assertCodec
       s
       GameEvent.codec
-      (GameEvent.CountersRemoved (CounterChange.MkCounterChange (ObjectId.MkObjectId 3) CounterKind.Defense 2 0))
-      " {\"type\":\"CountersRemoved\",\"value\":{\"object\":3,\"kind\":{\"type\":\"Defense\"},\"before\":2,\"after\":0}} "
+      (GameEvent.CountersRemoved (CounterChange.MkCounterChange (ObjectId.MkObjectId 3) CounterKind.Defense 2 0 (ObjectSnapshot.MkObjectSnapshot (ObjectId.MkObjectId 3) ProjectedCharacteristicsSpec.testCharacteristics (Just (PlayerId.MkPlayerId 0)) (PlayerId.MkPlayerId 0) Zone.Battlefield Zone.Battlefield Set.empty)))
+      ( " {\"type\":\"CountersRemoved\",\"value\":{\"object\":3,\"kind\":{\"type\":\"Defense\"},\"before\":2,\"after\":0,\"snapshot\":{\"object\":3,\"characteristics\":"
+          <> ProjectedCharacteristicsSpec.testCharacteristicsJson
+          <> ",\"controller\":0,\"owner\":0,\"zone\":\"Battlefield\"}}} "
+      )
   -- CR 709.5c's designation, recorded by the permanent and the DOOR: CR 709.5h
   -- tells two unlock triggers on one Room apart by the half's name, so the pair
   -- has to survive the round trip together. The third field is CR 709.5i's

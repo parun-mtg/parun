@@ -1302,7 +1302,9 @@ processDamage settle events = do
       removalOn kind before after oid =
         let was = countersOn kind oid before
             now = countersOn kind oid after
-         in if was > now then [GameEvent.CountersRemoved (CounterChange.MkCounterChange oid kind was now)] else []
+         in case Projection.objectSnapshot oid before of
+              Just snapshot | was > now -> [GameEvent.CountersRemoved (CounterChange.MkCounterChange oid kind was now snapshot)]
+              _ -> []
       -- The `was > now` guard above already subsumes the card-type classification,
       -- so this folds both kinds over every hit permanent rather than asking which
       -- of CR 120.3's results the recipient earned: a creature has neither kind on

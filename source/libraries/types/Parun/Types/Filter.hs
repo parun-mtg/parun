@@ -16,6 +16,7 @@ import qualified Parun.Types.Color as Color
 import qualified Parun.Types.ControlMargin as ControlMargin
 import qualified Parun.Types.CounterKind as CounterKind
 import qualified Parun.Types.CounterLinked as CounterLinked
+import qualified Parun.Types.CounterMotion as CounterMotion
 import qualified Parun.Types.DamageKind as DamageKind
 import qualified Parun.Types.DealtDamageTo as DealtDamageTo
 import qualified Parun.Types.DeclaredRole as DeclaredRole
@@ -457,10 +458,10 @@ data Filter keyword
     -- battlefield this turn". Read off the log's zone changes, so phasing in (CR
     -- 702.26d) and turning face up (CR 708.8) never count.
     EnteredThisTurn EnteredZone.EnteredZone
-  | -- | CR 122.6a: a player this relation admits put counters of this kind, or
-    -- of any kind for Nothing, on the candidate earlier this turn, as the
-    -- object it is now (CR 400.7).
-    CountersPutThisTurn PlayerRelation.PlayerRelation (Maybe (CounterKind.CounterKind keyword))
+  | -- | CR 122: counters of this kind, or of any kind for Nothing, moved this
+    -- way on the candidate earlier this turn, as the object it is now (CR
+    -- 400.7); a put names its putter (CR 122.6a).
+    CountersMovedThisTurn CounterMotion.CounterMotion (Maybe (CounterKind.CounterKind keyword))
   | -- | CR 302.6: the candidate's CONTROLLER has controlled it continuously since
     -- their most recent turn began -- Total War's "creatures the player hasn't
     -- controlled continuously since the beginning of the turn", negated. Reads

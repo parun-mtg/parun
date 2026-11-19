@@ -5,6 +5,7 @@ module Parun.Codec.CounterChange where
 import qualified Parun.Codec.CounterKind as CounterKind
 import qualified Parun.Codec.Keyword as Keyword
 import qualified Parun.Codec.ObjectId as ObjectId
+import qualified Parun.Codec.ObjectSnapshot as ObjectSnapshot
 import qualified Parun.JsonCodec.Codec as Codec
 import qualified Parun.JsonCodec.Common as Common
 import qualified Parun.JsonCodec.Fields as Fields
@@ -19,10 +20,12 @@ codec = Fields.object $ do
   kind <- Fields.required "kind" (CounterKind.codec Keyword.codec) CounterChange.kind
   before <- Fields.required "before" Common.natural CounterChange.before
   after <- Fields.required "after" Common.natural CounterChange.after
+  snapshot <- Fields.required "snapshot" ObjectSnapshot.codec CounterChange.snapshot
   pure
     CounterChange.MkCounterChange
       { CounterChange.object = object,
         CounterChange.kind = kind,
         CounterChange.before = before,
-        CounterChange.after = after
+        CounterChange.after = after,
+        CounterChange.snapshot = snapshot
       }
