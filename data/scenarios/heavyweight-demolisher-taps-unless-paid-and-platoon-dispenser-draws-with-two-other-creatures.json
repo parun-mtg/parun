@@ -89,7 +89,7 @@
     ],
     "step": "Untap"
   },
-  "description": "CR 503.1a / 118.12 / 513.1a / 603.4: Heavyweight Demolisher taps at upkeep unless you pay {3}; Platoon Dispenser draws at your end step if you control two or more other creatures",
+  "description": "CR 503.1a / 118.12a / 513.1 / 603.4: Heavyweight Demolisher taps at upkeep unless you pay {3}; Platoon Dispenser draws at your end step if you control two or more other creatures",
   "note": "Alice declines the {3}, so the Demolisher taps. The Demolisher and Grizzly Bears are the Dispenser's two other creatures.",
   "timeline": [
     {
