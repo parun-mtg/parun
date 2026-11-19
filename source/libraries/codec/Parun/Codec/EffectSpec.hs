@@ -1895,7 +1895,7 @@ spec s = Spec.describe s "Parun.Codec.Effect" $ do
       s
       toJson
       fromJson
-      (Effect.Meld (Meld.MkMeld (ObjectRef.InSlot (SlotName.MkSlotName (Text.pack "melding"))) (Text.pack "Hanweir, the Writhing Township")))
+      (Effect.Meld (Meld.MkMeld (ObjectRef.InSlot (SlotName.MkSlotName (Text.pack "melding"))) (Text.pack "Hanweir, the Writhing Township") EntryRiders.defaultValue))
       " {\"type\":\"Meld\",\"value\":{\"objects\":{\"type\":\"InSlot\",\"value\":\"melding\"},\"result\":\"Hanweir, the Writhing Township\"}} "
     -- The combined face reaches the wire only through the SUPPLIED card codec,
     -- CreateEmblem's case one payload over: two different `card` types encode
@@ -1904,8 +1904,8 @@ spec s = Spec.describe s "Parun.Codec.Effect" $ do
     Spec.assertEqWith
       s
       "the result payload comes from the argument, not the card"
-      (Codec.encode (Effect.codec (constCodec sentinel) abilityCodec) (Effect.Meld (Meld.MkMeld (ObjectRef.InSlot (SlotName.MkSlotName (Text.pack "melding"))) (Text.pack "a wholly different card type"))))
-      (Codec.encode (Effect.codec (constCodec sentinel) abilityCodec) (Effect.Meld (Meld.MkMeld (ObjectRef.InSlot (SlotName.MkSlotName (Text.pack "melding"))) (0 :: Int))))
+      (Codec.encode (Effect.codec (constCodec sentinel) abilityCodec) (Effect.Meld (Meld.MkMeld (ObjectRef.InSlot (SlotName.MkSlotName (Text.pack "melding"))) (Text.pack "a wholly different card type") EntryRiders.defaultValue)))
+      (Codec.encode (Effect.codec (constCodec sentinel) abilityCodec) (Effect.Meld (Meld.MkMeld (ObjectRef.InSlot (SlotName.MkSlotName (Text.pack "melding"))) (0 :: Int) EntryRiders.defaultValue)))
   -- CR 702.26b. Both ObjectRef arms, since the pool prints one of each: Reality
   -- Ripple's "target artifact, creature, or land phases out" is the slot, and
   -- Teferi's Protection's "all permanents you control phase out" is the filter,

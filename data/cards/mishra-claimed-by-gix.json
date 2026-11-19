@@ -1,0 +1,714 @@
+{
+  "faces": [
+    {
+      "manaCost": [
+        {
+          "type": "Generic",
+          "value": 2
+        },
+        {
+          "type": "OfType",
+          "value": {
+            "type": "Colored",
+            "value": "Black"
+          }
+        },
+        {
+          "type": "OfType",
+          "value": {
+            "type": "Colored",
+            "value": "Red"
+          }
+        }
+      ],
+      "name": "Mishra, Claimed by Gix",
+      "oracleText": "Whenever you attack, each opponent loses X life and you gain X life, where X is the number of attacking creatures. If Mishra, Claimed by Gix and a creature named Phyrexian Dragon Engine are attacking, and you both own and control them, exile them, then meld them into Mishra, Lost to Phyrexia. It enters tapped and attacking.",
+      "power": {
+        "type": "Literal",
+        "value": 3
+      },
+      "toughness": {
+        "type": "Literal",
+        "value": 5
+      },
+      "triggeredAbilities": [
+        {
+          "condition": {
+            "type": "Attacks",
+            "value": {
+              "type": "Declaration",
+              "value": {
+                "player": "You"
+              }
+            }
+          },
+          "modal": {
+            "modes": [
+              {
+                "clauses": [
+                  {
+                    "effects": [
+                      {
+                        "type": "LoseLife",
+                        "value": {
+                          "player": {
+                            "type": "Relative",
+                            "value": "Opponent"
+                          },
+                          "quantity": {
+                            "type": "Count",
+                            "value": {
+                              "aggregation": {
+                                "type": "Members"
+                              },
+                              "filter": {
+                                "type": "And",
+                                "value": [
+                                  {
+                                    "type": "HasCardType",
+                                    "value": "Creature"
+                                  },
+                                  {
+                                    "type": "IsAttacking"
+                                  }
+                                ]
+                              },
+                              "scope": {
+                                "type": "InZone",
+                                "value": {
+                                  "player": {
+                                    "type": "Relative",
+                                    "value": "AnyPlayer"
+                                  },
+                                  "zone": "Battlefield"
+                                }
+                              }
+                            }
+                          }
+                        }
+                      },
+                      {
+                        "type": "GainLife",
+                        "value": {
+                          "player": {
+                            "type": "Relative",
+                            "value": "You"
+                          },
+                          "quantity": {
+                            "type": "Count",
+                            "value": {
+                              "aggregation": {
+                                "type": "Members"
+                              },
+                              "filter": {
+                                "type": "And",
+                                "value": [
+                                  {
+                                    "type": "HasCardType",
+                                    "value": "Creature"
+                                  },
+                                  {
+                                    "type": "IsAttacking"
+                                  }
+                                ]
+                              },
+                              "scope": {
+                                "type": "InZone",
+                                "value": {
+                                  "player": {
+                                    "type": "Relative",
+                                    "value": "AnyPlayer"
+                                  },
+                                  "zone": "Battlefield"
+                                }
+                              }
+                            }
+                          }
+                        }
+                      }
+                    ]
+                  },
+                  {
+                    "condition": {
+                      "type": "All",
+                      "value": [
+                        {
+                          "type": "Compares",
+                          "value": {
+                            "comparison": "AtLeast",
+                            "measured": {
+                              "type": "Count",
+                              "value": {
+                                "aggregation": {
+                                  "type": "Members"
+                                },
+                                "filter": {
+                                  "type": "And",
+                                  "value": [
+                                    {
+                                      "type": "IsSource"
+                                    },
+                                    {
+                                      "type": "IsAttacking"
+                                    },
+                                    {
+                                      "type": "HeldBy",
+                                      "value": {
+                                        "holder": "Owner",
+                                        "relation": "You"
+                                      }
+                                    },
+                                    {
+                                      "type": "HeldBy",
+                                      "value": {
+                                        "holder": "Controller",
+                                        "relation": "You"
+                                      }
+                                    }
+                                  ]
+                                },
+                                "scope": {
+                                  "type": "InZone",
+                                  "value": {
+                                    "player": {
+                                      "type": "Relative",
+                                      "value": "AnyPlayer"
+                                    },
+                                    "zone": "Battlefield"
+                                  }
+                                }
+                              }
+                            },
+                            "threshold": {
+                              "type": "Literal",
+                              "value": 1
+                            }
+                          }
+                        },
+                        {
+                          "type": "Compares",
+                          "value": {
+                            "comparison": "AtLeast",
+                            "measured": {
+                              "type": "Count",
+                              "value": {
+                                "aggregation": {
+                                  "type": "Members"
+                                },
+                                "filter": {
+                                  "type": "And",
+                                  "value": [
+                                    {
+                                      "type": "HasCardType",
+                                      "value": "Creature"
+                                    },
+                                    {
+                                      "type": "HasName",
+                                      "value": "Phyrexian Dragon Engine"
+                                    },
+                                    {
+                                      "type": "IsAttacking"
+                                    },
+                                    {
+                                      "type": "HeldBy",
+                                      "value": {
+                                        "holder": "Owner",
+                                        "relation": "You"
+                                      }
+                                    },
+                                    {
+                                      "type": "HeldBy",
+                                      "value": {
+                                        "holder": "Controller",
+                                        "relation": "You"
+                                      }
+                                    }
+                                  ]
+                                },
+                                "scope": {
+                                  "type": "InZone",
+                                  "value": {
+                                    "player": {
+                                      "type": "Relative",
+                                      "value": "AnyPlayer"
+                                    },
+                                    "zone": "Battlefield"
+                                  }
+                                }
+                              }
+                            },
+                            "threshold": {
+                              "type": "Literal",
+                              "value": 1
+                            }
+                          }
+                        }
+                      ]
+                    },
+                    "effects": [
+                      {
+                        "type": "MoveToZone",
+                        "value": {
+                          "ref": {
+                            "type": "AllOf",
+                            "value": [
+                              {
+                                "type": "ChosenPermanents",
+                                "value": {
+                                  "filter": {
+                                    "type": "And",
+                                    "value": [
+                                      {
+                                        "type": "HasCardType",
+                                        "value": "Creature"
+                                      },
+                                      {
+                                        "type": "HasName",
+                                        "value": "Phyrexian Dragon Engine"
+                                      },
+                                      {
+                                        "type": "IsAttacking"
+                                      },
+                                      {
+                                        "type": "HeldBy",
+                                        "value": {
+                                          "holder": "Owner",
+                                          "relation": "You"
+                                        }
+                                      },
+                                      {
+                                        "type": "HeldBy",
+                                        "value": {
+                                          "holder": "Controller",
+                                          "relation": "You"
+                                        }
+                                      }
+                                    ]
+                                  }
+                                }
+                              },
+                              {
+                                "type": "EachMatching",
+                                "value": {
+                                  "type": "IsSource"
+                                }
+                              }
+                            ]
+                          },
+                          "slot": "melded",
+                          "zone": "Exile"
+                        }
+                      },
+                      {
+                        "type": "Meld",
+                        "value": {
+                          "objects": {
+                            "type": "InSlot",
+                            "value": "melded"
+                          },
+                          "result": {
+                            "faces": [
+                              {
+                                "colorIndicator": [
+                                  "Black",
+                                  "Red"
+                                ],
+                                "name": "Mishra, Lost to Phyrexia",
+                                "power": {
+                                  "type": "Literal",
+                                  "value": 9
+                                },
+                                "toughness": {
+                                  "type": "Literal",
+                                  "value": 9
+                                },
+                                "triggeredAbilities": [
+                                  {
+                                    "condition": {
+                                      "type": "AnyOf",
+                                      "value": [
+                                        {
+                                          "type": "Enters",
+                                          "value": {}
+                                        },
+                                        {
+                                          "type": "Attacks",
+                                          "value": {
+                                            "type": "Attacker",
+                                            "value": {}
+                                          }
+                                        }
+                                      ]
+                                    },
+                                    "modal": {
+                                      "modes": [
+                                        {
+                                          "clauses": [
+                                            {
+                                              "effects": [
+                                                {
+                                                  "type": "Discard",
+                                                  "value": {
+                                                    "type": "Counted",
+                                                    "value": {
+                                                      "player": {
+                                                        "type": "InSlot",
+                                                        "value": "target"
+                                                      },
+                                                      "quantity": {
+                                                        "type": "Literal",
+                                                        "value": 2
+                                                      }
+                                                    }
+                                                  }
+                                                }
+                                              ]
+                                            }
+                                          ],
+                                          "targetSlots": {
+                                            "target": {
+                                              "filter": {
+                                                "type": "IsPlayer",
+                                                "value": "Opponent"
+                                              },
+                                              "pool": {
+                                                "type": "Players"
+                                              }
+                                            }
+                                          }
+                                        },
+                                        {
+                                          "clauses": [
+                                            {
+                                              "effects": [
+                                                {
+                                                  "type": "DealDamage",
+                                                  "value": {
+                                                    "parts": [
+                                                      {
+                                                        "quantity": {
+                                                          "type": "Literal",
+                                                          "value": 3
+                                                        },
+                                                        "ref": {
+                                                          "type": "InSlot",
+                                                          "value": "target"
+                                                        }
+                                                      }
+                                                    ]
+                                                  }
+                                                }
+                                              ]
+                                            }
+                                          ],
+                                          "targetSlots": {
+                                            "target": {
+                                              "pool": {
+                                                "type": "AnyTarget"
+                                              }
+                                            }
+                                          }
+                                        },
+                                        {
+                                          "clauses": [
+                                            {
+                                              "effects": [
+                                                {
+                                                  "type": "Destroy",
+                                                  "value": {
+                                                    "ref": {
+                                                      "type": "InSlot",
+                                                      "value": "target"
+                                                    },
+                                                    "regenerability": "Regenerable"
+                                                  }
+                                                }
+                                              ]
+                                            }
+                                          ],
+                                          "targetSlots": {
+                                            "target": {
+                                              "filter": {
+                                                "type": "Or",
+                                                "value": [
+                                                  {
+                                                    "type": "HasCardType",
+                                                    "value": "Artifact"
+                                                  },
+                                                  {
+                                                    "type": "HasCardType",
+                                                    "value": "Planeswalker"
+                                                  }
+                                                ]
+                                              },
+                                              "pool": {
+                                                "type": "Permanents"
+                                              }
+                                            }
+                                          }
+                                        },
+                                        {
+                                          "clauses": [
+                                            {
+                                              "effects": [
+                                                {
+                                                  "type": "ModifyTarget",
+                                                  "value": {
+                                                    "duration": {
+                                                      "type": "UntilEndOfTurn"
+                                                    },
+                                                    "modification": {
+                                                      "type": "GainKeyword",
+                                                      "value": {
+                                                        "type": "Menace"
+                                                      }
+                                                    },
+                                                    "ref": {
+                                                      "type": "EachMatching",
+                                                      "value": {
+                                                        "type": "And",
+                                                        "value": [
+                                                          {
+                                                            "type": "HasCardType",
+                                                            "value": "Creature"
+                                                          },
+                                                          {
+                                                            "type": "HeldBy",
+                                                            "value": {
+                                                              "holder": "Controller",
+                                                              "relation": "You"
+                                                            }
+                                                          }
+                                                        ]
+                                                      }
+                                                    }
+                                                  }
+                                                },
+                                                {
+                                                  "type": "ModifyTarget",
+                                                  "value": {
+                                                    "duration": {
+                                                      "type": "UntilEndOfTurn"
+                                                    },
+                                                    "modification": {
+                                                      "type": "GainKeyword",
+                                                      "value": {
+                                                        "type": "Trample"
+                                                      }
+                                                    },
+                                                    "ref": {
+                                                      "type": "EachMatching",
+                                                      "value": {
+                                                        "type": "And",
+                                                        "value": [
+                                                          {
+                                                            "type": "HasCardType",
+                                                            "value": "Creature"
+                                                          },
+                                                          {
+                                                            "type": "HeldBy",
+                                                            "value": {
+                                                              "holder": "Controller",
+                                                              "relation": "You"
+                                                            }
+                                                          }
+                                                        ]
+                                                      }
+                                                    }
+                                                  }
+                                                }
+                                              ]
+                                            }
+                                          ]
+                                        },
+                                        {
+                                          "clauses": [
+                                            {
+                                              "effects": [
+                                                {
+                                                  "type": "ModifyTarget",
+                                                  "value": {
+                                                    "duration": {
+                                                      "type": "UntilEndOfTurn"
+                                                    },
+                                                    "modification": {
+                                                      "type": "ModifyPowerToughness",
+                                                      "value": {
+                                                        "power": {
+                                                          "type": "Literal",
+                                                          "value": -1
+                                                        },
+                                                        "toughness": {
+                                                          "type": "Literal",
+                                                          "value": -1
+                                                        }
+                                                      }
+                                                    },
+                                                    "ref": {
+                                                      "type": "EachMatching",
+                                                      "value": {
+                                                        "type": "And",
+                                                        "value": [
+                                                          {
+                                                            "type": "HasCardType",
+                                                            "value": "Creature"
+                                                          },
+                                                          {
+                                                            "type": "Not",
+                                                            "value": {
+                                                              "type": "HeldBy",
+                                                              "value": {
+                                                                "holder": "Controller",
+                                                                "relation": "You"
+                                                              }
+                                                            }
+                                                          }
+                                                        ]
+                                                      }
+                                                    }
+                                                  }
+                                                }
+                                              ]
+                                            }
+                                          ]
+                                        },
+                                        {
+                                          "clauses": [
+                                            {
+                                              "effects": [
+                                                {
+                                                  "type": "Create",
+                                                  "value": {
+                                                    "card": {
+                                                      "faces": [
+                                                        {
+                                                          "activatedAbilities": [
+                                                            {
+                                                              "cost": {
+                                                                "components": [
+                                                                  {
+                                                                    "type": "TapThis"
+                                                                  }
+                                                                ],
+                                                                "mana": []
+                                                              },
+                                                              "modal": {
+                                                                "modes": [
+                                                                  {
+                                                                    "clauses": [
+                                                                      {
+                                                                        "effects": [
+                                                                          {
+                                                                            "type": "AddMana",
+                                                                            "value": {
+                                                                              "production": {
+                                                                                "type": "OfType",
+                                                                                "value": {
+                                                                                  "type": "Colorless"
+                                                                                }
+                                                                              },
+                                                                              "restriction": {
+                                                                                "casts": {
+                                                                                  "type": "Not",
+                                                                                  "value": {
+                                                                                    "type": "HasCardType",
+                                                                                    "value": "Artifact"
+                                                                                  }
+                                                                                },
+                                                                                "prohibits": true
+                                                                              }
+                                                                            }
+                                                                          }
+                                                                        ]
+                                                                      }
+                                                                    ]
+                                                                  }
+                                                                ]
+                                                              }
+                                                            }
+                                                          ],
+                                                          "name": "Powerstone Token",
+                                                          "typeLine": {
+                                                            "subtypes": [
+                                                              "Powerstone"
+                                                            ],
+                                                            "types": [
+                                                              "Artifact"
+                                                            ]
+                                                          }
+                                                        }
+                                                      ]
+                                                    },
+                                                    "quantity": {
+                                                      "type": "Literal",
+                                                      "value": 2
+                                                    },
+                                                    "riders": {
+                                                      "tapped": "Tapped"
+                                                    }
+                                                  }
+                                                }
+                                              ]
+                                            }
+                                          ]
+                                        }
+                                      ],
+                                      "selection": {
+                                        "type": "ChooseExactly",
+                                        "value": 3
+                                      }
+                                    }
+                                  }
+                                ],
+                                "typeLine": {
+                                  "subtypes": [
+                                    "Artificer",
+                                    "Phyrexian"
+                                  ],
+                                  "supertypes": [
+                                    "Legendary"
+                                  ],
+                                  "types": [
+                                    "Artifact",
+                                    "Creature"
+                                  ]
+                                }
+                              }
+                            ]
+                          },
+                          "riders": {
+                            "attacking": {
+                              "type": "Chosen"
+                            },
+                            "tapped": "Tapped"
+                          }
+                        }
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          }
+        }
+      ],
+      "typeLine": {
+        "subtypes": [
+          "Artificer",
+          "Human",
+          "Phyrexian"
+        ],
+        "supertypes": [
+          "Legendary"
+        ],
+        "types": [
+          "Creature"
+        ]
+      }
+    }
+  ],
+  "layout": {
+    "type": "Meld",
+    "value": "Phyrexian Dragon Engine"
+  }
+}

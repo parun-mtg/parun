@@ -65,6 +65,7 @@ import qualified Parun.Types.Cost as Cost.Type
 import qualified Parun.Types.CounterKind as CounterKind
 import qualified Parun.Types.Deck as Deck
 import qualified Parun.Types.Effect as Effect
+import qualified Parun.Types.EntryRiders as EntryRiders
 import qualified Parun.Types.ExilePlayPermission as ExilePlayPermission
 import qualified Parun.Types.Expiry as Expiry
 import qualified Parun.Types.FaceDownReason as FaceDownReason
@@ -2103,7 +2104,7 @@ spec s registry = Spec.describe s "Sticker" $ do
                    in Sticker.put S.alice two ref2 Nothing (Sticker.put S.alice one ref1 Nothing e2)
               slot = SlotName.MkSlotName (Text.pack "melding")
               bound = Map.singleton slot (Set.fromList [Recipient.ToObject rId, Recipient.ToObject vId])
-              after = S.runPure S.identityAnswer placed (Resolve.applyEffect S.noSource S.noSource S.alice bound Map.empty (Effect.Meld (Meld.MkMeld (ObjectRef.InSlot slot) (Printing.card giant))))
+              after = S.runPure S.identityAnswer placed (Resolve.applyEffect S.noSource S.noSource S.alice bound Map.empty (Effect.Meld (Meld.MkMeld (ObjectRef.InSlot slot) (Printing.card giant) EntryRiders.defaultValue)))
            in (List.find (`Set.notMember` GameState.battlefield placed) (Set.toList (GameState.battlefield after)), after)
         pt (mHost, g) = fmap (\h -> (Projection.powerOf h g, Projection.toughnessOf h g)) mHost
         -- Rats then Scavengers, the later on the Scavengers: 1/4.

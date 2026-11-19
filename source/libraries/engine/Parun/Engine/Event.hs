@@ -11428,8 +11428,8 @@ recordMintedArrival zone newId = do
 -- The back faces are up by construction -- CR 713.1b leaves a meld card's own half
 -- of the oversized face meaningless alone, so parun prints neither half's back and
 -- the interned result IS the combined face, face up on its only face.
-meld :: Settle.Settle -> PlayerId -> [ObjectId] -> Card -> Game (Maybe ObjectId)
-meld settle controller victims resultCard = do
+meld :: Settle.Settle -> PlayerId -> [ObjectId] -> Card -> TapState.TapState -> Game (Maybe ObjectId)
+meld settle controller victims resultCard tapState = do
   gs <- State.get
   case meldable victims gs of
     -- CR 701.42b/701.42c. Nothing is written, so nothing moves.
@@ -11481,8 +11481,9 @@ meld settle controller victims resultCard = do
                 -- pool's meld pairs, whose abilities require their controller
                 -- to own and control both halves.
                 Object.enteredUnder = Just controller,
-                -- CR 110.5b: nothing in rule 701.42 says otherwise.
-                Object.tapped = TapState.Untapped,
+                -- CR 110.5b's default unless the melding ability says
+                -- otherwise (Mishra, Claimed by Gix's "It enters tapped").
+                Object.tapped = tapState,
                 -- CR 713.6's "back faces up", which for the interned combined
                 -- face is its only face; Object.face = Nothing is that face.
                 Object.facing = Facing.FaceUp,

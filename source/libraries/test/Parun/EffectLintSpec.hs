@@ -1703,7 +1703,7 @@ effectObjectRefs effect =
         -- Parun.Engine.Resolve's Flip arm sweeps the ref and asks nothing.
         Effect.Flip ref -> read_ [ref]
         -- A plain READ: Parun.Engine.Resolve's Meld arm sweeps the ref and asks nothing.
-        Effect.Meld (Meld.MkMeld ref _) -> read_ [ref]
+        Effect.Meld (Meld.MkMeld ref _ _) -> read_ [ref]
         Effect.PhaseOut (PhaseOut.MkPhaseOut ref _duration _slot _phasesIn) -> read_ [ref]
         Effect.AddPhases {} -> []
         Effect.AddStep {} -> []
@@ -3134,6 +3134,23 @@ effectLintSpec s registry corpus = Spec.describe s "Lint" $ do
     -- prints one.
     Spec.assertBool s (any (anyFace (any counters . cardResolutionEffects) . Printing.card) ps) "the pool has a card creating a copy token with counters on it"
     Spec.assertEqWith s "a copy token reads only counters, tapped, attacking and blocking" (fmap (S.nameOf . Printing.card) offenders) []
+  -- Unprinted: a meld rider other than CR 110.5b's tap state and CR 508.4's
+  -- attacking (Mishra, Claimed by Gix's "It enters tapped and attacking"), which
+  -- are all Parun.Engine.Resolve's Meld arm reads.
+  Spec.it s "no Meld carries an entry rider but tapped or attacking" $ do
+    ps <- S.allPrintings s corpus
+    let bare riders = riders == EntryRiders.defaultValue {EntryRiders.tapped = EntryRiders.tapped riders, EntryRiders.attacking = EntryRiders.attacking riders}
+        offends effect = case effect of
+          Effect.Meld (Meld.MkMeld _ _ riders) -> not (bare riders)
+          _ -> False
+        attacks effect = case effect of
+          Effect.Meld (Meld.MkMeld _ _ riders) -> Maybe.isJust (EntryRiders.attacking riders)
+          _ -> False
+        offenders = filter (anyFace (any offends . cardResolutionEffects) . Printing.card) ps
+    -- Guards against a vacuous sweep: Mishra, Claimed by Gix prints the rider.
+    Spec.assertBool s (any (anyFace (any attacks . cardResolutionEffects) . Printing.card) ps) "the pool has a card melding into an attacking permanent"
+    Spec.assertBool s (not (bare (EntryRiders.defaultValue {EntryRiders.transformed = True} :: EntryRiders.EntryRiders Quantity.Type.Quantity (GrantedAbility.GrantedAbility Card.Type.Card)))) "the lint sees a transformed meld rider"
+    Spec.assertEqWith s "a meld reads only tapped and attacking" (fmap (S.nameOf . Printing.card) offenders) []
   -- Unprinted: a token's entry counters conditioned on the entrant (CR 614.12),
   -- whose characteristics the creating effect already fixes. Only MoveToZone
   -- prints one (Chief Montgomery Scott); Event.createTokens would read the gate

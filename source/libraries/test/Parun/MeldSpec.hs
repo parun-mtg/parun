@@ -58,6 +58,7 @@ import qualified Parun.Types.Count as Count.Type
 import qualified Parun.Types.Daytime as Daytime
 import qualified Parun.Types.Effect as Effect
 import qualified Parun.Types.EndingStep as EndingStep
+import qualified Parun.Types.EntryRiders as EntryRiders
 import qualified Parun.Types.EventShape as EventShape
 import qualified Parun.Types.Face as Face
 import qualified Parun.Types.Filter as Filter.Type
@@ -245,7 +246,7 @@ spec s registry = Spec.describe s "Meld" $ do
         (gId, g2) = S.addExiledCard garrison S.alice g1
         slot = SlotName.MkSlotName (Text.pack "melding")
         bound = Map.singleton slot (Set.fromList [Recipient.ToObject bId, Recipient.ToObject gId])
-        effect = Effect.Meld (Meld.MkMeld (ObjectRef.InSlot slot) (Printing.card piker))
+        effect = Effect.Meld (Meld.MkMeld (ObjectRef.InSlot slot) (Printing.card piker) EntryRiders.defaultValue)
         after = S.runPure S.identityAnswer g2 (Resolve.applyEffect S.noSource S.noSource S.alice bound Map.empty effect)
     Spec.assertEqWith s "the Garrison is still in exile" (Game.zoneMembers Zone.Exile S.alice after) [gId]
     Spec.assertEqWith s "the Battlements is still the only permanent" (Set.toList (GameState.battlefield after)) [bId]
@@ -1065,7 +1066,7 @@ meldedOn base one two into =
       (secondId, g2) = S.addExiledCard two S.alice g1
       slot = SlotName.MkSlotName (Text.pack "melding")
       bound = Map.singleton slot (Set.fromList [Recipient.ToObject firstId, Recipient.ToObject secondId])
-      effect = Effect.Meld (Meld.MkMeld (ObjectRef.InSlot slot) (Printing.card into))
+      effect = Effect.Meld (Meld.MkMeld (ObjectRef.InSlot slot) (Printing.card into) EntryRiders.defaultValue)
    in (firstId, secondId, S.runPure S.identityAnswer g2 (Resolve.applyEffect S.noSource S.noSource S.alice bound Map.empty effect))
 
 melded :: Printing.Printing -> Printing.Printing -> Printing.Printing -> (ObjectId.ObjectId, ObjectId.ObjectId, GameState.GameState)

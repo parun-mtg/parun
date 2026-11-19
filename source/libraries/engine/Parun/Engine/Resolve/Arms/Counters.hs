@@ -95,6 +95,7 @@ import Parun.Types.Effect (Effect)
 import qualified Parun.Types.Effect as Effect
 import qualified Parun.Types.EndTurnSignal as EndTurnSignal
 import qualified Parun.Types.EndingStep as EndingStep
+import qualified Parun.Types.EntryRiders as EntryRiders
 import qualified Parun.Types.Expiry as Expiry.Type
 import qualified Parun.Types.ExtraTurn as ExtraTurn
 import qualified Parun.Types.Face as Face
@@ -1905,21 +1906,28 @@ flipArm resolving source controller legal ref =
     -- no alternative characteristics simply does nothing.
     foldr Game.flipPermanent gs (objectRefObjects legal resolving controller source gs ref)
 
-meld :: Settle.Settle -> ObjectId -> ObjectId -> PlayerId -> Map.Map SlotName (Set Recipient) -> Meld.Meld Card.Type.Card -> Game ()
-meld settle resolving source controller legal (Meld.MkMeld ref resultCard) = do
+meld :: Settle.Settle -> ObjectId -> ObjectId -> PlayerId -> Map.Map SlotName (Set Recipient) -> Meld.Meld Card.Type.Card (GrantedAbility.GrantedAbility Card.Type.Card) -> Game ()
+meld settle resolving source controller legal (Meld.MkMeld ref resultCard riders) = do
   gs <- State.get
   -- An ordinary read of the ref (CR 608.2c), not a question: the cards were
-  -- named by the ability that melds -- for the pool's only pair, the slot its
-  -- own "exile them" bound (CR 400.7j) -- so there is nothing here to ask. The
-  -- one choice this card makes is WHICH counterpart to exile, and it is made an
-  -- instruction earlier.
+  -- named by the ability that melds -- for every melding card in the pool, the
+  -- slot its own "exile them" bound (CR 400.7j) -- so there is nothing here to
+  -- ask. The one choice such a card makes is WHICH counterpart to exile, and it
+  -- is made an instruction earlier.
   --
   -- Event.meld is the whole of CR 701.42a, gate included: it refuses (CR
   -- 701.42b) by writing nothing, which is CR 701.42c's "they stay in their
   -- current zone" -- the cards are wherever the exile left them, and this
   -- resolution simply had no effect. Nothing is bound and no slot is filled: no
   -- printing names the melded permanent later in its own instruction list.
-  Monad.void (Event.meld settle controller (objectRefObjects legal resolving controller source gs ref) resultCard)
+  --
+  -- CR 508.4's rider, read ONCE off the pre-meld board (CR 608.2h), the Create
+  -- arm's posture; Mishra, Claimed by Gix's "It enters tapped and attacking".
+  -- After the entry loop, as there: Parun.Engine.Combat decides CR 506.3's
+  -- no-op cases, and CR 508.3a's attack triggers see nothing.
+  let mAttack = Common.entryAttack legal resolving riders gs
+  melded <- Event.meld settle controller (objectRefObjects legal resolving controller source gs ref) resultCard (EntryRiders.tapped riders)
+  Monad.forM_ melded (\newId -> Monad.forM_ mAttack (`Combat.putOntoBattlefieldAttacking` newId))
 
 phaseOut :: ObjectId -> ObjectId -> PlayerId -> Map.Map SlotName (Set Recipient) -> PhaseOut.PhaseOut -> Game ()
 phaseOut resolving source controller legal payload = do

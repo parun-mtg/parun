@@ -1251,7 +1251,7 @@ effectChildren c effect = case effect of
   Effect.Transform ref -> fmap Effect.Transform (onObjectRef c ref)
   Effect.Convert ref -> fmap Effect.Convert (onObjectRef c ref)
   Effect.Flip ref -> fmap Effect.Flip (onObjectRef c ref)
-  Effect.Meld (Meld.MkMeld objects result) -> fmap Effect.Meld (Meld.MkMeld <$> onObjectRef c objects <*> onMelded c result)
+  Effect.Meld (Meld.MkMeld objects result riders) -> fmap Effect.Meld (Meld.MkMeld <$> onObjectRef c objects <*> onMelded c result <*> onEntryRiders c riders)
   Effect.PhaseOut (PhaseOut.MkPhaseOut ref duration phased phasesIn) -> fmap Effect.PhaseOut (PhaseOut.MkPhaseOut <$> onObjectRef c ref <*> traverse (onMoveDuration c) duration <*> traverse (onSlot c) phased <*> pure phasesIn)
   Effect.TurnFaceDown (TurnFaceDown.MkTurnFaceDown ref characteristics) -> fmap Effect.TurnFaceDown (TurnFaceDown.MkTurnFaceDown <$> onObjectRef c ref <*> onFaceDown c characteristics)
   Effect.TurnFaceUp named -> fmap Effect.TurnFaceUp (onSlot c named)

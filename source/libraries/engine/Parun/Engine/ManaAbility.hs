@@ -823,7 +823,7 @@ movesLibraryCard effect = case effect of
   -- CR 701.42a's destination is the battlefield, so the "to" half is never a
   -- library; the "from" half is wherever the named cards are, which is the same
   -- question the ref asks above.
-  Effect.Meld (Meld.MkMeld ref _) -> refReachesLibrary ref
+  Effect.Meld (Meld.MkMeld ref _ _) -> refReachesLibrary ref
   Effect.AddMana _ -> False
   Effect.Firebend _ -> False
   Effect.ActivateManaAbilities {} -> False

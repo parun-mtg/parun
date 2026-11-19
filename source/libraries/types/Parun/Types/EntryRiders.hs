@@ -19,7 +19,7 @@ import qualified Parun.Types.TapState as TapState
 -- Befriending the Moths' "return it to the battlefield transformed", and
 -- Ignorant Bliss' "exile all cards from your hand face down".
 --
--- Carried by the OPCODE (Create, CreateCopy, MoveToZone) and not by the
+-- Carried by the OPCODE (Create, CreateCopy, MoveToZone, Meld) and not by the
 -- entering object, because neither is one of its characteristics (CR 109.3, CR
 -- 111.3). Two tokens with the same text can enter differently, and one printed
 -- card can be returned tapped by one effect and untapped by another.

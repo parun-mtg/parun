@@ -862,7 +862,7 @@ objectRefPositions =
         ("does-not-untap-next", Effect.DoesNotUntapNext (DoesNotUntapNext.MkDoesNotUntapNext (plantedRef "du") 1), [plantedRef "du"]),
         ("transform", Effect.Transform (plantedRef "tr"), [plantedRef "tr"]),
         ("convert", Effect.Convert (plantedRef "cv"), [plantedRef "cv"]),
-        ("meld", Effect.Meld (Meld.MkMeld (plantedRef "me") ()), [plantedRef "me"]),
+        ("meld", Effect.Meld (Meld.MkMeld (plantedRef "me") () EntryRiders.defaultValue), [plantedRef "me"]),
         ("phase-out", Effect.PhaseOut (PhaseOut.MkPhaseOut (plantedRef "po") Nothing Nothing Nothing), [plantedRef "po"]),
         ("turn-face-down", Effect.TurnFaceDown (TurnFaceDown.MkTurnFaceDown (plantedRef "tf") FaceDownCharacteristics.defaultValue), [plantedRef "tf"]),
         ("remove-from-combat", Effect.RemoveFromCombat (RemoveFromCombat.MkRemoveFromCombat (plantedRef "rc") Unblocking.StayBlocked), [plantedRef "rc"]),
@@ -5617,7 +5617,7 @@ effectFilters effect = case effect of
   Effect.Transform ref -> frame SourceHostFramed (objectRefFilters ref)
   Effect.Convert ref -> frame SourceHostFramed (objectRefFilters ref)
   Effect.Flip ref -> frame SourceHostFramed (objectRefFilters ref)
-  Effect.Meld (Meld.MkMeld ref card) -> frame SourceHostFramed (objectRefFilters ref) <> overFaces cardFilters card
+  Effect.Meld (Meld.MkMeld ref card riders) -> frame SourceHostFramed (objectRefFilters ref) <> frame Unframed (riderFilters riders) <> overFaces cardFilters card
   Effect.PhaseOut (PhaseOut.MkPhaseOut ref _duration _slot _phasesIn) -> frame SourceHostFramed (objectRefFilters ref)
   Effect.AddPhases _ -> []
   Effect.AddStep _ -> []
