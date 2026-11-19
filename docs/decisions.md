@@ -522,6 +522,27 @@ Entries are ordered by the first rule each cites.
   `before`. No test names it.
 - **Issue**: none.
 
+## Whether a mana ability that would remove Karn's Sylex reopens the life route
+
+- **Question**: Alice controls Karn's Sylex and Krark-Clan Ironworks, with
+  Mutagenic Growth in hand and no green source. She could announce the {G/P}
+  life route, sacrifice the Sylex to the Ironworks in the mana window, and pay
+  2 life with nothing forbidding it. Is that cast offered?
+- **Rules**: CR 119.4b, 601.2b, 601.2g, 601.2h; Karn's Sylex's 2022-09-09
+  ruling, a spell whose cost requires paying life can't be cast; CR of
+  2026-11-06.
+- **Decision**: No. The prohibition is read on the board as the cast is
+  proposed, so the life route is not offered; CR 601.2h's payment reads it
+  again on the board the window left.
+- **Rejected**: offering every route some mana-window sequence could clear.
+  CR 601.2h reads the prohibition only at payment, but the ruling says the
+  spell can't be cast, and the offer would have to search the window's
+  activations for one that removes the source.
+- **Site**: `Parun.Engine.Mana.canPayCommittingGiven`'s
+  `PlayerEffect.prohibitsPayingLife` guard; the scenario
+  `cant-pay-life/cr-601-2b-karn-s-sylex-a-mana-ability-could-sacrifice-leaves-mutagenic-growth-uncastable`.
+- **Issue**: #8908.
+
 ## Whether a card outside a narrowed search can be cast while searching
 
 - **Question**: Aven Mindcensor has an opponent search only the top four cards

@@ -4578,7 +4578,8 @@ prohibitsDrawingCards count pid gs =
 -- Sylex): a mana ability's cost, a special action's and CR 118.12's
 -- resolution-time payment stay payable, the card's 2022-09-09 rulings. Read by
 -- Parun.Engine.Mana.canPayCommittingGiven, which every payability question
--- about a cost's life reaches.
+-- about a cost's life reaches, and by Parun.Engine.Cost.paySubstitutingReadingThen,
+-- which refuses the payment itself.
 prohibitsPayingLife :: PaymentSubject.PaymentSubject -> PlayerId -> GameState -> Bool
 prohibitsPayingLife subject pid gs =
   let toward = case subject of

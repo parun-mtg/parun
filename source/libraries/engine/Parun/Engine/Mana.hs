@@ -2970,7 +2970,9 @@ canPayCommitting subject capacity spending pid committed committedEnergy claimed
 -- payable. A Phyrexian symbol's life is committed too by the time a cast or an
 -- activation asks (`completions`, `announce`), so CR 601.2b's offer refuses
 -- its life route here; the mana abilities paying for the cost keep their own
--- subjects and their own life. data/scenarios/cant-pay-life proves it.
+-- subjects and their own life. data/scenarios/cant-pay-life proves it. The
+-- board is read as the cast is proposed, not after the window (docs/decisions.md,
+-- "Whether a mana ability that would remove Karn's Sylex reopens the life route").
 canPayCommittingGiven :: PaymentSubject.PaymentSubject -> ManaSpending -> Sources -> Map.Map ObjectId PC.ProjectedCharacteristics -> PlayerId -> Natural -> Natural -> [Claim] -> ManaCost -> GameState -> Bool
 canPayCommittingGiven subject spending sources pcs pid committed committedEnergy claimed cost gs
   | committed > 0 && PlayerEffect.prohibitsPayingLife subject pid gs = False

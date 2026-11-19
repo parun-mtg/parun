@@ -1,0 +1,62 @@
+{
+  "board": {
+    "active": "alice",
+    "seats": [
+      {
+        "battlefield": [
+          {
+            "card": "Krark-Clan Ironworks",
+            "label": "ironworks"
+          },
+          {
+            "card": "Karn's Sylex",
+            "label": "sylex",
+            "tapped": true
+          }
+        ],
+        "hand": [
+          {
+            "card": "Mutagenic Growth"
+          }
+        ],
+        "name": "alice"
+      },
+      {
+        "battlefield": [
+          {
+            "card": "Goblin Piker"
+          }
+        ],
+        "name": "bob"
+      }
+    ],
+    "step": "PrecombatMain"
+  },
+  "description": "CR 601.2b Karn's Sylex a mana ability could sacrifice leaves Mutagenic Growth uncastable",
+  "final": [
+    {
+      "Life": {
+        "life": 20,
+        "player": "alice"
+      }
+    }
+  ],
+  "note": "Krark-Clan Ironworks could sacrifice the Sylex during CR 601.2g's window, before CR 601.2h's payment; the life route is still not offered (docs/decisions.md, \"Whether a mana ability that would remove Karn's Sylex reopens the life route\").",
+  "timeline": [
+    {
+      "check": {
+        "View": {
+          "is": [
+            "Pass",
+            "ActivateManaAbility $ironworks"
+          ],
+          "of": "Offered",
+          "player": "alice"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    }
+  ]
+}
