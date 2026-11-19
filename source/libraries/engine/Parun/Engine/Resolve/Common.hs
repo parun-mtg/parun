@@ -4980,8 +4980,8 @@ refill whole moving ordered =
 -- cards bound for the graveyard. Nothing for an empty library, which is still a
 -- surveil (CR 701.25d) with nothing to ask.
 --
--- The ELISION is Event.decideScry's minus its one-card case: the graveyard and
--- the top of the library are still two different places.
+-- Like Event.decideScry, a one-card library is still asked: the graveyard and
+-- the top of the library are two different places.
 decideSurveil :: Integer -> PlayerId -> Game (PlayerId, Maybe ([ObjectId], [ObjectId], [ObjectId]))
 decideSurveil n pid = do
   gs <- State.get
