@@ -95,7 +95,11 @@
                     "type": "PreventAllDamage",
                     "value": {
                       "duration": {
-                        "type": "UntilYourNextTurn"
+                        "type": "UntilNextTurnOf",
+                        "value": {
+                          "type": "Relative",
+                          "value": "You"
+                        }
                       },
                       "whoRecipient": "You"
                     }

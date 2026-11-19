@@ -150,6 +150,7 @@ theRingEmblem :: Natural.Natural -> Card.Card
 theRingEmblem temptations =
   Card.MkCard
     { Card.layout = Layout.Normal,
+      Card.synthetic = False,
       Card.faces =
         NonEmpty.singleton
           Face.MkFace

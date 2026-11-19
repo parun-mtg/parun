@@ -24,6 +24,10 @@ data Card = MkCard
     -- and right halves, CR 710.1a's top half and CR 710.1b's bottom, CR 712.6a's
     -- front face -- so the ORDER lives here even though a face is REFERRED to by
     -- name.
-    faces :: NonEmpty.NonEmpty (Face.Face Card)
+    faces :: NonEmpty.NonEmpty (Face.Face Card),
+    -- | A synthetic test card, which no printing carries (docs/design.md
+    -- section 6) and so is outside the Oracle card reference
+    -- (Parun.Registry.referenceCard). The rules never read it.
+    synthetic :: Bool
   }
   deriving (Eq, Ord, Show)

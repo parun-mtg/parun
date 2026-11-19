@@ -141,5 +141,6 @@
         ]
       }
     }
-  ]
+  ],
+  "synthetic": true
 }

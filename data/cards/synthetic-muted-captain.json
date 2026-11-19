@@ -121,5 +121,6 @@
         ]
       }
     }
-  ]
+  ],
+  "synthetic": true
 }

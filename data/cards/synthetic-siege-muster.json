@@ -247,5 +247,6 @@
         ]
       }
     }
-  ]
+  ],
+  "synthetic": true
 }

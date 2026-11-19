@@ -104,6 +104,7 @@ mountainCard :: Card.Card
 mountainCard =
   Card.MkCard
     { Card.layout = Layout.Normal,
+      Card.synthetic = False,
       Card.faces =
         NonEmpty.singleton
           (bareFace (CardName.MkCardName (Text.pack "Mountain")))
@@ -133,6 +134,7 @@ spec s = Spec.describe s "Parun.Codec.Card" $ do
         card =
           Card.MkCard
             { Card.layout = Layout.Normal,
+              Card.synthetic = False,
               Card.faces = face "Wax" NonEmpty.:| [face "Wane"]
             }
     -- assertJsonCodec rather than a bare encode-then-decode round trip: only
@@ -143,6 +145,12 @@ spec s = Spec.describe s "Parun.Codec.Card" $ do
       Card.codec
       card
       " {\"faces\":[{\"name\":\"Wax\",\"typeLine\":{\"types\":[\"Instant\"]}},{\"name\":\"Wane\",\"typeLine\":{\"types\":[\"Instant\"]}}]} "
+  Spec.it s "a synthetic card says so, after its faces" $
+    Common.assertCodec
+      s
+      Card.codec
+      mountainCard {Card.synthetic = True}
+      " {\"faces\":[{\"name\":\"Mountain\",\"typeLine\":{\"supertypes\":[\"Basic\"],\"types\":[\"Land\"],\"subtypes\":[\"Mountain\"]}}],\"synthetic\":true} "
   -- Omission is permitted on input, never required: a file that spells the
   -- default out must still load.
   Spec.it s "a card that spells its layout out still decodes" $

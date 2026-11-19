@@ -190,8 +190,8 @@ spec s =
           Common.assertCodec
             s
             codec
-            (ReplacementEffect.DamageR (DamageR.MkDamageR DamagePattern.MkDamagePattern {DamagePattern.whichKind = Nothing, DamagePattern.whatSource = Filter.IsSource, DamagePattern.whatRecipient = Nothing, DamagePattern.whoRecipient = Nothing, DamagePattern.whichRecipient = Nothing, DamagePattern.whichSource = Nothing, DamagePattern.boundRecipient = Nothing, DamagePattern.whatAmount = Nothing} (DamageRewrite.SetAmount (Quantity.Literal 4)) Seq.empty))
-            " {\"type\":\"DamageR\",\"value\":{\"matching\":{\"whatSource\":{\"type\":\"IsSource\"}},\"rewrite\":{\"type\":\"SetAmount\",\"value\":{\"type\":\"Literal\",\"value\":4}}}} "
+            (ReplacementEffect.DamageR (DamageR.MkDamageR DamagePattern.MkDamagePattern {DamagePattern.whichKind = Nothing, DamagePattern.whatSource = Filter.IsSource, DamagePattern.whatRecipient = Nothing, DamagePattern.whoRecipient = Nothing, DamagePattern.whichRecipient = Nothing, DamagePattern.whichSource = Nothing, DamagePattern.boundRecipient = Nothing, DamagePattern.whatAmount = Nothing} (DamageRewrite.Scale (Scaling.Exactly (Quantity.Literal 4))) Seq.empty))
+            " {\"type\":\"DamageR\",\"value\":{\"matching\":{\"whatSource\":{\"type\":\"IsSource\"}},\"rewrite\":{\"type\":\"Scale\",\"value\":{\"type\":\"Exactly\",\"value\":{\"type\":\"Literal\",\"value\":4}}}}} "
         Spec.it s "DamageR (any source's damage, doubled)" $
           Common.assertCodec
             s
@@ -321,9 +321,11 @@ spec s =
                         CounterPattern.subject = CounterSubject.ByAnything,
                         CounterPattern.whose = ControllerRelation.Related PlayerRelation.You,
                         CounterPattern.onWhat = Filter.HasCardType CardType.Creature,
-                        CounterPattern.onWho = Nothing
+                        CounterPattern.onWho = Nothing,
+                        CounterPattern.whichPlayerKind = Nothing
                       }
                     (Scaling.AddMore (Quantity.Literal 1))
+                    False
                 )
             )
             " {\"type\":\"CounterR\",\"value\":{\"matching\":{\"whichKind\":{\"type\":\"PlusOnePlusOne\"},\"subject\":{\"type\":\"ByAnything\"},\"whose\":{\"type\":\"You\"},\"onWhat\":{\"type\":\"HasCardType\",\"value\":\"Creature\"}},\"scaling\":{\"type\":\"AddMore\",\"value\":{\"type\":\"Literal\",\"value\":1}}}} "
@@ -341,9 +343,11 @@ spec s =
                         CounterPattern.subject = CounterSubject.ByEffect,
                         CounterPattern.whose = ControllerRelation.Related PlayerRelation.You,
                         CounterPattern.onWhat = Filter.And [],
-                        CounterPattern.onWho = Nothing
+                        CounterPattern.onWho = Nothing,
+                        CounterPattern.whichPlayerKind = Nothing
                       }
                     (Scaling.Multiply 2)
+                    False
                 )
             )
             " {\"type\":\"CounterR\",\"value\":{\"matching\":{\"subject\":{\"type\":\"ByEffect\"},\"whose\":{\"type\":\"You\"},\"onWhat\":{\"type\":\"And\",\"value\":[]}},\"scaling\":{\"type\":\"Multiply\",\"value\":2}}} "

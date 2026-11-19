@@ -93,5 +93,6 @@
         "lifeModifier": 0
       }
     }
-  ]
+  ],
+  "synthetic": true
 }

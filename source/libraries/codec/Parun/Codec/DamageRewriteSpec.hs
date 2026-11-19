@@ -72,12 +72,12 @@ spec s = Spec.describe s "Parun.Codec.DamageRewrite" $ do
       (DamageRewrite.PreventUpTo (Quantity.Literal 1))
       " {\"type\":\"PreventUpTo\",\"value\":{\"type\":\"Literal\",\"value\":1}} "
   -- CR 614.1a: a flat instead-amount.
-  Spec.it s "SetAmount" $
+  Spec.it s "Scale, Exactly" $
     Common.assertCodec
       s
       (DamageRewrite.codec (Effect.codec Card.codec (GrantedAbility.codec Card.codec)))
-      (DamageRewrite.SetAmount (Quantity.Literal 4))
-      " {\"type\":\"SetAmount\",\"value\":{\"type\":\"Literal\",\"value\":4}} "
+      (DamageRewrite.Scale (Scaling.Exactly (Quantity.Literal 4)))
+      " {\"type\":\"Scale\",\"value\":{\"type\":\"Exactly\",\"value\":{\"type\":\"Literal\",\"value\":4}}} "
   -- A doubling, which is Scaling's Multiply 2.
   Spec.it s "Scale" $
     Common.assertCodec

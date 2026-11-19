@@ -1545,8 +1545,10 @@ slotsOf effect = joinTwo (joinTwo (joinSlots (fmap objectRefSlots (effectObjectR
   Effect.AttachAll (AttachAll.MkAttachAll _ destination) -> filterSlotsOf destination
   -- CR 730.1/730.1b: the slot is a DEFINITION (the subgame's winner), not a read.
   Effect.PlaySubgame _ -> Map.empty
-  -- A DEFINITION too: chosen as this effect is applied (CR 608.2d), never read.
-  Effect.ChoosePlayer _ -> Map.empty
+  -- The slot is a DEFINITION, chosen as this effect is applied (CR 608.2d); the
+  -- excluded players are a READ at arity MANY, as EachPlayerExcept's are.
+  Effect.ChoosePlayer choice -> maybe Map.empty (\slot -> Map.singleton slot SlotArity.Many) (ChoosePlayer.excluding choice)
+  -- A DEFINITION only, for ChoosePlayer's reason.
   Effect.ChooseGroup _ -> Map.empty
   Effect.ChoosePlayerAtRandom _ -> Map.empty
   -- The slot is a DEFINITION; the reads are the ceiling's and the Filter's, and
@@ -1604,13 +1606,13 @@ slotsOf effect = joinTwo (joinTwo (joinSlots (fmap objectRefSlots (effectObjectR
   Effect.ChangeTargets _ -> Map.empty
 
 -- Every PlayerRef nested in a Duration: the seat CR 611.2a's window is counted
--- against, which only UntilEndOfNextTurnOf states. durationSlots' twin one type
--- over, and read by effectPlayerRefs rather than here, so the slot it names
--- reaches Parun.EffectLintSpec's singly-read classification the way every other
+-- against. durationSlots' twin one type over, and read by effectPlayerRefs
+-- rather than here, so the slot it names reaches Parun.EffectLintSpec's singly-read classification the way every other
 -- reference does.
 durationPlayerRefs :: Duration.Duration -> [PlayerRef]
 durationPlayerRefs duration = case duration of
   Duration.UntilEndOfNextTurnOf ref -> [ref]
+  Duration.UntilNextTurnOf ref -> [ref]
   -- The seat the WINDOW is counted against, read exactly as the arm above's is.
   Duration.DuringNextTurnOf ref -> [ref]
   Duration.DuringNextUntapStepOf ref -> [ref]
@@ -1621,7 +1623,6 @@ durationPlayerRefs duration = case duration of
   Duration.UntilEndOfTurn -> []
   Duration.Indefinite -> []
   Duration.Perpetual -> []
-  Duration.UntilYourNextTurn -> []
   Duration.UntilNextStepOf next -> [NextStepOf.player next]
   Duration.UntilEndOfYourNextTurn -> []
   -- A Condition's own references are Quantity.bakePlayerRef's half, reached
@@ -1640,12 +1641,12 @@ durationSlots duration = case duration of
   Duration.UntilEndOfTurn -> Map.empty
   Duration.Indefinite -> Map.empty
   Duration.Perpetual -> Map.empty
-  Duration.UntilYourNextTurn -> Map.empty
   Duration.UntilNextStepOf next -> playerRefSlots (NextStepOf.player next)
   Duration.UntilEndOfYourNextTurn -> Map.empty
   -- The seat the window is counted against, read exactly as every other
   -- PlayerRef position is (CR 601.2c).
   Duration.UntilEndOfNextTurnOf ref -> playerRefSlots ref
+  Duration.UntilNextTurnOf ref -> playerRefSlots ref
   Duration.DuringNextTurnOf ref -> playerRefSlots ref
   Duration.DuringNextUntapStepOf ref -> playerRefSlots ref
   Duration.DuringYourNextTurn -> Map.empty
@@ -1733,7 +1734,7 @@ replacementRowReads re = case re of
   -- CR 614.1a's printed subject (Pyramids' "target land"); the rewrite is nullary.
   ReplacementEffect.DestructionR (DestructionR.MkDestructionR matching _) -> (Maybe.maybeToList matching, [])
   -- The rewrite is one Scaling, which is a constructor and a Natural.
-  ReplacementEffect.CounterR (CounterR.MkCounterR pat _) -> ([CounterPattern.onWhat pat], [])
+  ReplacementEffect.CounterR (CounterR.MkCounterR pat _ _) -> ([CounterPattern.onWhat pat], [])
   -- The pattern's Filter over what the token is; the scaling is a number and
   -- the appended token is card data of its own, so neither reads a slot.
   -- CR 707.2: so does the permanent a copying row names.
@@ -2098,7 +2099,6 @@ damageRewriteEffects rewrite = case rewrite of
   DamageRewrite.PreventNext _ -> []
   DamageRewrite.PreventAllBut _ -> []
   DamageRewrite.PreventUpTo _ -> []
-  DamageRewrite.SetAmount _ -> []
   DamageRewrite.Scale _ -> []
   DamageRewrite.Redirect _ -> []
   DamageRewrite.RedirectNext _ _ -> []
@@ -2130,12 +2130,12 @@ damageRewriteReads rewrite = case rewrite of
   DamageRewrite.PreventNext _ -> ([], [])
   DamageRewrite.PreventAllBut _ -> ([], [])
   DamageRewrite.PreventUpTo quantity -> ([], [quantity])
-  DamageRewrite.SetAmount quantity -> ([], [quantity])
   -- Taii Wakeen, Perfect Shot's "plus X".
   DamageRewrite.Scale (Scaling.AddMore quantity) -> ([], [quantity])
   DamageRewrite.Scale (Scaling.Multiply _) -> ([], [])
   DamageRewrite.Scale (Scaling.Subtract _) -> ([], [])
   DamageRewrite.Scale Scaling.Halve -> ([], [])
+  DamageRewrite.Scale (Scaling.Exactly quantity) -> ([], [quantity])
   -- The nested effects are replacementRowEffects' answer above, not a read of
   -- the rewrite's own.
   DamageRewrite.RunEffects _ -> ([], [])
@@ -2418,8 +2418,9 @@ ownSlotsAreExhaustive effect = case effect of
   Effect.AttachAll (AttachAll.MkAttachAll _ _) -> True
   -- CR 730.1b: a DEFINITION, and the subgame reads no binding of the outer game.
   Effect.PlaySubgame _ -> True
-  -- PlaySubgame's answer: a definition reads no slot.
+  -- slotsOf reports the excluded players' slot, the whole of what it reads.
   Effect.ChoosePlayer _ -> True
+  -- PlaySubgame's answer: a definition reads no slot.
   Effect.ChooseGroup _ -> True
   Effect.ChoosePlayerAtRandom _ -> True
   Effect.ChoosePermanents choice -> all Quantity.slotsAreExhaustive (chosenPermanentsQuantities (ChoosePermanents.permanents choice))
@@ -2453,12 +2454,12 @@ durationSlotsAreExhaustive duration = case duration of
   Duration.UntilEndOfTurn -> True
   Duration.Indefinite -> True
   Duration.Perpetual -> True
-  Duration.UntilYourNextTurn -> True
   Duration.UntilNextStepOf _ -> True
   Duration.UntilEndOfYourNextTurn -> True
   -- playerRefSlots' answer is complete for every arm: a PlayerRef names at
   -- most one slot and nothing nested inside it names another.
   Duration.UntilEndOfNextTurnOf _ -> True
+  Duration.UntilNextTurnOf _ -> True
   Duration.DuringNextTurnOf _ -> True
   Duration.DuringNextUntapStepOf _ -> True
   Duration.DuringYourNextTurn -> True

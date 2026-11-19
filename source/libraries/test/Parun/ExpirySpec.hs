@@ -149,7 +149,7 @@ armSpec s = Spec.describe s "Arm" $ do
   Spec.it s "CR 611.2a an indefinite duration arms to Never" $
     Spec.assertEqWith s "armed" (Expiry.arm S.noSource Map.empty S.alice S.noSource Duration.Indefinite armGs) (Just Expiry.Type.Never)
   Spec.it s "CR 611.2a / 109.5 'until your next turn' bakes the controller" $
-    Spec.assertEqWith s "armed" (Expiry.arm S.noSource Map.empty S.alice S.noSource Duration.UntilYourNextTurn armGs) (Just (Expiry.Type.AtTurnOf S.alice))
+    Spec.assertEqWith s "armed" (Expiry.arm S.noSource Map.empty S.alice S.noSource (Duration.UntilNextTurnOf (PlayerRef.Relative PlayerRelation.You)) armGs) (Just (Expiry.Type.AtTurnOf S.alice))
   -- The turn number is sampled as well as the seat, and armGs is turn 1. Without
   -- it the sweep could not tell the controller's CURRENT turn from their next
   -- one, which is exactly the case the two phrasings disagree about.

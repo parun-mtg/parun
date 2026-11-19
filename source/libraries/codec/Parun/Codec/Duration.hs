@@ -19,7 +19,7 @@ codec =
     [ Arm.nullary "UntilEndOfTurn" Duration.UntilEndOfTurn,
       Arm.nullary "Indefinite" Duration.Indefinite,
       Arm.nullary "Perpetual" Duration.Perpetual,
-      Arm.nullary "UntilYourNextTurn" Duration.UntilYourNextTurn,
+      Arm.payload "UntilNextTurnOf" PlayerRef.codec Duration.UntilNextTurnOf (\x -> case x of Duration.UntilNextTurnOf y -> Just y; _ -> Nothing),
       Arm.payload "UntilNextStepOf" NextStepOf.codec Duration.UntilNextStepOf (\x -> case x of Duration.UntilNextStepOf y -> Just y; _ -> Nothing),
       Arm.nullary "UntilEndOfYourNextTurn" Duration.UntilEndOfYourNextTurn,
       Arm.payload "UntilEndOfNextTurnOf" PlayerRef.codec Duration.UntilEndOfNextTurnOf (\x -> case x of Duration.UntilEndOfNextTurnOf y -> Just y; _ -> Nothing),
@@ -41,7 +41,7 @@ tagOf x = case x of
   Duration.UntilEndOfTurn {} -> "UntilEndOfTurn"
   Duration.Indefinite {} -> "Indefinite"
   Duration.Perpetual {} -> "Perpetual"
-  Duration.UntilYourNextTurn {} -> "UntilYourNextTurn"
+  Duration.UntilNextTurnOf {} -> "UntilNextTurnOf"
   Duration.UntilNextStepOf {} -> "UntilNextStepOf"
   Duration.UntilEndOfYourNextTurn {} -> "UntilEndOfYourNextTurn"
   Duration.UntilEndOfNextTurnOf {} -> "UntilEndOfNextTurnOf"

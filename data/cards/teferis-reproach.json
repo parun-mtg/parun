@@ -1,0 +1,150 @@
+{
+  "faces": [
+    {
+      "manaCost": [
+        {
+          "type": "Generic",
+          "value": 2
+        },
+        {
+          "type": "OfType",
+          "value": {
+            "type": "Colored",
+            "value": "White"
+          }
+        }
+      ],
+      "name": "Teferi's Reproach",
+      "oracleText": "Choose target opponent. Until that player's next turn, they gain protection from everything and their life total can't change. All nonland permanents they control phase out. (While they're phased out, they're treated as though they don't exist. They phase in before that player untaps during their next untap step.)\nExile Teferi's Reproach.",
+      "spell": {
+        "modes": [
+          {
+            "clauses": [
+              {
+                "effects": [
+                  {
+                    "type": "AffectPlayers",
+                    "value": {
+                      "duration": {
+                        "type": "UntilNextTurnOf",
+                        "value": {
+                          "type": "InSlot",
+                          "value": "opponent"
+                        }
+                      },
+                      "effect": {
+                        "type": "HasProtectionFrom",
+                        "value": {
+                          "type": "And",
+                          "value": []
+                        }
+                      },
+                      "players": {
+                        "type": "Named",
+                        "value": "opponent"
+                      }
+                    }
+                  },
+                  {
+                    "type": "AffectPlayers",
+                    "value": {
+                      "duration": {
+                        "type": "UntilNextTurnOf",
+                        "value": {
+                          "type": "InSlot",
+                          "value": "opponent"
+                        }
+                      },
+                      "effect": {
+                        "type": "Cant",
+                        "value": {
+                          "type": "GainLife"
+                        }
+                      },
+                      "players": {
+                        "type": "Named",
+                        "value": "opponent"
+                      }
+                    }
+                  },
+                  {
+                    "type": "AffectPlayers",
+                    "value": {
+                      "duration": {
+                        "type": "UntilNextTurnOf",
+                        "value": {
+                          "type": "InSlot",
+                          "value": "opponent"
+                        }
+                      },
+                      "effect": {
+                        "type": "Cant",
+                        "value": {
+                          "type": "LoseLife"
+                        }
+                      },
+                      "players": {
+                        "type": "Named",
+                        "value": "opponent"
+                      }
+                    }
+                  },
+                  {
+                    "type": "PhaseOut",
+                    "value": {
+                      "ref": {
+                        "type": "EachMatching",
+                        "value": {
+                          "type": "And",
+                          "value": [
+                            {
+                              "type": "Not",
+                              "value": {
+                                "type": "HasCardType",
+                                "value": "Land"
+                              }
+                            },
+                            {
+                              "type": "HeldByBound",
+                              "value": {
+                                "holder": "Controller",
+                                "slot": "opponent"
+                              }
+                            }
+                          ]
+                        }
+                      }
+                    }
+                  }
+                ]
+              },
+              {
+                "effects": [
+                  {
+                    "type": "ExileThisSpell"
+                  }
+                ]
+              }
+            ],
+            "targetSlots": {
+              "opponent": {
+                "filter": {
+                  "type": "IsPlayer",
+                  "value": "Opponent"
+                },
+                "pool": {
+                  "type": "Players"
+                }
+              }
+            }
+          }
+        ]
+      },
+      "typeLine": {
+        "types": [
+          "Instant"
+        ]
+      }
+    }
+  ]
+}

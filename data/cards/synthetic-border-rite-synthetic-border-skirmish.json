@@ -42,5 +42,6 @@
   ],
   "layout": {
     "type": "Split"
-  }
+  },
+  "synthetic": true
 }

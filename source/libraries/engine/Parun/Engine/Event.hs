@@ -86,8 +86,10 @@ import qualified Parun.Types.AbilityWasActivated as AbilityWasActivated
 import qualified Parun.Types.Acquisition as Acquisition
 import qualified Parun.Types.ActiveCopy as ActiveCopy
 import qualified Parun.Types.ActiveCopyCast as ActiveCopyCast
+import qualified Parun.Types.ActivePlayerEffect as ActivePlayerEffect
 import qualified Parun.Types.ActiveReplacement as ActiveReplacement
 import qualified Parun.Types.Affected as Affected
+import qualified Parun.Types.AffectedPlayers as AffectedPlayers
 import qualified Parun.Types.AnyNumberOf as AnyNumberOf
 import qualified Parun.Types.Arrival as Arrival
 import qualified Parun.Types.ArrivalEnd as ArrivalEnd
@@ -3048,7 +3050,7 @@ stepChosen settle batch applied prevented exiledBy shuffling arriving split cand
   -- no arm of that fold has to report anything and none can forget to.
   -- What makes it exact rather than a guess is Replacement.prevents: only a
   -- PREVENTION rewrite's shrinkage is prevention, where CR 614.1a's
-  -- SetAmount and Scale shrink an event without preventing a point of it.
+  -- Scale shrinks an event without preventing a point of it.
   --
   -- CR 615.10's floor is read off the same pair: what the row let through
   -- counts against it for the rest of the batch (Replacement.floorLeft).
@@ -3248,7 +3250,6 @@ applyInertly candidate rewrite event = do
     -- Unreachable: `Replacement.prevents` refuses these three, so no inert
     -- application ever reaches them. CR 614.1a's replacements are not preventions
     -- and are applied in full to unpreventable damage.
-    DamageRewrite.SetAmount _ -> pure ()
     DamageRewrite.Scale _ -> pure ()
     DamageRewrite.Redirect _ -> pure ()
     DamageRewrite.RedirectNext _ _ -> pure ()
@@ -3262,7 +3263,7 @@ applyInertly candidate rewrite event = do
 -- CR 120.8: a damage event an amount rewrite left at 0 is no event at all, so
 -- nothing later in the CR 616.1 loop has one to replace and nothing downstream
 -- deals, marks or triggers on it. The arms of `apply` that can answer 0
--- without preventing anything go through here -- SetAmount, Scale, and
+-- without preventing anything go through here -- Scale, and
 -- RedirectNext's share where CR 615.7's allocation gave the event none; the
 -- prevention arms already answer Nothing at 0 (CR 615.6). Proved for Scale by
 -- data/scenarios/damage-replacement's Benevolent Unicorn case; the other two
@@ -4815,17 +4816,13 @@ apply settle batch applied batchPrevented candidate event =
         if stopped >= amount
           then pure Nothing
           else pure (Just (ProposedEvent.WouldDealDamage de {DamageEvent.amount = amount - stopped}))
-      -- CR 614.1a's "instead" with an amount (Galvanic Blast, Ojer Axonil). Only the
-      -- AMOUNT is rewritten, and that is the rule rather than economy: a
-      -- replaced damage event keeps its source, its recipient and every
-      -- deal-time rider it was proposed with.
-      DamageRewrite.SetAmount quantity -> do
-        Replacement.consume (ReplacementCandidate.identity candidate)
-        gs <- State.get
-        pure (dealing de {DamageEvent.amount = Integer.toNaturalSaturating (Replacement.rowQuantity gs candidate quantity)})
-      -- CR 614.1a: Furnace of Rath's "it deals double that damage ... instead".
-      -- Through the same `scale` the counter and token rewrites use, so a
-      -- doubling means one thing across every event class.
+      -- CR 614.1a: Furnace of Rath's "it deals double that damage ... instead",
+      -- and Galvanic Blast's "4 damage instead" (Scaling.Exactly). Through the
+      -- same `scale` the counter and token rewrites use, so a doubling means
+      -- one thing across every event class. Only the AMOUNT is rewritten, and
+      -- that is the rule rather than economy: a replaced damage event keeps
+      -- its source, its recipient and every deal-time rider it was proposed
+      -- with.
       DamageRewrite.Scale scaling -> do
         Replacement.consume (ReplacementCandidate.identity candidate)
         gs <- State.get
@@ -4833,7 +4830,7 @@ apply settle batch applied batchPrevented candidate event =
       -- CR 614.9: a redirection effect replaces the damage's RECIPIENT with
       -- another and nothing else -- "the same damage dealt to another battle,
       -- creature, planeswalker, or player". Every other field rides along for
-      -- SetAmount's reason: a replaced damage event keeps its source, its amount
+      -- Scale's reason: a replaced damage event keeps its source, its amount
       -- and every deal-time rider it was proposed with.
       --
       -- The rule's guard says the effect DOES NOTHING, not that it is
@@ -5719,7 +5716,7 @@ apply settle batch applied batchPrevented candidate event =
     -- Unreachable: `applies` admits PlaneswalkR only against WouldPlaneswalk.
     (ReplacementEffect.PlaneswalkR {}, _) -> pure (Just event)
     -- CR 122.6/614.1: Hardened Scales/Doubling Season scale a counter placement.
-    (ReplacementEffect.CounterR (CounterR.MkCounterR _ scaling), ProposedEvent.WouldPutCounters cause oid kind n) -> do
+    (ReplacementEffect.CounterR (CounterR.MkCounterR _ scaling _), ProposedEvent.WouldPutCounters cause oid kind n) -> do
       Replacement.consume (ReplacementCandidate.identity candidate)
       gs <- State.get
       pure (Just (ProposedEvent.WouldPutCounters cause oid kind (Replacement.scale gs candidate scaling n)))
@@ -5730,8 +5727,17 @@ apply settle batch applied batchPrevented candidate event =
     -- The event SURVIVES at a scaled count of zero rather than being cancelled
     -- here, so CR 616.2's next iteration still sees it and CR 614.5 still spends
     -- this row; putPlayerCounters is what declines to write a zero.
-    (ReplacementEffect.CounterR (CounterR.MkCounterR _ scaling), ProposedEvent.WouldPutPlayerCounters cause pid kind n) -> do
+    --
+    -- CR 614.1a / 101.2: Melira, the Living Cure's "and you can't get
+    -- additional poison counters this turn" is part of the modified event, so
+    -- the bar is installed HERE, as the row applies: a later placement in the
+    -- same batch meets it (its ruling), while this event, already past
+    -- putPlayerCounters' prohibition check, is not stopped by it -- so a
+    -- Vorinclex applied after it still doubles the one counter. Proved by
+    -- data/scenarios/melira-the-living-cure-*.
+    (ReplacementEffect.CounterR (CounterR.MkCounterR _ scaling barsAdditional), ProposedEvent.WouldPutPlayerCounters cause pid kind n) -> do
       Replacement.consume (ReplacementCandidate.identity candidate)
+      Monad.when barsAdditional (State.modify' (barPlayerCounters candidate pid kind))
       gs <- State.get
       pure (Just (ProposedEvent.WouldPutPlayerCounters cause pid kind (Replacement.scale gs candidate scaling n)))
     -- CR 614.16 at the ENTRY level: the counters this permanent is entering with,
@@ -5760,7 +5766,7 @@ apply settle batch applied batchPrevented candidate event =
     -- is applied, so a row applied before a later entry row has added its kind
     -- never sees that kind, and CR 616.1f offers it no second turn -- which is
     -- the rule's answer, not a shortcut.
-    (ReplacementEffect.CounterR (CounterR.MkCounterR pat scaling), ProposedEvent.WouldEnter oid) -> do
+    (ReplacementEffect.CounterR (CounterR.MkCounterR pat scaling _), ProposedEvent.WouldEnter oid) -> do
       Replacement.consume (ReplacementCandidate.identity candidate)
       gs <- State.get
       let scaled = fmap (fmap (Replacement.scale gs candidate scaling)) (Replacement.matchingEnteringCounters gs candidate pat oid)
@@ -7486,6 +7492,27 @@ putPlayerCounters cause pid kind n = do
                 placed = PlayerCountersPlaced.MkPlayerCountersPlaced (CounterCause.putter cause) target settledKind before (before + settledCount)
              in recordEvent (GameEvent.PlayerCountersPut placed) gs {GameState.players = List.foldl' (flip (Map.adjust bump)) (GameState.players gs) (Game.counterSharers settledKind target gs)}
           pure settledCount
+
+-- CR 101.2 / 514.2: `pid` can't get counters of `kind` until cleanup, a
+-- CounterR's barsAdditional. The row's controller controls the effect, the
+-- receiving player when it has none; either way it names `pid` alone.
+barPlayerCounters :: ReplacementCandidate -> PlayerId -> PlayerCounterKind.PlayerCounterKind -> GameState -> GameState
+barPlayerCounters candidate pid kind gs =
+  let src = ReplacementCandidate.source candidate
+      (ts, gs2) = Game.freshTimestamp gs
+      active =
+        ActivePlayerEffect.MkActivePlayerEffect
+          { ActivePlayerEffect.source = src,
+            ActivePlayerEffect.controller = Maybe.fromMaybe pid (ReplacementCandidate.controller candidate),
+            ActivePlayerEffect.choices = SourceContext.choicesOf (Game.acquisitionOf src gs) src gs,
+            ActivePlayerEffect.timestamp = ts,
+            ActivePlayerEffect.expiry = Expiry.Type.AtCleanup,
+            ActivePlayerEffect.scope = AffectedPlayers.Named pid,
+            ActivePlayerEffect.effect = PlayerEffect.Type.CantGetCounters (Just kind),
+            ActivePlayerEffect.ability = Nothing,
+            ActivePlayerEffect.slots = Map.empty
+          }
+   in gs2 {GameState.stored = (GameState.stored gs2) {StoredEffects.playerEffects = active : StoredEffects.playerEffects (GameState.stored gs2)}}
 
 -- CR 122.1: resolveCounters for a player recipient, and read the same way -- the
 -- cause rides the event and the rows decide which causes they reach.

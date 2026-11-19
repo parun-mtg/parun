@@ -34,5 +34,6 @@
         ]
       }
     }
-  ]
+  ],
+  "synthetic": true
 }

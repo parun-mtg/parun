@@ -229,14 +229,14 @@ card value = do
   case Text.unpack oracleCard of
     "Card" -> do
       f <- readFace [] pairs
-      pure Card.MkCard {Card.layout = Layout.Normal, Card.faces = f NonEmpty.:| []}
+      pure Card.MkCard {Card.synthetic = False, Card.layout = Layout.Normal, Card.faces = f NonEmpty.:| []}
     "Preparer" -> do
       f <- readFace ["Prepared"] pairs
       prepared <- Common.field "Prepared" pairs >>= Common.asObject
       kind <- Common.field "_OracleCard" prepared >>= Common.asText
       Monad.unless (kind == Text.pack "Card") (Left (Text.pack "_OracleCard:" <> kind))
       spell <- readFace [] prepared
-      pure Card.MkCard {Card.layout = Layout.Preparation, Card.faces = f NonEmpty.:| [spell]}
+      pure Card.MkCard {Card.synthetic = False, Card.layout = Layout.Preparation, Card.faces = f NonEmpty.:| [spell]}
     _ -> Left (Text.pack "_OracleCard:" <> oracleCard)
 
 -- | One face of a card's AST, the extra keys named the card's own rather
@@ -1499,7 +1499,7 @@ creatable context n = case Node.tag n of
         let line = TypeLine.MkTypeLine Set.empty (Set.fromList types) (Set.fromList (subtypes :: [Subtype.Subtype]))
             name = CardName.MkCardName (Text.unwords (subtypeNames <> [Text.pack "Token"]))
             face = Oracle.Face.bare name Nothing Nothing (Set.fromList colours) line (Just (Power.MkPower (Quantity.Literal power))) (Just (Toughness.MkToughness (Quantity.Literal toughness))) (Map.fromListWith (+) (fmap (\k -> (k, 1)) keywords))
-        Right (Quantity.Literal 1, Card.MkCard Layout.Normal (face NonEmpty.:| []))
+        Right (Quantity.Literal 1, Card.MkCard Layout.Normal (face NonEmpty.:| []) False)
       _ -> Node.untranslated n
   _ -> Node.untranslated n
 

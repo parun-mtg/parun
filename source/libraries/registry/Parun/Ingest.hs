@@ -55,7 +55,7 @@ candidate value = do
   toughness <- traverse (fmap Toughness.MkToughness . literal) printedToughness
   keywords <- traverse keyword (Normalise.normalise (Face.name face) (Maybe.fromMaybe Text.empty (Face.oracleText face)))
   let keyworded = face {Face.power = power, Face.toughness = toughness, Face.keywords = Map.fromListWith (+) (fmap (\k -> (k, 1)) keywords)}
-  pure Card.MkCard {Card.layout = Layout.Normal, Card.faces = keyworded NonEmpty.:| []}
+  pure Card.MkCard {Card.synthetic = False, Card.layout = Layout.Normal, Card.faces = keyworded NonEmpty.:| []}
 
 -- | The face a candidate record prints, no rules text read: its name, Oracle
 -- text verbatim (empty where MTGJSON has none), mana cost, colour indicator

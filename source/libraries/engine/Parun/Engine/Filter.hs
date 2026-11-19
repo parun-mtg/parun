@@ -3444,6 +3444,15 @@ bakeRelations related predicate = case predicate of
   Filter.HeldBy holder relation -> Filter.Or (fmap (Filter.HeldByPlayer holder) (related relation))
   _ -> Identity.runIdentity (Children.filterChildren (Children.descending (Identity.Identity . bakeRelations related)) predicate)
 
+-- CR 608.2h: every HasChosenColor named outright as the colours `chosen`
+-- holds, so a class stored past its resolution keeps the colour its source
+-- chose as it resolved (Skrelv, Defector Mite). The empty Or where none was.
+-- bakeBound's descent, and its reason for not entering a keyword.
+bakeChosenColors :: Set.Set Color.Color -> Filter.Filter Keyword.Type.Keyword -> Filter.Filter Keyword.Type.Keyword
+bakeChosenColors chosen predicate = case predicate of
+  Filter.HasChosenColor -> Filter.Or (fmap Filter.HasColor (Set.toList chosen))
+  _ -> Identity.runIdentity (Children.filterChildren (Children.descending (Identity.Identity . bakeChosenColors chosen)) predicate)
+
 -- The mana-value LITERALS a Filter compares against: every `n` a Measures atom
 -- compares the candidate's mana value with, at any depth.
 --

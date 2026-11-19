@@ -11,7 +11,7 @@ import qualified Parun.Types.RestrictedCreatures as RestrictedCreatures
 -- names (CR 802.3a).
 --
 -- Netter en-Dal's is @ForbidAttack UntilEndOfTurn (Named (InSlot target))
--- Nothing@; Chronomantic Escape's is @ForbidAttack UntilYourNextTurn (Matching
+-- Nothing@; Chronomantic Escape's is @ForbidAttack (UntilNextTurnOf (Scoped You)) (Matching
 -- creature) (Just (AimedAt (Scoped You) {OfPlayer}))@.
 --
 -- Two axes where Parun.Types.Prohibit has one, and Parun.Types.RestrictedCreatures

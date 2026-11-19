@@ -22,7 +22,11 @@
                         "type": "ModifyTarget",
                         "value": {
                           "duration": {
-                            "type": "UntilYourNextTurn"
+                            "type": "UntilNextTurnOf",
+                            "value": {
+                              "type": "Relative",
+                              "value": "You"
+                            }
                           },
                           "modification": {
                             "type": "CardType",
@@ -41,7 +45,11 @@
                         "type": "ModifyTarget",
                         "value": {
                           "duration": {
-                            "type": "UntilYourNextTurn"
+                            "type": "UntilNextTurnOf",
+                            "value": {
+                              "type": "Relative",
+                              "value": "You"
+                            }
                           },
                           "modification": {
                             "type": "CreatureSubtype",
@@ -60,7 +68,11 @@
                         "type": "ModifyTarget",
                         "value": {
                           "duration": {
-                            "type": "UntilYourNextTurn"
+                            "type": "UntilNextTurnOf",
+                            "value": {
+                              "type": "Relative",
+                              "value": "You"
+                            }
                           },
                           "modification": {
                             "type": "SetBasePowerToughness",
@@ -85,7 +97,11 @@
                         "type": "ModifyTarget",
                         "value": {
                           "duration": {
-                            "type": "UntilYourNextTurn"
+                            "type": "UntilNextTurnOf",
+                            "value": {
+                              "type": "Relative",
+                              "value": "You"
+                            }
                           },
                           "modification": {
                             "type": "GainKeyword",
@@ -103,7 +119,11 @@
                         "type": "ModifyTarget",
                         "value": {
                           "duration": {
-                            "type": "UntilYourNextTurn"
+                            "type": "UntilNextTurnOf",
+                            "value": {
+                              "type": "Relative",
+                              "value": "You"
+                            }
                           },
                           "modification": {
                             "type": "GainKeyword",
@@ -121,7 +141,11 @@
                         "type": "ModifyTarget",
                         "value": {
                           "duration": {
-                            "type": "UntilYourNextTurn"
+                            "type": "UntilNextTurnOf",
+                            "value": {
+                              "type": "Relative",
+                              "value": "You"
+                            }
                           },
                           "modification": {
                             "type": "GainKeyword",

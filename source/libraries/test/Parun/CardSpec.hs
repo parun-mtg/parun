@@ -672,6 +672,7 @@ splitCard :: Card.Type.Card
 splitCard =
   Card.Type.MkCard
     { Card.Type.layout = Layout.Split,
+      Card.Type.synthetic = False,
       Card.Type.faces = waxFace NonEmpty.:| [waneFace]
     }
 
@@ -725,6 +726,7 @@ cardSpec s = Spec.describe s "Card" $ do
         card =
           Card.Type.MkCard
             { Card.Type.layout = Layout.Normal,
+              Card.Type.synthetic = False,
               Card.Type.faces = wax NonEmpty.:| [wane]
             }
         named = CardName.MkCardName . Text.pack
@@ -2030,6 +2032,16 @@ cardGainingLifeNamesEntrant card =
         PlayerEffect.EntriesTrigger e -> EntriesTrigger.move e == TriggeringMove.GainingLife && EntriesTrigger.entrants e /= Filter.Type.And []
         _ -> False
    in any offends rows
+
+-- Unprinted: a CounterR's barsAdditional on a pattern reaching a permanent,
+-- which Parun.Engine.Event.apply's object and entry arms never read; Melira,
+-- the Living Cure bars only the player getting the counters.
+cardBarsPermanentCounters :: Face.Face Card.Type.Card -> Bool
+cardBarsPermanentCounters card =
+  let offends effect = case effect of
+        ReplacementEffect.CounterR r -> CounterR.barsAdditional r && (CounterPattern.onWhat (CounterR.matching r) /= Filter.Type.Or [] || Maybe.isNothing (CounterPattern.onWho (CounterR.matching r)))
+        _ -> False
+   in any offends (cardReplacementEffects card)
 
 -- Unprinted: a cast limit whose Filter reads a quality an announcement could
 -- move (CR 601.3a), which Parun.Engine.PlayerEffect.prohibitsCasting judges
@@ -3780,7 +3792,7 @@ durationFilters duration =
           Duration.UntilEndOfTurn -> []
           Duration.Indefinite -> []
           Duration.Perpetual -> []
-          Duration.UntilYourNextTurn -> []
+          Duration.UntilNextTurnOf _ -> []
           Duration.UntilNextStepOf _ -> []
           Duration.UntilEndOfYourNextTurn -> []
           Duration.UntilEndOfNextTurnOf _ -> []
@@ -4530,7 +4542,7 @@ replacementEffectFilters replacementEffect = case replacementEffect of
   -- CR 122.1b's kind, which may be a whole Keyword carrying a Filter; see #2728.
   -- `whichKind` is a Maybe, and Nothing there is Doubling Season's ANY kind
   -- rather than a kind holding nothing.
-  ReplacementEffect.CounterR (CounterR.MkCounterR counterPattern scaling) ->
+  ReplacementEffect.CounterR (CounterR.MkCounterR counterPattern scaling _) ->
     unframed [CounterPattern.onWhat counterPattern] <> concatMap counterKindFilters (Maybe.maybeToList (CounterPattern.whichKind counterPattern)) <> scalingFilters scaling
   ReplacementEffect.ZoneChangeR (ZoneChangeR.MkZoneChangeR zoneChangePattern _ _ _ _ _ counters _ _) -> unframed [ZoneChangePattern.whatObject zoneChangePattern] <> concatMap withCountersFilters counters
   ReplacementEffect.EntryR (EntryR.MkEntryR entryPattern entryRewrite) -> unframed [entryPattern] <> entryRewriteFilters entryRewrite
@@ -4611,7 +4623,6 @@ damageRewriteFilters rewrite = case rewrite of
   DamageRewrite.PreventNext _ -> []
   DamageRewrite.PreventAllBut _ -> []
   DamageRewrite.PreventUpTo quantity -> quantityFilters quantity
-  DamageRewrite.SetAmount _ -> []
   DamageRewrite.Scale scaling -> scalingFilters scaling
   -- CR 614.1a's instead-effects hold no Filter of their own; the ones inside
   -- them are reached as ordinary effect filters, through cardResolutionEffects
@@ -4637,6 +4648,7 @@ scalingFilters scaling = case scaling of
   Scaling.Multiply _ -> []
   Scaling.Subtract _ -> []
   Scaling.Halve -> []
+  Scaling.Exactly quantity -> quantityFilters quantity
 
 -- A face's printed replacement ability reaches a Filter on a second axis beside
 -- the rewrite's: CR 604.2's "as long as" clause counts objects, exactly as the
@@ -6139,7 +6151,7 @@ cardFilters card =
 -- A lint fixture built as a FACE, put back into the one-face card an
 -- Effect.Create's token payload has to be.
 oneFaced :: Face.Face Card.Type.Card -> Card.Type.Card
-oneFaced face = Card.Type.MkCard {Card.Type.layout = Layout.Normal, Card.Type.faces = NonEmpty.singleton face}
+oneFaced face = Card.Type.MkCard {Card.Type.synthetic = False, Card.Type.layout = Layout.Normal, Card.Type.faces = NonEmpty.singleton face}
 
 -- CR 709.2 / 712.6: every lint below is stated about ONE face's printed text,
 -- and a card offends when ANY of its faces does. Every card in the pool but
@@ -6774,6 +6786,20 @@ lintSpec s registry corpus = Spec.describe s "Lint" $ do
     Spec.assertBool s (not (cardGainingLifeNamesEntrant (S.combinedFace crusher))) "Dr. Beverly Crusher, naming no entrant, is accepted"
     Spec.assertBool s (not (cardGainingLifeNamesEntrant face)) "Teysa Karlov's creature dying is accepted"
     Spec.assertBool s (cardGainingLifeNamesEntrant doctored) "her creature entrant under GainingLife is rejected"
+  -- Unprinted: a counter bar on a permanent: the corpus half.
+  Spec.it s "barsAdditional only on a player pattern" $ do
+    ps <- S.allPrintings s corpus
+    Spec.assertEqWith s "no bar reaching a permanent" (fmap (S.nameOf . Printing.card) (filter (anyFaceOrMinted cardBarsPermanentCounters . Printing.card) ps)) []
+  -- And the rejecting direction, against Melira, the Living Cure misauthored on purpose.
+  Spec.it s "the lint itself catches a bar on a pattern reaching a permanent" $ do
+    melira <- S.printingOf s registry "Melira, the Living Cure"
+    let face = S.combinedFace melira
+        widened effect = case effect of
+          ReplacementEffect.CounterR r -> ReplacementEffect.CounterR r {CounterR.matching = (CounterR.matching r) {CounterPattern.onWhat = Filter.Type.And []}}
+          other -> other
+        doctored = face {Face.replacementEffects = fmap (\row -> row {PrintedReplacement.effect = widened (PrintedReplacement.effect row)}) (Face.replacementEffects face)}
+    Spec.assertBool s (not (cardBarsPermanentCounters face)) "Melira, the Living Cure's player-only pattern is accepted"
+    Spec.assertBool s (cardBarsPermanentCounters doctored) "the same bar on every permanent is rejected"
   -- Unprinted: a cast limit reading a quality an announcement could move,
   -- which prohibitsCasting judges without a CR 601.3a lookahead: the corpus half.
   Spec.it s "no card's cast limit reads a quality its announcement could move" $ do

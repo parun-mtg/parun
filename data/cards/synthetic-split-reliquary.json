@@ -155,5 +155,6 @@
         ]
       }
     }
-  ]
+  ],
+  "synthetic": true
 }
