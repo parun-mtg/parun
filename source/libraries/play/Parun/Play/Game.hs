@@ -73,12 +73,17 @@ wired registry exchange = Protocol.over (judgingNames registry) (\request -> Tra
 -- RecordSpec's Yorion, Sky Nomad case proves the format reaches the game.
 run :: (Monad m) => Registry.Registry m -> Maybe Format.Format -> [Observer.Observer (Play m)] -> Map.Map PlayerId.PlayerId (Answerer.Answerer (Asked.Asked GameState.GameState) (Play m)) -> (GameState.GameState -> Client.Client m ()) -> Hotseat.Hotseat -> Generator.Generator -> Map.Map PlayerId.PlayerId GraveyardOrder.GraveyardOrder -> NonEmpty.NonEmpty (PlayerId.PlayerId, Deck.Deck) -> m (Either Text.Text (Result.Result, GameState.GameState))
 run registry format observers seats finish hotseat generator orders matchup =
-  Except.runExceptT (State.evalStateT (State.evalStateT played generator) hotseat)
+  playing hotseat generator played
   where
     played = do
       (result, gs) <- Driver.match observers (consulting registry seats) GameSettings.plain {GameSettings.format = format} orders matchup
       Trans.lift (finish gs)
       pure (result, gs)
+
+-- | Play from the screen and the generator, in the base monad: Left is why
+-- it stopped first.
+playing :: (Monad m) => Hotseat.Hotseat -> Generator.Generator -> Play m a -> m (Either Text.Text a)
+playing hotseat generator played = Except.runExceptT (State.evalStateT (State.evalStateT played generator) hotseat)
 
 -- | Each seat, then chance, over the card reference `registry`: a name a seat
 -- chooses is asked again until CR 201.4 allows it

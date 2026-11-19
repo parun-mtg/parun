@@ -1869,7 +1869,8 @@ main.ending {
   justify-content: center;
 }
 
-.ending-actions a {
+.ending-actions a,
+.replay a.branch {
   display: inline-flex;
   align-items: center;
   min-height: 44px;
@@ -2344,4 +2345,16 @@ main.scenarios {
 
 .scenario-list a {
   color: var(--link);
+}
+
+/* Playing on from a position (Parun.Browser.Replay.branch). */
+.replay a.branch {
+  justify-content: center;
+}
+
+main.scenarios h2 {
+  font-size: 0.8rem;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--muted);
 }

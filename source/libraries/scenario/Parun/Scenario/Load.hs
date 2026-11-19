@@ -4,6 +4,7 @@ module Parun.Scenario.Load where
 import qualified Control.Monad as Monad
 import qualified Data.ByteString as ByteString
 import qualified Data.List as List
+import qualified Data.Map.Strict as Map
 import qualified Data.Text as Text
 import qualified Data.Text.Encoding as Encoding
 import qualified Parun.Codec.Scenario as Scenario
@@ -17,6 +18,17 @@ import qualified Paths_parun as Paths
 -- data/cards.
 defaultRoot :: IO FilePath
 defaultRoot = Paths.getDataFileName "scenarios"
+
+-- | data/scenario-manifest.json, the scenarios worth looking at in the web
+-- client's replay (Parun.Browser.Replay), by theme.
+manifestPath :: IO FilePath
+manifestPath = Paths.getDataFileName "scenario-manifest.json"
+
+-- | Each theme's scenarios, a name beneath the root less its extension.
+parseManifest :: ByteString.ByteString -> Either Text.Text (Map.Map Text.Text [Text.Text])
+parseManifest bytes = do
+  contents <- either (\err -> Left (Text.pack ("not valid UTF-8: " <> show err))) Right (Encoding.decodeUtf8' bytes)
+  Common.parse contents >>= Codec.decode (Common.textMap id Right (Common.list Common.text))
 
 -- | Decoded as UTF-8 explicitly, for Parun.Registry.parseCard's reason.
 parse :: ByteString.ByteString -> Either Text.Text Scenario.Type.Scenario
