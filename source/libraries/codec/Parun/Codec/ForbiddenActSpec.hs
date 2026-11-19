@@ -13,6 +13,8 @@ spec s = Spec.describe s "Parun.Codec.ForbiddenAct" $ do
     Common.assertCodec s ForbiddenAct.codec ForbiddenAct.LoseLife " {\"type\":\"LoseLife\"} "
   Spec.it s "DrawMoreThan" $
     Common.assertCodec s ForbiddenAct.codec (ForbiddenAct.DrawMoreThan 1) " {\"type\":\"DrawMoreThan\",\"value\":1} "
+  Spec.it s "PayLifeToCastOrActivate" $
+    Common.assertCodec s ForbiddenAct.codec ForbiddenAct.PayLifeToCastOrActivate " {\"type\":\"PayLifeToCastOrActivate\"} "
   Spec.it s "BecomeMonarch" $
     Common.assertCodec s ForbiddenAct.codec ForbiddenAct.BecomeMonarch " {\"type\":\"BecomeMonarch\"} "
   Spec.it s "has a schema" $

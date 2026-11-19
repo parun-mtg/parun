@@ -12,6 +12,7 @@ codec =
     [ Arm.nullary "GainLife" ForbiddenAct.GainLife,
       Arm.nullary "LoseLife" ForbiddenAct.LoseLife,
       Arm.payload "DrawMoreThan" Common.natural ForbiddenAct.DrawMoreThan (\x -> case x of ForbiddenAct.DrawMoreThan y -> Just y; _ -> Nothing),
+      Arm.nullary "PayLifeToCastOrActivate" ForbiddenAct.PayLifeToCastOrActivate,
       Arm.nullary "BecomeMonarch" ForbiddenAct.BecomeMonarch
     ]
 
@@ -20,4 +21,5 @@ tagOf x = case x of
   ForbiddenAct.GainLife -> "GainLife"
   ForbiddenAct.LoseLife -> "LoseLife"
   ForbiddenAct.DrawMoreThan {} -> "DrawMoreThan"
+  ForbiddenAct.PayLifeToCastOrActivate -> "PayLifeToCastOrActivate"
   ForbiddenAct.BecomeMonarch -> "BecomeMonarch"

@@ -1,0 +1,110 @@
+{
+  "description": "Karn's Sylex destroys each nonland permanent with mana value X or less",
+  "board": {
+    "seats": [
+      {
+        "name": "alice",
+        "battlefield": [
+          {
+            "card": "Karn's Sylex",
+            "label": "sylex",
+            "ready": true
+          },
+          {
+            "card": "Swamp",
+            "label": "swamp",
+            "ready": true
+          },
+          {
+            "card": "Swamp",
+            "label": "swamp-2",
+            "ready": true
+          }
+        ]
+      },
+      {
+        "name": "bob",
+        "battlefield": [
+          {
+            "card": "Typhoid Rats",
+            "ready": true
+          },
+          {
+            "card": "Goblin Piker",
+            "ready": true
+          },
+          {
+            "card": "Phyrexian Arena",
+            "ready": true
+          },
+          {
+            "card": "Forest",
+            "ready": true
+          }
+        ]
+      }
+    ],
+    "active": "alice",
+    "step": "PrecombatMain"
+  },
+  "timeline": [
+    {
+      "turn": 1,
+      "step": "PrecombatMain",
+      "player": "alice",
+      "do": {
+        "Activate": {
+          "object": "$sylex",
+          "ability": 0,
+          "x": 2,
+          "mana": [
+            "$swamp",
+            "$swamp-2"
+          ]
+        }
+      }
+    }
+  ],
+  "final": [
+    {
+      "Count": {
+        "player": "alice",
+        "zone": "Exile",
+        "card": "Karn's Sylex",
+        "count": 1
+      }
+    },
+    {
+      "Count": {
+        "player": "bob",
+        "zone": "Graveyard",
+        "card": "Typhoid Rats",
+        "count": 1
+      }
+    },
+    {
+      "Count": {
+        "player": "bob",
+        "zone": "Graveyard",
+        "card": "Goblin Piker",
+        "count": 1
+      }
+    },
+    {
+      "Count": {
+        "player": "bob",
+        "zone": "Battlefield",
+        "card": "Phyrexian Arena",
+        "count": 1
+      }
+    },
+    {
+      "Count": {
+        "player": "bob",
+        "zone": "Battlefield",
+        "card": "Forest",
+        "count": 1
+      }
+    }
+  ]
+}

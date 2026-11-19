@@ -1,0 +1,67 @@
+{
+  "description": "CR 119.4b bob's Karn's Sylex keeps alice's Greed from being activated",
+  "board": {
+    "seats": [
+      {
+        "name": "alice",
+        "battlefield": [
+          {
+            "card": "Swamp",
+            "ready": true
+          },
+          {
+            "card": "Greed",
+            "ready": true
+          }
+        ],
+        "library": [
+          {
+            "card": "Swamp"
+          }
+        ]
+      },
+      {
+        "name": "bob",
+        "battlefield": [
+          {
+            "card": "Karn's Sylex",
+            "tapped": true
+          }
+        ]
+      }
+    ],
+    "active": "alice",
+    "step": "PrecombatMain"
+  },
+  "timeline": [
+    {
+      "turn": 1,
+      "step": "PrecombatMain",
+      "player": "alice",
+      "check": {
+        "View": {
+          "of": "Offered",
+          "player": "alice",
+          "is": [
+            "Pass",
+            "ActivateManaAbility Swamp"
+          ]
+        }
+      }
+    }
+  ],
+  "final": [
+    {
+      "Life": {
+        "player": "alice",
+        "life": 20
+      }
+    },
+    {
+      "Tapped": {
+        "object": "Swamp",
+        "tapped": false
+      }
+    }
+  ]
+}
