@@ -73,6 +73,13 @@ ownCopySource = SlotName.MkSlotName (Text.pack "ownCopySource")
 turnedMergeSource :: SlotName
 turnedMergeSource = SlotName.MkSlotName (Text.pack "turnedMergeSource")
 
+-- CR 731.2e / 731.2f: the reserved slot under which a face-up MERGED permanent
+-- holding a face-down component keeps the reading of its merge with every
+-- component face up, while `ownCopySource` above holds the one in force
+-- (`setMergeCopy`). No card's targetSlots may name it: a merge is not a target.
+upMergeSource :: SlotName
+upMergeSource = SlotName.MkSlotName (Text.pack "upMergeSource")
+
 -- CR 701.20a / 731.2a: the reserved slot under which a MERGED permanent's
 -- reading of its merge with each side's copy effects left out is stored, where
 -- it differs from `ownCopySource`'s -- what a reveal of the face-down pile
@@ -2003,11 +2010,30 @@ setOwnCopy pc = Map.insert ownCopySource (Binding.empty {Binding.copy = Just pc}
 -- PC.flipped, as a stored copy row does. The turned reading is stamped even
 -- where it equals the current one, so its slot is also the record that the own
 -- values are a merge's (`mergeStampHolds`).
-setMergeCopy :: ProjectedCharacteristics -> ProjectedCharacteristics -> ProjectedCharacteristics -> Map SlotName Binding -> Map SlotName Binding
-setMergeCopy pc turnedPc shownPc =
-  Map.alter (const (if shownPc == pc then Nothing else Just (Binding.empty {Binding.copy = Just shownPc}))) shownMergeSource
+--
+-- CR 708.2 / 731.2e: where a face-down component stays face down under a
+-- face-up topmost one, the current reading takes that component's face-down
+-- characteristics and the reading with every component face up waits under
+-- `upMergeSource` for CR 731.2f's turn (`unstashMergeCopy`); Nothing where the
+-- two agree. The shown reading is stored where it differs from that one.
+setMergeCopy :: ProjectedCharacteristics -> ProjectedCharacteristics -> Maybe ProjectedCharacteristics -> ProjectedCharacteristics -> Map SlotName Binding -> Map SlotName Binding
+setMergeCopy pc turnedPc upPc shownPc =
+  Map.alter (const (if shownPc == Maybe.fromMaybe pc upPc then Nothing else Just (Binding.empty {Binding.copy = Just shownPc}))) shownMergeSource
+    . Map.alter (const (fmap (\up -> Binding.empty {Binding.copy = Just up}) upPc)) upMergeSource
     . Map.insert turnedMergeSource (Binding.empty {Binding.copy = Just turnedPc})
     . setOwnCopy pc
+
+-- CR 731.2f: a merged permanent turns face up or down, so every component
+-- shows one status and the reading with every component face up becomes the
+-- current one. The turned reading takes it too: a pile holding the stash is face
+-- up, so its turn is face down, which CR 731.2j refuses a pile with a
+-- double-faced component, so a pile that turns has no turned reading of its own.
+-- Parun.Engine.Game.withFacing and Parun.Engine.Event.merge's reading of such a
+-- pile with its components turned up are the callers.
+unstashMergeCopy :: Map SlotName Binding -> Map SlotName Binding
+unstashMergeCopy m = case Map.lookup upMergeSource m of
+  Just up -> Map.insert ownCopySource up (Map.insert turnedMergeSource up (Map.delete upMergeSource m))
+  Nothing -> m
 
 -- CR 731.2i: a merged permanent transforms, so each double-faced component turns
 -- over and the turned reading of its merge becomes the current one, its flipped

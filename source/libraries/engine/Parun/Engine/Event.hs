@@ -11701,10 +11701,11 @@ meldable victims gs = do
 --
 -- Each side's record is read at LAYER 1a, before layer 1b's face-down
 -- substitution (Projection.copiableCharacteristicsFaceUp), which is CR 613.2a's
--- own placement of the merge: CR 731.2e gives a component a status and CR 109.3
--- keeps status out of the characteristics, so what a face-down component
--- contributes is its card's characteristics and CR 708.2's substitution then
--- applies to the resulting PERMANENT rather than to any component of it.
+-- own placement of the merge, so a face-down pile turned face up is its
+-- topmost card. The exception is a face-down target the spell goes OVER: it
+-- stays a face-down component (CR 731.2e), and CR 708.2 leaves it only its
+-- face-down characteristics, so that is what it gives the pile until CR
+-- 731.2f turns it up with the rest (Binding.setMergeCopy).
 --
 -- CR 731.2h's flip components are stamped as a SECOND reading of the same merge,
 -- both sides read again through Projection.copiableCharacteristicsFlipped and
@@ -11776,10 +11777,25 @@ merge sid target side = do
             -- normal ones, and every other component's record unchanged. CR
             -- 731.2i's reading beside it, each double-faced component turned
             -- over, with its own flipped reading nested the same way.
-            readings board =
-              ( readingOf (both Projection.copiableCharacteristicsFaceUp) (both Projection.copiableCharacteristicsFlipped) board,
-                readingOf (turning Projection.copiableCharacteristicsFaceUp) (turning Projection.copiableCharacteristicsFlipped) board
-              )
+            readingsWith host board =
+              let hosted (askSpell, askHost) = (askSpell, host askHost)
+               in ( readingOf (hosted (both Projection.copiableCharacteristicsFaceUp)) (hosted (both Projection.copiableCharacteristicsFlipped)) board,
+                    readingOf (hosted (turning Projection.copiableCharacteristicsFaceUp)) (hosted (turning Projection.copiableCharacteristicsFlipped)) board
+                  )
+            -- CR 708.2 / 731.2e: the reading in force. A face-down target the
+            -- spell goes OVER stays face down, so it gives the pile its
+            -- face-down characteristics, read through layer 1b, and with them
+            -- only the abilities the rule that turned it face down lists. A
+            -- face-up target that is itself such a pile gives its own reading
+            -- in force the same way. docs/decisions.md, "What a face-down
+            -- component gives its face-up merged permanent"; data/scenarios/
+            -- mutate's "CR 708.2 a face-down component gives its face-up pile
+            -- none of its card's abilities" proves it.
+            readings = readingsWith (\ask -> if hostStaysDown then Projection.copiableCharacteristics else ask)
+            -- CR 731.2f: the reading once every component is face up, which
+            -- Binding.setMergeCopy keeps where it differs from the one in
+            -- force: the target's own components turned up with it.
+            upReadings = readingsWith (\ask oid board -> ask oid board {GameState.objects = Map.adjust (\o -> o {Object.bindings = Binding.unstashMergeCopy (Object.bindings o)}) oid (GameState.objects board)})
             readingOf up flippedAsk board = withFlip (reading up board) (reading flippedAsk board)
             -- A reading with its flipped one nested, where the two differ; any
             -- nesting a side's own reading carried is that side's, not this
@@ -11788,6 +11804,7 @@ merge sid target side = do
               let plain pc = pc {PC.flipped = Nothing}
                in if plain down == plain up then plain up else (plain up) {PC.flipped = Just (plain down)}
             (resulting, resultingTurned) = readings unrowed
+            resultingUp = fst (upReadings unrowed)
             -- CR 701.20a: the reading a reveal of the face-down pile shows,
             -- each side under no copy effect -- the permanent's stamp left
             -- out, and a merged permanent's own shown reading in place of its
@@ -11796,7 +11813,7 @@ merge sid target side = do
             -- data/scenarios/visibility's "Hauntwoods Shrieker reveals a pile
             -- mutated under a Clone as the Clone" proves it.
             uncopied o = o {Object.bindings = Binding.withoutCopyEffect (Object.bindings o)}
-            shown = fst (readings unrowed {GameState.objects = Map.adjust uncopied target (GameState.objects unrowed)})
+            shown = fst (upReadings unrowed {GameState.objects = Map.adjust uncopied target (GameState.objects unrowed)})
             -- CR 613.7 / 611.2a: a stored copy row covering the permanent is
             -- earlier than the merge, so while it lasts the merge applies OVER
             -- it, and once it ends over the stamp above. Each row keeps its own
@@ -11825,6 +11842,8 @@ merge sid target side = do
                     CopyCoverage.Attachment _ -> CopyCoverage.Attachment target,
                   ActiveCopy.timestamp = Game.copyRowTimestamp gs row
                 }
+            -- Not implemented: the row keeping the reading with every component
+            -- face up for CR 731.2f's turn, as Binding.setMergeCopy does (#8969).
             rewoven row =
               let (snapshot, turned) = readings (unrowed {GameState.stored = (GameState.stored unrowed) {StoredEffects.copyEffects = alone row : StoredEffects.copyEffects (GameState.stored unrowed)}})
                in (alone row) {ActiveCopy.snapshot = snapshot, ActiveCopy.turned = if turned == snapshot then Nothing else Just turned}
@@ -11844,7 +11863,7 @@ merge sid target side = do
                                 { Object.source = Source.OfMerge merged,
                                   Object.face = Nothing,
                                   Object.facing = facing,
-                                  Object.bindings = Binding.setMergeCopy resulting resultingTurned shown (Object.bindings o),
+                                  Object.bindings = Binding.setMergeCopy resulting resultingTurned (if resultingUp == resulting then Nothing else Just resultingUp) shown (Object.bindings o),
                                   Object.stickers = Object.stickers o <> joining
                                 }
                           )
