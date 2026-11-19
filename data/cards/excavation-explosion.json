@@ -1,0 +1,134 @@
+{
+  "faces": [
+    {
+      "manaCost": [
+        {
+          "type": "Generic",
+          "value": 2
+        },
+        {
+          "type": "OfType",
+          "value": {
+            "type": "Colored",
+            "value": "Red"
+          }
+        }
+      ],
+      "name": "Excavation Explosion",
+      "oracleText": "Excavation Explosion deals 3 damage to any target. Create a tapped Powerstone token. (It's an artifact with \"{T}: Add {C}. This mana can't be spent to cast a nonartifact spell.\")",
+      "spell": {
+        "modes": [
+          {
+            "clauses": [
+              {
+                "effects": [
+                  {
+                    "type": "DealDamage",
+                    "value": {
+                      "parts": [
+                        {
+                          "quantity": {
+                            "type": "Literal",
+                            "value": 3
+                          },
+                          "ref": {
+                            "type": "InSlot",
+                            "value": "target"
+                          }
+                        }
+                      ]
+                    }
+                  },
+                  {
+                    "type": "Create",
+                    "value": {
+                      "card": {
+                        "faces": [
+                          {
+                            "activatedAbilities": [
+                              {
+                                "cost": {
+                                  "components": [
+                                    {
+                                      "type": "TapThis"
+                                    }
+                                  ],
+                                  "mana": []
+                                },
+                                "modal": {
+                                  "modes": [
+                                    {
+                                      "clauses": [
+                                        {
+                                          "effects": [
+                                            {
+                                              "type": "AddMana",
+                                              "value": {
+                                                "production": {
+                                                  "type": "OfType",
+                                                  "value": {
+                                                    "type": "Colorless"
+                                                  }
+                                                },
+                                                "restriction": {
+                                                  "casts": {
+                                                    "type": "Not",
+                                                    "value": {
+                                                      "type": "HasCardType",
+                                                      "value": "Artifact"
+                                                    }
+                                                  },
+                                                  "prohibits": true
+                                                }
+                                              }
+                                            }
+                                          ]
+                                        }
+                                      ]
+                                    }
+                                  ]
+                                }
+                              }
+                            ],
+                            "name": "Powerstone Token",
+                            "typeLine": {
+                              "subtypes": [
+                                "Powerstone"
+                              ],
+                              "types": [
+                                "Artifact"
+                              ]
+                            }
+                          }
+                        ]
+                      },
+                      "quantity": {
+                        "type": "Literal",
+                        "value": 1
+                      },
+                      "riders": {
+                        "tapped": "Tapped"
+                      }
+                    }
+                  }
+                ]
+              }
+            ],
+            "targetSlots": {
+              "target": {
+                "pool": {
+                  "type": "AnyTarget"
+                }
+              }
+            }
+          }
+        ]
+      },
+      "typeLine": {
+        "types": [
+          "Sorcery"
+        ]
+      }
+    }
+  ]
+}

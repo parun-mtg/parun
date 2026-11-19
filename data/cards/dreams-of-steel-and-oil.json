@@ -1,0 +1,120 @@
+{
+  "faces": [
+    {
+      "manaCost": [
+        {
+          "type": "OfType",
+          "value": {
+            "type": "Colored",
+            "value": "Black"
+          }
+        }
+      ],
+      "name": "Dreams of Steel and Oil",
+      "oracleText": "Target opponent reveals their hand. You choose an artifact or creature card from it, then choose an artifact or creature card from their graveyard. Exile the chosen cards.",
+      "spell": {
+        "modes": [
+          {
+            "clauses": [
+              {
+                "effects": [
+                  {
+                    "type": "Reveal",
+                    "value": {
+                      "ref": {
+                        "type": "EachCardInHand",
+                        "value": {
+                          "hands": {
+                            "type": "InSlot",
+                            "value": "opponent"
+                          }
+                        }
+                      },
+                      "slot": "revealed"
+                    }
+                  }
+                ]
+              },
+              {
+                "effects": [
+                  {
+                    "type": "MoveToZone",
+                    "value": {
+                      "ref": {
+                        "type": "ChosenCardFromAmong",
+                        "value": {
+                          "filter": {
+                            "type": "Or",
+                            "value": [
+                              {
+                                "type": "HasCardType",
+                                "value": "Artifact"
+                              },
+                              {
+                                "type": "HasCardType",
+                                "value": "Creature"
+                              }
+                            ]
+                          },
+                          "slot": "revealed"
+                        }
+                      },
+                      "zone": "Exile"
+                    }
+                  },
+                  {
+                    "type": "MoveToZone",
+                    "value": {
+                      "ref": {
+                        "type": "ChosenCardInGraveyard",
+                        "value": {
+                          "chooser": {
+                            "type": "TheController"
+                          },
+                          "filter": {
+                            "type": "Or",
+                            "value": [
+                              {
+                                "type": "HasCardType",
+                                "value": "Artifact"
+                              },
+                              {
+                                "type": "HasCardType",
+                                "value": "Creature"
+                              }
+                            ]
+                          },
+                          "players": {
+                            "type": "InSlot",
+                            "value": "opponent"
+                          }
+                        }
+                      },
+                      "zone": "Exile"
+                    }
+                  }
+                ]
+              }
+            ],
+            "targetSlots": {
+              "opponent": {
+                "filter": {
+                  "type": "IsPlayer",
+                  "value": "Opponent"
+                },
+                "pool": {
+                  "type": "Players"
+                }
+              }
+            }
+          }
+        ]
+      },
+      "typeLine": {
+        "types": [
+          "Sorcery"
+        ]
+      }
+    }
+  ]
+}

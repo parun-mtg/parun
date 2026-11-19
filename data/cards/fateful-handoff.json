@@ -1,0 +1,114 @@
+{
+  "faces": [
+    {
+      "manaCost": [
+        {
+          "type": "Generic",
+          "value": 3
+        },
+        {
+          "type": "OfType",
+          "value": {
+            "type": "Colored",
+            "value": "Black"
+          }
+        }
+      ],
+      "name": "Fateful Handoff",
+      "oracleText": "Draw cards equal to the mana value of target artifact or creature you control. An opponent gains control of that permanent.",
+      "spell": {
+        "modes": [
+          {
+            "clauses": [
+              {
+                "effects": [
+                  {
+                    "type": "Draw",
+                    "value": {
+                      "player": {
+                        "type": "Relative",
+                        "value": "You"
+                      },
+                      "quantity": {
+                        "type": "AgainstSlot",
+                        "value": {
+                          "quantity": {
+                            "type": "Measure",
+                            "value": "ManaValue"
+                          },
+                          "slot": "permanent"
+                        }
+                      }
+                    }
+                  },
+                  {
+                    "type": "ChoosePlayer",
+                    "value": {
+                      "scope": {
+                        "type": "Opponent"
+                      },
+                      "slot": "opponent"
+                    }
+                  },
+                  {
+                    "type": "GainControl",
+                    "value": {
+                      "duration": {
+                        "type": "Indefinite"
+                      },
+                      "ref": {
+                        "type": "InSlot",
+                        "value": "permanent"
+                      },
+                      "to": {
+                        "type": "InSlot",
+                        "value": "opponent"
+                      }
+                    }
+                  }
+                ]
+              }
+            ],
+            "targetSlots": {
+              "permanent": {
+                "filter": {
+                  "type": "And",
+                  "value": [
+                    {
+                      "type": "Or",
+                      "value": [
+                        {
+                          "type": "HasCardType",
+                          "value": "Artifact"
+                        },
+                        {
+                          "type": "HasCardType",
+                          "value": "Creature"
+                        }
+                      ]
+                    },
+                    {
+                      "type": "HeldBy",
+                      "value": {
+                        "holder": "Controller",
+                        "relation": "You"
+                      }
+                    }
+                  ]
+                },
+                "pool": {
+                  "type": "Permanents"
+                }
+              }
+            }
+          }
+        ]
+      },
+      "typeLine": {
+        "types": [
+          "Sorcery"
+        ]
+      }
+    }
+  ]
+}

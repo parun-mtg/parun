@@ -1,0 +1,110 @@
+{
+  "faces": [
+    {
+      "manaCost": [
+        {
+          "type": "Generic",
+          "value": 2
+        },
+        {
+          "type": "OfType",
+          "value": {
+            "type": "Colored",
+            "value": "Green"
+          }
+        }
+      ],
+      "name": "Fog of War",
+      "oracleText": "You gain 1 life for each creature on the battlefield. Prevent all combat damage that would be dealt this turn by creatures with power 3 or less.",
+      "spell": {
+        "modes": [
+          {
+            "clauses": [
+              {
+                "effects": [
+                  {
+                    "type": "GainLife",
+                    "value": {
+                      "player": {
+                        "type": "Relative",
+                        "value": "You"
+                      },
+                      "quantity": {
+                        "type": "Count",
+                        "value": {
+                          "aggregation": {
+                            "type": "Members"
+                          },
+                          "filter": {
+                            "type": "HasCardType",
+                            "value": "Creature"
+                          },
+                          "scope": {
+                            "type": "InZone",
+                            "value": {
+                              "player": {
+                                "type": "Relative",
+                                "value": "AnyPlayer"
+                              },
+                              "zone": "Battlefield"
+                            }
+                          }
+                        }
+                      }
+                    }
+                  },
+                  {
+                    "type": "Replace",
+                    "value": {
+                      "duration": {
+                        "type": "UntilEndOfTurn"
+                      },
+                      "effect": {
+                        "type": "DamageR",
+                        "value": {
+                          "matching": {
+                            "whatSource": {
+                              "type": "And",
+                              "value": [
+                                {
+                                  "type": "HasCardType",
+                                  "value": "Creature"
+                                },
+                                {
+                                  "type": "Measures",
+                                  "value": {
+                                    "comparison": "AtMost",
+                                    "measure": "Power",
+                                    "operand": {
+                                      "type": "Literal",
+                                      "value": 3
+                                    }
+                                  }
+                                }
+                              ]
+                            },
+                            "whichKind": "Combat"
+                          },
+                          "rewrite": {
+                            "type": "PreventAll"
+                          }
+                        }
+                      },
+                      "origin": "Other",
+                      "uses": "Unlimited"
+                    }
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "typeLine": {
+        "types": [
+          "Instant"
+        ]
+      }
+    }
+  ]
+}
