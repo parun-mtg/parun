@@ -94,6 +94,7 @@ import qualified Parun.Types.GameSettings as GameSettings
 import qualified Parun.Types.GameState as GameState
 import qualified Parun.Types.Generator as Generator
 import qualified Parun.Types.GraveyardArrangement as GraveyardArrangement
+import qualified Parun.Types.GuessAnswer as GuessAnswer
 import qualified Parun.Types.HandActionIndex as HandActionIndex
 import qualified Parun.Types.Hotseat as Hotseat
 import qualified Parun.Types.Hybrid as Hybrid
@@ -118,7 +119,9 @@ import qualified Parun.Types.Object as Object
 import qualified Parun.Types.ObjectId as ObjectId
 import qualified Parun.Types.OptionalDecision as OptionalDecision
 import qualified Parun.Types.OutsideCard as OutsideCard
+import qualified Parun.Types.PayOffer as PayOffer
 import qualified Parun.Types.PayerAnswer as PayerAnswer
+import qualified Parun.Types.PaymentDecision as PaymentDecision
 import qualified Parun.Types.Phase as Phase
 import qualified Parun.Types.Pile as Pile
 import qualified Parun.Types.PileDraw as PileDraw
@@ -147,6 +150,7 @@ import qualified Parun.Types.StoredResult as StoredResult
 import qualified Parun.Types.TapState as TapState
 import qualified Parun.Types.TargetCount as TargetCount
 import qualified Parun.Types.Terminal as Terminal
+import qualified Parun.Types.TextWord as TextWord
 import qualified Parun.Types.TimeTravelChoice as TimeTravelChoice
 import qualified Parun.Types.Timestamp as Timestamp
 import qualified Parun.Types.TriggerEntry as TriggerEntry
@@ -154,6 +158,7 @@ import qualified Parun.Types.TriggerSource as TriggerSource
 import qualified Parun.Types.TurnRegisters as TurnRegisters
 import qualified Parun.Types.TurnUpProcedure as TurnUpProcedure
 import qualified Parun.Types.Undoing as Undoing
+import qualified Parun.Types.WordFamily as WordFamily
 import qualified Parun.Types.Zone as Zone
 import qualified Parun.Types.ZoneChange as ZoneChange
 import qualified Text.Read as Read
@@ -515,6 +520,52 @@ spec s registry = Spec.describe s "Client" $ do
         (pickedArming, shownArming) = asking Hotseat.fresh {Hotseat.facing = Just S.alice} ["2"] gs (Prompt.ChooseCost (Decider.MkDecider S.alice) S.alice oid [CandidateCost.plain Nothing cost, arming] Seq.empty)
     Spec.assertEqWith s "CR 603.7g shown" (take 2 (drop 1 (dropWhile (/= Text.pack "Choose how to pay for Forest:") shownArming))) (fmap Text.pack ["  1. {2}", "  2. {2} (sacrifice it)"])
     Spec.assertEqWith s "the second creates it" pickedArming (Right arming)
+
+  Spec.it s "CR 118.12 / 101.4b a cost to pay is a numbered yes or no, after what earlier payers answered" $ do
+    forest <- S.printingOf s registry "Forest"
+    let (oid, gs) = S.addPermanent forest S.alice (Setup.emptyGame S.bothPlayers)
+        cost = Cost.MkCost (Just (ManaCost.MkManaCost [ManaSymbol.Generic 2])) []
+        paying = Prompt.ChooseToPay (Decider.MkDecider S.bob) S.bob oid PayOffer.InsteadOfDraw cost (Seq.singleton (S.alice, PayerAnswer.Declined))
+        facing = Hotseat.fresh {Hotseat.facing = Just S.bob}
+        (declined, shown) = asking facing ["2"] gs paying
+    Spec.assertEqWith s "shown" (dropWhile (/= Text.pack "Player 1 declined.") shown) (fmap Text.pack ["Player 1 declined.", "Forest: pay {2}?", "  1. Pay", "  2. Don't pay", "> 2"])
+    Spec.assertEqWith s "the second declines" declined (Right PaymentDecision.Declines)
+    Spec.assertEqWith s "the first pays" (fst (asking facing ["1"] gs paying)) (Right PaymentDecision.Pays)
+
+  Spec.it s "CR 608.2c a guess is a numbered yes or no" $ do
+    forest <- S.printingOf s registry "Forest"
+    let (oid, gs) = S.addPermanent forest S.alice (Setup.emptyGame S.bothPlayers)
+        guessing = Prompt.ChooseGuess (Decider.MkDecider S.bob) S.bob oid Filter.Type.IsSource
+        facing = Hotseat.fresh {Hotseat.facing = Just S.bob}
+        (holds, shown) = asking facing ["1"] gs guessing
+    Spec.assertEqWith s "shown" (dropWhile (not . Text.isInfixOf (Text.pack ": guess")) shown) (fmap Text.pack ["Forest: guess whether the hidden card is as its text says.", "  1. It is", "  2. It isn't", "> 1"])
+    Spec.assertEqWith s "the first holds" holds (Right GuessAnswer.Holds)
+    Spec.assertEqWith s "the second does not" (fst (asking facing ["2"] gs guessing)) (Right GuessAnswer.DoesNotHold)
+
+  Spec.it s "CR 612.2 a word swap is two of the offer's words, by number or as printed, the new one allowed" $ do
+    forest <- S.printingOf s registry "Forest"
+    let (oid, gs) = S.addPermanent forest S.alice (Setup.emptyGame S.bothPlayers)
+        swapping = Prompt.ChooseWordSwap (Decider.MkDecider S.alice) S.alice oid (SlotName.MkSlotName (Text.pack "target"))
+        colors = swapping (Set.singleton WordFamily.Color) (Set.singleton (TextWord.ColorWord Color.Blue))
+        facing = Hotseat.fresh {Hotseat.facing = Just S.alice}
+        (picked, shown) = asking facing ["1 2", "1 1", "white black"] gs colors
+    Spec.assertEqWith s "the list marks the forbidden word" (take 3 (drop 1 (dropWhile (not . Text.isPrefixOf (Text.pack "Choose the words")) shown))) (fmap Text.pack ["  1. white", "  2. blue (can't be the new word)", "  3. black"])
+    Spec.assertEqWith s "a forbidden new word and the same word twice are refused, then words as printed read" picked (Right (TextWord.ColorWord Color.White, TextWord.ColorWord Color.Black))
+    Spec.assertEqWith s "refused twice" (length (filter (Text.isPrefixOf (Text.pack "Type two different numbers")) shown)) 2
+    Spec.assertEqWith s "by number" (fst (asking facing ["2 1"] gs colors)) (Right (TextWord.ColorWord Color.Blue, TextWord.ColorWord Color.White))
+    Spec.assertEqWith s "two families' words are refused" (Either.isLeft (fst (asking facing ["1 6"] gs (swapping (Set.fromList [WordFamily.Color, WordFamily.BasicLandType]) Set.empty)))) True
+
+  Spec.it s "CR 700.3 creatures are divided into piles by a pile number each" $ do
+    bears <- S.printingOf s registry "Grizzly Bears"
+    let (a, g1) = S.addPermanent bears S.bob (Setup.emptyGame S.bothPlayers)
+        (b, g2) = S.addPermanent bears S.bob g1
+        (c, gs) = S.addPermanent bears S.bob g2
+        dividing = Prompt.DividePiles (Decider.MkDecider S.bob) S.bob [a, b, c] 2
+        facing = Hotseat.fresh {Hotseat.facing = Just S.bob}
+        (piles, shown) = asking facing ["1 3 1", "1 2", "2 1 2"] gs dividing
+    Spec.assertEqWith s "a pile past the count and too few numbers are refused, then one pile each" piles (Right [Set.singleton b, Set.fromList [a, c]])
+    Spec.assertEqWith s "refused twice" (length (filter (Text.isPrefixOf (Text.pack "Type 3 pile numbers")) shown)) 2
+    Spec.assertEqWith s "a pile may be empty" (fst (asking facing ["2 2 2"] gs dividing)) (Right [Set.empty, Set.fromList [a, b, c]])
 
   Spec.it s "a priority offering only passing and mana abilities is passed without asking for the seat the screen faces" $ do
     (forest, gs) <- withForest s registry
