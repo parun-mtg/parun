@@ -15,10 +15,12 @@ codec =
         _ -> Nothing,
       Arm.payload "Defined" CharacteristicPT.codec CopyPowerToughness.Defined $ \x -> case x of
         CopyPowerToughness.Defined y -> Just y
-        _ -> Nothing
+        _ -> Nothing,
+      Arm.nullary "Own" CopyPowerToughness.Own
     ]
 
 tagOf :: CopyPowerToughness.CopyPowerToughness -> String
 tagOf x = case x of
   CopyPowerToughness.Numbers {} -> "Numbers"
   CopyPowerToughness.Defined {} -> "Defined"
+  CopyPowerToughness.Own -> "Own"

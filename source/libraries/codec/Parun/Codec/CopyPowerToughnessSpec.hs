@@ -22,4 +22,10 @@ spec s = Spec.describe s "Parun.Codec.CopyPowerToughness" $ do
       CopyPowerToughness.codec
       (CopyPowerToughness.Defined (CharacteristicPT.MkCharacteristicPT {CharacteristicPT.power = Quantity.Literal 1, CharacteristicPT.toughness = Quantity.Literal 2}))
       " {\"type\":\"Defined\",\"value\":{\"power\":{\"type\":\"Literal\",\"value\":1},\"toughness\":{\"type\":\"Literal\",\"value\":2}}} "
+  Spec.it s "Own round-trips" $
+    Common.assertCodec
+      s
+      CopyPowerToughness.codec
+      CopyPowerToughness.Own
+      " {\"type\":\"Own\"} "
   Spec.it s "has a schema" $ Common.assertHasSchema s CopyPowerToughness.codec
