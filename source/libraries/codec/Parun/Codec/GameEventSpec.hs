@@ -93,6 +93,8 @@ import qualified Parun.Types.PlanarDieFace as PlanarDieFace
 import qualified Parun.Types.PlanarDieRolled as PlanarDieRolled
 import qualified Parun.Types.PlayerActed as PlayerActed
 import qualified Parun.Types.PlayerAction as PlayerAction
+import qualified Parun.Types.PlayerCounterKind as PlayerCounterKind
+import qualified Parun.Types.PlayerCountersPlaced as PlayerCountersPlaced
 import qualified Parun.Types.PlayerId as PlayerId
 import qualified Parun.Types.Recipient as Recipient
 import qualified Parun.Types.RevealCause as RevealCause
@@ -365,6 +367,12 @@ spec s = Spec.describe s "Parun.Codec.GameEvent" $ do
           <> ProjectedCharacteristicsSpec.testCharacteristicsJson
           <> ",\"controller\":0,\"owner\":0,\"zone\":\"Battlefield\"}}} "
       )
+  Spec.it s "PlayerCountersPut" $
+    Common.assertCodec
+      s
+      GameEvent.codec
+      (GameEvent.PlayerCountersPut (PlayerCountersPlaced.MkPlayerCountersPlaced (PlayerId.MkPlayerId 1) (PlayerId.MkPlayerId 2) PlayerCounterKind.Poison 0 3))
+      " {\"type\":\"PlayerCountersPut\",\"value\":{\"putter\":1,\"player\":2,\"kind\":\"Poison\",\"before\":0,\"after\":3}} "
   -- CR 310.12b's record, and the pair runs the other way: before > after.
   Spec.it s "CountersRemoved" $
     Common.assertCodec

@@ -141,6 +141,7 @@ import qualified Parun.Types.PermanentIsDealtDamage as PermanentIsDealtDamage
 import qualified Parun.Types.PermanentWasSacrificed as PermanentWasSacrificed
 import qualified Parun.Types.PlanarDieRolled as PlanarDieRolled
 import qualified Parun.Types.PlayerActed as PlayerActed
+import qualified Parun.Types.PlayerCountersPlaced as PlayerCountersPlaced
 import Parun.Types.PlayerId (PlayerId)
 import qualified Parun.Types.ProjectedCharacteristics as PC
 import qualified Parun.Types.Prompt as Prompt
@@ -677,6 +678,7 @@ movedOf event = case event of
   GameEvent.LifeLost {} -> Nothing
   GameEvent.LifeGained {} -> Nothing
   GameEvent.CountersPut {} -> Nothing
+  GameEvent.PlayerCountersPut {} -> Nothing
   GameEvent.CountersRemoved {} -> Nothing
   GameEvent.ControlChanged {} -> Nothing
   GameEvent.VentureMarkerEntered {} -> Nothing
@@ -827,6 +829,7 @@ participants event =
         GameEvent.LifeGained c -> player (LifeChange.player c)
         GameEvent.AbilityActivated a -> (Maybe.maybeToList (AbilityWasActivated.ability a) <> [AbilityWasActivated.source a], [AbilityWasActivated.player a])
         GameEvent.CountersPut c -> one (CountersPlaced.object c)
+        GameEvent.PlayerCountersPut c -> player (PlayerCountersPlaced.player c)
         GameEvent.CountersRemoved c -> one (CounterChange.object c)
         GameEvent.HalfUnlocked h -> ([HalfUnlocked.object h], [HalfUnlocked.actor h])
         GameEvent.TurnedFaceUp t -> one (TurnedFaceUp.object t)
@@ -1676,6 +1679,7 @@ eventTriggersGiven scope standing events gs =
         GameEvent.LifeLost {} -> Map.empty
         GameEvent.LifeGained {} -> Map.empty
         GameEvent.CountersPut {} -> Map.empty
+        GameEvent.PlayerCountersPut {} -> Map.empty
         GameEvent.CountersRemoved {} -> Map.empty
         GameEvent.ControlChanged {} -> Map.empty
         GameEvent.VentureMarkerEntered {} -> Map.empty
@@ -1988,6 +1992,7 @@ eventTriggersGiven scope standing events gs =
         GameEvent.LifeLost {} -> Map.empty
         GameEvent.LifeGained {} -> Map.empty
         GameEvent.CountersPut {} -> Map.empty
+        GameEvent.PlayerCountersPut {} -> Map.empty
         GameEvent.CountersRemoved {} -> Map.empty
         GameEvent.ControlChanged {} -> Map.empty
         GameEvent.VentureMarkerEntered {} -> Map.empty
@@ -2218,6 +2223,7 @@ eventTriggersGiven scope standing events gs =
         GameEvent.LifeLost {} -> Map.empty
         GameEvent.LifeGained {} -> Map.empty
         GameEvent.CountersPut {} -> Map.empty
+        GameEvent.PlayerCountersPut {} -> Map.empty
         GameEvent.CountersRemoved {} -> Map.empty
         GameEvent.ControlChanged {} -> Map.empty
         GameEvent.VentureMarkerEntered {} -> Map.empty
@@ -2339,6 +2345,7 @@ eventTriggersGiven scope standing events gs =
         GameEvent.LifeLost {} -> Map.empty
         GameEvent.LifeGained {} -> Map.empty
         GameEvent.CountersPut {} -> Map.empty
+        GameEvent.PlayerCountersPut {} -> Map.empty
         GameEvent.CountersRemoved {} -> Map.empty
         GameEvent.ControlChanged {} -> Map.empty
         GameEvent.VentureMarkerEntered {} -> Map.empty
@@ -4135,6 +4142,7 @@ resnapshot gs without event =
         -- object, which a re-read would answer Nothing for.
         GameEvent.CountersPut {} -> Just event
         GameEvent.CountersRemoved {} -> Just event
+        GameEvent.PlayerCountersPut {} -> Just event
         GameEvent.HalfUnlocked {} -> Just event
         GameEvent.TurnedFaceUp {} -> Just event
         -- An explore's reveal, re-read as GameEvent.Revealed's is.

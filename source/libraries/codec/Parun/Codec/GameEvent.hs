@@ -57,6 +57,7 @@ import qualified Parun.Codec.PermanentActed as PermanentActed
 import qualified Parun.Codec.PermanentWasSacrificed as PermanentWasSacrificed
 import qualified Parun.Codec.PlanarDieRolled as PlanarDieRolled
 import qualified Parun.Codec.PlayerActed as PlayerActed
+import qualified Parun.Codec.PlayerCountersPlaced as PlayerCountersPlaced
 import qualified Parun.Codec.PlayerId as PlayerId
 import qualified Parun.Codec.Revealed as Revealed
 import qualified Parun.Codec.Saddling as Saddling
@@ -119,6 +120,7 @@ codec =
       Arm.payload "LifeGained" LifeChange.codec GameEvent.LifeGained (\x -> case x of GameEvent.LifeGained y -> Just y; _ -> Nothing),
       Arm.payload "AbilityActivated" AbilityWasActivated.codec GameEvent.AbilityActivated (\x -> case x of GameEvent.AbilityActivated y -> Just y; _ -> Nothing),
       Arm.payload "CountersPut" CountersPlaced.codec GameEvent.CountersPut (\x -> case x of GameEvent.CountersPut y -> Just y; _ -> Nothing),
+      Arm.payload "PlayerCountersPut" PlayerCountersPlaced.codec GameEvent.PlayerCountersPut (\x -> case x of GameEvent.PlayerCountersPut y -> Just y; _ -> Nothing),
       Arm.payload "CountersRemoved" CounterChange.codec GameEvent.CountersRemoved (\x -> case x of GameEvent.CountersRemoved y -> Just y; _ -> Nothing),
       Arm.payload "HalfUnlocked" HalfUnlocked.codec GameEvent.HalfUnlocked (\x -> case x of GameEvent.HalfUnlocked y -> Just y; _ -> Nothing),
       Arm.payload "TurnedFaceUp" TurnedFaceUp.codec GameEvent.TurnedFaceUp (\x -> case x of GameEvent.TurnedFaceUp y -> Just y; _ -> Nothing),
@@ -205,6 +207,7 @@ tagOf x = case x of
   GameEvent.LifeGained {} -> "LifeGained"
   GameEvent.AbilityActivated {} -> "AbilityActivated"
   GameEvent.CountersPut {} -> "CountersPut"
+  GameEvent.PlayerCountersPut {} -> "PlayerCountersPut"
   GameEvent.CountersRemoved {} -> "CountersRemoved"
   GameEvent.HalfUnlocked {} -> "HalfUnlocked"
   GameEvent.TurnedFaceUp {} -> "TurnedFaceUp"

@@ -102,6 +102,7 @@ witnessed pid logged = case LoggedEvent.event logged of
   GameEvent.LifeGained {} -> Visibility.Visible
   GameEvent.AbilityActivated {} -> Visibility.Visible
   GameEvent.CountersPut {} -> Visibility.Visible
+  GameEvent.PlayerCountersPut {} -> Visibility.Visible
   GameEvent.CountersRemoved {} -> Visibility.Visible
   GameEvent.HalfUnlocked {} -> Visibility.Visible
   GameEvent.TurnedFaceUp {} -> Visibility.Visible

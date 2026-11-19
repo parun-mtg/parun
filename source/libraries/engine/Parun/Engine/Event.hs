@@ -277,6 +277,7 @@ import qualified Parun.Types.PlayerActed as PlayerActed
 import qualified Parun.Types.PlayerAction as PlayerAction
 import qualified Parun.Types.PlayerChoice as PlayerChoice
 import qualified Parun.Types.PlayerCounterKind as PlayerCounterKind
+import qualified Parun.Types.PlayerCountersPlaced as PlayerCountersPlaced
 import qualified Parun.Types.PlayerEffect as PlayerEffect.Type
 import Parun.Types.PlayerId (PlayerId)
 import qualified Parun.Types.PlayerInstruction as PlayerInstruction
@@ -1371,6 +1372,7 @@ damageOf event = case event of
   GameEvent.LifeLost {} -> Nothing
   GameEvent.LifeGained {} -> Nothing
   GameEvent.CountersPut {} -> Nothing
+  GameEvent.PlayerCountersPut {} -> Nothing
   GameEvent.CountersRemoved {} -> Nothing
   GameEvent.ControlChanged {} -> Nothing
   GameEvent.VentureMarkerEntered {} -> Nothing
@@ -1454,6 +1456,7 @@ revealOf event = case event of
   GameEvent.LifeLost {} -> Nothing
   GameEvent.LifeGained {} -> Nothing
   GameEvent.CountersPut {} -> Nothing
+  GameEvent.PlayerCountersPut {} -> Nothing
   GameEvent.CountersRemoved {} -> Nothing
   GameEvent.ControlChanged {} -> Nothing
   GameEvent.VentureMarkerEntered {} -> Nothing
@@ -7459,11 +7462,8 @@ resolveCounters cause oid kind n = do
 -- putCounters already has, and dropping it would make the two funnels disagree
 -- about their own event.
 --
--- No GameEvent is recorded, where putCounters records CR 122.6's CountersPut: that
--- event carries an ObjectId, and no trigger condition in
--- Parun.Types.TriggerCondition watches a player's counters -- so an event minted
--- here would have no reader. The card that gives it one brings the condition and
--- the event together; this is where it is recorded.
+-- Records GameEvent.PlayerCountersPut, putCounters' CountersPut for a player,
+-- which a counter trigger whose holder admits players reads (All Will Be One).
 putPlayerCounters :: CounterCause.CounterCause -> PlayerId -> PlayerCounterKind.PlayerCounterKind -> Natural -> Game Natural
 putPlayerCounters cause pid kind n = do
   -- CR 101.2 with CR 122.1: a player an effect in force says can't get counters
@@ -7483,9 +7483,14 @@ putPlayerCounters cause pid kind n = do
           --
           -- CR 810.10: the counters happen to the player and land on their
           -- team's shared count, which every sharer holds (Game.counterSharers).
+          --
+          -- One event, for the player the placement named: the sharers' count is
+          -- one count (CR 810.10), so "before" is the target's.
           State.modify' $ \gs ->
             let bump p = p {Player.counters = Map.insertWith (+) settledKind settledCount (Player.counters p)}
-             in gs {GameState.players = List.foldl' (flip (Map.adjust bump)) (GameState.players gs) (Game.counterSharers settledKind target gs)}
+                before = maybe 0 (Map.findWithDefault 0 settledKind . Player.counters) (Map.lookup target (GameState.players gs))
+                placed = PlayerCountersPlaced.MkPlayerCountersPlaced (CounterCause.putter cause) target settledKind before (before + settledCount)
+             in recordEvent (GameEvent.PlayerCountersPut placed) gs {GameState.players = List.foldl' (flip (Map.adjust bump)) (GameState.players gs) (Game.counterSharers settledKind target gs)}
           pure settledCount
 
 -- CR 101.2 / 514.2: `pid` can't get counters of `kind` until cleanup, a
@@ -13520,6 +13525,7 @@ abilityTriggeredOf event = case event of
   GameEvent.LifeLost {} -> Nothing
   GameEvent.LifeGained {} -> Nothing
   GameEvent.CountersPut {} -> Nothing
+  GameEvent.PlayerCountersPut {} -> Nothing
   GameEvent.CountersRemoved {} -> Nothing
   GameEvent.ControlChanged {} -> Nothing
   GameEvent.VentureMarkerEntered {} -> Nothing

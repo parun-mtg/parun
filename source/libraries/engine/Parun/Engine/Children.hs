@@ -1714,7 +1714,7 @@ triggerConditionChildren c condition = case condition of
           <*> pure motion
           <*> ( case holder of
                   CounterHolder.Self -> pure holder
-                  CounterHolder.Permanent filter_ -> fmap CounterHolder.Permanent (triggerFilter c filter_)
+                  CounterHolder.Permanent filter_ players -> fmap (`CounterHolder.Permanent` players) (triggerFilter c filter_)
               )
           <*> pure threshold
           <*> pure grouping

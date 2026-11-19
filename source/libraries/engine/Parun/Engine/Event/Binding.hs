@@ -58,6 +58,7 @@ import qualified Parun.Types.Combat as Combat
 import qualified Parun.Types.CounterChange as CounterChange
 import qualified Parun.Types.CounterGrouping as CounterGrouping
 import qualified Parun.Types.CounterHolder as CounterHolder
+import qualified Parun.Types.CounterMotion as CounterMotion
 import qualified Parun.Types.CounterTrigger as CounterTrigger
 import qualified Parun.Types.CountersPlaced as CountersPlaced
 import qualified Parun.Types.CrewRole as CrewRole
@@ -102,6 +103,7 @@ import qualified Parun.Types.PermanentWasSacrificed as PermanentWasSacrificed
 import qualified Parun.Types.PermanentsDealDamageToPlayer as PermanentsDealDamageToPlayer
 import qualified Parun.Types.PlayerActed as PlayerActed
 import qualified Parun.Types.PlayerAction as PlayerAction
+import qualified Parun.Types.PlayerCountersPlaced as PlayerCountersPlaced
 import Parun.Types.PlayerId (PlayerId)
 import qualified Parun.Types.PlayerIsDealtDamage as PlayerIsDealtDamage
 import qualified Parun.Types.PlayerRelation as PlayerRelation
@@ -133,6 +135,7 @@ import qualified Parun.Types.TurnedFaceUp as TurnedFaceUp
 import qualified Parun.Types.TurnedFaceUpTrigger as TurnedFaceUpTrigger
 import qualified Parun.Types.TurnedUpOffDeck as TurnedUpOffDeck
 import qualified Parun.Types.WatchedAbility as WatchedAbility
+import qualified Parun.Types.WhichCounters as WhichCounters
 import qualified Parun.Types.Zone as Zone
 import qualified Parun.Types.ZoneChange as ZoneChange
 
@@ -182,14 +185,24 @@ eventBindings = eventBindingsOver Map.empty
 castX :: GameState -> ObjectId -> Numeric.Natural.Natural
 castX gs spell = Maybe.fromMaybe 0 (Game.lookupObject spell gs >>= Binding.amountOf Binding.variableX . Object.bindings)
 
--- CR 122: the object a counter event names and how many counters moved, on or
--- off. Each record exists only where its count changed (GameEvent.CountersPut,
+-- CR 122: the object or player a counter event names and how many counters
+-- moved, on or off. Each record exists only where its count changed
+-- (GameEvent.CountersPut, GameEvent.PlayerCountersPut,
 -- GameEvent.CountersRemoved), so the saturating difference is never 0.
-countersMovedOn :: GameEvent -> Maybe (ObjectId, Numeric.Natural.Natural)
+countersMovedOn :: GameEvent -> Maybe (Either PlayerId ObjectId, Numeric.Natural.Natural)
 countersMovedOn event = case event of
-  GameEvent.CountersPut placed -> Just (CountersPlaced.object placed, Natural.minusSaturating (CountersPlaced.after placed) (CountersPlaced.before placed))
-  GameEvent.CountersRemoved change -> Just (CounterChange.object change, Natural.minusSaturating (CounterChange.before change) (CounterChange.after change))
+  GameEvent.CountersPut placed -> Just (Right (CountersPlaced.object placed), Natural.minusSaturating (CountersPlaced.after placed) (CountersPlaced.before placed))
+  GameEvent.PlayerCountersPut placed -> Just (Left (PlayerCountersPlaced.player placed), Natural.minusSaturating (PlayerCountersPlaced.after placed) (PlayerCountersPlaced.before placed))
+  GameEvent.CountersRemoved change -> Just (Right (CounterChange.object change), Natural.minusSaturating (CounterChange.before change) (CounterChange.after change))
   _ -> Nothing
+
+-- CR 122.1: whether a counter trigger can match counters put on a player: its
+-- holder admits players, and it watches placements of any kind (no
+-- WhichCounters.OfKind names a player's kind).
+watchesPlayers :: CounterTrigger.CounterTrigger -> Bool
+watchesPlayers counterTrigger = case (CounterTrigger.holder counterTrigger, CounterTrigger.motion counterTrigger, CounterTrigger.kind counterTrigger) of
+  (CounterHolder.Permanent _ (Just _), CounterMotion.Put _, WhichCounters.OfAnyKind) -> True
+  _ -> False
 
 -- `eventBindings` given the event's CR 603.10 sample (Event.Trigger.battlefieldAt),
 -- the board matchesTriggerGiven read the same event against; empty answers
@@ -251,16 +264,19 @@ eventBindingsOver board gs bearerBecame becameInGraveyard bearer you cond event 
   -- every counter event carries its object and both counts. The amount needs one
   -- permanent, the object one permanent the bearer does not name already
   -- (CR 113.7a's source slot does), so a batch stamps neither (CR 603.2c) and a
-  -- Self holder no object.
+  -- Self holder no object. A player holder is stamped under `triggerPlayer`
+  -- instead, the key batchPartition splits players by.
   --
   -- A DEAD ID IS POSSIBLE and is the payload's problem, `became`'s standing
   -- posture: matchesTrigger admits the CR 704.5f victim a -1/-1 counter made
   -- through Projection.viewWithLastKnown.
   (TriggerCondition.CountersChange counterTrigger, _)
-    | Just (oid, amount) <- countersMovedOn event ->
-        let withObject = case (CounterTrigger.holder counterTrigger, CounterTrigger.grouping counterTrigger) of
-              (CounterHolder.Permanent _, CounterGrouping.EachCounter) -> Binding.setBecame oid
-              (CounterHolder.Permanent _, CounterGrouping.EachPermanent) -> Binding.setBecame oid
+    | Just (holder, amount) <- countersMovedOn event ->
+        let withObject = case (CounterTrigger.holder counterTrigger, CounterTrigger.grouping counterTrigger, holder) of
+              (CounterHolder.Permanent {}, CounterGrouping.EachCounter, Right oid) -> Binding.setBecame oid
+              (CounterHolder.Permanent {}, CounterGrouping.EachPermanent, Right oid) -> Binding.setBecame oid
+              (CounterHolder.Permanent {}, CounterGrouping.EachCounter, Left pid) -> Binding.setTriggerPlayer pid
+              (CounterHolder.Permanent {}, CounterGrouping.EachPermanent, Left pid) -> Binding.setTriggerPlayer pid
               _ -> id
             withAmount = case CounterTrigger.grouping counterTrigger of
               CounterGrouping.EachPermanent -> Binding.setEventAmount amount
@@ -992,10 +1008,11 @@ batchPartition cond bindings = case cond of
   -- data/scenarios/tinybones-pocket-nuisance-makes-each-opponent-discard-and-pings-them-once-per-discarding-player.json
   -- proves the split.
   TriggerCondition.Discards _ -> seat Binding.triggerPlayer
-  -- CR 603.2c: a kind-free EachPermanent is one occurrence per permanent, its
-  -- kinds' records joined (batchBindings sums "that many"). A Self holder and
-  -- an EachBatch stamp no `became`, so the split leaves them whole.
-  TriggerCondition.CountersChange _ -> object Binding.became
+  -- CR 603.2c: a kind-free EachPermanent is one occurrence per permanent, and
+  -- per player (All Will Be One's ruling), its kinds' records joined
+  -- (batchBindings sums "that many"). A Self holder and an EachBatch stamp
+  -- neither key, so the split leaves them whole.
+  TriggerCondition.CountersChange _ -> object Binding.became <> seat Binding.triggerPlayer
   -- A wildcard where batchScoped is exhaustive: a batch condition splits only
   -- where an arm above says by what.
   _ -> Seq.empty
@@ -1765,14 +1782,15 @@ eventBindingSlots cond = case cond of
     Batching.EachOccurrence -> Set.fromList [Binding.eventAmount, Binding.triggerPlayer]
     Batching.OneOrMore -> Set.empty
   -- eventBindings' CountersChange arm, field by field: the amount per permanent,
-  -- the object where it is not the bearer and is one permanent. A batch binds
+  -- the object where it is not the bearer and is one permanent, and never where
+  -- the holder admits players, whose events bind a player instead. A batch binds
   -- nothing, a OneOrMore Leaves' answer: Cloaked Cadet, the only printing of that
   -- form (Scryfall o:"counters are put on one or more", 2026-08-25), names none
   -- of the permanents, and a printing whose payload said "it" would refute this.
   TriggerCondition.CountersChange counterTrigger ->
     let object = case (CounterTrigger.holder counterTrigger, CounterTrigger.grouping counterTrigger) of
-          (CounterHolder.Permanent _, CounterGrouping.EachCounter) -> Set.singleton Binding.became
-          (CounterHolder.Permanent _, CounterGrouping.EachPermanent) -> Set.singleton Binding.became
+          (CounterHolder.Permanent {}, CounterGrouping.EachCounter) | not (watchesPlayers counterTrigger) -> Set.singleton Binding.became
+          (CounterHolder.Permanent {}, CounterGrouping.EachPermanent) | not (watchesPlayers counterTrigger) -> Set.singleton Binding.became
           _ -> Set.empty
         amount = case CounterTrigger.grouping counterTrigger of
           CounterGrouping.EachPermanent -> Set.singleton Binding.eventAmount
@@ -2036,6 +2054,11 @@ eventBindingSlotsSometimes cond = case cond of
   -- is the rule's own answer.
   TriggerCondition.PlayerManifestsDread _ -> Set.singleton Binding.became
   TriggerCondition.BecomesTargeted c -> snd (becomesTargetedSlots c)
+  -- The holder a counter trigger watching players too names: the permanent
+  -- under `became`, the player under `triggerPlayer`, whichever got the
+  -- counters (eventBindings' CountersChange arm). All Will Be One reads neither.
+  TriggerCondition.CountersChange counterTrigger
+    | watchesPlayers counterTrigger && CounterTrigger.grouping counterTrigger /= CounterGrouping.EachBatch -> Set.fromList [Binding.became, Binding.triggerPlayer]
   _ -> Set.empty
 
 -- CR 603.2 / 120.1: the slots a DealsDamage trigger's eventBindings arm binds,

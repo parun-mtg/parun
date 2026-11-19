@@ -6,6 +6,7 @@ import qualified Parun.Spec as Spec
 import qualified Parun.Types.CardType as CardType
 import qualified Parun.Types.CounterHolder as CounterHolder
 import qualified Parun.Types.Filter as Filter
+import qualified Parun.Types.PlayerRelation as PlayerRelation
 
 spec :: (Monad m, Monad n) => Spec.Spec m n -> n ()
 spec s = Spec.describe s "Parun.Codec.CounterHolder" $ do
@@ -20,6 +21,13 @@ spec s = Spec.describe s "Parun.Codec.CounterHolder" $ do
     Common.assertCodec
       s
       CounterHolder.codec
-      (CounterHolder.Permanent (Filter.HasCardType CardType.Creature))
+      (CounterHolder.Permanent (Filter.HasCardType CardType.Creature) Nothing)
       " {\"type\":\"Permanent\",\"value\":{\"type\":\"HasCardType\",\"value\":\"Creature\"}} "
+  -- All Will Be One's "a permanent or player".
+  Spec.it s "PermanentOrPlayer" $
+    Common.assertCodec
+      s
+      CounterHolder.codec
+      (CounterHolder.Permanent (Filter.And []) (Just PlayerRelation.AnyPlayer))
+      " {\"type\":\"PermanentOrPlayer\",\"value\":{\"permanent\":{\"type\":\"And\",\"value\":[]},\"player\":\"AnyPlayer\"}} "
   Spec.it s "has a schema" $ Common.assertHasSchema s CounterHolder.codec
