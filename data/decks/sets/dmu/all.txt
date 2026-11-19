@@ -1,0 +1,271 @@
+1 Academy Loremaster
+1 Academy Wall
+1 Adarkar Wastes
+1 Aether Channeler
+1 Aggressive Sabotage
+1 Ajani, Sleeper Agent
+1 Anointed Peacekeeper
+1 Archangel of Wrath
+1 Argivian Cavalier
+1 Argivian Phalanx
+1 Aron, Benalia's Ruin
+1 Artillery Blast
+1 Astor, Bearer of Blades
+1 Automatic Librarian
+1 Baird, Argivian Recruiter
+1 Balduvian Atrocity
+1 Balduvian Berserker
+1 Balmor, Battlemage Captain
+1 Barkweave Crusher
+1 Battle-Rage Blessing
+1 Battlefly Swarm
+1 Battlewing Mystic
+1 Benalish Faithbonder
+1 Benalish Sleeper
+1 Bite Down
+1 Blight Pile
+1 Bog Badger
+1 Bone Splinters
+1 Bortuk Bonerattle
+1 Braids's Frightful Return
+1 Braids, Arisen Nightmare
+1 Briar Hydra
+1 Broken Wings
+1 Captain's Call
+1 Caves of Koilos
+1 Chaotic Transformation
+1 Charismatic Vanguard
+1 Choking Miasma
+1 Citizen's Arrest
+1 Cleaving Skyrider
+1 Clockwork Drawbridge
+1 Coalition Skyknight
+1 Coalition Warbrute
+1 Colossal Growth
+1 Combat Research
+1 Contaminated Aquifer
+1 Coral Colony
+1 Cosmic Epiphany
+1 Crystal Grotto
+1 Cult Conscript
+1 Cut Down
+1 Danitha, Benalia's Hope
+1 Deathbloom Gardener
+1 Defiler of Dreams
+1 Defiler of Faith
+1 Defiler of Flesh
+1 Defiler of Instinct
+1 Defiler of Vigor
+1 Destroy Evil
+1 Djinn of the Fountain
+1 Drag to the Bottom
+1 Dragon Whelp
+1 Eerie Soultender
+1 Elas il-Kor, Sadistic Pilgrim
+1 Electrostatic Infantry
+1 Elfhame Wurm
+1 Elvish Hydromancer
+1 Ertai Resurrected
+1 Ertai's Scorn
+1 Essence Scatter
+1 Evolved Sleeper
+1 Extinguish the Light
+1 Fires of Victory
+1 Floriferous Vinewall
+1 Flowstone Infusion
+1 Flowstone Kavu
+1 Forest
+1 Founding the Third Path
+1 Frostfist Strider
+1 Furious Bellow
+1 Gaea's Might
+1 Garna, Bloodfist of Keld
+1 Geothermal Bog
+1 Ghitu Amplifier
+1 Gibbering Barricade
+1 Goblin Picker
+1 Golden Argosy
+1 Griffin Protector
+1 Guardian of New Benalia
+1 Hammerhand
+1 Haughty Djinn
+1 Haunted Mire
+1 Haunting Figment
+1 Herd Migration
+1 Hero's Heirloom
+1 Heroic Charge
+1 Hexbane Tortoise
+1 Hurler Cyclops
+1 Hurloon Battle Hymn
+1 Idyllic Beachfront
+1 Impede Momentum
+1 Impulse
+1 In Thrall to the Pit
+1 Inscribed Tablet
+1 Island
+1 Ivy, Gleeful Spellthief
+1 Jaya's Firenado
+1 Jaya, Fiery Negotiator
+1 Jhoira, Ageless Innovator
+1 Jodah's Codex
+1 Jodah, the Unifier
+1 Join Forces
+1 Joint Exploration
+1 Juniper Order Rootweaver
+1 Karn's Sylex
+1 Karn, Living Legacy
+1 Karplusan Forest
+1 Keldon Flamesage
+1 Keldon Strike Team
+1 King Darien XLVIII
+1 Knight of Dawn's Light
+1 Knight of Dusk's Shadow
+1 Lagomos, Hand of Hatred
+1 Leaf-Crowned Visionary
+1 Leyline Binding
+1 Lightning Strike
+1 Liliana of the Veil
+1 Linebreaker Baloth
+1 Llanowar Greenwidow
+1 Llanowar Loamspeaker
+1 Llanowar Stalker
+1 Love Song of Night and Day
+1 Magnigoth Sentry
+1 Meria's Outrider
+1 Meria, Scholar of Antiquity
+1 Mesa Cavalier
+1 Meteorite
+1 Micromancer
+1 Molten Monstrosity
+1 Molten Tributary
+1 Monstrous War-Leech
+1 Mossbeard Ancient
+1 Mountain
+1 Nael, Avizoa Aeronaut
+1 Najal, the Storm Runner
+1 Negate
+1 Nemata, Primeval Warden
+1 Nishoba Brawler
+1 Phoenix Chick
+1 Phyrexian Espionage
+1 Phyrexian Missionary
+1 Phyrexian Rager
+1 Phyrexian Vivisector
+1 Phyrexian Warhorse
+1 Pilfer
+1 Pixie Illusionist
+1 Plains
+1 Plaza of Heroes
+1 Prayer of Binding
+1 Protect the Negotiators
+1 Queen Allenal of Ruadach
+1 Quirion Beastcaller
+1 Radha's Firebrand
+1 Radha, Coalition Warlord
+1 Radiant Grove
+1 Raff, Weatherlight Stalwart
+1 Ragefire Hellkite
+1 Ratadrabik of Urborg
+1 Relic of Legends
+1 Resolute Reinforcements
+1 Rith, Liberated Primeval
+1 Rivaz of the Claw
+1 Rona's Vortex
+1 Rona, Sheoldred's Faithful
+1 Rulik Mons, Warren Chief
+1 Rundvelt Hordemaster
+1 Runic Shot
+1 Sacred Peaks
+1 Salvaged Manaworker
+1 Samite Herbalist
+1 Scout the Wilderness
+1 Sengir Connoisseur
+1 Serra Paragon
+1 Serra Redeemer
+1 Shadow Prophecy
+1 Shadow-Rite Priest
+1 Shalai's Acolyte
+1 Shanna, Purifying Blade
+1 Sheoldred's Restoration
+1 Sheoldred, the Apocalypse
+1 Shield-Wall Sentinel
+1 Shivan Devastator
+1 Shivan Reef
+1 Shore Up
+1 Silver Scrutiny
+1 Silverback Elder
+1 Slimefoot's Survey
+1 Smash to Dust
+1 Snarespinner
+1 Soaring Drake
+1 Sol'Kanar the Tainted
+1 Soul of Windgrace
+1 Sphinx of Clear Skies
+1 Splatter Goblin
+1 Sprouting Goblin
+1 Squee, Dubious Monarch
+1 Stall for Time
+1 Stenn, Paranoid Partisan
+1 Strength of the Coalition
+1 Stronghold Arena
+1 Sulfurous Springs
+1 Sunbathing Rootwalla
+1 Sunlit Marsh
+1 Swamp
+1 Tail Swipe
+1 Take Up the Shield
+1 Talas Lookout
+1 Tangled Islet
+1 Tattered Apparition
+1 Tatyova, Steward of Tides
+1 Tear Asunder
+1 Temporal Firestorm
+1 Temporary Lockdown
+1 Territorial Maro
+1 The Cruelty of Gix
+1 The Elder Dragon War
+1 The Phasing of Zhalfir
+1 The Raven Man
+1 The Weatherseed Treaty
+1 The World Spell
+1 Thran Portal
+1 Threats Undetected
+1 Thrill of Possibility
+1 Tidepool Turtle
+1 Timeless Lotus
+1 Timely Interference
+1 Tolarian Geyser
+1 Tolarian Terror
+1 Tori D'Avenant, Fury Rider
+1 Toxic Abomination
+1 Tribute to Urborg
+1 Tura Kennerüd, Skyknight
+1 Twinferno
+1 Tyrannical Pitlord
+1 Urborg Lhurgoyf
+1 Urborg Repossession
+1 Urza Assembles the Titans
+1 Uurg, Spawn of Turg
+1 Valiant Veteran
+1 Vanquisher's Axe
+1 Vesuvan Duplimancy
+1 Viashino Branchrider
+1 Vineshaper Prodigy
+1 Voda Sea Scavenger
+1 Vodalian Hexcatcher
+1 Vodalian Mindsinger
+1 Vohar, Vodalian Desecrator
+1 Volshe Tideturner
+1 Walking Bulwark
+1 Warhost's Frenzy
+1 Weatherlight Compleated
+1 Wingmantle Chaplain
+1 Wooded Ridgeline
+1 Writhing Necromass
+1 Yavimaya Coast
+1 Yavimaya Iconoclast
+1 Yavimaya Sojourner
+1 Yavimaya Steelcrusher
+1 Yotia Declares War
+1 Zar Ojanen, Scion of Efrava
+1 Zur, Eternal Schemer
