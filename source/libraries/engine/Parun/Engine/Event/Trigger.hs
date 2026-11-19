@@ -75,6 +75,7 @@ import qualified Parun.Types.CommittedCrime as CommittedCrime
 import qualified Parun.Types.ContinuousEffect as ContinuousEffect
 import qualified Parun.Types.ControlChanged as ControlChanged
 import qualified Parun.Types.Convoking as Convoking
+import qualified Parun.Types.CountedAct as CountedAct
 import qualified Parun.Types.CounterChange as CounterChange
 import qualified Parun.Types.CounterGrouping as CounterGrouping
 import qualified Parun.Types.CounterTrigger as CounterTrigger
@@ -92,7 +93,6 @@ import qualified Parun.Types.DiscardSubject as DiscardSubject
 import qualified Parun.Types.DiscardTrigger as DiscardTrigger
 import qualified Parun.Types.DiscardWay as DiscardWay
 import qualified Parun.Types.Discarded as Discarded
-import qualified Parun.Types.Discovered as Discovered
 import qualified Parun.Types.Drew as Drew
 import qualified Parun.Types.EntersTrigger as EntersTrigger
 import qualified Parun.Types.EventGroup as EventGroup
@@ -689,7 +689,7 @@ movedOf event = case event of
   GameEvent.ArrivedUnseen _ -> Nothing
   GameEvent.Milled {} -> Nothing
   GameEvent.PlayerActed _ -> Nothing
-  GameEvent.Discovered _ -> Nothing
+  GameEvent.CountedAct _ -> Nothing
   GameEvent.LandPlayed {} -> Nothing
   GameEvent.LostTheGame _ -> Nothing
   GameEvent.ManifestedDread {} -> Nothing
@@ -858,7 +858,7 @@ participants event =
         GameEvent.LeftTheGame l -> one (LeftTheGame.object l)
         GameEvent.ArrivedUnseen oid -> one oid
         GameEvent.PlayerActed acted -> player (PlayerActed.player acted)
-        GameEvent.Discovered discovered -> player (Discovered.player discovered)
+        GameEvent.CountedAct counted -> player (CountedAct.player counted)
         GameEvent.LandPlayed l -> ([LandPlayed.land l], [LandPlayed.player l])
         GameEvent.LostTheGame pid -> player pid
         GameEvent.ManifestedDread d -> (Foldable.toList (ManifestedDread.cards d), [ManifestedDread.player d])
@@ -1610,7 +1610,7 @@ eventTriggersGiven scope standing events gs =
         GameEvent.Milled {} -> Map.empty
         GameEvent.ArrivedUnseen _ -> Map.empty
         GameEvent.PlayerActed _ -> Map.empty
-        GameEvent.Discovered _ -> Map.empty
+        GameEvent.CountedAct _ -> Map.empty
         GameEvent.LandPlayed {} -> Map.empty
         GameEvent.LostTheGame _ -> Map.empty
         GameEvent.ManifestedDread {} -> Map.empty
@@ -2003,7 +2003,7 @@ eventTriggersGiven scope standing events gs =
         GameEvent.ArrivedUnseen _ -> Map.empty
         GameEvent.Milled {} -> Map.empty
         GameEvent.PlayerActed _ -> Map.empty
-        GameEvent.Discovered _ -> Map.empty
+        GameEvent.CountedAct _ -> Map.empty
         GameEvent.LandPlayed {} -> Map.empty
         GameEvent.LostTheGame _ -> Map.empty
         GameEvent.ManifestedDread {} -> Map.empty
@@ -2234,7 +2234,7 @@ eventTriggersGiven scope standing events gs =
         GameEvent.ArrivedUnseen _ -> Map.empty
         GameEvent.Milled {} -> Map.empty
         GameEvent.PlayerActed _ -> Map.empty
-        GameEvent.Discovered _ -> Map.empty
+        GameEvent.CountedAct _ -> Map.empty
         GameEvent.LandPlayed {} -> Map.empty
         GameEvent.LostTheGame _ -> Map.empty
         GameEvent.ManifestedDread {} -> Map.empty
@@ -2356,7 +2356,7 @@ eventTriggersGiven scope standing events gs =
         GameEvent.ArrivedUnseen _ -> Map.empty
         GameEvent.Milled {} -> Map.empty
         GameEvent.PlayerActed _ -> Map.empty
-        GameEvent.Discovered _ -> Map.empty
+        GameEvent.CountedAct _ -> Map.empty
         GameEvent.LandPlayed {} -> Map.empty
         GameEvent.LostTheGame _ -> Map.empty
         GameEvent.ManifestedDread {} -> Map.empty
@@ -4166,7 +4166,7 @@ resnapshot gs without event =
         GameEvent.LeftTheGame {} -> Just event
         GameEvent.ArrivedUnseen {} -> Just event
         GameEvent.PlayerActed {} -> Just event
-        GameEvent.Discovered {} -> Just event
+        GameEvent.CountedAct {} -> Just event
         GameEvent.LandPlayed {} -> Just event
         GameEvent.LostTheGame {} -> Just event
         GameEvent.ManifestedDread {} -> Just event

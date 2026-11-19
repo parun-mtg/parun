@@ -994,7 +994,7 @@ playerRefPositions =
 -- (CR 400.1's per-player zones). Resolve.objectRefPlayerRefs is what owes these.
 objectRefPlayerRefPositions :: [(String, ObjectRef.ObjectRef, [PlayerRef.PlayerRef])]
 objectRefPlayerRefPositions =
-  [ ("top-of-library", ObjectRef.TopOfLibrary (TopOfLibrary.MkTopOfLibrary (plantedPlayer "tl") (Quantity.Type.Literal 1) Nothing), [plantedPlayer "tl"]),
+  [ ("top-of-library", ObjectRef.TopOfLibrary (TopOfLibrary.MkTopOfLibrary (plantedPlayer "tl") (Quantity.Type.Literal 1) Nothing LibraryPosition.Top), [plantedPlayer "tl"]),
     ("top-of-library-until", ObjectRef.TopOfLibraryUntil (TopOfLibraryUntil.MkTopOfLibraryUntil (plantedPlayer "tu") (Filter.Type.And []) (Quantity.Type.Literal 1) (Quantity.Type.Literal 1) Nothing), [plantedPlayer "tu"]),
     ("top-of-graveyard", ObjectRef.TopOfGraveyard (plantedPlayer "tg"), [plantedPlayer "tg"]),
     ("chosen-card-in-hand", ObjectRef.ChosenCardInHand (ChosenCardInHand.MkChosenCardInHand (plantedPlayer "ch") (Filter.Type.And []) HowMany.one), [plantedPlayer "ch"]),
@@ -7017,7 +7017,7 @@ lintSpec s registry corpus = Spec.describe s "Lint" $ do
   -- slotsOf and nothing else, so all three answered a constant for it.
   Spec.it s "CR 107.3 a depth nested in an opcode's ref reaches all three checks" $ do
     let ghost = SlotName.MkSlotName (Text.pack "ghost")
-        destroying q = Effect.Destroy (Destroy.MkDestroy (ObjectRef.TopOfLibrary (TopOfLibrary.MkTopOfLibrary (PlayerRef.Relative PlayerRelation.You) q Nothing)) Regenerability.Regenerable Nothing Nothing Nothing)
+        destroying q = Effect.Destroy (Destroy.MkDestroy (ObjectRef.TopOfLibrary (TopOfLibrary.MkTopOfLibrary (PlayerRef.Relative PlayerRelation.You) q Nothing LibraryPosition.Top)) Regenerability.Regenerable Nothing Nothing Nothing)
         tally = Count.Type.MkCount (Scope.InZone (InZone.MkInZone Zone.Hand (PlayerRef.Relative PlayerRelation.You))) (Filter.Type.And []) Aggregation.Members
     Spec.assertEqWith
       s

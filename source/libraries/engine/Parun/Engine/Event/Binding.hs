@@ -55,6 +55,7 @@ import qualified Parun.Types.CardType as CardType
 import qualified Parun.Types.CausedBy as CausedBy
 import qualified Parun.Types.ChapterMoment as ChapterMoment
 import qualified Parun.Types.Combat as Combat
+import qualified Parun.Types.CountedAct as CountedAct
 import qualified Parun.Types.CounterChange as CounterChange
 import qualified Parun.Types.CounterGrouping as CounterGrouping
 import qualified Parun.Types.CounterHolder as CounterHolder
@@ -72,7 +73,6 @@ import qualified Parun.Types.DeclarationTrigger as DeclarationTrigger
 import qualified Parun.Types.DiscardSubject as DiscardSubject
 import qualified Parun.Types.DiscardTrigger as DiscardTrigger
 import qualified Parun.Types.Discarded as Discarded
-import qualified Parun.Types.Discovered as Discovered
 import qualified Parun.Types.Drew as Drew
 import qualified Parun.Types.EntersTrigger as EntersTrigger
 import qualified Parun.Types.Exploited as Exploited
@@ -102,7 +102,6 @@ import qualified Parun.Types.PermanentIsDealtDamage as PermanentIsDealtDamage
 import qualified Parun.Types.PermanentWasSacrificed as PermanentWasSacrificed
 import qualified Parun.Types.PermanentsDealDamageToPlayer as PermanentsDealDamageToPlayer
 import qualified Parun.Types.PlayerActed as PlayerActed
-import qualified Parun.Types.PlayerAction as PlayerAction
 import qualified Parun.Types.PlayerCountersPlaced as PlayerCountersPlaced
 import Parun.Types.PlayerId (PlayerId)
 import qualified Parun.Types.PlayerIsDealtDamage as PlayerIsDealtDamage
@@ -557,10 +556,10 @@ eventBindingsOver board gs bearerBecame becameInGraveyard bearer you cond event 
   -- searcher. Unconditional given a match.
   (TriggerCondition.PlayerActs _, GameEvent.PlayerActed acted) ->
     Binding.setTriggerPlayer (PlayerActed.player acted) Map.empty
-  -- And CR 701.57b's discover, with its N under the event amount: Curator of
-  -- Sun's Creation's "for the same value".
-  (TriggerCondition.PlayerActs _, GameEvent.Discovered discovered) ->
-    Binding.setTriggerPlayer (Discovered.player discovered) (Binding.setEventAmount (Discovered.value discovered) Map.empty)
+  -- And a counted act, with its count under the event amount: Curator of Sun's
+  -- Creation's "for the same value", The Temporal Anchor's "that many".
+  (TriggerCondition.PlayerActs _, GameEvent.CountedAct counted) ->
+    Binding.setTriggerPlayer (CountedAct.player counted) (Binding.setEventAmount (CountedAct.value counted) Map.empty)
   -- CR 601.2c / 603.2c: becomesTargetedSlots' slots, off the announcement
   -- matched.
   (TriggerCondition.BecomesTargeted c, GameEvent.BecameTarget t) -> becomesTargetedBindings c t
@@ -1602,8 +1601,9 @@ eventBindingSlots cond = case cond of
   -- The acting player, Ob Nixilis, Unshackled's "that player". CR 701.68c's
   -- "blighted creature" and CR 706.2's result are not this condition's to bind:
   -- the INSTRUCTING effect binds each at its own slot (Parun.Types.Blight,
-  -- Parun.Types.RollDie). CR 701.57b's discover binds its N too.
-  TriggerCondition.PlayerActs (PlayerActed.MkPlayerActed PlayerAction.Discover _) -> Set.fromList [Binding.triggerPlayer, Binding.eventAmount]
+  -- Parun.Types.RollDie). A counted act binds its count too: CR 701.57b's
+  -- discover its N, CR 701.22a's scry how many it put on the bottom.
+  TriggerCondition.PlayerActs acted | Set.member (PlayerActed.action acted) Game.countedActions -> Set.fromList [Binding.triggerPlayer, Binding.eventAmount]
   TriggerCondition.PlayerActs _ -> Set.singleton Binding.triggerPlayer
   -- Nothing: Withengar Unbound's payload points at no one -- it grows itself.
   TriggerCondition.PlayerLosesGame _ -> Set.empty

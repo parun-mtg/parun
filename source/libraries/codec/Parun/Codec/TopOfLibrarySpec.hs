@@ -6,6 +6,7 @@ import qualified Parun.Codec.TopOfLibrary as TopOfLibrary
 import qualified Parun.JsonCodec.Codec as Codec
 import qualified Parun.JsonCodec.Common as Common
 import qualified Parun.Spec as Spec
+import qualified Parun.Types.LibraryPosition as LibraryPosition
 import qualified Parun.Types.PlayerRef as PlayerRef
 import qualified Parun.Types.PlayerRelation as PlayerRelation
 import qualified Parun.Types.Quantity as Quantity
@@ -24,7 +25,8 @@ spec s = Spec.describe s "Parun.Codec.TopOfLibrary" $ do
       ( TopOfLibrary.MkTopOfLibrary
           { TopOfLibrary.player = PlayerRef.Relative PlayerRelation.You,
             TopOfLibrary.count = Quantity.Literal 3,
-            TopOfLibrary.deck = Nothing
+            TopOfLibrary.deck = Nothing,
+            TopOfLibrary.end = LibraryPosition.Top
           }
       )
       " {\"player\":{\"type\":\"Relative\",\"value\":\"You\"},\"count\":{\"type\":\"Literal\",\"value\":3}} "
@@ -37,7 +39,8 @@ spec s = Spec.describe s "Parun.Codec.TopOfLibrary" $ do
       ( TopOfLibrary.MkTopOfLibrary
           { TopOfLibrary.player = PlayerRef.Relative PlayerRelation.You,
             TopOfLibrary.count = Quantity.InSlot (SlotName.MkSlotName (Text.pack "X")),
-            TopOfLibrary.deck = Nothing
+            TopOfLibrary.deck = Nothing,
+            TopOfLibrary.end = LibraryPosition.Top
           }
       )
       " {\"player\":{\"type\":\"Relative\",\"value\":\"You\"},\"count\":{\"type\":\"InSlot\",\"value\":\"X\"}} "
@@ -49,10 +52,24 @@ spec s = Spec.describe s "Parun.Codec.TopOfLibrary" $ do
       ( TopOfLibrary.MkTopOfLibrary
           { TopOfLibrary.player = PlayerRef.Relative PlayerRelation.You,
             TopOfLibrary.count = Quantity.Literal 3,
-            TopOfLibrary.deck = Just SideDeck.Planar
+            TopOfLibrary.deck = Just SideDeck.Planar,
+            TopOfLibrary.end = LibraryPosition.Top
           }
       )
       " {\"player\":{\"type\":\"Relative\",\"value\":\"You\"},\"count\":{\"type\":\"Literal\",\"value\":3},\"deck\":\"Planar\"} "
+  -- The Temporal Anchor's "that many cards from the bottom of your library".
+  Spec.it s "MkTopOfLibrary, the bottom end" $
+    Common.assertCodec
+      s
+      TopOfLibrary.codec
+      ( TopOfLibrary.MkTopOfLibrary
+          { TopOfLibrary.player = PlayerRef.Relative PlayerRelation.You,
+            TopOfLibrary.count = Quantity.Literal 3,
+            TopOfLibrary.deck = Nothing,
+            TopOfLibrary.end = LibraryPosition.Bottom
+          }
+      )
+      " {\"player\":{\"type\":\"Relative\",\"value\":\"You\"},\"count\":{\"type\":\"Literal\",\"value\":3},\"end\":\"Bottom\"} "
   -- The bare number was the depth's whole spelling before the widening, so a card
   -- file written against it is a decode failure rather than a silent literal.
   Spec.it s "a bare number is rejected as a depth" $

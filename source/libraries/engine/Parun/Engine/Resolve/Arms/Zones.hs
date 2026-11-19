@@ -73,11 +73,11 @@ import qualified Parun.Types.Chosen as Chosen
 import qualified Parun.Types.ChosenCardFromAmong as ChosenCardFromAmong
 import qualified Parun.Types.Connive as Connive.Type
 import qualified Parun.Types.ContinuousEffect as ContinuousEffect
+import qualified Parun.Types.CountedAct as CountedAct
 import qualified Parun.Types.CountedDiscard as CountedDiscard
 import qualified Parun.Types.Departure as Departure.Type
 import qualified Parun.Types.Discard as Discard
 import qualified Parun.Types.Discover as Discover.Type
-import qualified Parun.Types.Discovered as Discovered
 import qualified Parun.Types.Draw as Draw
 import qualified Parun.Types.DrawKind as DrawKind
 import qualified Parun.Types.EachCardFromAmong as EachCardFromAmong
@@ -1345,7 +1345,7 @@ discover applyLoopBody runSubgame resolving source controller legal chosen (Disc
     gs <- State.get
     Common.bindObjects resolving mSlot (matchingFromAmong legal resolving discoverer source gs (Discover.stopsOn (toInteger n)) exiled)
     apply (Discover.afterWalk who (toInteger n))
-    State.modify' (Event.recordEvent (GameEvent.Discovered Discovered.MkDiscovered {Discovered.player = discoverer, Discovered.value = n}))
+    State.modify' (Event.recordEvent (GameEvent.CountedAct CountedAct.MkCountedAct {CountedAct.action = PlayerAction.Discover, CountedAct.player = discoverer, CountedAct.value = n}))
 
 -- CR 608.2c: the process in written order, then its printed "if" asked of the
 -- state that run left -- live, so the tally the run's own mill just bound is
@@ -1702,10 +1702,10 @@ scry settle resolving source controller legal (PlayerQuantity.MkPlayerQuantity r
         -- proposes no event for a CR 614.1a row to replace.
         Just n | n > 0 -> Event.proposeScry settle pid (Integer.toNaturalSaturating n)
         _ -> pure Nothing
-  Monad.mapM_ (\(pid, order) -> Monad.forM_ order (\(looked, whole) -> State.modify' (Event.reorderLibrary pid looked whole))) decided
-  -- CR 701.22d: recorded once the process is complete, and for a scry whose
-  -- move was impossible too.
-  Monad.mapM_ (\(pid, _) -> State.modify' (Event.recordEvent (GameEvent.PlayerActed (PlayerActed.MkPlayerActed PlayerAction.Scry pid)))) decided
+  -- CR 701.22c: the cards move at the same time, and CR 701.22d's events are
+  -- recorded once the process is complete, for a scry whose move was
+  -- impossible too.
+  Monad.mapM_ (\(pid, order) -> State.modify' (Event.completeScry pid order)) decided
 
 surveil :: Settle.Settle -> ObjectId -> ObjectId -> PlayerId -> Map.Map SlotName (Set Recipient) -> Surveil.Surveil -> Game ()
 surveil settle resolving source controller legal (Surveil.MkSurveil ref quantity mSlot) = do

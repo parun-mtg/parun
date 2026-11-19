@@ -61,6 +61,7 @@ import qualified Parun.Types.Face as Face
 import qualified Parun.Types.GameEvent as GameEvent
 import qualified Parun.Types.GameState as GameState
 import qualified Parun.Types.Keyword as Keyword
+import qualified Parun.Types.LibraryPosition as LibraryPosition
 import qualified Parun.Types.MoveCounters as MoveCounters
 import qualified Parun.Types.MovedKinds as MovedKinds
 import qualified Parun.Types.Object as Object
@@ -1232,7 +1233,7 @@ communeWithLavaSpec s registry =
               -- A slotless reveal: the planted Quantity is in the ref's depth,
               -- and the bind slot is a separate position this case says nothing
               -- about.
-              depthOf q = Effect.Reveal (Reveal.MkReveal (ObjectRef.TopOfLibrary (TopOfLibrary.MkTopOfLibrary (PlayerRef.Relative PlayerRelation.You) q Nothing)) Nothing Nothing)
+              depthOf q = Effect.Reveal (Reveal.MkReveal (ObjectRef.TopOfLibrary (TopOfLibrary.MkTopOfLibrary (PlayerRef.Relative PlayerRelation.You) q Nothing LibraryPosition.Top)) Nothing Nothing)
           -- SlotArity.Amount and not One: the depth reads the slot's amount
           -- rather than an object, so the entry is a read with no arity claim on
           -- it (Parun.Engine.Resolve.Slots.quantitySlots).
@@ -1269,7 +1270,7 @@ communeWithLavaSpec s registry =
           let damageDepthOf q =
                 Effect.DealDamage
                   ( DealDamage.MkDealDamage
-                      (Seq.singleton (DamagePart.MkDamagePart (ObjectRef.TopOfLibrary (TopOfLibrary.MkTopOfLibrary (PlayerRef.Relative PlayerRelation.You) q Nothing)) (Quantity.Literal 1)))
+                      (Seq.singleton (DamagePart.MkDamagePart (ObjectRef.TopOfLibrary (TopOfLibrary.MkTopOfLibrary (PlayerRef.Relative PlayerRelation.You) q Nothing LibraryPosition.Top)) (Quantity.Literal 1)))
                       Nothing
                       Nothing
                       Nothing
@@ -1296,7 +1297,7 @@ communeWithLavaSpec s registry =
           let giverDepthOf q =
                 Effect.MoveCounters
                   ( MoveCounters.MkMoveCounters
-                      (ObjectRef.TopOfLibrary (TopOfLibrary.MkTopOfLibrary (PlayerRef.Relative PlayerRelation.You) q Nothing))
+                      (ObjectRef.TopOfLibrary (TopOfLibrary.MkTopOfLibrary (PlayerRef.Relative PlayerRelation.You) q Nothing LibraryPosition.Top))
                       (MovedKinds.EveryOfKind CounterKind.PlusOnePlusOne)
                       Nothing
                       (ObjectRef.InSlot (SlotName.MkSlotName (Text.pack "recipient")))

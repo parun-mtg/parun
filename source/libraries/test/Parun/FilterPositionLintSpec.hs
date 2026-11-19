@@ -158,6 +158,7 @@ import qualified Parun.Types.KeywordCostPart as KeywordCostPart
 import qualified Parun.Types.KeywordDesignator as KeywordDesignator
 import qualified Parun.Types.Layer as Layer
 import qualified Parun.Types.LeavesZoneTrigger as LeavesZoneTrigger
+import qualified Parun.Types.LibraryPosition as LibraryPosition
 import qualified Parun.Types.LifeDirection as LifeDirection
 import qualified Parun.Types.LifeTally as LifeTally
 import qualified Parun.Types.Lookback as Lookback
@@ -3080,7 +3081,7 @@ filterPositionLintSpec s registry corpus = Spec.describe s "Lint" $ do
         -- The same kind written as a NUMBER rather than as a kind: CR 122.1's
         -- per-object tally, which is what the three traversals below reach.
         counting = Condition.Type.Compares (Compares.MkCompares (Quantity.Type.ObjectCounters kind) Comparison.AtLeast one)
-        topDepth = ObjectRef.TopOfLibrary (TopOfLibrary.MkTopOfLibrary (PlayerRef.Relative PlayerRelation.You) (Quantity.Type.ObjectCounters kind) Nothing)
+        topDepth = ObjectRef.TopOfLibrary (TopOfLibrary.MkTopOfLibrary (PlayerRef.Relative PlayerRelation.You) (Quantity.Type.ObjectCounters kind) Nothing LibraryPosition.Top)
         -- Every position a card may write a CounterKind in, each named for the
         -- traversal that has to reach it. An arm that stops digging names itself.
         walked =
@@ -3145,7 +3146,7 @@ filterPositionLintSpec s registry corpus = Spec.describe s "Lint" $ do
       "a number naming a plain kind contributes nothing either"
       ( conditionFilters plainNumber,
         durationFilters (Duration.ForAsLongAs plainNumber),
-        objectRefFilters (ObjectRef.TopOfLibrary (TopOfLibrary.MkTopOfLibrary (PlayerRef.Relative PlayerRelation.You) (Quantity.Type.ObjectCounters plain) Nothing))
+        objectRefFilters (ObjectRef.TopOfLibrary (TopOfLibrary.MkTopOfLibrary (PlayerRef.Relative PlayerRelation.You) (Quantity.Type.ObjectCounters plain) Nothing LibraryPosition.Top))
       )
       ([], [], [])
     -- And the whole road, end to end, at the ONE position no traversal above

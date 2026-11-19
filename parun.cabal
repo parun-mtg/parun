@@ -626,6 +626,7 @@ library codec
     Parun.Codec.CouldProduce
     Parun.Codec.CouldProduceSpec
     Parun.Codec.Count
+    Parun.Codec.CountedAct
     Parun.Codec.CountedAgainst
     Parun.Codec.CountedAgainstSpec
     Parun.Codec.CountedDiscard
@@ -798,7 +799,6 @@ library codec
     Parun.Codec.DiscardWay
     Parun.Codec.DiscardWaySpec
     Parun.Codec.Discover
-    Parun.Codec.Discovered
     Parun.Codec.DistinctOf
     Parun.Codec.DistinctOfSpec
     Parun.Codec.Divide
@@ -3151,6 +3151,7 @@ library types
     Parun.Types.CostSubject
     Parun.Types.CouldProduce
     Parun.Types.Count
+    Parun.Types.CountedAct
     Parun.Types.CountedAgainst
     Parun.Types.CountedDiscard
     Parun.Types.Counter
@@ -3245,7 +3246,6 @@ library types
     Parun.Types.DiscardTrigger
     Parun.Types.DiscardWay
     Parun.Types.Discover
-    Parun.Types.Discovered
     Parun.Types.Discrepancy
     Parun.Types.DistinctOf
     Parun.Types.Divide

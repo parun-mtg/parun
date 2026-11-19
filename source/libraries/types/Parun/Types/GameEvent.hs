@@ -22,6 +22,7 @@ import qualified Parun.Types.CoinFlipped as CoinFlipped
 import qualified Parun.Types.CommittedCrime as CommittedCrime
 import qualified Parun.Types.ControlChanged as ControlChanged
 import qualified Parun.Types.Convoking as Convoking
+import qualified Parun.Types.CountedAct as CountedAct
 import qualified Parun.Types.CounterChange as CounterChange
 import qualified Parun.Types.Countering as Countering
 import qualified Parun.Types.CountersPlaced as CountersPlaced
@@ -30,7 +31,6 @@ import qualified Parun.Types.DamageEvent as DamageEvent
 import qualified Parun.Types.DamagePrevented as DamagePrevented
 import qualified Parun.Types.DieResult as DieResult
 import qualified Parun.Types.Discarded as Discarded
-import qualified Parun.Types.Discovered as Discovered
 import qualified Parun.Types.Drew as Drew
 import qualified Parun.Types.Expended as Expended
 import qualified Parun.Types.Exploited as Exploited
@@ -591,9 +591,9 @@ data GameEvent
     PermanentActed (PermanentActed.PermanentActed (Maybe Revealed.Revealed) ObjectId.ObjectId)
   | -- | CR 603.2: a player performed a Parun.Types.PlayerAction.
     PlayerActed (PlayerActed.PlayerActed PlayerId.PlayerId)
-  | -- | CR 701.57b: a player finished discovering, with the N it was for, which
-    -- Parun.Types.TriggerCondition's PlayerActs matches as PlayerAction.Discover.
-    Discovered Discovered.Discovered
+  | -- | CR 603.2: a player performed a Parun.Types.PlayerAction for a number,
+    -- which Parun.Types.TriggerCondition's PlayerActs matches as that action.
+    CountedAct CountedAct.CountedAct
   | -- | CR 123.3.
     StickerPut StickerPut.StickerPut
   | -- | CR 103.5: a player declared whether they will take a mulligan.

@@ -42,6 +42,7 @@ import qualified Parun.Types.CombatStep as CombatStep
 import qualified Parun.Types.CommittedCrime as CommittedCrime
 import qualified Parun.Types.ControlChanged as ControlChanged
 import qualified Parun.Types.Convoking as Convoking
+import qualified Parun.Types.CountedAct as CountedAct
 import qualified Parun.Types.CounterChange as CounterChange
 import qualified Parun.Types.CounterKind as CounterKind
 import qualified Parun.Types.Countering as Countering
@@ -54,7 +55,6 @@ import qualified Parun.Types.Departure as Departure
 import qualified Parun.Types.Designation as Designation
 import qualified Parun.Types.DieResult as DieResult
 import qualified Parun.Types.Discarded as Discarded
-import qualified Parun.Types.Discovered as Discovered
 import qualified Parun.Types.DraftNote as DraftNote
 import qualified Parun.Types.Drew as Drew
 import qualified Parun.Types.EndingStep as EndingStep
@@ -476,7 +476,10 @@ event view logged = case LoggedEvent.event logged of
   GameEvent.BecameTarget {} -> Nothing
   GameEvent.PermanentActed {} -> Nothing
   GameEvent.PlayerActed a -> playerActed (PlayerActed.player a) (PlayerActed.action a)
-  GameEvent.Discovered d -> said [player (Discovered.player d), Text.pack "discovers", Text.pack (show (Discovered.value d))]
+  GameEvent.CountedAct d -> case CountedAct.action d of
+    PlayerAction.Discover -> said [player (CountedAct.player d), Text.pack "discovers", Text.pack (show (CountedAct.value d))]
+    PlayerAction.ScryToBottom -> said [player (CountedAct.player d), Text.pack "puts", Text.pack (show (CountedAct.value d)), Text.pack "scried cards on the bottom"]
+    action -> playerActed (CountedAct.player d) action
   -- CR 702.26b / 702.26n: a phased-out card's arrival in exile, which no seat sees.
   GameEvent.ArrivedUnseen {} -> Nothing
   GameEvent.DamagePrevented p ->
@@ -584,6 +587,7 @@ playerActed pid action = case action of
   PlayerAction.Shuffle -> Just (player pid <> Text.pack "'s library is shuffled.")
   PlayerAction.SearchLibrary -> does "searches their library"
   PlayerAction.Discover -> does "discovers"
+  PlayerAction.ScryToBottom -> does "puts scried cards on the bottom"
   where
     does predicate = Just (player pid <> Text.pack " " <> Text.pack predicate <> Text.pack ".")
 
