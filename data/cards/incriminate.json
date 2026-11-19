@@ -1,0 +1,118 @@
+{
+  "faces": [
+    {
+      "manaCost": [
+        {
+          "type": "Generic",
+          "value": 1
+        },
+        {
+          "type": "OfType",
+          "value": {
+            "type": "Colored",
+            "value": "Black"
+          }
+        }
+      ],
+      "name": "Incriminate",
+      "oracleText": "Choose two target creatures controlled by the same player. That player sacrifices one of them of their choice.",
+      "spell": {
+        "modes": [
+          {
+            "clauses": [
+              {
+                "effects": [
+                  {
+                    "type": "ChoosePermanents",
+                    "value": {
+                      "permanents": {
+                        "chooser": {
+                          "type": "HolderOfBound",
+                          "value": {
+                            "holder": "Controller",
+                            "hop": "Itself",
+                            "slot": "first"
+                          }
+                        },
+                        "filter": {
+                          "type": "And",
+                          "value": [
+                            {
+                              "type": "HasCardType",
+                              "value": "Creature"
+                            },
+                            {
+                              "type": "Or",
+                              "value": [
+                                {
+                                  "type": "IsBound",
+                                  "value": "first"
+                                },
+                                {
+                                  "type": "IsBound",
+                                  "value": "second"
+                                }
+                              ]
+                            }
+                          ]
+                        }
+                      },
+                      "slot": "chosen"
+                    }
+                  },
+                  {
+                    "type": "Sacrifice",
+                    "value": {
+                      "ref": {
+                        "type": "InSlot",
+                        "value": "chosen"
+                      },
+                      "sacrificer": "PermanentController"
+                    }
+                  }
+                ]
+              }
+            ],
+            "targetSlots": {
+              "first": {
+                "pool": {
+                  "type": "Creatures"
+                }
+              },
+              "second": {
+                "filter": {
+                  "type": "And",
+                  "value": [
+                    {
+                      "type": "Not",
+                      "value": {
+                        "type": "IsBound",
+                        "value": "first"
+                      }
+                    },
+                    {
+                      "type": "ControllerRelatesToBound",
+                      "value": {
+                        "hop": "Itself",
+                        "relation": "You",
+                        "slot": "first"
+                      }
+                    }
+                  ]
+                },
+                "pool": {
+                  "type": "Creatures"
+                }
+              }
+            }
+          }
+        ]
+      },
+      "typeLine": {
+        "types": [
+          "Sorcery"
+        ]
+      }
+    }
+  ]
+}
