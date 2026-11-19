@@ -2883,7 +2883,7 @@ effectLintSpec s registry corpus = Spec.describe s "Lint" $ do
           _ -> False
         byColor per = case per of
           OnePer.ColorAmong _ -> True
-          OnePer.CardType -> False
+          OnePer.CardType _ -> False
         keptApart ref = case ref of
           ObjectRef.ChosenCardFromAmong chosen -> not (Set.null (ChosenCardFromAmong.differentIn chosen))
           _ -> False

@@ -37,6 +37,7 @@ import qualified Parun.Types.ActivatedAbilitySource as ActivatedAbilitySource
 import qualified Parun.Types.AffectPlayers as AffectPlayers
 import qualified Parun.Types.AffectedPlayers as AffectedPlayers
 import qualified Parun.Types.Again as Again
+import qualified Parun.Types.Aggregation as Aggregation
 import qualified Parun.Types.AimedAt as AimedAt
 import qualified Parun.Types.AimedPlayers as AimedPlayers
 import qualified Parun.Types.Amass as Amass.Type
@@ -178,6 +179,7 @@ import qualified Parun.Types.InitiativeTarget as InitiativeTarget
 import qualified Parun.Types.InstructionR as InstructionR
 import qualified Parun.Types.JoinAttack as JoinAttack
 import qualified Parun.Types.Keyword as Keyword.Type
+import qualified Parun.Types.KeywordTally as KeywordTally
 import qualified Parun.Types.LastKnown as LastKnown
 import qualified Parun.Types.LaterPayment as LaterPayment
 import qualified Parun.Types.LentCards as LentCards
@@ -2151,11 +2153,12 @@ damageRewriteReads rewrite = case rewrite of
 filterSlotsOf :: Filter.Type.Filter Keyword.Type.Keyword -> Map.Map SlotName SlotArity
 filterSlotsOf = Filter.slotArities
 
--- filterSlotsOf over a per-quality bound's Filter: a card type names no slot.
+-- filterSlotsOf over a per-quality bound's Filter, and quantitySlots over its
+-- tally's members Count: every card type names no slot.
 onePerSlotsOf :: OnePer.OnePer -> Map.Map SlotName SlotArity
 onePerSlotsOf per = case per of
   OnePer.ColorAmong among -> filterSlotsOf among
-  OnePer.CardType -> Map.empty
+  OnePer.CardType among -> foldMap (\(KeywordTally.MkKeywordTally within filter_) -> quantitySlots (Quantity.Type.Count (Count.Type.MkCount within filter_ Aggregation.Members))) among
 
 -- filterSlotsOf over a sweep's optional Filter: none names no slot.
 maybeFilterSlots :: Maybe (Filter.Type.Filter Keyword.Type.Keyword) -> Map.Map SlotName SlotArity

@@ -5172,11 +5172,12 @@ framedSlotsReadSingly (framing, predicate)
 -- Tag a Filter position as UNFRAMED -- one none of the framings above applies
 -- to, which is every position in the type except the ones they name.
 -- The Filter a per-quality bound holds: Sanar, Innovative First-Year's
--- permanents whose colors bound the picks.
+-- permanents whose colors bound the picks, or Hurkyl, Master Wizard's spells
+-- whose card types do.
 onePerFilters :: OnePer.OnePer -> [Filter.Type.Filter Keyword.Keyword]
 onePerFilters per = case per of
   OnePer.ColorAmong among -> [among]
-  OnePer.CardType -> []
+  OnePer.CardType among -> foldMap (pure . KeywordTally.filter) among
 
 unframed :: [Filter.Type.Filter Keyword.Keyword] -> [(Framing, Filter.Type.Filter Keyword.Keyword)]
 unframed = fmap ((,) Unframed)
