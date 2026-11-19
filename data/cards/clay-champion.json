@@ -1,0 +1,175 @@
+{
+  "faces": [
+    {
+      "manaCost": [
+        {
+          "type": "Variable"
+        },
+        {
+          "type": "Generic",
+          "value": 4
+        }
+      ],
+      "name": "Clay Champion",
+      "oracleText": "This creature enters with three +1/+1 counters on it for each {G}{G} spent to cast it.\nWhen this creature enters, choose up to two other target creatures you control. For each {W}{W} spent to cast this creature, put a +1/+1 counter on each of them.",
+      "power": {
+        "type": "Literal",
+        "value": 2
+      },
+      "replacementEffects": [
+        {
+          "effect": {
+            "type": "EntryR",
+            "value": {
+              "matching": {
+                "type": "IsSource"
+              },
+              "rewrite": {
+                "type": "WithCounters",
+                "value": [
+                  {
+                    "count": {
+                      "type": "Times",
+                      "value": {
+                        "factor": {
+                          "type": "Literal",
+                          "value": 3
+                        },
+                        "quantity": {
+                          "type": "Quotient",
+                          "value": {
+                            "divisor": {
+                              "type": "Literal",
+                              "value": 2
+                            },
+                            "quantity": {
+                              "type": "ManaSpent",
+                              "value": {
+                                "type": "OfType",
+                                "value": {
+                                  "manaType": {
+                                    "type": "Colored",
+                                    "value": "Green"
+                                  },
+                                  "portion": "TotalCost"
+                                }
+                              }
+                            },
+                            "rounding": "Down"
+                          }
+                        }
+                      }
+                    },
+                    "kind": {
+                      "type": "PlusOnePlusOne"
+                    }
+                  }
+                ]
+              }
+            }
+          }
+        }
+      ],
+      "toughness": {
+        "type": "Literal",
+        "value": 2
+      },
+      "triggeredAbilities": [
+        {
+          "condition": {
+            "type": "Enters",
+            "value": {}
+          },
+          "modal": {
+            "modes": [
+              {
+                "clauses": [
+                  {
+                    "effects": [
+                      {
+                        "type": "PutCounters",
+                        "value": {
+                          "kind": {
+                            "type": "PlusOnePlusOne"
+                          },
+                          "quantity": {
+                            "type": "Quotient",
+                            "value": {
+                              "divisor": {
+                                "type": "Literal",
+                                "value": 2
+                              },
+                              "quantity": {
+                                "type": "ManaSpent",
+                                "value": {
+                                  "type": "OfType",
+                                  "value": {
+                                    "manaType": {
+                                      "type": "Colored",
+                                      "value": "White"
+                                    },
+                                    "portion": "TotalCost"
+                                  }
+                                }
+                              },
+                              "rounding": "Down"
+                            }
+                          },
+                          "ref": {
+                            "type": "InSlot",
+                            "value": "target"
+                          }
+                        }
+                      }
+                    ]
+                  }
+                ],
+                "targetSlots": {
+                  "target": {
+                    "count": {
+                      "type": "Printed",
+                      "value": {
+                        "least": 0,
+                        "most": 2
+                      }
+                    },
+                    "filter": {
+                      "type": "And",
+                      "value": [
+                        {
+                          "type": "Not",
+                          "value": {
+                            "type": "IsSource"
+                          }
+                        },
+                        {
+                          "type": "HeldBy",
+                          "value": {
+                            "holder": "Controller",
+                            "relation": "You"
+                          }
+                        }
+                      ]
+                    },
+                    "pool": {
+                      "type": "Creatures"
+                    }
+                  }
+                }
+              }
+            ]
+          }
+        }
+      ],
+      "typeLine": {
+        "subtypes": [
+          "Construct"
+        ],
+        "types": [
+          "Artifact",
+          "Creature"
+        ]
+      }
+    }
+  ]
+}

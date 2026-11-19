@@ -1375,9 +1375,9 @@ processDamage settle events = do
             -- replacement be spent on an event that never happened -- a fence
             -- rather than an observable, no printing in the pool having a one-shot
             -- counter replacement to spend.
-            place n go = Monad.when (n > 0) (Monad.void (go n))
+            place n go = [] <$ Monad.when (n > 0) (Monad.void (go n))
          in case Projection.controllerWithLastKnown (DamageEvent.source ev) board of
-              Nothing -> pure ()
+              Nothing -> pure []
               Just putter ->
                 let cause = CounterCause.ByRule putter
                     onObject oid = place minusOnes (Event.putCounters cause oid CounterKind.MinusOneMinusOne)
@@ -1390,8 +1390,10 @@ processDamage settle events = do
                       Recipient.ToPlaneswalker oid -> onObject oid
                       Recipient.ToBattle oid -> onObject oid
                       Recipient.ToObject oid -> onObject oid
-                      Recipient.ToPlayer pid -> place poison (Event.putPlayerCounters cause pid PlayerCounterKind.Poison)
-                      Recipient.ToPile _ -> pure ()
+                      -- Answered rather than placed, so the batch's player
+                      -- placements go through putPlayerCounters together.
+                      Recipient.ToPlayer pid -> pure [(cause, pid, PlayerCounterKind.Poison, poison) | poison > 0]
+                      Recipient.ToPile _ -> pure []
   -- CR 120.3f: lifelink damage gains its source's controller that much life, IN
   -- ADDITION to the damage's other results. A pass of its own over the same
   -- survivors, deliberately not a branch inside `markOne`: "in addition" is then
@@ -1559,7 +1561,8 @@ processDamage settle events = do
   -- The placements are simultaneous with the damage under CR 120.3, so nothing may
   -- observe the board between the fold above and this pass -- which is why it
   -- reads `board` rather than the state it is running against.
-  Monad.mapM_ counterResults survivors
+  playerPlacements <- concat <$> Monad.mapM counterResults survivors
+  Monad.void (Event.putPlayerCounters playerPlacements)
   -- CR 615.5: "the rest of the effect takes place immediately afterward". This
   -- module cannot run it -- Parun.Engine.Resolve depends on this one -- so the
   -- applications that carry an additional effect are QUEUED and Resolve drains

@@ -8366,7 +8366,7 @@ payPayable perform moment paidFor slots pid oid component = case component of
   -- The arm above on the payer, through Event.putPlayerCounters and with the
   -- same cause, so a cost's counters meet the replacements an effect's do.
   CostComponent.PutCountersOnPayer placement -> do
-    Monad.void (Event.putPlayerCounters (CounterCause.ByPayment pid) pid (CountersOnPayer.kind placement) (CountersOnPayer.count placement))
+    Monad.void (Event.putPlayerCounters [(CounterCause.ByPayment pid, pid, CountersOnPayer.kind placement, CountersOnPayer.count placement)])
     pure bindsNothing
   -- CR 701.68a's whole procedure, which Parun.Engine.Blight owns. Unpaid on rule
   -- 701.68b's board, which canPayComponent has already refused, so reaching it

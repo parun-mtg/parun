@@ -75,7 +75,7 @@
     ],
     "step": "PrecombatMain"
   },
-  "description": "CR 602.2, 611.2a Fortified Beachhead taps and pays {5} to give Soldiers its controller controls +1/+1 until end of turn, and only those",
+  "description": "CR 602.2, 611.2c Fortified Beachhead taps and pays {5} to give Soldiers its controller controls +1/+1 until end of turn, and only those",
   "timeline": [
     {
       "do": {

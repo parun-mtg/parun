@@ -2511,9 +2511,11 @@ readsApplier re = case re of
   -- CR 614.1c: NO despite spending a resource, for SacrificeAnyNumber's reason.
   -- The payer is the ENTERING object's controller -- "you" in an "as this
   -- permanent enters" ability the permanent prints about itself -- read live off
-  -- the board at CR 614.12a's moment rather than off the candidate, and the
-  -- price rides the effect. Two such rows are always on the same object and
-  -- would offer that object's controller the same price.
+  -- the board at CR 614.12a's moment, and the price rides the effect. The
+  -- waiver's "you" is read off the candidate (candidateContext), but only a
+  -- printed IsSource row carries this rewrite, so that is the same player. Two
+  -- such rows are always on the same object and would offer that object's
+  -- controller the same price and ask the same waiver.
   ReplacementEffect.EntryR (EntryR.MkEntryR _ (EntryRewrite.OrTapped _)) -> False
   -- CR 614.1c: NO, for the arm above's reason -- the payer is the ENTERING
   -- object's controller and the cap rides the effect.

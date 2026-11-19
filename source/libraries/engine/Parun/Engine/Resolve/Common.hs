@@ -4203,8 +4203,7 @@ giveAnotherOfEachKind source controller before permanents players = do
   Event.simultaneously $ do
     Monad.forM_ permanents $ \oid ->
       Monad.forM_ (objectKinds before oid) $ \kind -> Event.putCounters (CounterCause.ByEffect controller) oid kind 1
-    Monad.forM_ given $ \(pid, kind) ->
-      Monad.void (Event.putPlayerCounters (CounterCause.ByEffect controller) pid kind 1)
+    Monad.void (Event.putPlayerCounters [(CounterCause.ByEffect controller, pid, kind, 1) | (pid, kind) <- given])
 
 -- CR 603.7c: stamp the land an earthbend animated onto the resolving object, so
 -- the environment the arming opcode captures next carries it. Parun.Engine.Earthbend's
@@ -4981,8 +4980,8 @@ refill whole moving ordered =
 -- cards bound for the graveyard. Nothing for an empty library, which is still a
 -- surveil (CR 701.25d) with nothing to ask.
 --
--- The ELISION is Event.decideScry's minus its one-card case: the graveyard and
--- the top of the library are still two different places.
+-- Like Event.decideScry, a one-card library is still asked: the graveyard and
+-- the top of the library are two different places.
 decideSurveil :: Integer -> PlayerId -> Game (PlayerId, Maybe ([ObjectId], [ObjectId], [ObjectId]))
 decideSurveil n pid = do
   gs <- State.get

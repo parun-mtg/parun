@@ -7147,10 +7147,13 @@ lintSpec s registry corpus = Spec.describe s "Lint" $ do
         -- answerable. Only this condition, CR 107.3m's own, through the slot or
         -- through an effect (Pin Collection's "ticket cost X or less", bound by
         -- Engine.placeBorne's enteredX).
-        entersTriggerReadsX c =
+        -- Parametric in what the modal reads: X here, the mana spent in
+        -- spellReadsSpent below.
+        entersTriggerReads readsOff c =
           any
-            (\ability -> TriggeredAbility.condition ability == TriggerCondition.Enters EntersTrigger.defaultValue && (modalReadsAnnouncedX (TriggeredAbility.modal ability) || Resolve.hasRead StaticRead.ReadsX (Modal.allEffects (TriggeredAbility.modal ability))))
+            (\ability -> TriggeredAbility.condition ability == TriggerCondition.Enters EntersTrigger.defaultValue && readsOff (TriggeredAbility.modal ability))
             (Face.triggeredAbilities c)
+        entersTriggerReadsX = entersTriggerReads (\modal -> modalReadsAnnouncedX modal || Resolve.hasRead StaticRead.ReadsX (Modal.allEffects modal))
         -- CR 107.3i's reader: a "when you cast this spell" trigger (CR 113.6k)
         -- reading the X of the spell that is its source (Photon Blast Barrage's
         -- "copy it X times").
@@ -7202,10 +7205,14 @@ lintSpec s registry corpus = Spec.describe s "Lint" $ do
         -- spent to cast this spell", which X's mana is part of (Molten Note),
         -- or the CR 614.1c counters the permanent enters with read off that
         -- total (Dyadrine, Synthesis Amalgam), or the bound of the copy it
-        -- may enter as (Mockingbird). It answers only for a spell declaring X,
-        -- since the total is read whether or not there is one.
+        -- may enter as (Mockingbird), or the permanent's entering trigger
+        -- (Bladecoil Serpent's "for each {U}{U} spent to cast it"). A type's
+        -- share of that total reads it too (Clay Champion). It answers only
+        -- for a spell declaring X, since the total is read whether or not
+        -- there is one.
         spellReadsSpent c =
           Resolve.hasRead StaticRead.ReadsManaSpent (Modal.allEffects (Face.spell c))
+            || entersTriggerReads (Resolve.hasRead StaticRead.ReadsManaSpent . Modal.allEffects) c
             || entryCountersRead (Quantity.hasRead StaticRead.ReadsManaSpent) (concatMap (entryMembers . PrintedReplacement.effect) (Face.replacementEffects c))
             || asCopyAmountRead (Quantity.hasRead StaticRead.ReadsManaSpent) (concatMap (entryMembers . PrintedReplacement.effect) (Face.replacementEffects c))
         -- CR 702.44a's reader: sunburst counts the colours of the mana spent
@@ -7224,6 +7231,18 @@ lintSpec s registry corpus = Spec.describe s "Lint" $ do
                 || (not spellDeclaresX && turnUpDeclaresX f /= turnedUpReadsX f)
         offenders = filter (anyFace offends . Printing.card) ps
     Spec.assertEqWith s "X read iff X declared" (fmap (S.nameOf . Printing.card) offenders) []
+    -- The mana-spent readers are what keep these {X}s read: Bladecoil Serpent's
+    -- entering triggers, Clay Champion's green share in its entry counters and
+    -- its white share in its entering trigger, each stripped in turn.
+    serpent <- S.combinedFace <$> S.printingOf s registry "Bladecoil Serpent"
+    champion <- S.combinedFace <$> S.printingOf s registry "Clay Champion"
+    let untriggered f = f {Face.triggeredAbilities = []}
+        unreplaced f = f {Face.replacementEffects = []}
+    Spec.assertEqWith
+      s
+      "the serpent, untriggered; the champion, untriggered, unreplaced, neither"
+      (fmap offends [serpent, untriggered serpent, champion, untriggered champion, unreplaced champion, untriggered (unreplaced champion)])
+      [False, True, False, False, False, True]
   -- CR 601.2b's count announced BESIDE X (Cost.announcedCounts), the lint above
   -- for a variable of its own name: a spell's cost declares it exactly where the
   -- face's own CR 601.2f reduction reads it, since nothing else binds the slot

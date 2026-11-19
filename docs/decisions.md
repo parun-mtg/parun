@@ -2963,3 +2963,25 @@ Entries are ordered by the first rule each cites.
   by the scenario
   `thieves-auction-re-reads-turn-order-after-a-topsy-turvy-is-taken`.
 - **Issue**: #8723.
+
+## Whether simultaneous poison counters meet Melira, the Living Cure's bar
+
+- **Question**: Melira, the Living Cure's replacement installs "you can't get
+  additional poison counters this turn", which CR 810.10c widens to the team.
+  In Two-Headed Giant one event gives alice and her teammate poison counters at
+  once (Ichor Rats, infect combat damage). Does the bar alice's replacement
+  installs stop the teammate's simultaneous counters?
+- **Rules**: CR 510.2, 614.1a, 616.1, 810.10, 810.10c; Melira's ruling,
+  "additional events that would put poison counters on a player don't happen";
+  CR of 2026-11-06.
+- **Decision**: Yes, whatever order the batch's placements are settled in: a
+  sibling placement is one of the "additional events", as two infect attackers
+  hitting alice alone already give her one counter, not two.
+- **Rejected**: The bar reaching only later events, so the team gets one from
+  Melira and the teammate's in full. The ruling speaks of additional events
+  without a time, and the one-player batch would then give two.
+- **Site**: `Parun.Engine.Event.putPlayerCounters`' second pass, proved by the
+  scenarios
+  `cr-810-10c-melira-the-living-cure-s-bar-stops-a-teammate-s-simultaneous-poison`
+  and `...-simultaneous-infect-damage`, each with a `--bob` pair.
+- **Issue**: #8806.
