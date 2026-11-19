@@ -2,12 +2,19 @@
 -- page, and the reply its taps build, from requests the engine makes.
 module Parun.WebQuestionSpec where
 
+import qualified Control.Monad as Monad
+import qualified Data.ByteString as ByteString
+import qualified Data.Containers.ListUtils as ListUtils
 import qualified Data.Either as Either
 import qualified Data.Foldable as Foldable
+import qualified Data.List as List
+import qualified Data.List.NonEmpty as NonEmpty
 import qualified Data.Map.Strict as Map
+import qualified Data.Maybe as Maybe
 import qualified Data.Sequence as Seq
 import qualified Data.Set as Set
 import qualified Data.Text as Text
+import qualified Data.Text.Encoding as Encoding
 import Numeric.Natural (Natural)
 import qualified Parun.Codec.ManaType as Codec.ManaType
 import qualified Parun.Codec.Reply as Codec.Reply
@@ -15,28 +22,46 @@ import qualified Parun.Engine.Event as Event
 import qualified Parun.Engine.PlayerView as PlayerView
 import qualified Parun.Engine.Projection as Projection
 import qualified Parun.Engine.Setup as Setup
+import qualified Parun.Extra.Int as Int
+import qualified Parun.Extra.Natural as Natural
 import qualified Parun.JsonCodec.Codec as Codec
+import qualified Parun.JsonCodec.Common as Common
 import qualified Parun.Play.Protocol as Protocol
 import qualified Parun.Registry as Registry
+import qualified Parun.Scenario as Scenario
+import qualified Parun.Scenario.Load as Load
 import qualified Parun.Scenario.PromptOffer as PromptOffer
 import qualified Parun.Spec as Spec
 import qualified Parun.Support as S
 import qualified Parun.Types.Action as Action
 import qualified Parun.Types.BeginningStep as BeginningStep
 import qualified Parun.Types.Color as Color
+import qualified Parun.Types.Cost as Cost
 import qualified Parun.Types.Decider as Decider
+import qualified Parun.Types.Dividing as Dividing
 import qualified Parun.Types.GameEvent as GameEvent
 import qualified Parun.Types.GameState as GameState
+import qualified Parun.Types.GraveyardArrangement as GraveyardArrangement
+import qualified Parun.Types.Keyword as Keyword
 import qualified Parun.Types.Looked as Looked
+import qualified Parun.Types.ManaCost as ManaCost
+import qualified Parun.Types.ManaSymbol as ManaSymbol
 import qualified Parun.Types.ManaType as ManaType
 import qualified Parun.Types.ObjectId as ObjectId
+import qualified Parun.Types.PayOffer as PayOffer
+import qualified Parun.Types.PaymentDecision as PaymentDecision
 import qualified Parun.Types.Phase as Phase
 import qualified Parun.Types.PlayerView as PlayerView.Type
 import qualified Parun.Types.Prompt as Prompt
 import qualified Parun.Types.Question as Question
+import qualified Parun.Types.Recipient as Recipient
 import qualified Parun.Types.Reply as R
 import qualified Parun.Types.Request as Request
+import qualified Parun.Types.SlotName as SlotName
+import qualified Parun.Types.Stop as Stop
+import qualified Parun.Types.TextWord as TextWord
 import qualified Parun.Types.TurnRegisters as TurnRegisters
+import qualified Parun.Types.WordFamily as WordFamily
 import qualified Parun.Types.Zone as Zone
 import qualified Parun.Web.Card as Card
 import qualified Parun.Web.Html as Html
@@ -72,6 +97,91 @@ spec s registry = Spec.describe s "WebQuestion" $ do
           Html.handler (Text.pack "click") (at <> path) reading
     Spec.assertEqWith s "sheet action" action (Just (Question.Web.MkAnswer (R.Number 1)))
 
+  Spec.it s "CR 601.2d a division starts one to each target and the rest to the first, and reads as the engine's" $ do
+    bears <- S.printingOf s registry "Grizzly Bears"
+    let (a, g1) = S.addPermanent bears S.bob (Setup.emptyGame S.bothPlayers)
+        (b, g2) = S.addPermanent bears S.bob g1
+        (source, gs) = S.addPermanent bears S.alice g2
+        prompt = Prompt.ChooseDivision (Decider.MkDecider S.alice) S.alice source (Dividing.Total 3) (NonEmpty.fromList [Recipient.ToCreature a, Recipient.ToCreature b])
+        request = requestFor gs prompt
+    Spec.assertEqWith s "one each, the rest first" (Question.Web.initial request) (Set.fromList [(0, 1), (1, 0)])
+    Spec.assertEqWith s "the reply" (answered prompt request (Question.Web.initial request)) (Right (Map.fromList [(Recipient.ToCreature a, 2), (Recipient.ToCreature b, 1)]))
+    Spec.assertBool s (Text.isInfixOf (Text.pack "class=\"amount-row\"") (Html.toText (Question.Web.view request Question.Web.blank))) "a row per target"
+
+  Spec.it s "CR 122.1 an amount per permanent within the offer's total, refused outside it" $ do
+    bears <- S.printingOf s registry "Grizzly Bears"
+    let (a, g1) = S.addPermanent bears S.alice (Setup.emptyGame S.bothPlayers)
+        (b, gs) = S.addPermanent bears S.alice g1
+        prompt = Prompt.ChooseCounterRemovalAmong (Decider.MkDecider S.alice) S.alice a 2 (Map.fromList [(a, 3), (b, 1)])
+        request = requestFor gs prompt
+    Spec.assertEqWith s "none at first" (Question.Web.initial request) (Set.fromList [(0, 0), (1, 0)])
+    Spec.assertEqWith s "one from each" (answered prompt request (Set.fromList [(0, 1), (1, 1)])) (Right (Map.fromList [(a, 1), (b, 1)]))
+    Spec.assertEqWith s "too few" (Question.Web.step request (Set.fromList [(0, 1), (1, 0)]) Question.Web.MkSubmit Text.empty) (Question.Web.MkRefused (Text.pack "Choose amounts adding up to exactly 2."))
+
+  Spec.it s "CR 118.12 a cost to pay is a yes or no naming the cost" $ do
+    bears <- S.printingOf s registry "Grizzly Bears"
+    let (source, gs) = S.addPermanent bears S.bob (Setup.emptyGame S.bothPlayers)
+        prompt = Prompt.ChooseToPay (Decider.MkDecider S.alice) S.alice source PayOffer.InsteadOfDraw (Cost.MkCost (Just (ManaCost.MkManaCost [ManaSymbol.Generic 2])) []) Seq.empty
+        request = requestFor gs prompt
+        view = Question.Web.view request Question.Web.blank
+        tap label = Html.labelled (Text.pack "button") (Text.pack label) view >>= \path -> Html.handler (Text.pack "click") path view
+    Spec.assertBool s (Text.isInfixOf (Text.pack "Grizzly Bears: pay ") (Html.content view)) "names the cost"
+    Spec.assertEqWith s "pay" (fmap (\event -> Question.Web.step request Set.empty event Text.empty) (tap "Pay")) (Just (Question.Web.MkReplied (R.Text (Text.pack "Pays"))))
+    Spec.assertEqWith s "reads" (Protocol.decodeAnswer prompt (R.Text (Text.pack "Pays"))) (Right PaymentDecision.Pays)
+
+  Spec.it s "CR 601.2b a keyword paid any number of times offers the first few and a field" $ do
+    bears <- S.printingOf s registry "Grizzly Bears"
+    let (source, gs) = S.addPermanent bears S.alice (Setup.emptyGame S.bothPlayers)
+        request = requestFor gs (Prompt.ChooseKicker (Decider.MkDecider S.alice) S.alice source (Keyword.Replicate (Cost.MkCost (Just (ManaCost.MkManaCost [ManaSymbol.Generic 1])) [])) Nothing Nothing)
+        view = Question.Web.view request Question.Web.blank
+        tap label = Html.labelled (Text.pack "button") (Text.pack label) view >>= \path -> Html.handler (Text.pack "click") path view
+    Spec.assertEqWith s "nine" (tap "9") (Just (Question.Web.MkAnswer (R.Number 9)))
+    Spec.assertBool s (Text.isInfixOf (Text.pack "placeholder=\"Another number\"") (Html.toText view)) "a field"
+    Spec.assertBool s (not (Question.Web.answersTyped request)) "a form"
+
+  Spec.it s "CR 612.2 a text change picks the word to change and the word it becomes" $ do
+    bears <- S.printingOf s registry "Grizzly Bears"
+    let (source, gs) = S.addPermanent bears S.alice (Setup.emptyGame S.bothPlayers)
+        prompt = Prompt.ChooseWordSwap (Decider.MkDecider S.alice) S.alice source (SlotName.MkSlotName (Text.pack "target")) (Set.singleton WordFamily.Color) Set.empty
+        request = requestFor gs prompt
+        picks = picking request [Question.Web.MkToggle 0 0, Question.Web.MkToggle 1 1]
+    Spec.assertEqWith s "white to blue" (answered prompt request picks) (Right (TextWord.ColorWord Color.White, TextWord.ColorWord Color.Blue))
+    Spec.assertEqWith s "the same word twice" (Question.Web.step request (picking request [Question.Web.MkToggle 0 0, Question.Web.MkToggle 1 0]) Question.Web.MkSubmit Text.empty) (Question.Web.MkRefused (Text.pack "Choose two different words."))
+
+  Spec.it s "CR 700.3 creatures divided into piles start in the first" $ do
+    bears <- S.printingOf s registry "Grizzly Bears"
+    let (a, g1) = S.addPermanent bears S.bob (Setup.emptyGame S.bothPlayers)
+        (b, gs) = S.addPermanent bears S.bob g1
+        prompt = Prompt.DividePiles (Decider.MkDecider S.bob) S.bob [a, b] 2
+        request = requestFor gs prompt
+    Spec.assertEqWith s "all in the first" (answered prompt request (Question.Web.initial request)) (Right [Set.fromList [a, b], Set.empty])
+    Spec.assertEqWith s "one moved" (answered prompt request (Set.fromList [(0, 0), (1, 1)])) (Right [Set.singleton a, Set.singleton b])
+
+  Spec.it s "CR 119.7 a redistribution starts with each player keeping their own total" $ do
+    let prompt = Prompt.ChooseRedistribution (Decider.MkDecider S.alice) S.alice [(S.alice, 20), (S.bob, 5)]
+        request = requestFor (Setup.emptyGame S.bothPlayers) prompt
+    Spec.assertEqWith s "kept" (answered prompt request (Question.Web.initial request)) (Right Map.empty)
+    Spec.assertEqWith s "swapped" (answered prompt request (Set.fromList [(0, 1), (1, 0)])) (Right (Map.fromList [(S.alice, S.bob), (S.bob, S.alice)]))
+    Spec.assertEqWith s "both take one" (Question.Web.step request (Set.fromList [(0, 1), (1, 1)]) Question.Web.MkSubmit Text.empty) (Question.Web.MkRefused (Text.pack "Give each life total to exactly one player."))
+
+  Spec.it s "CR 404.3 cards going to a graveyard together are ordered from the new top" $ do
+    bears <- S.printingOf s registry "Grizzly Bears"
+    let (a, g1) = S.addObjectIn Zone.Hand bears S.alice (Setup.emptyGame S.bothPlayers)
+        (b, gs) = S.addObjectIn Zone.Hand bears S.alice g1
+        prompt = Prompt.ArrangeGraveyardArrivals (Decider.MkDecider S.alice) S.alice [a, b]
+        request = requestFor gs prompt
+    Spec.assertEqWith s "the second on top" (answered prompt request (picking request [Question.Web.MkToggle 0 1])) (Right (GraveyardArrangement.InOrder [1, 0]))
+
+  Spec.it s "CR 724.1 a choice made for a controlled player says whose it is" $ do
+    let gs0 = Setup.emptyGame S.bothPlayers
+        gs = gs0 {GameState.turn = (GameState.turn gs0) {TurnRegisters.activePlayer = S.bob}}
+        request = requestFor gs (Prompt.ChooseAction (Decider.MkDecider S.alice) S.bob [Action.Pass])
+        page = Html.content (Question.Web.view request Question.Web.blank)
+    Spec.assertEqWith s "for" (Question.for (Request.question request)) (Just S.bob)
+    Spec.assertBool s (Text.isInfixOf (Text.pack "You're deciding for Player 2, whom you control.") page) "banner"
+    Spec.assertBool s (Text.isInfixOf (Text.pack "Player 2's turn, which you control.") page) "the turn is the seat's to play"
+    Spec.assertEqWith s "the seat's own" (Question.for (Request.question (requestFor gs (Prompt.ChooseAction (Decider.MkDecider S.alice) S.alice [Action.Pass])))) Nothing
+
   Spec.it s "CR 104.3a the turn bar carries the auto-pass level and the settings button, whose concession passes while the seat may" $ do
     let request = requestFor (Setup.emptyGame S.bothPlayers) (Prompt.ChooseAction (Decider.MkDecider S.alice) S.alice [Action.Pass])
         asked = Question.Web.view request Question.Web.blank
@@ -98,7 +208,7 @@ spec s registry = Spec.describe s "WebQuestion" $ do
     bears <- S.printingOf s registry "Grizzly Bears"
     let (one, g1) = S.addPermanent bears S.alice (Setup.emptyGame S.bothPlayers)
         (two, gs) = S.addPermanent bears S.alice g1
-        request = (requestFor gs (Prompt.ChooseAction (Decider.MkDecider S.alice) S.alice [Action.Pass])) {Request.question = Question.MkQuestion S.alice (Text.pack "DeclareAttackers") (R.Array [PromptOffer.object Protocol.namer one, PromptOffer.object Protocol.namer two])}
+        request = (requestFor gs (Prompt.ChooseAction (Decider.MkDecider S.alice) S.alice [Action.Pass])) {Request.question = Question.MkQuestion S.alice (Text.pack "DeclareAttackers") (R.Array [PromptOffer.object Protocol.namer one, PromptOffer.object Protocol.namer two]) Nothing}
         tap picked label = let view = Question.Web.view request Question.Web.blank {Question.Web.selected = picked} in Html.labelled (Text.pack "button") (Text.pack label) view >>= \path -> Html.handler (Text.pack "click") path view
     Spec.assertEqWith s "first" (tap Set.empty "Your Grizzly Bears 2/2 \x00d7\&2") (Just (Question.Web.MkToggle 0 0))
     Spec.assertEqWith s "then the next" (tap (Set.singleton (0, 0)) "1 of Your Grizzly Bears 2/2 \x00d7\&2") (Just (Question.Web.MkToggle 0 1))
@@ -146,7 +256,7 @@ spec s registry = Spec.describe s "WebQuestion" $ do
     let (land, gs) = S.addPermanent mountain S.alice (Setup.emptyGame S.bothPlayers)
         source = R.Object [(Text.pack "source", PromptOffer.object Protocol.namer land), (Text.pack "makes", R.Array [R.Array [Either.fromRight R.Null (Codec.Reply.fromValue (Codec.encode Codec.ManaType.codec (ManaType.Colored Color.Red)))]])]
         shown = requestFor gs (Prompt.ChooseAction (Decider.MkDecider S.alice) S.alice [Action.Pass])
-        request = shown {Request.question = Question.MkQuestion S.alice (Text.pack "ChooseManaSource") (R.Object [(Text.pack "sources", R.Array [source])])}
+        request = shown {Request.question = Question.MkQuestion S.alice (Text.pack "ChooseManaSource") (R.Object [(Text.pack "sources", R.Array [source])]) Nothing}
         page = Question.Web.view request Question.Web.blank
     Spec.assertBool s (Text.pack "<h2>Choose a source.</h2>" `Text.isInfixOf` Html.toText page) "heading"
     Spec.assertEqWith s "tap" (fmap (\event -> Question.Web.step request Set.empty event Text.empty) (Html.labelled (Text.pack "button") (Text.pack "Your Mountain (makes R)") page >>= \path -> Html.handler (Text.pack "click") path page)) (Just (Question.Web.MkReplied (PromptOffer.object Protocol.namer land)))
@@ -255,16 +365,60 @@ isCard html = Text.pack "<button class=\"card " `Text.isPrefixOf` Html.toText ht
 -- | The request the line protocol sends for a prompt, with the deciding seat's view.
 requestFor :: GameState.GameState -> Prompt.Prompt r -> Request.Request
 requestFor gs prompt = case Protocol.questionOf gs prompt of
-  Just question -> Request.MkRequest (Just (PlayerView.viewFor (Question.seat question) gs)) question Nothing
+  Just question -> Request.MkRequest (Just (PlayerView.viewFor (Question.seat question) gs)) question Nothing 0
   Nothing -> bare (Text.pack "unasked") R.Null
 
 -- | A request with no view, for questions whose form reads only the offer.
 bare :: Text.Text -> R.Reply -> Request.Request
-bare kind offer = Request.MkRequest Nothing (Question.MkQuestion S.alice kind offer) Nothing
+bare kind offer = Request.MkRequest Nothing (Question.MkQuestion S.alice kind offer Nothing) Nothing 0
 
 -- | A request asking the kind with the offer, with a view of an empty game.
 asking :: Text.Text -> R.Reply -> Request.Request
-asking kind offer = (requestFor (Setup.emptyGame S.bothPlayers) (Prompt.ChooseAction (Decider.MkDecider S.alice) S.alice [Action.Pass])) {Request.question = Question.MkQuestion S.alice kind offer}
+asking kind offer = (requestFor (Setup.emptyGame S.bothPlayers) (Prompt.ChooseAction (Decider.MkDecider S.alice) S.alice [Action.Pass])) {Request.question = Question.MkQuestion S.alice kind offer Nothing}
+
+-- | Every kind of question the scenario corpus answers has a form of its own,
+-- none falling back to a reply typed as JSON, but Concede, which the hotseat
+-- answers itself: each kind's first scenario, replayed to the stops about its
+-- first answer to the kind (a stop counts entries, not prompts, so a few
+-- either side).
+corpusSpec :: Spec.Spec IO n -> Registry.Registry IO -> n ()
+corpusSpec s registry = Spec.it s "every kind of question the scenarios answer has a form" $ do
+  root <- Load.defaultRoot
+  paths <- Load.listRoot root
+  firsts <-
+    Monad.foldM
+      ( \found path -> do
+          contents <- Encoding.decodeUtf8Lenient <$> ByteString.readFile path
+          pure (foldr (\kind -> Map.insertWith (\_ old -> old) kind path) found (kindsIn contents))
+      )
+      Map.empty
+      paths
+  found <- fmap concat . Monad.forM (Map.toList firsts) $ \(kind, path) -> do
+    bytes <- ByteString.readFile path
+    case (Load.parse bytes, Common.parse (Encoding.decodeUtf8Lenient bytes) >>= Codec.Reply.fromValue) of
+      (Right scenario, Right raw) -> do
+        let entries = Maybe.fromMaybe [] (Protocol.field "timeline" raw >>= Protocol.arrayOf)
+            answering entry = (Protocol.field "do" entry >>= Protocol.field "Answer" >>= Protocol.field "prompt") == Just (R.Text kind)
+            at = maybe 0 Int.toNaturalSaturating (List.findIndex answering entries)
+        stops <- Monad.forM [Natural.minusSaturating at 2 .. at + 3] $ \i -> Scenario.replay registry (Just i) scenario
+        pure [(Question.kind (Request.question request), path) | Right (Stop.MkBefore _ _ asked) <- stops, Just request <- [Protocol.requestFor asked], Question.kind (Request.question request) /= Text.pack "Concede", Question.Web.answersTyped request]
+      _ -> pure []
+  Spec.assertEqWith s "typed" (ListUtils.nubOrd found) []
+
+-- | The prompt kinds a scenario's text names in its answers.
+kindsIn :: Text.Text -> [Text.Text]
+kindsIn contents =
+  [ Text.takeWhile (/= '"') (Text.drop 1 (Text.stripStart (Text.drop 1 (Text.stripStart rest))))
+  | (_, found) <- Text.breakOnAll (Text.pack "\"prompt\"") contents,
+    let rest = Text.drop 8 found
+  ]
+
+-- | What submitting the picks answers, as the engine reads it and its offer
+-- lets it stand.
+answered :: Prompt.Prompt r -> Request.Request -> Set.Set (Natural, Natural) -> Either Text.Text r
+answered prompt request picks = case Question.Web.step request picks Question.Web.MkSubmit Text.empty of
+  Question.Web.MkReplied reply -> Protocol.decodeAnswer prompt reply >>= Protocol.onOffer (Question.offer (Request.question request)) prompt
+  other -> Left (Text.pack (show other))
 
 -- | The picks a run of events leaves.
 picking :: Request.Request -> [Question.Web.Event] -> Set.Set (Natural, Natural)

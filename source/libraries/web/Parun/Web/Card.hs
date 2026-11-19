@@ -11,13 +11,17 @@ import qualified Data.Map.Strict as Map
 import qualified Data.Maybe as Maybe
 import qualified Data.Set as Set
 import qualified Data.Text as Text
+import qualified Parun.Oracle as Oracle
+import qualified Parun.Oracle.Continuous as Oracle.Continuous
 import qualified Parun.Oracle.Keyword as Oracle.Keyword
 import qualified Parun.Play.Render as Render
 import qualified Parun.Types.Card as Card
 import qualified Parun.Types.CardName as CardName
 import qualified Parun.Types.CardType as CardType
+import qualified Parun.Types.ClassLevel as ClassLevel
 import qualified Parun.Types.Color as Color
 import qualified Parun.Types.Defense as Defense
+import qualified Parun.Types.Designation as Designation
 import qualified Parun.Types.Face as Face
 import qualified Parun.Types.Loyalty as Loyalty
 import qualified Parun.Types.ObjectId as ObjectId
@@ -26,6 +30,8 @@ import qualified Parun.Types.PlayerId as PlayerId
 import qualified Parun.Types.PlayerView as PlayerView
 import qualified Parun.Types.ProjectedCharacteristics as ProjectedCharacteristics
 import qualified Parun.Types.Recipient as Recipient
+import qualified Parun.Types.RoomHalf as RoomHalf
+import qualified Parun.Types.RoomIndex as RoomIndex
 import qualified Parun.Types.TapState as TapState
 import qualified Parun.Web.Attribute as Attribute
 import qualified Parun.Web.Element as Element
@@ -76,6 +82,42 @@ states view o =
         <> [shown "attack" "Attacking" "Attacking" | elem "attacking" kinds]
         <> [shown "block" "Blocking" "Blocking" | elem "blocking" kinds]
         <> [shown "sick" "Sick" "Summoning sick: can't attack or tap yet (CR 302.6)" | ObjectView.summoningSick o]
+        <> [shown "marked" label tip | (label, tip) <- marked o]
+
+-- | The designations a permanent has, short and spelled out: the
+-- Ring-bearer (CR 701.54b), a Class's level (CR 717.2b), a Room's unlocked
+-- halves (CR 709.5c), a dungeon's room (CR 309.4) and the rest
+-- (Parun.Types.Designation).
+marked :: ObjectView.ObjectView -> [(String, String)]
+marked o =
+  [("Ring-bearer", "The Ring-bearer: legendary, and harder to block (CR 701.54)") | Maybe.isJust (ObjectView.ringBearerFor o)]
+    <> [("Level " <> show (ClassLevel.unwrap l), "Class level " <> show (ClassLevel.unwrap l) <> " (CR 717)") | Just l <- [ObjectView.classLevel o]]
+    <> [ (label, label <> " (CR 709.5)")
+       | not (Set.null (ObjectView.unlockedHalves o)),
+         let label = case Set.toList (ObjectView.unlockedHalves o) of
+               [RoomHalf.LeftHalf] -> "Left door unlocked"
+               [RoomHalf.RightHalf] -> "Right door unlocked"
+               _ -> "Both doors unlocked"
+       ]
+    <> [("Room " <> show (RoomIndex.unwrap r + 1), "The venture marker is on room " <> show (RoomIndex.unwrap r + 1) <> " (CR 309.4)") | Just r <- [ObjectView.ventureRoom o]]
+    <> [(designationWord d, designationWord d) | d <- Set.toList (ObjectView.designations o)]
+
+designationWord :: Designation.Designation -> String
+designationWord d = case d of
+  Designation.Renowned -> "Renowned"
+  Designation.Monstrous -> "Monstrous"
+  Designation.Suspected -> "Suspected"
+  Designation.Solved -> "Solved"
+  Designation.Saddled -> "Saddled"
+  Designation.Prepared -> "Prepared"
+  Designation.Harnessed -> "Harnessed"
+  Designation.Embalmed -> "Embalmed"
+  Designation.AlphaSector -> "Alpha sector"
+  Designation.BetaSector -> "Beta sector"
+  Designation.GammaSector -> "Gamma sector"
+  Designation.Sprocket1 -> "Sprocket 1"
+  Designation.Sprocket2 -> "Sprocket 2"
+  Designation.Sprocket3 -> "Sprocket 3"
 
 -- | What on the stack targets the object, by name (CR 601.2c, 602.2b, 603.3d).
 targetedBy :: PlayerView.PlayerView -> ObjectId.ObjectId -> [Text.Text]
@@ -168,8 +210,9 @@ typeLine o = case ObjectView.ability o of
       let subtypes = fmap (Text.pack . show) (Set.toList (ProjectedCharacteristics.subtypes c))
           types = fmap (Text.pack . show) (Set.toList (ProjectedCharacteristics.cardTypes c))
           named = Set.map CardName.unwrap (ProjectedCharacteristics.names c)
-       in -- A basic land's subtype is its name, so its card types say more.
-          if null subtypes || Set.member (Text.unwords subtypes) named then Text.unwords types else Text.unwords subtypes
+       in -- A basic land's subtype is its name, so its card types say more;
+          -- an object with no types is an emblem (CR 114.3).
+          if null subtypes && null types then Text.pack "Emblem" else if null subtypes || Set.member (Text.unwords subtypes) named then Text.unwords types else Text.unwords subtypes
 
 -- | Damage marked and counters, each a small badge.
 badges :: ObjectView.ObjectView -> [Html.Html msg]
@@ -209,7 +252,19 @@ oracle lookUp o = do
   looked <- traverse lookUp (Set.toList names)
   let faces = concatMap (filter (\f -> Set.member (Face.name f) names) . Foldable.toList . Card.faces) (ListUtils.nubOrd (Maybe.catMaybes looked))
       lines' f = [CardName.unwrap (Face.name f) <> Text.pack ":" | length faces > 1] <> foldMap Text.lines (Face.oracleText f)
-  pure (concatMap lines' faces)
+  pure (if null faces then foldMap abilityLines (ObjectView.characteristics o) else concatMap lines' faces)
+
+-- | What an object no card data prints says, an emblem's abilities (CR
+-- 114.3) say: each rendered as Oracle text words it, where it is.
+abilityLines :: ProjectedCharacteristics.ProjectedCharacteristics -> [Text.Text]
+abilityLines c =
+  let self = Text.intercalate (Text.pack " // ") (fmap CardName.unwrap (Set.toList (ProjectedCharacteristics.names c)))
+      context = Oracle.contextOf self []
+   in concatMap (take 1) $
+        fmap (Oracle.Continuous.static context Nothing []) (ProjectedCharacteristics.staticAbilities c)
+          <> fmap (Oracle.Continuous.playerRule context) (ProjectedCharacteristics.playerAbilities c)
+          <> fmap (Oracle.activated context) (ProjectedCharacteristics.activatedAbilities c)
+          <> fmap (Oracle.triggered context False) (ProjectedCharacteristics.triggeredAbilities c)
 
 -- | What the sheet shows of the object it reads.
 data Reading = MkReading
@@ -255,7 +310,8 @@ fullType o = case (ObjectView.ability o, ObjectView.characteristics o) of
     let supertypes = fmap (Text.pack . show) (Set.toList (ProjectedCharacteristics.supertypes c))
         types = fmap (Text.pack . show) (Set.toList (ProjectedCharacteristics.cardTypes c))
         subtypes = fmap (Text.pack . show) (Set.toList (ProjectedCharacteristics.subtypes c))
-     in Text.unwords (supertypes <> types <> if null subtypes then [] else Text.pack "\8212" : subtypes)
+     in -- An object with no types is an emblem (CR 114.3).
+        if null (supertypes <> types <> subtypes) then Text.pack "Emblem" else Text.unwords (supertypes <> types <> if null subtypes then [] else Text.pack "\8212" : subtypes)
 
 -- | What the tile cannot fit: tapped, what it is attached to, what an
 -- ability says and what it targets, and the card behind a face-down one.
@@ -265,6 +321,7 @@ status view o =
     <> [Text.pack "Attacking" | Map.member (ObjectView.object o) (PlayerView.attackers view)]
     <> [Text.pack "Blocking" | any (Set.member (ObjectView.object o)) (PlayerView.blockers view)]
     <> [Text.pack "Summoning sick: it can't attack or use {T} abilities until its controller's next turn" | ObjectView.summoningSick o]
+    <> [Text.pack tip | (_, tip) <- marked o]
     <> [Text.pack "Keyword abilities: " <> Text.intercalate (Text.pack ", ") (keywords o) | not (null (keywords o))]
     <> [Text.pack "Attached to " <> Render.recipientName view r | r <- Maybe.maybeToList (ObjectView.attachedTo o)]
     <> [Text.pack "\"" <> t <> Text.pack "\"" | t <- Maybe.maybeToList (ObjectView.ability o >>= Render.abilityText view)]

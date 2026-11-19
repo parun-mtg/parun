@@ -2,11 +2,13 @@ module Parun.Codec.PlayerViewSpec where
 
 import qualified Data.Map.Strict as Map
 import qualified Data.Set as Set
+import qualified Parun.Codec.ObjectViewSpec as ObjectViewSpec
 import qualified Parun.Codec.PlayerView as PlayerView
 import qualified Parun.Codec.SeatViewSpec as SeatViewSpec
 import qualified Parun.JsonCodec.Common as Common
 import qualified Parun.Spec as Spec
 import qualified Parun.Types.AttackTarget as AttackTarget
+import qualified Parun.Types.Daytime as Daytime
 import qualified Parun.Types.ObjectId as ObjectId
 import qualified Parun.Types.Phase as Phase
 import qualified Parun.Types.PlayerId as PlayerId
@@ -32,6 +34,14 @@ spec s = Spec.describe s "Parun.Codec.PlayerView" $ do
       PlayerView.codec
       testView {PlayerView.attackers = Map.singleton (ObjectId.MkObjectId 5) (AttackTarget.OfPlayer (PlayerId.MkPlayerId 0)), PlayerView.blockers = Map.singleton (ObjectId.MkObjectId 5) (Set.singleton (ObjectId.MkObjectId 6))}
       (viewJsonWith ",\"attackers\":{\"5\":{\"type\":\"OfPlayer\",\"value\":0}},\"blockers\":{\"5\":[6]}")
+  -- CR 726.1 / 727.1 / 732.1: the game's designations; CR 702.26b / 408.1:
+  -- the phased-out permanents and the command zone.
+  Spec.it s "designations, phased-out permanents and the command zone" $
+    Common.assertCodec
+      s
+      PlayerView.codec
+      testView {PlayerView.monarch = Just (PlayerId.MkPlayerId 0), PlayerView.initiative = Just (PlayerId.MkPlayerId 1), PlayerView.daytime = Just Daytime.Night, PlayerView.phasedOut = [ObjectViewSpec.hidden], PlayerView.command = [ObjectViewSpec.hidden]}
+      (viewJsonWith (",\"phasedOut\":[" <> ObjectViewSpec.hiddenJson <> "],\"command\":[" <> ObjectViewSpec.hiddenJson <> "],\"monarch\":0,\"initiative\":1,\"daytime\":\"Night\""))
   Spec.it s "has a schema" $ Common.assertHasSchema s PlayerView.codec
 
 testView :: PlayerView.PlayerView
@@ -45,12 +55,17 @@ testView =
       PlayerView.priority = Just (PlayerId.MkPlayerId 1),
       PlayerView.seats = [SeatViewSpec.testSeat],
       PlayerView.battlefield = [],
+      PlayerView.phasedOut = [],
+      PlayerView.command = [],
       PlayerView.stack = [],
       PlayerView.attackers = Map.empty,
       PlayerView.blockers = Map.empty,
       PlayerView.parkedStacks = Map.empty,
       PlayerView.witnessed = [],
       PlayerView.witnessedLastTurn = [],
+      PlayerView.monarch = Nothing,
+      PlayerView.initiative = Nothing,
+      PlayerView.daytime = Nothing,
       PlayerView.result = Just (Result.Won (PlayerId.MkPlayerId 1)),
       PlayerView.undone = Just Undoing.UnpaidCost
     }

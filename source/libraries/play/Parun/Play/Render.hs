@@ -16,6 +16,7 @@ import qualified Parun.Engine.Sba as Sba
 import qualified Parun.Engine.Subtype as Subtype
 import qualified Parun.Exceptions.InvalidCorpus as InvalidCorpus
 import qualified Parun.Oracle as Oracle
+import qualified Parun.Oracle.Keyword as Oracle.Keyword
 import qualified Parun.Scenario.PromptOffer as PromptOffer
 import qualified Parun.Types.AbilityFacts as AbilityFacts
 import qualified Parun.Types.AbilityKind as AbilityKind
@@ -306,6 +307,8 @@ counterName :: CounterKind.CounterKind Keyword.Keyword -> Text.Text
 counterName kind = case kind of
   CounterKind.PlusOnePlusOne -> Text.pack "+1/+1"
   CounterKind.MinusOneMinusOne -> Text.pack "-1/-1"
+  -- CR 122.1b: a keyword counter by its keyword, as Oracle text prints it.
+  CounterKind.Keyword k | word : _ <- Oracle.Keyword.keywordWord Text.empty k -> word
   other -> Text.unwords (Text.words (spaced (Text.pack (show other))))
 
 -- | CR 107.4's symbols as the cost is printed.
@@ -340,6 +343,8 @@ objects :: PlayerView.PlayerView -> Map.Map ObjectId.ObjectId ObjectView.ObjectV
 objects view =
   Map.fromList . fmap (\o -> (ObjectView.object o, o)) $
     PlayerView.battlefield view
+      <> PlayerView.phasedOut view
+      <> PlayerView.command view
       <> PlayerView.stack view
       <> concat (PlayerView.parkedStacks view)
       <> concatMap (\s -> SeatView.hand s <> SeatView.library s <> SeatView.graveyard s <> SeatView.exile s) (PlayerView.seats view)
@@ -366,6 +371,11 @@ recalled view oid = case Map.lookup oid (objects view) of
         ObjectView.ability = Nothing,
         ObjectView.targets = [],
         ObjectView.summoningSick = False,
+        ObjectView.ringBearerFor = Nothing,
+        ObjectView.classLevel = Nothing,
+        ObjectView.unlockedHalves = Set.empty,
+        ObjectView.designations = Set.empty,
+        ObjectView.ventureRoom = Nothing,
         ObjectView.chosenColors = Map.empty,
         ObjectView.chosenColorless = Map.empty,
         ObjectView.chosenSubtype = Map.empty,

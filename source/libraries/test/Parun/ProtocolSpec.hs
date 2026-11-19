@@ -176,7 +176,7 @@ spec s registry = Spec.describe s "Protocol" $ do
     Spec.assertEqWith s "plays" (fst (asking ["\"Play\""])) (Just True)
     Spec.assertEqWith s "end of input" (fst (asking [])) Nothing
     Spec.assertEqWith s "views" (fmap (fmap Request.view) requests) [Just Nothing, Just Nothing]
-    Spec.assertEqWith s "questions" (fmap (fmap Request.question) requests) (replicate 2 (Just (Question.MkQuestion S.bob (Text.pack "PlayOrDraw") (R.Array [R.Text (Text.pack "Play"), R.Text (Text.pack "Draw")]))))
+    Spec.assertEqWith s "questions" (fmap (fmap Request.question) requests) (replicate 2 (Just (Question.MkQuestion S.bob (Text.pack "PlayOrDraw") (R.Array [R.Text (Text.pack "Play"), R.Text (Text.pack "Draw")]) Nothing)))
     Spec.assertEqWith s "problems" (fmap (fmap Request.problem) requests) [Just Nothing, Just (Just (Text.pack "expected Play or Draw"))]
   Spec.it s "an activated ability is offered by its place among its source's, so two abilities of one source differ" $ do
     vane <- S.printingOf s registry "Arcum's Weathervane"

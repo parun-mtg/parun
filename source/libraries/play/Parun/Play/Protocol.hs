@@ -6,6 +6,7 @@
 -- 'Reply.shapeOf'. An object is spelled @"$"@ and its id, a player by its id.
 module Parun.Play.Protocol where
 
+import qualified Control.Monad as Monad
 import qualified Data.Char as Char
 import qualified Data.Containers.ListUtils as ListUtils
 import qualified Data.List as List
@@ -19,6 +20,7 @@ import qualified Parun.Engine.Combat as Combat
 import qualified Parun.Engine.Driver as Driver
 import qualified Parun.Engine.PlayerView as PlayerView
 import qualified Parun.Extra.Integer as Integer
+import qualified Parun.Extra.Natural as Natural
 import qualified Parun.JsonCodec.Codec as Codec
 import qualified Parun.JsonCodec.Common as Common
 import qualified Parun.Play.Render as Render
@@ -113,13 +115,13 @@ readReply line = Common.parse line >>= Codec.Reply.fromValue
 requestFor :: Asked.Asked GameState.GameState r -> Maybe Request.Request
 requestFor asked =
   fmap
-    (\question -> Request.MkRequest (Just (PlayerView.viewFor (Question.seat question) (Asked.game asked))) question Nothing)
+    (\question -> Request.MkRequest (Just (PlayerView.viewFor (Question.seat question) (Asked.game asked))) question Nothing (Natural.length (Asked.enclosing asked)))
     (questionOf (Asked.game asked) (Asked.prompt asked))
 
 questionOf :: GameState.GameState -> Prompt.Prompt r -> Maybe Question.Question
 questionOf gs prompt =
   fmap
-    (\seat -> Question.MkQuestion seat (Scenario.Prompt.kindOf prompt) (PromptOffer.offerOf namer gs prompt))
+    (\seat -> Question.MkQuestion seat (Scenario.Prompt.kindOf prompt) (PromptOffer.offerOf namer gs prompt) (Monad.mfilter (/= seat) (Driver.subjectOf prompt)))
     (Driver.deciderOf prompt)
 
 decodeAnswer :: Prompt.Prompt r -> R.Reply -> Either Text.Text r
@@ -157,9 +159,9 @@ playOrDraw :: (Monad m) => Exchange m -> PlayerId.PlayerId -> m (Maybe Bool)
 playOrDraw send seat = go Nothing
   where
     choices = [(Text.pack "Play", True), (Text.pack "Draw", False)]
-    question = Question.MkQuestion seat (Text.pack "PlayOrDraw") (R.Array (fmap (R.Text . fst) choices))
+    question = Question.MkQuestion seat (Text.pack "PlayOrDraw") (R.Array (fmap (R.Text . fst) choices)) Nothing
     go problem = do
-      sent <- send (Request.MkRequest Nothing question problem)
+      sent <- send (Request.MkRequest Nothing question problem 0)
       case fmap (>>= chosen) sent of
         Nothing -> pure Nothing
         Just (Right plays) -> pure (Just plays)

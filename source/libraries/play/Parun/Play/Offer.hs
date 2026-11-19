@@ -14,13 +14,20 @@ import qualified Data.Set as Set
 import qualified Data.Text as Text
 import Numeric.Natural (Natural)
 import qualified Parun.Codec.Cost as Codec.Cost
+import qualified Parun.Codec.CounterKind as Codec.CounterKind
 import qualified Parun.Codec.EntryOption as Codec.EntryOption
 import qualified Parun.Codec.GameEvent as Codec.GameEvent
 import qualified Parun.Codec.Keyword as Codec.Keyword
 import qualified Parun.Codec.ManaCost as Codec.ManaCost
+import qualified Parun.Codec.ManaSymbol as Codec.ManaSymbol
 import qualified Parun.Codec.ManaType as Codec.ManaType
 import qualified Parun.Codec.Reply as Codec.Reply
+import qualified Parun.Codec.StoredResult as Codec.StoredResult
+import qualified Parun.Codec.TextWord as Codec.TextWord
+import qualified Parun.Codec.WordFamily as Codec.WordFamily
 import qualified Parun.Codec.Zone as Codec.Zone
+import qualified Parun.Engine.Subtype as Subtype
+import qualified Parun.Engine.TextWord as TextWord.Engine
 import qualified Parun.Extra.Natural as Natural
 import qualified Parun.JsonCodec.Codec as Codec
 import qualified Parun.JsonCodec.Common as Common
@@ -46,6 +53,8 @@ import qualified Parun.Types.ProductionTag as ProductionTag
 import qualified Parun.Types.Question as Question
 import qualified Parun.Types.Reply as R
 import qualified Parun.Types.SeatView as SeatView
+import qualified Parun.Types.StoredResult as StoredResult
+import qualified Parun.Types.TextWord as TextWord
 import qualified Text.Read as Read
 
 textOf :: R.Reply -> Maybe Text.Text
@@ -123,6 +132,10 @@ optionName view reply = case reply of
       Just target <- Protocol.field "target" reply,
       Just amount <- Protocol.field "amount" reply >>= Protocol.naturalOf ->
         Text.concat [objectName view source, Text.pack (" deals " <> show amount <> " damage to "), recipientName view target]
+    -- A counter's kind, a mana type, or another tagged value by its tag.
+    | Just kind <- decoded (Codec.CounterKind.codec Codec.Keyword.codec) reply -> Render.counterName kind <> Text.pack " counter"
+    | Just mana <- decoded Codec.ManaType.codec reply -> Text.pack "{" <> Render.manaType mana <> Text.pack "}"
+    | Just tag <- Protocol.field "type" reply >>= textOf -> tagName tag <> foldMap (\value -> Text.pack " " <> optionName view value) (Protocol.field "value" reply)
   _ -> Common.render (Codec.Reply.toValue reply)
 
 -- | A ChooseCost candidate's cost as Oracle text prints it (Oracle.Cost.cost),
@@ -352,3 +365,86 @@ entryName view entry
   | Maybe.isJust (Protocol.field "source" entry) = sourcedName Text.empty view entry
   | entry == R.Null = Text.pack "Something you did not see"
   | otherwise = optionName view entry
+
+-- | An amount-per-item offer's shape with these amounts in amountLeaves'
+-- order, a map leaving out each key that takes none.
+fillAmounts :: R.Reply -> [Natural] -> R.Reply
+fillAmounts caps = fst . go caps
+  where
+    go reply typed = case reply of
+      R.Array items
+        | all (Maybe.isJust . Protocol.naturalOf) items ->
+            let (rest, filled) = List.mapAccumL (\ns item -> swap (go item ns)) typed items
+             in (R.Array filled, rest)
+        | otherwise ->
+            let (rest, filled) = List.mapAccumL (\ns item -> swap (entry item ns)) typed items
+             in (R.Array (Maybe.catMaybes filled), rest)
+      _ -> case typed of
+        n : rest -> (R.Number (toInteger n), rest)
+        [] -> (R.Number 0, [])
+    entry item typed = case item of
+      R.Array [key, value] ->
+        let (filled, rest) = go value typed
+         in (if filled `elem` [R.Number 0, R.Array []] then Nothing else Just (R.Array [key, filled]), rest)
+      _ -> (Nothing, typed)
+    swap (a, b) = (b, a)
+
+-- | A key of an amount-per-item offer as the seat reads it: a counter's kind,
+-- a stored die result, a recipient, or as an option is named.
+amountKeyName :: PlayerView.PlayerView -> R.Reply -> Text.Text
+amountKeyName view key
+  | Just kind <- decoded (Codec.CounterKind.codec Codec.Keyword.codec) key = Render.counterName kind <> Text.pack " counters"
+  | Just result <- decoded Codec.StoredResult.codec key = Text.pack ("d" <> show (StoredResult.sides result) <> " showing " <> show (StoredResult.value result))
+  | R.Array [R.Text _, _] <- key = recipientName view key
+  | otherwise = optionName view key
+
+-- | What a listed offer tells the seat beside its options, a line each, in
+-- the order the offer gives: a cost or mana as Oracle text prints it, a list of who
+-- did what as each beside its player, and anything else as an option is named.
+-- An empty list says nothing.
+told :: PlayerView.PlayerView -> Text.Text -> R.Reply -> [Text.Text]
+told view self offer = case offer of
+  R.Object pairs ->
+    [ label key <> Text.pack ": " <> value key reply
+    | (key, reply) <- pairs,
+      key `notElem` fmap Text.pack ["source", "options", "entries", "players", "among", "departed", "least", "most", "names", "costs", "counts", "repeats", "amounts", "floors", "recipients", "counters", "fromOne", "oneKind"],
+      reply /= R.Array []
+    ]
+  _ -> []
+  where
+    label key = case Text.uncons (Render.spaced key) of
+      Just (c, rest) -> Text.cons (Char.toUpper c) rest
+      Nothing -> key
+    value key reply
+      | key == Text.pack "cost" = candidateName self reply
+      | key == Text.pack "symbol", Just symbol <- decoded Codec.ManaSymbol.codec reply = Render.manaCost (ManaCost.MkManaCost [symbol])
+      | key == Text.pack "mana", Just mana <- decoded Codec.ManaType.codec reply = Render.manaType mana
+      | Just pairs <- Protocol.arrayOf reply,
+        Just named <- mapM byPlayer pairs =
+          Text.intercalate (Text.pack "; ") named
+      | otherwise = optionName view reply
+    byPlayer pair = case pair of
+      R.Array [player@(R.Text _), what] | Maybe.isNothing (objectOf player) -> Just (playerName player <> Text.pack ": " <> optionName view what)
+      _ -> Nothing
+
+-- | A value as an offer spells it.
+encoded :: Codec.Codec a -> a -> R.Reply
+encoded codec = Either.fromRight R.Null . Codec.Reply.fromValue . Codec.encode codec
+
+-- | A ChooseWordSwap offer's words (CR 612.2): those the change may replace,
+-- and those it may replace one with, outside the card's forbidden words
+-- (Parun.Engine.TextWord.swappable), each as the answer spells it and named.
+wordSwap :: R.Reply -> Maybe ([(R.Reply, Text.Text)], [(R.Reply, Text.Text)])
+wordSwap offer = do
+  families <- Protocol.field "families" offer >>= decoded (Common.set Codec.WordFamily.codec)
+  let forbidden = Maybe.fromMaybe Set.empty (Protocol.field "forbidden" offer >>= decoded (Common.set Codec.TextWord.codec))
+      every = fmap TextWord.ColorWord [minBound ..] <> fmap TextWord.SubtypeWord [minBound ..]
+      words' = [w | w <- every, any (`TextWord.Engine.choosable` w) families]
+      option w = (encoded Codec.TextWord.codec w, wordName w)
+  pure (fmap option words', fmap option (filter (`Set.notMember` forbidden) words'))
+
+-- | A word a text change swaps, as Oracle text prints it.
+wordName :: TextWord.TextWord -> Text.Text
+wordName word = case word of
+  TextWord.ColorWord c -> Text.toLower (Text.pack (show c))
+  TextWord.SubtypeWord s -> Maybe.fromMaybe (Text.pack (show s)) (Subtype.creatureTypeWord s)

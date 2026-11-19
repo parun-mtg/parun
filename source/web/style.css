@@ -786,7 +786,55 @@ main.game {
   color: var(--muted);
 }
 
-.auto-pass > summary .k {
+.auto-pass > summary /* The seat's designations: the monarch, the initiative, the Ring, speed. */
+.count.monarch,
+.count.initiative {
+  background: color-mix(in srgb, var(--c-multi) 32%, var(--surface-2));
+  font-weight: 600;
+}
+
+.count.monarch .k,
+.count.initiative .k {
+  color: var(--text);
+}
+
+.count.ring,
+.count.speed,
+.count.blessing,
+.count.dungeons,
+.count.player-counter {
+  background: color-mix(in srgb, var(--accent) 16%, var(--surface-2));
+}
+
+/* A subgame (CR 730), on the turn bar. */
+.subgame {
+  flex: none;
+  padding: 0.1em 0.6em;
+  border-radius: 999px;
+  background: var(--danger);
+  color: var(--on-danger);
+  font-weight: 700;
+  font-size: 0.85em;
+}
+
+/* Day or night (CR 732), beside the turn. */
+.daytime {
+  margin-left: 0.5em;
+  padding: 0.05em 0.5em;
+  border-radius: 999px;
+  font-size: 0.85em;
+  font-weight: 600;
+}
+
+.daytime.day {
+  background: color-mix(in srgb, var(--c-w) 30%, var(--surface));
+}
+
+.daytime.night {
+  background: color-mix(in srgb, var(--c-b) 45%, var(--surface));
+}
+
+.k {
   color: var(--muted);
 }
 
@@ -1034,6 +1082,36 @@ details.pile[open] {
 .group {
   display: flex;
   flex-direction: column;
+}
+
+/* Phased out (CR 702.26b) and the command zone (CR 408): rows apart from
+   the permanents, each labelled. */
+.row.phased,
+.row.command {
+  position: relative;
+  align-items: center;
+  margin-top: 0.5rem;
+  padding: 0.7rem 6px 6px;
+  border: 1px dashed var(--border);
+  border-radius: var(--radius);
+}
+
+.row-label {
+  position: absolute;
+  top: -0.6em;
+  left: 8px;
+  padding: 0 0.35em;
+  background: var(--surface);
+  color: var(--muted);
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+
+.row.phased .card {
+  opacity: 0.55;
+  filter: grayscale(0.6);
 }
 
 .group {
@@ -1331,6 +1409,12 @@ details.pile[open] {
   color: var(--on-good);
 }
 
+.badge.marked {
+  background: color-mix(in srgb, var(--c-multi) 28%, var(--surface));
+  border-color: var(--c-multi);
+  color: var(--text);
+}
+
 .badge.sick {
   background: var(--surface-2);
   color: var(--text);
@@ -1551,6 +1635,16 @@ details.pile[open] {
   color: var(--muted);
   font-weight: 600;
   margin-top: 0.3em;
+}
+
+/* CR 724: a choice the seat makes for a player it controls. */
+.controlling {
+  margin: 0;
+  padding: 0.45em 0.7em;
+  border-radius: var(--radius);
+  background: color-mix(in srgb, var(--c-b) 30%, var(--surface));
+  font-weight: 600;
+  font-size: 0.9rem;
 }
 
 .nudge {

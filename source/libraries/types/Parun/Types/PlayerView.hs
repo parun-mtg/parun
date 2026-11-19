@@ -4,6 +4,7 @@ import qualified Data.Map.Strict as Map
 import qualified Data.Set as Set
 import qualified Numeric.Natural as Natural
 import qualified Parun.Types.AttackTarget as AttackTarget
+import qualified Parun.Types.Daytime as Daytime
 import qualified Parun.Types.LoggedEvent as LoggedEvent
 import qualified Parun.Types.ObjectId as ObjectId
 import qualified Parun.Types.ObjectView as ObjectView
@@ -25,6 +26,12 @@ data PlayerView = MkPlayerView
     priority :: Maybe PlayerId.PlayerId,
     seats :: [SeatView.SeatView],
     battlefield :: [ObjectView.ObjectView],
+    -- | CR 702.26b: the phased-out permanents, which every seat sees though
+    -- the game treats them as though they don't exist.
+    phasedOut :: [ObjectView.ObjectView],
+    -- | CR 408: what is face up in the command zone: emblems, dungeons,
+    -- commanders, planes and schemes.
+    command :: [ObjectView.ObjectView],
     -- | Top first, as TurnRegisters.stack.
     stack :: [ObjectView.ObjectView],
     -- | CR 508.1b: each attacking creature and what it attacks, as Combat.attackers.
@@ -39,6 +46,12 @@ data PlayerView = MkPlayerView
     -- | The previous turn's log entries the seat witnessed, for a client that
     -- last looked before that turn ended (CR 514.1's discard, for one).
     witnessedLastTurn :: [LoggedEvent.LoggedEvent],
+    -- | CR 726.1: the monarch.
+    monarch :: Maybe PlayerId.PlayerId,
+    -- | CR 727.1: who has the initiative.
+    initiative :: Maybe PlayerId.PlayerId,
+    -- | CR 732.1: day or night, Nothing until it first becomes either.
+    daytime :: Maybe Daytime.Daytime,
     result :: Maybe Result.Result,
     -- | CR 734.1: why the seat's last cast, activation or combat declaration
     -- was reversed, until it next chooses one (Bookkeeping.undone).
