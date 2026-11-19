@@ -207,8 +207,8 @@ function apply(json) {
 }
 
 // While the game goes on without the seat (Parun.Web.Question.watching), the
-// dock under the hand keeps the height it had, so the hand and board above it
-// hold still through a pass of many steps; the next question sizes it afresh.
+// dock keeps the height it had, so on a phone the hand and board above it hold
+// still through a pass of many steps; the next question sizes it afresh.
 function dock() {
   return root.querySelector("main.game > .side");
 }
