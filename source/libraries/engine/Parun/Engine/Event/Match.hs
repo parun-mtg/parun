@@ -103,6 +103,7 @@ import qualified Parun.Types.DiscardWay as DiscardWay
 import qualified Parun.Types.Discarded as Discarded
 import qualified Parun.Types.DrawnUnder as DrawnUnder
 import qualified Parun.Types.Drew as Drew
+import qualified Parun.Types.Enlisted as Enlisted
 import qualified Parun.Types.EntersTrigger as EntersTrigger
 import qualified Parun.Types.EventGroup as EventGroup
 import qualified Parun.Types.EventShape as EventShape
@@ -1095,6 +1096,7 @@ anyTriggerReads event = case event of
   GameEvent.Crewed {} -> True
   GameEvent.BecameCrewed {} -> True
   GameEvent.Saddled {} -> True
+  GameEvent.Enlisted {} -> True
   GameEvent.PermanentSacrificed {} -> True
   GameEvent.AbilityTriggered {} -> True
   GameEvent.ControlChanged {} -> True
@@ -2179,6 +2181,7 @@ armMatches bindings frozen board atEvent beforeEvent groupEvents gs bearer you c
         TriggerFrequency.FirstTimeEachTurn -> crewingsOf bearer gs <= 1
     (CrewRole.Crewer KeywordFamily.Crew, GameEvent.Crewed ev) -> Set.member bearer (Crewing.crewedBy ev)
     (CrewRole.Crewer KeywordFamily.Saddle, GameEvent.Saddled ev) -> Set.member bearer (Saddling.saddledBy ev)
+    (CrewRole.Enlister, GameEvent.Enlisted ev) -> Enlisted.enlister ev == bearer
     _ -> False
   -- CR 702.112b: a permanent the Filter admits was given the renowned designation.
   -- A Matching TurnedFaceUp's arm above, line for line, and for its reasons: the

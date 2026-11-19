@@ -13,4 +13,6 @@ spec s = Spec.describe s "Parun.Codec.CrewRole" $ do
     Common.assertCodec s CrewRole.codec (CrewRole.Vehicle TriggerFrequency.FirstTimeEachTurn) " {\"type\":\"Vehicle\",\"value\":\"FirstTimeEachTurn\"} "
   Spec.it s "Crewer" $
     Common.assertCodec s CrewRole.codec (CrewRole.Crewer KeywordFamily.Crew) " {\"type\":\"Crewer\",\"value\":\"Crew\"} "
+  Spec.it s "Enlister" $
+    Common.assertCodec s CrewRole.codec CrewRole.Enlister " {\"type\":\"Enlister\"} "
   Spec.it s "has a schema" $ Common.assertHasSchema s CrewRole.codec

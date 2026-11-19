@@ -1367,6 +1367,7 @@ damageOf event = case event of
   GameEvent.BecameCrewed _ -> Nothing
   GameEvent.Convoked _ -> Nothing
   GameEvent.Saddled _ -> Nothing
+  GameEvent.Enlisted {} -> Nothing
   GameEvent.Crewed _ -> Nothing
   GameEvent.PermanentSacrificed {} -> Nothing
   GameEvent.AbilityTriggered {} -> Nothing
@@ -1451,6 +1452,7 @@ revealOf event = case event of
   GameEvent.BecameCrewed _ -> Nothing
   GameEvent.Convoked _ -> Nothing
   GameEvent.Saddled _ -> Nothing
+  GameEvent.Enlisted {} -> Nothing
   GameEvent.Crewed _ -> Nothing
   GameEvent.PermanentSacrificed {} -> Nothing
   GameEvent.AbilityTriggered {} -> Nothing
@@ -13546,6 +13548,7 @@ abilityTriggeredOf event = case event of
   GameEvent.BecameCrewed _ -> Nothing
   GameEvent.Convoked _ -> Nothing
   GameEvent.Saddled _ -> Nothing
+  GameEvent.Enlisted {} -> Nothing
   GameEvent.Crewed _ -> Nothing
   GameEvent.PermanentSacrificed {} -> Nothing
   GameEvent.Moved {} -> Nothing

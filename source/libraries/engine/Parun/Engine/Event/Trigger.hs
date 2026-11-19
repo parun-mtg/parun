@@ -94,6 +94,7 @@ import qualified Parun.Types.DiscardTrigger as DiscardTrigger
 import qualified Parun.Types.DiscardWay as DiscardWay
 import qualified Parun.Types.Discarded as Discarded
 import qualified Parun.Types.Drew as Drew
+import qualified Parun.Types.Enlisted as Enlisted
 import qualified Parun.Types.EntersTrigger as EntersTrigger
 import qualified Parun.Types.EventGroup as EventGroup
 import qualified Parun.Types.Expended as Expended
@@ -671,6 +672,7 @@ movedOf event = case event of
   GameEvent.BecameCrewed _ -> Nothing
   GameEvent.Convoked _ -> Nothing
   GameEvent.Saddled _ -> Nothing
+  GameEvent.Enlisted {} -> Nothing
   GameEvent.Crewed _ -> Nothing
   GameEvent.PermanentSacrificed {} -> Nothing
   GameEvent.AbilityTriggered {} -> Nothing
@@ -844,6 +846,7 @@ participants event =
         GameEvent.Convoked c -> (Convoking.spell c : Set.toList (Convoking.convokedBy c), [])
         GameEvent.Crewed c -> (Crewing.vehicle c : Set.toList (Crewing.crewedBy c), [])
         GameEvent.Saddled c -> (Saddling.mount c : Set.toList (Saddling.saddledBy c), [])
+        GameEvent.Enlisted e -> ([Enlisted.enlister e, Enlisted.enlisted e], [])
         GameEvent.PermanentSacrificed p -> ([PermanentWasSacrificed.permanent p], [PermanentWasSacrificed.player p])
         GameEvent.AbilityTriggered t -> abilityParticipants t
         GameEvent.TriggeredAbilityFinished t -> abilityParticipants t
@@ -1672,6 +1675,7 @@ eventTriggersGiven scope standing events gs =
         GameEvent.BecameCrewed _ -> Map.empty
         GameEvent.Convoked _ -> Map.empty
         GameEvent.Saddled _ -> Map.empty
+        GameEvent.Enlisted {} -> Map.empty
         GameEvent.Crewed _ -> Map.empty
         GameEvent.PermanentSacrificed {} -> Map.empty
         GameEvent.AbilityTriggered {} -> Map.empty
@@ -1985,6 +1989,7 @@ eventTriggersGiven scope standing events gs =
         GameEvent.BecameCrewed _ -> Map.empty
         GameEvent.Convoked _ -> Map.empty
         GameEvent.Saddled _ -> Map.empty
+        GameEvent.Enlisted {} -> Map.empty
         GameEvent.Crewed _ -> Map.empty
         GameEvent.PermanentSacrificed {} -> Map.empty
         GameEvent.AbilityTriggered {} -> Map.empty
@@ -2216,6 +2221,7 @@ eventTriggersGiven scope standing events gs =
         GameEvent.BecameCrewed _ -> Map.empty
         GameEvent.Convoked _ -> Map.empty
         GameEvent.Saddled _ -> Map.empty
+        GameEvent.Enlisted {} -> Map.empty
         GameEvent.Crewed _ -> Map.empty
         GameEvent.PermanentSacrificed {} -> Map.empty
         GameEvent.AbilityTriggered {} -> Map.empty
@@ -2338,6 +2344,7 @@ eventTriggersGiven scope standing events gs =
         GameEvent.BecameCrewed _ -> Map.empty
         GameEvent.Convoked _ -> Map.empty
         GameEvent.Saddled _ -> Map.empty
+        GameEvent.Enlisted {} -> Map.empty
         GameEvent.Crewed _ -> Map.empty
         GameEvent.PermanentSacrificed {} -> Map.empty
         GameEvent.AbilityTriggered {} -> Map.empty
@@ -4156,6 +4163,7 @@ resnapshot gs without event =
         GameEvent.Convoked {} -> Just event
         GameEvent.Crewed {} -> Just event
         GameEvent.Saddled {} -> Just event
+        GameEvent.Enlisted {} -> Just event
         GameEvent.PermanentSacrificed {} -> Just event
         GameEvent.AbilityTriggered {} -> Just event
         GameEvent.ControlChanged {} -> Just event

@@ -57,6 +57,7 @@ import Parun.Types.Combat (Combat)
 import qualified Parun.Types.Combat as Combat
 import qualified Parun.Types.CombatDeclaration as CombatDeclaration
 import Parun.Types.Cost (Cost)
+import qualified Parun.Types.Enlisted as Enlisted
 import qualified Parun.Types.Filter as Filter.Type
 import Parun.Types.Game (Game)
 import qualified Parun.Types.GameEvent as GameEvent
@@ -2910,6 +2911,10 @@ attemptAttackDeclaration perform pid asked forced rejected = do
         -- so CR 508.1's preamble undoes an enlist along with the declaration. Paid
         -- here, at the choice, and `held` like exert's.
         --
+        -- CR 702.154c's "enlists" is GameEvent.Enlisted, written at the tap, which
+        -- Guardian of New Benalia's trigger reads; the scenario
+        -- guardian-of-new-benalia-scries-2-when-it-enlists-a-creature proves it.
+        --
         -- CR 702.154b's linked triggered ability is armed HERE and only where the
         -- tap happened (CR 607.2h): the entry's
         -- existence is the affirmative answer, and it fires at the next
@@ -2935,6 +2940,7 @@ attemptAttackDeclaration perform pid asked forced rejected = do
             answer <- Game.mayChooseAmong (\enlistDecider who -> Prompt.ChooseEnlist enlistDecider who oid) you enlistCandidates
             Monad.forM_ answer $ \tapped -> do
               Event.tap you tapped
+              State.modify' (Event.recordEvent (GameEvent.Enlisted Enlisted.MkEnlisted {Enlisted.enlister = oid, Enlisted.enlisted = tapped}))
               State.modify' (\armed -> Event.armDelayed Keyword.Engine.enlistReflexive (Projection.delayedSnapshotOf oid armed) oid you (Map.singleton Binding.tappedPermanent (Binding.toObject tapped)) (Just TurnWindow.AnyTurn) Nothing armed)
             pure (fmap ((,) you) answer)
         gs1 <- State.get

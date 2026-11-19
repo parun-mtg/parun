@@ -37,6 +37,7 @@ import qualified Parun.Codec.DamagePrevented as DamagePrevented
 import qualified Parun.Codec.DieResult as DieResult
 import qualified Parun.Codec.Discarded as Discarded
 import qualified Parun.Codec.Drew as Drew
+import qualified Parun.Codec.Enlisted as Enlisted
 import qualified Parun.Codec.Expended as Expended
 import qualified Parun.Codec.Exploited as Exploited
 import qualified Parun.Codec.FacedDilemma as FacedDilemma
@@ -133,6 +134,7 @@ codec =
       Arm.payload "Crewed" Crewing.codec GameEvent.Crewed (\x -> case x of GameEvent.Crewed y -> Just y; _ -> Nothing),
       Arm.payload "BecameCrewed" Crewing.codec GameEvent.BecameCrewed (\x -> case x of GameEvent.BecameCrewed y -> Just y; _ -> Nothing),
       Arm.payload "Saddled" Saddling.codec GameEvent.Saddled (\x -> case x of GameEvent.Saddled y -> Just y; _ -> Nothing),
+      Arm.payload "Enlisted" Enlisted.codec GameEvent.Enlisted (\x -> case x of GameEvent.Enlisted y -> Just y; _ -> Nothing),
       Arm.payload "PermanentSacrificed" PermanentWasSacrificed.codec GameEvent.PermanentSacrificed (\x -> case x of GameEvent.PermanentSacrificed y -> Just y; _ -> Nothing),
       Arm.payload "AbilityTriggered" AbilityTriggered.codec GameEvent.AbilityTriggered (\x -> case x of GameEvent.AbilityTriggered y -> Just y; _ -> Nothing),
       Arm.payload "ControlChanged" ControlChanged.codec GameEvent.ControlChanged (\x -> case x of GameEvent.ControlChanged y -> Just y; _ -> Nothing),
@@ -218,6 +220,7 @@ tagOf x = case x of
   GameEvent.Exploited {} -> "Exploited"
   GameEvent.Convoked {} -> "Convoked"
   GameEvent.Saddled {} -> "Saddled"
+  GameEvent.Enlisted {} -> "Enlisted"
   GameEvent.Crewed {} -> "Crewed"
   GameEvent.BecameCrewed {} -> "BecameCrewed"
   GameEvent.PermanentSacrificed {} -> "PermanentSacrificed"

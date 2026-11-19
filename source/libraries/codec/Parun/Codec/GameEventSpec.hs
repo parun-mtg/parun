@@ -60,6 +60,7 @@ import qualified Parun.Types.DiscardCause as DiscardCause
 import qualified Parun.Types.Discarded as Discarded
 import qualified Parun.Types.Drew as Drew
 import qualified Parun.Types.EndingStep as EndingStep
+import qualified Parun.Types.Enlisted as Enlisted
 import qualified Parun.Types.Expended as Expended
 import qualified Parun.Types.Exploited as Exploited
 import qualified Parun.Types.FacedDilemma as FacedDilemma
@@ -469,6 +470,14 @@ spec s = Spec.describe s "Parun.Codec.GameEvent" $ do
       GameEvent.codec
       (GameEvent.Exploited (Exploited.MkExploited (ObjectId.MkObjectId 8) (ObjectId.MkObjectId 9)))
       " {\"type\":\"Exploited\",\"value\":{\"exploiter\":8,\"exploited\":9}} "
+  -- CR 702.154c: the enlister and the creature it tapped, distinct ids so a
+  -- codec that crossed them goes red.
+  Spec.it s "Enlisted" $
+    Common.assertCodec
+      s
+      GameEvent.codec
+      (GameEvent.Enlisted (Enlisted.MkEnlisted (ObjectId.MkObjectId 10) (ObjectId.MkObjectId 11)))
+      " {\"type\":\"Enlisted\",\"value\":{\"enlister\":10,\"enlisted\":11}} "
   -- CR 702.51c: the spell and the creatures tapped to pay for mana in its total
   -- cost, two convokers so a codec that dropped all but one goes red.
   Spec.it s "Convoked" $

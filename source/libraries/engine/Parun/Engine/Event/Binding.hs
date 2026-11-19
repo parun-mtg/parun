@@ -74,6 +74,7 @@ import qualified Parun.Types.DiscardSubject as DiscardSubject
 import qualified Parun.Types.DiscardTrigger as DiscardTrigger
 import qualified Parun.Types.Discarded as Discarded
 import qualified Parun.Types.Drew as Drew
+import qualified Parun.Types.Enlisted as Enlisted
 import qualified Parun.Types.EntersTrigger as EntersTrigger
 import qualified Parun.Types.Exploited as Exploited
 import qualified Parun.Types.Filter as Filter.Type
@@ -667,6 +668,11 @@ eventBindingsOver board gs bearerBecame becameInGraveyard bearer you cond event 
     Binding.setCrewedOrSaddled (Crewing.vehicle ev) Map.empty
   (TriggerCondition.Crews (CrewRole.Crewer KeywordFamily.Saddle), GameEvent.Saddled ev) ->
     Binding.setCrewedOrSaddled (Saddling.mount ev) Map.empty
+  -- CR 702.154c's enlisted creature, under enlist's own reflexive slot for "the
+  -- tapped creature". Unconditional given a match: every GameEvent.Enlisted
+  -- carries it.
+  (TriggerCondition.Crews CrewRole.Enlister, GameEvent.Enlisted ev) ->
+    Map.singleton Binding.tappedPermanent (Binding.toObject (Enlisted.enlisted ev))
   -- CR 702.122e's rider: the creatures that paid THAT activation's crew cost,
   -- which Mighty Servant of Leuk-o's intervening "if" counts. The event the
   -- rider is about is the one being matched, so taking the set off it is what
@@ -1879,6 +1885,7 @@ eventBindingSlots cond = case cond of
   TriggerCondition.Crews role -> case role of
     CrewRole.Vehicle _ -> Set.singleton Binding.crewers
     CrewRole.Crewer _ -> Set.singleton Binding.crewedOrSaddled
+    CrewRole.Enlister -> Set.singleton Binding.tappedPermanent
   -- CR 701.21a's event names a player and a permanent, and this claims the
   -- PLAYER: Vengeful Tracker's "deals 2 damage to them" reads the seat that
   -- sacrificed, which the eventBindings arm stamps for every match.

@@ -1748,6 +1748,7 @@ triggerConditionChildren c condition = case condition of
   TriggerCondition.Crews role -> case role of
     CrewRole.Vehicle frequency -> fmap (TriggerCondition.Crews . CrewRole.Vehicle) (triggerFrequency c HistoryRead.Crews frequency)
     CrewRole.Crewer _ -> pure condition
+    CrewRole.Enlister -> pure condition
   TriggerCondition.PermanentSacrificed (SacrificeTrigger.MkSacrificeTrigger acts batching) -> fmap (\renamed -> TriggerCondition.PermanentSacrificed (SacrificeTrigger.MkSacrificeTrigger renamed batching)) (playerActsOnChildren c acts)
   TriggerCondition.AbilityWatch _ -> pure condition
   TriggerCondition.PlayerBecomesMonarch _ -> pure condition

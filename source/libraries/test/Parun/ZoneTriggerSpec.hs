@@ -125,6 +125,7 @@ import qualified Parun.Types.Discarded as Discarded
 import qualified Parun.Types.DrawnUnder as DrawnUnder
 import qualified Parun.Types.Drew as Drew
 import qualified Parun.Types.EndingStep as EndingStep
+import qualified Parun.Types.Enlisted as Enlisted
 import qualified Parun.Types.EntersTrigger as EntersTrigger
 import qualified Parun.Types.Expended as Expended
 import qualified Parun.Types.ExploitTrigger as ExploitTrigger
@@ -2010,11 +2011,12 @@ representativeEvents cond =
         -- `departed`, which is not the bearer.
         -- CR 702.122b's own event for a crewing Crewer and CR 702.171c's for a
         -- saddling one, with `departed` on BOTH sides so the pair matches
-        -- whichever side the arm reads.
+        -- whichever side the arm reads; CR 702.154c's for an Enlister likewise.
         TriggerCondition.Crews role -> one $ case role of
           CrewRole.Vehicle _ -> GameEvent.BecameCrewed (Crewing.MkCrewing departed (Set.singleton departed))
           CrewRole.Crewer KeywordFamily.Saddle -> GameEvent.Saddled (Saddling.MkSaddling departed (Set.singleton departed))
           CrewRole.Crewer _ -> GameEvent.Crewed (Crewing.MkCrewing departed (Set.singleton departed))
+          CrewRole.Enlister -> GameEvent.Enlisted (Enlisted.MkEnlisted departed departed)
         -- CR 701.21a's own event, and the only one this condition admits. The
         -- pair need not actually match -- `departed` is no artifact on the empty
         -- board -- which is fine for what this pins: the arm binds the event's
@@ -2433,6 +2435,7 @@ everyTriggerCondition =
     TriggerCondition.Crews (CrewRole.Vehicle TriggerFrequency.EveryTime),
     TriggerCondition.Crews (CrewRole.Crewer KeywordFamily.Crew),
     TriggerCondition.Crews (CrewRole.Crewer KeywordFamily.Saddle),
+    TriggerCondition.Crews CrewRole.Enlister,
     -- ALL THREE relations, on the Declaration rows' reasoning above: an
     -- eventBindings arm that had cased on the relation and stamped nothing under
     -- one of them would go unseen if only one were listed. Vengeful Tracker
