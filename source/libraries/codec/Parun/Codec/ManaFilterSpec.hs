@@ -30,6 +30,13 @@ spec s = Spec.describe s "Parun.Codec.ManaFilter" $ do
       ManaFilter.codec
       (ManaFilter.OfType ManaType.Colorless)
       " {\"type\":\"OfType\",\"value\":{\"type\":\"Colorless\"}} "
+  -- CR 106.1a / Edgewalker's "colored mana".
+  Spec.it s "Colored" $
+    Common.assertCodec
+      s
+      ManaFilter.codec
+      ManaFilter.Colored
+      " {\"type\":\"Colored\"} "
   -- Celestial Dawn's "other mana", the complement of the type its first clause
   -- named.
   Spec.it s "NotOfType" $

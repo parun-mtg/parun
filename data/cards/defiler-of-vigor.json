@@ -55,7 +55,13 @@
                         }
                       }
                     ],
-                    "coloredOnly": true
+                    "reducesOnly": {
+                      "type": "OfType",
+                      "value": {
+                        "type": "Colored",
+                        "value": "Green"
+                      }
+                    }
                   }
                 }
               },

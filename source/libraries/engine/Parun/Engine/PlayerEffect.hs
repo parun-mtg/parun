@@ -2015,7 +2015,8 @@ spellCostRows pid oid gs =
 -- CR 118.8a / 601.2b: the optional additional costs effects offer `pid`
 -- casting `oid`, one per row, each with the reduction paying it brings
 -- (Defiler of Dreams). Asked before CR 601.2c, so no target is read: a fence,
--- Parun.CardSpec refusing an optional addition that is per target or per each.
+-- Parun.Codec.CostModifier's additionCheck refusing an optional addition that
+-- is per target or per each.
 spellOptionalAdditions :: PlayerId -> ObjectId -> GameState -> [(CostAddition.CostAddition, AppliedReduction.AppliedReduction)]
 spellOptionalAdditions pid oid gs =
   [ (addition, reduction)
@@ -2321,7 +2322,7 @@ activationCostAdjustmentsGiven effects pid targets stamp named kind loyalty srcI
       -- Parun.ActivateSpec's "Power-up (CR 702.193)" group proves it.
       ruleReduction
         | any Keyword.reducesByManaCostOnEntry stamp && matchesObjectFrom (liveSource (Just srcId)) (Filter.Type.EnteredThisTurn EnteredZone.MkEnteredZone {EnteredZone.to = Zone.Battlefield, EnteredZone.from = Set.empty, EnteredZone.window = EntryWindow.ThisTurn}) srcId gs =
-            [ AppliedReduction.MkAppliedReduction (ManaCost.MkManaCost (filter (/= ManaSymbol.Variable) (ManaCost.unwrap manaCost))) 0 False
+            [ AppliedReduction.MkAppliedReduction (ManaCost.MkManaCost (filter (/= ManaSymbol.Variable) (ManaCost.unwrap manaCost))) 0 Nothing
             | manaCost <- Maybe.maybeToList (PC.manaCost (Projection.project srcId gs))
             ]
         | otherwise = []
@@ -2943,7 +2944,7 @@ permissionCosts = foldMap (CastFromZone.additionalCosts . snd)
 -- under no permission.
 permissionReductions :: Maybe (ObjectId, CastFromZone.CastFromZone) -> [AppliedReduction.AppliedReduction]
 permissionReductions option =
-  [ AppliedReduction.MkAppliedReduction (ManaCost.MkManaCost [ManaSymbol.Generic n]) 0 False
+  [ AppliedReduction.MkAppliedReduction (ManaCost.MkManaCost [ManaSymbol.Generic n]) 0 Nothing
   | Just (_, grant) <- [option],
     let n = CastFromZone.reduction grant,
     n > 0

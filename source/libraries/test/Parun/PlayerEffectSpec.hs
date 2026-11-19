@@ -147,6 +147,7 @@ import qualified Parun.Types.Hybrid as Hybrid
 import qualified Parun.Types.HybridPhyrexian as HybridPhyrexian
 import qualified Parun.Types.Keyword as Keyword
 import qualified Parun.Types.ManaCost as ManaCost
+import qualified Parun.Types.ManaFilter as ManaFilter
 import qualified Parun.Types.ManaSymbol as ManaSymbol
 import qualified Parun.Types.ManaType as ManaType
 import qualified Parun.Types.Object as Object
@@ -329,7 +330,7 @@ adjustments :: [ManaCost.ManaCost] -> [ManaCost.ManaCost] -> CostAdjustments.Cos
 adjustments increases reductions =
   CostAdjustments.MkCostAdjustments
     { CostAdjustments.increases = increases,
-      CostAdjustments.reductions = fmap (\reduction -> AppliedReduction.MkAppliedReduction reduction 0 False) reductions,
+      CostAdjustments.reductions = fmap (\reduction -> AppliedReduction.MkAppliedReduction reduction 0 Nothing) reductions,
       CostAdjustments.components = []
     }
 
@@ -340,7 +341,7 @@ adjustments increases reductions =
 confinedAdjustments :: [ManaCost.ManaCost] -> CostAdjustments.CostAdjustments
 confinedAdjustments reductions =
   (adjustments [] reductions)
-    { CostAdjustments.reductions = fmap (\reduction -> AppliedReduction.MkAppliedReduction reduction 0 True) reductions
+    { CostAdjustments.reductions = fmap (\reduction -> AppliedReduction.MkAppliedReduction reduction 0 (Just ManaFilter.Colored)) reductions
     }
 
 -- A reduction by an amount of GENERIC mana (CR 118.7a) -- the Medallion's shape,

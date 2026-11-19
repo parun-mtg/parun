@@ -1,0 +1,41 @@
+{
+  "board": {
+    "active": "alice",
+    "seats": [
+      {
+        "battlefield": [
+          {"card": "Defiler of Dreams", "label": "defiler"},
+          {"card": "Island", "label": "i1"},
+          {"card": "Island", "label": "i2"},
+          {"card": "Mountain", "label": "m1"}
+        ],
+        "hand": [
+          {"card": "Sleight of Mind", "label": "sleight"},
+          {"card": "Lightning Stormkin", "label": "stormkin"}
+        ],
+        "library": [
+          {"card": "Island"},
+          {"card": "Island"}
+        ],
+        "name": "alice"
+      },
+      {
+        "name": "bob"
+      }
+    ],
+    "step": "PrecombatMain"
+  },
+  "description": "CR 612.2: Defiler of Dreams with blue Sleighted to red offers 2 life for Lightning Stormkin but reduces only red mana, so its {U} reduction takes nothing off {U}{R}",
+  "timeline": [
+    {"do": {"Cast": {"mana": ["$i1", null], "object": "$sleight", "targets": ["$defiler"]}}, "player": "alice", "step": "PrecombatMain", "turn": 1},
+    {"do": "Pass", "player": "alice", "step": "PrecombatMain", "turn": 1},
+    {"do": {"ChooseWordSwap": {"from": {"type": "Blue"}, "to": {"type": "Red"}}}, "player": "alice", "source": "Sleight of Mind", "step": "PrecombatMain", "turn": 1},
+    {"do": {"Answer": {"prompt": "ChooseCost", "with": 1}}, "player": "alice", "step": "PrecombatMain", "turn": 1},
+    {"do": {"Cast": {"mana": ["$i2", "$m1"], "object": "$stormkin"}}, "player": "alice", "step": "PrecombatMain", "turn": 1},
+    {"check": {"View": {"is": [], "of": "ManaPool", "player": "alice"}}, "player": "alice", "step": "PrecombatMain", "turn": 1},
+    {"do": "Pass", "player": "alice", "step": "PrecombatMain", "turn": 1},
+    {"do": "Pass", "player": "alice", "step": "PrecombatMain", "turn": 1},
+    {"check": {"Life": {"life": 18, "player": "alice"}}, "player": "alice", "step": "PrecombatMain", "turn": 1},
+    {"check": {"Count": {"card": "Lightning Stormkin", "count": 1, "player": "alice", "zone": "Battlefield"}}, "player": "alice", "step": "PrecombatMain", "turn": 1}
+  ]
+}

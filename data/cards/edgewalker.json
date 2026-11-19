@@ -47,7 +47,9 @@
                       }
                     }
                   ],
-                  "coloredOnly": true
+                  "reducesOnly": {
+                    "type": "Colored"
+                  }
                 }
               },
               "matching": {

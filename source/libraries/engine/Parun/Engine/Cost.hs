@@ -513,7 +513,7 @@ withOffering pid oid gs candidate =
           Nothing
           candidate
             { CandidateCost.cost = (CandidateCost.cost candidate) {Cost.components = Cost.components (CandidateCost.cost candidate) <> [CostComponent.Sacrifice (Sacrifice.MkSacrifice (ObjectCount.Exactly (CostAmount.Fixed 1)) (Filter.Type.IsObject vid) Set.empty)]},
-              CandidateCost.reductions = CandidateCost.reductions candidate <> [AppliedReduction.MkAppliedReduction (Maybe.fromMaybe (ManaCost.MkManaCost []) (Filter.manaCost (Projection.viewOfObject vid gs))) 0 False]
+              CandidateCost.reductions = CandidateCost.reductions candidate <> [AppliedReduction.MkAppliedReduction (Maybe.fromMaybe (ManaCost.MkManaCost []) (Filter.manaCost (Projection.viewOfObject vid gs))) 0 Nothing]
             }
       | quality <- Keyword.offeringQualities (Map.keysSet (spellKeywords pid oid gs)),
         vid <- Replacement.sacrificeCandidates (Just pid) Map.empty pid (Just oid) quality gs
@@ -527,15 +527,25 @@ withOffering pid oid gs candidate =
 -- candidates, CR 118.8a's "any number of additional costs". CR 118.9d applies
 -- it to an alternative cost too, so an effect's applied cost goes through this
 -- as `withOffering` does.
+--
+-- Asked of the board the candidate's announcement makes: CR 719.3b makes the
+-- prototype candidate its prototype cost's colour, so Defiler of Dreams offers
+-- its life to a prototyped Hulking Metamorph (the scenario
+-- defiler-of-dreams-offers-2-life-to-a-prototyped-hulking-metamorph proves it).
+-- Bestow and mutate keep the spell's colour and permanence, and a face-down or
+-- half cast is stamped before pricing (Parun.Engine.Cast.asProposed).
 withOptionalAdditions :: PlayerId -> ObjectId -> GameState -> CandidateCost.CandidateCost -> [CandidateCost.CandidateCost]
 withOptionalAdditions pid oid gs candidate =
-  let paying sofar (addition, reduction) =
+  let board = case CandidateCost.keyword candidate of
+        Just (Keyword.Type.Prototype _) -> Maybe.fromMaybe gs (Maybe.listToMaybe (PlayerEffect.prototypedReading oid gs))
+        _ -> gs
+      paying sofar (addition, reduction) =
         sofar
           { CandidateCost.cost = plusComponents (CostAdjustments.MkCostAdjustments [] [] [(CostAddition.scale addition, component) | component <- CostAddition.components addition]) (CandidateCost.cost sofar),
             CandidateCost.reductions = CandidateCost.reductions sofar <> [reduction]
           }
       variants candidates offer = concatMap (\sofar -> [sofar, paying sofar offer]) candidates
-   in List.foldl' variants [candidate] (PlayerEffect.spellOptionalAdditions pid oid gs)
+   in List.foldl' variants [candidate] (PlayerEffect.spellOptionalAdditions pid oid board)
 
 -- | CR 601.3c / 601.3d: the card's own permissions to be cast as though it had
 -- flash whose condition holds as the cast begins, with the caster as CR
@@ -873,7 +883,7 @@ candidateCostsGiven permitted pid name oid gs =
                       CandidateCost.MkCandidateCost
                         (Just (Keyword.Type.Emerge emerge))
                         (withAdditional (Emerge.cost emerge) {Cost.components = Cost.components (Emerge.cost emerge) <> [CostComponent.Sacrifice (Sacrifice.MkSacrifice (ObjectCount.Exactly (CostAmount.Fixed 1)) (Filter.Type.IsObject vid) Set.empty)]})
-                        [AppliedReduction.MkAppliedReduction (ManaCost.MkManaCost [ManaSymbol.Generic (Integer.toNaturalSaturating n)]) 0 False]
+                        [AppliedReduction.MkAppliedReduction (ManaCost.MkManaCost [ManaSymbol.Generic (Integer.toNaturalSaturating n)]) 0 Nothing]
                         False
                         Nothing
                         Nothing
@@ -1174,7 +1184,7 @@ candidateCostsGiven permitted pid name oid gs =
                               CandidateCost.MkCandidateCost
                                 (Just (Keyword.Type.Harmonize cost))
                                 (withAdditional cost {Cost.components = Cost.components cost <> [CostComponent.TapPermanents (TapPermanents.MkTapPermanents (CostAmount.Fixed 1) (criterion vid) False TapState.Tapped)]})
-                                [AppliedReduction.MkAppliedReduction (ManaCost.MkManaCost [ManaSymbol.Generic (Integer.toNaturalSaturating n)]) 0 False]
+                                [AppliedReduction.MkAppliedReduction (ManaCost.MkManaCost [ManaSymbol.Generic (Integer.toNaturalSaturating n)]) 0 Nothing]
                                 False
                                 Nothing
                                 Nothing
@@ -1405,7 +1415,7 @@ spellAdjustments announced aiming pid oid gs =
               -- and Ertai's Scorn's sentences state neither restriction, so CR
               -- 601.2f's own {0} and CR 118.7b-d's spill both stand.
               CostAdjustments.reductions adjustments
-                <> [AppliedReduction.MkAppliedReduction amount 0 False | (CostDirection.Less, amount) <- self],
+                <> [AppliedReduction.MkAppliedReduction amount 0 Nothing | (CostDirection.Less, amount) <- self],
             -- Dragon's Prey's "costs {2} more".
             CostAdjustments.increases =
               CostAdjustments.increases adjustments
@@ -1665,7 +1675,7 @@ adjustmentResolutions adjustments =
 -- left to enumerate is the interleaving of reductions that genuinely differ.
 reductionOrders :: CostAdjustments.CostAdjustments -> ManaCost.ManaCost -> NonEmpty.NonEmpty (CostAdjustments.CostAdjustments, ManaCost.ManaCost)
 reductionOrders adjustments manaCost =
-  let restrictionsOf r = (AppliedReduction.atLeast r, AppliedReduction.coloredOnly r)
+  let restrictionsOf r = (AppliedReduction.atLeast r, AppliedReduction.reducesOnly r)
       uniform rs = case fmap restrictionsOf rs of
         [] -> True
         restrictions : rest -> all (== restrictions) rest

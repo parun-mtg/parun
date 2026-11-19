@@ -16,6 +16,9 @@ matchesType :: ManaFilter.ManaFilter -> ManaType.ManaType -> Bool
 matchesType filter_ manaType = case filter_ of
   ManaFilter.Any -> True
   ManaFilter.OfType wanted -> manaType == wanted
+  ManaFilter.Colored -> case manaType of
+    ManaType.Colored _ -> True
+    ManaType.Colorless -> False
   ManaFilter.NotOfType unwanted -> manaType /= unwanted
 
 -- | The same question about a unit in a pool. Kept beside the type-level one
