@@ -54,9 +54,8 @@ data PlayerAction
   | -- | CR 701.57b, even where some or all of the process was impossible.
     -- Recorded as Parun.Types.GameEvent's CountedAct, which carries the N.
     Discover
-  | -- | CR 701.22a: the player chose to put one or more scried cards on the
-    -- bottom (The Temporal Anchor). Recorded as Parun.Types.GameEvent's
-    -- CountedAct, which carries how many, beside the Scry it is part of.
+  | -- | CR 701.22a: one or more scried cards put on the bottom, recorded as a
+    -- Parun.Types.GameEvent CountedAct carrying how many.
     ScryToBottom
   | -- | CR 701.23a: the player searched their OWN library (Ob Nixilis,
     -- Unshackled's ruling), whatever the search found.
