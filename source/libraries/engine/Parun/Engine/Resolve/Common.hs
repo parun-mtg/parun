@@ -4203,8 +4203,7 @@ giveAnotherOfEachKind source controller before permanents players = do
   Event.simultaneously $ do
     Monad.forM_ permanents $ \oid ->
       Monad.forM_ (objectKinds before oid) $ \kind -> Event.putCounters (CounterCause.ByEffect controller) oid kind 1
-    Monad.forM_ given $ \(pid, kind) ->
-      Monad.void (Event.putPlayerCounters (CounterCause.ByEffect controller) pid kind 1)
+    Monad.void (Event.putPlayerCounters [(CounterCause.ByEffect controller, pid, kind, 1) | (pid, kind) <- given])
 
 -- CR 603.7c: stamp the land an earthbend animated onto the resolving object, so
 -- the environment the arming opcode captures next carries it. Parun.Engine.Earthbend's

@@ -1636,13 +1636,16 @@ gainPlayerCounters resolving source controller legal (PlayerCounters.MkPlayerCou
       context = effectContext gs resolving controller source legal (slotBindings resolving gs)
       recipients = playerRefPlayers legal resolving source controller gs ref
   -- CR 122 / 107.14: the amount is read per recipient off the one pre-effect
-  -- `gs`, then CR 122.6's funnel per recipient, so a counter-scaling
-  -- replacement gets its CR 614 opportunity against each player's gain.
-  Monad.forM_ recipients $ \pid ->
-    case Common.evaluateForRecipient viewOf context gs resolving source pid quantity of
-      Just n
-        | n > 0 -> Monad.void (Event.putPlayerCounters (CounterCause.ByEffect controller) pid kind (Integer.toNaturalSaturating n))
-      _ -> pure ()
+  -- `gs`, then CR 122.6's funnel, a placement per recipient in one batch, so a
+  -- counter-scaling replacement gets its CR 614 opportunity against each
+  -- player's gain and a sibling's bar meets every other (CR 810.10).
+  Monad.void $
+    Event.putPlayerCounters
+      [ (CounterCause.ByEffect controller, pid, kind, Integer.toNaturalSaturating n)
+      | pid <- recipients,
+        Just n <- [Common.evaluateForRecipient viewOf context gs resolving source pid quantity],
+        n > 0
+      ]
 
 removePlayerCounters :: ObjectId -> ObjectId -> PlayerId -> Map.Map SlotName (Set Recipient) -> RemovePlayerCounters.RemovePlayerCounters -> Game ()
 removePlayerCounters resolving source controller legal (RemovePlayerCounters.MkRemovePlayerCounters ref kind quantity mTally) = do

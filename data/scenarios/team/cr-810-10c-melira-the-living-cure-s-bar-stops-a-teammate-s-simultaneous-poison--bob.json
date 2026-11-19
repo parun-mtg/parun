@@ -1,0 +1,105 @@
+{
+  "board": {
+    "active": "carol",
+    "seats": [
+      {
+        "name": "alice",
+        "team": 1
+      },
+      {
+        "battlefield": [
+          {
+            "card": "Melira, the Living Cure"
+          }
+        ],
+        "name": "bob",
+        "team": 1
+      },
+      {
+        "battlefield": [
+          {
+            "card": "Swamp",
+            "label": "swamp-1"
+          },
+          {
+            "card": "Swamp",
+            "label": "swamp-2"
+          },
+          {
+            "card": "Swamp",
+            "label": "swamp-3"
+          }
+        ],
+        "hand": [
+          {
+            "card": "Ichor Rats",
+            "label": "rats"
+          }
+        ],
+        "name": "carol",
+        "team": 2
+      },
+      {
+        "name": "dave",
+        "team": 2
+      }
+    ],
+    "sharedTeamTurns": true,
+    "step": "PrecombatMain",
+    "twoHeadedGiant": true
+  },
+  "description": "CR 810.10c Melira, the Living Cure's bar stops a teammate's simultaneous poison (bob)",
+  "final": [
+    {
+      "PlayerCounters": {
+        "count": 1,
+        "kind": "Poison",
+        "player": "alice"
+      }
+    },
+    {
+      "PlayerCounters": {
+        "count": 1,
+        "kind": "Poison",
+        "player": "bob"
+      }
+    },
+    {
+      "PlayerCounters": {
+        "count": 2,
+        "kind": "Poison",
+        "player": "carol"
+      }
+    }
+  ],
+  "note": "A Two-Headed Giant game. Bob controls Melira, the Living Cure. Carol's Ichor Rats gives each player a poison counter as it enters, one placement each, simultaneously (CR 810.10). Melira turns bob's into one and bars more this turn, which bars alice too (CR 810.10c), and the bar meets the simultaneous sibling whichever order the players are settled in (docs/decisions.md, \"Whether simultaneous poison counters meet Melira, the Living Cure's bar\"). The team is on one either way; its pair seats Melira on the other teammate.",
+  "timeline": [
+    {
+      "do": {
+        "Cast": {
+          "mana": [
+            "$swamp-1",
+            "$swamp-2",
+            "$swamp-3"
+          ],
+          "object": "$rats"
+        }
+      },
+      "player": "carol",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": "Pass",
+      "player": "carol",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": "Pass",
+      "player": "carol",
+      "step": "PrecombatMain",
+      "turn": 1
+    }
+  ]
+}

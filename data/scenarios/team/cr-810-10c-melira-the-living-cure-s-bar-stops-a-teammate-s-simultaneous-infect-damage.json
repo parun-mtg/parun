@@ -1,0 +1,117 @@
+{
+  "board": {
+    "active": "carol",
+    "seats": [
+      {
+        "battlefield": [
+          {
+            "card": "Melira, the Living Cure"
+          }
+        ],
+        "name": "alice",
+        "team": 1
+      },
+      {
+        "name": "bob",
+        "team": 1
+      },
+      {
+        "battlefield": [
+          {
+            "card": "Cystbearer",
+            "label": "cyst",
+            "ready": true
+          },
+          {
+            "card": "Blackcleave Goblin",
+            "label": "goblin",
+            "ready": true
+          }
+        ],
+        "name": "carol",
+        "team": 2
+      },
+      {
+        "name": "dave",
+        "team": 2
+      }
+    ],
+    "sharedTeamTurns": true,
+    "step": "PrecombatMain",
+    "twoHeadedGiant": true
+  },
+  "description": "CR 810.10c Melira, the Living Cure's bar stops a teammate's simultaneous infect damage",
+  "final": [
+    {
+      "PlayerCounters": {
+        "count": 0,
+        "kind": "Poison",
+        "player": "carol"
+      }
+    }
+  ],
+  "note": "A Two-Headed Giant game. Alice controls Melira, the Living Cure. Carol's Cystbearer attacks alice and her Blackcleave Goblin attacks bob, and their infect combat damage gives each two poison counters, simultaneously (CR 510.2, 810.10). Melira turns alice's into one and bars more this turn, which bars bob too (CR 810.10c), whichever order the two are settled in (docs/decisions.md, \"Whether simultaneous poison counters meet Melira, the Living Cure's bar\"). The team is on one either way; its pair seats Melira on the other teammate.",
+  "timeline": [
+    {
+      "do": {
+        "Attack": [
+          "$cyst",
+          "$goblin"
+        ]
+      },
+      "player": "carol",
+      "step": "DeclareAttackers",
+      "turn": 1
+    },
+    {
+      "do": {
+        "ChooseAttackTarget": "$alice"
+      },
+      "player": "carol",
+      "source": "$cyst",
+      "step": "DeclareAttackers",
+      "turn": 1
+    },
+    {
+      "do": {
+        "ChooseAttackTarget": "$bob"
+      },
+      "player": "carol",
+      "source": "$goblin",
+      "step": "DeclareAttackers",
+      "turn": 1
+    },
+    {
+      "do": {
+        "Block": {}
+      },
+      "player": "alice",
+      "step": "DeclareBlockers",
+      "turn": 1
+    },
+    {
+      "check": {
+        "PlayerCounters": {
+          "count": 1,
+          "kind": "Poison",
+          "player": "alice"
+        }
+      },
+      "player": "carol",
+      "step": "PostcombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "PlayerCounters": {
+          "count": 1,
+          "kind": "Poison",
+          "player": "bob"
+        }
+      },
+      "player": "carol",
+      "step": "PostcombatMain",
+      "turn": 1
+    }
+  ]
+}
