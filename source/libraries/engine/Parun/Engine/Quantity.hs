@@ -1772,7 +1772,8 @@ bakePlayerRef players objects ref = case ref of
 -- read against the cost's {X} (CR 107.3, CR 107.3a, CR 118.4), and "does it
 -- read the mana spent on X?" for whether the payer is asked which mana that was
 -- (Parun.Engine.Cost.recordXShares), and "does it read the total mana spent?"
--- for the same lint's spell whose X only that total reads (Molten Note).
+-- for the same lint's spell whose X only that total, or a type's share of it,
+-- reads (Molten Note, Clay Champion).
 -- Vitalizing Cascade's "X plus 3" is the card that needs the recursion for X,
 -- Soul Burn's limit inside an AtMost the one for the mana.
 --
@@ -1784,10 +1785,12 @@ hasRead wanted quantity = case quantity of
   Quantity.InSlot slot -> wanted == StaticRead.ReadsX && slot == Binding.variableX
   Quantity.ManaSpent part -> case part of
     ManaSpent.Total -> wanted == StaticRead.ReadsManaSpent
-    -- Unobserved: only a card with {X} reading a type over its whole cost
-    -- would show the payer asked for X's share needlessly (data/cards/,
-    -- 2026-11-13, none).
-    ManaSpent.OfType _ portion -> portion == CostPortion.OnX && wanted == StaticRead.ReadsManaSpentOnX
+    -- A type read over the whole cost reads the total X's mana is part of
+    -- (Bladecoil Serpent's "for each {U}{U} spent to cast it"), never X's
+    -- share alone, so the payer is not asked which mana paid X.
+    ManaSpent.OfType _ portion -> case portion of
+      CostPortion.OnX -> wanted == StaticRead.ReadsManaSpentOnX
+      CostPortion.TotalCost -> wanted == StaticRead.ReadsManaSpent
     ManaSpent.Colors -> False
     ManaSpent.Tagged _ -> False
   _ -> Monoid.getAny (Const.getConst (Children.quantityChildren (Children.descendingQuantities (Const.Const . Monoid.Any . hasRead wanted)) quantity))
