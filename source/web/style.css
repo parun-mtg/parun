@@ -696,7 +696,14 @@ main.game {
     "side";
 }
 
+/* Sticky, though nothing scrolls it: iOS 26 blurs the top of a Home Screen
+   app unless a fixed or sticky full-width box with a solid background and no
+   backdrop filter spans the edge (WebKit's
+   LocalFrameView::fixedContainerEdges), and then tints the status bar with
+   that colour instead. */
 .turn-bar {
+  position: sticky;
+  top: 0;
   grid-area: bar;
   display: flex;
   align-items: center;
