@@ -4173,19 +4173,10 @@ playerKinds gs pid = foldMap (Map.keys . Map.filter (> 0) . Player.counters) (Ma
 -- 701.34a) or targeted.
 giveAnotherOfEachKind :: ObjectId -> PlayerId -> GameState -> [ObjectId] -> [PlayerId] -> Game ()
 giveAnotherOfEachKind source controller before permanents players = do
-  -- CR 122.6: object counters through the single funnel, so CR 614's counter
-  -- replacements apply to a proliferated counter as to a placed one. ONE
-  -- event, the PutCounters arm's CR 608.2f bracket, so a kind-free
-  -- per-permanent trigger sees a permanent's kinds together:
-  -- data/scenarios/the-great-goblin-pings-once-per-goblin-however-many-kinds-proliferate-adds.json
-  -- proves it.
-  Event.simultaneously . Monad.forM_ permanents $ \oid ->
-    Monad.forM_ (objectKinds before oid) $ \kind -> Event.putCounters (CounterCause.ByEffect controller) oid kind 1
-  -- CR 122.1: and player counters through their own funnel.
-  --
   -- CR 701.34b: a kind a team shares (Game.counterSharers, Two-Headed Giant's
   -- poison) gets one additional counter however many of its members were
-  -- chosen, and `controller` chooses which member gets it. The scenario
+  -- chosen, and `controller` chooses which member gets it, before any counter
+  -- lands. The scenario
   -- cr-701-34b-the-proliferating-player-chooses-winding-constrictor-s-controller
   -- proves it.
   let pick done (pid, kind)
@@ -4195,8 +4186,18 @@ giveAnotherOfEachKind source controller before permanents players = do
             picked <- Players.chooseOne controller source Nothing chosen
             pure (done <> [(Maybe.fromMaybe pid picked, kind)])
   given <- Monad.foldM pick [] [(pid, kind) | pid <- players, kind <- playerKinds before pid]
-  Monad.forM_ given $ \(pid, kind) ->
-    Monad.void (Event.putPlayerCounters (CounterCause.ByEffect controller) pid kind 1)
+  -- CR 701.34a, 608.2f: ONE event, so a kind-free per-permanent or per-player
+  -- trigger sees each recipient's kinds together. Object counters go through
+  -- CR 122.6's funnel, so CR 614's counter replacements apply to a
+  -- proliferated counter as to a placed one, and player counters through
+  -- their own. data/scenarios/the-great-goblin-pings-once-per-goblin-however-many-kinds-proliferate-adds.json
+  -- and data/scenarios/all-will-be-one-joins-a-players-counter-kinds-and-splits-players-under-urzas-armor.json
+  -- prove it.
+  Event.simultaneously $ do
+    Monad.forM_ permanents $ \oid ->
+      Monad.forM_ (objectKinds before oid) $ \kind -> Event.putCounters (CounterCause.ByEffect controller) oid kind 1
+    Monad.forM_ given $ \(pid, kind) ->
+      Monad.void (Event.putPlayerCounters (CounterCause.ByEffect controller) pid kind 1)
 
 -- CR 603.7c: stamp the land an earthbend animated onto the resolving object, so
 -- the environment the arming opcode captures next carries it. Parun.Engine.Earthbend's
