@@ -1,0 +1,130 @@
+{
+  "faces": [
+    {
+      "manaCost": [
+        {
+          "type": "Generic",
+          "value": 3
+        },
+        {
+          "type": "OfType",
+          "value": {
+            "type": "Colored",
+            "value": "Green"
+          }
+        },
+        {
+          "type": "OfType",
+          "value": {
+            "type": "Colored",
+            "value": "Green"
+          }
+        }
+      ],
+      "name": "Fallaji Excavation",
+      "oracleText": "Create three tapped Powerstone tokens. You gain 3 life. (The tokens are artifacts with \"{T}: Add {C}. This mana can't be spent to cast a nonartifact spell.\")",
+      "spell": {
+        "modes": [
+          {
+            "clauses": [
+              {
+                "effects": [
+                  {
+                    "type": "Create",
+                    "value": {
+                      "card": {
+                        "faces": [
+                          {
+                            "activatedAbilities": [
+                              {
+                                "cost": {
+                                  "components": [
+                                    {
+                                      "type": "TapThis"
+                                    }
+                                  ],
+                                  "mana": []
+                                },
+                                "modal": {
+                                  "modes": [
+                                    {
+                                      "clauses": [
+                                        {
+                                          "effects": [
+                                            {
+                                              "type": "AddMana",
+                                              "value": {
+                                                "production": {
+                                                  "type": "OfType",
+                                                  "value": {
+                                                    "type": "Colorless"
+                                                  }
+                                                },
+                                                "restriction": {
+                                                  "casts": {
+                                                    "type": "Not",
+                                                    "value": {
+                                                      "type": "HasCardType",
+                                                      "value": "Artifact"
+                                                    }
+                                                  },
+                                                  "prohibits": true
+                                                }
+                                              }
+                                            }
+                                          ]
+                                        }
+                                      ]
+                                    }
+                                  ]
+                                }
+                              }
+                            ],
+                            "name": "Powerstone Token",
+                            "typeLine": {
+                              "subtypes": [
+                                "Powerstone"
+                              ],
+                              "types": [
+                                "Artifact"
+                              ]
+                            }
+                          }
+                        ]
+                      },
+                      "quantity": {
+                        "type": "Literal",
+                        "value": 3
+                      },
+                      "riders": {
+                        "tapped": "Tapped"
+                      }
+                    }
+                  },
+                  {
+                    "type": "GainLife",
+                    "value": {
+                      "player": {
+                        "type": "Relative",
+                        "value": "You"
+                      },
+                      "quantity": {
+                        "type": "Literal",
+                        "value": 3
+                      }
+                    }
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "typeLine": {
+        "types": [
+          "Sorcery"
+        ]
+      }
+    }
+  ]
+}

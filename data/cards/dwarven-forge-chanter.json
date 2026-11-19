@@ -1,0 +1,60 @@
+{
+  "faces": [
+    {
+      "keywords": [
+        {
+          "type": "Ward",
+          "value": {
+            "cost": {
+              "components": [
+                {
+                  "type": "PayLife",
+                  "value": {
+                    "type": "Fixed",
+                    "value": 2
+                  }
+                }
+              ],
+              "mana": []
+            }
+          }
+        },
+        {
+          "type": "Prowess"
+        }
+      ],
+      "manaCost": [
+        {
+          "type": "Generic",
+          "value": 1
+        },
+        {
+          "type": "OfType",
+          "value": {
+            "type": "Colored",
+            "value": "Red"
+          }
+        }
+      ],
+      "name": "Dwarven Forge-Chanter",
+      "oracleText": "Ward—Pay 2 life. (Whenever this creature becomes the target of a spell or ability an opponent controls, counter it unless that player pays 2 life.)\nProwess (Whenever you cast a noncreature spell, this creature gets +1/+1 until end of turn.)",
+      "power": {
+        "type": "Literal",
+        "value": 1
+      },
+      "toughness": {
+        "type": "Literal",
+        "value": 3
+      },
+      "typeLine": {
+        "subtypes": [
+          "Dwarf",
+          "Wizard"
+        ],
+        "types": [
+          "Creature"
+        ]
+      }
+    }
+  ]
+}

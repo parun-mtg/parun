@@ -1,0 +1,145 @@
+{
+  "faces": [
+    {
+      "manaCost": [
+        {
+          "type": "Generic",
+          "value": 2
+        },
+        {
+          "type": "OfType",
+          "value": {
+            "type": "Colored",
+            "value": "Green"
+          }
+        },
+        {
+          "type": "OfType",
+          "value": {
+            "type": "Colored",
+            "value": "Green"
+          }
+        }
+      ],
+      "name": "Fade from History",
+      "oracleText": "Each player who controls an artifact or enchantment creates a 2/2 green Bear creature token. Then destroy all artifacts and enchantments.",
+      "spell": {
+        "modes": [
+          {
+            "clauses": [
+              {
+                "effects": [
+                  {
+                    "type": "ForEach",
+                    "value": {
+                      "body": [
+                        {
+                          "type": "Create",
+                          "value": {
+                            "card": {
+                              "faces": [
+                                {
+                                  "colorIndicator": [
+                                    "Green"
+                                  ],
+                                  "name": "Bear Token",
+                                  "power": {
+                                    "type": "Literal",
+                                    "value": 2
+                                  },
+                                  "toughness": {
+                                    "type": "Literal",
+                                    "value": 2
+                                  },
+                                  "typeLine": {
+                                    "subtypes": [
+                                      "Bear"
+                                    ],
+                                    "types": [
+                                      "Creature"
+                                    ]
+                                  }
+                                }
+                              ]
+                            },
+                            "creator": {
+                              "type": "InSlot",
+                              "value": "player"
+                            },
+                            "quantity": {
+                              "type": "Literal",
+                              "value": 1
+                            }
+                          }
+                        }
+                      ],
+                      "ref": {
+                        "type": "Players",
+                        "value": {
+                          "players": {
+                            "type": "Relative",
+                            "value": "AnyPlayer"
+                          },
+                          "who": {
+                            "type": "Controls",
+                            "value": {
+                              "filter": {
+                                "type": "Or",
+                                "value": [
+                                  {
+                                    "type": "HasCardType",
+                                    "value": "Artifact"
+                                  },
+                                  {
+                                    "type": "HasCardType",
+                                    "value": "Enchantment"
+                                  }
+                                ]
+                              },
+                              "margin": {
+                                "type": "AtLeast",
+                                "value": 1
+                              }
+                            }
+                          }
+                        }
+                      },
+                      "slot": "player"
+                    }
+                  },
+                  {
+                    "type": "Destroy",
+                    "value": {
+                      "ref": {
+                        "type": "EachMatching",
+                        "value": {
+                          "type": "Or",
+                          "value": [
+                            {
+                              "type": "HasCardType",
+                              "value": "Artifact"
+                            },
+                            {
+                              "type": "HasCardType",
+                              "value": "Enchantment"
+                            }
+                          ]
+                        }
+                      },
+                      "regenerability": "Regenerable"
+                    }
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "typeLine": {
+        "types": [
+          "Sorcery"
+        ]
+      }
+    }
+  ]
+}
