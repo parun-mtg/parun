@@ -53,6 +53,7 @@
     "step": "PrecombatMain"
   },
   "description": "CR 118.3: with three other cards in its owner's graveyard Squee, Dubious Monarch cannot exile four, so the graveyard cast is not offered",
+  "note": "The exile's Not IsSource, the Oracle text's \"other\", has no observer: by CR 601.2a Squee is on the stack before any cost is paid, so the four cards come from a graveyard it has already left, and dropping the clause leaves this green.",
   "timeline": [
     {
       "check": {
