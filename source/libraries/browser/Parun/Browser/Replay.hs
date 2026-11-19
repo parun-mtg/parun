@@ -174,12 +174,13 @@ seatsOf scenario =
 -- | What the page shows of a stop.
 frameOf :: Text.Text -> Scenario.Type.Scenario -> [(PlayerId.PlayerId, Text.Text)] -> Natural -> Natural -> Either ScenarioFailure.ScenarioFailure Stop.Stop -> PlayerId.PlayerId -> Maybe Web.Card.Reading -> Web.Replay.Frame
 frameOf name scenario seats count at stop viewer reading =
-  let base = Web.Replay.MkFrame name (Scenario.Type.description scenario) seats viewer at count Nothing Nothing Nothing Nothing reading
+  let base = Web.Replay.MkFrame name (Scenario.Type.description scenario) seats viewer at count Nothing 0 Nothing Nothing Nothing reading
    in case stop of
         Left failure -> base {Web.Replay.failure = Just (Scenario.render failure)}
         Right reached@(Stop.MkBefore _ timed asked) ->
           base
             { Web.Replay.board = Just (PlayerView.Engine.viewFor viewer (Stop.state reached)),
+              Web.Replay.depth = Protocol.depthOf asked,
               Web.Replay.entry = Just (Scenario.renderWhen (Timed.when timed) <> Text.pack ": " <> Scenario.renderEntry (Timed.entry timed)),
               Web.Replay.question = Protocol.requestFor asked
             }

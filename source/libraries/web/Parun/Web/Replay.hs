@@ -54,6 +54,9 @@ data Frame = MkFrame
     positions :: Natural,
     -- | The table as the viewer sees it; Nothing where the run failed first.
     board :: Maybe PlayerView.PlayerView,
+    -- | CR 730.1a: how many games the board's game is nested inside, as
+    -- Request.depth counts them.
+    depth :: Natural,
     -- | The entry the run takes next, as the scenario writes it, and its
     -- moment; Nothing at the end.
     entry :: Maybe Text.Text,
@@ -71,7 +74,7 @@ view frame =
       marks = maybe readOnly (\r -> mapMarks (Web.Question.cues r Set.empty Nothing)) asked
       logged = foldMap (Seq.fromList . snd . Log.unseen Map.empty) (board frame)
    in Element.el "main" ["game", "replay"] [] $
-        foldMap (\b -> [Board.turnBar [Web.Question.settingsButton Nothing] b]) (board frame)
+        foldMap (\b -> [Board.turnBar (Web.Question.subgameChip (depth frame) <> [Web.Question.settingsButton Nothing]) b]) (board frame)
           <> [Element.el "div" ["play-area"] [] (foldMap (\b -> [Board.view marks b]) (board frame))]
           <> foldMap (Board.hand marks) (board frame)
           <> [ Element.el "aside" ["side"] [] $

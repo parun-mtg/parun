@@ -117,8 +117,13 @@ readReply line = Common.parse line >>= Codec.Reply.fromValue
 requestFor :: Asked.Asked GameState.GameState r -> Maybe Request.Request
 requestFor asked =
   fmap
-    (\question -> Request.MkRequest (Just (PlayerView.viewFor (Question.seat question) (Asked.game asked))) question Nothing (Natural.length (Asked.enclosing asked)))
+    (\question -> Request.MkRequest (Just (PlayerView.viewFor (Question.seat question) (Asked.game asked))) question Nothing (depthOf asked))
     (questionOf (Asked.game asked) (Asked.prompt asked))
+
+-- | CR 730.1a: how many games the question's game is nested inside, 0 for the
+-- main game's (Request.depth).
+depthOf :: Asked.Asked g r -> Natural
+depthOf = Natural.length . Asked.enclosing
 
 questionOf :: GameState.GameState -> Prompt.Prompt r -> Maybe Question.Question
 questionOf gs prompt =

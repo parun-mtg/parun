@@ -1,6 +1,7 @@
 module Parun.Types.PlayerView where
 
 import qualified Data.Map.Strict as Map
+import qualified Data.Sequence as Seq
 import qualified Data.Set as Set
 import qualified Numeric.Natural as Natural
 import qualified Parun.Types.AttackTarget as AttackTarget
@@ -22,6 +23,12 @@ data PlayerView = MkPlayerView
     game :: Natural.Natural,
     turn :: Natural.Natural,
     phase :: Phase.Phase,
+    -- | CR 500.1: the steps still scheduled this turn after `phase`, in
+    -- order, as TurnRegisters.remaining.
+    remaining :: Seq.Seq Phase.Phase,
+    -- | CR 500.8 / 500.9: whether `phase` is an extra step or phase
+    -- (Parun.Engine.PlayerView.extraStep).
+    extra :: Bool,
     active :: PlayerId.PlayerId,
     priority :: Maybe PlayerId.PlayerId,
     seats :: [SeatView.SeatView],

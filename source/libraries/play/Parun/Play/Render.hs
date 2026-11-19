@@ -402,6 +402,7 @@ recalled view oid = case Map.lookup oid (objects view) of
         ObjectView.classLevel = Nothing,
         ObjectView.unlockedHalves = Set.empty,
         ObjectView.designations = Set.empty,
+        ObjectView.onAdventure = False,
         ObjectView.ventureRoom = Nothing,
         ObjectView.chosenColors = Map.empty,
         ObjectView.chosenColorless = Map.empty,

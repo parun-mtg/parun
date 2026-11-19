@@ -89,6 +89,9 @@ spec s = Spec.describe s "Parun.Codec.ObjectView" $ do
       ObjectView.codec
       hidden {ObjectView.ringBearerFor = Just (PlayerId.MkPlayerId 1), ObjectView.protector = Just (PlayerId.MkPlayerId 0), ObjectView.classLevel = Just (ClassLevel.MkClassLevel 2), ObjectView.unlockedHalves = Set.singleton RoomHalf.LeftHalf, ObjectView.designations = Set.singleton Designation.Solved, ObjectView.ventureRoom = Just (RoomIndex.MkRoomIndex 3)}
       (init hiddenJson <> ",\"ringBearerFor\":1,\"protector\":0,\"classLevel\":2,\"unlockedHalves\":[\"LeftHalf\"],\"designations\":[\"Solved\"],\"ventureRoom\":3}")
+  -- CR 716.3d: a card exiled as its Adventure resolved.
+  Spec.it s "a card on an adventure" $
+    Common.assertCodec s ObjectView.codec hidden {ObjectView.onAdventure = True} (init hiddenJson <> ",\"onAdventure\":true}")
   Spec.it s "has a schema" $ Common.assertHasSchema s ObjectView.codec
 
 -- Tapped and damaged, so neither status key encodes a default.
@@ -113,6 +116,7 @@ hidden =
       ObjectView.classLevel = Nothing,
       ObjectView.unlockedHalves = Set.empty,
       ObjectView.designations = Set.empty,
+      ObjectView.onAdventure = False,
       ObjectView.ventureRoom = Nothing,
       ObjectView.chosenColors = Map.empty,
       ObjectView.chosenColorless = Map.empty,

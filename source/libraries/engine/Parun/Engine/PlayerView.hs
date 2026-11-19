@@ -4,6 +4,7 @@
 module Parun.Engine.PlayerView where
 
 import qualified Data.Foldable as Foldable
+import qualified Data.List as List
 import qualified Data.Map.Strict as Map
 import qualified Data.Maybe as Maybe
 import qualified Data.Sequence as Seq
@@ -13,6 +14,7 @@ import qualified Parun.Engine.Game as Game
 import qualified Parun.Engine.Projection as Projection
 import qualified Parun.Engine.Projection.View as Projection.View
 import qualified Parun.Engine.Summoning as Summoning
+import qualified Parun.Engine.Turn as Turn
 import qualified Parun.Engine.Visibility as Visibility
 import qualified Parun.Extra.Natural as Natural
 import qualified Parun.Types.AbilityView as AbilityView
@@ -22,6 +24,7 @@ import qualified Parun.Types.Bookkeeping as Bookkeeping
 import qualified Parun.Types.CardType as CardType
 import qualified Parun.Types.Chosen as Chosen
 import qualified Parun.Types.Combat as Combat
+import qualified Parun.Types.ExilePlayPermission as ExilePlayPermission
 import qualified Parun.Types.Facing as Facing
 import qualified Parun.Types.GameState as GameState
 import qualified Parun.Types.InherentTriggerSource as InherentTriggerSource
@@ -31,6 +34,7 @@ import qualified Parun.Types.MatchScope as MatchScope
 import qualified Parun.Types.Object as Object
 import qualified Parun.Types.ObjectId as ObjectId
 import qualified Parun.Types.ObjectView as ObjectView
+import qualified Parun.Types.PlayPermissionOrigin as PlayPermissionOrigin
 import qualified Parun.Types.Player as Player
 import qualified Parun.Types.PlayerChoice as PlayerChoice
 import qualified Parun.Types.PlayerId as PlayerId
@@ -52,6 +56,8 @@ viewFor pid gs =
       PlayerView.game = MatchScope.gameNumber (GameState.match gs),
       PlayerView.turn = TurnRegisters.turnNumber (GameState.turn gs),
       PlayerView.phase = TurnRegisters.phase (GameState.turn gs),
+      PlayerView.remaining = TurnRegisters.remaining (GameState.turn gs),
+      PlayerView.extra = extraStep gs,
       PlayerView.active = TurnRegisters.activePlayer (GameState.turn gs),
       PlayerView.priority = TurnRegisters.priority (GameState.turn gs),
       PlayerView.seats = Maybe.mapMaybe (seatView pid gs) (GameState.seating gs),
@@ -73,6 +79,20 @@ viewFor pid gs =
   where
     witnessedIn :: Seq.Seq LoggedEvent.LoggedEvent -> [LoggedEvent.LoggedEvent]
     witnessedIn = filter (\logged -> Visibility.witnessed pid logged == Visibility.Type.Visible) . Foldable.toList
+
+-- | CR 500.8 / 500.9: whether the step under way is an extra one: begun after
+-- a step no earlier in the turn's order (Turn.turnRank) began this turn, the
+-- current step's own beginning aside, so a CR 514.3a cleanup step after the
+-- first is one too. Of two like phases the later shows as the extra one, the
+-- schedule recording no more; a skipped step logs no beginning (CR 500.11), so
+-- it makes nothing extra.
+extraStep :: GameState.GameState -> Bool
+extraStep gs =
+  let current = TurnRegisters.phase (GameState.turn gs)
+      rank = Turn.turnRank (TurnRegisters.phasesReversed (GameState.turn gs))
+      begun = Turn.stepsBegun gs
+      earlier = foldMap (\(before, latest) -> if latest == current then before else begun) (List.unsnoc begun)
+   in any (\step -> rank step >= rank current) earlier
 
 -- | CR 400.2: a hidden zone by its size and the members `pid` may see; a public
 -- one in full. A library card whose id reached a seat is re-minted when
@@ -155,6 +175,7 @@ objectView pid gs oid = do
         ObjectView.classLevel = Object.classLevel object,
         ObjectView.unlockedHalves = Object.unlockedHalves object,
         ObjectView.designations = Object.designations object,
+        ObjectView.onAdventure = any ((== PlayPermissionOrigin.Adventure) . ExilePlayPermission.origin) (Object.playPermissions object),
         ObjectView.ventureRoom = Object.ventureRoom object,
         ObjectView.chosenColors = chosen Chosen.Colors,
         ObjectView.chosenColorless = chosen Chosen.Colorless,

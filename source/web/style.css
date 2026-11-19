@@ -755,6 +755,22 @@ main.game {
   font-weight: 700;
 }
 
+/* An extra phase or step (CR 500.8, 500.9): the lit phase ringed, and a chip
+   beside the turn (Parun.Web.Board's turnBar). */
+.phases li.now.extra {
+  outline: 2px dashed var(--accent);
+  outline-offset: 1px;
+}
+
+.turn-label .extra {
+  margin-left: 0.4em;
+  padding: 0.05em 0.5em;
+  border-radius: 999px;
+  border: 1px dashed var(--accent);
+  font-size: 0.85em;
+  font-weight: 700;
+}
+
 /* The auto-pass level, a menu beside the phases (Parun.Web.Question's
    barControls). */
 .auto-pass {
