@@ -1,6 +1,7 @@
 -- | A line protocol request as a page: the seat's board, what it is asked,
--- and an answer built from taps. Each kind of question a Portal game reaches
--- has its own form; any other shows its offer and takes a reply typed as JSON.
+-- and an answer built from taps. Each kind of question the scenarios reach has
+-- its own form (Parun.WebQuestionSpec's corpus case is the proof); any other
+-- shows its offer and takes a reply typed as JSON.
 module Parun.Web.Question where
 
 import qualified Control.Monad as Monad
@@ -540,8 +541,11 @@ bounds group
 -- | The groups a question is answered by picking among, for the questions
 -- that are: cards to put on the bottom or discard (CR 103.5, 701.9),
 -- attackers (CR 508.1a), blocks (CR 509.1a), targets (CR 601.2c), cards
--- found by a search (CR 701.23b), a set from an offer's "among" that picks no
--- option twice, mana to spend, and combat damage divided (CR 510.1c).
+-- found by a search (CR 701.23b), a division among targets (CR 601.2d), life
+-- totals redistributed, words a text change swaps (CR 612.2), creatures into
+-- piles (CR 700.3), a set from an offer's "among" that picks no option twice,
+-- an amount per item of an offer's "amounts", mana to spend, and combat
+-- damage divided (CR 510.1c).
 picker :: Request.Request -> Maybe Picker
 picker request = do
   shown <- Request.view request
@@ -598,7 +602,7 @@ picker request = do
                     else Left (Text.pack "Divide " <> self <> Text.pack ("'s " <> show total <> " so it adds up" <> maybe "" (\ps -> ", using exactly " <> unwords (fmap show ps)) parts <> "."))
           )
           (Text.pack "Divide")
-    -- CR 119.7: for each player, the player whose life total they take.
+    -- Reverse the Sands: for each player, the player whose life total they take.
     "ChooseRedistribution" -> do
       totals <- Protocol.field "totals" offer >>= Protocol.arrayOf >>= mapM (\total -> case total of R.Array [p, R.Number life] -> Just (p, life); _ -> Nothing)
       let players = fmap fst totals
@@ -1028,7 +1032,7 @@ headingOf shown request = case Text.unpack (Question.kind question) of
     self = named "source"
 
 -- | A question answered by the index of one of its options: the mana a
--- source makes (CR 106.1), the mana spent on X (CR 107.3), or how to pay a
+-- source makes (CR 106.3), the mana spent on X (CR 107.3), or how to pay a
 -- cost (CR 601.2b); its heading and each option's label.
 indexed :: PlayerView.PlayerView -> Request.Request -> Maybe (Text.Text, [Text.Text])
 indexed shown request = case Text.unpack (Question.kind (Request.question request)) of

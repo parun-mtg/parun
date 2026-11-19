@@ -162,7 +162,7 @@ spec s registry = Spec.describe s "WebQuestion" $ do
     Spec.assertEqWith s "all in the first" (answered prompt request (Question.Web.initial request)) (Right [Set.fromList [a, b], Set.empty])
     Spec.assertEqWith s "one moved" (answered prompt request (Set.fromList [(0, 0), (1, 1)])) (Right [Set.singleton a, Set.singleton b])
 
-  Spec.it s "CR 119.7 a redistribution starts with each player keeping their own total" $ do
+  Spec.it s "a redistribution of life totals starts with each player keeping their own total" $ do
     let prompt = Prompt.ChooseRedistribution (Decider.MkDecider S.alice) S.alice [(S.alice, 20), (S.bob, 5)]
         request = requestFor (Setup.emptyGame S.bothPlayers) prompt
     Spec.assertEqWith s "kept" (answered prompt request (Question.Web.initial request)) (Right Map.empty)
