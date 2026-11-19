@@ -14,8 +14,8 @@
             "ready": true
           },
           {
-            "card": "Crawling Chorus",
-            "label": "c2",
+            "card": "Branchblight Stalker",
+            "label": "stalker",
             "ready": true
           }
         ],
@@ -67,14 +67,14 @@
     ],
     "step": "PrecombatMain"
   },
-  "description": "CR 122.1, 510.2, 603.2c, 702.164c: two Crawling Chorus give bob their toxic poison counters in one combat damage event, so All Will Be One triggers once and deals 2",
-  "note": "Read per damage source, it would trigger twice for 1 each: the same life total, which the stack check tells apart.",
+  "description": "CR 122.1, 510.2, 603.2c, 702.164c: Crawling Chorus and Branchblight Stalker give bob 3 poison counters in one combat damage event, so All Will Be One triggers once and deals 3",
+  "note": "Read per damage source, it would trigger twice, for 1 and 2: the same life total, which the stack check tells apart.",
   "timeline": [
     {
       "do": {
         "Attack": [
           "$c1",
-          "$c2"
+          "$stalker"
         ]
       },
       "player": "alice",
@@ -84,7 +84,7 @@
     {
       "check": {
         "PlayerCounters": {
-          "count": 2,
+          "count": 3,
           "kind": "Poison",
           "player": "bob"
         }
@@ -115,7 +115,7 @@
     {
       "check": {
         "Life": {
-          "life": 16,
+          "life": 13,
           "player": "bob"
         }
       },

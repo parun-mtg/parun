@@ -58,7 +58,13 @@
           }
         ],
         "manaPool": "BBC",
-        "name": "alice"
+        "name": "alice",
+        "counters": [
+          {
+            "key": "Poison",
+            "value": 1
+          }
+        ]
       },
       {
         "counters": [
@@ -92,8 +98,8 @@
     ],
     "step": "PrecombatMain"
   },
-  "description": "CR 122.1, 603.2c, 701.34a: alice proliferates onto her Bears and onto bob, so All Will Be One triggers once for each, dealing 2 for the Bears' two counters and 1 for bob's poison",
-  "note": "Read per counter kind, the Bears would trigger twice; read per event, once for 3.",
+  "description": "CR 122.1, 603.2c, 701.34a: alice proliferates onto her Bears, herself and bob, so All Will Be One triggers once for each, dealing 2 for the Bears' two counters and 1 for each player's poison",
+  "note": "Read per counter kind, the Bears would trigger twice; read per event, once for 4; with the players unsplit, once for both.",
   "timeline": [
     {
       "do": {
@@ -130,6 +136,7 @@
               "$bears"
             ],
             [
+              "alice",
               "bob"
             ]
           ]
@@ -157,7 +164,8 @@
           "prompt": "OrderTriggers",
           "with": [
             0,
-            1
+            1,
+            2
           ]
         }
       },
@@ -169,6 +177,7 @@
       "check": {
         "View": {
           "is": [
+            "trigger of $awbo",
             "trigger of $awbo",
             "trigger of $awbo"
           ],
@@ -192,10 +201,28 @@
       "turn": 1
     },
     {
+      "do": "Pass",
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
       "check": {
         "Life": {
-          "life": 17,
+          "life": 16,
           "player": "bob"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "PlayerCounters": {
+          "count": 2,
+          "kind": "Poison",
+          "player": "alice"
         }
       },
       "player": "alice",
