@@ -2570,6 +2570,30 @@ liveAfterLayers setEffs oid gs =
             && any (\(src, _, aff) -> affects src oid aff view gs) (appliedSetEffects (textChangeStatics gs) setEffs gs)
         )
 
+-- CR 305.7's strip written into `oid`'s finished projection, for a reader that
+-- shows the object rather than plays by it (Parun.Engine.PlayerView): the
+-- rules-text lists the fold leaves to their readers' gates, liveAfterLayers
+-- and permanentParts', emptied where the land lost its rules text. What a
+-- granted list holds stays (CR 305.7's "Note"). An ability CR 613.6 keeps
+-- applying is gone all the same: the rule keeps its effect, not the ability.
+withRulesTextStrip :: ObjectId -> GameState -> ProjectedCharacteristics -> ProjectedCharacteristics
+withRulesTextStrip oid gs pc
+  | null setEffs || liveAfterLayers setEffs oid gs = pc
+  | otherwise =
+      pc
+        { PC.staticAbilities = [],
+          PC.playerAbilities = [],
+          PC.ruleAbilities = mempty,
+          PC.specialActions = [],
+          PC.additionalCosts = [],
+          PC.additionalCostChoices = [],
+          PC.alternativeCosts = [],
+          PC.costReductions = [],
+          PC.castingRestrictions = []
+        }
+  where
+    setEffs = setLandSubtypeEffects gs
+
 -- CR 305.7's strip, asked of ONE ability rather than of the whole permanent: does
 -- a subtype-setting effect reach `oid` by the time layer 4 has finished? The
 -- caller pairs it with CR 613.6 -- see permanentParts' `removed` -- so only an

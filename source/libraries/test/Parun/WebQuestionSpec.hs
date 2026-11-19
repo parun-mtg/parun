@@ -296,16 +296,16 @@ spec s registry = Spec.describe s "WebQuestion" $ do
         shown = List.find ((== oid) . ObjectView.object) (PlayerView.Type.battlefield (PlayerView.viewFor S.alice gs))
     Spec.assertEqWith s "the sheet" (fmap (Card.oracle lookUp) shown) (Just (Right [Text.pack "({T}: Add {R}.)"]))
 
-  Spec.it s "CR 305.7 a creature land whose static ability Blood Moon may have stripped is marked as changed" $ do
+  Spec.it s "CR 305.7 a creature land Blood Moon strips reads as the Mountain's intrinsic mana ability, its static ability gone" $ do
     -- Ashaya makes the Lord a Forest land, and Blood Moon then sets it to
-    -- Mountain; the projection still lists the Lord's static ability.
+    -- Mountain.
     lord <- S.printingOf s registry "Lord of Atlantis"
     ashaya <- S.printingOf s registry "Ashaya, Soul of the Wild"
     moon <- S.printingOf s registry "Blood Moon"
     let (oid, gs) = S.addPermanent lord S.alice (snd (S.addPermanent ashaya S.alice (snd (S.addPermanent moon S.bob (Setup.emptyGame S.bothPlayers)))))
         lookUp name = Right (if name == Face.name (NonEmpty.head (Card.Type.faces (Printing.card lord))) then Just (Printing.card lord) else Nothing) :: Either () (Maybe Card.Type.Card)
         shown = List.find ((== oid) . ObjectView.object) (PlayerView.Type.battlefield (PlayerView.viewFor S.alice gs))
-    Spec.assertEqWith s "the sheet" (fmap (fmap (take 1) . Card.oracle lookUp) shown) (Just (Right [Text.pack "Its abilities have changed; this text may be out of date."]))
+    Spec.assertEqWith s "the sheet" (fmap (Card.oracle lookUp) shown) (Just (Right [Text.pack "({T}: Add {R}.)"]))
 
   Spec.it s "CR 104.3a the turn bar carries the auto-pass level and the settings button, whose concession passes while the seat may" $ do
     let request = requestFor (Setup.emptyGame S.bothPlayers) (Prompt.ChooseAction (Decider.MkDecider S.alice) S.alice [Action.Pass])
@@ -642,12 +642,12 @@ replaySpec s registry = Spec.describe s "WebQuestion" . Spec.describe s "replay"
     Spec.assertEqWith s "a Plains, as printed" plains [Text.pack "({T}: Add {W}.)"]
     Spec.assertBool s (not (null opalescence) && notElem (Text.pack "It has no abilities.") opalescence) ("Opalescence, as printed: " <> show opalescence)
 
-  Spec.it s "CR 305.7 a Palace Guard stripped by Blood Moon is marked as changed, its block permission unworded" $ do
+  Spec.it s "CR 305.7 a Palace Guard stripped by Blood Moon reads as the Mountain's intrinsic mana ability, its block permission gone" $ do
     stripped <- replayed s registry "combat-cost/cr-305-7-an-animated-palace-guard-set-to-mountain-blocks-stripped" 0
     control <- replayed s registry "combat-cost/cr-305-7-an-animated-palace-guard-set-to-mountain-blocks-control" 0
     guard <- sheetText s registry stripped "Palace Guard"
     unchanged <- sheetText s registry control "Palace Guard"
-    Spec.assertEqWith s "stripped" (take 1 guard) [Text.pack "Its abilities have changed; this text may be out of date."]
+    Spec.assertEqWith s "stripped" guard [Text.pack "({T}: Add {R}.)"]
     Spec.assertEqWith s "the control, as printed" unchanged [Text.pack "This creature can block any number of creatures."]
 
   Spec.it s "CR 702.140e a mutated permanent's sheet reads its top card as printed and then the card merged under it" $ do
