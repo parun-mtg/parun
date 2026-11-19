@@ -1,10 +1,11 @@
 module Parun.Types.TopOfLibrary where
 
+import qualified Parun.Types.LibraryPosition as LibraryPosition
 import qualified Parun.Types.PlayerRef as PlayerRef
 import qualified Parun.Types.Quantity as Quantity
 import qualified Parun.Types.SideDeck as SideDeck
 
--- | The top cards of a library, named by whose library and how many. CR 401.2
+-- | The cards at one end of a library, named by whose library and how many. CR 401.2
 -- makes a library an ordered pile and CR 121.1 names its head the top, which
 -- together are what a POSITION in one means.
 --
@@ -21,6 +22,9 @@ data TopOfLibrary = MkTopOfLibrary
     count :: Quantity.Quantity,
     -- | Nothing for the library; a side deck's top otherwise (CR 901.3 / 311.7:
     -- Pools of Becoming's "the top three cards of your planar deck").
-    deck :: Maybe SideDeck.SideDeck
+    deck :: Maybe SideDeck.SideDeck,
+    -- | Which end the cards are counted from: Top for the head (CR 121.1),
+    -- Bottom for The Temporal Anchor's "cards from the bottom of your library".
+    end :: LibraryPosition.LibraryPosition
   }
   deriving (Eq, Ord, Show)

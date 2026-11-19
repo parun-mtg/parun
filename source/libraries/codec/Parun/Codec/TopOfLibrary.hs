@@ -2,12 +2,14 @@
 
 module Parun.Codec.TopOfLibrary where
 
+import qualified Parun.Codec.LibraryPosition as LibraryPosition
 import qualified Parun.Codec.PlayerRef as PlayerRef
 import qualified Parun.Codec.Quantity as Quantity
 import qualified Parun.Codec.SideDeck as SideDeck
 import qualified Parun.JsonCodec.Codec as Codec
 import qualified Parun.JsonCodec.Common as Common
 import qualified Parun.JsonCodec.Fields as Fields
+import qualified Parun.Types.LibraryPosition as LibraryPosition
 import qualified Parun.Types.TopOfLibrary as TopOfLibrary
 
 -- | A bare object keyed by the record's field names, replacing the two-element
@@ -21,4 +23,5 @@ codec = Fields.object $ do
   player <- Fields.required "player" PlayerRef.codec TopOfLibrary.player
   count <- Fields.required "count" Quantity.codec TopOfLibrary.count
   deck <- Fields.defaulted "deck" Nothing (Common.maybe SideDeck.codec) TopOfLibrary.deck
-  pure TopOfLibrary.MkTopOfLibrary {TopOfLibrary.player = player, TopOfLibrary.count = count, TopOfLibrary.deck = deck}
+  end <- Fields.defaulted "end" LibraryPosition.Top LibraryPosition.codec TopOfLibrary.end
+  pure TopOfLibrary.MkTopOfLibrary {TopOfLibrary.player = player, TopOfLibrary.count = count, TopOfLibrary.deck = deck, TopOfLibrary.end = end}

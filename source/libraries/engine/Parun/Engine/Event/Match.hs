@@ -1129,7 +1129,7 @@ anyTriggerReads event = case event of
   GameEvent.TriggeredAbilityFinished {} -> True
   GameEvent.PermanentActed {} -> True
   GameEvent.PlayerActed {} -> True
-  GameEvent.Discovered {} -> True
+  GameEvent.CountedAct {} -> True
   GameEvent.StickerPut {} -> True
 
 -- The same question against a slot environment, for the conditions whose subject

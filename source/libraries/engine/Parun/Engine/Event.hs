@@ -138,6 +138,7 @@ import qualified Parun.Types.CopyRecipient as CopyRecipient
 import qualified Parun.Types.Cost as Cost
 import qualified Parun.Types.CostAmount as CostAmount
 import qualified Parun.Types.CostComponent as CostComponent
+import qualified Parun.Types.CountedAct as CountedAct
 import qualified Parun.Types.CounterCause as CounterCause
 import qualified Parun.Types.CounterChange as CounterChange
 import qualified Parun.Types.CounterKind as CounterKind
@@ -1383,7 +1384,7 @@ damageOf event = case event of
   GameEvent.ArrivedUnseen _ -> Nothing
   GameEvent.Milled {} -> Nothing
   GameEvent.PlayerActed _ -> Nothing
-  GameEvent.Discovered _ -> Nothing
+  GameEvent.CountedAct _ -> Nothing
   GameEvent.LandPlayed {} -> Nothing
   GameEvent.LostTheGame _ -> Nothing
   GameEvent.ManifestedDread {} -> Nothing
@@ -1467,7 +1468,7 @@ revealOf event = case event of
   GameEvent.ArrivedUnseen _ -> Nothing
   GameEvent.Milled {} -> Nothing
   GameEvent.PlayerActed _ -> Nothing
-  GameEvent.Discovered _ -> Nothing
+  GameEvent.CountedAct _ -> Nothing
   GameEvent.LandPlayed {} -> Nothing
   GameEvent.LostTheGame _ -> Nothing
   GameEvent.ManifestedDread {} -> Nothing
@@ -12816,8 +12817,9 @@ topCards n pid gs =
   let looked = List.genericTake n (Game.cardsIn Zone.Library pid gs)
    in (looked, filter (`List.notElem` looked) (Game.zoneMembers Zone.Library pid gs))
 
--- CR 701.22a: one player's scry DECISION, answered with the cards looked at and
--- the library order it makes -- Nothing where there was nothing to decide. A
+-- CR 701.22a: one player's scry DECISION, answered with the cards looked at,
+-- the library order it makes and how many went to the bottom -- Nothing where
+-- there was nothing to look at. A
 -- short library is looked at as far as it goes; rule 701.22 states no penalty
 -- for scrying more than there is. The move and the CR 701.22d event come after every scryer has
 -- decided (CR 701.22c): the Scry arm's, or scryInstruction's for its one.
@@ -12829,24 +12831,34 @@ topCards n pid gs =
 --
 -- Every card looked at is logged (look) before the question, and where
 -- none is asked: the look is the rule's, the question the engine's.
-decideScry :: Integer -> PlayerId -> Game (PlayerId, Maybe ([ObjectId], [ObjectId]))
+decideScry :: Integer -> PlayerId -> Game (PlayerId, Maybe Scried)
 decideScry n pid = do
   gs <- State.get
   let (looked, beneath) = topCards n pid gs
-      -- The engine never makes the player's choice, but does not ask a question
-      -- with one answer either: nothing to look at, or a single looked-at card
-      -- that is the whole library. One card with more beneath it IS a decision.
-      decided = case looked of
-        [] -> False
-        [_] -> any (`Game.isCardObject` gs) beneath
-        _ -> True
   Monad.mapM_ (look pid) looked
-  if decided
-    then do
+  -- A single looked-at card that is the whole library IS a decision: The
+  -- Temporal Anchor sees it put on the bottom (PlayerAction.ScryToBottom).
+  if null looked
+    then pure (pid, Nothing)
+    else do
       answer <- Game.choose (Prompt.ChooseScry (Decide.deciderFor pid gs) pid looked)
       let (toBottom, onTop) = splitLooked looked answer
-      pure (pid, Just (looked, onTop <> beneath <> toBottom))
-    else pure (pid, Nothing)
+      pure (pid, Just (MkScried looked (onTop <> beneath <> toBottom) (List.genericLength toBottom)))
+
+-- | One player's decided scry: the cards looked at, the library's new order,
+-- and how many of them went to the bottom.
+data Scried = MkScried [ObjectId] [ObjectId] Natural
+
+-- | CR 701.22a / 701.22d: move one player's decided scry into place, then
+-- record the scry and, where one or more cards went to the bottom, the
+-- PlayerAction.ScryToBottom that counts them.
+completeScry :: PlayerId -> Maybe Scried -> GameState -> GameState
+completeScry pid decided =
+  bottomed . recordEvent (GameEvent.PlayerActed (PlayerActed.MkPlayerActed PlayerAction.Scry pid)) . maybe id (\(MkScried looked whole _) -> reorderLibrary pid looked whole) decided
+  where
+    bottomed = case decided of
+      Just (MkScried _ _ n) | n > 0 -> recordEvent (GameEvent.CountedAct (CountedAct.MkCountedAct PlayerAction.ScryToBottom pid n))
+      _ -> id
 
 -- Repair a look-and-split answer into the two groups the effect then moves: the
 -- cards going AWAY from the top, and the cards staying on top in reading order.
@@ -12867,7 +12879,7 @@ splitLooked looked (away, kept) =
 -- 614.1a's replaceable instruction and then decided. Nothing where a row
 -- replaced it outright (Eligeth, Crossroads Augur): it has done its own work,
 -- and by CR 614.6 there is no scry.
-proposeScry :: Settle.Settle -> PlayerId -> Natural -> Game (Maybe (PlayerId, Maybe ([ObjectId], [ObjectId])))
+proposeScry :: Settle.Settle -> PlayerId -> Natural -> Game (Maybe (PlayerId, Maybe Scried))
 proposeScry settle pid n = do
   outcome <- applyReplacementsIn settle Nothing Set.empty Set.empty (ProposedEvent.WouldPerform PlayerInstruction.Scry Nothing pid n)
   Monad.forM (outcome >>= Replacement.asPerformed PlayerInstruction.Scry) $ \(scryer, settled) ->
@@ -12880,9 +12892,7 @@ proposeScry settle pid n = do
 scryInstruction :: Settle.Settle -> PlayerId -> Natural -> Game ()
 scryInstruction settle pid n = do
   decided <- proposeScry settle pid n
-  Monad.forM_ decided $ \(scryer, order) -> do
-    Monad.forM_ order (\(looked, whole) -> State.modify' (reorderLibrary scryer looked whole))
-    State.modify' (recordEvent (GameEvent.PlayerActed (PlayerActed.MkPlayerActed PlayerAction.Scry scryer)))
+  Monad.forM_ decided (\(scryer, order) -> State.modify' (completeScry scryer order))
 
 -- | CR 701.20a: keep a revealed card revealed for a window, beside any it
 -- already has. Parun.VisibilitySpec's "CR 701.20a a second behold" case proves a
@@ -13538,7 +13548,7 @@ abilityTriggeredOf event = case event of
   GameEvent.ArrivedUnseen _ -> Nothing
   GameEvent.Milled {} -> Nothing
   GameEvent.PlayerActed _ -> Nothing
-  GameEvent.Discovered _ -> Nothing
+  GameEvent.CountedAct _ -> Nothing
   GameEvent.LandPlayed {} -> Nothing
   GameEvent.LostTheGame _ -> Nothing
   GameEvent.ManifestedDread {} -> Nothing

@@ -28,6 +28,7 @@ import qualified Parun.Types.HiddenZone as HiddenZone
 import qualified Parun.Types.Holder as Holder
 import qualified Parun.Types.Hop as Hop
 import qualified Parun.Types.HowMany as HowMany
+import qualified Parun.Types.LibraryPosition as LibraryPosition
 import qualified Parun.Types.Measure as Measure
 import qualified Parun.Types.ObjectRef as ObjectRef
 import qualified Parun.Types.PlayerRef as PlayerRef
@@ -197,7 +198,7 @@ spec s = Spec.describe s "Parun.Codec.ObjectRef" $ do
     Common.assertCodec
       s
       ObjectRef.codec
-      (ObjectRef.TopOfLibrary (TopOfLibrary.MkTopOfLibrary (PlayerRef.Relative PlayerRelation.You) (Quantity.Literal 3) Nothing))
+      (ObjectRef.TopOfLibrary (TopOfLibrary.MkTopOfLibrary (PlayerRef.Relative PlayerRelation.You) (Quantity.Literal 3) Nothing LibraryPosition.Top))
       " {\"type\":\"TopOfLibrary\",\"value\":{\"player\":{\"type\":\"Relative\",\"value\":\"You\"},\"count\":{\"type\":\"Literal\",\"value\":3}}} "
   -- Commune with Lava's "the top X cards of your library": the same arm with a
   -- computed depth, which is what a bare number could never say.
@@ -205,7 +206,7 @@ spec s = Spec.describe s "Parun.Codec.ObjectRef" $ do
     Common.assertCodec
       s
       ObjectRef.codec
-      (ObjectRef.TopOfLibrary (TopOfLibrary.MkTopOfLibrary (PlayerRef.Relative PlayerRelation.You) (Quantity.InSlot (SlotName.MkSlotName (Text.pack "X"))) Nothing))
+      (ObjectRef.TopOfLibrary (TopOfLibrary.MkTopOfLibrary (PlayerRef.Relative PlayerRelation.You) (Quantity.InSlot (SlotName.MkSlotName (Text.pack "X"))) Nothing LibraryPosition.Top))
       " {\"type\":\"TopOfLibrary\",\"value\":{\"player\":{\"type\":\"Relative\",\"value\":\"You\"},\"count\":{\"type\":\"InSlot\",\"value\":\"X\"}}} "
   -- The walk-terminated sibling: the arm above's keys plus a Filter, which is
   -- the whole difference between them on the wire too -- the shared @count@
@@ -509,7 +510,7 @@ spec s = Spec.describe s "Parun.Codec.ObjectRef" $ do
                 Codec.encode ObjectRef.codec (ObjectRef.EachAbility (Filter.Not Filter.IsSource)),
                 Codec.encode ObjectRef.codec (ObjectRef.EachOnStack (Filter.Not Filter.IsSource)),
                 Codec.encode ObjectRef.codec (ObjectRef.Players PlayersWho.MkPlayersWho {PlayersWho.players = PlayerRef.Relative PlayerRelation.You, PlayersWho.who = Nothing, PlayersWho.whose = Nothing}),
-                Codec.encode ObjectRef.codec (ObjectRef.TopOfLibrary (TopOfLibrary.MkTopOfLibrary (PlayerRef.Relative PlayerRelation.You) (Quantity.Literal 3) Nothing)),
+                Codec.encode ObjectRef.codec (ObjectRef.TopOfLibrary (TopOfLibrary.MkTopOfLibrary (PlayerRef.Relative PlayerRelation.You) (Quantity.Literal 3) Nothing LibraryPosition.Top)),
                 Codec.encode ObjectRef.codec (ObjectRef.TopOfLibraryUntil (TopOfLibraryUntil.MkTopOfLibraryUntil (PlayerRef.Relative PlayerRelation.You) (Filter.Not (Filter.HasCardType CardType.Land)) (Quantity.Literal 1) (Quantity.Literal 1) Nothing)),
                 Codec.encode ObjectRef.codec (ObjectRef.TopOfGraveyard (PlayerRef.Relative PlayerRelation.You)),
                 Codec.encode ObjectRef.codec (ObjectRef.ChosenCardInGraveyard (ChosenCardInGraveyard.MkChosenCardInGraveyard Chooser.TheController (ZoneScope.Scoped (PlayerScope.Related PlayerRelation.AnyPlayer)) (Filter.HasCardType CardType.Creature) HowMany.one Nothing)),

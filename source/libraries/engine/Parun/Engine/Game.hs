@@ -54,12 +54,12 @@ import qualified Parun.Types.ComponentCard as ComponentCard
 import qualified Parun.Types.ControlChanged as ControlChanged
 import qualified Parun.Types.CopyCoverage as CopyCoverage
 import qualified Parun.Types.Cost as Cost
+import qualified Parun.Types.CountedAct as CountedAct
 import qualified Parun.Types.DamageDirection as DamageDirection
 import qualified Parun.Types.DamageEvent as DamageEvent
 import qualified Parun.Types.DamageKind as DamageKind
 import qualified Parun.Types.Decider as Decider
 import qualified Parun.Types.Discarded as Discarded
-import qualified Parun.Types.Discovered as Discovered
 import qualified Parun.Types.EntryOrigin as EntryOrigin
 import qualified Parun.Types.EventGroup as EventGroup
 import qualified Parun.Types.ExileLink as ExileLink
@@ -3538,7 +3538,7 @@ castOf event = case event of
   GameEvent.ArrivedUnseen _ -> Nothing
   GameEvent.Milled {} -> Nothing
   GameEvent.PlayerActed _ -> Nothing
-  GameEvent.Discovered _ -> Nothing
+  GameEvent.CountedAct _ -> Nothing
   GameEvent.LandPlayed {} -> Nothing
   GameEvent.LostTheGame _ -> Nothing
   GameEvent.ManifestedDread {} -> Nothing
@@ -3745,7 +3745,7 @@ abilityResolved event = case event of
   GameEvent.ArrivedUnseen _ -> Nothing
   GameEvent.Milled {} -> Nothing
   GameEvent.PlayerActed _ -> Nothing
-  GameEvent.Discovered _ -> Nothing
+  GameEvent.CountedAct _ -> Nothing
   GameEvent.LandPlayed {} -> Nothing
   GameEvent.LostTheGame _ -> Nothing
   GameEvent.ManifestedDread {} -> Nothing
@@ -3843,7 +3843,7 @@ discardOf event = case event of
   GameEvent.ArrivedUnseen _ -> Nothing
   GameEvent.Milled {} -> Nothing
   GameEvent.PlayerActed _ -> Nothing
-  GameEvent.Discovered _ -> Nothing
+  GameEvent.CountedAct _ -> Nothing
   GameEvent.LandPlayed {} -> Nothing
   GameEvent.LostTheGame _ -> Nothing
   GameEvent.ManifestedDread {} -> Nothing
@@ -4087,7 +4087,7 @@ movedChange event = case event of
   GameEvent.ArrivedUnseen _ -> Nothing
   GameEvent.Milled {} -> Nothing
   GameEvent.PlayerActed _ -> Nothing
-  GameEvent.Discovered _ -> Nothing
+  GameEvent.CountedAct _ -> Nothing
   GameEvent.LandPlayed {} -> Nothing
   GameEvent.LostTheGame _ -> Nothing
   GameEvent.ManifestedDread {} -> Nothing
@@ -4204,7 +4204,7 @@ damageDealt event = case event of
   GameEvent.ArrivedUnseen _ -> Nothing
   GameEvent.Milled {} -> Nothing
   GameEvent.PlayerActed _ -> Nothing
-  GameEvent.Discovered _ -> Nothing
+  GameEvent.CountedAct _ -> Nothing
   GameEvent.LandPlayed {} -> Nothing
   GameEvent.LostTheGame _ -> Nothing
   GameEvent.ManifestedDread {} -> Nothing
@@ -4506,7 +4506,7 @@ lifeChangeOf direction event = case event of
   GameEvent.ArrivedUnseen _ -> Nothing
   GameEvent.Milled {} -> Nothing
   GameEvent.PlayerActed _ -> Nothing
-  GameEvent.Discovered _ -> Nothing
+  GameEvent.CountedAct _ -> Nothing
   GameEvent.LandPlayed {} -> Nothing
   GameEvent.LostTheGame _ -> Nothing
   GameEvent.ManifestedDread {} -> Nothing
@@ -4553,13 +4553,18 @@ lifeChangedAmong :: LifeDirection.LifeDirection -> Seq.Seq LoggedEvent.LoggedEve
 lifeChangedAmong direction events admits =
   sum (fmap snd (filter (admits . fst) (Maybe.mapMaybe (lifeChangeOf direction . LoggedEvent.event) (Foldable.toList events))))
 
+-- | The acts recorded as GameEvent.CountedAct rather than GameEvent.PlayerActed:
+-- each carries a count, which a trigger watching it binds as its event amount.
+countedActions :: Set.Set PlayerAction.PlayerAction
+countedActions = Set.fromList [PlayerAction.Discover, PlayerAction.ScryToBottom]
+
 -- | CR 603.2: the Parun.Types.PlayerAction an event records, and who did it --
--- GameEvent.PlayerActed's own, and CR 701.57b's discover, whose event carries
--- its N beside the act.
+-- GameEvent.PlayerActed's own, and a GameEvent.CountedAct's, which carries a
+-- count beside the act.
 actOf :: GameEvent.GameEvent -> Maybe (PlayerActed.PlayerActed PlayerId)
 actOf event = case event of
   GameEvent.PlayerActed acted -> Just acted
-  GameEvent.Discovered discovered -> Just PlayerActed.MkPlayerActed {PlayerActed.action = PlayerAction.Discover, PlayerActed.player = Discovered.player discovered}
+  GameEvent.CountedAct counted -> Just PlayerActed.MkPlayerActed {PlayerActed.action = CountedAct.action counted, PlayerActed.player = CountedAct.player counted}
   _ -> Nothing
 
 -- CR 603.1b / 608.2i: how many DISTINCT acts of these this player has done this

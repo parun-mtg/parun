@@ -43,6 +43,7 @@ import qualified Parun.Types.CardSelection as CardSelection
 import qualified Parun.Types.CardType as CardType
 import qualified Parun.Types.ClauseIndex as ClauseIndex
 import qualified Parun.Types.CombatStep as CombatStep
+import qualified Parun.Types.CountedAct as CountedAct
 import qualified Parun.Types.CounterKind as CounterKind
 import qualified Parun.Types.Decider as Decider
 import qualified Parun.Types.Departure as Departure.Type
@@ -58,6 +59,7 @@ import qualified Parun.Types.GameEvent as GameEvent
 import qualified Parun.Types.GameState as GameState
 import qualified Parun.Types.Keyword as Keyword
 import qualified Parun.Types.LibraryPlacement as LibraryPlacement
+import qualified Parun.Types.LibraryPosition as LibraryPosition
 import qualified Parun.Types.Mode as Mode
 import qualified Parun.Types.ModeIndex as ModeIndex
 import qualified Parun.Types.ModeInstance as ModeInstance
@@ -666,14 +668,16 @@ scryPromptSpec s registry = Spec.describe s "ScryPrompt" $ do
   Spec.it s "CR 701.22a an empty library raises no scry prompt" $ do
     (_, ballId, board) <- scryBoard s registry 0
     Spec.assertEqWith s "not asked" (asks ballId board) 0
-  -- Nothing to DECIDE: one card that IS the whole library. Its top and its
-  -- bottom are the same position, so both answers produce the same library and
-  -- declining to ask takes no choice away from the player.
-  Spec.it s "CR 701.22a one card that is the whole library raises no scry prompt" $ do
+  -- One card that IS the whole library. Both answers produce the same library,
+  -- but putting it on the bottom is still a choice The Temporal Anchor sees
+  -- (data/scenarios/the-temporal-anchor-exiles-a-whole-one-card-library-scried-to-the-bottom.json),
+  -- so the player is asked.
+  Spec.it s "CR 701.22a one card that is the whole library raises a scry prompt" $ do
     (ids, ballId, board) <- scryBoard s registry 1
-    let after = runScry (scryAnswer ([], [])) ballId board
-    Spec.assertEqWith s "not asked" (asks ballId board) 0
-    Spec.assertEqWith s "and the library is what it was" (scryLibrary after) ids
+    let after = runScry (scryAnswer (ids, [])) ballId board
+    Spec.assertEqWith s "asked" (asks ballId board) 1
+    Spec.assertEqWith s "and the card is still the whole library" (fmap (\oid -> fmap S.nameOf (Game.cardOf oid after)) (scryLibrary after)) [cardNamed "Goblin Piker"]
+    Spec.assertBool s (elem (GameEvent.CountedAct (CountedAct.MkCountedAct PlayerAction.ScryToBottom S.alice 1)) (S.eventsOf after)) "CR 701.22a it was put on the bottom"
   -- CR 614.6: Eligeth, Crossroads Augur ("If you would scry a number of cards,
   -- draw that many cards instead.") replaces the scry outright: two cards drawn,
   -- nothing looked at, and no CR 701.22d event for "whenever you scry".
@@ -785,10 +789,8 @@ surveilPromptSpec s registry = Spec.describe s "SurveilPrompt" $ do
       surveilTwo = Effect.Surveil (Surveil.MkSurveil (PlayerRef.Relative PlayerRelation.You) (Quantity.Literal 2) Nothing)
       apply effect sourceId = Resolve.applyEffect sourceId sourceId S.alice Map.empty Map.empty effect
       asks effect sourceId gs = State.execState (Engine.runGame counting gs (apply effect sourceId)) 0
-  -- The case that separates surveil from scry, and the reason this pair exists:
-  -- with ONE card that is the whole library, Parun.Engine.Event.decideScry asks
-  -- nothing because top and bottom are the same position -- but a graveyard is
-  -- somewhere else, so the player IS asked, and the answer is honoured.
+  -- ONE card that is the whole library: a graveyard is somewhere else, so the
+  -- player IS asked, and the answer is honoured.
   Spec.it s "CR 701.25a one card that is the whole library is still a real choice" $ do
     (ids, sourceId, board) <- surveilOpcodeBoard s registry 1
     let after = S.runPure (surveilAnswer (ids, [])) board (apply surveilTwo sourceId)
@@ -808,7 +810,8 @@ fatesealSpec s registry = Spec.describe s "Fateseal" $ do
   -- The elision pair for the SPLIT question, two boards differing in one card:
   -- a lone card that is the whole library has its top and its bottom at the same
   -- position, so both answers give the same library and there is nothing to ask
-  -- -- decideScry's case, and NOT surveil's, where the two destinations differ.
+  -- -- NOT surveil's case, where the two destinations differ, and not scry's,
+  -- whose bottoming The Temporal Anchor sees.
   -- Driven through the opcode, Spin into Myth's count being fixed at two.
   Spec.it s "CR 701.29a a one-card library raises no fateseal prompt, and a card beneath it does" $ do
     island <- S.printingOf s registry "Island"
@@ -1206,7 +1209,7 @@ ponderSpec s registry = Spec.describe s "PutBackInOrder" $ do
   -- pair differs in the ref's count alone, on one board.
   Spec.it s "CR 401.4 one card is one order and raises no prompt, where two do" $ do
     (_, _, board) <- ponderBoard s registry
-    let topOf n = Effect.ArrangeInLibrary (ArrangeInLibrary.MkArrangeInLibrary (ObjectRef.TopOfLibrary (TopOfLibrary.MkTopOfLibrary (PlayerRef.Relative PlayerRelation.You) (Quantity.Literal n) Nothing)) (PlayerRef.Relative PlayerRelation.You) Nothing Nothing CardSelection.ByChoice)
+    let topOf n = Effect.ArrangeInLibrary (ArrangeInLibrary.MkArrangeInLibrary (ObjectRef.TopOfLibrary (TopOfLibrary.MkTopOfLibrary (PlayerRef.Relative PlayerRelation.You) (Quantity.Literal n) Nothing LibraryPosition.Top)) (PlayerRef.Relative PlayerRelation.You) Nothing Nothing CardSelection.ByChoice)
         counting :: Prompt.Prompt r -> State.State Int r
         counting p = case p of
           Prompt.ArrangeLibraryCards {} -> do

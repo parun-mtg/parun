@@ -3455,7 +3455,7 @@ objectRefChildren c ref = case ref of
   ObjectRef.EachAbility filter_ -> ObjectRef.EachAbility <$> refFilter c filter_
   ObjectRef.EachOnStack filter_ -> ObjectRef.EachOnStack <$> refFilter c filter_
   ObjectRef.Players (PlayersWho.MkPlayersWho players who whose) -> fmap ObjectRef.Players (PlayersWho.MkPlayersWho <$> refPlayer c players <*> traverse (refFilter c) who <*> traverse (refCondition c) whose)
-  ObjectRef.TopOfLibrary (TopOfLibrary.MkTopOfLibrary seat count deck) -> fmap ObjectRef.TopOfLibrary (TopOfLibrary.MkTopOfLibrary <$> refPlayer c seat <*> refQuantity c count <*> pure deck)
+  ObjectRef.TopOfLibrary (TopOfLibrary.MkTopOfLibrary seat count deck end) -> fmap ObjectRef.TopOfLibrary (TopOfLibrary.MkTopOfLibrary <$> refPlayer c seat <*> refQuantity c count <*> pure deck <*> pure end)
   ObjectRef.TopOfLibraryUntil (TopOfLibraryUntil.MkTopOfLibraryUntil seat filter_ weight count deck) -> fmap ObjectRef.TopOfLibraryUntil (TopOfLibraryUntil.MkTopOfLibraryUntil <$> refPlayer c seat <*> refFilter c filter_ <*> refQuantity c weight <*> refQuantity c count <*> pure deck)
   ObjectRef.TopOfGraveyard seat -> ObjectRef.TopOfGraveyard <$> refPlayer c seat
   ObjectRef.ChosenCardInGraveyard (ChosenCardInGraveyard.MkChosenCardInGraveyard chooser players filter_ count total) ->

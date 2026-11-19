@@ -708,7 +708,7 @@ spec s = Spec.describe s "Parun.Codec.Effect" $ do
       fromJson
       ( Effect.LookAt
           ( LookAt.MkLookAt
-              (ObjectRef.TopOfLibrary (TopOfLibrary.MkTopOfLibrary (PlayerRef.Relative PlayerRelation.You) (Quantity.Literal 1) Nothing))
+              (ObjectRef.TopOfLibrary (TopOfLibrary.MkTopOfLibrary (PlayerRef.Relative PlayerRelation.You) (Quantity.Literal 1) Nothing LibraryPosition.Top))
               (SlotName.MkSlotName (Text.pack "looked"))
               (PlayerRef.Relative PlayerRelation.You)
           )
@@ -1429,7 +1429,7 @@ spec s = Spec.describe s "Parun.Codec.Effect" $ do
       s
       toJson
       fromJson
-      (Effect.ExchangeCardZones (ExchangeCardZones.MkExchangeCardZones (ObjectRef.InSlot (SlotName.MkSlotName (Text.pack "card"))) (ObjectRef.TopOfLibrary (TopOfLibrary.MkTopOfLibrary (PlayerRef.Relative PlayerRelation.You) (Quantity.Literal 1) Nothing))))
+      (Effect.ExchangeCardZones (ExchangeCardZones.MkExchangeCardZones (ObjectRef.InSlot (SlotName.MkSlotName (Text.pack "card"))) (ObjectRef.TopOfLibrary (TopOfLibrary.MkTopOfLibrary (PlayerRef.Relative PlayerRelation.You) (Quantity.Literal 1) Nothing LibraryPosition.Top))))
       " {\"type\":\"ExchangeCardZones\",\"value\":{\"one\":{\"type\":\"InSlot\",\"value\":\"card\"},\"other\":{\"type\":\"TopOfLibrary\",\"value\":{\"player\":{\"type\":\"Relative\",\"value\":\"You\"},\"count\":{\"type\":\"Literal\",\"value\":1}}}}} "
   -- CR 701.24a on its own: the arm above with no ref at all, so the payload is a
   -- bare PlayerRef. Undercity's "then shuffle" is what writes it.

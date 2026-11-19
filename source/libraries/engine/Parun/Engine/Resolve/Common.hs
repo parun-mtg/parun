@@ -5101,8 +5101,7 @@ clash resolving source controller = do
                 asked <- State.get
                 -- The engine never makes the player's choice, but does not ask a
                 -- question with one answer either: a revealed card that is the
-                -- whole library is already at both ends, Event.decideScry's
-                -- elision one card over.
+                -- whole library is already at both ends.
                 let alone = length (Game.cardsIn Zone.Library pid asked) <= 1
                     earlier = fmap (\(who, _, at) -> (who, at)) made
                 position <-

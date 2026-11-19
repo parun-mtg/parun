@@ -163,6 +163,7 @@ import qualified Parun.Types.Layout as Layout
 import qualified Parun.Types.LeavesTrigger as LeavesTrigger
 import qualified Parun.Types.LeavingPermanent as LeavingPermanent
 import qualified Parun.Types.LibraryPlacement as LibraryPlacement
+import qualified Parun.Types.LibraryPosition as LibraryPosition
 import qualified Parun.Types.LookAt as LookAt
 import qualified Parun.Types.LostPermanent as LostPermanent
 import qualified Parun.Types.MakeForetold as MakeForetold
@@ -2365,7 +2366,7 @@ effectLintSpec s registry corpus = Spec.describe s "Lint" $ do
         -- is the ARM of the reference.
         gaining ref = Effect.GainLife (PlayerQuantity.MkPlayerQuantity ref (Quantity.Type.Literal 1))
         -- The same reference NESTED IN AN OBJECTREF, CR 400.1's per-seat walk.
-        revealing ref = Effect.Reveal (Reveal.MkReveal (ObjectRef.TopOfLibrary (TopOfLibrary.MkTopOfLibrary ref (Quantity.Type.Literal 1) Nothing)) Nothing Nothing)
+        revealing ref = Effect.Reveal (Reveal.MkReveal (ObjectRef.TopOfLibrary (TopOfLibrary.MkTopOfLibrary ref (Quantity.Type.Literal 1) Nothing LibraryPosition.Top)) Nothing Nothing)
         -- CR 608.2h's arm anywhere a PlayerRef sits in an effect, which is the
         -- corpus half of this leg. A wildcard because it is a presence probe:
         -- every other arm is not this one, however many there come to be.
@@ -4241,7 +4242,7 @@ movesAtMostOne ref = case ref of
   ObjectRef.EachAbility _ -> False
   ObjectRef.EachOnStack _ -> False
   ObjectRef.Players _ -> False
-  ObjectRef.TopOfLibrary (TopOfLibrary.MkTopOfLibrary player depth _) -> case depth of
+  ObjectRef.TopOfLibrary (TopOfLibrary.MkTopOfLibrary player depth _ _) -> case depth of
     Quantity.Type.Literal n -> n <= 1 && namesOneSeat player
     _ -> False
   -- FALSE however narrow the seat and however small the count: a walk

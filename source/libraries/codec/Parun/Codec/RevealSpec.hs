@@ -6,6 +6,7 @@ import qualified Parun.JsonCodec.Common as Common
 import qualified Parun.Spec as Spec
 import qualified Parun.Types.Filter as Filter
 import qualified Parun.Types.HiddenZone as HiddenZone
+import qualified Parun.Types.LibraryPosition as LibraryPosition
 import qualified Parun.Types.ObjectRef as ObjectRef
 import qualified Parun.Types.PlayerRef as PlayerRef
 import qualified Parun.Types.PlayerRelation as PlayerRelation
@@ -48,7 +49,7 @@ spec s = Spec.describe s "Parun.Codec.Reveal" $ do
       s
       Reveal.codec
       ( Reveal.MkReveal
-          { Reveal.ref = ObjectRef.TopOfLibrary (TopOfLibrary.MkTopOfLibrary (PlayerRef.InSlot (SlotName.MkSlotName (Text.pack "target"))) (Quantity.Literal 1) Nothing),
+          { Reveal.ref = ObjectRef.TopOfLibrary (TopOfLibrary.MkTopOfLibrary (PlayerRef.InSlot (SlotName.MkSlotName (Text.pack "target"))) (Quantity.Literal 1) Nothing LibraryPosition.Top),
             Reveal.slot = Nothing,
             Reveal.revealer = Just (PlayerRef.Relative PlayerRelation.You)
           }

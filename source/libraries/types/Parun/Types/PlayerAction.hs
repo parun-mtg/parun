@@ -1,7 +1,7 @@
 module Parun.Types.PlayerAction where
 
 -- | An act a player performs that a "whenever [a player] <acts>" trigger (CR
--- 603.2) watches, with no payload the trigger reads. Recorded by
+-- 603.2) watches, with no payload the trigger reads beyond a count. Recorded by
 -- Parun.Types.GameEvent's PlayerActed and matched by
 -- Parun.Types.TriggerCondition's PlayerActs. Each constructor's comment names
 -- the rule that places the moment of the act.
@@ -52,8 +52,11 @@ data PlayerAction
     -- library of zero or one cards too.
     Shuffle
   | -- | CR 701.57b, even where some or all of the process was impossible.
-    -- Recorded as Parun.Types.GameEvent's Discovered, which carries the N.
+    -- Recorded as Parun.Types.GameEvent's CountedAct, which carries the N.
     Discover
+  | -- | CR 701.22a: one or more scried cards put on the bottom, recorded as a
+    -- Parun.Types.GameEvent CountedAct carrying how many.
+    ScryToBottom
   | -- | CR 701.23a: the player searched their OWN library (Ob Nixilis,
     -- Unshackled's ruling), whatever the search found.
     SearchLibrary

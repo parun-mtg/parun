@@ -118,6 +118,7 @@ import qualified Parun.Types.KeywordInstance as KeywordInstance
 import qualified Parun.Types.LeavesTrigger as LeavesTrigger
 import qualified Parun.Types.LeavingPermanent as LeavingPermanent
 import qualified Parun.Types.LibraryPlacement as LibraryPlacement
+import qualified Parun.Types.LibraryPosition as LibraryPosition
 import qualified Parun.Types.LifeDirection as LifeDirection
 import qualified Parun.Types.LifeTally as LifeTally
 import qualified Parun.Types.LostPermanent as LostPermanent
@@ -1900,7 +1901,7 @@ abilitySlotLintSpec s registry corpus = Spec.describe s "Lint" $ do
         moving =
           Effect.MoveCounters
             ( MoveCounters.MkMoveCounters
-                (ObjectRef.TopOfLibrary (TopOfLibrary.MkTopOfLibrary (PlayerRef.Relative PlayerRelation.You) (Quantity.Type.Count counted) Nothing))
+                (ObjectRef.TopOfLibrary (TopOfLibrary.MkTopOfLibrary (PlayerRef.Relative PlayerRelation.You) (Quantity.Type.Count counted) Nothing LibraryPosition.Top))
                 (MovedKinds.EveryOfKind CounterKind.PlusOnePlusOne)
                 Nothing
                 (ObjectRef.InSlot (SlotName.MkSlotName (Text.pack "recipient")))

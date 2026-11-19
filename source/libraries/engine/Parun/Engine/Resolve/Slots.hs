@@ -182,6 +182,7 @@ import qualified Parun.Types.LastKnown as LastKnown
 import qualified Parun.Types.LaterPayment as LaterPayment
 import qualified Parun.Types.LentCards as LentCards
 import qualified Parun.Types.LibraryPlacement as LibraryPlacement
+import qualified Parun.Types.LibraryPosition as LibraryPosition
 import qualified Parun.Types.LifeExchange as LifeExchange
 import qualified Parun.Types.LifeGainR as LifeGainR
 import qualified Parun.Types.LifeLoss as LifeLoss
@@ -612,7 +613,7 @@ objectRefSlots ref = joinTwo (joinSlots (fmap playerRefSlots (objectRefPlayerRef
   -- Palm's HolderOfBound); the narrowing Filter and Condition are reads like a
   -- sweep's.
   ObjectRef.Players (PlayersWho.MkPlayersWho _ who whose) -> joinSlots (foldMap filterSlotsOf who : fmap quantitySlots (foldMap conditionQuantities whose))
-  ObjectRef.TopOfLibrary (TopOfLibrary.MkTopOfLibrary _ count _) -> quantitySlots count
+  ObjectRef.TopOfLibrary (TopOfLibrary.MkTopOfLibrary _ count _ _) -> quantitySlots count
   -- The arm above's count, and each match's weight: the SEAT is
   -- objectRefPlayerRefs' half. What a MATCH is is a Filter, whose reads are
   -- joined as a sweep's are.
@@ -705,7 +706,7 @@ objectRefQuantities ref = case ref of
   ObjectRef.EachOnStack _ -> []
   -- The narrowing Condition's, both sides of each comparison.
   ObjectRef.Players (PlayersWho.MkPlayersWho _ _ whose) -> foldMap conditionQuantities whose
-  ObjectRef.TopOfLibrary (TopOfLibrary.MkTopOfLibrary _ count _) -> [count]
+  ObjectRef.TopOfLibrary (TopOfLibrary.MkTopOfLibrary _ count _ _) -> [count]
   -- The arm above's count, measured in MATCHES rather than in cards, and what
   -- each match weighs.
   ObjectRef.TopOfLibraryUntil (TopOfLibraryUntil.MkTopOfLibraryUntil _ _ weight count _) -> [weight, count]
@@ -762,7 +763,7 @@ objectRefPlayerRefs ref = case ref of
   ObjectRef.EachOnStack _ -> []
   -- The reference IS a seat, so it is its own whole answer here.
   ObjectRef.Players (PlayersWho.MkPlayersWho player _ _) -> [player]
-  ObjectRef.TopOfLibrary (TopOfLibrary.MkTopOfLibrary player _ _) -> [player]
+  ObjectRef.TopOfLibrary (TopOfLibrary.MkTopOfLibrary player _ _ _) -> [player]
   ObjectRef.TopOfLibraryUntil (TopOfLibraryUntil.MkTopOfLibraryUntil player _ _ _ _) -> [player]
   -- Whose graveyard, the two library walks' own read over CR 400.1's other
   -- per-player zone.
@@ -3430,13 +3431,19 @@ objectRefObjects legal resolving controller source gs ref = case ref of
   -- CARDS, so a token waiting in the library for CR 704.5d (CR 111.7) is passed
   -- over rather than counted towards the depth -- Warp World's 2009-10-01 ruling.
   -- Proved by data/scenarios/warp-world-counts-a-token-but-reveals-only-cards.json.
-  ObjectRef.TopOfLibrary (TopOfLibrary.MkTopOfLibrary player count deck) ->
+  --
+  -- The Bottom end counts the same way from the pile's other end (The Temporal
+  -- Anchor), the cards named top first all the same.
+  ObjectRef.TopOfLibrary (TopOfLibrary.MkTopOfLibrary player count deck end) ->
     let named = playerRefPlayers legal resolving source controller gs player
         viewOf = effectViewOf resolving source legal gs
         context = effectContext gs resolving controller source legal (slotBindings resolving gs)
         depth pid = maybe 0 Integer.toNaturalSaturating (Quantity.evaluateFor viewOf (context {Filter.recipient = Just pid}) gs resolving source (Quantity.forCandidate pid count))
+        fromEnd pid = case end of
+          LibraryPosition.Top -> List.genericTake (depth pid)
+          LibraryPosition.Bottom -> List.reverse . List.genericTake (depth pid) . List.reverse
      in concatMap
-          (\pid -> List.genericTake (depth pid) (deckCards deck pid gs))
+          (\pid -> fromEnd pid (deckCards deck pid gs))
           (filter (`elem` named) (Game.apnapOrder gs))
   -- The arm above's walk with its Quantity counting MATCHES rather than cards:
   -- the same prefix of CR 401.2's ordered pile taken from its head (CR 121.1),

@@ -4,6 +4,7 @@ import qualified Data.Text as Text
 import qualified Parun.Codec.LookAt as LookAt
 import qualified Parun.JsonCodec.Common as Common
 import qualified Parun.Spec as Spec
+import qualified Parun.Types.LibraryPosition as LibraryPosition
 import qualified Parun.Types.LookAt as LookAt
 import qualified Parun.Types.ObjectRef as ObjectRef
 import qualified Parun.Types.PlayerRef as PlayerRef
@@ -20,7 +21,7 @@ spec s = Spec.describe s "Parun.Codec.LookAt" $ do
       s
       LookAt.codec
       ( LookAt.MkLookAt
-          (ObjectRef.TopOfLibrary (TopOfLibrary.MkTopOfLibrary (PlayerRef.Relative PlayerRelation.You) (Quantity.Literal 1) Nothing))
+          (ObjectRef.TopOfLibrary (TopOfLibrary.MkTopOfLibrary (PlayerRef.Relative PlayerRelation.You) (Quantity.Literal 1) Nothing LibraryPosition.Top))
           (SlotName.MkSlotName (Text.pack "looked"))
           (PlayerRef.Relative PlayerRelation.You)
       )
@@ -31,7 +32,7 @@ spec s = Spec.describe s "Parun.Codec.LookAt" $ do
       s
       LookAt.codec
       ( LookAt.MkLookAt
-          (ObjectRef.TopOfLibrary (TopOfLibrary.MkTopOfLibrary (PlayerRef.Relative PlayerRelation.You) (Quantity.Literal 1) Nothing))
+          (ObjectRef.TopOfLibrary (TopOfLibrary.MkTopOfLibrary (PlayerRef.Relative PlayerRelation.You) (Quantity.Literal 1) Nothing LibraryPosition.Top))
           (SlotName.MkSlotName (Text.pack "looked"))
           (PlayerRef.Relative PlayerRelation.Opponent)
       )
