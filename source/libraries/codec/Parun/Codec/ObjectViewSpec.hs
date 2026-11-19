@@ -82,13 +82,13 @@ spec s = Spec.describe s "Parun.Codec.ObjectView" $ do
           }
       )
       (init hiddenJson <> ",\"chosenSubtype\":[{\"key\":{\"type\":\"Own\"},\"value\":[\"Merfolk\"]}],\"chosenPlayers\":[{\"key\":{\"type\":\"Own\"},\"value\":[{\"key\":{\"type\":\"SecretChooser\"},\"value\":0}]}]}")
-  -- CR 701.54b / 717.2b / 709.5c / 720.3b / 309.4.
+  -- CR 701.54b / 310.9 / 717.2b / 709.5c / 720.3b / 309.4.
   Spec.it s "a permanent's designations" $
     Common.assertCodec
       s
       ObjectView.codec
-      hidden {ObjectView.ringBearerFor = Just (PlayerId.MkPlayerId 1), ObjectView.classLevel = Just (ClassLevel.MkClassLevel 2), ObjectView.unlockedHalves = Set.singleton RoomHalf.LeftHalf, ObjectView.designations = Set.singleton Designation.Solved, ObjectView.ventureRoom = Just (RoomIndex.MkRoomIndex 3)}
-      (init hiddenJson <> ",\"ringBearerFor\":1,\"classLevel\":2,\"unlockedHalves\":[\"LeftHalf\"],\"designations\":[\"Solved\"],\"ventureRoom\":3}")
+      hidden {ObjectView.ringBearerFor = Just (PlayerId.MkPlayerId 1), ObjectView.protector = Just (PlayerId.MkPlayerId 0), ObjectView.classLevel = Just (ClassLevel.MkClassLevel 2), ObjectView.unlockedHalves = Set.singleton RoomHalf.LeftHalf, ObjectView.designations = Set.singleton Designation.Solved, ObjectView.ventureRoom = Just (RoomIndex.MkRoomIndex 3)}
+      (init hiddenJson <> ",\"ringBearerFor\":1,\"protector\":0,\"classLevel\":2,\"unlockedHalves\":[\"LeftHalf\"],\"designations\":[\"Solved\"],\"ventureRoom\":3}")
   Spec.it s "has a schema" $ Common.assertHasSchema s ObjectView.codec
 
 -- Tapped and damaged, so neither status key encodes a default.
@@ -109,6 +109,7 @@ hidden =
       ObjectView.targets = [],
       ObjectView.summoningSick = False,
       ObjectView.ringBearerFor = Nothing,
+      ObjectView.protector = Nothing,
       ObjectView.classLevel = Nothing,
       ObjectView.unlockedHalves = Set.empty,
       ObjectView.designations = Set.empty,

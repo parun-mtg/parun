@@ -20,6 +20,7 @@ import qualified Parun.Types.CardName as CardName
 import qualified Parun.Types.CardType as CardType
 import qualified Parun.Types.ClassLevel as ClassLevel
 import qualified Parun.Types.Color as Color
+import qualified Parun.Types.CounterKind as CounterKind
 import qualified Parun.Types.Defense as Defense
 import qualified Parun.Types.Designation as Designation
 import qualified Parun.Types.Face as Face
@@ -91,6 +92,7 @@ states view o =
 marked :: ObjectView.ObjectView -> [(String, String)]
 marked o =
   [("Ring-bearer", "The Ring-bearer: legendary, and harder to block (CR 701.54)") | Maybe.isJust (ObjectView.ringBearerFor o)]
+    <> [("Protected by " <> Text.unpack (Render.player p), "Its protector, who may block for it and whom it can't attack (CR 310.9)") | Just p <- [ObjectView.protector o]]
     <> [("Level " <> show (ClassLevel.unwrap l), "Class level " <> show (ClassLevel.unwrap l) <> " (CR 717)") | Just l <- [ObjectView.classLevel o]]
     <> [ (label, label <> " (CR 709.5)")
        | not (Set.null (ObjectView.unlockedHalves o)),
@@ -218,14 +220,20 @@ typeLine o = case ObjectView.ability o of
 badges :: ObjectView.ObjectView -> [Html.Html msg]
 badges o =
   [Element.el "span" ["badge", "damage"] [Element.attr "title" (Text.pack "Damage")] [Element.string (show (ObjectView.damage o) <> " dmg")] | ObjectView.damage o > 0]
-    <> [Element.el "span" ["badge", "counter"] [] [Element.text (Text.pack (show n <> " ") <> Render.counterName kind)] | (kind, n) <- Map.toList (ObjectView.counters o), n > 0]
+    <> [Element.el "span" ["badge", "counter"] [] [Element.text (Text.pack (show n <> " ") <> Render.counterName kind)] | (kind, n) <- Map.toList (ObjectView.counters o), n > 0, not (cornered kind)]
+  where
+    -- The corner shows these (stats).
+    cornered kind = kind `elem` [CounterKind.Loyalty, CounterKind.Defense] && Maybe.isJust (ObjectView.characteristics o)
 
 -- | Power and toughness, loyalty or defense, as printed in the corner.
 stats :: ObjectView.ObjectView -> [Html.Html msg]
 stats o = case ObjectView.characteristics o of
   Nothing -> []
   Just c ->
-    let loyalty l = case l of
+    let -- On the battlefield, its loyalty or defense is its counters
+        -- (CR 306.5c, 310.4c), not the printed number.
+        counted kind = Map.lookup kind (ObjectView.counters o)
+        loyalty l = case l of
           Loyalty.Literal n -> show n
           Loyalty.Variable -> "X"
         -- Raised or lowered from its base power and toughness (CR 208.4b) by
@@ -240,8 +248,8 @@ stats o = case ObjectView.characteristics o of
             | otherwise -> ["mixed"]
           Nothing -> []
      in foldMap (\(p, t) -> [Element.el "span" (["pt"] <> change p t) [Element.attr "title" (Text.pack ("Power and toughness" <> base))] [Element.string (show p <> "/" <> show t)]]) ((,) <$> ProjectedCharacteristics.power c <*> ProjectedCharacteristics.toughness c)
-          <> foldMap (\l -> [Element.el "span" ["pt", "loyalty"] [] [Element.string (loyalty l)]]) (ProjectedCharacteristics.loyalty c)
-          <> foldMap (\d -> [Element.el "span" ["pt", "defense"] [] [Element.string (show (Defense.unwrap d))]]) (ProjectedCharacteristics.defense c)
+          <> foldMap (\l -> [Element.el "span" ["pt", "loyalty"] [Element.attr "title" (Text.pack "Loyalty")] [Element.string (maybe (loyalty l) show (counted CounterKind.Loyalty))]]) (ProjectedCharacteristics.loyalty c)
+          <> foldMap (\d -> [Element.el "span" ["pt", "defense"] [Element.attr "title" (Text.pack "Defense")] [Element.string (maybe (show (Defense.unwrap d)) show (counted CounterKind.Defense))]]) (ProjectedCharacteristics.defense c)
 
 -- | The printed Oracle text of the faces the seat may read the object by
 -- (Render.cardNames), each line apart, a face's name heading its own where

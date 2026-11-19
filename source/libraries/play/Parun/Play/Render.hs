@@ -51,6 +51,7 @@ import qualified Parun.Types.CountersPlaced as CountersPlaced
 import qualified Parun.Types.Crewing as Crewing
 import qualified Parun.Types.DamageEvent as DamageEvent
 import qualified Parun.Types.DamagePrevented as DamagePrevented
+import qualified Parun.Types.Daytime as Daytime
 import qualified Parun.Types.Defense as Defense
 import qualified Parun.Types.Departure as Departure
 import qualified Parun.Types.Designation as Designation
@@ -145,6 +146,13 @@ board begun view =
           ]
       else Text.pack "Before the first turn. " <> player (PlayerView.active view) <> Text.pack " plays first."
   ]
+    -- CR 726.1 / 727.1 / 732.1: the game's designations.
+    <> [ Text.intercalate (Text.pack " ") $
+           foldMap (\p -> [player p <> Text.pack " is the monarch."]) (PlayerView.monarch view)
+             <> foldMap (\p -> [player p <> Text.pack " has the initiative."]) (PlayerView.initiative view)
+             <> foldMap (\d -> [Text.pack ("It is " <> (if d == Daytime.Day then "day." else "night."))]) (PlayerView.daytime view)
+       | Maybe.isJust (PlayerView.monarch view) || Maybe.isJust (PlayerView.initiative view) || Maybe.isJust (PlayerView.daytime view)
+       ]
     <> concatMap seat (List.sortOn ((/= PlayerView.viewer view) . SeatView.player) (PlayerView.seats view))
     <> stack
     <> parked
@@ -162,9 +170,21 @@ board begun view =
                 Text.pack (show (SeatView.librarySize s) <> " in library")
               ]
           ]
+            -- CR 122.1 / 701.54c / 702.179b / 702.131c / 309.7.
+            <> [ Text.pack "  " <> Text.intercalate (Text.pack ", ") marks
+               | let marks =
+                       [Text.pack (show n <> " ") <> spaced (Text.pack (show kind)) <> Text.pack (if n == 1 then " counter" else " counters") | (kind, n) <- Map.toList (SeatView.counters s), n > 0]
+                         <> [Text.pack ("tempted by the Ring " <> show (SeatView.ringTemptations s) <> (if SeatView.ringTemptations s == 1 then " time" else " times")) | SeatView.ringTemptations s > 0]
+                         <> [Text.pack ("speed " <> show n) | Just n <- [SeatView.speed s]]
+                         <> [spaced (Text.pack (show d)) | d <- Set.toList (SeatView.designations s)]
+                         <> [count (SeatView.completedDungeons s) "dungeon" <> Text.pack " completed" | SeatView.completedDungeons s > 0],
+                 not (null marks)
+               ]
             <> listed view "  Lands: " (ordered view lands)
             <> listed view "  Creatures: " (ordered view creatures)
             <> listed view "  Other permanents: " (ordered view others)
+            <> listed view "  Phased out: " (filter ((== Just pid) . ObjectView.controller) (PlayerView.phasedOut view))
+            <> listed view "  Command zone: " (filter ((== pid) . ObjectView.owner) (PlayerView.command view))
             <> listed view "  Graveyard: " (SeatView.graveyard s)
             <> listed view "  Exile: " (SeatView.exile s)
             <> (if pid == PlayerView.viewer view then [] else listed view "  Seen in hand: " (handOrder view (SeatView.hand s)))
@@ -253,6 +273,8 @@ cardName o =
   let shown = case ObjectView.characteristics o of
         Nothing | Maybe.isNothing (ObjectView.face o) -> Text.pack "a hidden card"
         Just c | names <- Set.toList (ProjectedCharacteristics.names c), not (null names) -> joined names
+        -- A Room with both doors locked has neither half's name (CR 709.5c).
+        Just c | Just whole <- ProjectedCharacteristics.halves c -> joined (fmap Face.name (Foldable.toList (Card.faces whole))) <> Text.pack " (locked)"
         _ -> Text.pack "a face-down card"
       joined = Text.intercalate (Text.pack " // ") . fmap CardName.unwrap
       card = foldMap (\f -> Text.pack " (" <> joined (Set.toList (ProjectedCharacteristics.names f)) <> Text.pack ")") (ObjectView.face o)
@@ -262,7 +284,10 @@ cardName o =
 -- object it may look at (CR 708.5), else the object's own, which a face-down
 -- one has none of (CR 708.2a).
 cardNames :: ObjectView.ObjectView -> Set.Set CardName.CardName
-cardNames o = maybe (foldMap ProjectedCharacteristics.names (ObjectView.characteristics o)) ProjectedCharacteristics.names (ObjectView.face o)
+cardNames o = maybe (foldMap readable (ObjectView.characteristics o)) ProjectedCharacteristics.names (ObjectView.face o)
+  where
+    -- A Room's locked halves still print their text (CR 709.5c).
+    readable c = ProjectedCharacteristics.names c <> foldMap (Set.fromList . fmap Face.name . Foldable.toList . Card.faces) (ProjectedCharacteristics.halves c)
 
 -- | An object in full, as the seat sees it: its summary, its characteristics
 -- now, the card behind it when face down and the seat may look, a foretell
@@ -372,6 +397,7 @@ recalled view oid = case Map.lookup oid (objects view) of
         ObjectView.targets = [],
         ObjectView.summoningSick = False,
         ObjectView.ringBearerFor = Nothing,
+        ObjectView.protector = Nothing,
         ObjectView.classLevel = Nothing,
         ObjectView.unlockedHalves = Set.empty,
         ObjectView.designations = Set.empty,

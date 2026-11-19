@@ -51,6 +51,7 @@ codec = Fields.object $ do
   targets <- Fields.required "targets" (Common.list Recipient.codec) ObjectView.targets
   summoningSick <- Fields.defaulted "summoningSick" False Common.boolean ObjectView.summoningSick
   ringBearerFor <- Fields.defaulted "ringBearerFor" Nothing (Common.maybe PlayerId.codec) ObjectView.ringBearerFor
+  protector <- Fields.defaulted "protector" Nothing (Common.maybe PlayerId.codec) ObjectView.protector
   classLevel <- Fields.defaulted "classLevel" Nothing (Common.maybe ClassLevel.codec) ObjectView.classLevel
   unlockedHalves <- Fields.defaulted "unlockedHalves" Set.empty (Common.set RoomHalf.codec) ObjectView.unlockedHalves
   designations <- Fields.defaulted "designations" Set.empty (Common.set Designation.codec) ObjectView.designations
@@ -79,6 +80,7 @@ codec = Fields.object $ do
         ObjectView.targets = targets,
         ObjectView.summoningSick = summoningSick,
         ObjectView.ringBearerFor = ringBearerFor,
+        ObjectView.protector = protector,
         ObjectView.classLevel = classLevel,
         ObjectView.unlockedHalves = unlockedHalves,
         ObjectView.designations = designations,

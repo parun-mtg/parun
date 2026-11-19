@@ -467,16 +467,19 @@ blocks request = do
   attackers <- Protocol.field "attackers" offer >>= Protocol.arrayOf >>= traverse Offer.objectOf
   pure (blockers, attackers)
 
--- | Before a seat's question when the screen last showed another seat's.
-handOff :: PlayerId.PlayerId -> Html.Html Event
-handOff seat =
+-- | Before a seat's question when the screen last showed another seat's,
+-- saying whom the seat decides for while it controls them (CR 724.1).
+handOff :: Request.Request -> Html.Html Event
+handOff request =
   Element.el
     "main"
     ["handoff"]
     []
-    [ Element.el "p" [] [] [Html.text $ Text.pack "Pass the screen to " <> Render.player seat <> Text.pack "."],
+    [ Element.el "p" [] [] [Html.text $ Text.pack "Pass the screen to " <> Render.player seat <> foldMap (\p -> Text.pack ", deciding for " <> Render.player p) (Question.for (Request.question request)) <> Text.pack "."],
       primary MkReady $ Text.pack "Ready"
     ]
+  where
+    seat = Question.seat (Request.question request)
 
 -- | What an event does, the options picked so far being `picked`.
 step :: Request.Request -> Set.Set (Natural, Natural) -> Event -> Text.Text -> Outcome

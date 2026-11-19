@@ -48,6 +48,8 @@ data ObjectView = MkObjectView
     summoningSick :: Bool,
     -- | CR 701.54b: the player the permanent is the Ring-bearer for.
     ringBearerFor :: Maybe PlayerId.PlayerId,
+    -- | CR 310.9: a battle's protector.
+    protector :: Maybe PlayerId.PlayerId,
     -- | CR 717.2b: a Class's level, Nothing where it was never levelled.
     classLevel :: Maybe ClassLevel.ClassLevel,
     -- | CR 709.5c: a Room's unlocked halves.

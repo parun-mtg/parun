@@ -59,7 +59,9 @@ import qualified Parun.Types.Combat as Combat
 import qualified Parun.Types.ControlDuration as ControlDuration
 import qualified Parun.Types.CounterKind as CounterKind
 import qualified Parun.Types.DamageEvent as DamageEvent
+import qualified Parun.Types.Daytime as Daytime
 import qualified Parun.Types.Decider as Decider
+import qualified Parun.Types.Designation as Designation
 import qualified Parun.Types.Discarded as Discarded
 import qualified Parun.Types.DraftNote as DraftNote
 import qualified Parun.Types.Drew as Drew
@@ -85,6 +87,7 @@ import qualified Parun.Types.ObjectId as ObjectId
 import qualified Parun.Types.ObjectView as ObjectView
 import qualified Parun.Types.Observer as Observer
 import qualified Parun.Types.Phase as Phase
+import qualified Parun.Types.PhasedOut as PhasedOut
 import qualified Parun.Types.Player as Player
 import qualified Parun.Types.PlayerControl as PlayerControl
 import qualified Parun.Types.PlayerId as PlayerId
@@ -112,6 +115,30 @@ import qualified Parun.Types.ZoneChange as ZoneChange
 
 spec :: (Monad m, Monad n) => Spec.Spec m n -> Registry.Registry m -> n ()
 spec s registry = Spec.describe s "PlayerView" $ do
+  Spec.it s "CR 726.1 / 727.1 / 732.1 / 702.26b every seat sees the game's designations, phased-out permanents and its designations, and the board writes them" $ do
+    piker <- S.printingOf s registry "Goblin Piker"
+    let (phased, g1) = S.addPermanent piker S.alice (Setup.emptyGame S.bothPlayers)
+        (bearer, g2) = S.addPermanent piker S.alice g1
+        gs =
+          g2
+            { GameState.monarch = Just S.alice,
+              GameState.initiative = Just S.bob,
+              GameState.daytime = Just Daytime.Day,
+              GameState.battlefield = Set.delete phased (GameState.battlefield g2),
+              GameState.phasedOut = Map.singleton phased (PhasedOut.Directly S.alice),
+              GameState.objects = Map.adjust (\o -> o {Object.ringBearerFor = Just S.alice, Object.designations = Set.singleton Designation.Renowned}) bearer (GameState.objects g2),
+              GameState.players = Map.adjust (\p -> p {Player.ringTemptations = 2, Player.speed = Just 3}) S.alice (GameState.players g2)
+            }
+        view = PlayerView.viewFor S.bob gs
+        board = Render.board True view
+    Spec.assertEqWith s "designations" (PlayerView.Type.monarch view, PlayerView.Type.initiative view, PlayerView.Type.daytime view) (Just S.alice, Just S.bob, Just Daytime.Day)
+    Spec.assertEqWith s "phased out" (fmap ObjectView.object (PlayerView.Type.phasedOut view)) [phased]
+    Spec.assertEqWith s "the Ring-bearer" (fmap (\o -> (ObjectView.ringBearerFor o, ObjectView.designations o)) (List.find ((== bearer) . ObjectView.object) (PlayerView.Type.battlefield view))) (Just (Just S.alice, Set.singleton Designation.Renowned))
+    Spec.assertEqWith s "the seat's" (fmap (\seat -> (SeatView.ringTemptations seat, SeatView.speed seat)) (seatOf S.alice view)) (Just (2, Just 3))
+    Spec.assertBool s (Text.pack "Player 1 is the monarch. Player 2 has the initiative. It is day." `elem` board) ("the game's: " <> show board)
+    Spec.assertBool s (Text.pack "  tempted by the Ring 2 times, speed 3" `elem` board) ("the seat's: " <> show board)
+    Spec.assertBool s (any (Text.isPrefixOf (Text.pack "  Phased out: ")) board) ("phased out: " <> show board)
+
   Spec.it s "an opponent's hidden cards reach no part of the encoded view" $ do
     gs <- started s registry
     let rendered = Text.unpack (Common.render (Codec.encode Codec.PlayerView.codec (PlayerView.viewFor S.bob gs)))

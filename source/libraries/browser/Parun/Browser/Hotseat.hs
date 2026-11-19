@@ -220,7 +220,7 @@ exchange lookUp page seatRef request = do
       _ -> do
         traced "asked"
         Monad.when (facing state /= Just seat) $ do
-          Browser.display page . fmap Right $ Web.Question.handOff seat
+          Browser.display page . fmap Right $ Web.Question.handOff request
           untilReady
           IORef.modifyIORef' seatRef $ \s -> s {facing = Just seat}
         -- A tap made while the board was only being watched is dropped.

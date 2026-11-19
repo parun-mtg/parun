@@ -151,6 +151,7 @@ objectView pid gs oid = do
             && Set.member CardType.Creature (Projection.cardTypesOf oid gs)
             && not (Summoning.settledOrHasty (Maybe.fromMaybe (Object.owner object) (Projection.View.controllerOf oid gs)) oid gs),
         ObjectView.ringBearerFor = Object.ringBearerFor object,
+        ObjectView.protector = Object.protector object,
         ObjectView.classLevel = Object.classLevel object,
         ObjectView.unlockedHalves = Object.unlockedHalves object,
         ObjectView.designations = Object.designations object,

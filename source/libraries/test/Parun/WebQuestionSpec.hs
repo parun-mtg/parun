@@ -37,6 +37,8 @@ import qualified Parun.Types.Action as Action
 import qualified Parun.Types.BeginningStep as BeginningStep
 import qualified Parun.Types.Color as Color
 import qualified Parun.Types.Cost as Cost
+import qualified Parun.Types.CounterKind as CounterKind
+import qualified Parun.Types.Daytime as Daytime
 import qualified Parun.Types.Decider as Decider
 import qualified Parun.Types.Dividing as Dividing
 import qualified Parun.Types.GameEvent as GameEvent
@@ -47,10 +49,13 @@ import qualified Parun.Types.Looked as Looked
 import qualified Parun.Types.ManaCost as ManaCost
 import qualified Parun.Types.ManaSymbol as ManaSymbol
 import qualified Parun.Types.ManaType as ManaType
+import qualified Parun.Types.Object as Object
 import qualified Parun.Types.ObjectId as ObjectId
 import qualified Parun.Types.PayOffer as PayOffer
 import qualified Parun.Types.PaymentDecision as PaymentDecision
 import qualified Parun.Types.Phase as Phase
+import qualified Parun.Types.Player as Player
+import qualified Parun.Types.PlayerCounterKind as PlayerCounterKind
 import qualified Parun.Types.PlayerView as PlayerView.Type
 import qualified Parun.Types.Prompt as Prompt
 import qualified Parun.Types.Question as Question
@@ -180,7 +185,25 @@ spec s registry = Spec.describe s "WebQuestion" $ do
     Spec.assertEqWith s "for" (Question.for (Request.question request)) (Just S.bob)
     Spec.assertBool s (Text.isInfixOf (Text.pack "You're deciding for Player 2, whom you control.") page) "banner"
     Spec.assertBool s (Text.isInfixOf (Text.pack "Player 2's turn, which you control.") page) "the turn is the seat's to play"
+    Spec.assertBool s (Text.isInfixOf (Text.pack "Pass the screen to Player 1, deciding for Player 2.") (Html.content (Question.Web.handOff request))) "the hand-off says so"
     Spec.assertEqWith s "the seat's own" (Question.for (Request.question (requestFor gs (Prompt.ChooseAction (Decider.MkDecider S.alice) S.alice [Action.Pass])))) Nothing
+
+  Spec.it s "CR 726.1 / 732.1 / 306.5c the table shows the game's designations, player counters, and a walker's loyalty counters" $ do
+    liliana <- S.printingOf s registry "Liliana of the Veil"
+    let (walker, gs0) = S.addPermanent liliana S.alice (Setup.emptyGame S.bothPlayers)
+        gs =
+          gs0
+            { GameState.monarch = Just S.bob,
+              GameState.daytime = Just Daytime.Night,
+              GameState.objects = Map.adjust (\o -> o {Object.counters = Map.singleton CounterKind.Loyalty 5}) walker (GameState.objects gs0),
+              GameState.players = Map.adjust (\p -> p {Player.counters = Map.singleton PlayerCounterKind.Energy 3}) S.alice (GameState.players gs0)
+            }
+        page = Html.toText (Question.Web.view (requestFor gs (Prompt.ChooseAction (Decider.MkDecider S.alice) S.alice [Action.Pass])) Question.Web.blank)
+    Spec.assertBool s (Text.isInfixOf (Text.pack "class=\"count monarch\"") page) "the monarch"
+    Spec.assertBool s (Text.isInfixOf (Text.pack "class=\"daytime night\"") page) "night"
+    Spec.assertBool s (Text.isInfixOf (Text.pack "<span class=\"k\">Energy</span>3") page) "energy"
+    Spec.assertBool s (Text.isInfixOf (Text.pack "title=\"Loyalty\">5</span>") page) "loyalty is its counters"
+    Spec.assertBool s (not (Text.isInfixOf (Text.pack "5 loyalty") page)) "not a badge too"
 
   Spec.it s "CR 104.3a the turn bar carries the auto-pass level and the settings button, whose concession passes while the seat may" $ do
     let request = requestFor (Setup.emptyGame S.bothPlayers) (Prompt.ChooseAction (Decider.MkDecider S.alice) S.alice [Action.Pass])
