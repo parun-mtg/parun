@@ -311,7 +311,6 @@ composeWordChanges pairs =
 rewriteManaFilter :: [(TextWord.TextWord, TextWord.TextWord)] -> ManaFilter.ManaFilter -> ManaFilter.ManaFilter
 rewriteManaFilter pairs f = case f of
   ManaFilter.Any -> f
-  ManaFilter.Colored -> f
   ManaFilter.OfType t -> ManaFilter.OfType (rewriteWrittenManaType pairs t)
   ManaFilter.NotOfType t -> ManaFilter.NotOfType (rewriteWrittenManaType pairs t)
 

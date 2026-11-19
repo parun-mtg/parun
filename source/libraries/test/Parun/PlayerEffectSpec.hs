@@ -341,7 +341,7 @@ adjustments increases reductions =
 confinedAdjustments :: [ManaCost.ManaCost] -> CostAdjustments.CostAdjustments
 confinedAdjustments reductions =
   (adjustments [] reductions)
-    { CostAdjustments.reductions = fmap (\reduction -> AppliedReduction.MkAppliedReduction reduction 0 (Just ManaFilter.Colored)) reductions
+    { CostAdjustments.reductions = fmap (\reduction -> AppliedReduction.MkAppliedReduction reduction 0 (Just (ManaFilter.NotOfType ManaType.Colorless))) reductions
     }
 
 -- A reduction by an amount of GENERIC mana (CR 118.7a) -- the Medallion's shape,

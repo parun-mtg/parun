@@ -26,12 +26,10 @@ data ManaFilter
   | -- | CR 106.1a / 106.1b: the units of exactly this type. Omnath, Locus of
     -- Mana's green.
     OfType ManaType.ManaType
-  | -- | CR 106.1a: the units of any of the five colours. Edgewalker's
-    -- "colored mana".
-    Colored
   | -- | The complement of OfType: every unit that is not of this type.
     -- Celestial Dawn's "other mana", which its own sentence defines by
-    -- exclusion from the white its first clause spoke about.
+    -- exclusion from the white its first clause spoke about; Edgewalker's
+    -- "colored mana" is the complement of colorless.
     --
     -- A COMPLEMENT OF ONE TYPE and not a general `Not ManaFilter`. Every
     -- printed "other mana" is worded against a single named type, so recursion
