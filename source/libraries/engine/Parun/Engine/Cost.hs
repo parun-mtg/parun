@@ -509,11 +509,12 @@ withChoices choices cost =
 withOffering :: PlayerId -> ObjectId -> GameState -> CandidateCost.CandidateCost -> [CandidateCost.CandidateCost]
 withOffering pid oid gs candidate =
   candidate
-    : [ candidate
-          { CandidateCost.cost = (CandidateCost.cost candidate) {Cost.components = Cost.components (CandidateCost.cost candidate) <> [CostComponent.Sacrifice (Sacrifice.MkSacrifice (ObjectCount.Exactly (CostAmount.Fixed 1)) (Filter.Type.IsObject vid) Set.empty)]},
-            CandidateCost.reductions = CandidateCost.reductions candidate <> [AppliedReduction.MkAppliedReduction (Maybe.fromMaybe (ManaCost.MkManaCost []) (Filter.manaCost (Projection.viewOfObject vid gs))) 0 Nothing],
-            CandidateCost.instantSpeed = True
-          }
+    : [ CandidateCost.widened
+          Nothing
+          candidate
+            { CandidateCost.cost = (CandidateCost.cost candidate) {Cost.components = Cost.components (CandidateCost.cost candidate) <> [CostComponent.Sacrifice (Sacrifice.MkSacrifice (ObjectCount.Exactly (CostAmount.Fixed 1)) (Filter.Type.IsObject vid) Set.empty)]},
+              CandidateCost.reductions = CandidateCost.reductions candidate <> [AppliedReduction.MkAppliedReduction (Maybe.fromMaybe (ManaCost.MkManaCost []) (Filter.manaCost (Projection.viewOfObject vid gs))) 0 Nothing]
+            }
       | quality <- Keyword.offeringQualities (Map.keysSet (spellKeywords pid oid gs)),
         vid <- Replacement.sacrificeCandidates (Just pid) Map.empty pid (Just oid) quality gs
       ]
@@ -560,7 +561,11 @@ withOptionalAdditions pid oid gs candidate =
 -- The condition is asked of the board after CR 601.2a's move
 -- (Game.withoutBeingCast), so a card cast from a graveyard does not count
 -- itself there (Swift Reckoning's ruling); the scenarios
--- swift-reckoning-from-a-graveyard-* prove it.
+-- swift-reckoning-from-a-graveyard-* prove it. The candidate carries the
+-- condition (CandidateCost.windowIf), and Parun.Engine.Cast.flashRefusedAt
+-- re-asks it once X is announced: Silver Scrutiny's "if X is 3 or less" holds
+-- of the card's X of 0 (CR 107.3g) and not always of the spell's; the
+-- scenarios silver-scrutiny-* prove it.
 --
 -- One naming a delayed ability (CR 603.7g) is offered as a candidate of its
 -- own too, tagged with the name: Spider Climb's ruling (2022-12-08) has a cast
@@ -570,20 +575,24 @@ withOptionalAdditions pid oid gs candidate =
 -- where CR 307.5a's test holds.
 withFlashPermission :: PlayerId -> ObjectId -> Face.Face Card.Type.Card -> GameState -> CandidateCost.CandidateCost -> [CandidateCost.CandidateCost]
 withFlashPermission pid oid face gs =
-  let holds = ActivationRestriction.onlyIfHolds pid oid (Game.withoutBeingCast gs)
-      permitted = [((additional, components), arms) | CastingPermission.CastAsThoughItHadFlash condition additional components arms <- permissionsOf oid face gs, all holds condition]
-      free = elem ((Nothing, []), Nothing) permitted
+  let -- CR 107.3g: the card's {X} is 0 off the stack.
+      atZero o = o {Object.bindings = Map.union (Object.bindings o) (Binding.fromChoices Map.empty (Just 0) Seq.empty)}
+      board = Game.withoutBeingCast gs
+      holds = ActivationRestriction.onlyIfHolds pid oid (if manaHasVariable (Cost.MkCost (Face.manaCost face) []) then board {GameState.objects = Map.adjust atZero oid (GameState.objects board)} else board)
+      permitted = [(((additional, components), arms), condition) | CastingPermission.CastAsThoughItHadFlash condition additional components arms <- permissionsOf oid face gs, all holds condition]
+      unpaid = ((Nothing, []), Nothing)
       -- An absent mana part adds {0}, not CR 118.6's unpayable Nothing.
       addition (additional, components) cost = plus cost Cost.MkCost {Cost.mana = Just (Maybe.fromMaybe (ManaCost.MkManaCost []) additional), Cost.components = components}
    in \candidate ->
-        candidate {CandidateCost.instantSpeed = CandidateCost.instantSpeed candidate || free}
-          : [ candidate
-                { CandidateCost.cost = addition additional (CandidateCost.cost candidate),
-                  CandidateCost.instantSpeed = True,
-                  CandidateCost.arms = arms
-                }
-            | (additional, arms) <- permitted,
-              (additional, arms) /= ((Nothing, []), Nothing)
+        List.foldl' (flip CandidateCost.widened) candidate [condition | (route, condition) <- permitted, route == unpaid]
+          : [ CandidateCost.widened
+                condition
+                candidate
+                  { CandidateCost.cost = addition additional (CandidateCost.cost candidate),
+                    CandidateCost.arms = arms
+                  }
+            | ((additional, arms), condition) <- permitted,
+              (additional, arms) /= unpaid
             ]
 
 -- CR 702.170d: may this player cast this PLOTTED card? Four conjuncts, and the
@@ -876,6 +885,7 @@ candidateCostsGiven permitted pid name oid gs =
                         (withAdditional (Emerge.cost emerge) {Cost.components = Cost.components (Emerge.cost emerge) <> [CostComponent.Sacrifice (Sacrifice.MkSacrifice (ObjectCount.Exactly (CostAmount.Fixed 1)) (Filter.Type.IsObject vid) Set.empty)]})
                         [AppliedReduction.MkAppliedReduction (ManaCost.MkManaCost [ManaSymbol.Generic (Integer.toNaturalSaturating n)]) 0 Nothing]
                         False
+                        Nothing
                         Nothing
                         Nothing
                         Nothing
@@ -1176,6 +1186,7 @@ candidateCostsGiven permitted pid name oid gs =
                                 (withAdditional cost {Cost.components = Cost.components cost <> [CostComponent.TapPermanents (TapPermanents.MkTapPermanents (CostAmount.Fixed 1) (criterion vid) False TapState.Tapped)]})
                                 [AppliedReduction.MkAppliedReduction (ManaCost.MkManaCost [ManaSymbol.Generic (Integer.toNaturalSaturating n)]) 0 Nothing]
                                 False
+                                Nothing
                                 Nothing
                                 Nothing
                                 Nothing
