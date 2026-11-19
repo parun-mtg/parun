@@ -54,6 +54,7 @@ import qualified Parun.Types.AbilityWasActivated as AbilityWasActivated
 import qualified Parun.Types.ActivatedAbility as ActivatedAbility
 import qualified Parun.Types.ActivationRestriction as ActivationRestriction.Type
 import qualified Parun.Types.ActiveCopyCast as ActiveCopyCast
+import qualified Parun.Types.AppliedReduction as AppliedReduction
 import qualified Parun.Types.Binding as Binding.Type
 import qualified Parun.Types.CandidateCost as CandidateCost
 import qualified Parun.Types.Card as Card.Type
@@ -357,12 +358,13 @@ offerCastOnce runSubgame context fits named caster optionality verb retake offer
             -- costs are why: the face's additional costs ride the applied cost,
             -- and one of them may offer the caster a choice of payments, which
             -- Cost.choiceVariants expands here exactly as it does for a cast the
-            -- board itself offers. CR 702.48a's offering is the other optional
-            -- additional cost, and Cost.withOffering adds it the same way.
+            -- board itself offers. CR 702.48a's offering and an effect's optional
+            -- addition are the others, which Cost.withOffering and
+            -- Cost.withOptionalAdditions add the same way.
             appliedOne
               | CastOffer.withoutPayingManaCost offer = Just (CandidateCost.plain (CastOffer.offeredBy offer) (Cost.withoutPayingManaCost priced))
               | otherwise = fmap (\c -> CandidateCost.plain (CastOffer.offeredBy offer) (c {Cost.Type.components = Cost.Type.components c <> Face.additionalCosts priced})) (CastOffer.payingInstead offer)
-            applied = concatMap (Cost.withOffering caster oid proposed) (concatMap (Cost.choiceVariants priced) (Maybe.maybeToList appliedOne))
+            applied = concatMap (Cost.withOptionalAdditions caster oid proposed) . concatMap (Cost.withOffering caster oid proposed) $ concatMap (Cost.choiceVariants priced) (Maybe.maybeToList appliedOne)
             -- CR 708.4: a cast proposed face down is measured against the
             -- face-down characteristics, so it is the stamped state's face that
             -- prices it and carries the additional costs -- none, CR 708.2a's 2/2
@@ -376,7 +378,7 @@ offerCastOnce runSubgame context fits named caster optionality verb retake offer
             -- every candidate, the printed cost and an alternative alike, so it
             -- applies after any increase. The cast is then handed these
             -- candidates rather than finding its own, which are the same list.
-            lessened candidate = candidate {CandidateCost.reductions = CandidateCost.reductions candidate <> [ManaCost.MkManaCost [ManaSymbol.Generic (CastOffer.reduction offer)]]}
+            lessened candidate = candidate {CandidateCost.reductions = CandidateCost.reductions candidate <> [AppliedReduction.MkAppliedReduction (ManaCost.MkManaCost [ManaSymbol.Generic (CastOffer.reduction offer)]) 0 False]}
             candidates
               | CastOffer.reduction offer == 0 = if null applied then Cost.candidateCostsGiven True caster name oid proposed else applied
               | otherwise = fmap lessened (if null applied then Cost.candidateCostsGiven True caster name oid proposed else applied)

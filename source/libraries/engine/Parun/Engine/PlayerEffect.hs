@@ -1925,22 +1925,11 @@ admitsAtManaValue pid permission oid manaValue gs = case permission of
 -- read; empty for a caller standing before CR 601.2c.
 spellCostAdjustments :: Set.Set Recipient.Recipient -> PlayerId -> ObjectId -> GameState -> CostAdjustments
 spellCostAdjustments targets pid oid gs =
-  let reaches source modifier = case CostModifier.subject modifier of
-        -- Then Shadow in the Warp's "first" or Uthros Psionicist's "second",
-        -- asked with the same criterion.
-        CostSubject.Spells ->
-          matchesObjectFrom source (CostModifier.matching modifier) oid gs
-            && maybe True (nthCast pid source (CostModifier.matching modifier) oid gs) (CostModifier.onlyNth modifier)
-        -- Oppressive Rays, turned away by the SUBJECT and not by its Filter
-        -- -- the mirror of what keeps Thalia off an activation cost in
-        -- activationCostAdjustmentsGiven below (#90).
-        CostSubject.Activations _ -> False
-        CostSubject.SpecialActions _ -> False
-   in modifierAdjustments
-        [(source, modifier) | (source, PlayerEffect.ModifyCost modifier) <- applying pid gs, reaches source modifier]
-        (\source wanted -> any (perTargetMatches pid source gs wanted) (Set.toList targets))
-        (\source wanted -> perTargetCount targets pid source gs wanted)
-        (perEachCount pid oid gs)
+  modifierAdjustments
+    (spellCostRows pid oid gs)
+    (\source wanted -> any (perTargetMatches pid source gs wanted) (Set.toList targets))
+    (\source wanted -> perTargetCount targets pid source gs wanted)
+    (perEachCount pid oid gs)
 
 -- CR 118.7 / 116.2: the cost increases, reductions and additional components
 -- that apply to `pid` paying the cost of this special action with `oid` --
@@ -1995,13 +1984,45 @@ modifierAdjustments rows aims counted each =
           -- card text and arrive through Parun.Engine.Cost.plus at CR 601.2b. What
           -- is gathered here is CR 118.8's other half, a cost applied from
           -- another effect.
+          -- An OPTIONAL addition is not owed, so it is not among them either:
+          -- spellOptionalAdditions offers it at CR 601.2b.
           CostAdjustments.components =
             [ (CostAddition.scale addition, component)
             | (_, modifier, times) <- applying',
               CostChange.Add addition <- [CostModifier.change modifier],
+              Maybe.isNothing (CostAddition.optional addition),
               component <- concat (List.genericReplicate times (CostAddition.components addition))
             ]
         }
+
+-- CR 613.11 / 601.2f: the ModifyCost rows that reach `pid` casting `oid` --
+-- subject CostSubject.Spells and criterion matching the spell.
+spellCostRows :: PlayerId -> ObjectId -> GameState -> [(RowSource, CostModifier.CostModifier)]
+spellCostRows pid oid gs =
+  let reaches source modifier = case CostModifier.subject modifier of
+        -- Then Shadow in the Warp's "first" or Uthros Psionicist's "second",
+        -- asked with the same criterion.
+        CostSubject.Spells ->
+          matchesObjectFrom source (CostModifier.matching modifier) oid gs
+            && maybe True (nthCast pid source (CostModifier.matching modifier) oid gs) (CostModifier.onlyNth modifier)
+        -- Oppressive Rays, turned away by the SUBJECT and not by its Filter
+        -- -- the mirror of what keeps Thalia off an activation cost in
+        -- activationCostAdjustmentsGiven below (#90).
+        CostSubject.Activations _ -> False
+        CostSubject.SpecialActions _ -> False
+   in [(source, modifier) | (source, PlayerEffect.ModifyCost modifier) <- applying pid gs, reaches source modifier]
+
+-- CR 118.8a / 601.2b: the optional additional costs effects offer `pid`
+-- casting `oid`, one per row, each with the reduction paying it brings
+-- (Defiler of Dreams). Asked before CR 601.2c, so no target is read: a fence,
+-- Parun.CardSpec refusing an optional addition that is per target or per each.
+spellOptionalAdditions :: PlayerId -> ObjectId -> GameState -> [(CostAddition.CostAddition, AppliedReduction.AppliedReduction)]
+spellOptionalAdditions pid oid gs =
+  [ (addition, reduction)
+  | (_, modifier) <- spellCostRows pid oid gs,
+    CostChange.Add addition <- [CostModifier.change modifier],
+    Just reduction <- [CostAddition.optional addition]
+  ]
 
 -- Whether a cost change applying to `pid` casting `oid` reads the spell's
 -- targets (`whichTargets` or `perTarget`), so a gate standing before CR 601.2c
@@ -2920,9 +2941,9 @@ permissionCosts = foldMap (CastFromZone.additionalCosts . snd)
 -- Augurelt's "spells you cast this way cost {2} less", generic mana, in
 -- Parun.Types.CandidateCost's `reductions` shape -- and none for a cast made
 -- under no permission.
-permissionReductions :: Maybe (ObjectId, CastFromZone.CastFromZone) -> [ManaCost.ManaCost]
+permissionReductions :: Maybe (ObjectId, CastFromZone.CastFromZone) -> [AppliedReduction.AppliedReduction]
 permissionReductions option =
-  [ ManaCost.MkManaCost [ManaSymbol.Generic n]
+  [ AppliedReduction.MkAppliedReduction (ManaCost.MkManaCost [ManaSymbol.Generic n]) 0 False
   | Just (_, grant) <- [option],
     let n = CastFromZone.reduction grant,
     n > 0

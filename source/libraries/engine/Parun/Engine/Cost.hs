@@ -114,6 +114,7 @@ import qualified Parun.Types.Comparison as Comparison
 import qualified Parun.Types.ComputedLife as ComputedLife
 import Parun.Types.Cost (Cost)
 import qualified Parun.Types.Cost as Cost
+import qualified Parun.Types.CostAddition as CostAddition
 import qualified Parun.Types.CostAdjustments as CostAdjustments
 import qualified Parun.Types.CostAmount as CostAmount
 import qualified Parun.Types.CostChoice as CostChoice
@@ -509,12 +510,30 @@ withOffering pid oid gs candidate =
   candidate
     : [ candidate
           { CandidateCost.cost = (CandidateCost.cost candidate) {Cost.components = Cost.components (CandidateCost.cost candidate) <> [CostComponent.Sacrifice (Sacrifice.MkSacrifice (ObjectCount.Exactly (CostAmount.Fixed 1)) (Filter.Type.IsObject vid) Set.empty)]},
-            CandidateCost.reductions = CandidateCost.reductions candidate <> [Maybe.fromMaybe (ManaCost.MkManaCost []) (Filter.manaCost (Projection.viewOfObject vid gs))],
+            CandidateCost.reductions = CandidateCost.reductions candidate <> [AppliedReduction.MkAppliedReduction (Maybe.fromMaybe (ManaCost.MkManaCost []) (Filter.manaCost (Projection.viewOfObject vid gs))) 0 False],
             CandidateCost.instantSpeed = True
           }
       | quality <- Keyword.offeringQualities (Map.keysSet (spellKeywords pid oid gs)),
         vid <- Replacement.sacrificeCandidates (Just pid) Map.empty pid (Just oid) quality gs
       ]
+
+-- | CR 118.8a / 601.2b: each optional additional cost an effect offers
+-- (Parun.Engine.PlayerEffect.spellOptionalAdditions) doubles the candidates:
+-- one announced without it, one with its components added at their scale
+-- (`plusComponents`) and its reduction brought along, so CR 601.2f takes the
+-- reduction only from a cast that pays (Defiler of Dreams). Two offers are four
+-- candidates, CR 118.8a's "any number of additional costs". CR 118.9d applies
+-- it to an alternative cost too, so an effect's applied cost goes through this
+-- as `withOffering` does.
+withOptionalAdditions :: PlayerId -> ObjectId -> GameState -> CandidateCost.CandidateCost -> [CandidateCost.CandidateCost]
+withOptionalAdditions pid oid gs candidate =
+  let paying sofar (addition, reduction) =
+        sofar
+          { CandidateCost.cost = plusComponents (CostAdjustments.MkCostAdjustments [] [] [(CostAddition.scale addition, component) | component <- CostAddition.components addition]) (CandidateCost.cost sofar),
+            CandidateCost.reductions = CandidateCost.reductions sofar <> [reduction]
+          }
+      variants candidates offer = concatMap (\sofar -> [sofar, paying sofar offer]) candidates
+   in List.foldl' variants [candidate] (PlayerEffect.spellOptionalAdditions pid oid gs)
 
 -- | CR 601.3c / 601.3d: the card's own permissions to be cast as though it had
 -- flash whose condition holds as the cast begins, with the caster as CR
@@ -844,7 +863,7 @@ candidateCostsGiven permitted pid name oid gs =
                       CandidateCost.MkCandidateCost
                         (Just (Keyword.Type.Emerge emerge))
                         (withAdditional (Emerge.cost emerge) {Cost.components = Cost.components (Emerge.cost emerge) <> [CostComponent.Sacrifice (Sacrifice.MkSacrifice (ObjectCount.Exactly (CostAmount.Fixed 1)) (Filter.Type.IsObject vid) Set.empty)]})
-                        [ManaCost.MkManaCost [ManaSymbol.Generic (Integer.toNaturalSaturating n)]]
+                        [AppliedReduction.MkAppliedReduction (ManaCost.MkManaCost [ManaSymbol.Generic (Integer.toNaturalSaturating n)]) 0 False]
                         False
                         Nothing
                         Nothing
@@ -1023,7 +1042,7 @@ candidateCostsGiven permitted pid name oid gs =
               -- Game.zoneOf's, so a CR 707.13 copy outside the game (CR 400.11)
               -- takes the `_` arm. A regression fence: none of Garth One-Eye's
               -- six cards prints a cost the graveyard arm offers.
-              concatMap (withOffering pid oid gs) . concatMap (withFlashPermission pid oid face gs) . concatMap (choiceVariants face) . orConverted $ case Game.zoneOf oid gs of
+              concatMap (withOptionalAdditions pid oid gs) . concatMap (withOffering pid oid gs) . concatMap (withFlashPermission pid oid face gs) . concatMap (choiceVariants face) . orConverted $ case Game.zoneOf oid gs of
                 -- Three shapes, differing in what they do to the printed cost, plus
                 -- an effect's permission. Flashback (CR 702.34a) REPLACES the mana
                 -- cost, so it is wrapped by `withAdditional`, and escape (CR
@@ -1144,7 +1163,7 @@ candidateCostsGiven permitted pid name oid gs =
                               CandidateCost.MkCandidateCost
                                 (Just (Keyword.Type.Harmonize cost))
                                 (withAdditional cost {Cost.components = Cost.components cost <> [CostComponent.TapPermanents (TapPermanents.MkTapPermanents (CostAmount.Fixed 1) (criterion vid) False TapState.Tapped)]})
-                                [ManaCost.MkManaCost [ManaSymbol.Generic (Integer.toNaturalSaturating n)]]
+                                [AppliedReduction.MkAppliedReduction (ManaCost.MkManaCost [ManaSymbol.Generic (Integer.toNaturalSaturating n)]) 0 False]
                                 False
                                 Nothing
                                 Nothing
