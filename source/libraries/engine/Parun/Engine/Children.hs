@@ -39,6 +39,7 @@ import qualified Parun.Types.AnotherCounter as AnotherCounter
 import qualified Parun.Types.Ante as Ante
 import qualified Parun.Types.AnyNumberDiscard as AnyNumberDiscard
 import qualified Parun.Types.AnyNumberMatching as AnyNumberMatching
+import qualified Parun.Types.AppliedReduction as AppliedReduction
 import qualified Parun.Types.Arithmetic as Arithmetic
 import qualified Parun.Types.ArmDelayedTrigger as ArmDelayedTrigger
 import qualified Parun.Types.ArrangeInLibrary as ArrangeInLibrary
@@ -2404,8 +2405,14 @@ perTargetChildren c (PerTarget.MkPerTarget matching each) = PerTarget.MkPerTarge
 costChangeChildren :: (Applicative f) => PlayerEffectChildren f -> CostChange.CostChange -> f CostChange.CostChange
 costChangeChildren c change = case change of
   CostChange.Increase _ -> pure change
-  CostChange.Reduce _ -> pure change
-  CostChange.Add (CostAddition.MkCostAddition components scale optional) -> fmap CostChange.Add (CostAddition.MkCostAddition <$> traverse (playerCostComponent c) components <*> costScaleChildren c scale <*> pure optional)
+  CostChange.Reduce reduction -> CostChange.Reduce <$> appliedReductionChildren c reduction
+  CostChange.Add (CostAddition.MkCostAddition components scale optional) -> fmap CostChange.Add (CostAddition.MkCostAddition <$> traverse (playerCostComponent c) components <*> costScaleChildren c scale <*> traverse (appliedReductionChildren c) optional)
+
+-- | A reduction's confinement names mana (Defiler of Dreams' "blue mana");
+-- its amount is symbols, which no text change reaches (CR 612.2).
+appliedReductionChildren :: (Applicative f) => PlayerEffectChildren f -> AppliedReduction.AppliedReduction -> f AppliedReduction.AppliedReduction
+appliedReductionChildren c (AppliedReduction.MkAppliedReduction amount atLeast reducesOnly) =
+  AppliedReduction.MkAppliedReduction amount atLeast <$> traverse (playerManaFilter c) reducesOnly
 
 -- | How often an addition applies: only a per-symbol scale names a colour.
 costScaleChildren :: (Applicative f) => PlayerEffectChildren f -> CostScale.CostScale -> f CostScale.CostScale

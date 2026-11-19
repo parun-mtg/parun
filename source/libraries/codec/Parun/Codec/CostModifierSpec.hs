@@ -47,7 +47,7 @@ spec s = Spec.describe s "Parun.Codec.CostModifier" $ do
           (Just (Quantity.CommanderCasts (PlayerRef.Relative PlayerRelation.You)))
           CountedAgainst.PaidFor
           (Just (TurnOrdinal.MkTurnOrdinal (TurnScope.PlayersTurn (PlayerRef.Relative PlayerRelation.You)) 1))
-          (CostChange.Reduce (AppliedReduction.MkAppliedReduction (ManaCost.MkManaCost [ManaSymbol.Generic 2]) 1 False))
+          (CostChange.Reduce (AppliedReduction.MkAppliedReduction (ManaCost.MkManaCost [ManaSymbol.Generic 2]) 1 Nothing))
       )
       " {\"subject\":{\"type\":\"Activations\",\"value\":{\"whichKind\":\"NonManaAbility\"}},\"matching\":{\"type\":\"HasCardType\",\"value\":\"Creature\"},\"whichTargets\":{\"type\":\"IsSource\"},\"perTarget\":{\"matching\":{\"type\":\"HasCardType\",\"value\":\"Creature\"}},\"perEach\":{\"type\":\"CommanderCasts\",\"value\":{\"type\":\"Relative\",\"value\":\"You\"}},\"countedAgainst\":\"PaidFor\",\"onlyNth\":{\"scope\":{\"type\":\"PlayersTurn\",\"value\":{\"type\":\"Relative\",\"value\":\"You\"}},\"ordinal\":1},\"change\":{\"type\":\"Reduce\",\"value\":{\"amount\":[{\"type\":\"Generic\",\"value\":2}],\"atLeast\":1}}} "
   -- Uthros Psionicist's second spell.
@@ -55,7 +55,7 @@ spec s = Spec.describe s "Parun.Codec.CostModifier" $ do
     Common.assertCodec
       s
       CostModifier.codec
-      (CostModifier.Type.MkCostModifier CostSubject.Spells (Filter.HasCardType CardType.Creature) Nothing Nothing Nothing CountedAgainst.ChangeSource (Just (TurnOrdinal.MkTurnOrdinal (TurnScope.PlayersTurn (PlayerRef.Relative PlayerRelation.AnyPlayer)) 2)) (CostChange.Reduce (AppliedReduction.MkAppliedReduction (ManaCost.MkManaCost [ManaSymbol.Generic 2]) 0 False)))
+      (CostModifier.Type.MkCostModifier CostSubject.Spells (Filter.HasCardType CardType.Creature) Nothing Nothing Nothing CountedAgainst.ChangeSource (Just (TurnOrdinal.MkTurnOrdinal (TurnScope.PlayersTurn (PlayerRef.Relative PlayerRelation.AnyPlayer)) 2)) (CostChange.Reduce (AppliedReduction.MkAppliedReduction (ManaCost.MkManaCost [ManaSymbol.Generic 2]) 0 Nothing)))
       " {\"subject\":{\"type\":\"Spells\"},\"matching\":{\"type\":\"HasCardType\",\"value\":\"Creature\"},\"onlyNth\":{\"scope\":{\"type\":\"PlayersTurn\",\"value\":{\"type\":\"Relative\",\"value\":\"AnyPlayer\"}},\"ordinal\":2},\"change\":{\"type\":\"Reduce\",\"value\":{\"amount\":[{\"type\":\"Generic\",\"value\":2}]}}} "
   Spec.it s "refuses countedAgainst beside no perEach" $
     Spec.assertBool

@@ -14,6 +14,7 @@ import qualified Parun.Types.CostComponent as CostComponent
 import qualified Parun.Types.CostScale as CostScale
 import qualified Parun.Types.Filter as Filter
 import qualified Parun.Types.ManaCost as ManaCost
+import qualified Parun.Types.ManaFilter as ManaFilter
 import qualified Parun.Types.ManaSymbol as ManaSymbol
 import qualified Parun.Types.ManaType as ManaType
 import qualified Parun.Types.ObjectCount as ObjectCount
@@ -38,19 +39,19 @@ spec s = Spec.describe s "Parun.Codec.CostChange" $ do
     Common.assertCodec
       s
       CostChange.codec
-      (CostChange.Type.Reduce (AppliedReduction.MkAppliedReduction (ManaCost.MkManaCost [ManaSymbol.Generic 1]) 0 False))
+      (CostChange.Type.Reduce (AppliedReduction.MkAppliedReduction (ManaCost.MkManaCost [ManaSymbol.Generic 1]) 0 Nothing))
       " {\"type\":\"Reduce\",\"value\":{\"amount\":[{\"type\":\"Generic\",\"value\":1}]}} "
   Spec.it s "Reduce, Edgewalker's coloured mana only" $
     Common.assertCodec
       s
       CostChange.codec
-      (CostChange.Type.Reduce (AppliedReduction.MkAppliedReduction (ManaCost.MkManaCost [ManaSymbol.OfType (ManaType.Colored Color.White)]) 0 True))
-      " {\"type\":\"Reduce\",\"value\":{\"amount\":[{\"type\":\"OfType\",\"value\":{\"type\":\"Colored\",\"value\":\"White\"}}],\"coloredOnly\":true}} "
+      (CostChange.Type.Reduce (AppliedReduction.MkAppliedReduction (ManaCost.MkManaCost [ManaSymbol.OfType (ManaType.Colored Color.White)]) 0 (Just ManaFilter.Colored)))
+      " {\"type\":\"Reduce\",\"value\":{\"amount\":[{\"type\":\"OfType\",\"value\":{\"type\":\"Colored\",\"value\":\"White\"}}],\"reducesOnly\":{\"type\":\"Colored\"}}} "
   Spec.it s "Reduce, Heartstone's floor" $
     Common.assertCodec
       s
       CostChange.codec
-      (CostChange.Type.Reduce (AppliedReduction.MkAppliedReduction (ManaCost.MkManaCost [ManaSymbol.Generic 1]) 1 False))
+      (CostChange.Type.Reduce (AppliedReduction.MkAppliedReduction (ManaCost.MkManaCost [ManaSymbol.Generic 1]) 1 Nothing))
       " {\"type\":\"Reduce\",\"value\":{\"amount\":[{\"type\":\"Generic\",\"value\":1}],\"atLeast\":1}} "
   -- A scale of Once writes no key.
   Spec.it s "Add, Brutal Suppression's" $
@@ -69,6 +70,6 @@ spec s = Spec.describe s "Parun.Codec.CostChange" $ do
     Common.assertCodec
       s
       CostChange.codec
-      (CostChange.Type.Add (CostAddition.MkCostAddition [CostComponent.PayLife (CostAmount.Fixed 2)] CostScale.Once (Just (AppliedReduction.MkAppliedReduction (ManaCost.MkManaCost [ManaSymbol.OfType (ManaType.Colored Color.Blue)]) 0 True))))
-      " {\"type\":\"Add\",\"value\":{\"components\":[{\"type\":\"PayLife\",\"value\":{\"type\":\"Fixed\",\"value\":2}}],\"optional\":{\"amount\":[{\"type\":\"OfType\",\"value\":{\"type\":\"Colored\",\"value\":\"Blue\"}}],\"coloredOnly\":true}}} "
+      (CostChange.Type.Add (CostAddition.MkCostAddition [CostComponent.PayLife (CostAmount.Fixed 2)] CostScale.Once (Just (AppliedReduction.MkAppliedReduction (ManaCost.MkManaCost [ManaSymbol.OfType (ManaType.Colored Color.Blue)]) 0 (Just (ManaFilter.OfType (ManaType.Colored Color.Blue)))))))
+      " {\"type\":\"Add\",\"value\":{\"components\":[{\"type\":\"PayLife\",\"value\":{\"type\":\"Fixed\",\"value\":2}}],\"optional\":{\"amount\":[{\"type\":\"OfType\",\"value\":{\"type\":\"Colored\",\"value\":\"Blue\"}}],\"reducesOnly\":{\"type\":\"OfType\",\"value\":{\"type\":\"Colored\",\"value\":\"Blue\"}}}}} "
   Spec.it s "has a schema" $ Common.assertHasSchema s CostChange.codec

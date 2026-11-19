@@ -6,6 +6,7 @@ module Parun.Engine.CostAdjustments where
 
 import qualified Data.List as List
 import qualified Data.Maybe as Maybe
+import qualified Parun.Engine.ManaFilter as ManaFilter
 import qualified Parun.Extra.Natural as Natural
 import qualified Parun.Types.AppliedReduction as AppliedReduction
 import qualified Parun.Types.CostAdjustments as CostAdjustments
@@ -27,7 +28,7 @@ import qualified Parun.Types.ManaType as ManaType
 -- Piercer's miracle). All stay COSTS rather than becoming CR 601.2f reductions
 -- -- grantedForetellCost's haddock is where that is argued.
 reducedManaCost :: ManaCost.ManaCost -> ManaCost.ManaCost -> ManaCost.ManaCost
-reducedManaCost amount = applyAdjustments (plusReductions [AppliedReduction.MkAppliedReduction amount 0 False] noAdjustments)
+reducedManaCost amount = applyAdjustments (plusReductions [AppliedReduction.MkAppliedReduction amount 0 Nothing] noAdjustments)
 
 -- CR 601.2f with nothing in it: the board's own increases and reductions are the
 -- caster's business in Parun.Engine.Cost, and reducedManaCost's amount is the
@@ -221,12 +222,19 @@ applyAdjustments adjustments cost =
             floor_ = AppliedReduction.atLeast reduction
             generic = sum (fmap costGenericOf symbols)
             typed = filter isTyped symbols
-            (survivors, unspent) = cancel (Maybe.mapMaybe reducingManaTypeOf reducingSymbols) typed
+            -- A confinement admits only the typed reduction of mana it names:
+            -- Defiler of Dreams with "blue" rewritten to "red" takes {U} off
+            -- nothing (CR 612.2).
+            --
+            -- Unprinted: a generic reduction beside a confinement, which comes
+            -- off the generic component as ever.
+            admitted manaType = maybe True (`ManaFilter.matchesType` manaType) (AppliedReduction.reducesOnly reduction)
+            (survivors, unspent) = cancel (filter admitted (Maybe.mapMaybe reducingManaTypeOf reducingSymbols)) typed
             -- Point 3: the typed reduction the cost had nothing to give to comes
             -- off the GENERIC component instead, one generic mana per stranded
             -- symbol (CR 118.7b-d), unless this effect's own text confines it to
-            -- the coloured mana paid (Edgewalker, CR 101.1).
-            spilled = if AppliedReduction.coloredOnly reduction then 0 else Natural.length unspent
+            -- the mana it names (Edgewalker, CR 101.1).
+            spilled = if Maybe.isJust (AppliedReduction.reducesOnly reduction) then 0 else Natural.length unspent
             taken = sum (fmap reducingGenericOf reducingSymbols) + spilled
             -- Natural subtraction is PARTIAL, so CR 601.2f's floor is also what
             -- keeps this total.

@@ -2,6 +2,7 @@ module Parun.Types.AppliedReduction where
 
 import Numeric.Natural (Natural)
 import qualified Parun.Types.ManaCost as ManaCost
+import Parun.Types.ManaFilter (ManaFilter)
 
 -- | CR 601.2f: ONE cost reduction as it applies to one cost -- the amount of
 -- mana it takes off, plus the restrictions its own effect states.
@@ -35,14 +36,15 @@ data AppliedReduction = MkAppliedReduction
     -- generic mana in their activation cost"): the clamp is on what that
     -- reduction took, not on the cost.
     atLeast :: Natural,
-    -- | Whether this effect confines itself to the COLOURED mana paid --
-    -- Edgewalker's "This effect reduces only the amount of colored mana you
-    -- pay", card text CR 101.1 lets override the rules.
+    -- | The mana this effect confines itself to -- Edgewalker's "This effect
+    -- reduces only the amount of colored mana you pay", Defiler of Dreams'
+    -- "blue mana", card text CR 101.1 lets override the rules. A colour word
+    -- there is text CR 612.2 rewrites, where the amount's symbol is not.
     --
-    -- False is the RULE, not the absence of one: CR 118.7b-d spill a coloured or
-    -- colourless reduction the cost cannot use onto the cost's generic
-    -- component, and True is what stops that spill, leaving the excess to do
-    -- nothing at all.
-    coloredOnly :: Bool
+    -- Nothing is the RULE, not the absence of one: CR 118.7b-d spill a coloured
+    -- or colourless reduction the cost cannot use onto the cost's generic
+    -- component, and a confinement stops that spill and drops a typed reducing
+    -- symbol it does not admit, leaving either to do nothing at all.
+    reducesOnly :: Maybe ManaFilter
   }
   deriving (Eq, Ord, Show)

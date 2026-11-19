@@ -378,7 +378,7 @@ offerCastOnce runSubgame context fits named caster optionality verb retake offer
             -- every candidate, the printed cost and an alternative alike, so it
             -- applies after any increase. The cast is then handed these
             -- candidates rather than finding its own, which are the same list.
-            lessened candidate = candidate {CandidateCost.reductions = CandidateCost.reductions candidate <> [AppliedReduction.MkAppliedReduction (ManaCost.MkManaCost [ManaSymbol.Generic (CastOffer.reduction offer)]) 0 False]}
+            lessened candidate = candidate {CandidateCost.reductions = CandidateCost.reductions candidate <> [AppliedReduction.MkAppliedReduction (ManaCost.MkManaCost [ManaSymbol.Generic (CastOffer.reduction offer)]) 0 Nothing]}
             candidates
               | CastOffer.reduction offer == 0 = if null applied then Cost.candidateCostsGiven True caster name oid proposed else applied
               | otherwise = fmap lessened (if null applied then Cost.candidateCostsGiven True caster name oid proposed else applied)
