@@ -797,7 +797,7 @@ form request picked = case Text.unpack (Question.kind question) of
               [ nudge (Text.pack "You have " <> foldMap (\u -> Text.pack "{" <> Render.manaType (ManaUnit.manaType u) <> Text.pack "}") floating <> Text.pack " unspent. It empties when this step ends.")
               | not (null floating)
               ]
-                <> [ nudge (Text.pack "Before ending your turn: you can still " <> Render.listing (take 3 reminders) <> (if length reminders > 3 then Text.pack ", and more." else Text.pack "."))
+                <> [ nudge (Text.pack "Before you pass: you can still " <> Render.listing (take 3 reminders) <> (if length reminders > 3 then Text.pack ", and more." else Text.pack "."))
                    | yours,
                      settled,
                      not (null rest)
