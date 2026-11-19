@@ -38,6 +38,8 @@ data ObjectView = MkObjectView
     characteristics :: Maybe ProjectedCharacteristics.ProjectedCharacteristics,
     -- | CR 406.3 / 708.5: the card a face-down object is, for a seat that may look at it.
     face :: Maybe ProjectedCharacteristics.ProjectedCharacteristics,
+    -- | CR 613.1: its characteristics under its own static abilities alone, where one applies to it and the seat sees them: what its printed text says it has.
+    ownEffects :: Maybe ProjectedCharacteristics.ProjectedCharacteristics,
     -- | CR 702.143d / 702.143e: what a granted foretell cost takes off the card's mana cost, for a seat that may look at it.
     foretellCostReduction :: Maybe ManaCost.ManaCost,
     -- | CR 113.7a / 602.2a: what an ability on the stack came from, and Nothing for anything else.

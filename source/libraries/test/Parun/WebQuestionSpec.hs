@@ -39,6 +39,7 @@ import qualified Parun.Types.Action as Action
 import qualified Parun.Types.AnyNumberOf as AnyNumberOf
 import qualified Parun.Types.BeginningStep as BeginningStep
 import qualified Parun.Types.Card as Card.Type
+import qualified Parun.Types.CardName as CardName
 import qualified Parun.Types.Color as Color
 import qualified Parun.Types.Cost as Cost
 import qualified Parun.Types.CounterKind as CounterKind
@@ -273,6 +274,38 @@ spec s registry = Spec.describe s "WebQuestion" $ do
         text = maybe (Right []) (Card.oracle lookUp) shown
     Spec.assertBool s (either (const False) (elem (Text.pack "Jace, Telepath Unbound (other face):")) text) ("the back face: " <> show text)
     Spec.assertEqWith s "the face up first" (fmap (take 1) text) (Right [Text.pack "Jace, Vryn's Prodigy:"])
+
+  Spec.it s "CR 604.1 an ability a permanent's own static ability grants it reads as printed: a Sliver and Karlov Watchdog alone"
+    . Monad.forM_ ["Karlov Watchdog", "Sentinel Sliver"]
+    $ \name -> do
+      printing <- S.printingOf s registry name
+      let (oid, gs) = S.addPermanent printing S.alice (Setup.emptyGame S.bothPlayers)
+          card = Printing.card printing
+          lookUp n = Right (if any ((== n) . Face.name) (Card.Type.faces card) then Just card else Nothing) :: Either () (Maybe Card.Type.Card)
+          shown = List.find ((== oid) . ObjectView.object) (PlayerView.Type.battlefield (PlayerView.viewFor S.alice gs))
+          printedText = foldMap Text.lines (Face.oracleText (NonEmpty.head (Card.Type.faces card)))
+      Spec.assertEqWith s (name <> ": the sheet") (fmap (Card.oracle lookUp) shown) (Just (Right printedText))
+      -- On alice's turn the grant applies, and the view carries it.
+      Spec.assertBool s (Maybe.isJust (shown >>= ObjectView.ownEffects)) (name <> ": its own effects apply")
+
+  Spec.it s "CR 305.7 / 305.6 a land Blood Moon strips reads as the Mountain's intrinsic mana ability" $ do
+    tomb <- S.printingOf s registry "Ancient Tomb"
+    moon <- S.printingOf s registry "Blood Moon"
+    let (oid, gs) = S.addPermanent tomb S.alice (snd (S.addPermanent moon S.bob (Setup.emptyGame S.bothPlayers)))
+        lookUp name = Right (if name == Face.name (NonEmpty.head (Card.Type.faces (Printing.card tomb))) then Just (Printing.card tomb) else Nothing) :: Either () (Maybe Card.Type.Card)
+        shown = List.find ((== oid) . ObjectView.object) (PlayerView.Type.battlefield (PlayerView.viewFor S.alice gs))
+    Spec.assertEqWith s "the sheet" (fmap (Card.oracle lookUp) shown) (Just (Right [Text.pack "({T}: Add {R}.)"]))
+
+  Spec.it s "CR 305.7 a creature land whose static ability Blood Moon may have stripped is marked as changed" $ do
+    -- Ashaya makes the Lord a Forest land, and Blood Moon then sets it to
+    -- Mountain; the projection still lists the Lord's static ability.
+    lord <- S.printingOf s registry "Lord of Atlantis"
+    ashaya <- S.printingOf s registry "Ashaya, Soul of the Wild"
+    moon <- S.printingOf s registry "Blood Moon"
+    let (oid, gs) = S.addPermanent lord S.alice (snd (S.addPermanent ashaya S.alice (snd (S.addPermanent moon S.bob (Setup.emptyGame S.bothPlayers)))))
+        lookUp name = Right (if name == Face.name (NonEmpty.head (Card.Type.faces (Printing.card lord))) then Just (Printing.card lord) else Nothing) :: Either () (Maybe Card.Type.Card)
+        shown = List.find ((== oid) . ObjectView.object) (PlayerView.Type.battlefield (PlayerView.viewFor S.alice gs))
+    Spec.assertEqWith s "the sheet" (fmap (fmap (take 1) . Card.oracle lookUp) shown) (Just (Right [Text.pack "Its abilities have changed; this text may be out of date."]))
 
   Spec.it s "CR 104.3a the turn bar carries the auto-pass level and the settings button, whose concession passes while the seat may" $ do
     let request = requestFor (Setup.emptyGame S.bothPlayers) (Prompt.ChooseAction (Decider.MkDecider S.alice) S.alice [Action.Pass])
@@ -577,6 +610,48 @@ replaySpec s registry = Spec.describe s "WebQuestion" . Spec.describe s "replay"
         Spec.assertBool s (said (Html.toText (Card.sheet b o (Card.MkReading (ObjectView.object o) [] True) [] (ObjectView.object o)))) "its sheet"
         Spec.assertBool s (not (said (Html.toText (Board.view marks b')) || ObjectView.onAdventure other)) "not a card merely exiled"
       (one, two) -> Spec.assertFailure s ("expected one exiled card in each: " <> show (length one, length two))
+
+  Spec.it s "CR 612.2 a Sleight of Mind's swap shows on the Paladin's sheet, and the Clone of it reads as printed" $ do
+    -- Entry 4 casts the Clone after the swap resolves; entry 9 follows the
+    -- Terror's resolution, the Paladin in the graveyard and the Clone left.
+    swapped <- replayed s registry "text-change/cr-612-2-a-sleight-of-mind-turns-protection-from-black-into-green-but-a-clone-keeps-it" 3
+    copied <- replayed s registry "text-change/cr-612-2-a-sleight-of-mind-turns-protection-from-black-into-green-but-a-clone-keeps-it" 8
+    paladin <- sheetText s registry swapped "Paladin en-Vec"
+    clone <- sheetText s registry copied "Paladin en-Vec"
+    Spec.assertEqWith s "the Paladin's abilities now" paladin [Text.pack "First strike", Text.pack "Protection from red and from green"]
+    Spec.assertEqWith s "the Clone's, as printed" (fmap (Text.takeWhile (/= '(')) clone) [Text.pack "First strike, protection from black and from red "]
+
+  Spec.it s "CR 613.1f Humility's wipe shows as no abilities, on itself and on History of Benalia under Opalescence" $ do
+    -- Entry 3 follows History of Benalia's entry.
+    stop <- replayed s registry "saga/cr-613-1f-history-of-benalia-under-opalescence-and-humility-enters-with-no-lore" 2
+    humility <- sheetText s registry stop "Humility"
+    history <- sheetText s registry stop "History of Benalia"
+    plains <- sheetText s registry stop "Plains"
+    opalescence <- sheetText s registry stop "Opalescence"
+    Spec.assertEqWith s "Humility" humility [Text.pack "It has no abilities."]
+    Spec.assertEqWith s "History of Benalia" history [Text.pack "It has no abilities."]
+    Spec.assertEqWith s "a Plains, as printed" plains [Text.pack "({T}: Add {W}.)"]
+    Spec.assertBool s (not (null opalescence) && notElem (Text.pack "It has no abilities.") opalescence) ("Opalescence, as printed: " <> show opalescence)
+
+  Spec.it s "CR 305.7 a Palace Guard stripped by Blood Moon is marked as changed, its block permission unworded" $ do
+    stripped <- replayed s registry "combat-cost/cr-305-7-an-animated-palace-guard-set-to-mountain-blocks-stripped" 0
+    control <- replayed s registry "combat-cost/cr-305-7-an-animated-palace-guard-set-to-mountain-blocks-control" 0
+    guard <- sheetText s registry stripped "Palace Guard"
+    unchanged <- sheetText s registry control "Palace Guard"
+    Spec.assertEqWith s "stripped" (take 1 guard) [Text.pack "Its abilities have changed; this text may be out of date."]
+    Spec.assertEqWith s "the control, as printed" unchanged [Text.pack "This creature can block any number of creatures."]
+
+-- | The sheet's Oracle text (Card.oracle) of the one battlefield object named,
+-- as the stop's active player reads it.
+sheetText :: Spec.Spec IO n -> Registry.Registry IO -> Stop.Stop -> String -> IO [Text.Text]
+sheetText s registry stop name = do
+  let board = boardOf stop
+  case [o | o <- PlayerView.Type.battlefield board, Render.nameOf board o == Text.pack name] of
+    o : _ -> do
+      looked <- Monad.forM (Set.toList (Render.cardNames o)) $ \n -> fmap ((,) n) (Registry.named registry (Text.unpack (CardName.unwrap n)))
+      let lookUp n = Maybe.fromMaybe (Right Nothing) (lookup n looked)
+      either (Spec.assertFailure s . show) pure (Card.oracle lookUp o)
+    [] -> Spec.assertFailure s ("no " <> name <> " on the battlefield")
 
 -- | The scenario named (beneath data/scenarios, less its extension) replayed
 -- to a position.

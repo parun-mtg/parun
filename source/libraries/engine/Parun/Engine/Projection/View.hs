@@ -2019,6 +2019,29 @@ ruleAbilitiesOfFace face =
       RuleAbilities.counterLimits = Face.counterLimits face
     }
 
+-- | ruleAbilitiesOfFace's inverse: the face with its sixteen lists replaced by
+-- these. Matched positionally, so a seventeenth family fails to compile here.
+withRuleAbilities :: RuleAbilities.RuleAbilities -> Face.Face card -> Face.Face card
+withRuleAbilities (RuleAbilities.MkRuleAbilities prohibitions attach attackCosts permissions attacks blockCosts blockPermissions blocks combat counters keywordCosts entries objects targets untaps limits) face =
+  face
+    { Face.activationProhibitions = prohibitions,
+      Face.attachRestrictions = attach,
+      Face.attackCosts = attackCosts,
+      Face.rulePermissions = permissions,
+      Face.attackRequirements = attacks,
+      Face.blockCosts = blockCosts,
+      Face.blockPermissions = blockPermissions,
+      Face.blockRequirements = blocks,
+      Face.combatRestrictions = combat,
+      Face.counterRestrictions = counters,
+      Face.keywordCostRestrictions = keywordCosts,
+      Face.entryRestrictions = entries,
+      Face.objectRestrictions = objects,
+      Face.targetRestrictions = targets,
+      Face.untapRestrictions = untaps,
+      Face.counterLimits = limits
+    }
+
 -- CR 208.2 / 604.3: the card's characteristic-defining P/T, with the printed star
 -- resolved to what the CDA counts. Nothing unless the card declares a CDA *and*
 -- has a printed power and toughness box (CR 208.1) for the star to sit in.

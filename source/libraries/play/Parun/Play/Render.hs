@@ -394,6 +394,7 @@ recalled view oid = case Map.lookup oid (objects view) of
         ObjectView.characteristics = Just c,
         ObjectView.face = Nothing,
         ObjectView.foretellCostReduction = Nothing,
+        ObjectView.ownEffects = Nothing,
         ObjectView.ability = Nothing,
         ObjectView.targets = [],
         ObjectView.summoningSick = False,

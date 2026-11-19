@@ -65,6 +65,7 @@ codec = Fields.object $ do
   chosenPlayers <- Fields.defaulted "chosenPlayers" Map.empty (Common.keyedList (Common.keyValue Acquisition.codec (Common.keyedList (Common.keyValue PlayerChoice.codec PlayerId.codec)))) ObjectView.chosenPlayers
   chosenNumber <- Fields.defaulted "chosenNumber" Map.empty (Common.keyedList (Common.keyValue Acquisition.codec Common.natural)) ObjectView.chosenNumber
   chosenObjects <- Fields.defaulted "chosenObjects" Map.empty (Common.keyedList (Common.keyValue Acquisition.codec (Common.set ObjectId.codec))) ObjectView.chosenObjects
+  ownEffects <- Fields.defaulted "ownEffects" Nothing (Common.maybe ProjectedCharacteristics.codec) ObjectView.ownEffects
   pure
     ObjectView.MkObjectView
       { ObjectView.object = object,
@@ -76,6 +77,7 @@ codec = Fields.object $ do
         ObjectView.attachedTo = attachedTo,
         ObjectView.characteristics = characteristics,
         ObjectView.face = face,
+        ObjectView.ownEffects = ownEffects,
         ObjectView.foretellCostReduction = foretellCostReduction,
         ObjectView.ability = ability,
         ObjectView.targets = targets,
