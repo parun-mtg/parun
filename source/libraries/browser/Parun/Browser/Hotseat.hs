@@ -267,7 +267,7 @@ exchange lookUp page seatRef request = do
         Left _ -> asking pending picked reading focus
     readingOf pending object pinned = do
       shown <- Request.view pending
-      o <- Map.lookup object (Render.objects shown)
+      o <- Render.recalled shown object
       pure (Web.Card.MkReading object (either (pure . Text.pack . Exception.displayException) id (Web.Card.oracle lookUp o)) pinned)
     focusAfter e focus = case e of
       Web.Question.MkFocus g -> if focus == Just g then Nothing else Just g

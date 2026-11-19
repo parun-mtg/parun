@@ -150,7 +150,7 @@ sheet :: Frame -> Maybe (Html.Html Event)
 sheet frame = do
   b <- board frame
   r <- reading frame
-  o <- Map.lookup (Card.object r) (Render.objects b)
+  o <- Render.recalled b (Card.object r)
   pure (Card.sheet b o r [] (MkTable Web.Question.MkClose))
 
 -- | The list of scenarios: a filter, then the names matching it, those the

@@ -107,11 +107,13 @@ linking known reading t =
             <> linking known reading (Text.drop (at + Text.length name) t)
 
 -- | The names of the objects the view shows, each to one object, a card on
--- the battlefield or the stack before one elsewhere.
+-- the battlefield or the stack before one elsewhere, and any of them before
+-- one only a witnessed move, look or reveal showed (Render.recalled).
 linkable :: PlayerView.PlayerView -> Map.Map Text.Text ObjectId.ObjectId
 linkable view =
   let shown = PlayerView.battlefield view <> PlayerView.stack view <> concatMap (\seat -> SeatView.hand seat <> SeatView.graveyard seat <> SeatView.exile seat) (PlayerView.seats view)
-   in Map.fromListWith (\_ first -> first) [(Render.cardName o, ObjectView.object o) | o <- shown, Maybe.isNothing (ObjectView.ability o), Maybe.isJust (ObjectView.characteristics o)]
+      remembered = [(name, oid) | oid <- Map.keys (Render.snapshots view), Map.notMember oid (Render.objects view), Just name <- [Render.knownName view oid]]
+   in Map.fromListWith (\_ first -> first) ([(Render.cardName o, ObjectView.object o) | o <- shown, Maybe.isNothing (ObjectView.ability o), Maybe.isJust (ObjectView.characteristics o)] <> remembered)
 
 -- | Entries, each beside something (its place), newest turn first, each
 -- turn's heading above its entries and those newest first.

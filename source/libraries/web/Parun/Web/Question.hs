@@ -357,7 +357,7 @@ logView board viewer screen =
 -- now: its actions, or picking it.
 sheetFor :: Request.Request -> PlayerView.PlayerView -> Board.Marks Event -> Card.Reading -> Maybe (Html.Html Event)
 sheetFor request board marks r = do
-  o <- Map.lookup (Card.object r) (Render.objects board)
+  o <- Render.recalled board (Card.object r)
   let cue = Board.object marks o
       actions = case Card.tap cue of
         MkRead _ -> [primary (MkAnswer (R.Number i)) label | (i, label) <- Map.findWithDefault [] (Card.object r) (actionsByObject request)]
@@ -451,17 +451,28 @@ step :: Request.Request -> Set.Set (Natural, Natural) -> Event -> Text.Text -> O
 step request picked event typed = case event of
   MkAnswer reply -> MkReplied reply
   MkToggle g i
-    | Just (_, items) <- ordering request ->
-        let next = if i `elem` fmap snd (Set.toList picked) then picked else Set.insert (Natural.length (Set.toList picked), i) picked
-         in if Natural.length (Set.toList next) == Natural.length items then MkReplied . R.Array . fmap (R.Number . toInteger . snd) $ Set.toAscList next else MkPicking next
-    | Just (_, from) <- piles request ->
+    -- An item placed is taken out again, those after it moving up.
+    | Just _ <- ordering request ->
+        let placed = fmap snd (Set.toAscList picked)
+         in MkPicking . Set.fromList . zip [0 ..] $ if i `elem` placed then filter (/= i) placed else placed <> [i]
+    | Just _ <- piles request ->
         let placed = Set.toAscList picked
-            next = if i `elem` fmap snd placed then picked else Set.insert (Natural.length placed * 2 + g, i) picked
-            pile p = R.Array [List.genericIndex from j | (k, j) <- Set.toAscList next, k `mod` 2 == p]
-         in if Natural.length (Set.toList next) == Natural.length from then MkReplied $ R.Array [pile 1, pile 0] else MkPicking next
+            kept = if i `elem` fmap snd placed then [(k `mod` 2, j) | (k, j) <- placed, j /= i] else fmap (\(k, j) -> (k `mod` 2, j)) placed <> [(g, i)]
+         in MkPicking $ Set.fromList [(n * 2 + p, j) | (n, (p, j)) <- zip [0 ..] kept]
     | Set.member (g, i) picked -> MkPicking $ Set.delete (g, i) picked
     | Just True <- exclusive <$> (picker request >>= \chooser -> Maybe.listToMaybe (List.genericDrop g (groups chooser))) -> MkPicking . Set.insert (g, i) $ Set.filter ((/= g) . fst) picked
     | otherwise -> MkPicking $ Set.insert (g, i) picked
+  -- What is not placed follows what is, in the order offered: an ordering's
+  -- items last, a pile's cards on top below those placed there.
+  MkSubmit
+    | Just (_, items) <- ordering request ->
+        let placed = fmap snd (Set.toAscList picked)
+         in MkReplied . R.Array . fmap (R.Number . toInteger) $ placed <> filter (`notElem` placed) [0 .. Natural.length items - 1]
+    | Just (_, from) <- piles request ->
+        let placed = Set.toAscList picked
+            rest = [j | j <- [0 .. Natural.length from - 1], j `notElem` fmap snd placed]
+            pile js = R.Array (fmap (List.genericIndex from) js)
+         in MkReplied $ R.Array [pile [j | (k, j) <- placed, odd k], pile ([j | (k, j) <- placed, even k] <> rest)]
   MkSubmit -> case picker request of
     Just chooser ->
       let chosen = [[reply | (i, (reply, _)) <- zip [0 ..] (options group), Set.member (g, i) picked] | (g, group) <- zip [0 ..] (groups chooser)]
@@ -677,21 +688,21 @@ form request picked = case Text.unpack (Question.kind question) of
   _
     | Just (title', items) <- ordering request ->
         Html.element (Text.pack "h2") [] [Html.text title']
-          : [button (MkToggle 0 i) $ foldMap (\(k, _) -> Text.pack (show (k + 1) <> ". ")) (List.find ((== i) . snd) (Set.toList picked)) <> label | (i, label) <- zip [0 ..] items]
-            <> [button (MkAnswer . R.Array $ fmap (R.Number . toInteger) [0 .. length items - 1]) (Text.pack "Keep this order"), button MkClear (Text.pack "Start over")]
+          : [button (MkToggle 0 i) (foldMap (\(k, _) -> Text.pack (show (k + 1) <> ". ")) (List.find ((== i) . snd) (Set.toList picked)) <> label) | (i, label) <- zip [0 ..] items]
+            <> [Element.el "div" ["passes"] [] $ primary MkSubmit (Text.pack (if Set.null picked then "Keep this order" else "Done")) : [button MkClear (Text.pack "Start over") | not (Set.null picked)]]
   _
     | Just ((what, other), from) <- piles request,
       Just shown <- Request.view request ->
         let placed = Set.toAscList picked
             at j = List.find ((== j) . snd) placed
-         in Html.element (Text.pack "h2") [] [Html.text $ what <> Text.pack ": tap each card for the top or the " <> Text.toLower other <> Text.pack " pile, in order. The first tapped for the top stays on top."]
+         in Html.element (Text.pack "h2") [] [Html.text $ what <> Text.pack ": tap each card for the top or the " <> Text.toLower other <> Text.pack " pile, in order. The first tapped for the top stays on top; any left untapped stay on top below those."]
               : concat
                 [ case at j of
-                    Just (k, _) -> [Html.element (Text.pack "p") [] [Html.text $ Text.pack (show (k `div` 2 + 1) <> ". ") <> (if even k then Text.pack "Top: " else other <> Text.pack ": ") <> Offer.listedName shown card]]
+                    Just (k, _) -> [button (MkToggle 0 j) (Text.pack (show (k `div` 2 + 1) <> ". ") <> (if even k then Text.pack "Top: " else other <> Text.pack ": ") <> Offer.listedName shown card)]
                     Nothing -> [button (MkToggle 0 j) (Text.pack "Top: " <> Offer.listedName shown card), button (MkToggle 1 j) (other <> Text.pack ": " <> Offer.listedName shown card)]
                 | (j, card) <- zip [0 ..] from
                 ]
-                <> [button (MkAnswer $ R.Array [R.Array [], R.Array from]) (Text.pack "Keep all on top"), button MkClear (Text.pack "Start over")]
+                <> [Element.el "div" ["passes"] [] $ primary MkSubmit (Text.pack (if Set.null picked then "Keep all on top" else "Done")) : [button MkClear (Text.pack "Start over") | not (Set.null picked)]]
   "ChooseCardName" -> [heading "Name a card.", Html.element (Text.pack "input") [Attribute.MkProperty (Text.pack "placeholder") (Text.pack "A card's name"), Attribute.MkProperty (Text.pack "data-clear") Text.empty, Attribute.MkOn (Text.pack "change") MkTyped] []]
   _
     | Just shown <- Request.view request,
