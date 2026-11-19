@@ -1,0 +1,222 @@
+{
+  "faces": [
+    {
+      "manaCost": [
+        {
+          "type": "Generic",
+          "value": 3
+        },
+        {
+          "type": "OfType",
+          "value": {
+            "type": "Colored",
+            "value": "Black"
+          }
+        },
+        {
+          "type": "OfType",
+          "value": {
+            "type": "Colored",
+            "value": "Black"
+          }
+        }
+      ],
+      "name": "Gix's Command",
+      "oracleText": "Choose two —\n• Put two +1/+1 counters on up to one creature. It gains lifelink until end of turn.\n• Destroy each creature with power 2 or less.\n• Return up to two creature cards from your graveyard to your hand.\n• Each opponent sacrifices a creature with the greatest power among creatures they control.",
+      "spell": {
+        "modes": [
+          {
+            "clauses": [
+              {
+                "effects": [
+                  {
+                    "type": "ChoosePermanents",
+                    "value": {
+                      "permanents": {
+                        "count": {
+                          "type": "UpTo",
+                          "value": {
+                            "type": "Literal",
+                            "value": 1
+                          }
+                        },
+                        "filter": {
+                          "type": "HasCardType",
+                          "value": "Creature"
+                        }
+                      },
+                      "slot": "chosen"
+                    }
+                  },
+                  {
+                    "type": "PutCounters",
+                    "value": {
+                      "kind": {
+                        "type": "PlusOnePlusOne"
+                      },
+                      "quantity": {
+                        "type": "Literal",
+                        "value": 2
+                      },
+                      "ref": {
+                        "type": "InSlot",
+                        "value": "chosen"
+                      }
+                    }
+                  },
+                  {
+                    "type": "ModifyTarget",
+                    "value": {
+                      "duration": {
+                        "type": "UntilEndOfTurn"
+                      },
+                      "modification": {
+                        "type": "GainKeyword",
+                        "value": {
+                          "type": "Lifelink"
+                        }
+                      },
+                      "ref": {
+                        "type": "InSlot",
+                        "value": "chosen"
+                      }
+                    }
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "clauses": [
+              {
+                "effects": [
+                  {
+                    "type": "Destroy",
+                    "value": {
+                      "ref": {
+                        "type": "EachMatching",
+                        "value": {
+                          "type": "And",
+                          "value": [
+                            {
+                              "type": "HasCardType",
+                              "value": "Creature"
+                            },
+                            {
+                              "type": "Measures",
+                              "value": {
+                                "comparison": "AtMost",
+                                "measure": "Power",
+                                "operand": {
+                                  "type": "Literal",
+                                  "value": 2
+                                }
+                              }
+                            }
+                          ]
+                        }
+                      },
+                      "regenerability": "Regenerable"
+                    }
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "clauses": [
+              {
+                "effects": [
+                  {
+                    "type": "MoveToZone",
+                    "value": {
+                      "ref": {
+                        "type": "ChosenCardInGraveyard",
+                        "value": {
+                          "chooser": {
+                            "type": "TheController"
+                          },
+                          "count": {
+                            "type": "UpTo",
+                            "value": {
+                              "type": "Literal",
+                              "value": 2
+                            }
+                          },
+                          "filter": {
+                            "type": "HasCardType",
+                            "value": "Creature"
+                          },
+                          "players": {
+                            "type": "Scoped",
+                            "value": {
+                              "type": "You"
+                            }
+                          }
+                        }
+                      },
+                      "zone": "Hand"
+                    }
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "clauses": [
+              {
+                "effects": [
+                  {
+                    "type": "PlayerSacrifices",
+                    "value": {
+                      "filter": {
+                        "type": "And",
+                        "value": [
+                          {
+                            "type": "HasCardType",
+                            "value": "Creature"
+                          },
+                          {
+                            "type": "Measures",
+                            "value": {
+                              "comparison": "AtLeast",
+                              "measure": "Power",
+                              "operand": {
+                                "type": "OfEachOtherCandidate",
+                                "value": {
+                                  "measure": "Power",
+                                  "scope": "SameController"
+                                }
+                              }
+                            }
+                          }
+                        ]
+                      },
+                      "players": {
+                        "type": "Relative",
+                        "value": "Opponent"
+                      },
+                      "quantity": {
+                        "type": "Literal",
+                        "value": 1
+                      }
+                    }
+                  }
+                ]
+              }
+            ]
+          }
+        ],
+        "selection": {
+          "type": "ChooseExactly",
+          "value": 2
+        }
+      },
+      "typeLine": {
+        "types": [
+          "Sorcery"
+        ]
+      }
+    }
+  ]
+}
