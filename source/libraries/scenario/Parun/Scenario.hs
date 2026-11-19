@@ -9,6 +9,8 @@ module Parun.Scenario where
 import Control.Applicative ((<|>))
 import qualified Control.Exception as Exception
 import qualified Control.Monad as Monad
+import qualified Control.Monad.Trans.Class as Trans
+import qualified Control.Monad.Trans.Except as Except
 import qualified Control.Monad.Trans.State.Strict as State
 import qualified Data.Bifunctor as Bifunctor
 import qualified Data.Either as Either
@@ -289,10 +291,7 @@ replay registry stop scenario = do
         State.evalStateT (mapM_ (expect Nothing final Nothing) (Scenario.final scenario)) rehearsal {depth = 0}
         pure (Stop.MkEnded final)
       fetching whole known = case attempt whole known of
-        Left (Fetching name) -> do
-          card <- Registry.fetchCard registry name
-          face <- Interpreter.chosenFace registry name
-          either (pure . Left . Failure.MkInvalidCorpus) (fetching whole . flip (Map.insert name) known) ((,) <$> card <*> face)
+        Left (Fetching name) -> fetchInto registry name known >>= either (pure . Left) (fetching whole)
         Left Enumerating -> Registry.cards registry >>= either (pure . Left . Failure.MkInvalidCorpus) (\every -> fetching (Just every) known)
         Left (Failed failure) -> pure (Left failure)
         Left (Stopped reached) -> pure (Right reached)
@@ -302,6 +301,68 @@ replay registry stop scenario = do
     setUp matchup gs = do
       (_, set) <- Engine.runGameAsked answerPrompt gs (Setup.newGame (Resolve.performHandAction Engine.playSubgame) matchup)
       Driver.drive [] scripted replayBudget finished set
+
+-- | The reference `known` with a name's card and the face it answers to when
+-- chosen (Interpreter.chosenFace) fetched into it.
+fetchInto :: (Monad m) => Registry.Registry m -> CardName.CardName -> Map.Map CardName.CardName (Maybe Card.Card, Maybe (Face.Face Card.Card)) -> m (Either Failure.ScenarioFailure (Map.Map CardName.CardName (Maybe Card.Card, Maybe (Face.Face Card.Card))))
+fetchInto registry name known = do
+  card <- Registry.fetchCard registry name
+  face <- Interpreter.chosenFace registry name
+  pure (either (Left . Failure.MkInvalidCorpus) (\entry -> Right (Map.insert name entry known)) ((,) <$> card <*> face))
+
+-- | Where a branch stands: answering from the timeline, or played on.
+data Branching
+  = MkScripted Rehearsal
+  | MkOnward
+
+-- | The scenario run as `replay` runs it to the stop at `at`, then played on
+-- from that stop, every later question put to `onward`, until the game has a
+-- result or a whole game's steps (replayBudget) have passed: the web client's
+-- branch (Parun.Browser.Replay.branch). The stop past the last entry is where
+-- `replay` ends: a board's run at the end of the step its timeline is spent
+-- in, a recording's at the first question past it. A name looked up is
+-- fetched and the question asked again, where `run` starts over, which takes
+-- the same answers to the same question.
+branch :: (Monad m) => Registry.Registry m -> Natural -> Answerer.Answerer (Asked.Asked GameState.GameState) m -> Scenario.Scenario -> m (Either Failure.ScenarioFailure GameState.GameState)
+branch registry at onward scenario = do
+  staging <- case Scenario.start scenario of
+    Start.FromBoard board -> fmap (fmap (\placed' -> (placed', Nothing))) (stage registry board)
+    Start.FromDecks format entrants -> fmap (fmap (fmap Just)) (enter registry format entrants)
+  case staging of
+    Left failure -> pure (Left failure)
+    Right (board, matchup) ->
+      let first = (rehearsalOf (Scenario.timeline scenario) board) {reference = Just Map.empty, replaying = Maybe.isJust matchup, stopAt = Just at}
+          dealt = maybe (pure (Staged.state board)) (fmap snd . Engine.runGameAsked (answerBranch registry onward) (Staged.state board) . Setup.newGame (Resolve.performHandAction Engine.playSubgame)) matchup
+       in Except.runExceptT (State.evalStateT (dealt >>= Driver.drive [] (Answerer.MkAnswerer (answerBranch registry onward)) replayBudget handOver) (MkScripted first))
+  where
+    -- A board's run hands over where `replay` ends it.
+    handOver gs = do
+      standing <- State.get
+      case standing of
+        MkScripted rehearsal | Right True <- State.evalStateT (finished gs) rehearsal -> False <$ State.put MkOnward
+        _ -> pure False
+
+-- | A branch's question: answered from the timeline until the stop, then by
+-- `onward`.
+answerBranch :: (Monad m) => Registry.Registry m -> Answerer.Answerer (Asked.Asked GameState.GameState) m -> Asked.Asked GameState.GameState r -> State.StateT Branching (Except.ExceptT Failure.ScenarioFailure m) r
+answerBranch registry onward asked = do
+  standing <- State.get
+  case standing of
+    MkOnward -> Trans.lift (Trans.lift (Answerer.unwrap onward asked))
+    MkScripted rehearsal
+      | replaying rehearsal && Map.null (queues rehearsal) && recorded (Asked.prompt asked) -> State.put MkOnward >> again
+      | otherwise -> case State.runStateT (answerPrompt asked) rehearsal of
+          Right (answered, next) -> answered <$ State.put (MkScripted next)
+          Left (Stopped _) -> State.put MkOnward >> again
+          Left (Failed failure) -> Trans.lift (Except.throwE failure)
+          Left (Fetching name) ->
+            Trans.lift (Trans.lift (fetchInto registry name (Maybe.fromMaybe Map.empty (reference rehearsal))))
+              >>= either (Trans.lift . Except.throwE) (\known -> State.put (MkScripted rehearsal {reference = Just known}) >> again)
+          Left Enumerating ->
+            Trans.lift (Trans.lift (Registry.cards registry))
+              >>= either (Trans.lift . Except.throwE . Failure.MkInvalidCorpus) (\every -> State.put (MkScripted rehearsal {catalogue = Just every}) >> again)
+  where
+    again = answerBranch registry onward asked
 
 -- | CR 103: each entrant seated in turn order, its deck list read and its
 -- graveyard order set (CR 404.3), under `format` (CR 100.2), nothing yet

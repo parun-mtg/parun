@@ -138,7 +138,7 @@ play page = do
   Browser.display page . fmap Right $ starting (Lobby.deckName deckRoot one) (Lobby.deckName deckRoot two)
   registry <- Registry.defaultRegistry loaded :: IO (Registry.Registry Identity.Identity)
   -- The bot needs no screen, so the player is never handed it.
-  seatRef <- IORef.newIORef . MkSeat (Just player) False initialLevel Nothing False Seq.empty Nothing Map.empty Seq.empty 0 =<< Clock.getMonotonicTime
+  seatRef <- IORef.newIORef =<< newSeat initialLevel
   listed <- (,) <$> Command.load registry one <*> Command.load registry two
   case listed of
     (Right first, Right second) -> do
@@ -152,7 +152,7 @@ play page = do
           -- What the player saw after their last decision: the killing blow, say.
           Monad.forM_ outcome $ IORef.modifyIORef' seatRef . witness . PlayerView.Engine.viewFor player . snd
           finished <- IORef.readIORef seatRef
-          let seen = logged finished
+          let seen = loggedFor player finished
               trail = lives finished
           Browser.display page . Ending.view $ Ending.MkEnding (verdictOf outcome) (either (\reason -> [Text.pack "The game stopped: " <> reason <> Text.pack "."]) (\(result, gs) -> Render.result result : Render.departures gs) outcome) (Command.rendered recorded) seen player (Lobby.deckName deckRoot one, Lobby.deckName deckRoot two) (Foldable.toList trail) (Key.toHex seed)
         Left problems -> say problems
@@ -200,7 +200,8 @@ exchange lookUp page seatRef request = do
             "DeclareAttackers" -> Just (R.Array [])
             _ -> Nothing
     IORef.writeIORef seatRef state {paying = Maybe.isJust auto, skipping = if skipping state == turn then skipping state else Nothing}
-    let -- The board as it stands, while the seat is not asked: redrawn only
+    let seat = Question.seat $ Request.question request
+        -- The board as it stands, while the seat is not asked: redrawn only
         -- when what it shows changed, not at every pass of priority.
         watch how reply = do
           traced how
@@ -209,7 +210,7 @@ exchange lookUp page seatRef request = do
             let seen = shown {PlayerView.priority = Nothing}
             Monad.when (watched now /= Just seen) $ do
               IORef.writeIORef seatRef now {watched = Just seen}
-              Browser.display page . fmap Right $ Web.Question.watching request (Web.Question.blank {Web.Question.logged = logged now, Web.Question.fresh = freshOf now, Web.Question.level = level now})
+              Browser.display page . fmap Right $ Web.Question.watching request (Web.Question.blank {Web.Question.logged = loggedFor seat now, Web.Question.fresh = freshOf seat now, Web.Question.level = level now})
           pure reply
         conceded = if conceding state && kind == Text.pack "Concede" then Just (R.Text (Text.pack "Concedes")) else Nothing
     reply <- case (Monad.mplus conceded (Web.Question.automatic (level state) request), auto, skipped) of
@@ -218,7 +219,6 @@ exchange lookUp page seatRef request = do
       (_, _, Just reply) -> watch "skipped" reply
       _ -> do
         traced "asked"
-        let seat = Question.seat $ Request.question request
         Monad.when (facing state /= Just seat) $ do
           Browser.display page . fmap Right $ Web.Question.handOff seat
           untilReady
@@ -229,14 +229,15 @@ exchange lookUp page seatRef request = do
         IORef.modifyIORef' seatRef $ \st -> st {watched = Nothing}
         answer request (Web.Question.initial request)
     returned <- Clock.getMonotonicTime
-    IORef.modifyIORef' seatRef $ \s -> s {answeredAt = returned, decided = Seq.length (logged s)}
+    IORef.modifyIORef' seatRef $ \s -> s {answeredAt = returned, decided = Map.insert seat (Seq.length (loggedFor seat s)) (decided s)}
     pure reply
   where
     untilReady = Browser.next page >>= \(event, _) -> Monad.unless (event == Right Web.Question.MkReady) untilReady
     answer pending picked = asking pending picked Nothing Nothing
     asking pending picked reading focus = do
       state <- IORef.readIORef seatRef
-      let screen = Web.Question.MkScreen picked reading (logged state) (freshOf state) focus (level state)
+      let asked = Question.seat (Request.question pending)
+          screen = Web.Question.MkScreen picked reading (loggedFor asked state) (freshOf asked state) focus (level state)
       Browser.display page . fmap Right $ Web.Question.view pending screen
       (event, value) <- Browser.next page
       case event of
@@ -295,26 +296,37 @@ data Seat = MkSeat
     watched :: Maybe PlayerView.PlayerView,
     -- | How far the seat has read each game's log (Log.unseen).
     marks :: Map.Map (PlayerId.PlayerId, Natural) (Natural, Natural),
-    -- | The entries read so far, oldest first: the game log the end shows.
-    logged :: Seq.Seq Log.Entry,
-    -- | How many entries were logged when the seat last answered.
-    decided :: Int,
+    -- | The entries each seat has read so far, oldest first: the seat the
+    -- page plays's is the game log the end shows.
+    logged :: Map.Map PlayerId.PlayerId (Seq.Seq Log.Entry),
+    -- | How many entries each seat had logged when it last answered.
+    decided :: Map.Map PlayerId.PlayerId Int,
     -- | When the last line was answered, the engine's work since then being
     -- what the trace times.
     answeredAt :: Double
   }
 
--- | How many entries the seat has logged since it last answered.
-freshOf :: Seat -> Natural
-freshOf state = Int.toNaturalSaturating (Seq.length (logged state) - decided state)
+-- | The page's state before its first request line, facing the seat it
+-- plays, at that auto-pass level.
+newSeat :: Web.Question.Level -> IO Seat
+newSeat initial = MkSeat (Just player) False initial Nothing False Seq.empty Nothing Map.empty Map.empty Map.empty <$> Clock.getMonotonicTime
 
--- | The seat's state with the view's entries it has not read yet logged.
+-- | The entries a seat has read so far, oldest first.
+loggedFor :: PlayerId.PlayerId -> Seat -> Seq.Seq Log.Entry
+loggedFor seat state = Map.findWithDefault Seq.empty seat (logged state)
+
+-- | How many entries a seat has logged since it last answered.
+freshOf :: PlayerId.PlayerId -> Seat -> Natural
+freshOf seat state = Int.toNaturalSaturating (Seq.length (loggedFor seat state) - Map.findWithDefault 0 seat (decided state))
+
+-- | The page's state with the entries of the view its seat has not read yet
+-- logged for that seat.
 witness :: PlayerView.PlayerView -> Seat -> Seat
 witness view state =
   let (moved, unread) = Log.unseen (marks state) view
       now = [(SeatView.player seat, SeatView.life seat) | seat <- PlayerView.seats view]
       changed = fmap snd (Seq.lookup (Seq.length (lives state) - 1) (lives state)) /= Just now
-   in state {marks = moved, logged = logged state <> Seq.fromList unread, lives = if changed then lives state Seq.|> (PlayerView.turn view, now) else lives state}
+   in state {marks = moved, logged = Map.insertWith (flip (<>)) (PlayerView.viewer view) (Seq.fromList unread) (logged state), lives = if changed then lives state Seq.|> (PlayerView.turn view, now) else lives state}
 
 message :: [Text.Text] -> Html.Html msg
 message said = Element.el "main" ["message"] [] [Element.el "p" [] [] [Html.text t] | t <- said]

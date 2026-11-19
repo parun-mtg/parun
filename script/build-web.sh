@@ -40,9 +40,10 @@ done > "$staging/cards.bundle"
 tar --format=ustar --sort=name --owner=0 --group=0 --numeric-owner --mtime=@0 -cf - \
   -C "$staging" cards.bundle \
   -C "$PWD/data" decks formats legalities.json printings.json sticker-sheets | gzip -9n > "$out/data.tar.gz"
-# The scenarios a replay (?scenario=…) mounts beside it, fetched only then.
+# The scenarios and their manifest a replay (?scenario=…) mounts beside it,
+# fetched only then.
 tar --format=ustar --sort=name --owner=0 --group=0 --numeric-owner --mtime=@0 -cf - \
-  -C "$PWD/data" --exclude=README.md scenarios | gzip -9n > "$out/scenarios.tar.gz"
+  -C "$PWD/data" --exclude=README.md scenario-manifest.json scenarios | gzip -9n > "$out/scenarios.tar.gz"
 
 # Content addressing, leaves first: a file's hash covers the names it refers
 # to, so a change anywhere renames every file that leads to it.
