@@ -764,15 +764,16 @@ addedTogether p rest = case (mana p, rest) of
 -- series.
 joined :: Target.Context -> [Predicate] -> [(Text.Text, [SlotName.SlotName])]
 joined context predicates = case predicates of
-  -- Free for an amount of damage: "equal to" or an X defined after (Sanctum of
-  -- Shattered Heights's "deals X damage to target creature or planeswalker,
-  -- where X is the number of Shrines you control").
+  -- Free for an amount of damage or life: "equal to" or an X defined after
+  -- (Sanctum of Shattered Heights's "deals X damage to target creature or
+  -- planeswalker, where X is the number of Shrines you control", Blight Pile's
+  -- "loses X life, where X is").
   [p] ->
     (sentences p, allMentions p)
       : [ (Prose.sentence (clauseText p {verb = vx} <> Text.pack ", where X is " <> e) <> trailing p, allMentions p)
         | not (implied p),
           (vx, e) <- equalToX (verb p),
-          Text.pack " X damage to " `Text.isInfixOf` vx
+          Text.pack " X damage to " `Text.isInfixOf` vx || Text.pack " X life" `Text.isSuffixOf` vx
         ]
   -- Free: one subject's series, whose last step alone keeps "then"
   -- (Faithful Mending's "You gain 2 life, draw two cards, then discard two

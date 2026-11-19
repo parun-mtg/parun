@@ -1,0 +1,243 @@
+{
+  "faces": [
+    {
+      "manaCost": [
+        {
+          "type": "Generic",
+          "value": 5
+        },
+        {
+          "type": "OfType",
+          "value": {
+            "type": "Colored",
+            "value": "Red"
+          }
+        }
+      ],
+      "name": "Chaotic Transformation",
+      "oracleText": "Exile up to one target artifact, up to one target creature, up to one target enchantment, up to one target planeswalker, and/or up to one target land. For each permanent exiled this way, its controller reveals cards from the top of their library until they reveal a card that shares a card type with it, puts that card onto the battlefield, then shuffles.",
+      "spell": {
+        "modes": [
+          {
+            "clauses": [
+              {
+                "effects": [
+                  {
+                    "type": "MoveToZone",
+                    "value": {
+                      "ref": {
+                        "type": "AllOf",
+                        "value": [
+                          {
+                            "type": "InSlot",
+                            "value": "artifact"
+                          },
+                          {
+                            "type": "InSlot",
+                            "value": "creature"
+                          },
+                          {
+                            "type": "InSlot",
+                            "value": "enchantment"
+                          },
+                          {
+                            "type": "InSlot",
+                            "value": "planeswalker"
+                          },
+                          {
+                            "type": "InSlot",
+                            "value": "land"
+                          }
+                        ]
+                      },
+                      "slot": "exiled",
+                      "zone": "Exile"
+                    }
+                  },
+                  {
+                    "type": "ForEach",
+                    "value": {
+                      "body": [
+                        {
+                          "type": "Reveal",
+                          "value": {
+                            "ref": {
+                              "type": "TopOfLibraryUntil",
+                              "value": {
+                                "count": {
+                                  "type": "Literal",
+                                  "value": 1
+                                },
+                                "filter": {
+                                  "type": "Shares",
+                                  "value": {
+                                    "anchor": {
+                                      "type": "Bound",
+                                      "value": {
+                                        "slot": "victim"
+                                      }
+                                    },
+                                    "trait": {
+                                      "type": "CardType"
+                                    }
+                                  }
+                                },
+                                "player": {
+                                  "type": "HolderOfBound",
+                                  "value": {
+                                    "holder": "Controller",
+                                    "hop": "Itself",
+                                    "slot": "victim"
+                                  }
+                                }
+                              }
+                            },
+                            "slot": "revealed"
+                          }
+                        },
+                        {
+                          "type": "MoveToZone",
+                          "value": {
+                            "ref": {
+                              "type": "EachCardFromAmong",
+                              "value": {
+                                "filter": {
+                                  "type": "Shares",
+                                  "value": {
+                                    "anchor": {
+                                      "type": "Bound",
+                                      "value": {
+                                        "slot": "victim"
+                                      }
+                                    },
+                                    "trait": {
+                                      "type": "CardType"
+                                    }
+                                  }
+                                },
+                                "slot": "revealed"
+                              }
+                            },
+                            "riders": {
+                              "under": {
+                                "type": "Owner"
+                              }
+                            },
+                            "zone": "Battlefield"
+                          }
+                        },
+                        {
+                          "type": "Shuffle",
+                          "value": {
+                            "type": "HolderOfBound",
+                            "value": {
+                              "holder": "Controller",
+                              "hop": "Itself",
+                              "slot": "victim"
+                            }
+                          }
+                        }
+                      ],
+                      "ref": {
+                        "type": "InSlot",
+                        "value": "exiled"
+                      },
+                      "slot": "victim"
+                    }
+                  }
+                ]
+              }
+            ],
+            "targetSlots": {
+              "artifact": {
+                "count": {
+                  "type": "Printed",
+                  "value": {
+                    "least": 0,
+                    "most": 1
+                  }
+                },
+                "filter": {
+                  "type": "HasCardType",
+                  "value": "Artifact"
+                },
+                "pool": {
+                  "type": "Permanents"
+                }
+              },
+              "creature": {
+                "count": {
+                  "type": "Printed",
+                  "value": {
+                    "least": 0,
+                    "most": 1
+                  }
+                },
+                "filter": {
+                  "type": "HasCardType",
+                  "value": "Creature"
+                },
+                "pool": {
+                  "type": "Permanents"
+                }
+              },
+              "enchantment": {
+                "count": {
+                  "type": "Printed",
+                  "value": {
+                    "least": 0,
+                    "most": 1
+                  }
+                },
+                "filter": {
+                  "type": "HasCardType",
+                  "value": "Enchantment"
+                },
+                "pool": {
+                  "type": "Permanents"
+                }
+              },
+              "land": {
+                "count": {
+                  "type": "Printed",
+                  "value": {
+                    "least": 0,
+                    "most": 1
+                  }
+                },
+                "filter": {
+                  "type": "HasCardType",
+                  "value": "Land"
+                },
+                "pool": {
+                  "type": "Permanents"
+                }
+              },
+              "planeswalker": {
+                "count": {
+                  "type": "Printed",
+                  "value": {
+                    "least": 0,
+                    "most": 1
+                  }
+                },
+                "filter": {
+                  "type": "HasCardType",
+                  "value": "Planeswalker"
+                },
+                "pool": {
+                  "type": "Permanents"
+                }
+              }
+            }
+          }
+        ]
+      },
+      "typeLine": {
+        "types": [
+          "Sorcery"
+        ]
+      }
+    }
+  ]
+}

@@ -1930,6 +1930,7 @@ filterPositionLintSpec s registry corpus = Spec.describe s "Lint" $ do
         ("Runed Halo", 1), -- its printed player ability
         ("Alhammarret, High Arbiter", 1), -- its printed player ability
         ("Skyseer's Chariot", 1), -- its printed player ability
+        ("Anointed Peacekeeper", 2), -- its printed player abilities
         ("Conjurer's Ban", 2), -- its stored player effects
         ("Cheering Fanatic", 1), -- its stored player effect
         ("Synthetic Name Ward", 1), -- its stored player effect
