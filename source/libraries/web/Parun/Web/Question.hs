@@ -637,7 +637,10 @@ picker request = do
         Protocol.field "repeats" offer /= Just (R.Boolean True) -> do
           let least' = Maybe.fromMaybe 0 $ Protocol.field "least" offer >>= Protocol.naturalOf
               most' = Maybe.fromMaybe (Natural.length among) $ Protocol.field "most" offer >>= Protocol.naturalOf
-          pure $ MkPicker [MkGroup (Render.spaced (Question.kind question) <> foldMap (\source -> Text.pack " for " <> Offer.objectName shown source) (Protocol.field "source" offer)) [(option, Offer.optionName shown option) | option <- among] least' most' False] (Right . R.Array . concat) (Text.pack "Done")
+              -- An option the offer names under "names" (a mode's text, a card
+              -- outside the game) by that name.
+              names = foldMap (fmap Offer.textOf) (Protocol.field "names" offer >>= Protocol.arrayOf) <> repeat Nothing
+          pure $ MkPicker [MkGroup (Maybe.fromMaybe (capitalized (Question.kind question)) (headingOf shown request)) [(option, Maybe.fromMaybe (Offer.optionName shown option) name) | (option, name) <- zip among names] least' most' False] (Right . R.Array . concat) (Text.pack "Done")
     -- An amount per item the offer lists, each within its range and in all
     -- within the offer's bounds (Protocol.amountsFit).
     _
@@ -855,12 +858,16 @@ form request picked = case Text.unpack (Question.kind question) of
                 ]
                 <> [Element.el "div" ["passes"] [] $ primary MkSubmit (Text.pack (if Set.null picked then "Keep all on top" else "Done")) : [button MkClear (Text.pack "Start over") | not (Set.null picked)]]
   "ChooseCardName" -> [heading "Name a card.", Html.element (Text.pack "input") [Attribute.MkProperty (Text.pack "placeholder") (Text.pack "A card's name"), Attribute.MkProperty (Text.pack "data-clear") Text.empty, Attribute.MkOn (Text.pack "change") MkTyped] []]
-  _
+  kind
     | Just shown <- Request.view request,
       Just (options', name) <- Monad.mplus (fmap (\o -> (o, Offer.optionName shown)) (Protocol.field "options" offer >>= Protocol.arrayOf)) (fmap (\o -> (o, Offer.playerName)) (Protocol.field "players" offer >>= Protocol.arrayOf)) ->
         let entries = foldMap (fmap Just) (Protocol.field "entries" offer >>= Protocol.arrayOf) <> repeat Nothing
-         in Html.element (Text.pack "h2") [] [Html.text $ capitalized (Question.kind question) <> foldMap (\source -> Text.pack " for " <> Offer.objectName shown source) (Protocol.field "source" offer) <> Text.pack "."]
-              : [button (MkAnswer option) (maybe (name option) (Offer.entryName shown) entry) | (option, entry) <- zip options' entries]
+            -- CR 309.4: a room by its place in the dungeon, topmost first.
+            label option entry
+              | kind == "ChooseRoom", Just n <- Protocol.naturalOf option = Text.pack ("Room " <> show (n + 1))
+              | otherwise = maybe (name option) (Offer.entryName shown) entry
+         in Html.element (Text.pack "h2") [] [Html.text $ Maybe.fromMaybe (capitalized (Question.kind question) <> foldMap (\source -> Text.pack " for " <> Offer.objectName shown source) (Protocol.field "source" offer) <> Text.pack ".") (headingOf shown request)]
+              : [button (MkAnswer option) (label option entry) | (option, entry) <- zip options' entries]
   "DeclareAttackers"
     | Just attackers <- Protocol.arrayOf offer,
       Just shown <- Request.view request ->
@@ -943,7 +950,7 @@ form request picked = case Text.unpack (Question.kind question) of
   _
     | Just chooser <- picker request ->
         concat
-          [ Html.element (Text.pack "h2") [] [Html.text $ title group <> Text.pack (" (" <> bounds group <> ")")]
+          [ Html.element (Text.pack "h2") [] [Html.text $ title group <> (if Text.any Char.isDigit (title group) then Text.empty else Text.pack (" (choose " <> bounds group <> ")"))]
               : toggles g [(i, label) | (i, (_, label)) <- zip [0 ..] (options group)]
           | (g, group) <- zip [0 ..] (groups chooser)
           ]
@@ -992,6 +999,33 @@ yesOrNo shown request = case Text.unpack (Question.kind (Request.question reques
   where
     offer = Question.offer (Request.question request)
     self = foldMap (Offer.objectName shown) (Protocol.field "source" offer)
+
+-- | A question's heading in words, where its kind's name says too little.
+headingOf :: PlayerView.PlayerView -> Request.Request -> Maybe Text.Text
+headingOf shown request = case Text.unpack (Question.kind question) of
+  "ChooseLegend" -> Just (Text.pack "Legend rule: choose the legend to keep. The rest go to the graveyard.")
+  "ChooseRingBearer" -> Just (Text.pack "The Ring tempts you: choose your Ring-bearer.")
+  "ChooseRoom" -> Just (Text.pack "Venture into " <> self <> Text.pack ": choose the next room.")
+  "ChooseDungeon" -> Just (Text.pack "Choose a dungeon to venture into.")
+  "ChooseAttackTarget" -> Just (Text.pack "Choose what " <> self <> Text.pack " attacks.")
+  "ChooseMutateSide" -> Just (Text.pack "Put " <> self <> Text.pack " over or under " <> named "onto" <> Text.pack "?")
+  "ChooseModes" -> Just (Text.pack "Choose modes for " <> self)
+  "ChooseVote" -> Just (Text.pack "Vote for " <> self <> Text.pack ".")
+  "ChooseReplacement" -> Just (Text.pack "Choose the replacement effect that applies first.")
+  "ChooseHalf" -> Just (Text.pack "Choose a door of " <> self <> Text.pack ".")
+  "ChooseProliferate" -> Just (Text.pack "Proliferate: choose permanents and players to get another counter of each kind they have")
+  "DeclareBands" -> Just (Text.pack "Choose attacking creatures to band together")
+  "ChooseClash" -> Just (Text.pack "Clash: keep the revealed card on top of your library, or put it on the bottom?")
+  "ChooseFromOutsideTheGame" -> Just (Text.pack "Choose cards from outside the game")
+  "ChooseExert" -> Just (Text.pack "Exert " <> self <> Text.pack " as it attacks?")
+  "OfferedCast" -> Just (Text.pack "Cast " <> Maybe.fromMaybe self (Protocol.field "name" offer >>= Offer.textOf) <> Text.pack "?")
+  "ChoosePlayPermission" -> Just (Text.pack "Choose the permission to play " <> self <> Text.pack " by.")
+  _ -> Nothing
+  where
+    question = Request.question request
+    offer = Question.offer question
+    named key = foldMap (Offer.objectName shown) (Protocol.field key offer)
+    self = named "source"
 
 -- | A question answered by the index of one of its options: the mana a
 -- source makes (CR 106.1), the mana spent on X (CR 107.3), or how to pay a

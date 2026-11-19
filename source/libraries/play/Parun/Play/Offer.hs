@@ -135,6 +135,8 @@ optionName view reply = case reply of
     -- A counter's kind, a mana type, or another tagged value by its tag.
     | Just kind <- decoded (Codec.CounterKind.codec Codec.Keyword.codec) reply -> Render.counterName kind <> Text.pack " counter"
     | Just mana <- decoded Codec.ManaType.codec reply -> Text.pack "{" <> Render.manaType mana <> Text.pack "}"
+    -- A permission to cast from a zone (Parun.Codec.CastFromZone) by the zone.
+    | Just zone <- Protocol.field "from" reply >>= Protocol.field "zone" >>= textOf -> Text.pack "from the " <> Text.toLower zone
     | Just tag <- Protocol.field "type" reply >>= textOf -> tagName tag <> foldMap (\value -> Text.pack " " <> optionName view value) (Protocol.field "value" reply)
   _ -> Common.render (Codec.Reply.toValue reply)
 
