@@ -5371,21 +5371,33 @@ payAgain failed agreed paid stands again = case paid of
 -- The costs one offer of this gate may be paid with, one per option in printed
 -- order (PayGate.cost), with the slot map their components read: payGatePaidBy's
 -- CR 107.3 X, CR 118.6 description and "for each" multiplier, applied to each.
+--
+-- `legal` is the START-of-resolution targets (CR 608.2b, payGateAdmits'
+-- caller), which is not where a slot an EARLIER CLAUSE defined lives (CR
+-- 608.2c): its binding is written to the resolving object as that clause runs
+-- -- Flash's "it", and the permanent Braids, Arisen Nightmare's own gate took,
+-- whose card types its opponents' gate compares against (CR 205.2a, CR
+-- 608.2h). So the gate reads both halves, the validated targets winning where a
+-- slot is both.
 gateCostOf :: ObjectId -> ObjectId -> PlayerId -> Map.Map SlotName (Set Recipient) -> PayGate.PayGate -> GameState -> (Map.Map SlotName (Set Recipient), NonEmpty.NonEmpty (Cost.Type.Cost Keyword.Type.Keyword))
 gateCostOf resolving source controller legal gate gs =
-  let evaluated quantity =
-        let viewOf = effectViewOf resolving source legal gs
-            context = effectContext gs resolving controller source legal (slotBindings resolving gs)
+  let live = slotBindings resolving gs
+      bound = Map.union legal (Binding.targetsOf live)
+      evaluated quantity =
+        let viewOf = effectViewOf resolving source bound gs
+            context = effectContext gs resolving controller source bound live
          in maybe 0 Integer.toNaturalSaturating (Quantity.evaluateFor viewOf context gs resolving source quantity)
       multiplier = maybe 1 evaluated (PayGate.perEach gate)
       -- CR 107.3f's X, chosen during resolution, or else CR 107.3a's announced one.
       chosenX = maybe (announcedXOn resolving gs) evaluated (PayGate.x gate)
-      costs = fmap (Cost.repeated multiplier . Cost.substituteX chosenX) (describedCosts resolving controller source legal gs gate)
+      costs = fmap (Cost.repeated multiplier . Cost.substituteX chosenX) (describedCosts resolving controller source bound gs gate)
       -- effectContext's slot map, so a component's criterion reads what every
       -- other filter of this resolution reads -- CR 608.2b's legal targets, the
       -- reserved cost slots among them (Binding.discardedCard), and the groups.
-      -- Parun.ConjureSpec's Calim's Breath cases prove it.
-      slots = Binding.recipientsBySlot legal (slotBindings resolving gs)
+      -- Parun.ConjureSpec's Calim's Breath cases prove it, and the scenario
+      -- cr-205-2a-braids-arisen-nightmare-offers-each-opponent-only-permanents-sharing-a-card-type
+      -- the earlier clause's payment.
+      slots = Binding.recipientsBySlot bound live
    in (slots, costs)
 
 -- CR 118.3 / 800.4f for one seat, before any offer: could this payer pay any
@@ -5492,15 +5504,11 @@ foldPaid resolving bound gs
 -- The stated COMPONENTS survive: what a basis supplies is the mana part alone,
 -- and a card stating both pays both. None in the pool does.
 describedCosts :: ObjectId -> PlayerId -> ObjectId -> Map.Map SlotName (Set Recipient) -> GameState -> PayGate.PayGate -> NonEmpty.NonEmpty (Cost.Type.Cost Keyword.Type.Keyword)
-describedCosts resolving controller source legal gs gate = case PayGate.basis gate of
+describedCosts resolving controller source bound gs gate = case PayGate.basis gate of
   Nothing -> CostChoice.unwrap (PayGate.cost gate)
   Just basis ->
-    let -- The gate's own `legal` is the START-of-resolution targets (CR 608.2b,
-        -- payGateAdmits' caller), which is not where a slot an EARLIER CLAUSE
-        -- defined lives: CR 400.7j's binding is written to the resolving object
-        -- as that clause runs, and Flash's "it" is one of those. Both halves,
-        -- the validated targets winning where a card names a slot that is both.
-        bound = Map.union legal (Binding.targetsOf (slotBindings resolving gs))
+    let -- gateCostOf's `bound`: CR 400.7j's binding an earlier clause wrote is
+        -- in it, and Flash's "it" is one of those.
         described = case objectRefObjects bound resolving controller source gs (ObjectRef.InSlot (CostBasis.slot basis)) of
           [oid] -> Filter.manaCost =<< effectViewOf resolving source bound gs oid
           _ -> Nothing

@@ -1653,8 +1653,8 @@ data Context = MkContext
     -- "with this creature", and a sibling target slot's (Unbury). Filled by
     -- Parun.Engine.Projection.framedBySlots; empty elsewhere, where the atom
     -- widens, and Parun.FilterPositionLintSpec's "CR 205.3m no card asks a
-    -- slot-anchored Shares CreatureType outside a resolution's own positions
-    -- or a target slot" keeps a card out of those. Each member's types under its
+    -- slot-anchored Shares CreatureType outside a resolution's own positions,
+    -- a target slot or a gate cost" keeps a card out of those. Each member's types under its
     -- controller (CR 110.2), Nothing for one with none, so a narrowed Bound reads
     -- one player's members and a plain one the union.
     slotCreatureTypes :: Map.Map SlotName.SlotName (Map.Map (Maybe PlayerId.PlayerId) (Set.Set Subtype.Subtype)),

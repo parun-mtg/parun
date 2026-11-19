@@ -1,0 +1,52 @@
+{
+  "description": "CR 205.2a Braids, Arisen Nightmare offers each opponent only permanents sharing a card type with the one sacrificed",
+  "note": "alice sacrifices Glorious Anthem, so the gate reads a graveyard card's last known types (CR 608.2h). bob's offer holds his two enchantments and not his Grizzly Bears; he sacrifices Bad Moon. carol declines, so she alone loses 2 life and alice draws one card. Three seats, so an opponent who pays and one who doesn't are told apart.",
+  "board": {
+    "seats": [
+      {
+        "name": "alice",
+        "battlefield": [
+          { "card": "Braids, Arisen Nightmare", "label": "braids" },
+          { "card": "Glorious Anthem", "label": "anthem" },
+          { "card": "Swamp" }
+        ],
+        "library": [{ "card": "Island" }, { "card": "Island" }, { "card": "Island" }]
+      },
+      {
+        "name": "bob",
+        "battlefield": [
+          { "card": "Bad Moon", "label": "moon" },
+          { "card": "Glorious Anthem", "label": "bob-anthem" },
+          { "card": "Grizzly Bears", "label": "bob-bears" }
+        ],
+        "library": [{ "card": "Island" }, { "card": "Island" }, { "card": "Island" }]
+      },
+      {
+        "name": "carol",
+        "battlefield": [
+          { "card": "Bad Moon", "label": "carol-moon" },
+          { "card": "Hill Giant", "label": "carol-giant" }
+        ],
+        "library": [{ "card": "Island" }, { "card": "Island" }, { "card": "Island" }]
+      }
+    ],
+    "active": "alice",
+    "step": "PostcombatMain"
+  },
+  "timeline": [
+    { "turn": 1, "step": "EndStep", "player": "alice", "source": "$braids", "do": { "ChooseToPay": { "decision": "Pays" } } },
+    { "turn": 1, "step": "EndStep", "player": "alice", "do": { "Answer": { "prompt": "ChooseSacrifices", "with": ["$anthem"] } } },
+    { "turn": 1, "step": "EndStep", "player": "bob", "source": "$braids", "do": { "ChooseToPay": { "decision": "Pays" } } },
+    { "turn": 1, "step": "EndStep", "player": "bob", "check": { "View": { "of": "Prompt", "is": { "kind": "ChooseSacrifices", "offer": { "source": "$braids", "earlier": [], "least": 1, "most": 1, "among": ["$moon", "$bob-anthem"] } } } } },
+    { "turn": 1, "step": "EndStep", "player": "bob", "do": { "Answer": { "prompt": "ChooseSacrifices", "with": ["$moon"] } } },
+    { "turn": 1, "step": "EndStep", "player": "carol", "source": "$braids", "do": { "ChooseToPay": { "decision": "Declines" } } },
+    { "turn": 1, "step": "EndStep", "player": "alice", "check": { "Life": { "player": "carol", "life": 18 } } },
+    { "turn": 1, "step": "EndStep", "player": "alice", "check": { "Life": { "player": "bob", "life": 20 } } },
+    { "turn": 1, "step": "EndStep", "player": "alice", "check": { "Life": { "player": "alice", "life": 20 } } },
+    { "turn": 1, "step": "EndStep", "player": "alice", "check": { "Count": { "player": "alice", "zone": "Hand", "card": "Island", "count": 1 } } },
+    { "turn": 1, "step": "EndStep", "player": "alice", "check": { "Count": { "player": "bob", "zone": "Graveyard", "card": "Bad Moon", "count": 1 } } },
+    { "turn": 1, "step": "EndStep", "player": "alice", "check": { "Count": { "player": "bob", "zone": "Battlefield", "card": "Grizzly Bears", "count": 1 } } },
+    { "turn": 1, "step": "EndStep", "player": "alice", "check": { "Count": { "player": "carol", "zone": "Battlefield", "card": "Bad Moon", "count": 1 } } },
+    { "turn": 1, "step": "EndStep", "player": "alice", "check": { "Count": { "player": "alice", "zone": "Graveyard", "card": "Glorious Anthem", "count": 1 } } }
+  ]
+}

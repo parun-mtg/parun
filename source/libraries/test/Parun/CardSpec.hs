@@ -2760,7 +2760,7 @@ withCountersFilters w =
 -- same reason riderFilters is one -- the two halves of a gate must not be swept
 -- apart.
 --
--- The COST half is Unframed, an announced cost's framing: Parun.Engine.Resolve.Effect.payGatePaidBy
+-- The COST half is PayGateCostFramed: Parun.Engine.Resolve.Effect.payGatePaidBy
 -- measures and pays it with the resolving object's slots (Cost.canPayReading,
 -- Cost.payReading), the map Cost.announcedSlots hands an announced cost, so
 -- Filter.IsBound there reads them -- Calim, Djinn Emperor's "two other cards
@@ -2768,12 +2768,12 @@ withCountersFilters w =
 --
 -- The MULTIPLIER half is left as quantityFilters tags it, which is Unframed for
 -- an ordinary Count and KeywordFramed for a CR 122.1b keyword counter. Unframed
--- is the honest promise there and not the cost half's lie: payGatePaidBy
+-- is the honest promise there: payGatePaidBy
 -- evaluates the multiplier against Resolve.Slots.effectContext, which carries the
 -- resolution's slots.
 payGateFilters :: PayGate.PayGate -> [(Framing, Filter.Type.Filter Keyword.Keyword)]
 payGateFilters gate =
-  fmap ((,) Unframed) (concatMap costFilters (CostChoice.unwrap (PayGate.cost gate)))
+  fmap ((,) PayGateCostFramed) (concatMap costFilters (CostChoice.unwrap (PayGate.cost gate)))
     <> concatMap quantityFilters (Maybe.maybeToList (PayGate.perEach gate) <> Maybe.maybeToList (PayGate.x gate))
 
 -- CR 122.1b: the one counter kind with a Filter under it, since it carries a
@@ -4839,6 +4839,12 @@ blockPermissionFilters permission =
 --     Parun.Engine.Resolve.gateHolds through Resolve.Slots.effectContext, so
 --     CR 205.3m's Filter.Shares CreatureType Bound answers there (Mudbutton
 --     Clanger).
+--   * PayGateCostFramed -- CR 118.12's gate cost, whose pools Parun.Engine.Cost
+--     matches through Projection.contextWithSlots over the slot map
+--     Resolve.Common.gateCostOf builds, an earlier clause's among them, so CR
+--     205.2a's Filter.Shares CardType Bound answers there (Braids, Arisen
+--     Nightmare). Unframed until that lint admitted it, and Unframed's posture
+--     in every other lint.
 --   * RepeatGateFramed -- a RepeatIf's condition, read by
 --     Parun.Engine.Resolve.Arms.Zones.repeatIf through Resolve.Slots.effectContext
 --     and a view filling Filter.View.hasEntryHost, which no other position does
@@ -5048,6 +5054,9 @@ data Framing
   | -- | CR 608.2c's clause "if", evaluated in the resolution's own context. See
     -- the overview above.
     ClauseGateFramed
+  | -- | CR 118.12's gate cost, matched over the resolution's slots. See the
+    -- overview above.
+    PayGateCostFramed
   | -- | A RepeatIf's condition, evaluated in the resolution's own context. See
     -- the overview above.
     RepeatGateFramed
@@ -5148,6 +5157,8 @@ sweptForSingularSlots framing = case framing of
   HandSweepFramed -> True
   -- SWEPT for MillTallyFramed's reason: gateHolds' context carries the slots.
   ClauseGateFramed -> True
+  -- SWEPT, as it was while Unframed: gateCostOf hands the cost the slots.
+  PayGateCostFramed -> True
   -- SWEPT for MillTallyFramed's reason: repeatIf's context carries the slots.
   RepeatGateFramed -> True
   -- SWEPT for MillTallyFramed's reason: the LoseLife and ModifyTarget arms read

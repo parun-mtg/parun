@@ -15,7 +15,7 @@ import qualified Data.Monoid as Monoid
 import qualified Data.Sequence as Seq
 import qualified Data.Set as Set
 import qualified Data.Text as Text
-import Parun.CardSpec (Framing (ActivationCostFramed, AffectedSetFramed, AttachDestination, AttachingHostFramed, ChosenSourceFramed, ClauseGateFramed, EntryAttachDestination, HandSweepFramed, InTargetSlot, InterveningFramed, KeywordFramed, ManaRestrictionFramed, MillTallyFramed, MintedTargetSlot, OutsideTheGameFramed, PlayerEffectFramed, RepeatGateFramed, ReplacementRowFramed, ResolutionAmountFramed, SearchFramed, SlotlessCostFramed, SourceHostFramed, SpentOnFramed, StandingHostFramed, StoredClassFramed, StoredPlayerEffectFramed, TriggerConditionFramed, Unframed), Surveyed, anyFace, cardAuthoredEffects, cardCounts, cardFilters, cardResolutionEffects, conditionFilters, costComponentFilters, counterKindFilters, durationFilters, effectFilters, entryRewriteFilters, filterSlotsReadSingly, framedSlotsReadSingly, keywordFilters, modalFilters, objectRefFilters, oneEffectTrigger, oneFaced, payGateFilters, quantityFilters, replacementEffectFilters, riderFilters, survey, surveyedFace, surveyedFilters, surveyedPool, triggerConditionFilters, turnUpRewriteFilters)
+import Parun.CardSpec (Framing (ActivationCostFramed, AffectedSetFramed, AttachDestination, AttachingHostFramed, ChosenSourceFramed, ClauseGateFramed, EntryAttachDestination, HandSweepFramed, InTargetSlot, InterveningFramed, KeywordFramed, ManaRestrictionFramed, MillTallyFramed, MintedTargetSlot, OutsideTheGameFramed, PayGateCostFramed, PlayerEffectFramed, RepeatGateFramed, ReplacementRowFramed, ResolutionAmountFramed, SearchFramed, SlotlessCostFramed, SourceHostFramed, SpentOnFramed, StandingHostFramed, StoredClassFramed, StoredPlayerEffectFramed, TriggerConditionFramed, Unframed), Surveyed, anyFace, cardAuthoredEffects, cardCounts, cardFilters, cardResolutionEffects, conditionFilters, costComponentFilters, counterKindFilters, durationFilters, effectFilters, entryRewriteFilters, filterSlotsReadSingly, framedSlotsReadSingly, keywordFilters, modalFilters, objectRefFilters, oneEffectTrigger, oneFaced, payGateFilters, quantityFilters, replacementEffectFilters, riderFilters, survey, surveyedFace, surveyedFilters, surveyedPool, triggerConditionFilters, turnUpRewriteFilters)
 import qualified Parun.Codec.Card as Card
 import qualified Parun.Codec.CardType as CardType.Codec
 import qualified Parun.Codec.Face as Face.Codec
@@ -335,6 +335,9 @@ sourceFramed framing = case framing of
   -- Conservative for KeywordFramed's reason: everything else, some of it read
   -- with no source at all.
   Unframed -> False
+  -- Unframed's posture, kept when it was split off for CR 205.2a's bound
+  -- comparison: refusing the atom only narrows what a card may write.
+  PayGateCostFramed -> False
   -- Matched through a bare Filter.contextFor, Unframed's posture.
   StoredClassFramed -> False
   -- Parun.Engine.Resolve.Effect.offerCastOnce pays CastOffer.payingInstead,
@@ -978,7 +981,7 @@ chosenValueCounts admitted answers tag card =
       inAbility = total (\framing -> not (admitted framing) && framing /= KeywordFramed) (concatMap abilityAnswered abilityModals)
       -- Unframed alone, where an ability admits more: a spell that has
       -- resolved leaves no source for a stored position to read later.
-      unframedInSpell = total (\framing -> not (admitted framing) && framing == Unframed) (afterChoice answers (Face.spell (surveyedFace card)))
+      unframedInSpell = total (\framing -> not (admitted framing) && elem framing [Unframed, PayGateCostFramed]) (afterChoice answers (Face.spell (surveyedFace card)))
       answerable = inAbility + unframedInSpell
    in (total admitted (surveyedFilters card) - inSpell + answerable, total (not . admitted) (surveyedFilters card) + inSpell - answerable)
 
@@ -1340,13 +1343,15 @@ yourCommanderOffends card =
 -- How many CR 205.3m atoms this card carries in a resolution's own positions --
 -- an effect's ObjectRef (Heirloom Blade), a clause's "if" (Mudbutton Clanger), a
 -- search, a mill tally, a hand sweep or an amount (Shared Animosity), each read through
--- Parun.Engine.Resolve.Slots.effectContext -- or in a target slot (Unbury), read
--- through Parun.Engine.Target.slotContext: the two fillers of
+-- Parun.Engine.Resolve.Slots.effectContext -- in a target slot (Unbury), read
+-- through Parun.Engine.Target.slotContext, or in a CR 118.12 gate's cost (Braids,
+-- Arisen Nightmare), whose pools Parun.Engine.Cost frames through
+-- Projection.contextWithSlots over the same slots: the fillers of
 -- Filter.Context.slotCreatureTypes, slotCardTypes and slotColors. And how many anywhere else, where the atom
 -- is a silent True. The second number is the offence.
 boundCreatureTypeCounts :: Surveyed -> (Int, Int)
 boundCreatureTypeCounts card =
-  let total wanted = sum (fmap (\(_, f) -> boundCreatureTypeAtoms (atomJson f)) (filter (\(framing, _) -> elem framing [SourceHostFramed, ClauseGateFramed, SearchFramed, MillTallyFramed, HandSweepFramed, ResolutionAmountFramed, InTargetSlot] == wanted) (surveyedFilters card)))
+  let total wanted = sum (fmap (\(_, f) -> boundCreatureTypeAtoms (atomJson f)) (filter (\(framing, _) -> elem framing [SourceHostFramed, ClauseGateFramed, SearchFramed, MillTallyFramed, HandSweepFramed, ResolutionAmountFramed, InTargetSlot, PayGateCostFramed] == wanted) (surveyedFilters card)))
    in (total True, total False)
 
 -- The atom outside those positions, or the traversal and the codec disagreeing
@@ -2089,12 +2094,12 @@ filterPositionLintSpec s registry corpus = Spec.describe s "Lint" $ do
     Spec.assertBool s (length (filter ((== InTargetSlot) . fst) positions) > 10) "and target slot filters for the accepted side to be about"
     Spec.assertBool s (length (filter ((== SearchFramed) . fst) positions) > 10) "and search filters, the accepted side's other half"
   -- CR 205.3m's bound comparison in Shares Name Bound's frame, one field over:
-  -- answerable only where effectContext or Target.slotContext fills
-  -- Filter.Context.slotCreatureTypes. See boundCreatureTypeOffends for the two
+  -- answerable only where effectContext, Target.slotContext or a gate cost's
+  -- Projection.contextWithSlots fills Filter.Context.slotCreatureTypes. See boundCreatureTypeOffends for the two
   -- offences.
-  Spec.it s "CR 205.3m no card asks a slot-anchored Shares CreatureType outside a resolution's own positions or a target slot" $ do
+  Spec.it s "CR 205.3m no card asks a slot-anchored Shares CreatureType outside a resolution's own positions, a target slot or a gate cost" $ do
     let offenders = fmap fst (filter (any boundCreatureTypeOffends . snd) pool)
-    Spec.assertEqWith s "the atom sits only where a resolution or a target slot fills the creature types" (fmap (S.nameOf . Printing.card) offenders) []
+    Spec.assertEqWith s "the atom sits only where a resolution, a target slot or a gate cost fills the creature types" (fmap (S.nameOf . Printing.card) offenders) []
     -- NOT vacuous: one card per admitted position the pool uses is ACCEPTED.
     blade <- S.printingOf s registry "Heirloom Blade"
     Spec.assertEqWith s "Heirloom Blade's two atoms are in its ObjectRefs" (boundCreatureTypeCounts (survey (S.combinedFace blade))) (2, 0)
@@ -2115,6 +2120,8 @@ filterPositionLintSpec s registry corpus = Spec.describe s "Lint" $ do
     Spec.assertEqWith s "Rally the Righteous's two CR 105.2 atoms are in its ObjectRefs" (boundCreatureTypeCounts (survey (S.combinedFace rally))) (2, 0)
     animosity <- S.printingOf s registry "Shared Animosity"
     Spec.assertEqWith s "Shared Animosity's atom is in its ModifyTarget's locked amount" (boundCreatureTypeCounts (survey (S.combinedFace animosity))) (1, 0)
+    braids <- S.printingOf s registry "Braids, Arisen Nightmare"
+    Spec.assertEqWith s "Braids, Arisen Nightmare's CR 205.2a atom is in its opponents' gate cost" (boundCreatureTypeCounts (survey (S.combinedFace braids))) (1, 0)
     -- The lint's own proof, the pair differing in one position: the same atom in
     -- a static restriction's affected set, read through a bare contextFor.
     Spec.assertBool s (boundCreatureTypeOffends (survey restricted)) "the atom in an affected set offends"
@@ -3181,7 +3188,7 @@ filterPositionLintSpec s registry corpus = Spec.describe s "Lint" $ do
     lithophage <- S.printingOf s registry "Lithophage"
     Spec.assertBool
       s
-      (elem (Unframed, Filter.Type.HasSubtype Subtype.Mountain) (cardFilters (S.combinedFace lithophage)))
+      (elem (PayGateCostFramed, Filter.Type.HasSubtype Subtype.Mountain) (cardFilters (S.combinedFace lithophage)))
       "CR 118.12 a gate cost's own filter reaches cardFilters, tagged for the resolution's slots it reads"
   -- The batch-bound slot lint used to answer two ways about one piece of text.
   -- filterSlotsReadSingly deliberately does not descend into Filter.HasKeyword or
@@ -3243,6 +3250,7 @@ filterPositionLintSpec s registry corpus = Spec.describe s "Lint" $ do
         (MillTallyFramed, [bound]),
         (HandSweepFramed, [bound]),
         (ClauseGateFramed, [bound]),
+        (PayGateCostFramed, [bound]),
         (RepeatGateFramed, [bound]),
         (ResolutionAmountFramed, [bound]),
         (AffectedSetFramed, [bound]),
