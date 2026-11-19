@@ -1376,10 +1376,11 @@ monarchTriggerSpec s registry =
 -- fire on the board its own half never touched, and each group below has the
 -- other card nowhere near it.
 --
--- HAND SIZE is the reading throughout, and always against a PAIRED board that
--- differs only in whether Matoya is on the battlefield. Curate draws a card of
--- its own, so an absolute number would prove nothing about the trigger.
-matoyaTriggerSpec :: (Monad m) => Spec.Spec m n -> Registry.Registry m -> n ()
+-- HAND SIZE is the reading (an empty library's CR 704.5b loss in its place),
+-- always against a PAIRED board that differs only in whether Matoya is on the
+-- battlefield. Curate draws a card of its own, so an absolute number would prove
+-- nothing about the trigger.
+matoyaTriggerSpec :: (Monad m, Monad n) => Spec.Spec m n -> Registry.Registry m -> n ()
 matoyaTriggerSpec s registry =
   let -- alice's board: four Islands, a Crystal Ball, `stock` cards on her
       -- library (top-first Goblin Piker then Bird Maiden), and Matoya only when
@@ -1422,24 +1423,35 @@ matoyaTriggerSpec s registry =
         Prompt.ChooseSurveil _ _ looked -> ([], looked)
         _ -> S.identityAnswer p
    in Spec.describe s "MatoyaKeywordActionTrigger" $ do
-        -- CR 701.22d's "even if some or all of those actions were impossible",
-        -- and the case that discriminates WHERE the event is recorded: a library
-        -- of exactly one card gives scry 2 nothing to decide -- top and bottom
-        -- are one position -- so Resolve.decideScry asks no question and reorders
-        -- nothing. The scry happened all the same, and Matoya draws that card.
-        --
-        -- Recording the event only for a scryer decideScry asked passes every
-        -- assertion in the case above and fails this one.
-        Spec.it s "CR 701.22d a scry with nothing to decide still draws Matoya's card" $ do
+        -- A library of exactly one card: Event.decideScry asks (bottoming it is a
+        -- choice The Temporal Anchor sees), the scry is recorded, and Matoya draws
+        -- that card.
+        Spec.it s "CR 701.22d a scry of a one-card library draws Matoya's card" $ do
           (ballId, board) <- scryBoardFor True 1
           (bareBall, bare) <- scryBoardFor False 1
           let after = runBall S.alice ballId board
               baseline = runBall S.alice bareBall bare
-          Spec.assertBool s (elem (GameEvent.PlayerActed (PlayerActed.MkPlayerActed PlayerAction.Scry S.alice)) (S.eventsOf after)) "CR 701.22d the scry is still an event"
+          Spec.assertBool s (elem (GameEvent.PlayerActed (PlayerActed.MkPlayerActed PlayerAction.Scry S.alice)) (S.eventsOf after)) "CR 701.22d the scry is an event"
           Spec.assertEqWith s "Matoya drew the lone card" (S.handSize S.alice after) 1
           Spec.assertEqWith s "so alice's library is empty" (length (Game.zoneMembers Zone.Library S.alice after)) 0
           Spec.assertEqWith s "and without Matoya nothing was drawn" (S.handSize S.alice baseline) 0
           Spec.assertEqWith s "the card stayed on the library instead" (length (Game.zoneMembers Zone.Library S.alice baseline)) 1
+        -- CR 701.22d's "even if some or all of those actions were impossible", and
+        -- the case that discriminates WHERE the event is recorded: an empty library
+        -- gives Event.decideScry nothing to look at, so it asks nothing. The scry
+        -- happened all the same, so Matoya triggers, and drawing off the empty
+        -- library loses alice the game (CR 121.4).
+        --
+        -- Recording the event only for a scryer decideScry asked passes the case
+        -- above and fails this one.
+        Spec.it s "CR 701.22d a scry of an empty library still triggers Matoya" $ do
+          (ballId, board) <- scryBoardFor True 0
+          (bareBall, bare) <- scryBoardFor False 0
+          let after = runBall S.alice ballId board
+              baseline = runBall S.alice bareBall bare
+          Spec.assertEqWith s "CR 704.5b Matoya's draw off the empty library lost alice the game" (Game.stillPlaying after) [S.bob]
+          Spec.assertBool s (elem (GameEvent.PlayerActed (PlayerActed.MkPlayerActed PlayerAction.Scry S.alice)) (S.eventsOf after)) "CR 701.22d because the scry is still an event"
+          Spec.assertEqWith s "and without Matoya alice is still playing" (Game.stillPlaying baseline) [S.alice, S.bob]
 
 -- Feywild Trickster {2}{U} Creature -- Gnome Warlock 2/2, "Whenever you roll one
 -- or more dice, create a 1/1 blue Faerie Dragon creature token with flying" --
