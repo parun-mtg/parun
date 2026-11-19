@@ -1009,7 +1009,8 @@ effectPlayerRefs effect = case effect of
   -- The seat that picks -- Archfiend of Depravity's "that player" -- and the
   -- one that picks a pile (CR 700.3).
   Effect.ChoosePermanents choice -> ChosenPermanents.chooser (ChoosePermanents.permanents choice) : Foldable.toList (ChoosePermanents.pileChooser choice)
-  Effect.ChooseGroup {} -> []
+  -- The seat that picks a group -- Hostile Negotiations' opponent.
+  Effect.ChooseGroup choice -> [ChooseGroup.chooser choice]
   Effect.RollDie rollDie -> [RollDie.roller rollDie]
   -- The seat that flips -- Mana Clash's target opponent (CR 705.2).
   Effect.FlipCoin flipCoin -> [FlipCoin.flipper flipCoin]

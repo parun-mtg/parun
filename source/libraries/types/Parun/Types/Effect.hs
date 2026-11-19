@@ -532,7 +532,8 @@ data Effect card ability
     -- none.
     TurnFaceDown (TurnFaceDown.TurnFaceDown ability)
   | -- | CR 708: turn the slot's target permanent face up, which CR 708.8 makes
-    -- argumentless -- not CR 116.2b's special action, so no cost is paid.
+    -- argumentless -- not CR 116.2b's special action, so no cost is paid; and
+    -- CR 406.3: turn the slot's cards exiled face down face up.
     TurnFaceUp SlotName.SlotName
   | -- | CR 506.4: an effect that specifically removes the named permanents from
     -- combat (Labyrinth of Skophos), and CR 509.1h's unblocking of the

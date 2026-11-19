@@ -1624,8 +1624,16 @@ lookAt resolving source controller legal chosen (LookAt.MkLookAt ref slot looker
   -- Bauble's "a card at random", which objectRefObjects answers with nothing.
   named <- Common.askingObjects Common.Present resolving source controller legal chosen ref
   gs <- State.get
+  let lookers = playerRefPlayers legal resolving source controller gs looker
   Monad.forM_ named $ \oid ->
-    Monad.forM_ (playerRefPlayers legal resolving source controller gs looker) $ \pid -> Event.look pid oid
+    Monad.forM_ lookers $ \pid -> Event.look pid oid
+  -- CR 406.3: a looker at a card exiled face down may go on looking at it
+  -- until it leaves exile (Hostile Negotiations' "look at the cards in each
+  -- pile"). Proved by Parun.BoardEffectSpec's HostileNegotiations case.
+  let stillLooking o
+        | Object.zone o == Zone.Exile && Object.exiledFaceDown o = o {Object.exileLookers = Set.union (Set.fromList (fmap ExileLooker.ThePlayer lookers)) (Object.exileLookers o)}
+        | otherwise = o
+  State.modify' (\g -> g {GameState.objects = List.foldl' (flip (Map.adjust stillLooking)) (GameState.objects g) named})
   -- Several cards take the group, which Filter.IsBound reads as a card's
   -- printed "among them".
   Common.bindObjects resolving (Just slot) named

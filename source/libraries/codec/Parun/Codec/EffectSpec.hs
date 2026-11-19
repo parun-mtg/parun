@@ -2542,7 +2542,7 @@ spec s = Spec.describe s "Parun.Codec.Effect" $ do
       s
       toJson
       fromJson
-      (Effect.ChooseGroup (ChooseGroup.MkChooseGroup Grouping.Sectors (SlotName.MkSlotName (Text.pack "sector")) Nothing))
+      (Effect.ChooseGroup (ChooseGroup.MkChooseGroup Grouping.Sectors (SlotName.MkSlotName (Text.pack "sector")) Nothing (PlayerRef.Relative PlayerRelation.You)))
       " {\"type\":\"ChooseGroup\",\"value\":{\"among\":{\"type\":\"Sectors\"},\"slot\":\"sector\"}} "
   Spec.it s "RollDie" $
     Common.assertJsonCodec

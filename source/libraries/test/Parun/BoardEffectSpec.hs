@@ -34,6 +34,7 @@ import qualified Parun.Engine.Sba as Sba
 import qualified Parun.Engine.Setup as Setup
 import qualified Parun.Engine.Stack as Stack
 import qualified Parun.Engine.Target as Target
+import qualified Parun.Engine.Visibility as Visibility
 import Parun.MassEffectSpec (namesIn, statusOf)
 import qualified Parun.Registry as Registry
 import qualified Parun.Spec as Spec
@@ -41,6 +42,7 @@ import qualified Parun.Support as S
 import qualified Parun.Types.Affected as Affected
 import qualified Parun.Types.AfterTurn as AfterTurn
 import qualified Parun.Types.AnyNumberOf as AnyNumberOf
+import qualified Parun.Types.Asked as Asked
 import qualified Parun.Types.BeginningStep as BeginningStep
 import qualified Parun.Types.Card as Card.Type
 import qualified Parun.Types.CardName as CardName
@@ -90,6 +92,7 @@ import qualified Parun.Types.StoredEffects as StoredEffects
 import qualified Parun.Types.TapState as TapState
 import qualified Parun.Types.TopOfLibrary as TopOfLibrary
 import qualified Parun.Types.TurnRegisters as TurnRegisters
+import qualified Parun.Types.Visibility as Visibility.Type
 import qualified Parun.Types.Zone as Zone
 
 -- The same arm with a CHOOSER other than the resolving controller:
@@ -2421,6 +2424,67 @@ spawnbrokerSpec s registry = Spec.describe s "Spawnbroker" $ do
     Spec.assertEqWith s "and bob keeps his Wraith" (Projection.controllerOf bobWraith refused) (Just S.bob)
     Spec.assertEqWith s "and alice her Piker" (Projection.controllerOf alicePiker refused) (Just S.alice)
 
+-- Hostile Negotiations {3}{B} (The Brothers' War; Oracle checked against
+-- Scryfall 2026-11-19): "Exile the top three cards of your library in a
+-- face-down pile, then exile the top three cards of your library in another
+-- face-down pile. Look at the cards in each pile, then turn a pile of your
+-- choice face up. An opponent chooses one of those piles. Put that pile into
+-- your hand and the other into your graveyard. You lose 3 life."
+--
+-- alice turns the second pile (Hill Giants) face up; bob, asked which pile,
+-- sees those three and not the face-down Grizzly Bears (CR 406.3), while
+-- alice, who looked, sees all six. bob takes the face-down pile.
+hostileNegotiationsSpec :: (Monad m) => Spec.Spec m n -> Registry.Registry m -> n ()
+hostileNegotiationsSpec s registry =
+  Spec.describe s "HostileNegotiations"
+    . Spec.it s "CR 406.3 / 700.3 the opponent picks between a face-up and a face-down exiled pile"
+    $ do
+      negotiations <- S.printingOf s registry "Hostile Negotiations"
+      swamp <- S.printingOf s registry "Swamp"
+      bears <- S.printingOf s registry "Grizzly Bears"
+      giant <- S.printingOf s registry "Hill Giant"
+      ogre <- S.printingOf s registry "Gray Ogre"
+      let addCard g p = snd (S.addLibraryCard p S.alice g)
+          lands = S.landsFor swamp S.alice 4 (Setup.emptyGame S.bothPlayers)
+          -- Each card goes on top, so the Bears are the top three.
+          stocked = List.foldl' addCard lands [ogre, giant, giant, giant, bears, bears, bears]
+          (spell, g0) = S.addHandCard negotiations S.alice stocked
+          board =
+            g0
+              { GameState.turn =
+                  (GameState.turn g0)
+                    { TurnRegisters.activePlayer = S.alice,
+                      TurnRegisters.phase = Phase.PrecombatMain,
+                      TurnRegisters.priority = Just S.alice
+                    }
+              }
+          named = CardName.MkCardName . Text.pack
+          nameIn gs oid = S.nameOf <$> Game.cardOf oid gs
+          -- CR 400.7: exile mints new ids, so a pile is found by its cards' names.
+          pileOf gs wanted piles = Maybe.fromMaybe (NonEmpty.head piles) (List.find (all ((== Just (named wanted)) . nameIn gs) . Set.toList) piles)
+          answer :: Asked.Asked GameState.GameState r -> State.State [(PlayerId.PlayerId, [([Maybe CardName.CardName], Int, Int)])] r
+          answer question = case Asked.prompt question of
+            Prompt.ChoosePile decider _ _ piles _
+              | Decider.unwrap decider == S.bob -> do
+                  let gs = Asked.game question
+                      seenBy pid pile = length (filter (\oid -> Visibility.sees pid oid gs == Visibility.Type.Visible) (Set.toList pile))
+                      described pile = (fmap (nameIn gs) (Set.toList pile), seenBy S.bob pile, seenBy S.alice pile)
+                  State.modify' (<> [(S.bob, fmap described (NonEmpty.toList piles))])
+                  pure (pileOf gs "Grizzly Bears" piles)
+              | otherwise -> pure (pileOf (Asked.game question) "Hill Giant" piles)
+            prompt -> pure (S.identityAnswer prompt)
+          ((_, final), asked) = State.runState (Engine.runGameAsked answer board (S.cast S.alice spell >> Engine.priorityLoop)) []
+          names zone = List.sort (Maybe.mapMaybe (nameIn final) (Game.cardsIn zone S.alice final))
+          three name = replicate 3 (Just (named name))
+      Spec.assertEqWith
+        s
+        "bob is asked between the two piles, seeing the face-up Giants and not the Bears; alice sees all six"
+        asked
+        [(S.bob, [(three "Grizzly Bears", 0, 3), (three "Hill Giant", 3, 3)])]
+      Spec.assertEqWith s "the face-down pile bob took goes to alice's hand" (names Zone.Hand) (replicate 3 (named "Grizzly Bears"))
+      Spec.assertEqWith s "the other goes to her graveyard" (names Zone.Graveyard) (replicate 3 (named "Hill Giant") <> [named "Hostile Negotiations"])
+      Spec.assertEqWith s "and she loses 3 life" (S.lifeOf S.alice final) (Just 17)
+
 spec :: (Monad m, Monad n) => Spec.Spec m n -> Registry.Registry m -> n ()
 spec s registry = Spec.describe s "Parun.Engine.Resolve" $ do
   spawnbrokerSpec s registry
@@ -2435,6 +2499,7 @@ spec s registry = Spec.describe s "Parun.Engine.Resolve" $ do
   covetousElegySpec s registry
   summonValeforSpec s registry
   standOrFallSpec s registry
+  hostileNegotiationsSpec s registry
   banisherPriestSpec s registry
   levelerSpec s registry
   calderaBreakerSpec s registry

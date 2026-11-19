@@ -1301,7 +1301,7 @@ effectChildren c effect = case effect of
   Effect.ChoosePlayerAtRandom (ChoosePlayerAtRandom.MkChoosePlayerAtRandom pool named) -> fmap (Effect.ChoosePlayerAtRandom . ChoosePlayerAtRandom.MkChoosePlayerAtRandom pool) (onSlot c named)
   Effect.ChoosePermanents (ChoosePermanents.MkChoosePermanents permanents named pileChooser rest linked) ->
     fmap Effect.ChoosePermanents (ChoosePermanents.MkChoosePermanents <$> onChosenPermanents c permanents <*> onSlot c named <*> traverse (onPlayer c) pileChooser <*> traverse (onSlot c) rest <*> pure linked)
-  Effect.ChooseGroup (ChooseGroup.MkChooseGroup among named about) -> fmap Effect.ChooseGroup (ChooseGroup.MkChooseGroup <$> groupingChildren c among <*> onSlot c named <*> traverse (onObjectRef c) about)
+  Effect.ChooseGroup (ChooseGroup.MkChooseGroup among named about chooser) -> fmap Effect.ChooseGroup (ChooseGroup.MkChooseGroup <$> groupingChildren c among <*> onSlot c named <*> traverse (onObjectRef c) about <*> onPlayer c chooser)
   Effect.RollDie (RollDie.MkRollDie sides count ignore modifier reading named other roller extreme store) ->
     fmap
       Effect.RollDie
