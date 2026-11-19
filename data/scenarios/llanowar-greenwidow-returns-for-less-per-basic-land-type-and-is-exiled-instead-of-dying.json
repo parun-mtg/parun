@@ -1,0 +1,43 @@
+{
+  "description": "Llanowar Greenwidow's graveyard ability is out of reach at three basic land types, costs {3}{G} at four, returns it tapped, and exiles it when it would die",
+  "board": {
+    "active": "alice",
+    "step": "PrecombatMain",
+    "seats": [
+      {
+        "name": "alice",
+        "manaPool": "GGGG",
+        "battlefield": [
+          {"card": "Forest", "label": "forest", "tapped": true},
+          {"card": "Island", "label": "island", "tapped": true},
+          {"card": "Mountain", "label": "mountain", "tapped": true}
+        ],
+        "hand": [{"card": "Plains", "label": "plains"}],
+        "graveyard": [{"card": "Llanowar Greenwidow", "label": "widow"}],
+        "library": [{"card": "Forest"}, {"card": "Forest"}, {"card": "Forest"}, {"card": "Forest"}, {"card": "Forest"}]
+      },
+      {
+        "name": "bob",
+        "battlefield": [
+          {"card": "Swamp", "label": "s1"},
+          {"card": "Swamp", "label": "s2"}
+        ],
+        "hand": [{"card": "Doom Blade", "label": "blade"}],
+        "library": [{"card": "Swamp"}, {"card": "Swamp"}, {"card": "Swamp"}, {"card": "Swamp"}, {"card": "Swamp"}]
+      }
+    ]
+  },
+  "timeline": [
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "refuse": {"Activate": {"ability": 0, "object": "$widow"}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": {"PlayLand": "$plains"}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": {"Activate": {"ability": 0, "object": "$widow", "mana": [null]}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"Tapped": {"object": "$plains", "tapped": false}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": "Pass"},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"Count": {"player": "alice", "zone": "Battlefield", "card": "Llanowar Greenwidow", "count": 1}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"Tapped": {"object": "Llanowar Greenwidow", "tapped": true}}},
+    {"turn": 2, "step": "PrecombatMain", "player": "bob", "do": {"Cast": {"object": "$blade", "targets": ["Llanowar Greenwidow"], "mana": ["$s1", "$s2"]}}},
+    {"turn": 2, "step": "PrecombatMain", "player": "bob", "do": "Pass"},
+    {"turn": 2, "step": "PrecombatMain", "player": "bob", "check": {"Count": {"player": "alice", "zone": "Exile", "card": "Llanowar Greenwidow", "count": 1}}},
+    {"turn": 2, "step": "PrecombatMain", "player": "bob", "check": {"Count": {"player": "alice", "zone": "Graveyard", "card": "Llanowar Greenwidow", "count": 0}}}
+  ]
+}
