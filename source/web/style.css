@@ -2283,3 +2283,65 @@ body.tracing footer.diagnostics {
     transition-duration: 0.001s !important;
   }
 }
+
+/* ---------- Scenario replay (Parun.Web.Replay) ---------- */
+
+/* The replay's controls keep their height while a long form scrolls. */
+.replay .prompt > * {
+  flex-shrink: 0;
+}
+
+/* The steps in a row, the scrubber the whole width beneath them. */
+.replay .scrubber {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.4em;
+}
+
+.replay .scrubber button {
+  flex: 1;
+}
+
+.replay .scrubber input[type="range"] {
+  order: 1;
+  flex-basis: 100%;
+  min-width: 0;
+}
+
+.replay-description,
+.replay .position {
+  color: var(--muted);
+  font-size: 0.85rem;
+}
+
+.replay pre.entry {
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  font-size: 0.8rem;
+  background: var(--surface-2);
+  border-radius: 6px;
+  padding: 0.4em 0.55em;
+}
+
+main.scenarios {
+  justify-content: flex-start;
+  align-items: stretch;
+  max-width: 980px;
+  margin: 0 auto;
+  text-align: left;
+}
+
+.scenario-list {
+  list-style: none;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.25em;
+  font-size: 0.9rem;
+  overflow-wrap: anywhere;
+}
+
+.scenario-list a {
+  color: var(--link);
+}

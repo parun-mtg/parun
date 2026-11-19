@@ -71,20 +71,34 @@ function inodes(tree) {
   return new Map(Array.from(tree, ([name, node]) => [name, node instanceof Map ? new Directory(inodes(node)) : node]));
 }
 
-const archive = await fetch("./data.tar.gz");
-const data = new Uint8Array(await new Response(archive.body.pipeThrough(new DecompressionStream("gzip"))).arrayBuffer());
+async function gunzip(url) {
+  const archive = await fetch(url);
+  return new Uint8Array(await new Response(archive.body.pipeThrough(new DecompressionStream("gzip"))).arrayBuffer());
+}
+
+const query = new URLSearchParams(location.search);
+const data = await gunzip("./data.tar.gz");
 phase(`fetched ${data.length} bytes`);
-const mounted = new PreopenDirectory("/data", inodes(untar(data)));
+const tree = untar(data);
+// A replay (?scenario=…, Parun.Browser.Replay) mounts data/scenarios too,
+// fetched only then.
+if (query.has("scenario")) {
+  const scenarios = await gunzip("./scenarios.tar.gz");
+  phase(`fetched ${scenarios.length} bytes of scenarios`);
+  tree.set("scenarios", untar(scenarios).get("scenarios"));
+}
+const mounted = new PreopenDirectory("/data", inodes(tree));
 phase("unpacked");
 
 // ?trace, passed on from the page, has Haskell time each step on standard
 // error (Parun.Browser.trace), which goes to the page's trace.
-const tracing = new URLSearchParams(location.search).has("trace");
+const tracing = query.has("trace");
 // A rematch's decks (?mine=…&theirs=…) skip the lobby, and a shared seed
-// (&seed=…) shuffles as before (Parun.Web.Ending).
-const query = new URLSearchParams(location.search);
+// (&seed=…) shuffles as before (Parun.Web.Ending). A replay names its
+// scenario, the empty name for the list of them, and may name a position
+// (&at=…).
 // The auto-pass level the page kept (page.js) goes in as parun_level.
-const passed = ["mine", "theirs", "seed", "level"].filter((key) => query.has(key)).map((key) => `parun_${key}=${query.get(key)}`);
+const passed = ["mine", "theirs", "seed", "level", "scenario", "at"].filter((key) => query.has(key)).map((key) => `parun_${key}=${query.get(key)}`);
 const wasi = new WASI([], ["parun_datadir=/data", ...(tracing ? ["parun_trace=1"] : []), ...passed], [
   new OpenFile(new File([])),
   ConsoleStdout.lineBuffered((line) => console.log(line)),

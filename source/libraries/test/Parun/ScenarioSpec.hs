@@ -11,6 +11,7 @@ import qualified Data.Foldable as Foldable
 import qualified Data.List as List
 import qualified Data.List.NonEmpty as NonEmpty
 import qualified Data.Map.Strict as Map
+import qualified Data.Maybe as Maybe
 import qualified Data.Sequence as Seq
 import qualified Data.Set as Set
 import qualified Data.Text as Text
@@ -29,11 +30,13 @@ import qualified Parun.Registry as Registry
 import qualified Parun.Scenario as Scenario
 import qualified Parun.Scenario.Load as Load
 import qualified Parun.Scenario.Perturb as Perturb
+import qualified Parun.Scenario.Prompt as Scenario.Prompt
 import qualified Parun.Spec as Spec
 import qualified Parun.Support as S
 import qualified Parun.Trustworthy.Directory as Directory
 import qualified Parun.Types.Action as A
 import qualified Parun.Types.Answer as Answer
+import qualified Parun.Types.Asked as Asked
 import qualified Parun.Types.AttackersAre as AttackersAre
 import qualified Parun.Types.BeginningStep as BeginningStep
 import qualified Parun.Types.Board as Board
@@ -70,6 +73,7 @@ import qualified Parun.Types.Seat as Seat
 import qualified Parun.Types.SlotName as SlotName
 import qualified Parun.Types.StackPlacement as StackPlacement
 import qualified Parun.Types.Staged as Staged
+import qualified Parun.Types.Stop as Stop
 import qualified Parun.Types.TapState as TapState
 import qualified Parun.Types.TappedIs as TappedIs
 import qualified Parun.Types.TeamId as TeamId
@@ -824,6 +828,35 @@ spec s registry = Spec.describe s "Scenario" $ do
       Left (ScenarioFailure.MkNotAnObject _) -> pure ()
       Left failure -> Spec.assertFailure s (S.renderFailure failure)
       Right _ -> Spec.assertFailure s "a seat was declared as an attacker"
+
+  -- The web client's replay (Parun.Browser.Replay) reaches each position by
+  -- the run itself: before each entry in the order taken, then the end.
+  Spec.it s "a replay stops before the entry it reaches, and at the end past the last" $ do
+    let json =
+          "{\"description\":\"x\",\"board\":{\"seats\":[{\"name\":\"alice\",\"manaPool\":\"RR\",\"hand\":[{\"card\":\"Goblin Piker\",\"label\":\"piker\"}],\"library\":[{\"card\":\"Mountain\"}]},{\"name\":\"bob\",\"library\":[{\"card\":\"Mountain\"}]}],\"active\":\"alice\",\"step\":\"PrecombatMain\"},"
+            <> "\"timeline\":[{\"turn\":1,\"step\":\"PrecombatMain\",\"player\":\"alice\",\"do\":{\"Cast\":{\"object\":\"$piker\"}}},"
+            <> "{\"turn\":1,\"step\":\"PrecombatMain\",\"player\":\"alice\",\"do\":\"Pass\"},"
+            <> "{\"turn\":1,\"step\":\"PrecombatMain\",\"player\":\"alice\",\"check\":{\"Count\":{\"player\":\"alice\",\"zone\":\"Battlefield\",\"card\":\"Goblin Piker\",\"count\":1}}}]}"
+        piker = CardName.MkCardName (Text.pack "Goblin Piker")
+        described stop = case stop of
+          Stop.MkBefore taken timed asked -> (Just (taken, timed, Scenario.Prompt.kindOf (Asked.prompt asked)), S.countOnBattlefieldByName piker S.alice (Stop.state stop))
+          Stop.MkEnded gs -> (Nothing, S.countOnBattlefieldByName piker S.alice gs)
+    scenario <- case Common.parse (Text.pack json) >>= Codec.decode Codec.Scenario.codec of
+      Left problem -> Spec.assertFailure s (Text.unpack problem)
+      Right decoded -> pure decoded
+    let entry k = Foldable.toList (Seq.lookup k (Scenario.Type.timeline scenario))
+        priority = Text.pack "ChooseAction"
+    stops <- traverse (\k -> Scenario.replay registry k scenario) [Just 0, Just 1, Just 2, Just 3, Nothing]
+    Spec.assertEqWith
+      s
+      "each stop's entry, its question, and the Piker on the battlefield"
+      (fmap (fmap described) stops)
+      [ Right (fmap (\t -> (0, t, priority)) (Maybe.listToMaybe (entry 0)), 0),
+        Right (fmap (\t -> (1, t, priority)) (Maybe.listToMaybe (entry 1)), 0),
+        Right (fmap (\t -> (2, t, priority)) (Maybe.listToMaybe (entry 2)), 1),
+        Right (Nothing, 1),
+        Right (Nothing, 1)
+      ]
 
 -- Every scenario under data/scenarios: each file matches the schema parun
 -- emits for it, and runs clean.
