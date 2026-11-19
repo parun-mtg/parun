@@ -34,6 +34,7 @@ import qualified Parun.Types.Filter as Filter
 import qualified Parun.Types.HowMany as HowMany
 import qualified Parun.Types.Keyword as Keyword
 import qualified Parun.Types.Mill as Mill
+import qualified Parun.Types.OrTapped as OrTapped
 import qualified Parun.Types.PlayerRef as PlayerRef
 import qualified Parun.Types.PlayerRelation as PlayerRelation
 import qualified Parun.Types.PlayerScope as PlayerScope
@@ -299,8 +300,8 @@ spec s = Spec.describe s "Parun.Codec.EntryRewrite" $ do
     Common.assertCodec
       s
       (EntryRewrite.codec (GrantedAbility.codec Card.codec) (Effect.codec Card.codec (GrantedAbility.codec Card.codec)))
-      (EntryRewrite.OrTapped (EntryPrice.PayLife 3))
-      " {\"type\":\"OrTapped\",\"value\":{\"type\":\"PayLife\",\"value\":3}} "
+      (EntryRewrite.OrTapped (OrTapped.MkOrTapped (EntryPrice.PayLife 3) Nothing))
+      " {\"type\":\"OrTapped\",\"value\":{\"price\":{\"type\":\"PayLife\",\"value\":3}}} "
   -- CR 616.1b: a control rewrite, carrying the recipient's relation to the
   -- source's controller.
   Spec.it s "UnderControlOf (Captive Audience)" $
@@ -375,6 +376,6 @@ spec s = Spec.describe s "Parun.Codec.EntryRewrite" $ do
     Common.assertCodec
       s
       (EntryRewrite.codec (GrantedAbility.codec Card.codec) (Effect.codec Card.codec (GrantedAbility.codec Card.codec)))
-      (EntryRewrite.InOrder (EntryRewrite.ChooseQuality (ChosenQuality.Subtype ChoiceOrdinal.First ChoiceDistinct.MayRepeat SubtypeFamily.BasicLandType Nothing) NonEmpty.:| [EntryRewrite.OrTapped (EntryPrice.PayLife 2)]))
-      " {\"type\":\"InOrder\",\"value\":[{\"type\":\"ChooseQuality\",\"value\":{\"type\":\"Subtype\",\"value\":{\"family\":\"BasicLandType\"}}},{\"type\":\"OrTapped\",\"value\":{\"type\":\"PayLife\",\"value\":2}}]} "
+      (EntryRewrite.InOrder (EntryRewrite.ChooseQuality (ChosenQuality.Subtype ChoiceOrdinal.First ChoiceDistinct.MayRepeat SubtypeFamily.BasicLandType Nothing) NonEmpty.:| [EntryRewrite.OrTapped (OrTapped.MkOrTapped (EntryPrice.PayLife 2) Nothing)]))
+      " {\"type\":\"InOrder\",\"value\":[{\"type\":\"ChooseQuality\",\"value\":{\"type\":\"Subtype\",\"value\":{\"family\":\"BasicLandType\"}}},{\"type\":\"OrTapped\",\"value\":{\"price\":{\"type\":\"PayLife\",\"value\":2}}}]} "
   Spec.it s "has a schema" $ Common.assertHasSchema s (EntryRewrite.codec (GrantedAbility.codec Card.codec) (Effect.codec Card.codec (GrantedAbility.codec Card.codec)))

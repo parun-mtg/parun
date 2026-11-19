@@ -252,6 +252,7 @@ import Parun.Types.ObjectId (ObjectId)
 import Parun.Types.Onset (Onset)
 import qualified Parun.Types.Onset as Onset
 import qualified Parun.Types.OptionalDecision as OptionalDecision
+import qualified Parun.Types.OrTapped as OrTapped
 import qualified Parun.Types.OutsideCard as OutsideCard
 import qualified Parun.Types.OutsideDestination as OutsideDestination
 import qualified Parun.Types.OutsideObject as OutsideObject
@@ -4524,16 +4525,29 @@ apply settle batch applied batchPrevented candidate event =
       --
       -- NEVER ELIDED where the price can be paid. Paying against an untapped land
       -- is a real fork on any board -- it is why the cycles are printed.
-      EntryRewrite.OrTapped price -> do
+      --
+      -- The waiver -- Fortified Beachhead's "or you control a Soldier" -- is
+      -- asked only once the price is declined, and NEVER IN PLACE OF the offer:
+      -- revealing is still the player's choice where the waiver already holds,
+      -- and a shown card is not indistinguishable from a hidden one. Asked of
+      -- Projection.boardAsEntering, CR 614.12's board, as
+      -- Projection.printedRowLives asks a row's own condition.
+      -- data/scenarios/fortified-beachhead-enters-untapped-declining-the-reveal-while-controlling-a-soldier.json
+      -- proves both halves.
+      EntryRewrite.OrTapped (OrTapped.MkOrTapped price unless_) -> do
         Replacement.consume (ReplacementCandidate.identity candidate)
         gs <- State.get
+        let declined = do
+              now <- State.get
+              let waived = Condition.holds (Projection.fullView now) (Replacement.candidateContext now candidate) (Projection.boardAsEntering now) oid
+              Monad.unless (any waived unless_) (enterTapState TapState.Tapped oid)
         case Projection.controllerOf oid gs of
           -- Unreachable, and defensive for the arms above's reason: the object is
           -- materialized on the battlefield before this loop runs, so controllerOf
-          -- falls back to its owner. Tapped rather than untapped, because with
-          -- nobody to ask nobody paid -- which is the card's own stated default,
-          -- "if you don't, it enters tapped".
-          Nothing -> enterTapState TapState.Tapped oid
+          -- falls back to its owner. Declined, because with nobody to ask nobody
+          -- paid -- which is the card's own stated default, "if you don't, it
+          -- enters tapped".
+          Nothing -> declined
           Just controller -> case price of
             -- CR 119.4: a player may pay N life only if their life total is at
             -- least N. Below that, declining is the only legal answer -- a forced
@@ -4556,7 +4570,7 @@ apply settle batch applied batchPrevented candidate event =
                   else pure OptionalDecision.Declines
               case answer of
                 OptionalDecision.Exercises -> payLife settle controller n
-                OptionalDecision.Declines -> enterTapState TapState.Tapped oid
+                OptionalDecision.Declines -> declined
             -- CR 701.20a: through `reveal`, its own funnel, so the shown card
             -- reaches the public log with the projection a player at the table
             -- would see. Nothing moves and nothing changes (CR 701.20b), so this
@@ -4583,7 +4597,7 @@ apply settle batch applied batchPrevented candidate event =
               -- the refusal.
               case answer of
                 Just shown | List.elem shown candidates -> reveal RevealCause.Ordinary controller shown
-                _ -> enterTapState TapState.Tapped oid
+                _ -> declined
             -- CR 701.4a: the reveal above, with the permanents the controller
             -- controls offered beside the hand, on the same prompt and posture.
             -- A beheld permanent is only chosen, so nothing is logged for it.
@@ -4596,7 +4610,7 @@ apply settle batch applied batchPrevented candidate event =
                 Just shown
                   | List.elem shown candidates ->
                       Monad.when (fmap Object.zone (Game.lookupObject shown gs) == Just Zone.Hand) (reveal RevealCause.Ordinary controller shown)
-                _ -> enterTapState TapState.Tapped oid
+                _ -> declined
         pure (Just event)
       -- CR 614.1c / 119.4: "As this enters, pay any amount of life" (Phyrexian
       -- Processor), at most the cap where one is printed (Nameless Race), the

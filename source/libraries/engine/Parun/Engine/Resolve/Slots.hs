@@ -219,6 +219,7 @@ import qualified Parun.Types.OnePer as OnePer
 import qualified Parun.Types.Onset as Onset
 import qualified Parun.Types.Optionality as Optionality
 import qualified Parun.Types.OrElse as OrElse
+import qualified Parun.Types.OrTapped as OrTapped
 import qualified Parun.Types.PayGate as PayGate
 import qualified Parun.Types.PerformerR as PerformerR
 import qualified Parun.Types.PermanentActed as PermanentActed
@@ -1843,9 +1844,14 @@ entryRewriteReads rewrite = case rewrite of
   EntryRewrite.EntersTapState _ -> ([], [])
   EntryRewrite.Prepared -> ([], [])
   EntryRewrite.EntersAttacking -> ([], [])
-  EntryRewrite.OrTapped (EntryPrice.PayLife _) -> ([], [])
-  EntryRewrite.OrTapped (EntryPrice.Reveal filter_) -> ([filter_], [])
-  EntryRewrite.OrTapped (EntryPrice.Behold filter_) -> ([filter_], [])
+  -- The price's Filter, and the waiver's Quantities, asked at the entry as the
+  -- WithCounters arm's are.
+  EntryRewrite.OrTapped (OrTapped.MkOrTapped price unless_) ->
+    let waived = foldMap conditionQuantities unless_
+     in case price of
+          EntryPrice.PayLife _ -> ([], waived)
+          EntryPrice.Reveal filter_ -> ([filter_], waived)
+          EntryPrice.Behold filter_ -> ([filter_], waived)
   -- The cap, a Quantity read at the entry as the WithCounters arm's is.
   EntryRewrite.PayAnyLife cap -> ([], Foldable.toList cap)
   EntryRewrite.EntersTransformed -> ([], [])

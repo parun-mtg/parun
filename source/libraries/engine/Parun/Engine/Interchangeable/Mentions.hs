@@ -1164,7 +1164,8 @@ replacementEffectNames asking onCard onAbility onEffect =
           Children.replacementDamage = Const.Const . damagePatternNames asking,
           Children.replacementCounters = Const.Const . withCountersNames asking,
           Children.replacementCopy = Const.Const . asCopyNames asking onAbility onEffect,
-          Children.replacementLooksBack = Const.Const . history asking
+          Children.replacementLooksBack = Const.Const . history asking,
+          Children.replacementCondition = Const.Const . conditionNames asking
         }
 
 ruleAbilitiesNames :: (Monoid r) => Asking r -> RuleAbilities.RuleAbilities -> r
