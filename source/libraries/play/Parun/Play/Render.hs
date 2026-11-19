@@ -9,6 +9,7 @@ import qualified Data.Foldable as Foldable
 import qualified Data.List as List
 import qualified Data.Map.Strict as Map
 import qualified Data.Maybe as Maybe
+import qualified Data.Sequence as Seq
 import qualified Data.Set as Set
 import qualified Data.Text as Text
 import Numeric.Natural (Natural)
@@ -395,6 +396,7 @@ recalled view oid = case Map.lookup oid (objects view) of
         ObjectView.face = Nothing,
         ObjectView.foretellCostReduction = Nothing,
         ObjectView.ownEffects = Nothing,
+        ObjectView.merged = Seq.empty,
         ObjectView.ability = Nothing,
         ObjectView.targets = [],
         ObjectView.summoningSick = False,

@@ -641,14 +641,48 @@ replaySpec s registry = Spec.describe s "WebQuestion" . Spec.describe s "replay"
     Spec.assertEqWith s "stripped" (take 1 guard) [Text.pack "Its abilities have changed; this text may be out of date."]
     Spec.assertEqWith s "the control, as printed" unchanged [Text.pack "This creature can block any number of creatures."]
 
+  Spec.it s "CR 702.140e a mutated permanent's sheet reads its top card as printed and then the card merged under it" $ do
+    -- Entry 9 follows Cubwarden's mutate over Silent Arbiter.
+    stop <- replayed s registry "mutate/cr-702-140e-a-silent-arbiter-under-a-cubwarden-still-holds-alice-to-one-attacker" 8
+    cubwarden <- S.printingOf s registry "Cubwarden"
+    arbiter <- S.printingOf s registry "Silent Arbiter"
+    sheet <- sheetText s registry stop "Cubwarden"
+    let printedOf = foldMap Text.lines . Face.oracleText . NonEmpty.head . Card.Type.faces . Printing.card
+    Spec.assertEqWith s "the sheet" sheet ([Text.pack "Cubwarden:"] <> printedOf cubwarden <> [Text.pack "Silent Arbiter (merged under it):"] <> printedOf arbiter)
+
+  Spec.it s "CR 731.2e / 708.5 a face-down card merged under a face-up one is named to its controller alone" $ do
+    -- Entry 7 follows Cubwarden's mutate over a face-down Misthoof Kirin.
+    stop <- replayed s registry "mutate/cr-731-2e-a-merge-over-a-face-down-permanent-leaves-the-topmost-component-s-face" 6
+    let mergedFor seat = [ObjectView.merged o | o <- PlayerView.Type.battlefield (PlayerView.viewFor seat (Stop.state stop)), not (null (ObjectView.merged o))]
+    Spec.assertEqWith s "alice" (mergedFor S.alice) [Seq.singleton (Just (CardName.MkCardName (Text.pack "Misthoof Kirin")))]
+    Spec.assertEqWith s "bob" (mergedFor S.bob) [Seq.singleton Nothing]
+    sheet <- sheetText s registry stop "Cubwarden"
+    Spec.assertBool s (Text.pack "Misthoof Kirin (merged under it):" `elem` sheet) ("alice's sheet: " <> show sheet)
+
+  Spec.it s "CR 731.2f a face-down merged permanent's controller reads its top card as printed and the card under it" $ do
+    -- Entry 9 follows Cyber Conversion turning Cubwarden over a manifested
+    -- Thragtusk face down.
+    stop <- replayed s registry "mutate/cr-731-2g-a-face-down-merged-permanent-with-a-sorcery-card-in-it-stays-face-down--control" 8
+    cubwarden <- S.printingOf s registry "Cubwarden"
+    thragtusk <- S.printingOf s registry "Thragtusk"
+    sheet <- sheetWhere s registry stop "the face-down pile" (\_ o -> not (null (ObjectView.merged o)))
+    let printedOf = foldMap Text.lines . Face.oracleText . NonEmpty.head . Card.Type.faces . Printing.card
+    Spec.assertEqWith s "the sheet" sheet ([Text.pack "Cubwarden:"] <> printedOf cubwarden <> [Text.pack "Thragtusk (merged under it):"] <> printedOf thragtusk)
+    let mergedFor seat = [ObjectView.merged o | o <- PlayerView.Type.battlefield (PlayerView.viewFor seat (Stop.state stop)), not (null (ObjectView.merged o))]
+    Spec.assertEqWith s "bob" (mergedFor S.bob) [Seq.singleton Nothing]
+
 -- | The sheet's Oracle text (Card.oracle) of the one battlefield object named,
 -- as the stop's active player reads it.
 sheetText :: Spec.Spec IO n -> Registry.Registry IO -> Stop.Stop -> String -> IO [Text.Text]
-sheetText s registry stop name = do
+sheetText s registry stop name = sheetWhere s registry stop name (\board o -> Render.nameOf board o == Text.pack name)
+
+-- | sheetText of the first battlefield object the predicate picks, described.
+sheetWhere :: Spec.Spec IO n -> Registry.Registry IO -> Stop.Stop -> String -> (PlayerView.Type.PlayerView -> ObjectView.ObjectView -> Bool) -> IO [Text.Text]
+sheetWhere s registry stop name picks = do
   let board = boardOf stop
-  case [o | o <- PlayerView.Type.battlefield board, Render.nameOf board o == Text.pack name] of
+  case filter (picks board) (PlayerView.Type.battlefield board) of
     o : _ -> do
-      looked <- Monad.forM (Set.toList (Render.cardNames o)) $ \n -> fmap ((,) n) (Registry.named registry (Text.unpack (CardName.unwrap n)))
+      looked <- Monad.forM (Set.toList (Render.cardNames o) <> Maybe.catMaybes (Foldable.toList (ObjectView.merged o))) $ \n -> fmap ((,) n) (Registry.named registry (Text.unpack (CardName.unwrap n)))
       let lookUp n = Maybe.fromMaybe (Right Nothing) (lookup n looked)
       either (Spec.assertFailure s . show) pure (Card.oracle lookUp o)
     [] -> Spec.assertFailure s ("no " <> name <> " on the battlefield")

@@ -3,6 +3,7 @@
 module Parun.Codec.ObjectView where
 
 import qualified Data.Map.Strict as Map
+import qualified Data.Sequence as Seq
 import qualified Data.Set as Set
 import qualified Parun.Codec.AbilityView as AbilityView
 import qualified Parun.Codec.Acquisition as Acquisition
@@ -33,8 +34,9 @@ import qualified Parun.Types.ObjectView as ObjectView
 -- one the seat may look at; `foretellCostReduction` is null for anything but a
 -- card given a foretell cost the seat may look at; `ability` is null for
 -- anything but an ability on the stack; `targets` is empty for anything but a
--- spell or ability on the stack with a target; each chosen field is omitted
--- when empty, Parun.Codec.Object's keys and shapes otherwise.
+-- spell or ability on the stack with a target; `merged` lists a hidden
+-- component as null; it and each chosen field are omitted when empty,
+-- Parun.Codec.Object's keys and shapes otherwise.
 codec :: Codec.Codec ObjectView.ObjectView
 codec = Fields.object $ do
   object <- Fields.required "object" ObjectId.codec ObjectView.object
@@ -66,6 +68,7 @@ codec = Fields.object $ do
   chosenNumber <- Fields.defaulted "chosenNumber" Map.empty (Common.keyedList (Common.keyValue Acquisition.codec Common.natural)) ObjectView.chosenNumber
   chosenObjects <- Fields.defaulted "chosenObjects" Map.empty (Common.keyedList (Common.keyValue Acquisition.codec (Common.set ObjectId.codec))) ObjectView.chosenObjects
   ownEffects <- Fields.defaulted "ownEffects" Nothing (Common.maybe ProjectedCharacteristics.codec) ObjectView.ownEffects
+  merged <- Fields.defaulted "merged" Seq.empty (Common.seq (Common.maybe CardName.codec)) ObjectView.merged
   pure
     ObjectView.MkObjectView
       { ObjectView.object = object,
@@ -78,6 +81,7 @@ codec = Fields.object $ do
         ObjectView.characteristics = characteristics,
         ObjectView.face = face,
         ObjectView.ownEffects = ownEffects,
+        ObjectView.merged = merged,
         ObjectView.foretellCostReduction = foretellCostReduction,
         ObjectView.ability = ability,
         ObjectView.targets = targets,

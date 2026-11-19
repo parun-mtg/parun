@@ -268,29 +268,35 @@ stats o = case ObjectView.characteristics o of
 
 -- | The Oracle text of the faces the seat may read the object by
 -- (Render.cardNames), each line apart, a face's name heading its own where
--- there are several; or why the card data could not say. The face the
--- object is says what its abilities are now (wording); every other face says
--- what is printed on it.
+-- there are several; then, under a heading each, the printed text of the
+-- cards merged under it (ObjectView.merged); or why the card data could not
+-- say. The face the object is says what its abilities are now (wording);
+-- every other face says what is printed on it.
 oracle :: (CardName.CardName -> Either e (Maybe Card.Card)) -> ObjectView.ObjectView -> Either e [Text.Text]
 oracle lookUp o = do
   let names = Render.cardNames o
   looked <- traverse lookUp (Set.toList names)
+  under <- traverse (traverse (\n -> fmap ((,) n) (lookUp n))) (Foldable.toList (ObjectView.merged o))
   -- Every face printed on the card, those it shows first: a double-faced
   -- card's other face, a flip card's other half and an adventure are on the
   -- card for anyone who sees it to read.
   let every = concatMap (Foldable.toList . Card.faces) (ListUtils.nubOrd (Maybe.catMaybes looked))
       (shown, others) = List.partition (\f -> Set.member (Face.name f) names) every
       faces = shown <> others
-      -- The characteristics the names came from (Render.cardNames).
+      -- The characteristics the names came from (Render.cardNames), and
+      -- ownEffects is beside whichever they are.
       now = ObjectView.face o Applicative.<|> ObjectView.characteristics o
       -- Several faces shown at once share one set of abilities, which no one
       -- face's can be compared with: not implemented (#8956).
       body f = case (now, shown) of
-        -- Face down, the card looked at has no own effects to compare with.
-        (Just c, [one]) | Face.name one == Face.name f -> said (if Maybe.isJust (ObjectView.face o) then Nothing else ObjectView.ownEffects o) c f
+        (Just c, [one]) | Face.name one == Face.name f -> said (ObjectView.ownEffects o) c f
         _ -> printed f
-      lines' f = [CardName.unwrap (Face.name f) <> Text.pack (if Set.member (Face.name f) names || null shown then ":" else " (other face):") | length faces > 1] <> body f
-  pure (if null faces then foldMap abilityLines now else concatMap lines' faces)
+      lines' f = [CardName.unwrap (Face.name f) <> Text.pack (if Set.member (Face.name f) names || null shown then ":" else " (other face):") | length faces > 1 || not (null under)] <> body f
+      -- A merged card's face it shows (CR 731.2), as printed.
+      merged component = case component of
+        Just (n, card) -> (CardName.unwrap n <> Text.pack " (merged under it):") : concatMap printed (filter ((== n) . Face.name) (foldMap (Foldable.toList . Card.faces) card))
+        Nothing -> [Text.pack "A face-down card (merged under it)"]
+  pure ((if null faces then foldMap abilityLines now else concatMap lines' faces) <> concatMap merged under)
 
 -- | A face's printed Oracle text, a line each.
 printed :: Face.Face Card.Card -> [Text.Text]
@@ -322,8 +328,9 @@ data Wording
 -- compared as card data (current) together with CR 305.6's intrinsic mana
 -- abilities, and if not whether the renderer words each. What the face says
 -- is the object under its own static abilities alone (ObjectView.ownEffects,
--- `own`), where one applies to it: a Sliver's grant to itself is its printed
--- text, as Karlov Watchdog's "during your turn" is.
+-- `own`), where one applies to it or it is merged: a Sliver's grant to itself
+-- is its printed text, as Karlov Watchdog's "during your turn" is, and a
+-- mutated permanent's abilities from under it its cards' (CR 702.140e).
 wording :: Maybe ProjectedCharacteristics.ProjectedCharacteristics -> ProjectedCharacteristics.ProjectedCharacteristics -> Face.Face Card.Card -> Wording
 wording own c face
   | now == baseline, intrinsicNow == intrinsicBaseline, extras c == maybe (mempty, mempty, Projection.View.seedCharacteristicPT face) extras own = MkAsPrinted
