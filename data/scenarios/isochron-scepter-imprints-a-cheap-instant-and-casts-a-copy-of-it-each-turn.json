@@ -1,0 +1,38 @@
+{
+  "description": "CR 607.2a / 707.12: Isochron Scepter may exile an instant card with mana value 2 or less from its controller's hand as it enters, and its {2}, {T} ability may copy that card and offer the copy's cast without paying its mana cost, turn after turn",
+  "note": "Cancel (mana value 3) and Grizzly Bears (no instant) are refused and Shock left; Lightning Bolt is exiled. The ability resolves twice, two turns apart, and each copy Bolts bob; the card stays exiled.",
+  "board": {
+    "active": "alice",
+    "step": "PrecombatMain",
+    "seats": [
+      {"name": "alice", "battlefield": [{"card": "Island", "label": "i0"}, {"card": "Island", "label": "i1"}, {"card": "Plains", "label": "p0"}, {"card": "Plains", "label": "p1"}], "hand": [{"card": "Isochron Scepter", "label": "scepter"}, {"card": "Lightning Bolt", "label": "bolt"}, {"card": "Cancel", "label": "cancel"}, {"card": "Grizzly Bears", "label": "bears"}, {"card": "Shock", "label": "shock"}], "library": [{"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}]},
+      {"name": "bob", "battlefield": [{"card": "Grizzly Bears", "label": "bobbears"}], "library": [{"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}]}
+    ]
+  },
+  "timeline": [
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": {"Cast": {"object": "$scepter", "mana": ["$i0", "$i1", null]}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": "Pass"},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": "Pass"},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": {"ChooseOptional": "Exercises"}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "refuse": {"Answer": {"prompt": "ChooseCardInHand", "with": "$cancel"}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "refuse": {"Answer": {"prompt": "ChooseCardInHand", "with": "$bears"}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": {"Answer": {"prompt": "ChooseCardInHand", "with": "$bolt"}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"Count": {"player": "alice", "zone": "Exile", "card": "Lightning Bolt", "count": 1}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": {"Activate": {"object": "Isochron Scepter", "mana": ["$p0", "$p1"]}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": "Pass"},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": {"ChooseOptional": "Exercises"}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": {"Answer": {"prompt": "OfferedCast", "with": "Exercises"}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": {"ChooseTargets": {"target": ["$bob"]}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": "Pass"},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"Life": {"player": "bob", "life": 17}}},
+    {"turn": 2, "step": "DeclareAttackers", "player": "bob", "do": {"Attack": []}},
+    {"turn": 3, "step": "PrecombatMain", "player": "alice", "do": {"Activate": {"object": "Isochron Scepter", "mana": ["$p0", "$p1", null]}}},
+    {"turn": 3, "step": "PrecombatMain", "player": "alice", "do": "Pass"},
+    {"turn": 3, "step": "PrecombatMain", "player": "alice", "do": {"ChooseOptional": "Exercises"}},
+    {"turn": 3, "step": "PrecombatMain", "player": "alice", "do": {"Answer": {"prompt": "OfferedCast", "with": "Exercises"}}},
+    {"turn": 3, "step": "PrecombatMain", "player": "alice", "do": {"ChooseTargets": {"target": ["$bob"]}}},
+    {"turn": 3, "step": "PrecombatMain", "player": "alice", "do": "Pass"},
+    {"turn": 3, "step": "PrecombatMain", "player": "alice", "check": {"Life": {"player": "bob", "life": 14}}},
+    {"turn": 3, "step": "PrecombatMain", "player": "alice", "check": {"Count": {"player": "alice", "zone": "Exile", "card": "Lightning Bolt", "count": 1}}}
+  ]
+}

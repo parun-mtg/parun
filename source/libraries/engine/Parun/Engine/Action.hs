@@ -69,10 +69,10 @@ import qualified Parun.Types.Zone as Zone
 -- (CR 702.170d, CR 702.143a), where CR 601.1a makes playing a card either
 -- playing it as a land or casting it -- and this is the first of those.
 --
--- ONE CARD MAY APPEAR TWICE, in principle: CR 712.9 has the player choose among
+-- ONE CARD MAY APPEAR TWICE: CR 712.9 has the player choose among
 -- "its faces that's a land", so a modal double-faced card with two land faces
--- would offer both. That shape falls out of landFaces returning a list; no
--- printing reaches it.
+-- offers both. That shape falls out of landFaces returning a list; a Pathway
+-- reaches it (data/scenarios/brightclimb-pathway-is-played-as-either-land-face.json).
 --
 -- The PROHIBITION is asked here and not in legalActions' `canPlayLand` gate,
 -- because it is per-CARD rather than per-turn: CR 305.2/305.3's limits are about

@@ -1,0 +1,27 @@
+{
+  "description": "CR 702.16j / 119.7 / 119.8 / 702.26a: Teferi's Protection gives its caster protection from everything and a life total that can't change until their next turn, and phases out every permanent they control",
+  "note": "bob's Bolt cannot target alice on his turn (his Grizzly Bears give it a second legal target, so the target is asked), and his Blood Tithe takes no life from her and so gains him none. alice's Plains and Grizzly Bears are gone until her untap step.",
+  "board": {
+    "active": "alice",
+    "step": "PrecombatMain",
+    "seats": [
+      {"name": "alice", "battlefield": [{"card": "Plains", "label": "p0"}, {"card": "Plains", "label": "p1"}, {"card": "Plains", "label": "p2"}, {"card": "Grizzly Bears", "label": "bears"}], "hand": [{"card": "Teferi's Protection", "label": "tp"}], "library": [{"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}]},
+      {"name": "bob", "battlefield": [{"card": "Mountain", "label": "m"}, {"card": "Swamp", "label": "s0"}, {"card": "Swamp", "label": "s1"}, {"card": "Swamp", "label": "s2"}, {"card": "Mountain", "label": "m2"}, {"card": "Grizzly Bears", "label": "bobbears"}], "hand": [{"card": "Lightning Bolt", "label": "bolt"}, {"card": "Blood Tithe", "label": "tithe"}], "library": [{"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}]}
+    ]
+  },
+  "timeline": [
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": {"Cast": {"object": "$tp", "mana": ["$p0", "$p1", "$p2"]}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": "Pass"},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"Count": {"player": "alice", "zone": "Exile", "card": "Teferi's Protection", "count": 1}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"Count": {"player": "alice", "zone": "Battlefield", "card": "Plains", "count": 0}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"Count": {"player": "alice", "zone": "Battlefield", "card": "Grizzly Bears", "count": 0}}},
+    {"turn": 2, "step": "PrecombatMain", "player": "bob", "do": {"Cast": {"object": "$tithe", "mana": ["$s0", "$s1", "$s2", "$m", null]}}},
+    {"turn": 2, "step": "PrecombatMain", "player": "bob", "do": "Pass"},
+    {"turn": 2, "step": "PrecombatMain", "player": "bob", "check": {"Life": {"player": "alice", "life": 20}}},
+    {"turn": 2, "step": "PrecombatMain", "player": "bob", "check": {"Life": {"player": "bob", "life": 20}}},
+    {"turn": 2, "step": "PrecombatMain", "player": "bob", "refuse": {"Cast": {"object": "$bolt", "mana": ["$m2"], "targets": ["$alice"]}}},
+    {"turn": 2, "step": "DeclareAttackers", "player": "bob", "do": {"Attack": []}},
+    {"turn": 3, "step": "PrecombatMain", "player": "alice", "check": {"Count": {"player": "alice", "zone": "Battlefield", "card": "Plains", "count": 3}}},
+    {"turn": 3, "step": "PrecombatMain", "player": "alice", "check": {"Count": {"player": "alice", "zone": "Battlefield", "card": "Grizzly Bears", "count": 1}}}
+  ]
+}
