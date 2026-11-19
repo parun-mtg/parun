@@ -2110,26 +2110,20 @@ body:has(main.game) .chrome {
   bottom: auto;
 }
 
-body:has(main.game) #settings-button {
-  width: 36px;
-  min-height: 36px !important;
-  height: 36px;
-  padding: 0 !important;
-  border-radius: 50% !important;
-  text-align: center !important;
-  font-size: 1.1rem;
-  line-height: 1;
-}
-
 #settings-button {
   width: 36px;
   min-height: 36px !important;
   height: 36px;
   padding: 0 !important;
   border-radius: 50% !important;
-  text-align: center !important;
-  font-size: 1.1rem;
-  line-height: 1;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+#settings-button > svg {
+  width: 24px;
+  height: 24px;
 }
 
 #settings {
