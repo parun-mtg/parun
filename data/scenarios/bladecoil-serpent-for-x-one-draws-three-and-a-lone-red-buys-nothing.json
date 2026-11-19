@@ -1,0 +1,224 @@
+{
+  "board": {
+    "active": "alice",
+    "seats": [
+      {
+        "battlefield": [
+          {
+            "card": "Island",
+            "label": "u1"
+          },
+          {
+            "card": "Island",
+            "label": "u2"
+          },
+          {
+            "card": "Island",
+            "label": "u3"
+          },
+          {
+            "card": "Island",
+            "label": "u4"
+          },
+          {
+            "card": "Island",
+            "label": "u5"
+          },
+          {
+            "card": "Island",
+            "label": "u6"
+          },
+          {
+            "card": "Mountain",
+            "label": "r1"
+          }
+        ],
+        "hand": [
+          {
+            "card": "Bladecoil Serpent",
+            "label": "serpent"
+          }
+        ],
+        "library": [
+          {
+            "card": "Grizzly Bears"
+          },
+          {
+            "card": "Hill Giant"
+          },
+          {
+            "card": "Plains"
+          },
+          {
+            "card": "Plains"
+          }
+        ],
+        "name": "alice"
+      },
+      {
+        "hand": [
+          {
+            "card": "Shock",
+            "label": "shock"
+          }
+        ],
+        "library": [
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          }
+        ],
+        "name": "bob"
+      }
+    ],
+    "step": "PrecombatMain"
+  },
+  "description": "CR 601.2h Bladecoil Serpent cast for X=1 with six {U} and one {R} draws three cards, and its lone red buys neither +1/+0 nor trample and haste",
+  "note": "No black was spent, so Bob keeps Shock.",
+  "timeline": [
+    {
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1,
+      "do": {
+        "Cast": {
+          "mana": [
+            "$u1",
+            "$u2",
+            "$u3",
+            "$u4",
+            "$u5",
+            "$u6",
+            "$r1"
+          ],
+          "object": "$serpent",
+          "x": 1
+        }
+      }
+    },
+    {
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1,
+      "do": {
+        "OrderTriggers": [
+          "Bladecoil Serpent",
+          "Bladecoil Serpent",
+          "Bladecoil Serpent"
+        ]
+      }
+    },
+    {
+      "player": "alice",
+      "step": "BeginningOfCombat",
+      "turn": 1,
+      "check": {
+        "Count": {
+          "card": "Grizzly Bears",
+          "count": 1,
+          "player": "alice",
+          "zone": "Hand"
+        }
+      }
+    },
+    {
+      "player": "alice",
+      "step": "BeginningOfCombat",
+      "turn": 1,
+      "check": {
+        "Count": {
+          "card": "Hill Giant",
+          "count": 1,
+          "player": "alice",
+          "zone": "Hand"
+        }
+      }
+    },
+    {
+      "player": "alice",
+      "step": "BeginningOfCombat",
+      "turn": 1,
+      "check": {
+        "Count": {
+          "card": "Plains",
+          "count": 1,
+          "player": "alice",
+          "zone": "Hand"
+        }
+      }
+    },
+    {
+      "player": "alice",
+      "step": "BeginningOfCombat",
+      "turn": 1,
+      "check": {
+        "Count": {
+          "card": "Shock",
+          "count": 1,
+          "player": "bob",
+          "zone": "Hand"
+        }
+      }
+    },
+    {
+      "player": "alice",
+      "step": "BeginningOfCombat",
+      "turn": 1,
+      "check": {
+        "PowerToughness": {
+          "object": "$serpent",
+          "power": 5,
+          "toughness": 4
+        }
+      }
+    },
+    {
+      "player": "alice",
+      "step": "BeginningOfCombat",
+      "turn": 1,
+      "check": {
+        "Keywords": {
+          "count": 0,
+          "keyword": {
+            "type": "Trample"
+          },
+          "object": "$serpent"
+        }
+      }
+    },
+    {
+      "player": "alice",
+      "step": "BeginningOfCombat",
+      "turn": 1,
+      "check": {
+        "Keywords": {
+          "count": 0,
+          "keyword": {
+            "type": "Haste"
+          },
+          "object": "$serpent"
+        }
+      }
+    }
+  ]
+}

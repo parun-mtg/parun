@@ -7,6 +7,6 @@ data StaticRead
     ReadsX
   | -- | CR 107.3 / 601.2h: the mana spent on X (Soul Burn, Illusionary Mask).
     ReadsManaSpentOnX
-  | -- | CR 601.2h: the total mana spent to cast the spell, X's included (Molten Note).
+  | -- | CR 601.2h: the mana spent to cast the spell, or a type's share of it, X's included (Molten Note).
     ReadsManaSpent
   deriving (Eq, Ord, Show)
