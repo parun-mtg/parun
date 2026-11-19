@@ -261,21 +261,23 @@ cardTimingWith window pid oid name gs = case proposedFace oid name gs of
              && any CandidateCost.instantSpeed (Cost.candidateCostsFor pid name oid gs)
          )
 
--- CR 601.2e / 601.3b: the timing half of rule 601.2e's check at the announced
--- X. A cast only a flash permission let begin is illegal once the X announced
--- leaves the permission not naming the spell at `manaValue` and no other window
--- is open to the CHOSEN candidate: a candidate it passed over carrying its own
--- window (offering, sneak, a paid flash permission) does not keep it open.
--- windowedCandidates has already judged every other choice. Asked on the
--- proposal board, so the window reads the stack the spell is not yet on. The
--- scenarios cr-601-2e-untimely-aluren-takes-back-protean-hydra-at-x-2-and-not-at-x-3
--- and cr-601-2e-untimely-aluren-takes-back-a-hasty-hydra-cast-for-its-printed-cost
--- are the proof.
-flashRefusedAt :: PlayerId -> ObjectId -> CardName.CardName -> CandidateCost.CandidateCost -> Integer -> GameState -> Bool
-flashRefusedAt pid oid name candidate manaValue gs =
-  PlayerEffect.mayCastAsThoughItHadFlash pid oid gs
+-- CR 601.2e / 601.3b / 601.3d: the timing half of rule 601.2e's check at the
+-- announced X. A cast only a flash permission let begin is illegal once the X
+-- announced leaves the permission not naming the spell at `manaValue`, or
+-- `lapsed` says the chosen candidate's own window (CandidateCost.windowIf) no
+-- longer holds, and no other window is open to the CHOSEN candidate: a
+-- candidate it passed over carrying its own window (offering, sneak, a paid
+-- flash permission) does not keep it open. windowedCandidates has already
+-- judged every other choice. Asked on the proposal board, so the window reads
+-- the stack the spell is not yet on. The scenarios
+-- cr-601-2e-untimely-aluren-takes-back-protean-hydra-at-x-2-and-not-at-x-3,
+-- cr-601-2e-untimely-aluren-takes-back-a-hasty-hydra-cast-for-its-printed-cost
+-- and silver-scrutiny-* are the proof.
+flashRefusedAt :: PlayerId -> ObjectId -> CardName.CardName -> CandidateCost.CandidateCost -> Bool -> Integer -> GameState -> Bool
+flashRefusedAt pid oid name candidate lapsed manaValue gs =
+  (lapsed || PlayerEffect.mayCastAsThoughItHadFlash pid oid gs)
     && not (timingWith False pid oid name gs)
-    && not (CandidateCost.instantSpeed candidate)
+    && not (CandidateCost.instantSpeed candidate && not lapsed)
     && not (Keyword.sneakWindowed (CandidateCost.keyword candidate) && Turn.declareBlockersWindow pid gs)
     && not (PlayerEffect.mayCastAsThoughItHadFlashAt pid oid manaValue gs)
 
@@ -3039,11 +3041,11 @@ castSpellWith perform timed offered applied widened pid oid name facing = Event.
           -- and of the permission the cast is made under, judged on the same
           -- proposal board candidateAllowed judged them on, and of a flash
           -- window where a window times the cast at all, the chosen candidate's.
-          let refusedAt candidate permission manaValue =
+          let refusedAt candidate permission lapsed manaValue =
                 let board = proposedFor pid oid (CandidateCost.keyword candidate) proposed
                  in PlayerEffect.prohibitsAtManaValue pid oid manaValue board
                       || not (PlayerEffect.admitsAtManaValue pid permission oid manaValue board)
-                      || (timed && flashRefusedAt pid oid name candidate manaValue board)
+                      || (timed && flashRefusedAt pid oid name candidate lapsed manaValue board)
           castProposed perform spending pid oid sid face castFrom preparedFor keywordsBefore candidates spent permissions (riders sid) (candidateAllowed pid oid proposed) refusedAt (ownPlayPermission [Zone.Exile, Zone.Graveyard] offered pid oid held) before
 
 -- CR 305.2a / 305.3: whether `pid` may play a land at all now -- it is their
@@ -3972,7 +3974,7 @@ textChangedSpell oid gs face = case Projection.textChangesAffecting oid gs of
 --
 -- `allowed` is candidateAllowed on the proposal board, which a permission's
 -- alternative cost (underAlternative) is judged by once laid over a candidate.
-castProposed :: ManaAbilityPerformer.ManaAbilityPerformer -> ManaSpending -> PlayerId -> ObjectId -> ObjectId -> Face.Face Card.Type.Card -> Maybe Zone.Zone -> Maybe ObjectId -> Set Keyword -> [CandidateCost.CandidateCost] -> (Maybe Keyword -> [ActivePlayerEffect.ActivePlayerEffect]) -> (Maybe Keyword -> Maybe [Maybe (ObjectId, CastFromZone.CastFromZone)]) -> (Maybe (ObjectId, CastFromZone.CastFromZone) -> [ContinuousEffect.ContinuousEffect Card.Type.Card]) -> (CandidateCost.CandidateCost -> Bool) -> (CandidateCost.CandidateCost -> Maybe (ObjectId, CastFromZone.CastFromZone) -> Integer -> Bool) -> Maybe ExilePlayPermission.ExilePlayPermission -> GameState -> Game ()
+castProposed :: ManaAbilityPerformer.ManaAbilityPerformer -> ManaSpending -> PlayerId -> ObjectId -> ObjectId -> Face.Face Card.Type.Card -> Maybe Zone.Zone -> Maybe ObjectId -> Set Keyword -> [CandidateCost.CandidateCost] -> (Maybe Keyword -> [ActivePlayerEffect.ActivePlayerEffect]) -> (Maybe Keyword -> Maybe [Maybe (ObjectId, CastFromZone.CastFromZone)]) -> (Maybe (ObjectId, CastFromZone.CastFromZone) -> [ContinuousEffect.ContinuousEffect Card.Type.Card]) -> (CandidateCost.CandidateCost -> Bool) -> (CandidateCost.CandidateCost -> Maybe (ObjectId, CastFromZone.CastFromZone) -> Bool -> Integer -> Bool) -> Maybe ExilePlayPermission.ExilePlayPermission -> GameState -> Game ()
 castProposed perform baseSpending pid oid sid printedFace castFrom preparedFor keywordsBefore candidateCosts spent permissions riders allowed refusedAt ownHeld before = do
   -- CR 118.14: until the announcement settles which permission the cast is made
   -- under (permissionUsed below), every question asks about SOME permission.
@@ -4512,7 +4514,11 @@ castProposed perform baseSpending pid oid sid printedFace castFrom preparedFor k
                   -- CR 601.2f total will.
                   withX o = o {Object.bindings = Map.union (Binding.fromChoices Map.empty mAmount Seq.empty) (Object.bindings o)}
                   announcedBoard = bestowedGs {GameState.objects = Map.adjust withX sid (GameState.objects bestowedGs)}
-                  refused = Maybe.isJust mAmount && maybe False (refusedAt chosenCandidate permissionUsed) (Filter.manaValue (Projection.viewOfObject sid announcedBoard))
+                  -- CR 601.3d: the chosen candidate's window re-asked of the
+                  -- spell with X announced, on the board Cost.withFlashPermission
+                  -- asked it of as the cast began, the card now on the stack.
+                  lapsed = maybe False (not . ActivationRestriction.onlyIfHolds pid sid announcedBoard) (CandidateCost.windowIf chosenCandidate)
+                  refused = Maybe.isJust mAmount && maybe False (refusedAt chosenCandidate permissionUsed lapsed) (Filter.manaValue (Projection.viewOfObject sid announcedBoard))
               if overCeiling || underFloor || refused || not (payableCost (const id) (Just chosenModes) chosenReductions chosenSpending pid sid announcedBoard announcedAtX)
                 then reject
                 else do

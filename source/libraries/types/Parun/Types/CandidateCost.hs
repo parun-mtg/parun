@@ -4,6 +4,7 @@ import qualified Control.Monad as Monad
 import Numeric.Natural (Natural)
 import qualified Parun.Types.AbilityName as AbilityName
 import qualified Parun.Types.AppliedReduction as AppliedReduction
+import qualified Parun.Types.Condition as Condition
 import qualified Parun.Types.Cost as Cost
 import qualified Parun.Types.FreeCast as FreeCast
 import qualified Parun.Types.Keyword as Keyword
@@ -73,14 +74,24 @@ data CandidateCost = MkCandidateCost
     -- of Mutation), with the budget it spends: Just Nothing for an unlimited
     -- grant, Just its key under the granting object for a budgeted one (Warped
     -- Space's "Once each turn"); Nothing for every other candidate.
-    granted :: Maybe (Maybe (ObjectId.ObjectId, FreeCast.FreeCast))
+    granted :: Maybe (Maybe (ObjectId.ObjectId, FreeCast.FreeCast)),
+    -- | CR 601.3d / 601.2e: the condition `instantSpeed`'s window holds under,
+    -- re-asked once X is announced; Nothing where it holds under none.
+    windowIf :: Maybe Condition.Condition
   }
   deriving (Eq, Ord, Show)
 
 -- | A candidate bringing no reduction, no window of its own, no delayed ability,
 -- no printed alternative and no grant.
 plain :: Maybe Keyword.Keyword -> Cost.Cost Keyword.Keyword -> CandidateCost
-plain k c = MkCandidateCost k c [] False Nothing Nothing Nothing
+plain k c = MkCandidateCost k c [] False Nothing Nothing Nothing Nothing
+
+-- | CR 702.48a / 601.3c / 601.3d: the candidate with a window opened under the
+-- condition (Nothing: unconditionally) beside any it had.
+widened :: Maybe Condition.Condition -> CandidateCost -> CandidateCost
+widened condition candidate
+  | instantSpeed candidate = candidate {windowIf = (\a b -> Condition.Any [a, b]) <$> windowIf candidate <*> condition}
+  | otherwise = candidate {instantSpeed = True, windowIf = condition}
 
 -- | CR 118.9: the budgeted grant this candidate spends, recorded in
 -- Parun.Types.TurnRegisters.freeCastsUsedThisTurn once the spell becomes cast.
