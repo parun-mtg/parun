@@ -14,6 +14,7 @@ import qualified Data.Set as Set
 import qualified Data.Text as Text
 import Numeric.Natural (Natural)
 import qualified Parun.Codec.Cost as Codec.Cost
+import qualified Parun.Codec.CostComponent as Codec.CostComponent
 import qualified Parun.Codec.CounterKind as Codec.CounterKind
 import qualified Parun.Codec.EntryOption as Codec.EntryOption
 import qualified Parun.Codec.GameEvent as Codec.GameEvent
@@ -138,13 +139,44 @@ optionName view reply = case reply of
     -- A permission to cast from a zone (Parun.Codec.CastFromZone) by the zone.
     | Just zone <- Protocol.field "from" reply >>= Protocol.field "zone" >>= textOf -> Text.pack "from the " <> Text.toLower zone
     | Just tag <- Protocol.field "type" reply >>= textOf -> tagName tag <> foldMap (\value -> Text.pack " " <> optionName view value) (Protocol.field "value" reply)
-  _ -> Common.render (Codec.Reply.toValue reply)
+    -- A cost, as Oracle text prints it.
+    | Maybe.isJust (Protocol.field "components" reply) -> candidateName Text.empty reply
+  _ -> plainName reply
 
 -- | A ChooseCost candidate's cost as Oracle text prints it (Oracle.Cost.cost),
 -- or the offer itself where it does not print.
 candidateName :: Text.Text -> R.Reply -> Text.Text
 candidateName self candidate =
-  Maybe.fromMaybe (Common.render (Codec.Reply.toValue candidate)) (decoded (Codec.Cost.codec Codec.Keyword.codec) candidate >>= Maybe.listToMaybe . Oracle.Cost.cost self (Oracle.Keyword.keywordWord self))
+  Maybe.fromMaybe piecewise (decoded (Codec.Cost.codec Codec.Keyword.codec) candidate >>= Maybe.listToMaybe . Oracle.Cost.cost self (Oracle.Keyword.keywordWord self))
+  where
+    -- Its mana and each component apart, where the whole does not print.
+    piecewise =
+      let mana = [Render.manaCost m | Just m <- [Protocol.field "mana" candidate >>= decoded Codec.ManaCost.codec], not (null (ManaCost.unwrap m))]
+          components = foldMap (fmap (componentName self)) (Protocol.field "components" candidate >>= Protocol.arrayOf)
+       in if null (mana <> components) then plainName candidate else Text.intercalate (Text.pack ", ") (mana <> components)
+
+-- | A cost component as Oracle text prints it (Oracle.Cost.component), or in
+-- plain words where it does not print.
+componentName :: Text.Text -> R.Reply -> Text.Text
+componentName self component =
+  Maybe.fromMaybe (plainName component) (decoded (Codec.CostComponent.codec Codec.Keyword.codec) component >>= Maybe.listToMaybe . Oracle.Cost.component self (Oracle.Keyword.keywordWord self))
+
+-- | A value an offer spells that nothing renders, in words rather than JSON:
+-- each tag spaced, a fixed amount as its number, and an empty filter as
+-- nothing.
+plainName :: R.Reply -> Text.Text
+plainName reply = Text.unwords (filter (not . Text.null) (go reply))
+  where
+    go r = case r of
+      R.Null -> []
+      R.Boolean _ -> []
+      R.Number n -> [Text.pack (show n)]
+      R.Text t -> [Text.toLower (Render.spaced t)]
+      R.Array xs -> concatMap go xs
+      R.Object pairs
+        | Just (R.Text tag) <- lookup (Text.pack "type") pairs ->
+            [Text.toLower (Render.spaced tag) | tag `notElem` fmap Text.pack ["Fixed", "And", "Literal", "Exactly"]] <> foldMap go (lookup (Text.pack "value") pairs)
+        | otherwise -> concatMap (go . snd) pairs
 
 decoded :: Codec.Codec a -> R.Reply -> Maybe a
 decoded codec = either (const Nothing) Just . Codec.decode codec . Codec.Reply.toValue

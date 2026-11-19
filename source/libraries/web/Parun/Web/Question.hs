@@ -719,7 +719,10 @@ ordering request = do
     "ArrangeGraveyardArrivals" -> (,) (Text.pack "These cards go to your graveyard together. Order them from the new top down.") . fmap (Offer.listedName shown) <$> (Protocol.field "from" offer >>= Protocol.arrayOf)
     _ -> do
       items <- Protocol.field "order" offer >>= Protocol.arrayOf
-      pure (capitalized (Question.kind question) <> foldMap (\source -> Text.pack " for " <> Offer.objectName shown source) (Protocol.field "source" offer) <> Text.pack ", first to last: " <> Offer.orderNote (Question.kind question) offer <> Text.pack ".", fmap (Offer.optionName shown) items)
+      let self = foldMap (Offer.objectName shown) (Protocol.field "source" offer)
+          -- CR 601.2h: a cost's components as Oracle text prints each.
+          named = if Question.kind question == Text.pack "OrderCostComponents" then Offer.componentName self else Offer.optionName shown
+      pure (capitalized (Question.kind question) <> foldMap (\source -> Text.pack " for " <> Offer.objectName shown source) (Protocol.field "source" offer) <> Text.pack ", first to last: " <> Offer.orderNote (Question.kind question) offer <> Text.pack ".", fmap named items)
   where
     question = Request.question request
     offer = Question.offer question

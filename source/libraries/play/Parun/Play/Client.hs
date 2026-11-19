@@ -20,7 +20,6 @@ import qualified Data.Set as Set
 import qualified Data.Text as Text
 import Numeric.Natural (Natural)
 import qualified Parun.Codec.CombatDamageOption as Codec.CombatDamageOption
-import qualified Parun.Codec.CostComponent as Codec.CostComponent
 import qualified Parun.Codec.Keyword as Codec.Keyword
 import qualified Parun.Codec.ManaCost as Codec.ManaCost
 import qualified Parun.Codec.ManaType as Codec.ManaType
@@ -33,7 +32,6 @@ import qualified Parun.Exceptions.InvalidCorpus as InvalidCorpus
 import qualified Parun.Extra.Natural as Natural
 import qualified Parun.JsonCodec.Codec as Codec
 import qualified Parun.JsonCodec.Common as Common
-import qualified Parun.Oracle.Cost as Oracle.Cost
 import qualified Parun.Oracle.Keyword as Oracle.Keyword
 import qualified Parun.Play.Offer as Offer
 import qualified Parun.Play.Protocol as Protocol
@@ -470,7 +468,7 @@ choice view question = Maybe.fromMaybe generic $ case Text.unpack (Question.kind
     source <- Protocol.field "source" offer
     components <- Protocol.field "order" offer >>= Protocol.arrayOf
     let self = Offer.objectName view source
-    pure (ordered (orderHeading (Text.pack " for " <> self) (Text.pack "the first is paid first")) (fmap (componentName self) components))
+    pure (ordered (orderHeading (Text.pack " for " <> self) (Text.pack "the first is paid first")) (fmap (Offer.componentName self) components))
   -- CR 601.2h: the pool's unit that pays the next symbol, sent back whole.
   "ChooseManaToSpend" -> do
     units <- Protocol.arrayOf offer
@@ -809,12 +807,6 @@ ordered heading names =
   )
   where
     size = Natural.length names
-
--- | A cost component as Oracle text prints it (Oracle.Cost.component), or the
--- offer itself where it does not print.
-componentName :: Text.Text -> R.Reply -> Text.Text
-componentName self component =
-  Maybe.fromMaybe (Common.render (Codec.Reply.toValue component)) (Offer.decoded (Codec.CostComponent.codec Codec.Keyword.codec) component >>= Maybe.listToMaybe . Oracle.Cost.component self (Oracle.Keyword.keywordWord self))
 
 -- | An optional prompt's answer, a bare tag (Parun.JsonCodec.Arm.enum).
 optionalDecision :: OptionalDecision.OptionalDecision -> R.Reply

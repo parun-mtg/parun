@@ -454,7 +454,8 @@ asking :: Text.Text -> R.Reply -> Request.Request
 asking kind offer = (requestFor (Setup.emptyGame S.bothPlayers) (Prompt.ChooseAction (Decider.MkDecider S.alice) S.alice [Action.Pass])) {Request.question = Question.MkQuestion S.alice kind offer Nothing}
 
 -- | Every kind of question the scenario corpus answers has a form of its own,
--- none falling back to a reply typed as JSON, but Concede, which the hotseat
+-- none falling back to a reply typed as JSON or labelling an option in JSON,
+-- but Concede, which the hotseat
 -- answers itself: each kind's first scenario, replayed to the stops about its
 -- first answer to the kind (a stop counts entries, not prompts, so a few
 -- either side).
@@ -478,7 +479,13 @@ corpusSpec s registry = Spec.describe s "WebQuestion" . Spec.it s "every kind of
             answering entry = (Protocol.field "do" entry >>= Protocol.field "Answer" >>= Protocol.field "prompt") == Just (R.Text kind)
             at = maybe 0 Int.toNaturalSaturating (List.findIndex answering entries)
         stops <- Monad.forM [Natural.minusSaturating at 2 .. at + 3] $ \i -> Scenario.replay registry (Just i) scenario
-        pure [(Question.kind (Request.question request), path) | Right (Stop.MkBefore _ _ asked) <- stops, Just request <- [Protocol.requestFor asked], Question.kind (Request.question request) /= Text.pack "Concede", Question.Web.answersTyped request]
+        pure
+          [ (Question.kind (Request.question request), path, if Question.Web.answersTyped request then Text.pack "typed as JSON" else Text.take 160 (snd (Text.breakOn (Text.pack "{\"") (Html.content (Question.Web.view request Question.Web.blank)))))
+          | Right (Stop.MkBefore _ _ asked) <- stops,
+            Just request <- [Protocol.requestFor asked],
+            Question.kind (Request.question request) /= Text.pack "Concede",
+            Question.Web.answersTyped request || Text.isInfixOf (Text.pack "{\"") (Html.content (Question.Web.view request Question.Web.blank))
+          ]
       _ -> pure []
   Spec.assertEqWith s "typed" (ListUtils.nubOrd found) []
 
