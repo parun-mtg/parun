@@ -98,6 +98,7 @@ spec s registry = Spec.describe s "WebQuestion" $ do
     Spec.assertEqWith s "skip" (fmap (\event -> Question.Web.step request Set.empty event Text.empty) (tap "End turn")) (Just (Question.Web.MkReplied (R.Number 0)))
     Spec.assertEqWith s "not automatic" (Question.Web.automatic Question.Web.MkStandard request) Nothing
     Spec.assertBool s (Text.pack "aria-keyshortcuts=\"E\">End turn</button>" `Text.isInfixOf` page) "E ends the turn"
+    Spec.assertBool s (Text.pack "Before ending your turn: you can still play Mountain." `Text.isInfixOf` Html.content view) "a card keeps its name's case"
     -- The hand's Mountain is lit, since the seat may play it, and tapping it reads it.
     Spec.assertBool s (Text.pack "<section class=\"hand\"" `Text.isInfixOf` page) "hand"
     Spec.assertBool s (Text.pack "class=\"card c-land playable\"" `Text.isInfixOf` page) "playable"
@@ -280,6 +281,8 @@ spec s registry = Spec.describe s "WebQuestion" $ do
         request = requestFor gs (Prompt.ChooseAction (Decider.MkDecider S.alice) S.alice (Action.Pass : fmap (Action.Activate oid) (Projection.abilitiesOf oid gs)))
     -- The tap symbol is drawn, so the text around it is matched.
     Spec.assertBool s (Text.pack ": Prodigal Sorcerer deals 1 damage to any target." `Text.isInfixOf` Html.content (Question.Web.view request Question.Web.blank)) "labelled"
+    -- The end-of-turn reminder names the activation by its source, as a phrase.
+    Spec.assertBool s (Text.pack "Before ending your turn: you can still activate Prodigal Sorcerer." `Text.isInfixOf` Html.content (Question.Web.view request Question.Web.blank)) "reminded"
 
   Spec.it s "options the seat can't tell apart share one button, which picks the next" $ do
     bears <- S.printingOf s registry "Grizzly Bears"
