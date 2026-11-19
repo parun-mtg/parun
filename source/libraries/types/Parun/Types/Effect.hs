@@ -522,7 +522,7 @@ data Effect card ability
   | -- | CR 701.42a: meld the cards the payload's ObjectRef names -- put them
     -- onto the battlefield with their back faces up and combined, as one
     -- permanent (CR 713.6).
-    Meld (Meld.Meld card)
+    Meld (Meld.Meld card ability)
   | -- | CR 702.26b: the permanents the payload names phase out, until CR
     -- 702.26a's untap step or CR 610.4's stated event. Not a zone change (CR
     -- 702.26d).

@@ -153,7 +153,7 @@ codec :: (Typeable.Typeable card, Eq card, Typeable.Typeable ability, Eq ability
 codec cardCodec abilityCodec =
   let createCodec = Create.codec cardCodec abilityCodec
       conjureCodec = Conjure.codec cardCodec
-      meldCodec = Meld.codec cardCodec
+      meldCodec = Meld.codec cardCodec abilityCodec
       replaceCodec = Replace.codec cardCodec abilityCodec (codec cardCodec abilityCodec)
       preventCodec = PreventNextDamage.codec (codec cardCodec abilityCodec)
       laterPaymentCodec = LaterPayment.codec (codec cardCodec abilityCodec)

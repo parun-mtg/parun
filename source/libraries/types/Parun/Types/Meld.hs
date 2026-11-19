@@ -1,6 +1,8 @@
 module Parun.Types.Meld where
 
+import qualified Parun.Types.EntryRiders as EntryRiders
 import qualified Parun.Types.ObjectRef as ObjectRef
+import qualified Parun.Types.Quantity as Quantity
 
 -- | CR 701.42a's keyword action, and only it: "to meld the two cards in a meld
 -- pair, put them onto the battlefield with their back faces up and combined. The
@@ -21,7 +23,7 @@ import qualified Parun.Types.ObjectRef as ObjectRef
 -- object -- a CARD (CR 108.2, so not a token and not a copy) whose layout is
 -- 'Parun.Types.Layout.Meld', all sharing one owner, each naming another as its
 -- counterpart.
-data Meld card = MkMeld
+data Meld card ability = MkMeld
   { -- | The cards to meld, which the melding ability has already named -- a slot
     -- an earlier 'Parun.Types.Effect.MoveToZone' bound (CR 400.7j).
     objects :: ObjectRef.ObjectRef,
@@ -43,6 +45,13 @@ data Meld card = MkMeld
     -- Parametric in @card@ for 'Parun.Types.Effect.Effect'\'s reason: the combined
     -- face is card DATA nested inside card data, and the parameter is what keeps
     -- 'Parun.Types.Effect' from naming a concrete card type.
-    result :: card
+    result :: card,
+    -- | How the melded permanent enters (Mishra, Claimed by Gix's "It enters
+    -- tapped and attacking"); 'EntryRiders.defaultValue' for every other
+    -- printing. Only `tapped` (CR 110.5b) and `attacking` (CR 508.4) are read;
+    -- Unprinted: any other rider on a meld, which Parun.EffectLintSpec's "no
+    -- Meld carries an entry rider but tapped or attacking" keeps out of card
+    -- data.
+    riders :: EntryRiders.EntryRiders Quantity.Quantity ability
   }
   deriving (Eq, Ord, Show)

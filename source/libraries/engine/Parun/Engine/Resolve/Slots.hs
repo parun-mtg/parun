@@ -196,6 +196,7 @@ import qualified Parun.Types.ManaCount as ManaCount
 import qualified Parun.Types.ManaProduction as ManaProduction
 import qualified Parun.Types.ManaR as ManaR
 import qualified Parun.Types.ManifestDread as ManifestDread.Type
+import qualified Parun.Types.Meld as Meld
 import qualified Parun.Types.Mill as Mill
 import qualified Parun.Types.MillTally as MillTally
 import qualified Parun.Types.Modal as Modal
@@ -1477,8 +1478,9 @@ slotsOf effect = joinTwo (joinTwo (joinSlots (fmap objectRefSlots (effectObjectR
   Effect.Transform _ -> Map.empty
   Effect.Convert _ -> Map.empty
   Effect.Flip _ -> Map.empty
-  -- The combined back face is literal card data and names no slot.
-  Effect.Meld {} -> Map.empty
+  -- The combined back face is literal card data and names no slot; the riders
+  -- can (CR 508.4's specified attack), Create's arm's reading.
+  Effect.Meld (Meld.MkMeld _ _ riders) -> riderSlots riders
   Effect.PhaseOut _ -> Map.empty
   Effect.AddPhases _ -> Map.empty
   Effect.AddStep _ -> Map.empty
