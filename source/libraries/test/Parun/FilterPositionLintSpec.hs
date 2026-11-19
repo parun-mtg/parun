@@ -2060,6 +2060,7 @@ filterPositionLintSpec s registry corpus = Spec.describe s "Lint" $ do
         ("Kotose, the Silent Spider", 1), -- its search's filter, against its exiled target
         ("Legion's End", 3), -- its battlefield and graveyard exiles' objects and its hand sweep's filter
         ("Maelstrom Pulse", 1), -- its destroy's object
+        ("Legions to Ashes", 1), -- its exile's object
         ("Rat King, Verminister", 1), -- its return's object
         ("Pattern Matcher", 1), -- its search's filter, at AnyPermanent
         ("Central Elevator", 1), -- its search's filter, negated, at AnyPermanent
@@ -2216,7 +2217,8 @@ filterPositionLintSpec s registry corpus = Spec.describe s "Lint" $ do
         ("Run Away Together", 2), -- both target slots, each relative to the other
         ("Kitsune, Dragon's Daughter", 2), -- both target slots, Run Away Together's shape
         ("Trial of Agony", 1), -- its second target slot, Sorrow's Path's shape
-        ("Fear, Fire, Foes!", 1) -- its damage's object, relative to the target's controller
+        ("Fear, Fire, Foes!", 1), -- its damage's object, relative to the target's controller
+        ("Legions to Ashes", 1) -- its exile's object, relative to the target's controller
       ]
     -- The REJECTING direction, hand-built for the reason every sibling lint's is:
     -- a card that offends must not be loadable, so no file can carry one. Buried
@@ -2330,8 +2332,9 @@ filterPositionLintSpec s registry corpus = Spec.describe s "Lint" $ do
     -- Tameshi, Reality Architect, on ACTIVATED abilities, whose X CR 602.2b
     -- announces; Sundering Archaic, whose bound is the colors of mana spent to
     -- cast its source (CR 601.2h); Astelli Reclaimer, whose bound is the
-    -- amount of it; and Squirming Emergence, whose bound counts the permanent
-    -- cards in its controller's graveyard.
+    -- amount of it; Squirming Emergence, whose bound counts the permanent
+    -- cards in its controller's graveyard; and Lay Down Arms, whose bound
+    -- counts the Plains its controller controls.
     --
     -- Exactly, against the mana value: Chthonian Nightmare, Shelob, Dread
     -- Weaver, Likeness Looter, The Mycosynth Gardens, Rydia, Summoner of Mist, Tamiyo, Compleated Sage, Synthetic Counted, Announced, Wide, Paired, Total and Divided
@@ -2390,6 +2393,7 @@ filterPositionLintSpec s registry corpus = Spec.describe s "Lint" $ do
         ("Sundering Archaic", 1),
         ("Astelli Reclaimer", 1),
         ("Squirming Emergence", 1),
+        ("Lay Down Arms", 1),
         ("Tameshi, Reality Architect", 1),
         ("Chthonian Nightmare", 1),
         ("Shelob, Dread Weaver", 1),
