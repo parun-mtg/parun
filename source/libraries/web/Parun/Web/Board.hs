@@ -5,6 +5,7 @@
 module Parun.Web.Board where
 
 import qualified Data.Char as Char
+import qualified Data.Foldable as Foldable
 import qualified Data.List as List
 import qualified Data.Map.Strict as Map
 import qualified Data.Maybe as Maybe
@@ -40,11 +41,19 @@ data Marks msg = MkMarks
   }
 
 -- | The turn bar: whose turn, which step, the phases as a strip with the
--- current one lit, and the controls given after them.
+-- current one lit (marked where it is an extra one, CR 500.8) and those with
+-- no step still scheduled passed, and the controls given after them.
 turnBar :: [Html.Html msg] -> PlayerView.PlayerView -> Html.Html msg
 turnBar controls board =
   let yours = PlayerView.active board == PlayerView.viewer board
       current = phaseIndex (PlayerView.phase board)
+      ahead = Set.fromList (fmap phaseIndex (Foldable.toList (PlayerView.remaining board)))
+      extra = PlayerView.extra board
+      extraTip = Text.pack "An extra phase or step this turn (CR 500.8, 500.9, 514.3a)"
+      shown i
+        | i == current = ["now"] <> ["extra" | extra]
+        | Set.member i ahead = []
+        | otherwise = ["past"]
    in Element.el
         "div"
         ["turn-bar", if yours then "yours" else "theirs"]
@@ -56,9 +65,10 @@ turnBar controls board =
               ( [ Element.el "strong" [] [] [Element.string ("Turn " <> show (PlayerView.turn board))],
                   Element.text (Text.pack " \x00b7 " <> (if yours then Text.pack "Your " else possessive (PlayerView.active board)) <> Render.phase (PlayerView.phase board))
                 ]
+                  <> [Element.el "span" ["extra"] [Element.attr "title" extraTip] [Element.string "Extra"] | extra]
                   <> foldMap (pure . daytime) (PlayerView.daytime board)
               ),
-            Element.el "ol" ["phases"] [Element.attr "aria-hidden" (Text.pack "true")] [Element.el "li" [if i == current then "now" else if i < current then "past" else ""] [] [Element.string label] | (i, label) <- zip [0 :: Integer ..] ["Begin", "Main", "Combat", "Main 2", "End"]]
+            Element.el "ol" ["phases"] [Element.attr "aria-hidden" (Text.pack "true")] [Element.el "li" (shown i) [Element.attr "title" extraTip | i == current, extra] [Element.string label] | (i, label) <- zip [0 :: Integer ..] ["Begin", "Main", "Combat", "Main 2", "End"]]
           ]
           <> controls
 

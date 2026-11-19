@@ -28,6 +28,7 @@ import qualified Parun.Extra.Natural as Natural
 import qualified Parun.JsonCodec.Codec as Codec
 import qualified Parun.JsonCodec.Common as Common
 import qualified Parun.Play.Protocol as Protocol
+import qualified Parun.Play.Render as Render
 import qualified Parun.Registry as Registry
 import qualified Parun.Scenario as Scenario
 import qualified Parun.Scenario.Load as Load
@@ -73,16 +74,19 @@ import qualified Parun.Types.Question as Question
 import qualified Parun.Types.Recipient as Recipient
 import qualified Parun.Types.Reply as R
 import qualified Parun.Types.Request as Request
+import qualified Parun.Types.SeatView as SeatView
 import qualified Parun.Types.SlotName as SlotName
 import qualified Parun.Types.Stop as Stop
 import qualified Parun.Types.TextWord as TextWord
 import qualified Parun.Types.TurnRegisters as TurnRegisters
 import qualified Parun.Types.WordFamily as WordFamily
 import qualified Parun.Types.Zone as Zone
+import qualified Parun.Web.Board as Board
 import qualified Parun.Web.Card as Card
 import qualified Parun.Web.Html as Html
 import qualified Parun.Web.Log as Log
 import qualified Parun.Web.Question as Question.Web
+import qualified Parun.Web.Replay as Replay
 
 spec :: (Monad m, Monad n) => Spec.Spec m n -> Registry.Registry m -> n ()
 spec s registry = Spec.describe s "WebQuestion" $ do
@@ -509,6 +513,98 @@ subgameSpec s registry = Spec.describe s "WebQuestion" . Spec.it s "CR 730.1a a 
       Spec.assertEqWith s "the main game" (fmap Request.depth before) (Just 0)
       Spec.assertEqWith s "the subgame" (fmap Request.depth inside) (Just 1)
       Spec.assertBool s (maybe False (Text.isInfixOf (Text.pack "class=\"subgame\"") . Html.toText . (`Question.Web.view` Question.Web.blank)) inside) "the turn bar says so"
+
+-- | The replay page (Parun.Web.Replay) at scenario positions: a subgame's
+-- (CR 730.1a), a turn's extra phase (CR 500.8) and a skipped one (CR
+-- 500.11) on the turn bar, and a card on an adventure in exile (CR 716.3d).
+replaySpec :: (Monad n) => Spec.Spec IO n -> Registry.Registry IO -> n ()
+replaySpec s registry = Spec.describe s "WebQuestion" . Spec.describe s "replay" $ do
+  Spec.it s "CR 730.1a a replayed subgame position is marked as one" $ do
+    let named = "game/cr-730-1b-730-3-gameplay-alice-casts-a-subgame-spell-bob-decks-bob-loses-3"
+    before <- replayed s registry named 0
+    -- Entry 5 keeps a hand in the subgame (CR 730.2).
+    inside <- replayed s registry named 5
+    let marked stop = Text.isInfixOf (Text.pack "class=\"subgame\"") (Html.toText (Replay.view (frameAt stop)))
+    Spec.assertBool s (not (marked before)) "the main game is not"
+    Spec.assertBool s (marked inside) "the subgame is"
+
+  Spec.it s "CR 500.8 an added beginning phase is lit as extra, the phase before it passed" $ do
+    -- Entry 11 is answered in the upkeep Sphinx of the Second Sun adds after
+    -- the first of the turn's two postcombat main phases, Relentless
+    -- Assault's added combat and main phase having run; the turn's own combat
+    -- and postcombat main phase are still to come.
+    stop <- replayed s registry "sphinx-of-the-second-sun-adds-a-beginning-phase-that-neither-settles-nor-grants-a-land" 10
+    let bar = turnBarOf stop
+    Spec.assertEqWith s "the step" (PlayerView.Type.phase (boardOf stop)) (Phase.Beginning BeginningStep.Upkeep)
+    Spec.assertBool s (Text.isInfixOf (Text.pack "<li class=\"now extra\"") bar) ("lit as extra: " <> Text.unpack bar)
+    Spec.assertBool s (Text.isInfixOf (Text.pack "<li class=\"past\">Main</li>") bar) "the precombat main phase passed"
+    Spec.assertEqWith s "still to come" [label | label <- ["Combat", "Main 2", "End"], Text.isInfixOf (Text.pack ("<li>" <> label <> "</li>")) bar] ["Combat", "Main 2", "End"]
+    Spec.assertBool s (Text.isInfixOf (Text.pack "<span class=\"extra\"") bar) "said beside the turn"
+
+  Spec.it s "CR 500.11 a skipped combat phase shows as passed and nothing as extra" $ do
+    -- Entry 3 is checked in bob's postcombat main phase, his combat skipped.
+    stop <- replayed s registry "blinding-angel-makes-the-player-it-hits-skip-their-next-combat" 2
+    let bar = turnBarOf stop
+    Spec.assertEqWith s "the step" (PlayerView.Type.phase (boardOf stop)) Phase.PostcombatMain
+    Spec.assertBool s (Text.isInfixOf (Text.pack "<li class=\"past\">Combat</li>") bar) ("combat passed: " <> Text.unpack bar)
+    Spec.assertBool s (Text.isInfixOf (Text.pack "<li class=\"now\">Main 2</li>") bar) "the main phase lit"
+    Spec.assertBool s (not (Text.isInfixOf (Text.pack "extra") bar)) "nothing extra"
+
+  Spec.it s "CR 716.3d a card exiled as its Adventure resolved is marked on its tile and sheet" $ do
+    -- Entry 10 follows Can't Wake Up's resolution.
+    after <- replayed s registry "chancellor-of-tales-copies-an-adventure-onto-a-new-target" 9
+    -- Flaxen Intruder put into exile by the scenario, never cast.
+    placed <- replayed s registry "howling-galefang-has-haste-while-you-own-an-exiled-adventure-card--control" 0
+    let exiled name stop = [(o, b) | let b = boardOf stop, seat <- PlayerView.Type.seats b, o <- SeatView.exile seat, Render.nameOf b o == Text.pack name]
+        marks = Board.MkMarks (\o -> Card.MkCue [] (ObjectView.object o) Nothing) (const Nothing)
+        said = Text.isInfixOf (Text.pack "On an adventure")
+    case (exiled "Cruel Somnophage" after, exiled "Flaxen Intruder" placed) of
+      ([(o, b)], [(other, b')]) -> do
+        Spec.assertBool s (said (Html.toText (Board.view marks b))) "its tile"
+        Spec.assertBool s (said (Html.toText (Card.sheet b o (Card.MkReading (ObjectView.object o) [] True) [] (ObjectView.object o)))) "its sheet"
+        Spec.assertBool s (not (said (Html.toText (Board.view marks b')) || ObjectView.onAdventure other)) "not a card merely exiled"
+      (one, two) -> Spec.assertFailure s ("expected one exiled card in each: " <> show (length one, length two))
+
+-- | The scenario named (beneath data/scenarios, less its extension) replayed
+-- to a position.
+replayed :: Spec.Spec IO n -> Registry.Registry IO -> String -> Natural -> IO Stop.Stop
+replayed s registry name at = do
+  root <- Load.defaultRoot
+  bytes <- ByteString.readFile (root <> "/" <> name <> ".json")
+  case Load.parse bytes of
+    Left problem -> Spec.assertFailure s (Text.unpack problem)
+    Right scenario -> do
+      stopped <- Scenario.replay registry (Just at) scenario
+      either (Spec.assertFailure s . Text.unpack . Scenario.render) pure stopped
+
+-- | The stop's board as its active player sees it.
+boardOf :: Stop.Stop -> PlayerView.Type.PlayerView
+boardOf stop = let gs = Stop.state stop in PlayerView.viewFor (TurnRegisters.activePlayer (GameState.turn gs)) gs
+
+-- | The replay page's frame of a stop, as Parun.Browser.Replay.frameOf
+-- builds it.
+frameAt :: Stop.Stop -> Replay.Frame
+frameAt stop =
+  Replay.MkFrame
+    { Replay.name = Text.pack "a-scenario",
+      Replay.description = Text.empty,
+      Replay.seats = [],
+      Replay.viewer = PlayerView.Type.viewer (boardOf stop),
+      Replay.position = 0,
+      Replay.positions = 0,
+      Replay.board = Just (boardOf stop),
+      Replay.depth = case stop of
+        Stop.MkBefore _ _ asked -> Protocol.depthOf asked
+        Stop.MkEnded _ -> 0,
+      Replay.entry = Nothing,
+      Replay.question = Nothing,
+      Replay.failure = Nothing,
+      Replay.reading = Nothing
+    }
+
+-- | The turn bar of the replay page at the stop.
+turnBarOf :: Stop.Stop -> Text.Text
+turnBarOf stop = fst (Text.breakOn (Text.pack "<div class=\"play-area\"") (Html.toText (Replay.view (frameAt stop))))
 
 -- | The prompt kinds a scenario's text names in its answers.
 kindsIn :: Text.Text -> [Text.Text]

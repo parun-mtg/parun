@@ -2298,6 +2298,7 @@ spec s reference corpus = do
   Parun.WebQuestionSpec.spec s registry
   Parun.WebQuestionSpec.corpusSpec s registry
   Parun.WebQuestionSpec.subgameSpec s registry
+  Parun.WebQuestionSpec.replaySpec s registry
   Parun.ZoneChangeSpec.spec s registry
   Parun.ZoneReplacementSpec.spec s registry
   Parun.ZoneTriggerSpec.spec s registry

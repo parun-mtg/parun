@@ -55,6 +55,7 @@ codec = Fields.object $ do
   classLevel <- Fields.defaulted "classLevel" Nothing (Common.maybe ClassLevel.codec) ObjectView.classLevel
   unlockedHalves <- Fields.defaulted "unlockedHalves" Set.empty (Common.set RoomHalf.codec) ObjectView.unlockedHalves
   designations <- Fields.defaulted "designations" Set.empty (Common.set Designation.codec) ObjectView.designations
+  onAdventure <- Fields.defaulted "onAdventure" False Common.boolean ObjectView.onAdventure
   ventureRoom <- Fields.defaulted "ventureRoom" Nothing (Common.maybe RoomIndex.codec) ObjectView.ventureRoom
   chosenColors <- Fields.defaulted "chosenColors" Map.empty (Common.keyedList (Common.keyValue Acquisition.codec (Common.set Color.codec))) ObjectView.chosenColors
   chosenColorless <- Fields.defaulted "chosenColorless" Map.empty (Common.keySet Acquisition.codec) ObjectView.chosenColorless
@@ -84,6 +85,7 @@ codec = Fields.object $ do
         ObjectView.classLevel = classLevel,
         ObjectView.unlockedHalves = unlockedHalves,
         ObjectView.designations = designations,
+        ObjectView.onAdventure = onAdventure,
         ObjectView.ventureRoom = ventureRoom,
         ObjectView.chosenColors = chosenColors,
         ObjectView.chosenColorless = chosenColorless,

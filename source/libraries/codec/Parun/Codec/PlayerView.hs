@@ -3,6 +3,7 @@
 module Parun.Codec.PlayerView where
 
 import qualified Data.Map.Strict as Map
+import qualified Data.Sequence as Seq
 import qualified Parun.Codec.AttackTarget as AttackTarget
 import qualified Parun.Codec.Daytime as Daytime
 import qualified Parun.Codec.LoggedEvent as LoggedEvent
@@ -26,6 +27,8 @@ codec = Fields.object $ do
   game <- Fields.required "game" Common.natural PlayerView.game
   turn <- Fields.required "turn" Common.natural PlayerView.turn
   phase <- Fields.required "phase" Phase.codec PlayerView.phase
+  remaining <- Fields.defaulted "remaining" Seq.empty (Common.seq Phase.codec) PlayerView.remaining
+  extra <- Fields.defaulted "extra" False Common.boolean PlayerView.extra
   active <- Fields.required "active" PlayerId.codec PlayerView.active
   priority <- Fields.required "priority" (Common.maybe PlayerId.codec) PlayerView.priority
   seats <- Fields.required "seats" (Common.list SeatView.codec) PlayerView.seats
@@ -49,6 +52,8 @@ codec = Fields.object $ do
         PlayerView.game = game,
         PlayerView.turn = turn,
         PlayerView.phase = phase,
+        PlayerView.remaining = remaining,
+        PlayerView.extra = extra,
         PlayerView.active = active,
         PlayerView.priority = priority,
         PlayerView.seats = seats,

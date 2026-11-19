@@ -60,6 +60,7 @@ frame =
       Replay.position = 0,
       Replay.positions = 3,
       Replay.board = Nothing,
+      Replay.depth = 0,
       Replay.entry = Nothing,
       Replay.question = Nothing,
       Replay.failure = Nothing,

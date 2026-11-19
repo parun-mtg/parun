@@ -57,6 +57,9 @@ data ObjectView = MkObjectView
     -- | CR 702.112b / 701.37b / 701.60b / 720.3b and the rest of
     -- Parun.Types.Designation: the permanent's designations.
     designations :: Set.Set Designation.Designation,
+    -- | CR 716.3d: a card exiled as its Adventure resolved, which that
+    -- spell's controller may play while it stays exiled.
+    onAdventure :: Bool,
     -- | CR 309.4: the room of a dungeon its venture marker is on.
     ventureRoom :: Maybe RoomIndex.RoomIndex,
     -- | CR 607.2d: Object.chosenColors, less a secret choice (PlayerChoice.SecretChooser) the seat is not privy to (CR 724.4).

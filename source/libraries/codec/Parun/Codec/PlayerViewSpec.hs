@@ -1,7 +1,9 @@
 module Parun.Codec.PlayerViewSpec where
 
 import qualified Data.Map.Strict as Map
+import qualified Data.Sequence as Seq
 import qualified Data.Set as Set
+import qualified Data.Text as Text
 import qualified Parun.Codec.ObjectViewSpec as ObjectViewSpec
 import qualified Parun.Codec.PlayerView as PlayerView
 import qualified Parun.Codec.SeatViewSpec as SeatViewSpec
@@ -42,6 +44,13 @@ spec s = Spec.describe s "Parun.Codec.PlayerView" $ do
       PlayerView.codec
       testView {PlayerView.monarch = Just (PlayerId.MkPlayerId 0), PlayerView.initiative = Just (PlayerId.MkPlayerId 1), PlayerView.daytime = Just Daytime.Night, PlayerView.phasedOut = [ObjectViewSpec.hidden], PlayerView.command = [ObjectViewSpec.hidden]}
       (viewJsonWith (",\"phasedOut\":[" <> ObjectViewSpec.hiddenJson <> "],\"command\":[" <> ObjectViewSpec.hiddenJson <> "],\"monarch\":0,\"initiative\":1,\"daytime\":\"Night\""))
+  -- CR 500.1 / 500.8: the steps still scheduled, and an extra step.
+  Spec.it s "the steps to come and an extra step" $
+    Common.assertCodec
+      s
+      PlayerView.codec
+      testView {PlayerView.remaining = Seq.singleton Phase.PostcombatMain, PlayerView.extra = True}
+      (Text.unpack (Text.replace (Text.pack "\"phase\":{\"type\":\"PrecombatMain\"},") (Text.pack "\"phase\":{\"type\":\"PrecombatMain\"},\"remaining\":[{\"type\":\"PostcombatMain\"}],\"extra\":true,") (Text.pack testViewJson)))
   Spec.it s "has a schema" $ Common.assertHasSchema s PlayerView.codec
 
 testView :: PlayerView.PlayerView
@@ -51,6 +60,8 @@ testView =
       PlayerView.game = 2,
       PlayerView.turn = 3,
       PlayerView.phase = Phase.PrecombatMain,
+      PlayerView.remaining = Seq.empty,
+      PlayerView.extra = False,
       PlayerView.active = PlayerId.MkPlayerId 1,
       PlayerView.priority = Just (PlayerId.MkPlayerId 1),
       PlayerView.seats = [SeatViewSpec.testSeat],
