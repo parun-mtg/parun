@@ -6,6 +6,7 @@ import qualified Parun.Types.CostComponent as CostComponent
 import qualified Parun.Types.Keyword as Keyword
 import qualified Parun.Types.KeywordFamily as KeywordFamily
 import qualified Parun.Types.ManaCost as ManaCost
+import qualified Parun.Types.PermissionCost as PermissionCost
 import qualified Parun.Types.WithCounters as WithCounters
 import qualified Parun.Types.Zone as Zone
 
@@ -40,6 +41,9 @@ data CastingPermission
     -- owes none of it, so Parun.Engine.Cast.castWays offers it as a way of its own.
     -- So too the counters a spell cast under it enters with (CR 614.1d):
     -- Hundred-Battle Veteran's "If you do, it enters with a finality counter".
+    -- The PermissionCost is what such a cast pays rather than the mana cost (CR
+    -- 118.9), the list then holding the rest of that alternative cost: Squee,
+    -- Dubious Monarch's {3}{R}, its list exiling four other cards.
     -- The condition, asked of its owner (CR 109.5), is what the permission holds
     -- under (Undead Sprinter's "if a non-Zombie creature died this turn");
     -- Parun.Engine.PlayerEffect.permissionHolds asks it.
@@ -49,9 +53,9 @@ data CastingPermission
     -- Parun.Engine.Cast keeps asking "may this be cast from the graveyard?" and
     -- never "does this have flashback?".
     --
-    -- Unprinted: another zone, or exile beside a condition, a family, a cost or
-    -- counters. Parun.Codec.CastingPermission refuses each.
-    CastFrom Zone.Zone (Maybe Condition.Condition) (Maybe KeywordFamily.KeywordFamily) [CostComponent.CostComponent Keyword.Keyword] (Maybe WithCounters.WithCounters)
+    -- Unprinted: another zone, or exile beside a condition, a family, a cost, an
+    -- alternative cost or counters. Parun.Codec.CastingPermission refuses each.
+    CastFrom Zone.Zone (Maybe Condition.Condition) (Maybe KeywordFamily.KeywordFamily) [CostComponent.CostComponent Keyword.Keyword] (Maybe WithCounters.WithCounters) (Maybe PermissionCost.PermissionCost)
   | -- | CR 601.3 / 305.1: play this card from its owner's graveyard, casting
     -- it for its printed or an alternative cost (CR 118.9) or playing it as a land.
     PlayFromGraveyard
