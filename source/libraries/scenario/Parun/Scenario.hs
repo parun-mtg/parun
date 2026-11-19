@@ -169,6 +169,7 @@ import qualified Parun.Types.Source as Source
 import qualified Parun.Types.StackPlacement as StackPlacement
 import qualified Parun.Types.Staged as Staged
 import qualified Parun.Types.Start as Start
+import qualified Parun.Types.Stop as Stop
 import qualified Parun.Types.SubtypesAre as SubtypesAre
 import qualified Parun.Types.Taking as Taking
 import qualified Parun.Types.TappedIs as TappedIs
@@ -230,16 +231,24 @@ data Rehearsal = MkRehearsal
     ended :: Maybe GameState.GameState,
     -- | Each prompt other than priority asked so far, oldest first, by depth,
     -- turn, decider and kind: what the Asked view reads.
-    promptsAsked :: Seq.Seq (Natural, Natural, Maybe Label.Label, Text.Text)
+    promptsAsked :: Seq.Seq (Natural, Natural, Maybe Label.Label, Text.Text),
+    -- | How many entries the run has taken.
+    entriesTaken :: Natural,
+    -- | How many a replay takes before it stops (`replay`); Nothing to run on.
+    stopAt :: Maybe Natural,
+    -- | Where the run stands if it stops before the next entry: in the
+    -- question being answered.
+    stopHere :: Maybe (Natural -> Timed.Timed -> Stop.Stop)
   }
 
 type Run = State.StateT Rehearsal (Either Halt)
 
 -- | Why a run stopped short: a failure, or a name its reference has yet to be
 -- asked, or its whole reference, which `run` fetches before running again from
--- the start.
+-- the start, or a replay's stop.
 data Halt
   = Failed Failure.ScenarioFailure
+  | Stopped Stop.Stop
   | Fetching CardName.CardName
   | Enumerating
 
@@ -258,7 +267,14 @@ data Halt
 -- proves both. A ReferenceCards prompt halts it likewise, once, for the whole
 -- reference (Registry.cards), which every later run reads.
 run :: (Monad m) => Registry.Registry m -> Scenario.Scenario -> m (Either Failure.ScenarioFailure GameState.GameState)
-run registry scenario = do
+run registry = fmap (fmap Stop.state) . replay registry Nothing
+
+-- | `run`, stopped once it has taken that many entries, before it takes
+-- another, or at the end when it is Nothing or more than it takes: the web
+-- client's replay (Parun.Browser.Replay), which reaches a position the way
+-- the test runner does. A failure on the way fails the replay.
+replay :: (Monad m) => Registry.Registry m -> Maybe Natural -> Scenario.Scenario -> m (Either Failure.ScenarioFailure Stop.Stop)
+replay registry stop scenario = do
   staging <- case Scenario.start scenario of
     Start.FromBoard board -> fmap (fmap (\placed' -> (placed', Driver.drive [] scripted stepBudget finished (Staged.state placed')))) (stage registry board)
     Start.FromDecks format entrants -> fmap (fmap (\(seated, matchup) -> (seated, setUp matchup (Staged.state seated)))) (enter registry format entrants)
@@ -267,11 +283,11 @@ run registry scenario = do
         Start.FromDecks _ _ -> True
       attempt whole known = do
         (board, playing) <- Bifunctor.first Failed staging
-        (reached, rehearsal) <- State.runStateT playing ((rehearsalOf (Scenario.timeline scenario) board) {reference = Just known, catalogue = whole, replaying = fromDecks})
+        (reached, rehearsal) <- State.runStateT playing ((rehearsalOf (Scenario.timeline scenario) board) {reference = Just known, catalogue = whole, replaying = fromDecks, stopAt = stop})
         let final = Maybe.fromMaybe reached (ended rehearsal)
         Bifunctor.first Failed (settle rehearsal final)
         State.evalStateT (mapM_ (expect Nothing final Nothing) (Scenario.final scenario)) rehearsal {depth = 0}
-        pure final
+        pure (Stop.MkEnded final)
       fetching whole known = case attempt whole known of
         Left (Fetching name) -> do
           card <- Registry.fetchCard registry name
@@ -279,6 +295,7 @@ run registry scenario = do
           either (pure . Left . Failure.MkInvalidCorpus) (fetching whole . flip (Map.insert name) known) ((,) <$> card <*> face)
         Left Enumerating -> Registry.cards registry >>= either (pure . Left . Failure.MkInvalidCorpus) (\every -> fetching (Just every) known)
         Left (Failed failure) -> pure (Left failure)
+        Left (Stopped reached) -> pure (Right reached)
         Right final -> pure (Right final)
   fetching Nothing Map.empty
   where
@@ -334,6 +351,8 @@ rehearse timeline board game = do
         -- Unreached: rehearsalOf holds no reference, which never fetches.
         Fetching name -> Failure.MkUnknownCard name
         Enumerating -> Failure.MkUnknownCard (CardName.MkCardName (Text.pack "the card reference"))
+        -- Unreached: rehearsalOf sets no stop.
+        Stopped _ -> Failure.MkUnknownCard (CardName.MkCardName (Text.pack "a replay's stop"))
   ((value, final), rehearsal) <- Bifunctor.first halted (State.runStateT (Engine.runGameAsked answerPrompt (Staged.state board) game) (rehearsalOf timeline board))
   settle rehearsal final
   pure (value, final)
@@ -354,7 +373,10 @@ rehearsalOf timeline board =
           catalogue = Nothing,
           replaying = False,
           ended = Nothing,
-          promptsAsked = Seq.empty
+          promptsAsked = Seq.empty,
+          entriesTaken = 0,
+          stopAt = Nothing,
+          stopHere = Nothing
         }
 
 -- | What a finished run still owes: choices its last action never used, and
@@ -709,6 +731,7 @@ scripted = Answerer.MkAnswerer answerPrompt
 
 answerPrompt :: Asked.Asked GameState.GameState r -> Run r
 answerPrompt asked = do
+  State.modify' (\rehearsal -> rehearsal {stopHere = Just (\index timed -> Stop.MkBefore index timed asked)})
   rehearsal <- State.get
   -- A replayed recording ends at the first prompt past its last entry; the
   -- run answers quietly to the end of the step and checks that state.
@@ -1851,15 +1874,21 @@ takeForSource gs key source = do
       unqualified = List.find (\(_, _, oid) -> Maybe.isNothing oid) qualifiers
   pure (fmap (\(index, timed, _) -> (index, timed)) (qualified <|> unqualified))
 
+-- | Takes the entry at `index` of the moment's queue, or stops a replay that
+-- has taken as many as it asked for.
 popAt :: When.When -> Int -> Run ()
-popAt key index =
-  State.modify' $ \rehearsal ->
+popAt key index = do
+  rehearsal <- State.get
+  case (stopAt rehearsal, stopHere rehearsal, Seq.lookup index =<< Map.lookup key (queues rehearsal)) of
+    (Just limit, Just at, Just timed) | entriesTaken rehearsal >= limit -> State.StateT (const (Left (Stopped (at (entriesTaken rehearsal) timed))))
+    _ -> pure ()
+  State.put $
     let remaining = case Map.lookup key (queues rehearsal) of
           Nothing -> queues rehearsal
           Just entries ->
             let rest = Seq.deleteAt index entries
              in if Seq.null rest then Map.delete key (queues rehearsal) else Map.insert key rest (queues rehearsal)
-     in rehearsal {queues = remaining}
+     in rehearsal {queues = remaining, entriesTaken = entriesTaken rehearsal + 1}
 
 failWith :: Failure.ScenarioFailure -> Run a
 failWith failure = State.StateT (const (Left (Failed failure)))

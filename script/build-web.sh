@@ -2,7 +2,7 @@
 # Builds the web client into a directory ready to serve (default dist-web/):
 # the page, its style sheet, manifest and icons, the service worker, the
 # engine's Web Worker, the wasm module and its JavaScript FFI glue, the WASI
-# shim, and the data directory the engine mounts. Every file but the page,
+# shim, and the data directory the engine mounts, its scenarios apart. Every file but the page,
 # its manifest and icons and the service worker is named by a hash of its
 # contents, so a browser caches each until it changes, and the service
 # worker (sw.js) keeps them for later visits. Runs in the wasm dev shell;
@@ -40,6 +40,9 @@ done > "$staging/cards.bundle"
 tar --format=ustar --sort=name --owner=0 --group=0 --numeric-owner --mtime=@0 -cf - \
   -C "$staging" cards.bundle \
   -C "$PWD/data" decks formats legalities.json printings.json sticker-sheets | gzip -9n > "$out/data.tar.gz"
+# The scenarios a replay (?scenario=…) mounts beside it, fetched only then.
+tar --format=ustar --sort=name --owner=0 --group=0 --numeric-owner --mtime=@0 -cf - \
+  -C "$PWD/data" --exclude=README.md scenarios | gzip -9n > "$out/scenarios.tar.gz"
 
 # Content addressing, leaves first: a file's hash covers the names it refers
 # to, so a change anywhere renames every file that leads to it.
@@ -64,6 +67,7 @@ mv "$out/browser_wasi_shim" "$out/$shim"
 sed -i "s|\"\\./browser_wasi_shim/|\"./$shim/|g" "$out/engine.js"
 address parun.wasm engine.js
 address data.tar.gz engine.js
+address scenarios.tar.gz engine.js
 address ghc_wasm_jsffi.js engine.js
 address engine.js page.js
 address page.js index.html

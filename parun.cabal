@@ -3852,6 +3852,7 @@ library types
     Parun.Types.StickerPut
     Parun.Types.StickerRef
     Parun.Types.StickerSheet
+    Parun.Types.Stop
     Parun.Types.StoredEffects
     Parun.Types.StoredKind
     Parun.Types.StoredResult
@@ -4031,6 +4032,8 @@ library web
     Parun.Web.ManaSpec
     Parun.Web.Patch
     Parun.Web.Question
+    Parun.Web.Replay
+    Parun.Web.ReplaySpec
     Parun.Web.Wire
     Parun.Web.WireSpec
 
@@ -4047,6 +4050,7 @@ library browser
     parun:interpreter,
     parun:play,
     parun:registry,
+    parun:scenario,
     parun:trustworthy,
     parun:types,
     parun:web,
@@ -4059,6 +4063,7 @@ library browser
   exposed-modules:
     Parun.Browser
     Parun.Browser.Hotseat
+    Parun.Browser.Replay
 
 executable parun
   import: executable
