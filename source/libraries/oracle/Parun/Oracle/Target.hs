@@ -195,10 +195,13 @@ amounts context q = case q of
     let inclusive = [Text.replace orWord (Text.pack " and/or ") one | Text.isInfixOf orWord one]
         orWord = Text.pack " or "
         -- Free: a plural instant-or-sorcery count reads "and" (Enigma Drake's
-        -- power, Cosmic Epiphany's draw).
+        -- power, Cosmic Epiphany's draw), and so may a singular one (Tribute
+        -- to Urborg's "for each instant and sorcery card").
         spells = Text.pack "instant or sorcery cards"
         jointly = [Text.replace spells (Text.pack "instant and sorcery cards") many | Text.isInfixOf spells many]
-    fmap (\o -> MkAmount (ForEach 1 o) ms) (one : inclusive) <> fmap (\m -> MkAmount (EqualTo (Text.pack "the number of " <> m)) ms) (many : jointly)
+        spell = Text.pack "instant or sorcery card"
+        each' = [Text.replace spell (Text.pack "instant and sorcery card") one | Text.isInfixOf spell one]
+    fmap (\o -> MkAmount (ForEach 1 o) ms) (one : inclusive <> each') <> fmap (\m -> MkAmount (EqualTo (Text.pack "the number of " <> m)) ms) (many : jointly)
   Quantity.Arithmetic (Arithmetic.Times (Times.MkTimes (Quantity.Literal f) (Quantity.Count c)))
     | f > 1 -> do
         (one, _, ms) <- counting context c
@@ -410,8 +413,10 @@ object context determiner ref = case ref of
     Affected -> do
       p <- Filter.phrase f (keyword context)
       text <- Filter.describe Filter.Plural permanent p
+      -- Free: "all other ... you control" (Tori D'Avenant, Fury Rider).
       let bare = null (Filter.adjectives p) && null (Filter.qualifiers p)
-          adjectival = not bare && null (Filter.qualifiers p)
+          other = any ((== Text.pack "other") . Filter.many) (Filter.adjectives p)
+          adjectival = not bare && (null (Filter.qualifiers p) || other)
       [MkReference w [] Filter.Plural [] | w <- if bare then [Text.pack "all " <> text, text] else [text] <> [Text.pack "all " <> text | adjectival]]
   ObjectRef.EachCardInGraveyard e
     | determiner == All,
