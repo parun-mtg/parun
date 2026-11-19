@@ -1,0 +1,78 @@
+{
+  "faces": [
+    {
+      "castingPermissions": [
+        {
+          "type": "CastAsThoughItHadFlash",
+          "value": {
+            "condition": {
+              "type": "Compares",
+              "value": {
+                "comparison": "AtMost",
+                "measured": {
+                  "type": "InSlot",
+                  "value": "X"
+                },
+                "threshold": {
+                  "type": "Literal",
+                  "value": 3
+                }
+              }
+            }
+          }
+        }
+      ],
+      "manaCost": [
+        {
+          "type": "Variable"
+        },
+        {
+          "type": "OfType",
+          "value": {
+            "type": "Colored",
+            "value": "Blue"
+          }
+        },
+        {
+          "type": "OfType",
+          "value": {
+            "type": "Colored",
+            "value": "Blue"
+          }
+        }
+      ],
+      "name": "Silver Scrutiny",
+      "oracleText": "You may cast this spell as though it had flash if X is 3 or less.\nDraw X cards.",
+      "spell": {
+        "modes": [
+          {
+            "clauses": [
+              {
+                "effects": [
+                  {
+                    "type": "Draw",
+                    "value": {
+                      "player": {
+                        "type": "Relative",
+                        "value": "You"
+                      },
+                      "quantity": {
+                        "type": "InSlot",
+                        "value": "X"
+                      }
+                    }
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "typeLine": {
+        "types": [
+          "Sorcery"
+        ]
+      }
+    }
+  ]
+}
