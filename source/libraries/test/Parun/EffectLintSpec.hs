@@ -3155,7 +3155,7 @@ effectLintSpec s registry corpus = Spec.describe s "Lint" $ do
     Spec.assertEqWith s "a meld reads only tapped and attacking" (fmap (S.nameOf . Printing.card) offenders) []
   -- Unprinted: a token's entry counters conditioned on the entrant (CR 614.12),
   -- whose characteristics the creating effect already fixes. Only MoveToZone
-  -- prints one (Chief Montgomery Scott); Event.createTokens would read the gate
+  -- prints one (Chief Montgomery Scott, Recommission); Event.createTokens would read the gate
   -- as the move funnel does.
   Spec.it s "no Create or CreateCopy conditions an entry counter on the entrant" $ do
     ps <- S.allPrintings s corpus
