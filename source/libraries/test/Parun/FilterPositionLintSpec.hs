@@ -2227,6 +2227,7 @@ filterPositionLintSpec s registry corpus = Spec.describe s "Lint" $ do
         ("Run Away Together", 2), -- both target slots, each relative to the other
         ("Kitsune, Dragon's Daughter", 2), -- both target slots, Run Away Together's shape
         ("Trial of Agony", 1), -- its second target slot, Sorrow's Path's shape
+        ("Incriminate", 1), -- its second target slot, Trial of Agony's shape
         ("Fear, Fire, Foes!", 1), -- its damage's object, relative to the target's controller
         ("Legions to Ashes", 1), -- its exile's object, relative to the target's controller
         ("The Fall of Kroog", 1) -- its land target slot, Cloak and Dagger, Entwined's shape

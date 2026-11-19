@@ -1,0 +1,385 @@
+{
+  "faces": [
+    {
+      "manaCost": [
+        {
+          "type": "Generic",
+          "value": 4
+        },
+        {
+          "type": "OfType",
+          "value": {
+            "type": "Colored",
+            "value": "Green"
+          }
+        }
+      ],
+      "name": "Freelance Muscle",
+      "oracleText": "Whenever this creature attacks or blocks, it gets +X/+X until end of turn, where X is the greatest power and/or toughness among other creatures you control.",
+      "power": {
+        "type": "Literal",
+        "value": 4
+      },
+      "toughness": {
+        "type": "Literal",
+        "value": 4
+      },
+      "triggeredAbilities": [
+        {
+          "condition": {
+            "type": "AnyOf",
+            "value": [
+              {
+                "type": "Attacks",
+                "value": {
+                  "type": "Attacker",
+                  "value": {}
+                }
+              },
+              {
+                "type": "Blocks",
+                "value": {
+                  "role": "Blocker"
+                }
+              }
+            ]
+          },
+          "modal": {
+            "modes": [
+              {
+                "clauses": [
+                  {
+                    "effects": [
+                      {
+                        "type": "ModifyTarget",
+                        "value": {
+                          "duration": {
+                            "type": "UntilEndOfTurn"
+                          },
+                          "modification": {
+                            "type": "ModifyPowerToughness",
+                            "value": {
+                              "power": {
+                                "type": "Plus",
+                                "value": {
+                                  "left": {
+                                    "type": "Count",
+                                    "value": {
+                                      "aggregation": {
+                                        "type": "Greatest",
+                                        "value": {
+                                          "type": "Measure",
+                                          "value": "Power"
+                                        }
+                                      },
+                                      "filter": {
+                                        "type": "And",
+                                        "value": [
+                                          {
+                                            "type": "Not",
+                                            "value": {
+                                              "type": "IsSource"
+                                            }
+                                          },
+                                          {
+                                            "type": "HasCardType",
+                                            "value": "Creature"
+                                          },
+                                          {
+                                            "type": "HeldBy",
+                                            "value": {
+                                              "holder": "Controller",
+                                              "relation": "You"
+                                            }
+                                          }
+                                        ]
+                                      },
+                                      "scope": {
+                                        "type": "InZone",
+                                        "value": {
+                                          "player": {
+                                            "type": "Relative",
+                                            "value": "AnyPlayer"
+                                          },
+                                          "zone": "Battlefield"
+                                        }
+                                      }
+                                    }
+                                  },
+                                  "right": {
+                                    "type": "NonNegative",
+                                    "value": {
+                                      "type": "Plus",
+                                      "value": {
+                                        "left": {
+                                          "type": "Count",
+                                          "value": {
+                                            "aggregation": {
+                                              "type": "Greatest",
+                                              "value": {
+                                                "type": "Measure",
+                                                "value": "Toughness"
+                                              }
+                                            },
+                                            "filter": {
+                                              "type": "And",
+                                              "value": [
+                                                {
+                                                  "type": "Not",
+                                                  "value": {
+                                                    "type": "IsSource"
+                                                  }
+                                                },
+                                                {
+                                                  "type": "HasCardType",
+                                                  "value": "Creature"
+                                                },
+                                                {
+                                                  "type": "HeldBy",
+                                                  "value": {
+                                                    "holder": "Controller",
+                                                    "relation": "You"
+                                                  }
+                                                }
+                                              ]
+                                            },
+                                            "scope": {
+                                              "type": "InZone",
+                                              "value": {
+                                                "player": {
+                                                  "type": "Relative",
+                                                  "value": "AnyPlayer"
+                                                },
+                                                "zone": "Battlefield"
+                                              }
+                                            }
+                                          }
+                                        },
+                                        "right": {
+                                          "type": "Negate",
+                                          "value": {
+                                            "type": "Count",
+                                            "value": {
+                                              "aggregation": {
+                                                "type": "Greatest",
+                                                "value": {
+                                                  "type": "Measure",
+                                                  "value": "Power"
+                                                }
+                                              },
+                                              "filter": {
+                                                "type": "And",
+                                                "value": [
+                                                  {
+                                                    "type": "Not",
+                                                    "value": {
+                                                      "type": "IsSource"
+                                                    }
+                                                  },
+                                                  {
+                                                    "type": "HasCardType",
+                                                    "value": "Creature"
+                                                  },
+                                                  {
+                                                    "type": "HeldBy",
+                                                    "value": {
+                                                      "holder": "Controller",
+                                                      "relation": "You"
+                                                    }
+                                                  }
+                                                ]
+                                              },
+                                              "scope": {
+                                                "type": "InZone",
+                                                "value": {
+                                                  "player": {
+                                                    "type": "Relative",
+                                                    "value": "AnyPlayer"
+                                                  },
+                                                  "zone": "Battlefield"
+                                                }
+                                              }
+                                            }
+                                          }
+                                        }
+                                      }
+                                    }
+                                  }
+                                }
+                              },
+                              "toughness": {
+                                "type": "Plus",
+                                "value": {
+                                  "left": {
+                                    "type": "Count",
+                                    "value": {
+                                      "aggregation": {
+                                        "type": "Greatest",
+                                        "value": {
+                                          "type": "Measure",
+                                          "value": "Power"
+                                        }
+                                      },
+                                      "filter": {
+                                        "type": "And",
+                                        "value": [
+                                          {
+                                            "type": "Not",
+                                            "value": {
+                                              "type": "IsSource"
+                                            }
+                                          },
+                                          {
+                                            "type": "HasCardType",
+                                            "value": "Creature"
+                                          },
+                                          {
+                                            "type": "HeldBy",
+                                            "value": {
+                                              "holder": "Controller",
+                                              "relation": "You"
+                                            }
+                                          }
+                                        ]
+                                      },
+                                      "scope": {
+                                        "type": "InZone",
+                                        "value": {
+                                          "player": {
+                                            "type": "Relative",
+                                            "value": "AnyPlayer"
+                                          },
+                                          "zone": "Battlefield"
+                                        }
+                                      }
+                                    }
+                                  },
+                                  "right": {
+                                    "type": "NonNegative",
+                                    "value": {
+                                      "type": "Plus",
+                                      "value": {
+                                        "left": {
+                                          "type": "Count",
+                                          "value": {
+                                            "aggregation": {
+                                              "type": "Greatest",
+                                              "value": {
+                                                "type": "Measure",
+                                                "value": "Toughness"
+                                              }
+                                            },
+                                            "filter": {
+                                              "type": "And",
+                                              "value": [
+                                                {
+                                                  "type": "Not",
+                                                  "value": {
+                                                    "type": "IsSource"
+                                                  }
+                                                },
+                                                {
+                                                  "type": "HasCardType",
+                                                  "value": "Creature"
+                                                },
+                                                {
+                                                  "type": "HeldBy",
+                                                  "value": {
+                                                    "holder": "Controller",
+                                                    "relation": "You"
+                                                  }
+                                                }
+                                              ]
+                                            },
+                                            "scope": {
+                                              "type": "InZone",
+                                              "value": {
+                                                "player": {
+                                                  "type": "Relative",
+                                                  "value": "AnyPlayer"
+                                                },
+                                                "zone": "Battlefield"
+                                              }
+                                            }
+                                          }
+                                        },
+                                        "right": {
+                                          "type": "Negate",
+                                          "value": {
+                                            "type": "Count",
+                                            "value": {
+                                              "aggregation": {
+                                                "type": "Greatest",
+                                                "value": {
+                                                  "type": "Measure",
+                                                  "value": "Power"
+                                                }
+                                              },
+                                              "filter": {
+                                                "type": "And",
+                                                "value": [
+                                                  {
+                                                    "type": "Not",
+                                                    "value": {
+                                                      "type": "IsSource"
+                                                    }
+                                                  },
+                                                  {
+                                                    "type": "HasCardType",
+                                                    "value": "Creature"
+                                                  },
+                                                  {
+                                                    "type": "HeldBy",
+                                                    "value": {
+                                                      "holder": "Controller",
+                                                      "relation": "You"
+                                                    }
+                                                  }
+                                                ]
+                                              },
+                                              "scope": {
+                                                "type": "InZone",
+                                                "value": {
+                                                  "player": {
+                                                    "type": "Relative",
+                                                    "value": "AnyPlayer"
+                                                  },
+                                                  "zone": "Battlefield"
+                                                }
+                                              }
+                                            }
+                                          }
+                                        }
+                                      }
+                                    }
+                                  }
+                                }
+                              }
+                            }
+                          },
+                          "ref": {
+                            "type": "InSlot",
+                            "value": "self"
+                          }
+                        }
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          }
+        }
+      ],
+      "typeLine": {
+        "subtypes": [
+          "Rhino",
+          "Warrior"
+        ],
+        "types": [
+          "Creature"
+        ]
+      }
+    }
+  ]
+}
