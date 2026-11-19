@@ -109,9 +109,6 @@
   "note": "Three of a colour is one pair: three counters, not four and a half, and one each, not one and a half.",
   "timeline": [
     {
-      "player": "alice",
-      "step": "PrecombatMain",
-      "turn": 1,
       "do": {
         "Cast": {
           "mana": [
@@ -127,12 +124,12 @@
           "object": "$champion",
           "x": 4
         }
-      }
-    },
-    {
+      },
       "player": "alice",
       "step": "PrecombatMain",
-      "turn": 1,
+      "turn": 1
+    },
+    {
       "do": {
         "ChooseTargets": {
           "target": [
@@ -140,26 +137,26 @@
             "$giant"
           ]
         }
-      }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
     },
     {
-      "player": "alice",
-      "step": "BeginningOfCombat",
-      "turn": 1,
       "check": {
         "Counters": {
           "count": 3,
           "kind": {
             "type": "PlusOnePlusOne"
           },
-          "object": "$champion"
+          "object": "Clay Champion"
         }
-      }
-    },
-    {
+      },
       "player": "alice",
       "step": "BeginningOfCombat",
-      "turn": 1,
+      "turn": 1
+    },
+    {
       "check": {
         "Counters": {
           "count": 1,
@@ -168,12 +165,12 @@
           },
           "object": "$bears"
         }
-      }
-    },
-    {
+      },
       "player": "alice",
       "step": "BeginningOfCombat",
-      "turn": 1,
+      "turn": 1
+    },
+    {
       "check": {
         "Counters": {
           "count": 1,
@@ -182,12 +179,12 @@
           },
           "object": "$giant"
         }
-      }
-    },
-    {
+      },
       "player": "alice",
       "step": "BeginningOfCombat",
-      "turn": 1,
+      "turn": 1
+    },
+    {
       "check": {
         "Counters": {
           "count": 0,
@@ -196,7 +193,10 @@
           },
           "object": "$theirs"
         }
-      }
+      },
+      "player": "alice",
+      "step": "BeginningOfCombat",
+      "turn": 1
     }
   ]
 }

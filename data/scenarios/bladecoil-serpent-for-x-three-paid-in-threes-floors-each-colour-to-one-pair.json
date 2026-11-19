@@ -105,13 +105,10 @@
     ],
     "step": "PrecombatMain"
   },
-  "description": "CR 601.2h / 107.3m Bladecoil Serpent cast for X=3 with three each of {U}, {B} and {R} draws one card, makes each opponent discard one, and gets +1/+0, trample and haste",
+  "description": "CR 601.2h Bladecoil Serpent cast for X=3 with three each of {U}, {B} and {R} draws one card, makes each opponent discard one, and gets +1/+0, trample and haste",
   "note": "Three of each colour is one pair of each: every trigger floors one and a half to one.",
   "timeline": [
     {
-      "player": "alice",
-      "step": "PrecombatMain",
-      "turn": 1,
       "do": {
         "Cast": {
           "mana": [
@@ -128,24 +125,24 @@
           "object": "$serpent",
           "x": 3
         }
-      }
-    },
-    {
+      },
       "player": "alice",
       "step": "PrecombatMain",
-      "turn": 1,
+      "turn": 1
+    },
+    {
       "do": {
         "OrderTriggers": [
           "Bladecoil Serpent",
           "Bladecoil Serpent",
           "Bladecoil Serpent"
         ]
-      }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
     },
     {
-      "player": "bob",
-      "step": "PrecombatMain",
-      "turn": 1,
       "do": {
         "Answer": {
           "prompt": "ChooseDiscard",
@@ -153,12 +150,12 @@
             "$shock"
           ]
         }
-      }
+      },
+      "player": "bob",
+      "step": "PrecombatMain",
+      "turn": 1
     },
     {
-      "player": "alice",
-      "step": "BeginningOfCombat",
-      "turn": 1,
       "check": {
         "Count": {
           "card": "Grizzly Bears",
@@ -166,12 +163,12 @@
           "player": "alice",
           "zone": "Hand"
         }
-      }
-    },
-    {
+      },
       "player": "alice",
       "step": "BeginningOfCombat",
-      "turn": 1,
+      "turn": 1
+    },
+    {
       "check": {
         "Count": {
           "card": "Hill Giant",
@@ -179,12 +176,12 @@
           "player": "alice",
           "zone": "Hand"
         }
-      }
-    },
-    {
+      },
       "player": "alice",
       "step": "BeginningOfCombat",
-      "turn": 1,
+      "turn": 1
+    },
+    {
       "check": {
         "Count": {
           "card": "Shock",
@@ -192,12 +189,12 @@
           "player": "bob",
           "zone": "Graveyard"
         }
-      }
-    },
-    {
+      },
       "player": "alice",
       "step": "BeginningOfCombat",
-      "turn": 1,
+      "turn": 1
+    },
+    {
       "check": {
         "Count": {
           "card": "Hill Giant",
@@ -205,47 +202,50 @@
           "player": "bob",
           "zone": "Hand"
         }
-      }
-    },
-    {
+      },
       "player": "alice",
       "step": "BeginningOfCombat",
-      "turn": 1,
+      "turn": 1
+    },
+    {
       "check": {
         "PowerToughness": {
-          "object": "$serpent",
+          "object": "Bladecoil Serpent",
           "power": 6,
           "toughness": 4
         }
-      }
-    },
-    {
+      },
       "player": "alice",
       "step": "BeginningOfCombat",
-      "turn": 1,
+      "turn": 1
+    },
+    {
       "check": {
         "Keywords": {
           "count": 1,
           "keyword": {
             "type": "Trample"
           },
-          "object": "$serpent"
+          "object": "Bladecoil Serpent"
         }
-      }
-    },
-    {
+      },
       "player": "alice",
       "step": "BeginningOfCombat",
-      "turn": 1,
+      "turn": 1
+    },
+    {
       "check": {
         "Keywords": {
           "count": 1,
           "keyword": {
             "type": "Haste"
           },
-          "object": "$serpent"
+          "object": "Bladecoil Serpent"
         }
-      }
+      },
+      "player": "alice",
+      "step": "BeginningOfCombat",
+      "turn": 1
     }
   ]
 }

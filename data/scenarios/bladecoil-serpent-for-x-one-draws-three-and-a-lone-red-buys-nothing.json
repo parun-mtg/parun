@@ -97,9 +97,6 @@
   "note": "No black was spent, so Bob keeps Shock.",
   "timeline": [
     {
-      "player": "alice",
-      "step": "PrecombatMain",
-      "turn": 1,
       "do": {
         "Cast": {
           "mana": [
@@ -114,24 +111,24 @@
           "object": "$serpent",
           "x": 1
         }
-      }
-    },
-    {
+      },
       "player": "alice",
       "step": "PrecombatMain",
-      "turn": 1,
+      "turn": 1
+    },
+    {
       "do": {
         "OrderTriggers": [
           "Bladecoil Serpent",
           "Bladecoil Serpent",
           "Bladecoil Serpent"
         ]
-      }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
     },
     {
-      "player": "alice",
-      "step": "BeginningOfCombat",
-      "turn": 1,
       "check": {
         "Count": {
           "card": "Grizzly Bears",
@@ -139,12 +136,12 @@
           "player": "alice",
           "zone": "Hand"
         }
-      }
-    },
-    {
+      },
       "player": "alice",
       "step": "BeginningOfCombat",
-      "turn": 1,
+      "turn": 1
+    },
+    {
       "check": {
         "Count": {
           "card": "Hill Giant",
@@ -152,12 +149,12 @@
           "player": "alice",
           "zone": "Hand"
         }
-      }
-    },
-    {
+      },
       "player": "alice",
       "step": "BeginningOfCombat",
-      "turn": 1,
+      "turn": 1
+    },
+    {
       "check": {
         "Count": {
           "card": "Plains",
@@ -165,12 +162,12 @@
           "player": "alice",
           "zone": "Hand"
         }
-      }
-    },
-    {
+      },
       "player": "alice",
       "step": "BeginningOfCombat",
-      "turn": 1,
+      "turn": 1
+    },
+    {
       "check": {
         "Count": {
           "card": "Shock",
@@ -178,47 +175,50 @@
           "player": "bob",
           "zone": "Hand"
         }
-      }
-    },
-    {
+      },
       "player": "alice",
       "step": "BeginningOfCombat",
-      "turn": 1,
+      "turn": 1
+    },
+    {
       "check": {
         "PowerToughness": {
-          "object": "$serpent",
+          "object": "Bladecoil Serpent",
           "power": 5,
           "toughness": 4
         }
-      }
-    },
-    {
+      },
       "player": "alice",
       "step": "BeginningOfCombat",
-      "turn": 1,
+      "turn": 1
+    },
+    {
       "check": {
         "Keywords": {
           "count": 0,
           "keyword": {
             "type": "Trample"
           },
-          "object": "$serpent"
+          "object": "Bladecoil Serpent"
         }
-      }
-    },
-    {
+      },
       "player": "alice",
       "step": "BeginningOfCombat",
-      "turn": 1,
+      "turn": 1
+    },
+    {
       "check": {
         "Keywords": {
           "count": 0,
           "keyword": {
             "type": "Haste"
           },
-          "object": "$serpent"
+          "object": "Bladecoil Serpent"
         }
-      }
+      },
+      "player": "alice",
+      "step": "BeginningOfCombat",
+      "turn": 1
     }
   ]
 }
