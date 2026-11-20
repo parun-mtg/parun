@@ -61,6 +61,7 @@ import qualified Parun.Types.Player as Player
 import qualified Parun.Types.PlayerCounterKind as PlayerCounterKind
 import Parun.Types.PlayerId (PlayerId)
 import qualified Parun.Types.Pool as Pool
+import qualified Parun.Types.Program as Program
 import qualified Parun.Types.ProjectedCharacteristics as PC
 import qualified Parun.Types.Prompt as Prompt
 import qualified Parun.Types.RangeOfInfluence as RangeOfInfluence
@@ -755,6 +756,17 @@ performStateBasedActions instead boards = do
   thenExile
   pure acted
 
+-- The objects `act` moves out of their zones, run on `gs` and discarded:
+-- what a destruction's replacement in a check would move, which a loss's
+-- replacement in it contests (checkOnce).
+--
+-- Not implemented: a replacement that asks a question before it moves
+-- contests nothing (#9097).
+wouldMove :: Game () -> GameState -> Set.Set ObjectId
+wouldMove act gs = case State.execStateT act gs of
+  Program.Return after -> Set.fromList [oid | oid <- Map.keys (GameState.objects gs), Game.zoneOf oid after /= Game.zoneOf oid gs]
+  Program.Then _ _ -> Set.empty
+
 -- The pass itself, which is one event; `performStateBasedActions` above says why
 -- CR 800.4a's fourth clause is handed back rather than run here.
 checkOnce :: (PendingReplacementEffect.PendingReplacementEffect -> Game ()) -> [GameState] -> Game (Bool, Game ())
@@ -994,6 +1006,7 @@ checkOnce instead boards = do
   -- What a destruction's replacement queued runs with the losses' below.
   queued <- State.gets (Seq.length . (StoredEffects.pendingReplacementEffects . GameState.stored))
   standing <- Event.destructionsStanding gs DestructionCause.ByRule Regenerability.Regenerable (filter (`notElem` buried) toDestroy)
+  replaced <- State.gets (Seq.length . (StoredEffects.pendingReplacementEffects . GameState.stored))
   -- CR 104.3 / 614.1a: each loss is offered to the replacements that watch it
   -- BEFORE anything below moves, in REVERSE of `leaving` -- the order the
   -- `foldr` this replaced applied them in, kept because CR 800.4a's fourth
@@ -1023,9 +1036,17 @@ checkOnce instead boards = do
   -- moves below find it gone (CR 614.7's shape, as for any member another
   -- action already moved). Parun.ScenarioSpec's
   -- data/scenarios/game-outcome/cr-616-1-lich-s-mirror-* pair proves both.
+  --
+  -- What a destruction's replacement moves is the check's too, so a loss's
+  -- effects run first and contest it as well, and the destruction's run after,
+  -- finding a taken object gone or a kept one where it was. Parun.ScenarioSpec's
+  -- cr-616-1-lich-s-mirror-*-crackling-emergence-* pair proves both.
   let moving = Set.fromList (buried <> standing <> fmap snd told <> returningCommanders)
-  Foldable.for_ insteads $ \pending -> do
-    State.modify' (\g -> g {GameState.scratch = (GameState.scratch g) {Scratch.contested = Map.fromSet (const (Just (PendingReplacementEffect.source pending))) moving}})
+      (spared, lost) = Seq.splitAt (replaced - queued) insteads
+      contesting pending = Map.fromSet (const (Just (PendingReplacementEffect.source pending)))
+  sparedMoves <- State.gets (\now -> foldMap (\pending -> wouldMove (instead pending) now) spared)
+  Foldable.for_ (fmap (\pending -> (pending, moving <> sparedMoves)) lost <> fmap (\pending -> (pending, moving)) spared) $ \(pending, contested) -> do
+    State.modify' (\g -> g {GameState.scratch = (GameState.scratch g) {Scratch.contested = contesting pending contested}})
     instead pending
   State.modify' (\g -> g {GameState.scratch = (GameState.scratch g) {Scratch.contested = Map.empty}})
   -- Every put-into-graveyard this pass performs, as ONE deduplicated batch:
