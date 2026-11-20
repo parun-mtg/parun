@@ -324,25 +324,33 @@ spec s registry = Spec.describe s "WebQuestion" $ do
     Spec.assertEqWith s "the sheet" (fmap (Card.oracle lookUp) (Render.recalled view oid)) (Just (Right [Text.pack "({T}: Add {R}.)"]))
 
   Spec.it s "CR 709.4c / 709.5 a Room's sheet checks the abilities of the doors it has, as one" $ do
-    -- Opalescence makes the Room a creature for Humility to strip.
+    -- Opalescence makes the Room a creature for Humility to strip and
+    -- Levitation to give flying.
     room <- S.printingOf s registry "Bottomless Pool"
     opalescence <- S.printingOf s registry "Opalescence"
     humility <- S.printingOf s registry "Humility"
+    levitation <- S.printingOf s registry "Levitation"
     let card = Printing.card room
         lookUp n = Right (if any ((== n) . Face.name) (Card.Type.faces card) then Just card else Nothing) :: Either () (Maybe Card.Type.Card)
         sheetOf doors gs0 =
           let (oid, gs1) = S.addPermanent room S.alice gs0
               gs = gs1 {GameState.objects = Map.adjust (\o -> o {Object.unlockedHalves = Set.fromList doors}) oid (GameState.objects gs1)}
            in fmap (Card.oracle lookUp) (List.find ((== oid) . ObjectView.object) (PlayerView.Type.battlefield (PlayerView.viewFor S.alice gs)))
-        stripped = snd (S.addPermanent humility S.bob (snd (S.addPermanent opalescence S.bob (Setup.emptyGame S.bothPlayers))))
-        headed f = (CardName.unwrap (Face.name f) <> Text.pack ":") : foldMap Text.lines (Face.oracleText f)
-        printedText = foldMap headed (Card.Type.faces card)
-        locker = foldMap headed (NonEmpty.tail (Card.Type.faces card))
+        animated = snd (S.addPermanent opalescence S.bob (Setup.emptyGame S.bothPlayers))
+        stripped = snd (S.addPermanent humility S.bob animated)
+        flying = snd (S.addPermanent levitation S.alice animated)
+        headedAs suffix f = (CardName.unwrap (Face.name f) <> Text.pack suffix) : foldMap Text.lines (Face.oracleText f)
+        printedText = foldMap (headedAs ":") (Card.Type.faces card)
+        pool = headedAs ":" (NonEmpty.head (Card.Type.faces card))
+        locker = foldMap (headedAs " (locked):") (NonEmpty.tail (Card.Type.faces card))
+        shut = foldMap (headedAs " (locked):") (Card.Type.faces card)
         both = [RoomHalf.LeftHalf, RoomHalf.RightHalf]
     Spec.assertEqWith s "both doors, as printed" (sheetOf both (Setup.emptyGame S.bothPlayers)) (Just (Right printedText))
-    Spec.assertEqWith s "one door, as printed" (sheetOf [RoomHalf.LeftHalf] (Setup.emptyGame S.bothPlayers)) (Just (Right printedText))
+    Spec.assertEqWith s "one door, as printed, the other locked" (sheetOf [RoomHalf.LeftHalf] (Setup.emptyGame S.bothPlayers)) (Just (Right (pool <> locker)))
     Spec.assertEqWith s "both doors, stripped" (sheetOf both stripped) (Just (Right [Text.pack "Bottomless Pool // Locker Room:", Text.pack "It has no abilities."]))
     Spec.assertEqWith s "the open door stripped, the locked one printed" (sheetOf [RoomHalf.LeftHalf] stripped) (Just (Right ([Text.pack "Bottomless Pool:", Text.pack "It has no abilities."] <> locker)))
+    Spec.assertEqWith s "no door, both locked" (sheetOf [] (Setup.emptyGame S.bothPlayers)) (Just (Right shut))
+    Spec.assertEqWith s "no door, given flying" (sheetOf [] flying) (Just (Right (Text.pack "Flying" : shut)))
 
   Spec.it s "CR 709.4 a split card's sheet checks its halves as one, and can't word the second half's spell" $ do
     wearTear <- S.printingOf s registry "Wear"

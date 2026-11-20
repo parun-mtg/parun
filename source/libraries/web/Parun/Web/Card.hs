@@ -293,19 +293,32 @@ oracle lookUp o = do
       -- split card's halves off the stack (CR 709.4), the half cast (CR
       -- 709.3b), a Room's unlocked doors (CR 709.5); and those together.
       had = filter (\f -> any (Set.member (Face.name f) . ProjectedCharacteristics.names) now) shown
+      own = ObjectView.ownEffects o
+      room = ProjectedCharacteristics.halves =<< now
+      -- On the battlefield, where a Room has its designations (CR 709.5c): a
+      -- door unlocked, or no name, which a Room has nowhere else (CR 709.3b,
+      -- 709.4).
+      placed = not (Set.null (ObjectView.unlockedHalves o)) || null had
+      locked f = placed && any (any (`Set.notMember` ObjectView.unlockedHalves o) . Engine.Card.halfPositionOf (Face.name f)) room
       whole = case (now, had) of
-        (Just c, one : more@(_ : _)) -> Just (wordingOf (ObjectView.ownEffects o) c (one NonEmpty.:| more))
+        (Just c, one : more@(_ : _)) -> Just (wordingOf own c (one NonEmpty.:| more))
+        -- A Room with no door unlocked has neither door's rules text (CR 709.5).
+        (Just c, []) | Just card <- room, placed -> Just (wording own c (Engine.Card.roomFace Set.empty card))
         _ -> Nothing
       body f = case (now, had) of
-        (Just c, [one]) | Face.name one == Face.name f -> said (wording (ObjectView.ownEffects o) c f) (printed f)
+        (Just c, [one]) | Face.name one == Face.name f -> said (wording own c f) (printed f)
         _ -> printed f
-      lines' f = [CardName.unwrap (Face.name f) <> Text.pack (if Set.member (Face.name f) names || null shown then ":" else " (other face):") | length faces > 1 || not (null under)] <> body f
+      heading f
+        | locked f = " (locked):"
+        | Set.member (Face.name f) names || null shown = ":"
+        | otherwise = " (other face):"
+      lines' f = [CardName.unwrap (Face.name f) <> Text.pack (heading f) | length faces > 1 || not (null under)] <> body f
       -- Faces it has whose abilities differ say them once, under their names.
       body' = case whole of
         Just (MkWorded worded) ->
-          (Text.intercalate (Text.pack " // ") (fmap (CardName.unwrap . Face.name) had) <> Text.pack ":")
-            : said (MkWorded worded) []
-              <> concatMap lines' (filter (`notElem` had) faces)
+          [Text.intercalate (Text.pack " // ") (fmap (CardName.unwrap . Face.name) had) <> Text.pack ":" | not (null had)]
+            <> said (MkWorded worded) []
+            <> concatMap lines' (filter (`notElem` had) faces)
         Just MkUnworded -> said MkUnworded (concatMap lines' faces)
         _ -> concatMap lines' faces
       -- A merged card's face it shows (CR 731.2), as printed.
