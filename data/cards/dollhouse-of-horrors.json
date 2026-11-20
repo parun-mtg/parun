@@ -1,0 +1,210 @@
+{
+  "faces": [
+    {
+      "activatedAbilities": [
+        {
+          "cost": {
+            "components": [
+              {
+                "type": "TapThis"
+              },
+              {
+                "type": "MoveCardsFromGraveyard",
+                "value": {
+                  "count": {
+                    "type": "Fixed",
+                    "value": 1
+                  },
+                  "whichCards": {
+                    "type": "HasCardType",
+                    "value": "Creature"
+                  }
+                }
+              }
+            ],
+            "mana": [
+              {
+                "type": "Generic",
+                "value": 1
+              }
+            ]
+          },
+          "modal": {
+            "modes": [
+              {
+                "clauses": [
+                  {
+                    "effects": [
+                      {
+                        "type": "CreateCopy",
+                        "value": {
+                          "exceptions": [
+                            {
+                              "type": "SetPowerToughness",
+                              "value": {
+                                "type": "Numbers",
+                                "value": {
+                                  "power": 0,
+                                  "toughness": 0
+                                }
+                              }
+                            },
+                            {
+                              "type": "CardTypes",
+                              "value": {
+                                "cardTypes": [
+                                  "Artifact"
+                                ],
+                                "mode": "InAddition"
+                              }
+                            },
+                            {
+                              "type": "AddSubtypes",
+                              "value": [
+                                "Construct"
+                              ]
+                            },
+                            {
+                              "type": "GainAbility",
+                              "value": {
+                                "type": "Static",
+                                "value": {
+                                  "affected": {
+                                    "type": "Matching",
+                                    "value": {
+                                      "type": "IsSource"
+                                    }
+                                  },
+                                  "modifications": [
+                                    {
+                                      "type": "ModifyPowerToughness",
+                                      "value": {
+                                        "power": {
+                                          "type": "Count",
+                                          "value": {
+                                            "aggregation": {
+                                              "type": "Members"
+                                            },
+                                            "filter": {
+                                              "type": "And",
+                                              "value": [
+                                                {
+                                                  "type": "HasSubtype",
+                                                  "value": "Construct"
+                                                },
+                                                {
+                                                  "type": "HeldBy",
+                                                  "value": {
+                                                    "holder": "Controller",
+                                                    "relation": "You"
+                                                  }
+                                                }
+                                              ]
+                                            },
+                                            "scope": {
+                                              "type": "InZone",
+                                              "value": {
+                                                "player": {
+                                                  "type": "Relative",
+                                                  "value": "AnyPlayer"
+                                                },
+                                                "zone": "Battlefield"
+                                              }
+                                            }
+                                          }
+                                        },
+                                        "toughness": {
+                                          "type": "Count",
+                                          "value": {
+                                            "aggregation": {
+                                              "type": "Members"
+                                            },
+                                            "filter": {
+                                              "type": "And",
+                                              "value": [
+                                                {
+                                                  "type": "HasSubtype",
+                                                  "value": "Construct"
+                                                },
+                                                {
+                                                  "type": "HeldBy",
+                                                  "value": {
+                                                    "holder": "Controller",
+                                                    "relation": "You"
+                                                  }
+                                                }
+                                              ]
+                                            },
+                                            "scope": {
+                                              "type": "InZone",
+                                              "value": {
+                                                "player": {
+                                                  "type": "Relative",
+                                                  "value": "AnyPlayer"
+                                                },
+                                                "zone": "Battlefield"
+                                              }
+                                            }
+                                          }
+                                        }
+                                      }
+                                    }
+                                  ]
+                                }
+                              }
+                            }
+                          ],
+                          "ref": {
+                            "type": "InSlot",
+                            "value": "thatExiledCard"
+                          },
+                          "slot": "token"
+                        }
+                      },
+                      {
+                        "type": "ModifyTarget",
+                        "value": {
+                          "duration": {
+                            "type": "UntilEndOfTurn"
+                          },
+                          "modification": {
+                            "type": "GainKeyword",
+                            "value": {
+                              "type": "Haste"
+                            }
+                          },
+                          "ref": {
+                            "type": "InSlot",
+                            "value": "token"
+                          }
+                        }
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          },
+          "restrictions": [
+            {
+              "type": "SorcerySpeed"
+            }
+          ]
+        }
+      ],
+      "manaCost": [
+        {
+          "type": "Generic",
+          "value": 5
+        }
+      ],
+      "name": "Dollhouse of Horrors",
+      "oracleText": "{1}, {T}, Exile a creature card from your graveyard: Create a token that's a copy of the exiled card, except it's a 0/0 Construct artifact in addition to its other types and it has \"This token gets +1/+1 for each Construct you control.\" It gains haste until end of turn. Activate only as a sorcery.",
+      "typeLine": {
+        "types": [
+          "Artifact"
+        ]
+      }
+    }
+  ]
+}

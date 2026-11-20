@@ -2440,7 +2440,8 @@ filterPositionLintSpec s registry corpus = Spec.describe s "Lint" $ do
     -- Phyrexia's back face. At most, against toughness, in a reflexive
     -- trigger's slot counting your Shrines: Go-Shintai of Hidden Cruelty. At
     -- most, against the mana value, in an attack trigger's slot counting your
-    -- modified creatures: Unforgiving One.
+    -- modified creatures: Unforgiving One. At most, against the mana value, in
+    -- an enters trigger's slot counting your Vampires: Dominating Vampire.
     assertAuthors
       s
       registry
@@ -2462,6 +2463,7 @@ filterPositionLintSpec s registry corpus = Spec.describe s "Lint" $ do
         ("Astelli Reclaimer", 1),
         ("Squirming Emergence", 1),
         ("Lay Down Arms", 1),
+        ("Dominating Vampire", 1),
         ("Tameshi, Reality Architect", 1),
         ("Chthonian Nightmare", 1),
         ("Shelob, Dread Weaver", 1),
