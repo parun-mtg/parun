@@ -1433,8 +1433,11 @@ spellAdjustments announced aiming pid oid gs =
 -- {1} more". Zero for a card anywhere else, or one whose permission is not
 -- `pid`'s or not open (Expiry.permissionOpen), candidateCostsGiven's exile arm's
 -- scoping, and zero for one a target can waive, which permissionCostChanges
--- applies once the targets are announced. On a graveyard card it is not
--- implemented (#8118).
+-- applies once the targets are announced.
+--
+-- Unprinted: an increase no target waives on a graveyard card, kept out of
+-- card data by Parun.EffectLintSpec's "no play permission outside exile
+-- carries keywords, a budget or an unwaived increase".
 --
 -- Asked of the PRE-MOVE card, Commander.tax's reason: the permission is on the
 -- card in exile and CR 400.7's spell on the stack has none, so this answers the
@@ -1469,8 +1472,11 @@ permissionCostChanges permission = case ExilePlayPermission.increaseUnless permi
 -- CR 400.7h: the keywords the CR 601.3 permission an exiled `oid` carries gives
 -- `pid`'s spell of it -- Durnan of the Yawning Portal's "that spell has
 -- undaunted". Scoped and asked of the pre-move card for permissionIncrease's
--- reasons; Parun.Engine.Cast.castGrantsOf stamps them on the spell. On a
--- graveyard card they are not implemented (#8118).
+-- reasons; Parun.Engine.Cast.castGrantsOf stamps them on the spell.
+--
+-- Unprinted: the keywords on a graveyard card, kept out of card data by
+-- Parun.EffectLintSpec's "no play permission outside exile carries keywords,
+-- a budget or an unwaived increase".
 permissionKeywords :: PlayerId -> ObjectId -> GameState -> [Keyword.Type.Keyword]
 permissionKeywords pid oid gs = foldMap ExilePlayPermission.keywords (castPermission [Zone.Exile] pid oid gs)
 
