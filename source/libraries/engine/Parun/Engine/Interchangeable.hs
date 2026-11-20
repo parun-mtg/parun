@@ -525,7 +525,7 @@ continuousNames oid gs row = case row of
 -- runtime id, exactly as a printed card does.
 copyNames :: ObjectId -> ActiveCopy.ActiveCopy -> Bool
 copyNames oid row = case row of
-  ActiveCopy.MkActiveCopy source _timestamp expiry covers _snapshot _turned ->
+  ActiveCopy.MkActiveCopy source _timestamp expiry covers _snapshot _turned _up ->
     source == oid || Monoid.getAny (Mentions.expiryNames (unread oid) expiry) || case covers of
       CopyCoverage.These copied -> Set.member oid copied
       CopyCoverage.SourceHost overtaken -> Map.member oid overtaken

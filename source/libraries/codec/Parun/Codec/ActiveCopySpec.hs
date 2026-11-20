@@ -28,7 +28,8 @@ spec s = Spec.describe s "Parun.Codec.ActiveCopy" $ do
           ActiveCopy.expiry = Expiry.AtCleanup,
           ActiveCopy.covers = CopyCoverage.These (Set.fromList [ObjectId.MkObjectId 3, ObjectId.MkObjectId 4]),
           ActiveCopy.snapshot = ProjectedCharacteristicsSpec.minimalCharacteristics,
-          ActiveCopy.turned = Nothing
+          ActiveCopy.turned = Nothing,
+          ActiveCopy.up = Nothing
         }
       " {\"source\":1,\"timestamp\":2,\"expiry\":{\"type\":\"AtCleanup\"},\"covers\":{\"type\":\"These\",\"value\":[3,4]},\"snapshot\":{\"names\":[\"Mountain\"],\"cardTypes\":[\"Land\"]}} "
   -- CR 731.2i: a merge applied over the row, with its turned-over reading.
@@ -42,9 +43,26 @@ spec s = Spec.describe s "Parun.Codec.ActiveCopy" $ do
           ActiveCopy.expiry = Expiry.AtCleanup,
           ActiveCopy.covers = CopyCoverage.These (Set.singleton (ObjectId.MkObjectId 3)),
           ActiveCopy.snapshot = ProjectedCharacteristicsSpec.minimalCharacteristics,
-          ActiveCopy.turned = Just ProjectedCharacteristicsSpec.minimalCharacteristics
+          ActiveCopy.turned = Just ProjectedCharacteristicsSpec.minimalCharacteristics,
+          ActiveCopy.up = Nothing
         }
       " {\"source\":1,\"timestamp\":2,\"expiry\":{\"type\":\"AtCleanup\"},\"covers\":{\"type\":\"These\",\"value\":[3]},\"snapshot\":{\"names\":[\"Mountain\"],\"cardTypes\":[\"Land\"]},\"turned\":{\"names\":[\"Mountain\"],\"cardTypes\":[\"Land\"]}} "
+  -- CR 731.2f: a merge over a face-down component applied over the row, with
+  -- its reading once every component is face up.
+  Spec.it s "a merged permanent's row with its face-up reading" $
+    Common.assertCodec
+      s
+      ActiveCopy.codec
+      ActiveCopy.MkActiveCopy
+        { ActiveCopy.source = ObjectId.MkObjectId 1,
+          ActiveCopy.timestamp = Timestamp.MkTimestamp 2,
+          ActiveCopy.expiry = Expiry.AtCleanup,
+          ActiveCopy.covers = CopyCoverage.These (Set.singleton (ObjectId.MkObjectId 3)),
+          ActiveCopy.snapshot = ProjectedCharacteristicsSpec.minimalCharacteristics,
+          ActiveCopy.turned = Nothing,
+          ActiveCopy.up = Just ProjectedCharacteristicsSpec.minimalCharacteristics
+        }
+      " {\"source\":1,\"timestamp\":2,\"expiry\":{\"type\":\"AtCleanup\"},\"covers\":{\"type\":\"These\",\"value\":[3]},\"snapshot\":{\"names\":[\"Mountain\"],\"cardTypes\":[\"Land\"]},\"up\":{\"names\":[\"Mountain\"],\"cardTypes\":[\"Land\"]}} "
   -- Metamorphic Alteration's row, following its source's host, one object of
   -- which a later copy effect took over while the source had timestamp 5.
   Spec.it s "a row following its source's host" $
@@ -57,7 +75,8 @@ spec s = Spec.describe s "Parun.Codec.ActiveCopy" $ do
           ActiveCopy.expiry = Expiry.AtCleanup,
           ActiveCopy.covers = CopyCoverage.SourceHost (Map.singleton (ObjectId.MkObjectId 3) (Timestamp.MkTimestamp 5)),
           ActiveCopy.snapshot = ProjectedCharacteristicsSpec.minimalCharacteristics,
-          ActiveCopy.turned = Nothing
+          ActiveCopy.turned = Nothing,
+          ActiveCopy.up = Nothing
         }
       " {\"source\":1,\"timestamp\":2,\"expiry\":{\"type\":\"AtCleanup\"},\"covers\":{\"type\":\"SourceHost\",\"value\":{\"3\":5}},\"snapshot\":{\"names\":[\"Mountain\"],\"cardTypes\":[\"Land\"]}} "
   Spec.it s "has a schema" $

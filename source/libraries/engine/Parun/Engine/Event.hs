@@ -6442,7 +6442,7 @@ becomeCopyAs batch candidate asCopy oid = do
               -- latestStoredCopy's tie with the old one either way.
               CopyRecipient.ItsHost ->
                 let (ts, g1) = Game.freshTimestamp g
-                    row = ActiveCopy.MkActiveCopy {ActiveCopy.source = oid, ActiveCopy.timestamp = ts, ActiveCopy.expiry = Expiry.Type.Never, ActiveCopy.covers = CopyCoverage.SourceHost Map.empty, ActiveCopy.snapshot = stamped, ActiveCopy.turned = Nothing}
+                    row = ActiveCopy.MkActiveCopy {ActiveCopy.source = oid, ActiveCopy.timestamp = ts, ActiveCopy.expiry = Expiry.Type.Never, ActiveCopy.covers = CopyCoverage.SourceHost Map.empty, ActiveCopy.snapshot = stamped, ActiveCopy.turned = Nothing, ActiveCopy.up = Nothing}
                     earlier r = ActiveCopy.source r == oid && isHostRow (ActiveCopy.covers r)
                     isHostRow covers = case covers of
                       CopyCoverage.SourceHost _ -> True
@@ -6461,7 +6461,7 @@ becomeCopyAs batch candidate asCopy oid = do
                     covers = case AsCopy.recipient asCopy of
                       CopyRecipient.ThisObject -> CopyCoverage.These (Set.singleton oid)
                       CopyRecipient.ItsHost -> CopyCoverage.SourceHost Map.empty
-                    row = ActiveCopy.MkActiveCopy {ActiveCopy.source = oid, ActiveCopy.timestamp = ts, ActiveCopy.expiry = expiry, ActiveCopy.covers = covers, ActiveCopy.snapshot = stamped, ActiveCopy.turned = Nothing}
+                    row = ActiveCopy.MkActiveCopy {ActiveCopy.source = oid, ActiveCopy.timestamp = ts, ActiveCopy.expiry = expiry, ActiveCopy.covers = covers, ActiveCopy.snapshot = stamped, ActiveCopy.turned = Nothing, ActiveCopy.up = Nothing}
                  in g1 {GameState.stored = (GameState.stored g1) {StoredEffects.copyEffects = row : StoredEffects.copyEffects (GameState.stored g1)}}
           pure held
       Foldable.for_ chosen $ \src2 -> do
@@ -11795,7 +11795,7 @@ merge sid target side = do
             -- CR 731.2f: the reading once every component is face up, which
             -- Binding.setMergeCopy keeps where it differs from the one in
             -- force: the target's own components turned up with it.
-            upReadings = readingsWith (\ask oid board -> ask oid board {GameState.objects = Map.adjust (\o -> o {Object.bindings = Binding.unstashMergeCopy (Object.bindings o)}) oid (GameState.objects board)})
+            upReadings = readingsWith (\ask oid board -> ask oid (Game.unstashStoredCopies oid board) {GameState.objects = Map.adjust (\o -> o {Object.bindings = Binding.unstashMergeCopy (Object.bindings o)}) oid (GameState.objects board)})
             readingOf up flippedAsk board = withFlip (reading up board) (reading flippedAsk board)
             -- A reading with its flipped one nested, where the two differ; any
             -- nesting a side's own reading carried is that side's, not this
@@ -11842,11 +11842,20 @@ merge sid target side = do
                     CopyCoverage.Attachment _ -> CopyCoverage.Attachment target,
                   ActiveCopy.timestamp = Game.copyRowTimestamp gs row
                 }
-            -- Not implemented: the row keeping the reading with every component
-            -- face up for CR 731.2f's turn, as Binding.setMergeCopy does (#8969).
+            -- CR 731.2f's reading with every component face up rides as
+            -- ActiveCopy.up where it differs, as Binding.setMergeCopy keeps
+            -- it: data/scenarios/mutate's "CR 731.2f a pile under
+            -- Mirrorweave's copy gains its face-down component's abilities on
+            -- its turn" proves it.
             rewoven row =
-              let (snapshot, turned) = readings (unrowed {GameState.stored = (GameState.stored unrowed) {StoredEffects.copyEffects = alone row : StoredEffects.copyEffects (GameState.stored unrowed)}})
-               in (alone row) {ActiveCopy.snapshot = snapshot, ActiveCopy.turned = if turned == snapshot then Nothing else Just turned}
+              let rowed = unrowed {GameState.stored = (GameState.stored unrowed) {StoredEffects.copyEffects = alone row : StoredEffects.copyEffects (GameState.stored unrowed)}}
+                  (snapshot, turned) = readings rowed
+                  up = fst (upReadings rowed)
+               in (alone row)
+                    { ActiveCopy.snapshot = snapshot,
+                      ActiveCopy.turned = if turned == snapshot then Nothing else Just turned,
+                      ActiveCopy.up = if up == snapshot then Nothing else Just up
+                    }
             rows = fmap rewoven (filter (Game.copyCovers gs target) (StoredEffects.copyEffects (GameState.stored gs)))
         State.modify' (referTo sid target)
         State.modify' (`forgetObject` sid)

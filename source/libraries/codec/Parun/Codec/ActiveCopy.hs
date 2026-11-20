@@ -20,6 +20,7 @@ codec = Fields.object $ do
   covers <- Fields.required "covers" CopyCoverage.codec ActiveCopy.covers
   snapshot <- Fields.required "snapshot" ProjectedCharacteristics.codec ActiveCopy.snapshot
   turned <- Fields.defaulted "turned" Nothing (Common.maybe ProjectedCharacteristics.codec) ActiveCopy.turned
+  up <- Fields.defaulted "up" Nothing (Common.maybe ProjectedCharacteristics.codec) ActiveCopy.up
   pure
     ActiveCopy.MkActiveCopy
       { ActiveCopy.source = source,
@@ -27,5 +28,6 @@ codec = Fields.object $ do
         ActiveCopy.expiry = expiry,
         ActiveCopy.covers = covers,
         ActiveCopy.snapshot = snapshot,
-        ActiveCopy.turned = turned
+        ActiveCopy.turned = turned,
+        ActiveCopy.up = up
       }
