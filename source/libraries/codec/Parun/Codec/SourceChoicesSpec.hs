@@ -11,6 +11,7 @@ import qualified Parun.Types.Acquisition as Acquisition
 import qualified Parun.Types.CardName as CardName
 import qualified Parun.Types.CardType as CardType
 import qualified Parun.Types.Color as Color
+import qualified Parun.Types.ObjectId as ObjectId
 import qualified Parun.Types.PlayerId as PlayerId
 import qualified Parun.Types.SourceChoices as SourceChoices
 import qualified Parun.Types.Subtype as Subtype
@@ -28,10 +29,11 @@ spec s = Spec.describe s "Parun.Codec.SourceChoices" $ do
           SourceChoices.subtype = Nothing,
           SourceChoices.cardType = Nothing,
           SourceChoices.number = Nothing,
-          SourceChoices.acquisition = Acquisition.Own
+          SourceChoices.acquisition = Acquisition.Own,
+          SourceChoices.resolution = Nothing
         }
       " {} "
-  Spec.it s "a name, a colour, a subtype, a card type and a number" $
+  Spec.it s "a name, a colour, a subtype, a card type, a number and a resolution" $
     Common.assertCodec
       s
       SourceChoices.codec
@@ -41,8 +43,9 @@ spec s = Spec.describe s "Parun.Codec.SourceChoices" $ do
           SourceChoices.subtype = Just (Subtype.Goblin NonEmpty.:| [Subtype.Elf]),
           SourceChoices.cardType = Just CardType.Creature,
           SourceChoices.number = Just 5,
-          SourceChoices.acquisition = Acquisition.Copied (Timestamp.MkTimestamp 3)
+          SourceChoices.acquisition = Acquisition.Copied (Timestamp.MkTimestamp 3),
+          SourceChoices.resolution = Just (ObjectId.MkObjectId 6)
         }
-      " {\"names\":{\"4\":[\"Lightning Bolt\",\"Shock\"]},\"colors\":[\"Red\"],\"subtype\":[\"Goblin\",\"Elf\"],\"cardType\":\"Creature\",\"number\":5,\"acquisition\":{\"type\":\"Copied\",\"value\":3}} "
+      " {\"names\":{\"4\":[\"Lightning Bolt\",\"Shock\"]},\"colors\":[\"Red\"],\"subtype\":[\"Goblin\",\"Elf\"],\"cardType\":\"Creature\",\"number\":5,\"acquisition\":{\"type\":\"Copied\",\"value\":3},\"resolution\":6} "
   Spec.it s "has a schema" $
     Common.assertHasSchema s SourceChoices.codec

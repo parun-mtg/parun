@@ -229,9 +229,11 @@ data GameState = MkGameState
     -- only.
     exiledWith :: Map.Map ObjectId.ObjectId ExileLink.ExileLink,
     -- | CR 400.7 / 607.5: the objects whose effects put each permanent onto the
-    -- battlefield or assimilated it (CR 701.72c), and the acquisition each
-    -- ability came with, keyed by the incarnation and written through
-    -- Parun.Engine.Resolve.Common.linkEntrant: by Parun.Engine.Resolve.Arms.Zones's
+    -- battlefield or assimilated it (CR 701.72c), the acquisition each
+    -- ability came with and the resolution that did it, keyed by the
+    -- incarnation and written through Parun.Engine.LinkReaders.recordEntry,
+    -- only where the source can read it: through
+    -- Parun.Engine.Resolve.Common.linkEntrant by Parun.Engine.Resolve.Arms.Zones's
     -- Effect.MoveToZone arm, by Parun.Engine.Resolve.Arms.Objects's for a
     -- Create.linked or CreateCopy.linked token, and by
     -- Parun.Engine.Resolve.Arms.Counters's Effect.Assimilate arm; and by

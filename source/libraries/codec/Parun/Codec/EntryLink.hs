@@ -15,4 +15,5 @@ codec :: Codec.Codec EntryLink.EntryLink
 codec = Fields.object $ do
   source <- Fields.required "source" ObjectId.codec EntryLink.source
   acquisition <- Fields.defaulted "acquisition" Acquisition.Own Acquisition.codec EntryLink.acquisition
-  pure EntryLink.MkEntryLink {EntryLink.source = source, EntryLink.acquisition = acquisition}
+  resolution <- Fields.required "resolution" ObjectId.codec EntryLink.resolution
+  pure EntryLink.MkEntryLink {EntryLink.source = source, EntryLink.acquisition = acquisition, EntryLink.resolution = resolution}

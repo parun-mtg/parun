@@ -42,6 +42,7 @@ import qualified Parun.Engine.Filter as Filter
 import qualified Parun.Engine.Forage as Forage
 import qualified Parun.Engine.Game as Game
 import qualified Parun.Engine.Keyword as Keyword
+import qualified Parun.Engine.LinkReaders as LinkReaders
 import qualified Parun.Engine.Modal as Modal
 import qualified Parun.Engine.Phasing as Phasing
 import qualified Parun.Engine.Plane as Plane
@@ -4427,12 +4428,11 @@ ticketCapOf resolving source controller legal gs =
 
 -- CR 607.5: link `entrant` to `source`, for the abilities that came with the
 -- one resolving (Filter.EnteredWithSource): CR 607.2c's "put onto the
--- battlefield with" and CR 701.72c's "assimilated with". Adds to the
--- permanent's links rather than replacing them.
+-- battlefield with" and CR 701.72c's "assimilated with"; through
+-- LinkReaders.recordEntry, so only where the source can read it.
 linkEntrant :: ObjectId -> ObjectId -> ObjectId -> GameState -> GameState
 linkEntrant resolving source entrant gs =
-  let link = EntryLink.MkEntryLink source (Game.readingAcquisition resolving source gs source)
-   in gs {GameState.enteredWith = Map.insertWith Set.union entrant (Set.singleton link) (GameState.enteredWith gs)}
+  LinkReaders.recordEntry (EntryLink.MkEntryLink source (Game.readingAcquisition resolving source gs source) resolving) entrant gs
 
 -- CR 603.7c: bind `target` into `slot` of `holder`'s binding environment, so a
 -- delayed ability armed later in the SAME resolution can name the object.

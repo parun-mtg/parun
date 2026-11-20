@@ -14,15 +14,15 @@ spec s = Spec.describe s "Parun.Codec.EntryLink" $ do
     Common.assertCodec
       s
       EntryLink.codec
-      (EntryLink.MkEntryLink {EntryLink.source = ObjectId.MkObjectId 7, EntryLink.acquisition = Acquisition.Own})
-      " {\"source\":7} "
+      (EntryLink.MkEntryLink {EntryLink.source = ObjectId.MkObjectId 7, EntryLink.acquisition = Acquisition.Own, EntryLink.resolution = ObjectId.MkObjectId 9})
+      " {\"source\":7,\"resolution\":9} "
 
   Spec.it s "MkEntryLink, abilities a copy effect gave it" $
     Common.assertCodec
       s
       EntryLink.codec
-      (EntryLink.MkEntryLink {EntryLink.source = ObjectId.MkObjectId 7, EntryLink.acquisition = Acquisition.Copied (Timestamp.MkTimestamp 3)})
-      " {\"source\":7,\"acquisition\":{\"type\":\"Copied\",\"value\":3}} "
+      (EntryLink.MkEntryLink {EntryLink.source = ObjectId.MkObjectId 7, EntryLink.acquisition = Acquisition.Copied (Timestamp.MkTimestamp 3), EntryLink.resolution = ObjectId.MkObjectId 9})
+      " {\"source\":7,\"acquisition\":{\"type\":\"Copied\",\"value\":3},\"resolution\":9} "
 
   Spec.it s "has a schema" $
     Common.assertHasSchema s EntryLink.codec

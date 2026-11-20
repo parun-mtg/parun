@@ -204,8 +204,10 @@ data Asking r = MkAsking
     history :: HistoryRead.HistoryRead -> r,
     -- | A read of what the source's own prevention effect stopped (CR 615.13).
     prevention :: r,
-    -- | A read of the counters the source's own effects moved (CR 607.1).
-    counterLinks :: r,
+    -- | A read of what the source's own effects linked to objects (CR 607.1 /
+    -- 607.5): the counters they moved, or the permanents they put onto the
+    -- battlefield.
+    sourceLinks :: r,
     -- | What an inline card answers as a meld pair's combined back face (CR
     -- 713.1a), given what it answers as any inline card.
     melded :: r -> r
@@ -223,7 +225,7 @@ combinedBackFaces = snd . foldMap (faceNames asking (\card -> ([card], []))) . C
           keyed = mempty,
           history = const mempty,
           prevention = mempty,
-          counterLinks = mempty,
+          sourceLinks = mempty,
           melded = \(inline, backs) -> ([], inline <> backs)
         }
 
@@ -243,21 +245,21 @@ readsPrevention =
           keyed = mempty,
           history = const mempty,
           prevention = Monoid.Any True,
-          counterLinks = mempty,
+          sourceLinks = mempty,
           melded = id
         }
 
--- | The question whose answer is whether a tree reads the counters its
--- source's own effects moved (Parun.Engine.Fragmented.digest).
-readsCounterLinks :: Asking Monoid.Any
-readsCounterLinks =
+-- | The question whose answer is whether a tree reads what its source's own
+-- effects linked to objects (Parun.Engine.LinkReaders.readsOwnLinks).
+readsSourceLinks :: Asking Monoid.Any
+readsSourceLinks =
   MkAsking
     { names = const mempty,
       context = mempty,
       keyed = mempty,
       history = const mempty,
       prevention = mempty,
-      counterLinks = Monoid.Any True,
+      sourceLinks = Monoid.Any True,
       melded = id
     }
 
@@ -331,8 +333,8 @@ filterNames asking criterion = case criterion of
   Filter.TappedForManaThisTurn nested -> keyed asking <> history asking HistoryRead.TapsForMana <> filterNames asking nested
   Filter.CountersMovedThisTurn _ _ -> keyed asking <> history asking HistoryRead.CounterMoves
   Filter.BecameSource -> keyed asking <> history asking HistoryRead.Moves
-  Filter.EnteredWithSource -> keyed asking
-  Filter.CounterLinkedToSource _moved -> keyed asking <> counterLinks asking
+  Filter.EnteredWithSource -> keyed asking <> sourceLinks asking
+  Filter.CounterLinkedToSource _moved -> keyed asking <> sourceLinks asking
   Filter.AttachedNoLaterThanSource -> contextNames asking
   Filter.CanHostSubject -> contextNames asking
   Filter.CanAttachToSubject -> contextNames asking

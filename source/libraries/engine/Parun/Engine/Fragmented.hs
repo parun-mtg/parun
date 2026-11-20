@@ -17,7 +17,6 @@ import qualified Data.Foldable as Foldable
 import qualified Data.List as List
 import qualified Data.Map.Strict as Map
 import qualified Data.Maybe as Maybe
-import qualified Data.Monoid as Monoid
 import qualified Data.Sequence as Seq
 import qualified Data.Set as Set
 import qualified Numeric.Natural as Natural
@@ -25,9 +24,9 @@ import qualified Parun.Engine.Count as Count
 import qualified Parun.Engine.Game as Game
 import qualified Parun.Engine.Interchangeable.Mentions as Mentions
 import qualified Parun.Engine.Keyword as Keyword
+import qualified Parun.Engine.LinkReaders as LinkReaders
 import qualified Parun.Engine.MoveDuration as MoveDuration
 import qualified Parun.Engine.Planechase as Planechase
-import qualified Parun.Engine.Projection as Projection
 import qualified Parun.Extra.Int as Int
 import qualified Parun.Types.AbilityFacts as AbilityFacts
 import qualified Parun.Types.AbilityWasActivated as AbilityWasActivated
@@ -42,7 +41,6 @@ import qualified Parun.Types.Completion as Completion
 import qualified Parun.Types.ContinuousEffect as ContinuousEffect
 import qualified Parun.Types.Cost as Cost
 import qualified Parun.Types.CounterLink as CounterLink
-import qualified Parun.Types.DelayedTrigger as DelayedTrigger
 import qualified Parun.Types.EntryLink as EntryLink
 import qualified Parun.Types.ExileLink as ExileLink
 import Parun.Types.GameEvent (GameEvent)
@@ -52,7 +50,6 @@ import qualified Parun.Types.GameState as GameState
 import qualified Parun.Types.History as History
 import qualified Parun.Types.HistoryRead as HistoryRead
 import qualified Parun.Types.Keyword as Keyword.Type
-import qualified Parun.Types.LastKnown as LastKnown
 import qualified Parun.Types.LifeDirection as LifeDirection
 import qualified Parun.Types.LoggedEvent as LoggedEvent
 import Parun.Types.LoopTrail (LoopTrail)
@@ -119,8 +116,10 @@ import qualified Text.Read as Read
 -- reads what the loop appended to them.
 --
 -- Trimmed to what its sources read: `counteredWith`, each link compared only
--- where its source can read it (CR 607.1, `readsOwnCounterLinks`). A Grim
+-- where its source can read it (CR 607.1, LinkReaders.readsOwnLinks). A Grim
 -- Poppet's lap beside a Cyclopean Tomb still recurs; the Tomb's own does not.
+-- `enteredWith` needs no trim: LinkReaders.recordEntry writes no row its
+-- source cannot read as it writes it.
 digest :: GameState -> StateDigest
 digest gs =
   let (effects, objects, reacquire) = canonicalStamps gs
@@ -136,7 +135,7 @@ digest gs =
                   -- One value for a whole turn, and the digest keeps turnNumber.
                   TurnRegisters.permanentsAsTurnBegan = Nothing
                 },
-            GameState.counteredWith = Map.filter (not . Set.null) (fmap (Set.map (\link -> link {CounterLink.acquisition = reacquire (CounterLink.acquisition link)}) . Set.filter (readsOwnCounterLinks gs . CounterLink.source)) (GameState.counteredWith gs)),
+            GameState.counteredWith = Map.filter (not . Set.null) (fmap (Set.map (\link -> link {CounterLink.acquisition = reacquire (CounterLink.acquisition link)}) . Set.filter (LinkReaders.readsOwnLinks gs . CounterLink.source)) (GameState.counteredWith gs)),
             -- Only a countdown shield's key is read, and its row, compared here, shrinks as it grows.
             GameState.damagePreventedBy = Map.empty,
             GameState.loopInvolvement = Map.empty,
@@ -172,18 +171,6 @@ digest gs =
           StateDigest.events = TurnRegisters.events (GameState.turn gs),
           StateDigest.activations = TurnRegisters.activationsThisTurn (GameState.turn gs)
         }
-
--- | CR 607.1 / 608.2h: can `source`, live or gone, read the counters its own
--- effects moved? Asked of the cards representing it, its projection (CR 613.1:
--- a copy effect, a full text, a grant), else its last known characteristics
--- and copiable values, and the delayed triggers it made (CR 603.7). Erring
--- towards yes, the safe direction.
-readsOwnCounterLinks :: GameState -> ObjectId.ObjectId -> Bool
-readsOwnCounterLinks gs source =
-  let projected = Monoid.getAny . Mentions.projectedCharacteristicsNames Mentions.readsCounterLinks
-   in any (Monoid.getAny . Mentions.cardNames Mentions.readsCounterLinks) (Game.cardsOfWithLastKnown source gs)
-        || or (Game.liveOrLastKnown (\_ -> projected (Projection.project source gs)) (\known -> projected (LastKnown.characteristics known) || projected (LastKnown.copiable known)) source gs)
-        || any (\entry -> DelayedTrigger.source entry == source && Monoid.getAny (Mentions.delayedTriggerNames Mentions.readsCounterLinks entry)) (StoredEffects.delayedTriggers (GameState.stored gs))
 
 -- How the derived Show renders an object id and a timestamp, up to the
 -- number.
@@ -406,7 +393,7 @@ historyReads =
       Mentions.keyed = Set.empty,
       Mentions.history = Set.singleton,
       Mentions.prevention = Set.empty,
-      Mentions.counterLinks = Set.empty,
+      Mentions.sourceLinks = Set.empty,
       Mentions.melded = id
     }
 

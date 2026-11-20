@@ -8,6 +8,7 @@ import qualified Parun.Types.Acquisition as Acquisition
 import qualified Parun.Types.CardName as CardName
 import qualified Parun.Types.CardType as CardType
 import qualified Parun.Types.Color as Color
+import qualified Parun.Types.ObjectId as ObjectId
 import qualified Parun.Types.PlayerId as PlayerId
 import qualified Parun.Types.Subtype as Subtype
 
@@ -26,6 +27,10 @@ data SourceChoices = MkSourceChoices
     number :: Maybe Natural.Natural,
     -- | CR 607.5: the acquisition of the source's abilities these belong to,
     -- under which Parun.Engine.SourceContext.framedWith reads its entrants too.
-    acquisition :: Acquisition.Acquisition
+    acquisition :: Acquisition.Acquisition,
+    -- | CR 603.7 / 608.2c: the resolving spell or ability that created the
+    -- delayed ability baking these, whose entrants alone it reads ("this
+    -- way"); Nothing for every other reader, which reads them all.
+    resolution :: Maybe ObjectId.ObjectId
   }
   deriving (Eq, Ord, Show)

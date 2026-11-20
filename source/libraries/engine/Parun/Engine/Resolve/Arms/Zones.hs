@@ -271,7 +271,7 @@ moveToZone settle resolving source controller legal chosen (MoveToZone.MkMoveToZ
                   ReturnWatch.MkReturnWatch
                     { ReturnWatch.ending = MoveDuration.endingOf lasting source controller,
                       ReturnWatch.zone = from,
-                      ReturnWatch.link = EntryLink.MkEntryLink source (Game.readingAcquisition resolving source before source)
+                      ReturnWatch.link = EntryLink.MkEntryLink source (Game.readingAcquisition resolving source before source) resolving
                     }
           Monad.forM_ watched $ \watch ->
             State.modify' (\g -> g {GameState.movedUntil = Map.insert newId watch (GameState.movedUntil g)})

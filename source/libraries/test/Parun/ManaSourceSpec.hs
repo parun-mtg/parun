@@ -105,11 +105,13 @@ import qualified Parun.Types.Prohibition as Prohibition
 import qualified Parun.Types.Prompt as Prompt
 import qualified Parun.Types.Quantity as Quantity
 import qualified Parun.Types.Recipient as Recipient
+import qualified Parun.Types.Regenerability as Regenerability
 import qualified Parun.Types.RequirementArity as RequirementArity
 import qualified Parun.Types.RestrictedCreatures as RestrictedCreatures
 import qualified Parun.Types.RoomHalf as RoomHalf
 import qualified Parun.Types.Scope as Scope
 import qualified Parun.Types.Settle as Settle
+import qualified Parun.Types.Sickness as Sickness
 import qualified Parun.Types.SlotName as SlotName
 import qualified Parun.Types.StepBegan as StepBegan
 import qualified Parun.Types.StoredEffects as StoredEffects
@@ -2048,6 +2050,42 @@ interchangeableSourcesSpec s registry = Spec.describe s "Interchangeable mana so
     Spec.assertBool s paid "the {G} was paid"
     Spec.assertEqWith s "off exactly one Elf" (tappedCount (NonEmpty.toList elves) after) 1
 
+  -- CR 610.3 / 607.5: Banisher Priest's return links the Elf to the Priest
+  -- (GameState.enteredWith) only where something can read the link, and
+  -- nothing does: the Priest is dead and armed no delayed trigger. alice's
+  -- Priest exiles one of bob's three Elves, dies, and the Elf comes back.
+  -- Through bob's turn and into alice's next, nothing remembers it arriving
+  -- (not this turn, not since bob's last), and settling its sickness stands in
+  -- for CR 302.6 as S.addPermanent does for the other two, so the three are
+  -- alike and paying bob's {G} asks nothing of him.
+  Spec.it s "CR 610.3 an Elf Banisher Priest returned is no candidate of its own" $ do
+    elf <- S.printingOf s registry "Llanowar Elves"
+    priest <- S.printingOf s registry "Banisher Priest"
+    plains <- S.printingOf s registry "Plains"
+    let g0 = S.landsFor plains S.alice 3 (Setup.emptyGame S.bothPlayers)
+        (first, g1) = S.addPermanent elf S.bob g0
+        (second, g2) = S.addPermanent elf S.bob g1
+        (third, g3) = S.addPermanent elf S.bob g2
+        (withPriest, priestCard) = S.handOne priest g3
+        targeting :: Prompt.Prompt r -> r
+        targeting p = case p of
+          Prompt.ChooseTargets _ _ _ sets -> fmap (\(_, legal) -> Set.filter ((== Just first) . Recipient.objectOf) legal) sets
+          _ -> S.identityAnswer p
+        cast = S.runPure targeting (S.runPure targeting withPriest (S.cast S.alice priestCard)) Engine.priorityLoop
+        priestOnField = List.find (\oid -> fmap S.nameOf (Game.cardOf oid cast) == Just (CardName.MkCardName (Text.pack "Banisher Priest"))) (Set.toList (GameState.battlefield cast))
+        killed = maybe cast (\oid -> S.runPure S.identityAnswer (S.runPure S.identityAnswer cast (Event.destroy Settle.none Regenerability.Regenerable [oid])) Engine.priorityLoop) priestOnField
+        settle oid gs = gs {GameState.objects = Map.adjust (\o -> o {Object.sickness = Sickness.Settled S.bob}) oid (GameState.objects gs)}
+        board = foldr settle (Engine.beginTurnOf S.alice (Engine.beginTurnOf S.bob killed)) (elvesOf killed)
+        elvesOf gs = filter (\oid -> fmap S.nameOf (Game.cardOf oid gs) == Just (CardName.MkCardName (Text.pack "Llanowar Elves"))) (Set.toList (GameState.battlefield gs))
+        (offers, paid, after) = greenWindowOf S.bob board
+    Spec.assertEqWith s "asked nothing, the three Elves one candidate" (fmap length offers) [1]
+    -- The premises, after the assertion above.
+    Spec.assertEqWith s "the Priest exiled the first Elf" (Set.member first (GameState.battlefield cast), fmap length (Just (elvesOf cast))) (False, Just 2)
+    Spec.assertBool s (Maybe.isJust priestOnField && maybe True (`Set.notMember` GameState.battlefield killed) priestOnField) "the Priest died"
+    Spec.assertEqWith s "and the Elf came back to bob beside the other two" (length (elvesOf board), all (`Set.member` GameState.battlefield board) [second, third]) (3, True)
+    Spec.assertBool s paid "the {G} was paid"
+    Spec.assertEqWith s "off exactly one Elf" (tappedCount (elvesOf board) after) 1
+
   -- GameState.haunting (CR 702.55b) is one of the id-keyed relations
   -- Parun.Engine.Interchangeable.namedByRelation SEARCHES rather than requires
   -- empty. Here the row names bob's Piker, so it says nothing about any Elf and
@@ -2109,9 +2147,13 @@ elfBoard printing n =
 -- Alice paying {G} out of CR 601.2g's window: what it offered, whether the cost
 -- was paid, and the board it left.
 greenWindow :: GameState.GameState -> ([[ObjectId.ObjectId]], Bool, GameState.GameState)
-greenWindow board =
+greenWindow = greenWindowOf S.alice
+
+-- The same, paid by `payer`.
+greenWindowOf :: PlayerId.PlayerId -> GameState.GameState -> ([[ObjectId.ObjectId]], Bool, GameState.GameState)
+greenWindowOf payer board =
   let cost = ManaCost.MkManaCost [ManaSymbol.OfType (ManaType.Colored Color.Green)]
-      ((paid, after), offers) = State.runState (Engine.runGame recordingManaSources board (Cost.payMana S.manaPerformer PaymentSubject.ForNeither ManaSpending.AsProduced S.alice cost)) []
+      ((paid, after), offers) = State.runState (Engine.runGame recordingManaSources board (Cost.payMana S.manaPerformer PaymentSubject.ForNeither ManaSpending.AsProduced payer cost)) []
    in (offers, paid, after)
 
 -- How many of these permanents are tapped.

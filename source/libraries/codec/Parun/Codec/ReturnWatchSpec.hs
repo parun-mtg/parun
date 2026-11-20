@@ -21,9 +21,9 @@ spec s = Spec.describe s "Parun.Codec.ReturnWatch" $ do
       ReturnWatch.MkReturnWatch
         { ReturnWatch.ending = ReturnEnding.SourceLeaves (ObjectId.MkObjectId 3),
           ReturnWatch.zone = Zone.Battlefield,
-          ReturnWatch.link = EntryLink.MkEntryLink (ObjectId.MkObjectId 3) Acquisition.Own
+          ReturnWatch.link = EntryLink.MkEntryLink (ObjectId.MkObjectId 3) Acquisition.Own (ObjectId.MkObjectId 4)
         }
-      " {\"ending\":{\"type\":\"SourceLeaves\",\"value\":3},\"zone\":\"Battlefield\",\"link\":{\"source\":3}} "
+      " {\"ending\":{\"type\":\"SourceLeaves\",\"value\":3},\"zone\":\"Battlefield\",\"link\":{\"source\":3,\"resolution\":4}} "
   -- The zone is recorded rather than assumed, so a move out of another zone
   -- round trips as the zone it came from (CR 610.3's "previous zone").
   Spec.it s "a watch on a card that came from a graveyard" $
@@ -33,8 +33,8 @@ spec s = Spec.describe s "Parun.Codec.ReturnWatch" $ do
       ReturnWatch.MkReturnWatch
         { ReturnWatch.ending = ReturnEnding.SourceLeaves (ObjectId.MkObjectId 7),
           ReturnWatch.zone = Zone.Graveyard,
-          ReturnWatch.link = EntryLink.MkEntryLink (ObjectId.MkObjectId 7) Acquisition.Own
+          ReturnWatch.link = EntryLink.MkEntryLink (ObjectId.MkObjectId 7) Acquisition.Own (ObjectId.MkObjectId 8)
         }
-      " {\"ending\":{\"type\":\"SourceLeaves\",\"value\":7},\"zone\":\"Graveyard\",\"link\":{\"source\":7}} "
+      " {\"ending\":{\"type\":\"SourceLeaves\",\"value\":7},\"zone\":\"Graveyard\",\"link\":{\"source\":7,\"resolution\":8}} "
   Spec.it s "has a schema" $
     Common.assertHasSchema s ReturnWatch.codec

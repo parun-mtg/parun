@@ -58,8 +58,10 @@ framedWith viewOf choices source gs context =
       -- CR 108.3 fixes an owner when the game starts, so a live read; a source
       -- the state no longer holds answers Nothing.
       Filter.sourceOwner = fmap Object.owner (Game.lookupObject source gs),
-      -- CR 607.5: only those the abilities doing the reading put there.
-      Filter.sourceEntrants = Map.keysSet (Map.filter (Set.member (EntryLink.MkEntryLink source (SourceChoices.acquisition choices))) (GameState.enteredWith gs)),
+      -- CR 607.5: only those the abilities doing the reading put there, and
+      -- for a delayed ability only those the resolution that created it put
+      -- there (CR 603.7, 608.2c: "this way").
+      Filter.sourceEntrants = Map.keysSet (Map.filter (any (readsEntrant choices source)) (GameState.enteredWith gs)),
       -- CR 607.5: the same acquisition's counter links.
       Filter.sourceCountered = Map.filter (not . Set.null) (fmap (Set.map CounterLink.moved . Set.filter (\link -> CounterLink.source link == source && CounterLink.acquisition link == SourceChoices.acquisition choices)) (GameState.counteredWith gs)),
       -- CR 607.2a: the cards in exile now (CR 400.7) linked to the source.
@@ -87,7 +89,8 @@ choicesOf acquisition source gs =
       SourceChoices.subtype = Game.choiceWithLastKnown Chosen.Subtype acquisition source gs,
       SourceChoices.cardType = Game.choiceWithLastKnown Chosen.CardType acquisition source gs,
       SourceChoices.number = Game.choiceWithLastKnown Chosen.Number acquisition source gs,
-      SourceChoices.acquisition = acquisition
+      SourceChoices.acquisition = acquisition,
+      SourceChoices.resolution = Nothing
     }
 
 -- | `context` with these choices as the source's: CR 105.2's colours, CR
@@ -103,3 +106,12 @@ withChoices choices context =
       Filter.sourceChosenNames = SourceChoices.names choices,
       Filter.sourceAcquisition = Just (SourceChoices.acquisition choices)
     }
+
+-- | CR 607.5 / 603.7: whether a reader framed by `choices` of `source` reads
+-- this entry link: the same source and acquisition, and the resolution that
+-- made it where the reader names one.
+readsEntrant :: SourceChoices.SourceChoices -> ObjectId.ObjectId -> EntryLink.EntryLink -> Bool
+readsEntrant choices source link =
+  EntryLink.source link == source
+    && EntryLink.acquisition link == SourceChoices.acquisition choices
+    && all (== EntryLink.resolution link) (SourceChoices.resolution choices)

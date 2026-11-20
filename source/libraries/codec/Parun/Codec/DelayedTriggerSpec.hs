@@ -41,7 +41,7 @@ entry =
 
 -- | A source that had chosen nothing (CR 607.2d).
 noChoices :: SourceChoices.SourceChoices
-noChoices = SourceChoices.MkSourceChoices Map.empty Set.empty Nothing Nothing Nothing Acquisition.Own
+noChoices = SourceChoices.MkSourceChoices Map.empty Set.empty Nothing Nothing Nothing Acquisition.Own Nothing
 
 entryJson :: String
 entryJson =
