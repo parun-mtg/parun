@@ -42,7 +42,9 @@ import qualified Parun.Types.Completion as Completion
 import qualified Parun.Types.ContinuousEffect as ContinuousEffect
 import qualified Parun.Types.Cost as Cost
 import qualified Parun.Types.CounterLink as CounterLink
+import qualified Parun.Types.DelayedTrigger as DelayedTrigger
 import qualified Parun.Types.EntryLink as EntryLink
+import qualified Parun.Types.EventGroup as EventGroup
 import qualified Parun.Types.ExileLink as ExileLink
 import Parun.Types.GameEvent (GameEvent)
 import qualified Parun.Types.GameEvent as GameEvent
@@ -103,7 +105,8 @@ import qualified Text.Read as Read
 -- `repeatPicks`, which a RepeatIf's runs compare digests to fill, CR 734.1's
 -- `undone`, which only a client reads, and CR 603.12's `fellShort`; CR 104.4b's
 -- `loopInvolvement`; and the scan state keyed off the log (`scannedThrough`,
--- `damageScannedThrough`, `stackedIn`) with GameState.snapshots whole. Its
+-- `damageScannedThrough`, `stackedIn`, a delayed entry's `armedIn`) with
+-- GameState.snapshots whole. Its
 -- `lastKnown` and `stackArchive` are keyed by ids that have left (CR 400.7), so
 -- only the entries of the ids the rest of
 -- the state holds are compared.
@@ -159,7 +162,7 @@ digest gs =
             GameState.cardsPlayed = Map.empty,
             -- Canonical rather than dropped, so CR 733.3's own example recurs,
             -- and a loop that moves a counter back.
-            GameState.stored = (GameState.stored gs) {StoredEffects.continuousEffects = effects},
+            GameState.stored = (GameState.stored gs) {StoredEffects.continuousEffects = effects, StoredEffects.delayedTriggers = fmap (\entry -> entry {DelayedTrigger.armedIn = EventGroup.first}) (StoredEffects.delayedTriggers (GameState.stored gs))},
             GameState.objects = objects,
             GameState.exiledWith = fmap (\link -> link {ExileLink.acquisition = reacquire (ExileLink.acquisition link)}) (GameState.exiledWith gs),
             GameState.enteredWith = fmap (Set.map (\link -> link {EntryLink.acquisition = reacquire (EntryLink.acquisition link)})) (GameState.enteredWith gs),
