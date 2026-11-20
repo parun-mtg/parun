@@ -162,6 +162,10 @@ spec s registry reference = Spec.describe s "Parun.Legality" $ do
   Spec.it s "namedCard names the card of too many copies, and none for too few cards" $ do
     Spec.assertEqWith s "the cards" (fmap Legality.namedCard [copies "Grizzly Bears" 5, Violation.TooFewCards Nothing 59 60]) [Just (nameOf "Grizzly Bears"), Nothing]
 
+  Spec.it s "shippedFormats lists every format file by name, in order" $ do
+    named <- Legality.shippedFormats
+    Spec.assertEqWith s "constructed and limited among them, sorted" (all (`elem` named) [Text.pack "constructed", Text.pack "limited"], named == List.sort named) (True, True)
+
   Spec.it s "CR 100.2a: minimumFor gives constructed's sixty, and nothing for no format" $ do
     sizes <- traverse (Legality.minimumFor . Text.pack) ["constructed", "nonsense"]
     Spec.assertEqWith s "the minimums" sizes [Just 60, Nothing]

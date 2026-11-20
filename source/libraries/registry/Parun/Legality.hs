@@ -550,6 +550,15 @@ loadTable path = fmap (decodeWith LegalityTable.Codec.codec) (ByteString.readFil
 formatsRoot :: IO FilePath
 formatsRoot = Paths.getDataFileName "formats"
 
+-- | Every shipped format's name, in order; none while the formats are
+-- absent, as they are in the browser until they load.
+shippedFormats :: IO [Text.Text]
+shippedFormats = do
+  root <- formatsRoot
+  present <- Directory.doesDirectoryExist root
+  files <- if present then Directory.listDirectory root else pure []
+  pure (List.sort [name | file <- files, Just name <- [Text.stripSuffix (Text.pack ".json") (Text.pack file)]])
+
 -- | The format a name means, the file of that name under a formats root:
 -- Nothing when there is none.
 loadFormat :: FilePath -> Text.Text -> IO (Maybe (Either Text.Text Format.Format))

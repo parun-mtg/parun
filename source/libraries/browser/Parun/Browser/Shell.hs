@@ -18,6 +18,7 @@ import qualified Data.Sequence as Seq
 import qualified Data.Set as Set
 import qualified Data.Text as Text
 import qualified Data.Text.Encoding as Encoding
+import qualified GHC.Clock as Clock
 import Numeric.Natural (Natural)
 import qualified Parun.Browser as Browser
 import qualified Parun.Browser.Hotseat as Hotseat
@@ -26,6 +27,7 @@ import qualified Parun.DeckList as DeckList
 import qualified Parun.Decks as Decks
 import qualified Parun.Engine.Quantity as Quantity
 import qualified Parun.Extra.Integer as Integer
+import qualified Parun.Legality as Legality
 import qualified Parun.Play.Command as Command
 import qualified Parun.Play.Key as Key
 import qualified Parun.Registry as Registry
@@ -37,6 +39,8 @@ import qualified Parun.Types.Face as Face
 import qualified Parun.Types.Key as Key
 import qualified Parun.Types.Scenario as Scenario.Type
 import qualified Parun.Types.TypeLine as TypeLine
+import qualified Parun.Web.Builder as Builder
+import qualified Parun.Web.CardIndex as CardIndex
 import qualified Parun.Web.Element as Element
 import qualified Parun.Web.Ending as Ending
 import qualified Parun.Web.Home as Home
@@ -74,13 +78,25 @@ data Loaded = MkLoaded
     registry :: Maybe (Registry.Registry Identity.Identity),
     -- | The manifest's themes (or why it does not decode) and every
     -- scenario's name, once listed.
-    scenarioList :: Maybe (Either Text.Text (Map.Map Text.Text [Text.Text]), [Text.Text])
+    scenarioList :: Maybe (Either Text.Text (Map.Map Text.Text [Text.Text]), [Text.Text]),
+    -- | The deck builder's card index, once built, and whether the builder
+    -- has asked for it.
+    cardIndex :: Maybe (Seq.Seq CardIndex.Entry),
+    indexWanted :: Bool,
+    -- | The index built so far, the cards still to index, and when the
+    -- build began, while it runs.
+    indexing :: Maybe (Seq.Seq CardIndex.Entry, [Either Text.Text Card.Card], Double),
+    -- | Why each saved deck breaks its format, by name, as checked so far.
+    illegal :: Map.Map Text.Text [Text.Text],
+    -- | The saved decks still to check.
+    unchecked :: [(Text.Text, FilePath)]
   }
 
 -- | Where a screen leads when it ends.
 data Next
   = MkToHome
   | MkToLobby
+  | MkToBuilder
   | MkToReplays
   | -- | This scenario's replay, at this position.
     MkToReplay Text.Text Natural
@@ -98,7 +114,7 @@ data Woke
 start :: IO ()
 start = do
   chosen <- maybe Web.Question.MkStandard (Maybe.fromMaybe Web.Question.MkStandard . Web.Question.levelNamed) <$> Environment.lookupEnv "parun_level"
-  shell <- MkShell <$> Browser.mount <*> IORef.newIORef (MkLoaded Loading.new Nothing Map.empty Nothing Map.empty [] Nothing Nothing) <*> IORef.newIORef chosen
+  shell <- MkShell <$> Browser.mount <*> IORef.newIORef (MkLoaded Loading.new Nothing Map.empty Nothing Map.empty [] Nothing Nothing Nothing False Nothing Map.empty []) <*> IORef.newIORef chosen
   Exception.catch (opening >>= follow shell) $ \problem ->
     Browser.display (page shell) $ message ["The page stopped on an error:", Exception.displayException (problem :: Exception.SomeException)]
 
@@ -121,6 +137,7 @@ follow :: Shell -> Next -> IO ()
 follow shell next = case next of
   MkToHome -> home shell Home.new >>= follow shell . afterHome
   MkToLobby -> lobby shell >>= follow shell
+  MkToBuilder -> builder shell >>= follow shell
   MkToReplays -> replays shell >>= follow shell
   MkToReplay name at -> replay shell name at >>= follow shell
   MkToPlayOn name at -> playOnFrom shell name at >>= follow shell
@@ -163,7 +180,8 @@ lobby shell = do
       case woke of
         MkTapped (Screen.MkLobby event) value -> case event of
           Lobby.MkHome -> pure MkToHome
-          Lobby.MkStart | Just mine <- Lobby.mine current -> do
+          Lobby.MkOpenBuilder -> pure MkToBuilder
+          Lobby.MkStart | Right mine <- Lobby.startable current -> do
             others <- traverse (maybe (randomOf (Lobby.opponents current)) (pure . Just)) (Lobby.theirs current)
             files <- Maybe.fromMaybe Map.empty <$> decksRead shell
             -- A bot with no deck to play keeps the lobby up.
@@ -173,7 +191,7 @@ lobby shell = do
           Lobby.MkSubmitImport | Just panel <- Lobby.importing current -> importDeck shell current panel >>= go
           Lobby.MkDelete name | Lobby.isSaved name -> do
             Browser.forgetDeck (Text.drop (Text.length Lobby.savedPrefix) name)
-            IORef.modifyIORef' (loaded shell) $ \l -> l {deckFiles = fmap (Map.delete name) (deckFiles l), formats = Map.delete name (formats l), palette = Map.delete name (palette l), unread = filter ((/= name) . fst) (unread l)}
+            IORef.modifyIORef' (loaded shell) $ \l -> l {deckFiles = fmap (Map.delete name) (deckFiles l), formats = Map.delete name (formats l), palette = Map.delete name (palette l), unread = filter ((/= name) . fst) (unread l), illegal = Map.delete name (illegal l), unchecked = filter ((/= name) . fst) (unchecked l)}
             go (Lobby.deleted name current)
           Lobby.MkExport name -> do
             files <- Maybe.fromMaybe Map.empty . deckFiles <$> IORef.readIORef (loaded shell)
@@ -243,6 +261,7 @@ refreshed shell shown = do
     withDecks
       { Lobby.problem = Loading.problemFor Loading.MkDecks (loading now),
         Lobby.palette = palette now,
+        Lobby.illegal = illegal now,
         Lobby.previews = Map.union (Lobby.previews withDecks) (Map.fromList read')
       }
 
@@ -258,6 +277,76 @@ lineOf root byFile n name = case LazyMap.lookup (Registry.cardPath root (Registr
               | otherwise = Lobby.MkSpell
          in Lobby.MkLine n name (Face.manaCost face) (Quantity.manaValueOf face) kind
   _ -> Lobby.MkLine n name Nothing 0 Lobby.MkSpell
+
+-- | The deck builder until it leads back to the lobby: its cards indexed
+-- as they load, its list checked after each change once the registry is
+-- built, and saved as a lobby deck.
+builder :: Shell -> IO Next
+builder shell = do
+  need shell Loading.MkDecks
+  need shell Loading.MkCards
+  IORef.modifyIORef' (loaded shell) $ \l -> l {indexWanted = True}
+  go (Builder.new []) Nothing
+  where
+    -- The builder, and the list and format it was last checked at.
+    go shown lastChecked = do
+      now <- IORef.readIORef (loaded shell)
+      named <- if null (Builder.formats shown) then Legality.shippedFormats else pure (Builder.formats shown)
+      least <- maybe (Legality.minimumFor (Builder.format shown)) (pure . Just) (Builder.least shown)
+      let filled = shown {Builder.index = cardIndex now, Builder.formats = named, Builder.least = least}
+          key = (Builder.deck filled, Builder.format filled)
+      current <- case registry now of
+        Just reg
+          | lastChecked /= Just key,
+            Loading.ready Loading.MkRules (loading now) -> do
+              (found, cards') <- deckProblems reg (Builder.listText filled)
+              pure (Builder.checked found cards' filled, Just key)
+        _ -> pure (filled, lastChecked)
+      Browser.display (page shell) (fmap Screen.MkBuilder (Builder.view (fst current)))
+      woke <- await shell
+      let shownNow = fst current
+      case woke of
+        MkTapped (Screen.MkBuilder event) value -> case event of
+          Builder.MkBack | not (Builder.dirty shownNow) -> pure MkToLobby
+          Builder.MkLeave -> pure MkToLobby
+          Builder.MkSave -> do
+            saved' <- saveBuilt shell shownNow
+            go saved' (snd current)
+          Builder.MkFormat -> go (Builder.update event value shownNow) {Builder.least = Nothing} (snd current)
+          _ -> go (Builder.update event value shownNow) (snd current)
+        _ -> go shownNow (snd current)
+
+-- | The builder once its deck is saved under the name it was saved as, or
+-- the name typed (Builder.saveTarget): written to the deck root and the
+-- page, listed in the lobby, recoloured and its problems recorded.
+saveBuilt :: Shell -> Builder.Builder -> IO Builder.Builder
+saveBuilt shell built = do
+  listed <- IORef.readIORef (loaded shell)
+  case Builder.saveTarget (Seq.fromList (foldMap Map.keys (deckFiles listed))) built of
+    Left problems -> pure built {Builder.saveProblems = problems}
+    Right name -> do
+      deckRoot <- Decks.defaultRoot
+      let contents = Builder.listText built
+          path = deckRoot <> "/" <> Text.unpack name <> ".txt"
+      Browser.saveDeck (Text.drop (Text.length Lobby.savedPrefix) name) contents
+      IORef.modifyIORef' (loaded shell) $ \l ->
+        l
+          { deckFiles = fmap (Map.insert name path) (deckFiles l),
+            formats = maybe id (Map.insert name) (DeckList.formatOf contents) (formats l),
+            palette = Map.delete name (palette l),
+            unread = (name, path) : filter ((/= name) . fst) (unread l),
+            illegal = if null (Builder.problems built) then Map.delete name (illegal l) else Map.insert name (Builder.problems built) (illegal l)
+          }
+      pure (Builder.saved name built)
+
+-- | Why a deck list breaks the format its header names, as lines, and the
+-- cards those lines are about (Legality.namedCard).
+deckProblems :: Registry.Registry Identity.Identity -> Text.Text -> IO ([Text.Text], Set.Set CardName.CardName)
+deckProblems reg contents = case Command.loadText reg "deck" contents of
+  Left problems -> pure (problems, Set.empty)
+  Right listed -> do
+    (_, lines', violations) <- Legality.assess Nothing Nothing listed
+    pure (lines' <> fmap Legality.explain violations, Set.fromList (Maybe.mapMaybe Legality.namedCard violations))
 
 -- | One of these decks at random.
 randomOf :: Seq.Seq Text.Text -> IO (Maybe Text.Text)
@@ -489,11 +578,40 @@ work shell = do
             Exception.evaluate . (,) name $! Lobby.deckColours colours contents
           IORef.modifyIORef' (loaded shell) $ \l -> l {palette = Map.union (palette l) (Map.fromList read'), unread = rest}
         _ -> Nothing
+      -- The builder's index, 500 cards a batch, timed to the console.
+      buildIndex = case (cards now, indexing now) of
+        (Just byFile, Nothing)
+          | indexWanted now,
+            Maybe.isNothing (cardIndex now) -> Just $ do
+              began <- Clock.getMonotonicTime
+              IORef.modifyIORef' (loaded shell) $ \l -> l {indexing = Just (Seq.empty, LazyMap.elems byFile, began)}
+        (_, Just (built, pending, began)) -> Just $ do
+          let (batch, rest) = splitAt 500 pending
+              entries = Seq.fromList (Maybe.mapMaybe (either (const Nothing) CardIndex.entryOf) batch)
+          _ <- Exception.evaluate (foldr (\e n -> Text.length (CardIndex.folded e) + n) 0 entries)
+          if null rest
+            then do
+              ended <- Clock.getMonotonicTime
+              let done = built <> entries
+              Browser.logLine (Text.pack ("Indexed " <> show (Seq.length done) <> " cards in " <> show (ended - began) <> " s"))
+              IORef.modifyIORef' (loaded shell) $ \l -> l {indexing = Nothing, cardIndex = Just done}
+            else IORef.modifyIORef' (loaded shell) $ \l -> l {indexing = Just (built <> entries, rest, began)}
+        _ -> Nothing
+      -- Two saved decks checked against their formats a batch.
+      checkSaved = case (registry now, unchecked now) of
+        (Just reg, _ : _) | ready Loading.MkRules -> Just $ do
+          let (batch, rest) = splitAt 2 (unchecked now)
+          found <- Monad.forM batch $ \(name, path) -> do
+            contents <- Encoding.decodeUtf8Lenient <$> ByteString.readFile path
+            (,) name . fst <$> deckProblems reg contents
+          IORef.modifyIORef' (loaded shell) $ \l -> l {illegal = Map.union (Map.filter (not . null) (Map.fromList found)) (foldr (Map.delete . fst) (illegal l) batch), unchecked = rest}
+        _ -> Nothing
       steps =
         [ Monad.guard (ready Loading.MkDecks && Maybe.isNothing (deckFiles now)) >> Just readDecks,
           Monad.guard (ready Loading.MkCards && Maybe.isNothing (cards now)) >> Just readCards
         ]
           <> (if gameWaits then [buildRegistry, readColours] else [readColours, buildRegistry])
+          <> [buildIndex, checkSaved]
   case Maybe.catMaybes steps of
     step : _ -> step >> pure True
     [] -> pure False
@@ -503,7 +621,7 @@ work shell = do
       paths <- Decks.listRoot deckRoot
       let files = Map.fromList [(name, path) | path <- paths, let name = Lobby.deckName deckRoot path, Lobby.playable name]
       named <- fmap (Map.mapMaybe id) . traverse (fmap (DeckList.formatOf . Encoding.decodeUtf8Lenient) . ByteString.readFile) $ files
-      IORef.modifyIORef' (loaded shell) $ \l -> l {deckFiles = Just files, formats = named, unread = Map.toList files}
+      IORef.modifyIORef' (loaded shell) $ \l -> l {deckFiles = Just files, formats = named, unread = Map.toList files, unchecked = filter (Lobby.isSaved . fst) (Map.toList files)}
     readCards = do
       root <- Registry.defaultRoot
       bundles <- Registry.bundlePaths >>= traverse ByteString.readFile
