@@ -2710,7 +2710,8 @@ filterPositionLintSpec s registry corpus = Spec.describe s "Lint" $ do
         ("Airtight Alibi", 3), -- Abduction's entering untap, Fae Flight's hexproof and an unsuspecting
         ("Sleep with the Fishes", 1), -- Claustrophobia's entering tap, before a token
         ("Crackling Emergence", 1), -- Pariah's replacement row, on a destruction
-        ("Harmonious Emergence", 1) -- Crackling Emergence's wording
+        ("Harmonious Emergence", 1), -- Crackling Emergence's wording
+        ("Cradle of Safety", 1) -- Aquitect's Defenses' entering hexproof
       ]
     -- The rejected side, which the sweep above cannot show while the pool has no
     -- offender: the same atom planted in a SPELL's target slot -- the position a
