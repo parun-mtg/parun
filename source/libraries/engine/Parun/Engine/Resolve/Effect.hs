@@ -392,6 +392,13 @@ offerCastOnce runSubgame context fits named caster optionality verb retake offer
             -- the same source the reference did. An offer stating none narrows
             -- nothing. `fits` is the repetition's total asking the same half
             -- (CastRepetition.WithinTotal).
+            --
+            -- Also CR 406.3b's quality half for a card exiled face down: the
+            -- face's view is the spell it becomes, where the reference's walk
+            -- saw no characteristics (CR 406.3a). The scenario
+            -- the-dragon-kami-reborn-hatches-a-face-down-creature-card-and-not-an-instant-when-its-egg-dies
+            -- proves it. Rule 406.3b's look half (Exile.mayLookAt) is not
+            -- implemented (#9083).
             if maybe True (Filter.matches context faceView) (CastOffer.restriction offer)
               && fits oid faceView
               && Cast.castableWhenOffered (CastOffer.spending offer) caster oid name candidates proposed
