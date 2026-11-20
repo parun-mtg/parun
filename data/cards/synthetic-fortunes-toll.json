@@ -21,7 +21,6 @@
             "type": "ModifyDieRoll",
             "value": {
               "cost": {
-                "components": [],
                 "mana": [
                   {
                     "type": "Generic",

@@ -58,7 +58,7 @@
     "step": "PrecombatMain"
   },
   "description": "CR 706.2a the roller gets a mana window before another player's mana-cost reroll",
-  "note": "bob's Toll over alice's roll, paid with {1}: alice, who rolled, is offered a mana window first (she taps her Forest), then bob pays from his own. Under the payer-only window alice's ChooseManaSource answers would be unscheduled.",
+  "note": "bob's Toll over alice's roll, paid with {1}: alice, who rolled, is offered a mana window first (she taps her Forest), then bob pays from his own. Under the payer-only window alice's ChooseExtraManaSource answer would be unscheduled.",
   "timeline": [
     {
       "do": {
@@ -110,7 +110,7 @@
     {
       "do": {
         "Answer": {
-          "prompt": "ChooseManaSource",
+          "prompt": "ChooseExtraManaSource",
           "with": "$f1"
         }
       },
