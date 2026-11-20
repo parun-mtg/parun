@@ -130,7 +130,7 @@ spec s registry = Spec.describe s "WebQuestion" $ do
         board = Html.toText (Question.Web.view request Question.Web.blank)
         reading = Question.Web.view request Question.Web.blank {Question.Web.reading = Just (Card.MkReading oid [] True)}
         sheet = maybe Text.empty Html.toText (Html.search (\html -> Text.pack "<section class=\"sheet" `Text.isPrefixOf` Html.toText html) reading >>= (`Html.at` reading))
-    Spec.assertBool s (Text.pack "Keyword abilities: Flying, Ward {2}" `Text.isInfixOf` sheet) "the sheet lists ward"
+    Spec.assertBool s (Text.pack "Keyword abilities: Flying, Ward <span class=\"ms ms-generic\" title=\"{2}\"" `Text.isInfixOf` sheet) "the sheet lists ward"
     Spec.assertBool s (not (Text.pack "Ward {2}" `Text.isInfixOf` board)) "the tile leaves it out"
 
   Spec.it s "CR 601.2d a division starts one to each target and the rest to the first, and reads as the engine's" $ do
@@ -480,7 +480,8 @@ spec s registry = Spec.describe s "WebQuestion" $ do
         request = shown {Request.question = Question.MkQuestion S.alice (Text.pack "ChooseManaSource") (R.Object [(Text.pack "sources", R.Array [source])]) Nothing}
         page = Question.Web.view request Question.Web.blank
     Spec.assertBool s (Text.pack "<h2>Choose a source.</h2>" `Text.isInfixOf` Html.toText page) "heading"
-    Spec.assertEqWith s "tap" (fmap (\event -> Question.Web.step request Set.empty event Text.empty) (Html.labelled (Text.pack "button") (Text.pack "Your Mountain (makes R)") page >>= \path -> Html.handler (Text.pack "click") path page)) (Just (Question.Web.MkReplied (PromptOffer.object Protocol.namer land)))
+    Spec.assertEqWith s "tap" (fmap (\event -> Question.Web.step request Set.empty event Text.empty) (Html.labelled (Text.pack "button") (Text.pack "Your Mountain (makes )") page >>= \path -> Html.handler (Text.pack "click") path page)) (Just (Question.Web.MkReplied (PromptOffer.object Protocol.namer land)))
+    Spec.assertBool s (Text.pack "Your Mountain (makes <span class=\"ms\" title=\"{R}\"" `Text.isInfixOf` Html.toText page) "what it makes, drawn"
     -- The Mountain's tile on the battlefield pays too.
     Spec.assertEqWith s "tile" (Html.search isCard page >>= \path -> Html.handler (Text.pack "click") path page) (Just (Question.Web.MkAnswer (PromptOffer.object Protocol.namer land)))
 

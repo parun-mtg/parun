@@ -19,6 +19,7 @@ import qualified Parun.Uri.Fragment as Fragment
 import qualified Parun.Web.Element as Element
 import qualified Parun.Web.Html as Html
 import qualified Parun.Web.Log as Log
+import qualified Parun.Web.Mana as Mana
 
 -- | How the game ended for the player the page plays.
 data Verdict
@@ -63,7 +64,7 @@ view ending =
         []
         $ [confetti | verdict ending == MkWon]
           <> [ Element.el "section" ["verdict", tone] [] $
-                 Element.el "h1" [] [] [Element.string headline] : [Element.el "p" [] [] [Element.text line] | line <- said ending],
+                 Element.el "h1" [] [] [Element.string headline] : [Element.el "p" [] [] (Mana.rich line) | line <- said ending],
                Element.el
                  "div"
                  ["ending-actions"]

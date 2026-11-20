@@ -261,7 +261,7 @@ blank = MkScreen Set.empty Nothing Seq.empty 0 Nothing MkStandard
 view :: Request.Request -> Screen -> Html.Html Event
 view request screen =
   table request screen (barControls (level screen) True (MkConcede <$ passIndex request)) (cues request (selected screen) (focus screen)) $
-    [Element.el "p" ["problem"] [Element.attr "role" (Text.pack "alert")] [Html.text problem] | problem <- Maybe.maybeToList (Request.problem request)]
+    [Element.el "p" ["problem"] [Element.attr "role" (Text.pack "alert")] (Mana.rich problem) | problem <- Maybe.maybeToList (Request.problem request)]
       <> [Element.el "p" ["controlling"] [Element.attr "role" (Text.pack "note")] [Html.text (Text.pack "You're deciding for " <> Render.player p <> Text.pack ", whom you control.")] | p <- Maybe.maybeToList (Question.for (Request.question request))]
       <> news (Request.view request) (viewerOf request) screen
       <> form request (selected screen)
@@ -383,7 +383,7 @@ logView board viewer screen =
         "details"
         ["log"]
         []
-        [ Element.el "summary" [] [] [Element.el "span" ["k"] [] [Element.string "Log"], Element.el "span" ["latest"] [] (foldMap (\(_, e) -> [Element.text (Log.sentence viewer e)]) latest)],
+        [ Element.el "summary" [] [] [Element.el "span" ["k"] [] [Element.string "Log"], Element.el "span" ["latest"] [] (foldMap (\(_, e) -> Mana.rich (Log.sentence viewer e)) latest)],
           -- The newest entries link their cards; older ones stay plain text.
           Element.keyed "ul" ["log-list"] [] (Foldable.toList (Seq.mapWithIndex (\j (i, e) -> (Text.pack (show i), Log.item viewer (if j < 60 then linksOf board else Nothing) (i >= total - newest) e)) (Seq.take 300 entries)))
         ]
@@ -815,7 +815,7 @@ form request picked = case Text.unpack (Question.kind question) of
     | kind `elem` ["ChooseManaSource", "ChooseExtraManaSource"],
       Just shown <- Request.view request,
       Just sources <- Protocol.field "sources" offer >>= Protocol.arrayOf >>= traverse Offer.manaSource ->
-        Html.element (Text.pack "h2") [] [Html.text $ foldMap (\cost -> Text.pack "Paying " <> Render.manaCost cost <> Text.pack ". ") (Protocol.field "cost" offer >>= Offer.decoded Codec.ManaCost.codec) <> Text.pack (if kind == "ChooseManaSource" then "Choose a source." else "The cost is covered. Activate another source, or pay now.")]
+        Html.element (Text.pack "h2") [] (Mana.rich $ foldMap (\cost -> Text.pack "Paying " <> Render.manaCost cost <> Text.pack ". ") (Protocol.field "cost" offer >>= Offer.decoded Codec.ManaCost.codec) <> Text.pack (if kind == "ChooseManaSource" then "Choose a source." else "The cost is covered. Activate another source, or pay now."))
           : [primary MkAuto (Text.pack "Pay automatically") | Maybe.isJust (auto request)]
             -- Sources the seat can't tell apart are one button, for the first.
             <> [button (MkAnswer source) (label <> many count) | (source : _, label, count) <- collapsed [(source, Offer.listedName shown source <> makes yields) | (source, yields) <- sources]]
@@ -854,7 +854,7 @@ form request picked = case Text.unpack (Question.kind question) of
                 else [numberInput]
   _
     | Just (title', items) <- ordering request ->
-        Html.element (Text.pack "h2") [] [Html.text title']
+        Html.element (Text.pack "h2") [] (Mana.rich title')
           : [button (MkToggle 0 i) (foldMap (\(k, _) -> Text.pack (show (k + 1) <> ". ")) (List.find ((== i) . snd) (Set.toList picked)) <> label) | (i, label) <- zip [0 ..] items]
             <> [Element.el "div" ["passes"] [] $ primary MkSubmit (Text.pack (if Set.null picked then "Keep this order" else "Done")) : [button MkClear (Text.pack "Start over") | not (Set.null picked)]]
   _
@@ -888,7 +888,7 @@ form request picked = case Text.unpack (Question.kind question) of
             label option entry
               | kind == "ChooseRoom", Just n <- Protocol.naturalOf option = Text.pack ("Room " <> show (n + 1))
               | otherwise = maybe (name option) (Offer.entryName shown) entry
-         in Html.element (Text.pack "h2") [] [Html.text $ Maybe.fromMaybe (capitalized (Question.kind question) <> foldMap (\source -> Text.pack " for " <> Offer.objectName shown source) (Protocol.field "source" offer) <> Text.pack ".") (headingOf shown request)]
+         in Html.element (Text.pack "h2") [] (Mana.rich $ Maybe.fromMaybe (capitalized (Question.kind question) <> foldMap (\source -> Text.pack " for " <> Offer.objectName shown source) (Protocol.field "source" offer) <> Text.pack ".") (headingOf shown request))
               : [button (MkAnswer option) (label option entry) | (option, entry) <- zip options' entries]
   "DeclareAttackers"
     | Just attackers <- Protocol.arrayOf offer,
@@ -936,11 +936,11 @@ form request picked = case Text.unpack (Question.kind question) of
                 "div"
                 ["amount-row"]
                 []
-                [ Element.el "span" ["amount-label"] [] [Html.text (title group)],
+                [ Element.el "span" ["amount-label"] [] (Mana.rich (title group)),
                   Element.el "div" ["segmented"] [] [Element.button (["on" | Set.member (Int.toNaturalSaturating g, i) picked]) (MkToggle (Int.toNaturalSaturating g) i) (Mana.rich label) | (i, (_, label)) <- zip [0 ..] (options group)]
                 ]
-            rows = concat [[Element.el "h3" ["subhead"] [] [Html.text t] | Just t <- [sectionOf g], g == 0 || sectionOf (g - 1) /= Just t] <> [row g group] | (g, group) <- zip [0 ..] (groups chooser)]
-         in Html.element (Text.pack "h2") [] [Html.text title']
+            rows = concat [[Element.el "h3" ["subhead"] [] (Mana.rich t) | Just t <- [sectionOf g], g == 0 || sectionOf (g - 1) /= Just t] <> [row g group] | (g, group) <- zip [0 ..] (groups chooser)]
+         in Html.element (Text.pack "h2") [] (Mana.rich title')
               : fmap nudge context
                 <> rows
                 <> [primary MkSubmit (send chooser)]
@@ -955,7 +955,7 @@ form request picked = case Text.unpack (Question.kind question) of
     | Just chooser <- picker request ->
         heading "Declare blockers: tap a creature of yours, then the attacker it blocks."
           : concat
-            [ Element.el "h3" ["subhead"] [] [Html.text (title group)]
+            [ Element.el "h3" ["subhead"] [] (Mana.rich (title group))
                 : toggles g [(i, label) | (i, (_, label)) <- zip [0 ..] (options group)]
             | (g, group) <- zip [0 ..] (groups chooser)
             ]
@@ -963,7 +963,7 @@ form request picked = case Text.unpack (Question.kind question) of
   _
     | Just chooser <- picker request ->
         concat
-          [ Html.element (Text.pack "h2") [] [Html.text $ title group <> (if Text.any Char.isDigit (title group) then Text.empty else Text.pack (" (choose " <> bounds group <> ")"))]
+          [ Html.element (Text.pack "h2") [] (Mana.rich $ title group <> (if Text.any Char.isDigit (title group) then Text.empty else Text.pack (" (choose " <> bounds group <> ")")))
               : toggles g [(i, label) | (i, (_, label)) <- zip [0 ..] (options group)]
           | (g, group) <- zip [0 ..] (groups chooser)
           ]
@@ -987,8 +987,8 @@ form request picked = case Text.unpack (Question.kind question) of
       | (indices, label, _) <- collapsed labelled
       ]
     many n = if n > 1 then Text.pack (" \x00d7" <> show n) else Text.empty
-    makes yields = if null yields then Text.empty else Text.pack " (makes " <> Text.intercalate (Text.pack " or ") (fmap (foldMap Render.manaType) yields) <> Text.pack ")"
-    heading t = Html.element (Text.pack "h2") [] [Html.text $ Text.pack t]
+    makes yields = if null yields then Text.empty else Text.pack " (makes " <> Text.intercalate (Text.pack " or ") (fmap (foldMap (\m -> Text.pack "{" <> Render.manaType m <> Text.pack "}")) yields) <> Text.pack ")"
+    heading t = Html.element (Text.pack "h2") [] (Mana.rich $ Text.pack t)
 
 -- | A field to type a number into, answering with it.
 numberInput :: Html.Html Event

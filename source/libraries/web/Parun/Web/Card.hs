@@ -470,7 +470,7 @@ sheet view o reading actions close =
                      <> foldMap (pure . Mana.cost) (ObjectView.characteristics o >>= ProjectedCharacteristics.manaCost),
                  Element.el "p" ["type-line"] [] [Element.text (fullType o)]
                ]
-               <> [Element.el "p" ["status"] [] [Element.text line] | line <- status view o]
+               <> [Element.el "p" ["status"] [] (Mana.rich line) | line <- status view o]
                <> [Element.el "div" ["oracle"] [] [Element.el "p" [] [] (Mana.rich line) | line <- text reading, not (Text.null line)] | not (null (text reading))]
                <> [Element.el "div" ["stats-row"] [] (badges o <> stats o) | not (null (badges o <> stats o))]
                <> [Element.el "div" ["sheet-actions"] [] actions | pinned reading, not (null actions)]
