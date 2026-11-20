@@ -2474,10 +2474,10 @@ withPrototype oid gs face pc = case (maybe False Object.prototyped (Game.lookupO
 -- ability" proves it.
 --
 -- Each side arrives at LAYER 1a, through `copiableCharacteristicsFaceUp` above,
--- so a FACE-DOWN component contributes its card's abilities rather than CR
--- 708.2a's none: CR 731.2e gives a component a status, CR 109.3 keeps status out
--- of the characteristics, and CR 613.2b applies rule 708.2's substitution to the
--- resulting permanent one sublayer later.
+-- except a face-down component that stays face down under a face-up topmost
+-- one (CR 731.2e), which contributes its face-down characteristics: CR 708.2
+-- leaves a face-down object only those its rule lists, so its card's abilities
+-- are no abilities of it (Parun.Engine.Event.merge).
 --
 -- CR 731.2h's flip component arrives here already read the way that rule asks
 -- for, Parun.Engine.Event.merge folding a SECOND result out of both sides'

@@ -1289,6 +1289,29 @@ Entries are ordered by the first rule each cites.
   controller doesn't own is exiled at once".
 - **Issue**: #2468, #6254, #6263.
 
+## What a face-down component gives its face-up merged permanent
+
+- **Question**: CR 702.140e gives a mutated permanent all abilities of each
+  card representing it, and CR 731.2e lets a face-down card stay face down
+  under a face-up topmost one. Does that card give the permanent its printed
+  abilities, or none?
+- **Rules**: CR 702.140e, 708.2, 708.2a, 731.2a, 731.2e, 731.2f, 613.2b; CR of
+  2026-11-06. The Ikoria release notes say only that the topmost object sets
+  the permanent's status.
+- **Decision**: Its face-down characteristics, and so only the abilities the
+  rule that turned it face down lists (none for a morph). CR 708.2 leaves a
+  face-down object no other characteristics, and a card that turns face up
+  under CR 731.2f gives its abilities from then on.
+- **Rejected**: Its printed abilities, on CR 109.3 keeping status out of the
+  characteristics and CR 613.2b applying CR 708.2 to the permanent alone. It
+  shows every player a hidden card's abilities, and lets the face-up permanent
+  use them while the card stays face down.
+- **Site**: `Parun.Engine.Event.merge` and `Parun.Engine.Binding.setMergeCopy`,
+  proved by data/scenarios/mutate's "CR 708.2 a face-down component gives its
+  face-up pile none of its card's abilities" and "CR 731.2f a second merge
+  over a pile keeps its face-down component's abilities for its turn".
+- **Issue**: #8963.
+
 ## Which component of a merged permanent answers for day and night
 
 - **Question**: A merged permanent with one double-faced component under a

@@ -277,8 +277,9 @@ spec s registry = Spec.describe s "Mutate" $ do
   -- CR 712.12a over the merge's turned reading: Synthetic Graftling merges OVER
   -- a manifested Blightreaper Thallid and transforms the pile by its own
   -- ability. The Graftling turns and the face-down Thallid does not, so the
-  -- pile is a 4/4 Graftbeast with trample that keeps the Thallid FRONT face's
-  -- activated ability (CR 702.140e), where Blightsower Thallid has none.
+  -- pile is a 4/4 Graftbeast with trample whose Thallid component still shows
+  -- its front face. Face down, the Thallid gives the pile none of its
+  -- activated ability before or after (CR 708.2).
   Spec.it s "CR 712.12a a face-down component stays unturned when the pile transforms" $ do
     forest <- S.printingOf s registry "Forest"
     thallid <- S.printingOf s registry "Blightreaper Thallid"
@@ -305,9 +306,10 @@ spec s registry = Spec.describe s "Mutate" $ do
     case transformedBy forest host merged of
       Nothing -> Spec.assertFailure s "expected the pile to offer the Graftling's activated ability"
       Just after -> do
-        Spec.assertEqWith s "CR 712.12a the face-down Thallid's front-face ability is still the pile's one activated ability" (offered after) 1
+        Spec.assertEqWith s "CR 712.12a the Graftling turned and the face-down Thallid still shows its front" (shownFaces host after) [Just graftbeastName, Nothing]
         Spec.assertEqWith s "CR 731.2i the Graftling turned: a 4/4 Graftbeast with trample" (reading after) (Set.singleton graftbeastName, Just (4, 4), True)
-        Spec.assertEqWith s "setup: merged, the pile offered the Graftling's ability and the Thallid's" (offered merged) 2
+        Spec.assertEqWith s "CR 708.2 the face-down Thallid gives the Graftbeast no activated ability" (offered after) 0
+        Spec.assertEqWith s "CR 708.2 merged, the pile offered the Graftling's ability and not the face-down Thallid's" (offered merged) 1
   -- CR 731.2i with TWO double-faced components: Synthetic Graftling transforms
   -- by its own ability, unmerged, and a second Graftling then mutates OVER it.
   -- The pile shows the top card's front and the transformed card's trample (CR
@@ -1094,6 +1096,13 @@ componentNames oid gs =
   foldMap
     (Maybe.mapMaybe (\component -> fmap (S.nameOf . Printing.card) (Game.printingOf (Game.printingOfComponent component) gs)) . Foldable.toList . Game.componentsOf . Object.source)
     (Game.lookupObject oid gs)
+
+-- CR 731.2i: the face each component of `oid`'s pile shows, top to bottom,
+-- Nothing for a front.
+shownFaces :: ObjectId.ObjectId -> GameState.GameState -> [Maybe CardName.CardName]
+shownFaces oid gs = case fmap Object.source (Game.lookupObject oid gs) of
+  Just (Source.OfMerge components) -> fmap ShownComponent.face (Foldable.toList components)
+  _ -> []
 
 -- The first of the two Cat tokens CR 702.140d's trigger created, which is the
 -- token these cases merge with. By name, so nothing else on the board can stand

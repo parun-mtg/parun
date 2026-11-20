@@ -2320,12 +2320,20 @@ turnFacing facing oid gs =
 -- face-up component that represents it is turned face down", and face up the
 -- same way. Parun.MutateSpec's "CR 731.2i a merged permanent that was face down
 -- transforms once turned face up" proves the face-up half.
+--
+-- A component turned face up gives the pile its abilities from then on
+-- (Binding.unstashMergeCopy). data/scenarios/mutate's "CR 708.2 a face-down
+-- component gives its face-up pile none of its card's abilities" proves it,
+-- turning its pile down and back up.
 withFacing :: Facing.Facing -> Object -> Object
-withFacing facing object =
-  let source = case Object.source object of
-        Source.OfMerge components -> Source.OfMerge (fmap (\shown -> shown {ShownComponent.facing = facing}) components)
-        other -> other
-   in object {Object.facing = facing, Object.source = source}
+withFacing facing object = case Object.source object of
+  Source.OfMerge components ->
+    object
+      { Object.facing = facing,
+        Object.source = Source.OfMerge (fmap (\shown -> shown {ShownComponent.facing = facing}) components),
+        Object.bindings = Binding.unstashMergeCopy (Object.bindings object)
+      }
+  _ -> object {Object.facing = facing}
 
 -- CR 712.13 / 713.7 / 731.2j: the permanent is represented by a double-faced
 -- card or token or by meld cards, or is merged with such a component, so it
