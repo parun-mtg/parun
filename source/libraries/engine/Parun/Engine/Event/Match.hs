@@ -275,7 +275,7 @@ attacks context board atEvent gs bearer you trigger event = case (trigger, event
         -- apart (docs/decisions.md, "Whom Attuma's Merfolk attack").
         countHolds = case AttackedTrigger.attackers t of
           Nothing -> True
-          Just count -> reachesFloor count (fmap (declaredPower gs) (Foldable.toList (attackedBy gs bearer you t payload)))
+          Just count -> reachesFloor count (fmap (declaredPower gs) (Foldable.toList (attackedBy board gs bearer you t payload)))
      in attackerHolds && attackedHolds && countHolds
   -- CR 508.3c / 508.3d: once per declaration, the declaring player read off the
   -- event rather than TurnRegisters.activePlayer: under the shared team turns
@@ -285,7 +285,7 @@ attacks context board atEvent gs bearer you trigger event = case (trigger, event
     PlayerRelation.holds (Game.teams gs) (DeclarationTrigger.player t) you attacker
       && case DeclarationTrigger.attackers t of
         Nothing -> True
-        Just count -> reachesFloor count (fmap (declaredPower gs) (Foldable.toList (admittedAttackers gs bearer you (AttackCount.filter count) attacker)))
+        Just count -> reachesFloor count (fmap (declaredPower gs) (Foldable.toList (admittedAttackers board gs bearer you (AttackCount.filter count) attacker)))
       && case DeclarationTrigger.frequency t of
         TriggerFrequency.EveryTime -> True
         -- "For the first time each turn" narrows the EVENT, so an earlier
@@ -293,12 +293,12 @@ attacks context board atEvent gs bearer you trigger event = case (trigger, event
         -- (docs/decisions.md, "What a short attack spends of Desert Were-Worm's
         -- first time"). The one
         -- being matched is already in the log, so "the first" is "the only
-        -- one so far"; an earlier one's creatures are each read through
-        -- viewWithLastKnown now, their power as stamped then.
+        -- one so far"; an earlier one's creatures are each read off this
+        -- event's sample (admitsAttacker), their power as stamped then.
         TriggerFrequency.FirstTimeEachTurn ->
           let qualifies declared = case DeclarationTrigger.attackers t of
                 Nothing -> True
-                Just count -> reachesFloor count [stampedPower d | d <- declared, admitsAttacker gs bearer you (AttackCount.filter count) (AttackerDeclared.attacker d)]
+                Just count -> reachesFloor count [stampedPower d | d <- declared, admitsAttacker board gs bearer you (AttackCount.filter count) (AttackerDeclared.attacker d)]
            in length (filter qualifies (declarationsBy attacker gs)) <= 1
       -- As the Attacker arm's: asked of the game the event left, never re-checked
       -- (CR 603.4). data/scenarios's

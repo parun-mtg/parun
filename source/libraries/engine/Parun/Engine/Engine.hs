@@ -83,6 +83,7 @@ import qualified Parun.Types.ActingPermanent as ActingPermanent
 import qualified Parun.Types.Action as Action.Type
 import qualified Parun.Types.AnyNumberOf as AnyNumberOf
 import qualified Parun.Types.Asked as Asked
+import qualified Parun.Types.BattlefieldCandidate as BattlefieldCandidate
 import qualified Parun.Types.BeginningStep as BeginningStep
 import qualified Parun.Types.Bookkeeping as Bookkeeping
 import qualified Parun.Types.Card as Card
@@ -779,7 +780,7 @@ placePendingTriggers boards = do
   -- CR 605.5a: the EVENT that fired it decides too, so a trigger watching mana
   -- added by an ability that resolved (Caged Sun off Crumbling Vestige) is no
   -- mana ability and is placed here like any other.
-  gathered <- reactions (filter (\p -> not (ManaAbility.isTriggeredManaAbility (fmap LoggedEvent.event (PendingTrigger.firedBy p)) (PendingTrigger.ability p))) pending <> inherent)
+  gathered <- reactions (Snapshots.battlefieldWhenTriggered (GameState.snapshots gs)) (filter (\p -> not (ManaAbility.isTriggeredManaAbility (fmap LoggedEvent.event (PendingTrigger.firedBy p)) (PendingTrigger.ability p))) pending <> inherent)
   -- CR 603.3b's two sentences, run one after the other rather than ordered
   -- together and placed at the end: the rule's first sentence PUTS its abilities
   -- on the stack before its second is reached, which is observable both in the
@@ -823,8 +824,12 @@ reacts = Maybe.isJust . (Event.abilityTriggeredOf . LoggedEvent.event Monad.<=< 
 -- survives for a later round -- proved by Parun.TriggerSpec's "CR 603.7b a
 -- non-final chapter triggering leaves the one-shot entry armed". Its CR 603.12
 -- reflexive entries fired at the batch's first gather, which spent them.
-reactions :: [PendingTrigger.PendingTrigger] -> Game [PendingTrigger.PendingTrigger]
-reactions incoming = do
+--
+-- `samples` are the CR 603.10 samples the first round was gathered over, kept
+-- for `triggeredEvent` past their clearing; a later round's events are records
+-- of abilities triggering, which `triggeredEvent` reads no sample for.
+reactions :: Map.Map EventGroup.EventGroup (Map.Map ObjectId.ObjectId (BattlefieldCandidate.BattlefieldCandidate PC.ProjectedCharacteristics)) -> [PendingTrigger.PendingTrigger] -> Game [PendingTrigger.PendingTrigger]
+reactions samples incoming = do
   before <- State.get
   case Event.withinTriggerLimit before incoming of
     [] -> pure []
@@ -836,7 +841,7 @@ reactions incoming = do
       -- around the lot: a batch is "the abilities that have triggered since the
       -- last time a player received priority" (CR 603.3b), which can have
       -- triggered off different events at different moments.
-      State.modify' (\g -> List.foldl' (flip Event.recordEvent) g (fmap (triggeredEvent before) batch))
+      State.modify' (\g -> List.foldl' (flip Event.recordEvent) g (fmap (triggeredEvent samples before) batch))
       -- The per-GAME rider's own record, written beside the log because the log
       -- is cleared at the turn handoff. Only that rider's bearers are stored, so
       -- the record stays the size of the rider's use rather than the game's.
@@ -864,15 +869,16 @@ reactions incoming = do
                 GameState.stored = (GameState.stored g) {StoredEffects.delayedTriggers = surviving}
               }
         )
-      rest <- reactions (fresh <> fromDelayed)
+      rest <- reactions Map.empty (fresh <> fromDelayed)
       pure (batch <> rest)
 
 -- CR 603.3b's record of one ability triggering: what it hangs on (CR 113.7), its
 -- controller as it triggered (CR 603.3a) and WHICH ABILITY it is. Every pending
 -- trigger gets one, a SOURCELESS inherent ability included -- the record names a
--- Parun.Types.TriggerSource, so there is no id it lacks.
-triggeredEvent :: GameState -> PendingTrigger.PendingTrigger -> GameEvent.GameEvent
-triggeredEvent gs pending =
+-- Parun.Types.TriggerSource, so there is no id it lacks. Its attackers are read
+-- off the firing event's CR 603.10 sample, as the trigger matched them.
+triggeredEvent :: Map.Map EventGroup.EventGroup (Map.Map ObjectId.ObjectId (BattlefieldCandidate.BattlefieldCandidate PC.ProjectedCharacteristics)) -> GameState -> PendingTrigger.PendingTrigger -> GameEvent.GameEvent
+triggeredEvent samples gs pending =
   GameEvent.AbilityTriggered
     AbilityTriggered.MkAbilityTriggered
       { AbilityTriggered.source = PendingTrigger.source pending,
@@ -880,7 +886,7 @@ triggeredEvent gs pending =
         AbilityTriggered.ability = PendingTrigger.ability pending,
         AbilityTriggered.stackObject = PendingTrigger.stackId pending,
         AbilityTriggered.attackers = case (PendingTrigger.source pending, PendingTrigger.firedBy pending) of
-          (TriggerSource.OfObject bearer, Just logged) -> EventBinding.attackCausers gs bearer (PendingTrigger.controller pending) (TriggeredAbility.condition (PendingTrigger.ability pending)) (LoggedEvent.event logged)
+          (TriggerSource.OfObject bearer, Just logged) -> EventBinding.attackCausers (Map.findWithDefault Map.empty (LoggedEvent.group logged) samples) gs bearer (PendingTrigger.controller pending) (TriggeredAbility.condition (PendingTrigger.ability pending)) (LoggedEvent.event logged)
           _ -> Set.empty
       }
 

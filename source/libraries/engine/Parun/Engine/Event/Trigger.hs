@@ -2454,7 +2454,7 @@ eventTriggersGiven scope standing events gs =
             -- Beverly Crusher), the gain being the event.
             additional (cond, ab) =
               additionalTriggers gs (controllerFor cond) oid ab (LoggedEvent.group logged) (looksBack cond)
-                + additionalAttackTriggers gs (controllerFor cond) oid (LoggedEvent.group logged) (looksBack cond) (attackCausers gs oid (controllerFor cond) cond event)
+                + additionalAttackTriggers gs (controllerFor cond) oid (LoggedEvent.group logged) (looksBack cond) (attackCausers board gs oid (controllerFor cond) cond event)
                 + additionalLifeGainTriggers gs (controllerFor cond) oid (LoggedEvent.group logged) (looksBack cond) event
                 + case Game.enteredBattlefieldChange event of
                   Just zc -> additionalMoveTriggers gs (controllerFor cond) oid (LoggedEvent.group logged) (looksBack cond) zc

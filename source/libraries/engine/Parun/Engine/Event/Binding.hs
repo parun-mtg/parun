@@ -439,7 +439,7 @@ eventBindingsOver board gs bearerBecame becameInGraveyard bearer you cond event 
     only Seq.:<| Seq.Empty -> Binding.setBecame only Map.empty
     every -> Binding.setBecameGroup every Map.empty
   -- CR 508.3: attackSlots' slots, off the event each arity matches.
-  (TriggerCondition.Attacks t, _) -> attackBindings gs bearer you t event
+  (TriggerCondition.Attacks t, _) -> attackBindings board gs bearer you t event
   -- CR 603.6c: leavesSlots' slots, off the departure matched.
   (TriggerCondition.Leaves t, _) -> leavesBindings gs bearerBecame t event
   -- CR 615.13's "that many": how much this prevention effect prevented, which is
@@ -1145,18 +1145,22 @@ admittedPreventedSources context gs f = Map.filterWithKey admits . DamagePrevent
 
 -- The attackers `attacker` declared that the Filter admits, CR 508.3c's "a
 -- creature that player controls" read through Combat.joinedUnder (CR 506.4)
--- and each viewed through viewWithLastKnown, framed by the bearer. CR 508.4's
+-- and each viewed as admitsAttacker views it, framed by the bearer. CR 508.4's
 -- creature put onto the battlefield attacking is not in Combat.declaredAttackers.
-admittedAttackers :: GameState -> ObjectId -> PlayerId -> Filter.Type.Filter Keyword.Type.Keyword -> PlayerId -> Seq.Seq ObjectId
-admittedAttackers gs bearer you f attacker = Seq.fromList (filter admits (Set.toList (Combat.declaredAttackers combat)))
+admittedAttackers :: Map.Map ObjectId (BattlefieldCandidate.BattlefieldCandidate PC.ProjectedCharacteristics) -> GameState -> ObjectId -> PlayerId -> Filter.Type.Filter Keyword.Type.Keyword -> PlayerId -> Seq.Seq ObjectId
+admittedAttackers board gs bearer you f attacker = Seq.fromList (filter admits (Set.toList (Combat.declaredAttackers combat)))
   where
     combat = TurnRegisters.combat (GameState.turn gs)
-    admits oid = Map.lookup oid (Combat.joinedUnder combat) == Just attacker && admitsAttacker gs bearer you f oid
+    admits oid = Map.lookup oid (Combat.joinedUnder combat) == Just attacker && admitsAttacker board gs bearer you f oid
 
--- Whether the Filter admits this declared attacker, viewed through
--- viewWithLastKnown and framed by the bearer: admittedAttackers' reading.
-admitsAttacker :: GameState -> ObjectId -> PlayerId -> Filter.Type.Filter Keyword.Type.Keyword -> ObjectId -> Bool
-admitsAttacker gs bearer you f oid = maybe False (\view -> Filter.matches (Projection.sourceContext gs (Just you) bearer) view f) (Projection.viewWithLastKnown oid gs oid)
+-- Whether the Filter admits this declared attacker, viewed off `board`, the
+-- event's CR 603.10 sample (`postEventView`), and framed by the bearer:
+-- admittedAttackers' reading. A state-based action after the attack (CR
+-- 704.5m burying an Aura) changes nothing: data/scenarios's
+-- rigo-streetwise-mentor-draws-nothing-when-the-small-attacker-shrinks-only-after-the-attack
+-- proves it.
+admitsAttacker :: Map.Map ObjectId (BattlefieldCandidate.BattlefieldCandidate PC.ProjectedCharacteristics) -> GameState -> ObjectId -> PlayerId -> Filter.Type.Filter Keyword.Type.Keyword -> ObjectId -> Bool
+admitsAttacker board gs bearer you f oid = maybe False (\view -> Filter.matches (Projection.sourceContext gs (Just you) bearer) view f) (postEventView board gs oid)
 
 -- CR 508.3: the slots eventBindings stamps for an attack trigger, each off the
 -- event its arity matches. A declared or unblocked attacker and CR 508.5's
@@ -1484,19 +1488,19 @@ leavesBindings gs bearerBecame t event
 -- Warlord's "Merfolk you control"), read as admittedAttackers reads them.
 -- CR 508.4's creature put onto the battlefield attacking is not in
 -- Combat.declaredAttackers.
-attackedBy :: GameState -> ObjectId -> PlayerId -> AttackedTrigger.AttackedTrigger -> BecameAttacked.BecameAttacked -> Seq.Seq ObjectId
-attackedBy gs bearer you t (BecameAttacked.MkBecameAttacked attacker target) = Seq.fromList (filter admits (Set.toList (Combat.declaredAttackers combat)))
+attackedBy :: Map.Map ObjectId (BattlefieldCandidate.BattlefieldCandidate PC.ProjectedCharacteristics) -> GameState -> ObjectId -> PlayerId -> AttackedTrigger.AttackedTrigger -> BecameAttacked.BecameAttacked -> Seq.Seq ObjectId
+attackedBy board gs bearer you t (BecameAttacked.MkBecameAttacked attacker target) = Seq.fromList (filter admits (Set.toList (Combat.declaredAttackers combat)))
   where
     combat = TurnRegisters.combat (GameState.turn gs)
     admits oid =
       Map.lookup oid (Combat.attackers combat) == Just target
         && (Maybe.isNothing (AttackedTrigger.attacker t) || Map.lookup oid (Combat.joinedUnder combat) == Just attacker)
-        && maybe True (\count -> admitsAttacker gs bearer you (AttackCount.filter count) oid) (AttackedTrigger.attackers t)
+        && maybe True (\count -> admitsAttacker board gs bearer you (AttackCount.filter count) oid) (AttackedTrigger.attackers t)
 
 -- CR 508.3: attackSlots, stamped. A Source subject binds no "that player":
 -- the match has already pinned the attacked to the bearer.
-attackBindings :: GameState -> ObjectId -> PlayerId -> AttackTrigger.AttackTrigger -> GameEvent -> Map.Map SlotName.SlotName Binding
-attackBindings gs bearer you trigger event = case (trigger, event) of
+attackBindings :: Map.Map ObjectId (BattlefieldCandidate.BattlefieldCandidate PC.ProjectedCharacteristics) -> GameState -> ObjectId -> PlayerId -> AttackTrigger.AttackTrigger -> GameEvent -> Map.Map SlotName.SlotName Binding
+attackBindings board gs bearer you trigger event = case (trigger, event) of
   (AttackTrigger.Attacker _, GameEvent.AttackerDeclared d) ->
     Binding.setTriggerPlayer (AttackerDeclared.defender d) (Binding.setAttackingCreature (AttackerDeclared.attacker d) Map.empty)
   (AttackTrigger.Attacked t, GameEvent.BecameAttacked payload@(BecameAttacked.MkBecameAttacked attacker target)) ->
@@ -1505,10 +1509,10 @@ attackBindings gs bearer you trigger event = case (trigger, event) of
           (_, AttackTarget.OfPlayer player) -> Binding.setTriggerPlayer player
           _ -> id
         attacking = maybe id (const (Binding.setAttackingPlayer attacker)) (AttackedTrigger.attacker t)
-     in attacking (attacked (Binding.setAttackingCreatures (attackedBy gs bearer you t payload) Map.empty))
+     in attacking (attacked (Binding.setAttackingCreatures (attackedBy board gs bearer you t payload) Map.empty))
   (AttackTrigger.Declaration t, GameEvent.AttackersDeclared attacker) -> case DeclarationTrigger.attackers t of
     Nothing -> Binding.setAttackingPlayer attacker Map.empty
-    Just count -> Binding.setAttackingPlayer attacker (Binding.setAttackingCreatures (admittedAttackers gs bearer you (AttackCount.filter count) attacker) Map.empty)
+    Just count -> Binding.setAttackingPlayer attacker (Binding.setAttackingCreatures (admittedAttackers board gs bearer you (AttackCount.filter count) attacker) Map.empty)
   (AttackTrigger.Unblocked _, GameEvent.AttackerUnblocked u) ->
     Binding.setTriggerPlayer (AttackerUnblocked.defender u) (Binding.setAttackingCreature (AttackerUnblocked.attacker u) Map.empty)
   _ -> Map.empty
@@ -1520,14 +1524,14 @@ attackBindings gs bearer you trigger event = case (trigger, event) of
 -- "attacks and isn't blocked", whose event is the declaration of blockers
 -- (docs/decisions.md, "Which abilities a creature attacking causes to
 -- trigger").
-attackCausers :: GameState -> ObjectId -> PlayerId -> TriggerCondition.TriggerCondition -> GameEvent -> Set.Set ObjectId
-attackCausers gs bearer you condition event = case condition of
-  TriggerCondition.AnyOf conditions -> foldMap (\each -> attackCausers gs bearer you each event) conditions
+attackCausers :: Map.Map ObjectId (BattlefieldCandidate.BattlefieldCandidate PC.ProjectedCharacteristics) -> GameState -> ObjectId -> PlayerId -> TriggerCondition.TriggerCondition -> GameEvent -> Set.Set ObjectId
+attackCausers board gs bearer you condition event = case condition of
+  TriggerCondition.AnyOf conditions -> foldMap (\each -> attackCausers board gs bearer you each event) conditions
   TriggerCondition.Attacks trigger -> case (trigger, event) of
     (AttackTrigger.Attacker _, GameEvent.AttackerDeclared d) -> Set.singleton (AttackerDeclared.attacker d)
-    (AttackTrigger.Attacked t, GameEvent.BecameAttacked payload) -> Set.fromList (Foldable.toList (attackedBy gs bearer you t payload))
+    (AttackTrigger.Attacked t, GameEvent.BecameAttacked payload) -> Set.fromList (Foldable.toList (attackedBy board gs bearer you t payload))
     (AttackTrigger.Declaration t, GameEvent.AttackersDeclared attacker) ->
-      Set.fromList (Foldable.toList (admittedAttackers gs bearer you (maybe (Filter.Type.And []) AttackCount.filter (DeclarationTrigger.attackers t)) attacker))
+      Set.fromList (Foldable.toList (admittedAttackers board gs bearer you (maybe (Filter.Type.And []) AttackCount.filter (DeclarationTrigger.attackers t)) attacker))
     _ -> Set.empty
   _ -> Set.empty
 
