@@ -166,6 +166,7 @@ import qualified Parun.Types.Phase as Phase
 import qualified Parun.Types.PlayerChoice as PlayerChoice
 import qualified Parun.Types.PlayerEffect as PlayerEffect
 import qualified Parun.Types.PlayerIsDealtDamage as PlayerIsDealtDamage
+import qualified Parun.Types.PlayerQuantity as PlayerQuantity
 import qualified Parun.Types.PlayerRef as PlayerRef
 import qualified Parun.Types.PlayerRelation as PlayerRelation
 import qualified Parun.Types.PlayerSacrifices as PlayerSacrifices
@@ -411,9 +412,12 @@ triggeredAbilityOffendsGiven armed inherited ability =
 -- payment's bound slots price the YIELD -- Priest of Yawgmoth's "the sacrificed
 -- artifact's mana value" -- and their amounts reach the rest beside
 -- Binding.triggerSource and Binding.you -- Springjack Pasture's "You gain X
--- life". Not implemented: the objects they name reaching the rest, so an object
--- exemption this lint grants is wider than a mana ability's other effects get
--- (#7447).
+-- life".
+--
+-- Unprinted: the objects they name reaching the rest, so an object exemption
+-- this lint grants is wider than a mana ability's other effects get;
+-- manaEffectSlotOffends ("CR 405.6c no card writes a mana ability whose other
+-- effects read an object its cost paid") keeps that read out of card data.
 activatedAbilityOffends :: ActivatedAbility.ActivatedAbility Card.Type.Card (GrantedAbility.GrantedAbility Card.Type.Card) -> Bool
 activatedAbilityOffends = activatedAbilityOffendsGiven (const Set.empty)
 
@@ -576,8 +580,8 @@ manaExileLinkOffends face =
    in not (null exiling) && any (or . filterAtomsOf readsPile . snd) (cardFilters face)
 
 -- CR 605.1a / 601.2h: does a mana ability's yield read a slot its cost's payment
--- binds that Parun.Engine.Mana.pricedCostSlots does not price? PAYMENT_SLOTS is
--- the slots Parun.Engine.Cost.payComponent's arms bind.
+-- binds (manaPaymentSlots) that Parun.Engine.Mana.pricedCostSlots does not
+-- price?
 --
 -- Unprinted: a yield reading what its cost tapped, discarded, revealed or
 -- returned, the several permanents it sacrificed or exiled, or counters it
@@ -586,30 +590,56 @@ manaExileLinkOffends face =
 -- this keeps the shape out of card data.
 manaYieldSlotOffends :: ActivatedAbility.ActivatedAbility Card.Type.Card (GrantedAbility.GrantedAbility Card.Type.Card) -> Bool
 manaYieldSlotOffends ability =
-  let paymentSlots =
-        Set.fromList
-          [ Binding.sacrificedPermanent,
-            Binding.exiledPermanent,
-            Binding.exiledCard,
-            Binding.totalledExiles,
-            Binding.craftMaterials,
-            Binding.tappedPermanent,
-            Binding.untappedPermanent,
-            Binding.tappedForTotalPower,
-            Binding.discardedCard,
-            Binding.revealedCard,
-            Binding.returnedPermanent,
-            Binding.graveyardedCard,
-            Binding.removedCounters,
-            Binding.loyaltyRemoved,
-            Binding.collectedEvidence,
-            Binding.beheldObject,
-            Binding.waterbendCost,
-            Binding.blightCost
-          ]
-      readOf addition = QuantitySlot.slots (ManaAddition.count addition) <> Map.keysSet (Resolve.productionSlots (ManaAddition.production addition))
+  let readOf addition = QuantitySlot.slots (ManaAddition.count addition) <> Map.keysSet (Resolve.productionSlots (ManaAddition.production addition))
       yieldReads = foldMap readOf (Maybe.mapMaybe ManaAbility.manaProduced (Modal.allEffects (ActivatedAbility.modal ability)))
-   in ManaAbility.isManaAbility ability && not (Set.null (Set.intersection yieldReads paymentSlots Set.\\ Mana.pricedCostSlots (ActivatedAbility.cost ability)))
+   in ManaAbility.isManaAbility ability && not (Set.null (Set.intersection yieldReads manaPaymentSlots Set.\\ Mana.pricedCostSlots (ActivatedAbility.cost ability)))
+
+-- The slots Parun.Engine.Cost.payComponent's arms bind.
+manaPaymentSlots :: Set.Set SlotName.SlotName
+manaPaymentSlots =
+  Set.union
+    manaPaymentAmountSlots
+    ( Set.fromList
+        [ Binding.sacrificedPermanent,
+          Binding.exiledPermanent,
+          Binding.exiledCard,
+          Binding.totalledExiles,
+          Binding.craftMaterials,
+          Binding.tappedPermanent,
+          Binding.untappedPermanent,
+          Binding.tappedForTotalPower,
+          Binding.discardedCard,
+          Binding.revealedCard,
+          Binding.returnedPermanent,
+          Binding.graveyardedCard,
+          Binding.collectedEvidence,
+          Binding.beheldObject
+        ]
+    )
+
+-- The manaPaymentSlots whose binding is an amount (Binding.toAmount), which
+-- Parun.Engine.Cost.tapForManaWith publishes on Scratch.ambientAmounts.
+manaPaymentAmountSlots :: Set.Set SlotName.SlotName
+manaPaymentAmountSlots = Set.fromList [Binding.removedCounters, Binding.loyaltyRemoved, Binding.waterbendCost, Binding.blightCost]
+
+-- CR 405.6c / 608.2h: does a mana ability's other effects, clause conditions
+-- or gates read an object its own cost's payment binds?
+--
+-- Unprinted: a mana ability's effects other than its yield reading the objects
+-- its cost paid with ("You gain life equal to the sacrificed creature's
+-- toughness"). CR 605.3b leaves no ability object to carry them, so
+-- Parun.Engine.Cost.tapForManaWith hands those effects only the amounts, and the
+-- read falls through to the source permanent's bindings; this keeps the shape
+-- out of card data.
+manaEffectSlotOffends :: ActivatedAbility.ActivatedAbility Card.Type.Card (GrantedAbility.GrantedAbility Card.Type.Card) -> Bool
+manaEffectSlotOffends ability =
+  let modal = ActivatedAbility.modal ability
+      unyielded clause = clause {Clause.effects = Seq.filter (Maybe.isNothing . ManaAbility.manaProduced) (Clause.effects clause)}
+      otherReads mode =
+        let stripped = mode {Mode.clauses = fmap unyielded (Mode.clauses mode)}
+         in Map.keysSet (Resolve.modeSlots stripped) Set.\\ Resolve.definedSlots (Foldable.toList (Mode.allEffects stripped))
+      everyRead = foldMap otherReads (Foldable.toList (Modal.modes modal) <> [Modal.sharedMode modal])
+   in ManaAbility.isManaAbility ability && not (Set.null (Set.intersection everyRead (manaPaymentSlots Set.\\ manaPaymentAmountSlots)))
 
 -- CR 603.7 / 109.5: does this card arm a delayed ability "on your next turn"
 -- whose condition is not scoped to its controller's turn?
@@ -1044,6 +1074,35 @@ abilitySlotLintSpec s registry corpus = Spec.describe s "Lint" $ do
     Spec.assertEqWith s "the untapped land's, Benthic Explorers' shape, is accepted" (verdicts (onYields (reading Binding.untappedPermanent) . onComponents (sacrificing (turning TapState.Untapped))) priest) [False]
     Spec.assertEqWith s "a discarded card's mana value is rejected" (verdicts (onYields (reading Binding.discardedCard)) priest) [True]
     Spec.assertEqWith s "counters removed X of are rejected" (verdicts (onComponents announced) battery) [True]
+  -- See manaEffectSlotOffends. When a printed card trips this, its PR carries
+  -- the payment's objects to those effects in
+  -- Parun.Engine.Cost.tapForManaWith, proves it on that card and deletes the
+  -- lint.
+  Spec.it s "CR 405.6c no card writes a mana ability whose other effects read an object its cost paid" $ do
+    ps <- S.allPrintings s corpus
+    let abilities face = Face.activatedAbilities face <> grantedActivatedAbilities face
+        offenders = filter (anyFace (any manaEffectSlotOffends . abilities) . Printing.card) ps
+    Spec.assertEqWith s "no mana ability's other effects read a paid object" (fmap (S.nameOf . Printing.card) offenders) []
+  -- The lint itself, on a doctored Springjack Pasture ("{T}, Sacrifice X
+  -- Goats: Add X mana of any one color. You gain X life.") whose life reads
+  -- Priest of Yawgmoth's "the sacrificed artifact's mana value".
+  Spec.it s "the lint itself catches a mana ability whose other effects read an object its cost paid" $ do
+    pasture <- S.printingOf s registry "Springjack Pasture"
+    priest <- S.printingOf s registry "Priest of Yawgmoth"
+    let manaOf printing = filter ManaAbility.isManaAbility (Face.activatedAbilities (S.combinedFace printing))
+        sacrificedValue = case [ManaAddition.count addition | ability <- manaOf priest, Effect.AddMana addition <- Modal.allEffects (ActivatedAbility.modal ability)] of
+          quantity : _ -> quantity
+          [] -> Quantity.Type.Literal 0
+        onClauses f ability =
+          let modal = ActivatedAbility.modal ability
+           in ability {ActivatedAbility.modal = modal {Modal.modes = fmap (\mode -> mode {Mode.clauses = fmap f (Mode.clauses mode)}) (Modal.modes modal)}}
+        gaining quantity clause = clause {Clause.effects = fmap (\effect -> case effect of Effect.GainLife gain -> Effect.GainLife gain {PlayerQuantity.quantity = quantity}; _ -> effect) (Clause.effects clause)}
+        gated clause = clause {Clause.condition = Just (Condition.Type.Compares (Compares.MkCompares sacrificedValue Comparison.AtLeast (Quantity.Type.Literal 1)))}
+        verdicts edit printing = fmap (manaEffectSlotOffends . edit) (manaOf printing)
+    Spec.assertEqWith s "the real cards are accepted, Priest of Yawgmoth's read in its yield" (verdicts id pasture <> verdicts id priest) [False, False, False]
+    Spec.assertEqWith s "life equal to the sacrificed permanent's mana value is rejected" (verdicts (onClauses (gaining sacrificedValue)) pasture) [False, True]
+    Spec.assertEqWith s "a clause condition reading it is rejected" (verdicts (onClauses gated) pasture) [True, True]
+    Spec.assertEqWith s "the counters a cost removed, an amount, are accepted" (verdicts (onClauses (gaining (Quantity.Type.InSlot Binding.removedCounters))) pasture) [False, False]
   -- The granted half (namedGrantedActivationCriteria) on The Dominion Bracelet,
   -- whose one static ability grants "dominate" and the cost reduction naming
   -- it. Renaming either side dangles; so does splitting the grant across two
