@@ -1,0 +1,20 @@
+{
+  "description": "CR 508.5/802.2a Sibilant Spirit attacking a planeswalker in a three-seat game offers the draw to that planeswalker's controller alone",
+  "note": "Alice sends the Spirit at carol's Ajani Goldmane. Bob is a defending player too (CR 802.2), but the trigger's defending player is carol, Ajani's controller: carol is asked, accepts and draws a Swamp; bob draws nothing.",
+  "board": {
+    "active": "alice",
+    "step": "BeginningOfCombat",
+    "seats": [
+      {"name": "alice", "battlefield": [{"card": "Sibilant Spirit", "label": "spirit", "ready": true}], "library": [{"card": "Island"}, {"card": "Island"}, {"card": "Island"}]},
+      {"name": "bob", "library": [{"card": "Forest"}, {"card": "Forest"}, {"card": "Forest"}]},
+      {"name": "carol", "battlefield": [{"card": "Ajani Goldmane", "label": "ajani", "counters": [{"key": {"type": "Loyalty"}, "value": 4}]}], "library": [{"card": "Swamp"}, {"card": "Swamp"}, {"card": "Swamp"}]}
+    ]
+  },
+  "timeline": [
+    {"turn": 1, "step": "DeclareAttackers", "player": "alice", "do": {"Attack": ["$spirit"]}},
+    {"turn": 1, "step": "DeclareAttackers", "player": "alice", "source": "$spirit", "do": {"ChooseAttackTarget": "$ajani"}},
+    {"turn": 1, "step": "DeclareAttackers", "player": "carol", "do": {"ChooseOptional": "Exercises"}},
+    {"turn": 1, "step": "DeclareBlockers", "player": "alice", "check": {"Count": {"player": "carol", "zone": "Hand", "card": "Swamp", "count": 1}}},
+    {"turn": 1, "step": "DeclareBlockers", "player": "alice", "check": {"Count": {"player": "bob", "zone": "Hand", "card": "Forest", "count": 0}}}
+  ]
+}
