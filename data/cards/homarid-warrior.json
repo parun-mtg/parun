@@ -48,10 +48,13 @@
                             }
                           },
                           "duration": {
-                            "type": "DuringNextUntapStepOf",
+                            "type": "DuringNextOf",
                             "value": {
-                              "type": "Relative",
-                              "value": "You"
+                              "player": {
+                                "type": "Relative",
+                                "value": "You"
+                              },
+                              "window": "UntapStep"
                             }
                           },
                           "what": {

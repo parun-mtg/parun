@@ -21,15 +21,18 @@
                         "type": "AffectPlayers",
                         "value": {
                           "duration": {
-                            "type": "DuringNextTurnOf",
+                            "type": "DuringNextOf",
                             "value": {
-                              "type": "ChosenPlayerOfBound",
-                              "value": [
-                                "self",
-                                {
-                                  "type": "AsEntersOrTransforms"
-                                }
-                              ]
+                              "player": {
+                                "type": "ChosenPlayerOfBound",
+                                "value": [
+                                  "self",
+                                  {
+                                    "type": "AsEntersOrTransforms"
+                                  }
+                                ]
+                              },
+                              "window": "Turn"
                             }
                           },
                           "effect": {

@@ -48,10 +48,13 @@
                         }
                       },
                       "duration": {
-                        "type": "DuringNextTurnOf",
+                        "type": "DuringNextOf",
                         "value": {
-                          "type": "InSlot",
-                          "value": "target"
+                          "player": {
+                            "type": "InSlot",
+                            "value": "target"
+                          },
+                          "window": "Turn"
                         }
                       }
                     }

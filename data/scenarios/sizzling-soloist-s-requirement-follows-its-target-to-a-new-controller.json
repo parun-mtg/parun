@@ -1,0 +1,48 @@
+{
+  "description": "Sizzling Soloist's requirement follows its target to a new controller before that creature's combat phase comes (CR 506.1, 508.1d, 611.2a)",
+  "note": "Alice's two Grizzly Bears trigger the Soloist twice against bob's Hill Giant, the only legal target, in her precombat main phase. In her postcombat main phase she Switcheroos the Giant for her first Bears, so its controller's next combat phase is alice's on turn 3, not bob's on turn 2: there her decline is refused and the Giant attacks. docs/decisions.md, \"Whose combat phase its controller's next combat phase is after a control change\".",
+  "board": {
+    "active": "alice",
+    "step": "PrecombatMain",
+    "seats": [
+      {
+        "name": "alice",
+        "battlefield": [
+          { "card": "Sizzling Soloist", "label": "soloist" },
+          { "card": "Forest", "label": "f1" },
+          { "card": "Forest", "label": "f2" },
+          { "card": "Forest", "label": "f3" },
+          { "card": "Forest", "label": "f4" },
+          { "card": "Island", "label": "i1" },
+          { "card": "Island", "label": "i2" },
+          { "card": "Island", "label": "i3" },
+          { "card": "Island", "label": "i4" },
+          { "card": "Island", "label": "i5" }
+        ],
+        "hand": [{ "card": "Grizzly Bears", "label": "b1" }, { "card": "Grizzly Bears", "label": "b2" }, { "card": "Switcheroo", "label": "switch" }],
+        "library": [{ "card": "Island" }, { "card": "Island" }]
+      },
+      {
+        "name": "bob",
+        "battlefield": [{ "card": "Hill Giant", "label": "giant", "ready": true }],
+        "library": [{ "card": "Island" }, { "card": "Island" }]
+      }
+    ]
+  },
+  "timeline": [
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "do": { "Cast": { "object": "$b1", "mana": ["$f1", "$f2", null] } } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "do": "Pass" },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "do": "Pass" },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "do": { "Cast": { "object": "$b2", "mana": ["$f3", "$f4", null] } } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "do": "Pass" },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "do": "Pass" },
+    { "turn": 1, "step": "PostcombatMain", "player": "alice", "do": { "Cast": { "object": "$switch", "targets": ["Grizzly Bears", "$giant"], "mana": ["$i1", "$i2", "$i3", "$i4", "$i5"] } } },
+    { "turn": 1, "step": "PostcombatMain", "player": "alice", "do": "Pass" },
+    { "turn": 1, "step": "PostcombatMain", "player": "alice", "check": { "View": { "of": "Controller", "object": "$giant", "is": "alice" } } },
+    { "turn": 2, "step": "DeclareAttackers", "player": "bob", "do": { "Attack": [] } },
+    { "turn": 3, "step": "DeclareAttackers", "player": "alice", "refuse": { "Attack": [] } },
+    { "turn": 3, "step": "DeclareAttackers", "player": "alice", "do": { "Attack": ["$giant"] } },
+    { "turn": 3, "step": "DeclareBlockers", "player": "bob", "do": { "Block": {} } },
+    { "turn": 3, "step": "PostcombatMain", "player": "alice", "check": { "Life": { "player": "bob", "life": 17 } } }
+  ]
+}

@@ -184,6 +184,8 @@ import qualified Parun.Types.MoveToZone as MoveToZone
 import qualified Parun.Types.MovedKinds as MovedKinds
 import qualified Parun.Types.NextDamageInstance as NextDamageInstance
 import qualified Parun.Types.NextDamageOutcome as NextDamageOutcome
+import qualified Parun.Types.NextWindow as NextWindow
+import qualified Parun.Types.NextWindowOf as NextWindowOf
 import qualified Parun.Types.ObjectId as ObjectId
 import qualified Parun.Types.ObjectRef as ObjectRef
 import qualified Parun.Types.OfferCast as OfferCast
@@ -4084,6 +4086,20 @@ effectLintSpec s registry corpus = Spec.describe s "Lint" $ do
     Spec.assertBool s (not (anyFace windowOffends (Printing.card relay))) "the real Galvanic Relay is accepted"
     Spec.assertBool s (windowOffends (planted evasion)) "an evasion is rejected"
     Spec.assertBool s (windowOffends (planted pump)) "a continuous effect on an object is rejected"
+  -- Swept over the pool. See combatPhaseSeatOffends.
+  Spec.it s "no card counts a combat-phase window against a seat" $ do
+    ps <- S.allPrintings s corpus
+    let offenders = filter (anyFace combatPhaseSeatOffends . Printing.card) ps
+    Spec.assertEqWith s "a combat-phase window names a bound object's controller" (fmap (S.nameOf . Printing.card) offenders) []
+  -- The REJECTING direction: Sizzling Soloist's requirement against its
+  -- controller's opponent.
+  Spec.it s "the lint itself catches a combat-phase window counted against a seat" $ do
+    soloist <- S.printingOf s registry "Sizzling Soloist"
+    let opponent = PlayerRef.Relative PlayerRelation.Opponent
+        requirement = Effect.RequireAttack (RequireAttack.MkRequireAttack (Duration.DuringNextOf (NextWindowOf.MkNextWindowOf NextWindow.CombatPhase opponent)) (RestrictedCreatures.Matching (Filter.Type.HasCardType CardType.Creature)) Nothing)
+        planted = (vanillaFace "Planted" instantLine) {Face.spell = Mint.oneMode (Seq.singleton requirement)}
+    Spec.assertBool s (not (anyFace combatPhaseSeatOffends (Printing.card soloist))) "the real Sizzling Soloist is accepted"
+    Spec.assertBool s (combatPhaseSeatOffends planted) "a window counted against an opponent is rejected"
   -- CR 500.8, swept over the pool. See thatCombatPhaseOffends.
   Spec.it s "CR 500.8 no card writes during or at that combat phase without adding one" $ do
     ps <- S.allPrintings s corpus
@@ -4155,12 +4171,36 @@ thatCombatPhaseOffends card =
 windowOffends :: Face.Face Card.Type.Card -> Bool
 windowOffends card =
   let encoded = Codec.encode (Face.Codec.codec Card.Codec.codec) card
-   in sum (fmap (\tag -> jsonAtoms (Text.pack tag) encoded) ["DuringNextTurnOf", "DuringNextUntapStepOf", "DuringYourNextTurn", "DuringThatExtraTurn", "DuringThatCombatPhase"]) /= begunWindows card
+   in sum (fmap (\tag -> jsonAtoms (Text.pack tag) encoded) ["DuringNextOf", "DuringYourNextTurn", "DuringThatExtraTurn", "DuringThatCombatPhase"]) /= begunWindows card
 
 -- How many window durations this face writes on a carrier that asks
 -- Expiry.begun.
 begunWindows :: Face.Face Card.Type.Card -> Int
 begunWindows card =
+  let window duration = case duration of
+        Duration.DuringNextOf _ -> True
+        Duration.DuringYourNextTurn -> True
+        Duration.DuringThatExtraTurn -> True
+        Duration.DuringThatCombatPhase -> True
+        _ -> False
+   in length (filter window (askingDurations card))
+
+-- Unprinted: a combat-phase window counted against anything but a bound
+-- object's controller, which Parun.Engine.Expiry.arm does not arm. Read off
+-- the carriers that ask Expiry.begun, the only ones windowOffends admits.
+combatPhaseSeatOffends :: Face.Face Card.Type.Card -> Bool
+combatPhaseSeatOffends card =
+  let offends duration = case duration of
+        Duration.DuringNextOf (NextWindowOf.MkNextWindowOf NextWindow.CombatPhase ref) -> case ref of
+          PlayerRef.HolderOfBound Holder.Controller Hop.Itself _ -> False
+          _ -> True
+        _ -> False
+   in any offends (askingDurations card)
+
+-- The duration of each effect this face writes on a carrier that asks
+-- Expiry.begun.
+askingDurations :: Face.Face Card.Type.Card -> [Duration.Duration]
+askingDurations card =
   let asking effect = case effect of
         Effect.AffectPlayers e -> Just (AffectPlayers.duration e)
         Effect.ForbidAttack e -> Just (ForbidAttack.duration e)
@@ -4170,14 +4210,7 @@ begunWindows card =
         Effect.SkipPhase e -> Just (SkipPhase.duration e)
         Effect.Prohibit e -> Just (Prohibit.duration e)
         _ -> Nothing
-      window duration = case duration of
-        Duration.DuringNextTurnOf _ -> True
-        Duration.DuringNextUntapStepOf _ -> True
-        Duration.DuringYourNextTurn -> True
-        Duration.DuringThatExtraTurn -> True
-        Duration.DuringThatCombatPhase -> True
-        _ -> False
-   in length (filter (maybe False window . asking) (cardAuthoredEffects card))
+   in Maybe.mapMaybe asking (cardAuthoredEffects card)
 
 -- | The discard of the cards a ref names, binding nothing.
 discardsThese :: ObjectRef.ObjectRef -> Effect.Effect card ability

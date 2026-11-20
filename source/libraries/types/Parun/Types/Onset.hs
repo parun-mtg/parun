@@ -33,7 +33,7 @@ import qualified Parun.Types.PlayerRef as PlayerRef
 -- to.
 data Onset
   = Immediately
-  | -- | Duration.DuringNextTurnOf read as a beginning instead of an end: "on
+  | -- | Duration.DuringNextOf's turn read as a beginning instead of an end: "on
     -- your next turn" (Meandering Towershell) is @Relative You@, "that turn's
     -- end step" after "during that player's next turn" (Oracle en-Vec) the
     -- player a slot holds, and "the next turn's upkeep" (Portent) Nothing, the

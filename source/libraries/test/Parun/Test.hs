@@ -610,6 +610,8 @@ import qualified Parun.Codec.NameChooserSpec
 import qualified Parun.Codec.NamesAreSpec
 import qualified Parun.Codec.NextDamageOutcomeSpec
 import qualified Parun.Codec.NextStepOfSpec
+import qualified Parun.Codec.NextWindowOfSpec
+import qualified Parun.Codec.NextWindowSpec
 import qualified Parun.Codec.NinjutsuSpec
 import qualified Parun.Codec.NinjutsuVariantSpec
 import qualified Parun.Codec.NoteFoldSpec
@@ -1303,6 +1305,8 @@ spec s reference corpus = do
   Parun.Codec.EntriesTriggerSpec.spec s
   Parun.Codec.EntryTriggeringSpec.spec s
   Parun.Codec.NextStepOfSpec.spec s
+  Parun.Codec.NextWindowOfSpec.spec s
+  Parun.Codec.NextWindowSpec.spec s
   Parun.Codec.ObjectCountSpec.spec s
   Parun.Codec.CardIdentitySpec.spec s
   Parun.Codec.LeavesZoneTriggerSpec.spec s

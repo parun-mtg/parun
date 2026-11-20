@@ -3,6 +3,7 @@ module Parun.Types.Duration where
 import qualified Parun.Types.Condition as Condition
 import qualified Parun.Types.DurationEvent as DurationEvent
 import qualified Parun.Types.NextStepOf as NextStepOf
+import qualified Parun.Types.NextWindowOf as NextWindowOf
 import qualified Parun.Types.PlayerRef as PlayerRef
 import qualified Parun.Types.SlotName as SlotName
 import qualified Parun.Types.UntilPaid as UntilPaid
@@ -47,21 +48,18 @@ data Duration
     -- Parun.Engine.Expiry.perSeat serves, names no one turn and arms nothing
     -- (Parun.Engine.Expiry.seatOf).
     UntilEndOfNextTurnOf PlayerRef.PlayerRef
-  | -- | CR 611.2a: "during that player's next turn" (Wall of Dust) -- a WINDOW,
+  | -- | CR 611.2a: "during that player's next turn" (Wall of Dust), "next untap
+    -- step" (Exhaustion) or "next combat phase" (Sizzling Soloist) -- a WINDOW,
     -- where every arm above states only an end. The effect applies during that
-    -- one turn and not before it, so the seat's intervening exposure is exactly
-    -- what tells this arm from UntilEndOfNextTurnOf above.
+    -- one window and not before it, so the seat's intervening exposure is
+    -- exactly what tells the turn's from UntilEndOfNextTurnOf above.
     --
     -- The seat is a reference, as that arm's is, and is sampled the same way and
     -- at the same moment (Parun.Engine.Expiry.arm, Parun.Engine.Expiry.seatOf).
     -- Candidate is "that player" of a fold -- Sphinx's Decree's "each opponent
     -- can't cast instant or sorcery spells during that player's next turn" --
     -- and arms one window per member (Parun.Engine.Expiry.perSeat).
-    DuringNextTurnOf PlayerRef.PlayerRef
-  | -- | CR 611.2a / 502.3: "during their next untap step" (Exhaustion) -- a
-    -- WINDOW, the arm above's with the untap step for the turn, its seat sampled
-    -- the same way.
-    DuringNextUntapStepOf PlayerRef.PlayerRef
+    DuringNextOf NextWindowOf.NextWindowOf
   | -- | CR 611.2a: "during your next turn" (Galvanic Relay) -- the arm above's
     -- window with the seat taken from CR 109.5's "you" instead of sampled from a
     -- reference.

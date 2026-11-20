@@ -4,6 +4,7 @@ import qualified Numeric.Natural as Natural
 import qualified Parun.Types.AfterObjectTurn as AfterObjectTurn
 import qualified Parun.Types.AfterTurn as AfterTurn
 import qualified Parun.Types.EventExpiry as EventExpiry
+import qualified Parun.Types.ObjectId as ObjectId
 import qualified Parun.Types.PaidExpiry as PaidExpiry
 import qualified Parun.Types.PhaseSelector as PhaseSelector
 import qualified Parun.Types.PlayerId as PlayerId
@@ -68,8 +69,8 @@ data Expiry
     -- ends: the effect does nothing until that turn is under way.
     --
     -- One of the arms whose stored row is inert for part of its life (the
-    -- others are DuringUntapStepOf, DuringExtraTurn and DuringAddedCombatPhase
-    -- below), which is why
+    -- others are DuringUntapStepOf, DuringExtraTurn, DuringAddedCombatPhase and
+    -- DuringCombatPhaseOfControllerOf below), which is why
     -- Parun.Engine.Expiry.begun exists beside the sweeps -- a reader that asks
     -- only "has this ended" sees this row from the moment it is stored and
     -- applies it a turn early.
@@ -84,7 +85,7 @@ data Expiry
     -- turn/, 2026-10-11: every hit is one of the first four or CR 724's player
     -- control).
     DuringTurnOf AfterTurn.AfterTurn
-  | -- | CR 611.2a: Duration.DuringNextUntapStepOf, stored -- a WINDOW, open while
+  | -- | CR 611.2a: Duration.DuringNextOf's untap step, stored -- a WINDOW, open while
     -- this player's untap step is under way and ended as it ends. A third arm
     -- whose stored row is inert for part of its life (Parun.Engine.Expiry.begun).
     DuringUntapStepOf PlayerId.PlayerId
@@ -95,6 +96,9 @@ data Expiry
     -- and ended as such a turn ends if it had none.
     -- Wall of Dust and Gideon, Battle-Forged are the producers.
     DuringTurnOfControllerOf AfterObjectTurn.AfterObjectTurn
+  | -- | CR 611.2a / 506.1: Duration.DuringNextOf's combat phase of this object's
+    -- controller, stored; inert until Parun.Engine.Expiry.reachCombatPhase pins it.
+    DuringCombatPhaseOfControllerOf ObjectId.ObjectId
   | -- | CR 611.2a / 500.7: Duration.DuringThatExtraTurn, stored as the
     -- ExtraTurn.createdAt of the turn it names. A window like DuringTurnOf
     -- above, inert until that turn is under way (Parun.Engine.Expiry.begun), and

@@ -3,6 +3,7 @@ module Parun.Codec.Expiry where
 import qualified Parun.Codec.AfterObjectTurn as AfterObjectTurn
 import qualified Parun.Codec.AfterTurn as AfterTurn
 import qualified Parun.Codec.EventExpiry as EventExpiry
+import qualified Parun.Codec.ObjectId as ObjectId
 import qualified Parun.Codec.PaidExpiry as PaidExpiry
 import qualified Parun.Codec.PhaseSelector as PhaseSelector
 import qualified Parun.Codec.PlayerId as PlayerId
@@ -36,6 +37,7 @@ codec =
       Arm.payload "DuringUntapStepOf" PlayerId.codec Expiry.DuringUntapStepOf (\x -> case x of Expiry.DuringUntapStepOf y -> Just y; _ -> Nothing),
       Arm.payload "DuringTurnOfControllerOf" AfterObjectTurn.codec Expiry.DuringTurnOfControllerOf (\x -> case x of Expiry.DuringTurnOfControllerOf y -> Just y; _ -> Nothing),
       Arm.payload "DuringExtraTurn" Timestamp.codec Expiry.DuringExtraTurn (\x -> case x of Expiry.DuringExtraTurn y -> Just y; _ -> Nothing),
+      Arm.payload "DuringCombatPhaseOfControllerOf" ObjectId.codec Expiry.DuringCombatPhaseOfControllerOf (\x -> case x of Expiry.DuringCombatPhaseOfControllerOf y -> Just y; _ -> Nothing),
       Arm.payload "DuringAddedCombatPhase" Common.natural Expiry.DuringAddedCombatPhase (\x -> case x of Expiry.DuringAddedCombatPhase y -> Just y; _ -> Nothing),
       Arm.payload "AtEndOf" PhaseSelector.codec Expiry.AtEndOf (\x -> case x of Expiry.AtEndOf y -> Just y; _ -> Nothing),
       Arm.payload "AtEndOfCombatOn" AfterTurn.codec Expiry.AtEndOfCombatOn (\x -> case x of Expiry.AtEndOfCombatOn y -> Just y; _ -> Nothing),
@@ -58,6 +60,7 @@ tagOf x = case x of
   Expiry.AtStepOfControllerOf {} -> "AtStepOfControllerOf"
   Expiry.DuringTurnOfControllerOf {} -> "DuringTurnOfControllerOf"
   Expiry.DuringExtraTurn {} -> "DuringExtraTurn"
+  Expiry.DuringCombatPhaseOfControllerOf {} -> "DuringCombatPhaseOfControllerOf"
   Expiry.DuringAddedCombatPhase {} -> "DuringAddedCombatPhase"
   Expiry.AtEndOf {} -> "AtEndOf"
   Expiry.AtEndOfCombatOn {} -> "AtEndOfCombatOn"

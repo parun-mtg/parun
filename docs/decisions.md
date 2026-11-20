@@ -3029,3 +3029,23 @@ Entries are ordered by the first rule each cites.
   `cr-810-10c-melira-the-living-cure-s-bar-stops-a-teammate-s-simultaneous-poison`
   and `...-simultaneous-infect-damage`, each with a `--bob` pair.
 - **Issue**: #8806.
+
+## Whose combat phase its controller's next combat phase is after a control change
+
+- **Question**: Sizzling Soloist's target "attacks during its controller's next
+  combat phase if able". If that creature changes control after the ability
+  resolves and before its controller's combat phase comes, is the window the
+  old controller's next combat phase or the new one's?
+- **Rules**: CR 506.1, 508.1d, 611.2a; Gideon, Battle-Forged's 2015-06-22
+  ruling on "its controller's next turn" and Elvish Hunter's on "its
+  controller's next untap step"; CR of 2026-11-06.
+- **Decision**: The new controller's: the controller is read as each combat
+  phase begins, and the first one beginning on a turn of the creature's
+  controller then is the window.
+- **Rejected**: Sampling the controller as the ability resolves. Both rulings
+  read "its controller" as whoever controls it when the window comes, and
+  nothing in the combat-phase wording sets it apart.
+- **Site**: `Parun.Engine.Expiry.reachCombatPhase`'s
+  `DuringCombatPhaseOfControllerOf` arm, proved by the scenario
+  `sizzling-soloist-s-requirement-follows-its-target-to-a-new-controller`.
+- **Issue**: #8974.

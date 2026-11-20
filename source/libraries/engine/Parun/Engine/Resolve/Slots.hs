@@ -211,6 +211,7 @@ import qualified Parun.Types.MovedKinds as MovedKinds
 import qualified Parun.Types.NewX as NewX
 import qualified Parun.Types.NextDamageInstance as NextDamageInstance
 import qualified Parun.Types.NextStepOf as NextStepOf
+import qualified Parun.Types.NextWindowOf as NextWindowOf
 import qualified Parun.Types.Object as Object
 import Parun.Types.ObjectId (ObjectId)
 import Parun.Types.ObjectRef (ObjectRef)
@@ -1621,8 +1622,7 @@ durationPlayerRefs duration = case duration of
   Duration.UntilEndOfNextTurnOf ref -> [ref]
   Duration.UntilNextTurnOf ref -> [ref]
   -- The seat the WINDOW is counted against, read exactly as the arm above's is.
-  Duration.DuringNextTurnOf ref -> [ref]
-  Duration.DuringNextUntapStepOf ref -> [ref]
+  Duration.DuringNextOf next -> [NextWindowOf.player next]
   -- CR 109.5's "you" is no reference at all.
   Duration.DuringYourNextTurn -> []
   Duration.DuringThatExtraTurn -> []
@@ -1654,8 +1654,7 @@ durationSlots duration = case duration of
   -- PlayerRef position is (CR 601.2c).
   Duration.UntilEndOfNextTurnOf ref -> playerRefSlots ref
   Duration.UntilNextTurnOf ref -> playerRefSlots ref
-  Duration.DuringNextTurnOf ref -> playerRefSlots ref
-  Duration.DuringNextUntapStepOf ref -> playerRefSlots ref
+  Duration.DuringNextOf next -> playerRefSlots (NextWindowOf.player next)
   Duration.DuringYourNextTurn -> Map.empty
   Duration.DuringThatExtraTurn -> Map.empty
   Duration.DuringThatCombatPhase -> Map.empty
@@ -2473,8 +2472,7 @@ durationSlotsAreExhaustive duration = case duration of
   -- most one slot and nothing nested inside it names another.
   Duration.UntilEndOfNextTurnOf _ -> True
   Duration.UntilNextTurnOf _ -> True
-  Duration.DuringNextTurnOf _ -> True
-  Duration.DuringNextUntapStepOf _ -> True
+  Duration.DuringNextOf _ -> True
   Duration.DuringYourNextTurn -> True
   Duration.DuringThatExtraTurn -> True
   Duration.DuringThatCombatPhase -> True

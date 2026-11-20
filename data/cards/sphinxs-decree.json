@@ -26,9 +26,12 @@
                     "type": "AffectPlayers",
                     "value": {
                       "duration": {
-                        "type": "DuringNextTurnOf",
+                        "type": "DuringNextOf",
                         "value": {
-                          "type": "Candidate"
+                          "player": {
+                            "type": "Candidate"
+                          },
+                          "window": "Turn"
                         }
                       },
                       "effect": {

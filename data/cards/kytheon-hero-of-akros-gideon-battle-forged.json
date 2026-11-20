@@ -234,14 +234,17 @@
                             }
                           },
                           "duration": {
-                            "type": "DuringNextTurnOf",
+                            "type": "DuringNextOf",
                             "value": {
-                              "type": "HolderOfBound",
-                              "value": {
-                                "holder": "Controller",
-                                "hop": "Itself",
-                                "slot": "target"
-                              }
+                              "player": {
+                                "type": "HolderOfBound",
+                                "value": {
+                                  "holder": "Controller",
+                                  "hop": "Itself",
+                                  "slot": "target"
+                                }
+                              },
+                              "window": "Turn"
                             }
                           }
                         }

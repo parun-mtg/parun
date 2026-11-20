@@ -11,7 +11,7 @@ import qualified Parun.Types.RestrictedCreatures as RestrictedCreatures
 -- Hurr Jackal's is @Prohibit Regenerate UntilEndOfTurn (Named (InSlot
 -- target))@; Deadlock Trap, Zirda, the Dawnwaker and Wall of Stolen Identity
 -- write the other three Named. Exhaustion's is @Prohibit (Untap UntapStep)
--- (DuringNextUntapStepOf target) (Matching ...)@.
+-- (DuringNextOf UntapStep target) (Matching ...)@.
 --
 -- Teferi, Timeless Voyager's "they can't phase in" is written BEFORE its PhaseOut:
 -- a Named ref reads the battlefield, and they have left it once that has resolved.
