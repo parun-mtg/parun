@@ -1494,13 +1494,17 @@ details.pile[open] {
   border-top-color: var(--border-strong);
 }
 
+/* The tap symbol ({T}, index.html's ms-tap), at the right edge. */
 #app button.card.tapped::after {
-  content: "\21b7";
+  content: "";
   position: absolute;
-  right: 4px;
-  bottom: 50%;
-  font-size: 1.1em;
-  color: var(--muted);
+  right: 5px;
+  top: calc(50% - 8px);
+  width: 16px;
+  height: 16px;
+  background: var(--muted);
+  -webkit-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Cpath d='M9.6 24.4A9.5 9.5 0 1 1 25.2 18' fill='none' stroke='black' stroke-width='2.8' stroke-linecap='round'/%3E%3Cpath d='M21 15.6L25.3 21.6L29 15.2Z' stroke='black' stroke-width='1' stroke-linejoin='round'/%3E%3C/svg%3E") center / contain no-repeat;
+  mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Cpath d='M9.6 24.4A9.5 9.5 0 1 1 25.2 18' fill='none' stroke='black' stroke-width='2.8' stroke-linecap='round'/%3E%3Cpath d='M21 15.6L25.3 21.6L29 15.2Z' stroke='black' stroke-width='1' stroke-linejoin='round'/%3E%3C/svg%3E") center / contain no-repeat;
 }
 
 #app button.card.back {
