@@ -22,7 +22,7 @@ import qualified Parun.Oracle as Oracle
 import qualified Parun.Oracle.Cost as Oracle.Cost
 import qualified Parun.Oracle.Face as Oracle.Face
 import qualified Parun.Oracle.Keyword as Oracle.Keyword
-import qualified Parun.Play.Render as Render
+import qualified Parun.Play.Wording as Wording
 import qualified Parun.Types.Card as Card
 import qualified Parun.Types.CardName as CardName
 import qualified Parun.Types.CardType as CardType
@@ -69,7 +69,7 @@ tile view cue o = case ObjectView.characteristics o of
       "button"
       (["card", colour o] <> marks cue <> tapped o <> combat view o <> ["sick" | ObjectView.summoningSick o] <> ["targeted" | not (null (targetedBy view (ObjectView.object o)))])
       ([Element.attr "type" (Text.pack "button"), Element.attr "aria-label" (summary view cue o), Element.on "click" (tap cue)] <> peeking cue)
-      [ Element.el "span" ["top"] [] $ [Element.el "span" ["name"] [] [Element.text (Render.nameOf view o)]] <> foldMap (pure . Mana.cost) (ObjectView.characteristics o >>= ProjectedCharacteristics.manaCost),
+      [ Element.el "span" ["top"] [] $ [Element.el "span" ["name"] [] [Element.text (Wording.nameOf view o)]] <> foldMap (pure . Mana.cost) (ObjectView.characteristics o >>= ProjectedCharacteristics.manaCost),
         -- On the table, what a permanent can do says more than its subtypes.
         case tileKeywords o of
           [] -> Element.el "span" ["type"] [] [Element.text (typeLine o)]
@@ -89,7 +89,7 @@ states view o =
   let shown cls label tip = Element.el "span" ["badge", "state", cls] [Element.attr "title" (Text.pack tip)] [Element.string label]
       kinds = combat view o
       by = targetedBy view (ObjectView.object o)
-   in [shown "target" "Target" ("Targeted by " <> Text.unpack (Render.listing by)) | not (null by)]
+   in [shown "target" "Target" ("Targeted by " <> Text.unpack (Wording.listing by)) | not (null by)]
         <> [shown "attack" "Attacking" "Attacking" | elem "attacking" kinds]
         <> [shown "block" "Blocking" "Blocking" | elem "blocking" kinds]
         <> [shown "sick" "Sick" "Summoning sick: can't attack or tap yet (CR 302.6)" | ObjectView.summoningSick o]
@@ -103,7 +103,7 @@ states view o =
 marked :: ObjectView.ObjectView -> [(String, String)]
 marked o =
   [("Ring-bearer", "The Ring-bearer: legendary, and harder to block (CR 701.54)") | Maybe.isJust (ObjectView.ringBearerFor o)]
-    <> [("Protected by " <> Text.unpack (Render.player p), "Its protector, who may block for it and whom it can't attack (CR 310.9)") | Just p <- [ObjectView.protector o]]
+    <> [("Protected by " <> Text.unpack (Wording.player p), "Its protector, who may block for it and whom it can't attack (CR 310.9)") | Just p <- [ObjectView.protector o]]
     <> [("Level " <> show (ClassLevel.unwrap l), "Class level " <> show (ClassLevel.unwrap l) <> " (CR 717)") | Just l <- [ObjectView.classLevel o]]
     <> [ (label, label <> " (CR 709.5)")
        | not (Set.null (ObjectView.unlockedHalves o)),
@@ -136,7 +136,7 @@ designationWord d = case d of
 
 -- | What on the stack targets the object, by name (CR 601.2c, 602.2b, 603.3d).
 targetedBy :: PlayerView.PlayerView -> ObjectId.ObjectId -> [Text.Text]
-targetedBy view oid = [Render.nameOf view item | item <- PlayerView.stack view, any (aims oid) (ObjectView.targets item)]
+targetedBy view oid = [Wording.nameOf view item | item <- PlayerView.stack view, any (aims oid) (ObjectView.targets item)]
   where
     aims target r = case r of
       Recipient.ToCreature x -> x == target
@@ -148,7 +148,7 @@ targetedBy view oid = [Render.nameOf view item | item <- PlayerView.stack view, 
 
 -- | What on the stack targets the player, by name.
 targetingPlayer :: PlayerView.PlayerView -> PlayerId.PlayerId -> [Text.Text]
-targetingPlayer view pid = [Render.nameOf view item | item <- PlayerView.stack view, Recipient.ToPlayer pid `elem` ObjectView.targets item]
+targetingPlayer view pid = [Wording.nameOf view item | item <- PlayerView.stack view, Recipient.ToPlayer pid `elem` ObjectView.targets item]
 
 -- | The keyword abilities the object has now, as Oracle text prints each;
 -- granted ones included.
@@ -179,7 +179,7 @@ summary view cue o =
           <> [Text.pack "attacking" | elem "attacking" (combat view o)]
           <> [Text.pack "blocking" | elem "blocking" (combat view o)]
           <> [Text.pack "summoning sick" | ObjectView.summoningSick o]
-          <> [Text.pack "targeted by " <> Render.listing by | let by = targetedBy view (ObjectView.object o), not (null by)]
+          <> [Text.pack "targeted by " <> Wording.listing by | let by = targetedBy view (ObjectView.object o), not (null by)]
           <> [Text.pack (show (ObjectView.damage o) <> " damage") | ObjectView.damage o > 0]
       action
         | elem "playable" (marks cue) = [Text.pack "you can play or use it"]
@@ -190,7 +190,7 @@ summary view cue o =
       kind = case tileKeywords o of
         [] -> [typeLine o]
         words' -> [typeLine o, Text.intercalate (Text.pack ", ") words']
-   in Text.intercalate (Text.pack ", ") ([Render.nameOf view o] <> kind <> pt <> doing <> action)
+   in Text.intercalate (Text.pack ", ") ([Wording.nameOf view o] <> kind <> pt <> doing <> action)
 
 tapped :: ObjectView.ObjectView -> [String]
 tapped o = ["tapped" | ObjectView.tapped o == TapState.Tapped]
@@ -202,7 +202,7 @@ colour o =
   let colours = foldMap (Set.toList . ProjectedCharacteristics.colors) (ObjectView.characteristics o)
    in case colours of
         [c] -> "c-" <> letter c
-        [] | Render.isA CardType.Land o -> "c-land"
+        [] | Wording.isA CardType.Land o -> "c-land"
         [] -> "c-none"
         _ -> "c-multi"
 
@@ -241,7 +241,7 @@ subtypeWords o c = fmap (Text.pack . show) (Subtype.inPrintedOrder (ObjectView.p
 badges :: ObjectView.ObjectView -> [Html.Html msg]
 badges o =
   [Element.el "span" ["badge", "damage"] [Element.attr "title" (Text.pack "Damage")] [Element.string (show (ObjectView.damage o) <> " dmg")] | ObjectView.damage o > 0]
-    <> [Element.el "span" ["badge", "counter"] [] [Element.text (Text.pack (show n <> " ") <> Render.counterName kind)] | (kind, n) <- Map.toList (ObjectView.counters o), n > 0, not (cornered kind)]
+    <> [Element.el "span" ["badge", "counter"] [] [Element.text (Text.pack (show n <> " ") <> Wording.counterName kind)] | (kind, n) <- Map.toList (ObjectView.counters o), n > 0, not (cornered kind)]
   where
     -- The corner shows these (stats).
     cornered kind = case (kind, ObjectView.characteristics o) of
@@ -276,7 +276,7 @@ stats o = case ObjectView.characteristics o of
           <> foldMap (\d -> [Element.el "span" ["pt", "defense"] [Element.attr "title" (Text.pack "Defense")] [Element.string (maybe (show (Defense.unwrap d)) show (counted CounterKind.Defense))]]) (ProjectedCharacteristics.defense c)
 
 -- | The Oracle text of the faces the seat may read the object by
--- (Render.cardNames), each line apart, a face's name heading its own where
+-- (Wording.cardNames), each line apart, a face's name heading its own where
 -- there are several; then, under a heading each, the printed text of the
 -- cards merged under it (ObjectView.merged); or why the card data could not
 -- say. The faces the object has say what its abilities are now (wording),
@@ -284,7 +284,7 @@ stats o = case ObjectView.characteristics o of
 -- it.
 oracle :: (CardName.CardName -> Either e (Maybe Card.Card)) -> ObjectView.ObjectView -> Either e [Text.Text]
 oracle lookUp o = do
-  let names = Render.cardNames o
+  let names = Wording.cardNames o
   looked <- traverse lookUp (Set.toList names)
   under <- traverse (traverse (\n -> fmap ((,) n) (lookUp n))) (Foldable.toList (ObjectView.merged o))
   -- Every face printed on the card, those it shows first: a double-faced
@@ -293,7 +293,7 @@ oracle lookUp o = do
   let every = concatMap (Foldable.toList . Card.faces) (ListUtils.nubOrd (Maybe.catMaybes looked))
       (shown, others) = List.partition (\f -> Set.member (Face.name f) names) every
       faces = shown <> others
-      -- The characteristics the names came from (Render.cardNames), and
+      -- The characteristics the names came from (Wording.cardNames), and
       -- ownEffects is beside whichever they are.
       now = ObjectView.face o Applicative.<|> ObjectView.characteristics o
       -- The faces it shows whose characteristics it has, by their names: a
@@ -471,7 +471,7 @@ sheet view o reading actions close =
              ["sheet", colour o]
              []
              $ [ Element.el "header" [] [] $
-                   [Element.el "h2" [] [] [Element.text (Render.nameOf view o)]]
+                   [Element.el "h2" [] [] [Element.text (Wording.nameOf view o)]]
                      <> foldMap (pure . Mana.cost) (ObjectView.characteristics o >>= ProjectedCharacteristics.manaCost),
                  Element.el "p" ["type-line"] [] [Element.text (fullType o)]
                ]
@@ -504,7 +504,7 @@ status view o =
     <> [Text.pack "Summoning sick: it can't attack or use {T} abilities until its controller's next turn" | ObjectView.summoningSick o]
     <> [Text.pack tip | (_, tip) <- marked o]
     <> [Text.pack "Keyword abilities: " <> Text.intercalate (Text.pack ", ") (keywords o) | not (null (keywords o))]
-    <> [Text.pack "Attached to " <> Render.recipientName view r | r <- Maybe.maybeToList (ObjectView.attachedTo o)]
-    <> [Text.pack "\"" <> t <> Text.pack "\"" | t <- Maybe.maybeToList (ObjectView.ability o >>= Render.abilityText view)]
-    <> [Text.pack "Targeting " <> Render.listing (fmap (Render.recipientName view) (ObjectView.targets o)) | not (null (ObjectView.targets o))]
+    <> [Text.pack "Attached to " <> Wording.recipientName view r | r <- Maybe.maybeToList (ObjectView.attachedTo o)]
+    <> [Text.pack "\"" <> t <> Text.pack "\"" | t <- Maybe.maybeToList (ObjectView.ability o >>= Wording.abilityText view)]
+    <> [Text.pack "Targeting " <> Wording.listing (fmap (Wording.recipientName view) (ObjectView.targets o)) | not (null (ObjectView.targets o))]
     <> [Text.pack "Face down; you may look at it: " <> Text.intercalate (Text.pack " // ") (fmap CardName.unwrap (Set.toList (ProjectedCharacteristics.names f))) | f <- Maybe.maybeToList (ObjectView.face o)]

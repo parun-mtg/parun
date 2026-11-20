@@ -163,8 +163,8 @@ to agents as written. What it doesn't say:
   `area:*` label where one fits: the subsystem names, plus `area:keywords` (CR
   701/702), `area:effects` (the DSL), `area:cards` (card data, faces, layouts,
   schemas, lints), `area:stack` (CR 601/602/608), `area:variants` (CR 313/315,
-  subgames, Commander, the Ring, dungeons), `area:client` (`parun play`:
-  text client, line protocol, hotseat and bot seats).
+  subgames, Commander, the Ring, dungeons), `area:client` (the web
+  client and its hotseat, and `parun play`'s line protocol and bot seats).
 
 - Verify Oracle text with `curl -s
   'https://api.scryfall.com/cards/named?fuzzy=<name>'` (WebFetch gets 403s).

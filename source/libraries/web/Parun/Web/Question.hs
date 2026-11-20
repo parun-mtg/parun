@@ -29,7 +29,7 @@ import qualified Parun.JsonCodec.Common as Common
 import qualified Parun.Oracle.Keyword as Oracle.Keyword
 import qualified Parun.Play.Offer as Offer
 import qualified Parun.Play.Protocol as Protocol
-import qualified Parun.Play.Render as Render
+import qualified Parun.Play.Wording as Wording
 import qualified Parun.Types.CombatDamageOption as CombatDamageOption
 import qualified Parun.Types.Mana as Mana.Type
 import qualified Parun.Types.ManaRetention as ManaRetention
@@ -69,7 +69,7 @@ data Event
     MkAuto
   | -- | Drops every pick.
     MkClear
-  | -- | Shows a card's text (Render.details).
+  | -- | Shows a card's text (Wording.details).
     MkRead ObjectId.ObjectId
   | -- | Hides the card shown.
     MkClose
@@ -264,7 +264,7 @@ view :: Request.Request -> Screen -> Html.Html Event
 view request screen =
   table request screen (barControls (level screen) True (MkConcede <$ passIndex request)) (cues request (selected screen) (focus screen)) $
     [Element.el "p" ["problem"] [Element.attr "role" (Text.pack "alert")] (Mana.rich problem) | problem <- Maybe.maybeToList (Request.problem request)]
-      <> [Element.el "p" ["controlling"] [Element.attr "role" (Text.pack "note")] [Html.text (Text.pack "You're deciding for " <> Render.player p <> Text.pack ", whom you control.")] | p <- Maybe.maybeToList (Question.for (Request.question request))]
+      <> [Element.el "p" ["controlling"] [Element.attr "role" (Text.pack "note")] [Html.text (Text.pack "You're deciding for " <> Wording.player p <> Text.pack ", whom you control.")] | p <- Maybe.maybeToList (Question.for (Request.question request))]
       <> news (Request.view request) (viewerOf request) screen
       <> form request (selected screen)
 
@@ -278,7 +278,7 @@ watching facing request screen = do
   let status = case Request.view request of
         Just b
           | not (null (PlayerView.stack b)) -> "Resolving\x2026"
-          | PlayerView.active b /= PlayerView.viewer b -> Text.unpack (Render.player (PlayerView.active b)) <> " is taking their turn\x2026"
+          | PlayerView.active b /= PlayerView.viewer b -> Text.unpack (Wording.player (PlayerView.active b)) <> " is taking their turn\x2026"
         _ -> "Moving on\x2026"
   pure . table request screen (barControls (level screen) False Nothing) (Board.MkMarks (\o -> Card.MkCue [] (MkRead (ObjectView.object o)) Nothing) (const Nothing)) $
     news (Request.view request) (viewerOf request) screen <> [Element.el "p" ["waiting"] [] [Icon.loading ["small"], Element.string status]]
@@ -387,7 +387,7 @@ logView board viewer screen =
 -- now: its actions, or picking it.
 sheetFor :: Request.Request -> PlayerView.PlayerView -> Board.Marks Event -> Card.Reading -> Maybe (Html.Html Event)
 sheetFor request board marks r = do
-  o <- Render.recalled board (Card.object r)
+  o <- Wording.recalled board (Card.object r)
   let cue = Board.object marks o
       actions = case Card.tap cue of
         MkRead _ -> [primary (MkAnswer (R.Number i)) label | (i, label) <- Map.findWithDefault [] (Card.object r) (actionsByObject request)]
@@ -473,7 +473,7 @@ handOff request =
     "main"
     ["handoff"]
     []
-    [ Element.el "p" [] [] [Html.text $ Text.pack "Pass the screen to " <> Render.player seat <> foldMap (\p -> Text.pack ", deciding for " <> Render.player p) (Question.for (Request.question request)) <> Text.pack "."],
+    [ Element.el "p" [] [] [Html.text $ Text.pack "Pass the screen to " <> Wording.player seat <> foldMap (\p -> Text.pack ", deciding for " <> Wording.player p) (Question.for (Request.question request)) <> Text.pack "."],
       primary MkReady $ Text.pack "Ready"
     ]
   where
@@ -554,7 +554,7 @@ picker request = do
       from <- Protocol.field "from" offer >>= Protocol.arrayOf
       wanted <- min (Natural.length from) <$> (Protocol.field "count" offer >>= Protocol.naturalOf)
       let purpose = if kind == "Bottom" then " to put on the bottom of your library" else " to discard"
-      pure $ MkPicker [MkGroup (Text.pack "Choose " <> Render.count wanted "card" <> Text.pack purpose) (named from) wanted wanted False] (Right . R.Array . concat) (Text.pack "Done")
+      pure $ MkPicker [MkGroup (Text.pack "Choose " <> Wording.count wanted "card" <> Text.pack purpose) (named from) wanted wanted False] (Right . R.Array . concat) (Text.pack "Done")
     "DeclareAttackers" -> do
       attackers <- Protocol.arrayOf offer
       pure $ MkPicker [uncurry (MkGroup (Text.pack "Choose attackers") (named attackers)) (every attackers) False] (Right . R.Array . concat) (Text.pack "Attack")
@@ -572,7 +572,7 @@ picker request = do
         MkPicker
           [ let legal = Offer.bySeat shown offered
                 n = min wanted (Natural.length legal)
-             in MkGroup (Text.pack "Choose " <> Render.count n "target" <> Text.pack " for " <> Offer.objectName shown source <> foldMap (\t -> Text.pack " (" <> Render.spaced t <> Text.pack ")") (Offer.textOf slot)) [(option, Offer.targetName shown legal option) | option <- legal] n n False
+             in MkGroup (Text.pack "Choose " <> Wording.count n "target" <> Text.pack " for " <> Offer.objectName shown source <> foldMap (\t -> Text.pack " (" <> Wording.spaced t <> Text.pack ")") (Offer.textOf slot)) [(option, Offer.targetName shown legal option) | option <- legal] n n False
           | (slot, wanted, offered) <- slots
           ]
           (\chosen -> Right $ R.Array [R.Array [slot, R.Array picks] | ((slot, _, _), picks) <- zip slots chosen])
@@ -581,7 +581,7 @@ picker request = do
       from <- Protocol.field "from" offer >>= Protocol.arrayOf
       names <- Protocol.field "names" offer >>= Protocol.arrayOf >>= traverse Offer.textOf
       wanted <- min (Natural.length from) <$> (Protocol.field "count" offer >>= Protocol.naturalOf)
-      pure $ MkPicker [MkGroup (Text.pack "Choose up to " <> Render.count wanted "card" <> Text.pack " to find") (zip from names) 0 wanted False] (Right . R.Array . concat) (Text.pack "Find")
+      pure $ MkPicker [MkGroup (Text.pack "Choose up to " <> Wording.count wanted "card" <> Text.pack " to find") (zip from names) 0 wanted False] (Right . R.Array . concat) (Text.pack "Find")
     -- CR 601.2d: an amount of at least one per target, adding up to the
     -- total, or using exactly the parts given.
     "ChooseDivision" -> do
@@ -741,7 +741,7 @@ piles request = do
 
 -- | A kind's words, the first capitalized: ArrangeLibraryCards as "Arrange library cards".
 capitalized :: Text.Text -> Text.Text
-capitalized kind = case Text.uncons (Render.spaced kind) of
+capitalized kind = case Text.uncons (Wording.spaced kind) of
   Just (c, rest) -> Text.cons (Char.toUpper c) rest
   Nothing -> Text.empty
 
@@ -753,7 +753,7 @@ answersTyped request = fmap Html.toText (form request Set.empty) == fmap Html.to
 -- | The offer shown as it is sent, and a field for a reply typed as JSON.
 typedReply :: Request.Request -> [Html.Html Event]
 typedReply request =
-  [ Html.element (Text.pack "h2") [] [Html.text (Render.spaced (Question.kind question) <> Text.pack ":")],
+  [ Html.element (Text.pack "h2") [] [Html.text (Wording.spaced (Question.kind question) <> Text.pack ":")],
     Html.element (Text.pack "pre") [] [Html.text . Common.render $ Codec.Reply.toValue (Question.offer question)],
     Html.element (Text.pack "input") [Attribute.MkProperty (Text.pack "placeholder") (Text.pack "Reply as JSON"), Attribute.MkProperty (Text.pack "data-clear") Text.empty, Attribute.MkOn (Text.pack "change") MkTyped] []
   ]
@@ -766,7 +766,7 @@ form request picked = case Text.unpack (Question.kind question) of
   -- CR 103.1: among three or more seats, the seat to take the first turn.
   "ChooseStarter" -> heading "Who takes the first turn?" : [button (MkAnswer option) (if option == R.Text (Text.pack (show (PlayerId.unwrap (Question.seat question)))) then Text.pack "You" else Offer.playerName option) | option <- Foldable.fold (Protocol.arrayOf offer)]
   "DeclareMulligan" ->
-    heading ("Keep this hand, or mulligan?" <> foldMap (\n -> " A mulligan puts " <> Text.unpack (Render.count n "card") <> " on the bottom.") (Protocol.field "bottom" offer >>= Protocol.naturalOf))
+    heading ("Keep this hand, or mulligan?" <> foldMap (\n -> " A mulligan puts " <> Text.unpack (Wording.count n "card") <> " on the bottom.") (Protocol.field "bottom" offer >>= Protocol.naturalOf))
       : [primary (MkAnswer . R.Text $ Text.pack "Keep") (Text.pack "Keep"), button (MkAnswer . R.Text $ Text.pack "Mulligan") (Text.pack "Mulligan")]
   "ChooseManaToSpend"
     | Just units <- Protocol.arrayOf offer,
@@ -786,17 +786,17 @@ form request picked = case Text.unpack (Question.kind question) of
             settled = null (PlayerView.stack shown)
             prompt
               | not settled = "Respond, or pass to let the top of the stack resolve."
-              | Just p <- controlled, yours = Text.unpack (Render.player p) <> "'s turn, which you control. Play something for them, or pass to move on."
+              | Just p <- controlled, yours = Text.unpack (Wording.player p) <> "'s turn, which you control. Play something for them, or pass to move on."
               | yours = "Your turn. Play something, or pass to move on."
               | otherwise = "Their turn. Respond, or pass."
             -- Unspent mana empties as the step ends (CR 106.4, 500.5) unless
             -- it is kept longer.
             floating = [u | seat <- PlayerView.seats shown, SeatView.player seat == PlayerView.viewer shown, u <- Mana.Type.unwrap (SeatView.manaPool seat), ManaUnit.retention u == ManaRetention.Ordinary]
             nudges =
-              [ nudge (Text.pack "You have " <> foldMap (\u -> Text.pack "{" <> Render.manaType (ManaUnit.manaType u) <> Text.pack "}") floating <> Text.pack " unspent. It empties when this step ends.")
+              [ nudge (Text.pack "You have " <> foldMap (\u -> Text.pack "{" <> Wording.manaType (ManaUnit.manaType u) <> Text.pack "}") floating <> Text.pack " unspent. It empties when this step ends.")
               | not (null floating)
               ]
-                <> [ nudge (Text.pack "Before you pass: you can still " <> Render.listing (take 3 reminders) <> (if length reminders > 3 then Text.pack ", and more." else Text.pack "."))
+                <> [ nudge (Text.pack "Before you pass: you can still " <> Wording.listing (take 3 reminders) <> (if length reminders > 3 then Text.pack ", and more." else Text.pack "."))
                    | yours,
                      settled,
                      not (null rest)
@@ -812,7 +812,7 @@ form request picked = case Text.unpack (Question.kind question) of
     | kind `elem` ["ChooseManaSource", "ChooseExtraManaSource"],
       Just shown <- Request.view request,
       Just sources <- Protocol.field "sources" offer >>= Protocol.arrayOf >>= traverse Offer.manaSource ->
-        Html.element (Text.pack "h2") [] (Mana.rich $ foldMap (\cost -> Text.pack "Paying " <> Render.manaCost cost <> Text.pack ". ") (Protocol.field "cost" offer >>= Offer.decoded Codec.ManaCost.codec) <> Text.pack (if kind == "ChooseManaSource" then "Choose a source." else "The cost is covered. Activate another source, or pay now."))
+        Html.element (Text.pack "h2") [] (Mana.rich $ foldMap (\cost -> Text.pack "Paying " <> Wording.manaCost cost <> Text.pack ". ") (Protocol.field "cost" offer >>= Offer.decoded Codec.ManaCost.codec) <> Text.pack (if kind == "ChooseManaSource" then "Choose a source." else "The cost is covered. Activate another source, or pay now."))
           : [primary MkAuto (Text.pack "Pay automatically") | Maybe.isJust (auto request)]
             -- Sources the seat can't tell apart are one button, for the first.
             <> [button (MkAnswer source) (label <> many count) | (source : _, label, count) <- collapsed [(source, Offer.listedName shown source <> makes yields) | (source, yields) <- sources]]
@@ -984,7 +984,7 @@ form request picked = case Text.unpack (Question.kind question) of
       | (indices, label, _) <- collapsed labelled
       ]
     many n = if n > 1 then Text.pack (" \x00d7" <> show n) else Text.empty
-    makes yields = if null yields then Text.empty else Text.pack " (makes " <> Text.intercalate (Text.pack " or ") (fmap (foldMap (\m -> Text.pack "{" <> Render.manaType m <> Text.pack "}")) yields) <> Text.pack ")"
+    makes yields = if null yields then Text.empty else Text.pack " (makes " <> Text.intercalate (Text.pack " or ") (fmap (foldMap (\m -> Text.pack "{" <> Wording.manaType m <> Text.pack "}")) yields) <> Text.pack ")"
     heading t = Html.element (Text.pack "h2") [] (Mana.rich $ Text.pack t)
 
 -- | A field to type a number into, answering with it.
@@ -999,7 +999,7 @@ yesOrNo shown request = case Text.unpack (Question.kind (Request.question reques
   "PayLifeForMana" -> do
     life <- Protocol.field "life" offer >>= Protocol.naturalOf
     mana <- Protocol.field "mana" offer >>= Offer.decoded Codec.ManaType.codec
-    Just (Text.pack ("Pay " <> show life <> " life to add {") <> Render.manaType mana <> Text.pack "}?", ("Exercises", "Pay life"), ("Declines", "Don't"))
+    Just (Text.pack ("Pay " <> show life <> " life to add {") <> Wording.manaType mana <> Text.pack "}?", ("Exercises", "Pay life"), ("Declines", "Don't"))
   "ChooseCombatDamageOption" -> do
     option <- Protocol.field "option" offer >>= Offer.decoded Codec.CombatDamageOption.codec
     let wording = if option == CombatDamageOption.AsThoughUnblocked then Text.pack ": assign its combat damage as though it weren't blocked?" else Text.pack ": assign its combat damage to a creature the defending player controls?"
@@ -1058,14 +1058,14 @@ indexed shown request = case Text.unpack (Question.kind (Request.question reques
   "ChooseCost" -> do
     costs <- Protocol.field "costs" offer >>= Protocol.arrayOf
     let keywords = foldMap (fmap (Offer.decoded Codec.Keyword.codec)) (Protocol.field "keywords" offer >>= Protocol.arrayOf) <> repeat Nothing
-        named cost keyword = Offer.candidateName self cost <> foldMap (\k -> Text.pack " (" <> Render.spaced (Text.pack (Codec.Keyword.tagOf k)) <> Text.pack ")") keyword
+        named cost keyword = Offer.candidateName self cost <> foldMap (\k -> Text.pack " (" <> Wording.spaced (Text.pack (Codec.Keyword.tagOf k)) <> Text.pack ")") keyword
     Just (Text.pack "Choose how to pay for " <> self <> Text.pack ".", zipWith named costs keywords)
   _ -> Nothing
   where
     offer = Question.offer (Request.question request)
     self = foldMap (Offer.objectName shown) (Protocol.field "source" offer)
     symbols :: [ManaType.ManaType] -> Text.Text
-    symbols = foldMap (\t -> Text.pack "{" <> Render.manaType t <> Text.pack "}")
+    symbols = foldMap (\t -> Text.pack "{" <> Wording.manaType t <> Text.pack "}")
 
 -- | Options by label, each label once with every option bearing it, in the
 -- order labels first appear; the label's count is the third part.

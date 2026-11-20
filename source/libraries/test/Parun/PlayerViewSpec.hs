@@ -35,7 +35,7 @@ import qualified Parun.JsonCodec.Codec as Codec
 import qualified Parun.JsonCodec.Common as Common
 import qualified Parun.Play.Bot as Bot
 import qualified Parun.Play.Chance as Chance
-import qualified Parun.Play.Render as Render
+import qualified Parun.Play.Wording as Wording
 import qualified Parun.Registry as Registry
 import qualified Parun.Spec as Spec
 import qualified Parun.Support as S
@@ -115,7 +115,7 @@ import qualified Parun.Types.ZoneChange as ZoneChange
 
 spec :: (Monad m, Monad n) => Spec.Spec m n -> Registry.Registry m -> n ()
 spec s registry = Spec.describe s "PlayerView" $ do
-  Spec.it s "CR 726.1 / 727.1 / 732.1 / 702.26b every seat sees the game's designations, phased-out permanents and its designations, and the board writes them" $ do
+  Spec.it s "CR 726.1 / 727.1 / 732.1 / 702.26b every seat sees the game's designations, phased-out permanents and its designations" $ do
     piker <- S.printingOf s registry "Goblin Piker"
     let (phased, g1) = S.addPermanent piker S.alice (Setup.emptyGame S.bothPlayers)
         (bearer, g2) = S.addPermanent piker S.alice g1
@@ -130,14 +130,10 @@ spec s registry = Spec.describe s "PlayerView" $ do
               GameState.players = Map.adjust (\p -> p {Player.ringTemptations = 2, Player.speed = Just 3}) S.alice (GameState.players g2)
             }
         view = PlayerView.viewFor S.bob gs
-        board = Render.board True view
     Spec.assertEqWith s "designations" (PlayerView.Type.monarch view, PlayerView.Type.initiative view, PlayerView.Type.daytime view) (Just S.alice, Just S.bob, Just Daytime.Day)
     Spec.assertEqWith s "phased out" (fmap ObjectView.object (PlayerView.Type.phasedOut view)) [phased]
     Spec.assertEqWith s "the Ring-bearer" (fmap (\o -> (ObjectView.ringBearerFor o, ObjectView.designations o)) (List.find ((== bearer) . ObjectView.object) (PlayerView.Type.battlefield view))) (Just (Just S.alice, Set.singleton Designation.Renowned))
     Spec.assertEqWith s "the seat's" (fmap (\seat -> (SeatView.ringTemptations seat, SeatView.speed seat)) (seatOf S.alice view)) (Just (2, Just 3))
-    Spec.assertBool s (Text.pack "Player 1 is the monarch. Player 2 has the initiative. It is day." `elem` board) ("the game's: " <> show board)
-    Spec.assertBool s (Text.pack "  tempted by the Ring 2 times, speed 3" `elem` board) ("the seat's: " <> show board)
-    Spec.assertBool s (any (Text.isPrefixOf (Text.pack "  Phased out: ")) board) ("phased out: " <> show board)
 
   Spec.it s "an opponent's hidden cards reach no part of the encoded view" $ do
     gs <- started s registry
@@ -221,7 +217,7 @@ spec s registry = Spec.describe s "PlayerView" $ do
         Spec.assertEqWith s "hand size" (SeatView.handSize seat) 7
         Spec.assertEqWith s "hand" (SeatView.hand seat) []
         Spec.assertEqWith s "library size" (SeatView.librarySize seat) (Natural.length (Game.zoneMembers Zone.Library S.alice gs))
-  Spec.it s "CR 905.2b every seat sees a player's draft notes, and the board writes them" $ do
+  Spec.it s "CR 905.2b every seat sees a player's draft notes" $ do
     let named = CardName.MkCardName . Text.pack
         noted =
           Map.fromList
@@ -236,8 +232,6 @@ spec s registry = Spec.describe s "PlayerView" $ do
         gs = empty {GameState.players = Map.adjust (\p -> p {Player.draftNotes = noted}) S.alice (GameState.players empty)}
     Spec.assertEqWith s "bob sees alice's notes" (fmap SeatView.draftNotes (seatOf S.alice (PlayerView.viewFor S.bob gs))) (Just noted)
     Spec.assertEqWith s "and bob's own, none" (fmap SeatView.draftNotes (seatOf S.bob (PlayerView.viewFor S.bob gs))) (Just Map.empty)
-    let written = Text.pack "  Draft notes: Cogwork Tracker Player 2; Garbage Fire 2; Lurking Automaton 9, 3; Paliano Vanguard Goblin; Regicide red, blue; Smuggler Captain Goblin Piker"
-    Spec.assertBool s (written `elem` Render.board True (PlayerView.viewFor S.bob gs)) ("bob's board writes them: " <> show (Render.board True (PlayerView.viewFor S.bob gs)))
   Spec.it s "a seat's own library is hidden from it too" $ do
     gs <- started s registry
     case seatOf S.alice (PlayerView.viewFor S.alice gs) of
@@ -274,7 +268,7 @@ spec s registry = Spec.describe s "PlayerView" $ do
                   }
             }
         abilityFor pid = fmap ObjectView.ability (PlayerView.Type.stack (PlayerView.viewFor pid gs))
-        nameFor pid = let view = PlayerView.viewFor pid gs in Render.named view oid
+        nameFor pid = let view = PlayerView.viewFor pid gs in Wording.named view oid
     Spec.assertEqWith s "alice is not told the hand card" (abilityFor S.alice) [Just (AbilityView.MkAbilityView Nothing (StackedAbility.Activated ability))]
     Spec.assertEqWith s "bob is" (abilityFor S.bob) [Just (AbilityView.MkAbilityView (Just held) (StackedAbility.Activated ability))]
     Spec.assertEqWith s "alice's drawing" (nameFor S.alice) (Text.pack "an ability")
@@ -298,10 +292,10 @@ spec s registry = Spec.describe s "PlayerView" $ do
             (S.addCounter CounterKind.Loyalty 4 walker placed)
 
         gs = S.runPure S.identityAnswer staged (Activate.activateAbility S.alice walker minus)
-        stackFor pid = let view = PlayerView.viewFor pid gs in fmap (Render.describe view) (PlayerView.Type.stack view)
+        stackFor pid = let view = PlayerView.viewFor pid gs in fmap (Wording.describe view) (PlayerView.Type.stack view)
     Spec.assertEqWith s "bob reads its text" (stackFor S.bob) [Text.pack "Ajani Goldmane's ability \"[\8722\&1]: Put a +1/+1 counter on each creature you control and they gain vigilance until end of turn.\""]
   -- CR 601.2c: alice's Searing Spear, cast at bob's Goblin Piker, names its
-  -- target to bob, in bob's view and on bob's board's stack line.
+  -- target to bob, in bob's view and as its stack entry is worded.
   Spec.it s "CR 601.2c a spell on the stack shows every seat its target" $ do
     mountain <- S.printingOf s registry "Mountain"
     spear <- S.printingOf s registry "Searing Spear"
@@ -311,9 +305,9 @@ spec s registry = Spec.describe s "PlayerView" $ do
         gs = S.runPure (aimedAt ((== Just victim) . Recipient.objectOf)) staged (S.cast S.alice spell)
         view = PlayerView.viewFor S.bob gs
     Spec.assertEqWith s "bob is told the target" (fmap ObjectView.targets (PlayerView.Type.stack view)) [[Recipient.ToCreature victim]]
-    Spec.assertBool s (Text.pack "Stack, top first: Searing Spear targeting Goblin Piker" `elem` Render.board True view) "bob's board names it"
+    Spec.assertEqWith s "bob's wording names it" (fmap (Wording.describe view) (PlayerView.Type.stack view)) [Text.pack "Searing Spear targeting Goblin Piker"]
   -- CR 602.2b: alice's Prodigal Sorcerer's ability, aimed at bob, names bob,
-  -- its source and its text on bob's board's stack line.
+  -- its source and its text as its stack entry is worded.
   Spec.it s "CR 602.2b an ability on the stack shows every seat its target" $ do
     sorcerer <- S.printingOf s registry "Prodigal Sorcerer"
     card <- S.cardOf s registry "Prodigal Sorcerer"
@@ -333,7 +327,7 @@ spec s registry = Spec.describe s "PlayerView" $ do
             )
         view = PlayerView.viewFor S.bob gs
     Spec.assertEqWith s "bob is told the target" (fmap ObjectView.targets (PlayerView.Type.stack view)) [[Recipient.ToPlayer S.bob]]
-    Spec.assertBool s (Text.pack "Stack, top first: Prodigal Sorcerer's ability \"{T}: Prodigal Sorcerer deals 1 damage to any target.\" targeting Player 2" `elem` Render.board True view) "bob's board names it"
+    Spec.assertEqWith s "bob's wording names it" (fmap (Wording.describe view) (PlayerView.Type.stack view)) [Text.pack "Prodigal Sorcerer's ability \"{T}: Prodigal Sorcerer deals 1 damage to any target.\" targeting Player 2"]
   Spec.it s "CR 406.3 a card exiled face down shows its owner nothing of itself" $ do
     piker <- S.printingOf s registry "Goblin Piker"
     let (oid, placed) = S.addObjectIn Zone.Exile piker S.alice (Setup.emptyGame S.bothPlayers)
@@ -375,7 +369,7 @@ spec s registry = Spec.describe s "PlayerView" $ do
         exiled pid gs = foldMap SeatView.exile (seatOf S.alice (PlayerView.viewFor pid gs))
         reduced = Just (ManaCost.MkManaCost [ManaSymbol.Generic 2])
         line = Text.pack "Foretell cost: its mana cost reduced by {2}"
-        drawn gs = fmap (either (const False) (elem line) . Render.details (const (Right Nothing)) (PlayerView.viewFor S.alice gs)) (exiled S.alice gs)
+        drawn gs = fmap (either (const False) (elem line) . Wording.details (const (Right Nothing)) (PlayerView.viewFor S.alice gs)) (exiled S.alice gs)
     Spec.assertEqWith s "the Giant was foretold" (fmap (fmap ProjectedCharacteristics.names . ObjectView.face) (exiled S.alice (foretold giant))) [Just (Set.singleton (S.printingName giant))]
     Spec.assertEqWith s "CR 702.143e alice sees the {2} the Devourer took off the Giant" (fmap ObjectView.foretellCostReduction (exiled S.alice (foretold giant))) [reduced]
     Spec.assertEqWith s "and her drawing names it" (drawn (foretold giant)) [True]
@@ -416,15 +410,15 @@ spec s registry = Spec.describe s "PlayerView" $ do
                     TurnRegisters.priority = Just S.alice
                   }
             }
-        answer :: Asked.Asked GameState.GameState r -> State.State [(PlayerId.PlayerId, Maybe PlayerId.PlayerId, [Text.Text])] r
+        answer :: Asked.Asked GameState.GameState r -> State.State [(PlayerId.PlayerId, Maybe PlayerId.PlayerId, Maybe PlayerId.PlayerId)] r
         answer question = case Asked.prompt question of
           prompt@(Prompt.ChooseOptional _ pid _ _ _ _) -> do
             let gs = Asked.game question
-            State.modify' (<> [(pid, TurnRegisters.priority (GameState.turn gs), take 1 (Render.board True (PlayerView.viewFor pid gs)))])
+            State.modify' (<> [(pid, TurnRegisters.priority (GameState.turn gs), PlayerView.Type.priority (PlayerView.viewFor pid gs))])
             pure (S.identityAnswer prompt)
           prompt -> pure (S.identityAnswer prompt)
         asked = State.execState (Engine.runGameAsked answer board (S.cast S.alice spell >> Engine.priorityLoop)) []
-    Spec.assertEqWith s "alice is asked, with nobody holding priority" asked [(S.alice, Nothing, [Text.pack "Turn 1, Player 1's precombat main phase."])]
+    Spec.assertEqWith s "alice is asked, with nobody holding priority" asked [(S.alice, Nothing, Nothing)]
   -- Goblin Battle Jester's trigger asks alice its target in the settle, which
   -- follows the step's first grant (cast before the loop) or her cast (inside).
   Spec.it s "CR 117.5 / 117.3c no seat holds priority while Goblin Battle Jester's trigger asks its target" $ do
@@ -564,7 +558,7 @@ spec s registry = Spec.describe s "PlayerView" $ do
     gs <- S.play s registry setup script S.priorityGame
     Monad.forM_ [S.alice, S.bob] $ \pid -> do
       let seen = witnessedBy pid gs
-          seat = Text.unpack (Render.player pid) <> ": "
+          seat = Text.unpack (Wording.player pid) <> ": "
       Spec.assertEqWith s (seat <> "CR 601.2a every cast, by its caster and name") [(SpellWasCast.player c, ProjectedCharacteristics.names (SpellWasCast.characteristics c)) | GameEvent.SpellCast c <- seen] (fmap (\n -> (S.alice, Set.singleton (CardName.MkCardName (Text.pack n)))) ["Mind Rot", "Volcanic Hammer", "Sacred Nectar"])
       Spec.assertEqWith s (seat <> "CR 701.9a both discards") [Discarded.player d | GameEvent.Discarded d <- seen] [S.bob, S.bob]
       Spec.assertEqWith s (seat <> "CR 404.2 both discarded cards landing face up") (Set.fromList [ProjectedCharacteristics.names (Moved.characteristics m) | GameEvent.Moved m <- seen, ZoneChange.from (Moved.change m) == Zone.Hand, ZoneChange.to (Moved.change m) == Zone.Graveyard]) (Set.fromList (fmap (Set.singleton . CardName.MkCardName . Text.pack) ["Hill Giant", "Grizzly Bears"]))
@@ -595,7 +589,7 @@ spec s registry = Spec.describe s "PlayerView" $ do
     gs <- S.play s registry setup script S.combatGame
     Monad.forM_ [S.alice, S.bob] $ \pid -> do
       let seen = witnessedBy pid gs
-          seat = Text.unpack (Render.player pid) <> ": "
+          seat = Text.unpack (Wording.player pid) <> ": "
           died = [ProjectedCharacteristics.names (Moved.characteristics m) | GameEvent.Moved m <- seen, ZoneChange.from (Moved.change m) == Zone.Battlefield, ZoneChange.to (Moved.change m) == Zone.Graveyard]
       Spec.assertEqWith s (seat <> "CR 508.1 both attackers, at bob") [AttackerDeclared.target a | GameEvent.AttackerDeclared a <- seen] [AttackTarget.OfPlayer S.bob, AttackTarget.OfPlayer S.bob]
       Spec.assertEqWith s (seat <> "CR 509.1 the block") (length [() | GameEvent.BecameBlocking _ <- seen]) 1
@@ -612,7 +606,7 @@ spec s registry = Spec.describe s "PlayerView" $ do
         script = S.turn 1 [S.on S.precombatMain S.alice (S.castAction (S.aliasRef "ebb") choices)]
     gs <- S.play s registry setup script S.priorityGame
     Monad.forM_ [S.alice, S.bob] $ \pid -> do
-      let seat = Text.unpack (Render.player pid) <> ": "
+      let seat = Text.unpack (Wording.player pid) <> ": "
       Spec.assertEqWith s (seat <> "CR 603.10a the giant, seen leaving") [ProjectedCharacteristics.names (Moved.characteristics m) | GameEvent.Moved m <- witnessedBy pid gs, ZoneChange.to (Moved.change m) == Zone.Library] [Set.singleton (CardName.MkCardName (Text.pack "Hill Giant"))]
       Spec.assertBool s (Text.pack "Hill Giant moves from the battlefield to a library." `elem` drawnFor pid gs) (seat <> "drawn")
   Spec.it s "CR 400.2 / 701.23a a land searched out onto the battlefield is witnessed by both seats as it arrives, the rest of the library by neither" $ do
@@ -634,7 +628,7 @@ spec s registry = Spec.describe s "PlayerView" $ do
             ]
     gs <- S.play s registry setup script S.priorityGame
     Monad.forM_ [S.alice, S.bob] $ \pid -> do
-      let seat = Text.unpack (Render.player pid) <> ": "
+      let seat = Text.unpack (Wording.player pid) <> ": "
       Spec.assertEqWith s (seat <> "CR 400.2 the land, seen arriving") [ProjectedCharacteristics.names (Moved.characteristics m) | GameEvent.Moved m <- witnessedBy pid gs, ZoneChange.from (Moved.change m) == Zone.Library] [Set.singleton (CardName.MkCardName (Text.pack "Plains"))]
       Spec.assertBool s (Text.pack "Plains moves from a library to the battlefield." `elem` drawnFor pid gs) (seat <> "drawn")
     Spec.assertBool s (not ("Hill Giant" `List.isInfixOf` encodedFor S.bob gs)) "CR 701.23a the card alice saw searching reaches no part of bob's view"
@@ -729,7 +723,7 @@ spec s registry = Spec.describe s "PlayerView" $ do
     gs <- S.play s registry setup script S.priorityGame
     Monad.forM_ [S.alice, S.bob] $ \pid -> do
       let drawn = drawnFor pid gs
-          seat = Text.unpack (Render.player pid) <> ": "
+          seat = Text.unpack (Wording.player pid) <> ": "
       Spec.assertEqWith s (seat <> "every Plains, the one played this turn too") (length (filter (== died "Plains") drawn)) 5
       Spec.assertEqWith s (seat <> "bob's Forest") (length (filter (== died "Forest") drawn)) 1
       Spec.assertEqWith s (seat <> "the land play, once") (filter (Text.isInfixOf (Text.pack "Plains moves")) drawn <> filter (== Text.pack "Player 1 plays Plains.") drawn) [Text.pack "Player 1 plays Plains."]
@@ -745,7 +739,7 @@ spec s registry = Spec.describe s "PlayerView" $ do
     Spec.assertBool s ("Lava Axe" `List.isInfixOf` encodedFor S.alice gs) "the control: alice's own view names it, in her hand"
     Monad.forM_ [S.alice, S.bob] $ \pid -> do
       let seen = witnessedBy pid gs
-          seat = Text.unpack (Render.player pid) <> ": "
+          seat = Text.unpack (Wording.player pid) <> ": "
       Spec.assertEqWith s (seat <> "CR 121.1 alice drew") [Drew.player d | GameEvent.Drew d <- seen] [S.alice]
       Spec.assertEqWith s (seat <> "CR 401.2 the move from library to hand is no one's to witness") (length [() | GameEvent.Moved _ <- seen]) 0
       Spec.assertBool s (Text.pack "Player 1 draws a card." `elem` drawnFor pid gs) (seat <> "drawn")
@@ -759,7 +753,7 @@ spec s registry = Spec.describe s "PlayerView" $ do
         script = S.turn 1 [S.on S.precombatMain S.alice (Move.Cast (Casting.MkCasting (S.aliasRef "tracker") choices (Just True) Nothing))]
     gs <- S.play s registry setup script S.priorityGame
     Monad.forM_ [S.alice, S.bob] $ \pid ->
-      Spec.assertEqWith s (Text.unpack (Render.player pid) <> ": CR 708.2a a nameless cast") [ProjectedCharacteristics.names (SpellWasCast.characteristics c) | GameEvent.SpellCast c <- witnessedBy pid gs] [Set.empty]
+      Spec.assertEqWith s (Text.unpack (Wording.player pid) <> ": CR 708.2a a nameless cast") [ProjectedCharacteristics.names (SpellWasCast.characteristics c) | GameEvent.SpellCast c <- witnessedBy pid gs] [Set.empty]
     Spec.assertBool s (not ("Ainok Tracker" `List.isInfixOf` encodedFor S.bob gs)) "CR 708.5 no name in bob's encoded view"
     Spec.assertBool s (Text.pack "Player 1 casts a face-down card." `elem` drawnFor S.bob gs) "drawn"
 
@@ -781,8 +775,8 @@ faceDownViews s tracker other gs zoneOf = do
   Spec.assertEqWith s "CR 708.5 bob may not" (card S.bob) [Nothing]
   Spec.assertEqWith s "CR 708.2 alice's permanent is the 2/2 all the same" (shown S.alice) [nameless]
   Spec.assertBool s (not (Text.unpack (CardName.unwrap name) `List.isInfixOf` rendered)) "no name in bob's encoded view"
-  Spec.assertEqWith s "bob's drawing" (fmap (Render.describe (PlayerView.viewFor S.bob gs)) (viewOf S.bob)) [Text.pack "a face-down card 2/2"]
-  Spec.assertEqWith s "alice's drawing" (fmap (Render.describe (PlayerView.viewFor S.alice gs)) (viewOf S.alice)) [Text.pack "a face-down card (Ainok Tracker) 2/2"]
+  Spec.assertEqWith s "bob's drawing" (fmap (Wording.describe (PlayerView.viewFor S.bob gs)) (viewOf S.bob)) [Text.pack "a face-down card 2/2"]
+  Spec.assertEqWith s "alice's drawing" (fmap (Wording.describe (PlayerView.viewFor S.alice gs)) (viewOf S.alice)) [Text.pack "a face-down card (Ainok Tracker) 2/2"]
   Spec.assertEqWith s "CR 708.5 bob's view does not move as the card behind it changes" (snd (leaks other gs)) []
 
 -- Each seat whose view moves when every object it may not see (CR 400.2) is
@@ -829,11 +823,11 @@ hiddenOf pid gs = Game.zoneMembers Zone.Hand pid gs <> Game.zoneMembers Zone.Lib
 witnessedBy :: PlayerId.PlayerId -> GameState.GameState -> [GameEvent.GameEvent]
 witnessedBy pid = fmap LoggedEvent.event . PlayerView.Type.witnessed . PlayerView.viewFor pid
 
--- The text client's sentence for each of them.
+-- Wording.event's sentence for each of them.
 drawnFor :: PlayerId.PlayerId -> GameState.GameState -> [Text.Text]
 drawnFor pid gs =
   let view = PlayerView.viewFor pid gs
-   in Maybe.mapMaybe (Render.event view) (PlayerView.Type.witnessed view)
+   in Maybe.mapMaybe (Wording.event view) (PlayerView.Type.witnessed view)
 
 -- A seat's view as its client receives it.
 encodedFor :: PlayerId.PlayerId -> GameState.GameState -> String

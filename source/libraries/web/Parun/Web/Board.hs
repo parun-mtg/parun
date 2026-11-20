@@ -11,7 +11,7 @@ import qualified Data.Map.Strict as Map
 import qualified Data.Maybe as Maybe
 import qualified Data.Set as Set
 import qualified Data.Text as Text
-import qualified Parun.Play.Render as Render
+import qualified Parun.Play.Wording as Wording
 import qualified Parun.Types.BeginningStep as BeginningStep
 import qualified Parun.Types.CardName as CardName
 import qualified Parun.Types.CardType as CardType
@@ -66,7 +66,7 @@ turnBar controls board =
               ["turn-label"]
               []
               ( [ Element.el "strong" [] [] [Element.string ("Turn " <> show (PlayerView.turn board))],
-                  Element.text (Text.pack " \x00b7 " <> (if yours then Text.pack "Your " else possessive (PlayerView.active board)) <> Render.phase (PlayerView.phase board))
+                  Element.text (Text.pack " \x00b7 " <> (if yours then Text.pack "Your " else possessive (PlayerView.active board)) <> Wording.phase (PlayerView.phase board))
                 ]
                   <> [Element.el "span" ["extra"] [Element.attr "title" extraTip] [Element.string "Extra"] | extra]
                   <> foldMap (pure . daytime) (PlayerView.daytime board)
@@ -98,7 +98,7 @@ possessive pid = name pid <> Text.pack "'s "
 
 -- | A seat's name as the table shows it.
 name :: PlayerId.PlayerId -> Text.Text
-name = Render.player
+name = Wording.player
 
 phaseIndex :: Phase.Phase -> Integer
 phaseIndex p = case p of
@@ -166,7 +166,7 @@ stackItem marks board o =
         (["stack-item", Card.colour o] <> Card.marks cue)
         ([Element.attr "type" (Text.pack "button"), Element.on "click" (Card.tap cue)] <> Card.peeking cue)
         ( [ Element.el "span" ["who"] [] [Element.text whose],
-            Element.el "span" ["name"] [] [Element.text (Render.nameOf board o)]
+            Element.el "span" ["name"] [] [Element.text (Wording.nameOf board o)]
           ]
             <> [Element.el "span" ["detail"] [] (Web.Mana.rich line) | line <- Card.status board o]
         )
@@ -189,8 +189,8 @@ seatArea marks board own s =
         if Map.member oid onBattlefield then Just oid else Nothing
       riders = Map.fromListWith (flip (<>)) [(h, [o]) | o <- PlayerView.battlefield board, Just h <- [hostOf o]]
       standing = filter (Maybe.isNothing . hostOf) permanents
-      (creatures, rest) = List.partition (Render.isA CardType.Creature) standing
-      (lands, others) = List.partition (Render.isA CardType.Land) rest
+      (creatures, rest) = List.partition (Wording.isA CardType.Creature) standing
+      (lands, others) = List.partition (Wording.isA CardType.Land) rest
       ridersOf o = Map.findWithDefault [] (ObjectView.object o) riders
       tileOf o = Card.tile board (object marks o) o
       -- Permanents the seat cannot tell apart on the table (the same tile,
@@ -211,7 +211,7 @@ seatArea marks board own s =
                 )
             )
           ]
-      row cls objects = [Element.keyed "div" ["row", cls] [] (concatMap group (List.groupBy alike (Render.ordered board objects))) | not (null objects)]
+      row cls objects = [Element.keyed "div" ["row", cls] [] (concatMap group (List.groupBy alike (Wording.ordered board objects))) | not (null objects)]
       front = row "front" creatures
       back = row "back" (others <> lands)
       labelled cls title objects = [Element.el "div" ["row", cls] [Element.attr "aria-label" (Text.pack title)] (Element.el "span" ["row-label"] [] [Element.string title] : fmap tileOf objects) | not (null objects)]
@@ -233,7 +233,7 @@ seatHead marks board own s =
         Just cue -> Element.button (["who"] <> Card.marks cue) (Card.tap cue) [Element.text label, lifeBox]
         Nothing -> Element.el "div" ["who"] [] [Element.text label, lifeBox]
       chip cls k v tip = Element.el "span" ["count", cls] [Element.attr "title" (Text.pack tip)] ([Element.el "span" ["k"] [] [Element.string k]] <> [Element.string v | not (null v)])
-      counterWord kind = Text.unpack (Render.spaced (Text.pack (show kind)))
+      counterWord kind = Text.unpack (Wording.spaced (Text.pack (show kind)))
       -- CR 903.10a: the combat damage each commander has dealt the seat, by
       -- the commander's name up to its comma, beside its life.
       whose owner = if owner == PlayerView.viewer board then "your" else Text.unpack (name owner) <> "'s"
@@ -258,7 +258,7 @@ seatHead marks board own s =
           <> [chip "priority" "Priority" "" "Holds priority (CR 117.1)" | PlayerView.priority board == Just pid]
       pool = Mana.unwrap (SeatView.manaPool s)
       aimed = Card.targetingPlayer board pid
-   in Element.el "div" (["seat-head"] <> ["targeted" | not (null aimed)]) [Element.attr "title" (Text.pack "Targeted by " <> Render.listing aimed) | not (null aimed)] $
+   in Element.el "div" (["seat-head"] <> ["targeted" | not (null aimed)]) [Element.attr "title" (Text.pack "Targeted by " <> Wording.listing aimed) | not (null aimed)] $
         [ identity,
           Element.el
             "div"
@@ -275,10 +275,10 @@ seatHead marks board own s =
             )
         ]
           <> [Element.el "div" ["pool"] [Element.attr "title" (Text.pack "Mana pool")] (Element.el "span" ["k"] [] [Element.string "Pool"] : concatMap (Web.Mana.rich . unit) pool) | not (null pool)]
-          <> [Element.el "div" ["seen"] [] (Element.el "span" ["k"] [] [Element.string "Seen in hand"] : fmap (\o -> Card.tile board (object marks o) o) (Render.handOrder board (SeatView.hand s))) | not own, not (null (SeatView.hand s))]
+          <> [Element.el "div" ["seen"] [] (Element.el "span" ["k"] [] [Element.string "Seen in hand"] : fmap (\o -> Card.tile board (object marks o) o) (Wording.handOrder board (SeatView.hand s))) | not own, not (null (SeatView.hand s))]
           <> [Element.el "div" ["seen"] [] (Element.el "span" ["k"] [] [Element.string "Library, top first"] : fmap (\o -> Card.tile board (object marks o) o) (SeatView.library s)) | not (null (SeatView.library s))]
   where
-    unit u = Text.pack "{" <> Render.manaType (ManaUnit.manaType u) <> Text.pack "}"
+    unit u = Text.pack "{" <> Wording.manaType (ManaUnit.manaType u) <> Text.pack "}"
 
 designationName :: PlayerDesignation.PlayerDesignation -> String
 designationName d = case d of
@@ -324,7 +324,7 @@ handArea marks board s =
     ["hand"]
     [Element.attr "aria-label" (Text.pack "Your hand")]
     [ Element.el "h3" ["zone-title"] [] [Element.string ("Hand \x00b7 " <> show (length (SeatView.hand s)))],
-      Element.keyed "div" ["hand-cards"] [] [(key o, Card.tile board (object marks o) o) | o <- Render.handOrder board (SeatView.hand s)]
+      Element.keyed "div" ["hand-cards"] [] [(key o, Card.tile board (object marks o) o) | o <- Wording.handOrder board (SeatView.hand s)]
     ]
 
 key :: ObjectView.ObjectView -> Text.Text

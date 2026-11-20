@@ -3,7 +3,6 @@
 module Parun.RecordSpec where
 
 import qualified Control.Monad as Monad
-import qualified Control.Monad.Trans.Class as Trans
 import qualified Control.Monad.Trans.State.Strict as State
 import qualified Data.Bifunctor as Bifunctor
 import qualified Data.Either as Either
@@ -15,13 +14,11 @@ import qualified Data.Text as Text
 import qualified Data.Word as Word
 import Numeric.Natural (Natural)
 import qualified Parun.BotSpec as BotSpec
-import qualified Parun.ClientSpec as ClientSpec
 import qualified Parun.Codec.Scenario as Codec.Scenario
 import qualified Parun.CompanionSpec as CompanionSpec
 import qualified Parun.Engine.Event as Event
 import qualified Parun.Engine.Setup as Setup
 import qualified Parun.JsonCodec.Codec as Codec
-import qualified Parun.Play.Client as Client
 import qualified Parun.Play.Game as Game
 import qualified Parun.Play.Record as Record
 import qualified Parun.Registry as Registry
@@ -39,7 +36,6 @@ import qualified Parun.Types.Existence as Existence
 import qualified Parun.Types.Format as Format
 import qualified Parun.Types.GameState as GameState
 import qualified Parun.Types.GraveyardOrder as GraveyardOrder
-import qualified Parun.Types.Hotseat as Hotseat
 import qualified Parun.Types.Label as Label
 import qualified Parun.Types.Move as Move
 import qualified Parun.Types.Observer as Observer
@@ -52,7 +48,6 @@ import qualified Parun.Types.Result as Result
 import qualified Parun.Types.RuleFamily as RuleFamily
 import qualified Parun.Types.Scenario as Scenario.Type
 import qualified Parun.Types.Settle as Settle
-import qualified Parun.Types.Terminal as Terminal
 import qualified Parun.Types.Timed as Timed
 import qualified Parun.Types.TurnRegisters as TurnRegisters
 
@@ -69,10 +64,9 @@ spec s registry = Spec.describe s "Record" $ do
 
   Spec.it s "a game cut short replays to where it stopped" $ do
     matchup <- BotSpec.bears s registry
-    let seats = Map.fromList [(S.alice, Game.human (S.fixtureRegistry []) (lifted (ClientSpec.screen 12 ClientSpec.plays)) (const (Right Nothing))), (S.bob, Game.bot (S.fixtureRegistry []))]
-        (outcome, (timeline, cut)) = watched Nothing 1 Nothing seats Map.empty matchup
+    let (outcome, (timeline, cut)) = watched (Just 2) 1 Nothing bots Map.empty matchup
     replayed <- Scenario.run registry (saved matchup timeline)
-    Spec.assertEqWith s "cut" (fmap fst outcome) (Left (Text.pack "end of input"))
+    Spec.assertEqWith s "cut" (fmap fst outcome) (Left (Text.pack "curfew"))
     case replayed of
       Right final -> Spec.assertBool s (Just final == cut) "stopped where it was cut"
       Left failure -> Spec.assertFailure s (Text.unpack (Scenario.render failure))
@@ -194,9 +188,8 @@ attacks timed = case Timed.entry timed of
   Entry.Do (Move.Answer answer) -> Answer.prompt answer == Text.pack "DeclareAttackers" && Answer.with answer /= Reply.Array []
   _ -> False
 
--- The entries recorded so far and the state the last prompt was asked in,
--- over the screen a person reads.
-type Base = State.StateT (Seq.Seq Timed.Timed, Maybe GameState.GameState) (State.State ClientSpec.Screen)
+-- The entries recorded so far and the state the last prompt was asked in.
+type Base = State.State (Seq.Seq Timed.Timed, Maybe GameState.GameState)
 
 -- A game seeded 1 between these seats, and every entry its answers recorded,
 -- however it ended.
@@ -207,15 +200,15 @@ recorded seats matchup = fmap fst (watched Nothing 1 Nothing seats Map.empty mat
 -- in `orders`.
 watched :: Maybe Natural -> Word.Word32 -> Maybe Format.Format -> Map.Map PlayerId.PlayerId (Answerer.Answerer (Asked.Asked GameState.GameState) (Game.Play Base)) -> Map.Map PlayerId.PlayerId GraveyardOrder.GraveyardOrder -> NonEmpty.NonEmpty (PlayerId.PlayerId, Deck.Deck) -> (Either Text.Text (Result.Result, GameState.GameState), (Seq.Seq Timed.Timed, Maybe GameState.GameState))
 watched curfew seed format seats orders matchup =
-  let played = Game.run (S.fixtureRegistry []) format ([Record.recording labels sink, lastAsked] <> foldMap (pure . after) curfew) seats (const (pure ())) Hotseat.fresh {Hotseat.facing = Just S.alice} (S.seeded seed) orders matchup
-   in State.evalState (State.runStateT played (Seq.empty, Nothing)) ClientSpec.blank
+  let played = Game.run (S.fixtureRegistry []) format ([Record.recording labels sink, lastAsked] <> foldMap (pure . after) curfew) seats (S.seeded seed) orders matchup
+   in State.runState played (Seq.empty, Nothing)
 
 -- Stops play, as a seat out of input does, at the first question of a turn
 -- after `turn`.
 after :: Natural -> Observer.Observer (Game.Play Base)
 after turn =
   Observer.MkObserver
-    { Observer.before = \asked -> Monad.when (TurnRegisters.turnNumber (GameState.turn (Asked.game asked)) > turn) (Trans.lift (Client.stop (Text.pack "curfew"))),
+    { Observer.before = \asked -> Monad.when (TurnRegisters.turnNumber (GameState.turn (Asked.game asked)) > turn) (Game.stop (Text.pack "curfew")),
       Observer.after = \_ _ -> pure ()
     }
 
@@ -227,14 +220,6 @@ sink entry = Game.underneath (State.modify' (Bifunctor.first (Seq.|> entry)))
 
 bots :: Map.Map PlayerId.PlayerId (Answerer.Answerer (Asked.Asked GameState.GameState) (Game.Play Base))
 bots = Map.fromList [(S.alice, Game.bot (S.fixtureRegistry [])), (S.bob, Game.bot (S.fixtureRegistry []))]
-
-lifted :: Terminal.Terminal (State.State ClientSpec.Screen) -> Terminal.Terminal Base
-lifted terminal =
-  Terminal.MkTerminal
-    { Terminal.say = Trans.lift . Terminal.say terminal,
-      Terminal.listen = Trans.lift (Terminal.listen terminal),
-      Terminal.clear = Trans.lift (Terminal.clear terminal)
-    }
 
 saved :: NonEmpty.NonEmpty (PlayerId.PlayerId, Deck.Deck) -> Seq.Seq Timed.Timed -> Scenario.Type.Scenario
 saved = savedWith Map.empty

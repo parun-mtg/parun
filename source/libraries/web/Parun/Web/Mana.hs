@@ -6,7 +6,7 @@ module Parun.Web.Mana where
 import qualified Data.Char as Char
 import qualified Data.Text as Text
 import qualified Numeric
-import qualified Parun.Play.Render as Render
+import qualified Parun.Play.Wording as Wording
 import qualified Parun.Types.ManaCost as ManaCost
 import qualified Parun.Web.Attribute as Attribute
 import qualified Parun.Web.Element as Element
@@ -30,7 +30,7 @@ rich t =
 
 -- | A cost's symbols, drawn.
 cost :: ManaCost.ManaCost -> Html.Html msg
-cost c = Element.el "span" ["cost"] [] . rich $ Render.manaCost c
+cost c = Element.el "span" ["cost"] [] . rich $ Wording.manaCost c
 
 -- | A motif the page's sprite draws (index.html), as the @<symbol>@ whose
 -- id is 'motifId'; Parun.Web.ManaSpec proves the two lists equal.

@@ -1,7 +1,8 @@
--- | The text client's drawing of a view: a board summary, then the deciding
--- seat's hand. Reads nothing but the decoded view, and a card's printed text
--- by a name the view shows.
-module Parun.Play.Render where
+-- | A game's things in a player's words: seats, objects, mana, counters,
+-- witnessed entries and results, as the web client and the line protocol say
+-- them. Reads nothing but the decoded view, and a card's printed text by a
+-- name the view shows.
+module Parun.Play.Wording where
 
 import qualified Data.Char as Char
 import qualified Data.Containers.ListUtils as ListUtils
@@ -52,13 +53,11 @@ import qualified Parun.Types.CountersPlaced as CountersPlaced
 import qualified Parun.Types.Crewing as Crewing
 import qualified Parun.Types.DamageEvent as DamageEvent
 import qualified Parun.Types.DamagePrevented as DamagePrevented
-import qualified Parun.Types.Daytime as Daytime
 import qualified Parun.Types.Defense as Defense
 import qualified Parun.Types.Departure as Departure
 import qualified Parun.Types.Designation as Designation
 import qualified Parun.Types.DieResult as DieResult
 import qualified Parun.Types.Discarded as Discarded
-import qualified Parun.Types.DraftNote as DraftNote
 import qualified Parun.Types.Drew as Drew
 import qualified Parun.Types.EndingStep as EndingStep
 import qualified Parun.Types.Enlisted as Enlisted
@@ -131,89 +130,6 @@ import qualified Parun.Types.ZoneChange as ZoneChange
 player :: PlayerId.PlayerId -> Text.Text
 player pid = Text.pack ("Player " <> show (PlayerId.unwrap pid + 1))
 
--- | The board summary: whose turn and step, or before the first turn whose
--- it will be (CR 103.5-103.8), then each seat's totals, permanents and public
--- zones, and the cards of another seat's hand or any seat's library the
--- deciding seat may see (CR 400.2), the deciding seat first, then the stack.
-board :: Bool -> PlayerView.PlayerView -> [Text.Text]
-board begun view =
-  [ if begun
-      then
-        Text.concat
-          [ Text.pack ("Turn " <> show (PlayerView.turn view) <> ", "),
-            player (PlayerView.active view),
-            Text.pack "'s ",
-            phase (PlayerView.phase view),
-            maybe Text.empty (\p -> Text.pack ". Priority: " <> player p) (PlayerView.priority view),
-            Text.pack "."
-          ]
-      else Text.pack "Before the first turn. " <> player (PlayerView.active view) <> Text.pack " plays first."
-  ]
-    -- CR 726.1 / 727.1 / 732.1: the game's designations.
-    <> [ Text.intercalate (Text.pack " ") $
-           foldMap (\p -> [player p <> Text.pack " is the monarch."]) (PlayerView.monarch view)
-             <> foldMap (\p -> [player p <> Text.pack " has the initiative."]) (PlayerView.initiative view)
-             <> foldMap (\d -> [Text.pack ("It is " <> (if d == Daytime.Day then "day." else "night."))]) (PlayerView.daytime view)
-       | Maybe.isJust (PlayerView.monarch view) || Maybe.isJust (PlayerView.initiative view) || Maybe.isJust (PlayerView.daytime view)
-       ]
-    <> concatMap seat (List.sortOn ((/= PlayerView.viewer view) . SeatView.player) (PlayerView.seats view))
-    <> stack
-    <> parked
-  where
-    seat s =
-      let pid = SeatView.player s
-          you = if pid == PlayerView.viewer view then Text.pack " (you)" else Text.empty
-          (lands, rest) = List.partition (isA CardType.Land) (filter ((== Just pid) . ObjectView.controller) (PlayerView.battlefield view))
-          (creatures, others) = List.partition (isA CardType.Creature) rest
-       in [ Text.concat
-              [ player pid,
-                you,
-                Text.pack (": " <> show (SeatView.life s) <> " life, "),
-                count (SeatView.handSize s) "card" <> Text.pack " in hand, ",
-                Text.pack (show (SeatView.librarySize s) <> " in library")
-              ]
-          ]
-            -- CR 122.1 / 701.54c / 702.179b / 702.131c / 309.7.
-            <> [ Text.pack "  " <> Text.intercalate (Text.pack ", ") marks
-               | let marks =
-                       [Text.pack (show n <> " ") <> spaced (Text.pack (show kind)) <> Text.pack (if n == 1 then " counter" else " counters") | (kind, n) <- Map.toList (SeatView.counters s), n > 0]
-                         <> [Text.pack ("tempted by the Ring " <> show (SeatView.ringTemptations s) <> (if SeatView.ringTemptations s == 1 then " time" else " times")) | SeatView.ringTemptations s > 0]
-                         <> [Text.pack ("speed " <> show n) | Just n <- [SeatView.speed s]]
-                         <> [spaced (Text.pack (show d)) | d <- Set.toList (SeatView.designations s)]
-                         <> [count (SeatView.completedDungeons s) "dungeon" <> Text.pack " completed" | SeatView.completedDungeons s > 0],
-                 not (null marks)
-               ]
-            <> listed view "  Lands: " (ordered view lands)
-            <> listed view "  Creatures: " (ordered view creatures)
-            <> listed view "  Other permanents: " (ordered view others)
-            <> listed view "  Phased out: " (filter ((== Just pid) . ObjectView.controller) (PlayerView.phasedOut view))
-            <> listed view "  Command zone: " (filter ((== pid) . ObjectView.owner) (PlayerView.command view))
-            <> listed view "  Graveyard: " (SeatView.graveyard s)
-            <> listed view "  Exile: " (SeatView.exile s)
-            <> (if pid == PlayerView.viewer view then [] else listed view "  Seen in hand: " (handOrder view (SeatView.hand s)))
-            <> listed view "  Seen in library, top first: " (SeatView.library s)
-            <> notes (SeatView.draftNotes s)
-    -- CR 905.2b: "Draft notes: Garbage Fire 2, 5; Regicide red, blue".
-    notes noted =
-      [ Text.pack "  Draft notes: " <> Text.intercalate (Text.pack "; ") [CardName.unwrap name <> Text.singleton ' ' <> Text.intercalate (Text.pack ", ") (fmap note (Foldable.toList written)) | (name, written) <- Map.toList noted]
-      | not (Map.null noted)
-      ]
-    note written = case written of
-      DraftNote.Number n -> Text.pack (show n)
-      DraftNote.Color c -> Text.toLower (Text.pack (show c))
-      DraftNote.Name name -> CardName.unwrap name
-      DraftNote.CreatureType t -> Maybe.fromMaybe (Text.pack (show t)) (Subtype.creatureTypeWord t)
-      DraftNote.Player pid -> player pid
-    stack = listed view "Stack, top first: " (PlayerView.stack view)
-    -- CR 807.5: each other Grand Melee turn marker's stack.
-    parked = concatMap (\(n, shown) -> listed view ("Turn marker " <> show n <> "'s stack, top first: ") shown) (Map.toList (PlayerView.parkedStacks view))
-
--- | The deciding seat's hand.
-hand :: PlayerView.PlayerView -> [Text.Text]
-hand view =
-  let held = concatMap SeatView.hand (filter ((== PlayerView.viewer view) . SeatView.player) (PlayerView.seats view))
-   in [Text.pack "Your hand: " <> if null held then Text.pack "empty" else Text.intercalate (Text.pack ", ") (fmap (describe view) (handOrder view held))]
-
 -- | A hand's cards, lands first, then spells, each by `ordered`.
 handOrder :: PlayerView.PlayerView -> [ObjectView.ObjectView] -> [ObjectView.ObjectView]
 handOrder view held =
@@ -227,9 +143,6 @@ isA t = maybe False (Set.member t . ProjectedCharacteristics.cardTypes) . Object
 -- | By mana value, then name, ties in the view's order.
 ordered :: PlayerView.PlayerView -> [ObjectView.ObjectView] -> [ObjectView.ObjectView]
 ordered view = List.sortOn (\o -> (Maybe.fromMaybe 0 (ObjectView.characteristics o >>= ProjectedCharacteristics.manaValue), Text.toLower (nameOf view o)))
-
-listed :: PlayerView.PlayerView -> String -> [ObjectView.ObjectView] -> [Text.Text]
-listed view label shown = [Text.pack label <> Text.intercalate (Text.pack ", ") (fmap (describe view) shown) | not (null shown)]
 
 -- | An object's name, power and toughness, status, which ability it is (CR
 -- 113.7a), and what it targets (CR 601.2c / 602.2b / 603.3d).

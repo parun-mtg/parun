@@ -30,7 +30,6 @@ import qualified Parun.CastRestrictionSpec
 import qualified Parun.CastSpec
 import qualified Parun.ClashSpec
 import qualified Parun.ClassSpec
-import qualified Parun.ClientSpec
 import qualified Parun.CloakSpec
 import qualified Parun.Codec.AbilityActSpec
 import qualified Parun.Codec.AbilityAddsManaSpec
@@ -1067,6 +1066,7 @@ import qualified Parun.PlaneswalkerCombatSpec
 import qualified Parun.PlaneswalkerSpec
 import qualified Parun.Play.GeneratorSpec
 import qualified Parun.Play.KeySpec
+import qualified Parun.PlaySpec
 import qualified Parun.PlayerDesignationSpec
 import qualified Parun.PlayerEffectSpec
 import qualified Parun.PlayerViewSpec
@@ -2256,7 +2256,7 @@ spec s reference corpus = do
   Parun.SagaSpec.spec s registry
   Parun.ProtocolSpec.spec s registry
   Parun.BotSpec.spec s registry
-  Parun.ClientSpec.spec s registry
+  Parun.PlaySpec.spec s registry
   Parun.RecordSpec.spec s registry
   Parun.MatchSpec.spec s registry
   Parun.DecksSpec.spec s registry

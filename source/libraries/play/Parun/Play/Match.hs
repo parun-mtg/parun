@@ -21,13 +21,12 @@ import qualified Parun.Play.Game as Game
 import qualified Parun.Play.Generator as Generator
 import qualified Parun.Play.Key as Key
 import qualified Parun.Play.Record as Record
-import qualified Parun.Play.Render as Render
+import qualified Parun.Play.Wording as Wording
 import qualified Parun.Registry as Registry
 import qualified Parun.Trustworthy.Directory as Directory
 import qualified Parun.Types.Deck as Deck
 import qualified Parun.Types.Format as Format
 import qualified Parun.Types.GameState as GameState
-import qualified Parun.Types.Hotseat as Hotseat
 import qualified Parun.Types.Key as Key.Type
 import qualified Parun.Types.MatchOptions as MatchOptions
 import qualified Parun.Types.Result as Result
@@ -94,7 +93,7 @@ match options registry format decks = do
 game :: (Monad m) => Registry.Registry m -> Maybe Format.Format -> Key.Type.Key -> Natural -> NonEmpty.NonEmpty Deck.Deck -> m (Either Text.Text (Result.Result, GameState.GameState), Seq.Seq Timed.Timed)
 game registry format seed index decks =
   let count = Natural.length decks
-   in State.runStateT (Game.run (lifted registry) format [Record.recording (Command.labels count) sink] (Map.fromList [(Command.idOf n, Game.bot (lifted registry)) | n <- [1 .. count]]) (const (pure ())) Hotseat.fresh (Generator.fromKey (seedAt seed index)) Map.empty (Command.seated (firstAt index) decks)) Seq.empty
+   in State.runStateT (Game.run (lifted registry) format [Record.recording (Command.labels count) sink] (Map.fromList [(Command.idOf n, Game.bot (lifted registry)) | n <- [1 .. count]]) (Generator.fromKey (seedAt seed index)) Map.empty (Command.seated (firstAt index) decks)) Seq.empty
 
 -- | A pair of decks, seat 1's first.
 both :: (Deck.Deck, Deck.Deck) -> NonEmpty.NonEmpty Deck.Deck
@@ -129,7 +128,7 @@ tallied outcome tally = case outcome of
 -- | How one game ended.
 ended :: Either Text.Text (Result.Result, GameState.GameState) -> Text.Text
 ended outcome = case outcome of
-  Right (result, gs) -> Render.result result <> Text.pack (" Turn " <> show (TurnRegisters.turnNumber (GameState.turn gs)) <> ".")
+  Right (result, gs) -> Wording.result result <> Text.pack (" Turn " <> show (TurnRegisters.turnNumber (GameState.turn gs)) <> ".")
   Left reason -> Text.pack "stopped: " <> reason <> Text.pack "."
 
 -- | The tally of `count` games: each seat's wins, any team's, the draws and

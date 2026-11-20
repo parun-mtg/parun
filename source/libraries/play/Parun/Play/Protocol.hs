@@ -25,7 +25,7 @@ import qualified Parun.Extra.Integer as Integer
 import qualified Parun.Extra.Natural as Natural
 import qualified Parun.JsonCodec.Codec as Codec
 import qualified Parun.JsonCodec.Common as Common
-import qualified Parun.Play.Render as Render
+import qualified Parun.Play.Wording as Wording
 import qualified Parun.Scenario as Scenario
 import qualified Parun.Scenario.Prompt as Scenario.Prompt
 import qualified Parun.Scenario.PromptOffer as PromptOffer
@@ -59,7 +59,7 @@ over judge send fallback = Answerer.MkAnswerer $ \asked -> case requestFor asked
             either (pure . Left) (judge asked) $
               sent >>= decodeAnswer (Asked.prompt asked) >>= onOffer (Question.offer (Request.question request)) (Asked.prompt asked) >>= lawful named (Asked.game asked) (Asked.prompt asked)
           either (\problem -> go pending {Request.problem = Just problem}) pure judged
-        named = maybe (const (Text.pack "a creature")) Render.named (Request.view request)
+        named = maybe (const (Text.pack "a creature")) Wording.named (Request.view request)
      in go request
 
 -- | An answer the prompt offers, amounts within the bounds `offer` states
@@ -212,7 +212,7 @@ amountsIn caps answer =
 -- order, fit the offer (amounts): each at most its cap and at least its floor,
 -- adding up within the least and most, from one permanent where "fromOne" says
 -- so, of one kind where "oneKind" does, and each kind within its tally under
--- "counters". The text client's reader and onOffer both ask it.
+-- "counters". The web client's reader and onOffer both ask it.
 amountsFit :: R.Reply -> [Natural] -> Bool
 amountsFit offer typed =
   let leaves = foldMap amountLeaves (field "amounts" offer)
