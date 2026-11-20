@@ -408,6 +408,8 @@ eventBindingsOver board gs bearerBecame becameInGraveyard bearer you cond event 
   -- CR 603.2c's batch reading instead counts "that much" (Magmakin
   -- Artillerist): one card per Discarded event, summed across the group by
   -- batchBindings, beside the discarder batchPartition splits the group by.
+  -- Its cards are a one-member `became` GROUP per event, which batchBindings
+  -- joins (Toluz, Clever Conductor's "exile them"), arrivalBindings' reason.
   -- A Self discard stamps no object: its card is the bearer, whom
   -- CR 113.7a's source slot already names, and its discarder is the owner CR
   -- 113.8 and CR 108.4a make the controller, whom Binding.setYou names. It
@@ -415,7 +417,7 @@ eventBindingsOver board gs bearerBecame becameInGraveyard bearer you cond event 
   -- (Discarded.announcedX): Webstrike Elite's "mana value X" is the cycling
   -- ability's X, data/scenarios/webstrike-elite-* the proof.
   (TriggerCondition.Discards trigger, GameEvent.Discarded (Discarded.MkDiscarded discarder card _ _ _ announcedX)) -> case (DiscardTrigger.subject trigger, DiscardTrigger.batching trigger) of
-    (DiscardSubject.Discarder _, Batching.OneOrMore) -> Binding.setEventAmount 1 (Binding.setTriggerPlayer discarder Map.empty)
+    (DiscardSubject.Discarder _, Batching.OneOrMore) -> Binding.setBecameGroup (Seq.singleton card) (Binding.setEventAmount 1 (Binding.setTriggerPlayer discarder Map.empty))
     (DiscardSubject.Self, Batching.OneOrMore) -> Binding.setEventAmount 1 Map.empty
     (DiscardSubject.Discarder _, Batching.EachOccurrence) -> Binding.setBecame card (Binding.setTriggerPlayer discarder Map.empty)
     (DiscardSubject.Self, Batching.EachOccurrence) -> maybe Map.empty (\x -> Binding.fromChoices Map.empty (Just x) Seq.empty) announcedX
@@ -1734,9 +1736,9 @@ eventBindingSlots cond = case cond of
   -- bearer, already bound as CR 113.7's source; a Discarder's is CR 400.7e's
   -- `became` (Bag of Holding's "that card") beside the discarding player, whom
   -- the bearer does not name (Megrim's "that player"); a batch counts cards
-  -- beside its discarder.
+  -- beside its discarder, and a Discarder's batch groups them under `became`.
   TriggerCondition.Discards trigger -> case (DiscardTrigger.subject trigger, DiscardTrigger.batching trigger) of
-    (DiscardSubject.Discarder _, Batching.OneOrMore) -> Set.fromList [Binding.triggerPlayer, Binding.eventAmount]
+    (DiscardSubject.Discarder _, Batching.OneOrMore) -> Set.fromList [Binding.triggerPlayer, Binding.eventAmount, Binding.became]
     (DiscardSubject.Self, Batching.OneOrMore) -> Set.singleton Binding.eventAmount
     (DiscardSubject.Discarder _, Batching.EachOccurrence) -> Set.fromList [Binding.triggerPlayer, Binding.became]
     (DiscardSubject.Self, Batching.EachOccurrence) -> Set.empty
