@@ -21,7 +21,6 @@ import qualified Parun.Web.Html as Html
 import qualified Parun.Web.Log as Log
 import qualified Parun.Web.Mana as Mana
 
--- | How the game ended for the player the page plays.
 -- | What a tap on the ending does.
 data Event
   = -- | The same decks again, shuffled afresh.
@@ -32,6 +31,7 @@ data Event
     MkNewGame
   deriving (Eq, Show)
 
+-- | How the game ended for the player the page plays.
 data Verdict
   = MkWon
   | MkLost

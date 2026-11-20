@@ -72,26 +72,32 @@ instance Exception.Exception Abandoned
 
 -- | A game between these decks (name and file, the player's first) on the
 -- page, from this seed or a fresh one, every request line answered there
--- (Parun.Web.Question), leaving for the home screen through `leave`: how
--- it came out, or why it could not start.
-game :: Browser.Page Screen.Event -> Registry.Registry Identity.Identity -> Web.Question.Level -> NonEmpty.NonEmpty (Text.Text, FilePath) -> Maybe Key.Key -> IO Leave -> IO (Either [Text.Text] Played)
-game page registry initial seats given leave = Exception.handle (\MkAbandonedGame -> pure (Right MkAbandoned)) $ do
-  seatRef <- IORef.newIORef (newSeat initial)
-  listed <- traverse (Command.load registry . snd) seats
-  case sequenceA listed of
-    Left _ -> pure (Left (foldMap (Either.fromLeft []) listed))
-    Right lists -> do
-      settled <- Command.settle Nothing (zip (fmap snd (NonEmpty.toList seats)) (NonEmpty.toList lists))
-      case settled of
-        Left problems -> pure (Left problems)
-        Right format -> do
-          seed <- maybe Key.fresh pure given
-          (outcome, recorded) <- Command.game (exchange (Identity.runIdentity . Interpreter.chosenCard registry) page seatRef leave) (options (Natural.length seats)) registry format (fmap DeckList.deck lists) seed
-          -- What the player saw after their last decision: the killing blow, say.
-          Monad.forM_ outcome $ IORef.modifyIORef' seatRef . witness . PlayerView.Engine.viewFor player . snd
-          finished <- IORef.readIORef seatRef
-          let names = fmap fst seats
-          pure . Right . MkFinished $ Ending.MkEnding (verdictOf outcome) (either (\reason -> [Text.pack "The game stopped: " <> reason <> Text.pack "."]) (\(result, gs) -> Render.result result : Render.departures gs) outcome) (Command.rendered recorded) (loggedFor player finished) player (NonEmpty.head names, NonEmpty.tail names) (Foldable.toList (lives finished)) (Key.toHex seed)
+-- (Parun.Web.Question) at the auto-pass level kept in `levelRef`, and
+-- left with the level last chosen there; leaving for the home screen
+-- through `leave`: how it came out, or why it could not start.
+game :: Browser.Page Screen.Event -> Registry.Registry Identity.Identity -> IORef.IORef Web.Question.Level -> NonEmpty.NonEmpty (Text.Text, FilePath) -> Maybe Key.Key -> IO Leave -> IO (Either [Text.Text] Played)
+game page registry levelRef seats given leave = do
+  seatRef <- IORef.newIORef . newSeat =<< IORef.readIORef levelRef
+  keepingLevel levelRef seatRef . Exception.handle (\MkAbandonedGame -> pure (Right MkAbandoned)) $ do
+    listed <- traverse (Command.load registry . snd) seats
+    case sequenceA listed of
+      Left _ -> pure (Left (foldMap (Either.fromLeft []) listed))
+      Right lists -> do
+        settled <- Command.settle Nothing (zip (fmap snd (NonEmpty.toList seats)) (NonEmpty.toList lists))
+        case settled of
+          Left problems -> pure (Left problems)
+          Right format -> do
+            seed <- maybe Key.fresh pure given
+            (outcome, recorded) <- Command.game (exchange (Identity.runIdentity . Interpreter.chosenCard registry) page seatRef leave) (options (Natural.length seats)) registry format (fmap DeckList.deck lists) seed
+            -- What the player saw after their last decision: the killing blow, say.
+            Monad.forM_ outcome $ IORef.modifyIORef' seatRef . witness . PlayerView.Engine.viewFor player . snd
+            finished <- IORef.readIORef seatRef
+            let names = fmap fst seats
+            pure . Right . MkFinished $ Ending.MkEnding (verdictOf outcome) (either (\reason -> [Text.pack "The game stopped: " <> reason <> Text.pack "."]) (\(result, gs) -> Render.result result : Render.departures gs) outcome) (Command.rendered recorded) (loggedFor player finished) player (NonEmpty.head names, NonEmpty.tail names) (Foldable.toList (lives finished)) (Key.toHex seed)
+
+-- | Runs a game, then keeps the auto-pass level its seat ended on.
+keepingLevel :: IORef.IORef Web.Question.Level -> IORef.IORef Seat -> IO a -> IO a
+keepingLevel levelRef seatRef run = run `Exception.finally` (IORef.readIORef seatRef >>= IORef.writeIORef levelRef . level)
 
 -- | How the game ended for the seat the page plays.
 verdictOf :: Either a (Result.Result, b) -> Ending.Verdict

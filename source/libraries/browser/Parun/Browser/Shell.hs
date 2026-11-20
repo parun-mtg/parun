@@ -52,9 +52,9 @@ import qualified Text.Read as Read
 data Shell = MkShell
   { page :: Browser.Page Screen.Event,
     loaded :: IORef.IORef Loaded,
-    -- | How much the page answers for the player at first
-    -- (Web.Question.Level).
-    level :: Web.Question.Level
+    -- | How much the page answers for the player (Web.Question.Level), as
+    -- the last game left it.
+    level :: IORef.IORef Web.Question.Level
   }
 
 -- | The data so far: which chunks arrived, and what has been built from
@@ -98,7 +98,7 @@ data Woke
 start :: IO ()
 start = do
   chosen <- maybe Web.Question.MkStandard (Maybe.fromMaybe Web.Question.MkStandard . Web.Question.levelNamed) <$> Environment.lookupEnv "parun_level"
-  shell <- MkShell <$> Browser.mount <*> IORef.newIORef (MkLoaded Loading.new Nothing Map.empty Nothing Map.empty [] Nothing Nothing) <*> pure chosen
+  shell <- MkShell <$> Browser.mount <*> IORef.newIORef (MkLoaded Loading.new Nothing Map.empty Nothing Map.empty [] Nothing Nothing) <*> IORef.newIORef chosen
   Exception.catch (opening shell >>= follow shell) $ \problem ->
     Browser.display (page shell) $ message ["The page stopped on an error:", Exception.displayException (problem :: Exception.SomeException)]
 
@@ -172,7 +172,8 @@ lobby shell = do
           Lobby.MkStart | Just mine <- Lobby.mine current -> do
             others <- traverse (maybe (randomOf (Lobby.opponents current)) (pure . Just)) (Lobby.theirs current)
             files <- Maybe.fromMaybe Map.empty <$> decksRead shell
-            case traverse (\name -> (,) name <$> Map.lookup name files) (mine NonEmpty.:| Maybe.catMaybes others) of
+            -- A bot with no deck to play keeps the lobby up.
+            case sequence others >>= traverse (\name -> (,) name <$> Map.lookup name files) . (mine NonEmpty.:|) of
               Just seats -> play shell seats Nothing
               Nothing -> go current
           Lobby.MkRandom -> do
@@ -200,6 +201,7 @@ refreshed shell shown = do
   pure
     withDecks
       { Lobby.cardFiles = fmap Natural.length (cards now),
+        Lobby.problem = Loading.problemFor Loading.MkDecks (loading now),
         Lobby.palette = palette now,
         Lobby.previews = Map.union (Lobby.previews withDecks) (Map.fromList read')
       }
@@ -239,7 +241,7 @@ untilBuilt shell needs built = do
         case done of
           Just a -> pure (Right a)
           Nothing
-            | any (\n -> Maybe.isJust (Loading.blocked n now)) needs -> pure (Left (Maybe.fromMaybe Text.empty (Loading.problem now)))
+            | problem : _ <- Maybe.mapMaybe (`Loading.problemFor` now) needs -> pure (Left problem)
             | otherwise -> do
                 progressed <- awaitWork shell
                 Monad.unless progressed Browser.idle
@@ -300,12 +302,14 @@ replays shell = do
         listed <- case scenarioList now of
           Just known -> pure (Just known)
           Nothing
+            | Just problem <- Loading.problemFor Loading.MkScenarios (loading now) -> pure (Just (Left problem, []))
             | Loading.ready Loading.MkScenarios (loading now) -> do
                 known <- Replay.listing
                 IORef.modifyIORef' (loaded shell) $ \l -> l {scenarioList = Just known}
                 pure (Just known)
             | otherwise -> pure Nothing
         case listed of
+          Just (Left problem, []) -> notice shell [problem]
           Just (Left problem, _) -> notice shell [Text.pack "The scenario manifest does not decode:", problem]
           _ -> do
             Browser.display (page shell) . fmap Screen.MkReplay $ Web.Replay.picker typed (fmap (Bifunctor.first (Either.fromRight Map.empty)) listed)

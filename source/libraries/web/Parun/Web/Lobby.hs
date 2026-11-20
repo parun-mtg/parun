@@ -33,6 +33,8 @@ data Lobby = MkLobby
     cardFiles :: Maybe Natural,
     -- | Whether the deck lists are still to read.
     reading :: Bool,
+    -- | Why the deck lists did not load.
+    problem :: Maybe Text.Text,
     -- | Every deck, by its path beneath the deck root, less ".txt".
     decks :: Seq.Seq Text.Text,
     -- | The format each deck's header names (Parun.DeckList.formatOf), by
@@ -83,7 +85,7 @@ data Event
 
 -- | A lobby whose decks are still to read, nothing chosen yet.
 new :: Lobby
-new = MkLobby Nothing True Seq.empty Map.empty Nothing [Nothing] MkMine Text.empty Map.empty Map.empty
+new = MkLobby Nothing True Nothing Seq.empty Map.empty Nothing [Nothing] MkMine Text.empty Map.empty Map.empty
 
 -- | The lobby holding these decks under these formats, what was chosen and
 -- typed kept.
@@ -331,6 +333,8 @@ view lobby =
                        ],
                      Element.keyed "div" ["sets"] [] [(group, Element.el "section" ["set"] [] [Element.el "h2" [] [] [Element.text group], Element.keyed "div" ["deck-list"] [] (fmap deck names)]) | (group, names) <- groups]
                    ]
-                     <> [Element.el "p" ["empty"] [] [Element.string (if reading lobby then "Reading the decks\x2026" else "No deck matches.")] | null shown]
+                     <> case problem lobby of
+                       Just p -> [Element.el "p" ["problem"] [Element.attr "role" (Text.pack "alert")] [Element.text p]]
+                       Nothing -> [Element.el "p" ["empty"] [] [Element.string (if reading lobby then "Reading the decks\x2026" else "No deck matches.")] | null shown]
                  )
              ]

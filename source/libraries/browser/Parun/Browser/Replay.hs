@@ -114,21 +114,23 @@ viewer page registry name scenario given = do
 -- | Plays on by hand from a position of the scenario: the run takes the
 -- timeline to that stop (Scenario.branch), then every seat is answered on
 -- the page as the hotseat answers one (Hotseat.exchange), chance from a
--- fresh key, until the game ends; how it ended, or nothing when it was
--- given up from the home screen (`leave`).
-playOn :: Browser.Page Screen.Event -> Registry.Registry Identity.Identity -> Web.Question.Level -> Scenario.Type.Scenario -> Natural -> IO Hotseat.Leave -> IO (Maybe [Text.Text])
-playOn page registry initial scenario given leave = Exception.handle (\Hotseat.MkAbandonedGame -> pure Nothing) $ do
-  seatRef <- IORef.newIORef (Hotseat.newSeat initial)
-  key <- Key.fresh
-  let at = min (Natural.length (Scenario.Type.timeline scenario)) given
-      reference = Registry.hoist (pure . Identity.runIdentity) registry :: Registry.Registry IO
-      lookUp = Identity.runIdentity . Interpreter.chosenCard registry
-      seats = Map.fromList [(pid, Game.wired reference (Hotseat.exchange lookUp page seatRef leave)) | (pid, _) <- seatsOf scenario]
-  outcome <- Game.playing Hotseat.Type.fresh (Generator.fromKey key) (Scenario.branch (Game.reference reference) at (Game.consulting reference seats) scenario)
-  pure . Just $ case outcome of
-    Left reason -> [Text.pack "The game stopped: " <> reason <> Text.pack "."]
-    Right (Left failure) -> [Text.pack "The scenario failed before the position:", Scenario.render failure]
-    Right (Right gs) -> maybe [Text.pack "The game ran out of steps."] (\result -> Render.result result : Render.departures gs) (GameState.result gs)
+-- fresh key, at the auto-pass level kept in `levelRef`, until the game
+-- ends; how it ended, or nothing when it was given up from the home screen
+-- (`leave`).
+playOn :: Browser.Page Screen.Event -> Registry.Registry Identity.Identity -> IORef.IORef Web.Question.Level -> Scenario.Type.Scenario -> Natural -> IO Hotseat.Leave -> IO (Maybe [Text.Text])
+playOn page registry levelRef scenario given leave = do
+  seatRef <- IORef.newIORef . Hotseat.newSeat =<< IORef.readIORef levelRef
+  Hotseat.keepingLevel levelRef seatRef . Exception.handle (\Hotseat.MkAbandonedGame -> pure Nothing) $ do
+    key <- Key.fresh
+    let at = min (Natural.length (Scenario.Type.timeline scenario)) given
+        reference = Registry.hoist (pure . Identity.runIdentity) registry :: Registry.Registry IO
+        lookUp = Identity.runIdentity . Interpreter.chosenCard registry
+        seats = Map.fromList [(pid, Game.wired reference (Hotseat.exchange lookUp page seatRef leave)) | (pid, _) <- seatsOf scenario]
+    outcome <- Game.playing Hotseat.Type.fresh (Generator.fromKey key) (Scenario.branch (Game.reference reference) at (Game.consulting reference seats) scenario)
+    pure . Just $ case outcome of
+      Left reason -> [Text.pack "The game stopped: " <> reason <> Text.pack "."]
+      Right (Left failure) -> [Text.pack "The scenario failed before the position:", Scenario.render failure]
+      Right (Right gs) -> maybe [Text.pack "The game ran out of steps."] (\result -> Render.result result : Render.departures gs) (GameState.result gs)
 
 -- | Each seat and the name the scenario gives it, in turn order.
 seatsOf :: Scenario.Type.Scenario -> [(PlayerId.PlayerId, Text.Text)]

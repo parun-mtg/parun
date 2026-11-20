@@ -56,8 +56,9 @@ function untar(bytes) {
 }
 
 // The shim copies a directory's whole listing to read each entry, quadratic
-// over the cards directory; the mounted data never changes, so each opened
-// directory copies it once.
+// over a large directory, so each opened directory copies it once. A chunk
+// merged in later reaches a directory opened afresh; only the root stays
+// open, and fetchAll resets its copy.
 const readdirSingle = OpenDirectory.prototype.fd_readdir_single;
 OpenDirectory.prototype.fd_readdir_single = function (cookie) {
   if (cookie < 2n) return readdirSingle.call(this, cookie);

@@ -32,3 +32,8 @@ spec s = Spec.describe s "Parun.Web.Loading" $ do
     Spec.it s "says which need did not load" $ do
       Spec.assertEqWith s "none" (Loading.problem Loading.new) Nothing
       Spec.assertEqWith s "cards" (Loading.problem (Loading.arrive (Left (Text.pack "cards-1")) Loading.new)) (Just (Text.pack "Couldn't load the cards. Reload to try again."))
+
+    Spec.it s "says why one need did not load, not another" $ do
+      let both = Loading.arrive (Left (Text.pack "decks")) (Loading.arrive (Left (Text.pack "scenarios")) Loading.new)
+      Spec.assertEqWith s "scenarios" (Loading.problemFor Loading.MkScenarios both) (Just (Text.pack "Couldn't load the scenarios. Reload to try again."))
+      Spec.assertEqWith s "cards" (Loading.problemFor Loading.MkCards both) Nothing

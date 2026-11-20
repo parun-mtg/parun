@@ -113,6 +113,11 @@ spec s = Spec.describe s "Parun.Web.Lobby" $ do
       Spec.assertBool s (Text.isInfixOf (Text.pack "Reading the decks") page) "reading"
       Spec.assertBool s (not (Text.isInfixOf (Text.pack "No deck matches") page)) "no empty match"
 
+    Spec.it s "says why the decks did not load in place of reading them" $ do
+      let page = Html.toText (Lobby.view Lobby.new {Lobby.problem = Just (Text.pack "Reload to try again.")})
+      Spec.assertBool s (Text.isInfixOf (Text.pack "role=\"alert\">Reload to try again.") page) "problem"
+      Spec.assertBool s (not (Text.isInfixOf (Text.pack "Reading the decks") page)) "not reading"
+
     Spec.it s "goes home from its Home button" $ do
       let page = Lobby.view lobby
       Spec.assertEq s (Html.labelled (Text.pack "button") (Text.pack "Home") page >>= \path -> Html.handler (Text.pack "click") path page) (Just Lobby.MkHome)

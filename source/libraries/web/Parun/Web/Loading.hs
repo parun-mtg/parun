@@ -66,10 +66,14 @@ demand need loading =
 -- | Why the first need that cannot load did not, said for the screen
 -- waiting on it.
 problem :: Loading -> Maybe Text.Text
-problem loading =
-  let said need = case need of
+problem loading = Maybe.listToMaybe (Maybe.mapMaybe (`problemFor` loading) [minBound .. maxBound])
+
+-- | Why this need did not load, if it cannot.
+problemFor :: Need -> Loading -> Maybe Text.Text
+problemFor need loading =
+  let said = case need of
         MkDecks -> "decks"
         MkCards -> "cards"
         MkRules -> "rules"
         MkScenarios -> "scenarios"
-   in List.find (\n -> Maybe.isJust (blocked n loading)) [minBound .. maxBound] >>= \n -> Just (Text.pack ("Couldn't load the " <> said n <> ". Reload to try again."))
+   in Text.pack ("Couldn't load the " <> said <> ". Reload to try again.") <$ blocked need loading
