@@ -5317,6 +5317,10 @@ installControl legal resolving controller source recipient duration ref mSlot gs
             -- controller rather than against Object.owner.
             --
             -- CR 611.2c: one stored effect over the frozen id set.
+            --
+            -- CR 611.2b: a duration that has yet to begin moves nothing now;
+            -- Engine.checkControlContinuity re-Sicks once a later instruction
+            -- begins it.
             let (ts, gs1) = Game.freshTimestamp gs
                 eff =
                   ContinuousEffect.MkContinuousEffect
@@ -5327,7 +5331,7 @@ installControl legal resolving controller source recipient duration ref mSlot gs
                       ContinuousEffect.affected = Affected.TheseObjects (Set.fromList targets)
                     }
                 sicken o = o {Object.sickness = Sickness.Sick}
-                moved = filter (\oid -> Projection.controllerOf oid gs /= Just recipient) targets
+                moved = if Expiry.unbegun expiry then [] else filter (\oid -> Projection.controllerOf oid gs /= Just recipient) targets
              in objectsBound
                   resolving
                   mSlot
