@@ -10,6 +10,7 @@ import qualified Data.Sequence as Seq
 import qualified Data.Set as Set
 import qualified Data.Text as Text
 import Numeric.Natural (Natural)
+import qualified Parun.DeckList as DeckList
 import qualified Parun.Types.CardName as CardName
 import qualified Parun.Types.CardType as CardType
 import qualified Parun.Types.Color as Color
@@ -27,9 +28,10 @@ data Builder = MkBuilder
     query :: CardIndex.Query,
     -- | The main deck: how many of each card.
     deck :: Map.Map CardName.CardName Natural,
-    -- | What follows a main-deck card's name on its line: its printing and
-    -- annotations, from a list opened.
-    suffixes :: Map.Map CardName.CardName Text.Text,
+    -- | A main-deck card's lines in a list opened, in order: what follows its
+    -- name on each (its printing and annotations) and how many that line
+    -- names; absent for a card on one bare line.
+    suffixes :: Map.Map CardName.CardName [(Text.Text, Natural)],
     -- | Every line of a list opened after its main deck, kept as written.
     rest :: [Text.Text],
     -- | The format the list's header names; empty for a casual deck, which
@@ -37,8 +39,9 @@ data Builder = MkBuilder
     format :: Text.Text,
     -- | Every shipped format, by name.
     formats :: [Text.Text],
-    -- | The fewest cards the format allows, once known.
-    least :: Maybe Natural,
+    -- | The fewest cards the format allows, and whether a commander counts
+    -- toward them, once known.
+    least :: Maybe (Natural, Bool),
     -- | Why the list as it stands breaks its format.
     problems :: [Text.Text],
     -- | The cards those problems are about.
@@ -51,8 +54,8 @@ data Builder = MkBuilder
     savedAs :: Maybe Text.Text,
     -- | Why the last save was refused.
     saveProblems :: [Text.Text],
-    -- | Whether the deck changed since it was last saved.
-    dirty :: Bool,
+    -- | The deck and format as last saved or opened.
+    baseline :: (Map.Map CardName.CardName Natural, Text.Text),
     -- | Whether leaving with changes is being asked about.
     leaving :: Bool
   }
@@ -78,7 +81,7 @@ data Event
 
 -- | An empty casual deck, among these formats, its cards not yet indexed.
 new :: [Text.Text] -> Builder
-new named = MkBuilder Nothing CardIndex.everything Map.empty Map.empty [] Text.empty named Nothing [] Set.empty Nothing Text.empty Nothing [] False False
+new named = MkBuilder Nothing CardIndex.everything Map.empty Map.empty [] Text.empty named Nothing [] Set.empty Nothing Text.empty Nothing [] (Map.empty, Text.empty) False
 
 -- | The builder after an event, the value typed being `typed`. Save, Leave,
 -- and Back with nothing changed are the shell's to carry out.
@@ -88,13 +91,11 @@ update event typed builder = case event of
   MkToggleColour c -> withQuery (\q -> q {CardIndex.wanted = toggle c (CardIndex.wanted q)})
   MkToggleKind k -> withQuery (\q -> q {CardIndex.kinds = toggle k (CardIndex.kinds q)})
   MkValue -> withQuery (\q -> q {CardIndex.valued = Read.readMaybe (Text.unpack typed)})
-  MkAdd card -> changed builder {deck = Map.insertWith (+) card 1 (deck builder)}
-  MkRemove card
-    | Map.member card (deck builder) -> changed builder {deck = Map.update (\n -> if n <= 1 then Nothing else Just (n - 1)) card (deck builder)}
-    | otherwise -> builder
+  MkAdd card -> builder {deck = Map.insertWith (+) card 1 (deck builder)}
+  MkRemove card -> builder {deck = Map.update (\n -> if n <= 1 then Nothing else Just (n - 1)) card (deck builder)}
   MkRead card -> builder {reading = Just card}
   MkCloseCard -> builder {reading = Nothing}
-  MkFormat -> changed builder {format = typed}
+  MkFormat -> builder {format = typed}
   MkSaveName -> builder {saveName = typed}
   MkSave -> builder
   MkBack -> builder {leaving = dirty builder}
@@ -102,26 +103,63 @@ update event typed builder = case event of
   MkLeave -> builder
   where
     withQuery f = builder {query = f (query builder)}
-    changed b = b {dirty = True}
     toggle :: (Ord a) => a -> Set.Set a -> Set.Set a
     toggle x xs = if Set.member x xs then Set.delete x xs else Set.insert x xs
 
 -- | The deck as a deck list: its format's header, if it names one, the
--- main deck by name, then the rest of a list opened, as written.
+-- main deck by name, then, after a blank line, the rest of a list opened,
+-- as written.
 listText :: Builder -> Text.Text
 listText builder =
   Text.unlines $
     [Text.pack "Format: " <> format builder | not (Text.null (format builder))]
-      <> [Text.pack (show n) <> Text.singleton ' ' <> CardName.unwrap card <> Map.findWithDefault Text.empty card (suffixes builder) | (card, n) <- List.sortOn (CardName.unwrap . fst) (Map.toList (deck builder))]
-      <> rest builder
+      <> [ Text.pack (show k) <> Text.singleton ' ' <> CardName.unwrap card <> suffix
+         | (card, n) <- List.sortOn (CardName.unwrap . fst) (Map.toList (deck builder)),
+           (suffix, k) <- fitted n (Map.findWithDefault [(Text.empty, n)] card (suffixes builder)),
+           k > 0
+         ]
+      <> (if null (rest builder) then [] else Text.empty : rest builder)
 
 -- | The builder with a check's problems, and the cards they name.
 checked :: [Text.Text] -> Set.Set CardName.CardName -> Builder -> Builder
 checked found named builder = builder {problems = found, flagged = named}
 
+-- | A card's lines holding this many copies: copies added go on the first,
+-- copies removed come off the last.
+fitted :: Natural -> [(Text.Text, Natural)] -> [(Text.Text, Natural)]
+fitted n parts
+  | n >= total = case parts of
+      (suffix, k) : more -> (suffix, k + n - total) : more
+      [] -> [(Text.empty, n)]
+  | otherwise = reverse (trimmed (total - n) (reverse parts))
+  where
+    total = sum (fmap snd parts)
+    trimmed d xs = case xs of
+      (suffix, k) : more
+        | k > d -> (suffix, k - d) : more
+        | otherwise -> trimmed (d - k) more
+      [] -> []
+
 -- | The builder once saved as this deck.
 saved :: Text.Text -> Builder -> Builder
-saved name builder = builder {savedAs = Just name, dirty = False, saveProblems = []}
+saved name builder = builder {savedAs = Just name, baseline = (deck builder, format builder), saveProblems = []}
+
+-- | The sections of a list opened beside its main deck, each with how many
+-- cards its lines name, in the order written.
+kept :: Builder -> [(DeckList.Section, Natural)]
+kept builder =
+  let step acc raw = case (DeckList.sectionNamed line, acc) of
+        (Just section, _) -> (section, 0) : acc
+        (Nothing, (section, n) : older) | not (Text.null line), Just (more, _, _, _) <- DeckList.entryOf line -> (section, n + more) : older
+        _ -> acc
+        where
+          line = Text.strip raw
+   in reverse (List.foldl' step [] (rest builder))
+
+-- | Whether the deck or its format differ from when it was last saved or
+-- opened.
+dirty :: Builder -> Bool
+dirty builder = (deck builder, format builder) /= baseline builder
 
 -- | The saved deck a save writes, given the saved decks' names: the one
 -- this deck was saved as, or else the one the typed name makes, unless it
@@ -194,7 +232,13 @@ view builder =
                     ]
             | not (null these)
             ]
-      counted = maybe (show total <> " cards") (\n -> show total <> " / " <> show n) (least builder)
+      -- CR 903.5a / 903.12d: a commander counts toward the size of a deck whose
+      -- format designates one.
+      commanders = sum [n | (DeckList.Commander, n) <- kept builder]
+      counted = case least builder of
+        Nothing -> show total <> " cards"
+        Just (n, withCommander) -> show (if withCommander then total + commanders else total) <> " / " <> show n
+      keptNote = [Element.el "p" ["kept"] [] [Element.string "Also kept: ", Element.text (Text.intercalate (Text.pack ", ") [DeckList.heading part <> Text.pack " \x00b7 " <> Text.pack (show n) | (part, n) <- kept builder])] | not (null (kept builder))]
       reading' = do
         card <- reading builder
         let found = List.find ((== card) . CardIndex.name) (foldMap Foldable.toList (index builder))
@@ -223,7 +267,7 @@ view builder =
                 Element.el "label" ["sr-only"] [Element.attr "for" (Text.pack "builder-format")] [Element.string "Format"],
                 Element.el "select" ["format"] [Element.attr "id" (Text.pack "builder-format"), Element.on "change" MkFormat] (option (format builder) (Text.empty, Text.pack "Casual (no format)") : [option (format builder) (f, Lobby.titled f) | f <- formats builder]),
                 Element.el "label" ["sr-only"] [Element.attr "for" (Text.pack "builder-name")] [Element.string "Deck name"],
-                Element.el "input" ["builder-name"] ([Element.attr "id" (Text.pack "builder-name"), Element.attr "type" (Text.pack "text"), Element.attr "autocomplete" (Text.pack "off"), Element.attr "placeholder" (Text.pack "Deck name"), Element.on "input" MkSaveName] <> [Element.attr "disabled" Text.empty | Maybe.isJust (savedAs builder)]) [],
+                Element.el "input" ["builder-name"] ([Element.attr "id" (Text.pack "builder-name"), Element.attr "type" (Text.pack "text"), Element.attr "autocomplete" (Text.pack "off"), Element.attr "placeholder" (Text.pack "Deck name"), Element.attr "value" (saveName builder), Element.on "input" MkSaveName] <> [Element.attr "disabled" Text.empty | Maybe.isJust (savedAs builder)]) [],
                 Element.button ["primary"] MkSave [Element.string "Save"]
               ]
                 <> [Element.el "span" ["saved"] [] [Element.string "Saved"] | Maybe.isJust (savedAs builder), not (dirty builder)]
@@ -246,6 +290,7 @@ view builder =
                     <> results,
                 Element.el "section" ["builder-deck"] [Element.attr "aria-label" (Text.pack "Deck")] $
                   [Element.el "h2" [] [] [Element.string counted], Lobby.curve lines']
+                    <> keptNote
                     <> [Element.el "ul" ["problems"] [Element.attr "role" (Text.pack "alert")] [Element.el "li" [] [] [Element.text p] | p <- problems builder] | not (null (problems builder))]
                     <> section "Creatures" Lobby.MkCreature
                     <> section "Spells" Lobby.MkSpell
@@ -256,3 +301,39 @@ view builder =
         ]
           <> Maybe.maybeToList reading'
           <> leave
+
+-- | The builder on a deck list: the saved deck it is, if one, the name to
+-- offer for saving, and its text. The main deck becomes counts, each card's
+-- printing and annotations its suffix, and every other section's lines the
+-- rest, as written; blank lines in the main deck drop.
+open :: Maybe Text.Text -> Text.Text -> Text.Text -> Builder -> Builder
+open savedName offered text builder =
+  let step (inMain, fmt, counts, after, others) raw =
+        let line = Text.strip raw
+         in case (DeckList.sectionNamed line, DeckList.formatNamed line) of
+              (Just DeckList.Main, _) -> (True, fmt, counts, after, others)
+              (Just _, _) -> (False, fmt, counts, after, raw : others)
+              (_, Just named) -> (inMain, Maybe.fromMaybe Text.empty named, counts, after, others)
+              _
+                | not inMain -> (inMain, fmt, counts, after, raw : others)
+                | Text.null line -> (inMain, fmt, counts, after, others)
+                | Just (n, card, at, notes) <- DeckList.entryOf line ->
+                    (inMain, fmt, Map.insertWith (+) card n counts, Map.insertWith (flip (<>)) card [(suffixOf at notes, n)] after, others)
+                | otherwise -> (inMain, fmt, counts, after, others)
+      suffixOf at notes = foldMap (\(set, number) -> Text.pack " (" <> set <> Text.pack ") " <> number) at <> foldMap (\note -> Text.pack " {" <> note <> Text.singleton '}') notes
+      (_, format', deck', suffixes', others') = List.foldl' step (True, Text.empty, Map.empty, Map.empty, []) (Text.lines text)
+   in builder
+        { format = format',
+          deck = deck',
+          suffixes = Map.filter (\parts -> length parts > 1 || not (all (Text.null . fst) parts)) suffixes',
+          rest = reverse (dropWhile (Text.null . Text.strip) others'),
+          savedAs = savedName,
+          saveName = offered,
+          baseline = (deck', format'),
+          problems = [],
+          flagged = Set.empty,
+          least = Nothing,
+          reading = Nothing,
+          saveProblems = [],
+          leaving = False
+        }

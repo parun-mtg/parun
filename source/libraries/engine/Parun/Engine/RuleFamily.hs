@@ -15,6 +15,16 @@ minimumDeckSize family = case family of
   RuleFamily.Brawl -> 60
   RuleFamily.CommanderDraft -> 60
 
+-- | Whether a deck of this family designates a commander, which counts
+-- toward its size: CR 903.5a, 903.12d and 903.13f(1).
+designatesCommander :: RuleFamily.RuleFamily -> Bool
+designatesCommander family = case family of
+  RuleFamily.Constructed -> False
+  RuleFamily.Limited -> False
+  RuleFamily.Commander -> True
+  RuleFamily.Brawl -> True
+  RuleFamily.CommanderDraft -> True
+
 -- | Whether a deck of this family is built from cards its player drafted, so
 -- that its sideboard is what the player drafted and left out (CR 100.4b,
 -- 903.13a; docs/decisions.md, "Which cards a player drafted that aren't in

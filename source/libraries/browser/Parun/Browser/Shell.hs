@@ -99,7 +99,8 @@ data Loaded = MkLoaded
 data Next
   = MkToHome
   | MkToLobby
-  | MkToBuilder
+  | -- | The builder, on this deck if any.
+    MkToBuilder (Maybe Text.Text)
   | MkToReplays
   | -- | This scenario's replay, at this position.
     MkToReplay Text.Text Natural
@@ -140,7 +141,7 @@ follow :: Shell -> Next -> IO ()
 follow shell next = case next of
   MkToHome -> home shell Home.new >>= follow shell . afterHome
   MkToLobby -> lobby shell >>= follow shell
-  MkToBuilder -> builder shell >>= follow shell
+  MkToBuilder deck -> builder shell deck >>= follow shell
   MkToReplays -> replays shell >>= follow shell
   MkToReplay name at -> replay shell name at >>= follow shell
   MkToPlayOn name at -> playOnFrom shell name at >>= follow shell
@@ -183,7 +184,8 @@ lobby shell = do
       case woke of
         MkTapped (Screen.MkLobby event) value -> case event of
           Lobby.MkHome -> pure MkToHome
-          Lobby.MkOpenBuilder -> pure MkToBuilder
+          Lobby.MkOpenBuilder -> pure (MkToBuilder Nothing)
+          Lobby.MkEdit name -> pure (MkToBuilder (Just name))
           Lobby.MkStart | Right mine <- Lobby.startable current -> do
             others <- traverse (maybe (randomOf (Lobby.opponents current)) (pure . Just)) (Lobby.theirs current)
             files <- Maybe.fromMaybe Map.empty <$> decksRead shell
@@ -281,15 +283,22 @@ lineOf root byFile n name = case LazyMap.lookup (Registry.cardPath root (Registr
          in Lobby.MkLine n name (Face.manaCost face) (Quantity.manaValueOf face) kind
   _ -> Lobby.MkLine n name Nothing 0 Lobby.MkSpell
 
--- | The deck builder until it leads back to the lobby: its cards indexed
--- as they load, its list checked after each change once the registry is
--- built, and saved as a lobby deck.
-builder :: Shell -> IO Next
-builder shell = do
+-- | The deck builder until it leads back to the lobby, on this deck if any
+-- (a saved one to save over, any other as a copy): its cards indexed as they
+-- load, its list checked after each change once the registry is built, and
+-- saved as a lobby deck.
+builder :: Shell -> Maybe Text.Text -> IO Next
+builder shell deck = do
   need shell Loading.MkDecks
   need shell Loading.MkCards
   IORef.modifyIORef' (loaded shell) $ \l -> l {indexWanted = True}
-  go (Builder.new []) Nothing
+  files <- Maybe.fromMaybe Map.empty <$> decksRead shell
+  initial <- case deck >>= \name -> (,) name <$> Map.lookup name files of
+    Just (name, path) -> do
+      contents <- Encoding.decodeUtf8Lenient <$> ByteString.readFile path
+      pure (Builder.open (if Lobby.isSaved name then Just name else Nothing) (snd (Lobby.describe name)) contents (Builder.new []))
+    Nothing -> pure (Builder.new [])
+  go initial Nothing
   where
     -- The builder, and the list and format it was last checked at.
     go shown lastChecked = do

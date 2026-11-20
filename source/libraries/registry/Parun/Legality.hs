@@ -480,9 +480,11 @@ namedCard violation = case violation of
   Violation.PregameExileMismatch exiled _ -> Just exiled
 
 -- | The fewest cards a deck of the shipped format a name means may hold
--- (RuleFamily.Engine.minimumDeckSize); none for a name meaning none.
-minimumFor :: Text.Text -> IO (Maybe Natural.Natural)
-minimumFor name = either (const Nothing) (Just . RuleFamily.Engine.minimumDeckSize . Format.rules) <$> shipped name
+-- (RuleFamily.Engine.minimumDeckSize), and whether its commander counts
+-- toward them (RuleFamily.Engine.designatesCommander); none for a name
+-- meaning none.
+minimumFor :: Text.Text -> IO (Maybe (Natural.Natural, Bool))
+minimumFor name = either (const Nothing) (\format -> Just (RuleFamily.Engine.minimumDeckSize (Format.rules format), RuleFamily.Engine.designatesCommander (Format.rules format))) <$> shipped name
 
 -- | A violation as a line a person can read.
 explain :: Violation.Violation -> Text.Text
