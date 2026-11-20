@@ -1844,8 +1844,9 @@ manaSourcesGiven inFlight capacity grants pcs pid gs =
 -- permission adds to the mana, Nothing for none. Taken under a grant, the mana
 -- carries the grant's restriction.
 --
--- Not implemented: a choice between two grants whose restrictions differ; the
--- first is taken (#5459).
+-- Unprinted: a choice between two grants whose restrictions differ; the first
+-- is taken. Parun.CardSpec's "CR 106.6 no card writes a tap-for-mana grant
+-- naming activations, or a second restriction" keeps it out of card data.
 routeAccess :: (Activator.Activator -> Bool) -> [Maybe ManaRestriction.ManaRestriction] -> Cost Keyword.Keyword -> Maybe (ActivatedAbility.ActivatedAbility c g) -> Maybe (Maybe ManaRestriction.ManaRestriction)
 routeAccess mayTake borrowed cost ability
   | mayTake (maybe (Activator.Related PlayerRelation.You) ActivatedAbility.activator ability) = Just Nothing
@@ -1866,9 +1867,12 @@ restrictUnit extra unit = unit {ManaUnit.restriction = Just (meetRestriction ext
 -- `admitsUnder` reads them. Parun.ScenarioSpec's "CR 106.6 mana alice taps from
 -- bob's Workshop under Piracy" proves the Workshop's half survives.
 --
--- Not implemented: an exact conjunction where both name activations, one by
--- keyword and the other by filter, or a keyword each under two prohibitions;
--- the activation half is refused instead (#5459).
+-- Unprinted: an exact conjunction where both name activations, one by keyword
+-- and the other by filter, or a keyword each under two prohibitions; the
+-- activation half is refused instead. Only a grant's restriction meets another,
+-- and Parun.CardSpec's "CR 106.6 no card writes a tap-for-mana grant naming
+-- activations, or a second restriction" keeps one naming activations out of
+-- card data.
 meetRestriction :: ManaRestriction.ManaRestriction -> Maybe ManaRestriction.ManaRestriction -> ManaRestriction.ManaRestriction
 meetRestriction one = maybe one (\other -> if ManaRestriction.prohibits one then (if ManaRestriction.prohibits other then eitherProhibits one other else excluding other one) else (if ManaRestriction.prohibits other then excluding one other else alongside one other))
   where

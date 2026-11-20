@@ -2088,6 +2088,26 @@ cardCastLimitMovable card =
         _ -> False
    in any offends rows
 
+-- The CR 106.6 restrictions a face's CR 602.2 grants to tap another player's
+-- permanents for mana carry (Piracy), Nothing for an unrestricted grant.
+cardTapForManaRestrictions :: Face.Face Card.Type.Card -> [Maybe ManaRestriction.ManaRestriction]
+cardTapForManaRestrictions card =
+  let rows =
+        fmap PlayerStaticAbility.effect (Face.playerAbilities card <> grantedPlayerAbilities card)
+          <> [effect | Effect.AffectPlayers (AffectPlayers.MkAffectPlayers _ _ effect) <- cardAuthoredEffects card]
+   in [TapForMana.restriction grant | PlayerEffect.MayTapForMana grant <- rows]
+
+-- Unprinted: a grant whose restriction names activations, which
+-- Parun.Engine.Mana.meetRestriction can't always conjoin with the land's own.
+tapForManaNamesActivations :: ManaRestriction.ManaRestriction -> Bool
+tapForManaNamesActivations r = Maybe.isJust (ManaRestriction.activations r) || Maybe.isJust (ManaRestriction.keywordActivations r)
+
+-- Unprinted: two grants with different restrictions, between which
+-- Parun.Engine.Mana.routeAccess takes the first instead of asking: do the
+-- faces' restricted grants carry more than one distinct restriction?
+tapForManaRestrictionsDiffer :: [Face.Face Card.Type.Card] -> Bool
+tapForManaRestrictionsDiffer faces = Set.size (Set.fromList (concatMap (Maybe.catMaybes . cardTapForManaRestrictions) faces)) > 1
+
 -- CR 118.6: does any clause state a cost DESCRIBED in terms of another object's
 -- mana cost (Parun.Types.CostBasis) and a mana part of its own beside it?
 --
@@ -6900,6 +6920,30 @@ lintSpec s registry corpus = Spec.describe s "Lint" $ do
         doctored = face {Face.playerAbilities = fmap (\ability -> ability {PlayerStaticAbility.effect = costly (PlayerStaticAbility.effect ability)}) (Face.playerAbilities face)}
     Spec.assertBool s (not (cardCastLimitMovable face)) "Phyrexian Censor's non-Phyrexian spells are accepted"
     Spec.assertBool s (cardCastLimitMovable doctored) "a limit on spells with mana value 4 or greater is rejected"
+  -- Unprinted: a CR 602.2 grant to tap another player's permanents for mana
+  -- whose CR 106.6 restriction names activations, or a second grant whose
+  -- restriction differs (Parun.Engine.Mana's routeAccess and meetRestriction):
+  -- the corpus half.
+  Spec.it s "CR 106.6 no card writes a tap-for-mana grant naming activations, or a second restriction" $ do
+    ps <- S.allPrintings s corpus
+    let faces = concatMap (concatMap withMinted . Card.Type.faces . Printing.card) ps
+        naming = anyFaceOrMinted (any (maybe False tapForManaNamesActivations) . cardTapForManaRestrictions) . Printing.card
+    Spec.assertBool s (not (all (null . cardTapForManaRestrictions) faces)) "the pool has a tap-for-mana grant"
+    Spec.assertEqWith s "no grant naming activations" (fmap (S.nameOf . Printing.card) (filter naming ps)) []
+    Spec.assertBool s (not (tapForManaRestrictionsDiffer faces)) "the pool's grants carry one restriction"
+  -- And the rejecting direction, against Piracy misauthored on purpose.
+  Spec.it s "the lint itself catches a tap-for-mana grant naming activations, and a second restriction" $ do
+    piracy <- S.printingOf s registry "Piracy"
+    let face = S.combinedFace piracy
+        restricted r effect = case effect of
+          Effect.AffectPlayers affect | PlayerEffect.MayTapForMana grant <- AffectPlayers.effect affect -> Effect.AffectPlayers affect {AffectPlayers.effect = PlayerEffect.MayTapForMana grant {TapForMana.restriction = Just r}}
+          other -> other
+        doctor r = face {Face.spell = (Face.spell face) {Modal.modes = fmap (\mode -> mode {Mode.clauses = fmap (\clause -> clause {Clause.effects = fmap (restricted r) (Clause.effects clause)}) (Mode.clauses mode)}) (Modal.modes (Face.spell face))}}
+        harbor = doctor (ManaRestriction.MkManaRestriction Nothing (Just (Filter.Type.And [])) Nothing Nothing Nothing False True)
+        names = any (maybe False tapForManaNamesActivations) . cardTapForManaRestrictions
+    Spec.assertBool s (not (names face) && not (tapForManaRestrictionsDiffer [face, face])) "Piracy, its restriction naming casts alone, is accepted, twice over"
+    Spec.assertBool s (names harbor) "a grant whose mana only activates abilities is rejected"
+    Spec.assertBool s (tapForManaRestrictionsDiffer [face, doctor (ManaRestriction.MkManaRestriction (Just (Filter.Type.HasCardType CardType.Artifact)) Nothing Nothing Nothing Nothing False True)]) "Piracy beside a grant whose mana only casts artifact spells is rejected"
   -- Parun.Engine.Cost.tapForManaWith adds a clause's shares as one, so an
   -- addition whose colour is chosen is its clause's only one: the corpus half.
   Spec.it s "CR 608.2c an addition choosing its source's colour is its clause's only addition" $ do
