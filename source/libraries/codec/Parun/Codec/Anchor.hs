@@ -8,6 +8,7 @@ import qualified Parun.JsonCodec.Codec as Codec
 import qualified Parun.JsonCodec.Common as Common
 import qualified Parun.JsonCodec.Fields as Fields
 import qualified Parun.Types.Anchor as Anchor
+import qualified Parun.Types.AnchorPool as AnchorPool
 import qualified Parun.Types.Holder as Holder.Type
 import qualified Parun.Types.SelfInclusion as SelfInclusion
 import qualified Parun.Types.SlotName as SlotName.Type
@@ -20,11 +21,15 @@ codec filterCodec =
     [ Arm.payload "Bound" bound (uncurry Anchor.Bound) (\x -> case x of Anchor.Bound h y -> Just (h, y); _ -> Nothing),
       Arm.nullary "Evaluated" Anchor.Evaluated,
       Arm.nullary "Source" Anchor.Source,
-      Arm.payload "AnyPermanent" filterCodec (Anchor.AnyPermanent SelfInclusion.IncludesCandidate) (\x -> case x of Anchor.AnyPermanent SelfInclusion.IncludesCandidate y -> Just y; _ -> Nothing),
-      Arm.payload "AnyOtherPermanent" filterCodec (Anchor.AnyPermanent SelfInclusion.ExcludesCandidate) (\x -> case x of Anchor.AnyPermanent SelfInclusion.ExcludesCandidate y -> Just y; _ -> Nothing),
+      anyObject "AnyPermanent" AnchorPool.Permanents SelfInclusion.IncludesCandidate,
+      anyObject "AnyOtherPermanent" AnchorPool.Permanents SelfInclusion.ExcludesCandidate,
+      anyObject "AnyExiledCard" AnchorPool.ExiledCards SelfInclusion.IncludesCandidate,
+      anyObject "AnyOtherExiledCard" AnchorPool.ExiledCards SelfInclusion.ExcludesCandidate,
       Arm.nullary "YourCommander" Anchor.YourCommander,
       Arm.nullary "Host" Anchor.Host
     ]
+  where
+    anyObject tag pool inclusion = Arm.payload tag filterCodec (Anchor.AnyObject pool inclusion) (\x -> case x of Anchor.AnyObject p i y | p == pool, i == inclusion -> Just y; _ -> Nothing)
 
 -- | The slot, and the holder its members are narrowed by, absent for the whole group.
 bound :: Codec.Codec (Maybe Holder.Type.Holder, SlotName.Type.SlotName)
@@ -39,7 +44,9 @@ tagOf x = case x of
   Anchor.Bound {} -> "Bound"
   Anchor.Evaluated {} -> "Evaluated"
   Anchor.Source {} -> "Source"
-  Anchor.AnyPermanent SelfInclusion.IncludesCandidate _ -> "AnyPermanent"
-  Anchor.AnyPermanent SelfInclusion.ExcludesCandidate _ -> "AnyOtherPermanent"
+  Anchor.AnyObject AnchorPool.Permanents SelfInclusion.IncludesCandidate _ -> "AnyPermanent"
+  Anchor.AnyObject AnchorPool.Permanents SelfInclusion.ExcludesCandidate _ -> "AnyOtherPermanent"
+  Anchor.AnyObject AnchorPool.ExiledCards SelfInclusion.IncludesCandidate _ -> "AnyExiledCard"
+  Anchor.AnyObject AnchorPool.ExiledCards SelfInclusion.ExcludesCandidate _ -> "AnyOtherExiledCard"
   Anchor.YourCommander {} -> "YourCommander"
   Anchor.Host {} -> "Host"

@@ -62,6 +62,7 @@ import qualified Parun.Types.AimedAt as AimedAt
 import qualified Parun.Types.AloneUnless as AloneUnless
 import qualified Parun.Types.AlternativeCost as AlternativeCost
 import qualified Parun.Types.Anchor as Anchor
+import qualified Parun.Types.AnchorPool as AnchorPool
 import qualified Parun.Types.AttachTarget as AttachTarget
 import qualified Parun.Types.AttackCost as AttackCost
 import qualified Parun.Types.AttackCostScope as AttackCostScope
@@ -1259,10 +1260,10 @@ decodedAtoms tag wanted value =
 
 -- The CR 709.4a atoms Parun.Engine.Projection.framedBySlots answers, in an
 -- encoding: Filter.Shares Name at a Bound anchor (Filter.Context.slotNames) or
--- Name, Controller, Color or CreatureType at AnyPermanent
+-- Name, Controller, Color, CreatureType or CardType at AnyObject's Permanents
 -- (Filter.Context.battlefieldViews).
 framedNameAtoms :: Value.Value -> Int
-framedNameAtoms = decodedAtoms "Shares" (\atom -> case atom of Filter.Type.Shares Trait.Name (Anchor.Bound _ _) -> True; Filter.Type.Shares Trait.Name (Anchor.AnyPermanent _ _) -> True; Filter.Type.Shares Trait.Controller (Anchor.AnyPermanent _ _) -> True; Filter.Type.Shares Trait.Color (Anchor.AnyPermanent _ _) -> True; Filter.Type.Shares Trait.CreatureType (Anchor.AnyPermanent _ _) -> True; _ -> False)
+framedNameAtoms = decodedAtoms "Shares" (\atom -> case atom of Filter.Type.Shares Trait.Name (Anchor.Bound _ _) -> True; Filter.Type.Shares Trait.Name (Anchor.AnyObject AnchorPool.Permanents _ _) -> True; Filter.Type.Shares Trait.Controller (Anchor.AnyObject AnchorPool.Permanents _ _) -> True; Filter.Type.Shares Trait.Color (Anchor.AnyObject AnchorPool.Permanents _ _) -> True; Filter.Type.Shares Trait.CreatureType (Anchor.AnyObject AnchorPool.Permanents _ _) -> True; Filter.Type.Shares (Trait.CardType _) (Anchor.AnyObject AnchorPool.Permanents _ _) -> True; _ -> False)
 
 -- How many CR 709.4a atoms this card carries in one of the ADMITTED positions
 -- -- a MODE's target slot filter (Harness the Storm), a CR 701.23 search filter
@@ -2844,9 +2845,9 @@ filterPositionLintSpec s registry corpus = Spec.describe s "Lint" $ do
             { Face.spell =
                 Mint.oneModeTargeting (Map.singleton slot (TargetSlot.required Pool.Creatures (Just (Filter.Type.And [Filter.Type.Not atom])))) Seq.empty
             }
-    Spec.assertEqWith s "a planted Shares Owner AnyPermanent is unread" (unreadAnchorCounts (encodedFace (plantedWith (Filter.Type.Shares Trait.Owner (Anchor.AnyPermanent SelfInclusion.IncludesCandidate (Filter.Type.And [])))))) (1, 1)
+    Spec.assertEqWith s "a planted Shares Owner AnyPermanent is unread" (unreadAnchorCounts (encodedFace (plantedWith (Filter.Type.Shares Trait.Owner (Anchor.AnyObject AnchorPool.Permanents SelfInclusion.IncludesCandidate (Filter.Type.And [])))))) (1, 1)
     Spec.assertEqWith s "a planted Shares Color Bound is read" (unreadAnchorCounts (encodedFace (plantedWith (Filter.Type.Shares Trait.Color (Anchor.Bound Nothing slot))))) (0, 1)
-    Spec.assertEqWith s "a planted IsAttachedTo AnyPermanent is unread" (unreadAnchorCounts (encodedFace (plantedWith (Filter.Type.IsAttachedTo (Anchor.AnyPermanent SelfInclusion.IncludesCandidate (Filter.Type.And [])))))) (1, 1)
+    Spec.assertEqWith s "a planted IsAttachedTo AnyPermanent is unread" (unreadAnchorCounts (encodedFace (plantedWith (Filter.Type.IsAttachedTo (Anchor.AnyObject AnchorPool.Permanents SelfInclusion.IncludesCandidate (Filter.Type.And [])))))) (1, 1)
     Spec.assertEqWith s "a planted IsAttachedTo Bound is read" (unreadAnchorCounts (encodedFace (plantedWith (Filter.Type.IsAttachedTo (Anchor.Bound Nothing slot))))) (0, 1)
     Spec.assertEqWith s "a planted Shares Name Bound is read" (unreadAnchorCounts (encodedFace (plantedWith (Filter.Type.Shares Trait.Name (Anchor.Bound Nothing slot))))) (0, 1)
     Spec.assertEqWith s "a planted Shares CreatureType at a Bound narrowed to the candidate's controller is read" (unreadAnchorCounts (encodedFace (plantedWith (Filter.Type.Shares Trait.CreatureType (Anchor.Bound (Just Holder.Controller) slot))))) (0, 1)
@@ -3060,7 +3061,7 @@ filterPositionLintSpec s registry corpus = Spec.describe s "Lint" $ do
         boundAtom = bury (Filter.Type.IsBound slot)
         hostAtom = bury Filter.Type.IsHostOfSource
         nameAtom = bury (Filter.Type.Shares Trait.Name (Anchor.Bound Nothing slot))
-        groupAtom = bury (Filter.Type.Shares Trait.Name (Anchor.AnyPermanent SelfInclusion.IncludesCandidate creatures))
+        groupAtom = bury (Filter.Type.Shares Trait.Name (Anchor.AnyObject AnchorPool.Permanents SelfInclusion.IncludesCandidate creatures))
         keywordOf f = Keyword.Hexproof (Just f)
         kindOf f = CounterKind.Keyword (keywordOf f)
         plain = CounterKind.PlusOnePlusOne

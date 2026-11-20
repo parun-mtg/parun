@@ -31,6 +31,7 @@ import qualified Parun.Types.ActivationCriteria as ActivationCriteria
 import qualified Parun.Types.Actor as Actor
 import qualified Parun.Types.AloneAmong as AloneAmong
 import qualified Parun.Types.Anchor as Anchor
+import qualified Parun.Types.AnchorPool as AnchorPool
 import qualified Parun.Types.BlockRole as BlockRole
 import qualified Parun.Types.BlockStatus as BlockStatus
 import qualified Parun.Types.BoundMeasure as BoundMeasure
@@ -2016,10 +2017,15 @@ data Context = MkContext
     -- read: with no other candidate to compare against, every comparison holds.
     candidateMeasures :: Maybe (Map.Map ObjectId.ObjectId View),
     -- CR 109.2: the projected view of every permanent, for Shares at
-    -- Anchor.AnyPermanent. Filled lazily by Parun.Engine.Projection.framedBySlots;
+    -- Anchor.AnyObject's Permanents. Filled lazily by Parun.Engine.Projection.framedBySlots;
     -- empty in contextFor below, so the atom is vacuously False there, and
     -- Parun.FilterPositionLintSpec keeps a card to the positions it is filled in.
     battlefieldViews :: Seq.Seq View,
+    -- CR 406.1: the view of every card in exile, for Shares at
+    -- Anchor.AnyObject's ExiledCards. Filled lazily where sourceExiled is, so
+    -- a nested IsExiledWithSource reads the source's pile; empty in contextFor
+    -- below, so the atom is vacuously False wherever no source frames the read.
+    exiledViews :: Seq.Seq View,
     -- | CR 107.2 / 208.3: an object's missing power or toughness reads 0 in
     -- Parun.Engine.Quantity's Measure arm rather than Nothing. Set by
     -- Parun.Engine.Condition.holds and Parun.Engine.Resolve.Slots.effectContext,
@@ -2095,7 +2101,7 @@ data Context = MkContext
 -- here owes both halves of the same pair: which way its unfilled read answers,
 -- and what holds a card to the positions that fill it.
 contextFor :: Teams.Teams -> Maybe PlayerId.PlayerId -> Maybe ObjectId.ObjectId -> Context
-contextFor t p s = MkContext {teams = t, perspective = p, source = s, sourceMeasures = Map.empty, sourceColors = Set.empty, sourceSectors = Set.empty, sourceNames = Set.empty, sourceDealtDamage = Set.empty, sourceDealtDamageEarlier = Set.empty, sourceCrewed = Set.empty, sourceBefore = Nothing, slotAmount = Nothing, defendingPlayers = [], activePlayers = [], recipient = Nothing, shares = Map.empty, slotObjects = Map.empty, cantPayKeywordCost = Map.empty, slotNames = Map.empty, slotControllers = Map.empty, slotHostControllers = Map.empty, subjectHostCardTypes = Set.empty, slotCreatureTypes = Map.empty, slotCardTypes = Map.empty, slotColors = Map.empty, slotMeasures = Map.empty, slotPlayers = Map.empty, boundAmounts = Map.empty, slotStickers = Map.empty, slotVotes = Map.empty, boundUnannounced = False, sourceAttachedTo = Nothing, sourceEnchantedPlayer = Nothing, evaluated = Nothing, evaluatedView = Nothing, commanderCreatureTypes = Set.empty, sourceEntrants = Set.empty, sourceCountered = Map.empty, sourceOwner = Nothing, sourceChosenNames = Map.empty, carrierChosenPlayer = Nothing, carrierStickers = Seq.empty, aimingController = Nothing, sourceChosenColors = Set.empty, draftNotes = Map.empty, exiledBeforeGame = Map.empty, playerCounters = Map.empty, sourceChosenSubtype = Nothing, sourceChosenCardType = Nothing, sourceChosenNumber = Nothing, sourceChosenObjects = Set.empty, sourceLastExiled = Nothing, sourceExiled = Map.empty, sourceAcquisition = Nothing, reader = Nothing, candidateMeasures = Nothing, battlefieldViews = Seq.empty, zeroMissingPowerToughness = False, asCast = const (Just 0)}
+contextFor t p s = MkContext {teams = t, perspective = p, source = s, sourceMeasures = Map.empty, sourceColors = Set.empty, sourceSectors = Set.empty, sourceNames = Set.empty, sourceDealtDamage = Set.empty, sourceDealtDamageEarlier = Set.empty, sourceCrewed = Set.empty, sourceBefore = Nothing, slotAmount = Nothing, defendingPlayers = [], activePlayers = [], recipient = Nothing, shares = Map.empty, slotObjects = Map.empty, cantPayKeywordCost = Map.empty, slotNames = Map.empty, slotControllers = Map.empty, slotHostControllers = Map.empty, subjectHostCardTypes = Set.empty, slotCreatureTypes = Map.empty, slotCardTypes = Map.empty, slotColors = Map.empty, slotMeasures = Map.empty, slotPlayers = Map.empty, boundAmounts = Map.empty, slotStickers = Map.empty, slotVotes = Map.empty, boundUnannounced = False, sourceAttachedTo = Nothing, sourceEnchantedPlayer = Nothing, evaluated = Nothing, evaluatedView = Nothing, commanderCreatureTypes = Set.empty, sourceEntrants = Set.empty, sourceCountered = Map.empty, sourceOwner = Nothing, sourceChosenNames = Map.empty, carrierChosenPlayer = Nothing, carrierStickers = Seq.empty, aimingController = Nothing, sourceChosenColors = Set.empty, draftNotes = Map.empty, exiledBeforeGame = Map.empty, playerCounters = Map.empty, sourceChosenSubtype = Nothing, sourceChosenCardType = Nothing, sourceChosenNumber = Nothing, sourceChosenObjects = Set.empty, sourceLastExiled = Nothing, sourceExiled = Map.empty, sourceAcquisition = Nothing, reader = Nothing, candidateMeasures = Nothing, battlefieldViews = Seq.empty, exiledViews = Seq.empty, zeroMissingPowerToughness = False, asCast = const (Just 0)}
 
 -- contextFor over a game: its teams (CR 102.4), its active players (CR 102.1,
 -- 805.4a), its draft notes (CR 905.2b), what was exiled before it (CR
@@ -2338,14 +2344,18 @@ sharesAnchored trait anchor = case anchor of
     Trait.Sector -> Nothing
     Trait.CardType _ -> Nothing
     Trait.LandType -> Nothing
-  -- Some permanent the nest admits, matched in the OUTER context, so its "you"
-  -- and "another" are the outer match's (Pattern Matcher's "another creature
-  -- you control"). Vacuously False where nothing fills battlefieldViews.
-  -- ExcludesCandidate drops the candidate's own view, "another permanent you
-  -- control" of a battlefield candidate; the scenarios named for Yenna,
-  -- Redtooth Regent prove it.
-  Anchor.AnyPermanent inclusion group ->
-    let peerShares traitOf = Just (\context view -> any (\permanent -> eligible view permanent && matches context permanent group && meets (traitOf view) (traitOf permanent)) (battlefieldViews context))
+  -- Some object of the pool the nest admits, matched in the OUTER context, so
+  -- its "you" and "another" are the outer match's (Pattern Matcher's "another
+  -- creature you control"), and an IsExiledWithSource names the outer source's
+  -- pile (Cemetery Illuminator's "a card exiled with this creature"). Vacuously
+  -- False where nothing fills the pool's views. ExcludesCandidate drops the
+  -- candidate's own view, "another permanent you control" of a battlefield
+  -- candidate; the scenarios named for Yenna, Redtooth Regent prove it.
+  Anchor.AnyObject pool inclusion group ->
+    let pooled context = case pool of
+          AnchorPool.Permanents -> battlefieldViews context
+          AnchorPool.ExiledCards -> exiledViews context
+        peerShares traitOf = Just (\context view -> any (\permanent -> eligible view permanent && matches context permanent group && meets (traitOf view) (traitOf permanent)) (pooled context))
         eligible view permanent = case inclusion of
           SelfInclusion.IncludesCandidate -> True
           SelfInclusion.ExcludesCandidate -> case identity view of
@@ -2362,9 +2372,11 @@ sharesAnchored trait anchor = case anchor of
           -- CR 205.3m, off each side's subtypes as LandType reads them. The scenario
           -- named for Radagast the Brown proves it.
           Trait.CreatureType -> peerShares creatureTypes
+          -- CR 205.2a, among the named types as at Bound. The scenarios named
+          -- for Cemetery Illuminator prove it.
+          Trait.CardType among -> peerShares (cardTypesAmong among)
           Trait.Owner -> Nothing
           Trait.Sector -> Nothing
-          Trait.CardType _ -> Nothing
   -- A commander with no creature type shares none, and neither does a player
   -- with no commander: both leave the set empty.
   Anchor.YourCommander -> case trait of
@@ -2417,7 +2429,7 @@ attachedAnchored anchor = case anchor of
   -- sharesAnchored's lint keeps it out of card data too.
   Anchor.Bound (Just _) _ -> Nothing
   -- A group names no one host: Filter.AttachedTo is that reading.
-  Anchor.AnyPermanent _ _ -> Nothing
+  Anchor.AnyObject {} -> Nothing
   Anchor.YourCommander -> Nothing
   -- The candidate's own host is the candidate's attachment, not an anchor.
   Anchor.Host -> Nothing
@@ -3961,7 +3973,7 @@ readsSourceValues predicate = case predicate of
       Trait.LandType -> False
     Anchor.Bound _ _ -> False
     Anchor.Evaluated -> False
-    Anchor.AnyPermanent _ group -> readsSourceValues group
+    Anchor.AnyObject _ _ group -> readsSourceValues group
     Anchor.YourCommander -> False
     Anchor.Host -> False
   Filter.HasSubtype _ -> False
@@ -4279,7 +4291,7 @@ overBoundSlotsWith f predicate = case predicate of
 -- The filter an anchor nests, for a traversal that descends into one.
 anchorFilter :: Anchor.Anchor nested -> Maybe nested
 anchorFilter anchor = case anchor of
-  Anchor.AnyPermanent _ group -> Just group
+  Anchor.AnyObject _ _ group -> Just group
   Anchor.Bound _ _ -> Nothing
   Anchor.Evaluated -> Nothing
   Anchor.Source -> Nothing

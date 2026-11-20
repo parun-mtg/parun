@@ -2936,6 +2936,7 @@ library types
     Parun.Types.Amass
     Parun.Types.AmassKind
     Parun.Types.Anchor
+    Parun.Types.AnchorPool
     Parun.Types.Announcement
     Parun.Types.AnotherCounter
     Parun.Types.Answer

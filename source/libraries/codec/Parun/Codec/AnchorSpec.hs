@@ -8,6 +8,7 @@ import qualified Parun.JsonCodec.Codec as Codec
 import qualified Parun.JsonCodec.Common as Common
 import qualified Parun.Spec as Spec
 import qualified Parun.Types.Anchor as Anchor
+import qualified Parun.Types.AnchorPool as AnchorPool
 import qualified Parun.Types.CardType as CardType
 import qualified Parun.Types.Filter as Filter.Type
 import qualified Parun.Types.Holder as Holder
@@ -45,14 +46,26 @@ spec s = Spec.describe s "Parun.Codec.Anchor" $ do
     Common.assertCodec
       s
       codec
-      (Anchor.AnyPermanent SelfInclusion.IncludesCandidate (Filter.Type.HasCardType CardType.Creature))
+      (Anchor.AnyObject AnchorPool.Permanents SelfInclusion.IncludesCandidate (Filter.Type.HasCardType CardType.Creature))
       " {\"type\":\"AnyPermanent\",\"value\":{\"type\":\"HasCardType\",\"value\":\"Creature\"}} "
   Spec.it s "AnyOtherPermanent" $
     Common.assertCodec
       s
       codec
-      (Anchor.AnyPermanent SelfInclusion.ExcludesCandidate (Filter.Type.HasCardType CardType.Creature))
+      (Anchor.AnyObject AnchorPool.Permanents SelfInclusion.ExcludesCandidate (Filter.Type.HasCardType CardType.Creature))
       " {\"type\":\"AnyOtherPermanent\",\"value\":{\"type\":\"HasCardType\",\"value\":\"Creature\"}} "
+  Spec.it s "AnyExiledCard" $
+    Common.assertCodec
+      s
+      codec
+      (Anchor.AnyObject AnchorPool.ExiledCards SelfInclusion.IncludesCandidate (Filter.Type.HasCardType CardType.Creature))
+      " {\"type\":\"AnyExiledCard\",\"value\":{\"type\":\"HasCardType\",\"value\":\"Creature\"}} "
+  Spec.it s "AnyOtherExiledCard" $
+    Common.assertCodec
+      s
+      codec
+      (Anchor.AnyObject AnchorPool.ExiledCards SelfInclusion.ExcludesCandidate (Filter.Type.HasCardType CardType.Creature))
+      " {\"type\":\"AnyOtherExiledCard\",\"value\":{\"type\":\"HasCardType\",\"value\":\"Creature\"}} "
   Spec.it s "YourCommander" $
     Common.assertCodec
       s

@@ -162,7 +162,7 @@ evaluate viewOf quantityOf talliesWhatHappened candidateCounters context gs coun
           pids <- playersFor viewOf context gs ref
           let ids = concatMap (\pid -> residents zone pid gs) pids
               kept = Maybe.mapMaybe (\oid -> fmap ((,) (Just oid)) (keep predicate context (viewOf oid))) ids
-          pure (aggregate quantityOf aggregation kept)
+          pure (aggregate quantityOf (Filter.evaluatedView context) aggregation kept)
         -- CR 608.2i: the event log. Views of the object that MOVED come from each
         -- event's stored snapshot (CR 608.2h last-known information), never from a
         -- live object -- a token has no printed card at all (CR 111.3) and an
@@ -186,7 +186,7 @@ evaluate viewOf quantityOf talliesWhatHappened candidateCounters context gs coun
               views = Maybe.mapMaybe (snapshotView viewOf context gs shape) logged
               matched = Maybe.mapMaybe (keep predicate context . Just) views
               kept = fmap ((,) Nothing) (if oncePerObject shape then ListUtils.nubOrdOn Filter.identity matched else matched)
-           in pure (aggregate quantityOf aggregation kept)
+           in pure (aggregate quantityOf (Filter.evaluatedView context) aggregation kept)
         -- CR 102.1: the players themselves. Candidates come from the same
         -- playersFor the zone arm indexes by, so CR 800.4a's departed seat is not
         -- one -- except where the per-member quantity tallies what players did:
@@ -243,7 +243,7 @@ evaluate viewOf quantityOf talliesWhatHappened candidateCounters context gs coun
               summed = case shared of
                 Nothing -> matching
                 Just kind -> List.foldl' (\chosen member -> if any (\earlier -> List.elem (fst member) (Game.counterSharers kind (fst earlier) gs)) chosen then chosen else chosen <> [member]) [] matching
-          pure (aggregate quantityOf aggregation (fmap ((,) Nothing . snd) summed))
+          pure (aggregate quantityOf (Filter.evaluatedView context) aggregation (fmap ((,) Nothing . snd) summed))
         -- CR 400.7j: the objects one of the surrounding announcement's slots names,
         -- wherever they wound up. The one scope whose candidates come from the
         -- resolution's bindings rather than from the board, which is what lets it
@@ -273,13 +273,13 @@ evaluate viewOf quantityOf talliesWhatHappened candidateCounters context gs coun
         Scope.OverBound reading slot ->
           let ids = boundRead gs reading (Set.toList (Map.findWithDefault Set.empty slot (Filter.slotObjects context)))
               kept = Maybe.mapMaybe (\oid -> if boundMember gs aggregation predicate oid then fmap ((,) (Just oid)) (keep predicate context (orLastKnown viewOf gs oid)) else Nothing) ids
-           in pure (aggregate quantityOf aggregation kept)
+           in pure (aggregate quantityOf (Filter.evaluatedView context) aggregation kept)
         -- CR 500.12: the record of the board before this turn's untap step. Its
         -- members are objectless, as InHistory's are: some have since left.
         Scope.AsTurnBegan ->
           let views = Map.elems (Map.mapWithKey (\oid record -> lastKnownView viewOf oid gs record) (Maybe.fromMaybe Map.empty (TurnRegisters.permanentsAsTurnBegan (GameState.turn gs))))
               kept = fmap ((,) Nothing) (Maybe.mapMaybe (keep predicate context . Just) views)
-           in pure (aggregate quantityOf aggregation kept)
+           in pure (aggregate quantityOf (Filter.evaluatedView context) aggregation kept)
         -- CR 400.1: every zone, each player's copy of the per-player ones, each
         -- read as the zone arm reads it; the Filter says whose. Tangleweave
         -- Armor's "your commanders" wherever each is (CR 903.3e):
@@ -288,7 +288,7 @@ evaluate viewOf quantityOf talliesWhatHappened candidateCounters context gs coun
           pids <- playersFor viewOf context gs (PlayerRef.Relative PlayerRelation.AnyPlayer)
           let ids = concatMap (\zone -> concatMap (\pid -> residents zone pid gs) pids) [minBound .. maxBound]
               kept = Maybe.mapMaybe (\oid -> fmap ((,) (Just oid)) (keep predicate context (viewOf oid))) ids
-          pure (aggregate quantityOf aggregation kept)
+          pure (aggregate quantityOf (Filter.evaluatedView context) aggregation kept)
         -- CR 401.2 / 404.1: each named library or graveyard, narrowed by
         -- POSITION before the Filter is asked -- the zone arm above answers "any
         -- matching card" instead. Order-insensitive like every Aggregation, so no
@@ -299,7 +299,7 @@ evaluate viewOf quantityOf talliesWhatHappened candidateCounters context gs coun
           pids <- playersFor viewOf context gs ref
           let ids = foldMap (\pid -> Game.atPosition position (Filter.source context) zone pid gs) pids
               kept = Maybe.mapMaybe (\oid -> fmap ((,) (Just oid)) (keep predicate context (viewOf oid))) ids
-          pure (aggregate quantityOf aggregation kept)
+          pure (aggregate quantityOf (Filter.evaluatedView context) aggregation kept)
 
 -- CR 400.1: the objects a count over one player's copy of a zone folds over.
 -- CR 108.2b: a token awaiting CR 704.5d in a hand, graveyard or exile is no card
@@ -635,10 +635,16 @@ keep predicate context mv = case mv of
 -- snapshot of a past event rather than of anything on the battlefield now --
 -- so Greatest and Total hand the reader both and let it answer from whichever
 -- it can.
-aggregate :: QuantityOf quantity -> Aggregation.Aggregation quantity -> [(Maybe ObjectId, Filter.View)] -> Integer
-aggregate quantityOf aggregation members = case aggregation of
+--
+-- `evaluated` is the view of the object the surrounding quantity is evaluated
+-- against (Filter.evaluatedView), which CardTypesShared intersects with.
+aggregate :: QuantityOf quantity -> Maybe Filter.View -> Aggregation.Aggregation quantity -> [(Maybe ObjectId, Filter.View)] -> Integer
+aggregate quantityOf evaluated aggregation members = case aggregation of
   Aggregation.Members -> toInteger (length members)
   Aggregation.Distinct DistinctOf.CardTypes -> toInteger (Set.size (Set.unions (fmap (Filter.cardTypes . snd) members)))
+  -- CR 205.2a: none where nothing is evaluated. The scenarios named for
+  -- Cemetery Prowler prove it.
+  Aggregation.Distinct DistinctOf.CardTypesShared -> toInteger (Set.size (Set.intersection (foldMap Filter.cardTypes evaluated) (Set.unions (fmap (Filter.cardTypes . snd) members))))
   -- CR 110.4: a kindred member's Kindred adds nothing.
   Aggregation.Distinct DistinctOf.PermanentTypes -> toInteger (Set.size (Set.filter Card.isPermanentType (Set.unions (fmap (Filter.cardTypes . snd) members))))
   -- CR 105.2c: a colorless member adds nothing.

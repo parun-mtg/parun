@@ -5,6 +5,9 @@ module Parun.Types.DistinctOf where
 data DistinctOf
   = -- | CR 205.2a: card types (CR 208.2a's Tarmogoyf).
     CardTypes
+  | -- | CR 205.2a: the card types the object the count is evaluated against
+    -- has too (Cemetery Prowler).
+    CardTypesShared
   | -- | CR 110.4: permanent types, a member's other card types adding none
     -- (Matzalantli, the Great Door).
     PermanentTypes
