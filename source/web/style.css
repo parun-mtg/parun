@@ -3082,3 +3082,42 @@ main.builder {
   color: var(--muted);
   font-size: 0.85rem;
 }
+
+/* A card pool pasted in, and how many of a pooled card remain. */
+.paste-pool {
+  position: fixed;
+  left: 50%;
+  top: 2em;
+  transform: translateX(-50%);
+  width: min(36em, calc(100% - 2em));
+  display: grid;
+  gap: 0.5em;
+  padding: 1em;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--surface);
+  box-shadow: var(--sheet-shadow);
+  z-index: 11;
+}
+
+.paste-pool h2,
+.paste-pool p {
+  margin: 0;
+}
+
+.paste-pool textarea {
+  font-family: ui-monospace, monospace;
+  font-size: 0.85rem;
+  resize: vertical;
+}
+
+.result .left {
+  color: var(--muted);
+  font-size: 0.8rem;
+  font-variant-numeric: tabular-nums;
+}
+
+#app button.add:disabled {
+  opacity: 0.35;
+  cursor: default;
+}
