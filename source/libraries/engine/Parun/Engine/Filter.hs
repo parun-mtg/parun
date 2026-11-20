@@ -1591,7 +1591,7 @@ data Context = MkContext
     -- last-known reader so a bound object that has left is still answerable.
     --
     -- What keeps a card out of the positions this is empty in is Parun.FilterPositionLintSpec's
-    -- "CR 110.2 no card asks ControllerRelatesToBound outside a mode's target slot, an attach destination, a stored class or an effect's object",
+    -- "CR 110.2 no card asks ControllerRelatesToBound outside a mode's target slot, an attach destination, a stored class, an effect's object or a clause's if",
     -- slotNames' sweep with more riding on it: that atom is a silent False
     -- elsewhere and this one a silent True.
     --
@@ -2072,7 +2072,7 @@ data Context = MkContext
 -- arm in `matches` reads a slot with no key as a relation with only one party and
 -- ADMITS every candidate. Nothing narrows an offer written against that empty
 -- map; what keeps a card out of the positions it is empty in is Parun.FilterPositionLintSpec's
--- "CR 110.2 no card asks ControllerRelatesToBound outside a mode's target slot, an attach destination, a stored class or an effect's object"
+-- "CR 110.2 no card asks ControllerRelatesToBound outside a mode's target slot, an attach destination, a stored class, an effect's object or a clause's if"
 -- alone, Parun.Engine.Target.slotContext and Parun.Engine.Resolve.Slots.effectContext
 -- being the only fillers.
 --
