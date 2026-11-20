@@ -2375,7 +2375,11 @@ playerSacrifices settle resolving source controller legal (PlayerSacrifices.MkPl
                 -- "can't be sacrificed" on this path: a prohibited permanent is
                 -- never the pick that satisfies the edict. Framed by `source`,
                 -- so Lord of the Pit's "a creature other than this creature"
-                -- never offers the Lord itself.
+                -- never offers the Lord itself. Over the resolution's slots, a
+                -- cast cost's sacrificed permanent among them: the scenario
+                -- "CR 701.21a / 205.2a Fatal Grudge offers each opponent only
+                -- permanents sharing a card type ..." in data/scenarios/resolve
+                -- proves it.
                 let candidates = Replacement.sacrificeCandidates (Filter.perspective context) (Binding.recipientsBySlot legal (slotBindings resolving gs)) victim (Just source) filter_ gs
                     decider = Decide.deciderFor victim gs
                     -- `n > 0` above, so the clamp never decides anything here.
