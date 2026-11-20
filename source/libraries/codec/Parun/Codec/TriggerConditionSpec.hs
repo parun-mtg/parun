@@ -229,7 +229,7 @@ spec s = Spec.describe s "Parun.Codec.TriggerCondition" $ do
     Common.assertCodec
       s
       TriggerCondition.codec
-      (TriggerCondition.PlayerDrawsNthCard (PlayerDrawsNthCard.MkPlayerDrawsNthCard PlayerRelation.You (Just 2)))
+      (TriggerCondition.PlayerDrawsNthCard (PlayerDrawsNthCard.MkPlayerDrawsNthCard PlayerRelation.You (Just 2) Nothing))
       " {\"type\":\"PlayerDrawsNthCard\",\"value\":{\"player\":\"You\",\"nth\":2}} "
   -- CR 508.3a: the source's own "whenever this creature attacks", whose
   -- fields all default. Parun.Codec.AttackTriggerSpec has the other arms.

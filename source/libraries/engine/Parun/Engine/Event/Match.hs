@@ -570,6 +570,25 @@ stepPlayers gs bearer scope own =
   let named = Count.scopePlayers (Projection.viewWithLastKnownAnywhere gs) (Projection.sourceContext gs (Just own) bearer) gs
    in filter (Turn.scopeNames named gs scope own) (Turn.activePlayers gs)
 
+-- CR 603.2b: is this the step the StepBegins names, at its ordinal, on a turn
+-- its scope admits? The StepBegins condition's match, and a draw trigger's step.
+stepBeginsAdmits :: (PlayerRef.PlayerRef -> Maybe [PlayerId]) -> GameState -> PlayerId -> StepBegins.StepBegins -> StepBegan.StepBegan -> Bool
+stepBeginsAdmits scopeNamed gs you (StepBegins.MkStepBegins wanted ordinal scope) (StepBegan.MkStepBegan began active) =
+  began == wanted
+    && Maybe.maybe True (== stepsOfKindBegun wanted gs) ordinal
+    && Turn.turnScopeAdmits scopeNamed gs scope active you
+
+-- CR 500.1 / 121.1: the step under way in this game, and how many cards the
+-- player had drawn this turn before it began; Nothing before the turn's first
+-- step. Off the turn's log, whose last StepBegan is the step under way;
+-- comprehensions, as Turn.stepsBegun is, so no arm falls through.
+drawsBeforeStep :: PlayerId -> GameState -> Maybe (StepBegan.StepBegan, Natural)
+drawsBeforeStep drawer gs =
+  let logged = fmap LoggedEvent.event (Foldable.toList (TurnRegisters.events (GameState.turn gs)))
+      lastBegan = Maybe.listToMaybe [(i, b) | (i, GameEvent.StepBegan b) <- reverse (zip [0 :: Int ..] logged)]
+      drawsIn events = Natural.length [() | GameEvent.Drew (Drew.MkDrew who _) <- events, who == drawer]
+   in fmap (\(i, b) -> (b, drawsIn (take i logged))) lastBegan
+
 -- CR 603.2b: how many steps of the wanted kind have begun this turn, counting
 -- the one whose beginning is being matched -- every main phase for a main
 -- phase (CR 505.1b), the step itself for any other (Paradox Haze's "first
@@ -1178,11 +1197,8 @@ armMatches bindings frozen board atEvent beforeEvent groupEvents gs bearer you c
   -- CR 603.2b: this step began, on a turn the scope admits, and -- for a card
   -- that counts its occurrences, "your second main phase" (CR 505.1b) or
   -- "first upkeep each turn" -- at its ordinal.
-  TriggerCondition.StepBegins (StepBegins.MkStepBegins wanted ordinal scope) -> case event of
-    GameEvent.StepBegan (StepBegan.MkStepBegan began active) ->
-      began == wanted
-        && Maybe.maybe True (== stepsOfKindBegun wanted gs) ordinal
-        && Turn.turnScopeAdmits scopeNamed gs scope active you
+  TriggerCondition.StepBegins step -> case event of
+    GameEvent.StepBegan began -> stepBeginsAdmits scopeNamed gs you step began
     _ -> False
   -- CR 603.8: a state trigger is not an event trigger. It never matches an entry
   -- in the log; stateTriggers below is its whole story.
@@ -1361,10 +1377,24 @@ armMatches bindings frozen board atEvent beforeEvent groupEvents gs bearer you c
   -- Equality on the ordinal, which is what makes "your second card" fire once in
   -- a turn with five draws; no ordinal fires on every draw, one event per card
   -- (CR 121.2).
-  TriggerCondition.PlayerDrawsNthCard (PlayerDrawsNthCard.MkPlayerDrawsNthCard relation nth) -> case event of
+  --
+  -- A `within` step counts from that step's beginning instead (CR 500.1), read
+  -- off the game the event left (`atEvent`): the step under way then is the
+  -- log's last StepBegan, and the draws before it are subtracted from the
+  -- turn's ordinal. Wiretapping's draw step therefore still fires after an
+  -- upkeep draw (CR 504.1), which data/scenarios/event-trigger's
+  -- cr-504-1-wiretapping-fires-on-the-draw-step-s-first-draw-after-an-upkeep-draw
+  -- proves.
+  TriggerCondition.PlayerDrawsNthCard (PlayerDrawsNthCard.MkPlayerDrawsNthCard relation nth within) -> case event of
     GameEvent.Drew (Drew.MkDrew drawer ordinal) ->
-      maybe True (== ordinal) nth
-        && PlayerRelation.holds (Game.teams gs) relation you drawer
+      PlayerRelation.holds (Game.teams gs) relation you drawer
+        && case within of
+          Nothing -> maybe True (== ordinal) nth
+          Just step -> case drawsBeforeStep drawer atEvent of
+            Just (began, before) ->
+              stepBeginsAdmits scopeNamed atEvent you step began
+                && maybe True (\n -> ordinal == before + n) nth
+            Nothing -> False
     _ -> False
   -- CR 726.1: a player BECAME the monarch. Matched against the event the
   -- crowning records, so every route through CR 726.1's "an effect instructs a

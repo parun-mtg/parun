@@ -1769,7 +1769,7 @@ representativeEvents cond =
         -- The ordinal matches the condition's own, so the event is one this
         -- condition genuinely admits -- an event it rejected would pin nothing,
         -- eventBindings being consulted only for a match.
-        TriggerCondition.PlayerDrawsNthCard (PlayerDrawsNthCard.MkPlayerDrawsNthCard _ nth) -> one (GameEvent.Drew (Drew.MkDrew S.alice (Maybe.fromMaybe 1 nth)))
+        TriggerCondition.PlayerDrawsNthCard (PlayerDrawsNthCard.MkPlayerDrawsNthCard _ nth _) -> one (GameEvent.Drew (Drew.MkDrew S.alice (Maybe.fromMaybe 1 nth)))
         -- CR 508.3: one shape of event per arity, and per field the slots read.
         TriggerCondition.Attacks trigger -> case trigger of
           -- CR 508.5's defending player, and deliberately NOT the attacker's
@@ -2216,8 +2216,8 @@ everyTriggerCondition =
     TriggerCondition.Discards (DiscardTrigger.MkDiscardTrigger (DiscardSubject.Discarder (PlayerActsOn.MkPlayerActsOn PlayerRelation.You (Filter.Type.And []))) DiscardWay.AnyDiscard Batching.OneOrMore),
     TriggerCondition.Discards (DiscardTrigger.MkDiscardTrigger (DiscardSubject.Discarder (PlayerActsOn.MkPlayerActsOn PlayerRelation.You (Filter.Type.And []))) DiscardWay.Cycled Batching.EachOccurrence),
     TriggerCondition.Discards (DiscardTrigger.MkDiscardTrigger (DiscardSubject.Discarder (PlayerActsOn.MkPlayerActsOn PlayerRelation.Opponent (Filter.Type.And []))) DiscardWay.Cycled Batching.EachOccurrence),
-    TriggerCondition.PlayerDrawsNthCard (PlayerDrawsNthCard.MkPlayerDrawsNthCard PlayerRelation.You (Just 2)),
-    TriggerCondition.PlayerDrawsNthCard (PlayerDrawsNthCard.MkPlayerDrawsNthCard PlayerRelation.You Nothing),
+    TriggerCondition.PlayerDrawsNthCard (PlayerDrawsNthCard.MkPlayerDrawsNthCard PlayerRelation.You (Just 2) Nothing),
+    TriggerCondition.PlayerDrawsNthCard (PlayerDrawsNthCard.MkPlayerDrawsNthCard PlayerRelation.You Nothing Nothing),
     TriggerCondition.Attacks (AttackTrigger.Attacker AttackerTrigger.defaultValue),
     -- Each field away from its default, so an arm that had cased on one and
     -- stamped nothing under it would go unseen if only the default were listed.

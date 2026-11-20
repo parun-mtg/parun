@@ -280,6 +280,7 @@ import qualified Parun.Types.PlayerAction as PlayerAction
 import qualified Parun.Types.PlayerChoice as PlayerChoice
 import qualified Parun.Types.PlayerCounterKind as PlayerCounterKind
 import qualified Parun.Types.PlayerCountersPlaced as PlayerCountersPlaced
+import qualified Parun.Types.PlayerDrawsNthCard as PlayerDrawsNthCard
 import qualified Parun.Types.PlayerEffect as PlayerEffect.Type
 import Parun.Types.PlayerId (PlayerId)
 import qualified Parun.Types.PlayerInstruction as PlayerInstruction
@@ -13165,7 +13166,8 @@ controllerTurnScoped cond = case cond of
   TriggerCondition.SelfRevealedForMiracle -> False
   TriggerCondition.RevealedThisWay _ -> False
   TriggerCondition.Discards _ -> False
-  TriggerCondition.PlayerDrawsNthCard {} -> False
+  -- A draw counted within "your <step>" is scoped as StepBegins is.
+  TriggerCondition.PlayerDrawsNthCard p -> any (Turn.isControllersTurn . StepBegins.scope) (PlayerDrawsNthCard.within p)
   -- CR 508.1 lets only an active player declare attackers (CR 805.10a), so a
   -- declaring player the trigger pins to You pins the event to CR 109.5's
   -- "you"'s own turn. An attacker trigger pins the CREATURE instead, which
