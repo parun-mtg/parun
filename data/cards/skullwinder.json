@@ -75,10 +75,8 @@
                                 "value": []
                               },
                               "players": {
-                                "type": "Scoped",
-                                "value": {
-                                  "type": "AnyPlayer"
-                                }
+                                "type": "InSlot",
+                                "value": "opponent"
                               }
                             }
                           },

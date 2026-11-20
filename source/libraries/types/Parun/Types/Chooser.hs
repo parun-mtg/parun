@@ -47,29 +47,6 @@ data Chooser
     EachInScope
   | -- | The resolving controller, choosing once in each graveyard the scope names (CR 608.2c).
     TheControllerInEach
-  | -- | The ONE player a slot names -- Skullwinder's "choose an opponent. That
-    -- player returns a card from their graveyard to their hand", where the slot
-    -- was filled by Parun.Types.Effect's ChoosePlayer earlier in the same
-    -- resolution. One chooser and so one helping of the ref's count,
-    -- EachInScope's cardinality with the scope's fold replaced by a single seat.
-    --
-    -- The same arm would serve a slot CR 601.2c filled at CAST -- Obscura
-    -- Confluence's "target player returns a creature card from their graveyard to
-    -- their hand" -- since the read below goes through the resolution's
-    -- CR 608.2b-filtered slots either way. No card in the pool prints one, so
-    -- that reading is untested.
-    --
-    -- Reads a slot exactly as Parun.Types.PlayerRef's InSlot does, and answers
-    -- nothing under the same conditions: a slot that is unfilled, illegal (CR
-    -- 608.2b) or bound to something that is not a player names no chooser, and
-    -- that share of the instruction is ignored (CR 101.3).
-    --
-    -- CHOOSES FROM THEIR OWN GRAVEYARD, EachInScope's rule with one chooser
-    -- rather than several: "that player ... their graveyard" is the same
-    -- possessive "each player ... their graveyard" is. The PlayerScope beside
-    -- this is therefore the outer bound the sentence puts on which graveyards
-    -- the instruction reaches rather than a second answer to "whose" -- a
-    -- sentence that puts none writes AnyPlayer, and a chooser the scope does not
-    -- name is offered nothing.
+  | -- | The one player a slot names, choosing once across the scope's graveyards (CR 608.2c, 608.2d).
     BoundInSlot SlotName.SlotName
   deriving (Eq, Ord, Show)
