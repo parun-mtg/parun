@@ -728,22 +728,16 @@ manaSuppliesGiven xCeiling capacity watch rewritesOf pcs pid borrowed oid gs =
       -- below, and one reading its own X `announcing`'s or
       -- `announcedByComponent`'s.
       --
-      -- Not implemented: a yield reading any other slot its cost binds, which
-      -- is supplied as the offer prices it (#7634).
+      -- Unprinted: a yield reading any other slot its cost binds (pricedCostSlots
+      -- names the priced ones), which is supplied as the offer prices it.
+      -- Parun.AbilitySlotLintSpec's "no card writes a mana ability whose yield
+      -- reads an unpriced payment of its cost" keeps it out of card data.
       perCandidate option =
         let (activations, share, manaCost) = measured option
             addsReading slot addition = Set.member slot (Quantity.objectSlots (ManaAddition.count addition)) || Map.member slot (Slots.productionSlots (ManaAddition.production addition))
             readsSlot slot = any (\(clause, _) -> any (addsReading slot) (Maybe.mapMaybe ManaAbility.manaProduced (Foldable.toList (Clause.effects clause)))) (ManaOption.steps option)
-            -- The slot each one-object choice of the cost binds its object
-            -- under (Parun.Engine.Cost.payComponent's arms), and the axis its
-            -- claim spends: a removal, or Benthic Explorers' untap.
-            chosenSlot component = case component of
-              CostComponent.Sacrifice sacrifice | Sacrifice.count sacrifice == ObjectCount.Exactly (CostAmount.Fixed 1) -> Just (Binding.sacrificedPermanent, ClaimAxis.Removal Zone.Battlefield)
-              CostComponent.ExilePermanents exiled | ExilePermanents.count exiled == 1 -> Just (Binding.exiledPermanent, ClaimAxis.Removal Zone.Battlefield)
-              CostComponent.TapPermanents turned | TapPermanents.count turned == CostAmount.Fixed 1, TapPermanents.becoming turned == TapState.Untapped -> Just (Binding.untappedPermanent, ClaimAxis.Untapping)
-              _ -> Nothing
             onAxis axis = filter ((==) axis . Claim.Type.axis) (Activations.claims activations)
-         in case fmap (Bifunctor.second onAxis) (Maybe.mapMaybe chosenSlot (Cost.components (ManaOption.cost option))) of
+         in case fmap (Bifunctor.second onAxis) (Maybe.mapMaybe pricedChoice (Cost.components (ManaOption.cost option))) of
               [(slot, [claim])]
                 | readsSlot slot && Claim.Type.count claim == 1 && Maybe.isNothing (Claim.Type.selection claim) ->
                     let pricedFor candidate = [shareOf priced | (offered, priced) <- manaRepricingsGiven (Binding.paidObjects slot (Set.singleton (Recipient.ToObject candidate))) gs pcs oid gs, offered == option]
@@ -813,8 +807,10 @@ manaSuppliesGiven xCeiling capacity watch rewritesOf pcs pid borrowed oid gs =
       -- every number from the floor to the counters the permanents it names
       -- carry where the floor is all it fixes (CounterSpread.FromAmongAtLeast).
       --
-      -- Not implemented: a floor not yet announced (CR 601.2b's X), which is
-      -- supplied as the offer prices it (#7634).
+      -- Unprinted: a floor not yet announced (CR 601.2b's X), which is supplied
+      -- as the offer prices it. Parun.AbilitySlotLintSpec's "no card writes a
+      -- mana ability whose yield reads an unpriced payment of its cost" keeps it
+      -- out of card data.
       removable option = case [removal | CostComponent.RemoveCounters removal <- Cost.components (ManaOption.cost option)] of
         [CountersFromPermanents.MkCountersFromPermanents (ObjectCount.Exactly (CostAmount.Fixed floor_)) which criterion spread]
           | any (any (Set.member Binding.removedCounters . QuantitySlot.slots . ManaAddition.count) . Maybe.mapMaybe ManaAbility.manaProduced . Foldable.toList . Clause.effects . fst) (ManaOption.steps option) ->
@@ -988,6 +984,31 @@ triggerAdds pid gs pending = case PendingTrigger.source pending of
      in case Modal.forcedSelection every (Modal.Type.selection modal) of
           Nothing -> [[]]
           Just selection -> fmap concat (traverse adds (Maybe.mapMaybe ManaAbility.manaProduced (Modal.modesEffects selection modal)))
+
+-- The slot a one-object choice of a cost binds its object under
+-- (Parun.Engine.Cost.payComponent's arms), and the axis its claim spends: a
+-- removal, or Benthic Explorers' untap. manaSuppliesGiven's perCandidate prices
+-- a yield reading it when it is the cost's only such choice.
+pricedChoice :: CostComponent.CostComponent Keyword.Keyword -> Maybe (SlotName, ClaimAxis.ClaimAxis)
+pricedChoice component = case component of
+  CostComponent.Sacrifice sacrifice | Sacrifice.count sacrifice == ObjectCount.Exactly (CostAmount.Fixed 1) -> Just (Binding.sacrificedPermanent, ClaimAxis.Removal Zone.Battlefield)
+  CostComponent.ExilePermanents exiled | ExilePermanents.count exiled == 1 -> Just (Binding.exiledPermanent, ClaimAxis.Removal Zone.Battlefield)
+  CostComponent.TapPermanents turned | TapPermanents.count turned == CostAmount.Fixed 1, TapPermanents.becoming turned == TapState.Untapped -> Just (Binding.untappedPermanent, ClaimAxis.Untapping)
+  _ -> Nothing
+
+-- The payment slots of a cost a mana ability's yield may read and still be
+-- supplied as manaSuppliesGiven prices it: perCandidate's one-object choice,
+-- and removable's counters where the cost fixes how many. Parun.AbilitySlotLintSpec
+-- fences every other.
+pricedCostSlots :: Cost Keyword.Keyword -> Set.Set SlotName
+pricedCostSlots cost =
+  let chosen = case Maybe.mapMaybe pricedChoice (Cost.components cost) of
+        [(slot, _)] -> [slot]
+        _ -> []
+      counted = case [removal | CostComponent.RemoveCounters removal <- Cost.components cost] of
+        [CountersFromPermanents.MkCountersFromPermanents (ObjectCount.Exactly (CostAmount.Fixed _)) _ _ _] -> [Binding.removedCounters]
+        _ -> []
+   in Set.fromList (chosen <> counted)
 
 readsPool :: (Clause.Clause Card.Type.Card (GrantedAbility.GrantedAbility Card.Type.Card), a) -> Bool
 readsPool (clause, _) = any (poolProduction . ManaAddition.production) (Maybe.mapMaybe ManaAbility.manaProduced (Foldable.toList (Clause.effects clause)))
