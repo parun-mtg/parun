@@ -246,6 +246,20 @@ spec s = Spec.describe s "Parun.Web.Builder" $ do
       let opened = Builder.open Nothing Text.empty (Text.pack "1 Island\nDraft Notes\n3 Lurking Automaton\nStickers\n1 Ancestral Hot Dog Minotaur\n") indexed
       Spec.assertBool s (Text.isInfixOf (Text.pack "Also kept: Draft Notes, Stickers") (page opened)) "kept"
 
+  Spec.describe s "fidelity" $ do
+    Spec.it s "keeps the first Format header, as a deck list reads it" $ do
+      Spec.assertEq s (Builder.format (Builder.open Nothing Text.empty (Text.pack "Format: commander\nFormat: standard\n1 Island\n") fresh)) (Text.pack "commander")
+
+    Spec.it s "drops a line of no copies" $ do
+      Spec.assertEq s (Builder.deck (Builder.open Nothing Text.empty (Text.pack "0 Island\n1 Mountain\n") fresh)) (Map.singleton mountain 1)
+
+    Spec.it s "notes a line it cannot read" $ do
+      Spec.assertEq s (Builder.notices (Builder.open Nothing Text.empty (Text.pack "4\n1 Mountain\n") fresh)) [Text.pack "Couldn't read this line, which saving drops: 4"]
+
+    Spec.it s "renames an opened deck's cards as the index names them, with nothing to save" $ do
+      let renamed = Builder.withIndex (Maybe.fromMaybe Seq.empty (Builder.index indexed)) (Builder.open Nothing Text.empty (Text.pack "4 lightning bolt\n") fresh)
+      Spec.assertEq s (Builder.deck renamed, Builder.dirty renamed) (Map.singleton bolt 4, False)
+
   Spec.describe s "zones" $ do
     Spec.it s "opens a commander and a sideboard into zones, and edits them" $ do
       let opened = Builder.open Nothing Text.empty (Text.pack "Format: commander\nCommander\n1 Sai, Master Thopterist\nDeck\n30 Island\nSideboard\n2 Shock\n") indexed
