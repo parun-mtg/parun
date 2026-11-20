@@ -54,7 +54,11 @@ data Lobby = MkLobby
     -- | The panel a deck list is pasted into, while open.
     importing :: Maybe Import,
     -- | A saved deck's name and text, shown to copy.
-    exporting :: Maybe (Text.Text, Text.Text)
+    exporting :: Maybe (Text.Text, Text.Text),
+    -- | Why each saved deck found to break its format does, by name.
+    illegal :: Map.Map Text.Text [Text.Text],
+    -- | Why Start was last refused, until the next pick.
+    refusal :: Maybe [Text.Text]
   }
   deriving (Eq, Show)
 
@@ -110,11 +114,13 @@ data Event
     MkExport Text.Text
   | -- | Hides the list shown to copy.
     MkCloseExport
+  | -- | Opens the deck builder; the shell does it.
+    MkOpenBuilder
   deriving (Eq, Show)
 
 -- | A lobby whose decks are still to read, nothing chosen yet.
 new :: Lobby
-new = MkLobby True Nothing Seq.empty Map.empty Nothing [Nothing] MkMine Text.empty Map.empty Map.empty Nothing Nothing
+new = MkLobby True Nothing Seq.empty Map.empty Nothing [Nothing] MkMine Text.empty Map.empty Map.empty Nothing Nothing Map.empty Nothing
 
 -- | Where saved decks sit beneath the deck root.
 savedPrefix :: Text.Text
@@ -133,12 +139,12 @@ isSaved = Text.isPrefixOf savedPrefix
 slugOf :: Text.Text -> Text.Text
 slugOf = Text.intercalate (Text.pack "-") . filter (not . Text.null) . Text.split (not . Char.isAlphaNum) . Text.toLower
 
--- | Why a pasted deck may not be saved under this name: an empty one, or
--- one a saved deck holds.
-nameProblems :: Lobby -> Text.Text -> [Text.Text]
-nameProblems lobby typed
+-- | Why a deck may not be saved under this name, among these decks: an
+-- empty one, or one a saved deck holds.
+nameProblems :: Seq.Seq Text.Text -> Text.Text -> [Text.Text]
+nameProblems names typed
   | Text.null slug = [Text.pack "Give the deck a name."]
-  | Foldable.elem (savedPrefix <> slug) (decks lobby) = [Text.pack "A saved deck is already named that."]
+  | Foldable.elem (savedPrefix <> slug) names = [Text.pack "A saved deck is already named that."]
   | otherwise = []
   where
     slug = slugOf typed
@@ -235,12 +241,10 @@ data Kind
   | MkLand
   deriving (Eq, Ord, Show)
 
--- | A deck's list: a curve of its spells by mana value (the last bar
--- counting six and up), and its cards by kind.
-preview :: Text.Text -> [Line] -> Html.Html msg
-preview name lines' =
-  let total = sum (fmap copies lines')
-      spells = [l | l <- lines', kind l /= MkLand]
+-- | A deck's spells by mana value, as bars, the last counting six and up.
+curve :: [Line] -> Html.Html msg
+curve lines' =
+  let spells = [l | l <- lines', kind l /= MkLand]
       bars = [(mv, sum [copies l | l <- spells, inBar l]) | (mv, inBar) <- [(show n, \l -> value l == n) | n <- [0 .. 5]] <> [("6+", \l -> value l >= 6)]]
       tallest = maximum (1 : fmap snd bars)
       bar (mv, n) =
@@ -249,6 +253,12 @@ preview name lines' =
           ["bar"]
           [Element.attr "title" (Text.pack (show n <> " at mana value " <> mv))]
           [Element.el "span" ["fill"] [Element.attr "style" (Text.pack ("height:" <> show (div (n * 100) tallest) <> "%"))] [], Element.el "span" ["mv"] [] [Element.string mv]]
+   in Element.el "span" ["curve"] [Element.attr "aria-hidden" (Text.pack "true")] (fmap bar bars)
+
+-- | A deck's list: its curve ('curve') and its cards by kind.
+preview :: Text.Text -> [Line] -> Html.Html msg
+preview name lines' =
+  let total = sum (fmap copies lines')
       section title k =
         let these = List.sortOn (\l -> (value l, CardName.unwrap (card l))) [l | l <- lines', kind l == k]
          in [ Element.el "div" ["deck-section"] [] $
@@ -260,7 +270,7 @@ preview name lines' =
         "details"
         ["deck-preview"]
         []
-        [ Element.el "summary" [] [] [Element.el "span" ["preview-title"] [] [Element.text (label name), Element.string (" \x00b7 " <> show total <> " cards")], Element.el "span" ["curve"] [Element.attr "aria-hidden" (Text.pack "true")] (fmap bar bars)],
+        [ Element.el "summary" [] [] [Element.el "span" ["preview-title"] [] [Element.text (label name), Element.string (" \x00b7 " <> show total <> " cards")], curve lines'],
           Element.el "div" ["deck-sections"] [] (section "Creatures" MkCreature <> section "Spells" MkSpell <> section "Lands" MkLand)
         ]
 
@@ -279,6 +289,7 @@ update :: Event -> Text.Text -> Lobby -> Lobby
 update event typed lobby = case event of
   MkPick name
     | Foldable.notElem name (decks lobby) -> lobby
+    | Maybe.isJust (refusal lobby) -> update event typed lobby {refusal = Nothing}
     | MkTheirs i <- choosing lobby ->
         if Foldable.notElem name (opponents lobby) then lobby else lobby {theirs = [if j == i then Just name else deck | (j, deck) <- zip [0 ..] (theirs lobby)]}
     | otherwise ->
@@ -295,7 +306,7 @@ update event typed lobby = case event of
         let kept = take (length (theirs lobby) - 1) (theirs lobby)
          in lobby {theirs = kept, choosing = if choosing lobby == MkTheirs (length kept) then MkMine else choosing lobby}
     | otherwise -> lobby
-  MkStart -> lobby
+  MkStart -> lobby {refusal = either (\problems -> if null problems then Nothing else Just problems) (const Nothing) (startable lobby)}
   MkOpenImport -> lobby {importing = Just (MkImport Text.empty Text.empty [] False)}
   MkCloseImport -> lobby {importing = Nothing}
   MkImportName -> lobby {importing = fmap (\i -> i {importName = typed}) (importing lobby)}
@@ -304,7 +315,15 @@ update event typed lobby = case event of
   MkDelete _ -> lobby
   MkExport _ -> lobby
   MkCloseExport -> lobby {exporting = Nothing}
+  MkOpenBuilder -> lobby
   MkHome -> lobby
+
+-- | Your deck, to start a game with; or why it may not: the problems a
+-- check found with it, or none while there is no deck.
+startable :: Lobby -> Either [Text.Text] Text.Text
+startable lobby = case mine lobby of
+  Nothing -> Left []
+  Just name -> maybe (Right name) Left (Map.lookup name (illegal lobby))
 
 -- | The deck chosen for a slot, if any.
 chosen :: Lobby -> Slot -> Maybe Text.Text
@@ -357,7 +376,7 @@ view lobby =
       deck name =
         let picked = Just name == chosen lobby (choosing lobby)
             pips = Element.el "span" ["pips"] [] [Mana.symbol (Text.pack (Web.Card.letterUpper c)) | c <- Set.toList (Map.findWithDefault Set.empty name (palette lobby))]
-            format = [Element.el "span" ["deck-format"] [] [Element.text (titled f)] | f <- Maybe.maybeToList (Map.lookup name (formats lobby))]
+            format = [Element.el "span" ["deck-format"] [] [Element.text (titled f)] | f <- Maybe.maybeToList (Map.lookup name (formats lobby))] <> [Element.el "span" ["not-legal"] [] [Element.string "Not legal"] | Map.member name (illegal lobby)]
          in (name, Element.button (["deck"] <> ["picked" | picked]) (MkPick name) [Element.el "span" ["deck-name"] [] (Element.text (snd (describe name)) : format), pips])
    in -- Keyed, so a section coming or going above the panel's fields or the
       -- filter's keeps their nodes, and what was typed into them.
@@ -391,6 +410,7 @@ view lobby =
                 ]
             )
           ]
+          <> [(Text.pack "refusal", Element.el "ul" ["problems", "refusal"] [Element.attr "role" (Text.pack "alert")] [Element.el "li" [] [] [Element.text p] | p <- problems]) | problems <- Maybe.maybeToList (refusal lobby)]
           -- The list of the deck being chosen, or else of the player's;
           -- a saved one with the ways to copy it out and delete it.
           <> [ (,) (Text.pack "shown") . Element.el "div" ["deck-shown"] [] $
@@ -419,6 +439,7 @@ view lobby =
                          [ Element.el "label" ["sr-only"] [Element.attr "for" (Text.pack "deck-search")] [Element.string "Filter decks"],
                            Element.el "input" ["search"] [Element.attr "id" (Text.pack "deck-search"), Element.attr "type" (Text.pack "search"), Element.attr "placeholder" (Text.pack "Filter decks or sets"), Element.attr "autocomplete" (Text.pack "off"), Element.on "input" MkSearch] [],
                            Element.button ["random"] MkRandom [Element.string "Random"],
+                           Element.button ["open-builder"] MkOpenBuilder [Element.string "Build a deck"],
                            Element.button ["open-import"] MkOpenImport [Element.string "Import a deck"]
                          ],
                        Element.el

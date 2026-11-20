@@ -149,6 +149,27 @@ spec s registry reference = Spec.describe s "Parun.Legality" $ do
     Spec.assertEqWith s "the header's format" headerFormat (Just (Text.pack "limited"))
     Spec.assertEqWith s "under which five are legal" headerReported [DeckList.explain (DeckList.NoSuchCard 4 (nameOf "Lightnin Bolt"))]
 
+  Spec.it s "CR 100.2a: assess returns a constructed deck's five Lightning Bolts as a violation" $ do
+    listed <- DeckList.parse registry (Text.pack "5 Lightning Bolt\n55 Mountain\n") >>= either (S.brokenCorpus s) pure
+    (_, lines', found) <- Legality.assess Legality.named (Just (Text.pack "constructed")) Nothing listed
+    Spec.assertEqWith s "the lines and violations" (lines', found) ([], [copies "Lightning Bolt" 5])
+
+  Spec.it s "assess says a header naming no shipped format, with no violations" $ do
+    listed <- DeckList.parse registry (Text.pack "Format: nonsense\n5 Lightning Bolt\n") >>= either (S.brokenCorpus s) pure
+    (_, lines', found) <- Legality.assess Legality.named Nothing Nothing listed
+    Spec.assertEqWith s "the lines and violations" (lines', found) ([Text.pack "not a format: nonsense"], [])
+
+  Spec.it s "namedCard names the card of too many copies, and none for too few cards" $ do
+    Spec.assertEqWith s "the cards" (fmap Legality.namedCard [copies "Grizzly Bears" 5, Violation.TooFewCards Nothing 59 60]) [Just (nameOf "Grizzly Bears"), Nothing]
+
+  Spec.it s "shippedFormats lists every format file by name, in order" $ do
+    named <- Legality.shippedFormats
+    Spec.assertEqWith s "constructed and limited among them, sorted" (all (`elem` named) [Text.pack "constructed", Text.pack "limited"], named == List.sort named) (True, True)
+
+  Spec.it s "CR 100.2a: minimumFor gives constructed's sixty, and nothing for no format" $ do
+    sizes <- traverse (Legality.minimumFor . Text.pack) ["constructed", "nonsense"]
+    Spec.assertEqWith s "the minimums" sizes [Just 60, Nothing]
+
   Spec.it s "CR 100.2a: a constructed deck of 59 cards is too small" $ do
     found <- violations s registry RuleFamily.Constructed [("Grizzly Bears", 4), ("Mountain", 55)] []
     Spec.assertEqWith s "violations" found [Violation.TooFewCards Nothing 59 60]

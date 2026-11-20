@@ -74,6 +74,29 @@ spec s = Spec.describe s "Parun.Web.Lobby" $ do
     Spec.it s "filters by what is typed" $ do
       Spec.assertEq s (Lobby.search $ Lobby.update Lobby.MkSearch (Text.pack "webs") lobby) (Text.pack "webs")
 
+  Spec.describe s "flagged decks" $ do
+    Spec.it s "badges a saved deck with problems Not legal" $ do
+      let holding = (Lobby.withDecks (Seq.fromList [a, saved]) Map.empty Lobby.new) {Lobby.illegal = Map.singleton saved [Text.pack "43 cards in the deck, fewer than 60"]}
+      Spec.assertBool s (Text.isInfixOf (Text.pack "Not legal") (Html.toText (Lobby.view holding))) "badge"
+      Spec.assertBool s (not (Text.isInfixOf (Text.pack "Not legal") (Html.toText (Lobby.view holding {Lobby.illegal = Map.empty})))) "no badge"
+
+    Spec.it s "refuses to start a flagged deck, listing why" $ do
+      let holding = flaggedMine
+          started = Lobby.update Lobby.MkStart Text.empty holding
+      Spec.assertEq s (Lobby.startable holding) (Left [Text.pack "43 cards in the deck, fewer than 60"])
+      Spec.assertBool s (Text.isInfixOf (Text.pack "43 cards in the deck, fewer than 60") (Html.toText (Lobby.view started))) "reason"
+
+    Spec.it s "starts an unflagged deck" $ do
+      Spec.assertEq s (Lobby.startable (Lobby.update (Lobby.MkPick a) Text.empty flaggedMine {Lobby.choosing = Lobby.MkMine})) (Right a)
+
+    Spec.it s "a new pick clears the refusal" $ do
+      let started = Lobby.update Lobby.MkStart Text.empty flaggedMine
+      Spec.assertEq s (Lobby.refusal (Lobby.update (Lobby.MkPick a) Text.empty (started {Lobby.choosing = Lobby.MkMine}))) Nothing
+
+    Spec.it s "offers Build a deck" $ do
+      let page = Lobby.view lobby
+      Spec.assertEq s (Html.labelled (Text.pack "button") (Text.pack "Build a deck") page >>= \path -> Html.handler (Text.pack "click") path page) (Just Lobby.MkOpenBuilder)
+
   Spec.describe s "import" $ do
     Spec.it s "slugs a name as lowercase words joined by dashes" $ do
       Spec.assertEqWith s "words" (Lobby.slugOf (Text.pack "  My  Deck!")) (Text.pack "my-deck")
@@ -81,9 +104,9 @@ spec s = Spec.describe s "Parun.Web.Lobby" $ do
 
     Spec.it s "refuses an empty name and one a saved deck holds" $ do
       let holding = Lobby.withDecks (Seq.fromList [a, saved]) Map.empty Lobby.new
-      Spec.assertBool s (not (null (Lobby.nameProblems holding (Text.pack "My Deck")))) "taken"
-      Spec.assertBool s (not (null (Lobby.nameProblems holding (Text.pack "!!!")))) "empty"
-      Spec.assertEqWith s "free" (Lobby.nameProblems holding (Text.pack "Other")) []
+      Spec.assertBool s (not (null (Lobby.nameProblems (Lobby.decks holding) (Text.pack "My Deck")))) "taken"
+      Spec.assertBool s (not (null (Lobby.nameProblems (Lobby.decks holding) (Text.pack "!!!")))) "empty"
+      Spec.assertEqWith s "free" (Lobby.nameProblems (Lobby.decks holding) (Text.pack "Other")) []
 
     Spec.it s "keeps what is typed into the panel" $ do
       let opened = Lobby.update Lobby.MkOpenImport Text.empty lobby
@@ -201,6 +224,10 @@ d = Text.pack "sets/fdc/wretched-ranks"
 
 saved :: Text.Text
 saved = Text.pack "saved/my-deck"
+
+-- | Your deck a saved one the check flagged.
+flaggedMine :: Lobby.Lobby
+flaggedMine = Lobby.update (Lobby.MkPick saved) Text.empty (Lobby.withDecks (Seq.fromList [a, saved]) Map.empty Lobby.new) {Lobby.illegal = Map.singleton saved [Text.pack "43 cards in the deck, fewer than 60"]}
 
 lobby :: Lobby.Lobby
 lobby = Lobby.withDecks (Seq.fromList [a, b, c, d]) (Map.fromList [(c, Text.pack "commander"), (d, Text.pack "commander")]) Lobby.new

@@ -436,14 +436,53 @@ basicLand card =
 -- the format checked.
 report :: Maybe Text.Text -> Maybe CardPool -> DeckList.Listed -> IO (Maybe Text.Text, [Text.Text])
 report asked cardPool listed = do
+  (format, lines', violations) <- assess named asked cardPool listed
+  pure (format, lines' <> fmap explain violations)
+
+-- | 'report' with its violations unexplained, each format's check found by
+-- `lookUp` ('named', or 'namedIn' a table already loaded): the format
+-- checked, the list's own problems and a format that would not load, then
+-- the violations.
+assess :: (Text.Text -> IO (Either Text.Text Checker)) -> Maybe Text.Text -> Maybe CardPool -> DeckList.Listed -> IO (Maybe Text.Text, [Text.Text], [Violation.Violation])
+assess lookUp asked cardPool listed = do
   let (format, disagreement) = DeckList.formatFor asked listed
       lines' = fmap DeckList.explain (DeckList.problems listed <> disagreement)
-  checked <- traverse named format
-  let violations = case checked of
-        Nothing -> []
-        Just (Left problem) -> [problem]
-        Just (Right known) -> fmap explain (known GameSettings.plain cardPool (DeckList.deck listed))
-  pure (format, lines' <> violations)
+  checked <- traverse lookUp format
+  pure $ case checked of
+    Nothing -> (format, lines', [])
+    Just (Left problem) -> (format, lines' <> [problem], [])
+    Just (Right known) -> (format, lines', known GameSettings.plain cardPool (DeckList.deck listed))
+
+-- | The card a violation is about; none for one about the deck as a whole.
+namedCard :: Violation.Violation -> Maybe CardName.CardName
+namedCard violation = case violation of
+  Violation.TooFewCards {} -> Nothing
+  Violation.TooManyCards {} -> Nothing
+  Violation.TooManyCopies _ written _ _ -> Just written
+  Violation.SideboardTooLarge {} -> Nothing
+  Violation.BannedCard written -> Just written
+  Violation.NotLegalCard written -> Just written
+  Violation.NoLegalityData written -> Just written
+  Violation.AnteCard written -> Just written
+  Violation.MiscircledCard written _ _ -> Just written
+  Violation.ConspiracyCard written -> Just written
+  Violation.NoCommander -> Nothing
+  Violation.IllegalCommander written -> Just written
+  Violation.OutsideColorIdentity written -> Just written
+  Violation.TooFewStickerSheets {} -> Nothing
+  Violation.DuplicateStickerSheet {} -> Nothing
+  Violation.TooManyPhenomena {} -> Nothing
+  Violation.MisplacedCard _ written -> Just written
+  Violation.NotInCardPool written -> Just written
+  Violation.NotVanguardCard written -> Just written
+  Violation.MissingVanguard {} -> Nothing
+  Violation.PregameExileCount written _ -> Just written
+  Violation.PregameExileMismatch exiled _ -> Just exiled
+
+-- | The fewest cards a deck of the shipped format a name means may hold
+-- (RuleFamily.Engine.minimumDeckSize); none for a name meaning none.
+minimumFor :: Text.Text -> IO (Maybe Natural.Natural)
+minimumFor name = either (const Nothing) (Just . RuleFamily.Engine.minimumDeckSize . Format.rules) <$> shipped name
 
 -- | A violation as a line a person can read.
 explain :: Violation.Violation -> Text.Text
@@ -482,14 +521,24 @@ explain violation = Text.pack $ case violation of
 -- | The check of the shipped format a name means, against the shipped table:
 -- "constructed" and "limited" for the rules alone, "vintage" and the like with
 -- a pool.
-named :: Text.Text -> IO (Either Text.Text (GameSettings.GameSettings -> Maybe CardPool -> Deck.Deck -> [Violation.Violation]))
+named :: Text.Text -> IO (Either Text.Text Checker)
 named name = do
   found <- shipped name
   case found of
     Left problem -> pure (Left problem)
-    Right format -> do
-      table <- tablePath >>= loadTable
-      pure (fmap (\loaded settings -> check loaded settings format) table)
+    Right format -> fmap (fmap (`checkerOf` format)) (tablePath >>= loadTable)
+
+-- | 'named' against a legality table already loaded.
+namedIn :: LegalityTable.LegalityTable -> Text.Text -> IO (Either Text.Text Checker)
+namedIn table name = fmap (fmap (checkerOf table)) (shipped name)
+
+-- | A format's check against a table ('check').
+checkerOf :: LegalityTable.LegalityTable -> Format.Format -> Checker
+checkerOf table format settings = check table settings format
+
+-- | A format's check of a deck, for a game played with the settings given,
+-- against the card pool given.
+type Checker = GameSettings.GameSettings -> Maybe CardPool -> Deck.Deck -> [Violation.Violation]
 
 -- | The shipped format a name means, or why there is none.
 shipped :: Text.Text -> IO (Either Text.Text Format.Format)
@@ -512,6 +561,15 @@ loadTable path = fmap (decodeWith LegalityTable.Codec.codec) (ByteString.readFil
 -- | The directory the shipped formats are in, one file each.
 formatsRoot :: IO FilePath
 formatsRoot = Paths.getDataFileName "formats"
+
+-- | Every shipped format's name, in order; none while the formats are
+-- absent, as they are in the browser until they load.
+shippedFormats :: IO [Text.Text]
+shippedFormats = do
+  root <- formatsRoot
+  present <- Directory.doesDirectoryExist root
+  files <- if present then Directory.listDirectory root else pure []
+  pure (List.sort [name | file <- files, Just name <- [Text.stripSuffix (Text.pack ".json") (Text.pack file)]])
 
 -- | The format a name means, the file of that name under a formats root:
 -- Nothing when there is none.

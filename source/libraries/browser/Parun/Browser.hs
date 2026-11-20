@@ -90,6 +90,10 @@ want = wantChunk . Prim.toJSString . Text.unpack
 saveDeck :: Text.Text -> Text.Text -> IO ()
 saveDeck slug contents = saveJs (Prim.toJSString (Text.unpack slug)) (Prim.toJSString (Text.unpack contents))
 
+-- | Writes a line to the browser's console.
+logLine :: Text.Text -> IO ()
+logLine = logJs . Prim.toJSString . Text.unpack
+
 -- | Deletes the deck list saved under this slug, from the worker and the
 -- page alike.
 forgetDeck :: Text.Text -> IO ()
@@ -159,6 +163,9 @@ foreign import javascript unsafe "globalThis.parunWant($1)"
 
 foreign import javascript unsafe "globalThis.parunSave($1, $2)"
   saveJs :: Prim.JSString -> Prim.JSString -> IO ()
+
+foreign import javascript unsafe "console.log($1)"
+  logJs :: Prim.JSString -> IO ()
 
 foreign import javascript unsafe "globalThis.parunForget($1)"
   forgetJs :: Prim.JSString -> IO ()
