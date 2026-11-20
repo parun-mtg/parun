@@ -1,0 +1,164 @@
+{
+  "faces": [
+    {
+      "manaCost": [
+        {
+          "type": "Generic",
+          "value": 2
+        },
+        {
+          "type": "OfType",
+          "value": {
+            "type": "Colored",
+            "value": "White"
+          }
+        }
+      ],
+      "name": "Mage's Attendant",
+      "oracleText": "When this creature enters, create a 1/1 blue Wizard creature token with \"{1}, Sacrifice this token: Counter target noncreature spell unless its controller pays {1}.\"",
+      "power": {
+        "type": "Literal",
+        "value": 3
+      },
+      "toughness": {
+        "type": "Literal",
+        "value": 2
+      },
+      "triggeredAbilities": [
+        {
+          "condition": {
+            "type": "Enters",
+            "value": {}
+          },
+          "modal": {
+            "modes": [
+              {
+                "clauses": [
+                  {
+                    "effects": [
+                      {
+                        "type": "Create",
+                        "value": {
+                          "card": {
+                            "faces": [
+                              {
+                                "activatedAbilities": [
+                                  {
+                                    "cost": {
+                                      "components": [
+                                        {
+                                          "type": "SacrificeThis"
+                                        }
+                                      ],
+                                      "mana": [
+                                        {
+                                          "type": "Generic",
+                                          "value": 1
+                                        }
+                                      ]
+                                    },
+                                    "modal": {
+                                      "modes": [
+                                        {
+                                          "clauses": [
+                                            {
+                                              "effects": [
+                                                {
+                                                  "type": "Counter",
+                                                  "value": {
+                                                    "ref": {
+                                                      "type": "InSlot",
+                                                      "value": "spell"
+                                                    }
+                                                  }
+                                                }
+                                              ],
+                                              "payGate": {
+                                                "branch": "IfNotPaid",
+                                                "cost": {
+                                                  "mana": [
+                                                    {
+                                                      "type": "Generic",
+                                                      "value": 1
+                                                    }
+                                                  ]
+                                                },
+                                                "payer": {
+                                                  "type": "HolderOfBound",
+                                                  "value": {
+                                                    "holder": "Controller",
+                                                    "hop": "Itself",
+                                                    "slot": "spell"
+                                                  }
+                                                }
+                                              }
+                                            }
+                                          ],
+                                          "targetSlots": {
+                                            "spell": {
+                                              "filter": {
+                                                "type": "Not",
+                                                "value": {
+                                                  "type": "HasCardType",
+                                                  "value": "Creature"
+                                                }
+                                              },
+                                              "pool": {
+                                                "type": "Spells"
+                                              }
+                                            }
+                                          }
+                                        }
+                                      ]
+                                    }
+                                  }
+                                ],
+                                "colorIndicator": [
+                                  "Blue"
+                                ],
+                                "name": "Wizard Token",
+                                "power": {
+                                  "type": "Literal",
+                                  "value": 1
+                                },
+                                "toughness": {
+                                  "type": "Literal",
+                                  "value": 1
+                                },
+                                "typeLine": {
+                                  "subtypes": [
+                                    "Wizard"
+                                  ],
+                                  "types": [
+                                    "Creature"
+                                  ]
+                                }
+                              }
+                            ]
+                          },
+                          "quantity": {
+                            "type": "Literal",
+                            "value": 1
+                          }
+                        }
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          }
+        }
+      ],
+      "typeLine": {
+        "subtypes": [
+          "Cat",
+          "Rogue"
+        ],
+        "types": [
+          "Creature"
+        ]
+      }
+    }
+  ]
+}

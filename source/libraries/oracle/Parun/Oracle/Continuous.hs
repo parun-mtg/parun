@@ -259,10 +259,11 @@ static context attached enchants a
   | Set.null (StaticAbility.functionsFrom a),
     Maybe.isNothing (StaticAbility.lingers a),
     Maybe.isNothing (StaticAbility.name a) =
-      let body context' = do
+      let body = bodyWith (Text.pack " ")
+          bodyWith between context' = do
             subject <- affected context' attached enchants (StaticAbility.affected a)
             (verb, defined) <- modifications Static (Target.number subject) False context' (Foldable.toList (StaticAbility.modifications a))
-            [Target.wording subject <> Text.pack " " <> verb <> defined]
+            [Target.wording subject <> between <> verb <> defined]
        in case StaticAbility.condition a of
             -- Free: an ability word the effect earns (Song of Stupefaction's
             -- fathomless descent).
@@ -283,6 +284,10 @@ static context attached enchants a
                   it = context {Target.self = Text.pack "it"}
               stated <- body (if itself then it else context)
               full <- body context
+              -- Free: "also" after the subject where the condition closes
+              -- the sentence, a later tier of the same grant saying so
+              -- (Jetmir, Nexus of Revels).
+              let alsos = bodyWith (Text.pack " also ") context
               after <- if itself then fmap (\w -> maybe w (Text.pack "it's " <>) (Text.stripPrefix (Text.pack "it is ") w)) (Trigger.condition it c) else [words']
               let opened = if Text.isPrefixOf (Target.self context) stated then stated else Prose.decapitalise stated
               -- Free: the condition opens the sentence (Excavating Anurid) or
@@ -290,7 +295,7 @@ static context attached enchants a
               -- turn" (Blood Burglar) or "As long as it's your turn" (Faithful
               -- Pikemaster).
               let openings = [Text.pack "As long as " <> words' <> Text.pack ", "] <> [Text.pack "During your turn, " | words' == Text.pack "it's your turn"]
-              [word <> opening <> opened <> Text.pack "." | opening <- openings] <> [word <> Prose.sentence (full <> Text.pack " as long as " <> after)]
+              [word <> opening <> opened <> Text.pack "." | opening <- openings] <> [word <> Prose.sentence (closed <> Text.pack " as long as " <> after) | closed <- full : alsos]
   | otherwise = []
   where
     -- Free: the attached creature's own supertype or colour as the condition,
