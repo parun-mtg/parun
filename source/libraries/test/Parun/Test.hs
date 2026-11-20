@@ -927,6 +927,7 @@ import qualified Parun.Codec.UntapRestrictionSpec
 import qualified Parun.Codec.UntapRewriteSpec
 import qualified Parun.Codec.UntapScopeSpec
 import qualified Parun.Codec.UntilPaidSpec
+import qualified Parun.Codec.UpToCastsSpec
 import qualified Parun.Codec.UsesSpec
 import qualified Parun.Codec.VanguardSpec
 import qualified Parun.Codec.VentureMarkerEnteredSpec
@@ -1789,6 +1790,7 @@ spec s reference corpus = do
   Parun.Codec.OwnedZoneSpec.spec s
   Parun.Codec.PaidExpirySpec.spec s
   Parun.Codec.UntilPaidSpec.spec s
+  Parun.Codec.UpToCastsSpec.spec s
   Parun.Codec.PairingSpec.spec s
   Parun.Codec.PairwiseFrameSpec.spec s
   Parun.Codec.PartnerTextSpec.spec s

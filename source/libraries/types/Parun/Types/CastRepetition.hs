@@ -1,7 +1,7 @@
 module Parun.Types.CastRepetition where
 
-import qualified Parun.Types.Quantity as Quantity
 import qualified Parun.Types.TotalCap as TotalCap
+import qualified Parun.Types.UpToCasts as UpToCasts
 
 -- | How many of the cards a CR 608.2g offer names may be cast under it: the one
 -- Shell of the Last Kappa's "cast a spell from among cards exiled with Shell of
@@ -27,6 +27,6 @@ data CastRepetition
     -- next one's weight (CR 202.3).
     WithinTotal TotalCap.TotalCap
   | -- | Talent of the Telepath's "up to two": @AnyNumber@ capped at that many
-    -- casts, the quantity read once before the first (CR 608.2h).
-    UpTo Quantity.Quantity
+    -- casts, and Invoke Calamity's at a total as well (CR 608.2h).
+    UpTo UpToCasts.UpToCasts
   deriving (Eq, Ord, Show)

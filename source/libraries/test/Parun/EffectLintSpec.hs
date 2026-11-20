@@ -1832,6 +1832,9 @@ inertChoosers effect =
 -- ShuffleIntoLibrary reads its ref through objectRefObjects too -- Timetwister's
 -- "their hand and graveyard" as one move and one shuffle, proved by
 -- Parun.MassEffectSpec's Timetwister group.
+-- OfferCast reads its ref through askingObjects too -- Invoke Calamity's "from
+-- your graveyard and/or hand", proved by the scenario
+-- invoke-calamity-casts-two-spells-from-graveyard-and-hand-and-stops-at-two.
 -- CopyStackObject's CopyTargets.ForEach reads its candidates through
 -- objectRefRecipients too (Resolve.Common.copyForEachTargets) -- Radiate's
 -- "each other permanent or player", proved by the scenario
@@ -1848,6 +1851,7 @@ strayAllOf effect = case effect of
   Effect.Destroy {} -> False
   Effect.ModifyTarget {} -> False
   Effect.ShuffleIntoLibrary {} -> False
+  Effect.OfferCast {} -> False
   Effect.CopyStackObject x -> case CopyStackObject.targets x of
     CopyTargets.ForEach _ -> holdsAllOf (CopyStackObject.ref x)
     _ -> any (holdsAllOf . snd) (effectObjectRefs effect)
@@ -2679,7 +2683,7 @@ effectLintSpec s registry corpus = Spec.describe s "Lint" $ do
     -- Exhume, Elvish Piper, Commune with the Gods and Merfolk Spy print them.
     Spec.assertBool s asks "the pool has a card asking a player to pick a card"
     Spec.assertEqWith s "a chosen card under an opcode that cannot ask (CR 608.2d)" (fmap (S.nameOf . Printing.card) offenders) []
-  Spec.it s "no AllOf outside a move, a play grant, a loop, a damage instruction, a destruction, a shuffle-in, a modification or a copy's candidates" $ do
+  Spec.it s "no AllOf outside a move, a play grant, a loop, a damage instruction, a destruction, a shuffle-in, a modification, a cast offer or a copy's candidates" $ do
     ps <- S.allPrintings s corpus
     let offenders = filter (anyFace (any strayAllOf . cardAuthoredEffects) . Printing.card) ps
         moved = any (anyFace (any (any (isAllOf . snd) . effectObjectRefs) . cardAuthoredEffects) . Printing.card) ps

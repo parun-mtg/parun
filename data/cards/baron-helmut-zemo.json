@@ -48,8 +48,10 @@
                           "repetition": {
                             "type": "UpTo",
                             "value": {
-                              "type": "Literal",
-                              "value": 3
+                              "casts": {
+                                "type": "Literal",
+                                "value": 3
+                              }
                             }
                           }
                         }
