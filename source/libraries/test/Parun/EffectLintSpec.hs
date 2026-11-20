@@ -150,6 +150,7 @@ import qualified Parun.Types.GainControl as GainControl
 import qualified Parun.Types.GrantCopyCast as GrantCopyCast
 import qualified Parun.Types.GrantLookAtExiled as GrantLookAtExiled
 import qualified Parun.Types.GrantPlayFromExile as GrantPlayFromExile
+import qualified Parun.Types.GrantZone as GrantZone
 import qualified Parun.Types.GrantedAbility as GrantedAbility
 import qualified Parun.Types.Guess as Guess
 import qualified Parun.Types.HiddenZone as HiddenZone
@@ -171,6 +172,7 @@ import qualified Parun.Types.LostPermanent as LostPermanent
 import qualified Parun.Types.MakeForetold as MakeForetold
 import qualified Parun.Types.ManaAddition as ManaAddition
 import qualified Parun.Types.ManaRestriction as ManaRestriction
+import qualified Parun.Types.ManaSpending as ManaSpending
 import qualified Parun.Types.MayPass as MayPass
 import qualified Parun.Types.Measure as Measure
 import qualified Parun.Types.Meld as Meld
@@ -201,11 +203,13 @@ import qualified Parun.Types.PermanentActed as PermanentActed
 import qualified Parun.Types.PermanentAction as PermanentAction
 import qualified Parun.Types.PermanentActsTrigger as PermanentActsTrigger
 import qualified Parun.Types.PermissionLimit as PermissionLimit
+import qualified Parun.Types.PermissionVerb as PermissionVerb
 import qualified Parun.Types.PhaseAnchor as PhaseAnchor
 import qualified Parun.Types.PhaseOut as PhaseOut
 import qualified Parun.Types.PhasePattern as PhasePattern
 import qualified Parun.Types.PhaseR as PhaseR
 import qualified Parun.Types.PhaseRewrite as PhaseRewrite
+import qualified Parun.Types.PlayAllowance as PlayAllowance
 import qualified Parun.Types.PlayerEffect as PlayerEffect
 import qualified Parun.Types.PlayerId as PlayerId
 import qualified Parun.Types.PlayerInstruction as PlayerInstruction
@@ -266,6 +270,7 @@ import qualified Parun.Types.Subtype as Subtype.Type
 import qualified Parun.Types.Superlative as Superlative
 import qualified Parun.Types.Supertype as Supertype
 import qualified Parun.Types.Tap as Tap
+import qualified Parun.Types.TapState as TapState
 import qualified Parun.Types.TargetSlot as TargetSlot
 import qualified Parun.Types.TheseDiscard as TheseDiscard
 import qualified Parun.Types.TokenR as TokenR
@@ -2624,6 +2629,34 @@ effectLintSpec s registry corpus = Spec.describe s "Lint" $ do
     -- would pass whatever a card said. Aetherspouts is the card that prints one.
     Spec.assertBool s (any (anyFace (any asks . cardResolutionEffects) . Printing.card) ps) "the pool has a card leaving the end to each owner"
     Spec.assertEqWith s "only a library has ends" (fmap (S.nameOf . Printing.card) offenders) []
+  -- Unprinted: Parun.Engine.Cost and Parun.Engine.Cast read a play
+  -- permission's keywords, its budget and an increase no target waives off a
+  -- card in exile only (CR 601.3, 601.2f, 400.7h), and no printing writes
+  -- one on a permission reaching a graveyard. The printed card that does
+  -- builds them and deletes this lint.
+  Spec.it s "no play permission outside exile carries keywords, a budget or an unwaived increase" $ do
+    ps <- S.allPrintings s corpus
+    let offenders = filter (anyFaceOrMinted (any nonExileRidersOffend . cardResolutionEffects) . Printing.card) ps
+        riders effect = case effect of
+          Effect.GrantPlayFromExile grant -> GrantPlayFromExile.zone grant == GrantZone.Exile && exileOnlyRiders grant
+          _ -> False
+    -- Guards against a vacuous sweep: Durnan of the Yawning Portal and
+    -- Chiss-Goria, Forge Tyrant carry the riders in exile, which passes.
+    Spec.assertBool s (any (anyFace (any riders . cardResolutionEffects) . Printing.card) ps) "the pool has an exile permission carrying a rider"
+    Spec.assertEqWith s "a permission outside exile carries no exile-only rider" (fmap (S.nameOf . Printing.card) offenders) []
+  Spec.it s "the lint itself catches keywords, a budget and an unwaived increase on a permission outside exile" $ do
+    let bare = GrantPlayFromExile.MkGrantPlayFromExile Duration.UntilEndOfTurn (PlayerRef.Relative PlayerRelation.You) (ObjectRef.EachMatching (Filter.Type.And [])) ManaSpending.AsProduced Nothing Nothing PermissionVerb.Play 0 Nothing TapState.Untapped TapState.Untapped Nothing []
+        keyworded zone = (bare zone) {GrantPlayFromExile.keywords = [Keyword.Undaunted]}
+        budgeted zone = (bare zone) {GrantPlayFromExile.upTo = Just (PlayAllowance.Plays 1)}
+        increased zone = (bare zone) {GrantPlayFromExile.increase = 1}
+        waived zone = (increased zone) {GrantPlayFromExile.increaseUnless = Just (Filter.Type.And [])}
+        caught grant = any nonExileRidersOffend (cardResolutionEffects ((vanillaFace "Granter" instantLine) {Face.spell = Mint.oneMode (Seq.singleton (Effect.GrantPlayFromExile grant))}))
+        zones = [GrantZone.Exile, GrantZone.Graveyard, GrantZone.AnyPublic]
+    Spec.assertEqWith s "keywords are rejected outside exile" (fmap (caught . keyworded) zones) [False, True, True]
+    Spec.assertEqWith s "and a budget" (fmap (caught . budgeted) zones) [False, True, True]
+    Spec.assertEqWith s "and an increase no target waives" (fmap (caught . increased) zones) [False, True, True]
+    Spec.assertEqWith s "but a waivable increase is accepted (Mavinda, Students' Advocate)" (fmap (caught . waived) zones) [False, False, False]
+    Spec.assertEqWith s "and so is a bare permission" (fmap (caught . bare) zones) [False, False, False]
   -- CR 608.2d: a choice an effect offers is announced while the effect is
   -- applied, so an opcode that gathers its objects through the pure
   -- Parun.Engine.Resolve.Slots.objectRefObjects cannot make one, and a
@@ -4563,6 +4596,22 @@ boundPlurally effect = case effect of
   Effect.Tap (Tap.MkTap _ mTapped _) -> Maybe.maybeToList mTapped
   Effect.Divide divide -> [Divide.slot divide]
   _ -> []
+
+-- A play permission reaching a card outside exile (GrantZone.Graveyard, or
+-- GrantZone.AnyPublic's graveyard) that carries a rider only an exiled card's
+-- cast reads.
+nonExileRidersOffend :: Effect.Effect Card.Type.Card (GrantedAbility.GrantedAbility Card.Type.Card) -> Bool
+nonExileRidersOffend effect = case effect of
+  Effect.GrantPlayFromExile grant -> GrantPlayFromExile.zone grant /= GrantZone.Exile && exileOnlyRiders grant
+  _ -> False
+
+-- Whether a play permission carries keywords, a budget or an increase no
+-- target waives.
+exileOnlyRiders :: GrantPlayFromExile.GrantPlayFromExile -> Bool
+exileOnlyRiders grant =
+  not (null (GrantPlayFromExile.keywords grant))
+    || Maybe.isJust (GrantPlayFromExile.upTo grant)
+    || (GrantPlayFromExile.increase grant > 0 && Maybe.isNothing (GrantPlayFromExile.increaseUnless grant))
 
 -- CR 122.5 onto a GROUP of permanents under MovedKinds.EachAbsentKind, the one
 -- `kinds` arm Parun.Engine.Resolve.Arms.Counters's distributePair does not ask

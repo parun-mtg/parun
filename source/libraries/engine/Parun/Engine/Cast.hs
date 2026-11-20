@@ -2515,8 +2515,10 @@ isFlashPermission permission = case permission of
 -- about this one card for one player (Jace, Telepath Unbound's -3), read with
 -- its verb's face confinement (permitsCastUnderPermission).
 --
--- Not implemented: that permission's keywords, budget and an increase no target
--- waives (#8118), on a graveyard card.
+-- Unprinted: that permission's keywords, budget and an increase no target
+-- waives, on a graveyard card, kept out of card data by
+-- Parun.EffectLintSpec's "no play permission outside exile carries keywords,
+-- a budget or an unwaived increase".
 --
 -- Folding the second into the first would say the effect printed flashback onto
 -- every card in the graveyard, which is neither CR 702.34a's meaning nor a thing
@@ -3994,8 +3996,11 @@ castProposed perform baseSpending pid oid sid printedFace castFrom preparedFor k
       -- reads them (proposedUnder), and the stamp gives them only to a cast
       -- made under that permission.
       held = foldMap ExilePlayPermission.keywords exilePermission
-      -- The card's own permission where the card lay in exile. Its keywords
-      -- and budget on a graveyard card are not implemented (#8118).
+      -- The card's own permission where the card lay in exile.
+      --
+      -- Unprinted: its keywords and budget on a graveyard card, kept out of
+      -- card data by Parun.EffectLintSpec's "no play permission outside exile
+      -- carries keywords, a budget or an unwaived increase".
       exilePermission = if castFrom == Just Zone.Exile then ownHeld else Nothing
   -- CR 601.2f: the cost change the card's own permission makes once CR
   -- 601.2c's targets are announced, stamped on the spell for every pricing
