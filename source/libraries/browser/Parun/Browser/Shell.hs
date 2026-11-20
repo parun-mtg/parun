@@ -95,7 +95,9 @@ data Loaded = MkLoaded
     -- | The legality table, once a check has loaded it (or why it did not).
     legalityTable :: Maybe (Either Text.Text LegalityTable.LegalityTable),
     -- | Each set's whole card list, by the set's code, once the decks are read.
-    setLists :: Map.Map Text.Text FilePath
+    setLists :: Map.Map Text.Text FilePath,
+    -- | How many cards each deck's main deck holds, by name, as read so far.
+    deckSizes :: Map.Map Text.Text Natural
   }
 
 -- | Where a screen leads when it ends.
@@ -121,7 +123,7 @@ data Woke
 start :: IO ()
 start = do
   chosen <- maybe Web.Question.MkStandard (Maybe.fromMaybe Web.Question.MkStandard . Web.Question.levelNamed) <$> Environment.lookupEnv "parun_level"
-  shell <- MkShell <$> Browser.mount <*> IORef.newIORef (MkLoaded Loading.new Nothing Map.empty Nothing Map.empty [] Nothing Nothing Nothing False Nothing Map.empty [] Nothing Map.empty) <*> IORef.newIORef chosen
+  shell <- MkShell <$> Browser.mount <*> IORef.newIORef (MkLoaded Loading.new Nothing Map.empty Nothing Map.empty [] Nothing Nothing Nothing False Nothing Map.empty [] Nothing Map.empty Map.empty) <*> IORef.newIORef chosen
   Exception.catch (opening >>= follow shell) $ \problem ->
     Browser.display (page shell) $ message ["The page stopped on an error:", Exception.displayException (problem :: Exception.SomeException)]
 
@@ -270,6 +272,7 @@ refreshed shell shown = do
       { Lobby.problem = Loading.problemFor Loading.MkDecks (loading now),
         Lobby.palette = palette now,
         Lobby.illegal = illegal now,
+        Lobby.sizes = deckSizes now,
         Lobby.previews = Map.union (Lobby.previews withDecks) (Map.fromList read')
       }
 
@@ -621,8 +624,9 @@ work shell = do
                 _ -> Set.empty
           read' <- Monad.forM batch $ \(name, path) -> do
             contents <- Encoding.decodeUtf8Lenient <$> ByteString.readFile path
-            Exception.evaluate . (,) name $! Lobby.deckColours colours contents
-          IORef.modifyIORef' (loaded shell) $ \l -> l {palette = Map.union (palette l) (Map.fromList read'), unread = rest}
+            size <- Exception.evaluate (Lobby.mainCount contents)
+            Exception.evaluate . (,) name . (,) size $! Lobby.deckColours colours contents
+          IORef.modifyIORef' (loaded shell) $ \l -> l {palette = Map.union (Map.fromList [(name, colours') | (name, (_, colours')) <- read']) (palette l), deckSizes = Map.union (Map.fromList [(name, size) | (name, (size, _)) <- read']) (deckSizes l), unread = rest}
         _ -> Nothing
       -- The builder's index, 500 cards a batch, timed to the console.
       buildIndex = case (cards now, indexing now) of

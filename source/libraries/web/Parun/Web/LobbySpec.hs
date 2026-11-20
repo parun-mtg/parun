@@ -75,9 +75,12 @@ spec s = Spec.describe s "Parun.Web.Lobby" $ do
       Spec.assertEq s (Lobby.search $ Lobby.update Lobby.MkSearch (Text.pack "webs") lobby) (Text.pack "webs")
 
   Spec.describe s "pairing" $ do
-    Spec.it s "CR 100.2b offers a Limited deck the decks naming no format" $ do
-      let holding = Lobby.withDecks (Seq.fromList [a, saved]) (Map.singleton saved (Text.pack "limited")) Lobby.new
+    Spec.it s "offers a Limited deck the decks naming no format that a Limited game takes" $ do
+      let holding = (Lobby.withDecks (Seq.fromList [a, b, saved]) (Map.singleton saved (Text.pack "limited")) Lobby.new) {Lobby.sizes = Map.fromList [(a, 40), (b, 30)]}
       Spec.assertEq s (Lobby.opponents (Lobby.update (Lobby.MkPick saved) Text.empty holding)) (Seq.fromList [a, saved])
+
+    Spec.it s "counts a deck list's main deck" $ do
+      Spec.assertEq s (Lobby.mainCount (Text.pack "Format: commander\nCommander\n1 Sai\nDeck\n4 Island\n2 Shock\nSideboard\n3 Bolt\n")) 6
 
   Spec.describe s "flagged decks" $ do
     Spec.it s "badges a saved deck with problems Not legal" $ do

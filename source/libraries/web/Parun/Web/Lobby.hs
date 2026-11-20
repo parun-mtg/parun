@@ -12,6 +12,8 @@ import qualified Data.Sequence as Seq
 import qualified Data.Set as Set
 import qualified Data.Text as Text
 import Numeric.Natural (Natural)
+import qualified Parun.DeckList as DeckList
+import qualified Parun.Engine.RuleFamily as RuleFamily.Engine
 import qualified Parun.Types.Card as Card
 import qualified Parun.Types.CardName as CardName
 import qualified Parun.Types.Color as Color
@@ -21,6 +23,7 @@ import qualified Parun.Types.HybridPhyrexian as HybridPhyrexian
 import qualified Parun.Types.ManaCost as ManaCost
 import qualified Parun.Types.ManaSymbol as ManaSymbol
 import qualified Parun.Types.ManaType as ManaType
+import qualified Parun.Types.RuleFamily as RuleFamily
 import qualified Parun.Web.Card as Web.Card
 import qualified Parun.Web.Element as Element
 import qualified Parun.Web.Home as Home
@@ -58,7 +61,9 @@ data Lobby = MkLobby
     -- | Why each saved deck found to break its format does, by name.
     illegal :: Map.Map Text.Text [Text.Text],
     -- | Why Start was last refused, until the next pick.
-    refusal :: Maybe [Text.Text]
+    refusal :: Maybe [Text.Text],
+    -- | How many cards each deck's main deck holds, by name, as read so far.
+    sizes :: Map.Map Text.Text Natural
   }
   deriving (Eq, Show)
 
@@ -123,7 +128,7 @@ data Event
 
 -- | A lobby whose decks are still to read, nothing chosen yet.
 new :: Lobby
-new = MkLobby True Nothing Seq.empty Map.empty Nothing [Nothing] MkMine Text.empty Map.empty Map.empty Nothing Nothing Map.empty Nothing
+new = MkLobby True Nothing Seq.empty Map.empty Nothing [Nothing] MkMine Text.empty Map.empty Map.empty Nothing Nothing Map.empty Nothing Map.empty
 
 -- | Where saved decks sit beneath the deck root.
 savedPrefix :: Text.Text
@@ -181,17 +186,19 @@ mostBots :: Int
 mostBots = 3
 
 -- | Whether two decks are under one format, and so may meet: the game's
--- format is the one their headers name (Parun.Play.Command.settle), which
--- a Limited deck's makes of a deck naming none.
+-- format is the one their headers name (Parun.Play.Command.settle).
 together :: Lobby -> Text.Text -> Text.Text -> Bool
 together lobby one two = case (Map.lookup one (formats lobby), Map.lookup two (formats lobby)) of
-  -- CR 100.2b: a Limited deck meets a deck naming no format, which the
-  -- game then checks as Limited.
-  (Just named, Nothing) | named == limited -> True
-  (Nothing, Just named) | named == limited -> True
+  -- A Limited deck meets a deck naming no format that a Limited game takes,
+  -- since the game is then Limited (Parun.Play.Command.gameFormat): the
+  -- client's reading, so a sealed deck has opponents. A deck not yet
+  -- counted is offered, and Start refuses it if it is too small.
+  (Just named, Nothing) | named == limited -> bigEnough two
+  (Nothing, Just named) | named == limited -> bigEnough one
   (mine', theirs') -> mine' == theirs'
   where
     limited = Text.pack "limited"
+    bigEnough name = maybe True (>= RuleFamily.Engine.minimumDeckSize RuleFamily.Limited) (Map.lookup name (sizes lobby))
 
 -- | The decks the bot may play against yours: every deck, until yours is
 -- chosen.
@@ -223,6 +230,17 @@ costColours printed =
 -- | A deck list's colours: those of each card a line names, by `colours`.
 deckColours :: (CardName.CardName -> Set.Set Color.Color) -> Text.Text -> Set.Set Color.Color
 deckColours colours contents = foldMap colours (Set.fromList (fmap snd (entries contents)))
+
+-- | How many cards a deck list's main deck holds: its lines before any
+-- other section's header, and those under the main deck's.
+mainCount :: Text.Text -> Natural
+mainCount contents =
+  let step (inMain, n) line = case DeckList.sectionNamed (Text.strip line) of
+        Just section -> (section == DeckList.Main, n)
+        Nothing
+          | inMain, Just (k, _) <- Maybe.listToMaybe (entries line) -> (inMain, n + k)
+          | otherwise -> (inMain, n)
+   in snd (List.foldl' step (True, 0) (Text.lines contents))
 
 -- | A deck list's lines that name a card ("4 Forest", "1 Shock (M19) 156"),
 -- each as its count and the card; other lines skipped.

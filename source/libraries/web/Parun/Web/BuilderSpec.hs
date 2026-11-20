@@ -260,6 +260,42 @@ spec s = Spec.describe s "Parun.Web.Builder" $ do
       let renamed = Builder.withIndex (Maybe.fromMaybe Seq.empty (Builder.index indexed)) (Builder.open Nothing Text.empty (Text.pack "4 lightning bolt\n") fresh)
       Spec.assertEq s (Builder.deck renamed, Builder.dirty renamed) (Map.singleton bolt 4, False)
 
+  Spec.describe s "review" $ do
+    Spec.it s "CR 207.5 keeps each line's choice when a card's copies circle different colours" $ do
+      let text = Text.pack "2 Cryptic Spires {circled: W U}\n1 Cryptic Spires {circled: B R}\n"
+          opened = Builder.open Nothing Text.empty text indexed
+      Spec.assertEq s (Builder.listText opened, length (Builder.notices opened)) (text, 1)
+
+    Spec.it s "offers a choice for a pool's unused card that makes one" $ do
+      let shown = page (pooled "1 Cryptic Spires\n")
+      Spec.assertBool s (Text.isInfixOf (Text.pack "Circle two colours") shown) "offered"
+
+    Spec.it s "folds the sideboard into a held pool when the format turns Limited" $ do
+      let held = Builder.update Builder.MkFormat Text.empty (pooled "1 Shock\n")
+          sided = tap (Builder.MkAdd DeckList.Side bolt) (tap (Builder.MkTarget DeckList.Side) held)
+          back = Builder.update Builder.MkFormat (Text.pack "limited") sided
+      Spec.assertEq s (Builder.target back, Builder.listText back) (DeckList.Main, Text.pack "Format: limited\n\nSideboard\n1 Lightning Bolt\n1 Shock\n")
+
+    Spec.it s "takes a later Format header over an empty one" $ do
+      Spec.assertEq s (Builder.format (Builder.open Nothing Text.empty (Text.pack "Format:\nFormat: modern\n1 Island\n") fresh)) (Text.pack "modern")
+
+    Spec.it s "CR 903.4b replaces a commander's chosen colour" $ do
+      let piper = (card "The Prismatic Piper") {CardIndex.choices = Set.singleton (DeckList.Commander, DeckList.CommanderColor)}
+          b = tap (Builder.MkAdd DeckList.Commander (named "The Prismatic Piper")) (Builder.withIndex (Seq.singleton piper) fresh)
+          picked = tap (Builder.MkChoose DeckList.Commander (named "The Prismatic Piper") Color.Green) (tap (Builder.MkChoose DeckList.Commander (named "The Prismatic Piper") Color.Red) b)
+      Spec.assertEq s (Builder.chosenFor DeckList.Commander (named "The Prismatic Piper") picked) (Set.singleton Color.Green)
+
+    Spec.it s "saves a pasted pool before any card is in the deck" $ do
+      Spec.assertEq s (Builder.saveTarget Seq.empty (Builder.update Builder.MkSaveName (Text.pack "Sealed") (pooled "1 Shock\n"))) (Right (Text.pack "saved/sealed"))
+
+    Spec.it s "drops a choice a card does not make, saying so" $ do
+      let renamed = Builder.withIndex (Maybe.fromMaybe Seq.empty (Builder.index indexed)) (Builder.open Nothing Text.empty (Text.pack "1 Lightning Bolt {circled: W U}\n") fresh)
+      Spec.assertEq s (Builder.listText renamed, length (Builder.notices renamed)) (Text.pack "1 Lightning Bolt\n", 1)
+
+    Spec.it s "keeps a bare copy bare when spellings merge" $ do
+      let renamed = Builder.withIndex (Maybe.fromMaybe Seq.empty (Builder.index indexed)) (Builder.open Nothing Text.empty (Text.pack "2 Lightning Bolt (M10) 146\n1 lightning bolt\n") fresh)
+      Spec.assertEq s (Builder.listText renamed) (Text.pack "2 Lightning Bolt (M10) 146\n1 Lightning Bolt\n")
+
   Spec.describe s "zones" $ do
     Spec.it s "opens a commander and a sideboard into zones, and edits them" $ do
       let opened = Builder.open Nothing Text.empty (Text.pack "Format: commander\nCommander\n1 Sai, Master Thopterist\nDeck\n30 Island\nSideboard\n2 Shock\n") indexed
@@ -318,7 +354,7 @@ spec s = Spec.describe s "Parun.Web.Builder" $ do
     page = Html.toText . Builder.view
     card name = CardIndex.MkEntry (CardName.MkCardName (Text.pack name)) [Text.pack name] Nothing 1 Set.empty Set.empty (Text.pack "Instant") [] (Text.toCaseFold (Text.pack name)) False Set.empty
     spires = named "Cryptic Spires"
-    indexed = Builder.withIndex (Seq.fromList [(card "Cryptic Spires") {CardIndex.choices = Set.singleton (DeckList.Main, DeckList.CircledColors)}, (card "Lightning Bolt") {CardIndex.rules = [(Text.pack "Lightning Bolt", [Text.pack "Lightning Bolt deals 3 damage to any target."])]}, (card "Mountain") {CardIndex.basic = True}, card "Shock", (card "Front Face") {CardIndex.faceNames = [Text.pack "Front Face", Text.pack "Back Face"]}]) fresh
+    indexed = Builder.withIndex (Seq.fromList [(card "Cryptic Spires") {CardIndex.choices = Set.fromList [(section, DeckList.CircledColors) | section <- [DeckList.Main, DeckList.Side, DeckList.Commander]]}, (card "Lightning Bolt") {CardIndex.rules = [(Text.pack "Lightning Bolt", [Text.pack "Lightning Bolt deals 3 damage to any target."])]}, (card "Mountain") {CardIndex.basic = True}, card "Shock", (card "Front Face") {CardIndex.faceNames = [Text.pack "Front Face", Text.pack "Back Face"]}]) fresh
     pooled text = Builder.update Builder.MkUsePool Text.empty (Builder.update Builder.MkPoolText (Text.pack text) (Builder.update Builder.MkPoolChoice (Text.pack "paste") indexed))
     constructed = Builder.update Builder.MkFormat (Text.pack "constructed") fresh
     fresh = Builder.new [Text.pack "constructed", Text.pack "pauper"]
