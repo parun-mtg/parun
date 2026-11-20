@@ -2826,3 +2826,224 @@ main.scenarios h2 {
   letter-spacing: 0.06em;
   color: var(--muted);
 }
+
+/* ---------- Deck builder ---------- */
+
+main.builder {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: max(1em, env(safe-area-inset-top)) 1em calc(2em + env(safe-area-inset-bottom));
+}
+
+.builder-top {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5em;
+  margin-bottom: 1em;
+}
+
+.builder-top .builder-name {
+  flex: 1;
+  min-width: 10em;
+  width: auto;
+}
+
+.builder-top .saved {
+  color: var(--good-text);
+  font-size: 0.85rem;
+}
+
+.builder-top .problems,
+.builder-deck .problems {
+  flex-basis: 100%;
+  margin: 0;
+  padding-left: 1.2em;
+  color: var(--danger-text);
+  font-size: 0.88rem;
+}
+
+/* Cards and deck side by side where there is room, stacked otherwise. */
+.builder-body {
+  display: grid;
+  grid-template-columns: minmax(0, 3fr) minmax(0, 2fr);
+  gap: 1.2em;
+  align-items: start;
+}
+
+@media (max-width: 760px) {
+  .builder-body {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+.builder-search,
+.builder-deck {
+  display: grid;
+  gap: 0.6em;
+}
+
+.builder-deck {
+  position: sticky;
+  top: 0.5em;
+  padding: 0.75em;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--surface);
+}
+
+.builder-deck h2 {
+  margin: 0;
+  font-size: 1.1rem;
+  font-variant-numeric: tabular-nums;
+}
+
+.filters,
+.basics {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35em;
+}
+
+#app .filters button.toggle {
+  padding: 0.25em 0.6em;
+  font-size: 0.82rem;
+}
+
+#app .filters button.toggle.on {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: var(--accent-text);
+}
+
+#app .basics button.basic {
+  padding: 0.25em 0.6em;
+  font-size: 0.82rem;
+}
+
+#app .basics button.basic::before {
+  content: "+ ";
+}
+
+.shown-count {
+  color: var(--muted);
+  font-size: 0.82rem;
+  margin: 0;
+}
+
+.results {
+  display: grid;
+}
+
+.result {
+  display: flex;
+  align-items: center;
+  gap: 0.5em;
+  padding: 0.3em 0;
+  border-bottom: 1px solid var(--border);
+  font-size: 0.9rem;
+}
+
+.result .type-line {
+  flex: 1;
+  color: var(--muted);
+  font-size: 0.8rem;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.result .copies {
+  font-variant-numeric: tabular-nums;
+  color: var(--accent);
+  font-weight: 600;
+}
+
+#app button.card-name {
+  padding: 0;
+  border: none;
+  background: none;
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+#app button.card-name:hover {
+  text-decoration: underline;
+}
+
+.builder-deck .deck-line {
+  align-items: center;
+}
+
+.builder-deck .deck-line .card-name {
+  flex: 1;
+}
+
+.builder-deck .deck-line.flagged {
+  color: var(--danger-text);
+}
+
+.builder-deck .deck-line.flagged .copies {
+  color: var(--danger-text);
+  font-weight: 600;
+}
+
+#app button.add,
+#app button.remove {
+  flex: none;
+  width: 1.9em;
+  height: 1.9em;
+  padding: 0;
+  line-height: 1;
+}
+
+#app button.add::before {
+  content: "+";
+}
+
+#app button.remove::before {
+  content: "\2212";
+}
+
+.card-reading,
+.leave {
+  position: fixed;
+  left: 50%;
+  bottom: 1em;
+  transform: translateX(-50%);
+  width: min(32em, calc(100% - 2em));
+  display: grid;
+  gap: 0.4em;
+  padding: 1em;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--surface);
+  box-shadow: var(--sheet-shadow);
+  z-index: 10;
+}
+
+.card-reading h2 {
+  margin: 0;
+  font-size: 1.05rem;
+}
+
+.card-reading .type-line {
+  margin: 0;
+  color: var(--muted);
+  font-size: 0.85rem;
+}
+
+.card-reading .rules {
+  margin: 0;
+}
+
+.leave {
+  grid-template-columns: 1fr auto auto;
+  align-items: center;
+}
+
+.leave p {
+  margin: 0;
+}

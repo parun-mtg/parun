@@ -235,12 +235,10 @@ data Kind
   | MkLand
   deriving (Eq, Ord, Show)
 
--- | A deck's list: a curve of its spells by mana value (the last bar
--- counting six and up), and its cards by kind.
-preview :: Text.Text -> [Line] -> Html.Html msg
-preview name lines' =
-  let total = sum (fmap copies lines')
-      spells = [l | l <- lines', kind l /= MkLand]
+-- | A deck's spells by mana value, as bars, the last counting six and up.
+curve :: [Line] -> Html.Html msg
+curve lines' =
+  let spells = [l | l <- lines', kind l /= MkLand]
       bars = [(mv, sum [copies l | l <- spells, inBar l]) | (mv, inBar) <- [(show n, \l -> value l == n) | n <- [0 .. 5]] <> [("6+", \l -> value l >= 6)]]
       tallest = maximum (1 : fmap snd bars)
       bar (mv, n) =
@@ -249,6 +247,12 @@ preview name lines' =
           ["bar"]
           [Element.attr "title" (Text.pack (show n <> " at mana value " <> mv))]
           [Element.el "span" ["fill"] [Element.attr "style" (Text.pack ("height:" <> show (div (n * 100) tallest) <> "%"))] [], Element.el "span" ["mv"] [] [Element.string mv]]
+   in Element.el "span" ["curve"] [Element.attr "aria-hidden" (Text.pack "true")] (fmap bar bars)
+
+-- | A deck's list: its curve ('curve') and its cards by kind.
+preview :: Text.Text -> [Line] -> Html.Html msg
+preview name lines' =
+  let total = sum (fmap copies lines')
       section title k =
         let these = List.sortOn (\l -> (value l, CardName.unwrap (card l))) [l | l <- lines', kind l == k]
          in [ Element.el "div" ["deck-section"] [] $
@@ -260,7 +264,7 @@ preview name lines' =
         "details"
         ["deck-preview"]
         []
-        [ Element.el "summary" [] [] [Element.el "span" ["preview-title"] [] [Element.text (label name), Element.string (" \x00b7 " <> show total <> " cards")], Element.el "span" ["curve"] [Element.attr "aria-hidden" (Text.pack "true")] (fmap bar bars)],
+        [ Element.el "summary" [] [] [Element.el "span" ["preview-title"] [] [Element.text (label name), Element.string (" \x00b7 " <> show total <> " cards")], curve lines'],
           Element.el "div" ["deck-sections"] [] (section "Creatures" MkCreature <> section "Spells" MkSpell <> section "Lands" MkLand)
         ]
 

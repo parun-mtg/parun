@@ -2,8 +2,10 @@
 -- typed, checked as it changes, and saved as a deck list.
 module Parun.Web.Builder where
 
+import qualified Data.Foldable as Foldable
 import qualified Data.List as List
 import qualified Data.Map.Strict as Map
+import qualified Data.Maybe as Maybe
 import qualified Data.Sequence as Seq
 import qualified Data.Set as Set
 import qualified Data.Text as Text
@@ -11,8 +13,12 @@ import Numeric.Natural (Natural)
 import qualified Parun.Types.CardName as CardName
 import qualified Parun.Types.CardType as CardType
 import qualified Parun.Types.Color as Color
+import qualified Parun.Web.Card as Web.Card
 import qualified Parun.Web.CardIndex as CardIndex
+import qualified Parun.Web.Element as Element
+import qualified Parun.Web.Html as Html
 import qualified Parun.Web.Lobby as Lobby
+import qualified Parun.Web.Mana as Mana
 import qualified Text.Read as Read
 
 data Builder = MkBuilder
@@ -126,3 +132,127 @@ saveTarget decks builder = case savedAs builder of
   Nothing -> case Lobby.nameProblems decks (saveName builder) of
     [] -> Right (Lobby.savedPrefix <> Lobby.slugOf (saveName builder))
     problems' -> Left problems'
+
+-- | The deck as the lobby's preview lines, each card's cost, mana value and
+-- kind from the index.
+linesOf :: Builder -> [Lobby.Line]
+linesOf builder =
+  let byName = Map.fromList [(CardIndex.name e, e) | e <- foldMap Foldable.toList (index builder)]
+      line (card, n) = case Map.lookup card byName of
+        Just e -> Lobby.MkLine n card (CardIndex.cost e) (CardIndex.value e) (kindOf (CardIndex.types e))
+        Nothing -> Lobby.MkLine n card Nothing 0 Lobby.MkSpell
+      kindOf types'
+        | Set.member CardType.Land types' = Lobby.MkLand
+        | Set.member CardType.Creature types' = Lobby.MkCreature
+        | otherwise = Lobby.MkSpell
+   in fmap line (Map.toList (deck builder))
+
+-- | The basic lands, offered whatever the search.
+basics :: [CardName.CardName]
+basics = fmap (CardName.MkCardName . Text.pack) ["Plains", "Island", "Swamp", "Mountain", "Forest"]
+
+-- | The card types a search may be narrowed to.
+searchKinds :: [CardType.CardType]
+searchKinds = [CardType.Creature, CardType.Instant, CardType.Sorcery, CardType.Artifact, CardType.Enchantment, CardType.Planeswalker, CardType.Battle, CardType.Land]
+
+view :: Builder -> Html.Html Event
+view builder =
+  let lines' = linesOf builder
+      total = sum (fmap Lobby.copies lines')
+      named = CardName.unwrap
+      adding card = Element.el "button" ["add"] [Element.attr "type" (Text.pack "button"), Element.on "click" (MkAdd card)] [Element.el "span" ["sr-only"] [] [Element.text (Text.pack "Add " <> named card)]]
+      removing card = Element.el "button" ["remove"] [Element.attr "type" (Text.pack "button"), Element.on "click" (MkRemove card)] [Element.el "span" ["sr-only"] [] [Element.text (Text.pack "Remove " <> named card)]]
+      reader card = Element.button ["card-name"] (MkRead card) [Element.text (named card)]
+      option chosen (value', label') = Element.el "option" [] ([Element.attr "value" value'] <> [Element.attr "selected" Text.empty | chosen == value']) [Element.text label']
+      toggled on = ["toggle"] <> ["on" | on]
+      q = query builder
+      valueChoices = (Text.empty, Text.pack "Any mana value") : [(Text.pack (show n), Text.pack (show n)) | n <- [0 .. 6 :: Int]] <> [(Text.pack "7", Text.pack "7+")]
+      chosenValue = maybe Text.empty (Text.pack . show) (CardIndex.valued q)
+      results = case index builder of
+        Nothing -> [Element.el "p" ["empty"] [] [Element.string "Preparing the cards\x2026"]]
+        Just entries ->
+          let (count, shown) = CardIndex.search q entries
+              row e =
+                Element.el "div" (["result"] <> ["in-deck" | Map.member (CardIndex.name e) (deck builder)]) [] $
+                  [reader (CardIndex.name e)]
+                    <> foldMap (pure . Mana.cost) (CardIndex.cost e)
+                    <> [Element.el "span" ["type-line"] [] [Element.text (CardIndex.typeLine e)]]
+                    <> [Element.el "span" ["copies"] [] [Element.string (show n)] | n <- Maybe.maybeToList (Map.lookup (CardIndex.name e) (deck builder))]
+                    <> [adding (CardIndex.name e)]
+           in [Element.el "p" ["empty"] [] [Element.string "No card matches."] | count == 0]
+                <> [Element.el "p" ["shown-count"] [] [Element.string ("Showing " <> show (Seq.length shown) <> " of " <> show count)] | count > Seq.length shown]
+                <> [Element.el "div" ["results"] [] (fmap row (Foldable.toList shown))]
+      section title k =
+        let these = List.sortOn (\l -> (Lobby.value l, named (Lobby.card l))) [l | l <- lines', Lobby.kind l == k]
+         in [ Element.el "div" ["deck-section"] [] $
+                Element.el "h3" [] [] [Element.string (title <> " \x00b7 " <> show (sum (fmap Lobby.copies these)))]
+                  : [ Element.el "div" (["deck-line"] <> ["flagged" | Set.member (Lobby.card l) (flagged builder)]) [] $
+                        [Element.el "span" ["copies"] [] [Element.string (show (Lobby.copies l))], reader (Lobby.card l)]
+                          <> foldMap (pure . Mana.cost) (Lobby.cost l)
+                          <> [removing (Lobby.card l), adding (Lobby.card l)]
+                    | l <- these
+                    ]
+            | not (null these)
+            ]
+      counted = maybe (show total <> " cards") (\n -> show total <> " / " <> show n) (least builder)
+      reading' = do
+        card <- reading builder
+        let found = List.find ((== card) . CardIndex.name) (foldMap Foldable.toList (index builder))
+        pure
+          ( Text.pack "card",
+            Element.el "section" ["card-reading"] [Element.attr "aria-label" (named card)] $
+              [Element.el "h2" [] [] [Element.text (named card)]]
+                <> [Element.el "p" ["type-line"] [] [Element.text (CardIndex.typeLine e)] | e <- Maybe.maybeToList found]
+                <> [Element.el "p" ["rules"] [] (Mana.rich l) | e <- Maybe.maybeToList found, l <- CardIndex.rules e]
+                <> [Element.button [] MkCloseCard [Element.string "Close"]]
+          )
+      leave =
+        [ ( Text.pack "leave",
+            Element.el
+              "section"
+              ["leave"]
+              [Element.attr "role" (Text.pack "alertdialog")]
+              [Element.el "p" [] [] [Element.string "Leave without saving your changes?"], Element.button [] MkStay [Element.string "Stay"], Element.button ["danger"] MkLeave [Element.string "Leave"]]
+          )
+        | leaving builder
+        ]
+   in Element.keyed "main" ["builder"] [] $
+        [ ( Text.pack "top",
+            Element.el "div" ["builder-top"] [] $
+              [ Element.button ["home-button"] MkBack [Element.string "Back"],
+                Element.el "label" ["sr-only"] [Element.attr "for" (Text.pack "builder-format")] [Element.string "Format"],
+                Element.el "select" ["format"] [Element.attr "id" (Text.pack "builder-format"), Element.on "change" MkFormat] [option (format builder) (f, Lobby.titled f) | f <- formats builder],
+                Element.el "label" ["sr-only"] [Element.attr "for" (Text.pack "builder-name")] [Element.string "Deck name"],
+                Element.el "input" ["builder-name"] ([Element.attr "id" (Text.pack "builder-name"), Element.attr "type" (Text.pack "text"), Element.attr "autocomplete" (Text.pack "off"), Element.attr "placeholder" (Text.pack "Deck name"), Element.on "input" MkSaveName] <> [Element.attr "disabled" Text.empty | Maybe.isJust (savedAs builder)]) [],
+                Element.button ["primary"] MkSave [Element.string "Save"]
+              ]
+                <> [Element.el "span" ["saved"] [] [Element.string "Saved"] | Maybe.isJust (savedAs builder), not (dirty builder)]
+                <> [Element.el "ul" ["problems"] [Element.attr "role" (Text.pack "alert")] [Element.el "li" [] [] [Element.text p] | p <- saveProblems builder] | not (null (saveProblems builder))]
+          ),
+          ( Text.pack "body",
+            Element.el
+              "div"
+              ["builder-body"]
+              []
+              [ Element.el "section" ["builder-search"] [Element.attr "aria-label" (Text.pack "Cards")] $
+                  [ Element.el "label" ["sr-only"] [Element.attr "for" (Text.pack "card-search")] [Element.string "Search cards"],
+                    Element.el "input" ["search"] [Element.attr "id" (Text.pack "card-search"), Element.attr "type" (Text.pack "search"), Element.attr "placeholder" (Text.pack "Search names and rules text"), Element.attr "autocomplete" (Text.pack "off"), Element.on "input" MkSearch] [],
+                    Element.el "div" ["filters"] [] $
+                      [Element.el "button" (toggled (Set.member c (CardIndex.wanted q))) [Element.attr "type" (Text.pack "button"), Element.attr "aria-pressed" (Text.pack (if Set.member c (CardIndex.wanted q) then "true" else "false")), Element.on "click" (MkToggleColour c)] [Mana.symbol (Text.pack (Web.Card.letterUpper c))] | c <- [minBound .. maxBound]]
+                        <> [Element.el "button" (toggled (Set.member k (CardIndex.kinds q))) [Element.attr "type" (Text.pack "button"), Element.attr "aria-pressed" (Text.pack (if Set.member k (CardIndex.kinds q) then "true" else "false")), Element.on "click" (MkToggleKind k)] [Element.string (show k)] | k <- searchKinds]
+                        <> [Element.el "select" ["mana-value"] [Element.attr "aria-label" (Text.pack "Mana value"), Element.on "change" MkValue] (fmap (option chosenValue) valueChoices)],
+                    Element.el "div" ["basics"] [] [Element.button ["basic"] (MkAdd land) [Element.text (named land)] | land <- basics]
+                  ]
+                    <> results,
+                Element.el "section" ["builder-deck"] [Element.attr "aria-label" (Text.pack "Deck")] $
+                  [Element.el "h2" [] [] [Element.string counted], Lobby.curve lines']
+                    <> [Element.el "ul" ["problems"] [Element.attr "role" (Text.pack "alert")] [Element.el "li" [] [] [Element.text p] | p <- problems builder] | not (null (problems builder))]
+                    <> section "Creatures" Lobby.MkCreature
+                    <> section "Spells" Lobby.MkSpell
+                    <> section "Lands" Lobby.MkLand
+                    <> [Element.el "p" ["empty"] [] [Element.string "Add cards from the search."] | null lines']
+              ]
+          )
+        ]
+          <> Maybe.maybeToList reading'
+          <> leave

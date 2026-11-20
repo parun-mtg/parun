@@ -9,6 +9,7 @@ import qualified Parun.Types.CardName as CardName
 import qualified Parun.Types.Color as Color
 import qualified Parun.Web.Builder as Builder
 import qualified Parun.Web.CardIndex as CardIndex
+import qualified Parun.Web.Html as Html
 import qualified Parun.Web.Lobby as Lobby
 
 spec :: (Monad m, Monad n) => Spec.Spec m n -> n ()
@@ -54,6 +55,41 @@ spec s = Spec.describe s "Parun.Web.Builder" $ do
       let built = fresh {Builder.deck = Map.fromList [(bolt, 4), (fireIce, 2)]}
       Spec.assertEq s (Map.fromList [(name, n) | (n, name) <- Lobby.entries (Builder.listText built)]) (Builder.deck built)
 
+  Spec.describe s "view" $ do
+    Spec.it s "shows the count against the format's minimum" $ do
+      let built = indexed {Builder.deck = Map.fromList [(bolt, 4), (mountain, 39)], Builder.least = Just 60}
+      Spec.assertBool s (Text.isInfixOf (Text.pack "43 / 60") (page built)) "count"
+
+    Spec.it s "marks a flagged card" $ do
+      let built = indexed {Builder.deck = Map.singleton bolt 5}
+      Spec.assertBool s (not (Text.isInfixOf (Text.pack "flagged") (page built))) "unflagged"
+      Spec.assertBool s (Text.isInfixOf (Text.pack "flagged") (page (Builder.checked [] (Set.singleton bolt) built))) "flagged"
+
+    Spec.it s "lists the check's problems" $ do
+      Spec.assertBool s (Text.isInfixOf (Text.pack "5 copies of Lightning Bolt") (page (Builder.checked [Text.pack "5 copies of Lightning Bolt"] Set.empty indexed))) "problem"
+
+    Spec.it s "says how many matched beyond the cap" $ do
+      let many = fresh {Builder.index = Just (Seq.fromList [card ("Card " <> show n) | n <- [1 .. 61 :: Int]])}
+      Spec.assertBool s (Text.isInfixOf (Text.pack "Showing 60 of 61") (page many)) "beyond"
+
+    Spec.it s "says no card matches" $ do
+      Spec.assertBool s (Text.isInfixOf (Text.pack "No card matches.") (page (Builder.update Builder.MkSearch (Text.pack "zzzz") indexed))) "none"
+
+    Spec.it s "says the cards are being prepared" $ do
+      Spec.assertBool s (Text.isInfixOf (Text.pack "Preparing the cards") (page fresh)) "preparing"
+
+    Spec.it s "offers the five basic lands whatever the search" $ do
+      let shown = Builder.view (Builder.update Builder.MkSearch (Text.pack "zzzz") indexed)
+          tapped name = Html.labelled (Text.pack "button") (Text.pack name) shown >>= \path -> Html.handler (Text.pack "click") path shown
+      Spec.assertEq s (fmap tapped ["Plains", "Island", "Swamp", "Mountain", "Forest"]) (fmap (Just . Builder.MkAdd . CardName.MkCardName . Text.pack) ["Plains", "Island", "Swamp", "Mountain", "Forest"])
+
+    Spec.it s "adds a result when its name's button is tapped" $ do
+      let shown = Builder.view indexed
+      Spec.assertEq s (Html.labelled (Text.pack "button") (Text.pack "Add Lightning Bolt") shown >>= \path -> Html.handler (Text.pack "click") path shown) (Just (Builder.MkAdd bolt))
+
+    Spec.it s "shows the rules text of the card being read" $ do
+      Spec.assertBool s (Text.isInfixOf (Text.pack "deals 3 damage") (page (Builder.update (Builder.MkRead bolt) Text.empty indexed))) "rules"
+
   Spec.describe s "saveTarget" $ do
     Spec.it s "a first save takes the typed name" $ do
       Spec.assertEq s (Builder.saveTarget Seq.empty (Builder.update Builder.MkSaveName (Text.pack "Red Burn") fresh)) (Right (Text.pack "saved/red-burn"))
@@ -65,6 +101,9 @@ spec s = Spec.describe s "Parun.Web.Builder" $ do
       let again = Builder.update Builder.MkSaveName (Text.pack "Other") (Builder.saved (Text.pack "saved/burn") fresh)
       Spec.assertEq s (Builder.saveTarget (Seq.singleton (Text.pack "saved/burn")) again) (Right (Text.pack "saved/burn"))
   where
+    page = Html.toText . Builder.view
+    card name = CardIndex.MkEntry (CardName.MkCardName (Text.pack name)) [Text.pack name] Nothing 1 Set.empty Set.empty (Text.pack "Instant") [] (Text.toCaseFold (Text.pack name))
+    indexed = fresh {Builder.index = Just (Seq.fromList [(card "Lightning Bolt") {CardIndex.rules = [Text.pack "Lightning Bolt deals 3 damage to any target."]}, card "Mountain"])}
     fresh = Builder.new [Text.pack "constructed", Text.pack "pauper"]
     tap event = Builder.update event Text.empty
     bolt = CardName.MkCardName (Text.pack "Lightning Bolt")
