@@ -1,0 +1,228 @@
+{
+  "faces": [
+    {
+      "activatedAbilities": [
+        {
+          "cost": {
+            "components": [
+              {
+                "type": "ExileThis"
+              },
+              {
+                "type": "ExilePermanents",
+                "value": {
+                  "count": 4,
+                  "whichPermanents": {
+                    "type": "And",
+                    "value": [
+                      {
+                        "type": "Or",
+                        "value": [
+                          {
+                            "type": "And",
+                            "value": [
+                              {
+                                "type": "HasCardType",
+                                "value": "Artifact"
+                              },
+                              {
+                                "type": "HasCardType",
+                                "value": "Creature"
+                              }
+                            ]
+                          },
+                          {
+                            "type": "HasSubtype",
+                            "value": "Vehicle"
+                          }
+                        ]
+                      },
+                      {
+                        "type": "HeldBy",
+                        "value": {
+                          "holder": "Controller",
+                          "relation": "You"
+                        }
+                      },
+                      {
+                        "type": "Not",
+                        "value": {
+                          "type": "IsSource"
+                        }
+                      }
+                    ]
+                  }
+                }
+              }
+            ],
+            "mana": [
+              {
+                "type": "Generic",
+                "value": 5
+              }
+            ]
+          },
+          "modal": {
+            "modes": [
+              {
+                "clauses": [
+                  {
+                    "effects": [
+                      {
+                        "type": "Create",
+                        "value": {
+                          "card": {
+                            "faces": [
+                              {
+                                "colorIndicator": [
+                                  "White",
+                                  "Blue",
+                                  "Black",
+                                  "Red",
+                                  "Green"
+                                ],
+                                "keywords": [
+                                  {
+                                    "type": "Flying"
+                                  },
+                                  {
+                                    "type": "Haste"
+                                  },
+                                  {
+                                    "type": "Lifelink"
+                                  },
+                                  {
+                                    "type": "Trample"
+                                  },
+                                  {
+                                    "type": "Vigilance"
+                                  }
+                                ],
+                                "name": "Mechtitan",
+                                "power": {
+                                  "type": "Literal",
+                                  "value": 10
+                                },
+                                "toughness": {
+                                  "type": "Literal",
+                                  "value": 10
+                                },
+                                "typeLine": {
+                                  "subtypes": [
+                                    "Construct"
+                                  ],
+                                  "supertypes": [
+                                    "Legendary"
+                                  ],
+                                  "types": [
+                                    "Artifact",
+                                    "Creature"
+                                  ]
+                                }
+                              }
+                            ]
+                          },
+                          "quantity": {
+                            "type": "Literal",
+                            "value": 1
+                          },
+                          "slot": "token"
+                        }
+                      },
+                      {
+                        "type": "ArmDelayedTrigger",
+                        "value": {
+                          "name": "return the exiled cards"
+                        }
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          }
+        }
+      ],
+      "delayedAbilities": {
+        "return the exiled cards": {
+          "condition": {
+            "type": "Leaves",
+            "value": {
+              "permanent": {
+                "type": "Matching",
+                "value": {
+                  "type": "IsBound",
+                  "value": "token"
+                }
+              }
+            }
+          },
+          "modal": {
+            "modes": [
+              {
+                "clauses": [
+                  {
+                    "effects": [
+                      {
+                        "type": "MoveToZone",
+                        "value": {
+                          "ref": {
+                            "type": "EachCardInExiledPile",
+                            "value": {
+                              "pile": {
+                                "type": "OwnAbilities"
+                              }
+                            }
+                          },
+                          "riders": {
+                            "tapped": "Tapped",
+                            "under": {
+                              "type": "Owner"
+                            }
+                          },
+                          "zone": "Battlefield"
+                        }
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          }
+        }
+      },
+      "keywords": [
+        {
+          "type": "Crew",
+          "value": {
+            "power": 2
+          }
+        }
+      ],
+      "manaCost": [
+        {
+          "type": "Generic",
+          "value": 2
+        }
+      ],
+      "name": "Mechtitan Core",
+      "oracleText": "{5}, Exile this Vehicle and four other artifact creatures and/or Vehicles you control: Create Mechtitan, a legendary 10/10 Construct artifact creature token with flying, vigilance, trample, lifelink, and haste that's all colors. When that token leaves the battlefield, return all cards exiled with this Vehicle except this card to the battlefield tapped under their owners' control.\nCrew 2",
+      "power": {
+        "type": "Literal",
+        "value": 2
+      },
+      "toughness": {
+        "type": "Literal",
+        "value": 4
+      },
+      "typeLine": {
+        "subtypes": [
+          "Vehicle"
+        ],
+        "types": [
+          "Artifact"
+        ]
+      }
+    }
+  ]
+}
