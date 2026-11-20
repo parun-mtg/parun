@@ -118,8 +118,10 @@ import qualified Text.Read as Read
 -- Trimmed to what its sources read: `counteredWith`, each link compared only
 -- where its source can read it (CR 607.1, LinkReaders.readsOwnLinks). A Grim
 -- Poppet's lap beside a Cyclopean Tomb still recurs; the Tomb's own does not.
--- `enteredWith` needs no trim: LinkReaders.recordEntry writes no row its
--- source cannot read as it writes it.
+-- `enteredWith` needs no reader trim: LinkReaders.recordEntry writes no row
+-- its source cannot read as it writes it. A row keyed by an entrant that has
+-- left is compared too, so a lap through a reading source never recurs (gap
+-- #9010).
 digest :: GameState -> StateDigest
 digest gs =
   let (effects, objects, reacquire) = canonicalStamps gs
