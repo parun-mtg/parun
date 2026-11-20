@@ -2398,6 +2398,12 @@ body:has(main.game) #settings-button {
   color: var(--muted);
 }
 
+#settings .legal {
+  margin: 0;
+  font-size: 0.7rem;
+  color: var(--muted);
+}
+
 #settings a {
   color: var(--link);
 }

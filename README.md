@@ -22,3 +22,17 @@ Parun is a Magic: The Gathering (MTG) rules engine written in Haskell.
 - The engine is completely deterministic.
   Anything that needs input, whether that's a player's choice or the outcome of a shuffle, is modeled as a request.
   The same inputs always give the same outputs, so any bug can be reproduced.
+
+## Legal
+
+Parun is unofficial Fan Content permitted under the [Fan Content Policy](https://company.wizards.com/en/legal/fancontentpolicy).
+Not approved/endorsed by Wizards.
+Portions of the materials used are property of Wizards of the Coast.
+©Wizards of the Coast LLC.
+
+Magic: The Gathering and related names are trademarks of Wizards of the Coast LLC.
+Names from licensed third-party properties (Universes Beyond) belong to their respective owners.
+
+The 0BSD license covers Parun's own code and data, not card names, Oracle text or the Comprehensive Rules.
+Card printings and legalities are derived from [MTGJSON](https://mtgjson.com), used under the MIT License.
+See [`LICENSE.txt`](LICENSE.txt) for details.
