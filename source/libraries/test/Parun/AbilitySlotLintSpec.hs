@@ -2043,9 +2043,9 @@ granterUnreachedOffends face = any modalOffends ([ActivatedAbility.modal a | Gra
         || any (any (any names . quoted) . effectWithNested) (Modal.allEffects modal)
     quoted effect =
       fmap ability (concatMap modificationAbilities (effectGrants effect))
-        <> Const.getConst (Children.effectChildren Children.effectLeaves {Children.onCard = card, Children.onConjured = card, Children.onMelded = card, Children.onAbility = Const.Const . pure . ability} effect)
+        <> Const.getConst (Children.effectChildren Children.effectLeaves {Children.onCard = card, Children.onConjured = card, Children.onMelded = card, Children.onAbility = \a -> Const.Const [ability a]} effect)
     ability = Codec.encode (GrantedAbility.Codec.codec Card.Codec.codec)
-    card = Const.Const . pure . Codec.encode Card.Codec.codec
+    card c = Const.Const [Codec.encode Card.Codec.codec c]
     names = (> 0) . jsonAtoms (SlotName.unwrap Binding.grantingPermanent)
 
 -- CR 611.2b / 702.174a: Parun.Engine.Quantity.bakePlayerRef leaves
