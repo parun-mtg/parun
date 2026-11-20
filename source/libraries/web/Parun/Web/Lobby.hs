@@ -181,9 +181,17 @@ mostBots :: Int
 mostBots = 3
 
 -- | Whether two decks are under one format, and so may meet: the game's
--- format is the one their headers name (Parun.Play.Command.settle).
+-- format is the one their headers name (Parun.Play.Command.settle), which
+-- a Limited deck's makes of a deck naming none.
 together :: Lobby -> Text.Text -> Text.Text -> Bool
-together lobby one two = Map.lookup one (formats lobby) == Map.lookup two (formats lobby)
+together lobby one two = case (Map.lookup one (formats lobby), Map.lookup two (formats lobby)) of
+  -- CR 100.2b: a Limited deck meets a deck naming no format, which the
+  -- game then checks as Limited.
+  (Just named, Nothing) | named == limited -> True
+  (Nothing, Just named) | named == limited -> True
+  (mine', theirs') -> mine' == theirs'
+  where
+    limited = Text.pack "limited"
 
 -- | The decks the bot may play against yours: every deck, until yours is
 -- chosen.

@@ -67,6 +67,8 @@ data Builder = MkBuilder
     saveProblems :: [Text.Text],
     -- | What the builder could not do with the deck it was given.
     notices :: [Text.Text],
+    -- | Why the cards or the rules did not load, if they did not.
+    loadProblem :: Maybe Text.Text,
     -- | The deck as last saved or opened.
     baseline :: Snapshot,
     -- | Whether leaving with changes is being asked about.
@@ -182,6 +184,7 @@ new named =
       savedAs = Nothing,
       saveProblems = [],
       notices = [],
+      loadProblem = Nothing,
       baseline = ([Map.empty, Map.empty, Map.empty], Map.empty, Text.empty, Nothing),
       leaving = False,
       pool = Nothing,
@@ -320,13 +323,15 @@ dirty builder = snapshot builder /= baseline builder
 
 -- | The saved deck a save writes, given the saved decks' names: the one
 -- this deck was saved as, or else the one the typed name makes, unless it
--- may not be used (Lobby.nameProblems).
+-- may not be used (Lobby.nameProblems); none for a deck with no cards.
 saveTarget :: Seq.Seq Text.Text -> Builder -> Either [Text.Text] Text.Text
-saveTarget decks builder = case savedAs builder of
-  Just name -> Right name
-  Nothing -> case Lobby.nameProblems decks (saveName builder) of
-    [] -> Right (Lobby.savedPrefix <> Lobby.slugOf (saveName builder))
-    problems' -> Left problems'
+saveTarget decks builder
+  | all (Map.null . (`zoneOf` builder)) zones = Left [Text.pack "Add some cards before saving."]
+  | otherwise = case savedAs builder of
+      Just name -> Right name
+      Nothing -> case Lobby.nameProblems decks (saveName builder) of
+        [] -> Right (Lobby.savedPrefix <> Lobby.slugOf (saveName builder))
+        problems' -> Left problems'
 
 -- | The deck as the lobby's preview lines, each card's cost, mana value and
 -- kind from the index.
@@ -340,6 +345,10 @@ linesOf builder =
         | Set.member CardType.Creature types' = Lobby.MkCreature
         | otherwise = Lobby.MkSpell
    in fmap line (Map.toList (deck builder))
+
+-- | The colours of the deck's cards, its commander's and sideboard's aside.
+deckColours :: Builder -> Set.Set Color.Color
+deckColours builder = foldMap (\card -> foldMap CardIndex.colours (Map.lookup (canonical builder card) (byName builder))) (Map.keys (deck builder))
 
 -- | The basic lands, offered whatever the search.
 basics :: [CardName.CardName]
@@ -516,7 +525,10 @@ view builder =
                   ]
                     <> results,
                 Element.el "section" ["builder-deck"] [Element.attr "aria-label" (Text.pack "Deck")] $
-                  [Element.el "h2" [] [] [Element.string counted], Lobby.curve lines']
+                  [ Element.el "div" ["deck-head"] [] [Element.el "h2" [] [] [Element.string counted], Element.el "span" ["pips"] [Element.attr "aria-label" (Text.pack "Colours")] [Mana.symbol (Text.pack (Web.Card.letterUpper c)) | c <- Set.toList (deckColours builder)]],
+                    Lobby.curve lines'
+                  ]
+                    <> [Element.el "p" ["problem"] [Element.attr "role" (Text.pack "alert")] [Element.text p] | p <- Maybe.maybeToList (loadProblem builder)]
                     <> [Element.el "ul" ["notices"] [] [Element.el "li" [] [] [Element.text n] | n <- notices builder] | not (null (notices builder))]
                     <> keptNote
                     <> [Element.el "ul" ["problems"] [Element.attr "role" (Text.pack "alert")] [Element.el "li" [] [] [Element.text p] | p <- problems builder] | not (null (problems builder))]
@@ -611,7 +623,8 @@ withIndex :: Seq.Seq CardIndex.Entry -> Builder -> Builder
 withIndex entries builder =
   let known =
         builder
-          { index = Just entries,
+          { -- By name, as the search wants them (CardIndex.search).
+            index = Just (Seq.sortOn CardIndex.name entries),
             byName = Map.fromList [(CardIndex.name e, e) | e <- Foldable.toList entries],
             aliases = Map.fromList [(Text.toCaseFold alias, CardIndex.name e) | e <- Foldable.toList entries, alias <- CardName.unwrap (CardIndex.name e) : Text.intercalate (Text.pack " // ") (CardIndex.faceNames e) : CardIndex.faceNames e]
           }

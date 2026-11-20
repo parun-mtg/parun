@@ -112,7 +112,7 @@ typeWords line =
 
 -- | How many entries match, and the first 'cap' of them: those whose name
 -- starts with the text, then those with it in a face's name, then those
--- with it anywhere else, each by name.
+-- with it anywhere else, each in the order given, which is by name.
 search :: Query -> Seq.Seq Entry -> (Int, Seq.Seq Entry)
 search query entries =
   let needle = Text.toCaseFold (Text.strip (text query))
@@ -125,5 +125,6 @@ search query entries =
       ofKind e = Set.null (kinds query) || not (Set.disjoint (types e) (kinds query))
       pooled e = basic e || maybe True (Set.member (Text.toCaseFold (CardName.unwrap (name e)))) (among query)
       atValue e = maybe True (\v -> if v >= 7 then value e >= 7 else value e == v) (valued query)
-      ranked = Seq.sortOn (\(r, e) -> (r, CardName.unwrap (name e))) (Seq.fromList [(r, e) | e <- Foldable.toList entries, pooled e, within e, ofKind e, atValue e, Just r <- [rank e]])
+      -- Stable, so each rank keeps the entries' own order.
+      ranked = Seq.sortOn fst (Seq.fromList [(r, e) | e <- Foldable.toList entries, pooled e, within e, ofKind e, atValue e, Just r <- [rank e]])
    in (Seq.length ranked, fmap snd (Seq.take cap ranked))

@@ -91,16 +91,17 @@ spec s = Spec.describe s "Parun.Web.CardIndex" $ do
     typed t = CardIndex.everything {CardIndex.text = Text.pack t}
     pool :: Seq.Seq CardIndex.Entry
     pool =
-      Seq.fromList
-        [ entry "Lightning Bolt" [Color.Red] 1 [CardType.Instant] "Lightning Bolt deals 3 damage to any target.",
-          entry "Llanowar Elves" [Color.Green] 1 [CardType.Creature] "{T}: Add {G}.",
-          entry "Elvish Champion" [Color.Green] 3 [CardType.Creature] "Other Elf creatures get +1/+1.",
-          entry "Wood Elf" [Color.Green] 1 [CardType.Creature] "",
-          entry "Elf Replica" [] 3 [CardType.Artifact, CardType.Creature] "",
-          entry "Gruul Signet" [Color.Red, Color.Green] 2 [CardType.Artifact] "",
-          entry "Big One" [Color.Red] 7 [CardType.Creature] "",
-          entry "Bigger One" [Color.Red] 9 [CardType.Creature] ""
-        ]
+      Seq.sortOn CardIndex.name $
+        Seq.fromList
+          [ entry "Lightning Bolt" [Color.Red] 1 [CardType.Instant] "Lightning Bolt deals 3 damage to any target.",
+            entry "Llanowar Elves" [Color.Green] 1 [CardType.Creature] "{T}: Add {G}.",
+            entry "Elvish Champion" [Color.Green] 3 [CardType.Creature] "Other Elf creatures get +1/+1.",
+            entry "Wood Elf" [Color.Green] 1 [CardType.Creature] "",
+            entry "Elf Replica" [] 3 [CardType.Artifact, CardType.Creature] "",
+            entry "Gruul Signet" [Color.Red, Color.Green] 2 [CardType.Artifact] "",
+            entry "Big One" [Color.Red] 7 [CardType.Creature] "",
+            entry "Bigger One" [Color.Red] 9 [CardType.Creature] ""
+          ]
 
 -- | An entry as the index would build it, for the tests.
 entry :: String -> [Color.Color] -> Integer -> [CardType.CardType] -> String -> CardIndex.Entry

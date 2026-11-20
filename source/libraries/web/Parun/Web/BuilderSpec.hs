@@ -278,15 +278,27 @@ spec s = Spec.describe s "Parun.Web.Builder" $ do
       let shown = page (tap (Builder.MkAdd DeckList.Main spires) indexed)
       Spec.assertBool s (Text.isInfixOf (Text.pack "Circle two colours") shown) "offered"
 
+  Spec.describe s "polish" $ do
+    Spec.it s "refuses to save an empty deck" $ do
+      Spec.assertEq s (Builder.saveTarget Seq.empty (Builder.update Builder.MkSaveName (Text.pack "Empty") fresh)) (Left [Text.pack "Add some cards before saving."])
+
+    Spec.it s "sums the deck's colours" $ do
+      let red = (card "Lightning Bolt") {CardIndex.colours = Set.singleton Color.Red}
+          built = tap (Builder.MkAdd DeckList.Main bolt) (Builder.withIndex (Seq.singleton red) fresh)
+      Spec.assertEq s (Builder.deckColours built) (Set.singleton Color.Red)
+
+    Spec.it s "shows why the cards or rules did not load" $ do
+      Spec.assertBool s (Text.isInfixOf (Text.pack "Couldn't load the rules.") (page indexed {Builder.loadProblem = Just (Text.pack "Couldn't load the rules.")})) "shown"
+
   Spec.describe s "saveTarget" $ do
     Spec.it s "a first save takes the typed name" $ do
-      Spec.assertEq s (Builder.saveTarget Seq.empty (Builder.update Builder.MkSaveName (Text.pack "Red Burn") fresh)) (Right (Text.pack "saved/red-burn"))
+      Spec.assertEq s (Builder.saveTarget Seq.empty (Builder.update Builder.MkSaveName (Text.pack "Red Burn") (tap (Builder.MkAdd DeckList.Main bolt) fresh))) (Right (Text.pack "saved/red-burn"))
 
     Spec.it s "refuses a first save under a saved deck's name" $ do
-      Spec.assertEq s (Builder.saveTarget (Seq.singleton (Text.pack "saved/burn")) (Builder.update Builder.MkSaveName (Text.pack "Burn") fresh)) (Left [Text.pack "A saved deck is already named that."])
+      Spec.assertEq s (Builder.saveTarget (Seq.singleton (Text.pack "saved/burn")) (Builder.update Builder.MkSaveName (Text.pack "Burn") (tap (Builder.MkAdd DeckList.Main bolt) fresh))) (Left [Text.pack "A saved deck is already named that."])
 
     Spec.it s "later saves keep the name saved under" $ do
-      let again = Builder.update Builder.MkSaveName (Text.pack "Other") (Builder.saved (Text.pack "saved/burn") fresh)
+      let again = Builder.update Builder.MkSaveName (Text.pack "Other") (Builder.saved (Text.pack "saved/burn") (tap (Builder.MkAdd DeckList.Main bolt) fresh))
       Spec.assertEq s (Builder.saveTarget (Seq.singleton (Text.pack "saved/burn")) again) (Right (Text.pack "saved/burn"))
   where
     page = Html.toText . Builder.view

@@ -301,7 +301,7 @@ builder shell deck = do
     Just (name, path) -> do
       contents <- Encoding.decodeUtf8Lenient <$> ByteString.readFile path
       pure (Builder.open (if Lobby.isSaved name then Just name else Nothing) (snd (Lobby.describe name)) contents (Builder.new []))
-    Nothing -> pure (Builder.new [])
+    Nothing -> pure (Builder.new []) {Builder.notices = [Text.pack "That deck could not be opened, so this is a new one." | Maybe.isJust deck]}
   go initial Nothing
   where
     -- The builder, and the list and format it was last checked at.
@@ -310,7 +310,7 @@ builder shell deck = do
       named <- if null (Builder.formats shown) then Legality.shippedFormats else pure (Builder.formats shown)
       least <- maybe (Legality.minimumFor (Builder.format shown)) (pure . Just) (Builder.least shown)
       let indexed = if Maybe.isNothing (Builder.index shown) then maybe id Builder.withIndex (cardIndex now) shown else shown
-          filled = indexed {Builder.formats = named, Builder.least = least, Builder.sets = Map.keys (setLists now)}
+          filled = indexed {Builder.formats = named, Builder.least = least, Builder.sets = Map.keys (setLists now), Builder.loadProblem = Loading.problem (loading now)}
           key = (Builder.deck filled, Builder.format filled)
       -- Taps waiting go first: the list is checked once they are done.
       waiting <- Browser.pending (page shell)
@@ -380,7 +380,7 @@ saveBuilt shell built = do
 -- The legality table is loaded once, at the first check, and kept.
 deckProblems :: Shell -> Registry.Registry Identity.Identity -> Text.Text -> IO ([Text.Text], Set.Set CardName.CardName)
 deckProblems shell reg contents = case Command.loadText reg "deck" contents of
-  Left problems -> pure (problems, Set.empty)
+  Left problems -> pure (fmap (\p -> Maybe.fromMaybe p (Text.stripPrefix (Text.pack "deck: ") p)) problems, Set.empty)
   Right listed -> do
     kept <- legalityTable <$> IORef.readIORef (loaded shell)
     table <- case kept of
