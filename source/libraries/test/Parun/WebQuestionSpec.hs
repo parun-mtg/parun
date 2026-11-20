@@ -41,6 +41,7 @@ import qualified Parun.Types.BeginningStep as BeginningStep
 import qualified Parun.Types.Card as Card.Type
 import qualified Parun.Types.CardName as CardName
 import qualified Parun.Types.Color as Color
+import qualified Parun.Types.CommandZoneDecision as CommandZoneDecision
 import qualified Parun.Types.Cost as Cost
 import qualified Parun.Types.CounterKind as CounterKind
 import qualified Parun.Types.CounterKindFor as CounterKindFor
@@ -163,6 +164,30 @@ spec s registry = Spec.describe s "WebQuestion" $ do
     Spec.assertBool s (Text.isInfixOf (Text.pack "Grizzly Bears: pay ") (Html.content view)) "names the cost"
     Spec.assertEqWith s "pay" (fmap (\event -> Question.Web.step request Set.empty event Text.empty) (tap "Pay")) (Just (Question.Web.MkReplied (R.Text (Text.pack "Pays"))))
     Spec.assertEqWith s "reads" (Protocol.decodeAnswer prompt (R.Text (Text.pack "Pays"))) (Right PaymentDecision.Pays)
+
+  Spec.it s "CR 903.9a / 903.9b a commander's move to the command zone asks in words, the command zone first" $ do
+    bears <- S.printingOf s registry "Grizzly Bears"
+    let (commander, gs) = S.addObjectIn Zone.Graveyard bears S.alice (Setup.emptyGame S.bothPlayers)
+        prompt = Prompt.ReturnCommander (Decider.MkDecider S.alice) S.alice commander
+        request = requestFor gs prompt
+        view = Question.Web.view request Question.Web.blank
+        tap label = Html.labelled (Text.pack "button") (Text.pack label) view >>= \path -> Html.handler (Text.pack "click") path view
+        decided label = case fmap (\event -> Question.Web.step request Set.empty event Text.empty) (tap label) of
+          Just (Question.Web.MkReplied r) -> either (const Nothing) Just (Protocol.decodeAnswer prompt r)
+          _ -> Nothing
+    Spec.assertBool s (Text.isInfixOf (Text.pack "Put Grizzly Bears into the command zone?") (Html.content view)) ("asks: " <> Text.unpack (Html.content view))
+    Spec.assertBool s (Text.isInfixOf (Text.pack "<button class=\"primary\" type=\"button\">Command zone</button>") (Html.toText view)) "the command zone is the primary answer"
+    Spec.assertEqWith s "returns" (decided "Command zone") (Just CommandZoneDecision.Returns)
+    Spec.assertEqWith s "leaves" (decided "Don't") (Just CommandZoneDecision.Leaves)
+
+  Spec.it s "CR 702.75a a card chosen from among those looked at asks for a card for its source" $ do
+    bridge <- S.printingOf s registry "Mosswort Bridge"
+    bears <- S.printingOf s registry "Grizzly Bears"
+    let (source, g1) = S.addPermanent bridge S.alice (Setup.emptyGame S.bothPlayers)
+        (a, g2) = S.addObjectIn Zone.Library bears S.alice g1
+        (b, gs) = S.addObjectIn Zone.Library bears S.alice g2
+        view = Question.Web.view (requestFor gs (Prompt.ChooseCardFromAmong (Decider.MkDecider S.alice) S.alice source (NonEmpty.fromList [a, b]))) Question.Web.blank
+    Spec.assertBool s (Text.isInfixOf (Text.pack "Choose a card for Mosswort Bridge.") (Html.content view)) ("asks: " <> Text.unpack (Html.content view))
 
   Spec.it s "CR 601.2b a keyword paid any number of times offers the first few and a field" $ do
     bears <- S.printingOf s registry "Grizzly Bears"

@@ -30,6 +30,12 @@ spec s = Spec.describe s "Parun.Web.Ending" $ do
       has "Player 2</strong>: ended on 0 life, lowest 0, biggest hit 17"
       has "Turn 3"
 
+    Spec.it s "CR 103.4c a seat that never fell to 20 life has a lowest above it" $ do
+      let page = Html.toText (Ending.view ending {Ending.trail = [(1, [(you, 40), (bot, 40)]), (2, [(you, 33), (bot, 12)]), (3, [(you, 37), (bot, -8)])]})
+          you = PlayerId.MkPlayerId 0
+          bot = PlayerId.MkPlayerId 1
+      Spec.assertBool s (Text.isInfixOf (Text.pack "You</strong>: ended on 37 life, lowest 33, biggest hit 7") page) (Text.unpack page)
+
   Spec.describe s "download" $ do
     Spec.it s "percent-encodes the text's UTF-8, a space and a number sign included" $ do
       Spec.assertEq s (Ending.download $ Text.pack "{\"name\": \"J\246tun #1\"}") $
