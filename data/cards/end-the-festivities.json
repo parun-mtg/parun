@@ -1,0 +1,90 @@
+{
+  "faces": [
+    {
+      "manaCost": [
+        {
+          "type": "OfType",
+          "value": {
+            "type": "Colored",
+            "value": "Red"
+          }
+        }
+      ],
+      "name": "End the Festivities",
+      "oracleText": "End the Festivities deals 1 damage to each opponent and each creature and planeswalker they control.",
+      "spell": {
+        "modes": [
+          {
+            "clauses": [
+              {
+                "effects": [
+                  {
+                    "type": "DealDamage",
+                    "value": {
+                      "parts": [
+                        {
+                          "quantity": {
+                            "type": "Literal",
+                            "value": 1
+                          },
+                          "ref": {
+                            "type": "Players",
+                            "value": {
+                              "players": {
+                                "type": "Relative",
+                                "value": "Opponent"
+                              }
+                            }
+                          }
+                        },
+                        {
+                          "quantity": {
+                            "type": "Literal",
+                            "value": 1
+                          },
+                          "ref": {
+                            "type": "EachMatching",
+                            "value": {
+                              "type": "And",
+                              "value": [
+                                {
+                                  "type": "Or",
+                                  "value": [
+                                    {
+                                      "type": "HasCardType",
+                                      "value": "Creature"
+                                    },
+                                    {
+                                      "type": "HasCardType",
+                                      "value": "Planeswalker"
+                                    }
+                                  ]
+                                },
+                                {
+                                  "type": "HeldBy",
+                                  "value": {
+                                    "holder": "Controller",
+                                    "relation": "Opponent"
+                                  }
+                                }
+                              ]
+                            }
+                          }
+                        }
+                      ]
+                    }
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "typeLine": {
+        "types": [
+          "Sorcery"
+        ]
+      }
+    }
+  ]
+}

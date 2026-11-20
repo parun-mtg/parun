@@ -1,0 +1,302 @@
+{
+  "board": {
+    "active": "alice",
+    "seats": [
+      {
+        "battlefield": [
+          {
+            "card": "Foreboding Statue",
+            "counters": [
+              {
+                "key": {
+                  "type": "Named",
+                  "value": "omen"
+                },
+                "value": 2
+              }
+            ],
+            "label": "statue",
+            "ready": true
+          },
+          {
+            "card": "Forest",
+            "label": "f"
+          }
+        ],
+        "hand": [
+          {
+            "card": "Grizzly Bears",
+            "label": "bears"
+          },
+          {
+            "card": "Savannah Lions",
+            "label": "lions"
+          }
+        ],
+        "library": [
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          }
+        ],
+        "name": "alice"
+      },
+      {
+        "library": [
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          }
+        ],
+        "name": "bob"
+      }
+    ],
+    "step": "PrecombatMain",
+    "turn": 2
+  },
+  "description": "CR 605.1a, 603.4, 701.27a, 505.1: Foreboding Statue's mana ability adds a third omen counter, its end-step trigger untaps and transforms it, and Forsaken Thresher adds one mana of any color at alice's first main phase",
+  "note": "Savannah Lions is cast on turn 4 from Forsaken Thresher's mana alone: the Forest pays for nothing then.",
+  "timeline": [
+    {
+      "do": {
+        "Cast": {
+          "mana": [
+            "$f",
+            "$statue"
+          ],
+          "object": "$bears",
+          "yields": [
+            [
+              {
+                "manaType": {
+                  "type": "Colored",
+                  "value": "Green"
+                },
+                "restriction": null,
+                "retention": "Ordinary",
+                "rider": null,
+                "sourceChoices": null,
+                "tags": [
+                  {
+                    "CardType": "Artifact"
+                  },
+                  {
+                    "CardType": "Creature"
+                  }
+                ]
+              }
+            ]
+          ]
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 2
+    },
+    {
+      "do": "Pass",
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 2
+    },
+    {
+      "check": {
+        "Counters": {
+          "count": 3,
+          "kind": {
+            "type": "Named",
+            "value": "omen"
+          },
+          "object": "$statue"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 2
+    },
+    {
+      "check": {
+        "Tapped": {
+          "object": "$statue",
+          "tapped": true
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 2
+    },
+    {
+      "check": {
+        "Count": {
+          "card": "Grizzly Bears",
+          "count": 1,
+          "player": "alice",
+          "zone": "Battlefield"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 2
+    },
+    {
+      "check": {
+        "View": {
+          "is": [
+            "trigger of $statue"
+          ],
+          "of": "Stack"
+        }
+      },
+      "player": "alice",
+      "step": "EndStep",
+      "turn": 2
+    },
+    {
+      "do": "Pass",
+      "player": "alice",
+      "step": "EndStep",
+      "turn": 2
+    },
+    {
+      "check": {
+        "Names": {
+          "names": [
+            "Forsaken Thresher"
+          ],
+          "object": "$statue"
+        }
+      },
+      "player": "alice",
+      "step": "EndStep",
+      "turn": 2
+    },
+    {
+      "check": {
+        "Tapped": {
+          "object": "$statue",
+          "tapped": false
+        }
+      },
+      "player": "alice",
+      "step": "EndStep",
+      "turn": 2
+    },
+    {
+      "check": {
+        "PowerToughness": {
+          "object": "$statue",
+          "power": 5,
+          "toughness": 5
+        }
+      },
+      "player": "alice",
+      "step": "EndStep",
+      "turn": 2
+    },
+    {
+      "check": {
+        "View": {
+          "is": [
+            "trigger of $statue"
+          ],
+          "of": "Stack"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 4
+    },
+    {
+      "do": "Pass",
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 4
+    },
+    {
+      "do": {
+        "Answer": {
+          "prompt": "ChooseManaType",
+          "with": {
+            "type": "Colored",
+            "value": "White"
+          }
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 4
+    },
+    {
+      "do": {
+        "Cast": {
+          "mana": [
+            null
+          ],
+          "object": "$lions"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 4
+    },
+    {
+      "do": "Pass",
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 4
+    },
+    {
+      "check": {
+        "Count": {
+          "card": "Savannah Lions",
+          "count": 1,
+          "player": "alice",
+          "zone": "Battlefield"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 4
+    }
+  ]
+}

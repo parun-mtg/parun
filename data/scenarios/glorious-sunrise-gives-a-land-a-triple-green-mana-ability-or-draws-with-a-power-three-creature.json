@@ -1,0 +1,213 @@
+{
+  "board": {
+    "active": "alice",
+    "seats": [
+      {
+        "name": "alice",
+        "library": [
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          }
+        ],
+        "battlefield": [
+          {
+            "card": "Glorious Sunrise"
+          },
+          {
+            "card": "Forest",
+            "label": "f"
+          }
+        ],
+        "hand": [
+          {
+            "card": "Centaur Courser",
+            "label": "courser"
+          }
+        ]
+      },
+      {
+        "name": "bob",
+        "library": [
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          }
+        ]
+      }
+    ],
+    "step": "PrecombatMain"
+  },
+  "description": "CR 700.2, 613.1f, 605.1a: Glorious Sunrise's beginning-of-combat trigger gives the target land '{T}: Add {G}{G}{G}' until end of turn, and on a later turn draws a card because alice controls a creature with power 3 or greater",
+  "timeline": [
+    {
+      "player": "alice",
+      "turn": 1,
+      "step": "BeginningOfCombat",
+      "do": {
+        "Answer": {
+          "prompt": "ChooseModes",
+          "with": [
+            1
+          ]
+        }
+      }
+    },
+    {
+      "player": "alice",
+      "turn": 1,
+      "step": "BeginningOfCombat",
+      "do": "Pass"
+    },
+    {
+      "player": "alice",
+      "turn": 1,
+      "step": "PostcombatMain",
+      "do": {
+        "Cast": {
+          "object": "$courser",
+          "mana": [
+            "$f"
+          ],
+          "yields": [
+            [
+              {
+                "manaType": {
+                  "type": "Colored",
+                  "value": "Green"
+                },
+                "tags": [],
+                "retention": "Ordinary",
+                "restriction": null,
+                "rider": null,
+                "sourceChoices": null
+              },
+              {
+                "manaType": {
+                  "type": "Colored",
+                  "value": "Green"
+                },
+                "tags": [],
+                "retention": "Ordinary",
+                "restriction": null,
+                "rider": null,
+                "sourceChoices": null
+              },
+              {
+                "manaType": {
+                  "type": "Colored",
+                  "value": "Green"
+                },
+                "tags": [],
+                "retention": "Ordinary",
+                "restriction": null,
+                "rider": null,
+                "sourceChoices": null
+              }
+            ]
+          ]
+        }
+      }
+    },
+    {
+      "player": "alice",
+      "turn": 1,
+      "step": "PostcombatMain",
+      "do": "Pass"
+    },
+    {
+      "player": "alice",
+      "turn": 1,
+      "step": "PostcombatMain",
+      "check": {
+        "Count": {
+          "card": "Centaur Courser",
+          "count": 1,
+          "player": "alice",
+          "zone": "Battlefield"
+        }
+      }
+    },
+    {
+      "player": "alice",
+      "turn": 3,
+      "step": "BeginningOfCombat",
+      "do": {
+        "Answer": {
+          "prompt": "ChooseModes",
+          "with": [
+            2
+          ]
+        }
+      }
+    },
+    {
+      "player": "alice",
+      "turn": 3,
+      "step": "BeginningOfCombat",
+      "do": "Pass"
+    },
+    {
+      "player": "alice",
+      "turn": 3,
+      "step": "DeclareAttackers",
+      "do": {
+        "Attack": []
+      }
+    },
+    {
+      "player": "alice",
+      "turn": 3,
+      "step": "PostcombatMain",
+      "check": {
+        "Count": {
+          "card": "Island",
+          "count": 2,
+          "player": "alice",
+          "zone": "Hand"
+        }
+      }
+    }
+  ],
+  "note": "The Forest alone casts Centaur Courser, a 3/3, which is what the third mode reads on turn 3; alice's hand then holds her draw-step Island and the drawn one."
+}

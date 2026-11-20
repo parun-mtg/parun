@@ -1,0 +1,112 @@
+{
+  "faces": [
+    {
+      "enchant": [
+        {
+          "pool": {
+            "type": "Creatures"
+          }
+        }
+      ],
+      "manaCost": [
+        {
+          "type": "Generic",
+          "value": 1
+        },
+        {
+          "type": "OfType",
+          "value": {
+            "type": "Colored",
+            "value": "Blue"
+          }
+        }
+      ],
+      "name": "Fear of Death",
+      "oracleText": "Enchant creature\nWhen this Aura enters, mill two cards. (Put the top two cards of your library into your graveyard.)\nEnchanted creature gets -X/-0, where X is the number of cards in your graveyard.",
+      "staticAbilities": [
+        {
+          "affected": {
+            "type": "Attached"
+          },
+          "modifications": [
+            {
+              "type": "ModifyPowerToughness",
+              "value": {
+                "power": {
+                  "type": "Negate",
+                  "value": {
+                    "type": "Count",
+                    "value": {
+                      "aggregation": {
+                        "type": "Members"
+                      },
+                      "filter": {
+                        "type": "And",
+                        "value": []
+                      },
+                      "scope": {
+                        "type": "InZone",
+                        "value": {
+                          "player": {
+                            "type": "Relative",
+                            "value": "You"
+                          },
+                          "zone": "Graveyard"
+                        }
+                      }
+                    }
+                  }
+                },
+                "toughness": {
+                  "type": "Literal",
+                  "value": 0
+                }
+              }
+            }
+          ]
+        }
+      ],
+      "triggeredAbilities": [
+        {
+          "condition": {
+            "type": "Enters",
+            "value": {}
+          },
+          "modal": {
+            "modes": [
+              {
+                "clauses": [
+                  {
+                    "effects": [
+                      {
+                        "type": "Mill",
+                        "value": {
+                          "player": {
+                            "type": "Relative",
+                            "value": "You"
+                          },
+                          "quantity": {
+                            "type": "Literal",
+                            "value": 2
+                          }
+                        }
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          }
+        }
+      ],
+      "typeLine": {
+        "subtypes": [
+          "Aura"
+        ],
+        "types": [
+          "Enchantment"
+        ]
+      }
+    }
+  ]
+}

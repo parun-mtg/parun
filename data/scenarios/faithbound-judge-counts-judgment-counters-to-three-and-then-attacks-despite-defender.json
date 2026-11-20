@@ -1,0 +1,201 @@
+{
+  "board": {
+    "active": "bob",
+    "step": "EndStep",
+    "seats": [
+      {
+        "name": "alice",
+        "library": [
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          }
+        ],
+        "battlefield": [
+          {
+            "card": "Faithbound Judge",
+            "label": "judge",
+            "counters": [
+              {
+                "key": {
+                  "type": "Named",
+                  "value": "judgment"
+                },
+                "value": 2
+              }
+            ]
+          },
+          {
+            "card": "Faithbound Judge",
+            "label": "rookie",
+            "counters": [
+              {
+                "key": {
+                  "type": "Named",
+                  "value": "judgment"
+                },
+                "value": 1
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "name": "bob",
+        "library": [
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          }
+        ]
+      }
+    ]
+  },
+  "description": "CR 603.4, 702.3b, 122.1: Faithbound Judge's upkeep trigger adds a judgment counter only while it has two or fewer, and with three it can attack as though it didn't have defender",
+  "timeline": [
+    {
+      "player": "alice",
+      "turn": 2,
+      "step": "Upkeep",
+      "do": {
+        "OrderTriggers": [
+          "$judge",
+          "$rookie"
+        ]
+      }
+    },
+    {
+      "player": "alice",
+      "turn": 2,
+      "step": "PrecombatMain",
+      "check": {
+        "Counters": {
+          "count": 3,
+          "kind": {
+            "type": "Named",
+            "value": "judgment"
+          },
+          "object": "$judge"
+        }
+      }
+    },
+    {
+      "player": "alice",
+      "turn": 2,
+      "step": "PrecombatMain",
+      "check": {
+        "Counters": {
+          "count": 2,
+          "kind": {
+            "type": "Named",
+            "value": "judgment"
+          },
+          "object": "$rookie"
+        }
+      }
+    },
+    {
+      "player": "alice",
+      "turn": 2,
+      "step": "DeclareAttackers",
+      "refuse": {
+        "Attack": [
+          "$judge",
+          "$rookie"
+        ]
+      }
+    },
+    {
+      "player": "alice",
+      "turn": 2,
+      "step": "DeclareAttackers",
+      "do": {
+        "Attack": [
+          "$judge"
+        ]
+      }
+    },
+    {
+      "player": "alice",
+      "turn": 2,
+      "step": "EndOfCombat",
+      "check": {
+        "Life": {
+          "life": 16,
+          "player": "bob"
+        }
+      }
+    },
+    {
+      "player": "alice",
+      "turn": 4,
+      "step": "PrecombatMain",
+      "check": {
+        "Counters": {
+          "count": 3,
+          "kind": {
+            "type": "Named",
+            "value": "judgment"
+          },
+          "object": "$judge"
+        }
+      }
+    },
+    {
+      "player": "alice",
+      "turn": 4,
+      "step": "PrecombatMain",
+      "check": {
+        "Counters": {
+          "count": 3,
+          "kind": {
+            "type": "Named",
+            "value": "judgment"
+          },
+          "object": "$rookie"
+        }
+      }
+    }
+  ],
+  "note": "The Judge reaches three counters on alice's turn 2 and attacks; the rookie, at two, may not. On turn 4 the Judge stays at three (the intervening if fails) while the rookie reaches three."
+}

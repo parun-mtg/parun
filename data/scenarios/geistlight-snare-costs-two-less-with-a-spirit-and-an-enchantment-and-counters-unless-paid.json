@@ -1,0 +1,160 @@
+{
+  "board": {
+    "active": "alice",
+    "seats": [
+      {
+        "name": "alice",
+        "library": [
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          }
+        ],
+        "battlefield": [
+          {
+            "card": "Island",
+            "label": "i"
+          },
+          {
+            "card": "Kami of Old Stone"
+          },
+          {
+            "card": "Glorious Anthem"
+          }
+        ],
+        "hand": [
+          {
+            "card": "Geistlight Snare",
+            "label": "snare"
+          }
+        ]
+      },
+      {
+        "name": "bob",
+        "library": [
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          }
+        ],
+        "battlefield": [
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          }
+        ]
+      }
+    ],
+    "stack": [
+      {
+        "owner": "bob",
+        "card": "Divination",
+        "label": "div"
+      }
+    ],
+    "step": "PrecombatMain"
+  },
+  "description": "CR 601.2f, 118.12a: Geistlight Snare costs {1} less for alice's Spirit and {1} less for her enchantment, so one Island casts it, and it counters bob's spell when he declines to pay {3}",
+  "timeline": [
+    {
+      "player": "alice",
+      "turn": 1,
+      "step": "PrecombatMain",
+      "do": {
+        "Cast": {
+          "object": "$snare",
+          "mana": [
+            "$i"
+          ]
+        }
+      }
+    },
+    {
+      "player": "alice",
+      "turn": 1,
+      "step": "PrecombatMain",
+      "do": "Pass"
+    },
+    {
+      "player": "bob",
+      "turn": 1,
+      "step": "PrecombatMain",
+      "do": {
+        "ChooseToPay": {
+          "decision": "Declines"
+        }
+      }
+    },
+    {
+      "player": "alice",
+      "turn": 1,
+      "step": "PrecombatMain",
+      "check": {
+        "Count": {
+          "card": "Divination",
+          "count": 1,
+          "player": "bob",
+          "zone": "Graveyard"
+        }
+      }
+    },
+    {
+      "player": "alice",
+      "turn": 1,
+      "step": "PrecombatMain",
+      "check": {
+        "Count": {
+          "card": "Geistlight Snare",
+          "count": 1,
+          "player": "alice",
+          "zone": "Graveyard"
+        }
+      }
+    }
+  ]
+}

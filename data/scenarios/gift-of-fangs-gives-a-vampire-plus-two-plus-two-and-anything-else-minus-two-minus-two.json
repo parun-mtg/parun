@@ -1,0 +1,154 @@
+{
+  "board": {
+    "active": "alice",
+    "seats": [
+      {
+        "name": "alice",
+        "library": [
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          }
+        ],
+        "manaPool": "BB",
+        "battlefield": [
+          {
+            "card": "Vampire Interloper",
+            "label": "vamp"
+          }
+        ],
+        "hand": [
+          {
+            "card": "Gift of Fangs",
+            "label": "g1"
+          },
+          {
+            "card": "Gift of Fangs",
+            "label": "g2"
+          }
+        ]
+      },
+      {
+        "name": "bob",
+        "library": [
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          }
+        ],
+        "battlefield": [
+          {
+            "card": "Hill Giant",
+            "label": "giant"
+          }
+        ]
+      }
+    ],
+    "step": "PrecombatMain"
+  },
+  "description": "CR 613.4c, 303.4: Gift of Fangs gives an enchanted Vampire +2/+2 and an enchanted non-Vampire -2/-2",
+  "timeline": [
+    {
+      "player": "alice",
+      "turn": 1,
+      "step": "PrecombatMain",
+      "do": {
+        "Cast": {
+          "object": "$g1",
+          "targets": [
+            "$vamp"
+          ]
+        }
+      }
+    },
+    {
+      "player": "alice",
+      "turn": 1,
+      "step": "PrecombatMain",
+      "do": "Pass"
+    },
+    {
+      "player": "alice",
+      "turn": 1,
+      "step": "PrecombatMain",
+      "do": {
+        "Cast": {
+          "object": "$g2",
+          "targets": [
+            "$giant"
+          ]
+        }
+      }
+    },
+    {
+      "player": "alice",
+      "turn": 1,
+      "step": "PrecombatMain",
+      "do": "Pass"
+    },
+    {
+      "player": "alice",
+      "turn": 1,
+      "step": "PrecombatMain",
+      "check": {
+        "PowerToughness": {
+          "object": "$vamp",
+          "power": 4,
+          "toughness": 3
+        }
+      }
+    },
+    {
+      "player": "alice",
+      "turn": 1,
+      "step": "PrecombatMain",
+      "check": {
+        "PowerToughness": {
+          "object": "$giant",
+          "power": 1,
+          "toughness": 1
+        }
+      }
+    }
+  ]
+}

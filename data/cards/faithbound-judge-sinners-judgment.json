@@ -1,0 +1,365 @@
+{
+  "faces": [
+    {
+      "keywords": [
+        {
+          "type": "Defender"
+        },
+        {
+          "type": "Flying"
+        },
+        {
+          "type": "Vigilance"
+        },
+        {
+          "type": "Disturb",
+          "value": {
+            "mana": [
+              {
+                "type": "Generic",
+                "value": 5
+              },
+              {
+                "type": "OfType",
+                "value": {
+                  "type": "Colored",
+                  "value": "White"
+                }
+              },
+              {
+                "type": "OfType",
+                "value": {
+                  "type": "Colored",
+                  "value": "White"
+                }
+              }
+            ]
+          }
+        }
+      ],
+      "manaCost": [
+        {
+          "type": "Generic",
+          "value": 1
+        },
+        {
+          "type": "OfType",
+          "value": {
+            "type": "Colored",
+            "value": "White"
+          }
+        },
+        {
+          "type": "OfType",
+          "value": {
+            "type": "Colored",
+            "value": "White"
+          }
+        }
+      ],
+      "name": "Faithbound Judge",
+      "oracleText": "Defender, flying, vigilance\nAt the beginning of your upkeep, if this creature has two or fewer judgment counters on it, put a judgment counter on it.\nAs long as this creature has three or more judgment counters on it, it can attack as though it didn't have defender.\nDisturb {5}{W}{W}",
+      "power": {
+        "type": "Literal",
+        "value": 4
+      },
+      "rulePermissions": [
+        {
+          "affected": {
+            "type": "Matching",
+            "value": {
+              "type": "IsSource"
+            }
+          },
+          "while": {
+            "type": "Compares",
+            "value": {
+              "comparison": "AtLeast",
+              "measured": {
+                "type": "Count",
+                "value": {
+                  "aggregation": {
+                    "type": "Total",
+                    "value": {
+                      "type": "ObjectCounters",
+                      "value": {
+                        "type": "Named",
+                        "value": "judgment"
+                      }
+                    }
+                  },
+                  "filter": {
+                    "type": "IsSource"
+                  },
+                  "scope": {
+                    "type": "InZone",
+                    "value": {
+                      "player": {
+                        "type": "Relative",
+                        "value": "AnyPlayer"
+                      },
+                      "zone": "Battlefield"
+                    }
+                  }
+                }
+              },
+              "threshold": {
+                "type": "Literal",
+                "value": 3
+              }
+            }
+          }
+        }
+      ],
+      "toughness": {
+        "type": "Literal",
+        "value": 4
+      },
+      "triggeredAbilities": [
+        {
+          "condition": {
+            "type": "StepBegins",
+            "value": {
+              "phase": {
+                "type": "Beginning",
+                "value": "Upkeep"
+              },
+              "scope": {
+                "type": "PlayersTurn",
+                "value": {
+                  "type": "Relative",
+                  "value": "You"
+                }
+              }
+            }
+          },
+          "intervening": {
+            "type": "Compares",
+            "value": {
+              "comparison": "AtMost",
+              "measured": {
+                "type": "Count",
+                "value": {
+                  "aggregation": {
+                    "type": "Total",
+                    "value": {
+                      "type": "ObjectCounters",
+                      "value": {
+                        "type": "Named",
+                        "value": "judgment"
+                      }
+                    }
+                  },
+                  "filter": {
+                    "type": "IsSource"
+                  },
+                  "scope": {
+                    "type": "InZone",
+                    "value": {
+                      "player": {
+                        "type": "Relative",
+                        "value": "AnyPlayer"
+                      },
+                      "zone": "Battlefield"
+                    }
+                  }
+                }
+              },
+              "threshold": {
+                "type": "Literal",
+                "value": 2
+              }
+            }
+          },
+          "modal": {
+            "modes": [
+              {
+                "clauses": [
+                  {
+                    "effects": [
+                      {
+                        "type": "PutCounters",
+                        "value": {
+                          "kind": {
+                            "type": "Named",
+                            "value": "judgment"
+                          },
+                          "quantity": {
+                            "type": "Literal",
+                            "value": 1
+                          },
+                          "ref": {
+                            "type": "InSlot",
+                            "value": "self"
+                          }
+                        }
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          }
+        }
+      ],
+      "typeLine": {
+        "subtypes": [
+          "Spirit",
+          "Soldier"
+        ],
+        "types": [
+          "Creature"
+        ]
+      }
+    },
+    {
+      "colorIndicator": [
+        "White"
+      ],
+      "enchant": [
+        {
+          "pool": {
+            "type": "Players"
+          }
+        }
+      ],
+      "name": "Sinner's Judgment",
+      "oracleText": "Enchant player\nAt the beginning of your upkeep, put a judgment counter on this Aura. Then if there are three or more judgment counters on it, enchanted player loses the game.\nIf Sinner's Judgment would be put into a graveyard from anywhere, exile it instead.",
+      "replacementEffects": [
+        {
+          "effect": {
+            "type": "ZoneChangeR",
+            "value": {
+              "destination": "Exile",
+              "matching": {
+                "whatObject": {
+                  "type": "IsSource"
+                },
+                "whenDestination": "Graveyard"
+              }
+            }
+          },
+          "functionsFrom": [
+            "Library",
+            "Hand",
+            "Graveyard",
+            "Battlefield",
+            "Stack",
+            "Exile",
+            "Command"
+          ]
+        }
+      ],
+      "triggeredAbilities": [
+        {
+          "condition": {
+            "type": "StepBegins",
+            "value": {
+              "phase": {
+                "type": "Beginning",
+                "value": "Upkeep"
+              },
+              "scope": {
+                "type": "PlayersTurn",
+                "value": {
+                  "type": "Relative",
+                  "value": "You"
+                }
+              }
+            }
+          },
+          "modal": {
+            "modes": [
+              {
+                "clauses": [
+                  {
+                    "effects": [
+                      {
+                        "type": "PutCounters",
+                        "value": {
+                          "kind": {
+                            "type": "Named",
+                            "value": "judgment"
+                          },
+                          "quantity": {
+                            "type": "Literal",
+                            "value": 1
+                          },
+                          "ref": {
+                            "type": "InSlot",
+                            "value": "self"
+                          }
+                        }
+                      }
+                    ]
+                  },
+                  {
+                    "condition": {
+                      "type": "Compares",
+                      "value": {
+                        "comparison": "AtLeast",
+                        "measured": {
+                          "type": "Count",
+                          "value": {
+                            "aggregation": {
+                              "type": "Total",
+                              "value": {
+                                "type": "ObjectCounters",
+                                "value": {
+                                  "type": "Named",
+                                  "value": "judgment"
+                                }
+                              }
+                            },
+                            "filter": {
+                              "type": "IsSource"
+                            },
+                            "scope": {
+                              "type": "InZone",
+                              "value": {
+                                "player": {
+                                  "type": "Relative",
+                                  "value": "AnyPlayer"
+                                },
+                                "zone": "Battlefield"
+                              }
+                            }
+                          }
+                        },
+                        "threshold": {
+                          "type": "Literal",
+                          "value": 3
+                        }
+                      }
+                    },
+                    "effects": [
+                      {
+                        "type": "LoseGame",
+                        "value": {
+                          "type": "PlayerHostOfBound",
+                          "value": "self"
+                        }
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          }
+        }
+      ],
+      "typeLine": {
+        "subtypes": [
+          "Aura",
+          "Curse"
+        ],
+        "types": [
+          "Enchantment"
+        ]
+      }
+    }
+  ],
+  "layout": {
+    "type": "Transforming"
+  }
+}
