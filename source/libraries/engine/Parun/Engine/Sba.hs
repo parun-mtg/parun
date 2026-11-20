@@ -1053,10 +1053,13 @@ checkOnce instead boards = do
   let moving = Set.fromList (buried <> standing <> fmap snd told <> returningCommanders)
       (spared, lost) = Seq.splitAt (replaced - queued) insteads
       contesting pending = Map.fromSet (const (Just (PendingReplacementEffect.source pending)))
-  sparedMoves <- State.gets (\now -> foldMap (\pending -> wouldMove (instead pending) now) spared)
-  Foldable.for_ (fmap (\pending -> (pending, moving <> sparedMoves)) lost <> fmap (\pending -> (pending, moving)) spared) $ \(pending, contested) -> do
+      -- What replaced a destruction is part of this pass's event, on its
+      -- board and by rule (CR 704.5g/h; Hyena Umbra's ruling): Event.asPartOf.
+      partOf = Event.asPartOf gs DestructionCause.ByRule
+  sparedMoves <- State.gets (\now -> foldMap (\pending -> wouldMove (partOf (instead pending)) now) spared)
+  Foldable.for_ (fmap (\pending -> (pending, moving <> sparedMoves, id)) lost <> fmap (\pending -> (pending, moving, partOf)) spared) $ \(pending, contested, within) -> do
     State.modify' (\g -> g {GameState.scratch = (GameState.scratch g) {Scratch.contested = contesting pending contested}})
-    instead pending
+    within (instead pending)
   State.modify' (\g -> g {GameState.scratch = (GameState.scratch g) {Scratch.contested = Map.empty}})
   -- Every put-into-graveyard this pass performs, as ONE deduplicated batch:
   -- CR 704.5f (toughness <= 0), CR 704.5i (loyalty 0), CR 704.5j (the legend

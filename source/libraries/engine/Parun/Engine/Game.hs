@@ -528,7 +528,8 @@ blankSnapshots =
       Snapshots.controlSample = Map.empty,
       Snapshots.boardAtControlSample = Nothing,
       Snapshots.heldBoards = [],
-      Snapshots.boardAsCast = Map.empty
+      Snapshots.boardAsCast = Map.empty,
+      Snapshots.replacedDestruction = Nothing
     }
 
 -- The resolution scratch of a game nothing is resolving in.

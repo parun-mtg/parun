@@ -107,6 +107,7 @@ withoutAnnouncement before entry between closed = do
   boardAtControlSample <- newest (Snapshots.boardAtControlSample . GameState.snapshots)
   heldBoards <- one (Snapshots.heldBoards . GameState.snapshots)
   boardAsCast <- mapOf (Snapshots.boardAsCast . GameState.snapshots)
+  replacedDestruction <- one (Snapshots.replacedDestruction . GameState.snapshots)
   damageScannedThrough <- one (TurnRegisters.damageScannedThrough . GameState.turn)
   delayedTriggers <- seqOf (StoredEffects.delayedTriggers . GameState.stored)
   continuousEffects <- listOf (StoredEffects.continuousEffects . GameState.stored)
@@ -344,7 +345,8 @@ withoutAnnouncement before entry between closed = do
               Snapshots.controlSample = controlSample,
               Snapshots.boardAtControlSample = boardAtControlSample,
               Snapshots.heldBoards = heldBoards,
-              Snapshots.boardAsCast = boardAsCast
+              Snapshots.boardAsCast = boardAsCast,
+              Snapshots.replacedDestruction = replacedDestruction
             },
         GameState.stored =
           StoredEffects.MkStoredEffects

@@ -23,8 +23,9 @@ data DestructionCause
   | -- | A rule, acting on its own: CR 704.5g's lethal damage and CR 704.5h's
     -- deathtouch damage, the only destructions the rules perform without an
     -- effect, both raised by Parun.Engine.Sba through
-    -- Parun.Engine.Event.destroyInBatch. CR 122.1c's replacement does not reach
+    -- Parun.Engine.Event.destructionsStanding, and a destruction replacing one
+    -- of them (Parun.Engine.Event.asPartOf). CR 122.1c's replacement does not reach
     -- these; CR 701.19a's regeneration and CR 702.89a's umbra armor do, which is
     -- why the arms of Parun.Types.DestructionRewrite read this differently.
     ByRule
-  deriving (Eq, Ord, Show)
+  deriving (Bounded, Enum, Eq, Ord, Show)

@@ -302,6 +302,7 @@ import qualified Parun.Types.Quantity as Quantity.Type
 import qualified Parun.Types.RangeOfInfluence as RangeOfInfluence
 import qualified Parun.Types.Recipient as Recipient
 import qualified Parun.Types.Regenerability as Regenerability
+import qualified Parun.Types.ReplacedDestruction as ReplacedDestruction
 import qualified Parun.Types.ReplacementBucket as ReplacementBucket
 import Parun.Types.ReplacementCandidate (ReplacementCandidate)
 import qualified Parun.Types.ReplacementCandidate as ReplacementCandidate
@@ -5041,7 +5042,8 @@ apply settle batch applied batchPrevented candidate event =
       -- The Aura's destruction is a Destroy effect QUEUED as RunEffects' below
       -- is, so it runs in the destruction's own event (destroyIn, Sba.checkOnce)
       -- and Lich's Mirror's reset in the same check contests it as it does
-      -- Crackling Emergence's sacrifice. Through the `destroy` funnel, so rule
+      -- Crackling Emergence's sacrifice, on that event's board and by its cause
+      -- (asPartOf). Through the `destroy` funnel, so rule
       -- 702.89a's own destruction is itself replaceable (a regeneration shield
       -- on the Aura) and CR 400.7's graveyard incarnation is minted as on any
       -- other road. Parun.ScenarioSpec's cr-616-1-lich-s-mirror-*-hyena-umbra-*
@@ -10457,9 +10459,12 @@ permissionRiders src gs played =
 -- This door and destroyReturning are the EFFECT's, which is why neither takes a
 -- Parun.Types.DestructionCause: a caller with a whole event of its own to destroy in
 -- is a resolving spell or ability (CR 609.1), and CR 122.1c's shield reads that.
--- The rules' own destructions come through destroyInBatch, which asks.
+-- The rules' own destructions come through destroyInBatch, which asks. The one
+-- exception is a destruction among what replaced another (asPartOf): it is part
+-- of that event, so it takes that event's board and cause (Hyena Umbra's ruling
+-- has the game rules destroy the Aura in place of a lethal-damage destruction).
 destroy :: Settle.Settle -> Regenerability.Regenerability -> [ObjectId] -> Game ()
-destroy settle regenerability oids = Monad.void (destroyIn settle Nothing DestructionCause.ByEffect regenerability oids)
+destroy settle regenerability oids = Monad.void (destroyReturning settle regenerability oids)
 
 -- destroy, answering with the permanents it ACTUALLY destroyed (CR 701.8b), which
 -- is emphatically not the batch it was handed: an indestructible member never
@@ -10481,7 +10486,9 @@ destroy settle regenerability oids = Monad.void (destroyIn settle Nothing Destru
 -- A second door rather than a return type on `destroy`, the changeZoneReturning
 -- posture: only the Destroy opcode's bound slots use the answer.
 destroyReturning :: Settle.Settle -> Regenerability.Regenerability -> [ObjectId] -> Game [(ObjectId, Seq.Seq ObjectId)]
-destroyReturning settle = destroyIn settle Nothing DestructionCause.ByEffect
+destroyReturning settle regenerability oids = do
+  replaced <- State.gets (Snapshots.replacedDestruction . GameState.snapshots)
+  destroyIn settle (ReplacedDestruction.board <$> replaced) (maybe DestructionCause.ByEffect ReplacedDestruction.cause replaced) regenerability oids
 
 -- destroy for a batch that is one PART of a larger simultaneous event, whose board
 -- is `asOf`. CR 704.3's state-based-action check is that event, and Sba is the
@@ -10538,9 +10545,9 @@ destroyIn settle asOf cause regenerability oids = simultaneously $ do
       setQueue q g = g {GameState.stored = (GameState.stored g) {StoredEffects.pendingReplacementEffects = q}}
   -- CR 614.6 / 608.2f: what replaced a member's destruction (Crackling
   -- Emergence's sacrifice) is part of this one event, so it runs inside the
-  -- bracket, where CR 603.10a looks back to the board before the batch. Only
-  -- what this batch queued runs here; anything queued before waits for its own
-  -- drain.
+  -- bracket, where CR 603.10a looks back to the board before the batch, and
+  -- moves what it moves on `gs` (asPartOf). Only what this batch queued runs
+  -- here; anything queued before waits for its own drain.
   before <- State.gets queue
   State.modify' (setQueue Seq.empty)
   destroyed <- fmap Maybe.catMaybes . Monad.forM (doomedAmong live gs oids) $ \oid -> do
@@ -10555,9 +10562,27 @@ destroyIn settle asOf cause regenerability oids = simultaneously $ do
       Just target -> do
         arrived <- changeZoneInBatchReturning settle gs target Zone.Graveyard
         pure (Just (target, arrived))
-  Settle.queued settle
+  asPartOf gs cause (Settle.queued settle)
   State.modify' (\g -> setQueue (before <> queue g) g)
   pure destroyed
+
+-- CR 614.6 / 608.2f / 704.3: run what a replacement put in place of a
+-- destruction as part of that destruction's one event, whose board is `board`
+-- (Snapshots.replacedDestruction): a destruction or a sacrifice among it reads
+-- its replacements off `board`, so CR 614.4's effects that existed before the
+-- event apply though the event has since removed their source, and a
+-- destruction among it takes `cause`. Parun.ScenarioSpec's two
+-- beside-an-animated-rest-in-peace scenarios and
+-- cr-614-6-hyena-umbra-destroyed-in-lich-s-mirror-s-check-is-exiled prove the
+-- board, cr-122-1c-a-shield-counter-on-hyena-umbra-* the cause.
+asPartOf :: GameState -> DestructionCause.DestructionCause -> Game a -> Game a
+asPartOf board cause act = do
+  outer <- State.gets (Snapshots.replacedDestruction . GameState.snapshots)
+  let set replaced g = g {GameState.snapshots = (GameState.snapshots g) {Snapshots.replacedDestruction = replaced}}
+  State.modify' (set (Just ReplacedDestruction.MkReplacedDestruction {ReplacedDestruction.board = set Nothing board, ReplacedDestruction.cause = cause}))
+  result <- act
+  State.modify' (set outer)
+  pure result
 
 -- The members a destruction reaches: still there on the live board, and not
 -- indestructible on the batch's (CR 702.12b).
@@ -11088,7 +11113,10 @@ sacrificeInBatch settle asOf = sacrificeIn settle (Just asOf)
 sacrificeIn :: Settle.Settle -> Maybe GameState -> [(PlayerId, ObjectId)] -> Game ()
 sacrificeIn settle asOf victims = simultaneously $ do
   began <- State.get
-  let gs = Maybe.fromMaybe began asOf
+  -- A sacrifice among what replaced a destruction is part of that event
+  -- (asPartOf): Crackling Emergence's.
+  replaced <- State.gets (Snapshots.replacedDestruction . GameState.snapshots)
+  let gs = Maybe.fromMaybe began (asOf <|> fmap ReplacedDestruction.board replaced)
   Monad.forM_ victims $ \(pid, oid) -> do
     live <- State.get
     case Game.lookupObject oid live of

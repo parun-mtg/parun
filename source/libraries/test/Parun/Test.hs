@@ -345,6 +345,7 @@ import qualified Parun.Codec.DepartureSpec
 import qualified Parun.Codec.DesignateSpec
 import qualified Parun.Codec.DesignationSpec
 import qualified Parun.Codec.DestroySpec
+import qualified Parun.Codec.DestructionCauseSpec
 import qualified Parun.Codec.DestructionRSpec
 import qualified Parun.Codec.DestructionRewriteSpec
 import qualified Parun.Codec.DevotionSpec
@@ -755,6 +756,7 @@ import qualified Parun.Codec.RepeatIfSpec
 import qualified Parun.Codec.RepeatPicksSpec
 import qualified Parun.Codec.RepeatSpec
 import qualified Parun.Codec.ReplaceSpec
+import qualified Parun.Codec.ReplacedDestructionSpec
 import qualified Parun.Codec.ReplacementEffectSpec
 import qualified Parun.Codec.ReplacementOriginSpec
 import qualified Parun.Codec.ReplacementProvenanceSpec
@@ -1515,6 +1517,7 @@ spec s reference corpus = do
   Parun.Codec.DesignateSpec.spec s
   Parun.Codec.DesignationSpec.spec s
   Parun.Codec.DestroySpec.spec s
+  Parun.Codec.DestructionCauseSpec.spec s
   Parun.Codec.DivideSpec.spec s
   Parun.Codec.DestructionRewriteSpec.spec s
   Parun.Codec.DestructionRSpec.spec s
@@ -1922,6 +1925,7 @@ spec s reference corpus = do
   Parun.Codec.ReplacementOriginSpec.spec s
   Parun.Codec.ReplacementProvenanceSpec.spec s
   Parun.Codec.ReplaceSpec.spec s
+  Parun.Codec.ReplacedDestructionSpec.spec s
   Parun.Codec.RequireAttackSpec.spec s
   Parun.Codec.RequireBlockSpec.spec s
   Parun.Codec.RequiredDefenderSpec.spec s

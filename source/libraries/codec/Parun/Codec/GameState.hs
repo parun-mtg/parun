@@ -62,6 +62,7 @@ import qualified Parun.Codec.Printing as Printing
 import qualified Parun.Codec.PrintingId as PrintingId
 import qualified Parun.Codec.ProjectedCharacteristics as ProjectedCharacteristics
 import qualified Parun.Codec.RepeatPicks as RepeatPicks
+import qualified Parun.Codec.ReplacedDestruction as ReplacedDestruction
 import qualified Parun.Codec.RestartSignal as RestartSignal
 import qualified Parun.Codec.Result as Result
 import qualified Parun.Codec.ReturnWatch as ReturnWatch
@@ -161,6 +162,7 @@ codec resolve = Fields.object $ do
   boardAtControlSample <- Fields.defaulted "boardAtControlSample" Nothing (Common.maybe (codec resolve)) (Snapshots.boardAtControlSample . GameState.snapshots)
   heldBoards <- Fields.defaulted "heldBoards" [] (Common.list (codec resolve)) (Snapshots.heldBoards . GameState.snapshots)
   boardAsCast <- Fields.defaulted "boardAsCast" Map.empty (Common.naturalMap ObjectId.codec (codec resolve)) (Snapshots.boardAsCast . GameState.snapshots)
+  replacedDestruction <- Fields.defaulted "replacedDestruction" Nothing (Common.maybe (ReplacedDestruction.codec (codec resolve))) (Snapshots.replacedDestruction . GameState.snapshots)
   delayedTriggers <- Fields.defaulted "delayedTriggers" Seq.empty (Common.seq DelayedTrigger.codec) (StoredEffects.delayedTriggers . GameState.stored)
   continuousEffects <- Fields.defaulted "continuousEffects" [] (Common.list (ContinuousEffect.codec Card.codec)) (StoredEffects.continuousEffects . GameState.stored)
   copyEffects <- Fields.defaulted "copyEffects" [] (Common.list ActiveCopy.codec) (StoredEffects.copyEffects . GameState.stored)
@@ -332,7 +334,8 @@ codec resolve = Fields.object $ do
               Snapshots.controlSample = controlSample,
               Snapshots.boardAtControlSample = boardAtControlSample,
               Snapshots.heldBoards = heldBoards,
-              Snapshots.boardAsCast = boardAsCast
+              Snapshots.boardAsCast = boardAsCast,
+              Snapshots.replacedDestruction = replacedDestruction
             },
         GameState.stored =
           StoredEffects.MkStoredEffects
