@@ -10,7 +10,8 @@
 --
 -- WHAT IS NOT IMPLEMENTED:
 --
---   * CR 901.12's Two-Headed Giant and CR 901.14's Grand Melee options (#4465).
+--   * CR 901.12c's plane "you" reaching both Two-Headed Giant teammates (#9165).
+--   * CR 901.14's Grand Melee option (#9166).
 module Parun.Engine.Planechase where
 
 import qualified Control.Monad as Monad
@@ -110,7 +111,10 @@ faceUp :: GameState -> [ObjectId]
 faceUp gs = filter (`Plane.isPlanarCard` gs) (Set.toAscList (GameState.command gs))
 
 -- | CR 701.31a: may this player planeswalk? Only in a Planechase game, and only
--- the planar controller.
+-- the planar controller. So the planeswalking ability of a Two-Headed Giant
+-- teammate who is not the primary player does nothing (CR 901.8, 901.12b):
+-- data/scenarios/planechase/cr-901-12b-the-active-team-s-primary-player-controls-the-plane.json
+-- proves it.
 canPlaneswalk :: PlayerId -> GameState -> Bool
 canPlaneswalk pid gs = isPlanechase gs && pid == Plane.planarController gs
 
