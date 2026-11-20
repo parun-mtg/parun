@@ -229,7 +229,8 @@ button {
   opacity: 1;
 }
 
-input {
+input,
+textarea {
   font: inherit;
   color: inherit;
   min-height: 44px;
@@ -689,8 +690,52 @@ main.lobby {
   margin-bottom: 0.6em;
 }
 
-.deck-tools .random {
+.deck-tools .random,
+.deck-tools .open-import {
   flex: none;
+}
+
+/* A saved deck's list with the ways to copy it out and delete it. */
+.saved-tools {
+  display: flex;
+  gap: 0.5em;
+  margin: -0.4em 0 1em;
+}
+
+/* The panel a deck list is pasted into, and a saved deck's list to copy. */
+.import,
+.export {
+  display: grid;
+  gap: 0.4em;
+  margin: 0 0 1em;
+  padding: 0.75em;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--surface);
+}
+
+.import h2,
+.export h2 {
+  margin: 0;
+  font-size: 1rem;
+}
+
+.import textarea,
+.export textarea {
+  font-family: ui-monospace, monospace;
+  font-size: 0.85rem;
+  resize: vertical;
+}
+
+.import .problems {
+  margin: 0;
+  padding-left: 1.2em;
+  color: var(--danger-text);
+}
+
+.import-tools {
+  display: flex;
+  gap: 0.5em;
 }
 
 .deck-tools input {

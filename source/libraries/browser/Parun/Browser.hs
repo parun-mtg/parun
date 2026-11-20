@@ -85,6 +85,16 @@ arrivals page = do
 want :: Text.Text -> IO ()
 want = wantChunk . Prim.toJSString . Text.unpack
 
+-- | Saves a deck list under this slug: the worker writes it beneath the
+-- deck root at once (engine.js), and the page keeps it for later visits.
+saveDeck :: Text.Text -> Text.Text -> IO ()
+saveDeck slug contents = saveJs (Prim.toJSString (Text.unpack slug)) (Prim.toJSString (Text.unpack contents))
+
+-- | Deletes the deck list saved under this slug, from the worker and the
+-- page alike.
+forgetDeck :: Text.Text -> IO ()
+forgetDeck = forgetJs . Prim.toJSString . Text.unpack
+
 -- | Moves the chunks the worker named since last asked onto the page's own
 -- queue.
 collect :: Page msg -> IO ()
@@ -146,3 +156,9 @@ foreign import javascript unsafe "globalThis.parunTakeArrivals()"
 
 foreign import javascript unsafe "globalThis.parunWant($1)"
   wantChunk :: Prim.JSString -> IO ()
+
+foreign import javascript unsafe "globalThis.parunSave($1, $2)"
+  saveJs :: Prim.JSString -> Prim.JSString -> IO ()
+
+foreign import javascript unsafe "globalThis.parunForget($1)"
+  forgetJs :: Prim.JSString -> IO ()
