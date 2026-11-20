@@ -1036,7 +1036,7 @@ bakeGranter granter = Identity.runIdentity . Children.modalChildren Children.mod
     ref = Identity.runIdentity . Children.objectRefChildren Children.objectRefLeaves {Children.refFilter = Identity.Identity . bake, Children.refCondition = Identity.Identity . condition, Children.refNested = Identity.Identity . ref}
     condition = Identity.runIdentity . Children.conditionChildren Children.conditionLeaves {Children.conditionQuantity = Identity.Identity . quantity, Children.conditionNested = Identity.Identity . condition}
     quantity = Identity.runIdentity . Children.quantityChildren (Children.descendingQuantities (Identity.Identity . quantity)) {Children.nest = Identity.Identity . bake}
-    bake = Filter.bakeBound Map.empty (Map.singleton Binding.grantingPermanent (Set.singleton granter)) Map.empty
+    bake = Filter.bakeBound Map.empty (Map.singleton Binding.grantingPermanent (Set.singleton granter)) Map.empty Map.empty
 
 -- | CR 305.6: a land's intrinsic mana abilities, one per basic land type (the
 -- ruling on Manascape Refractor), which a lend takes beside its printed ones.

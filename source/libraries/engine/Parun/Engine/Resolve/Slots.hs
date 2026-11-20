@@ -3134,7 +3134,7 @@ chosenCandidates legal resolving controller source gs choice =
       zone -> concatMap (inZoneOf zone) (Game.apnapOrder gs)
     context = effectContext gs resolving controller source legal (slotBindings resolving gs)
     viewOf = Projection.viewsOf gs
-    baked = Filter.bakeBound (Binding.playerSlots (slotBindings resolving gs)) Map.empty Map.empty (ChosenPermanents.filter choice)
+    baked = Filter.bakeBound (Binding.playerSlots (slotBindings resolving gs)) Map.empty Map.empty Map.empty (ChosenPermanents.filter choice)
     inZoneOf zone pid = List.sort (filter (\oid -> Filter.matches context (viewOf oid) baked) (Game.zoneMembers zone pid gs))
 
 -- CR 109.2's battlefield, narrowed by an effect-borne Filter and sorted into CR
@@ -3164,7 +3164,7 @@ battlefieldMatching legal resolving controller source gs filter_ =
       -- Total War's "destroy all untapped non-Wall creatures that player
       -- controls" is the phrase, and Total War's scenarios under
       -- data/scenarios/card-trigger/ are what prove it.
-      baked = Filter.bakeBound (Binding.playerSlots (slotBindings resolving gs)) Map.empty Map.empty filter_
+      baked = Filter.bakeBound (Binding.playerSlots (slotBindings resolving gs)) Map.empty Map.empty Map.empty filter_
       grants = Projection.controlGrants gs
       -- CR 801.10 / 801.5a: only permanents in the controller's range, so the
       -- sweep and the ChosenPermanents offer agree -- every one for CR 801.18's
