@@ -184,8 +184,8 @@ triggerPlayer = SlotName.MkSlotName (Text.pack "thatPlayer")
 -- CR 802.2a: the reserved slot under which the defending player a spell or
 -- ability CHOSE is bound, where it has no attacking creature to resolve
 -- "defending player" by -- Yare's "target creature defending player controls".
--- Choosing the target is that choice, so it is the controllers of the chosen
--- targets that are defending players, stamped as the targets are announced
+-- Choosing the target is that choice, so it is the defending player
+-- controlling the targets read against the role, stamped as they are announced
 -- (Parun.Engine.Target.stampDefendingPlayers) so that CR 608.2b re-checks a
 -- target against the player chosen rather than against every defending player.
 --

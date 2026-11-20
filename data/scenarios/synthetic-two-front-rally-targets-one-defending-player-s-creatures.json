@@ -1,0 +1,157 @@
+{
+  "description": "CR 802.2a Synthetic Two-Front Rally's targets are one defending player's creatures",
+  "note": "A free-for-all under attack multiple players (CR 802.2): alice attacks bob, so bob and carol are both defending players. carol casts Synthetic Two-Front Rally, whose source has no attack to read the defending player from, so she chooses one (CR 802.2a). Targeting bob's Bears and her own is refused: no one defending player controls both. Targeting her own two creatures is cast, and they get +2/+0 while bob's Bears stay 2/2.",
+  "board": {
+    "seats": [
+      {
+        "name": "alice",
+        "battlefield": [
+          {
+            "card": "Goblin Piker",
+            "label": "piker",
+            "ready": true
+          }
+        ]
+      },
+      {
+        "name": "bob",
+        "battlefield": [
+          {
+            "card": "Grizzly Bears",
+            "label": "bob bears"
+          }
+        ]
+      },
+      {
+        "name": "carol",
+        "battlefield": [
+          {
+            "card": "Grizzly Bears",
+            "label": "carol bears"
+          },
+          {
+            "card": "Llanowar Elves",
+            "label": "carol elves"
+          },
+          {
+            "card": "Plains",
+            "label": "carol plains 1"
+          },
+          {
+            "card": "Plains",
+            "label": "carol plains 2"
+          }
+        ],
+        "hand": [
+          {
+            "card": "Synthetic Two-Front Rally",
+            "label": "rally"
+          }
+        ]
+      }
+    ],
+    "active": "alice",
+    "step": "BeginningOfCombat"
+  },
+  "timeline": [
+    {
+      "turn": 1,
+      "step": "DeclareAttackers",
+      "player": "alice",
+      "do": {
+        "Attack": [
+          "$piker"
+        ]
+      }
+    },
+    {
+      "turn": 1,
+      "step": "DeclareAttackers",
+      "player": "alice",
+      "source": "$piker",
+      "do": {
+        "ChooseAttackTarget": "$bob"
+      }
+    },
+    {
+      "turn": 1,
+      "step": "DeclareAttackers",
+      "player": "carol",
+      "refuse": {
+        "Cast": {
+          "object": "$rally",
+          "targets": [
+            "$bob bears",
+            "$carol bears"
+          ],
+          "mana": [
+            "$carol plains 1",
+            "$carol plains 2"
+          ]
+        }
+      }
+    },
+    {
+      "turn": 1,
+      "step": "DeclareAttackers",
+      "player": "carol",
+      "do": {
+        "Cast": {
+          "object": "$rally",
+          "targets": [
+            "$carol bears",
+            "$carol elves"
+          ],
+          "mana": [
+            "$carol plains 1",
+            "$carol plains 2"
+          ]
+        }
+      }
+    },
+    {
+      "turn": 1,
+      "step": "DeclareBlockers",
+      "player": "bob",
+      "do": {
+        "Block": {}
+      }
+    },
+    {
+      "turn": 1,
+      "step": "EndOfCombat",
+      "player": "alice",
+      "check": {
+        "PowerToughness": {
+          "object": "$carol bears",
+          "power": 4,
+          "toughness": 2
+        }
+      }
+    },
+    {
+      "turn": 1,
+      "step": "EndOfCombat",
+      "player": "alice",
+      "check": {
+        "PowerToughness": {
+          "object": "$carol elves",
+          "power": 3,
+          "toughness": 1
+        }
+      }
+    },
+    {
+      "turn": 1,
+      "step": "EndOfCombat",
+      "player": "alice",
+      "check": {
+        "PowerToughness": {
+          "object": "$bob bears",
+          "power": 2,
+          "toughness": 2
+        }
+      }
+    }
+  ]
+}

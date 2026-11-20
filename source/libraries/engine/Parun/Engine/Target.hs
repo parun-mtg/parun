@@ -94,6 +94,7 @@ import qualified Parun.Types.TextWord as TextWord
 import qualified Parun.Types.Together as Together
 import qualified Parun.Types.TotalCap as TotalCap
 import qualified Parun.Types.TurnRegisters as TurnRegisters
+import qualified Parun.Types.TurnRole as TurnRole
 import qualified Parun.Types.Zone as Zone
 import qualified Parun.Types.ZoneScope as ZoneScope
 
@@ -451,8 +452,8 @@ slotContext reader perspective unannounced bindings acquisition source amount gs
             -- ability came from. A source that never attacked -- Yare, a spell
             -- -- has no creature to resolve it by, so CR 802.2a's controller
             -- chooses one defending player: any of them while the targets are
-            -- being chosen, and at CR 608.2b the one the announcement chose
-            -- (stampDefendingPlayers).
+            -- being chosen (selectionLegal admits one player's alone), and at
+            -- CR 608.2b the one the announcement chose (stampDefendingPlayers).
             Filter.defendingPlayers = case Defender.defendingPlayerOf Projection.viewWithLastKnownAnywhere source gs of
               Just defending -> [defending]
               Nothing -> maybe (Defender.designatedPlayers gs) Set.toList (Map.lookup Binding.chosenDefendingPlayers (Binding.slotPlayers bindings)),
@@ -2518,6 +2519,8 @@ selectionLegal kind reader perspective seed source x slots sets chosen gs =
    in Set.isSubsetOf (Map.keysSet chosen) (Map.keysSet sets)
         && and (Map.elems (Map.mapWithKey slotLegal slots))
         && jointlyCoherentGiven kind reader (wholePools gs) perspective False seed source slots chosen gs
+        -- CR 802.2a: one defending player, whom the targets chose.
+        && all ((<= 1) . Set.size) (targetsChoseDefending source slots chosen gs)
 
 -- CR 601.2c's JOINT CHECK on its own: every jointly judged slot re-derived
 -- against what the whole announcement chose, under `seed`. Two callers, and
@@ -2951,29 +2954,53 @@ narrowedAsCast slot = case TargetSlot.asCast slot of
       }
 
 -- CR 802.2a: the defending player an announcement chose, for a source with no
--- attacking creature to resolve "defending player" by. The target settles it --
--- its controller is the one defending player that makes it legal -- so the
--- choice is elided rather than asked, and recorded under
--- Binding.chosenDefendingPlayers for CR 608.2b's re-check. Nothing is stamped
--- for an attacking source, whose defending player CR 508.5 already fixes, nor
--- when no chosen target is a defending player's.
---
--- Not implemented: a choice the targets do not settle -- targets of several
--- defending players are all recorded, and a negated atom names nobody (#4804).
-stampDefendingPlayers :: ObjectId -> Map SlotName (Set Recipient) -> GameState -> Map SlotName Binding.Type.Binding -> Map SlotName Binding.Type.Binding
-stampDefendingPlayers source chosen gs bindings = case Defender.defendingPlayerOf Projection.viewWithLastKnownAnywhere source gs of
-  Just _ -> bindings
+-- attacking creature to resolve "defending player" by, recorded under
+-- Binding.chosenDefendingPlayers for CR 608.2b's re-check. The targets settle
+-- it (targetsChoseDefending), so it is elided rather than asked. Nothing is
+-- stamped for an attacking source, whose defending player CR 508.5 already
+-- fixes, nor when no target read against the role was chosen, which leaves
+-- nothing the choice could change.
+stampDefendingPlayers :: ObjectId -> Map SlotName TargetSlot -> Map SlotName (Set Recipient) -> GameState -> Map SlotName Binding.Type.Binding -> Map SlotName Binding.Type.Binding
+stampDefendingPlayers source slots chosen gs bindings = case targetsChoseDefending source slots chosen gs of
+  Just chosenBy | not (Set.null chosenBy) -> Map.insert Binding.chosenDefendingPlayers (Binding.toPlayers chosenBy) bindings
+  _ -> bindings
+
+-- CR 802.2a: the defending players controlling the chosen targets of the slots
+-- that read the role (settlesDefendingPlayer), or Nothing for a source CR 508.5
+-- resolves "defending player" by. The rule allows ONE, so selectionLegal refuses
+-- an announcement where this holds two; at most one, it is the choice the
+-- targets forced. The scenario "synthetic-two-front-rally-targets-one-defending-
+-- player-s-creatures" proves the refusal.
+targetsChoseDefending :: ObjectId -> Map SlotName TargetSlot -> Map SlotName (Set Recipient) -> GameState -> Maybe (Set PlayerId)
+targetsChoseDefending source slots chosen gs = case Defender.defendingPlayerOf Projection.viewWithLastKnownAnywhere source gs of
+  Just _ -> Nothing
   Nothing ->
     let designated = Defender.designatedPlayers gs
-        chosenBy =
-          Set.fromList
-            [ pid
-            | recipient <- concatMap Set.toList (Map.elems chosen),
-              Just oid <- [Recipient.objectOf recipient],
-              Just pid <- [Projection.controllerOf oid gs],
-              List.elem pid designated
-            ]
-     in if Set.null chosenBy then bindings else Map.insert Binding.chosenDefendingPlayers (Binding.toPlayers chosenBy) bindings
+     in Just
+          ( Set.fromList
+              [ pid
+              | (name, slot) <- Map.toList slots,
+                maybe False settlesDefendingPlayer (TargetSlot.filter slot),
+                recipient <- Set.toList (Map.findWithDefault Set.empty name chosen),
+                Just oid <- [Recipient.objectOf recipient],
+                Just pid <- [Projection.controllerOf oid gs],
+                List.elem pid designated
+              ]
+          )
+
+-- CR 802.2a: whether a slot filter demands that a target's controller be the
+-- defending player, through its conjunctions alone, so that choosing the target
+-- chooses that player. Under an Or or a Not the atom names nobody.
+--
+-- Unprinted: the atom in a target slot anywhere else, which would need the
+-- choice asked; Parun.FilterPositionLintSpec's "CR 802.2a no card writes
+-- ControlledByRole Defending in a target slot but as a conjunct" keeps it out
+-- of card data.
+settlesDefendingPlayer :: Filter.Type.Filter keyword -> Bool
+settlesDefendingPlayer predicate = case predicate of
+  Filter.Type.ControlledByRole TurnRole.Defending -> True
+  Filter.Type.And conjuncts -> any settlesDefendingPlayer conjuncts
+  _ -> False
 
 -- CR 608.2b: the copies an announcement BOUND, read back off the binding names,
 -- so each target is re-judged against the player it was chosen for. By name
