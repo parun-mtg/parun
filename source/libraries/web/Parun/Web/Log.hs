@@ -1,4 +1,4 @@
--- | The web client's game log: what a seat saw happen, as Render.events
+-- | The web client's game log: what a seat saw happen, as Wording.events
 -- tells it, headed by each turn as it began, the bookkeeping the board
 -- already shows set apart as minor.
 module Parun.Web.Log where
@@ -11,7 +11,7 @@ import qualified Data.Sequence as Seq
 import qualified Data.Text as Text
 import Numeric.Natural (Natural)
 import qualified Parun.Extra.Natural as Natural
-import qualified Parun.Play.Render as Render
+import qualified Parun.Play.Wording as Wording
 import qualified Parun.Types.GameEvent as GameEvent
 import qualified Parun.Types.LoggedEvent as LoggedEvent
 import qualified Parun.Types.Moved as Moved
@@ -56,12 +56,12 @@ unseen seen view =
         _ -> heading : told view entries
    in (Map.insert mark (turn, Natural.length entries) seen, missed)
 
--- | The entries as Render.events tells them, each run of minor or major
+-- | The entries as Wording.events tells them, each run of minor or major
 -- ones told together so draws still group.
 told :: PlayerView.PlayerView -> [LoggedEvent.LoggedEvent] -> [Entry]
 told view logged =
   let tell run = case run of
-        first : _ -> fmap (MkEvent (minor first)) (Render.events view run)
+        first : _ -> fmap (MkEvent (minor first)) (Wording.events view run)
         [] -> []
    in concatMap tell (List.groupBy (\a b -> minor a == minor b) logged)
 
@@ -77,7 +77,7 @@ minor logged = case LoggedEvent.event logged of
 -- summary; headings as "Turn 5: Player 2".
 sentence :: PlayerId.PlayerId -> Entry -> Text.Text
 sentence viewer entry = case entry of
-  MkTurn n active -> Text.pack ("Turn " <> show n <> ": ") <> (if active == viewer then Text.pack "your turn" else Render.player active <> Text.pack "'s turn")
+  MkTurn n active -> Text.pack ("Turn " <> show n <> ": ") <> (if active == viewer then Text.pack "your turn" else Wording.player active <> Text.pack "'s turn")
   MkEvent _ t -> t
 
 -- | Whether an entry is a heading.
@@ -108,12 +108,12 @@ linking known reading t =
 
 -- | The names of the objects the view shows, each to one object, a card on
 -- the battlefield or the stack before one elsewhere, and any of them before
--- one only a witnessed move, look or reveal showed (Render.recalled).
+-- one only a witnessed move, look or reveal showed (Wording.recalled).
 linkable :: PlayerView.PlayerView -> Map.Map Text.Text ObjectId.ObjectId
 linkable view =
   let shown = PlayerView.battlefield view <> PlayerView.stack view <> concatMap (\seat -> SeatView.hand seat <> SeatView.graveyard seat <> SeatView.exile seat) (PlayerView.seats view)
-      remembered = [(name, oid) | oid <- Map.keys (Render.snapshots view), Map.notMember oid (Render.objects view), Just name <- [Render.knownName view oid]]
-   in Map.fromListWith (\_ first -> first) ([(Render.cardName o, ObjectView.object o) | o <- shown, Maybe.isNothing (ObjectView.ability o), Maybe.isJust (ObjectView.characteristics o)] <> remembered)
+      remembered = [(name, oid) | oid <- Map.keys (Wording.snapshots view), Map.notMember oid (Wording.objects view), Just name <- [Wording.knownName view oid]]
+   in Map.fromListWith (\_ first -> first) ([(Wording.cardName o, ObjectView.object o) | o <- shown, Maybe.isNothing (ObjectView.ability o), Maybe.isJust (ObjectView.characteristics o)] <> remembered)
 
 -- | Entries, each beside something (its place), newest turn first, each
 -- turn's heading above its entries and those newest first.

@@ -35,7 +35,7 @@ import qualified Parun.Interpreter as Interpreter
 import qualified Parun.Play.Command as Command
 import qualified Parun.Play.Key as Key
 import qualified Parun.Play.Protocol as Protocol
-import qualified Parun.Play.Render as Render
+import qualified Parun.Play.Wording as Wording
 import qualified Parun.Registry as Registry
 import qualified Parun.Types.Card as Card
 import qualified Parun.Types.CardName as CardName
@@ -163,7 +163,7 @@ play page = do
           finished <- IORef.readIORef seatRef
           let seen = loggedFor player finished
               trail = lives finished
-          Browser.display page . Ending.view $ Ending.MkEnding (verdictOf outcome) (either (\reason -> [Text.pack "The game stopped: " <> reason <> Text.pack "."]) (\(result, gs) -> Render.result result : Render.departures gs) outcome) (Command.rendered recorded) seen player (Lobby.deckName deckRoot one, fmap (Lobby.deckName deckRoot) others) (Foldable.toList trail) (Key.toHex seed)
+          Browser.display page . Ending.view $ Ending.MkEnding (verdictOf outcome) (either (\reason -> [Text.pack "The game stopped: " <> reason <> Text.pack "."]) (\(result, gs) -> Wording.result result : Wording.departures gs) outcome) (Command.rendered recorded) seen player (Lobby.deckName deckRoot one, fmap (Lobby.deckName deckRoot) others) (Foldable.toList trail) (Key.toHex seed)
         Left problems -> say problems
     Left _ -> say (foldMap (Either.fromLeft []) listed)
 
@@ -278,7 +278,7 @@ exchange lookUp page seatRef request = do
         Left _ -> asking pending picked reading focus
     readingOf pending object pinned = do
       shown <- Request.view pending
-      o <- Render.recalled shown object
+      o <- Wording.recalled shown object
       pure (Web.Card.MkReading object (either (pure . Text.pack . Exception.displayException) id (Web.Card.oracle lookUp o)) pinned)
     focusAfter e focus = case e of
       Web.Question.MkFocus g -> if focus == Just g then Nothing else Just g

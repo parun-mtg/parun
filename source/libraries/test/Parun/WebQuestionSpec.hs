@@ -28,7 +28,7 @@ import qualified Parun.Extra.Natural as Natural
 import qualified Parun.JsonCodec.Codec as Codec
 import qualified Parun.JsonCodec.Common as Common
 import qualified Parun.Play.Protocol as Protocol
-import qualified Parun.Play.Render as Render
+import qualified Parun.Play.Wording as Wording
 import qualified Parun.Registry as Registry
 import qualified Parun.Scenario as Scenario
 import qualified Parun.Scenario.Load as Load
@@ -339,7 +339,7 @@ spec s registry = Spec.describe s "WebQuestion" $ do
 
   Spec.it s "CR 608.2h / 305.7 a creature land Blood Moon stripped reads as stripped once it has died" $ do
     -- The sheet of the departed id is built from its last known information
-    -- (Render.recalled), as a log entry naming it opens.
+    -- (Wording.recalled), as a log entry naming it opens.
     lord <- S.printingOf s registry "Lord of Atlantis"
     ashaya <- S.printingOf s registry "Ashaya, Soul of the Wild"
     moon <- S.printingOf s registry "Blood Moon"
@@ -348,7 +348,7 @@ spec s registry = Spec.describe s "WebQuestion" $ do
         lookUp name = Right (if name == Face.name (NonEmpty.head (Card.Type.faces (Printing.card lord))) then Just (Printing.card lord) else Nothing) :: Either () (Maybe Card.Type.Card)
         view = PlayerView.viewFor S.alice killed
     Spec.assertBool s (List.all ((/= oid) . ObjectView.object) (PlayerView.Type.battlefield view)) "the Lord has left"
-    Spec.assertEqWith s "the sheet" (fmap (Card.oracle lookUp) (Render.recalled view oid)) (Just (Right [Text.pack "({T}: Add {R}.)"]))
+    Spec.assertEqWith s "the sheet" (fmap (Card.oracle lookUp) (Wording.recalled view oid)) (Just (Right [Text.pack "({T}: Add {R}.)"]))
 
   Spec.it s "CR 709.4c / 709.5 a Room's sheet checks the abilities of the doors it has, as one" $ do
     -- Opalescence makes the Room a creature for Humility to strip and
@@ -711,7 +711,7 @@ replaySpec s registry = Spec.describe s "WebQuestion" . Spec.describe s "replay"
   Spec.it s "CR 205.3a a tile and sheet list subtypes as printed, a gained one after" $ do
     stop <- replayed s registry "annihilating-glare-sacrifices-a-creature-to-destroy-a-planeswalker" 0
     let board = boardOf stop
-    case [o | o <- PlayerView.Type.battlefield board, Render.nameOf board o == Text.pack "Llanowar Elves"] of
+    case [o | o <- PlayerView.Type.battlefield board, Wording.nameOf board o == Text.pack "Llanowar Elves"] of
       o : _ -> do
         Spec.assertEqWith s "the tile" (Card.typeLine o) (Text.pack "Elf Druid")
         Spec.assertEqWith s "the sheet" (Card.fullType o) (Text.pack "Creature \8212 Elf Druid")
@@ -724,7 +724,7 @@ replaySpec s registry = Spec.describe s "WebQuestion" . Spec.describe s "replay"
     after <- replayed s registry "chancellor-of-tales-copies-an-adventure-onto-a-new-target" 9
     -- Flaxen Intruder put into exile by the scenario, never cast.
     placed <- replayed s registry "howling-galefang-has-haste-while-you-own-an-exiled-adventure-card--control" 0
-    let exiled name stop = [(o, b) | let b = boardOf stop, seat <- PlayerView.Type.seats b, o <- SeatView.exile seat, Render.nameOf b o == Text.pack name]
+    let exiled name stop = [(o, b) | let b = boardOf stop, seat <- PlayerView.Type.seats b, o <- SeatView.exile seat, Wording.nameOf b o == Text.pack name]
         marks = Board.MkMarks (\o -> Card.MkCue [] (ObjectView.object o) Nothing) (const Nothing)
         said = Text.isInfixOf (Text.pack "On an adventure")
     case (exiled "Cruel Somnophage" after, exiled "Flaxen Intruder" placed) of
@@ -827,7 +827,7 @@ replaySpec s registry = Spec.describe s "WebQuestion" . Spec.describe s "replay"
 -- | The sheet's Oracle text (Card.oracle) of the one battlefield object named,
 -- as the stop's active player reads it.
 sheetText :: Spec.Spec IO n -> Registry.Registry IO -> Stop.Stop -> String -> IO [Text.Text]
-sheetText s registry stop name = sheetWhere s registry stop name (\board o -> Render.nameOf board o == Text.pack name)
+sheetText s registry stop name = sheetWhere s registry stop name (\board o -> Wording.nameOf board o == Text.pack name)
 
 -- | sheetText of the first battlefield object the predicate picks, described.
 sheetWhere :: Spec.Spec IO n -> Registry.Registry IO -> Stop.Stop -> String -> (PlayerView.Type.PlayerView -> ObjectView.ObjectView -> Bool) -> IO [Text.Text]
@@ -835,7 +835,7 @@ sheetWhere s registry stop name picks = do
   let board = boardOf stop
   case filter (picks board) (PlayerView.Type.battlefield board) of
     o : _ -> do
-      looked <- Monad.forM (Set.toList (Render.cardNames o) <> Maybe.catMaybes (Foldable.toList (ObjectView.merged o))) $ \n -> fmap ((,) n) (Registry.named registry (Text.unpack (CardName.unwrap n)))
+      looked <- Monad.forM (Set.toList (Wording.cardNames o) <> Maybe.catMaybes (Foldable.toList (ObjectView.merged o))) $ \n -> fmap ((,) n) (Registry.named registry (Text.unpack (CardName.unwrap n)))
       let lookUp n = Maybe.fromMaybe (Right Nothing) (lookup n looked)
       either (Spec.assertFailure s . show) pure (Card.oracle lookUp o)
     [] -> Spec.assertFailure s ("no " <> name <> " on the battlefield")

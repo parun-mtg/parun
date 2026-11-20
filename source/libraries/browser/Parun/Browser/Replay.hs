@@ -25,14 +25,13 @@ import qualified Parun.Play.Game as Game
 import qualified Parun.Play.Generator as Generator
 import qualified Parun.Play.Key as Key
 import qualified Parun.Play.Protocol as Protocol
-import qualified Parun.Play.Render as Render
+import qualified Parun.Play.Wording as Wording
 import qualified Parun.Registry as Registry
 import qualified Parun.Scenario as Scenario
 import qualified Parun.Scenario.Load as Load
 import qualified Parun.Types.Board as Board
 import qualified Parun.Types.Entrant as Entrant
 import qualified Parun.Types.GameState as GameState
-import qualified Parun.Types.Hotseat as Hotseat.Type
 import qualified Parun.Types.Label as Label
 import qualified Parun.Types.PlayerId as PlayerId
 import qualified Parun.Types.Scenario as Scenario.Type
@@ -105,7 +104,7 @@ replay page name =
           let moveTo target = if target == at then go at stop viewer Nothing else reach target >>= \next -> go target next viewer Nothing
               readingOf object pinned = do
                 board <- Web.Replay.board frame
-                o <- Render.recalled board object
+                o <- Wording.recalled board object
                 pure (Web.Card.MkReading object (either (pure . Text.pack . Exception.displayException) id (Web.Card.oracle lookUp o)) pinned)
               held = maybe False Web.Card.pinned reading
           case event of
@@ -157,11 +156,11 @@ playOn page name =
         reference = Registry.hoist (pure . Identity.runIdentity) registry :: Registry.Registry IO
         lookUp = Identity.runIdentity . Interpreter.chosenCard registry
         seats = Map.fromList [(pid, Game.wired reference (Hotseat.exchange lookUp page seatRef)) | (pid, _) <- seatsOf scenario]
-    outcome <- Game.playing Hotseat.Type.fresh (Generator.fromKey key) (Scenario.branch (Game.reference reference) at (Game.consulting reference seats) scenario)
+    outcome <- Game.playing (Generator.fromKey key) (Scenario.branch (Game.reference reference) at (Game.consulting reference seats) scenario)
     Browser.display page . Web.Replay.ended name at $ case outcome of
       Left reason -> [Text.pack "The game stopped: " <> reason <> Text.pack "."]
       Right (Left failure) -> [Text.pack "The scenario failed before the position:", Scenario.render failure]
-      Right (Right gs) -> maybe [Text.pack "The game ran out of steps."] (\result -> Render.result result : Render.departures gs) (GameState.result gs)
+      Right (Right gs) -> maybe [Text.pack "The game ran out of steps."] (\result -> Wording.result result : Wording.departures gs) (GameState.result gs)
 
 -- | Each seat and the name the scenario gives it, in turn order.
 seatsOf :: Scenario.Type.Scenario -> [(PlayerId.PlayerId, Text.Text)]
