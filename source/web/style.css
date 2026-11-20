@@ -3121,3 +3121,47 @@ main.builder {
   opacity: 0.35;
   cursor: default;
 }
+
+/* Which zone the search adds to, a card's deckbuilding choice, and notes. */
+.targets,
+.choice {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.35em;
+}
+
+.choice {
+  flex-basis: 100%;
+  padding-left: 1.9em;
+}
+
+.choice-prompt {
+  color: var(--muted);
+  font-size: 0.8rem;
+}
+
+#app .targets button.toggle,
+#app .choice button.toggle {
+  min-height: 0;
+  padding: 0.2em 0.55em;
+  font-size: 0.82rem;
+}
+
+#app .targets button.toggle.on,
+#app .choice button.toggle.on {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: var(--accent-text);
+}
+
+.builder-deck .deck-line {
+  flex-wrap: wrap;
+}
+
+.notices {
+  margin: 0;
+  padding-left: 1.2em;
+  color: var(--warn-text);
+  font-size: 0.85rem;
+}

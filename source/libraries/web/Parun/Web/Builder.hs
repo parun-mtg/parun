@@ -2,6 +2,7 @@
 -- typed, checked as it changes, and saved as a deck list.
 module Parun.Web.Builder where
 
+import qualified Data.Either as Either
 import qualified Data.Foldable as Foldable
 import qualified Data.List as List
 import qualified Data.Map.Strict as Map
@@ -28,11 +29,21 @@ data Builder = MkBuilder
     query :: CardIndex.Query,
     -- | The main deck: how many of each card.
     deck :: Map.Map CardName.CardName Natural,
-    -- | A main-deck card's lines in a list opened, in order: what follows its
-    -- name on each (its printing and annotations) and how many that line
-    -- names; absent for a card on one bare line.
-    suffixes :: Map.Map CardName.CardName [(Text.Text, Natural)],
-    -- | Every line of a list opened after its main deck, kept as written.
+    -- | CR 100.4a: the sideboard, unless a pool makes it (CR 100.4b).
+    side :: Map.Map CardName.CardName Natural,
+    -- | CR 903.3: the commander, or commanders.
+    command :: Map.Map CardName.CardName Natural,
+    -- | Which of those the search's cards go to.
+    target :: DeckList.Section,
+    -- | A card's lines in a section of a list opened, in order: what follows
+    -- its name on each (its printing and annotations other than a choice)
+    -- and how many that line names; absent for a card on one bare line.
+    suffixes :: Map.Map (DeckList.Section, CardName.CardName) [(Text.Text, Natural)],
+    -- | The choice a card in a section makes as its deck is built, and the
+    -- colours chosen (CR 207.5, 903.4b).
+    chosen :: Map.Map (DeckList.Section, CardName.CardName) (DeckList.Choice, Set.Set Color.Color),
+    -- | Every line of a list opened in a section the builder does not edit,
+    -- kept as written.
     rest :: [Text.Text],
     -- | The format the list's header names; empty for a casual deck, which
     -- names none and so meets any deck naming none.
@@ -54,8 +65,10 @@ data Builder = MkBuilder
     savedAs :: Maybe Text.Text,
     -- | Why the last save was refused.
     saveProblems :: [Text.Text],
-    -- | The deck, format and pool as last saved or opened.
-    baseline :: (Map.Map CardName.CardName Natural, Text.Text, Maybe (Map.Map CardName.CardName Natural)),
+    -- | What the builder could not do with the deck it was given.
+    notices :: [Text.Text],
+    -- | The deck as last saved or opened.
+    baseline :: Snapshot,
     -- | Whether leaving with changes is being asked about.
     leaving :: Bool,
     -- | CR 100.2b: a limited card pool, which caps each card but a basic
@@ -76,6 +89,35 @@ data Builder = MkBuilder
   }
   deriving (Eq, Show)
 
+-- | What a save keeps of a deck: its zones, choices, format and pool.
+type Snapshot = ([Map.Map CardName.CardName Natural], Map.Map (DeckList.Section, CardName.CardName) (DeckList.Choice, Set.Set Color.Color), Text.Text, Maybe (Map.Map CardName.CardName Natural))
+
+-- | The deck as a save keeps it.
+snapshot :: Builder -> Snapshot
+snapshot builder = (fmap (`zoneOf` builder) zones, chosen builder, format builder, pool builder)
+
+-- | The sections the builder edits.
+zones :: [DeckList.Section]
+zones = [DeckList.Main, DeckList.Side, DeckList.Commander]
+
+-- | A zone's cards.
+zoneOf :: DeckList.Section -> Builder -> Map.Map CardName.CardName Natural
+zoneOf section builder = case section of
+  DeckList.Side -> side builder
+  DeckList.Commander -> command builder
+  _ -> deck builder
+
+-- | The builder with a zone's cards.
+withZone :: DeckList.Section -> Map.Map CardName.CardName Natural -> Builder -> Builder
+withZone section cards builder = case section of
+  DeckList.Side -> builder {side = cards}
+  DeckList.Commander -> builder {command = cards}
+  _ -> builder {deck = cards}
+
+-- | Whether a pool makes the sideboard: a Limited deck's unused pool cards.
+pooledSide :: Builder -> Bool
+pooledSide builder = Maybe.isJust (pool builder) && format builder == Text.pack "limited"
+
 -- | The cards a search draws on, basic lands always among them.
 data Scope
   = -- | Every card.
@@ -93,8 +135,12 @@ data Event
   | MkToggleColour Color.Color
   | MkToggleKind CardType.CardType
   | MkValue
-  | MkAdd CardName.CardName
-  | MkRemove CardName.CardName
+  | MkAdd DeckList.Section CardName.CardName
+  | MkRemove DeckList.Section CardName.CardName
+  | -- | Sends the search's cards to this zone.
+    MkTarget DeckList.Section
+  | -- | Toggles a colour of the choice a card in a zone makes.
+    MkChoose DeckList.Section CardName.CardName Color.Color
   | MkRead CardName.CardName
   | MkCloseCard
   | MkFormat
@@ -115,7 +161,37 @@ data Event
 
 -- | An empty casual deck, among these formats, its cards not yet indexed.
 new :: [Text.Text] -> Builder
-new named = MkBuilder Nothing CardIndex.everything Map.empty Map.empty [] Text.empty named Nothing [] Set.empty Nothing Text.empty Nothing [] (Map.empty, Text.empty, Nothing) False Nothing MkEveryCard Nothing [] [] Map.empty Map.empty
+new named =
+  MkBuilder
+    { index = Nothing,
+      query = CardIndex.everything,
+      deck = Map.empty,
+      side = Map.empty,
+      command = Map.empty,
+      target = DeckList.Main,
+      suffixes = Map.empty,
+      chosen = Map.empty,
+      rest = [],
+      format = Text.empty,
+      formats = named,
+      least = Nothing,
+      problems = [],
+      flagged = Set.empty,
+      reading = Nothing,
+      saveName = Text.empty,
+      savedAs = Nothing,
+      saveProblems = [],
+      notices = [],
+      baseline = ([Map.empty, Map.empty, Map.empty], Map.empty, Text.empty, Nothing),
+      leaving = False,
+      pool = Nothing,
+      scope = MkEveryCard,
+      pasting = Nothing,
+      poolProblems = [],
+      sets = [],
+      byName = Map.empty,
+      aliases = Map.empty
+    }
 
 -- | The builder after an event, the value typed being `typed`. Save, Leave,
 -- and Back with nothing changed are the shell's to carry out.
@@ -125,14 +201,21 @@ update event typed builder = case event of
   MkToggleColour c -> withQuery (\q -> q {CardIndex.wanted = toggle c (CardIndex.wanted q)})
   MkToggleKind k -> withQuery (\q -> q {CardIndex.kinds = toggle k (CardIndex.kinds q)})
   MkValue -> withQuery (\q -> q {CardIndex.valued = Read.readMaybe (Text.unpack typed)})
-  MkAdd card
-    | Just most <- capOf builder card, Map.findWithDefault 0 card (deck builder) >= most -> builder
-    | otherwise -> builder {deck = Map.insertWith (+) card 1 (deck builder)}
-  MkRemove card -> builder {deck = Map.update (\n -> if n <= 1 then Nothing else Just (n - 1)) card (deck builder)}
+  MkAdd section card
+    | section == DeckList.Side, pooledSide builder -> builder
+    | section == DeckList.Main, Just most <- capOf builder card, Map.findWithDefault 0 card (deck builder) >= most -> builder
+    | otherwise -> withZone section (Map.insertWith (+) card 1 (zoneOf section builder)) builder
+  MkRemove section card -> withZone section (Map.update (\n -> if n <= 1 then Nothing else Just (n - 1)) card (zoneOf section builder)) builder
+  MkTarget section -> builder {target = section}
+  MkChoose section card colour -> case choiceOf builder section card of
+    Just choice ->
+      let toggled = maybe (Set.singleton colour) (toggle colour . snd) (Map.lookup (section, card) (chosen builder))
+       in builder {chosen = if Set.null toggled then Map.delete (section, card) (chosen builder) else Map.insert (section, card) (choice, toggled) (chosen builder)}
+    Nothing -> builder
   MkRead card -> builder {reading = Just card}
   MkCloseCard -> builder {reading = Nothing}
   MkFormat -> builder {format = typed}
-  MkSaveName -> builder {saveName = typed}
+  MkSaveName -> builder {saveName = typed, saveProblems = []}
   MkSave -> builder
   MkBack -> builder {leaving = dirty builder}
   MkStay -> builder {leaving = False}
@@ -158,7 +241,8 @@ update event typed builder = case event of
                       scope = MkPoolCards,
                       format = Text.pack "limited",
                       least = Nothing,
-                      rest = snd (split DeckList.Side (rest builder)),
+                      side = Map.empty,
+                      target = if target builder == DeckList.Side then DeckList.Main else target builder,
                       pasting = Nothing,
                       poolProblems = []
                     }
@@ -170,20 +254,28 @@ update event typed builder = case event of
     toggle :: (Ord a) => a -> Set.Set a -> Set.Set a
     toggle x xs = if Set.member x xs then Set.delete x xs else Set.insert x xs
 
--- | The deck as a deck list: its format's header, if it names one, the
--- main deck by name, then, after a blank line, the rest of a list opened,
--- as written.
+-- | The deck as a deck list: its format's header, if it names one, its
+-- commander under its own header, the main deck by name, its sideboard (a
+-- pool's unused cards, if a pool makes it), then the rest of a list opened,
+-- as written, each after a blank line.
 listText :: Builder -> Text.Text
 listText builder =
-  Text.unlines $
-    [Text.pack "Format: " <> format builder | not (Text.null (format builder))]
-      <> [ Text.pack (show k) <> Text.singleton ' ' <> CardName.unwrap card <> suffix
-         | (card, n) <- List.sortOn (CardName.unwrap . fst) (Map.toList (deck builder)),
-           (suffix, k) <- fitted n (Map.findWithDefault [(Text.empty, n)] card (suffixes builder)),
-           k > 0
-         ]
-      <> (if null (unused builder) then [] else Text.empty : DeckList.heading DeckList.Side : [Text.pack (show n) <> Text.singleton ' ' <> CardName.unwrap card | (card, n) <- unused builder])
-      <> (if null (rest builder) then [] else Text.empty : rest builder)
+  let linesIn section cards =
+        [ Text.pack (show k) <> Text.singleton ' ' <> CardName.unwrap card <> suffix <> foldMap annotation (Map.lookup (section, card) (chosen builder))
+        | (card, n) <- List.sortOn (CardName.unwrap . fst) cards,
+          (suffix, k) <- fitted n (Map.findWithDefault [(Text.empty, n)] (section, card) (suffixes builder)),
+          k > 0
+        ]
+      annotation (choice, colours) = Text.pack " {" <> DeckList.keyword choice <> Text.pack ": " <> Text.unwords (fmap DeckList.colorLetter (Set.toList colours)) <> Text.singleton '}'
+      sideboard = linesIn DeckList.Side (if pooledSide builder then unused builder else Map.toList (side builder))
+      commanders = linesIn DeckList.Commander (Map.toList (command builder))
+      block section lines' = if null lines' then [] else Text.empty : DeckList.heading section : lines'
+   in Text.unlines $
+        [Text.pack "Format: " <> format builder | not (Text.null (format builder))]
+          <> (if null commanders then [] else DeckList.heading DeckList.Commander : commanders <> [Text.empty, DeckList.heading DeckList.Main])
+          <> linesIn DeckList.Main (Map.toList (deck builder))
+          <> block DeckList.Side sideboard
+          <> (if null (rest builder) then [] else Text.empty : rest builder)
 
 -- | The builder with a check's problems, and the cards they name.
 checked :: [Text.Text] -> Set.Set CardName.CardName -> Builder -> Builder
@@ -207,7 +299,7 @@ fitted n parts
 
 -- | The builder once saved as this deck.
 saved :: Text.Text -> Builder -> Builder
-saved name builder = builder {savedAs = Just name, baseline = (deck builder, format builder, pool builder), saveProblems = []}
+saved name builder = builder {savedAs = Just name, baseline = snapshot builder, saveProblems = []}
 
 -- | The sections of a list opened beside its main deck, each with how many
 -- cards its lines name, in the order written.
@@ -221,10 +313,10 @@ kept builder =
           line = Text.strip raw
    in reverse (List.foldl' step [] (rest builder))
 
--- | Whether the deck, its format or its pool differ from when it was last
--- saved or opened.
+-- | Whether the deck, its choices, format or pool differ from when it was
+-- last saved or opened.
 dirty :: Builder -> Bool
-dirty builder = (deck builder, format builder, pool builder) /= baseline builder
+dirty builder = snapshot builder /= baseline builder
 
 -- | The saved deck a save writes, given the saved decks' names: the one
 -- this deck was saved as, or else the one the typed name makes, unless it
@@ -262,11 +354,49 @@ view builder =
   let lines' = linesOf builder
       total = sum (fmap Lobby.copies lines')
       named = CardName.unwrap
-      atCap card = maybe False (<= Map.findWithDefault 0 card (deck builder)) (capOf builder card)
-      adding card = Element.el "button" ["add"] ([Element.attr "type" (Text.pack "button"), Element.on "click" (MkAdd card)] <> [Element.attr "disabled" Text.empty | atCap card]) [Element.el "span" ["sr-only"] [] [Element.text (Text.pack "Add " <> named card)]]
-      removing card = Element.el "button" ["remove"] [Element.attr "type" (Text.pack "button"), Element.on "click" (MkRemove card)] [Element.el "span" ["sr-only"] [] [Element.text (Text.pack "Remove " <> named card)]]
+      atCap section card = section == DeckList.Main && maybe False (<= Map.findWithDefault 0 card (deck builder)) (capOf builder card)
+      adding section card = Element.el "button" ["add"] ([Element.attr "type" (Text.pack "button"), Element.on "click" (MkAdd section card)] <> [Element.attr "disabled" Text.empty | atCap section card]) [Element.el "span" ["sr-only"] [] [Element.text (Text.pack "Add " <> named card)]]
+      removing section card = Element.el "button" ["remove"] [Element.attr "type" (Text.pack "button"), Element.on "click" (MkRemove section card)] [Element.el "span" ["sr-only"] [] [Element.text (Text.pack "Remove " <> named card)]]
+      -- The colours a card in a zone chooses as its deck is built, to toggle.
+      choosing section card = case choiceOf builder section card of
+        Nothing -> []
+        Just choice ->
+          let picked = chosenFor section card builder
+              prompt = if DeckList.colorCount choice == 1 then "Choose a colour" else "Circle two colours"
+           in [ Element.el "div" ["choice"] [Element.attr "role" (Text.pack "group"), Element.attr "aria-label" (Text.pack prompt <> Text.pack " for " <> named card)] $
+                  Element.el "span" ["choice-prompt"] [] [Element.string prompt]
+                    : [Element.el "button" (toggled (Set.member c picked)) [Element.attr "type" (Text.pack "button"), Element.attr "aria-pressed" (Text.pack (if Set.member c picked then "true" else "false")), Element.on "click" (MkChoose section card c)] [Mana.symbol (Text.pack (Web.Card.letterUpper c))] | c <- [minBound .. maxBound]]
+              ]
+      deckLine section card n cost' =
+        Element.el "div" (["deck-line"] <> ["flagged" | Set.member card (flagged builder)]) [] $
+          [Element.el "span" ["copies"] [] [Element.string (show n)], reader card]
+            <> foldMap (pure . Mana.cost) cost'
+            <> [removing section card, adding section card]
+            <> choosing section card
+      zoneBlock section title =
+        let cards = List.sortOn (named . fst) (Map.toList (zoneOf section builder))
+         in [ Element.el "div" ["deck-section", "zone"] [] $
+                Element.el "h3" [] [] [Element.string (title <> " \x00b7 " <> show (sum (fmap snd cards)))]
+                  : [deckLine section card n (Map.lookup (canonical builder card) (byName builder) >>= CardIndex.cost) | (card, n) <- cards]
+            | not (null cards)
+            ]
+      pooledBlock =
+        [ Element.el "div" ["deck-section", "zone"] [] $
+            Element.el "h3" [] [] [Element.string ("Sideboard, the rest of the pool \x00b7 " <> show (sum (fmap snd (unused builder))))]
+              : [Element.el "p" ["deck-line"] [] [Element.el "span" ["copies"] [] [Element.string (show n)], reader card] | (card, n) <- unused builder]
+        | pooledSide builder,
+          not (null (unused builder))
+        ]
+      commanderZone = maybe False snd (least builder) || not (Map.null (command builder))
+      targets =
+        Element.el "div" ["targets"] [Element.attr "role" (Text.pack "group"), Element.attr "aria-label" (Text.pack "Add cards to")] $
+          Element.el "span" ["choice-prompt"] [] [Element.string "Add to"]
+            : [ Element.el "button" (toggled (target builder == section)) [Element.attr "type" (Text.pack "button"), Element.attr "aria-pressed" (Text.pack (if target builder == section then "true" else "false")), Element.on "click" (MkTarget section)] [Element.string title]
+              | (section, title, offered') <- [(DeckList.Main, "Deck", True), (DeckList.Side, "Sideboard", not (pooledSide builder)), (DeckList.Commander, "Commander", commanderZone)],
+                offered'
+              ]
       reader card = Element.button ["card-name"] (MkRead card) [Element.text (named card)]
-      option chosen (value', label') = Element.el "option" [] ([Element.attr "value" value'] <> [Element.attr "selected" Text.empty | chosen == value']) [Element.text label']
+      option current (value', label') = Element.el "option" [] ([Element.attr "value" value'] <> [Element.attr "selected" Text.empty | current == value']) [Element.text label']
       toggled on = ["toggle"] <> ["on" | on]
       q = searchQuery builder
       valueChoices = (Text.empty, Text.pack "Any mana value") : [(Text.pack (show n), Text.pack (show n)) | n <- [0 .. 6 :: Int]] <> [(Text.pack "7", Text.pack "7+")]
@@ -276,31 +406,26 @@ view builder =
         Just entries ->
           let (count, shown) = CardIndex.search q entries
               row e =
-                Element.el "div" (["result"] <> ["in-deck" | Map.member (CardIndex.name e) (deck builder)]) [] $
+                Element.el "div" (["result"] <> ["in-deck" | Map.member (CardIndex.name e) (zoneOf (target builder) builder)]) [] $
                   [reader (CardIndex.name e)]
                     <> foldMap (pure . Mana.cost) (CardIndex.cost e)
                     <> [Element.el "span" ["type-line"] [] [Element.text (CardIndex.typeLine e)]]
-                    <> [Element.el "span" ["copies"] [] [Element.string (show n)] | n <- Maybe.maybeToList (Map.lookup (CardIndex.name e) (deck builder))]
-                    <> [Element.el "span" ["left"] [] [Element.string (show (most - min most (Map.findWithDefault 0 (CardIndex.name e) (deck builder))) <> " left")] | most <- Maybe.maybeToList (capOf builder (CardIndex.name e))]
-                    <> [adding (CardIndex.name e)]
+                    <> [Element.el "span" ["copies"] [] [Element.string (show n)] | n <- Maybe.maybeToList (Map.lookup (CardIndex.name e) (zoneOf (target builder) builder))]
+                    <> [Element.el "span" ["left"] [] [Element.string (show (most - min most (Map.findWithDefault 0 (CardIndex.name e) (deck builder))) <> " left")] | target builder == DeckList.Main, most <- Maybe.maybeToList (capOf builder (CardIndex.name e))]
+                    <> [adding (target builder) (CardIndex.name e)]
            in [Element.el "p" ["empty"] [] [Element.string "No card matches."] | count == 0]
                 <> [Element.el "p" ["shown-count"] [] [Element.string ("Showing " <> show (Seq.length shown) <> " of " <> show count)] | count > Seq.length shown]
                 <> [Element.el "div" ["results"] [] (fmap row (Foldable.toList shown))]
-      section title k =
+      kindBlock title k =
         let these = List.sortOn (\l -> (Lobby.value l, named (Lobby.card l))) [l | l <- lines', Lobby.kind l == k]
          in [ Element.el "div" ["deck-section"] [] $
                 Element.el "h3" [] [] [Element.string (title <> " \x00b7 " <> show (sum (fmap Lobby.copies these)))]
-                  : [ Element.el "div" (["deck-line"] <> ["flagged" | Set.member (Lobby.card l) (flagged builder)]) [] $
-                        [Element.el "span" ["copies"] [] [Element.string (show (Lobby.copies l))], reader (Lobby.card l)]
-                          <> foldMap (pure . Mana.cost) (Lobby.cost l)
-                          <> [removing (Lobby.card l), adding (Lobby.card l)]
-                    | l <- these
-                    ]
+                  : [deckLine DeckList.Main (Lobby.card l) (Lobby.copies l) (Lobby.cost l) | l <- these]
             | not (null these)
             ]
       -- CR 903.5a / 903.12d: a commander counts toward the size of a deck whose
       -- format designates one.
-      commanders = sum [n | (DeckList.Commander, n) <- kept builder]
+      commanders = sum (command builder)
       poolValue = case scope builder of
         MkEveryCard -> Text.empty
         MkSetCards code _ -> Text.pack "set:" <> code
@@ -379,17 +504,22 @@ view builder =
                       [Element.el "button" (toggled (Set.member c (CardIndex.wanted q))) [Element.attr "type" (Text.pack "button"), Element.attr "aria-pressed" (Text.pack (if Set.member c (CardIndex.wanted q) then "true" else "false")), Element.on "click" (MkToggleColour c)] [Mana.symbol (Text.pack (Web.Card.letterUpper c))] | c <- [minBound .. maxBound]]
                         <> [Element.el "button" (toggled (Set.member k (CardIndex.kinds q))) [Element.attr "type" (Text.pack "button"), Element.attr "aria-pressed" (Text.pack (if Set.member k (CardIndex.kinds q) then "true" else "false")), Element.on "click" (MkToggleKind k)] [Element.string (show k)] | k <- searchKinds]
                         <> [Element.el "select" ["mana-value"] [Element.attr "aria-label" (Text.pack "Mana value"), Element.on "change" MkValue] (fmap (option chosenValue) valueChoices)],
-                    Element.el "div" ["basics"] [] [Element.button ["basic"] (MkAdd land) [Element.text (named land)] | land <- basics]
+                    targets,
+                    Element.el "div" ["basics"] [] [Element.button ["basic"] (MkAdd (target builder) land) [Element.text (named land)] | land <- basics]
                   ]
                     <> results,
                 Element.el "section" ["builder-deck"] [Element.attr "aria-label" (Text.pack "Deck")] $
                   [Element.el "h2" [] [] [Element.string counted], Lobby.curve lines']
+                    <> [Element.el "ul" ["notices"] [] [Element.el "li" [] [] [Element.text n] | n <- notices builder] | not (null (notices builder))]
                     <> keptNote
                     <> [Element.el "ul" ["problems"] [Element.attr "role" (Text.pack "alert")] [Element.el "li" [] [] [Element.text p] | p <- problems builder] | not (null (problems builder))]
-                    <> section "Creatures" Lobby.MkCreature
-                    <> section "Spells" Lobby.MkSpell
-                    <> section "Lands" Lobby.MkLand
-                    <> [Element.el "p" ["empty"] [] [Element.string "Add cards from the search."] | null lines']
+                    <> zoneBlock DeckList.Commander "Commander"
+                    <> kindBlock "Creatures" Lobby.MkCreature
+                    <> kindBlock "Spells" Lobby.MkSpell
+                    <> kindBlock "Lands" Lobby.MkLand
+                    <> zoneBlock DeckList.Side "Sideboard"
+                    <> pooledBlock
+                    <> [Element.el "p" ["empty"] [] [Element.string "Add cards from the search."] | null lines', Map.null (command builder), Map.null (side builder)]
               ]
           )
         ]
@@ -398,49 +528,72 @@ view builder =
           <> leave
 
 -- | The builder on a deck list: the saved deck it is, if one, the name to
--- offer for saving, and its text. The main deck becomes counts, each card's
--- printing and annotations its suffix, and every other section's lines the
--- rest, as written; blank lines in the main deck drop.
+-- offer for saving, and its text. The main deck, sideboard and commander
+-- become counts, each card's printing and annotations its suffix and its
+-- choice its colours; every other section's lines are the rest, as
+-- written. A Limited list's sideboard is its pool's unused cards
+-- (CR 100.4b). Blank lines and lines of no copies drop; a line no card can
+-- be read from is noted.
 open :: Maybe Text.Text -> Text.Text -> Text.Text -> Builder -> Builder
 open savedName offered text builder =
-  let step (inMain, fmt, counts, after, others) raw =
+  let step (current, fmt, counts, after, picked, others, unreadable) raw =
         let line = Text.strip raw
          in case (DeckList.sectionNamed line, DeckList.formatNamed line) of
-              (Just DeckList.Main, _) -> (True, fmt, counts, after, others)
-              (Just _, _) -> (False, fmt, counts, after, raw : others)
-              (_, Just named) -> (inMain, Maybe.fromMaybe Text.empty named, counts, after, others)
-              _
-                | not inMain -> (inMain, fmt, counts, after, raw : others)
-                | Text.null line -> (inMain, fmt, counts, after, others)
-                | Just (n, card, at, notes) <- DeckList.entryOf line ->
-                    (inMain, fmt, Map.insertWith (+) card n counts, Map.insertWith (flip (<>)) card [(suffixOf at notes, n)] after, others)
-                | otherwise -> (inMain, fmt, counts, after, others)
+              (Just section, _)
+                | section `elem` zones -> (Just section, fmt, counts, after, picked, others, unreadable)
+                | otherwise -> (Nothing, fmt, counts, after, picked, raw : others, unreadable)
+              -- The first header names the format, as Parun.DeckList reads it.
+              (_, Just named) -> (current, Just (Maybe.fromMaybe (Maybe.fromMaybe Text.empty named) fmt), counts, after, picked, others, unreadable)
+              _ -> case current of
+                Nothing -> (current, fmt, counts, after, picked, raw : others, unreadable)
+                Just section
+                  | Text.null line -> (current, fmt, counts, after, picked, others, unreadable)
+                  | Just (n, card, at, notes) <- DeckList.entryOf line ->
+                      if n == 0
+                        then (current, fmt, counts, after, picked, others, unreadable)
+                        else
+                          let made = Either.rights (fmap (DeckList.choiceOf 0) notes)
+                              plain = [note | note <- notes, Either.isLeft (DeckList.choiceOf 0 note)]
+                           in ( current,
+                                fmt,
+                                Map.insertWith (Map.unionWith (+)) section (Map.singleton card n) counts,
+                                Map.insertWith (flip (<>)) (section, card) [(suffixOf at plain, n)] after,
+                                foldr (Map.insertWith (\_ old -> old) (section, card)) picked made,
+                                others,
+                                unreadable
+                              )
+                  | otherwise -> (current, fmt, counts, after, picked, others, line : unreadable)
       suffixOf at notes = foldMap (\(set, number) -> Text.pack " (" <> set <> Text.pack ") " <> number) at <> foldMap (\note -> Text.pack " {" <> note <> Text.singleton '}') notes
-      (_, format', deck', suffixes', others') = List.foldl' step (True, Text.empty, Map.empty, Map.empty, []) (Text.lines text)
-      (side, unsided) = split DeckList.Side (reverse others')
+      (_, fmt', counts', suffixes', picked', others', unreadable') = List.foldl' step (Just DeckList.Main, Nothing, Map.empty, Map.empty, Map.empty, [], []) (Text.lines text)
+      format' = Maybe.fromMaybe Text.empty fmt'
+      zone section = Map.findWithDefault Map.empty section counts'
       -- CR 100.4b: a limited list's main deck and sideboard are its pool.
-      holding = Map.unionWith (+) deck' (Map.fromListWith (+) (entriesOf side))
-      pooled = format' == Text.pack "limited" && not (null (entriesOf side))
-   in (if pooled then \b -> b {pool = Just holding, baseline = (deck', format', Just holding), scope = MkPoolCards, rest = dropWhile (Text.null . Text.strip) (reverse (dropWhile (Text.null . Text.strip) (reverse unsided)))} else id)
+      pooled = format' == Text.pack "limited" && not (Map.null (zone DeckList.Side))
+      opened =
         builder
           { format = format',
-            deck = deck',
+            deck = zone DeckList.Main,
+            side = if pooled then Map.empty else zone DeckList.Side,
+            command = zone DeckList.Commander,
+            target = DeckList.Main,
             suffixes = Map.filter (\parts -> length parts > 1 || not (all (Text.null . fst) parts)) suffixes',
+            chosen = picked',
             rest = reverse (dropWhile (Text.null . Text.strip) others'),
             savedAs = savedName,
             saveName = offered,
-            baseline = (deck', format', Nothing),
             problems = [],
             flagged = Set.empty,
             least = Nothing,
             reading = Nothing,
             saveProblems = [],
+            notices = [Text.pack "Couldn't read this line, which saving drops: " <> line | line <- reverse unreadable'],
             leaving = False,
-            pool = Nothing,
-            scope = MkEveryCard,
+            pool = if pooled then Just (Map.unionWith (+) (zone DeckList.Main) (zone DeckList.Side)) else Nothing,
+            scope = if pooled then MkPoolCards else MkEveryCard,
             pasting = Nothing,
             poolProblems = []
           }
+   in opened {baseline = snapshot opened}
 
 -- | The builder searching a set's cards, by its code, as its list names them.
 setPool :: Text.Text -> [CardName.CardName] -> Builder -> Builder
@@ -449,16 +602,40 @@ setPool code names builder = builder {scope = MkSetCards code names, pasting = N
 -- | The builder with its cards indexed, and every way of naming one known.
 withIndex :: Seq.Seq CardIndex.Entry -> Builder -> Builder
 withIndex entries builder =
-  builder
-    { index = Just entries,
-      byName = Map.fromList [(CardIndex.name e, e) | e <- Foldable.toList entries],
-      aliases = Map.fromList [(Text.toCaseFold alias, CardIndex.name e) | e <- Foldable.toList entries, alias <- CardName.unwrap (CardIndex.name e) : Text.intercalate (Text.pack " // ") (CardIndex.faceNames e) : CardIndex.faceNames e]
-    }
+  let known =
+        builder
+          { index = Just entries,
+            byName = Map.fromList [(CardIndex.name e, e) | e <- Foldable.toList entries],
+            aliases = Map.fromList [(Text.toCaseFold alias, CardIndex.name e) | e <- Foldable.toList entries, alias <- CardName.unwrap (CardIndex.name e) : Text.intercalate (Text.pack " // ") (CardIndex.faceNames e) : CardIndex.faceNames e]
+          }
+      -- Every card the deck names, renamed as the index names it.
+      rename :: Map.Map CardName.CardName Natural -> Map.Map CardName.CardName Natural
+      rename = Map.mapKeysWith (+) (canonical known)
+      renamePair :: Map.Map (DeckList.Section, CardName.CardName) a -> (a -> a -> a) -> Map.Map (DeckList.Section, CardName.CardName) a
+      renamePair m merge = Map.mapKeysWith merge (fmap (canonical known)) m
+      (zones', picked, fmt, held') = baseline builder
+   in known
+        { deck = rename (deck builder),
+          side = rename (side builder),
+          command = rename (command builder),
+          suffixes = renamePair (suffixes builder) (flip (<>)),
+          chosen = renamePair (chosen builder) const,
+          pool = fmap rename (pool builder),
+          baseline = (fmap rename zones', renamePair picked const, fmt, fmap rename held')
+        }
 
 -- | The index's name for a card however a list named it; the name as
 -- written for a card the index lacks.
 canonical :: Builder -> CardName.CardName -> CardName.CardName
 canonical builder card = Map.findWithDefault card (foldName card) (aliases builder)
+
+-- | The choice a card makes as its deck is built, in a zone, if any.
+choiceOf :: Builder -> DeckList.Section -> CardName.CardName -> Maybe DeckList.Choice
+choiceOf builder section card = Maybe.listToMaybe [choice | (within, choice) <- foldMap (Set.toList . CardIndex.choices) (Map.lookup (canonical builder card) (byName builder)), within == section]
+
+-- | The colours a card in a zone has chosen.
+chosenFor :: DeckList.Section -> CardName.CardName -> Builder -> Set.Set Color.Color
+chosenFor section card builder = maybe Set.empty snd (Map.lookup (section, card) (chosen builder))
 
 -- | The search as the scope narrows it.
 searchQuery :: Builder -> CardIndex.Query

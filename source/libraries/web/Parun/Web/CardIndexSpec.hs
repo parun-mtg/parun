@@ -107,7 +107,8 @@ entry name colours value kinds rules =
       CardIndex.typeLine = Text.unwords (fmap (Text.pack . show) kinds),
       CardIndex.rules = [Text.pack rules | not (null rules)],
       CardIndex.folded = Text.toCaseFold (Text.unwords [Text.pack name, Text.pack rules]),
-      CardIndex.basic = False
+      CardIndex.basic = False,
+      CardIndex.choices = Set.empty
     }
 
 -- | A one-face card named Probe, of the one type given, synthetic or not.

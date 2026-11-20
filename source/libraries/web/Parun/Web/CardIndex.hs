@@ -7,6 +7,7 @@ import qualified Data.List.NonEmpty as NonEmpty
 import qualified Data.Sequence as Seq
 import qualified Data.Set as Set
 import qualified Data.Text as Text
+import qualified Parun.DeckList as DeckList
 import qualified Parun.Engine.Card as EngineCard
 import qualified Parun.Engine.Quantity as Quantity
 import qualified Parun.Types.Card as Card
@@ -39,7 +40,10 @@ data Entry = MkEntry
     folded :: Text.Text,
     -- | Whether the card is a basic land, which every card pool admits
     -- (CR 100.2b, 205.4c).
-    basic :: Bool
+    basic :: Bool,
+    -- | The choices the card makes as its deck is built, in each section of
+    -- a list that reads one (Parun.DeckList.makes).
+    choices :: Set.Set (DeckList.Section, DeckList.Choice)
   }
   deriving (Eq, Show)
 
@@ -85,6 +89,7 @@ entryOf c
             typeLine = typeWords (Face.typeLine front),
             rules = said,
             folded = Text.toCaseFold (Text.unlines (named <> fmap (typeWords . Face.typeLine) faces <> said)),
+            choices = Set.fromList [(section, choice) | section <- [DeckList.Main, DeckList.Side, DeckList.Commander], choice <- [minBound .. maxBound], DeckList.makes section choice c],
             basic = Set.member Supertype.Basic (TypeLine.supertypes (Face.typeLine front)) && Set.member CardType.Land (TypeLine.types (Face.typeLine front))
           }
   where
