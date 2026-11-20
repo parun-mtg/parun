@@ -2,11 +2,13 @@
 -- page, and the reply its taps build, from requests the engine makes.
 module Parun.WebQuestionSpec where
 
+import qualified Control.Exception as Exception
 import qualified Control.Monad as Monad
 import qualified Data.ByteString as ByteString
 import qualified Data.Containers.ListUtils as ListUtils
 import qualified Data.Either as Either
 import qualified Data.Foldable as Foldable
+import qualified Data.IORef as IORef
 import qualified Data.List as List
 import qualified Data.List.NonEmpty as NonEmpty
 import qualified Data.Map.Strict as Map
@@ -37,11 +39,15 @@ import qualified Parun.Scenario.PromptOffer as PromptOffer
 import qualified Parun.Spec as Spec
 import qualified Parun.Support as S
 import qualified Parun.Types.Action as Action
+import qualified Parun.Types.Answerer as Answerer
 import qualified Parun.Types.AnyNumberOf as AnyNumberOf
+import qualified Parun.Types.Asked as Asked
+import qualified Parun.Types.AttackTarget as AttackTarget
 import qualified Parun.Types.BeginningStep as BeginningStep
 import qualified Parun.Types.Card as Card.Type
 import qualified Parun.Types.CardName as CardName
 import qualified Parun.Types.Color as Color
+import qualified Parun.Types.Combat as Combat
 import qualified Parun.Types.CommandZoneDecision as CommandZoneDecision
 import qualified Parun.Types.Cost as Cost
 import qualified Parun.Types.CounterKind as CounterKind
@@ -923,3 +929,97 @@ answered prompt request picks = case Question.Web.step request picks Question.We
 -- | The picks a run of events leaves.
 picking :: Request.Request -> [Question.Web.Event] -> Set.Set (Natural, Natural)
 picking request = Foldable.foldl' (\picked event -> case Question.Web.step request picked event Text.empty of Question.Web.MkPicking now -> now; _ -> picked) Set.empty
+
+-- | The questions only a game of three or more seats asks, each answered
+-- through its form in a scenario played on from a stop (Scenario.branch).
+multiplayerSpec :: (Monad n) => Spec.Spec IO n -> Registry.Registry IO -> n ()
+multiplayerSpec s registry = Spec.describe s "WebQuestion" . Spec.describe s "multiplayer" $ do
+  Spec.it s "CR 506.2a / 508.1b / 802.1 an attacker picks a planeswalker or a player among several defenders" $ do
+    let named = "shark-shredders-creature-attacks-the-damaged-player-not-their-planeswalker"
+        attacked gs = Map.elems (Combat.attackers (TurnRegisters.combat (GameState.turn gs)))
+    (asked, walker) <- playedThrough s registry named 1 "ChooseAttackTarget" [["Player 3's Jace Beleren (3 loyalty counters)"]]
+    Spec.assertEqWith s "every defender a button" (fmap (\request -> fmap (\label -> Maybe.isJust (Html.labelled (Text.pack "button") (Text.pack label) (Question.Web.view request Question.Web.blank))) ["Player 2", "Player 3"]) asked) [[True, True]]
+    Spec.assertBool s (all (\a -> case a of AttackTarget.OfPlaneswalker _ -> True; _ -> False) (attacked walker) && not (null (attacked walker))) "the planeswalker"
+    (_, player) <- playedThrough s registry named 1 "ChooseAttackTarget" [["Player 2"]]
+    Spec.assertEqWith s "a player" (attacked player) [AttackTarget.OfPlayer S.bob]
+
+  Spec.it s "CR 701.38a three voters each vote on their own form among the other players, handed the screen in turn" $ do
+    -- Mob Verdict: each player votes for another player.
+    (asked, gs) <- playedThrough s registry "vote/cr-701-38b-player-vote-mob-verdict-damages-each-opponent-by-their-own-votes" 1 "ChooseVote" [["Player 2"], ["Player 3"], ["Player 2"]]
+    Spec.assertEqWith s "each seat asked" (fmap (Question.seat . Request.question) asked) [S.alice, S.bob, S.carol]
+    Spec.assertEqWith s "the others offered" (fmap (\request -> filter (\label -> Maybe.isJust (Html.labelled (Text.pack "button") (Text.pack label) (Question.Web.view request Question.Web.blank))) ["Player 1", "Player 2", "Player 3"]) asked) [["Player 2", "Player 3"], ["Player 1", "Player 3"], ["Player 1", "Player 2"]]
+    Spec.assertEqWith s "handed" (fmap (Html.content . Question.Web.handOff) asked) (fmap (\n -> Text.pack ("Pass the screen to Player " <> show (n :: Int) <> ".Ready")) [1, 2, 3])
+    -- Two votes for bob, one for carol, at 2 damage each.
+    Spec.assertEqWith s "life" (fmap Player.life (Map.elems (GameState.players gs))) [20, 16, 18]
+
+  Spec.it s "CR 101.4 / 118.12a each opponent decides on their own form in turn order, the hand-off naming them" $ do
+    -- Acererak the Archlich: for each opponent, a Zombie unless that player sacrifices a creature.
+    (asked, gs) <- playedThrough s registry "acererak-the-archlich-makes-a-zombie-for-each-of-two-opponents-who-do-not-sacrifice" 2 "ChooseToPay" [["Don't pay"], ["Don't pay"]]
+    Spec.assertEqWith s "each opponent asked" (fmap (Question.seat . Request.question) asked) [S.bob, S.carol]
+    Spec.assertEqWith s "handed" (fmap (Html.content . Question.Web.handOff) asked) [Text.pack "Pass the screen to Player 2.Ready", Text.pack "Pass the screen to Player 3.Ready"]
+    Spec.assertBool s (all (Text.isInfixOf (Text.pack "Acererak the Archlich's ability: pay Sacrifice a creature?") . Html.content . (`Question.Web.view` Question.Web.blank)) asked) "the cost, on each form"
+    Spec.assertEqWith s "a Zombie each" (S.countOnBattlefieldByName (CardName.MkCardName (Text.pack "Zombie Token")) S.alice gs) 2
+
+  Spec.it s "CR 724.1 a controlled seat's defender is chosen by its controller among three seats, the hand-off naming both" $ do
+    -- Seated alice, carol, bob: carol, Player 2, controls bob's turn with Mindslaver.
+    (asked, gs) <- playedThrough s registry "combat/cr-724-1-a-controlled-active-player-s-choice-of-defender-routes-to-their-controller" 6 "ChooseDefender" [["Player 1"]]
+    Spec.assertEqWith s "for" (fmap (Question.for . Request.question) asked) [Just S.carol]
+    Spec.assertEqWith s "handed" (fmap (Html.content . Question.Web.handOff) asked) [Text.pack "Pass the screen to Player 2, deciding for Player 3.Ready"]
+    Spec.assertBool s (all (Text.isInfixOf (Text.pack "You're deciding for Player 3, whom you control.Choose defender.Player 1Player 2") . Html.content . (`Question.Web.view` Question.Web.blank)) asked) "the banner and both candidates"
+    Spec.assertEqWith s "defender" (Combat.defenders (TurnRegisters.combat (GameState.turn gs))) [S.alice]
+
+-- | The scenario named played to the stop at `at`, then on: each question of
+-- the kind answered on the page by tapping the next run of button labels, as
+-- its seat would, the reply read as the engine reads it; every other question
+-- declined (S.identityAnswer). The requests the page answered, and the game
+-- at the first other question after the last of them.
+playedThrough :: Spec.Spec IO n -> Registry.Registry IO -> String -> Natural -> String -> [[String]] -> IO ([Request.Request], GameState.GameState)
+playedThrough s registry name at kind taps = do
+  root <- Load.defaultRoot
+  bytes <- ByteString.readFile (root <> "/" <> name <> ".json")
+  scenario <- either (Spec.assertFailure s . Text.unpack) pure (Load.parse bytes)
+  pending <- IORef.newIORef taps
+  answered' <- IORef.newIORef Seq.empty
+  after <- IORef.newIORef Nothing
+  let onward = Answerer.MkAnswerer $ \asked -> do
+        let prompt = Asked.prompt asked
+        left <- IORef.readIORef pending
+        case (Protocol.requestFor asked, left) of
+          (Just request, labels : rest) | Question.kind (Request.question request) == Text.pack kind -> do
+            IORef.writeIORef pending rest
+            IORef.modifyIORef' answered' (Seq.|> request)
+            Monad.unless (Maybe.isNothing (Question.Web.automatic Question.Web.MkStandard request)) $ Spec.assertFailure s "answered unasked"
+            reply <- either (Spec.assertFailure s . Text.unpack) pure (tapping request labels)
+            either (Spec.assertFailure s . Text.unpack) pure (Protocol.decodeAnswer prompt reply >>= Protocol.onOffer (Question.offer (Request.question request)) prompt)
+          (_, []) -> do
+            IORef.writeIORef after (Just (Asked.game asked))
+            Exception.throwIO MkPlayedThrough
+          _ -> pure (S.identityAnswer prompt)
+  ended <- Exception.try (Scenario.branch registry at onward scenario)
+  done <- IORef.readIORef after
+  shown <- IORef.readIORef answered'
+  case (ended, done) of
+    (Left MkPlayedThrough, Just gs) -> pure (Foldable.toList shown, gs)
+    (Right (Left failure), _) -> Spec.assertFailure s (Text.unpack (Scenario.render failure))
+    _ -> Spec.assertFailure s ("the page answered " <> show (Seq.length shown) <> " of " <> show (length taps))
+
+-- | Ends a scenario played through once the page has answered its last.
+data PlayedThrough = MkPlayedThrough
+  deriving (Show)
+
+instance Exception.Exception PlayedThrough
+
+-- | The reply tapping the buttons labelled so, in order, on the request's
+-- page builds, the picks each tap leaves carried to the next.
+tapping :: Request.Request -> [String] -> Either Text.Text R.Reply
+tapping request = go (Question.Web.initial request)
+  where
+    go picked labels = case labels of
+      [] -> Left (Text.pack "no reply")
+      label : rest -> do
+        let page = Question.Web.view request Question.Web.blank {Question.Web.selected = picked}
+        event <- maybe (Left (Text.pack ("no button " <> label <> ": ") <> Html.content page)) Right (Html.labelled (Text.pack "button") (Text.pack label) page >>= \path -> Html.handler (Text.pack "click") path page)
+        case Question.Web.step request picked event Text.empty of
+          Question.Web.MkReplied reply -> Right reply
+          Question.Web.MkPicking now -> go now rest
+          Question.Web.MkRefused problem -> Left problem
