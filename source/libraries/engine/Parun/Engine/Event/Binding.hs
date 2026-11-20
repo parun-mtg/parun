@@ -29,6 +29,7 @@ import qualified Parun.Types.AttachmentEnd as AttachmentEnd
 import qualified Parun.Types.AttachmentTrigger as AttachmentTrigger
 import qualified Parun.Types.AttackCount as AttackCount
 import qualified Parun.Types.AttackTarget as AttackTarget
+import qualified Parun.Types.AttackTargetKind as AttackTargetKind
 import qualified Parun.Types.AttackTrigger as AttackTrigger
 import qualified Parun.Types.AttackedSubject as AttackedSubject
 import qualified Parun.Types.AttackedTrigger as AttackedTrigger
@@ -1171,7 +1172,7 @@ attackSlots trigger = case trigger of
   AttackTrigger.Attacker _ -> Set.fromList [Binding.attackingCreature, Binding.triggerPlayer]
   AttackTrigger.Attacked t ->
     Set.fromList
-      ( [Binding.triggerPlayer | AttackedTrigger.attacked t /= AttackedSubject.Source]
+      ( [Binding.triggerPlayer | attacksPlayersAlone (AttackedTrigger.attacked t)]
           <> [Binding.attackingPlayer | Maybe.isJust (AttackedTrigger.attacker t)]
           <> [Binding.attackingCreatures]
       )
@@ -1179,6 +1180,16 @@ attackSlots trigger = case trigger of
     Nothing -> Set.singleton Binding.attackingPlayer
     Just _ -> Set.fromList [Binding.attackingPlayer, Binding.attackingCreatures]
   AttackTrigger.Unblocked _ -> Set.fromList [Binding.attackingCreature, Binding.triggerPlayer]
+
+-- Whether every target the subject admits is a player, so that "that player"
+-- is bound for each match. A Related subject a planeswalker answers (Rigo,
+-- Streetwise Mentor's "a player or planeswalker") binds it only when a player
+-- was attacked, which eventBindingSlotsSometimes claims.
+attacksPlayersAlone :: AttackedSubject.AttackedSubject -> Bool
+attacksPlayersAlone subject = case subject of
+  AttackedSubject.Related _ kinds -> kinds == Set.singleton AttackTargetKind.OfPlayer
+  AttackedSubject.Enchanted -> True
+  AttackedSubject.Source -> False
 
 -- CR 400.7: what eventBindings stamps for a LeavesZone, as (guaranteed given
 -- a match, bound for some matches only). CR 400.7e's `became` is never bound:
@@ -2029,6 +2040,12 @@ eventBindingSlotsSometimes cond = case cond of
   -- one, under "to a player or battle": the arm binds whichever was hit.
   TriggerCondition.PermanentsDealDamageToPlayer p
     | PermanentsDealDamageToPlayer.orBattle p && not (PermanentsDealDamageToPlayer.oneOrMorePlayers p) -> Set.fromList [Binding.triggerPlayer, Binding.became]
+  -- The attacked player under a Related subject a planeswalker also answers
+  -- (attacksPlayersAlone). Rigo, Streetwise Mentor reads nothing under it.
+  TriggerCondition.Attacks (AttackTrigger.Attacked t)
+    | AttackedSubject.Related {} <- AttackedTrigger.attacked t,
+      not (attacksPlayersAlone (AttackedTrigger.attacked t)) ->
+        Set.singleton Binding.triggerPlayer
   -- Binding.handArrival, bound when the move a destination-free condition
   -- matched reached a hand. Nothing in data/cards/ names it under one.
   TriggerCondition.LeavesZone t -> snd (leavesZoneSlots t)

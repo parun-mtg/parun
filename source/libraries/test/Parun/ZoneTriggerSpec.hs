@@ -48,6 +48,7 @@ import qualified Parun.Types.AttackCompany as AttackCompany
 import qualified Parun.Types.AttackCount as AttackCount
 import qualified Parun.Types.AttackMeasure as AttackMeasure
 import qualified Parun.Types.AttackTarget as AttackTarget
+import qualified Parun.Types.AttackTargetKind as AttackTargetKind
 import qualified Parun.Types.AttackTrigger as AttackTrigger
 import qualified Parun.Types.AttackedSubject as AttackedSubject
 import qualified Parun.Types.AttackedTrigger as AttackedTrigger
@@ -1782,6 +1783,12 @@ representativeEvents cond =
           -- subject is the bearer, matched by identity and bound under nothing.
           AttackTrigger.Attacked t -> case AttackedTrigger.attacked t of
             AttackedSubject.Source -> one (GameEvent.BecameAttacked (BecameAttacked.MkBecameAttacked S.carol (AttackTarget.OfPlaneswalker departed)))
+            -- A subject a planeswalker answers binds `thatPlayer` for an
+            -- attacked player only, so its floor is pinned by both events.
+            AttackedSubject.Related _ kinds
+              | Set.member AttackTargetKind.OfPlaneswalker kinds ->
+                  noTable (GameEvent.BecameAttacked (BecameAttacked.MkBecameAttacked S.carol (AttackTarget.OfPlayer S.bob)))
+                    NonEmpty.:| [noTable (GameEvent.BecameAttacked (BecameAttacked.MkBecameAttacked S.carol (AttackTarget.OfPlaneswalker departed)))]
             _ -> one (GameEvent.BecameAttacked (BecameAttacked.MkBecameAttacked S.carol (AttackTarget.OfPlayer S.bob)))
           -- CR 508.3d's once-per-DECLARATION event, naming the player who
           -- declared, which is the ONLY thing it carries.
@@ -2227,16 +2234,17 @@ everyTriggerCondition =
     -- function of both.
     TriggerCondition.Attacks (AttackTrigger.Attacked (AttackedTrigger.MkAttackedTrigger Nothing AttackedSubject.Enchanted Nothing)),
     TriggerCondition.Attacks (AttackTrigger.Attacked (AttackedTrigger.MkAttackedTrigger Nothing AttackedSubject.Source Nothing)),
-    TriggerCondition.Attacks (AttackTrigger.Attacked (AttackedTrigger.MkAttackedTrigger Nothing (AttackedSubject.Related PlayerRelation.AnyPlayer) Nothing)),
-    TriggerCondition.Attacks (AttackTrigger.Attacked (AttackedTrigger.MkAttackedTrigger (Just PlayerRelation.You) (AttackedSubject.Related PlayerRelation.AnyPlayer) Nothing)),
-    TriggerCondition.Attacks (AttackTrigger.Attacked (AttackedTrigger.MkAttackedTrigger (Just PlayerRelation.Opponent) (AttackedSubject.Related PlayerRelation.You) Nothing)),
-    TriggerCondition.Attacks (AttackTrigger.Attacked (AttackedTrigger.MkAttackedTrigger (Just PlayerRelation.AnyPlayer) (AttackedSubject.Related PlayerRelation.Opponent) Nothing)),
+    TriggerCondition.Attacks (AttackTrigger.Attacked (AttackedTrigger.MkAttackedTrigger Nothing (AttackedSubject.Related PlayerRelation.AnyPlayer (Set.singleton AttackTargetKind.OfPlayer)) Nothing)),
+    TriggerCondition.Attacks (AttackTrigger.Attacked (AttackedTrigger.MkAttackedTrigger (Just PlayerRelation.You) (AttackedSubject.Related PlayerRelation.AnyPlayer (Set.singleton AttackTargetKind.OfPlayer)) Nothing)),
+    TriggerCondition.Attacks (AttackTrigger.Attacked (AttackedTrigger.MkAttackedTrigger (Just PlayerRelation.Opponent) (AttackedSubject.Related PlayerRelation.You (Set.singleton AttackTargetKind.OfPlayer)) Nothing)),
+    TriggerCondition.Attacks (AttackTrigger.Attacked (AttackedTrigger.MkAttackedTrigger (Just PlayerRelation.AnyPlayer) (AttackedSubject.Related PlayerRelation.Opponent (Set.singleton AttackTargetKind.OfPlayer)) Nothing)),
     TriggerCondition.Attacks (AttackTrigger.Attacked (AttackedTrigger.MkAttackedTrigger (Just PlayerRelation.You) AttackedSubject.Enchanted Nothing)),
+    TriggerCondition.Attacks (AttackTrigger.Attacked (AttackedTrigger.MkAttackedTrigger (Just PlayerRelation.You) (AttackedSubject.Related PlayerRelation.AnyPlayer (Set.fromList [AttackTargetKind.OfPlayer, AttackTargetKind.OfPlaneswalker])) Nothing)),
     TriggerCondition.Attacks (AttackTrigger.Attacked (AttackedTrigger.MkAttackedTrigger (Just PlayerRelation.You) AttackedSubject.Source Nothing)),
     -- A count with and without an attacking player: eventBindings stamps the
     -- admitted creatures in place of every creature attacking the target.
-    TriggerCondition.Attacks (AttackTrigger.Attacked (AttackedTrigger.MkAttackedTrigger Nothing (AttackedSubject.Related PlayerRelation.AnyPlayer) (Just (AttackCount.MkAttackCount AttackMeasure.Creatures 1 (Filter.Type.And []))))),
-    TriggerCondition.Attacks (AttackTrigger.Attacked (AttackedTrigger.MkAttackedTrigger (Just PlayerRelation.You) (AttackedSubject.Related PlayerRelation.AnyPlayer) (Just (AttackCount.MkAttackCount AttackMeasure.Creatures 1 (Filter.Type.And []))))),
+    TriggerCondition.Attacks (AttackTrigger.Attacked (AttackedTrigger.MkAttackedTrigger Nothing (AttackedSubject.Related PlayerRelation.AnyPlayer (Set.singleton AttackTargetKind.OfPlayer)) (Just (AttackCount.MkAttackCount AttackMeasure.Creatures 1 (Filter.Type.And []))))),
+    TriggerCondition.Attacks (AttackTrigger.Attacked (AttackedTrigger.MkAttackedTrigger (Just PlayerRelation.You) (AttackedSubject.Related PlayerRelation.AnyPlayer (Set.singleton AttackTargetKind.OfPlayer)) (Just (AttackCount.MkAttackCount AttackMeasure.Creatures 1 (Filter.Type.And []))))),
     -- ALL THREE relations, each with and without a count: an eventBindings arm
     -- that had cased on the relation and stamped nothing under one of them
     -- would go unseen if only one were listed.

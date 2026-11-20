@@ -15,6 +15,7 @@ import Numeric.Natural (Natural)
 import qualified Parun.Engine.Binding as Binding
 import qualified Parun.Engine.Condition as Condition
 import qualified Parun.Engine.Count as Count
+import qualified Parun.Engine.Defender as Defender
 import Parun.Engine.Event.Binding (admitsAttacker, admitsDeparture, admittedAt, admittedAttackers, admittedDepartures, admittedPreventedSources, attackedBy, combatDamagerOn, postEventView)
 import qualified Parun.Engine.Filter as Filter
 import qualified Parun.Engine.Game as Game
@@ -252,12 +253,19 @@ attacks context board atEvent gs bearer you trigger event = case (trigger, event
   -- collapses the declaration's group. CR 508.3e's "[a player] attacks" is
   -- once per event, each one attacking player and target. Either way only
   -- the target CR 508.1b announced answers, so a creature sent at a
-  -- planeswalker leaves a player's trigger silent (CR 508.3e's last sentence).
+  -- planeswalker leaves a trigger naming players alone silent (CR 508.3e's last
+  -- sentence).
   (AttackTrigger.Attacked t, GameEvent.BecameAttacked payload) ->
     let enchanted = Recipient.playerOf =<< (Object.attachedTo =<< Game.lookupObject bearer gs)
         attackerHolds = maybe True (\relation -> PlayerRelation.holds (Game.teams gs) relation you (BecameAttacked.attacker payload)) (AttackedTrigger.attacker t)
         attackedHolds = case (AttackedTrigger.attacked t, BecameAttacked.target payload) of
-          (AttackedSubject.Related relation, AttackTarget.OfPlayer attacked) -> PlayerRelation.holds (Game.teams gs) relation you attacked
+          -- A planeswalker answers through its controller (CR 508.5's
+          -- reading), and only where the kinds admit one, each apart from its
+          -- controller (docs/decisions.md, "How often Rigo draws for a player
+          -- and their planeswalker").
+          (AttackedSubject.Related relation kinds, attacked) ->
+            Set.member (Game.attackTargetKind attacked) kinds
+              && maybe False (PlayerRelation.holds (Game.teams gs) relation you) (Defender.playerOf Projection.viewWithLastKnownAnywhere attacked gs)
           (AttackedSubject.Enchanted, AttackTarget.OfPlayer attacked) -> enchanted == Just attacked
           (AttackedSubject.Source, AttackTarget.OfPlaneswalker attacked) -> attacked == bearer
           (AttackedSubject.Source, AttackTarget.OfBattle attacked) -> attacked == bearer

@@ -1,10 +1,12 @@
 module Parun.Codec.AttackedTriggerSpec where
 
+import qualified Data.Set as Set
 import qualified Parun.Codec.AttackedTrigger as AttackedTrigger
 import qualified Parun.JsonCodec.Common as Common
 import qualified Parun.Spec as Spec
 import qualified Parun.Types.AttackCount as AttackCount
 import qualified Parun.Types.AttackMeasure as AttackMeasure
+import qualified Parun.Types.AttackTargetKind as AttackTargetKind
 import qualified Parun.Types.AttackedSubject as AttackedSubject
 import qualified Parun.Types.AttackedTrigger as AttackedTrigger
 import qualified Parun.Types.Filter as Filter
@@ -19,8 +21,8 @@ spec s = Spec.describe s "Parun.Codec.AttackedTrigger" $ do
     Common.assertCodec
       s
       AttackedTrigger.codec
-      (AttackedTrigger.MkAttackedTrigger (Just PlayerRelation.Opponent) (AttackedSubject.Related PlayerRelation.You) Nothing)
-      " {\"attacker\":\"Opponent\",\"attacked\":{\"type\":\"Related\",\"value\":\"You\"}} "
+      (AttackedTrigger.MkAttackedTrigger (Just PlayerRelation.Opponent) (AttackedSubject.Related PlayerRelation.You (Set.singleton AttackTargetKind.OfPlayer)) Nothing)
+      " {\"attacker\":\"Opponent\",\"attacked\":{\"type\":\"Related\",\"value\":{\"relation\":\"You\"}}} "
   -- Curse of Vitality's "whenever enchanted player is attacked".
   Spec.it s "no attacker writes no key" $
     Common.assertCodec
@@ -34,6 +36,6 @@ spec s = Spec.describe s "Parun.Codec.AttackedTrigger" $ do
     Common.assertCodec
       s
       AttackedTrigger.codec
-      (AttackedTrigger.MkAttackedTrigger (Just PlayerRelation.You) (AttackedSubject.Related PlayerRelation.AnyPlayer) (Just (AttackCount.MkAttackCount AttackMeasure.Creatures 1 (Filter.HasSubtype Subtype.Merfolk))))
-      " {\"attacker\":\"You\",\"attacked\":{\"type\":\"Related\",\"value\":\"AnyPlayer\"},\"attackers\":{\"floor\":1,\"filter\":{\"type\":\"HasSubtype\",\"value\":\"Merfolk\"}}} "
+      (AttackedTrigger.MkAttackedTrigger (Just PlayerRelation.You) (AttackedSubject.Related PlayerRelation.AnyPlayer (Set.singleton AttackTargetKind.OfPlayer)) (Just (AttackCount.MkAttackCount AttackMeasure.Creatures 1 (Filter.HasSubtype Subtype.Merfolk))))
+      " {\"attacker\":\"You\",\"attacked\":{\"type\":\"Related\",\"value\":{\"relation\":\"AnyPlayer\"}},\"attackers\":{\"floor\":1,\"filter\":{\"type\":\"HasSubtype\",\"value\":\"Merfolk\"}}} "
   Spec.it s "has a schema" $ Common.assertHasSchema s AttackedTrigger.codec
