@@ -18,6 +18,7 @@ import qualified Data.Text.Encoding as Encoding
 import Numeric.Natural (Natural)
 import qualified Parun.Codec.ManaType as Codec.ManaType
 import qualified Parun.Codec.Reply as Codec.Reply
+import qualified Parun.Engine.Departure as Departure
 import qualified Parun.Engine.Event as Event
 import qualified Parun.Engine.Game as Game
 import qualified Parun.Engine.PlayerView as PlayerView
@@ -47,6 +48,7 @@ import qualified Parun.Types.CounterKind as CounterKind
 import qualified Parun.Types.CounterKindFor as CounterKindFor
 import qualified Parun.Types.Daytime as Daytime
 import qualified Parun.Types.Decider as Decider
+import qualified Parun.Types.Departure as Departure.Type
 import qualified Parun.Types.Designation as Designation
 import qualified Parun.Types.Dividing as Dividing
 import qualified Parun.Types.Face as Face
@@ -823,6 +825,28 @@ replaySpec s registry = Spec.describe s "WebQuestion" . Spec.describe s "replay"
     Spec.assertEqWith s "alice's" (fmap (taxes S.alice) stops) [[0], [2], [4]]
     Spec.assertEqWith s "bob's" (fmap (taxes S.bob) stops) [[0], [2], [4]]
     Spec.assertEqWith s "drawn on its tile" (fmap drawn stops) [False, False, True]
+
+  Spec.it s "CR 800.4a the other seats sit in turn order from the viewer's, a departed one dropped, each showing its turn, priority and monarchy" $ do
+    let marks = Board.MkMarks (\o -> Card.MkCue [] (ObjectView.object o) Nothing) (const Nothing)
+        start = S.fourPlayerGame {GameState.monarch = Just S.bob}
+        held = start {GameState.turn = (GameState.turn start) {TurnRegisters.priority = Just S.dave}}
+        -- Each seat's section of carol's table, by its label, in page order.
+        sections gs =
+          [ (Text.takeWhile (/= '"') (Text.drop (Text.length label) (snd (Text.breakOn label section))), section)
+          | section <- drop 1 (Text.splitOn (Text.pack "<section class=\"seat ") (Html.toText (Board.view marks (PlayerView.viewFor S.carol gs))))
+          ]
+        label = Text.pack "aria-label=\""
+        order gs = fmap fst (sections gs)
+        labelled = Board.name
+        has cls gs pid = maybe False (Text.isInfixOf (Text.pack ("class=\"count " <> cls <> "\""))) (lookup (labelled pid) (sections gs))
+        reversed = held {GameState.turnOrderReversed = True}
+        departed = S.runPure S.identityAnswer held (Departure.leaveGame Departure.Type.Conceded S.alice)
+    Spec.assertEqWith s "turn order from carol" (order held) (fmap labelled [S.dave, S.alice, S.bob] <> [Text.pack "Your side"])
+    Spec.assertEqWith s "reversed" (order reversed) (fmap labelled [S.bob, S.alice, S.dave] <> [Text.pack "Your side"])
+    Spec.assertEqWith s "alice conceded" (order departed) (fmap labelled [S.dave, S.bob] <> [Text.pack "Your side"])
+    Spec.assertEqWith s "alice's turn" (fmap (has "turn" held) S.fourPlayers) (True NonEmpty.:| [False, False, False])
+    Spec.assertEqWith s "dave's priority" (fmap (has "priority" held) S.fourPlayers) (False NonEmpty.:| [False, False, True])
+    Spec.assertEqWith s "bob the monarch" (fmap (has "monarch" held) S.fourPlayers) (False NonEmpty.:| [True, False, False])
 
 -- | The sheet's Oracle text (Card.oracle) of the one battlefield object named,
 -- as the stop's active player reads it.

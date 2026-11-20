@@ -29,6 +29,7 @@ import qualified Parun.Types.PlayerId as PlayerId
 import qualified Parun.Types.PlayerView as PlayerView
 import qualified Parun.Types.Recipient as Recipient
 import qualified Parun.Types.SeatView as SeatView
+import qualified Parun.Types.Status as Status
 import qualified Parun.Web.Card as Card
 import qualified Parun.Web.Element as Element
 import qualified Parun.Web.Html as Html
@@ -117,14 +118,31 @@ phaseIndex p = case p of
     EndingStep.EndStep -> 4
     EndingStep.Cleanup -> 4
 
--- | The table: other seats, the stack, and the seat's own.
+-- | The table: other seats, the stack, and the seat's own. The others go in
+-- turn order from the seat's, those still in the game only (CR 800.4a), side
+-- by side where the screen allows.
 view :: Marks msg -> PlayerView.PlayerView -> Html.Html msg
 view marks board =
-  let (mine, others) = List.partition ((== PlayerView.viewer board) . SeatView.player) (PlayerView.seats board)
+  let (mine, others) = List.partition ((== PlayerView.viewer board) . SeatView.player) (fromViewer board)
+      present = filter ((== Status.Playing) . SeatView.status) others
+      across =
+        [ Element.keyed
+            "div"
+            (["opponents"] <> ["many" | length present > 1])
+            []
+            [(Text.pack (show (PlayerId.unwrap (SeatView.player s))), seatArea marks board False s) | s <- present]
+        | not (null present)
+        ]
    in Element.el "div" ["table"] [] $
-        fmap (seatArea marks board False) others
+        across
           <> stackArea marks board
           <> fmap (seatArea marks board True) mine
+
+-- | The seats in turn order (CR 103.1), starting from the viewer's.
+fromViewer :: PlayerView.PlayerView -> [SeatView.SeatView]
+fromViewer board =
+  let (before, from) = break ((== PlayerView.viewer board) . SeatView.player) (PlayerView.seats board)
+   in from <> before
 
 stackArea :: Marks msg -> PlayerView.PlayerView -> [Html.Html msg]
 stackArea marks board = case PlayerView.stack board of
@@ -234,6 +252,10 @@ seatHead marks board own s =
           <> [chip "blessing" (designationName d) "" (designationTip d) | d <- Set.toList (SeatView.designations s)]
           <> [chip "dungeons" "Dungeons" (show (SeatView.completedDungeons s)) "Dungeons completed (CR 309.7)" | SeatView.completedDungeons s > 0]
           <> [chip (if kind == PlayerCounterKind.Poison then "poison" else "player-counter") (capitalized (counterWord kind)) (show n) (counterWord kind <> " counters") | (kind, n) <- Map.toList (SeatView.counters s), n > 0]
+      -- CR 102.1 / 117.1: whose turn it is and who holds priority.
+      holding =
+        [chip "turn" "Turn" "" "Whose turn it is: the active player (CR 102.1)" | PlayerView.active board == pid]
+          <> [chip "priority" "Priority" "" "Holds priority (CR 117.1)" | PlayerView.priority board == Just pid]
       pool = Mana.unwrap (SeatView.manaPool s)
       aimed = Card.targetingPlayer board pid
    in Element.el "div" (["seat-head"] <> ["targeted" | not (null aimed)]) [Element.attr "title" (Text.pack "Targeted by " <> Render.listing aimed) | not (null aimed)] $
@@ -242,7 +264,8 @@ seatHead marks board own s =
             "div"
             ["counts"]
             []
-            ( commanderDamage
+            ( holding
+                <> commanderDamage
                 <> [ Element.el "span" ["count"] [Element.attr "title" (Text.pack "Cards in hand")] [zone Icon.MkHand "Hand", Element.string (show (SeatView.handSize s))],
                      Element.el "span" ["count"] [Element.attr "title" (Text.pack "Cards in library")] [zone Icon.MkLibrary "Library", Element.string (show (SeatView.librarySize s))]
                    ]

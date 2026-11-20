@@ -11,10 +11,12 @@ import qualified Parun.Codec.ObjectView as ObjectView
 import qualified Parun.Codec.PlayerCounterKind as PlayerCounterKind
 import qualified Parun.Codec.PlayerDesignation as PlayerDesignation
 import qualified Parun.Codec.PlayerId as PlayerId
+import qualified Parun.Codec.Status as Status
 import qualified Parun.JsonCodec.Codec as Codec
 import qualified Parun.JsonCodec.Common as Common
 import qualified Parun.JsonCodec.Fields as Fields
 import qualified Parun.Types.SeatView as SeatView
+import qualified Parun.Types.Status as Status.Type
 
 -- | A bare object keyed by the record's field names.
 codec :: Codec.Codec SeatView.SeatView
@@ -35,9 +37,11 @@ codec = Fields.object $ do
   completedDungeons <- Fields.defaulted "completedDungeons" 0 Common.natural SeatView.completedDungeons
   draftNotes <- Fields.defaulted "draftNotes" Map.empty (Common.keyedList (Common.keyValue CardName.codec (Common.seq DraftNote.codec))) SeatView.draftNotes
   commanderDamage <- Fields.defaulted "commanderDamage" Map.empty (Common.naturalMap PlayerId.codec (Common.multiset CardName.codec)) SeatView.commanderDamage
+  status <- Fields.defaulted "status" Status.Type.Playing Status.codec SeatView.status
   pure
     SeatView.MkSeatView
       { SeatView.player = player,
+        SeatView.status = status,
         SeatView.life = life,
         SeatView.counters = counters,
         SeatView.handSize = handSize,
