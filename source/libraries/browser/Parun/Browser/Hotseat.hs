@@ -1,5 +1,5 @@
--- | A game against the random bot in the browser: the lobby picks each deck
--- from the data the page mounted, then `parun play --json`'s game runs with
+-- | A game against one or more random bots in the browser: the lobby picks
+-- each deck from the data the page mounted, then `parun play --json`'s game runs with
 -- every request line answered on the page (Parun.Web.Question), and the
 -- page ends on how it ended (Parun.Web.Ending).
 module Parun.Browser.Hotseat where
@@ -11,6 +11,7 @@ import qualified Data.Either as Either
 import qualified Data.Foldable as Foldable
 import qualified Data.Functor.Identity as Identity
 import qualified Data.IORef as IORef
+import qualified Data.List as List
 import qualified Data.List.NonEmpty as NonEmpty
 import qualified Data.Map.Lazy as LazyMap
 import qualified Data.Map.Strict as Map
@@ -98,8 +99,8 @@ play page = do
             (event, value) <- Browser.next page
             case event of
               Left Lobby.MkStart | Just one <- Lobby.mine lobby >>= (`Map.lookup` byName) -> do
-                two <- maybe (fmap (Maybe.fromMaybe Text.empty) (random (Lobby.opponents lobby))) pure (Lobby.theirs lobby)
-                maybe (choose lobby work) (\path -> pure (one, path)) (Map.lookup two byName)
+                others <- traverse (maybe (fmap (Maybe.fromMaybe Text.empty) (random (Lobby.opponents lobby))) pure) (Lobby.theirs lobby)
+                maybe (choose lobby work) (\theirs -> pure (one, theirs)) (traverse (`Map.lookup` byName) others)
               Left Lobby.MkRandom -> random (if Lobby.choosing lobby == Lobby.MkMine then names else Lobby.opponents lobby) >>= maybe (choose lobby work) (\name -> choose (Lobby.update (Lobby.MkPick name) Text.empty lobby) work)
               Left e -> previewing (Lobby.update e value lobby) >>= \next -> choose next work
               Right _ -> choose lobby work
@@ -113,7 +114,7 @@ play page = do
       prepared = Map.toList byName
       -- The chosen decks' lists, read once each.
       previewing lobby = do
-        let wanted = [name | name <- Maybe.catMaybes [Lobby.mine lobby, Lobby.theirs lobby], Map.notMember name (Lobby.previews lobby)]
+        let wanted = [name | name <- Maybe.catMaybes (Lobby.mine lobby : Lobby.theirs lobby), Map.notMember name (Lobby.previews lobby)]
         read' <- Monad.forM wanted $ \name -> do
           contents <- maybe (pure Text.empty) (fmap Encoding.decodeUtf8Lenient . ByteString.readFile) (Map.lookup name byName)
           pure (name, [line n card | (n, card) <- Lobby.entries contents])
@@ -133,34 +134,38 @@ play page = do
   -- decks a game with yours can start under (Lobby.opponents).
   formats <- fmap (Map.mapMaybe id) . traverse (fmap (DeckList.formatOf . Encoding.decodeUtf8Lenient) . ByteString.readFile) $ byName
   initialLevel <- maybe Web.Question.MkStandard (Maybe.fromMaybe Web.Question.MkStandard . Web.Question.levelNamed) <$> Environment.lookupEnv "parun_level"
-  -- A rematch names both decks (Ending.rematch) and skips the lobby.
+  -- A rematch names every deck (Ending.rematch) and skips the lobby.
   asked <- (,) <$> Environment.lookupEnv "parun_mine" <*> Environment.lookupEnv "parun_theirs"
-  (one, two) <- case asked of
-    (Just mine, Just theirs) | Just a <- Map.lookup (Text.pack mine) byName, Just b <- Map.lookup (Text.pack theirs) byName -> pure (a, b)
+  (one, others) <- case asked of
+    (Just mine, Just theirs)
+      | Just a <- Map.lookup (Text.pack mine) byName,
+        Just bs <- traverse (`Map.lookup` byName) (Text.splitOn (Text.pack ",") (Text.pack theirs)) ->
+          pure (a, bs)
     _ -> choose (Lobby.new (Natural.length loaded) names formats) prepared
+  let seats = one NonEmpty.:| others
   -- The printing table is the slow part of the registry, so the lobby shows first.
-  Browser.display page . fmap Right $ starting (Lobby.deckName deckRoot one) (Lobby.deckName deckRoot two)
+  Browser.display page . fmap Right $ starting (fmap (Lobby.deckName deckRoot) seats)
   registry <- Registry.defaultRegistry loaded :: IO (Registry.Registry Identity.Identity)
   -- The bot needs no screen, so the player is never handed it.
   seatRef <- IORef.newIORef =<< newSeat initialLevel
-  listed <- (,) <$> Command.load registry one <*> Command.load registry two
-  case listed of
-    (Right first, Right second) -> do
-      settled <- Command.settle Nothing [(one, first), (two, second)]
+  listed <- traverse (Command.load registry) seats
+  case sequenceA listed of
+    Right lists -> do
+      settled <- Command.settle Nothing (zip (NonEmpty.toList seats) (NonEmpty.toList lists))
       case settled of
         Right format -> do
           -- A shared "same shuffle" link names its seed (Ending.rematch).
           given <- (>>= Key.fromHex . Text.pack) <$> Environment.lookupEnv "parun_seed"
           seed <- maybe Key.fresh pure given
-          (outcome, recorded) <- Command.game (exchange (Identity.runIdentity . Interpreter.chosenCard registry) page seatRef) options registry format (DeckList.deck first, DeckList.deck second) seed
+          (outcome, recorded) <- Command.game (exchange (Identity.runIdentity . Interpreter.chosenCard registry) page seatRef) (options (Natural.length seats)) registry format (fmap DeckList.deck lists) seed
           -- What the player saw after their last decision: the killing blow, say.
           Monad.forM_ outcome $ IORef.modifyIORef' seatRef . witness . PlayerView.Engine.viewFor player . snd
           finished <- IORef.readIORef seatRef
           let seen = loggedFor player finished
               trail = lives finished
-          Browser.display page . Ending.view $ Ending.MkEnding (verdictOf outcome) (either (\reason -> [Text.pack "The game stopped: " <> reason <> Text.pack "."]) (\(result, gs) -> Render.result result : Render.departures gs) outcome) (Command.rendered recorded) seen player (Lobby.deckName deckRoot one, Lobby.deckName deckRoot two) (Foldable.toList trail) (Key.toHex seed)
+          Browser.display page . Ending.view $ Ending.MkEnding (verdictOf outcome) (either (\reason -> [Text.pack "The game stopped: " <> reason <> Text.pack "."]) (\(result, gs) -> Render.result result : Render.departures gs) outcome) (Command.rendered recorded) seen player (Lobby.deckName deckRoot one, fmap (Lobby.deckName deckRoot) others) (Foldable.toList trail) (Key.toHex seed)
         Left problems -> say problems
-    (first, second) -> say $ Either.fromLeft [] first <> Either.fromLeft [] second
+    Left _ -> say (foldMap (Either.fromLeft []) listed)
 
 -- | How the game ended for the seat the page plays.
 verdictOf :: Either a (Result.Result, b) -> Ending.Verdict
@@ -174,9 +179,10 @@ verdictOf outcome = case outcome of
 player :: PlayerId.PlayerId
 player = PlayerId.MkPlayerId 0
 
--- | The player is seat 1, over the line protocol; the random bot is seat 2.
-options :: PlayOptions.PlayOptions
-options = PlayOptions.none {PlayOptions.json = True, PlayOptions.bots = Set.singleton 2}
+-- | The player is seat 1, over the line protocol, of so many seats; the
+-- random bot is every other.
+options :: Natural -> PlayOptions.PlayOptions
+options count = PlayOptions.none {PlayOptions.json = True, PlayOptions.bots = Set.fromList [2 .. count]}
 
 -- | One request answered on the page, as values (Protocol.Exchange): a reply the seat is never asked
 -- for, or auto's next source once the seat chose auto for this payment, at
@@ -337,13 +343,13 @@ message :: [Text.Text] -> Html.Html msg
 message said = Element.el "main" ["message"] [] [Element.el "p" [] [] [Html.text t] | t <- said]
 
 -- | While the registry builds and the game deals: the match-up, and a spinner.
-starting :: Text.Text -> Text.Text -> Html.Html msg
-starting one two =
+starting :: NonEmpty.NonEmpty Text.Text -> Html.Html msg
+starting decks =
   Element.el
     "main"
     ["message", "starting"]
     []
     [ Element.el "div" ["spinner"] [Element.attr "aria-hidden" (Text.pack "true")] [],
       Element.el "p" [] [] [Element.string "Shuffling up\x2026"],
-      Element.el "p" ["matchup-line"] [] [Html.text (Lobby.label one), Element.el "span" ["versus"] [] [Element.string " vs "], Html.text (Lobby.label two)]
+      Element.el "p" ["matchup-line"] [] (List.intersperse (Element.el "span" ["versus"] [] [Element.string " vs "]) (fmap (Html.text . Lobby.label) (NonEmpty.toList decks)))
     ]

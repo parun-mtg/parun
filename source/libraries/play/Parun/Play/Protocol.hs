@@ -10,6 +10,7 @@ import qualified Control.Monad as Monad
 import qualified Data.Char as Char
 import qualified Data.Containers.ListUtils as ListUtils
 import qualified Data.List as List
+import qualified Data.List.NonEmpty as NonEmpty
 import qualified Data.Maybe as Maybe
 import qualified Data.Text as Text
 import Numeric.Natural (Natural)
@@ -159,23 +160,35 @@ idOf label =
   let t = Label.unwrap label
    in if not (Text.null t) && Text.all Char.isDigit t then Read.readMaybe (Text.unpack t) else Nothing
 
--- | CR 103.1: whether this seat plays first rather than draws, asked over the
--- line before the game begins, so with no view; asked again with the problem
--- until the reply is Play or Draw. Nothing at the end of input.
-playOrDraw :: (Monad m) => Exchange m -> PlayerId.PlayerId -> m (Maybe Bool)
-playOrDraw send seat = go Nothing
+-- | CR 103.1: the seat this seat chooses to take the first turn, of `seats`
+-- in turn order, asked over the line before the game begins, so with no
+-- view; asked again with the problem until the reply is one offered. Between
+-- two seats it is PlayOrDraw, Play or Draw; among more, ChooseStarter, a
+-- seat's id. Nothing at the end of input.
+playOrDraw :: (Monad m) => Exchange m -> PlayerId.PlayerId -> NonEmpty.NonEmpty PlayerId.PlayerId -> m (Maybe PlayerId.PlayerId)
+playOrDraw send seat seats = go Nothing
   where
-    choices = [(Text.pack "Play", True), (Text.pack "Draw", False)]
-    question = Question.MkQuestion seat (Text.pack "PlayOrDraw") (R.Array (fmap (R.Text . fst) choices)) Nothing
+    (kind, choices, expected)
+      | length seats <= 2 = (Text.pack "PlayOrDraw", [(Text.pack "Play", seat), (Text.pack "Draw", next)], Text.pack "expected Play or Draw")
+      | otherwise = (Text.pack "ChooseStarter", [(Text.pack (show (PlayerId.unwrap pid)), pid) | pid <- NonEmpty.toList seats], Text.pack "expected a seat's id")
+    next = nextSeat seat seats
+    question = Question.MkQuestion seat kind (R.Array (fmap (R.Text . fst) choices)) Nothing
     go problem = do
       sent <- send (Request.MkRequest Nothing question problem 0)
       case fmap (>>= chosen) sent of
         Nothing -> pure Nothing
-        Just (Right plays) -> pure (Just plays)
+        Just (Right pid) -> pure (Just pid)
         Just (Left again) -> go (Just again)
     chosen reply = case reply of
-      R.Text word | Just plays <- lookup word choices -> Right plays
-      _ -> Left (Text.pack "expected Play or Draw")
+      R.Text word | Just pid <- lookup word choices -> Right pid
+      _ -> Left expected
+
+-- | The seat after `seat` in turn order among `seats`, the first after the
+-- last.
+nextSeat :: (Eq a) => a -> NonEmpty.NonEmpty a -> a
+nextSeat seat seats = case drop 1 (NonEmpty.dropWhile (/= seat) seats) of
+  after : _ -> after
+  [] -> NonEmpty.head seats
 
 -- | Each amount an amount-per-item offer asks for (amounts), in order: the
 -- keys leading to it, an index for an item of a list, and the most it takes.

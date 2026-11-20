@@ -459,6 +459,16 @@ spec s registry = Spec.describe s "WebQuestion" $ do
     Spec.assertEqWith s "pass" (Question.Web.automatic Question.Web.MkStandard (requestFor gs (Prompt.ChooseAction (Decider.MkDecider S.alice) S.alice [Action.Pass]))) (Just (R.Number 0))
     Spec.assertEqWith s "concede" (Question.Web.automatic Question.Web.MkStandard (bare (Text.pack "Concede") R.Null)) (Just (R.Text (Text.pack "Continues")))
     Spec.assertEqWith s "play first" (Question.Web.automatic Question.Web.MkStandard (bare (Text.pack "PlayOrDraw") (R.Array [R.Text (Text.pack "Play"), R.Text (Text.pack "Draw")]))) (Just (R.Text (Text.pack "Play")))
+    Spec.assertEqWith s "CR 103.1 among three seats, its own seat first" (Question.Web.automatic Question.Web.MkStandard (bare (Text.pack "ChooseStarter") starters)) (Just (R.Text (Text.pack "0")))
+
+  Spec.it s "CR 103.1 full control asks who of three seats takes the first turn, each seat a button" $ do
+    let asked = bare (Text.pack "ChooseStarter") starters
+        page = Question.Web.view asked Question.Web.blank {Question.Web.level = Question.Web.MkFull}
+        tapped label = Html.labelled (Text.pack "button") (Text.pack label) page >>= \path -> Html.handler (Text.pack "click") path page
+    Spec.assertEqWith s "asked" (Question.Web.automatic Question.Web.MkFull asked) Nothing
+    Spec.assertBool s (not (Question.Web.answersTyped asked)) "a form of its own"
+    Spec.assertEqWith s "you" (tapped "You") (Just (Question.Web.MkAnswer (R.Text (Text.pack "0"))))
+    Spec.assertEqWith s "another seat" (tapped "Player 3") (Just (Question.Web.MkAnswer (R.Text (Text.pack "2"))))
 
   Spec.it s "full control asks a lone pass and who plays first; auto passes an empty stack outside the seat's main phases" $ do
     mountain <- S.printingOf s registry "Mountain"
@@ -593,6 +603,10 @@ requestFor gs prompt = case Protocol.questionOf gs prompt of
   Nothing -> bare (Text.pack "unasked") R.Null
 
 -- | A request with no view, for questions whose form reads only the offer.
+-- | CR 103.1's three seats, offered to choose the first turn's.
+starters :: R.Reply
+starters = R.Array (fmap (R.Text . Text.pack) ["0", "1", "2"])
+
 bare :: Text.Text -> R.Reply -> Request.Request
 bare kind offer = Request.MkRequest Nothing (Question.MkQuestion S.alice kind offer Nothing) Nothing 0
 
