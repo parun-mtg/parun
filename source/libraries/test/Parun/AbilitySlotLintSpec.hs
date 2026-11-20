@@ -32,7 +32,7 @@ import qualified Data.Maybe as Maybe
 import qualified Data.Sequence as Seq
 import qualified Data.Set as Set
 import qualified Data.Text as Text
-import Parun.CardSpec (anyFace, anyFaceOrMinted, armedReads, cardAuthoredEffects, cardCounts, cardFilters, cardResolutionEffects, collectsEvidenceAsCost, createToken, declaresVariable, delayedDeclarations, discardsAsCost, effectCounts, effectGrants, effectWithNested, exilesCardAsCost, faceModals, grantedAbilities, grantedActivatedAbilities, grantedTriggeredAbilities, instantLine, lintMode, mintingSpell, modalActivated, modalClauseConditions, modalSlotsOffend, modificationAbilities, oneEffectActivated, oneEffectTrigger, payGateBound, removesCountersAsCost, sacrificesAsCost, spellCostsOf, triggerConditionSlots, vanillaFace, waterbendsAsCost, withMinted)
+import Parun.CardSpec (anyFace, anyFaceOrMinted, armedReads, cardAuthoredEffects, cardCounts, cardFilters, cardResolutionEffects, collectsEvidenceAsCost, createToken, declaresVariable, delayedDeclarations, discardsAsCost, effectCounts, effectGrants, effectWithNested, exilesCardAsCost, faceModals, grantedAbilities, grantedActivatedAbilities, grantedStaticAbilities, grantedTriggeredAbilities, instantLine, lintMode, mintingSpell, modalActivated, modalClauseConditions, modalSlotsOffend, modificationAbilities, oneEffectActivated, oneEffectTrigger, payGateBound, removesCountersAsCost, sacrificesAsCost, spellCostsOf, triggerConditionSlots, vanillaFace, waterbendsAsCost, withMinted)
 import qualified Parun.Codec.Card as Card.Codec
 import qualified Parun.Codec.Condition as Condition.Codec
 import qualified Parun.Codec.GrantedAbility as GrantedAbility.Codec
@@ -63,7 +63,9 @@ import qualified Parun.Types.ActivatedAbility as ActivatedAbility
 import qualified Parun.Types.ActivationCriteria as ActivationCriteria
 import qualified Parun.Types.ActivationProhibition as ActivationProhibition
 import qualified Parun.Types.ActivationsThisTurn as ActivationsThisTurn
+import qualified Parun.Types.Activator as Activator
 import qualified Parun.Types.AffectPlayers as AffectPlayers
+import qualified Parun.Types.Affected as Affected
 import qualified Parun.Types.AffectedPlayers as AffectedPlayers
 import qualified Parun.Types.AgainstExiledPile as AgainstExiledPile
 import qualified Parun.Types.AgainstSlot as AgainstSlot
@@ -2030,6 +2032,27 @@ abilitySlotLintSpec s registry corpus = Spec.describe s "Lint" $ do
     Spec.assertBool s (not (anyFace chosenPlayerStoredOffends (Printing.card hama))) "the real Hama, the Bloodbender is accepted"
     Spec.assertBool s (chosenPlayerStoredOffends (planted pump)) "a for-as-long-as duration is rejected"
     Spec.assertBool s (chosenPlayerStoredOffends (planted permission)) "an exile play permission's condition is rejected"
+  -- CR 109.5 / 602.1b, swept over the pool. See grantedActivatorOffends.
+  Spec.it s "CR 602.1b no card grants an activated ability whose activator names other than you" $ do
+    ps <- S.allPrintings s corpus
+    let offenders = filter (anyFaceOrMinted grantedActivatorOffends . Printing.card) ps
+    Spec.assertBool s (any (anyFace (not . null . grantedActivators) . Printing.card) ps) "the pool has a grant naming who may activate it"
+    Spec.assertEqWith s "every granted activator is a resolving grant's you" (fmap (S.nameOf . Printing.card) offenders) []
+  -- The REJECTING direction, against faces planted on Martyrdom's own grant:
+  -- its activator widened, and the same ability granted by a static ability.
+  Spec.it s "the lint itself catches a granted activator naming other than you" $ do
+    martyrdom <- S.printingOf s registry "Martyrdom"
+    let face = S.combinedFace martyrdom
+        creatures = Filter.Type.HasCardType CardType.Creature
+    granted <- case grantedActivatedAbilities face of
+      [ability] -> pure ability
+      _ -> Spec.assertFailure s "Martyrdom grants one activated ability"
+    let opponents = granted {ActivatedAbility.activator = Activator.Player (PlayerRef.Relative PlayerRelation.Opponent)}
+        resolving = (vanillaFace "Planted" instantLine) {Face.spell = Mint.oneMode (Seq.singleton (Effect.ModifyTarget (ModifyTarget.MkModifyTarget Duration.UntilEndOfTurn (Modification.GainAbility (GrantedAbility.Activated opponents)) (ObjectRef.EachMatching creatures) Nothing)))}
+        static = face {Face.staticAbilities = [StaticAbility.MkStaticAbility (Affected.Matching creatures) Nothing Set.empty Nothing Nothing (NonEmpty.singleton (Modification.GainAbility (GrantedAbility.Activated granted)))]}
+    Spec.assertBool s (not (grantedActivatorOffends face)) "the real Martyrdom is accepted"
+    Spec.assertBool s (grantedActivatorOffends resolving) "a resolving grant's activator naming opponents is rejected"
+    Spec.assertBool s (grantedActivatorOffends static) "a static grant's activator naming you is rejected"
   -- CR 613.1f, swept over the pool. See resolvingTriggeredLendOffends.
   Spec.it s "CR 613.1f no card writes a resolving lend of triggered abilities" $ do
     ps <- S.allPrintings s corpus
@@ -2110,6 +2133,27 @@ storedConditions card =
         Effect.GrantPlayFromExile grant -> Maybe.maybeToList (GrantPlayFromExile.condition grant)
         _ -> []
    in concatMap (\effect -> concatMap held (durations effect) <> permitted effect) (cardAuthoredEffects card)
+
+-- Unprinted: Parun.Engine.Resolve.Arms.Damage.modifyTarget fixes a granted
+-- activated ability's Activator.Player (CR 109.5 / 602.1b: the grant's text,
+-- read off the granting ability) only when it names one player as the grant
+-- resolves, and a static ability's grant never. So the one shape admitted is
+-- Martyrdom's: a resolving grant's "Only you", which names its controller.
+grantedActivatorOffends :: Face.Face Card.Type.Card -> Bool
+grantedActivatorOffends face =
+  let staticGrant ability = [activated | Modification.GainAbility (GrantedAbility.Activated activated) <- NonEmpty.toList (StaticAbility.modifications ability)]
+      fromStatic = concatMap staticGrant (Face.staticAbilities face <> grantedStaticAbilities face)
+   in any (/= PlayerRef.Relative PlayerRelation.You) (grantedActivators face)
+        || any (Maybe.isJust . activatorPlayer) fromStatic
+
+-- The Activator.Player reference of every activated ability a face grants.
+grantedActivators :: Face.Face Card.Type.Card -> [PlayerRef.PlayerRef]
+grantedActivators = Maybe.mapMaybe activatorPlayer . grantedActivatedAbilities
+
+activatorPlayer :: ActivatedAbility.ActivatedAbility Card.Type.Card (GrantedAbility.GrantedAbility Card.Type.Card) -> Maybe PlayerRef.PlayerRef
+activatorPlayer ability = case ActivatedAbility.activator ability of
+  Activator.Player who -> Just who
+  _ -> Nothing
 
 -- Every AbilityName a face's layer-6 removals refer to. Both carriers of a
 -- Modification are swept: the printed ones on Face.staticAbilities, and the
