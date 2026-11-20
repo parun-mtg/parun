@@ -555,12 +555,12 @@ manaExileLinkOffends :: Face.Face Card.Type.Card -> Bool
 manaExileLinkOffends face =
   let exiling = filter (\ability -> ManaAbility.isManaAbility ability && linksExilesAsCost (ActivatedAbility.cost ability)) (Face.activatedAbilities face <> grantedActivatedAbilities face)
       names = Set.fromList (Maybe.mapMaybe ActivatedAbility.name exiling)
-      reads atom = case atom of
+      readsPile atom = case atom of
         Filter.Type.IsExiledWithSource ExiledPile.OwnAbilities -> [True]
         Filter.Type.IsExiledWithSource ExiledPile.LastChosen -> [True]
         Filter.Type.IsExiledWithSource (ExiledPile.OfAbility name) -> [Set.member name names]
         _ -> []
-   in not (null exiling) && any (or . filterAtomsOf reads . snd) (cardFilters face)
+   in not (null exiling) && any (or . filterAtomsOf readsPile . snd) (cardFilters face)
 
 -- CR 603.7 / 109.5: does this card arm a delayed ability "on your next turn"
 -- whose condition is not scoped to its controller's turn?
@@ -933,11 +933,12 @@ abilitySlotLintSpec s registry corpus = Spec.describe s "Lint" $ do
   -- evidence, and a pile named for its other ability.
   Spec.it s "the lint itself catches a mana ability whose cost exiles cards beside a reader of their pile" $ do
     cryptex <- S.printingOf s registry "Cryptex"
-    let named = AbilityName.MkAbilityName (Text.pack "evidence")
+    let evidence = AbilityName.MkAbilityName (Text.pack "evidence")
+        unlock = AbilityName.MkAbilityName (Text.pack "unlock")
         face = S.combinedFace cryptex
         you = PlayerRef.Relative PlayerRelation.You
         reader pile = oneEffectActivated Nothing (Effect.Draw (Draw.MkDraw you (Quantity.Type.AgainstExiledPile (AgainstExiledPile.MkAgainstExiledPile pile (Quantity.Type.Literal 1))) Nothing Nothing))
-        nameAt i abilities = [if j == i then ability {ActivatedAbility.name = Just named} else ability | (j, ability) <- zip [0 :: Int ..] abilities]
+        nameBoth = zipWith (\name ability -> ability {ActivatedAbility.name = Just name}) [evidence, unlock]
         stripped ability = if ManaAbility.isManaAbility ability then ability {ActivatedAbility.cost = (ActivatedAbility.cost ability) {Cost.Type.components = filter (not . isEvidence) (Cost.Type.components (ActivatedAbility.cost ability))}} else ability
         isEvidence component = case component of
           CostComponent.CollectEvidence {} -> True
@@ -946,8 +947,8 @@ abilitySlotLintSpec s registry corpus = Spec.describe s "Lint" $ do
     Spec.assertBool s (not (manaExileLinkOffends face)) "the real Cryptex is accepted"
     Spec.assertBool s (manaExileLinkOffends (doctored id ExiledPile.OwnAbilities)) "its own abilities' pile is rejected"
     Spec.assertBool s (manaExileLinkOffends (doctored id ExiledPile.LastChosen)) "the last chosen card of that pile is rejected"
-    Spec.assertBool s (manaExileLinkOffends (doctored (nameAt 0) (ExiledPile.OfAbility named))) "the mana ability's own named pile is rejected"
-    Spec.assertBool s (not (manaExileLinkOffends (doctored (nameAt 1) (ExiledPile.OfAbility named)))) "a pile named for its other ability is accepted"
+    Spec.assertBool s (manaExileLinkOffends (doctored nameBoth (ExiledPile.OfAbility evidence))) "the mana ability's own named pile is rejected"
+    Spec.assertBool s (not (manaExileLinkOffends (doctored nameBoth (ExiledPile.OfAbility unlock)))) "a pile named for its other ability is accepted"
     Spec.assertBool s (not (manaExileLinkOffends (doctored (fmap stripped) ExiledPile.OwnAbilities))) "the mana ability without collect evidence is accepted"
   -- The granted half (namedGrantedActivationCriteria) on The Dominion Bracelet,
   -- whose one static ability grants "dominate" and the cost reduction naming
