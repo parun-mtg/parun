@@ -270,7 +270,7 @@ spec s registry = Spec.describe s "Bot" $ do
   -- CR 608.2d: Imperial Edict's "a creature they control" is any of them.
   Spec.it s "chooses any matching permanent" $ do
     let candidates = ObjectId.MkObjectId 8 NonEmpty.:| [ObjectId.MkObjectId 9, ObjectId.MkObjectId 10]
-    Spec.assertEqWith s "permanents" (drawn (Prompt.ChoosePermanent decider S.alice oid candidates Seq.empty)) (Set.fromList (NonEmpty.toList candidates))
+    Spec.assertEqWith s "permanents" (drawn (Prompt.ChoosePermanent decider S.alice oid candidates Seq.empty Nothing)) (Set.fromList (NonEmpty.toList candidates))
 
   -- CR 608.2d: Coercion's "choose a card from it" is any of them.
   Spec.it s "chooses any card from among the group" $ do

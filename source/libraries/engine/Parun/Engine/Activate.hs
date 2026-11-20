@@ -317,7 +317,7 @@ activateAbilityWith refused runSubgame pid srcId ability = Event.announcing . Ev
       -- proves the timing.
       let definingCandidates = Cost.definingCandidates pid srcId ability gs
       mDefining <- case definingCandidates of
-        Just (first : rest@(_ : _)) -> Just <$> Game.choose (Prompt.ChoosePermanent decider pid srcId (first NonEmpty.:| rest) Seq.empty)
+        Just (first : rest@(_ : _)) -> Just <$> Game.choose (Prompt.ChoosePermanent decider pid srcId (first NonEmpty.:| rest) Seq.empty Nothing)
         Just [only] -> pure (Just only)
         _ -> pure Nothing
       let -- CR 107.3c: the X the ability's own text defines, which its activator

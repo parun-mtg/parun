@@ -122,7 +122,7 @@ forage settle pid resolving = do
       Monad.mapM_ (\oid -> Event.changeZone settle oid Zone.Exile) (Set.toAscList chosen)
       pure True
     Just ForageMode.SacrificeFood -> do
-      food <- Game.chooseAmong (\chooser asked pool -> Prompt.ChoosePermanent chooser asked resolving pool Seq.empty) pid foods
+      food <- Game.chooseAmong (\chooser asked pool -> Prompt.ChoosePermanent chooser asked resolving pool Seq.empty Nothing) pid foods
       -- CR 701.21a, through the one funnel a sacrifice goes through.
       Monad.forM_ food (Event.sacrifice settle pid)
       pure (Maybe.isJust food)

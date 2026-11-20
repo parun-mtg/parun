@@ -304,7 +304,9 @@ offerOf namer gs prompt = case prompt of
   Prompt.ChoosePlayer _ _ source players -> choosing namer prompt "players" (Just source) [] (NonEmpty.toList players)
   Prompt.ChooseActivePlayer _ _ players -> choosing namer prompt "players" Nothing [] (NonEmpty.toList players)
   -- CR 101.4b: the objects earlier choosers chose, beside who chose them.
-  Prompt.ChoosePermanent _ _ source candidates earlier -> choosing namer prompt "options" (Just source) [("earlier", Reply.encode (Reply.seqOf (Reply.pairOf Reply.player (Reply.setOf Reply.object))) namer earlier)] (NonEmpty.toList candidates)
+  -- Under @"counterKind"@, where there is one, the kind the pick puts a counter
+  -- of (CR 122.6, Exotic Pets).
+  Prompt.ChoosePermanent _ _ source candidates earlier forKind -> choosing namer prompt "options" (Just source) ([("earlier", Reply.encode (Reply.seqOf (Reply.pairOf Reply.player (Reply.setOf Reply.object))) namer earlier)] <> [("counterKind", Reply.encode Reply.counterKind namer kind) | kind <- Maybe.maybeToList forKind]) (NonEmpty.toList candidates)
   Prompt.ChooseCounterRemoval _ _ source candidates -> choosing namer prompt "options" (Just source) [] (NonEmpty.toList candidates)
   Prompt.ChooseAttachment _ _ source candidates -> choosing namer prompt "options" (Just source) [] (NonEmpty.toList candidates)
   Prompt.ChooseOfferedCastSpell _ _ offers -> choosing namer prompt "options" Nothing [] (NonEmpty.toList offers)

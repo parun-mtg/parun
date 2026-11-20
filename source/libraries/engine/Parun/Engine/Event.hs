@@ -5861,7 +5861,7 @@ apply settle batch applied batchPrevented candidate event =
                     else pure OptionalDecision.Exercises
             -- Choose, not target: elided at one candidate (Game.chooseAmong).
             picked <- case (decision, copyable) of
-              (OptionalDecision.Exercises, Just offered) -> Game.chooseAmong (\chooser chooses pool -> Prompt.ChoosePermanent chooser chooses (ReplacementCandidate.source candidate) pool Seq.empty) who offered
+              (OptionalDecision.Exercises, Just offered) -> Game.chooseAmong (\chooser chooses pool -> Prompt.ChoosePermanent chooser chooses (ReplacementCandidate.source candidate) pool Seq.empty Nothing) who offered
               _ -> pure Nothing
             -- CR 614.1a: Jinnie Fay's "or", asked only where it offers two
             -- kinds or more.
@@ -6362,7 +6362,7 @@ becomeCopyAs batch candidate asCopy oid = do
           legal = Replacement.legalCopyTargets bounded batch (AsCopy.eligible asCopy) (AsCopy.among asCopy) oid gs
           -- A permanent is asked as one, a card as one from among the rest.
           pick = case AsCopy.among asCopy of
-            CopyDomain.InZone Zone.Battlefield -> \chooser who source pool -> Prompt.ChoosePermanent chooser who source pool Seq.empty
+            CopyDomain.InZone Zone.Battlefield -> \chooser who source pool -> Prompt.ChoosePermanent chooser who source pool Seq.empty Nothing
             CopyDomain.InZone _ -> Prompt.ChooseCardFromAmong
             CopyDomain.InPile _ -> Prompt.ChooseCardFromAmong
       answer <-

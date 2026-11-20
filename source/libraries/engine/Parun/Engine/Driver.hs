@@ -213,7 +213,7 @@ subjectOf prompt = case prompt of
   Prompt.ChooseExilesTotalling _ pid _ _ _ _ _ _ -> Just pid
   Prompt.ChooseAnyNumber _ pid _ _ _ _ _ -> Just pid
   Prompt.ChoosePile _ pid _ _ _ -> Just pid
-  Prompt.ChoosePermanent _ pid _ _ _ -> Just pid
+  Prompt.ChoosePermanent _ pid _ _ _ _ -> Just pid
   Prompt.ChooseTapsForTotalPower _ pid _ _ _ -> Just pid
   Prompt.ChooseTaps _ pid _ _ _ _ -> Just pid
   Prompt.ChooseReturns _ pid _ _ _ -> Just pid
@@ -413,7 +413,7 @@ deciderOf prompt = case prompt of
   Prompt.ChooseExilesFromGraveyard decider _ _ _ _ -> Just (Decider.unwrap decider)
   Prompt.ChooseMaterials decider _ _ _ _ _ -> Just (Decider.unwrap decider)
   Prompt.ChooseExilesTotalling decider _ _ _ _ _ _ _ -> Just (Decider.unwrap decider)
-  Prompt.ChoosePermanent decider _ _ _ _ -> Just (Decider.unwrap decider)
+  Prompt.ChoosePermanent decider _ _ _ _ _ -> Just (Decider.unwrap decider)
   Prompt.ChooseTapsForTotalPower decider _ _ _ _ -> Just (Decider.unwrap decider)
   Prompt.ChooseTaps decider _ _ _ _ _ -> Just (Decider.unwrap decider)
   Prompt.ChooseReturns decider _ _ _ _ -> Just (Decider.unwrap decider)

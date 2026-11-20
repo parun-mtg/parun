@@ -2153,7 +2153,7 @@ blockAttacker chooser oid = do
     Just controller
       | canBlock controller oid gs -> do
           let (_, _, _, (_, most, _)) = blockScopeGiven board controller gs
-          mAttacker <- Game.chooseAmong (\decider who pool -> Prompt.ChoosePermanent decider who oid pool Seq.empty) chooser (filter (blockable controller most) attacking)
+          mAttacker <- Game.chooseAmong (\decider who pool -> Prompt.ChoosePermanent decider who oid pool Seq.empty Nothing) chooser (filter (blockable controller most) attacking)
           Monad.forM_ mAttacker $ \attacker -> do
             let targets = targetsOf attacker
                 pairs = fmap (\a -> (oid, a)) targets
@@ -3539,7 +3539,7 @@ putOntoBattlefieldBlocking choice oid = do
           mAttacker <- case choice of
             SpecifiedAttacker attacker -> pure (if blockable controller attacker then Just attacker else Nothing)
             -- Through Game.chooseAmong, announceAttackTarget's posture.
-            AnyAttacker -> Game.chooseAmong (\decider who pool -> Prompt.ChoosePermanent decider who oid pool Seq.empty) controller (filter (blockable controller) (Map.keys (Combat.attackers (TurnRegisters.combat (GameState.turn start)))))
+            AnyAttacker -> Game.chooseAmong (\decider who pool -> Prompt.ChoosePermanent decider who oid pool Seq.empty Nothing) controller (filter (blockable controller) (Map.keys (Combat.attackers (TurnRegisters.combat (GameState.turn start)))))
           -- CR 702.22h: blocking one member of a band blocks every member.
           Monad.forM_ mAttacker $ \attacker ->
             Monad.forM_ (attacker : Set.toList (bandmatesOf attacker (TurnRegisters.combat (GameState.turn start)))) (enterBlocking controller oid)

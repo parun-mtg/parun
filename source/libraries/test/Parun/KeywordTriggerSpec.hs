@@ -1721,7 +1721,7 @@ exploitSpec s registry =
       exploiting :: (ObjectId.ObjectId -> Bool) -> Prompt.Prompt r -> r
       exploiting wanted p = case p of
         Prompt.ChooseOptional {} -> OptionalDecision.Exercises
-        Prompt.ChoosePermanent _ _ _ offered _ ->
+        Prompt.ChoosePermanent _ _ _ offered _ _ ->
           Maybe.fromMaybe (NonEmpty.head offered) (List.find wanted (NonEmpty.toList offered))
         Prompt.ChooseTargets _ _ _ slots ->
           fmap (\(_, legal) -> Set.filter (== Recipient.ToPlayer S.bob) legal) slots
@@ -1812,7 +1812,7 @@ championSpec s registry =
       exiling :: ObjectId.ObjectId -> Prompt.Prompt r -> r
       exiling victim p = case p of
         Prompt.ChooseOptional {} -> OptionalDecision.Exercises
-        Prompt.ChoosePermanent _ _ _ offered _ ->
+        Prompt.ChoosePermanent _ _ _ offered _ _ ->
           Maybe.fromMaybe (NonEmpty.head offered) (List.find (== victim) (NonEmpty.toList offered))
         _ -> S.identityAnswer p
       -- alice's Goblin Piker, alice's `first`, and bob's `second` under alice's
@@ -1933,7 +1933,7 @@ soulbondSpec s registry =
       pairingWith :: ObjectId.ObjectId -> Prompt.Prompt r -> r
       pairingWith partner p = case p of
         Prompt.ChooseOptional {} -> OptionalDecision.Exercises
-        Prompt.ChoosePermanent _ _ _ offered _ ->
+        Prompt.ChoosePermanent _ _ _ offered _ _ ->
           Maybe.fromMaybe (NonEmpty.head offered) (List.find (== partner) (NonEmpty.toList offered))
         _ -> S.identityAnswer p
       -- Rule 702.95a's second ability offers the "may" and nothing else, the

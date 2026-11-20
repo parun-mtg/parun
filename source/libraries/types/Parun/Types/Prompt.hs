@@ -874,8 +874,10 @@ data Prompt r where
   -- 608.2d: which creature of a paired fight's other group the ObjectId fights
   -- (Ezuri's Predation). Also which permanent that is a die a "reroll any die"
   -- rerolls outside a roll (Parun.Types.Effect's Rethrow). The Seq is
-  -- ChooseAnyNumber's.
-  ChoosePermanent :: Decider.Decider -> PlayerId.PlayerId -> ObjectId.ObjectId -> NonEmpty.NonEmpty ObjectId.ObjectId -> Seq.Seq (PlayerId.PlayerId, Set.Set ObjectId.ObjectId) -> Prompt ObjectId.ObjectId
+  -- ChooseAnyNumber's. The counter kind, where there is one, is the one the
+  -- pick puts a counter of (CR 122.6, Exotic Pets' "either of those tokens"
+  -- asked once per kind).
+  ChoosePermanent :: Decider.Decider -> PlayerId.PlayerId -> ObjectId.ObjectId -> NonEmpty.NonEmpty ObjectId.ObjectId -> Seq.Seq (PlayerId.PlayerId, Set.Set ObjectId.ObjectId) -> Maybe (CounterKind.CounterKind Keyword.Keyword) -> Prompt ObjectId.ObjectId
   -- | CR 702.122a: which untapped permanents are tapped to crew, the Natural a
   -- power threshold rather than a size (Parun.Engine.Cost validates the sum).
   -- Never elided, forcedness being a question about subsets. Answers as

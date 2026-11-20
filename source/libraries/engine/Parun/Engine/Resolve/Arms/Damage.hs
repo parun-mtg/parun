@@ -382,7 +382,7 @@ pairFighters controller firsts seconds
     pickFor pool (made, taken) subject = do
       let remaining = filter ((`Set.notMember` taken) . fst) pool
           picks = if Set.null taken then Seq.empty else Seq.singleton (controller, taken)
-      answer <- Game.chooseAmong (\decider who offered -> Prompt.ChoosePermanent decider who (fst subject) offered picks) controller (fmap fst remaining)
+      answer <- Game.chooseAmong (\decider who offered -> Prompt.ChoosePermanent decider who (fst subject) offered picks Nothing) controller (fmap fst remaining)
       pure $ case answer >>= \oid -> List.find ((== oid) . fst) remaining of
         Just other -> ((subject, other) : made, Set.insert (fst other) taken)
         Nothing -> (made, taken)
@@ -397,7 +397,7 @@ modifyTarget resolving source controller legal chosen (ModifyTarget.MkModifyTarg
   -- reason: CR 608.2d's choice is an ask, which the pure sweep cannot make.
   -- Mirkwood Trapper's "that player chooses an attacking creature. It gets
   -- +2/+0" is the reader.
-  affected <- Common.askingObjects Common.Present resolving source controller legal chosen ref
+  affected <- Common.askingObjects Common.Present Nothing resolving source controller legal chosen ref
   -- CR 611.2c's third sentence: an effect modifying no characteristic and no
   -- controller (CR 613.11's layer, a classification) keeps a described group
   -- live, so a creature matching only later is in it, and the effect is stored
@@ -977,7 +977,7 @@ search settle performManaAbility runSubgame resolving source controller legal (S
           -- whoever decides for them -- and elided at one.
           exiler <-
             if ownLibrary
-              then State.gets (PlayerEffect.exilersWhileSearching searcher) >>= Game.chooseAmong (\decider who pool -> Prompt.ChoosePermanent decider who source pool Seq.empty) searcher
+              then State.gets (PlayerEffect.exilersWhileSearching searcher) >>= Game.chooseAmong (\decider who pool -> Prompt.ChoosePermanent decider who source pool Seq.empty Nothing) searcher
               else pure Nothing
           outsideAvailable <-
             if lookOutside
@@ -1743,7 +1743,7 @@ rethrow throwDice runSubgame resolving controller = do
         Nothing -> State.modify' (\g -> g {GameState.scratch = (GameState.scratch g) {Scratch.rethrowRequested = True}})
         Just oid -> rerollShownDie throwDice runSubgame controller oid
     else do
-      picked <- Game.chooseAmong (\decider who offered -> Prompt.ChoosePermanent decider who resolving offered Seq.empty) controller dice
+      picked <- Game.chooseAmong (\decider who offered -> Prompt.ChoosePermanent decider who resolving offered Seq.empty Nothing) controller dice
       Foldable.for_ picked (rerollShownDie throwDice runSubgame controller)
 
 -- | Reroll the die permanent `oid` is, as `roller`'s roll: one die of its kind
@@ -1970,7 +1970,7 @@ destroy settle resolving source controller legal chosen (Destroy.MkDestroy ref r
   -- victim (CR 608.2f). An illegal slot (CR 608.2b), a non-object recipient, or
   -- a set that matched nothing all arrive here as the empty list. Through
   -- askingObjects, so Capricious Efreet's "one of them at random" is drawn.
-  victims <- Common.askingObjects Common.Present resolving source controller legal chosen ref
+  victims <- Common.askingObjects Common.Present Nothing resolving source controller legal chosen ref
   destroyed <- Event.destroyReturning settle regenerability victims
   -- CR 701.8b: "destroyed this way" is what the funnel DESTROYED, never what
   -- the sweep named. Bound onto this effect's SOURCE so a later effect of the
@@ -2058,7 +2058,7 @@ sacrifice settle resolving source controller legal chosen (SacrificeEffect.MkSac
   -- member's CR 616.1 loop reads the board the batch began on -- All Is Dust
   -- sacrificing Rest in Peace beside another coloured permanent exiles both.
   -- Parun.EventSpec's All Is Dust case is the proof.
-  victims <- Common.askingObjects Common.Present resolving source controller legal chosen ref
+  victims <- Common.askingObjects Common.Present Nothing resolving source controller legal chosen ref
   gs <- State.get
   Event.sacrificeAll settle (Maybe.mapMaybe (Common.sacrificerFor sacrificer controller gs) victims)
   -- "That many" is what the funnel SACRIFICED, never what the sweep named

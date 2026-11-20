@@ -1361,7 +1361,7 @@ defaultAnswer p = case p of
   -- CR 608.2d: the head of the offer, ChooseCardInGraveyard's fallback. Every
   -- candidate was pre-filtered by the engine, so the head is a legal answer. A
   -- deterministic fallback, not a recommendation.
-  Prompt.ChoosePermanent _ _ _ candidates _ -> NonEmpty.head candidates
+  Prompt.ChoosePermanent _ _ _ candidates _ _ -> NonEmpty.head candidates
   -- CR 702.122a: every candidate, the arm above's maximal subset. Legal whenever
   -- the cost is payable at all, save for a board where some candidate has
   -- NEGATIVE power and dragging it in drops the total back under the threshold
