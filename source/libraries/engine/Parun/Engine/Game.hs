@@ -1168,6 +1168,12 @@ isBlocking oid gs =
 hostOf :: ObjectId -> GameState -> Maybe ObjectId
 hostOf oid gs = lookupObject oid gs >>= Object.attachedTo >>= Recipient.objectOf
 
+-- CR 303.4b's other destination: WHICH PLAYER this object is attached to --
+-- what an enchant-player Aura "enchants". hostOf's twin, Nothing where the
+-- object is attached to nothing or to an object, and likewise no projection.
+enchantedPlayerOf :: ObjectId -> GameState -> Maybe PlayerId
+enchantedPlayerOf oid gs = lookupObject oid gs >>= Object.attachedTo >>= Recipient.playerOf
+
 -- hostOf through CR 608.2h: for an object that has left, what it was attached
 -- to as it left (Parun.Types.LastKnown.host).
 hostWithLastKnown :: ObjectId -> GameState -> Maybe ObjectId
