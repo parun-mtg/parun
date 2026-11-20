@@ -4427,9 +4427,8 @@ movesAtMostOne ref = case ref of
       Chooser.EachInScope -> False
       -- One card per graveyard, so EachInScope's answer.
       Chooser.TheControllerInEach -> False
-      -- One seat, so one graveyard and one card -- TheController's
-      -- answer with the chooser named by a slot instead of by CR
-      -- 608.2c.
+      -- One chooser, so one card -- TheController's answer with the
+      -- chooser named by a slot instead of by CR 608.2c.
       Chooser.BoundInSlot _ -> True
   -- One card per CHOOSER again, and here the PlayerRef names the
   -- choosers: Karn Liberated's targeted seat exiles one card, and "each

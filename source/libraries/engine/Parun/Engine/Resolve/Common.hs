@@ -1179,15 +1179,13 @@ chosenCardsInGraveyard legal resolving controller source (ChosenCardInGraveyard.
     Chooser.TheControllerInEach ->
       fmap (fmap snd . Foldable.toList) . Monad.foldM (\made pid -> pick made controller (graveyardCardsOf context gs pid filter_)) Seq.empty $
         Target.zoneScopePlayers (Plane.rangePerspective source controller gs) (Just controller) legal scope gs
-    -- ONE chooser, read out of the slot a ChoosePlayer bound,
-    -- choosing out of their own graveyard. Through playerRefPlayers so
-    -- the slot is read as every other is (CR 608.2b): an unfilled,
-    -- illegal, non-player or many-valued slot names nobody, and nobody
-    -- asked is nothing moved (CR 101.3). Intersected with the scope, so
-    -- a chooser the scope does not name is offered nothing.
+    -- TheController's read with ONE chooser out of a slot. Through
+    -- playerRefPlayers so the slot is read as every other is (CR 608.2b):
+    -- an unfilled, illegal, non-player or many-valued slot names nobody,
+    -- and nobody asked is nothing moved (CR 101.3).
     Chooser.BoundInSlot slot ->
       case playerRefPlayers legal resolving source controller gs (PlayerRef.InSlot slot) of
-        [pid] | List.elem pid (Target.zoneScopePlayers (Plane.rangePerspective source controller gs) (Just controller) legal scope gs) -> ask pid (graveyardCardsOf context gs pid filter_)
+        [pid] -> ask pid (graveyardCards context legal source controller gs scope filter_)
         _ -> pure []
 
 -- The seats an ObjectRef.ChosenCardInHand asks -- and an
@@ -3978,7 +3976,7 @@ effectIsImpossible asked resolving source controller legal gs effect = case effe
           ObjectRef.ChosenPermanents choice -> chosenCandidates legal resolving controller source gs choice
           ObjectRef.ChosenCardInGraveyard (ChosenCardInGraveyard.MkChosenCardInGraveyard chooser scope filter_ _ _) -> case chooser of
             Chooser.BoundInSlot slot -> case playerRefPlayers legal resolving source controller gs (PlayerRef.InSlot slot) of
-              [pid] | List.elem pid (Target.zoneScopePlayers (Plane.rangePerspective source controller gs) (Just controller) legal scope gs) -> graveyardCardsOf context gs pid filter_
+              [_] -> graveyardCards context legal source controller gs scope filter_
               _ -> []
             Chooser.TheController -> graveyardCards context legal source controller gs scope filter_
             Chooser.EachInScope -> graveyardCards context legal source controller gs scope filter_
