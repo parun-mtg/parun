@@ -20,8 +20,10 @@ import qualified Parun.Codec.Card as Card
 import qualified Parun.Codec.CardType as CardType.Codec
 import qualified Parun.Codec.Face as Face.Codec
 import qualified Parun.Codec.Filter as Filter.Codec
+import qualified Parun.Codec.GrantedAbility as GrantedAbility.Codec
 import qualified Parun.Codec.Keyword as Keyword.Codec
 import qualified Parun.Codec.KeywordDesignator as KeywordDesignator.Codec
+import qualified Parun.Codec.Modification as Modification.Codec
 import qualified Parun.Codec.Quantity as Quantity.Codec
 import qualified Parun.Codec.Subtype as Subtype.Codec
 import qualified Parun.Codec.TriggerCondition as TriggerCondition.Codec
@@ -34,6 +36,7 @@ import qualified Parun.Engine.Keyword as Keyword.Engine
 import qualified Parun.Engine.Mana as Mana
 import qualified Parun.Engine.Mint as Mint
 import qualified Parun.Engine.Projection as Projection
+import qualified Parun.Engine.Resolve.Common as Resolve.Common
 import qualified Parun.Json.Array as Array
 import qualified Parun.Json.Object as Object
 import qualified Parun.Json.Pair as Pair
@@ -177,6 +180,7 @@ import qualified Parun.Types.Modification as Modification
 import qualified Parun.Types.ModifyPowerToughness as ModifyPowerToughness
 import qualified Parun.Types.ModifyTarget as ModifyTarget
 import qualified Parun.Types.MoveCounters as MoveCounters
+import qualified Parun.Types.MoveToZone as MoveToZone
 import qualified Parun.Types.MovedBetween as MovedBetween
 import qualified Parun.Types.MovedKinds as MovedKinds
 import qualified Parun.Types.NameChooser as NameChooser
@@ -376,6 +380,23 @@ canHostSubjectCounts card =
 -- pairwise combat restriction.
 jsonAtoms :: Text.Text -> Value.Value -> Int
 jsonAtoms = occurrences . Value.String . String.MkString
+
+-- Every AtGrant a face's encoding carries, minted tokens' included.
+atGrantAtoms :: Face.Face Card.Type.Card -> Int
+atGrantAtoms = jsonAtoms (Text.pack "AtGrant") . Codec.encode (Face.Codec.codec Card.codec)
+
+-- The AtGrants Resolve.Common.bakeAtGrant reaches in a face's grants: the
+-- count its bake removes from each modification the two granting opcodes
+-- carry, read the way Resolve.Arms.Damage and Resolve.Arms.Zones apply it.
+bakedAtGrants :: Face.Face Card.Type.Card -> Int
+bakedAtGrants = sum . fmap baked . concatMap granted . cardAuthoredEffects
+  where
+    granted effect = case effect of
+      Effect.ModifyTarget modify -> [ModifyTarget.modification modify]
+      Effect.MoveToZone move -> Foldable.toList (EntryRiders.characteristics (MoveToZone.riders move))
+      _ -> []
+    atoms = jsonAtoms (Text.pack "AtGrant") . Codec.encode (Modification.Codec.codec (GrantedAbility.Codec.codec Card.codec))
+    baked m = atoms m - atoms (Resolve.Common.bakeAtGrant (const (Just (PlayerId.MkPlayerId 1))) m)
 
 -- Every encoded BecomesTapState condition watching a OneOrMore untap.
 batchedUntaps :: Value.Value -> [Value.Value]
@@ -3708,6 +3729,26 @@ filterPositionLintSpec s registry corpus = Spec.describe s "Lint" $ do
                 Mint.oneModeTargeting (Map.singleton (SlotName.MkSlotName (Text.pack "target")) (TargetSlot.required Pool.Creatures Nothing)) (Seq.singleton (Effect.GainControl (GainControl.MkGainControl (Duration.ForAsLongAs crowned) (ObjectRef.InSlot (SlotName.MkSlotName (Text.pack "target"))) Nothing (PlayerRef.Relative PlayerRelation.You))))
             }
     Spec.assertEqWith s "a planted reference is seen" (atoms planted) 1
+  -- CR 113.10 / 608.2h: Resolve.Common.bakeAtGrant fixes an AtGrant only in a
+  -- granted triggered ability's trigger, askers and effects, granted by a
+  -- ModifyTarget or a MoveToZone's entry riders. Takklemaggot and Hellish
+  -- Rebuke write exactly that; anywhere else it would name nobody.
+  Spec.it s "CR 608.2h no card writes an AtGrant bakeAtGrant leaves unbaked" $ do
+    ps <- S.allPrintings s corpus
+    let offenders = filter (anyFace (\c -> atGrantAtoms c /= bakedAtGrants c) . Printing.card) ps
+    Spec.assertEqWith s "every AtGrant is baked at its grant" (fmap (S.nameOf . Printing.card) offenders) []
+    -- Not vacuous: both producers' AtGrants are reached, and one planted
+    -- outside a grant is seen.
+    Monad.forM_ ["Takklemaggot", "Hellish Rebuke"] $ \name -> do
+      producer <- S.printingOf s registry name
+      Spec.assertLtWith s (name <> " reaches the bake") 0 (bakedAtGrants (S.combinedFace producer))
+    piker <- S.printingOf s registry "Goblin Piker"
+    let planted =
+          (S.combinedFace piker)
+            { Face.spell =
+                Mint.oneModeTargeting (Map.singleton (SlotName.MkSlotName (Text.pack "target")) (TargetSlot.required Pool.Creatures Nothing)) (Seq.singleton (Effect.GainControl (GainControl.MkGainControl Duration.Indefinite (ObjectRef.InSlot (SlotName.MkSlotName (Text.pack "target"))) Nothing (PlayerRef.AtGrant (PlayerRef.Relative PlayerRelation.You)))))
+            }
+    Spec.assertEqWith s "a planted AtGrant is unbaked" (atGrantAtoms planted, bakedAtGrants planted) (1, 0)
   -- CR 400.7's baked half of DurationEvent.BoundCardCast: the object a cost
   -- exiled, written by Parun.Engine.Expiry.arm and round-tripped by a total
   -- codec, so nothing but this keeps card JSON from naming it. The unbaked slot
