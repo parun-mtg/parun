@@ -1173,7 +1173,7 @@ details.pile[open] {
   position: absolute;
   z-index: 2;
   top: -9px;
-  left: -9px;
+  right: -9px;
   min-width: 22px;
   height: 20px;
   padding: 0 0.4em;
@@ -1187,6 +1187,15 @@ details.pile[open] {
   justify-content: center;
   box-shadow: var(--shadow);
   pointer-events: none;
+}
+
+/* Permanents sharing a tile show as a pile: card edges behind the first. */
+#app .group:has(> .many) > .card:first-child:not(.playable, .attacking) {
+  box-shadow:
+    3px 3px 0 -1px var(--surface-2),
+    3px 3px 0 0 var(--border-strong),
+    6px 6px 0 -1px var(--surface-2),
+    6px 6px 0 0 var(--border);
 }
 
 /* An attachment tucks under the permanent it is attached to, its name
