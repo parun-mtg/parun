@@ -678,6 +678,18 @@ spec s registry reference = Spec.describe s "Parun.Legality" $ do
       result <- started reference Nothing [dir <> "/small.txt", dir <> "/limited.txt"]
       Spec.assertEqWith s "refused" result (Left (fmap Text.pack [dir <> "/small.txt: 39 cards in the deck, fewer than 40"]))
 
+  Spec.it s "a pasted deck list naming a card the pool lacks is refused, naming it" $ do
+    problems <- Command.check reference "pasted" (Text.pack "59 Forest\n1 No Such Card\n")
+    Spec.assertBool s (any (Text.isInfixOf (Text.pack "No Such Card")) problems) (show problems)
+
+  Spec.it s "CR 100.2a a pasted deck list breaking its header's format is refused" $ do
+    problems <- Command.check reference "pasted" (Text.pack "Format: constructed\n40 Forest\n")
+    Spec.assertEqWith s "refused" problems [Text.pack "pasted: 40 cards in the deck, fewer than 60"]
+
+  Spec.it s "a sound pasted deck list is accepted" $ do
+    problems <- Command.check reference "pasted" (Text.pack "60 Forest\n")
+    Spec.assertEqWith s "accepted" problems []
+
 -- Eighty cards, twenty over constructed's sixty, with Yorion, Sky Nomad as
 -- the companion, under a header naming `format` if any.
 yorionList :: Maybe String -> Text.Text

@@ -7,6 +7,7 @@ import qualified Control.Monad as Monad
 import qualified Control.Monad.Trans.State.Strict as State
 import qualified Data.Bifunctor as Bifunctor
 import qualified Data.ByteString as ByteString
+import qualified Data.Either as Either
 import qualified Data.Functor.Identity as Identity
 import qualified Data.IORef as IORef
 import qualified Data.List as List
@@ -99,11 +100,24 @@ load registry path = do
   bytes <- ByteString.readFile path
   pure $ case Encoding.decodeUtf8' bytes of
     Left err -> Left [Text.pack (path <> ": not valid UTF-8: " <> show err)]
-    Right contents -> case Identity.runIdentity (DeckList.parse registry contents) of
-      Left corpus -> Left [Text.pack (Exception.displayException corpus)]
-      Right listed -> case DeckList.sound listed of
-        Left problems -> Left (fmap (\p -> Text.pack (path <> ": ") <> DeckList.explain p) problems)
-        Right _ -> Right listed
+    Right contents -> loadText registry path contents
+
+-- | A deck list's text with no bad line, as 'load' reads a file, its
+-- problems labelled `label`; or every problem with it.
+loadText :: Registry.Registry Identity.Identity -> FilePath -> Text.Text -> Either [Text.Text] DeckList.Listed
+loadText registry label contents = case Identity.runIdentity (DeckList.parse registry contents) of
+  Left corpus -> Left [Text.pack (Exception.displayException corpus)]
+  Right listed -> case DeckList.sound listed of
+    Left problems -> Left (fmap (\p -> Text.pack (label <> ": ") <> DeckList.explain p) problems)
+    Right _ -> Right listed
+
+-- | Every problem with a deck list's text, labelled `label`: a bad line, or
+-- a breach of the format its header names ('settle'); none for a deck that
+-- can start a game.
+check :: Registry.Registry Identity.Identity -> FilePath -> Text.Text -> IO [Text.Text]
+check registry label contents = case loadText registry label contents of
+  Left problems -> pure problems
+  Right listed -> Either.fromLeft [] <$> settle Nothing [(label, listed)]
 
 -- | The format a game between these lists is under, by name: the one asked
 -- for, else the one their headers name, checking every deck against it; or
