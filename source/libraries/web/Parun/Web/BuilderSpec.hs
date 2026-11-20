@@ -43,12 +43,19 @@ spec s = Spec.describe s "Parun.Web.Builder" $ do
       Spec.assertEq s (Builder.problems found, Builder.flagged found) ([Text.pack "5 copies"], Set.singleton bolt)
 
   Spec.describe s "listText" $ do
+    Spec.it s "writes no header for a casual deck, which names no format" $ do
+      Spec.assertEq s (Builder.listText (tap (Builder.MkAdd bolt) fresh)) (Text.pack "1 Lightning Bolt\n")
+
+    Spec.it s "offers casual first, and chooses it" $ do
+      let shown = Html.toText (Builder.view fresh)
+      Spec.assertBool s (Text.isInfixOf (Text.pack "<option value=\"\" selected=\"\">Casual (no format)</option>") shown) "casual chosen"
+
     Spec.it s "writes the format header, then the main deck by name" $ do
-      let built = (tap (Builder.MkAdd bolt) . tap (Builder.MkAdd mountain) . tap (Builder.MkAdd bolt)) fresh
+      let built = (tap (Builder.MkAdd bolt) . tap (Builder.MkAdd mountain) . tap (Builder.MkAdd bolt)) constructed
       Spec.assertEq s (Builder.listText built) (Text.pack "Format: constructed\n2 Lightning Bolt\n1 Mountain\n")
 
     Spec.it s "writes back the rest of a list untouched" $ do
-      let opened = fresh {Builder.deck = Map.singleton bolt 4, Builder.suffixes = Map.singleton bolt (Text.pack " (M10) 146"), Builder.rest = [Text.pack "Sideboard", Text.pack "2 Shock"]}
+      let opened = constructed {Builder.deck = Map.singleton bolt 4, Builder.suffixes = Map.singleton bolt (Text.pack " (M10) 146"), Builder.rest = [Text.pack "Sideboard", Text.pack "2 Shock"]}
       Spec.assertEq s (Builder.listText opened) (Text.pack "Format: constructed\n4 Lightning Bolt (M10) 146\nSideboard\n2 Shock\n")
 
     Spec.it s "parses back to the same deck, a split card included" $ do
@@ -104,6 +111,7 @@ spec s = Spec.describe s "Parun.Web.Builder" $ do
     page = Html.toText . Builder.view
     card name = CardIndex.MkEntry (CardName.MkCardName (Text.pack name)) [Text.pack name] Nothing 1 Set.empty Set.empty (Text.pack "Instant") [] (Text.toCaseFold (Text.pack name))
     indexed = fresh {Builder.index = Just (Seq.fromList [(card "Lightning Bolt") {CardIndex.rules = [Text.pack "Lightning Bolt deals 3 damage to any target."]}, card "Mountain"])}
+    constructed = Builder.update Builder.MkFormat (Text.pack "constructed") fresh
     fresh = Builder.new [Text.pack "constructed", Text.pack "pauper"]
     tap event = Builder.update event Text.empty
     bolt = CardName.MkCardName (Text.pack "Lightning Bolt")

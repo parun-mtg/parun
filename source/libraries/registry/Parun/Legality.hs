@@ -436,16 +436,18 @@ basicLand card =
 -- the format checked.
 report :: Maybe Text.Text -> Maybe CardPool -> DeckList.Listed -> IO (Maybe Text.Text, [Text.Text])
 report asked cardPool listed = do
-  (format, lines', violations) <- assess asked cardPool listed
+  (format, lines', violations) <- assess named asked cardPool listed
   pure (format, lines' <> fmap explain violations)
 
--- | 'report' with its violations unexplained: the format checked, the list's
--- own problems and a format that would not load, then the violations.
-assess :: Maybe Text.Text -> Maybe CardPool -> DeckList.Listed -> IO (Maybe Text.Text, [Text.Text], [Violation.Violation])
-assess asked cardPool listed = do
+-- | 'report' with its violations unexplained, each format's check found by
+-- `lookUp` ('named', or 'namedIn' a table already loaded): the format
+-- checked, the list's own problems and a format that would not load, then
+-- the violations.
+assess :: (Text.Text -> IO (Either Text.Text Checker)) -> Maybe Text.Text -> Maybe CardPool -> DeckList.Listed -> IO (Maybe Text.Text, [Text.Text], [Violation.Violation])
+assess lookUp asked cardPool listed = do
   let (format, disagreement) = DeckList.formatFor asked listed
       lines' = fmap DeckList.explain (DeckList.problems listed <> disagreement)
-  checked <- traverse named format
+  checked <- traverse lookUp format
   pure $ case checked of
     Nothing -> (format, lines', [])
     Just (Left problem) -> (format, lines' <> [problem], [])
@@ -519,14 +521,24 @@ explain violation = Text.pack $ case violation of
 -- | The check of the shipped format a name means, against the shipped table:
 -- "constructed" and "limited" for the rules alone, "vintage" and the like with
 -- a pool.
-named :: Text.Text -> IO (Either Text.Text (GameSettings.GameSettings -> Maybe CardPool -> Deck.Deck -> [Violation.Violation]))
+named :: Text.Text -> IO (Either Text.Text Checker)
 named name = do
   found <- shipped name
   case found of
     Left problem -> pure (Left problem)
-    Right format -> do
-      table <- tablePath >>= loadTable
-      pure (fmap (\loaded settings -> check loaded settings format) table)
+    Right format -> fmap (fmap (`checkerOf` format)) (tablePath >>= loadTable)
+
+-- | 'named' against a legality table already loaded.
+namedIn :: LegalityTable.LegalityTable -> Text.Text -> IO (Either Text.Text Checker)
+namedIn table name = fmap (fmap (checkerOf table)) (shipped name)
+
+-- | A format's check against a table ('check').
+checkerOf :: LegalityTable.LegalityTable -> Format.Format -> Checker
+checkerOf table format settings = check table settings format
+
+-- | A format's check of a deck, for a game played with the settings given,
+-- against the card pool given.
+type Checker = GameSettings.GameSettings -> Maybe CardPool -> Deck.Deck -> [Violation.Violation]
 
 -- | The shipped format a name means, or why there is none.
 shipped :: Text.Text -> IO (Either Text.Text Format.Format)

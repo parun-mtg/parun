@@ -2944,8 +2944,14 @@ main.builder {
   font-size: 0.9rem;
 }
 
+.result {
+  min-height: 2.6em;
+}
+
 .result .type-line {
   flex: 1;
+  padding-bottom: 0;
+  border-bottom: none;
   color: var(--muted);
   font-size: 0.8rem;
   white-space: nowrap;
@@ -2960,9 +2966,11 @@ main.builder {
 }
 
 #app button.card-name {
+  min-height: 0;
   padding: 0;
   border: none;
   background: none;
+  box-shadow: none;
   color: inherit;
   font: inherit;
   text-align: left;
@@ -2995,8 +3003,10 @@ main.builder {
   flex: none;
   width: 1.9em;
   height: 1.9em;
+  min-height: 0;
   padding: 0;
   line-height: 1;
+  text-align: center;
 }
 
 #app button.add::before {

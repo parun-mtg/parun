@@ -151,12 +151,12 @@ spec s registry reference = Spec.describe s "Parun.Legality" $ do
 
   Spec.it s "CR 100.2a: assess returns a constructed deck's five Lightning Bolts as a violation" $ do
     listed <- DeckList.parse registry (Text.pack "5 Lightning Bolt\n55 Mountain\n") >>= either (S.brokenCorpus s) pure
-    (_, lines', found) <- Legality.assess (Just (Text.pack "constructed")) Nothing listed
+    (_, lines', found) <- Legality.assess Legality.named (Just (Text.pack "constructed")) Nothing listed
     Spec.assertEqWith s "the lines and violations" (lines', found) ([], [copies "Lightning Bolt" 5])
 
   Spec.it s "assess says a header naming no shipped format, with no violations" $ do
     listed <- DeckList.parse registry (Text.pack "Format: nonsense\n5 Lightning Bolt\n") >>= either (S.brokenCorpus s) pure
-    (_, lines', found) <- Legality.assess Nothing Nothing listed
+    (_, lines', found) <- Legality.assess Legality.named Nothing Nothing listed
     Spec.assertEqWith s "the lines and violations" (lines', found) ([Text.pack "not a format: nonsense"], [])
 
   Spec.it s "namedCard names the card of too many copies, and none for too few cards" $ do

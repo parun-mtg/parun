@@ -32,7 +32,8 @@ data Builder = MkBuilder
     suffixes :: Map.Map CardName.CardName Text.Text,
     -- | Every line of a list opened after its main deck, kept as written.
     rest :: [Text.Text],
-    -- | The format the list's header names.
+    -- | The format the list's header names; empty for a casual deck, which
+    -- names none and so meets any deck naming none.
     format :: Text.Text,
     -- | Every shipped format, by name.
     formats :: [Text.Text],
@@ -75,10 +76,9 @@ data Event
   | MkLeave
   deriving (Eq, Show)
 
--- | An empty deck under constructed, among these formats, its cards not
--- yet indexed.
+-- | An empty casual deck, among these formats, its cards not yet indexed.
 new :: [Text.Text] -> Builder
-new named = MkBuilder Nothing CardIndex.everything Map.empty Map.empty [] (Text.pack "constructed") named Nothing [] Set.empty Nothing Text.empty Nothing [] False False
+new named = MkBuilder Nothing CardIndex.everything Map.empty Map.empty [] Text.empty named Nothing [] Set.empty Nothing Text.empty Nothing [] False False
 
 -- | The builder after an event, the value typed being `typed`. Save, Leave,
 -- and Back with nothing changed are the shell's to carry out.
@@ -106,14 +106,14 @@ update event typed builder = case event of
     toggle :: (Ord a) => a -> Set.Set a -> Set.Set a
     toggle x xs = if Set.member x xs then Set.delete x xs else Set.insert x xs
 
--- | The deck as a deck list: its format's header, the main deck by name,
--- then the rest of a list opened, as written.
+-- | The deck as a deck list: its format's header, if it names one, the
+-- main deck by name, then the rest of a list opened, as written.
 listText :: Builder -> Text.Text
 listText builder =
   Text.unlines $
-    (Text.pack "Format: " <> format builder)
-      : [Text.pack (show n) <> Text.singleton ' ' <> CardName.unwrap card <> Map.findWithDefault Text.empty card (suffixes builder) | (card, n) <- List.sortOn (CardName.unwrap . fst) (Map.toList (deck builder))]
-        <> rest builder
+    [Text.pack "Format: " <> format builder | not (Text.null (format builder))]
+      <> [Text.pack (show n) <> Text.singleton ' ' <> CardName.unwrap card <> Map.findWithDefault Text.empty card (suffixes builder) | (card, n) <- List.sortOn (CardName.unwrap . fst) (Map.toList (deck builder))]
+      <> rest builder
 
 -- | The builder with a check's problems, and the cards they name.
 checked :: [Text.Text] -> Set.Set CardName.CardName -> Builder -> Builder
@@ -221,7 +221,7 @@ view builder =
             Element.el "div" ["builder-top"] [] $
               [ Element.button ["home-button"] MkBack [Element.string "Back"],
                 Element.el "label" ["sr-only"] [Element.attr "for" (Text.pack "builder-format")] [Element.string "Format"],
-                Element.el "select" ["format"] [Element.attr "id" (Text.pack "builder-format"), Element.on "change" MkFormat] [option (format builder) (f, Lobby.titled f) | f <- formats builder],
+                Element.el "select" ["format"] [Element.attr "id" (Text.pack "builder-format"), Element.on "change" MkFormat] (option (format builder) (Text.empty, Text.pack "Casual (no format)") : [option (format builder) (f, Lobby.titled f) | f <- formats builder]),
                 Element.el "label" ["sr-only"] [Element.attr "for" (Text.pack "builder-name")] [Element.string "Deck name"],
                 Element.el "input" ["builder-name"] ([Element.attr "id" (Text.pack "builder-name"), Element.attr "type" (Text.pack "text"), Element.attr "autocomplete" (Text.pack "off"), Element.attr "placeholder" (Text.pack "Deck name"), Element.on "input" MkSaveName] <> [Element.attr "disabled" Text.empty | Maybe.isJust (savedAs builder)]) [],
                 Element.button ["primary"] MkSave [Element.string "Save"]

@@ -37,6 +37,7 @@ import qualified Parun.Types.CardType as CardType
 import qualified Parun.Types.Color as Color
 import qualified Parun.Types.Face as Face
 import qualified Parun.Types.Key as Key
+import qualified Parun.Types.LegalityTable as LegalityTable
 import qualified Parun.Types.Scenario as Scenario.Type
 import qualified Parun.Types.TypeLine as TypeLine
 import qualified Parun.Web.Builder as Builder
@@ -89,7 +90,9 @@ data Loaded = MkLoaded
     -- | Why each saved deck breaks its format, by name, as checked so far.
     illegal :: Map.Map Text.Text [Text.Text],
     -- | The saved decks still to check.
-    unchecked :: [(Text.Text, FilePath)]
+    unchecked :: [(Text.Text, FilePath)],
+    -- | The legality table, once a check has loaded it (or why it did not).
+    legalityTable :: Maybe (Either Text.Text LegalityTable.LegalityTable)
   }
 
 -- | Where a screen leads when it ends.
@@ -114,7 +117,7 @@ data Woke
 start :: IO ()
 start = do
   chosen <- maybe Web.Question.MkStandard (Maybe.fromMaybe Web.Question.MkStandard . Web.Question.levelNamed) <$> Environment.lookupEnv "parun_level"
-  shell <- MkShell <$> Browser.mount <*> IORef.newIORef (MkLoaded Loading.new Nothing Map.empty Nothing Map.empty [] Nothing Nothing Nothing False Nothing Map.empty []) <*> IORef.newIORef chosen
+  shell <- MkShell <$> Browser.mount <*> IORef.newIORef (MkLoaded Loading.new Nothing Map.empty Nothing Map.empty [] Nothing Nothing Nothing False Nothing Map.empty [] Nothing) <*> IORef.newIORef chosen
   Exception.catch (opening >>= follow shell) $ \problem ->
     Browser.display (page shell) $ message ["The page stopped on an error:", Exception.displayException (problem :: Exception.SomeException)]
 
@@ -295,11 +298,14 @@ builder shell = do
       least <- maybe (Legality.minimumFor (Builder.format shown)) (pure . Just) (Builder.least shown)
       let filled = shown {Builder.index = cardIndex now, Builder.formats = named, Builder.least = least}
           key = (Builder.deck filled, Builder.format filled)
+      -- Taps waiting go first: the list is checked once they are done.
+      waiting <- Browser.pending (page shell)
       current <- case registry now of
         Just reg
-          | lastChecked /= Just key,
+          | not waiting,
+            lastChecked /= Just key,
             Loading.ready Loading.MkRules (loading now) -> do
-              (found, cards') <- deckProblems reg (Builder.listText filled)
+              (found, cards') <- deckProblems shell reg (Builder.listText filled)
               pure (Builder.checked found cards' filled, Just key)
         _ -> pure (filled, lastChecked)
       Browser.display (page shell) (fmap Screen.MkBuilder (Builder.view (fst current)))
@@ -341,11 +347,20 @@ saveBuilt shell built = do
 
 -- | Why a deck list breaks the format its header names, as lines, and the
 -- cards those lines are about (Legality.namedCard).
-deckProblems :: Registry.Registry Identity.Identity -> Text.Text -> IO ([Text.Text], Set.Set CardName.CardName)
-deckProblems reg contents = case Command.loadText reg "deck" contents of
+-- The legality table is loaded once, at the first check, and kept.
+deckProblems :: Shell -> Registry.Registry Identity.Identity -> Text.Text -> IO ([Text.Text], Set.Set CardName.CardName)
+deckProblems shell reg contents = case Command.loadText reg "deck" contents of
   Left problems -> pure (problems, Set.empty)
   Right listed -> do
-    (_, lines', violations) <- Legality.assess Nothing Nothing listed
+    kept <- legalityTable <$> IORef.readIORef (loaded shell)
+    table <- case kept of
+      Just t -> pure t
+      Nothing -> do
+        t <- Legality.tablePath >>= Legality.loadTable
+        IORef.modifyIORef' (loaded shell) $ \l -> l {legalityTable = Just t}
+        pure t
+    let lookUp = either (const . pure . Left) Legality.namedIn table
+    (_, lines', violations) <- Legality.assess lookUp Nothing Nothing listed
     pure (lines' <> fmap Legality.explain violations, Set.fromList (Maybe.mapMaybe Legality.namedCard violations))
 
 -- | One of these decks at random.
@@ -597,13 +612,13 @@ work shell = do
               IORef.modifyIORef' (loaded shell) $ \l -> l {indexing = Nothing, cardIndex = Just done}
             else IORef.modifyIORef' (loaded shell) $ \l -> l {indexing = Just (built <> entries, rest, began)}
         _ -> Nothing
-      -- Two saved decks checked against their formats a batch.
+      -- One saved deck checked against its format a batch.
       checkSaved = case (registry now, unchecked now) of
         (Just reg, _ : _) | ready Loading.MkRules -> Just $ do
-          let (batch, rest) = splitAt 2 (unchecked now)
+          let (batch, rest) = splitAt 1 (unchecked now)
           found <- Monad.forM batch $ \(name, path) -> do
             contents <- Encoding.decodeUtf8Lenient <$> ByteString.readFile path
-            (,) name . fst <$> deckProblems reg contents
+            (,) name . fst <$> deckProblems shell reg contents
           IORef.modifyIORef' (loaded shell) $ \l -> l {illegal = Map.union (Map.filter (not . null) (Map.fromList found)) (foldr (Map.delete . fst) (illegal l) batch), unchecked = rest}
         _ -> Nothing
       steps =
