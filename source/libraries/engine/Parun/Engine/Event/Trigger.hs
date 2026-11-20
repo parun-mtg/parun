@@ -2427,7 +2427,7 @@ eventTriggersGiven scope standing events gs =
             -- CR 400.7d: an ability of a permanent may read what costs were
             -- paid for the spell it was, so the bearer's record rides on every
             -- ability it triggers (Binding.triggeredCostRecord).
-            pend (cond, ab) = PendingTrigger.MkPendingTrigger (TriggerSource.OfObject oid) (controllerFor cond) ab (Map.union (Binding.triggeredCostRecord bindings) (eventBindingsOver board gs (Map.lookup oid becameInGraveyard) becameInPublicZone oid (controllerFor cond) cond event)) Nothing (Just logged) (copiesIn (fmap snd abilities) ab) (delayedAsTriggered board oid gs) Nothing
+            pend (cond, ab) = PendingTrigger.MkPendingTrigger (TriggerSource.OfObject oid) (controllerFor cond) ab (Map.union (Binding.triggeredCostRecord bindings) (eventBindingsOver board gs (Map.lookup oid becameInGraveyard) becameInPublicZone oid (controllerFor cond) cond event)) Nothing (Just logged) (EventGroup.next (LoggedEvent.group logged)) (copiesIn (fmap snd abilities) ab) (delayedAsTriggered board oid gs) Nothing
             -- CR 603.2d: a permanent entering may make an ability of a
             -- permanent trigger additional times (Yarok, the Desecrated),
             -- whichever side of the move its condition names (docs/decisions.md,
@@ -2621,7 +2621,7 @@ inherentTriggers held events gs =
             frozen = case source of
               TriggerSource.OfObject oid -> delayedAsTriggered board oid gs
               TriggerSource.Sourceless -> Map.empty
-            pend logged = PendingTrigger.MkPendingTrigger source you ability (eventBindingsOver board gs Nothing Map.empty bearer you cond (LoggedEvent.event logged)) Nothing (Just logged) 1 frozen Nothing
+            pend logged = PendingTrigger.MkPendingTrigger source you ability (eventBindingsOver board gs Nothing Map.empty bearer you cond (LoggedEvent.event logged)) Nothing (Just logged) (EventGroup.next (LoggedEvent.group logged)) 1 frozen Nothing
             key trigger = if batchScoped cond then Just (batchPartition cond (PendingTrigger.bindings trigger)) else Nothing
          in oncePerBatch id [(key trigger, trigger) | logged <- NonEmpty.toList block, let event = LoggedEvent.event logged, fires event, trigger <- stepCopies gs bearer you cond event ability (pend logged)]
    in concatMap (filter (interveningHolds gs) . forHeld) held
@@ -3460,7 +3460,7 @@ stateTriggersOn gs
           armed (before, ab) = 1 + length (filter (ab ==) before) > instancesOnStack oid ab
           -- CR 400.7d, the event scan's stamp above on this road too. A
           -- fence: no state trigger in data/cards/ reads the record.
-          pend ab = PendingTrigger.MkPendingTrigger (TriggerSource.OfObject oid) ctrl ab (maybe Map.empty (Binding.triggeredCostRecord . Object.bindings) (Game.lookupObject oid gs)) Nothing Nothing (copiesIn abilities ab) (Projection.delayedSnapshotOf oid gs) Nothing
+          pend ab = PendingTrigger.MkPendingTrigger (TriggerSource.OfObject oid) ctrl ab (maybe Map.empty (Binding.triggeredCostRecord . Object.bindings) (Game.lookupObject oid gs)) Nothing Nothing (Bookkeeping.nextEventGroup (GameState.bookkeeping gs)) (copiesIn abilities ab) (Projection.delayedSnapshotOf oid gs) Nothing
           -- CR 603.2d: a state trigger triggers additional times like any other,
           -- on a permanent; CR 603.8 holds each back while any is on the stack.
           instances ab = if Set.member oid (GameState.battlefield gs) then 1 + PlayerEffect.additionalTriggers ctrl oid ab gs else 1
@@ -3570,6 +3570,12 @@ reflexiveFiring entry =
     -- CR 603.12: the entry's existence is the affirmative answer, so there
     -- is no one event this fired from.
     Nothing
+    -- CR 603.12: it triggered as it was created, during its parent's
+    -- resolution, so a crowning later in that resolution or among the
+    -- state-based actions before CR 603.3's placement counts (CR 610.3b).
+    -- data/scenarios/trigger/cr-610-3b-a-crowning-before-a-reflexive-exile-reaches-the-stack-keeps-the-creature.json
+    -- proves it.
+    (DelayedTrigger.armedIn entry)
     1
     -- CR 113.7a: its own text, frozen as it was created. A regression fence:
     -- no reflexive ability in data/cards/ arms another by name (2026-11-13).
@@ -3678,6 +3684,7 @@ delayedMatches grouped gs =
           (Just (DelayedTrigger.createdAt entry))
           -- CR 603.2's event, the same one the slots above were read off.
           (Just logged)
+          (EventGroup.next (LoggedEvent.group logged))
           -- One entry is one instance, CR 603.7's ability created on its own.
           1
           -- CR 603.7 / 113.7a: its own text, frozen as it was created

@@ -13366,7 +13366,10 @@ armDelayed ability declared source acquisition resolution controller captured ar
               DelayedTrigger.delayed = declared,
               DelayedTrigger.window = window,
               DelayedTrigger.expiry = expiry,
-              DelayedTrigger.createdAt = createdAt
+              DelayedTrigger.createdAt = createdAt,
+              -- CR 603.12: a reflexive entry triggers as it is created, so
+              -- every event already recorded is behind it.
+              DelayedTrigger.armedIn = Bookkeeping.nextEventGroup (GameState.bookkeeping gs)
             }
      in gs1 {GameState.stored = (GameState.stored gs1) {StoredEffects.delayedTriggers = StoredEffects.delayedTriggers (GameState.stored gs1) Seq.|> entry}}
 

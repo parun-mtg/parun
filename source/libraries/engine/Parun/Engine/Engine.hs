@@ -968,20 +968,7 @@ placeSourceless pending = do
         )
           { Object.bindings = bindings
           }
-  State.put (Game.putOnStack (triggeredSince pending gs2) abilId gs2 {GameState.objects = Map.insert abilId obj (GameState.objects gs2)})
-
--- CR 610.3b's "after that ability triggered": the first event group after
--- the trigger event's, so an event between the trigger and CR 603.3's
--- placement counts, such as a CR 726.4 crowning among the state-based actions.
--- An ability with no trigger event counts from its placement.
---
--- Not implemented: a reflexive (CR 603.12) or state (CR 603.8) trigger counting
--- from when it triggered rather than from its placement (#5106).
---
--- data/scenarios/trigger/cr-610-3b-a-crowning-while-palace-jailers-exile-waits-for-the-stack-keeps-the-creature.json
--- is the proof.
-triggeredSince :: PendingTrigger.PendingTrigger -> GameState -> EventGroup.EventGroup
-triggeredSince pending gs = maybe (Bookkeeping.nextEventGroup (GameState.bookkeeping gs)) (EventGroup.next . LoggedEvent.group) (PendingTrigger.firedBy pending)
+  State.put (Game.putOnStack (PendingTrigger.since pending) abilId gs2 {GameState.objects = Map.insert abilId obj (GameState.objects gs2)})
 
 -- Put one object-borne triggered ability on the stack as a fresh OfTrigger
 -- object, choosing its mode(s) and their targets as it is placed (CR 603.3d).
@@ -1111,7 +1098,7 @@ placeBorne srcId pending = do
           )
           Zone.Stack
           ts
-  State.put (Game.putOnStack (triggeredSince pending gs2) abilId gs2 {GameState.objects = Map.insert abilId obj (GameState.objects gs2)})
+  State.put (Game.putOnStack (PendingTrigger.since pending) abilId gs2 {GameState.objects = Map.insert abilId obj (GameState.objects gs2)})
   -- CR 701.20a: a card whose reveal caused this ability to trigger stays revealed
   -- until the ability leaves the stack. Proven by the scenario
   -- cr-702-94b-lasting-reveal-the-miracle-card-stays-revealed-while-its-trigger-is-on-the-stack.

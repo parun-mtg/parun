@@ -1,0 +1,150 @@
+{
+  "description": "CR 610.3b a crowning before a reflexive exile reaches the stack keeps the creature where it is",
+  "note": "Synthetic Usurping Writ: \"Each opponent loses 3 life. When they do, exile target creature an opponent controls until an opponent becomes the monarch.\" alice casts it on bob's turn and drains carol, the monarch, to 0. The reflexive exile triggers during the spell's resolution (CR 603.12); carol then loses to CR 704.5a and CR 726.4 crowns bob, the active player, before the exile reaches the stack (CR 603.3). That crowning came after the ability triggered, so its move does not happen (CR 610.3b) and bob's Goblin Piker stays. A look-back from the stack rather than from the trigger would miss it and exile the Piker.",
+  "board": {
+    "active": "bob",
+    "step": "PrecombatMain",
+    "monarch": "carol",
+    "seats": [
+      {
+        "name": "alice",
+        "battlefield": [
+          {
+            "card": "Swamp",
+            "ready": true
+          },
+          {
+            "card": "Swamp",
+            "ready": true
+          },
+          {
+            "card": "Swamp",
+            "ready": true
+          }
+        ],
+        "hand": [
+          {
+            "card": "Synthetic Usurping Writ",
+            "label": "writ"
+          }
+        ]
+      },
+      {
+        "name": "bob",
+        "battlefield": [
+          {
+            "card": "Goblin Piker",
+            "label": "piker"
+          },
+          {
+            "card": "Grizzly Bears"
+          }
+        ]
+      },
+      {
+        "name": "carol",
+        "life": 3
+      }
+    ]
+  },
+  "timeline": [
+    {
+      "turn": 1,
+      "step": "PrecombatMain",
+      "player": "alice",
+      "do": {
+        "Cast": {
+          "object": "$writ",
+          "mana": [
+            "Swamp",
+            "Swamp#2",
+            "Swamp#3"
+          ]
+        }
+      }
+    },
+    {
+      "turn": 1,
+      "step": "PrecombatMain",
+      "player": "alice",
+      "do": "Pass"
+    },
+    {
+      "turn": 1,
+      "step": "PrecombatMain",
+      "player": "alice",
+      "do": {
+        "ChooseTargets": {
+          "target": [
+            "$piker"
+          ]
+        }
+      },
+      "source": "Synthetic Usurping Writ"
+    },
+    {
+      "turn": 1,
+      "step": "PrecombatMain",
+      "player": "alice",
+      "check": {
+        "Monarch": {
+          "player": "bob"
+        }
+      }
+    },
+    {
+      "turn": 1,
+      "step": "PrecombatMain",
+      "player": "alice",
+      "do": "Pass"
+    },
+    {
+      "turn": 1,
+      "step": "PrecombatMain",
+      "player": "alice",
+      "check": {
+        "Count": {
+          "player": "bob",
+          "zone": "Battlefield",
+          "card": "Goblin Piker",
+          "count": 1
+        }
+      }
+    },
+    {
+      "turn": 1,
+      "step": "PrecombatMain",
+      "player": "alice",
+      "check": {
+        "Count": {
+          "player": "bob",
+          "zone": "Exile",
+          "card": "Goblin Piker",
+          "count": 0
+        }
+      }
+    },
+    {
+      "turn": 1,
+      "step": "PrecombatMain",
+      "player": "alice",
+      "check": {
+        "Life": {
+          "player": "bob",
+          "life": 17
+        }
+      }
+    },
+    {
+      "turn": 1,
+      "step": "PrecombatMain",
+      "player": "alice",
+      "check": {
+        "View": {
+          "of": "Stack",
+          "is": []
+        }
+      }
+    }
+  ]
+}

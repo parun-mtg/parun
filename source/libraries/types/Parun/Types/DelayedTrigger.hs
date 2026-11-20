@@ -4,6 +4,7 @@ import qualified Data.Map.Strict as Map
 import qualified Parun.Types.AbilityName as AbilityName
 import qualified Parun.Types.Binding as Binding
 import qualified Parun.Types.Card as Card
+import qualified Parun.Types.EventGroup as EventGroup
 import qualified Parun.Types.Expiry as Expiry
 import qualified Parun.Types.GrantedAbility as GrantedAbility
 import qualified Parun.Types.ObjectId as ObjectId
@@ -83,6 +84,10 @@ data DelayedTrigger = MkDelayedTrigger
     -- A Timestamp from the same Bookkeeping.nextTimestamp counter every other
     -- moment in the game comes from, so it compares against Object.turnedOverAt
     -- and Object.timestamp without a second clock.
-    createdAt :: Timestamp.Timestamp
+    createdAt :: Timestamp.Timestamp,
+    -- | CR 603.12 / 610.3b: the first event group after this entry was
+    -- created, which is when a reflexive one triggered: its firing's
+    -- PendingTrigger.since.
+    armedIn :: EventGroup.EventGroup
   }
   deriving (Eq, Ord, Show)

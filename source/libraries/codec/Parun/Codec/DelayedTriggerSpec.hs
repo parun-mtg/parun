@@ -13,6 +13,7 @@ import qualified Parun.Types.AbilityName as AbilityName
 import qualified Parun.Types.Acquisition as Acquisition
 import qualified Parun.Types.Binding as Binding
 import qualified Parun.Types.DelayedTrigger as DelayedTrigger
+import qualified Parun.Types.EventGroup as EventGroup
 import qualified Parun.Types.Expiry as Expiry
 import qualified Parun.Types.ObjectId as ObjectId
 import qualified Parun.Types.PlayerId as PlayerId
@@ -36,7 +37,8 @@ entry =
       DelayedTrigger.delayed = Map.empty,
       DelayedTrigger.window = TurnWindow.AnyTurn,
       DelayedTrigger.expiry = Nothing,
-      DelayedTrigger.createdAt = Timestamp.MkTimestamp 7
+      DelayedTrigger.createdAt = Timestamp.MkTimestamp 7,
+      DelayedTrigger.armedIn = EventGroup.MkEventGroup 3
     }
 
 -- | A source that had chosen nothing (CR 607.2d).
@@ -47,7 +49,7 @@ entryJson :: String
 entryJson =
   "{\"ability\":{\"condition\":{\"type\":\"Enters\",\"value\":{}},\"modal\":{\"modes\":[{}]}},\"source\":4,\"controller\":0,"
     <> "\"bindings\":{\"token\":{\"amount\":9}},\"choices\":{\"subtype\":[\"Goblin\"]},"
-    <> "\"window\":{\"type\":\"AnyTurn\"},\"createdAt\":7}"
+    <> "\"window\":{\"type\":\"AnyTurn\"},\"createdAt\":7,\"armedIn\":3}"
 
 spec :: (Monad m, Monad n) => Spec.Spec m n -> n ()
 spec s = Spec.describe s "Parun.Codec.DelayedTrigger" $ do
@@ -62,7 +64,7 @@ spec s = Spec.describe s "Parun.Codec.DelayedTrigger" $ do
       entry {DelayedTrigger.expiry = Just Expiry.AtCleanup}
       ( "{\"ability\":{\"condition\":{\"type\":\"Enters\",\"value\":{}},\"modal\":{\"modes\":[{}]}},\"source\":4,\"controller\":0,"
           <> "\"bindings\":{\"token\":{\"amount\":9}},\"choices\":{\"subtype\":[\"Goblin\"]},"
-          <> "\"window\":{\"type\":\"AnyTurn\"},\"expiry\":{\"type\":\"AtCleanup\"},\"createdAt\":7}"
+          <> "\"window\":{\"type\":\"AnyTurn\"},\"expiry\":{\"type\":\"AtCleanup\"},\"createdAt\":7,\"armedIn\":3}"
       )
   -- CR 113.7a: the declarations the entry can arm by name.
   Spec.it s "MkDelayedTrigger, frozen declarations (CR 113.7a)" $
@@ -73,7 +75,7 @@ spec s = Spec.describe s "Parun.Codec.DelayedTrigger" $ do
       ( "{\"ability\":{\"condition\":{\"type\":\"Enters\",\"value\":{}},\"modal\":{\"modes\":[{}]}},\"source\":4,\"controller\":0,"
           <> "\"bindings\":{\"token\":{\"amount\":9}},\"choices\":{\"subtype\":[\"Goblin\"]},"
           <> "\"delayed\":{\"sacrifice it\":{\"condition\":{\"type\":\"Enters\",\"value\":{}},\"modal\":{\"modes\":[{}]}}},"
-          <> "\"window\":{\"type\":\"AnyTurn\"},\"createdAt\":7}"
+          <> "\"window\":{\"type\":\"AnyTurn\"},\"createdAt\":7,\"armedIn\":3}"
       )
   -- CR 603.7a: an onset gate. Parun.Codec.TurnWindowSpec covers the other arms.
   Spec.it s "MkDelayedTrigger, an onset gate (CR 603.7a)" $
@@ -83,7 +85,7 @@ spec s = Spec.describe s "Parun.Codec.DelayedTrigger" $ do
       entry {DelayedTrigger.window = TurnWindow.NextTurnOf (Just (PlayerId.MkPlayerId 2))}
       ( "{\"ability\":{\"condition\":{\"type\":\"Enters\",\"value\":{}},\"modal\":{\"modes\":[{}]}},\"source\":4,\"controller\":0,"
           <> "\"bindings\":{\"token\":{\"amount\":9}},\"choices\":{\"subtype\":[\"Goblin\"]},"
-          <> "\"window\":{\"type\":\"NextTurnOf\",\"value\":2},\"createdAt\":7}"
+          <> "\"window\":{\"type\":\"NextTurnOf\",\"value\":2},\"createdAt\":7,\"armedIn\":3}"
       )
   -- 'bindings' at its default and no stated 'expiry'. 'window' stays a required
   -- key regardless: CR 603.7a's "no restriction" is one of TurnWindow's arms,
@@ -101,6 +103,7 @@ spec s = Spec.describe s "Parun.Codec.DelayedTrigger" $ do
           DelayedTrigger.delayed = Map.empty,
           DelayedTrigger.window = TurnWindow.AnyTurn,
           DelayedTrigger.expiry = Nothing,
-          DelayedTrigger.createdAt = Timestamp.MkTimestamp 7
+          DelayedTrigger.createdAt = Timestamp.MkTimestamp 7,
+          DelayedTrigger.armedIn = EventGroup.MkEventGroup 3
         }
-      "{\"ability\":{\"condition\":{\"type\":\"Enters\",\"value\":{}},\"modal\":{\"modes\":[{}]}},\"source\":4,\"controller\":0,\"choices\":{},\"window\":{\"type\":\"AnyTurn\"},\"createdAt\":7}"
+      "{\"ability\":{\"condition\":{\"type\":\"Enters\",\"value\":{}},\"modal\":{\"modes\":[{}]}},\"source\":4,\"controller\":0,\"choices\":{},\"window\":{\"type\":\"AnyTurn\"},\"createdAt\":7,\"armedIn\":3}"
