@@ -80,7 +80,10 @@ function syncSettings() {
     settings.style.bottom = "auto";
   }
   const conceding = root.querySelector("[data-concede]");
-  concede.hidden = root.querySelector("main.game:not(.replay)") === null;
+  const playing = root.querySelector("main.game:not(.replay)") !== null;
+  leave.hidden = !playing;
+  leaveButton.disabled = root.querySelector("[data-home]") === null;
+  concede.hidden = !playing;
   concedeButton.disabled = conceding === null;
   document.getElementById("concede-why").hidden = conceding !== null;
 }
@@ -100,6 +103,17 @@ document.addEventListener("keydown", (event) => {
     openSettings(false);
     gear().focus();
   }
+});
+// Leaving for the home screen goes through the turn bar's menu button,
+// which carries the game's "home" event while the seat is asked.
+const leave = settings.querySelector(".leave");
+const leaveButton = document.getElementById("leave-button");
+leaveButton.addEventListener("click", () => {
+  const leaving = root.querySelector("[data-home]");
+  if (leaving === null) return;
+  openSettings(false);
+  document.body.classList.add("busy");
+  engine.postMessage({ type: "home", path: pathOf(leaving), value: "" });
 });
 const concede = settings.querySelector(".concede");
 const concedeButton = document.getElementById("concede-button");

@@ -99,10 +99,12 @@ summary me samples =
       x i = if count <= 1 then 0 else div (toInteger i * width) (toInteger (count - 1))
       y life = height - div ((life - lo) * height) (max 1 (hi - lo))
       name pid = if pid == me then Text.pack "You" else Wording.player pid
+      -- Each seat its own colour, by its seat; the viewer's line drawn bolder.
+      hue pid = ["seat-" <> show (mod (PlayerId.unwrap pid) 6)] <> ["you" | pid == me]
       line pid =
         Element.el
           "polyline"
-          ["life-line", if pid == me then "you" else "them"]
+          ("life-line" : hue pid)
           [Element.attr "points" (Text.unwords [Text.pack (show (x i) <> "," <> show (y (lifeOf pid sample))) | (i, sample) <- zip [0 :: Int ..] samples]), Element.attr "fill" (Text.pack "none")]
           []
       turns = maybe 0 fst (Maybe.listToMaybe (reverse samples))
@@ -110,7 +112,7 @@ summary me samples =
       stat pid =
         Element.el
           "li"
-          [if pid == me then "you" else "them"]
+          (hue pid)
           []
           [ Element.el "strong" [] [] [Element.text (name pid)],
             Element.text (Text.pack (": ended on " <> show (maybe 0 (lifeOf pid) (Maybe.listToMaybe (reverse samples))) <> " life, lowest " <> show (maybe 0 minimum (NonEmpty.nonEmpty (fmap (lifeOf pid) samples))) <> ", biggest hit " <> show (maximum (0 : drops pid))))
@@ -128,9 +130,9 @@ summary me samples =
           Element.el "ul" ["stats"] [] (fmap stat seats)
         ]
 
--- | Confetti for a win: the five colours' symbols, falling from spread
--- places at spread speeds, each drifting aside, swaying and tumbling at its
--- own pace; the same every time.
+-- | Confetti for a win: the five colours' symbols bursting at once from the
+-- middle of the screen, each thrown its own way, then falling, drifting,
+-- swaying and tumbling at its own pace; the same every time.
 confetti :: Html.Html msg
 confetti =
   let colour n = case n of
@@ -140,14 +142,20 @@ confetti =
         3 -> ("r", Mana.MkRed)
         _ -> ("g", Mana.MkGreen)
       piece i =
-        let r k = mod (i * 7919 + k * 104729) 1000
+        -- Each property its own mix of the piece's number, so none moves in
+        -- step with another.
+        let r k = let h = i * 7919 + k * 104729 + i * k * 31 in mod (div (h * h) 13 + h) 1000
             (tint, motif) = colour (mod (r 4) 5)
+            -- Thrown up and out (style.css turns the two into a place), a fan
+            -- from straight left to straight right.
+            angle = 180 + div (r 1 * 180) 1000
+            reach = 22 + mod (r 10) 32
          in Element.el
               "span"
               ["fg-" <> tint]
-              [Element.attr "style" (Text.pack ("--x:" <> show (div (r 1) 10) <> "%;--delay:" <> show (r 2 * 2) <> "ms;--spin:" <> show (r 3 - 500) <> "deg;--size:" <> show (14 + mod (r 5) 14) <> "px;--drift:" <> show (div (r 6) 20 - 25) <> "vw;--fall:" <> show (2600 + r 7 * 2) <> "ms;--sway:" <> show (6 + mod (r 8) 18) <> "px;--flutter:" <> show (450 + mod (r 9) 600) <> "ms"))]
+              [Element.attr "style" (Text.pack ("--angle:" <> show angle <> "deg;--reach:" <> show reach <> "vmin;--delay:" <> show (div (r 2) 8) <> "ms;--spin:" <> show (r 3 - 500) <> "deg;--size:" <> show (14 + mod (r 5) 14) <> "px;--drift:" <> show (div (r 6) 33 - 15) <> "vw;--fall:" <> show (2800 + r 7 * 2) <> "ms;--sway:" <> show (6 + mod (r 8) 18) <> "px;--flutter:" <> show (450 + mod (r 9) 600) <> "ms"))]
               [Element.el "svg" [] [Element.attr "viewBox" (Text.pack "0 0 32 32")] [Element.el "use" [] [Element.attr "href" (Text.pack "#" <> Mana.motifId motif)] []]]
-   in Element.el "div" ["confetti"] [Element.attr "aria-hidden" (Text.pack "true")] (fmap piece [1 .. 48 :: Integer])
+   in Element.el "div" ["confetti"] [Element.attr "aria-hidden" (Text.pack "true")] (fmap piece [1 .. 72 :: Integer])
 
 -- | A data URL holding the text as JSON (RFC 2397).
 download :: Text.Text -> Text.Text

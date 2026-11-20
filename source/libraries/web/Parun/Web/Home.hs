@@ -10,9 +10,7 @@ import qualified Parun.Web.Element as Element
 import qualified Parun.Web.Html as Html
 
 data Home = MkHome
-  { -- | The card files loaded, once known.
-    cards :: Maybe Natural,
-    -- | Whether a game was left for here, to resume.
+  { -- | Whether a game was left for here, to resume.
     paused :: Bool,
     -- | A new game chosen while one is paused, asked about first.
     confirming :: Maybe Choice,
@@ -50,7 +48,7 @@ data Outcome
 
 -- | Nothing loaded, no game paused.
 new :: Home
-new = MkHome Nothing False Nothing Nothing
+new = MkHome False Nothing Nothing
 
 -- | Whether a choice starts a game, and so concedes a paused one.
 starts :: Choice -> Bool
@@ -68,21 +66,21 @@ update event home = case event of
   MkConfirm -> maybe (MkStay home) MkGo (confirming home)
   MkCancel -> MkStay home {confirming = Nothing}
 
--- | The logo, the name, and the tagline, with the card count once known.
-hero :: Maybe Natural -> Html.Html msg
-hero count =
+-- | The logo, the name, and the tagline.
+hero :: Html.Html msg
+hero =
   Element.el
     "header"
     ["hero"]
     []
     [ Element.el "h1" [] [] [Element.el "img" ["logo"] [Element.attr "src" (Text.pack "./icon.svg"), Element.attr "alt" Text.empty, Element.attr "width" (Text.pack "40"), Element.attr "height" (Text.pack "40")] [], Element.string "Parun"],
-      Element.el "p" ["tagline"] [] [Element.string ("A Magic rules engine, running in your browser." <> foldMap (\n -> " " <> show n <> " cards loaded.") count)]
+      Element.el "p" ["tagline"] [] [Element.string "A Magic rules engine, running in your browser."]
     ]
 
 view :: Home -> Html.Html Event
 view home =
   Element.el "main" ["home"] [] $
-    [hero (cards home)]
+    [hero]
       <> [Element.el "p" ["problem"] [Element.attr "role" (Text.pack "alert")] [Element.text p] | p <- Maybe.maybeToList (problem home)]
       <> case confirming home of
         Just choice ->
@@ -103,7 +101,7 @@ view home =
         Nothing ->
           [ Element.el "nav" ["choices"] [Element.attr "aria-label" (Text.pack "What to do")] $
               [Element.button ["primary", "resume"] MkResume [Element.string "Resume game"] | paused home]
-                <> [ Element.button (["play"] <> ["primary" | not (paused home)]) (MkChoose MkPlayBots) [Element.string "Play against bots"],
+                <> [ Element.button (["play"] <> ["primary" | not (paused home)]) (MkChoose MkPlayBots) [Element.string (if paused home then "Start a new game" else "Play against bots")],
                      Element.button ["replays"] (MkChoose MkReplays) [Element.string "Replays"]
                    ]
           ]
