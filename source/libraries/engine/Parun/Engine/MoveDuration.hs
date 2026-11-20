@@ -18,9 +18,12 @@ import qualified Control.Monad as Monad
 import qualified Control.Monad.Trans.State.Strict as State
 import qualified Data.Foldable as Foldable
 import qualified Data.Map.Strict as Map
+import qualified Data.Sequence as Seq
+import qualified Data.Set as Set
 import qualified Parun.Engine.Event as Event
 import qualified Parun.Engine.Game as Game
 import qualified Parun.Types.Bookkeeping as Bookkeeping
+import qualified Parun.Types.EntryLink as EntryLink
 import Parun.Types.EventGroup (EventGroup)
 import Parun.Types.Game (Game)
 import qualified Parun.Types.GameEvent as GameEvent
@@ -194,7 +197,7 @@ returnDue settle = do
       batches =
         Map.fromListWith
           (flip (<>))
-          [ (maybe (Right ()) Left group, [(oid, ReturnWatch.zone watch)])
+          [ (maybe (Right ()) Left group, [(oid, watch)])
           | (oid, watch) <- Map.toList (GameState.movedUntil gs),
             Just group <- [dueIn (ReturnWatch.ending watch) gs]
           ]
@@ -203,9 +206,22 @@ returnDue settle = do
     then pure False
     else do
       Monad.forM_ (Map.elems batches) $ \batch -> do
-        _ <- Event.changeZonesTogether settle batch
+        arrived <- Event.changeZonesTogether settle (fmap (fmap ReturnWatch.zone) batch)
         State.modify' (\g -> Foldable.foldl' discharge g (fmap fst batch))
+        State.modify' (\g -> Foldable.foldl' linkArrival g (zip (fmap (ReturnWatch.link . snd) batch) arrived))
       pure True
+
+-- CR 610.3 / 607.5: the second one-shot effect is the move's source's effect
+-- too, so what it puts onto the battlefield is linked to that source
+-- (Filter.EnteredWithSource) -- Lagrella, the Magpie's "this way", which
+-- data/scenarios/trigger/lagrella-the-magpie-counters-only-what-returns-under-your-control.json
+-- proves.
+linkArrival :: GameState -> (EntryLink.EntryLink, Seq.Seq ObjectId) -> GameState
+linkArrival gs (link, arrivals) =
+  Foldable.foldl'
+    (\g new -> if Set.member new (GameState.battlefield g) then g {GameState.enteredWith = Map.insertWith Set.union new (Set.singleton link) (GameState.enteredWith g)} else g)
+    gs
+    arrivals
 
 -- The event group a source left the battlefield in: the first logged
 -- GameEvent.Moved that took it away, or CR 800.4a's GameEvent.LeftTheGame.

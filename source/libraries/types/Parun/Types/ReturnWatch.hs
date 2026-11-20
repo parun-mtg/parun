@@ -1,5 +1,6 @@
 module Parun.Types.ReturnWatch where
 
+import qualified Parun.Types.EntryLink as EntryLink
 import qualified Parun.Types.ReturnEnding as ReturnEnding
 import qualified Parun.Types.Zone as Zone
 
@@ -15,6 +16,11 @@ data ReturnWatch = MkReturnWatch
     -- | CR 610.3's "previous zone": where the second one-shot effect puts the
     -- object back. Recorded at the move rather than assumed, since the rule
     -- names the zone the object came from.
-    zone :: Zone.Zone
+    zone :: Zone.Zone,
+    -- | CR 610.3 / 607.5: the object whose effect made the move, and with
+    -- which acquisition of its abilities, linked to what the second one-shot
+    -- effect puts onto the battlefield (Filter.EnteredWithSource): Lagrella,
+    -- the Magpie's "an exiled card enters ... this way".
+    link :: EntryLink.EntryLink
   }
   deriving (Eq, Ord, Show)

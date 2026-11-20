@@ -86,6 +86,7 @@ import qualified Parun.Types.Effect as Effect
 import qualified Parun.Types.EntryBlock as EntryBlock
 import qualified Parun.Types.EntryController as EntryController
 import qualified Parun.Types.EntryHost as EntryHost
+import qualified Parun.Types.EntryLink as EntryLink
 import qualified Parun.Types.EntryRiders as EntryRiders
 import qualified Parun.Types.ExchangeCardZones as ExchangeCardZones
 import qualified Parun.Types.ExchangeOwnership as ExchangeOwnership
@@ -266,7 +267,12 @@ moveToZone settle resolving source controller legal chosen (MoveToZone.MkMoveToZ
           let watched = do
                 lasting <- duration
                 from <- fmap Object.zone (Game.lookupObject target before)
-                pure (ReturnWatch.MkReturnWatch {ReturnWatch.ending = MoveDuration.endingOf lasting source controller, ReturnWatch.zone = from})
+                pure
+                  ReturnWatch.MkReturnWatch
+                    { ReturnWatch.ending = MoveDuration.endingOf lasting source controller,
+                      ReturnWatch.zone = from,
+                      ReturnWatch.link = EntryLink.MkEntryLink source (Game.readingAcquisition resolving source before source)
+                    }
           Monad.forM_ watched $ \watch ->
             State.modify' (\g -> g {GameState.movedUntil = Map.insert newId watch (GameState.movedUntil g)})
           -- CR 400.7 / 607.5: which object's effect put this permanent onto

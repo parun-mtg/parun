@@ -73,6 +73,7 @@ import qualified Parun.Types.PlayerActed as PlayerActed
 import qualified Parun.Types.PlayerAction as PlayerAction
 import Parun.Types.PlayerId (PlayerId)
 import qualified Parun.Types.Printing as Printing
+import qualified Parun.Types.ReturnWatch as ReturnWatch
 import qualified Parun.Types.Snapshots as Snapshots
 import Parun.Types.StateDigest (StateDigest)
 import qualified Parun.Types.StateDigest as StateDigest
@@ -150,6 +151,7 @@ digest gs =
             GameState.objects = objects,
             GameState.exiledWith = fmap (\link -> link {ExileLink.acquisition = reacquire (ExileLink.acquisition link)}) (GameState.exiledWith gs),
             GameState.enteredWith = fmap (Set.map (\link -> link {EntryLink.acquisition = reacquire (EntryLink.acquisition link)})) (GameState.enteredWith gs),
+            GameState.movedUntil = fmap (\watch -> watch {ReturnWatch.link = (ReturnWatch.link watch) {EntryLink.acquisition = reacquire (EntryLink.acquisition (ReturnWatch.link watch))}}) (GameState.movedUntil gs),
             -- Canonical rather than dropped: a payment leaves an empty pool
             -- behind where there was no entry, and no card tells the two apart.
             GameState.manaPool = Map.filter (not . null . Mana.unwrap) (GameState.manaPool gs)

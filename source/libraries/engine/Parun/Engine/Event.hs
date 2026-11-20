@@ -8376,7 +8376,14 @@ changeZonesTogether settle batch = simultaneously . together $ do
   arrived <- fmap (reverse . snd) (amongPending Nothing entering (Monad.foldM step (Set.empty, []) moves))
   -- CR 613.7m: noted here, ordered as `together` ends.
   Restamp.settle (Bookkeeping.nextTimestamp (GameState.bookkeeping before)) (concatMap Foldable.toList arrived)
-  pure arrived
+  -- One answer per member of `batch`, a kept one's empty, so a caller can
+  -- line them up with what it asked for (MoveDuration.returnDue).
+  let answer rest (oid, _)
+        | Set.member oid kept = (rest, Seq.empty)
+        | otherwise = case rest of
+            new : later -> (later, new)
+            [] -> ([], Seq.empty)
+  pure (snd (List.mapAccumL answer arrived batch))
 
 -- changeZoneReturning's body, returning the destination incarnations' ids: one
 -- fresh id per arrival on a completed move (CR 400.7), which is one for every
