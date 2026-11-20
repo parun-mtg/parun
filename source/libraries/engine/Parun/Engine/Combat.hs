@@ -2941,7 +2941,7 @@ attemptAttackDeclaration perform pid asked forced rejected = do
             Monad.forM_ answer $ \tapped -> do
               Event.tap you tapped
               State.modify' (Event.recordEvent (GameEvent.Enlisted Enlisted.MkEnlisted {Enlisted.enlister = oid, Enlisted.enlisted = tapped}))
-              State.modify' (\armed -> Event.armDelayed Keyword.Engine.enlistReflexive (Projection.delayedSnapshotOf oid armed) oid you (Map.singleton Binding.tappedPermanent (Binding.toObject tapped)) (Just TurnWindow.AnyTurn) Nothing armed)
+              State.modify' (\armed -> Event.armDelayed Keyword.Engine.enlistReflexive (Projection.delayedSnapshotOf oid armed) oid (Game.acquisitionOf oid armed) you (Map.singleton Binding.tappedPermanent (Binding.toObject tapped)) (Just TurnWindow.AnyTurn) Nothing armed)
             pure (fmap ((,) you) answer)
         gs1 <- State.get
         -- CR 508.1h: the total cost to attack is determined once and then LOCKED

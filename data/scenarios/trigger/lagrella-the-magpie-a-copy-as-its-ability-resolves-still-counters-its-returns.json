@@ -1,0 +1,56 @@
+{
+  "description": "CR 607.5 / 603.7 Lagrella, the Magpie a copy of another creature as its enters ability resolves still counters what returns under your control",
+  "note": "Cytoshape makes Lagrella a copy of Llanowar Elves while its enters ability waits on the stack. The ability resolves, exiling alice's Grizzly Bears and bob's Goblin Piker. Unsummon takes Lagrella away: the delayed trigger, linked to the ability that armed it rather than to what Lagrella then was, puts two +1/+1 counters on the Bears.",
+  "board": {
+    "seats": [
+      {
+        "name": "alice",
+        "battlefield": [
+          { "card": "Forest", "ready": true },
+          { "card": "Forest", "ready": true },
+          { "card": "Plains", "ready": true },
+          { "card": "Island", "ready": true },
+          { "card": "Island", "ready": true },
+          { "card": "Island", "ready": true },
+          { "card": "Island", "ready": true },
+          { "card": "Grizzly Bears", "label": "bears" },
+          { "card": "Llanowar Elves", "label": "elves" }
+        ],
+        "hand": [
+          { "card": "Lagrella, the Magpie", "label": "lagrella" },
+          { "card": "Cytoshape", "label": "cytoshape" },
+          { "card": "Unsummon", "label": "unsummon" }
+        ]
+      },
+      {
+        "name": "bob",
+        "battlefield": [
+          { "card": "Goblin Piker", "label": "piker" }
+        ]
+      }
+    ],
+    "active": "alice",
+    "step": "PrecombatMain"
+  },
+  "timeline": [
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "do": { "Cast": { "object": "$lagrella", "mana": ["Forest", "Plains", "Island", null] } } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "do": "Pass" },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "do": { "ChooseTargets": { "target": ["$bears", "$piker"] } } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "do": { "Cast": { "object": "$cytoshape", "targets": ["Lagrella, the Magpie"], "mana": ["Forest#2", "Island#2", "Island#3", null] } } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "do": "Pass" },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "do": { "Answer": { "prompt": "ChoosePermanent", "with": "$elves" } } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "check": { "Count": { "player": "alice", "zone": "Battlefield", "card": "Llanowar Elves", "count": 2 } } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "do": "Pass" },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "check": { "Count": { "player": "alice", "zone": "Exile", "card": "Grizzly Bears", "count": 1 } } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "check": { "Count": { "player": "bob", "zone": "Exile", "card": "Goblin Piker", "count": 1 } } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "do": { "Cast": { "object": "$unsummon", "mana": ["Island#4"], "targets": ["Lagrella, the Magpie"] } } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "do": "Pass" },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "check": { "View": { "of": "Stack", "is": ["trigger of Lagrella, the Magpie"] } } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "do": "Pass" },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "check": { "Count": { "player": "alice", "zone": "Battlefield", "card": "Grizzly Bears", "count": 1 } } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "check": { "Counters": { "object": "Grizzly Bears", "kind": { "type": "PlusOnePlusOne" }, "count": 2 } } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "check": { "Count": { "player": "bob", "zone": "Battlefield", "card": "Goblin Piker", "count": 1 } } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "check": { "Counters": { "object": "Goblin Piker", "kind": { "type": "PlusOnePlusOne" }, "count": 0 } } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "check": { "View": { "of": "Stack", "is": [] } } }
+  ]
+}
