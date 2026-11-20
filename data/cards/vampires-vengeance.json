@@ -1,0 +1,152 @@
+{
+  "faces": [
+    {
+      "manaCost": [
+        {
+          "type": "Generic",
+          "value": 2
+        },
+        {
+          "type": "OfType",
+          "value": {
+            "type": "Colored",
+            "value": "Red"
+          }
+        }
+      ],
+      "name": "Vampires' Vengeance",
+      "oracleText": "Vampires' Vengeance deals 2 damage to each non-Vampire creature. Create a Blood token. (It's an artifact with \"{1}, {T}, Discard a card, Sacrifice this token: Draw a card.\")",
+      "spell": {
+        "modes": [
+          {
+            "clauses": [
+              {
+                "effects": [
+                  {
+                    "type": "DealDamage",
+                    "value": {
+                      "parts": [
+                        {
+                          "quantity": {
+                            "type": "Literal",
+                            "value": 2
+                          },
+                          "ref": {
+                            "type": "EachMatching",
+                            "value": {
+                              "type": "And",
+                              "value": [
+                                {
+                                  "type": "Not",
+                                  "value": {
+                                    "type": "HasSubtype",
+                                    "value": "Vampire"
+                                  }
+                                },
+                                {
+                                  "type": "HasCardType",
+                                  "value": "Creature"
+                                }
+                              ]
+                            }
+                          }
+                        }
+                      ]
+                    }
+                  },
+                  {
+                    "type": "Create",
+                    "value": {
+                      "card": {
+                        "faces": [
+                          {
+                            "activatedAbilities": [
+                              {
+                                "cost": {
+                                  "components": [
+                                    {
+                                      "type": "TapThis"
+                                    },
+                                    {
+                                      "type": "DiscardCards",
+                                      "value": {
+                                        "count": {
+                                          "type": "Fixed",
+                                          "value": 1
+                                        },
+                                        "whichCards": {
+                                          "type": "And",
+                                          "value": []
+                                        }
+                                      }
+                                    },
+                                    {
+                                      "type": "SacrificeThis"
+                                    }
+                                  ],
+                                  "mana": [
+                                    {
+                                      "type": "Generic",
+                                      "value": 1
+                                    }
+                                  ]
+                                },
+                                "modal": {
+                                  "modes": [
+                                    {
+                                      "clauses": [
+                                        {
+                                          "effects": [
+                                            {
+                                              "type": "Draw",
+                                              "value": {
+                                                "player": {
+                                                  "type": "Relative",
+                                                  "value": "You"
+                                                },
+                                                "quantity": {
+                                                  "type": "Literal",
+                                                  "value": 1
+                                                }
+                                              }
+                                            }
+                                          ]
+                                        }
+                                      ]
+                                    }
+                                  ]
+                                }
+                              }
+                            ],
+                            "name": "Blood Token",
+                            "typeLine": {
+                              "subtypes": [
+                                "Blood"
+                              ],
+                              "types": [
+                                "Artifact"
+                              ]
+                            }
+                          }
+                        ]
+                      },
+                      "quantity": {
+                        "type": "Literal",
+                        "value": 1
+                      }
+                    }
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "typeLine": {
+        "types": [
+          "Instant"
+        ]
+      }
+    }
+  ]
+}
