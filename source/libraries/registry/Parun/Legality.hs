@@ -436,14 +436,51 @@ basicLand card =
 -- the format checked.
 report :: Maybe Text.Text -> Maybe CardPool -> DeckList.Listed -> IO (Maybe Text.Text, [Text.Text])
 report asked cardPool listed = do
+  (format, lines', violations) <- assess asked cardPool listed
+  pure (format, lines' <> fmap explain violations)
+
+-- | 'report' with its violations unexplained: the format checked, the list's
+-- own problems and a format that would not load, then the violations.
+assess :: Maybe Text.Text -> Maybe CardPool -> DeckList.Listed -> IO (Maybe Text.Text, [Text.Text], [Violation.Violation])
+assess asked cardPool listed = do
   let (format, disagreement) = DeckList.formatFor asked listed
       lines' = fmap DeckList.explain (DeckList.problems listed <> disagreement)
   checked <- traverse named format
-  let violations = case checked of
-        Nothing -> []
-        Just (Left problem) -> [problem]
-        Just (Right known) -> fmap explain (known GameSettings.plain cardPool (DeckList.deck listed))
-  pure (format, lines' <> violations)
+  pure $ case checked of
+    Nothing -> (format, lines', [])
+    Just (Left problem) -> (format, lines' <> [problem], [])
+    Just (Right known) -> (format, lines', known GameSettings.plain cardPool (DeckList.deck listed))
+
+-- | The card a violation is about; none for one about the deck as a whole.
+namedCard :: Violation.Violation -> Maybe CardName.CardName
+namedCard violation = case violation of
+  Violation.TooFewCards {} -> Nothing
+  Violation.TooManyCards {} -> Nothing
+  Violation.TooManyCopies _ written _ _ -> Just written
+  Violation.SideboardTooLarge {} -> Nothing
+  Violation.BannedCard written -> Just written
+  Violation.NotLegalCard written -> Just written
+  Violation.NoLegalityData written -> Just written
+  Violation.AnteCard written -> Just written
+  Violation.MiscircledCard written _ _ -> Just written
+  Violation.ConspiracyCard written -> Just written
+  Violation.NoCommander -> Nothing
+  Violation.IllegalCommander written -> Just written
+  Violation.OutsideColorIdentity written -> Just written
+  Violation.TooFewStickerSheets {} -> Nothing
+  Violation.DuplicateStickerSheet {} -> Nothing
+  Violation.TooManyPhenomena {} -> Nothing
+  Violation.MisplacedCard _ written -> Just written
+  Violation.NotInCardPool written -> Just written
+  Violation.NotVanguardCard written -> Just written
+  Violation.MissingVanguard {} -> Nothing
+  Violation.PregameExileCount written _ -> Just written
+  Violation.PregameExileMismatch exiled _ -> Just exiled
+
+-- | The fewest cards a deck of the shipped format a name means may hold
+-- (RuleFamily.Engine.minimumDeckSize); none for a name meaning none.
+minimumFor :: Text.Text -> IO (Maybe Natural.Natural)
+minimumFor name = either (const Nothing) (Just . RuleFamily.Engine.minimumDeckSize . Format.rules) <$> shipped name
 
 -- | A violation as a line a person can read.
 explain :: Violation.Violation -> Text.Text
