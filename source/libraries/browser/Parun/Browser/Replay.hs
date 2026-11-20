@@ -14,7 +14,6 @@ import qualified Data.List.NonEmpty as NonEmpty
 import qualified Data.Map.Strict as Map
 import qualified Data.Maybe as Maybe
 import qualified Data.Text as Text
-import qualified GHC.Clock as Clock
 import Numeric.Natural (Natural)
 import qualified Parun.Browser as Browser
 import qualified Parun.Browser.Hotseat as Hotseat
@@ -91,13 +90,8 @@ replay page name =
     let count = Natural.length (Scenario.Type.timeline scenario)
         seats = seatsOf scenario
         lookUp = Identity.runIdentity . Interpreter.chosenCard registry
-        -- The run to a position, timed on the trace.
-        reach at = do
-          began <- Clock.getMonotonicTime
-          stop <- Exception.evaluate . Identity.runIdentity $ Scenario.replay registry (Just at) scenario
-          ended <- Clock.getMonotonicTime
-          Browser.trace page . Text.pack $ "replay: position " <> show at <> " in " <> Browser.milliseconds (ended - began)
-          pure stop
+        -- The run to a position.
+        reach at = Exception.evaluate . Identity.runIdentity $ Scenario.replay registry (Just at) scenario
         go at stop viewer reading = do
           let frame = frameOf name scenario seats count at stop viewer reading
           Browser.display page $ Web.Replay.view frame
@@ -151,7 +145,7 @@ playOn :: Browser.Page (Either Lobby.Event Web.Question.Event) -> Text.Text -> I
 playOn page name =
   opening page name $ \scenario registry given -> do
     level <- maybe Web.Question.MkStandard (Maybe.fromMaybe Web.Question.MkStandard . Web.Question.levelNamed) <$> Environment.lookupEnv "parun_level"
-    seatRef <- IORef.newIORef =<< Hotseat.newSeat level
+    seatRef <- IORef.newIORef (Hotseat.newSeat level)
     key <- Key.fresh
     let at = min (Natural.length (Scenario.Type.timeline scenario)) (Maybe.fromMaybe 0 given)
         reference = Registry.hoist (pure . Identity.runIdentity) registry :: Registry.Registry IO

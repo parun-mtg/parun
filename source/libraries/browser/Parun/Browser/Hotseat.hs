@@ -20,7 +20,6 @@ import qualified Data.Sequence as Seq
 import qualified Data.Set as Set
 import qualified Data.Text as Text
 import qualified Data.Text.Encoding as Encoding
-import qualified GHC.Clock as Clock
 import Numeric.Natural (Natural)
 import qualified Parun.Browser as Browser
 import qualified Parun.DeckList as DeckList
@@ -147,7 +146,7 @@ play page = do
   Browser.display page . fmap Right $ starting (fmap (Lobby.deckName deckRoot) seats)
   registry <- Registry.defaultRegistry loaded :: IO (Registry.Registry Identity.Identity)
   -- The bot needs no screen, so the player is never handed it.
-  seatRef <- IORef.newIORef =<< newSeat initialLevel
+  seatRef <- IORef.newIORef (newSeat initialLevel)
   listed <- traverse (Command.load registry) seats
   case sequenceA listed of
     Right lists -> do
@@ -191,13 +190,11 @@ options count = PlayOptions.none {PlayOptions.json = True, PlayOptions.bots = Se
 -- card data through `lookUp`.
 exchange :: (CardName.CardName -> Either InvalidCorpus.InvalidCorpus (Maybe Card.Card)) -> Browser.Page (Either Lobby.Event Web.Question.Event) -> IORef.IORef Seat -> Protocol.Exchange IO
 exchange lookUp page seatRef request = do
-  arrived <- Clock.getMonotonicTime
   fmap (Just . Right) $ do
     Monad.forM_ (Request.view request) $ IORef.modifyIORef' seatRef . witness
     state <- IORef.readIORef seatRef
     let auto = if paying state || level state == Web.Question.MkAutoPass then Web.Question.paying request else Nothing
         kind = Question.kind $ Request.question request
-        traced how = Browser.trace page $ kind <> Text.pack (": engine " <> Browser.milliseconds (arrived - answeredAt state) <> ", " <> how)
         turn = fmap PlayerView.turn (Request.view request)
         -- The seat's own stop: it asked to pass until the turn ends, which
         -- holds while the stack is empty, and declares no attackers.
@@ -214,8 +211,7 @@ exchange lookUp page seatRef request = do
         -- The board as it stands, while the seat is not asked: redrawn only
         -- when what it shows changed, not at every pass of priority, and
         -- only while the screen faces the seat, else what it last showed stays.
-        watch how reply = do
-          traced how
+        watch reply = do
           Monad.forM_ (Request.view request) $ \shown -> do
             now <- IORef.readIORef seatRef
             let seen = shown {PlayerView.priority = Nothing}
@@ -225,11 +221,10 @@ exchange lookUp page seatRef request = do
           pure reply
         conceded = if conceding state && kind == Text.pack "Concede" then Just (R.Text (Text.pack "Concedes")) else Nothing
     reply <- case (Monad.mplus conceded (Web.Question.automatic (level state) request), auto, skipped) of
-      (Just reply, _, _) -> watch "answered unasked" reply
-      (_, Just reply, _) -> watch "paid by auto" reply
-      (_, _, Just reply) -> watch "skipped" reply
+      (Just reply, _, _) -> watch reply
+      (_, Just reply, _) -> watch reply
+      (_, _, Just reply) -> watch reply
       _ -> do
-        traced "asked"
         Monad.when (facing state /= Just seat) $ do
           Browser.display page . fmap Right $ Web.Question.handOff request
           untilReady
@@ -239,8 +234,7 @@ exchange lookUp page seatRef request = do
         -- The question replaces the watched board, which is drawn afresh after.
         IORef.modifyIORef' seatRef $ \st -> st {watched = Nothing}
         answer request (Web.Question.initial request)
-    returned <- Clock.getMonotonicTime
-    IORef.modifyIORef' seatRef $ \s -> s {answeredAt = returned, decided = Map.insert seat (Seq.length (loggedFor seat s)) (decided s)}
+    IORef.modifyIORef' seatRef $ \s -> s {decided = Map.insert seat (Seq.length (loggedFor seat s)) (decided s)}
     pure reply
   where
     untilReady = Browser.next page >>= \(event, _) -> Monad.unless (event == Right Web.Question.MkReady) untilReady
@@ -311,16 +305,13 @@ data Seat = MkSeat
     -- page plays's is the game log the end shows.
     logged :: Map.Map PlayerId.PlayerId (Seq.Seq Log.Entry),
     -- | How many entries each seat had logged when it last answered.
-    decided :: Map.Map PlayerId.PlayerId Int,
-    -- | When the last line was answered, the engine's work since then being
-    -- what the trace times.
-    answeredAt :: Double
+    decided :: Map.Map PlayerId.PlayerId Int
   }
 
 -- | The page's state before its first request line, facing the seat it
 -- plays, at that auto-pass level.
-newSeat :: Web.Question.Level -> IO Seat
-newSeat initial = MkSeat (Just player) False initial Nothing False Seq.empty Nothing Map.empty Map.empty Map.empty <$> Clock.getMonotonicTime
+newSeat :: Web.Question.Level -> Seat
+newSeat initial = MkSeat (Just player) False initial Nothing False Seq.empty Nothing Map.empty Map.empty Map.empty
 
 -- | The entries a seat has read so far, oldest first.
 loggedFor :: PlayerId.PlayerId -> Seat -> Seq.Seq Log.Entry

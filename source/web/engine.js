@@ -90,19 +90,16 @@ if (query.has("scenario")) {
 const mounted = new PreopenDirectory("/data", inodes(tree));
 phase("unpacked");
 
-// ?trace, passed on from the page, has Haskell time each step on standard
-// error (Parun.Browser.trace), which goes to the page's trace.
-const tracing = query.has("trace");
 // A rematch's decks (?mine=…&theirs=…) skip the lobby, and a shared seed
 // (&seed=…) shuffles as before (Parun.Web.Ending). A replay names its
 // scenario, the empty name for the list of them, and may name a position
 // (&at=…) and play on from it (&branch).
 // The auto-pass level the page kept (page.js) goes in as parun_level.
 const passed = ["mine", "theirs", "seed", "level", "scenario", "at", "branch"].filter((key) => query.has(key)).map((key) => `parun_${key}=${query.get(key)}`);
-const wasi = new WASI([], ["parun_datadir=/data", ...(tracing ? ["parun_trace=1"] : []), ...passed], [
+const wasi = new WASI([], ["parun_datadir=/data", ...passed], [
   new OpenFile(new File([])),
   ConsoleStdout.lineBuffered((line) => console.log(line)),
-  ConsoleStdout.lineBuffered((line) => (tracing ? postMessage({ trace: line }) : console.warn(line))),
+  ConsoleStdout.lineBuffered((line) => console.warn(line)),
   mounted,
 ], { debug: false });
 const exports = {};

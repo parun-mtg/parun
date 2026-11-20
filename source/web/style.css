@@ -2540,17 +2540,6 @@ body:has(main.game) #settings-button {
 }
 
 
-footer.diagnostics {
-  display: none;
-  font-size: 0.75rem;
-  color: var(--muted);
-  padding: 0.5em 1em;
-}
-
-body.tracing footer.diagnostics {
-  display: block;
-}
-
 /* A life total's change, floating up from it (page.js). */
 .float-delta {
   position: fixed;
