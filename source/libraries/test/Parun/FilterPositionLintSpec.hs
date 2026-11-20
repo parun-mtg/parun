@@ -37,6 +37,7 @@ import qualified Parun.Engine.Mana as Mana
 import qualified Parun.Engine.Mint as Mint
 import qualified Parun.Engine.Projection as Projection
 import qualified Parun.Engine.Resolve.Common as Common
+import qualified Parun.Engine.Target as Target
 import qualified Parun.Json.Array as Array
 import qualified Parun.Json.Object as Object
 import qualified Parun.Json.Pair as Pair
@@ -3592,6 +3593,29 @@ filterPositionLintSpec s registry corpus = Spec.describe s "Lint" $ do
     Spec.assertBool s (atoms giantFace /= 0) "the Giant's trigger carries the atom"
     Spec.assertEqWith s "and on its own attack it is accepted" (elsewhere giantFace) 0
     Spec.assertEqWith s "and on any creature's attack it is not" (elsewhere watcher) (atoms giantFace)
+  -- CR 802.2a: a source with no attack chooses its defending player through
+  -- the targets (Parun.Engine.Target.targetsChoseDefending), which settles the
+  -- choice only where a slot's filter conjoins the atom. Anywhere else in a
+  -- target slot it names nobody and the choice would need asking (MTGJSON
+  -- AtomicCards, 2026-10, no hit).
+  Spec.it s "CR 802.2a no card writes ControlledByRole Defending in a target slot but as a conjunct" $ do
+    ps <- S.allPrintings s corpus
+    let needle = atomJson (Filter.Type.ControlledByRole TurnRole.Defending)
+        unsettled c = length [() | (InTargetSlot, f) <- cardFilters c, occurrences needle (atomJson f) /= 0, not (Target.settlesDefendingPlayer f)]
+        offenders = filter (anyFace ((/= 0) . unsettled) . Printing.card) ps
+    Spec.assertEqWith s "the atom is a conjunct wherever a target slot writes it" (fmap (S.nameOf . Printing.card) offenders) []
+    -- Not vacuous: Yare's conjunct is accepted, and the same slot negated is
+    -- seen.
+    yare <- S.printingOf s registry "Yare"
+    piker <- S.printingOf s registry "Goblin Piker"
+    let negated = TargetSlot.required Pool.Creatures (Just (Filter.Type.And [Filter.Type.HasCardType CardType.Creature, Filter.Type.Not (Filter.Type.ControlledByRole TurnRole.Defending)]))
+        planted =
+          (S.combinedFace piker)
+            { Face.spell =
+                Mint.oneModeTargeting (Map.singleton (SlotName.MkSlotName (Text.pack "target")) negated) Seq.empty
+            }
+    Spec.assertEqWith s "Yare's slot settles the choice" (unsettled (S.combinedFace yare)) 0
+    Spec.assertEqWith s "and a negated atom does not" (unsettled planted) 1
   -- CR 603.2's baked half is in Modification.SetController's position rather
   -- than CR 702.39a's: a PlayerId that only a resolution can know, round-tripped
   -- by a total codec, so nothing but this keeps card JSON from naming a seat

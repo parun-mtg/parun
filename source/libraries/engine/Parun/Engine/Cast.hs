@@ -4686,7 +4686,7 @@ castProposed perform baseSpending pid oid sid printedFace castFrom preparedFor k
                             g
                               { GameState.objects =
                                   Map.adjust
-                                    (\o -> o {Object.bindings = Map.union (Binding.copyStamps (Object.bindings o)) (stampChooser (Binding.setAnnouncedTargets chosen (Binding.setYou pid (Binding.setTriggerSource sid (Target.stampDefendingPlayers sid chosen g (Map.unions [paidAlternative, Binding.fromAnnounced counts, Binding.setDivisions divisions (Binding.fromChoices chosen boundX chosenModes)]))))))})
+                                    (\o -> o {Object.bindings = Map.union (Binding.copyStamps (Object.bindings o)) (stampChooser (Binding.setAnnouncedTargets chosen (Binding.setYou pid (Binding.setTriggerSource sid (Target.stampDefendingPlayers sid slots chosen g (Map.unions [paidAlternative, Binding.fromAnnounced counts, Binding.setDivisions divisions (Binding.fromChoices chosen boundX chosenModes)]))))))})
                                     sid
                                     (GameState.objects g)
                               }
