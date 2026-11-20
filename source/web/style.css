@@ -518,7 +518,7 @@ main.lobby {
 .deck-preview {
   margin: -0.4em 0 1em;
   padding: 0.5em 0.75em;
-  border: 1px solid var(--border);
+  border: 2px dotted var(--border);
   border-radius: var(--radius);
   background: var(--surface);
 }
@@ -714,7 +714,7 @@ main.game {
   gap: 0.6em;
   padding: calc(0.4em + env(safe-area-inset-top)) 0.75em 0.4em;
   background: var(--surface);
-  border-bottom: 1px solid var(--border);
+  border-bottom: 2px dotted var(--border);
   font-size: 0.85rem;
 }
 
@@ -952,7 +952,7 @@ main.game {
   border-radius: calc(var(--radius) + 2px);
   padding: 0.5em;
   background: color-mix(in srgb, var(--surface) 55%, transparent);
-  border: 1px solid transparent;
+  border: 2px dotted transparent;
 }
 
 .seat.opponent {
@@ -1204,7 +1204,7 @@ details.pile[open] {
   padding: 0.5em;
   border-radius: calc(var(--radius) + 2px);
   background: var(--accent-soft);
-  border: 1px solid color-mix(in srgb, var(--accent) 40%, transparent);
+  border: 2px dotted color-mix(in srgb, var(--accent) 45%, transparent);
   animation: enter 0.2s ease-out;
 }
 
@@ -1266,7 +1266,7 @@ details.pile[open] {
   grid-area: hand;
   padding: 0.3em 0.5em 0;
   background: var(--bg);
-  border-top: 1px solid var(--border);
+  border-top: 2px dotted var(--border);
 }
 
 .hand .zone-title {
@@ -1572,7 +1572,7 @@ details.pile[open] {
   flex-direction: column;
   max-height: 40dvh;
   background: var(--surface);
-  border-top: 1px solid var(--border);
+  border-top: 2px dotted var(--border);
   box-shadow: var(--sheet-shadow);
   padding-bottom: env(safe-area-inset-bottom);
 }
@@ -1725,7 +1725,7 @@ details.pile[open] {
 }
 
 details.log {
-  border-top: 1px solid var(--border);
+  border-top: 2px dotted var(--border);
   font-size: 0.84rem;
   min-height: 0;
   display: flex;
@@ -1804,7 +1804,7 @@ details.log[open] .latest {
   font-weight: 700;
   color: var(--text);
   font-size: 0.9em;
-  border-bottom: 1px solid var(--border);
+  border-bottom: 2px dotted var(--border);
 }
 
 .log-list li.minor,
@@ -1837,7 +1837,7 @@ details.log[open] .latest {
     max-height: none;
     min-height: 0;
     border-top: 0;
-    border-left: 1px solid var(--border);
+    border-left: 2px dotted var(--border);
     box-shadow: none;
   }
 
@@ -1970,7 +1970,7 @@ details.log[open] .latest {
   color: var(--muted);
   font-size: 0.9rem;
   padding-bottom: 0.4em;
-  border-bottom: 1px solid var(--border);
+  border-bottom: 2px dotted var(--border);
 }
 
 .oracle {
@@ -2349,7 +2349,7 @@ body:has(main.game) #settings-button {
 #settings .about {
   margin: 0.2em 0 0;
   padding-top: 0.5em;
-  border-top: 1px solid var(--border);
+  border-top: 2px dotted var(--border);
   font-size: 0.8rem;
   color: var(--muted);
 }
@@ -2370,7 +2370,7 @@ body:has(main.game) #settings-button {
   align-items: center;
   gap: 0.2em 0.8em;
   padding-top: 0.5em;
-  border-top: 1px solid var(--border);
+  border-top: 2px dotted var(--border);
 }
 
 #concede-why {
