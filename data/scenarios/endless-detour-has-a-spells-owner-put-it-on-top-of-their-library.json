@@ -1,0 +1,140 @@
+{
+  "board": {
+    "active": "alice",
+    "seats": [
+      {
+        "hand": [
+          {
+            "card": "Endless Detour",
+            "label": "detour"
+          }
+        ],
+        "library": [
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          }
+        ],
+        "manaPool": "GWU",
+        "name": "alice"
+      },
+      {
+        "graveyard": [
+          {
+            "card": "Forest"
+          },
+          {
+            "card": "Shock"
+          }
+        ],
+        "library": [
+          {
+            "card": "Island",
+            "label": "l1"
+          },
+          {
+            "card": "Island",
+            "label": "l2"
+          },
+          {
+            "card": "Island",
+            "label": "l3"
+          },
+          {
+            "card": "Island",
+            "label": "l4"
+          }
+        ],
+        "name": "bob"
+      }
+    ],
+    "stack": [
+      {
+        "card": "Divination",
+        "label": "div",
+        "owner": "bob"
+      }
+    ],
+    "step": "PrecombatMain"
+  },
+  "description": "Endless Detour's one slot reaches a spell on the stack, and its owner puts it on top of their library",
+  "note": "bob's Divination sits on the stack, placed rather than cast; alice Detours it, bob chooses the top, and Divination never resolves, so bob's hand stays empty. A Forest and a Shock in bob's graveyard keep the slot at more than one candidate whichever half is lost, so the target is always asked.",
+  "timeline": [
+    {
+      "do": {
+        "Cast": {
+          "object": "$detour",
+          "targets": [
+            "$div"
+          ]
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": "Pass",
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": "Pass",
+      "player": "bob",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": {
+        "Answer": {
+          "prompt": "ChooseLibraryEnd",
+          "with": "Top"
+        }
+      },
+      "player": "bob",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "View": {
+          "is": [
+            "Divination",
+            "$l1",
+            "$l2",
+            "$l3",
+            "$l4"
+          ],
+          "of": "Zone",
+          "player": "bob",
+          "zone": "Library"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Count": {
+          "card": "Divination",
+          "count": 0,
+          "player": "bob",
+          "zone": "Hand"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    }
+  ]
+}

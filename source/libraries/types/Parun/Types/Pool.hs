@@ -114,9 +114,10 @@ data Pool
     -- and a second zone's candidates, the GraveyardPartner -- Savior of
     -- Ollenbock's "up to one other target creature from the battlefield or
     -- creature card from a graveyard", Sorceress's Schemes's "target instant or
-    -- sorcery card from your graveyard or exiled card with flashback you own".
-    -- Each half is tagged as its own pool tags it (ToCreature on the
-    -- battlefield, ToObject in a graveyard or exile).
+    -- sorcery card from your graveyard or exiled card with flashback you own",
+    -- Endless Detour's "target spell, nonland permanent, or card in a
+    -- graveyard". Each half is tagged as its own pool tags it (ToCreature for
+    -- battlefield creatures, ToObject otherwise).
     --
     -- ONE slot and not two, because the printed count covers both halves at once:
     -- two slots would let a card take one of each where the card allows one
