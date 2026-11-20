@@ -10,10 +10,12 @@ codec =
   Arm.tagged
     tagOf
     [ Arm.nullary "EveryCard" PermissionPool.EveryCard,
-      Arm.payload "InExiledPile" ExiledPile.codec PermissionPool.InExiledPile (\x -> case x of PermissionPool.InExiledPile y -> Just y; _ -> Nothing)
+      Arm.payload "InExiledPile" ExiledPile.codec PermissionPool.InExiledPile (\x -> case x of PermissionPool.InExiledPile y -> Just y; _ -> Nothing),
+      Arm.nullary "ExiledByYou" PermissionPool.ExiledByYou
     ]
 
 tagOf :: PermissionPool.PermissionPool -> String
 tagOf x = case x of
   PermissionPool.EveryCard -> "EveryCard"
   PermissionPool.InExiledPile {} -> "InExiledPile"
+  PermissionPool.ExiledByYou -> "ExiledByYou"

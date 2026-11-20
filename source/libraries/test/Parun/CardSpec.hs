@@ -3755,10 +3755,12 @@ domainFilters domain = case domain of
   CopyDomain.InZone _ -> []
   CopyDomain.InPile pile -> [Filter.Type.IsExiledWithSource pile]
 
--- CR 601.3's pool as the atom selecting the same cards: none for the whole zone.
+-- CR 601.3's pool as the atom selecting the same cards: none for the whole zone,
+-- nor for ExiledByYou, which no Filter atom states.
 poolFilters :: PermissionPool.PermissionPool -> [Filter.Type.Filter Keyword.Keyword]
 poolFilters pool = case pool of
   PermissionPool.EveryCard -> []
+  PermissionPool.ExiledByYou -> []
   PermissionPool.InExiledPile pile -> [Filter.Type.IsExiledWithSource pile]
 
 -- BOTH axes of every Quantity a Condition compares, off Resolve.conditionQuantities

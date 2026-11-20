@@ -3,6 +3,7 @@ module Parun.Types.ExileLink where
 import qualified Parun.Types.AbilityName as AbilityName
 import qualified Parun.Types.Acquisition as Acquisition
 import qualified Parun.Types.ObjectId as ObjectId
+import qualified Parun.Types.PlayerId as PlayerId
 
 -- | CR 607.2a: what an exiled card is linked to -- the object whose ability
 -- exiled it, and that ability's name when it has one, so a reference naming one
@@ -19,6 +20,9 @@ data ExileLink = MkExileLink
     acquisition :: Acquisition.Acquisition,
     -- | CR 607.2d: whether this is the card last chosen from among those the
     -- source's abilities of that acquisition exiled (ChosenQuality.ExiledCard).
-    chosen :: Bool
+    chosen :: Bool,
+    -- | CR 113.8: the exiling spell or ability's controller as it exiled the
+    -- card; Nothing where none can be read (a replacement whose source left).
+    controller :: Maybe PlayerId.PlayerId
   }
   deriving (Eq, Ord, Show)

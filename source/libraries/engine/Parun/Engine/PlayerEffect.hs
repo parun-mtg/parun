@@ -92,6 +92,7 @@ import qualified Parun.Types.EntriesTrigger as EntriesTrigger
 import qualified Parun.Types.EntryTriggering as EntryTriggering
 import qualified Parun.Types.EntryWindow as EntryWindow
 import qualified Parun.Types.EventShape as EventShape
+import qualified Parun.Types.ExileLink as ExileLink
 import qualified Parun.Types.ExtraVotes as ExtraVotes
 import qualified Parun.Types.Face as Face
 import Parun.Types.Filter (Filter)
@@ -2857,6 +2858,13 @@ castPermissionsFrom pid origin oid gs =
         PermissionPool.InExiledPile pile -> case (RowSource.object source, Map.lookup oid (GameState.exiledWith gs)) of
           (Just sid, Just link) -> Binding.isLinkedExile (RowSource.ability source) (maybe (Game.acquisitionFor (RowSource.ability source) sid gs) SourceChoices.acquisition (RowSource.choices source)) pile sid link
           _ -> False
+        -- CR 113.8 / 109.5: what a spell or ability the row's "you"
+        -- controlled exiled, any source's, as ExileLink.controller recorded it.
+        -- data/scenarios/evelyn-the-covetous-plays-what-its-controller-s-earlier-evelyn-exiled.json
+        -- and data/scenarios/evelyn-the-covetous-refuses-what-an-opponent-s-evelyn-exiled.json
+        -- prove both directions.
+        PermissionPool.ExiledByYou ->
+          (ExileLink.controller =<< Map.lookup oid (GameState.exiledWith gs)) == Just (permissionHolder pid (RowSource.object source) gs)
    in fmap (Bifunctor.first RowSource.object) (filter allows (Maybe.mapMaybe grantOf (applying pid gs)))
 
 -- CR 601.3: has this permission a use left? Unlimited always; a

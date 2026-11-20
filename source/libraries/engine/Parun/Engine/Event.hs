@@ -4078,7 +4078,7 @@ apply settle batch applied batchPrevented candidate event =
                 -- data/scenarios/entry-replacement proves it: Spirit Mascot fires once.
                 arrivals <- changeZonesTogether settle (fmap (\card -> (card, Zone.Exile)) chosen)
                 State.modify' $ \gs2 ->
-                  gs2 {GameState.exiledWith = foldr (\arrival -> Map.insert arrival ExileLink.MkExileLink {ExileLink.source = oid, ExileLink.ability = Just Binding.entryExileLink, ExileLink.acquisition = Game.acquisitionOf oid gs2, ExileLink.chosen = False}) (GameState.exiledWith gs2) (foldMap Foldable.toList arrivals)}
+                  gs2 {GameState.exiledWith = foldr (\arrival -> Map.insert arrival ExileLink.MkExileLink {ExileLink.source = oid, ExileLink.ability = Just Binding.entryExileLink, ExileLink.acquisition = Game.acquisitionOf oid gs2, ExileLink.chosen = False, ExileLink.controller = Just controller}) (GameState.exiledWith gs2) (foldMap Foldable.toList arrivals)}
                 -- "For each creature card exiled this way": the cards that reached
                 -- exile, one choice of kind each.
                 exiled <- State.gets (\gs2 -> filter (`Set.member` GameState.exile gs2) (foldMap Foldable.toList arrivals))
@@ -9925,7 +9925,7 @@ changeZoneWithCause settle discarded asOf batch oid requestedDest requestedPosit
                   -- CR 607.2b's link is exactly such a finding.
                   Monad.forM_ (if dest == Zone.Exile then exiledBy else Nothing) $ \linked ->
                     Monad.forM_ arrivals $ \arrival ->
-                      State.modify' (\g -> g {GameState.exiledWith = Map.insert arrival ExileLink.MkExileLink {ExileLink.source = linked, ExileLink.ability = Nothing, ExileLink.acquisition = Game.acquisitionOf linked g, ExileLink.chosen = False} (GameState.exiledWith g)})
+                      State.modify' (\g -> g {GameState.exiledWith = Map.insert arrival ExileLink.MkExileLink {ExileLink.source = linked, ExileLink.ability = Nothing, ExileLink.acquisition = Game.acquisitionOf linked g, ExileLink.chosen = False, ExileLink.controller = Projection.controllerWithLastKnown linked g} (GameState.exiledWith g)})
                   -- ONE Moved event for the whole move, which is CR 713.8's first
                   -- clause: one permanent leaves the battlefield. `newId` is the
                   -- first arrival, so a trigger reading the destination end of this
