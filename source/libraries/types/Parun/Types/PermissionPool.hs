@@ -10,4 +10,8 @@ data PermissionPool
   | -- | CR 607.2a: only the cards in one of the permission's source's linked
     -- piles (Dawnhand Dissident's "cards you own exiled with this creature").
     InExiledPile ExiledPile.ExiledPile
+  | -- | CR 109.5: only the cards in exile that a spell or ability the
+    -- permission's controller controlled exiled, whatever its source (Evelyn,
+    -- the Covetous).
+    ExiledByYou
   deriving (Eq, Ord, Show)

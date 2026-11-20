@@ -3079,14 +3079,14 @@ exileTotalling perform slots pid oid exile@(ExileCardsTotalling.MkExileCardsTota
 --
 -- Not implemented: a mana ability's cost, which has no stack object to name its
 -- ability, links nothing (#8188).
-linkPaidExiles :: Maybe ObjectId -> ObjectId -> CostComponent.CostComponent Keyword.Type.Keyword -> [ObjectId] -> Game ()
-linkPaidExiles paidFor oid component arrived = do
+linkPaidExiles :: PlayerId -> Maybe ObjectId -> ObjectId -> CostComponent.CostComponent Keyword.Type.Keyword -> [ObjectId] -> Game ()
+linkPaidExiles pid paidFor oid component arrived = do
   gs <- State.get
   let link = case paidFor of
         Just paying
-          | paying == oid -> if printedCastCost oid component gs then Just (printedLink oid) else Nothing
+          | paying == oid -> if printedCastCost oid component gs then Just (printedLink pid oid) else Nothing
           | Just (Source.OfAbility activated) <- fmap Object.source (Game.lookupObject paying gs) ->
-              Just (exileLink oid (ActivatedAbility.name (ActivatedAbilitySource.ability activated)) (ActivatedAbilitySource.acquisition activated))
+              Just (exileLink pid oid (ActivatedAbility.name (ActivatedAbilitySource.ability activated)) (ActivatedAbilitySource.acquisition activated))
         _ -> Nothing
   Foldable.for_ link (\l -> linkExiles oid l arrived)
 
@@ -3097,20 +3097,22 @@ linkPaidExiles paidFor oid component arrived = do
 -- produced the exile, never by the component's shape, which a printed exile cost
 -- shares (Skyway Robber's escape); data/scenarios/cast's "the escaped Skyway
 -- Robber offers nothing Teval's delve exiled" proves it.
-linkSubstitutedExiles :: Maybe ObjectId -> ObjectId -> [Keyword.Substitute] -> [ObjectId] -> Game ()
-linkSubstitutedExiles paidFor oid substitutes arrived = do
+linkSubstitutedExiles :: PlayerId -> Maybe ObjectId -> ObjectId -> [Keyword.Substitute] -> [ObjectId] -> Game ()
+linkSubstitutedExiles pid paidFor oid substitutes arrived = do
   gs <- State.get
   let exiling = [s | s@(Keyword.ExileFromGraveyard _) <- substitutes]
       printed = foldMap (Keyword.manaSubstitutesFor (ManaSymbol.Generic 0) . Map.keysSet . Face.keywords) (faceCast oid gs)
-  Monad.when (paidFor == Just oid && not (null exiling) && all (`elem` printed) exiling) (linkExiles oid (printedLink oid) arrived)
+  Monad.when (paidFor == Just oid && not (null exiling) && all (`elem` printed) exiling) (linkExiles oid (printedLink pid oid) arrived)
 
--- The link an ability printed on the spell `oid` makes (CR 607.2q).
-printedLink :: ObjectId -> ExileLink.ExileLink
-printedLink oid = exileLink oid Nothing Acquisition.Own
+-- The link an ability printed on the spell `oid` that `pid` pays for makes (CR
+-- 607.2q).
+printedLink :: PlayerId -> ObjectId -> ExileLink.ExileLink
+printedLink pid oid = exileLink pid oid Nothing Acquisition.Own
 
--- The link `oid` keeps to a card a cost exiled under `ability` (CR 607.2a).
-exileLink :: ObjectId -> Maybe AbilityName.AbilityName -> Acquisition.Acquisition -> ExileLink.ExileLink
-exileLink oid ability acquisition = ExileLink.MkExileLink {ExileLink.source = oid, ExileLink.ability = ability, ExileLink.acquisition = acquisition, ExileLink.chosen = False}
+-- The link `oid` keeps to a card a cost `pid` paid exiled under `ability` (CR
+-- 607.2a), `pid` controlling what it paid for (CR 113.8).
+exileLink :: PlayerId -> ObjectId -> Maybe AbilityName.AbilityName -> Acquisition.Acquisition -> ExileLink.ExileLink
+exileLink pid oid ability acquisition = ExileLink.MkExileLink {ExileLink.source = oid, ExileLink.ability = ability, ExileLink.acquisition = acquisition, ExileLink.chosen = False, ExileLink.controller = Just pid}
 
 -- File `link` for each of `arrived` still in exile. A new link ends a
 -- DurationEvent.SourceExiledCard duration, as Resolve.Common.recordExiledWith's
@@ -6045,7 +6047,7 @@ paySubstitutingReadingThen refuses slots perform began earlier moment subject an
             before <- State.gets GameState.exile
             paid <- payComponents perform moment Nothing slots pid oid (substituteComponents substitutes)
             arrived <- State.gets (Set.toAscList . (`Set.difference` before) . GameState.exile)
-            linkSubstitutedExiles announced oid (fmap fst substitutes) arrived
+            linkSubstitutedExiles pid announced oid (fmap fst substitutes) arrived
             pure paid
       -- CR 601.2g / 605.3a: no window where the total cost holds no mana payment
       -- (docs/decisions.md, "Whether a total cost of {0} opens a mana window").
@@ -8034,7 +8036,7 @@ payPayable perform moment paidFor slots pid oid component = case component of
     if Set.isSubsetOf chosen (Set.fromList candidates) && Natural.length chosen == n
       then do
         arrived <- Event.changeZonesTogether (ManaAbilityPerformer.settle perform) (fmap (\exiled -> (exiled, Zone.Exile)) (Set.toAscList chosen))
-        linkPaidExiles paidFor oid component (foldMap Foldable.toList arrived)
+        linkPaidExiles pid paidFor oid component (foldMap Foldable.toList arrived)
         pure (Payment.Paid (Binding.paidObjects Binding.exiledPermanent (Set.map Recipient.ToObject chosen)))
       else pure Payment.Unpaid
   -- CR 701.9b: the discarding player chooses which cards, so this is a prompt.
@@ -8160,7 +8162,7 @@ payPayable perform moment paidFor slots pid oid component = case component of
     if Set.isSubsetOf chosen (Set.fromList candidates) && Natural.length chosen == n
       then do
         arrived <- Event.changeZonesTogether (ManaAbilityPerformer.settle perform) (fmap (\c -> (c, Zone.Exile)) (Set.toAscList chosen))
-        linkPaidExiles paidFor oid component (foldMap Foldable.toList arrived)
+        linkPaidExiles pid paidFor oid component (foldMap Foldable.toList arrived)
         pure bindsNothing
       else pure Payment.Unpaid
   -- CR 701.20a's reveal as a cost, the arm above's pool and prompt with no zone
@@ -8229,7 +8231,7 @@ payPayable perform moment paidFor slots pid oid component = case component of
     case beheld of
       Just [chosen] -> do
         arrived <- Event.changeZoneReturning (ManaAbilityPerformer.settle perform) chosen Zone.Exile
-        linkPaidExiles paidFor oid component (Foldable.toList arrived)
+        linkPaidExiles pid paidFor oid component (Foldable.toList arrived)
         pure bindsNothing
       _ -> pure Payment.Unpaid
   -- CR 107.14: paying energy removes that many energy counters from the player.
@@ -8616,7 +8618,7 @@ payPayable perform moment paidFor slots pid oid component = case component of
         arrived <- Event.changeZonesTogether (ManaAbilityPerformer.settle perform) moves
         case destination of
           GraveyardCostDestination.Exile -> do
-            linkPaidExiles paidFor oid component (foldMap Foldable.toList arrived)
+            linkPaidExiles pid paidFor oid component (foldMap Foldable.toList arrived)
             State.gets (\after -> bindFindable Binding.exiledCard after (foldMap Foldable.toList arrived))
           GraveyardCostDestination.LibraryBottom -> pure bindsNothing
       else pure Payment.Unpaid
@@ -8665,7 +8667,7 @@ payPayable perform moment paidFor slots pid oid component = case component of
     case exiled of
       Nothing -> pure Payment.Unpaid
       Just (chosen, arrived) -> do
-        linkPaidExiles paidFor oid component arrived
+        linkPaidExiles pid paidFor oid component arrived
         -- Evidence Examiner's "Whenever you collect evidence" reads this.
         State.modify' (Event.recordEvent (GameEvent.PlayerActed (PlayerActed.MkPlayerActed PlayerAction.CollectEvidence pid)))
         pure (Payment.Paid (Binding.paidObjects Binding.collectedEvidence (Set.map Recipient.ToObject chosen)))
@@ -8679,7 +8681,7 @@ payPayable perform moment paidFor slots pid oid component = case component of
     case exiled of
       Nothing -> pure Payment.Unpaid
       Just (_, arrived) -> do
-        linkPaidExiles paidFor oid component arrived
+        linkPaidExiles pid paidFor oid component arrived
         pure (Payment.Paid (Binding.paidObjects Binding.totalledExiles (Set.fromList (fmap Recipient.ToObject arrived))))
   -- The arm above at the amount these slots fix (fixComputed). A REGRESSION
   -- FENCE: Cast.castProposed fixes the amount before CR 601.2h pays, per Urgent
@@ -8695,7 +8697,7 @@ payPayable perform moment paidFor slots pid oid component = case component of
       Nothing -> pure Payment.Unpaid
       Just candidate -> do
         arrived <- Event.changeZoneReturning (ManaAbilityPerformer.settle perform) candidate Zone.Exile
-        linkPaidExiles paidFor oid component (Foldable.toList arrived)
+        linkPaidExiles pid paidFor oid component (Foldable.toList arrived)
         pure bindsNothing
 
   -- CR 406.4: the payer picks a card they may look at, or a face-down pile, out

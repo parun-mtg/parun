@@ -20,5 +20,11 @@ spec s = Spec.describe s "Parun.Codec.PermissionPool" $ do
       PermissionPool.codec
       (PermissionPool.InExiledPile ExiledPile.OwnAbilities)
       " {\"type\":\"InExiledPile\",\"value\":{\"type\":\"OwnAbilities\"}} "
+  Spec.it s "ExiledByYou" $
+    Common.assertCodec
+      s
+      PermissionPool.codec
+      PermissionPool.ExiledByYou
+      " {\"type\":\"ExiledByYou\"} "
   Spec.it s "has a schema" $
     Common.assertHasSchema s PermissionPool.codec

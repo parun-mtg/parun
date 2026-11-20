@@ -2296,7 +2296,7 @@ popControl pid row gs =
 exileFoundFor :: ObjectId -> Seq.Seq ObjectId -> Game ()
 exileFoundFor agent exiled =
   State.modify' $ \gs ->
-    let link = ExileLink.MkExileLink {ExileLink.source = agent, ExileLink.ability = Nothing, ExileLink.acquisition = Game.acquisitionOf agent gs, ExileLink.chosen = False}
+    let link = ExileLink.MkExileLink {ExileLink.source = agent, ExileLink.ability = Nothing, ExileLink.acquisition = Game.acquisitionOf agent gs, ExileLink.chosen = False, ExileLink.controller = Projection.controllerWithLastKnown agent gs}
         file oid = Map.insert oid link
         permission you = (ExilePlayPermission.defaultValue you agent) {ExilePlayPermission.spending = ManaSpending.AnyColor}
         grant you o = o {Object.playPermissions = Object.playPermissions o <> [permission you]}
@@ -2565,7 +2565,7 @@ linkCraftMaterials :: ObjectId -> ObjectId -> GameState -> GameState
 linkCraftMaterials resolving entered gs =
   let paid = foldMap Set.toList (Map.lookup Binding.craftMaterials (Binding.targetsOf (slotBindings resolving gs)))
       materials = filter (`Set.member` GameState.exile gs) (Maybe.mapMaybe Recipient.objectOf paid)
-      link = ExileLink.MkExileLink {ExileLink.source = entered, ExileLink.ability = Just Binding.craftLink, ExileLink.acquisition = Acquisition.Own, ExileLink.chosen = False}
+      link = ExileLink.MkExileLink {ExileLink.source = entered, ExileLink.ability = Just Binding.craftLink, ExileLink.acquisition = Acquisition.Own, ExileLink.chosen = False, ExileLink.controller = Projection.controllerWithLastKnown resolving gs}
    in gs {GameState.exiledWith = foldr (`Map.insert` link) (GameState.exiledWith gs) materials}
 
 -- CR 607.1: the counters this instruction's effect put on or removed from each
@@ -2622,8 +2622,11 @@ causeOf resolving source controller gs =
 -- is linked to IT" is what proves it.
 --
 -- Filed for a SPELL's effects too, where CR 607.2a scopes the link to an
--- activated or triggered ability -- unreadable rather than wrong, since CR
--- 608.2n puts the spell into its graveyard as part of its own resolution.
+-- activated or triggered ability -- unreadable as a link, since CR 608.2n puts
+-- the spell into its graveyard as part of its own resolution, but its
+-- controller is read: a spell ability is an ability (CR 113.3a), so Evelyn,
+-- the Covetous's "exiled by an ability you controlled" admits the card
+-- (PermissionPool.ExiledByYou).
 --
 -- A filing is the moment DurationEvent.SourceExiledCard ends at. Only a NEW key
 -- counts: an outer window re-seeing an inner one's arrival would end the

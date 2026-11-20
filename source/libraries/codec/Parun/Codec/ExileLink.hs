@@ -5,6 +5,7 @@ module Parun.Codec.ExileLink where
 import qualified Parun.Codec.AbilityName as AbilityName
 import qualified Parun.Codec.Acquisition as Acquisition
 import qualified Parun.Codec.ObjectId as ObjectId
+import qualified Parun.Codec.PlayerId as PlayerId
 import qualified Parun.JsonCodec.Codec as Codec
 import qualified Parun.JsonCodec.Common as Common
 import qualified Parun.JsonCodec.Fields as Fields
@@ -20,4 +21,5 @@ codec = Fields.object $ do
   ability <- Fields.defaulted "ability" Nothing (Common.maybe AbilityName.codec) ExileLink.ability
   acquisition <- Fields.defaulted "acquisition" Acquisition.Own Acquisition.codec ExileLink.acquisition
   chosen <- Fields.defaulted "chosen" False Common.boolean ExileLink.chosen
-  pure ExileLink.MkExileLink {ExileLink.source = source, ExileLink.ability = ability, ExileLink.acquisition = acquisition, ExileLink.chosen = chosen}
+  controller <- Fields.defaulted "controller" Nothing (Common.maybe PlayerId.codec) ExileLink.controller
+  pure ExileLink.MkExileLink {ExileLink.source = source, ExileLink.ability = ability, ExileLink.acquisition = acquisition, ExileLink.chosen = chosen, ExileLink.controller = controller}
