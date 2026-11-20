@@ -80,7 +80,7 @@ withoutAnnouncement before entry between closed = do
   exile <- setOf GameState.exile
   command <- setOf GameState.command
   ante <- setOf GameState.ante
-  sideDecks <- mapWith pilesOf (GameState.sideDecks before) (GameState.sideDecks entry) (GameState.sideDecks closed)
+  sideDecks <- absentAs Map.empty pilesOf (GameState.sideDecks before) (GameState.sideDecks entry) (GameState.sideDecks closed)
   stack <- listOf (TurnRegisters.stack . GameState.turn)
   stackedIn <- mapOf (TurnRegisters.stackedIn . GameState.turn)
   players <- mapWith playerWith (GameState.players before) (GameState.players entry) (GameState.players closed)
@@ -440,7 +440,7 @@ withoutAnnouncement before entry between closed = do
     seqOf :: (Eq a) => (GameState -> Seq.Seq a) -> Maybe (Seq.Seq a)
     seqOf field = Just (Seq.fromList (elements (Foldable.toList (field before)) (Foldable.toList (field entry)) (Foldable.toList (field closed))))
     zoneOf :: (Ord k, Eq a) => (GameState -> Map.Map k (Seq.Seq a)) -> Maybe (Map.Map k (Seq.Seq a))
-    zoneOf field = mapWith (\b e c -> Just (Seq.fromList (elements (Foldable.toList b) (Foldable.toList e) (Foldable.toList c)))) (field before) (field entry) (field closed)
+    zoneOf field = absentAs Seq.empty (\b e c -> Just (Seq.fromList (elements (Foldable.toList b) (Foldable.toList e) (Foldable.toList c)))) (field before) (field entry) (field closed)
     -- CR 734.1's last sentence: a shuffle is never reversed, nor a move to a
     -- library or out of one to anywhere but the stack. So the window's ORDER
     -- stands, and so does whatever the window moved; what goes back is only the
@@ -452,7 +452,7 @@ withoutAnnouncement before entry between closed = do
     -- `libraries` for one map of piles; a supplementary deck is reversed as a
     -- library is, its order being a shuffle's too (CR 103.3a).
     pilesOf :: (Ord k, Eq a) => Map.Map k (Seq.Seq a) -> Map.Map k (Seq.Seq a) -> Map.Map k (Seq.Seq a) -> Maybe (Map.Map k (Seq.Seq a))
-    pilesOf = mapWith (\b e c -> Just (Seq.fromList (libraryOrder (Foldable.toList b) (Foldable.toList e) (Foldable.toList c))))
+    pilesOf = absentAs Seq.empty (\b e c -> Just (Seq.fromList (libraryOrder (Foldable.toList b) (Foldable.toList e) (Foldable.toList c))))
     -- CR 603.2e, 734.1: a kept tap or untap the cut leaves changing nothing
     -- did not happen, its change having been on the undone side's write
     -- (`objectWith`'s `tapped`), so it goes and triggers nothing.
@@ -785,6 +785,16 @@ mapWith :: (Ord k, Eq v) => (v -> v -> v -> Maybe v) -> Map.Map k v -> Map.Map k
 mapWith combine = keysWith $ \_ b e c -> case (b, e, c) of
   (Just held, Just opened, Just shut) -> fmap Just (combine held opened shut)
   _ -> leaf b e c
+
+-- `mapWith` with a missing key read as `empty`, as a zone's map gains a player's
+-- key only with their first card there. A key `before` lacked is dropped where
+-- the answer is `empty`.
+absentAs :: (Ord k, Eq v) => v -> (v -> v -> v -> Maybe v) -> Map.Map k v -> Map.Map k v -> Map.Map k v -> Maybe (Map.Map k v)
+absentAs empty combine before = keysWith at before
+  where
+    at key b e c =
+      let value = combine (Maybe.fromMaybe empty b) (Maybe.fromMaybe empty e) (Maybe.fromMaybe empty c)
+       in fmap (\v -> if v == empty && not (Map.member key before) then Nothing else Just v) value
 
 -- Each key's three values, a missing one Nothing, combined by `at` into the
 -- key's value, Nothing dropping the key.
