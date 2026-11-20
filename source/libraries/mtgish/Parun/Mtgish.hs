@@ -1457,7 +1457,7 @@ counters context n = case Node.tag n of
   where
     put q k ref = do
       kind <- Node.node k >>= counterKind
-      pure [Effect.PutCounters PutCounters.MkPutCounters {PutCounters.kind = kind, PutCounters.quantity = q, PutCounters.totalAtMost = Nothing, PutCounters.ref = ref, PutCounters.slot = Nothing}]
+      pure [Effect.PutCounters PutCounters.MkPutCounters {PutCounters.kind = kind, PutCounters.alternatives = [], PutCounters.quantity = q, PutCounters.totalAtMost = Nothing, PutCounters.ref = ref, PutCounters.slot = Nothing}]
 
 counterKind :: Node.Node -> Translated (CounterKind.CounterKind Keyword.Keyword)
 counterKind n = case Node.tag n of

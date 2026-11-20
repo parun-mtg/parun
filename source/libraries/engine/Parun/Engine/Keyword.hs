@@ -1886,6 +1886,7 @@ reinforce n cost =
         Effect.PutCounters
           ( PutCounters.MkPutCounters
               CounterKind.PlusOnePlusOne
+              []
               (Quantity.Literal (toInteger n))
               (ObjectRef.InSlot reinforceTarget)
               Nothing
@@ -2429,6 +2430,7 @@ scavenge cost =
         Effect.PutCounters
           ( PutCounters.MkPutCounters
               CounterKind.PlusOnePlusOne
+              []
               (Quantity.AgainstSlot (AgainstSlot.MkAgainstSlot Binding.triggerSource (Quantity.Measure Measure.Power)))
               (ObjectRef.InSlot scavengeTarget)
               Nothing
@@ -2868,6 +2870,7 @@ station =
         Effect.PutCounters
           ( PutCounters.MkPutCounters
               (CounterKind.Named chargeCounter)
+              []
               (Quantity.AgainstSlot (AgainstSlot.MkAgainstSlot Binding.tappedPermanent Quantity.StationMeasure))
               (ObjectRef.InSlot Binding.triggerSource)
               Nothing
@@ -2925,7 +2928,7 @@ chargeCounter = CounterName.UnsafeMkCounterName (Text.pack "charge")
 -- the last level symbol's range.
 levelUp :: Cost Keyword -> ActivatedAbility Card (GrantedAbility.GrantedAbility Card)
 levelUp cost =
-  let gain = Effect.PutCounters (PutCounters.MkPutCounters CounterKind.Level (Quantity.Literal 1) (ObjectRef.InSlot Binding.triggerSource) Nothing Nothing)
+  let gain = Effect.PutCounters (PutCounters.MkPutCounters CounterKind.Level [] (Quantity.Literal 1) (ObjectRef.InSlot Binding.triggerSource) Nothing Nothing)
    in ActivatedAbility.MkActivatedAbility
         { ActivatedAbility.costChoices = [],
           ActivatedAbility.cost = cost,
@@ -2957,7 +2960,7 @@ levelUp cost =
 -- timing clause and the ONLY restriction.
 outlast :: Cost Keyword -> ActivatedAbility Card (GrantedAbility.GrantedAbility Card)
 outlast cost =
-  let grow = Effect.PutCounters (PutCounters.MkPutCounters CounterKind.PlusOnePlusOne (Quantity.Literal 1) (ObjectRef.InSlot Binding.triggerSource) Nothing Nothing)
+  let grow = Effect.PutCounters (PutCounters.MkPutCounters CounterKind.PlusOnePlusOne [] (Quantity.Literal 1) (ObjectRef.InSlot Binding.triggerSource) Nothing Nothing)
    in ActivatedAbility.MkActivatedAbility
         { ActivatedAbility.costChoices = [],
           ActivatedAbility.cost = cost {Cost.components = Cost.components cost <> [CostComponent.TapThis]},
@@ -6196,7 +6199,7 @@ sourceIsCreature =
 -- of a strict ">" (Parun.Types.Comparison).
 increment :: TriggeredAbility Card (GrantedAbility.GrantedAbility Card)
 increment =
-  let grow = Effect.PutCounters (PutCounters.MkPutCounters CounterKind.PlusOnePlusOne (Quantity.Literal 1) (ObjectRef.InSlot Binding.triggerSource) Nothing Nothing)
+  let grow = Effect.PutCounters (PutCounters.MkPutCounters CounterKind.PlusOnePlusOne [] (Quantity.Literal 1) (ObjectRef.InSlot Binding.triggerSource) Nothing Nothing)
       spentExceeds quantity =
         Condition.Compares
           ( Compares.MkCompares
@@ -6735,7 +6738,7 @@ provokeTarget = SlotName.MkSlotName (Text.pack "provoked")
 -- ONE clause holding BOTH effects, the rule printing one sentence.
 renown :: Natural -> TriggeredAbility Card (GrantedAbility.GrantedAbility Card)
 renown n =
-  let grow = Effect.PutCounters (PutCounters.MkPutCounters CounterKind.PlusOnePlusOne (Quantity.Literal (toInteger n)) (ObjectRef.InSlot Binding.triggerSource) Nothing Nothing)
+  let grow = Effect.PutCounters (PutCounters.MkPutCounters CounterKind.PlusOnePlusOne [] (Quantity.Literal (toInteger n)) (ObjectRef.InSlot Binding.triggerSource) Nothing Nothing)
       designate = Effect.Designate (Designate.MkDesignate Designation.Renowned Binding.triggerSource Nothing)
    in Mint.triggerIf
         Mint.dealsCombatDamageToAPlayer
@@ -6751,7 +6754,7 @@ renown n =
 -- the stack.
 dethrone :: TriggeredAbility Card (GrantedAbility.GrantedAbility Card)
 dethrone =
-  let grow = Effect.PutCounters (PutCounters.MkPutCounters CounterKind.PlusOnePlusOne (Quantity.Literal 1) (ObjectRef.InSlot Binding.triggerSource) Nothing Nothing)
+  let grow = Effect.PutCounters (PutCounters.MkPutCounters CounterKind.PlusOnePlusOne [] (Quantity.Literal 1) (ObjectRef.InSlot Binding.triggerSource) Nothing Nothing)
    in Mint.trigger (TriggerCondition.Attacks (AttackTrigger.Attacker AttackerTrigger.defaultValue {AttackerTrigger.target = AttackerTarget.PlayerWithMostLife})) (Seq.singleton grow)
 
 -- CR 702.79a: persist. Its event is CR 700.4's dies, which is why the condition
@@ -7184,6 +7187,7 @@ backup (Backup.MkBackup n above) =
         Effect.PutCounters
           ( PutCounters.MkPutCounters
               CounterKind.PlusOnePlusOne
+              []
               (Quantity.Literal (toInteger n))
               (ObjectRef.InSlot backupTarget)
               Nothing
@@ -8917,7 +8921,7 @@ cumulativeUpkeep cost =
           )
       ageClause =
         Mint.mandatory
-          (Seq.singleton (Effect.PutCounters (PutCounters.MkPutCounters CounterKind.Age (Quantity.Literal 1) (ObjectRef.InSlot Binding.triggerSource) Nothing Nothing)))
+          (Seq.singleton (Effect.PutCounters (PutCounters.MkPutCounters CounterKind.Age [] (Quantity.Literal 1) (ObjectRef.InSlot Binding.triggerSource) Nothing Nothing)))
       upkeepClause =
         Mint.mandatoryPaying
           gate
@@ -9018,6 +9022,7 @@ modular =
         Effect.PutCounters
           ( PutCounters.MkPutCounters
               CounterKind.PlusOnePlusOne
+              []
               (Quantity.ObjectCounters CounterKind.PlusOnePlusOne)
               (ObjectRef.InSlot modularTarget)
               Nothing

@@ -569,6 +569,7 @@ instructions context es = case es of
   -- target creature" (Qarsi Revenant). Free: the first apart, below.
   e@(Effect.PutCounters p) : rest
     | Maybe.isNothing (PutCounters.totalAtMost p),
+      null (PutCounters.alternatives p),
       (run, others) <- span (placedOn p) rest,
       not (null run) ->
         let together = do
@@ -590,6 +591,8 @@ instructions context es = case es of
   e@(Effect.PutCounters p) : f@(Effect.PutCounters q) : others
     | Maybe.isNothing (PutCounters.totalAtMost p),
       Maybe.isNothing (PutCounters.totalAtMost q),
+      null (PutCounters.alternatives p),
+      null (PutCounters.alternatives q),
       not (placedOn p f) ->
         let paired = do
               first <- Target.object context Target.Each (PutCounters.ref p)
@@ -722,7 +725,7 @@ returned context objects = do
 -- object this placement puts them on.
 placedOn :: PutCounters.PutCounters -> Effect.Effect card ability -> Bool
 placedOn p e = case e of
-  Effect.PutCounters q -> PutCounters.ref q == PutCounters.ref p && Maybe.isNothing (PutCounters.totalAtMost q)
+  Effect.PutCounters q -> PutCounters.ref q == PutCounters.ref p && Maybe.isNothing (PutCounters.totalAtMost q) && null (PutCounters.alternatives q)
   _ -> False
 
 putCounters :: Effect.Effect card ability -> Maybe PutCounters.PutCounters
@@ -1089,22 +1092,25 @@ effect context e = case e of
                 Target.Third -> []
                 Target.ThirdPlural -> []
         naming (Target.names a) (imperative context (Create.creator c) create creates <> leading <> spoken)
-  -- A limit on the total has no wording yet, so a limited placement renders nothing.
-  Effect.PutCounters p | Maybe.isNothing (PutCounters.totalAtMost p) -> do
-    ref <- Target.object context Target.Each (PutCounters.ref p)
-    a <- Target.amounts context (PutCounters.quantity p)
-    let on = Text.pack " on " <> Target.wording ref
-    phrase <- case Target.reading a of
-      -- Free for a count: "for each" (Khabal Ghoul), "a number of"
-      -- (Rhovanion Rampager) or "X ..., where X is" (Southern Air Temple).
-      Target.Stated q -> fmap (\put -> Text.pack "put " <> put <> on) (counters (Target.keyword context) (PutCounters.kind p) q)
-      Target.ForEach n each' -> fmap (\put -> Text.pack "put " <> put <> on <> Text.pack " for each " <> each') (counters (Target.keyword context) (PutCounters.kind p) (Quantity.Literal n))
-      Target.EqualTo equal -> do
-        word <- Cost.counterWord (Target.keyword context) (PutCounters.kind p)
-        [ Text.pack "put a number of " <> word <> Text.pack " counters" <> on <> Text.pack " equal to " <> equal,
-          Text.pack "put X " <> word <> Text.pack " counters" <> on <> Text.pack ", where X is " <> equal
-          ]
-    MkPredicate Nothing phrase [] (Target.mentions ref <> Target.names a) Nothing False : supported context p
+  -- A limit on the total and a choice of kinds have no wording yet, so either
+  -- renders nothing.
+  Effect.PutCounters p
+    | Maybe.isNothing (PutCounters.totalAtMost p),
+      null (PutCounters.alternatives p) -> do
+        ref <- Target.object context Target.Each (PutCounters.ref p)
+        a <- Target.amounts context (PutCounters.quantity p)
+        let on = Text.pack " on " <> Target.wording ref
+        phrase <- case Target.reading a of
+          -- Free for a count: "for each" (Khabal Ghoul), "a number of"
+          -- (Rhovanion Rampager) or "X ..., where X is" (Southern Air Temple).
+          Target.Stated q -> fmap (\put -> Text.pack "put " <> put <> on) (counters (Target.keyword context) (PutCounters.kind p) q)
+          Target.ForEach n each' -> fmap (\put -> Text.pack "put " <> put <> on <> Text.pack " for each " <> each') (counters (Target.keyword context) (PutCounters.kind p) (Quantity.Literal n))
+          Target.EqualTo equal -> do
+            word <- Cost.counterWord (Target.keyword context) (PutCounters.kind p)
+            [ Text.pack "put a number of " <> word <> Text.pack " counters" <> on <> Text.pack " equal to " <> equal,
+              Text.pack "put X " <> word <> Text.pack " counters" <> on <> Text.pack ", where X is " <> equal
+              ]
+        MkPredicate Nothing phrase [] (Target.mentions ref <> Target.names a) Nothing False : supported context p
   Effect.Tap (Tap.MkTap r Nothing Nothing) -> acted context (Text.pack "tap ") r
   -- "Sacrifice this creature" (CR 701.21a): one object, which the
   -- instruction's controller sacrifices. A sweep is not spelled out here.

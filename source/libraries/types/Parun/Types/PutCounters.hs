@@ -17,8 +17,9 @@ import qualified Parun.Types.SlotName as SlotName
 -- makes such a set a description and never a target, which is exactly the
 -- distinction that type draws.
 --
--- ONE kind per instruction, which is all CR 701.10e's sentence asks for and what
--- Aragorn, Hornburg Hero writes. A card's "each kind of counter" (Vorel of the
+-- ONE kind per permanent, which is all CR 701.10e's sentence asks for and what
+-- Aragorn, Hornburg Hero writes; `alternatives` lets the controller choose
+-- that kind per permanent instead. A card's "each kind of counter" (Vorel of the
 -- Hull Clade) is Parun.Types.PutCountersFrom from a permanent onto itself, and
 -- one counter of each kind among a group (Exotic Pets) is
 -- Parun.Types.PutCounterOfEachKind.
@@ -45,6 +46,10 @@ import qualified Parun.Types.SlotName as SlotName
 -- more +1/+1 counters on creatures this way".
 data PutCounters = MkPutCounters
   { kind :: CounterKind.CounterKind Keyword.Keyword,
+    -- | CR 608.2d: kinds offered beside `kind`, the controller choosing one
+    -- for each permanent before any counter is placed (Invoke the Ancients);
+    -- empty for one fixed kind.
+    alternatives :: [CounterKind.CounterKind Keyword.Keyword],
     quantity :: Quantity.Quantity,
     ref :: ObjectRef.ObjectRef,
     totalAtMost :: Maybe Natural.Natural,

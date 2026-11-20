@@ -254,7 +254,7 @@ counter settle resolving source controller legal (Counter.MkCounter ref mSlot mS
     Monad.unless (null permanents) (State.modify' (Common.bindObjectsSlot resolving slot (Seq.fromList permanents)))
 
 putCounters :: ObjectId -> ObjectId -> PlayerId -> Map.Map SlotName (Set Recipient) -> Map.Map SlotName (Set Recipient) -> PutCounters.PutCounters -> Game ()
-putCounters resolving source controller legal chosen (PutCounters.MkPutCounters kind quantity ref totalAtMost mSlot) = do
+putCounters resolving source controller legal chosen (PutCounters.MkPutCounters kind alternatives quantity ref totalAtMost mSlot) = do
   -- CR 608.2c: the set is swept as this instruction is reached, and an
   -- illegal slot (CR 608.2b) or a player recipient answers with nobody. A
   -- CR 608.2d choice is asked through askingObjects, ModifyTarget's reason:
@@ -271,7 +271,13 @@ putCounters resolving source controller legal chosen (PutCounters.MkPutCounters 
       amountFor target =
         let sharing = context {Filter.shares = Binding.sharesOf (Recipient.ToObject target) (slotBindings resolving gs)}
          in Monad.mfilter (> 0) (Quantity.evaluateFor viewOf sharing gs resolving source quantity)
-      placements = Maybe.mapMaybe (\target -> fmap ((,) target . Integer.toNaturalSaturating) (amountFor target)) targets
+      amounts = Maybe.mapMaybe (\target -> fmap ((,) target . Integer.toNaturalSaturating) (amountFor target)) targets
+      offered = ListUtils.nubOrd (kind : alternatives)
+  -- PutCounters.alternatives: the controller's kind for each permanent, every
+  -- one chosen before any counter lands (CR 608.2d), FILTERED, NOT TRUSTED
+  -- (Game.chooseAmong), and not asked where one kind is offered.
+  placements <- Monad.forM amounts $ \(target, n) ->
+    fmap (\picked -> (target, Maybe.fromMaybe kind picked, n)) (Game.chooseAmong (\decider who -> Prompt.ChooseCounterKind decider who (CounterKindFor.PlacedOn target)) controller offered)
   -- CR 122.6's funnel per recipient, so CR 614's counter replacements apply
   -- against each placement.
   --
@@ -300,8 +306,8 @@ putCounters resolving source controller legal chosen (PutCounters.MkPutCounters 
   placed <-
     if null placements
       then pure []
-      else Event.simultaneously . fmap concat . Monad.forM placements $ \(target, n) -> do
-        settled <- Event.putCountersWithin totalAtMost cause target kind n
+      else Event.simultaneously . fmap concat . Monad.forM placements $ \(target, placedKind, n) -> do
+        settled <- Event.putCountersWithin totalAtMost cause target placedKind n
         pure [(target, settled) | settled > 0]
   -- PutCounters.slot: the recipients the funnel settled at least one counter
   -- on, so a placement CR 614 or CR 101.2 brought to none is not among them,
