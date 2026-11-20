@@ -197,7 +197,6 @@ import qualified Parun.Types.TriggerFrequency as TriggerFrequency
 import qualified Parun.Types.TriggerSource as TriggerSource
 import qualified Parun.Types.TriggeredAbility as TriggeredAbility
 import qualified Parun.Types.TriggeringMove as TriggeringMove
-import qualified Parun.Types.TurnRegisters as TurnRegisters
 import qualified Parun.Types.TurnScope as TurnScope
 import qualified Parun.Types.TurnedFaceUp as TurnedFaceUp
 import qualified Parun.Types.TurnedFaceUpTrigger as TurnedFaceUpTrigger
@@ -218,7 +217,7 @@ declarationsOf bearer gs =
   let declaredIt event = case event of
         GameEvent.AttackerDeclared (AttackerDeclared.MkAttackerDeclared oid _ _ _ _ _) -> oid == bearer
         _ -> False
-   in length (Seq.filter (declaredIt . LoggedEvent.event) (TurnRegisters.events (GameState.turn gs)))
+   in length (Seq.filter (declaredIt . LoggedEvent.event) (Turn.eventsThisTurn gs))
 
 -- CR 508.3: whether `event` fires a Parun.Types.AttackTrigger. Each arity
 -- matches its own event, the declaration's three appended by
@@ -327,7 +326,7 @@ declaredPower :: GameState -> ObjectId -> Integer
 declaredPower gs oid =
   Maybe.fromMaybe 0 . Maybe.listToMaybe $
     [ stampedPower d
-    | GameEvent.AttackerDeclared d <- reverse (fmap LoggedEvent.event (Foldable.toList (TurnRegisters.events (GameState.turn gs)))),
+    | GameEvent.AttackerDeclared d <- reverse (fmap LoggedEvent.event (Foldable.toList (Turn.eventsThisTurn gs))),
       AttackerDeclared.attacker d == oid
     ]
 
@@ -339,7 +338,7 @@ stampedPower = Maybe.fromMaybe 0 . PC.power . ObjectSnapshot.characteristics . A
 -- turn's AttackerDeclared events for that player, cut at each
 -- GameEvent.AttackersDeclared closing one.
 declarationsBy :: PlayerId -> GameState -> [[AttackerDeclared.AttackerDeclared]]
-declarationsBy attacker gs = go [] (fmap LoggedEvent.event (Foldable.toList (TurnRegisters.events (GameState.turn gs))))
+declarationsBy attacker gs = go [] (fmap LoggedEvent.event (Foldable.toList (Turn.eventsThisTurn gs)))
   where
     go pending events = case events of
       [] -> []
@@ -511,7 +510,7 @@ crewingsOf bearer gs =
   let crewedIt event = case event of
         GameEvent.BecameCrewed ev -> Crewing.vehicle ev == bearer
         _ -> False
-   in length (Seq.filter (crewedIt . LoggedEvent.event) (TurnRegisters.events (GameState.turn gs)))
+   in length (Seq.filter (crewedIt . LoggedEvent.event) (Turn.eventsThisTurn gs))
 
 -- Clarion Spirit's "your SECOND spell each turn": which of the turn's matching
 -- casts this one is, counting from one.
@@ -576,7 +575,7 @@ stepBeginsAdmits scopeNamed gs you (StepBegins.MkStepBegins wanted ordinal scope
 -- comprehensions, as Turn.stepsBegun is, so no arm falls through.
 drawsBeforeStep :: PlayerId -> GameState -> Maybe (StepBegan.StepBegan, Natural)
 drawsBeforeStep drawer gs =
-  let logged = fmap LoggedEvent.event (Foldable.toList (TurnRegisters.events (GameState.turn gs)))
+  let logged = fmap LoggedEvent.event (Foldable.toList (Turn.eventsThisTurn gs))
       lastBegan = Maybe.listToMaybe [(i, b) | (i, GameEvent.StepBegan b) <- reverse (zip [0 :: Int ..] logged)]
       drawsIn events = Natural.length [() | GameEvent.Drew (Drew.MkDrew who _) <- events, who == drawer]
    in fmap (\(i, b) -> (b, drawsIn (take i logged))) lastBegan
@@ -646,7 +645,7 @@ firstPlacementOn which holder gs =
         GameEvent.CountersPut placed -> holder == Right (CountersPlaced.object placed) && admitsKind which (CountersPlaced.kind placed) && ObjectSnapshot.zone (CountersPlaced.snapshot placed) == Zone.Battlefield
         GameEvent.PlayerCountersPut placed -> holder == Left (PlayerCountersPlaced.player placed) && which == WhichCounters.OfAnyKind
         _ -> False
-   in Foldable.find placedOnIt (fmap LoggedEvent.event (TurnRegisters.events (GameState.turn gs)))
+   in Foldable.find placedOnIt (fmap LoggedEvent.event (Turn.eventsThisTurn gs))
 
 -- CR 601.2c: whether the condition's road, relation and keyword admit this
 -- targeting, the relation read of the targeting object's controller against
@@ -663,7 +662,7 @@ firstTargetingOf :: GameState -> PlayerId -> BecomesTargetedTrigger.BecomesTarge
 firstTargetingOf gs you c targeted =
   Foldable.find
     (\t -> BecameTarget.targeted t == targeted && targetingAdmitted gs you c t)
-    [t | GameEvent.BecameTarget t <- Foldable.toList (fmap LoggedEvent.event (TurnRegisters.events (GameState.turn gs)))]
+    [t | GameEvent.BecameTarget t <- Foldable.toList (fmap LoggedEvent.event (Turn.eventsThisTurn gs))]
 
 -- CR 603.6a: a permanent entered the battlefield, an entry that may trigger
 -- `you`'s abilities (`entryTriggers`), and it is the permanent the trigger
@@ -1172,7 +1171,7 @@ anyTriggerReads event = case event of
 -- batch, for an arm that totals over it.
 matchesTriggerGiven :: Map.Map SlotName.SlotName Binding -> Maybe SourceChoices.SourceChoices -> Map.Map ObjectId (BattlefieldCandidate.BattlefieldCandidate PC.ProjectedCharacteristics) -> EventGroup.EventGroup -> GameState -> ObjectId -> PlayerId -> TriggerCondition -> GameEvent -> Bool
 matchesTriggerGiven bindings frozen board group gs =
-  let groupEvents = [LoggedEvent.event logged | logged <- Foldable.toList (TurnRegisters.events (GameState.turn gs)), LoggedEvent.group logged == group]
+  let groupEvents = [LoggedEvent.event logged | logged <- Foldable.toList (Turn.eventsThisTurn gs), LoggedEvent.group logged == group]
    in matchesAt bindings frozen board (gameAfter group gs) (Map.lookup group (Snapshots.boardBeforeEvent (GameState.snapshots gs))) groupEvents gs
 
 -- matchesTriggerGiven with the two filed games and the group's events in hand,

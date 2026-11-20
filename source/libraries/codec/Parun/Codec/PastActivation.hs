@@ -5,6 +5,7 @@ module Parun.Codec.PastActivation where
 import qualified Parun.Codec.AbilityKind as AbilityKind
 import qualified Parun.Codec.ActivatedAbility as ActivatedAbility
 import qualified Parun.Codec.Card as Card
+import qualified Parun.Codec.EventGroup as EventGroup
 import qualified Parun.Codec.GrantedAbility as GrantedAbility
 import qualified Parun.Codec.ObjectSnapshot as ObjectSnapshot
 import qualified Parun.Codec.PlayerId as PlayerId
@@ -21,11 +22,13 @@ codec = Fields.object $ do
   ability <- Fields.required "ability" (Common.maybe (ActivatedAbility.codec Card.codec (GrantedAbility.codec Card.codec))) PastActivation.ability
   kind <- Fields.required "kind" AbilityKind.codec PastActivation.kind
   targets <- Fields.required "targets" (Common.list ObjectSnapshot.codec) PastActivation.targets
+  loggedAt <- Fields.required "loggedAt" EventGroup.codec PastActivation.loggedAt
   pure
     PastActivation.MkPastActivation
       { PastActivation.activator = activator,
         PastActivation.source = source,
         PastActivation.ability = ability,
         PastActivation.kind = kind,
-        PastActivation.targets = targets
+        PastActivation.targets = targets,
+        PastActivation.loggedAt = loggedAt
       }

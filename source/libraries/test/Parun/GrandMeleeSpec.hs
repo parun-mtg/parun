@@ -356,6 +356,33 @@ spec s registry = Spec.describe s "GrandMelee" $ do
         (twos, staged) = S.addPermanent mob (seat 2) withFours
     Spec.assertEqWith s "seat 0's turn is worked" (TurnRegisters.activePlayer (GameState.turn staged)) (seat 0)
     Spec.assertEqWith s "CR 807.4 seat 4's and seat 2's Angry Mobs" (fmap (\o -> (Projection.powerOf o staged, Projection.toughnessOf o staged)) [fours, twos]) [(Just 4, Just 4), (Just 2, Just 2)]
+
+  -- CR 608.2i / 807.4b: seat 0 casts two Divinations on its marker's turn, so
+  -- its Gnarled Sage is 4/6 and its Brightspear Zealot 4/4; the Sage is dealt
+  -- 5 damage. Once seat 4's turn is worked, "this turn" still reads seat 0's
+  -- draws and casts, so the Sage survives state-based actions
+  -- (docs/decisions.md, "What "this turn" and "last turn" read in Grand
+  -- Melee").
+  Spec.it s "CR 608.2i this turn reads every running Grand Melee turn" $ do
+    forest <- S.printingOf s registry "Forest"
+    island <- S.printingOf s registry "Island"
+    divination <- S.printingOf s registry "Divination"
+    gnarledSage <- S.printingOf s registry "Gnarled Sage"
+    zealot <- S.printingOf s registry "Brightspear Zealot"
+    let main = S.landsFor island (seat 0) 6 (untilPhase Phase.PrecombatMain (melee forest 8))
+        (sage, withSage) = S.addPermanent gnarledSage (seat 0) main
+        (zealotId, withZealot) = S.addPermanent zealot (seat 0) withSage
+        (first, withFirst) = S.addHandCard divination (seat 0) withZealot
+        (second, staged) = S.addHandCard divination (seat 0) withFirst
+        resolve gs = snd (Engine.runGamePure S.identityAnswer gs Engine.priorityLoop)
+        castBoth = resolve (S.runPure S.identityAnswer (resolve (S.runPure S.identityAnswer staged (S.cast (seat 0) first))) (S.cast (seat 0) second))
+        damaged = S.markDamage sage 5 castBoth
+        onFour = S.settleSba (Engine.workOn 2 damaged)
+    Spec.assertEqWith s "seat 0's turn is worked" (TurnRegisters.activePlayer (GameState.turn castBoth)) (seat 0)
+    Spec.assertEqWith s "seat 0's Sage on its own turn" (Projection.toughnessOf sage castBoth) (Just 6)
+    Spec.assertEqWith s "seat 4's turn is worked" (TurnRegisters.activePlayer (GameState.turn onFour)) (seat 4)
+    Spec.assertEqWith s "CR 704.5g the Sage survives on seat 4's turn" (S.onBattlefield sage onFour) True
+    Spec.assertEqWith s "CR 601.2i the Zealot counts seat 0's casts on seat 4's turn" (Projection.powerOf zealotId onFour) (Just 4)
   where
     seat = PlayerId.MkPlayerId
     seats :: [Natural] -> [PlayerId]

@@ -25,16 +25,15 @@ import qualified Control.Monad.Trans.State.Strict as State
 import qualified Data.Foldable as Foldable
 import qualified Data.Maybe as Maybe
 import qualified Parun.Engine.PlayerEffect as PlayerEffect
+import qualified Parun.Engine.Turn as Turn
 import qualified Parun.Types.CoinFace as CoinFace
 import qualified Parun.Types.CoinFlipped as CoinFlipped
 import Parun.Types.Game (Game)
 import qualified Parun.Types.GameEvent as GameEvent
 import Parun.Types.GameState (GameState)
-import qualified Parun.Types.GameState as GameState
 import qualified Parun.Types.LoggedEvent as LoggedEvent
 import Parun.Types.PlayerId (PlayerId)
 import qualified Parun.Types.StatedFlip as StatedFlip
-import qualified Parun.Types.TurnRegisters as TurnRegisters
 
 -- | The CR 705.3 statements in force for one INSTRUCTION's worth of flips, read
 -- once before any of its coins is flipped.
@@ -91,4 +90,4 @@ flipsThisTurn pid gs =
   let flipped logged = case LoggedEvent.event logged of
         GameEvent.CoinFlipped flipped_ -> CoinFlipped.flipper flipped_ == pid
         _ -> False
-   in length (filter flipped (Foldable.toList (TurnRegisters.events (GameState.turn gs))))
+   in length (filter flipped (Foldable.toList (Turn.eventsThisTurn gs)))

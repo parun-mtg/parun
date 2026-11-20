@@ -134,7 +134,7 @@ withinLimit :: GameState -> PlayerId -> Maybe ObjectId -> ModifiedRoll.ModifiedR
 withinLimit gs payer stated modifier =
   let unspent = case stated of
         Nothing -> False
-        Just oid -> Set.notMember modifier (Map.findWithDefault Set.empty oid (TurnRegisters.rollModifiersUsedThisTurn (GameState.turn gs)))
+        Just oid -> Set.notMember modifier (Map.findWithDefault Set.empty oid (Turn.keyedThisTurn Set.union TurnRegisters.rollModifiersUsedThisTurn gs))
    in case ModifiedRoll.limit modifier of
         PermissionLimit.Unlimited -> True
         PermissionLimit.OnceEachTurn -> unspent

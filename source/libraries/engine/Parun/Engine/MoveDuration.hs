@@ -23,6 +23,7 @@ import qualified Data.Set as Set
 import qualified Parun.Engine.Event as Event
 import qualified Parun.Engine.Game as Game
 import qualified Parun.Engine.LinkReaders as LinkReaders
+import qualified Parun.Engine.Turn as Turn
 import qualified Parun.Types.Bookkeeping as Bookkeeping
 import qualified Parun.Types.EntryLink as EntryLink
 import Parun.Types.EventGroup (EventGroup)
@@ -96,7 +97,7 @@ hasHappened duration resolving source controller gs = case duration of
             GameEvent.BecameMonarch pid -> LoggedEvent.group logged >= since && Game.areOpponents gs controller pid
             _ -> False
         )
-        (TurnRegisters.events (GameState.turn gs))
+        (Turn.eventsThisTurn gs)
   -- CR 901.11's planeswalk is a GameEvent.TurnedUpOffDeck off a planar deck,
   -- looked for the way a crowning is.
   MoveDuration.Type.UntilAPlayerPlaneswalks -> case Map.lookup resolving (TurnRegisters.stackedIn (GameState.turn gs)) of
@@ -104,7 +105,7 @@ hasHappened duration resolving source controller gs = case duration of
     Just since ->
       any
         (\logged -> LoggedEvent.group logged >= since && isPlaneswalk (LoggedEvent.event logged))
-        (TurnRegisters.events (GameState.turn gs))
+        (Turn.eventsThisTurn gs)
 
 -- | The watch a move with this duration arms, for the move's source and the
 -- effect's controller. CR 726's watch is armed undischarged whoever holds the
@@ -239,4 +240,4 @@ departedIn src gs =
         _ -> found
     )
     Nothing
-    (TurnRegisters.events (GameState.turn gs))
+    (Turn.eventsThisTurn gs)
