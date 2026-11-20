@@ -812,6 +812,29 @@ engineMintedDestruction rewrite = case rewrite of
   -- Crackling Emergence's own sentence, card data like DamageRewrite.RunEffects.
   DestructionRewrite.RunEffects _ -> False
 
+-- A destruction replacement's instead-effects, unless each names its objects
+-- by slot and is one that moves or modifies them unasked: a sacrifice of a
+-- named permanent, a continuous effect on one. Anything else may ask before it
+-- moves ("CR 614.1a no destruction replacement asks before it moves").
+destructionAsksOffends :: ReplacementEffect.ReplacementEffect Card.Type.Card (GrantedAbility.GrantedAbility Card.Type.Card) (Effect.Effect Card.Type.Card (GrantedAbility.GrantedAbility Card.Type.Card)) -> Bool
+destructionAsksOffends replacement = case replacement of
+  ReplacementEffect.DestructionR (DestructionR.MkDestructionR _ (DestructionRewrite.RunEffects effects)) -> not (all quiet effects)
+  _ -> False
+  where
+    named ref = case ref of
+      ObjectRef.InSlot _ -> True
+      _ -> False
+    quiet effect = case effect of
+      Effect.Sacrifice sacrifice -> named (SacrificeEffect.ref sacrifice)
+      Effect.ModifyTarget modify -> named (ModifyTarget.ref modify)
+      _ -> False
+
+-- The non-vacuity half of destructionAsksOffends' lint.
+isDestructionRunEffects :: ReplacementEffect.ReplacementEffect Card.Type.Card (GrantedAbility.GrantedAbility Card.Type.Card) (Effect.Effect Card.Type.Card (GrantedAbility.GrantedAbility Card.Type.Card)) -> Bool
+isDestructionRunEffects replacement = case replacement of
+  ReplacementEffect.DestructionR (DestructionR.MkDestructionR _ (DestructionRewrite.RunEffects _)) -> True
+  _ -> False
+
 -- The non-vacuity half of the same lint: is this the replacement that carries a
 -- PhasePattern at all? A wildcard is right here, where it is not above -- this
 -- asks "did the sweep have anything to look at", not "is it well-formed".
@@ -3280,6 +3303,28 @@ effectLintSpec s registry corpus = Spec.describe s "Lint" $ do
         baked = card {Face.replacementEffects = fmap (\pr -> pr {PrintedReplacement.effect = bake (PrintedReplacement.effect pr)}) (Face.replacementEffects card)}
     Spec.assertBool s (not (any turnUpRequiringOffends (cardReplacementEffects card))) "the real Bubble Smuggler names no procedure and is accepted"
     Spec.assertBool s (any turnUpRequiringOffends (cardReplacementEffects baked)) "and the same card naming CR 702.37e's is rejected"
+  -- Unprinted: a destruction replacement whose own effects ask before they
+  -- move. Parun.Engine.Sba's wouldMove settles what one in a check moves, for
+  -- Lich's Mirror's reset to contest, on a trial run that takes a default
+  -- answer, which a "may" or a choice of what to move would decide. The
+  -- printed ones sacrifice their own Aura and modify the spared permanent
+  -- (Crackling Emergence, Harmonious Emergence); the doctored Emergence, with
+  -- Opt's scry ahead of its sacrifice, proves the lint is not vacuous.
+  Spec.it s "CR 614.1a no destruction replacement asks before it moves" $ do
+    ps <- S.allPrintings s corpus
+    emergence <- S.printingOf s registry "Crackling Emergence"
+    opt <- S.printingOf s registry "Opt"
+    let face = S.combinedFace emergence
+        scry = take 1 (cardResolutionEffects (S.combinedFace opt))
+        doctor replacement = case replacement of
+          ReplacementEffect.DestructionR (DestructionR.MkDestructionR matching (DestructionRewrite.RunEffects effects)) ->
+            ReplacementEffect.DestructionR (DestructionR.MkDestructionR matching (DestructionRewrite.RunEffects (Seq.fromList scry <> effects)))
+          other -> other
+        doctored = face {Face.replacementEffects = fmap (\pr -> pr {PrintedReplacement.effect = doctor (PrintedReplacement.effect pr)}) (Face.replacementEffects face)}
+        offenders = filter (anyFace (any destructionAsksOffends . cardReplacementEffects) . Printing.card) ps
+    Spec.assertBool s (any isDestructionRunEffects (cardReplacementEffects face) && not (any destructionAsksOffends (cardReplacementEffects face))) "Crackling Emergence's instead-effects ask nothing, and are accepted"
+    Spec.assertBool s (any destructionAsksOffends (cardReplacementEffects doctored)) "the same card scrying first is rejected"
+    Spec.assertEqWith s "no destruction replacement asks" (fmap (S.nameOf . Printing.card) offenders) []
   -- nonEntryCopyRiderOffends over the pool, and its rejecting direction against
   -- Vesuvan Shapeshifter and Dinosaur Headdress with Vesuva's `tapped` baked
   -- into their rows, the pair above's shape, and Vesuvan Shapeshifter with
