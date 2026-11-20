@@ -116,7 +116,7 @@ spec s registry = Spec.describe s "WebQuestion" $ do
     Spec.assertEqWith s "tap" (fmap (\event -> Question.Web.step request Set.empty event Text.empty) (tap "Play Mountain")) (Just (Question.Web.MkReplied (R.Number 1)))
     Spec.assertEqWith s "skip" (fmap (\event -> Question.Web.step request Set.empty event Text.empty) (tap "End turn")) (Just (Question.Web.MkReplied (R.Number 0)))
     Spec.assertEqWith s "not automatic" (Question.Web.automatic Question.Web.MkStandard request) Nothing
-    Spec.assertBool s (Text.pack "aria-keyshortcuts=\"E\">End turn</button>" `Text.isInfixOf` page) "E ends the turn"
+    Spec.assertBool s (Text.pack "<button class=\"danger\" type=\"button\" aria-keyshortcuts=\"E\">End turn</button>" `Text.isInfixOf` page) "E ends the turn, a button marked as giving something up"
     Spec.assertBool s (Text.pack "Before you pass: you can still play Mountain." `Text.isInfixOf` Html.content view) "a card keeps its name's case"
     -- The hand's Mountain is lit, since the seat may play it, and tapping it reads it.
     Spec.assertBool s (Text.pack "<section class=\"hand\"" `Text.isInfixOf` page) "hand"
@@ -451,7 +451,10 @@ spec s registry = Spec.describe s "WebQuestion" $ do
         tap picked label = let view = Question.Web.view request Question.Web.blank {Question.Web.selected = picked} in Html.labelled (Text.pack "button") (Text.pack label) view >>= \path -> Html.handler (Text.pack "click") path view
     Spec.assertEqWith s "first" (tap Set.empty "Your Grizzly Bears 2/2 \x00d7\&2") (Just (Question.Web.MkToggle 0 0))
     Spec.assertEqWith s "then the next" (tap (Set.singleton (0, 0)) "1 of Your Grizzly Bears 2/2 \x00d7\&2") (Just (Question.Web.MkToggle 0 1))
-    Spec.assertBool s (Text.pack "aria-keyshortcuts=\"A\">All</button>" `Text.isInfixOf` Html.toText (Question.Web.view request Question.Web.blank)) "A attacks with all"
+    Spec.assertBool s (Text.pack "aria-keyshortcuts=\"A\">Attack with all</button>" `Text.isInfixOf` Html.toText (Question.Web.view request Question.Web.blank)) "A attacks with all"
+    let alone = request {Request.question = (Request.question request) {Question.offer = R.Array [PromptOffer.object Protocol.namer one]}}
+        attackAll = Html.labelled (Text.pack "button") (Text.pack "Attack with all") (Question.Web.view alone Question.Web.blank)
+    Spec.assertBool s (Maybe.isJust attackAll) "offered for a lone attacker too"
 
   Spec.it s "the log heads each turn the seat reads into, once" $ do
     let view = PlayerView.viewFor S.alice (Setup.emptyGame S.bothPlayers)
@@ -463,6 +466,8 @@ spec s registry = Spec.describe s "WebQuestion" $ do
     let busy = Question.Web.blank {Question.Web.logged = Seq.fromList (fmap (event . show) [1 :: Int .. 6]), Question.Web.fresh = 6}
         asked = requestFor (Setup.emptyGame S.bothPlayers) (Prompt.ChooseAction (Decider.MkDecider S.alice) S.alice [Action.Pass])
     Spec.assertBool s (Text.pack "\x2026\&and 2 more in the log" `Text.isInfixOf` Html.content (Question.Web.view asked busy)) "news says how many more"
+    let flyout = Html.search (\node -> Text.pack "<summary class=\"turn-label\"" `Text.isPrefixOf` Html.toText node) (Question.Web.view asked busy)
+    Spec.assertBool s (Maybe.isJust flyout) "the log opens from the turn label"
     let shock = ObjectId.MkObjectId 5
         linked = Log.item S.alice (Just (Map.fromList [(Text.pack "Shock", shock), (Text.pack "Shocking Grasp", ObjectId.MkObjectId 6)], Question.Web.MkRead)) False (event "Player 1 casts Shocking Grasp, then Shock.")
         tapped label = Html.labelled (Text.pack "button") (Text.pack label) linked >>= \path -> Html.handler (Text.pack "click") path linked
@@ -917,7 +922,11 @@ frameAt stop =
 
 -- | The turn bar of the replay page at the stop.
 turnBarOf :: Stop.Stop -> Text.Text
-turnBarOf stop = fst (Text.breakOn (Text.pack "<div class=\"play-area\"") (Html.toText (Replay.view (frameAt stop))))
+turnBarOf stop =
+  let bar = fst (Text.breakOn (Text.pack "<div class=\"play-area\"") (Html.toText (Replay.view (frameAt stop))))
+      -- Less the log its label opens, whose entries are not the bar's.
+      (label, logged) = Text.breakOn (Text.pack "<div class=\"log-panel\"") bar
+   in label <> snd (Text.breakOn (Text.pack "</details>") logged)
 
 -- | The prompt kinds a scenario's text names in its answers.
 kindsIn :: Text.Text -> [Text.Text]

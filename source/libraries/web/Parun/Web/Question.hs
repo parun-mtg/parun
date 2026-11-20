@@ -259,12 +259,12 @@ data Screen = MkScreen
 blank :: Screen
 blank = MkScreen Set.empty Nothing Seq.empty 0 Nothing MkStandard
 
--- | The page for a request: the turn bar, the table with each tile marked
--- for what tapping it does, the question docked with its answers, the log,
--- and the sheet of the card being read.
+-- | The page for a request: the turn bar and the log it opens, the table
+-- with each tile marked for what tapping it does, the question docked with
+-- its answers, and the sheet of the card being read.
 view :: Request.Request -> Screen -> Html.Html Event
 view request screen =
-  table request screen (barControls (level screen) True (MkConcede <$ passIndex request)) (cues request (selected screen) (focus screen)) $
+  table request screen (autoPass (level screen) True) (barControls True (MkConcede <$ passIndex request)) (cues request (selected screen) (focus screen)) $
     [Element.el "p" ["problem"] [Element.attr "role" (Text.pack "alert")] (Mana.rich problem) | problem <- Maybe.maybeToList (Request.problem request)]
       <> [Element.el "p" ["controlling"] [Element.attr "role" (Text.pack "note")] [Html.text (Text.pack "You're deciding for " <> Wording.player p <> Text.pack ", whom you control.")] | p <- Maybe.maybeToList (Question.for (Request.question request))]
       <> news (Request.view request) (viewerOf request) screen
@@ -282,7 +282,7 @@ watching facing request screen = do
           | not (null (PlayerView.stack b)) -> "Resolving\x2026"
           | PlayerView.active b /= PlayerView.viewer b -> Text.unpack (Wording.player (PlayerView.active b)) <> " is taking their turn\x2026"
         _ -> "Moving on\x2026"
-  pure . table request screen (barControls (level screen) False Nothing) (Board.MkMarks (\o -> Card.MkCue [] (MkRead (ObjectView.object o)) Nothing) (const Nothing)) $
+  pure . table request screen (autoPass (level screen) False) (barControls False Nothing) (Board.MkMarks (\o -> Card.MkCue [] (MkRead (ObjectView.object o)) Nothing) (const Nothing)) $
     news (Request.view request) (viewerOf request) screen <> [Element.el "p" ["waiting"] [] [Icon.loading ["small"], Element.string status]]
 
 -- | A subgame's mark on the turn bar (CR 730.1a), and how deep it is.
@@ -292,30 +292,35 @@ subgameChip depth =
   | depth > 0
   ]
 
--- | The turn bar's controls: the auto-pass level, chosen from a disclosure
--- beside the phases and inert unless the seat is asked (a tap made while it
--- watches is dropped), and the settings button, whose menu's Concede
--- (CR 104.3a) sends the event given where the seat may concede.
-barControls :: Level -> Bool -> Maybe Event -> [Html.Html Event]
-barControls current asked concede =
-  [ Element.el
-      "details"
-      ["auto-pass"]
-      []
-      [ Element.el "summary" [] [Element.attr "title" (Text.pack "Automatic passing")] [Element.el "span" ["k"] [] [Element.string "Auto-pass"], Element.string (snd (levelName current))],
-        Element.el
-          "div"
-          ["segmented"]
-          [Element.attr "role" (Text.pack "group"), Element.attr "aria-label" (Text.pack "Automatic passing")]
-          [ Element.el
-              "button"
-              ["on" | l == current]
-              ([Element.attr "type" (Text.pack "button"), Element.attr "data-level" (Text.pack (fst (levelName l))), Element.attr "aria-pressed" (Text.pack (if l == current then "true" else "false")), Element.on "click" (MkLevel l)] <> [Element.attr "disabled" Text.empty | not asked])
-              [Element.string (snd (levelName l))]
-          | l <- [minBound .. maxBound]
-          ]
-      ],
-    Element.el "button" ["home-button"] ([Element.attr "type" (Text.pack "button"), Element.attr "title" (Text.pack "Leave the game for the home screen, to resume later"), Element.on "click" MkHome] <> [Element.attr "disabled" Text.empty | not asked]) [Element.string "Home"],
+-- | The auto-pass level, at the end of the turn bar's phases: chosen from
+-- a disclosure, and inert unless the seat is asked (a tap made while it
+-- watches is dropped).
+autoPass :: Level -> Bool -> Html.Html Event
+autoPass current asked =
+  Element.el
+    "details"
+    ["auto-pass"]
+    []
+    [ Element.el "summary" [] [Element.attr "title" (Text.pack "Automatic passing"), Element.attr "aria-label" (Text.pack ("Automatic passing: " <> snd (levelName current)))] [Element.string (snd (levelName current))],
+      Element.el
+        "div"
+        ["segmented"]
+        [Element.attr "role" (Text.pack "group"), Element.attr "aria-label" (Text.pack "Automatic passing")]
+        [ Element.el
+            "button"
+            ["on" | l == current]
+            ([Element.attr "type" (Text.pack "button"), Element.attr "data-level" (Text.pack (fst (levelName l))), Element.attr "aria-pressed" (Text.pack (if l == current then "true" else "false")), Element.on "click" (MkLevel l)] <> [Element.attr "disabled" Text.empty | not asked])
+            [Element.string (snd (levelName l))]
+        | l <- [minBound .. maxBound]
+        ]
+    ]
+
+-- | The turn bar's controls: Home, inert unless the seat is asked, and the
+-- settings button, whose menu's Concede (CR 104.3a) sends the event given
+-- where the seat may concede.
+barControls :: Bool -> Maybe Event -> [Html.Html Event]
+barControls asked concede =
+  [ Element.el "button" ["home-button"] ([Element.attr "type" (Text.pack "button"), Element.attr "title" (Text.pack "Leave the game for the home screen, to resume later"), Element.on "click" MkHome] <> [Element.attr "disabled" Text.empty | not asked]) [Element.string "Home"],
     settingsButton concede
   ]
 
@@ -342,17 +347,15 @@ viewerOf :: Request.Request -> PlayerId.PlayerId
 viewerOf request = maybe (Question.seat (Request.question request)) PlayerView.viewer (Request.view request)
 
 -- | The game screen around a prompt's contents, the turn bar carrying the
--- controls given.
-table :: Request.Request -> Screen -> [Html.Html Event] -> Board.Marks Event -> [Html.Html Event] -> Html.Html Event
-table request screen controls marks prompt =
+-- log, the auto-pass control and the controls given.
+table :: Request.Request -> Screen -> Html.Html Event -> [Html.Html Event] -> Board.Marks Event -> [Html.Html Event] -> Html.Html Event
+table request screen passing controls marks prompt =
   let board = Request.view request
    in Element.el "main" ["game"] [] $
-        foldMap (\b -> [Board.turnBar (subgameChip (Request.depth request) <> controls) b]) board
+        foldMap (\b -> [Board.turnBar (logView (Request.view request) (viewerOf request) screen) [passing] (subgameChip (Request.depth request) <> controls) b]) board
           <> [Element.el "div" ["play-area"] [] (foldMap (\b -> [Board.view marks b]) board)]
           <> foldMap (Board.hand marks) board
-          <> [ Element.el "aside" ["side"] [] $
-                 Element.el "section" ["prompt"] [Element.attr "aria-label" (Text.pack "Your decision")] prompt
-                   : [logView (Request.view request) (viewerOf request) screen | not (Seq.null (logged screen))]
+          <> [ Element.el "aside" ["side"] [] [Element.el "section" ["prompt"] [Element.attr "aria-label" (Text.pack "Your decision")] prompt]
              ]
           <> Maybe.maybeToList (do b <- board; r <- reading screen; sheetFor request b marks r)
 
@@ -369,22 +372,17 @@ news board viewer screen =
       | shown > 0
       ]
 
--- | The log, newest first, the entries since the seat last decided lit; its
--- summary the newest entry.
-logView :: Maybe PlayerView.PlayerView -> PlayerId.PlayerId -> Screen -> Html.Html Event
+-- | The log, newest first, the entries since the seat last decided lit;
+-- nothing while it is empty.
+logView :: Maybe PlayerView.PlayerView -> PlayerId.PlayerId -> Screen -> [Html.Html Event]
 logView board viewer screen =
   let entries = Log.newestFirst (Seq.mapWithIndex (,) (logged screen))
       newest = Natural.toIntSaturating (fresh screen)
       total = Seq.length (logged screen)
-      latest = Foldable.find (not . Log.isTurn . snd) entries
-   in Element.el
-        "details"
-        ["log"]
-        []
-        [ Element.el "summary" [] [] [Element.el "span" ["k"] [] [Element.string "Log"], Element.el "span" ["latest"] [] (foldMap (\(_, e) -> Mana.rich (Log.sentence viewer e)) latest)],
-          -- The newest entries link their cards; older ones stay plain text.
-          Element.keyed "ul" ["log-list"] [] (Foldable.toList (Seq.mapWithIndex (\j (i, e) -> (Text.pack (show i), Log.item viewer (if j < 60 then linksOf board else Nothing) (i >= total - newest) e)) (Seq.take 300 entries)))
-        ]
+   in -- The newest entries link their cards; older ones stay plain text.
+      [ Element.keyed "ul" ["log-list"] [] (Foldable.toList (Seq.mapWithIndex (\j (i, e) -> (Text.pack (show i), Log.item viewer (if j < 60 then linksOf board else Nothing) (i >= total - newest) e)) (Seq.take 300 entries)))
+      | total > 0
+      ]
 
 -- | The sheet for the card being read, with what the seat may do with it
 -- now: its actions, or picking it.
@@ -811,7 +809,7 @@ form request picked = case Text.unpack (Question.kind question) of
                 <> [Element.el "div" ["actions"] [] [button (MkAnswer $ R.Number i) (Offer.actionName shown option) | (i, option) <- rest] | not (null rest)]
                 <> [ Element.el "div" ["passes"] [] $
                        [primary (MkAnswer $ R.Number i) (Text.pack (if settled then "Pass" else "Pass and resolve")) | (i, _) <- passes]
-                         <> [shortcut "E" MkSkip (Text.pack (if yours then "End turn" else "Pass to my turn")) | settled, not (null passes)]
+                         <> [shortcut ["danger"] "E" MkSkip (Text.pack (if yours then "End turn" else "Pass to my turn")) | settled, not (null passes)]
                    ]
   kind
     | kind `elem` ["ChooseManaSource", "ChooseExtraManaSource"],
@@ -900,7 +898,7 @@ form request picked = case Text.unpack (Question.kind question) of
               Element.el "div" ["actions"] [] (toggles 0 [(i, Offer.listedName shown option) | (i, option) <- zip [0 ..] attackers]),
               Element.el "div" ["passes"] [] $
                 [primary MkSubmit (Text.pack (if count == 0 then "No attack" else "Attack with " <> show count))]
-                  <> [shortcut "A" (MkAnswer (R.Array attackers)) (Text.pack "All") | length attackers > 1, count < length attackers]
+                  <> [shortcut [] "A" (MkAnswer (R.Array attackers)) (Text.pack "Attack with all") | not (null attackers)]
             ]
   kind
     | amounted request || kind `elem` ["ChooseRedistribution", "DividePiles"] || (kind == "ChooseWordSwap" && maybe False (all ((<= 12) . length . options) . groups) (picker request)),
@@ -1087,9 +1085,11 @@ button :: Event -> Text.Text -> Html.Html Event
 button event label = Element.button [] event (Mana.rich label)
 
 -- | A button its key presses wherever it shows (page.js): a meaning's key,
--- the same from prompt to prompt, where page.js numbers the rest.
-shortcut :: String -> Event -> Text.Text -> Html.Html Event
-shortcut key event label = Element.el "button" [] [Element.attr "type" (Text.pack "button"), Element.attr "aria-keyshortcuts" (Text.pack key), Element.on "click" event] (Mana.rich label)
+-- the same from prompt to prompt, where page.js numbers the rest; "danger"
+-- among its classes marks one that gives something up, as ending the turn
+-- gives up the rest of it.
+shortcut :: [String] -> String -> Event -> Text.Text -> Html.Html Event
+shortcut classes key event label = Element.el "button" classes [Element.attr "type" (Text.pack "button"), Element.attr "aria-keyshortcuts" (Text.pack key), Element.on "click" event] (Mana.rich label)
 
 -- | The button that answers, set apart from the rest.
 primary :: Event -> Text.Text -> Html.Html Event

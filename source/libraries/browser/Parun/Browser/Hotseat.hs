@@ -181,13 +181,16 @@ exchange lookUp page seatRef leave request = do
         Screen.MkQuestion (Web.Question.MkRead object)
           | Just r <- readingOf pending object True -> asking pending picked (Just r) focus
         -- A preview shows only while no tapped sheet is open, and ends only
-        -- itself.
+        -- itself, never the tapped sheet (the pointer leaving the tile for
+        -- that sheet's scrim ends a preview).
         Screen.MkQuestion (Web.Question.MkPeek object)
           | maybe True (not . Web.Card.pinned) reading,
             Just r <- readingOf pending object False ->
               asking pending picked (Just r) focus
+          | otherwise -> asking pending picked reading focus
         Screen.MkQuestion Web.Question.MkUnpeek
           | maybe False (not . Web.Card.pinned) reading -> asking pending picked Nothing focus
+          | otherwise -> asking pending picked reading focus
         -- The home screen runs here, the question waiting; giving the game
         -- up unwinds it (game).
         Screen.MkQuestion Web.Question.MkHome -> do

@@ -4,6 +4,7 @@
 -- name the view shows.
 module Parun.Play.Wording where
 
+import qualified Control.Monad as Monad
 import qualified Data.Char as Char
 import qualified Data.Containers.ListUtils as ListUtils
 import qualified Data.Foldable as Foldable
@@ -376,6 +377,15 @@ located view oid =
         )
         (PlayerView.seats view)
 
+-- | A zone as an entry names it: a library, hand or graveyard by its owner
+-- where the entry knows them (CR 400.3), else as PromptOffer.zoneName does.
+ownedZone :: Maybe PlayerId.PlayerId -> Zone.Zone -> Text.Text
+ownedZone owner z = case (owner, z) of
+  (Just p, Zone.Library) -> player p <> Text.pack "'s library"
+  (Just p, Zone.Hand) -> player p <> Text.pack "'s hand"
+  (Just p, Zone.Graveyard) -> player p <> Text.pack "'s graveyard"
+  _ -> PromptOffer.zoneName z
+
 -- | An object's name, if the view shows it or a witnessed move, look or
 -- reveal of it did.
 knownName :: PlayerView.PlayerView -> ObjectId.ObjectId -> Maybe Text.Text
@@ -439,9 +449,12 @@ event view logged = case LoggedEvent.event logged of
     -- CR 111.1: a token's creation is logged as a move from the battlefield
     -- to it.
     | from == Zone.Battlefield && to == Zone.Battlefield -> said [PromptOffer.snapshotName (Moved.characteristics m), Text.pack "is created"]
-    | to == Zone.Graveyard -> said [PromptOffer.snapshotName (Moved.characteristics m), Text.pack "is put into a graveyard from", PromptOffer.zoneName from]
-    | otherwise -> said [PromptOffer.snapshotName (Moved.characteristics m), Text.pack "moves from", PromptOffer.zoneName from, Text.pack "to", PromptOffer.zoneName to]
+    | to == Zone.Graveyard -> said [PromptOffer.snapshotName (Moved.characteristics m), Text.pack "is put into", zoneOf to, Text.pack "from", zoneOf from]
+    | otherwise -> said [PromptOffer.snapshotName (Moved.characteristics m), Text.pack "moves from", zoneOf from, Text.pack "to", zoneOf to]
     where
+      -- CR 400.3: a library, hand or graveyard a card is in is its owner's.
+      owner = Monad.mplus (fmap ObjectSnapshot.owner (Moved.arrived m)) (fmap (ObjectView.owner . snd) (located view (ZoneChange.object (Moved.change m))))
+      zoneOf = ownedZone owner
       from = ZoneChange.from (Moved.change m)
       to = ZoneChange.to (Moved.change m)
   GameEvent.Discarded d -> said [player (Discarded.player d), Text.pack "discards", name (Discarded.card d)]

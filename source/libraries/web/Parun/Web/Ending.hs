@@ -128,8 +128,9 @@ summary me samples =
           Element.el "ul" ["stats"] [] (fmap stat seats)
         ]
 
--- | Confetti for a win: the five colours' symbols, falling at spread places
--- and speeds, the same every time.
+-- | Confetti for a win: the five colours' symbols, falling from spread
+-- places at spread speeds, each drifting aside, swaying and tumbling at its
+-- own pace; the same every time.
 confetti :: Html.Html msg
 confetti =
   let colour n = case n of
@@ -144,7 +145,7 @@ confetti =
          in Element.el
               "span"
               ["fg-" <> tint]
-              [Element.attr "style" (Text.pack ("--x:" <> show (div (r 1) 10) <> "%;--delay:" <> show (r 2 * 2) <> "ms;--spin:" <> show (r 3 - 500) <> "deg;--size:" <> show (14 + mod (r 5) 14) <> "px"))]
+              [Element.attr "style" (Text.pack ("--x:" <> show (div (r 1) 10) <> "%;--delay:" <> show (r 2 * 2) <> "ms;--spin:" <> show (r 3 - 500) <> "deg;--size:" <> show (14 + mod (r 5) 14) <> "px;--drift:" <> show (div (r 6) 20 - 25) <> "vw;--fall:" <> show (2600 + r 7 * 2) <> "ms;--sway:" <> show (6 + mod (r 8) 18) <> "px;--flutter:" <> show (450 + mod (r 9) 600) <> "ms"))]
               [Element.el "svg" [] [Element.attr "viewBox" (Text.pack "0 0 32 32")] [Element.el "use" [] [Element.attr "href" (Text.pack "#" <> Mana.motifId motif)] []]]
    in Element.el "div" ["confetti"] [Element.attr "aria-hidden" (Text.pack "true")] (fmap piece [1 .. 48 :: Integer])
 
