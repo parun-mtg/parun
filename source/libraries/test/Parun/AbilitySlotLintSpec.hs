@@ -44,6 +44,7 @@ import qualified Parun.Engine.Event as Event
 import qualified Parun.Engine.Event.Binding as Event
 import qualified Parun.Engine.Game as Game
 import qualified Parun.Engine.Keyword as Keyword.Engine
+import qualified Parun.Engine.Mana as Mana
 import qualified Parun.Engine.ManaAbility as ManaAbility
 import qualified Parun.Engine.Mint as Mint
 import qualified Parun.Engine.Modal as Modal
@@ -91,6 +92,7 @@ import qualified Parun.Types.Compares as Compares
 import qualified Parun.Types.Comparison as Comparison
 import qualified Parun.Types.Condition as Condition.Type
 import qualified Parun.Types.Cost as Cost.Type
+import qualified Parun.Types.CostAmount as CostAmount
 import qualified Parun.Types.CostChoice as CostChoice
 import qualified Parun.Types.CostComponent as CostComponent
 import qualified Parun.Types.CostModifier as CostModifier
@@ -98,6 +100,7 @@ import qualified Parun.Types.CostSubject as CostSubject
 import qualified Parun.Types.Count as Count.Type
 import qualified Parun.Types.CountedDiscard as CountedDiscard
 import qualified Parun.Types.CounterKind as CounterKind
+import qualified Parun.Types.CountersFromPermanents as CountersFromPermanents
 import qualified Parun.Types.DamageRecipient as DamageRecipient
 import qualified Parun.Types.DealtDamage as DealtDamage
 import qualified Parun.Types.DeclarationTrigger as DeclarationTrigger
@@ -147,6 +150,7 @@ import qualified Parun.Types.MoveCardsFromGraveyard as MoveCardsFromGraveyard
 import qualified Parun.Types.MoveCounters as MoveCounters
 import qualified Parun.Types.MoveToZone as MoveToZone
 import qualified Parun.Types.MovedKinds as MovedKinds
+import qualified Parun.Types.ObjectCount as ObjectCount
 import qualified Parun.Types.ObjectId as ObjectId
 import qualified Parun.Types.ObjectRef as ObjectRef
 import qualified Parun.Types.Onset as Onset
@@ -174,6 +178,7 @@ import qualified Parun.Types.PrintedReplacement as PrintedReplacement
 import qualified Parun.Types.Printing as Printing
 import qualified Parun.Types.Quantity as Quantity.Type
 import qualified Parun.Types.RuleAbilities as RuleAbilities
+import qualified Parun.Types.Sacrifice as Sacrifice
 import qualified Parun.Types.SacrificeEffect as SacrificeEffect
 import qualified Parun.Types.Sacrificer as Sacrificer
 import qualified Parun.Types.Scope as Scope
@@ -570,6 +575,42 @@ manaExileLinkOffends face =
         _ -> []
    in not (null exiling) && any (or . filterAtomsOf readsPile . snd) (cardFilters face)
 
+-- CR 605.1a / 601.2h: does a mana ability's yield read a slot its cost's payment
+-- binds that Parun.Engine.Mana.pricedCostSlots does not price? PAYMENT_SLOTS is
+-- the slots Parun.Engine.Cost.payComponent's arms bind.
+--
+-- Unprinted: a yield reading what its cost tapped, discarded, revealed or
+-- returned, the several permanents it sacrificed or exiled, or counters it
+-- removes X of. Parun.Engine.Mana.manaSuppliesGiven supplies it as the offer
+-- prices it, with the slot unbound, so a cast it would pay for goes unoffered;
+-- this keeps the shape out of card data.
+manaYieldSlotOffends :: ActivatedAbility.ActivatedAbility Card.Type.Card (GrantedAbility.GrantedAbility Card.Type.Card) -> Bool
+manaYieldSlotOffends ability =
+  let paymentSlots =
+        Set.fromList
+          [ Binding.sacrificedPermanent,
+            Binding.exiledPermanent,
+            Binding.exiledCard,
+            Binding.totalledExiles,
+            Binding.craftMaterials,
+            Binding.tappedPermanent,
+            Binding.untappedPermanent,
+            Binding.tappedForTotalPower,
+            Binding.discardedCard,
+            Binding.revealedCard,
+            Binding.returnedPermanent,
+            Binding.graveyardedCard,
+            Binding.removedCounters,
+            Binding.loyaltyRemoved,
+            Binding.collectedEvidence,
+            Binding.beheldObject,
+            Binding.waterbendCost,
+            Binding.blightCost
+          ]
+      readOf addition = QuantitySlot.slots (ManaAddition.count addition) <> Map.keysSet (Resolve.productionSlots (ManaAddition.production addition))
+      yieldReads = foldMap readOf (Maybe.mapMaybe ManaAbility.manaProduced (Modal.allEffects (ActivatedAbility.modal ability)))
+   in ManaAbility.isManaAbility ability && not (Set.null (Set.intersection yieldReads paymentSlots Set.\\ Mana.pricedCostSlots (ActivatedAbility.cost ability)))
+
 -- CR 603.7 / 109.5: does this card arm a delayed ability "on your next turn"
 -- whose condition is not scoped to its controller's turn?
 --
@@ -962,6 +1003,47 @@ abilitySlotLintSpec s registry corpus = Spec.describe s "Lint" $ do
     Spec.assertBool s (manaExileLinkOffends (doctored nameBoth (ExiledPile.OfAbility evidence))) "the mana ability's own named pile is rejected"
     Spec.assertBool s (not (manaExileLinkOffends (doctored nameBoth (ExiledPile.OfAbility unlock)))) "a pile named for its other ability is accepted"
     Spec.assertBool s (not (manaExileLinkOffends (doctored (fmap stripped) ExiledPile.OwnAbilities))) "the mana ability without collect evidence is accepted"
+  -- See manaYieldSlotOffends. When a printed card trips this, its PR prices
+  -- that yield in Parun.Engine.Mana.manaSuppliesGiven, proves it on that card
+  -- and deletes the lint.
+  Spec.it s "CR 605.1a no card writes a mana ability whose yield reads an unpriced payment of its cost" $ do
+    ps <- S.allPrintings s corpus
+    let abilities face = Face.activatedAbilities face <> grantedActivatedAbilities face
+        offenders = filter (anyFace (any manaYieldSlotOffends . abilities) . Printing.card) ps
+    Spec.assertEqWith s "no mana ability's yield reads an unpriced payment" (fmap (S.nameOf . Printing.card) offenders) []
+  -- The lint itself, on a doctored Priest of Yawgmoth ("Sacrifice an artifact:
+  -- Add an amount of {B} equal to the sacrificed artifact's mana value") and a
+  -- doctored Red Mana Battery.
+  Spec.it s "the lint itself catches a mana ability whose yield reads an unpriced payment of its cost" $ do
+    priest <- S.printingOf s registry "Priest of Yawgmoth"
+    battery <- S.printingOf s registry "Red Mana Battery"
+    let manaOf printing = filter ManaAbility.isManaAbility (Face.activatedAbilities (S.combinedFace printing))
+        onComponents f ability = ability {ActivatedAbility.cost = (ActivatedAbility.cost ability) {Cost.Type.components = concatMap f (Cost.Type.components (ActivatedAbility.cost ability))}}
+        onYields f ability =
+          let modal = ActivatedAbility.modal ability
+           in ability {ActivatedAbility.modal = modal {Modal.modes = fmap (\mode -> mode {Mode.clauses = fmap (\clause -> clause {Clause.effects = fmap f (Clause.effects clause)}) (Mode.clauses mode)}) (Modal.modes modal)}}
+        reading slot effect = case effect of
+          Effect.AddMana addition
+            | Quantity.Type.AgainstSlot against <- ManaAddition.count addition ->
+                Effect.AddMana addition {ManaAddition.count = Quantity.Type.AgainstSlot against {AgainstSlot.slot = slot}}
+          _ -> effect
+        sacrificing f component = case component of
+          CostComponent.Sacrifice sacrifice -> f sacrifice
+          _ -> [component]
+        twice sacrifice = [CostComponent.Sacrifice sacrifice {Sacrifice.count = ObjectCount.Exactly (CostAmount.Fixed 2)}]
+        alongside sacrifice = [CostComponent.Sacrifice sacrifice, CostComponent.Sacrifice sacrifice]
+        turning state sacrifice = [CostComponent.TapPermanents (TapPermanents.MkTapPermanents (CostAmount.Fixed 1) (Sacrifice.whichPermanents sacrifice) False state)]
+        announced component = case component of
+          CostComponent.RemoveCounters removal -> [CostComponent.RemoveCounters removal {CountersFromPermanents.count = ObjectCount.Exactly (CostAmount.Announced Binding.variableX)}]
+          _ -> [component]
+        verdicts edit printing = fmap (manaYieldSlotOffends . edit) (manaOf printing)
+    Spec.assertEqWith s "the real cards are accepted" (verdicts id priest <> verdicts id battery) [False, False]
+    Spec.assertEqWith s "two permanents sacrificed are rejected" (verdicts (onComponents (sacrificing twice)) priest) [True]
+    Spec.assertEqWith s "a second one-object choice beside the sacrifice is rejected" (verdicts (onComponents (sacrificing alongside)) priest) [True]
+    Spec.assertEqWith s "the tapped creature's power is rejected" (verdicts (onYields (reading Binding.tappedPermanent) . onComponents (sacrificing (turning TapState.Tapped))) priest) [True]
+    Spec.assertEqWith s "the untapped land's, Benthic Explorers' shape, is accepted" (verdicts (onYields (reading Binding.untappedPermanent) . onComponents (sacrificing (turning TapState.Untapped))) priest) [False]
+    Spec.assertEqWith s "a discarded card's mana value is rejected" (verdicts (onYields (reading Binding.discardedCard)) priest) [True]
+    Spec.assertEqWith s "counters removed X of are rejected" (verdicts (onComponents announced) battery) [True]
   -- The granted half (namedGrantedActivationCriteria) on The Dominion Bracelet,
   -- whose one static ability grants "dominate" and the cost reduction naming
   -- it. Renaming either side dangles; so does splitting the grant across two
