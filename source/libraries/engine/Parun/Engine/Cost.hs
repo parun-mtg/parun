@@ -7383,8 +7383,10 @@ tapForManaWith perform window inFlight refused activator oid = do
               -- from the pool shrinks what it doubles. Their amounts reach CR
               -- 405.6c's other effects through the clause fold below.
               --
-              -- Not implemented: the objects they name reaching those effects,
-              -- which run with none of them (#7447).
+              -- Unprinted: the objects they name reaching those effects, which
+              -- run with none of them. Parun.AbilitySlotLintSpec's "CR 405.6c no
+              -- card writes a mana ability whose other effects read an object
+              -- its cost paid" keeps that read out of card data.
               gsPaid <- State.get
               let paid = if printedX then Map.insert Binding.variableX (Binding.toAmount x) paidSlots else paidSlots
                   pricedAlike = [priced | (offered, priced) <- Mana.manaRepricingsGiven paid gsPaid Map.empty oid gs, List.elem offered alike]

@@ -1528,9 +1528,10 @@ performTriggeredManaAbility runSubgame pending = case PendingTrigger.source pend
 -- The amounts its cost's payment bound arrive on Scratch.ambientAmounts
 -- (Cost.tapForManaWith); CR 605.1a leaves it no targets to have bound.
 --
--- Not implemented: an object of the ability's own to carry the OBJECTS that
--- payment bound. A read of one falls through to the source PERMANENT's
--- bindings instead (#7447).
+-- Unprinted: an object of the ability's own to carry the OBJECTS that payment
+-- bound; a read of one would fall through to the source PERMANENT's bindings.
+-- Parun.AbilitySlotLintSpec's "CR 405.6c no card writes a mana ability whose
+-- other effects read an object its cost paid" keeps that read out of card data.
 --
 -- CR 113.7a / 613.1f: nor has it an object to freeze its source's delayed
 -- abilities on, so each arm carries the one its name means to the ability
