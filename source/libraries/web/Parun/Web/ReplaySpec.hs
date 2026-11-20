@@ -25,30 +25,41 @@ spec s = Spec.describe s "Parun.Web.Replay" $ do
           tapped name label = Html.labelled (Text.pack name) (Text.pack label) page >>= \path -> Html.handler (Text.pack "click") path page
       Spec.assertEq s (tapped "button" "\x25B6", tapped "button" "\x25C0", tapped "button" "bob") (Just (Replay.MkGo 2), Just (Replay.MkGo 0), Just (Replay.MkSeat (PlayerId.MkPlayerId 1)))
 
-    Spec.it s "offers to play on from the position" $ do
-      let page = Html.toText . Replay.view $ frame {Replay.position = 1}
-      Spec.assertBool s (Text.isInfixOf (Text.pack "href=\"?scenario=a-scenario&amp;at=1&amp;branch\"") page) "the branch's link"
+    Spec.it s "offers to play on from the position, and to go back to the list" $ do
+      let page = Replay.view frame {Replay.position = 1}
+          tapped label = Html.labelled (Text.pack "button") (Text.pack label) page >>= \path -> Html.handler (Text.pack "click") path page
+      Spec.assertEqWith s "play on" (tapped "Play on from here") (Just Replay.MkBranch)
+      Spec.assertEqWith s "back" (tapped "All scenarios") (Just Replay.MkBack)
+      Spec.assertBool s (not (Text.isInfixOf (Text.pack "&amp;branch") (Html.toText page))) "no branch link"
 
   Spec.describe s "picker" $ do
     Spec.it s "lists the names holding what is typed, whatever its case" $ do
-      let page = Html.toText $ Replay.picker (Text.pack "PIKER") Map.empty (fmap Text.pack ["goblin-piker-attacks", "shock-kills", "a-piker-blocks"])
-      Spec.assertBool s (Text.isInfixOf (Text.pack "href=\"?scenario=goblin-piker-attacks\"") page) "match"
+      let view = Replay.picker (Text.pack "PIKER") (Just (Map.empty, fmap Text.pack ["goblin-piker-attacks", "shock-kills", "a-piker-blocks"]))
+          page = Html.toText view
+      Spec.assertEqWith s "match" (Html.labelled (Text.pack "button") (Text.pack "goblin-piker-attacks") view >>= \path -> Html.handler (Text.pack "click") path view) (Just (Replay.MkOpen (Text.pack "goblin-piker-attacks")))
+      Spec.assertBool s (not (Text.isInfixOf (Text.pack "href=\"?scenario=") page)) "no link"
       Spec.assertBool s (not (Text.isInfixOf (Text.pack "shock-kills") page)) "filtered out"
       Spec.assertBool s (Text.isInfixOf (Text.pack "2 of 3") page) "count"
 
     Spec.it s "lists the manifest's matching names under their themes ahead of every name" $ do
       let themes = Map.fromList [(Text.pack "Combat", fmap Text.pack ["a-piker-blocks", "shock-kills"]), (Text.pack "Burn", fmap Text.pack ["shock-kills"])]
-          page = Html.toText $ Replay.picker (Text.pack "piker") themes (fmap Text.pack ["goblin-piker-attacks", "shock-kills", "a-piker-blocks"])
+          page = Html.toText $ Replay.picker (Text.pack "piker") (Just (themes, fmap Text.pack ["goblin-piker-attacks", "shock-kills", "a-piker-blocks"]))
           at needle = Text.length (fst (Text.breakOn (Text.pack needle) page))
       Spec.assertBool s (at ">Combat<" < at "Every scenario" && at "Every scenario" < at "goblin-piker-attacks") "the theme first"
       Spec.assertBool s (not (Text.isInfixOf (Text.pack ">Burn<") page)) "a theme with no match left out"
-      Spec.assertBool s (at ">Combat<" < at "?scenario=a-piker-blocks") "the theme's match"
+      Spec.assertBool s (at ">Combat<" < at ">a-piker-blocks<") "the theme's match"
+
+    Spec.it s "says the scenarios are being fetched until they are, and goes home" $ do
+      let view = Replay.picker Text.empty Nothing
+      Spec.assertBool s (Text.isInfixOf (Text.pack "Fetching the scenarios") (Html.toText view)) "fetching"
+      Spec.assertEq s (Html.labelled (Text.pack "button") (Text.pack "Home") view >>= \path -> Html.handler (Text.pack "click") path view) (Just Replay.MkHome)
 
   Spec.describe s "ended" $ do
-    Spec.it s "links back to the position and to play on from it again" $ do
-      let page = Html.toText $ Replay.ended (Text.pack "a-scenario") 2 [Text.pack "Alice wins."]
-      Spec.assertBool s (Text.isInfixOf (Text.pack "href=\"?scenario=a-scenario&amp;at=2\"") page) "back"
-      Spec.assertBool s (Text.isInfixOf (Text.pack "href=\"?scenario=a-scenario&amp;at=2&amp;branch\"") page) "again"
+    Spec.it s "goes back to the position and plays on from it again" $ do
+      let view = Replay.ended [Text.pack "Alice wins."]
+          tapped label = Html.labelled (Text.pack "button") (Text.pack label) view >>= \path -> Html.handler (Text.pack "click") path view
+      Spec.assertEqWith s "back" (tapped "Back to the replay") (Just Replay.MkResumeReplay)
+      Spec.assertEqWith s "again" (tapped "Play on again") (Just Replay.MkBranch)
 
 frame :: Replay.Frame
 frame =

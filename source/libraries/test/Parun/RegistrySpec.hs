@@ -359,3 +359,13 @@ spec s = Spec.describe s "Parun.Registry" $ do
       let field = (<> ByteString.singleton 0)
           bundle = foldMap (\(name, contents) -> field (ByteString.Char8.pack name) <> field (Encoding.encodeUtf8 contents)) files
       Spec.assertEq s (Registry.loadBundle root bundle) loaded
+
+  Spec.it s "loadBundles over slices answers what loadRoot does over the same files" $ do
+    piker <- S.pikerJson
+    let files = [("goblin-piker.json", piker), ("bird-maiden.json", Text.pack "{oh no"), ("README.md", Text.pack "not a card")]
+    S.withCorpusDir "load-bundles" files $ \root -> do
+      loaded <- Registry.loadRoot root
+      let field = (<> ByteString.singleton 0)
+          bundleOf :: [(String, Text.Text)] -> ByteString.ByteString
+          bundleOf = foldMap (\(name, contents) -> field (ByteString.Char8.pack name) <> field (Encoding.encodeUtf8 contents))
+      Spec.assertEq s (Registry.loadBundles root [bundleOf (take 1 files), bundleOf (drop 1 files)]) loaded

@@ -10,30 +10,20 @@ engineUrl.search = location.search;
 const level = localStorage.getItem("parun-level");
 if (level !== null) engineUrl.searchParams.set("level", level);
 const engine = new Worker(engineUrl, { type: "module" });
+// The query is read once, by the engine at its start (Parun.Browser.Shell's
+// opening); the page moves on without it.
+if (location.search) history.replaceState(null, "", location.pathname);
 // Safari runs WebAssembly far slower outside a secure context (#8419), and
 // plain http from a network address is not one.
 if (!isSecureContext) document.getElementById("insecure").hidden = false;
 // Once fetched, the engine is kept for later visits (sw.js).
 if ("serviceWorker" in navigator && isSecureContext) navigator.serviceWorker.register("./sw.js").catch((problem) => console.warn(problem));
-// With ?trace, the engine's step timings and the page's own go to a panel.
-const trace = new URLSearchParams(location.search).has("trace") ? document.getElementById("trace") : null;
-if (trace) {
-  trace.closest("details").hidden = false;
-  document.body.classList.add("tracing");
-}
-function traced(line) {
-  if (trace) trace.textContent += `${Math.round(performance.now())} ${line}\n`;
-}
 
-// The engine's load phases and the last tap's response time show at the foot
-// of the page, and what loads next on the loading screen.
-const timings = document.getElementById("timings");
-// What the loading screen says comes next, after each phase engine.js
-// reports; a failure is said as it is.
-const nextPhase = { fetched: "Unpacking the cards", unpacked: "Compiling the engine", compiled: "Reading the cards" };
+// The engine's load phases go to the console, and the loading screen says
+// what comes after each (engine.js); a failure is said as it is.
+const nextPhase = { compiled: "Fetching the cards", decks: "Fetching the cards", "cards-0": "Fetching the cards", "cards-1": "Fetching the cards", "cards-2": "Fetching the cards", "cards-3": "Fetching the rules", rules: "Reading the cards" };
 function note(line) {
   console.log(line);
-  timings.textContent += (timings.textContent ? "; " : "") + line;
   const phase = document.getElementById("phase");
   const next = nextPhase[line.split(" ")[0]];
   if (phase) phase.textContent = next ? `${next}\u2026` : line;
@@ -116,10 +106,8 @@ concedeButton.addEventListener("click", () => {
   if (conceding === null || !confirm("Concede this game?")) return;
   openSettings(false);
   document.body.classList.add("busy");
-  tapped = performance.now();
   engine.postMessage({ type: "concede", path: pathOf(conceding), value: "" });
 });
-let tapped = null;
 
 const svgNamespace = "http://www.w3.org/2000/svg";
 
@@ -197,10 +185,6 @@ function apply(json) {
   const docked = dockHeight();
   const focused = document.activeElement;
   unkey();
-  if (tapped !== null) {
-    document.getElementById("response").textContent = `last response ${Math.round(performance.now() - tapped)} ms`;
-    tapped = null;
-  }
   for (const patch of JSON.parse(json)) {
     const node = at(patch.path);
     switch (patch.op) {
@@ -292,8 +276,6 @@ for (const type of events) {
     // A tap shows the page busy until the engine next patches it.
     if (type === "click" && event.target.closest("button")) {
       document.body.classList.add("busy");
-      tapped = performance.now();
-      traced("page: tap");
     }
     engine.postMessage({ type, path, value: String(event.target.value ?? "") });
     // A typed line is sent once; the box is ready for the next. A filter
@@ -486,11 +468,7 @@ document.addEventListener("keydown", (event) => {
 });
 
 engine.onmessage = ({ data }) => {
-  if ("patches" in data) {
-    const began = performance.now();
-    apply(data.patches);
-    traced(`page: applied ${data.patches.length} bytes in ${Math.round(performance.now() - began)} ms`);
-  } else if ("phase" in data) note(data.phase);
-  else if ("trace" in data) traced(data.trace);
+  if ("patches" in data) apply(data.patches);
+  else if ("phase" in data) note(data.phase);
 };
 engine.onerror = (error) => note(`engine failed: ${error.message}`);

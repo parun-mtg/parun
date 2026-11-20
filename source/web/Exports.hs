@@ -1,13 +1,10 @@
 -- | The functions the page calls; a reactor module has no main.
 module Exports where
 
-import qualified Parun.Browser.Hotseat
-import qualified Parun.Browser.Replay
-import qualified System.Environment as Environment
+import qualified Parun.Browser.Shell
 
 foreign export javascript "start" start :: IO ()
 
--- | A game, or the scenario the page names (parun_scenario, the page's
--- ?scenario) replayed.
+-- | The web client: its home screen, or the scenario the page names.
 start :: IO ()
-start = Environment.lookupEnv "parun_scenario" >>= maybe Parun.Browser.Hotseat.start Parun.Browser.Replay.start
+start = Parun.Browser.Shell.start

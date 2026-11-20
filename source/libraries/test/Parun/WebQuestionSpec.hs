@@ -417,6 +417,14 @@ spec s registry = Spec.describe s "WebQuestion" $ do
     Spec.assertBool s (maybe False (Text.isInfixOf (Text.pack "aria-pressed=\"false\" disabled=\"\">Auto</button>") . Html.toText) (bar watched)) "inert while watching"
     Spec.assertBool s (maybe False (\p -> not (any (`Text.isInfixOf` Html.content p) [Text.pack "Auto-pass", Text.pack "Concede"])) prompt) "the prompt carries neither"
 
+  Spec.it s "the turn bar's Home button leaves the game while the seat is asked, and is inert while it watches" $ do
+    let request = requestFor (Setup.emptyGame S.bothPlayers) (Prompt.ChooseAction (Decider.MkDecider S.alice) S.alice [Action.Pass])
+        asked = Question.Web.view request Question.Web.blank
+        watched = Maybe.fromMaybe (Html.text Text.empty) (Question.Web.watching (Just S.alice) request Question.Web.blank)
+        home html = Html.labelled (Text.pack "button") (Text.pack "Home") html >>= \path -> Html.handler (Text.pack "click") path html
+    Spec.assertEqWith s "asked" (home asked) (Just Question.Web.MkHome)
+    Spec.assertBool s (Text.isInfixOf (Text.pack "disabled=\"\">Home</button>") (Html.toText watched)) "inert while watching"
+
   Spec.it s "CR 402.3 a request the screen's seat was not asked draws no board of the seat asked" $ do
     elves <- S.printingOf s registry "Llanowar Elves"
     let (_, gs) = S.addObjectIn Zone.Hand elves S.bob (Setup.emptyGame S.bothPlayers)

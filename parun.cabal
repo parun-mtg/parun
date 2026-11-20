@@ -4045,10 +4045,14 @@ library web
     Parun.Web.Element
     Parun.Web.Ending
     Parun.Web.EndingSpec
+    Parun.Web.Home
+    Parun.Web.HomeSpec
     Parun.Web.Html
     Parun.Web.HtmlSpec
     Parun.Web.Icon
     Parun.Web.IconSpec
+    Parun.Web.Loading
+    Parun.Web.LoadingSpec
     Parun.Web.Lobby
     Parun.Web.LobbySpec
     Parun.Web.Log
@@ -4058,6 +4062,7 @@ library web
     Parun.Web.Question
     Parun.Web.Replay
     Parun.Web.ReplaySpec
+    Parun.Web.Screen
     Parun.Web.Wire
     Parun.Web.WireSpec
 
@@ -4088,6 +4093,7 @@ library browser
     Parun.Browser
     Parun.Browser.Hotseat
     Parun.Browser.Replay
+    Parun.Browser.Shell
 
 executable parun
   import: executable

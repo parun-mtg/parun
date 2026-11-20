@@ -1132,8 +1132,10 @@ import qualified Parun.VoteSpec
 import qualified Parun.Web.AppSpec
 import qualified Parun.Web.DiffSpec
 import qualified Parun.Web.EndingSpec
+import qualified Parun.Web.HomeSpec
 import qualified Parun.Web.HtmlSpec
 import qualified Parun.Web.IconSpec
+import qualified Parun.Web.LoadingSpec
 import qualified Parun.Web.LobbySpec
 import qualified Parun.Web.ManaSpec
 import qualified Parun.Web.ReplaySpec
@@ -2304,6 +2306,8 @@ spec s reference corpus = do
   Parun.Web.DiffSpec.spec s
   Parun.Web.EndingSpec.spec s
   Parun.Web.HtmlSpec.spec s
+  Parun.Web.HomeSpec.spec s
+  Parun.Web.LoadingSpec.spec s
   Parun.Web.LobbySpec.spec s
   Parun.Web.IconSpec.spec s
   Parun.Web.ManaSpec.spec s

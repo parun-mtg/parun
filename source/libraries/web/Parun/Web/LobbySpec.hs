@@ -76,6 +76,14 @@ spec s = Spec.describe s "Parun.Web.Lobby" $ do
       Spec.assertEq s (Lobby.opponents (Lobby.update (Lobby.MkPick c) Text.empty lobby)) (Seq.fromList [c, d])
       Spec.assertEq s (Lobby.opponents (Lobby.update (Lobby.MkPick a) Text.empty lobby)) (Seq.fromList [a, b])
 
+  Spec.describe s "withDecks" $ do
+    Spec.it s "keeps what was picked and typed" $ do
+      let early = (Lobby.update (Lobby.MkPick a) Text.empty lobby) {Lobby.search = Text.pack "web"}
+          later = Lobby.withDecks (Seq.fromList [a, b]) Map.empty early
+      Spec.assertEqWith s "mine" (Lobby.mine later) (Just a)
+      Spec.assertEqWith s "search" (Lobby.search later) (Text.pack "web")
+      Spec.assertEqWith s "read" (Lobby.reading later) False
+
   Spec.describe s "view" $ do
     Spec.it s "lists the decks matching the filter, grouped by set" $ do
       let page = Html.toText . Lobby.view $ lobby {Lobby.search = Text.pack "WEB"}
@@ -100,6 +108,20 @@ spec s = Spec.describe s "Parun.Web.Lobby" $ do
       Spec.assertBool s (Text.isInfixOf (Text.pack ">Bot<") one && not (Text.isInfixOf (Text.pack "Remove a bot") one)) "one bot"
       Spec.assertBool s (Text.isInfixOf (Text.pack ">Bot 1<") two && Text.isInfixOf (Text.pack ">Bot 2<") two && Text.isInfixOf (Text.pack "Remove a bot") two) "two bots"
 
+    Spec.it s "says the decks are being read until they are" $ do
+      let page = Html.toText (Lobby.view Lobby.new)
+      Spec.assertBool s (Text.isInfixOf (Text.pack "Reading the decks") page) "reading"
+      Spec.assertBool s (not (Text.isInfixOf (Text.pack "No deck matches") page)) "no empty match"
+
+    Spec.it s "says why the decks did not load in place of reading them" $ do
+      let page = Html.toText (Lobby.view Lobby.new {Lobby.problem = Just (Text.pack "Reload to try again.")})
+      Spec.assertBool s (Text.isInfixOf (Text.pack "role=\"alert\">Reload to try again.") page) "problem"
+      Spec.assertBool s (not (Text.isInfixOf (Text.pack "Reading the decks") page)) "not reading"
+
+    Spec.it s "goes home from its Home button" $ do
+      let page = Lobby.view lobby
+      Spec.assertEq s (Html.labelled (Text.pack "button") (Text.pack "Home") page >>= \path -> Html.handler (Text.pack "click") path page) (Just Lobby.MkHome)
+
     Spec.it s "sends a deck's name when it is tapped" $ do
       let page = Lobby.view lobby
       Spec.assertEq s (Html.labelled (Text.pack "button") (Text.pack "Entangling Webs") page >>= \path -> Html.handler (Text.pack "click") path page) . Just $ Lobby.MkPick b
@@ -117,4 +139,4 @@ d :: Text.Text
 d = Text.pack "sets/fdc/wretched-ranks"
 
 lobby :: Lobby.Lobby
-lobby = Lobby.new 2 (Seq.fromList [a, b, c, d]) $ Map.fromList [(c, Text.pack "commander"), (d, Text.pack "commander")]
+lobby = Lobby.withDecks (Seq.fromList [a, b, c, d]) (Map.fromList [(c, Text.pack "commander"), (d, Text.pack "commander")]) Lobby.new

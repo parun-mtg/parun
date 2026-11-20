@@ -2,7 +2,8 @@
 # Builds the web client into a directory ready to serve (default dist-web/):
 # the page, its style sheet, manifest and icons, the service worker, the
 # engine's Web Worker, the wasm module and its JavaScript FFI glue, the WASI
-# shim, and the data directory the engine mounts, its scenarios apart. Every file but the page,
+# shim, and the data directory the engine mounts, in chunks it fetches one at
+# a time (decks, four slices of the cards, rules, and scenarios on demand). Every file but the page,
 # its manifest and icons and the service worker is named by a hash of its
 # contents, so a browser caches each until it changes, and the service
 # worker (sw.js) keeps them for later visits. Runs in the wasm dev shell;
@@ -28,22 +29,32 @@ chmod -R u+w "$out"
 version=$(awk '$1 == "version:" { print $2 }' parun.cabal)
 commit=$(git rev-parse --short HEAD 2>/dev/null || echo unknown)
 sed -i "s|@VERSION@|$version|; s|@COMMIT@|$commit|" "$out/index.html"
-# The data directory the engine mounts, reproducibly packed, with the cards as
-# one bundle (Parun.Registry.loadBundle) rather than a file each.
+# The data directory the engine mounts, reproducibly packed in chunks, each
+# merged into /data as it arrives (engine.js): the decks and formats; the
+# cards as four bundles (Parun.Registry.bundlePaths) of equal count, in path
+# order; the rules data; and the scenarios, fetched only for a replay.
 staging=$(mktemp -d)
 trap 'rm -rf "$staging"' EXIT
-find data/cards -name '*.json' | LC_ALL=C sort | while read -r card; do
-  printf '%s\0' "${card##*/}"
-  cat "$card"
-  printf '\0'
-done > "$staging/cards.bundle"
-tar --format=ustar --sort=name --owner=0 --group=0 --numeric-owner --mtime=@0 -cf - \
-  -C "$staging" cards.bundle \
-  -C "$PWD/data" decks formats legalities.json printings.json sticker-sheets | gzip -9n > "$out/data.tar.gz"
-# The scenarios and their manifest a replay (?scenario=…) mounts beside it,
-# fetched only then.
-tar --format=ustar --sort=name --owner=0 --group=0 --numeric-owner --mtime=@0 -cf - \
-  -C "$PWD/data" --exclude=README.md scenario-manifest.json scenarios | gzip -9n > "$out/scenarios.tar.gz"
+pack() {
+  local name=$1
+  shift
+  tar --format=ustar --sort=name --owner=0 --group=0 --numeric-owner --mtime=@0 -cf - "$@" | gzip -9n > "$out/$name.tar.gz"
+}
+find data/cards -name '*.json' | LC_ALL=C sort > "$staging/cards"
+slice=$(( ($(wc -l < "$staging/cards") + 3) / 4 ))
+split -l "$slice" -d -a 1 "$staging/cards" "$staging/slice-"
+for k in 0 1 2 3; do
+  touch "$staging/slice-$k"
+  while read -r card; do
+    printf '%s\0' "${card##*/}"
+    cat "$card"
+    printf '\0'
+  done < "$staging/slice-$k" > "$staging/cards-$k.bundle"
+  pack "cards-$k" -C "$staging" "cards-$k.bundle"
+done
+pack decks -C "$PWD/data" decks formats
+pack rules -C "$PWD/data" legalities.json printings.json sticker-sheets
+pack scenarios -C "$PWD/data" --exclude=README.md scenario-manifest.json scenarios
 
 # Content addressing, leaves first: a file's hash covers the names it refers
 # to, so a change anywhere renames every file that leads to it.
@@ -67,8 +78,9 @@ shim="browser_wasi_shim-$(cat "$out"/browser_wasi_shim/* | sha256sum | cut -c1-1
 mv "$out/browser_wasi_shim" "$out/$shim"
 sed -i "s|\"\\./browser_wasi_shim/|\"./$shim/|g" "$out/engine.js"
 address parun.wasm engine.js
-address data.tar.gz engine.js
-address scenarios.tar.gz engine.js
+for chunk in decks cards-0 cards-1 cards-2 cards-3 rules scenarios; do
+  address "$chunk.tar.gz" engine.js
+done
 address ghc_wasm_jsffi.js engine.js
 address engine.js page.js
 address page.js index.html

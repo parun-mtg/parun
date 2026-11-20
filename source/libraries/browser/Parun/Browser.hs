@@ -6,32 +6,41 @@ module Parun.Browser where
 
 import qualified Control.Exception as Exception
 import qualified Control.Monad as Monad
+import qualified Data.Foldable as Foldable
 import qualified Data.IORef as IORef
-import qualified Data.Maybe as Maybe
 import qualified Data.Sequence as Seq
 import qualified Data.Text as Text
-import qualified GHC.Clock as Clock
 import qualified Parun.Trustworthy.Wasm as Prim
 import qualified Parun.Web.Diff as Diff
 import qualified Parun.Web.Html as Html
 import qualified Parun.Web.Patch as Patch
 import qualified Parun.Web.Wire as Wire
-import qualified System.Environment as Environment
-import qualified System.IO as IO
 
--- | The view the page shows, and the events its handlers took that no one
--- has waited for yet, each with the value of the element it came from.
+-- | The view the page shows, the events its handlers took that no one
+-- has waited for yet, each with the value of the element it came from, and
+-- the data chunks that arrived since last read.
 data Page msg = MkPage
   { shown :: IORef.IORef (Maybe (Html.Html msg)),
     taken :: IORef.IORef (Seq.Seq (msg, Text.Text)),
-    -- | Whether the page asked for timings (parun_trace, the page's ?trace).
-    tracing :: Bool
+    arrived :: IORef.IORef (Seq.Seq Arrival)
   }
+
+-- | A chunk of the data directory (engine.js) merged into it, or failed:
+-- "decks", "cards-0" to "cards-3", "rules" or "scenarios".
+data Arrival
+  = MkArrived Text.Text
+  | MkFailed Text.Text
+  deriving (Eq, Show)
+
+-- | What woke the page's loop: a tap, or a chunk.
+data Input msg
+  = MkTap msg Text.Text
+  | MkArrival Arrival
 
 -- | A page showing nothing yet, its events listened for.
 mount :: IO (Page msg)
 mount = do
-  page <- MkPage <$> IORef.newIORef Nothing <*> IORef.newIORef Seq.empty <*> fmap Maybe.isJust (Environment.lookupEnv "parun_trace")
+  page <- MkPage <$> IORef.newIORef Nothing <*> IORef.newIORef Seq.empty <*> IORef.newIORef Seq.empty
   listen =<< wrap (dispatch page)
   pure page
 
@@ -41,20 +50,8 @@ display :: Page msg -> Html.Html msg -> IO ()
 display page html = do
   before <- IORef.readIORef $ shown page
   IORef.writeIORef (shown page) $ Just html
-  began <- Clock.getMonotonicTime
   json <- Exception.evaluate . Wire.patches $ maybe (Seq.singleton $ Patch.MkReplace Seq.empty html) (`Diff.diff` html) before
-  Monad.when (tracing page) $ do
-    Monad.void . Exception.evaluate $ length json
-    ended <- Clock.getMonotonicTime
-    trace page . Text.pack $ "screen: " <> show (length json) <> " bytes of patches in " <> milliseconds (ended - began)
   applyJson $ Prim.toJSString json
-
--- | A line of timings to the page's trace, when it asked for them.
-trace :: Page msg -> Text.Text -> IO ()
-trace page line = Monad.when (tracing page) $ IO.hPutStrLn IO.stderr (Text.unpack line)
-
-milliseconds :: Double -> String
-milliseconds seconds = show (round (seconds * 1000) :: Integer) <> " ms"
 
 -- | The next event the shown view's handlers take, waiting for one.
 next :: Page msg -> IO (msg, Text.Text)
@@ -63,6 +60,38 @@ next page = do
     event Seq.:< rest -> (rest, Just event)
     Seq.EmptyL -> (events, Nothing)
   maybe (wait >> next page) pure queued
+
+-- | The next chunk arrived, else the next tap, waiting for either.
+nextInput :: Page msg -> IO (Input msg)
+nextInput page = do
+  collect page
+  chunk <- IORef.atomicModifyIORef' (arrived page) $ \chunks -> case Seq.viewl chunks of
+    c Seq.:< rest -> (rest, Just c)
+    Seq.EmptyL -> (chunks, Nothing)
+  case chunk of
+    Just c -> pure (MkArrival c)
+    Nothing -> do
+      queued <- pending page
+      if queued then fmap (uncurry MkTap) (next page) else wait >> nextInput page
+
+-- | The chunks arrived since last asked, without waiting.
+arrivals :: Page msg -> IO [Arrival]
+arrivals page = do
+  collect page
+  fmap Foldable.toList . IORef.atomicModifyIORef' (arrived page) $ \cs -> (Seq.empty, cs)
+
+-- | Asks the worker to fetch this chunk next (engine.js), the scenarios
+-- only once asked for.
+want :: Text.Text -> IO ()
+want = wantChunk . Prim.toJSString . Text.unpack
+
+-- | Moves the chunks the worker named since last asked onto the page's own
+-- queue.
+collect :: Page msg -> IO ()
+collect page = do
+  names <- fmap (Text.lines . Text.pack . Prim.fromJSString) takeArrivals
+  let arrival n = maybe (MkArrived n) MkFailed (Text.stripPrefix (Text.pack "!") n)
+  Monad.unless (null names) . IORef.atomicModifyIORef' (arrived page) $ \cs -> (cs <> Seq.fromList (fmap arrival names), ())
 
 -- | Whether an event taken waits to be read.
 pending :: Page msg -> IO Bool
@@ -84,6 +113,10 @@ dispatch page event path value = do
       IORef.atomicModifyIORef' (taken page) $ \events -> (events Seq.|> (msg, Text.pack $ Prim.fromJSString value), ())
       wake
     _ -> pure ()
+
+-- | Waits for the next tap or chunk without taking it.
+idle :: IO ()
+idle = wait
 
 -- | Waits until 'wake' is called: the waiting thread is suspended, and the
 -- page goes on. The import's result is a thunk, forced here.
@@ -107,3 +140,9 @@ foreign import javascript safe "await new Promise((resolve) => setTimeout(resolv
 
 foreign import javascript unsafe "globalThis.parunWake?.()"
   wake :: IO ()
+
+foreign import javascript unsafe "globalThis.parunTakeArrivals()"
+  takeArrivals :: IO Prim.JSString
+
+foreign import javascript unsafe "globalThis.parunWant($1)"
+  wantChunk :: Prim.JSString -> IO ()

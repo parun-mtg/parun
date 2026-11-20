@@ -1,7 +1,7 @@
 // The web client's engine, in a Web Worker: loads the wasm module and runs the
 // game, sending each view's patches to the page (page.js) and taking the
-// page's events back. Parun's data directory is data.tar.gz, unpacked into
-// memory and mounted at /data.
+// page's events back. Parun's data directory is mounted at /data, empty at
+// first and filled in memory chunk by chunk as each downloads.
 import { ConsoleStdout, Directory, File, OpenDirectory, OpenFile, PreopenDirectory, WASI, wasi as defs } from "./browser_wasi_shim/index.js";
 import jsffi from "./ghc_wasm_jsffi.js";
 
@@ -56,8 +56,9 @@ function untar(bytes) {
 }
 
 // The shim copies a directory's whole listing to read each entry, quadratic
-// over the cards directory; the mounted data never changes, so each opened
-// directory copies it once.
+// over a large directory, so each opened directory copies it once. A chunk
+// merged in later reaches a directory opened afresh; only the root stays
+// open, and fetchAll resets its copy.
 const readdirSingle = OpenDirectory.prototype.fd_readdir_single;
 OpenDirectory.prototype.fd_readdir_single = function (cookie) {
   if (cookie < 2n) return readdirSingle.call(this, cookie);
@@ -67,46 +68,99 @@ OpenDirectory.prototype.fd_readdir_single = function (cookie) {
   return { ret: 0, dirent: new defs.Dirent(cookie + 1n, entry.ino, name, entry.stat().filetype) };
 };
 
-function inodes(tree) {
-  return new Map(Array.from(tree, ([name, node]) => [name, node instanceof Map ? new Directory(inodes(node)) : node]));
+// A tree from untar merged into a mounted directory: a directory both hold
+// is merged, anything else set.
+function merge(dir, tree) {
+  for (const [name, node] of tree) {
+    if (node instanceof Map) {
+      let sub = dir.contents.get(name);
+      if (!(sub instanceof Directory)) {
+        sub = new Directory(new Map());
+        sub.parent = dir;
+        dir.contents.set(name, sub);
+      }
+      merge(sub, node);
+    } else dir.contents.set(name, node);
+  }
 }
 
 async function gunzip(url) {
   const archive = await fetch(url);
+  if (!archive.ok) throw new Error(`${url}: ${archive.status}`);
   return new Uint8Array(await new Response(archive.body.pipeThrough(new DecompressionStream("gzip"))).arrayBuffer());
 }
 
 const query = new URLSearchParams(location.search);
-const data = await gunzip("./data.tar.gz");
-phase(`fetched ${data.length} bytes`);
-const tree = untar(data);
-// A replay (?scenario=…, Parun.Browser.Replay) mounts data/scenarios and
-// its manifest too, fetched only then.
-if (query.has("scenario")) {
-  const scenarios = await gunzip("./scenarios.tar.gz");
-  phase(`fetched ${scenarios.length} bytes of scenarios`);
-  for (const [name, node] of untar(scenarios)) tree.set(name, node);
-}
-const mounted = new PreopenDirectory("/data", inodes(tree));
-phase("unpacked");
+// The engine compiles while the data downloads, and starts on an empty /data.
+const compiling = WebAssembly.compileStreaming(fetch("./parun.wasm"));
+const mounted = new PreopenDirectory("/data", new Map());
 
-// ?trace, passed on from the page, has Haskell time each step on standard
-// error (Parun.Browser.trace), which goes to the page's trace.
-const tracing = query.has("trace");
-// A rematch's decks (?mine=…&theirs=…) skip the lobby, and a shared seed
-// (&seed=…) shuffles as before (Parun.Web.Ending). A replay names its
-// scenario, the empty name for the list of them, and may name a position
-// (&at=…) and play on from it (&branch).
+// The data's chunks (script/build-web.sh), fetched one at a time in this
+// order, each merged into /data and then named to Haskell
+// (Parun.Browser.nextInput), a failed one with a leading "!". The scenarios
+// are fetched only when Haskell asks for them (parunWant), as a replay does.
+const urls = {
+  decks: "./decks.tar.gz",
+  "cards-0": "./cards-0.tar.gz",
+  "cards-1": "./cards-1.tar.gz",
+  "cards-2": "./cards-2.tar.gz",
+  "cards-3": "./cards-3.tar.gz",
+  rules: "./rules.tar.gz",
+  scenarios: "./scenarios.tar.gz",
+};
+const queue = ["decks", "cards-0", "cards-1", "cards-2", "cards-3", "rules"];
+const asked = new Set(queue);
+let arrivals = [];
+globalThis.parunTakeArrivals = () => {
+  const taken = arrivals.join("\n");
+  arrivals = [];
+  return taken;
+};
+// A chunk Haskell needs now goes to the front of the queue.
+let fetching = false;
+globalThis.parunWant = (name) => {
+  if (!(name in urls)) return;
+  if (asked.has(name)) {
+    const at = queue.indexOf(name);
+    if (at > 0) queue.unshift(...queue.splice(at, 1));
+  } else {
+    asked.add(name);
+    queue.unshift(name);
+  }
+  if (!fetching) fetchAll();
+};
+async function fetchAll() {
+  fetching = true;
+  while (queue.length > 0) {
+    const name = queue.shift();
+    try {
+      merge(mounted.dir, untar(await gunzip(urls[name])));
+      // The root's listing, if read, is read afresh.
+      mounted.listing = undefined;
+      phase(name);
+      arrivals.push(name);
+    } catch (problem) {
+      console.warn(problem);
+      arrivals.push(`!${name}`);
+    }
+    globalThis.parunWake?.();
+  }
+  fetching = false;
+}
+fetchAll();
+
+// A replay names its scenario, the empty name for the list of them, and may
+// name a position (&at=…) and play on from it (&branch).
 // The auto-pass level the page kept (page.js) goes in as parun_level.
-const passed = ["mine", "theirs", "seed", "level", "scenario", "at", "branch"].filter((key) => query.has(key)).map((key) => `parun_${key}=${query.get(key)}`);
-const wasi = new WASI([], ["parun_datadir=/data", ...(tracing ? ["parun_trace=1"] : []), ...passed], [
+const passed = ["level", "scenario", "at", "branch"].filter((key) => query.has(key)).map((key) => `parun_${key}=${query.get(key)}`);
+const wasi = new WASI([], ["parun_datadir=/data", ...passed], [
   new OpenFile(new File([])),
   ConsoleStdout.lineBuffered((line) => console.log(line)),
-  ConsoleStdout.lineBuffered((line) => (tracing ? postMessage({ trace: line }) : console.warn(line))),
+  ConsoleStdout.lineBuffered((line) => console.warn(line)),
   mounted,
 ], { debug: false });
 const exports = {};
-const { instance } = await WebAssembly.instantiateStreaming(fetch("./parun.wasm"), {
+const instance = await WebAssembly.instantiate(await compiling, {
   ghc_wasm_jsffi: jsffi(exports),
   wasi_snapshot_preview1: wasi.wasiImport,
 });
