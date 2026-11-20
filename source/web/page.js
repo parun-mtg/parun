@@ -10,6 +10,10 @@ engineUrl.search = location.search;
 const level = localStorage.getItem("parun-level");
 if (level !== null) engineUrl.searchParams.set("level", level);
 const engine = new Worker(engineUrl, { type: "module" });
+// The decks saved in this browser go to the engine first (engine.js), each
+// kept as parun-deck:<slug>.
+const deckKey = "parun-deck:";
+engine.postMessage({ saved: Object.fromEntries(Object.keys(localStorage).filter((key) => key.startsWith(deckKey)).map((key) => [key.slice(deckKey.length), localStorage.getItem(key)])) });
 // The query is read once, by the engine at its start (Parun.Browser.Shell's
 // opening); the page moves on without it.
 if (location.search) history.replaceState(null, "", location.pathname);
@@ -530,5 +534,7 @@ document.addEventListener("keydown", (event) => {
 engine.onmessage = ({ data }) => {
   if ("patches" in data) apply(data.patches);
   else if ("phase" in data) note(data.phase);
+  else if ("save" in data) localStorage.setItem(deckKey + data.save.slug, data.save.text);
+  else if ("forget" in data) localStorage.removeItem(deckKey + data.forget);
 };
 engine.onerror = (error) => note(`engine failed: ${error.message}`);

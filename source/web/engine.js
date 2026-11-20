@@ -18,7 +18,16 @@ globalThis.parunApply = (json) => {
 globalThis.parunListen = (listener) => {
   dispatch = listener;
 };
-onmessage = ({ data }) => dispatch?.(data.type, data.path, data.value);
+// The page's first message holds the decks it saved (page.js), mounted
+// before the deck list is read; every other is an event.
+let savedDecks;
+const savedArrived = new Promise((resolve) => {
+  savedDecks = resolve;
+});
+onmessage = ({ data }) => {
+  if ("saved" in data) savedDecks(data.saved);
+  else dispatch?.(data.type, data.path, data.value);
+};
 
 // Each load phase's time goes to the page.
 let started = false;
@@ -95,6 +104,21 @@ const query = new URLSearchParams(location.search);
 const compiling = WebAssembly.compileStreaming(fetch("./parun.wasm"));
 const mounted = new PreopenDirectory("/data", new Map());
 
+// Saved decks (Parun.Browser.saveDeck) live at decks/saved/<slug>.txt,
+// written and deleted here and kept by the page.
+function savedTree(decks) {
+  const files = new Map(Object.entries(decks).map(([slug, text]) => [`${slug}.txt`, new File(new TextEncoder().encode(text))]));
+  return new Map([["decks", new Map([["saved", files]])]]);
+}
+globalThis.parunSave = (slug, text) => {
+  merge(mounted.dir, savedTree({ [slug]: text }));
+  postMessage({ save: { slug, text } });
+};
+globalThis.parunForget = (slug) => {
+  mounted.dir.contents.get("decks")?.contents.get("saved")?.contents.delete(`${slug}.txt`);
+  postMessage({ forget: slug });
+};
+
 // The data's chunks (script/build-web.sh), fetched one at a time in this
 // order, each merged into /data and then named to Haskell
 // (Parun.Browser.nextInput), a failed one with a leading "!". The scenarios
@@ -135,6 +159,7 @@ async function fetchAll() {
     const name = queue.shift();
     try {
       merge(mounted.dir, untar(await gunzip(urls[name])));
+      if (name === "decks") merge(mounted.dir, savedTree(await savedArrived));
       // The root's listing, if read, is read afresh.
       mounted.listing = undefined;
       phase(name);
