@@ -29,6 +29,7 @@
     ]
   },
   "timeline": [
+    {"turn": 1, "step": "DrawStep", "player": "alice", "do": {"Answer": {"prompt": "ChooseActivePlayer", "with": "alice"}}},
     { "turn": 1, "step": "Upkeep", "player": "carol", "do": { "Cast": { "object": "$call", "mana": ["$i1"] } } },
     { "turn": 1, "step": "Upkeep", "player": "carol", "do": { "Answer": { "prompt": "ChooseOpponent", "with": "bob" } } },
     { "turn": 1, "step": "DeclareAttackers", "player": "alice", "refuse": { "Attack": [] } },

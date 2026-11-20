@@ -98,7 +98,6 @@ import qualified Parun.Types.Decider as Decider
 import qualified Parun.Types.Deck as Deck
 import qualified Parun.Types.Departure as Departure.Type
 import qualified Parun.Types.DiscardCause as DiscardCause
-import qualified Parun.Types.DrawKind as DrawKind
 import qualified Parun.Types.EndTurnSignal as EndTurnSignal
 import qualified Parun.Types.EndingStep as EndingStep
 import qualified Parun.Types.EntersTrigger as EntersTrigger
@@ -132,13 +131,11 @@ import qualified Parun.Types.Phase as Phase
 import qualified Parun.Types.PhaseSelector as PhaseSelector
 import qualified Parun.Types.PlayerControl as PlayerControl
 import Parun.Types.PlayerId (PlayerId)
-import qualified Parun.Types.PlayerInstruction as PlayerInstruction
 import qualified Parun.Types.PriorityWindow as PriorityWindow
 import qualified Parun.Types.Program as Program
 import qualified Parun.Types.ProjectedCharacteristics as PC
 import Parun.Types.Prompt (Prompt)
 import qualified Parun.Types.Prompt as Prompt
-import qualified Parun.Types.ProposedEvent as ProposedEvent
 import qualified Parun.Types.RangeOfInfluence as RangeOfInfluence
 import qualified Parun.Types.RestartSignal as RestartSignal
 import Parun.Types.Result (Result)
@@ -613,7 +610,7 @@ runTurnBasedActions phase = do
       gs <- State.get
       Monad.when (Attraction.controlsSubtype Subtype.Contraption pid gs) (Contraption.crank pid)
     Phase.Beginning BeginningStep.DrawStep ->
-      Monad.void (Event.inDrawOrder (\pid -> [ProposedEvent.WouldPerform PlayerInstruction.DrawCards Nothing pid 1, ProposedEvent.WouldDraw pid (DrawKind.TurnBased pid)]) live (Event.drawForTurn (Resolve.settleWith playSubgame)))
+      Monad.void (Event.inDrawOrder live (Event.drawForTurn (Resolve.settleWith playSubgame)))
     -- CR 703.4h: choose the defending player. The active player's action (CR
     -- 507.1), and the one item on the list CR 800.4h hands to another seat rather
     -- than dropping, so it is NOT guarded here -- designateDefenders asks

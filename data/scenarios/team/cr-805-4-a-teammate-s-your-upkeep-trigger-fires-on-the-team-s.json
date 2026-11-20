@@ -50,6 +50,7 @@
     ]
   },
   "timeline": [
+    {"turn": 1, "step": "DrawStep", "player": "alice", "do": {"Answer": {"prompt": "ChooseActivePlayer", "with": "alice"}}},
     { "turn": 1, "step": "EndStep", "player": "alice", "check": { "Life": { "player": "bob", "life": 19 } } },
     { "turn": 1, "step": "EndStep", "player": "alice", "check": { "Count": { "player": "bob", "zone": "Battlefield", "card": "Faerie Rogue Token", "count": 1 } } }
   ]

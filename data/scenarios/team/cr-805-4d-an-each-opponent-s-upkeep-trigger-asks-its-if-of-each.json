@@ -64,6 +64,7 @@
     "sharedTeamTurns": true
   },
   "timeline": [
+    {"turn": 1, "step": "DrawStep", "player": "alice", "do": {"Answer": {"prompt": "ChooseActivePlayer", "with": "alice"}}},
     { "turn": 1, "step": "DrawStep", "player": "alice", "check": { "Life": { "player": "alice", "life": 20 } } },
     { "turn": 1, "step": "DrawStep", "player": "alice", "check": { "Life": { "player": "bob", "life": 16 } } }
   ]

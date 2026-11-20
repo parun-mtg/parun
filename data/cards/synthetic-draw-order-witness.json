@@ -1,0 +1,64 @@
+{
+  "faces": [
+    {
+      "manaCost": [
+        {
+          "type": "Generic",
+          "value": 2
+        },
+        {
+          "type": "OfType",
+          "value": {
+            "type": "Colored",
+            "value": "Black"
+          }
+        }
+      ],
+      "name": "Synthetic Draw-Order Witness",
+      "triggeredAbilities": [
+        {
+          "condition": {
+            "type": "PlayerDrawsNthCard",
+            "value": {
+              "player": "Opponent"
+            }
+          },
+          "limit": {
+            "type": "OncePerTurn"
+          },
+          "modal": {
+            "modes": [
+              {
+                "clauses": [
+                  {
+                    "effects": [
+                      {
+                        "type": "Mill",
+                        "value": {
+                          "player": {
+                            "type": "InSlot",
+                            "value": "thatPlayer"
+                          },
+                          "quantity": {
+                            "type": "Literal",
+                            "value": 2
+                          }
+                        }
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          }
+        }
+      ],
+      "typeLine": {
+        "types": [
+          "Enchantment"
+        ]
+      }
+    }
+  ],
+  "synthetic": true
+}

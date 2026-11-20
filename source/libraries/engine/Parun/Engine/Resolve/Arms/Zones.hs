@@ -144,7 +144,6 @@ import qualified Parun.Types.PlayerActed as PlayerActed
 import qualified Parun.Types.PlayerAction as PlayerAction
 import qualified Parun.Types.PlayerEffect as PlayerEffect.Type
 import Parun.Types.PlayerId (PlayerId)
-import qualified Parun.Types.PlayerInstruction as PlayerInstruction
 import qualified Parun.Types.PlayerQuantity as PlayerQuantity
 import Parun.Types.PlayerRef (PlayerRef)
 import qualified Parun.Types.PlayerRef as PlayerRef
@@ -152,7 +151,6 @@ import qualified Parun.Types.PlayerRelation as PlayerRelation
 import qualified Parun.Types.PlayerSacrifices as PlayerSacrifices
 import qualified Parun.Types.PrintingId as PrintingId
 import qualified Parun.Types.Prompt as Prompt
-import qualified Parun.Types.ProposedEvent as ProposedEvent
 import qualified Parun.Types.PutSticker as PutSticker
 import qualified Parun.Types.Quantity as Quantity.Type
 import qualified Parun.Types.RangeOfInfluence as RangeOfInfluence
@@ -1435,11 +1433,10 @@ draw settle resolving source controller legal (Draw.MkDraw ref quantity mSlot mD
             n > 0
           ]
       drawers = filter (`Map.member` instructed) (Game.apnapOrder gs)
-      instruction pid = ProposedEvent.WouldPerform PlayerInstruction.DrawCards Nothing pid (Integer.toNaturalSaturating (Map.findWithDefault 0 pid instructed))
   -- CR 121.2d: the active team's drawers in the order that team likes.
   let tallies = TurnRegisters.drawsThisTurn . GameState.turn
   before <- State.gets tallies
-  drawn <- fmap concat . Event.inDrawOrder (\pid -> [instruction pid, ProposedEvent.WouldDraw pid DrawKind.Other]) drawers $ \pid -> do
+  drawn <- fmap concat . Event.inDrawOrder drawers $ \pid -> do
     -- CR 121.2a: the INSTRUCTION is its own replaceable event, and rule
     -- 616.1g settles it before any of the individual draws below -- so
     -- the count those draws run on is the one this loop leaves standing,

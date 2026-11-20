@@ -117,6 +117,17 @@
   "timeline": [
     {
       "turn": 1,
+      "step": "DrawStep",
+      "player": "alice",
+      "do": {
+        "Answer": {
+          "prompt": "ChooseActivePlayer",
+          "with": "alice"
+        }
+      }
+    },
+    {
+      "turn": 1,
       "step": "Cleanup",
       "player": "bob",
       "do": {

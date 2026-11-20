@@ -98,6 +98,17 @@
   "note": "CR 805.4, 805.8: alice's Time Walk turn is her team's, so bob begins it after alice concedes; CR 800.4k spends it only once the team has left (the control).",
   "timeline": [
     {
+      "turn": 3,
+      "step": "DrawStep",
+      "player": "carol",
+      "do": {
+        "Answer": {
+          "prompt": "ChooseActivePlayer",
+          "with": "carol"
+        }
+      }
+    },
+    {
       "do": {
         "Cast": {
           "mana": [

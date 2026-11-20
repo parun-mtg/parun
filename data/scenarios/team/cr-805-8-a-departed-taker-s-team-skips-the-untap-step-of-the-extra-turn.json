@@ -109,6 +109,17 @@
   "note": "CR 805.8: Savor the Moment's skip rides the turn to alice's team, so bob's tapped Island stays tapped through it and untaps on the team's next turn.",
   "timeline": [
     {
+      "turn": 3,
+      "step": "DrawStep",
+      "player": "carol",
+      "do": {
+        "Answer": {
+          "prompt": "ChooseActivePlayer",
+          "with": "carol"
+        }
+      }
+    },
+    {
       "do": {
         "Cast": {
           "mana": [

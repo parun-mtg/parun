@@ -34,6 +34,12 @@
     ]
   },
   "timeline": [
+    {"turn": 7, "step": "DrawStep", "player": "alice", "do": {"Answer": {"prompt": "ChooseActivePlayer", "with": "alice"}}},
+    {"turn": 6, "step": "DrawStep", "player": "carol", "do": {"Answer": {"prompt": "ChooseActivePlayer", "with": "carol"}}},
+    {"turn": 5, "step": "DrawStep", "player": "alice", "do": {"Answer": {"prompt": "ChooseActivePlayer", "with": "alice"}}},
+    {"turn": 4, "step": "DrawStep", "player": "carol", "do": {"Answer": {"prompt": "ChooseActivePlayer", "with": "carol"}}},
+    {"turn": 3, "step": "DrawStep", "player": "alice", "do": {"Answer": {"prompt": "ChooseActivePlayer", "with": "alice"}}},
+    {"turn": 2, "step": "DrawStep", "player": "carol", "do": {"Answer": {"prompt": "ChooseActivePlayer", "with": "carol"}}},
     { "turn": 5, "step": "PrecombatMain", "player": "bob", "refuse": { "Cast": { "object": "$avenger", "mana": ["$plains", "$plains-2"] } } },
     { "turn": 7, "step": "PrecombatMain", "player": "bob", "do": { "Cast": { "object": "$avenger", "mana": ["$plains", "$plains-2"] } } },
     { "turn": 7, "step": "PrecombatMain", "player": "bob", "do": "Pass" },

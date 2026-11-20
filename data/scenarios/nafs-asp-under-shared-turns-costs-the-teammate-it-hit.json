@@ -12,6 +12,7 @@
     ]
   },
   "timeline": [
+    {"turn": 2, "step": "DrawStep", "player": "bob", "do": {"Answer": {"prompt": "ChooseActivePlayer", "with": "bob"}}},
     {"turn": 1, "step": "DeclareAttackers", "player": "alice", "do": {"Attack": ["$asp"]}},
     {"turn": 1, "step": "DeclareAttackers", "player": "alice", "do": {"ChooseAttackTarget": "$dave"}},
     {"turn": 2, "step": "PrecombatMain", "player": "bob", "check": {"Life": {"player": "dave", "life": 18}}},

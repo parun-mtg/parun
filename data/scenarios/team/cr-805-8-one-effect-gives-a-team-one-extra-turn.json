@@ -109,6 +109,28 @@
   },
   "timeline": [
     {
+      "turn": 3,
+      "step": "DrawStep",
+      "player": "alice",
+      "do": {
+        "Answer": {
+          "prompt": "ChooseActivePlayer",
+          "with": "alice"
+        }
+      }
+    },
+    {
+      "turn": 2,
+      "step": "DrawStep",
+      "player": "carol",
+      "do": {
+        "Answer": {
+          "prompt": "ChooseActivePlayer",
+          "with": "carol"
+        }
+      }
+    },
+    {
       "turn": 1,
       "step": "PrecombatMain",
       "player": "alice",

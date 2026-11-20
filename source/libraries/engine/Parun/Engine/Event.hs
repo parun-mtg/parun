@@ -12416,15 +12416,12 @@ drawForTurn settle pid = drawInstruction settle (DrawKind.TurnBased pid) Set.emp
 -- draws before naming the next: docs/decisions.md, "When a team sharing a turn
 -- settles the order its players draw in". The scenarios "CR 805.6a the active
 -- team names which teammate draws first" and "CR 121.2d the active team names
--- which teammate draws first for Temple Bell" prove the choice.
---
--- Not implemented: the question where no replacement effect applies to any of
--- the team's draws -- `proposals` names each drawer's -- and seat order is
--- taken (#8000).
-inDrawOrder :: (PlayerId -> [ProposedEvent]) -> [PlayerId] -> (PlayerId -> Game a) -> Game [a]
-inDrawOrder proposals drawers act =
-  let replaced gs pid = not (PlayerEffect.prohibitsDrawing pid gs || all (null . Replacement.applicable Nothing gs) (proposals pid))
-   in reverse <$> inActiveTeamOrder (any . replaced) drawers (\pid results -> (: results) <$> act pid) []
+-- which teammate draws first for Temple Bell" prove the choice, and
+-- "CR 805.6a the active team names which teammate draws first with no
+-- replacement" proves it is asked where no replacement effect applies.
+inDrawOrder :: [PlayerId] -> (PlayerId -> Game a) -> Game [a]
+inDrawOrder drawers act =
+  reverse <$> inActiveTeamOrder (\_ _ -> True) drawers (\pid results -> (: results) <$> act pid) []
 
 -- CR 805.6 / 805.2: fold `act` over these players, the active team's first in
 -- the order that team likes, the rest in the order given, which the caller

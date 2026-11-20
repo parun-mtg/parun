@@ -84,6 +84,17 @@
   "timeline": [
     {
       "turn": 2,
+      "step": "DrawStep",
+      "player": "dave",
+      "do": {
+        "Answer": {
+          "prompt": "ChooseActivePlayer",
+          "with": "alice"
+        }
+      }
+    },
+    {
+      "turn": 2,
       "step": "Upkeep",
       "player": "carol",
       "do": "Concede"
