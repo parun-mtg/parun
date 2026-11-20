@@ -871,6 +871,15 @@ form request picked = case Text.unpack (Question.kind question) of
                 ]
                 <> [Element.el "div" ["passes"] [] $ primary MkSubmit (Text.pack (if Set.null picked then "Keep all on top" else "Done")) : [button MkClear (Text.pack "Start over") | not (Set.null picked)]]
   "ChooseCardName" -> [heading "Name a card.", Html.element (Text.pack "input") [Attribute.MkProperty (Text.pack "placeholder") (Text.pack "A card's name"), Attribute.MkProperty (Text.pack "data-clear") Text.empty, Attribute.MkOn (Text.pack "change") MkTyped] []]
+  -- A yes or no about paying a cost (CR 118.12), Channel's life for mana
+  -- (CR 116.2c), where combat damage goes (CR 510.1b-c), a guess (CR
+  -- 608.2c), or a commander's move to the command zone (CR 903.9a-b).
+  kind
+    | Just shown <- Request.view request,
+      Just (asked, yes, no) <- yesOrNo shown request ->
+        Html.element (Text.pack "h2") [] (Mana.rich asked)
+          : fmap nudge (if kind == "ChooseToPay" then filter (not . Text.isPrefixOf (Text.pack "Cost:")) (Offer.told shown Text.empty offer) else [])
+            <> [Element.el "div" ["passes"] [] [primary (MkAnswer (R.Text (Text.pack (fst yes)))) (Text.pack (snd yes)), button (MkAnswer (R.Text (Text.pack (fst no)))) (Text.pack (snd no))]]
   kind
     | Just shown <- Request.view request,
       Just (options', name) <- Monad.mplus (fmap (\o -> (o, Offer.optionName shown)) (Protocol.field "options" offer >>= Protocol.arrayOf)) (fmap (\o -> (o, Offer.playerName)) (Protocol.field "players" offer >>= Protocol.arrayOf)) ->
@@ -935,15 +944,6 @@ form request picked = case Text.unpack (Question.kind question) of
               : fmap nudge context
                 <> rows
                 <> [primary MkSubmit (send chooser)]
-  -- A yes or no about paying a cost (CR 118.12), Channel's life for mana
-  -- (CR 116.2c), where combat damage goes (CR 510.1b-c), or a guess (CR
-  -- 608.2c).
-  kind
-    | Just shown <- Request.view request,
-      Just (asked, yes, no) <- yesOrNo shown request ->
-        Html.element (Text.pack "h2") [] (Mana.rich asked)
-          : fmap nudge (if kind == "ChooseToPay" then filter (not . Text.isPrefixOf (Text.pack "Cost:")) (Offer.told shown Text.empty offer) else [])
-            <> [Element.el "div" ["passes"] [] [primary (MkAnswer (R.Text (Text.pack (fst yes)))) (Text.pack (snd yes)), button (MkAnswer (R.Text (Text.pack (fst no)))) (Text.pack (snd no))]]
   -- One of several yields, shares or costs, answered by its index.
   kind
     | Just shown <- Request.view request,
@@ -1008,6 +1008,7 @@ yesOrNo shown request = case Text.unpack (Question.kind (Request.question reques
     let wording = if option == CombatDamageOption.AsThoughUnblocked then Text.pack ": assign its combat damage as though it weren't blocked?" else Text.pack ": assign its combat damage to a creature the defending player controls?"
     Just (self <> wording, ("Exercises", "Yes"), ("Declines", "No"))
   "ChooseGuess" -> Just (self <> Text.pack ": guess whether the hidden card is as its text says.", ("Holds", "It is"), ("DoesNotHold", "It isn't"))
+  "ReturnCommander" -> Just (Text.pack "Put " <> self <> Text.pack " into the command zone?", ("Returns", "Command zone"), ("Leaves", "Don't"))
   _ -> Nothing
   where
     offer = Question.offer (Request.question request)
@@ -1030,6 +1031,7 @@ headingOf shown request = case Text.unpack (Question.kind question) of
   "DeclareBands" -> Just (Text.pack "Choose attacking creatures to band together")
   "ChooseClash" -> Just (Text.pack "Clash: keep the revealed card on top of your library, or put it on the bottom?")
   "ChooseFromOutsideTheGame" -> Just (Text.pack "Choose cards from outside the game")
+  "ChooseCardFromAmong" -> Just (Text.pack "Choose a card for " <> self <> Text.pack ".")
   "ChooseExert" -> Just (Text.pack "Exert " <> self <> Text.pack " as it attacks?")
   "OfferedCast" -> Just (Text.pack "Cast " <> Maybe.fromMaybe self (Protocol.field "name" offer >>= Offer.textOf) <> Text.pack "?")
   "ChoosePlayPermission" -> Just (Text.pack "Choose the permission to play " <> self <> Text.pack " by.")

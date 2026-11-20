@@ -7,6 +7,7 @@ import qualified Data.ByteString.Builder as Builder
 import qualified Data.ByteString.Lazy as LazyByteString
 import qualified Data.Containers.ListUtils as ListUtils
 import qualified Data.Foldable as Foldable
+import qualified Data.List.NonEmpty as NonEmpty
 import qualified Data.Maybe as Maybe
 import qualified Data.Sequence as Seq
 import qualified Data.Text as Text
@@ -119,7 +120,7 @@ summary me samples =
           [if pid == me then "you" else "them"]
           []
           [ Element.el "strong" [] [] [Element.text (name pid)],
-            Element.text (Text.pack (": ended on " <> show (maybe 0 (lifeOf pid) (Maybe.listToMaybe (reverse samples))) <> " life, lowest " <> show (minimum (20 : fmap (lifeOf pid) samples)) <> ", biggest hit " <> show (maximum (0 : drops pid))))
+            Element.text (Text.pack (": ended on " <> show (maybe 0 (lifeOf pid) (Maybe.listToMaybe (reverse samples))) <> " life, lowest " <> show (maybe 0 minimum (NonEmpty.nonEmpty (fmap (lifeOf pid) samples))) <> ", biggest hit " <> show (maximum (0 : drops pid))))
           ]
    in Element.el
         "section"
