@@ -4,6 +4,7 @@ import qualified Parun.Types.DamageDirection as DamageDirection
 import qualified Parun.Types.DamageKind as DamageKind
 import qualified Parun.Types.Filter as Filter
 import qualified Parun.Types.Keyword as Keyword
+import qualified Parun.Types.PlayerRef as PlayerRef
 
 -- | The payload of Parun.Types.Quantity's DamageDealtThisTurn arm.
 data ObjectDamage = MkObjectDamage
@@ -16,6 +17,11 @@ data ObjectDamage = MkObjectDamage
     by :: Maybe (Filter.Filter Keyword.Keyword),
     -- | Nothing for any damage; Just Noncombat for CR 120.2b's alone (Temple of
     -- Power's "dealt 4 or more noncombat damage").
-    kind :: Maybe DamageKind.DamageKind
+    kind :: Maybe DamageKind.DamageKind,
+    -- | CR 120.1: beside DealtBy, only damage dealt to the players this names
+    -- (Vessel of the All-Consuming's "to that player"), or to anything when
+    -- Nothing. Beside DealtTo the object is the recipient, so no card writes it
+    -- (Parun.EffectLintSpec).
+    to :: Maybe PlayerRef.PlayerRef
   }
   deriving (Eq, Ord, Show)

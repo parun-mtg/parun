@@ -879,7 +879,7 @@ quantityChildren children quantity = case quantity of
   Quantity.LifeChanged (LifeTally.MkLifeTally ref direction turn) -> fmap (\renamed -> Quantity.LifeChanged (LifeTally.MkLifeTally renamed direction turn)) (player children ref)
   Quantity.PlayersDealtDamage (DamageTally.MkDamageTally dealt turn) -> fmap (\renamed -> Quantity.PlayersDealtDamage (DamageTally.MkDamageTally renamed turn)) (dealtDamageChildren children dealt)
   Quantity.DamageDealtToPlayersThisTurn dealt -> fmap Quantity.DamageDealtToPlayersThisTurn (dealtDamageChildren children dealt)
-  Quantity.DamageDealtThisTurn (ObjectDamage.MkObjectDamage direction by kind) -> fmap (\visited -> Quantity.DamageDealtThisTurn (ObjectDamage.MkObjectDamage direction visited kind)) (traverse (nest children) by)
+  Quantity.DamageDealtThisTurn (ObjectDamage.MkObjectDamage direction by kind to) -> (\visited renamed -> Quantity.DamageDealtThisTurn (ObjectDamage.MkObjectDamage direction visited kind renamed)) <$> traverse (nest children) by <*> traverse (player children) to
   Quantity.SpellsCast (SpellTally.MkSpellTally ref turn) -> fmap (\renamed -> Quantity.SpellsCast (SpellTally.MkSpellTally renamed turn)) (player children ref)
   Quantity.TimesThisTurn _ -> pure quantity
   Quantity.ActivationsThisTurn (ActivationsThisTurn.MkActivationsThisTurn ref source criteria) -> fmap Quantity.ActivationsThisTurn (ActivationsThisTurn.MkActivationsThisTurn <$> player children ref <*> nest children source <*> activationCriteriaChildren children criteria)
