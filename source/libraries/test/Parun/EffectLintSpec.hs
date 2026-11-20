@@ -34,6 +34,7 @@ import Parun.CardSpec (Framing (SourceHostFramed), MintedKind (MintedEmblem), an
 import qualified Parun.Codec.Card as Card.Codec
 import qualified Parun.Codec.Face as Face.Codec
 import qualified Parun.Codec.Keyword as Keyword.Codec
+import qualified Parun.Codec.PhaseSelector as PhaseSelector.Codec
 import qualified Parun.Codec.Quantity as Quantity.Codec
 import qualified Parun.Codec.Scope as Scope.Codec
 import qualified Parun.Engine.Binding as Binding
@@ -77,6 +78,7 @@ import qualified Parun.Types.AttachRewrite as AttachRewrite
 import qualified Parun.Types.AttachTarget as AttachTarget
 import qualified Parun.Types.AttachedToBound as AttachedToBound
 import qualified Parun.Types.BecomeCopy as BecomeCopy
+import qualified Parun.Types.BeginningStep as BeginningStep
 import qualified Parun.Types.BoundReading as BoundReading
 import qualified Parun.Types.Card as Card.Type
 import qualified Parun.Types.CardName as CardName
@@ -209,12 +211,14 @@ import qualified Parun.Types.PermanentAction as PermanentAction
 import qualified Parun.Types.PermanentActsTrigger as PermanentActsTrigger
 import qualified Parun.Types.PermissionLimit as PermissionLimit
 import qualified Parun.Types.PermissionVerb as PermissionVerb
+import qualified Parun.Types.Phase as Phase
 import qualified Parun.Types.PhaseAnchor as PhaseAnchor
 import qualified Parun.Types.PhaseGrant as PhaseGrant
 import qualified Parun.Types.PhaseOut as PhaseOut
 import qualified Parun.Types.PhasePattern as PhasePattern
 import qualified Parun.Types.PhaseR as PhaseR
 import qualified Parun.Types.PhaseRewrite as PhaseRewrite
+import qualified Parun.Types.PhaseSelector as PhaseSelector
 import qualified Parun.Types.PlayAllowance as PlayAllowance
 import qualified Parun.Types.PlayerEffect as PlayerEffect
 import qualified Parun.Types.PlayerId as PlayerId
@@ -861,6 +865,40 @@ turnSkipOffends card =
 -- | A SkipPhase naming any whole turn and never spent.
 unspentTurnSkip :: Effect.Effect Card.Type.Card (GrantedAbility.GrantedAbility Card.Type.Card) -> Bool
 unspentTurnSkip = maybe False ((== Uses.Unlimited) . SkipPhase.uses) . turnSkip
+
+-- | The whole beginning phase as a PhaseSelector encodes.
+beginningPhaseJson :: Value.Value
+beginningPhaseJson = Codec.encode PhaseSelector.Codec.codec PhaseSelector.BeginningPhase
+
+-- | A face as card JSON spells it.
+encodeFace :: Face.Face Card.Type.Card -> Value.Value
+encodeFace = Codec.encode (Face.Codec.codec Card.Codec.codec)
+
+-- | How many times an encoding names the whole beginning phase outside a
+-- "window" (Parun.Types.DuringPhase), the one position reading it by
+-- containment rather than by its beginning or end.
+beginningPhaseOutsideWindow :: Value.Value -> Int
+beginningPhaseOutsideWindow value
+  | value == beginningPhaseJson = 1
+  | otherwise = case value of
+      Value.Array a -> sum (fmap beginningPhaseOutsideWindow (Array.unwrap a))
+      Value.Object o -> sum [beginningPhaseOutsideWindow (Pair.value p) | p <- Object.unwrap o, String.unwrap (Pair.name p) /= Text.pack "window"]
+      Value.String _ -> 0
+      Value.Null _ -> 0
+      Value.Boolean _ -> 0
+      Value.Number _ -> 0
+
+-- | Every subtree equal to `old` replaced by `new`.
+substituteJson :: Value.Value -> Value.Value -> Value.Value -> Value.Value
+substituteJson old new value
+  | value == old = new
+  | otherwise = case value of
+      Value.Array a -> Value.Array (Array.MkArray (fmap (substituteJson old new) (Array.unwrap a)))
+      Value.Object o -> Value.Object (Object.MkObject (fmap (\p -> p {Pair.value = substituteJson old new (Pair.value p)}) (Object.unwrap o)))
+      Value.String _ -> value
+      Value.Null _ -> value
+      Value.Boolean _ -> value
+      Value.Number _ -> value
 
 -- | A SkipPhase naming any whole turn.
 turnSkip :: Effect.Effect Card.Type.Card (GrantedAbility.GrantedAbility Card.Type.Card) -> Maybe SkipPhase.SkipPhase
@@ -3449,6 +3487,28 @@ effectLintSpec s registry corpus = Spec.describe s "Lint" $ do
     Spec.assertBool s (turnSkipOffends baked) "and its static skip over a whole turn is rejected"
     timeVault <- S.printingOf s registry "Time Vault"
     Spec.assertBool s (not (turnSkipOffends (S.combinedFace timeVault))) "Time Vault's optional static skip over a whole turn is accepted"
+  -- CR 500.10's beginning phase holding only an upkeep step (Obeka, Splitter
+  -- of Seconds) is not seen to begin or end (Parun.Engine.Turn's
+  -- phaseBeginningAt), so no card may name the whole beginning phase anywhere
+  -- but a containment window ("window": Dose of Dawnglow): a skip, an extra
+  -- turn's skips or a count of beginnings would miss that phase.
+  Spec.it s "CR 500.10 no card writes the whole beginning phase outside a window" $ do
+    ps <- S.allPrintings s corpus
+    let offenders = filter (anyFace ((/= 0) . beginningPhaseOutsideWindow . encodeFace) . Printing.card) ps
+    Spec.assertEqWith s "the beginning phase is named only as a window" (fmap (S.nameOf . Printing.card) offenders) []
+    -- Not vacuous: Dose of Dawnglow's window is seen and accepted, and each
+    -- refused position, planted over a real card's selector, is seen.
+    dawnglow <- S.printingOf s registry "Dose of Dawnglow"
+    stonehorn <- S.printingOf s registry "Stonehorn Dignitary"
+    raphLeo <- S.printingOf s registry "Raph & Leo, Sibling Rivals"
+    savor <- S.printingOf s registry "Savor the Moment"
+    let dawnglowJson = encodeFace (S.combinedFace dawnglow)
+        planted from = beginningPhaseOutsideWindow . substituteJson (Codec.encode PhaseSelector.Codec.codec from) beginningPhaseJson . encodeFace . S.combinedFace
+    Spec.assertBool s (occurrences beginningPhaseJson dawnglowJson > 0) "Dose of Dawnglow names the beginning phase"
+    Spec.assertEqWith s "as a window, which is accepted" (beginningPhaseOutsideWindow dawnglowJson) 0
+    Spec.assertEqWith s "a planted skip is seen" (planted PhaseSelector.CombatPhase stonehorn) 1
+    Spec.assertEqWith s "a planted count is seen" (planted PhaseSelector.CombatPhase raphLeo) 1
+    Spec.assertEqWith s "a planted extra turn's skip is seen" (planted (PhaseSelector.Step (Phase.Beginning BeginningStep.Untap)) savor) 1
   -- The same lint one event class over, for the OTHER fields the codec accepts and
   -- only the engine writes: CR 615.7's shielded recipient and its remaining amount,
   -- plus CR 122.1c's minted pair. See engineOnlyOffends.

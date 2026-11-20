@@ -363,9 +363,12 @@ dropRestOfPhase phase = snd . thisPhase phase
 -- not a new phase. A CR 500.8 phase starts over at its first step, behind that
 -- phase's later steps.
 --
--- Not implemented: a CR 500.10 beginning phase holding only an upkeep step
--- (ExtraPhase.ExtraUpkeep) is not seen to begin here or to end at
--- phaseEndingAt (#7601).
+-- Unprinted: a card naming the whole beginning phase as one that begins or
+-- ends -- a skip, an extra turn's skips, a count of beginnings -- would need a
+-- CR 500.10 beginning phase holding only an upkeep step (ExtraPhase.ExtraUpkeep)
+-- seen to begin here and to end at phaseEndingAt. Parun.EffectLintSpec's "CR
+-- 500.10 no card writes the whole beginning phase outside a window" keeps it
+-- out of card data.
 phaseBeginningAt :: Maybe Phase -> Phase -> Maybe PhaseSelector
 phaseBeginningAt previous phase
   | Just before <- previous, Maybe.isJust (wholePhaseOf phase), wholePhaseOf before == wholePhaseOf phase, before <= phase = Nothing
