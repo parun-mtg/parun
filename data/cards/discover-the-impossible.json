@@ -64,6 +64,15 @@
                       "slot": "exiled",
                       "zone": "Exile"
                     }
+                  },
+                  {
+                    "type": "GrantLookAtExiled",
+                    "value": {
+                      "cards": {
+                        "type": "InSlot",
+                        "value": "exiled"
+                      }
+                    }
                   }
                 ]
               },

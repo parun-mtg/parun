@@ -79,6 +79,15 @@
                     }
                   },
                   {
+                    "type": "GrantLookAtExiled",
+                    "value": {
+                      "cards": {
+                        "type": "InSlot",
+                        "value": "exiled"
+                      }
+                    }
+                  },
+                  {
                     "type": "Shuffle",
                     "value": {
                       "type": "Relative",
