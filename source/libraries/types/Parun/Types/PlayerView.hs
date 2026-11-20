@@ -31,6 +31,7 @@ data PlayerView = MkPlayerView
     extra :: Bool,
     active :: PlayerId.PlayerId,
     priority :: Maybe PlayerId.PlayerId,
+    -- | In turn order (Parun.Engine.Turn.turnOrder), departed seats included.
     seats :: [SeatView.SeatView],
     battlefield :: [ObjectView.ObjectView],
     -- | CR 702.26b: the phased-out permanents, which every seat sees though
