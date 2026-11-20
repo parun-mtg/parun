@@ -689,16 +689,16 @@ spec s = Spec.describe s "Parun.Engine.Filter" $ do
       Spec.assertEqWith
         s
         "the atom is replaced in place"
-        (Filter.bakeBound bound Map.empty Map.empty (buried (Filter.Type.HeldByBound Holder.Controller slot)))
+        (Filter.bakeBound bound Map.empty Map.empty Map.empty (buried (Filter.Type.HeldByBound Holder.Controller slot)))
         (buried (Filter.Type.HeldByPlayer Holder.Controller (player 0)))
       Spec.assertEqWith
         s
         "and left standing when the slot names nobody"
-        (Filter.bakeBound Map.empty Map.empty Map.empty (Filter.Type.HeldByBound Holder.Controller slot))
+        (Filter.bakeBound Map.empty Map.empty Map.empty Map.empty (Filter.Type.HeldByBound Holder.Controller slot))
         (Filter.Type.HeldByBound Holder.Controller slot)
       Spec.assertBool
         s
-        (Filter.matches self blackCreature (Filter.bakeBound bound Map.empty Map.empty (Filter.Type.HeldByBound Holder.Controller slot)))
+        (Filter.matches self blackCreature (Filter.bakeBound bound Map.empty Map.empty Map.empty (Filter.Type.HeldByBound Holder.Controller slot)))
         "so the baked filter matches where the unbaked one did not"
     -- CR 608.2h: a bound object's controller, baked to the player the
     -- resolution read, so a stored class says "that player controls" after the
@@ -706,11 +706,22 @@ spec s = Spec.describe s "Parun.Engine.Filter" $ do
     Spec.it s "bakeBound substitutes a bound object's controller" $ do
       let object = SlotName.MkSlotName (Text.pack "target")
           atom = Filter.Type.ControllerRelatesToBound PlayerRelation.You Hop.Itself object
-          baked = Filter.bakeBound Map.empty Map.empty (Map.singleton object (const (Set.singleton (player 1)))) atom
+          baked = Filter.bakeBound Map.empty Map.empty (Map.singleton object (const (Set.singleton (player 1)))) Map.empty atom
       Spec.assertEqWith s "the atom names the controller" baked (Filter.Type.Or [Filter.Type.HeldByPlayer Holder.Controller (player 1)])
       Spec.assertBool s (not (Filter.matches self blackCreature baked)) "player 0's creature is not that player's"
       Spec.assertBool s (Filter.matches self blackCreature atom) "where the unbaked atom admitted it"
-      Spec.assertEqWith s "and left standing when the slot is unnamed" (Filter.bakeBound Map.empty Map.empty Map.empty atom) atom
+      Spec.assertEqWith s "and left standing when the slot is unnamed" (Filter.bakeBound Map.empty Map.empty Map.empty Map.empty atom) atom
+    -- CR 608.2h: a bound object's measure, baked to the literal the resolution
+    -- read, so a stored prohibition compares against a number (Living
+    -- Breakthrough) and CR 601.3a's lookahead sees it as a threshold.
+    Spec.it s "bakeBound substitutes a bound object's measure" $ do
+      let spell = SlotName.MkSlotName (Text.pack "thatSpell")
+          manaValue = Filter.Type.Measures . Measures.MkMeasures Measure.ManaValue Comparison.Exactly
+          atom = manaValue (Operand.OfBound (BoundMeasure.MkBoundMeasure spell Measure.ManaValue))
+          baked = Filter.bakeBound Map.empty Map.empty Map.empty (Map.singleton (spell, Measure.ManaValue) 2) (Filter.Type.Not atom)
+      Spec.assertEqWith s "the operand is the literal" baked (Filter.Type.Not (manaValue (Operand.Literal 2)))
+      Spec.assertEqWith s "which bounds the lookahead" (Filter.manaValueThresholds baked) [2]
+      Spec.assertEqWith s "and left standing when the measure is unnamed" (Filter.bakeBound Map.empty Map.empty Map.empty (Map.singleton (spell, Measure.Power) 2) atom) atom
   -- CR 108.3's owner holder of the pair above: blackCreature is owned by player
   -- 1 and controlled by player 0, so reading the controller disagrees.
   Spec.describe s "HeldByBound and HeldByPlayer, Owner" $ do
@@ -732,12 +743,12 @@ spec s = Spec.describe s "Parun.Engine.Filter" $ do
       Spec.assertEqWith
         s
         "the atom is replaced in place"
-        (Filter.bakeBound (Map.singleton slot (player 1)) Map.empty Map.empty (buried (Filter.Type.HeldByBound Holder.Owner slot)))
+        (Filter.bakeBound (Map.singleton slot (player 1)) Map.empty Map.empty Map.empty (buried (Filter.Type.HeldByBound Holder.Owner slot)))
         (buried (Filter.Type.HeldByPlayer Holder.Owner (player 1)))
       Spec.assertEqWith
         s
         "and left standing when the slot names nobody"
-        (Filter.bakeBound Map.empty Map.empty Map.empty (Filter.Type.HeldByBound Holder.Owner slot))
+        (Filter.bakeBound Map.empty Map.empty Map.empty Map.empty (Filter.Type.HeldByBound Holder.Owner slot))
         (Filter.Type.HeldByBound Holder.Owner slot)
 
     -- CR 700.2d's per-occurrence rename (Parun.Engine.Modal) rewrites the slot
@@ -1884,7 +1895,7 @@ spec s = Spec.describe s "Parun.Engine.Filter" $ do
           nested = Filter.Type.BeforeMove (Filter.Type.IsBound slot)
           swapped = Filter.rewrite [(TextWord.SubtypeWord Subtype.Aura, TextWord.SubtypeWord Subtype.Equipment)] (Filter.Type.BeforeMove (Filter.Type.HasSubtype Subtype.Aura))
       Spec.assertEqWith s "the slot the nest names" (Filter.boundSlots nested) (Set.singleton slot)
-      Spec.assertEqWith s "baked in place" (Filter.bakeBound Map.empty (Map.singleton slot (Set.singleton before)) Map.empty nested) (Filter.Type.BeforeMove (Filter.Type.Or [Filter.Type.IsObject before]))
+      Spec.assertEqWith s "baked in place" (Filter.bakeBound Map.empty (Map.singleton slot (Set.singleton before)) Map.empty Map.empty nested) (Filter.Type.BeforeMove (Filter.Type.Or [Filter.Type.IsObject before]))
       Spec.assertEqWith s "the subtype word is swapped" swapped (Filter.Type.BeforeMove (Filter.Type.HasSubtype Subtype.Equipment))
 
   Spec.describe s "LeftLibraryThisTurn" $ do

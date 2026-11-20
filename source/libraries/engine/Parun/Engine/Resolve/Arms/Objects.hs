@@ -1546,8 +1546,10 @@ affectPlayers resolving source controller legal (AffectPlayers.MkAffectPlayers d
           _ -> ref
         -- CR 702.16k / 608.2h: a player a Filter names by its slot is fixed
         -- likewise, Filter.bakeBound's posture -- Eon Frolicker's "you gain
-        -- protection from that player". Its scenario proves it.
-        withPlayers = Functor.runIdentity (Children.playerEffectChildren Children.playerEffectLeaves {Children.playerFilter = Functor.Identity . Filter.bakeBound (Binding.playersIn legal) Map.empty Map.empty} (PlayerEffect.mapPlayerRefs atResolution playerEffect))
+        -- protection from that player". Its scenario proves it. So is a bound
+        -- object's measure, read through effectContext's CR 608.2h last-known
+        -- reader: Living Breakthrough's "the same mana value as that spell".
+        withPlayers = Functor.runIdentity (Children.playerEffectChildren Children.playerEffectLeaves {Children.playerFilter = Functor.Identity . Filter.bakeBound (Binding.playersIn legal) Map.empty Map.empty (Filter.slotMeasures context)} (PlayerEffect.mapPlayerRefs atResolution playerEffect))
         -- CR 608.2h / 611.2d: a number the stored effect counts with is
         -- determined once, now. Mutated Cultist's "for each counter removed
         -- this way" reads tallies that die with this resolution. One that

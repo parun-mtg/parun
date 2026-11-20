@@ -2906,8 +2906,8 @@ bakeSlots players = fmap (bakeSlot players)
 bakeSlot :: Map SlotName PlayerId -> TargetSlot -> TargetSlot
 bakeSlot players slot =
   slot
-    { TargetSlot.filter = fmap (Filter.bakeBound players Map.empty Map.empty) (TargetSlot.filter slot),
-      TargetSlot.asCast = fmap (Filter.bakeBound players Map.empty Map.empty) (TargetSlot.asCast slot),
+    { TargetSlot.filter = fmap (Filter.bakeBound players Map.empty Map.empty Map.empty) (TargetSlot.filter slot),
+      TargetSlot.asCast = fmap (Filter.bakeBound players Map.empty Map.empty Map.empty) (TargetSlot.asCast slot),
       TargetSlot.amount = fmap (Quantity.bakeBound players Map.empty) (TargetSlot.amount slot),
       TargetSlot.divided = fmap (Quantity.bakeBound players Map.empty) (TargetSlot.divided slot),
       TargetSlot.total = fmap (\(TotalCap.MkTotalCap weight most) -> TotalCap.MkTotalCap (Quantity.bakeBound players Map.empty weight) (Quantity.bakeBound players Map.empty most)) (TargetSlot.total slot),

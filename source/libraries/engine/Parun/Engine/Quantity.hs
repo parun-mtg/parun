@@ -1647,7 +1647,7 @@ bakeBound players objects =
             (Children.descendingQuantities (Identity.Identity . go))
               { Children.player = Identity.Identity . bakePlayerRef players objects,
                 Children.scope = Identity.Identity . QuantitySlot.mapScope (bakePlayerRef players objects),
-                Children.nest = Identity.Identity . Filter.bakeBound players (fmap Set.singleton objects) Map.empty
+                Children.nest = Identity.Identity . Filter.bakeBound players (fmap Set.singleton objects) Map.empty Map.empty
               }
    in go
 

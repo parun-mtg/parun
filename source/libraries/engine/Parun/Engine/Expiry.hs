@@ -275,7 +275,7 @@ arm resolving targets controller source duration gs = case duration of
               DurationEvent.Planeswalked -> event
               DurationEvent.SourceExiledCard -> event
               DurationEvent.SourceLeftBattlefield -> event
-              DurationEvent.SpellCast criterion -> DurationEvent.SpellCast (Filter.bakeBound (Binding.playersIn targets) Map.empty Map.empty criterion)
+              DurationEvent.SpellCast criterion -> DurationEvent.SpellCast (Filter.bakeBound (Binding.playersIn targets) Map.empty Map.empty Map.empty criterion)
               -- CR 400.7: the object the slot bound, named outright. Left
               -- standing where the slot is unbound -- the card never arrived,
               -- so no cast of it can end the effect.

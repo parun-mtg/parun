@@ -1806,7 +1806,7 @@ bakeRowPlayers players =
     one named = case Set.toList named of
       [pid] -> Just pid
       _ -> Nothing
-    bake = Identity.Identity . Filter.bakeBound (Map.mapMaybe one players) Map.empty Map.empty
+    bake = Identity.Identity . Filter.bakeBound (Map.mapMaybe one players) Map.empty Map.empty Map.empty
     damage =
       Children.MkDamagePatternChildren
         { Children.damageFilter = bake,
@@ -1830,6 +1830,7 @@ storedClass legal resolving controller source gs =
       (Map.union (Binding.playersIn legal) (Binding.playerSlots bindings))
       (Binding.objectsBySlot legal bindings)
       (fmap related (Filter.slotControllers context))
+      Map.empty
   where
     bindings = slotBindings resolving gs
     context = effectContext gs resolving controller source legal bindings

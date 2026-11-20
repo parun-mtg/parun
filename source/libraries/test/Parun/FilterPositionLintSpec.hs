@@ -1397,11 +1397,13 @@ ofBoundTag = Text.pack "OfBound"
 -- positions or a target slot and how many anywhere else, boundCreatureTypeCounts'
 -- shape one Filter.Context field over: Parun.Engine.Resolve.Slots.effectContext
 -- and Parun.Engine.Target.slotContext fill Filter.Context.slotMeasures too, as
--- does Parun.Engine.Event.Match for an AttachingHostFramed Filter, so the operand
--- is a silent False elsewhere. The second number is the offence.
+-- does Parun.Engine.Event.Match for an AttachingHostFramed Filter, and
+-- Parun.Engine.Resolve.Arms.Objects.affectPlayers bakes it to a literal in a
+-- StoredPlayerEffectFramed one, so the operand is a silent False elsewhere. The
+-- second number is the offence.
 ofBoundCounts :: Surveyed -> (Int, Int)
 ofBoundCounts card =
-  let total wanted = sum (fmap (\(_, f) -> filterAtoms ofBoundTag f) (filter (\(framing, _) -> elem framing [SourceHostFramed, ClauseGateFramed, SearchFramed, MillTallyFramed, HandSweepFramed, AttachingHostFramed, InTargetSlot] == wanted) (surveyedFilters card)))
+  let total wanted = sum (fmap (\(_, f) -> filterAtoms ofBoundTag f) (filter (\(framing, _) -> elem framing [SourceHostFramed, ClauseGateFramed, SearchFramed, MillTallyFramed, HandSweepFramed, AttachingHostFramed, StoredPlayerEffectFramed, InTargetSlot] == wanted) (surveyedFilters card)))
    in (total True, total False)
 
 -- The atom outside those positions, or the traversal and the codec disagreeing
@@ -2184,7 +2186,8 @@ filterPositionLintSpec s registry corpus = Spec.describe s "Lint" $ do
     Spec.assertBool s (yourCommanderOffends (survey restricted)) "the atom in an affected set offends"
   -- CR 208.1's bound comparison in the arm above's frame, one Filter.Context field
   -- over: answerable only where effectContext or Target.slotContext fills
-  -- Filter.Context.slotMeasures. See ofBoundOffends for the two offences.
+  -- Filter.Context.slotMeasures, or affectPlayers bakes it to a literal. See
+  -- ofBoundOffends for the two offences.
   Spec.it s "CR 208.1 no card compares against a bound object outside a resolution's own positions or a target slot" $ do
     let offenders = fmap fst (filter (any ofBoundOffends . snd) pool)
     Spec.assertEqWith s "the operand sits only where a resolution or a target slot fills the bound measures" (fmap (S.nameOf . Printing.card) offenders) []
@@ -2196,6 +2199,8 @@ filterPositionLintSpec s registry corpus = Spec.describe s "Lint" $ do
     Spec.assertEqWith s "Profaner of the Dead's one atom is in its ObjectRef" (ofBoundCounts (survey face)) (1, 0)
     ring <- S.printingOf s registry "Boxing Ring"
     Spec.assertEqWith s "Boxing Ring's one atom is in its target slot, framed by its CR 603.2 binding" (ofBoundCounts (survey (S.combinedFace ring))) (1, 0)
+    breakthrough <- S.printingOf s registry "Inventive Iteration"
+    Spec.assertEqWith s "Living Breakthrough's one atom is in its stored player effect, baked as it resolves" (ofBoundCounts (survey (NonEmpty.last (Card.Type.faces (Printing.card breakthrough))))) (1, 0)
     -- The lint's own proof, the pair differing in one position: the same atom in
     -- a static restriction's affected set, read through a bare contextFor.
     Spec.assertBool s (ofBoundOffends (survey restricted)) "the atom in an affected set offends"
@@ -2333,20 +2338,22 @@ filterPositionLintSpec s registry corpus = Spec.describe s "Lint" $ do
   -- sample by the mana value LITERALS a prohibition compares against, so a
   -- player effect comparing a mana value against any other operand would leave
   -- the sample too short with nothing failing. The position lints above keep the
-  -- source, bound-object and enclosing-amount operands out of a player effect;
-  -- this keeps the rest out too. A printed free-cast grant's spells are exempt:
+  -- source and enclosing-amount operands out of a player effect, and the
+  -- bound-object one out of a printed one; this keeps the rest out too. A printed free-cast grant's spells are exempt:
   -- Parun.Engine.PlayerEffect's freeCastAdmits reaches neither choiceCouldEscape
   -- nor choiceCouldApply,
   -- and CR 107.3b fixes X at 0 under the grant, so the hand's mana value is the
   -- spell's (Omnipresence's EnclosingAmount). So is a cast permission's
   -- `matching` beside an `amount`: castPermissionsFrom reaches neither as well,
   -- and admitsAtManaValue re-judges the announced X against the same bound
-  -- (CR 601.2e; Maralen, Fae Ascendant).
+  -- (CR 601.2e; Maralen, Fae Ascendant). So is a stored player effect's bound
+  -- operand: Parun.Engine.Resolve.Arms.Objects.affectPlayers bakes it to a
+  -- literal before any lookahead reads it (Living Breakthrough).
   Spec.it s "CR 601.3a no player effect compares a mana value against anything but a literal" $ do
     ps <- S.allPrintings s corpus
     let encode = Codec.encode (Filter.Codec.codec Keyword.Codec.codec)
         freeCastSpells c = [FreeCast.spells grant | PlayerEffect.PayRatherThanManaCost grant <- fmap PlayerStaticAbility.effect (Face.playerAbilities c)] <> [CastFromZone.matching grant | PlayerEffect.CastFrom grant <- fmap PlayerStaticAbility.effect (Face.playerAbilities c), Maybe.isJust (CastFromZone.amount grant)]
-        inPlayerEffects wanted c = sum [manaValueComparisons wanted (encode f) | (framing, f) <- cardFilters c, elem framing [PlayerEffectFramed, StoredPlayerEffectFramed]] - sum [manaValueComparisons wanted (encode f) | f <- freeCastSpells c]
+        inPlayerEffects wanted c = sum [manaValueComparisons wanted (encode f) | (framing, f) <- cardFilters c, elem framing [PlayerEffectFramed, StoredPlayerEffectFramed]] - sum [manaValueComparisons wanted (encode f) | f <- freeCastSpells c] - sum [manaValueComparisons (\t -> wanted t && t == ofBoundTag) (encode f) | (StoredPlayerEffectFramed, f) <- cardFilters c]
         nonLiteral = (/= Text.pack "Literal")
         offenders = filter (anyFace ((/= 0) . inPlayerEffects nonLiteral) . Printing.card) ps
     Spec.assertEqWith s "every player effect's mana value comparison is against a literal" (fmap (S.nameOf . Printing.card) offenders) []

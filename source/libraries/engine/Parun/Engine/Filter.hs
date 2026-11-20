@@ -3395,7 +3395,7 @@ bakeCost slot object =
   Identity.runIdentity
     . Children.costChildren
       Children.costLeaves
-        { Children.costFilter = Identity.Identity . bakeBound Map.empty (Map.singleton slot (Set.singleton object)) Map.empty
+        { Children.costFilter = Identity.Identity . bakeBound Map.empty (Map.singleton slot (Set.singleton object)) Map.empty Map.empty
         }
 
 -- CR 603.2: replace every HeldByBound atom whose slot this environment names
@@ -3416,10 +3416,13 @@ bakeCost slot object =
 --
 -- Every nest is descended into, the descent overBoundSlotsWith makes: a slot
 -- named inside one must be baked before the match or it can never be answered.
--- No other slot is substituted: a Measures operand's slot holds a number or an
--- object, which the Context carries into the match, and IsControllerOfBound's
--- and HoldsBoundAtLeast's hold objects, answered by
--- Parun.Engine.Count.bakePerspective.
+-- A Measures atom's OfBound operand whose slot and measure `measures` names
+-- becomes that literal (CR 608.2h), so a stored prohibition keeps CR 601.3a's
+-- lookahead bounded by literals (manaValueThresholds): Living Breakthrough's
+-- "the same mana value as that spell". No other slot is substituted: an
+-- AmountInSlot operand's slot holds a number the Context carries into the
+-- match, and IsControllerOfBound's and HoldsBoundAtLeast's hold objects,
+-- answered by Parun.Engine.Count.bakePerspective.
 --
 -- NO DESCENT INTO A KEYWORD, unlike `rewrite` above, and the difference is
 -- load-bearing: HasKeyword compares its keyword against the PROJECTION's keyword
@@ -3427,8 +3430,8 @@ bakeCost slot object =
 -- key the projection can never hold. There is no reading of a card under which a
 -- keyword's own criterion names a trigger's player anyway -- CR 702.14c's
 -- criterion is a land description.
-bakeBound :: Map.Map SlotName.SlotName PlayerId.PlayerId -> Map.Map SlotName.SlotName (Set.Set ObjectId.ObjectId) -> Map.Map SlotName.SlotName (PlayerRelation.PlayerRelation -> Set.Set PlayerId.PlayerId) -> Filter.Filter Keyword.Type.Keyword -> Filter.Filter Keyword.Type.Keyword
-bakeBound players objects controllers predicate = case predicate of
+bakeBound :: Map.Map SlotName.SlotName PlayerId.PlayerId -> Map.Map SlotName.SlotName (Set.Set ObjectId.ObjectId) -> Map.Map SlotName.SlotName (PlayerRelation.PlayerRelation -> Set.Set PlayerId.PlayerId) -> Map.Map (SlotName.SlotName, Measure.Measure) Integer -> Filter.Filter Keyword.Type.Keyword -> Filter.Filter Keyword.Type.Keyword
+bakeBound players objects controllers measures predicate = case predicate of
   Filter.HeldByBound holder slot -> maybe predicate (Filter.HeldByPlayer holder) (Map.lookup slot players)
   Filter.OfBoundPlayer slot -> maybe predicate Filter.OfSpecificPlayer (Map.lookup slot players)
   -- The objects the slot holds, named outright, so a class stored past the
@@ -3442,7 +3445,11 @@ bakeBound players objects controllers predicate = case predicate of
   -- offer before the sibling target is chosen. A host hop is left standing
   -- too: the host is read live as the ability resolves.
   Filter.ControllerRelatesToBound relation Hop.Itself slot -> maybe predicate (\related -> Filter.Or (fmap (Filter.HeldByPlayer Holder.Controller) (Set.toList (related relation)))) (Map.lookup slot controllers)
-  _ -> Identity.runIdentity (Children.filterChildren (Children.descending (Identity.Identity . bakeBound players objects controllers)) predicate)
+  Filter.Measures m
+    | Operand.OfBound (BoundMeasure.MkBoundMeasure slot measure) <- Measures.operand m,
+      Just n <- Map.lookup (slot, measure) measures ->
+        Filter.Measures m {Measures.operand = Operand.Literal n}
+  _ -> Identity.runIdentity (Children.filterChildren (Children.descending (Identity.Identity . bakeBound players objects controllers measures)) predicate)
 
 -- CR 109.5: every HeldBy relation named outright, as the players `related`
 -- answers for it, so a class stored past its resolution keeps the "you" it was
