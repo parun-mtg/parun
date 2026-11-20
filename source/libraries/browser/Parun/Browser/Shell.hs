@@ -304,14 +304,15 @@ builder shell deck = do
     Nothing -> pure (Builder.new []) {Builder.notices = [Text.pack "That deck could not be opened, so this is a new one." | Maybe.isJust deck]}
   go initial Nothing
   where
-    -- The builder, and the list and format it was last checked at.
+    -- The builder, and the list it was last checked at.
     go shown lastChecked = do
       now <- IORef.readIORef (loaded shell)
       named <- if null (Builder.formats shown) then Legality.shippedFormats else pure (Builder.formats shown)
       least <- maybe (Legality.minimumFor (Builder.format shown)) (pure . Just) (Builder.least shown)
       let indexed = if Maybe.isNothing (Builder.index shown) then maybe id Builder.withIndex (cardIndex now) shown else shown
           filled = indexed {Builder.formats = named, Builder.least = least, Builder.sets = Map.keys (setLists now), Builder.loadProblem = Loading.problem (loading now)}
-          key = (Builder.deck filled, Builder.format filled)
+          -- Checked again whenever the list it saves would change.
+          key = Builder.listText filled
       -- Taps waiting go first: the list is checked once they are done.
       waiting <- Browser.pending (page shell)
       current <- case registry now of
