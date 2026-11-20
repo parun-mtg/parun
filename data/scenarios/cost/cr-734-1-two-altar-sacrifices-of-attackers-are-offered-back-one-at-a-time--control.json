@@ -47,6 +47,14 @@
   "timeline": [
     {
       "do": {
+        "Attack": []
+      },
+      "player": "alice",
+      "step": "DeclareAttackers",
+      "turn": 1
+    },
+    {
+      "do": {
         "Answer": {
           "prompt": "ChooseSacrifices",
           "with": [
