@@ -56,14 +56,18 @@ Finished 2026-11-17.
   lone exiled token and Kaya (#8199), #8197 lent cost exiles linked (#8205),
   #8198 a secret choice hidden from its chooser (#8202), #8214 Teval's granted
   delve linked to an escaped card (#8215).
-- Filed along the way, off the tracker: #8188 (a mana ability's cost exiles
-  link nothing), #8201 (chosen qualities on `ObjectView`), #8204 (a lent
-  ability's exile pairs), #8220 (Blitzball counts a departed player dealt
-  damage) and #8225 (a stolen Lamplight Phoenix cannot exile its card from its
-  owner's graveyard). Unprinted: a face-down spell leaving the stack is face up
-  in its last-known record, so IsFaceDown asked of it is unsupported; the lint
-  is `Parun.FilterPositionLintSpec`'s "CR 608.2h no card asks IsFaceDown of an
-  object that left a zone other than the battlefield".
+- Filed along the way, off the tracker: #8201 (chosen qualities on
+  `ObjectView`), #8204 (a lent ability's exile pairs), #8220 (Blitzball counts
+  a departed player dealt damage) and #8225 (a stolen Lamplight Phoenix cannot
+  exile its card from its owner's graveyard). Unprinted: a face-down spell
+  leaving the stack is face up in its last-known record, so IsFaceDown asked of
+  it is unsupported; the lint is `Parun.FilterPositionLintSpec`'s "CR 608.2h no
+  card asks IsFaceDown of an object that left a zone other than the
+  battlefield".
+- Unprinted: a mana ability's cost exiles link nothing, so an "exiled with"
+  reader beside one is unsupported; the lint is `Parun.AbilitySlotLintSpec`'s
+  "CR 607.2a no card writes a mana ability whose cost exiles cards beside a
+  reader of their pile".
 - Audits: 10 of 23 capability or fix PRs; 3 found rules defects. Reviewed
   inline, all clean: #8196, #8199, #8200, #8202, #8207, #8211, #8213, #8215,
   #8219, #8221, #8222, #8226. Skipped the census, every batch and #8216 (card

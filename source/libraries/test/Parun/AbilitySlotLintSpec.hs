@@ -41,6 +41,7 @@ import qualified Parun.Engine.Event as Event
 import qualified Parun.Engine.Event.Binding as Event
 import qualified Parun.Engine.Game as Game
 import qualified Parun.Engine.Keyword as Keyword.Engine
+import qualified Parun.Engine.ManaAbility as ManaAbility
 import qualified Parun.Engine.Mint as Mint
 import qualified Parun.Engine.Modal as Modal
 import qualified Parun.Engine.Projection as Projection
@@ -110,6 +111,7 @@ import qualified Parun.Types.Gift as Gift
 import qualified Parun.Types.GrantPlayFromExile as GrantPlayFromExile
 import qualified Parun.Types.GrantZone as GrantZone
 import qualified Parun.Types.GrantedAbility as GrantedAbility
+import qualified Parun.Types.GraveyardCostDestination as GraveyardCostDestination
 import qualified Parun.Types.Holder as Holder
 import qualified Parun.Types.HowMany as HowMany
 import qualified Parun.Types.InZone as InZone
@@ -134,6 +136,7 @@ import qualified Parun.Types.ModeMemory as ModeMemory
 import qualified Parun.Types.ModeSelection as ModeSelection
 import qualified Parun.Types.Modification as Modification
 import qualified Parun.Types.ModifyTarget as ModifyTarget
+import qualified Parun.Types.MoveCardsFromGraveyard as MoveCardsFromGraveyard
 import qualified Parun.Types.MoveCounters as MoveCounters
 import qualified Parun.Types.MoveToZone as MoveToZone
 import qualified Parun.Types.MovedKinds as MovedKinds
@@ -525,6 +528,40 @@ exilesTotallingAsCost =
         _ -> False
    in any isExile . Cost.Type.components
 
+-- Does this cost exile cards Parun.Engine.Cost.linkPaidExiles links to its
+-- source on the activated road (CR 607.2a)? Its ExilePermanents,
+-- ExileCardsFromHand, BeholdAndExile, MoveCardsFromGraveyard-to-exile and
+-- CollectEvidence arms; CollectEvidenceOfTargets is fixed to the last.
+linksExilesAsCost :: Cost.Type.Cost Keyword.Keyword -> Bool
+linksExilesAsCost =
+  let links component = case component of
+        CostComponent.ExilePermanents {} -> True
+        CostComponent.ExileCardsFromHand {} -> True
+        CostComponent.BeholdAndExile {} -> True
+        CostComponent.MoveCardsFromGraveyard exile -> MoveCardsFromGraveyard.destination exile == GraveyardCostDestination.Exile
+        CostComponent.CollectEvidence {} -> True
+        CostComponent.CollectEvidenceOfTargets -> True
+        _ -> False
+   in any links . Cost.Type.components
+
+-- CR 607.2a / 605.1a: does a face pair a mana ability whose cost exiles cards
+-- (linksExilesAsCost) with a reader of the pile it would link -- its own
+-- abilities' (OwnAbilities, LastChosen) or that ability's by name?
+--
+-- Unprinted: a mana ability's cost has no stack object to name its ability, so
+-- Parun.Engine.Cost.linkPaidExiles links nothing for it; this keeps the pairing
+-- out of card data (Cryptex has the cost and no reader).
+manaExileLinkOffends :: Face.Face Card.Type.Card -> Bool
+manaExileLinkOffends face =
+  let exiling = filter (\ability -> ManaAbility.isManaAbility ability && linksExilesAsCost (ActivatedAbility.cost ability)) (Face.activatedAbilities face <> grantedActivatedAbilities face)
+      names = Set.fromList (Maybe.mapMaybe ActivatedAbility.name exiling)
+      readsPile atom = case atom of
+        Filter.Type.IsExiledWithSource ExiledPile.OwnAbilities -> [True]
+        Filter.Type.IsExiledWithSource ExiledPile.LastChosen -> [True]
+        Filter.Type.IsExiledWithSource (ExiledPile.OfAbility name) -> [Set.member name names]
+        _ -> []
+   in not (null exiling) && any (or . filterAtomsOf readsPile . snd) (cardFilters face)
+
 -- CR 603.7 / 109.5: does this card arm a delayed ability "on your next turn"
 -- whose condition is not scoped to its controller's turn?
 --
@@ -882,6 +919,37 @@ abilitySlotLintSpec s registry corpus = Spec.describe s "Lint" $ do
       "each position's own name is accepted and a dangling one rejected"
       (fmap verdict positions)
       (fmap (\(label, _) -> (label, False, True)) positions)
+  -- See manaExileLinkOffends. When a printed card trips this, its PR links a
+  -- mana ability's cost exiles, proves it on that card and deletes the lint.
+  Spec.it s "CR 607.2a no card writes a mana ability whose cost exiles cards beside a reader of their pile" $ do
+    ps <- S.allPrintings s corpus
+    let exiling face = any (\ability -> ManaAbility.isManaAbility ability && linksExilesAsCost (ActivatedAbility.cost ability)) (Face.activatedAbilities face)
+        offenders = filter (anyFace manaExileLinkOffends . Printing.card) ps
+    Spec.assertBool s (any (anyFace exiling . Printing.card) ps) "the pool has a mana ability whose cost exiles cards"
+    Spec.assertEqWith s "no mana ability's cost exiles are read" (fmap (S.nameOf . Printing.card) offenders) []
+  -- The lint itself, on a doctored Cryptex given "{3}: Draw a card for each
+  -- card exiled with" it. Each pile its mana ability would link is rejected;
+  -- the same reader is accepted beside the mana ability stripped of collect
+  -- evidence, and a pile named for its other ability.
+  Spec.it s "the lint itself catches a mana ability whose cost exiles cards beside a reader of their pile" $ do
+    cryptex <- S.printingOf s registry "Cryptex"
+    let evidence = AbilityName.MkAbilityName (Text.pack "evidence")
+        unlock = AbilityName.MkAbilityName (Text.pack "unlock")
+        face = S.combinedFace cryptex
+        you = PlayerRef.Relative PlayerRelation.You
+        reader pile = oneEffectActivated Nothing (Effect.Draw (Draw.MkDraw you (Quantity.Type.AgainstExiledPile (AgainstExiledPile.MkAgainstExiledPile pile (Quantity.Type.Literal 1))) Nothing Nothing))
+        nameBoth = zipWith (\name ability -> ability {ActivatedAbility.name = Just name}) [evidence, unlock]
+        stripped ability = if ManaAbility.isManaAbility ability then ability {ActivatedAbility.cost = (ActivatedAbility.cost ability) {Cost.Type.components = filter (not . isEvidence) (Cost.Type.components (ActivatedAbility.cost ability))}} else ability
+        isEvidence component = case component of
+          CostComponent.CollectEvidence {} -> True
+          _ -> False
+        doctored edit pile = face {Face.activatedAbilities = edit (Face.activatedAbilities face) <> [reader pile]}
+    Spec.assertBool s (not (manaExileLinkOffends face)) "the real Cryptex is accepted"
+    Spec.assertBool s (manaExileLinkOffends (doctored id ExiledPile.OwnAbilities)) "its own abilities' pile is rejected"
+    Spec.assertBool s (manaExileLinkOffends (doctored id ExiledPile.LastChosen)) "the last chosen card of that pile is rejected"
+    Spec.assertBool s (manaExileLinkOffends (doctored nameBoth (ExiledPile.OfAbility evidence))) "the mana ability's own named pile is rejected"
+    Spec.assertBool s (not (manaExileLinkOffends (doctored nameBoth (ExiledPile.OfAbility unlock)))) "a pile named for its other ability is accepted"
+    Spec.assertBool s (not (manaExileLinkOffends (doctored (fmap stripped) ExiledPile.OwnAbilities))) "the mana ability without collect evidence is accepted"
   -- The granted half (namedGrantedActivationCriteria) on The Dominion Bracelet,
   -- whose one static ability grants "dominate" and the cost reduction naming
   -- it. Renaming either side dangles; so does splitting the grant across two
