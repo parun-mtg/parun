@@ -14,4 +14,7 @@ data CounterKindFor
   | -- | CR 122.1: the kind among this object's counters it gets one more of
     -- (Dathon, His Heart Open's "choose a counter on target enchantment").
     AnotherOn ObjectId.ObjectId
+  | -- | CR 608.2d: the kind this permanent gets from a placement offering a
+    -- choice of kinds (Invoke the Ancients).
+    PlacedOn ObjectId.ObjectId
   deriving (Eq, Ord, Show)

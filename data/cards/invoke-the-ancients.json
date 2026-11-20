@@ -1,0 +1,128 @@
+{
+  "faces": [
+    {
+      "manaCost": [
+        {
+          "type": "Generic",
+          "value": 1
+        },
+        {
+          "type": "OfType",
+          "value": {
+            "type": "Colored",
+            "value": "Green"
+          }
+        },
+        {
+          "type": "OfType",
+          "value": {
+            "type": "Colored",
+            "value": "Green"
+          }
+        },
+        {
+          "type": "OfType",
+          "value": {
+            "type": "Colored",
+            "value": "Green"
+          }
+        },
+        {
+          "type": "OfType",
+          "value": {
+            "type": "Colored",
+            "value": "Green"
+          }
+        }
+      ],
+      "name": "Invoke the Ancients",
+      "oracleText": "Create two 4/5 green Spirit creature tokens. For each of them, put your choice of a reach counter, a vigilance counter, or a trample counter on it.",
+      "spell": {
+        "modes": [
+          {
+            "clauses": [
+              {
+                "effects": [
+                  {
+                    "type": "Create",
+                    "value": {
+                      "card": {
+                        "faces": [
+                          {
+                            "colorIndicator": [
+                              "Green"
+                            ],
+                            "name": "Spirit Token",
+                            "power": {
+                              "type": "Literal",
+                              "value": 4
+                            },
+                            "toughness": {
+                              "type": "Literal",
+                              "value": 5
+                            },
+                            "typeLine": {
+                              "subtypes": [
+                                "Spirit"
+                              ],
+                              "types": [
+                                "Creature"
+                              ]
+                            }
+                          }
+                        ]
+                      },
+                      "quantity": {
+                        "type": "Literal",
+                        "value": 2
+                      },
+                      "slot": "token"
+                    }
+                  },
+                  {
+                    "type": "PutCounters",
+                    "value": {
+                      "alternatives": [
+                        {
+                          "type": "Keyword",
+                          "value": {
+                            "type": "Vigilance"
+                          }
+                        },
+                        {
+                          "type": "Keyword",
+                          "value": {
+                            "type": "Trample"
+                          }
+                        }
+                      ],
+                      "kind": {
+                        "type": "Keyword",
+                        "value": {
+                          "type": "Reach"
+                        }
+                      },
+                      "quantity": {
+                        "type": "Literal",
+                        "value": 1
+                      },
+                      "ref": {
+                        "type": "InSlot",
+                        "value": "token"
+                      }
+                    }
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "typeLine": {
+        "types": [
+          "Sorcery"
+        ]
+      }
+    }
+  ]
+}

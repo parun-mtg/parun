@@ -849,7 +849,7 @@ objectRefPositions =
         ("prevent-all-damage", Effect.PreventAllDamage (PreventAllDamage.MkPreventAllDamage Duration.UntilEndOfTurn Nothing (Just (plantedRef "pa")) Nothing Nothing DamageDirection.DealtTo Nothing (Filter.Type.And []) Seq.empty), [plantedRef "pa"]),
         ("redirect-damage", Effect.RedirectDamage (RedirectDamage.MkRedirectDamage Duration.UntilEndOfTurn Nothing Nothing (Just (plantedRef "rd-from")) Nothing Nothing (plantedRef "rd-to") Nothing Uses.Unlimited (Filter.Type.And [])), [plantedRef "rd-from", plantedRef "rd-to"]),
         ("counter", Effect.Counter (Counter.MkCounter (plantedRef "co") Nothing Nothing Nothing), [plantedRef "co"]),
-        ("put-counters", Effect.PutCounters (PutCounters.MkPutCounters CounterKind.PlusOnePlusOne (Quantity.Type.Literal 1) (plantedRef "pc") Nothing Nothing), [plantedRef "pc"]),
+        ("put-counters", Effect.PutCounters (PutCounters.MkPutCounters CounterKind.PlusOnePlusOne [] (Quantity.Type.Literal 1) (plantedRef "pc") Nothing Nothing), [plantedRef "pc"]),
         ("divide", Effect.Divide (Divide.MkDivide (Quantity.Type.Literal 3) (plantedRef "dv") (PlayerRef.Relative PlayerRelation.You) (SlotName.MkSlotName (Text.pack "split"))), [plantedRef "dv"]),
         ("move-counters", Effect.MoveCounters (MoveCounters.MkMoveCounters (plantedRef "mc-from") MovedKinds.Every Nothing (plantedRef "mc-to")), [plantedRef "mc-from", plantedRef "mc-to"]),
         ("put-counters-from", Effect.PutCountersFrom (PutCountersFrom.MkPutCountersFrom (SlotName.MkSlotName (Text.pack "giver")) Nothing (plantedRef "pf")), [plantedRef "pf"]),
@@ -5617,7 +5617,7 @@ effectFilters effect = case effect of
   -- creature you control with a +1/+1 counter on it", and a Filter there would
   -- otherwise escape the lint; the count is a Quantity like any other; and CR
   -- 122.1b's kind may be a whole Keyword with a Filter under it; see #2728.
-  Effect.PutCounters (PutCounters.MkPutCounters kind quantity ref _ _) -> frame Unframed (counterKindFilters kind <> quantityFilters quantity) <> frame SourceHostFramed (objectRefFilters ref)
+  Effect.PutCounters (PutCounters.MkPutCounters kind alternatives quantity ref _ _) -> frame Unframed (foldMap counterKindFilters (kind : alternatives) <> quantityFilters quantity) <> frame SourceHostFramed (objectRefFilters ref)
   Effect.Divide (Divide.MkDivide quantity among _ _) -> frame Unframed (quantityFilters quantity) <> frame SourceHostFramed (objectRefFilters among)
   -- The destination and CR 122.1b's kind, PutCounters' framing: `from` is a bare
   -- SlotName and carries no Filter, and the kind is the one rule 122.8's second

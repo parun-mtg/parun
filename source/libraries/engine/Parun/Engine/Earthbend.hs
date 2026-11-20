@@ -91,6 +91,7 @@ instructions earthbend =
         Effect.PutCounters
           PutCounters.MkPutCounters
             { PutCounters.kind = CounterKind.PlusOnePlusOne,
+              PutCounters.alternatives = [],
               PutCounters.quantity = Earthbend.quantity earthbend,
               PutCounters.ref = ref,
               PutCounters.totalAtMost = Nothing,

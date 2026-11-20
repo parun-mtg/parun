@@ -332,6 +332,9 @@ data Response
   | -- | CR 122.1: the kind among an object's counters chosen to give it one
     -- more of. Its own constructor for ChoseEntryCounter's reason.
     ChoseAnotherCounter (CounterKind.CounterKind Keyword.Keyword)
+  | -- | CR 608.2d: the kind chosen for one permanent of a placement offering a
+    -- choice of kinds. Its own constructor for ChoseEntryCounter's reason.
+    ChosePlacedCounter (CounterKind.CounterKind Keyword.Keyword)
   | -- | CR 122.5: how many counters of each kind a player chose to move off the
     -- first object. Its own constructor and not ChoseMovedCounter above: one
     -- names a kind and the other a tally per kind, so a transcript of either

@@ -340,8 +340,8 @@ data Prompt r where
   -- (Nothing), Parun.Types.Vote's upToOne, and is then raised for one
   -- candidate too.
   ChooseVote :: Decider.Decider -> PlayerId.PlayerId -> ObjectId.ObjectId -> NonEmpty.NonEmpty (BallotChoice.BallotChoice ObjectId.ObjectId) -> Bool -> Prompt (Maybe (BallotChoice.BallotChoice ObjectId.ObjectId))
-  -- | Which one of these counter kinds, the CounterKindFor saying what for: a
-  -- CR 122.5 move or a CR 614.1c entry. Not raised for one kind.
+  -- | Which one of these counter kinds, the CounterKindFor saying what for.
+  -- Not raised for one kind.
   -- Parun.Engine.Replay answers each CounterKindFor with its own Response
   -- constructor.
   ChooseCounterKind :: Decider.Decider -> PlayerId.PlayerId -> CounterKindFor.CounterKindFor -> NonEmpty.NonEmpty (CounterKind.CounterKind Keyword.Keyword) -> Prompt (CounterKind.CounterKind Keyword.Keyword)

@@ -1680,7 +1680,7 @@ effectObjectRefs effect =
         Effect.ExchangeBlocks {} -> []
         Effect.Counter (Counter.MkCounter ref _ _ _) -> read_ [ref]
         -- Only the one permanent Phylactery Lich chooses: no test reaches "up to".
-        Effect.PutCounters (PutCounters.MkPutCounters _ _ ref _ _) -> [([OnePermanent], ref)]
+        Effect.PutCounters (PutCounters.MkPutCounters _ _ _ ref _ _) -> [([OnePermanent], ref)]
         -- A READ: which of the swept objects get a part is asked of the
         -- answer (Prompt.ChooseDistribution), not of the ref.
         Effect.Divide divide -> read_ [Divide.among divide]
