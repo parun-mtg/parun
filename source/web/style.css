@@ -824,7 +824,8 @@ main.game {
 .count.speed,
 .count.blessing,
 .count.dungeons,
-.count.player-counter {
+.count.player-counter,
+.count.commander-damage {
   background: color-mix(in srgb, var(--accent) 16%, var(--surface-2));
 }
 
@@ -1040,11 +1041,6 @@ main.game {
 
 .count.poison {
   background: color-mix(in srgb, var(--good) 30%, var(--surface-2));
-}
-
-/* Combat damage from one commander (CR 903.10a). */
-.count.commander-damage {
-  background: color-mix(in srgb, var(--danger) 24%, var(--surface-2));
 }
 
 .k {

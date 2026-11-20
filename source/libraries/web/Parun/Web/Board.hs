@@ -209,7 +209,7 @@ seatHead marks board own s =
       -- the commander's name up to its comma, beside its life.
       whose owner = if owner == PlayerView.viewer board then "your" else Text.unpack (name owner) <> "'s"
       commanderDamage =
-        [ chip "commander-damage" ("\x2694\xFE0E " <> takeWhile (/= ',') (Text.unpack (CardName.unwrap commander))) (show n) ("Combat damage dealt by " <> Text.unpack (CardName.unwrap commander) <> ", " <> whose owner <> " commander (CR 903.10a)")
+        [ chip "commander-damage" (takeWhile (/= ',') (Text.unpack (CardName.unwrap commander)) <> ":") (show n <> " commander damage") ("Combat damage dealt by " <> Text.unpack (CardName.unwrap commander) <> ", " <> whose owner <> " commander (CR 903.10a)")
         | (owner, dealt) <- Map.toList (SeatView.commanderDamage s),
           (commander, n) <- Map.toList dealt
         ]
