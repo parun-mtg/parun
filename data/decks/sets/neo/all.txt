@@ -1,0 +1,287 @@
+1 Acquisition Octopus
+1 Akki Ember-Keeper
+1 Akki Ronin
+1 Akki War Paint
+1 Ambitious Assault
+1 Ancestral Katana
+1 Anchor to Reality
+1 Ao, the Dawn Sky
+1 Armguard Familiar
+1 Asari Captain
+1 Assassin's Ink
+1 Atsushi, the Blazing Sky
+1 Automated Artificer
+1 Awakened Awareness
+1 Azusa's Many Journeys // Likeness of the Seeker
+1 Bamboo Grove Archer
+1 Banishing Slash
+1 Bearer of Memory
+1 Befriending the Moths // Imperial Moth
+1 Behold the Unspeakable // Vision of the Unspeakable
+1 Biting-Palm Ninja
+1 Blade of the Oni
+1 Blade-Blizzard Kitsune
+1 Bloodfell Caves
+1 Blossom Prancer
+1 Blossoming Sands
+1 Boon of Boseiju
+1 Born to Drive
+1 Boseiju Reaches Skyward // Branch of Boseiju
+1 Boseiju, Who Endures
+1 Brilliant Restoration
+1 Bronze Cudgels
+1 Bronzeplate Boar
+1 Brute Suit
+1 Careful Cultivation
+1 Chainflail Centipede
+1 Circuit Mender
+1 Clawing Torment
+1 Cloudsteel Kirin
+1 Coiling Stalker
+1 Colossal Skyturtle
+1 Commune with Spirits
+1 Containment Construct
+1 Covert Technician
+1 Crackling Emergence
+1 Debt to the Kami
+1 Discover the Impossible
+1 Dismal Backwater
+1 Disruption Protocol
+1 Dockside Chef
+1 Dokuchi Shadow-Walker
+1 Dokuchi Silencer
+1 Dragonfly Suit
+1 Dragonspark Reactor
+1 Dramatist's Puppet
+1 Eater of Virtue
+1 Ecologist's Terrarium
+1 Eiganjo Exemplar
+1 Eiganjo Uprising
+1 Eiganjo, Seat of the Empire
+1 Enormous Energy Blade
+1 Enthusiastic Mechanaut
+1 Era of Enlightenment // Hand of Enlightenment
+1 Essence Capture
+1 Experimental Synthesizer
+1 Explosive Entry
+1 Explosive Singularity
+1 Fable of the Mirror-Breaker // Reflection of Kiki-Jiki
+1 Fade into Antiquity
+1 Fang of Shigeki
+1 Farewell
+1 Favor of Jukai
+1 Flame Discharge
+1 Forest
+1 Futurist Operative
+1 Futurist Sentinel
+1 Generous Visitor
+1 Geothermal Kami
+1 Gift of Wrath
+1 Gloomshrieker
+1 Go-Shintai of Ancient Wars
+1 Go-Shintai of Boundless Vigor
+1 Go-Shintai of Hidden Cruelty
+1 Go-Shintai of Lost Wisdom
+1 Go-Shintai of Shared Purpose
+1 Golden-Tail Disciple
+1 Goro-Goro, Disciple of Ryusei
+1 Grafted Growth
+1 Gravelighter
+1 Greasefang, Okiba Boss
+1 Greater Tanuki
+1 Guardians of Oboro
+1 Harmonious Emergence
+1 Heiko Yamazaki, the General
+1 Heir of the Ancient Fang
+1 Hidetsugu Consumes All // Vessel of the All-Consuming
+1 Hidetsugu, Devouring Chaos
+1 High-Speed Hoverbike
+1 Hinata, Dawn-Crowned
+1 Historian's Wisdom
+1 Hotshot Mechanic
+1 Imperial Oath
+1 Imperial Recovery Unit
+1 Imperial Subduer
+1 Inkrise Infiltrator
+1 Intercessor's Arrest
+1 Inventive Iteration // Living Breakthrough
+1 Invigorating Hot Spring
+1 Invoke Calamity
+1 Invoke Despair
+1 Invoke Justice
+1 Invoke the Ancients
+1 Invoke the Winds
+1 Iron Apprentice
+1 Ironhoof Boar
+1 Island
+1 Isshin, Two Heavens as One
+1 Jin-Gitaxias, Progress Tyrant
+1 Jugan Defends the Temple // Remnant of the Rising Star
+1 Jukai Naturalist
+1 Jukai Preserver
+1 Jukai Trainee
+1 Jungle Hollow
+1 Junji, the Midnight Sky
+1 Kairi, the Swirling Sky
+1 Kaito Shizuki
+1 Kaito's Pursuit
+1 Kami of Industry
+1 Kami of Restless Shadows
+1 Kami of Terrible Secrets
+1 Kami of Transience
+1 Kami's Flare
+1 Kappa Tech-Wrecker
+1 Kindled Fury
+1 Kitsune Ace
+1 Kodama of the West Tree
+1 Kotose, the Silent Spider
+1 Kumano Faces Kakkazan // Etching of Kumano
+1 Kura, the Boundless Sky
+1 Kyodai, Soul of Kamigawa
+1 Leech Gauntlet
+1 Lethal Exploit
+1 Life of Toshiro Umezawa // Memory of Toshiro
+1 Light the Way
+1 Light-Paws, Emperor's Voice
+1 Lion Sash
+1 Lizard Blades
+1 Lucky Offering
+1 Malicious Malfunction
+1 March of Burgeoning Life
+1 March of Otherworldly Light
+1 March of Reckless Joy
+1 March of Swirling Mist
+1 March of Wretched Sorrow
+1 Master's Rebuke
+1 Mech Hangar
+1 Mechtitan Core
+1 Michiko's Reign of Truth // Portrait of Michiko
+1 Mindlink Mech
+1 Mirror Box
+1 Mirrorshell Crab
+1 Mnemonic Sphere
+1 Mobilizer Mech
+1 Moon-Circuit Hacker
+1 Moonfolk Puzzlemaker
+1 Moonsnare Prototype
+1 Moonsnare Specialist
+1 Mothrider Patrol
+1 Mountain
+1 Mukotai Ambusher
+1 Mukotai Soulripper
+1 Naomi, Pillar of Order
+1 Nashi, Moon Sage's Scion
+1 Network Disruptor
+1 Network Terminal
+1 Nezumi Bladeblesser
+1 Nezumi Prowler
+1 Ninja's Kunai
+1 Norika Yamazaki, the Poet
+1 Ogre-Head Helm
+1 Okiba Reckoner Raid // Nezumi Road Captain
+1 Okiba Salvage
+1 Oni-Cult Anvil
+1 Orochi Merge-Keeper
+1 Otawara, Soaring City
+1 Papercraft Decoy
+1 Patchwork Automaton
+1 Peerless Samurai
+1 Plains
+1 Planar Incision
+1 Prodigy's Prototype
+1 Prosperous Thief
+1 Rabbit Battery
+1 Raiyuu, Storm's Edge
+1 Reality Heist
+1 Reckoner Bankbuster
+1 Reckoner Shakedown
+1 Reckoner's Bargain
+1 Regent's Authority
+1 Reinforced Ronin
+1 Reito Sentinel
+1 Repel the Vile
+1 Replication Specialist
+1 Return to Action
+1 Risona, Asari Commander
+1 Roadside Reliquary
+1 Roaring Earth
+1 Rugged Highlands
+1 Runaway Trash-Bot
+1 Saiba Trespassers
+1 Satoru Umezawa
+1 Satsuki, the Living Lore
+1 Scoured Barrens
+1 Scrap Welder
+1 Scrapyard Steelbreaker
+1 Searchlight Companion
+1 Season of Renewal
+1 Secluded Courtyard
+1 Seismic Wave
+1 Selfless Samurai
+1 Seven-Tail Mentor
+1 Shigeki, Jukai Visionary
+1 Short Circuit
+1 Shrine Steward
+1 Silver-Fur Master
+1 Simian Sling
+1 Sky-Blessed Samurai
+1 Skyswimmer Koi
+1 Sokenzan Smelter
+1 Sokenzan, Crucible of Defiance
+1 Soul Transfer
+1 Spell Pierce
+1 Spinning Wheel Kick
+1 Spirit-Sister's Call
+1 Spirited Companion
+1 Spring-Leaf Avenger
+1 Storyweave
+1 Suit Up
+1 Sunblade Samurai
+1 Surgehacker Mech
+1 Swamp
+1 Swiftwater Cliffs
+1 Takenuma, Abandoned Mire
+1 Tales of Master Seshiro // Seshiro's Living Legacy
+1 Tameshi, Reality Architect
+1 Tamiyo's Compleation
+1 Tamiyo's Safekeeping
+1 Tamiyo, Compleated Sage
+1 Tatsunari, Toad Rider
+1 Teachings of the Kirin // Kirin-Touched Orochi
+1 Tempered in Solitude
+1 Tezzeret, Betrayer of Flesh
+1 The Dragon-Kami Reborn // Dragon-Kami's Egg
+1 The Fall of Lord Konda // Fragment of Konda
+1 The Kami War // O-Kagachi Made Manifest
+1 The Long Reach of Night // Animus of Night's Reach
+1 The Modern Age // Vector Glider
+1 The Reality Chip
+1 The Restoration of Eiganjo // Architect of Restoration
+1 The Shattered States Era // Nameless Conqueror
+1 The Wandering Emperor
+1 Thirst for Knowledge
+1 Thornwood Falls
+1 Thousand-Faced Shadow
+1 Thundering Raiju
+1 Thundersteel Colossus
+1 Touch the Spirit Realm
+1 Towashi Guide-Bot
+1 Towashi Songshaper
+1 Tranquil Cove
+1 Tribute to Horobi // Echo of Death's Wail
+1 Twinshot Sniper
+1 Twisted Embrace
+1 Uncharted Haven
+1 Undercity Scrounger
+1 Unforgiving One
+1 Unstoppable Ogre
+1 Upriser Renegade
+1 Virus Beetle
+1 Voltage Surge
+1 Walking Skyscraper
+1 Wanderer's Intervention
+1 Weaver of Harmony
+1 Webspinner Cuff
+1 When We Were Young
+1 Wind-Scarred Crag
+1 You Are Already Dead
