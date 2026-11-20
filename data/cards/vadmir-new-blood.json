@@ -105,8 +105,8 @@
       ],
       "typeLine": {
         "subtypes": [
-          "Rogue",
-          "Vampire"
+          "Vampire",
+          "Rogue"
         ],
         "supertypes": [
           "Legendary"

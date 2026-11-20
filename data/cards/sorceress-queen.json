@@ -96,8 +96,8 @@
       "typeLine": {
         "subtypes": [
           "Human",
-          "Sorcerer",
-          "Wizard"
+          "Wizard",
+          "Sorcerer"
         ],
         "types": [
           "Creature"

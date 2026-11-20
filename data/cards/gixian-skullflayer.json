@@ -106,9 +106,9 @@
       ],
       "typeLine": {
         "subtypes": [
-          "Assassin",
+          "Phyrexian",
           "Human",
-          "Phyrexian"
+          "Assassin"
         ],
         "types": [
           "Creature"

@@ -98,8 +98,8 @@
       ],
       "typeLine": {
         "subtypes": [
-          "Assassin",
-          "Drix"
+          "Drix",
+          "Assassin"
         ],
         "types": [
           "Creature"

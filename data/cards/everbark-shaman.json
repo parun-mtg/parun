@@ -86,8 +86,8 @@
       },
       "typeLine": {
         "subtypes": [
-          "Shaman",
-          "Treefolk"
+          "Treefolk",
+          "Shaman"
         ],
         "types": [
           "Creature"

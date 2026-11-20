@@ -68,8 +68,8 @@
       ],
       "typeLine": {
         "subtypes": [
-          "Dinosaur",
-          "Fungus"
+          "Fungus",
+          "Dinosaur"
         ],
         "types": [
           "Creature"

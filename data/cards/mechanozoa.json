@@ -130,8 +130,8 @@
       ],
       "typeLine": {
         "subtypes": [
-          "Jellyfish",
-          "Robot"
+          "Robot",
+          "Jellyfish"
         ],
         "types": [
           "Artifact",

@@ -56,8 +56,8 @@
       },
       "typeLine": {
         "subtypes": [
-          "Ogre",
-          "Zombie"
+          "Zombie",
+          "Ogre"
         ],
         "types": [
           "Creature"

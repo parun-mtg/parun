@@ -9,8 +9,10 @@ data TriggeringMove
     Dying
   | -- | CR 508.3: the creature attacking (Parun.Engine.Event.Binding.attackCausers).
     --
-    -- Not implemented: an attack that doesn't cause abilities to trigger
-    -- (EntryTriggering.NoTrigger) (#7726).
+    -- Unprinted: an attack that doesn't cause abilities to trigger
+    -- (EntryTriggering.NoTrigger) is unsupported; Parun.CardSpec's "CR 508.3
+    -- no card keeps an attack from causing abilities to trigger" keeps it out
+    -- of card data.
     Attacking
   | -- | CR 119.9: the row's player gaining life; no permanent makes it, so
     -- EntriesTrigger.entrants is unread (Parun.CardSpec's lint keeps it empty).

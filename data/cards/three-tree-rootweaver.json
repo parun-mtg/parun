@@ -58,8 +58,8 @@
       },
       "typeLine": {
         "subtypes": [
-          "Druid",
-          "Mole"
+          "Mole",
+          "Druid"
         ],
         "types": [
           "Creature"

@@ -204,8 +204,8 @@
       ],
       "typeLine": {
         "subtypes": [
-          "Beast",
-          "Werewolf"
+          "Werewolf",
+          "Beast"
         ],
         "supertypes": [
           "Legendary"

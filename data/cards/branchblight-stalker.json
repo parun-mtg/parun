@@ -32,8 +32,8 @@
       },
       "typeLine": {
         "subtypes": [
-          "Elf",
           "Phyrexian",
+          "Elf",
           "Scout"
         ],
         "types": [

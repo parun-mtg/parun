@@ -243,8 +243,8 @@
       },
       "typeLine": {
         "subtypes": [
-          "Merfolk",
           "Phyrexian",
+          "Merfolk",
           "Wizard"
         ],
         "supertypes": [

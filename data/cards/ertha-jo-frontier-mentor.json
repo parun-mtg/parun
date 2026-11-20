@@ -222,8 +222,8 @@
       ],
       "typeLine": {
         "subtypes": [
-          "Advisor",
-          "Kor"
+          "Kor",
+          "Advisor"
         ],
         "supertypes": [
           "Legendary"

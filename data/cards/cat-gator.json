@@ -105,8 +105,8 @@
       ],
       "typeLine": {
         "subtypes": [
-          "Crocodile",
-          "Fish"
+          "Fish",
+          "Crocodile"
         ],
         "types": [
           "Creature"

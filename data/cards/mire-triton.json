@@ -77,8 +77,8 @@
       ],
       "typeLine": {
         "subtypes": [
-          "Merfolk",
-          "Zombie"
+          "Zombie",
+          "Merfolk"
         ],
         "types": [
           "Creature"

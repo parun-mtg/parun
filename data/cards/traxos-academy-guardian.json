@@ -95,8 +95,8 @@
       },
       "typeLine": {
         "subtypes": [
-          "Construct",
-          "Dragon"
+          "Dragon",
+          "Construct"
         ],
         "supertypes": [
           "Legendary"

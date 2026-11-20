@@ -71,6 +71,7 @@ import qualified Parun.Types.Player as Player
 import qualified Parun.Types.PlayerCounterKind as PlayerCounterKind
 import qualified Parun.Types.PlayerView as PlayerView.Type
 import qualified Parun.Types.Printing as Printing
+import qualified Parun.Types.ProjectedCharacteristics as ProjectedCharacteristics
 import qualified Parun.Types.Prompt as Prompt
 import qualified Parun.Types.Question as Question
 import qualified Parun.Types.Recipient as Recipient
@@ -82,6 +83,7 @@ import qualified Parun.Types.SeatView as SeatView
 import qualified Parun.Types.Settle as Settle
 import qualified Parun.Types.SlotName as SlotName
 import qualified Parun.Types.Stop as Stop
+import qualified Parun.Types.Subtype as Subtype
 import qualified Parun.Types.TextWord as TextWord
 import qualified Parun.Types.TurnRegisters as TurnRegisters
 import qualified Parun.Types.WordFamily as WordFamily
@@ -457,6 +459,16 @@ spec s registry = Spec.describe s "WebQuestion" $ do
     Spec.assertEqWith s "pass" (Question.Web.automatic Question.Web.MkStandard (requestFor gs (Prompt.ChooseAction (Decider.MkDecider S.alice) S.alice [Action.Pass]))) (Just (R.Number 0))
     Spec.assertEqWith s "concede" (Question.Web.automatic Question.Web.MkStandard (bare (Text.pack "Concede") R.Null)) (Just (R.Text (Text.pack "Continues")))
     Spec.assertEqWith s "play first" (Question.Web.automatic Question.Web.MkStandard (bare (Text.pack "PlayOrDraw") (R.Array [R.Text (Text.pack "Play"), R.Text (Text.pack "Draw")]))) (Just (R.Text (Text.pack "Play")))
+    Spec.assertEqWith s "CR 103.1 among three seats, its own seat first" (Question.Web.automatic Question.Web.MkStandard (bare (Text.pack "ChooseStarter") starters)) (Just (R.Text (Text.pack "0")))
+
+  Spec.it s "CR 103.1 full control asks who of three seats takes the first turn, each seat a button" $ do
+    let asked = bare (Text.pack "ChooseStarter") starters
+        page = Question.Web.view asked Question.Web.blank {Question.Web.level = Question.Web.MkFull}
+        tapped label = Html.labelled (Text.pack "button") (Text.pack label) page >>= \path -> Html.handler (Text.pack "click") path page
+    Spec.assertEqWith s "asked" (Question.Web.automatic Question.Web.MkFull asked) Nothing
+    Spec.assertBool s (not (Question.Web.answersTyped asked)) "a form of its own"
+    Spec.assertEqWith s "you" (tapped "You") (Just (Question.Web.MkAnswer (R.Text (Text.pack "0"))))
+    Spec.assertEqWith s "another seat" (tapped "Player 3") (Just (Question.Web.MkAnswer (R.Text (Text.pack "2"))))
 
   Spec.it s "full control asks a lone pass and who plays first; auto passes an empty stack outside the seat's main phases" $ do
     mountain <- S.printingOf s registry "Mountain"
@@ -591,6 +603,10 @@ requestFor gs prompt = case Protocol.questionOf gs prompt of
   Nothing -> bare (Text.pack "unasked") R.Null
 
 -- | A request with no view, for questions whose form reads only the offer.
+-- | CR 103.1's three seats, offered to choose the first turn's.
+starters :: R.Reply
+starters = R.Array (fmap (R.Text . Text.pack) ["0", "1", "2"])
+
 bare :: Text.Text -> R.Reply -> Request.Request
 bare kind offer = Request.MkRequest Nothing (Question.MkQuestion S.alice kind offer Nothing) Nothing 0
 
@@ -691,6 +707,17 @@ replaySpec s registry = Spec.describe s "WebQuestion" . Spec.describe s "replay"
     Spec.assertBool s (Text.isInfixOf (Text.pack "<li class=\"past\" title=\"Combat phase\">") bar) ("combat passed: " <> Text.unpack bar)
     Spec.assertBool s (Text.isInfixOf (Text.pack "<li class=\"now second\" title=\"Postcombat main phase\">") bar) "the main phase lit"
     Spec.assertBool s (not (Text.isInfixOf (Text.pack "extra") bar)) "nothing extra"
+
+  Spec.it s "CR 205.3a a tile and sheet list subtypes as printed, a gained one after" $ do
+    stop <- replayed s registry "annihilating-glare-sacrifices-a-creature-to-destroy-a-planeswalker" 0
+    let board = boardOf stop
+    case [o | o <- PlayerView.Type.battlefield board, Render.nameOf board o == Text.pack "Llanowar Elves"] of
+      o : _ -> do
+        Spec.assertEqWith s "the tile" (Card.typeLine o) (Text.pack "Elf Druid")
+        Spec.assertEqWith s "the sheet" (Card.fullType o) (Text.pack "Creature \8212 Elf Druid")
+        let gained = o {ObjectView.characteristics = fmap (\c -> c {ProjectedCharacteristics.subtypes = Set.insert Subtype.Ally (ProjectedCharacteristics.subtypes c)}) (ObjectView.characteristics o)}
+        Spec.assertEqWith s "a gained subtype" (Card.typeLine gained) (Text.pack "Elf Druid Ally")
+      [] -> Spec.assertFailure s "expected Llanowar Elves on the battlefield"
 
   Spec.it s "CR 716.3d a card exiled as its Adventure resolved is marked on its tile and sheet" $ do
     -- Entry 10 follows Can't Wake Up's resolution.

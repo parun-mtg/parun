@@ -79,8 +79,8 @@
       ],
       "typeLine": {
         "subtypes": [
-          "Golem",
-          "Phyrexian"
+          "Phyrexian",
+          "Golem"
         ],
         "types": [
           "Artifact",

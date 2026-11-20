@@ -204,8 +204,8 @@
       ],
       "typeLine": {
         "subtypes": [
-          "Druid",
-          "Insect"
+          "Insect",
+          "Druid"
         ],
         "supertypes": [
           "Legendary"

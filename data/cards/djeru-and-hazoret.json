@@ -210,8 +210,8 @@
       ],
       "typeLine": {
         "subtypes": [
-          "God",
-          "Human"
+          "Human",
+          "God"
         ],
         "supertypes": [
           "Legendary"

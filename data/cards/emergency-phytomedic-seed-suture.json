@@ -43,8 +43,8 @@
       },
       "typeLine": {
         "subtypes": [
-          "Cleric",
-          "Dryad"
+          "Dryad",
+          "Cleric"
         ],
         "types": [
           "Creature"

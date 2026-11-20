@@ -75,8 +75,8 @@
       ],
       "typeLine": {
         "subtypes": [
-          "Advisor",
-          "Frog"
+          "Frog",
+          "Advisor"
         ],
         "types": [
           "Creature"

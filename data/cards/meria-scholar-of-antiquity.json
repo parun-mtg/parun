@@ -191,8 +191,8 @@
       },
       "typeLine": {
         "subtypes": [
-          "Artificer",
-          "Elf"
+          "Elf",
+          "Artificer"
         ],
         "supertypes": [
           "Legendary"

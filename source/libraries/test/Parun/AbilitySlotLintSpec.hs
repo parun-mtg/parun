@@ -25,14 +25,17 @@ module Parun.AbilitySlotLintSpec where
 
 import qualified Data.Foldable as Foldable
 import qualified Data.Functor.Const as Const
+import qualified Data.Functor.Identity as Identity
 import qualified Data.List.NonEmpty as NonEmpty
 import qualified Data.Map.Strict as Map
 import qualified Data.Maybe as Maybe
 import qualified Data.Sequence as Seq
 import qualified Data.Set as Set
 import qualified Data.Text as Text
-import Parun.CardSpec (anyFace, anyFaceOrMinted, armedReads, cardAuthoredEffects, cardCounts, cardFilters, cardResolutionEffects, collectsEvidenceAsCost, createToken, declaresVariable, delayedDeclarations, discardsAsCost, effectCounts, effectWithNested, exilesCardAsCost, faceModals, grantedActivatedAbilities, grantedStaticAbilities, grantedTriggeredAbilities, instantLine, lintMode, mintingSpell, modalActivated, modalClauseConditions, modalSlotsOffend, oneEffectActivated, oneEffectTrigger, payGateBound, removesCountersAsCost, sacrificesAsCost, spellCostsOf, triggerConditionSlots, vanillaFace, waterbendsAsCost, withMinted)
+import Parun.CardSpec (anyFace, anyFaceOrMinted, armedReads, cardAuthoredEffects, cardCounts, cardFilters, cardResolutionEffects, collectsEvidenceAsCost, createToken, declaresVariable, delayedDeclarations, discardsAsCost, effectCounts, effectGrants, effectWithNested, exilesCardAsCost, faceModals, grantedAbilities, grantedActivatedAbilities, grantedStaticAbilities, grantedTriggeredAbilities, instantLine, lintMode, mintingSpell, modalActivated, modalClauseConditions, modalSlotsOffend, modificationAbilities, oneEffectActivated, oneEffectTrigger, payGateBound, removesCountersAsCost, sacrificesAsCost, spellCostsOf, triggerConditionSlots, vanillaFace, waterbendsAsCost, withMinted)
+import qualified Parun.Codec.Card as Card.Codec
 import qualified Parun.Codec.Condition as Condition.Codec
+import qualified Parun.Codec.GrantedAbility as GrantedAbility.Codec
 import qualified Parun.Engine.Binding as Binding
 import qualified Parun.Engine.Card as Card
 import qualified Parun.Engine.Children as Children
@@ -74,6 +77,7 @@ import qualified Parun.Types.AttackTrigger as AttackTrigger
 import qualified Parun.Types.BoundMeasure as BoundMeasure
 import qualified Parun.Types.BoundReading as BoundReading
 import qualified Parun.Types.Card as Card.Type
+import qualified Parun.Types.CardAbilities as CardAbilities
 import qualified Parun.Types.CardName as CardName
 import qualified Parun.Types.CardType as CardType
 import qualified Parun.Types.CastFromZone as CastFromZone
@@ -1646,6 +1650,27 @@ abilitySlotLintSpec s registry corpus = Spec.describe s "Lint" $ do
     Spec.assertBool s (not (null abilities)) "the pool has activated abilities"
     Spec.assertBool s (any (readsAnySlot . snd) abilities) "and one of them reads a slot"
     Spec.assertEqWith s "no dangling activated-ability slot" (fmap fst (filter (offends . snd) abilities)) []
+  -- Unprinted: see granterUnreachedOffends.
+  Spec.it s "no granted ability names its granter in a target filter or a quoted ability" $ do
+    ps <- S.allPrintings s corpus
+    Spec.assertEqWith s "no granter named where the bake cannot reach" (fmap (S.nameOf . Printing.card) (filter (anyFaceOrMinted granterUnreachedOffends . Printing.card) ps)) []
+  -- Blazing Torch's grant, doctored to name its granter in each unreached
+  -- position: "other than Blazing Torch" on its target, and a token quoting
+  -- "Tap Blazing Torch".
+  Spec.it s "the lint itself catches a granter named in a target filter or a quoted ability" $ do
+    torch <- S.printingOf s registry "Blazing Torch"
+    let face = S.combinedFace torch
+        onGrant f = face {Face.staticAbilities = fmap (\a -> a {StaticAbility.modifications = fmap (grant f) (StaticAbility.modifications a)}) (Face.staticAbilities face)}
+        grant f m = case m of
+          Modification.GainAbility (GrantedAbility.Activated a) -> Modification.GainAbility (GrantedAbility.Activated a {ActivatedAbility.modal = f (ActivatedAbility.modal a)})
+          _ -> m
+        other = Filter.Type.Not (Filter.Type.IsBound Binding.grantingPermanent)
+        narrowed modal = modal {Modal.modes = fmap (\m -> m {Mode.targetSlots = fmap (\t -> t {TargetSlot.filter = Just other}) (Mode.targetSlots m)}) (Modal.modes modal)}
+        servo = (vanillaFace "Servo" instantLine) {Face.activatedAbilities = [oneEffectActivated Nothing (Effect.Tap (Tap.plain (ObjectRef.InSlot Binding.grantingPermanent)))]}
+        quoting _ = Mint.oneMode (Seq.singleton (createToken servo))
+    Spec.assertBool s (not (granterUnreachedOffends face)) "the real Blazing Torch, naming its granter in its cost and effect, is accepted"
+    Spec.assertBool s (granterUnreachedOffends (onGrant narrowed)) "its granter in the target's filter is rejected"
+    Spec.assertBool s (granterUnreachedOffends (onGrant quoting)) "its granter in a token's quoted ability is rejected"
   -- CR 601.2c's count, over every carrier at once: see modalCountsOffend.
   Spec.it s "every slot that may take more than one target is read where a set fits" $ do
     ps <- S.allPrintings s corpus
@@ -2028,6 +2053,62 @@ abilitySlotLintSpec s registry corpus = Spec.describe s "Lint" $ do
     Spec.assertBool s (not (grantedActivatorOffends face)) "the real Martyrdom is accepted"
     Spec.assertBool s (grantedActivatorOffends resolving) "a resolving grant's activator naming opponents is rejected"
     Spec.assertBool s (grantedActivatorOffends static) "a static grant's activator naming you is rejected"
+  -- CR 613.1f, swept over the pool. See resolvingTriggeredLendOffends.
+  Spec.it s "CR 613.1f no card writes a resolving lend of triggered abilities" $ do
+    ps <- S.allPrintings s corpus
+    let offenders = filter (anyFaceOrMinted resolvingTriggeredLendOffends . Printing.card) ps
+    Spec.assertBool s (any (anyFaceOrMinted (not . null . resolvingLends) . Printing.card) ps) "the pool has a resolving lend"
+    Spec.assertEqWith s "no resolving lend lends triggered abilities" (fmap (S.nameOf . Printing.card) offenders) []
+  -- The lint itself, on Quicksilver Elemental's resolving lend doctored to
+  -- lend triggered abilities too. Koh, the Face Stealer's static lend of them
+  -- is accepted.
+  Spec.it s "the lint itself catches a resolving lend of triggered abilities" $ do
+    elemental <- S.printingOf s registry "Quicksilver Elemental"
+    koh <- S.printingOf s registry "Koh, the Face Stealer"
+    let lendTriggered effect = case effect of
+          Effect.ModifyTarget modify
+            | Modification.GainCardAbilities lend <- ModifyTarget.modification modify ->
+                Effect.ModifyTarget modify {ModifyTarget.modification = Modification.GainCardAbilities lend {CardAbilities.triggered = True}}
+          _ -> effect
+        doctor ability = ability {ActivatedAbility.modal = Identity.runIdentity (Children.modalChildren Children.modalLeaves {Children.modalEffect = Identity.Identity . lendTriggered} (ActivatedAbility.modal ability))}
+        face = S.combinedFace elemental
+    Spec.assertBool s (not (resolvingTriggeredLendOffends face)) "the real Quicksilver Elemental is accepted"
+    Spec.assertBool s (not (anyFace resolvingTriggeredLendOffends (Printing.card koh))) "the real Koh, the Face Stealer is accepted"
+    Spec.assertBool s (resolvingTriggeredLendOffends face {Face.activatedAbilities = fmap doctor (Face.activatedAbilities face)}) "a resolving lend of triggered abilities is rejected"
+
+-- CR 613.1f: Parun.Engine.Resolve.Common.expandGrant lends a resolving
+-- GainCardAbilities' activated abilities and keywords but no triggered
+-- ability, which only a static lend carries (Koh, the Face Stealer). No
+-- printing resolves a lend of triggered abilities, so this keeps it out of card
+-- data.
+resolvingTriggeredLendOffends :: Face.Face Card.Type.Card -> Bool
+resolvingTriggeredLendOffends = any CardAbilities.triggered . resolvingLends
+
+-- Every GainCardAbilities a resolution applies, off Parun.Engine.Children's
+-- traversal, so an opcode gaining a Modification is swept without an arm here.
+resolvingLends :: Face.Face Card.Type.Card -> [CardAbilities.CardAbilities]
+resolvingLends face =
+  let stored = Const.getConst . Children.effectChildren Children.effectLeaves {Children.onModification = \modification -> Const.Const [modification]}
+   in [lend | Modification.GainCardAbilities lend <- concatMap stored (cardAuthoredEffects face)]
+
+-- Unprinted: a granted ability naming its granter (Binding.grantingPermanent)
+-- in a target slot's filter, which CR 601.2c judges at announcement before
+-- Binding.setGranter binds the slot, or inside an ability or object it quotes,
+-- where Projection.bakeGranter does not descend. No printing has either shape,
+-- so this keeps both out of card data.
+granterUnreachedOffends :: Face.Face Card.Type.Card -> Bool
+granterUnreachedOffends face = any modalOffends ([ActivatedAbility.modal a | GrantedAbility.Activated a <- granted] <> [TriggeredAbility.modal t | GrantedAbility.Triggered t <- granted])
+  where
+    granted = grantedAbilities face
+    modalOffends modal =
+      any (any (Map.member Binding.grantingPermanent . Resolve.targetSlotSlots) . Mode.targetSlots) (Modal.modes modal)
+        || any (any (any names . quoted) . effectWithNested) (Modal.allEffects modal)
+    quoted effect =
+      fmap ability (concatMap modificationAbilities (effectGrants effect))
+        <> Const.getConst (Children.effectChildren Children.effectLeaves {Children.onCard = card, Children.onConjured = card, Children.onMelded = card, Children.onAbility = \a -> Const.Const [ability a]} effect)
+    ability = Codec.encode (GrantedAbility.Codec.codec Card.Codec.codec)
+    card c = Const.Const [Codec.encode Card.Codec.codec c]
+    names = (> 0) . jsonAtoms (SlotName.unwrap Binding.grantingPermanent)
 
 -- CR 611.2b / 702.174a: Parun.Engine.Quantity.bakePlayerRef leaves
 -- PlayerRef.ChosenPlayerOfBound standing in a stored condition, where no slot

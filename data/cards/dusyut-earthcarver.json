@@ -122,8 +122,8 @@
       ],
       "typeLine": {
         "subtypes": [
-          "Druid",
-          "Elephant"
+          "Elephant",
+          "Druid"
         ],
         "types": [
           "Creature"

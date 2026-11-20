@@ -82,9 +82,9 @@
       ],
       "typeLine": {
         "subtypes": [
-          "Ally",
           "Human",
-          "Noble"
+          "Noble",
+          "Ally"
         ],
         "supertypes": [
           "Legendary"

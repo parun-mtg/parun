@@ -125,8 +125,8 @@
       ],
       "typeLine": {
         "subtypes": [
-          "Bird",
-          "Human"
+          "Human",
+          "Bird"
         ],
         "supertypes": [
           "Legendary"

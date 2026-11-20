@@ -157,8 +157,8 @@
       ],
       "typeLine": {
         "subtypes": [
-          "Berserker",
           "Mutant",
+          "Berserker",
           "Turtle"
         ],
         "supertypes": [

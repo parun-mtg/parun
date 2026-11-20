@@ -77,8 +77,8 @@
       },
       "typeLine": {
         "subtypes": [
-          "Noble",
-          "TimeLord"
+          "TimeLord",
+          "Noble"
         ],
         "supertypes": [
           "Legendary"

@@ -63,8 +63,8 @@
       },
       "typeLine": {
         "subtypes": [
-          "Detective",
-          "Sphinx"
+          "Sphinx",
+          "Detective"
         ],
         "types": [
           "Creature"

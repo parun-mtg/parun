@@ -137,8 +137,8 @@
       ],
       "typeLine": {
         "subtypes": [
-          "Detective",
-          "Gargoyle"
+          "Gargoyle",
+          "Detective"
         ],
         "types": [
           "Artifact",

@@ -19,8 +19,8 @@
       },
       "typeLine": {
         "subtypes": [
-          "Ally",
-          "Cat"
+          "Cat",
+          "Ally"
         ],
         "types": [
           "Artifact",

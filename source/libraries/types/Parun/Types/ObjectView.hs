@@ -42,6 +42,8 @@ data ObjectView = MkObjectView
     face :: Maybe ProjectedCharacteristics.ProjectedCharacteristics,
     -- | CR 613.1 / 702.140e: the characteristics `face`, or else `characteristics`, holds under its own static abilities alone, where one applies to it or it is merged: what its printed text, or its cards', says it has.
     ownEffects :: Maybe ProjectedCharacteristics.ProjectedCharacteristics,
+    -- | CR 205.3a: the subtypes printed on the face it shows, in printed order, for a face-up object the seat sees; else empty.
+    printedSubtypes :: [Subtype.Subtype],
     -- | CR 731.2 / 702.140e: the cards and tokens under a merged permanent's topmost one, top to bottom, each by the face it shows, and Nothing for a face-down one the seat may not look at (CR 708.5).
     merged :: Seq.Seq (Maybe CardName.CardName),
     -- | CR 702.143d / 702.143e: what a granted foretell cost takes off the card's mana cost, for a seat that may look at it.

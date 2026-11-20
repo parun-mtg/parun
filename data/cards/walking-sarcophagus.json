@@ -66,8 +66,8 @@
       },
       "typeLine": {
         "subtypes": [
-          "Cat",
-          "Zombie"
+          "Zombie",
+          "Cat"
         ],
         "types": [
           "Artifact",

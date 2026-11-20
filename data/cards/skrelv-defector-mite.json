@@ -162,8 +162,8 @@
       },
       "typeLine": {
         "subtypes": [
-          "Mite",
-          "Phyrexian"
+          "Phyrexian",
+          "Mite"
         ],
         "supertypes": [
           "Legendary"

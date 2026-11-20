@@ -147,8 +147,8 @@
       },
       "typeLine": {
         "subtypes": [
-          "Barbarian",
-          "Minotaur"
+          "Minotaur",
+          "Barbarian"
         ],
         "types": [
           "Creature"

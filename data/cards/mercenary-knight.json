@@ -81,8 +81,8 @@
       "typeLine": {
         "subtypes": [
           "Human",
-          "Knight",
-          "Mercenary"
+          "Mercenary",
+          "Knight"
         ],
         "types": [
           "Creature"

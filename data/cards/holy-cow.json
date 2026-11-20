@@ -80,8 +80,8 @@
       ],
       "typeLine": {
         "subtypes": [
-          "Angel",
-          "Ox"
+          "Ox",
+          "Angel"
         ],
         "types": [
           "Creature"

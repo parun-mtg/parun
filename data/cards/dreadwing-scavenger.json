@@ -162,8 +162,8 @@
       ],
       "typeLine": {
         "subtypes": [
-          "Bird",
-          "Nightmare"
+          "Nightmare",
+          "Bird"
         ],
         "types": [
           "Creature"

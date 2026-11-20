@@ -203,8 +203,8 @@
       },
       "typeLine": {
         "subtypes": [
-          "Elemental",
           "Sand",
+          "Elemental",
           "Villain"
         ],
         "supertypes": [

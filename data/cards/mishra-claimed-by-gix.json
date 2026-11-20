@@ -694,9 +694,9 @@
       ],
       "typeLine": {
         "subtypes": [
-          "Artificer",
+          "Phyrexian",
           "Human",
-          "Phyrexian"
+          "Artificer"
         ],
         "supertypes": [
           "Legendary"

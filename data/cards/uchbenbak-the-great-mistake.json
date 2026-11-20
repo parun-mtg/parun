@@ -168,8 +168,8 @@
       },
       "typeLine": {
         "subtypes": [
-          "Horror",
-          "Skeleton"
+          "Skeleton",
+          "Horror"
         ],
         "supertypes": [
           "Legendary"

@@ -127,9 +127,9 @@
       ],
       "typeLine": {
         "subtypes": [
-          "Bird",
           "Boar",
           "Elk",
+          "Bird",
           "Ox"
         ],
         "types": [

@@ -34,8 +34,8 @@
       },
       "typeLine": {
         "subtypes": [
-          "Berserker",
-          "Minotaur"
+          "Minotaur",
+          "Berserker"
         ],
         "types": [
           "Creature"

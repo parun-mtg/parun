@@ -119,8 +119,8 @@
       },
       "typeLine": {
         "subtypes": [
-          "Cleric",
-          "Shapeshifter"
+          "Shapeshifter",
+          "Cleric"
         ],
         "types": [
           "Creature"

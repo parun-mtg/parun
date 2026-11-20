@@ -37,8 +37,8 @@
       },
       "typeLine": {
         "subtypes": [
-          "Drone",
-          "Eldrazi"
+          "Eldrazi",
+          "Drone"
         ],
         "types": [
           "Creature"

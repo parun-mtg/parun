@@ -128,8 +128,8 @@
       ],
       "typeLine": {
         "subtypes": [
-          "Cleric",
-          "Demon"
+          "Demon",
+          "Cleric"
         ],
         "types": [
           "Creature"

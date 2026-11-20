@@ -20,6 +20,7 @@ import qualified Parun.Engine.Card as Card
 import qualified Parun.Engine.Decide as Decide
 import qualified Parun.Engine.Loyalty as Loyalty
 import qualified Parun.Engine.Modal as Modal
+import qualified Parun.Engine.Subtype as Subtype.Engine
 import qualified Parun.Engine.Turn as Turn
 import qualified Parun.Extra.Int as Int
 import qualified Parun.Extra.Natural as Natural
@@ -612,7 +613,7 @@ sideDeckBack oid gs = case fmap Object.source (lookupObject oid gs) of
 -- | `sideDeckBack`, of a card rather than an object.
 sideDeckBackOf :: Card.Type.Card -> Maybe SideDeck.SideDeck
 sideDeckBackOf card =
-  let printed subtype = any (Set.member subtype . TypeLine.subtypes . Face.typeLine) (Card.Type.faces card)
+  let printed subtype = any (elem subtype . TypeLine.subtypes . Face.typeLine) (Card.Type.faces card)
    in Maybe.listToMaybe [kind | (subtype, kind) <- [(Subtype.Attraction, SideDeck.Attraction), (Subtype.Contraption, SideDeck.Contraption)], printed subtype]
 
 -- | CR 108.2a: is this a nontraditional card? A card type CR 309.1, 311.1,
@@ -1779,7 +1780,7 @@ castingFaceOf obj card face = case copyStampOf obj of
             Face.costReductions = PC.costReductions stamp,
             Face.castingRestrictions = PC.castingRestrictions stamp,
             Face.spell = PC.spell stamp,
-            Face.typeLine = TypeLine.MkTypeLine (PC.supertypes stamp) (PC.cardTypes stamp) (PC.subtypes stamp)
+            Face.typeLine = TypeLine.MkTypeLine (PC.supertypes stamp) (PC.cardTypes stamp) (Subtype.Engine.inPrintedOrder (TypeLine.subtypes (Face.typeLine face)) (PC.subtypes stamp))
           }
   _ -> face
 
@@ -2534,7 +2535,7 @@ storedCopyOf oid = fmap ActiveCopy.snapshot . latestStoredCopy oid
 storedCopyFace :: ObjectId -> GameState -> Face Card -> Face Card
 storedCopyFace oid gs face = case storedCopyOf oid gs of
   Nothing -> face
-  Just copied -> face {Face.spell = PC.spell copied, Face.typeLine = TypeLine.MkTypeLine (PC.supertypes copied) (PC.cardTypes copied) (PC.subtypes copied)}
+  Just copied -> face {Face.spell = PC.spell copied, Face.typeLine = TypeLine.MkTypeLine (PC.supertypes copied) (PC.cardTypes copied) (Subtype.Engine.inPrintedOrder (TypeLine.subtypes (Face.typeLine face)) (PC.subtypes copied))}
 
 -- The row `storedCopyOf` reads: the latest stored copy effect covering the
 -- object (CR 613.7).

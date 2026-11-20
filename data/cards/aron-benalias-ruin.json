@@ -135,8 +135,8 @@
       },
       "typeLine": {
         "subtypes": [
-          "Human",
-          "Phyrexian"
+          "Phyrexian",
+          "Human"
         ],
         "supertypes": [
           "Legendary"

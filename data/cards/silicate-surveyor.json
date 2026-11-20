@@ -83,8 +83,8 @@
       ],
       "typeLine": {
         "subtypes": [
-          "Scout",
-          "Tholian"
+          "Tholian",
+          "Scout"
         ],
         "types": [
           "Creature"

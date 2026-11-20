@@ -276,8 +276,8 @@
       ],
       "typeLine": {
         "subtypes": [
-          "Hydra",
-          "Phyrexian"
+          "Phyrexian",
+          "Hydra"
         ],
         "supertypes": [
           "Legendary"

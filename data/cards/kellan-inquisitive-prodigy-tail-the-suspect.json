@@ -138,9 +138,9 @@
       ],
       "typeLine": {
         "subtypes": [
-          "Detective",
+          "Human",
           "Faerie",
-          "Human"
+          "Detective"
         ],
         "supertypes": [
           "Legendary"

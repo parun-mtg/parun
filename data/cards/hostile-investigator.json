@@ -172,9 +172,9 @@
       ],
       "typeLine": {
         "subtypes": [
-          "Detective",
           "Ogre",
-          "Rogue"
+          "Rogue",
+          "Detective"
         ],
         "types": [
           "Creature"

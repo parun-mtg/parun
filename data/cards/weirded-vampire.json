@@ -49,8 +49,8 @@
       },
       "typeLine": {
         "subtypes": [
-          "Horror",
-          "Vampire"
+          "Vampire",
+          "Horror"
         ],
         "types": [
           "Creature"

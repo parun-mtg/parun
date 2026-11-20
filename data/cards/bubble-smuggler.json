@@ -72,8 +72,8 @@
       },
       "typeLine": {
         "subtypes": [
-          "Fish",
-          "Octopus"
+          "Octopus",
+          "Fish"
         ],
         "types": [
           "Creature"

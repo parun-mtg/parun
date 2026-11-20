@@ -103,8 +103,8 @@
       ],
       "typeLine": {
         "subtypes": [
-          "Doctor",
-          "Vorta"
+          "Vorta",
+          "Doctor"
         ],
         "types": [
           "Creature"

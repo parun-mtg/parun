@@ -192,8 +192,8 @@
       ],
       "typeLine": {
         "subtypes": [
-          "Berserker",
-          "Phyrexian"
+          "Phyrexian",
+          "Berserker"
         ],
         "types": [
           "Creature"

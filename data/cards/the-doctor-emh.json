@@ -122,8 +122,8 @@
       ],
       "typeLine": {
         "subtypes": [
-          "Doctor",
-          "Illusion"
+          "Illusion",
+          "Doctor"
         ],
         "supertypes": [
           "Legendary"

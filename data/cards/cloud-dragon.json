@@ -53,8 +53,8 @@
       },
       "typeLine": {
         "subtypes": [
-          "Dragon",
-          "Illusion"
+          "Illusion",
+          "Dragon"
         ],
         "types": [
           "Creature"

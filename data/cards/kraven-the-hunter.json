@@ -127,8 +127,8 @@
       "typeLine": {
         "subtypes": [
           "Human",
-          "Villain",
-          "Warrior"
+          "Warrior",
+          "Villain"
         ],
         "supertypes": [
           "Legendary"

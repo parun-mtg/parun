@@ -211,8 +211,8 @@
       },
       "typeLine": {
         "subtypes": [
-          "God",
-          "Phyrexian"
+          "Phyrexian",
+          "God"
         ],
         "supertypes": [
           "Legendary"

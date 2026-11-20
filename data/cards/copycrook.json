@@ -100,8 +100,8 @@
       },
       "typeLine": {
         "subtypes": [
-          "Rogue",
-          "Shapeshifter"
+          "Shapeshifter",
+          "Rogue"
         ],
         "types": [
           "Creature"

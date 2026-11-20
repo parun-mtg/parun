@@ -127,8 +127,8 @@
       ],
       "typeLine": {
         "subtypes": [
-          "Detective",
-          "Homunculus"
+          "Homunculus",
+          "Detective"
         ],
         "types": [
           "Creature"

@@ -248,7 +248,7 @@ creatureCard printing =
 hasType :: CardType.CardType -> Subtype.Subtype -> Printing.Printing -> Bool
 hasType cardType subtype printing =
   Set.member cardType (printedTypes printing)
-    && Set.member subtype (TypeLine.subtypes (Face.typeLine (Card.frontFace (Printing.card printing))))
+    && elem subtype (TypeLine.subtypes (Face.typeLine (Card.frontFace (Printing.card printing))))
 
 -- | The card types printed on this card's front face, for the reason
 -- `designations` gives.
@@ -321,7 +321,7 @@ isBackground printing =
       typeLine = Face.typeLine face
    in Set.member Supertype.Legendary (TypeLine.supertypes typeLine)
         && Set.member CardType.Enchantment (TypeLine.types typeLine)
-        && Set.member Subtype.Background (TypeLine.subtypes typeLine)
+        && elem Subtype.Background (TypeLine.subtypes typeLine)
 
 -- | CR 702.124m's requirement of the card that names the other: "this card",
 -- which rule 702.124m also has be a legendary creature card, since it designates
@@ -341,7 +341,7 @@ isDoctorsCompanion printing = legendaryCreature printing && printedKeyword Keywo
 isTheDoctor :: Printing.Printing -> Bool
 isTheDoctor printing =
   let face = Card.frontFace (Printing.card printing)
-      creatureTypes = Set.filter Subtype.Engine.isCreatureType (TypeLine.subtypes (Face.typeLine face))
+      creatureTypes = Set.filter Subtype.Engine.isCreatureType (Set.fromList (TypeLine.subtypes (Face.typeLine face)))
    in legendaryCreature printing && creatureTypes == Set.fromList [Subtype.TimeLord, Subtype.Doctor]
 
 -- | CR 702.124m's "two legendary CREATURE cards", which both halves of that

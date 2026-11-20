@@ -123,8 +123,8 @@
       ],
       "typeLine": {
         "subtypes": [
-          "Kangaroo",
-          "Rabbit"
+          "Rabbit",
+          "Kangaroo"
         ],
         "types": [
           "Creature"

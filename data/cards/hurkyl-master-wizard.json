@@ -200,9 +200,9 @@
       ],
       "typeLine": {
         "subtypes": [
-          "Advisor",
           "Human",
-          "Wizard"
+          "Wizard",
+          "Advisor"
         ],
         "supertypes": [
           "Legendary"

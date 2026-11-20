@@ -31,8 +31,8 @@
       },
       "typeLine": {
         "subtypes": [
-          "Minotaur",
-          "Zombie"
+          "Zombie",
+          "Minotaur"
         ],
         "types": [
           "Creature"

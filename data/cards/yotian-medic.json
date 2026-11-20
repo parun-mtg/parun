@@ -31,8 +31,8 @@
       },
       "typeLine": {
         "subtypes": [
-          "Cleric",
           "Human",
+          "Cleric",
           "Soldier"
         ],
         "types": [

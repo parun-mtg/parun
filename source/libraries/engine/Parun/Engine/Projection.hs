@@ -1025,8 +1025,10 @@ applyModification textBoxOf viewOf src stamp gs oid unitTypes affected m pc =
 -- card in data/cards reaches; Spare Dagger would. A slot-named position is
 -- readsGranter's.
 --
--- Not implemented: the name in a target slot's filter or a quoted ability
--- (#7794).
+-- Unprinted: the name in a target slot's filter, judged before
+-- Binding.setGranter binds the slot, or in a quoted ability, where this does
+-- not descend. Parun.AbilitySlotLintSpec's "no granted ability names its
+-- granter in a target filter or a quoted ability" keeps both out of card data.
 bakeGranter :: ObjectId -> Modal.Modal Card.Type.Card (GrantedAbility.GrantedAbility Card.Type.Card) -> Modal.Modal Card.Type.Card (GrantedAbility.GrantedAbility Card.Type.Card)
 bakeGranter granter = Identity.runIdentity . Children.modalChildren Children.modalLeaves {Children.modalEffect = Identity.Identity . effect, Children.modalCondition = Identity.Identity . condition}
   where
@@ -1960,7 +1962,7 @@ anyCopiableKeyword p oid gs = case copiableSnapshotOf oid gs of
 copiableMintsType :: ObjectId -> GameState -> Bool
 copiableMintsType oid gs =
   let fromFace face =
-        Set.member Subtype.Type.Saga (TypeLine.subtypes (Face.typeLine face))
+        elem Subtype.Type.Saga (TypeLine.subtypes (Face.typeLine face))
           || any mintingCardType (TypeLine.types (Face.typeLine face))
    in case copiableSnapshotOf oid gs of
         Just snapshot -> Set.member Subtype.Type.Saga (PC.subtypes snapshot) || any mintingCardType (PC.cardTypes snapshot)

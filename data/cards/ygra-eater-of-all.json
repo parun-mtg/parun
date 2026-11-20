@@ -194,8 +194,8 @@
       ],
       "typeLine": {
         "subtypes": [
-          "Cat",
-          "Elemental"
+          "Elemental",
+          "Cat"
         ],
         "supertypes": [
           "Legendary"

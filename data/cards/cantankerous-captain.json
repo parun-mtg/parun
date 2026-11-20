@@ -167,8 +167,8 @@
       ],
       "typeLine": {
         "subtypes": [
-          "Officer",
-          "Tellarite"
+          "Tellarite",
+          "Officer"
         ],
         "types": [
           "Creature"

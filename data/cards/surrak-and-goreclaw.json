@@ -161,8 +161,8 @@
       ],
       "typeLine": {
         "subtypes": [
-          "Bear",
-          "Human"
+          "Human",
+          "Bear"
         ],
         "supertypes": [
           "Legendary"

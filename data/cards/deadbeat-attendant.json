@@ -49,8 +49,8 @@
       ],
       "typeLine": {
         "subtypes": [
-          "Employee",
-          "Vampire"
+          "Vampire",
+          "Employee"
         ],
         "types": [
           "Creature"

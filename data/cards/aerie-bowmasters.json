@@ -59,8 +59,8 @@
       },
       "typeLine": {
         "subtypes": [
-          "Archer",
-          "Dog"
+          "Dog",
+          "Archer"
         ],
         "types": [
           "Creature"

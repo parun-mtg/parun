@@ -214,8 +214,8 @@
       "typeLine": {
         "subtypes": [
           "Phyrexian",
-          "Wizard",
-          "Zombie"
+          "Zombie",
+          "Wizard"
         ],
         "supertypes": [
           "Legendary"

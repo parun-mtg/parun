@@ -93,8 +93,8 @@
       ],
       "typeLine": {
         "subtypes": [
-          "Druid",
-          "Satyr"
+          "Satyr",
+          "Druid"
         ],
         "types": [
           "Creature"

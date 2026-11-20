@@ -113,8 +113,8 @@
       },
       "typeLine": {
         "subtypes": [
-          "Faerie",
-          "Human"
+          "Human",
+          "Faerie"
         ],
         "supertypes": [
           "Legendary"

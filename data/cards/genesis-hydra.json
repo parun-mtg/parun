@@ -190,8 +190,8 @@
       ],
       "typeLine": {
         "subtypes": [
-          "Hydra",
-          "Plant"
+          "Plant",
+          "Hydra"
         ],
         "types": [
           "Creature"

@@ -77,9 +77,9 @@
       },
       "typeLine": {
         "subtypes": [
+          "Spider",
           "Cat",
-          "Hero",
-          "Spider"
+          "Hero"
         ],
         "types": [
           "Creature"

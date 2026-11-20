@@ -113,8 +113,8 @@
       },
       "typeLine": {
         "subtypes": [
-          "Satyr",
-          "Zombie"
+          "Zombie",
+          "Satyr"
         ],
         "supertypes": [
           "Legendary"

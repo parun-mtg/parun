@@ -74,9 +74,9 @@
       },
       "typeLine": {
         "subtypes": [
-          "Archer",
           "Human",
-          "Noble"
+          "Noble",
+          "Archer"
         ],
         "supertypes": [
           "Legendary"

@@ -177,8 +177,8 @@
       ],
       "typeLine": {
         "subtypes": [
-          "Construct",
-          "Myr"
+          "Myr",
+          "Construct"
         ],
         "types": [
           "Artifact",

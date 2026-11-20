@@ -9,6 +9,7 @@ module Parun.Mtgish where
 
 import qualified Control.Monad as Monad
 import qualified Data.Char as Char
+import qualified Data.Containers.ListUtils as ListUtils
 import qualified Data.Either as Either
 import qualified Data.List as List
 import qualified Data.List.NonEmpty as NonEmpty
@@ -281,7 +282,7 @@ typeLineOf value = do
     TypeLine.MkTypeLine
       { TypeLine.supertypes = Set.fromList supertypes,
         TypeLine.types = Set.fromList types,
-        TypeLine.subtypes = Set.fromList subtypes
+        TypeLine.subtypes = ListUtils.nubOrd subtypes
       }
 
 -- | A mana cost's symbols (CR 202.1). The pool writes {0} as a cost of no
@@ -589,11 +590,11 @@ affectedOf face n = case Node.tag n of
     let subtypes = TypeLine.subtypes (Face.typeLine face)
     host <- case Face.enchant face of
       [enchanted]
-        | Set.member Subtype.Aura subtypes -> case (TargetSlot.pool enchanted, TargetSlot.filter enchanted) of
+        | elem Subtype.Aura subtypes -> case (TargetSlot.pool enchanted, TargetSlot.filter enchanted) of
             (Pool.Creatures, _) -> Right (Filter.HasCardType CardType.Creature)
             (Pool.Permanents, Just f@(Filter.HasCardType _)) -> Right f
             _ -> Node.untranslated n
-      [] | Set.member Subtype.Equipment subtypes -> Right (Filter.HasCardType CardType.Creature)
+      [] | elem Subtype.Equipment subtypes -> Right (Filter.HasCardType CardType.Creature)
       _ -> Node.untranslated n
     Right (Affected.Matching (Filter.And [host, Filter.HasAttached Filter.IsSource]))
   "ThisPermanent" -> Right (Affected.Matching Filter.IsSource)
@@ -1496,7 +1497,7 @@ creatable context n = case Node.tag n of
           _ -> Node.untranslated subtypesNode
         subtypes <- traverse (Ingest.enumWord "subtype") subtypeNames
         keywords <- Common.asArray rulesValue >>= traverse (Node.node Monad.>=> keywordRule)
-        let line = TypeLine.MkTypeLine Set.empty (Set.fromList types) (Set.fromList (subtypes :: [Subtype.Subtype]))
+        let line = TypeLine.MkTypeLine Set.empty (Set.fromList types) (ListUtils.nubOrd (subtypes :: [Subtype.Subtype]))
             name = CardName.MkCardName (Text.unwords (subtypeNames <> [Text.pack "Token"]))
             face = Oracle.Face.bare name Nothing Nothing (Set.fromList colours) line (Just (Power.MkPower (Quantity.Literal power))) (Just (Toughness.MkToughness (Quantity.Literal toughness))) (Map.fromListWith (+) (fmap (\k -> (k, 1)) keywords))
         Right (Quantity.Literal 1, Card.MkCard Layout.Normal (face NonEmpty.:| []) False)

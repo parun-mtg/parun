@@ -30,8 +30,8 @@
       },
       "typeLine": {
         "subtypes": [
-          "Dog",
-          "Nightmare"
+          "Nightmare",
+          "Dog"
         ],
         "types": [
           "Creature"

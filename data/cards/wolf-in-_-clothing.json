@@ -130,8 +130,8 @@
       ],
       "typeLine": {
         "subtypes": [
-          "Guest",
-          "Wolf"
+          "Wolf",
+          "Guest"
         ],
         "types": [
           "Creature"

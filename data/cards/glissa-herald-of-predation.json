@@ -263,9 +263,9 @@
       ],
       "typeLine": {
         "subtypes": [
-          "Elf",
           "Phyrexian",
-          "Zombie"
+          "Zombie",
+          "Elf"
         ],
         "supertypes": [
           "Legendary"

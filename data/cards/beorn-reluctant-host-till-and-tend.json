@@ -31,8 +31,8 @@
       },
       "typeLine": {
         "subtypes": [
-          "Bear",
           "Human",
+          "Bear",
           "Shapeshifter"
         ],
         "supertypes": [

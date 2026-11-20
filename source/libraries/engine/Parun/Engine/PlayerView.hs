@@ -53,6 +53,7 @@ import qualified Parun.Types.Source as Source
 import qualified Parun.Types.StackedAbility as StackedAbility
 import qualified Parun.Types.TriggeredAbilitySource as TriggeredAbilitySource
 import qualified Parun.Types.TurnRegisters as TurnRegisters
+import qualified Parun.Types.TypeLine as TypeLine
 import qualified Parun.Types.Visibility as Visibility.Type
 import qualified Parun.Types.WhichTurn as WhichTurn
 import qualified Parun.Types.Zone as Zone
@@ -202,6 +203,10 @@ objectView pid gs oid = do
           if seen && faceDown
             then if isMerged || not (null lookedOwn) then Just (Projection.projectFrom lookedOwn oid looked) else Nothing
             else if shown && (isMerged || not (null own)) then Just (Projection.projectFrom own oid gs) else Nothing,
+        ObjectView.printedSubtypes =
+          if seen && not faceDown
+            then foldMap (TypeLine.subtypes . Face.typeLine) (Projection.View.spellFaceOf oid gs)
+            else [],
         ObjectView.merged = Seq.fromList (Maybe.mapMaybe named under),
         ObjectView.foretellCostReduction =
           if seen

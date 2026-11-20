@@ -133,7 +133,7 @@ viewOfCardLapsed :: Set Condition.Type.Condition -> Face.Face Card.Type.Card -> 
 viewOfCardLapsed lapsed face =
   let typeLine = Face.typeLine face
       roster = filter (Count.grantHeld lapsed) (printedAbilitiesOf face)
-      activated = ManaAbility.abilityKinds (length (Subtype.intrinsicMana (TypeLine.types typeLine) (TypeLine.subtypes typeLine))) roster
+      activated = ManaAbility.abilityKinds (length (Subtype.intrinsicMana (TypeLine.types typeLine) (Set.fromList (TypeLine.subtypes typeLine)))) roster
    in Filter.MkView
         { -- CR 201.1 off the printed FACE. A multi-faced card's combined view
           -- carries the halves joined for rendering (Engine.Card.merge2); CR
@@ -152,8 +152,8 @@ viewOfCardLapsed lapsed face =
           -- everywhere".
           Filter.subtypes =
             if definesEveryCreatureType (Face.keywordSet face)
-              then Set.union Subtype.everyCreatureType (TypeLine.subtypes typeLine)
-              else TypeLine.subtypes typeLine,
+              then Set.union Subtype.everyCreatureType (Set.fromList (TypeLine.subtypes typeLine))
+              else Set.fromList (TypeLine.subtypes typeLine),
           -- CR 702: read off the printed face, like the type line above.
           Filter.keywords = Face.keywords face,
           -- CR 208.1 read off the PRINTED power box -- see printedPower below.
@@ -1753,8 +1753,8 @@ wipedFace spell face
 spellFaceOf :: ObjectId -> GameState -> Maybe (Face.Face Card.Type.Card)
 spellFaceOf oid gs =
   let copiable = copiableCharacteristics oid gs
-      typeLine = TypeLine.MkTypeLine (PC.supertypes copiable) (PC.cardTypes copiable) (PC.subtypes copiable)
-   in fmap (\face -> face {Face.spell = PC.spell copiable, Face.typeLine = typeLine}) (Game.faceOf oid gs)
+      typeLine face = TypeLine.MkTypeLine (PC.supertypes copiable) (PC.cardTypes copiable) (Subtype.inPrintedOrder (TypeLine.subtypes (Face.typeLine face)) (PC.subtypes copiable))
+   in fmap (\face -> face {Face.spell = PC.spell copiable, Face.typeLine = typeLine face}) (Game.faceOf oid gs)
 
 -- CR 707.2 / 113.6: the face an object OFF the battlefield has its abilities read
 -- from -- Game.faceOfObject with its copiable values' abilities, keywords and type
@@ -1787,7 +1787,7 @@ abilityFaceOf oid obj gs
               else copiableSnapshotOf oid gs
           overlay face pc =
             face
-              { Face.typeLine = TypeLine.MkTypeLine (PC.supertypes pc) (PC.cardTypes pc) (PC.subtypes pc),
+              { Face.typeLine = TypeLine.MkTypeLine (PC.supertypes pc) (PC.cardTypes pc) (Subtype.inPrintedOrder (TypeLine.subtypes (Face.typeLine face)) (PC.subtypes pc)),
                 Face.keywords = PC.keywords pc,
                 Face.staticAbilities = PC.staticAbilities pc,
                 Face.playerAbilities = PC.playerAbilities pc,
@@ -2270,7 +2270,7 @@ baseCharacteristics oid gs = case Game.faceOf oid gs of
               PC.intensity = fmap toInteger (Face.startingIntensity face),
               PC.characteristicPT = seedCharacteristicPT face,
               PC.cardTypes = TypeLine.types (Face.typeLine face),
-              PC.subtypes = TypeLine.subtypes (Face.typeLine face),
+              PC.subtypes = Set.fromList (TypeLine.subtypes (Face.typeLine face)),
               -- CR 604.1 / 613.10: the two ability lists the layer fold never
               -- rewrites. In the SEED for enchant's reason below -- CR 707.2
               -- names rules text among the copiable values -- which is what puts

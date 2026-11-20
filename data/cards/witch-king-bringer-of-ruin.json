@@ -97,8 +97,8 @@
       ],
       "typeLine": {
         "subtypes": [
-          "Noble",
-          "Wraith"
+          "Wraith",
+          "Noble"
         ],
         "supertypes": [
           "Legendary"

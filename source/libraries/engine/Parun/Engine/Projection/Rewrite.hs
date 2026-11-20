@@ -5,6 +5,7 @@
 module Parun.Engine.Projection.Rewrite where
 
 import qualified Data.Char as Char
+import qualified Data.Containers.ListUtils as ListUtils
 import qualified Data.Functor.Identity as Identity
 import qualified Data.List as List
 import qualified Data.Map.Strict as Map
@@ -927,7 +928,7 @@ rewriteListing pairs = Identity.runIdentity . Children.faceDownChildren (copyRew
 swapSubtype :: (TextWord.TextWord, TextWord.TextWord) -> TypeLine.TypeLine -> Maybe (Subtype.Type.Subtype, Subtype.Type.Subtype, TypeLine.TypeLine)
 swapSubtype pair typeLine = case pair of
   (TextWord.SubtypeWord old, TextWord.SubtypeWord new)
-    | Set.member old subtypes -> Just (old, new, typeLine {TypeLine.subtypes = Set.insert new (Set.delete old subtypes)})
+    | elem old subtypes -> Just (old, new, typeLine {TypeLine.subtypes = ListUtils.nubOrd (fmap (\s -> if s == old then new else s) subtypes)})
   _ -> Nothing
   where
     subtypes = TypeLine.subtypes typeLine

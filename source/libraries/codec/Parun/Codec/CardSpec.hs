@@ -36,7 +36,7 @@ bareFace n =
     { Face.name = n,
       Face.oracleText = Nothing,
       Face.manaCost = Nothing,
-      Face.typeLine = TypeLine.MkTypeLine Set.empty Set.empty Set.empty,
+      Face.typeLine = TypeLine.MkTypeLine Set.empty Set.empty [],
       Face.power = Nothing,
       Face.toughness = Nothing,
       Face.loyalty = Nothing,
@@ -112,7 +112,7 @@ mountainCard =
                 TypeLine.MkTypeLine
                   (Set.singleton Supertype.Basic)
                   (Set.singleton CardType.Land)
-                  (Set.singleton Subtype.Mountain)
+                  [Subtype.Mountain]
             }
     }
 
@@ -129,7 +129,7 @@ spec s = Spec.describe s "Parun.Codec.Card" $ do
   Spec.it s "a card with two faces round-trips, and layout is omitted when Normal" $ do
     let face n =
           (bareFace (CardName.MkCardName (Text.pack n)))
-            { Face.typeLine = TypeLine.MkTypeLine Set.empty (Set.singleton CardType.Instant) Set.empty
+            { Face.typeLine = TypeLine.MkTypeLine Set.empty (Set.singleton CardType.Instant) []
             }
         card =
           Card.MkCard

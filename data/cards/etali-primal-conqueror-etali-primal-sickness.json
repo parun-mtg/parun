@@ -153,8 +153,8 @@
       ],
       "typeLine": {
         "subtypes": [
-          "Dinosaur",
-          "Elder"
+          "Elder",
+          "Dinosaur"
         ],
         "supertypes": [
           "Legendary"
@@ -237,9 +237,9 @@
       ],
       "typeLine": {
         "subtypes": [
-          "Dinosaur",
+          "Phyrexian",
           "Elder",
-          "Phyrexian"
+          "Dinosaur"
         ],
         "supertypes": [
           "Legendary"

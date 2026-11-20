@@ -106,8 +106,8 @@
       ],
       "typeLine": {
         "subtypes": [
-          "Horror",
-          "Zombie"
+          "Zombie",
+          "Horror"
         ],
         "supertypes": [
           "Legendary"

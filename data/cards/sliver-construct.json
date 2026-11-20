@@ -19,8 +19,8 @@
       },
       "typeLine": {
         "subtypes": [
-          "Construct",
-          "Sliver"
+          "Sliver",
+          "Construct"
         ],
         "types": [
           "Artifact",

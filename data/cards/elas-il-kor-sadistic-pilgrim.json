@@ -155,9 +155,9 @@
       ],
       "typeLine": {
         "subtypes": [
-          "Cleric",
+          "Phyrexian",
           "Kor",
-          "Phyrexian"
+          "Cleric"
         ],
         "supertypes": [
           "Legendary"

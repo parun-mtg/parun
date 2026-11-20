@@ -365,10 +365,13 @@ spreadMoved spread offered recipients = case spread of
     perKind shares = fmap byRecipient (traverse (pickOr Map.empty . shares) offered)
     byRecipient divided = Map.unionsWith Map.union (fmap (\(kind, division) -> fmap (Map.singleton kind) division) (Map.toList divided))
 
--- | CR 103.1: whether the bot, picked to choose who plays first, plays first
--- rather than draws, each equally likely.
-playsFirst :: (Monad m) => State.StateT Generator.Type.Generator m Bool
-playsFirst = coin
+-- | CR 103.1: the seat the bot, picked as `chooser` to choose who plays
+-- first, chooses of `seats`: between two, itself or the other, each equally
+-- likely; among more, any seat, each equally likely.
+starting :: (Monad m, Eq a) => a -> NonEmpty.NonEmpty a -> State.StateT Generator.Type.Generator m a
+starting chooser seats = case seats of
+  one NonEmpty.:| [two] -> fmap (\plays -> if plays == (chooser == one) then one else two) coin
+  _ -> Generator.pick seats
 
 -- | A subset of at most so many of the items, each such subset equally
 -- likely: its size drawn by how many subsets have it, then its members.

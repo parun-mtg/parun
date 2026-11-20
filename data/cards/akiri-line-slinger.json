@@ -95,9 +95,9 @@
       },
       "typeLine": {
         "subtypes": [
-          "Ally",
           "Kor",
-          "Soldier"
+          "Soldier",
+          "Ally"
         ],
         "supertypes": [
           "Legendary"

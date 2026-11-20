@@ -46,8 +46,8 @@
       },
       "typeLine": {
         "subtypes": [
-          "Rogue",
-          "Turtle"
+          "Turtle",
+          "Rogue"
         ],
         "types": [
           "Creature"

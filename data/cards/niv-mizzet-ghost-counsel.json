@@ -161,8 +161,8 @@
       ],
       "typeLine": {
         "subtypes": [
-          "Dragon",
-          "Spirit"
+          "Spirit",
+          "Dragon"
         ],
         "supertypes": [
           "Legendary"

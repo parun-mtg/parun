@@ -212,8 +212,8 @@
       ],
       "typeLine": {
         "subtypes": [
-          "Mutant",
-          "Treefolk"
+          "Treefolk",
+          "Mutant"
         ],
         "supertypes": [
           "Legendary"

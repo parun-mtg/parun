@@ -117,6 +117,7 @@ import qualified Parun.Types.StackedAbility as StackedAbility
 import qualified Parun.Types.Status as Status
 import qualified Parun.Types.StickerKind as StickerKind
 import qualified Parun.Types.StickerPut as StickerPut
+import qualified Parun.Types.Subtype as Subtype.Type
 import qualified Parun.Types.TapState as TapState
 import qualified Parun.Types.Transformed as Transformed
 import qualified Parun.Types.TurnedFaceUp as TurnedFaceUp
@@ -302,8 +303,8 @@ details lookUp view o = do
       oracle f = [CardName.unwrap (Face.name f) <> Text.pack ":" | length faces > 1] <> foldMap Text.lines (Face.oracleText f)
   pure $
     [describe view o]
-      <> foldMap characteristicLines (ObjectView.characteristics o)
-      <> foldMap (\f -> Text.pack "Face down. You may look at it:" : characteristicLines f) (ObjectView.face o)
+      <> foldMap (characteristicLines (ObjectView.printedSubtypes o)) (ObjectView.characteristics o)
+      <> foldMap (\f -> Text.pack "Face down. You may look at it:" : characteristicLines [] f) (ObjectView.face o)
       <> foldMap (\amount -> [Text.pack "Foretell cost: its mana cost reduced by " <> manaCost amount]) (ObjectView.foretellCostReduction o)
       <> [Text.pack "Counters: " <> Text.intercalate (Text.pack ", ") (fmap counted (Map.toList (ObjectView.counters o))) | not (Map.null (ObjectView.counters o))]
       <> foldMap oracle faces
@@ -312,9 +313,10 @@ details lookUp view o = do
     counted (kind, n) = Text.pack (show n <> " ") <> counterName kind
 
 -- | CR 201.1 / 202.1 / 205.1 / 208.1: the name line with its mana cost, the type line, and
--- power and toughness, loyalty or defense.
-characteristicLines :: ProjectedCharacteristics.ProjectedCharacteristics -> [Text.Text]
-characteristicLines c =
+-- power and toughness, loyalty or defense; the subtypes in `printed`'s order
+-- (Parun.Engine.Subtype.inPrintedOrder).
+characteristicLines :: [Subtype.Type.Subtype] -> ProjectedCharacteristics.ProjectedCharacteristics -> [Text.Text]
+characteristicLines printed c =
   [Text.unwords (title <> foldMap (pure . manaCost) (ProjectedCharacteristics.manaCost c)) | not (null title) || Maybe.isJust (ProjectedCharacteristics.manaCost c)]
     <> [Text.unwords (supertypes <> types <> if null subtypes then [] else Text.pack "\8212" : subtypes)]
     <> foldMap (\(p, t) -> [Text.pack (show p <> "/" <> show t)]) ((,) <$> ProjectedCharacteristics.power c <*> ProjectedCharacteristics.toughness c)
@@ -324,7 +326,7 @@ characteristicLines c =
     title = [Text.intercalate (Text.pack " // ") (fmap CardName.unwrap (Set.toList (ProjectedCharacteristics.names c))) | not (Set.null (ProjectedCharacteristics.names c))]
     supertypes = fmap (Text.pack . show) (Set.toList (ProjectedCharacteristics.supertypes c))
     types = fmap (Text.pack . show) (Set.toList (ProjectedCharacteristics.cardTypes c))
-    subtypes = fmap (Text.pack . show) (Set.toList (ProjectedCharacteristics.subtypes c))
+    subtypes = fmap (Text.pack . show) (Subtype.inPrintedOrder printed (ProjectedCharacteristics.subtypes c))
     loyalty l = case l of
       Loyalty.Literal n -> Text.pack (show n)
       Loyalty.Variable -> Text.pack "X"
@@ -396,6 +398,7 @@ recalled view oid = case Map.lookup oid (objects view) of
         ObjectView.face = Nothing,
         ObjectView.foretellCostReduction = Nothing,
         ObjectView.ownEffects = Nothing,
+        ObjectView.printedSubtypes = [],
         ObjectView.merged = Seq.empty,
         ObjectView.ability = Nothing,
         ObjectView.targets = [],

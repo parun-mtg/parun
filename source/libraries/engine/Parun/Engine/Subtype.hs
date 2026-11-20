@@ -76,6 +76,11 @@ intrinsicManaOf pc =
     then []
     else intrinsicMana (PC.cardTypes pc) (PC.subtypes pc)
 
+-- | A set of subtypes in printed order (CR 205.3a): those printed first, as
+-- printed, then the rest ascending.
+inPrintedOrder :: [Subtype.Subtype] -> Set.Set Subtype.Subtype -> [Subtype.Subtype]
+inPrintedOrder printed subtypes = filter (`Set.member` subtypes) printed <> Set.toAscList (Set.difference subtypes (Set.fromList printed))
+
 -- | CR 205.3i / 305.6: Forest, Island, Mountain, Plains or Swamp -- the five
 -- `subtypeMana` names, so the list exists once.
 isBasicLandType :: Subtype.Subtype -> Bool

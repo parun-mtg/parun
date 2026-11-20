@@ -31,8 +31,8 @@
       },
       "typeLine": {
         "subtypes": [
-          "Monk",
-          "Vulcan"
+          "Vulcan",
+          "Monk"
         ],
         "types": [
           "Creature"

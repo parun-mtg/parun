@@ -69,8 +69,8 @@
       ],
       "typeLine": {
         "subtypes": [
-          "Detective",
-          "Human"
+          "Human",
+          "Detective"
         ],
         "types": [
           "Creature"

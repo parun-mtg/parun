@@ -241,8 +241,8 @@
       ],
       "typeLine": {
         "subtypes": [
-          "Druid",
-          "Plant"
+          "Plant",
+          "Druid"
         ],
         "types": [
           "Creature"

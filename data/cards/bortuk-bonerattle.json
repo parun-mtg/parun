@@ -219,8 +219,8 @@
       ],
       "typeLine": {
         "subtypes": [
-          "Shaman",
-          "Troll"
+          "Troll",
+          "Shaman"
         ],
         "supertypes": [
           "Legendary"

@@ -189,8 +189,8 @@
       ],
       "typeLine": {
         "subtypes": [
-          "Horse",
-          "Phyrexian"
+          "Phyrexian",
+          "Horse"
         ],
         "types": [
           "Creature"

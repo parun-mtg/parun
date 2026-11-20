@@ -103,8 +103,8 @@
       ],
       "typeLine": {
         "subtypes": [
-          "Berserker",
           "Human",
+          "Berserker",
           "Villain"
         ],
         "types": [

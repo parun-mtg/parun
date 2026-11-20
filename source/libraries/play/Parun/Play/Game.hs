@@ -41,6 +41,7 @@ import qualified Parun.Types.PlayerId as PlayerId
 import qualified Parun.Types.Prompt as Prompt
 import qualified Parun.Types.Result as Result
 import qualified Parun.Types.Terminal as Terminal
+import qualified Text.Read as Read
 
 -- | The generator over the client's monad.
 type Play m = State.StateT Generator.Generator (Client.Client m)
@@ -127,34 +128,43 @@ halted = Trans.lift . Client.stop . Text.pack . Exception.displayException
 underneath :: (Monad m) => m a -> Play m a
 underneath = Trans.lift . Client.lift2
 
--- | CR 103.1: the seat that plays first. `--first` names it; otherwise a seat
--- drawn from the generator chooses whether to play first or draw, the bot
--- through 'Bot.playsFirst' and any other seat by `ask`, which is Nothing at
--- the end of input. Each step is told through `tell`.
-starter :: (Monad m) => (Text.Text -> m ()) -> (Natural -> m (Maybe Bool)) -> PlayOptions.PlayOptions -> State.StateT Generator.Generator m (Maybe Natural)
-starter tell ask options = case PlayOptions.first options of
+-- | CR 103.1: the seat that plays first, of `seats` in turn order. `--first`
+-- names it; otherwise a seat drawn from the generator chooses which seat
+-- takes the first turn, the bot through 'Bot.starting' and any other seat by
+-- `ask`, which is Nothing at the end of input. Each step is told through
+-- `tell`.
+starter :: (Monad m) => (Text.Text -> m ()) -> (Natural -> NonEmpty.NonEmpty Natural -> m (Maybe Natural)) -> NonEmpty.NonEmpty Natural -> PlayOptions.PlayOptions -> State.StateT Generator.Generator m (Maybe Natural)
+starter tell ask seats options = case PlayOptions.first options of
   Just seat -> pure (Just seat)
   Nothing -> do
-    chooser <- Generator.Play.pick (1 NonEmpty.:| [2])
+    chooser <- Generator.Play.pick seats
     Trans.lift (tell (Text.pack ("Seat " <> show chooser <> " was picked at random to choose who plays first.")))
-    plays <-
+    chosen <-
       if Set.member chooser (PlayOptions.bots options)
-        then fmap Just Bot.playsFirst
-        else Trans.lift (ask chooser)
-    Monad.forM plays $ \chooses -> do
-      let seat = if chooses == (chooser == 1) then 1 else 2 :: Natural
+        then fmap Just (Bot.starting chooser seats)
+        else Trans.lift (ask chooser seats)
+    Monad.forM chosen $ \seat -> do
       Trans.lift (tell (Text.pack ("Seat " <> show seat <> " plays first.")))
       pure seat
 
--- | Whether this seat's person plays first rather than draws, asked until
--- they say which; Nothing at the end of input.
-playOrDraw :: (Monad m) => Terminal.Terminal m -> Natural -> m (Maybe Bool)
-playOrDraw terminal seat = do
-  Terminal.say terminal (Text.pack ("Seat " <> show seat <> ", play first or draw?"))
-  typed <- Terminal.listen terminal
-  case fmap (Text.toLower . Text.strip) typed of
-    Nothing -> pure Nothing
-    Just word
-      | word `elem` fmap Text.pack ["play", "p"] -> pure (Just True)
-      | word `elem` fmap Text.pack ["draw", "d"] -> pure (Just False)
-      | otherwise -> Terminal.say terminal (Text.pack "Type play or draw.") >> playOrDraw terminal seat
+-- | The seat this seat's person chooses to take the first turn, asked until
+-- they say which; Nothing at the end of input. Between two seats, whether
+-- they play first or draw.
+playOrDraw :: (Monad m) => Terminal.Terminal m -> Natural -> NonEmpty.NonEmpty Natural -> m (Maybe Natural)
+playOrDraw terminal seat seats
+  | length seats <= 2 = do
+      Terminal.say terminal (Text.pack ("Seat " <> show seat <> ", play first or draw?"))
+      typed <- Terminal.listen terminal
+      case fmap (Text.toLower . Text.strip) typed of
+        Nothing -> pure Nothing
+        Just word
+          | word `elem` fmap Text.pack ["play", "p"] -> pure (Just seat)
+          | word `elem` fmap Text.pack ["draw", "d"] -> pure (Just (Protocol.nextSeat seat seats))
+          | otherwise -> Terminal.say terminal (Text.pack "Type play or draw.") >> playOrDraw terminal seat seats
+  | otherwise = do
+      Terminal.say terminal (Text.pack ("Seat " <> show seat <> ", which seat takes the first turn? Type its number, " <> show (NonEmpty.head seats) <> " to " <> show (NonEmpty.last seats) <> "."))
+      typed <- Terminal.listen terminal
+      case fmap (Read.readMaybe . Text.unpack . Text.strip) typed of
+        Nothing -> pure Nothing
+        Just (Just n) | n `elem` seats -> pure (Just n)
+        Just _ -> playOrDraw terminal seat seats

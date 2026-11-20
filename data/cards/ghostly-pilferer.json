@@ -198,8 +198,8 @@
       ],
       "typeLine": {
         "subtypes": [
-          "Rogue",
-          "Spirit"
+          "Spirit",
+          "Rogue"
         ],
         "types": [
           "Creature"

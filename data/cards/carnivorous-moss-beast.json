@@ -87,9 +87,9 @@
       },
       "typeLine": {
         "subtypes": [
-          "Beast",
+          "Plant",
           "Elemental",
-          "Plant"
+          "Beast"
         ],
         "types": [
           "Creature"

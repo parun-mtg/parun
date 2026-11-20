@@ -162,8 +162,8 @@
       },
       "typeLine": {
         "subtypes": [
-          "Detective",
-          "Weird"
+          "Weird",
+          "Detective"
         ],
         "supertypes": [
           "Legendary"

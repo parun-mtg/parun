@@ -96,8 +96,8 @@
       },
       "typeLine": {
         "subtypes": [
-          "Chimera",
-          "Elemental"
+          "Elemental",
+          "Chimera"
         ],
         "types": [
           "Creature"

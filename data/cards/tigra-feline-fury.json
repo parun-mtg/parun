@@ -74,8 +74,8 @@
       "typeLine": {
         "subtypes": [
           "Cat",
-          "Hero",
-          "Human"
+          "Human",
+          "Hero"
         ],
         "supertypes": [
           "Legendary"

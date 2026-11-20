@@ -81,8 +81,8 @@
       },
       "typeLine": {
         "subtypes": [
-          "Barbarian",
           "Human",
+          "Barbarian",
           "Soldier"
         ],
         "supertypes": [

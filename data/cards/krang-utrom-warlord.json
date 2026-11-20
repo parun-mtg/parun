@@ -92,8 +92,8 @@
       },
       "typeLine": {
         "subtypes": [
-          "Robot",
-          "Utrom"
+          "Utrom",
+          "Robot"
         ],
         "supertypes": [
           "Legendary"

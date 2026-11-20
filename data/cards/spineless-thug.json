@@ -39,9 +39,9 @@
       },
       "typeLine": {
         "subtypes": [
-          "Mercenary",
           "Phyrexian",
-          "Zombie"
+          "Zombie",
+          "Mercenary"
         ],
         "types": [
           "Creature"

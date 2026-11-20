@@ -147,8 +147,8 @@
       ],
       "typeLine": {
         "subtypes": [
-          "Knight",
-          "Phyrexian"
+          "Phyrexian",
+          "Knight"
         ],
         "supertypes": [
           "Legendary"

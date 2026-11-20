@@ -85,9 +85,9 @@
       },
       "typeLine": {
         "subtypes": [
-          "Noble",
+          "Vampire",
           "Rogue",
-          "Vampire"
+          "Noble"
         ],
         "types": [
           "Creature"

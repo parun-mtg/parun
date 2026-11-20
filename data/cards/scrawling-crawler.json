@@ -97,8 +97,8 @@
       ],
       "typeLine": {
         "subtypes": [
-          "Construct",
-          "Phyrexian"
+          "Phyrexian",
+          "Construct"
         ],
         "types": [
           "Artifact",

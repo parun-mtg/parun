@@ -147,8 +147,8 @@
       ],
       "typeLine": {
         "subtypes": [
-          "Assassin",
-          "Human"
+          "Human",
+          "Assassin"
         ],
         "supertypes": [
           "Legendary"

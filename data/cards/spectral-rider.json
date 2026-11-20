@@ -34,8 +34,8 @@
       },
       "typeLine": {
         "subtypes": [
-          "Knight",
-          "Spirit"
+          "Spirit",
+          "Knight"
         ],
         "types": [
           "Creature"

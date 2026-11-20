@@ -238,8 +238,8 @@
       ],
       "typeLine": {
         "subtypes": [
-          "Artificer",
-          "Phyrexian"
+          "Phyrexian",
+          "Artificer"
         ],
         "types": [
           "Creature"

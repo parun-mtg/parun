@@ -98,8 +98,8 @@
       },
       "typeLine": {
         "subtypes": [
-          "Citizen",
-          "Halfling"
+          "Halfling",
+          "Citizen"
         ],
         "types": [
           "Creature"

@@ -165,8 +165,8 @@
       ],
       "typeLine": {
         "subtypes": [
-          "Detective",
-          "Merfolk"
+          "Merfolk",
+          "Detective"
         ],
         "types": [
           "Creature"

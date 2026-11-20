@@ -147,8 +147,8 @@
       ],
       "typeLine": {
         "subtypes": [
-          "Advisor",
           "Human",
+          "Advisor",
           "Knight"
         ],
         "types": [

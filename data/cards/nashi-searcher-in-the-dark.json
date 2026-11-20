@@ -149,8 +149,8 @@
       ],
       "typeLine": {
         "subtypes": [
-          "Ninja",
           "Rat",
+          "Ninja",
           "Wizard"
         ],
         "supertypes": [

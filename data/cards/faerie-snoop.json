@@ -148,8 +148,8 @@
       ],
       "typeLine": {
         "subtypes": [
-          "Detective",
-          "Faerie"
+          "Faerie",
+          "Detective"
         ],
         "types": [
           "Creature"

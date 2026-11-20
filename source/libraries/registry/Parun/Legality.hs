@@ -341,7 +341,7 @@ deckColors printing = Commander.colorIdentity printing <> Set.fromList [color | 
 
 -- CR 305.6: the basic land types on any of a card's faces.
 landTypes :: Printing.Printing -> Set.Set Subtype.Subtype
-landTypes printing = Set.filter (Maybe.isJust . Subtype.Engine.subtypeMana) (foldMap (TypeLine.subtypes . Face.typeLine) (Card.Type.faces (Printing.card printing)))
+landTypes printing = Set.filter (Maybe.isJust . Subtype.Engine.subtypeMana) (foldMap (Set.fromList . TypeLine.subtypes . Face.typeLine) (Card.Type.faces (Printing.card printing)))
 
 -- A card's standing in one pool: Nothing for a card the table does not have,
 -- and Just Nothing for one the pool does not have, which is not legal there.

@@ -71,8 +71,8 @@
       },
       "typeLine": {
         "subtypes": [
-          "Citizen",
-          "Insect"
+          "Insect",
+          "Citizen"
         ],
         "types": [
           "Creature"

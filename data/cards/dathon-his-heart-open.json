@@ -207,8 +207,8 @@
       ],
       "typeLine": {
         "subtypes": [
-          "Officer",
-          "Tamarian"
+          "Tamarian",
+          "Officer"
         ],
         "supertypes": [
           "Legendary"

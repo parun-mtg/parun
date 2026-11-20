@@ -180,8 +180,8 @@
       ],
       "typeLine": {
         "subtypes": [
-          "Cleric",
-          "Elf"
+          "Elf",
+          "Cleric"
         ],
         "supertypes": [
           "Legendary"

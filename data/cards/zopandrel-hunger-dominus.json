@@ -196,8 +196,8 @@
       ],
       "typeLine": {
         "subtypes": [
-          "Horror",
-          "Phyrexian"
+          "Phyrexian",
+          "Horror"
         ],
         "supertypes": [
           "Legendary"

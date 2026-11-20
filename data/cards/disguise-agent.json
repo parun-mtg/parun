@@ -54,8 +54,8 @@
       },
       "typeLine": {
         "subtypes": [
-          "Detective",
-          "Vedalken"
+          "Vedalken",
+          "Detective"
         ],
         "types": [
           "Creature"

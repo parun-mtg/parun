@@ -143,8 +143,8 @@
       },
       "typeLine": {
         "subtypes": [
-          "Alien",
-          "Construct"
+          "Construct",
+          "Alien"
         ],
         "types": [
           "Artifact",

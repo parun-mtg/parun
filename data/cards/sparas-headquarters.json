@@ -37,8 +37,8 @@
       "typeLine": {
         "subtypes": [
           "Forest",
-          "Island",
-          "Plains"
+          "Plains",
+          "Island"
         ],
         "types": [
           "Land"

@@ -31,9 +31,9 @@
       },
       "typeLine": {
         "subtypes": [
-          "Hero",
           "Human",
-          "Spy"
+          "Spy",
+          "Hero"
         ],
         "types": [
           "Creature"

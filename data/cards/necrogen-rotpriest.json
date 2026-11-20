@@ -186,9 +186,9 @@
       ],
       "typeLine": {
         "subtypes": [
-          "Cleric",
           "Phyrexian",
-          "Zombie"
+          "Zombie",
+          "Cleric"
         ],
         "types": [
           "Creature"

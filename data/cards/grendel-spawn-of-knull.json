@@ -34,8 +34,8 @@
       },
       "typeLine": {
         "subtypes": [
-          "Dragon",
           "Symbiote",
+          "Dragon",
           "Villain"
         ],
         "supertypes": [

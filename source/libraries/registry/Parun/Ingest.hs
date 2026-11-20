@@ -11,6 +11,7 @@ module Parun.Ingest where
 import qualified Control.Applicative as Applicative
 import qualified Control.Monad as Monad
 import qualified Data.Char as Char
+import qualified Data.Containers.ListUtils as ListUtils
 import qualified Data.List.NonEmpty as NonEmpty
 import qualified Data.Map.Strict as Map
 import qualified Data.Maybe as Maybe
@@ -85,7 +86,7 @@ printed value = do
         TypeLine.MkTypeLine
           { TypeLine.supertypes = Set.fromList (supertypes :: [Supertype.Supertype]),
             TypeLine.types = Set.fromList (types :: [CardType.CardType]),
-            TypeLine.subtypes = Set.fromList (subtypes :: [Subtype.Subtype])
+            TypeLine.subtypes = ListUtils.nubOrd (subtypes :: [Subtype.Subtype])
           }
   pure (Oracle.Face.bare (CardName.MkCardName name) (Just text) cost (Set.fromList indicator) typeLine Nothing Nothing Map.empty, power, toughness)
 

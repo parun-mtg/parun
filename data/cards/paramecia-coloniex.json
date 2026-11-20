@@ -183,8 +183,8 @@
       ],
       "typeLine": {
         "subtypes": [
-          "Worm",
-          "Zombie"
+          "Zombie",
+          "Worm"
         ],
         "types": [
           "Creature"

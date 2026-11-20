@@ -131,8 +131,8 @@
       "typeLine": {
         "subtypes": [
           "Demigod",
-          "Hero",
-          "Warrior"
+          "Warrior",
+          "Hero"
         ],
         "supertypes": [
           "Legendary"

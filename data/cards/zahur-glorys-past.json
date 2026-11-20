@@ -220,9 +220,9 @@
       },
       "typeLine": {
         "subtypes": [
+          "Zombie",
           "Cat",
-          "Warrior",
-          "Zombie"
+          "Warrior"
         ],
         "supertypes": [
           "Legendary"

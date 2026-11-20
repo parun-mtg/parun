@@ -126,9 +126,9 @@
       ],
       "typeLine": {
         "subtypes": [
-          "Advisor",
+          "Klingon",
           "Human",
-          "Klingon"
+          "Advisor"
         ],
         "supertypes": [
           "Legendary"

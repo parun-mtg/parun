@@ -102,8 +102,8 @@
       ],
       "typeLine": {
         "subtypes": [
-          "Clue",
-          "Food"
+          "Food",
+          "Clue"
         ],
         "types": [
           "Artifact"

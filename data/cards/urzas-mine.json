@@ -252,8 +252,8 @@
       "oracleText": "{T}: Add {C}. If you control an Urza's Power-Plant and an Urza's Tower, add {C}{C} instead.",
       "typeLine": {
         "subtypes": [
-          "Mine",
-          "Urzas"
+          "Urzas",
+          "Mine"
         ],
         "types": [
           "Land"

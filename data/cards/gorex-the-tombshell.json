@@ -122,8 +122,8 @@
       ],
       "typeLine": {
         "subtypes": [
-          "Turtle",
-          "Zombie"
+          "Zombie",
+          "Turtle"
         ],
         "supertypes": [
           "Legendary"

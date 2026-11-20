@@ -146,8 +146,8 @@
       ],
       "typeLine": {
         "subtypes": [
-          "Ogre",
-          "Phyrexian"
+          "Phyrexian",
+          "Ogre"
         ],
         "types": [
           "Creature"

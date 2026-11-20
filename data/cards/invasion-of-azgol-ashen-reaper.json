@@ -197,8 +197,8 @@
       ],
       "typeLine": {
         "subtypes": [
-          "Elemental",
-          "Zombie"
+          "Zombie",
+          "Elemental"
         ],
         "types": [
           "Creature"

@@ -255,8 +255,8 @@
       ],
       "typeLine": {
         "subtypes": [
-          "Faerie",
-          "Rat"
+          "Rat",
+          "Faerie"
         ],
         "supertypes": [
           "Legendary"

@@ -20,8 +20,8 @@
       ],
       "typeLine": {
         "subtypes": [
-          "Forest",
-          "Swamp"
+          "Swamp",
+          "Forest"
         ],
         "types": [
           "Land"

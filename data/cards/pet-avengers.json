@@ -124,10 +124,10 @@
       },
       "typeLine": {
         "subtypes": [
-          "Bird",
+          "Dragon",
           "Cat",
           "Dog",
-          "Dragon",
+          "Bird",
           "Frog",
           "Hero"
         ],

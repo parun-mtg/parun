@@ -121,8 +121,8 @@
       ],
       "typeLine": {
         "subtypes": [
-          "Angel",
-          "Spirit"
+          "Spirit",
+          "Angel"
         ],
         "types": [
           "Creature"

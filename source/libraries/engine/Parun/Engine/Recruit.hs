@@ -77,7 +77,7 @@ soldierToken =
                 TypeLine.MkTypeLine
                   Set.empty
                   (Set.singleton CardType.Creature)
-                  (Set.fromList [Subtype.Human, Subtype.Soldier]),
+                  [Subtype.Human, Subtype.Soldier],
               Face.power = Just (Power.MkPower (Quantity.Literal 1)),
               Face.toughness = Just (Toughness.MkToughness (Quantity.Literal 1)),
               Face.loyalty = Nothing,

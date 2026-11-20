@@ -162,8 +162,8 @@
       },
       "typeLine": {
         "subtypes": [
-          "Cleric",
           "Human",
+          "Cleric",
           "Shaman"
         ],
         "types": [

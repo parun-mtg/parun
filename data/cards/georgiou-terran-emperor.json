@@ -159,8 +159,8 @@
       "typeLine": {
         "subtypes": [
           "Human",
-          "Noble",
-          "Rogue"
+          "Rogue",
+          "Noble"
         ],
         "supertypes": [
           "Legendary"

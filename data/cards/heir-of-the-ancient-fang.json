@@ -134,8 +134,8 @@
       },
       "typeLine": {
         "subtypes": [
-          "Samurai",
-          "Snake"
+          "Snake",
+          "Samurai"
         ],
         "types": [
           "Creature"

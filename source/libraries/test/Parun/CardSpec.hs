@@ -265,6 +265,7 @@ import qualified Parun.Types.EntryR as EntryR
 import qualified Parun.Types.EntryRestriction as EntryRestriction
 import qualified Parun.Types.EntryRewrite as EntryRewrite
 import qualified Parun.Types.EntryRiders as EntryRiders
+import qualified Parun.Types.EntryTriggering as EntryTriggering
 import qualified Parun.Types.Equip as Equip
 import qualified Parun.Types.ExchangeCardZones as ExchangeCardZones
 import qualified Parun.Types.ExchangeOwnership as ExchangeOwnership
@@ -625,7 +626,7 @@ vanillaFace name typeLine =
 
 -- A spell's printed type line: one card type, plus whatever supertypes and
 -- subtypes sit beside it.
-spellLine :: CardType.CardType -> Set.Set Supertype.Supertype -> Set.Set Subtype.Subtype -> TypeLine.TypeLine
+spellLine :: CardType.CardType -> Set.Set Supertype.Supertype -> [Subtype.Subtype] -> TypeLine.TypeLine
 spellLine cardType supertypes subtypes =
   TypeLine.MkTypeLine
     { TypeLine.supertypes = supertypes,
@@ -634,7 +635,7 @@ spellLine cardType supertypes subtypes =
     }
 
 instantLine :: TypeLine.TypeLine
-instantLine = spellLine CardType.Instant Set.empty Set.empty
+instantLine = spellLine CardType.Instant Set.empty []
 
 -- "You draw this many cards" -- the smallest payload an ability can carry, used
 -- below only so that two abilities can be told apart by their effect.
@@ -682,7 +683,7 @@ splitCard =
 -- Forest, which is what makes CR 709.3a's per-half pricing observable there.
 waxFace :: Face.Face Card.Type.Card
 waxFace =
-  (vanillaFace "Wax" (spellLine CardType.Instant Set.empty (Set.singleton Subtype.Arcane)))
+  (vanillaFace "Wax" (spellLine CardType.Instant Set.empty [Subtype.Arcane]))
     { Face.manaCost = costOf [ManaSymbol.OfType (ManaType.Colored Color.Green)],
       Face.keywords = Map.singleton Keyword.Flying 1,
       Face.staticAbilities = [grantsItself Keyword.Flying],
@@ -695,7 +696,7 @@ waxFace =
 -- a different number of cards so the concatenation's ORDER is checkable too.
 waneFace :: Face.Face Card.Type.Card
 waneFace =
-  (vanillaFace "Wane" (spellLine CardType.Sorcery (Set.singleton Supertype.Snow) (Set.singleton Subtype.Trap)))
+  (vanillaFace "Wane" (spellLine CardType.Sorcery (Set.singleton Supertype.Snow) [Subtype.Trap]))
     { Face.manaCost = costOf [ManaSymbol.OfType (ManaType.Colored Color.White)],
       Face.keywords = Map.singleton Keyword.Trample 1,
       Face.staticAbilities = [grantsItself Keyword.Trample],
@@ -762,7 +763,7 @@ cardSpec s = Spec.describe s "Card" $ do
     -- CR 709.4: the rest of the type line is combined for the reason 709.4c's
     -- card types are -- a supertype and a subtype are characteristics (CR 109.3)
     -- and no subrule narrows them. See Parun.Engine.Card.unionTypeLines.
-    Spec.assertEqWith s "each subtype" (TypeLine.subtypes (Face.typeLine c)) (Set.fromList [Subtype.Arcane, Subtype.Trap])
+    Spec.assertEqWith s "each subtype" (TypeLine.subtypes (Face.typeLine c)) [Subtype.Arcane, Subtype.Trap]
     -- One-sided on purpose: only Wane is snow. A merge line replaced by the LEFT
     -- half's value -- which is what a record update over `l` already does -- would
     -- leave this empty.
@@ -2021,18 +2022,30 @@ cardChosenKindReachesPlayer = any (any offends . Modal.modes) . faceModals
         | Effect.Proliferate (Just (AnotherCounter.ChosenKind named)) <- Foldable.toList (Mode.allEffects mode)
         ]
 
--- Unprinted: a TriggeringMove.GainingLife row naming an entrant (CR 119.9's
--- gain is no permanent's), over every player effect a face writes: its own,
--- those it grants, and those its effects store.
-cardGainingLifeNamesEntrant :: Face.Face Card.Type.Card -> Bool
-cardGainingLifeNamesEntrant card =
+-- Whether any EntriesTrigger row a face writes offends: its own player
+-- effects, those it grants, and those its effects store.
+cardWritesEntriesTrigger :: (EntriesTrigger.EntriesTrigger -> Bool) -> Face.Face Card.Type.Card -> Bool
+cardWritesEntriesTrigger offends card =
   let rows =
         fmap PlayerStaticAbility.effect (Face.playerAbilities card <> grantedPlayerAbilities card)
           <> [effect | Effect.AffectPlayers (AffectPlayers.MkAffectPlayers _ _ effect) <- cardAuthoredEffects card]
-      offends effect = case effect of
-        PlayerEffect.EntriesTrigger e -> EntriesTrigger.move e == TriggeringMove.GainingLife && EntriesTrigger.entrants e /= Filter.Type.And []
+      row effect = case effect of
+        PlayerEffect.EntriesTrigger e -> offends e
         _ -> False
-   in any offends rows
+   in any row rows
+
+-- Unprinted: a TriggeringMove.GainingLife row naming an entrant (CR 119.9's
+-- gain is no permanent's).
+cardGainingLifeNamesEntrant :: Face.Face Card.Type.Card -> Bool
+cardGainingLifeNamesEntrant = cardWritesEntriesTrigger $ \e ->
+  EntriesTrigger.move e == TriggeringMove.GainingLife && EntriesTrigger.entrants e /= Filter.Type.And []
+
+-- Unprinted: a creature attacking that doesn't cause abilities to trigger
+-- (CR 508.3, 603.2), which Parun.Engine.Event.Match.matchesTriggerGiven never
+-- reads.
+cardSilencesAttack :: Face.Face Card.Type.Card -> Bool
+cardSilencesAttack = cardWritesEntriesTrigger $ \e ->
+  EntriesTrigger.move e == TriggeringMove.Attacking && EntriesTrigger.triggering e == EntryTriggering.NoTrigger
 
 -- Unprinted: a CounterR's barsAdditional on a pattern reaching a permanent,
 -- which Parun.Engine.Event.apply's object and entry arms never read; Melira,
@@ -2627,7 +2640,7 @@ tokenNameOffends token
   | Set.member Supertype.Legendary (TypeLine.supertypes (Face.typeLine token)) = False
   | Set.member (Face.name token) namedTokens = False
   | otherwise =
-      case traverse printedWord (Set.toList (TypeLine.subtypes (Face.typeLine token))) of
+      case traverse printedWord (TypeLine.subtypes (Face.typeLine token)) of
         Left _ -> True
         Right subtypes ->
           notElem
@@ -6822,6 +6835,22 @@ lintSpec s registry corpus = Spec.describe s "Lint" $ do
     Spec.assertBool s (not (cardGainingLifeNamesEntrant (S.combinedFace crusher))) "Dr. Beverly Crusher, naming no entrant, is accepted"
     Spec.assertBool s (not (cardGainingLifeNamesEntrant face)) "Teysa Karlov's creature dying is accepted"
     Spec.assertBool s (cardGainingLifeNamesEntrant doctored) "her creature entrant under GainingLife is rejected"
+  -- Unprinted: an attack that doesn't cause abilities to trigger: the corpus half.
+  Spec.it s "CR 508.3 no card keeps an attack from causing abilities to trigger" $ do
+    ps <- S.allPrintings s corpus
+    Spec.assertEqWith s "no NoTrigger under Attacking" (fmap (S.nameOf . Printing.card) (filter (anyFaceOrMinted cardSilencesAttack . Printing.card) ps)) []
+  -- And the rejecting direction, against Hushbringer misauthored on purpose.
+  Spec.it s "the lint itself catches an attack that doesn't cause abilities to trigger" $ do
+    hushbringer <- S.printingOf s registry "Hushbringer"
+    isshin <- S.printingOf s registry "Isshin, Two Heavens as One"
+    let face = S.combinedFace hushbringer
+        attacking effect = case effect of
+          PlayerEffect.EntriesTrigger e -> PlayerEffect.EntriesTrigger e {EntriesTrigger.move = TriggeringMove.Attacking}
+          other -> other
+        doctored = face {Face.playerAbilities = fmap (\ability -> ability {PlayerStaticAbility.effect = attacking (PlayerStaticAbility.effect ability)}) (Face.playerAbilities face)}
+    Spec.assertBool s (not (cardSilencesAttack (S.combinedFace isshin))) "Isshin, Two Heavens as One's additional attack trigger is accepted"
+    Spec.assertBool s (not (cardSilencesAttack face)) "Hushbringer's creatures entering or dying are accepted"
+    Spec.assertBool s (cardSilencesAttack doctored) "its creatures attacking without triggering are rejected"
   -- Unprinted: a counter bar on a permanent: the corpus half.
   Spec.it s "barsAdditional only on a player pattern" $ do
     ps <- S.allPrintings s corpus

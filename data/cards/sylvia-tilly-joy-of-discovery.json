@@ -167,9 +167,9 @@
       ],
       "typeLine": {
         "subtypes": [
-          "Artificer",
           "Human",
-          "Scientist"
+          "Scientist",
+          "Artificer"
         ],
         "supertypes": [
           "Legendary"

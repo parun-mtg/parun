@@ -190,8 +190,8 @@
       ],
       "typeLine": {
         "subtypes": [
-          "Citizen",
-          "Halfling"
+          "Halfling",
+          "Citizen"
         ],
         "supertypes": [
           "Legendary"

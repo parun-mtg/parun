@@ -91,8 +91,8 @@
       },
       "typeLine": {
         "subtypes": [
-          "Mutant",
-          "Rhino"
+          "Rhino",
+          "Mutant"
         ],
         "supertypes": [
           "Legendary"

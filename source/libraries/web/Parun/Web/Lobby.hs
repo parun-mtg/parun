@@ -1,5 +1,5 @@
 -- | The web client's first screen: the match-up being set, your deck against
--- the bot's, and every deck, grouped by set and filtered by what is typed.
+-- each bot's, and every deck, grouped by set and filtered by what is typed.
 module Parun.Web.Lobby where
 
 import qualified Control.Monad as Monad
@@ -37,8 +37,9 @@ data Lobby = MkLobby
     formats :: Map.Map Text.Text Text.Text,
     -- | The player's deck, once chosen.
     mine :: Maybe Text.Text,
-    -- | The bot's deck, once chosen; a random one otherwise.
-    theirs :: Maybe Text.Text,
+    -- | Each bot's deck, in seat order, once chosen; a random one otherwise.
+    -- There is at least one bot and at most 'mostBots'.
+    theirs :: [Maybe Text.Text],
     -- | Which deck a tapped deck becomes.
     choosing :: Slot,
     -- | What the deck list is filtered by.
@@ -53,7 +54,8 @@ data Lobby = MkLobby
 -- | A side of the match-up.
 data Slot
   = MkMine
-  | MkTheirs
+  | -- | The bot at this place in 'theirs', from zero.
+    MkTheirs Int
   deriving (Eq, Show)
 
 -- | What a tap or a keystroke on the lobby does.
@@ -66,13 +68,21 @@ data Event
     MkSearch
   | -- | A random deck for the slot being chosen; the page picks it.
     MkRandom
+  | -- | Seats another bot, with a random deck, up to 'mostBots'.
+    MkAddBot
+  | -- | Unseats the last bot, while there are two or more.
+    MkDropBot
   | -- | Starts the game.
     MkStart
   deriving (Eq, Show)
 
 -- | A lobby holding these decks under these formats, nothing chosen yet.
 new :: Natural -> Seq.Seq Text.Text -> Map.Map Text.Text Text.Text -> Lobby
-new files names named = MkLobby files names named Nothing Nothing MkMine Text.empty Map.empty Map.empty
+new files names named = MkLobby files names named Nothing [Nothing] MkMine Text.empty Map.empty Map.empty
+
+-- | The most bots a game seats: a table of four.
+mostBots :: Int
+mostBots = 3
 
 -- | Whether two decks are under one format, and so may meet: the game's
 -- format is the one their headers name (Parun.Play.Command.settle).
@@ -176,21 +186,35 @@ deckName root path =
    in Maybe.fromMaybe name $ Text.stripSuffix (Text.pack ".txt") name
 
 -- | The lobby after an event, the value typed being `typed`. Picking your
--- deck moves on to the bot's while that is unchosen, and drops the bot's
--- deck under another format; the bot is offered only its 'opponents'.
+-- deck moves on to the first bot's still unchosen, and drops each bot's deck
+-- under another format; a bot is offered only its 'opponents'.
 update :: Event -> Text.Text -> Lobby -> Lobby
 update event typed lobby = case event of
   MkPick name
     | Foldable.notElem name (decks lobby) -> lobby
-    | choosing lobby == MkMine ->
-        let kept = Monad.mfilter (together lobby name) (theirs lobby)
-         in lobby {mine = Just name, theirs = kept, choosing = if Maybe.isNothing kept then MkTheirs else MkMine}
-    | Foldable.notElem name (opponents lobby) -> lobby
-    | otherwise -> lobby {theirs = Just name}
+    | MkTheirs i <- choosing lobby ->
+        if Foldable.notElem name (opponents lobby) then lobby else lobby {theirs = [if j == i then Just name else deck | (j, deck) <- zip [0 ..] (theirs lobby)]}
+    | otherwise ->
+        let kept = fmap (Monad.mfilter (together lobby name)) (theirs lobby)
+         in lobby {mine = Just name, theirs = kept, choosing = maybe MkMine MkTheirs (List.elemIndex Nothing kept)}
   MkChoose slot -> lobby {choosing = slot}
   MkSearch -> lobby {search = typed}
   MkRandom -> lobby
+  MkAddBot
+    | length (theirs lobby) < mostBots -> lobby {theirs = theirs lobby <> [Nothing]}
+    | otherwise -> lobby
+  MkDropBot
+    | length (theirs lobby) > 1 ->
+        let kept = take (length (theirs lobby) - 1) (theirs lobby)
+         in lobby {theirs = kept, choosing = if choosing lobby == MkTheirs (length kept) then MkMine else choosing lobby}
+    | otherwise -> lobby
   MkStart -> lobby
+
+-- | The deck chosen for a slot, if any.
+chosen :: Lobby -> Slot -> Maybe Text.Text
+chosen lobby slot = case slot of
+  MkMine -> mine lobby
+  MkTheirs i -> Monad.join (Maybe.listToMaybe (drop i (theirs lobby)))
 
 -- | A deck's set and its own name: "sets/m12/entangling-webs" is set "M12",
 -- deck "Entangling Webs".
@@ -224,17 +248,18 @@ matches typed name =
 view :: Lobby -> Html.Html Event
 view lobby =
   let offered = if choosing lobby == MkMine then decks lobby else opponents lobby
+      bots = theirs lobby
       shown = filter (matches (search lobby)) (Foldable.toList offered)
       groups = Map.toList (Map.fromListWith (flip (<>)) [(fst (describe name), [name]) | name <- shown])
-      slot which title chosen fallback =
+      slot which title held fallback =
         Element.button
           (["slot"] <> ["choosing" | choosing lobby == which])
           (MkChoose which)
           [ Element.el "span" ["slot-title"] [] [Element.string title],
-            Element.el "span" ["slot-deck"] [] [Element.text (maybe (Text.pack fallback) label chosen)]
+            Element.el "span" ["slot-deck"] [] [Element.text (maybe (Text.pack fallback) label held)]
           ]
       deck name =
-        let picked = Just name == (if choosing lobby == MkMine then mine lobby else theirs lobby)
+        let picked = Just name == chosen lobby (choosing lobby)
             pips = Element.el "span" ["pips"] [] [Mana.symbol (Text.pack (Web.Card.letterUpper c)) | c <- Set.toList (Map.findWithDefault Set.empty name (palette lobby))]
             format = [Element.el "span" ["deck-format"] [] [Element.text (titled f)] | f <- Maybe.maybeToList (Map.lookup name (formats lobby))]
          in (name, Element.button (["deck"] <> ["picked" | picked]) (MkPick name) [Element.el "span" ["deck-name"] [] (Element.text (snd (describe name)) : format), pips])
@@ -255,7 +280,16 @@ view lobby =
               [Element.attr "aria-label" (Text.pack "Match-up")]
               [ slot MkMine "You" (mine lobby) "Choose a deck",
                 Element.el "span" ["versus"] [] [Element.string "vs"],
-                slot MkTheirs "Bot" (theirs lobby) "Random deck",
+                Element.el "div" ["bots"] [] $
+                  [slot (MkTheirs i) (if length bots == 1 then "Bot" else "Bot " <> show (i + 1)) held "Random deck" | (i, held) <- zip [0 ..] bots]
+                    <> [ Element.el
+                           "div"
+                           ["bot-count"]
+                           []
+                           ( [Element.button ["add-bot"] MkAddBot [Element.string "Add a bot"] | length bots < mostBots]
+                               <> [Element.button ["drop-bot"] MkDropBot [Element.string "Remove a bot"] | length bots > 1]
+                           )
+                       ],
                 Element.el
                   "button"
                   ["primary", "start"]
@@ -265,7 +299,7 @@ view lobby =
           ]
           -- The list of the deck being chosen, or else of the player's.
           <> [ preview name lines'
-             | name <- Maybe.maybeToList (Monad.mplus (if choosing lobby == MkMine then mine lobby else theirs lobby) (mine lobby)),
+             | name <- Maybe.maybeToList (Monad.mplus (chosen lobby (choosing lobby)) (mine lobby)),
                lines' <- Maybe.maybeToList (Map.lookup name (previews lobby))
              ]
           <> [ Element.el
@@ -280,7 +314,16 @@ view lobby =
                          Element.el "input" ["search"] [Element.attr "id" (Text.pack "deck-search"), Element.attr "type" (Text.pack "search"), Element.attr "placeholder" (Text.pack "Filter decks or sets"), Element.attr "autocomplete" (Text.pack "off"), Element.on "input" MkSearch] [],
                          Element.button ["random"] MkRandom [Element.string "Random"]
                        ],
-                     Element.el "p" ["choosing-for"] [] [Element.string (if choosing lobby == MkMine then "Choose your deck." else "Choose the bot's deck.")],
+                     Element.el
+                       "p"
+                       ["choosing-for"]
+                       []
+                       [ Element.string
+                           ( case choosing lobby of
+                               MkMine -> "Choose your deck."
+                               MkTheirs i -> if length bots == 1 then "Choose the bot's deck." else "Choose bot " <> show (i + 1) <> "'s deck."
+                           )
+                       ],
                      Element.keyed "div" ["sets"] [] [(group, Element.el "section" ["set"] [] [Element.el "h2" [] [] [Element.text group], Element.keyed "div" ["deck-list"] [] (fmap deck names)]) | (group, names) <- groups]
                    ]
                      <> [Element.el "p" ["empty"] [] [Element.string "No deck matches."] | null shown]

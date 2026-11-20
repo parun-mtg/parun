@@ -156,8 +156,8 @@
       ],
       "typeLine": {
         "subtypes": [
-          "Construct",
-          "Goblin"
+          "Goblin",
+          "Construct"
         ],
         "types": [
           "Artifact",

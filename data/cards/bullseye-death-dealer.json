@@ -245,8 +245,8 @@
       ],
       "typeLine": {
         "subtypes": [
-          "Assassin",
           "Human",
+          "Assassin",
           "Villain"
         ],
         "supertypes": [

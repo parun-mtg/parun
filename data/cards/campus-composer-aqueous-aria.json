@@ -56,8 +56,8 @@
       },
       "typeLine": {
         "subtypes": [
-          "Bard",
-          "Merfolk"
+          "Merfolk",
+          "Bard"
         ],
         "types": [
           "Creature"

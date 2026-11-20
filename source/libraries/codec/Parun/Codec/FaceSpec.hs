@@ -152,7 +152,7 @@ baseFace =
     { Face.name = CardName.MkCardName $ Text.pack "Test Card",
       Face.oracleText = Nothing,
       Face.manaCost = Just (ManaCost.MkManaCost [ManaSymbol.Generic 1]),
-      Face.typeLine = TypeLine.MkTypeLine Set.empty (Set.singleton CardType.Creature) Set.empty,
+      Face.typeLine = TypeLine.MkTypeLine Set.empty (Set.singleton CardType.Creature) [],
       Face.power = Just (Power.MkPower (Quantity.Literal 1)),
       Face.toughness = Just (Toughness.MkToughness (Quantity.Literal 1)),
       Face.loyalty = Nothing,
@@ -222,7 +222,7 @@ minimalFace =
     { Face.name = CardName.MkCardName (Text.pack "Mountain"),
       Face.oracleText = Nothing,
       Face.manaCost = Nothing,
-      Face.typeLine = TypeLine.MkTypeLine Set.empty (Set.singleton CardType.Land) Set.empty,
+      Face.typeLine = TypeLine.MkTypeLine Set.empty (Set.singleton CardType.Land) [],
       Face.power = Nothing,
       Face.toughness = Nothing,
       Face.loyalty = Nothing,
@@ -293,7 +293,7 @@ mountainFace =
         TypeLine.MkTypeLine
           (Set.singleton Supertype.Basic)
           (Set.singleton CardType.Land)
-          (Set.singleton Subtype.Mountain)
+          [Subtype.Mountain]
     }
 
 baseFaceJson :: String

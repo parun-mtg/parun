@@ -81,8 +81,8 @@
       ],
       "typeLine": {
         "subtypes": [
-          "Employee",
-          "Human"
+          "Human",
+          "Employee"
         ],
         "types": [
           "Creature"
