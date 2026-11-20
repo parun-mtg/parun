@@ -1,6 +1,7 @@
 {
   "date": "2026-11-19",
   "cards": {
+    "Brine Comber // Brinebound Gift": {"brawl":"Legal","commander":"Legal","competitivebrawl":"Legal","duel":"Legal","gladiator":"Legal","historic":"Legal","legacy":"Legal","modern":"Legal","oathbreaker":"Legal","pioneer":"Legal","timeless":"Legal","vintage":"Legal"},
     "\"Lifetime\" Pass Holder": {"commander":"Legal","duel":"Banned","legacy":"Banned","oathbreaker":"Banned","vintage":"Banned"},
     "70,000 Light-Years from Home": {"brawl":"Legal","commander":"Legal","competitivebrawl":"Legal","duel":"Legal","future":"Legal","gladiator":"Legal","historic":"Legal","legacy":"Legal","modern":"Legal","oathbreaker":"Legal","pioneer":"Legal","standard":"Legal","standardbrawl":"Legal","timeless":"Legal","vintage":"Legal"},
     "A Good Day to Die": {"brawl":"Legal","commander":"Legal","competitivebrawl":"Legal","duel":"Legal","future":"Legal","gladiator":"Legal","historic":"Legal","legacy":"Legal","modern":"Legal","oathbreaker":"Legal","pauper":"Legal","paupercommander":"Legal","pioneer":"Legal","standard":"Legal","standardbrawl":"Legal","timeless":"Legal","vintage":"Legal"},

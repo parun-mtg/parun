@@ -15,7 +15,7 @@ import qualified Parun.Types.Zone as Zone
 -- | CR 601.2c: which targets becoming targets fire the ability, by which
 -- announcement road, per target or per batch (CR 603.2c), whether only the
 -- first such targeting this turn counts, and whether only a keyword's ability
--- (CR 702.165a's backup) does.
+-- (CR 702.165a's backup) or an object a Filter admits does.
 --
 -- Fields rather than constructors: every one narrows one rule 601.2c
 -- announcement and they differ only in how far.
@@ -51,7 +51,11 @@ data BecomesTargetedTrigger = MkBecomesTargetedTrigger
     -- | CR 702.165a: Just narrows the targeting object to an ability a keyword
     -- of this family represents, whoever bears it (Mirror-Shield Hoplite's "a
     -- backup ability"); Nothing admits any spell or ability.
-    sourceKeyword :: Maybe KeywordFamily.KeywordFamily
+    sourceKeyword :: Maybe KeywordFamily.KeywordFamily,
+    -- | CR 115.1b: Just narrows the targeting object to one the Filter admits,
+    -- read as it stood when it became a target (Brine Comber's "an Aura
+    -- spell"); Nothing admits any spell or ability.
+    sourceFilter :: Maybe (Filter.Filter Keyword.Keyword)
   }
   deriving (Eq, Ord, Show)
 
@@ -67,7 +71,8 @@ defaultValue =
       batching = Batching.EachOccurrence,
       zones = Set.singleton Zone.Battlefield,
       frequency = TriggerFrequency.EveryTime,
-      sourceKeyword = Nothing
+      sourceKeyword = Nothing,
+      sourceFilter = Nothing
     }
 
 -- | "Whenever a [permanent] becomes the target of a spell or ability": a

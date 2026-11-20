@@ -13,6 +13,7 @@ import qualified Parun.Types.Holder as Holder
 import qualified Parun.Types.KeywordFamily as KeywordFamily
 import qualified Parun.Types.PlayerRelation as PlayerRelation
 import qualified Parun.Types.StackObjectKind as StackObjectKind
+import qualified Parun.Types.Subtype as Subtype
 import qualified Parun.Types.TargetedSubject as TargetedSubject
 import qualified Parun.Types.TriggerFrequency as TriggerFrequency
 import qualified Parun.Types.Zone as Zone
@@ -31,7 +32,7 @@ spec s = Spec.describe s "Parun.Codec.BecomesTargetedTrigger" $ do
   -- Leyline of Combustion's "you and/or" over Professor Hojo's creatures you
   -- control, Loki, God of Mischief's either ability, one batch, Surrak, Elusive
   -- Hunter's stack beside the battlefield, valiant's first time each turn,
-  -- Mirror-Shield Hoplite's backup ability.
+  -- Mirror-Shield Hoplite's backup ability, Brine Comber's Aura spell.
   Spec.it s "round-trips every field" $
     Common.assertCodec
       s
@@ -43,8 +44,9 @@ spec s = Spec.describe s "Parun.Codec.BecomesTargetedTrigger" $ do
             BecomesTargetedTrigger.batching = Batching.OneOrMore,
             BecomesTargetedTrigger.zones = Set.fromList [Zone.Battlefield, Zone.Stack],
             BecomesTargetedTrigger.frequency = TriggerFrequency.FirstTimeEachTurn,
-            BecomesTargetedTrigger.sourceKeyword = Just KeywordFamily.Backup
+            BecomesTargetedTrigger.sourceKeyword = Just KeywordFamily.Backup,
+            BecomesTargetedTrigger.sourceFilter = Just (Filter.HasSubtype Subtype.Aura)
           }
       )
-      " {\"subject\":{\"type\":\"PlayerOrPermanent\",\"value\":{\"player\":\"You\",\"permanent\":{\"type\":\"Matching\",\"value\":{\"type\":\"And\",\"value\":[{\"type\":\"HasCardType\",\"value\":\"Creature\"},{\"type\":\"HeldBy\",\"value\":{\"holder\":\"Controller\",\"relation\":\"You\"}}]}}}},\"relation\":\"Opponent\",\"kinds\":[\"ActivatedAbility\",\"TriggeredAbility\"],\"batching\":\"OneOrMore\",\"zones\":[\"Battlefield\",\"Stack\"],\"frequency\":\"FirstTimeEachTurn\",\"sourceKeyword\":\"Backup\"} "
+      " {\"subject\":{\"type\":\"PlayerOrPermanent\",\"value\":{\"player\":\"You\",\"permanent\":{\"type\":\"Matching\",\"value\":{\"type\":\"And\",\"value\":[{\"type\":\"HasCardType\",\"value\":\"Creature\"},{\"type\":\"HeldBy\",\"value\":{\"holder\":\"Controller\",\"relation\":\"You\"}}]}}}},\"relation\":\"Opponent\",\"kinds\":[\"ActivatedAbility\",\"TriggeredAbility\"],\"batching\":\"OneOrMore\",\"zones\":[\"Battlefield\",\"Stack\"],\"frequency\":\"FirstTimeEachTurn\",\"sourceKeyword\":\"Backup\",\"sourceFilter\":{\"type\":\"HasSubtype\",\"value\":\"Aura\"}} "
   Spec.it s "has a schema" $ Common.assertHasSchema s BecomesTargetedTrigger.codec
