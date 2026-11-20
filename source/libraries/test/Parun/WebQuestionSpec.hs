@@ -749,6 +749,27 @@ replaySpec s registry = Spec.describe s "WebQuestion" . Spec.describe s "replay"
     let mergedFor seat = [ObjectView.merged o | o <- PlayerView.Type.battlefield (PlayerView.viewFor seat (Stop.state stop)), not (null (ObjectView.merged o))]
     Spec.assertEqWith s "bob" (mergedFor S.bob) [Seq.singleton Nothing]
 
+  Spec.it s "CR 903.10a every seat sees the combat damage a commander dealt, beside the seat's life" $ do
+    -- Entry 3 is checked after Kalakscion's second 7-point swing.
+    stop <- replayed s registry "commander/cr-903-10a-fourteen-does-not" 2
+    let dealt seat = fmap SeatView.commanderDamage (List.find ((== S.bob) . SeatView.player) (PlayerView.Type.seats (PlayerView.viewFor seat (Stop.state stop))))
+        tally = Map.singleton S.alice (Map.singleton (CardName.MkCardName (Text.pack "Kalakscion, Hunger Tyrant")) (14 :: Natural))
+        marks = Board.MkMarks (\o -> Card.MkCue [] (ObjectView.object o) Nothing) (const Nothing)
+        page = Html.toText (Board.view marks (boardOf stop))
+    Spec.assertEqWith s "bob's seat, as each seat sees it" (dealt S.alice, dealt S.bob) (Just tally, Just tally)
+    Spec.assertBool s (Text.isInfixOf (Text.pack "<span class=\"k\">\x2694\xFE0E Kalakscion</span>14</span>") page) ("drawn: " <> Text.unpack page)
+
+  Spec.it s "CR 903.8 every seat sees a commander's tax on it in the command zone" $ do
+    -- Entry 5 follows the first cast's return to the command zone, entry 12
+    -- the second's.
+    stops <- traverse (replayed s registry "commander/cr-903-8-the-second-cast-from-the-command-zone-costs-2-more") [0, 4, 11]
+    let taxes seat stop = fmap ObjectView.commanderTax (PlayerView.Type.command (PlayerView.viewFor seat (Stop.state stop)))
+        marks = Board.MkMarks (\o -> Card.MkCue [] (ObjectView.object o) Nothing) (const Nothing)
+        drawn stop = Text.isInfixOf (Text.pack ">Tax +4<") (Html.toText (Board.view marks (boardOf stop)))
+    Spec.assertEqWith s "alice's" (fmap (taxes S.alice) stops) [[0], [2], [4]]
+    Spec.assertEqWith s "bob's" (fmap (taxes S.bob) stops) [[0], [2], [4]]
+    Spec.assertEqWith s "drawn on its tile" (fmap drawn stops) [False, False, True]
+
 -- | The sheet's Oracle text (Card.oracle) of the one battlefield object named,
 -- as the stop's active player reads it.
 sheetText :: Spec.Spec IO n -> Registry.Registry IO -> Stop.Stop -> String -> IO [Text.Text]

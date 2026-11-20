@@ -37,7 +37,7 @@ data View
   | -- | CR 205.4: an object's supertypes.
     Supertypes
   | -- | CR 903.10a: the combat damage each commander has dealt a player, by
-    -- the commander's name.
+    -- the designated card's name (CR 903.3).
     CommanderDamage
   | -- | CR 108.3 / 407.3: each card whose owner changed, as `[card, starting owner, owner]`.
     OwnershipChanges

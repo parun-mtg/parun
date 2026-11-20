@@ -1042,6 +1042,11 @@ main.game {
   background: color-mix(in srgb, var(--good) 30%, var(--surface-2));
 }
 
+/* Combat damage from one commander (CR 903.10a). */
+.count.commander-damage {
+  background: color-mix(in srgb, var(--danger) 24%, var(--surface-2));
+}
+
 .k {
   color: var(--muted);
   font-size: 0.85em;

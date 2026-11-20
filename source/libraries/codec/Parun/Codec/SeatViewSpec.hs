@@ -37,6 +37,13 @@ spec s = Spec.describe s "Parun.Codec.SeatView" $ do
       SeatView.codec
       testSeat {SeatView.ringTemptations = 2, SeatView.speed = Just 3, SeatView.designations = Set.singleton PlayerDesignation.CitysBlessing, SeatView.completedDungeons = 1}
       (List.init testSeatJson <> ",\"ringTemptations\":2,\"speed\":3,\"designations\":[\"CitysBlessing\"],\"completedDungeons\":1}")
+  -- Two seats' commanders, one a partner pair, so both levels key apart.
+  Spec.it s "CR 903.10a commander damage" $
+    Common.assertCodec
+      s
+      SeatView.codec
+      testSeat {SeatView.commanderDamage = Map.fromList [(PlayerId.MkPlayerId 1, Map.fromList [(CardName.MkCardName (Text.pack "Akiri, Line-Slinger"), 3), (CardName.MkCardName (Text.pack "Rograkh, Son of Rohgahh"), 7)]), (PlayerId.MkPlayerId 2, Map.singleton (CardName.MkCardName (Text.pack "Jedit Ojanen")) 5)]}
+      (List.init testSeatJson <> ",\"commanderDamage\":{\"1\":[{\"key\":\"Akiri, Line-Slinger\",\"value\":3},{\"key\":\"Rograkh, Son of Rohgahh\",\"value\":7}],\"2\":[{\"key\":\"Jedit Ojanen\",\"value\":5}]}}")
   Spec.it s "has a schema" $ Common.assertHasSchema s SeatView.codec
 
 -- A seat whose hand shows one of its three cards.
@@ -57,7 +64,8 @@ testSeat =
       SeatView.speed = Nothing,
       SeatView.designations = Set.empty,
       SeatView.completedDungeons = 0,
-      SeatView.draftNotes = Map.empty
+      SeatView.draftNotes = Map.empty,
+      SeatView.commanderDamage = Map.empty
     }
 
 testSeatJson :: String

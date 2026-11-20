@@ -100,6 +100,8 @@ spec s = Spec.describe s "Parun.Codec.ObjectView" $ do
   -- CR 731.2 / 708.5: a card merged under it and a face-down one the seat may not look at.
   Spec.it s "a merged permanent" $
     Common.assertCodec s ObjectView.codec hidden {ObjectView.merged = Seq.fromList [Just (CardName.MkCardName (Text.pack "Silent Arbiter")), Nothing]} (init hiddenJson <> ",\"merged\":[\"Silent Arbiter\",null]}")
+  Spec.it s "CR 903.8 a commander's tax" $
+    Common.assertCodec s ObjectView.codec hidden {ObjectView.commanderTax = 4} (init hiddenJson <> ",\"commanderTax\":4}")
   Spec.it s "has a schema" $ Common.assertHasSchema s ObjectView.codec
 
 -- Tapped and damaged, so neither status key encodes a default.
@@ -135,7 +137,8 @@ hidden =
       ObjectView.chosenNames = Map.empty,
       ObjectView.chosenPlayers = Map.empty,
       ObjectView.chosenNumber = Map.empty,
-      ObjectView.chosenObjects = Map.empty
+      ObjectView.chosenObjects = Map.empty,
+      ObjectView.commanderTax = 0
     }
 
 hiddenJson :: String

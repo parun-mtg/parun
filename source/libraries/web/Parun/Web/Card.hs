@@ -98,7 +98,8 @@ states view o =
 -- | The designations an object has, short and spelled out: the
 -- Ring-bearer (CR 701.54b), a Class's level (CR 717.2b), a Room's unlocked
 -- halves (CR 709.5c), a dungeon's room (CR 309.4), a card on an adventure
--- (CR 716.3d) and the rest (Parun.Types.Designation).
+-- (CR 716.3d), the rest (Parun.Types.Designation) and a commander's tax
+-- (CR 903.8).
 marked :: ObjectView.ObjectView -> [(String, String)]
 marked o =
   [("Ring-bearer", "The Ring-bearer: legendary, and harder to block (CR 701.54)") | Maybe.isJust (ObjectView.ringBearerFor o)]
@@ -114,6 +115,7 @@ marked o =
     <> [("Room " <> show (RoomIndex.unwrap r + 1), "The venture marker is on room " <> show (RoomIndex.unwrap r + 1) <> " (CR 309.4)") | Just r <- [ObjectView.ventureRoom o]]
     <> [("On an adventure", "On an adventure: it may be played from exile, though not as its Adventure (CR 716.3d)") | ObjectView.onAdventure o]
     <> [(designationWord d, designationWord d) | d <- Set.toList (ObjectView.designations o)]
+    <> [("Tax +" <> show n, "Costs {" <> show n <> "} more to cast from the command zone (CR 903.8)") | let n = ObjectView.commanderTax o, n > 0]
 
 designationWord :: Designation.Designation -> String
 designationWord d = case d of

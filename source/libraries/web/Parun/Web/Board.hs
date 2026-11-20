@@ -13,6 +13,7 @@ import qualified Data.Set as Set
 import qualified Data.Text as Text
 import qualified Parun.Play.Render as Render
 import qualified Parun.Types.BeginningStep as BeginningStep
+import qualified Parun.Types.CardName as CardName
 import qualified Parun.Types.CardType as CardType
 import qualified Parun.Types.CombatStep as CombatStep
 import qualified Parun.Types.Daytime as Daytime
@@ -204,6 +205,14 @@ seatHead marks board own s =
         Nothing -> Element.el "div" ["who"] [] [Element.text label, lifeBox]
       chip cls k v tip = Element.el "span" ["count", cls] [Element.attr "title" (Text.pack tip)] ([Element.el "span" ["k"] [] [Element.string k]] <> [Element.string v | not (null v)])
       counterWord kind = Text.unpack (Render.spaced (Text.pack (show kind)))
+      -- CR 903.10a: the combat damage each commander has dealt the seat, by
+      -- the commander's name up to its comma, beside its life.
+      whose owner = if owner == PlayerView.viewer board then "your" else Text.unpack (name owner) <> "'s"
+      commanderDamage =
+        [ chip "commander-damage" ("\x2694\xFE0E " <> takeWhile (/= ',') (Text.unpack (CardName.unwrap commander))) (show n) ("Combat damage dealt by " <> Text.unpack (CardName.unwrap commander) <> ", " <> whose owner <> " commander (CR 903.10a)")
+        | (owner, dealt) <- Map.toList (SeatView.commanderDamage s),
+          (commander, n) <- Map.toList dealt
+        ]
       -- The seat's designations (CR 726.1, 727.1, 701.54c, 702.179b,
       -- 702.131c, 702.195b, 309.7) and player counters (CR 122.1).
       designations =
@@ -222,9 +231,10 @@ seatHead marks board own s =
             "div"
             ["counts"]
             []
-            ( [ Element.el "span" ["count"] [Element.attr "title" (Text.pack "Cards in hand")] [Element.el "span" ["k"] [] [Element.string "Hand"], Element.string (show (SeatView.handSize s))],
-                Element.el "span" ["count"] [Element.attr "title" (Text.pack "Cards in library")] [Element.el "span" ["k"] [] [Element.string "Library"], Element.string (show (SeatView.librarySize s))]
-              ]
+            ( commanderDamage
+                <> [ Element.el "span" ["count"] [Element.attr "title" (Text.pack "Cards in hand")] [Element.el "span" ["k"] [] [Element.string "Hand"], Element.string (show (SeatView.handSize s))],
+                     Element.el "span" ["count"] [Element.attr "title" (Text.pack "Cards in library")] [Element.el "span" ["k"] [] [Element.string "Library"], Element.string (show (SeatView.librarySize s))]
+                   ]
                 <> designations
                 <> pile marks board "Graveyard" (SeatView.graveyard s)
                 <> pile marks board "Exile" (SeatView.exile s)
