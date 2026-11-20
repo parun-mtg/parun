@@ -1,0 +1,239 @@
+{
+  "board": {
+    "active": "alice",
+    "seats": [
+      {
+        "battlefield": [
+          {
+            "card": "Island",
+            "label": "i1",
+            "ready": true
+          },
+          {
+            "card": "Island",
+            "label": "i2",
+            "ready": true
+          },
+          {
+            "card": "Island",
+            "label": "i3",
+            "ready": true
+          }
+        ],
+        "hand": [
+          {
+            "card": "Witness the Future",
+            "label": "wit"
+          }
+        ],
+        "library": [
+          {
+            "card": "Lightning Bolt",
+            "label": "a"
+          },
+          {
+            "card": "Shock",
+            "label": "b"
+          },
+          {
+            "card": "Divination",
+            "label": "c"
+          },
+          {
+            "card": "Plains",
+            "label": "d"
+          },
+          {
+            "card": "Forest",
+            "label": "e"
+          }
+        ],
+        "name": "alice"
+      },
+      {
+        "graveyard": [
+          {
+            "card": "Hill Giant",
+            "label": "g1"
+          },
+          {
+            "card": "Grizzly Bears",
+            "label": "g2"
+          },
+          {
+            "card": "Raging Goblin",
+            "label": "g3"
+          },
+          {
+            "card": "Mountain",
+            "label": "g4"
+          },
+          {
+            "card": "Swamp",
+            "label": "g5"
+          }
+        ],
+        "library": [
+          {
+            "card": "Island",
+            "label": "x1"
+          },
+          {
+            "card": "Island",
+            "label": "x2"
+          }
+        ],
+        "name": "bob"
+      }
+    ],
+    "step": "PrecombatMain"
+  },
+  "description": "CR 601.2c / 701.24a / 701.20b: Witness the Future shuffles up to four target cards of the target player's graveyard into that player's library, then its caster takes one of their own top four and puts the rest on the bottom in a random order",
+  "note": "Five cards in bob's graveyard: the four targeted go into his two-card library and the Swamp stays. alice takes Divination, the third of her top four; the other three go under the Forest, which ends on top.",
+  "timeline": [
+    {
+      "do": {
+        "Cast": {
+          "mana": [
+            "$i1",
+            "$i2",
+            "$i3"
+          ],
+          "object": "$wit",
+          "targetsBySlot": {
+            "cards": [
+              "$g1",
+              "$g2",
+              "$g3",
+              "$g4"
+            ],
+            "player": [
+              "$bob"
+            ]
+          }
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": "Pass",
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": {
+        "Answer": {
+          "prompt": "Shuffle",
+          "with": [
+            "$x1",
+            "Hill Giant",
+            "Grizzly Bears",
+            "$x2",
+            "Raging Goblin",
+            "Mountain"
+          ]
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": {
+        "Answer": {
+          "prompt": "ChooseCardFromAmong",
+          "with": "$c"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": {
+        "Answer": {
+          "prompt": "Shuffle",
+          "with": [
+            "$d",
+            "$a",
+            "$b"
+          ]
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "View": {
+          "is": [
+            "Divination"
+          ],
+          "of": "Zone",
+          "player": "alice",
+          "zone": "Hand"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "View": {
+          "is": [
+            "$e",
+            "Shock",
+            "Lightning Bolt",
+            "Plains"
+          ],
+          "of": "Zone",
+          "player": "alice",
+          "zone": "Library"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "View": {
+          "is": [
+            "$g5"
+          ],
+          "of": "Zone",
+          "player": "bob",
+          "zone": "Graveyard"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "View": {
+          "is": [
+            "$x1",
+            "Hill Giant",
+            "Grizzly Bears",
+            "$x2",
+            "Raging Goblin",
+            "Mountain"
+          ],
+          "of": "Zone",
+          "player": "bob",
+          "zone": "Library"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    }
+  ]
+}
