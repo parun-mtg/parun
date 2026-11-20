@@ -3077,8 +3077,10 @@ exileTotalling perform slots pid oid exile@(ExileCardsTotalling.MkExileCardsTota
 -- road, Skyway Robber's and Fear of Abduction's the spell's, and
 -- data/scenarios/cost's cr-607-2a and cr-607-2q files what neither links.
 --
--- Not implemented: a mana ability's cost, which has no stack object to name its
--- ability, links nothing (#8188).
+-- Unprinted: a mana ability's cost, which has no stack object to name its
+-- ability, links nothing to a reader of its pile; Parun.AbilitySlotLintSpec's
+-- "CR 607.2a no card writes a mana ability whose cost exiles cards beside a
+-- reader of their pile" keeps the pairing out of card data.
 linkPaidExiles :: PlayerId -> Maybe ObjectId -> ObjectId -> CostComponent.CostComponent Keyword.Type.Keyword -> [ObjectId] -> Game ()
 linkPaidExiles pid paidFor oid component arrived = do
   gs <- State.get
