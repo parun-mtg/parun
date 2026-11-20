@@ -35,6 +35,7 @@ import Parun.Types.Action (Action)
 import qualified Parun.Types.Action as Action
 import qualified Parun.Types.ActivatedAbility as ActivatedAbility
 import qualified Parun.Types.ActiveCopy as ActiveCopy
+import qualified Parun.Types.Affected as Affected
 import qualified Parun.Types.Bookkeeping as Bookkeeping
 import qualified Parun.Types.Card as Card
 import qualified Parun.Types.Completion as Completion
@@ -119,11 +120,14 @@ import qualified Text.Read as Read
 -- where its source can read it (CR 607.1, LinkReaders.readsOwnLinks). A Grim
 -- Poppet's lap beside a Cyclopean Tomb still recurs; the Tomb's own does not.
 -- `enteredWith` needs no reader trim: LinkReaders.recordEntry writes no row
--- its source cannot read as it writes it. Both are keyed by the linked object,
--- so, as with `lastKnown`, only the rows of the ids the rest of the state
--- holds are compared (CR 400.7): a reader of a departed key's row, a dies
--- trigger, holds the key itself. Parun.FragmentedSpec's Animate Dead loop
--- proves it.
+-- its source cannot read as it writes it.
+--
+-- Trimmed to the ids the rest of the state holds, as `lastKnown` is (CR
+-- 400.7): the rows of `enteredWith` and `counteredWith`, keyed by the linked
+-- object, and the stored rows fixed to TheseObjects (CR 611.2c), each kept
+-- while it names one such id. A departed object is no longer one any of them
+-- applies to, and what reads one -- a dies trigger, an ability on the stack --
+-- holds its id. Parun.FragmentedSpec's Animate Dead loop proves both.
 digest :: GameState -> StateDigest
 digest gs =
   let (effects, objects, reacquire) = canonicalStamps gs
@@ -159,12 +163,16 @@ digest gs =
             -- behind where there was no entry, and no card tells the two apart.
             GameState.manaPool = Map.filter (not . null . Mana.unwrap) (GameState.manaPool gs)
           }
-      unkeyed = show unlinked {GameState.enteredWith = Map.empty, GameState.counteredWith = Map.empty}
+      fixedTo row = case ContinuousEffect.affected row of
+        Affected.TheseObjects oids -> Just oids
+        _ -> Nothing
+      unkeyed = show unlinked {GameState.enteredWith = Map.empty, GameState.counteredWith = Map.empty, GameState.stored = (GameState.stored unlinked) {StoredEffects.continuousEffects = filter (Maybe.isNothing . fixedTo) effects}}
       linked = Set.fromList (fmap ObjectId.MkObjectId (Map.keys (ranked objectIdTag unkeyed)))
       entered = Map.restrictKeys (GameState.enteredWith unlinked) linked
       countered = Map.restrictKeys (GameState.counteredWith unlinked) linked
-      trimmed = unlinked {GameState.enteredWith = entered, GameState.counteredWith = countered}
-      shown = unkeyed <> show (entered, countered)
+      live row = maybe True (not . Set.disjoint linked) (fixedTo row)
+      trimmed = unlinked {GameState.enteredWith = entered, GameState.counteredWith = countered, GameState.stored = (GameState.stored unlinked) {StoredEffects.continuousEffects = filter live effects}}
+      shown = unkeyed <> show (filter (Maybe.isJust . fixedTo) (filter live effects), entered, countered)
       held = Set.fromList (fmap ObjectId.MkObjectId (Map.keys (ranked objectIdTag shown)))
       -- What the log says of each held id, as the readers keyed by one ask it
       -- (`readers`), so a renamed id is the same object only where the
