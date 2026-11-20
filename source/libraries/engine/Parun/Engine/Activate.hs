@@ -188,7 +188,7 @@ activateAbilityWith refused runSubgame pid srcId ability = Event.announcing . Ev
       stamp = ActivatedAbility.keyword ability
       -- The mana this activation may be paid with, asked by both gates and the
       -- payment alike (ActivationRestriction.SpendOnly).
-      spendable = ActivationRestriction.spendableTypes srcId (ActivatedAbility.restrictions ability) gs
+      spendable = ActivationRestriction.spendable srcId (ActivatedAbility.restrictions ability) gs
       -- CR 602.2b / 601.2i: the activation as it is recorded once activated,
       -- and as a move made while it is under way records it (Market Gnome).
       activation = AbilityWasActivated.MkAbilityWasActivated {AbilityWasActivated.player = pid, AbilityWasActivated.ability = Just abilId, AbilityWasActivated.source = srcId, AbilityWasActivated.facts = Game.abilityFacts AbilityKind.NonManaAbility (Just ability), AbilityWasActivated.activationCost = Cost.Type.mana (ActivatedAbility.cost ability)}

@@ -6,6 +6,8 @@ import qualified Parun.Spec as Spec
 import qualified Parun.Types.Color as Color
 import qualified Parun.Types.ManaSpecification as ManaSpecification
 import qualified Parun.Types.ManaType as ManaType
+import qualified Parun.Types.ProductionTag as ProductionTag
+import qualified Parun.Types.Subtype as Subtype
 
 spec :: (Monad m, Monad n) => Spec.Spec m n -> n ()
 spec s = Spec.describe s "Parun.Codec.ManaSpecification" $ do
@@ -33,4 +35,10 @@ spec s = Spec.describe s "Parun.Codec.ManaSpecification" $ do
       ManaSpecification.codec
       (ManaSpecification.OfType ManaType.Colorless)
       " {\"type\":\"OfType\",\"value\":{\"type\":\"Colorless\"}} "
+  Spec.it s "ProducedBy" $
+    Common.assertCodec
+      s
+      ManaSpecification.codec
+      (ManaSpecification.ProducedBy (ProductionTag.Subtype Subtype.Treasure))
+      " {\"type\":\"ProducedBy\",\"value\":{\"Subtype\":\"Treasure\"}} "
   Spec.it s "has a schema" $ Common.assertHasSchema s ManaSpecification.codec

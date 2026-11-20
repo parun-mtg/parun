@@ -5,6 +5,7 @@ module Parun.Codec.AlternativeCost where
 import qualified Parun.Codec.Condition as Condition
 import qualified Parun.Codec.Cost as Cost
 import qualified Parun.Codec.Keyword as Keyword
+import qualified Parun.Codec.ManaSpecification as ManaSpecification
 import qualified Parun.JsonCodec.Codec as Codec
 import qualified Parun.JsonCodec.Common as Common
 import qualified Parun.JsonCodec.Fields as Fields
@@ -24,8 +25,10 @@ codec :: Codec.Codec AlternativeCost.AlternativeCost
 codec = Fields.object $ do
   condition <- Fields.defaulted "condition" Nothing (Common.maybe Condition.codec) AlternativeCost.condition
   cost <- Fields.required "cost" (Cost.codec Keyword.codec) AlternativeCost.cost
+  spendOnly <- Fields.defaulted "spendOnly" Nothing (Common.maybe ManaSpecification.codec) AlternativeCost.spendOnly
   pure
     AlternativeCost.MkAlternativeCost
       { AlternativeCost.condition = condition,
-        AlternativeCost.cost = cost
+        AlternativeCost.cost = cost,
+        AlternativeCost.spendOnly = spendOnly
       }

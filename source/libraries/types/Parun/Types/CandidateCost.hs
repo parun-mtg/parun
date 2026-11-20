@@ -8,6 +8,7 @@ import qualified Parun.Types.Condition as Condition
 import qualified Parun.Types.Cost as Cost
 import qualified Parun.Types.FreeCast as FreeCast
 import qualified Parun.Types.Keyword as Keyword
+import qualified Parun.Types.ManaSpecification as ManaSpecification
 import qualified Parun.Types.ObjectId as ObjectId
 
 -- | CR 601.2b: one of the costs a spell may be cast for, together with WHAT
@@ -77,14 +78,17 @@ data CandidateCost = MkCandidateCost
     granted :: Maybe (Maybe (ObjectId.ObjectId, FreeCast.FreeCast)),
     -- | CR 601.3d / 601.2e: the condition `instantSpeed`'s window holds under,
     -- re-asked once X is announced; Nothing where it holds under none.
-    windowIf :: Maybe Condition.Condition
+    windowIf :: Maybe Condition.Condition,
+    -- | CR 601.2h: the only mana that may pay this candidate, its alternative
+    -- cost's spend rule (Parun.Types.AlternativeCost.spendOnly); Nothing for any.
+    spendOnly :: Maybe ManaSpecification.ManaSpecification
   }
   deriving (Eq, Ord, Show)
 
 -- | A candidate bringing no reduction, no window of its own, no delayed ability,
--- no printed alternative and no grant.
+-- no printed alternative, no grant and no spend rule.
 plain :: Maybe Keyword.Keyword -> Cost.Cost Keyword.Keyword -> CandidateCost
-plain k c = MkCandidateCost k c [] False Nothing Nothing Nothing Nothing
+plain k c = MkCandidateCost k c [] False Nothing Nothing Nothing Nothing Nothing
 
 -- | CR 702.48a / 601.3c / 601.3d: the candidate with a window opened under the
 -- condition (Nothing: unconditionally) beside any it had.

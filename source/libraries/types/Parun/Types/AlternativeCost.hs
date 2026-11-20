@@ -3,6 +3,7 @@ module Parun.Types.AlternativeCost where
 import qualified Parun.Types.Condition as Condition
 import qualified Parun.Types.Cost as Cost
 import qualified Parun.Types.Keyword as Keyword
+import qualified Parun.Types.ManaSpecification as ManaSpecification
 
 -- | CR 118.9: one alternative cost a face PRINTS, which its controller may pay
 -- rather than the spell's mana cost -- and, when the card states one, the
@@ -32,6 +33,9 @@ import qualified Parun.Types.Keyword as Keyword
 -- has one.
 data AlternativeCost = MkAlternativeCost
   { condition :: Maybe Condition.Condition,
-    cost :: Cost.Cost Keyword.Keyword
+    cost :: Cost.Cost Keyword.Keyword,
+    -- | CR 601.2h: the only mana that may pay this cost -- Security Rhox's
+    -- "Spend only mana produced by Treasures to cast it this way"; Nothing for any.
+    spendOnly :: Maybe ManaSpecification.ManaSpecification
   }
   deriving (Eq, Ord, Show)

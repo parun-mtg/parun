@@ -843,6 +843,8 @@ rewriteManaSpecification pairs specified = case specified of
   ManaSpecification.ChosenColor -> specified
   ManaSpecification.OfType (ManaType.Colored c) -> ManaSpecification.OfType (ManaType.Colored (TextWord.Engine.colorAfter pairs c))
   ManaSpecification.OfType ManaType.Colorless -> specified
+  -- A production tag passes through, as Children passes Filter.TagWasSpent's.
+  ManaSpecification.ProducedBy _ -> specified
 
 -- CR 612.1 through a Duration, which Parun.Types.Duration holds as the card
 -- prints it: a CR 611.2b "for as long as ..." clause is rules text like any

@@ -46,6 +46,7 @@ import qualified Parun.Support as S
 import qualified Parun.Types.AbilityName as AbilityName
 import qualified Parun.Types.ActingPermanent as ActingPermanent
 import qualified Parun.Types.ActivatedAbility as ActivatedAbility
+import qualified Parun.Types.ActivationRestriction as ActivationRestriction
 import qualified Parun.Types.Activator as Activator
 import qualified Parun.Types.Actor as Actor
 import qualified Parun.Types.AffectPlayers as AffectPlayers
@@ -163,6 +164,7 @@ import qualified Parun.Types.LifeDirection as LifeDirection
 import qualified Parun.Types.LifeTally as LifeTally
 import qualified Parun.Types.Lookback as Lookback
 import qualified Parun.Types.ManaCost as ManaCost
+import qualified Parun.Types.ManaSpecification as ManaSpecification
 import qualified Parun.Types.ManaSpent as ManaSpent
 import qualified Parun.Types.ManaSymbol as ManaSymbol
 import qualified Parun.Types.Measure as Measure
@@ -1738,6 +1740,20 @@ productionTagPayloads key = go . Codec.encode (Face.Codec.codec Card.codec)
       Value.Boolean _ -> []
       Value.Number _ -> []
 
+-- A face naming ManaSpecification.ProducedBy anywhere but its alternative
+-- costs' spend rules.
+producedByOffends :: Face.Face Card.Type.Card -> Bool
+producedByOffends face = go (Codec.encode (Face.Codec.codec Card.codec) face {Face.alternativeCosts = []})
+  where
+    producedBy = Pair.MkPair (String.MkString (Text.pack "type")) (Value.String (String.MkString (Text.pack "ProducedBy")))
+    go value = case value of
+      Value.Object o -> elem producedBy (Object.unwrap o) || any (go . Pair.value) (Object.unwrap o)
+      Value.Array a -> any go (Array.unwrap a)
+      Value.String _ -> False
+      Value.Null _ -> False
+      Value.Boolean _ -> False
+      Value.Number _ -> False
+
 -- A face asking about mana from a subtype or card type
 -- Parun.Engine.Mana.productionTagsGiven never stamps, which would answer 0
 -- however the spell was paid for.
@@ -2896,7 +2912,7 @@ filterPositionLintSpec s registry corpus = Spec.describe s "Lint" $ do
         added = base {Face.additionalCosts = sacrificing}
         -- CR 118.9, the cost half only -- the CR 604.2 condition an alternative
         -- may carry is a separate question and is not tagged with it.
-        alternatively = base {Face.alternativeCosts = [AlternativeCost.MkAlternativeCost Nothing sacrificeCost]}
+        alternatively = base {Face.alternativeCosts = [AlternativeCost.MkAlternativeCost Nothing sacrificeCost Nothing]}
         -- CR 602.2b, paid as the ability is activated -- after CR 601.2c too.
         activating = base {Face.activatedAbilities = [ActivatedAbility.MkActivatedAbility sacrificeCost [] [] Nothing (spellOf []) [] (Activator.Related PlayerRelation.You) Nothing Nothing Nothing Copyability.Copyable Nothing]}
         -- CR 116.2d: a special action uses no stack (CR 116.1), so no
@@ -4507,6 +4523,19 @@ filterPositionLintSpec s registry corpus = Spec.describe s "Lint" $ do
     Spec.assertBool s (not (untaggedTagOffends (counting (ProductionTag.Subtype Subtype.Cave)))) "and the same count from a Cave is not"
     Spec.assertBool s (untaggedTagOffends (counting (ProductionTag.CardType CardType.Land))) "a count of mana from a land is an offence"
     Spec.assertBool s (not (untaggedTagOffends (counting (ProductionTag.CardType CardType.Creature)))) "and the same count from a creature is not"
+  -- Unprinted: ManaSpecification.ProducedBy is spent only by an alternative
+  -- cost's spend rule (Security Rhox); a mana trigger's (Parun.Engine.Event.Match's
+  -- producedSpecified) or an activation's would go unread or unproved.
+  Spec.it s "no card narrows a mana trigger or an activation to mana a kind of source produced" $ do
+    ps <- S.allPrintings s corpus
+    Spec.assertEqWith s "ProducedBy rides only an alternative cost" [S.nameOf (Printing.card p) | p <- ps, anyFace producedByOffends (Printing.card p)] []
+    rhox <- S.printingOf s registry "Security Rhox"
+    Spec.assertBool s (not (producedByOffends (S.combinedFace rhox))) "Security Rhox's spend rule is accepted"
+    throne <- S.printingOf s registry "Throne of Eldraine"
+    let treasureOnly ability = ability {ActivatedAbility.restrictions = [ActivationRestriction.SpendOnly (ManaSpecification.ProducedBy (ProductionTag.Subtype Subtype.Treasure))]}
+        doctored = (S.combinedFace throne) {Face.activatedAbilities = fmap treasureOnly (Face.activatedAbilities (S.combinedFace throne))}
+    Spec.assertBool s (not (producedByOffends (S.combinedFace throne))) "Throne of Eldraine's chosen colour is accepted"
+    Spec.assertBool s (producedByOffends doctored) "and the same ability spending only Treasures' mana is an offence"
   -- CR 608.2h: a face-down spell or exiled card that leaves its zone is filed
   -- face up (Parun.Engine.Event.lastKnownFrom), so IsFaceDown asked of that
   -- record would be a silent False. Battlefield departures are filed right:

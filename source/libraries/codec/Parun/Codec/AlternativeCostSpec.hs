@@ -11,11 +11,14 @@ import qualified Parun.Types.Condition as Condition
 import qualified Parun.Types.Cost as Cost
 import qualified Parun.Types.Hybrid as Hybrid
 import qualified Parun.Types.ManaCost as ManaCost
+import qualified Parun.Types.ManaSpecification as ManaSpecification
 import qualified Parun.Types.ManaSymbol as ManaSymbol
 import qualified Parun.Types.ManaType as ManaType
 import qualified Parun.Types.PlayerRef as PlayerRef
 import qualified Parun.Types.PlayerRelation as PlayerRelation
+import qualified Parun.Types.ProductionTag as ProductionTag
 import qualified Parun.Types.Quantity as Quantity
+import qualified Parun.Types.Subtype as Subtype
 import qualified Parun.Types.TurnTally as TurnTally
 
 spec :: (Monad m, Monad n) => Spec.Spec m n -> n ()
@@ -27,7 +30,8 @@ spec s = Spec.describe s "Parun.Codec.AlternativeCost" $ do
       AlternativeCost.codec
       AlternativeCost.MkAlternativeCost
         { AlternativeCost.condition = Nothing,
-          AlternativeCost.cost = Cost.MkCost {Cost.mana = Just (ManaCost.MkManaCost []), Cost.components = []}
+          AlternativeCost.cost = Cost.MkCost {Cost.mana = Just (ManaCost.MkManaCost []), Cost.components = []},
+          AlternativeCost.spendOnly = Nothing
         }
       " {\"cost\":{\"mana\":[]}} "
   -- The "as long as" clause (CR 611.3a) on one,
@@ -52,7 +56,19 @@ spec s = Spec.describe s "Parun.Codec.AlternativeCost" $ do
             Cost.MkCost
               { Cost.mana = Just (ManaCost.MkManaCost [ManaSymbol.Hybrid (Hybrid.MkHybrid (ManaType.Colored Color.Black) (ManaType.Colored Color.Red))]),
                 Cost.components = []
-              }
+              },
+          AlternativeCost.spendOnly = Nothing
         }
       " {\"condition\":{\"type\":\"Compares\",\"value\":{\"measured\":{\"type\":\"CardsDiscardedThisTurn\",\"value\":{\"type\":\"Relative\",\"value\":\"You\"}},\"comparison\":\"AtLeast\",\"threshold\":{\"type\":\"Literal\",\"value\":1}}},\"cost\":{\"mana\":[{\"type\":\"Hybrid\",\"value\":{\"left\":{\"type\":\"Colored\",\"value\":\"Black\"},\"right\":{\"type\":\"Colored\",\"value\":\"Red\"}}}]}} "
+  -- Security Rhox's "Spend only mana produced by Treasures to cast it this way".
+  Spec.it s "a spend rule round-trips" $
+    Common.assertCodec
+      s
+      AlternativeCost.codec
+      AlternativeCost.MkAlternativeCost
+        { AlternativeCost.condition = Nothing,
+          AlternativeCost.cost = Cost.MkCost {Cost.mana = Just (ManaCost.MkManaCost []), Cost.components = []},
+          AlternativeCost.spendOnly = Just (ManaSpecification.ProducedBy (ProductionTag.Subtype Subtype.Treasure))
+        }
+      " {\"cost\":{\"mana\":[]},\"spendOnly\":{\"type\":\"ProducedBy\",\"value\":{\"Subtype\":\"Treasure\"}}} "
   Spec.it s "has a schema" $ Common.assertHasSchema s AlternativeCost.codec

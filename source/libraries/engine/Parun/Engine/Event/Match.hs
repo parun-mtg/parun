@@ -2693,6 +2693,11 @@ producedSpecified gs bearer specified produced = case specified of
     any (\color -> Set.member (ManaType.Colored color) produced) (Maybe.fromMaybe Set.empty (Game.currentChoice Chosen.Colors bearer gs))
   -- data/scenarios/ultima-origin-of-oblivion/ prove it for colorless.
   ManaSpecification.OfType manaType -> Set.member manaType produced
+  -- Unprinted: a mana trigger narrowed to mana a kind of source produced would
+  -- read the producer's production tags, which the event does not carry. The
+  -- lint "no card narrows a mana trigger or an activation to mana a kind of
+  -- source produced" (Parun.FilterPositionLintSpec) keeps it out of card data.
+  ManaSpecification.ProducedBy _ -> False
 
 -- CR 609.1: the spell or ability whose effect made this
 -- event, on the two events that record one. Every other event records no

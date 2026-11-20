@@ -1,11 +1,13 @@
 module Parun.Types.ManaSpecification where
 
 import qualified Parun.Types.ManaType as ManaType
+import qualified Parun.Types.ProductionTag as ProductionTag
 
 -- | CR 106.12a's "or is tapped for mana of a specified type": which mana a tap
 -- has to have produced for the ability to trigger. The narrowing half of
 -- Parun.Types.TappedForManaTrigger, beside its subject and its player. Also
--- which mana may pay for an activation (Parun.Types.ActivationRestriction.SpendOnly).
+-- which mana may pay for an activation (Parun.Types.ActivationRestriction.SpendOnly)
+-- or for a spell cast for an alternative cost (Parun.Types.AlternativeCost.spendOnly).
 --
 -- A SPECIFICATION and not a Parun.Types.ManaProduction, which the AddMana opcode
 -- carries: that type says how an effect DECIDES the mana it adds, and two of its
@@ -28,4 +30,7 @@ data ManaSpecification
   | -- | CR 106.1b: mana of this printed type -- Crimson Hellkite's "red mana",
     -- Ultima, Origin of Oblivion's "for {C}".
     OfType ManaType.ManaType
+  | -- | CR 106.3: mana whose source carried this production tag -- Security
+    -- Rhox's "mana produced by Treasures".
+    ProducedBy ProductionTag.ProductionTag
   deriving (Eq, Ord, Show)

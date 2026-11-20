@@ -158,7 +158,7 @@ spec s = Spec.describe s "Parun.Codec.GrantedAbility" $ do
     Common.assertCodec
       s
       codec
-      (GrantedAbility.SelfAlternativeCost (AlternativeCost.MkAlternativeCost Nothing (Cost.MkCost (Just (ManaCost.MkManaCost [])) [])))
+      (GrantedAbility.SelfAlternativeCost (AlternativeCost.MkAlternativeCost Nothing (Cost.MkCost (Just (ManaCost.MkManaCost [])) []) Nothing))
       " {\"type\":\"SelfAlternativeCost\",\"value\":{\"cost\":{\"mana\":[]}}} "
   -- CR 609.4b: Tome of the Infinite's "You may spend mana as though it were mana
   -- of any color to cast this spell", one color shown.

@@ -74,6 +74,7 @@ import qualified Parun.Types.KickerDecision as KickerDecision
 import qualified Parun.Types.Label as Label
 import qualified Parun.Types.Mana as Mana.Type
 import qualified Parun.Types.ManaCost as ManaCost
+import qualified Parun.Types.ManaNarrowing as ManaNarrowing
 import qualified Parun.Types.ManaSpending as ManaSpending
 import qualified Parun.Types.ManaSymbol as ManaSymbol
 import qualified Parun.Types.ManaType as ManaType
@@ -3705,9 +3706,9 @@ theBlue = ManaSymbol.OfType (ManaType.Colored Color.Blue)
 
 -- Cast.entwineOffer's and Cast.announceOptionalCosts' candidate list: each
 -- candidate cost beside the CR 601.2f reductions it brings, which is empty for
--- every candidate but CR 702.119a's emerge.
-candidatePairs :: [CandidateCost.CandidateCost] -> [([AppliedReduction.AppliedReduction], Cost.Type.Cost Keyword.Keyword)]
-candidatePairs = fmap (\candidate -> (CandidateCost.reductions candidate, CandidateCost.cost candidate))
+-- every candidate but CR 702.119a's emerge, and its spend rule, which none here has.
+candidatePairs :: [CandidateCost.CandidateCost] -> [([AppliedReduction.AppliedReduction], ManaNarrowing.ManaNarrowing, Cost.Type.Cost Keyword.Keyword)]
+candidatePairs = fmap (\candidate -> (CandidateCost.reductions candidate, ManaNarrowing.none, CandidateCost.cost candidate))
 
 -- CR 601.2b's announcement answered by naming a cost's mana.
 payingFor :: [ManaSymbol.ManaSymbol] -> Prompt.Prompt r -> r

@@ -101,6 +101,7 @@ import qualified Parun.Types.ManaAddition as ManaAddition
 import qualified Parun.Types.ManaAmong as ManaAmong
 import Parun.Types.ManaCost (ManaCost)
 import qualified Parun.Types.ManaCost as ManaCost
+import qualified Parun.Types.ManaNarrowing as ManaNarrowing
 import Parun.Types.ManaOption (ManaOption)
 import qualified Parun.Types.ManaOption as ManaOption
 import Parun.Types.ManaProduction (ManaProduction)
@@ -2042,14 +2043,14 @@ spendableAmong subject pid gs = List.partition (admitsUnder subject pid gs)
 -- naming two creature types put mana in one pool, so both are written per unit
 -- below.
 --
--- An activation's SUBJECT can narrow the units too, ahead of any of that:
--- PaymentSubject.Activating's mana types (ActivationRestriction.SpendOnly),
--- `subjectAllows` below.
+-- The SUBJECT can narrow the units too, ahead of any of that: its
+-- Parun.Types.ManaNarrowing (ActivationRestriction.SpendOnly,
+-- AlternativeCost.spendOnly), `subjectAllows` below.
 admitsUnder :: PaymentSubject.PaymentSubject -> PlayerId -> GameState -> ManaUnit -> Bool
 admitsUnder subject pid gs =
   let paidFor = case subject of
         PaymentSubject.ForNeither -> Nothing
-        PaymentSubject.Casting oid -> Just (ManaRestriction.casts, oid)
+        PaymentSubject.Casting oid _ -> Just (ManaRestriction.casts, oid)
         PaymentSubject.Activating oid _ _ _ _ -> Just (ManaRestriction.activations, oid)
         PaymentSubject.Unlocking oid -> Just (ManaRestriction.unlocks, oid)
         PaymentSubject.TurningFaceUp oid -> Just (ManaRestriction.turnsFaceUp, oid)
@@ -2060,7 +2061,7 @@ admitsUnder subject pid gs =
         _ -> False
       asked = fmap (\(half, oid) -> (half, Filter.contextIn gs (Just pid) Nothing, Projection.viewOfObject oid gs)) paidFor
    in \unit ->
-        subjectAllows subject (ManaUnit.manaType unit) && case ManaUnit.restriction unit of
+        subjectAllows subject unit && case ManaUnit.restriction unit of
           Nothing -> True
           Just restriction ->
             let named =
@@ -2077,14 +2078,23 @@ admitsUnder subject pid gs =
 -- "Spend only mana of the chosen color"), asked of every unit before CR 106.6's
 -- question about its restriction, and the whole of admitsUnder's answer for a
 -- unit carrying none.
-subjectAllows :: PaymentSubject.PaymentSubject -> ManaType -> Bool
-subjectAllows subject manaType = maybe True (Set.member manaType) (narrowingOf subject)
+--
+-- Security Rhox's "Spend only mana produced by Treasures" is the same question
+-- asked of the unit's production tags (Parun.Types.ManaNarrowing.tags).
+subjectAllows :: PaymentSubject.PaymentSubject -> ManaUnit -> Bool
+subjectAllows subject unit =
+  let narrowing = narrowingOf subject
+   in maybe True (Set.member (ManaUnit.manaType unit)) (ManaNarrowing.types narrowing)
+        && Set.isSubsetOf (ManaNarrowing.tags narrowing) (ManaUnit.tags unit)
 
--- The types an activation's subject narrows its payment to, if any.
-narrowingOf :: PaymentSubject.PaymentSubject -> Maybe (Set.Set ManaType)
+-- The mana a subject's own spend rule narrows its payment to.
+narrowingOf :: PaymentSubject.PaymentSubject -> ManaNarrowing.ManaNarrowing
 narrowingOf subject = case subject of
-  PaymentSubject.Activating _ _ _ _ types -> types
-  _ -> Nothing
+  PaymentSubject.Activating _ _ _ _ narrowing -> narrowing
+  PaymentSubject.Casting _ narrowing -> narrowing
+  PaymentSubject.ForNeither -> ManaNarrowing.none
+  PaymentSubject.Unlocking _ -> ManaNarrowing.none
+  PaymentSubject.TurningFaceUp _ -> ManaNarrowing.none
 
 -- CR 601.2a before CR 601.2g: a source activated DURING this payment makes its
 -- mana once the card being cast has already left exile, so the card it last
@@ -2095,7 +2105,7 @@ narrowingOf subject = case subject of
 -- board after. Ice Cauldron tapped mid-cast pays for none of its card.
 producedDuring :: PaymentSubject.PaymentSubject -> ManaUnit -> ManaUnit
 producedDuring subject unit = case subject of
-  PaymentSubject.Casting oid | ManaUnit.sourceLastExiled unit == Just oid -> unit {ManaUnit.sourceLastExiled = Nothing}
+  PaymentSubject.Casting oid _ | ManaUnit.sourceLastExiled unit == Just oid -> unit {ManaUnit.sourceLastExiled = Nothing}
   _ -> unit
 
 -- A pool unit as a supply. Its type is settled, so the option set is a
@@ -3032,12 +3042,12 @@ plainSupplies clauses oid routes = case ListUtils.nubOrd [activations | (activat
 --
 -- A plain source some claim of the cost's own could take is left off, so the
 -- claims stay disjoint and CR 118.3's joint satisfiability is `claimed`'s
--- alone. A subject narrowing its mana types (ActivationRestriction.SpendOnly)
--- is left to the walk. Parun.ManaSpec's "plain sources" group pins this to
+-- alone. A subject narrowing its mana (ActivationRestriction.SpendOnly,
+-- AlternativeCost.spendOnly) is left to the walk. Parun.ManaSpec's "plain sources" group pins this to
 -- the walk's answer.
 plainPayable :: PaymentSubject.PaymentSubject -> ManaSpending -> Sources -> PlayerId -> Natural -> Natural -> [Claim] -> ManaCost -> GameState -> Bool
 plainPayable subject spending swept pid committed committedEnergy claimed cost gs =
-  Maybe.isNothing (narrowingOf subject)
+  narrowingOf subject == ManaNarrowing.none
     && Claim.satisfiable claimed
     && committedEnergy <= Game.energyOf pid gs
     && any payable (resolutions spending cost)
@@ -3816,17 +3826,17 @@ payableResolutionsGiven subject spending swept pcs pid committed committedEnergy
       -- A nested source's subject carries no keyword stamp: Sorcerer Class's
       -- CR 717.2c clause names a class level bar, whose ability sets a level and
       -- so is no mana ability (CR 605.1a).
-      subjects = Set.toList (Set.fromList (subject : fmap (\oid -> PaymentSubject.Activating oid AbilityKind.ManaAbility Nothing Nothing Nothing) sources))
+      subjects = Set.toList (Set.fromList (subject : fmap (\oid -> PaymentSubject.Activating oid AbilityKind.ManaAbility Nothing Nothing ManaNarrowing.none) sources))
       admittedBy = fmap (\each -> (each, admitsUnder each pid gs)) subjects
       -- A unit carrying no CR 106.6 restriction is admitted by every payment
-      -- whose ability does not narrow its types (subjectAllows), and those are
+      -- whose ability does not narrow its mana (subjectAllows), and those are
       -- one shared set rather than one walk of every payment per unit: the
       -- sources' own subjects narrow nothing, so the walk was one per unit per
       -- source (#6432).
-      (narrowed, unnarrowedList) = List.partition (Maybe.isJust . narrowingOf) subjects
+      (narrowed, unnarrowedList) = List.partition ((/= ManaNarrowing.none) . narrowingOf) subjects
       unnarrowed = Set.fromList unnarrowedList
       admitting unit = case ManaUnit.restriction unit of
-        Nothing -> foldr Set.insert unnarrowed (filter (`subjectAllows` ManaUnit.manaType unit) narrowed)
+        Nothing -> foldr Set.insert unnarrowed (filter (`subjectAllows` unit) narrowed)
         Just _ -> Set.fromList (fmap fst (filter (\(_, ok) -> ok unit) admittedBy))
       -- CR 609.4b, resolved ONCE for this whole question and applied to both
       -- halves of the board: a rewrite reaching the pool but not the untapped
@@ -3980,7 +3990,7 @@ payableResolutionsGiven subject spending swept pcs pid committed committedEnergy
               <> concatMap (\(k, (_, option)) -> fmap ((,) k) (optionSupplies option)) ranked,
             concatMap (\(k, (_, option)) -> fmap ((,) k) (optionDemands option)) ranked,
             costPosition,
-            Map.fromList ((costPosition, (subject, Nothing)) : fmap (\(k, ((oid, lender), _)) -> (k, (PaymentSubject.Activating oid AbilityKind.ManaAbility Nothing Nothing Nothing, lender))) ranked),
+            Map.fromList ((costPosition, (subject, Nothing)) : fmap (\(k, ((oid, lender), _)) -> (k, (PaymentSubject.Activating oid AbilityKind.ManaAbility Nothing Nothing ManaNarrowing.none, lender))) ranked),
             sum (fmap (optionLife . snd) taken),
             concatMap (\(k, (_, option)) -> fmap ((,) k) (optionDoublings option)) ranked
           )

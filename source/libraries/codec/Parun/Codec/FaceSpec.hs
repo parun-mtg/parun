@@ -341,7 +341,7 @@ populatedFace =
       Face.modeChooser = PlayerRelation.You,
       Face.maximumX = [Quantity.Measure Measure.ManaValue],
       Face.minimumX = 1,
-      Face.alternativeCosts = [AlternativeCost.MkAlternativeCost Nothing (Cost.MkCost (Just (ManaCost.MkManaCost [])) [])],
+      Face.alternativeCosts = [AlternativeCost.MkAlternativeCost Nothing (Cost.MkCost (Just (ManaCost.MkManaCost [])) []) Nothing],
       Face.costReductions = [CostReduction.MkCostReduction (ManaCost.MkManaCost [ManaSymbol.Generic 3]) (Quantity.Literal 1) Nothing Nothing False CostDirection.Less],
       Face.counterability = Counterability.CantBeCountered Nothing,
       Face.copyability = Copyability.Copyable,
@@ -736,7 +736,7 @@ spec s = Spec.describe s "Parun.Codec.Face" $ do
         s
         encodeFace
         decodeFace
-        baseFace {Face.alternativeCosts = [AlternativeCost.MkAlternativeCost Nothing (Cost.MkCost (Just (ManaCost.MkManaCost [])) [])]}
+        baseFace {Face.alternativeCosts = [AlternativeCost.MkAlternativeCost Nothing (Cost.MkCost (Just (ManaCost.MkManaCost [])) []) Nothing]}
         (init baseFaceJson <> ",\"alternativeCosts\":[{\"cost\":{\"mana\":[]}}]}")
     Spec.it s "costReductions" $
       Common.assertJsonCodec

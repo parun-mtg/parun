@@ -1,6 +1,7 @@
 module Parun.Codec.ManaSpecification where
 
 import qualified Parun.Codec.ManaType as ManaType
+import qualified Parun.Codec.ProductionTag as ProductionTag
 import qualified Parun.JsonCodec.Arm as Arm
 import qualified Parun.JsonCodec.Codec as Codec
 import qualified Parun.Types.ManaSpecification as ManaSpecification
@@ -11,7 +12,8 @@ codec =
     tagOf
     [ Arm.nullary "AnyMana" ManaSpecification.AnyMana,
       Arm.nullary "ChosenColor" ManaSpecification.ChosenColor,
-      Arm.payload "OfType" ManaType.codec ManaSpecification.OfType (\x -> case x of ManaSpecification.OfType y -> Just y; _ -> Nothing)
+      Arm.payload "OfType" ManaType.codec ManaSpecification.OfType (\x -> case x of ManaSpecification.OfType y -> Just y; _ -> Nothing),
+      Arm.payload "ProducedBy" ProductionTag.codec ManaSpecification.ProducedBy (\x -> case x of ManaSpecification.ProducedBy y -> Just y; _ -> Nothing)
     ]
 
 tagOf :: ManaSpecification.ManaSpecification -> String
@@ -19,3 +21,4 @@ tagOf x = case x of
   ManaSpecification.AnyMana {} -> "AnyMana"
   ManaSpecification.ChosenColor {} -> "ChosenColor"
   ManaSpecification.OfType {} -> "OfType"
+  ManaSpecification.ProducedBy {} -> "ProducedBy"
