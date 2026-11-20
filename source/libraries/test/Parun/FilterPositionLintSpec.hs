@@ -2098,7 +2098,8 @@ filterPositionLintSpec s registry corpus = Spec.describe s "Lint" $ do
         ("Deadly Cover-Up", 1), -- its search's filter, against its exiled card
         ("The Apprentice's Folly", 2), -- its chapters' target slots, negated, at AnyPermanent
         ("Yenna, Redtooth Regent", 1), -- its ability's target slot, negated, at AnyPermanent excluding the candidate
-        ("The End", 1) -- its search's filter, against its exiled target
+        ("The End", 1), -- its search's filter, against its exiled target
+        ("Light-Paws, Emperor's Voice", 1) -- its search's filter, negated, at AnyPermanent
       ]
     -- Both sides of the split, with room to spare under the pool's real figures:
     -- a traversal that had stopped walking, or a Framing that had stopped marking
