@@ -141,8 +141,10 @@
                           "repetition": {
                             "type": "UpTo",
                             "value": {
-                              "type": "Literal",
-                              "value": 2
+                              "casts": {
+                                "type": "Literal",
+                                "value": 2
+                              }
                             }
                           }
                         }

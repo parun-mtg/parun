@@ -30,7 +30,6 @@ import qualified Parun.CastRestrictionSpec
 import qualified Parun.CastSpec
 import qualified Parun.ClashSpec
 import qualified Parun.ClassSpec
-import qualified Parun.ClientSpec
 import qualified Parun.CloakSpec
 import qualified Parun.Codec.AbilityActSpec
 import qualified Parun.Codec.AbilityAddsManaSpec
@@ -384,6 +383,7 @@ import qualified Parun.Codec.EachCardFromAmongSpec
 import qualified Parun.Codec.EachCardInExiledPileSpec
 import qualified Parun.Codec.EachCardInGraveyardSpec
 import qualified Parun.Codec.EachCardInHandSpec
+import qualified Parun.Codec.EachKindSpec
 import qualified Parun.Codec.EffectSpec
 import qualified Parun.Codec.EmergeSpec
 import qualified Parun.Codec.EmperorsSpec
@@ -504,6 +504,7 @@ import qualified Parun.Codec.KeywordInstanceSpec
 import qualified Parun.Codec.KeywordRiderGrantSpec
 import qualified Parun.Codec.KeywordSpec
 import qualified Parun.Codec.KeywordsAreSpec
+import qualified Parun.Codec.KindStepSpec
 import qualified Parun.Codec.LabelSpec
 import qualified Parun.Codec.LandAllowanceSpec
 import qualified Parun.Codec.LandPlayedSpec
@@ -928,6 +929,7 @@ import qualified Parun.Codec.UntapRestrictionSpec
 import qualified Parun.Codec.UntapRewriteSpec
 import qualified Parun.Codec.UntapScopeSpec
 import qualified Parun.Codec.UntilPaidSpec
+import qualified Parun.Codec.UpToCastsSpec
 import qualified Parun.Codec.UsesSpec
 import qualified Parun.Codec.VanguardSpec
 import qualified Parun.Codec.VentureMarkerEnteredSpec
@@ -1067,6 +1069,7 @@ import qualified Parun.PlaneswalkerCombatSpec
 import qualified Parun.PlaneswalkerSpec
 import qualified Parun.Play.GeneratorSpec
 import qualified Parun.Play.KeySpec
+import qualified Parun.PlaySpec
 import qualified Parun.PlayerDesignationSpec
 import qualified Parun.PlayerEffectSpec
 import qualified Parun.PlayerViewSpec
@@ -1215,6 +1218,8 @@ spec s reference corpus = do
   Parun.Codec.AffectedUnlessSpec.spec s
   Parun.Codec.AnchorSpec.spec s
   Parun.Codec.AnotherCounterSpec.spec s
+  Parun.Codec.EachKindSpec.spec s
+  Parun.Codec.KindStepSpec.spec s
   Parun.Codec.AloneAmongSpec.spec s
   Parun.Codec.AloneUnlessSpec.spec s
   Parun.Codec.AffectPlayersSpec.spec s
@@ -1791,6 +1796,7 @@ spec s reference corpus = do
   Parun.Codec.OwnedZoneSpec.spec s
   Parun.Codec.PaidExpirySpec.spec s
   Parun.Codec.UntilPaidSpec.spec s
+  Parun.Codec.UpToCastsSpec.spec s
   Parun.Codec.PairingSpec.spec s
   Parun.Codec.PairwiseFrameSpec.spec s
   Parun.Codec.PartnerTextSpec.spec s
@@ -2258,7 +2264,7 @@ spec s reference corpus = do
   Parun.SagaSpec.spec s registry
   Parun.ProtocolSpec.spec s registry
   Parun.BotSpec.spec s registry
-  Parun.ClientSpec.spec s registry
+  Parun.PlaySpec.spec s registry
   Parun.RecordSpec.spec s registry
   Parun.MatchSpec.spec s registry
   Parun.DecksSpec.spec s registry
@@ -2311,6 +2317,7 @@ spec s reference corpus = do
   Parun.WebQuestionSpec.corpusSpec s registry
   Parun.WebQuestionSpec.subgameSpec s registry
   Parun.WebQuestionSpec.replaySpec s registry
+  Parun.WebQuestionSpec.multiplayerSpec s registry
   Parun.ZoneChangeSpec.spec s registry
   Parun.ZoneReplacementSpec.spec s registry
   Parun.ZoneTriggerSpec.spec s registry

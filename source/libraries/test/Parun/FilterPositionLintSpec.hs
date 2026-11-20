@@ -2701,7 +2701,9 @@ filterPositionLintSpec s registry corpus = Spec.describe s "Lint" $ do
         ("Convenient Target", 1), -- a loop over its host, suspecting it in the entering trigger
         ("Dramatic Accusation", 2), -- Stay Hidden, Stay Silent's tap and shuffle
         ("Airtight Alibi", 3), -- Abduction's entering untap, Fae Flight's hexproof and an unsuspecting
-        ("Sleep with the Fishes", 1) -- Claustrophobia's entering tap, before a token
+        ("Sleep with the Fishes", 1), -- Claustrophobia's entering tap, before a token
+        ("Crackling Emergence", 1), -- Pariah's replacement row, on a destruction
+        ("Harmonious Emergence", 1) -- Crackling Emergence's wording
       ]
     -- The rejected side, which the sweep above cannot show while the pool has no
     -- offender: the same atom planted in a SPELL's target slot -- the position a
@@ -3149,7 +3151,7 @@ filterPositionLintSpec s registry corpus = Spec.describe s "Lint" $ do
         -- traversal that has to reach it. An arm that stops digging names itself.
         walked =
           [ ("EntryRiders' kinds", holds (riderFilters riders)),
-            ("Effect.PutCounters' kind", holds (effectFilters (Effect.PutCounters (PutCounters.MkPutCounters kind one anywhere Nothing Nothing)))),
+            ("Effect.PutCounters' kind", holds (effectFilters (Effect.PutCounters (PutCounters.MkPutCounters kind [] one anywhere Nothing Nothing)))),
             ("Effect.RemoveCounters' kind", holds (effectFilters (Effect.RemoveCounters (RemoveCounters.MkRemoveCounters kind one slot Nothing)))),
             ("Effect.RemoveCountersAmong' kind", holds (effectFilters (Effect.RemoveCountersAmong (RemoveCountersAmong.MkRemoveCountersAmong (RemovalCount.Exactly one) anywhere (WhichCounters.OfKind kind) Nothing)))),
             ("Effect.MoveCounters' kinds", holds (effectFilters (Effect.MoveCounters (MoveCounters.MkMoveCounters anywhere (MovedKinds.Named kind one) Nothing anywhere)))),
@@ -3267,7 +3269,7 @@ filterPositionLintSpec s registry corpus = Spec.describe s "Lint" $ do
         -- TOP-LEVEL: the same keyword, the same atom, handed back by
         -- counterKindFilters as its own (KeywordFramed, f) pair -- the route that
         -- used to disagree.
-        topLevel = concatMap framedSlotsReadSingly (effectFilters (Effect.PutCounters (PutCounters.MkPutCounters kind one anywhere Nothing Nothing)))
+        topLevel = concatMap framedSlotsReadSingly (effectFilters (Effect.PutCounters (PutCounters.MkPutCounters kind [] one anywhere Nothing Nothing)))
     -- Ordered FIRST, and the assertion this case exists for.
     Spec.assertEqWith s "both routes to a keyword's own Filter read no slot" (nested, topLevel) ([], [])
     -- NOT vacuous, and the pair differing in exactly ONE thing: the same atom in

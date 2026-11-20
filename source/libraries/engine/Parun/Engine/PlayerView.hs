@@ -70,7 +70,7 @@ viewFor pid gs =
       PlayerView.extra = extraStep gs,
       PlayerView.active = TurnRegisters.activePlayer (GameState.turn gs),
       PlayerView.priority = TurnRegisters.priority (GameState.turn gs),
-      PlayerView.seats = Maybe.mapMaybe (seatView pid gs) (GameState.seating gs),
+      PlayerView.seats = Maybe.mapMaybe (seatView pid gs) (Turn.turnOrder gs),
       PlayerView.battlefield = Maybe.mapMaybe (objectView pid gs) (Foldable.toList (GameState.battlefield gs)),
       PlayerView.phasedOut = Maybe.mapMaybe (objectView pid gs) (Map.keys (GameState.phasedOut gs)),
       PlayerView.command = Maybe.mapMaybe (objectView pid gs) (Foldable.toList (GameState.command gs)),
@@ -118,6 +118,7 @@ seatView pid gs seat = do
   pure
     SeatView.MkSeatView
       { SeatView.player = seat,
+        SeatView.status = Player.status player,
         SeatView.life = Player.life player,
         SeatView.counters = Player.counters player,
         SeatView.handSize = Natural.length (members Zone.Hand),

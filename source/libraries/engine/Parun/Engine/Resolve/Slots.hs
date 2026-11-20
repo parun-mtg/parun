@@ -119,6 +119,7 @@ import qualified Parun.Types.DealDamage as DealDamage
 import qualified Parun.Types.Designate as Designate
 import qualified Parun.Types.Destroy as Destroy
 import qualified Parun.Types.DestructionR as DestructionR
+import qualified Parun.Types.DestructionRewrite as DestructionRewrite
 import qualified Parun.Types.DieRollR as DieRollR
 import qualified Parun.Types.Discard as Discard
 import qualified Parun.Types.Discover as Discover
@@ -313,6 +314,7 @@ import qualified Parun.Types.TurnRegisters as TurnRegisters
 import qualified Parun.Types.TurnUpR as TurnUpR
 import qualified Parun.Types.TurnUpRewrite as TurnUpRewrite
 import qualified Parun.Types.UntilPaid as UntilPaid
+import qualified Parun.Types.UpToCasts as UpToCasts
 import qualified Parun.Types.Vote as Vote
 import qualified Parun.Types.VoteChoices as VoteChoices
 import qualified Parun.Types.VoteObjects as VoteObjects
@@ -397,7 +399,7 @@ repetitionQuantities repetition = case repetition of
   CastRepetition.Once -> []
   CastRepetition.AnyNumber -> []
   CastRepetition.WithinTotal total -> totalCapQuantities (Just total)
-  CastRepetition.UpTo quantity -> [quantity]
+  CastRepetition.UpTo (UpToCasts.MkUpToCasts casts total) -> casts : totalCapQuantities total
 
 -- The Quantities an entry rider carries: CR 122.6's count per counter kind, which
 -- a card may write as anything a Quantity spells. A position the three walkers
@@ -1436,7 +1438,7 @@ slotsOf effect = joinTwo (joinTwo (joinSlots (fmap objectRefSlots (effectObjectR
       ]
   -- The bound slot is a DEFINITION, not a read: see boundSlots below.
   Effect.Counter {} -> Map.empty
-  Effect.PutCounters (PutCounters.MkPutCounters _ quantity _ _ _) -> quantitySlots quantity
+  Effect.PutCounters (PutCounters.MkPutCounters _ _ quantity _ _ _) -> quantitySlots quantity
   Effect.Divide divide -> quantitySlots (Divide.quantity divide)
   -- CR 122.8 reads its tally off ONE object, so `from` is read singly, where the
   -- destination is an ObjectRef and may sweep.
@@ -1739,7 +1741,8 @@ replacementRowReads re = case re of
   ReplacementEffect.DamageR (DamageR.MkDamageR pat rewrite _) ->
     let (filters, quantities) = damageRewriteReads rewrite
      in (DamagePattern.whatSource pat : (Maybe.maybeToList (DamagePattern.whatRecipient pat) <> filters), foldMap (pure . ComparedTo.threshold) (DamagePattern.whatAmount pat) <> quantities)
-  -- CR 614.1a's printed subject (Pyramids' "target land"); the rewrite is nullary.
+  -- CR 614.1a's printed subject (Pyramids' "target land"); the rewrite's
+  -- instead-effects are replacementRowEffects' answer.
   ReplacementEffect.DestructionR (DestructionR.MkDestructionR matching _) -> (Maybe.maybeToList matching, [])
   -- The rewrite is one Scaling, which is a constructor and a Natural.
   ReplacementEffect.CounterR (CounterR.MkCounterR pat _ _) -> ([CounterPattern.onWhat pat], [])
@@ -2037,7 +2040,13 @@ replacementRowEffects re = case re of
   -- reason for AsCopy's. A redirect's riders (CR 614.6) are printed only on
   -- static abilities in data/cards/, which no resolution installs.
   ReplacementEffect.ZoneChangeR _ -> []
-  ReplacementEffect.DestructionR _ -> []
+  -- CR 614.1a's instead-effects (Crackling Emergence).
+  ReplacementEffect.DestructionR (DestructionR.MkDestructionR _ rewrite) -> case rewrite of
+    DestructionRewrite.RunEffects effects -> Foldable.toList effects
+    DestructionRewrite.Regenerate -> []
+    DestructionRewrite.RemoveShieldCounter -> []
+    DestructionRewrite.UmbraArmor -> []
+    DestructionRewrite.Heal _ -> []
   ReplacementEffect.CounterR _ -> []
   ReplacementEffect.TokenR _ -> []
   ReplacementEffect.TurnUpR _ -> []
@@ -2345,7 +2354,7 @@ ownSlotsAreExhaustive effect = case effect of
     durationSlotsAreExhaustive duration && all slotsAreExhaustive rider
   Effect.RedirectDamage (RedirectDamage.MkRedirectDamage duration _ amount _ _ _ _ _ _ _) -> durationSlotsAreExhaustive duration && all Quantity.slotsAreExhaustive amount
   Effect.Counter {} -> True
-  Effect.PutCounters (PutCounters.MkPutCounters _ quantity _ _ _) -> Quantity.slotsAreExhaustive quantity
+  Effect.PutCounters (PutCounters.MkPutCounters _ _ quantity _ _ _) -> Quantity.slotsAreExhaustive quantity
   Effect.Divide divide -> Quantity.slotsAreExhaustive (Divide.quantity divide)
   -- No Quantity at all: CR 122.8 names neither a kind nor a count.
   Effect.PutCountersFrom {} -> True
@@ -2650,7 +2659,7 @@ hasRead wanted =
         Effect.NextDamageInstance (NextDamageInstance.MkNextDamageInstance _ _ _ _ _ _ _ _ rider _) -> hasRead wanted (Foldable.toList rider)
         Effect.RedirectDamage (RedirectDamage.MkRedirectDamage _ _ amount _ _ _ _ _ _ _) -> any (Quantity.hasRead wanted) amount
         Effect.Counter {} -> False
-        Effect.PutCounters (PutCounters.MkPutCounters _ quantity _ _ _) -> Quantity.hasRead wanted quantity
+        Effect.PutCounters (PutCounters.MkPutCounters _ _ quantity _ _ _) -> Quantity.hasRead wanted quantity
         Effect.Divide divide -> Quantity.hasRead wanted (Divide.quantity divide)
         Effect.PutCountersFrom {} -> False
         Effect.PutCounterOfEachKind {} -> False

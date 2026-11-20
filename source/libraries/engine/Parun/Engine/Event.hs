@@ -604,7 +604,8 @@ simultaneously body = do
 -- and the cards put into a graveyard, while `body` runs are put there "at the
 -- same time", and their owners arrange them as it ends (arrangeArrivals).
 -- `simultaneously` opens one. The OUTERMOST scope wins, `simultaneously`'s
--- posture.
+-- posture. The one-use entry rows its entries applied are spent as it ends
+-- (Replacement.spendEntries).
 arrivingTogether :: Game a -> Game a
 arrivingTogether body = do
   open <- State.gets (Maybe.isJust . Scratch.arrivals . GameState.scratch)
@@ -615,6 +616,7 @@ arrivingTogether body = do
       result <- body
       arrangeArrivals
       State.modify' (\g -> g {GameState.scratch = (GameState.scratch g) {Scratch.enteredFrom = Map.empty}})
+      State.modify' Replacement.spendEntries
       pure result
 
 -- CR 401.4: "if an effect puts two or more cards in a specific position in a
@@ -2608,7 +2610,9 @@ applyReplacements = applyReplacementsIn Settle.none Nothing Set.empty Set.empty
 -- What `asOf` does NOT freeze: the FLOATING store stays live (see
 -- Replacement.collect), because CR 614.3 has Replacement.consume spend a one-shot
 -- as it applies and a frozen
--- store would hand a spent regeneration shield to the next member of the batch;
+-- store would hand a spent regeneration shield to the next member of the batch
+-- (a one-use ENTRY row stays for every member, the batch's entries being one
+-- event: Replacement.consume);
 -- the loop still RE-COLLECTS every iteration, so CR 616.1f and CR 616.2 are
 -- untouched; and `apply`'s writes and Replacement.choose's chooser lookup read the LIVE
 -- state. A permanent that ENTERED after the batch began therefore contributes
@@ -4988,7 +4992,8 @@ apply settle batch applied batchPrevented candidate event =
     -- in Peace's redirect) ever runs. What each does INSTEAD is all that separates
     -- them: regeneration removes marked damage, taps the permanent and removes it
     -- from combat; a shield counter's removal does none of those; umbra armor
-    -- removes the damage and destroys the Aura; and a heal removes the damage.
+    -- removes the damage and destroys the Aura; a heal removes the damage; and
+    -- an instead-effect runs what the card prints.
     (ReplacementEffect.DestructionR (DestructionR.MkDestructionR _ rewrite), ProposedEvent.WouldBeDestroyed oid _ _) -> case rewrite of
       DestructionRewrite.Regenerate -> do
         Replacement.consume (ReplacementCandidate.identity candidate)
@@ -5058,6 +5063,35 @@ apply settle batch applied batchPrevented candidate event =
           held <- State.gets (maybe 0 (Map.findWithDefault 0 k . Object.counters) . Game.lookupObject oid)
           removeCounters oid k held
         State.modify' (\gs -> gs {GameState.objects = Map.adjust (\obj -> obj {Object.damage = 0}) oid (GameState.objects gs)})
+        pure Nothing
+      -- CR 614.1a / 614.6: Crackling Emergence's "instead sacrifice this Aura
+      -- and that land gains indestructible until end of turn". QUEUED for
+      -- DamageRewrite.RunEffects' reason, with `oid` bound under
+      -- Binding.sparedPermanent ("that land") and the row's source under
+      -- Binding.triggerSource ("this Aura", CR 113.7), and drained inside the
+      -- destruction's own event (destroyIn, Sba.checkOnce). No controller,
+      -- nobody to perform them; the destruction is replaced all the same.
+      DestructionRewrite.RunEffects effects -> do
+        Replacement.consume (ReplacementCandidate.identity candidate)
+        Foldable.for_ (ReplacementCandidate.controller candidate) $ \controller ->
+          State.modify' $ \g ->
+            g
+              { GameState.stored =
+                  (GameState.stored g)
+                    { StoredEffects.pendingReplacementEffects =
+                        StoredEffects.pendingReplacementEffects (GameState.stored g)
+                          Seq.|> PendingReplacementEffect.MkPendingReplacementEffect
+                            { PendingReplacementEffect.effects = effects,
+                              PendingReplacementEffect.targets =
+                                Map.insert Binding.sparedPermanent (Set.singleton (Recipient.ToObject oid))
+                                  . Map.insert Binding.triggerSource (Set.singleton (Recipient.ToObject (ReplacementCandidate.source candidate)))
+                                  $ ReplacementCandidate.slots candidate,
+                              PendingReplacementEffect.controller = controller,
+                              PendingReplacementEffect.source = ReplacementCandidate.source candidate,
+                              PendingReplacementEffect.bindsArrival = False
+                            }
+                    }
+              }
         pure Nothing
     -- Unreachable: `applies` admits DestructionR only against WouldBeDestroyed.
     (ReplacementEffect.DestructionR _, _) -> pure (Just event)
@@ -10488,7 +10522,16 @@ destroyIn :: Settle.Settle -> Maybe GameState -> DestructionCause.DestructionCau
 destroyIn settle asOf cause regenerability oids = simultaneously $ do
   live <- State.get
   let gs = Maybe.fromMaybe live asOf
-  fmap Maybe.catMaybes . Monad.forM (doomedAmong live gs oids) $ \oid -> do
+      queue = StoredEffects.pendingReplacementEffects . GameState.stored
+      setQueue q g = g {GameState.stored = (GameState.stored g) {StoredEffects.pendingReplacementEffects = q}}
+  -- CR 614.6 / 608.2f: what replaced a member's destruction (Crackling
+  -- Emergence's sacrifice) is part of this one event, so it runs inside the
+  -- bracket, where CR 603.10a looks back to the board before the batch. Only
+  -- what this batch queued runs here; anything queued before waits for its own
+  -- drain.
+  before <- State.gets queue
+  State.modify' (setQueue Seq.empty)
+  destroyed <- fmap Maybe.catMaybes . Monad.forM (doomedAmong live gs oids) $ \oid -> do
     settled <- resolveDestruction (Just gs) cause regenerability oid
     case settled of
       -- CR 701.8c: a regeneration effect REPLACED the destruction, so nothing was
@@ -10500,6 +10543,9 @@ destroyIn settle asOf cause regenerability oids = simultaneously $ do
       Just target -> do
         arrived <- changeZoneInBatchReturning settle gs target Zone.Graveyard
         pure (Just (target, arrived))
+  Settle.queued settle
+  State.modify' (\g -> setQueue (before <> queue g) g)
+  pure destroyed
 
 -- The members a destruction reaches: still there on the live board, and not
 -- indestructible on the batch's (CR 702.12b).

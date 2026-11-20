@@ -2,11 +2,13 @@
 -- page, and the reply its taps build, from requests the engine makes.
 module Parun.WebQuestionSpec where
 
+import qualified Control.Exception as Exception
 import qualified Control.Monad as Monad
 import qualified Data.ByteString as ByteString
 import qualified Data.Containers.ListUtils as ListUtils
 import qualified Data.Either as Either
 import qualified Data.Foldable as Foldable
+import qualified Data.IORef as IORef
 import qualified Data.List as List
 import qualified Data.List.NonEmpty as NonEmpty
 import qualified Data.Map.Strict as Map
@@ -18,6 +20,7 @@ import qualified Data.Text.Encoding as Encoding
 import Numeric.Natural (Natural)
 import qualified Parun.Codec.ManaType as Codec.ManaType
 import qualified Parun.Codec.Reply as Codec.Reply
+import qualified Parun.Engine.Departure as Departure
 import qualified Parun.Engine.Event as Event
 import qualified Parun.Engine.Game as Game
 import qualified Parun.Engine.PlayerView as PlayerView
@@ -28,7 +31,7 @@ import qualified Parun.Extra.Natural as Natural
 import qualified Parun.JsonCodec.Codec as Codec
 import qualified Parun.JsonCodec.Common as Common
 import qualified Parun.Play.Protocol as Protocol
-import qualified Parun.Play.Render as Render
+import qualified Parun.Play.Wording as Wording
 import qualified Parun.Registry as Registry
 import qualified Parun.Scenario as Scenario
 import qualified Parun.Scenario.Load as Load
@@ -36,17 +39,22 @@ import qualified Parun.Scenario.PromptOffer as PromptOffer
 import qualified Parun.Spec as Spec
 import qualified Parun.Support as S
 import qualified Parun.Types.Action as Action
+import qualified Parun.Types.Answerer as Answerer
 import qualified Parun.Types.AnyNumberOf as AnyNumberOf
+import qualified Parun.Types.Asked as Asked
+import qualified Parun.Types.AttackTarget as AttackTarget
 import qualified Parun.Types.BeginningStep as BeginningStep
 import qualified Parun.Types.Card as Card.Type
 import qualified Parun.Types.CardName as CardName
 import qualified Parun.Types.Color as Color
+import qualified Parun.Types.Combat as Combat
 import qualified Parun.Types.CommandZoneDecision as CommandZoneDecision
 import qualified Parun.Types.Cost as Cost
 import qualified Parun.Types.CounterKind as CounterKind
 import qualified Parun.Types.CounterKindFor as CounterKindFor
 import qualified Parun.Types.Daytime as Daytime
 import qualified Parun.Types.Decider as Decider
+import qualified Parun.Types.Departure as Departure.Type
 import qualified Parun.Types.Designation as Designation
 import qualified Parun.Types.Dividing as Dividing
 import qualified Parun.Types.Face as Face
@@ -339,7 +347,7 @@ spec s registry = Spec.describe s "WebQuestion" $ do
 
   Spec.it s "CR 608.2h / 305.7 a creature land Blood Moon stripped reads as stripped once it has died" $ do
     -- The sheet of the departed id is built from its last known information
-    -- (Render.recalled), as a log entry naming it opens.
+    -- (Wording.recalled), as a log entry naming it opens.
     lord <- S.printingOf s registry "Lord of Atlantis"
     ashaya <- S.printingOf s registry "Ashaya, Soul of the Wild"
     moon <- S.printingOf s registry "Blood Moon"
@@ -348,7 +356,7 @@ spec s registry = Spec.describe s "WebQuestion" $ do
         lookUp name = Right (if name == Face.name (NonEmpty.head (Card.Type.faces (Printing.card lord))) then Just (Printing.card lord) else Nothing) :: Either () (Maybe Card.Type.Card)
         view = PlayerView.viewFor S.alice killed
     Spec.assertBool s (List.all ((/= oid) . ObjectView.object) (PlayerView.Type.battlefield view)) "the Lord has left"
-    Spec.assertEqWith s "the sheet" (fmap (Card.oracle lookUp) (Render.recalled view oid)) (Just (Right [Text.pack "({T}: Add {R}.)"]))
+    Spec.assertEqWith s "the sheet" (fmap (Card.oracle lookUp) (Wording.recalled view oid)) (Just (Right [Text.pack "({T}: Add {R}.)"]))
 
   Spec.it s "CR 709.4c / 709.5 a Room's sheet checks the abilities of the doors it has, as one" $ do
     -- Opalescence makes the Room a creature for Humility to strip and
@@ -719,7 +727,7 @@ replaySpec s registry = Spec.describe s "WebQuestion" . Spec.describe s "replay"
   Spec.it s "CR 205.3a a tile and sheet list subtypes as printed, a gained one after" $ do
     stop <- replayed s registry "annihilating-glare-sacrifices-a-creature-to-destroy-a-planeswalker" 0
     let board = boardOf stop
-    case [o | o <- PlayerView.Type.battlefield board, Render.nameOf board o == Text.pack "Llanowar Elves"] of
+    case [o | o <- PlayerView.Type.battlefield board, Wording.nameOf board o == Text.pack "Llanowar Elves"] of
       o : _ -> do
         Spec.assertEqWith s "the tile" (Card.typeLine o) (Text.pack "Elf Druid")
         Spec.assertEqWith s "the sheet" (Card.fullType o) (Text.pack "Creature \8212 Elf Druid")
@@ -732,7 +740,7 @@ replaySpec s registry = Spec.describe s "WebQuestion" . Spec.describe s "replay"
     after <- replayed s registry "chancellor-of-tales-copies-an-adventure-onto-a-new-target" 9
     -- Flaxen Intruder put into exile by the scenario, never cast.
     placed <- replayed s registry "howling-galefang-has-haste-while-you-own-an-exiled-adventure-card--control" 0
-    let exiled name stop = [(o, b) | let b = boardOf stop, seat <- PlayerView.Type.seats b, o <- SeatView.exile seat, Render.nameOf b o == Text.pack name]
+    let exiled name stop = [(o, b) | let b = boardOf stop, seat <- PlayerView.Type.seats b, o <- SeatView.exile seat, Wording.nameOf b o == Text.pack name]
         marks = Board.MkMarks (\o -> Card.MkCue [] (ObjectView.object o) Nothing) (const Nothing)
         said = Text.isInfixOf (Text.pack "On an adventure")
     case (exiled "Cruel Somnophage" after, exiled "Flaxen Intruder" placed) of
@@ -832,10 +840,32 @@ replaySpec s registry = Spec.describe s "WebQuestion" . Spec.describe s "replay"
     Spec.assertEqWith s "bob's" (fmap (taxes S.bob) stops) [[0], [2], [4]]
     Spec.assertEqWith s "drawn on its tile" (fmap drawn stops) [False, False, True]
 
+  Spec.it s "CR 800.4a the other seats sit in turn order from the viewer's, a departed one dropped, each showing its turn, priority and monarchy" $ do
+    let marks = Board.MkMarks (\o -> Card.MkCue [] (ObjectView.object o) Nothing) (const Nothing)
+        start = S.fourPlayerGame {GameState.monarch = Just S.bob}
+        held = start {GameState.turn = (GameState.turn start) {TurnRegisters.priority = Just S.dave}}
+        -- Each seat's section of carol's table, by its label, in page order.
+        sections gs =
+          [ (Text.takeWhile (/= '"') (Text.drop (Text.length label) (snd (Text.breakOn label section))), section)
+          | section <- drop 1 (Text.splitOn (Text.pack "<section class=\"seat ") (Html.toText (Board.view marks (PlayerView.viewFor S.carol gs))))
+          ]
+        label = Text.pack "aria-label=\""
+        order gs = fmap fst (sections gs)
+        labelled = Board.name
+        has cls gs pid = maybe False (Text.isInfixOf (Text.pack ("class=\"count " <> cls <> "\""))) (lookup (labelled pid) (sections gs))
+        reversed = held {GameState.turnOrderReversed = True}
+        departed = S.runPure S.identityAnswer held (Departure.leaveGame Departure.Type.Conceded S.alice)
+    Spec.assertEqWith s "turn order from carol" (order held) (fmap labelled [S.dave, S.alice, S.bob] <> [Text.pack "Your side"])
+    Spec.assertEqWith s "reversed" (order reversed) (fmap labelled [S.bob, S.alice, S.dave] <> [Text.pack "Your side"])
+    Spec.assertEqWith s "alice conceded" (order departed) (fmap labelled [S.dave, S.bob] <> [Text.pack "Your side"])
+    Spec.assertEqWith s "alice's turn" (fmap (has "turn" held) S.fourPlayers) (True NonEmpty.:| [False, False, False])
+    Spec.assertEqWith s "dave's priority" (fmap (has "priority" held) S.fourPlayers) (False NonEmpty.:| [False, False, True])
+    Spec.assertEqWith s "bob the monarch" (fmap (has "monarch" held) S.fourPlayers) (False NonEmpty.:| [True, False, False])
+
 -- | The sheet's Oracle text (Card.oracle) of the one battlefield object named,
 -- as the stop's active player reads it.
 sheetText :: Spec.Spec IO n -> Registry.Registry IO -> Stop.Stop -> String -> IO [Text.Text]
-sheetText s registry stop name = sheetWhere s registry stop name (\board o -> Render.nameOf board o == Text.pack name)
+sheetText s registry stop name = sheetWhere s registry stop name (\board o -> Wording.nameOf board o == Text.pack name)
 
 -- | sheetText of the first battlefield object the predicate picks, described.
 sheetWhere :: Spec.Spec IO n -> Registry.Registry IO -> Stop.Stop -> String -> (PlayerView.Type.PlayerView -> ObjectView.ObjectView -> Bool) -> IO [Text.Text]
@@ -843,7 +873,7 @@ sheetWhere s registry stop name picks = do
   let board = boardOf stop
   case filter (picks board) (PlayerView.Type.battlefield board) of
     o : _ -> do
-      looked <- Monad.forM (Set.toList (Render.cardNames o) <> Maybe.catMaybes (Foldable.toList (ObjectView.merged o))) $ \n -> fmap ((,) n) (Registry.named registry (Text.unpack (CardName.unwrap n)))
+      looked <- Monad.forM (Set.toList (Wording.cardNames o) <> Maybe.catMaybes (Foldable.toList (ObjectView.merged o))) $ \n -> fmap ((,) n) (Registry.named registry (Text.unpack (CardName.unwrap n)))
       let lookUp n = Maybe.fromMaybe (Right Nothing) (lookup n looked)
       either (Spec.assertFailure s . show) pure (Card.oracle lookUp o)
     [] -> Spec.assertFailure s ("no " <> name <> " on the battlefield")
@@ -907,3 +937,97 @@ answered prompt request picks = case Question.Web.step request picks Question.We
 -- | The picks a run of events leaves.
 picking :: Request.Request -> [Question.Web.Event] -> Set.Set (Natural, Natural)
 picking request = Foldable.foldl' (\picked event -> case Question.Web.step request picked event Text.empty of Question.Web.MkPicking now -> now; _ -> picked) Set.empty
+
+-- | The questions only a game of three or more seats asks, each answered
+-- through its form in a scenario played on from a stop (Scenario.branch).
+multiplayerSpec :: (Monad n) => Spec.Spec IO n -> Registry.Registry IO -> n ()
+multiplayerSpec s registry = Spec.describe s "WebQuestion" . Spec.describe s "multiplayer" $ do
+  Spec.it s "CR 506.2a / 508.1b / 802.1 an attacker picks a planeswalker or a player among several defenders" $ do
+    let named = "shark-shredders-creature-attacks-the-damaged-player-not-their-planeswalker"
+        attacked gs = Map.elems (Combat.attackers (TurnRegisters.combat (GameState.turn gs)))
+    (asked, walker) <- playedThrough s registry named 1 "ChooseAttackTarget" [["Player 3's Jace Beleren (3 loyalty counters)"]]
+    Spec.assertEqWith s "every defender a button" (fmap (\request -> fmap (\label -> Maybe.isJust (Html.labelled (Text.pack "button") (Text.pack label) (Question.Web.view request Question.Web.blank))) ["Player 2", "Player 3"]) asked) [[True, True]]
+    Spec.assertBool s (all (\a -> case a of AttackTarget.OfPlaneswalker _ -> True; _ -> False) (attacked walker) && not (null (attacked walker))) "the planeswalker"
+    (_, player) <- playedThrough s registry named 1 "ChooseAttackTarget" [["Player 2"]]
+    Spec.assertEqWith s "a player" (attacked player) [AttackTarget.OfPlayer S.bob]
+
+  Spec.it s "CR 701.38a three voters each vote on their own form among the other players, handed the screen in turn" $ do
+    -- Mob Verdict: each player votes for another player.
+    (asked, gs) <- playedThrough s registry "vote/cr-701-38b-player-vote-mob-verdict-damages-each-opponent-by-their-own-votes" 1 "ChooseVote" [["Player 2"], ["Player 3"], ["Player 2"]]
+    Spec.assertEqWith s "each seat asked" (fmap (Question.seat . Request.question) asked) [S.alice, S.bob, S.carol]
+    Spec.assertEqWith s "the others offered" (fmap (\request -> filter (\label -> Maybe.isJust (Html.labelled (Text.pack "button") (Text.pack label) (Question.Web.view request Question.Web.blank))) ["Player 1", "Player 2", "Player 3"]) asked) [["Player 2", "Player 3"], ["Player 1", "Player 3"], ["Player 1", "Player 2"]]
+    Spec.assertEqWith s "handed" (fmap (Html.content . Question.Web.handOff) asked) (fmap (\n -> Text.pack ("Pass the screen to Player " <> show (n :: Int) <> ".Ready")) [1, 2, 3])
+    -- Two votes for bob, one for carol, at 2 damage each.
+    Spec.assertEqWith s "life" (fmap Player.life (Map.elems (GameState.players gs))) [20, 16, 18]
+
+  Spec.it s "CR 101.4 / 118.12a each opponent decides on their own form in turn order, the hand-off naming them" $ do
+    -- Acererak the Archlich: for each opponent, a Zombie unless that player sacrifices a creature.
+    (asked, gs) <- playedThrough s registry "acererak-the-archlich-makes-a-zombie-for-each-of-two-opponents-who-do-not-sacrifice" 2 "ChooseToPay" [["Don't pay"], ["Don't pay"]]
+    Spec.assertEqWith s "each opponent asked" (fmap (Question.seat . Request.question) asked) [S.bob, S.carol]
+    Spec.assertEqWith s "handed" (fmap (Html.content . Question.Web.handOff) asked) [Text.pack "Pass the screen to Player 2.Ready", Text.pack "Pass the screen to Player 3.Ready"]
+    Spec.assertBool s (all (Text.isInfixOf (Text.pack "Acererak the Archlich's ability: pay Sacrifice a creature?") . Html.content . (`Question.Web.view` Question.Web.blank)) asked) "the cost, on each form"
+    Spec.assertEqWith s "a Zombie each" (S.countOnBattlefieldByName (CardName.MkCardName (Text.pack "Zombie Token")) S.alice gs) 2
+
+  Spec.it s "CR 724.1 a controlled seat's defender is chosen by its controller among three seats, the hand-off naming both" $ do
+    -- Seated alice, carol, bob: carol, Player 2, controls bob's turn with Mindslaver.
+    (asked, gs) <- playedThrough s registry "combat/cr-724-1-a-controlled-active-player-s-choice-of-defender-routes-to-their-controller" 6 "ChooseDefender" [["Player 1"]]
+    Spec.assertEqWith s "for" (fmap (Question.for . Request.question) asked) [Just S.carol]
+    Spec.assertEqWith s "handed" (fmap (Html.content . Question.Web.handOff) asked) [Text.pack "Pass the screen to Player 2, deciding for Player 3.Ready"]
+    Spec.assertBool s (all (Text.isInfixOf (Text.pack "You're deciding for Player 3, whom you control.Choose defender.Player 1Player 2") . Html.content . (`Question.Web.view` Question.Web.blank)) asked) "the banner and both candidates"
+    Spec.assertEqWith s "defender" (Combat.defenders (TurnRegisters.combat (GameState.turn gs))) [S.alice]
+
+-- | The scenario named played to the stop at `at`, then on: each question of
+-- the kind answered on the page by tapping the next run of button labels, as
+-- its seat would, the reply read as the engine reads it; every other question
+-- declined (S.identityAnswer). The requests the page answered, and the game
+-- at the first other question after the last of them.
+playedThrough :: Spec.Spec IO n -> Registry.Registry IO -> String -> Natural -> String -> [[String]] -> IO ([Request.Request], GameState.GameState)
+playedThrough s registry name at kind taps = do
+  root <- Load.defaultRoot
+  bytes <- ByteString.readFile (root <> "/" <> name <> ".json")
+  scenario <- either (Spec.assertFailure s . Text.unpack) pure (Load.parse bytes)
+  pending <- IORef.newIORef taps
+  answered' <- IORef.newIORef Seq.empty
+  after <- IORef.newIORef Nothing
+  let onward = Answerer.MkAnswerer $ \asked -> do
+        let prompt = Asked.prompt asked
+        left <- IORef.readIORef pending
+        case (Protocol.requestFor asked, left) of
+          (Just request, labels : rest) | Question.kind (Request.question request) == Text.pack kind -> do
+            IORef.writeIORef pending rest
+            IORef.modifyIORef' answered' (Seq.|> request)
+            Monad.unless (Maybe.isNothing (Question.Web.automatic Question.Web.MkStandard request)) $ Spec.assertFailure s "answered unasked"
+            reply <- either (Spec.assertFailure s . Text.unpack) pure (tapping request labels)
+            either (Spec.assertFailure s . Text.unpack) pure (Protocol.decodeAnswer prompt reply >>= Protocol.onOffer (Question.offer (Request.question request)) prompt)
+          (_, []) -> do
+            IORef.writeIORef after (Just (Asked.game asked))
+            Exception.throwIO MkPlayedThrough
+          _ -> pure (S.identityAnswer prompt)
+  ended <- Exception.try (Scenario.branch registry at onward scenario)
+  done <- IORef.readIORef after
+  shown <- IORef.readIORef answered'
+  case (ended, done) of
+    (Left MkPlayedThrough, Just gs) -> pure (Foldable.toList shown, gs)
+    (Right (Left failure), _) -> Spec.assertFailure s (Text.unpack (Scenario.render failure))
+    _ -> Spec.assertFailure s ("the page answered " <> show (Seq.length shown) <> " of " <> show (length taps))
+
+-- | Ends a scenario played through once the page has answered its last.
+data PlayedThrough = MkPlayedThrough
+  deriving (Show)
+
+instance Exception.Exception PlayedThrough
+
+-- | The reply tapping the buttons labelled so, in order, on the request's
+-- page builds, the picks each tap leaves carried to the next.
+tapping :: Request.Request -> [String] -> Either Text.Text R.Reply
+tapping request = go (Question.Web.initial request)
+  where
+    go picked labels = case labels of
+      [] -> Left (Text.pack "no reply")
+      label : rest -> do
+        let page = Question.Web.view request Question.Web.blank {Question.Web.selected = picked}
+        event <- maybe (Left (Text.pack ("no button " <> label <> ": ") <> Html.content page)) Right (Html.labelled (Text.pack "button") (Text.pack label) page >>= \path -> Html.handler (Text.pack "click") path page)
+        case Question.Web.step request picked event Text.empty of
+          Question.Web.MkReplied reply -> Right reply
+          Question.Web.MkPicking now -> go now rest
+          Question.Web.MkRefused problem -> Left problem

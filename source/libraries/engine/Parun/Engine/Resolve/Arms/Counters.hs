@@ -17,6 +17,7 @@ import qualified Data.Maybe as Maybe
 import qualified Data.Sequence as Seq
 import Data.Set (Set)
 import qualified Data.Set as Set
+import Numeric.Natural (Natural)
 import qualified Parun.Engine.Airbend as Airbend
 import qualified Parun.Engine.Amass as Amass
 import qualified Parun.Engine.Archenemy as Archenemy
@@ -90,6 +91,7 @@ import qualified Parun.Types.CounteredEnd as CounteredEnd
 import qualified Parun.Types.Divide as Divide
 import qualified Parun.Types.DoesNotUntapNext as DoesNotUntapNext
 import qualified Parun.Types.Duration as Duration
+import qualified Parun.Types.EachKind as EachKind
 import qualified Parun.Types.Earthbend as Earthbend.Type
 import Parun.Types.Effect (Effect)
 import qualified Parun.Types.Effect as Effect
@@ -106,6 +108,7 @@ import Parun.Types.Game (Game)
 import qualified Parun.Types.GameEvent as GameEvent
 import qualified Parun.Types.GameState as GameState
 import qualified Parun.Types.GrantedAbility as GrantedAbility
+import qualified Parun.Types.KindStep as KindStep
 import qualified Parun.Types.LibraryPosition as LibraryPosition
 import qualified Parun.Types.ManaAddition as ManaAddition
 import qualified Parun.Types.ManifestDread as ManifestDread.Type
@@ -254,7 +257,7 @@ counter settle resolving source controller legal (Counter.MkCounter ref mSlot mS
     Monad.unless (null permanents) (State.modify' (Common.bindObjectsSlot resolving slot (Seq.fromList permanents)))
 
 putCounters :: ObjectId -> ObjectId -> PlayerId -> Map.Map SlotName (Set Recipient) -> Map.Map SlotName (Set Recipient) -> PutCounters.PutCounters -> Game ()
-putCounters resolving source controller legal chosen (PutCounters.MkPutCounters kind quantity ref totalAtMost mSlot) = do
+putCounters resolving source controller legal chosen (PutCounters.MkPutCounters kind alternatives quantity ref totalAtMost mSlot) = do
   -- CR 608.2c: the set is swept as this instruction is reached, and an
   -- illegal slot (CR 608.2b) or a player recipient answers with nobody. A
   -- CR 608.2d choice is asked through askingObjects, ModifyTarget's reason:
@@ -271,7 +274,13 @@ putCounters resolving source controller legal chosen (PutCounters.MkPutCounters 
       amountFor target =
         let sharing = context {Filter.shares = Binding.sharesOf (Recipient.ToObject target) (slotBindings resolving gs)}
          in Monad.mfilter (> 0) (Quantity.evaluateFor viewOf sharing gs resolving source quantity)
-      placements = Maybe.mapMaybe (\target -> fmap ((,) target . Integer.toNaturalSaturating) (amountFor target)) targets
+      amounts = Maybe.mapMaybe (\target -> fmap ((,) target . Integer.toNaturalSaturating) (amountFor target)) targets
+      offered = ListUtils.nubOrd (kind : alternatives)
+  -- PutCounters.alternatives: the controller's kind for each permanent, every
+  -- one chosen before any counter lands (CR 608.2d), FILTERED, NOT TRUSTED
+  -- (Game.chooseAmong), and not asked where one kind is offered.
+  placements <- Monad.forM amounts $ \(target, n) ->
+    fmap (\picked -> (target, Maybe.fromMaybe kind picked, n)) (Game.chooseAmong (\decider who -> Prompt.ChooseCounterKind decider who (CounterKindFor.PlacedOn target)) controller offered)
   -- CR 122.6's funnel per recipient, so CR 614's counter replacements apply
   -- against each placement.
   --
@@ -300,8 +309,8 @@ putCounters resolving source controller legal chosen (PutCounters.MkPutCounters 
   placed <-
     if null placements
       then pure []
-      else Event.simultaneously . fmap concat . Monad.forM placements $ \(target, n) -> do
-        settled <- Event.putCountersWithin totalAtMost cause target kind n
+      else Event.simultaneously . fmap concat . Monad.forM placements $ \(target, placedKind, n) -> do
+        settled <- Event.putCountersWithin totalAtMost cause target placedKind n
         pure [(target, settled) | settled > 0]
   -- PutCounters.slot: the recipients the funnel settled at least one counter
   -- on, so a placement CR 614 or CR 101.2 brought to none is not among them,
@@ -1244,7 +1253,8 @@ moveCounters resolving source controller legal (MoveCounters.MkMoveCounters from
 -- A slot is the targeted form instead: its targets that CR 608.2b left
 -- standing, read once (CR 608.2h). Not CR 701.34a's keyword action, so no
 -- WouldPerform and no "whenever you proliferate" event. Powerful Broker's
--- EachKind gives every kind there; Dathon, His Heart Open's ChosenKind gives
+-- EachKind gives every kind there (Dramatist's Puppet's, another or one
+-- fewer, kind by kind); Dathon, His Heart Open's ChosenKind gives
 -- one kind its controller picks among those on each target permanent, asked
 -- only where two or more kinds make it a choice. The scenarios
 -- dathon-his-heart-open-* prove it.
@@ -1254,13 +1264,37 @@ proliferate source controller legal targeted = case targeted of
     outcome <- Event.applyReplacements (ProposedEvent.WouldPerform PlayerInstruction.Proliferate Nothing controller 1)
     Monad.forM_ (outcome >>= Replacement.asPerformed PlayerInstruction.Proliferate) $ \(_, times) ->
       Monad.replicateM_ (Natural.toIntSaturating times) (Common.proliferateOnce source controller)
-  Just (AnotherCounter.EachKind slot) -> do
+  Just (AnotherCounter.EachKind (EachKind.MkEachKind slot step)) -> do
     gs <- State.get
     let (permanents, players) = inSlot slot
-    Common.giveAnotherOfEachKind source controller gs permanents players
+    case step of
+      KindStep.Another -> Common.giveAnotherOfEachKind source controller gs permanents players
+      -- Unprinted: a player in an AnotherOrRemoveOne slot gets nothing, no
+      -- printing offering a player's counters that choice; Parun.CardSpec's
+      -- cardKindChoiceReachesPlayer keeps it out of card data.
+      KindStep.AnotherOrRemoveOne -> do
+        -- Every kind is read before any counter moves (CR 608.2h), and which
+        -- kinds lose one is asked once, before either half runs (CR 608.2d),
+        -- through the mixed removal prompt capped at one of each kind; the
+        -- kinds it leaves get another. An answer outside the offer removes
+        -- nothing, that prompt's default.
+        let offered = Map.fromList [(oid, Map.fromList [(kind, 1 :: Natural) | kind <- kinds]) | oid <- permanents, let kinds = Common.objectKinds gs oid, not (null kinds)]
+            owed = sum (Cost.flattenMixed offered)
+        removed <-
+          if Map.null offered
+            then pure Map.empty
+            else do
+              answer <- Game.choose (Prompt.ChooseMixedCounterRemoval (Decide.deciderFor controller gs) controller source CounterSpread.FromAmongAtMost owed offered)
+              pure (Cost.flattenMixed (if Cost.dividesMixedRemoval CounterSpread.FromAmongAtMost owed offered answer then answer else Map.empty))
+        -- CR 122.6 for a counter put, one CR 608.2f bracket for both halves.
+        Event.simultaneously . Monad.forM_ (Map.toList offered) $ \(oid, kinds) ->
+          Monad.forM_ (Map.keys kinds) $ \kind ->
+            if Map.member (oid, kind) removed
+              then Event.removeCounters oid kind 1
+              else Monad.void (Event.putCounters (CounterCause.ByEffect controller) oid kind 1)
   -- Unprinted: a player in a ChosenKind slot gets nothing, no printing
   -- choosing among a player's counters; Parun.CardSpec's
-  -- cardChosenKindReachesPlayer keeps it out of card data.
+  -- cardKindChoiceReachesPlayer keeps it out of card data.
   Just (AnotherCounter.ChosenKind slot) -> do
     gs <- State.get
     -- Every kind is read before any counter lands (CR 608.2h), and the kind

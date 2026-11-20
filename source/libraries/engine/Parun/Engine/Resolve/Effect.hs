@@ -139,6 +139,7 @@ import qualified Parun.Types.TotalCap as TotalCap
 import qualified Parun.Types.TriggerSource as TriggerSource
 import qualified Parun.Types.TriggeredAbility as TriggeredAbility
 import qualified Parun.Types.TurnRegisters as TurnRegisters
+import qualified Parun.Types.UpToCasts as UpToCasts
 import qualified Parun.Types.Zone as Zone
 
 -- CR 608.2g: make the offer Effect.OfferCast carries, once or over again.
@@ -180,7 +181,7 @@ import qualified Parun.Types.Zone as Zone
 -- `reading Nothing` reads the budget's Quantity once, before the first round
 -- (CR 608.2h), and `reading (Just candidate)` a weight against that
 -- candidate's view. UpTo's count is the same repeat with a cap on casts, read
--- once the same way.
+-- once the same way, and Invoke Calamity's UpTo carries both.
 --
 -- Answers the spells the offer's casts put on the stack, for CR 400.7h's
 -- OfferCast.slot.
@@ -190,9 +191,10 @@ offerCast runSubgame context reading named caster optionality verb retake repeti
   case repetition of
     CastRepetition.Once -> foldMap (Maybe.maybeToList . snd) <$> offerCastOnce runSubgame context (\_ _ -> True) subjects caster optionality verb retake offer
     CastRepetition.AnyNumber -> again Nothing Nothing subjects
-    CastRepetition.WithinTotal (TotalCap.MkTotalCap weight most) -> again (Just (weighs weight, Maybe.fromMaybe 0 (reading Nothing most))) Nothing subjects
-    CastRepetition.UpTo quantity -> again Nothing (Just (Maybe.fromMaybe 0 (reading Nothing quantity))) subjects
+    CastRepetition.WithinTotal total -> again (Just (budgetOf total)) Nothing subjects
+    CastRepetition.UpTo (UpToCasts.MkUpToCasts casts total) -> again (fmap budgetOf total) (Just (Maybe.fromMaybe 0 (reading Nothing casts))) subjects
   where
+    budgetOf (TotalCap.MkTotalCap weight most) = (weighs weight, Maybe.fromMaybe 0 (reading Nothing most))
     -- TotalCap.weight's read; a negative one is unobserved, mana value having
     -- none (CR 202.3).
     weighs weight oid view = Maybe.fromMaybe 0 (reading (Just (oid, view)) weight)
@@ -391,7 +393,14 @@ offerCastOnce runSubgame context fits named caster optionality verb retake offer
             -- view and the resolution's context, so a source-comparing atom reads
             -- the same source the reference did. An offer stating none narrows
             -- nothing. `fits` is the repetition's total asking the same half
-            -- (CastRepetition.WithinTotal).
+            -- (CastRepetition.WithinTotal, or UpTo with a total).
+            --
+            -- Also CR 406.3b's quality half for a card exiled face down: the
+            -- face's view is the spell it becomes, where the reference's walk
+            -- saw no characteristics (CR 406.3a). The scenario
+            -- the-dragon-kami-reborn-hatches-a-face-down-creature-card-and-not-an-instant-when-its-egg-dies
+            -- proves it. Rule 406.3b's look half (Exile.mayLookAt) is not
+            -- implemented (#9083).
             if maybe True (Filter.matches context faceView) (CastOffer.restriction offer)
               && fits oid faceView
               && Cast.castableWhenOffered (CastOffer.spending offer) caster oid name candidates proposed
@@ -917,7 +926,9 @@ runEntryEffect runSubgame pending = do
 -- For damage, every caller runs it BEFORE runPreventionRiders and before the
 -- next state-based action check: the replaced event and the rest of its batch
 -- were simultaneous (CR 608.2f, 614.6), so what happens instead of it lands
--- before CR 704.5g reads the board. For a loss of the game or a draw, it runs
+-- before CR 704.5g reads the board. A destruction's drains inside its own
+-- event instead (Event.destroyIn, Sba.checkOnce). For a loss of the game or a
+-- draw, it runs
 -- after each draw of a sequence, an instruction's or a replacement's (Event.drawSeries, CR
 -- 614.11a), after each resolved instruction and in every settle before
 -- priority; a loss a

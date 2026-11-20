@@ -1,8 +1,7 @@
 {-# LANGUAGE GADTs #-}
 
--- | A whole game: each seat answered by its own answerer (a person at the
--- terminal, a program over lines, or the random bot), chance by the
--- generator.
+-- | A whole game: each seat answered by its own answerer (a program over
+-- lines or the random bot), chance by the generator.
 module Parun.Play.Game where
 
 import qualified Control.Exception as Exception
@@ -20,13 +19,11 @@ import qualified Parun.Exceptions.InvalidCorpus as InvalidCorpus
 import qualified Parun.Interpreter as Interpreter
 import qualified Parun.Play.Bot as Bot
 import qualified Parun.Play.Chance as Chance
-import qualified Parun.Play.Client as Client
 import qualified Parun.Play.Generator as Generator.Play
 import qualified Parun.Play.Protocol as Protocol
 import qualified Parun.Registry as Registry
 import qualified Parun.Types.Answerer as Answerer
 import qualified Parun.Types.Asked as Asked
-import qualified Parun.Types.Card as Card
 import qualified Parun.Types.CardName as CardName
 import qualified Parun.Types.Deck as Deck
 import qualified Parun.Types.Format as Format
@@ -34,22 +31,14 @@ import qualified Parun.Types.GameSettings as GameSettings
 import qualified Parun.Types.GameState as GameState
 import qualified Parun.Types.Generator as Generator
 import qualified Parun.Types.GraveyardOrder as GraveyardOrder
-import qualified Parun.Types.Hotseat as Hotseat
 import qualified Parun.Types.Observer as Observer
 import qualified Parun.Types.PlayOptions as PlayOptions
 import qualified Parun.Types.PlayerId as PlayerId
 import qualified Parun.Types.Prompt as Prompt
 import qualified Parun.Types.Result as Result
-import qualified Parun.Types.Terminal as Terminal
-import qualified Text.Read as Read
 
--- | The generator over the client's monad.
-type Play m = State.StateT Generator.Generator (Client.Client m)
-
--- | A person at the terminal, reading cards' printed text from the card data
--- and told why the reference `registry` refuses a name (judgingNames).
-human :: (Monad m) => Registry.Registry m -> Terminal.Terminal m -> (CardName.CardName -> Either InvalidCorpus.InvalidCorpus (Maybe Card.Card)) -> Answerer.Answerer (Asked.Asked GameState.GameState) (Play m)
-human registry terminal lookUp = Protocol.over (judgingNames registry) (Protocol.viaLines (Trans.lift . Client.respond terminal lookUp)) Chance.chance
+-- | The generator over the base monad, play stopping with why (stop).
+type Play m = State.StateT Generator.Generator (Except.ExceptT Text.Text m)
 
 -- | The random bot, answering each prompt from its seat's view of the game
 -- (Driver.seated) and naming a card from the reference's names
@@ -64,34 +53,26 @@ bot registry = Answerer.MkAnswerer $ \asked -> do
 -- | A program speaking the protocol (Protocol.Exchange): each request out,
 -- its reply back, Nothing at the end of input.
 wired :: (Monad m) => Registry.Registry m -> Protocol.Exchange m -> Answerer.Answerer (Asked.Asked GameState.GameState) (Play m)
-wired registry exchange = Protocol.over (judgingNames registry) (\request -> Trans.lift (Client.lift2 (exchange request) >>= maybe (Client.stop (Text.pack "end of input")) pure)) Chance.chance
+wired registry exchange = Protocol.over (judgingNames registry) (\request -> underneath (exchange request) >>= maybe (stop (Text.pack "end of input")) pure) Chance.chance
 
 -- | A plain two-player game over the card reference `registry`
 -- ('consulting'), under `format` (CR 100.2), from setup to its result; the
 -- head of the matchup plays first, and each seat starts at its graveyard order
--- in `orders` (Driver.match). `finish` is shown the final state before the
--- result is returned (Client.ending). Left is why play stopped before the end.
+-- in `orders` (Driver.match). Left is why play stopped before the end.
 -- RecordSpec's Yorion, Sky Nomad case proves the format reaches the game.
-run :: (Monad m) => Registry.Registry m -> Maybe Format.Format -> [Observer.Observer (Play m)] -> Map.Map PlayerId.PlayerId (Answerer.Answerer (Asked.Asked GameState.GameState) (Play m)) -> (GameState.GameState -> Client.Client m ()) -> Hotseat.Hotseat -> Generator.Generator -> Map.Map PlayerId.PlayerId GraveyardOrder.GraveyardOrder -> NonEmpty.NonEmpty (PlayerId.PlayerId, Deck.Deck) -> m (Either Text.Text (Result.Result, GameState.GameState))
-run registry format observers seats finish hotseat generator orders matchup =
-  playing hotseat generator played
-  where
-    played = do
-      (result, gs) <- Driver.match observers (consulting registry seats) GameSettings.plain {GameSettings.format = format} orders matchup
-      Trans.lift (finish gs)
-      pure (result, gs)
+run :: (Monad m) => Registry.Registry m -> Maybe Format.Format -> [Observer.Observer (Play m)] -> Map.Map PlayerId.PlayerId (Answerer.Answerer (Asked.Asked GameState.GameState) (Play m)) -> Generator.Generator -> Map.Map PlayerId.PlayerId GraveyardOrder.GraveyardOrder -> NonEmpty.NonEmpty (PlayerId.PlayerId, Deck.Deck) -> m (Either Text.Text (Result.Result, GameState.GameState))
+run registry format observers seats generator orders matchup =
+  playing generator (Driver.match observers (consulting registry seats) GameSettings.plain {GameSettings.format = format} orders matchup)
 
--- | Play from the screen and the generator, in the base monad: Left is why
--- it stopped first.
-playing :: (Monad m) => Hotseat.Hotseat -> Generator.Generator -> Play m a -> m (Either Text.Text a)
-playing hotseat generator played = Except.runExceptT (State.evalStateT (State.evalStateT played generator) hotseat)
+-- | Play from the generator, in the base monad: Left is why it stopped first.
+playing :: (Monad m) => Generator.Generator -> Play m a -> m (Either Text.Text a)
+playing generator played = Except.runExceptT (State.evalStateT played generator)
 
 -- | Each seat, then chance, over the card reference `registry`: a name a seat
 -- chooses is asked again until CR 201.4 allows it
--- (Interpreter.policingCardNames; human and wired seats are told why,
--- judgingNames), and CR 108.1's questions about the reference are answered
--- from it (Interpreter.lookingUpCards). ClientSpec's Null Chamber case is the
--- proof.
+-- (Interpreter.policingCardNames; wired seats are told why, judgingNames),
+-- and CR 108.1's questions about the reference are answered from it
+-- (Interpreter.lookingUpCards). PlaySpec's Null Chamber case is the proof.
 consulting :: (Monad m) => Registry.Registry m -> Map.Map PlayerId.PlayerId (Answerer.Answerer (Asked.Asked GameState.GameState) (Play m)) -> Answerer.Answerer (Asked.Asked GameState.GameState) (Play m)
 consulting registry seats =
   Driver.bySeat
@@ -104,7 +85,7 @@ policed registry (Answerer.MkAnswerer seat) = Answerer.MkAnswerer (Interpreter.p
 
 -- | A chosen name the reference `registry` refuses, with why: CR 201.4's
 -- name of no card, or CR 201.4a's card without the characteristics asked for.
--- Every other answer stands. ClientSpec's Null Chamber refusal is the proof.
+-- Every other answer stands. PlaySpec's Null Chamber refusal is the proof.
 judgingNames :: (Monad m) => Registry.Registry m -> Asked.Asked GameState.GameState r -> r -> Play m (Either Text.Text r)
 judgingNames registry asked answer = case Asked.prompt asked of
   Prompt.ChooseCardName _ chooser _ restriction _ -> do
@@ -122,11 +103,15 @@ reference = Registry.hoist underneath
 
 -- | Card data that cannot be read stops play, saying why.
 halted :: (Monad m) => InvalidCorpus.InvalidCorpus -> Play m r
-halted = Trans.lift . Client.stop . Text.pack . Exception.displayException
+halted = stop . Text.pack . Exception.displayException
+
+-- | Play stops, saying why.
+stop :: (Monad m) => Text.Text -> Play m a
+stop = Trans.lift . Except.throwE
 
 -- | Something of the base monad's, from inside a game.
 underneath :: (Monad m) => m a -> Play m a
-underneath = Trans.lift . Client.lift2
+underneath = Trans.lift . Trans.lift
 
 -- | CR 103.1: the seat that plays first, of `seats` in turn order. `--first`
 -- names it; otherwise a seat drawn from the generator chooses which seat
@@ -146,25 +131,3 @@ starter tell ask seats options = case PlayOptions.first options of
     Monad.forM chosen $ \seat -> do
       Trans.lift (tell (Text.pack ("Seat " <> show seat <> " plays first.")))
       pure seat
-
--- | The seat this seat's person chooses to take the first turn, asked until
--- they say which; Nothing at the end of input. Between two seats, whether
--- they play first or draw.
-playOrDraw :: (Monad m) => Terminal.Terminal m -> Natural -> NonEmpty.NonEmpty Natural -> m (Maybe Natural)
-playOrDraw terminal seat seats
-  | length seats <= 2 = do
-      Terminal.say terminal (Text.pack ("Seat " <> show seat <> ", play first or draw?"))
-      typed <- Terminal.listen terminal
-      case fmap (Text.toLower . Text.strip) typed of
-        Nothing -> pure Nothing
-        Just word
-          | word `elem` fmap Text.pack ["play", "p"] -> pure (Just seat)
-          | word `elem` fmap Text.pack ["draw", "d"] -> pure (Just (Protocol.nextSeat seat seats))
-          | otherwise -> Terminal.say terminal (Text.pack "Type play or draw.") >> playOrDraw terminal seat seats
-  | otherwise = do
-      Terminal.say terminal (Text.pack ("Seat " <> show seat <> ", which seat takes the first turn? Type its number, " <> show (NonEmpty.head seats) <> " to " <> show (NonEmpty.last seats) <> "."))
-      typed <- Terminal.listen terminal
-      case fmap (Read.readMaybe . Text.unpack . Text.strip) typed of
-        Nothing -> pure Nothing
-        Just (Just n) | n `elem` seats -> pure (Just n)
-        Just _ -> playOrDraw terminal seat seats

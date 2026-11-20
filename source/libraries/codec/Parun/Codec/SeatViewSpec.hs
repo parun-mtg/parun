@@ -10,11 +10,13 @@ import qualified Parun.Codec.SeatView as SeatView
 import qualified Parun.JsonCodec.Common as Common
 import qualified Parun.Spec as Spec
 import qualified Parun.Types.CardName as CardName
+import qualified Parun.Types.Departure as Departure
 import qualified Parun.Types.DraftNote as DraftNote
 import qualified Parun.Types.Mana as Mana
 import qualified Parun.Types.PlayerDesignation as PlayerDesignation
 import qualified Parun.Types.PlayerId as PlayerId
 import qualified Parun.Types.SeatView as SeatView
+import qualified Parun.Types.Status as Status
 
 spec :: (Monad m, Monad n) => Spec.Spec m n -> n ()
 spec s = Spec.describe s "Parun.Codec.SeatView" $ do
@@ -44,6 +46,12 @@ spec s = Spec.describe s "Parun.Codec.SeatView" $ do
       SeatView.codec
       testSeat {SeatView.commanderDamage = Map.fromList [(PlayerId.MkPlayerId 1, Map.fromList [(CardName.MkCardName (Text.pack "Akiri, Line-Slinger"), 3), (CardName.MkCardName (Text.pack "Rograkh, Son of Rohgahh"), 7)]), (PlayerId.MkPlayerId 2, Map.singleton (CardName.MkCardName (Text.pack "Jedit Ojanen")) 5)]}
       (List.init testSeatJson <> ",\"commanderDamage\":{\"1\":[{\"key\":\"Akiri, Line-Slinger\",\"value\":3},{\"key\":\"Rograkh, Son of Rohgahh\",\"value\":7}],\"2\":[{\"key\":\"Jedit Ojanen\",\"value\":5}]}}")
+  Spec.it s "CR 800.4a a seat that left the game" $
+    Common.assertCodec
+      s
+      SeatView.codec
+      testSeat {SeatView.status = Status.Departed Departure.Conceded}
+      (List.init testSeatJson <> ",\"status\":{\"type\":\"Departed\",\"value\":\"Conceded\"}}")
   Spec.it s "has a schema" $ Common.assertHasSchema s SeatView.codec
 
 -- A seat whose hand shows one of its three cards.
@@ -51,6 +59,7 @@ testSeat :: SeatView.SeatView
 testSeat =
   SeatView.MkSeatView
     { SeatView.player = PlayerId.MkPlayerId 0,
+      SeatView.status = Status.Playing,
       SeatView.life = 20,
       SeatView.counters = Map.empty,
       SeatView.handSize = 3,

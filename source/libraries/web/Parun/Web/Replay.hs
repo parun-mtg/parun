@@ -13,7 +13,7 @@ import qualified Data.Set as Set
 import qualified Data.Text as Text
 import Numeric.Natural (Natural)
 import qualified Parun.Extra.Natural as Natural
-import qualified Parun.Play.Render as Render
+import qualified Parun.Play.Wording as Wording
 import qualified Parun.Types.ObjectView as ObjectView
 import qualified Parun.Types.PlayerId as PlayerId
 import qualified Parun.Types.PlayerView as PlayerView
@@ -145,7 +145,7 @@ controls frame =
           "div"
           ["segmented", "seats"]
           [Element.attr "role" (Text.pack "group"), Element.attr "aria-label" (Text.pack "View as")]
-          [ Element.el "button" ["on" | pid == viewer frame] [Element.attr "type" (Text.pack "button"), Element.attr "title" (label <> Text.pack " is " <> Render.player pid <> Text.pack " on the table"), Element.attr "aria-pressed" (Text.pack (if pid == viewer frame then "true" else "false")), Element.on "click" (MkSeat pid)] [Element.text label]
+          [ Element.el "button" ["on" | pid == viewer frame] [Element.attr "type" (Text.pack "button"), Element.attr "title" (label <> Text.pack " is " <> Wording.player pid <> Text.pack " on the table"), Element.attr "aria-pressed" (Text.pack (if pid == viewer frame then "true" else "false")), Element.on "click" (MkSeat pid)] [Element.text label]
           | (pid, label) <- seats frame
           ]
       ]
@@ -162,14 +162,14 @@ stop frame asked =
       (Nothing, Nothing) -> []
 
 seatName :: Frame -> PlayerId.PlayerId -> Text.Text
-seatName frame pid = maybe (Render.player pid) snd (List.find ((== pid) . fst) (seats frame))
+seatName frame pid = maybe (Wording.player pid) snd (List.find ((== pid) . fst) (seats frame))
 
 -- | The sheet of the card being read.
 sheet :: Frame -> Maybe (Html.Html Event)
 sheet frame = do
   b <- board frame
   r <- reading frame
-  o <- Render.recalled b (Card.object r)
+  o <- Wording.recalled b (Card.object r)
   pure (Card.sheet b o r [] (MkTable Web.Question.MkClose))
 
 -- | The list of scenarios once fetched: a filter, then the names matching

@@ -13,7 +13,7 @@ import qualified Data.Sequence as Seq
 import qualified Data.Text as Text
 import qualified Data.Text.Encoding as Encoding
 import Numeric.Natural (Natural)
-import qualified Parun.Play.Render as Render
+import qualified Parun.Play.Wording as Wording
 import qualified Parun.Types.PlayerId as PlayerId
 import qualified Parun.Uri.Fragment as Fragment
 import qualified Parun.Web.Element as Element
@@ -42,8 +42,8 @@ data Verdict
 
 data Ending = MkEnding
   { verdict :: Verdict,
-    -- | The result and how each player left (Render.result,
-    -- Render.departures), or why play stopped first.
+    -- | The result and how each player left (Wording.result,
+    -- Wording.departures), or why play stopped first.
     said :: [Text.Text],
     -- | The game as a scenario file (Command.rendered).
     scenario :: Text.Text,
@@ -117,7 +117,7 @@ summary me samples =
       count = length samples
       x i = if count <= 1 then 0 else div (toInteger i * width) (toInteger (count - 1))
       y life = height - div ((life - lo) * height) (max 1 (hi - lo))
-      name pid = if pid == me then Text.pack "You" else Render.player pid
+      name pid = if pid == me then Text.pack "You" else Wording.player pid
       line pid =
         Element.el
           "polyline"

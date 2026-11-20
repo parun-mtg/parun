@@ -1032,6 +1032,25 @@ main.game {
   margin-top: auto;
 }
 
+/* The other seats, in turn order from yours: side by side where they fit,
+   each battlefield capped so yours stays on screen. */
+.opponents {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 22rem), 1fr));
+  gap: 0.5em;
+  align-items: start;
+}
+
+.opponents.many .seat .battlefield {
+  max-height: 28vh;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+
+.opponents.many .seat .seat-head {
+  position: static;
+}
+
 .seat.active {
   border-color: color-mix(in srgb, var(--accent) 45%, transparent);
 }
@@ -1124,6 +1143,15 @@ main.game {
   border-radius: 999px;
   background: var(--surface-2);
   font-variant-numeric: tabular-nums;
+}
+
+.count.turn {
+  background: color-mix(in srgb, var(--accent) 35%, var(--surface-2));
+}
+
+.count.priority {
+  background: var(--accent);
+  color: var(--accent-text);
 }
 
 .count.poison {

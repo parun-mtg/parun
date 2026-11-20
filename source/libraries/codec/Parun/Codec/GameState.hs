@@ -38,6 +38,7 @@ import qualified Parun.Codec.EventGroup as EventGroup
 import qualified Parun.Codec.ExileLink as ExileLink
 import qualified Parun.Codec.ExtraTurn as ExtraTurn
 import qualified Parun.Codec.Filter as Filter
+import qualified Parun.Codec.FloatingCandidate as FloatingCandidate
 import qualified Parun.Codec.GameSettings as GameSettings
 import qualified Parun.Codec.IgnoredAbility as IgnoredAbility
 import qualified Parun.Codec.Keyword as Keyword
@@ -178,6 +179,7 @@ codec resolve = Fields.object $ do
   enteringSpells <- Fields.defaulted "enteringSpells" Map.empty (Common.naturalMap ObjectId.codec ObjectId.codec) (Scratch.enteringSpells . GameState.scratch)
   enteredFrom <- Fields.defaulted "enteredFrom" Map.empty (Common.naturalMap ObjectId.codec EntryOrigin.codec) (Scratch.enteredFrom . GameState.scratch)
   enteringPending <- Fields.defaulted "enteringPending" Map.empty (Common.naturalMap ObjectId.codec PlayerId.codec) (Scratch.enteringPending . GameState.scratch)
+  spentEntries <- Fields.defaulted "spentEntries" Set.empty (Common.set FloatingCandidate.codec) (Scratch.spentEntries . GameState.scratch)
   refusedEntries <- Fields.defaulted "refusedEntries" Nothing (Common.maybe (Common.set ObjectId.codec)) (Scratch.refusedEntries . GameState.scratch)
   enteringCounters <- Fields.defaulted "enteringCounters" Map.empty (Common.naturalMap ObjectId.codec (Common.keyedList (Common.keyValue (Common.maybe PlayerId.codec) (Common.multiset (CounterKind.codec Keyword.codec))))) (Scratch.enteringCounters . GameState.scratch)
   copyExceptionCounters <- Fields.defaulted "copyExceptionCounters" Map.empty (Common.naturalMap ObjectId.codec (Common.multiset (CounterKind.codec Keyword.codec))) (Scratch.copyExceptionCounters . GameState.scratch)
@@ -288,6 +290,7 @@ codec resolve = Fields.object $ do
               Scratch.enteringSpells = enteringSpells,
               Scratch.enteredFrom = enteredFrom,
               Scratch.enteringPending = enteringPending,
+              Scratch.spentEntries = spentEntries,
               Scratch.refusedEntries = refusedEntries,
               Scratch.enteringCounters = enteringCounters,
               Scratch.copyExceptionCounters = copyExceptionCounters,

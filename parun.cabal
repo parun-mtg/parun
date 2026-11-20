@@ -844,6 +844,8 @@ library codec
     Parun.Codec.EachCardInGraveyardSpec
     Parun.Codec.EachCardInHand
     Parun.Codec.EachCardInHandSpec
+    Parun.Codec.EachKind
+    Parun.Codec.EachKindSpec
     Parun.Codec.Earthbend
     Parun.Codec.Effect
     Parun.Codec.EffectSpec
@@ -1094,6 +1096,8 @@ library codec
     Parun.Codec.KeywordsAreSpec
     Parun.Codec.KeywordSpec
     Parun.Codec.KeywordTally
+    Parun.Codec.KindStep
+    Parun.Codec.KindStepSpec
     Parun.Codec.Label
     Parun.Codec.LabelSpec
     Parun.Codec.LandAllowance
@@ -1980,6 +1984,8 @@ library codec
     Parun.Codec.UntapScopeSpec
     Parun.Codec.UntilPaid
     Parun.Codec.UntilPaidSpec
+    Parun.Codec.UpToCasts
+    Parun.Codec.UpToCastsSpec
     Parun.Codec.Uses
     Parun.Codec.UsesSpec
     Parun.Codec.Vanguard
@@ -2522,7 +2528,6 @@ library play
   exposed-modules:
     Parun.Play.Bot
     Parun.Play.Chance
-    Parun.Play.Client
     Parun.Play.Command
     Parun.Play.Game
     Parun.Play.Generator
@@ -2533,7 +2538,7 @@ library play
     Parun.Play.Offer
     Parun.Play.Protocol
     Parun.Play.Record
-    Parun.Play.Render
+    Parun.Play.Wording
 
 -- The registry provides a way to load and cache card data from disk.
 library registry
@@ -2684,7 +2689,6 @@ library test
     Parun.CastSpec
     Parun.ClashSpec
     Parun.ClassSpec
-    Parun.ClientSpec
     Parun.CloakSpec
     Parun.CodecIntegrationSpec
     Parun.CoinSpec
@@ -2770,6 +2774,7 @@ library test
     Parun.PlayerDesignationSpec
     Parun.PlayerEffectSpec
     Parun.PlayerViewSpec
+    Parun.PlaySpec
     Parun.PopulateSpec
     Parun.PowerToughnessSpec
     Parun.PreparationSpec
@@ -3283,6 +3288,7 @@ library types
     Parun.Types.EachCardInExiledPile
     Parun.Types.EachCardInGraveyard
     Parun.Types.EachCardInHand
+    Parun.Types.EachKind
     Parun.Types.Earthbend
     Parun.Types.Effect
     Parun.Types.Emerge
@@ -3406,7 +3412,6 @@ library types
     Parun.Types.HistoryRead
     Parun.Types.Holder
     Parun.Types.Hop
-    Parun.Types.Hotseat
     Parun.Types.HowMany
     Parun.Types.Hybrid
     Parun.Types.HybridPayment
@@ -3434,6 +3439,7 @@ library types
     Parun.Types.KeywordsAre
     Parun.Types.KeywordTally
     Parun.Types.KickerDecision
+    Parun.Types.KindStep
     Parun.Types.Label
     Parun.Types.LandAllowance
     Parun.Types.LandOrNonland
@@ -3900,7 +3906,6 @@ library types
     Parun.Types.TargetSlot
     Parun.Types.TeamId
     Parun.Types.Teams
-    Parun.Types.Terminal
     Parun.Types.TextWord
     Parun.Types.TheseDiscard
     Parun.Types.Threshold
@@ -3961,6 +3966,7 @@ library types
     Parun.Types.UntapRewrite
     Parun.Types.UntapScope
     Parun.Types.UntilPaid
+    Parun.Types.UpToCasts
     Parun.Types.Uses
     Parun.Types.Vanguard
     Parun.Types.VariableChoice

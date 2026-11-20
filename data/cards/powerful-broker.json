@@ -21,7 +21,10 @@
                         "type": "Proliferate",
                         "value": {
                           "type": "EachKind",
-                          "value": "target"
+                          "value": {
+                            "slot": "target",
+                            "step": "Another"
+                          }
                         }
                       }
                     ]

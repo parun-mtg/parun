@@ -9,6 +9,7 @@ import qualified Parun.Types.Measure as Measure
 import qualified Parun.Types.Quantity as Quantity
 import qualified Parun.Types.SlotName as SlotName
 import qualified Parun.Types.TotalCap as TotalCap
+import qualified Parun.Types.UpToCasts as UpToCasts
 
 spec :: (Monad m, Monad n) => Spec.Spec m n -> n ()
 spec s = Spec.describe s "Parun.Codec.CastRepetition" $ do
@@ -34,7 +35,7 @@ spec s = Spec.describe s "Parun.Codec.CastRepetition" $ do
     Common.assertCodec
       s
       CastRepetition.codec
-      (CastRepetition.UpTo (Quantity.InSlot (SlotName.MkSlotName (Text.pack "casts"))))
-      " {\"type\":\"UpTo\",\"value\":{\"type\":\"InSlot\",\"value\":\"casts\"}} "
+      (CastRepetition.UpTo UpToCasts.MkUpToCasts {UpToCasts.casts = Quantity.InSlot (SlotName.MkSlotName (Text.pack "casts")), UpToCasts.total = Nothing})
+      " {\"type\":\"UpTo\",\"value\":{\"casts\":{\"type\":\"InSlot\",\"value\":\"casts\"}}} "
   Spec.it s "has a schema" $
     Common.assertHasSchema s CastRepetition.codec

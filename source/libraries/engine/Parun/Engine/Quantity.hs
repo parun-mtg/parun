@@ -99,6 +99,7 @@ import qualified Parun.Types.PowerToughnessSticker as PowerToughnessSticker
 import Parun.Types.Quantity (Quantity)
 import qualified Parun.Types.Quantity as Quantity
 import qualified Parun.Types.Quotient as Quotient
+import qualified Parun.Types.Recipient as Recipient
 import qualified Parun.Types.RollTotalsThisTurn as RollTotalsThisTurn
 import qualified Parun.Types.Rounding as Rounding
 import qualified Parun.Types.Scratch as Scratch
@@ -854,10 +855,16 @@ evaluateAgainst viewOf context gs announcedOn mOid mView quantity =
         -- A Count.InHistory member has no object, only its snapshot, so the
         -- tallied id is the snapshot's: Temple of Power totals each red source's
         -- noncombat damage off the sources the log saw deal it.
-        Quantity.DamageDealtThisTurn (ObjectDamage.MkObjectDamage direction by kind) ->
+        --
+        -- The recipient players are judged over every seat (historyPlayersOf), so
+        -- Vessel of the All-Consuming's "that player" is the seat its trigger
+        -- stamped. data/scenarios/vessel-of-the-all-consuming-*.json prove it.
+        Quantity.DamageDealtThisTurn (ObjectDamage.MkObjectDamage direction by kind to) -> do
+          recipients <- traverse historyPlayersOf to
           let judged = context {Filter.evaluated = mOid, Filter.evaluatedView = mView}
-              admits ev = all (== DamageEvent.kind ev) kind && all (Filter.matches judged (Filter.dealtByView ev)) by
-           in fmap (toInteger . Game.damageDealtThisTurn direction admits gs) (mOid <|> (mView >>= Filter.identity))
+              dealtTo ev = all (\pids -> any (`elem` pids) (Recipient.playerOf (DamageEvent.target ev))) recipients
+              admits ev = all (== DamageEvent.kind ev) kind && all (Filter.matches judged (Filter.dealtByView ev)) by && dealtTo ev
+          fmap (toInteger . Game.damageDealtThisTurn direction admits gs) (mOid <|> (mView >>= Filter.identity))
         -- CR 508.3b: how many of that player's opponents they declared attacked this
         -- combat phase. LifeTotal's arm in shape -- live, one player only, resolved
         -- through the same playersOf, and Nothing for a reference naming
@@ -1885,7 +1892,7 @@ talliesWhatHappened quantity = case quantity of
   Quantity.Convokers -> False
   Quantity.ControlGained _ _ -> False
   Quantity.PlayedBy _ -> False
-  Quantity.DamageDealtThisTurn _ -> False
+  Quantity.DamageDealtThisTurn damage -> Maybe.isJust (ObjectDamage.to damage)
   Quantity.OpponentsAttacked _ _ -> False
   Quantity.AttackersDeclaredThisTurn _ -> False
   Quantity.AttackersDeclaredThisCombat -> False

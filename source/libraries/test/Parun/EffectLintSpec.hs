@@ -34,6 +34,7 @@ import Parun.CardSpec (Framing (SourceHostFramed), MintedKind (MintedEmblem), an
 import qualified Parun.Codec.Card as Card.Codec
 import qualified Parun.Codec.Face as Face.Codec
 import qualified Parun.Codec.Keyword as Keyword.Codec
+import qualified Parun.Codec.Quantity as Quantity.Codec
 import qualified Parun.Codec.Scope as Scope.Codec
 import qualified Parun.Engine.Binding as Binding
 import qualified Parun.Engine.Card as Card
@@ -48,6 +49,9 @@ import qualified Parun.Engine.Subtype as Subtype.Engine
 import qualified Parun.Extra.Natural as Natural
 import Parun.FilterPositionLintSpec (jsonAtoms, occurrences)
 import qualified Parun.Json.Array as Array
+import qualified Parun.Json.Object as Object
+import qualified Parun.Json.Pair as Pair
+import qualified Parun.Json.String as String
 import qualified Parun.Json.Value as Value
 import qualified Parun.JsonCodec.Codec as Codec
 import qualified Parun.Oracle.Normalise as Normalise
@@ -188,6 +192,7 @@ import qualified Parun.Types.NextDamageInstance as NextDamageInstance
 import qualified Parun.Types.NextDamageOutcome as NextDamageOutcome
 import qualified Parun.Types.NextWindow as NextWindow
 import qualified Parun.Types.NextWindowOf as NextWindowOf
+import qualified Parun.Types.ObjectDamage as ObjectDamage
 import qualified Parun.Types.ObjectId as ObjectId
 import qualified Parun.Types.ObjectRef as ObjectRef
 import qualified Parun.Types.OfferCast as OfferCast
@@ -798,12 +803,14 @@ engineMintedDamage rewrite = case rewrite of
 -- (Drudge Skeletons), where CR 122.1c's removal and CR 702.89a's umbra armor are
 -- minted -- the latter from Parun.Types.Keyword's UmbraArmor, which is what a card
 -- writes instead (Hyena Umbra).
-engineMintedDestruction :: DestructionRewrite.DestructionRewrite -> Bool
+engineMintedDestruction :: DestructionRewrite.DestructionRewrite effect -> Bool
 engineMintedDestruction rewrite = case rewrite of
   DestructionRewrite.RemoveShieldCounter -> True
   DestructionRewrite.UmbraArmor -> True
   DestructionRewrite.Regenerate -> False
   DestructionRewrite.Heal _ -> False
+  -- Crackling Emergence's own sentence, card data like DamageRewrite.RunEffects.
+  DestructionRewrite.RunEffects _ -> False
 
 -- The non-vacuity half of the same lint: is this the replacement that carries a
 -- PhasePattern at all? A wildcard is right here, where it is not above -- this
@@ -1673,7 +1680,7 @@ effectObjectRefs effect =
         Effect.ExchangeBlocks {} -> []
         Effect.Counter (Counter.MkCounter ref _ _ _) -> read_ [ref]
         -- Only the one permanent Phylactery Lich chooses: no test reaches "up to".
-        Effect.PutCounters (PutCounters.MkPutCounters _ _ ref _ _) -> [([OnePermanent], ref)]
+        Effect.PutCounters (PutCounters.MkPutCounters _ _ _ ref _ _) -> [([OnePermanent], ref)]
         -- A READ: which of the swept objects get a part is asked of the
         -- answer (Prompt.ChooseDistribution), not of the ref.
         Effect.Divide divide -> read_ [Divide.among divide]
@@ -1825,6 +1832,9 @@ inertChoosers effect =
 -- ShuffleIntoLibrary reads its ref through objectRefObjects too -- Timetwister's
 -- "their hand and graveyard" as one move and one shuffle, proved by
 -- Parun.MassEffectSpec's Timetwister group.
+-- OfferCast reads its ref through askingObjects too -- Invoke Calamity's "from
+-- your graveyard and/or hand", proved by the scenario
+-- invoke-calamity-casts-two-spells-from-graveyard-and-hand-and-stops-at-two.
 -- CopyStackObject's CopyTargets.ForEach reads its candidates through
 -- objectRefRecipients too (Resolve.Common.copyForEachTargets) -- Radiate's
 -- "each other permanent or player", proved by the scenario
@@ -1841,6 +1851,7 @@ strayAllOf effect = case effect of
   Effect.Destroy {} -> False
   Effect.ModifyTarget {} -> False
   Effect.ShuffleIntoLibrary {} -> False
+  Effect.OfferCast {} -> False
   Effect.CopyStackObject x -> case CopyStackObject.targets x of
     CopyTargets.ForEach _ -> holdsAllOf (CopyStackObject.ref x)
     _ -> any (holdsAllOf . snd) (effectObjectRefs effect)
@@ -2672,7 +2683,7 @@ effectLintSpec s registry corpus = Spec.describe s "Lint" $ do
     -- Exhume, Elvish Piper, Commune with the Gods and Merfolk Spy print them.
     Spec.assertBool s asks "the pool has a card asking a player to pick a card"
     Spec.assertEqWith s "a chosen card under an opcode that cannot ask (CR 608.2d)" (fmap (S.nameOf . Printing.card) offenders) []
-  Spec.it s "no AllOf outside a move, a play grant, a loop, a damage instruction, a destruction, a shuffle-in, a modification or a copy's candidates" $ do
+  Spec.it s "no AllOf outside a move, a play grant, a loop, a damage instruction, a destruction, a shuffle-in, a modification, a cast offer or a copy's candidates" $ do
     ps <- S.allPrintings s corpus
     let offenders = filter (anyFace (any strayAllOf . cardAuthoredEffects) . Printing.card) ps
         moved = any (anyFace (any (any (isAllOf . snd) . effectObjectRefs) . cardAuthoredEffects) . Printing.card) ps
@@ -4087,6 +4098,20 @@ effectLintSpec s registry corpus = Spec.describe s "Lint" $ do
         planted = (vanillaFace "Planted" instantLine) {Face.spell = Mint.oneMode (Seq.fromList restated)}
     Spec.assertBool s (not (anyFace ownPowerToughnessOffends (Printing.card geometry))) "the real Applied Geometry is accepted"
     Spec.assertBool s (ownPowerToughnessOffends planted) "a token copy taking its own power and toughness is rejected"
+  -- CR 120.1, swept over the pool. See damageRecipientOffends.
+  Spec.it s "CR 120.1 no card writes a damage tally's recipient players beside DealtTo" $ do
+    ps <- S.allPrintings s corpus
+    let offenders = filter (anyFace damageRecipientOffends . Printing.card) ps
+    Spec.assertEqWith s "a damage tally names recipient players only beside DealtBy" (fmap (S.nameOf . Printing.card) offenders) []
+  -- The REJECTING direction, against planted faces: the same tally both ways.
+  Spec.it s "the lint itself catches a damage tally's recipient players beside DealtTo" $ do
+    let planted direction =
+          (vanillaFace "Planted" instantLine)
+            { Face.spell =
+                Mint.oneMode (Seq.singleton (Effect.Draw (Draw.MkDraw (PlayerRef.Relative PlayerRelation.You) (Quantity.Type.DamageDealtThisTurn (ObjectDamage.MkObjectDamage direction Nothing Nothing (Just (PlayerRef.Relative PlayerRelation.You)))) Nothing Nothing)))
+            }
+    Spec.assertBool s (not (damageRecipientOffends (planted DamageDirection.DealtBy))) "recipient players beside DealtBy are accepted"
+    Spec.assertBool s (damageRecipientOffends (planted DamageDirection.DealtTo)) "recipient players beside DealtTo are rejected"
   -- CR 611.2a, swept over the pool. See oncePerEffectOffends.
   Spec.it s "CR 611.2a no card writes OncePerEffect where no stored row carries it" $ do
     ps <- S.allPrintings s corpus
@@ -4209,6 +4234,24 @@ windowOffends :: Face.Face Card.Type.Card -> Bool
 windowOffends card =
   let encoded = Codec.encode (Face.Codec.codec Card.Codec.codec) card
    in sum (fmap (\tag -> jsonAtoms (Text.pack tag) encoded) ["DuringNextOf", "DuringYourNextTurn", "DuringThatExtraTurn", "DuringThatCombatPhase"]) /= begunWindows card
+
+-- Unprinted: a Quantity.DamageDealtThisTurn naming recipient players
+-- (Parun.Types.ObjectDamage's to) beside DealtTo, where the tallied object is
+-- itself the recipient. Read off the encoding, so every position is swept.
+damageRecipientOffends :: Face.Face Card.Type.Card -> Bool
+damageRecipientOffends = offends . Codec.encode (Face.Codec.codec Card.Codec.codec)
+  where
+    tag = Pair.MkPair (String.MkString (Text.pack "type")) (Value.String (String.MkString (Text.pack "DamageDealtThisTurn")))
+    here value = case Codec.decode Quantity.Codec.codec value of
+      Right (Quantity.Type.DamageDealtThisTurn (ObjectDamage.MkObjectDamage DamageDirection.DealtTo _ _ (Just _))) -> True
+      _ -> False
+    offends value = case value of
+      Value.Object o -> (elem tag (Object.unwrap o) && here value) || any (offends . Pair.value) (Object.unwrap o)
+      Value.Array a -> any offends (Array.unwrap a)
+      Value.String _ -> False
+      Value.Null _ -> False
+      Value.Boolean _ -> False
+      Value.Number _ -> False
 
 -- How many window durations this face writes on a carrier that asks
 -- Expiry.begun.

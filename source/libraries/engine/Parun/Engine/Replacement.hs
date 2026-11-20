@@ -666,7 +666,7 @@ manaRewrites gs =
 --     does not touch it. The rule's own reading of that restriction is the ruling
 --     that a shielded creature "may still be destroyed by state-based actions if
 --     it has damage marked on it equal to its toughness".
-admits :: Regenerability.Regenerability -> DestructionCause.DestructionCause -> DestructionRewrite.DestructionRewrite -> Bool
+admits :: Regenerability.Regenerability -> DestructionCause.DestructionCause -> DestructionRewrite.DestructionRewrite effect -> Bool
 admits regenerability cause rewrite = case rewrite of
   DestructionRewrite.Regenerate -> regenerability == Regenerability.Regenerable
   DestructionRewrite.RemoveShieldCounter -> cause == DestructionCause.ByEffect
@@ -678,6 +678,9 @@ admits regenerability cause rewrite = case rewrite of
   -- Pyramids' shield and Dr. McCoy's are not regenerations (CR 701.19c) and
   -- name no cause.
   DestructionRewrite.Heal _ -> True
+  -- Crackling Emergence's "if enchanted land would be destroyed" names no
+  -- cause, and its ruling has it reach lethal damage too; not a regeneration.
+  DestructionRewrite.RunEffects _ -> True
 
 -- CR 614.1: which permanent's destruction each rewrite watches for when its row
 -- prints no subject of its own.
@@ -692,7 +695,7 @@ admits regenerability cause rewrite = case rewrite of
 -- A function rather than a Filter written onto every such row because these
 -- subjects are the RULES' words, not a card's: two of the three name the source
 -- itself and the third names its attachment.
-scopes :: GameState -> DestructionRewrite.DestructionRewrite -> ObjectId -> ObjectId -> Bool
+scopes :: GameState -> DestructionRewrite.DestructionRewrite effect -> ObjectId -> ObjectId -> Bool
 scopes gs rewrite src oid = case rewrite of
   DestructionRewrite.Regenerate -> src == oid
   DestructionRewrite.RemoveShieldCounter -> src == oid
@@ -702,9 +705,11 @@ scopes gs rewrite src oid = case rewrite of
   -- is a permanent.
   DestructionRewrite.UmbraArmor ->
     (Recipient.objectOf =<< (Object.attachedTo =<< Game.lookupObject src gs)) == Just oid
-  -- Read only for a row printing no subject, which no heal shield does; the
-  -- self-scope is regeneration's reading of an unnamed subject.
+  -- Read only for a row printing no subject, which no heal shield and no
+  -- instead-effect does; the self-scope is regeneration's reading of an
+  -- unnamed subject.
   DestructionRewrite.Heal _ -> src == oid
+  DestructionRewrite.RunEffects _ -> src == oid
 
 -- CR 615.7: a spent shield is not an applicable prevention effect at all, and is
 -- refused HERE rather than applied for nothing -- as `admits` refuses a
@@ -2549,8 +2554,14 @@ readsApplier re = case re of
   -- way, but not the same CR 615.13 preventions: X=3 then X=1 against 2 damage
   -- is one prevention, the other order two.
   ReplacementEffect.DamageR (DamageR.MkDamageR _ rewrite _) -> computedAmount rewrite
-  -- CR 701.19a acts on the creature being destroyed and names no player.
-  ReplacementEffect.DestructionR _ -> False
+  -- CR 701.19a acts on the creature being destroyed and names no player; an
+  -- instead-effect runs as the row's controller (CR 109.5), GameLossR's answer.
+  ReplacementEffect.DestructionR (DestructionR.MkDestructionR _ rewrite) -> case rewrite of
+    DestructionRewrite.RunEffects _ -> True
+    DestructionRewrite.Regenerate -> False
+    DestructionRewrite.RemoveShieldCounter -> False
+    DestructionRewrite.UmbraArmor -> False
+    DestructionRewrite.Heal _ -> False
   -- The scaling is the effect's, and it rewrites the count on the object the
   -- event already named (Hardened Scales, Doubling Season); a computed AddMore
   -- is read against the candidate's Context, computedScaling's answer.
@@ -2886,7 +2897,17 @@ readsSource effect = case effect of
   -- A computed scaling reads the source (computedScaling); nothing else here does.
   ReplacementEffect.DamageR (DamageR.MkDamageR _ (DamageRewrite.Scale scaling) _) -> computedScaling scaling
   ReplacementEffect.DamageR {} -> False
-  ReplacementEffect.DestructionR _ -> False
+  -- CR 702.89a's "destroy this Aura" and Crackling Emergence's "sacrifice this
+  -- Aura" act on the row's own source, so two such Auras on one permanent leave
+  -- different boards and its controller is asked which applies (CR 616.1). The
+  -- scenarios hyena-umbra-and-lion-umbra-ask-which-aura-is-destroyed and
+  -- two-emergences-ask-which-aura-is-sacrificed prove both.
+  ReplacementEffect.DestructionR (DestructionR.MkDestructionR _ rewrite) -> case rewrite of
+    DestructionRewrite.UmbraArmor -> True
+    DestructionRewrite.RunEffects _ -> True
+    DestructionRewrite.Regenerate -> False
+    DestructionRewrite.RemoveShieldCounter -> False
+    DestructionRewrite.Heal _ -> False
   ReplacementEffect.CounterR r -> computedScaling (CounterR.scaling r)
   ReplacementEffect.CounterLossR {} -> False
   -- CR 707.2: the permanent copied is read relative to the source (Mirrormind
@@ -3441,18 +3462,45 @@ amplifiableFromHand pid types gs =
 -- regeneration ability replaces every destruction, not just the next one" is
 -- what proves the difference: a Mossbridge Troll and a Drudge Skeletons take the
 -- same two destructions, and only the Skeletons' shield is spent.
+--
+-- An ENTRY row applied inside a simultaneous move (Event.arrivingTogether) is
+-- held standing until the move ends (Scratch.spentEntries, spent by
+-- `spendEntries`): what enters at once enters in one event, so "the next time
+-- one or more ... enter" serves each of them, as spendPrevented does for a CR
+-- 615.8 damage batch. Each entrant's own CR 616.1 loop still applies the row
+-- once. Proved by the scenario
+-- storyweave-counters-each-enchantment-creature-entering-together-and-no-later-one.
 consume :: CandidateId -> Game ()
 consume identity_ = case identity_ of
   CandidateId.OfPermanent {} -> pure ()
   CandidateId.OfFloating floating ->
     State.modify' $ \gs ->
-      let src = FloatingCandidate.source floating
-          ts = FloatingCandidate.timestamp floating
-          spent active =
-            ActiveReplacement.source active == src
-              && ActiveReplacement.timestamp active == ts
-              && ActiveReplacement.uses active == Uses.Once
-       in gs {GameState.stored = (GameState.stored gs) {StoredEffects.replacements = filter (not . spent) (StoredEffects.replacements (GameState.stored gs))}}
+      let scratch = GameState.scratch gs
+          entry active = case ActiveReplacement.effect active of
+            ReplacementEffect.EntryR {} -> isRow floating active && ActiveReplacement.uses active == Uses.Once
+            _ -> False
+       in if Maybe.isJust (Scratch.arrivals scratch) && any entry (StoredEffects.replacements (GameState.stored gs))
+            then gs {GameState.scratch = scratch {Scratch.spentEntries = Set.insert floating (Scratch.spentEntries scratch)}}
+            else spendOnce floating gs
+
+-- | `consume`'s held-back entry rows, spent as Event.arrivingTogether's scope
+-- ends.
+spendEntries :: GameState -> GameState
+spendEntries gs =
+  let held = Scratch.spentEntries (GameState.scratch gs)
+   in List.foldl' (flip spendOnce) gs {GameState.scratch = (GameState.scratch gs) {Scratch.spentEntries = Set.empty}} (Set.toList held)
+
+-- | Drop a floating row whose `uses` is Once.
+spendOnce :: FloatingCandidate.FloatingCandidate -> GameState -> GameState
+spendOnce floating gs =
+  let spent active = isRow floating active && ActiveReplacement.uses active == Uses.Once
+   in gs {GameState.stored = (GameState.stored gs) {StoredEffects.replacements = filter (not . spent) (StoredEffects.replacements (GameState.stored gs))}}
+
+-- | CR 614.5: the floating row this candidate names.
+isRow :: FloatingCandidate.FloatingCandidate -> ActiveReplacement.ActiveReplacement -> Bool
+isRow floating active =
+  ActiveReplacement.source active == FloatingCandidate.source floating
+    && ActiveReplacement.timestamp active == FloatingCandidate.timestamp floating
 
 -- CR 615.8: spend each one-use prevention row a settled damage batch applied.
 -- "The next time a specific source would deal damage" is every event that

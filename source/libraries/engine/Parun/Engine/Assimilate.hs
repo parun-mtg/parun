@@ -75,6 +75,7 @@ permanentInstructions =
         : Effect.PutCounters
           PutCounters.MkPutCounters
             { PutCounters.kind = CounterKind.PlusOnePlusOne,
+              PutCounters.alternatives = [],
               PutCounters.quantity = Quantity.Literal 1,
               PutCounters.ref = ref,
               PutCounters.totalAtMost = Nothing,

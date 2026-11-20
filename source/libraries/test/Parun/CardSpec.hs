@@ -230,6 +230,7 @@ import qualified Parun.Types.Designate as Designate
 import qualified Parun.Types.Designation as Designation
 import qualified Parun.Types.Destroy as Destroy
 import qualified Parun.Types.DestructionR as DestructionR
+import qualified Parun.Types.DestructionRewrite as DestructionRewrite
 import qualified Parun.Types.Devour as Devour
 import qualified Parun.Types.DiceReading as DiceReading
 import qualified Parun.Types.Discard as Discard
@@ -249,6 +250,7 @@ import qualified Parun.Types.EachCardFromAmong as EachCardFromAmong
 import qualified Parun.Types.EachCardInExiledPile as EachCardInExiledPile
 import qualified Parun.Types.EachCardInGraveyard as EachCardInGraveyard
 import qualified Parun.Types.EachCardInHand as EachCardInHand
+import qualified Parun.Types.EachKind as EachKind
 import qualified Parun.Types.Earthbend as Earthbend
 import qualified Parun.Types.Effect as Effect
 import qualified Parun.Types.Emerge as Emerge
@@ -318,6 +320,7 @@ import qualified Parun.Types.KeywordCount as KeywordCount
 import qualified Parun.Types.KeywordDesignator as KeywordDesignator
 import qualified Parun.Types.KeywordRiderGrant as KeywordRiderGrant
 import qualified Parun.Types.KeywordTally as KeywordTally
+import qualified Parun.Types.KindStep as KindStep
 import qualified Parun.Types.LaterPayment as LaterPayment
 import qualified Parun.Types.Layout as Layout
 import qualified Parun.Types.LeavesTrigger as LeavesTrigger
@@ -848,7 +851,7 @@ objectRefPositions =
         ("prevent-all-damage", Effect.PreventAllDamage (PreventAllDamage.MkPreventAllDamage Duration.UntilEndOfTurn Nothing (Just (plantedRef "pa")) Nothing Nothing DamageDirection.DealtTo Nothing (Filter.Type.And []) Seq.empty), [plantedRef "pa"]),
         ("redirect-damage", Effect.RedirectDamage (RedirectDamage.MkRedirectDamage Duration.UntilEndOfTurn Nothing Nothing (Just (plantedRef "rd-from")) Nothing Nothing (plantedRef "rd-to") Nothing Uses.Unlimited (Filter.Type.And [])), [plantedRef "rd-from", plantedRef "rd-to"]),
         ("counter", Effect.Counter (Counter.MkCounter (plantedRef "co") Nothing Nothing Nothing), [plantedRef "co"]),
-        ("put-counters", Effect.PutCounters (PutCounters.MkPutCounters CounterKind.PlusOnePlusOne (Quantity.Type.Literal 1) (plantedRef "pc") Nothing Nothing), [plantedRef "pc"]),
+        ("put-counters", Effect.PutCounters (PutCounters.MkPutCounters CounterKind.PlusOnePlusOne [] (Quantity.Type.Literal 1) (plantedRef "pc") Nothing Nothing), [plantedRef "pc"]),
         ("divide", Effect.Divide (Divide.MkDivide (Quantity.Type.Literal 3) (plantedRef "dv") (PlayerRef.Relative PlayerRelation.You) (SlotName.MkSlotName (Text.pack "split"))), [plantedRef "dv"]),
         ("move-counters", Effect.MoveCounters (MoveCounters.MkMoveCounters (plantedRef "mc-from") MovedKinds.Every Nothing (plantedRef "mc-to")), [plantedRef "mc-from", plantedRef "mc-to"]),
         ("put-counters-from", Effect.PutCountersFrom (PutCountersFrom.MkPutCountersFrom (SlotName.MkSlotName (Text.pack "giver")) Nothing (plantedRef "pf")), [plantedRef "pf"]),
@@ -1814,6 +1817,7 @@ replacementRewriteEffects replacement = case replacement of
   -- CR 603.11's linked trigger runs these each time the redirect applies.
   -- and CR 614.6's riders as part of the modified event.
   ReplacementEffect.ZoneChangeR r -> Foldable.toList (ZoneChangeR.whenYouDo r) <> Foldable.toList (ZoneChangeR.riders r)
+  ReplacementEffect.DestructionR (DestructionR.MkDestructionR _ (DestructionRewrite.RunEffects effects)) -> Foldable.toList effects
   ReplacementEffect.DestructionR _ -> []
   ReplacementEffect.TokenR {} -> []
   -- The same linked trigger, on the copy a turning face up makes.
@@ -2011,15 +2015,21 @@ modeDivisionDangles mode =
       offends (slot, ref) = ref /= ObjectRef.InSlot slot || not (Set.member slot divided)
    in any offends sharing || not (Set.isSubsetOf divided reads_)
 
--- Unprinted: a chosen-kind Proliferate (AnotherCounter.ChosenKind) whose slot
--- admits a player, whose counters its prompt cannot offer.
-cardChosenKindReachesPlayer :: Face.Face Card.Type.Card -> Bool
-cardChosenKindReachesPlayer = any (any offends . Modal.modes) . faceModals
+-- Unprinted: a targeted Proliferate asking about kinds -- a chosen kind
+-- (AnotherCounter.ChosenKind) or another-or-one-fewer
+-- (KindStep.AnotherOrRemoveOne) -- whose slot admits a player, whose counters
+-- its prompt cannot offer.
+cardKindChoiceReachesPlayer :: Face.Face Card.Type.Card -> Bool
+cardKindChoiceReachesPlayer = any (any offends . Modal.modes) . faceModals
   where
     offends mode =
       or
         [ maybe True (\slot -> not (Card.poolWithin (TargetSlot.pool slot) Pool.Permanents)) (Map.lookup named (Mode.targetSlots mode))
-        | Effect.Proliferate (Just (AnotherCounter.ChosenKind named)) <- Foldable.toList (Mode.allEffects mode)
+        | Effect.Proliferate (Just targeted) <- Foldable.toList (Mode.allEffects mode),
+          named <- case targeted of
+            AnotherCounter.ChosenKind named -> [named]
+            AnotherCounter.EachKind (EachKind.MkEachKind named KindStep.AnotherOrRemoveOne) -> [named]
+            AnotherCounter.EachKind (EachKind.MkEachKind _ KindStep.Another) -> []
         ]
 
 -- Whether any EntriesTrigger row a face writes offends: its own player
@@ -2256,6 +2266,7 @@ reservedSlots =
       Binding.became,
       Binding.handArrival,
       Binding.departedPermanent,
+      Binding.sparedPermanent,
       Binding.earthbentLand,
       Binding.airbentObjects,
       Binding.discoveredCards,
@@ -5614,7 +5625,7 @@ effectFilters effect = case effect of
   -- creature you control with a +1/+1 counter on it", and a Filter there would
   -- otherwise escape the lint; the count is a Quantity like any other; and CR
   -- 122.1b's kind may be a whole Keyword with a Filter under it; see #2728.
-  Effect.PutCounters (PutCounters.MkPutCounters kind quantity ref _ _) -> frame Unframed (counterKindFilters kind <> quantityFilters quantity) <> frame SourceHostFramed (objectRefFilters ref)
+  Effect.PutCounters (PutCounters.MkPutCounters kind alternatives quantity ref _ _) -> frame Unframed (foldMap counterKindFilters (kind : alternatives) <> quantityFilters quantity) <> frame SourceHostFramed (objectRefFilters ref)
   Effect.Divide (Divide.MkDivide quantity among _ _) -> frame Unframed (quantityFilters quantity) <> frame SourceHostFramed (objectRefFilters among)
   -- The destination and CR 122.1b's kind, PutCounters' framing: `from` is a bare
   -- SlotName and carries no Filter, and the kind is the one rule 122.8's second
@@ -6683,18 +6694,27 @@ lintSpec s registry corpus = Spec.describe s "Lint" $ do
     Spec.assertBool s (not (cardDivisionsDangle face)) "Forked Lightning reads its division, and is accepted"
     Spec.assertBool s (cardDivisionsDangle (rewrite undivided)) "a part read off an undivided slot is rejected"
     Spec.assertBool s (cardDivisionsDangle (rewrite unread)) "a division nothing reads is rejected"
-  -- Dathon, His Heart Open's chosen kind is offered among a PERMANENT's
-  -- counters only.
-  Spec.it s "no card's chosen-kind proliferate slot admits a player" $ do
+  -- Dathon, His Heart Open's chosen kind and Dramatist's Puppet's
+  -- another-or-one-fewer are offered among a PERMANENT's counters only.
+  Spec.it s "no card's kind-choosing proliferate slot admits a player" $ do
     ps <- S.allPrintings s corpus
-    Spec.assertEqWith s "no chosen kind over a player" (fmap (S.nameOf . Printing.card) (filter (anyFace cardChosenKindReachesPlayer . Printing.card) ps)) []
-  Spec.it s "the lint itself catches a chosen-kind slot admitting a player" $ do
+    Spec.assertEqWith s "no kind choice over a player" (fmap (S.nameOf . Printing.card) (filter (anyFace cardKindChoiceReachesPlayer . Printing.card) ps)) []
+  Spec.it s "the lint itself catches a kind-choosing slot admitting a player" $ do
     dathon <- S.printingOf s registry "Dathon, His Heart Open"
-    let face = S.combinedFace dathon
-        widen mode = mode {Mode.targetSlots = fmap (\slot -> slot {TargetSlot.pool = Pool.PermanentsAndPlayers}) (Mode.targetSlots mode)}
-        widened = face {Face.activatedAbilities = fmap (\ability -> ability {ActivatedAbility.modal = (ActivatedAbility.modal ability) {Modal.modes = fmap widen (Modal.modes (ActivatedAbility.modal ability))}}) (Face.activatedAbilities face)}
-    Spec.assertBool s (not (cardChosenKindReachesPlayer face)) "Dathon targets an enchantment, and is accepted"
-    Spec.assertBool s (cardChosenKindReachesPlayer widened) "a slot admitting players is rejected"
+    puppet <- S.printingOf s registry "Dramatist's Puppet"
+    broker <- S.printingOf s registry "Powerful Broker"
+    let widen mode = mode {Mode.targetSlots = fmap (\slot -> slot {TargetSlot.pool = Pool.PermanentsAndPlayers}) (Mode.targetSlots mode)}
+        widenModal modal = modal {Modal.modes = fmap widen (Modal.modes modal)}
+        widened face =
+          face
+            { Face.activatedAbilities = fmap (\ability -> ability {ActivatedAbility.modal = widenModal (ActivatedAbility.modal ability)}) (Face.activatedAbilities face),
+              Face.triggeredAbilities = fmap (\ability -> ability {TriggeredAbility.modal = widenModal (TriggeredAbility.modal ability)}) (Face.triggeredAbilities face)
+            }
+    Spec.assertBool s (not (cardKindChoiceReachesPlayer (S.combinedFace dathon))) "Dathon targets an enchantment, and is accepted"
+    Spec.assertBool s (cardKindChoiceReachesPlayer (widened (S.combinedFace dathon))) "a chosen-kind slot admitting players is rejected"
+    Spec.assertBool s (not (cardKindChoiceReachesPlayer (S.combinedFace puppet))) "Dramatist's Puppet targets a permanent, and is accepted"
+    Spec.assertBool s (cardKindChoiceReachesPlayer (widened (S.combinedFace puppet))) "an another-or-one-fewer slot admitting players is rejected"
+    Spec.assertBool s (not (cardKindChoiceReachesPlayer (S.combinedFace broker))) "Powerful Broker's another of each kind reaches a player, and is accepted"
   -- Demonic Pact's "that hasn't been chosen" on a spell or a mana ability is
   -- read by nothing, so a chosen mode would be offered again.
   Spec.it s "only a triggered or a non-mana activated ability remembers its chosen modes" $ do

@@ -991,13 +991,14 @@ checkOnce instead boards = do
   -- is about a permanent "put into your graveyard"). The funnel's CR 702.12b
   -- gate is judged against that board too. Parun.ScenarioSpec's
   -- cr-616-1-lich-s-mirror-s-reset-takes-a-regenerating-blocker-unasked proves it.
+  -- What a destruction's replacement queued runs with the losses' below.
+  queued <- State.gets (Seq.length . (StoredEffects.pendingReplacementEffects . GameState.stored))
   standing <- Event.destructionsStanding gs DestructionCause.ByRule Regenerability.Regenerable (filter (`notElem` buried) toDestroy)
   -- CR 104.3 / 614.1a: each loss is offered to the replacements that watch it
   -- BEFORE anything below moves, in REVERSE of `leaving` -- the order the
   -- `foldr` this replaced applied them in, kept because CR 800.4a's fourth
   -- clause emits zone changes and CR 726.4 hands the crown along, so who goes
   -- first is observable.
-  queued <- State.gets (Seq.length . (StoredEffects.pendingReplacementEffects . GameState.stored))
   departing <- Departure.losing (Just gs) True Departure.Type.Lost (List.reverse leaving)
   insteads <- State.gets (Seq.drop queued . (StoredEffects.pendingReplacementEffects . GameState.stored))
   -- CR 704.5b's window is "since the last time state-based actions were
@@ -1013,9 +1014,10 @@ checkOnce instead boards = do
       { GameState.stored = (GameState.stored g) {StoredEffects.pendingReplacementEffects = Seq.take queued (StoredEffects.pendingReplacementEffects (GameState.stored g))},
         GameState.drewFromEmpty = Set.difference (GameState.drewFromEmpty g) spent
       }
-  -- CR 614.1a: what replaced a loss happens INSTEAD of it, so inside this
-  -- pass's one event and before its moves, with every object the pass moves
-  -- contested (Scratch.contested): Lich's Mirror's ruling has its reset and
+  -- CR 614.1a: what replaced a loss or a destruction (Crackling Emergence's
+  -- sacrifice) happens INSTEAD of it, so inside this pass's one event and
+  -- before its moves, where CR 603.10a looks back to the pre-pass board, with
+  -- every object the pass moves contested (Scratch.contested): Lich's Mirror's ruling has its reset and
   -- the check compete for such an object, and its controller choose which
   -- move happens. Kept, the object stays for the moves below; taken, the
   -- moves below find it gone (CR 614.7's shape, as for any member another

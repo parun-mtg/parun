@@ -220,6 +220,7 @@ import qualified Parun.Types.EachCardFromAmong as EachCardFromAmong
 import qualified Parun.Types.EachCardInExiledPile as EachCardInExiledPile
 import qualified Parun.Types.EachCardInGraveyard as EachCardInGraveyard
 import qualified Parun.Types.EachCardInHand as EachCardInHand
+import qualified Parun.Types.EachKind as EachKind
 import qualified Parun.Types.Earthbend as Earthbend
 import qualified Parun.Types.Effect as Effect
 import qualified Parun.Types.Emerge as Emerge
@@ -517,6 +518,7 @@ import qualified Parun.Types.UntapR as UntapR
 import qualified Parun.Types.UntapRestriction as UntapRestriction
 import qualified Parun.Types.UntapRewrite as UntapRewrite
 import qualified Parun.Types.UntilPaid as UntilPaid
+import qualified Parun.Types.UpToCasts as UpToCasts
 import qualified Parun.Types.Vote as Vote
 import qualified Parun.Types.VoteChoices as VoteChoices
 import qualified Parun.Types.VoteObjects as VoteObjects
@@ -879,7 +881,7 @@ quantityChildren children quantity = case quantity of
   Quantity.LifeChanged (LifeTally.MkLifeTally ref direction turn) -> fmap (\renamed -> Quantity.LifeChanged (LifeTally.MkLifeTally renamed direction turn)) (player children ref)
   Quantity.PlayersDealtDamage (DamageTally.MkDamageTally dealt turn) -> fmap (\renamed -> Quantity.PlayersDealtDamage (DamageTally.MkDamageTally renamed turn)) (dealtDamageChildren children dealt)
   Quantity.DamageDealtToPlayersThisTurn dealt -> fmap Quantity.DamageDealtToPlayersThisTurn (dealtDamageChildren children dealt)
-  Quantity.DamageDealtThisTurn (ObjectDamage.MkObjectDamage direction by kind) -> fmap (\visited -> Quantity.DamageDealtThisTurn (ObjectDamage.MkObjectDamage direction visited kind)) (traverse (nest children) by)
+  Quantity.DamageDealtThisTurn (ObjectDamage.MkObjectDamage direction by kind to) -> (\visited renamed -> Quantity.DamageDealtThisTurn (ObjectDamage.MkObjectDamage direction visited kind renamed)) <$> traverse (nest children) by <*> traverse (player children) to
   Quantity.SpellsCast (SpellTally.MkSpellTally ref turn) -> fmap (\renamed -> Quantity.SpellsCast (SpellTally.MkSpellTally renamed turn)) (player children ref)
   Quantity.TimesThisTurn _ -> pure quantity
   Quantity.ActivationsThisTurn (ActivationsThisTurn.MkActivationsThisTurn ref source criteria) -> fmap Quantity.ActivationsThisTurn (ActivationsThisTurn.MkActivationsThisTurn <$> player children ref <*> nest children source <*> activationCriteriaChildren children criteria)
@@ -1225,8 +1227,8 @@ effectChildren c effect = case effect of
       )
   Effect.Counter (Counter.MkCounter ref named sources instead) ->
     fmap Effect.Counter (Counter.MkCounter <$> onObjectRef c ref <*> traverse (onSlot c) named <*> traverse (onSlot c) sources <*> traverse (counterDestinationChildren c) instead)
-  Effect.PutCounters (PutCounters.MkPutCounters kind quantity ref totalAtMost placed) ->
-    fmap Effect.PutCounters (PutCounters.MkPutCounters <$> onCounterKind c kind <*> onQuantity c quantity <*> onObjectRef c ref <*> pure totalAtMost <*> traverse (onSlot c) placed)
+  Effect.PutCounters (PutCounters.MkPutCounters kind alternatives quantity ref totalAtMost placed) ->
+    fmap Effect.PutCounters (PutCounters.MkPutCounters <$> onCounterKind c kind <*> traverse (onCounterKind c) alternatives <*> onQuantity c quantity <*> onObjectRef c ref <*> pure totalAtMost <*> traverse (onSlot c) placed)
   Effect.Divide (Divide.MkDivide quantity among chooser named) -> fmap Effect.Divide (Divide.MkDivide <$> onQuantity c quantity <*> onObjectRef c among <*> onPlayer c chooser <*> onSlot c named)
   Effect.RemoveCounters (RemoveCounters.MkRemoveCounters kind quantity named tally) ->
     fmap Effect.RemoveCounters (RemoveCounters.MkRemoveCounters <$> onCounterKind c kind <*> onQuantity c quantity <*> onSlot c named <*> traverse (onSlot c) tally)
@@ -1333,7 +1335,7 @@ effectChildren c effect = case effect of
   Effect.Proliferate targeted -> fmap Effect.Proliferate (traverse anotherCounter targeted)
     where
       anotherCounter x = case x of
-        AnotherCounter.EachKind named -> AnotherCounter.EachKind <$> onSlot c named
+        AnotherCounter.EachKind (EachKind.MkEachKind named step) -> AnotherCounter.EachKind . (`EachKind.MkEachKind` step) <$> onSlot c named
         AnotherCounter.ChosenKind named -> AnotherCounter.ChosenKind <$> onSlot c named
   Effect.ChooseCardName (ChooseCardName.MkChooseCardName who restriction among selection) ->
     fmap Effect.ChooseCardName (ChooseCardName.MkChooseCardName <$> onPlayer c who <*> onFilter c restriction <*> traverse (onSlot c) among <*> pure selection)
@@ -1571,7 +1573,7 @@ castRepetitionChildren c repetition = case repetition of
   CastRepetition.Once -> pure repetition
   CastRepetition.AnyNumber -> pure repetition
   CastRepetition.WithinTotal (TotalCap.MkTotalCap weight most) -> fmap CastRepetition.WithinTotal (TotalCap.MkTotalCap <$> onQuantity c weight <*> onQuantity c most)
-  CastRepetition.UpTo quantity -> fmap CastRepetition.UpTo (onQuantity c quantity)
+  CastRepetition.UpTo (UpToCasts.MkUpToCasts casts total) -> fmap CastRepetition.UpTo (UpToCasts.MkUpToCasts <$> onQuantity c casts <*> traverse (\(TotalCap.MkTotalCap weight most) -> TotalCap.MkTotalCap <$> onQuantity c weight <*> onQuantity c most) total)
 
 -- | One visitor per kind of child a trigger condition (CR 603.1) holds. Its
 -- payloads are matched positionally in triggerConditionChildren; a type
@@ -2648,12 +2650,13 @@ transformRewriteChildren c rewrite = case rewrite of
   TransformRewrite.ChoosePlayer _ -> pure rewrite
 
 -- | What a destruction replacement does (CR 614.1a).
-destructionRewriteChildren :: (Applicative f) => ReplacementChildren card ability effect f -> DestructionRewrite.DestructionRewrite -> f DestructionRewrite.DestructionRewrite
+destructionRewriteChildren :: (Applicative f) => ReplacementChildren card ability effect f -> DestructionRewrite.DestructionRewrite effect -> f (DestructionRewrite.DestructionRewrite effect)
 destructionRewriteChildren c rewrite = case rewrite of
   DestructionRewrite.Regenerate -> pure rewrite
   DestructionRewrite.RemoveShieldCounter -> pure rewrite
   DestructionRewrite.UmbraArmor -> pure rewrite
   DestructionRewrite.Heal kind -> DestructionRewrite.Heal <$> traverse (replacementCounterKind c) kind
+  DestructionRewrite.RunEffects effects -> DestructionRewrite.RunEffects <$> traverse (replacementEffect c) effects
 
 -- | What an untap replacement does (CR 614.1a).
 untapRewriteChildren :: (Applicative f) => ReplacementChildren card ability effect f -> UntapRewrite.UntapRewrite -> f UntapRewrite.UntapRewrite

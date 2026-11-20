@@ -35,7 +35,7 @@ import qualified Parun.JsonCodec.Common as Common
 import qualified Parun.Oracle.Cost as Oracle.Cost
 import qualified Parun.Oracle.Keyword as Oracle.Keyword
 import qualified Parun.Play.Protocol as Protocol
-import qualified Parun.Play.Render as Render
+import qualified Parun.Play.Wording as Wording
 import qualified Parun.Scenario.PromptOffer as PromptOffer
 import qualified Parun.Types.EntryOption as EntryOption
 import qualified Parun.Types.EventGroup as EventGroup
@@ -71,22 +71,22 @@ objectOf reply = do
 
 -- | An object the offer spells @"$7"@, named as the view shows it.
 objectName :: PlayerView.PlayerView -> R.Reply -> Text.Text
-objectName view reply = maybe (Text.pack "something") (Render.named view) (objectOf reply)
+objectName view reply = maybe (Text.pack "something") (Wording.named view) (objectOf reply)
 
 -- | An object an offer lists, told apart from others of its name.
 listedName :: PlayerView.PlayerView -> R.Reply -> Text.Text
-listedName view reply = maybe (Text.pack "something") (Render.choosable view) (objectOf reply)
+listedName view reply = maybe (Text.pack "something") (Wording.choosable view) (objectOf reply)
 
 -- | A seat a listed offer names by its bare id, or declining as None.
 playerName :: R.Reply -> Text.Text
 playerName reply = case reply of
-  R.Text x -> maybe x (Render.player . PlayerId.MkPlayerId) (Read.readMaybe (Text.unpack x))
+  R.Text x -> maybe x (Wording.player . PlayerId.MkPlayerId) (Read.readMaybe (Text.unpack x))
   _ -> Text.pack "None"
 
 recipientName :: PlayerView.PlayerView -> R.Reply -> Text.Text
 recipientName view reply = case reply of
   R.Array [R.Text tag, R.Text x]
-    | tag == Text.pack "Player" -> maybe x (Render.player . PlayerId.MkPlayerId) (Read.readMaybe (Text.unpack x))
+    | tag == Text.pack "Player" -> maybe x (Wording.player . PlayerId.MkPlayerId) (Read.readMaybe (Text.unpack x))
     | otherwise -> listedName view (R.Text x)
   R.Array [R.Text tag, draw] | tag == Text.pack "Pile" -> pileName draw
   _ -> Text.pack "something"
@@ -108,7 +108,7 @@ tagName t
   | t == Text.pack "Declines" = Text.pack "No"
   | Text.all (\c -> Char.isAsciiUpper c || Char.isAsciiLower c) t,
     Text.any Char.isAsciiUpper (Text.drop 1 t) =
-      case Text.uncons (Render.spaced t) of
+      case Text.uncons (Wording.spaced t) of
         Just (c, rest) -> Text.cons (Char.toUpper c) rest
         Nothing -> t
   | otherwise = t
@@ -134,8 +134,8 @@ optionName view reply = case reply of
       Just amount <- Protocol.field "amount" reply >>= Protocol.naturalOf ->
         Text.concat [objectName view source, Text.pack (" deals " <> show amount <> " damage to "), recipientName view target]
     -- A counter's kind, a mana type, or another tagged value by its tag.
-    | Just kind <- decoded (Codec.CounterKind.codec Codec.Keyword.codec) reply -> Render.counterName kind <> Text.pack " counter"
-    | Just mana <- decoded Codec.ManaType.codec reply -> Text.pack "{" <> Render.manaType mana <> Text.pack "}"
+    | Just kind <- decoded (Codec.CounterKind.codec Codec.Keyword.codec) reply -> Wording.counterName kind <> Text.pack " counter"
+    | Just mana <- decoded Codec.ManaType.codec reply -> Text.pack "{" <> Wording.manaType mana <> Text.pack "}"
     -- A permission to cast from a zone (Parun.Codec.CastFromZone) by the zone.
     | Just zone <- Protocol.field "from" reply >>= Protocol.field "zone" >>= textOf -> Text.pack "from the " <> Text.toLower zone
     | Just tag <- Protocol.field "type" reply >>= textOf -> tagName tag <> foldMap (\value -> Text.pack " " <> optionName view value) (Protocol.field "value" reply)
@@ -151,7 +151,7 @@ candidateName self candidate =
   where
     -- Its mana and each component apart, where the whole does not print.
     piecewise =
-      let mana = [Render.manaCost m | Just m <- [Protocol.field "mana" candidate >>= decoded Codec.ManaCost.codec], not (null (ManaCost.unwrap m))]
+      let mana = [Wording.manaCost m | Just m <- [Protocol.field "mana" candidate >>= decoded Codec.ManaCost.codec], not (null (ManaCost.unwrap m))]
           components = foldMap (fmap (componentName self)) (Protocol.field "components" candidate >>= Protocol.arrayOf)
        in if null (mana <> components) then plainName candidate else Text.intercalate (Text.pack ", ") (mana <> components)
 
@@ -171,11 +171,11 @@ plainName reply = Text.unwords (filter (not . Text.null) (go reply))
       R.Null -> []
       R.Boolean _ -> []
       R.Number n -> [Text.pack (show n)]
-      R.Text t -> [Text.toLower (Render.spaced t)]
+      R.Text t -> [Text.toLower (Wording.spaced t)]
       R.Array xs -> concatMap go xs
       R.Object pairs
         | Just (R.Text tag) <- lookup (Text.pack "type") pairs ->
-            [Text.toLower (Render.spaced tag) | tag `notElem` fmap Text.pack ["Fixed", "And", "Literal", "Exactly"]] <> foldMap go (lookup (Text.pack "value") pairs)
+            [Text.toLower (Wording.spaced tag) | tag `notElem` fmap Text.pack ["Fixed", "And", "Literal", "Exactly"]] <> foldMap go (lookup (Text.pack "value") pairs)
         | otherwise -> concatMap (go . snd) pairs
 
 decoded :: Codec.Codec a -> R.Reply -> Maybe a
@@ -197,12 +197,12 @@ actionName view action =
           | otherwise -> maybe (Text.pack "Activate an ability of ") (\i -> Text.pack ("Activate ability " <> show (i + 1) <> " of ")) (Protocol.field "ability" action >>= Protocol.naturalOf) <> subject
         "ActivateManaAbility" -> Text.pack "Activate a mana ability of " <> subject
         -- CR 701.40c: which procedure, where two may turn one permanent up.
-        "TurnFaceUp" -> Text.pack "Turn face up " <> subject <> foldMap (\p -> Text.pack " (" <> Render.spaced p <> Text.pack ")") (Protocol.field "procedure" action >>= textOf)
+        "TurnFaceUp" -> Text.pack "Turn face up " <> subject <> foldMap (\p -> Text.pack " (" <> Wording.spaced p <> Text.pack ")") (Protocol.field "procedure" action >>= textOf)
         -- CR 116.2d: which of the permanent's abilities is ignored.
         "Ignore" -> Text.pack "Ignore " <> subject <> foldMap (Text.pack "'s " <>) (Protocol.field "abilityName" action >>= textOf)
         -- CR 702.170a: which plot cost is paid.
         "Plot" -> Text.pack "Plot " <> subject <> foldMap (\c -> Text.pack " for " <> candidateName subject c) (Protocol.field "cost" action)
-        kind -> Render.spaced (Text.pack kind) <> maybe Text.empty (Text.pack " " <>) object
+        kind -> Wording.spaced (Text.pack kind) <> maybe Text.empty (Text.pack " " <>) object
 
 -- | An action as a verb phrase within a sentence: the label's own case bar
 -- its first letter, and an activation by its source alone.
@@ -240,7 +240,7 @@ bySeat :: PlayerView.PlayerView -> [R.Reply] -> [R.Reply]
 bySeat view = List.sortOn key
   where
     key reply =
-      let pid = maybe (recipientPlayer reply) (Render.seatOf view) (recipientObject reply)
+      let pid = maybe (recipientPlayer reply) (Wording.seatOf view) (recipientObject reply)
        in (Maybe.isNothing pid, fmap (\p -> (p /= PlayerView.viewer view, p)) pid, Maybe.isJust (recipientObject reply))
 
 -- | The player a recipient names, if it is one.
@@ -372,7 +372,7 @@ unitName unit =
           <> [Text.pack "restricted" | Maybe.isJust (ManaUnit.restriction unit)]
           <> [Text.pack "with an effect when spent" | Maybe.isJust (ManaUnit.rider unit) || Maybe.isJust (ManaUnit.spendTrigger unit)]
       article noun = (if Text.take 1 noun `elem` fmap Text.singleton "aeiou" then Text.pack "an " else Text.pack "a ") <> noun
-   in Text.pack "{" <> Render.manaType (ManaUnit.manaType unit) <> Text.pack "}" <> (if null notes then Text.empty else Text.pack " (" <> Text.intercalate (Text.pack ", ") notes <> Text.pack ")")
+   in Text.pack "{" <> Wording.manaType (ManaUnit.manaType unit) <> Text.pack "}" <> (if null notes then Text.empty else Text.pack " (" <> Text.intercalate (Text.pack ", ") notes <> Text.pack ")")
 
 -- | A mana source as an offer names it, beside the mana types of each yield.
 
@@ -405,7 +405,7 @@ entryName view entry
   | Just shape <- decoded Codec.EntryOption.codec entry =
       Text.intercalate (Text.pack ", ") (Text.pack (show (EntryOption.power shape) <> "/" <> show (EntryOption.toughness shape)) : concatMap (take 1 . Oracle.Keyword.keywordWord Text.empty) (Set.toList (EntryOption.keywords shape)) <> fmap (Text.pack . show) (Set.toList (EntryOption.subtypes shape)))
   | Just event <- decoded Codec.GameEvent.codec entry =
-      Maybe.fromMaybe (Common.render (Codec.Reply.toValue entry)) (Render.event view (LoggedEvent.MkLoggedEvent (EventGroup.MkEventGroup 0) event))
+      Maybe.fromMaybe (Common.render (Codec.Reply.toValue entry)) (Wording.event view (LoggedEvent.MkLoggedEvent (EventGroup.MkEventGroup 0) event))
   | Maybe.isJust (Protocol.field "source" entry) = sourcedName Text.empty view entry
   | entry == R.Null = Text.pack "Something you did not see"
   | otherwise = optionName view entry
@@ -437,7 +437,7 @@ fillAmounts caps = fst . go caps
 -- a stored die result, a recipient, or as an option is named.
 amountKeyName :: PlayerView.PlayerView -> R.Reply -> Text.Text
 amountKeyName view key
-  | Just kind <- decoded (Codec.CounterKind.codec Codec.Keyword.codec) key = Render.counterName kind <> Text.pack " counters"
+  | Just kind <- decoded (Codec.CounterKind.codec Codec.Keyword.codec) key = Wording.counterName kind <> Text.pack " counters"
   | Just result <- decoded Codec.StoredResult.codec key = Text.pack ("d" <> show (StoredResult.sides result) <> " showing " <> show (StoredResult.value result))
   | R.Array [R.Text _, _] <- key = recipientName view key
   | otherwise = optionName view key
@@ -456,13 +456,13 @@ told view self offer = case offer of
     ]
   _ -> []
   where
-    label key = case Text.uncons (Render.spaced key) of
+    label key = case Text.uncons (Wording.spaced key) of
       Just (c, rest) -> Text.cons (Char.toUpper c) rest
       Nothing -> key
     value key reply
       | key == Text.pack "cost" = candidateName self reply
-      | key == Text.pack "symbol", Just symbol <- decoded Codec.ManaSymbol.codec reply = Render.manaCost (ManaCost.MkManaCost [symbol])
-      | key == Text.pack "mana", Just mana <- decoded Codec.ManaType.codec reply = Render.manaType mana
+      | key == Text.pack "symbol", Just symbol <- decoded Codec.ManaSymbol.codec reply = Wording.manaCost (ManaCost.MkManaCost [symbol])
+      | key == Text.pack "mana", Just mana <- decoded Codec.ManaType.codec reply = Wording.manaType mana
       | Just pairs <- Protocol.arrayOf reply,
         Just named <- mapM byPlayer pairs =
           Text.intercalate (Text.pack "; ") named

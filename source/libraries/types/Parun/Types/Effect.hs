@@ -745,7 +745,8 @@ data Effect card ability
   | -- | Give each recipient one additional counter of a kind it already has
     -- (CR 122.1): 'Nothing' is CR 701.34a's proliferate, every kind, the
     -- recipients chosen on resolution; 'Just' is the targets in a slot (CR
-    -- 115.1), which is not a proliferate.
+    -- 115.1), which is not a proliferate, and may instead take one away
+    -- (Parun.Types.KindStep).
     Proliferate (Maybe AnotherCounter.AnotherCounter)
   | -- | CR 201.4 via CR 608.2c: the players the payload's PlayerRef names each
     -- choose a card name, written to Object.chosenNames on the resolving object
