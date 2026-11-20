@@ -839,7 +839,7 @@ spec s registry = Spec.describe s "Client" $ do
         attacking = Prompt.DeclareAttackers (Decider.MkDecider S.alice) S.alice [g1, g2]
         byName = readout lookUp gs ["card raging goblin", "1"] attacking
         byNumber = readout lookUp gs ["card 2", "1"] attacking
-    Spec.assertEqWith s "by name" (cardLines byName) ([Text.pack "Raging Goblin 2/2 (1 damage, 1 +1/+1 counter)", Text.pack "Raging Goblin {R}", Text.pack "Creature \8212 Berserker Goblin", Text.pack "2/2", Text.pack "Counters: 1 +1/+1"] <> Text.lines text)
+    Spec.assertEqWith s "by name" (cardLines byName) ([Text.pack "Raging Goblin 2/2 (1 damage, 1 +1/+1 counter)", Text.pack "Raging Goblin {R}", Text.pack "Creature \8212 Goblin Berserker", Text.pack "2/2", Text.pack "Counters: 1 +1/+1"] <> Text.lines text)
     Spec.assertBool s (not (null (Text.lines text))) "Raging Goblin has Oracle text"
     Spec.assertBool s (Text.pack "Type card and a number from a list, or a card's name, to read that card." `elem` byName) "the first screen says how"
     Spec.assertEqWith
