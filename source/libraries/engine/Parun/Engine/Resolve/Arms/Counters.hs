@@ -135,6 +135,7 @@ import qualified Parun.Types.PlayerRef as PlayerRef
 import qualified Parun.Types.PlayerRelation as PlayerRelation
 import qualified Parun.Types.Prompt as Prompt
 import qualified Parun.Types.ProposedEvent as ProposedEvent
+import qualified Parun.Types.PutCounterOfEachKind as PutCounterOfEachKind
 import qualified Parun.Types.PutCounters as PutCounters
 import qualified Parun.Types.PutCountersFrom as PutCountersFrom
 import qualified Parun.Types.Quantity as Quantity.Type
@@ -388,6 +389,22 @@ putCountersFrom resolving source controller legal (PutCountersFrom.MkPutCounters
   -- ONE call per kind per permanent inside it, which is CR 614.16's own unit.
   Monad.unless (Map.null tally) . Event.simultaneously . Monad.forM_ targets $ \target ->
     Monad.forM_ (Map.toList tally) (uncurry (Event.putCounters (CounterCause.ByEffect controller) target))
+
+-- CR 122.6: one counter of each kind among the permanents `among` names, on
+-- what `ref` names. The kinds are read once, as the instruction is reached (CR
+-- 608.2h), each kind once however many permanents bear it (CR 122.1's
+-- interchangeable counters). `ref` is asked once per kind, in ascending kind
+-- order, every choice made before any counter lands (CR 608.2d), so Exotic
+-- Pets' "either of those tokens" is chosen kind by kind. Then ONE CR 608.2f
+-- bracket, the PutCounters arm's, with one CR 122.6 funnel call per counter.
+putCounterOfEachKind :: ObjectId -> ObjectId -> PlayerId -> Map.Map SlotName (Set Recipient) -> Map.Map SlotName (Set Recipient) -> PutCounterOfEachKind.PutCounterOfEachKind -> Game ()
+putCounterOfEachKind resolving source controller legal chosen (PutCounterOfEachKind.MkPutCounterOfEachKind among ref) = do
+  gs <- State.get
+  let kinds = Set.toAscList (foldMap (Set.fromList . Common.objectKinds gs) (objectRefObjects legal resolving controller source gs among))
+  picks <- Monad.forM kinds $ \kind -> fmap ((,) kind) (Common.askingObjects Common.Present resolving source controller legal chosen ref)
+  cause <- State.gets (Event.resolvingCounterCause controller)
+  Monad.unless (all (null . snd) picks) . Event.simultaneously . Monad.forM_ picks $ \(kind, targets) ->
+    Monad.forM_ targets $ \target -> Event.putCounters cause target kind 1
 
 -- CR 201.4 via CR 608.2c: the players the PlayerRef names each name a card,
 -- and the names are stamped on the SOURCE, each under its chooser, so a later

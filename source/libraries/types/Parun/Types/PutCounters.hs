@@ -19,7 +19,9 @@ import qualified Parun.Types.SlotName as SlotName
 --
 -- ONE kind per instruction, which is all CR 701.10e's sentence asks for and what
 -- Aragorn, Hornburg Hero writes. A card's "each kind of counter" (Vorel of the
--- Hull Clade) is Parun.Types.PutCountersFrom from a permanent onto itself.
+-- Hull Clade) is Parun.Types.PutCountersFrom from a permanent onto itself, and
+-- one counter of each kind among a group (Exotic Pets) is
+-- Parun.Types.PutCounterOfEachKind.
 --
 -- Each named permanent gets its OWN call to Event.putCounters, because CR 614.16
 -- replaces one placement at a time: a Hardened Scales seeing three creatures gets

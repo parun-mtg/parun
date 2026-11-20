@@ -449,6 +449,7 @@ manaProduced effect = case effect of
   Effect.PutCounters {} -> Nothing
   Effect.Divide {} -> Nothing
   Effect.PutCountersFrom {} -> Nothing
+  Effect.PutCounterOfEachKind {} -> Nothing
   Effect.RemoveCounters {} -> Nothing
   Effect.RemoveCountersAmong {} -> Nothing
   Effect.MoveCounters {} -> Nothing
@@ -664,6 +665,7 @@ playerChoice effect = case effect of
   Effect.PutCounters {} -> Nothing
   Effect.Divide {} -> Nothing
   Effect.PutCountersFrom {} -> Nothing
+  Effect.PutCounterOfEachKind {} -> Nothing
   Effect.RemoveCounters {} -> Nothing
   Effect.RemoveCountersAmong {} -> Nothing
   Effect.MoveCounters {} -> Nothing
@@ -965,6 +967,7 @@ movesLibraryCard effect = case effect of
   Effect.PutCounters {} -> False
   Effect.Divide {} -> False
   Effect.PutCountersFrom {} -> False
+  Effect.PutCounterOfEachKind {} -> False
   Effect.RemoveCounters {} -> False
   Effect.RemoveCountersAmong {} -> False
   Effect.MoveCounters {} -> False

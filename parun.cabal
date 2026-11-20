@@ -1566,6 +1566,8 @@ library codec
     Parun.Codec.ProtectionSpec
     Parun.Codec.Prototype
     Parun.Codec.PrototypeSpec
+    Parun.Codec.PutCounterOfEachKind
+    Parun.Codec.PutCounterOfEachKindSpec
     Parun.Codec.PutCounters
     Parun.Codec.PutCountersFrom
     Parun.Codec.PutCountersFromSpec
@@ -3706,6 +3708,7 @@ library types
     Parun.Types.ProposedEvent
     Parun.Types.Protection
     Parun.Types.Prototype
+    Parun.Types.PutCounterOfEachKind
     Parun.Types.PutCounters
     Parun.Types.PutCountersFrom
     Parun.Types.PutIntoZoneTrigger

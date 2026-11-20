@@ -1,0 +1,46 @@
+{
+  "description": "CR 122.6 / 608.2d: Exotic Pets puts one counter of each kind among creatures its caster controls on a Fish chosen kind by kind",
+  "note": "Three kinds among alice's creatures: +1/+1 (on both, so counted once), flying and shield. The +1/+1 and shield go on the first Fish and flying on the second, so the per-kind choice is not the fallback for every kind. Glorious Anthem's charge counter (not a creature) and bob's Grizzly Bears' -1/-1 counter (not alice's) add no kind.",
+  "board": {
+    "active": "alice",
+    "step": "PrecombatMain",
+    "seats": [
+      {
+        "name": "alice",
+        "manaPool": "WUU",
+        "hand": [{"card": "Exotic Pets", "label": "pets"}],
+        "battlefield": [
+          {"card": "Hill Giant", "label": "giant", "counters": [{"key": {"type": "PlusOnePlusOne"}, "value": 2}, {"key": {"type": "Keyword", "value": {"type": "Flying"}}, "value": 1}]},
+          {"card": "Grizzly Bears", "label": "bears", "counters": [{"key": {"type": "PlusOnePlusOne"}, "value": 1}, {"key": {"type": "Shield"}, "value": 1}]},
+          {"card": "Glorious Anthem", "label": "anthem", "counters": [{"key": {"type": "Named", "value": "charge"}, "value": 1}]}
+        ],
+        "library": [{"card": "Island"}, {"card": "Island"}, {"card": "Island"}]
+      },
+      {
+        "name": "bob",
+        "battlefield": [
+          {"card": "Grizzly Bears", "label": "theirs", "counters": [{"key": {"type": "MinusOneMinusOne"}, "value": 1}]}
+        ],
+        "library": [{"card": "Island"}, {"card": "Island"}, {"card": "Island"}]
+      }
+    ]
+  },
+  "timeline": [
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": {"Cast": {"object": "$pets"}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": "Pass"},
+    {"turn": 1, "step": "PrecombatMain", "player": "bob", "do": "Pass"},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": {"Answer": {"prompt": "ChoosePermanent", "with": "Fish Token"}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": {"Answer": {"prompt": "ChoosePermanent", "with": "Fish Token#2"}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": {"Answer": {"prompt": "ChoosePermanent", "with": "Fish Token"}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"Counters": {"object": "Fish Token", "kind": {"type": "PlusOnePlusOne"}, "count": 1}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"Counters": {"object": "Fish Token", "kind": {"type": "Shield"}, "count": 1}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"Counters": {"object": "Fish Token", "kind": {"type": "Keyword", "value": {"type": "Flying"}}, "count": 0}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"Counters": {"object": "Fish Token#2", "kind": {"type": "Keyword", "value": {"type": "Flying"}}, "count": 1}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"Counters": {"object": "Fish Token#2", "kind": {"type": "PlusOnePlusOne"}, "count": 0}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"Counters": {"object": "Fish Token#2", "kind": {"type": "Shield"}, "count": 0}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"Counters": {"object": "Fish Token", "kind": {"type": "Named", "value": "charge"}, "count": 0}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"Counters": {"object": "Fish Token#2", "kind": {"type": "Named", "value": "charge"}, "count": 0}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"Counters": {"object": "Fish Token", "kind": {"type": "MinusOneMinusOne"}, "count": 0}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"Counters": {"object": "Fish Token#2", "kind": {"type": "MinusOneMinusOne"}, "count": 0}}}
+  ]
+}

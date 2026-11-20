@@ -3764,6 +3764,7 @@ effectIsImpossible asked resolving source controller legal gs effect = case effe
           _ -> False
      in any emptySlot [fromRef, toRef] || (not (null pairs) && not (any crosses pairs))
   Effect.PutCountersFrom {} -> False
+  Effect.PutCounterOfEachKind {} -> False
   Effect.GainPlayerCounters {} -> False
   Effect.RemovePlayerCounters {} -> False
   Effect.PayAnyEnergy {} -> False

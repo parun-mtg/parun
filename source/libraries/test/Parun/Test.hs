@@ -729,6 +729,7 @@ import qualified Parun.Codec.ProhibitionSpec
 import qualified Parun.Codec.ProjectedCharacteristicsSpec
 import qualified Parun.Codec.ProtectionSpec
 import qualified Parun.Codec.PrototypeSpec
+import qualified Parun.Codec.PutCounterOfEachKindSpec
 import qualified Parun.Codec.PutCountersFromSpec
 import qualified Parun.Codec.PutCountersSpec
 import qualified Parun.Codec.PutIntoZoneTriggerSpec
@@ -1884,6 +1885,7 @@ spec s reference corpus = do
   Parun.Codec.ProtectionSpec.spec s
   Parun.Codec.PrototypeSpec.spec s
   Parun.Codec.PutCountersFromSpec.spec s
+  Parun.Codec.PutCounterOfEachKindSpec.spec s
   Parun.Codec.PutCountersSpec.spec s
   Parun.Codec.QuantitySpec.spec s
   Parun.Codec.RangeOfInfluenceSpec.spec s
