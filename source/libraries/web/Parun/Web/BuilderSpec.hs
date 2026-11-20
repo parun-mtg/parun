@@ -56,7 +56,7 @@ spec s = Spec.describe s "Parun.Web.Builder" $ do
 
     Spec.it s "writes back the rest of a list untouched" $ do
       let opened = constructed {Builder.deck = Map.singleton bolt 4, Builder.suffixes = Map.singleton bolt (Text.pack " (M10) 146"), Builder.rest = [Text.pack "Sideboard", Text.pack "2 Shock"]}
-      Spec.assertEq s (Builder.listText opened) (Text.pack "Format: constructed\n4 Lightning Bolt (M10) 146\nSideboard\n2 Shock\n")
+      Spec.assertEq s (Builder.listText opened) (Text.pack "Format: constructed\n4 Lightning Bolt (M10) 146\n\nSideboard\n2 Shock\n")
 
     Spec.it s "parses back to the same deck, a split card included" $ do
       let built = fresh {Builder.deck = Map.fromList [(bolt, 4), (fireIce, 2)]}
@@ -97,6 +97,38 @@ spec s = Spec.describe s "Parun.Web.Builder" $ do
     Spec.it s "shows the rules text of the card being read" $ do
       Spec.assertBool s (Text.isInfixOf (Text.pack "deals 3 damage") (page (Builder.update (Builder.MkRead bolt) Text.empty indexed))) "rules"
 
+  Spec.describe s "open" $ do
+    Spec.it s "opens a commander precon and writes its commander back" $ do
+      let text = "Format: commander\n\nCommander\n1 Sai, Master Thopterist\n\nDeck\n1 Ornithopter\n30 Island\n"
+          opened = Builder.open Nothing (Text.pack "Sai") (Text.pack text) fresh
+      Spec.assertEq s (Builder.format opened, Builder.deck opened) (Text.pack "commander", Map.fromList [(named "Ornithopter", 1), (named "Island", 30)])
+      Spec.assertEq s (Builder.listText opened) (Text.pack "Format: commander\n30 Island\n1 Ornithopter\n\nCommander\n1 Sai, Master Thopterist\n")
+
+    Spec.it s "opens a list with no header as a casual main deck" $ do
+      let opened = Builder.open Nothing (Text.pack "Mine") (Text.pack "4 Lightning Bolt\n\n20 Mountain\n") fresh
+      Spec.assertEq s (Builder.format opened, Builder.deck opened) (Text.empty, Map.fromList [(bolt, 4), (mountain, 20)])
+
+    Spec.it s "sums a card listed twice" $ do
+      Spec.assertEq s (Builder.deck (Builder.open Nothing Text.empty (Text.pack "2 Mountain\n3 Mountain\n") fresh)) (Map.singleton mountain 5)
+
+    Spec.it s "keeps a card's printing and annotations" $ do
+      let opened = Builder.open Nothing Text.empty (Text.pack "4 Lightning Bolt (m10) 146\n1 Paliano Vanguard {color: G}\n") fresh
+      Spec.assertEq s (Builder.listText opened) (Text.pack "4 Lightning Bolt (M10) 146\n1 Paliano Vanguard {color: G}\n")
+
+    Spec.it s "an opened saved deck saves over itself" $ do
+      let opened = Builder.open (Just (Text.pack "saved/burn")) (Text.pack "Burn") (Text.pack "4 Lightning Bolt\n") fresh
+      Spec.assertEq s (Builder.saveTarget (Seq.singleton (Text.pack "saved/burn")) opened) (Right (Text.pack "saved/burn"))
+
+    Spec.it s "an opened precon offers its name and refuses a clash" $ do
+      let opened = Builder.open Nothing (Text.pack "Burn") (Text.pack "4 Lightning Bolt\n") fresh
+      Spec.assertEq s (Builder.saveName opened, Builder.saveTarget (Seq.singleton (Text.pack "saved/burn")) opened) (Text.pack "Burn", Left [Text.pack "A saved deck is already named that."])
+
+    Spec.it s "opens with nothing to save" $ do
+      Spec.assertEq s (Builder.dirty (Builder.open Nothing (Text.pack "Burn") (Text.pack "4 Lightning Bolt\n") fresh)) False
+
+    Spec.it s "adding then removing a card leaves nothing to save" $ do
+      Spec.assertEq s (Builder.dirty (tap (Builder.MkRemove bolt) (tap (Builder.MkAdd bolt) fresh))) False
+
   Spec.describe s "saveTarget" $ do
     Spec.it s "a first save takes the typed name" $ do
       Spec.assertEq s (Builder.saveTarget Seq.empty (Builder.update Builder.MkSaveName (Text.pack "Red Burn") fresh)) (Right (Text.pack "saved/red-burn"))
@@ -117,3 +149,4 @@ spec s = Spec.describe s "Parun.Web.Builder" $ do
     bolt = CardName.MkCardName (Text.pack "Lightning Bolt")
     mountain = CardName.MkCardName (Text.pack "Mountain")
     fireIce = CardName.MkCardName (Text.pack "Fire // Ice")
+    named = CardName.MkCardName . Text.pack
