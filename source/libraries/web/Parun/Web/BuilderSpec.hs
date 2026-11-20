@@ -168,7 +168,7 @@ spec s = Spec.describe s "Parun.Web.Builder" $ do
       Spec.assertEq s (Builder.saveTarget (Seq.singleton (Text.pack "saved/burn")) again) (Right (Text.pack "saved/burn"))
   where
     page = Html.toText . Builder.view
-    card name = CardIndex.MkEntry (CardName.MkCardName (Text.pack name)) [Text.pack name] Nothing 1 Set.empty Set.empty (Text.pack "Instant") [] (Text.toCaseFold (Text.pack name))
+    card name = CardIndex.MkEntry (CardName.MkCardName (Text.pack name)) [Text.pack name] Nothing 1 Set.empty Set.empty (Text.pack "Instant") [] (Text.toCaseFold (Text.pack name)) False
     indexed = fresh {Builder.index = Just (Seq.fromList [(card "Lightning Bolt") {CardIndex.rules = [Text.pack "Lightning Bolt deals 3 damage to any target."]}, card "Mountain"])}
     constructed = Builder.update Builder.MkFormat (Text.pack "constructed") fresh
     fresh = Builder.new [Text.pack "constructed", Text.pack "pauper"]
