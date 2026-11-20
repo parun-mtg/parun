@@ -1,0 +1,123 @@
+{
+  "faces": [
+    {
+      "activatedAbilities": [
+        {
+          "cost": {
+            "components": [
+              {
+                "type": "TapThis"
+              },
+              {
+                "type": "MoveCardsFromGraveyard",
+                "value": {
+                  "count": {
+                    "type": "Fixed",
+                    "value": 3
+                  },
+                  "whichCards": {
+                    "type": "And",
+                    "value": []
+                  }
+                }
+              }
+            ],
+            "mana": [
+              {
+                "type": "Generic",
+                "value": 2
+              },
+              {
+                "type": "OfType",
+                "value": {
+                  "type": "Colored",
+                  "value": "Red"
+                }
+              }
+            ]
+          },
+          "modal": {
+            "modes": [
+              {
+                "clauses": [
+                  {
+                    "effects": [
+                      {
+                        "type": "Create",
+                        "value": {
+                          "card": {
+                            "faces": [
+                              {
+                                "colorIndicator": [
+                                  "Red"
+                                ],
+                                "name": "Wolf Token",
+                                "power": {
+                                  "type": "Literal",
+                                  "value": 3
+                                },
+                                "toughness": {
+                                  "type": "Literal",
+                                  "value": 2
+                                },
+                                "typeLine": {
+                                  "subtypes": [
+                                    "Wolf"
+                                  ],
+                                  "types": [
+                                    "Creature"
+                                  ]
+                                }
+                              }
+                            ]
+                          },
+                          "quantity": {
+                            "type": "Literal",
+                            "value": 1
+                          }
+                        }
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          }
+        }
+      ],
+      "keywords": [
+        {
+          "type": "Menace"
+        }
+      ],
+      "manaCost": [
+        {
+          "type": "OfType",
+          "value": {
+            "type": "Colored",
+            "value": "Red"
+          }
+        }
+      ],
+      "name": "Kessig Wolfrider",
+      "oracleText": "Menace\n{2}{R}, {T}, Exile three cards from your graveyard: Create a 3/2 red Wolf creature token.",
+      "power": {
+        "type": "Literal",
+        "value": 1
+      },
+      "toughness": {
+        "type": "Literal",
+        "value": 2
+      },
+      "typeLine": {
+        "subtypes": [
+          "Human",
+          "Knight"
+        ],
+        "types": [
+          "Creature"
+        ]
+      }
+    }
+  ]
+}

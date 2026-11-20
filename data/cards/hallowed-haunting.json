@@ -1,0 +1,265 @@
+{
+  "faces": [
+    {
+      "manaCost": [
+        {
+          "type": "Generic",
+          "value": 2
+        },
+        {
+          "type": "OfType",
+          "value": {
+            "type": "Colored",
+            "value": "White"
+          }
+        },
+        {
+          "type": "OfType",
+          "value": {
+            "type": "Colored",
+            "value": "White"
+          }
+        }
+      ],
+      "name": "Hallowed Haunting",
+      "oracleText": "As long as you control seven or more enchantments, creatures you control have flying and vigilance.\nWhenever you cast an enchantment spell, create a white Spirit Cleric creature token with \"This token's power and toughness are each equal to the number of Spirits you control.\"",
+      "staticAbilities": [
+        {
+          "affected": {
+            "type": "Matching",
+            "value": {
+              "type": "And",
+              "value": [
+                {
+                  "type": "HasCardType",
+                  "value": "Creature"
+                },
+                {
+                  "type": "HeldBy",
+                  "value": {
+                    "holder": "Controller",
+                    "relation": "You"
+                  }
+                }
+              ]
+            }
+          },
+          "condition": {
+            "type": "Compares",
+            "value": {
+              "comparison": "AtLeast",
+              "measured": {
+                "type": "Count",
+                "value": {
+                  "aggregation": {
+                    "type": "Members"
+                  },
+                  "filter": {
+                    "type": "And",
+                    "value": [
+                      {
+                        "type": "HasCardType",
+                        "value": "Enchantment"
+                      },
+                      {
+                        "type": "HeldBy",
+                        "value": {
+                          "holder": "Controller",
+                          "relation": "You"
+                        }
+                      }
+                    ]
+                  },
+                  "scope": {
+                    "type": "InZone",
+                    "value": {
+                      "player": {
+                        "type": "Relative",
+                        "value": "AnyPlayer"
+                      },
+                      "zone": "Battlefield"
+                    }
+                  }
+                }
+              },
+              "threshold": {
+                "type": "Literal",
+                "value": 7
+              }
+            }
+          },
+          "modifications": [
+            {
+              "type": "GainKeyword",
+              "value": {
+                "type": "Flying"
+              }
+            },
+            {
+              "type": "GainKeyword",
+              "value": {
+                "type": "Vigilance"
+              }
+            }
+          ]
+        }
+      ],
+      "triggeredAbilities": [
+        {
+          "condition": {
+            "type": "SpellCast",
+            "value": {
+              "scope": {
+                "type": "PlayersTurn",
+                "value": {
+                  "type": "Relative",
+                  "value": "AnyPlayer"
+                }
+              },
+              "spell": {
+                "type": "Matching",
+                "value": {
+                  "type": "And",
+                  "value": [
+                    {
+                      "type": "HasCardType",
+                      "value": "Enchantment"
+                    },
+                    {
+                      "type": "HeldBy",
+                      "value": {
+                        "holder": "Controller",
+                        "relation": "You"
+                      }
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "modal": {
+            "modes": [
+              {
+                "clauses": [
+                  {
+                    "effects": [
+                      {
+                        "type": "Create",
+                        "value": {
+                          "card": {
+                            "faces": [
+                              {
+                                "characteristicPT": {
+                                  "power": {
+                                    "type": "Count",
+                                    "value": {
+                                      "aggregation": {
+                                        "type": "Members"
+                                      },
+                                      "filter": {
+                                        "type": "And",
+                                        "value": [
+                                          {
+                                            "type": "HasSubtype",
+                                            "value": "Spirit"
+                                          },
+                                          {
+                                            "type": "HeldBy",
+                                            "value": {
+                                              "holder": "Controller",
+                                              "relation": "You"
+                                            }
+                                          }
+                                        ]
+                                      },
+                                      "scope": {
+                                        "type": "InZone",
+                                        "value": {
+                                          "player": {
+                                            "type": "Relative",
+                                            "value": "AnyPlayer"
+                                          },
+                                          "zone": "Battlefield"
+                                        }
+                                      }
+                                    }
+                                  },
+                                  "toughness": {
+                                    "type": "Count",
+                                    "value": {
+                                      "aggregation": {
+                                        "type": "Members"
+                                      },
+                                      "filter": {
+                                        "type": "And",
+                                        "value": [
+                                          {
+                                            "type": "HasSubtype",
+                                            "value": "Spirit"
+                                          },
+                                          {
+                                            "type": "HeldBy",
+                                            "value": {
+                                              "holder": "Controller",
+                                              "relation": "You"
+                                            }
+                                          }
+                                        ]
+                                      },
+                                      "scope": {
+                                        "type": "InZone",
+                                        "value": {
+                                          "player": {
+                                            "type": "Relative",
+                                            "value": "AnyPlayer"
+                                          },
+                                          "zone": "Battlefield"
+                                        }
+                                      }
+                                    }
+                                  }
+                                },
+                                "colorIndicator": [
+                                  "White"
+                                ],
+                                "name": "Spirit Cleric Token",
+                                "power": {
+                                  "type": "Star"
+                                },
+                                "toughness": {
+                                  "type": "Star"
+                                },
+                                "typeLine": {
+                                  "subtypes": [
+                                    "Spirit",
+                                    "Cleric"
+                                  ],
+                                  "types": [
+                                    "Creature"
+                                  ]
+                                }
+                              }
+                            ]
+                          },
+                          "quantity": {
+                            "type": "Literal",
+                            "value": 1
+                          }
+                        }
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          }
+        }
+      ],
+      "typeLine": {
+        "types": [
+          "Enchantment"
+        ]
+      }
+    }
+  ]
+}

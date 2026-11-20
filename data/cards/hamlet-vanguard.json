@@ -1,0 +1,130 @@
+{
+  "faces": [
+    {
+      "keywords": [
+        {
+          "type": "Ward",
+          "value": {
+            "cost": {
+              "mana": [
+                {
+                  "type": "Generic",
+                  "value": 2
+                }
+              ]
+            }
+          }
+        }
+      ],
+      "manaCost": [
+        {
+          "type": "Generic",
+          "value": 2
+        },
+        {
+          "type": "OfType",
+          "value": {
+            "type": "Colored",
+            "value": "Green"
+          }
+        }
+      ],
+      "name": "Hamlet Vanguard",
+      "oracleText": "Ward {2} (Whenever this creature becomes the target of a spell or ability an opponent controls, counter it unless that player pays {2}.)\nThis creature enters with two +1/+1 counters on it for each other nontoken Human you control.",
+      "power": {
+        "type": "Literal",
+        "value": 1
+      },
+      "replacementEffects": [
+        {
+          "effect": {
+            "type": "EntryR",
+            "value": {
+              "matching": {
+                "type": "IsSource"
+              },
+              "rewrite": {
+                "type": "WithCounters",
+                "value": [
+                  {
+                    "count": {
+                      "type": "Times",
+                      "value": {
+                        "factor": {
+                          "type": "Literal",
+                          "value": 2
+                        },
+                        "quantity": {
+                          "type": "Count",
+                          "value": {
+                            "aggregation": {
+                              "type": "Members"
+                            },
+                            "filter": {
+                              "type": "And",
+                              "value": [
+                                {
+                                  "type": "HasSubtype",
+                                  "value": "Human"
+                                },
+                                {
+                                  "type": "Not",
+                                  "value": {
+                                    "type": "IsToken"
+                                  }
+                                },
+                                {
+                                  "type": "HeldBy",
+                                  "value": {
+                                    "holder": "Controller",
+                                    "relation": "You"
+                                  }
+                                },
+                                {
+                                  "type": "Not",
+                                  "value": {
+                                    "type": "IsSource"
+                                  }
+                                }
+                              ]
+                            },
+                            "scope": {
+                              "type": "InZone",
+                              "value": {
+                                "player": {
+                                  "type": "Relative",
+                                  "value": "AnyPlayer"
+                                },
+                                "zone": "Battlefield"
+                              }
+                            }
+                          }
+                        }
+                      }
+                    },
+                    "kind": {
+                      "type": "PlusOnePlusOne"
+                    }
+                  }
+                ]
+              }
+            }
+          }
+        }
+      ],
+      "toughness": {
+        "type": "Literal",
+        "value": 1
+      },
+      "typeLine": {
+        "subtypes": [
+          "Human",
+          "Warrior"
+        ],
+        "types": [
+          "Creature"
+        ]
+      }
+    }
+  ]
+}

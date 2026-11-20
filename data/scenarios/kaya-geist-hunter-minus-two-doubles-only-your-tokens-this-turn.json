@@ -1,0 +1,246 @@
+{
+  "board": {
+    "active": "alice",
+    "seats": [
+      {
+        "battlefield": [
+          {
+            "card": "Kaya, Geist Hunter",
+            "counters": [
+              {
+                "key": {
+                  "type": "Loyalty"
+                },
+                "value": 3
+              }
+            ],
+            "label": "kaya"
+          },
+          {
+            "card": "Plains",
+            "label": "p1"
+          },
+          {
+            "card": "Plains",
+            "label": "p2"
+          },
+          {
+            "card": "Plains",
+            "label": "p3"
+          },
+          {
+            "card": "Plains",
+            "label": "p4"
+          }
+        ],
+        "hand": [
+          {
+            "card": "Raise the Alarm",
+            "label": "alarm1"
+          },
+          {
+            "card": "Raise the Alarm",
+            "label": "alarm2"
+          }
+        ],
+        "library": [
+          {
+            "card": "Plains"
+          },
+          {
+            "card": "Plains"
+          },
+          {
+            "card": "Plains"
+          },
+          {
+            "card": "Plains"
+          },
+          {
+            "card": "Plains"
+          },
+          {
+            "card": "Plains"
+          }
+        ],
+        "name": "alice"
+      },
+      {
+        "battlefield": [
+          {
+            "card": "Plains",
+            "label": "b1"
+          },
+          {
+            "card": "Plains",
+            "label": "b2"
+          }
+        ],
+        "hand": [
+          {
+            "card": "Raise the Alarm",
+            "label": "balarm"
+          }
+        ],
+        "library": [
+          {
+            "card": "Plains"
+          },
+          {
+            "card": "Plains"
+          },
+          {
+            "card": "Plains"
+          },
+          {
+            "card": "Plains"
+          },
+          {
+            "card": "Plains"
+          },
+          {
+            "card": "Plains"
+          }
+        ],
+        "name": "bob"
+      }
+    ],
+    "step": "PrecombatMain"
+  },
+  "description": "CR 606.3 / 614.1a / 111.1: Kaya, Geist Hunter's -2 doubles the tokens created under her controller's control until end of turn, and no one else's",
+  "note": "Alice's Raise the Alarm after the -2 makes four Soldiers; bob's, cast in alice's end step, makes two; alice's second, cast in bob's draw step after the effect ended, makes two more (six).",
+  "timeline": [
+    {
+      "do": {
+        "Activate": {
+          "ability": 1,
+          "object": "$kaya"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": "Pass",
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Counters": {
+          "count": 1,
+          "kind": {
+            "type": "Loyalty"
+          },
+          "object": "$kaya"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": {
+        "Cast": {
+          "mana": [
+            "$p1",
+            "$p2",
+            null
+          ],
+          "object": "$alarm1"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": "Pass",
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Count": {
+          "card": "Soldier Token",
+          "count": 4,
+          "player": "alice",
+          "zone": "Battlefield"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": {
+        "Cast": {
+          "mana": [
+            "$b1",
+            "$b2"
+          ],
+          "object": "$balarm"
+        }
+      },
+      "player": "bob",
+      "step": "EndStep",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Count": {
+          "card": "Soldier Token",
+          "count": 2,
+          "player": "bob",
+          "zone": "Battlefield"
+        }
+      },
+      "player": "bob",
+      "step": "Upkeep",
+      "turn": 2
+    },
+    {
+      "check": {
+        "Count": {
+          "card": "Soldier Token",
+          "count": 4,
+          "player": "alice",
+          "zone": "Battlefield"
+        }
+      },
+      "player": "bob",
+      "step": "Upkeep",
+      "turn": 2
+    },
+    {
+      "do": {
+        "Cast": {
+          "mana": [
+            "$p3",
+            "$p4"
+          ],
+          "object": "$alarm2"
+        }
+      },
+      "player": "alice",
+      "step": "DrawStep",
+      "turn": 2
+    },
+    {
+      "check": {
+        "Count": {
+          "card": "Soldier Token",
+          "count": 6,
+          "player": "alice",
+          "zone": "Battlefield"
+        }
+      },
+      "player": "bob",
+      "step": "PrecombatMain",
+      "turn": 2
+    }
+  ]
+}

@@ -1,0 +1,168 @@
+{
+  "board": {
+    "active": "alice",
+    "seats": [
+      {
+        "battlefield": [
+          {
+            "card": "Alaborn Trooper"
+          },
+          {
+            "card": "Balduvian Barbarians"
+          },
+          {
+            "card": "Bane Alley Blackguard"
+          },
+          {
+            "card": "Elite Vanguard",
+            "label": "tokenhuman",
+            "token": true
+          },
+          {
+            "card": "Grizzly Bears"
+          },
+          {
+            "card": "Hill Giant"
+          },
+          {
+            "card": "Forest",
+            "label": "f1"
+          },
+          {
+            "card": "Forest",
+            "label": "f2"
+          },
+          {
+            "card": "Forest",
+            "label": "f3"
+          }
+        ],
+        "hand": [
+          {
+            "card": "Hamlet Vanguard",
+            "label": "hv"
+          }
+        ],
+        "library": [
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          }
+        ],
+        "name": "alice"
+      },
+      {
+        "battlefield": [
+          {
+            "card": "Barbarian Horde"
+          },
+          {
+            "card": "Elite Vanguard"
+          },
+          {
+            "card": "Alaborn Trooper"
+          }
+        ],
+        "library": [
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          }
+        ],
+        "name": "bob"
+      }
+    ],
+    "step": "PrecombatMain"
+  },
+  "description": "CR 614.1c / 122.6: Hamlet Vanguard enters with two +1/+1 counters for each other nontoken Human you control",
+  "note": "Three nontoken Humans of alice's count (six counters). Her Human token, her two non-Humans and bob's three Humans would each change the number if counted.",
+  "timeline": [
+    {
+      "do": {
+        "Cast": {
+          "mana": [
+            "$f1",
+            "$f2",
+            "$f3"
+          ],
+          "object": "$hv"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": "Pass",
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Counters": {
+          "count": 6,
+          "kind": {
+            "type": "PlusOnePlusOne"
+          },
+          "object": "Hamlet Vanguard"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "PowerToughness": {
+          "object": "Hamlet Vanguard",
+          "power": 7,
+          "toughness": 7
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    }
+  ]
+}

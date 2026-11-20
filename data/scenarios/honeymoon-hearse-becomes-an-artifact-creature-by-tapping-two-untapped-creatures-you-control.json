@@ -1,0 +1,237 @@
+{
+  "board": {
+    "active": "alice",
+    "seats": [
+      {
+        "battlefield": [
+          {
+            "card": "Honeymoon Hearse",
+            "label": "hearse",
+            "ready": true
+          },
+          {
+            "card": "Grizzly Bears",
+            "label": "bears",
+            "ready": true
+          },
+          {
+            "card": "Gray Ogre",
+            "label": "ogre",
+            "ready": true,
+            "tapped": true
+          }
+        ],
+        "library": [
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          }
+        ],
+        "name": "alice"
+      },
+      {
+        "battlefield": [
+          {
+            "card": "Hill Giant",
+            "label": "giant",
+            "ready": true
+          }
+        ],
+        "library": [
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          }
+        ],
+        "name": "bob"
+      }
+    ],
+    "step": "PrecombatMain"
+  },
+  "description": "CR 602.1a / 301.7b / 611.2a: tapping two untapped creatures you control makes Honeymoon Hearse a 5/5 artifact creature until end of turn",
+  "note": "Turn 1 alice has untapped Bears and a tapped Ogre, and bob an untapped Hill Giant: the cost is refused. The Bears attack, taking bob to 18. Turn 3 the Bears and Ogre pay, the Hearse attacks unblocked for 5, and it is no creature by bob's upkeep.",
+  "timeline": [
+    {
+      "check": {
+        "Types": {
+          "object": "$hearse",
+          "types": [
+            "Artifact"
+          ]
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "player": "alice",
+      "refuse": {
+        "Activate": {
+          "object": "$hearse"
+        }
+      },
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": {
+        "Attack": [
+          "$bears"
+        ]
+      },
+      "player": "alice",
+      "step": "DeclareAttackers",
+      "turn": 1
+    },
+    {
+      "do": {
+        "Block": {}
+      },
+      "player": "bob",
+      "step": "DeclareBlockers",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Life": {
+          "life": 18,
+          "player": "bob"
+        }
+      },
+      "player": "alice",
+      "step": "EndOfCombat",
+      "turn": 1
+    },
+    {
+      "do": {
+        "Attack": []
+      },
+      "player": "bob",
+      "step": "DeclareAttackers",
+      "turn": 2
+    },
+    {
+      "do": {
+        "Activate": {
+          "object": "$hearse"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 3
+    },
+    {
+      "check": {
+        "Tapped": {
+          "object": "$bears",
+          "tapped": true
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 3
+    },
+    {
+      "check": {
+        "Tapped": {
+          "object": "$ogre",
+          "tapped": true
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 3
+    },
+    {
+      "do": "Pass",
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 3
+    },
+    {
+      "check": {
+        "Types": {
+          "object": "$hearse",
+          "types": [
+            "Artifact",
+            "Creature"
+          ]
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 3
+    },
+    {
+      "check": {
+        "PowerToughness": {
+          "object": "$hearse",
+          "power": 5,
+          "toughness": 5
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 3
+    },
+    {
+      "do": {
+        "Attack": [
+          "$hearse"
+        ]
+      },
+      "player": "alice",
+      "step": "DeclareAttackers",
+      "turn": 3
+    },
+    {
+      "do": {
+        "Block": {}
+      },
+      "player": "bob",
+      "step": "DeclareBlockers",
+      "turn": 3
+    },
+    {
+      "check": {
+        "Life": {
+          "life": 13,
+          "player": "bob"
+        }
+      },
+      "player": "alice",
+      "step": "EndOfCombat",
+      "turn": 3
+    },
+    {
+      "check": {
+        "Types": {
+          "object": "$hearse",
+          "types": [
+            "Artifact"
+          ]
+        }
+      },
+      "player": "bob",
+      "step": "Upkeep",
+      "turn": 4
+    }
+  ]
+}

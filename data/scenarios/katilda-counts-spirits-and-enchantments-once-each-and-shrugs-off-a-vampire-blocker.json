@@ -1,0 +1,167 @@
+{
+  "board": {
+    "active": "alice",
+    "seats": [
+      {
+        "battlefield": [
+          {
+            "card": "Katilda, Dawnhart Martyr",
+            "label": "katilda",
+            "ready": true
+          },
+          {
+            "card": "Binding Geist",
+            "label": "geist"
+          },
+          {
+            "card": "Spirit of the Labyrinth",
+            "label": "labyrinth"
+          },
+          {
+            "attached": "bgiant",
+            "card": "Pacifism",
+            "label": "pacifism"
+          }
+        ],
+        "library": [
+          {
+            "card": "Plains"
+          },
+          {
+            "card": "Plains"
+          },
+          {
+            "card": "Plains"
+          },
+          {
+            "card": "Plains"
+          },
+          {
+            "card": "Plains"
+          },
+          {
+            "card": "Plains"
+          }
+        ],
+        "life": 11,
+        "name": "alice"
+      },
+      {
+        "battlefield": [
+          {
+            "card": "Vampire Nighthawk",
+            "label": "nighthawk"
+          },
+          {
+            "card": "Hill Giant",
+            "label": "bgiant"
+          },
+          {
+            "card": "Binding Geist",
+            "label": "bgeist"
+          },
+          {
+            "attached": "bgeist",
+            "card": "Pacifism",
+            "label": "bpacifism"
+          },
+          {
+            "card": "Storm Crow",
+            "label": "crow"
+          }
+        ],
+        "library": [
+          {
+            "card": "Plains"
+          },
+          {
+            "card": "Plains"
+          },
+          {
+            "card": "Plains"
+          },
+          {
+            "card": "Plains"
+          },
+          {
+            "card": "Plains"
+          },
+          {
+            "card": "Plains"
+          }
+        ],
+        "name": "bob"
+      }
+    ],
+    "step": "PrecombatMain",
+    "turn": 2
+  },
+  "description": "CR 604.3 / 702.16b / 702.16f: Katilda, Dawnhart Martyr's power and toughness count the permanents her controller controls that are Spirits and/or enchantments, each once; protection from Vampires stops a Vampire blocking her",
+  "note": "Alice's Katilda, Binding Geist, Spirit of the Labyrinth (an enchantment Spirit, counted once) and the Pacifism she controls on bob's Hill Giant make Katilda 4/4; bob's own Binding Geist and Pacifism count for nothing. Bob's flying Vampire Nighthawk cannot block (his Storm Crow could, and declines) her, and her 4 lifelink damage takes alice from 11 to 15.",
+  "timeline": [
+    {
+      "check": {
+        "PowerToughness": {
+          "object": "$katilda",
+          "power": 4,
+          "toughness": 4
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 2
+    },
+    {
+      "do": {
+        "Attack": [
+          "$katilda"
+        ]
+      },
+      "player": "alice",
+      "step": "DeclareAttackers",
+      "turn": 2
+    },
+    {
+      "player": "bob",
+      "refuse": {
+        "Block": {
+          "$nighthawk": [
+            "$katilda"
+          ]
+        }
+      },
+      "step": "DeclareBlockers",
+      "turn": 2
+    },
+    {
+      "do": {
+        "Block": {}
+      },
+      "player": "bob",
+      "step": "DeclareBlockers",
+      "turn": 2
+    },
+    {
+      "check": {
+        "Life": {
+          "life": 16,
+          "player": "bob"
+        }
+      },
+      "player": "alice",
+      "step": "PostcombatMain",
+      "turn": 2
+    },
+    {
+      "check": {
+        "Life": {
+          "life": 15,
+          "player": "alice"
+        }
+      },
+      "player": "alice",
+      "step": "PostcombatMain",
+      "turn": 2
+    }
+  ]
+}

@@ -1,0 +1,157 @@
+{
+  "faces": [
+    {
+      "counterability": {
+        "type": "CantBeCountered"
+      },
+      "keywords": [
+        {
+          "type": "Flash"
+        }
+      ],
+      "manaCost": [
+        {
+          "type": "Generic",
+          "value": 5
+        },
+        {
+          "type": "OfType",
+          "value": {
+            "type": "Colored",
+            "value": "Blue"
+          }
+        },
+        {
+          "type": "OfType",
+          "value": {
+            "type": "Colored",
+            "value": "Blue"
+          }
+        }
+      ],
+      "name": "Hullbreaker Horror",
+      "oracleText": "Flash\nThis spell can't be countered.\nWhenever you cast a spell, choose up to one —\n• Return target spell you don't control to its owner's hand.\n• Return target nonland permanent to its owner's hand.",
+      "power": {
+        "type": "Literal",
+        "value": 7
+      },
+      "toughness": {
+        "type": "Literal",
+        "value": 8
+      },
+      "triggeredAbilities": [
+        {
+          "condition": {
+            "type": "SpellCast",
+            "value": {
+              "scope": {
+                "type": "PlayersTurn",
+                "value": {
+                  "type": "Relative",
+                  "value": "AnyPlayer"
+                }
+              },
+              "spell": {
+                "type": "Matching",
+                "value": {
+                  "type": "HeldBy",
+                  "value": {
+                    "holder": "Controller",
+                    "relation": "You"
+                  }
+                }
+              }
+            }
+          },
+          "modal": {
+            "modes": [
+              {
+                "clauses": [
+                  {
+                    "effects": [
+                      {
+                        "type": "MoveToZone",
+                        "value": {
+                          "ref": {
+                            "type": "InSlot",
+                            "value": "spell"
+                          },
+                          "zone": "Hand"
+                        }
+                      }
+                    ]
+                  }
+                ],
+                "targetSlots": {
+                  "spell": {
+                    "filter": {
+                      "type": "Not",
+                      "value": {
+                        "type": "HeldBy",
+                        "value": {
+                          "holder": "Controller",
+                          "relation": "You"
+                        }
+                      }
+                    },
+                    "pool": {
+                      "type": "Spells"
+                    }
+                  }
+                }
+              },
+              {
+                "clauses": [
+                  {
+                    "effects": [
+                      {
+                        "type": "MoveToZone",
+                        "value": {
+                          "ref": {
+                            "type": "InSlot",
+                            "value": "permanent"
+                          },
+                          "zone": "Hand"
+                        }
+                      }
+                    ]
+                  }
+                ],
+                "targetSlots": {
+                  "permanent": {
+                    "filter": {
+                      "type": "Not",
+                      "value": {
+                        "type": "HasCardType",
+                        "value": "Land"
+                      }
+                    },
+                    "pool": {
+                      "type": "Permanents"
+                    }
+                  }
+                }
+              }
+            ],
+            "selection": {
+              "type": "ChooseBetween",
+              "value": {
+                "least": 0,
+                "most": 1
+              }
+            }
+          }
+        }
+      ],
+      "typeLine": {
+        "subtypes": [
+          "Kraken",
+          "Horror"
+        ],
+        "types": [
+          "Creature"
+        ]
+      }
+    }
+  ]
+}
