@@ -113,4 +113,12 @@ spec s = Spec.describe s "Parun.Codec.Pool" $ do
       Pool.codec
       (Pool.CardsInGraveyardAnd GraveyardPartner.ExiledCards (ZoneScope.Scoped (PlayerScope.Related PlayerRelation.You)))
       " {\"type\":\"CardsInGraveyardAndExile\",\"value\":{\"type\":\"Scoped\",\"value\":{\"type\":\"You\"}}} "
+  -- CR 112.1's stack and CR 110.1's battlefield beside a graveyard, the tag alone
+  -- again.
+  Spec.it s "SpellsPermanentsAndCardsInGraveyard" $
+    Common.assertCodec
+      s
+      Pool.codec
+      (Pool.CardsInGraveyardAnd GraveyardPartner.SpellsAndPermanents (ZoneScope.Scoped (PlayerScope.Related PlayerRelation.AnyPlayer)))
+      " {\"type\":\"SpellsPermanentsAndCardsInGraveyard\",\"value\":{\"type\":\"Scoped\",\"value\":{\"type\":\"AnyPlayer\"}}} "
   Spec.it s "has a schema" $ Common.assertHasSchema s Pool.codec

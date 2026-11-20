@@ -620,10 +620,12 @@ poolHeldLastKnown pool view =
         Pool.CardsInGraveyard _ -> False
         Pool.CardsInExile -> False
         Pool.CardsInAnte -> False
-        -- The battlefield half, Pool.Creatures's answer; neither card half is a permanent.
+        -- The battlefield half, Pool.Creatures's or Pool.SpellsAndPermanents's
+        -- answer; neither card half is a permanent.
         Pool.CardsInGraveyardAnd partner _ -> case partner of
           GraveyardPartner.BattlefieldCreatures -> hasType CardType.Creature
           GraveyardPartner.ExiledCards -> False
+          GraveyardPartner.SpellsAndPermanents -> any Card.isPermanentType (Set.toList types)
 
 -- CR 702.18a (shroud), CR 702.11b/702.11d (hexproof) and CR 702.16b
 -- (protection): THE targeting-restriction gate, the one every restriction rule
@@ -855,8 +857,8 @@ protectionQuality keyword = case keyword of
 -- shared by every slot of every ability in one enumeration (#1073). One field
 -- per Pool constructor that ignores the Filter.Context, which is every one that
 -- names no graveyard -- see basePoolGiven for why a graveyard arm cannot be here.
--- Pool.CardsInGraveyardAnd is half of each: its partner is the creature or exile
--- field below, and only its graveyard half is built per slot.
+-- Pool.CardsInGraveyardAnd is half of each: its partner is the creature, spell-
+-- and-permanent or exile field below, and only its graveyard half is built per slot.
 --
 -- LAZY FIELDS, and that is the whole design: a record with no strictness
 -- annotations makes each pool a thunk, so an enumeration whose abilities all
@@ -980,14 +982,15 @@ basePoolGiven pools context bindings pool gs = case pool of
   Pool.CardsInAnte -> antePool pools
   -- The graveyard arm above joined to its partner's, built HERE rather than
   -- hoisted into Pools for the graveyard arm's reason: half of it is per-slot.
-  -- The partner is the shared thunk, so a slot naming this pool pays the creature
-  -- or exile walk once with every other slot that names one.
+  -- The partner is the shared thunk, so a slot naming this pool pays the creature,
+  -- stack-and-battlefield or exile walk once with every other slot that names one.
   Pool.CardsInGraveyardAnd partner scope ->
     Set.union (partnerPool partner) (graveyardRecipients context bindings scope gs)
   where
     partnerPool partner = case partner of
       GraveyardPartner.BattlefieldCreatures -> creaturePool pools
       GraveyardPartner.ExiledCards -> exilePool pools
+      GraveyardPartner.SpellsAndPermanents -> spellsAndPermanentsPool pools
 
 -- CR 115.2 (only permanents are legal targets, save for the exceptions the
 -- graveyard, exile, spell and player arms above are) with CR 109.2 (an
@@ -1952,7 +1955,7 @@ countAt counting x count = case (x, count) of
 --
 -- Anything in the legal set that is in NO candidate player's graveyard is added
 -- back whole: Pool.CardsInGraveyardAnd's partner is scoped by nothing, so a
--- coherent answer may take every creature or exiled card it offers beside the
+-- coherent answer may take every partner candidate it offers beside the
 -- cards from one graveyard.
 --
 -- The named slot's own capacity is its plain candidate count rather than another

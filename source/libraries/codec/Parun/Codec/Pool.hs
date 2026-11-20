@@ -32,7 +32,8 @@ codec =
       -- Parun.Codec.ZoneScope's slot-named arms are: each carries only the
       -- graveyard half's ZoneScope.
       partnerArm "CreaturesAndCardsInGraveyard" GraveyardPartner.BattlefieldCreatures,
-      partnerArm "CardsInGraveyardAndExile" GraveyardPartner.ExiledCards
+      partnerArm "CardsInGraveyardAndExile" GraveyardPartner.ExiledCards,
+      partnerArm "SpellsPermanentsAndCardsInGraveyard" GraveyardPartner.SpellsAndPermanents
     ]
   where
     partnerArm tag partner =
@@ -56,3 +57,4 @@ tagOf x = case x of
   Pool.CardsInGraveyardAnd partner _ -> case partner of
     GraveyardPartner.BattlefieldCreatures -> "CreaturesAndCardsInGraveyard"
     GraveyardPartner.ExiledCards -> "CardsInGraveyardAndExile"
+    GraveyardPartner.SpellsAndPermanents -> "SpellsPermanentsAndCardsInGraveyard"
