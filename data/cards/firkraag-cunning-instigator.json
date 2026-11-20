@@ -48,7 +48,9 @@
               "value": {
                 "attacked": {
                   "type": "Related",
-                  "value": "Opponent"
+                  "value": {
+                    "relation": "Opponent"
+                  }
                 },
                 "attacker": "You",
                 "attackers": {

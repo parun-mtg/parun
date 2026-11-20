@@ -1,0 +1,147 @@
+{
+  "board": {
+    "active": "alice",
+    "seats": [
+      {
+        "battlefield": [
+          {
+            "card": "Rigo, Streetwise Mentor",
+            "label": "rigo",
+            "ready": true
+          },
+          {
+            "card": "Llanowar Elves",
+            "label": "elves-1",
+            "ready": true
+          },
+          {
+            "card": "Llanowar Elves",
+            "label": "elves-2",
+            "ready": true
+          },
+          {
+            "card": "Llanowar Elves",
+            "label": "elves-3",
+            "ready": true
+          },
+          {
+            "card": "Invasion of Tarkir",
+            "counters": [
+              {
+                "key": {
+                  "type": "Defense"
+                },
+                "value": 5
+              }
+            ],
+            "label": "tarkir",
+            "protector": "bob"
+          }
+        ],
+        "library": [
+          {
+            "card": "Island",
+            "label": "a1"
+          },
+          {
+            "card": "Island",
+            "label": "a2"
+          },
+          {
+            "card": "Island",
+            "label": "a3"
+          },
+          {
+            "card": "Island",
+            "label": "a4"
+          }
+        ],
+        "name": "alice"
+      },
+      {
+        "battlefield": [
+          {
+            "card": "Ajani Goldmane",
+            "counters": [
+              {
+                "key": {
+                  "type": "Loyalty"
+                },
+                "value": 4
+              }
+            ],
+            "label": "ajani"
+          }
+        ],
+        "library": [
+          {
+            "card": "Island",
+            "label": "b1"
+          },
+          {
+            "card": "Island",
+            "label": "b2"
+          }
+        ],
+        "name": "bob"
+      }
+    ],
+    "step": "PrecombatMain"
+  },
+  "description": "Rigo, Streetwise Mentor draws for a player and a planeswalker attacked by a creature of power 1 or less, and not for a battle",
+  "note": "Three Llanowar Elves attack bob, bob's Ajani Goldmane and the Invasion of Tarkir bob protects: two draws, one per player or planeswalker attacked (docs/decisions.md, \"How often Rigo draws for a player and their planeswalker\"), none for the battle.",
+  "timeline": [
+    {
+      "do": {
+        "Attack": [
+          "$elves-1",
+          "$elves-2",
+          "$elves-3"
+        ]
+      },
+      "player": "alice",
+      "step": "DeclareAttackers",
+      "turn": 1
+    },
+    {
+      "do": {
+        "ChooseAttackTarget": "$bob"
+      },
+      "player": "alice",
+      "source": "$elves-1",
+      "step": "DeclareAttackers",
+      "turn": 1
+    },
+    {
+      "do": {
+        "ChooseAttackTarget": "$ajani"
+      },
+      "player": "alice",
+      "source": "$elves-2",
+      "step": "DeclareAttackers",
+      "turn": 1
+    },
+    {
+      "do": {
+        "ChooseAttackTarget": "$tarkir"
+      },
+      "player": "alice",
+      "source": "$elves-3",
+      "step": "DeclareAttackers",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Count": {
+          "card": "Island",
+          "count": 2,
+          "player": "alice",
+          "zone": "Hand"
+        }
+      },
+      "player": "alice",
+      "step": "DeclareBlockers",
+      "turn": 1
+    }
+  ]
+}

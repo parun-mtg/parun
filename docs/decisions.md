@@ -2329,6 +2329,25 @@ Entries are ordered by the first rule each cites.
   `attuma-draws-once-per-player-its-merfolk-attack`.
 - **Issue**: #6820.
 
+## How often Rigo draws for a player and their planeswalker
+
+- **Question**: Rigo, Streetwise Mentor's "whenever you attack a player or
+  planeswalker with one or more creatures with power 1 or less", when such
+  creatures attack an opponent and that opponent's planeswalker: once, or once
+  for each?
+- **Rules**: CR 506.3, 508.3b, 508.3d, 508.3e (CR of 2026-11-06); the card's
+  rulings are shield counters' alone.
+- **Decision**: Once per player or planeswalker attacked by at least one such
+  creature, as "Whom Attuma's Merfolk attack" reads CR 508.3e: the trigger
+  names the attacked, now a player or a planeswalker.
+- **Rejected**: Once per declaration, CR 508.3d's arity, for that entry's
+  reason; and once per player, folding a planeswalker into its controller as
+  CR 508.5 does: the printed text counts the planeswalker apart.
+- **Site**: `Parun.Engine.Event.Match.attacks`' Attacked arm. Proved by the
+  scenario
+  `rigo-streetwise-mentor-draws-per-player-or-planeswalker-a-small-creature-attacks-not-per-battle`.
+- **Issue**: #8950.
+
 ## Does a permission's entry rider outlive its source?
 
 - **Question**: Leonardo, Sewer Samurai's static ability lets a creature spell

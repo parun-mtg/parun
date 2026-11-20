@@ -107,7 +107,9 @@
               "value": {
                 "attacked": {
                   "type": "Related",
-                  "value": "AnyPlayer"
+                  "value": {
+                    "relation": "AnyPlayer"
+                  }
                 },
                 "attacker": "You",
                 "attackers": {
