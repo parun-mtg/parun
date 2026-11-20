@@ -37,6 +37,7 @@ import qualified Parun.Types.Combat as Combat.Type
 import qualified Parun.Types.CombatStep as CombatStep
 import qualified Parun.Types.CounterKind as CounterKind
 import qualified Parun.Types.Departure as Departure.Type
+import qualified Parun.Types.EntryLink as EntryLink
 import qualified Parun.Types.Face as Face
 import qualified Parun.Types.Game as Game.Type
 import qualified Parun.Types.GameEvent as GameEvent
@@ -49,6 +50,7 @@ import qualified Parun.Types.MonarchWatch as MonarchWatch
 import qualified Parun.Types.Moved as Moved
 import qualified Parun.Types.Object as Object
 import Parun.Types.ObjectId (ObjectId)
+import qualified Parun.Types.ObjectId as ObjectId
 import qualified Parun.Types.OptionalDecision as OptionalDecision
 import qualified Parun.Types.PaymentDecision as PaymentDecision
 import qualified Parun.Types.Phase as Phase
@@ -437,7 +439,7 @@ spec s registry = Spec.describe s "Parun.Engine.Departure" $ do
   Spec.it s "CR 726 a crowning watch KEYED on the departing player's own object is dropped" $ do
     piker <- S.printingOf s registry "Goblin Piker"
     let (onField, g1) = S.addPermanent piker S.bob S.threePlayerGame
-        exiled = g1 {GameState.movedUntil = Map.singleton onField (ReturnWatch.MkReturnWatch (ReturnEnding.OpponentCrowned MonarchWatch.MkMonarchWatch {MonarchWatch.controller = S.alice, MonarchWatch.due = Nothing}) Zone.Battlefield)}
+        exiled = g1 {GameState.movedUntil = Map.singleton onField (ReturnWatch.MkReturnWatch (ReturnEnding.OpponentCrowned MonarchWatch.MkMonarchWatch {MonarchWatch.controller = S.alice, MonarchWatch.due = Nothing}) Zone.Battlefield (EntryLink.MkEntryLink (ObjectId.MkObjectId 0) Acquisition.Own))}
         gone = S.departs Departure.Type.Conceded S.bob exiled
     Spec.assertEqWith s "the entry keyed on bob's own (now-gone) object is dropped" (GameState.movedUntil gone) Map.empty
 

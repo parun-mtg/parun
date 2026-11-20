@@ -234,7 +234,9 @@ data GameState = MkGameState
     -- Parun.Engine.Resolve.Common.linkEntrant: by Parun.Engine.Resolve.Arms.Zones's
     -- Effect.MoveToZone arm, by Parun.Engine.Resolve.Arms.Objects's for a
     -- Create.linked or CreateCopy.linked token, and by
-    -- Parun.Engine.Resolve.Arms.Counters's Effect.Assimilate arm. A SET, since
+    -- Parun.Engine.Resolve.Arms.Counters's Effect.Assimilate arm; and by
+    -- Parun.Engine.MoveDuration.returnDue for CR 610.3's return, which has no
+    -- resolving object and writes the ReturnWatch.link the move recorded. A SET, since
     -- a permanent that entered with one source can be assimilated with another.
     -- Read by Filter.EnteredWithSource. Cleaned up by key only.
     enteredWith :: Map.Map ObjectId.ObjectId (Set.Set EntryLink.EntryLink),

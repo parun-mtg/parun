@@ -743,12 +743,12 @@ phasedOutNames row = case row of
   PhasedOut.Until _under ending _phasesIn -> foldMap endingNames ending
 
 -- The objects a GameState.movedUntil row names beyond its key: CR 610.3's
--- source, whose leaving the battlefield ends the move, and nothing for a CR 726
--- crowning watch, whose value is a player and an event group. Positional for
+-- source, whose leaving the battlefield ends the move, and CR 607.5's, whose
+-- effect made it (a CR 726 crowning watch's ending names none). Positional for
 -- phasedOutNames' reason.
 returnWatchNames :: ReturnWatch.ReturnWatch -> Set.Set ObjectId
 returnWatchNames watch = case watch of
-  ReturnWatch.MkReturnWatch ending _zone -> endingNames ending
+  ReturnWatch.MkReturnWatch ending _zone link -> Set.insert (EntryLink.source link) (endingNames ending)
 
 -- The objects an "until" ending names: CR 610.3's and CR 610.4's source, and
 -- nothing for a crowning or a planeswalk, whose values are a player and an

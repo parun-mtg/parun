@@ -2,6 +2,7 @@
 
 module Parun.Codec.ReturnWatch where
 
+import qualified Parun.Codec.EntryLink as EntryLink
 import qualified Parun.Codec.ReturnEnding as ReturnEnding
 import qualified Parun.Codec.Zone as Zone
 import qualified Parun.JsonCodec.Codec as Codec
@@ -12,8 +13,10 @@ codec :: Codec.Codec ReturnWatch.ReturnWatch
 codec = Fields.object $ do
   ending <- Fields.required "ending" ReturnEnding.codec ReturnWatch.ending
   zone <- Fields.required "zone" Zone.codec ReturnWatch.zone
+  link <- Fields.required "link" EntryLink.codec ReturnWatch.link
   pure
     ReturnWatch.MkReturnWatch
       { ReturnWatch.ending = ending,
-        ReturnWatch.zone = zone
+        ReturnWatch.zone = zone,
+        ReturnWatch.link = link
       }
