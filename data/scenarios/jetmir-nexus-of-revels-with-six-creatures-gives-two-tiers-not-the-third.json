@@ -1,0 +1,110 @@
+{
+  "board": {
+    "active": "alice",
+    "seats": [
+      {
+        "battlefield": [
+          {
+            "card": "Jetmir, Nexus of Revels",
+            "label": "jetmir"
+          },
+          {
+            "card": "Grizzly Bears",
+            "label": "bear0"
+          },
+          {
+            "card": "Grizzly Bears",
+            "label": "bear1"
+          },
+          {
+            "card": "Grizzly Bears",
+            "label": "bear2"
+          },
+          {
+            "card": "Grizzly Bears",
+            "label": "bear3"
+          },
+          {
+            "card": "Grizzly Bears",
+            "label": "bear4"
+          }
+        ],
+        "name": "alice"
+      },
+      {
+        "name": "bob"
+      }
+    ],
+    "step": "PrecombatMain"
+  },
+  "description": "Jetmir, Nexus of Revels: three, six and nine creatures each give +1/+0 and a keyword",
+  "note": "Six creatures reach the second tier, not the third: each gets +2/+0, vigilance and trample but not double strike.",
+  "timeline": [
+    {
+      "check": {
+        "PowerToughness": {
+          "object": "$bear0",
+          "power": 4,
+          "toughness": 2
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "PowerToughness": {
+          "object": "$jetmir",
+          "power": 7,
+          "toughness": 4
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Keywords": {
+          "count": 1,
+          "keyword": {
+            "type": "Vigilance"
+          },
+          "object": "$bear0"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Keywords": {
+          "count": 1,
+          "keyword": {
+            "type": "Trample"
+          },
+          "object": "$bear0"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Keywords": {
+          "count": 0,
+          "keyword": {
+            "type": "DoubleStrike"
+          },
+          "object": "$bear0"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    }
+  ]
+}
