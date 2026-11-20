@@ -34,6 +34,7 @@ spec s = Spec.describe s "Parun.Codec.TurnRegisters" $ do
           TurnRegisters.passed = Set.empty,
           TurnRegisters.combat = CombatSpec.empty,
           TurnRegisters.events = Seq.empty,
+          TurnRegisters.stackCaused = Set.empty,
           TurnRegisters.scannedThrough = 0,
           TurnRegisters.damageScannedThrough = 0,
           TurnRegisters.turnNumber = 2,

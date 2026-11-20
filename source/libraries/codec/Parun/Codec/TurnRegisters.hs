@@ -50,6 +50,7 @@ codec = Fields.object $ do
   passed <- Fields.defaulted "passed" Set.empty (Common.set PlayerId.codec) TurnRegisters.passed
   combat <- Fields.required "combat" Combat.codec TurnRegisters.combat
   events <- Fields.defaulted "events" Seq.empty (Common.seq LoggedEvent.codec) TurnRegisters.events
+  stackCaused <- Fields.defaulted "stackCaused" Set.empty (Common.set EventGroup.codec) TurnRegisters.stackCaused
   scannedThrough <- Fields.defaulted "scannedThrough" 0 Common.natural TurnRegisters.scannedThrough
   damageScannedThrough <- Fields.defaulted "damageScannedThrough" 0 Common.natural TurnRegisters.damageScannedThrough
   turnNumber <- Fields.required "turnNumber" Common.natural TurnRegisters.turnNumber
@@ -80,6 +81,7 @@ codec = Fields.object $ do
         TurnRegisters.passed = passed,
         TurnRegisters.combat = combat,
         TurnRegisters.events = events,
+        TurnRegisters.stackCaused = stackCaused,
         TurnRegisters.scannedThrough = scannedThrough,
         TurnRegisters.damageScannedThrough = damageScannedThrough,
         TurnRegisters.turnNumber = turnNumber,
