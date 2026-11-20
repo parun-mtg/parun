@@ -40,7 +40,7 @@ import qualified Parun.Engine.ManaSymbolText as ManaSymbolText
 import qualified Parun.Engine.Mint as Mint
 import qualified Parun.Engine.NameWords as NameWords
 import Parun.Engine.Projection.Rewrite (Modification, composeWordChanges, rewriteActivatedAbility, rewriteAffected, rewriteCharacteristicPT, rewriteCondition, rewriteModification, rewritePlayerStaticAbility, rewritePrintedReplacement, rewriteRuleAbilities, rewriteStaticAbility, rewriteTriggeredAbility)
-import Parun.Engine.Projection.View (ControlGrant, abilitiesFromCharacteristics, abilityFaceOf, abilityFaceOfId, abilitySources, controlGrants, controllerOf, controllerOfGiven, copiableCharacteristics, copiableRuleAbilitiesOf, copiableSnapshotOf, copiableSpecialActionsOf, correspondsTo, countersOf, definesColorless, definesEveryCreatureType, enchantedPlayerOf, functionsFromZone, grantedStaticAbilitiesOf, inSourceRangeGiven, lapsedGrantsOf, retainedThroughCardTypeSet, staticAbilitiesOf, staticTimestampOf, viewOfCard, viewOfCharacteristics, withAnnouncedX)
+import Parun.Engine.Projection.View (ControlGrant, abilitiesFromCharacteristics, abilityFaceOf, abilityFaceOfId, abilitySources, controlGrants, controllerOf, controllerOfGiven, copiableCharacteristics, copiableRuleAbilitiesOf, copiableSnapshotOf, copiableSpecialActionsOf, correspondsTo, countersOf, definesColorless, definesEveryCreatureType, functionsFromZone, grantedStaticAbilitiesOf, inSourceRangeGiven, lapsedGrantsOf, retainedThroughCardTypeSet, staticAbilitiesOf, staticTimestampOf, viewOfCard, viewOfCharacteristics, withAnnouncedX)
 import qualified Parun.Engine.Quantity as Quantity
 import qualified Parun.Engine.QuantitySlot as QuantitySlot
 import qualified Parun.Engine.RuleAbilities as RuleAbilities.Engine
@@ -1481,7 +1481,7 @@ affectsFramed frame grants peers source oid a partial gs = case a of
   -- control grant reading its own output is what CR 613.8b's ordering is for,
   -- and Projection.View.layerTwo does that ordering there. So the two arms differ exactly on
   -- a candidate this source itself takes, and neither is the other's bug.
-  Affected.AttachedPlayerControls f -> case enchantedPlayerOf source gs of
+  Affected.AttachedPlayerControls f -> case Game.enchantedPlayerOf source gs of
     Just pid ->
       let controller = controllerOfGiven grants oid gs
        in Set.member oid (GameState.battlefield gs)

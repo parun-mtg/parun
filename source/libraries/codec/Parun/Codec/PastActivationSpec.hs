@@ -12,6 +12,7 @@ import qualified Parun.Types.ActivatedAbility as ActivatedAbility
 import qualified Parun.Types.Activator as Activator
 import qualified Parun.Types.Copyability as Copyability
 import qualified Parun.Types.Cost as Cost
+import qualified Parun.Types.EventGroup as EventGroup
 import qualified Parun.Types.Modal as Modal
 import qualified Parun.Types.Mode as Mode
 import qualified Parun.Types.ModeMemory as ModeMemory
@@ -47,9 +48,10 @@ spec s = Spec.describe s "Parun.Codec.PastActivation" $ do
           PastActivation.source = snapshotOf 5,
           PastActivation.ability = Just bare,
           PastActivation.kind = AbilityKind.NonManaAbility,
-          PastActivation.targets = [snapshotOf 6]
+          PastActivation.targets = [snapshotOf 6],
+          PastActivation.loggedAt = EventGroup.MkEventGroup 3
         }
-      (" {\"activator\":2,\"source\":" <> snapshotJson 5 <> ",\"ability\":{\"cost\":{\"mana\":null},\"modal\":{\"modes\":[{}]}},\"kind\":\"NonManaAbility\",\"targets\":[" <> snapshotJson 6 <> "]} ")
+      (" {\"activator\":2,\"source\":" <> snapshotJson 5 <> ",\"ability\":{\"cost\":{\"mana\":null},\"modal\":{\"modes\":[{}]}},\"kind\":\"NonManaAbility\",\"targets\":[" <> snapshotJson 6 <> "],\"loggedAt\":3} ")
   -- CR 605.1a: a mana ability names no target.
   Spec.it s "a mana ability" $
     Common.assertCodec
@@ -60,8 +62,9 @@ spec s = Spec.describe s "Parun.Codec.PastActivation" $ do
           PastActivation.source = snapshotOf 7,
           PastActivation.ability = Nothing,
           PastActivation.kind = AbilityKind.ManaAbility,
-          PastActivation.targets = []
+          PastActivation.targets = [],
+          PastActivation.loggedAt = EventGroup.MkEventGroup 0
         }
-      (" {\"activator\":1,\"source\":" <> snapshotJson 7 <> ",\"ability\":null,\"kind\":\"ManaAbility\",\"targets\":[]} ")
+      (" {\"activator\":1,\"source\":" <> snapshotJson 7 <> ",\"ability\":null,\"kind\":\"ManaAbility\",\"targets\":[],\"loggedAt\":0} ")
   Spec.it s "has a schema" $
     Common.assertHasSchema s PastActivation.codec

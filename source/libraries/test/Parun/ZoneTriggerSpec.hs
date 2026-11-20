@@ -91,6 +91,7 @@ import qualified Parun.Types.Compares as Compares
 import qualified Parun.Types.Comparison as Comparison
 import qualified Parun.Types.Condition as Condition.Type
 import qualified Parun.Types.ControlChanged as ControlChanged
+import qualified Parun.Types.ControllerRelation as ControllerRelation
 import qualified Parun.Types.Cost as Cost.Type
 import qualified Parun.Types.CostAmount as CostAmount
 import qualified Parun.Types.CostComponent as CostComponent
@@ -2265,7 +2266,7 @@ everyTriggerCondition =
     TriggerCondition.Blocks (BlockTrigger.MkBlockTrigger BlockRole.Blocker Filter.Type.IsSource (BlockCount.AtLeast 1 (Filter.Type.And [])) Batching.EachOccurrence Nothing),
     TriggerCondition.Blocks (BlockTrigger.MkBlockTrigger BlockRole.Attacker (Filter.Type.And []) (BlockCount.EachCreature (Filter.Type.And [])) Batching.EachOccurrence Nothing),
     TriggerCondition.Blocks (BlockTrigger.MkBlockTrigger BlockRole.Attacker Filter.Type.IsSource (BlockCount.AtLeast 1 (Filter.Type.And [])) Batching.EachOccurrence Nothing),
-    TriggerCondition.Blocks (BlockTrigger.MkBlockTrigger BlockRole.Attacker (Filter.Type.IsAttackingPlayer PlayerRelation.Opponent) (BlockCount.AtLeast 2 (Filter.Type.And [])) Batching.EachOccurrence Nothing),
+    TriggerCondition.Blocks (BlockTrigger.MkBlockTrigger BlockRole.Attacker (Filter.Type.IsAttackingPlayer (ControllerRelation.Related PlayerRelation.Opponent)) (BlockCount.AtLeast 2 (Filter.Type.And [])) Batching.EachOccurrence Nothing),
     TriggerCondition.Blocks (BlockTrigger.MkBlockTrigger BlockRole.Attacker (Filter.Type.And []) BlockCount.Once Batching.OneOrMore Nothing),
     TriggerCondition.Blocks (BlockTrigger.MkBlockTrigger BlockRole.Blocker Filter.Type.IsSource BlockCount.Once Batching.EachOccurrence (Just (Condition.Type.Compares (Compares.MkCompares (Quantity.Type.Literal 0) Comparison.Exactly (Quantity.Type.Literal 0))))),
     -- CR 603.6's arrival: each subject, origins named and not, CR 608.2n's

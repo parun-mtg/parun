@@ -57,6 +57,8 @@ framedWith viewOf choices source gs context =
     { -- CR 608.2h / 113.7a: a source that has left still names the host it
       -- had as it left.
       Filter.sourceAttachedTo = Game.hostWithLastKnown source gs,
+      -- CR 303.4b: live, so a source that has left enchants nobody.
+      Filter.sourceEnchantedPlayer = Game.enchantedPlayerOf source gs,
       -- CR 108.3 fixes an owner when the game starts, so a live read; a source
       -- the state no longer holds answers Nothing.
       Filter.sourceOwner = fmap Object.owner (Game.lookupObject source gs),

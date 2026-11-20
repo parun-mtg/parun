@@ -13,10 +13,12 @@ data ManaActivation = MkManaActivation
   { -- | The source whose ability this was -- or, where re-based activations
     -- could not be told apart, every one of their sources.
     sources :: NonEmpty.NonEmpty ObjectId.ObjectId,
-    -- | The mana its cost took from the payer's pool (CR 602.2b).
+    -- | The mana its cost took from the payer's pool (CR 602.2b); for a group,
+    -- what its members took from outside it (Parun.Engine.Cost.groupActivations).
     spent :: [ManaUnit.ManaUnit],
     -- | The mana it, and the triggered mana abilities it caused, added to the
-    -- payer's pool (CR 106.4).
+    -- payer's pool (CR 106.4); for a group, what its members' costs left of
+    -- it.
     added :: [ManaUnit.ManaUnit],
     -- | Whether CR 734.1 offers it back: False for a CR 116.2c special action
     -- taken in the window, which is no mana ability and stands.

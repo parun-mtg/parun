@@ -88,7 +88,9 @@
               "target": {
                 "filter": {
                   "type": "IsAttackingPlayer",
-                  "value": "You"
+                  "value": {
+                    "type": "You"
+                  }
                 },
                 "pool": {
                   "type": "Creatures"

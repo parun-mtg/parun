@@ -46,6 +46,7 @@ import qualified Parun.Engine.Replacement as Replacement
 import qualified Parun.Engine.Resolve.Slots as Slots
 import qualified Parun.Engine.SourceContext as SourceContext
 import qualified Parun.Engine.Subtype as Subtype.Engine
+import qualified Parun.Engine.Turn as Turn
 import qualified Parun.Extra.Integer as Integer
 import qualified Parun.Extra.Natural as Natural
 import qualified Parun.Types.AbilityKind as AbilityKind
@@ -394,7 +395,7 @@ colorsAmong manaTypes = Set.fromList [color | ManaType.Colored color <- manaType
 
 -- CR 106.12a: the types of mana a permanent's latest tap for mana produced.
 latestTapProduced :: ObjectId -> GameState -> Set.Set ManaType
-latestTapProduced oid = Foldable.foldl' newest Set.empty . (TurnRegisters.events . GameState.turn)
+latestTapProduced oid = Foldable.foldl' newest Set.empty . Turn.eventsThisTurn
   where
     newest older logged = case LoggedEvent.event logged of
       GameEvent.TappedForMana tapped | TappedForMana.permanent tapped == oid -> TappedForMana.mana tapped

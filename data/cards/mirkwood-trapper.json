@@ -121,7 +121,9 @@
                     "value": [
                       {
                         "type": "IsAttackingPlayer",
-                        "value": "You"
+                        "value": {
+                          "type": "You"
+                        }
                       },
                       {
                         "type": "HeldByBound",

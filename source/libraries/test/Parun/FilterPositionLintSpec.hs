@@ -1533,6 +1533,28 @@ hostOfSourceOffends card =
   let (framed, elsewhere) = hostOfSourceCounts card
    in elsewhere /= 0 || framed + elsewhere /= jsonAtoms hostOfSourceTag (Codec.encode (Face.Codec.codec Card.codec) (surveyedFace card))
 
+-- How many IsAttackingPlayer EnchantedPlayers atoms this card asks where
+-- `sourceFramed` admits them, and how many elsewhere.
+enchantedAttackedCounts :: Surveyed -> (Int, Int)
+enchantedAttackedCounts card =
+  let atoms framing = sum [decodedAtoms "IsAttackingPlayer" (== Filter.Type.IsAttackingPlayer ControllerRelation.EnchantedPlayers) (atomJson f) | (position, f) <- surveyedFilters card, framing position]
+   in (atoms sourceFramed, atoms (not . sourceFramed))
+
+-- The atom asked outside `sourceFramed`, the traversal and the codec disagreeing
+-- about how many the card holds (hostOfSourceOffends' fence), or an
+-- IsAttackingPlayer naming a resolution's players.
+attackedPlayerOffends :: Surveyed -> Bool
+attackedPlayerOffends card =
+  let (framed, elsewhere) = enchantedAttackedCounts card
+      encoded = Codec.encode (Face.Codec.codec Card.codec) (surveyedFace card)
+      baked atom = case atom of
+        Filter.Type.IsAttackingPlayer (ControllerRelation.InSlot _) -> True
+        Filter.Type.IsAttackingPlayer (ControllerRelation.Among _) -> True
+        _ -> False
+   in elsewhere /= 0
+        || framed + elsewhere /= decodedAtoms "IsAttackingPlayer" (== Filter.Type.IsAttackingPlayer ControllerRelation.EnchantedPlayers) encoded
+        || decodedAtoms "IsAttackingPlayer" baked encoded /= 0
+
 -- How many atoms aimed at a quantity's object an encoding carries:
 -- Filter.IsEvaluated by tag, and Filter.Shares and Filter.IsAttachedTo at the
 -- Evaluated anchor.
@@ -2626,6 +2648,37 @@ filterPositionLintSpec s registry corpus = Spec.describe s "Lint" $ do
             }
     Spec.assertEqWith s "the atom in the controller's graveyard choice is accepted" (otherCandidateCounts (fromGraveyard Chooser.TheController)) (1, 0)
     Spec.assertEqWith s "and in each scoped player's is an offence" (otherCandidateCounts (fromGraveyard Chooser.EachInScope)) (0, 1)
+  -- CR 303.4b's enchanted player as IsAttackingPlayer names it is answerable
+  -- only where Filter.Context.sourceEnchantedPlayer is filled, which
+  -- Parun.Engine.SourceContext fills: the positions `sourceFramed` admits.
+  -- Its InSlot and Among relations name a resolution's
+  -- players, which no filter is baked with, so a card writing either anywhere
+  -- is an offence too. See attackedPlayerOffends.
+  Spec.it s "CR 303.4b no card asks IsAttackingPlayer of a player the filter cannot read" $ do
+    let offenders = fmap fst (filter (any attackedPlayerOffends . snd) pool)
+    Spec.assertEqWith s "the atom names only a player its position supplies" (fmap (S.nameOf . Printing.card) offenders) []
+    assertAuthors s registry pool "each author's atoms are framed" enchantedAttackedCounts [("Curse of Hospitality", 1)]
+    -- The rejected side: the atom in a spell's draw count, which no source
+    -- frames, and an InSlot relation in a target slot, which one does.
+    piker <- S.printingOf s registry "Goblin Piker"
+    curse <- S.printingOf s registry "Curse of Hospitality"
+    let counting atom =
+          (S.combinedFace piker)
+            { Face.spell =
+                Mint.oneMode (Seq.singleton (Effect.Draw (Draw.MkDraw (PlayerRef.InSlot Binding.you) (Quantity.Type.Count (Count.Type.MkCount (Scope.InZone (InZone.MkInZone Zone.Battlefield (PlayerRef.Relative PlayerRelation.AnyPlayer))) (Filter.Type.And [Filter.Type.Not atom]) Aggregation.Members)) Nothing Nothing)))
+            }
+        slotted atom =
+          (S.combinedFace piker)
+            { Face.spell =
+                Mint.oneModeTargeting (Map.singleton (SlotName.MkSlotName (Text.pack "target")) (TargetSlot.required Pool.Creatures (Just atom))) Seq.empty
+            }
+        enchanted = Filter.Type.IsAttackingPlayer ControllerRelation.EnchantedPlayers
+        inSlot = Filter.Type.IsAttackingPlayer (ControllerRelation.InSlot (SlotName.MkSlotName (Text.pack "target")))
+    Spec.assertEqWith s "a planted atom is an offence" (enchantedAttackedCounts (survey (counting enchanted))) (0, 1)
+    Spec.assertBool s (attackedPlayerOffends (survey (counting enchanted))) "and the lint says so"
+    Spec.assertBool s (not (attackedPlayerOffends (survey (slotted enchanted)))) "a target slot is framed by its source"
+    Spec.assertBool s (attackedPlayerOffends (survey (slotted inSlot))) "an InSlot relation is an offence"
+    Spec.assertBool s (not (attackedPlayerOffends (survey (S.combinedFace curse)))) "and the Curse itself is not"
   -- CR 303.4b's Filter.IsHostOfSource is CR 709.4a's atom one axis over again:
   -- answerable only in the positions `hostFramed` admits. See hostOfSourceOffends for the two offences.
   Spec.it s "CR 303.4b no card asks IsHostOfSource where the source's host is unknown" $ do

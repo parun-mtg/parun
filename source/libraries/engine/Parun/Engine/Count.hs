@@ -33,6 +33,7 @@ import qualified Parun.Engine.Plane as Plane
 import qualified Parun.Engine.Players as Players
 import qualified Parun.Engine.Sector as Sector
 import qualified Parun.Engine.Subtype as Subtype
+import qualified Parun.Engine.Turn as Turn
 import qualified Parun.Types.AbilityKind as AbilityKind
 import qualified Parun.Types.ActivatedAbility as ActivatedAbility
 import qualified Parun.Types.ActivationCriteria as ActivationCriteria
@@ -180,7 +181,7 @@ evaluate viewOf quantityOf talliesWhatHappened candidateCounters context gs coun
                 EventShape.SpellCast CastWindow.ThisGame -> fmap GameEvent.SpellCast (Foldable.toList (Game.castsThisGame gs))
                 EventShape.AttackerDeclared AttackWindow.ThisCombat -> fmap GameEvent.AttackerDeclared (declaredThisCombat gs)
                 _ -> thisTurn
-              thisTurn = fmap LoggedEvent.event (Foldable.toList (TurnRegisters.events (GameState.turn gs)))
+              thisTurn = fmap LoggedEvent.event (Foldable.toList (Turn.eventsThisTurn gs))
               isEvaluatedCast event = Maybe.isJust (Filter.evaluated context) && fmap SpellWasCast.spell (Game.castOf event) == Filter.evaluated context
               views = Maybe.mapMaybe (snapshotView viewOf context gs shape) logged
               matched = Maybe.mapMaybe (keep predicate context . Just) views
@@ -363,7 +364,7 @@ wasDiscarded gs oid =
   let discarded event = case event of
         GameEvent.Discarded d -> Discarded.card d == oid
         _ -> False
-   in any (discarded . LoggedEvent.event) (TurnRegisters.events (GameState.turn gs))
+   in any (discarded . LoggedEvent.event) (Turn.eventsThisTurn gs)
 
 -- CR 701.9c / 109.3: does this count ask nothing of its members' characteristics,
 -- so that a member whose characteristics are undefined still answers it? A tally
@@ -402,7 +403,7 @@ revealedInPlace gs oid =
   let revealed event = case LoggedEvent.event event of
         GameEvent.Revealed r -> Revealed.card r == oid
         _ -> False
-   in any revealed (TurnRegisters.events (GameState.turn gs))
+   in any revealed (Turn.eventsThisTurn gs)
 
 -- Was the card revealed as it left the zone this incarnation arrived from?
 -- The Moved entry naming this id as its arrival gives the departed id; a
@@ -413,7 +414,7 @@ revealedArriving gs oid =
       revealed event = case LoggedEvent.event event of
         GameEvent.Revealed r -> Just (Revealed.card r) == departed
         _ -> False
-   in any revealed (TurnRegisters.events (GameState.turn gs))
+   in any revealed (Turn.eventsThisTurn gs)
 
 -- CR 400.7: the id this incarnation had before the move that made it, off the
 -- Moved entry naming it as an arrival; Nothing if no move this turn made it.
@@ -422,7 +423,7 @@ departedAs gs oid =
   let departure event = case LoggedEvent.event event of
         GameEvent.Moved m | Foldable.elem oid (Moved.arrivals m) -> Just (ZoneChange.departed (Moved.change m))
         _ -> Nothing
-   in Maybe.listToMaybe (Maybe.mapMaybe departure (Foldable.toList (TurnRegisters.events (GameState.turn gs))))
+   in Maybe.listToMaybe (Maybe.mapMaybe departure (Foldable.toList (Turn.eventsThisTurn gs)))
 
 -- CR 109.1 / 120.1: THE player candidate's view -- Parun.Engine.Filter.playerView
 -- with the fields a bare PlayerId cannot answer filled from the board.
@@ -449,7 +450,7 @@ playerView gs pid =
     { Filter.dealtDamageThisTurn = damageThisTurn ((== Just pid) . Game.damagedPlayer) gs,
       -- CR 119.3 / 608.2i: the same division for a life total. Damage reaches
       -- the log as its own life loss (CR 120.3a), so no damage read is needed.
-      Filter.lostLifeThisTurn = Game.lifeChangedIn LifeDirection.Lost (TurnRegisters.events (GameState.turn gs)) pid > 0,
+      Filter.lostLifeThisTurn = Game.lifeChangedIn LifeDirection.Lost (Turn.eventsThisTurn gs) pid > 0,
       -- CR 508.3b: the same division, one record over -- a player IS one of that
       -- rule's three subjects, and Parun.Engine.Filter.playerView holds no combat
       -- record to read the answer from.
@@ -571,7 +572,7 @@ tappedForManaThisTurn viewOf context gs inner candidate =
             alone = viewOfSnapshot (deployIn gs (ObjectSnapshot.zone snapshot)) (ObjectSnapshot.controller snapshot) (Just (ObjectSnapshot.owner snapshot)) False Map.empty (ObjectSnapshot.zone snapshot) (ObjectSnapshot.home snapshot) (ObjectSnapshot.lapsedGrants snapshot) (ObjectSnapshot.characteristics snapshot)
             live = Maybe.fromMaybe alone (orLastKnown viewOf gs (ObjectSnapshot.object snapshot))
          in TappedForMana.player tapped == candidate && Filter.matches context (asSnapshotted gs snapshot live) inner
-   in any admits (Maybe.mapMaybe (Game.tappedForManaOf . LoggedEvent.event) (Foldable.toList (TurnRegisters.events (GameState.turn gs))))
+   in any admits (Maybe.mapMaybe (Game.tappedForManaOf . LoggedEvent.event) (Foldable.toList (Turn.eventsThisTurn gs)))
 
 -- A baked answer as a Filter. `And []` is the trivial predicate by
 -- Parun.Types.Filter's own note, so its negation is the trivially false one --
@@ -1475,7 +1476,7 @@ declaredThisTurn oid gs =
         GameEvent.AttackerDeclared (AttackerDeclared.MkAttackerDeclared declared _ target _ _ _) | declared == oid -> [DeclaredRole.Attacked Nothing, DeclaredRole.Attacked (Just (Game.attackTargetKind target))]
         GameEvent.BlocksDeclared (BlocksDeclared.MkBlocksDeclared blocker _) | blocker == oid -> [DeclaredRole.Blocked]
         _ -> []
-   in Set.fromList (foldMap (rolesOf . LoggedEvent.event) (TurnRegisters.events (GameState.turn gs)))
+   in Set.fromList (foldMap (rolesOf . LoggedEvent.event) (Turn.eventsThisTurn gs))
 
 -- CR 508.1a / 511.3: each of Combat.declaredAttackers' creatures at its LAST
 -- AttackerDeclared this turn, which is this combat's, in log order: one declared
@@ -1492,7 +1493,7 @@ declaredThisCombat gs =
   where
     declared =
       [ d
-      | GameEvent.AttackerDeclared d <- fmap LoggedEvent.event (Foldable.toList (TurnRegisters.events (GameState.turn gs))),
+      | GameEvent.AttackerDeclared d <- fmap LoggedEvent.event (Foldable.toList (Turn.eventsThisTurn gs)),
         Set.member (AttackerDeclared.attacker d) (Combat.declaredAttackers (TurnRegisters.combat (GameState.turn gs)))
       ]
 
@@ -1500,7 +1501,7 @@ declaredThisCombat gs =
 -- this turn's declare attackers steps? The record those steps wrote as each
 -- declaration began.
 couldAttackThisTurn :: ObjectId -> GameState -> Bool
-couldAttackThisTurn oid gs = Set.member oid (TurnRegisters.couldAttackThisTurn (GameState.turn gs))
+couldAttackThisTurn oid gs = Set.member oid (Turn.tallyThisTurn TurnRegisters.couldAttackThisTurn gs)
 
 -- CR 508.1a / 509.1a: from the COMBAT record, which CR 511.3 does clear -- and
 -- not from the log above, which cannot answer it: CR 508.1k and CR 509.1g put
@@ -1540,9 +1541,9 @@ leftLibraryThisTurn oid gs =
   let milledIt event = case event of
         GameEvent.Milled (Milled.MkMilled _ cards) -> Foldable.elem oid cards
         _ -> False
-      milled = any (milledIt . LoggedEvent.event) (TurnRegisters.events (GameState.turn gs))
-      drawn = any (Foldable.elem oid) (TurnRegisters.drawsThisTurn (GameState.turn gs))
-      drawnLast = any (\draws -> Seq.lookup (Seq.length draws - 1) draws == Just oid) (TurnRegisters.drawsThisTurn (GameState.turn gs))
+      milled = any (milledIt . LoggedEvent.event) (Turn.eventsThisTurn gs)
+      drawn = any (Foldable.elem oid) (Turn.drawsThisTurn gs)
+      drawnLast = any (\draws -> Seq.lookup (Seq.length draws - 1) draws == Just oid) (Turn.drawsThisTurn gs)
    in Set.fromList ([LibraryDeparture.Milled | milled] <> [LibraryDeparture.Drawn | drawn] <> [LibraryDeparture.LastDrawn | drawnLast])
 
 -- CR 120.1 / 608.2i: was this object dealt damage this turn? Never
@@ -1566,7 +1567,7 @@ damageThisTurn admits gs =
 -- Every logged activation counts, resolved or not, whoever activated it and
 -- whether or not the object still has the ability.
 activatedThisTurn :: ObjectId -> GameState -> Bool
-activatedThisTurn oid gs = any ((== oid) . ObjectSnapshot.object . PastActivation.source) (TurnRegisters.activationsThisTurn (GameState.turn gs))
+activatedThisTurn oid gs = any ((== oid) . ObjectSnapshot.object . PastActivation.source) (Turn.activationsThisTurn gs)
 
 -- CR 603.2 / 608.2i: what this object did this turn, off the log's
 -- GameEvent.PermanentActed entries naming its id.
@@ -1575,7 +1576,7 @@ actedThisTurn oid gs =
   let actOf event = case event of
         GameEvent.PermanentActed (PermanentActed.MkPermanentActed action actor _) | actor == oid -> Just action
         _ -> Nothing
-   in Set.fromList (Maybe.mapMaybe (actOf . LoggedEvent.event) (Foldable.toList (TurnRegisters.events (GameState.turn gs))))
+   in Set.fromList (Maybe.mapMaybe (actOf . LoggedEvent.event) (Foldable.toList (Turn.eventsThisTurn gs)))
 
 -- CR 702.122c / 608.2i: the Vehicles this object crewed this turn -- the half of
 -- the relation one object can answer; Parun.Engine.Filter's CrewedThisTurn
@@ -1589,7 +1590,7 @@ crewedThisTurn oid gs =
         GameEvent.Crewed crewed
           | Set.member oid (Crewing.crewedBy crewed) -> Just (Crewing.vehicle crewed)
         _ -> Nothing
-   in Set.fromList (Maybe.mapMaybe (crewedByIt . LoggedEvent.event) (Foldable.toList (TurnRegisters.events (GameState.turn gs))))
+   in Set.fromList (Maybe.mapMaybe (crewedByIt . LoggedEvent.event) (Foldable.toList (Turn.eventsThisTurn gs)))
 
 -- CR 702.171c: crewedThisTurn one keyword over, for the Mounts this object
 -- saddled.
@@ -1599,7 +1600,7 @@ saddledThisTurn oid gs =
         GameEvent.Saddled saddled
           | Set.member oid (Saddling.saddledBy saddled) -> Just (Saddling.mount saddled)
         _ -> Nothing
-   in Set.fromList (Maybe.mapMaybe (saddledByIt . LoggedEvent.event) (Foldable.toList (TurnRegisters.events (GameState.turn gs))))
+   in Set.fromList (Maybe.mapMaybe (saddledByIt . LoggedEvent.event) (Foldable.toList (Turn.eventsThisTurn gs)))
 
 -- CR 122.6 / 122.6a: which kinds of counters moved on this object this turn,
 -- a put beside its putter and a removal beside Nothing. Event.putCounters
@@ -1614,7 +1615,7 @@ countersMovedThisTurn oid gs =
         GameEvent.CountersRemoved change
           | CounterChange.object change == oid -> Just (Nothing, CounterChange.kind change)
         _ -> Nothing
-   in Set.fromList (Maybe.mapMaybe (movedOnIt . LoggedEvent.event) (Foldable.toList (TurnRegisters.events (GameState.turn gs))))
+   in Set.fromList (Maybe.mapMaybe (movedOnIt . LoggedEvent.event) (Foldable.toList (Turn.eventsThisTurn gs)))
 
 -- CR 120.1 / 608.2i: whom this object dealt damage to this turn -- every
 -- recipient of a damage event it was the source of, through
@@ -1627,7 +1628,7 @@ dealtDamageTo oid gs =
   let byIt event = case event of
         GameEvent.DamageDealt ev | DamageEvent.source ev == oid -> fmap (\recipient -> (recipient, DamageEvent.kind ev, DamageEvent.recipientCardTypes ev)) (Game.damageRecipient event)
         _ -> Nothing
-   in Set.fromList (Maybe.mapMaybe (byIt . LoggedEvent.event) (Foldable.toList (TurnRegisters.events (GameState.turn gs))))
+   in Set.fromList (Maybe.mapMaybe (byIt . LoggedEvent.event) (Foldable.toList (Turn.eventsThisTurn gs)))
 
 -- CR 120.1 / 400.7: the same answer for every earlier turn of the game. An id
 -- names one object for its whole life, so the earlier turns' damage by this id
@@ -1653,7 +1654,7 @@ dealtDamageEarlier oid gs =
 -- the source it is evaluating for.
 convokedThisTurn :: ObjectId -> GameState -> Set.Set ObjectId
 convokedThisTurn oid gs =
-  let events = fmap LoggedEvent.event (Foldable.toList (TurnRegisters.events (GameState.turn gs)))
+  let events = fmap LoggedEvent.event (Foldable.toList (Turn.eventsThisTurn gs))
       convokedByIt event = case event of
         GameEvent.Convoked convoked
           | Set.member oid (Convoking.convokedBy convoked) -> Just (Convoking.spell convoked)

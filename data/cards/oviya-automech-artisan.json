@@ -143,7 +143,9 @@
                 },
                 {
                   "type": "IsAttackingPlayer",
-                  "value": "Opponent"
+                  "value": {
+                    "type": "Opponent"
+                  }
                 }
               ]
             }

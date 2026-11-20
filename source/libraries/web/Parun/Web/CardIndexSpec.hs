@@ -48,6 +48,11 @@ spec s = Spec.describe s "Parun.Web.CardIndex" $ do
       let split = (entry "Fire // Ice" [Color.Red, Color.Blue] 2 [CardType.Instant] "") {CardIndex.faceNames = [Text.pack "Fire", Text.pack "Ice"]}
       Spec.assertEq s (names (CardIndex.search (typed "ice") (Seq.singleton split))) ["Fire // Ice"]
 
+    Spec.it s "keeps only the pool's cards, and basic lands" $ do
+      let query = CardIndex.everything {CardIndex.among = Just (Set.fromList [Text.pack "lightning bolt"])}
+          forest = (entry "Forest" [] 0 [CardType.Land] "") {CardIndex.basic = True}
+      Spec.assertEq s (names (CardIndex.search query (forest Seq.<| pool))) ["Forest", "Lightning Bolt"]
+
     Spec.it s "matches nothing for text no card holds" $ do
       Spec.assertEq s (CardIndex.search (typed "zzzz") pool) (0, Seq.empty)
 
@@ -58,6 +63,10 @@ spec s = Spec.describe s "Parun.Web.CardIndex" $ do
     Spec.it s "names a transforming card by its front face, as a deck list does" $ do
       let json = "{\"faces\":[{\"name\":\"Front\",\"typeLine\":{\"types\":[\"Creature\"]}},{\"name\":\"Back\",\"typeLine\":{\"types\":[\"Creature\"]}}],\"layout\":{\"type\":\"Transforming\"}}"
       Spec.assertEq s (fmap (CardName.unwrap . CardIndex.name) (CardIndex.entryOf (decoded json))) (Just (Text.pack "Front"))
+
+    Spec.it s "CR 205.4c marks a basic land, a snow one too, and not a nonbasic one" $ do
+      let land supertypes = "{\"faces\":[{\"name\":\"Probe\",\"typeLine\":{\"supertypes\":[" <> supertypes <> "],\"types\":[\"Land\"]}}]}"
+      Spec.assertEq s (fmap (fmap CardIndex.basic . CardIndex.entryOf . decoded . land) ["\"Basic\"", "\"Basic\",\"Snow\"", ""]) [Just True, Just True, Just False]
 
     Spec.it s "leaves out a synthetic card" $ do
       Spec.assertEq s (fmap CardIndex.name (CardIndex.entryOf (card True "Instant"))) Nothing
@@ -97,7 +106,8 @@ entry name colours value kinds rules =
       CardIndex.types = Set.fromList kinds,
       CardIndex.typeLine = Text.unwords (fmap (Text.pack . show) kinds),
       CardIndex.rules = [Text.pack rules | not (null rules)],
-      CardIndex.folded = Text.toCaseFold (Text.unwords [Text.pack name, Text.pack rules])
+      CardIndex.folded = Text.toCaseFold (Text.unwords [Text.pack name, Text.pack rules]),
+      CardIndex.basic = False
     }
 
 -- | A one-face card named Probe, of the one type given, synthetic or not.

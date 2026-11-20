@@ -2814,13 +2814,6 @@ controlGrants gs =
                 <> fmap (\(ts, sa) -> toGrant (max (Object.timestamp permObj) ts) sa) (filter (keeps . snd) (grantedStaticAbilitiesOf permId gs))
    in concatMap grantsOf (abilitySources gs)
 
--- CR 303.4b's other destination: WHICH PLAYER this object is attached to --
--- what an enchant-player Aura "enchants". Game.hostOf's twin, Nothing where the
--- object is attached to nothing or to an object. Like Game.hostOf, no projection,
--- read live off Object.attachedTo, so controlNames below may ask it.
-enchantedPlayerOf :: ObjectId -> GameState -> Maybe PlayerId.PlayerId
-enchantedPlayerOf oid gs = Game.lookupObject oid gs >>= Object.attachedTo >>= Recipient.playerOf
-
 -- CR 110.2 / 108.4a / 613.1b: an object's default controller, or its owner where
 -- it has none, overridden by layer-2 control effects applied in CR 613.7/613.8 order. A lean fold rather than the
 -- full projection: control precedes P/T.
@@ -3023,7 +3016,7 @@ controlNames ctrl gs source a = case a of
   -- for a phased-out permanent, which Parun.Engine.Phasing.phaseOut removes from
   -- that set. Parun.PhasingSpec's "CR 702.26b a phased-out permanent leaves a
   -- control grant reached through its controller" proves it.
-  Affected.AttachedPlayerControls f -> case enchantedPlayerOf source gs of
+  Affected.AttachedPlayerControls f -> case Game.enchantedPlayerOf source gs of
     Nothing -> Set.empty
     Just pid ->
       Set.filter

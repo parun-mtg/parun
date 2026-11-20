@@ -14,6 +14,7 @@ import qualified Parun.Types.CardType as CardType
 import qualified Parun.Types.ChoiceOrdinal as ChoiceOrdinal
 import qualified Parun.Types.Color as Color
 import qualified Parun.Types.ControlMargin as ControlMargin
+import qualified Parun.Types.ControllerRelation as ControllerRelation
 import qualified Parun.Types.CounterKind as CounterKind
 import qualified Parun.Types.CounterLinked as CounterLinked
 import qualified Parun.Types.CounterMotion as CounterMotion
@@ -326,12 +327,14 @@ data Filter keyword
     -- same kind of act as reading a card type.
     IsAttacking (Maybe AloneAmong.AloneAmong)
   | -- | CR 508.1b: the candidate is an attacking creature AND the player it is
-    -- attacking stands in this relation to the perspective (CR 109.5). Strictly
-    -- CR 508.1b's player and never CR 508.5's defending player, which CR 509.1a
-    -- and CR 802.4a spell apart as three subjects -- a creature attacking a
-    -- planeswalker you control does not match @IsAttackingPlayer You@. Present
-    -- tense, so CR 506.4's removal from combat makes it False.
-    IsAttackingPlayer PlayerRelation.PlayerRelation
+    -- attacking is the one the relation names: in a relation to the perspective
+    -- (CR 109.5), or the player the source enchants (CR 303.4b, Curse of
+    -- Hospitality). Strictly CR 508.1b's player and never CR 508.5's defending
+    -- player, which CR 509.1a and CR 802.4a spell apart as three subjects -- a
+    -- creature attacking a planeswalker you control does not match
+    -- @IsAttackingPlayer (Related You)@. Present tense, so CR 506.4's removal
+    -- from combat makes it False.
+    IsAttackingPlayer ControllerRelation.ControllerRelation
   | -- | CR 508.1b: the candidate is an attacking creature AND the CONTROLLER of
     -- the planeswalker it is attacking stands in this relation to the perspective
     -- (CR 109.5), the second subject of CR 509.1a's and CR 802.4a's list.

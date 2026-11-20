@@ -31,6 +31,7 @@ import qualified Parun.Types.Color as Color
 import qualified Parun.Types.Compares as Compares
 import qualified Parun.Types.Comparison as Comparison
 import qualified Parun.Types.Condition as Condition
+import qualified Parun.Types.ControllerRelation as ControllerRelation
 import qualified Parun.Types.CounterGrouping as CounterGrouping
 import qualified Parun.Types.CounterHolder as CounterHolder
 import qualified Parun.Types.CounterKind as CounterKind
@@ -245,8 +246,8 @@ spec s = Spec.describe s "Parun.Codec.TriggerCondition" $ do
     Common.assertCodec
       s
       TriggerCondition.codec
-      (TriggerCondition.Blocks (BlockTrigger.MkBlockTrigger BlockRole.Attacker (Filter.IsAttackingPlayer PlayerRelation.Opponent) (BlockCount.AtLeast 2 (Filter.And [])) Batching.EachOccurrence Nothing))
-      " {\"type\":\"Blocks\",\"value\":{\"role\":\"Attacker\",\"creature\":{\"type\":\"IsAttackingPlayer\",\"value\":\"Opponent\"},\"count\":{\"type\":\"AtLeast\",\"value\":{\"floor\":2}}}} "
+      (TriggerCondition.Blocks (BlockTrigger.MkBlockTrigger BlockRole.Attacker (Filter.IsAttackingPlayer (ControllerRelation.Related PlayerRelation.Opponent)) (BlockCount.AtLeast 2 (Filter.And [])) Batching.EachOccurrence Nothing))
+      " {\"type\":\"Blocks\",\"value\":{\"role\":\"Attacker\",\"creature\":{\"type\":\"IsAttackingPlayer\",\"value\":{\"type\":\"Opponent\"}},\"count\":{\"type\":\"AtLeast\",\"value\":{\"floor\":2}}}} "
   Spec.it s "Leaves" $
     Common.assertCodec
       s

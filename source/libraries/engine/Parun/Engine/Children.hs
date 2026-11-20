@@ -652,6 +652,8 @@ filterChildren children predicate = case predicate of
   Filter.HoldsBoundAtLeast holder reading n name f -> liftA2 (Filter.HoldsBoundAtLeast holder reading n) (slot children SlotArity.Many name) (nest children f)
   Filter.TappedForManaThisTurn f -> fmap Filter.TappedForManaThisTurn (nest children f)
   Filter.IsAttacking _ -> pure predicate
+  -- ONE: an InSlot relation names the one player the slot binds.
+  Filter.IsAttackingPlayer (ControllerRelation.InSlot name) -> fmap (Filter.IsAttackingPlayer . ControllerRelation.InSlot) (slot children SlotArity.One name)
   Filter.IsAttackingPlayer _ -> pure predicate
   Filter.IsAttackingPlaneswalker _ -> pure predicate
   Filter.IsAttackingBattle _ -> pure predicate
