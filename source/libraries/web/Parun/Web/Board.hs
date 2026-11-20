@@ -243,12 +243,12 @@ seatHead marks board own s =
             ["counts"]
             []
             ( commanderDamage
-                <> [ Element.el "span" ["count"] [Element.attr "title" (Text.pack "Cards in hand")] [Element.el "span" ["k"] [] [Element.string "Hand"], Element.string (show (SeatView.handSize s))],
-                     Element.el "span" ["count"] [Element.attr "title" (Text.pack "Cards in library")] [Element.el "span" ["k"] [] [Element.string "Library"], Element.string (show (SeatView.librarySize s))]
+                <> [ Element.el "span" ["count"] [Element.attr "title" (Text.pack "Cards in hand")] [zone Icon.MkHand "Hand", Element.string (show (SeatView.handSize s))],
+                     Element.el "span" ["count"] [Element.attr "title" (Text.pack "Cards in library")] [zone Icon.MkLibrary "Library", Element.string (show (SeatView.librarySize s))]
                    ]
                 <> designations
-                <> pile marks board "Graveyard" (SeatView.graveyard s)
-                <> pile marks board "Exile" (SeatView.exile s)
+                <> pile marks board Icon.MkGraveyard "Graveyard" (SeatView.graveyard s)
+                <> pile marks board Icon.MkExile "Exile" (SeatView.exile s)
             )
         ]
           <> [Element.el "div" ["pool"] [Element.attr "title" (Text.pack "Mana pool")] (Element.el "span" ["k"] [] [Element.string "Pool"] : concatMap (Web.Mana.rich . unit) pool) | not (null pool)]
@@ -273,18 +273,22 @@ capitalized word = case word of
   [] -> []
 
 -- | A public pile, a chip opening to its cards; nothing while it is empty.
-pile :: Marks msg -> PlayerView.PlayerView -> String -> [ObjectView.ObjectView] -> [Html.Html msg]
-pile marks board title objects = case objects of
+pile :: Marks msg -> PlayerView.PlayerView -> Icon.Icon -> String -> [ObjectView.ObjectView] -> [Html.Html msg]
+pile marks board glyph title objects = case objects of
   [] -> []
   _ ->
     [ Element.el
         "details"
         ["count", "pile"]
         []
-        [ Element.el "summary" [] [] [Element.el "span" ["k"] [] [Element.string title], Element.string (show (length objects))],
+        [ Element.el "summary" [] [Element.attr "title" (Text.pack title)] [zone glyph title, Element.string (show (length objects))],
           Element.keyed "div" ["pile-cards"] [] [(key o, Card.tile board (object marks o) o) | o <- reverse objects]
         ]
     ]
+
+-- | A zone's icon, its name for a screen reader.
+zone :: Icon.Icon -> String -> Html.Html msg
+zone glyph title = Element.el "span" ["k", "zone"] [] [Icon.icon [] glyph, Element.el "span" ["sr-only"] [] [Element.string title]]
 
 -- | The seat's hand, apart from the table so it is always in reach.
 hand :: Marks msg -> PlayerView.PlayerView -> [Html.Html msg]

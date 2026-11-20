@@ -1066,6 +1066,16 @@ main.game {
   font-size: 0.85em;
 }
 
+/* A zone's icon in place of its name. */
+.k.zone {
+  display: inline-flex;
+}
+
+.k.zone .icon {
+  width: 15px;
+  height: 15px;
+}
+
 details.pile {
   position: relative;
 }
@@ -1358,8 +1368,6 @@ details.pile[open] {
   /* Its longest word, so the cost wraps rather than the word breaking. */
   min-width: min(min-content, 100%);
   overflow-wrap: break-word;
-  hyphens: auto;
-  -webkit-hyphens: auto;
 }
 
 .card .cost {
@@ -1874,6 +1882,12 @@ details.log[open] .latest {
     flex: 1;
   }
 
+  /* The log beside the prompt marks what is new, so the summary above the
+     prompt would only repeat it. */
+  main.game .news {
+    display: none;
+  }
+
   .table {
     padding: 0.75em 1em;
     gap: 0.75em;
@@ -2337,7 +2351,7 @@ body:has(main.game) #settings-button {
   position: absolute;
   right: 0;
   bottom: calc(100% + 0.4em);
-  min-width: 220px;
+  min-width: 260px;
   padding: 0.6em 0.8em;
   border: 1px solid var(--border-strong);
   border-radius: var(--radius);
@@ -2383,37 +2397,70 @@ body:has(main.game) #settings-button {
   color: var(--muted);
 }
 
+/* Each setting a segmented control: its choices side by side, the chosen
+   one lit; the radio buttons stay, unseen, for the keyboard. */
 #settings fieldset {
   border: 0;
   margin: 0;
   padding: 0;
   display: flex;
   flex-wrap: wrap;
-  gap: 0.2em 0.8em;
 }
 
 #settings legend {
   width: 100%;
   font-weight: 700;
-  font-size: 0.8rem;
+  font-size: 0.75rem;
   color: var(--muted);
   text-transform: uppercase;
   letter-spacing: 0.05em;
-  margin-bottom: 0.2em;
+  margin-bottom: 0.35em;
 }
 
 #settings label {
+  flex: 1 1 0;
   display: inline-flex;
   align-items: center;
-  gap: 0.3em;
+  justify-content: center;
   min-height: 32px;
+  padding: 0 0.7em;
+  border: 1px solid var(--border);
+  margin-left: -1px;
+  background: var(--surface-2);
   cursor: pointer;
+  white-space: nowrap;
+  transition: background-color 0.15s, color 0.15s;
+}
+
+#settings legend + label {
+  margin-left: 0;
+  border-radius: 999px 0 0 999px;
+}
+
+#settings label:last-child {
+  border-radius: 0 999px 999px 0;
+}
+
+#settings label:has(input:checked) {
+  position: relative;
+  background: var(--accent);
+  border-color: var(--accent);
+  color: var(--accent-text);
+  font-weight: 650;
+}
+
+#settings label:has(input:focus-visible) {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+  z-index: 1;
 }
 
 #settings input {
-  width: auto;
-  min-height: 0;
-  accent-color: var(--accent);
+  position: absolute;
+  opacity: 0;
+  width: 1px;
+  height: 1px;
+  pointer-events: none;
 }
 
 :root[data-density="compact"] {

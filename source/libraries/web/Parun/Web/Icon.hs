@@ -17,6 +17,14 @@ data Icon
     MkCombat
   | -- | The ending phase: a sunset.
     MkEnding
+  | -- | A hand of cards.
+    MkHand
+  | -- | A library: a stack of cards.
+    MkLibrary
+  | -- | A graveyard: a headstone.
+    MkGraveyard
+  | -- | Exile: a spiral.
+    MkExile
   | -- | The settings: Parun's mark on a gear.
     MkGear
   | -- | Parun's mark without its ring, which 'loading' draws dashed.
@@ -30,6 +38,10 @@ iconId i = Text.pack . ("ui-" <>) $ case i of
   MkMain -> "main"
   MkCombat -> "combat"
   MkEnding -> "ending"
+  MkHand -> "hand"
+  MkLibrary -> "library"
+  MkGraveyard -> "graveyard"
+  MkExile -> "exile"
   MkGear -> "gear"
   MkLambda -> "lambda"
 
