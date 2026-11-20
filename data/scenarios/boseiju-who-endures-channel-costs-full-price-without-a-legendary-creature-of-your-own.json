@@ -1,0 +1,114 @@
+{
+  "board": {
+    "active": "alice",
+    "seats": [
+      {
+        "battlefield": [
+          {
+            "card": "Grizzly Bears"
+          },
+          {
+            "card": "Forest",
+            "label": "f"
+          }
+        ],
+        "hand": [
+          {
+            "card": "Boseiju, Who Endures",
+            "label": "boseiju"
+          }
+        ],
+        "library": [
+          {
+            "card": "Wastes"
+          },
+          {
+            "card": "Wastes"
+          },
+          {
+            "card": "Wastes"
+          },
+          {
+            "card": "Wastes"
+          },
+          {
+            "card": "Wastes"
+          }
+        ],
+        "name": "alice"
+      },
+      {
+        "battlefield": [
+          {
+            "card": "Isamaru, Hound of Konda"
+          },
+          {
+            "card": "Strip Mine",
+            "label": "strip"
+          },
+          {
+            "card": "Strip Mine"
+          }
+        ],
+        "library": [
+          {
+            "card": "Mountain",
+            "label": "mtn"
+          },
+          {
+            "card": "Grizzly Bears",
+            "label": "bears"
+          }
+        ],
+        "name": "bob"
+      }
+    ],
+    "step": "PrecombatMain"
+  },
+  "description": "Boseiju, Who Endures' channel costs its full {1}{G} while alice controls only a nonlegendary creature and bob a legendary one, so one Forest cannot activate it from hand",
+  "timeline": [
+    {
+      "player": "alice",
+      "refuse": {
+        "Activate": {
+          "ability": 1,
+          "mana": [
+            "$f"
+          ],
+          "object": "$boseiju",
+          "targets": [
+            "$strip"
+          ]
+        }
+      },
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Count": {
+          "card": "Boseiju, Who Endures",
+          "count": 1,
+          "player": "alice",
+          "zone": "Hand"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Count": {
+          "card": "Strip Mine",
+          "count": 2,
+          "player": "bob",
+          "zone": "Battlefield"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    }
+  ]
+}
