@@ -196,6 +196,7 @@ kindOf prompt = Text.pack $ case prompt of
   Prompt.OrderCombatTolls {} -> "OrderCombatTolls"
   Prompt.OrderComponentCards {} -> "OrderComponentCards"
   Prompt.ChooseStickerKeeper {} -> "ChooseStickerKeeper"
+  Prompt.ChooseTokenKind {} -> "ChooseTokenKind"
   Prompt.OrderForEach {} -> "OrderForEach"
   Prompt.ChooseLoopMembers {} -> "ChooseLoopMembers"
   Prompt.ChoosePile {} -> "ChoosePile"

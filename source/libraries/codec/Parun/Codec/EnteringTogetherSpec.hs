@@ -37,9 +37,21 @@ spec s = Spec.describe s "Parun.Codec.EnteringTogether" $ do
         { EnteringTogether.substitutions =
             Map.singleton
               (CandidateId.OfFloating FloatingCandidate.MkFloatingCandidate {FloatingCandidate.source = ObjectId.MkObjectId 3, FloatingCandidate.timestamp = Timestamp.MkTimestamp 8})
-              (OptionalDecision.Exercises, Just (ObjectId.MkObjectId 9))
+              (OptionalDecision.Exercises, Just (ObjectId.MkObjectId 9), 0)
         }
       " {\"substitutions\":[{\"by\":{\"type\":\"OfFloating\",\"value\":{\"source\":3,\"timestamp\":8}},\"decision\":\"Exercises\",\"copied\":9}]} "
+  -- CR 614.1a: a token row's controller chose the second token kind it offers.
+  Spec.it s "a batch a token replacement offering kinds answered for" $
+    Common.assertCodec
+      s
+      EnteringTogether.codec
+      EnteringTogether.empty
+        { EnteringTogether.substitutions =
+            Map.singleton
+              (CandidateId.OfFloating FloatingCandidate.MkFloatingCandidate {FloatingCandidate.source = ObjectId.MkObjectId 3, FloatingCandidate.timestamp = Timestamp.MkTimestamp 8})
+              (OptionalDecision.Exercises, Nothing, 1)
+        }
+      " {\"substitutions\":[{\"by\":{\"type\":\"OfFloating\",\"value\":{\"source\":3,\"timestamp\":8}},\"decision\":\"Exercises\",\"kind\":1}]} "
   -- CR 616.1: player 1 applied the row of object 3 to this action's tokens.
   Spec.it s "a batch whose token creation a replacement was applied to" $
     Common.assertCodec

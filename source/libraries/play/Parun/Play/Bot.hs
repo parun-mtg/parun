@@ -275,6 +275,7 @@ bot names = Answerer.MkAnswerer $ \asked -> case Asked.prompt asked of
   Prompt.ChooseReplacement _ _ entries -> indexInto (Asked.prompt asked) entries
   Prompt.ChooseRollModifier _ _ modifiers -> indexInto (Asked.prompt asked) (NonEmpty.toList modifiers)
   Prompt.ChooseStickerKeeper _ _ printings -> indexInto (Asked.prompt asked) (NonEmpty.toList printings)
+  Prompt.ChooseTokenKind _ _ _ kinds -> indexInto (Asked.prompt asked) (NonEmpty.toList kinds)
   Prompt.KeepHand _ _ hands -> indexInto (Asked.prompt asked) (NonEmpty.toList hands)
   -- Any of the offer, or none: each a "may", an "up to one" or a "wish to".
   Prompt.CastWhileSearching _ _ offers -> orNone offers

@@ -2698,7 +2698,7 @@ tokenPlusChildren :: (Applicative f) => ReplacementChildren card ability effect 
 tokenPlusChildren c plus = case plus of
   TokenPlus.One card -> TokenPlus.One <$> replacementCard c card
   TokenPlus.ThatMany card -> TokenPlus.ThatMany <$> replacementCard c card
-  TokenPlus.Instead card -> TokenPlus.Instead <$> replacementCard c card
+  TokenPlus.Instead cards -> TokenPlus.Instead <$> traverse (replacementCard c) cards
   TokenPlus.InsteadCopies copied -> TokenPlus.InsteadCopies <$> replacementFilter c copied
 
 -- | How a replacement resizes an event (CR 614.1a): only a quantity holds a child.

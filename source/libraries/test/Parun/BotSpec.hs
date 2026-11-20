@@ -579,6 +579,7 @@ spec s registry = Spec.describe s "Bot" $ do
     Spec.assertEqWith s "roll modifiers" (drawn (Prompt.ChooseRollModifier decider S.alice (Just oid NonEmpty.:| [Nothing]))) (Set.fromList [0, 1])
     Spec.assertEqWith s "opening hands" (drawn (Prompt.KeepHand decider S.alice ([oid] NonEmpty.:| [[], [oid]]))) (Set.fromList [0, 1, 2])
     Spec.assertEqWith s "sticker keepers" (drawn (Prompt.ChooseStickerKeeper decider S.alice (PrintingId.MkPrintingId 3 NonEmpty.:| [PrintingId.MkPrintingId 4]))) (Set.fromList [0, 1])
+    Spec.assertEqWith s "token kinds" (drawn (Prompt.ChooseTokenKind decider S.alice oid (CardName.MkCardName (Text.pack "Cat Token") NonEmpty.:| [CardName.MkCardName (Text.pack "Dog Token")]))) (Set.fromList [0, 1])
 
   -- Each is a "may", an "up to one" or a "wish to", so declining is an
   -- answer beside every candidate.

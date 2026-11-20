@@ -39,30 +39,32 @@
               },
               "plus": {
                 "type": "Instead",
-                "value": {
-                  "faces": [
-                    {
-                      "name": "Illusion Token",
-                      "power": {
-                        "type": "Literal",
-                        "value": 3
-                      },
-                      "toughness": {
-                        "type": "Literal",
-                        "value": 3
-                      },
-                      "typeLine": {
-                        "subtypes": [
-                          "Illusion"
-                        ],
-                        "types": [
-                          "Artifact",
-                          "Creature"
-                        ]
+                "value": [
+                  {
+                    "faces": [
+                      {
+                        "name": "Illusion Token",
+                        "power": {
+                          "type": "Literal",
+                          "value": 3
+                        },
+                        "toughness": {
+                          "type": "Literal",
+                          "value": 3
+                        },
+                        "typeLine": {
+                          "subtypes": [
+                            "Illusion"
+                          ],
+                          "types": [
+                            "Artifact",
+                            "Creature"
+                          ]
+                        }
                       }
-                    }
-                  ]
-                }
+                    ]
+                  }
+                ]
               }
             }
           }
