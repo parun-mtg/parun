@@ -1459,19 +1459,20 @@ attachedToBoundOffends card =
 
 -- How many unhopped CR 110.2 shared-controller atoms (Hop.Itself) this card carries inside a MODE's
 -- target slot filter, an attach effect's destination, a stored combat
--- restriction class or an effect's ObjectRef, and how many anywhere else. The
+-- restriction class, an effect's ObjectRef or a clause's if, and how many anywhere else. The
 -- second number is the offence; the first is what Bioshift and Glamer Spinners
 -- legitimately have one of.
 controllerRelatesToBoundCounts :: Surveyed -> (Int, Int)
 controllerRelatesToBoundCounts card =
-  let total wanted = sum (fmap (\(_, f) -> relatesToBoundAtoms Hop.Itself (atomJson f)) (filter (\(framing, _) -> elem framing [InTargetSlot, AttachDestination, StoredClassFramed, SourceHostFramed] == wanted) (surveyedFilters card)))
+  let total wanted = sum (fmap (\(_, f) -> relatesToBoundAtoms Hop.Itself (atomJson f)) (filter (\(framing, _) -> elem framing [InTargetSlot, AttachDestination, StoredClassFramed, SourceHostFramed, ClauseGateFramed] == wanted) (surveyedFilters card)))
    in (total True, total False)
 
 -- CR 110.2's shared-controller comparison is answerable only where
 -- Filter.Context.slotControllers is filled: Parun.Engine.Target.slotContext, the
 -- one site that matches a MODE's target slot Filter, and
 -- Parun.Engine.Resolve.Slots.effectContext, which an attach effect's destination
--- and an effect's ObjectRef are matched against and which
+-- and an effect's ObjectRef are matched against, a clause's if (CR 608.2c) is
+-- evaluated in, and which
 -- Parun.Engine.Resolve.Common.storedClass bakes a stored class's atom from. EntryAttachDestination's bare Context is not one. This is framedNameOffends' sweep one characteristic over, and
 -- the one place the two differ is what makes it load-bearing rather than tidy:
 -- that atom is a silent False outside its position and this one is a silent TRUE,
@@ -2247,7 +2248,7 @@ filterPositionLintSpec s registry corpus = Spec.describe s "Lint" $ do
   -- where Filter.Context.slotControllers has no key for its slot, so an atom
   -- outside the positions filling it admits every candidate the card meant to
   -- exclude rather than none. See controllerRelatesToBoundOffends.
-  Spec.it s "CR 110.2 no card asks ControllerRelatesToBound outside a mode's target slot, an attach destination, a stored class or an effect's object" $ do
+  Spec.it s "CR 110.2 no card asks ControllerRelatesToBound outside a mode's target slot, an attach destination, a stored class, an effect's object or a clause's if" $ do
     let offenders = fmap fst (filter (any controllerRelatesToBoundOffends . snd) pool)
     Spec.assertEqWith s "the atom sits only in an admitted position" (fmap (S.nameOf . Printing.card) offenders) []
     -- NOT vacuous: the pool authors the atom, and the cards that do are ACCEPTED
@@ -2279,7 +2280,8 @@ filterPositionLintSpec s registry corpus = Spec.describe s "Lint" $ do
         ("Incriminate", 1), -- its second target slot, Trial of Agony's shape
         ("Fear, Fire, Foes!", 1), -- its damage's object, relative to the target's controller
         ("Legions to Ashes", 1), -- its exile's object, relative to the target's controller
-        ("The Fall of Kroog", 1) -- its land target slot, Cloak and Dagger, Entwined's shape
+        ("The Fall of Kroog", 1), -- its land target slot, Cloak and Dagger, Entwined's shape
+        ("Skulking Killer", 1) -- its clause's if, relative to the target's controller
       ]
     -- The REJECTING direction, hand-built for the reason every sibling lint's is:
     -- a card that offends must not be loadable, so no file can carry one. Buried
@@ -2661,6 +2663,7 @@ filterPositionLintSpec s registry corpus = Spec.describe s "Lint" $ do
         ("Paralyze", 2), -- the entering tap and the paid untap
         ("Erosion", 1), -- the destroy a refused payment leaves
         ("Cooped Up", 1), -- an activated exile of its host
+        ("Sigarda's Imprisonment", 1), -- Cooped Up's wording
         ("De-evolve", 1), -- an upkeep trigger's exile of its host
         ("Waterknot", 1), -- Claustrophobia's wording
         ("Sleep Paralysis", 1), -- Claustrophobia's wording

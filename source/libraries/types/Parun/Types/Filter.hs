@@ -230,7 +230,8 @@ data Filter keyword
     -- read as the ability resolves, and no joint check stands behind an attach
     -- destination to narrow a widened offer. Parun.FilterPositionLintSpec's "CR
     -- 110.2 no card asks ControllerRelatesToBound outside a mode's target slot,
-    -- an attach destination, a stored class or an effect's object" and "CR 110.2
+    -- an attach destination, a stored class, an effect's object or a clause's
+    -- if" and "CR 110.2
     -- no card asks a hopped ControllerRelatesToBound outside a resolution's own
     -- positions" keep each to the positions that fill it.
     ControllerRelatesToBound PlayerRelation.PlayerRelation Hop.Hop SlotName.SlotName
