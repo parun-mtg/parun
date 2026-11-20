@@ -249,7 +249,7 @@ untilBuilt shell needs built = do
   go
 
 -- | A game between these decks, once the registry is built, shown while it
--- builds; its ending, and the games its Rematch and Same shuffle start;
+-- builds; its ending, and the games its Rematch starts;
 -- then where it leads. Home from the game shows the home screen with the
 -- game kept; a new game chosen there gives it up.
 play :: Shell -> NonEmpty.NonEmpty (Text.Text, FilePath) -> Maybe Key.Key -> IO Next
@@ -270,7 +270,6 @@ play shell seats seed = do
                 woke <- await shell
                 case woke of
                   MkTapped (Screen.MkEnding Ending.MkRematch) _ -> play shell seats Nothing
-                  MkTapped (Screen.MkEnding Ending.MkSameShuffle) _ -> play shell seats (Key.fromHex (Ending.seed ending))
                   MkTapped (Screen.MkEnding Ending.MkNewGame) _ -> pure MkToHome
                   _ -> go
           go

@@ -11,7 +11,7 @@ import qualified Parun.Web.Log as Log
 spec :: (Monad m, Monad n) => Spec.Spec m n -> n ()
 spec s = Spec.describe s "Parun.Web.Ending" $ do
   Spec.describe s "view" $ do
-    Spec.it s "says how the game ended, links a rematch, the same shuffle, a new game and the scenario, and lists the log" $ do
+    Spec.it s "says how the game ended, offers a rematch, a link to the same shuffle, a new game and the scenario, and lists the log" $ do
       let page = Html.toText (Ending.view ending)
           has piece = Spec.assertBool s (Text.isInfixOf (Text.pack piece) page) piece
       has "<section class=\"verdict won\"><h1>You win!</h1><p>Player 1 wins.</p><p>Player 2 conceded.</p></section>"
@@ -21,7 +21,7 @@ spec s = Spec.describe s "Parun.Web.Ending" $ do
       has ">Share this shuffle</a>"
       let tapping label = Html.labelled (Text.pack "button") (Text.pack label) (Ending.view ending) >>= \path -> Html.handler (Text.pack "click") path (Ending.view ending)
       Spec.assertEqWith s "rematch" (tapping "Rematch") (Just Ending.MkRematch)
-      Spec.assertEqWith s "same shuffle" (tapping "Same shuffle") (Just Ending.MkSameShuffle)
+      Spec.assertBool s (not (Text.isInfixOf (Text.pack ">Same shuffle<") page)) "no same-shuffle button"
       Spec.assertEqWith s "new game" (tapping "New game") (Just Ending.MkNewGame)
       has ">New game</button>"
       has "<a href=\"data:application/json;charset=utf-8,%7b%7d\" download=\"parun-game.json\">Save as a scenario</a>"

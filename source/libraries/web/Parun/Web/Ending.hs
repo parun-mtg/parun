@@ -25,8 +25,6 @@ import qualified Parun.Web.Mana as Mana
 data Event
   = -- | The same decks again, shuffled afresh.
     MkRematch
-  | -- | The same decks, shuffled by the same seed.
-    MkSameShuffle
   | -- | Back to the home screen.
     MkNewGame
   deriving (Eq, Show)
@@ -81,7 +79,6 @@ view ending =
                  ["ending-actions"]
                  []
                  [ Element.button ["primary"] MkRematch [Element.string "Rematch"],
-                   Element.el "button" [] [Element.attr "type" (Text.pack "button"), Element.attr "title" (Text.pack "The same decks, shuffled the same way"), Element.on "click" MkSameShuffle] [Element.string "Same shuffle"],
                    Element.el "a" [] [Element.attr "href" (rematch (decks ending) (Just (seed ending))), Element.attr "title" (Text.pack "A link to the same decks, shuffled the same way")] [Element.string "Share this shuffle"],
                    Element.button [] MkNewGame [Element.string "New game"],
                    Element.el "a" [] [Element.attr "href" (download (scenario ending)), Element.attr "download" (Text.pack "parun-game.json")] [Element.string "Save as a scenario"]
