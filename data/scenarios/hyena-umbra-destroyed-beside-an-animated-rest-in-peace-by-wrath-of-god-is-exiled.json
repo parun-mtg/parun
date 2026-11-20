@@ -1,0 +1,131 @@
+{
+  "board": {
+    "active": "alice",
+    "seats": [
+      {
+        "battlefield": [
+          {
+            "card": "Plains",
+            "label": "w1",
+            "ready": true
+          },
+          {
+            "card": "Plains",
+            "label": "w2",
+            "ready": true
+          },
+          {
+            "card": "Plains",
+            "label": "w3",
+            "ready": true
+          },
+          {
+            "card": "Plains",
+            "label": "w4",
+            "ready": true
+          },
+          {
+            "card": "Grizzly Bears",
+            "label": "bears",
+            "ready": true
+          },
+          {
+            "attached": "bears",
+            "card": "Hyena Umbra",
+            "label": "umbra"
+          }
+        ],
+        "hand": [
+          {
+            "card": "Wrath of God",
+            "label": "wrath"
+          }
+        ],
+        "name": "alice"
+      },
+      {
+        "battlefield": [
+          {
+            "card": "Opalescence"
+          },
+          {
+            "card": "Rest in Peace"
+          }
+        ],
+        "name": "bob"
+      }
+    ],
+    "step": "PrecombatMain"
+  },
+  "description": "Hyena Umbra destroyed by Wrath of God beside an animated Rest in Peace is exiled",
+  "note": "CR 614.6 / 608.2f: Wrath of God destroys bob's Rest in Peace, a 2/2 under Opalescence, and alice's Grizzly Bears, whose destruction umbra armor replaces by destroying Hyena Umbra. The Aura's destruction is part of Wrath's one event, so Rest in Peace, which existed before it, exiles the Aura.",
+  "timeline": [
+    {
+      "do": {
+        "Cast": {
+          "mana": [
+            "$w1",
+            "$w2",
+            "$w3",
+            "$w4"
+          ],
+          "object": "$wrath"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": "Pass",
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": "Pass",
+      "player": "bob",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Count": {
+          "card": "Hyena Umbra",
+          "count": 1,
+          "player": "alice",
+          "zone": "Exile"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Count": {
+          "card": "Grizzly Bears",
+          "count": 1,
+          "player": "alice",
+          "zone": "Battlefield"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Count": {
+          "card": "Rest in Peace",
+          "count": 1,
+          "player": "bob",
+          "zone": "Exile"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    }
+  ]
+}

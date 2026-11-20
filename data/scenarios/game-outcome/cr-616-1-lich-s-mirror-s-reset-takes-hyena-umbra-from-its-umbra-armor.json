@@ -16,6 +16,10 @@
             "attached": "bears",
             "card": "Hyena Umbra",
             "label": "umbra"
+          },
+          {
+            "card": "Knight of Doves",
+            "label": "knight"
           }
         ],
         "library": [
@@ -71,7 +75,7 @@
     "step": "BeginningOfCombat"
   },
   "description": "CR 616.1 Lich's Mirror's reset takes Hyena Umbra from its umbra armor in the same check",
-  "note": "Alice at 3 life with Lich's Mirror blocks bob's Craw Wurm with Grizzly Bears under Hyena Umbra while his Hill Giant hits her. One state-based action check destroys the Bears, which umbra armor replaces by destroying the Aura, and loses her the game, which the Mirror's reset replaces: both would move the Aura, only one can happen, and its controller chooses (the Mirror's ruling). She lets the reset take it: the Aura and the Bears are shuffled into her library and her graveyard stays empty.",
+  "note": "Alice at 3 life with Lich's Mirror blocks bob's Craw Wurm with Grizzly Bears under Hyena Umbra while his Hill Giant hits her. One state-based action check destroys the Bears, which umbra armor replaces by destroying the Aura, and loses her the game, which the Mirror's reset replaces: both would move the Aura, only one can happen, and its controller chooses (the Mirror's ruling). She lets the reset take it: the Aura and the Bears are shuffled into her library, her graveyard stays empty, and Knight of Doves sees no enchantment put into a graveyard, so no Bird.",
   "timeline": [
     {
       "do": {
@@ -121,7 +125,8 @@
             "Island#7",
             "Lich's Mirror",
             "Grizzly Bears",
-            "Hyena Umbra"
+            "Hyena Umbra",
+            "Knight of Doves"
           ]
         }
       },
@@ -162,6 +167,19 @@
           "count": 1,
           "player": "alice",
           "zone": "Library"
+        }
+      },
+      "player": "bob",
+      "step": "EndOfCombat",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Count": {
+          "card": "Bird Token",
+          "count": 0,
+          "player": "alice",
+          "zone": "Battlefield"
         }
       },
       "player": "bob",

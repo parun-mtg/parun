@@ -8,6 +8,7 @@ import qualified Parun.Types.Object as Object
 import qualified Parun.Types.ObjectId as ObjectId
 import qualified Parun.Types.PlayerId as PlayerId
 import qualified Parun.Types.ProjectedCharacteristics as ProjectedCharacteristics
+import qualified Parun.Types.ReplacedDestruction as ReplacedDestruction
 
 -- | CR 603.10 / 608.2h: the game as it stood at earlier moments, held whole as
 -- GameState.snapshots, `state` being the whole game a board snapshot keeps.
@@ -81,6 +82,10 @@ data Snapshots state = MkSnapshots
     -- through Parun.Engine.Projection's framing; each entry's own copy of this
     -- field and of the other filed boards is empty. Grows for the whole game,
     -- as `lastKnown` does.
-    boardAsCast :: !(Map.Map ObjectId.ObjectId state)
+    boardAsCast :: !(Map.Map ObjectId.ObjectId state),
+    -- | CR 614.6 / 608.2f: the destruction whose replacement's queued effects
+    -- are running (Parun.Engine.Event.asPartOf), its board's own copy of this
+    -- field empty. Nothing outside that drain.
+    replacedDestruction :: !(Maybe (ReplacedDestruction.ReplacedDestruction state))
   }
   deriving (Eq, Ord, Show)

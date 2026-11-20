@@ -766,6 +766,8 @@ library codec
     Parun.Codec.DesignationSpec
     Parun.Codec.Destroy
     Parun.Codec.DestroySpec
+    Parun.Codec.DestructionCause
+    Parun.Codec.DestructionCauseSpec
     Parun.Codec.DestructionR
     Parun.Codec.DestructionRewrite
     Parun.Codec.DestructionRewriteSpec
@@ -1624,6 +1626,8 @@ library codec
     Parun.Codec.RepeatPicksSpec
     Parun.Codec.RepeatSpec
     Parun.Codec.Replace
+    Parun.Codec.ReplacedDestruction
+    Parun.Codec.ReplacedDestructionSpec
     Parun.Codec.ReplacementEffect
     Parun.Codec.ReplacementEffectSpec
     Parun.Codec.ReplacementOrigin
@@ -3750,6 +3754,7 @@ library types
     Parun.Types.RepeatIf
     Parun.Types.RepeatPicks
     Parun.Types.Replace
+    Parun.Types.ReplacedDestruction
     Parun.Types.ReplacementBucket
     Parun.Types.ReplacementCandidate
     Parun.Types.ReplacementEffect
