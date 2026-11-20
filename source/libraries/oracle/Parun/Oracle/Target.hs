@@ -427,7 +427,11 @@ object context determiner ref = case ref of
         p <- Filter.phrase (EachCardInGraveyard.filter e) (keyword context)
         from <- graveyard (EachCardInGraveyard.graveyards e) Nothing
         text <- Filter.describe Filter.Plural permanent (Filter.merge p (Filter.MkPhrase [] [card] [from]))
-        [MkReference (Text.pack "all " <> text) [] Filter.Plural []]
+        -- Free: kinds disjoined read "and" (Brilliant Restoration's "all
+        -- artifact and enchantment cards").
+        let orWord = Text.pack " or "
+            jointly = [Text.replace orWord (Text.pack " and ") text | Text.isInfixOf orWord text]
+        [MkReference (Text.pack "all " <> t) [] Filter.Plural [] | t <- text : jointly]
   ObjectRef.ChosenPermanents c
     | ChosenPermanents.chooser c == PlayerRef.Relative PlayerRelation.You && ChosenPermanents.zone c == Zone.Battlefield && Set.null (ChosenPermanents.ownZones c) && Maybe.isNothing (ChosenPermanents.total c) -> do
         p <- Filter.phrase (ChosenPermanents.filter c) (keyword context)
