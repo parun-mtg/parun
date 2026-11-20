@@ -604,7 +604,8 @@ simultaneously body = do
 -- and the cards put into a graveyard, while `body` runs are put there "at the
 -- same time", and their owners arrange them as it ends (arrangeArrivals).
 -- `simultaneously` opens one. The OUTERMOST scope wins, `simultaneously`'s
--- posture.
+-- posture. The one-use entry rows its entries applied are spent as it ends
+-- (Replacement.spendEntries).
 arrivingTogether :: Game a -> Game a
 arrivingTogether body = do
   open <- State.gets (Maybe.isJust . Scratch.arrivals . GameState.scratch)
@@ -615,6 +616,7 @@ arrivingTogether body = do
       result <- body
       arrangeArrivals
       State.modify' (\g -> g {GameState.scratch = (GameState.scratch g) {Scratch.enteredFrom = Map.empty}})
+      State.modify' Replacement.spendEntries
       pure result
 
 -- CR 401.4: "if an effect puts two or more cards in a specific position in a
@@ -2608,7 +2610,9 @@ applyReplacements = applyReplacementsIn Settle.none Nothing Set.empty Set.empty
 -- What `asOf` does NOT freeze: the FLOATING store stays live (see
 -- Replacement.collect), because CR 614.3 has Replacement.consume spend a one-shot
 -- as it applies and a frozen
--- store would hand a spent regeneration shield to the next member of the batch;
+-- store would hand a spent regeneration shield to the next member of the batch
+-- (a one-use ENTRY row stays for every member, the batch's entries being one
+-- event: Replacement.consume);
 -- the loop still RE-COLLECTS every iteration, so CR 616.1f and CR 616.2 are
 -- untouched; and `apply`'s writes and Replacement.choose's chooser lookup read the LIVE
 -- state. A permanent that ENTERED after the batch began therefore contributes

@@ -10,6 +10,7 @@ import qualified Parun.Types.Cause as Cause
 import qualified Parun.Types.CounterKind as CounterKind
 import qualified Parun.Types.EnteringTogether as EnteringTogether
 import qualified Parun.Types.EntryOrigin as EntryOrigin
+import qualified Parun.Types.FloatingCandidate as FloatingCandidate
 import qualified Parun.Types.Keyword as Keyword
 import qualified Parun.Types.ObjectId as ObjectId
 import qualified Parun.Types.PlayerId as PlayerId
@@ -75,6 +76,11 @@ data Scratch = MkScratch
     -- the one-at-a-time funnel would otherwise hide from an earlier member's
     -- entry choice. Empty at every priority window.
     enteringPending :: !(Map.Map ObjectId.ObjectId PlayerId.PlayerId),
+    -- | CR 614.3: the one-use floating entry replacements applied in the
+    -- Event.arrivingTogether scope under way, held standing until it ends,
+    -- since what enters at once enters in one event
+    -- (Parun.Engine.Replacement.consume). Empty outside one.
+    spentEntries :: !(Set.Set FloatingCandidate.FloatingCandidate),
     -- | CR 614.1a: while a land play is moving its card, the pre-move ids whose
     -- entry an EntryRewrite.SacrificeToEnter turned into the graveyard -- the
     -- land was still played (CR 305.1). Nothing when no play is listening,
