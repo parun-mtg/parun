@@ -16,7 +16,9 @@ import qualified Parun.Types.BeginningStep as BeginningStep
 import qualified Parun.Types.Bookkeeping as Bookkeeping
 import qualified Parun.Types.Combat as Combat
 import qualified Parun.Types.CombatStep as CombatStep
+import qualified Parun.Types.Drew as Drew
 import qualified Parun.Types.EndingStep as EndingStep
+import qualified Parun.Types.EventGroup as EventGroup
 import Parun.Types.ExtraPhase (ExtraPhase)
 import qualified Parun.Types.ExtraPhase as ExtraPhase
 import qualified Parun.Types.ExtraTurn as ExtraTurn
@@ -27,6 +29,7 @@ import qualified Parun.Types.GameState as GameState
 import qualified Parun.Types.LoggedEvent as LoggedEvent
 import qualified Parun.Types.MatchScope as MatchScope
 import Parun.Types.ObjectId (ObjectId)
+import qualified Parun.Types.PastActivation as PastActivation
 import Parun.Types.Phase (Phase)
 import qualified Parun.Types.Phase as Phase
 import Parun.Types.PhaseAnchor (PhaseAnchor)
@@ -136,6 +139,69 @@ runningTurns gs =
 -- that turn has ended and before another is worked.
 workedMarker :: GameState -> Maybe Natural
 workedMarker gs = fmap TurnMarker.number (List.find (\m -> TurnMarker.underWay m && Map.notMember (TurnMarker.number m) (GameState.parkedTurns gs)) (GameState.turnMarkers gs))
+
+-- | CR 807.4b: every running turn's registers, GameState.turn first, then
+-- each parked Grand Melee turn by marker number. A history read ("this turn")
+-- reads them all (docs/decisions.md, "What "this turn" and "last turn" read in
+-- Grand Melee"); a positional one (a watermark, a before/after window, a
+-- stack's own record) reads GameState.turn alone.
+runningRegisters :: GameState -> [TurnRegisters.TurnRegisters]
+runningRegisters gs = GameState.turn gs : Map.elems (GameState.parkedTurns gs)
+
+-- | CR 608.2i: what happened this turn, every running turn's log merged in
+-- event order, EventGroup being game-wide (Bookkeeping.nextEventGroup).
+eventsThisTurn :: GameState -> Seq LoggedEvent.LoggedEvent
+eventsThisTurn gs
+  | Map.null (GameState.parkedTurns gs) = TurnRegisters.events (GameState.turn gs)
+  | otherwise = mergedOn LoggedEvent.group (fmap TurnRegisters.events (runningRegisters gs))
+
+-- | CR 121.1: the cards each player has drawn this turn, in draw order. Each
+-- running turn's entries take the groups of that log's GameEvent.Drew for the
+-- player, which Event.drawCard writes beside each entry, to merge by.
+drawsThisTurn :: GameState -> Map.Map PlayerId (Seq ObjectId)
+drawsThisTurn gs
+  | Map.null (GameState.parkedTurns gs) = TurnRegisters.drawsThisTurn (GameState.turn gs)
+  | otherwise = fmap (fmap snd . mergedOn fst) (Map.unionsWith (<>) (fmap stamped (runningRegisters gs)))
+  where
+    stamped r = Map.mapWithKey (\pid draws -> [Seq.zip (aligned (Seq.length draws) (drewIn pid r)) draws]) (TurnRegisters.drawsThisTurn r)
+    -- The newest draws' groups: CR 103.5's opening hands log draws the tally
+    -- no longer holds (Parun.Engine.Mulligan).
+    aligned n tags
+      | Seq.length tags >= n = Seq.drop (Seq.length tags - n) tags
+      | otherwise = Seq.replicate (n - Seq.length tags) (Maybe.fromMaybe (EventGroup.MkEventGroup 0) (Seq.lookup 0 tags)) <> tags
+    drewIn pid r =
+      Seq.fromList
+        [ LoggedEvent.group logged
+        | logged <- Foldable.toList (TurnRegisters.events r),
+          GameEvent.Drew drew <- [LoggedEvent.event logged],
+          Drew.player drew == pid
+        ]
+
+-- | CR 602.2: every activated ability begun this turn, oldest first.
+activationsThisTurn :: GameState -> Seq PastActivation.PastActivation
+activationsThisTurn gs
+  | Map.null (GameState.parkedTurns gs) = TurnRegisters.activationsThisTurn (GameState.turn gs)
+  | otherwise = mergedOn PastActivation.loggedAt (fmap TurnRegisters.activationsThisTurn (runningRegisters gs))
+
+-- | A per-turn tally no reader orders, every running turn's together.
+tallyThisTurn :: (Monoid a) => (TurnRegisters.TurnRegisters -> a) -> GameState -> a
+tallyThisTurn field = foldMap field . runningRegisters
+
+-- | A per-turn tally keyed by object, every running turn's together, the
+-- entries for one object combined by `both`.
+keyedThisTurn :: (v -> v -> v) -> (TurnRegisters.TurnRegisters -> Map.Map ObjectId v) -> GameState -> Map.Map ObjectId v
+keyedThisTurn both field = Map.unionsWith both . fmap field . runningRegisters
+
+-- Sequences each in order merged into one, by key; a tie keeps the earlier
+-- sequence's entry first.
+mergedOn :: (Ord k) => (a -> k) -> [Seq a] -> Seq a
+mergedOn key = Seq.fromList . foldr (merge . Foldable.toList) []
+  where
+    merge xs [] = xs
+    merge [] ys = ys
+    merge (x : xs) (y : ys)
+      | key y < key x = y : merge (x : xs) ys
+      | otherwise = x : merge xs (y : ys)
 
 -- | CR 102.1 / 807.4: is it this player's turn -- an active player of some
 -- running turn? The relation read (docs/decisions.md, "Which turn a Grand

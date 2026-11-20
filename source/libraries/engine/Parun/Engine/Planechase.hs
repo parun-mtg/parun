@@ -10,7 +10,8 @@
 --
 -- WHAT IS NOT IMPLEMENTED:
 --
---   * CR 901.12's Two-Headed Giant and CR 901.14's Grand Melee options (#4465).
+--   * CR 901.12c's plane "you" reaching both Two-Headed Giant teammates (#9165).
+--   * CR 901.14's Grand Melee option (#9166).
 module Parun.Engine.Planechase where
 
 import qualified Control.Monad as Monad
@@ -72,7 +73,6 @@ import qualified Parun.Types.TriggerCondition as TriggerCondition
 import qualified Parun.Types.TriggerSource as TriggerSource
 import Parun.Types.TriggeredAbility (TriggeredAbility)
 import qualified Parun.Types.TriggeredAbilitySource as TriggeredAbilitySource
-import qualified Parun.Types.TurnRegisters as TurnRegisters
 import qualified Parun.Types.TurnedUpOffDeck as TurnedUpOffDeck
 
 -- | CR 901.3: this player's planar deck, top first; under CR 901.15c, the
@@ -110,7 +110,10 @@ faceUp :: GameState -> [ObjectId]
 faceUp gs = filter (`Plane.isPlanarCard` gs) (Set.toAscList (GameState.command gs))
 
 -- | CR 701.31a: may this player planeswalk? Only in a Planechase game, and only
--- the planar controller.
+-- the planar controller. So the planeswalking ability of a Two-Headed Giant
+-- teammate who is not the primary player does nothing (CR 901.8, 901.12b):
+-- data/scenarios/planechase/cr-901-12b-the-active-team-s-primary-player-controls-the-plane.json
+-- proves it.
 canPlaneswalk :: PlayerId -> GameState -> Bool
 canPlaneswalk pid gs = isPlanechase gs && pid == Plane.planarController gs
 
@@ -311,7 +314,7 @@ rollsThisTurn pid gs =
   let rolled logged = case LoggedEvent.event logged of
         GameEvent.PlanarDieRolled r -> PlanarDieRolled.roller r == pid
         _ -> False
-   in Natural.length (filter rolled (Foldable.toList (TurnRegisters.events (GameState.turn gs))))
+   in Natural.length (filter rolled (Foldable.toList (Turn.eventsThisTurn gs)))
 
 -- | CR 901.9: {1} for each earlier roll this turn, so the first is free.
 rollCost :: PlayerId -> GameState -> Cost Keyword

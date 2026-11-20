@@ -490,7 +490,7 @@ sampleControl = do
 -- log's clearing at turn handoff makes it "of the turn".
 lifeChanged :: LifeDirection.LifeDirection -> PlayerId -> Natural -> GameState -> GameEvent
 lifeChanged direction pid amount gs =
-  lifeChangeEvent direction (LifeChange.MkLifeChange {LifeChange.player = pid, LifeChange.amount = amount, LifeChange.first = firstLifeChange direction pid (TurnRegisters.events (GameState.turn gs))})
+  lifeChangeEvent direction (LifeChange.MkLifeChange {LifeChange.player = pid, LifeChange.amount = amount, LifeChange.first = firstLifeChange direction pid (Turn.eventsThisTurn gs)})
 
 lifeChangeEvent :: LifeDirection.LifeDirection -> LifeChange.LifeChange -> GameEvent
 lifeChangeEvent direction = case direction of
@@ -12522,14 +12522,9 @@ performDraw settle pid = do
         drawn Seq.:< _ -> do
           nth <- State.state $ \g ->
             let tally = Map.insertWith (flip (<>)) pid (Seq.singleton drawn) (TurnRegisters.drawsThisTurn (GameState.turn g))
-             in ( Natural.length (Map.findWithDefault Seq.empty pid tally),
-                  g
-                    { GameState.turn =
-                        (GameState.turn g)
-                          { TurnRegisters.drawsThisTurn = tally
-                          }
-                    }
-                )
+                tallied = g {GameState.turn = (GameState.turn g) {TurnRegisters.drawsThisTurn = tally}}
+             in -- The ordinal counts every running turn's draws (Turn.drawsThisTurn).
+                (Natural.length (Map.findWithDefault Seq.empty pid (Turn.drawsThisTurn tallied)), tallied)
           State.modify' (recordEvent (GameEvent.Drew (Drew.MkDrew pid nth)))
           -- CR 121.8: drawn while a spell is being cast or an ability
           -- activated, the card is kept face down and any reveal waits for
@@ -13584,9 +13579,9 @@ withinTriggerLimit gs =
           | otherwise -> pending : go (Map.insertWith (+) key 1 spent) rest
    in go
         ( tally
-            ( fmap spentKey (filter perTurn (Maybe.mapMaybe (abilityTriggeredOf . LoggedEvent.event) (Foldable.toList (TurnRegisters.events (GameState.turn gs)))))
+            ( fmap spentKey (filter perTurn (Maybe.mapMaybe (abilityTriggeredOf . LoggedEvent.event) (Foldable.toList (Turn.eventsThisTurn gs))))
                 <> fmap spentKey (Foldable.toList (History.triggeredThisGame (GameState.history gs)))
-                <> fmap spentKey (Foldable.toList (TurnRegisters.instructionsTakenThisTurn (GameState.turn gs)))
+                <> fmap spentKey (Foldable.toList (Turn.tallyThisTurn TurnRegisters.instructionsTakenThisTurn gs))
             )
         )
 
@@ -13666,7 +13661,7 @@ instructionRecord controller src =
 instructionSpent :: GameState -> AbilityTriggered.AbilityTriggered -> Bool
 instructionSpent gs record =
   let key r = limitKey (AbilityTriggered.source r) (AbilityTriggered.controller r) (AbilityTriggered.ability r)
-   in any ((== key record) . key) (TurnRegisters.instructionsTakenThisTurn (GameState.turn gs))
+   in any ((== key record) . key) (Turn.tallyThisTurn TurnRegisters.instructionsTakenThisTurn gs)
 
 -- CR 603.2h: spend the instruction's turn.
 instructionTaken :: AbilityTriggered.AbilityTriggered -> GameState -> GameState

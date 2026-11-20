@@ -15,6 +15,7 @@ import qualified Parun.Types.CardType as CardType
 import qualified Parun.Types.Color as Color
 import qualified Parun.Types.Face as Face
 import qualified Parun.Types.ManaCost as ManaCost
+import qualified Parun.Types.Supertype as Supertype
 import qualified Parun.Types.TypeLine as TypeLine
 import qualified Parun.Web.Lobby as Lobby
 
@@ -35,7 +36,10 @@ data Entry = MkEntry
     -- | Every face's rules text, a line each.
     rules :: [Text.Text],
     -- | Every face's name, type line and rules text, case-folded, to match.
-    folded :: Text.Text
+    folded :: Text.Text,
+    -- | Whether the card is a basic land, which every card pool admits
+    -- (CR 100.2b, 205.4c).
+    basic :: Bool
   }
   deriving (Eq, Show)
 
@@ -47,13 +51,16 @@ data Query = MkQuery
     -- | The card types a card must have one of.
     kinds :: Set.Set CardType.CardType,
     -- | The mana value a card must have, 7 meaning 7 and up.
-    valued :: Maybe Integer
+    valued :: Maybe Integer,
+    -- | The names, case-folded, a card's must be among; a basic land is
+    -- always kept.
+    among :: Maybe (Set.Set Text.Text)
   }
   deriving (Eq, Show)
 
 -- | A query filtering nothing.
 everything :: Query
-everything = MkQuery Text.empty Set.empty Set.empty Nothing
+everything = MkQuery Text.empty Set.empty Set.empty Nothing Nothing
 
 -- | The most results shown.
 cap :: Int
@@ -77,7 +84,8 @@ entryOf c
             types = kindsOf,
             typeLine = typeWords (Face.typeLine front),
             rules = said,
-            folded = Text.toCaseFold (Text.unlines (named <> fmap (typeWords . Face.typeLine) faces <> said))
+            folded = Text.toCaseFold (Text.unlines (named <> fmap (typeWords . Face.typeLine) faces <> said)),
+            basic = Set.member Supertype.Basic (TypeLine.supertypes (Face.typeLine front)) && Set.member CardType.Land (TypeLine.types (Face.typeLine front))
           }
   where
     faces = NonEmpty.toList (Card.faces c)
@@ -109,6 +117,7 @@ search query entries =
         | otherwise = Nothing
       within e = Set.null (wanted query) || Set.isSubsetOf (colours e) (wanted query)
       ofKind e = Set.null (kinds query) || not (Set.disjoint (types e) (kinds query))
+      pooled e = basic e || maybe True (Set.member (Text.toCaseFold (CardName.unwrap (name e)))) (among query)
       atValue e = maybe True (\v -> if v >= 7 then value e >= 7 else value e == v) (valued query)
-      ranked = Seq.sortOn (\(r, e) -> (r, CardName.unwrap (name e))) (Seq.fromList [(r, e) | e <- Foldable.toList entries, within e, ofKind e, atValue e, Just r <- [rank e]])
+      ranked = Seq.sortOn (\(r, e) -> (r, CardName.unwrap (name e))) (Seq.fromList [(r, e) | e <- Foldable.toList entries, pooled e, within e, ofKind e, atValue e, Just r <- [rank e]])
    in (Seq.length ranked, fmap snd (Seq.take cap ranked))

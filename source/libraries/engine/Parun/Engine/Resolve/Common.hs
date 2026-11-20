@@ -4373,7 +4373,7 @@ enteredBeside oid gs = case Game.entryGroup oid gs of
   Just group ->
     Set.delete oid . Set.fromList $
       [ ZoneChange.object zc
-      | logged <- Foldable.toList (TurnRegisters.events (GameState.turn gs)),
+      | logged <- Foldable.toList (Turn.eventsThisTurn gs),
         LoggedEvent.group logged == group,
         Just zc <- [Game.enteredBattlefieldChange (LoggedEvent.event logged)]
       ]

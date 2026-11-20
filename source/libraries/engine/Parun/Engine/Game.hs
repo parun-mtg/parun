@@ -3620,7 +3620,7 @@ castOf event = case event of
 -- (Event.Match.castOrdinal) read it.
 castsBefore :: ObjectId -> GameState -> Maybe [SpellWasCast.SpellWasCast]
 castsBefore spell gs =
-  case break ((== spell) . SpellWasCast.spell) (Maybe.mapMaybe (castOf . LoggedEvent.event) (Foldable.toList (TurnRegisters.events (GameState.turn gs)))) of
+  case break ((== spell) . SpellWasCast.spell) (Maybe.mapMaybe (castOf . LoggedEvent.event) (Foldable.toList (Turn.eventsThisTurn gs))) of
     (_, []) -> Nothing
     (before, _) -> Just before
 
@@ -3643,8 +3643,7 @@ casterOf spell gs =
         . List.find ((== spell) . SpellWasCast.spell)
         . Maybe.mapMaybe (castOf . LoggedEvent.event)
         . Foldable.toList
-        . TurnRegisters.events
-        $ GameState.turn gs
+        $ Turn.eventsThisTurn gs
 
 -- CR 601.2i: how many spells each player cast during the turn this log holds
 -- (turnLog's). Parun.Engine.Quantity's SpellsCast arm and spellsCastLastTurn
@@ -3658,8 +3657,8 @@ castsPerPlayer events =
     (+)
     (fmap (\cast -> (SpellWasCast.player cast, 1)) (Maybe.mapMaybe (castOf . LoggedEvent.event) (Foldable.toList events)))
 
--- CR 608.2i: the log of the turn a tally names. TurnRegisters.events is the turn in
--- progress, Engine.beginTurn clearing it at the handoff; the newest of
+-- CR 608.2i: the log of the turn a tally names. This turn is every running
+-- turn's log (Turn.eventsThisTurn), Engine.closeTurn clearing each at its end; the newest of
 -- History.pastTurns is the one before, whoever's it was. None on the game's
 -- first turn; the second turn's holds the pre-game entries too.
 -- SinceOwnLastTurn's "your" is the perspective's: every turn after their own
@@ -3677,7 +3676,7 @@ turnLog which perspective gs = case which of
     Nothing -> Seq.empty
   where
     past = History.pastTurns (GameState.history gs)
-    live = TurnRegisters.events (GameState.turn gs)
+    live = Turn.eventsThisTurn gs
 
 -- CR 102.1 / 805.4: the player's own most recent finished turn, as its index
 -- in History.pastTurns: the newest whose active players hold them. Nothing
@@ -3709,7 +3708,7 @@ castsInLog = Seq.fromList . Maybe.mapMaybe (castOf . LoggedEvent.event) . Foldab
 castsThisGame :: GameState -> Seq.Seq SpellWasCast.SpellWasCast
 castsThisGame gs =
   foldMap (castsInLog . PastTurn.events) (History.pastTurns (GameState.history gs))
-    <> castsInLog (TurnRegisters.events (GameState.turn gs))
+    <> castsInLog (Turn.eventsThisTurn gs)
 
 -- CR 120.1: the damage events a log holds, oldest first, behind
 -- damageRecipient's CR 120.8 fence.
@@ -3950,14 +3949,14 @@ enteredThisTurn oid gs = fmap MovedBetween.to (arrivalThisTurn oid gs) == Just Z
 -- mirrormind-crown-is-spent-by-tokens-hallowed-moonlight-exiles and
 -- mirrormind-crown-stays-spent-once-its-land-copies-cannot-be-created.
 wouldCreateTokensThisTurn :: PlayerId -> GameState -> Bool
-wouldCreateTokensThisTurn pid gs = Set.member pid (TurnRegisters.wouldCreateTokens (GameState.turn gs))
+wouldCreateTokensThisTurn pid gs = Set.member pid (Turn.tallyThisTurn TurnRegisters.wouldCreateTokens gs)
 
 -- CR 110.2 / 608.2i: this turn's control changes of this permanent, oldest
 -- first. The first one's `before` is the player it entered under, if it
 -- entered this turn: an entry mints none (Parun.Engine.Event.sampleControl).
 controlChangesThisTurn :: ObjectId -> GameState -> [ControlChanged.ControlChanged]
 controlChangesThisTurn oid gs =
-  [change | GameEvent.ControlChanged change <- fmap LoggedEvent.event (Foldable.toList (TurnRegisters.events (GameState.turn gs))), ControlChanged.object change == oid]
+  [change | GameEvent.ControlChanged change <- fmap LoggedEvent.event (Foldable.toList (Turn.eventsThisTurn gs)), ControlChanged.object change == oid]
 
 -- CR 400.7 / 608.2i: the zone change this turn that made this object the object
 -- it is now, keyed on the ARRIVAL's id. Every arrival counts: a move's leading
@@ -3965,7 +3964,7 @@ controlChangesThisTurn oid gs =
 -- 713.8), which GameEvent.CardArrived names. Filter.EnteredThisTurn's view
 -- field reads it.
 arrivalThisTurn :: ObjectId -> GameState -> Maybe MovedBetween.MovedBetween
-arrivalThisTurn oid gs = arrivalIn (TurnRegisters.events (GameState.turn gs)) oid
+arrivalThisTurn oid gs = arrivalIn (Turn.eventsThisTurn gs) oid
 
 -- The same entry, over every turn since each player's own most recent turn
 -- ended (ownLastTurn), the live one included, keyed by each player still in
@@ -3984,7 +3983,7 @@ arrivalSinceOwnLastTurn oid gs =
       opens = List.foldl' min (Seq.length past) (fmap (maybe 0 (+ 1)) (Map.elems lastTurns))
       -- Each turn the search may reach, by its index; the live turn's is
       -- one past the newest finished turn's.
-      turns = (Seq.length past, TurnRegisters.events (GameState.turn gs)) : reverse (zip [opens ..] (fmap PastTurn.events (Foldable.toList (Seq.drop opens past))))
+      turns = (Seq.length past, Turn.eventsThisTurn gs) : reverse (zip [opens ..] (fmap PastTurn.events (Foldable.toList (Seq.drop opens past))))
       found = Maybe.listToMaybe (Maybe.mapMaybe (\(i, events) -> fmap ((,) i) (arrivalIn events oid)) turns)
       within i = maybe True (< i)
    in case found of
@@ -4014,7 +4013,7 @@ enteredBattlefieldChange event = do
 entryGroup :: ObjectId -> GameState -> Maybe EventGroup.EventGroup
 entryGroup oid gs =
   let entered logged = maybe False ((== oid) . ZoneChange.object) (enteredBattlefieldChange (LoggedEvent.event logged))
-   in fmap (LoggedEvent.group . Seq.index (TurnRegisters.events (GameState.turn gs))) (Seq.findIndexR entered (TurnRegisters.events (GameState.turn gs)))
+   in fmap (LoggedEvent.group . Seq.index (Turn.eventsThisTurn gs)) (Seq.findIndexR entered (Turn.eventsThisTurn gs))
 
 -- CR 700.4's "is put into a graveyard from the battlefield", the reader
 -- `enteredBattlefieldChange` above is the other direction of: rule 702.69a's
@@ -4074,7 +4073,7 @@ arrivalsOf oid gs =
   let arrivedFrom event = case event of
         GameEvent.Moved m | ZoneChange.departed (Moved.change m) == oid -> Foldable.toList (Moved.arrivals m)
         _ -> []
-   in concatMap (arrivedFrom . LoggedEvent.event) (TurnRegisters.events (GameState.turn gs))
+   in concatMap (arrivedFrom . LoggedEvent.event) (Turn.eventsThisTurn gs)
 
 -- CR 400.7's zone change itself, whatever its ends -- the exhaustive case the two
 -- readers above share, so a new GameEvent constructor is classified once rather
@@ -4322,7 +4321,7 @@ discardedThisTurnBy pid oid gs =
   let discardedIt event = case event of
         GameEvent.Discarded discarded -> Discarded.player discarded == pid && Discarded.card discarded == oid
         _ -> False
-   in any (discardedIt . LoggedEvent.event) (TurnRegisters.events (GameState.turn gs))
+   in any (discardedIt . LoggedEvent.event) (Turn.eventsThisTurn gs)
 
 -- CR 702.117a / 608.2i: has this player or one of their teammates cast a spell
 -- this turn? discardedThisTurnBy's shape above over the cast log, and the reader
@@ -4340,7 +4339,7 @@ yourTeamCastASpellThisTurn pid gs =
   let castByYours event = case castOf event of
         Just cast -> not (areOpponents gs pid (SpellWasCast.player cast))
         Nothing -> False
-   in any (castByYours . LoggedEvent.event) (TurnRegisters.events (GameState.turn gs))
+   in any (castByYours . LoggedEvent.event) (Turn.eventsThisTurn gs)
 
 -- CR 702.137a / 608.2i: did an opponent of this player lose life this turn?
 -- yourTeamCastASpellThisTurn's shape over the life-loss log, and the reader is
@@ -4355,7 +4354,7 @@ yourTeamCastASpellThisTurn pid gs =
 -- here.
 opponentLostLifeThisTurn :: PlayerId -> GameState -> Bool
 opponentLostLifeThisTurn pid gs =
-  lifeChangedAmong LifeDirection.Lost (TurnRegisters.events (GameState.turn gs)) (areOpponents gs pid) > 0
+  lifeChangedAmong LifeDirection.Lost (Turn.eventsThisTurn gs) (areOpponents gs pid) > 0
 
 -- CR 702.76a / 608.2i: was a player dealt combat damage this turn by a source
 -- that was then under this player's control and had any of these creature types?
@@ -4383,7 +4382,7 @@ prowlDamageThisTurn pid types gs =
             && DamageEvent.dealtByController ev == Just pid
             && not (Set.disjoint types (DamageEvent.dealtByCreatureTypes ev))
         _ -> False
-   in any prowled (TurnRegisters.events (GameState.turn gs))
+   in any prowled (Turn.eventsThisTurn gs)
 
 -- CR 702.173a / 608.2i: prowlDamageThisTurn's twin, whose clause asks for an
 -- Assassin or a commander rather than for the spell's own creature types. The
@@ -4407,7 +4406,7 @@ freerunningDamageThisTurn pid gs =
             && DamageEvent.dealtByController ev == Just pid
             && (Set.member Subtype.Assassin (DamageEvent.dealtByCreatureTypes ev) || DamageEvent.dealtByCommander ev)
         _ -> False
-   in any freeran (TurnRegisters.events (GameState.turn gs))
+   in any freeran (Turn.eventsThisTurn gs)
 
 -- CR 120.1 / 608.2i: was this PLAYER dealt damage during the turn named? The
 -- log fold damagedPlayer exists for, read by Parun.Engine.Quantity's
@@ -4450,7 +4449,7 @@ damageDealtToPlayerThisTurn kind by gs pid =
             Just (recipient, amount) | Recipient.playerOf recipient == Just pid && eventCounts kind by (LoggedEvent.event logged) -> Just amount
             _ -> Nothing
         )
-        (Foldable.toList (TurnRegisters.events (GameState.turn gs)))
+        (Foldable.toList (Turn.eventsThisTurn gs))
     )
 
 -- CR 120.1 / 608.2i: how much damage was dealt to, or by, this OBJECT this
@@ -4476,7 +4475,7 @@ damageDealtThisTurn direction admits gs oid =
             (Just (recipient, amount), GameEvent.DamageDealt ev) | endOf recipient ev == Just oid && admits ev -> Just amount
             _ -> Nothing
         )
-        (Foldable.toList (TurnRegisters.events (GameState.turn gs)))
+        (Foldable.toList (Turn.eventsThisTurn gs))
     )
   where
     endOf recipient ev = case direction of
@@ -4624,7 +4623,7 @@ actionsDoneThisTurn acts gs pid =
   let actionOf event = case actOf event of
         Just acted | PlayerActed.player acted == pid -> Just (PlayerActed.action acted)
         _ -> Nothing
-   in Set.size (Set.intersection acts (Set.fromList (Maybe.mapMaybe (actionOf . LoggedEvent.event) (Foldable.toList (TurnRegisters.events (GameState.turn gs))))))
+   in Set.size (Set.intersection acts (Set.fromList (Maybe.mapMaybe (actionOf . LoggedEvent.event) (Foldable.toList (Turn.eventsThisTurn gs)))))
 
 -- | How many of this turn's events the player is the one doing, off
 -- actionsDoneThisTurn's log: CR 700.17's dilemmas faced (one
@@ -4632,7 +4631,7 @@ actionsDoneThisTurn acts gs pid =
 -- 700.13's crimes (one GameEvent.CommittedCrime per spell or ability).
 doneThisTurn :: (GameEvent -> Maybe PlayerId) -> GameState -> PlayerId -> Int
 doneThisTurn doer gs pid =
-  length (filter ((== Just pid) . doer . LoggedEvent.event) (Foldable.toList (TurnRegisters.events (GameState.turn gs))))
+  length (filter ((== Just pid) . doer . LoggedEvent.event) (Foldable.toList (Turn.eventsThisTurn gs)))
 
 -- | CR 700.17: who faced this dilemma, for doneThisTurn.
 dilemmaFacer :: GameEvent -> Maybe PlayerId
@@ -4653,7 +4652,7 @@ manaExpendedThisTurn gs pid =
   let reached event = case event of
         GameEvent.Expended expended | Expended.player expended == pid -> Just (Expended.after expended)
         _ -> Nothing
-   in Maybe.fromMaybe 0 (Foldable.foldl' (\latest logged -> reached (LoggedEvent.event logged) Applicative.<|> latest) Nothing (TurnRegisters.events (GameState.turn gs)))
+   in Maybe.fromMaybe 0 (Foldable.foldl' (\latest logged -> reached (LoggedEvent.event logged) Applicative.<|> latest) Nothing (Turn.eventsThisTurn gs))
 
 -- CR 508.1a / 608.2i: how many creatures this player declared as attackers this
 -- turn. lifeChangedIn's footing -- a fold over TurnRegisters.events, whose
@@ -4667,7 +4666,7 @@ manaExpendedThisTurn gs pid =
 -- Parun.Engine.Combat.declareAttackers appending the event -- the same scope
 -- Parun.Engine.Count.declaredThisTurn reads.
 attackersDeclaredThisTurn :: GameState -> PlayerId -> Natural
-attackersDeclaredThisTurn gs pid = Natural.length (filter (declaredBy pid . LoggedEvent.event) (Foldable.toList (TurnRegisters.events (GameState.turn gs))))
+attackersDeclaredThisTurn gs pid = Natural.length (filter (declaredBy pid . LoggedEvent.event) (Foldable.toList (Turn.eventsThisTurn gs)))
 
 -- CR 508.1b / 508.3b: what that player declared creatures attacking this turn,
 -- attackersDeclaredThisTurn's log and scope -- a target attacked in an earlier
@@ -4677,7 +4676,7 @@ attackedThisTurnBy :: GameState -> PlayerId -> Set.Set AttackTarget.AttackTarget
 attackedThisTurnBy gs pid =
   Set.fromList
     [ AttackerDeclared.target declared
-    | declared <- Foldable.toList (attacksInLog (TurnRegisters.events (GameState.turn gs))),
+    | declared <- Foldable.toList (attacksInLog (Turn.eventsThisTurn gs)),
       AttackerDeclared.attackingPlayer declared == pid
     ]
 
@@ -4728,7 +4727,7 @@ attacked gs during kinds attacking victim =
   where
     rows = case during of
       AttackedDuring.TheirLastTurn -> attacksInOwnLastTurn gs attacking
-      AttackedDuring.ThisTurn -> attacksInLog (TurnRegisters.events (GameState.turn gs))
+      AttackedDuring.ThisTurn -> attacksInLog (Turn.eventsThisTurn gs)
 
 -- CR 506.3: which of the three attackable things an announcement names, the
 -- thing itself dropped. The mapping Parun.Types.AttackTargetKind's arms are named
@@ -4758,11 +4757,11 @@ attackTargetKind target = case target of
 -- reassignment under CR 509.3b -- Parun.Engine.Combat's declareBlockers,
 -- becomeBlocked, putOntoBattlefieldBlocking, switchBlockers and blockAttacker.
 wasBlockedThisTurn :: GameState -> ObjectId -> Bool
-wasBlockedThisTurn gs oid = any ((== Just oid) . blockedAttacker . LoggedEvent.event) (TurnRegisters.events (GameState.turn gs))
+wasBlockedThisTurn gs oid = any ((== Just oid) . blockedAttacker . LoggedEvent.event) (Turn.eventsThisTurn gs)
 
 -- CR 701.26a: how many times this object became tapped this turn, off the log.
 timesTappedThisTurn :: GameState -> ObjectId -> Integer
-timesTappedThisTurn gs oid = toInteger (length (Seq.filter ((== Just oid) . tappedOf . LoggedEvent.event) (TurnRegisters.events (GameState.turn gs))))
+timesTappedThisTurn gs oid = toInteger (length (Seq.filter ((== Just oid) . tappedOf . LoggedEvent.event) (Turn.eventsThisTurn gs)))
 
 -- The permanent an event records becoming tapped (CR 701.26a).
 tappedOf :: GameEvent -> Maybe ObjectId

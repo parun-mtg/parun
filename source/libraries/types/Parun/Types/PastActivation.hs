@@ -3,6 +3,7 @@ module Parun.Types.PastActivation where
 import qualified Parun.Types.AbilityKind as AbilityKind
 import qualified Parun.Types.ActivatedAbility as ActivatedAbility
 import qualified Parun.Types.Card as Card
+import qualified Parun.Types.EventGroup as EventGroup
 import qualified Parun.Types.GrantedAbility as GrantedAbility
 import qualified Parun.Types.ObjectSnapshot as ObjectSnapshot
 import qualified Parun.Types.PlayerId as PlayerId
@@ -29,6 +30,9 @@ data PastActivation = MkPastActivation
     -- | CR 605.1a's side of the ability, for ActivationCriteria.whichKind.
     kind :: AbilityKind.AbilityKind,
     -- | CR 601.2c's object targets, as they stood when announced.
-    targets :: [ObjectSnapshot.ObjectSnapshot]
+    targets :: [ObjectSnapshot.ObjectSnapshot],
+    -- | Bookkeeping.nextEventGroup as the activation began, which orders it
+    -- among another running Grand Melee turn's (Turn.activationsThisTurn).
+    loggedAt :: EventGroup.EventGroup
   }
   deriving (Eq, Ord, Show)

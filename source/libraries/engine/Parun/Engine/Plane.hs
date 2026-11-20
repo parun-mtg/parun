@@ -79,20 +79,26 @@ isOrphanedPhenomenonAbility :: ObjectId -> GameState -> Bool
 isOrphanedPhenomenonAbility oid gs = maybe False (`List.notElem` Game.stillPlaying gs) (phenomenonOwnerOf oid gs)
 
 -- | CR 311.5 / 312.4 / 901.6: the planar controller, normally the active
--- player. While that seat has left (CR 800.4j leaves the turn with no active
--- player, though TurnRegisters.activePlayer still names the seat), CR 800.4p's
--- heir: the next still-playing seat in turn order. Derived, not stored: the
--- designation moves only off a departing holder and reverts at the next turn,
--- so the walk from the active seat always finds it.
+-- player, or under the shared team turns option the active team's primary
+-- player (CR 901.12b, Game.primaryOf). While that seat's team has left (CR
+-- 800.4j leaves the turn with no active player, though
+-- TurnRegisters.activePlayer still names the seat), CR 800.4p's and CR
+-- 901.12b's heir: the primary player of the next still-playing seat in turn
+-- order. Derived, not stored: the designation moves only off a departing holder
+-- and reverts at the next turn, so the walk from the active seat always finds
+-- it, and a team leaves whole (Departure.teamFallsWith).
 -- data/scenarios/planechase/cr-311-5-a-departing-active-player-s-plane-is-replaced-from-the-next-seat-s-planar-deck.json
--- proves it.
+-- and
+-- data/scenarios/planechase/cr-901-12b-the-active-team-s-primary-player-controls-the-plane.json
+-- prove it.
 planarController :: GameState -> PlayerId
 planarController gs =
   let active = TurnRegisters.activePlayer (GameState.turn gs)
       playing = Game.stillPlaying gs
       order = Turn.turnOrder gs
       after = drop 1 (List.dropWhile (/= active) order) <> order
-   in if List.elem active playing then active else Maybe.fromMaybe active (List.find (`List.elem` playing) after)
+      holder = if List.elem active playing then active else Maybe.fromMaybe active (List.find (`List.elem` playing) after)
+   in Game.primaryOf gs holder
 
 -- | CR 109.4 for a command-zone object: the planar controller controls a
 -- face-up plane or phenomenon card (CR 901.6), and the owner controls
@@ -116,7 +122,7 @@ commandControllerOf oid obj gs
 -- range after Akoum leaves the game" proves it.
 --
 -- Not implemented: CR 901.14's Grand Melee Planechase, where the exemption does
--- not hold (#4465).
+-- not hold (#9166).
 exemptFromRange :: ObjectId -> GameState -> Bool
 exemptFromRange oid gs = maybe False isPlanarFace (Game.faceOfWithLastKnown oid gs)
 
