@@ -1,0 +1,266 @@
+1 A Little Chat
+1 All-Seeing Arbiter
+1 An Offer You Can't Refuse
+1 Angel of Suffering
+1 Angelic Observer
+1 Antagonize
+1 Arc Spitter
+1 Arcane Bombardment
+1 Attended Socialite
+1 Aven Heartstabber
+1 Backstreet Bruiser
+1 Backup Agent
+1 Ballroom Brawlers
+1 Big Score
+1 Black Market Tycoon
+1 Body Dropper
+1 Body Launderer
+1 Boon of Safety
+1 Bootleggers' Stash
+1 Botanical Plaza
+1 Bouncer's Beatdown
+1 Brass Knuckles
+1 Brazen Upstart
+1 Broken Wings
+1 Brokers Ascendancy
+1 Brokers Charm
+1 Brokers Hideout
+1 Brokers Initiate
+1 Brokers Veteran
+1 Buy Your Silence
+1 Cabaretti Ascendancy
+1 Cabaretti Charm
+1 Cabaretti Courtyard
+1 Cabaretti Initiate
+1 Caldaia Strongarm
+1 Call In a Professional
+1 Capenna Express
+1 Case the Joint
+1 Celebrity Fencer
+1 Celestial Regulator
+1 Cement Shoes
+1 Cemetery Tampering
+1 Ceremonial Groundbreaker
+1 Chrome Cat
+1 Citizen's Crowbar
+1 Civic Gardener
+1 Civil Servant
+1 Cleanup Crew
+1 Cormela, Glamour Thief
+1 Corpse Appraiser
+1 Corpse Explosion
+1 Corrupt Court Official
+1 Courier's Briefcase
+1 Crew Captain
+1 Crooked Custodian
+1 Cut Your Losses
+1 Cut of the Profits
+1 Cutthroat Contender
+1 Dapper Shieldmate
+1 Daring Escape
+1 Darling of the Masses
+1 Deal Gone Bad
+1 Demon's Due
+1 Depopulate
+1 Devilish Valet
+1 Dig Up the Body
+1 Disciplined Duelist
+1 Disdainful Stroke
+1 Dusk Mangler
+1 Echo Inspector
+1 Elegant Entourage
+1 Elspeth Resplendent
+1 Endless Detour
+1 Errant, Street Artist
+1 Evelyn, the Covetous
+1 Even the Score
+1 Evolving Door
+1 Exhibition Magician
+1 Exotic Pets
+1 Expendable Lackey
+1 Extract the Truth
+1 Extraction Specialist
+1 Faerie Vandal
+1 Fake Your Own Death
+1 Falco Spara, Pactweaver
+1 Fatal Grudge
+1 Fight Rigging
+1 Fleetfoot Dancer
+1 For the Family
+1 Forest
+1 Forge Boss
+1 Freelance Muscle
+1 Gala Greeters
+1 Gathering Throng
+1 Getaway Car
+1 Giada, Font of Hope
+1 Gilded Pinions
+1 Girder Goons
+1 Glamorous Outlaw
+1 Glittering Stockpile
+1 Glittermonger
+1 Goldhound
+1 Graveyard Shift
+1 Grisly Sigil
+1 Halo Fountain
+1 Halo Scarab
+1 High-Rise Sawjack
+1 Hoard Hauler
+1 Hold for Ransom
+1 Hostile Takeover
+1 Hypnotic Grifter
+1 Illicit Shipment
+1 Illuminator Virtuoso
+1 Incandescent Aria
+1 Incriminate
+1 Inspiring Overseer
+1 Involuntary Employment
+1 Island
+1 Jackhammer
+1 Jaxis, the Troublemaker
+1 Jetmir's Fixer
+1 Jetmir's Garden
+1 Jetmir, Nexus of Revels
+1 Jewel Thief
+1 Jinnie Fay, Jetmir's Second
+1 Join the Maestros
+1 Kill Shot
+1 Knockout Blow
+1 Lagrella, the Magpie
+1 Ledger Shredder
+1 Light 'Em Up
+1 Lord Xander, the Collector
+1 Luxior, Giada's Gift
+1 Luxurious Libation
+1 Maestros Ascendancy
+1 Maestros Charm
+1 Maestros Diabolist
+1 Maestros Initiate
+1 Maestros Theater
+1 Mage's Attendant
+1 Majestic Metamorphosis
+1 Make Disappear
+1 Masked Bandits
+1 Mayhem Patrol
+1 Meeting of the Five
+1 Metropolis Angel
+1 Midnight Assassin
+1 Most Wanted
+1 Mountain
+1 Mr. Orfeo, the Boulder
+1 Murder
+1 Mysterious Limousine
+1 Night Clubber
+1 Nimble Larcenist
+1 Ob Nixilis, the Adversary
+1 Obscura Ascendancy
+1 Obscura Charm
+1 Obscura Initiate
+1 Obscura Interceptor
+1 Obscura Storefront
+1 Ognis, the Dragon's Lash
+1 Ominous Parcel
+1 Out of the Way
+1 Paragon of Modernity
+1 Park Heights Pegasus
+1 Patch Up
+1 Plains
+1 Plasma Jockey
+1 Prizefight
+1 Professional Face-Breaker
+1 Psionic Snoop
+1 Psychic Pickpocket
+1 Public Enemy
+1 Pugnacious Pugilist
+1 Pyre-Sledge Arsonist
+1 Queza, Augur of Agonies
+1 Quick-Draw Dagger
+1 Rabble Rousing
+1 Racers' Ring
+1 Raffine's Guidance
+1 Raffine's Informant
+1 Raffine's Silencer
+1 Raffine's Tower
+1 Raffine, Scheming Seer
+1 Rakish Revelers
+1 Ready to Rumble
+1 Refuse to Yield
+1 Reservoir Kraken
+1 Revel Ruiner
+1 Revelation of Power
+1 Rhox Pummeler
+1 Rigo, Streetwise Mentor
+1 Riveteers Ascendancy
+1 Riveteers Charm
+1 Riveteers Decoy
+1 Riveteers Initiate
+1 Riveteers Overlook
+1 Riveteers Requisitioner
+1 Rob the Archives
+1 Rocco, Cabaretti Caterer
+1 Rogues' Gallery
+1 Rooftop Nuisance
+1 Rumor Gatherer
+1 Run Out of Town
+1 Sanctuary Warden
+1 Sanguine Spy
+1 Scheming Fence
+1 Scuttling Butler
+1 Security Bypass
+1 Security Rhox
+1 Sewer Crocodile
+1 Shadow of Mortality
+1 Shakedown Heavy
+1 Shattered Seraph
+1 Sizzling Soloist
+1 Sky Crier
+1 Skybridge Towers
+1 Sleep with the Fishes
+1 Slip Out the Back
+1 Snooping Newsie
+1 Social Climber
+1 Soul of Emancipation
+1 Spara's Adjudicators
+1 Spara's Headquarters
+1 Speakeasy Server
+1 Sticky Fingers
+1 Stimulus Package
+1 Strangle
+1 Structural Assault
+1 Suspicious Bookcase
+1 Swamp
+1 Swooping Protector
+1 Syndicate Infiltrator
+1 Tainted Indulgence
+1 Take to the Streets
+1 Tavern Swindler
+1 Tenacious Underdog
+1 Titan of Industry
+1 Toluz, Clever Conductor
+1 Topiary Stomper
+1 Torch Breath
+1 Tramway Station
+1 Undercover Operative
+1 Unleash the Inferno
+1 Unlicensed Hearse
+1 Unlucky Witness
+1 Urabrask, Heretic Praetor
+1 Vampire Scrivener
+1 Venom Connoisseur
+1 Vivien on the Hunt
+1 Voice of the Vermin
+1 Void Rend
+1 Warm Welcome
+1 Waterfront District
+1 Whack
+1 Widespread Thieving
+1 Wingshield Agent
+1 Wiretapping
+1 Witness Protection
+1 Witty Roastmaster
+1 Workshop Warchief
+1 Wrecking Crew
+1 Xander's Lounge
+1 Ziatora's Envoy
+1 Ziatora's Proving Ground
+1 Ziatora, the Incinerator
