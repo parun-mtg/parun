@@ -158,9 +158,9 @@
       ],
       "typeLine": {
         "subtypes": [
-          "Bird",
           "Mutant",
-          "Ninja"
+          "Ninja",
+          "Bird"
         ],
         "supertypes": [
           "Legendary"

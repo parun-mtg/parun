@@ -36,8 +36,8 @@
       ],
       "typeLine": {
         "subtypes": [
-          "Forest",
           "Mountain",
+          "Forest",
           "Plains"
         ],
         "types": [

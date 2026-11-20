@@ -54,8 +54,8 @@
       "typeLine": {
         "subtypes": [
           "Human",
-          "Warlock",
-          "Wizard"
+          "Wizard",
+          "Warlock"
         ],
         "types": [
           "Creature"

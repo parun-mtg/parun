@@ -157,8 +157,8 @@
       ],
       "typeLine": {
         "subtypes": [
-          "Avatar",
           "Human",
+          "Avatar",
           "Soldier"
         ],
         "supertypes": [

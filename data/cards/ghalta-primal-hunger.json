@@ -86,8 +86,8 @@
       },
       "typeLine": {
         "subtypes": [
-          "Dinosaur",
-          "Elder"
+          "Elder",
+          "Dinosaur"
         ],
         "supertypes": [
           "Legendary"

@@ -41,8 +41,8 @@
       },
       "typeLine": {
         "subtypes": [
-          "Bear",
           "Phyrexian",
+          "Bear",
           "Rhino"
         ],
         "types": [

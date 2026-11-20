@@ -30,7 +30,7 @@ spec s = Spec.describe s "Parun.Codec.FaceDownCharacteristics" $ do
             TypeLine.MkTypeLine
               { TypeLine.supertypes = Set.empty,
                 TypeLine.types = Set.fromList [CardType.Artifact, CardType.Creature],
-                TypeLine.subtypes = Set.singleton Subtype.Cyberman
+                TypeLine.subtypes = [Subtype.Cyberman]
               }
         }
       " {\"typeLine\":{\"subtypes\":[\"Cyberman\"],\"types\":[\"Artifact\",\"Creature\"]}} "

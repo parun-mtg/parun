@@ -71,8 +71,8 @@
       },
       "typeLine": {
         "subtypes": [
-          "Artificer",
-          "Human"
+          "Human",
+          "Artificer"
         ],
         "types": [
           "Creature"
@@ -104,8 +104,8 @@
       },
       "typeLine": {
         "subtypes": [
-          "Artificer",
-          "Phyrexian"
+          "Phyrexian",
+          "Artificer"
         ],
         "types": [
           "Creature"

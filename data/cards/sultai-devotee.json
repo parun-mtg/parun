@@ -113,9 +113,9 @@
       },
       "typeLine": {
         "subtypes": [
-          "Druid",
+          "Zombie",
           "Snake",
-          "Zombie"
+          "Druid"
         ],
         "types": [
           "Creature"

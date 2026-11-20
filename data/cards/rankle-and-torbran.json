@@ -236,8 +236,8 @@
       ],
       "typeLine": {
         "subtypes": [
-          "Dwarf",
-          "Faerie"
+          "Faerie",
+          "Dwarf"
         ],
         "supertypes": [
           "Legendary"

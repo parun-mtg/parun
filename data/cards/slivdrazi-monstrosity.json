@@ -216,8 +216,8 @@
       },
       "typeLine": {
         "subtypes": [
-          "Eldrazi",
-          "Sliver"
+          "Sliver",
+          "Eldrazi"
         ],
         "supertypes": [
           "Legendary"

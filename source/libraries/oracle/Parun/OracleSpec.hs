@@ -979,7 +979,7 @@ spec s = Spec.describe s "Parun.Oracle" $ do
   -- mode one line; CR 700.2d lets a mode be chosen more than once. Modes that
   -- each only add mana read as one choice of mana (Skyshroud Elf).
   Spec.it s "render prints modes as a bulleted list" $ do
-    let chosen selection modes = withFace (\f -> f {Face.spell = Modal.MkModal (Seq.fromList modes) selection ModeMemory.NoMemory Seq.empty, Face.typeLine = TypeLine.MkTypeLine Set.empty (Set.singleton CardType.Instant) Set.empty})
+    let chosen selection modes = withFace (\f -> f {Face.spell = Modal.MkModal (Seq.fromList modes) selection ModeMemory.NoMemory Seq.empty, Face.typeLine = TypeLine.MkTypeLine Set.empty (Set.singleton CardType.Instant) []})
         destroying t = Mode.MkMode (Seq.singleton (clause [destroy (ObjectRef.InSlot target) Regenerability.Regenerable])) (Map.singleton target (TargetSlot.required Pool.Permanents (Just (Filter.HasCardType t))))
         drawing = Mode.MkMode (Seq.singleton (clause [draw (PlayerRef.Relative PlayerRelation.You) 1])) Map.empty
     Spec.assertEq s (Just (Text.pack "Choose one \8212\n\8226 Destroy target artifact.\n\8226 Draw a card.")) (Oracle.render (chosen (ModeSelection.ChooseExactly 1) [destroying CardType.Artifact, drawing]))
@@ -988,7 +988,7 @@ spec s = Spec.describe s "Parun.Oracle" $ do
     Spec.assertEq s (Just (Text.pack "Choose up to four. You may choose the same mode more than once.\n\8226 Destroy target land.\n\8226 Draw a card.")) (Oracle.render (chosen (ModeSelection.ChooseBetweenWithRepeats (ChooseBetween.MkChooseBetween 0 4)) [destroying CardType.Land, drawing]))
     -- CR 700.2i: each mode headed by its pawprints (CR 107.18), not a bullet.
     Spec.assertEq s (Just (Text.pack "Choose up to five {P} worth of modes. You may choose the same mode more than once.\n{P} \8212 Draw a card.\n{P}{P} \8212 Destroy target land.")) (Oracle.render (chosen (ModeSelection.ChoosePawprintsWithRepeats (ChoosePawprints.MkChoosePawprints 5 (Seq.fromList [1, 2]))) [drawing, destroying CardType.Land]))
-    let remembering memory = withFace (\f -> f {Face.spell = Modal.MkModal (Seq.fromList [destroying CardType.Artifact, drawing]) (ModeSelection.ChooseExactly 1) memory Seq.empty, Face.typeLine = TypeLine.MkTypeLine Set.empty (Set.singleton CardType.Instant) Set.empty})
+    let remembering memory = withFace (\f -> f {Face.spell = Modal.MkModal (Seq.fromList [destroying CardType.Artifact, drawing]) (ModeSelection.ChooseExactly 1) memory Seq.empty, Face.typeLine = TypeLine.MkTypeLine Set.empty (Set.singleton CardType.Instant) []})
     Spec.assertEq s (Just (Text.pack "Choose one that hasn't been chosen this turn \8212\n\8226 Destroy target artifact.\n\8226 Draw a card.")) (Oracle.render (remembering ModeMemory.ThisTurn))
     let three = [destroying CardType.Artifact, destroying CardType.Land, drawing]
     Spec.assertEq s (Just (Text.pack "Choose two \8212\n\8226 Destroy target artifact.\n\8226 Destroy target land.\n\8226 Draw a card.")) (Oracle.render (chosen (ModeSelection.ChooseExactly 2) three))
@@ -1235,7 +1235,7 @@ graveyard whose = TargetSlot.required (Pool.CardsInGraveyard (ZoneScope.Scoped (
 -- A creature token of this name, colours, subtypes, size and keywords.
 token :: String -> [Color.Color] -> [Subtype.Subtype] -> Integer -> [Keyword.Keyword] -> Card.Card
 token name colours subtypes size keywords =
-  let face = Oracle.Face.bare (CardName.MkCardName (Text.pack name)) Nothing Nothing (Set.fromList colours) (TypeLine.MkTypeLine Set.empty (Set.singleton CardType.Creature) (Set.fromList subtypes)) (Just (Power.MkPower (Quantity.Literal size))) (Just (Toughness.MkToughness (Quantity.Literal size))) (Map.fromList (fmap (\k -> (k, 1)) keywords))
+  let face = Oracle.Face.bare (CardName.MkCardName (Text.pack name)) Nothing Nothing (Set.fromList colours) (TypeLine.MkTypeLine Set.empty (Set.singleton CardType.Creature) subtypes) (Just (Power.MkPower (Quantity.Literal size))) (Just (Toughness.MkToughness (Quantity.Literal size))) (Map.fromList (fmap (\k -> (k, 1)) keywords))
    in Card.MkCard Layout.Normal (NonEmpty.singleton face) False
 
 -- An instruction creating this many of the token.
@@ -1327,7 +1327,7 @@ static objects changes = StaticAbility.MkStaticAbility {StaticAbility.affected =
 
 -- The face with these card types and subtypes.
 typed :: [CardType.CardType] -> [Subtype.Subtype] -> Face.Face Card.Card -> Face.Face Card.Card
-typed types subtypes f = f {Face.typeLine = TypeLine.MkTypeLine Set.empty (Set.fromList types) (Set.fromList subtypes)}
+typed types subtypes f = f {Face.typeLine = TypeLine.MkTypeLine Set.empty (Set.fromList types) subtypes}
 
 -- A triggered ability on this event, of one mode.
 triggered :: TriggerCondition.TriggerCondition -> [Clause.Clause Card.Card (GrantedAbility.GrantedAbility Card.Card)] -> [(SlotName.SlotName, TargetSlot.TargetSlot)] -> TriggeredAbility.TriggeredAbility Card.Card (GrantedAbility.GrantedAbility Card.Card)
@@ -1343,7 +1343,7 @@ payload clauses slots = Modal.MkModal (Seq.singleton (Mode.MkMode (Seq.fromList 
 
 -- An instant named Spark whose spell is this payload.
 spell :: [Clause.Clause Card.Card (GrantedAbility.GrantedAbility Card.Card)] -> [(SlotName.SlotName, TargetSlot.TargetSlot)] -> Card.Card
-spell clauses slots = withFace (\f -> f {Face.spell = payload clauses slots, Face.typeLine = TypeLine.MkTypeLine Set.empty (Set.singleton CardType.Instant) Set.empty})
+spell clauses slots = withFace (\f -> f {Face.spell = payload clauses slots, Face.typeLine = TypeLine.MkTypeLine Set.empty (Set.singleton CardType.Instant) []})
 
 -- An activated ability of this cost and the one instruction.
 activated :: Cost.Cost Keyword.Keyword -> Effect.Effect Card.Card (GrantedAbility.GrantedAbility Card.Card) -> ActivatedAbility.ActivatedAbility Card.Card (GrantedAbility.GrantedAbility Card.Card)
@@ -1365,4 +1365,4 @@ card layout keywords =
 
 -- A face named Spark of no type, carrying these keywords and nothing else.
 blank :: [Keyword.Keyword] -> Face.Face Card.Card
-blank ks = Oracle.Face.bare (CardName.MkCardName (Text.pack "Spark")) Nothing Nothing Set.empty (TypeLine.MkTypeLine Set.empty Set.empty Set.empty) Nothing Nothing (Map.fromList (fmap (\k -> (k, 1)) ks))
+blank ks = Oracle.Face.bare (CardName.MkCardName (Text.pack "Spark")) Nothing Nothing Set.empty (TypeLine.MkTypeLine Set.empty Set.empty []) Nothing Nothing (Map.fromList (fmap (\k -> (k, 1)) ks))

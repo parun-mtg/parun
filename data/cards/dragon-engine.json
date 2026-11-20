@@ -68,8 +68,8 @@
       },
       "typeLine": {
         "subtypes": [
-          "Construct",
-          "Dragon"
+          "Dragon",
+          "Construct"
         ],
         "types": [
           "Artifact",

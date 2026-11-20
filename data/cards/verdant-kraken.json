@@ -109,8 +109,8 @@
       ],
       "typeLine": {
         "subtypes": [
-          "Kraken",
-          "Plant"
+          "Plant",
+          "Kraken"
         ],
         "types": [
           "Creature"

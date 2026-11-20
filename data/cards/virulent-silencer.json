@@ -93,8 +93,8 @@
       ],
       "typeLine": {
         "subtypes": [
-          "Assassin",
-          "Robot"
+          "Robot",
+          "Assassin"
         ],
         "types": [
           "Artifact",

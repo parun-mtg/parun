@@ -111,8 +111,8 @@
       ],
       "typeLine": {
         "subtypes": [
-          "Mount",
-          "Porcupine"
+          "Porcupine",
+          "Mount"
         ],
         "types": [
           "Creature"

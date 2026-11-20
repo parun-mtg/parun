@@ -129,8 +129,8 @@
       "typeLine": {
         "subtypes": [
           "Merfolk",
-          "Villain",
-          "Warrior"
+          "Warrior",
+          "Villain"
         ],
         "supertypes": [
           "Legendary"

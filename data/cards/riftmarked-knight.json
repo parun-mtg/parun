@@ -167,8 +167,8 @@
       "typeLine": {
         "subtypes": [
           "Human",
-          "Knight",
-          "Rebel"
+          "Rebel",
+          "Knight"
         ],
         "types": [
           "Creature"

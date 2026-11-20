@@ -104,8 +104,8 @@
       ],
       "typeLine": {
         "subtypes": [
-          "Elk",
-          "Fractal"
+          "Fractal",
+          "Elk"
         ],
         "types": [
           "Creature"

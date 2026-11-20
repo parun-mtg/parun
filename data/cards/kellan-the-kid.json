@@ -197,8 +197,8 @@
       ],
       "typeLine": {
         "subtypes": [
-          "Faerie",
           "Human",
+          "Faerie",
           "Rogue"
         ],
         "supertypes": [

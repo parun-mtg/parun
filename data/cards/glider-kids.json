@@ -64,9 +64,9 @@
       ],
       "typeLine": {
         "subtypes": [
-          "Ally",
           "Human",
-          "Pilot"
+          "Pilot",
+          "Ally"
         ],
         "types": [
           "Creature"

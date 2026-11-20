@@ -121,9 +121,9 @@
       ],
       "typeLine": {
         "subtypes": [
-          "Hero",
           "Human",
-          "Samurai"
+          "Samurai",
+          "Hero"
         ],
         "supertypes": [
           "Legendary"

@@ -80,8 +80,8 @@
       },
       "typeLine": {
         "subtypes": [
-          "Pirate",
-          "Siren"
+          "Siren",
+          "Pirate"
         ],
         "types": [
           "Artifact",

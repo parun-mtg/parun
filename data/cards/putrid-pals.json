@@ -109,8 +109,8 @@
       "typeLine": {
         "subtypes": [
           "Human",
-          "Mutant",
-          "Ooze"
+          "Ooze",
+          "Mutant"
         ],
         "types": [
           "Creature"

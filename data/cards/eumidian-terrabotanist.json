@@ -79,8 +79,8 @@
       ],
       "typeLine": {
         "subtypes": [
-          "Druid",
-          "Insect"
+          "Insect",
+          "Druid"
         ],
         "types": [
           "Creature"

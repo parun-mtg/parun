@@ -208,8 +208,8 @@
       ],
       "typeLine": {
         "subtypes": [
-          "Cleric",
-          "Djinn"
+          "Djinn",
+          "Cleric"
         ],
         "types": [
           "Creature"

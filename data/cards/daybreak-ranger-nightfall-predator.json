@@ -157,8 +157,8 @@
       ],
       "typeLine": {
         "subtypes": [
-          "Archer",
           "Human",
+          "Archer",
           "Ranger",
           "Werewolf"
         ],

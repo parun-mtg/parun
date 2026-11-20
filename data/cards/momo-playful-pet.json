@@ -178,9 +178,9 @@
       ],
       "typeLine": {
         "subtypes": [
-          "Ally",
+          "Lemur",
           "Bat",
-          "Lemur"
+          "Ally"
         ],
         "supertypes": [
           "Legendary"

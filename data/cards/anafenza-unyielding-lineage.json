@@ -162,8 +162,8 @@
       ],
       "typeLine": {
         "subtypes": [
-          "Soldier",
-          "Spirit"
+          "Spirit",
+          "Soldier"
         ],
         "supertypes": [
           "Legendary"

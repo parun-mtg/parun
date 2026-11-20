@@ -41,8 +41,8 @@
       },
       "typeLine": {
         "subtypes": [
-          "Crocodile",
-          "Zombie"
+          "Zombie",
+          "Crocodile"
         ],
         "types": [
           "Creature"

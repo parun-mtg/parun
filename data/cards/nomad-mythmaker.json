@@ -112,9 +112,9 @@
       },
       "typeLine": {
         "subtypes": [
-          "Cleric",
           "Human",
-          "Nomad"
+          "Nomad",
+          "Cleric"
         ],
         "types": [
           "Creature"

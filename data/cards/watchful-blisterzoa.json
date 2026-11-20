@@ -107,8 +107,8 @@
       ],
       "typeLine": {
         "subtypes": [
-          "Jellyfish",
-          "Phyrexian"
+          "Phyrexian",
+          "Jellyfish"
         ],
         "types": [
           "Creature"

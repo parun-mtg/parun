@@ -330,8 +330,8 @@
       },
       "typeLine": {
         "subtypes": [
-          "God",
-          "Spirit"
+          "Spirit",
+          "God"
         ],
         "supertypes": [
           "Legendary"

@@ -70,8 +70,8 @@
       ],
       "typeLine": {
         "subtypes": [
-          "Artificer",
-          "Lanthanite"
+          "Lanthanite",
+          "Artificer"
         ],
         "supertypes": [
           "Legendary"

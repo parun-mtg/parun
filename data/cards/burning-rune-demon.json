@@ -148,8 +148,8 @@
       ],
       "typeLine": {
         "subtypes": [
-          "Berserker",
-          "Demon"
+          "Demon",
+          "Berserker"
         ],
         "types": [
           "Creature"

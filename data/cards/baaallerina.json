@@ -161,8 +161,8 @@
       ],
       "typeLine": {
         "subtypes": [
-          "Performer",
-          "Sheep"
+          "Sheep",
+          "Performer"
         ],
         "types": [
           "Creature"

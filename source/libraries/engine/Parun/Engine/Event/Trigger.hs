@@ -364,7 +364,7 @@ standingOf gs =
         Just obj
           | Just face <- Projection.abilityFaceOf oid obj gs ->
               let inGraveyard subtypes cardTypes triggered keywords = Maybe.mapMaybe (functionsIn subtypes (Face.delayedAbilities face) Zone.Graveyard) triggered <> fmap whole (Keyword.graveyardTriggeredAbilitiesOf cardTypes keywords)
-               in case inGraveyard (TypeLine.subtypes (Face.typeLine face)) (TypeLine.types (Face.typeLine face)) (Face.triggeredAbilities face) (Face.keywordSet face) of
+               in case inGraveyard (Set.fromList (TypeLine.subtypes (Face.typeLine face))) (TypeLine.types (Face.typeLine face)) (Face.triggeredAbilities face) (Face.keywordSet face) of
                     [] | not graveyardGrantInForce -> Nothing
                     _ ->
                       let pc = Projection.project oid gs
@@ -432,7 +432,7 @@ standingOf gs =
           | not (Object.exiledFaceDown obj),
             Just face <- Projection.abilityFaceOf oid obj gs ->
               let inExileZone subtypes triggered keywords = Maybe.mapMaybe (functionsIn subtypes (Face.delayedAbilities face) Zone.Exile) triggered <> fmap whole (Keyword.exileTriggeredAbilitiesOf keywords)
-                  onFace = inExileZone (TypeLine.subtypes (Face.typeLine face)) (Face.triggeredAbilities face) (Face.keywords face)
+                  onFace = inExileZone (Set.fromList (TypeLine.subtypes (Face.typeLine face))) (Face.triggeredAbilities face) (Face.keywords face)
                in if null onFace && not exileGrantInForce
                     then Nothing
                     else
@@ -2300,7 +2300,7 @@ eventTriggersGiven scope standing events gs =
       revealedInHand event = case event of
         GameEvent.Revealed (Revealed.MkRevealed _ oid (RevealCause.ForMiracle cost) _) -> case Game.lookupObject oid gs of
           Just obj | Just face <- Projection.abilityFaceOf oid obj gs ->
-            case Maybe.mapMaybe (functionsIn (TypeLine.subtypes (Face.typeLine face)) (Face.delayedAbilities face) Zone.Hand) (Face.triggeredAbilities face <> Keyword.handTriggeredAbilitiesOf (Keyword.revealedForMiracle cost (Map.keysSet (Projection.keywordsOf oid gs)))) of
+            case Maybe.mapMaybe (functionsIn (Set.fromList (TypeLine.subtypes (Face.typeLine face))) (Face.delayedAbilities face) Zone.Hand) (Face.triggeredAbilities face <> Keyword.handTriggeredAbilitiesOf (Keyword.revealedForMiracle cost (Map.keysSet (Projection.keywordsOf oid gs)))) of
               [] -> Map.empty
               abilities -> Map.singleton oid (Object.owner obj, abilities)
           _ -> Map.empty

@@ -93,9 +93,9 @@
       },
       "typeLine": {
         "subtypes": [
-          "Knight",
           "Phyrexian",
-          "Zombie"
+          "Zombie",
+          "Knight"
         ],
         "types": [
           "Creature"

@@ -92,8 +92,8 @@
       },
       "typeLine": {
         "subtypes": [
-          "Dog",
           "Phyrexian",
+          "Dog",
           "Warrior"
         ],
         "types": [

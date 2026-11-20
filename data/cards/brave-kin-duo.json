@@ -88,8 +88,8 @@
       },
       "typeLine": {
         "subtypes": [
-          "Mouse",
-          "Rabbit"
+          "Rabbit",
+          "Mouse"
         ],
         "types": [
           "Creature"

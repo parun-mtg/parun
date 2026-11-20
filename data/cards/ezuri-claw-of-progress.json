@@ -175,8 +175,8 @@
       ],
       "typeLine": {
         "subtypes": [
-          "Elf",
           "Phyrexian",
+          "Elf",
           "Warrior"
         ],
         "supertypes": [

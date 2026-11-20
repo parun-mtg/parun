@@ -34,8 +34,8 @@
       },
       "typeLine": {
         "subtypes": [
-          "Imp",
-          "Phyrexian"
+          "Phyrexian",
+          "Imp"
         ],
         "types": [
           "Creature"

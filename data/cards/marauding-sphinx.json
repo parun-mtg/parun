@@ -90,8 +90,8 @@
       ],
       "typeLine": {
         "subtypes": [
-          "Rogue",
-          "Sphinx"
+          "Sphinx",
+          "Rogue"
         ],
         "types": [
           "Creature"

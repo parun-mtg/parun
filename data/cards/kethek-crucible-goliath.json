@@ -206,8 +206,8 @@
       ],
       "typeLine": {
         "subtypes": [
-          "Beast",
-          "Phyrexian"
+          "Phyrexian",
+          "Beast"
         ],
         "supertypes": [
           "Legendary"

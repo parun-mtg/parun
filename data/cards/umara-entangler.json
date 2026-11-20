@@ -31,9 +31,9 @@
       },
       "typeLine": {
         "subtypes": [
-          "Ally",
           "Merfolk",
-          "Rogue"
+          "Rogue",
+          "Ally"
         ],
         "types": [
           "Creature"

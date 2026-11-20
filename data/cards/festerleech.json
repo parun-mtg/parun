@@ -131,8 +131,8 @@
       ],
       "typeLine": {
         "subtypes": [
-          "Leech",
-          "Zombie"
+          "Zombie",
+          "Leech"
         ],
         "types": [
           "Creature"

@@ -172,8 +172,8 @@
       },
       "typeLine": {
         "subtypes": [
-          "Armadillo",
-          "Cat"
+          "Cat",
+          "Armadillo"
         ],
         "types": [
           "Creature"

@@ -320,8 +320,8 @@
       ],
       "typeLine": {
         "subtypes": [
-          "Dryad",
-          "Human"
+          "Human",
+          "Dryad"
         ],
         "supertypes": [
           "Legendary"

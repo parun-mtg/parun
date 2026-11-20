@@ -136,8 +136,8 @@
       "typeLine": {
         "subtypes": [
           "Frog",
-          "Noble",
-          "Wizard"
+          "Wizard",
+          "Noble"
         ],
         "supertypes": [
           "Legendary"

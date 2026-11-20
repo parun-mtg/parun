@@ -49,9 +49,9 @@
       ],
       "typeLine": {
         "subtypes": [
-          "Guest",
           "Human",
-          "Rogue"
+          "Rogue",
+          "Guest"
         ],
         "types": [
           "Creature"

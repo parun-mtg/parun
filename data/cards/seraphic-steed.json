@@ -117,8 +117,8 @@
       ],
       "typeLine": {
         "subtypes": [
-          "Mount",
-          "Unicorn"
+          "Unicorn",
+          "Mount"
         ],
         "types": [
           "Creature"

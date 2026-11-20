@@ -108,8 +108,8 @@
       },
       "typeLine": {
         "subtypes": [
-          "Knight",
-          "Vampire"
+          "Vampire",
+          "Knight"
         ],
         "types": [
           "Creature"

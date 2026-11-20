@@ -214,8 +214,8 @@
       },
       "typeLine": {
         "subtypes": [
-          "Mercenary",
-          "Zombie"
+          "Zombie",
+          "Mercenary"
         ],
         "types": [
           "Creature"

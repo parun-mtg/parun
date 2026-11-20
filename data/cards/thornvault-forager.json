@@ -156,8 +156,8 @@
       },
       "typeLine": {
         "subtypes": [
-          "Ranger",
-          "Squirrel"
+          "Squirrel",
+          "Ranger"
         ],
         "types": [
           "Creature"

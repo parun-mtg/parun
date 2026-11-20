@@ -169,8 +169,8 @@
       ],
       "typeLine": {
         "subtypes": [
-          "Crocodile",
-          "Phyrexian"
+          "Phyrexian",
+          "Crocodile"
         ],
         "types": [
           "Creature"

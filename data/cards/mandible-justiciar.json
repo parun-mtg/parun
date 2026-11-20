@@ -102,8 +102,8 @@
       ],
       "typeLine": {
         "subtypes": [
-          "Cleric",
-          "Phyrexian"
+          "Phyrexian",
+          "Cleric"
         ],
         "types": [
           "Artifact",

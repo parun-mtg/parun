@@ -81,8 +81,8 @@
       },
       "typeLine": {
         "subtypes": [
-          "Insect",
-          "Robot"
+          "Robot",
+          "Insect"
         ],
         "types": [
           "Artifact",

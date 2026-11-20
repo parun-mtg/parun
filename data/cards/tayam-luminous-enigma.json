@@ -225,8 +225,8 @@
       },
       "typeLine": {
         "subtypes": [
-          "Beast",
-          "Nightmare"
+          "Nightmare",
+          "Beast"
         ],
         "supertypes": [
           "Legendary"

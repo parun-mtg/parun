@@ -79,8 +79,8 @@
       ],
       "typeLine": {
         "subtypes": [
-          "Pirate",
-          "Zombie"
+          "Zombie",
+          "Pirate"
         ],
         "types": [
           "Creature"

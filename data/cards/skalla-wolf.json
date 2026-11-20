@@ -123,8 +123,8 @@
       ],
       "typeLine": {
         "subtypes": [
-          "Spirit",
-          "Wolf"
+          "Wolf",
+          "Spirit"
         ],
         "types": [
           "Creature"

@@ -141,8 +141,8 @@
       ],
       "typeLine": {
         "subtypes": [
-          "Mercenary",
-          "Weasel"
+          "Weasel",
+          "Mercenary"
         ],
         "supertypes": [
           "Legendary"

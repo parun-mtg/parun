@@ -87,9 +87,9 @@
       },
       "typeLine": {
         "subtypes": [
-          "Hero",
           "Kree",
-          "Soldier"
+          "Soldier",
+          "Hero"
         ],
         "supertypes": [
           "Legendary"

@@ -102,8 +102,8 @@
       ],
       "typeLine": {
         "subtypes": [
-          "Pegasus",
-          "Phyrexian"
+          "Phyrexian",
+          "Pegasus"
         ],
         "types": [
           "Creature"

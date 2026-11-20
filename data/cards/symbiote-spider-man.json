@@ -308,9 +308,9 @@
       ],
       "typeLine": {
         "subtypes": [
-          "Hero",
+          "Symbiote",
           "Spider",
-          "Symbiote"
+          "Hero"
         ],
         "supertypes": [
           "Legendary"

@@ -183,8 +183,8 @@
       ],
       "typeLine": {
         "subtypes": [
-          "Mercenary",
-          "Plant"
+          "Plant",
+          "Mercenary"
         ],
         "types": [
           "Creature"

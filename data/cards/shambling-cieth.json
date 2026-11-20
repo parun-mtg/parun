@@ -120,8 +120,8 @@
       ],
       "typeLine": {
         "subtypes": [
-          "Horror",
-          "Mutant"
+          "Mutant",
+          "Horror"
         ],
         "types": [
           "Creature"

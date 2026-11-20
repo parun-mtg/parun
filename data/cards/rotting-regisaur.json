@@ -74,8 +74,8 @@
       ],
       "typeLine": {
         "subtypes": [
-          "Dinosaur",
-          "Zombie"
+          "Zombie",
+          "Dinosaur"
         ],
         "types": [
           "Creature"

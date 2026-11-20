@@ -133,8 +133,8 @@
       ],
       "typeLine": {
         "subtypes": [
-          "Shaman",
-          "Vampire"
+          "Vampire",
+          "Shaman"
         ],
         "types": [
           "Creature"

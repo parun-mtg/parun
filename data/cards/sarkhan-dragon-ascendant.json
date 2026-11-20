@@ -218,8 +218,8 @@
       ],
       "typeLine": {
         "subtypes": [
-          "Druid",
-          "Human"
+          "Human",
+          "Druid"
         ],
         "supertypes": [
           "Legendary"

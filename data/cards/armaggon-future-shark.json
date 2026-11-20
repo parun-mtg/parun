@@ -82,9 +82,9 @@
       ],
       "typeLine": {
         "subtypes": [
+          "Shark",
           "Horror",
-          "Mutant",
-          "Shark"
+          "Mutant"
         ],
         "supertypes": [
           "Legendary"

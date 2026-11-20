@@ -181,8 +181,8 @@
       "typeLine": {
         "subtypes": [
           "Human",
-          "Pilot",
-          "Wizard"
+          "Wizard",
+          "Pilot"
         ],
         "supertypes": [
           "Legendary"

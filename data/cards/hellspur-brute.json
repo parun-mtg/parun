@@ -59,8 +59,8 @@
       },
       "typeLine": {
         "subtypes": [
-          "Mercenary",
-          "Minotaur"
+          "Minotaur",
+          "Mercenary"
         ],
         "types": [
           "Creature"

@@ -103,8 +103,8 @@
       },
       "typeLine": {
         "subtypes": [
-          "Knight",
-          "Rat"
+          "Rat",
+          "Knight"
         ],
         "supertypes": [
           "Legendary"

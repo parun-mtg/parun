@@ -148,8 +148,8 @@
       },
       "typeLine": {
         "subtypes": [
-          "Knight",
-          "Vampire"
+          "Vampire",
+          "Knight"
         ],
         "supertypes": [
           "Legendary"

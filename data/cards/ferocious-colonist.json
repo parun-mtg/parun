@@ -34,8 +34,8 @@
       },
       "typeLine": {
         "subtypes": [
-          "Citizen",
-          "Klingon"
+          "Klingon",
+          "Citizen"
         ],
         "types": [
           "Creature"

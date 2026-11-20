@@ -2420,7 +2420,7 @@ effectLintSpec s registry corpus = Spec.describe s "Lint" $ do
           Effect.Create
             ( Create.MkCreate
                 (Quantity.Type.Literal 1)
-                (oneFaced (vanillaFace "Soldier" (spellLine CardType.Creature Set.empty Set.empty)) {Face.enchant = [TargetSlot.required Pool.Creatures (Just f)]})
+                (oneFaced (vanillaFace "Soldier" (spellLine CardType.Creature Set.empty [])) {Face.enchant = [TargetSlot.required Pool.Creatures (Just f)]})
                 EntryRiders.defaultValue
                 Nothing
                 (PlayerRef.Relative PlayerRelation.You)
@@ -2429,7 +2429,7 @@ effectLintSpec s registry corpus = Spec.describe s "Lint" $ do
             )
         victimSlot = SlotName.MkSlotName (Text.pack "victim")
         discarding = Effect.Discard (Discard.Counted (CountedDiscard.MkCountedDiscard (PlayerRef.InSlot victimSlot) (Quantity.Type.Literal 1) (Just destroyedSlot)))
-        minting n = Effect.Create (Create.MkCreate (Quantity.Type.Literal n) (oneFaced (vanillaFace "Soldier" (spellLine CardType.Creature Set.empty Set.empty))) EntryRiders.defaultValue (Just destroyedSlot) (PlayerRef.Relative PlayerRelation.You) False Nothing)
+        minting n = Effect.Create (Create.MkCreate (Quantity.Type.Literal n) (oneFaced (vanillaFace "Soldier" (spellLine CardType.Creature Set.empty []))) EntryRiders.defaultValue (Just destroyedSlot) (PlayerRef.Relative PlayerRelation.You) False Nothing)
     -- Half the rejected shape is in the pool: Act on Impulse binds a group. No
     -- card in data/cards/ pairs one with a singular read of the same slot, so the
     -- REJECTING direction is proven against a hand-built pair rather than by a
@@ -2874,7 +2874,7 @@ effectLintSpec s registry corpus = Spec.describe s "Lint" $ do
           Mint.oneMode (Seq.fromList effects)
         token =
           oneFaced
-            (vanillaFace "Nightmare" (spellLine CardType.Creature Set.empty Set.empty))
+            (vanillaFace "Nightmare" (spellLine CardType.Creature Set.empty []))
               { Face.spell = oneEffectSpell [reading]
               }
         creating = Effect.Create (Create.MkCreate (Quantity.Type.Literal 1) token EntryRiders.defaultValue Nothing (PlayerRef.Relative PlayerRelation.You) False Nothing)
@@ -3052,7 +3052,7 @@ effectLintSpec s registry corpus = Spec.describe s "Lint" $ do
             | specified riders ->
                 not
                   ( ref `elem` [ObjectRef.InSlot Binding.became, ObjectRef.InSlot Binding.triggerSource]
-                      && Set.member Subtype.Type.Aura (TypeLine.subtypes (Face.typeLine face))
+                      && elem Subtype.Type.Aura (TypeLine.subtypes (Face.typeLine face))
                       && not (any (holdsPlayer . TargetSlot.pool) (Face.enchant face))
                   )
                   && ref `notElem` fmap ObjectRef.InSlot (auraLoopSlots face)
@@ -3997,7 +3997,7 @@ effectLintSpec s registry corpus = Spec.describe s "Lint" $ do
                   }
             }
         dropSubtype face =
-          face {Face.typeLine = (Face.typeLine face) {TypeLine.subtypes = Set.empty}}
+          face {Face.typeLine = (Face.typeLine face) {TypeLine.subtypes = []}}
         addSupertype face =
           face
             { Face.typeLine =

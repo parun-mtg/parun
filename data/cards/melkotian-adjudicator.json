@@ -70,8 +70,8 @@
       ],
       "typeLine": {
         "subtypes": [
-          "Advisor",
-          "Melkotian"
+          "Melkotian",
+          "Advisor"
         ],
         "types": [
           "Creature"

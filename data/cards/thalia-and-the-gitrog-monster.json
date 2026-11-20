@@ -173,9 +173,9 @@
       ],
       "typeLine": {
         "subtypes": [
+          "Human",
           "Frog",
-          "Horror",
-          "Human"
+          "Horror"
         ],
         "supertypes": [
           "Legendary"

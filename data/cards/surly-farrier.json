@@ -112,8 +112,8 @@
       },
       "typeLine": {
         "subtypes": [
-          "Citizen",
-          "Kithkin"
+          "Kithkin",
+          "Citizen"
         ],
         "types": [
           "Creature"

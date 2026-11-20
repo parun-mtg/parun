@@ -174,8 +174,8 @@
       },
       "typeLine": {
         "subtypes": [
-          "Shapeshifter",
-          "Snake"
+          "Snake",
+          "Shapeshifter"
         ],
         "types": [
           "Creature"

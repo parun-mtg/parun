@@ -47,8 +47,8 @@
       },
       "typeLine": {
         "subtypes": [
-          "Drake",
-          "Zombie"
+          "Zombie",
+          "Drake"
         ],
         "types": [
           "Creature"

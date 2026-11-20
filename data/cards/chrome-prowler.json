@@ -74,8 +74,8 @@
       ],
       "typeLine": {
         "subtypes": [
-          "Cat",
-          "Phyrexian"
+          "Phyrexian",
+          "Cat"
         ],
         "types": [
           "Artifact",

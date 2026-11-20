@@ -93,9 +93,9 @@
       },
       "typeLine": {
         "subtypes": [
-          "Archer",
           "Human",
-          "Soldier"
+          "Soldier",
+          "Archer"
         ],
         "types": [
           "Creature"

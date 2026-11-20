@@ -288,8 +288,8 @@
       },
       "typeLine": {
         "subtypes": [
-          "Avatar",
-          "Spirit"
+          "Spirit",
+          "Avatar"
         ],
         "supertypes": [
           "Legendary"

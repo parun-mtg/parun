@@ -181,9 +181,9 @@
       ],
       "typeLine": {
         "subtypes": [
+          "Utrom",
           "Human",
-          "Ninja",
-          "Utrom"
+          "Ninja"
         ],
         "supertypes": [
           "Legendary"

@@ -105,7 +105,7 @@ armyToken subtype =
                 TypeLine.MkTypeLine
                   Set.empty
                   (Set.singleton CardType.Creature)
-                  (Set.fromList [subtype, Subtype.Type.Army]),
+                  [subtype, Subtype.Type.Army],
               Face.power = Just (Power.MkPower (Quantity.Literal 0)),
               Face.toughness = Just (Toughness.MkToughness (Quantity.Literal 0)),
               Face.loyalty = Nothing,
@@ -180,7 +180,7 @@ jaceToken =
   let card =
         Keyword.tokenCard
           (Text.pack "Jace Token")
-          (TypeLine.MkTypeLine Set.empty (Set.singleton CardType.Planeswalker) (Set.singleton Subtype.Type.Jace))
+          (TypeLine.MkTypeLine Set.empty (Set.singleton CardType.Planeswalker) [Subtype.Type.Jace])
           (Set.singleton Color.Blue)
           Nothing
           [ loyaltyAbility 1 (Effect.Surveil (Surveil.MkSurveil you (Quantity.Literal 1) Nothing)),

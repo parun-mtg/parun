@@ -178,8 +178,8 @@
       ],
       "typeLine": {
         "subtypes": [
-          "Druid",
-          "Plant"
+          "Plant",
+          "Druid"
         ],
         "supertypes": [
           "Legendary"

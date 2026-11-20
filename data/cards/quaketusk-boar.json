@@ -44,8 +44,8 @@
       },
       "typeLine": {
         "subtypes": [
-          "Boar",
-          "Elemental"
+          "Elemental",
+          "Boar"
         ],
         "types": [
           "Creature"

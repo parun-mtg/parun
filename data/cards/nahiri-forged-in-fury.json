@@ -144,8 +144,8 @@
       ],
       "typeLine": {
         "subtypes": [
-          "Artificer",
-          "Kor"
+          "Kor",
+          "Artificer"
         ],
         "supertypes": [
           "Legendary"

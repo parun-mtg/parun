@@ -115,8 +115,8 @@
       ],
       "typeLine": {
         "subtypes": [
-          "Artificer",
-          "Kavu"
+          "Kavu",
+          "Artificer"
         ],
         "types": [
           "Creature"

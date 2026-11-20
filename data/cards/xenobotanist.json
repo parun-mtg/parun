@@ -58,8 +58,8 @@
       },
       "typeLine": {
         "subtypes": [
-          "Scientist",
-          "Vulcan"
+          "Vulcan",
+          "Scientist"
         ],
         "types": [
           "Creature"

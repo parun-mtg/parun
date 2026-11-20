@@ -136,8 +136,8 @@
       ],
       "typeLine": {
         "subtypes": [
-          "Assassin",
-          "Gorgon"
+          "Gorgon",
+          "Assassin"
         ],
         "types": [
           "Creature"

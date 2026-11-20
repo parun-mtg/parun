@@ -144,8 +144,8 @@
       ],
       "typeLine": {
         "subtypes": [
-          "Horror",
-          "Hydra"
+          "Hydra",
+          "Horror"
         ],
         "types": [
           "Creature"

@@ -143,8 +143,8 @@
       ],
       "typeLine": {
         "subtypes": [
-          "Glimmer",
-          "Snake"
+          "Snake",
+          "Glimmer"
         ],
         "types": [
           "Creature",

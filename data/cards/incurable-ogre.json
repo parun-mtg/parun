@@ -26,8 +26,8 @@
       },
       "typeLine": {
         "subtypes": [
-          "Mutant",
-          "Ogre"
+          "Ogre",
+          "Mutant"
         ],
         "types": [
           "Creature"

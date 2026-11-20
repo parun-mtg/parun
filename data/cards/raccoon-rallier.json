@@ -87,8 +87,8 @@
       },
       "typeLine": {
         "subtypes": [
-          "Bard",
-          "Raccoon"
+          "Raccoon",
+          "Bard"
         ],
         "types": [
           "Creature"

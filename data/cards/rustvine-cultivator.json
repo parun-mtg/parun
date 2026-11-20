@@ -116,9 +116,9 @@
       },
       "typeLine": {
         "subtypes": [
-          "Druid",
+          "Phyrexian",
           "Elf",
-          "Phyrexian"
+          "Druid"
         ],
         "types": [
           "Creature"

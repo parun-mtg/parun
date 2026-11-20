@@ -247,9 +247,9 @@
       ],
       "typeLine": {
         "subtypes": [
-          "Ally",
           "Human",
-          "Monk"
+          "Monk",
+          "Ally"
         ],
         "supertypes": [
           "Legendary"

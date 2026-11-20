@@ -64,8 +64,8 @@
       ],
       "typeLine": {
         "subtypes": [
-          "Cat",
           "Symbiote",
+          "Cat",
           "Villain"
         ],
         "types": [

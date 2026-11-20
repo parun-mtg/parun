@@ -266,8 +266,8 @@
       ],
       "typeLine": {
         "subtypes": [
-          "Druid",
-          "Merfolk"
+          "Merfolk",
+          "Druid"
         ],
         "supertypes": [
           "Legendary"

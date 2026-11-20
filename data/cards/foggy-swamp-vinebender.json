@@ -111,9 +111,9 @@
       },
       "typeLine": {
         "subtypes": [
-          "Ally",
           "Human",
-          "Plant"
+          "Plant",
+          "Ally"
         ],
         "types": [
           "Creature"

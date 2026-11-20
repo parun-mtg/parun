@@ -135,9 +135,9 @@
       ],
       "typeLine": {
         "subtypes": [
-          "Horror",
+          "Phyrexian",
           "Insect",
-          "Phyrexian"
+          "Horror"
         ],
         "types": [
           "Creature"

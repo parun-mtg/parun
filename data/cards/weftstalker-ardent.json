@@ -119,8 +119,8 @@
       ],
       "typeLine": {
         "subtypes": [
-          "Artificer",
-          "Drix"
+          "Drix",
+          "Artificer"
         ],
         "types": [
           "Creature"

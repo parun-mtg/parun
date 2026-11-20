@@ -121,8 +121,8 @@
       ],
       "typeLine": {
         "subtypes": [
-          "Advisor",
-          "Mutant"
+          "Mutant",
+          "Advisor"
         ],
         "supertypes": [
           "Legendary"

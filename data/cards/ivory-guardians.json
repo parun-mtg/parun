@@ -130,8 +130,8 @@
       },
       "typeLine": {
         "subtypes": [
-          "Cleric",
-          "Giant"
+          "Giant",
+          "Cleric"
         ],
         "types": [
           "Creature"

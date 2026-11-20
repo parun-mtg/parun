@@ -98,8 +98,8 @@
       ],
       "typeLine": {
         "subtypes": [
-          "Warlock",
-          "Zombie"
+          "Zombie",
+          "Warlock"
         ],
         "types": [
           "Creature"

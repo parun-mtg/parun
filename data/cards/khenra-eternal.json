@@ -32,9 +32,9 @@
       },
       "typeLine": {
         "subtypes": [
+          "Zombie",
           "Jackal",
-          "Warrior",
-          "Zombie"
+          "Warrior"
         ],
         "types": [
           "Creature"

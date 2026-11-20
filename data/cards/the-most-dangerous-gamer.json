@@ -148,9 +148,9 @@
       ],
       "typeLine": {
         "subtypes": [
+          "Human",
           "Gamer",
-          "Guest",
-          "Human"
+          "Guest"
         ],
         "supertypes": [
           "Legendary"

@@ -34,8 +34,8 @@
       },
       "typeLine": {
         "subtypes": [
-          "Goblin",
           "Phyrexian",
+          "Goblin",
           "Zombie"
         ],
         "types": [

@@ -111,8 +111,8 @@
       ],
       "typeLine": {
         "subtypes": [
-          "Artificer",
           "Human",
+          "Artificer",
           "Noble"
         ],
         "supertypes": [

@@ -40,9 +40,9 @@
       },
       "typeLine": {
         "subtypes": [
-          "Elemental",
           "Frog",
-          "Spirit"
+          "Spirit",
+          "Elemental"
         ],
         "supertypes": [
           "Legendary"

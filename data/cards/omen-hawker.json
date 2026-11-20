@@ -81,8 +81,8 @@
       },
       "typeLine": {
         "subtypes": [
-          "Advisor",
-          "Octopus"
+          "Octopus",
+          "Advisor"
         ],
         "types": [
           "Creature"

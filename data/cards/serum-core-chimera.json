@@ -251,8 +251,8 @@
       ],
       "typeLine": {
         "subtypes": [
-          "Chimera",
-          "Phyrexian"
+          "Phyrexian",
+          "Chimera"
         ],
         "types": [
           "Creature"

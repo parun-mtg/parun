@@ -189,7 +189,7 @@ spec s corpus = Spec.describe s "Parun.Ingest" $ do
         card <- Registry.named registry name
         -- A star stays as the translation has it, so only a number is staled.
         let staleNumber p = if p == Just (Power.MkPower Quantity.Star) then p else Just (Power.MkPower (Quantity.Literal 9))
-            stale c = c {Card.faces = fmap (\f -> f {Face.manaCost = Nothing, Face.typeLine = (Face.typeLine f) {TypeLine.subtypes = Set.empty}, Face.power = staleNumber (Face.power f)}) (Card.faces c)}
+            stale c = c {Card.faces = fmap (\f -> f {Face.manaCost = Nothing, Face.typeLine = (Face.typeLine f) {TypeLine.subtypes = []}, Face.power = staleNumber (Face.power f)}) (Card.faces c)}
         case (Common.parse (Text.pack json) >>= Ingest.printed, card) of
           (Right record, Right (Just expected)) -> Spec.assertEqWith s name expected (Ingest.reprint [record] (stale expected))
           _ -> Spec.assertFailure s (name <> ": no record or no card")
@@ -200,7 +200,7 @@ spec s corpus = Spec.describe s "Parun.Ingest" $ do
     registry <- Registry.defaultRoot >>= Registry.fileRegistry
     card <- Registry.named registry "Encouraging Aviator"
     let json = "{\"name\":\"Encouraging Aviator // Jump\",\"faces\":[{\"name\":\"Encouraging Aviator\",\"manaCost\":\"{2}{U}\",\"supertypes\":[],\"types\":[\"Creature\"],\"subtypes\":[\"Bird\",\"Wizard\"],\"power\":\"2\",\"toughness\":\"3\",\"text\":null},{\"name\":\"Jump\",\"manaCost\":\"{U}\",\"supertypes\":[],\"types\":[\"Instant\"],\"subtypes\":[],\"power\":null,\"toughness\":null,\"text\":null}]}"
-        stale c = c {Card.faces = fmap (\f -> f {Face.manaCost = Nothing, Face.typeLine = TypeLine.MkTypeLine Set.empty Set.empty Set.empty}) (Card.faces c)}
+        stale c = c {Card.faces = fmap (\f -> f {Face.manaCost = Nothing, Face.typeLine = TypeLine.MkTypeLine Set.empty Set.empty []}) (Card.faces c)}
     case (Common.parse (Text.pack json) >>= Ingest.printedFaces, card) of
       (Right records, Right (Just expected)) -> Spec.assertEq s expected (Ingest.reprint records (stale expected))
       _ -> Spec.assertFailure s "Encouraging Aviator // Jump: no record or no card"

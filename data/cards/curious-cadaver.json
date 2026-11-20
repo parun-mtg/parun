@@ -75,8 +75,8 @@
       ],
       "typeLine": {
         "subtypes": [
-          "Detective",
-          "Zombie"
+          "Zombie",
+          "Detective"
         ],
         "types": [
           "Creature"

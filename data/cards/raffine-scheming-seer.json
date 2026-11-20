@@ -119,8 +119,8 @@
       ],
       "typeLine": {
         "subtypes": [
-          "Demon",
-          "Sphinx"
+          "Sphinx",
+          "Demon"
         ],
         "supertypes": [
           "Legendary"

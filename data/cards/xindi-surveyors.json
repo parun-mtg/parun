@@ -82,8 +82,8 @@
       ],
       "typeLine": {
         "subtypes": [
-          "Scientist",
-          "Xindi"
+          "Xindi",
+          "Scientist"
         ],
         "types": [
           "Creature"

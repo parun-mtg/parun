@@ -124,8 +124,8 @@
       },
       "typeLine": {
         "subtypes": [
-          "Avatar",
-          "Hydra"
+          "Hydra",
+          "Avatar"
         ],
         "supertypes": [
           "Legendary"

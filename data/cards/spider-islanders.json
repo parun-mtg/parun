@@ -46,9 +46,9 @@
       },
       "typeLine": {
         "subtypes": [
-          "Citizen",
+          "Spider",
           "Horror",
-          "Spider"
+          "Citizen"
         ],
         "types": [
           "Creature"

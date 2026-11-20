@@ -205,8 +205,8 @@
       ],
       "typeLine": {
         "subtypes": [
-          "Peasant",
-          "Rat"
+          "Rat",
+          "Peasant"
         ],
         "types": [
           "Creature"

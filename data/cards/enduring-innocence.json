@@ -175,8 +175,8 @@
       ],
       "typeLine": {
         "subtypes": [
-          "Glimmer",
-          "Sheep"
+          "Sheep",
+          "Glimmer"
         ],
         "types": [
           "Creature",

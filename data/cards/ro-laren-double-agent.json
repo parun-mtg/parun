@@ -127,8 +127,8 @@
       "typeLine": {
         "subtypes": [
           "Bajoran",
-          "Officer",
-          "Rogue"
+          "Rogue",
+          "Officer"
         ],
         "supertypes": [
           "Legendary"

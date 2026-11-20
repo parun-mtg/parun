@@ -100,8 +100,8 @@
       },
       "typeLine": {
         "subtypes": [
-          "Artificer",
-          "Jellyfish"
+          "Jellyfish",
+          "Artificer"
         ],
         "types": [
           "Creature"

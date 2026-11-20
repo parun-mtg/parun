@@ -167,8 +167,8 @@
       },
       "typeLine": {
         "subtypes": [
-          "Druid",
-          "Elemental"
+          "Elemental",
+          "Druid"
         ],
         "types": [
           "Creature"

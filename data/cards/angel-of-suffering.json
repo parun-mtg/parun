@@ -79,8 +79,8 @@
       },
       "typeLine": {
         "subtypes": [
-          "Angel",
-          "Nightmare"
+          "Nightmare",
+          "Angel"
         ],
         "types": [
           "Creature"

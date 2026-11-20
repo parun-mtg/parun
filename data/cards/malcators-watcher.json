@@ -73,8 +73,8 @@
       ],
       "typeLine": {
         "subtypes": [
-          "Drone",
-          "Phyrexian"
+          "Phyrexian",
+          "Drone"
         ],
         "types": [
           "Artifact",

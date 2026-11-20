@@ -34,8 +34,8 @@
       },
       "typeLine": {
         "subtypes": [
-          "Drake",
-          "Phyrexian"
+          "Phyrexian",
+          "Drake"
         ],
         "types": [
           "Creature"

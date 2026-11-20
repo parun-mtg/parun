@@ -66,8 +66,8 @@
       },
       "typeLine": {
         "subtypes": [
-          "Cleric",
-          "Human"
+          "Human",
+          "Cleric"
         ],
         "types": [
           "Creature"
@@ -195,8 +195,8 @@
       ],
       "typeLine": {
         "subtypes": [
-          "Cleric",
-          "Phyrexian"
+          "Phyrexian",
+          "Cleric"
         ],
         "types": [
           "Creature"

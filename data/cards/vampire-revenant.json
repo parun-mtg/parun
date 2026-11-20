@@ -31,8 +31,8 @@
       },
       "typeLine": {
         "subtypes": [
-          "Spirit",
-          "Vampire"
+          "Vampire",
+          "Spirit"
         ],
         "types": [
           "Creature"

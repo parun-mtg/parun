@@ -102,8 +102,8 @@
       ],
       "typeLine": {
         "subtypes": [
-          "Assassin",
-          "Faerie"
+          "Faerie",
+          "Assassin"
         ],
         "types": [
           "Creature"

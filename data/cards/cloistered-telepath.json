@@ -80,8 +80,8 @@
       ],
       "typeLine": {
         "subtypes": [
-          "Advisor",
-          "Talosian"
+          "Talosian",
+          "Advisor"
         ],
         "types": [
           "Creature"

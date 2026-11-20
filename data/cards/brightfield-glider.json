@@ -110,8 +110,8 @@
       ],
       "typeLine": {
         "subtypes": [
-          "Mount",
-          "Possum"
+          "Possum",
+          "Mount"
         ],
         "types": [
           "Creature"

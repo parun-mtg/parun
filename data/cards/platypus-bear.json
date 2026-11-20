@@ -112,8 +112,8 @@
       ],
       "typeLine": {
         "subtypes": [
-          "Bear",
-          "Platypus"
+          "Platypus",
+          "Bear"
         ],
         "types": [
           "Creature"

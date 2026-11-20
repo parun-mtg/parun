@@ -141,8 +141,8 @@
       ],
       "typeLine": {
         "subtypes": [
-          "Vampire",
-          "Zombie"
+          "Zombie",
+          "Vampire"
         ],
         "types": [
           "Creature"

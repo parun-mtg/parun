@@ -2939,8 +2939,8 @@ screamsFromWithinSpec s registry =
         Spec.it s "CR 113.6m control: an ordinary graveyard-recursion trigger is still pinned to the graveyard" $ do
           squee <- S.printingOf s registry "Squee, Goblin Nabob"
           screams <- S.printingOf s registry "Screams from Within"
-          Spec.assertEqWith s "Squee's ability functions only in the graveyard" (fmap (Event.zonesFunctionedIn (TypeLine.subtypes (Face.typeLine (S.combinedFace squee))) (Face.delayedAbilities (S.combinedFace squee))) (Face.triggeredAbilities (S.combinedFace squee))) [Set.singleton Zone.Graveyard]
-          Spec.assertEqWith s "the Aura's names no zone, so CR 113.6's battlefield default stands" (fmap (Event.zonesFunctionedIn (TypeLine.subtypes (Face.typeLine (S.combinedFace screams))) (Face.delayedAbilities (S.combinedFace screams))) (Face.triggeredAbilities (S.combinedFace screams))) [Set.singleton Zone.Battlefield]
+          Spec.assertEqWith s "Squee's ability functions only in the graveyard" (fmap (Event.zonesFunctionedIn (Set.fromList (TypeLine.subtypes (Face.typeLine (S.combinedFace squee)))) (Face.delayedAbilities (S.combinedFace squee))) (Face.triggeredAbilities (S.combinedFace squee))) [Set.singleton Zone.Graveyard]
+          Spec.assertEqWith s "the Aura's names no zone, so CR 113.6's battlefield default stands" (fmap (Event.zonesFunctionedIn (Set.fromList (TypeLine.subtypes (Face.typeLine (S.combinedFace screams)))) (Face.delayedAbilities (S.combinedFace screams))) (Face.triggeredAbilities (S.combinedFace screams))) [Set.singleton Zone.Battlefield]
 
 -- CR 113.6m's Aura clause read the other way round: the exception is granted
 -- "if the object is an Aura", so the SAME trigger condition on a non-Aura gets
@@ -3012,9 +3012,9 @@ widowedBladeSpec s registry =
           blade <- S.printingOf s registry "Synthetic Widowed Blade"
           let face = S.combinedFace blade
               zonesWith subtypes = fmap (Event.zonesFunctionedIn subtypes (Face.delayedAbilities face)) (Face.triggeredAbilities face)
-          Spec.assertEqWith s "as an Equipment the ability functions only in the graveyard" (zonesWith (TypeLine.subtypes (Face.typeLine face))) [Set.singleton Zone.Graveyard]
-          Spec.assertEqWith s "as an Aura the exception applies and it functions on the battlefield" (zonesWith (Set.insert Subtype.Aura (TypeLine.subtypes (Face.typeLine face)))) [Set.singleton Zone.Battlefield]
-          Spec.assertBool s (not (Set.member Subtype.Aura (TypeLine.subtypes (Face.typeLine face)))) "and the printed card really is no Aura"
+          Spec.assertEqWith s "as an Equipment the ability functions only in the graveyard" (zonesWith (Set.fromList (TypeLine.subtypes (Face.typeLine face)))) [Set.singleton Zone.Graveyard]
+          Spec.assertEqWith s "as an Aura the exception applies and it functions on the battlefield" (zonesWith (Set.insert Subtype.Aura (Set.fromList (TypeLine.subtypes (Face.typeLine face))))) [Set.singleton Zone.Battlefield]
+          Spec.assertBool s (not (Set.member Subtype.Aura (Set.fromList (TypeLine.subtypes (Face.typeLine face))))) "and the printed card really is no Aura"
 
 -- Heirloom Blade: CR 205.3m's comparison against a BOUND slot,
 -- Binding.departedPermanent, read as the equipped creature last existed (CR
@@ -3180,7 +3180,7 @@ prizedAmalgamSpec s registry =
                     { Modal.modes = fmap (\mode -> mode {Mode.clauses = fmap (\clause -> clause {Clause.effects = fmap carry (Clause.effects clause)}) (Mode.clauses mode)}) (Modal.modes (TriggeredAbility.modal ability))
                     }
               }
-          zonesOf = Event.zonesFunctionedIn (TypeLine.subtypes (Face.typeLine face)) Map.empty
+          zonesOf = Event.zonesFunctionedIn (Set.fromList (TypeLine.subtypes (Face.typeLine face))) Map.empty
       Spec.assertEqWith s "the carried return pins the graveyard" (fmap (zonesOf . quoted) (Face.triggeredAbilities face)) [Set.singleton Zone.Graveyard]
       Spec.assertEqWith s "where the bare name, unread, leaves the battlefield default" (fmap zonesOf (Face.triggeredAbilities face)) [Set.singleton Zone.Battlefield]
 
@@ -3345,7 +3345,7 @@ ivoryGargoyleSpec s registry =
           Spec.assertEqWith
             s
             "the battlefield once the exception is read"
-            (fmap (Event.zonesFunctionedIn (TypeLine.subtypes (Face.typeLine face)) (Face.delayedAbilities face)) (Face.triggeredAbilities face))
+            (fmap (Event.zonesFunctionedIn (Set.fromList (TypeLine.subtypes (Face.typeLine face))) (Face.delayedAbilities face)) (Face.triggeredAbilities face))
             [Set.singleton Zone.Battlefield]
         -- The proving leg for CR 400.7e's delayed reader: the card the Gargoyle
         -- became is on the battlefield again when the end step has passed. The
@@ -3492,7 +3492,7 @@ biolumeEggSpec s registry =
           Spec.assertEqWith
             s
             "the battlefield for both triggered abilities"
-            (fmap (Event.zonesFunctionedIn (TypeLine.subtypes (Face.typeLine face)) (Face.delayedAbilities face)) (Face.triggeredAbilities face))
+            (fmap (Event.zonesFunctionedIn (Set.fromList (TypeLine.subtypes (Face.typeLine face))) (Face.delayedAbilities face)) (Face.triggeredAbilities face))
             [Set.singleton Zone.Battlefield, Set.singleton Zone.Battlefield]
 
 spec :: (Monad m, Monad n) => Spec.Spec m n -> Registry.Registry m -> n ()

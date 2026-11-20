@@ -215,8 +215,8 @@
       ],
       "typeLine": {
         "subtypes": [
-          "Detective",
-          "Shapeshifter"
+          "Shapeshifter",
+          "Detective"
         ],
         "supertypes": [
           "Legendary"

@@ -31,8 +31,8 @@
       },
       "typeLine": {
         "subtypes": [
-          "Cat",
           "Phyrexian",
+          "Cat",
           "Soldier"
         ],
         "types": [

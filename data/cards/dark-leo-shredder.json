@@ -229,10 +229,10 @@
       ],
       "typeLine": {
         "subtypes": [
-          "Human",
           "Mutant",
           "Ninja",
-          "Turtle"
+          "Turtle",
+          "Human"
         ],
         "supertypes": [
           "Legendary"

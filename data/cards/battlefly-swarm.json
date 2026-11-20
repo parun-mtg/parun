@@ -72,8 +72,8 @@
       },
       "typeLine": {
         "subtypes": [
-          "Insect",
-          "Phyrexian"
+          "Phyrexian",
+          "Insect"
         ],
         "types": [
           "Creature"

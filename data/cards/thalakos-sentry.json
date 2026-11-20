@@ -31,8 +31,8 @@
       },
       "typeLine": {
         "subtypes": [
-          "Soldier",
-          "Thalakos"
+          "Thalakos",
+          "Soldier"
         ],
         "types": [
           "Creature"

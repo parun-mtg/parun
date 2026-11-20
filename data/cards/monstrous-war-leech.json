@@ -141,8 +141,8 @@
       },
       "typeLine": {
         "subtypes": [
-          "Horror",
-          "Leech"
+          "Leech",
+          "Horror"
         ],
         "types": [
           "Creature"

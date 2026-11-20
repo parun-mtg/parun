@@ -162,9 +162,9 @@
       ],
       "typeLine": {
         "subtypes": [
-          "Ally",
           "Human",
-          "Rogue"
+          "Rogue",
+          "Ally"
         ],
         "types": [
           "Creature"

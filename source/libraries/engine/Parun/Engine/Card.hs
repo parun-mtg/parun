@@ -10,6 +10,7 @@ module Parun.Engine.Card where
 
 import Control.Applicative ((<|>))
 import qualified Control.Monad as Monad
+import qualified Data.Containers.ListUtils as ListUtils
 import qualified Data.Foldable as Foldable
 import qualified Data.List as List
 import qualified Data.List.NonEmpty as NonEmpty
@@ -745,7 +746,7 @@ unionTypeLines l r =
   TypeLine.MkTypeLine
     { TypeLine.supertypes = Set.union (TypeLine.supertypes l) (TypeLine.supertypes r),
       TypeLine.types = Set.union (TypeLine.types l) (TypeLine.types r),
-      TypeLine.subtypes = Set.union (TypeLine.subtypes l) (TypeLine.subtypes r)
+      TypeLine.subtypes = ListUtils.nubOrd (TypeLine.subtypes l <> TypeLine.subtypes r)
     }
 
 -- Maybe's Alternative instance, read left to right: the left half's value if
@@ -1863,7 +1864,7 @@ isPermanent f = any isPermanentType (Set.toList (TypeLine.types (Face.typeLine f
 -- case on the card's identity. Parun.Engine.Stack dispatches on it, which is the
 -- one place an Aura differs from any other enchantment by a rule.
 isAura :: Face.Face Card.Card -> Bool
-isAura f = Set.member Subtype.Aura (TypeLine.subtypes (Face.typeLine f))
+isAura f = elem Subtype.Aura (TypeLine.subtypes (Face.typeLine f))
 
 -- CR 205.3k: is this face the ADVENTURE half of an adventurer card? The same
 -- printed-subtype read isAura is, and the reason "cast as an Adventure" is
@@ -1876,7 +1877,7 @@ isAura f = Set.member Subtype.Aura (TypeLine.subtypes (Face.typeLine f))
 -- Adventure" is a fact about the object on the stack, and CR 716.3d asks the
 -- second of a face that has already been chosen.
 isAdventure :: Face.Face Card.Card -> Bool
-isAdventure f = Set.member Subtype.Adventure (TypeLine.subtypes (Face.typeLine f))
+isAdventure f = elem Subtype.Adventure (TypeLine.subtypes (Face.typeLine f))
 
 -- CR 205.3k: is this face the OMEN half of an omen card? isAdventure's reading
 -- one rule section over, and for the same reason -- CR 721.3b puts one named face
@@ -1885,7 +1886,7 @@ isAdventure f = Set.member Subtype.Adventure (TypeLine.subtypes (Face.typeLine f
 -- Parun.OmenSpec's "CR 721.3d Signaling Roar is shuffled into its owner's library"
 -- is what proves it.
 isOmen :: Face.Face Card.Card -> Bool
-isOmen f = Set.member Subtype.Omen (TypeLine.subtypes (Face.typeLine f))
+isOmen f = elem Subtype.Omen (TypeLine.subtypes (Face.typeLine f))
 
 -- CR 303.4a: the slot an Aura spell's required target is bound under. A genuine
 -- target, so it lives in the ordinary target namespace rather than among

@@ -162,8 +162,8 @@
       ],
       "typeLine": {
         "subtypes": [
-          "Advisor",
-          "Elf"
+          "Elf",
+          "Advisor"
         ],
         "types": [
           "Creature"

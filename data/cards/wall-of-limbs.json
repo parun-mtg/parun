@@ -133,8 +133,8 @@
       ],
       "typeLine": {
         "subtypes": [
-          "Wall",
-          "Zombie"
+          "Zombie",
+          "Wall"
         ],
         "types": [
           "Creature"

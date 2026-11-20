@@ -237,8 +237,8 @@
       ],
       "typeLine": {
         "subtypes": [
-          "Masticore",
-          "Phyrexian"
+          "Phyrexian",
+          "Masticore"
         ],
         "types": [
           "Artifact",

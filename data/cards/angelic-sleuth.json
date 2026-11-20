@@ -158,8 +158,8 @@
       ],
       "typeLine": {
         "subtypes": [
-          "Advisor",
-          "Angel"
+          "Angel",
+          "Advisor"
         ],
         "types": [
           "Creature"

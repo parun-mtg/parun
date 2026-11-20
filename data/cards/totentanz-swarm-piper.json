@@ -215,9 +215,9 @@
       ],
       "typeLine": {
         "subtypes": [
-          "Bard",
           "Human",
-          "Warlock"
+          "Warlock",
+          "Bard"
         ],
         "supertypes": [
           "Legendary"

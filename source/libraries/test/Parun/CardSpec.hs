@@ -625,7 +625,7 @@ vanillaFace name typeLine =
 
 -- A spell's printed type line: one card type, plus whatever supertypes and
 -- subtypes sit beside it.
-spellLine :: CardType.CardType -> Set.Set Supertype.Supertype -> Set.Set Subtype.Subtype -> TypeLine.TypeLine
+spellLine :: CardType.CardType -> Set.Set Supertype.Supertype -> [Subtype.Subtype] -> TypeLine.TypeLine
 spellLine cardType supertypes subtypes =
   TypeLine.MkTypeLine
     { TypeLine.supertypes = supertypes,
@@ -634,7 +634,7 @@ spellLine cardType supertypes subtypes =
     }
 
 instantLine :: TypeLine.TypeLine
-instantLine = spellLine CardType.Instant Set.empty Set.empty
+instantLine = spellLine CardType.Instant Set.empty []
 
 -- "You draw this many cards" -- the smallest payload an ability can carry, used
 -- below only so that two abilities can be told apart by their effect.
@@ -682,7 +682,7 @@ splitCard =
 -- Forest, which is what makes CR 709.3a's per-half pricing observable there.
 waxFace :: Face.Face Card.Type.Card
 waxFace =
-  (vanillaFace "Wax" (spellLine CardType.Instant Set.empty (Set.singleton Subtype.Arcane)))
+  (vanillaFace "Wax" (spellLine CardType.Instant Set.empty [Subtype.Arcane]))
     { Face.manaCost = costOf [ManaSymbol.OfType (ManaType.Colored Color.Green)],
       Face.keywords = Map.singleton Keyword.Flying 1,
       Face.staticAbilities = [grantsItself Keyword.Flying],
@@ -695,7 +695,7 @@ waxFace =
 -- a different number of cards so the concatenation's ORDER is checkable too.
 waneFace :: Face.Face Card.Type.Card
 waneFace =
-  (vanillaFace "Wane" (spellLine CardType.Sorcery (Set.singleton Supertype.Snow) (Set.singleton Subtype.Trap)))
+  (vanillaFace "Wane" (spellLine CardType.Sorcery (Set.singleton Supertype.Snow) [Subtype.Trap]))
     { Face.manaCost = costOf [ManaSymbol.OfType (ManaType.Colored Color.White)],
       Face.keywords = Map.singleton Keyword.Trample 1,
       Face.staticAbilities = [grantsItself Keyword.Trample],
@@ -762,7 +762,7 @@ cardSpec s = Spec.describe s "Card" $ do
     -- CR 709.4: the rest of the type line is combined for the reason 709.4c's
     -- card types are -- a supertype and a subtype are characteristics (CR 109.3)
     -- and no subrule narrows them. See Parun.Engine.Card.unionTypeLines.
-    Spec.assertEqWith s "each subtype" (TypeLine.subtypes (Face.typeLine c)) (Set.fromList [Subtype.Arcane, Subtype.Trap])
+    Spec.assertEqWith s "each subtype" (TypeLine.subtypes (Face.typeLine c)) [Subtype.Arcane, Subtype.Trap]
     -- One-sided on purpose: only Wane is snow. A merge line replaced by the LEFT
     -- half's value -- which is what a record update over `l` already does -- would
     -- leave this empty.
@@ -2627,7 +2627,7 @@ tokenNameOffends token
   | Set.member Supertype.Legendary (TypeLine.supertypes (Face.typeLine token)) = False
   | Set.member (Face.name token) namedTokens = False
   | otherwise =
-      case traverse printedWord (Set.toList (TypeLine.subtypes (Face.typeLine token))) of
+      case traverse printedWord (TypeLine.subtypes (Face.typeLine token)) of
         Left _ -> True
         Right subtypes ->
           notElem

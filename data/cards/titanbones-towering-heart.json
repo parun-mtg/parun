@@ -105,8 +105,8 @@
       ],
       "typeLine": {
         "subtypes": [
-          "Druid",
-          "Skeleton"
+          "Skeleton",
+          "Druid"
         ],
         "supertypes": [
           "Legendary"

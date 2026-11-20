@@ -70,8 +70,8 @@
       },
       "typeLine": {
         "subtypes": [
-          "Berserker",
-          "Giant"
+          "Giant",
+          "Berserker"
         ],
         "types": [
           "Creature"

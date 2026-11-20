@@ -164,8 +164,8 @@
       ],
       "typeLine": {
         "subtypes": [
-          "Bard",
-          "Dwarf"
+          "Dwarf",
+          "Bard"
         ],
         "supertypes": [
           "Legendary"

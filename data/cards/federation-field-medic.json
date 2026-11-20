@@ -156,8 +156,8 @@
       ],
       "typeLine": {
         "subtypes": [
-          "Doctor",
-          "Human"
+          "Human",
+          "Doctor"
         ],
         "types": [
           "Creature"

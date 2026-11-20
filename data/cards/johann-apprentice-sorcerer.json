@@ -79,8 +79,8 @@
       "typeLine": {
         "subtypes": [
           "Human",
-          "Sorcerer",
-          "Wizard"
+          "Wizard",
+          "Sorcerer"
         ],
         "supertypes": [
           "Legendary"

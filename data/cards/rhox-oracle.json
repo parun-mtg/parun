@@ -59,8 +59,8 @@
       ],
       "typeLine": {
         "subtypes": [
-          "Monk",
-          "Rhino"
+          "Rhino",
+          "Monk"
         ],
         "types": [
           "Creature"

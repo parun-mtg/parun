@@ -77,8 +77,8 @@
       ],
       "typeLine": {
         "subtypes": [
-          "Ape",
-          "Pest"
+          "Pest",
+          "Ape"
         ],
         "types": [
           "Creature"

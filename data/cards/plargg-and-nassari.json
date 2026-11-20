@@ -157,8 +157,8 @@
       ],
       "typeLine": {
         "subtypes": [
-          "Efreet",
-          "Orc"
+          "Orc",
+          "Efreet"
         ],
         "supertypes": [
           "Legendary"

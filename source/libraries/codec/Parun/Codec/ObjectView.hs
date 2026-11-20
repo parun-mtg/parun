@@ -68,6 +68,7 @@ codec = Fields.object $ do
   chosenNumber <- Fields.defaulted "chosenNumber" Map.empty (Common.keyedList (Common.keyValue Acquisition.codec Common.natural)) ObjectView.chosenNumber
   chosenObjects <- Fields.defaulted "chosenObjects" Map.empty (Common.keyedList (Common.keyValue Acquisition.codec (Common.set ObjectId.codec))) ObjectView.chosenObjects
   ownEffects <- Fields.defaulted "ownEffects" Nothing (Common.maybe ProjectedCharacteristics.codec) ObjectView.ownEffects
+  printedSubtypes <- Fields.defaulted "printedSubtypes" [] (Common.distinctList Subtype.codec) ObjectView.printedSubtypes
   merged <- Fields.defaulted "merged" Seq.empty (Common.seq (Common.maybe CardName.codec)) ObjectView.merged
   commanderTax <- Fields.defaulted "commanderTax" 0 Common.natural ObjectView.commanderTax
   pure
@@ -82,6 +83,7 @@ codec = Fields.object $ do
         ObjectView.characteristics = characteristics,
         ObjectView.face = face,
         ObjectView.ownEffects = ownEffects,
+        ObjectView.printedSubtypes = printedSubtypes,
         ObjectView.merged = merged,
         ObjectView.foretellCostReduction = foretellCostReduction,
         ObjectView.ability = ability,

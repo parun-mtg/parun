@@ -80,8 +80,8 @@
       ],
       "typeLine": {
         "subtypes": [
-          "Archer",
-          "Squirrel"
+          "Squirrel",
+          "Archer"
         ],
         "types": [
           "Creature"

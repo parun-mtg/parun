@@ -209,8 +209,8 @@
       ],
       "typeLine": {
         "subtypes": [
-          "Merfolk",
           "Mutant",
+          "Merfolk",
           "Villain"
         ],
         "supertypes": [

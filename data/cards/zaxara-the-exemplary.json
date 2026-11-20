@@ -182,8 +182,8 @@
       ],
       "typeLine": {
         "subtypes": [
-          "Hydra",
-          "Nightmare"
+          "Nightmare",
+          "Hydra"
         ],
         "supertypes": [
           "Legendary"

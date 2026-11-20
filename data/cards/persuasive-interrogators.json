@@ -168,8 +168,8 @@
       ],
       "typeLine": {
         "subtypes": [
-          "Detective",
-          "Gorgon"
+          "Gorgon",
+          "Detective"
         ],
         "types": [
           "Creature"

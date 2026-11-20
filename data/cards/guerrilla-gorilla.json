@@ -115,8 +115,8 @@
       "typeLine": {
         "subtypes": [
           "Ape",
-          "Hero",
-          "Soldier"
+          "Soldier",
+          "Hero"
         ],
         "types": [
           "Creature"

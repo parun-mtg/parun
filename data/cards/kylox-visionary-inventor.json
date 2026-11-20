@@ -183,8 +183,8 @@
       ],
       "typeLine": {
         "subtypes": [
-          "Artificer",
-          "Lizard"
+          "Lizard",
+          "Artificer"
         ],
         "supertypes": [
           "Legendary"

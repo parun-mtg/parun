@@ -146,8 +146,8 @@
       "typeLine": {
         "subtypes": [
           "Merfolk",
-          "Scout",
-          "Warrior"
+          "Warrior",
+          "Scout"
         ],
         "types": [
           "Creature"

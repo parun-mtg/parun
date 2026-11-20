@@ -103,9 +103,9 @@
       },
       "typeLine": {
         "subtypes": [
-          "Bard",
           "Squirrel",
-          "Warlock"
+          "Warlock",
+          "Bard"
         ],
         "types": [
           "Creature"

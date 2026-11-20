@@ -113,9 +113,9 @@
       ],
       "typeLine": {
         "subtypes": [
+          "Minotaur",
           "Child",
-          "Guest",
-          "Minotaur"
+          "Guest"
         ],
         "types": [
           "Creature"

@@ -194,8 +194,8 @@
       ],
       "typeLine": {
         "subtypes": [
-          "Cat",
           "Elder",
+          "Cat",
           "Turtle"
         ],
         "supertypes": [

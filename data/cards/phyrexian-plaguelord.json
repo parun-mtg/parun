@@ -156,8 +156,8 @@
       },
       "typeLine": {
         "subtypes": [
-          "Carrier",
-          "Phyrexian"
+          "Phyrexian",
+          "Carrier"
         ],
         "types": [
           "Creature"

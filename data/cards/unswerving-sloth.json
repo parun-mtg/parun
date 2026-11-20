@@ -115,8 +115,8 @@
       ],
       "typeLine": {
         "subtypes": [
-          "Mount",
-          "Sloth"
+          "Sloth",
+          "Mount"
         ],
         "types": [
           "Creature"

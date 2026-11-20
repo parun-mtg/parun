@@ -73,8 +73,8 @@
       },
       "typeLine": {
         "subtypes": [
-          "Bard",
-          "Elemental"
+          "Elemental",
+          "Bard"
         ],
         "types": [
           "Creature"

@@ -147,8 +147,8 @@
       },
       "typeLine": {
         "subtypes": [
-          "Advisor",
-          "Jellyfish"
+          "Jellyfish",
+          "Advisor"
         ],
         "supertypes": [
           "Legendary"

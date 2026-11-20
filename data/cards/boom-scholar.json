@@ -189,8 +189,8 @@
       },
       "typeLine": {
         "subtypes": [
-          "Advisor",
-          "Goblin"
+          "Goblin",
+          "Advisor"
         ],
         "types": [
           "Creature"

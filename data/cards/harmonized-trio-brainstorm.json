@@ -84,8 +84,8 @@
       },
       "typeLine": {
         "subtypes": [
-          "Bard",
           "Merfolk",
+          "Bard",
           "Wizard"
         ],
         "types": [

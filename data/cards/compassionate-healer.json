@@ -77,9 +77,9 @@
       ],
       "typeLine": {
         "subtypes": [
-          "Ally",
+          "Human",
           "Cleric",
-          "Human"
+          "Ally"
         ],
         "types": [
           "Creature"
