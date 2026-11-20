@@ -47,10 +47,11 @@ Finished 2026-11-15.
   #7703 Molten Exhale (#7732).
 - Fix issues: #7734 (Sidisi's ability offered when no X makes both its cost
   and its target legal, #7737).
-- Filed along the way, each open and off the tracker: #7726 (keeping a
-  creature attacking from causing abilities to trigger, synthetic), #7733 (a
-  spell's cost announcing X for a criterion, Nahiri's Sacrifice), #7736 (the
-  spell side of #7734, Stir the Grave).
+- Filed along the way, each off the tracker: #7726 (keeping a creature
+  attacking from causing abilities to trigger: unprinted, kept out of card
+  data by a `Parun.CardSpec` lint), #7733 (a spell's cost announcing X for a
+  criterion, Nahiri's Sacrifice), #7736 (the spell side of #7734, Stir the
+  Grave).
 - Audits: 4 of 7 capability PRs; 1 found rules defects. Reviewed inline
   #7727, #7730 and #7732 and the fix PR #7737; skipped the census and all ten
   batches, each recorded on #7692.
