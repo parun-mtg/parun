@@ -18,10 +18,10 @@ import qualified Control.Monad as Monad
 import qualified Control.Monad.Trans.State.Strict as State
 import qualified Data.Foldable as Foldable
 import qualified Data.Map.Strict as Map
-import qualified Parun.Engine.Event as Event
-import qualified Parun.Engine.Game as Game
 import qualified Data.Sequence as Seq
 import qualified Data.Set as Set
+import qualified Parun.Engine.Event as Event
+import qualified Parun.Engine.Game as Game
 import qualified Parun.Types.Bookkeeping as Bookkeeping
 import qualified Parun.Types.EntryLink as EntryLink
 import Parun.Types.EventGroup (EventGroup)
