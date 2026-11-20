@@ -65,6 +65,7 @@ import qualified Parun.Engine.Target as Target
 import qualified Parun.Engine.Turn as Turn
 import qualified Parun.Extra.Integer as Integer
 import qualified Parun.Extra.Natural as Natural
+import qualified Parun.Types.AbilityName as AbilityName
 import qualified Parun.Types.Acquisition as Acquisition
 import qualified Parun.Types.ActivatedAbility as ActivatedAbility
 import qualified Parun.Types.ActivatedAbilitySource as ActivatedAbilitySource
@@ -4273,8 +4274,12 @@ bindEarthbentLand resolving land gs =
 -- printing with backup prints either, nor a special action, which has no arm
 -- (Scryfall `keyword:backup`, 2026-09-24).
 --
--- Not implemented: the delayed abilities a granted ability arms by name, so
--- it arms none of the source's (#9064).
+-- CR 603.7: a granted activated or triggered ability's arms carry the delayed
+-- ability their name means to the source (modalCarryingDelayed), so the
+-- receiver arms the source's. The scenario
+-- mirror-style-master-s-backed-up-copies-are-exiled-at-end-of-combat proves
+-- it for a triggered one; no printing with backup has an activated one that
+-- arms a delayed ability.
 --
 -- CR 702.1c's grant expands the same way, into one GainKeyword per distinct
 -- keyword the designator names among the projected keywords of the objects in
@@ -4317,13 +4322,15 @@ expandGrant legal resolving controller source gs modification = case modificatio
   Modification.GainAbilitiesOfSource above ->
     let pc = Projection.withoutExceptedAbilities (Maybe.fromMaybe (Projection.copiableCharacteristics source gs) (Binding.placedSourceCopyOf (slotBindings resolving gs)))
         printedAbove keyword = Set.member keyword above
+        activatedCarrying a = a {ActivatedAbility.modal = modalCarryingDelayed (ActivatedAbility.name a) source gs (ActivatedAbility.modal a)}
+        triggeredCarrying t = t {TriggeredAbility.modal = modalCarryingDelayed (TriggeredAbility.name t) source gs (TriggeredAbility.modal t)}
         granted keyword count
           | Keyword.familyOf keyword == Just KeywordFamily.Backup = []
           | printedAbove keyword = []
           | otherwise = List.genericReplicate count (Modification.GainKeyword keyword)
      in concatMap (uncurry granted) (Map.toAscList (PC.keywords pc))
-          <> fmap (Modification.GainAbility . GrantedAbility.Activated) (PC.activatedAbilities pc)
-          <> fmap (Modification.GainAbility . GrantedAbility.Triggered) (PC.triggeredAbilities pc)
+          <> fmap (Modification.GainAbility . GrantedAbility.Activated . activatedCarrying) (PC.activatedAbilities pc)
+          <> fmap (Modification.GainAbility . GrantedAbility.Triggered . triggeredCarrying) (PC.triggeredAbilities pc)
           <> fmap (Modification.GainAbility . GrantedAbility.Static) (PC.staticAbilities pc)
           <> [Modification.GainAbility (GrantedAbility.Rules (PC.ruleAbilities pc)) | PC.ruleAbilities pc /= mempty]
           <> fmap (Modification.GainAbility . GrantedAbility.Replacement) (PC.replacementEffects pc)
@@ -4332,7 +4339,7 @@ expandGrant legal resolving controller source gs modification = case modificatio
   Modification.GainCardAbilities (CardAbilities.MkCardAbilities LentCards.OnTheBattlefield among _ only loyalty extra) ->
     let lenders = battlefieldMatching legal resolving controller source gs among
         named a = a {ActivatedAbility.name = Just (Binding.acquiredFrom resolving (ActivatedAbility.name a)), ActivatedAbility.restrictions = ActivatedAbility.restrictions a <> extra}
-        withDelayed oid a = a {ActivatedAbility.modal = Identity.runIdentity (Children.modalChildren Children.modalLeaves {Children.modalEffect = Identity.Identity . Projection.carryingDelayed (ActivatedAbility.name a) oid gs} (ActivatedAbility.modal a))}
+        withDelayed oid a = a {ActivatedAbility.modal = modalCarryingDelayed (ActivatedAbility.name a) oid gs (ActivatedAbility.modal a)}
         recorded keyword count restrictions = [LentKeyword.MkLentKeyword keyword count (Binding.acquiredFrom resolving Nothing) False (restrictions <> extra) | Keyword.lends False keyword count]
         lent oid =
           let pc = Projection.project oid gs
@@ -4341,6 +4348,11 @@ expandGrant legal resolving controller source gs modification = case modificatio
            in fmap (Modification.GainAbility . GrantedAbility.Activated . named . withDelayed oid) abilities <> fmap Modification.GainLentKeyword keywords
      in foldMap lent lenders
   _ -> [modification]
+
+-- CR 603.7 / 613.1f: `modal` with each delayed ability it arms by name carried
+-- as the ability named `reader` of `source` means it (Projection.carryingDelayed).
+modalCarryingDelayed :: Maybe AbilityName.AbilityName -> ObjectId -> GameState -> Modal.Type.Modal Card.Type.Card (GrantedAbility.GrantedAbility Card.Type.Card) -> Modal.Type.Modal Card.Type.Card (GrantedAbility.GrantedAbility Card.Type.Card)
+modalCarryingDelayed reader source gs = Identity.runIdentity . Children.modalChildren Children.modalLeaves {Children.modalEffect = Identity.Identity . Projection.carryingDelayed reader source gs}
 
 -- CR 614.12: the other permanents that entered in the same event as `oid` (CR
 -- 608.2f's group, which an Event.simultaneously bracket shares) -- not yet on the
