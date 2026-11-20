@@ -1,0 +1,811 @@
+{
+  "faces": [
+    {
+      "manaCost": [
+        {
+          "type": "Generic",
+          "value": 1
+        },
+        {
+          "type": "OfType",
+          "value": {
+            "type": "Colored",
+            "value": "Red"
+          }
+        },
+        {
+          "type": "OfType",
+          "value": {
+            "type": "Colored",
+            "value": "White"
+          }
+        }
+      ],
+      "name": "Odric, Blood-Cursed",
+      "oracleText": "When Odric enters, create X Blood tokens, where X is the number of abilities from among flying, first strike, double strike, deathtouch, haste, hexproof, indestructible, lifelink, menace, reach, trample, and vigilance found among creatures you control. (Count each ability only once.)",
+      "power": {
+        "type": "Literal",
+        "value": 3
+      },
+      "toughness": {
+        "type": "Literal",
+        "value": 3
+      },
+      "triggeredAbilities": [
+        {
+          "condition": {
+            "type": "Enters",
+            "value": {}
+          },
+          "modal": {
+            "modes": [
+              {
+                "clauses": [
+                  {
+                    "effects": [
+                      {
+                        "type": "Create",
+                        "value": {
+                          "card": {
+                            "faces": [
+                              {
+                                "activatedAbilities": [
+                                  {
+                                    "cost": {
+                                      "components": [
+                                        {
+                                          "type": "TapThis"
+                                        },
+                                        {
+                                          "type": "DiscardCards",
+                                          "value": {
+                                            "count": {
+                                              "type": "Fixed",
+                                              "value": 1
+                                            },
+                                            "whichCards": {
+                                              "type": "And",
+                                              "value": []
+                                            }
+                                          }
+                                        },
+                                        {
+                                          "type": "SacrificeThis"
+                                        }
+                                      ],
+                                      "mana": [
+                                        {
+                                          "type": "Generic",
+                                          "value": 1
+                                        }
+                                      ]
+                                    },
+                                    "modal": {
+                                      "modes": [
+                                        {
+                                          "clauses": [
+                                            {
+                                              "effects": [
+                                                {
+                                                  "type": "Draw",
+                                                  "value": {
+                                                    "player": {
+                                                      "type": "Relative",
+                                                      "value": "You"
+                                                    },
+                                                    "quantity": {
+                                                      "type": "Literal",
+                                                      "value": 1
+                                                    }
+                                                  }
+                                                }
+                                              ]
+                                            }
+                                          ]
+                                        }
+                                      ]
+                                    }
+                                  }
+                                ],
+                                "name": "Blood Token",
+                                "typeLine": {
+                                  "subtypes": [
+                                    "Blood"
+                                  ],
+                                  "types": [
+                                    "Artifact"
+                                  ]
+                                }
+                              }
+                            ]
+                          },
+                          "quantity": {
+                            "type": "Plus",
+                            "value": {
+                              "left": {
+                                "type": "AtMost",
+                                "value": {
+                                  "limits": [
+                                    {
+                                      "type": "Literal",
+                                      "value": 1
+                                    }
+                                  ],
+                                  "quantity": {
+                                    "type": "Count",
+                                    "value": {
+                                      "aggregation": {
+                                        "type": "Members"
+                                      },
+                                      "filter": {
+                                        "type": "And",
+                                        "value": [
+                                          {
+                                            "type": "HasCardType",
+                                            "value": "Creature"
+                                          },
+                                          {
+                                            "type": "HasKeyword",
+                                            "value": {
+                                              "type": "Flying"
+                                            }
+                                          },
+                                          {
+                                            "type": "HeldBy",
+                                            "value": {
+                                              "holder": "Controller",
+                                              "relation": "You"
+                                            }
+                                          }
+                                        ]
+                                      },
+                                      "scope": {
+                                        "type": "InZone",
+                                        "value": {
+                                          "player": {
+                                            "type": "Relative",
+                                            "value": "AnyPlayer"
+                                          },
+                                          "zone": "Battlefield"
+                                        }
+                                      }
+                                    }
+                                  }
+                                }
+                              },
+                              "right": {
+                                "type": "Plus",
+                                "value": {
+                                  "left": {
+                                    "type": "AtMost",
+                                    "value": {
+                                      "limits": [
+                                        {
+                                          "type": "Literal",
+                                          "value": 1
+                                        }
+                                      ],
+                                      "quantity": {
+                                        "type": "Count",
+                                        "value": {
+                                          "aggregation": {
+                                            "type": "Members"
+                                          },
+                                          "filter": {
+                                            "type": "And",
+                                            "value": [
+                                              {
+                                                "type": "HasCardType",
+                                                "value": "Creature"
+                                              },
+                                              {
+                                                "type": "HasKeyword",
+                                                "value": {
+                                                  "type": "FirstStrike"
+                                                }
+                                              },
+                                              {
+                                                "type": "HeldBy",
+                                                "value": {
+                                                  "holder": "Controller",
+                                                  "relation": "You"
+                                                }
+                                              }
+                                            ]
+                                          },
+                                          "scope": {
+                                            "type": "InZone",
+                                            "value": {
+                                              "player": {
+                                                "type": "Relative",
+                                                "value": "AnyPlayer"
+                                              },
+                                              "zone": "Battlefield"
+                                            }
+                                          }
+                                        }
+                                      }
+                                    }
+                                  },
+                                  "right": {
+                                    "type": "Plus",
+                                    "value": {
+                                      "left": {
+                                        "type": "AtMost",
+                                        "value": {
+                                          "limits": [
+                                            {
+                                              "type": "Literal",
+                                              "value": 1
+                                            }
+                                          ],
+                                          "quantity": {
+                                            "type": "Count",
+                                            "value": {
+                                              "aggregation": {
+                                                "type": "Members"
+                                              },
+                                              "filter": {
+                                                "type": "And",
+                                                "value": [
+                                                  {
+                                                    "type": "HasCardType",
+                                                    "value": "Creature"
+                                                  },
+                                                  {
+                                                    "type": "HasKeyword",
+                                                    "value": {
+                                                      "type": "DoubleStrike"
+                                                    }
+                                                  },
+                                                  {
+                                                    "type": "HeldBy",
+                                                    "value": {
+                                                      "holder": "Controller",
+                                                      "relation": "You"
+                                                    }
+                                                  }
+                                                ]
+                                              },
+                                              "scope": {
+                                                "type": "InZone",
+                                                "value": {
+                                                  "player": {
+                                                    "type": "Relative",
+                                                    "value": "AnyPlayer"
+                                                  },
+                                                  "zone": "Battlefield"
+                                                }
+                                              }
+                                            }
+                                          }
+                                        }
+                                      },
+                                      "right": {
+                                        "type": "Plus",
+                                        "value": {
+                                          "left": {
+                                            "type": "AtMost",
+                                            "value": {
+                                              "limits": [
+                                                {
+                                                  "type": "Literal",
+                                                  "value": 1
+                                                }
+                                              ],
+                                              "quantity": {
+                                                "type": "Count",
+                                                "value": {
+                                                  "aggregation": {
+                                                    "type": "Members"
+                                                  },
+                                                  "filter": {
+                                                    "type": "And",
+                                                    "value": [
+                                                      {
+                                                        "type": "HasCardType",
+                                                        "value": "Creature"
+                                                      },
+                                                      {
+                                                        "type": "HasKeyword",
+                                                        "value": {
+                                                          "type": "Deathtouch"
+                                                        }
+                                                      },
+                                                      {
+                                                        "type": "HeldBy",
+                                                        "value": {
+                                                          "holder": "Controller",
+                                                          "relation": "You"
+                                                        }
+                                                      }
+                                                    ]
+                                                  },
+                                                  "scope": {
+                                                    "type": "InZone",
+                                                    "value": {
+                                                      "player": {
+                                                        "type": "Relative",
+                                                        "value": "AnyPlayer"
+                                                      },
+                                                      "zone": "Battlefield"
+                                                    }
+                                                  }
+                                                }
+                                              }
+                                            }
+                                          },
+                                          "right": {
+                                            "type": "Plus",
+                                            "value": {
+                                              "left": {
+                                                "type": "AtMost",
+                                                "value": {
+                                                  "limits": [
+                                                    {
+                                                      "type": "Literal",
+                                                      "value": 1
+                                                    }
+                                                  ],
+                                                  "quantity": {
+                                                    "type": "Count",
+                                                    "value": {
+                                                      "aggregation": {
+                                                        "type": "Members"
+                                                      },
+                                                      "filter": {
+                                                        "type": "And",
+                                                        "value": [
+                                                          {
+                                                            "type": "HasCardType",
+                                                            "value": "Creature"
+                                                          },
+                                                          {
+                                                            "type": "HasKeyword",
+                                                            "value": {
+                                                              "type": "Haste"
+                                                            }
+                                                          },
+                                                          {
+                                                            "type": "HeldBy",
+                                                            "value": {
+                                                              "holder": "Controller",
+                                                              "relation": "You"
+                                                            }
+                                                          }
+                                                        ]
+                                                      },
+                                                      "scope": {
+                                                        "type": "InZone",
+                                                        "value": {
+                                                          "player": {
+                                                            "type": "Relative",
+                                                            "value": "AnyPlayer"
+                                                          },
+                                                          "zone": "Battlefield"
+                                                        }
+                                                      }
+                                                    }
+                                                  }
+                                                }
+                                              },
+                                              "right": {
+                                                "type": "Plus",
+                                                "value": {
+                                                  "left": {
+                                                    "type": "AtMost",
+                                                    "value": {
+                                                      "limits": [
+                                                        {
+                                                          "type": "Literal",
+                                                          "value": 1
+                                                        }
+                                                      ],
+                                                      "quantity": {
+                                                        "type": "Count",
+                                                        "value": {
+                                                          "aggregation": {
+                                                            "type": "Members"
+                                                          },
+                                                          "filter": {
+                                                            "type": "And",
+                                                            "value": [
+                                                              {
+                                                                "type": "HasCardType",
+                                                                "value": "Creature"
+                                                              },
+                                                              {
+                                                                "type": "HasKeywordFamily",
+                                                                "value": "Hexproof"
+                                                              },
+                                                              {
+                                                                "type": "HeldBy",
+                                                                "value": {
+                                                                  "holder": "Controller",
+                                                                  "relation": "You"
+                                                                }
+                                                              }
+                                                            ]
+                                                          },
+                                                          "scope": {
+                                                            "type": "InZone",
+                                                            "value": {
+                                                              "player": {
+                                                                "type": "Relative",
+                                                                "value": "AnyPlayer"
+                                                              },
+                                                              "zone": "Battlefield"
+                                                            }
+                                                          }
+                                                        }
+                                                      }
+                                                    }
+                                                  },
+                                                  "right": {
+                                                    "type": "Plus",
+                                                    "value": {
+                                                      "left": {
+                                                        "type": "AtMost",
+                                                        "value": {
+                                                          "limits": [
+                                                            {
+                                                              "type": "Literal",
+                                                              "value": 1
+                                                            }
+                                                          ],
+                                                          "quantity": {
+                                                            "type": "Count",
+                                                            "value": {
+                                                              "aggregation": {
+                                                                "type": "Members"
+                                                              },
+                                                              "filter": {
+                                                                "type": "And",
+                                                                "value": [
+                                                                  {
+                                                                    "type": "HasCardType",
+                                                                    "value": "Creature"
+                                                                  },
+                                                                  {
+                                                                    "type": "HasKeyword",
+                                                                    "value": {
+                                                                      "type": "Indestructible"
+                                                                    }
+                                                                  },
+                                                                  {
+                                                                    "type": "HeldBy",
+                                                                    "value": {
+                                                                      "holder": "Controller",
+                                                                      "relation": "You"
+                                                                    }
+                                                                  }
+                                                                ]
+                                                              },
+                                                              "scope": {
+                                                                "type": "InZone",
+                                                                "value": {
+                                                                  "player": {
+                                                                    "type": "Relative",
+                                                                    "value": "AnyPlayer"
+                                                                  },
+                                                                  "zone": "Battlefield"
+                                                                }
+                                                              }
+                                                            }
+                                                          }
+                                                        }
+                                                      },
+                                                      "right": {
+                                                        "type": "Plus",
+                                                        "value": {
+                                                          "left": {
+                                                            "type": "AtMost",
+                                                            "value": {
+                                                              "limits": [
+                                                                {
+                                                                  "type": "Literal",
+                                                                  "value": 1
+                                                                }
+                                                              ],
+                                                              "quantity": {
+                                                                "type": "Count",
+                                                                "value": {
+                                                                  "aggregation": {
+                                                                    "type": "Members"
+                                                                  },
+                                                                  "filter": {
+                                                                    "type": "And",
+                                                                    "value": [
+                                                                      {
+                                                                        "type": "HasCardType",
+                                                                        "value": "Creature"
+                                                                      },
+                                                                      {
+                                                                        "type": "HasKeyword",
+                                                                        "value": {
+                                                                          "type": "Lifelink"
+                                                                        }
+                                                                      },
+                                                                      {
+                                                                        "type": "HeldBy",
+                                                                        "value": {
+                                                                          "holder": "Controller",
+                                                                          "relation": "You"
+                                                                        }
+                                                                      }
+                                                                    ]
+                                                                  },
+                                                                  "scope": {
+                                                                    "type": "InZone",
+                                                                    "value": {
+                                                                      "player": {
+                                                                        "type": "Relative",
+                                                                        "value": "AnyPlayer"
+                                                                      },
+                                                                      "zone": "Battlefield"
+                                                                    }
+                                                                  }
+                                                                }
+                                                              }
+                                                            }
+                                                          },
+                                                          "right": {
+                                                            "type": "Plus",
+                                                            "value": {
+                                                              "left": {
+                                                                "type": "AtMost",
+                                                                "value": {
+                                                                  "limits": [
+                                                                    {
+                                                                      "type": "Literal",
+                                                                      "value": 1
+                                                                    }
+                                                                  ],
+                                                                  "quantity": {
+                                                                    "type": "Count",
+                                                                    "value": {
+                                                                      "aggregation": {
+                                                                        "type": "Members"
+                                                                      },
+                                                                      "filter": {
+                                                                        "type": "And",
+                                                                        "value": [
+                                                                          {
+                                                                            "type": "HasCardType",
+                                                                            "value": "Creature"
+                                                                          },
+                                                                          {
+                                                                            "type": "HasKeyword",
+                                                                            "value": {
+                                                                              "type": "Menace"
+                                                                            }
+                                                                          },
+                                                                          {
+                                                                            "type": "HeldBy",
+                                                                            "value": {
+                                                                              "holder": "Controller",
+                                                                              "relation": "You"
+                                                                            }
+                                                                          }
+                                                                        ]
+                                                                      },
+                                                                      "scope": {
+                                                                        "type": "InZone",
+                                                                        "value": {
+                                                                          "player": {
+                                                                            "type": "Relative",
+                                                                            "value": "AnyPlayer"
+                                                                          },
+                                                                          "zone": "Battlefield"
+                                                                        }
+                                                                      }
+                                                                    }
+                                                                  }
+                                                                }
+                                                              },
+                                                              "right": {
+                                                                "type": "Plus",
+                                                                "value": {
+                                                                  "left": {
+                                                                    "type": "AtMost",
+                                                                    "value": {
+                                                                      "limits": [
+                                                                        {
+                                                                          "type": "Literal",
+                                                                          "value": 1
+                                                                        }
+                                                                      ],
+                                                                      "quantity": {
+                                                                        "type": "Count",
+                                                                        "value": {
+                                                                          "aggregation": {
+                                                                            "type": "Members"
+                                                                          },
+                                                                          "filter": {
+                                                                            "type": "And",
+                                                                            "value": [
+                                                                              {
+                                                                                "type": "HasCardType",
+                                                                                "value": "Creature"
+                                                                              },
+                                                                              {
+                                                                                "type": "HasKeyword",
+                                                                                "value": {
+                                                                                  "type": "Reach"
+                                                                                }
+                                                                              },
+                                                                              {
+                                                                                "type": "HeldBy",
+                                                                                "value": {
+                                                                                  "holder": "Controller",
+                                                                                  "relation": "You"
+                                                                                }
+                                                                              }
+                                                                            ]
+                                                                          },
+                                                                          "scope": {
+                                                                            "type": "InZone",
+                                                                            "value": {
+                                                                              "player": {
+                                                                                "type": "Relative",
+                                                                                "value": "AnyPlayer"
+                                                                              },
+                                                                              "zone": "Battlefield"
+                                                                            }
+                                                                          }
+                                                                        }
+                                                                      }
+                                                                    }
+                                                                  },
+                                                                  "right": {
+                                                                    "type": "Plus",
+                                                                    "value": {
+                                                                      "left": {
+                                                                        "type": "AtMost",
+                                                                        "value": {
+                                                                          "limits": [
+                                                                            {
+                                                                              "type": "Literal",
+                                                                              "value": 1
+                                                                            }
+                                                                          ],
+                                                                          "quantity": {
+                                                                            "type": "Count",
+                                                                            "value": {
+                                                                              "aggregation": {
+                                                                                "type": "Members"
+                                                                              },
+                                                                              "filter": {
+                                                                                "type": "And",
+                                                                                "value": [
+                                                                                  {
+                                                                                    "type": "HasCardType",
+                                                                                    "value": "Creature"
+                                                                                  },
+                                                                                  {
+                                                                                    "type": "HasKeyword",
+                                                                                    "value": {
+                                                                                      "type": "Trample"
+                                                                                    }
+                                                                                  },
+                                                                                  {
+                                                                                    "type": "HeldBy",
+                                                                                    "value": {
+                                                                                      "holder": "Controller",
+                                                                                      "relation": "You"
+                                                                                    }
+                                                                                  }
+                                                                                ]
+                                                                              },
+                                                                              "scope": {
+                                                                                "type": "InZone",
+                                                                                "value": {
+                                                                                  "player": {
+                                                                                    "type": "Relative",
+                                                                                    "value": "AnyPlayer"
+                                                                                  },
+                                                                                  "zone": "Battlefield"
+                                                                                }
+                                                                              }
+                                                                            }
+                                                                          }
+                                                                        }
+                                                                      },
+                                                                      "right": {
+                                                                        "type": "AtMost",
+                                                                        "value": {
+                                                                          "limits": [
+                                                                            {
+                                                                              "type": "Literal",
+                                                                              "value": 1
+                                                                            }
+                                                                          ],
+                                                                          "quantity": {
+                                                                            "type": "Count",
+                                                                            "value": {
+                                                                              "aggregation": {
+                                                                                "type": "Members"
+                                                                              },
+                                                                              "filter": {
+                                                                                "type": "And",
+                                                                                "value": [
+                                                                                  {
+                                                                                    "type": "HasCardType",
+                                                                                    "value": "Creature"
+                                                                                  },
+                                                                                  {
+                                                                                    "type": "HasKeyword",
+                                                                                    "value": {
+                                                                                      "type": "Vigilance"
+                                                                                    }
+                                                                                  },
+                                                                                  {
+                                                                                    "type": "HeldBy",
+                                                                                    "value": {
+                                                                                      "holder": "Controller",
+                                                                                      "relation": "You"
+                                                                                    }
+                                                                                  }
+                                                                                ]
+                                                                              },
+                                                                              "scope": {
+                                                                                "type": "InZone",
+                                                                                "value": {
+                                                                                  "player": {
+                                                                                    "type": "Relative",
+                                                                                    "value": "AnyPlayer"
+                                                                                  },
+                                                                                  "zone": "Battlefield"
+                                                                                }
+                                                                              }
+                                                                            }
+                                                                          }
+                                                                        }
+                                                                      }
+                                                                    }
+                                                                  }
+                                                                }
+                                                              }
+                                                            }
+                                                          }
+                                                        }
+                                                      }
+                                                    }
+                                                  }
+                                                }
+                                              }
+                                            }
+                                          }
+                                        }
+                                      }
+                                    }
+                                  }
+                                }
+                              }
+                            }
+                          }
+                        }
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          }
+        }
+      ],
+      "typeLine": {
+        "subtypes": [
+          "Vampire",
+          "Soldier"
+        ],
+        "supertypes": [
+          "Legendary"
+        ],
+        "types": [
+          "Creature"
+        ]
+      }
+    }
+  ]
+}
