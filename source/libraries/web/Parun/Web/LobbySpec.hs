@@ -40,8 +40,25 @@ spec s = Spec.describe s "Parun.Web.Lobby" $ do
     Spec.it s "ignores a deck it does not hold" $ do
       Spec.assertEq s (Lobby.update (Lobby.MkPick $ Text.pack "nope") Text.empty lobby) lobby
 
+    Spec.it s "drops the bot's deck when your deck is under another format" $ do
+      let picked = Lobby.update (Lobby.MkPick c) Text.empty . Lobby.update (Lobby.MkChoose Lobby.MkMine) Text.empty . Lobby.update (Lobby.MkPick a) Text.empty $ Lobby.update (Lobby.MkPick b) Text.empty lobby
+      Spec.assertEq s (Lobby.mine picked, Lobby.theirs picked) (Just c, Nothing)
+
+    Spec.it s "keeps the bot's deck when your deck is under its format" $ do
+      let picked = Lobby.update (Lobby.MkPick d) Text.empty . Lobby.update (Lobby.MkChoose Lobby.MkMine) Text.empty . Lobby.update (Lobby.MkPick d) Text.empty $ Lobby.update (Lobby.MkPick c) Text.empty lobby
+      Spec.assertEq s (Lobby.mine picked, Lobby.theirs picked) (Just d, Just d)
+
+    Spec.it s "refuses the bot a deck under another format than yours" $ do
+      let mineChosen = Lobby.update (Lobby.MkPick c) Text.empty lobby
+      Spec.assertEq s (Lobby.theirs (Lobby.update (Lobby.MkPick a) Text.empty mineChosen)) Nothing
+
     Spec.it s "filters by what is typed" $ do
       Spec.assertEq s (Lobby.search $ Lobby.update Lobby.MkSearch (Text.pack "webs") lobby) (Text.pack "webs")
+
+  Spec.describe s "opponents" $ do
+    Spec.it s "offers the bot the decks under your deck's format" $ do
+      Spec.assertEq s (Lobby.opponents (Lobby.update (Lobby.MkPick c) Text.empty lobby)) (Seq.fromList [c, d])
+      Spec.assertEq s (Lobby.opponents (Lobby.update (Lobby.MkPick a) Text.empty lobby)) (Seq.fromList [a, b])
 
   Spec.describe s "view" $ do
     Spec.it s "lists the decks matching the filter, grouped by set" $ do
@@ -49,6 +66,14 @@ spec s = Spec.describe s "Parun.Web.Lobby" $ do
       Spec.assertBool s (Text.isInfixOf (Text.pack "<h2>M12</h2>") page) "set"
       Spec.assertBool s (Text.isInfixOf (Text.pack "Entangling Webs") page) "match"
       Spec.assertBool s (not $ Text.isInfixOf (Text.pack "Demo A") page) "filtered out"
+
+    Spec.it s "lists only the decks the bot may play while choosing its deck" $ do
+      let page = Html.toText . Lobby.view $ Lobby.update (Lobby.MkPick c) Text.empty lobby
+      Spec.assertBool s (Text.isInfixOf (Text.pack "Wretched Ranks") page) "your format"
+      Spec.assertBool s (not $ Text.isInfixOf (Text.pack "Entangling Webs") page) "another format"
+
+    Spec.it s "names a deck's format" $ do
+      Spec.assertBool s (Text.isInfixOf (Text.pack "Commander") . Html.toText $ Lobby.view lobby) "format"
 
     Spec.it s "cannot start without your deck" $ do
       Spec.assertBool s (Text.isInfixOf (Text.pack "disabled=\"\">Start game") . Html.toText $ Lobby.view lobby) "disabled"
@@ -63,5 +88,11 @@ a = Text.pack "sets/por/demo-a"
 b :: Text.Text
 b = Text.pack "sets/m12/entangling-webs"
 
+c :: Text.Text
+c = Text.pack "sets/fdc/calling-all-angels"
+
+d :: Text.Text
+d = Text.pack "sets/fdc/wretched-ranks"
+
 lobby :: Lobby.Lobby
-lobby = Lobby.new 2 $ Seq.fromList [a, b]
+lobby = Lobby.new 2 (Seq.fromList [a, b, c, d]) $ Map.fromList [(c, Text.pack "commander"), (d, Text.pack "commander")]

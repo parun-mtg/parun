@@ -32,6 +32,9 @@ data Lobby = MkLobby
     cardFiles :: Natural,
     -- | Every deck, by its path beneath the deck root, less ".txt".
     decks :: Seq.Seq Text.Text,
+    -- | The format each deck's header names (Parun.DeckList.formatOf), by
+    -- name; a deck naming none is absent.
+    formats :: Map.Map Text.Text Text.Text,
     -- | The player's deck, once chosen.
     mine :: Maybe Text.Text,
     -- | The bot's deck, once chosen; a random one otherwise.
@@ -67,9 +70,19 @@ data Event
     MkStart
   deriving (Eq, Show)
 
--- | A lobby holding these decks, nothing chosen yet.
-new :: Natural -> Seq.Seq Text.Text -> Lobby
-new files names = MkLobby files names Nothing Nothing MkMine Text.empty Map.empty Map.empty
+-- | A lobby holding these decks under these formats, nothing chosen yet.
+new :: Natural -> Seq.Seq Text.Text -> Map.Map Text.Text Text.Text -> Lobby
+new files names named = MkLobby files names named Nothing Nothing MkMine Text.empty Map.empty Map.empty
+
+-- | Whether two decks are under one format, and so may meet: the game's
+-- format is the one their headers name (Parun.Play.Command.settle).
+together :: Lobby -> Text.Text -> Text.Text -> Bool
+together lobby one two = Map.lookup one (formats lobby) == Map.lookup two (formats lobby)
+
+-- | The decks the bot may play against yours: every deck, until yours is
+-- chosen.
+opponents :: Lobby -> Seq.Seq Text.Text
+opponents lobby = maybe (decks lobby) (\one -> Seq.filter (together lobby one) (decks lobby)) (mine lobby)
 
 -- | A card's colours as a deck shows them: those of the mana symbols in
 -- its faces' costs.
@@ -163,12 +176,16 @@ deckName root path =
    in Maybe.fromMaybe name $ Text.stripSuffix (Text.pack ".txt") name
 
 -- | The lobby after an event, the value typed being `typed`. Picking your
--- deck moves on to the bot's while that is unchosen.
+-- deck moves on to the bot's while that is unchosen, and drops the bot's
+-- deck under another format; the bot is offered only its 'opponents'.
 update :: Event -> Text.Text -> Lobby -> Lobby
 update event typed lobby = case event of
   MkPick name
     | Foldable.notElem name (decks lobby) -> lobby
-    | choosing lobby == MkMine -> lobby {mine = Just name, choosing = if Maybe.isNothing (theirs lobby) then MkTheirs else MkMine}
+    | choosing lobby == MkMine ->
+        let kept = Monad.mfilter (together lobby name) (theirs lobby)
+         in lobby {mine = Just name, theirs = kept, choosing = if Maybe.isNothing kept then MkTheirs else MkMine}
+    | Foldable.notElem name (opponents lobby) -> lobby
     | otherwise -> lobby {theirs = Just name}
   MkChoose slot -> lobby {choosing = slot}
   MkSearch -> lobby {search = typed}
@@ -206,7 +223,8 @@ matches typed name =
 
 view :: Lobby -> Html.Html Event
 view lobby =
-  let shown = filter (matches (search lobby)) (Foldable.toList (decks lobby))
+  let offered = if choosing lobby == MkMine then decks lobby else opponents lobby
+      shown = filter (matches (search lobby)) (Foldable.toList offered)
       groups = Map.toList (Map.fromListWith (flip (<>)) [(fst (describe name), [name]) | name <- shown])
       slot which title chosen fallback =
         Element.button
@@ -218,7 +236,8 @@ view lobby =
       deck name =
         let picked = Just name == (if choosing lobby == MkMine then mine lobby else theirs lobby)
             pips = Element.el "span" ["pips"] [] [Mana.symbol (Text.pack (Web.Card.letterUpper c)) | c <- Set.toList (Map.findWithDefault Set.empty name (palette lobby))]
-         in (name, Element.button (["deck"] <> ["picked" | picked]) (MkPick name) [Element.el "span" ["deck-name"] [] [Element.text (snd (describe name))], pips])
+            format = [Element.el "span" ["deck-format"] [] [Element.text (titled f)] | f <- Maybe.maybeToList (Map.lookup name (formats lobby))]
+         in (name, Element.button (["deck"] <> ["picked" | picked]) (MkPick name) [Element.el "span" ["deck-name"] [] (Element.text (snd (describe name)) : format), pips])
    in Element.el
         "main"
         ["lobby"]

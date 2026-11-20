@@ -265,6 +265,16 @@ spec s = Spec.describe s "Parun.DeckList" $ do
       Spec.assertEqWith s "the format" (DeckList.format listed) (Just (1, Text.pack "modern"))
       Spec.assertEqWith s "the problems" (DeckList.problems listed) [DeckList.FormatRepeated 2 (Text.pack "limited"), DeckList.Unreadable 3 (Text.pack "Format:")]
 
+  -- The web client's lobby reads a list's format before any registry exists.
+  Spec.it s "a list's format reads off its text alone, as parsing it reads it"
+    . withPool "format-text"
+    $ \registry -> do
+      let text = "4 Goblin Piker\nFormat:\nFormat: Commander\nFormat: modern\n"
+      listed <- listedOf s registry text
+      Spec.assertEqWith s "the first header naming one" (DeckList.formatOf (Text.pack text)) (Just (Text.pack "commander"))
+      Spec.assertEqWith s "as parsing reads it" (DeckList.formatOf (Text.pack text)) (fmap snd (DeckList.format listed))
+      Spec.assertEqWith s "none without a header" (DeckList.formatOf (Text.pack "4 Goblin Piker\n")) Nothing
+
   -- The format asked for is checked, but a header naming another is reported
   -- rather than silently overruled.
   Spec.it s "a format asked for that the header contradicts is a problem"
