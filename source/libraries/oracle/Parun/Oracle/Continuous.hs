@@ -21,6 +21,7 @@ import qualified Parun.Types.AffectedUnless as AffectedUnless
 import qualified Parun.Types.Arithmetic as Arithmetic
 import qualified Parun.Types.CantBeBlockedBy as CantBeBlockedBy
 import qualified Parun.Types.Card as Card
+import qualified Parun.Types.CardType as CardType
 import qualified Parun.Types.CharacteristicPT as CharacteristicPT
 import qualified Parun.Types.CombatRestriction as CombatRestriction
 import qualified Parun.Types.CostChange as CostChange
@@ -454,13 +455,18 @@ affected context attached enchants a = case a of
         -- all the source attaches to: an Aura enchanting creatures
         -- (Invisibility), or an Equipment (CR 301.5). Otherwise it is a
         -- permanent (Teferi's Curse).
-        one <- case (filter (/= attachedToSource) (conjuncts f), fmap TargetSlot.pool enchants) of
-          ([], [Pool.Creatures]) -> [Text.pack "creature"]
-          ([], []) -> [Text.pack "creature"]
+        wording <- case (filter (/= attachedToSource) (conjuncts f), fmap TargetSlot.pool enchants) of
+          ([], [Pool.Creatures]) -> [word <> Text.pack " creature"]
+          ([], []) -> [word <> Text.pack " creature"]
+          -- An Aura that may enchant a noncreature permanent affects its
+          -- host only while that is a creature (Akki War Paint).
+          ([Filter.Type.HasCardType CardType.Creature], [Pool.Permanents]) ->
+            [Text.pack "as long as " <> word <> Text.pack " permanent is a creature, it"]
           (rest, _) -> do
             p <- Filter.phrase (Filter.Type.And rest) (Target.keyword context)
-            Filter.describe Filter.Singular Target.permanent p
-        [Target.MkReference (word <> Text.pack " " <> one) [] Filter.Singular []]
+            one <- Filter.describe Filter.Singular Target.permanent p
+            [word <> Text.pack " " <> one]
+        [Target.MkReference wording [] Filter.Singular []]
     -- Free, as Parun.Oracle.Effect.modified reads them: the objects together
     -- or, where they read together, each of them (Coppercoat Vanguard's "Each
     -- other Human you control gets").

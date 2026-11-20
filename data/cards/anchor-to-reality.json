@@ -1,0 +1,144 @@
+{
+  "faces": [
+    {
+      "additionalCosts": [
+        {
+          "type": "Sacrifice",
+          "value": {
+            "count": {
+              "type": "Fixed",
+              "value": 1
+            },
+            "whichPermanents": {
+              "type": "Or",
+              "value": [
+                {
+                  "type": "HasCardType",
+                  "value": "Artifact"
+                },
+                {
+                  "type": "HasCardType",
+                  "value": "Creature"
+                }
+              ]
+            }
+          }
+        }
+      ],
+      "manaCost": [
+        {
+          "type": "Generic",
+          "value": 2
+        },
+        {
+          "type": "OfType",
+          "value": {
+            "type": "Colored",
+            "value": "Blue"
+          }
+        },
+        {
+          "type": "OfType",
+          "value": {
+            "type": "Colored",
+            "value": "Blue"
+          }
+        }
+      ],
+      "name": "Anchor to Reality",
+      "oracleText": "As an additional cost to cast this spell, sacrifice an artifact or creature.\nSearch your library for an Equipment or Vehicle card, put that card onto the battlefield, then shuffle. If it has mana value less than the sacrificed permanent's mana value, scry 2.",
+      "spell": {
+        "modes": [
+          {
+            "clauses": [
+              {
+                "effects": [
+                  {
+                    "type": "Search",
+                    "value": {
+                      "destination": "Battlefield",
+                      "filter": {
+                        "type": "Or",
+                        "value": [
+                          {
+                            "type": "HasSubtype",
+                            "value": "Equipment"
+                          },
+                          {
+                            "type": "HasSubtype",
+                            "value": "Vehicle"
+                          }
+                        ]
+                      },
+                      "owner": {
+                        "type": "Relative",
+                        "value": "You"
+                      },
+                      "quantity": {
+                        "type": "Literal",
+                        "value": 1
+                      },
+                      "searcher": {
+                        "type": "Relative",
+                        "value": "You"
+                      },
+                      "slot": "found"
+                    }
+                  }
+                ]
+              },
+              {
+                "condition": {
+                  "type": "Compares",
+                  "value": {
+                    "comparison": "LessThan",
+                    "measured": {
+                      "type": "AgainstSlot",
+                      "value": {
+                        "quantity": {
+                          "type": "Measure",
+                          "value": "ManaValue"
+                        },
+                        "slot": "found"
+                      }
+                    },
+                    "threshold": {
+                      "type": "AgainstSlot",
+                      "value": {
+                        "quantity": {
+                          "type": "Measure",
+                          "value": "ManaValue"
+                        },
+                        "slot": "thatSacrificedPermanent"
+                      }
+                    }
+                  }
+                },
+                "effects": [
+                  {
+                    "type": "Scry",
+                    "value": {
+                      "player": {
+                        "type": "Relative",
+                        "value": "You"
+                      },
+                      "quantity": {
+                        "type": "Literal",
+                        "value": 2
+                      }
+                    }
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "typeLine": {
+        "types": [
+          "Sorcery"
+        ]
+      }
+    }
+  ]
+}
