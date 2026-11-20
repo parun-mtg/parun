@@ -27,6 +27,7 @@ import qualified Parun.Engine.Event as Event
 import qualified Parun.Engine.Ledger as Ledger
 import qualified Parun.Extra.Integer as Integer
 import qualified Parun.Types.Bookkeeping as Bookkeeping
+import qualified Parun.Types.Combat as Combat
 import Parun.Types.GameState (GameState)
 import qualified Parun.Types.GameState as GameState
 import qualified Parun.Types.History as History
@@ -64,10 +65,8 @@ import qualified Parun.Types.TurnRegisters as TurnRegisters
 -- that silently keeps the announcement's value.
 --
 -- `objects` descends into each Object's fields, an id the window deleted
--- staying deleted (`objectsWith`). `combat` is a whole-value leaf: a
--- declaration writes it (Combat.declaredAttackers, Combat.declaredBlockers),
--- and a window that wrote it too answers Nothing, the conservative fallback
--- above.
+-- staying deleted (`objectsWith`), and `combat` into its fields
+-- (`combatWith`).
 withoutAnnouncement :: GameState -> GameState -> [GameState] -> GameState -> Maybe GameState
 withoutAnnouncement before entry between closed = do
   settings <- one (MatchScope.settings . GameState.match)
@@ -88,7 +87,7 @@ withoutAnnouncement before entry between closed = do
   broughtIn <- seqOf GameState.broughtIn
   departedCards <- mapOf GameState.departedCards
   manaPool <- pools (GameState.manaPool before) (GameState.manaPool entry) (GameState.manaPool closed)
-  combat <- one (TurnRegisters.combat . GameState.turn)
+  combat <- combatWith (TurnRegisters.combat (GameState.turn before)) (TurnRegisters.combat (GameState.turn entry)) (TurnRegisters.combat (GameState.turn closed))
   events <- Event.restampLifeChanges . withoutIdleTaps <$> eventsOf (TurnRegisters.events . GameState.turn)
   nextEventGroup <- newest (Bookkeeping.nextEventGroup . GameState.bookkeeping)
   eventGroupDepth <- one (Bookkeeping.eventGroupDepth . GameState.bookkeeping)
@@ -674,6 +673,78 @@ objectWith before entry between closed = do
   where
     field :: (Eq a) => (Object -> a) -> Maybe a
     field get = leaf (get before) (get entry) (get closed)
+
+-- `leaf` reached through a Combat's fields, a map per key and a set per
+-- member, so two sides that each removed a different creature from combat (CR
+-- 506.4) keep each other's removal: Ashnod's Altar sacrificing two attackers to
+-- pay for an illegal cast, one activation reversed. The reversed side's removal
+-- is undone, so its creature is attacking again, its sacrifice not having
+-- happened (CR 734.1); CR 400.7 is about an object that moved, which this one
+-- has not. Every writer of a field adds or deletes keys or members, none a
+-- count, so no field sums. The scenario
+-- cost/cr-734-1-two-altar-sacrifices-of-attackers-are-offered-back-one-at-a-time
+-- is the proof.
+--
+-- A TOTAL record construction for `withoutAnnouncement`'s reason: a new Combat
+-- field is a `-Wmissing-fields` error here.
+combatWith :: Combat.Combat -> Combat.Combat -> Combat.Combat -> Maybe Combat.Combat
+combatWith before entry closed = do
+  attackers <- keyed Combat.attackers
+  blockers <- mapWith members (Combat.blockers before) (Combat.blockers entry) (Combat.blockers closed)
+  struckFirst <- field Combat.struckFirst
+  joinedUnder <- keyed Combat.joinedUnder
+  attackedUnder <- keyed Combat.attackedUnder
+  attackedControlledBy <- keyed Combat.attackedControlledBy
+  attackedProtectedBy <- keyed Combat.attackedProtectedBy
+  attacked <- set Combat.attacked
+  declaredAttacked <- set Combat.declaredAttacked
+  declaredAttackedBy <- mapWith members (Combat.declaredAttackedBy before) (Combat.declaredAttackedBy entry) (Combat.declaredAttackedBy closed)
+  declaredAttackedThisStep <- set Combat.declaredAttackedThisStep
+  declaredAttackers <- set Combat.declaredAttackers
+  declaredBlockers <- set Combat.declaredBlockers
+  hadToAttack <- set Combat.hadToAttack
+  blockersDeclared <- field Combat.blockersDeclared
+  attackingNothing <- set Combat.attackingNothing
+  blockingNothing <- set Combat.blockingNothing
+  removedDefending <- keyed Combat.removedDefending
+  defenders <- field Combat.defenders
+  barred <- field Combat.barred
+  bands <- field Combat.bands
+  pileBlocks <- field Combat.pileBlocks
+  blockedBy <- mapWith members (Combat.blockedBy before) (Combat.blockedBy entry) (Combat.blockedBy closed)
+  pure
+    Combat.MkCombat
+      { Combat.attackers = attackers,
+        Combat.blockers = blockers,
+        Combat.struckFirst = struckFirst,
+        Combat.joinedUnder = joinedUnder,
+        Combat.attackedUnder = attackedUnder,
+        Combat.attackedControlledBy = attackedControlledBy,
+        Combat.attackedProtectedBy = attackedProtectedBy,
+        Combat.attacked = attacked,
+        Combat.declaredAttacked = declaredAttacked,
+        Combat.declaredAttackedBy = declaredAttackedBy,
+        Combat.declaredAttackedThisStep = declaredAttackedThisStep,
+        Combat.declaredAttackers = declaredAttackers,
+        Combat.declaredBlockers = declaredBlockers,
+        Combat.hadToAttack = hadToAttack,
+        Combat.blockersDeclared = blockersDeclared,
+        Combat.attackingNothing = attackingNothing,
+        Combat.blockingNothing = blockingNothing,
+        Combat.removedDefending = removedDefending,
+        Combat.defenders = defenders,
+        Combat.barred = barred,
+        Combat.bands = bands,
+        Combat.pileBlocks = pileBlocks,
+        Combat.blockedBy = blockedBy
+      }
+  where
+    field :: (Eq a) => (Combat.Combat -> a) -> Maybe a
+    field get = leaf (get before) (get entry) (get closed)
+    keyed :: (Ord k, Eq v) => (Combat.Combat -> Map.Map k v) -> Maybe (Map.Map k v)
+    keyed get = mapWith leaf (get before) (get entry) (get closed)
+    set :: (Ord a) => (Combat.Combat -> Set.Set a) -> Maybe (Set.Set a)
+    set get = members (get before) (get entry) (get closed)
 
 -- `leaf` for a player, with a life total and a counter count both sides
 -- changed each taken as the sum of their two changes: Ancient Tomb's 2 damage
