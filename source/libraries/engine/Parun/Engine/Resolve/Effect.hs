@@ -31,6 +31,7 @@ import qualified Parun.Engine.Decide as Decide
 import qualified Parun.Engine.Dice as Dice
 import qualified Parun.Engine.Event as Event
 import qualified Parun.Engine.Event.Trigger as Trigger
+import qualified Parun.Engine.Exile as Exile
 import qualified Parun.Engine.Expiry as Expiry
 import qualified Parun.Engine.Filter as Filter
 import qualified Parun.Engine.Game as Game
@@ -399,9 +400,12 @@ offerCastOnce runSubgame context fits named caster optionality verb retake offer
             -- face's view is the spell it becomes, where the reference's walk
             -- saw no characteristics (CR 406.3a). The scenario
             -- the-dragon-kami-reborn-hatches-a-face-down-creature-card-and-not-an-instant-when-its-egg-dies
-            -- proves it. Rule 406.3b's look half (Exile.mayLookAt) is not
-            -- implemented (#9083).
-            if maybe True (Filter.matches context faceView) (CastOffer.restriction offer)
+            -- proves it. Its look half asks Exile.mayLookAt of the caster, so
+            -- only an offer stating a quality refuses a card it may not look at;
+            -- the scenario
+            -- cr-406-3b-an-offer-stating-a-quality-refuses-a-face-down-card-its-caster-may-not-look-at
+            -- proves it.
+            if maybe True (\restriction -> Exile.mayLookAt caster oid gs && Filter.matches context faceView restriction) (CastOffer.restriction offer)
               && fits oid faceView
               && Cast.castableWhenOffered (CastOffer.spending offer) caster oid name candidates proposed
               then
