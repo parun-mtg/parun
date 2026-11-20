@@ -784,9 +784,9 @@ placePendingTriggers boards = do
   -- on the stack before its second is reached, which is observable both in the
   -- ordering prompt and in CR 603.3d's target choices.
   first <- orderPending (filter (not . reacts) gathered)
-  Monad.mapM_ placeOne first
+  Monad.mapM_ placeChosen first
   second <- orderPending (filter reacts gathered)
-  Monad.mapM_ placeOne second
+  Monad.mapM_ placeChosen second
   pure (not (null first) || not (null second))
 
 -- CR 603.3b's classification, asked of one pending trigger: is the condition that
@@ -916,12 +916,46 @@ perGameRecord pending = case TriggeredAbility.limit (PendingTrigger.ability pend
           AbilityTriggered.attackers = Set.empty
         }
 
+-- CR 807.5b: put `pending` on the stack its controller chooses, asked only
+-- when they hold priority in another running turn's window and no object on
+-- a stack caused it to trigger, the worked turn's offered first and the rest
+-- in the order the turns take units (runMarkedUnit); otherwise on the worked
+-- turn's (docs/decisions.md, "Which stack a Grand Melee trigger goes on").
+-- One put on a parked stack restarts that stack's passes (CR 117.4). An
+-- object on a parked stack causes nothing, so only the worked turn's
+-- TurnRegisters.stackCaused is read. Parun.GrandMeleeSpec's "CR 807.5b a
+-- trigger's controller with priority for several stacks chooses one" proves
+-- it.
+placeChosen :: PendingTrigger.PendingTrigger -> Game ()
+placeChosen pending = do
+  gs <- State.get
+  let controller = PendingTrigger.controller pending
+      holding r = TurnRegisters.turnResume r == TurnResume.InWindow && TurnRegisters.priority r == Just controller
+      held = Map.keys (Map.filter holding (GameState.parkedTurns gs))
+      caused = any ((`Set.member` TurnRegisters.stackCaused (GameState.turn gs)) . LoggedEvent.group) (PendingTrigger.firedBy pending)
+  case Turn.workedMarker gs of
+    Just n
+      | not (null held) && not caused && List.elem controller (Game.stillPlaying gs) -> do
+          let offered = n NonEmpty.:| (filter (> n) held <> filter (< n) held)
+          answered <- Game.choose (Prompt.ChooseTurnMarker (Decide.deciderFor controller gs) controller offered)
+          if answered /= n && List.elem answered held
+            then do
+              State.modify' (workOn answered)
+              before <- State.gets (length . TurnRegisters.stack . GameState.turn)
+              placeOne pending
+              after <- State.gets (length . TurnRegisters.stack . GameState.turn)
+              State.modify' (workOn n)
+              Monad.when (after > before) $
+                State.modify' (\g -> g {GameState.parkedTurns = Map.adjust (\r -> r {TurnRegisters.passed = Set.empty}) answered (GameState.parkedTurns g)})
+            else placeOne pending
+    _ -> placeOne pending
+
 -- Put one triggered ability from the ordered batch on the stack. What it hangs
 -- on decides how: an ability BORNE by an object goes through placeBorne, where
 -- every step is keyed to that object -- CR 113.7's reserved source binding, and
 -- the fillableModes/legalSets pair. A sourceless ability has no such object.
 placeOne :: PendingTrigger.PendingTrigger -> Game ()
-placeOne pending = do
+placeOne pending = Game.byStackObject $ do
   -- CR 801.16: the ability is an object its controller controls, and a
   -- continuous effect without which it would not have triggered is part of
   -- the loop too (Trigger.loopShapers). Only a game using limited range reads
@@ -1395,11 +1429,9 @@ settleForPriority = Monad.void performSettle
 -- put on the stack: a player would receive priority now.
 --
 -- In Grand Melee the log scanned is the worked turn's, so a trigger goes on
--- the stack of the turn in which its event happened (docs/decisions.md,
--- "Which stack a Grand Melee trigger goes on").
---
--- Not implemented: CR 807.5b's choice of stack for a trigger whose controller
--- has priority for several (#6561).
+-- the stack of the turn in which its event happened unless CR 807.5b lets its
+-- controller choose (placeChosen; docs/decisions.md, "Which stack a Grand
+-- Melee trigger goes on").
 performSettle :: Game Bool
 performSettle = do
   -- CR 725.1f / 725.2f: the boards CR 725.1c's or 725.2c's check left behind
@@ -1825,7 +1857,7 @@ priorityDecision trail = do
                           -- Parun.FragmentedSpec's Blinking Spirit case
                           -- proves the refusal.
                           pre <- State.get
-                          Cast.castSpell performManaAbility p oid name facing
+                          Game.byStackObject (Cast.castSpell performManaAbility p oid name facing)
                           post <- State.get
                           let completion = Completion.MkCompletion {Completion.announcement = Nothing, Completion.paid = Fragmented.paid Nothing post}
                               completed = if Cost.touchedLibrary pre post then Nothing else Just completion
@@ -1978,7 +2010,7 @@ priorityDecision trail = do
                           grantAfterAction gs p
                           pure (PriorityWindow.Open (Fragmented.complete completed trail'))
                         Action.Type.Activate oid ability -> do
-                          completed <- Activate.activateAbilityWith refusing playSubgame p oid ability
+                          completed <- Game.byStackObject (Activate.activateAbilityWith refusing playSubgame p oid ability)
                           grantAfterAction gs p
                           pure (PriorityWindow.Open (Fragmented.complete completed trail'))
                 else do
@@ -2439,7 +2471,8 @@ closeTurn gs =
                 TurnRegisters.rollsThisTurn = Seq.empty,
                 -- Cleared with the log they describe, as the boards below are.
                 TurnRegisters.scannedThrough = 0,
-                TurnRegisters.damageScannedThrough = 0
+                TurnRegisters.damageScannedThrough = 0,
+                TurnRegisters.stackCaused = Set.empty
               },
           -- Cleared with the log it describes: the settle Engine.advance runs
           -- immediately before this leaves nothing unscanned.

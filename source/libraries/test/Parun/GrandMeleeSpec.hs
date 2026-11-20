@@ -27,6 +27,7 @@ import qualified Parun.Engine.GrandMelee as GrandMelee
 import qualified Parun.Engine.Projection as Projection
 import qualified Parun.Engine.Resolve.Common as Resolve
 import qualified Parun.Engine.Setup as Setup
+import qualified Parun.Engine.Stack as Stack
 import qualified Parun.Engine.Turn as Turn
 import qualified Parun.Registry as Registry
 import qualified Parun.Spec as Spec
@@ -36,6 +37,7 @@ import qualified Parun.Types.Departure as Departure.Type
 import qualified Parun.Types.EndTurnSignal as EndTurnSignal
 import qualified Parun.Types.ExtraTurn as ExtraTurn
 import qualified Parun.Types.GameState as GameState
+import qualified Parun.Types.LoopTrail as LoopTrail
 import qualified Parun.Types.Phase as Phase
 import Parun.Types.PlayerId (PlayerId)
 import qualified Parun.Types.PlayerId as PlayerId
@@ -289,10 +291,44 @@ spec s registry = Spec.describe s "GrandMelee" $ do
               GameState.parkedTurns = Map.adjust holds 1 (GameState.parkedTurns withCounter)
             }
         ((_, acted), asked) = State.runState (Engine.runGame chooseLast staged Engine.runStep) []
-        stacks gs = Map.insert (Maybe.fromMaybe 0 (Turn.workedMarker gs)) (length (TurnRegisters.stack (GameState.turn gs))) (fmap (length . TurnRegisters.stack) (GameState.parkedTurns gs))
     Spec.assertEqWith s "seat 4's turn is worked" (Turn.workedMarker staged) (Just 2)
     Spec.assertEqWith s "CR 807.5b seat 3 is asked" asked [(seat 3, [1, 2])]
-    Spec.assertEqWith s "CR 807.5b Counterspell is on seat 4's stack" (stacks acted) (Map.fromList [(1, 1), (2, 2)])
+    Spec.assertEqWith s "CR 807.5b Counterspell is on seat 4's stack" (stackSizes acted) (Map.fromList [(1, 1), (2, 2)])
+
+  -- CR 807.5b: seat 3 holds priority on seat 0's marker's stack while seat 4
+  -- plays a Forest on its own turn, a special action and no stack object, so
+  -- seat 3's Ankh of Mishra's trigger is placed on the stack seat 3 picks:
+  -- seat 0's, whose standing passes restart (CR 117.4).
+  Spec.it s "CR 807.5b a trigger's controller with priority for several stacks chooses one" $ do
+    forest <- S.printingOf s registry "Forest"
+    ankh <- S.printingOf s registry "Ankh of Mishra"
+    let main = untilPhase Phase.PrecombatMain (melee forest 8)
+        (_, withAnkh) = S.addPermanent ankh (seat 3) main
+        (_, staged) = S.addHandCard forest (seat 4) (holdingTwoWindows (Engine.workOn 2 withAnkh))
+        ((_, played), asked) = State.runState (Engine.runGame chooseLast staged (Engine.priorityDecision LoopTrail.empty)) []
+    Spec.assertEqWith s "seat 4's turn is worked" (Turn.workedMarker staged) (Just 2)
+    Spec.assertEqWith s "CR 807.5b seat 3 is asked" asked [(seat 3, [2, 1])]
+    Spec.assertEqWith s "CR 807.5b the trigger is on seat 0's stack" (stackSizes played) (Map.fromList [(1, 1), (2, 0)])
+    Spec.assertEqWith s "CR 117.4 seat 0's stack's passes restart" (fmap TurnRegisters.passed (Map.lookup 1 (GameState.parkedTurns played))) (Just Set.empty)
+
+  -- CR 807.5b: as above, but what triggers seat 3's abilities is seat 4's
+  -- Rampant Growth, cast and then resolved on seat 4's marker's stack, so
+  -- Mogg Sentry's trigger and then Ankh of Mishra's go there unasked.
+  Spec.it s "CR 807.5b a trigger a stack object caused goes on that stack" $ do
+    forest <- S.printingOf s registry "Forest"
+    ankh <- S.printingOf s registry "Ankh of Mishra"
+    sentry <- S.printingOf s registry "Mogg Sentry"
+    growth <- S.printingOf s registry "Rampant Growth"
+    let main = untilPhase Phase.PrecombatMain (melee forest 8)
+        (_, withAnkh) = S.addPermanent ankh (seat 3) main
+        (_, withSentry) = S.addPermanent sentry (seat 3) withAnkh
+        (_, staged) = S.addHandCard growth (seat 4) (S.landsFor forest (seat 4) 2 (holdingTwoWindows (Engine.workOn 2 withSentry)))
+        ((_, cast), castAsked) = State.runState (Engine.runGame chooseLast staged (Engine.priorityDecision LoopTrail.empty)) []
+        resolveTop = Stack.resolveTopWith Engine.playSubgame >> Engine.settleForPriority
+        ((_, resolved), resolveAsked) = State.runState (Engine.runGame chooseLast cast (resolveTop >> resolveTop)) []
+    Spec.assertEqWith s "CR 807.5b Mogg Sentry's trigger is on seat 4's stack, unasked" (castAsked, stackSizes cast) ([], Map.fromList [(1, 0), (2, 2)])
+    Spec.assertEqWith s "a Forest entered" (length (GameState.battlefield resolved) - length (GameState.battlefield cast)) 1
+    Spec.assertEqWith s "CR 807.5b Ankh of Mishra's trigger is on seat 4's stack, unasked" (resolveAsked, stackSizes resolved) ([], Map.fromList [(1, 0), (2, 1)])
 
   -- CR 102.1 / 807.4: seat 4's Gideon Blackblade is a 4/4 creature while
   -- seat 0's turn is worked, seat 4's turn running beside it; seat 2's, whose
@@ -405,13 +441,40 @@ recordAsked p = case p of
   _ -> pure (S.identityAnswer p)
 
 -- Records who is asked Prompt.ChooseTurnMarker and what it offers, and
--- answers the last marker offered; casts as S.castAnswer does.
+-- answers the last marker offered; finds what a search can, and casts as
+-- S.castAnswer does.
 chooseLast :: Prompt.Prompt r -> State.State [(PlayerId, [Natural])] r
 chooseLast p = case p of
   Prompt.ChooseTurnMarker _ pid markers -> do
     State.modify' (<> [(pid, NonEmpty.toList markers)])
     pure (NonEmpty.last markers)
+  Prompt.Search _ _ found most -> pure (List.genericTake most found)
   _ -> pure (S.castAnswer p)
+
+-- How many objects are on each running turn's stack, by marker number.
+stackSizes :: GameState.GameState -> Map.Map Natural Int
+stackSizes gs = Map.insert (Maybe.fromMaybe 0 (Turn.workedMarker gs)) (length (TurnRegisters.stack (GameState.turn gs))) (fmap (length . TurnRegisters.stack) (GameState.parkedTurns gs))
+
+-- Seat 4 holds priority in its worked marker 2's precombat main phase window
+-- and seat 3 in parked marker 1's, where seat 2 has passed.
+holdingTwoWindows :: GameState.GameState -> GameState.GameState
+holdingTwoWindows gs =
+  gs
+    { GameState.turn =
+        (GameState.turn gs)
+          { TurnRegisters.phase = Phase.PrecombatMain,
+            TurnRegisters.priority = Just (PlayerId.MkPlayerId 4),
+            TurnRegisters.turnResume = TurnResume.InWindow
+          },
+      GameState.parkedTurns = Map.adjust holds 1 (GameState.parkedTurns gs)
+    }
+  where
+    holds r =
+      r
+        { TurnRegisters.priority = Just (PlayerId.MkPlayerId 3),
+          TurnRegisters.turnResume = TurnResume.InWindow,
+          TurnRegisters.passed = Set.singleton (PlayerId.MkPlayerId 2)
+        }
 
 -- Records the target menu each Prompt.ChooseTargets offers, every slot's
 -- recipients in one set; everything is answered as S.identityAnswer answers it.

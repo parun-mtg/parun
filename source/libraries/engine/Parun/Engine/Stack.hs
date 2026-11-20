@@ -82,7 +82,8 @@ resolveTopWith :: Game Result -> Game ()
 resolveTopWith runSubgame = do
   top <- State.gets (TurnRegisters.stack . GameState.turn)
   Foldable.for_ (take 1 top) (State.modify' . beginResolutionControl)
-  resolveOneWith runSubgame
+  -- CR 807.5b: what the resolution does, the resolving object caused.
+  Game.byStackObject (resolveOneWith runSubgame)
   State.modify' endResolutionControl
   -- CR 400.11: what a search held out there for a later clause and no clause
   -- brought in stays out there.

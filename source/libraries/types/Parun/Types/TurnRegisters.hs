@@ -60,6 +60,10 @@ data TurnRegisters = MkTurnRegisters
     -- static ability's "this turn" reads whichever turn's question is being
     -- asked (#6538).
     events :: Seq.Seq LoggedEvent.LoggedEvent,
+    -- | CR 807.5b: the groups of `events` an object on this turn's stack
+    -- caused (Parun.Engine.Game.byStackObject), recorded in Grand Melee only;
+    -- cleared with `events`.
+    stackCaused :: Set.Set EventGroup.EventGroup,
     -- | CR 117.5: how far the trigger scan has consumed the event log.
     scannedThrough :: Natural.Natural,
     -- | How far the state-based action check has consumed the event log --

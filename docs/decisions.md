@@ -1892,14 +1892,25 @@ Entries are ordered by the first rule each cites.
 ## Which stack a Grand Melee trigger goes on
 
 - **Question**: CR 807.5b places a trigger only for a controller with
-  priority for several stacks. Which stack does any other trigger go on?
-- **Rules**: CR 603.3, 807.5, 807.5b; CR of 2026-11-06.
-- **Decision**: The stack of the turn in which its event happened.
-- **Rejected**: A fixed marker's, such as the lowest number, which puts a
-  trigger far from the action that caused it.
-- **Site**: `Parun.Engine.Engine.performSettle`, over the worked turn's log.
-  No test reaches it.
-- **Issue**: #6117.
+  priority for several stacks. Who has it at placement, when nobody holds
+  priority (CR 117.5)? Which stack does any other trigger go on?
+- **Rules**: CR 117.4, 117.5, 603.3, 807.5, 807.5b; CR of 2026-11-06.
+- **Decision**: A controller holding priority in another running turn's
+  window chooses between that stack and the worked turn's, unless an object
+  on a stack caused the trigger; a choice of a parked stack restarts its
+  passes. Every other trigger goes on the stack of the turn in which its
+  event happened.
+- **Rejected**: Every stack whose marker or objects are in the controller's
+  range (CR 807.5a), which asks at nearly every trigger and disagrees with
+  the casting choice's "holding priority". Leaving a parked stack's passes
+  standing, which can resolve a trigger some players never saw. A fixed
+  marker's stack, such as the lowest number, which puts a trigger far from
+  the action that caused it.
+- **Site**: `Parun.Engine.Engine.placeChosen`, over the worked turn's log.
+  `Parun.GrandMeleeSpec`'s "CR 807.5b a trigger's controller with priority
+  for several stacks chooses one" and "CR 807.5b a trigger a stack object
+  caused goes on that stack".
+- **Issue**: #6117, #6561.
 
 ## Whether Grand Melee's cleanup and pool emptying reach every turn
 

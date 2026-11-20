@@ -575,6 +575,22 @@ blankHistory =
 overTurn :: (TurnRegisters.TurnRegisters -> TurnRegisters.TurnRegisters) -> GameState -> GameState
 overTurn f gs = gs {GameState.turn = f (GameState.turn gs)}
 
+-- | CR 807.5b: run `body` as the casting, activation, placement or resolution
+-- of an object on the worked turn's stack, noting the groups of the events it
+-- logs there in TurnRegisters.stackCaused. Grand Melee only, the one variant
+-- with several stacks.
+byStackObject :: Game a -> Game a
+byStackObject body = do
+  begun <- State.gets (Seq.length . TurnRegisters.events . GameState.turn)
+  result <- body
+  State.modify' $ \gs ->
+    if GameSettings.grandMelee (MatchScope.settings (GameState.match gs))
+      then
+        let logged = Seq.drop begun (TurnRegisters.events (GameState.turn gs))
+         in overTurn (\t -> t {TurnRegisters.stackCaused = foldr (Set.insert . LoggedEvent.group) (TurnRegisters.stackCaused t) logged}) gs
+      else gs
+  pure result
+
 -- | Rewrite the bookkeeping (GameState.bookkeeping).
 overBookkeeping :: (Bookkeeping.Bookkeeping -> Bookkeeping.Bookkeeping) -> GameState -> GameState
 overBookkeeping f gs = gs {GameState.bookkeeping = f (GameState.bookkeeping gs)}

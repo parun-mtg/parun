@@ -296,6 +296,7 @@ blankGame match order active =
             TurnRegisters.stackedIn = Map.empty,
             TurnRegisters.combat = Combat.emptyCombat,
             TurnRegisters.events = Seq.empty,
+            TurnRegisters.stackCaused = Set.empty,
             TurnRegisters.scannedThrough = 0,
             TurnRegisters.damageScannedThrough = 0,
             TurnRegisters.activePlayer = active,

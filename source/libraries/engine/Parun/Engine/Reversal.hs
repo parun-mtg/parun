@@ -98,6 +98,7 @@ withoutAnnouncement before entry between closed = do
   lastKnown <- mapOf (Snapshots.lastKnown . GameState.snapshots)
   stackArchive <- mapOf (Snapshots.stackArchive . GameState.snapshots)
   scannedThrough <- one (TurnRegisters.scannedThrough . GameState.turn)
+  stackCaused <- setOf (TurnRegisters.stackCaused . GameState.turn)
   battlefieldWhenTriggered <- mapOfMaps (Snapshots.battlefieldWhenTriggered . GameState.snapshots)
   boardAfterEvent <- mapOf (Snapshots.boardAfterEvent . GameState.snapshots)
   boardBeforeEvent <- mapOf (Snapshots.boardBeforeEvent . GameState.snapshots)
@@ -261,6 +262,7 @@ withoutAnnouncement before entry between closed = do
               TurnRegisters.combat = combat,
               TurnRegisters.events = events,
               TurnRegisters.scannedThrough = scannedThrough,
+              TurnRegisters.stackCaused = stackCaused,
               TurnRegisters.damageScannedThrough = damageScannedThrough,
               TurnRegisters.activePlayer = activePlayer,
               TurnRegisters.phase = phase,
