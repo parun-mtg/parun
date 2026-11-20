@@ -61,14 +61,17 @@
                             }
                           },
                           "duration": {
-                            "type": "DuringNextTurnOf",
+                            "type": "DuringNextOf",
                             "value": {
-                              "type": "HolderOfBound",
-                              "value": {
-                                "holder": "Controller",
-                                "hop": "Itself",
-                                "slot": "thatAttacker"
-                              }
+                              "player": {
+                                "type": "HolderOfBound",
+                                "value": {
+                                  "holder": "Controller",
+                                  "hop": "Itself",
+                                  "slot": "thatAttacker"
+                                }
+                              },
+                              "window": "Turn"
                             }
                           }
                         }

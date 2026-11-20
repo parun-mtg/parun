@@ -19,6 +19,8 @@ import qualified Parun.Types.ManaCost as ManaCost
 import qualified Parun.Types.ManaSymbol as ManaSymbol
 import qualified Parun.Types.ManaType as ManaType
 import qualified Parun.Types.NextStepOf as NextStepOf
+import qualified Parun.Types.NextWindow as NextWindow
+import qualified Parun.Types.NextWindowOf as NextWindowOf
 import qualified Parun.Types.Phase as Phase
 import qualified Parun.Types.PlayerRef as PlayerRef
 import qualified Parun.Types.PlayerRelation as PlayerRelation
@@ -85,22 +87,14 @@ spec s = Spec.describe s "Parun.Codec.Duration" $ do
       Duration.codec
       (Duration.UntilEndOfNextTurnOf (PlayerRef.HolderOfBound Holder.Controller Hop.Itself (SlotName.MkSlotName (Text.pack "exiled"))))
       " {\"type\":\"UntilEndOfNextTurnOf\",\"value\":{\"type\":\"HolderOfBound\",\"value\":{\"holder\":\"Controller\",\"hop\":\"Itself\",\"slot\":\"exiled\"}}} "
-  -- CR 611.2a: the WINDOW, carrying the reference its seat is sampled from (Wall
-  -- of Dust's "its controller's next turn").
-  Spec.it s "DuringNextTurnOf carries its reference" $
+  -- CR 611.2a: the WINDOW, carrying its unit and the reference its seat is
+  -- sampled from (Wall of Dust's "its controller's next turn").
+  Spec.it s "DuringNextOf carries its window and reference" $
     Common.assertCodec
       s
       Duration.codec
-      (Duration.DuringNextTurnOf (PlayerRef.HolderOfBound Holder.Controller Hop.Itself (SlotName.MkSlotName (Text.pack "thatAttacker"))))
-      " {\"type\":\"DuringNextTurnOf\",\"value\":{\"type\":\"HolderOfBound\",\"value\":{\"holder\":\"Controller\",\"hop\":\"Itself\",\"slot\":\"thatAttacker\"}}} "
-  -- CR 611.2a / 502.3: the untap step's window (Exhaustion's "their next untap
-  -- step").
-  Spec.it s "DuringNextUntapStepOf carries its reference" $
-    Common.assertCodec
-      s
-      Duration.codec
-      (Duration.DuringNextUntapStepOf (PlayerRef.InSlot (SlotName.MkSlotName (Text.pack "target"))))
-      " {\"type\":\"DuringNextUntapStepOf\",\"value\":{\"type\":\"InSlot\",\"value\":\"target\"}} "
+      (Duration.DuringNextOf (NextWindowOf.MkNextWindowOf NextWindow.Turn (PlayerRef.HolderOfBound Holder.Controller Hop.Itself (SlotName.MkSlotName (Text.pack "thatAttacker")))))
+      " {\"type\":\"DuringNextOf\",\"value\":{\"player\":{\"type\":\"HolderOfBound\",\"value\":{\"holder\":\"Controller\",\"hop\":\"Itself\",\"slot\":\"thatAttacker\"}},\"window\":\"Turn\"}} "
   -- CR 611.2a: the same window against CR 109.5's "you" (Galvanic Relay).
   Spec.it s "DuringYourNextTurn" $
     Common.assertCodec

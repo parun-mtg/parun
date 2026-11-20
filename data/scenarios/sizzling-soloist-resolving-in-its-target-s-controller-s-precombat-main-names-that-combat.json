@@ -1,0 +1,40 @@
+{
+  "description": "Sizzling Soloist's second resolution in its target's controller's precombat main phase makes the target attack in that turn's combat phase, and in no later one (CR 506.1, 508.1d, 611.2a)",
+  "note": "Alice flashes in two Spectral Sailors during bob's turn 1 precombat main phase, both triggers targeting bob's Hill Giant, the only legal target. That turn's combat phase is the Giant's controller's next: declining is refused and the Giant attacks. On bob's turn 3 declining stands, so the window was spent.",
+  "board": {
+    "active": "bob",
+    "step": "PrecombatMain",
+    "seats": [
+      {
+        "name": "alice",
+        "battlefield": [
+          { "card": "Sizzling Soloist", "label": "soloist" },
+          { "card": "Island", "label": "i1" },
+          { "card": "Island", "label": "i2" }
+        ],
+        "hand": [{ "card": "Spectral Sailor", "label": "s1" }, { "card": "Spectral Sailor", "label": "s2" }],
+        "library": [{ "card": "Island" }, { "card": "Island" }]
+      },
+      {
+        "name": "bob",
+        "battlefield": [{ "card": "Hill Giant", "label": "giant", "ready": true }],
+        "library": [{ "card": "Island" }, { "card": "Island" }]
+      }
+    ]
+  },
+  "timeline": [
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "do": { "Cast": { "object": "$s1", "mana": ["$i1", null] } } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "do": "Pass" },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "do": "Pass" },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "do": { "Cast": { "object": "$s2", "mana": ["$i2"] } } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "do": "Pass" },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "do": "Pass" },
+    { "turn": 1, "step": "DeclareAttackers", "player": "bob", "refuse": { "Attack": [] } },
+    { "turn": 1, "step": "DeclareAttackers", "player": "bob", "do": { "Attack": ["$giant"] } },
+    { "turn": 1, "step": "DeclareBlockers", "player": "alice", "do": { "Block": {} } },
+    { "turn": 1, "step": "PostcombatMain", "player": "bob", "check": { "Life": { "player": "alice", "life": 17 } } },
+    { "turn": 2, "step": "DeclareAttackers", "player": "alice", "do": { "Attack": [] } },
+    { "turn": 3, "step": "DeclareAttackers", "player": "bob", "do": { "Attack": [] } },
+    { "turn": 3, "step": "EndStep", "player": "bob", "check": { "Life": { "player": "alice", "life": 17 } } }
+  ]
+}

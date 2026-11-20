@@ -3,6 +3,7 @@ module Parun.Codec.Duration where
 import qualified Parun.Codec.Condition as Condition
 import qualified Parun.Codec.DurationEvent as DurationEvent
 import qualified Parun.Codec.NextStepOf as NextStepOf
+import qualified Parun.Codec.NextWindowOf as NextWindowOf
 import qualified Parun.Codec.PlayerRef as PlayerRef
 import qualified Parun.Codec.SlotName as SlotName
 import qualified Parun.Codec.UntilPaid as UntilPaid
@@ -23,8 +24,7 @@ codec =
       Arm.payload "UntilNextStepOf" NextStepOf.codec Duration.UntilNextStepOf (\x -> case x of Duration.UntilNextStepOf y -> Just y; _ -> Nothing),
       Arm.nullary "UntilEndOfYourNextTurn" Duration.UntilEndOfYourNextTurn,
       Arm.payload "UntilEndOfNextTurnOf" PlayerRef.codec Duration.UntilEndOfNextTurnOf (\x -> case x of Duration.UntilEndOfNextTurnOf y -> Just y; _ -> Nothing),
-      Arm.payload "DuringNextTurnOf" PlayerRef.codec Duration.DuringNextTurnOf (\x -> case x of Duration.DuringNextTurnOf y -> Just y; _ -> Nothing),
-      Arm.payload "DuringNextUntapStepOf" PlayerRef.codec Duration.DuringNextUntapStepOf (\x -> case x of Duration.DuringNextUntapStepOf y -> Just y; _ -> Nothing),
+      Arm.payload "DuringNextOf" NextWindowOf.codec Duration.DuringNextOf (\x -> case x of Duration.DuringNextOf y -> Just y; _ -> Nothing),
       Arm.nullary "DuringYourNextTurn" Duration.DuringYourNextTurn,
       Arm.nullary "DuringThatExtraTurn" Duration.DuringThatExtraTurn,
       Arm.nullary "DuringThatCombatPhase" Duration.DuringThatCombatPhase,
@@ -45,8 +45,7 @@ tagOf x = case x of
   Duration.UntilNextStepOf {} -> "UntilNextStepOf"
   Duration.UntilEndOfYourNextTurn {} -> "UntilEndOfYourNextTurn"
   Duration.UntilEndOfNextTurnOf {} -> "UntilEndOfNextTurnOf"
-  Duration.DuringNextTurnOf {} -> "DuringNextTurnOf"
-  Duration.DuringNextUntapStepOf {} -> "DuringNextUntapStepOf"
+  Duration.DuringNextOf {} -> "DuringNextOf"
   Duration.DuringYourNextTurn {} -> "DuringYourNextTurn"
   Duration.DuringThatExtraTurn {} -> "DuringThatExtraTurn"
   Duration.DuringThatCombatPhase {} -> "DuringThatCombatPhase"

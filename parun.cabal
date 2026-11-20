@@ -1316,6 +1316,10 @@ library codec
     Parun.Codec.NextDamageOutcomeSpec
     Parun.Codec.NextStepOf
     Parun.Codec.NextStepOfSpec
+    Parun.Codec.NextWindow
+    Parun.Codec.NextWindowOf
+    Parun.Codec.NextWindowOfSpec
+    Parun.Codec.NextWindowSpec
     Parun.Codec.Ninjutsu
     Parun.Codec.NinjutsuSpec
     Parun.Codec.NinjutsuVariant
@@ -3563,6 +3567,8 @@ library types
     Parun.Types.NextDamageInstance
     Parun.Types.NextDamageOutcome
     Parun.Types.NextStepOf
+    Parun.Types.NextWindow
+    Parun.Types.NextWindowOf
     Parun.Types.Ninjutsu
     Parun.Types.NinjutsuVariant
     Parun.Types.NoteFold

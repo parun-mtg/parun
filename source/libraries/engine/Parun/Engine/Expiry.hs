@@ -77,6 +77,8 @@ import qualified Parun.Types.Holder as Holder
 import qualified Parun.Types.Hop as Hop
 import qualified Parun.Types.IgnoredAbility as IgnoredAbility
 import qualified Parun.Types.NextStepOf as NextStepOf
+import qualified Parun.Types.NextWindow as NextWindow
+import qualified Parun.Types.NextWindowOf as NextWindowOf
 import qualified Parun.Types.Object as Object
 import Parun.Types.ObjectId (ObjectId)
 import qualified Parun.Types.PaidExpiry as PaidExpiry
@@ -146,12 +148,9 @@ arm resolving targets controller source duration gs = case duration of
   -- (Ajani Vengeant and Elvish Hunter's rulings). data/scenarios'
   -- orcish-farmer-follows-a-land-annexed-before-its-untap-step proves it. A
   -- reference naming nobody stores nothing, the arms below' reason.
-  Duration.UntilNextStepOf next -> case NextStepOf.player next of
-    PlayerRef.HolderOfBound Holder.Controller Hop.Itself slot
-      | Just oid <- Map.lookup slot (Binding.objectsIn targets),
-        Maybe.isJust (Game.lookupObject oid gs) ->
-          Just (Expiry.AtStepOfControllerOf (StepOfControllerOf.MkStepOfControllerOf (NextStepOf.step next) oid))
-    ref -> Expiry.AtStepOf . StepOfSeats.MkStepOfSeats (NextStepOf.step next) <$> seatsOf reading targets controller gs ref
+  Duration.UntilNextStepOf next -> case boundController targets gs (NextStepOf.player next) of
+    Just oid -> Just (Expiry.AtStepOfControllerOf (StepOfControllerOf.MkStepOfControllerOf (NextStepOf.step next) oid))
+    Nothing -> Expiry.AtStepOf . StepOfSeats.MkStepOfSeats (NextStepOf.step next) <$> seatsOf reading targets controller gs (NextStepOf.player next)
   -- CR 611.2a: "until the end of your next turn". Two samples, both taken here
   -- and neither ever rewritten: the controller (CR 109.5's "you", as above) and
   -- the turn this duration began on. endsAt ends it with the first turn of the
@@ -182,20 +181,27 @@ arm resolving targets controller source duration gs = case duration of
   -- seat is read live and pinned once its controller's declare attackers step
   -- has passed (pinAfterDeclareAttackers), so a control change before then
   -- moves the window (CR 611.2a).
-  Duration.DuringNextTurnOf ref -> case ref of
-    PlayerRef.HolderOfBound Holder.Controller Hop.Itself slot
-      | Just oid <- Map.lookup slot (Binding.objectsIn targets),
-        Maybe.isJust (Game.lookupObject oid gs) ->
-          Just (Expiry.DuringTurnOfControllerOf (AfterObjectTurn.MkAfterObjectTurn oid (TurnRegisters.turnNumber (GameState.turn gs))))
-    _ ->
-      fmap
-        (\pid -> Expiry.DuringTurnOf (AfterTurn.MkAfterTurn pid (TurnRegisters.turnNumber (GameState.turn gs))))
-        (seatOf reading targets controller gs ref)
-  -- CR 611.2a / 502.3: the arm above's seat, sampled the same way, with the
-  -- untap step for the window. No turn is sampled: no player receives priority
-  -- during an untap step (CR 502.4), so nothing arms this inside the window it
-  -- names, and the first of that player's untap steps to begin is the next one.
-  Duration.DuringNextUntapStepOf ref -> fmap Expiry.DuringUntapStepOf (seatOf reading targets controller gs ref)
+  Duration.DuringNextOf (NextWindowOf.MkNextWindowOf window ref) -> case window of
+    NextWindow.Turn -> case boundController targets gs ref of
+      Just oid -> Just (Expiry.DuringTurnOfControllerOf (AfterObjectTurn.MkAfterObjectTurn oid (TurnRegisters.turnNumber (GameState.turn gs))))
+      Nothing ->
+        fmap
+          (\pid -> Expiry.DuringTurnOf (AfterTurn.MkAfterTurn pid (TurnRegisters.turnNumber (GameState.turn gs))))
+          (seatOf reading targets controller gs ref)
+    -- CR 502.3: the turn's seat, sampled the same way. No turn is sampled: no
+    -- player receives priority during an untap step (CR 502.4), so nothing arms
+    -- this inside the window it names, and the first of that player's untap
+    -- steps to begin is the next one.
+    NextWindow.UntapStep -> fmap Expiry.DuringUntapStepOf (seatOf reading targets controller gs ref)
+    -- CR 506.1: the bound object's controller, read live (docs/decisions.md,
+    -- "Whose combat phase its controller's next combat phase is after a control
+    -- change"), with no turn sampled: reachCombatPhase pins the row as a combat
+    -- phase BEGINS, so one under way as this arms is not its next.
+    --
+    -- Unprinted: a combat-phase window counted against a seat would need an
+    -- expiry naming one. Parun.EffectLintSpec's "no card counts a combat-phase
+    -- window against a seat" keeps it out of card data, so this arms nothing.
+    NextWindow.CombatPhase -> fmap Expiry.DuringCombatPhaseOfControllerOf (boundController targets gs ref)
   -- CR 611.2a: the arm above's window with the seat taken from CR 109.5's "you",
   -- as UntilNextTurnOf's Relative You takes it. Never Nothing -- a controller is
   -- always a seat, so this window always begins.
@@ -278,8 +284,18 @@ arm resolving targets controller source duration gs = case duration of
   where
     reading = Game.readingAcquisition resolving source gs
 
+-- CR 611.2a: the object whose controller "its controller's next ..." names, a
+-- bound object still in the game; Nothing for every other reference.
+boundController :: Map.Map SlotName (Set.Set Recipient) -> GameState -> PlayerRef.PlayerRef -> Maybe ObjectId
+boundController targets gs ref = case ref of
+  PlayerRef.HolderOfBound Holder.Controller Hop.Itself slot
+    | Just oid <- Map.lookup slot (Binding.objectsIn targets),
+      Maybe.isJust (Game.lookupObject oid gs) ->
+        Just oid
+  _ -> Nothing
+
 -- The ONE seat a Duration.UntilNextTurnOf, UntilEndOfNextTurnOf or
--- DuringNextTurnOf reference names, sampled as the window begins. One stored row
+-- DuringNextOf reference names, sampled as the window begins. One stored row
 -- names one turn, so a reference naming several seats arms nothing; no printing
 -- states such a window (Scryfall o:"each opponent's next turn", o:"opponents'
 -- next turns", 2026-09-25, no hit).
@@ -321,10 +337,8 @@ perSeat :: Duration -> Maybe (PlayerId -> Duration)
 perSeat duration = case duration of
   Duration.UntilEndOfNextTurnOf PlayerRef.Candidate -> Just (Duration.UntilEndOfNextTurnOf . PlayerRef.Specific)
   Duration.UntilEndOfNextTurnOf _ -> Nothing
-  Duration.DuringNextTurnOf PlayerRef.Candidate -> Just (Duration.DuringNextTurnOf . PlayerRef.Specific)
-  Duration.DuringNextTurnOf _ -> Nothing
-  Duration.DuringNextUntapStepOf PlayerRef.Candidate -> Just (Duration.DuringNextUntapStepOf . PlayerRef.Specific)
-  Duration.DuringNextUntapStepOf _ -> Nothing
+  Duration.DuringNextOf (NextWindowOf.MkNextWindowOf window PlayerRef.Candidate) -> Just (Duration.DuringNextOf . NextWindowOf.MkNextWindowOf window . PlayerRef.Specific)
+  Duration.DuringNextOf _ -> Nothing
   Duration.UntilEndOfTurn -> Nothing
   Duration.Indefinite -> Nothing
   Duration.Perpetual -> Nothing
@@ -354,10 +368,10 @@ follows :: Expiry -> Bool
 follows = (== Expiry.Perpetual)
 
 -- CR 611.2a: has this duration's window BEGUN? Every arm but DuringTurnOf,
--- DuringUntapStepOf, DuringExtraTurn and DuringAddedCombatPhase states only an
--- end, so the answer for them is True from the moment the effect is stored and
--- a sweep is the whole of their life cycle. Those four name a turn, step or
--- phase that has not started yet, and a reader that asks only whether the row
+-- DuringUntapStepOf, DuringExtraTurn and the two combat-phase windows states
+-- only an end, so the answer for them is True from the moment the effect is
+-- stored and a sweep is the whole of their life cycle. Those five name a turn,
+-- step or phase that has not started yet, and a reader that asks only whether the row
 -- was swept applies it early.
 --
 -- The reading is dropAtCleanup's, one turn shifted: the window is the first turn
@@ -385,6 +399,7 @@ begun gs expiry = case expiry of
   -- CR 500.8: never open under this arm. reachCombatPhase rewrites the row to
   -- AtEndOf as the phase it names begins, and that arm is the open one.
   Expiry.DuringAddedCombatPhase _ -> False
+  Expiry.DuringCombatPhaseOfControllerOf _ -> False
   Expiry.AtCleanup -> True
   Expiry.Never -> True
   Expiry.Perpetual -> True
@@ -519,6 +534,10 @@ endsAt gs moment source expiry = case expiry of
   -- reached, so only a row whose phase the turn never reached (CR 725.1d) is
   -- left for the cleanup. Hygiene: `begun` never applies the row.
   Expiry.DuringAddedCombatPhase _ -> moment == Cleanup
+  -- CR 506.1: reachCombatPhase pins it as its phase begins, and nothing ends
+  -- it before then. Hygiene: dropped once its object is gone,
+  -- DuringTurnOfControllerOf's reason.
+  Expiry.DuringCombatPhaseOfControllerOf oid -> moment == Cleanup && Maybe.isNothing (Game.lookupObject oid gs)
   -- CR 500.5a: EQUALITY on the selector -- dropAtEndOf says why.
   Expiry.AtEndOf window -> moment == EndOf window
   -- CR 500.5 / 500.5a: the first combat phase of that turn to end ends it, so an
@@ -790,6 +809,14 @@ pinAfterDeclareAttackers gs =
 -- proves the pin, and
 -- cr-500-8-a-skipped-added-combat-phase-takes-bumi-unleashed-s-restriction-with-it.json
 -- the skip.
+--
+-- A "during its controller's next combat phase" row is pinned the same way
+-- where the phase begins on a turn of its object's controller now (CR 702.26d
+-- keeps a phased-out object waiting, windowReached's guard), and waits where
+-- the phase is skipped: CR 500.11 passes it "as though it didn't exist".
+-- data/scenarios' sizzling-soloist-s-second-resolution-makes-its-target-attack-in-the-next-combat
+-- and sizzling-soloist-s-requirement-follows-its-target-to-a-new-controller
+-- prove the pin.
 reachCombatPhase :: Bool -> GameState -> GameState
 reachCombatPhase begins gs =
   let behind = Turn.combatPhasesIn (TurnRegisters.remaining (GameState.turn gs))
@@ -798,6 +825,12 @@ reachCombatPhase begins gs =
           | named < behind -> Just expiry
           | named == behind && begins -> Just (Expiry.AtEndOf PhaseSelector.CombatPhase)
           | otherwise -> Nothing
+        Expiry.DuringCombatPhaseOfControllerOf oid
+          | begins,
+            Set.member oid (GameState.battlefield gs),
+            maybe False (Turn.isActive gs) (View.controllerOf oid gs) ->
+              Just (Expiry.AtEndOf PhaseSelector.CombatPhase)
+          | otherwise -> Just expiry
         _ -> Just expiry
    in editExpiries reach gs
 

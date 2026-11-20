@@ -152,6 +152,12 @@ spec s = Spec.describe s "Parun.Codec.Expiry" $ do
       (Expiry.DuringExtraTurn (Timestamp.MkTimestamp 12))
       " {\"type\":\"DuringExtraTurn\",\"value\":12} "
   -- CR 500.8: how many combat phases the schedule holds behind the one named.
+  Spec.it s "DuringCombatPhaseOfControllerOf carries its object" $
+    Common.assertCodec
+      s
+      Expiry.codec
+      (Expiry.DuringCombatPhaseOfControllerOf (ObjectId.MkObjectId 5))
+      " {\"type\":\"DuringCombatPhaseOfControllerOf\",\"value\":5} "
   Spec.it s "DuringAddedCombatPhase carries the count of combat phases behind it" $
     Common.assertCodec
       s

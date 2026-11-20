@@ -79,10 +79,13 @@
                         }
                       },
                       "duration": {
-                        "type": "DuringNextUntapStepOf",
+                        "type": "DuringNextOf",
                         "value": {
-                          "type": "InSlot",
-                          "value": "target"
+                          "player": {
+                            "type": "InSlot",
+                            "value": "target"
+                          },
+                          "window": "UntapStep"
                         }
                       },
                       "what": {

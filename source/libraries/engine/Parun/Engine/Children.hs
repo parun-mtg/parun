@@ -352,6 +352,7 @@ import qualified Parun.Types.MovedKinds as MovedKinds
 import qualified Parun.Types.NewX as NewX
 import qualified Parun.Types.NextDamageInstance as NextDamageInstance
 import qualified Parun.Types.NextStepOf as NextStepOf
+import qualified Parun.Types.NextWindowOf as NextWindowOf
 import qualified Parun.Types.Ninjutsu as Ninjutsu
 import qualified Parun.Types.ObjectCount as ObjectCount
 import qualified Parun.Types.ObjectDamage as ObjectDamage
@@ -2790,8 +2791,7 @@ durationChildren c duration = case duration of
   Duration.UntilNextStepOf (NextStepOf.MkNextStepOf step whose) -> fmap Duration.UntilNextStepOf (NextStepOf.MkNextStepOf step <$> durationPlayer c whose)
   Duration.UntilEndOfYourNextTurn -> pure duration
   Duration.UntilEndOfNextTurnOf whose -> Duration.UntilEndOfNextTurnOf <$> durationPlayer c whose
-  Duration.DuringNextTurnOf whose -> Duration.DuringNextTurnOf <$> durationPlayer c whose
-  Duration.DuringNextUntapStepOf whose -> Duration.DuringNextUntapStepOf <$> durationPlayer c whose
+  Duration.DuringNextOf (NextWindowOf.MkNextWindowOf window whose) -> fmap Duration.DuringNextOf (NextWindowOf.MkNextWindowOf window <$> durationPlayer c whose)
   Duration.DuringYourNextTurn -> pure duration
   Duration.DuringThatExtraTurn -> pure duration
   Duration.DuringThatCombatPhase -> pure duration
@@ -3399,6 +3399,7 @@ expiryChildren c expiry = case expiry of
   Expiry.DuringUntapStepOf _whose -> pure expiry
   Expiry.DuringTurnOfControllerOf (AfterObjectTurn.MkAfterObjectTurn whose turn) -> fmap Expiry.DuringTurnOfControllerOf (AfterObjectTurn.MkAfterObjectTurn <$> storedObject c whose <*> pure turn)
   Expiry.DuringExtraTurn _timestamp -> pure expiry
+  Expiry.DuringCombatPhaseOfControllerOf whose -> Expiry.DuringCombatPhaseOfControllerOf <$> storedObject c whose
   Expiry.DuringAddedCombatPhase _behind -> pure expiry
   Expiry.AtEndOf _phaseSelector -> pure expiry
   Expiry.AtEndOfCombatOn _afterTurn -> pure expiry
