@@ -89,6 +89,17 @@
   "timeline": [
     {
       "turn": 2,
+      "step": "DrawStep",
+      "player": "carol",
+      "do": {
+        "Answer": {
+          "prompt": "ChooseActivePlayer",
+          "with": "carol"
+        }
+      }
+    },
+    {
+      "turn": 2,
       "step": "PrecombatMain",
       "player": "carol",
       "check": {

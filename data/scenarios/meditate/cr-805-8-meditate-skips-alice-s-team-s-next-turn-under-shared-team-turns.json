@@ -174,6 +174,28 @@
   "note": "CR 805.8: a player's skip is their team's. The walk past the skipped seat also passes alice's teammate, who shares that turn (CR 805.4).",
   "timeline": [
     {
+      "turn": 3,
+      "step": "DrawStep",
+      "player": "bob",
+      "do": {
+        "Answer": {
+          "prompt": "ChooseActivePlayer",
+          "with": "bob"
+        }
+      }
+    },
+    {
+      "turn": 2,
+      "step": "DrawStep",
+      "player": "bob",
+      "do": {
+        "Answer": {
+          "prompt": "ChooseActivePlayer",
+          "with": "bob"
+        }
+      }
+    },
+    {
       "do": {
         "Cast": {
           "mana": [

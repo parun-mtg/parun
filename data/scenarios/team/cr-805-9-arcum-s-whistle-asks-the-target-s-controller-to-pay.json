@@ -37,6 +37,7 @@
     ]
   },
   "timeline": [
+    {"turn": 1, "step": "DrawStep", "player": "alice", "do": {"Answer": {"prompt": "ChooseActivePlayer", "with": "alice"}}},
     { "turn": 1, "step": "Upkeep", "player": "carol", "do": { "Activate": { "object": "$whistle", "ability": 0, "mana": ["$i1", "$i2", "$i3"] } } },
     { "turn": 1, "step": "Upkeep", "player": "bob", "source": "$whistle", "do": { "ChooseToPay": { "decision": "Declines" } } },
     { "turn": 1, "step": "DeclareAttackers", "player": "alice", "refuse": { "Attack": [] } },

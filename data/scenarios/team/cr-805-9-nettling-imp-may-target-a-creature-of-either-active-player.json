@@ -23,6 +23,7 @@
     ]
   },
   "timeline": [
+    {"turn": 1, "step": "DrawStep", "player": "alice", "do": {"Answer": {"prompt": "ChooseActivePlayer", "with": "alice"}}},
     { "turn": 1, "step": "Upkeep", "player": "carol", "do": { "Activate": { "object": "$imp", "ability": 0 } } },
     { "turn": 1, "step": "DeclareAttackers", "player": "alice", "refuse": { "Attack": [] } },
     { "turn": 1, "step": "DeclareAttackers", "player": "alice", "do": { "Attack": ["$piker"] } },

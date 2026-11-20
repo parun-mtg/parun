@@ -104,6 +104,17 @@
   "note": "The same board with no Mindslaver activation: only alice and bob see their hands, alice declares her own attack and her Goblin Piker deals carol 2.",
   "timeline": [
     {
+      "turn": 2,
+      "step": "DrawStep",
+      "player": "alice",
+      "do": {
+        "Answer": {
+          "prompt": "ChooseActivePlayer",
+          "with": "alice"
+        }
+      }
+    },
+    {
       "check": {
         "View": {
           "is": [

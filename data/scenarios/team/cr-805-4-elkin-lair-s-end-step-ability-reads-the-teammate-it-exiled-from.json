@@ -13,6 +13,7 @@
     ]
   },
   "timeline": [
+    {"turn": 1, "step": "DrawStep", "player": "alice", "do": {"Answer": {"prompt": "ChooseActivePlayer", "with": "alice"}}},
     {"turn": 1, "step": "Upkeep", "player": "carol", "do": {"OrderTriggers": ["$lair", "$lair"]}},
     {"turn": 1, "step": "PrecombatMain", "player": "bob", "check": {"View": {"of": "Zone", "player": "bob", "zone": "Exile", "is": ["Mountain"]}}},
     {"turn": 1, "step": "PrecombatMain", "player": "bob", "do": {"PlayLand": "Mountain"}},

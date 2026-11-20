@@ -104,6 +104,17 @@
   "note": "Under shared team turns, controlling a player controls their team (CR 805.8). Carol activates Mindslaver at bob on her own turn, so on alice's team's next turn carol sees both alice's and bob's hands (CR 724.4) and decides alice's attack too, declaring nothing: no Goblin Piker hits her. The control activates nothing; alice sees only her own hand and her Piker attacks carol for 2.",
   "timeline": [
     {
+      "turn": 2,
+      "step": "DrawStep",
+      "player": "carol",
+      "do": {
+        "Answer": {
+          "prompt": "ChooseActivePlayer",
+          "with": "alice"
+        }
+      }
+    },
+    {
       "do": {
         "Activate": {
           "ability": 0,

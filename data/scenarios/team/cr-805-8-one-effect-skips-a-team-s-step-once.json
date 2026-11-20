@@ -142,6 +142,39 @@
   "note": "Brine Elemental: \"When this creature is turned face up, each opponent skips their next untap step.\" Under shared team turns ONE effect skipping two players on a team skips that team's step once (CR 805.8). Carol turns Brine Elemental face up, so alice and bob each skip their next untap step: their team's next untap step is skipped, leaving both tapped Goblin Pikers tapped, and the one after untaps both.",
   "timeline": [
     {
+      "turn": 4,
+      "step": "DrawStep",
+      "player": "alice",
+      "do": {
+        "Answer": {
+          "prompt": "ChooseActivePlayer",
+          "with": "alice"
+        }
+      }
+    },
+    {
+      "turn": 3,
+      "step": "DrawStep",
+      "player": "carol",
+      "do": {
+        "Answer": {
+          "prompt": "ChooseActivePlayer",
+          "with": "carol"
+        }
+      }
+    },
+    {
+      "turn": 2,
+      "step": "DrawStep",
+      "player": "alice",
+      "do": {
+        "Answer": {
+          "prompt": "ChooseActivePlayer",
+          "with": "alice"
+        }
+      }
+    },
+    {
       "do": {
         "Cast": {
           "faceDown": true,

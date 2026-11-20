@@ -83,6 +83,17 @@
   },
   "timeline": [
     {
+      "turn": 2,
+      "step": "DrawStep",
+      "player": "carol",
+      "do": {
+        "Answer": {
+          "prompt": "ChooseActivePlayer",
+          "with": "carol"
+        }
+      }
+    },
+    {
       "turn": 1,
       "step": "EndStep",
       "player": "alice",

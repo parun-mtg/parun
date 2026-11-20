@@ -54,6 +54,8 @@
     "sharedTeamTurns": true
   },
   "timeline": [
+    {"turn": 3, "step": "DrawStep", "player": "alice", "do": {"Answer": {"prompt": "ChooseActivePlayer", "with": "alice"}}},
+    {"turn": 2, "step": "DrawStep", "player": "carol", "do": {"Answer": {"prompt": "ChooseActivePlayer", "with": "carol"}}},
     { "turn": 3, "step": "Upkeep", "player": "alice", "check": { "Count": { "player": "alice", "zone": "Hand", "card": "Island", "count": 0 } } },
     { "turn": 3, "step": "Upkeep", "player": "alice", "check": { "Count": { "player": "bob", "zone": "Hand", "card": "Island", "count": 0 } } },
     { "turn": 3, "step": "PrecombatMain", "player": "alice", "check": { "Count": { "player": "alice", "zone": "Hand", "card": "Island", "count": 1 } } },
