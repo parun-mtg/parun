@@ -1,0 +1,76 @@
+{
+  "faces": [
+    {
+      "costReductions": [
+        {
+          "amount": [
+            {
+              "type": "Generic",
+              "value": 1
+            }
+          ],
+          "perEach": {
+            "type": "Plus",
+            "value": {
+              "left": {
+                "type": "StartingLifeTotal",
+                "value": {
+                  "type": "Relative",
+                  "value": "You"
+                }
+              },
+              "right": {
+                "type": "Negate",
+                "value": {
+                  "type": "LifeTotal",
+                  "value": {
+                    "type": "Relative",
+                    "value": "You"
+                  }
+                }
+              }
+            }
+          }
+        }
+      ],
+      "manaCost": [
+        {
+          "type": "Generic",
+          "value": 13
+        },
+        {
+          "type": "OfType",
+          "value": {
+            "type": "Colored",
+            "value": "Black"
+          }
+        },
+        {
+          "type": "OfType",
+          "value": {
+            "type": "Colored",
+            "value": "Black"
+          }
+        }
+      ],
+      "name": "Shadow of Mortality",
+      "oracleText": "If your life total is less than your starting life total, this spell costs {X} less to cast, where X is the difference.",
+      "power": {
+        "type": "Literal",
+        "value": 7
+      },
+      "toughness": {
+        "type": "Literal",
+        "value": 7
+      },
+      "typeLine": {
+        "subtypes": [
+          "Avatar"
+        ],
+        "types": [
+          "Creature"
+        ]
+      }
+    }
+  ]
+}

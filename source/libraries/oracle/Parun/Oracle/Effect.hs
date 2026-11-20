@@ -25,6 +25,7 @@ import qualified Parun.Types.AgainstSlot as AgainstSlot
 import qualified Parun.Types.Amass as Amass
 import qualified Parun.Types.AmassKind as AmassKind
 import qualified Parun.Types.Card as Card
+import qualified Parun.Types.CardType as CardType
 import qualified Parun.Types.ChooseBetween as ChooseBetween
 import qualified Parun.Types.ChooseInstead as ChooseInstead
 import qualified Parun.Types.ChoosePawprints as ChoosePawprints
@@ -718,7 +719,10 @@ modified context m more = do
   -- Objects a change to power and toughness reaches again get "an
   -- additional" one: "That creature gets an additional +4/+4" (Wild Might).
   -- Free for some of the objects an earlier change reached: "Creatures that
-  -- are green and/or white get an additional -2/-2" (Glistening Deluge).
+  -- are green and/or white get an additional -2/-2" (Glistening Deluge), or
+  -- "Citizens you control get an additional +1/+1" after "Creatures you
+  -- control get" (Take to the Streets), a pump reaching only creatures (CR
+  -- 208.3).
   let pumping = case ModifyTarget.modification m of
         Modification.ModifyPowerToughness _ -> True
         _ -> False
@@ -726,7 +730,7 @@ modified context m more = do
       narrower = case ModifyTarget.ref m of
         ObjectRef.EachMatching f ->
           let within r = case r of
-                ObjectRef.EachMatching g -> g /= f && all (`elem` conjuncts f) (conjuncts g)
+                ObjectRef.EachMatching g -> g /= f && all (`elem` (Filter.Type.HasCardType CardType.Creature : conjuncts f)) (conjuncts g)
                 _ -> False
            in pumping && any within (Target.pumped context)
         _ -> False
