@@ -215,7 +215,10 @@ returnDue settle = do
 -- too, so what it puts onto the battlefield is linked to that source
 -- (Filter.EnteredWithSource) -- Lagrella, the Magpie's "this way", which
 -- data/scenarios/trigger/lagrella-the-magpie-counters-only-what-returns-under-your-control.json
--- proves.
+-- proves. Each batch member gets its own watch's link: Lagrella's
+-- dying-beside-banisher-priest scenario proves the alignment.
+--
+-- The row is written whether or not anything can read it (gap #8997).
 linkArrival :: GameState -> (EntryLink.EntryLink, Seq.Seq ObjectId) -> GameState
 linkArrival gs (link, arrivals) =
   Foldable.foldl'
