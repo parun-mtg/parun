@@ -98,6 +98,7 @@ import qualified Parun.Types.Hybrid as Hybrid
 import qualified Parun.Types.Keyword as Keyword
 import qualified Parun.Types.Label as Label
 import qualified Parun.Types.Mana as Mana.Type
+import qualified Parun.Types.ManaActivation as ManaActivation
 import qualified Parun.Types.ManaCost as ManaCost
 import qualified Parun.Types.ManaRetention as ManaRetention
 import qualified Parun.Types.ManaSpending as ManaSpending
@@ -2941,6 +2942,7 @@ spec s registry = Spec.describe s "Parun.Engine.Cost" $ do
   convokeWindowSpec s registry
   assistSpec s registry
   partialReversalSpec s registry
+  groupedActivationSpec s
   treasureCruiseSpec s registry
   geyserLeaperSpec s registry
   kataraSpec s registry
@@ -5345,6 +5347,28 @@ delveBoard island piker card islands fuel =
 -- CR 702.66a's one clause, and the cheapest printing that states delve and
 -- nothing else. The graveyard holds one card MORE than the cost can spend, so
 -- Prompt.ChooseExilesFromGraveyard is a real choice rather than a forced one.
+groupedActivationSpec :: (Monad m, Monad n) => Spec.Spec m n -> n ()
+groupedActivationSpec s = Spec.describe s "Grouped mana activations" $ do
+  let unit t = ManaUnit.MkManaUnit {ManaUnit.manaType = t, ManaUnit.tags = Set.empty, ManaUnit.retention = ManaRetention.Ordinary, ManaUnit.restriction = Nothing, ManaUnit.rider = Nothing, ManaUnit.spendTrigger = Nothing, ManaUnit.sourceChoices = Nothing, ManaUnit.sourceLastExiled = Nothing, ManaUnit.producer = Nothing}
+      green = unit (ManaType.Colored Color.Green)
+      red = unit (ManaType.Colored Color.Red)
+      blue = unit (ManaType.Colored Color.Blue)
+      activation oid spent added = ManaActivation.MkManaActivation {ManaActivation.sources = ObjectId.MkObjectId oid NonEmpty.:| [], ManaActivation.spent = spent, ManaActivation.added = added, ManaActivation.reversible = True}
+      -- Llanowar Elves' {G} pays Skyshroud Elf's {1}, which adds {R}.
+      elves = activation 1 [] [green]
+      skyshroud = activation 2 [green] [red]
+      -- A third spends {U} from the pool the window opened on.
+      outside = activation 3 [blue] [green]
+      members = elves NonEmpty.:| [skyshroud, outside]
+  Spec.it s "CR 734.1 a group whose member spent another member's mana replays as its members do" $ do
+    Spec.assertEqWith s "the members in order replay" (Cost.replayActivations [blue] (NonEmpty.toList members)) (Just [red, green])
+    Spec.assertEqWith s "and so does the group" (Cost.replayActivations [blue] [Cost.groupActivations members]) (Just [red, green])
+  Spec.it s "CR 734.1 a group spends only what its members took from outside it" $ do
+    let grouped = Cost.groupActivations members
+    Spec.assertEqWith s "the {U} alone" (ManaActivation.spent grouped) [blue]
+    Spec.assertEqWith s "the {R} and the third's {G} are left" (ManaActivation.added grouped) [red, green]
+    Spec.assertEqWith s "without the {U} the group does not replay" (Cost.replayActivations [] [grouped]) Nothing
+
 treasureCruiseSpec :: (Monad m) => Spec.Spec m n -> Registry.Registry m -> n ()
 treasureCruiseSpec s registry = Spec.describe s "Treasure Cruise" $ do
   -- The pair, varying the ISLAND and nothing else: same graveyard, same hand,
