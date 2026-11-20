@@ -7,6 +7,7 @@ module Parun.Browser.Replay where
 
 import Control.Applicative ((<|>))
 import qualified Control.Exception as Exception
+import qualified Control.Monad as Monad
 import qualified Data.ByteString as ByteString
 import qualified Data.Functor.Identity as Identity
 import qualified Data.IORef as IORef
@@ -66,6 +67,7 @@ start named = do
 -- | The list of scenarios, filtered as typed.
 choose :: Browser.Page Web.Replay.Event -> IO ()
 choose page = do
+  scenarios page []
   root <- Load.defaultRoot
   paths <- Load.listRoot root
   themes <- Load.manifestPath >>= fmap Load.parseManifest . ByteString.readFile
@@ -75,6 +77,13 @@ choose page = do
         (event, value) <- Browser.next page
         go (if event == Web.Replay.MkSearch then value else typed)
   go Text.empty
+
+-- | Waits for the scenarios, asked for first, and these other chunks.
+scenarios :: Browser.Page msg -> [String] -> IO ()
+scenarios page others = do
+  Browser.want (Text.pack "scenarios")
+  failed <- Browser.untilArrived page (fmap Text.pack ("scenarios" : others))
+  Monad.unless (null failed) . Exception.throwIO . userError $ "The data did not load: " <> Text.unpack (Text.intercalate (Text.pack ", ") failed)
 
 -- | A path's name beneath the root, less its extension.
 nameOf :: FilePath -> FilePath -> Text.Text
@@ -119,6 +128,7 @@ replay page name =
 -- (parun_at), handed on; else why the scenario does not decode, shown.
 opening :: Browser.Page msg -> Text.Text -> (Scenario.Type.Scenario -> Registry.Registry Identity.Identity -> Maybe Natural -> IO ()) -> IO ()
 opening page name continue = do
+  scenarios page ["cards-0", "cards-1", "cards-2", "cards-3", "rules"]
   root <- Load.defaultRoot
   (_, decoded) <- Load.loadFile (root <> "/" <> Text.unpack name <> ".json")
   case decoded of
@@ -126,7 +136,7 @@ opening page name continue = do
     Right scenario -> do
       Browser.display page $ message ["Loading the cards\x2026"]
       cardRoot <- Registry.defaultRoot
-      loaded <- fmap (Registry.loadBundle cardRoot) $ Registry.bundlePath >>= ByteString.readFile
+      loaded <- fmap (Registry.loadBundles cardRoot) $ Registry.bundlePaths >>= traverse ByteString.readFile
       registry <- Registry.defaultRegistry loaded
       given <- (>>= Read.readMaybe) <$> Environment.lookupEnv "parun_at"
       continue scenario registry given

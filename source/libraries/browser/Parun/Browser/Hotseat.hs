@@ -69,8 +69,10 @@ start = do
 
 play :: Browser.Page (Either Lobby.Event Web.Question.Event) -> IO ()
 play page = do
+  failed <- Browser.untilArrived page (fmap Text.pack ["decks", "cards-0", "cards-1", "cards-2", "cards-3", "rules"])
+  Monad.unless (null failed) . Exception.throwIO . userError $ "The data did not load: " <> Text.unpack (Text.intercalate (Text.pack ", ") failed)
   root <- Registry.defaultRoot
-  loaded <- fmap (Registry.loadBundle root) $ Registry.bundlePath >>= ByteString.readFile
+  loaded <- fmap (Registry.loadBundles root) $ Registry.bundlePaths >>= traverse ByteString.readFile
   deckRoot <- Decks.defaultRoot
   paths <- Decks.listRoot deckRoot
   -- A set's whole card list is no deck to play.

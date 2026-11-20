@@ -5,8 +5,11 @@
 module Parun.Browser where
 
 import qualified Control.Exception as Exception
+import qualified Control.Monad as Monad
+import qualified Data.Foldable as Foldable
 import qualified Data.IORef as IORef
 import qualified Data.Sequence as Seq
+import qualified Data.Set as Set
 import qualified Data.Text as Text
 import qualified Parun.Trustworthy.Wasm as Prim
 import qualified Parun.Web.Diff as Diff
@@ -14,17 +17,31 @@ import qualified Parun.Web.Html as Html
 import qualified Parun.Web.Patch as Patch
 import qualified Parun.Web.Wire as Wire
 
--- | The view the page shows, and the events its handlers took that no one
--- has waited for yet, each with the value of the element it came from.
+-- | The view the page shows, the events its handlers took that no one
+-- has waited for yet, each with the value of the element it came from, and
+-- the data chunks that arrived since last read.
 data Page msg = MkPage
   { shown :: IORef.IORef (Maybe (Html.Html msg)),
-    taken :: IORef.IORef (Seq.Seq (msg, Text.Text))
+    taken :: IORef.IORef (Seq.Seq (msg, Text.Text)),
+    arrived :: IORef.IORef (Seq.Seq Arrival)
   }
+
+-- | A chunk of the data directory (engine.js) merged into it, or failed:
+-- "decks", "cards-0" to "cards-3", "rules" or "scenarios".
+data Arrival
+  = MkArrived Text.Text
+  | MkFailed Text.Text
+  deriving (Eq, Show)
+
+-- | What woke the page's loop: a tap, or a chunk.
+data Input msg
+  = MkTap msg Text.Text
+  | MkArrival Arrival
 
 -- | A page showing nothing yet, its events listened for.
 mount :: IO (Page msg)
 mount = do
-  page <- MkPage <$> IORef.newIORef Nothing <*> IORef.newIORef Seq.empty
+  page <- MkPage <$> IORef.newIORef Nothing <*> IORef.newIORef Seq.empty <*> IORef.newIORef Seq.empty
   listen =<< wrap (dispatch page)
   pure page
 
@@ -44,6 +61,49 @@ next page = do
     event Seq.:< rest -> (rest, Just event)
     Seq.EmptyL -> (events, Nothing)
   maybe (wait >> next page) pure queued
+
+-- | The next chunk arrived, else the next tap, waiting for either.
+nextInput :: Page msg -> IO (Input msg)
+nextInput page = do
+  collect page
+  chunk <- IORef.atomicModifyIORef' (arrived page) $ \chunks -> case Seq.viewl chunks of
+    c Seq.:< rest -> (rest, Just c)
+    Seq.EmptyL -> (chunks, Nothing)
+  case chunk of
+    Just c -> pure (MkArrival c)
+    Nothing -> do
+      queued <- pending page
+      if queued then fmap (uncurry MkTap) (next page) else wait >> nextInput page
+
+-- | Waits until every chunk named has arrived (or failed), leaving taps
+-- queued; the names of those that failed.
+untilArrived :: Page msg -> [Text.Text] -> IO [Text.Text]
+untilArrived page names = go (Set.fromList names) []
+  where
+    go left failed
+      | Set.null left = pure (reverse failed)
+      | otherwise = do
+          collect page
+          chunks <- IORef.atomicModifyIORef' (arrived page) $ \cs -> (Seq.empty, cs)
+          let name a = case a of
+                MkArrived n -> n
+                MkFailed n -> n
+              failures = [n | MkFailed n <- Foldable.toList chunks]
+              left' = foldr (Set.delete . name) left chunks
+          if Seq.null chunks then wait >> go left failed else go left' (reverse failures <> failed)
+
+-- | Asks the worker to fetch this chunk next (engine.js), the scenarios
+-- only once asked for.
+want :: Text.Text -> IO ()
+want = wantChunk . Prim.toJSString . Text.unpack
+
+-- | Moves the chunks the worker named since last asked onto the page's own
+-- queue.
+collect :: Page msg -> IO ()
+collect page = do
+  names <- fmap (Text.lines . Text.pack . Prim.fromJSString) takeArrivals
+  let arrival n = maybe (MkArrived n) MkFailed (Text.stripPrefix (Text.pack "!") n)
+  Monad.unless (null names) . IORef.atomicModifyIORef' (arrived page) $ \cs -> (cs <> Seq.fromList (fmap arrival names), ())
 
 -- | Whether an event taken waits to be read.
 pending :: Page msg -> IO Bool
@@ -88,3 +148,9 @@ foreign import javascript safe "await new Promise((resolve) => setTimeout(resolv
 
 foreign import javascript unsafe "globalThis.parunWake?.()"
   wake :: IO ()
+
+foreign import javascript unsafe "globalThis.parunTakeArrivals()"
+  takeArrivals :: IO Prim.JSString
+
+foreign import javascript unsafe "globalThis.parunWant($1)"
+  wantChunk :: Prim.JSString -> IO ()

@@ -16,10 +16,9 @@ if (!isSecureContext) document.getElementById("insecure").hidden = false;
 // Once fetched, the engine is kept for later visits (sw.js).
 if ("serviceWorker" in navigator && isSecureContext) navigator.serviceWorker.register("./sw.js").catch((problem) => console.warn(problem));
 
-// The engine's load phases go to the console, and what loads next to the
-// loading screen. What the loading screen says comes next, after each phase engine.js
-// reports; a failure is said as it is.
-const nextPhase = { fetched: "Unpacking the cards", unpacked: "Compiling the engine", compiled: "Reading the cards" };
+// The engine's load phases go to the console, and the loading screen says
+// what comes after each (engine.js); a failure is said as it is.
+const nextPhase = { compiled: "Fetching the cards", decks: "Fetching the cards", "cards-0": "Fetching the cards", "cards-1": "Fetching the cards", "cards-2": "Fetching the cards", "cards-3": "Fetching the rules", rules: "Reading the cards" };
 function note(line) {
   console.log(line);
   const phase = document.getElementById("phase");

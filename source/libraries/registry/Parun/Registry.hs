@@ -334,9 +334,15 @@ loadBundle root =
         _ -> []
    in List.sortOn fst . filter (List.isSuffixOf ".json" . fst) . pairs . ByteString.split 0
 
--- Where the web client's bundle of the shipped cards is, 'loadBundle''s input.
-bundlePath :: IO FilePath
-bundlePath = Paths.getDataFileName "cards.bundle"
+-- | Several bundles' cards, ascending by path: the web client's four slices
+-- (script/build-web.sh) as one.
+loadBundles :: FilePath -> [ByteString.ByteString] -> [(FilePath, Either Text.Text Card.Card)]
+loadBundles root = List.sortOn fst . concatMap (loadBundle root)
+
+-- Where the web client's bundles of the shipped cards are, 'loadBundles''s
+-- input, in order.
+bundlePaths :: IO [FilePath]
+bundlePaths = traverse (\k -> Paths.getDataFileName ("cards-" <> show k <> ".bundle")) [0 :: Int .. 3]
 
 -- Every card file in a root, ascending by path, read no further: the
 -- enumeration half of 'loadRoot', for a caller that parses each file later.
