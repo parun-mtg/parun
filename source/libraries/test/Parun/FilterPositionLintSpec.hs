@@ -2404,7 +2404,8 @@ filterPositionLintSpec s registry corpus = Spec.describe s "Lint" $ do
     -- At most, against power, in an enters trigger's slot counting your lands:
     -- Invasion of Lorwyn. At most, against the mana value, in a reflexive
     -- trigger's slot counting the creatures its parent tapped: Invasion of New
-    -- Phyrexia's back face.
+    -- Phyrexia's back face. At most, against toughness, in a reflexive
+    -- trigger's slot counting your Shrines: Go-Shintai of Hidden Cruelty.
     assertAuthors
       s
       registry
@@ -2462,7 +2463,8 @@ filterPositionLintSpec s registry corpus = Spec.describe s "Lint" $ do
         ("Riveteers Ascendancy", 1),
         ("Clement, the Worrywort", 1),
         ("Invasion of Lorwyn", 1),
-        ("Invasion of New Phyrexia", 1)
+        ("Invasion of New Phyrexia", 1),
+        ("Go-Shintai of Hidden Cruelty", 1)
       ]
     -- The rejected side, which the sweep above cannot show while the pool has no
     -- offender: the SAME atom, buried under all three combinators, in a target
