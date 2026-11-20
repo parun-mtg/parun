@@ -1,0 +1,212 @@
+{
+  "board": {
+    "active": "bob",
+    "seats": [
+      {
+        "battlefield": [
+          {
+            "card": "Lich's Mirror"
+          },
+          {
+            "card": "Mountain",
+            "label": "land",
+            "ready": true
+          },
+          {
+            "attached": "land",
+            "card": "Crackling Emergence",
+            "label": "emergence",
+            "ready": true
+          }
+        ],
+        "library": [
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          }
+        ],
+        "life": 3,
+        "name": "alice"
+      },
+      {
+        "battlefield": [
+          {
+            "card": "Mayhem Devil",
+            "ready": true
+          },
+          {
+            "card": "Craw Wurm",
+            "label": "wurm",
+            "ready": true
+          },
+          {
+            "card": "Hill Giant",
+            "label": "giant",
+            "ready": true
+          }
+        ],
+        "library": [
+          {
+            "card": "Forest"
+          },
+          {
+            "card": "Forest"
+          }
+        ],
+        "name": "bob"
+      }
+    ],
+    "step": "BeginningOfCombat"
+  },
+  "description": "CR 616.1 Lich's Mirror's controller keeps Crackling Emergence's sacrifice out of the reset in the same check",
+  "note": "Alice at 3 life with Lich's Mirror blocks bob's Craw Wurm with a Mountain Crackling Emergence animates while his Hill Giant hits her. One state-based action check destroys the land, which the Aura's sacrifice replaces, and loses her the game, which the Mirror's reset replaces: the sacrifice and the reset would both move the Aura, only one can happen, and its controller chooses (the Mirror's ruling). She keeps the sacrifice: the Aura stays in her graveyard, the reset shuffles the rest, and bob's Mayhem Devil triggers.",
+  "timeline": [
+    {
+      "do": {
+        "Attack": [
+          "$wurm",
+          "$giant"
+        ]
+      },
+      "player": "bob",
+      "step": "DeclareAttackers",
+      "turn": 1
+    },
+    {
+      "do": {
+        "Block": {
+          "$land": [
+            "$wurm"
+          ]
+        }
+      },
+      "player": "alice",
+      "step": "DeclareBlockers",
+      "turn": 1
+    },
+    {
+      "do": {
+        "Answer": {
+          "prompt": "ChooseRedirect",
+          "with": "Declines"
+        }
+      },
+      "player": "alice",
+      "step": "CombatDamage",
+      "turn": 1
+    },
+    {
+      "do": {
+        "Answer": {
+          "prompt": "Shuffle",
+          "with": [
+            "Island",
+            "Island#2",
+            "Island#3",
+            "Island#4",
+            "Island#5",
+            "Island#6",
+            "Island#7",
+            "Lich's Mirror",
+            "Mountain"
+          ]
+        }
+      },
+      "player": "bob",
+      "step": "CombatDamage",
+      "turn": 1
+    },
+    {
+      "do": {
+        "ChooseTargets": {
+          "target": [
+            "$alice"
+          ]
+        }
+      },
+      "player": "bob",
+      "source": "Mayhem Devil",
+      "step": "CombatDamage",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Count": {
+          "card": "Crackling Emergence",
+          "count": 1,
+          "player": "alice",
+          "zone": "Graveyard"
+        }
+      },
+      "player": "bob",
+      "step": "CombatDamage",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Count": {
+          "card": "Crackling Emergence",
+          "count": 0,
+          "player": "alice",
+          "zone": "Library"
+        }
+      },
+      "player": "bob",
+      "step": "CombatDamage",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Count": {
+          "card": "Mountain",
+          "count": 1,
+          "player": "alice",
+          "zone": "Library"
+        }
+      },
+      "player": "bob",
+      "step": "CombatDamage",
+      "turn": 1
+    },
+    {
+      "do": "Pass",
+      "player": "bob",
+      "step": "CombatDamage",
+      "turn": 1
+    },
+    {
+      "do": "Pass",
+      "player": "alice",
+      "step": "CombatDamage",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Life": {
+          "life": 19,
+          "player": "alice"
+        }
+      },
+      "player": "bob",
+      "step": "EndOfCombat",
+      "turn": 1
+    }
+  ]
+}
