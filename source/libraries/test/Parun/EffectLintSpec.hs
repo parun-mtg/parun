@@ -210,6 +210,7 @@ import qualified Parun.Types.PermanentActsTrigger as PermanentActsTrigger
 import qualified Parun.Types.PermissionLimit as PermissionLimit
 import qualified Parun.Types.PermissionVerb as PermissionVerb
 import qualified Parun.Types.PhaseAnchor as PhaseAnchor
+import qualified Parun.Types.PhaseGrant as PhaseGrant
 import qualified Parun.Types.PhaseOut as PhaseOut
 import qualified Parun.Types.PhasePattern as PhasePattern
 import qualified Parun.Types.PhaseR as PhaseR
@@ -4223,7 +4224,7 @@ effectLintSpec s registry corpus = Spec.describe s "Lint" $ do
     Spec.assertBool s (thatCombatPhaseOffends planted) "a restriction naming no added phase is rejected"
     war <- S.printingOf s registry "World at War"
     let arm = Effect.ArmDelayedTrigger (ArmDelayedTrigger.MkArmDelayedTrigger (AbilityName.MkAbilityName (Text.pack "that combat")) (Onset.FromThatCombatPhase PhaseAnchor.SecondMainPhase) Nothing Nothing)
-        hereOnly = Effect.AddPhases (AddPhases.MkAddPhases PhaseAnchor.ThisPhase [ExtraPhase.ExtraCombat, ExtraPhase.ExtraMain])
+        hereOnly = Effect.AddPhases (AddPhases.MkAddPhases PhaseAnchor.ThisPhase [ExtraPhase.ExtraCombat, ExtraPhase.ExtraMain] PhaseGrant.ThereIs)
         misanchored = (vanillaFace "Planted" instantLine) {Face.spell = Mint.oneMode (Seq.fromList [hereOnly, arm])}
     Spec.assertBool s (not (anyFace thatCombatPhaseOffends (Printing.card war))) "the real World at War is accepted"
     Spec.assertBool s (thatCombatPhaseOffends misanchored) "an onset naming a combat phase added after another anchor is rejected"

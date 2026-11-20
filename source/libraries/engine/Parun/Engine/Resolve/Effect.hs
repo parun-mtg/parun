@@ -768,7 +768,7 @@ applyOneEffect runSubgame resolving source controller legal chosen effect = case
   Effect.Flip payload -> Counters.flipArm resolving source controller legal payload
   Effect.Meld payload -> Counters.meld (settleWith runSubgame) resolving source controller legal payload
   Effect.PhaseOut payload -> Counters.phaseOut resolving source controller legal payload
-  Effect.AddPhases payload -> Counters.addPhases payload
+  Effect.AddPhases payload -> Counters.addPhases controller payload
   Effect.AddStep payload -> Counters.addStep payload
   Effect.EndTurn -> Counters.endTurn runDamageRewriteEffect runReplacementEffects runSubgame
   Effect.EndCombatPhase -> Counters.endCombatPhase runDamageRewriteEffect runReplacementEffects runSubgame

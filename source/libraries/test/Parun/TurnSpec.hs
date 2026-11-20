@@ -56,6 +56,7 @@ import qualified Parun.Types.ObjectId as ObjectId
 import Parun.Types.Phase (Phase)
 import qualified Parun.Types.Phase as Phase
 import qualified Parun.Types.PhaseAnchor as PhaseAnchor
+import qualified Parun.Types.PhaseGrant as PhaseGrant
 import qualified Parun.Types.PhaseSelector as PhaseSelector
 import qualified Parun.Types.PlayerId as PlayerId
 import qualified Parun.Types.Printing as Printing
@@ -516,7 +517,7 @@ castAndResolveWith answer spell gs =
 -- an additional combat phase followed by an additional main phase.)
 -- Turn.splicePhases after the phase under way, which always names one.
 spliceHere :: Phase.Phase -> [ExtraPhase.ExtraPhase] -> Seq.Seq Phase.Phase -> Seq.Seq Phase.Phase
-spliceHere phase extras = Foldable.fold . Turn.splicePhases (AddPhases.MkAddPhases PhaseAnchor.ThisPhase extras) 0 phase
+spliceHere phase extras = Foldable.fold . Turn.splicePhases (AddPhases.MkAddPhases PhaseAnchor.ThisPhase extras PhaseGrant.ThereIs) 0 phase
 
 extraPhaseSpec :: (Monad m, Monad n) => Spec.Spec m n -> Registry.Registry m -> n ()
 extraPhaseSpec s registry = Spec.describe s "ExtraPhase" $ do
@@ -589,7 +590,7 @@ extraPhaseSpec s registry = Spec.describe s "ExtraPhase" $ do
     -- World at War: from the first main phase, after the next main phase;
     -- from the upkeep, after the one after it; from the second, after it.
     let schedule = Seq.fromList [Phase.Combat CombatStep.BeginningOfCombat, Phase.PostcombatMain, Phase.Ending EndingStep.EndStep]
-        second = Turn.splicePhases (AddPhases.MkAddPhases PhaseAnchor.SecondMainPhase [ExtraPhase.ExtraCombat, ExtraPhase.ExtraMain])
+        second = Turn.splicePhases (AddPhases.MkAddPhases PhaseAnchor.SecondMainPhase [ExtraPhase.ExtraCombat, ExtraPhase.ExtraMain] PhaseGrant.ThereIs)
         afterSecond = Just (Seq.fromList [Phase.Combat CombatStep.BeginningOfCombat, Phase.PostcombatMain] <> Turn.combatAndMainPhase <> Seq.fromList [Phase.Ending EndingStep.EndStep])
     Spec.assertEqWith s "from the first main phase" (second 1 Phase.PrecombatMain schedule) afterSecond
     Spec.assertEqWith s "from the upkeep" (second 0 (Phase.Beginning BeginningStep.Upkeep) (Seq.fromList [Phase.Beginning BeginningStep.DrawStep, Phase.PrecombatMain] <> schedule)) (fmap (Seq.fromList [Phase.Beginning BeginningStep.DrawStep, Phase.PrecombatMain] <>) afterSecond)
@@ -600,7 +601,7 @@ extraPhaseSpec s registry = Spec.describe s "ExtraPhase" $ do
     Spec.assertEqWith
       s
       "no second main phase left"
-      (Turn.splicePhases (AddPhases.MkAddPhases PhaseAnchor.SecondMainPhase [ExtraPhase.ExtraCombat, ExtraPhase.ExtraMain]) 3 Phase.PostcombatMain (Seq.fromList [Phase.Ending EndingStep.EndStep]))
+      (Turn.splicePhases (AddPhases.MkAddPhases PhaseAnchor.SecondMainPhase [ExtraPhase.ExtraCombat, ExtraPhase.ExtraMain] PhaseGrant.ThereIs) 3 Phase.PostcombatMain (Seq.fromList [Phase.Ending EndingStep.EndStep]))
       Nothing
   Spec.it s "CR 500.8 whole card: a vigilant creature attacks in the added combat phase AND the turn's own" $ do
     -- CR 506.1's five steps really run twice: Windseeker Centaur has
