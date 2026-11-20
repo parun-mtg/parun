@@ -55,7 +55,6 @@ import qualified Parun.Types.BlocksDeclared as BlocksDeclared
 import qualified Parun.Types.CardType as CardType
 import qualified Parun.Types.CausedBy as CausedBy
 import qualified Parun.Types.ChapterMoment as ChapterMoment
-import qualified Parun.Types.Combat as Combat
 import qualified Parun.Types.CountedAct as CountedAct
 import qualified Parun.Types.CounterChange as CounterChange
 import qualified Parun.Types.CounterGrouping as CounterGrouping
@@ -82,7 +81,6 @@ import qualified Parun.Types.Filter as Filter.Type
 import Parun.Types.GameEvent (GameEvent)
 import qualified Parun.Types.GameEvent as GameEvent
 import Parun.Types.GameState (GameState)
-import qualified Parun.Types.GameState as GameState
 import qualified Parun.Types.Keyword as Keyword.Type
 import qualified Parun.Types.KeywordFamily as KeywordFamily
 import qualified Parun.Types.LastKnown as LastKnown
@@ -131,7 +129,6 @@ import qualified Parun.Types.Transformed as Transformed
 import Parun.Types.TriggerCondition (TriggerCondition)
 import qualified Parun.Types.TriggerCondition as TriggerCondition
 import qualified Parun.Types.TriggerSource as TriggerSource
-import qualified Parun.Types.TurnRegisters as TurnRegisters
 import qualified Parun.Types.TurnedFaceUp as TurnedFaceUp
 import qualified Parun.Types.TurnedFaceUpTrigger as TurnedFaceUpTrigger
 import qualified Parun.Types.TurnedUpOffDeck as TurnedUpOffDeck
@@ -1144,21 +1141,20 @@ admittedPreventedSources context gs f = Map.filterWithKey admits . DamagePrevent
       sum share > 0 && maybe False (\view -> Filter.matches context (Count.lastZoned gs damager view) f) (Projection.viewWithLastKnown damager gs damager)
 
 -- The attackers `attacker` declared that the Filter admits, CR 508.3c's "a
--- creature that player controls" read through Combat.joinedUnder (CR 506.4)
--- and each viewed as admitsAttacker views it, framed by the bearer. CR 508.4's
--- creature put onto the battlefield attacking is not in Combat.declaredAttackers.
+-- creature that player controls" read off the declaration's attacking player
+-- and each viewed as admitsAttacker views it, framed by the bearer: each of
+-- Count.declaredThisCombat, so one that left after the attack is counted.
 admittedAttackers :: Map.Map ObjectId (BattlefieldCandidate.BattlefieldCandidate PC.ProjectedCharacteristics) -> GameState -> ObjectId -> PlayerId -> Filter.Type.Filter Keyword.Type.Keyword -> PlayerId -> Seq.Seq ObjectId
-admittedAttackers board gs bearer you f attacker = Seq.fromList (filter admits (Set.toList (Combat.declaredAttackers combat)))
+admittedAttackers board gs bearer you f attacker = Seq.fromList (Map.keys (Map.filterWithKey admits (declarations gs)))
   where
-    combat = TurnRegisters.combat (GameState.turn gs)
-    admits oid = Map.lookup oid (Combat.joinedUnder combat) == Just attacker && admitsAttacker board gs bearer you f oid
+    admits oid d = AttackerDeclared.attackingPlayer d == attacker && admitsAttacker board gs bearer you f oid
 
 -- Whether the Filter admits this declared attacker, viewed off `board`, the
 -- event's CR 603.10 sample (`postEventView`), and framed by the bearer:
 -- admittedAttackers' reading. A state-based action after the attack (CR
--- 704.5m burying an Aura) changes nothing: data/scenarios's
+-- 704.5m burying an Aura) changes nothing it admits: data/scenarios's
 -- rigo-streetwise-mentor-draws-nothing-when-the-small-attacker-shrinks-only-after-the-attack
--- proves it.
+-- proves it; Count.declaredThisCombat keeps one that leaves.
 admitsAttacker :: Map.Map ObjectId (BattlefieldCandidate.BattlefieldCandidate PC.ProjectedCharacteristics) -> GameState -> ObjectId -> PlayerId -> Filter.Type.Filter Keyword.Type.Keyword -> ObjectId -> Bool
 admitsAttacker board gs bearer you f oid = maybe False (\view -> Filter.matches (Projection.sourceContext gs (Just you) bearer) view f) (postEventView board gs oid)
 
@@ -1485,17 +1481,19 @@ leavesBindings gs bearerBecame t event
 -- CR 508.3b / 508.3e: the creatures declared attacking the event's target, for
 -- 508.3e only the attacking player's (Garruk, Curse Breaker's "those
 -- creatures"), and only those the trigger's count admits (Attuma, Atlantean
--- Warlord's "Merfolk you control"), read as admittedAttackers reads them.
--- CR 508.4's creature put onto the battlefield attacking is not in
--- Combat.declaredAttackers.
+-- Warlord's "Merfolk you control"), each off Count.declaredThisCombat as
+-- admittedAttackers reads them.
 attackedBy :: Map.Map ObjectId (BattlefieldCandidate.BattlefieldCandidate PC.ProjectedCharacteristics) -> GameState -> ObjectId -> PlayerId -> AttackedTrigger.AttackedTrigger -> BecameAttacked.BecameAttacked -> Seq.Seq ObjectId
-attackedBy board gs bearer you t (BecameAttacked.MkBecameAttacked attacker target) = Seq.fromList (filter admits (Set.toList (Combat.declaredAttackers combat)))
+attackedBy board gs bearer you t (BecameAttacked.MkBecameAttacked attacker target) = Seq.fromList (Map.keys (Map.filterWithKey admits (declarations gs)))
   where
-    combat = TurnRegisters.combat (GameState.turn gs)
-    admits oid =
-      Map.lookup oid (Combat.attackers combat) == Just target
-        && (Maybe.isNothing (AttackedTrigger.attacker t) || Map.lookup oid (Combat.joinedUnder combat) == Just attacker)
+    admits oid d =
+      AttackerDeclared.target d == target
+        && (Maybe.isNothing (AttackedTrigger.attacker t) || AttackerDeclared.attackingPlayer d == attacker)
         && maybe True (\count -> admitsAttacker board gs bearer you (AttackCount.filter count) oid) (AttackedTrigger.attackers t)
+
+-- Count.declaredThisCombat, keyed by the creature.
+declarations :: GameState -> Map.Map ObjectId AttackerDeclared.AttackerDeclared
+declarations gs = Map.fromList [(AttackerDeclared.attacker d, d) | d <- Count.declaredThisCombat gs]
 
 -- CR 508.3: attackSlots, stamped. A Source subject binds no "that player":
 -- the match has already pinned the attacked to the bearer.

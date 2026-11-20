@@ -1,0 +1,181 @@
+{
+  "board": {
+    "active": "bob",
+    "seats": [
+      {
+        "battlefield": [
+          {
+            "card": "Jolene, Plundering Pugilist",
+            "label": "jolene"
+          },
+          {
+            "attached": "speakers",
+            "card": "Unholy Strength"
+          },
+          {
+            "attached": "speakers",
+            "card": "Bonesplitter"
+          },
+          {
+            "attached": "speakers",
+            "card": "Coerced to Kill"
+          },
+          {
+            "card": "Opalescence"
+          },
+          {
+            "card": "Humility",
+            "label": "humility"
+          },
+          {
+            "card": "Ashnod's Altar",
+            "label": "altar"
+          },
+          {
+            "card": "Forest",
+            "label": "forest"
+          }
+        ],
+        "library": [
+          {
+            "card": "Island",
+            "label": "a1"
+          },
+          {
+            "card": "Island",
+            "label": "a2"
+          },
+          {
+            "card": "Island",
+            "label": "a3"
+          }
+        ],
+        "name": "alice"
+      },
+      {
+        "battlefield": [
+          {
+            "card": "Death Speakers",
+            "label": "speakers",
+            "ready": true
+          },
+          {
+            "attached": "speakers",
+            "card": "Oppressive Rays"
+          }
+        ],
+        "library": [
+          {
+            "card": "Island",
+            "label": "b1"
+          },
+          {
+            "card": "Island",
+            "label": "b2"
+          }
+        ],
+        "name": "bob"
+      }
+    ],
+    "step": "EndStep"
+  },
+  "description": "CR 508.1k / 603.2 Jolene, Plundering Pugilist counts an attacker as the attack happened: Death Speakers attacks as a 5/2 under alice's control, so Jolene makes a Treasure though CR 704.5m buries Coerced to Kill before the trigger is put and CR 506.4 removes Death Speakers from combat",
+  "note": "Opalescence makes Humility a creature for Ashnod's Altar. Sacrificing it to pay Oppressive Rays' {3} gives Death Speakers back protection from black, which makes Coerced to Kill and Unholy Strength illegal on it after the attack: bob controls Death Speakers again, a 4/1 with Bonesplitter. Jolene stays home. The board starts on bob's turn so that alice has controlled Death Speakers continuously since her turn began (CR 302.6).",
+  "timeline": [
+    {
+      "do": {
+        "Attack": [
+          "$speakers"
+        ]
+      },
+      "player": "alice",
+      "step": "DeclareAttackers",
+      "turn": 2
+    },
+    {
+      "do": {
+        "Answer": {
+          "prompt": "ChooseManaSource",
+          "with": "$altar"
+        }
+      },
+      "player": "alice",
+      "step": "DeclareAttackers",
+      "turn": 2
+    },
+    {
+      "do": {
+        "Answer": {
+          "prompt": "ChooseSacrifices",
+          "with": [
+            "$humility"
+          ]
+        }
+      },
+      "player": "alice",
+      "step": "DeclareAttackers",
+      "turn": 2
+    },
+    {
+      "do": {
+        "Answer": {
+          "prompt": "ChooseManaSource",
+          "with": "$forest"
+        }
+      },
+      "player": "alice",
+      "step": "DeclareAttackers",
+      "turn": 2
+    },
+    {
+      "do": {
+        "Answer": {
+          "prompt": "ChooseExtraManaSource",
+          "with": null
+        }
+      },
+      "player": "alice",
+      "step": "DeclareAttackers",
+      "turn": 2
+    },
+    {
+      "check": {
+        "Count": {
+          "card": "Treasure Token",
+          "count": 1,
+          "player": "alice",
+          "zone": "Battlefield"
+        }
+      },
+      "player": "alice",
+      "step": "DeclareBlockers",
+      "turn": 2
+    },
+    {
+      "check": {
+        "Count": {
+          "card": "Coerced to Kill",
+          "count": 1,
+          "player": "alice",
+          "zone": "Graveyard"
+        }
+      },
+      "player": "alice",
+      "step": "DeclareBlockers",
+      "turn": 2
+    },
+    {
+      "check": {
+        "Count": {
+          "card": "Death Speakers",
+          "count": 1,
+          "player": "bob",
+          "zone": "Battlefield"
+        }
+      },
+      "player": "alice",
+      "step": "DeclareBlockers",
+      "turn": 2
+    }
+  ]
+}

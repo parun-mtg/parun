@@ -76,7 +76,6 @@ import qualified Parun.Types.Chosen as Chosen
 import qualified Parun.Types.ClassLevelChange as ClassLevelChange
 import qualified Parun.Types.CoinFlipTrigger as CoinFlipTrigger
 import qualified Parun.Types.CoinFlipped as CoinFlipped
-import qualified Parun.Types.Combat as Combat
 import qualified Parun.Types.CommittedCrime as CommittedCrime
 import qualified Parun.Types.ControlChanged as ControlChanged
 import qualified Parun.Types.CounterChange as CounterChange
@@ -401,17 +400,10 @@ attackCompanyHolds context board gs attacker company d = case company of
 -- data/scenarios's
 -- jiang-yanggu-alone-ignores-an-attacker-whose-co-attacker-died-after-the-declaration
 -- and hopeful-initiate-trains-beside-a-co-attacker-that-died-after-the-declaration
--- prove it. Combat.declaredAttackers scopes the turn's log to this combat
--- phase, the latest event answering for a creature declared in an earlier one
--- too, and leaves out a creature lost before CR 508.1k (docs/decisions.md,
--- "Attacks alone after a sacrificed co-attacker").
+-- prove it. Count.declaredThisCombat leaves out a creature lost before CR
+-- 508.1k (docs/decisions.md, "Attacks alone after a sacrificed co-attacker").
 declaredTargets :: GameState -> Map.Map ObjectId AttackTarget.AttackTarget
-declaredTargets gs =
-  Map.fromList
-    [ (oid, target)
-    | GameEvent.AttackerDeclared (AttackerDeclared.MkAttackerDeclared oid _ target _ _ _) <- fmap LoggedEvent.event (Foldable.toList (TurnRegisters.events (GameState.turn gs))),
-      Set.member oid (Combat.declaredAttackers (TurnRegisters.combat (GameState.turn gs)))
-    ]
+declaredTargets gs = Map.fromList [(AttackerDeclared.attacker d, AttackerDeclared.target d) | d <- Count.declaredThisCombat gs]
 
 -- CR 509.3e on the effect road (BlockProducer.ByEffect): whether this arrival
 -- is the one that answers the attacker's crossing. One effect records a

@@ -178,16 +178,8 @@ evaluate viewOf quantityOf talliesWhatHappened candidateCounters context gs coun
                 EventShape.SpellCast CastWindow.BeforeEvaluated -> foldMap (fmap GameEvent.SpellCast) (Filter.evaluated context >>= \spell -> Game.castsBefore spell gs)
                 EventShape.SpellCast CastWindow.OtherThanEvaluated -> List.filter (not . isEvaluatedCast) thisTurn
                 EventShape.SpellCast CastWindow.ThisGame -> fmap GameEvent.SpellCast (Foldable.toList (Game.castsThisGame gs))
-                -- CR 508.1a / 511.3: each of Combat.declaredAttackers' creatures at
-                -- its LAST declaration this turn, which is this combat's: one
-                -- declared in an earlier combat phase too (CR 500.8) was declared
-                -- then first. A departed attacker keeps its old id in both.
-                EventShape.AttackerDeclared AttackWindow.ThisCombat ->
-                  fmap GameEvent.AttackerDeclared (List.reverse (ListUtils.nubOrdOn AttackerDeclared.attacker (List.reverse (Maybe.mapMaybe declaredThisCombat thisTurn))))
+                EventShape.AttackerDeclared AttackWindow.ThisCombat -> fmap GameEvent.AttackerDeclared (declaredThisCombat gs)
                 _ -> thisTurn
-              declaredThisCombat event = case event of
-                GameEvent.AttackerDeclared declared | Set.member (AttackerDeclared.attacker declared) (Combat.declaredAttackers (TurnRegisters.combat (GameState.turn gs))) -> Just declared
-                _ -> Nothing
               thisTurn = fmap LoggedEvent.event (Foldable.toList (TurnRegisters.events (GameState.turn gs)))
               isEvaluatedCast event = Maybe.isJust (Filter.evaluated context) && fmap SpellWasCast.spell (Game.castOf event) == Filter.evaluated context
               views = Maybe.mapMaybe (snapshotView viewOf context gs shape) logged
@@ -1478,6 +1470,25 @@ declaredThisTurn oid gs =
         GameEvent.BlocksDeclared (BlocksDeclared.MkBlocksDeclared blocker _) | blocker == oid -> [DeclaredRole.Blocked]
         _ -> []
    in Set.fromList (foldMap (rolesOf . LoggedEvent.event) (TurnRegisters.events (GameState.turn gs)))
+
+-- CR 508.1a / 511.3: each of Combat.declaredAttackers' creatures at its LAST
+-- AttackerDeclared this turn, which is this combat's, in log order: one declared
+-- in an earlier combat phase too (CR 500.8) was declared then first. The target
+-- and attacking player are as the attack happened, so a creature leaving combat
+-- or the battlefield after it (CR 506.4, 704.5f) keeps its entry, old id
+-- included: data/scenarios's
+-- rigo-streetwise-mentor-draws-when-the-small-attacker-dies-after-the-attack
+-- proves it. CR 508.4's creature put onto the battlefield attacking is in
+-- neither.
+declaredThisCombat :: GameState -> [AttackerDeclared.AttackerDeclared]
+declaredThisCombat gs =
+  List.reverse (ListUtils.nubOrdOn AttackerDeclared.attacker (List.reverse declared))
+  where
+    declared =
+      [ d
+      | GameEvent.AttackerDeclared d <- fmap LoggedEvent.event (Foldable.toList (TurnRegisters.events (GameState.turn gs))),
+        Set.member (AttackerDeclared.attacker d) (Combat.declaredAttackers (TurnRegisters.combat (GameState.turn gs)))
+      ]
 
 -- CR 508.1a-d: could this object have been declared as an attacker in one of
 -- this turn's declare attackers steps? The record those steps wrote as each
