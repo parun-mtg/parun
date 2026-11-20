@@ -161,7 +161,7 @@ playOn already page name =
     let at = min (Natural.length (Scenario.Type.timeline scenario)) (Maybe.fromMaybe 0 given)
         reference = Registry.hoist (pure . Identity.runIdentity) registry :: Registry.Registry IO
         lookUp = Identity.runIdentity . Interpreter.chosenCard registry
-        seats = Map.fromList [(pid, Game.wired reference (Hotseat.exchange lookUp page seatRef)) | (pid, _) <- seatsOf scenario]
+        seats = Map.fromList [(pid, Game.wired reference (Hotseat.exchange lookUp page seatRef (pure Hotseat.MkResume))) | (pid, _) <- seatsOf scenario]
     outcome <- Game.playing Hotseat.Type.fresh (Generator.fromKey key) (Scenario.branch (Game.reference reference) at (Game.consulting reference seats) scenario)
     Browser.display page . Web.Replay.ended name at $ case outcome of
       Left reason -> [Text.pack "The game stopped: " <> reason <> Text.pack "."]

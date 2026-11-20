@@ -15,9 +15,15 @@ spec s = Spec.describe s "Parun.Web.Ending" $ do
       let page = Html.toText (Ending.view ending)
           has piece = Spec.assertBool s (Text.isInfixOf (Text.pack piece) page) piece
       has "<section class=\"verdict won\"><h1>You win!</h1><p>Player 1 wins.</p><p>Player 2 conceded.</p></section>"
-      has "<a class=\"primary\" href=\"?mine=sets/a/x&amp;theirs=sets/b/y\">Rematch</a>"
+      has ">Rematch</button>"
+      Spec.assertBool s (not (Text.isInfixOf (Text.pack "<a class=\"primary\" href=\"?mine=") page)) "no rematch link"
       has "href=\"?mine=sets/a/x&amp;theirs=sets/b/y&amp;seed=00ff\""
-      has "<a href=\"./\">New game</a>"
+      has ">Share this shuffle</a>"
+      let tapping label = Html.labelled (Text.pack "button") (Text.pack label) (Ending.view ending) >>= \path -> Html.handler (Text.pack "click") path (Ending.view ending)
+      Spec.assertEqWith s "rematch" (tapping "Rematch") (Just Ending.MkRematch)
+      Spec.assertEqWith s "same shuffle" (tapping "Same shuffle") (Just Ending.MkSameShuffle)
+      Spec.assertEqWith s "new game" (tapping "New game") (Just Ending.MkNewGame)
+      has ">New game</button>"
       has "<a href=\"data:application/json;charset=utf-8,%7b%7d\" download=\"parun-game.json\">Save as a scenario</a>"
       has "<ul class=\"game-log\"><li class=\"turn\">Turn 1: your turn</li><li>Player 1 draws a card.</li><li class=\"minor\">Player 2 concedes.</li></ul>"
       has "<div class=\"confetti\""

@@ -49,11 +49,33 @@ import qualified Parun.Web.Log as Log
 import qualified Parun.Web.Question as Web.Question
 import qualified Parun.Web.Screen as Screen
 
+-- | What the player chose on leaving a game for the home screen.
+data Leave
+  = -- | Back to the question pending.
+    MkResume
+  | -- | The game given up for another.
+    MkAbandon
+  deriving (Eq, Show)
+
+-- | How a game the page played came out.
+data Played
+  = MkFinished Ending.Ending
+  | -- | Given up from the home screen for another game, so no ending shows.
+    MkAbandoned
+  deriving (Eq, Show)
+
+-- | Unwinds a game given up from the home screen.
+data Abandoned = MkAbandonedGame
+  deriving (Show)
+
+instance Exception.Exception Abandoned
+
 -- | A game between these decks (name and file, the player's first) on the
 -- page, from this seed or a fresh one, every request line answered there
--- (Parun.Web.Question): how it ended, or why it could not start.
-game :: Browser.Page Screen.Event -> Registry.Registry Identity.Identity -> Web.Question.Level -> NonEmpty.NonEmpty (Text.Text, FilePath) -> Maybe Key.Key -> IO (Either [Text.Text] Ending.Ending)
-game page registry initial seats given = do
+-- (Parun.Web.Question), leaving for the home screen through `leave`: how
+-- it came out, or why it could not start.
+game :: Browser.Page Screen.Event -> Registry.Registry Identity.Identity -> Web.Question.Level -> NonEmpty.NonEmpty (Text.Text, FilePath) -> Maybe Key.Key -> IO Leave -> IO (Either [Text.Text] Played)
+game page registry initial seats given leave = Exception.handle (\MkAbandonedGame -> pure (Right MkAbandoned)) $ do
   seatRef <- IORef.newIORef (newSeat initial)
   listed <- traverse (Command.load registry . snd) seats
   case sequenceA listed of
@@ -64,12 +86,12 @@ game page registry initial seats given = do
         Left problems -> pure (Left problems)
         Right format -> do
           seed <- maybe Key.fresh pure given
-          (outcome, recorded) <- Command.game (exchange (Identity.runIdentity . Interpreter.chosenCard registry) page seatRef) (options (Natural.length seats)) registry format (fmap DeckList.deck lists) seed
+          (outcome, recorded) <- Command.game (exchange (Identity.runIdentity . Interpreter.chosenCard registry) page seatRef leave) (options (Natural.length seats)) registry format (fmap DeckList.deck lists) seed
           -- What the player saw after their last decision: the killing blow, say.
           Monad.forM_ outcome $ IORef.modifyIORef' seatRef . witness . PlayerView.Engine.viewFor player . snd
           finished <- IORef.readIORef seatRef
           let names = fmap fst seats
-          pure . Right $ Ending.MkEnding (verdictOf outcome) (either (\reason -> [Text.pack "The game stopped: " <> reason <> Text.pack "."]) (\(result, gs) -> Render.result result : Render.departures gs) outcome) (Command.rendered recorded) (loggedFor player finished) player (NonEmpty.head names, NonEmpty.tail names) (Foldable.toList (lives finished)) (Key.toHex seed)
+          pure . Right . MkFinished $ Ending.MkEnding (verdictOf outcome) (either (\reason -> [Text.pack "The game stopped: " <> reason <> Text.pack "."]) (\(result, gs) -> Render.result result : Render.departures gs) outcome) (Command.rendered recorded) (loggedFor player finished) player (NonEmpty.head names, NonEmpty.tail names) (Foldable.toList (lives finished)) (Key.toHex seed)
 
 -- | How the game ended for the seat the page plays.
 verdictOf :: Either a (Result.Result, b) -> Ending.Verdict
@@ -92,9 +114,10 @@ options count = PlayOptions.none {PlayOptions.json = True, PlayOptions.bots = Se
 -- for, or auto's next source once the seat chose auto for this payment, at
 -- once; else after a hand-off when the screen last faced another seat, the
 -- question's form until it answers, a card tapped showing its text from the
--- card data through `lookUp`.
-exchange :: (CardName.CardName -> Either InvalidCorpus.InvalidCorpus (Maybe Card.Card)) -> Browser.Page Screen.Event -> IORef.IORef Seat -> Protocol.Exchange IO
-exchange lookUp page seatRef request = do
+-- card data through `lookUp`, and the home screen through `leave` while
+-- the seat is asked.
+exchange :: (CardName.CardName -> Either InvalidCorpus.InvalidCorpus (Maybe Card.Card)) -> Browser.Page Screen.Event -> IORef.IORef Seat -> IO Leave -> Protocol.Exchange IO
+exchange lookUp page seatRef leave request = do
   fmap (Just . Right) $ do
     Monad.forM_ (Request.view request) $ IORef.modifyIORef' seatRef . witness
     state <- IORef.readIORef seatRef
@@ -161,6 +184,13 @@ exchange lookUp page seatRef request = do
               asking pending picked (Just r) focus
         Screen.MkQuestion Web.Question.MkUnpeek
           | maybe False (not . Web.Card.pinned) reading -> asking pending picked Nothing focus
+        -- The home screen runs here, the question waiting; giving the game
+        -- up unwinds it (game).
+        Screen.MkQuestion Web.Question.MkHome -> do
+          left <- leave
+          case left of
+            MkResume -> asking pending picked reading focus
+            MkAbandon -> Exception.throwIO MkAbandonedGame
         Screen.MkQuestion e -> case Web.Question.step pending picked e value of
           Web.Question.MkReplied answered -> do
             Monad.when (e == Web.Question.MkAuto) . IORef.modifyIORef' seatRef $ \s -> s {paying = True}

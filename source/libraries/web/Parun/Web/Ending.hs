@@ -22,6 +22,16 @@ import qualified Parun.Web.Log as Log
 import qualified Parun.Web.Mana as Mana
 
 -- | How the game ended for the player the page plays.
+-- | What a tap on the ending does.
+data Event
+  = -- | The same decks again, shuffled afresh.
+    MkRematch
+  | -- | The same decks, shuffled by the same seed.
+    MkSameShuffle
+  | -- | Back to the home screen.
+    MkNewGame
+  deriving (Eq, Show)
+
 data Verdict
   = MkWon
   | MkLost
@@ -52,7 +62,7 @@ data Ending = MkEnding
   }
   deriving (Eq, Show)
 
-view :: Ending -> Html.Html msg
+view :: Ending -> Html.Html Event
 view ending =
   let (headline, tone) = case verdict ending of
         MkWon -> ("You win!", "won")
@@ -70,10 +80,10 @@ view ending =
                  "div"
                  ["ending-actions"]
                  []
-                 [ Element.el "a" ["primary"] [Element.attr "href" (rematch (decks ending) Nothing)] [Element.string "Rematch"],
-                   Element.el "a" [] [Element.attr "href" (rematch (decks ending) (Just (seed ending))), Element.attr "title" (Text.pack "The same decks, shuffled the same way: a link to share")] [Element.string "Same shuffle"],
-                   -- The page itself without a query: the lobby.
-                   Element.el "a" [] [Element.attr "href" (Text.pack "./")] [Element.string "New game"],
+                 [ Element.button ["primary"] MkRematch [Element.string "Rematch"],
+                   Element.el "button" [] [Element.attr "type" (Text.pack "button"), Element.attr "title" (Text.pack "The same decks, shuffled the same way"), Element.on "click" MkSameShuffle] [Element.string "Same shuffle"],
+                   Element.el "a" [] [Element.attr "href" (rematch (decks ending) (Just (seed ending))), Element.attr "title" (Text.pack "A link to the same decks, shuffled the same way")] [Element.string "Share this shuffle"],
+                   Element.button [] MkNewGame [Element.string "New game"],
                    Element.el "a" [] [Element.attr "href" (download (scenario ending)), Element.attr "download" (Text.pack "parun-game.json")] [Element.string "Save as a scenario"]
                  ],
                Element.el "h2" [] [] [Element.string "How it went"],

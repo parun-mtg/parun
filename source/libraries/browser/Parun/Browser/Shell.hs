@@ -69,6 +69,12 @@ data Loaded = MkLoaded
     registry :: Maybe (Registry.Registry Identity.Identity)
   }
 
+-- | Where a screen leads when it ends.
+data Next
+  = MkToHome
+  | MkToLobby
+  | MkToReplays
+
 -- | What woke a screen's loop.
 data Woke
   = MkTapped Screen.Event Text.Text
@@ -87,30 +93,34 @@ start = do
     Nothing -> do
       chosen <- maybe Web.Question.MkStandard (Maybe.fromMaybe Web.Question.MkStandard . Web.Question.levelNamed) <$> Environment.lookupEnv "parun_level"
       shell <- MkShell <$> Browser.mount <*> IORef.newIORef (MkLoaded Loading.new Nothing Map.empty Nothing Map.empty [] Nothing) <*> pure chosen
-      Exception.catch (opening shell >> run shell) $ \problem ->
+      Exception.catch (opening shell >>= follow shell) $ \problem ->
         Browser.display (page shell) $ message ["The page stopped on an error:", Exception.displayException (problem :: Exception.SomeException)]
 
--- | The game a rematch link names, if it names one whose decks exist.
-opening :: Shell -> IO ()
+-- | The game a rematch link names, if it names one whose decks exist;
+-- else the home screen.
+opening :: Shell -> IO Next
 opening shell = do
   asked <- (,,) <$> Environment.lookupEnv "parun_mine" <*> Environment.lookupEnv "parun_theirs" <*> Environment.lookupEnv "parun_seed"
   case asked of
     (Just mine, Just theirs, seed) -> do
       files <- decksRead shell
       let names = Text.pack mine NonEmpty.:| Text.splitOn (Text.pack ",") (Text.pack theirs)
-      Monad.forM_ (files >>= \known -> traverse (\name -> (,) name <$> Map.lookup name known) names) $ \seats ->
-        play shell seats (seed >>= Key.fromHex . Text.pack)
-    _ -> pure ()
+      maybe (pure MkToHome) (\seats -> play shell seats (seed >>= Key.fromHex . Text.pack)) (files >>= \known -> traverse (\name -> (,) name <$> Map.lookup name known) names)
+    _ -> pure MkToHome
 
-run :: Shell -> IO ()
-run shell = do
-  outcome <- home shell False
-  already <- Loading.arrived . loading <$> IORef.readIORef (loaded shell)
-  case outcome of
-    Home.MkGo Home.MkPlayBots -> lobby shell >> run shell
-    Home.MkGo Home.MkReplays -> Replay.start already ""
-    Home.MkBack -> run shell
-    Home.MkStay _ -> run shell
+-- | Goes where a screen led, and on from there.
+follow :: Shell -> Next -> IO ()
+follow shell next = case next of
+  MkToHome -> do
+    outcome <- home shell False
+    follow shell $ case outcome of
+      Home.MkGo Home.MkPlayBots -> MkToLobby
+      Home.MkGo Home.MkReplays -> MkToReplays
+      _ -> MkToHome
+  MkToLobby -> lobby shell >>= follow shell
+  MkToReplays -> do
+    already <- Loading.arrived . loading <$> IORef.readIORef (loaded shell)
+    Replay.start already ""
 
 -- | The home screen until it leads somewhere, a game paused or not.
 home :: Shell -> Bool -> IO Home.Outcome
@@ -127,9 +137,9 @@ home shell paused = go Home.new {Home.paused = paused}
           outcome -> pure outcome
         _ -> go current
 
--- | The lobby until it goes home, filling in as decks and cards arrive; a
--- game it starts is played, and ends, from here.
-lobby :: Shell -> IO ()
+-- | The lobby until it goes home or starts a game, filling in as decks
+-- and cards arrive; where the game, played from here, then leads.
+lobby :: Shell -> IO Next
 lobby shell = do
   need shell Loading.MkDecks
   need shell Loading.MkCards
@@ -141,7 +151,7 @@ lobby shell = do
       woke <- await shell
       case woke of
         MkTapped (Screen.MkLobby event) value -> case event of
-          Lobby.MkHome -> pure ()
+          Lobby.MkHome -> pure MkToHome
           Lobby.MkStart | Just mine <- Lobby.mine current -> do
             others <- traverse (maybe (randomOf (Lobby.opponents current)) (pure . Just)) (Lobby.theirs current)
             files <- Maybe.fromMaybe Map.empty <$> decksRead shell
@@ -220,18 +230,49 @@ untilBuilt shell needs built = do
   go
 
 -- | A game between these decks, once the registry is built, shown while it
--- builds; then how it ended.
-play :: Shell -> NonEmpty.NonEmpty (Text.Text, FilePath) -> Maybe Key.Key -> IO ()
+-- builds; its ending, and the games its Rematch and Same shuffle start;
+-- then where it leads. Home from the game shows the home screen with the
+-- game kept; a new game chosen there gives it up.
+play :: Shell -> NonEmpty.NonEmpty (Text.Text, FilePath) -> Maybe Key.Key -> IO Next
 play shell seats seed = do
   Browser.display (page shell) (Hotseat.starting (fmap fst seats))
   built <- untilBuilt shell [Loading.MkCards, Loading.MkRules] (registry <$> IORef.readIORef (loaded shell))
   case built of
-    Left problem -> Browser.display (page shell) (Hotseat.message [problem])
+    Left problem -> notice shell [problem]
     Right reg -> do
-      ended <- Hotseat.game (page shell) reg (level shell) seats seed
-      Browser.display (page shell) (either Hotseat.message Ending.view ended)
-  -- The ending's links leave the page.
-  Monad.forever (Browser.next (page shell))
+      chosen <- IORef.newIORef MkToHome
+      let leave = do
+            outcome <- home shell True
+            case outcome of
+              Home.MkGo Home.MkPlayBots -> IORef.writeIORef chosen MkToLobby >> pure Hotseat.MkAbandon
+              Home.MkGo Home.MkReplays -> IORef.writeIORef chosen MkToReplays >> pure Hotseat.MkAbandon
+              _ -> pure Hotseat.MkResume
+      ended <- Hotseat.game (page shell) reg (level shell) seats seed leave
+      case ended of
+        Left problems -> notice shell problems
+        Right Hotseat.MkAbandoned -> IORef.readIORef chosen
+        Right (Hotseat.MkFinished ending) -> do
+          let go = do
+                Browser.display (page shell) (fmap Screen.MkEnding (Ending.view ending))
+                woke <- await shell
+                case woke of
+                  MkTapped (Screen.MkEnding Ending.MkRematch) _ -> play shell seats Nothing
+                  MkTapped (Screen.MkEnding Ending.MkSameShuffle) _ -> play shell seats (Key.fromHex (Ending.seed ending))
+                  MkTapped (Screen.MkEnding Ending.MkNewGame) _ -> pure MkToHome
+                  _ -> go
+          go
+
+-- | Why a game could not be played, until the player goes home.
+notice :: Shell -> [Text.Text] -> IO Next
+notice shell said = do
+  Browser.display (page shell) . Element.el "main" ["message"] [] $
+    [Element.el "p" [] [] [Element.text t] | t <- said] <> [Element.button ["primary"] (Screen.MkEnding Ending.MkNewGame) [Element.string "Home"]]
+  let go = do
+        woke <- await shell
+        case woke of
+          MkTapped (Screen.MkEnding Ending.MkNewGame) _ -> pure MkToHome
+          _ -> go
+  go
 
 -- | A tap waiting, else a chunk arrived, else one batch of loading work,
 -- else whatever comes next: a waiting tap is never kept behind work.

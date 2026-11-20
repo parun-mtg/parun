@@ -76,6 +76,8 @@ data Event
   | -- | Concedes the game (CR 104.3a): passes now, and the hotseat answers
     -- its next concession question yes.
     MkConcede
+  | -- | Leaves the game for the home screen, to resume it later.
+    MkHome
   | -- | Lets the page answer this much for the seat.
     MkLevel Level
   | -- | Previews a card's text under a resting pointer.
@@ -313,6 +315,7 @@ barControls current asked concede =
           | l <- [minBound .. maxBound]
           ]
       ],
+    Element.el "button" ["home-button"] ([Element.attr "type" (Text.pack "button"), Element.attr "title" (Text.pack "Leave the game for the home screen, to resume later"), Element.on "click" MkHome] <> [Element.attr "disabled" Text.empty | not asked]) [Element.string "Home"],
     settingsButton concede
   ]
 
@@ -519,6 +522,8 @@ step request picked event typed = case event of
         if Text.null (Text.strip typed) then MkRefused (Text.pack "Type the name of a card.") else MkReplied . R.Text $ Text.strip typed
   MkTyped -> either (MkRefused . (Text.pack "That reply does not read: " <>)) MkReplied $ Common.parse typed >>= Codec.Reply.fromValue
   MkReady -> MkPicking picked
+  -- The page leaves the game before the step (Parun.Browser.Hotseat).
+  MkHome -> MkPicking picked
   MkClear -> MkPicking Set.empty
   MkRead _ -> MkPicking picked
   MkClose -> MkPicking picked
