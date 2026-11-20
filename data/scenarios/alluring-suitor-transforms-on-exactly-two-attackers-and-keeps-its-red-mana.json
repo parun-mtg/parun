@@ -1,0 +1,234 @@
+{
+  "board": {
+    "active": "alice",
+    "seats": [
+      {
+        "battlefield": [
+          {
+            "card": "Alluring Suitor",
+            "label": "suitor",
+            "ready": true
+          },
+          {
+            "card": "Grizzly Bears",
+            "label": "bears",
+            "ready": true
+          },
+          {
+            "card": "Hill Giant",
+            "label": "giant",
+            "ready": true
+          }
+        ],
+        "library": [
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          }
+        ],
+        "name": "alice"
+      },
+      {
+        "library": [
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          }
+        ],
+        "name": "bob"
+      }
+    ],
+    "step": "PrecombatMain",
+    "turn": 2
+  },
+  "description": "CR 508.1, 603.2, 701.27a, 106.4: Alluring Suitor transforms when its controller attacks with exactly two creatures; Deadly Dancer's transform trigger adds RR kept through steps and phases, which pays for pumping it and another target creature",
+  "note": "Turn 2 alice attacks with three creatures: no transform. Turn 4 she attacks with two: the Suitor becomes the 3/3 trampling Deadly Dancer and adds RR in declare attackers, still in her pool in the postcombat main phase, where it pays the Dancer's ability on the Bears; the Hill Giant, not targeted, stays 3/3.",
+  "timeline": [
+    {
+      "do": {
+        "Attack": [
+          "$suitor",
+          "$bears",
+          "$giant"
+        ]
+      },
+      "player": "alice",
+      "step": "DeclareAttackers",
+      "turn": 2
+    },
+    {
+      "check": {
+        "Names": {
+          "names": [
+            "Alluring Suitor"
+          ],
+          "object": "$suitor"
+        }
+      },
+      "player": "alice",
+      "step": "CombatDamage",
+      "turn": 2
+    },
+    {
+      "check": {
+        "Life": {
+          "life": 13,
+          "player": "bob"
+        }
+      },
+      "player": "alice",
+      "step": "PostcombatMain",
+      "turn": 2
+    },
+    {
+      "check": {
+        "Names": {
+          "names": [
+            "Alluring Suitor"
+          ],
+          "object": "$suitor"
+        }
+      },
+      "player": "alice",
+      "step": "PostcombatMain",
+      "turn": 2
+    },
+    {
+      "do": {
+        "Attack": [
+          "$suitor",
+          "$bears"
+        ]
+      },
+      "player": "alice",
+      "step": "DeclareAttackers",
+      "turn": 4
+    },
+    {
+      "do": "Pass",
+      "player": "alice",
+      "step": "DeclareAttackers",
+      "turn": 4
+    },
+    {
+      "check": {
+        "Names": {
+          "names": [
+            "Deadly Dancer"
+          ],
+          "object": "$suitor"
+        }
+      },
+      "player": "alice",
+      "step": "DeclareAttackers",
+      "turn": 4
+    },
+    {
+      "check": {
+        "Life": {
+          "life": 8,
+          "player": "bob"
+        }
+      },
+      "player": "alice",
+      "step": "PostcombatMain",
+      "turn": 4
+    },
+    {
+      "do": {
+        "Activate": {
+          "ability": 0,
+          "object": "$suitor",
+          "targets": [
+            "$bears"
+          ]
+        }
+      },
+      "player": "alice",
+      "step": "PostcombatMain",
+      "turn": 4
+    },
+    {
+      "do": "Pass",
+      "player": "alice",
+      "step": "PostcombatMain",
+      "turn": 4
+    },
+    {
+      "check": {
+        "PowerToughness": {
+          "object": "$suitor",
+          "power": 4,
+          "toughness": 3
+        }
+      },
+      "player": "alice",
+      "step": "PostcombatMain",
+      "turn": 4
+    },
+    {
+      "check": {
+        "PowerToughness": {
+          "object": "$bears",
+          "power": 3,
+          "toughness": 2
+        }
+      },
+      "player": "alice",
+      "step": "PostcombatMain",
+      "turn": 4
+    },
+    {
+      "check": {
+        "PowerToughness": {
+          "object": "$giant",
+          "power": 3,
+          "toughness": 3
+        }
+      },
+      "player": "alice",
+      "step": "PostcombatMain",
+      "turn": 4
+    }
+  ]
+}
