@@ -72,8 +72,8 @@ face name in the pool.
   Hunt's Wolves dealing damage one at a time, #7292), #7307 (a lent mana
   ability can't arm its card's delayed trigger, #7345), #7329 (a granted
   ability naming its granter outside an effect's own object; its remainder
-  #7341 and #7342, closed, and
-  #7794, open).
+  #7341 and #7342, closed, and the unprinted rest, fenced by a lint in
+  `Parun.AbilitySlotLintSpec`).
 - Audits: 12 of 18 capability PRs (#7298 inline by the orchestrator) and all
   5 fix PRs (#7335 inline); 3 found rules defects and 1 a test gap. Skipped
   the census, the ten batches (card data, renderer wording and lint specs

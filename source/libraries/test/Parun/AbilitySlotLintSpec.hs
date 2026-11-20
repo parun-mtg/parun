@@ -31,8 +31,10 @@ import qualified Data.Maybe as Maybe
 import qualified Data.Sequence as Seq
 import qualified Data.Set as Set
 import qualified Data.Text as Text
-import Parun.CardSpec (anyFace, anyFaceOrMinted, armedReads, cardAuthoredEffects, cardCounts, cardFilters, cardResolutionEffects, collectsEvidenceAsCost, createToken, declaresVariable, delayedDeclarations, discardsAsCost, effectCounts, effectWithNested, exilesCardAsCost, faceModals, grantedActivatedAbilities, grantedTriggeredAbilities, instantLine, lintMode, mintingSpell, modalActivated, modalClauseConditions, modalSlotsOffend, oneEffectActivated, oneEffectTrigger, payGateBound, removesCountersAsCost, sacrificesAsCost, spellCostsOf, triggerConditionSlots, vanillaFace, waterbendsAsCost, withMinted)
+import Parun.CardSpec (anyFace, anyFaceOrMinted, armedReads, cardAuthoredEffects, cardCounts, cardFilters, cardResolutionEffects, collectsEvidenceAsCost, createToken, declaresVariable, delayedDeclarations, discardsAsCost, effectCounts, effectGrants, effectWithNested, exilesCardAsCost, faceModals, grantedAbilities, grantedActivatedAbilities, grantedTriggeredAbilities, instantLine, lintMode, mintingSpell, modalActivated, modalClauseConditions, modalSlotsOffend, modificationAbilities, oneEffectActivated, oneEffectTrigger, payGateBound, removesCountersAsCost, sacrificesAsCost, spellCostsOf, triggerConditionSlots, vanillaFace, waterbendsAsCost, withMinted)
+import qualified Parun.Codec.Card as Card.Codec
 import qualified Parun.Codec.Condition as Condition.Codec
+import qualified Parun.Codec.GrantedAbility as GrantedAbility.Codec
 import qualified Parun.Engine.Binding as Binding
 import qualified Parun.Engine.Card as Card
 import qualified Parun.Engine.Children as Children
@@ -1644,6 +1646,27 @@ abilitySlotLintSpec s registry corpus = Spec.describe s "Lint" $ do
     Spec.assertBool s (not (null abilities)) "the pool has activated abilities"
     Spec.assertBool s (any (readsAnySlot . snd) abilities) "and one of them reads a slot"
     Spec.assertEqWith s "no dangling activated-ability slot" (fmap fst (filter (offends . snd) abilities)) []
+  -- Unprinted: see granterUnreachedOffends.
+  Spec.it s "no granted ability names its granter in a target filter or a quoted ability" $ do
+    ps <- S.allPrintings s corpus
+    Spec.assertEqWith s "no granter named where the bake cannot reach" (fmap (S.nameOf . Printing.card) (filter (anyFaceOrMinted granterUnreachedOffends . Printing.card) ps)) []
+  -- Blazing Torch's grant, doctored to name its granter in each unreached
+  -- position: "other than Blazing Torch" on its target, and a token quoting
+  -- "Tap Blazing Torch".
+  Spec.it s "the lint itself catches a granter named in a target filter or a quoted ability" $ do
+    torch <- S.printingOf s registry "Blazing Torch"
+    let face = S.combinedFace torch
+        onGrant f = face {Face.staticAbilities = fmap (\a -> a {StaticAbility.modifications = fmap (grant f) (StaticAbility.modifications a)}) (Face.staticAbilities face)}
+        grant f m = case m of
+          Modification.GainAbility (GrantedAbility.Activated a) -> Modification.GainAbility (GrantedAbility.Activated a {ActivatedAbility.modal = f (ActivatedAbility.modal a)})
+          _ -> m
+        other = Filter.Type.Not (Filter.Type.IsBound Binding.grantingPermanent)
+        narrowed modal = modal {Modal.modes = fmap (\m -> m {Mode.targetSlots = fmap (\t -> t {TargetSlot.filter = Just other}) (Mode.targetSlots m)}) (Modal.modes modal)}
+        servo = (vanillaFace "Servo" instantLine) {Face.activatedAbilities = [oneEffectActivated Nothing (Effect.Tap (Tap.plain (ObjectRef.InSlot Binding.grantingPermanent)))]}
+        quoting _ = Mint.oneMode (Seq.singleton (createToken servo))
+    Spec.assertBool s (not (granterUnreachedOffends face)) "the real Blazing Torch, naming its granter in its cost and effect, is accepted"
+    Spec.assertBool s (granterUnreachedOffends (onGrant narrowed)) "its granter in the target's filter is rejected"
+    Spec.assertBool s (granterUnreachedOffends (onGrant quoting)) "its granter in a token's quoted ability is rejected"
   -- CR 601.2c's count, over every carrier at once: see modalCountsOffend.
   Spec.it s "every slot that may take more than one target is read where a set fits" $ do
     ps <- S.allPrintings s corpus
@@ -2005,6 +2028,25 @@ abilitySlotLintSpec s registry corpus = Spec.describe s "Lint" $ do
     Spec.assertBool s (not (anyFace chosenPlayerStoredOffends (Printing.card hama))) "the real Hama, the Bloodbender is accepted"
     Spec.assertBool s (chosenPlayerStoredOffends (planted pump)) "a for-as-long-as duration is rejected"
     Spec.assertBool s (chosenPlayerStoredOffends (planted permission)) "an exile play permission's condition is rejected"
+
+-- Unprinted: a granted ability naming its granter (Binding.grantingPermanent)
+-- in a target slot's filter, which CR 601.2c judges at announcement before
+-- Binding.setGranter binds the slot, or inside an ability or object it quotes,
+-- where Projection.bakeGranter does not descend. No printing has either shape,
+-- so this keeps both out of card data.
+granterUnreachedOffends :: Face.Face Card.Type.Card -> Bool
+granterUnreachedOffends face = any modalOffends ([ActivatedAbility.modal a | GrantedAbility.Activated a <- granted] <> [TriggeredAbility.modal t | GrantedAbility.Triggered t <- granted])
+  where
+    granted = grantedAbilities face
+    modalOffends modal =
+      any (any (Map.member Binding.grantingPermanent . Resolve.targetSlotSlots) . Mode.targetSlots) (Modal.modes modal)
+        || any (any (any names . quoted) . effectWithNested) (Modal.allEffects modal)
+    quoted effect =
+      fmap ability (concatMap modificationAbilities (effectGrants effect))
+        <> Const.getConst (Children.effectChildren Children.effectLeaves {Children.onCard = card, Children.onConjured = card, Children.onMelded = card, Children.onAbility = Const.Const . pure . ability} effect)
+    ability = Codec.encode (GrantedAbility.Codec.codec Card.Codec.codec)
+    card = Const.Const . pure . Codec.encode Card.Codec.codec
+    names = (> 0) . jsonAtoms (SlotName.unwrap Binding.grantingPermanent)
 
 -- CR 611.2b / 702.174a: Parun.Engine.Quantity.bakePlayerRef leaves
 -- PlayerRef.ChosenPlayerOfBound standing in a stored condition, where no slot
