@@ -1,0 +1,157 @@
+{
+  "faces": [
+    {
+      "activatedAbilities": [
+        {
+          "cost": {
+            "components": [
+              {
+                "type": "TapThis"
+              }
+            ],
+            "mana": [
+              {
+                "type": "OfType",
+                "value": {
+                  "type": "Colored",
+                  "value": "Green"
+                }
+              }
+            ]
+          },
+          "modal": {
+            "modes": [
+              {
+                "clauses": [
+                  {
+                    "effects": [
+                      {
+                        "type": "CopyStackObject",
+                        "value": {
+                          "ref": {
+                            "type": "InSlot",
+                            "value": "ability"
+                          },
+                          "targets": {
+                            "type": "ChosenByController"
+                          }
+                        }
+                      }
+                    ]
+                  }
+                ],
+                "targetSlots": {
+                  "ability": {
+                    "filter": {
+                      "type": "And",
+                      "value": [
+                        {
+                          "type": "HeldBy",
+                          "value": {
+                            "holder": "Controller",
+                            "relation": "You"
+                          }
+                        },
+                        {
+                          "type": "FromSource",
+                          "value": {
+                            "type": "HasCardType",
+                            "value": "Enchantment"
+                          }
+                        }
+                      ]
+                    },
+                    "pool": {
+                      "type": "Abilities"
+                    }
+                  }
+                }
+              }
+            ]
+          }
+        }
+      ],
+      "manaCost": [
+        {
+          "type": "Generic",
+          "value": 1
+        },
+        {
+          "type": "OfType",
+          "value": {
+            "type": "Colored",
+            "value": "Green"
+          }
+        }
+      ],
+      "name": "Weaver of Harmony",
+      "oracleText": "Other enchantment creatures you control get +1/+1.\n{G}, {T}: Copy target activated or triggered ability you control from an enchantment source. You may choose new targets for the copy. (Mana abilities can't be targeted.)",
+      "power": {
+        "type": "Literal",
+        "value": 2
+      },
+      "staticAbilities": [
+        {
+          "affected": {
+            "type": "Matching",
+            "value": {
+              "type": "And",
+              "value": [
+                {
+                  "type": "Not",
+                  "value": {
+                    "type": "IsSource"
+                  }
+                },
+                {
+                  "type": "HasCardType",
+                  "value": "Enchantment"
+                },
+                {
+                  "type": "HasCardType",
+                  "value": "Creature"
+                },
+                {
+                  "type": "HeldBy",
+                  "value": {
+                    "holder": "Controller",
+                    "relation": "You"
+                  }
+                }
+              ]
+            }
+          },
+          "modifications": [
+            {
+              "type": "ModifyPowerToughness",
+              "value": {
+                "power": {
+                  "type": "Literal",
+                  "value": 1
+                },
+                "toughness": {
+                  "type": "Literal",
+                  "value": 1
+                }
+              }
+            }
+          ]
+        }
+      ],
+      "toughness": {
+        "type": "Literal",
+        "value": 2
+      },
+      "typeLine": {
+        "subtypes": [
+          "Snake",
+          "Druid"
+        ],
+        "types": [
+          "Creature",
+          "Enchantment"
+        ]
+      }
+    }
+  ]
+}

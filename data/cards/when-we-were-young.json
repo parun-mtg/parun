@@ -1,0 +1,192 @@
+{
+  "faces": [
+    {
+      "manaCost": [
+        {
+          "type": "Generic",
+          "value": 3
+        },
+        {
+          "type": "OfType",
+          "value": {
+            "type": "Colored",
+            "value": "White"
+          }
+        }
+      ],
+      "name": "When We Were Young",
+      "oracleText": "Up to two target creatures each get +2/+2 until end of turn. If you control an artifact and an enchantment, those creatures also gain lifelink until end of turn.",
+      "spell": {
+        "modes": [
+          {
+            "clauses": [
+              {
+                "effects": [
+                  {
+                    "type": "ModifyTarget",
+                    "value": {
+                      "duration": {
+                        "type": "UntilEndOfTurn"
+                      },
+                      "modification": {
+                        "type": "ModifyPowerToughness",
+                        "value": {
+                          "power": {
+                            "type": "Literal",
+                            "value": 2
+                          },
+                          "toughness": {
+                            "type": "Literal",
+                            "value": 2
+                          }
+                        }
+                      },
+                      "ref": {
+                        "type": "InSlot",
+                        "value": "target"
+                      }
+                    }
+                  }
+                ]
+              },
+              {
+                "condition": {
+                  "type": "All",
+                  "value": [
+                    {
+                      "type": "Compares",
+                      "value": {
+                        "comparison": "AtLeast",
+                        "measured": {
+                          "type": "Count",
+                          "value": {
+                            "aggregation": {
+                              "type": "Members"
+                            },
+                            "filter": {
+                              "type": "And",
+                              "value": [
+                                {
+                                  "type": "HasCardType",
+                                  "value": "Artifact"
+                                },
+                                {
+                                  "type": "HeldBy",
+                                  "value": {
+                                    "holder": "Controller",
+                                    "relation": "You"
+                                  }
+                                }
+                              ]
+                            },
+                            "scope": {
+                              "type": "InZone",
+                              "value": {
+                                "player": {
+                                  "type": "Relative",
+                                  "value": "AnyPlayer"
+                                },
+                                "zone": "Battlefield"
+                              }
+                            }
+                          }
+                        },
+                        "threshold": {
+                          "type": "Literal",
+                          "value": 1
+                        }
+                      }
+                    },
+                    {
+                      "type": "Compares",
+                      "value": {
+                        "comparison": "AtLeast",
+                        "measured": {
+                          "type": "Count",
+                          "value": {
+                            "aggregation": {
+                              "type": "Members"
+                            },
+                            "filter": {
+                              "type": "And",
+                              "value": [
+                                {
+                                  "type": "HasCardType",
+                                  "value": "Enchantment"
+                                },
+                                {
+                                  "type": "HeldBy",
+                                  "value": {
+                                    "holder": "Controller",
+                                    "relation": "You"
+                                  }
+                                }
+                              ]
+                            },
+                            "scope": {
+                              "type": "InZone",
+                              "value": {
+                                "player": {
+                                  "type": "Relative",
+                                  "value": "AnyPlayer"
+                                },
+                                "zone": "Battlefield"
+                              }
+                            }
+                          }
+                        },
+                        "threshold": {
+                          "type": "Literal",
+                          "value": 1
+                        }
+                      }
+                    }
+                  ]
+                },
+                "effects": [
+                  {
+                    "type": "ModifyTarget",
+                    "value": {
+                      "duration": {
+                        "type": "UntilEndOfTurn"
+                      },
+                      "modification": {
+                        "type": "GainKeyword",
+                        "value": {
+                          "type": "Lifelink"
+                        }
+                      },
+                      "ref": {
+                        "type": "InSlot",
+                        "value": "target"
+                      }
+                    }
+                  }
+                ]
+              }
+            ],
+            "targetSlots": {
+              "target": {
+                "count": {
+                  "type": "Printed",
+                  "value": {
+                    "least": 0,
+                    "most": 2
+                  }
+                },
+                "pool": {
+                  "type": "Creatures"
+                }
+              }
+            }
+          }
+        ]
+      },
+      "typeLine": {
+        "types": [
+          "Instant"
+        ]
+      }
+    }
+  ]
+}

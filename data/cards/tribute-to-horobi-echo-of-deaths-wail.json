@@ -1,0 +1,373 @@
+{
+  "faces": [
+    {
+      "manaCost": [
+        {
+          "type": "Generic",
+          "value": 1
+        },
+        {
+          "type": "OfType",
+          "value": {
+            "type": "Colored",
+            "value": "Black"
+          }
+        }
+      ],
+      "name": "Tribute to Horobi",
+      "oracleText": "(As this Saga enters and after your draw step, add a lore counter.)\nI, II — Each opponent creates a 1/1 black Rat Rogue creature token.\nIII — Exile this Saga, then return it to the battlefield transformed under your control.",
+      "triggeredAbilities": [
+        {
+          "condition": {
+            "type": "CountersChange",
+            "value": {
+              "kind": {
+                "type": "OfKind",
+                "value": {
+                  "type": "Lore"
+                }
+              },
+              "motion": {
+                "type": "Put",
+                "value": "AnyPlayer"
+              },
+              "threshold": 1
+            }
+          },
+          "modal": {
+            "modes": [
+              {
+                "clauses": [
+                  {
+                    "effects": [
+                      {
+                        "type": "Create",
+                        "value": {
+                          "card": {
+                            "faces": [
+                              {
+                                "colorIndicator": [
+                                  "Black"
+                                ],
+                                "name": "Rat Rogue Token",
+                                "power": {
+                                  "type": "Literal",
+                                  "value": 1
+                                },
+                                "toughness": {
+                                  "type": "Literal",
+                                  "value": 1
+                                },
+                                "typeLine": {
+                                  "subtypes": [
+                                    "Rat",
+                                    "Rogue"
+                                  ],
+                                  "types": [
+                                    "Creature"
+                                  ]
+                                }
+                              }
+                            ]
+                          },
+                          "creator": {
+                            "type": "Relative",
+                            "value": "Opponent"
+                          },
+                          "quantity": {
+                            "type": "Literal",
+                            "value": 1
+                          }
+                        }
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "condition": {
+            "type": "CountersChange",
+            "value": {
+              "kind": {
+                "type": "OfKind",
+                "value": {
+                  "type": "Lore"
+                }
+              },
+              "motion": {
+                "type": "Put",
+                "value": "AnyPlayer"
+              },
+              "threshold": 2
+            }
+          },
+          "modal": {
+            "modes": [
+              {
+                "clauses": [
+                  {
+                    "effects": [
+                      {
+                        "type": "Create",
+                        "value": {
+                          "card": {
+                            "faces": [
+                              {
+                                "colorIndicator": [
+                                  "Black"
+                                ],
+                                "name": "Rat Rogue Token",
+                                "power": {
+                                  "type": "Literal",
+                                  "value": 1
+                                },
+                                "toughness": {
+                                  "type": "Literal",
+                                  "value": 1
+                                },
+                                "typeLine": {
+                                  "subtypes": [
+                                    "Rat",
+                                    "Rogue"
+                                  ],
+                                  "types": [
+                                    "Creature"
+                                  ]
+                                }
+                              }
+                            ]
+                          },
+                          "creator": {
+                            "type": "Relative",
+                            "value": "Opponent"
+                          },
+                          "quantity": {
+                            "type": "Literal",
+                            "value": 1
+                          }
+                        }
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "condition": {
+            "type": "CountersChange",
+            "value": {
+              "kind": {
+                "type": "OfKind",
+                "value": {
+                  "type": "Lore"
+                }
+              },
+              "motion": {
+                "type": "Put",
+                "value": "AnyPlayer"
+              },
+              "threshold": 3
+            }
+          },
+          "modal": {
+            "modes": [
+              {
+                "clauses": [
+                  {
+                    "effects": [
+                      {
+                        "type": "MoveToZone",
+                        "value": {
+                          "ref": {
+                            "type": "InSlot",
+                            "value": "self"
+                          },
+                          "slot": "exiled",
+                          "zone": "Exile"
+                        }
+                      },
+                      {
+                        "type": "MoveToZone",
+                        "value": {
+                          "ref": {
+                            "type": "InSlot",
+                            "value": "exiled"
+                          },
+                          "riders": {
+                            "transformed": true
+                          },
+                          "zone": "Battlefield"
+                        }
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          }
+        }
+      ],
+      "typeLine": {
+        "subtypes": [
+          "Saga"
+        ],
+        "types": [
+          "Enchantment"
+        ]
+      }
+    },
+    {
+      "colorIndicator": [
+        "Black"
+      ],
+      "keywords": [
+        {
+          "type": "Flying"
+        },
+        {
+          "type": "Haste"
+        }
+      ],
+      "name": "Echo of Death's Wail",
+      "oracleText": "Flying, haste\nWhen this creature enters, gain control of all Rat tokens.\nWhenever this creature attacks, you may sacrifice another creature. If you do, draw a card.",
+      "power": {
+        "type": "Literal",
+        "value": 3
+      },
+      "toughness": {
+        "type": "Literal",
+        "value": 3
+      },
+      "triggeredAbilities": [
+        {
+          "condition": {
+            "type": "Enters",
+            "value": {}
+          },
+          "modal": {
+            "modes": [
+              {
+                "clauses": [
+                  {
+                    "effects": [
+                      {
+                        "type": "GainControl",
+                        "value": {
+                          "duration": {
+                            "type": "Indefinite"
+                          },
+                          "ref": {
+                            "type": "EachMatching",
+                            "value": {
+                              "type": "And",
+                              "value": [
+                                {
+                                  "type": "HasSubtype",
+                                  "value": "Rat"
+                                },
+                                {
+                                  "type": "IsToken"
+                                }
+                              ]
+                            }
+                          }
+                        }
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "condition": {
+            "type": "Attacks",
+            "value": {
+              "type": "Attacker",
+              "value": {}
+            }
+          },
+          "modal": {
+            "modes": [
+              {
+                "clauses": [
+                  {
+                    "effects": [
+                      {
+                        "type": "Draw",
+                        "value": {
+                          "player": {
+                            "type": "Relative",
+                            "value": "You"
+                          },
+                          "quantity": {
+                            "type": "Literal",
+                            "value": 1
+                          }
+                        }
+                      }
+                    ],
+                    "payGate": {
+                      "branch": "IfPaid",
+                      "cost": {
+                        "components": [
+                          {
+                            "type": "Sacrifice",
+                            "value": {
+                              "count": {
+                                "type": "Fixed",
+                                "value": 1
+                              },
+                              "whichPermanents": {
+                                "type": "And",
+                                "value": [
+                                  {
+                                    "type": "Not",
+                                    "value": {
+                                      "type": "IsSource"
+                                    }
+                                  },
+                                  {
+                                    "type": "HasCardType",
+                                    "value": "Creature"
+                                  }
+                                ]
+                              }
+                            }
+                          }
+                        ],
+                        "mana": []
+                      },
+                      "payer": {
+                        "type": "InSlot",
+                        "value": "you"
+                      }
+                    }
+                  }
+                ]
+              }
+            ]
+          }
+        }
+      ],
+      "typeLine": {
+        "subtypes": [
+          "Spirit"
+        ],
+        "types": [
+          "Creature",
+          "Enchantment"
+        ]
+      }
+    }
+  ],
+  "layout": {
+    "type": "Transforming"
+  }
+}

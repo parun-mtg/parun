@@ -1,0 +1,178 @@
+{
+  "faces": [
+    {
+      "costReductions": [
+        {
+          "amount": [
+            {
+              "type": "Generic",
+              "value": 1
+            }
+          ],
+          "perEach": {
+            "type": "Count",
+            "value": {
+              "aggregation": {
+                "type": "Members"
+              },
+              "filter": {
+                "type": "And",
+                "value": [
+                  {
+                    "type": "HasCardType",
+                    "value": "Creature"
+                  },
+                  {
+                    "type": "Or",
+                    "value": [
+                      {
+                        "type": "HasCountersOfAnyKind"
+                      },
+                      {
+                        "type": "HasAttached",
+                        "value": {
+                          "type": "HasSubtype",
+                          "value": "Equipment"
+                        }
+                      },
+                      {
+                        "type": "HasAttached",
+                        "value": {
+                          "type": "And",
+                          "value": [
+                            {
+                              "type": "HasSubtype",
+                              "value": "Aura"
+                            },
+                            {
+                              "type": "Shares",
+                              "value": {
+                                "anchor": {
+                                  "type": "Host"
+                                },
+                                "trait": {
+                                  "type": "Controller"
+                                }
+                              }
+                            }
+                          ]
+                        }
+                      }
+                    ]
+                  },
+                  {
+                    "type": "HeldBy",
+                    "value": {
+                      "holder": "Controller",
+                      "relation": "You"
+                    }
+                  }
+                ]
+              },
+              "scope": {
+                "type": "InZone",
+                "value": {
+                  "player": {
+                    "type": "Relative",
+                    "value": "AnyPlayer"
+                  },
+                  "zone": "Battlefield"
+                }
+              }
+            }
+          }
+        }
+      ],
+      "keywords": [
+        {
+          "type": "Trample"
+        }
+      ],
+      "manaCost": [
+        {
+          "type": "Generic",
+          "value": 8
+        }
+      ],
+      "name": "Walking Skyscraper",
+      "oracleText": "This spell costs {1} less to cast for each modified creature you control. (Equipment, Auras you control, and counters are modifications.)\nTrample\nThis creature has hexproof as long as it's untapped. (It can't be the target of spells or abilities your opponents control.)",
+      "power": {
+        "type": "Literal",
+        "value": 8
+      },
+      "staticAbilities": [
+        {
+          "affected": {
+            "type": "Matching",
+            "value": {
+              "type": "IsSource"
+            }
+          },
+          "condition": {
+            "type": "Compares",
+            "value": {
+              "comparison": "AtLeast",
+              "measured": {
+                "type": "Count",
+                "value": {
+                  "aggregation": {
+                    "type": "Members"
+                  },
+                  "filter": {
+                    "type": "And",
+                    "value": [
+                      {
+                        "type": "IsSource"
+                      },
+                      {
+                        "type": "Not",
+                        "value": {
+                          "type": "IsTapped"
+                        }
+                      }
+                    ]
+                  },
+                  "scope": {
+                    "type": "InZone",
+                    "value": {
+                      "player": {
+                        "type": "Relative",
+                        "value": "AnyPlayer"
+                      },
+                      "zone": "Battlefield"
+                    }
+                  }
+                }
+              },
+              "threshold": {
+                "type": "Literal",
+                "value": 1
+              }
+            }
+          },
+          "modifications": [
+            {
+              "type": "GainKeyword",
+              "value": {
+                "type": "Hexproof"
+              }
+            }
+          ]
+        }
+      ],
+      "toughness": {
+        "type": "Literal",
+        "value": 8
+      },
+      "typeLine": {
+        "subtypes": [
+          "Construct"
+        ],
+        "types": [
+          "Artifact",
+          "Creature"
+        ]
+      }
+    }
+  ]
+}
