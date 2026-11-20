@@ -783,12 +783,10 @@ payableCountedAtGiven modes pcs sources x extra spending narrowing pid oid gs co
 -- a legal cast. The list is lazy and asked before the Bool, so the gate stops
 -- at the first aiming that pays.
 --
--- Not implemented: an exact answer past the cap for a Differing slot taking
--- several targets whose candidates share many values (#8649).
---
 -- Unprinted: an exact answer past the cap where an apart slot
 -- (Target.apartSlots), or an exclusion with a slot named between its two, sits
--- beside a slot taking several targets (Target.cappedWalk).
+-- beside a slot taking several targets, or a Differing slot taking several
+-- shares candidates with a sibling (Target.cappedWalk, Target.matchedSlots).
 -- Parun.AbilitySlotLintSpec's "no card writes a joint check only the capped
 -- walk prices" keeps it out of card data.
 castAimable :: (Ord k) => (Recipient.Recipient -> k) -> Maybe (Seq.Seq ModeIndex.ModeIndex) -> Natural -> PlayerId -> ObjectId -> GameState -> ([Map.Map SlotName.SlotName (Set.Set Recipient.Recipient)], Bool)
@@ -840,11 +838,15 @@ castAimable key announced x pid oid gs = case Game.faceOf oid gs of
         -- (Target.poolSplits). The members of a slot the check tells apart one
         -- by one (Target.apartSlots) are each their own class, and the members
         -- of every other jointly judged slot are classed by what the check reads
-        -- of them (Target.jointSignature). Only where classes of one may sit in
-        -- a slot taking several targets does the walk stop at
-        -- Target.subsetBudget (Target.cappedWalk). Parun.CostSpec's "Drafna's
-        -- Restoration", "Synthetic Wide Verdict", "Graceful Takedown" and
-        -- "Behold the Sinister Six!" groups prove the split and the classes.
+        -- of them (Target.jointSignature). A Differing slot taking several
+        -- targets is walked by counts per class, blind to the values its
+        -- candidates share, and each aiming refilled with candidates no two of
+        -- which share one (Target.matchedSlots, Target.apartAiming), or
+        -- dropped. Only where classes of one may sit in a slot taking several
+        -- targets does the walk stop at Target.subsetBudget
+        -- (Target.cappedWalk). Parun.CostSpec's "Drafna's Restoration",
+        -- "Synthetic Wide Verdict", "Graceful Takedown" and "Behold the
+        -- Sinister Six!" groups prove the split, the classes and the refill.
         aimingsOf slots =
           let sets = setsOf slots
               rangesOf legal = Target.aimingRanges Nothing (Just pid) oid (Just x) slots legal gs
@@ -852,14 +854,15 @@ castAimable key announced x pid oid gs = case Game.faceOf oid gs of
               legalUnder bindings slot = Target.legalRecipientsGiven StackObjectKind.Spell Nothing pools (Just pid) True bindings (Game.acquisitionFor Nothing oid gs) oid slot gs
               (split, splits) = Target.poolSplits legalUnder ranges slots sets
               apart = Target.apartSlots split slots
-              joint = Target.jointSignature gs (Target.boundValueUnder Nothing (Just pid) True oid gs) legalUnder apart slots sets
+              matched = Target.matchedSlots ranges slots sets
+              joint = Target.jointSignature gs (Target.boundValueUnder Nothing (Just pid) True oid gs) legalUnder apart matched slots sets
               signatureIn narrowed =
                 let holders = Map.fromListWith Set.union [(Cost.aimedReferent a, Set.singleton name) | (name, members) <- Map.toList narrowed, a <- Set.toList members]
                     held r = Map.findWithDefault Set.empty r holders
                  in \r -> (key r, joint (held r) r)
-              walkOne narrowed = Target.aimingsBy Cost.aimedReferent (signatureIn narrowed) (rangesOf narrowed) narrowed
+              walkOne narrowed = Maybe.mapMaybe (Target.apartAiming gs (signatureIn narrowed) slots matched narrowed) (Target.aimingsBy Cost.aimedReferent (signatureIn narrowed) (rangesOf narrowed) narrowed)
               walk = concatMap walkOne splits
-              capped = Target.cappedWalk apart ranges slots
+              capped = Target.cappedWalk apart matched ranges slots
               -- Lazy, so only the prefix the gate asks of, and under a cap one
               -- aiming past it, are built.
               (visited, beyond) = if capped then List.genericSplitAt Target.subsetBudget walk else (walk, [])

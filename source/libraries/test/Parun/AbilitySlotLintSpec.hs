@@ -95,6 +95,7 @@ import qualified Parun.Types.DamageRecipient as DamageRecipient
 import qualified Parun.Types.DealtDamage as DealtDamage
 import qualified Parun.Types.DeclarationTrigger as DeclarationTrigger
 import qualified Parun.Types.DefinedX as DefinedX
+import qualified Parun.Types.DifferentIn as DifferentIn
 import qualified Parun.Types.Discard as Discard
 import qualified Parun.Types.Draw as Draw
 import qualified Parun.Types.Duration as Duration
@@ -180,6 +181,7 @@ import qualified Parun.Types.TapPermanents as TapPermanents
 import qualified Parun.Types.TapState as TapState
 import qualified Parun.Types.TargetCount as TargetCount
 import qualified Parun.Types.TargetSlot as TargetSlot
+import qualified Parun.Types.Together as Together
 import qualified Parun.Types.TopOfLibrary as TopOfLibrary
 import qualified Parun.Types.TriggerCondition as TriggerCondition
 import qualified Parun.Types.TriggerFrequency as TriggerFrequency
@@ -737,9 +739,9 @@ siblingBoundCardOffends face =
 
 -- Does this mode write an apart or crowded joint check
 -- Parun.Engine.Cast.castAimable prices only up to Target.subsetBudget
--- (Target.cappedWalk)? A wide Differing slot is capped too, and is not
--- linted: Behold the Sinister Six! prints one (#8649). A named slot is split
--- where its printed count takes at most one target.
+-- (Target.cappedWalk), or a wide Differing slot beside another slot, which
+-- may share its candidates (Target.matchedSlots)? A named slot is split where
+-- its printed count takes at most one target.
 cappedWalkOffends :: Mode.Mode Card.Type.Card (GrantedAbility.GrantedAbility Card.Type.Card) -> Bool
 cappedWalkOffends mode =
   let slots = Mode.targetSlots mode
@@ -750,7 +752,11 @@ cappedWalkOffends mode =
       splittable name = maybe False (\slot -> single slot && not (Target.dependsOnSlot (TargetSlot.pool slot))) (Map.lookup name slots)
       split = Set.filter splittable (Set.fromList (Maybe.mapMaybe (Target.scopeSlot . TargetSlot.pool) (Map.elems slots)))
       wide name = maybe False (not . single) (Map.lookup name slots)
-   in (not (Set.null (Target.apartSlots split slots)) || not (null (Target.crowdedPairs declared slots))) && any wide (Map.keys slots)
+      differing slot = case TargetSlot.together slot of
+        Just (Together.Differing _) -> True
+        _ -> False
+   in ((not (Set.null (Target.apartSlots split slots)) || not (null (Target.crowdedPairs declared slots))) && any wide (Map.keys slots))
+        || (Map.size slots > 1 && any (\(name, slot) -> differing slot && wide name) (Map.toList slots))
 
 -- Every modal a face carries, printed or granted, against cappedWalkOffends.
 cappedWalkCardOffends :: Face.Face Card.Type.Card -> Bool
@@ -1285,10 +1291,10 @@ abilitySlotLintSpec s registry corpus = Spec.describe s "Lint" $ do
     Spec.assertBool s (siblingBoundOffends (verdict Aggregation.Members [Filter.Type.Not (Filter.Type.IsBound gauge)])) "a Members bound whose slot's filter reads the gauge is rejected"
   -- castAimable prices an aiming exactly unless an apart slot, or an exclusion
   -- with a slot named between its two, sits beside a slot taking several
-  -- targets; there it stops at
-  -- Target.subsetBudget and offers the cast unpriced (CR 601.2h takes it
-  -- back). No printed card writes either; Synthetic Total Verdict's gauge, read
-  -- by a Total bound, is exempt.
+  -- targets, or a Differing slot taking several beside another; there it
+  -- stops at Target.subsetBudget and offers the cast unpriced (CR 601.2h takes
+  -- it back). No printed card writes any of them; Synthetic Total Verdict's
+  -- gauge, read by a Total bound, is exempt.
   Spec.it s "no card writes a joint check only the capped walk prices" $ do
     ps <- S.allPrintings s corpus
     let exempt = Set.fromList (fmap (CardName.MkCardName . Text.pack) ["Synthetic Total Verdict"])
@@ -1314,6 +1320,10 @@ abilitySlotLintSpec s registry corpus = Spec.describe s "Lint" $ do
     Spec.assertBool s (not (cappedWalkOffends (takedown (Filter.Type.Not (Filter.Type.IsBound enchanted)) []))) "an exclusion is accepted"
     Spec.assertBool s (cappedWalkOffends (takedown (Filter.Type.IsBound enchanted) [])) "any other read of a wide sibling is rejected"
     Spec.assertBool s (cappedWalkOffends (takedown (Filter.Type.Not (Filter.Type.IsBound enchanted)) [(middle, TargetSlot.required Pool.Creatures Nothing)])) "a slot named between the exclusion's two beside a wide slot is rejected"
+    let apart = (TargetSlot.anyNumber Pool.Creatures Nothing) {TargetSlot.together = Just (Together.Differing DifferentIn.Controllers)}
+        alone = Mode.MkMode (Seq.singleton (Mint.mandatory (Seq.singleton (Effect.Tap (Tap.plain (ObjectRef.InSlot enchanted)))))) (Map.singleton enchanted apart)
+    Spec.assertBool s (not (cappedWalkOffends alone)) "a wide Differing slot alone is accepted"
+    Spec.assertBool s (cappedWalkOffends (takedown (Filter.Type.Not (Filter.Type.IsBound enchanted)) [(enchanted, apart)])) "a wide Differing slot beside another is rejected"
   -- The slot's FOURTH read: a CR 115.1 chooser naming its seat through a
   -- binding (Curse of Inertia's "that attacking player ... of their choice").
   -- Unreported, a card could hand its announcement to a player its condition

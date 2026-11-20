@@ -2582,17 +2582,29 @@ beholdTheSinisterSixSpec s registry = Spec.describe s "Behold the Sinister Six!"
     Spec.assertEqWith s "CR 601.2c one aiming per target count from none to six, the walk not cut short" (length walked, cut) (7, False)
     Spec.assertBool s (not (S.castable S.alice noneId none)) "CR 601.2f no aiming pays {6}{B} without a Swamp"
     Spec.assertBool s (S.castable S.alice paidId paid) "and seven Swamps pay it with nothing targeted"
-  -- Two of each of those twelve: every name is shared, so each pair is its own
-  -- class, and the walk stops at Target.subsetBudget. Not implemented: an
-  -- exact answer past it (#8649).
-  Spec.it s "CR 601.2c under Hinata a walk over many shared names stops at the budget" $ do
+  -- Two of each of those twelve, buried in pairs: every name is shared, 2510
+  -- ways to draw six or fewer names. The walk draws counts blind to the names,
+  -- so its first two cards share one, and refills each with cards of
+  -- different names (Target.apartAiming). `holder` controls Hinata, and alice
+  -- controls `swamps` Swamps.
+  Spec.it s "CR 601.2f under Hinata a walk over many shared names is priced exactly" $ do
+    swamp <- S.printingOf s registry "Swamp"
     hinata <- S.printingOf s registry "Hinata, Dawn-Crowned"
     behold <- S.printingOf s registry "Behold the Sinister Six!"
     named <- traverse (S.printingOf s registry) distinctCreatures
-    let withHinata = snd (S.addPermanent hinata S.bob (Setup.emptyGame S.bothPlayers))
-        buried = List.foldl' (\g card -> snd (S.addGraveyardCard card S.alice g)) withHinata (named <> named)
-        (heldId, gs) = inMainPhase (S.addHandCard behold S.alice buried)
-    Spec.assertBool s (snd (Cast.castAimable (const ()) Nothing 0 S.alice heldId gs)) "CR 601.2c the walk is cut short"
+    let board holder swamps =
+          let withLands = S.landsFor swamp S.alice swamps (Setup.emptyGame S.bothPlayers)
+              (_, withHinata) = S.addPermanent hinata holder withLands
+              buried = List.foldl' (\g card -> snd (S.addGraveyardCard card S.alice g)) withHinata (concatMap (\card -> [card, card]) named)
+           in inMainPhase (S.addHandCard behold S.alice buried)
+        (noneId, none) = board S.bob 0
+        (paidId, paid) = board S.bob 7
+        (oneId, one) = board S.alice 1
+        (walked, cut) = Cast.castAimable (const ()) Nothing 0 S.alice noneId none
+    Spec.assertBool s (not (S.castable S.alice noneId none)) "CR 601.2f against bob's Hinata no aiming pays {6}{B} without a Swamp"
+    Spec.assertBool s (S.castable S.alice paidId paid) "and seven Swamps pay it with nothing targeted"
+    Spec.assertBool s (S.castable S.alice oneId one) "CR 601.2c under alice's Hinata six cards of different names pay {6}{B} down to {B}"
+    Spec.assertEqWith s "CR 601.2c one aiming per target count from none to six, the walk not cut short" (length walked, cut) (7, False)
   -- alice controls Hinata, so each target costs her {1} less, and one Swamp:
   -- only six targets pay. Six Goblin Pikers lie in her graveyard ahead of
   -- `others` distinctly named creature cards, so six names need five others.
