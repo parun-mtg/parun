@@ -477,6 +477,7 @@ shapeOf prompt = case prompt of
   Prompt.OrderCombatTolls {} -> list natural
   Prompt.OrderComponentCards {} -> list natural
   Prompt.ChooseStickerKeeper {} -> natural
+  Prompt.ChooseTokenKind {} -> natural
   Prompt.OrderForEach {} -> list natural
   Prompt.ChooseLoopMembers {} -> setOf recipient
   Prompt.ChoosePile {} -> setOf object

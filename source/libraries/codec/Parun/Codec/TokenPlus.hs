@@ -5,6 +5,7 @@ import qualified Parun.Codec.Filter as Filter
 import qualified Parun.Codec.Keyword as Keyword
 import qualified Parun.JsonCodec.Arm as Arm
 import qualified Parun.JsonCodec.Codec as Codec
+import qualified Parun.JsonCodec.Common as Common
 import qualified Parun.Types.TokenPlus as TokenPlus
 
 -- | The card codec is a PARAMETER for Parun.Codec.TokenR's reason.
@@ -14,7 +15,7 @@ codec cardCodec =
     tagOf
     [ Arm.payload "One" cardCodec TokenPlus.One (\x -> case x of TokenPlus.One y -> Just y; _ -> Nothing),
       Arm.payload "ThatMany" cardCodec TokenPlus.ThatMany (\x -> case x of TokenPlus.ThatMany y -> Just y; _ -> Nothing),
-      Arm.payload "Instead" cardCodec TokenPlus.Instead (\x -> case x of TokenPlus.Instead y -> Just y; _ -> Nothing),
+      Arm.payload "Instead" (Common.nonEmpty cardCodec) TokenPlus.Instead (\x -> case x of TokenPlus.Instead y -> Just y; _ -> Nothing),
       Arm.payload "InsteadCopies" (Filter.codec Keyword.codec) TokenPlus.InsteadCopies (\x -> case x of TokenPlus.InsteadCopies y -> Just y; _ -> Nothing)
     ]
 

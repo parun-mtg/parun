@@ -1,0 +1,145 @@
+{
+  "faces": [
+    {
+      "manaCost": [
+        {
+          "type": "Hybrid",
+          "value": {
+            "left": {
+              "type": "Colored",
+              "value": "Red"
+            },
+            "right": {
+              "type": "Colored",
+              "value": "Green"
+            }
+          }
+        },
+        {
+          "type": "OfType",
+          "value": {
+            "type": "Colored",
+            "value": "Green"
+          }
+        },
+        {
+          "type": "Hybrid",
+          "value": {
+            "left": {
+              "type": "Colored",
+              "value": "Green"
+            },
+            "right": {
+              "type": "Colored",
+              "value": "White"
+            }
+          }
+        }
+      ],
+      "name": "Jinnie Fay, Jetmir's Second",
+      "oracleText": "If you would create one or more tokens, you may instead create that many 2/2 green Cat creature tokens with haste or that many 3/1 green Dog creature tokens with vigilance.",
+      "power": {
+        "type": "Literal",
+        "value": 3
+      },
+      "replacementEffects": [
+        {
+          "effect": {
+            "type": "TokenR",
+            "value": {
+              "matching": {
+                "whose": {
+                  "type": "You"
+                }
+              },
+              "optional": true,
+              "plus": {
+                "type": "Instead",
+                "value": [
+                  {
+                    "faces": [
+                      {
+                        "colorIndicator": [
+                          "Green"
+                        ],
+                        "keywords": [
+                          {
+                            "type": "Haste"
+                          }
+                        ],
+                        "name": "Cat Token",
+                        "power": {
+                          "type": "Literal",
+                          "value": 2
+                        },
+                        "toughness": {
+                          "type": "Literal",
+                          "value": 2
+                        },
+                        "typeLine": {
+                          "subtypes": [
+                            "Cat"
+                          ],
+                          "types": [
+                            "Creature"
+                          ]
+                        }
+                      }
+                    ]
+                  },
+                  {
+                    "faces": [
+                      {
+                        "colorIndicator": [
+                          "Green"
+                        ],
+                        "keywords": [
+                          {
+                            "type": "Vigilance"
+                          }
+                        ],
+                        "name": "Dog Token",
+                        "power": {
+                          "type": "Literal",
+                          "value": 3
+                        },
+                        "toughness": {
+                          "type": "Literal",
+                          "value": 1
+                        },
+                        "typeLine": {
+                          "subtypes": [
+                            "Dog"
+                          ],
+                          "types": [
+                            "Creature"
+                          ]
+                        }
+                      }
+                    ]
+                  }
+                ]
+              }
+            }
+          }
+        }
+      ],
+      "toughness": {
+        "type": "Literal",
+        "value": 3
+      },
+      "typeLine": {
+        "subtypes": [
+          "Druid",
+          "Elf"
+        ],
+        "supertypes": [
+          "Legendary"
+        ],
+        "types": [
+          "Creature"
+        ]
+      }
+    }
+  ]
+}

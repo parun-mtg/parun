@@ -2,6 +2,7 @@ module Parun.Types.EnteringTogether where
 
 import qualified Data.Map.Strict as Map
 import qualified Data.Sequence as Seq
+import qualified Numeric.Natural as Natural
 import qualified Parun.Types.CandidateId as CandidateId
 import qualified Parun.Types.ObjectId as ObjectId
 import qualified Parun.Types.OptionalDecision as OptionalDecision
@@ -17,9 +18,10 @@ data EnteringTogether = MkEnteringTogether
     -- events wait for that order.
     minted :: Seq.Seq ObjectId.ObjectId,
     -- | CR 614.1a: what each token replacement's controller answered for this
-    -- action's creations, and the permanent a copying one copies, so the one
-    -- event is asked about once (Parun.Engine.Event.apply's TokenR arm).
-    substitutions :: Map.Map CandidateId.CandidateId (OptionalDecision.OptionalDecision, Maybe ObjectId.ObjectId),
+    -- action's creations, the permanent a copying one copies, and the index of
+    -- the token kind one offering several substitutes, so the one event is
+    -- asked about once (Parun.Engine.Event.apply's TokenR arm).
+    substitutions :: Map.Map CandidateId.CandidateId (OptionalDecision.OptionalDecision, Maybe ObjectId.ObjectId, Natural.Natural),
     -- | CR 616.1: the replacements each player has applied to this action's
     -- token creations, first applied first, so the one event keeps one order
     -- (Parun.Engine.Event.inCreationOrder). Keyed by every player the action

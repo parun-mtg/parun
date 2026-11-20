@@ -1,5 +1,6 @@
 module Parun.Types.TokenPlus where
 
+import qualified Data.List.NonEmpty as NonEmpty
 import qualified Parun.Types.Filter as Filter
 import qualified Parun.Types.Keyword as Keyword
 
@@ -16,8 +17,10 @@ data TokenPlus card
     -- (Chatterfang, Squirrel General): one more per token the event creates.
     ThatMany card
   | -- | "that many 5/5 red Dragon creature tokens with flying are created
-    -- instead" (Draconic Visitor): the matched tokens' lots become this card's.
-    Instead card
+    -- instead" (Draconic Visitor): the matched tokens' lots become this card's,
+    -- or one of these its controller chooses ("that many ... Cat ... or that
+    -- many ... Dog", Jinnie Fay, Jetmir's Second).
+    Instead (NonEmpty.NonEmpty card)
   | -- | "that many tokens that are copies of equipped creature" instead
     -- (Mirrormind Crown, CR 707.2): Instead, over a copy of the permanent this
     -- names in place of a written card.
@@ -28,12 +31,12 @@ instance Functor TokenPlus where
   fmap f plus = case plus of
     One card -> One (f card)
     ThatMany card -> ThatMany (f card)
-    Instead card -> Instead (f card)
+    Instead cards -> Instead (fmap f cards)
     InsteadCopies copied -> InsteadCopies copied
 
 instance Foldable TokenPlus where
   foldr f z plus = case plus of
     One card -> f card z
     ThatMany card -> f card z
-    Instead card -> f card z
+    Instead cards -> foldr f z cards
     InsteadCopies _ -> z

@@ -4,6 +4,7 @@ module Parun.Codec.EnteringTogether where
 
 import qualified Data.Map.Strict as Map
 import qualified Data.Sequence as Seq
+import qualified Numeric.Natural as Natural
 import qualified Parun.Codec.CandidateId as CandidateId.Codec
 import qualified Parun.Codec.ObjectId as ObjectId.Codec
 import qualified Parun.Codec.OptionalDecision as OptionalDecision.Codec
@@ -32,9 +33,10 @@ codec = Fields.object $ do
       }
 
 -- | One row's answer, keyed by the row.
-substitution :: Codec.Codec (CandidateId.CandidateId, (OptionalDecision.OptionalDecision, Maybe ObjectId.ObjectId))
+substitution :: Codec.Codec (CandidateId.CandidateId, (OptionalDecision.OptionalDecision, Maybe ObjectId.ObjectId, Natural.Natural))
 substitution = Fields.object $ do
   by <- Fields.required "by" CandidateId.Codec.codec fst
-  decision <- Fields.required "decision" OptionalDecision.Codec.codec (fst . snd)
-  copied <- Fields.defaulted "copied" Nothing (Common.maybe ObjectId.Codec.codec) (snd . snd)
-  pure (by, (decision, copied))
+  decision <- Fields.required "decision" OptionalDecision.Codec.codec (\(_, (d, _, _)) -> d)
+  copied <- Fields.defaulted "copied" Nothing (Common.maybe ObjectId.Codec.codec) (\(_, (_, c, _)) -> c)
+  kind <- Fields.defaulted "kind" 0 Common.natural (\(_, (_, _, k)) -> k)
+  pure (by, (decision, copied, kind))

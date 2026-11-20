@@ -48,37 +48,39 @@
               },
               "plus": {
                 "type": "Instead",
-                "value": {
-                  "faces": [
-                    {
-                      "colorIndicator": [
-                        "Red"
-                      ],
-                      "keywords": [
-                        {
-                          "type": "Flying"
-                        }
-                      ],
-                      "name": "Dragon Token",
-                      "power": {
-                        "type": "Literal",
-                        "value": 5
-                      },
-                      "toughness": {
-                        "type": "Literal",
-                        "value": 5
-                      },
-                      "typeLine": {
-                        "subtypes": [
-                          "Dragon"
+                "value": [
+                  {
+                    "faces": [
+                      {
+                        "colorIndicator": [
+                          "Red"
                         ],
-                        "types": [
-                          "Creature"
-                        ]
+                        "keywords": [
+                          {
+                            "type": "Flying"
+                          }
+                        ],
+                        "name": "Dragon Token",
+                        "power": {
+                          "type": "Literal",
+                          "value": 5
+                        },
+                        "toughness": {
+                          "type": "Literal",
+                          "value": 5
+                        },
+                        "typeLine": {
+                          "subtypes": [
+                            "Dragon"
+                          ],
+                          "types": [
+                            "Creature"
+                          ]
+                        }
                       }
-                    }
-                  ]
-                }
+                    ]
+                  }
+                ]
               }
             }
           }

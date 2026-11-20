@@ -385,6 +385,8 @@ offerOf namer gs prompt = case prompt of
   -- CR 123.5c: each object by its card's name.
   Prompt.KeepHand _ _ hands -> indexing namer prompt Nothing [] (fmap (objects namer) (NonEmpty.toList hands))
   Prompt.ChooseStickerKeeper _ _ printings -> indexing namer prompt Nothing [] (fmap (R.Text . printingName gs) (NonEmpty.toList printings))
+  -- CR 614.1a: each token kind by its card's name.
+  Prompt.ChooseTokenKind _ _ source kinds -> indexing namer prompt (Just source) [] (fmap (R.Text . CardName.unwrap) (NonEmpty.toList kinds))
   -- CR 706.4: each result as its number.
   -- CR 706.1a: the die by its sides.
   Prompt.RollDie sides -> fields [("sides", natural sides)]

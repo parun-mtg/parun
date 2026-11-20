@@ -75,11 +75,11 @@ spec s = Spec.describe s "Parun.Codec.TokenR" $ do
       ( TokenR.MkTokenR
           { TokenR.matching = TokenPattern.MkTokenPattern {TokenPattern.whose = ControllerRelation.Related PlayerRelation.You, TokenPattern.whatToken = Filter.HasCardType CardType.Artifact, TokenPattern.effectsOnly = False, TokenPattern.firstEachTurn = False},
             TokenR.scaling = Nothing,
-            TokenR.plus = Just (TokenPlus.Instead soldier),
+            TokenR.plus = Just (TokenPlus.Instead (soldier NonEmpty.:| [])),
             TokenR.optional = False
           }
       )
-      " {\"matching\":{\"whose\":{\"type\":\"You\"},\"whatToken\":{\"type\":\"HasCardType\",\"value\":\"Artifact\"}},\"plus\":{\"type\":\"Instead\",\"value\":{\"faces\":[{\"name\":\"Soldier Token\",\"typeLine\":{\"types\":[\"Creature\"]}}]}}} "
+      " {\"matching\":{\"whose\":{\"type\":\"You\"},\"whatToken\":{\"type\":\"HasCardType\",\"value\":\"Artifact\"}},\"plus\":{\"type\":\"Instead\",\"value\":[{\"faces\":[{\"name\":\"Soldier Token\",\"typeLine\":{\"types\":[\"Creature\"]}}]}]}} "
   -- CR 614.1a / 707.2: Mirrormind Crown's optional, once-a-turn copies.
   Spec.it s "an optional first-each-turn substitute of copies" $
     Common.assertCodec

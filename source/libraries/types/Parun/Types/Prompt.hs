@@ -810,6 +810,12 @@ data Prompt r where
   -- creation ("you may instead create", Mirrormind Crown). Never elided,
   -- ChooseDredge's reason.
   ChooseSubstitute :: Decider.Decider -> PlayerId.PlayerId -> ObjectId.ObjectId -> Prompt OptionalDecision.OptionalDecision
+  -- | CR 614.1a: which of the token kinds a token replacement whose source the
+  -- ObjectId names offers ("that many ... Cat ... or that many ... Dog", Jinnie
+  -- Fay, Jetmir's Second) its controller substitutes, by index, each by its
+  -- card's name; an index past the end reads as the first. Asked only for two
+  -- or more.
+  ChooseTokenKind :: Decider.Decider -> PlayerId.PlayerId -> ObjectId.ObjectId -> NonEmpty.NonEmpty CardName.CardName -> Prompt Natural.Natural
   -- | CR 701.21a: which of the payer's matching permanents are sacrificed to
   -- pay a cost, the Natural how many; asked only with more candidates than the
   -- count. Not ChooseTargets: CR 115.1 makes a target only what the word

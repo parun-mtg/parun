@@ -5815,7 +5815,11 @@ apply settle batch applied batchPrevented candidate event =
     -- each matched lot for the row's card at the same count, in the same event,
     -- so the riders still reach it (its ruling) and a later row scales it. An
     -- unmatched lot stays. The data/scenarios/draconic-visitor-* files are the
-    -- proof, the Chatterfang race for the unmatched lot.
+    -- proof, the Chatterfang race for the unmatched lot. Jinnie Fay, Jetmir's
+    -- Second's "or" is one row offering two cards, its controller choosing one
+    -- as it applies; two rows would let CR 614.5 swap the second's card over a
+    -- later row's. The data/scenarios/jinnie-fay-* files are the proof, the
+    -- Holo-Engineer one for the single row.
     --
     -- CR 614.1a / 707.2: Mirrormind Crown's "you may instead create that many
     -- tokens that are copies of equipped creature" swaps every matched lot for
@@ -5856,10 +5860,16 @@ apply settle batch applied batchPrevented candidate event =
             picked <- case (decision, copyable) of
               (OptionalDecision.Exercises, Just offered) -> Game.chooseAmong (\chooser chooses pool -> Prompt.ChoosePermanent chooser chooses (ReplacementCandidate.source candidate) pool Seq.empty) who offered
               _ -> pure Nothing
-            let remember open = open {EnteringTogether.substitutions = Map.insert identity_ (decision, picked) (EnteringTogether.substitutions open)}
+            -- CR 614.1a: Jinnie Fay's "or", asked only where it offers two
+            -- kinds or more.
+            kind <- case (decision, plus) of
+              (OptionalDecision.Exercises, Just (TokenPlus.Instead kinds))
+                | length kinds > 1 -> Game.choose (Prompt.ChooseTokenKind (Decide.deciderFor who asked) who (ReplacementCandidate.source candidate) (fmap (Face.name . NonEmpty.head . Card.Type.faces) kinds))
+              _ -> pure 0
+            let remember open = open {EnteringTogether.substitutions = Map.insert identity_ (decision, picked, kind) (EnteringTogether.substitutions open)}
             State.modify' (\g -> g {GameState.scratch = (GameState.scratch g) {Scratch.enteringTogether = fmap remember (Scratch.enteringTogether (GameState.scratch g))}})
-            pure (decision, picked)
-      (decision, picked) <- maybe ask pure answered
+            pure (decision, picked, kind)
+      (decision, picked, kind) <- maybe ask pure answered
       case decision of
         OptionalDecision.Declines -> pure (Just event)
         OptionalDecision.Exercises -> do
@@ -5884,7 +5894,9 @@ apply settle batch applied batchPrevented candidate event =
                 -- Chatterfang's "that many": every token the event would create as
                 -- this row applies, its own scaling included.
                 Just (TokenPlus.ThatMany card) -> scaled Seq.|> lotOf card (sum (fmap TokenLot.count scaled))
-                Just (TokenPlus.Instead card) -> fmap (swapFor card Nothing) scaled
+                -- An index past the end reads as the first, the prompt's own
+                -- reading.
+                Just (TokenPlus.Instead kinds) -> fmap (swapFor (Maybe.fromMaybe (NonEmpty.head kinds) (Maybe.listToMaybe (List.genericDrop kind (NonEmpty.toList kinds)))) Nothing) scaled
                 -- The token's own card is the copied permanent's, CreateCopy's
                 -- pairing. No pick, or a pick with no card behind it, swaps
                 -- nothing. The swap drops a replaced copy effect's exceptions:

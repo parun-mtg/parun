@@ -525,6 +525,9 @@ data Response
   | -- | CR 614.1a: whether an optional substitution applied (Exercises) or the
     -- flip or roll stood (Declines). Distinct from ChoseDredge for its reason.
     ChoseSubstitute OptionalDecision.OptionalDecision
+  | -- | CR 614.1a: the index of the token kind a token replacement's controller
+    -- substituted.
+    ChoseTokenKind Natural.Natural
   | -- | CR 734.1: whether the payer of an action that could not be legally
     -- completed also reversed the mana abilities they activated while making it
     -- (Exercises) or kept them and the mana they made (Declines). Distinct from

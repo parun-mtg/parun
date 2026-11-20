@@ -234,6 +234,7 @@ subjectOf prompt = case prompt of
   Prompt.OrderCombatTolls _ pid _ -> Just pid
   Prompt.OrderComponentCards _ pid _ _ -> Just pid
   Prompt.ChooseStickerKeeper _ pid _ -> Just pid
+  Prompt.ChooseTokenKind _ pid _ _ -> Just pid
   Prompt.OrderForEach _ pid _ _ -> Just pid
   Prompt.ChooseLoopMembers _ pid _ _ _ -> Just pid
   Prompt.ChooseRepeat _ pid _ _ -> Just pid
@@ -426,6 +427,7 @@ deciderOf prompt = case prompt of
   Prompt.OrderCombatTolls decider _ _ -> Just (Decider.unwrap decider)
   Prompt.OrderComponentCards decider _ _ _ -> Just (Decider.unwrap decider)
   Prompt.ChooseStickerKeeper decider _ _ -> Just (Decider.unwrap decider)
+  Prompt.ChooseTokenKind decider _ _ _ -> Just (Decider.unwrap decider)
   Prompt.OrderForEach decider _ _ _ -> Just (Decider.unwrap decider)
   Prompt.ChooseLoopMembers decider _ _ _ _ -> Just (Decider.unwrap decider)
   Prompt.ChoosePile decider _ _ _ _ -> Just (Decider.unwrap decider)

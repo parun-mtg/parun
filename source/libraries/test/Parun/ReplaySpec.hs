@@ -1408,6 +1408,12 @@ combatReplaySpec s =
           let p = Prompt.ChooseStickerKeeper decider S.alice (PrintingId.MkPrintingId 3 NonEmpty.:| [PrintingId.MkPrintingId 4])
           Spec.assertEqWith s "choosing the second round trips" (Replay.decode p (Replay.encode p 1)) (Just 1)
           Spec.assertEqWith s "a short transcript keeps them on the first" (Replay.defaultAnswer p) 0
+        -- CR 614.1a: which token kind a token replacement substitutes is a
+        -- decision.
+        Spec.it s "ChooseTokenKind round-trips through the transcript" $ do
+          let p = Prompt.ChooseTokenKind decider S.alice (ObjectId.MkObjectId 7) (CardName.MkCardName (Text.pack "Cat Token") NonEmpty.:| [CardName.MkCardName (Text.pack "Dog Token")])
+          Spec.assertEqWith s "choosing the second round trips" (Replay.decode p (Replay.encode p 1)) (Just 1)
+          Spec.assertEqWith s "a short transcript substitutes the first" (Replay.defaultAnswer p) 0
         -- CR 315.5a: which opening hand a player keeps is a decision.
         Spec.it s "KeepHand round-trips through the transcript" $ do
           let p = Prompt.KeepHand decider S.alice ([ObjectId.MkObjectId 3] NonEmpty.:| [[ObjectId.MkObjectId 4]])

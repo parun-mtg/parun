@@ -239,6 +239,7 @@ encode p answer = case p of
   Prompt.OrderCombatTolls {} -> Response.OrderedCombatTolls answer
   Prompt.OrderComponentCards {} -> Response.OrderedComponentCards answer
   Prompt.ChooseStickerKeeper {} -> Response.ChoseStickerKeeper answer
+  Prompt.ChooseTokenKind {} -> Response.ChoseTokenKind answer
   Prompt.OrderForEach {} -> Response.OrderedForEach answer
   Prompt.ChooseLoopMembers {} -> Response.ChoseLoopMembers answer
   Prompt.ChoosePile {} -> Response.ChosePile answer
@@ -671,6 +672,9 @@ decode p response = case p of
     _ -> Nothing
   Prompt.ChooseStickerKeeper {} -> case response of
     Response.ChoseStickerKeeper index -> Just index
+    _ -> Nothing
+  Prompt.ChooseTokenKind {} -> case response of
+    Response.ChoseTokenKind index -> Just index
     _ -> Nothing
   Prompt.OrderForEach {} -> case response of
     Response.OrderedForEach order -> Just order
@@ -1308,6 +1312,8 @@ defaultAnswer p = case p of
   -- CR 123.5c: the first object, the one the melded or merged permanent's split
   -- names first.
   Prompt.ChooseStickerKeeper {} -> 0
+  -- CR 614.1a: the first token kind the replacement names.
+  Prompt.ChooseTokenKind {} -> 0
   -- CR 608.2f: likewise, and it is the engine's own APNAP-then-ascending sweep
   -- order -- what parun walked in before the intra-seat key became the resolving
   -- controller's to choose.
