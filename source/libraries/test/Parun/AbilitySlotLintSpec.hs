@@ -25,6 +25,7 @@ module Parun.AbilitySlotLintSpec where
 
 import qualified Data.Foldable as Foldable
 import qualified Data.Functor.Const as Const
+import qualified Data.Functor.Identity as Identity
 import qualified Data.List.NonEmpty as NonEmpty
 import qualified Data.Map.Strict as Map
 import qualified Data.Maybe as Maybe
@@ -72,6 +73,7 @@ import qualified Parun.Types.AttackTrigger as AttackTrigger
 import qualified Parun.Types.BoundMeasure as BoundMeasure
 import qualified Parun.Types.BoundReading as BoundReading
 import qualified Parun.Types.Card as Card.Type
+import qualified Parun.Types.CardAbilities as CardAbilities
 import qualified Parun.Types.CardName as CardName
 import qualified Parun.Types.CardType as CardType
 import qualified Parun.Types.CastFromZone as CastFromZone
@@ -2005,6 +2007,43 @@ abilitySlotLintSpec s registry corpus = Spec.describe s "Lint" $ do
     Spec.assertBool s (not (anyFace chosenPlayerStoredOffends (Printing.card hama))) "the real Hama, the Bloodbender is accepted"
     Spec.assertBool s (chosenPlayerStoredOffends (planted pump)) "a for-as-long-as duration is rejected"
     Spec.assertBool s (chosenPlayerStoredOffends (planted permission)) "an exile play permission's condition is rejected"
+  -- CR 613.1f, swept over the pool. See resolvingTriggeredLendOffends.
+  Spec.it s "CR 613.1f no card writes a resolving lend of triggered abilities" $ do
+    ps <- S.allPrintings s corpus
+    let offenders = filter (anyFaceOrMinted resolvingTriggeredLendOffends . Printing.card) ps
+    Spec.assertBool s (any (anyFaceOrMinted (not . null . resolvingLends) . Printing.card) ps) "the pool has a resolving lend"
+    Spec.assertEqWith s "no resolving lend lends triggered abilities" (fmap (S.nameOf . Printing.card) offenders) []
+  -- The lint itself, on Quicksilver Elemental's resolving lend doctored to
+  -- lend triggered abilities too. Koh, the Face Stealer's static lend of them
+  -- is accepted.
+  Spec.it s "the lint itself catches a resolving lend of triggered abilities" $ do
+    elemental <- S.printingOf s registry "Quicksilver Elemental"
+    koh <- S.printingOf s registry "Koh, the Face Stealer"
+    let lendTriggered effect = case effect of
+          Effect.ModifyTarget modify
+            | Modification.GainCardAbilities lend <- ModifyTarget.modification modify ->
+                Effect.ModifyTarget modify {ModifyTarget.modification = Modification.GainCardAbilities lend {CardAbilities.triggered = True}}
+          _ -> effect
+        doctor ability = ability {ActivatedAbility.modal = Identity.runIdentity (Children.modalChildren Children.modalLeaves {Children.modalEffect = Identity.Identity . lendTriggered} (ActivatedAbility.modal ability))}
+        face = S.combinedFace elemental
+    Spec.assertBool s (not (resolvingTriggeredLendOffends face)) "the real Quicksilver Elemental is accepted"
+    Spec.assertBool s (not (anyFace resolvingTriggeredLendOffends (Printing.card koh))) "the real Koh, the Face Stealer is accepted"
+    Spec.assertBool s (resolvingTriggeredLendOffends face {Face.activatedAbilities = fmap doctor (Face.activatedAbilities face)}) "a resolving lend of triggered abilities is rejected"
+
+-- CR 613.1f: Parun.Engine.Resolve.Common.expandGrant lends a resolving
+-- GainCardAbilities' activated abilities and keywords but no triggered
+-- ability, which only a static lend carries (Koh, the Face Stealer). No
+-- printing resolves a lend of triggered abilities, so this keeps it out of card
+-- data.
+resolvingTriggeredLendOffends :: Face.Face Card.Type.Card -> Bool
+resolvingTriggeredLendOffends = any CardAbilities.triggered . resolvingLends
+
+-- Every GainCardAbilities a resolution applies, off Parun.Engine.Children's
+-- traversal, so an opcode gaining a Modification is swept without an arm here.
+resolvingLends :: Face.Face Card.Type.Card -> [CardAbilities.CardAbilities]
+resolvingLends face =
+  let stored = Const.getConst . Children.effectChildren Children.effectLeaves {Children.onModification = \modification -> Const.Const [modification]}
+   in [lend | Modification.GainCardAbilities lend <- concatMap stored (cardAuthoredEffects face)]
 
 -- CR 611.2b / 702.174a: Parun.Engine.Quantity.bakePlayerRef leaves
 -- PlayerRef.ChosenPlayerOfBound standing in a stored condition, where no slot
