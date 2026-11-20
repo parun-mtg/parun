@@ -477,8 +477,11 @@ modifyTarget resolving source controller legal chosen (ModifyTarget.MkModifyTarg
               -- "Only you"), baked now as the seat it names. data/scenarios'
               -- Martyrdom files prove it.
               --
-              -- Not implemented: a reference naming several players or none
-              -- stays unbaked, read from the receiver's controller (#7635).
+              -- Unprinted: a reference naming several players or none stays
+              -- unbaked, read from the receiver's controller, and a static
+              -- grant's is never baked. Parun.AbilitySlotLintSpec's "CR 602.1b
+              -- no card grants an activated ability whose activator names
+              -- other than you" keeps both out of card data.
               bakeActivator m = case m of
                 Modification.GainAbility (GrantedAbility.Activated a)
                   | Activator.Player who <- ActivatedAbility.activator a,
