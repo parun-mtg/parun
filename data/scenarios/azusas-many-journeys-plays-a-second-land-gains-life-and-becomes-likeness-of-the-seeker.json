@@ -1,0 +1,364 @@
+{
+  "board": {
+    "active": "alice",
+    "seats": [
+      {
+        "battlefield": [
+          {
+            "card": "Azusa's Many Journeys",
+            "counters": [
+              {
+                "key": {
+                  "type": "Lore"
+                },
+                "value": 0
+              }
+            ],
+            "label": "saga"
+          }
+        ],
+        "hand": [
+          {
+            "card": "Forest",
+            "label": "f1"
+          },
+          {
+            "card": "Forest",
+            "label": "f2"
+          },
+          {
+            "card": "Forest",
+            "label": "f3"
+          },
+          {
+            "card": "Forest",
+            "label": "f4"
+          }
+        ],
+        "library": [
+          {
+            "card": "Swamp"
+          },
+          {
+            "card": "Swamp"
+          },
+          {
+            "card": "Swamp"
+          },
+          {
+            "card": "Swamp"
+          },
+          {
+            "card": "Swamp"
+          }
+        ],
+        "name": "alice"
+      },
+      {
+        "battlefield": [
+          {
+            "card": "Hill Giant",
+            "label": "bgiant"
+          }
+        ],
+        "library": [
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          }
+        ],
+        "name": "bob"
+      }
+    ],
+    "step": "PrecombatMain"
+  },
+  "description": "CR 715.2b / 712.11a / 509.1h: Azusa's Many Journeys allows a second land play, then gains 3 life, then returns transformed as Likeness of the Seeker, which untaps up to three of alice's lands when it becomes blocked",
+  "note": "Four Forests are tapped for mana before combat on turn 7; three are untapped by the trigger and the fourth stays tapped. A third land play on turn 1 is refused.",
+  "timeline": [
+    {
+      "do": "Pass",
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": {
+        "PlayLand": "$f1"
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": {
+        "PlayLand": "$f2"
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "player": "alice",
+      "refuse": {
+        "PlayLand": "$f3"
+      },
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Count": {
+          "card": "Forest",
+          "count": 2,
+          "player": "alice",
+          "zone": "Battlefield"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": {
+        "Attack": []
+      },
+      "player": "bob",
+      "step": "DeclareAttackers",
+      "turn": 2
+    },
+    {
+      "do": {
+        "Attack": []
+      },
+      "player": "bob",
+      "step": "DeclareAttackers",
+      "turn": 4
+    },
+    {
+      "do": {
+        "Attack": []
+      },
+      "player": "bob",
+      "step": "DeclareAttackers",
+      "turn": 6
+    },
+    {
+      "do": "Pass",
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 3
+    },
+    {
+      "check": {
+        "Life": {
+          "life": 23,
+          "player": "alice"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 3
+    },
+    {
+      "do": {
+        "PlayLand": "$f3"
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 3
+    },
+    {
+      "do": "Pass",
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 5
+    },
+    {
+      "check": {
+        "Count": {
+          "card": "Likeness of the Seeker",
+          "count": 1,
+          "player": "alice",
+          "zone": "Battlefield"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 5
+    },
+    {
+      "check": {
+        "PowerToughness": {
+          "object": "Likeness of the Seeker",
+          "power": 3,
+          "toughness": 3
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 5
+    },
+    {
+      "do": {
+        "PlayLand": "$f4"
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 5
+    },
+    {
+      "do": {
+        "Take": {
+          "action": "ActivateManaAbility Forest"
+        }
+      },
+      "player": "alice",
+      "step": "BeginningOfCombat",
+      "turn": 7
+    },
+    {
+      "do": {
+        "Take": {
+          "action": "ActivateManaAbility Forest#2"
+        }
+      },
+      "player": "alice",
+      "step": "BeginningOfCombat",
+      "turn": 7
+    },
+    {
+      "do": {
+        "Take": {
+          "action": "ActivateManaAbility Forest#3"
+        }
+      },
+      "player": "alice",
+      "step": "BeginningOfCombat",
+      "turn": 7
+    },
+    {
+      "do": {
+        "Take": {
+          "action": "ActivateManaAbility Forest#4"
+        }
+      },
+      "player": "alice",
+      "step": "BeginningOfCombat",
+      "turn": 7
+    },
+    {
+      "do": {
+        "Attack": [
+          "Likeness of the Seeker"
+        ]
+      },
+      "player": "alice",
+      "step": "DeclareAttackers",
+      "turn": 7
+    },
+    {
+      "do": {
+        "Block": {
+          "$bgiant": [
+            "Likeness of the Seeker"
+          ]
+        }
+      },
+      "player": "bob",
+      "step": "DeclareBlockers",
+      "turn": 7
+    },
+    {
+      "do": "Pass",
+      "player": "alice",
+      "step": "DeclareBlockers",
+      "turn": 7
+    },
+    {
+      "player": "alice",
+      "refuse": {
+        "Answer": {
+          "prompt": "ChooseAnyNumberOfPermanents",
+          "with": [
+            "Forest",
+            "Forest#2",
+            "Forest#3",
+            "Forest#4"
+          ]
+        }
+      },
+      "step": "DeclareBlockers",
+      "turn": 7
+    },
+    {
+      "do": {
+        "Answer": {
+          "prompt": "ChooseAnyNumberOfPermanents",
+          "with": [
+            "Forest",
+            "Forest#2",
+            "Forest#4"
+          ]
+        }
+      },
+      "player": "alice",
+      "step": "DeclareBlockers",
+      "turn": 7
+    },
+    {
+      "check": {
+        "Tapped": {
+          "object": "Forest",
+          "tapped": false
+        }
+      },
+      "player": "alice",
+      "step": "DeclareBlockers",
+      "turn": 7
+    },
+    {
+      "check": {
+        "Tapped": {
+          "object": "Forest#2",
+          "tapped": false
+        }
+      },
+      "player": "alice",
+      "step": "DeclareBlockers",
+      "turn": 7
+    },
+    {
+      "check": {
+        "Tapped": {
+          "object": "Forest#3",
+          "tapped": true
+        }
+      },
+      "player": "alice",
+      "step": "DeclareBlockers",
+      "turn": 7
+    },
+    {
+      "check": {
+        "Tapped": {
+          "object": "Forest#4",
+          "tapped": false
+        }
+      },
+      "player": "alice",
+      "step": "DeclareBlockers",
+      "turn": 7
+    }
+  ]
+}

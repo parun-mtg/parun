@@ -1,0 +1,315 @@
+{
+  "board": {
+    "active": "alice",
+    "seats": [
+      {
+        "battlefield": [
+          {
+            "card": "Behold the Unspeakable",
+            "counters": [
+              {
+                "key": {
+                  "type": "Lore"
+                },
+                "value": 0
+              }
+            ],
+            "label": "b1"
+          },
+          {
+            "card": "Behold the Unspeakable",
+            "counters": [
+              {
+                "key": {
+                  "type": "Lore"
+                },
+                "value": 1
+              }
+            ],
+            "label": "b2"
+          }
+        ],
+        "hand": [
+          {
+            "card": "Plains",
+            "label": "h1"
+          }
+        ],
+        "library": [
+          {
+            "card": "Swamp",
+            "label": "l1"
+          },
+          {
+            "card": "Swamp",
+            "label": "l2"
+          },
+          {
+            "card": "Swamp",
+            "label": "l3"
+          },
+          {
+            "card": "Swamp",
+            "label": "l4"
+          },
+          {
+            "card": "Swamp",
+            "label": "l5"
+          },
+          {
+            "card": "Mountain",
+            "label": "l6"
+          },
+          {
+            "card": "Forest",
+            "label": "l7"
+          },
+          {
+            "card": "Island",
+            "label": "l8"
+          },
+          {
+            "card": "Plains",
+            "label": "l9"
+          },
+          {
+            "card": "Plains",
+            "label": "l10"
+          }
+        ],
+        "name": "alice"
+      },
+      {
+        "battlefield": [
+          {
+            "card": "Hill Giant",
+            "label": "bgiant"
+          }
+        ],
+        "library": [
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          }
+        ],
+        "name": "bob"
+      }
+    ],
+    "step": "PrecombatMain"
+  },
+  "description": "CR 715.2b / 712.11a / 611.2a: Behold the Unspeakable gives bob's creatures -2/-0 until alice's next turn, draws four with one or fewer cards in hand and otherwise scries 2 then draws two, and returns transformed as Vision of the Unspeakable, +1/+1 for each card in alice's hand",
+  "note": "Two Sagas a chapter apart. On turn 1 alice holds one card, so the later Saga's chapter II draws four; on turn 3 she holds six, so the earlier Saga's chapter II scries and draws two. The later Saga's chapter III resolves last, so Vision sees eight cards.",
+  "timeline": [
+    {
+      "do": {
+        "OrderTriggers": [
+          "$b1",
+          "$b2"
+        ]
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": "Pass",
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Count": {
+          "card": "Swamp",
+          "count": 4,
+          "player": "alice",
+          "zone": "Hand"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": "Pass",
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "PowerToughness": {
+          "object": "$bgiant",
+          "power": 1,
+          "toughness": 3
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": {
+        "Attack": []
+      },
+      "player": "bob",
+      "step": "DeclareAttackers",
+      "turn": 2
+    },
+    {
+      "check": {
+        "PowerToughness": {
+          "object": "$bgiant",
+          "power": 1,
+          "toughness": 3
+        }
+      },
+      "player": "bob",
+      "step": "EndStep",
+      "turn": 2
+    },
+    {
+      "check": {
+        "PowerToughness": {
+          "object": "$bgiant",
+          "power": 3,
+          "toughness": 3
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 3
+    },
+    {
+      "do": {
+        "OrderTriggers": [
+          "$b2",
+          "$b1"
+        ]
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 3
+    },
+    {
+      "do": "Pass",
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 3
+    },
+    {
+      "do": {
+        "Answer": {
+          "prompt": "ChooseScry",
+          "with": [
+            [
+              "$l6"
+            ],
+            [
+              "$l7"
+            ]
+          ]
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 3
+    },
+    {
+      "check": {
+        "Count": {
+          "card": "Forest",
+          "count": 1,
+          "player": "alice",
+          "zone": "Hand"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 3
+    },
+    {
+      "check": {
+        "Count": {
+          "card": "Island",
+          "count": 1,
+          "player": "alice",
+          "zone": "Hand"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 3
+    },
+    {
+      "check": {
+        "View": {
+          "is": [
+            "$l9",
+            "$l10",
+            "Mountain"
+          ],
+          "of": "Zone",
+          "player": "alice",
+          "zone": "Library"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 3
+    },
+    {
+      "do": "Pass",
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 3
+    },
+    {
+      "check": {
+        "PowerToughness": {
+          "object": "Behold the Unspeakable#2",
+          "power": 8,
+          "toughness": 8
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 3
+    },
+    {
+      "check": {
+        "Names": {
+          "names": [
+            "Vision of the Unspeakable"
+          ],
+          "object": "Behold the Unspeakable#2"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 3
+    },
+    {
+      "check": {
+        "Keywords": {
+          "count": 1,
+          "keyword": {
+            "type": "Trample"
+          },
+          "object": "Behold the Unspeakable#2"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 3
+    }
+  ]
+}
