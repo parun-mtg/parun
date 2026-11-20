@@ -76,10 +76,11 @@ play page = do
   -- A set's whole card list is no deck to play.
   let byName = Map.fromList [(name, path) | path <- paths, let name = Lobby.deckName deckRoot path, not (Text.isSuffixOf (Text.pack "/all") name)]
       names = Seq.fromList (Map.keys byName)
-      random = do
+      -- One of these decks at random.
+      random among = do
         key <- Key.fresh
         let roll = foldr (\w acc -> acc * 4294967296 + toInteger w) 0 (Key.unwrap key)
-        pure (Integer.toInt (mod roll (toInteger (max 1 (Seq.length names)))) >>= (\i -> Seq.lookup i names))
+        pure (Integer.toInt (mod roll (toInteger (max 1 (Seq.length among)))) >>= (\i -> Seq.lookup i among))
       -- The lobby, with the decks whose colours are still to read: one
       -- batch at a time while no tap waits, the page given a turn between.
       choose lobby work = do
@@ -97,9 +98,9 @@ play page = do
             (event, value) <- Browser.next page
             case event of
               Left Lobby.MkStart | Just one <- Lobby.mine lobby >>= (`Map.lookup` byName) -> do
-                two <- maybe (fmap (Maybe.fromMaybe Text.empty) random) pure (Lobby.theirs lobby)
+                two <- maybe (fmap (Maybe.fromMaybe Text.empty) (random (Lobby.opponents lobby))) pure (Lobby.theirs lobby)
                 maybe (choose lobby work) (\path -> pure (one, path)) (Map.lookup two byName)
-              Left Lobby.MkRandom -> random >>= maybe (choose lobby work) (\name -> choose (Lobby.update (Lobby.MkPick name) Text.empty lobby) work)
+              Left Lobby.MkRandom -> random (if Lobby.choosing lobby == Lobby.MkMine then names else Lobby.opponents lobby) >>= maybe (choose lobby work) (\name -> choose (Lobby.update (Lobby.MkPick name) Text.empty lobby) work)
               Left e -> previewing (Lobby.update e value lobby) >>= \next -> choose next work
               Right _ -> choose lobby work
       -- A deck's colours come from the card files its lines name, each
@@ -128,12 +129,15 @@ play page = do
                in Lobby.MkLine n name (Face.manaCost face) (Quantity.manaValueOf face) kind
         _ -> Lobby.MkLine n name Nothing 0 Lobby.MkSpell
       say = Browser.display page . fmap Right . message
+  -- Each deck's format, from its header alone, so the bot is offered only
+  -- decks a game with yours can start under (Lobby.opponents).
+  formats <- fmap (Map.mapMaybe id) . traverse (fmap (DeckList.formatOf . Encoding.decodeUtf8Lenient) . ByteString.readFile) $ byName
   initialLevel <- maybe Web.Question.MkStandard (Maybe.fromMaybe Web.Question.MkStandard . Web.Question.levelNamed) <$> Environment.lookupEnv "parun_level"
   -- A rematch names both decks (Ending.rematch) and skips the lobby.
   asked <- (,) <$> Environment.lookupEnv "parun_mine" <*> Environment.lookupEnv "parun_theirs"
   (one, two) <- case asked of
     (Just mine, Just theirs) | Just a <- Map.lookup (Text.pack mine) byName, Just b <- Map.lookup (Text.pack theirs) byName -> pure (a, b)
-    _ -> choose (Lobby.new (Natural.length loaded) names) prepared
+    _ -> choose (Lobby.new (Natural.length loaded) names formats) prepared
   -- The printing table is the slow part of the registry, so the lobby shows first.
   Browser.display page . fmap Right $ starting (Lobby.deckName deckRoot one) (Lobby.deckName deckRoot two)
   registry <- Registry.defaultRegistry loaded :: IO (Registry.Registry Identity.Identity)

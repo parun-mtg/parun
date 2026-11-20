@@ -382,6 +382,11 @@ sheetOf sheets number text = case countOf text of
   Nothing -> Left (Unreadable number text)
   Just (count, name) -> maybe (Left (NoSuchStickerSheet number name)) (Right . Sheet count) (Map.lookup (Slug.fromText name) sheets)
 
+-- | The format a list's text names, as 'parse' reads it into 'format', read
+-- without resolving a card: for a caller holding no registry yet.
+formatOf :: Text.Text -> Maybe Text.Text
+formatOf text = Maybe.listToMaybe [named | line <- Text.lines text, Just (Just named) <- [formatNamed (Text.strip line)]]
+
 -- The format a "Format:" header names, lowercased as data/formats files are
 -- named; Just Nothing for a header naming none. No card's name begins
 -- "Format:", so a header never hides a card.

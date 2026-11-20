@@ -667,6 +667,12 @@ main.lobby {
   font-size: 0.9rem;
 }
 
+.deck-format {
+  display: block;
+  font-size: 0.75rem;
+  color: var(--muted);
+}
+
 #app button.deck.picked {
   border-color: var(--accent);
   background: var(--accent-soft);
