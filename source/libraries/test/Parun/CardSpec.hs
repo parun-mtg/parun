@@ -6776,7 +6776,7 @@ lintSpec s registry corpus = Spec.describe s "Lint" $ do
     elves <- S.combinedFace <$> S.printingOf s registry "Llanowar Elves"
     sliver <- S.combinedFace <$> S.printingOf s registry "Manaweft Sliver"
     levitation <- S.combinedFace <$> S.printingOf s registry "Levitation"
-    let exertsAttacking = any (\keyword -> case keyword of Keyword.Exert _ -> True; _ -> False)
+    let exertsAttacking keywords = any (\keyword -> case keyword of Keyword.Exert _ -> True; _ -> False) (keywords :: [Keyword.Keyword])
         exertsForMana ability = ManaAbility.isManaAbility ability && elem CostComponent.ExertThis (Cost.Type.components (ActivatedAbility.cost ability))
         grantedKeywords f = [keyword | Modification.GainKeyword keyword <- concatMap (NonEmpty.toList . StaticAbility.modifications) (Face.staticAbilities f) <> [ModifyTarget.modification m | Effect.ModifyTarget m <- cardResolutionEffects f]]
         offending f =
