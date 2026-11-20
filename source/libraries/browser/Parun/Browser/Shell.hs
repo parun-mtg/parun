@@ -307,8 +307,9 @@ builder shell deck = do
       now <- IORef.readIORef (loaded shell)
       named <- if null (Builder.formats shown) then Legality.shippedFormats else pure (Builder.formats shown)
       least <- maybe (Legality.minimumFor (Builder.format shown)) (pure . Just) (Builder.least shown)
-      let filled = shown {Builder.index = cardIndex now, Builder.formats = named, Builder.least = least, Builder.sets = Map.keys (setLists now)}
-          key = (Builder.deck filled, Builder.format filled, Builder.pool filled)
+      let indexed = if Maybe.isNothing (Builder.index shown) then maybe id Builder.withIndex (cardIndex now) shown else shown
+          filled = indexed {Builder.formats = named, Builder.least = least, Builder.sets = Map.keys (setLists now)}
+          key = (Builder.deck filled, Builder.format filled)
       -- Taps waiting go first: the list is checked once they are done.
       waiting <- Browser.pending (page shell)
       current <- case registry now of
@@ -316,7 +317,7 @@ builder shell deck = do
           | not waiting,
             lastChecked /= Just key,
             Loading.ready Loading.MkRules (loading now) -> do
-              (found, cards') <- deckProblems shell reg (heldBy (Builder.pool filled)) (Builder.listText filled)
+              (found, cards') <- deckProblems shell reg (Builder.listText filled)
               pure (Builder.checked found cards' filled, Just key)
         _ -> pure (filled, lastChecked)
       Browser.display (page shell) (fmap Screen.MkBuilder (Builder.view (fst current)))
@@ -333,8 +334,14 @@ builder shell deck = do
           Builder.MkPoolChoice
             | Just code <- Text.stripPrefix (Text.pack "set:") value -> do
                 listed <- setLists <$> IORef.readIORef (loaded shell)
-                names <- maybe (pure []) (fmap (fmap snd . Lobby.entries . Encoding.decodeUtf8Lenient) . ByteString.readFile) (Map.lookup code listed)
-                go (Builder.setPool code names shownNow) (snd current)
+                read' <- traverse (Exception.try . ByteString.readFile) (Map.lookup code listed)
+                go
+                  ( case read' of
+                      Just (Right bytes) -> Builder.setPool code (fmap snd (Lobby.entries (Encoding.decodeUtf8Lenient bytes))) shownNow
+                      Just (Left problem) -> shownNow {Builder.poolProblems = [Text.pack ("The set's cards did not load: " <> Exception.displayException (problem :: Exception.IOException))]}
+                      Nothing -> shownNow {Builder.poolProblems = [Text.pack "No such set: " <> code]}
+                  )
+                  (snd current)
           _ -> go (Builder.update event value shownNow) (snd current)
         _ -> go shownNow (snd current)
 
@@ -364,18 +371,13 @@ saveBuilt shell built = do
           }
       pure (Builder.saved name built)
 
--- | A limited pool's cards, for the check (Legality.check's CardPool).
-heldBy :: Builder.Pool -> Maybe Legality.CardPool
-heldBy chosen = case chosen of
-  Builder.MkCardPool held -> Just held
-  _ -> Nothing
-
--- | Why a deck list breaks the format its header names, against the card
--- pool given, as lines, and the cards those lines are about
--- (Legality.namedCard).
+-- | Why a deck list breaks the format its header names, as lines, and the
+-- cards those lines are about (Legality.namedCard). No card pool is given:
+-- a pooled list writes its pool's other cards as its sideboard (CR 100.4b),
+-- so the pool is the list's own, and the builder caps each card at it.
 -- The legality table is loaded once, at the first check, and kept.
-deckProblems :: Shell -> Registry.Registry Identity.Identity -> Maybe Legality.CardPool -> Text.Text -> IO ([Text.Text], Set.Set CardName.CardName)
-deckProblems shell reg held contents = case Command.loadText reg "deck" contents of
+deckProblems :: Shell -> Registry.Registry Identity.Identity -> Text.Text -> IO ([Text.Text], Set.Set CardName.CardName)
+deckProblems shell reg contents = case Command.loadText reg "deck" contents of
   Left problems -> pure (problems, Set.empty)
   Right listed -> do
     kept <- legalityTable <$> IORef.readIORef (loaded shell)
@@ -386,7 +388,7 @@ deckProblems shell reg held contents = case Command.loadText reg "deck" contents
         IORef.modifyIORef' (loaded shell) $ \l -> l {legalityTable = Just t}
         pure t
     let lookUp = either (const . pure . Left) Legality.namedIn table
-    (_, lines', violations) <- Legality.assess lookUp Nothing held listed
+    (_, lines', violations) <- Legality.assess lookUp Nothing Nothing listed
     pure (lines' <> fmap Legality.explain violations, Set.fromList (Maybe.mapMaybe Legality.namedCard violations))
 
 -- | One of these decks at random.
@@ -644,7 +646,7 @@ work shell = do
           let (batch, rest) = splitAt 1 (unchecked now)
           found <- Monad.forM batch $ \(name, path) -> do
             contents <- Encoding.decodeUtf8Lenient <$> ByteString.readFile path
-            (,) name . fst <$> deckProblems shell reg Nothing contents
+            (,) name . fst <$> deckProblems shell reg contents
           IORef.modifyIORef' (loaded shell) $ \l -> l {illegal = Map.union (Map.filter (not . null) (Map.fromList found)) (foldr (Map.delete . fst) (illegal l) batch), unchecked = rest}
         _ -> Nothing
       steps =
