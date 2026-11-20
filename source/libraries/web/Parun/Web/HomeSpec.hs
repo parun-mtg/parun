@@ -20,9 +20,9 @@ spec s = Spec.describe s "Parun.Web.Home" $ do
       Spec.assertEqWith s "bots" (tapping "Play against bots" Home.new) (Just (Home.MkChoose Home.MkPlayBots))
       Spec.assertEqWith s "replays" (tapping "Replays" Home.new) (Just (Home.MkChoose Home.MkReplays))
 
-    Spec.it s "says how many cards loaded once it knows" $ do
-      Spec.assertEqWith s "known" (has "14082 cards loaded." Home.new {Home.cards = Just 14082}) True
-      Spec.assertEqWith s "unknown" (has "cards loaded" Home.new) False
+    Spec.it s "offers a new game, said so, beside a paused one" $ do
+      Spec.assertEqWith s "fresh" (tapping "Play against bots" Home.new) (Just (Home.MkChoose Home.MkPlayBots))
+      Spec.assertEqWith s "paused" (tapping "Start a new game" Home.new {Home.paused = True}) (Just (Home.MkChoose Home.MkPlayBots))
 
     Spec.it s "shows a problem as an alert" $ do
       Spec.assertEq s (has "role=\"alert\">" Home.new {Home.problem = Just (Text.pack "Reload to try again.")} && has "Reload to try again." Home.new {Home.problem = Just (Text.pack "Reload to try again.")}) True

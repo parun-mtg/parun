@@ -427,8 +427,8 @@ body.busy #app {
   pointer-events: none;
 }
 
-/* The settings gear turns while the engine works, once it takes a moment. */
-body.busy .settings-button > svg,
+/* The page's settings gear turns while the engine works, once it takes a
+   moment. */
 body.busy #settings-button > svg {
   animation: spin 1.2s 0.15s linear infinite;
 }
@@ -1066,13 +1066,13 @@ main.game {
   align-items: start;
 }
 
-.opponents.many .seat .battlefield {
+.opponents.several .seat .battlefield {
   max-height: 28vh;
   overflow-y: auto;
   overscroll-behavior: contain;
 }
 
-.opponents.many .seat .seat-head {
+.opponents.several .seat .seat-head {
   position: static;
 }
 
@@ -1177,6 +1177,12 @@ main.game {
 .count.priority {
   background: var(--accent);
   color: var(--accent-text);
+  font-weight: 600;
+}
+
+.count.turn .k,
+.count.priority .k {
+  color: inherit;
 }
 
 .count.poison {
@@ -2231,14 +2237,21 @@ main.ending h2 {
   stroke-linecap: round;
 }
 
-.life-line.you {
-  stroke: var(--link);
+.life-line {
+  stroke: var(--line);
 }
 
-.life-line.them {
-  stroke: var(--danger-text);
-  stroke-dasharray: 8 4;
+.life-line.you {
+  stroke-width: 4;
 }
+
+/* Each seat's colour in the chart and its key (Parun.Web.Ending). */
+.seat-0 { --line: #2f6fd6; }
+.seat-1 { --line: #d4492f; }
+.seat-2 { --line: #2e9a55; }
+.seat-3 { --line: #8a4fc9; }
+.seat-4 { --line: #c98a12; }
+.seat-5 { --line: #1d9aa6; }
 
 .chart-axis {
   display: flex;
@@ -2261,14 +2274,10 @@ main.ending h2 {
   width: 1.6em;
   margin-right: 0.5em;
   vertical-align: middle;
-  border-top: 3px solid var(--link);
+  border-top: 3px solid var(--line);
 }
 
-.stats li.them::before {
-  border-top: 3px dashed var(--danger-text);
-}
-
-/* A win's confetti, falling once (none for reduced motion). */
+/* A win's confetti, bursting once (none for reduced motion). */
 .confetti {
   position: fixed;
   inset: 0;
@@ -2279,11 +2288,14 @@ main.ending h2 {
 
 .confetti span {
   position: absolute;
-  top: -32px;
-  left: var(--x);
+  top: 55%;
+  left: 50%;
   width: var(--size);
   height: var(--size);
-  animation: fall var(--fall) var(--delay) cubic-bezier(0.25, 0.4, 0.6, 1) forwards;
+  margin: calc(var(--size) / -2) 0 0 calc(var(--size) / -2);
+  --bx: calc(cos(var(--angle)) * var(--reach));
+  --by: calc(sin(var(--angle)) * var(--reach));
+  animation: burst var(--fall) var(--delay) linear both;
 }
 
 /* Each piece sways and tumbles as it falls, at its own pace. */
@@ -2301,8 +2313,19 @@ main.ending h2 {
 .confetti .fg-r { color: var(--c-r); }
 .confetti .fg-g { color: var(--c-g); }
 
-@keyframes fall {
-  to { transform: translate(var(--drift), calc(100vh + 64px)) rotate(var(--spin)); }
+/* Out fast to where the piece was thrown, then down under gravity. */
+@keyframes burst {
+  0% {
+    transform: scale(0.3);
+    animation-timing-function: cubic-bezier(0.1, 0.8, 0.3, 1);
+  }
+  20% {
+    transform: translate(var(--bx), var(--by)) rotate(calc(var(--spin) / 4));
+    animation-timing-function: cubic-bezier(0.45, 0, 0.9, 0.6);
+  }
+  100% {
+    transform: translate(calc(var(--bx) + var(--drift)), calc(var(--by) + 110vh)) rotate(var(--spin));
+  }
 }
 
 @keyframes flutter {
@@ -2474,7 +2497,7 @@ body:has(main.game) #settings-button {
   position: absolute;
   right: 0;
   bottom: calc(100% + 0.4em);
-  min-width: 260px;
+  width: min(360px, calc(100vw - 1em));
   padding: 0.6em 0.8em;
   border: 1px solid var(--border-strong);
   border-radius: var(--radius);
@@ -2509,6 +2532,27 @@ body:has(main.game) #settings-button {
 #settings .concede[hidden],
 #concede-why[hidden] {
   display: none;
+}
+
+/* The game's actions in the menu: leaving first, conceding last. */
+#settings .leave {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.2em 0.8em;
+  padding-bottom: 0.5em;
+  border-bottom: 1px solid var(--border);
+}
+
+#settings .leave[hidden],
+#settings .concede[hidden] {
+  display: none;
+}
+
+#settings .leave p {
+  margin: 0;
+  color: var(--muted);
+  font-size: 0.85em;
 }
 
 #settings .concede {

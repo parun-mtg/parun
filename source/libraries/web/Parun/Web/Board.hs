@@ -143,7 +143,7 @@ view marks board =
       across =
         [ Element.keyed
             "div"
-            (["opponents"] <> ["many" | length present > 1])
+            (["opponents"] <> ["several" | length present > 1])
             []
             [(Text.pack (show (PlayerId.unwrap (SeatView.player s))), seatArea marks board False s) | s <- present]
         | not (null present)

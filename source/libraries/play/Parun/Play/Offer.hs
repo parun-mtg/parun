@@ -324,10 +324,18 @@ payerSeat view offer = do
 -- pile numbered among the offer's piles where it holds several.
 targetName :: PlayerView.PlayerView -> [R.Reply] -> R.Reply -> Text.Text
 targetName view legal reply =
-  recipientName view reply <> case (pileOf reply, piles) of
+  recipientName view reply <> life <> case (pileOf reply, piles) of
     (Just pile, _ : _ : _) -> foldMap (\i -> Text.pack (" (pile " <> show (i + 1) <> ")")) (List.elemIndex pile piles)
     _ -> Text.empty
   where
+    -- A player by their life total too, which aiming damage weighs.
+    life = case reply of
+      R.Array [R.Text tag, R.Text x]
+        | tag == Text.pack "Player",
+          Just n <- Read.readMaybe (Text.unpack x),
+          seat : _ <- filter ((== PlayerId.MkPlayerId n) . SeatView.player) (PlayerView.seats view) ->
+            Text.pack (" (" <> show (SeatView.life seat) <> " life)")
+      _ -> Text.empty
     piles = ListUtils.nubOrd (Maybe.mapMaybe pileOf legal)
     pileOf r = case r of
       R.Array [R.Text tag, draw] | tag == Text.pack "Pile" -> Protocol.field "pile" draw

@@ -417,13 +417,15 @@ spec s registry = Spec.describe s "WebQuestion" $ do
     Spec.assertBool s (maybe False (Text.isInfixOf (Text.pack "aria-pressed=\"false\" disabled=\"\">Auto</button>") . Html.toText) (bar watched)) "inert while watching"
     Spec.assertBool s (maybe False (\p -> not (any (`Text.isInfixOf` Html.content p) [Text.pack "Auto-pass", Text.pack "Concede"])) prompt) "the prompt carries neither"
 
-  Spec.it s "the turn bar's Home button leaves the game while the seat is asked, and is inert while it watches" $ do
+  Spec.it s "the turn bar's menu leaves the game while the seat is asked, and not while it watches" $ do
     let request = requestFor (Setup.emptyGame S.bothPlayers) (Prompt.ChooseAction (Decider.MkDecider S.alice) S.alice [Action.Pass])
         asked = Question.Web.view request Question.Web.blank
         watched = Maybe.fromMaybe (Html.text Text.empty) (Question.Web.watching (Just S.alice) request Question.Web.blank)
-        home html = Html.labelled (Text.pack "button") (Text.pack "Home") html >>= \path -> Html.handler (Text.pack "click") path html
+        menu = Html.search (\node -> Text.pack "<button class=\"settings-button\"" `Text.isPrefixOf` Html.toText node)
+        home html = menu html >>= \path -> Html.handler (Text.pack "home") path html
     Spec.assertEqWith s "asked" (home asked) (Just Question.Web.MkHome)
-    Spec.assertBool s (Text.isInfixOf (Text.pack "disabled=\"\">Home</button>") (Html.toText watched)) "inert while watching"
+    Spec.assertEqWith s "watching" (home watched) Nothing
+    Spec.assertBool s (not (Text.isInfixOf (Text.pack ">Home</button>") (Html.toText asked))) "no Home button of its own"
 
   Spec.it s "CR 402.3 a request the screen's seat was not asked draws no board of the seat asked" $ do
     elves <- S.printingOf s registry "Llanowar Elves"
@@ -542,6 +544,11 @@ spec s registry = Spec.describe s "WebQuestion" $ do
         request = asking (Text.pack "ChooseTargets") (R.Object [(Text.pack "source", R.Text (Text.pack "$9")), (Text.pack "slots", R.Array [R.Array [slot, R.Array [R.Number 1, R.Array [R.Text (Text.pack "$1"), R.Text (Text.pack "$2")]]]])])
     Spec.assertEqWith s "too few" (Question.Web.step request Set.empty Question.Web.MkSubmit Text.empty) (Question.Web.MkRefused (Text.pack "Choose 1 target for object 9 (target): pick 1."))
     Spec.assertEqWith s "one" (Question.Web.step request (picking request [Question.Web.MkToggle 0 0]) Question.Web.MkSubmit Text.empty) (Question.Web.MkReplied (R.Array [R.Array [slot, R.Array [R.Text (Text.pack "$1")]]]))
+
+  Spec.it s "a player offered as a target is labelled with their life total" $ do
+    let bob = R.Array [R.Text (Text.pack "Player"), R.Text (Text.pack "1")]
+        request = asking (Text.pack "ChooseTargets") (R.Object [(Text.pack "source", R.Text (Text.pack "$9")), (Text.pack "slots", R.Array [R.Array [R.Text (Text.pack "target"), R.Array [R.Number 1, R.Array [bob]]]])])
+    Spec.assertBool s (Maybe.isJust (Html.labelled (Text.pack "button") (Text.pack "Player 2 (20 life)") (Question.Web.view request Question.Web.blank))) "Player 2 (20 life)"
 
   Spec.it s "CR 603.3b triggered abilities are ordered by tapping each in turn, answered by Done" $ do
     let request = asking (Text.pack "OrderTriggers") (R.Array [R.Object [(Text.pack "source", R.Text (Text.pack "$1"))], R.Object [(Text.pack "source", R.Text (Text.pack "$2"))], R.Object [(Text.pack "source", R.Text (Text.pack "$3"))]])

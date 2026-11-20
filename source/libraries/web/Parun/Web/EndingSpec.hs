@@ -31,7 +31,9 @@ spec s = Spec.describe s "Parun.Web.Ending" $ do
       let page = Html.toText (Ending.view ending)
           has piece = Spec.assertBool s (Text.isInfixOf (Text.pack piece) page) piece
       -- Life 20 to 17 to 0 for the bot over a chart 120 high whose floor is 0.
-      has "<polyline class=\"life-line them\" points=\"0,0 160,18 320,120\""
+      has "<polyline class=\"life-line seat-1\" points=\"0,0 160,18 320,120\""
+      -- Each seat in its own colour, the viewer's line bolder.
+      has "<polyline class=\"life-line seat-0 you\""
       has "Player 2</strong>: ended on 0 life, lowest 0, biggest hit 17"
       has "Turn 3"
 

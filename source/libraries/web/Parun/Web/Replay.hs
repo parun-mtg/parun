@@ -85,7 +85,7 @@ view frame =
       marks = maybe readOnly (\r -> mapMarks (Web.Question.cues r Set.empty Nothing)) asked
       logged = foldMap (Seq.fromList . snd . Log.unseen Map.empty) (board frame)
    in Element.el "main" ["game", "replay"] [] $
-        foldMap (\b -> [Board.turnBar (fmap (fmap MkTable) (Web.Question.logView (board frame) (viewer frame) Web.Question.blank {Web.Question.logged = logged})) [] (Web.Question.subgameChip (depth frame) <> [Web.Question.settingsButton Nothing]) b]) (board frame)
+        foldMap (\b -> [Board.turnBar (fmap (fmap MkTable) (Web.Question.logView (board frame) (viewer frame) Web.Question.blank {Web.Question.logged = logged})) [] (Web.Question.subgameChip (depth frame) <> [Web.Question.settingsButton Nothing Nothing]) b]) (board frame)
           <> [Element.el "div" ["play-area"] [] (foldMap (\b -> [Board.view marks b]) (board frame))]
           <> foldMap (Board.hand marks) (board frame)
           <> [Element.el "aside" ["side"] [] [Element.el "section" ["prompt"] [Element.attr "aria-label" (Text.pack "Replay")] (controls frame <> stop frame asked)]]
