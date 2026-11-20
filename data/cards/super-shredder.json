@@ -77,9 +77,9 @@
       ],
       "typeLine": {
         "subtypes": [
-          "Human",
           "Mutant",
-          "Ninja"
+          "Ninja",
+          "Human"
         ],
         "supertypes": [
           "Legendary"

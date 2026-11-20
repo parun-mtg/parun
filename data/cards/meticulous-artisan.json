@@ -110,8 +110,8 @@
       ],
       "typeLine": {
         "subtypes": [
-          "Artificer",
-          "Djinn"
+          "Djinn",
+          "Artificer"
         ],
         "types": [
           "Creature"

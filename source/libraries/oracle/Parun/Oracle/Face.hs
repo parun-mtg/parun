@@ -46,7 +46,7 @@ token named card = case Card.faces card of
       Set.null (TypeLine.supertypes (Face.typeLine face)),
       face == bare (Face.name face) Nothing Nothing (Face.colorIndicator face) (Face.typeLine face) (Face.power face) (Face.toughness face) (Face.keywords face) -> do
         let line = Face.typeLine face
-        names <- traverse Filter.subtype (Set.toList (TypeLine.subtypes line))
+        names <- traverse Filter.subtype (TypeLine.subtypes line)
         subtypes <- case Text.stripSuffix (Text.pack " Token") (CardName.unwrap (Face.name face)) of
           Just prefix | List.sort (Text.words prefix) == List.sort names -> [Text.words prefix]
           _ -> []

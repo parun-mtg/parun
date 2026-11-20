@@ -35,8 +35,8 @@
       },
       "typeLine": {
         "subtypes": [
-          "Barbarian",
-          "Human"
+          "Human",
+          "Barbarian"
         ],
         "types": [
           "Creature"

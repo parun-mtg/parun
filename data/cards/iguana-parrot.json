@@ -37,8 +37,8 @@
       },
       "typeLine": {
         "subtypes": [
-          "Bird",
           "Lizard",
+          "Bird",
           "Pirate"
         ],
         "types": [

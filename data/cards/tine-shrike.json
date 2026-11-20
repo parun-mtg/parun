@@ -34,8 +34,8 @@
       },
       "typeLine": {
         "subtypes": [
-          "Bird",
-          "Phyrexian"
+          "Phyrexian",
+          "Bird"
         ],
         "types": [
           "Creature"

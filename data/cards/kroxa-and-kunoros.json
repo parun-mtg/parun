@@ -160,9 +160,9 @@
       ],
       "typeLine": {
         "subtypes": [
-          "Dog",
           "Elder",
-          "Giant"
+          "Giant",
+          "Dog"
         ],
         "supertypes": [
           "Legendary"

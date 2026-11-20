@@ -141,8 +141,8 @@
       ],
       "typeLine": {
         "subtypes": [
-          "Egg",
-          "Serpent"
+          "Serpent",
+          "Egg"
         ],
         "types": [
           "Creature"

@@ -136,8 +136,8 @@
       ],
       "typeLine": {
         "subtypes": [
-          "Advisor",
-          "Vulcan"
+          "Vulcan",
+          "Advisor"
         ],
         "supertypes": [
           "Legendary"

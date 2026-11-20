@@ -158,8 +158,8 @@
       ],
       "typeLine": {
         "subtypes": [
-          "God",
-          "Zombie"
+          "Zombie",
+          "God"
         ],
         "supertypes": [
           "Legendary"

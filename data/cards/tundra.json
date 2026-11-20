@@ -5,8 +5,8 @@
       "oracleText": "({T}: Add {W} or {U}.)",
       "typeLine": {
         "subtypes": [
-          "Island",
-          "Plains"
+          "Plains",
+          "Island"
         ],
         "types": [
           "Land"

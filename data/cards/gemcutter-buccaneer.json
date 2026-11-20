@@ -253,9 +253,9 @@
       ],
       "typeLine": {
         "subtypes": [
-          "Artificer",
           "Orc",
-          "Pirate"
+          "Pirate",
+          "Artificer"
         ],
         "types": [
           "Creature"

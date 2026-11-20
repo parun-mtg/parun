@@ -118,8 +118,8 @@
       ],
       "typeLine": {
         "subtypes": [
-          "Coyote",
-          "Elemental"
+          "Elemental",
+          "Coyote"
         ],
         "types": [
           "Creature"

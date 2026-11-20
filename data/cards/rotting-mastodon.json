@@ -26,8 +26,8 @@
       },
       "typeLine": {
         "subtypes": [
-          "Elephant",
-          "Zombie"
+          "Zombie",
+          "Elephant"
         ],
         "types": [
           "Creature"

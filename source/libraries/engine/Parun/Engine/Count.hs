@@ -1735,7 +1735,7 @@ insetFramesOf pc =
     ( [ layout
       | half <- Maybe.maybeToList (PC.alternativeSpell pc),
         (spellType, layout) <- [(Subtype.Type.Adventure, Layout.Adventure), (Subtype.Type.Omen, Layout.Omen)],
-        Set.member spellType (TypeLine.subtypes (Face.typeLine half))
+        elem spellType (TypeLine.subtypes (Face.typeLine half))
       ]
         <> [Layout.Preparation | Maybe.isJust (PC.prepare pc)]
     )

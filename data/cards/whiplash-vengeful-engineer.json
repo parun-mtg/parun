@@ -187,8 +187,8 @@
       ],
       "typeLine": {
         "subtypes": [
-          "Artificer",
           "Human",
+          "Artificer",
           "Villain"
         ],
         "supertypes": [

@@ -137,9 +137,9 @@
       ],
       "typeLine": {
         "subtypes": [
-          "Ninja",
+          "Shark",
           "Octopus",
-          "Shark"
+          "Ninja"
         ],
         "supertypes": [
           "Legendary"

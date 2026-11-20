@@ -46,8 +46,8 @@
       },
       "typeLine": {
         "subtypes": [
-          "Berserker",
-          "Orc"
+          "Orc",
+          "Berserker"
         ],
         "types": [
           "Creature"

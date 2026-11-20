@@ -41,8 +41,8 @@
       },
       "typeLine": {
         "subtypes": [
-          "Construct",
-          "Dog"
+          "Dog",
+          "Construct"
         ],
         "types": [
           "Artifact",

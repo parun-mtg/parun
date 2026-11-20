@@ -135,8 +135,8 @@
       ],
       "typeLine": {
         "subtypes": [
-          "Crab",
-          "Fractal"
+          "Fractal",
+          "Crab"
         ],
         "types": [
           "Creature"

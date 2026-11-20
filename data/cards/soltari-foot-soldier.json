@@ -27,8 +27,8 @@
       },
       "typeLine": {
         "subtypes": [
-          "Soldier",
-          "Soltari"
+          "Soltari",
+          "Soldier"
         ],
         "types": [
           "Creature"

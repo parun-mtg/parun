@@ -70,8 +70,8 @@
       },
       "typeLine": {
         "subtypes": [
-          "Beast",
-          "Fungus"
+          "Fungus",
+          "Beast"
         ],
         "types": [
           "Creature"

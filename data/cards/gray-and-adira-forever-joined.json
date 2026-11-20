@@ -219,9 +219,9 @@
       ],
       "typeLine": {
         "subtypes": [
+          "Trill",
           "Human",
-          "Officer",
-          "Trill"
+          "Officer"
         ],
         "supertypes": [
           "Legendary"

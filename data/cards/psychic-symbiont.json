@@ -98,8 +98,8 @@
       ],
       "typeLine": {
         "subtypes": [
-          "Horror",
-          "Nightmare"
+          "Nightmare",
+          "Horror"
         ],
         "types": [
           "Creature"

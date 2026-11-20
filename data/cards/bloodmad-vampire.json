@@ -99,8 +99,8 @@
       ],
       "typeLine": {
         "subtypes": [
-          "Berserker",
-          "Vampire"
+          "Vampire",
+          "Berserker"
         ],
         "types": [
           "Creature"

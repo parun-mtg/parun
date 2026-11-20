@@ -216,8 +216,8 @@
       ],
       "typeLine": {
         "subtypes": [
-          "Avatar",
-          "Human"
+          "Human",
+          "Avatar"
         ],
         "supertypes": [
           "Legendary"

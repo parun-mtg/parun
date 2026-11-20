@@ -160,8 +160,8 @@
       ],
       "typeLine": {
         "subtypes": [
-          "Pilot",
-          "Rat"
+          "Rat",
+          "Pilot"
         ],
         "supertypes": [
           "Legendary"

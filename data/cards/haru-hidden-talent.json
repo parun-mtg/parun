@@ -108,9 +108,9 @@
       ],
       "typeLine": {
         "subtypes": [
-          "Ally",
           "Human",
-          "Peasant"
+          "Peasant",
+          "Ally"
         ],
         "supertypes": [
           "Legendary"

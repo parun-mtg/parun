@@ -223,8 +223,8 @@
       },
       "typeLine": {
         "subtypes": [
-          "Cleric",
-          "Kor"
+          "Kor",
+          "Cleric"
         ],
         "supertypes": [
           "Legendary"

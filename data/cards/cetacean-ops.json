@@ -107,8 +107,8 @@
       ],
       "typeLine": {
         "subtypes": [
-          "Officer",
-          "Whale"
+          "Whale",
+          "Officer"
         ],
         "types": [
           "Creature"

@@ -129,8 +129,8 @@
       "typeLine": {
         "subtypes": [
           "Alien",
-          "Soldier",
-          "Zombie"
+          "Zombie",
+          "Soldier"
         ],
         "types": [
           "Creature"

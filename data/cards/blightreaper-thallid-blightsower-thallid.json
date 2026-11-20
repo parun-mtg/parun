@@ -163,8 +163,8 @@
       ],
       "typeLine": {
         "subtypes": [
-          "Fungus",
-          "Phyrexian"
+          "Phyrexian",
+          "Fungus"
         ],
         "types": [
           "Creature"

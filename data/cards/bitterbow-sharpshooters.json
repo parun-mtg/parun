@@ -34,8 +34,8 @@
       },
       "typeLine": {
         "subtypes": [
-          "Archer",
-          "Jackal"
+          "Jackal",
+          "Archer"
         ],
         "types": [
           "Creature"

@@ -325,19 +325,26 @@ list c =
 -- | 'Schema.uniqueArray', and the decoder guarantees what that claims: a
 -- repeated element is REJECTED rather than silently collapsed, because a
 -- duplicate in a hand-written card file is plausibly a typo rather than a value
--- worth accepting. Encoding is ascending by element, so the wire form is
--- canonical.
+-- worth accepting. The order is the caller's, kept both ways.
+distinctList :: (Ord a) => Codec.Codec a -> Codec.Codec [a]
+distinctList c =
+  Codec.MkCodec
+    { Codec.encode = Codec.encode (list c),
+      Codec.decode = \value -> do
+        xs <- Codec.decode (list c) value
+        if Set.size (Set.fromList xs) == length xs
+          then Right xs
+          else Left $ Text.pack "expected an array with no repeated elements",
+      Codec.schema = Schema.uniqueArray <$> Codec.schema c
+    }
+
+-- | 'distinctList' ascending by element, so the wire form is canonical.
 set :: (Ord a) => Codec.Codec a -> Codec.Codec (Set.Set a)
 set c =
   Codec.MkCodec
-    { Codec.encode = Codec.encode (list c) . Set.toAscList,
-      Codec.decode = \value -> do
-        xs <- Codec.decode (list c) value
-        let s = Set.fromList xs
-        if Set.size s == length xs
-          then Right s
-          else Left $ Text.pack "expected an array with no repeated elements",
-      Codec.schema = Schema.uniqueArray <$> Codec.schema c
+    { Codec.encode = Codec.encode (distinctList c) . Set.toAscList,
+      Codec.decode = fmap Set.fromList . Codec.decode (distinctList c),
+      Codec.schema = Codec.schema (distinctList c)
     }
 
 -- | A map whose values carry nothing, as 'set' writes its keys.

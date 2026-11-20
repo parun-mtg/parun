@@ -98,9 +98,9 @@
       ],
       "typeLine": {
         "subtypes": [
+          "Human",
           "Barbarian",
-          "Beast",
-          "Human"
+          "Beast"
         ],
         "types": [
           "Creature"

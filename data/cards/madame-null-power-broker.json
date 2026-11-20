@@ -128,8 +128,8 @@
       ],
       "typeLine": {
         "subtypes": [
-          "Advisor",
-          "Demon"
+          "Demon",
+          "Advisor"
         ],
         "supertypes": [
           "Legendary"

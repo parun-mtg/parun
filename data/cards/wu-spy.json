@@ -93,8 +93,8 @@
       "typeLine": {
         "subtypes": [
           "Human",
-          "Rogue",
-          "Soldier"
+          "Soldier",
+          "Rogue"
         ],
         "types": [
           "Creature"

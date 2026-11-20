@@ -232,9 +232,9 @@
       ],
       "typeLine": {
         "subtypes": [
+          "Spider",
           "Boar",
-          "Hero",
-          "Spider"
+          "Hero"
         ],
         "supertypes": [
           "Legendary"

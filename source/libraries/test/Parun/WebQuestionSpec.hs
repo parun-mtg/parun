@@ -71,6 +71,7 @@ import qualified Parun.Types.Player as Player
 import qualified Parun.Types.PlayerCounterKind as PlayerCounterKind
 import qualified Parun.Types.PlayerView as PlayerView.Type
 import qualified Parun.Types.Printing as Printing
+import qualified Parun.Types.ProjectedCharacteristics as ProjectedCharacteristics
 import qualified Parun.Types.Prompt as Prompt
 import qualified Parun.Types.Question as Question
 import qualified Parun.Types.Recipient as Recipient
@@ -82,6 +83,7 @@ import qualified Parun.Types.SeatView as SeatView
 import qualified Parun.Types.Settle as Settle
 import qualified Parun.Types.SlotName as SlotName
 import qualified Parun.Types.Stop as Stop
+import qualified Parun.Types.Subtype as Subtype
 import qualified Parun.Types.TextWord as TextWord
 import qualified Parun.Types.TurnRegisters as TurnRegisters
 import qualified Parun.Types.WordFamily as WordFamily
@@ -691,6 +693,17 @@ replaySpec s registry = Spec.describe s "WebQuestion" . Spec.describe s "replay"
     Spec.assertBool s (Text.isInfixOf (Text.pack "<li class=\"past\" title=\"Combat phase\">") bar) ("combat passed: " <> Text.unpack bar)
     Spec.assertBool s (Text.isInfixOf (Text.pack "<li class=\"now second\" title=\"Postcombat main phase\">") bar) "the main phase lit"
     Spec.assertBool s (not (Text.isInfixOf (Text.pack "extra") bar)) "nothing extra"
+
+  Spec.it s "CR 205.3a a tile and sheet list subtypes as printed, a gained one after" $ do
+    stop <- replayed s registry "annihilating-glare-sacrifices-a-creature-to-destroy-a-planeswalker" 0
+    let board = boardOf stop
+    case [o | o <- PlayerView.Type.battlefield board, Render.nameOf board o == Text.pack "Llanowar Elves"] of
+      o : _ -> do
+        Spec.assertEqWith s "the tile" (Card.typeLine o) (Text.pack "Elf Druid")
+        Spec.assertEqWith s "the sheet" (Card.fullType o) (Text.pack "Creature \8212 Elf Druid")
+        let gained = o {ObjectView.characteristics = fmap (\c -> c {ProjectedCharacteristics.subtypes = Set.insert Subtype.Ally (ProjectedCharacteristics.subtypes c)}) (ObjectView.characteristics o)}
+        Spec.assertEqWith s "a gained subtype" (Card.typeLine gained) (Text.pack "Elf Druid Ally")
+      [] -> Spec.assertFailure s "expected Llanowar Elves on the battlefield"
 
   Spec.it s "CR 716.3d a card exiled as its Adventure resolved is marked on its tile and sheet" $ do
     -- Entry 10 follows Can't Wake Up's resolution.

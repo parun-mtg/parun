@@ -145,8 +145,8 @@
       },
       "typeLine": {
         "subtypes": [
-          "Officer",
-          "Vulcan"
+          "Vulcan",
+          "Officer"
         ],
         "types": [
           "Creature"

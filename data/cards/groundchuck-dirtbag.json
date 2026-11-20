@@ -82,9 +82,9 @@
       ],
       "typeLine": {
         "subtypes": [
+          "Ox",
           "Mole",
-          "Mutant",
-          "Ox"
+          "Mutant"
         ],
         "supertypes": [
           "Legendary"

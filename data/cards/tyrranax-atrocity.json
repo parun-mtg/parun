@@ -42,8 +42,8 @@
       },
       "typeLine": {
         "subtypes": [
-          "Dinosaur",
-          "Phyrexian"
+          "Phyrexian",
+          "Dinosaur"
         ],
         "types": [
           "Creature"

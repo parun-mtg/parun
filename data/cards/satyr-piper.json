@@ -87,8 +87,8 @@
       },
       "typeLine": {
         "subtypes": [
-          "Rogue",
-          "Satyr"
+          "Satyr",
+          "Rogue"
         ],
         "types": [
           "Creature"

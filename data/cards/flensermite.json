@@ -34,8 +34,8 @@
       },
       "typeLine": {
         "subtypes": [
-          "Gremlin",
-          "Phyrexian"
+          "Phyrexian",
+          "Gremlin"
         ],
         "types": [
           "Creature"

@@ -83,8 +83,8 @@
       },
       "typeLine": {
         "subtypes": [
-          "Demon",
-          "Vampire"
+          "Vampire",
+          "Demon"
         ],
         "types": [
           "Creature"

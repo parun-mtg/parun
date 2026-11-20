@@ -158,8 +158,8 @@
       ],
       "typeLine": {
         "subtypes": [
-          "Druid",
-          "Frog"
+          "Frog",
+          "Druid"
         ],
         "supertypes": [
           "Legendary"

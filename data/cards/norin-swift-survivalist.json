@@ -99,8 +99,8 @@
       ],
       "typeLine": {
         "subtypes": [
-          "Coward",
-          "Human"
+          "Human",
+          "Coward"
         ],
         "supertypes": [
           "Legendary"

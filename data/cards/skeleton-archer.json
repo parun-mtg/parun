@@ -70,8 +70,8 @@
       ],
       "typeLine": {
         "subtypes": [
-          "Archer",
-          "Skeleton"
+          "Skeleton",
+          "Archer"
         ],
         "types": [
           "Creature"

@@ -219,8 +219,8 @@
       ],
       "typeLine": {
         "subtypes": [
-          "Advisor",
           "Alien",
+          "Advisor",
           "Guest"
         ],
         "supertypes": [

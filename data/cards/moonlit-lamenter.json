@@ -118,8 +118,8 @@
       },
       "typeLine": {
         "subtypes": [
-          "Cleric",
-          "Treefolk"
+          "Treefolk",
+          "Cleric"
         ],
         "types": [
           "Creature"

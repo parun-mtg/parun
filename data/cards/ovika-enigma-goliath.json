@@ -181,8 +181,8 @@
       ],
       "typeLine": {
         "subtypes": [
-          "Nightmare",
-          "Phyrexian"
+          "Phyrexian",
+          "Nightmare"
         ],
         "supertypes": [
           "Legendary"

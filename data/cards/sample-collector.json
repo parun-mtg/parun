@@ -123,8 +123,8 @@
       ],
       "typeLine": {
         "subtypes": [
-          "Detective",
-          "Troll"
+          "Troll",
+          "Detective"
         ],
         "types": [
           "Creature"

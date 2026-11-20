@@ -70,8 +70,8 @@
       },
       "typeLine": {
         "subtypes": [
-          "Bard",
           "Human",
+          "Bard",
           "Sorcerer"
         ],
         "supertypes": [

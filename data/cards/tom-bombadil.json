@@ -214,8 +214,8 @@
       ],
       "typeLine": {
         "subtypes": [
-          "Bard",
-          "God"
+          "God",
+          "Bard"
         ],
         "supertypes": [
           "Legendary"

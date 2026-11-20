@@ -123,8 +123,8 @@
       },
       "typeLine": {
         "subtypes": [
-          "Jackal",
-          "Phyrexian"
+          "Phyrexian",
+          "Jackal"
         ],
         "types": [
           "Creature"

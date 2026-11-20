@@ -95,8 +95,8 @@
       },
       "typeLine": {
         "subtypes": [
-          "Mutant",
-          "Vedalken"
+          "Vedalken",
+          "Mutant"
         ],
         "types": [
           "Creature"

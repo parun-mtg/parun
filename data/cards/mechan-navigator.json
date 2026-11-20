@@ -80,8 +80,8 @@
       ],
       "typeLine": {
         "subtypes": [
-          "Pilot",
-          "Robot"
+          "Robot",
+          "Pilot"
         ],
         "types": [
           "Artifact",

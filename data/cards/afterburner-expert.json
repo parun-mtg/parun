@@ -136,8 +136,8 @@
       ],
       "typeLine": {
         "subtypes": [
-          "Artificer",
-          "Goblin"
+          "Goblin",
+          "Artificer"
         ],
         "types": [
           "Creature"

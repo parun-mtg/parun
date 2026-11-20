@@ -173,8 +173,8 @@
       ],
       "typeLine": {
         "subtypes": [
-          "Assassin",
-          "Gorgon"
+          "Gorgon",
+          "Assassin"
         ],
         "supertypes": [
           "Legendary"

@@ -101,8 +101,8 @@
       "typeLine": {
         "subtypes": [
           "Human",
-          "Monk",
-          "Rebel"
+          "Rebel",
+          "Monk"
         ],
         "supertypes": [
           "Legendary"

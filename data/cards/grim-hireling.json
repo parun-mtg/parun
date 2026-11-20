@@ -221,8 +221,8 @@
       ],
       "typeLine": {
         "subtypes": [
-          "Rogue",
-          "Tiefling"
+          "Tiefling",
+          "Rogue"
         ],
         "types": [
           "Creature"

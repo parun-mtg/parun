@@ -243,8 +243,8 @@
       },
       "typeLine": {
         "subtypes": [
-          "Elf",
-          "Zombie"
+          "Zombie",
+          "Elf"
         ],
         "supertypes": [
           "Legendary"

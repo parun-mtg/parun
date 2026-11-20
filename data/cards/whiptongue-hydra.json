@@ -92,8 +92,8 @@
       ],
       "typeLine": {
         "subtypes": [
-          "Hydra",
-          "Lizard"
+          "Lizard",
+          "Hydra"
         ],
         "types": [
           "Creature"

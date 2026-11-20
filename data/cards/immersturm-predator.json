@@ -184,8 +184,8 @@
       ],
       "typeLine": {
         "subtypes": [
-          "Dragon",
-          "Vampire"
+          "Vampire",
+          "Dragon"
         ],
         "types": [
           "Creature"

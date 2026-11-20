@@ -78,8 +78,8 @@
       ],
       "typeLine": {
         "subtypes": [
-          "Druid",
-          "Frog"
+          "Frog",
+          "Druid"
         ],
         "types": [
           "Creature"

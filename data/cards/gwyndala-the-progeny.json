@@ -215,8 +215,8 @@
       ],
       "typeLine": {
         "subtypes": [
-          "Advisor",
-          "VauNAkat"
+          "VauNAkat",
+          "Advisor"
         ],
         "supertypes": [
           "Legendary"

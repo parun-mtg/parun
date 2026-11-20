@@ -113,8 +113,8 @@
       },
       "typeLine": {
         "subtypes": [
-          "Druid",
-          "Human"
+          "Human",
+          "Druid"
         ],
         "types": [
           "Creature"

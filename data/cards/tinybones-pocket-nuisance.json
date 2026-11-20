@@ -114,8 +114,8 @@
       ],
       "typeLine": {
         "subtypes": [
-          "Rogue",
-          "Skeleton"
+          "Skeleton",
+          "Rogue"
         ],
         "supertypes": [
           "Legendary"

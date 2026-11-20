@@ -139,8 +139,8 @@
       ],
       "typeLine": {
         "subtypes": [
-          "Advisor",
-          "Merfolk"
+          "Merfolk",
+          "Advisor"
         ],
         "types": [
           "Creature"

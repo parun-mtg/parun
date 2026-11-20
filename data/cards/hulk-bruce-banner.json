@@ -38,8 +38,8 @@
       },
       "typeLine": {
         "subtypes": [
-          "Berserker",
           "Gamma",
+          "Berserker",
           "Hero"
         ],
         "supertypes": [

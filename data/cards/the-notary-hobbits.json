@@ -161,8 +161,8 @@
       ],
       "typeLine": {
         "subtypes": [
-          "Advisor",
-          "Halfling"
+          "Halfling",
+          "Advisor"
         ],
         "supertypes": [
           "Legendary"

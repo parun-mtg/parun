@@ -143,8 +143,8 @@
       },
       "typeLine": {
         "subtypes": [
-          "Advisor",
-          "Betazoid"
+          "Betazoid",
+          "Advisor"
         ],
         "supertypes": [
           "Legendary"

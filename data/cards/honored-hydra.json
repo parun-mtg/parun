@@ -49,8 +49,8 @@
       },
       "typeLine": {
         "subtypes": [
-          "Hydra",
-          "Snake"
+          "Snake",
+          "Hydra"
         ],
         "types": [
           "Creature"

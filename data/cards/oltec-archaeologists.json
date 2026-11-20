@@ -94,8 +94,8 @@
       ],
       "typeLine": {
         "subtypes": [
-          "Artificer",
           "Human",
+          "Artificer",
           "Scout"
         ],
         "types": [

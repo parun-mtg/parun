@@ -34,8 +34,8 @@
       },
       "typeLine": {
         "subtypes": [
-          "Berserker",
-          "Goblin"
+          "Goblin",
+          "Berserker"
         ],
         "types": [
           "Creature"

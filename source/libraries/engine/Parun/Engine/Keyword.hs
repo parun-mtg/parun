@@ -5823,7 +5823,7 @@ keywordCount n = case n of
 -- | CR 702.181a's token: 1\/1 red Warrior creature. Rule 702.181a names no name,
 -- so CR 111.4 supplies one -- rebelToken's shape one rule over.
 warriorToken :: Card
-warriorToken = creatureToken (Text.pack "Warrior Token") (Set.singleton Subtype.Warrior) (Set.singleton Color.Red) 1 1
+warriorToken = creatureToken (Text.pack "Warrior Token") [Subtype.Warrior] (Set.singleton Color.Red) 1 1
 
 -- CR 702.189a, battle cry's condition again (CR 508.3a).
 --
@@ -6905,7 +6905,7 @@ giftToken chosen tapped token =
 blueCreatureToken :: Subtype.Subtype -> Integer -> Integer -> Card
 blueCreatureToken subtype =
   let name = Text.unwords (Maybe.maybeToList (Subtype.Engine.creatureTypeWord subtype) <> [Text.pack "Token"])
-   in creatureToken name (Set.singleton subtype) (Set.singleton Color.Blue)
+   in creatureToken name [subtype] (Set.singleton Color.Blue)
 
 -- | CR 702.174f and 702.174i as printed: the gift with the creature type its
 -- rule names, whatever CR 612.2a text change has since replaced it. A text
@@ -7013,7 +7013,7 @@ spiritToken =
                 TypeLine.MkTypeLine
                   Set.empty
                   (Set.singleton CardType.Creature)
-                  (Set.singleton Subtype.Spirit),
+                  [Subtype.Spirit],
               Face.power = Just (Power.MkPower (Quantity.Literal 1)),
               Face.toughness = Just (Toughness.MkToughness (Quantity.Literal 1)),
               Face.loyalty = Nothing,
@@ -7259,7 +7259,7 @@ servoToken =
                 TypeLine.MkTypeLine
                   Set.empty
                   (Set.fromList [CardType.Artifact, CardType.Creature])
-                  (Set.singleton Subtype.Servo),
+                  [Subtype.Servo],
               Face.power = Just (Power.MkPower (Quantity.Literal 1)),
               Face.toughness = Just (Toughness.MkToughness (Quantity.Literal 1)),
               Face.loyalty = Nothing,
@@ -7371,21 +7371,21 @@ attachedTokenSlot = SlotName.MkSlotName (Text.pack "the token")
 -- dies to CR 704.5f, which is why rule 702.92a attaches the Equipment in the
 -- same resolution.
 germToken :: Card
-germToken = creatureToken (Text.pack "Phyrexian Germ Token") (Set.fromList [Subtype.Phyrexian, Subtype.Germ]) (Set.singleton Color.Black) 0 0
+germToken = creatureToken (Text.pack "Phyrexian Germ Token") [Subtype.Phyrexian, Subtype.Germ] (Set.singleton Color.Black) 0 0
 
 -- | CR 702.163a's token: 2/2 red Rebel creature.
 rebelToken :: Card
-rebelToken = creatureToken (Text.pack "Rebel Token") (Set.singleton Subtype.Rebel) (Set.singleton Color.Red) 2 2
+rebelToken = creatureToken (Text.pack "Rebel Token") [Subtype.Rebel] (Set.singleton Color.Red) 2 2
 
 -- | CR 702.182a's token: 1/1 colorless Hero creature. Colorless is the ABSENCE
 -- of a colorIndicator (CR 105.2, CR 202.2e) rather than a colour, servoToken's
 -- note one rule over.
 heroToken :: Card
-heroToken = creatureToken (Text.pack "Hero Token") (Set.singleton Subtype.Hero) Set.empty 1 1
+heroToken = creatureToken (Text.pack "Hero Token") [Subtype.Hero] Set.empty 1 1
 
 -- A vanilla creature token: CR 111.3's characteristics and nothing else, for the
 -- rules whose token has no ability of its own.
-creatureToken :: Text.Text -> Set.Set Subtype.Subtype -> Set.Set Color.Color -> Integer -> Integer -> Card
+creatureToken :: Text.Text -> [Subtype.Subtype] -> Set.Set Color.Color -> Integer -> Integer -> Card
 creatureToken name subtypes colors power toughness =
   tokenCard name (TypeLine.MkTypeLine Set.empty (Set.singleton CardType.Creature) subtypes) colors (Just (power, toughness)) []
 
@@ -7421,7 +7421,7 @@ predefinedArtifactToken :: Text.Text -> Subtype.Subtype -> Maybe ManaCost.ManaCo
 predefinedArtifactToken name subtype mana effect =
   tokenCard
     name
-    (TypeLine.MkTypeLine Set.empty (Set.singleton CardType.Artifact) (Set.singleton subtype))
+    (TypeLine.MkTypeLine Set.empty (Set.singleton CardType.Artifact) [subtype])
     Set.empty
     Nothing
     [ ActivatedAbility.MkActivatedAbility

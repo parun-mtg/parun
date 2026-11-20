@@ -159,9 +159,9 @@
       ],
       "typeLine": {
         "subtypes": [
-          "Bard",
           "Kithkin",
-          "Warrior"
+          "Warrior",
+          "Bard"
         ],
         "types": [
           "Creature"

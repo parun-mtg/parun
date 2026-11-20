@@ -61,8 +61,8 @@
       },
       "typeLine": {
         "subtypes": [
-          "Guest",
-          "Scarecrow"
+          "Scarecrow",
+          "Guest"
         ],
         "types": [
           "Artifact",

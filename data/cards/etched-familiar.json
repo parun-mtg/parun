@@ -78,8 +78,8 @@
       ],
       "typeLine": {
         "subtypes": [
-          "Fox",
-          "Phyrexian"
+          "Phyrexian",
+          "Fox"
         ],
         "types": [
           "Artifact",

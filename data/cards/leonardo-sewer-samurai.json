@@ -141,8 +141,8 @@
         "subtypes": [
           "Mutant",
           "Ninja",
-          "Samurai",
-          "Turtle"
+          "Turtle",
+          "Samurai"
         ],
         "supertypes": [
           "Legendary"

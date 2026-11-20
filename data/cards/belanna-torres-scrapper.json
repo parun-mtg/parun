@@ -193,9 +193,9 @@
       },
       "typeLine": {
         "subtypes": [
-          "Artificer",
+          "Klingon",
           "Human",
-          "Klingon"
+          "Artificer"
         ],
         "supertypes": [
           "Legendary"

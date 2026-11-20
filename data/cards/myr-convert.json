@@ -64,8 +64,8 @@
       },
       "typeLine": {
         "subtypes": [
-          "Myr",
-          "Phyrexian"
+          "Phyrexian",
+          "Myr"
         ],
         "types": [
           "Artifact",

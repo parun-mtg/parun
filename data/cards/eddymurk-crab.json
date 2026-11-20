@@ -154,8 +154,8 @@
       ],
       "typeLine": {
         "subtypes": [
-          "Crab",
-          "Elemental"
+          "Elemental",
+          "Crab"
         ],
         "types": [
           "Creature"

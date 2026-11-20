@@ -86,8 +86,8 @@
       },
       "typeLine": {
         "subtypes": [
-          "Druid",
-          "Treefolk"
+          "Treefolk",
+          "Druid"
         ],
         "types": [
           "Creature"

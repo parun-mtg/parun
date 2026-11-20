@@ -122,8 +122,8 @@
       ],
       "typeLine": {
         "subtypes": [
-          "Human",
           "Scorpion",
+          "Human",
           "Villain"
         ],
         "supertypes": [

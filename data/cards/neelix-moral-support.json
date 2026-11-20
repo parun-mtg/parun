@@ -152,8 +152,8 @@
       ],
       "typeLine": {
         "subtypes": [
-          "Advisor",
-          "Talaxian"
+          "Talaxian",
+          "Advisor"
         ],
         "supertypes": [
           "Legendary"

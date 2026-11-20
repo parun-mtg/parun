@@ -110,8 +110,8 @@
       ],
       "typeLine": {
         "subtypes": [
-          "Knight",
-          "Wraith"
+          "Wraith",
+          "Knight"
         ],
         "types": [
           "Creature"

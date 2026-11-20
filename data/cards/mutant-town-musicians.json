@@ -102,8 +102,8 @@
       ],
       "typeLine": {
         "subtypes": [
-          "Bard",
           "Mutant",
+          "Bard",
           "Performer"
         ],
         "types": [

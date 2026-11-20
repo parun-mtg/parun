@@ -192,9 +192,9 @@
       ],
       "typeLine": {
         "subtypes": [
-          "Ally",
           "Human",
-          "Pilot"
+          "Pilot",
+          "Ally"
         ],
         "supertypes": [
           "Legendary"

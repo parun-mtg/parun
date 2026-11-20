@@ -80,8 +80,8 @@
       ],
       "typeLine": {
         "subtypes": [
-          "Goblin",
-          "Zombie"
+          "Zombie",
+          "Goblin"
         ],
         "types": [
           "Creature"

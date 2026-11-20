@@ -142,8 +142,8 @@
       ],
       "typeLine": {
         "subtypes": [
-          "Devil",
-          "Phyrexian"
+          "Phyrexian",
+          "Devil"
         ],
         "types": [
           "Creature"

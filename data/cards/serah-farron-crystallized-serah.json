@@ -178,8 +178,8 @@
       ],
       "typeLine": {
         "subtypes": [
-          "Citizen",
-          "Human"
+          "Human",
+          "Citizen"
         ],
         "supertypes": [
           "Legendary"

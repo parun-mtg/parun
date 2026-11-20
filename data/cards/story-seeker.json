@@ -31,8 +31,8 @@
       },
       "typeLine": {
         "subtypes": [
-          "Cleric",
-          "Dwarf"
+          "Dwarf",
+          "Cleric"
         ],
         "types": [
           "Creature"

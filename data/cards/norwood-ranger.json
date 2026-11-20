@@ -23,8 +23,8 @@
       "typeLine": {
         "subtypes": [
           "Elf",
-          "Ranger",
-          "Scout"
+          "Scout",
+          "Ranger"
         ],
         "types": [
           "Creature"

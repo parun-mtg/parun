@@ -190,8 +190,8 @@
       ],
       "typeLine": {
         "subtypes": [
-          "Pirate",
-          "Shark"
+          "Shark",
+          "Pirate"
         ],
         "supertypes": [
           "Legendary"

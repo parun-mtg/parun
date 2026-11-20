@@ -188,8 +188,8 @@
       },
       "typeLine": {
         "subtypes": [
-          "Scout",
-          "Vedalken"
+          "Vedalken",
+          "Scout"
         ],
         "supertypes": [
           "Legendary"

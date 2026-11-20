@@ -113,8 +113,8 @@
       ],
       "typeLine": {
         "subtypes": [
-          "Officer",
-          "Vulcan"
+          "Vulcan",
+          "Officer"
         ],
         "supertypes": [
           "Legendary"

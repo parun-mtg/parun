@@ -100,8 +100,8 @@
       },
       "typeLine": {
         "subtypes": [
-          "Beast",
-          "Rhino"
+          "Rhino",
+          "Beast"
         ],
         "types": [
           "Creature"

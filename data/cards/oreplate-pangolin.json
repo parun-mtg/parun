@@ -103,8 +103,8 @@
       ],
       "typeLine": {
         "subtypes": [
-          "Pangolin",
-          "Robot"
+          "Robot",
+          "Pangolin"
         ],
         "types": [
           "Artifact",

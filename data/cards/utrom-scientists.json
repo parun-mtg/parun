@@ -85,9 +85,9 @@
       ],
       "typeLine": {
         "subtypes": [
+          "Utrom",
           "Robot",
-          "Scientist",
-          "Utrom"
+          "Scientist"
         ],
         "types": [
           "Artifact",

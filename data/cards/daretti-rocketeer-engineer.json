@@ -153,8 +153,8 @@
       ],
       "typeLine": {
         "subtypes": [
-          "Artificer",
-          "Goblin"
+          "Goblin",
+          "Artificer"
         ],
         "supertypes": [
           "Legendary"

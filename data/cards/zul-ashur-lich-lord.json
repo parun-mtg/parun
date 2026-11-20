@@ -109,8 +109,8 @@
       },
       "typeLine": {
         "subtypes": [
-          "Warlock",
-          "Zombie"
+          "Zombie",
+          "Warlock"
         ],
         "supertypes": [
           "Legendary"

@@ -191,9 +191,9 @@
       ],
       "typeLine": {
         "subtypes": [
-          "Avatar",
           "Cat",
-          "Spirit"
+          "Spirit",
+          "Avatar"
         ],
         "types": [
           "Creature"

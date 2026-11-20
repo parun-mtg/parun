@@ -122,9 +122,9 @@
       ],
       "typeLine": {
         "subtypes": [
-          "Doctor",
           "Klingon",
-          "Warrior"
+          "Warrior",
+          "Doctor"
         ],
         "types": [
           "Creature"

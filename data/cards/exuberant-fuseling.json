@@ -162,8 +162,8 @@
       ],
       "typeLine": {
         "subtypes": [
-          "Goblin",
           "Phyrexian",
+          "Goblin",
           "Warrior"
         ],
         "types": [

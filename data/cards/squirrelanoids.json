@@ -27,8 +27,8 @@
       },
       "typeLine": {
         "subtypes": [
-          "Mutant",
-          "Squirrel"
+          "Squirrel",
+          "Mutant"
         ],
         "types": [
           "Creature"

@@ -8,7 +8,8 @@ import qualified Parun.Types.Supertype as Supertype
 data TypeLine = MkTypeLine
   { supertypes :: Set.Set Supertype.Supertype,
     types :: Set.Set CardType.CardType,
-    subtypes :: Set.Set Subtype.Subtype
+    -- | In printed order (CR 205.3a), each once; every rule reads them as a set.
+    subtypes :: [Subtype.Subtype]
   }
   deriving (Eq, Ord, Show)
 
@@ -23,5 +24,5 @@ empty =
   MkTypeLine
     { supertypes = Set.empty,
       types = Set.empty,
-      subtypes = Set.empty
+      subtypes = []
     }

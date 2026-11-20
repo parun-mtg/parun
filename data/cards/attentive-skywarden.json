@@ -111,8 +111,8 @@
       ],
       "typeLine": {
         "subtypes": [
-          "Kor",
-          "Phyrexian"
+          "Phyrexian",
+          "Kor"
         ],
         "types": [
           "Creature"

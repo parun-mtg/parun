@@ -80,8 +80,8 @@
       ],
       "typeLine": {
         "subtypes": [
-          "Horror",
-          "Illusion"
+          "Illusion",
+          "Horror"
         ],
         "supertypes": [
           "Legendary"

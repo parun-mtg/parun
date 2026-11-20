@@ -5,8 +5,8 @@
       "oracleText": "({T}: Add {R} or {G}.)",
       "typeLine": {
         "subtypes": [
-          "Forest",
-          "Mountain"
+          "Mountain",
+          "Forest"
         ],
         "types": [
           "Land"

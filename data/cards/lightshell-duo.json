@@ -64,8 +64,8 @@
       ],
       "typeLine": {
         "subtypes": [
-          "Otter",
-          "Rat"
+          "Rat",
+          "Otter"
         ],
         "types": [
           "Creature"

@@ -97,8 +97,8 @@
       ],
       "typeLine": {
         "subtypes": [
-          "Elemental",
-          "Gremlin"
+          "Gremlin",
+          "Elemental"
         ],
         "types": [
           "Creature"

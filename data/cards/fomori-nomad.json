@@ -26,8 +26,8 @@
       },
       "typeLine": {
         "subtypes": [
-          "Giant",
-          "Nomad"
+          "Nomad",
+          "Giant"
         ],
         "types": [
           "Creature"

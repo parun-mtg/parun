@@ -178,9 +178,9 @@
       ],
       "typeLine": {
         "subtypes": [
-          "Hero",
           "Human",
-          "Performer"
+          "Performer",
+          "Hero"
         ],
         "supertypes": [
           "Legendary"
@@ -380,9 +380,9 @@
       ],
       "typeLine": {
         "subtypes": [
-          "Hero",
+          "Spider",
           "Human",
-          "Spider"
+          "Hero"
         ],
         "supertypes": [
           "Legendary"

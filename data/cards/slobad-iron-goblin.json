@@ -104,9 +104,9 @@
       },
       "typeLine": {
         "subtypes": [
-          "Artificer",
+          "Phyrexian",
           "Goblin",
-          "Phyrexian"
+          "Artificer"
         ],
         "supertypes": [
           "Legendary"

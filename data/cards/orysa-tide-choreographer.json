@@ -121,8 +121,8 @@
       ],
       "typeLine": {
         "subtypes": [
-          "Bard",
-          "Merfolk"
+          "Merfolk",
+          "Bard"
         ],
         "supertypes": [
           "Legendary"

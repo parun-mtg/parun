@@ -93,8 +93,8 @@
       },
       "typeLine": {
         "subtypes": [
-          "Goblin",
-          "Phyrexian"
+          "Phyrexian",
+          "Goblin"
         ],
         "types": [
           "Creature"

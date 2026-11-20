@@ -113,8 +113,8 @@
       ],
       "typeLine": {
         "subtypes": [
-          "Advisor",
-          "Elf"
+          "Elf",
+          "Advisor"
         ],
         "supertypes": [
           "Legendary"

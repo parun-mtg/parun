@@ -180,7 +180,7 @@ enterable quality gs printingId = case fmap Card.frontFace (Game.cardOfPrinting 
   -- that cannot be read.
   Nothing -> False
   Just face ->
-    all (\indicated -> Set.member indicated (TypeLine.subtypes (Face.typeLine face))) quality
+    all (\indicated -> elem indicated (TypeLine.subtypes (Face.typeLine face))) quality
       && all (\required -> quality == Just required) (Face.dungeonEntryQuality face)
 
 -- CR 701.49a: put a dungeon this player owns from outside the game into the

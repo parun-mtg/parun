@@ -74,9 +74,9 @@
       ],
       "typeLine": {
         "subtypes": [
-          "Dog",
           "Phyrexian",
-          "Zombie"
+          "Zombie",
+          "Dog"
         ],
         "types": [
           "Creature"

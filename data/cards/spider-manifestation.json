@@ -154,8 +154,8 @@
       ],
       "typeLine": {
         "subtypes": [
-          "Avatar",
-          "Spider"
+          "Spider",
+          "Avatar"
         ],
         "types": [
           "Creature"

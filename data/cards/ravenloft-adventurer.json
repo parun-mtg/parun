@@ -190,9 +190,9 @@
       ],
       "typeLine": {
         "subtypes": [
-          "Assassin",
           "Human",
-          "Rogue"
+          "Rogue",
+          "Assassin"
         ],
         "types": [
           "Creature"

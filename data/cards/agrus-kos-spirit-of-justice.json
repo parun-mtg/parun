@@ -148,8 +148,8 @@
       ],
       "typeLine": {
         "subtypes": [
-          "Detective",
-          "Spirit"
+          "Spirit",
+          "Detective"
         ],
         "supertypes": [
           "Legendary"

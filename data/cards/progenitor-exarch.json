@@ -196,9 +196,9 @@
       ],
       "typeLine": {
         "subtypes": [
+          "Phyrexian",
           "Cat",
-          "Cleric",
-          "Phyrexian"
+          "Cleric"
         ],
         "types": [
           "Creature"

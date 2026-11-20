@@ -25,7 +25,7 @@ codec :: Codec.Codec TypeLine.TypeLine
 codec = Fields.objectWith hasTypes $ do
   supertypes <- Fields.defaulted "supertypes" Set.empty (Common.set Supertype.codec) TypeLine.supertypes
   types <- Fields.required "types" (Common.set CardType.codec) TypeLine.types
-  subtypes <- Fields.defaulted "subtypes" Set.empty (Common.set Subtype.codec) TypeLine.subtypes
+  subtypes <- Fields.defaulted "subtypes" [] (Common.distinctList Subtype.codec) TypeLine.subtypes
   pure
     TypeLine.MkTypeLine
       { TypeLine.supertypes = supertypes,

@@ -127,9 +127,9 @@
       },
       "typeLine": {
         "subtypes": [
+          "Scorpion",
           "Dragon",
-          "Rogue",
-          "Scorpion"
+          "Rogue"
         ],
         "supertypes": [
           "Legendary"

@@ -72,8 +72,8 @@
       ],
       "typeLine": {
         "subtypes": [
-          "Bat",
-          "Phyrexian"
+          "Phyrexian",
+          "Bat"
         ],
         "types": [
           "Creature"

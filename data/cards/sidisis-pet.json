@@ -52,8 +52,8 @@
       },
       "typeLine": {
         "subtypes": [
-          "Ape",
-          "Zombie"
+          "Zombie",
+          "Ape"
         ],
         "types": [
           "Creature"

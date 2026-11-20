@@ -215,8 +215,8 @@
       ],
       "typeLine": {
         "subtypes": [
-          "Kavu",
-          "Phyrexian"
+          "Phyrexian",
+          "Kavu"
         ],
         "types": [
           "Creature"

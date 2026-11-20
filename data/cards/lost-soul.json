@@ -42,8 +42,8 @@
       },
       "typeLine": {
         "subtypes": [
-          "Minion",
-          "Spirit"
+          "Spirit",
+          "Minion"
         ],
         "types": [
           "Creature"

@@ -154,8 +154,8 @@
       ],
       "typeLine": {
         "subtypes": [
-          "Druid",
           "Elf",
+          "Druid",
           "Scout"
         ],
         "supertypes": [

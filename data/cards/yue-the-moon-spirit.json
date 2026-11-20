@@ -96,8 +96,8 @@
       },
       "typeLine": {
         "subtypes": [
-          "Ally",
-          "Spirit"
+          "Spirit",
+          "Ally"
         ],
         "supertypes": [
           "Legendary"

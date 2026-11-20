@@ -88,8 +88,8 @@
       },
       "typeLine": {
         "subtypes": [
-          "Advisor",
-          "Kithkin"
+          "Kithkin",
+          "Advisor"
         ],
         "supertypes": [
           "Legendary"

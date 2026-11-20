@@ -360,9 +360,9 @@
       ],
       "typeLine": {
         "subtypes": [
+          "Phyrexian",
           "Elf",
-          "Noble",
-          "Phyrexian"
+          "Noble"
         ],
         "supertypes": [
           "Legendary"

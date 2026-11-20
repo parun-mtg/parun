@@ -251,8 +251,8 @@
       ],
       "typeLine": {
         "subtypes": [
-          "Merfolk",
           "Phyrexian",
+          "Merfolk",
           "Scout"
         ],
         "types": [

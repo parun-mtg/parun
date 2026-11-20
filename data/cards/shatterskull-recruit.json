@@ -38,9 +38,9 @@
       },
       "typeLine": {
         "subtypes": [
-          "Ally",
           "Giant",
-          "Warrior"
+          "Warrior",
+          "Ally"
         ],
         "types": [
           "Creature"

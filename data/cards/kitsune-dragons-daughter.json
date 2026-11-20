@@ -144,9 +144,9 @@
       ],
       "typeLine": {
         "subtypes": [
-          "Avatar",
           "Fox",
-          "Warlock"
+          "Warlock",
+          "Avatar"
         ],
         "supertypes": [
           "Legendary"

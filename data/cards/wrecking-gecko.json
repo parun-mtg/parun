@@ -122,8 +122,8 @@
       },
       "typeLine": {
         "subtypes": [
-          "Construct",
-          "Lizard"
+          "Lizard",
+          "Construct"
         ],
         "types": [
           "Artifact",

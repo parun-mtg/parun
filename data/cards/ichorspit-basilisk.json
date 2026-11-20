@@ -35,8 +35,8 @@
       },
       "typeLine": {
         "subtypes": [
-          "Basilisk",
-          "Phyrexian"
+          "Phyrexian",
+          "Basilisk"
         ],
         "types": [
           "Creature"

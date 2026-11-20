@@ -269,8 +269,8 @@
       },
       "typeLine": {
         "subtypes": [
-          "Shapeshifter",
           "Skrull",
+          "Shapeshifter",
           "Villain"
         ],
         "supertypes": [

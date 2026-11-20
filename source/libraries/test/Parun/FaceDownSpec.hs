@@ -1886,7 +1886,7 @@ forestLand =
               TypeLine.MkTypeLine
                 { TypeLine.supertypes = Set.empty,
                   TypeLine.types = Set.singleton CardType.Land,
-                  TypeLine.subtypes = Set.singleton Subtype.Forest
+                  TypeLine.subtypes = [Subtype.Forest]
                 },
             FaceDownCharacteristics.power = Nothing,
             FaceDownCharacteristics.toughness = Nothing

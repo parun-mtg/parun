@@ -82,9 +82,9 @@
       },
       "typeLine": {
         "subtypes": [
-          "Ally",
           "Human",
-          "Soldier"
+          "Soldier",
+          "Ally"
         ],
         "types": [
           "Creature"

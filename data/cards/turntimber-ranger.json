@@ -152,10 +152,10 @@
       ],
       "typeLine": {
         "subtypes": [
-          "Ally",
           "Elf",
+          "Scout",
           "Ranger",
-          "Scout"
+          "Ally"
         ],
         "types": [
           "Creature"

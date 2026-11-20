@@ -437,8 +437,8 @@
       ],
       "typeLine": {
         "subtypes": [
-          "Druid",
-          "Treefolk"
+          "Treefolk",
+          "Druid"
         ],
         "supertypes": [
           "Legendary"

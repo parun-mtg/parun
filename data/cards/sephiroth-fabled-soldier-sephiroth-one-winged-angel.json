@@ -217,8 +217,8 @@
       ],
       "typeLine": {
         "subtypes": [
-          "Avatar",
           "Human",
+          "Avatar",
           "Soldier"
         ],
         "supertypes": [
@@ -422,8 +422,8 @@
       "typeLine": {
         "subtypes": [
           "Angel",
-          "Avatar",
-          "Nightmare"
+          "Nightmare",
+          "Avatar"
         ],
         "supertypes": [
           "Legendary"

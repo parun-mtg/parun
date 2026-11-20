@@ -205,8 +205,8 @@
       ],
       "typeLine": {
         "subtypes": [
-          "Detective",
-          "Elf"
+          "Elf",
+          "Detective"
         ],
         "supertypes": [
           "Legendary"

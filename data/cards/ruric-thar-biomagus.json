@@ -79,8 +79,8 @@
       ],
       "typeLine": {
         "subtypes": [
-          "Crab",
           "Ogre",
+          "Crab",
           "Wizard"
         ],
         "supertypes": [

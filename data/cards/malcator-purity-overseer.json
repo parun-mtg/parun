@@ -194,8 +194,8 @@
       ],
       "typeLine": {
         "subtypes": [
-          "Elephant",
           "Phyrexian",
+          "Elephant",
           "Wizard"
         ],
         "supertypes": [

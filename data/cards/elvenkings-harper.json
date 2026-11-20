@@ -80,8 +80,8 @@
       },
       "typeLine": {
         "subtypes": [
-          "Bard",
-          "Elf"
+          "Elf",
+          "Bard"
         ],
         "types": [
           "Creature"

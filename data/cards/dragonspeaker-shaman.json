@@ -63,8 +63,8 @@
       },
       "typeLine": {
         "subtypes": [
-          "Barbarian",
           "Human",
+          "Barbarian",
           "Shaman"
         ],
         "types": [

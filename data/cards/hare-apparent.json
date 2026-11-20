@@ -124,8 +124,8 @@
       ],
       "typeLine": {
         "subtypes": [
-          "Noble",
-          "Rabbit"
+          "Rabbit",
+          "Noble"
         ],
         "types": [
           "Creature"

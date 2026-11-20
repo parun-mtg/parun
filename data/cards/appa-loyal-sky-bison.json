@@ -149,8 +149,8 @@
       ],
       "typeLine": {
         "subtypes": [
-          "Ally",
-          "Bison"
+          "Bison",
+          "Ally"
         ],
         "supertypes": [
           "Legendary"

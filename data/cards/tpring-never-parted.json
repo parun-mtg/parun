@@ -183,8 +183,8 @@
       ],
       "typeLine": {
         "subtypes": [
-          "Citizen",
-          "Vulcan"
+          "Vulcan",
+          "Citizen"
         ],
         "supertypes": [
           "Legendary"

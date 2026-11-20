@@ -1960,7 +1960,7 @@ anyCopiableKeyword p oid gs = case copiableSnapshotOf oid gs of
 copiableMintsType :: ObjectId -> GameState -> Bool
 copiableMintsType oid gs =
   let fromFace face =
-        Set.member Subtype.Type.Saga (TypeLine.subtypes (Face.typeLine face))
+        elem Subtype.Type.Saga (TypeLine.subtypes (Face.typeLine face))
           || any mintingCardType (TypeLine.types (Face.typeLine face))
    in case copiableSnapshotOf oid gs of
         Just snapshot -> Set.member Subtype.Type.Saga (PC.subtypes snapshot) || any mintingCardType (PC.cardTypes snapshot)

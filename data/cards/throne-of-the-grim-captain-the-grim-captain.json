@@ -225,9 +225,9 @@
       ],
       "typeLine": {
         "subtypes": [
-          "Pirate",
           "Skeleton",
-          "Spirit"
+          "Spirit",
+          "Pirate"
         ],
         "supertypes": [
           "Legendary"

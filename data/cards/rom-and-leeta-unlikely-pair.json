@@ -111,8 +111,8 @@
       ],
       "typeLine": {
         "subtypes": [
-          "Bajoran",
-          "Ferengi"
+          "Ferengi",
+          "Bajoran"
         ],
         "supertypes": [
           "Legendary"

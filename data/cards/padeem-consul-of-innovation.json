@@ -221,8 +221,8 @@
       ],
       "typeLine": {
         "subtypes": [
-          "Artificer",
-          "Vedalken"
+          "Vedalken",
+          "Artificer"
         ],
         "supertypes": [
           "Legendary"

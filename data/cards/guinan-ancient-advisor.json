@@ -124,8 +124,8 @@
       },
       "typeLine": {
         "subtypes": [
-          "Advisor",
-          "ElAurian"
+          "ElAurian",
+          "Advisor"
         ],
         "supertypes": [
           "Legendary"

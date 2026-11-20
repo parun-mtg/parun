@@ -166,8 +166,8 @@
       ],
       "typeLine": {
         "subtypes": [
-          "Bear",
-          "Elemental"
+          "Elemental",
+          "Bear"
         ],
         "supertypes": [
           "Legendary"

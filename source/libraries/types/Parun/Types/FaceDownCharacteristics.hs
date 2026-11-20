@@ -65,7 +65,7 @@ noneValue =
         TypeLine.MkTypeLine
           { TypeLine.supertypes = Set.empty,
             TypeLine.types = Set.empty,
-            TypeLine.subtypes = Set.empty
+            TypeLine.subtypes = []
           },
       power = Nothing,
       toughness = Nothing,
@@ -86,7 +86,7 @@ defaultValue =
         TypeLine.MkTypeLine
           { TypeLine.supertypes = Set.empty,
             TypeLine.types = Set.singleton CardType.Creature,
-            TypeLine.subtypes = Set.empty
+            TypeLine.subtypes = []
           },
       power = Just (Power.MkPower (Quantity.Literal 2)),
       toughness = Just (Toughness.MkToughness (Quantity.Literal 2)),

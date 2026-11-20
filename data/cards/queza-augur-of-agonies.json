@@ -99,8 +99,8 @@
       ],
       "typeLine": {
         "subtypes": [
-          "Advisor",
-          "Octopus"
+          "Octopus",
+          "Advisor"
         ],
         "supertypes": [
           "Legendary"

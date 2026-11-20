@@ -268,9 +268,9 @@
       ],
       "typeLine": {
         "subtypes": [
+          "Vulcan",
           "Human",
-          "Scientist",
-          "Vulcan"
+          "Scientist"
         ],
         "supertypes": [
           "Legendary"
