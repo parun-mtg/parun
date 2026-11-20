@@ -43,6 +43,7 @@ import qualified Parun.Engine.Game as Game
 import qualified Parun.Engine.Mana as Mana
 import qualified Parun.Engine.Projection as Projection
 import qualified Parun.Engine.Setup as Setup
+import qualified Parun.Extra.Natural as Natural
 import qualified Parun.Registry as Registry
 import qualified Parun.Spec as Spec
 import qualified Parun.Support as S
@@ -308,6 +309,19 @@ spec s registry = Spec.describe s "a fragmented loop (CR 733.3)" $ do
     let casts = blinkCasts spirit omniscience
     Spec.assertEqWith s "CR 733.3 alice's repeated cast is refused" (fmap fst casts) [True, False]
     Spec.assertEqWith s "CR 734.1 and her next priority says why" (fmap snd casts) [Nothing, Just Undoing.RepeatedLoop]
+
+  Spec.it s "a loop through an entry-link reader recurs once the entrant has left" $ do
+    animate <- S.printingOf s registry "Animate Dead"
+    auramancer <- S.printingOf s registry "Auramancer"
+    seer <- S.printingOf s registry "Viscera Seer"
+    omniscience <- S.printingOf s registry "Omniscience"
+    -- alice casts one Animate Dead free under Omniscience on her Auramancer,
+    -- which returns her other Animate Dead to her hand, and sacrifices it to
+    -- her Viscera Seer, and so on. Each lap links an Auramancer that then
+    -- leaves (CR 400.7, 607.5), and no card can read that link, so the laps
+    -- recur and her repeated cast is refused.
+    let casts = reanimateCasts animate auramancer seer omniscience
+    Spec.assertEqWith s "CR 733.3 alice's repeated cast is refused" (fmap fst casts) [True, True, False]
 
 -- How many times the answerer has the tapper activate before it passes
 -- instead, since without CR 733.3 the loop never ends.
@@ -795,6 +809,33 @@ blinkCasts spirit omniscience =
                 }
           }
       ((_, _), (_, _, made)) = State.runState (Engine.runGameAsked blinking (inMain board) Engine.priorityLoop) (budget, False, [])
+   in made
+
+-- alice, under Omniscience with a Viscera Seer and an empty library, holds an
+-- Animate Dead, and her graveyard holds another and an Auramancer. She casts
+-- an Animate Dead whenever she can, and sacrifices the Auramancer to the Seer
+-- otherwise, `blinking`'s way.
+reanimateCasts :: Printing.Printing -> Printing.Printing -> Printing.Printing -> Printing.Printing -> [(Bool, Maybe Undoing.Undoing)]
+reanimateCasts animate auramancer seer omniscience =
+  let (_, gs1) = S.addPermanent omniscience S.alice (Setup.emptyGame S.bothPlayers)
+      (seerId, gs2) = S.addPermanent seer S.alice gs1
+      (_, gs3) = S.addHandCard animate S.alice gs2
+      (_, gs4) = S.addGraveyardCard animate S.alice gs3
+      (_, gs5) = S.addGraveyardCard auramancer S.alice gs4
+      board =
+        gs5
+          { GameState.history =
+              (GameState.history gs5)
+                { History.resolvedNames = Map.singleton S.alice (Set.singleton (CardName.MkCardName (Text.pack "Animate Dead")))
+                }
+          }
+      -- The Seer is activated only with an Auramancer beside it to sacrifice.
+      sacrificing asked = case Asked.prompt asked of
+        Prompt.ChooseAction decider pid actions
+          | length (GameState.battlefield (Asked.game asked)) <= 2 -> blinking asked {Asked.prompt = Prompt.ChooseAction decider pid (filter (not . activates seerId) actions)}
+        Prompt.ChooseSacrifices _ _ _ candidates n _ -> pure (Set.fromList (take (Natural.toIntSaturating n) (filter (/= seerId) candidates)))
+        _ -> blinking asked
+      ((_, _), (_, _, made)) = State.runState (Engine.runGameAsked sacrificing (inMain board) Engine.priorityLoop) (budget, False, [])
    in made
 
 -- The casts alice has left, whether she has just attempted one, and her

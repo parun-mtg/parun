@@ -119,13 +119,15 @@ import qualified Text.Read as Read
 -- where its source can read it (CR 607.1, LinkReaders.readsOwnLinks). A Grim
 -- Poppet's lap beside a Cyclopean Tomb still recurs; the Tomb's own does not.
 -- `enteredWith` needs no reader trim: LinkReaders.recordEntry writes no row
--- its source cannot read as it writes it. A row keyed by an entrant that has
--- left is compared too, so a lap through a reading source never recurs (gap
--- #9010).
+-- its source cannot read as it writes it. Both are keyed by the linked object,
+-- so, as with `lastKnown`, only the rows of the ids the rest of the state
+-- holds are compared (CR 400.7): a reader of a departed key's row, a dies
+-- trigger, holds the key itself. Parun.FragmentedSpec's Animate Dead loop
+-- proves it.
 digest :: GameState -> StateDigest
 digest gs =
   let (effects, objects, reacquire) = canonicalStamps gs
-      trimmed =
+      unlinked =
         gs
           { GameState.turn =
               (GameState.turn gs)
@@ -157,7 +159,12 @@ digest gs =
             -- behind where there was no entry, and no card tells the two apart.
             GameState.manaPool = Map.filter (not . null . Mana.unwrap) (GameState.manaPool gs)
           }
-      shown = show trimmed
+      unkeyed = show unlinked {GameState.enteredWith = Map.empty, GameState.counteredWith = Map.empty}
+      linked = Set.fromList (fmap ObjectId.MkObjectId (Map.keys (ranked objectIdTag unkeyed)))
+      entered = Map.restrictKeys (GameState.enteredWith unlinked) linked
+      countered = Map.restrictKeys (GameState.counteredWith unlinked) linked
+      trimmed = unlinked {GameState.enteredWith = entered, GameState.counteredWith = countered}
+      shown = unkeyed <> show (entered, countered)
       held = Set.fromList (fmap ObjectId.MkObjectId (Map.keys (ranked objectIdTag shown)))
       -- What the log says of each held id, as the readers keyed by one ask it
       -- (`readers`), so a renamed id is the same object only where the
