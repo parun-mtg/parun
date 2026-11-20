@@ -123,11 +123,12 @@ import qualified Text.Read as Read
 -- its source cannot read as it writes it.
 --
 -- Trimmed to the ids the rest of the state holds, as `lastKnown` is (CR
--- 400.7): the rows of `enteredWith` and `counteredWith`, keyed by the linked
--- object, and the stored rows fixed to TheseObjects (CR 611.2c), each kept
--- while it names one such id. A departed object is no longer one any of them
--- applies to, and what reads one -- a dies trigger, an ability on the stack --
--- holds its id. Parun.FragmentedSpec's Animate Dead loop proves both.
+-- 400.7): the rows of `exiledWith`, `enteredWith` and `counteredWith`, keyed
+-- by the linked object, and the stored rows fixed to TheseObjects (CR
+-- 611.2c), each kept while it names one such id. None of them applies to a
+-- departed object, and what reads one -- a dies trigger, an ability on the
+-- stack -- holds its id. Parun.FragmentedSpec's Animate Dead loop proves the
+-- entry and fixed rows, and its link cases the other two.
 digest :: GameState -> StateDigest
 digest gs =
   let (effects, objects, reacquire) = canonicalStamps gs
@@ -166,13 +167,14 @@ digest gs =
       fixedTo row = case ContinuousEffect.affected row of
         Affected.TheseObjects oids -> Just oids
         _ -> Nothing
-      unkeyed = show unlinked {GameState.enteredWith = Map.empty, GameState.counteredWith = Map.empty, GameState.stored = (GameState.stored unlinked) {StoredEffects.continuousEffects = filter (Maybe.isNothing . fixedTo) effects}}
+      unkeyed = show unlinked {GameState.exiledWith = Map.empty, GameState.enteredWith = Map.empty, GameState.counteredWith = Map.empty, GameState.stored = (GameState.stored unlinked) {StoredEffects.continuousEffects = filter (Maybe.isNothing . fixedTo) effects}}
       linked = Set.fromList (fmap ObjectId.MkObjectId (Map.keys (ranked objectIdTag unkeyed)))
+      exiled = Map.restrictKeys (GameState.exiledWith unlinked) linked
       entered = Map.restrictKeys (GameState.enteredWith unlinked) linked
       countered = Map.restrictKeys (GameState.counteredWith unlinked) linked
       live row = maybe True (not . Set.disjoint linked) (fixedTo row)
-      trimmed = unlinked {GameState.enteredWith = entered, GameState.counteredWith = countered, GameState.stored = (GameState.stored unlinked) {StoredEffects.continuousEffects = filter live effects}}
-      shown = unkeyed <> show (filter (Maybe.isJust . fixedTo) (filter live effects), entered, countered)
+      trimmed = unlinked {GameState.exiledWith = exiled, GameState.enteredWith = entered, GameState.counteredWith = countered, GameState.stored = (GameState.stored unlinked) {StoredEffects.continuousEffects = filter live effects}}
+      shown = unkeyed <> show (filter (Maybe.isJust . fixedTo) (filter live effects), exiled, entered, countered)
       held = Set.fromList (fmap ObjectId.MkObjectId (Map.keys (ranked objectIdTag shown)))
       -- What the log says of each held id, as the readers keyed by one ask it
       -- (`readers`), so a renamed id is the same object only where the
