@@ -479,7 +479,7 @@ spec s registry = Spec.describe s "Parun.Engine.Replacement" $ do
               ActiveReplacement.condition = Nothing,
               ActiveReplacement.rider = Nothing,
               ActiveReplacement.slots = Map.empty,
-              ActiveReplacement.choices = SourceChoices.MkSourceChoices Map.empty Set.empty Nothing Nothing Nothing Acquisition.Own
+              ActiveReplacement.choices = SourceChoices.MkSourceChoices Map.empty Set.empty Nothing Nothing Nothing Acquisition.Own Nothing
             }
         g3 = S.addReplacement active g2
         asked = answersFor S.identityAnswer g3 (Event.runEntry Settle.none Nothing Nothing Set.empty piker)
@@ -997,7 +997,7 @@ blastShape src ts =
       ActiveReplacement.condition = Nothing,
       ActiveReplacement.rider = Nothing,
       ActiveReplacement.slots = Map.empty,
-      ActiveReplacement.choices = SourceChoices.MkSourceChoices Map.empty Set.empty Nothing Nothing Nothing Acquisition.Own
+      ActiveReplacement.choices = SourceChoices.MkSourceChoices Map.empty Set.empty Nothing Nothing Nothing Acquisition.Own Nothing
     }
 
 -- CR 614.1c's variable amount: "This creature enters with a number of +1/+1

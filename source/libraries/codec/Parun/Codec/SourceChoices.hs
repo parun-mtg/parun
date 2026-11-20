@@ -8,6 +8,7 @@ import qualified Parun.Codec.Acquisition as Acquisition
 import qualified Parun.Codec.CardName as CardName
 import qualified Parun.Codec.CardType as CardType
 import qualified Parun.Codec.Color as Color
+import qualified Parun.Codec.ObjectId as ObjectId
 import qualified Parun.Codec.PlayerId as PlayerId
 import qualified Parun.Codec.Subtype as Subtype
 import qualified Parun.JsonCodec.Codec as Codec
@@ -24,6 +25,7 @@ codec = Fields.object $ do
   cardType <- Fields.defaulted "cardType" Nothing (Common.maybe CardType.codec) SourceChoices.cardType
   number <- Fields.defaulted "number" Nothing (Common.maybe Common.natural) SourceChoices.number
   acquisition <- Fields.defaulted "acquisition" Acquisition.Own Acquisition.codec SourceChoices.acquisition
+  resolution <- Fields.defaulted "resolution" Nothing (Common.maybe ObjectId.codec) SourceChoices.resolution
   pure
     SourceChoices.MkSourceChoices
       { SourceChoices.names = names,
@@ -31,5 +33,6 @@ codec = Fields.object $ do
         SourceChoices.subtype = subtype,
         SourceChoices.cardType = cardType,
         SourceChoices.number = number,
-        SourceChoices.acquisition = acquisition
+        SourceChoices.acquisition = acquisition,
+        SourceChoices.resolution = resolution
       }

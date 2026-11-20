@@ -22,6 +22,7 @@ import qualified Data.Sequence as Seq
 import qualified Data.Set as Set
 import qualified Parun.Engine.Event as Event
 import qualified Parun.Engine.Game as Game
+import qualified Parun.Engine.LinkReaders as LinkReaders
 import qualified Parun.Types.Bookkeeping as Bookkeeping
 import qualified Parun.Types.EntryLink as EntryLink
 import Parun.Types.EventGroup (EventGroup)
@@ -216,13 +217,14 @@ returnDue settle = do
 -- (Filter.EnteredWithSource) -- Lagrella, the Magpie's "this way", which
 -- data/scenarios/trigger/lagrella-the-magpie-counters-only-what-returns-under-your-control.json
 -- proves. Each batch member gets its own watch's link: Lagrella's
--- dying-beside-banisher-priest scenario proves the alignment.
---
--- The row is written whether or not anything can read it (gap #8997).
+-- dying-beside-banisher-priest scenario proves the alignment. The link names
+-- the resolution that made the move, so each delayed ability reads only its
+-- own creator's returns (SourceContext.readsEntrant): Lagrella's
+-- twice-counters-each-instance-s-own-return scenario proves it.
 linkArrival :: GameState -> (EntryLink.EntryLink, Seq.Seq ObjectId) -> GameState
 linkArrival gs (link, arrivals) =
   Foldable.foldl'
-    (\g new -> if Set.member new (GameState.battlefield g) then g {GameState.enteredWith = Map.insertWith Set.union new (Set.singleton link) (GameState.enteredWith g)} else g)
+    (\g new -> if Set.member new (GameState.battlefield g) then LinkReaders.recordEntry link new g else g)
     gs
     arrivals
 

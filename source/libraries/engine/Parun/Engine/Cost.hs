@@ -7050,6 +7050,7 @@ armSpendTriggers sid spent gs =
           (Projection.delayedSnapshotOf (SpendTrigger.source trigger) g)
           (SpendTrigger.source trigger)
           (Game.acquisitionOf (SpendTrigger.source trigger) g)
+          Nothing
           (SpendTrigger.controller trigger)
           (Map.singleton Binding.castSpell (Binding.toObject sid))
           (Just TurnWindow.AnyTurn)

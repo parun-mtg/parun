@@ -323,6 +323,7 @@ import Parun.Types.SkipWindow (SkipWindow)
 import qualified Parun.Types.SlotName as SlotName
 import qualified Parun.Types.Snapshots as Snapshots
 import qualified Parun.Types.Source as Source
+import qualified Parun.Types.SourceChoices as SourceChoices
 import qualified Parun.Types.SpellCast as SpellCast
 import qualified Parun.Types.SpentOn as SpentOn
 import qualified Parun.Types.StackObjectKind as StackObjectKind
@@ -3355,7 +3356,7 @@ apply settle batch applied batchPrevented candidate event =
           -- its controller's (Replacement.linkedTrigger). No controller,
           -- no "you" to do it.
           Foldable.for_ ((,) <$> Replacement.linkedTrigger whenYouDo <*> ReplacementCandidate.controller candidate) $ \(linked, you) ->
-            State.modify' (\g -> armDelayed linked (Projection.delayedSnapshotOf (ReplacementCandidate.source candidate) g) (ReplacementCandidate.source candidate) (Game.acquisitionOf (ReplacementCandidate.source candidate) g) you Map.empty (Just TurnWindow.AnyTurn) Nothing g)
+            State.modify' (\g -> armDelayed linked (Projection.delayedSnapshotOf (ReplacementCandidate.source candidate) g) (ReplacementCandidate.source candidate) (Game.acquisitionOf (ReplacementCandidate.source candidate) g) Nothing you Map.empty (Just TurnWindow.AnyTurn) Nothing g)
           -- CR 614.1a / 614.6: "instead exile it and ...", the riders part of
           -- the modified event. QUEUED for DamageRewrite.RunEffects' reason
           -- below, with the moving object bound under
@@ -6485,7 +6486,7 @@ becomeCopyAs batch candidate asCopy oid = do
         let linkedEarlier entry = DelayedTrigger.source entry == oid && Map.member Binding.copiedObject (DelayedTrigger.bindings entry)
         State.modify' (\g -> g {GameState.stored = (GameState.stored g) {StoredEffects.delayedTriggers = Seq.filter (not . linkedEarlier) (StoredEffects.delayedTriggers (GameState.stored g))}})
         Foldable.for_ (Replacement.linkedTrigger (AsCopy.whenYouDo asCopy)) $ \linked ->
-          State.modify' (\g -> armDelayed linked (Projection.delayedSnapshotOf oid g) oid (Game.acquisitionOf oid g) controller (Map.singleton Binding.copiedObject (Binding.toObject src2)) (Just TurnWindow.AnyTurn) Nothing g)
+          State.modify' (\g -> armDelayed linked (Projection.delayedSnapshotOf oid g) oid (Game.acquisitionOf oid g) Nothing controller (Map.singleton Binding.copiedObject (Binding.toObject src2)) (Just TurnWindow.AnyTurn) Nothing g)
       -- CR 707.9e / 122.1: Dominion Saboteur's copied counters, read off the
       -- copied permanent as the copy is made, ride the printed rows' funnel
       -- and are taken back with them (docs/decisions.md, "Whether Dominion
@@ -13251,9 +13252,11 @@ controllerTurnScoped cond = case cond of
 -- CR 607.5: `acquisition` is the one whose choices and entrants the entry
 -- reads off its source: Game.readingAcquisition for a resolving ability, so
 -- it matches the until-return link the same resolution recorded, and for
--- every other creator Game.acquisitionOf.
-armDelayed :: TriggeredAbility.TriggeredAbility Card.Type.Card (GrantedAbility.Type.GrantedAbility Card.Type.Card) -> Map.Map AbilityName.AbilityName (TriggeredAbility.TriggeredAbility Card.Type.Card (GrantedAbility.Type.GrantedAbility Card.Type.Card)) -> ObjectId -> Acquisition.Acquisition -> PlayerId -> Map.Map SlotName.SlotName Binding.Type.Binding -> Maybe TurnWindow -> Maybe Expiry.Type.Expiry -> GameState -> GameState
-armDelayed ability declared source acquisition controller captured armed expiry gs = case armed of
+-- every other creator Game.acquisitionOf. CR 603.7 / 608.2c: `resolution` is
+-- the resolving object creating it, whose entry links alone the entry reads
+-- ("this way"), and Nothing for every other creator.
+armDelayed :: TriggeredAbility.TriggeredAbility Card.Type.Card (GrantedAbility.Type.GrantedAbility Card.Type.Card) -> Map.Map AbilityName.AbilityName (TriggeredAbility.TriggeredAbility Card.Type.Card (GrantedAbility.Type.GrantedAbility Card.Type.Card)) -> ObjectId -> Acquisition.Acquisition -> Maybe ObjectId -> PlayerId -> Map.Map SlotName.SlotName Binding.Type.Binding -> Maybe TurnWindow -> Maybe Expiry.Type.Expiry -> GameState -> GameState
+armDelayed ability declared source acquisition resolution controller captured armed expiry gs = case armed of
   -- "That turn" names no turn this resolution created, or "that player's next
   -- turn" no player, so the ability could never fire (CR 603.7a).
   Nothing -> gs
@@ -13272,7 +13275,7 @@ armDelayed ability declared source acquisition controller captured armed expiry 
               DelayedTrigger.bindings = captured,
               -- CR 608.2h: read once, as the entry is created, so a later choice
               -- the source makes reaches no entry already armed.
-              DelayedTrigger.choices = SourceContext.choicesOf acquisition source gs,
+              DelayedTrigger.choices = (SourceContext.choicesOf acquisition source gs) {SourceChoices.resolution = resolution},
               DelayedTrigger.delayed = declared,
               DelayedTrigger.window = window,
               DelayedTrigger.expiry = expiry,

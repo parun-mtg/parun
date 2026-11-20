@@ -57,7 +57,7 @@ spec s = Spec.describe s "Parun.Codec.ManaUnit" $ do
           ManaUnit.restriction = Just (ManaRestriction.onlyCasts (Filter.HasCardType CardType.Creature)),
           ManaUnit.rider = Nothing,
           ManaUnit.spendTrigger = Nothing,
-          ManaUnit.sourceChoices = Just SourceChoices.MkSourceChoices {SourceChoices.names = Map.empty, SourceChoices.colors = Set.singleton Color.Red, SourceChoices.subtype = Just (NonEmpty.singleton Subtype.Goblin), SourceChoices.cardType = Nothing, SourceChoices.number = Nothing, SourceChoices.acquisition = Acquisition.Own},
+          ManaUnit.sourceChoices = Just SourceChoices.MkSourceChoices {SourceChoices.names = Map.empty, SourceChoices.colors = Set.singleton Color.Red, SourceChoices.subtype = Just (NonEmpty.singleton Subtype.Goblin), SourceChoices.cardType = Nothing, SourceChoices.number = Nothing, SourceChoices.acquisition = Acquisition.Own, SourceChoices.resolution = Nothing},
           ManaUnit.sourceLastExiled = Just (ObjectId.MkObjectId 7),
           ManaUnit.producer = Nothing
         }

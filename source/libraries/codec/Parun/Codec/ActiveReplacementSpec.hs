@@ -83,7 +83,7 @@ spec s = Spec.describe s "Parun.Codec.ActiveReplacement" $ do
           ActiveReplacement.condition = Nothing,
           ActiveReplacement.rider = Nothing,
           ActiveReplacement.slots = Map.empty,
-          ActiveReplacement.choices = SourceChoices.MkSourceChoices {SourceChoices.names = Map.empty, SourceChoices.colors = Set.empty, SourceChoices.subtype = Nothing, SourceChoices.cardType = Nothing, SourceChoices.number = Nothing, SourceChoices.acquisition = Acquisition.Own}
+          ActiveReplacement.choices = SourceChoices.MkSourceChoices {SourceChoices.names = Map.empty, SourceChoices.colors = Set.empty, SourceChoices.subtype = Nothing, SourceChoices.cardType = Nothing, SourceChoices.number = Nothing, SourceChoices.acquisition = Acquisition.Own, SourceChoices.resolution = Nothing}
         }
       ( " {\"effect\":"
           <> effectJson
@@ -122,7 +122,7 @@ spec s = Spec.describe s "Parun.Codec.ActiveReplacement" $ do
             Map.singleton
               (SlotName.MkSlotName (Text.pack "that spell"))
               (Set.fromList [Recipient.ToObject (ObjectId.MkObjectId 8), Recipient.ToPlayer (PlayerId.MkPlayerId 9)]),
-          ActiveReplacement.choices = SourceChoices.MkSourceChoices {SourceChoices.names = Map.empty, SourceChoices.colors = Set.singleton Color.White, SourceChoices.subtype = Nothing, SourceChoices.cardType = Nothing, SourceChoices.number = Nothing, SourceChoices.acquisition = Acquisition.Own}
+          ActiveReplacement.choices = SourceChoices.MkSourceChoices {SourceChoices.names = Map.empty, SourceChoices.colors = Set.singleton Color.White, SourceChoices.subtype = Nothing, SourceChoices.cardType = Nothing, SourceChoices.number = Nothing, SourceChoices.acquisition = Acquisition.Own, SourceChoices.resolution = Nothing}
         }
       ( " {\"effect\":"
           <> effectJson

@@ -2138,6 +2138,7 @@ library engine
     Parun.Engine.LaterPayment
     Parun.Engine.Learn
     Parun.Engine.Ledger
+    Parun.Engine.LinkReaders
     Parun.Engine.Loyalty
     Parun.Engine.Mana
     Parun.Engine.ManaAbility

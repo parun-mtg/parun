@@ -616,6 +616,7 @@ applyEpic oid controller = do
               (Projection.delayedSnapshotOf oid g)
               oid
               (Game.acquisitionOf oid g)
+              Nothing
               controller
               (Map.singleton Keyword.Engine.epicSlot (Binding.toObject oid))
               (Just TurnWindow.AnyTurn)
@@ -665,6 +666,7 @@ applyParadigm settle oid controller firstOfName = do
           (Projection.delayedSnapshotOf oid gs)
           oid
           (Game.acquisitionOf oid gs)
+          Nothing
           controller
           (Map.singleton Keyword.Engine.paradigmSlot (Binding.toObject oid))
           (Just TurnWindow.AnyTurn)
@@ -754,7 +756,7 @@ finishSpell settle oid face controller = do
     -- Rule 702.88a makes the delayed ability part of the SAME rewrite as the
     -- exile, so it is armed only where that rewrite is what moved the card.
     Monad.when (took reboundRow) $
-      State.modify' (\g -> Event.armDelayed Keyword.Engine.reboundUpkeep (Projection.delayedSnapshotOf newId g) newId (Game.acquisitionOf newId g) controller (Map.singleton Keyword.Engine.reboundSlot (Binding.toObject newId)) (Just TurnWindow.AnyTurn) Nothing g)
+      State.modify' (\g -> Event.armDelayed Keyword.Engine.reboundUpkeep (Projection.delayedSnapshotOf newId g) newId (Game.acquisitionOf newId g) Nothing controller (Map.singleton Keyword.Engine.reboundSlot (Binding.toObject newId)) (Just TurnWindow.AnyTurn) Nothing g)
     -- CR 716.3d's "for as long as that card remains exiled, that player may play
     -- it", which is the same sentence as the exile it hangs off.
     Monad.when (took adventureRow) . State.modify' $ \gs ->

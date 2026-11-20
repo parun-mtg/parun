@@ -461,7 +461,7 @@ unread oid =
       Mentions.keyed = Monoid.Any True,
       Mentions.history = mempty,
       Mentions.prevention = mempty,
-      Mentions.counterLinks = mempty,
+      Mentions.sourceLinks = mempty,
       Mentions.melded = id
     }
 
