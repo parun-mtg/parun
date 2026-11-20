@@ -1,0 +1,27 @@
+{
+  "description": "CR 702.146a, 303.4a, 613.1f, 508.5: Distracting Geist cast for its disturb cost is Clever Distraction, an Aura whose enchanted creature has \"Whenever this creature attacks, tap target creature defending player controls\"",
+  "note": "Three seats: carol's Hill Giant belongs to an opponent who is not defending, so bob's Bears are the only legal target and are bound unasked. Alice's Lions carry the granted trigger; the Bears, tapped, can't block, and the Lions' 2 damage gets through.",
+  "board": {
+    "active": "alice",
+    "step": "PrecombatMain",
+    "seats": [
+      {"name": "alice",
+       "battlefield": [{"card": "Savannah Lions", "label": "lions", "ready": true}, {"card": "Plains", "label": "p1"}, {"card": "Plains", "label": "p2"}, {"card": "Plains", "label": "p3"}, {"card": "Plains", "label": "p4"}, {"card": "Plains", "label": "p5"}],
+       "graveyard": [{"card": "Distracting Geist", "label": "geist"}],
+       "library": [{"card": "Plains"}, {"card": "Plains"}, {"card": "Plains"}, {"card": "Plains"}]},
+      {"name": "bob", "battlefield": [{"card": "Grizzly Bears", "label": "bears"}], "library": [{"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}]},
+      {"name": "carol", "battlefield": [{"card": "Hill Giant", "label": "giant"}], "library": [{"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}]}
+    ]
+  },
+  "timeline": [
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": {"Cast": {"object": "$geist", "mana": ["$p1", "$p2", "$p3", "$p4", "$p5"], "targets": ["$lions"]}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": "Pass"},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"View": {"of": "AttachedTo", "object": "Clever Distraction", "is": "$lions"}}},
+    {"turn": 1, "step": "DeclareAttackers", "player": "alice", "do": {"Attack": ["$lions"]}},
+    {"turn": 1, "step": "DeclareAttackers", "player": "alice", "source": "$lions", "do": {"ChooseAttackTarget": "$bob"}},
+    {"turn": 1, "step": "DeclareAttackers", "player": "alice", "do": "Pass"},
+    {"turn": 1, "step": "DeclareAttackers", "player": "alice", "check": {"Tapped": {"object": "$bears", "tapped": true}}},
+    {"turn": 1, "step": "DeclareAttackers", "player": "alice", "check": {"Tapped": {"object": "$giant", "tapped": false}}},
+    {"turn": 1, "step": "CombatDamage", "player": "alice", "check": {"Life": {"player": "bob", "life": 18}}}
+  ]
+}

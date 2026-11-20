@@ -1,0 +1,223 @@
+{
+  "faces": [
+    {
+      "characteristicPT": {
+        "power": {
+          "type": "Count",
+          "value": {
+            "aggregation": {
+              "type": "Members"
+            },
+            "filter": {
+              "type": "And",
+              "value": [
+                {
+                  "type": "HasCardType",
+                  "value": "Land"
+                },
+                {
+                  "type": "HeldBy",
+                  "value": {
+                    "holder": "Controller",
+                    "relation": "You"
+                  }
+                }
+              ]
+            },
+            "scope": {
+              "type": "InZone",
+              "value": {
+                "player": {
+                  "type": "Relative",
+                  "value": "AnyPlayer"
+                },
+                "zone": "Battlefield"
+              }
+            }
+          }
+        },
+        "toughness": {
+          "type": "Count",
+          "value": {
+            "aggregation": {
+              "type": "Members"
+            },
+            "filter": {
+              "type": "And",
+              "value": [
+                {
+                  "type": "HasCardType",
+                  "value": "Land"
+                },
+                {
+                  "type": "HeldBy",
+                  "value": {
+                    "holder": "Controller",
+                    "relation": "You"
+                  }
+                }
+              ]
+            },
+            "scope": {
+              "type": "InZone",
+              "value": {
+                "player": {
+                  "type": "Relative",
+                  "value": "AnyPlayer"
+                },
+                "zone": "Battlefield"
+              }
+            }
+          }
+        }
+      },
+      "keywords": [
+        {
+          "type": "Trample"
+        }
+      ],
+      "manaCost": [
+        {
+          "type": "Generic",
+          "value": 4
+        },
+        {
+          "type": "OfType",
+          "value": {
+            "type": "Colored",
+            "value": "Green"
+          }
+        },
+        {
+          "type": "OfType",
+          "value": {
+            "type": "Colored",
+            "value": "Green"
+          }
+        },
+        {
+          "type": "OfType",
+          "value": {
+            "type": "Colored",
+            "value": "Green"
+          }
+        }
+      ],
+      "name": "Cultivator Colossus",
+      "oracleText": "Trample\nCultivator Colossus's power and toughness are each equal to the number of lands you control.\nWhen this creature enters, you may put a land card from your hand onto the battlefield tapped. If you do, draw a card and repeat this process.",
+      "power": {
+        "type": "Star"
+      },
+      "toughness": {
+        "type": "Star"
+      },
+      "triggeredAbilities": [
+        {
+          "condition": {
+            "type": "Enters",
+            "value": {}
+          },
+          "modal": {
+            "modes": [
+              {
+                "clauses": [
+                  {
+                    "effects": [
+                      {
+                        "type": "RepeatIf",
+                        "value": {
+                          "condition": {
+                            "type": "Compares",
+                            "value": {
+                              "comparison": "AtLeast",
+                              "measured": {
+                                "type": "Count",
+                                "value": {
+                                  "aggregation": {
+                                    "type": "Members"
+                                  },
+                                  "filter": {
+                                    "type": "And",
+                                    "value": []
+                                  },
+                                  "scope": {
+                                    "type": "OverBound",
+                                    "value": "put"
+                                  }
+                                }
+                              },
+                              "threshold": {
+                                "type": "Literal",
+                                "value": 1
+                              }
+                            }
+                          },
+                          "ifHolds": [
+                            {
+                              "type": "Draw",
+                              "value": {
+                                "player": {
+                                  "type": "Relative",
+                                  "value": "You"
+                                },
+                                "quantity": {
+                                  "type": "Literal",
+                                  "value": 1
+                                }
+                              }
+                            }
+                          ],
+                          "process": [
+                            {
+                              "type": "MoveToZone",
+                              "value": {
+                                "ref": {
+                                  "type": "ChosenCardInHand",
+                                  "value": {
+                                    "count": {
+                                      "type": "UpTo",
+                                      "value": {
+                                        "type": "Literal",
+                                        "value": 1
+                                      }
+                                    },
+                                    "filter": {
+                                      "type": "HasCardType",
+                                      "value": "Land"
+                                    },
+                                    "player": {
+                                      "type": "Relative",
+                                      "value": "You"
+                                    }
+                                  }
+                                },
+                                "riders": {
+                                  "tapped": "Tapped"
+                                },
+                                "slot": "put",
+                                "zone": "Battlefield"
+                              }
+                            }
+                          ]
+                        }
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          }
+        }
+      ],
+      "typeLine": {
+        "subtypes": [
+          "Plant",
+          "Beast"
+        ],
+        "types": [
+          "Creature"
+        ]
+      }
+    }
+  ]
+}

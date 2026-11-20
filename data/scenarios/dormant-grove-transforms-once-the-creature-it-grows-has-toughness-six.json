@@ -1,0 +1,26 @@
+{
+  "description": "CR 507.1, 603.2, 608.2c, 701.27a: at the beginning of combat on its controller's turn Dormant Grove puts a +1/+1 counter on target creature they control, then transforms only if that creature has toughness 6 or greater; Gnarled Grovestrider gives its controller's other creatures vigilance",
+  "note": "Turn 1 the counter makes the Bears 3/3 and the Grove stays. Turn 3 it makes the Mastodon 4/6 and the Grove becomes the 3/6 Grovestrider; the Bears now have vigilance. Bob's turn between gives no trigger.",
+  "board": {
+    "active": "alice",
+    "step": "PrecombatMain",
+    "seats": [
+      {"name": "alice",
+       "battlefield": [{"card": "Dormant Grove", "label": "grove"}, {"card": "Grizzly Bears", "label": "bears"}, {"card": "Siege Mastodon", "label": "mastodon"}],
+       "library": [{"card": "Forest"}, {"card": "Forest"}, {"card": "Forest"}, {"card": "Forest"}]},
+      {"name": "bob", "library": [{"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}]}
+    ]
+  },
+  "timeline": [
+    {"turn": 1, "step": "BeginningOfCombat", "player": "alice", "do": {"ChooseTargets": {"target": ["$bears"]}}},
+    {"turn": 1, "step": "BeginningOfCombat", "player": "alice", "do": "Pass"},
+    {"turn": 1, "step": "BeginningOfCombat", "player": "alice", "check": {"Counters": {"object": "$bears", "kind": {"type": "PlusOnePlusOne"}, "count": 1}}},
+    {"turn": 1, "step": "BeginningOfCombat", "player": "alice", "check": {"Names": {"object": "$grove", "names": ["Dormant Grove"]}}},
+    {"turn": 3, "step": "BeginningOfCombat", "player": "alice", "do": {"ChooseTargets": {"target": ["$mastodon"]}}},
+    {"turn": 3, "step": "BeginningOfCombat", "player": "alice", "do": "Pass"},
+    {"turn": 3, "step": "BeginningOfCombat", "player": "alice", "check": {"PowerToughness": {"object": "$mastodon", "power": 4, "toughness": 6}}},
+    {"turn": 3, "step": "BeginningOfCombat", "player": "alice", "check": {"Names": {"object": "$grove", "names": ["Gnarled Grovestrider"]}}},
+    {"turn": 3, "step": "BeginningOfCombat", "player": "alice", "check": {"PowerToughness": {"object": "$grove", "power": 3, "toughness": 6}}},
+    {"turn": 3, "step": "BeginningOfCombat", "player": "alice", "check": {"Keywords": {"object": "$bears", "keyword": {"type": "Vigilance"}, "count": 1}}}
+  ]
+}
