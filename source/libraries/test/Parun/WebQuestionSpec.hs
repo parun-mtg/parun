@@ -130,7 +130,7 @@ spec s registry = Spec.describe s "WebQuestion" $ do
         board = Html.toText (Question.Web.view request Question.Web.blank)
         reading = Question.Web.view request Question.Web.blank {Question.Web.reading = Just (Card.MkReading oid [] True)}
         sheet = maybe Text.empty Html.toText (Html.search (\html -> Text.pack "<section class=\"sheet" `Text.isPrefixOf` Html.toText html) reading >>= (`Html.at` reading))
-    Spec.assertBool s (Text.pack "Keyword abilities: Flying, Ward {2}" `Text.isInfixOf` sheet) "the sheet lists ward"
+    Spec.assertBool s (Text.pack "Keyword abilities: Flying, Ward <span class=\"ms ms-generic\" title=\"{2}\"" `Text.isInfixOf` sheet) "the sheet lists ward"
     Spec.assertBool s (not (Text.pack "Ward {2}" `Text.isInfixOf` board)) "the tile leaves it out"
 
   Spec.it s "CR 601.2d a division starts one to each target and the rest to the first, and reads as the engine's" $ do
@@ -480,7 +480,8 @@ spec s registry = Spec.describe s "WebQuestion" $ do
         request = shown {Request.question = Question.MkQuestion S.alice (Text.pack "ChooseManaSource") (R.Object [(Text.pack "sources", R.Array [source])]) Nothing}
         page = Question.Web.view request Question.Web.blank
     Spec.assertBool s (Text.pack "<h2>Choose a source.</h2>" `Text.isInfixOf` Html.toText page) "heading"
-    Spec.assertEqWith s "tap" (fmap (\event -> Question.Web.step request Set.empty event Text.empty) (Html.labelled (Text.pack "button") (Text.pack "Your Mountain (makes R)") page >>= \path -> Html.handler (Text.pack "click") path page)) (Just (Question.Web.MkReplied (PromptOffer.object Protocol.namer land)))
+    Spec.assertEqWith s "tap" (fmap (\event -> Question.Web.step request Set.empty event Text.empty) (Html.labelled (Text.pack "button") (Text.pack "Your Mountain (makes )") page >>= \path -> Html.handler (Text.pack "click") path page)) (Just (Question.Web.MkReplied (PromptOffer.object Protocol.namer land)))
+    Spec.assertBool s (Text.pack "Your Mountain (makes <span class=\"ms\" title=\"{R}\"" `Text.isInfixOf` Html.toText page) "what it makes, drawn"
     -- The Mountain's tile on the battlefield pays too.
     Spec.assertEqWith s "tile" (Html.search isCard page >>= \path -> Html.handler (Text.pack "click") path page) (Just (Question.Web.MkAnswer (PromptOffer.object Protocol.namer land)))
 
@@ -675,10 +676,11 @@ replaySpec s registry = Spec.describe s "WebQuestion" . Spec.describe s "replay"
     -- and postcombat main phase are still to come.
     stop <- replayed s registry "sphinx-of-the-second-sun-adds-a-beginning-phase-that-neither-settles-nor-grants-a-land" 10
     let bar = turnBarOf stop
+        ahead = ["<li title=\"Combat phase\">", "<li class=\"second\" title=\"Postcombat main phase\">", "<li title=\"Ending phase\">"]
     Spec.assertEqWith s "the step" (PlayerView.Type.phase (boardOf stop)) (Phase.Beginning BeginningStep.Upkeep)
     Spec.assertBool s (Text.isInfixOf (Text.pack "<li class=\"now extra\"") bar) ("lit as extra: " <> Text.unpack bar)
-    Spec.assertBool s (Text.isInfixOf (Text.pack "<li class=\"past\">Main</li>") bar) "the precombat main phase passed"
-    Spec.assertEqWith s "still to come" [label | label <- ["Combat", "Main 2", "End"], Text.isInfixOf (Text.pack ("<li>" <> label <> "</li>")) bar] ["Combat", "Main 2", "End"]
+    Spec.assertBool s (Text.isInfixOf (Text.pack "<li class=\"past\" title=\"Precombat main phase\">") bar) "the precombat main phase passed"
+    Spec.assertEqWith s "still to come" [li | li <- ahead, Text.isInfixOf (Text.pack li) bar] ahead
     Spec.assertBool s (Text.isInfixOf (Text.pack "<span class=\"extra\"") bar) "said beside the turn"
 
   Spec.it s "CR 500.11 a skipped combat phase shows as passed and nothing as extra" $ do
@@ -686,8 +688,8 @@ replaySpec s registry = Spec.describe s "WebQuestion" . Spec.describe s "replay"
     stop <- replayed s registry "blinding-angel-makes-the-player-it-hits-skip-their-next-combat" 2
     let bar = turnBarOf stop
     Spec.assertEqWith s "the step" (PlayerView.Type.phase (boardOf stop)) Phase.PostcombatMain
-    Spec.assertBool s (Text.isInfixOf (Text.pack "<li class=\"past\">Combat</li>") bar) ("combat passed: " <> Text.unpack bar)
-    Spec.assertBool s (Text.isInfixOf (Text.pack "<li class=\"now\">Main 2</li>") bar) "the main phase lit"
+    Spec.assertBool s (Text.isInfixOf (Text.pack "<li class=\"past\" title=\"Combat phase\">") bar) ("combat passed: " <> Text.unpack bar)
+    Spec.assertBool s (Text.isInfixOf (Text.pack "<li class=\"now second\" title=\"Postcombat main phase\">") bar) "the main phase lit"
     Spec.assertBool s (not (Text.isInfixOf (Text.pack "extra") bar)) "nothing extra"
 
   Spec.it s "CR 716.3d a card exiled as its Adventure resolved is marked on its tile and sheet" $ do

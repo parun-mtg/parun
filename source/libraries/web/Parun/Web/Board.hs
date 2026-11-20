@@ -32,6 +32,7 @@ import qualified Parun.Types.SeatView as SeatView
 import qualified Parun.Web.Card as Card
 import qualified Parun.Web.Element as Element
 import qualified Parun.Web.Html as Html
+import qualified Parun.Web.Icon as Icon
 import qualified Parun.Web.Mana as Web.Mana
 
 -- | How each tile and each seat looks and what tapping it sends.
@@ -69,9 +70,19 @@ turnBar controls board =
                   <> [Element.el "span" ["extra"] [Element.attr "title" extraTip] [Element.string "Extra"] | extra]
                   <> foldMap (pure . daytime) (PlayerView.daytime board)
               ),
-            Element.el "ol" ["phases"] [Element.attr "aria-hidden" (Text.pack "true")] [Element.el "li" (shown i) [Element.attr "title" extraTip | i == current, extra] [Element.string label] | (i, label) <- zip [0 :: Integer ..] ["Begin", "Main", "Combat", "Main 2", "End"]]
+            Element.el "ol" ["phases"] [Element.attr "aria-hidden" (Text.pack "true")] [Element.el "li" (shown i <> cls) [Element.attr "title" (if i == current && extra then extraTip else Text.pack tip)] [Icon.icon [] glyph] | (i, (glyph, cls, tip)) <- zip [0 :: Integer ..] phaseIcons]
           ]
           <> controls
+
+-- | Each phase's icon on the strip, its classes and its name (CR 500.1).
+phaseIcons :: [(Icon.Icon, [String], String)]
+phaseIcons =
+  [ (Icon.MkBeginning, [], "Beginning phase"),
+    (Icon.MkMain, [], "Precombat main phase"),
+    (Icon.MkCombat, [], "Combat phase"),
+    (Icon.MkMain, ["second"], "Postcombat main phase"),
+    (Icon.MkEnding, [], "Ending phase")
+  ]
 
 -- | Day or night (CR 732.1), beside the turn.
 daytime :: Daytime.Daytime -> Html.Html msg
@@ -232,12 +243,12 @@ seatHead marks board own s =
             ["counts"]
             []
             ( commanderDamage
-                <> [ Element.el "span" ["count"] [Element.attr "title" (Text.pack "Cards in hand")] [Element.el "span" ["k"] [] [Element.string "Hand"], Element.string (show (SeatView.handSize s))],
-                     Element.el "span" ["count"] [Element.attr "title" (Text.pack "Cards in library")] [Element.el "span" ["k"] [] [Element.string "Library"], Element.string (show (SeatView.librarySize s))]
+                <> [ Element.el "span" ["count"] [Element.attr "title" (Text.pack "Cards in hand")] [zone Icon.MkHand "Hand", Element.string (show (SeatView.handSize s))],
+                     Element.el "span" ["count"] [Element.attr "title" (Text.pack "Cards in library")] [zone Icon.MkLibrary "Library", Element.string (show (SeatView.librarySize s))]
                    ]
                 <> designations
-                <> pile marks board "Graveyard" (SeatView.graveyard s)
-                <> pile marks board "Exile" (SeatView.exile s)
+                <> pile marks board Icon.MkGraveyard "Graveyard" (SeatView.graveyard s)
+                <> pile marks board Icon.MkExile "Exile" (SeatView.exile s)
             )
         ]
           <> [Element.el "div" ["pool"] [Element.attr "title" (Text.pack "Mana pool")] (Element.el "span" ["k"] [] [Element.string "Pool"] : concatMap (Web.Mana.rich . unit) pool) | not (null pool)]
@@ -262,18 +273,22 @@ capitalized word = case word of
   [] -> []
 
 -- | A public pile, a chip opening to its cards; nothing while it is empty.
-pile :: Marks msg -> PlayerView.PlayerView -> String -> [ObjectView.ObjectView] -> [Html.Html msg]
-pile marks board title objects = case objects of
+pile :: Marks msg -> PlayerView.PlayerView -> Icon.Icon -> String -> [ObjectView.ObjectView] -> [Html.Html msg]
+pile marks board glyph title objects = case objects of
   [] -> []
   _ ->
     [ Element.el
         "details"
         ["count", "pile"]
         []
-        [ Element.el "summary" [] [] [Element.el "span" ["k"] [] [Element.string title], Element.string (show (length objects))],
+        [ Element.el "summary" [] [Element.attr "title" (Text.pack title)] [zone glyph title, Element.string (show (length objects))],
           Element.keyed "div" ["pile-cards"] [] [(key o, Card.tile board (object marks o) o) | o <- reverse objects]
         ]
     ]
+
+-- | A zone's icon, its name for a screen reader.
+zone :: Icon.Icon -> String -> Html.Html msg
+zone glyph title = Element.el "span" ["k", "zone"] [] [Icon.icon [] glyph, Element.el "span" ["sr-only"] [] [Element.string title]]
 
 -- | The seat's hand, apart from the table so it is always in reach.
 hand :: Marks msg -> PlayerView.PlayerView -> [Html.Html msg]

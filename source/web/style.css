@@ -357,22 +357,37 @@ main.message {
   font-size: 0.9rem;
 }
 
-.spinner {
-  width: 40px;
-  height: 40px;
-  border-radius: 50%;
-  border: 4px solid var(--accent-soft);
-  border-top-color: var(--accent);
-  animation: spin 0.9s linear infinite;
-}
-
-.spinner.small {
-  display: inline-block;
+/* Parun's mark with its ring dashed and turning (Parun.Web.Icon's loading,
+   and the splash in index.html): something is loading. */
+.icon {
   width: 1em;
   height: 1em;
-  border-width: 2px;
-  vertical-align: -0.15em;
-  margin-right: 0.5em;
+  flex: none;
+}
+
+.icon.loading .ring {
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2.6;
+  stroke-dasharray: 3.1 3.1;
+}
+
+.loading .ring {
+  transform-origin: center;
+  transform-box: fill-box;
+  animation: spin 2.4s linear infinite;
+}
+
+.splash .logo.loading .ring {
+  stroke-dasharray: 44 22;
+}
+
+.icon.loading.small {
+  width: 1.3em;
+  height: 1.3em;
+  vertical-align: -0.3em;
+  margin-right: 0.45em;
+  color: var(--accent);
 }
 
 .waiting {
@@ -392,34 +407,15 @@ main.message {
   font-size: 0.85rem;
 }
 
-/* The engine is thinking: a thin bar along the top, shown only if it takes
-   a moment, and the page held still so a second tap cannot land. */
+/* The engine is thinking: the page held still so a second tap cannot land. */
 body.busy #app {
   pointer-events: none;
 }
 
-body.busy::before {
-  content: "";
-  position: fixed;
-  z-index: 100;
-  top: 0;
-  left: 0;
-  height: 3px;
-  width: 40%;
-  background: var(--accent);
-  opacity: 0;
-  animation:
-    appear 0s 0.15s forwards,
-    slide 1s 0.15s ease-in-out infinite;
-}
-
-@keyframes appear {
-  to { opacity: 1; }
-}
-
-@keyframes slide {
-  from { transform: translateX(-100%); }
-  to { transform: translateX(250%); }
+/* The settings gear turns while the engine works, once it takes a moment. */
+body.busy .settings-button > svg,
+body.busy #settings-button > svg {
+  animation: spin 1.2s 0.15s linear infinite;
 }
 
 /* ---------- Lobby ---------- */
@@ -522,7 +518,7 @@ main.lobby {
 .deck-preview {
   margin: -0.4em 0 1em;
   padding: 0.5em 0.75em;
-  border: 1px solid var(--border);
+  border: 2px dotted var(--border);
   border-radius: var(--radius);
   background: var(--surface);
 }
@@ -718,7 +714,7 @@ main.game {
   gap: 0.6em;
   padding: calc(0.4em + env(safe-area-inset-top)) 0.75em 0.4em;
   background: var(--surface);
-  border-bottom: 1px solid var(--border);
+  border-bottom: 2px dotted var(--border);
   font-size: 0.85rem;
 }
 
@@ -744,21 +740,41 @@ main.game {
 }
 
 .phases li {
-  font-size: 0.68rem;
-  padding: 0.2em 0.45em;
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 30px;
+  height: 24px;
   border-radius: 999px;
   background: var(--surface-2);
   color: var(--muted);
+  transition: background-color 0.25s, color 0.25s;
+}
+
+.phases li .icon {
+  width: 16px;
+  height: 16px;
+}
+
+/* The second main phase's card, marked so the two read apart. */
+.phases li.second::after {
+  content: "2";
+  position: absolute;
+  right: 4px;
+  bottom: 1px;
+  font-size: 0.55rem;
+  font-weight: 800;
 }
 
 .phases li.past {
   background: transparent;
+  opacity: 0.6;
 }
 
 .phases li.now {
   background: var(--accent);
   color: var(--accent-text);
-  font-weight: 700;
 }
 
 /* An extra phase or step (CR 500.8, 500.9): the lit phase ringed, and a chip
@@ -907,8 +923,10 @@ main.game {
   .phases li:not(.now) {
     width: 8px;
     height: 8px;
-    padding: 0;
-    font-size: 0;
+  }
+  .phases li:not(.now) > *,
+  .phases li:not(.now)::after {
+    display: none;
   }
   .phases {
     align-items: center;
@@ -934,7 +952,7 @@ main.game {
   border-radius: calc(var(--radius) + 2px);
   padding: 0.5em;
   background: color-mix(in srgb, var(--surface) 55%, transparent);
-  border: 1px solid transparent;
+  border: 2px dotted transparent;
 }
 
 .seat.opponent {
@@ -1048,6 +1066,16 @@ main.game {
   font-size: 0.85em;
 }
 
+/* A zone's icon in place of its name. */
+.k.zone {
+  display: inline-flex;
+}
+
+.k.zone .icon {
+  width: 15px;
+  height: 15px;
+}
+
 details.pile {
   position: relative;
 }
@@ -1100,6 +1128,8 @@ details.pile[open] {
   flex-wrap: wrap;
   gap: var(--gap);
   min-height: 0;
+  /* Room for a tapped tile's turned corners. */
+  padding-block: 6px;
 }
 
 .group {
@@ -1145,7 +1175,7 @@ details.pile[open] {
   position: absolute;
   z-index: 2;
   top: -9px;
-  left: -9px;
+  right: -9px;
   min-width: 22px;
   height: 20px;
   padding: 0 0.4em;
@@ -1159,6 +1189,15 @@ details.pile[open] {
   justify-content: center;
   box-shadow: var(--shadow);
   pointer-events: none;
+}
+
+/* Permanents sharing a tile show as a pile: card edges behind the first. */
+#app .group:has(> .many) > .card:first-child:not(.playable, .attacking) {
+  box-shadow:
+    3px 3px 0 -1px var(--surface-2),
+    3px 3px 0 0 var(--border-strong),
+    6px 6px 0 -1px var(--surface-2),
+    6px 6px 0 0 var(--border);
 }
 
 /* An attachment tucks under the permanent it is attached to, its name
@@ -1186,7 +1225,7 @@ details.pile[open] {
   padding: 0.5em;
   border-radius: calc(var(--radius) + 2px);
   background: var(--accent-soft);
-  border: 1px solid color-mix(in srgb, var(--accent) 40%, transparent);
+  border: 2px dotted color-mix(in srgb, var(--accent) 45%, transparent);
   animation: enter 0.2s ease-out;
 }
 
@@ -1248,7 +1287,7 @@ details.pile[open] {
   grid-area: hand;
   padding: 0.3em 0.5em 0;
   background: var(--bg);
-  border-top: 1px solid var(--border);
+  border-top: 2px dotted var(--border);
 }
 
 .hand .zone-title {
@@ -1340,8 +1379,6 @@ details.pile[open] {
   /* Its longest word, so the cost wraps rather than the word breaking. */
   min-width: min(min-content, 100%);
   overflow-wrap: break-word;
-  hyphens: auto;
-  -webkit-hyphens: auto;
 }
 
 .card .cost {
@@ -1476,13 +1513,17 @@ details.pile[open] {
   border-top-color: var(--border-strong);
 }
 
+/* The tap symbol ({T}, index.html's ms-tap), at the right edge. */
 #app button.card.tapped::after {
-  content: "\21b7";
+  content: "";
   position: absolute;
-  right: 4px;
-  bottom: 50%;
-  font-size: 1.1em;
-  color: var(--muted);
+  right: 5px;
+  top: calc(50% - 8px);
+  width: 16px;
+  height: 16px;
+  background: var(--muted);
+  -webkit-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Cpath d='M9.6 24.4A9.5 9.5 0 1 1 25.2 18' fill='none' stroke='black' stroke-width='2.8' stroke-linecap='round'/%3E%3Cpath d='M21 15.6L25.3 21.6L29 15.2Z' stroke='black' stroke-width='1' stroke-linejoin='round'/%3E%3C/svg%3E") center / contain no-repeat;
+  mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Cpath d='M9.6 24.4A9.5 9.5 0 1 1 25.2 18' fill='none' stroke='black' stroke-width='2.8' stroke-linecap='round'/%3E%3Cpath d='M21 15.6L25.3 21.6L29 15.2Z' stroke='black' stroke-width='1' stroke-linejoin='round'/%3E%3C/svg%3E") center / contain no-repeat;
 }
 
 #app button.card.back {
@@ -1554,7 +1595,7 @@ details.pile[open] {
   flex-direction: column;
   max-height: 40dvh;
   background: var(--surface);
-  border-top: 1px solid var(--border);
+  border-top: 2px dotted var(--border);
   box-shadow: var(--sheet-shadow);
   padding-bottom: env(safe-area-inset-bottom);
 }
@@ -1707,7 +1748,7 @@ details.pile[open] {
 }
 
 details.log {
-  border-top: 1px solid var(--border);
+  border-top: 2px dotted var(--border);
   font-size: 0.84rem;
   min-height: 0;
   display: flex;
@@ -1786,7 +1827,7 @@ details.log[open] .latest {
   font-weight: 700;
   color: var(--text);
   font-size: 0.9em;
-  border-bottom: 1px solid var(--border);
+  border-bottom: 2px dotted var(--border);
 }
 
 .log-list li.minor,
@@ -1819,7 +1860,7 @@ details.log[open] .latest {
     max-height: none;
     min-height: 0;
     border-top: 0;
-    border-left: 1px solid var(--border);
+    border-left: 2px dotted var(--border);
     box-shadow: none;
   }
 
@@ -1850,6 +1891,12 @@ details.log[open] .latest {
   .log-list {
     max-height: none;
     flex: 1;
+  }
+
+  /* The log beside the prompt marks what is new, so the summary above the
+     prompt would only repeat it. */
+  main.game .news {
+    display: none;
   }
 
   .table {
@@ -1952,7 +1999,7 @@ details.log[open] .latest {
   color: var(--muted);
   font-size: 0.9rem;
   padding-bottom: 0.4em;
-  border-bottom: 1px solid var(--border);
+  border-bottom: 2px dotted var(--border);
 }
 
 .oracle {
@@ -2112,8 +2159,23 @@ main.ending h2 {
 
 .stats {
   margin: 0.5em 0 0;
-  padding-left: 1.2em;
+  padding: 0;
+  list-style: none;
   font-size: 0.9rem;
+}
+
+/* Each seat's line in the chart, drawn as its key. */
+.stats li::before {
+  content: "";
+  display: inline-block;
+  width: 1.6em;
+  margin-right: 0.5em;
+  vertical-align: middle;
+  border-top: 3px solid var(--link);
+}
+
+.stats li.them::before {
+  border-top: 3px dashed var(--danger-text);
 }
 
 /* A win's confetti, falling once (none for reduced motion). */
@@ -2127,17 +2189,28 @@ main.ending h2 {
 
 .confetti span {
   position: absolute;
-  top: -20px;
+  top: -32px;
   left: var(--x);
-  width: 9px;
-  height: 14px;
-  border-radius: 2px;
-  background: hsl(calc(var(--hue) * 60) 75% 55%);
-  animation: fall 3.2s var(--delay) ease-in forwards;
+  width: var(--size);
+  height: var(--size);
+  animation: fall 3.4s var(--delay) cubic-bezier(0.3, 0, 0.7, 1) forwards;
 }
 
+.confetti svg {
+  display: block;
+  width: 100%;
+  height: 100%;
+  filter: drop-shadow(0 1px 1px rgb(0 0 0 / 0.25));
+}
+
+.confetti .fg-w { color: var(--c-w); }
+.confetti .fg-u { color: var(--c-u); }
+.confetti .fg-b { color: var(--c-b); }
+.confetti .fg-r { color: var(--c-r); }
+.confetti .fg-g { color: var(--c-g); }
+
 @keyframes fall {
-  to { transform: translateY(110vh) rotate(var(--spin)); }
+  to { transform: translateY(calc(100vh + 64px)) rotate(var(--spin)); }
 }
 
 :root[data-motion="reduced"] .confetti {
@@ -2304,7 +2377,7 @@ body:has(main.game) #settings-button {
   position: absolute;
   right: 0;
   bottom: calc(100% + 0.4em);
-  min-width: 220px;
+  min-width: 260px;
   padding: 0.6em 0.8em;
   border: 1px solid var(--border-strong);
   border-radius: var(--radius);
@@ -2320,7 +2393,7 @@ body:has(main.game) #settings-button {
 #settings .about {
   margin: 0.2em 0 0;
   padding-top: 0.5em;
-  border-top: 1px solid var(--border);
+  border-top: 2px dotted var(--border);
   font-size: 0.8rem;
   color: var(--muted);
 }
@@ -2341,7 +2414,7 @@ body:has(main.game) #settings-button {
   align-items: center;
   gap: 0.2em 0.8em;
   padding-top: 0.5em;
-  border-top: 1px solid var(--border);
+  border-top: 2px dotted var(--border);
 }
 
 #concede-why {
@@ -2350,37 +2423,70 @@ body:has(main.game) #settings-button {
   color: var(--muted);
 }
 
+/* Each setting a segmented control: its choices side by side, the chosen
+   one lit; the radio buttons stay, unseen, for the keyboard. */
 #settings fieldset {
   border: 0;
   margin: 0;
   padding: 0;
   display: flex;
   flex-wrap: wrap;
-  gap: 0.2em 0.8em;
 }
 
 #settings legend {
   width: 100%;
   font-weight: 700;
-  font-size: 0.8rem;
+  font-size: 0.75rem;
   color: var(--muted);
   text-transform: uppercase;
   letter-spacing: 0.05em;
-  margin-bottom: 0.2em;
+  margin-bottom: 0.35em;
 }
 
 #settings label {
+  flex: 1 1 0;
   display: inline-flex;
   align-items: center;
-  gap: 0.3em;
+  justify-content: center;
   min-height: 32px;
+  padding: 0 0.7em;
+  border: 1px solid var(--border);
+  margin-left: -1px;
+  background: var(--surface-2);
   cursor: pointer;
+  white-space: nowrap;
+  transition: background-color 0.15s, color 0.15s;
+}
+
+#settings legend + label {
+  margin-left: 0;
+  border-radius: 999px 0 0 999px;
+}
+
+#settings label:last-child {
+  border-radius: 0 999px 999px 0;
+}
+
+#settings label:has(input:checked) {
+  position: relative;
+  background: var(--accent);
+  border-color: var(--accent);
+  color: var(--accent-text);
+  font-weight: 650;
+}
+
+#settings label:has(input:focus-visible) {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+  z-index: 1;
 }
 
 #settings input {
-  width: auto;
-  min-height: 0;
-  accent-color: var(--accent);
+  position: absolute;
+  opacity: 0;
+  width: 1px;
+  height: 1px;
+  pointer-events: none;
 }
 
 :root[data-density="compact"] {

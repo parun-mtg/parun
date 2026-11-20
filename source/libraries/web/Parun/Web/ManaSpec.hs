@@ -14,7 +14,7 @@ spec :: (Monad n) => Spec.Spec IO n -> n ()
 spec s = Spec.describe s "Parun.Web.Mana" $ do
   Spec.it s "the sprite in index.html draws exactly the motifs" $ do
     page <- ByteString.readFile "source/web/index.html" >>= either (fail . show) pure . Encoding.decodeUtf8'
-    let drawn = Set.fromList [Text.takeWhile (/= '"') rest | rest <- drop 1 (Text.splitOn (Text.pack "<symbol id=\"") page)]
+    let drawn = Set.fromList [name | rest <- drop 1 (Text.splitOn (Text.pack "<symbol id=\"") page), let name = Text.takeWhile (/= '"') rest, Text.pack "ms-" `Text.isPrefixOf` name]
     Spec.assertEq s drawn (Set.fromList (fmap Mana.motifId [minBound .. maxBound]))
 
   Spec.describe s "drawing" $ do

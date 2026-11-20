@@ -26,14 +26,17 @@ function traced(line) {
 }
 
 // The engine's load phases and the last tap's response time show at the foot
-// of the page, and the latest phase on the loading screen.
+// of the page, and what loads next on the loading screen.
 const timings = document.getElementById("timings");
+// What the loading screen says comes next, after each phase engine.js
+// reports; a failure is said as it is.
+const nextPhase = { fetched: "Unpacking the cards", unpacked: "Compiling the engine", compiled: "Reading the cards" };
 function note(line) {
   console.log(line);
   timings.textContent += (timings.textContent ? "; " : "") + line;
   const phase = document.getElementById("phase");
-  const what = line.replace(/ in \d+ ms$/, "");
-  if (phase) phase.textContent = `${what[0].toUpperCase()}${what.slice(1)}\u2026`;
+  const next = nextPhase[line.split(" ")[0]];
+  if (phase) phase.textContent = next ? `${next}\u2026` : line;
 }
 
 // The settings menu: theme (the system's unless one is picked), card size

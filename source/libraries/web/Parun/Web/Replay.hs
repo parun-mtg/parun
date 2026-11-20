@@ -24,6 +24,7 @@ import qualified Parun.Web.Card as Card
 import qualified Parun.Web.Element as Element
 import qualified Parun.Web.Html as Html
 import qualified Parun.Web.Log as Log
+import qualified Parun.Web.Mana as Mana
 import qualified Parun.Web.Question as Web.Question
 
 -- | What the replay page sends.
@@ -101,7 +102,7 @@ controls frame =
       step label symbol key target enabled =
         Element.el "button" [] ([Element.attr "type" (Text.pack "button"), Element.attr "aria-label" (Text.pack label), Element.attr "aria-keyshortcuts" (Text.pack key), Element.on "click" (MkGo target)] <> [Element.attr "disabled" Text.empty | not enabled]) [Element.string symbol]
    in [ Element.el "h2" ["replay-title"] [] [Element.text (name frame)],
-        Element.el "p" ["replay-description"] [] [Element.text (description frame)],
+        Element.el "p" ["replay-description"] [] (Mana.rich (description frame)),
         Element.el
           "div"
           ["scrubber"]

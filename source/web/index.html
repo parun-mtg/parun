@@ -38,7 +38,8 @@
     <script type="module" src="./page.js"></script>
   </head>
   <body>
-    <!-- The motifs every symbol is drawn from (Parun.Web.Mana), Parun's own. -->
+    <!-- The motifs every symbol is drawn from (Parun.Web.Mana) and the
+         client's icons (Parun.Web.Icon), Parun's own. -->
     <svg class="symbols" width="0" height="0" aria-hidden="true" focusable="false">
       <defs>
         <clipPath id="ms-left" clipPathUnits="userSpaceOnUse"><rect width="16" height="32"/></clipPath>
@@ -60,12 +61,22 @@
         <symbol id="ms-legendary" viewBox="0 0 32 32"><path d="M6 11.5L11 16.5L16 8L21 16.5L26 11.5L24.2 22.5H7.8ZM8 24.5H24V27H8Z" fill="currentColor" stroke="currentColor" stroke-width="1" stroke-linejoin="round"/></symbol>
         <symbol id="ms-chaos" viewBox="0 0 32 32"><path d="M16.6 16.4c.8-1.2-.6-2.6-1.9-2.2c-2 .6-2.2 3.3-.8 4.6c2.1 2 5.6 1 6.6-1.6c1.3-3.4-1.2-7-4.6-7.6c-4.4-.8-8.3 2.7-8.4 7c-.1 5 4.2 9 9.2 8.8c5.4-.2 9.6-5 9.3-10.4" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"/></symbol>
         <symbol id="ms-planeswalker" viewBox="0 0 32 32"><path d="M16 4.5C16.9 12 20 15.1 27.5 16C20 16.9 16.9 20 16 27.5C15.1 20 12 16.9 4.5 16C12 15.1 15.1 12 16 4.5Z" fill="currentColor"/></symbol>
+        <symbol id="ui-beginning" viewBox="0 0 24 24"><path d="M3 19H21M6.5 19a5.5 5.5 0 0 1 11 0M12 3v6M9 6l3-3 3 3" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+        <symbol id="ui-main" viewBox="0 0 24 24"><rect x="6" y="3" width="12" height="18" rx="2" fill="none" stroke="currentColor" stroke-width="2"/><path d="M12 8.2l1.1 2.7 2.7 1.1-2.7 1.1-1.1 2.7-1.1-2.7-2.7-1.1 2.7-1.1Z" fill="currentColor"/></symbol>
+        <symbol id="ui-combat" viewBox="0 0 24 24"><path d="M4 4L16.5 16.5M14.5 18.5L18.5 14.5M16.5 16.5L20 20M20 4L7.5 16.5M5.5 14.5L9.5 18.5M7.5 16.5L4 20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+        <symbol id="ui-ending" viewBox="0 0 24 24"><path d="M3 19H21M6.5 19a5.5 5.5 0 0 1 11 0M12 3v6M9 6l3 3 3-3" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+        <symbol id="ui-hand" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><path d="M9.2 19.6L4.6 18.6A1.4 1.4 0 0 1 3.5 17L5.9 5.9A1.4 1.4 0 0 1 7.6 4.8L10.5 5.4"/><rect x="10" y="3.5" width="10.5" height="16" rx="1.6" transform="rotate(8 15 11.5)"/></g></symbol>
+        <symbol id="ui-library" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"><rect x="8" y="3" width="12" height="15" rx="1.6"/><path d="M5 6.5V19.4A1.6 1.6 0 0 0 6.6 21H16.5"/></g></symbol>
+        <symbol id="ui-graveyard" viewBox="0 0 24 24"><path d="M6.5 20V9.5a5.5 5.5 0 0 1 11 0V20M3.5 20.5h17M12 8v6M9.5 10.5h5" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/></symbol>
+        <symbol id="ui-exile" viewBox="0 0 24 24"><path d="M12 12a1.6 1.6 0 0 1 3.2 0a3.2 3.2 0 0 1-6.4 0a4.8 4.8 0 0 1 9.6 0a6.4 6.4 0 0 1-12.8 0a8 8 0 0 1 8-8" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></symbol>
+        <symbol id="ui-gear" viewBox="0 0 24 24"><circle cx="12" cy="12" r="7.6" fill="none" stroke="currentColor" stroke-width="2.6"/><g fill="currentColor"><rect id="ui-gear-tooth" x="10.4" y="1.9" width="3.2" height="3.4" rx="0.6"/><use href="#ui-gear-tooth" transform="rotate(45 12 12)"/><use href="#ui-gear-tooth" transform="rotate(90 12 12)"/><use href="#ui-gear-tooth" transform="rotate(135 12 12)"/><use href="#ui-gear-tooth" transform="rotate(180 12 12)"/><use href="#ui-gear-tooth" transform="rotate(225 12 12)"/><use href="#ui-gear-tooth" transform="rotate(270 12 12)"/><use href="#ui-gear-tooth" transform="rotate(315 12 12)"/><path d="M8.2 5.2H10.5L16.6 18.8H14.3ZM12.6 12.4L9.9 16.4L8.1 15.2L10.8 11.2Z"/></g></symbol>
+        <symbol id="ui-lambda" viewBox="0 0 24 24"><path d="M5.78 1.5H8.85L18.23 22.5H15.15ZM13.16 12.79L8.83 19.21L6.5 17.63L10.84 11.21Z" fill="currentColor"/></symbol>
       </defs>
     </svg>
     <p id="insecure" hidden>This page is not a secure context, so Safari runs the engine many times slower. Load it over https or from localhost (script/serve-web.sh).</p>
-    <div id="app"><div class="splash"><img class="logo" src="./icon.svg" alt="" width="72" height="72"><h1>Parun</h1><div class="spinner" aria-hidden="true"></div><p class="phase" id="phase">Loading the engine…</p></div></div>
+    <div id="app"><div class="splash"><svg class="logo loading" viewBox="0 0 256 256" width="88" height="88" aria-hidden="true"><rect width="256" height="256" rx="56" fill="#5E5086"/><circle class="ring" cx="128" cy="128" r="84" fill="none" stroke="#FFFFFF" stroke-width="30"/><polygon points="61.6,16.0 94.4,16.0 194.4,240.0 161.6,240.0" fill="#FFFFFF"/><polygon points="140.4,136.4 94.2,204.9 69.3,188.1 115.6,119.6" fill="#FFFFFF"/></svg><h1>Parun</h1><p class="phase" id="phase">Fetching the cards…</p></div></div>
     <div class="chrome">
-      <button type="button" id="settings-button" aria-label="Settings" aria-haspopup="true" aria-expanded="false" aria-controls="settings"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M9.58 4.17L10.14 1.16L13.86 1.16L14.42 4.17L15.83 4.75L18.35 3.02L20.98 5.65L19.25 8.17L19.83 9.58L22.84 10.14L22.84 13.86L19.83 14.42L19.25 15.83L20.98 18.35L18.35 20.98L15.83 19.25L14.42 19.83L13.86 22.84L10.14 22.84L9.58 19.83L8.17 19.25L5.65 20.98L3.02 18.35L4.75 15.83L4.17 14.42L1.16 13.86L1.16 10.14L4.17 9.58L4.75 8.17L3.02 5.65L5.65 3.02L8.17 4.75ZM12 8.4A3.6 3.6 0 1 0 12 15.6A3.6 3.6 0 1 0 12 8.4Z" fill="currentColor" fill-rule="evenodd"/></svg></button>
+      <button type="button" id="settings-button" aria-label="Settings" aria-haspopup="true" aria-expanded="false" aria-controls="settings"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><use href="#ui-gear"/></svg></button>
       <div id="settings" role="dialog" aria-label="Settings" hidden>
         <fieldset><legend>Theme</legend>
           <label><input type="radio" name="theme" value="system"> System</label>

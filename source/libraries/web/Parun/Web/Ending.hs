@@ -19,6 +19,7 @@ import qualified Parun.Uri.Fragment as Fragment
 import qualified Parun.Web.Element as Element
 import qualified Parun.Web.Html as Html
 import qualified Parun.Web.Log as Log
+import qualified Parun.Web.Mana as Mana
 
 -- | How the game ended for the player the page plays.
 data Verdict
@@ -63,7 +64,7 @@ view ending =
         []
         $ [confetti | verdict ending == MkWon]
           <> [ Element.el "section" ["verdict", tone] [] $
-                 Element.el "h1" [] [] [Element.string headline] : [Element.el "p" [] [] [Element.text line] | line <- said ending],
+                 Element.el "h1" [] [] [Element.string headline] : [Element.el "p" [] [] (Mana.rich line) | line <- said ending],
                Element.el
                  "div"
                  ["ending-actions"]
@@ -135,14 +136,25 @@ summary me samples =
           Element.el "ul" ["stats"] [] (fmap stat seats)
         ]
 
--- | Confetti for a win: pieces falling at spread places and speeds, the same
--- every time.
+-- | Confetti for a win: the five colours' symbols, falling at spread places
+-- and speeds, the same every time.
 confetti :: Html.Html msg
 confetti =
-  let piece i =
+  let colour n = case n of
+        0 -> ("w", Mana.MkWhite)
+        1 -> ("u", Mana.MkBlue)
+        2 -> ("b", Mana.MkBlack)
+        3 -> ("r", Mana.MkRed)
+        _ -> ("g", Mana.MkGreen)
+      piece i =
         let r k = mod (i * 7919 + k * 104729) 1000
-         in Element.el "span" [] [Element.attr "style" (Text.pack ("--x:" <> show (div (r 1) 10) <> "%;--delay:" <> show (div (r 2) 1000) <> "." <> show (mod (r 2) 10) <> "s;--spin:" <> show (r 3 - 500) <> "deg;--hue:" <> show (mod (r 4) 6)))] []
-   in Element.el "div" ["confetti"] [Element.attr "aria-hidden" (Text.pack "true")] (fmap piece [1 .. 40 :: Integer])
+            (tint, motif) = colour (mod (r 4) 5)
+         in Element.el
+              "span"
+              ["fg-" <> tint]
+              [Element.attr "style" (Text.pack ("--x:" <> show (div (r 1) 10) <> "%;--delay:" <> show (r 2 * 2) <> "ms;--spin:" <> show (r 3 - 500) <> "deg;--size:" <> show (14 + mod (r 5) 14) <> "px"))]
+              [Element.el "svg" [] [Element.attr "viewBox" (Text.pack "0 0 32 32")] [Element.el "use" [] [Element.attr "href" (Text.pack "#" <> Mana.motifId motif)] []]]
+   in Element.el "div" ["confetti"] [Element.attr "aria-hidden" (Text.pack "true")] (fmap piece [1 .. 48 :: Integer])
 
 -- | A data URL holding the text as JSON (RFC 2397).
 download :: Text.Text -> Text.Text
