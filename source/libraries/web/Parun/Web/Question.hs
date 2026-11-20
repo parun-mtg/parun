@@ -315,27 +315,26 @@ autoPass current asked =
         ]
     ]
 
--- | The turn bar's controls: Home, inert unless the seat is asked, and the
--- settings button, whose menu's Concede (CR 104.3a) sends the event given
--- where the seat may concede.
+-- | The turn bar's controls: the menu button, whose menu (page.js) leaves
+-- the game for the home screen while the seat is asked, and concedes
+-- (CR 104.3a) by the event given where the seat may.
 barControls :: Bool -> Maybe Event -> [Html.Html Event]
-barControls asked concede =
-  [ Element.el "button" ["home-button"] ([Element.attr "type" (Text.pack "button"), Element.attr "title" (Text.pack "Leave the game for the home screen, to resume later"), Element.on "click" MkHome] <> [Element.attr "disabled" Text.empty | not asked]) [Element.string "Home"],
-    settingsButton concede
-  ]
+barControls asked concede = [settingsButton (if asked then Just MkHome else Nothing) concede]
 
--- | The settings button page.js opens its menu from, on the game screen's
--- turn bar; the menu's Concede sends the event given, where there is one.
-settingsButton :: Maybe msg -> Html.Html msg
-settingsButton concede =
+-- | The menu button page.js opens its menu from, on the game screen's turn
+-- bar: the settings, and the game's actions, each sending the event given
+-- where there is one (Home, then Concede).
+settingsButton :: Maybe msg -> Maybe msg -> Html.Html msg
+settingsButton home concede =
   Element.el
     "button"
     ["settings-button"]
-    ( [Element.attr "type" (Text.pack "button"), Element.attr "aria-label" (Text.pack "Settings"), Element.attr "aria-haspopup" (Text.pack "true"), Element.attr "aria-controls" (Text.pack "settings"), Element.attr "data-settings" Text.empty]
+    ( [Element.attr "type" (Text.pack "button"), Element.attr "aria-label" (Text.pack "Menu"), Element.attr "aria-haspopup" (Text.pack "true"), Element.attr "aria-controls" (Text.pack "settings"), Element.attr "data-settings" Text.empty]
+        <> foldMap (\event -> [Element.attr "data-home" Text.empty, Element.on "home" event]) home
         <> foldMap (\event -> [Element.attr "data-concede" Text.empty, Element.on "concede" event]) concede
     )
-    -- The gear index.html's own settings button draws off the game screen.
-    [Icon.icon [] Icon.MkGear]
+    -- The gear stays index.html's own settings button's, off the game screen.
+    [Icon.icon [] Icon.MkMenu]
 
 -- | The links a log entry's names make: to the sheet of each object the
 -- view shows.

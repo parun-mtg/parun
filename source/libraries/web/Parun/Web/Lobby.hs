@@ -29,9 +29,7 @@ import qualified Parun.Web.Mana as Mana
 import qualified Text.Read as Read
 
 data Lobby = MkLobby
-  { -- | The card files the registry holds, once read.
-    cardFiles :: Maybe Natural,
-    -- | Whether the deck lists are still to read.
+  { -- | Whether the deck lists are still to read.
     reading :: Bool,
     -- | Why the deck lists did not load.
     problem :: Maybe Text.Text,
@@ -85,7 +83,7 @@ data Event
 
 -- | A lobby whose decks are still to read, nothing chosen yet.
 new :: Lobby
-new = MkLobby Nothing True Nothing Seq.empty Map.empty Nothing [Nothing] MkMine Text.empty Map.empty Map.empty
+new = MkLobby True Nothing Seq.empty Map.empty Nothing [Nothing] MkMine Text.empty Map.empty Map.empty
 
 -- | The lobby holding these decks under these formats, what was chosen and
 -- typed kept.
@@ -280,7 +278,7 @@ view lobby =
         "main"
         ["lobby"]
         []
-        $ [ Element.el "div" ["lobby-top"] [] [Element.button ["home-button"] MkHome [Element.string "Home"], Home.hero (cardFiles lobby)],
+        $ [ Element.el "div" ["lobby-top"] [] [Element.button ["home-button"] MkHome [Element.string "Home"], Home.hero],
             Element.el
               "section"
               ["matchup"]

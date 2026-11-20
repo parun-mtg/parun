@@ -26,7 +26,6 @@ import qualified Parun.DeckList as DeckList
 import qualified Parun.Decks as Decks
 import qualified Parun.Engine.Quantity as Quantity
 import qualified Parun.Extra.Integer as Integer
-import qualified Parun.Extra.Natural as Natural
 import qualified Parun.Play.Key as Key
 import qualified Parun.Registry as Registry
 import qualified Parun.Types.Card as Card
@@ -139,7 +138,7 @@ home shell = go
   where
     go shown = do
       now <- IORef.readIORef (loaded shell)
-      let current = shown {Home.cards = fmap Natural.length (cards now), Home.problem = Loading.problem (loading now)}
+      let current = shown {Home.problem = Loading.problem (loading now)}
       Browser.display (page shell) (fmap Screen.MkHome (Home.view current))
       woke <- await shell
       case woke of
@@ -194,8 +193,7 @@ refreshed shell shown = do
     _ -> pure []
   pure
     withDecks
-      { Lobby.cardFiles = fmap Natural.length (cards now),
-        Lobby.problem = Loading.problemFor Loading.MkDecks (loading now),
+      { Lobby.problem = Loading.problemFor Loading.MkDecks (loading now),
         Lobby.palette = palette now,
         Lobby.previews = Map.union (Lobby.previews withDecks) (Map.fromList read')
       }
