@@ -4,6 +4,7 @@ module Parun.Web.CardIndex where
 
 import qualified Data.Foldable as Foldable
 import qualified Data.List.NonEmpty as NonEmpty
+import qualified Data.Maybe as Maybe
 import qualified Data.Sequence as Seq
 import qualified Data.Set as Set
 import qualified Data.Text as Text
@@ -25,17 +26,17 @@ data Entry = MkEntry
   { name :: CardName.CardName,
     -- | Each face's name, in printed order.
     faceNames :: [Text.Text],
-    -- | The first face's cost.
+    -- | Its cost as its faces combine (CR 709.4b), or else its first face's.
     cost :: Maybe ManaCost.ManaCost,
-    -- | The first face's mana value (CR 202.3).
+    -- | Its mana value, likewise (CR 202.3, 709.4b).
     value :: Integer,
     colours :: Set.Set Color.Color,
     -- | Every face's card types.
     types :: Set.Set CardType.CardType,
     -- | The first face's type line, as words.
     typeLine :: Text.Text,
-    -- | Every face's rules text, a line each.
-    rules :: [Text.Text],
+    -- | Each face's name and its rules text, a line each.
+    rules :: [(Text.Text, [Text.Text])],
     -- | Every face's name, type line and rules text, case-folded, to match.
     folded :: Text.Text,
     -- | Whether the card is a basic land, which every card pool admits
@@ -82,12 +83,12 @@ entryOf c
           { -- As a deck list writes it (Parun.DeckList.written).
             name = CardName.MkCardName (Text.intercalate (Text.pack " // ") (NonEmpty.toList (fmap (CardName.unwrap . Face.name) (EngineCard.combinedFaces c)))),
             faceNames = named,
-            cost = Face.manaCost front,
-            value = Quantity.manaValueOf front,
+            cost = Face.manaCost (EngineCard.combined c),
+            value = Quantity.manaValueOf (EngineCard.combined c),
             colours = Lobby.cardColours c,
             types = kindsOf,
             typeLine = typeWords (Face.typeLine front),
-            rules = said,
+            rules = [(CardName.unwrap (Face.name face), foldMap Text.lines (Face.oracleText face)) | face <- faces, Maybe.isJust (Face.oracleText face)],
             folded = Text.toCaseFold (Text.unlines (named <> fmap (typeWords . Face.typeLine) faces <> said)),
             choices = Set.fromList [(section, choice) | section <- [DeckList.Main, DeckList.Side, DeckList.Commander], choice <- [minBound .. maxBound], DeckList.makes section choice c],
             basic = Set.member Supertype.Basic (TypeLine.supertypes (Face.typeLine front)) && Set.member CardType.Land (TypeLine.types (Face.typeLine front))

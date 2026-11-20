@@ -448,16 +448,23 @@ view builder =
       counted = case least builder of
         Nothing -> show total <> " cards"
         Just (n, withCommander) -> show (if withCommander then total + commanders else total) <> " / " <> show n
-      keptNote = [Element.el "p" ["kept"] [] [Element.string "Also kept: ", Element.text (Text.intercalate (Text.pack ", ") [DeckList.heading part <> Text.pack " \x00b7 " <> Text.pack (show n) | (part, n) <- kept builder])] | not (null (kept builder))]
+      -- Draft notes and sticker sheets are not cards, so their lines count none.
+      countsCards part = part `notElem` [DeckList.DraftNotes, DeckList.Stickers]
+      keptNote = [Element.el "p" ["kept"] [] [Element.string "Also kept: ", Element.text (Text.intercalate (Text.pack ", ") [DeckList.heading part <> (if countsCards part then Text.pack " \x00b7 " <> Text.pack (show n) else Text.empty) | (part, n) <- kept builder])] | not (null (kept builder))]
       reading' = do
         card <- reading builder
-        let found = List.find ((== card) . CardIndex.name) (foldMap Foldable.toList (index builder))
+        let found = Map.lookup (canonical builder card) (byName builder)
         pure
           ( Text.pack "card",
             Element.el "section" ["card-reading"] [Element.attr "aria-label" (named card)] $
               [Element.el "h2" [] [] [Element.text (named card)]]
                 <> [Element.el "p" ["type-line"] [] [Element.text (CardIndex.typeLine e)] | e <- Maybe.maybeToList found]
-                <> [Element.el "p" ["rules"] [] (Mana.rich l) | e <- Maybe.maybeToList found, l <- CardIndex.rules e]
+                <> concat
+                  [ [Element.el "h3" ["face-name"] [] [Element.text face] | length (CardIndex.rules e) > 1]
+                      <> [Element.el "p" ["rules"] [] (Mana.rich l) | l <- said']
+                  | e <- Maybe.maybeToList found,
+                    (face, said') <- CardIndex.rules e
+                  ]
                 <> [Element.button [] MkCloseCard [Element.string "Close"]]
           )
       leave =

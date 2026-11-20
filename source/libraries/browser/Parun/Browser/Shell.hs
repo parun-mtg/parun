@@ -25,6 +25,7 @@ import qualified Parun.Browser.Hotseat as Hotseat
 import qualified Parun.Browser.Replay as Replay
 import qualified Parun.DeckList as DeckList
 import qualified Parun.Decks as Decks
+import qualified Parun.Engine.Card as EngineCard
 import qualified Parun.Engine.Quantity as Quantity
 import qualified Parun.Extra.Integer as Integer
 import qualified Parun.Legality as Legality
@@ -282,7 +283,8 @@ lineOf root byFile n name = case LazyMap.lookup (Registry.cardPath root (Registr
               | Set.member CardType.Land types = Lobby.MkLand
               | Set.member CardType.Creature types = Lobby.MkCreature
               | otherwise = Lobby.MkSpell
-         in Lobby.MkLine n name (Face.manaCost face) (Quantity.manaValueOf face) kind
+         in -- CR 709.4b: a split card's cost and mana value are its halves'.
+            Lobby.MkLine n name (Face.manaCost (EngineCard.combined c)) (Quantity.manaValueOf (EngineCard.combined c)) kind
   _ -> Lobby.MkLine n name Nothing 0 Lobby.MkSpell
 
 -- | The deck builder until it leads back to the lobby, on this deck if any

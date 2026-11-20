@@ -241,6 +241,11 @@ spec s = Spec.describe s "Parun.Web.Builder" $ do
     Spec.it s "shows how many of a pooled card are left" $ do
       Spec.assertBool s (Text.isInfixOf (Text.pack "1 left") (page (tap (Builder.MkAdd DeckList.Main bolt) (pooled "2 Lightning Bolt\n")))) "left"
 
+  Spec.describe s "kept" $ do
+    Spec.it s "counts no cards for the sections whose lines are not cards" $ do
+      let opened = Builder.open Nothing Text.empty (Text.pack "1 Island\nDraft Notes\n3 Lurking Automaton\nStickers\n1 Ancestral Hot Dog Minotaur\n") indexed
+      Spec.assertBool s (Text.isInfixOf (Text.pack "Also kept: Draft Notes, Stickers") (page opened)) "kept"
+
   Spec.describe s "zones" $ do
     Spec.it s "opens a commander and a sideboard into zones, and edits them" $ do
       let opened = Builder.open Nothing Text.empty (Text.pack "Format: commander\nCommander\n1 Sai, Master Thopterist\nDeck\n30 Island\nSideboard\n2 Shock\n") indexed
@@ -287,7 +292,7 @@ spec s = Spec.describe s "Parun.Web.Builder" $ do
     page = Html.toText . Builder.view
     card name = CardIndex.MkEntry (CardName.MkCardName (Text.pack name)) [Text.pack name] Nothing 1 Set.empty Set.empty (Text.pack "Instant") [] (Text.toCaseFold (Text.pack name)) False Set.empty
     spires = named "Cryptic Spires"
-    indexed = Builder.withIndex (Seq.fromList [(card "Cryptic Spires") {CardIndex.choices = Set.singleton (DeckList.Main, DeckList.CircledColors)}, (card "Lightning Bolt") {CardIndex.rules = [Text.pack "Lightning Bolt deals 3 damage to any target."]}, (card "Mountain") {CardIndex.basic = True}, card "Shock", (card "Front Face") {CardIndex.faceNames = [Text.pack "Front Face", Text.pack "Back Face"]}]) fresh
+    indexed = Builder.withIndex (Seq.fromList [(card "Cryptic Spires") {CardIndex.choices = Set.singleton (DeckList.Main, DeckList.CircledColors)}, (card "Lightning Bolt") {CardIndex.rules = [(Text.pack "Lightning Bolt", [Text.pack "Lightning Bolt deals 3 damage to any target."])]}, (card "Mountain") {CardIndex.basic = True}, card "Shock", (card "Front Face") {CardIndex.faceNames = [Text.pack "Front Face", Text.pack "Back Face"]}]) fresh
     pooled text = Builder.update Builder.MkUsePool Text.empty (Builder.update Builder.MkPoolText (Text.pack text) (Builder.update Builder.MkPoolChoice (Text.pack "paste") indexed))
     constructed = Builder.update Builder.MkFormat (Text.pack "constructed") fresh
     fresh = Builder.new [Text.pack "constructed", Text.pack "pauper"]
