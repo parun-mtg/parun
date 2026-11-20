@@ -2648,12 +2648,13 @@ transformRewriteChildren c rewrite = case rewrite of
   TransformRewrite.ChoosePlayer _ -> pure rewrite
 
 -- | What a destruction replacement does (CR 614.1a).
-destructionRewriteChildren :: (Applicative f) => ReplacementChildren card ability effect f -> DestructionRewrite.DestructionRewrite -> f DestructionRewrite.DestructionRewrite
+destructionRewriteChildren :: (Applicative f) => ReplacementChildren card ability effect f -> DestructionRewrite.DestructionRewrite effect -> f (DestructionRewrite.DestructionRewrite effect)
 destructionRewriteChildren c rewrite = case rewrite of
   DestructionRewrite.Regenerate -> pure rewrite
   DestructionRewrite.RemoveShieldCounter -> pure rewrite
   DestructionRewrite.UmbraArmor -> pure rewrite
   DestructionRewrite.Heal kind -> DestructionRewrite.Heal <$> traverse (replacementCounterKind c) kind
+  DestructionRewrite.RunEffects effects -> DestructionRewrite.RunEffects <$> traverse (replacementEffect c) effects
 
 -- | What an untap replacement does (CR 614.1a).
 untapRewriteChildren :: (Applicative f) => ReplacementChildren card ability effect f -> UntapRewrite.UntapRewrite -> f UntapRewrite.UntapRewrite

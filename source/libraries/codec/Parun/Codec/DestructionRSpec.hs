@@ -1,7 +1,10 @@
 module Parun.Codec.DestructionRSpec where
 
 import qualified Data.Text as Text
+import qualified Parun.Codec.Card as Card
 import qualified Parun.Codec.DestructionR as DestructionR
+import qualified Parun.Codec.Effect as Effect
+import qualified Parun.Codec.GrantedAbility as GrantedAbility
 import qualified Parun.JsonCodec.Common as Common
 import qualified Parun.Spec as Spec
 import qualified Parun.Types.DestructionR as DestructionR
@@ -15,14 +18,14 @@ spec s = Spec.describe s "Parun.Codec.DestructionR" $ do
   Spec.it s "MkDestructionR (no subject)" $
     Common.assertCodec
       s
-      DestructionR.codec
+      (DestructionR.codec (Effect.codec Card.codec (GrantedAbility.codec Card.codec)))
       (DestructionR.MkDestructionR {DestructionR.matching = Nothing, DestructionR.rewrite = DestructionRewrite.Regenerate})
       " {\"rewrite\":{\"type\":\"Regenerate\"}} "
   -- CR 614.1a, Pyramids' "the next time target land would be destroyed".
   Spec.it s "MkDestructionR (a printed subject)" $
     Common.assertCodec
       s
-      DestructionR.codec
+      (DestructionR.codec (Effect.codec Card.codec (GrantedAbility.codec Card.codec)))
       (DestructionR.MkDestructionR {DestructionR.matching = Just (Filter.IsBound (SlotName.MkSlotName (Text.pack "land"))), DestructionR.rewrite = DestructionRewrite.Heal Nothing})
       " {\"matching\":{\"type\":\"IsBound\",\"value\":\"land\"},\"rewrite\":{\"type\":\"Heal\"}} "
-  Spec.it s "has a schema" $ Common.assertHasSchema s DestructionR.codec
+  Spec.it s "has a schema" $ Common.assertHasSchema s (DestructionR.codec (Effect.codec Card.codec (GrantedAbility.codec Card.codec)))

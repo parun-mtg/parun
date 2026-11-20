@@ -1,12 +1,15 @@
 module Parun.Types.DestructionRewrite where
 
+import qualified Data.Sequence as Seq
 import qualified Parun.Types.CounterKind as CounterKind
 import qualified Parun.Types.Keyword as Keyword
 
 -- | CR 614.8 / 701.19: how a replacement rewrites a would-be-destroyed event.
 -- Under every arm the destruction itself does not happen, so nothing downstream
 -- of it (a put-into-graveyard, and therefore Rest in Peace) ever runs.
-data DestructionRewrite
+--
+-- Parametric in the EFFECT for RunEffects, Parun.Types.DamageRewrite's reason.
+data DestructionRewrite effect
   = -- | CR 701.19a / 701.19b: regeneration, both forms -- the two spell out the
     -- same three instructions, and what parts them is whether the row is a
     -- resolution's Uses.Once shield or a permanent's static ability.
@@ -50,4 +53,6 @@ data DestructionRewrite
     -- first removing every counter of the kind given (Dr. McCoy, Surly Surgeon).
     -- Not a regeneration, so CR 701.19c does not bar it.
     Heal (Maybe (CounterKind.CounterKind Keyword.Keyword))
+  | -- | CR 614.1a: "instead [do something]" (Crackling Emergence).
+    RunEffects (Seq.Seq effect)
   deriving (Eq, Ord, Show)

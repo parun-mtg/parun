@@ -798,12 +798,14 @@ engineMintedDamage rewrite = case rewrite of
 -- (Drudge Skeletons), where CR 122.1c's removal and CR 702.89a's umbra armor are
 -- minted -- the latter from Parun.Types.Keyword's UmbraArmor, which is what a card
 -- writes instead (Hyena Umbra).
-engineMintedDestruction :: DestructionRewrite.DestructionRewrite -> Bool
+engineMintedDestruction :: DestructionRewrite.DestructionRewrite effect -> Bool
 engineMintedDestruction rewrite = case rewrite of
   DestructionRewrite.RemoveShieldCounter -> True
   DestructionRewrite.UmbraArmor -> True
   DestructionRewrite.Regenerate -> False
   DestructionRewrite.Heal _ -> False
+  -- Crackling Emergence's own sentence, card data like DamageRewrite.RunEffects.
+  DestructionRewrite.RunEffects _ -> False
 
 -- The non-vacuity half of the same lint: is this the replacement that carries a
 -- PhasePattern at all? A wildcard is right here, where it is not above -- this

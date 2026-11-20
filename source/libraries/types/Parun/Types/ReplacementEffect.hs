@@ -74,7 +74,8 @@ import qualified Parun.Types.ZoneChangeR as ZoneChangeR
 -- Parametric in the EFFECT, which is how the arms that carry effects reach them
 -- without a module cycle: CR 615.5's additional effect on DamageR's riders, CR
 -- 614.1a's "instead [do something]" on Parun.Types.DamageRewrite's RunEffects
--- and Parun.Types.DrawRewrite's RunEffects, its "instead exile it and [do
+-- Parun.Types.DrawRewrite's RunEffects and Parun.Types.DestructionRewrite's
+-- RunEffects, its "instead exile it and [do
 -- something]" on Parun.Types.ZoneChangeR's riders,
 -- CR 614.1c's "as [this permanent] enters, [do something]" on
 -- Parun.Types.EntryRewrite's RunEffects, and CR 701.27i's "as [this permanent]
@@ -95,7 +96,7 @@ data ReplacementEffect card ability effect
   = ZoneChangeR (ZoneChangeR.ZoneChangeR effect)
   | EntryR (EntryR.EntryR ability effect)
   | DamageR (DamageR.DamageR effect)
-  | DestructionR DestructionR.DestructionR
+  | DestructionR (DestructionR.DestructionR effect)
   | CounterR CounterR.CounterR
   | TokenR (TokenR.TokenR card)
   | -- | CR 614.1e: "As [this permanent] is turned face up . . ." A separate arm
