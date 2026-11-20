@@ -65,6 +65,7 @@ import qualified Parun.Types.CounterKind as CounterKind
 import qualified Parun.Types.CounterLink as CounterLink
 import qualified Parun.Types.CounterLinked as CounterLinked
 import qualified Parun.Types.Effect as Effect
+import qualified Parun.Types.EntryLink as EntryLink
 import qualified Parun.Types.ExileLink as ExileLink
 import qualified Parun.Types.Expiry as Expiry
 import qualified Parun.Types.GameEvent as GameEvent
@@ -88,6 +89,8 @@ import qualified Parun.Types.PlayerId as PlayerId
 import qualified Parun.Types.Printing as Printing
 import qualified Parun.Types.Prompt as Prompt
 import qualified Parun.Types.Recipient as Recipient
+import qualified Parun.Types.ReturnEnding as ReturnEnding
+import qualified Parun.Types.ReturnWatch as ReturnWatch
 import qualified Parun.Types.Settle as Settle
 import qualified Parun.Types.Sickness as Sickness
 import qualified Parun.Types.StoredEffects as StoredEffects
@@ -206,9 +209,10 @@ spec s registry = Spec.describe s "a fragmented loop (CR 733.3)" $ do
   Spec.it s "a link keyed by an object that has left is no new state" $ do
     tomb <- S.printingOf s registry "Cyclopean Tomb"
     island <- S.printingOf s registry "Island"
-    -- One state with and without a counter link and an exile link on alice's
-    -- Island, both her Cyclopean Tomb's, before and after the Island has left
-    -- (CR 400.7): nothing reads a link keyed by an id gone from the game.
+    -- One state with and without a counter link, an exile link and a return
+    -- watch on alice's Island, each her Cyclopean Tomb's, before and after the
+    -- Island has left (CR 400.7, 610.3): nothing reads a row keyed by an id
+    -- gone from the game.
     let (tombId, gs1) = S.addPermanent tomb S.alice (Setup.emptyGame S.bothPlayers)
         (islandId, here) = S.addPermanent island S.alice gs1
         gone = S.runPure S.identityAnswer here (Event.changeZone Settle.none islandId Zone.Graveyard)
@@ -216,10 +220,14 @@ spec s registry = Spec.describe s "a fragmented loop (CR 733.3)" $ do
         exileLink = ExileLink.MkExileLink {ExileLink.source = tombId, ExileLink.ability = Nothing, ExileLink.acquisition = Acquisition.Own, ExileLink.chosen = False, ExileLink.controller = Nothing}
         countered gs = Fragmented.digest gs {GameState.counteredWith = Map.singleton islandId (Set.singleton counterLink)} == Fragmented.digest gs
         exiled gs = Fragmented.digest gs {GameState.exiledWith = Map.singleton islandId exileLink} == Fragmented.digest gs
+        watch = ReturnWatch.MkReturnWatch {ReturnWatch.ending = ReturnEnding.SourceLeaves tombId, ReturnWatch.zone = Zone.Battlefield, ReturnWatch.link = EntryLink.MkEntryLink {EntryLink.source = tombId, EntryLink.acquisition = Acquisition.Own, EntryLink.resolution = tombId}}
+        watched gs = Fragmented.digest gs {GameState.movedUntil = Map.singleton islandId watch} == Fragmented.digest gs
     Spec.assertEqWith s "CR 733.3 a counter link on the Island is a new state" (countered here) False
     Spec.assertEqWith s "CR 733.3 a counter link on the departed Island is no new state" (countered gone) True
     Spec.assertEqWith s "CR 733.3 an exile link on the Island is a new state" (exiled here) False
     Spec.assertEqWith s "CR 733.3 an exile link on the departed Island is no new state" (exiled gone) True
+    Spec.assertEqWith s "CR 733.3 a return watch on the Island is a new state" (watched here) False
+    Spec.assertEqWith s "CR 733.3 a return watch on the departed Island is no new state" (watched gone) True
 
   Spec.it s "an activation is refused as paid, not as announced" $ do
     birds <- S.printingOf s registry "Birds of Paradise"
