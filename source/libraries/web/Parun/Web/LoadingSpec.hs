@@ -27,3 +27,8 @@ spec s = Spec.describe s "Parun.Web.Loading" $ do
       Spec.assertEqWith s "blocked" (Loading.blocked Loading.MkCards failed) (Just (Text.pack "cards-2"))
       Spec.assertEqWith s "unready" (Loading.ready Loading.MkCards failed) False
       Spec.assertEqWith s "another need" (Loading.blocked Loading.MkDecks failed) Nothing
+
+  Spec.describe s "problem" $ do
+    Spec.it s "says which need did not load" $ do
+      Spec.assertEqWith s "none" (Loading.problem Loading.new) Nothing
+      Spec.assertEqWith s "cards" (Loading.problem (Loading.arrive (Left (Text.pack "cards-1")) Loading.new)) (Just (Text.pack "Couldn't load the cards. Reload to try again."))

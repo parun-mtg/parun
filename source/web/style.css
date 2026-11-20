@@ -418,6 +418,44 @@ body.busy #settings-button > svg {
   animation: spin 1.2s 0.15s linear infinite;
 }
 
+/* ---------- Home ---------- */
+
+main.home {
+  max-width: 560px;
+  margin: 0 auto;
+  min-height: 100dvh;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 1.2em;
+  padding: max(1em, env(safe-area-inset-top)) 1em calc(2em + env(safe-area-inset-bottom));
+}
+
+main.home .hero {
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+}
+
+main.home .choices {
+  display: flex;
+  flex-direction: column;
+  gap: 0.6em;
+}
+
+#app main.home .choices button {
+  font-size: 1.1rem;
+  padding: 0.9em 1.2em;
+  text-align: center;
+}
+
+main.home .confirm {
+  display: flex;
+  flex-direction: column;
+  gap: 0.8em;
+  text-align: center;
+}
+
 /* ---------- Lobby ---------- */
 
 main.lobby {

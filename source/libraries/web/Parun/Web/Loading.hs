@@ -3,6 +3,7 @@
 module Parun.Web.Loading where
 
 import qualified Data.List as List
+import qualified Data.Maybe as Maybe
 import qualified Data.Set as Set
 import qualified Data.Text as Text
 
@@ -61,3 +62,14 @@ demand need loading =
   ( loading {wanted = if need `elem` wanted loading then wanted loading else wanted loading <> [need]},
     filter (`Set.notMember` arrived loading) (chunksOf need)
   )
+
+-- | Why the first need that cannot load did not, said for the screen
+-- waiting on it.
+problem :: Loading -> Maybe Text.Text
+problem loading =
+  let said need = case need of
+        MkDecks -> "decks"
+        MkCards -> "cards"
+        MkRules -> "rules"
+        MkScenarios -> "scenarios"
+   in List.find (\n -> Maybe.isJust (blocked n loading)) [minBound .. maxBound] >>= \n -> Just (Text.pack ("Couldn't load the " <> said n <> ". Reload to try again."))

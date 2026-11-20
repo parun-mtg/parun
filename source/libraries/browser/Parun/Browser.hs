@@ -75,10 +75,16 @@ nextInput page = do
       queued <- pending page
       if queued then fmap (uncurry MkTap) (next page) else wait >> nextInput page
 
--- | Waits until every chunk named has arrived (or failed), leaving taps
--- queued; the names of those that failed.
-untilArrived :: Page msg -> [Text.Text] -> IO [Text.Text]
-untilArrived page names = go (Set.fromList names) []
+-- | The chunks arrived since last asked, without waiting.
+arrivals :: Page msg -> IO [Arrival]
+arrivals page = do
+  collect page
+  fmap Foldable.toList . IORef.atomicModifyIORef' (arrived page) $ \cs -> (Seq.empty, cs)
+
+-- | Waits until every chunk named, but those already arrived, has arrived
+-- (or failed), leaving taps queued; the names of those that failed.
+untilArrived :: Page msg -> Set.Set Text.Text -> [Text.Text] -> IO [Text.Text]
+untilArrived page already names = go (Set.difference (Set.fromList names) already) []
   where
     go left failed
       | Set.null left = pure (reverse failed)

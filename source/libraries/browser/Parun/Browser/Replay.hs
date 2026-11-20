@@ -14,6 +14,7 @@ import qualified Data.IORef as IORef
 import qualified Data.List.NonEmpty as NonEmpty
 import qualified Data.Map.Strict as Map
 import qualified Data.Maybe as Maybe
+import qualified Data.Set as Set
 import qualified Data.Text as Text
 import Numeric.Natural (Natural)
 import qualified Parun.Browser as Browser
@@ -54,20 +55,20 @@ import qualified Text.Read as Read
 -- extension), played on from where parun_branch is set, or the list of them
 -- for the empty name, on a page mounted first so an exception that escapes
 -- is shown there.
-start :: String -> IO ()
-start named = do
+start :: Set.Set Text.Text -> String -> IO ()
+start already named = do
   branching <- Environment.lookupEnv "parun_branch"
   case branching of
-    Just _ | not (null named) -> branch (Text.pack named)
+    Just _ | not (null named) -> branch already (Text.pack named)
     _ -> do
       page <- Browser.mount
-      Exception.catch (if null named then choose page else replay page (Text.pack named)) $ \problem ->
+      Exception.catch (if null named then choose already page else replay already page (Text.pack named)) $ \problem ->
         Browser.display page $ message ["The replay stopped on an error:", Exception.displayException (problem :: Exception.SomeException)]
 
 -- | The list of scenarios, filtered as typed.
-choose :: Browser.Page Web.Replay.Event -> IO ()
-choose page = do
-  scenarios page []
+choose :: Set.Set Text.Text -> Browser.Page Web.Replay.Event -> IO ()
+choose already page = do
+  scenarios already page []
   root <- Load.defaultRoot
   paths <- Load.listRoot root
   themes <- Load.manifestPath >>= fmap Load.parseManifest . ByteString.readFile
@@ -79,10 +80,10 @@ choose page = do
   go Text.empty
 
 -- | Waits for the scenarios, asked for first, and these other chunks.
-scenarios :: Browser.Page msg -> [String] -> IO ()
-scenarios page others = do
+scenarios :: Set.Set Text.Text -> Browser.Page msg -> [String] -> IO ()
+scenarios already page others = do
   Browser.want (Text.pack "scenarios")
-  failed <- Browser.untilArrived page (fmap Text.pack ("scenarios" : others))
+  failed <- Browser.untilArrived page already (fmap Text.pack ("scenarios" : others))
   Monad.unless (null failed) . Exception.throwIO . userError $ "The data did not load: " <> Text.unpack (Text.intercalate (Text.pack ", ") failed)
 
 -- | A path's name beneath the root, less its extension.
@@ -93,9 +94,9 @@ nameOf root path =
 
 -- | The scenario at a position (parun_at, else its start) as a seat sees it
 -- (the first), replayed afresh at each position the page goes to.
-replay :: Browser.Page Web.Replay.Event -> Text.Text -> IO ()
-replay page name =
-  opening page name $ \scenario registry given -> do
+replay :: Set.Set Text.Text -> Browser.Page Web.Replay.Event -> Text.Text -> IO ()
+replay already page name =
+  opening already page name $ \scenario registry given -> do
     let count = Natural.length (Scenario.Type.timeline scenario)
         seats = seatsOf scenario
         lookUp = Identity.runIdentity . Interpreter.chosenCard registry
@@ -126,9 +127,9 @@ replay page name =
 
 -- | The scenario named, its card registry, and the position the page names
 -- (parun_at), handed on; else why the scenario does not decode, shown.
-opening :: Browser.Page msg -> Text.Text -> (Scenario.Type.Scenario -> Registry.Registry Identity.Identity -> Maybe Natural -> IO ()) -> IO ()
-opening page name continue = do
-  scenarios page ["cards-0", "cards-1", "cards-2", "cards-3", "rules"]
+opening :: Set.Set Text.Text -> Browser.Page msg -> Text.Text -> (Scenario.Type.Scenario -> Registry.Registry Identity.Identity -> Maybe Natural -> IO ()) -> IO ()
+opening already page name continue = do
+  scenarios already page ["cards-0", "cards-1", "cards-2", "cards-3", "rules"]
   root <- Load.defaultRoot
   (_, decoded) <- Load.loadFile (root <> "/" <> Text.unpack name <> ".json")
   case decoded of
@@ -145,15 +146,15 @@ opening page name continue = do
 -- start): the run takes the timeline to that stop (Scenario.branch), then
 -- every seat is answered on the page as the hotseat answers one
 -- (Hotseat.exchange), chance from a fresh key, until the game ends.
-branch :: Text.Text -> IO ()
-branch name = do
+branch :: Set.Set Text.Text -> Text.Text -> IO ()
+branch already name = do
   page <- Browser.mount
-  Exception.catch (playOn page name) $ \problem ->
+  Exception.catch (playOn already page name) $ \problem ->
     Browser.display page $ message ["The game stopped on an error:", Exception.displayException (problem :: Exception.SomeException)]
 
-playOn :: Browser.Page (Either Lobby.Event Web.Question.Event) -> Text.Text -> IO ()
-playOn page name =
-  opening page name $ \scenario registry given -> do
+playOn :: Set.Set Text.Text -> Browser.Page (Either Lobby.Event Web.Question.Event) -> Text.Text -> IO ()
+playOn already page name =
+  opening already page name $ \scenario registry given -> do
     level <- maybe Web.Question.MkStandard (Maybe.fromMaybe Web.Question.MkStandard . Web.Question.levelNamed) <$> Environment.lookupEnv "parun_level"
     seatRef <- IORef.newIORef (Hotseat.newSeat level)
     key <- Key.fresh
