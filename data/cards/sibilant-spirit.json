@@ -48,8 +48,8 @@
                         "type": "Draw",
                         "value": {
                           "player": {
-                            "type": "InRole",
-                            "value": "Defending"
+                            "type": "InSlot",
+                            "value": "thatPlayer"
                           },
                           "quantity": {
                             "type": "Literal",
@@ -61,8 +61,8 @@
                     "optionality": {
                       "type": "Optional",
                       "value": {
-                        "type": "InRole",
-                        "value": "Defending"
+                        "type": "InSlot",
+                        "value": "thatPlayer"
                       }
                     }
                   }
