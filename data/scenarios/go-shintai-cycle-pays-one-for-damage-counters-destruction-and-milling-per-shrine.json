@@ -1,0 +1,287 @@
+{
+  "board": {
+    "active": "alice",
+    "seats": [
+      {
+        "battlefield": [
+          {
+            "card": "Go-Shintai of Ancient Wars",
+            "label": "aw"
+          },
+          {
+            "card": "Go-Shintai of Boundless Vigor",
+            "label": "bv"
+          },
+          {
+            "card": "Go-Shintai of Hidden Cruelty",
+            "label": "hc"
+          },
+          {
+            "card": "Go-Shintai of Lost Wisdom",
+            "label": "lw"
+          },
+          {
+            "card": "Plains",
+            "label": "p1"
+          },
+          {
+            "card": "Plains",
+            "label": "p2"
+          },
+          {
+            "card": "Plains",
+            "label": "p3"
+          },
+          {
+            "card": "Plains",
+            "label": "p4"
+          }
+        ],
+        "library": [
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          }
+        ],
+        "name": "alice"
+      },
+      {
+        "battlefield": [
+          {
+            "card": "Horned Turtle",
+            "label": "turtle"
+          },
+          {
+            "card": "Ancient Carp",
+            "label": "tusker"
+          }
+        ],
+        "library": [
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          }
+        ],
+        "name": "bob"
+      }
+    ],
+    "step": "PostcombatMain",
+    "turn": 1
+  },
+  "description": "CR 603.12 / 118.12 / 701.17a: at alice's end step each of four Go-Shintai pays {1} for its reflexive trigger, X being the four Shrines she controls: Ancient Wars deals 4 to bob, Boundless Vigor puts four +1/+1 counters on Lost Wisdom, Hidden Cruelty destroys a toughness-4 creature but cannot target a toughness-5 one, and Lost Wisdom mills bob four",
+  "final": [
+    {
+      "Life": {
+        "life": 16,
+        "player": "bob"
+      }
+    },
+    {
+      "Counters": {
+        "count": 4,
+        "kind": {
+          "type": "PlusOnePlusOne"
+        },
+        "object": "$lw"
+      }
+    },
+    {
+      "PowerToughness": {
+        "object": "$lw",
+        "power": 4,
+        "toughness": 8
+      }
+    },
+    {
+      "Count": {
+        "card": "Horned Turtle",
+        "count": 1,
+        "player": "bob",
+        "zone": "Graveyard"
+      }
+    },
+    {
+      "Count": {
+        "card": "Ancient Carp",
+        "count": 1,
+        "player": "bob",
+        "zone": "Battlefield"
+      }
+    },
+    {
+      "Count": {
+        "card": "Island",
+        "count": 4,
+        "player": "bob",
+        "zone": "Graveyard"
+      }
+    },
+    {
+      "Count": {
+        "card": "Island",
+        "count": 2,
+        "player": "bob",
+        "zone": "Library"
+      }
+    }
+  ],
+  "note": "Bob's toughness-5 Ancient Carp is the target Hidden Cruelty refuses, so its X is four, not more; his library holds six Islands so the mill stops at four.",
+  "timeline": [
+    {
+      "do": {
+        "OrderTriggers": [
+          "$aw",
+          "$bv",
+          "$hc",
+          "$lw"
+        ]
+      },
+      "player": "alice",
+      "step": "EndStep",
+      "turn": 1
+    },
+    {
+      "do": {
+        "ChooseToPay": {
+          "decision": "Pays",
+          "mana": [
+            "$p1",
+            null
+          ]
+        }
+      },
+      "player": "alice",
+      "source": "$lw",
+      "step": "EndStep",
+      "turn": 1
+    },
+    {
+      "do": {
+        "ChooseTargets": {
+          "target": [
+            "$bob"
+          ]
+        }
+      },
+      "player": "alice",
+      "source": "$lw",
+      "step": "EndStep",
+      "turn": 1
+    },
+    {
+      "do": {
+        "ChooseToPay": {
+          "decision": "Pays",
+          "mana": [
+            "$p2",
+            null
+          ]
+        }
+      },
+      "player": "alice",
+      "source": "$hc",
+      "step": "EndStep",
+      "turn": 1
+    },
+    {
+      "player": "alice",
+      "refuse": {
+        "ChooseTargets": {
+          "target": [
+            "$tusker"
+          ]
+        }
+      },
+      "source": "$hc",
+      "step": "EndStep",
+      "turn": 1
+    },
+    {
+      "do": {
+        "ChooseTargets": {
+          "target": [
+            "$turtle"
+          ]
+        }
+      },
+      "player": "alice",
+      "source": "$hc",
+      "step": "EndStep",
+      "turn": 1
+    },
+    {
+      "do": {
+        "ChooseToPay": {
+          "decision": "Pays",
+          "mana": [
+            "$p3",
+            null
+          ]
+        }
+      },
+      "player": "alice",
+      "source": "$bv",
+      "step": "EndStep",
+      "turn": 1
+    },
+    {
+      "do": {
+        "ChooseTargets": {
+          "target": [
+            "$lw"
+          ]
+        }
+      },
+      "player": "alice",
+      "source": "$bv",
+      "step": "EndStep",
+      "turn": 1
+    },
+    {
+      "do": {
+        "ChooseToPay": {
+          "decision": "Pays",
+          "mana": [
+            "$p4"
+          ]
+        }
+      },
+      "player": "alice",
+      "source": "$aw",
+      "step": "EndStep",
+      "turn": 1
+    },
+    {
+      "do": {
+        "ChooseTargets": {
+          "target": [
+            "$bob"
+          ]
+        }
+      },
+      "player": "alice",
+      "source": "$aw",
+      "step": "EndStep",
+      "turn": 1
+    }
+  ]
+}

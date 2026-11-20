@@ -274,6 +274,7 @@ static context attached enchants a
                   stated : [word <> stated | word <- Trigger.effectWord stated]
               )
                 <> hostIs
+                <> hostIsCreature
             Just c -> do
               words' <- Trigger.condition context c
               word <- Trigger.abilityWord words'
@@ -314,6 +315,20 @@ static context attached enchants a
       Monad.guard (not (null qualities))
       (verb, defined) <- modifications Static Filter.Singular False context {Target.self = Text.pack "it"} (Foldable.toList (StaticAbility.modifications a))
       [Prose.sentence (Text.pack "as long as " <> word <> Text.pack " creature is " <> Prose.listing "and" qualities <> Text.pack ", it " <> verb <> defined)]
+    -- Free: an Aura that can enchant a noncreature names its host's card type
+    -- as the condition (Gift of Wrath's "As long as enchanted permanent is a
+    -- creature, it gets +2/+2 and has menace.").
+    hostIsCreature = do
+      word <- Maybe.maybeToList attached
+      Monad.guard (fmap TargetSlot.pool enchants /= [Pool.Creatures])
+      case StaticAbility.affected a of
+        Affected.Matching (Filter.Type.And fs)
+          | elem hosted fs,
+            [Filter.Type.HasCardType creature] <- filter (/= hosted) fs,
+            Filter.cardType Filter.Singular creature == Text.pack "creature" -> do
+              (verb, defined) <- modifications Static Filter.Singular False context {Target.self = Text.pack "it"} (Foldable.toList (StaticAbility.modifications a))
+              [Prose.sentence (Text.pack "as long as " <> word <> Text.pack " permanent is a creature, it " <> verb <> defined)]
+        _ -> []
     hosted = Filter.Type.HasAttached Filter.Type.IsSource
     quality f = case f of
       Filter.Type.HasSupertype s -> Just (Filter.supertype s)

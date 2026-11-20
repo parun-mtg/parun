@@ -1,0 +1,65 @@
+{
+  "faces": [
+    {
+      "manaCost": [
+        {
+          "type": "OfType",
+          "value": {
+            "type": "Colored",
+            "value": "White"
+          }
+        }
+      ],
+      "name": "Hotshot Mechanic",
+      "oracleText": "This creature crews Vehicles as though its power were 2 greater.",
+      "power": {
+        "type": "Literal",
+        "value": 2
+      },
+      "staticAbilities": [
+        {
+          "affected": {
+            "type": "Matching",
+            "value": {
+              "type": "IsSource"
+            }
+          },
+          "modifications": [
+            {
+              "type": "TapsCounting",
+              "value": {
+                "count": {
+                  "type": "GreaterBy",
+                  "value": 2
+                },
+                "keywords": [
+                  {
+                    "keyword": "Crew",
+                    "permanent": {
+                      "type": "HasSubtype",
+                      "value": "Vehicle"
+                    }
+                  }
+                ]
+              }
+            }
+          ]
+        }
+      ],
+      "toughness": {
+        "type": "Literal",
+        "value": 1
+      },
+      "typeLine": {
+        "subtypes": [
+          "Fox",
+          "Pilot"
+        ],
+        "types": [
+          "Artifact",
+          "Creature"
+        ]
+      }
+    }
+  ]
+}
