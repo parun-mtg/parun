@@ -324,11 +324,13 @@ builder shell = do
 
 -- | The builder once its deck is saved under the name it was saved as, or
 -- the name typed (Builder.saveTarget): written to the deck root and the
--- page, listed in the lobby, recoloured and its problems recorded.
+-- page, listed in the lobby under the format it now names, recoloured, and
+-- queued to be checked afresh; refused while the saved decks it may clash
+-- with are unread.
 saveBuilt :: Shell -> Builder.Builder -> IO Builder.Builder
 saveBuilt shell built = do
   listed <- IORef.readIORef (loaded shell)
-  case Builder.saveTarget (Seq.fromList (foldMap Map.keys (deckFiles listed))) built of
+  case maybe (Left [Text.pack "The decks did not load: reload to try again."]) (\files -> Builder.saveTarget (Seq.fromList (Map.keys files)) built) (deckFiles listed) of
     Left problems -> pure built {Builder.saveProblems = problems}
     Right name -> do
       deckRoot <- Decks.defaultRoot
@@ -338,10 +340,11 @@ saveBuilt shell built = do
       IORef.modifyIORef' (loaded shell) $ \l ->
         l
           { deckFiles = fmap (Map.insert name path) (deckFiles l),
-            formats = maybe id (Map.insert name) (DeckList.formatOf contents) (formats l),
+            formats = Map.alter (const (DeckList.formatOf contents)) name (formats l),
             palette = Map.delete name (palette l),
             unread = (name, path) : filter ((/= name) . fst) (unread l),
-            illegal = if null (Builder.problems built) then Map.delete name (illegal l) else Map.insert name (Builder.problems built) (illegal l)
+            illegal = Map.delete name (illegal l),
+            unchecked = (name, path) : filter ((/= name) . fst) (unchecked l)
           }
       pure (Builder.saved name built)
 

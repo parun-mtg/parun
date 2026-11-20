@@ -318,7 +318,6 @@ update event typed lobby = case event of
   MkOpenBuilder -> lobby
   MkHome -> lobby
 
--- | The deck chosen for a slot, if any.
 -- | Your deck, to start a game with; or why it may not: the problems a
 -- check found with it, or none while there is no deck.
 startable :: Lobby -> Either [Text.Text] Text.Text
@@ -326,6 +325,7 @@ startable lobby = case mine lobby of
   Nothing -> Left []
   Just name -> maybe (Right name) Left (Map.lookup name (illegal lobby))
 
+-- | The deck chosen for a slot, if any.
 chosen :: Lobby -> Slot -> Maybe Text.Text
 chosen lobby slot = case slot of
   MkMine -> mine lobby
