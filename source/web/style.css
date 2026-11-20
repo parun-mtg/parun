@@ -2145,17 +2145,28 @@ main.ending h2 {
 
 .confetti span {
   position: absolute;
-  top: -20px;
+  top: -32px;
   left: var(--x);
-  width: 9px;
-  height: 14px;
-  border-radius: 2px;
-  background: hsl(calc(var(--hue) * 60) 75% 55%);
-  animation: fall 3.2s var(--delay) ease-in forwards;
+  width: var(--size);
+  height: var(--size);
+  animation: fall 3.4s var(--delay) cubic-bezier(0.3, 0, 0.7, 1) forwards;
 }
 
+.confetti svg {
+  display: block;
+  width: 100%;
+  height: 100%;
+  filter: drop-shadow(0 1px 1px rgb(0 0 0 / 0.25));
+}
+
+.confetti .fg-w { color: var(--c-w); }
+.confetti .fg-u { color: var(--c-u); }
+.confetti .fg-b { color: var(--c-b); }
+.confetti .fg-r { color: var(--c-r); }
+.confetti .fg-g { color: var(--c-g); }
+
 @keyframes fall {
-  to { transform: translateY(110vh) rotate(var(--spin)); }
+  to { transform: translateY(calc(100vh + 64px)) rotate(var(--spin)); }
 }
 
 :root[data-motion="reduced"] .confetti {
