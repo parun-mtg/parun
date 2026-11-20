@@ -1,0 +1,29 @@
+{
+  "description": "CR 603.6c, 700.4, 701.27a: Desperate Farmer's leaves-the-battlefield trigger transforms it into Depraved Harvester when another creature its controller controls dies, and not when an opponent's creature dies",
+  "note": "Alice shocks bob's Bears first: no trigger, the Farmer stays a 2/2. Then she shocks her own Lions; the Farmer transforms into the 4/3 Harvester.",
+  "board": {
+    "active": "alice", "turn": 2, "step": "PrecombatMain",
+    "seats": [
+      {"name": "alice",
+       "battlefield": [{"card": "Desperate Farmer", "label": "farmer"}, {"card": "Savannah Lions", "label": "lions"}],
+       "manaPool": "RR",
+       "hand": [{"card": "Shock", "label": "s1"}, {"card": "Shock", "label": "s2"}],
+       "library": [{"card": "Mountain"}, {"card": "Mountain"}, {"card": "Mountain"}]},
+      {"name": "bob",
+       "battlefield": [{"card": "Grizzly Bears", "label": "bears"}],
+       "library": [{"card": "Forest"}, {"card": "Forest"}, {"card": "Forest"}]}
+    ]
+  },
+  "timeline": [
+    {"turn": 2, "step": "PrecombatMain", "player": "alice", "do": {"Cast": {"object": "$s1", "targets": ["$bears"]}}},
+    {"turn": 2, "step": "PrecombatMain", "player": "alice", "do": "Pass"},
+    {"turn": 2, "step": "PrecombatMain", "player": "alice", "check": {"Count": {"player": "bob", "zone": "Graveyard", "card": "Grizzly Bears", "count": 1}}},
+    {"turn": 2, "step": "PrecombatMain", "player": "alice", "check": {"View": {"of": "Stack", "is": []}}},
+    {"turn": 2, "step": "PrecombatMain", "player": "alice", "check": {"Names": {"object": "$farmer", "names": ["Desperate Farmer"]}}},
+    {"turn": 2, "step": "PrecombatMain", "player": "alice", "do": {"Cast": {"object": "$s2", "targets": ["$lions"]}}},
+    {"turn": 2, "step": "PrecombatMain", "player": "alice", "do": "Pass"},
+    {"turn": 2, "step": "PrecombatMain", "player": "alice", "do": "Pass"},
+    {"turn": 2, "step": "PrecombatMain", "player": "alice", "check": {"Names": {"object": "$farmer", "names": ["Depraved Harvester"]}}},
+    {"turn": 2, "step": "PrecombatMain", "player": "alice", "check": {"PowerToughness": {"object": "$farmer", "power": 4, "toughness": 3}}}
+  ]
+}

@@ -1,0 +1,31 @@
+{
+  "description": "CR 702.146a, 613.1f, 508.4, 603.7: Dorothea cast for its disturb cost is Dorothea's Retribution, whose enchanted creature has \"Whenever this creature attacks, create a 4/4 white Spirit creature token with flying that's tapped and attacking. Sacrifice that token at end of combat\"; Dorothea itself is sacrificed at end of combat after attacking",
+  "note": "Alice casts the buried Dorothea onto her Lions and attacks with the Lions and her other Dorothea. The Spirit enters tapped and attacking, and bob takes 2 + 4 + 4. At end of combat both the token and the attacking Dorothea are sacrificed.",
+  "board": {
+    "active": "alice",
+    "step": "PrecombatMain",
+    "seats": [
+      {"name": "alice",
+       "battlefield": [{"card": "Savannah Lions", "label": "lions", "ready": true}, {"card": "Dorothea, Vengeful Victim", "label": "dorothea", "ready": true}, {"card": "Plains", "label": "p1"}, {"card": "Plains", "label": "p2"}, {"card": "Island", "label": "i1"}],
+       "graveyard": [{"card": "Dorothea, Vengeful Victim", "label": "buried"}],
+       "library": [{"card": "Plains"}, {"card": "Plains"}, {"card": "Plains"}, {"card": "Plains"}]},
+      {"name": "bob", "library": [{"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}]}
+    ]
+  },
+  "timeline": [
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": {"Cast": {"object": "$buried", "mana": ["$p1", "$p2", "$i1"], "targets": ["$lions"]}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": "Pass"},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"Count": {"player": "alice", "zone": "Battlefield", "card": "Dorothea's Retribution", "count": 1}}},
+    {"turn": 1, "step": "DeclareAttackers", "player": "alice", "do": {"Attack": ["$lions", "$dorothea"]}},
+    {"turn": 1, "step": "DeclareAttackers", "player": "alice", "do": {"OrderTriggers": ["$dorothea", "$lions"]}},
+    {"turn": 1, "step": "DeclareAttackers", "player": "alice", "do": "Pass"},
+    {"turn": 1, "step": "DeclareAttackers", "player": "alice", "do": "Pass"},
+    {"turn": 1, "step": "DeclareAttackers", "player": "alice", "check": {"Count": {"player": "alice", "zone": "Battlefield", "card": "Spirit Token", "count": 1}}},
+    {"turn": 1, "step": "DeclareAttackers", "player": "alice", "check": {"Tapped": {"object": "Spirit Token", "tapped": true}}},
+    {"turn": 1, "step": "CombatDamage", "player": "alice", "check": {"Life": {"player": "bob", "life": 10}}},
+    {"turn": 1, "step": "EndOfCombat", "player": "alice", "do": {"OrderTriggers": ["$dorothea", "$lions"]}},
+    {"turn": 1, "step": "PostcombatMain", "player": "alice", "check": {"Count": {"player": "alice", "zone": "Battlefield", "card": "Spirit Token", "count": 0}}},
+    {"turn": 1, "step": "PostcombatMain", "player": "alice", "check": {"Count": {"player": "alice", "zone": "Graveyard", "card": "Dorothea, Vengeful Victim", "count": 1}}},
+    {"turn": 1, "step": "PostcombatMain", "player": "alice", "check": {"Count": {"player": "alice", "zone": "Battlefield", "card": "Savannah Lions", "count": 1}}}
+  ]
+}
