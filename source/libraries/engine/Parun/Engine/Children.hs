@@ -1619,12 +1619,17 @@ triggerLeaves =
       triggerDesignator = pure
     }
 
+-- | A StepBegins' ordinal and turn, each through its visitor: the condition's
+-- own and a draw trigger's step alike.
+stepBeginsChildren :: (Applicative f) => TriggerChildren f -> StepBegins.StepBegins -> f StepBegins.StepBegins
+stepBeginsChildren c (StepBegins.MkStepBegins phase ordinal turn) = StepBegins.MkStepBegins phase <$> traverse (triggerOrdinal c HistoryRead.StepBegins) ordinal <*> triggerTurn c turn
+
 -- | A TriggerCondition's immediate children, each through its visitor. A
 -- nested condition is handed to triggerNested and not descended here.
 triggerConditionChildren :: (Applicative f) => TriggerChildren f -> TriggerCondition.TriggerCondition -> f TriggerCondition.TriggerCondition
 triggerConditionChildren c condition = case condition of
   TriggerCondition.Enters (EntersTrigger.MkEntersTrigger permanent batching) -> fmap TriggerCondition.Enters (EntersTrigger.MkEntersTrigger <$> actingChildren c permanent <*> pure batching)
-  TriggerCondition.StepBegins (StepBegins.MkStepBegins phase ordinal turn) -> fmap TriggerCondition.StepBegins (StepBegins.MkStepBegins phase <$> traverse (triggerOrdinal c HistoryRead.StepBegins) ordinal <*> triggerTurn c turn)
+  TriggerCondition.StepBegins step -> fmap TriggerCondition.StepBegins (stepBeginsChildren c step)
   TriggerCondition.StateIs state -> fmap TriggerCondition.StateIs (triggerState c state)
   TriggerCondition.DealsDamage (DamageTrigger.MkDamageTrigger actor kind recipients atLeast) -> (\renamed qualified -> TriggerCondition.DealsDamage (DamageTrigger.MkDamageTrigger renamed kind qualified atLeast)) <$> actingChildren c actor <*> traverseSet (damageRecipientChildren (triggerPlayer c) (triggerFilter c)) recipients
   TriggerCondition.IsDealtDamage (PermanentIsDealtDamage.MkPermanentIsDealtDamage (DealtDamage.MkDealtDamage recipient kind by) batching wholeBatch excess atLeast) ->
@@ -1644,7 +1649,7 @@ triggerConditionChildren c condition = case condition of
           DiscardSubject.Self -> pure subject
           DiscardSubject.Discarder acts -> fmap DiscardSubject.Discarder (playerActsOnChildren c acts)
       )
-  TriggerCondition.PlayerDrawsNthCard (PlayerDrawsNthCard.MkPlayerDrawsNthCard _ _) -> pure condition
+  TriggerCondition.PlayerDrawsNthCard (PlayerDrawsNthCard.MkPlayerDrawsNthCard relation nth within) -> fmap (TriggerCondition.PlayerDrawsNthCard . PlayerDrawsNthCard.MkPlayerDrawsNthCard relation nth) (traverse (stepBeginsChildren c) within)
   TriggerCondition.Attacks trigger -> fmap TriggerCondition.Attacks (attackTriggerChildren c trigger)
   TriggerCondition.Blocks (BlockTrigger.MkBlockTrigger role creature count batching while_) ->
     fmap
