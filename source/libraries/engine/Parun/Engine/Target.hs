@@ -1438,16 +1438,114 @@ apartSlots split slots =
 -- an exclusion with a slot named between its two (jointSignature's
 -- `crowded`), sits beside a slot taking several targets, that slot may hold
 -- classes of one recipient, and the walk is every subset of them. So may a
--- Differing slot taking several, whose classes are as many as the values its
--- candidates share.
-cappedWalk :: Set SlotName -> Map SlotName (Natural, Natural) -> Map SlotName TargetSlot -> Bool
-cappedWalk apart ranges slots =
+-- Differing slot taking several that `matched` (matchedSlots) leaves out,
+-- whose classes are as many as the values its candidates share.
+cappedWalk :: Set SlotName -> Set SlotName -> Map SlotName (Natural, Natural) -> Map SlotName TargetSlot -> Bool
+cappedWalk apart matched ranges slots =
   let wide name = maybe False ((> 1) . snd) (Map.lookup name ranges)
       differing slot = case TargetSlot.together slot of
         Just (Together.Differing _) -> True
         _ -> False
    in ((not (Set.null apart) || not (null (crowdedPairs (Map.keysSet slots) slots))) && any wide (Map.keys slots))
-        || any wide (Map.keys (Map.filter differing slots))
+        || any wide (Set.toList (Set.difference (Map.keysSet (Map.filter differing slots)) matched))
+
+-- CR 601.2c: the Differing slots taking several targets whose candidates no
+-- sibling slot holds, which jointSignature classes without the values they
+-- share and apartAiming settles once the walk has drawn its counts.
+--
+-- Unprinted: a Differing slot taking several targets beside a slot holding
+-- some of its candidates, which is left to the capped walk (cappedWalk).
+-- Parun.AbilitySlotLintSpec's "no card writes a joint check only the capped
+-- walk prices" keeps it out of card data.
+matchedSlots :: Map SlotName (Natural, Natural) -> Map SlotName TargetSlot -> Map SlotName (Set Recipient) -> Set SlotName
+matchedSlots ranges slots sets =
+  let referents name = Set.map aimedAt (Map.findWithDefault Set.empty name sets)
+      wide name = maybe False ((> 1) . snd) (Map.lookup name ranges)
+      differing slot = case TargetSlot.together slot of
+        Just (Together.Differing _) -> True
+        _ -> False
+      alone name = all (Set.disjoint (referents name) . referents) (filter (/= name) (Map.keys slots))
+   in Set.filter (\name -> wide name && alone name) (Map.keysSet (Map.filter differing slots))
+
+-- What a recipient IS (Parun.Engine.Cost.aimedReferent): one object answering
+-- under two tags is one candidate.
+aimedAt :: Recipient -> Recipient
+aimedAt a = maybe a Recipient.ToObject (Recipient.objectOf a)
+
+-- CR 601.2c: this aiming with each `matched` slot (matchedSlots) refilled
+-- from its candidates by as many of each class (`classOf`, the walk's
+-- signature of a referent) as the walk drew, no two sharing a value on its
+-- axis, or Nothing where no such refill exists. The walk classes a matched
+-- slot's members without the values they share, so its draws are the counts
+-- per class, and the refill is the one aiming at those counts the joint check
+-- can accept (pickApart). Parun.CostSpec's "Behold the Sinister Six!" group
+-- proves it.
+apartAiming :: (Ord k) => GameState -> (Recipient -> k) -> Map SlotName TargetSlot -> Set SlotName -> Map SlotName (Set Recipient) -> Map SlotName (Set Recipient) -> Maybe (Map SlotName (Set Recipient))
+apartAiming gs classOf slots matched sets aiming =
+  let refill aimed name = case Map.lookup name slots >>= TargetSlot.together of
+        Just (Together.Differing axis) ->
+          let drawn = Map.findWithDefault Set.empty name aimed
+              demand = Map.fromListWith (+) [(classOf (aimedAt a), 1 :: Natural) | a <- Set.toList drawn]
+              candidates = Map.elems (Map.fromList [(aimedAt a, a) | a <- Set.toList (Map.findWithDefault Set.empty name sets)])
+              valued = [(classOf (aimedAt a), values, a) | a <- candidates, Just values <- [differingValues axis gs a]]
+              refilled picked = if null picked then Map.delete name aimed else Map.insert name (Set.fromList picked) aimed
+           in if Set.null drawn then Just aimed else fmap refilled (pickApart demand valued)
+        _ -> Just aimed
+   in Monad.foldM refill aiming (Set.toList matched)
+
+-- As many candidates of each class as `demand` asks, no two sharing a value,
+-- or Nothing where there are not. Exact: a candidate holding no value another
+-- holds collides with nothing, so it is taken first; a candidate holding one
+-- shared value takes that value, so the rest is a matching of each class's
+-- remaining demand to the values its candidates hold (matchAll); only the
+-- candidates holding several shared values are searched subset by subset.
+pickApart :: (Ord k, Ord v) => Map k Natural -> [(k, Set v, a)] -> Maybe [a]
+pickApart demand candidates =
+  let asked k = Map.findWithDefault 0 k demand
+      wanted = [c | c@(k, _, _) <- candidates, asked k > 0]
+      holders = Map.fromListWith (+) [(v, 1 :: Natural) | (_, values, _) <- wanted, v <- Set.toList values]
+      tagged = [(k, Set.filter (\v -> Map.findWithDefault 0 v holders > 1) values, a) | (k, values, a) <- wanted]
+      (several, rest) = List.partition (\(_, shared, _) -> Set.size shared > 1) tagged
+      (free, single) = List.partition (\(_, shared, _) -> Set.null shared) rest
+      packings used counts pending = case pending of
+        [] -> [(used, counts, [])]
+        (k, shared, a) : more ->
+          [ (used', counts', a : picked)
+          | Set.disjoint shared used,
+            Map.findWithDefault 0 k counts < asked k,
+            (used', counts', picked) <- packings (Set.union shared used) (Map.insertWith (+) k 1 counts) more
+          ]
+            <> packings used counts more
+      complete (used, counts, picked) =
+        let residual k = asked k - Map.findWithDefault 0 k counts
+            freeTaken k = List.genericTake (residual k) [a | (k', _, a) <- free, k' == k]
+            unmet k = residual k - Natural.length (freeTaken k)
+            options = Map.fromListWith (\_ firstSeen -> firstSeen) [((k, v), a) | (k, shared, a) <- single, v <- Set.toList shared, not (Set.member v used)]
+            units = Map.fromList (zip [0 :: Int ..] (concatMap (\k -> List.genericReplicate (unmet k) k) (Map.keys demand)))
+            adjacency k = [v | (k', v) <- Map.keys options, k' == k]
+            matchedTo matching = Maybe.mapMaybe (\(v, unit) -> Map.lookup unit units >>= \k -> Map.lookup (k, v) options) (Map.toList matching)
+         in fmap (\matching -> picked <> concatMap freeTaken (Map.keys demand) <> matchedTo matching) (matchAll (fmap adjacency (Map.elems units)))
+   in Maybe.listToMaybe (Maybe.mapMaybe complete (packings Set.empty Map.empty several))
+
+-- A value for every unit among those it may take, no value taken twice, as
+-- value to unit index, or Nothing where there is none: Kuhn's augmenting
+-- paths.
+matchAll :: (Ord v) => [[v]] -> Maybe (Map v Int)
+matchAll units =
+  let adjacency = Map.fromList (zip [0 :: Int ..] units)
+      augment unit seen matching = go (Map.findWithDefault [] unit adjacency) seen
+        where
+          go options visited = case options of
+            [] -> Left visited
+            v : more
+              | Set.member v visited -> go more visited
+              | otherwise -> case Map.lookup v matching of
+                  Nothing -> Right (Map.insert v unit matching)
+                  Just holder -> case augment holder (Set.insert v visited) matching of
+                    Right matching' -> Right (Map.insert v unit matching')
+                    Left visited' -> go more visited'
+      place matching unit = either (const Nothing) Just (augment unit Set.empty matching)
+   in Monad.foldM place Map.empty (Map.keys adjacency)
 
 -- Every (excluder, excluded) pair of `exclusions` with a slot of `among` named
 -- between its two.
@@ -1473,15 +1571,17 @@ crowdedPairs among slots =
 --     weight;
 --   * a Differing `together` reads only the values a member shares with
 --     another candidate: a value no other holds collides with nothing, so the
---     distinctly named members of a "different names" slot are one class.
+--     distinctly named members of a "different names" slot are one class. A
+--     `matched` slot's (matchedSlots) are read not at all, apartAiming
+--     choosing them after the walk.
 --
 -- Parun.CostSpec's "Synthetic Wide Verdict", "Graceful Takedown", "Behold the
 -- Sinister Six!" and "Scout for Survivors" groups prove the gauge, the
 -- exclusion, the Differing values and the weights.
-jointSignature :: GameState -> (TargetSlot -> Map SlotName Binding.Type.Binding -> Maybe Integer) -> (Map SlotName Binding.Type.Binding -> TargetSlot -> Set Recipient) -> Set SlotName -> Map SlotName TargetSlot -> Map SlotName (Set Recipient) -> Set SlotName -> Recipient -> Either Recipient (Maybe (Zone.Zone, Maybe PlayerId), [Maybe (Set (DifferentIn.DifferentIn, DifferingValue.DifferingValue))], [Integer], [Maybe Integer], [Bool])
-jointSignature gs valueOf legalUnder apart slots sets =
+jointSignature :: GameState -> (TargetSlot -> Map SlotName Binding.Type.Binding -> Maybe Integer) -> (Map SlotName Binding.Type.Binding -> TargetSlot -> Set Recipient) -> Set SlotName -> Set SlotName -> Map SlotName TargetSlot -> Map SlotName (Set Recipient) -> Set SlotName -> Recipient -> Either Recipient (Maybe (Zone.Zone, Maybe PlayerId), [Maybe (Set (DifferentIn.DifferentIn, DifferingValue.DifferingValue))], [Integer], [Maybe Integer], [Bool])
+jointSignature gs valueOf legalUnder apart matched slots sets =
   let declared = Map.keysSet slots
-      referent a = maybe a Recipient.ToObject (Recipient.objectOf a)
+      referent = aimedAt
       gauges = [(reader, slot, gauge) | (reader, slot) <- Map.toList slots, Just (gauge, _) <- [membersGauge declared slots slot]]
       -- Each reader's legal referents at every value its gauge could give it,
       -- built once for every recipient.
@@ -1493,7 +1593,8 @@ jointSignature gs valueOf legalUnder apart slots sets =
         let heldSlots = Map.restrictKeys slots held
             crowded = any (\(a, b) -> Set.member a held && Set.member b held) (crowdedPairs held slots)
             zone = if any ((== Just Together.InOneZone) . TargetSlot.together) heldSlots then zoneHolding gs r else Nothing
-            differing = [fmap (Set.intersection (Map.findWithDefault Set.empty axis sharedOn)) (differingValues axis gs r) | Just (Together.Differing axis) <- fmap TargetSlot.together (Map.elems heldSlots)]
+            shares name axis = if Set.member name matched then Set.empty else Map.findWithDefault Set.empty axis sharedOn
+            differing = [fmap (Set.intersection (shares name axis)) (differingValues axis gs r) | (name, Just (Together.Differing axis)) <- Map.toList (fmap TargetSlot.together heldSlots)]
             weights = [weighing gs weight r | Just (TotalCap.MkTotalCap weight _) <- fmap TargetSlot.total (Map.elems heldSlots)]
             counted = [valueOf slot (Map.singleton gauge (Binding.toRecipients (Set.singleton r))) | (_, slot, gauge) <- gauges, Set.member gauge held]
             legality = [Set.member (referent r) legal | (reader, _, _) <- gauges, Set.member reader held, legal <- Map.findWithDefault [] reader legalAt]
