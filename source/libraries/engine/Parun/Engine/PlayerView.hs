@@ -131,14 +131,14 @@ seatView pid gs seat = do
         SeatView.draftNotes = Player.draftNotes player
       }
 
--- | CR 110.5: an object's status for anyone; its characteristics (as projected,
--- CR 613, with CR 305.7's strip written in) for a seat that may see them,
--- which for a face-down permanent or spell is every seat (CR 708.2); the
--- card behind a face-down object for a
--- seat that may look at it (CR 406.3, 708.5), and beside whichever of the two
--- the seat gets its characteristics under its own static abilities alone; the
--- cards merged under a merged permanent (CR 731.2); the foretell cost it was
--- given with it (CR 702.143e); what an ability came from; what a stack
+-- | CR 110.5: an object's status for anyone; its characteristics (as
+-- projected, CR 613, with CR 305.7's strip written in) for a seat that may see
+-- them, which for a face-down permanent or spell is every seat (CR 708.2); the
+-- card behind a face-down object for a seat that may look at it (CR 406.3,
+-- 708.5), and beside whichever of the two the seat gets its characteristics
+-- under its own static abilities alone; the cards merged under a merged
+-- permanent (CR 731.2); the foretell cost it was given with it (CR
+-- 702.143e); what an ability came from; what a stack
 -- object targets, which CR 601.2c / 602.2b / 603.3d announce to every seat;
 -- and what the object has chosen (CR 607.2d), for a seat that sees it, less a
 -- secret choice to all but its chooser and whoever controls them (CR 724.4).

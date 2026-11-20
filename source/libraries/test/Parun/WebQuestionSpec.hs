@@ -73,9 +73,11 @@ import qualified Parun.Types.Printing as Printing
 import qualified Parun.Types.Prompt as Prompt
 import qualified Parun.Types.Question as Question
 import qualified Parun.Types.Recipient as Recipient
+import qualified Parun.Types.Regenerability as Regenerability
 import qualified Parun.Types.Reply as R
 import qualified Parun.Types.Request as Request
 import qualified Parun.Types.SeatView as SeatView
+import qualified Parun.Types.Settle as Settle
 import qualified Parun.Types.SlotName as SlotName
 import qualified Parun.Types.Stop as Stop
 import qualified Parun.Types.TextWord as TextWord
@@ -306,6 +308,19 @@ spec s registry = Spec.describe s "WebQuestion" $ do
         lookUp name = Right (if name == Face.name (NonEmpty.head (Card.Type.faces (Printing.card lord))) then Just (Printing.card lord) else Nothing) :: Either () (Maybe Card.Type.Card)
         shown = List.find ((== oid) . ObjectView.object) (PlayerView.Type.battlefield (PlayerView.viewFor S.alice gs))
     Spec.assertEqWith s "the sheet" (fmap (Card.oracle lookUp) shown) (Just (Right [Text.pack "({T}: Add {R}.)"]))
+
+  Spec.it s "CR 608.2h / 305.7 a creature land Blood Moon stripped reads as stripped once it has died" $ do
+    -- The sheet of the departed id is built from its last known information
+    -- (Render.recalled), as a log entry naming it opens.
+    lord <- S.printingOf s registry "Lord of Atlantis"
+    ashaya <- S.printingOf s registry "Ashaya, Soul of the Wild"
+    moon <- S.printingOf s registry "Blood Moon"
+    let (oid, gs) = S.addPermanent lord S.alice (snd (S.addPermanent ashaya S.alice (snd (S.addPermanent moon S.bob (Setup.emptyGame S.bothPlayers)))))
+        killed = S.runPure S.identityAnswer gs (Event.destroy Settle.none Regenerability.Regenerable [oid])
+        lookUp name = Right (if name == Face.name (NonEmpty.head (Card.Type.faces (Printing.card lord))) then Just (Printing.card lord) else Nothing) :: Either () (Maybe Card.Type.Card)
+        view = PlayerView.viewFor S.alice killed
+    Spec.assertBool s (List.all ((/= oid) . ObjectView.object) (PlayerView.Type.battlefield view)) "the Lord has left"
+    Spec.assertEqWith s "the sheet" (fmap (Card.oracle lookUp) (Render.recalled view oid)) (Just (Right [Text.pack "({T}: Add {R}.)"]))
 
   Spec.it s "CR 104.3a the turn bar carries the auto-pass level and the settings button, whose concession passes while the seat may" $ do
     let request = requestFor (Setup.emptyGame S.bothPlayers) (Prompt.ChooseAction (Decider.MkDecider S.alice) S.alice [Action.Pass])

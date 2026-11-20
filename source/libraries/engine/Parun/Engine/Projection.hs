@@ -2570,12 +2570,16 @@ liveAfterLayers setEffs oid gs =
             && any (\(src, _, aff) -> affects src oid aff view gs) (appliedSetEffects (textChangeStatics gs) setEffs gs)
         )
 
--- CR 305.7's strip written into `oid`'s finished projection, for a reader that
--- shows the object rather than plays by it (Parun.Engine.PlayerView): the
--- rules-text lists the fold leaves to their readers' gates, liveAfterLayers
--- and permanentParts', emptied where the land lost its rules text. What a
--- granted list holds stays (CR 305.7's "Note"). An ability CR 613.6 keeps
--- applying is gone all the same: the rule keeps its effect, not the ability.
+-- CR 305.7's strip written into `oid`'s finished projection: the rules-text
+-- lists the fold leaves to their readers' gates, liveAfterLayers and
+-- permanentParts', emptied where the land lost its rules text. What a granted
+-- list holds stays (CR 305.7's "Note"). An ability CR 613.6 keeps applying is
+-- gone all the same: the rule keeps its effect, not the ability.
+--
+-- For a record read after the gates are gone: the characteristics a seat is
+-- shown (Parun.Engine.PlayerView) and last known information (CR 608.2h,
+-- Parun.Engine.Event.lastKnownFrom), which a departed object's sheet is
+-- built from.
 withRulesTextStrip :: ObjectId -> GameState -> ProjectedCharacteristics -> ProjectedCharacteristics
 withRulesTextStrip oid gs pc
   | null setEffs || liveAfterLayers setEffs oid gs = pc
