@@ -36,6 +36,7 @@ data ObjectView = MkObjectView
     damage :: Natural.Natural,
     counters :: Map.Map (CounterKind.CounterKind Keyword.Keyword) Natural.Natural,
     attachedTo :: Maybe Recipient.Recipient,
+    -- | CR 613 / 305.7: its characteristics as projected, a land's stripped rules text emptied from every list (Parun.Engine.Projection.withRulesTextStrip).
     characteristics :: Maybe ProjectedCharacteristics.ProjectedCharacteristics,
     -- | CR 406.3 / 708.5: the card a face-down object is, for a seat that may look at it.
     face :: Maybe ProjectedCharacteristics.ProjectedCharacteristics,

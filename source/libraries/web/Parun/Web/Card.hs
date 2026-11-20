@@ -346,13 +346,6 @@ wording own c face
     -- What `current` leaves out.
     extras p = (ProjectedCharacteristics.lentKeywords p, ProjectedCharacteristics.grantedSpendManaAsThough p, ProjectedCharacteristics.characteristicPT p)
     intrinsic t = Text.pack "({T}: Add {" <> Oracle.Cost.manaType t <> Text.pack "}.)"
-    -- The lists no layer writes (Parun.Types.ProjectedCharacteristics), which
-    -- hold the printed text even where CR 305.7 strips it outside the fold.
-    unwritten =
-      not (null (ProjectedCharacteristics.staticAbilities c))
-        || not (null (ProjectedCharacteristics.playerAbilities c))
-        || ProjectedCharacteristics.ruleAbilities c /= mempty
-        || not (null (ProjectedCharacteristics.specialActions c))
     unworded =
       -- What no face field holds.
       not (null (ProjectedCharacteristics.lentKeywords c))
@@ -360,10 +353,6 @@ wording own c face
         -- A characteristic-defining P/T other than the printed one, which
         -- the projection holds with its star already substituted.
         || maybe False (\pt -> Just pt /= Projection.View.seedCharacteristicPT face) (ProjectedCharacteristics.characteristicPT c)
-        -- A land whose basic land types changed may have lost the text the
-        -- unwritten lists hold, which the projection doesn't record: not
-        -- implemented (#8957).
-        || (intrinsicNow /= intrinsicBaseline && not (ProjectedCharacteristics.lostAllAbilities c) && unwritten)
 
 -- | The face with the abilities `c` gives the object written over its own
 -- (CR 613.1f): the lists the layers write as they stand, the lists no layer

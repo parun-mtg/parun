@@ -12078,7 +12078,8 @@ lastKnownFrom gs oid obj =
     -- CR 701.15b's goaded, per-incarnation (CR 400.7) like the designations.
     (Object.goadedBy obj)
   where
-    characteristics = Projection.project oid gs
+    -- CR 305.7's strip written in, so the record says what the land had.
+    characteristics = Projection.withRulesTextStrip oid gs (Projection.project oid gs)
 
 -- | An object leaves the GAME rather than a zone -- CR 800.4a's first clause,
 -- or CR 730.4a's crossing into a subgame -- at the instant `asOf` describes,
