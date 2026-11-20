@@ -202,7 +202,7 @@ inScopeWithin source reach pid controller gs scope = case scope of
   PlayerScope.InRole role -> List.elem pid (Turn.roleHolders role gs)
   PlayerScope.ChosenPlayer -> (source >>= \oid -> Game.currentChoice Chosen.Players oid gs >>= Map.lookup PlayerChoice.AsEntersOrTransforms) == Just pid
   PlayerScope.SourceOwner -> (source >>= \oid -> fmap Object.owner (Game.lookupObject oid gs)) == Just pid
-  PlayerScope.EnchantedPlayer -> (source >>= \oid -> Projection.enchantedPlayerOf oid gs) == Just pid
+  PlayerScope.EnchantedPlayer -> (source >>= \oid -> Game.enchantedPlayerOf oid gs) == Just pid
   PlayerScope.AttackedYou during kinds -> Game.attacked gs during kinds pid controller
 
 -- The same question over a CARRIER's affected set rather than over a bare scope:

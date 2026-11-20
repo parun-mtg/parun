@@ -1,0 +1,47 @@
+{
+  "description": "CR 303.4b / 508.1b Curse of Hospitality: only creatures attacking the enchanted player have trample, and the creature that hit her lets its controller play her top card with mana of any colour",
+  "note": "Bob's Curse enchants carol. Alice attacks carol with one Grizzly Bears and dave with the other: only carol's attacker has trample, which a reading of the attacked player against bob (\"an opponent\") would give both, and before attacking neither has it. Carol's top card, Flying Men, is exiled; alice, the creature's controller and not bob, casts it off a Mountain. Dave's library is untouched.",
+  "board": {
+    "active": "alice",
+    "step": "BeginningOfCombat",
+    "seats": [
+      {
+        "name": "alice",
+        "battlefield": [
+          { "card": "Grizzly Bears", "label": "tocarol", "ready": true },
+          { "card": "Grizzly Bears", "label": "todave", "ready": true },
+          { "card": "Mountain", "label": "mountain" }
+        ],
+        "library": [{ "card": "Forest" }, { "card": "Forest" }]
+      },
+      {
+        "name": "bob",
+        "battlefield": [{ "card": "Curse of Hospitality", "label": "curse", "attached": "carol" }],
+        "library": [{ "card": "Plains" }, { "card": "Plains" }]
+      },
+      {
+        "name": "carol",
+        "library": [{ "card": "Flying Men" }, { "card": "Island" }]
+      },
+      {
+        "name": "dave",
+        "library": [{ "card": "Swamp" }, { "card": "Swamp" }]
+      }
+    ]
+  },
+  "timeline": [
+    { "turn": 1, "step": "BeginningOfCombat", "player": "alice", "check": { "Keywords": { "object": "$tocarol", "keyword": { "type": "Trample" }, "count": 0 } } },
+    { "turn": 1, "step": "DeclareAttackers", "player": "alice", "do": { "Attack": ["$tocarol", "$todave"] } },
+    { "turn": 1, "step": "DeclareAttackers", "player": "alice", "source": "$tocarol", "do": { "ChooseAttackTarget": "$carol" } },
+    { "turn": 1, "step": "DeclareAttackers", "player": "alice", "source": "$todave", "do": { "ChooseAttackTarget": "$dave" } },
+    { "turn": 1, "step": "DeclareAttackers", "player": "alice", "check": { "Keywords": { "object": "$tocarol", "keyword": { "type": "Trample" }, "count": 1 } } },
+    { "turn": 1, "step": "DeclareAttackers", "player": "alice", "check": { "Keywords": { "object": "$todave", "keyword": { "type": "Trample" }, "count": 0 } } },
+    { "turn": 1, "step": "EndOfCombat", "player": "alice", "check": { "Life": { "player": "carol", "life": 18 } } },
+    { "turn": 1, "step": "EndOfCombat", "player": "alice", "check": { "Life": { "player": "dave", "life": 18 } } },
+    { "turn": 1, "step": "EndOfCombat", "player": "alice", "check": { "Count": { "player": "carol", "zone": "Exile", "card": "Flying Men", "count": 1 } } },
+    { "turn": 1, "step": "EndOfCombat", "player": "alice", "check": { "Count": { "player": "dave", "zone": "Exile", "card": "Swamp", "count": 0 } } },
+    { "turn": 1, "step": "PostcombatMain", "player": "alice", "do": { "Cast": { "object": "Flying Men", "mana": ["$mountain"] } } },
+    { "turn": 1, "step": "PostcombatMain", "player": "alice", "do": "Pass" },
+    { "turn": 1, "step": "PostcombatMain", "player": "alice", "check": { "Count": { "player": "alice", "zone": "Battlefield", "card": "Flying Men", "count": 1 } } }
+  ]
+}

@@ -16,6 +16,7 @@ import qualified Parun.Codec.CardType as CardType
 import qualified Parun.Codec.ChoiceOrdinal as ChoiceOrdinal
 import qualified Parun.Codec.Color as Color
 import qualified Parun.Codec.ControlMargin as ControlMargin
+import qualified Parun.Codec.ControllerRelation as ControllerRelation
 import qualified Parun.Codec.CounterKind as CounterKind
 import qualified Parun.Codec.CounterLinked as CounterLinked
 import qualified Parun.Codec.CounterMotion as CounterMotion
@@ -151,7 +152,7 @@ codec keywordCodec =
       Arm.payload "OfSpecificPlayer" PlayerId.codec Filter.OfSpecificPlayer (\x -> case x of Filter.OfSpecificPlayer y -> Just y; _ -> Nothing),
       Arm.payload "OfBoundPlayer" SlotName.codec Filter.OfBoundPlayer (\x -> case x of Filter.OfBoundPlayer y -> Just y; _ -> Nothing),
       Arm.optionalPayload "IsAttacking" AloneAmong.codec Filter.IsAttacking (\x -> case x of Filter.IsAttacking y -> Just y; _ -> Nothing),
-      Arm.payload "IsAttackingPlayer" PlayerRelation.codec Filter.IsAttackingPlayer (\x -> case x of Filter.IsAttackingPlayer y -> Just y; _ -> Nothing),
+      Arm.payload "IsAttackingPlayer" ControllerRelation.codec Filter.IsAttackingPlayer (\x -> case x of Filter.IsAttackingPlayer y -> Just y; _ -> Nothing),
       Arm.payload "IsAttackingPlaneswalker" PlayerRelation.codec Filter.IsAttackingPlaneswalker (\x -> case x of Filter.IsAttackingPlaneswalker y -> Just y; _ -> Nothing),
       Arm.payload "IsAttackingBattle" PlayerRelation.codec Filter.IsAttackingBattle (\x -> case x of Filter.IsAttackingBattle y -> Just y; _ -> Nothing),
       Arm.optionalPayload "DeclaredAttackedThisCombat" SlotName.codec Filter.DeclaredAttackedThisCombat (\x -> case x of Filter.DeclaredAttackedThisCombat y -> Just y; _ -> Nothing),

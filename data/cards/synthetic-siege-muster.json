@@ -169,7 +169,9 @@
               "soldierBlocked": {
                 "filter": {
                   "type": "IsAttackingPlayer",
-                  "value": "You"
+                  "value": {
+                    "type": "You"
+                  }
                 },
                 "pool": {
                   "type": "Creatures"
@@ -231,7 +233,9 @@
               "battleBlocked": {
                 "filter": {
                   "type": "IsAttackingPlayer",
-                  "value": "You"
+                  "value": {
+                    "type": "You"
+                  }
                 },
                 "pool": {
                   "type": "Creatures"

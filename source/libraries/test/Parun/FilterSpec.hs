@@ -23,6 +23,7 @@ import qualified Parun.Types.CastOrigin as CastOrigin
 import qualified Parun.Types.Color as Color
 import qualified Parun.Types.Comparison as Comparison
 import qualified Parun.Types.ControlMargin as ControlMargin
+import qualified Parun.Types.ControllerRelation as ControllerRelation
 import qualified Parun.Types.Cost as Cost
 import qualified Parun.Types.CostAmount as CostAmount
 import qualified Parun.Types.CostComponent as CostComponent
@@ -1694,7 +1695,7 @@ spec s = Spec.describe s "Parun.Engine.Filter" $ do
             }
 
     Spec.it s "matches a creature attacking the perspective" $ do
-      Spec.assertBool s (Filter.matches self (attackingPlayer 0) (Filter.Type.IsAttackingPlayer PlayerRelation.You)) "attacking you"
+      Spec.assertBool s (Filter.matches self (attackingPlayer 0) (Filter.Type.IsAttackingPlayer (ControllerRelation.Related PlayerRelation.You))) "attacking you"
 
     -- The whole point of the atom: CR 509.1a and CR 802.4a keep "attacking that
     -- player" apart from "attacking a planeswalker they control", so a creature
@@ -1702,31 +1703,41 @@ spec s = Spec.describe s "Parun.Engine.Filter" $ do
     -- You. Reaching for CR 508.5's defending player (Parun.Engine.Defender) here
     -- would answer the first assertion the other way.
     Spec.it s "does not match a creature attacking something other than a player" $ do
-      Spec.assertBool s (not (Filter.matches self attackingPlaneswalker (Filter.Type.IsAttackingPlayer PlayerRelation.You))) "attacking a planeswalker is not attacking you"
-      Spec.assertBool s (not (Filter.matches self attackingPlaneswalker (Filter.Type.IsAttackingPlayer PlayerRelation.Opponent))) "nor attacking an opponent"
+      Spec.assertBool s (not (Filter.matches self attackingPlaneswalker (Filter.Type.IsAttackingPlayer (ControllerRelation.Related PlayerRelation.You)))) "attacking a planeswalker is not attacking you"
+      Spec.assertBool s (not (Filter.matches self attackingPlaneswalker (Filter.Type.IsAttackingPlayer (ControllerRelation.Related PlayerRelation.Opponent)))) "nor attacking an opponent"
       Spec.assertBool s (Filter.matches self attackingPlaneswalker (Filter.Type.IsAttacking Nothing)) "but it is still attacking"
 
     -- CR 109.5: the relation is measured against the perspective, so one board
     -- answers both ways depending on who asks. `self` is player 0.
     Spec.it s "reads the relation against the perspective" $ do
-      Spec.assertBool s (not (Filter.matches self (attackingPlayer 1) (Filter.Type.IsAttackingPlayer PlayerRelation.You))) "attacking someone else is not attacking you"
-      Spec.assertBool s (Filter.matches self (attackingPlayer 1) (Filter.Type.IsAttackingPlayer PlayerRelation.Opponent)) "it is attacking an opponent"
+      Spec.assertBool s (not (Filter.matches self (attackingPlayer 1) (Filter.Type.IsAttackingPlayer (ControllerRelation.Related PlayerRelation.You)))) "attacking someone else is not attacking you"
+      Spec.assertBool s (Filter.matches self (attackingPlayer 1) (Filter.Type.IsAttackingPlayer (ControllerRelation.Related PlayerRelation.Opponent))) "it is attacking an opponent"
 
     -- HeldBy's posture, and demanded even of AnyPlayer for its reason: a
     -- match nothing framed has no CR 109.5 "you" to relate the attacked player
     -- to, and answering off the one relation that does not read one would make
     -- the atom mean different things by relation.
     Spec.it s "is vacuously false with no perspective" $ do
-      Spec.assertBool s (not (Filter.matches noPerspective (attackingPlayer 0) (Filter.Type.IsAttackingPlayer PlayerRelation.AnyPlayer))) "no perspective"
+      Spec.assertBool s (not (Filter.matches noPerspective (attackingPlayer 0) (Filter.Type.IsAttackingPlayer (ControllerRelation.Related PlayerRelation.AnyPlayer)))) "no perspective"
 
     Spec.it s "does not match a creature in no combat" $ do
-      Spec.assertBool s (not (Filter.matches self blackCreature (Filter.Type.IsAttackingPlayer PlayerRelation.AnyPlayer))) "not attacking"
+      Spec.assertBool s (not (Filter.matches self blackCreature (Filter.Type.IsAttackingPlayer (ControllerRelation.Related PlayerRelation.AnyPlayer)))) "not attacking"
 
     -- CR 506.3: a player attacks nothing, so Parun.Engine.Filter.playerView leaves
     -- the field Nothing and this is vacuously false for a player candidate, as
     -- IsAttacking is.
     Spec.it s "a player candidate is vacuously false" $ do
-      Spec.assertBool s (not (Filter.matches self aPlayer (Filter.Type.IsAttackingPlayer PlayerRelation.AnyPlayer))) "player"
+      Spec.assertBool s (not (Filter.matches self aPlayer (Filter.Type.IsAttackingPlayer (ControllerRelation.Related PlayerRelation.AnyPlayer)))) "player"
+
+    -- CR 303.4b: EnchantedPlayers reads the player the context's source
+    -- enchants, not the perspective; unfilled, it names nobody.
+    Spec.it s "EnchantedPlayers reads the source's enchanted player" $ do
+      let enchanting n = self {Filter.sourceEnchantedPlayer = Just (PlayerId.MkPlayerId n)}
+          atom = Filter.Type.IsAttackingPlayer ControllerRelation.EnchantedPlayers
+      Spec.assertBool s (Filter.matches (enchanting 1) (attackingPlayer 1) atom) "attacking the enchanted player"
+      Spec.assertBool s (not (Filter.matches (enchanting 2) (attackingPlayer 1) atom)) "attacking another player"
+      Spec.assertBool s (not (Filter.matches self (attackingPlayer 1) atom)) "no enchanted player in the context"
+      Spec.assertBool s (not (Filter.matches (enchanting 0) attackingPlaneswalker atom)) "attacking the enchanted player's planeswalker"
 
   Spec.describe s "IsAttackingPlaneswalker" $ do
     -- CR 508.1b's second subject: attacking, attacking no PLAYER, and the

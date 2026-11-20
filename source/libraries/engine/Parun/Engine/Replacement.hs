@@ -1701,7 +1701,7 @@ matchesPutter gs candidate subject cause = case (subject, cause) of
 relationHolds :: GameState -> ReplacementCandidate -> ControllerRelation -> Maybe PlayerId -> Bool
 relationHolds gs candidate rel theirs = case rel of
   ControllerRelation.Related relation -> PlayerRelation.holdsFor (Game.teams gs) relation (ReplacementCandidate.controller candidate) theirs
-  ControllerRelation.EnchantedPlayers -> Maybe.isJust theirs && Projection.enchantedPlayerOf (ReplacementCandidate.source candidate) gs == theirs
+  ControllerRelation.EnchantedPlayers -> Maybe.isJust theirs && Game.enchantedPlayerOf (ReplacementCandidate.source candidate) gs == theirs
   -- An InSlot the install never baked names nobody: a printed row has no
   -- resolution whose slots it could read.
   ControllerRelation.InSlot _ -> False
@@ -1856,7 +1856,7 @@ matchesRecipientPlayer gs context de rel = case Recipient.playerOf (DamageEvent.
   Nothing -> False
   Just pid -> case rel of
     ControllerRelation.Related relation -> PlayerRelation.holdsFor (Filter.teams context) relation (Filter.perspective context) (Just pid)
-    ControllerRelation.EnchantedPlayers -> (Filter.source context >>= (`Projection.enchantedPlayerOf` gs)) == Just pid
+    ControllerRelation.EnchantedPlayers -> (Filter.source context >>= (`Game.enchantedPlayerOf` gs)) == Just pid
     ControllerRelation.InSlot _ -> False
     ControllerRelation.Among players -> Set.member pid players
 

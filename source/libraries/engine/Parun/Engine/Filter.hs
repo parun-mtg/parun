@@ -42,6 +42,7 @@ import qualified Parun.Types.ClassLevel as ClassLevel
 import qualified Parun.Types.Color as Color
 import qualified Parun.Types.Comparison as Comparison
 import qualified Parun.Types.ControllerGrant as ControllerGrant
+import qualified Parun.Types.ControllerRelation as ControllerRelation
 import qualified Parun.Types.Cost as Cost
 import qualified Parun.Types.CostComponent as CostComponent
 import qualified Parun.Types.CounterKind as CounterKind
@@ -1763,6 +1764,14 @@ data Context = MkContext
     -- the positions read through a bare contextFor is Parun.FilterPositionLintSpec's
     -- "CR 303.4b no card asks IsHostOfSource where the source's host is unknown".
     sourceAttachedTo :: Maybe ObjectId.ObjectId,
+    -- CR 303.4b's "enchanted player": WHICH player the SOURCE is attached to, for
+    -- IsAttackingPlayer EnchantedPlayers; sourceAttachedTo's other destination.
+    -- Filled beside it by Parun.Engine.SourceContext, live off the board: a
+    -- source that has left enchants nobody (Replacement.relationHolds' reading).
+    -- Nothing in contextFor, where the atom answers False; Parun.FilterPositionLintSpec's
+    -- "CR 303.4b no card asks IsAttackingPlayer of a player the filter cannot
+    -- read" keeps a card out of those positions.
+    sourceEnchantedPlayer :: Maybe PlayerId.PlayerId,
     -- The object the surrounding Quantity is evaluated against, which
     -- IsAttachedTo Evaluated compares a candidate's host with and IsEvaluated the
     -- candidate itself. Filled by Parun.Engine.Quantity's Count and
@@ -2086,7 +2095,7 @@ data Context = MkContext
 -- here owes both halves of the same pair: which way its unfilled read answers,
 -- and what holds a card to the positions that fill it.
 contextFor :: Teams.Teams -> Maybe PlayerId.PlayerId -> Maybe ObjectId.ObjectId -> Context
-contextFor t p s = MkContext {teams = t, perspective = p, source = s, sourceMeasures = Map.empty, sourceColors = Set.empty, sourceSectors = Set.empty, sourceNames = Set.empty, sourceDealtDamage = Set.empty, sourceDealtDamageEarlier = Set.empty, sourceCrewed = Set.empty, sourceBefore = Nothing, slotAmount = Nothing, defendingPlayers = [], activePlayers = [], recipient = Nothing, shares = Map.empty, slotObjects = Map.empty, cantPayKeywordCost = Map.empty, slotNames = Map.empty, slotControllers = Map.empty, slotHostControllers = Map.empty, subjectHostCardTypes = Set.empty, slotCreatureTypes = Map.empty, slotCardTypes = Map.empty, slotColors = Map.empty, slotMeasures = Map.empty, slotPlayers = Map.empty, boundAmounts = Map.empty, slotStickers = Map.empty, slotVotes = Map.empty, boundUnannounced = False, sourceAttachedTo = Nothing, evaluated = Nothing, evaluatedView = Nothing, commanderCreatureTypes = Set.empty, sourceEntrants = Set.empty, sourceCountered = Map.empty, sourceOwner = Nothing, sourceChosenNames = Map.empty, carrierChosenPlayer = Nothing, carrierStickers = Seq.empty, aimingController = Nothing, sourceChosenColors = Set.empty, draftNotes = Map.empty, exiledBeforeGame = Map.empty, playerCounters = Map.empty, sourceChosenSubtype = Nothing, sourceChosenCardType = Nothing, sourceChosenNumber = Nothing, sourceChosenObjects = Set.empty, sourceLastExiled = Nothing, sourceExiled = Map.empty, sourceAcquisition = Nothing, reader = Nothing, candidateMeasures = Nothing, battlefieldViews = Seq.empty, zeroMissingPowerToughness = False, asCast = const (Just 0)}
+contextFor t p s = MkContext {teams = t, perspective = p, source = s, sourceMeasures = Map.empty, sourceColors = Set.empty, sourceSectors = Set.empty, sourceNames = Set.empty, sourceDealtDamage = Set.empty, sourceDealtDamageEarlier = Set.empty, sourceCrewed = Set.empty, sourceBefore = Nothing, slotAmount = Nothing, defendingPlayers = [], activePlayers = [], recipient = Nothing, shares = Map.empty, slotObjects = Map.empty, cantPayKeywordCost = Map.empty, slotNames = Map.empty, slotControllers = Map.empty, slotHostControllers = Map.empty, subjectHostCardTypes = Set.empty, slotCreatureTypes = Map.empty, slotCardTypes = Map.empty, slotColors = Map.empty, slotMeasures = Map.empty, slotPlayers = Map.empty, boundAmounts = Map.empty, slotStickers = Map.empty, slotVotes = Map.empty, boundUnannounced = False, sourceAttachedTo = Nothing, sourceEnchantedPlayer = Nothing, evaluated = Nothing, evaluatedView = Nothing, commanderCreatureTypes = Set.empty, sourceEntrants = Set.empty, sourceCountered = Map.empty, sourceOwner = Nothing, sourceChosenNames = Map.empty, carrierChosenPlayer = Nothing, carrierStickers = Seq.empty, aimingController = Nothing, sourceChosenColors = Set.empty, draftNotes = Map.empty, exiledBeforeGame = Map.empty, playerCounters = Map.empty, sourceChosenSubtype = Nothing, sourceChosenCardType = Nothing, sourceChosenNumber = Nothing, sourceChosenObjects = Set.empty, sourceLastExiled = Nothing, sourceExiled = Map.empty, sourceAcquisition = Nothing, reader = Nothing, candidateMeasures = Nothing, battlefieldViews = Seq.empty, zeroMissingPowerToughness = False, asCast = const (Just 0)}
 
 -- contextFor over a game: its teams (CR 102.4), its active players (CR 102.1,
 -- 805.4a), its draft notes (CR 905.2b), what was exiled before it (CR
@@ -2813,9 +2822,20 @@ matches context view predicate = case predicate of
   -- Vacuously False where either half is unreadable, HeldBy's posture: a
   -- candidate attacking nothing, or attacking a planeswalker or a battle, has no
   -- player to relate, and a match nothing framed has no "you" to relate it to.
-  Filter.IsAttackingPlayer relation -> case (attackingPlayer view, perspective context) of
-    (Just a, Just p) -> PlayerRelation.holds (teams context) relation p a
-    _ -> False
+  --
+  -- CR 303.4b's enchanted player is read off the context's source, as
+  -- IsHostOfSource's host is.
+  --
+  -- Unprinted: an InSlot or Among relation, a resolution's players, which no
+  -- filter here is baked with, so both admit nobody. Parun.FilterPositionLintSpec's
+  -- "CR 303.4b no card asks IsAttackingPlayer of a player the filter cannot
+  -- read" rejects either.
+  Filter.IsAttackingPlayer rel -> case (attackingPlayer view, rel) of
+    (Nothing, _) -> False
+    (Just a, ControllerRelation.Related relation) -> maybe False (\p -> PlayerRelation.holds (teams context) relation p a) (perspective context)
+    (Just a, ControllerRelation.EnchantedPlayers) -> sourceEnchantedPlayer context == Just a
+    (Just _, ControllerRelation.InSlot _) -> False
+    (Just _, ControllerRelation.Among _) -> False
   -- CR 508.1b: the atom above one arm of AttackTarget over, and the same posture
   -- in every respect -- the relation is answered against the perspective here, and
   -- either half being unreadable is vacuously False.

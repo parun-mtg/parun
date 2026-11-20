@@ -22,6 +22,7 @@ import qualified Parun.Types.ChoiceOrdinal as ChoiceOrdinal
 import qualified Parun.Types.Color as Color
 import qualified Parun.Types.Comparison as Comparison
 import qualified Parun.Types.ControlMargin as ControlMargin
+import qualified Parun.Types.ControllerRelation as ControllerRelation
 import qualified Parun.Types.CounterKind as CounterKind
 import qualified Parun.Types.CounterLinked as CounterLinked
 import qualified Parun.Types.CounterMotion as CounterMotion
@@ -421,8 +422,14 @@ spec s = Spec.describe s "Parun.Codec.Filter" $ do
     Common.assertCodec
       s
       codec
-      (Filter.IsAttackingPlayer PlayerRelation.You)
-      " {\"type\":\"IsAttackingPlayer\",\"value\":\"You\"} "
+      (Filter.IsAttackingPlayer (ControllerRelation.Related PlayerRelation.You))
+      " {\"type\":\"IsAttackingPlayer\",\"value\":{\"type\":\"You\"}} "
+  Spec.it s "IsAttackingPlayer EnchantedPlayers" $
+    Common.assertCodec
+      s
+      codec
+      (Filter.IsAttackingPlayer ControllerRelation.EnchantedPlayers)
+      " {\"type\":\"IsAttackingPlayer\",\"value\":{\"type\":\"EnchantedPlayers\"}} "
   Spec.it s "IsAttackingPlaneswalker" $
     Common.assertCodec
       s
@@ -1022,12 +1029,12 @@ spec s = Spec.describe s "Parun.Codec.Filter" $ do
         isSource = Filter.IsSource
         ravenousRats = Filter.IsPlayer PlayerRelation.Opponent
         killShot = Filter.IsAttacking Nothing
-        flashFoliage = Filter.IsAttackingPlayer PlayerRelation.You
+        flashFoliage = Filter.IsAttackingPlayer (ControllerRelation.Related PlayerRelation.You)
         -- Soul Snare's whole target filter, the composite the new atom ships in.
-        soulSnare = Filter.Or [Filter.IsAttackingPlayer PlayerRelation.You, Filter.IsAttackingPlaneswalker PlayerRelation.You]
+        soulSnare = Filter.Or [Filter.IsAttackingPlayer (ControllerRelation.Related PlayerRelation.You), Filter.IsAttackingPlaneswalker PlayerRelation.You]
         -- Synthetic Bulwark Snare's whole target filter, the composite this atom
         -- ships in.
-        bulwarkSnare = Filter.Or [Filter.IsAttackingPlayer PlayerRelation.You, Filter.IsAttackingBattle PlayerRelation.You]
+        bulwarkSnare = Filter.Or [Filter.IsAttackingPlayer (ControllerRelation.Related PlayerRelation.You), Filter.IsAttackingBattle PlayerRelation.You]
         relentlessAssault = Filter.DeclaredThisTurn (DeclaredRole.Attacked Nothing)
         -- Break Open's whole target filter, the composite the new atom actually
         -- ships in.

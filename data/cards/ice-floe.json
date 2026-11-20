@@ -103,7 +103,9 @@
                         },
                         {
                           "type": "IsAttackingPlayer",
-                          "value": "You"
+                          "value": {
+                            "type": "You"
+                          }
                         }
                       ]
                     },
