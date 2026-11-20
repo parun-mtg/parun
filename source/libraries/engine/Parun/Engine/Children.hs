@@ -220,6 +220,7 @@ import qualified Parun.Types.EachCardFromAmong as EachCardFromAmong
 import qualified Parun.Types.EachCardInExiledPile as EachCardInExiledPile
 import qualified Parun.Types.EachCardInGraveyard as EachCardInGraveyard
 import qualified Parun.Types.EachCardInHand as EachCardInHand
+import qualified Parun.Types.EachKind as EachKind
 import qualified Parun.Types.Earthbend as Earthbend
 import qualified Parun.Types.Effect as Effect
 import qualified Parun.Types.Emerge as Emerge
@@ -1333,7 +1334,7 @@ effectChildren c effect = case effect of
   Effect.Proliferate targeted -> fmap Effect.Proliferate (traverse anotherCounter targeted)
     where
       anotherCounter x = case x of
-        AnotherCounter.EachKind named -> AnotherCounter.EachKind <$> onSlot c named
+        AnotherCounter.EachKind (EachKind.MkEachKind named step) -> AnotherCounter.EachKind . (`EachKind.MkEachKind` step) <$> onSlot c named
         AnotherCounter.ChosenKind named -> AnotherCounter.ChosenKind <$> onSlot c named
   Effect.ChooseCardName (ChooseCardName.MkChooseCardName who restriction among selection) ->
     fmap Effect.ChooseCardName (ChooseCardName.MkChooseCardName <$> onPlayer c who <*> onFilter c restriction <*> traverse (onSlot c) among <*> pure selection)

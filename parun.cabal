@@ -844,6 +844,8 @@ library codec
     Parun.Codec.EachCardInGraveyardSpec
     Parun.Codec.EachCardInHand
     Parun.Codec.EachCardInHandSpec
+    Parun.Codec.EachKind
+    Parun.Codec.EachKindSpec
     Parun.Codec.Earthbend
     Parun.Codec.Effect
     Parun.Codec.EffectSpec
@@ -1094,6 +1096,8 @@ library codec
     Parun.Codec.KeywordsAreSpec
     Parun.Codec.KeywordSpec
     Parun.Codec.KeywordTally
+    Parun.Codec.KindStep
+    Parun.Codec.KindStepSpec
     Parun.Codec.Label
     Parun.Codec.LabelSpec
     Parun.Codec.LandAllowance
@@ -3283,6 +3287,7 @@ library types
     Parun.Types.EachCardInExiledPile
     Parun.Types.EachCardInGraveyard
     Parun.Types.EachCardInHand
+    Parun.Types.EachKind
     Parun.Types.Earthbend
     Parun.Types.Effect
     Parun.Types.Emerge
@@ -3434,6 +3439,7 @@ library types
     Parun.Types.KeywordsAre
     Parun.Types.KeywordTally
     Parun.Types.KickerDecision
+    Parun.Types.KindStep
     Parun.Types.Label
     Parun.Types.LandAllowance
     Parun.Types.LandOrNonland

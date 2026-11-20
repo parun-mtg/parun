@@ -384,6 +384,7 @@ import qualified Parun.Codec.EachCardFromAmongSpec
 import qualified Parun.Codec.EachCardInExiledPileSpec
 import qualified Parun.Codec.EachCardInGraveyardSpec
 import qualified Parun.Codec.EachCardInHandSpec
+import qualified Parun.Codec.EachKindSpec
 import qualified Parun.Codec.EffectSpec
 import qualified Parun.Codec.EmergeSpec
 import qualified Parun.Codec.EmperorsSpec
@@ -504,6 +505,7 @@ import qualified Parun.Codec.KeywordInstanceSpec
 import qualified Parun.Codec.KeywordRiderGrantSpec
 import qualified Parun.Codec.KeywordSpec
 import qualified Parun.Codec.KeywordsAreSpec
+import qualified Parun.Codec.KindStepSpec
 import qualified Parun.Codec.LabelSpec
 import qualified Parun.Codec.LandAllowanceSpec
 import qualified Parun.Codec.LandPlayedSpec
@@ -1213,6 +1215,8 @@ spec s reference corpus = do
   Parun.Codec.AffectedUnlessSpec.spec s
   Parun.Codec.AnchorSpec.spec s
   Parun.Codec.AnotherCounterSpec.spec s
+  Parun.Codec.EachKindSpec.spec s
+  Parun.Codec.KindStepSpec.spec s
   Parun.Codec.AloneAmongSpec.spec s
   Parun.Codec.AloneUnlessSpec.spec s
   Parun.Codec.AffectPlayersSpec.spec s
