@@ -2490,7 +2490,8 @@ filterPositionLintSpec s registry corpus = Spec.describe s "Lint" $ do
         ("Clement, the Worrywort", 1),
         ("Invasion of Lorwyn", 1),
         ("Invasion of New Phyrexia", 1),
-        ("Go-Shintai of Hidden Cruelty", 1)
+        ("Go-Shintai of Hidden Cruelty", 1),
+        ("Scrap Welder", 1)
       ]
     -- The rejected side, which the sweep above cannot show while the pool has no
     -- offender: the SAME atom, buried under all three combinators, in a target
