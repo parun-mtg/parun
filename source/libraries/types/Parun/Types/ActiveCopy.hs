@@ -69,6 +69,10 @@ data ActiveCopy = MkActiveCopy
     -- | CR 731.2i: `snapshot` with that merge's double-faced components turned
     -- over, which Parun.Engine.Game.turnFaceOver swaps in; Nothing where turning
     -- changes nothing.
-    turned :: Maybe ProjectedCharacteristics.ProjectedCharacteristics
+    turned :: Maybe ProjectedCharacteristics.ProjectedCharacteristics,
+    -- | CR 731.2f: `snapshot` with that merge's face-down components turned
+    -- face up, which Parun.Engine.Game.turnFacing swaps in; Nothing where it
+    -- changes nothing.
+    up :: Maybe ProjectedCharacteristics.ProjectedCharacteristics
   }
   deriving (Eq, Ord, Show)

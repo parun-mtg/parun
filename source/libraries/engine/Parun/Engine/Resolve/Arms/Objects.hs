@@ -647,7 +647,8 @@ becomeCopy resolving source controller legal chosen (BecomeCopy.MkBecomeCopy ori
                             ActiveCopy.expiry = expiry,
                             ActiveCopy.covers = CopyCoverage.These oids,
                             ActiveCopy.snapshot = pc,
-                            ActiveCopy.turned = Nothing
+                            ActiveCopy.turned = Nothing,
+                            ActiveCopy.up = Nothing
                           }
                       rows = fmap row . Map.toList . Map.fromListWith Set.union $ fmap (\subject -> (snapshotFor subject, Set.singleton subject)) subjects
                    in acquire gs1 {GameState.stored = (GameState.stored gs1) {StoredEffects.copyEffects = rows <> StoredEffects.copyEffects (GameState.stored gs1)}}

@@ -2312,7 +2312,7 @@ turnFacing facing oid gs =
       restamps = Set.member oid (GameState.battlefield gs) || (Set.member oid (GameState.command gs) && facing == Facing.FaceUp)
       next = if restamps then stamped else gs
       adjust o = (withFacing facing o) {Object.timestamp = if restamps then ts else Object.timestamp o}
-      turned = next {GameState.objects = Map.adjust adjust oid (GameState.objects next)}
+      turned = (unstashStoredCopies oid next) {GameState.objects = Map.adjust adjust oid (GameState.objects next)}
    in if restamps then restampStickers oid turned else turned
 
 -- CR 731.2f: `object` showing `facing`, and for a merged permanent
@@ -2443,6 +2443,21 @@ turnStoredCopies oid gs =
         Just turned | copyCovers gs oid row -> row {ActiveCopy.snapshot = turned, ActiveCopy.turned = Just (ActiveCopy.snapshot row)}
         _ -> row
    in gs {GameState.stored = (GameState.stored gs) {StoredEffects.copyEffects = fmap turn (StoredEffects.copyEffects (GameState.stored gs))}}
+
+-- CR 731.2f under a stored copy row: a merge applied over the row turns its
+-- face-down components up with the permanent, so each row covering `oid` that
+-- carries a face-up reading swaps it in, `Binding.unstashMergeCopy`'s swap one
+-- carrier over, the turned reading with it for that function's reason. Only a
+-- merge writes that reading (Parun.Engine.Event.merge), on a row carved out for
+-- its permanent alone. data/scenarios/mutate's "CR 731.2f a pile under
+-- Mirrorweave's copy gains its face-down component's abilities on its turn"
+-- proves it.
+unstashStoredCopies :: ObjectId -> GameState -> GameState
+unstashStoredCopies oid gs =
+  let unstash row = case ActiveCopy.up row of
+        Just up | copyCovers gs oid row -> row {ActiveCopy.snapshot = up, ActiveCopy.turned = Nothing, ActiveCopy.up = Nothing}
+        _ -> row
+   in gs {GameState.stored = (GameState.stored gs) {StoredEffects.copyEffects = fmap unstash (StoredEffects.copyEffects (GameState.stored gs))}}
 
 -- CR 710.2 over ONE object: set its flipped status, or leave the map exactly as
 -- it was. `flipsOver` below is the whole membership question, asked rather than
