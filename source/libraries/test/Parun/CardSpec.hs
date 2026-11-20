@@ -6764,6 +6764,51 @@ lintSpec s registry corpus = Spec.describe s "Lint" $ do
     Spec.assertBool s (offending limited) "the lint itself catches a limited one"
     Spec.assertBool s (offending modal) "the lint itself catches a two-mode one"
     Spec.assertEqWith s "no offenders" (fmap (S.nameOf . Printing.card) offenders) []
+  -- CR 734.1 with CR 508.1g: a mana ability exerting an attacker exerted as it
+  -- attacks writes Object.exertedBy the value the declaration did, which
+  -- Reversal.objectWith cannot tell from no write. No printing exerts as it
+  -- attacks and exerts itself for mana, nor grants either, so none may; the
+  -- doctored Glory-Bound Initiate, Manaweft Sliver and Levitation prove the lint
+  -- is not vacuous.
+  Spec.it s "CR 734.1 no card writes an attack exert beside a mana ability that exerts" $ do
+    ps <- S.allPrintings s corpus
+    initiate <- S.combinedFace <$> S.printingOf s registry "Glory-Bound Initiate"
+    elves <- S.combinedFace <$> S.printingOf s registry "Llanowar Elves"
+    sliver <- S.combinedFace <$> S.printingOf s registry "Manaweft Sliver"
+    levitation <- S.combinedFace <$> S.printingOf s registry "Levitation"
+    let exertsAttacking = any (\keyword -> case keyword of Keyword.Exert _ -> True; _ -> False)
+        exertsForMana ability = ManaAbility.isManaAbility ability && elem CostComponent.ExertThis (Cost.Type.components (ActivatedAbility.cost ability))
+        grantedKeywords f = [keyword | Modification.GainKeyword keyword <- concatMap (NonEmpty.toList . StaticAbility.modifications) (Face.staticAbilities f) <> [ModifyTarget.modification m | Effect.ModifyTarget m <- cardResolutionEffects f]]
+        offending f =
+          (exertsAttacking (Map.keys (Face.keywords f)) && any exertsForMana (Face.activatedAbilities f))
+            || any exertsForMana (grantedActivatedAbilities f)
+            || exertsAttacking (grantedKeywords f)
+        exerting ability = ability {ActivatedAbility.cost = (ActivatedAbility.cost ability) {Cost.Type.components = Cost.Type.components (ActivatedAbility.cost ability) <> [CostComponent.ExertThis]}}
+        ritualist = elves {Face.activatedAbilities = fmap exerting (Face.activatedAbilities elves)}
+        both = initiate {Face.activatedAbilities = Face.activatedAbilities ritualist}
+        regrant g f = f {Face.staticAbilities = fmap (\a -> a {StaticAbility.modifications = fmap g (StaticAbility.modifications a)}) (Face.staticAbilities f)}
+        grantingMana =
+          regrant
+            ( \m -> case m of
+                Modification.GainAbility (GrantedAbility.Activated a) -> Modification.GainAbility (GrantedAbility.Activated (exerting a))
+                _ -> m
+            )
+            sliver
+        grantingExert =
+          regrant
+            ( \m -> case m of
+                Modification.GainKeyword _ -> Modification.GainKeyword (Keyword.Exert Nothing)
+                _ -> m
+            )
+            levitation
+        offenders = filter (anyFace offending . Printing.card) ps
+    Spec.assertBool s (exertsAttacking (Map.keys (Face.keywords initiate)) && not (offending initiate)) "Glory-Bound Initiate exerts as it attacks, and is accepted"
+    Spec.assertBool s (any exertsForMana (Face.activatedAbilities ritualist) && not (offending ritualist)) "a mana ability exerting itself alone is accepted"
+    Spec.assertBool s (not (offending sliver) && not (offending levitation)) "Manaweft Sliver's and Levitation's grants are accepted"
+    Spec.assertBool s (offending both) "the lint itself catches a face carrying both"
+    Spec.assertBool s (offending grantingMana) "the lint itself catches a granted mana ability that exerts"
+    Spec.assertBool s (offending grantingExert) "the lint itself catches a granted attack exert"
+    Spec.assertEqWith s "no offenders" (fmap (S.nameOf . Printing.card) offenders) []
   -- CR 608.2d's either-or, whose two branches must name each other: the corpus
   -- half, with the same shape the slot-name pair above has.
   Spec.it s "no card's either-or names a sibling that does not name it back" $ do
