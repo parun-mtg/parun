@@ -4043,6 +4043,8 @@ library web
     Parun.Web.HtmlSpec
     Parun.Web.Icon
     Parun.Web.IconSpec
+    Parun.Web.Loading
+    Parun.Web.LoadingSpec
     Parun.Web.Lobby
     Parun.Web.LobbySpec
     Parun.Web.Log
