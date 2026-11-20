@@ -216,7 +216,7 @@ evaluateAgainst viewOf context gs announcedOn mOid mView quantity =
       -- name a given id, and folding over the log is what says so rather than
       -- assuming it.
       entriesOf oid = do
-        ev <- Foldable.toList (TurnRegisters.events (GameState.turn gs))
+        ev <- Foldable.toList (Turn.eventsThisTurn gs)
         zc <- Maybe.maybeToList (Game.enteredBattlefieldChange (LoggedEvent.event ev))
         Monad.guard (ZoneChange.object zc == oid)
         pure zc
@@ -804,7 +804,7 @@ evaluateAgainst viewOf context gs announcedOn mOid mView quantity =
         -- proves it.
         Quantity.Convokers ->
           let asCast oid = Map.findWithDefault oid oid (Scratch.enteringSpells (GameState.scratch gs))
-           in fmap (\oid -> toInteger (Set.size (Count.convokersOf (asCast oid) (fmap LoggedEvent.event (Foldable.toList (TurnRegisters.events (GameState.turn gs))))))) mOid
+           in fmap (\oid -> toInteger (Set.size (Count.convokersOf (asCast oid) (fmap LoggedEvent.event (Foldable.toList (Turn.eventsThisTurn gs)))))) mOid
         -- CR 702.30a's window as a 0/1 -- echo's intervening "if", read of the
         -- ability's own source at both CR 603.4 and CR 608.2a.
         --
@@ -1078,13 +1078,13 @@ evaluateAgainst viewOf context gs announcedOn mOid mView quantity =
           obj <- Game.lookupObject oid gs <|> Map.lookup oid (Snapshots.stackArchive (GameState.snapshots gs))
           pure . toInteger $ case act of
             AbilityAct.Resolved ->
-              length (filter (== Object.source obj) (Maybe.mapMaybe (Game.abilityResolved . LoggedEvent.event) (Foldable.toList (TurnRegisters.events (GameState.turn gs)))))
+              length (filter (== Object.source obj) (Maybe.mapMaybe (Game.abilityResolved . LoggedEvent.event) (Foldable.toList (Turn.eventsThisTurn gs))))
             AbilityAct.Activated -> case Object.source obj of
               Source.OfAbility activated ->
                 let this past =
                       ObjectSnapshot.object (PastActivation.source past) == ActivatedAbilitySource.source activated
                         && PastActivation.ability past == Just (ActivatedAbilitySource.ability activated)
-                 in length (filter this (Foldable.toList (TurnRegisters.activationsThisTurn (GameState.turn gs))))
+                 in length (filter this (Foldable.toList (Turn.activationsThisTurn gs)))
               _ -> 0
         -- CR 602.2 / 608.2i: the turn's activations by those players, off the same
         -- log, each asked of its source as the activation began (Count.pastView)
@@ -1099,7 +1099,7 @@ evaluateAgainst viewOf context gs announcedOn mOid mView quantity =
                   elem (PastActivation.activator past) pids
                     && Filter.matches context (Count.pastView (PastActivation.source past)) (ActivationsThisTurn.source tally)
                     && Count.activationMeets (ActivationsThisTurn.criteria tally) past
-             in Just (toInteger (length (filter counts (Foldable.toList (TurnRegisters.activationsThisTurn (GameState.turn gs))))))
+             in Just (toInteger (length (filter counts (Foldable.toList (Turn.activationsThisTurn gs)))))
           _ -> Nothing
         -- CR 706.1 / 608.2i: off TurnRegisters.rollsThisTurn, keyed as
         -- TimesThisTurn's Resolved count is, by the Source of the ability this
@@ -1119,7 +1119,7 @@ evaluateAgainst viewOf context gs announcedOn mOid mView quantity =
                   && PastRoll.resolution past /= oid
                   && elem (PastRoll.roller past) pids
                   && PastRoll.total past == total
-          pure (toInteger (length (filter earlier (Foldable.toList (TurnRegisters.rollsThisTurn (GameState.turn gs))))))
+          pure (toInteger (length (filter earlier (Foldable.toList (Turn.tallyThisTurn TurnRegisters.rollsThisTurn gs)))))
         -- CR 700.4 / 702.69a: how many permanents, of any controller, were put into
         -- a graveyard from the battlefield this turn. The arm above's log fold with
         -- no keying on the evaluation's own object: rule 702.69a counts the whole
@@ -1133,7 +1133,7 @@ evaluateAgainst viewOf context gs announcedOn mOid mView quantity =
         -- Always a number, never Nothing: the fold answers for an evaluation aimed
         -- at no object at all, nothing here being read off one.
         Quantity.PermanentsDiedThisTurn ->
-          Just (toInteger (length (Maybe.mapMaybe (Game.diedChange . LoggedEvent.event) (Foldable.toList (TurnRegisters.events (GameState.turn gs))))))
+          Just (toInteger (length (Maybe.mapMaybe (Game.diedChange . LoggedEvent.event) (Foldable.toList (Turn.eventsThisTurn gs)))))
         -- CR 615.5: off the game-long tally, the log being cleared before a next
         -- end step on a later turn can read it. Nothing aimed at no source.
         Quantity.DamagePreventedThisWay ->
@@ -1145,7 +1145,7 @@ evaluateAgainst viewOf context gs announcedOn mOid mView quantity =
         --
         -- Always a number, never Nothing, for the arm above's reason.
         Quantity.SpellsCastUsingThisTurn family ->
-          let casts = Maybe.mapMaybe (Game.castOf . LoggedEvent.event) (Foldable.toList (TurnRegisters.events (GameState.turn gs)))
+          let casts = Maybe.mapMaybe (Game.castOf . LoggedEvent.event) (Foldable.toList (Turn.eventsThisTurn gs))
            in Just (toInteger (length (filter (\c -> (Keyword.familyOf =<< SpellWasCast.castUsing c) == Just family) casts)))
         -- CR 500.1: how many times that step or phase has begun this turn, off
         -- the turn's log (Turn.phasesBegun). Always a number, never Nothing, for
@@ -1246,7 +1246,7 @@ evaluateAgainst viewOf context gs announcedOn mOid mView quantity =
         -- walked away from and back to is a new object only once CR 311.6 has
         -- made it one.
         Quantity.PlaneswalkedTo ref -> case (playersOf ref, mOid) of
-          (Just pids, Just oid) -> Just (if any (walkedTo pids oid . LoggedEvent.event) (TurnRegisters.events (GameState.turn gs)) then 1 else 0)
+          (Just pids, Just oid) -> Just (if any (walkedTo pids oid . LoggedEvent.event) (Turn.eventsThisTurn gs) then 1 else 0)
           _ -> Nothing
         -- CR 400.7 / 400.3 read as a 0/1: did the object this evaluation is aimed at
         -- enter the battlefield out of the named player's copy of the named zone?
@@ -1348,7 +1348,7 @@ evaluateAgainst viewOf context gs announcedOn mOid mView quantity =
           -- instead reads as not cast.
           let spells =
                 [ ZoneChange.departed zc
-                | GameEvent.Moved m <- fmap LoggedEvent.event (Foldable.toList (TurnRegisters.events (GameState.turn gs))),
+                | GameEvent.Moved m <- fmap LoggedEvent.event (Foldable.toList (Turn.eventsThisTurn gs)),
                   let zc = Moved.change m,
                   ZoneChange.object zc == oid,
                   ZoneChange.from zc == Zone.Stack,
@@ -1359,7 +1359,7 @@ evaluateAgainst viewOf context gs announcedOn mOid mView quantity =
                 elem (SpellWasCast.spell cast) spells
                   && all (\inZone -> SpellWasCast.zone cast == Just (InZone.zone inZone)) (CastFrom.from castFrom)
                   && elem (SpellWasCast.player cast) casters
-              wasCast = any (maybe False castFromZone . Game.castOf . LoggedEvent.event) (TurnRegisters.events (GameState.turn gs))
+              wasCast = any (maybe False castFromZone . Game.castOf . LoggedEvent.event) (Turn.eventsThisTurn gs)
           pure (if all (elem owner) zoneOwners && wasCast then 1 else 0)
         -- CR 509.1g: how many creatures are blocking the object this
         -- evaluation is aimed at, less the skipped count, floored at 0 -- one for rule
@@ -2055,15 +2055,15 @@ controlGainedThisTurn gs pid oid current =
 -- names the zone (CR 305.1).
 talliedThisTurn :: TurnTally.TurnTally -> PlayerId.PlayerId -> GameState -> Integer
 talliedThisTurn tally pid gs = case tally of
-  TurnTally.CardsDiscarded -> toInteger (length (filter ((== Just pid) . Game.discardOf . LoggedEvent.event) (Foldable.toList (TurnRegisters.events (GameState.turn gs)))))
-  TurnTally.CardsDrawn -> toInteger (Seq.length (Map.findWithDefault Seq.empty pid (TurnRegisters.drawsThisTurn (GameState.turn gs))))
+  TurnTally.CardsDiscarded -> toInteger (length (filter ((== Just pid) . Game.discardOf . LoggedEvent.event) (Foldable.toList (Turn.eventsThisTurn gs))))
+  TurnTally.CardsDrawn -> toInteger (Seq.length (Map.findWithDefault Seq.empty pid (Turn.drawsThisTurn gs)))
   TurnTally.ActionsDone acts -> toInteger (Game.actionsDoneThisTurn acts gs pid)
   TurnTally.DilemmasFaced -> toInteger (Game.doneThisTurn Game.dilemmaFacer gs pid)
   TurnTally.CrimesCommitted -> toInteger (Game.doneThisTurn Game.criminal gs pid)
   TurnTally.LandsPlayed excluding
     | not (Turn.hasTurnRunning gs pid) -> 0
     | Set.null excluding -> toInteger (Map.findWithDefault 0 pid (GameState.landsPlayed gs))
-    | otherwise -> toInteger (length (filter (playedNotFrom excluding pid gs) (Maybe.mapMaybe (landPlayedOf . LoggedEvent.event) (Foldable.toList (TurnRegisters.events (GameState.turn gs))))))
+    | otherwise -> toInteger (length (filter (playedNotFrom excluding pid gs) (Maybe.mapMaybe (landPlayedOf . LoggedEvent.event) (Foldable.toList (Turn.eventsThisTurn gs)))))
 
 -- CR 305.1 / 400.3: was this play `pid`'s, from none of `excluding` as `pid`'s
 -- own zone? A per-player zone is its card's owner's, so a land played from

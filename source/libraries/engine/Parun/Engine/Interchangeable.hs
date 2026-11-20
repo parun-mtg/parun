@@ -28,6 +28,7 @@ import qualified Parun.Engine.Keyword as Keyword.Engine
 import qualified Parun.Engine.Projection as Projection
 import qualified Parun.Engine.Projection.View as Projection.View
 import qualified Parun.Engine.Stored as Stored
+import qualified Parun.Engine.Turn as Turn
 import qualified Parun.Types.AbilityTriggered as AbilityTriggered
 import qualified Parun.Types.ActivatedAbility as ActivatedAbility
 import qualified Parun.Types.ActivatedAbilitySource as ActivatedAbilitySource
@@ -255,7 +256,7 @@ objects pcs gs a b =
 -- proves the damage arm, both ways; the other three are regression fences.
 actedOnBy :: ObjectId -> GameState -> (Set.Set ObjectId, Set.Set ObjectId, Set.Set ObjectId, Set.Set ObjectId)
 actedOnBy oid gs =
-  let events = fmap LoggedEvent.event (Foldable.toList (TurnRegisters.events (GameState.turn gs) <> foldMap TurnRegisters.events (GameState.parkedTurns gs)))
+  let events = fmap LoggedEvent.event (Foldable.toList (Turn.eventsThisTurn gs))
       damagers =
         Set.fromList [DamageEvent.source dealt | event@(GameEvent.DamageDealt dealt) <- events, (Game.damageRecipient event >>= Recipient.objectOf) == Just oid]
           <> Set.fromList [DamageEvent.source dealt | dealt <- Foldable.toList (Game.damageBeforeThisTurn gs), Recipient.objectOf (DamageEvent.target dealt) == Just oid]
@@ -323,8 +324,8 @@ representatives pcs gs candidates =
 --   * GameState.parkedTurns holds each parked Grand Melee turn's copy of the
 --     turn fields (CR 807.4b), read beside the live ones by namedByStored,
 --     namedByRelation and actedOnBy; its stacks are a zone, as
---     TurnRegisters.stack is. Its look-back fields are not read through the two
---     views, which read the live turn's alone (gap #6538).
+--     TurnRegisters.stack is. The two views read its look-back fields too, a
+--     history read taking every running turn's (Turn.eventsThisTurn).
 --   * History.pastTurns holds every finished turn's log. Its newest is read
 --     by the per-seat view and by the "last turn" tallies (Quantity's
 --     SpellsCast and LifeChanged), which count per PLAYER and name no object,
@@ -787,7 +788,7 @@ spentActivationNames oid ability = any (Binding.isAcquiredFrom oid) (ActivatedAb
 -- among its targets. Positional for phasedOutNames' reason.
 activationNames :: ObjectId -> PastActivation.PastActivation -> Bool
 activationNames oid entry = case entry of
-  PastActivation.MkPastActivation _activator source _ability _kind targets ->
+  PastActivation.MkPastActivation _activator source _ability _kind targets _loggedAt ->
     any (\snapshot -> ObjectSnapshot.object snapshot == oid) (source : targets)
 
 -- Whether a roll an ability made this turn (CR 706.1) names this object, as

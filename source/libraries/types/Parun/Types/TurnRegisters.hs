@@ -54,11 +54,8 @@ data TurnRegisters = MkTurnRegisters
     -- its EventGroup (CR 608.2f's single event). Cleared at turn handoff
     -- (Engine.handoffTurn), never by a reader. A new reader of it as history
     -- owes its construct's arm in Parun.Engine.Interchangeable.Mentions a
-    -- Parun.Types.HistoryRead (CR 733.3).
-    --
-    -- Not implemented: in Grand Melee this is the worked turn's log, which a
-    -- static ability's "this turn" reads whichever turn's question is being
-    -- asked (#6538).
+    -- Parun.Types.HistoryRead (CR 733.3). This turn's own log: a history read
+    -- takes every running turn's, Parun.Engine.Turn.eventsThisTurn.
     events :: Seq.Seq LoggedEvent.LoggedEvent,
     -- | CR 807.5b: the groups of `events` an object on this turn's stack
     -- caused (Parun.Engine.Game.byStackObject), recorded in Grand Melee only;

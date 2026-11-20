@@ -37,6 +37,7 @@ import qualified Parun.Engine.Turn as Turn
 import qualified Parun.Types.AbilityKind as AbilityKind
 import qualified Parun.Types.ActivatedAbility as ActivatedAbility
 import qualified Parun.Types.ActivationRestriction as ActivationRestriction
+import qualified Parun.Types.Bookkeeping as Bookkeeping
 import qualified Parun.Types.Card as Card
 import qualified Parun.Types.Chosen as Chosen
 import qualified Parun.Types.Condition as Condition.Type
@@ -204,7 +205,7 @@ restrictionMet pid srcId ability gs restriction = case restriction of
   -- somewhere it offers abilities from.
   ActivationRestriction.TimesEachTurn limit -> case ability of
     Nothing -> False
-    Just this -> unspent limit srcId this (Map.findWithDefault Map.empty srcId (TurnRegisters.activatedThisTurn (GameState.turn gs))) gs
+    Just this -> unspent limit srcId this (Map.findWithDefault Map.empty srcId (Turn.keyedThisTurn (Map.unionWith (+)) TurnRegisters.activatedThisTurn gs)) gs
   -- Goblin Bookie's "any time it makes sense": while a die is being rolled or a
   -- coin has just been flipped, or while a permanent is a die to reroll -- Pippa,
   -- Duchess of Dice's rulings let a Die creature be rerolled at any time -- and
@@ -378,7 +379,8 @@ logActivation asOf pid srcId ability kind targets gs =
             PastActivation.source = source,
             PastActivation.ability = ability,
             PastActivation.kind = kind,
-            PastActivation.targets = Maybe.mapMaybe (\oid -> Projection.objectSnapshot oid asOf) (Set.toList targets)
+            PastActivation.targets = Maybe.mapMaybe (\oid -> Projection.objectSnapshot oid asOf) (Set.toList targets),
+            PastActivation.loggedAt = Bookkeeping.nextEventGroup (GameState.bookkeeping gs)
           }
    in case Projection.objectSnapshot srcId asOf of
         Nothing -> gs

@@ -1879,15 +1879,19 @@ Entries are ordered by the first rule each cites.
 
 - **Question**: With several turns running (CR 807.4b), which turn's history
   does "this turn" read, and which turn is "last turn"?
-- **Rules**: CR 500.7, 608.2i, 807.4b; CR of 2026-11-06.
-- **Decision**: "This turn" is the worked turn, the one the question arises
-  in. "Last turn" is the turn that ended most recently.
-- **Rejected**: Every running turn's history together, which makes a tally
-  count what happened on another stack.
-- **Site**: `Parun.Types.TurnRegisters` (each turn's log) and
-  `Parun.Engine.Engine.closeTurn` (`History.pastTurns`). No test
-  reaches it.
-- **Issue**: #6117.
+- **Rules**: CR 500.7, 608.2i, 807.2a, 807.4b; CR of 2026-11-06.
+- **Decision**: "This turn" reads every running turn's history combined, in
+  event order. "Last turn" is the turn that ended most recently.
+- **Rejected**: The worked turn alone, which makes a "this turn" static
+  ability change as the scheduler moves between turns
+  (`Parun.Engine.Engine.runMarkedUnit`). The controller's own turn, which
+  most seats are not taking. The turn of the marker whose range covers the
+  controller, which CR 807.2a's range of 1 leaves some seats without.
+- **Site**: `Parun.Engine.Turn.eventsThisTurn` and its tally siblings, and
+  `Parun.Engine.Engine.closeTurn` (`History.pastTurns`).
+  `Parun.GrandMeleeSpec`'s "CR 608.2i this turn reads every running Grand
+  Melee turn".
+- **Issue**: #6117, #6538.
 
 ## Which stack a Grand Melee trigger goes on
 

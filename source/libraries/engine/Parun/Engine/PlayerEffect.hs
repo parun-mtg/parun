@@ -628,7 +628,7 @@ storedSource active = RowSource.MkRowSource (Just (ActivePlayerEffect.source act
 -- spells cast before the source was on the battlefield, and a spell later
 -- countered.
 castsMatchingThisTurn :: PlayerId -> RowSource -> Filter Keyword -> GameState -> Natural
-castsMatchingThisTurn pid source criterion gs = Natural.length (filter (castMatching pid source criterion gs) (Foldable.toList (Game.castsInLog (TurnRegisters.events (GameState.turn gs)))))
+castsMatchingThisTurn pid source criterion gs = Natural.length (filter (castMatching pid source criterion gs) (Foldable.toList (Game.castsInLog (Turn.eventsThisTurn gs))))
 
 -- CR 601.2i: did `pid` cast this spell, and did it match `criterion` as it was
 -- cast? castsMatchingThisTurn above and nthCast below count with it.
@@ -2084,7 +2084,7 @@ freeCastAdmits pid source grant oid gs =
 -- OncePerEffect lint keeps a card from writing one).
 freeCastBudget :: PlayerId -> RowSource -> FreeCast.FreeCast -> GameState -> Maybe (Maybe (ObjectId, FreeCast.FreeCast))
 freeCastBudget pid source grant gs =
-  let spent sid = Set.member grant (Map.findWithDefault Set.empty sid (TurnRegisters.freeCastsUsedThisTurn (GameState.turn gs)))
+  let spent sid = Set.member grant (Map.findWithDefault Set.empty sid (Turn.keyedThisTurn Set.union TurnRegisters.freeCastsUsedThisTurn gs))
       budgeted usable = case RowSource.object source of
         Just sid | usable && not (spent sid) -> Just (Just (sid, grant))
         _ -> Nothing
@@ -2204,7 +2204,7 @@ nthActivation pid source criterion criteria aimedAt gs (TurnOrdinal.MkTurnOrdina
           && Count.activationMeets criteria past
           && maybe True (\f -> any (matchesSnapshot (Just (targetPerspective pid source gs)) f) (PastActivation.targets past)) aimedAt
    in Turn.turnScopeAdmits (Count.scopePlayers (Projection.viewWithLastKnownAnywhere gs) (contextFor (Just pid) source gs) gs) gs scope (TurnRegisters.activePlayer (GameState.turn gs)) pid
-        && countIs n admits (Foldable.toList (TurnRegisters.activationsThisTurn (GameState.turn gs)))
+        && countIs n admits (Foldable.toList (Turn.activationsThisTurn gs))
 
 -- Whether the matching ones earlier this turn, plus the one being begun, are
 -- the ordinal: one for "first", so none earlier. Zero matches nothing.
@@ -2224,7 +2224,7 @@ countIs n admits earlier = Natural.length (filter admits earlier) + 1 == n
 nthCast :: PlayerId -> RowSource -> Filter Keyword -> ObjectId -> GameState -> TurnOrdinal.TurnOrdinal -> Bool
 nthCast pid source criterion oid gs (TurnOrdinal.MkTurnOrdinal scope n) =
   let context = contextFor (Just pid) source gs
-      earlier = Maybe.fromMaybe (Foldable.toList (Game.castsInLog (TurnRegisters.events (GameState.turn gs)))) (Game.castsBefore oid gs)
+      earlier = Maybe.fromMaybe (Foldable.toList (Game.castsInLog (Turn.eventsThisTurn gs))) (Game.castsBefore oid gs)
    in Turn.turnScopeAdmits (Count.scopePlayers (Projection.viewWithLastKnownAnywhere gs) context gs) gs scope (TurnRegisters.activePlayer (GameState.turn gs)) pid
         && countIs n (castMatching pid source criterion gs) earlier
 
@@ -2884,7 +2884,7 @@ unspentPermission :: PlayerId -> RowSource -> CastFromZone.CastFromZone -> GameS
 unspentPermission pid source grant gs =
   let unspent = case RowSource.object source of
         Nothing -> True
-        Just sid -> Set.notMember grant (Map.findWithDefault Set.empty sid (TurnRegisters.castPermissionsUsedThisTurn (GameState.turn gs)))
+        Just sid -> Set.notMember grant (Map.findWithDefault Set.empty sid (Turn.keyedThisTurn Set.union TurnRegisters.castPermissionsUsedThisTurn gs))
    in case CastFromZone.limit grant of
         PermissionLimit.Unlimited -> True
         PermissionLimit.OnceEachTurn -> unspent
@@ -4573,7 +4573,7 @@ prohibitsDrawing = prohibitsDrawingCards 1
 -- the Labyrinth's 2014-02-01 ruling).
 prohibitsDrawingCards :: Natural -> PlayerId -> GameState -> Bool
 prohibitsDrawingCards count pid gs =
-  let drawn = maybe 0 Natural.length (Map.lookup pid (TurnRegisters.drawsThisTurn (GameState.turn gs)))
+  let drawn = maybe 0 Natural.length (Map.lookup pid (Turn.drawsThisTurn gs))
       reaches act = case act of
         ForbiddenAct.DrawMoreThan limit -> drawn + count > limit
         ForbiddenAct.GainLife -> False
