@@ -32,6 +32,7 @@ import qualified Parun.Types.ChoosePawprints as ChoosePawprints
 import qualified Parun.Types.Clause as Clause
 import qualified Parun.Types.ClauseIndex as ClauseIndex
 import qualified Parun.Types.CoinReading as CoinReading
+import qualified Parun.Types.Color as Color
 import qualified Parun.Types.ColorSpread as ColorSpread
 import qualified Parun.Types.Compares as Compares
 import qualified Parun.Types.Comparison as Comparison
@@ -420,19 +421,52 @@ clause context c
               complement' <- complement : [Text.pack "they control " <> rest | Text.isSuffixOf (Text.pack " that player.") body, rest <- Maybe.maybeToList (Text.stripPrefix (Text.pack "that player controls ") complement)]
             ]
       (word <> Text.pack "If " <> words' <> Text.pack ", " <> opened, ms) : trailed <> thenIf <> unlessed
-  | otherwise = do
-      predicates <- instructions context (Foldable.toList (Clause.effects c))
-      case (Clause.payGate c, Clause.optionality c, List.foldr addedTogether [] predicates) of
-        (Just g, Optionality.Mandatory, together) -> paid context g together
-        (Nothing, Optionality.Mandatory, together) -> joined context together
-        -- A continuous change names its objects, never "you", so its
-        -- duration-first reading is no imperative to follow "you may"
-        -- (Blightcaster's "you may have target creature get -2/-2").
-        (Nothing, Optionality.Optional (PlayerRef.Relative PlayerRelation.You) _, [p])
-          | maybe True ((== Text.pack "you") . Target.wording) (subject p),
-            not (any (Maybe.isJust . modifyTarget) (Clause.effects c)) ->
-              [(Prose.sentence (Text.pack "you may " <> verb p) <> trailing p, mentions p)]
-        _ -> []
+  | otherwise =
+      perColor context c <> do
+        predicates <- instructions context (Foldable.toList (Clause.effects c))
+        case (Clause.payGate c, Clause.optionality c, List.foldr addedTogether [] predicates) of
+          (Just g, Optionality.Mandatory, together) -> paid context g together
+          (Nothing, Optionality.Mandatory, together) -> joined context together
+          -- A continuous change names its objects, never "you", so its
+          -- duration-first reading is no imperative to follow "you may"
+          -- (Blightcaster's "you may have target creature get -2/-2").
+          (Nothing, Optionality.Optional (PlayerRef.Relative PlayerRelation.You) _, [p])
+            | maybe True ((== Text.pack "you") . Target.wording) (subject p),
+              not (any (Maybe.isJust . modifyTarget) (Clause.effects c)) ->
+                [(Prose.sentence (Text.pack "you may " <> verb p) <> trailing p, mentions p)]
+          _ -> []
+
+-- | "For each color, [instruction]": one move per color (CR 105.1), each of
+-- its own slot, the slots alike but for the color their filters add (Rogues'
+-- Gallery).
+perColor :: Target.Context -> Clause.Clause Card.Card Continuous.Ability -> [(Text.Text, [SlotName.SlotName])]
+perColor context c = do
+  Nothing <- [Clause.payGate c]
+  Optionality.Mandatory <- [Clause.optionality c]
+  let moves = [(s, m) | Effect.MoveToZone m <- Foldable.toList (Clause.effects c), ObjectRef.InSlot s <- [MoveToZone.ref m]]
+  Monad.guard (length moves == Seq.length (Clause.effects c))
+  (s, m) : _ <- [moves]
+  slots <- Maybe.maybeToList (traverse ((`Map.lookup` Target.slots context) . fst) moves)
+  first : _ <- [slots]
+  bases <- Maybe.maybeToList (traverse colorless (zip [minBound ..] slots))
+  base : _ <- [bases]
+  Monad.guard (length slots == length [minBound .. maxBound :: Color.Color] && all (== base) bases)
+  Monad.guard (all (\slot -> slot {TargetSlot.filter = Nothing} == first {TargetSlot.filter = Nothing}) slots)
+  Monad.guard (and [m' == m {MoveToZone.ref = ObjectRef.InSlot s'} | (s', m') <- moves])
+  let context' = context {Target.slots = Map.insert s first {TargetSlot.filter = Just base} (Target.slots context)}
+  predicates <- instructions context' [Effect.MoveToZone m]
+  (text, ms) <- joined context' (List.foldr addedTogether [] predicates)
+  reference <- Target.object context' Target.All (ObjectRef.InSlot s)
+  -- The color qualifies the noun, ahead of the zone it is found in.
+  let wording = Target.wording reference
+      (noun, zone) = Text.breakOn (Text.pack " from ") wording
+      text' = Text.replace wording (noun <> Text.pack " of that color" <> zone) text
+  Monad.guard (text' /= text)
+  [(Text.pack "For each color, " <> lowered context text', ms <> fmap fst (drop 1 moves))]
+  where
+    colorless (color, slot) = case TargetSlot.filter slot of
+      Just (Filter.Type.And [base, Filter.Type.HasColor color']) | color' == color -> Just base
+      _ -> Nothing
 
 -- | A condition a clause's instructions wait on, and whether its words name
 -- the source, which the instructions then call "it": "this spell was kicked"

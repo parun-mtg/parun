@@ -2378,6 +2378,8 @@ filterPositionLintSpec s registry corpus = Spec.describe s "Lint" $ do
     --
     -- Less than, against the mana value, in a dies trigger's slot whose amount
     -- totals the creature that died (the trigger's "became"): Jackdaw Savior.
+    -- The same in a sacrifice trigger's slot, against the sacrificed creature's
+    -- last-known mana value: Riveteers Ascendancy.
     -- The same in an enters trigger's slot, totalling the creature that
     -- entered: Clement, the Worrywort.
     --
@@ -2439,6 +2441,7 @@ filterPositionLintSpec s registry corpus = Spec.describe s "Lint" $ do
         ("Wishing Well", 1),
         ("Sidisi, Regent of the Mire", 1),
         ("Jackdaw Savior", 1),
+        ("Riveteers Ascendancy", 1),
         ("Clement, the Worrywort", 1),
         ("Invasion of Lorwyn", 1),
         ("Invasion of New Phyrexia", 1)
