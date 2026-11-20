@@ -1132,6 +1132,7 @@ import qualified Parun.VariableEffectSpec
 import qualified Parun.VisibilitySpec
 import qualified Parun.VoteSpec
 import qualified Parun.Web.AppSpec
+import qualified Parun.Web.BuilderSpec
 import qualified Parun.Web.CardIndexSpec
 import qualified Parun.Web.DiffSpec
 import qualified Parun.Web.EndingSpec
@@ -2313,6 +2314,7 @@ spec s reference corpus = do
   Parun.Web.HtmlSpec.spec s
   Parun.Web.HomeSpec.spec s
   Parun.Web.LoadingSpec.spec s
+  Parun.Web.BuilderSpec.spec s
   Parun.Web.CardIndexSpec.spec s
   Parun.Web.LobbySpec.spec s
   Parun.Web.IconSpec.spec s

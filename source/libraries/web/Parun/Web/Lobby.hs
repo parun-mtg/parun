@@ -133,12 +133,12 @@ isSaved = Text.isPrefixOf savedPrefix
 slugOf :: Text.Text -> Text.Text
 slugOf = Text.intercalate (Text.pack "-") . filter (not . Text.null) . Text.split (not . Char.isAlphaNum) . Text.toLower
 
--- | Why a pasted deck may not be saved under this name: an empty one, or
--- one a saved deck holds.
-nameProblems :: Lobby -> Text.Text -> [Text.Text]
-nameProblems lobby typed
+-- | Why a deck may not be saved under this name, among these decks: an
+-- empty one, or one a saved deck holds.
+nameProblems :: Seq.Seq Text.Text -> Text.Text -> [Text.Text]
+nameProblems names typed
   | Text.null slug = [Text.pack "Give the deck a name."]
-  | Foldable.elem (savedPrefix <> slug) (decks lobby) = [Text.pack "A saved deck is already named that."]
+  | Foldable.elem (savedPrefix <> slug) names = [Text.pack "A saved deck is already named that."]
   | otherwise = []
   where
     slug = slugOf typed

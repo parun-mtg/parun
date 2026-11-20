@@ -189,14 +189,14 @@ lobby shell = do
 -- checked (Command.check) once the registry is built, "Checking" shown
 -- meanwhile, then saved and made the player's; else the panel says why not.
 importDeck :: Shell -> Lobby.Lobby -> Lobby.Import -> IO Lobby.Lobby
-importDeck shell current panel = case Lobby.nameProblems current (Lobby.importName panel) of
+importDeck shell current panel = case Lobby.nameProblems (Lobby.decks current) (Lobby.importName panel) of
   problems@(_ : _) -> pure (refuse problems)
   [] -> do
     Browser.display (page shell) . fmap Screen.MkLobby $ Lobby.view current {Lobby.importing = Just panel {Lobby.checking = True, Lobby.importProblems = []}}
     built <- untilBuilt shell [Loading.MkDecks, Loading.MkCards, Loading.MkRules] (registry <$> IORef.readIORef (loaded shell))
     -- The name again, against the saved decks read meanwhile.
     listed <- IORef.readIORef (loaded shell)
-    let named = Lobby.nameProblems (Lobby.withDecks (Seq.fromList (foldMap Map.keys (deckFiles listed))) (formats listed) current) (Lobby.importName panel)
+    let named = Lobby.nameProblems (Seq.fromList (foldMap Map.keys (deckFiles listed))) (Lobby.importName panel)
     problems <- case built of
       Left problem -> pure [problem]
       Right reg

@@ -81,9 +81,9 @@ spec s = Spec.describe s "Parun.Web.Lobby" $ do
 
     Spec.it s "refuses an empty name and one a saved deck holds" $ do
       let holding = Lobby.withDecks (Seq.fromList [a, saved]) Map.empty Lobby.new
-      Spec.assertBool s (not (null (Lobby.nameProblems holding (Text.pack "My Deck")))) "taken"
-      Spec.assertBool s (not (null (Lobby.nameProblems holding (Text.pack "!!!")))) "empty"
-      Spec.assertEqWith s "free" (Lobby.nameProblems holding (Text.pack "Other")) []
+      Spec.assertBool s (not (null (Lobby.nameProblems (Lobby.decks holding) (Text.pack "My Deck")))) "taken"
+      Spec.assertBool s (not (null (Lobby.nameProblems (Lobby.decks holding) (Text.pack "!!!")))) "empty"
+      Spec.assertEqWith s "free" (Lobby.nameProblems (Lobby.decks holding) (Text.pack "Other")) []
 
     Spec.it s "keeps what is typed into the panel" $ do
       let opened = Lobby.update Lobby.MkOpenImport Text.empty lobby
