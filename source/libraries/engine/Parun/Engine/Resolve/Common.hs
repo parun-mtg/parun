@@ -2163,9 +2163,10 @@ freezeCounters viewOf context gs resolving source =
 -- "the player who cast Hellish Rebuke". One naming no one seat is left
 -- standing and names nobody. Every other modification passes whole.
 --
--- Not implemented: an AtGrant anywhere but a granted triggered ability's
--- trigger, its "may" and either-or askers and its effects' player and object
--- references (#8143).
+-- Unprinted: an AtGrant anywhere but a granted triggered ability's trigger,
+-- its "may" and either-or askers and its effects' player and object
+-- references, which Parun.FilterPositionLintSpec's AtGrant sweep keeps out of
+-- card data.
 bakeAtGrant :: (PlayerRef -> Maybe PlayerId) -> Modification.Modification (GrantedAbility.GrantedAbility Card.Type.Card) -> Modification.Modification (GrantedAbility.GrantedAbility Card.Type.Card)
 bakeAtGrant seat modification = case modification of
   Modification.GainAbility ability -> Modification.GainAbility (granted ability)

@@ -20,8 +20,10 @@ import qualified Parun.Codec.Card as Card
 import qualified Parun.Codec.CardType as CardType.Codec
 import qualified Parun.Codec.Face as Face.Codec
 import qualified Parun.Codec.Filter as Filter.Codec
+import qualified Parun.Codec.GrantedAbility as GrantedAbility.Codec
 import qualified Parun.Codec.Keyword as Keyword.Codec
 import qualified Parun.Codec.KeywordDesignator as KeywordDesignator.Codec
+import qualified Parun.Codec.Modification as Modification.Codec
 import qualified Parun.Codec.Quantity as Quantity.Codec
 import qualified Parun.Codec.Subtype as Subtype.Codec
 import qualified Parun.Codec.TriggerCondition as TriggerCondition.Codec
@@ -34,6 +36,7 @@ import qualified Parun.Engine.Keyword as Keyword.Engine
 import qualified Parun.Engine.Mana as Mana
 import qualified Parun.Engine.Mint as Mint
 import qualified Parun.Engine.Projection as Projection
+import qualified Parun.Engine.Resolve.Common as Common
 import qualified Parun.Json.Array as Array
 import qualified Parun.Json.Object as Object
 import qualified Parun.Json.Pair as Pair
@@ -177,6 +180,7 @@ import qualified Parun.Types.Modification as Modification
 import qualified Parun.Types.ModifyPowerToughness as ModifyPowerToughness
 import qualified Parun.Types.ModifyTarget as ModifyTarget
 import qualified Parun.Types.MoveCounters as MoveCounters
+import qualified Parun.Types.MoveToZone as MoveToZone
 import qualified Parun.Types.MovedBetween as MovedBetween
 import qualified Parun.Types.MovedKinds as MovedKinds
 import qualified Parun.Types.NameChooser as NameChooser
@@ -376,6 +380,27 @@ canHostSubjectCounts card =
 -- pairwise combat restriction.
 jsonAtoms :: Text.Text -> Value.Value -> Int
 jsonAtoms = occurrences . Value.String . String.MkString
+
+-- Every PlayerRef.AtGrant a face's encoding carries.
+atGrants :: Face.Face Card.Type.Card -> Int
+atGrants = jsonAtoms (Text.pack "AtGrant") . Codec.encode (Face.Codec.codec Card.codec)
+
+-- The AtGrants of a face Resolve.Common.bakeAtGrant leaves standing: every
+-- one, less those the grants of its ModifyTarget and MoveToZone entry riders
+-- bake.
+unbakedAtGrants :: Face.Face Card.Type.Card -> Int
+unbakedAtGrants face = atGrants face - sum (fmap baked grants)
+  where
+    grants =
+      concat
+        [ case effect of
+            Effect.ModifyTarget modify -> [ModifyTarget.modification modify]
+            Effect.MoveToZone move -> Foldable.toList (EntryRiders.characteristics (MoveToZone.riders move))
+            _ -> []
+        | effect <- cardAuthoredEffects face
+        ]
+    count = jsonAtoms (Text.pack "AtGrant") . Codec.encode (Modification.Codec.codec (GrantedAbility.Codec.codec Card.codec))
+    baked m = count m - count (Common.bakeAtGrant (const (Just (PlayerId.MkPlayerId 1))) m)
 
 -- Every encoded BecomesTapState condition watching a OneOrMore untap.
 batchedUntaps :: Value.Value -> [Value.Value]
@@ -3708,6 +3733,23 @@ filterPositionLintSpec s registry corpus = Spec.describe s "Lint" $ do
                 Mint.oneModeTargeting (Map.singleton (SlotName.MkSlotName (Text.pack "target")) (TargetSlot.required Pool.Creatures Nothing)) (Seq.singleton (Effect.GainControl (GainControl.MkGainControl (Duration.ForAsLongAs crowned) (ObjectRef.InSlot (SlotName.MkSlotName (Text.pack "target"))) Nothing (PlayerRef.Relative PlayerRelation.You))))
             }
     Spec.assertEqWith s "a planted reference is seen" (atoms planted) 1
+  -- Unprinted: a PlayerRef.AtGrant anywhere Resolve.Common.bakeAtGrant does
+  -- not reach -- outside a granted triggered ability's trigger, askers and
+  -- effects, outside a ModifyTarget's or an entry rider's grant, or in a
+  -- token's printed text -- stays unbaked and names nobody.
+  Spec.it s "CR 608.2h no card writes a PlayerRef.AtGrant its grant does not bake" $ do
+    ps <- S.allPrintings s corpus
+    let offenders = filter (anyFace ((/= 0) . unbakedAtGrants) . Printing.card) ps
+    Spec.assertEqWith s "every AtGrant is baked as its grant applies" (fmap (S.nameOf . Printing.card) offenders) []
+    -- Not vacuous: both producers' AtGrants are seen and baked.
+    rebuke <- S.printingOf s registry "Hellish Rebuke"
+    takklemaggot <- S.printingOf s registry "Takklemaggot"
+    Spec.assertEqWith s "Hellish Rebuke's AtGrant is seen" (atGrants (S.combinedFace rebuke)) 1
+    Spec.assertEqWith s "Takklemaggot's AtGrant is seen" (atGrants (S.combinedFace takklemaggot) /= 0) True
+    piker <- S.printingOf s registry "Goblin Piker"
+    let draw = Effect.Draw (Draw.MkDraw (PlayerRef.AtGrant (PlayerRef.Relative PlayerRelation.You)) (Quantity.Type.Literal 1) Nothing Nothing)
+        planted = (S.combinedFace piker) {Face.spell = Mint.oneModeTargeting Map.empty (Seq.singleton draw)}
+    Spec.assertEqWith s "an AtGrant outside a grant is seen" (unbakedAtGrants planted) 1
   -- CR 400.7's baked half of DurationEvent.BoundCardCast: the object a cost
   -- exiled, written by Parun.Engine.Expiry.arm and round-tripped by a total
   -- codec, so nothing but this keeps card JSON from naming it. The unbaked slot
