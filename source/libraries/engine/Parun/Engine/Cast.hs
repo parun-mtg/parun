@@ -3737,10 +3737,11 @@ clauseAppliesAt pid sid gs clause = case Clause.condition clause of
     | otherwise -> True
 
 -- CR 601.2i: files the game as the spell becomes cast, if a Quantity.AsCast
--- in its clauses' conditions or effects will read it -- after CR 601.2g's mana
--- abilities, so a Dragon sacrificed for mana is gone (Draconic Roar's ruling of
--- 2015-02-25). The whole board rather than the wrapped quantity's value, since
--- a text change (CR 612.1) can reword that quantity before it is read.
+-- in its clauses' conditions, effects or modifications (Lethal Exploit's
+-- -1/-1 each) will read it -- after CR 601.2g's mana abilities, so a Dragon
+-- sacrificed for mana is gone (Draconic Roar's ruling of 2015-02-25). The
+-- whole board rather than the wrapped quantity's value, since a text change
+-- (CR 612.1) can reword that quantity before it is read.
 -- Projection.withCastBoard reads it back.
 fileCastBoard :: ObjectId -> GameState -> GameState
 fileCastBoard sid gs =
@@ -3752,7 +3753,8 @@ fileCastBoard sid gs =
               _ -> Monoid.Any False
          in own <> Const.getConst (Children.quantityChildren (Children.descendingQuantities (Const.Const . inQuantity)) q)
       inCondition = Const.getConst . Children.conditionChildren Children.conditionLeaves {Children.conditionQuantity = Const.Const . inQuantity, Children.conditionNested = Const.Const . inCondition}
-      inEffect = Const.getConst . Children.effectChildren Children.effectLeaves {Children.onQuantity = Const.Const . inQuantity, Children.onCondition = Const.Const . inCondition, Children.onEffect = Const.Const . inEffect}
+      inEffect = Const.getConst . Children.effectChildren Children.effectLeaves {Children.onQuantity = Const.Const . inQuantity, Children.onCondition = Const.Const . inCondition, Children.onModification = Const.Const . inModification, Children.onEffect = Const.Const . inEffect}
+      inModification = Const.getConst . Children.modificationChildren Children.modificationLeaves {Children.modificationQuantity = Const.Const . inQuantity}
       wraps = Monoid.getAny (foldMap (\clause -> foldMap inCondition (Clause.condition clause) <> foldMap inEffect (Clause.effects clause)) clauses)
       snapshots = GameState.snapshots gs
       board = gs {GameState.snapshots = snapshots {Snapshots.boardAfterEvent = Map.empty, Snapshots.boardBeforeEvent = Map.empty, Snapshots.boardAtControlSample = Nothing, Snapshots.heldBoards = [], Snapshots.boardAsCast = Map.empty}}
