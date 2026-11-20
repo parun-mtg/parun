@@ -1,0 +1,173 @@
+{
+  "faces": [
+    {
+      "manaCost": [
+        {
+          "type": "Generic",
+          "value": 4
+        },
+        {
+          "type": "OfType",
+          "value": {
+            "type": "Colored",
+            "value": "Green"
+          }
+        },
+        {
+          "type": "OfType",
+          "value": {
+            "type": "Colored",
+            "value": "White"
+          }
+        },
+        {
+          "type": "OfType",
+          "value": {
+            "type": "Colored",
+            "value": "Blue"
+          }
+        }
+      ],
+      "name": "Soul of Emancipation",
+      "oracleText": "When this creature enters, destroy up to three other target nonland permanents. For each of those permanents, its controller creates a 3/3 white Angel creature token with flying.",
+      "power": {
+        "type": "Literal",
+        "value": 5
+      },
+      "toughness": {
+        "type": "Literal",
+        "value": 7
+      },
+      "triggeredAbilities": [
+        {
+          "condition": {
+            "type": "Enters",
+            "value": {}
+          },
+          "modal": {
+            "modes": [
+              {
+                "clauses": [
+                  {
+                    "effects": [
+                      {
+                        "type": "Destroy",
+                        "value": {
+                          "ref": {
+                            "type": "InSlot",
+                            "value": "target"
+                          },
+                          "regenerability": "Regenerable"
+                        }
+                      },
+                      {
+                        "type": "ForEach",
+                        "value": {
+                          "body": [
+                            {
+                              "type": "Create",
+                              "value": {
+                                "card": {
+                                  "faces": [
+                                    {
+                                      "colorIndicator": [
+                                        "White"
+                                      ],
+                                      "keywords": [
+                                        {
+                                          "type": "Flying"
+                                        }
+                                      ],
+                                      "name": "Angel Token",
+                                      "power": {
+                                        "type": "Literal",
+                                        "value": 3
+                                      },
+                                      "toughness": {
+                                        "type": "Literal",
+                                        "value": 3
+                                      },
+                                      "typeLine": {
+                                        "subtypes": [
+                                          "Angel"
+                                        ],
+                                        "types": [
+                                          "Creature"
+                                        ]
+                                      }
+                                    }
+                                  ]
+                                },
+                                "creator": {
+                                  "type": "HolderOfBound",
+                                  "value": {
+                                    "holder": "Controller",
+                                    "hop": "Itself",
+                                    "slot": "each"
+                                  }
+                                },
+                                "quantity": {
+                                  "type": "Literal",
+                                  "value": 1
+                                }
+                              }
+                            }
+                          ],
+                          "ref": {
+                            "type": "InSlot",
+                            "value": "target"
+                          },
+                          "slot": "each"
+                        }
+                      }
+                    ]
+                  }
+                ],
+                "targetSlots": {
+                  "target": {
+                    "count": {
+                      "type": "Printed",
+                      "value": {
+                        "least": 0,
+                        "most": 3
+                      }
+                    },
+                    "filter": {
+                      "type": "And",
+                      "value": [
+                        {
+                          "type": "Not",
+                          "value": {
+                            "type": "HasCardType",
+                            "value": "Land"
+                          }
+                        },
+                        {
+                          "type": "Not",
+                          "value": {
+                            "type": "IsSource"
+                          }
+                        }
+                      ]
+                    },
+                    "pool": {
+                      "type": "Permanents"
+                    }
+                  }
+                }
+              }
+            ]
+          }
+        }
+      ],
+      "typeLine": {
+        "subtypes": [
+          "Avatar"
+        ],
+        "types": [
+          "Creature"
+        ]
+      }
+    }
+  ]
+}

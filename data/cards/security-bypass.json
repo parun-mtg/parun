@@ -1,0 +1,171 @@
+{
+  "faces": [
+    {
+      "combatRestrictions": [
+        {
+          "type": "CantBeBlockedBy",
+          "value": {
+            "affected": {
+              "type": "Matching",
+              "value": {
+                "type": "And",
+                "value": [
+                  {
+                    "type": "HasCardType",
+                    "value": "Creature"
+                  },
+                  {
+                    "type": "HasAttached",
+                    "value": {
+                      "type": "IsSource"
+                    }
+                  }
+                ]
+              }
+            },
+            "blockers": {
+              "type": "And",
+              "value": []
+            },
+            "unless": {
+              "type": "Compares",
+              "value": {
+                "comparison": "AtLeast",
+                "measured": {
+                  "type": "Count",
+                  "value": {
+                    "aggregation": {
+                      "type": "Members"
+                    },
+                    "filter": {
+                      "type": "IsAttacking"
+                    },
+                    "scope": {
+                      "type": "InZone",
+                      "value": {
+                        "player": {
+                          "type": "Relative",
+                          "value": "AnyPlayer"
+                        },
+                        "zone": "Battlefield"
+                      }
+                    }
+                  }
+                },
+                "threshold": {
+                  "type": "Literal",
+                  "value": 2
+                }
+              }
+            }
+          }
+        }
+      ],
+      "enchant": [
+        {
+          "pool": {
+            "type": "Creatures"
+          }
+        }
+      ],
+      "manaCost": [
+        {
+          "type": "Generic",
+          "value": 1
+        },
+        {
+          "type": "OfType",
+          "value": {
+            "type": "Colored",
+            "value": "Blue"
+          }
+        }
+      ],
+      "name": "Security Bypass",
+      "oracleText": "Enchant creature\nAs long as enchanted creature is attacking alone, it can't be blocked.\nEnchanted creature has \"Whenever this creature deals combat damage to a player, it connives.\" (Its controller draws a card, then discards a card. If they discarded a nonland card, they put a +1/+1 counter on this creature.)",
+      "staticAbilities": [
+        {
+          "affected": {
+            "type": "Matching",
+            "value": {
+              "type": "And",
+              "value": [
+                {
+                  "type": "HasCardType",
+                  "value": "Creature"
+                },
+                {
+                  "type": "HasAttached",
+                  "value": {
+                    "type": "IsSource"
+                  }
+                }
+              ]
+            }
+          },
+          "modifications": [
+            {
+              "type": "GainAbility",
+              "value": {
+                "type": "Triggered",
+                "value": {
+                  "condition": {
+                    "type": "DealsDamage",
+                    "value": {
+                      "actor": {
+                        "type": "Self"
+                      },
+                      "kind": "Combat",
+                      "recipients": [
+                        {
+                          "type": "Player",
+                          "value": {
+                            "type": "Relative",
+                            "value": "AnyPlayer"
+                          }
+                        }
+                      ]
+                    }
+                  },
+                  "modal": {
+                    "modes": [
+                      {
+                        "clauses": [
+                          {
+                            "effects": [
+                              {
+                                "type": "Connive",
+                                "value": {
+                                  "quantity": {
+                                    "type": "Literal",
+                                    "value": 1
+                                  },
+                                  "ref": {
+                                    "type": "InSlot",
+                                    "value": "self"
+                                  }
+                                }
+                              }
+                            ]
+                          }
+                        ]
+                      }
+                    ]
+                  }
+                }
+              }
+            }
+          ]
+        }
+      ],
+      "typeLine": {
+        "subtypes": [
+          "Aura"
+        ],
+        "types": [
+          "Enchantment"
+        ]
+      }
+    }
+  ]
+}
