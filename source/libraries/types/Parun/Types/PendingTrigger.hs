@@ -5,6 +5,7 @@ import Numeric.Natural (Natural)
 import qualified Parun.Types.AbilityName as AbilityName
 import qualified Parun.Types.Binding as Binding
 import qualified Parun.Types.Card as Card
+import qualified Parun.Types.EventGroup as EventGroup
 import qualified Parun.Types.GrantedAbility as GrantedAbility
 import qualified Parun.Types.LoggedEvent as LoggedEvent
 import qualified Parun.Types.ObjectId as ObjectId
@@ -49,10 +50,17 @@ data PendingTrigger = MkPendingTrigger
     -- mana ability, nor can an inherent ability, CR 605.1b's middle clause
     -- naming events an inherent ability the rulebook states never watches. Read
     -- by Parun.Engine.ManaAbility.isTriggeredManaAbility, CR 605.5a asking what
-    -- added the mana rather than only what the ability watches. The group is
-    -- CR 610.3b's "after that ability triggered", which Engine.triggeredSince
-    -- stamps on the stack object (TurnRegisters.stackedIn).
+    -- added the mana rather than only what the ability watches.
     firedBy :: Maybe LoggedEvent.LoggedEvent,
+    -- | CR 610.3b's "after that ability triggered": the first event group after
+    -- it triggered -- the trigger event's next, the reflexive entry's
+    -- DelayedTrigger.armedIn (CR 603.12), or the next group of the board a
+    -- state trigger matched on (CR 603.8). Engine stamps it on the stack
+    -- object (TurnRegisters.stackedIn). Proved for an event trigger by
+    -- data/scenarios/trigger/cr-610-3b-a-crowning-while-palace-jailers-exile-waits-for-the-stack-keeps-the-creature.json
+    -- and for a reflexive one by
+    -- data/scenarios/trigger/cr-610-3b-a-crowning-before-a-reflexive-exile-reaches-the-stack-keeps-the-creature.json.
+    since :: EventGroup.EventGroup,
     -- | CR 113.2c: how many value-identical instances of `ability` the source
     -- bore as it triggered, 1 unless one printing or one granter repeats it
     -- (two granters' grants are unequal, Parun.Engine.Binding.acquiredFrom).

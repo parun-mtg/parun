@@ -5,6 +5,7 @@ module Parun.Codec.DelayedTrigger where
 import qualified Data.Map.Strict as Map
 import qualified Parun.Codec.Binding as Binding
 import qualified Parun.Codec.Card as Card
+import qualified Parun.Codec.EventGroup as EventGroup
 import qualified Parun.Codec.Expiry as Expiry
 import qualified Parun.Codec.GrantedAbility as GrantedAbility
 import qualified Parun.Codec.ObjectId as ObjectId
@@ -37,6 +38,9 @@ codec = Fields.object $ do
   expiry <- Fields.defaulted "expiry" Nothing (Common.maybe Expiry.codec) DelayedTrigger.expiry
   -- CR 603.7a: always present, an entry having been created at some moment.
   createdAt <- Fields.required "createdAt" Timestamp.codec DelayedTrigger.createdAt
+  -- CR 603.12: always present, an entry having been created between two
+  -- event groups.
+  armedIn <- Fields.required "armedIn" EventGroup.codec DelayedTrigger.armedIn
   pure
     DelayedTrigger.MkDelayedTrigger
       { DelayedTrigger.ability = ability,
@@ -47,5 +51,6 @@ codec = Fields.object $ do
         DelayedTrigger.delayed = delayed,
         DelayedTrigger.window = window,
         DelayedTrigger.expiry = expiry,
-        DelayedTrigger.createdAt = createdAt
+        DelayedTrigger.createdAt = createdAt,
+        DelayedTrigger.armedIn = armedIn
       }

@@ -3334,7 +3334,7 @@ activeReplacementChildren c (ActiveReplacement.MkActiveReplacement effect source
 
 -- | A delayed triggered ability's children (CR 603.7a).
 delayedTriggerChildren :: (Applicative f) => StoredChildren f -> DelayedTrigger.DelayedTrigger -> f DelayedTrigger.DelayedTrigger
-delayedTriggerChildren c (DelayedTrigger.MkDelayedTrigger ability source controller bindings choices delayed window expiry createdAt) =
+delayedTriggerChildren c (DelayedTrigger.MkDelayedTrigger ability source controller bindings choices delayed window expiry createdAt armedIn) =
   DelayedTrigger.MkDelayedTrigger
     <$> storedTriggered c ability
     <*> storedObject c source
@@ -3345,6 +3345,7 @@ delayedTriggerChildren c (DelayedTrigger.MkDelayedTrigger ability source control
     <*> pure window
     <*> traverse (expiryChildren c) expiry
     <*> pure createdAt
+    <*> pure armedIn
 
 -- | A later payment's children (CR 116.2c): its price, its payoff and its expiry.
 activeLaterPaymentChildren :: (Applicative f) => StoredChildren f -> ActiveLaterPayment.ActiveLaterPayment -> f ActiveLaterPayment.ActiveLaterPayment
