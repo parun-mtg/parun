@@ -1,0 +1,309 @@
+{
+  "board": {
+    "active": "alice",
+    "seats": [
+      {
+        "battlefield": [
+          {
+            "card": "Volatile Arsonist",
+            "label": "ars",
+            "ready": true
+          }
+        ],
+        "library": [
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          }
+        ],
+        "name": "alice"
+      },
+      {
+        "library": [
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          }
+        ],
+        "name": "bob"
+      },
+      {
+        "battlefield": [
+          {
+            "card": "Hill Giant",
+            "label": "giant",
+            "ready": true
+          },
+          {
+            "card": "Basri Ket",
+            "counters": [
+              {
+                "key": {
+                  "type": "Loyalty"
+                },
+                "value": 5
+              }
+            ],
+            "label": "basri"
+          }
+        ],
+        "library": [
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          }
+        ],
+        "name": "carol"
+      }
+    ],
+    "step": "PrecombatMain"
+  },
+  "description": "CR 115.1d / 601.2c / 702.145: Volatile Arsonist's attack trigger deals 1 to each of a target creature, a target player and a target planeswalker, and Dire-Strain Anarchist's by night deals 2",
+  "note": "Three seats so the targeted player (carol) is not the attacked one (bob), and carol's Hill Giant and Basri Ket do not block. The Giant's damage wears off between the two attacks; Basri goes 5 to 4 to 2. Alice casts nothing on turn 1, so turn 2 is night and the Arsonist is the Anarchist by alice's turn 4.",
+  "timeline": [
+    {
+      "check": {
+        "Names": {
+          "names": [
+            "Volatile Arsonist"
+          ],
+          "object": "$ars"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": {
+        "Attack": [
+          "$ars"
+        ]
+      },
+      "player": "alice",
+      "step": "DeclareAttackers",
+      "turn": 1
+    },
+    {
+      "do": {
+        "ChooseAttackTarget": "$bob"
+      },
+      "player": "alice",
+      "source": "$ars",
+      "step": "DeclareAttackers",
+      "turn": 1
+    },
+    {
+      "do": {
+        "ChooseTargets": {
+          "creature": [
+            "$giant"
+          ],
+          "planeswalker": [
+            "$basri"
+          ],
+          "player": [
+            "$carol"
+          ]
+        }
+      },
+      "player": "alice",
+      "step": "DeclareAttackers",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Damage": {
+          "damage": 1,
+          "object": "$giant"
+        }
+      },
+      "player": "alice",
+      "step": "EndOfCombat",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Life": {
+          "life": 19,
+          "player": "carol"
+        }
+      },
+      "player": "alice",
+      "step": "EndOfCombat",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Counters": {
+          "count": 4,
+          "kind": {
+            "type": "Loyalty"
+          },
+          "object": "$basri"
+        }
+      },
+      "player": "alice",
+      "step": "EndOfCombat",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Life": {
+          "life": 16,
+          "player": "bob"
+        }
+      },
+      "player": "alice",
+      "step": "EndOfCombat",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Names": {
+          "names": [
+            "Dire-Strain Anarchist"
+          ],
+          "object": "$ars"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 4
+    },
+    {
+      "do": {
+        "Attack": [
+          "$ars"
+        ]
+      },
+      "player": "alice",
+      "step": "DeclareAttackers",
+      "turn": 4
+    },
+    {
+      "do": {
+        "ChooseAttackTarget": "$bob"
+      },
+      "player": "alice",
+      "source": "$ars",
+      "step": "DeclareAttackers",
+      "turn": 4
+    },
+    {
+      "do": {
+        "ChooseTargets": {
+          "creature": [
+            "$giant"
+          ],
+          "planeswalker": [
+            "$basri"
+          ],
+          "player": [
+            "$carol"
+          ]
+        }
+      },
+      "player": "alice",
+      "step": "DeclareAttackers",
+      "turn": 4
+    },
+    {
+      "check": {
+        "Damage": {
+          "damage": 2,
+          "object": "$giant"
+        }
+      },
+      "player": "alice",
+      "step": "EndOfCombat",
+      "turn": 4
+    },
+    {
+      "check": {
+        "Life": {
+          "life": 17,
+          "player": "carol"
+        }
+      },
+      "player": "alice",
+      "step": "EndOfCombat",
+      "turn": 4
+    },
+    {
+      "check": {
+        "Counters": {
+          "count": 2,
+          "kind": {
+            "type": "Loyalty"
+          },
+          "object": "$basri"
+        }
+      },
+      "player": "alice",
+      "step": "EndOfCombat",
+      "turn": 4
+    },
+    {
+      "check": {
+        "Life": {
+          "life": 11,
+          "player": "bob"
+        }
+      },
+      "player": "alice",
+      "step": "EndOfCombat",
+      "turn": 4
+    },
+    {
+      "do": {
+        "Attack": []
+      },
+      "player": "carol",
+      "step": "DeclareAttackers",
+      "turn": 3
+    }
+  ]
+}
