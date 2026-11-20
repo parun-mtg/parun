@@ -638,8 +638,8 @@ manaEffectSlotOffends ability =
       otherReads mode =
         let stripped = mode {Mode.clauses = fmap unyielded (Mode.clauses mode)}
          in Map.keysSet (Resolve.modeSlots stripped) Set.\\ Resolve.definedSlots (Foldable.toList (Mode.allEffects stripped))
-      reads = foldMap otherReads (Foldable.toList (Modal.modes modal) <> [Modal.sharedMode modal])
-   in ManaAbility.isManaAbility ability && not (Set.null (Set.intersection reads (manaPaymentSlots Set.\\ manaPaymentAmountSlots)))
+      everyRead = foldMap otherReads (Foldable.toList (Modal.modes modal) <> [Modal.sharedMode modal])
+   in ManaAbility.isManaAbility ability && not (Set.null (Set.intersection everyRead (manaPaymentSlots Set.\\ manaPaymentAmountSlots)))
 
 -- CR 603.7 / 109.5: does this card arm a delayed ability "on your next turn"
 -- whose condition is not scoped to its controller's turn?
