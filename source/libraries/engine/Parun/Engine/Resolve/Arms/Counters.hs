@@ -259,7 +259,7 @@ putCounters resolving source controller legal chosen (PutCounters.MkPutCounters 
   -- illegal slot (CR 608.2b) or a player recipient answers with nobody. A
   -- CR 608.2d choice is asked through askingObjects, ModifyTarget's reason:
   -- Phylactery Lich's "put a phylactery counter on an artifact you control".
-  targets <- Common.askingObjects Common.Present resolving source controller legal chosen ref
+  targets <- Common.askingObjects Common.Present Nothing resolving source controller legal chosen ref
   gs <- State.get
   let viewOf = effectViewOf resolving source legal gs
       context = effectContext gs resolving controller source legal (slotBindings resolving gs)
@@ -395,13 +395,14 @@ putCountersFrom resolving source controller legal (PutCountersFrom.MkPutCounters
 -- 608.2h), each kind once however many permanents bear it (CR 122.1's
 -- interchangeable counters). `ref` is asked once per kind, in ascending kind
 -- order, every choice made before any counter lands (CR 608.2d), so Exotic
--- Pets' "either of those tokens" is chosen kind by kind. Then ONE CR 608.2f
--- bracket, the PutCounters arm's, with one CR 122.6 funnel call per counter.
+-- Pets' "either of those tokens" is chosen kind by kind, each prompt naming
+-- its kind. Then ONE CR 608.2f bracket, the PutCounters arm's, with one CR
+-- 122.6 funnel call per counter.
 putCounterOfEachKind :: ObjectId -> ObjectId -> PlayerId -> Map.Map SlotName (Set Recipient) -> Map.Map SlotName (Set Recipient) -> PutCounterOfEachKind.PutCounterOfEachKind -> Game ()
 putCounterOfEachKind resolving source controller legal chosen (PutCounterOfEachKind.MkPutCounterOfEachKind among ref) = do
   gs <- State.get
   let kinds = Set.toAscList (foldMap (Set.fromList . Common.objectKinds gs) (objectRefObjects legal resolving controller source gs among))
-  picks <- Monad.forM kinds $ \kind -> fmap ((,) kind) (Common.askingObjects Common.Present resolving source controller legal chosen ref)
+  picks <- Monad.forM kinds $ \kind -> fmap ((,) kind) (Common.askingObjects Common.Present (Just kind) resolving source controller legal chosen ref)
   cause <- State.gets (Event.resolvingCounterCause controller)
   Monad.unless (all (null . snd) picks) . Event.simultaneously . Monad.forM_ picks $ \(kind, targets) ->
     Monad.forM_ targets $ \target -> Event.putCounters cause target kind 1
@@ -1400,7 +1401,7 @@ airbend applyEffectWith runSubgame resolving source controller legal chosen ref 
 -- writes its own (Parun.Engine.Assimilate.cardInstruction).
 assimilate :: (Game Result -> ObjectId -> ObjectId -> PlayerId -> Map.Map SlotName (Set Recipient) -> Map.Map SlotName (Set Recipient) -> Effect Card.Type.Card (GrantedAbility.GrantedAbility Card.Type.Card) -> Game ()) -> Game Result -> ObjectId -> ObjectId -> PlayerId -> Map.Map SlotName (Set Recipient) -> Map.Map SlotName (Set Recipient) -> ObjectRef -> Game ()
 assimilate applyEffectWith runSubgame resolving source controller legal chosen ref = do
-  named <- Common.askingObjects Common.Present resolving source controller legal chosen ref
+  named <- Common.askingObjects Common.Present Nothing resolving source controller legal chosen ref
   onBattlefield <- State.gets (\g oid -> Set.member oid (GameState.battlefield g))
   let (permanents, cards) = List.partition onBattlefield named
       bound slot oids = Map.insert slot (Set.fromList (fmap Recipient.ToObject oids))
@@ -1611,7 +1612,7 @@ cloak settle resolving source controller legal chosen (Cloak.Type.MkCloak who ca
   let inApnapOrder ref =
         let named = Set.fromList (playerRefPlayers legal resolving source controller gs ref)
          in filter (`Set.member` named) (Game.apnapOrder gs)
-  asked <- traverse (Common.askingObjects Common.Present resolving source controller legal chosen) cards
+  asked <- traverse (Common.askingObjects Common.Present Nothing resolving source controller legal chosen) cards
   ordered <- case asked of
     Just batch@(_ : _ : _) | shuffled -> Just . Game.honourShuffle batch <$> Game.ask (Prompt.Shuffle batch)
     _ -> pure asked
@@ -1840,7 +1841,7 @@ tap resolving source controller legal (Tap.MkTap ref mTapped mTapper) = do
 -- outside the untap step" keeps it out of card data.
 untap :: ObjectId -> ObjectId -> PlayerId -> Map.Map SlotName (Set Recipient) -> Map.Map SlotName (Set Recipient) -> ObjectRef -> Game ()
 untap resolving source controller legal chosen ref = do
-  victims <- Common.askingObjects Common.Present resolving source controller legal chosen ref
+  victims <- Common.askingObjects Common.Present Nothing resolving source controller legal chosen ref
   Monad.forM_ victims Event.untap
 
 detain :: ObjectId -> ObjectId -> PlayerId -> Map.Map SlotName (Set Recipient) -> ObjectRef -> Game ()
@@ -1875,7 +1876,7 @@ pair resolving source controller legal chosen ref = do
   --
   -- The CHOSEN ref goes through askingObjects and not the pure sweep: CR
   -- 608.2d's choice is an ask, which objectRefObjects cannot make.
-  partners <- Common.askingObjects Common.Present resolving source controller legal chosen ref
+  partners <- Common.askingObjects Common.Present Nothing resolving source controller legal chosen ref
   State.modify' $ \gs -> case partners of
     [partner] -> Soulbond.pair controller source partner gs
     _ -> gs

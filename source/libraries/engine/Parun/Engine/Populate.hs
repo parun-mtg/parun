@@ -69,7 +69,7 @@ candidates pid gs =
 populate :: Settle.Settle -> PlayerId -> ObjectId -> Game ()
 populate settle pid resolving = do
   gs <- State.get
-  chosen <- Game.chooseAmong (\decider asked pool -> Prompt.ChoosePermanent decider asked resolving pool Seq.empty) pid (candidates pid gs)
+  chosen <- Game.chooseAmong (\decider asked pool -> Prompt.ChoosePermanent decider asked resolving pool Seq.empty Nothing) pid (candidates pid gs)
   Monad.forM_ chosen $ \token -> do
     -- Against the LIVE state and not `gs`, Parun.Engine.Event.bringInto's care:
     -- the choice above wrote the answer into the transcript, and minting off

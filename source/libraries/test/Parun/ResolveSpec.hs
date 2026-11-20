@@ -2390,7 +2390,7 @@ crabSpec s registry =
       picking byCarol byOthers p = case p of
         Prompt.ChooseOpponent _ _ _ _ seats
           | List.elem S.carol (NonEmpty.toList seats) -> S.carol
-        Prompt.ChoosePermanent _ asked _ offered _ ->
+        Prompt.ChoosePermanent _ asked _ offered _ _ ->
           let wanted = if asked == S.carol then byCarol else byOthers
            in if List.elem wanted (NonEmpty.toList offered) then wanted else NonEmpty.head offered
         _ -> S.identityAnswer p
@@ -2706,7 +2706,7 @@ tariffSpec s registry =
         onStack = S.runPure S.identityAnswer gs (S.cast S.alice tariffId)
         logging :: Prompt.Prompt r -> State.State [(PlayerId.PlayerId, Either [ObjectId.ObjectId] (Maybe ManaCost.ManaCost))] r
         logging p = case p of
-          Prompt.ChoosePermanent _ who _ candidates _ -> do
+          Prompt.ChoosePermanent _ who _ candidates _ _ -> do
             State.modify' (<> [(who, Left (NonEmpty.toList candidates))])
             pure (NonEmpty.last candidates)
           Prompt.ChooseToPay _ who _ _ cost _ -> do

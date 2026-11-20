@@ -32,7 +32,7 @@
     "step": "PrecombatMain"
   },
   "description": "CR 601.2h Security Rhox cast for {R}{G} leaves a Forest's floating {G} in the pool",
-  "note": "Alice taps her Forest for {G} first, then casts the Rhox for its {R}{G} alternative cost. That cost spends only mana produced by Treasures, so the floating {G} cannot pay it: both Buried Treasures are sacrificed for the {R} and the {G}.",
+  "note": "Alice taps her Forest for {G} first, then casts the Rhox for its {R}{G} alternative cost. That cost spends only mana produced by Treasures, so the floating {G} cannot pay it: both Buried Treasures are sacrificed for the {R} and the {G}, and the Forest's {G} is still in the pool after the cast.",
   "timeline": [
     {
       "do": {
@@ -105,6 +105,30 @@
               }
             ]
           ]
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "View": {
+          "is": [
+            {
+              "manaType": {
+                "type": "Colored",
+                "value": "Green"
+              },
+              "tags": [],
+              "retention": "Ordinary",
+              "restriction": null,
+              "rider": null,
+              "sourceChoices": null
+            }
+          ],
+          "of": "ManaPool",
+          "player": "alice"
         }
       },
       "player": "alice",

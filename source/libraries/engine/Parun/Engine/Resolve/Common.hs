@@ -749,7 +749,7 @@ chosenPermanents purpose legal resolving controller source choice = do
     controller
     legal
     chooser
-    (\decider who pool -> Prompt.ChoosePermanent decider who source pool earlier)
+    (\decider who pool -> Prompt.ChoosePermanent decider who source pool earlier Nothing)
     (\decider who pool ceiling_ -> Prompt.ChooseAnyNumber decider who source purpose pool ceiling_ earlier)
     amount
     count
@@ -870,9 +870,12 @@ data Members
 -- Every ask reads its candidates off the board before the instruction acts and
 -- filters the answer rather than trusting it.
 --
--- `offered` is the calling opcode's, read by the "from among them" arm alone.
+-- `offered` is the calling opcode's, read by the "from among them" arm alone;
+-- `forKind`, the counter kind the pick is for, by the chosen OneAmong arm alone
+-- (Prompt.ChoosePermanent's, Exotic Pets).
 askingObjects ::
   Members ->
+  Maybe (CounterKind.CounterKind Keyword.Type.Keyword) ->
   ObjectId ->
   ObjectId ->
   PlayerId ->
@@ -880,7 +883,7 @@ askingObjects ::
   Map.Map SlotName (Set Recipient) ->
   ObjectRef.ObjectRef ->
   Game [ObjectId]
-askingObjects offered resolving source controller legal chosen ref = case ref of
+askingObjects offered forKind resolving source controller legal chosen ref = case ref of
   -- Fall of the Thran's "two land cards from their graveyard": the count per
   -- chooser, DISTINCT cards (CR 608.2c's rules of English), asked in APNAP order
   -- (CR 101.4).
@@ -898,16 +901,16 @@ askingObjects offered resolving source controller legal chosen ref = case ref of
   -- illegal is not among them. Zack Fair's "an Equipment that was attached to
   -- Zack Fair" is the controller's pick instead (CR 608.2d), unasked at one.
   ObjectRef.OneAmong selection inner -> do
-    pool <- askingObjects offered resolving source controller legal chosen inner
+    pool <- askingObjects offered Nothing resolving source controller legal chosen inner
     Maybe.maybeToList <$> case selection of
       CardSelection.AtRandom -> Game.drawAmong Prompt.RandomObject pool
-      CardSelection.ByChoice -> Game.chooseAmong (\decider who candidates -> Prompt.ChoosePermanent decider who source candidates Seq.empty) controller pool
+      CardSelection.ByChoice -> Game.chooseAmong (\decider who candidates -> Prompt.ChoosePermanent decider who source candidates Seq.empty forKind) controller pool
   -- Tovolar's "any number of Human Werewolves you control", read off a board CR
   -- 702.145c has already turned him over on.
   ObjectRef.ChosenPermanents choice -> snd <$> chosenPermanents AnyNumberOf.Permanents legal resolving controller source choice
   -- Each ref asked or read in the order written, before anything moves; an
   -- object two refs name is named once.
-  ObjectRef.AllOf refs -> fmap (ListUtils.nubOrd . concat) (traverse (askingObjects offered resolving source controller legal chosen) (NonEmpty.toList refs))
+  ObjectRef.AllOf refs -> fmap (ListUtils.nubOrd . concat) (traverse (askingObjects offered forKind resolving source controller legal chosen) (NonEmpty.toList refs))
   -- Every other arm is a read. Exhaustive with no `_`, so a new arm has to say
   -- which it is: one answered [] by objectRefObjects but falling through here
   -- would name nothing.
@@ -944,8 +947,8 @@ askingObjects offered resolving source controller legal chosen ref = case ref of
 -- keeps a card from writing any other chooser here.
 loopMembers :: ObjectId -> ObjectId -> PlayerId -> Map.Map SlotName (Set Recipient) -> Map.Map SlotName (Set Recipient) -> ObjectRef.ObjectRef -> Game [Recipient]
 loopMembers resolving source controller legal chosen ref = case ref of
-  ObjectRef.ChosenCardFromAmong _ -> fmap Recipient.ToObject <$> askingObjects Present resolving source controller legal chosen ref
-  ObjectRef.ChosenCardInHand _ -> fmap Recipient.ToObject <$> askingObjects Present resolving source controller legal chosen ref
+  ObjectRef.ChosenCardFromAmong _ -> fmap Recipient.ToObject <$> askingObjects Present Nothing resolving source controller legal chosen ref
+  ObjectRef.ChosenCardInHand _ -> fmap Recipient.ToObject <$> askingObjects Present Nothing resolving source controller legal chosen ref
   _ -> State.gets (\gs -> objectRefRecipients legal resolving controller source gs ref)
 
 -- CR 701.9a's move for every Effect.Discard arm, once the cards are named:
@@ -1004,7 +1007,7 @@ turnPermanentsOver ::
   Game ()
 turnPermanentsOver legal chosen resolving controller source ref = do
   -- WHICH permanents turn over, gathered BEFORE the turn (CR 608.2f).
-  victims <- askingObjects Present resolving source controller legal chosen ref
+  victims <- askingObjects Present Nothing resolving source controller legal chosen ref
   -- CR 613.7m: which of the swept victims will ACTUALLY take a stamp, ordered by
   -- their controllers. Asked BEFORE the write and off the pre-turn board, the
   -- gather's own reason (CR 608.2f), and `turnsOver` below is the whole

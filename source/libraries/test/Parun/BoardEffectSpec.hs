@@ -2294,7 +2294,7 @@ summonValeforSpec :: (Monad m) => Spec.Spec m n -> Registry.Registry m -> n ()
 summonValeforSpec s registry =
   let told :: Prompt.Prompt r -> State.State [(PlayerId.PlayerId, [ObjectId.ObjectId], [(PlayerId.PlayerId, Set.Set ObjectId.ObjectId)])] r
       told p = case p of
-        Prompt.ChoosePermanent decider _ _ offered earlier -> do
+        Prompt.ChoosePermanent decider _ _ offered earlier _ -> do
           State.modify (<> [(Decider.unwrap decider, NonEmpty.toList offered, Foldable.toList earlier)])
           pure (NonEmpty.last offered)
         _ -> pure (S.identityAnswer p)

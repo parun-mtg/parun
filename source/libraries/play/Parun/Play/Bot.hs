@@ -199,7 +199,7 @@ bot names = Answerer.MkAnswerer $ \asked -> case Asked.prompt asked of
   Prompt.ChooseDivision _ _ _ dividing targets ->
     pickOr (Replay.defaultAnswer (Asked.prompt asked)) (filter (Target.divides dividing targets) (divisions (NonEmpty.toList targets) (Dividing.total dividing)))
   Prompt.ChooseToPay {} -> Generator.pick (PaymentDecision.Declines NonEmpty.:| [PaymentDecision.Pays])
-  Prompt.ChoosePermanent _ _ _ candidates _ -> Generator.pick candidates
+  Prompt.ChoosePermanent _ _ _ candidates _ _ -> Generator.pick candidates
   Prompt.ChooseCardFromAmong _ _ _ candidates -> Generator.pick candidates
   Prompt.ChooseSacrifices _ _ _ candidates count _ -> fmap (Set.fromList . List.genericTake count) (Generator.shuffle candidates)
   -- CR 118.1 / 601.2h / 608.2d: any bearer, then any division of its

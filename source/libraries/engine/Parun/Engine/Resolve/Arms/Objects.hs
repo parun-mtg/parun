@@ -464,7 +464,7 @@ createCopy settle resolving source controller legal chosen (CreateCopy.MkCreateC
   -- Asked before the board is read (CR 608.2d), so Twilight Diviner's "a copy
   -- of one of them" is chosen. Common.LastKnown, since the copy only reads its
   -- pick: CR 608.2h's branch below answers for one that has left.
-  sources <- Common.askingObjects Common.LastKnown resolving source controller legal chosen ref
+  sources <- Common.askingObjects Common.LastKnown Nothing resolving source controller legal chosen ref
   gs <- State.get
   -- CR 707.2 / 111.3: this many tokens per named permanent, minted through the
   -- same CR 111.2 funnel, carrying the copied permanent's COPIABLE values
@@ -558,7 +558,7 @@ becomeCopy resolving source controller legal chosen (BecomeCopy.MkBecomeCopy ori
   -- volatile-chimera-becomes-a-random-card-its-controller-exiled-before-the-game
   -- proves it.
   originals <- case original of
-    CopyOriginal.OfObject ref -> Common.askingObjects Common.LastKnown resolving source controller legal chosen ref
+    CopyOriginal.OfObject ref -> Common.askingObjects Common.LastKnown Nothing resolving source controller legal chosen ref
     CopyOriginal.Named _ -> pure []
     CopyOriginal.Defined _ -> pure []
   let onStackIn g oid = List.find ((== Zone.Stack) . Object.zone) (Game.lookupObject oid g)
@@ -2083,7 +2083,7 @@ exploit settle resolving source controller legal = do
           source
           gs
           (Filter.Type.And [Filter.Type.HasCardType CardType.Creature, Filter.Type.HeldBy Holder.Controller PlayerRelation.You])
-  victims <- Maybe.maybeToList <$> Game.chooseAmong (\decider who pool -> Prompt.ChoosePermanent decider who source pool Seq.empty) controller candidates
+  victims <- Maybe.maybeToList <$> Game.chooseAmong (\decider who pool -> Prompt.ChoosePermanent decider who source pool Seq.empty Nothing) controller candidates
   Monad.forM_ victims $ \victim -> Event.simultaneously $ do
     Event.sacrifice settle controller victim
     State.modify' (Event.recordEvent (GameEvent.Exploited (Exploited.MkExploited source victim)))
@@ -2213,11 +2213,11 @@ attachBound resolving source controller legal (AttachBound.MkAttachBound subject
 -- "another creature".
 attachAll :: ObjectId -> ObjectId -> PlayerId -> Map.Map SlotName (Set Recipient) -> Map.Map SlotName (Set Recipient) -> AttachAll.AttachAll -> Game ()
 attachAll resolving source controller legal chosen (AttachAll.MkAttachAll ref filter_) = do
-  movers <- Common.askingObjects Common.Present resolving source controller legal chosen ref
+  movers <- Common.askingObjects Common.Present Nothing resolving source controller legal chosen ref
   gs <- State.get
   let grants = Projection.controlGrants gs
       inReach oid = all (\you -> Projection.objectInRangeGiven grants you oid gs) (Plane.rangePerspective source controller gs)
-  destination <- Game.chooseAmong (\decider who pool -> Prompt.ChoosePermanent decider who source pool Seq.empty) controller (filter inReach (Attach.groupHostsFor (effectContext gs resolving controller source legal (slotBindings resolving gs)) movers filter_ gs))
+  destination <- Game.chooseAmong (\decider who pool -> Prompt.ChoosePermanent decider who source pool Seq.empty Nothing) controller (filter inReach (Attach.groupHostsFor (effectContext gs resolving controller source legal (slotBindings resolving gs)) movers filter_ gs))
   -- Proposed as a bare ToObject; Event.attach re-tags it per mover, as
   -- AttachTarget's arm says.
   Foldable.for_ destination (Common.attachTogether movers . Recipient.ToObject)
@@ -2230,7 +2230,7 @@ attachAll resolving source controller legal chosen (AttachAll.MkAttachAll ref fi
 -- re-asking Object.attachedTo.
 unattach :: ObjectId -> ObjectId -> PlayerId -> Map.Map SlotName (Set Recipient) -> Map.Map SlotName (Set Recipient) -> ObjectRef -> Game ()
 unattach resolving source controller legal chosen ref = do
-  movers <- Common.askingObjects Common.Present resolving source controller legal chosen ref
+  movers <- Common.askingObjects Common.Present Nothing resolving source controller legal chosen ref
   Event.simultaneously (Monad.forM_ movers Event.detach)
 
 exileHaunting :: Settle.Settle -> ObjectId -> Map.Map SlotName (Set Recipient) -> ExileHaunting.ExileHaunting -> Game ()

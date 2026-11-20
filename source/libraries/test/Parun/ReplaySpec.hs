@@ -2077,7 +2077,7 @@ combatReplaySpec s =
         Spec.it s "ChoosePermanent round-trips and does not decode as another ObjectId answer" $ do
           let a = ObjectId.MkObjectId 7
               b = ObjectId.MkObjectId 9
-              p = Prompt.ChoosePermanent decider S.alice oid (a NonEmpty.:| [b]) Seq.empty
+              p = Prompt.ChoosePermanent decider S.alice oid (a NonEmpty.:| [b]) Seq.empty Nothing
           Spec.assertEqWith s "returning the second round trips" (Replay.decode p (Replay.encode p b)) (Just b)
           Spec.assertEqWith s "returning the first round trips" (Replay.decode p (Replay.encode p a)) (Just a)
           Spec.assertEqWith s "a graveyard answer does not satisfy it" (Replay.decode p (Response.ChoseCardInGraveyard a)) Nothing

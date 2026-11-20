@@ -40,7 +40,7 @@ board plains wake piker giant flier =
 -- and took the offered set's front copies the other token.
 choosingLast :: Prompt.Prompt r -> r
 choosingLast p = case p of
-  Prompt.ChoosePermanent _ _ _ candidates _ -> NonEmpty.last candidates
+  Prompt.ChoosePermanent _ _ _ candidates _ _ -> NonEmpty.last candidates
   _ -> S.castAnswer p
 
 spec :: (Monad m) => Spec.Spec m n -> Registry.Registry m -> n ()

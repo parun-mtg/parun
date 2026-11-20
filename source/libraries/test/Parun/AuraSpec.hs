@@ -2786,7 +2786,7 @@ groupAttachSpec s registry =
       spinnersAnswer :: ObjectId.ObjectId -> (NonEmpty.NonEmpty ObjectId.ObjectId -> ObjectId.ObjectId) -> Prompt.Prompt r -> r
       spinnersAnswer victim choose p = case p of
         Prompt.ChooseTargets _ _ _ sets -> fmap (Set.filter ((== Just victim) . Recipient.objectOf) . snd) sets
-        Prompt.ChoosePermanent _ _ _ offered _ -> choose offered
+        Prompt.ChoosePermanent _ _ _ offered _ _ -> choose offered
         _ -> S.identityAnswer p
       settle :: (forall r. Prompt.Prompt r -> r) -> GameState.GameState -> GameState.GameState
       settle answer gs = S.runPure answer gs Engine.settleForPriority
