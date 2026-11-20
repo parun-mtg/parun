@@ -106,6 +106,7 @@ import qualified Parun.Types.DoesNotUntapNext as DoesNotUntapNext
 import qualified Parun.Types.Draw as Draw
 import qualified Parun.Types.Duration as Duration
 import qualified Parun.Types.EachCardInExiledPile as EachCardInExiledPile
+import qualified Parun.Types.EachKind as EachKind
 import qualified Parun.Types.Earthbend as Earthbend
 import qualified Parun.Types.Effect as Effect
 import qualified Parun.Types.EntryAttack as EntryAttack
@@ -145,6 +146,7 @@ import qualified Parun.Types.InZone as InZone
 import qualified Parun.Types.InitiativeTarget as InitiativeTarget
 import qualified Parun.Types.JoinAttack as JoinAttack
 import qualified Parun.Types.Keyword as Keyword
+import qualified Parun.Types.KindStep as KindStep
 import qualified Parun.Types.LaterPayment as LaterPayment
 import qualified Parun.Types.LibraryPlacement as LibraryPlacement
 import qualified Parun.Types.LibraryPosition as LibraryPosition
@@ -2602,8 +2604,8 @@ spec s = Spec.describe s "Parun.Codec.Effect" $ do
       s
       toJson
       fromJson
-      (Effect.Proliferate (Just (AnotherCounter.EachKind (SlotName.MkSlotName (Text.pack "target")))))
-      " {\"type\":\"Proliferate\",\"value\":{\"type\":\"EachKind\",\"value\":\"target\"}} "
+      (Effect.Proliferate (Just (AnotherCounter.EachKind (EachKind.MkEachKind (SlotName.MkSlotName (Text.pack "target")) KindStep.Another))))
+      " {\"type\":\"Proliferate\",\"value\":{\"type\":\"EachKind\",\"value\":{\"slot\":\"target\",\"step\":\"Another\"}}} "
   Spec.it s "Rethrow" $
     Common.assertJsonCodec
       s

@@ -250,6 +250,7 @@ import qualified Parun.Types.EachCardFromAmong as EachCardFromAmong
 import qualified Parun.Types.EachCardInExiledPile as EachCardInExiledPile
 import qualified Parun.Types.EachCardInGraveyard as EachCardInGraveyard
 import qualified Parun.Types.EachCardInHand as EachCardInHand
+import qualified Parun.Types.EachKind as EachKind
 import qualified Parun.Types.Earthbend as Earthbend
 import qualified Parun.Types.Effect as Effect
 import qualified Parun.Types.Emerge as Emerge
@@ -319,6 +320,7 @@ import qualified Parun.Types.KeywordCount as KeywordCount
 import qualified Parun.Types.KeywordDesignator as KeywordDesignator
 import qualified Parun.Types.KeywordRiderGrant as KeywordRiderGrant
 import qualified Parun.Types.KeywordTally as KeywordTally
+import qualified Parun.Types.KindStep as KindStep
 import qualified Parun.Types.LaterPayment as LaterPayment
 import qualified Parun.Types.Layout as Layout
 import qualified Parun.Types.LeavesTrigger as LeavesTrigger
@@ -2013,15 +2015,21 @@ modeDivisionDangles mode =
       offends (slot, ref) = ref /= ObjectRef.InSlot slot || not (Set.member slot divided)
    in any offends sharing || not (Set.isSubsetOf divided reads_)
 
--- Unprinted: a chosen-kind Proliferate (AnotherCounter.ChosenKind) whose slot
--- admits a player, whose counters its prompt cannot offer.
-cardChosenKindReachesPlayer :: Face.Face Card.Type.Card -> Bool
-cardChosenKindReachesPlayer = any (any offends . Modal.modes) . faceModals
+-- Unprinted: a targeted Proliferate asking about kinds -- a chosen kind
+-- (AnotherCounter.ChosenKind) or another-or-one-fewer
+-- (KindStep.AnotherOrRemoveOne) -- whose slot admits a player, whose counters
+-- its prompt cannot offer.
+cardKindChoiceReachesPlayer :: Face.Face Card.Type.Card -> Bool
+cardKindChoiceReachesPlayer = any (any offends . Modal.modes) . faceModals
   where
     offends mode =
       or
         [ maybe True (\slot -> not (Card.poolWithin (TargetSlot.pool slot) Pool.Permanents)) (Map.lookup named (Mode.targetSlots mode))
-        | Effect.Proliferate (Just (AnotherCounter.ChosenKind named)) <- Foldable.toList (Mode.allEffects mode)
+        | Effect.Proliferate (Just targeted) <- Foldable.toList (Mode.allEffects mode),
+          named <- case targeted of
+            AnotherCounter.ChosenKind named -> [named]
+            AnotherCounter.EachKind (EachKind.MkEachKind named KindStep.AnotherOrRemoveOne) -> [named]
+            AnotherCounter.EachKind (EachKind.MkEachKind _ KindStep.Another) -> []
         ]
 
 -- Whether any EntriesTrigger row a face writes offends: its own player
@@ -6686,18 +6694,27 @@ lintSpec s registry corpus = Spec.describe s "Lint" $ do
     Spec.assertBool s (not (cardDivisionsDangle face)) "Forked Lightning reads its division, and is accepted"
     Spec.assertBool s (cardDivisionsDangle (rewrite undivided)) "a part read off an undivided slot is rejected"
     Spec.assertBool s (cardDivisionsDangle (rewrite unread)) "a division nothing reads is rejected"
-  -- Dathon, His Heart Open's chosen kind is offered among a PERMANENT's
-  -- counters only.
-  Spec.it s "no card's chosen-kind proliferate slot admits a player" $ do
+  -- Dathon, His Heart Open's chosen kind and Dramatist's Puppet's
+  -- another-or-one-fewer are offered among a PERMANENT's counters only.
+  Spec.it s "no card's kind-choosing proliferate slot admits a player" $ do
     ps <- S.allPrintings s corpus
-    Spec.assertEqWith s "no chosen kind over a player" (fmap (S.nameOf . Printing.card) (filter (anyFace cardChosenKindReachesPlayer . Printing.card) ps)) []
-  Spec.it s "the lint itself catches a chosen-kind slot admitting a player" $ do
+    Spec.assertEqWith s "no kind choice over a player" (fmap (S.nameOf . Printing.card) (filter (anyFace cardKindChoiceReachesPlayer . Printing.card) ps)) []
+  Spec.it s "the lint itself catches a kind-choosing slot admitting a player" $ do
     dathon <- S.printingOf s registry "Dathon, His Heart Open"
-    let face = S.combinedFace dathon
-        widen mode = mode {Mode.targetSlots = fmap (\slot -> slot {TargetSlot.pool = Pool.PermanentsAndPlayers}) (Mode.targetSlots mode)}
-        widened = face {Face.activatedAbilities = fmap (\ability -> ability {ActivatedAbility.modal = (ActivatedAbility.modal ability) {Modal.modes = fmap widen (Modal.modes (ActivatedAbility.modal ability))}}) (Face.activatedAbilities face)}
-    Spec.assertBool s (not (cardChosenKindReachesPlayer face)) "Dathon targets an enchantment, and is accepted"
-    Spec.assertBool s (cardChosenKindReachesPlayer widened) "a slot admitting players is rejected"
+    puppet <- S.printingOf s registry "Dramatist's Puppet"
+    broker <- S.printingOf s registry "Powerful Broker"
+    let widen mode = mode {Mode.targetSlots = fmap (\slot -> slot {TargetSlot.pool = Pool.PermanentsAndPlayers}) (Mode.targetSlots mode)}
+        widenModal modal = modal {Modal.modes = fmap widen (Modal.modes modal)}
+        widened face =
+          face
+            { Face.activatedAbilities = fmap (\ability -> ability {ActivatedAbility.modal = widenModal (ActivatedAbility.modal ability)}) (Face.activatedAbilities face),
+              Face.triggeredAbilities = fmap (\ability -> ability {TriggeredAbility.modal = widenModal (TriggeredAbility.modal ability)}) (Face.triggeredAbilities face)
+            }
+    Spec.assertBool s (not (cardKindChoiceReachesPlayer (S.combinedFace dathon))) "Dathon targets an enchantment, and is accepted"
+    Spec.assertBool s (cardKindChoiceReachesPlayer (widened (S.combinedFace dathon))) "a chosen-kind slot admitting players is rejected"
+    Spec.assertBool s (not (cardKindChoiceReachesPlayer (S.combinedFace puppet))) "Dramatist's Puppet targets a permanent, and is accepted"
+    Spec.assertBool s (cardKindChoiceReachesPlayer (widened (S.combinedFace puppet))) "an another-or-one-fewer slot admitting players is rejected"
+    Spec.assertBool s (not (cardKindChoiceReachesPlayer (S.combinedFace broker))) "Powerful Broker's another of each kind reaches a player, and is accepted"
   -- Demonic Pact's "that hasn't been chosen" on a spell or a mana ability is
   -- read by nothing, so a chosen mode would be offered again.
   Spec.it s "only a triggered or a non-mana activated ability remembers its chosen modes" $ do
