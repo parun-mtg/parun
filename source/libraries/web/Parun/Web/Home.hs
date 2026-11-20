@@ -25,6 +25,8 @@ data Home = MkHome
 data Choice
   = MkPlayBots
   | MkReplays
+  | -- | Plays on by hand from this position of this scenario.
+    MkPlayOn Text.Text Natural
   deriving (Eq, Show)
 
 -- | What a tap on the home screen does.
@@ -55,6 +57,7 @@ starts :: Choice -> Bool
 starts choice = case choice of
   MkPlayBots -> True
   MkReplays -> False
+  MkPlayOn _ _ -> True
 
 update :: Event -> Home -> Outcome
 update event home = case event of
@@ -108,3 +111,4 @@ view home =
     confirmLabel choice = case choice of
       MkPlayBots -> "Concede and play"
       MkReplays -> "Concede"
+      MkPlayOn _ _ -> "Concede and play on"

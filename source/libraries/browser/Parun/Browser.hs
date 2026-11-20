@@ -9,7 +9,6 @@ import qualified Control.Monad as Monad
 import qualified Data.Foldable as Foldable
 import qualified Data.IORef as IORef
 import qualified Data.Sequence as Seq
-import qualified Data.Set as Set
 import qualified Data.Text as Text
 import qualified Parun.Trustworthy.Wasm as Prim
 import qualified Parun.Web.Diff as Diff
@@ -80,23 +79,6 @@ arrivals :: Page msg -> IO [Arrival]
 arrivals page = do
   collect page
   fmap Foldable.toList . IORef.atomicModifyIORef' (arrived page) $ \cs -> (Seq.empty, cs)
-
--- | Waits until every chunk named, but those already arrived, has arrived
--- (or failed), leaving taps queued; the names of those that failed.
-untilArrived :: Page msg -> Set.Set Text.Text -> [Text.Text] -> IO [Text.Text]
-untilArrived page already names = go (Set.difference (Set.fromList names) already) []
-  where
-    go left failed
-      | Set.null left = pure (reverse failed)
-      | otherwise = do
-          collect page
-          chunks <- IORef.atomicModifyIORef' (arrived page) $ \cs -> (Seq.empty, cs)
-          let name a = case a of
-                MkArrived n -> n
-                MkFailed n -> n
-              failures = [n | MkFailed n <- Foldable.toList chunks]
-              left' = foldr (Set.delete . name) left chunks
-          if Seq.null chunks then wait >> go left failed else go left' (reverse failures <> failed)
 
 -- | Asks the worker to fetch this chunk next (engine.js), the scenarios
 -- only once asked for.

@@ -39,6 +39,11 @@ spec s = Spec.describe s "Parun.Web.Home" $ do
       Spec.assertEqWith s "confirmed" (Home.update Home.MkConfirm asked) (Home.MkGo Home.MkPlayBots)
       Spec.assertEqWith s "cancelled" (Home.update Home.MkCancel asked) (Home.MkStay paused)
 
+    Spec.it s "asks before conceding a paused game to play on from a replay" $ do
+      let asked = Home.new {Home.paused = True, Home.confirming = Just (Home.MkPlayOn (Text.pack "a-scenario") 3)}
+      Spec.assertEqWith s "the question shows" (has "Concede and play on" asked) True
+      Spec.assertEqWith s "confirmed" (Home.update Home.MkConfirm asked) (Home.MkGo (Home.MkPlayOn (Text.pack "a-scenario") 3))
+
     Spec.it s "opens replays from a paused game without asking" $ do
       Spec.assertEq s (Home.update (Home.MkChoose Home.MkReplays) Home.new {Home.paused = True}) (Home.MkGo Home.MkReplays)
 

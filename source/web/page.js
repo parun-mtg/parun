@@ -10,6 +10,9 @@ engineUrl.search = location.search;
 const level = localStorage.getItem("parun-level");
 if (level !== null) engineUrl.searchParams.set("level", level);
 const engine = new Worker(engineUrl, { type: "module" });
+// The query is read once, by the engine at its start (Parun.Browser.Shell's
+// opening); the page moves on without it.
+if (location.search) history.replaceState(null, "", location.pathname);
 // Safari runs WebAssembly far slower outside a secure context (#8419), and
 // plain http from a network address is not one.
 if (!isSecureContext) document.getElementById("insecure").hidden = false;
