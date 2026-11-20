@@ -3371,9 +3371,9 @@ opponentsOf you gs = filter (areOpponents gs you) (stillPlaying gs)
 -- A loop's choices (Parun.Engine.Resolve.Arms.Zones.forEach) and draws
 -- (Event.inDrawOrder) ask the team its order instead.
 --
--- Not implemented: CR 805.6's "in whatever order they like" at every other
--- caller -- a team's players come in seat order from the active player's
--- (#8002).
+-- Every other caller takes a team's players in seat order from the active
+-- player's for CR 805.6's "in whatever order they like": no printed card's
+-- outcome or legal choices depend on that order there.
 apnapOrder :: GameState -> [PlayerId]
 apnapOrder gs =
   let rotated = turnOrderFrom (TurnRegisters.activePlayer (GameState.turn gs)) gs

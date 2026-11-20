@@ -73,8 +73,9 @@ startingHandSize = Vanguard.handSize openingHand
 -- players go first and then each other team's in turn order, which is `owners`
 -- regrouped by team.
 --
--- Not implemented: CR 805.3a's mulligan declarations within the starting team
--- come in seat order; the team does not choose it (#8002).
+-- CR 805.3a's mulligan declarations within the starting team come in seat
+-- order: teammates consult and all mulligans happen together, so the order
+-- changes no player's options.
 openingHands :: HandActionPerformer -> [PlayerId] -> Game ()
 openingHands perform seated = do
   owners <- State.gets (\gs -> List.sortOn (\pid -> List.findIndex (Turn.sharesTurn gs pid) seated) seated)

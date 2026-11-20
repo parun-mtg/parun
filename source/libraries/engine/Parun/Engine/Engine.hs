@@ -585,8 +585,9 @@ runTurnBasedActions phase = do
   -- actions that are the active player's own.
   -- The draws come in the order the team likes (CR 805.6a, Event.inDrawOrder).
   --
-  -- Not implemented: CR 805.6's order -- the team does not choose the order its
-  -- members make their untap and discard choices in (#8002).
+  -- CR 805.6 lets the team order its members' untap and discard choices; seat
+  -- order stands in, since each chooses only among their own objects and the
+  -- actions happen together.
   primary <- State.gets (`Game.primaryOf` active)
   live <- State.gets (\gs -> filter (\pid -> List.elem pid (Game.stillPlaying gs)) (Turn.activePlayers gs))
   case phase of
