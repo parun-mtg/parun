@@ -10,10 +10,12 @@ import qualified Data.Char as Char
 import qualified Data.Containers.ListUtils as ListUtils
 import qualified Data.Foldable as Foldable
 import qualified Data.List as List
+import qualified Data.List.NonEmpty as NonEmpty
 import qualified Data.Map.Strict as Map
 import qualified Data.Maybe as Maybe
 import qualified Data.Set as Set
 import qualified Data.Text as Text
+import qualified Parun.Engine.Card as Engine.Card
 import qualified Parun.Engine.Projection.View as Projection.View
 import qualified Parun.Engine.Subtype as Subtype
 import qualified Parun.Oracle as Oracle
@@ -270,8 +272,9 @@ stats o = case ObjectView.characteristics o of
 -- (Render.cardNames), each line apart, a face's name heading its own where
 -- there are several; then, under a heading each, the printed text of the
 -- cards merged under it (ObjectView.merged); or why the card data could not
--- say. The face the object is says what its abilities are now (wording);
--- every other face says what is printed on it.
+-- say. The faces the object has say what its abilities are now (wording),
+-- together where there are several; every other face says what is printed on
+-- it.
 oracle :: (CardName.CardName -> Either e (Maybe Card.Card)) -> ObjectView.ObjectView -> Either e [Text.Text]
 oracle lookUp o = do
   let names = Render.cardNames o
@@ -286,33 +289,55 @@ oracle lookUp o = do
       -- The characteristics the names came from (Render.cardNames), and
       -- ownEffects is beside whichever they are.
       now = ObjectView.face o Applicative.<|> ObjectView.characteristics o
-      -- Several faces shown at once share one set of abilities, which no one
-      -- face's can be compared with: not implemented (#8956).
-      body f = case (now, shown) of
-        (Just c, [one]) | Face.name one == Face.name f -> said (ObjectView.ownEffects o) c f
+      -- The faces it shows whose characteristics it has, by their names: a
+      -- split card's halves off the stack (CR 709.4), the half cast (CR
+      -- 709.3b), a Room's unlocked doors (CR 709.5); and those together.
+      had = filter (\f -> any (Set.member (Face.name f) . ProjectedCharacteristics.names) now) shown
+      whole = case (now, had) of
+        (Just c, one : more@(_ : _)) -> Just (wordingOf (ObjectView.ownEffects o) c (one NonEmpty.:| more))
+        _ -> Nothing
+      body f = case (now, had) of
+        (Just c, [one]) | Face.name one == Face.name f -> said (wording (ObjectView.ownEffects o) c f) (printed f)
         _ -> printed f
       lines' f = [CardName.unwrap (Face.name f) <> Text.pack (if Set.member (Face.name f) names || null shown then ":" else " (other face):") | length faces > 1 || not (null under)] <> body f
+      -- Faces it has whose abilities differ say them once, under their names.
+      body' = case whole of
+        Just (MkWorded worded) ->
+          (Text.intercalate (Text.pack " // ") (fmap (CardName.unwrap . Face.name) had) <> Text.pack ":")
+            : said (MkWorded worded) []
+              <> concatMap lines' (filter (`notElem` had) faces)
+        Just MkUnworded -> said MkUnworded (concatMap lines' faces)
+        _ -> concatMap lines' faces
       -- A merged card's face it shows (CR 731.2), as printed.
       merged component = case component of
         Just (n, card) -> (CardName.unwrap n <> Text.pack " (merged under it):") : concatMap printed (filter ((== n) . Face.name) (foldMap (Foldable.toList . Card.faces) card))
         Nothing -> [Text.pack "A face-down card (merged under it)"]
-  pure ((if null faces then foldMap abilityLines now else concatMap lines' faces) <> concatMap merged under)
+  pure ((if null faces then foldMap abilityLines now else body') <> concatMap merged under)
 
 -- | A face's printed Oracle text, a line each.
 printed :: Face.Face Card.Card -> [Text.Text]
 printed = foldMap Text.lines . Face.oracleText
 
--- | What a face says of the object's abilities `c` (CR 113.1a): its printed
--- text while they are what the face says (wording), the renderer's wording of
--- them once they differ, and otherwise its printed text under a note that it
--- may be out of date.
-said :: Maybe ProjectedCharacteristics.ProjectedCharacteristics -> ProjectedCharacteristics.ProjectedCharacteristics -> Face.Face Card.Card -> [Text.Text]
-said own c face = case wording own c face of
-  MkAsPrinted -> printed face
+-- | What faces say of the object's abilities (CR 113.1a), given how they
+-- stand (wording) and their printed text: that text while the abilities are
+-- what it says, the renderer's wording of them once they differ, and otherwise
+-- that text under a note that it may be out of date.
+said :: Wording -> [Text.Text] -> [Text.Text]
+said how asPrinted = case how of
+  MkAsPrinted -> asPrinted
   MkWorded [] -> [Text.pack "It has no abilities."]
   MkWorded worded -> worded
   -- Not implemented: wording an ability the renderer can't (#8955).
-  MkUnworded -> Text.pack "Its abilities have changed; this text may be out of date." : printed face
+  MkUnworded -> Text.pack "Its abilities have changed; this text may be out of date." : asPrinted
+
+-- | wording of the faces an object has together, combined as CR 709.4 and
+-- 709.5 combine them (Parun.Engine.Card.foldSplit). The combined view keeps
+-- the first face's spell alone (CR 709.3b), so a later face's spell abilities
+-- can't be worded from it.
+wordingOf :: Maybe ProjectedCharacteristics.ProjectedCharacteristics -> ProjectedCharacteristics.ProjectedCharacteristics -> NonEmpty.NonEmpty (Face.Face Card.Card) -> Wording
+wordingOf own c faces = case wording own c (Engine.Card.foldSplit faces) of
+  MkWorded _ | any ((/= Face.defaultSpell) . Face.spell) (NonEmpty.tail faces) -> MkUnworded
+  how -> how
 
 -- | How a face's text stands to the object's abilities now.
 data Wording
