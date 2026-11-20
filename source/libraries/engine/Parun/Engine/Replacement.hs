@@ -2555,12 +2555,13 @@ readsApplier re = case re of
   -- is one prevention, the other order two.
   ReplacementEffect.DamageR (DamageR.MkDamageR _ rewrite _) -> computedAmount rewrite
   -- CR 701.19a acts on the creature being destroyed and names no player; an
-  -- instead-effect runs as the row's controller (CR 109.5), GameLossR's answer.
+  -- instead-effect, umbra armor's destruction of its Aura among them, runs as
+  -- the row's controller (CR 109.5), GameLossR's answer.
   ReplacementEffect.DestructionR (DestructionR.MkDestructionR _ rewrite) -> case rewrite of
     DestructionRewrite.RunEffects _ -> True
+    DestructionRewrite.UmbraArmor -> True
     DestructionRewrite.Regenerate -> False
     DestructionRewrite.RemoveShieldCounter -> False
-    DestructionRewrite.UmbraArmor -> False
     DestructionRewrite.Heal _ -> False
   -- The scaling is the effect's, and it rewrites the count on the object the
   -- event already named (Hardened Scales, Doubling Season); a computed AddMore

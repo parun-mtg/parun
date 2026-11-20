@@ -31,6 +31,7 @@ import qualified Parun.Engine.PlayerEffect as PlayerEffect
 import qualified Parun.Engine.Prepare as Prepare
 import qualified Parun.Engine.Projection as Projection
 import qualified Parun.Engine.Projection.View as Projection
+import qualified Parun.Engine.Replay as Replay
 import qualified Parun.Engine.Saga as Saga
 import qualified Parun.Engine.Snapshot as Snapshot
 import qualified Parun.Engine.SpaceSculptor as SpaceSculptor
@@ -38,6 +39,7 @@ import qualified Parun.Engine.Speed as Speed
 import qualified Parun.Engine.Target as Target
 import qualified Parun.Extra.Int as Int
 import qualified Parun.Extra.Natural as Natural
+import qualified Parun.Types.Asked as Asked
 import qualified Parun.Types.CardType as CardType
 import qualified Parun.Types.CommandZoneDecision as CommandZoneDecision
 import qualified Parun.Types.CounterKind as CounterKind
@@ -758,14 +760,18 @@ performStateBasedActions instead boards = do
 
 -- The objects `act` moves out of their zones, run on `gs` and discarded:
 -- what a destruction's replacement in a check would move, which a loss's
--- replacement in it contests (checkOnce).
+-- replacement in it contests (checkOnce). A question the run raises (CR
+-- 616.1's order between two replacements of the move) takes
+-- Replay.defaultAnswer: the real run asks it.
 --
--- Not implemented: a replacement that asks a question before it moves
--- contests nothing (#9097).
+-- Unprinted: a destruction replacement whose own effects ask before they
+-- move (a "may"), where the answer decides what moves;
+-- Parun.EffectLintSpec's "CR 614.1a no destruction replacement asks before it
+-- moves" keeps it out of card data.
 wouldMove :: Game () -> GameState -> Set.Set ObjectId
-wouldMove act gs = case State.execStateT act gs of
-  Program.Return after -> Set.fromList [oid | oid <- Map.keys (GameState.objects gs), Game.zoneOf oid after /= Game.zoneOf oid gs]
-  Program.Then _ _ -> Set.empty
+wouldMove act gs =
+  let after = Program.foldProgram (Replay.defaultAnswer . Asked.prompt) (State.execStateT act gs)
+   in Set.fromList [oid | oid <- Map.keys (GameState.objects gs), Game.zoneOf oid after /= Game.zoneOf oid gs]
 
 -- The pass itself, which is one event; `performStateBasedActions` above says why
 -- CR 800.4a's fourth clause is handed back rather than run here.
@@ -998,12 +1004,15 @@ checkOnce instead boards = do
   --
   -- Settled HERE, on the SAME pre-pass board as the put-into-graveyard batch,
   -- because CR 704.3 makes the whole check one event, and BEFORE a reset in
-  -- place of a loss runs: a destruction a shield or umbra armor replaces moves
-  -- nothing, so it does not contest the reset's move (Lich's Mirror's ruling
-  -- is about a permanent "put into your graveyard"). The funnel's CR 702.12b
-  -- gate is judged against that board too. Parun.ScenarioSpec's
+  -- place of a loss runs: a destruction a shield replaces leaves its permanent
+  -- where it is, so the permanent does not contest the reset's move (Lich's
+  -- Mirror's ruling is about a permanent "put into your graveyard"). The
+  -- funnel's CR 702.12b gate is judged against that board too.
+  -- Parun.ScenarioSpec's
   -- cr-616-1-lich-s-mirror-s-reset-takes-a-regenerating-blocker-unasked proves it.
-  -- What a destruction's replacement queued runs with the losses' below.
+  -- What a destruction's replacement queued -- Crackling Emergence's
+  -- sacrifice, umbra armor's destruction of its Aura -- runs with the losses'
+  -- below.
   queued <- State.gets (Seq.length . (StoredEffects.pendingReplacementEffects . GameState.stored))
   standing <- Event.destructionsStanding gs DestructionCause.ByRule Regenerability.Regenerable (filter (`notElem` buried) toDestroy)
   replaced <- State.gets (Seq.length . (StoredEffects.pendingReplacementEffects . GameState.stored))

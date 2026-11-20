@@ -159,6 +159,7 @@ import qualified Parun.Types.DeclarationTrigger as DeclarationTrigger
 import Parun.Types.DelayedTrigger (DelayedTrigger)
 import qualified Parun.Types.DelayedTrigger as DelayedTrigger
 import qualified Parun.Types.Designation as Designation
+import qualified Parun.Types.Destroy as Destroy
 import qualified Parun.Types.DestructionCause as DestructionCause
 import qualified Parun.Types.DestructionR as DestructionR
 import qualified Parun.Types.DestructionRewrite as DestructionRewrite
@@ -249,6 +250,7 @@ import qualified Parun.Types.NumberFloor as NumberFloor
 import Parun.Types.Object (Object)
 import qualified Parun.Types.Object as Object
 import Parun.Types.ObjectId (ObjectId)
+import qualified Parun.Types.ObjectRef as ObjectRef
 import Parun.Types.Onset (Onset)
 import qualified Parun.Types.Onset as Onset
 import qualified Parun.Types.OptionalDecision as OptionalDecision
@@ -5036,18 +5038,21 @@ apply settle batch applied batchPrevented candidate event =
       -- which is the whole difference from the two arms above; Replacement.scopes
       -- is what paired them.
       --
-      -- The Aura goes through the `destroy` funnel rather than being moved, so
-      -- rule 702.89a's own destruction is itself replaceable (a regeneration
-      -- shield on the Aura) and CR 400.7's graveyard incarnation is minted as on
-      -- any other road. ByEffect, because the destruction is a replacement
-      -- effect's and not a rule's (CR 609.1).
+      -- The Aura's destruction is a Destroy effect QUEUED as RunEffects' below
+      -- is, so it runs in the destruction's own event (destroyIn, Sba.checkOnce)
+      -- and Lich's Mirror's reset in the same check contests it as it does
+      -- Crackling Emergence's sacrifice. Through the `destroy` funnel, so rule
+      -- 702.89a's own destruction is itself replaceable (a regeneration shield
+      -- on the Aura) and CR 400.7's graveyard incarnation is minted as on any
+      -- other road. Parun.ScenarioSpec's cr-616-1-lich-s-mirror-*-hyena-umbra-*
+      -- pair proves the contest.
       --
       -- `consume` is skipped for the shield arm's reason: the row is the Aura's
       -- own static ability, which CandidateId.OfPermanent makes a no-op, and the
       -- Aura leaving the battlefield is what takes the row away.
       DestructionRewrite.UmbraArmor -> do
         State.modify' (\gs -> gs {GameState.objects = Map.adjust (\obj -> obj {Object.damage = 0}) oid (GameState.objects gs)})
-        destroy settle Regenerability.Regenerable [ReplacementCandidate.source candidate]
+        queueInstead candidate oid (Seq.singleton (Effect.Type.Destroy (Destroy.MkDestroy (ObjectRef.InSlot Binding.triggerSource) Regenerability.Regenerable Nothing Nothing Nothing)))
         pure Nothing
       -- CR 614.1a / 701.69a: Pyramids' "remove all damage marked on it
       -- instead", and nothing else -- no tap and no removal from combat, which
@@ -5073,25 +5078,7 @@ apply settle batch applied batchPrevented candidate event =
       -- nobody to perform them; the destruction is replaced all the same.
       DestructionRewrite.RunEffects effects -> do
         Replacement.consume (ReplacementCandidate.identity candidate)
-        Foldable.for_ (ReplacementCandidate.controller candidate) $ \controller ->
-          State.modify' $ \g ->
-            g
-              { GameState.stored =
-                  (GameState.stored g)
-                    { StoredEffects.pendingReplacementEffects =
-                        StoredEffects.pendingReplacementEffects (GameState.stored g)
-                          Seq.|> PendingReplacementEffect.MkPendingReplacementEffect
-                            { PendingReplacementEffect.effects = effects,
-                              PendingReplacementEffect.targets =
-                                Map.insert Binding.sparedPermanent (Set.singleton (Recipient.ToObject oid))
-                                  . Map.insert Binding.triggerSource (Set.singleton (Recipient.ToObject (ReplacementCandidate.source candidate)))
-                                  $ ReplacementCandidate.slots candidate,
-                              PendingReplacementEffect.controller = controller,
-                              PendingReplacementEffect.source = ReplacementCandidate.source candidate,
-                              PendingReplacementEffect.bindsArrival = False
-                            }
-                    }
-              }
+        queueInstead candidate oid effects
         pure Nothing
     -- Unreachable: `applies` admits DestructionR only against WouldBeDestroyed.
     (ReplacementEffect.DestructionR _, _) -> pure (Just event)
@@ -7141,6 +7128,31 @@ settlesFirst gs threads =
           if null adding
             then const True
             else \thread -> if rank thread == seat then adds thread else rank thread < seat && chooses thread
+
+-- What replaced `oid`'s destruction, queued for the drain with `oid` under
+-- Binding.sparedPermanent and the row's source under Binding.triggerSource
+-- (DestructionRewrite.RunEffects, UmbraArmor). Nothing without a controller.
+queueInstead :: ReplacementCandidate.ReplacementCandidate -> ObjectId -> Seq.Seq (Effect.Type.Effect Card.Type.Card (GrantedAbility.Type.GrantedAbility Card.Type.Card)) -> Game ()
+queueInstead candidate oid effects =
+  Foldable.for_ (ReplacementCandidate.controller candidate) $ \controller ->
+    State.modify' $ \g ->
+      g
+        { GameState.stored =
+            (GameState.stored g)
+              { StoredEffects.pendingReplacementEffects =
+                  StoredEffects.pendingReplacementEffects (GameState.stored g)
+                    Seq.|> PendingReplacementEffect.MkPendingReplacementEffect
+                      { PendingReplacementEffect.effects = effects,
+                        PendingReplacementEffect.targets =
+                          Map.insert Binding.sparedPermanent (Set.singleton (Recipient.ToObject oid))
+                            . Map.insert Binding.triggerSource (Set.singleton (Recipient.ToObject (ReplacementCandidate.source candidate)))
+                            $ ReplacementCandidate.slots candidate,
+                        PendingReplacementEffect.controller = controller,
+                        PendingReplacementEffect.source = ReplacementCandidate.source candidate,
+                        PendingReplacementEffect.bindsArrival = False
+                      }
+              }
+        }
 
 -- CR 701.8 / 614.8: settle a proposed destruction. `Just` is the object actually
 -- destroyed -- which need not be the one asked about, since a rewrite may
@@ -10555,9 +10567,11 @@ doomedAmong live gs = filter (\oid -> Maybe.isJust (Game.lookupObject oid live) 
 -- destroyIn's first half for a batch on `asOf`: each member's destruction
 -- through its CR 616.1 loop, answering the settled objects whose destruction
 -- stands -- a regeneration shield or umbra armor (CR 701.19a, 702.89a)
--- replaced the rest, which then move nowhere. The caller puts the answer into
--- graveyards itself: Parun.Engine.Sba does so after Lich's Mirror's reset, which
--- contests only what would really move.
+-- replaced the rest, which then move nowhere; what a replacement does instead
+-- (umbra armor's destruction of its Aura) is queued, not run. The caller puts
+-- the answer into graveyards and drains the queue itself: Parun.Engine.Sba
+-- does both after Lich's Mirror's reset, which contests only what would really
+-- move.
 destructionsStanding :: GameState -> DestructionCause.DestructionCause -> Regenerability.Regenerability -> [ObjectId] -> Game [ObjectId]
 destructionsStanding asOf cause regenerability oids = do
   live <- State.get
