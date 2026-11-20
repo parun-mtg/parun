@@ -313,6 +313,7 @@ import qualified Parun.Types.TurnRegisters as TurnRegisters
 import qualified Parun.Types.TurnUpR as TurnUpR
 import qualified Parun.Types.TurnUpRewrite as TurnUpRewrite
 import qualified Parun.Types.UntilPaid as UntilPaid
+import qualified Parun.Types.UpToCasts as UpToCasts
 import qualified Parun.Types.Vote as Vote
 import qualified Parun.Types.VoteChoices as VoteChoices
 import qualified Parun.Types.VoteObjects as VoteObjects
@@ -397,7 +398,7 @@ repetitionQuantities repetition = case repetition of
   CastRepetition.Once -> []
   CastRepetition.AnyNumber -> []
   CastRepetition.WithinTotal total -> totalCapQuantities (Just total)
-  CastRepetition.UpTo quantity -> [quantity]
+  CastRepetition.UpTo (UpToCasts.MkUpToCasts casts total) -> casts : totalCapQuantities total
 
 -- The Quantities an entry rider carries: CR 122.6's count per counter kind, which
 -- a card may write as anything a Quantity spells. A position the three walkers

@@ -517,6 +517,7 @@ import qualified Parun.Types.UntapR as UntapR
 import qualified Parun.Types.UntapRestriction as UntapRestriction
 import qualified Parun.Types.UntapRewrite as UntapRewrite
 import qualified Parun.Types.UntilPaid as UntilPaid
+import qualified Parun.Types.UpToCasts as UpToCasts
 import qualified Parun.Types.Vote as Vote
 import qualified Parun.Types.VoteChoices as VoteChoices
 import qualified Parun.Types.VoteObjects as VoteObjects
@@ -1571,7 +1572,7 @@ castRepetitionChildren c repetition = case repetition of
   CastRepetition.Once -> pure repetition
   CastRepetition.AnyNumber -> pure repetition
   CastRepetition.WithinTotal (TotalCap.MkTotalCap weight most) -> fmap CastRepetition.WithinTotal (TotalCap.MkTotalCap <$> onQuantity c weight <*> onQuantity c most)
-  CastRepetition.UpTo quantity -> fmap CastRepetition.UpTo (onQuantity c quantity)
+  CastRepetition.UpTo (UpToCasts.MkUpToCasts casts total) -> fmap CastRepetition.UpTo (UpToCasts.MkUpToCasts <$> onQuantity c casts <*> traverse (\(TotalCap.MkTotalCap weight most) -> TotalCap.MkTotalCap <$> onQuantity c weight <*> onQuantity c most) total)
 
 -- | One visitor per kind of child a trigger condition (CR 603.1) holds. Its
 -- payloads are matched positionally in triggerConditionChildren; a type

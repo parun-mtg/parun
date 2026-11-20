@@ -1980,6 +1980,8 @@ library codec
     Parun.Codec.UntapScopeSpec
     Parun.Codec.UntilPaid
     Parun.Codec.UntilPaidSpec
+    Parun.Codec.UpToCasts
+    Parun.Codec.UpToCastsSpec
     Parun.Codec.Uses
     Parun.Codec.UsesSpec
     Parun.Codec.Vanguard
@@ -3961,6 +3963,7 @@ library types
     Parun.Types.UntapRewrite
     Parun.Types.UntapScope
     Parun.Types.UntilPaid
+    Parun.Types.UpToCasts
     Parun.Types.Uses
     Parun.Types.Vanguard
     Parun.Types.VariableChoice

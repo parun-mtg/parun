@@ -149,8 +149,10 @@
                       "repetition": {
                         "type": "UpTo",
                         "value": {
-                          "type": "InSlot",
-                          "value": "casts"
+                          "casts": {
+                            "type": "InSlot",
+                            "value": "casts"
+                          }
                         }
                       }
                     }
