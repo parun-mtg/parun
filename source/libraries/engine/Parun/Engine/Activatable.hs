@@ -53,8 +53,8 @@ import Parun.Types.Keyword (Keyword)
 import qualified Parun.Types.LoggedEvent as LoggedEvent
 import qualified Parun.Types.LoyaltyClause as LoyaltyClause
 import qualified Parun.Types.LoyaltyKind as LoyaltyKind
+import qualified Parun.Types.ManaNarrowing as ManaNarrowing
 import qualified Parun.Types.ManaSpending as ManaSpending
-import qualified Parun.Types.ManaType as ManaType
 import qualified Parun.Types.Measure as Measure
 import qualified Parun.Types.Measures as Measures
 import qualified Parun.Types.Modal as Modal.Type
@@ -462,7 +462,7 @@ graceUsed pid srcId gs =
 -- demands nothing at all (Mana.waysOf), so leaving it in place would answer the
 -- same as X=0 by accident rather than by rule -- the accident that made the {X}
 -- free (#544).
-payableCost :: [(Map.Map SlotName (Natural, Natural), Map.Map SlotName (Set.Set ObjectId))] -> Maybe Keyword -> Maybe AbilityName.AbilityName -> Maybe (Set.Set ManaType.ManaType) -> PlayerId -> ObjectId -> GameState -> Cost Keyword -> Bool
+payableCost :: [(Map.Map SlotName (Natural, Natural), Map.Map SlotName (Set.Set ObjectId))] -> Maybe Keyword -> Maybe AbilityName.AbilityName -> ManaNarrowing.ManaNarrowing -> PlayerId -> ObjectId -> GameState -> Cost Keyword -> Bool
 payableCost aimable = payableCostAt aimable 0
 
 -- The same question asked at some OTHER value of X -- `activatable` asks it at
@@ -486,7 +486,7 @@ payableCost aimable = payableCostAt aimable 0
 -- offers: CR 601.2b's completion comes before CR 601.2f's totalling, so a {2/R}
 -- totalled while still spelled {2/R} would hide the generic reduction the
 -- announcement exposes.
-payableCostAt :: [(Map.Map SlotName (Natural, Natural), Map.Map SlotName (Set.Set ObjectId))] -> Natural -> Maybe Keyword -> Maybe AbilityName.AbilityName -> Maybe (Set.Set ManaType.ManaType) -> PlayerId -> ObjectId -> GameState -> Cost Keyword -> Bool
+payableCostAt :: [(Map.Map SlotName (Natural, Natural), Map.Map SlotName (Set.Set ObjectId))] -> Natural -> Maybe Keyword -> Maybe AbilityName.AbilityName -> ManaNarrowing.ManaNarrowing -> PlayerId -> ObjectId -> GameState -> Cost Keyword -> Bool
 payableCostAt aimable x stamp named spendable pid srcId gs =
   let board = Snapshot.whole gs
    in payableCostAtGiven (PlayerEffect.applying pid gs) aimable (Cost.supplyManaSourcesGiven (Cost.manaActivationsGiven (PlayerEffect.applying pid gs)) (Snapshot.grants board) (Snapshot.projected board) pid gs) board x stamp named spendable pid srcId gs
@@ -494,7 +494,7 @@ payableCostAt aimable x stamp named spendable pid srcId gs =
 -- The same predicate on a board the caller already walked -- see
 -- Cost.canPaySomeCompletionGiven. `effects` MUST be `PlayerEffect.applying pid
 -- gs`'s own answer, which a per-ability loop takes once.
-payableCostAtGiven :: [(RowSource, PlayerEffect.Type.PlayerEffect)] -> [(Map.Map SlotName (Natural, Natural), Map.Map SlotName (Set.Set ObjectId))] -> Mana.Sources -> Snapshot.Snapshot -> Natural -> Maybe Keyword -> Maybe AbilityName.AbilityName -> Maybe (Set.Set ManaType.ManaType) -> PlayerId -> ObjectId -> GameState -> Cost Keyword -> Bool
+payableCostAtGiven :: [(RowSource, PlayerEffect.Type.PlayerEffect)] -> [(Map.Map SlotName (Natural, Natural), Map.Map SlotName (Set.Set ObjectId))] -> Mana.Sources -> Snapshot.Snapshot -> Natural -> Maybe Keyword -> Maybe AbilityName.AbilityName -> ManaNarrowing.ManaNarrowing -> PlayerId -> ObjectId -> GameState -> Cost Keyword -> Bool
 payableCostAtGiven effects aimable sources board x stamp named spendable pid srcId gs cost =
   aimingSomewhere effects (\adjustments -> Cost.plusComponents adjustments (Cost.substituteX x cost)) aimable stamp named (Loyalty.loyaltyKindOf cost) pid srcId gs (\slots adjustments -> let totalled = Cost.plusComponents adjustments (Cost.substituteX x cost) in Cost.canPaySomeCompletionGiven slots (PaymentSubject.Activating srcId AbilityKind.NonManaAbility named stamp spendable) ManaSpending.AsProduced sources board pid srcId (Cost.totalManas adjustments) (Cost.statedSubstitutions (Cost.Type.components totalled) slots pid srcId gs) totalled gs)
 
@@ -652,7 +652,7 @@ leastX pid srcId ability gs = case Cost.definingCandidates pid srcId ability gs 
 --
 -- A criterion reading X makes payability non-monotone, so its greatest payable
 -- X is found among `gateXs` instead of by the climb.
-affordableX :: Maybe Natural -> [(Map.Map SlotName (Natural, Natural), Map.Map SlotName (Set.Set ObjectId))] -> Maybe Keyword -> Maybe AbilityName.AbilityName -> Maybe (Set.Set ManaType.ManaType) -> PlayerId -> ObjectId -> GameState -> Cost Keyword -> Natural
+affordableX :: Maybe Natural -> [(Map.Map SlotName (Natural, Natural), Map.Map SlotName (Set.Set ObjectId))] -> Maybe Keyword -> Maybe AbilityName.AbilityName -> ManaNarrowing.ManaNarrowing -> PlayerId -> ObjectId -> GameState -> Cost Keyword -> Natural
 affordableX mCeiling aimable stamp named spendable pid srcId gs cost
   | criterionReadsX cost = Maybe.fromMaybe 0 (Maybe.listToMaybe (reverse (filter payableAt (gateXs mCeiling 0 pid srcId gs cost))))
   | otherwise = Cost.greatestPayableX mCeiling payableAt cost
@@ -791,7 +791,7 @@ activatableGiven pools sources pid srcId ability gs =
       selectable fillableUnder = Modal.selectionPossible (Set.difference fillableUnder remembered) (Modal.Type.selection modal)
       mCeiling = Cost.ceilingOf (ActivatedAbility.name ability) pid srcId (ActivatedAbility.maximumX ability) gs
       floorX = leastX pid srcId ability gs
-      payableAt aimableUnder x = payableCostAtGiven rows aimableUnder sources (Target.board pools) x (ActivatedAbility.keyword ability) (ActivatedAbility.name ability) (ActivationRestriction.spendableTypes srcId (ActivatedAbility.restrictions ability) gs) pid srcId
+      payableAt aimableUnder x = payableCostAtGiven rows aimableUnder sources (Target.board pools) x (ActivatedAbility.keyword ability) (ActivatedAbility.name ability) (ActivationRestriction.spendable srcId (ActivatedAbility.restrictions ability) gs) pid srcId
       -- CR 602.2b / 601.2c: where a target's bound reads the X (Sidisi,
       -- Regent of the Mire's "mana value X plus 1"), the unseeded targets
       -- above admit every recipient some X could reach, and the cost some

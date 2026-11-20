@@ -44,6 +44,7 @@ import qualified Parun.Types.DuringPhase as DuringPhase
 import Parun.Types.GameState (GameState)
 import qualified Parun.Types.GameState as GameState
 import qualified Parun.Types.GrantedAbility as GrantedAbility
+import qualified Parun.Types.ManaNarrowing as ManaNarrowing
 import qualified Parun.Types.ManaSpecification as ManaSpecification
 import qualified Parun.Types.ManaType as ManaType
 import qualified Parun.Types.Object as Object
@@ -211,7 +212,7 @@ restrictionMet pid srcId ability gs restriction = case restriction of
   -- activated with nothing to reroll").
   ActivationRestriction.DuringThrow -> Maybe.isJust (Scratch.throwing (GameState.scratch gs)) || not (null (Game.diceOnBattlefield gs))
   -- A payment rule, not a gate: Parun.Engine.Mana.admitsUnder spends only the
-  -- mana it names (PaymentSubject.Activating's colours).
+  -- mana it names (PaymentSubject.Activating's narrowing).
   ActivationRestriction.SpendOnly _ -> True
   -- CR 602.5e: the timing of an instant, which CR 304.5 reduces to holding
   -- priority. Every road that asks this board-reading gate is one where the
@@ -461,17 +462,24 @@ refusedMidPayment restriction = case restriction of
   ActivationRestriction.DuringThrow -> False
   ActivationRestriction.SpendOnly _ -> False
 
--- The mana types an activation under these restrictions may spend, Nothing for
--- any (PaymentSubject.Activating): SpendOnly's chosen colours are the source's
--- (CR 607.2d), read through CR 608.2h's last known information.
-spendableTypes :: ObjectId -> [ActivationRestriction.ActivationRestriction] -> GameState -> Maybe (Set.Set ManaType.ManaType)
-spendableTypes srcId restrictions gs =
-  let named restriction = case restriction of
-        ActivationRestriction.SpendOnly ManaSpecification.ChosenColor -> Just (Set.map ManaType.Colored (Maybe.fromMaybe Set.empty (Game.choiceWithLastKnown Chosen.Colors (Game.acquisitionOf srcId gs) srcId gs)))
-        ActivationRestriction.SpendOnly (ManaSpecification.OfType manaType) -> Just (Set.singleton manaType)
-        ActivationRestriction.SpendOnly ManaSpecification.AnyMana -> Nothing
-        -- The rest time or count an activation and say nothing of its mana.
-        _ -> Nothing
-   in case Maybe.mapMaybe named restrictions of
+-- The mana an activation under these restrictions may spend
+-- (PaymentSubject.Activating): every SpendOnly's narrowing, intersected.
+spendable :: ObjectId -> [ActivationRestriction.ActivationRestriction] -> GameState -> ManaNarrowing.ManaNarrowing
+spendable srcId restrictions gs =
+  let narrowings = [narrowingFor srcId specified gs | ActivationRestriction.SpendOnly specified <- restrictions]
+      types = case Maybe.mapMaybe ManaNarrowing.types narrowings of
         [] -> Nothing
         first : rest -> Just (List.foldl' Set.intersection first rest)
+   in ManaNarrowing.MkManaNarrowing types (Set.unions (fmap ManaNarrowing.tags narrowings))
+
+-- CR 601.2h / 602.2b: the mana one spend rule of `srcId`'s admits. A chosen
+-- colour is the source's (CR 607.2d), read through CR 608.2h's last known
+-- information.
+narrowingFor :: ObjectId -> ManaSpecification.ManaSpecification -> GameState -> ManaNarrowing.ManaNarrowing
+narrowingFor srcId specified gs = case specified of
+  ManaSpecification.AnyMana -> ManaNarrowing.none
+  ManaSpecification.ChosenColor -> ofTypes (Set.map ManaType.Colored (Maybe.fromMaybe Set.empty (Game.choiceWithLastKnown Chosen.Colors (Game.acquisitionOf srcId gs) srcId gs)))
+  ManaSpecification.OfType manaType -> ofTypes (Set.singleton manaType)
+  ManaSpecification.ProducedBy tag -> ManaNarrowing.none {ManaNarrowing.tags = Set.singleton tag}
+  where
+    ofTypes types = ManaNarrowing.none {ManaNarrowing.types = Just types}

@@ -4584,7 +4584,7 @@ prohibitsDrawingCards count pid gs =
 prohibitsPayingLife :: PaymentSubject.PaymentSubject -> PlayerId -> GameState -> Bool
 prohibitsPayingLife subject pid gs =
   let toward = case subject of
-        PaymentSubject.Casting _ -> True
+        PaymentSubject.Casting _ _ -> True
         PaymentSubject.Activating _ kind _ _ _ -> kind == AbilityKind.NonManaAbility
         PaymentSubject.Unlocking _ -> False
         PaymentSubject.TurningFaceUp _ -> False
@@ -4784,7 +4784,7 @@ spendManaAsThoughFor pid subject gs = spendManaAsThoughForGiven (spendManaAsThou
 -- subject but a cast or an activation is.
 spendManaAsThoughForGiven :: [SpendManaAsThough.SpendManaAsThough] -> PlayerId -> PaymentSubject.PaymentSubject -> GameState -> [SpendManaAsThough.SpendManaAsThough]
 spendManaAsThoughForGiven general pid subject gs = case subject of
-  PaymentSubject.Casting oid ->
+  PaymentSubject.Casting oid _ ->
     let view = Projection.viewOfObject oid gs
         namesSpell context clause = case SpendManaAsThough.scope clause of
           SpendScope.EveryPayment -> True

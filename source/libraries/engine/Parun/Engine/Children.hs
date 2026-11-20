@@ -2955,10 +2955,11 @@ costReductionChildren c (CostReduction.MkCostReduction amount perEach condition 
 
 -- | An alternative cost's children.
 alternativeCostChildren :: (Applicative f) => AbilityChildren card ability effect f -> AlternativeCost.AlternativeCost -> f AlternativeCost.AlternativeCost
-alternativeCostChildren c (AlternativeCost.MkAlternativeCost condition cost) =
+alternativeCostChildren c (AlternativeCost.MkAlternativeCost condition cost spendOnly) =
   AlternativeCost.MkAlternativeCost
     <$> traverse (abilityCondition c) condition
     <*> abilityCost c cost
+    <*> pure spendOnly
 
 -- | A granted ability (CR 113.3), its record descended with the same visitors.
 -- An ability nested inside it (a mode's grant, a modification's) is reached

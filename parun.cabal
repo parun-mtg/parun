@@ -3496,6 +3496,7 @@ library types
     Parun.Types.ManaCount
     Parun.Types.ManaFilter
     Parun.Types.ManaInstead
+    Parun.Types.ManaNarrowing
     Parun.Types.ManaOption
     Parun.Types.ManaProduction
     Parun.Types.ManaR

@@ -1653,7 +1653,7 @@ activateWhileRolling runSubgame pid oid ability = Common.withEnteringHeldOff . E
       loyalty = Loyalty.loyaltyKindOf (ActivatedAbility.cost ability)
       gathered = Cost.activationAdjustments Set.empty stamp (ActivatedAbility.name ability) AbilityKind.NonManaAbility loyalty pid oid before
       totalled = Cost.plusComponents gathered (ActivatedAbility.cost ability)
-      spendable = ActivationRestriction.spendableTypes oid (ActivatedAbility.restrictions ability) before
+      spendable = ActivationRestriction.spendable oid (ActivatedAbility.restrictions ability) before
   (announced, _) <- Cost.announce (PaymentSubject.Activating oid AbilityKind.NonManaAbility (ActivatedAbility.name ability) stamp spendable) ManaSpending.AsProduced pid oid (Cost.substitutedManas (Cost.statedSubstitutions (Cost.Type.components totalled) Map.empty pid oid before) (Cost.totalManas gathered)) totalled
   adjustments <- Cost.announceReductions pid oid before announced gathered
   (payment, _) <- Cost.paySubstituting (const False) (performManaAbility runSubgame) before [] PaymentMoment.OutsideResolution (PaymentSubject.Activating oid AbilityKind.NonManaAbility (ActivatedAbility.name ability) stamp spendable) Nothing ManaSpending.AsProduced pid oid (Cost.announceSubstitutions Cost.statedSubstitutions pid oid) (Cost.totalWith adjustments announced)

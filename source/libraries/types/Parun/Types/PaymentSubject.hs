@@ -1,10 +1,9 @@
 module Parun.Types.PaymentSubject where
 
-import qualified Data.Set as Set
 import qualified Parun.Types.AbilityKind as AbilityKind
 import qualified Parun.Types.AbilityName as AbilityName
 import qualified Parun.Types.Keyword as Keyword
-import qualified Parun.Types.ManaType as ManaType
+import qualified Parun.Types.ManaNarrowing as ManaNarrowing
 import qualified Parun.Types.ObjectId as ObjectId
 
 -- | WHAT a cost is being paid for, at the one grain CR 106.6's restrictions ask
@@ -34,8 +33,9 @@ data PaymentSubject
     -- (CR 116.2h's foretell), a combat toll, or CR 118.12's payment as a spell
     -- or ability resolves.
     ForNeither
-  | -- | CR 601.2h: the object being CAST.
-    Casting ObjectId.ObjectId
+  | -- | CR 601.2h: the object being CAST, and the mana the cost cast for
+    -- admits (Parun.Types.AlternativeCost.spendOnly).
+    Casting ObjectId.ObjectId ManaNarrowing.ManaNarrowing
   | -- | CR 602.2b: the SOURCE of the ability being activated, which is the
     -- object "activate abilities of artifacts" is about rather than the ability.
     --
@@ -54,10 +54,10 @@ data PaymentSubject
     -- The keyword is the ability's own Parun.Types.ActivatedAbility.keyword, which
     -- CR 717.2c's "to gain a Class level" asks about rather than the source.
     --
-    -- The set is the mana types the payment may spend, Nothing for any: Throne
-    -- of Eldraine's "Spend only mana of the chosen color to activate this
-    -- ability" (Parun.Types.ActivationRestriction.SpendOnly).
-    Activating ObjectId.ObjectId AbilityKind.AbilityKind (Maybe AbilityName.AbilityName) (Maybe Keyword.Keyword) (Maybe (Set.Set ManaType.ManaType))
+    -- The narrowing is the mana the payment may spend: Throne of Eldraine's
+    -- "Spend only mana of the chosen color to activate this ability"
+    -- (Parun.Types.ActivationRestriction.SpendOnly).
+    Activating ObjectId.ObjectId AbilityKind.AbilityKind (Maybe AbilityName.AbilityName) (Maybe Keyword.Keyword) ManaNarrowing.ManaNarrowing
   | -- | CR 116.2m \/ 709.5e: the PERMANENT whose locked half's unlock cost is
     -- being paid.
     Unlocking ObjectId.ObjectId

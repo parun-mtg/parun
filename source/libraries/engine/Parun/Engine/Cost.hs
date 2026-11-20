@@ -166,6 +166,7 @@ import qualified Parun.Types.ManaAdded as ManaAdded
 import qualified Parun.Types.ManaAddedCause as ManaAddedCause
 import qualified Parun.Types.ManaAddition as ManaAddition
 import qualified Parun.Types.ManaCost as ManaCost
+import qualified Parun.Types.ManaNarrowing as ManaNarrowing
 import qualified Parun.Types.ManaOption as ManaOption
 import qualified Parun.Types.ManaSegment as ManaSegment
 import qualified Parun.Types.ManaSpending as ManaSpending
@@ -741,9 +742,10 @@ candidateCostsGiven permitted pid name oid gs =
               -- cr-118-9-the-kavu-mine-security-conjured-is-cast-for-0 proves it.
               --
               -- A printed one is tagged with its index (CR 601.2b), so the cast
-              -- records which printed cost was paid; a granted one is not.
+              -- records which printed cost was paid; a granted one is not. Either
+              -- carries its spend rule (CR 601.2h).
               alternatives =
-                [ (untagged (withAdditional (AlternativeCost.cost alternative))) {CandidateCost.printedAlternative = index}
+                [ (untagged (withAdditional (AlternativeCost.cost alternative))) {CandidateCost.printedAlternative = index, CandidateCost.spendOnly = AlternativeCost.spendOnly alternative}
                 | (index, alternative) <- zip (fmap Just [0 ..]) (Face.alternativeCosts face) <> fmap ((,) Nothing) (PC.grantedAlternativeCosts spell),
                   available alternative
                 ]
@@ -885,6 +887,7 @@ candidateCostsGiven permitted pid name oid gs =
                         (withAdditional (Emerge.cost emerge) {Cost.components = Cost.components (Emerge.cost emerge) <> [CostComponent.Sacrifice (Sacrifice.MkSacrifice (ObjectCount.Exactly (CostAmount.Fixed 1)) (Filter.Type.IsObject vid) Set.empty)]})
                         [AppliedReduction.MkAppliedReduction (ManaCost.MkManaCost [ManaSymbol.Generic (Integer.toNaturalSaturating n)]) 0 Nothing]
                         False
+                        Nothing
                         Nothing
                         Nothing
                         Nothing
@@ -1186,6 +1189,7 @@ candidateCostsGiven permitted pid name oid gs =
                                 (withAdditional cost {Cost.components = Cost.components cost <> [CostComponent.TapPermanents (TapPermanents.MkTapPermanents (CostAmount.Fixed 1) (criterion vid) False TapState.Tapped)]})
                                 [AppliedReduction.MkAppliedReduction (ManaCost.MkManaCost [ManaSymbol.Generic (Integer.toNaturalSaturating n)]) 0 Nothing]
                                 False
+                                Nothing
                                 Nothing
                                 Nothing
                                 Nothing
@@ -4005,7 +4009,7 @@ manaPartPayable effects adjustments pid oid named cost gs = case Cost.mana cost 
     any
       ( \totalled ->
           Mana.canPayCommitting
-            (PaymentSubject.Activating oid AbilityKind.ManaAbility named Nothing Nothing)
+            (PaymentSubject.Activating oid AbilityKind.ManaAbility named Nothing ManaNarrowing.none)
             (manaActivationsGiven effects)
             ManaSpending.AsProduced
             pid
@@ -7345,7 +7349,7 @@ tapForManaWith perform window inFlight refused activator oid = do
           --
           -- The Phyrexian life record is DISCARDED, Activate's reason: rule
           -- 702.150a reads what the player who CAST a spell announced.
-          (announcedCost, _) <- announce (PaymentSubject.Activating oid AbilityKind.ManaAbility (ActivatedAbility.name =<< ManaOption.ability chosen) Nothing Nothing) ManaSpending.AsProduced controller oid (totalManas gathered) withComponents
+          (announcedCost, _) <- announce (PaymentSubject.Activating oid AbilityKind.ManaAbility (ActivatedAbility.name =<< ManaOption.ability chosen) Nothing ManaNarrowing.none) ManaSpending.AsProduced controller oid (totalManas gathered) withComponents
           -- CR 118.7e's half of each hybrid symbol in a reduction, and CR
           -- 601.2f's order of several reductions -- both the payer's, and both
           -- elided by announceReductions wherever the answers cannot differ,
@@ -7662,7 +7666,7 @@ payActivation perform inFlight pid oid named cost = do
     -- Chromatic Star's {1} -- and mana restricted to casts may not. `oid` is the
     -- ability's SOURCE, which is what "abilities of artifacts" reads.
     Just manaCost -> do
-      (windowPaid, _, window) <- payManaWindow perform inFlight Nothing (PaymentSubject.Activating oid AbilityKind.ManaAbility named Nothing Nothing) ManaSpending.AsProduced pid (\mc -> pure (mc, [])) manaCost
+      (windowPaid, _, window) <- payManaWindow perform inFlight Nothing (PaymentSubject.Activating oid AbilityKind.ManaAbility named Nothing ManaNarrowing.none) ManaSpending.AsProduced pid (\mc -> pure (mc, [])) manaCost
       pure (windowPaid, [window])
     -- CR 118.6: attempting to pay an unpayable cost is an illegal action.
     Nothing -> pure (False, [])
