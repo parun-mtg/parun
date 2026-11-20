@@ -3,10 +3,10 @@
     {
       "keywords": [
         {
-          "type": "Menace"
+          "type": "Haste"
         },
         {
-          "type": "Haste"
+          "type": "Menace"
         },
         {
           "type": "Daybound"
@@ -160,10 +160,10 @@
       ],
       "keywords": [
         {
-          "type": "Menace"
+          "type": "Haste"
         },
         {
-          "type": "Haste"
+          "type": "Menace"
         },
         {
           "type": "Nightbound"
