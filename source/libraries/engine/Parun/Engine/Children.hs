@@ -842,6 +842,7 @@ quantityChildren children quantity = case quantity of
   Quantity.StartingDeckSize ref -> fmap Quantity.StartingDeckSize (player children ref)
   Quantity.Speed ref -> fmap Quantity.Speed (player children ref)
   Quantity.IsMonarch ref -> fmap Quantity.IsMonarch (player children ref)
+  Quantity.HasDaytime daytime -> pure (Quantity.HasDaytime daytime)
   Quantity.HasPlayerDesignation (PlayerDesignationTally.MkPlayerDesignationTally ref mark) -> fmap (\renamed -> Quantity.HasPlayerDesignation (PlayerDesignationTally.MkPlayerDesignationTally renamed mark)) (player children ref)
   Quantity.OnEventTeam (EventTeamTally.MkEventTeamTally ref team) -> fmap (\renamed -> Quantity.OnEventTeam (EventTeamTally.MkEventTeamTally renamed team)) (player children ref)
   Quantity.IsStartingPlayer ref -> fmap Quantity.IsStartingPlayer (player children ref)

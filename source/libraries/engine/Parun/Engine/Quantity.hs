@@ -560,6 +560,9 @@ evaluateAgainst viewOf context gs announcedOn mOid mView quantity =
         Quantity.IsMonarch ref -> case playersOf ref of
           Nothing -> Nothing
           Just pids -> Just (if any (\pid -> GameState.monarch gs == Just pid) pids then 1 else 0)
+        -- CR 732.1: the game's designation, IsMonarch's posture -- the neither-state
+        -- (Nothing) answers 0.
+        Quantity.HasDaytime daytime -> Just (if GameState.daytime gs == Just daytime then 1 else 0)
         -- CR 702.131c / 702.195b: does that player have that rest-of-game mark?
         -- IsMonarch's arm in shape and in arity, reaching that arity from the
         -- opposite premise: rule 726.3 makes the monarch unique, so a disjunction
@@ -1856,6 +1859,7 @@ talliesWhatHappened quantity = case quantity of
   Quantity.StartingDeckSize _ -> False
   Quantity.Speed _ -> False
   Quantity.IsMonarch _ -> False
+  Quantity.HasDaytime _ -> False
   Quantity.HasPlayerDesignation {} -> False
   Quantity.OnEventTeam {} -> False
   Quantity.IsStartingPlayer _ -> False

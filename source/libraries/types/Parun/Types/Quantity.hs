@@ -18,6 +18,7 @@ import qualified Parun.Types.ControllerGrant as ControllerGrant
 import qualified Parun.Types.Count as Count
 import qualified Parun.Types.CounterKind as CounterKind
 import qualified Parun.Types.DamageTally as DamageTally
+import qualified Parun.Types.Daytime as Daytime
 import qualified Parun.Types.DealtDamage as DealtDamage
 import qualified Parun.Types.Designation as Designation
 import qualified Parun.Types.Devotion as Devotion
@@ -137,6 +138,8 @@ data Quantity
   | -- | CR 726.1: 1 if that player is the monarch, else 0; no monarch reads 0
     -- (CR 726.5).
     IsMonarch PlayerRef.PlayerRef
+  | -- | CR 732.1: 1 if the game has that designation, else 0; neither reads 0.
+    HasDaytime Daytime.Daytime
   | -- | CR 702.131c \/ 702.195b: 1 if that player has that rest-of-game mark, else
     -- 0; a player who has never had it reads 0.
     HasPlayerDesignation PlayerDesignationTally.PlayerDesignationTally

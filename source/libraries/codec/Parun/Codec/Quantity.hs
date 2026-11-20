@@ -14,6 +14,7 @@ import qualified Parun.Codec.ControllerGrant as ControllerGrant
 import qualified Parun.Codec.Count as Count
 import qualified Parun.Codec.CounterKind as CounterKind
 import qualified Parun.Codec.DamageTally as DamageTally
+import qualified Parun.Codec.Daytime as Daytime
 import qualified Parun.Codec.DealtDamage as DealtDamage
 import qualified Parun.Codec.Designation as Designation
 import qualified Parun.Codec.Devotion as Devotion
@@ -117,6 +118,7 @@ codec =
       -- a 0/1 rather than a stored number, so there is nothing beside the
       -- reference.
       Arm.payload "IsMonarch" PlayerRef.codec Quantity.IsMonarch (\x -> case x of Quantity.IsMonarch y -> Just y; _ -> Nothing),
+      Arm.payload "HasDaytime" Daytime.codec Quantity.HasDaytime (\x -> case x of Quantity.HasDaytime y -> Just y; _ -> Nothing),
       -- CR 702.131c / 702.195b's marks, IsMonarch's 0/1 answer with the mark
       -- beside the reference, since a player may hold either or both.
       Arm.payload "HasPlayerDesignation" PlayerDesignationTally.codec Quantity.HasPlayerDesignation (\x -> case x of Quantity.HasPlayerDesignation y -> Just y; _ -> Nothing),
@@ -339,6 +341,7 @@ tagOf x = case x of
   Quantity.StartingDeckSize {} -> "StartingDeckSize"
   Quantity.Speed {} -> "Speed"
   Quantity.IsMonarch {} -> "IsMonarch"
+  Quantity.HasDaytime {} -> "HasDaytime"
   Quantity.HasPlayerDesignation {} -> "HasPlayerDesignation"
   Quantity.OnEventTeam {} -> "OnEventTeam"
   Quantity.IsStartingPlayer {} -> "IsStartingPlayer"
