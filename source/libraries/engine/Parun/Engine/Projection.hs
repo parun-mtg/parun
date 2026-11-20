@@ -4932,10 +4932,10 @@ filterReadsPeers f = case f of
   -- The anchored object's traits arrive on the Context -- the source's owner
   -- read off Object.owner rather than off a projection -- and the candidate's
   -- own come from its partial, so no PEER is projected.
-  -- A group anchor reads every permanent's view (Filter.Context.battlefieldViews),
-  -- and Host the candidate's attachedToView.
+  -- A group anchor reads every view of its pool (Filter.Context.battlefieldViews,
+  -- exiledViews), and Host the candidate's attachedToView.
   Filter.Type.Shares _ anchor -> case anchor of
-    Anchor.AnyPermanent _ _ -> True
+    Anchor.AnyObject {} -> True
     Anchor.Host -> True
     Anchor.Bound _ _ -> False
     Anchor.Evaluated -> False
@@ -5459,6 +5459,7 @@ aggregationReads :: Aggregation.Aggregation Quantity.Type.Quantity -> Set Aspect
 aggregationReads a = case a of
   Aggregation.Members -> Set.empty
   Aggregation.Distinct DistinctOf.CardTypes -> Set.singleton Types
+  Aggregation.Distinct DistinctOf.CardTypesShared -> Set.singleton Types
   Aggregation.Distinct DistinctOf.PermanentTypes -> Set.singleton Types
   Aggregation.Distinct DistinctOf.Colors -> Set.singleton Colors
   Aggregation.Distinct DistinctOf.ColorSets -> Set.singleton Colors

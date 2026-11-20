@@ -736,7 +736,7 @@ anchorChildren children anchor = case anchor of
   Anchor.Bound held name -> fmap (Anchor.Bound held) (slot children SlotArity.Many name)
   Anchor.Evaluated -> pure anchor
   Anchor.Source -> pure anchor
-  Anchor.AnyPermanent inclusion group -> fmap (Anchor.AnyPermanent inclusion) (nest children group)
+  Anchor.AnyObject pool inclusion group -> fmap (Anchor.AnyObject pool inclusion) (nest children group)
   Anchor.YourCommander -> pure anchor
   Anchor.Host -> pure anchor
 

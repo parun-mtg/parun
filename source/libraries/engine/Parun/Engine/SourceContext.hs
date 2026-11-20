@@ -12,8 +12,10 @@
 -- every caller outside the fold goes through those instead.
 module Parun.Engine.SourceContext where
 
+import qualified Data.Foldable as Foldable
 import qualified Data.Map.Strict as Map
 import qualified Data.Maybe as Maybe
+import qualified Data.Sequence as Seq
 import qualified Data.Set as Set
 import qualified Parun.Engine.Count as Count
 import qualified Parun.Engine.Defender as Defender
@@ -66,6 +68,9 @@ framedWith viewOf choices source gs context =
       Filter.sourceCountered = Map.filter (not . Set.null) (fmap (Set.map CounterLink.moved . Set.filter (\link -> CounterLink.source link == source && CounterLink.acquisition link == SourceChoices.acquisition choices)) (GameState.counteredWith gs)),
       -- CR 607.2a: the cards in exile now (CR 400.7) linked to the source.
       Filter.sourceExiled = Map.filter ((== source) . ExileLink.source) (Map.restrictKeys (GameState.exiledWith gs) (GameState.exile gs)),
+      -- CR 406.1: every card in exile, for a group anchor over that pool,
+      -- whose nest reads sourceExiled above.
+      Filter.exiledViews = Seq.fromList (Maybe.mapMaybe viewOf (Foldable.toList (GameState.exile gs))),
       -- CR 607.2d: the objects the source last chose under the choices'
       -- acquisition, read off the board as sourceExiled is.
       Filter.sourceChosenObjects = Maybe.fromMaybe Set.empty (Game.choiceWithLastKnown Chosen.Objects (SourceChoices.acquisition choices) source gs),
