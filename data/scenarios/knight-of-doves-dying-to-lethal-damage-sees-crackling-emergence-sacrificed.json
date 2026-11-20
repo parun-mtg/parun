@@ -1,0 +1,143 @@
+{
+  "board": {
+    "active": "alice",
+    "seats": [
+      {
+        "battlefield": [
+          {
+            "card": "Mountain",
+            "label": "land",
+            "ready": true
+          },
+          {
+            "attached": "land",
+            "card": "Crackling Emergence",
+            "label": "emergence",
+            "ready": true
+          },
+          {
+            "card": "Knight of Doves",
+            "label": "knight",
+            "ready": true
+          },
+          {
+            "card": "Mountain",
+            "label": "b1",
+            "ready": true
+          },
+          {
+            "card": "Mountain",
+            "label": "b2",
+            "ready": true
+          },
+          {
+            "card": "Mountain",
+            "label": "b3",
+            "ready": true
+          },
+          {
+            "card": "Mountain",
+            "label": "b4",
+            "ready": true
+          }
+        ],
+        "hand": [
+          {
+            "card": "Anger of the Gods",
+            "label": "spell",
+            "ready": true
+          }
+        ],
+        "name": "alice"
+      },
+      {
+        "name": "bob"
+      }
+    ],
+    "step": "PrecombatMain"
+  },
+  "description": "Knight of Doves dying to lethal damage sees Crackling Emergence sacrificed in the same state-based action check",
+  "note": "CR 704.3 / 614.6 / 603.10a: the land's destruction by lethal damage and the Knight's are one event; the Aura's sacrifice replaces the first, so the Knight, exiled by Anger of the Gods, looks back and makes a Bird.",
+  "timeline": [
+    {
+      "do": {
+        "Cast": {
+          "mana": [
+            "$b1",
+            "$b2",
+            "$b3",
+            null
+          ],
+          "object": "$spell"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": "Pass",
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Count": {
+          "card": "Crackling Emergence",
+          "count": 1,
+          "player": "alice",
+          "zone": "Graveyard"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Count": {
+          "card": "Knight of Doves",
+          "count": 1,
+          "player": "alice",
+          "zone": "Exile"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": "Pass",
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Count": {
+          "card": "Bird Token",
+          "count": 1,
+          "player": "alice",
+          "zone": "Battlefield"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Count": {
+          "card": "Mountain",
+          "count": 5,
+          "player": "alice",
+          "zone": "Battlefield"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    }
+  ]
+}

@@ -924,7 +924,9 @@ runEntryEffect runSubgame pending = do
 -- For damage, every caller runs it BEFORE runPreventionRiders and before the
 -- next state-based action check: the replaced event and the rest of its batch
 -- were simultaneous (CR 608.2f, 614.6), so what happens instead of it lands
--- before CR 704.5g reads the board. For a loss of the game or a draw, it runs
+-- before CR 704.5g reads the board. A destruction's drains inside its own
+-- event instead (Event.destroyIn, Sba.checkOnce). For a loss of the game or a
+-- draw, it runs
 -- after each draw of a sequence, an instruction's or a replacement's (Event.drawSeries, CR
 -- 614.11a), after each resolved instruction and in every settle before
 -- priority; a loss a

@@ -119,6 +119,7 @@ import qualified Parun.Types.DealDamage as DealDamage
 import qualified Parun.Types.Designate as Designate
 import qualified Parun.Types.Destroy as Destroy
 import qualified Parun.Types.DestructionR as DestructionR
+import qualified Parun.Types.DestructionRewrite as DestructionRewrite
 import qualified Parun.Types.DieRollR as DieRollR
 import qualified Parun.Types.Discard as Discard
 import qualified Parun.Types.Discover as Discover
@@ -1739,7 +1740,8 @@ replacementRowReads re = case re of
   ReplacementEffect.DamageR (DamageR.MkDamageR pat rewrite _) ->
     let (filters, quantities) = damageRewriteReads rewrite
      in (DamagePattern.whatSource pat : (Maybe.maybeToList (DamagePattern.whatRecipient pat) <> filters), foldMap (pure . ComparedTo.threshold) (DamagePattern.whatAmount pat) <> quantities)
-  -- CR 614.1a's printed subject (Pyramids' "target land"); the rewrite is nullary.
+  -- CR 614.1a's printed subject (Pyramids' "target land"); the rewrite's
+  -- instead-effects are replacementRowEffects' answer.
   ReplacementEffect.DestructionR (DestructionR.MkDestructionR matching _) -> (Maybe.maybeToList matching, [])
   -- The rewrite is one Scaling, which is a constructor and a Natural.
   ReplacementEffect.CounterR (CounterR.MkCounterR pat _ _) -> ([CounterPattern.onWhat pat], [])
@@ -2037,7 +2039,13 @@ replacementRowEffects re = case re of
   -- reason for AsCopy's. A redirect's riders (CR 614.6) are printed only on
   -- static abilities in data/cards/, which no resolution installs.
   ReplacementEffect.ZoneChangeR _ -> []
-  ReplacementEffect.DestructionR _ -> []
+  -- CR 614.1a's instead-effects (Crackling Emergence).
+  ReplacementEffect.DestructionR (DestructionR.MkDestructionR _ rewrite) -> case rewrite of
+    DestructionRewrite.RunEffects effects -> Foldable.toList effects
+    DestructionRewrite.Regenerate -> []
+    DestructionRewrite.RemoveShieldCounter -> []
+    DestructionRewrite.UmbraArmor -> []
+    DestructionRewrite.Heal _ -> []
   ReplacementEffect.CounterR _ -> []
   ReplacementEffect.TokenR _ -> []
   ReplacementEffect.TurnUpR _ -> []

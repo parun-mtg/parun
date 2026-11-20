@@ -5068,8 +5068,9 @@ apply settle batch applied batchPrevented candidate event =
       -- and that land gains indestructible until end of turn". QUEUED for
       -- DamageRewrite.RunEffects' reason, with `oid` bound under
       -- Binding.sparedPermanent ("that land") and the row's source under
-      -- Binding.triggerSource ("this Aura", CR 113.7). No controller, nobody to
-      -- perform them; the destruction is replaced all the same.
+      -- Binding.triggerSource ("this Aura", CR 113.7), and drained inside the
+      -- destruction's own event (destroyIn, Sba.checkOnce). No controller,
+      -- nobody to perform them; the destruction is replaced all the same.
       DestructionRewrite.RunEffects effects -> do
         Replacement.consume (ReplacementCandidate.identity candidate)
         Foldable.for_ (ReplacementCandidate.controller candidate) $ \controller ->
@@ -10521,7 +10522,16 @@ destroyIn :: Settle.Settle -> Maybe GameState -> DestructionCause.DestructionCau
 destroyIn settle asOf cause regenerability oids = simultaneously $ do
   live <- State.get
   let gs = Maybe.fromMaybe live asOf
-  fmap Maybe.catMaybes . Monad.forM (doomedAmong live gs oids) $ \oid -> do
+      queue = StoredEffects.pendingReplacementEffects . GameState.stored
+      setQueue q g = g {GameState.stored = (GameState.stored g) {StoredEffects.pendingReplacementEffects = q}}
+  -- CR 614.6 / 608.2f: what replaced a member's destruction (Crackling
+  -- Emergence's sacrifice) is part of this one event, so it runs inside the
+  -- bracket, where CR 603.10a looks back to the board before the batch. Only
+  -- what this batch queued runs here; anything queued before waits for its own
+  -- drain.
+  before <- State.gets queue
+  State.modify' (setQueue Seq.empty)
+  destroyed <- fmap Maybe.catMaybes . Monad.forM (doomedAmong live gs oids) $ \oid -> do
     settled <- resolveDestruction (Just gs) cause regenerability oid
     case settled of
       -- CR 701.8c: a regeneration effect REPLACED the destruction, so nothing was
@@ -10533,6 +10543,9 @@ destroyIn settle asOf cause regenerability oids = simultaneously $ do
       Just target -> do
         arrived <- changeZoneInBatchReturning settle gs target Zone.Graveyard
         pure (Just (target, arrived))
+  Settle.queued settle
+  State.modify' (\g -> setQueue (before <> queue g) g)
+  pure destroyed
 
 -- The members a destruction reaches: still there on the live board, and not
 -- indestructible on the batch's (CR 702.12b).
