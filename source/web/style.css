@@ -1128,6 +1128,8 @@ details.pile[open] {
   flex-wrap: wrap;
   gap: var(--gap);
   min-height: 0;
+  /* Room for a tapped tile's turned corners. */
+  padding-block: 6px;
 }
 
 .group {
