@@ -69,6 +69,7 @@ codec = Fields.object $ do
   chosenObjects <- Fields.defaulted "chosenObjects" Map.empty (Common.keyedList (Common.keyValue Acquisition.codec (Common.set ObjectId.codec))) ObjectView.chosenObjects
   ownEffects <- Fields.defaulted "ownEffects" Nothing (Common.maybe ProjectedCharacteristics.codec) ObjectView.ownEffects
   merged <- Fields.defaulted "merged" Seq.empty (Common.seq (Common.maybe CardName.codec)) ObjectView.merged
+  commanderTax <- Fields.defaulted "commanderTax" 0 Common.natural ObjectView.commanderTax
   pure
     ObjectView.MkObjectView
       { ObjectView.object = object,
@@ -100,5 +101,6 @@ codec = Fields.object $ do
         ObjectView.chosenNames = chosenNames,
         ObjectView.chosenPlayers = chosenPlayers,
         ObjectView.chosenNumber = chosenNumber,
-        ObjectView.chosenObjects = chosenObjects
+        ObjectView.chosenObjects = chosenObjects,
+        ObjectView.commanderTax = commanderTax
       }

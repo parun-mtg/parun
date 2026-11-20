@@ -414,7 +414,8 @@ recalled view oid = case Map.lookup oid (objects view) of
         ObjectView.chosenNames = Map.empty,
         ObjectView.chosenPlayers = Map.empty,
         ObjectView.chosenNumber = Map.empty,
-        ObjectView.chosenObjects = Map.empty
+        ObjectView.chosenObjects = Map.empty,
+        ObjectView.commanderTax = 0
       }
 
 -- | An object by id, named as the view shows it, or else as the last witnessed

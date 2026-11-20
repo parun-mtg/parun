@@ -10,6 +10,7 @@ import qualified Data.Map.Strict as Map
 import qualified Data.Maybe as Maybe
 import qualified Data.Sequence as Seq
 import qualified Data.Set as Set
+import qualified Parun.Engine.Commander as Commander
 import qualified Parun.Engine.Decide as Decide
 import qualified Parun.Engine.Game as Game
 import qualified Parun.Engine.Projection as Projection
@@ -105,7 +106,8 @@ extraStep gs =
 -- | CR 400.2: a hidden zone by its size and the members `pid` may see; a public
 -- one in full. A library card whose id reached a seat is re-minted when
 -- shuffled (Parun.Engine.Event.forgetShown), so no seat follows it through.
--- The draft notes go to every seat (CR 905.2b).
+-- The draft notes and the commander damage go to every seat (CR 905.2b,
+-- 903.10a).
 seatView :: PlayerId.PlayerId -> GameState.GameState -> PlayerId.PlayerId -> Maybe SeatView.SeatView
 seatView pid gs seat = do
   player <- Map.lookup seat (GameState.players gs)
@@ -128,7 +130,8 @@ seatView pid gs seat = do
         SeatView.speed = Player.speed player,
         SeatView.designations = Player.designations player,
         SeatView.completedDungeons = Player.completedDungeons player,
-        SeatView.draftNotes = Player.draftNotes player
+        SeatView.draftNotes = Player.draftNotes player,
+        SeatView.commanderDamage = Commander.commanderDamageTo seat gs
       }
 
 -- | CR 110.5: an object's status for anyone; its characteristics (as
@@ -141,7 +144,8 @@ seatView pid gs seat = do
 -- 702.143e); what an ability came from; what a stack
 -- object targets, which CR 601.2c / 602.2b / 603.3d announce to every seat;
 -- and what the object has chosen (CR 607.2d), for a seat that sees it, less a
--- secret choice to all but its chooser and whoever controls them (CR 724.4).
+-- secret choice to all but its chooser and whoever controls them (CR 724.4);
+-- and a commander's tax, for every seat (CR 903.8).
 objectView :: PlayerId.PlayerId -> GameState.GameState -> ObjectId.ObjectId -> Maybe ObjectView.ObjectView
 objectView pid gs oid = do
   object <- Game.lookupObject oid gs
@@ -223,7 +227,8 @@ objectView pid gs oid = do
         ObjectView.chosenNames = chosen Chosen.Names,
         ObjectView.chosenPlayers = if public || seen then Object.chosenPlayers object else Map.empty,
         ObjectView.chosenNumber = chosen Chosen.Number,
-        ObjectView.chosenObjects = chosen Chosen.Objects
+        ObjectView.chosenObjects = chosen Chosen.Objects,
+        ObjectView.commanderTax = Commander.tax (Object.owner object) oid gs
       }
 
 -- | CR 731.2: a component of a merged permanent by the face it shows: its

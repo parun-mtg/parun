@@ -436,6 +436,20 @@ commandZoneComponent oid gs = do
   Monad.guard (not (Seq.null (Game.componentsOf (Object.source obj))))
   fmap fst (commanderCardOf oid gs)
 
+-- | CR 903.3: the printed name of the card a commander designation names, read
+-- off whichever object represents it now; Nothing when none does.
+designatedName :: CardIdentity.CardIdentity -> GameState -> Maybe CardName.CardName
+designatedName identity gs =
+  let named oid = commanderCardOf oid gs >>= \(printingId, card) -> if card == identity then fmap printedName (Game.printingOf printingId gs) else Nothing
+   in Foldable.asum (fmap named (Map.keys (GameState.objects gs)))
+
+-- | CR 903.10a: the combat damage each commander has dealt this player, by the
+-- player whose deck designated it (CR 903.3) and its name.
+commanderDamageTo :: PlayerId -> GameState -> Map.Map PlayerId (Map.Map CardName.CardName Natural)
+commanderDamageTo pid gs =
+  let tally = foldMap (Map.toList . Player.commanderDamage) (Map.lookup pid (GameState.players gs))
+   in Map.fromListWith (Map.unionWith (+)) [(CardIdentity.startingOwner identity, Map.singleton name amount) | (identity, amount) <- tally, Just name <- [designatedName identity gs]]
+
 -- | CR 903.3e: the objects that are this player's commanders, in every zone of
 -- the game, by `commanderCardOf`'s reading: a commander card, or the melded or
 -- merged permanent one is part of. Several for a partner pair (CR 702.124c).

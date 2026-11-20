@@ -34,6 +34,8 @@ data SeatView = MkSeatView
     -- | CR 309.7: how many dungeons the player has completed.
     completedDungeons :: Natural.Natural,
     -- | CR 905.2b: Player.draftNotes, which every seat may look at.
-    draftNotes :: Map.Map CardName.CardName (Seq.Seq DraftNote.DraftNote)
+    draftNotes :: Map.Map CardName.CardName (Seq.Seq DraftNote.DraftNote),
+    -- | CR 903.10a: the combat damage each commander has dealt the player, by the seat whose deck designated it (CR 903.3) and its name.
+    commanderDamage :: Map.Map PlayerId.PlayerId (Map.Map CardName.CardName Natural.Natural)
   }
   deriving (Eq, Show)

@@ -824,7 +824,8 @@ main.game {
 .count.speed,
 .count.blessing,
 .count.dungeons,
-.count.player-counter {
+.count.player-counter,
+.count.commander-damage {
   background: color-mix(in srgb, var(--accent) 16%, var(--surface-2));
 }
 

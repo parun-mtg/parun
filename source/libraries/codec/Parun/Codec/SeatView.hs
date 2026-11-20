@@ -34,6 +34,7 @@ codec = Fields.object $ do
   designations <- Fields.defaulted "designations" Set.empty (Common.set PlayerDesignation.codec) SeatView.designations
   completedDungeons <- Fields.defaulted "completedDungeons" 0 Common.natural SeatView.completedDungeons
   draftNotes <- Fields.defaulted "draftNotes" Map.empty (Common.keyedList (Common.keyValue CardName.codec (Common.seq DraftNote.codec))) SeatView.draftNotes
+  commanderDamage <- Fields.defaulted "commanderDamage" Map.empty (Common.naturalMap PlayerId.codec (Common.multiset CardName.codec)) SeatView.commanderDamage
   pure
     SeatView.MkSeatView
       { SeatView.player = player,
@@ -50,5 +51,6 @@ codec = Fields.object $ do
         SeatView.speed = speed,
         SeatView.designations = designations,
         SeatView.completedDungeons = completedDungeons,
-        SeatView.draftNotes = draftNotes
+        SeatView.draftNotes = draftNotes,
+        SeatView.commanderDamage = commanderDamage
       }

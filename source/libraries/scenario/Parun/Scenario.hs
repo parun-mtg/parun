@@ -41,6 +41,7 @@ import qualified Parun.Engine.Attach as Attach
 import qualified Parun.Engine.Binding as Binding
 import qualified Parun.Engine.Card as Engine.Card
 import qualified Parun.Engine.Combat as Combat
+import qualified Parun.Engine.Commander as Commander
 import qualified Parun.Engine.Damage as Damage
 import qualified Parun.Engine.Driver as Driver
 import qualified Parun.Engine.Engine as Engine
@@ -2394,9 +2395,7 @@ renderView gs asked viewIs =
         View.CommanderDamage -> do
           pid <- needPlayer
           let dealt = foldMap (Map.toList . Player.commanderDamage) (Map.lookup pid (GameState.players gs))
-              -- CR 903.3: the commander by the card its identity is now.
-              printingOfIdentity identity = Foldable.find ((== Just identity) . Object.identity) (GameState.objects gs) >>= Game.printingIdOfSource . Object.source
-              nameOf identity = maybe (Text.pack "unknown") (CardName.unwrap . Face.name . NonEmpty.head . Card.faces . Printing.card) (printingOfIdentity identity >>= (`Game.printingOf` gs))
+              nameOf identity = maybe (Text.pack "unknown") CardName.unwrap (Commander.designatedName identity gs)
           pure (ReplyType.Array [ReplyType.Array [ReplyType.Text (nameOf identity), ReplyType.Number (toInteger amount)] | (identity, amount) <- dealt])
         View.RingBearer -> do
           oid <- needObject

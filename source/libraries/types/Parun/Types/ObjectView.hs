@@ -83,6 +83,8 @@ data ObjectView = MkObjectView
     -- | CR 607.2d: Object.chosenNumber, less a secret choice the seat is not privy to.
     chosenNumber :: Map.Map Acquisition.Acquisition Natural.Natural,
     -- | CR 607.2d: Object.chosenObjects, less a secret choice the seat is not privy to.
-    chosenObjects :: Map.Map Acquisition.Acquisition (Set.Set ObjectId.ObjectId)
+    chosenObjects :: Map.Map Acquisition.Acquisition (Set.Set ObjectId.ObjectId),
+    -- | CR 903.8: the generic mana a commander in the command zone costs its owner beyond its mana cost, and 0 for anything else.
+    commanderTax :: Natural.Natural
   }
   deriving (Eq, Show)
