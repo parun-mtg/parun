@@ -126,6 +126,15 @@ spec s = Spec.describe s "Parun.Web.Builder" $ do
     Spec.it s "opens with nothing to save" $ do
       Spec.assertEq s (Builder.dirty (Builder.open Nothing (Text.pack "Burn") (Text.pack "4 Lightning Bolt\n") fresh)) False
 
+    Spec.it s "CR 903.5a counts a commander toward the deck, and notes the sections kept" $ do
+      let text = "Format: commander\nCommander\n1 Sai, Master Thopterist\nDeck\n99 Island\nSideboard\n2 Shock\n"
+          shown = page (Builder.open Nothing Text.empty (Text.pack text) indexed) {Builder.least = Just 100}
+      Spec.assertBool s (Text.isInfixOf (Text.pack "100 / 100") shown) "count"
+      Spec.assertBool s (Text.isInfixOf (Text.pack "Commander \x00b7 1") shown && Text.isInfixOf (Text.pack "Sideboard \x00b7 2") shown) "kept"
+
+    Spec.it s "shows the name offered in the name field" $ do
+      Spec.assertBool s (Text.isInfixOf (Text.pack "value=\"Entangling Webs\"") (page (Builder.open Nothing (Text.pack "Entangling Webs") (Text.pack "4 Lightning Bolt\n") indexed))) "name"
+
     Spec.it s "adding then removing a card leaves nothing to save" $ do
       Spec.assertEq s (Builder.dirty (tap (Builder.MkRemove bolt) (tap (Builder.MkAdd bolt) fresh))) False
 

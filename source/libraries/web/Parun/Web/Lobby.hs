@@ -116,6 +116,9 @@ data Event
     MkCloseExport
   | -- | Opens the deck builder; the shell does it.
     MkOpenBuilder
+  | -- | Opens this deck in the builder, a saved one to save over, any other
+    -- as a copy; the shell does it.
+    MkEdit Text.Text
   deriving (Eq, Show)
 
 -- | A lobby whose decks are still to read, nothing chosen yet.
@@ -316,6 +319,7 @@ update event typed lobby = case event of
   MkExport _ -> lobby
   MkCloseExport -> lobby {exporting = Nothing}
   MkOpenBuilder -> lobby
+  MkEdit _ -> lobby
   MkHome -> lobby
 
 -- | Your deck, to start a game with; or why it may not: the problems a
@@ -411,16 +415,14 @@ view lobby =
             )
           ]
           <> [(Text.pack "refusal", Element.el "ul" ["problems", "refusal"] [Element.attr "role" (Text.pack "alert")] [Element.el "li" [] [] [Element.text p] | p <- problems]) | problems <- Maybe.maybeToList (refusal lobby)]
-          -- The list of the deck being chosen, or else of the player's;
-          -- a saved one with the ways to copy it out and delete it.
+          -- The list of the deck being chosen, or else of the player's, with
+          -- the way to edit it, and a saved one's to copy it out and delete it.
           <> [ (,) (Text.pack "shown") . Element.el "div" ["deck-shown"] [] $
                  preview name lines'
-                   : [ Element.el
-                         "div"
-                         ["saved-tools"]
-                         []
-                         [Element.button ["export"] (MkExport name) [Element.string "Export"], Element.button ["delete"] (MkDelete name) [Element.string "Delete"]]
-                     | isSaved name
+                   : [ Element.el "div" ["saved-tools"] [] $
+                         if isSaved name
+                           then [Element.button ["edit"] (MkEdit name) [Element.string "Edit"], Element.button ["export"] (MkExport name) [Element.string "Export"], Element.button ["delete"] (MkDelete name) [Element.string "Delete"]]
+                           else [Element.button ["edit"] (MkEdit name) [Element.string "Edit a copy"]]
                      ]
              | name <- Maybe.maybeToList (Monad.mplus (chosen lobby (choosing lobby)) (mine lobby)),
                lines' <- Maybe.maybeToList (Map.lookup name (previews lobby))

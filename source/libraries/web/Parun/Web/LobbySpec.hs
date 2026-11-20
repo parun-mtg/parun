@@ -97,6 +97,15 @@ spec s = Spec.describe s "Parun.Web.Lobby" $ do
       let page = Lobby.view lobby
       Spec.assertEq s (Html.labelled (Text.pack "button") (Text.pack "Build a deck") page >>= \path -> Html.handler (Text.pack "click") path page) (Just Lobby.MkOpenBuilder)
 
+  Spec.describe s "edit" $ do
+    Spec.it s "offers Edit under a saved deck shown" $ do
+      let page = Lobby.view flaggedMine {Lobby.previews = Map.singleton saved []}
+      Spec.assertEq s (Html.labelled (Text.pack "button") (Text.pack "Edit") page >>= \path -> Html.handler (Text.pack "click") path page) (Just (Lobby.MkEdit saved))
+
+    Spec.it s "offers Edit a copy under a precon shown" $ do
+      let page = Lobby.view (Lobby.update (Lobby.MkPick a) Text.empty lobby) {Lobby.previews = Map.singleton a []}
+      Spec.assertEq s (Html.labelled (Text.pack "button") (Text.pack "Edit a copy") page >>= \path -> Html.handler (Text.pack "click") path page) (Just (Lobby.MkEdit a))
+
   Spec.describe s "import" $ do
     Spec.it s "slugs a name as lowercase words joined by dashes" $ do
       Spec.assertEqWith s "words" (Lobby.slugOf (Text.pack "  My  Deck!")) (Text.pack "my-deck")

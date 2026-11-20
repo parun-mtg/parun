@@ -122,6 +122,18 @@ checked found named builder = builder {problems = found, flagged = named}
 saved :: Text.Text -> Builder -> Builder
 saved name builder = builder {savedAs = Just name, baseline = (deck builder, format builder), saveProblems = []}
 
+-- | The sections of a list opened beside its main deck, each with how many
+-- cards its lines name, in the order written.
+kept :: Builder -> [(DeckList.Section, Natural)]
+kept builder =
+  let step acc raw = case (DeckList.sectionNamed line, acc) of
+        (Just section, _) -> (section, 0) : acc
+        (Nothing, (section, n) : older) | not (Text.null line), Just (more, _, _, _) <- DeckList.entryOf line -> (section, n + more) : older
+        _ -> acc
+        where
+          line = Text.strip raw
+   in reverse (List.foldl' step [] (rest builder))
+
 -- | Whether the deck or its format differ from when it was last saved or
 -- opened.
 dirty :: Builder -> Bool
@@ -198,7 +210,10 @@ view builder =
                     ]
             | not (null these)
             ]
-      counted = maybe (show total <> " cards") (\n -> show total <> " / " <> show n) (least builder)
+      -- CR 903.5a: a commander counts toward the deck's size.
+      commanders = sum [n | (DeckList.Commander, n) <- kept builder]
+      counted = maybe (show (total + commanders) <> " cards") (\n -> show (total + commanders) <> " / " <> show n) (least builder)
+      keptNote = [Element.el "p" ["kept"] [] [Element.string "Also kept: ", Element.text (Text.intercalate (Text.pack ", ") [DeckList.heading part <> Text.pack " \x00b7 " <> Text.pack (show n) | (part, n) <- kept builder])] | not (null (kept builder))]
       reading' = do
         card <- reading builder
         let found = List.find ((== card) . CardIndex.name) (foldMap Foldable.toList (index builder))
@@ -227,7 +242,7 @@ view builder =
                 Element.el "label" ["sr-only"] [Element.attr "for" (Text.pack "builder-format")] [Element.string "Format"],
                 Element.el "select" ["format"] [Element.attr "id" (Text.pack "builder-format"), Element.on "change" MkFormat] (option (format builder) (Text.empty, Text.pack "Casual (no format)") : [option (format builder) (f, Lobby.titled f) | f <- formats builder]),
                 Element.el "label" ["sr-only"] [Element.attr "for" (Text.pack "builder-name")] [Element.string "Deck name"],
-                Element.el "input" ["builder-name"] ([Element.attr "id" (Text.pack "builder-name"), Element.attr "type" (Text.pack "text"), Element.attr "autocomplete" (Text.pack "off"), Element.attr "placeholder" (Text.pack "Deck name"), Element.on "input" MkSaveName] <> [Element.attr "disabled" Text.empty | Maybe.isJust (savedAs builder)]) [],
+                Element.el "input" ["builder-name"] ([Element.attr "id" (Text.pack "builder-name"), Element.attr "type" (Text.pack "text"), Element.attr "autocomplete" (Text.pack "off"), Element.attr "placeholder" (Text.pack "Deck name"), Element.attr "value" (saveName builder), Element.on "input" MkSaveName] <> [Element.attr "disabled" Text.empty | Maybe.isJust (savedAs builder)]) [],
                 Element.button ["primary"] MkSave [Element.string "Save"]
               ]
                 <> [Element.el "span" ["saved"] [] [Element.string "Saved"] | Maybe.isJust (savedAs builder), not (dirty builder)]
@@ -250,6 +265,7 @@ view builder =
                     <> results,
                 Element.el "section" ["builder-deck"] [Element.attr "aria-label" (Text.pack "Deck")] $
                   [Element.el "h2" [] [] [Element.string counted], Lobby.curve lines']
+                    <> keptNote
                     <> [Element.el "ul" ["problems"] [Element.attr "role" (Text.pack "alert")] [Element.el "li" [] [] [Element.text p] | p <- problems builder] | not (null (problems builder))]
                     <> section "Creatures" Lobby.MkCreature
                     <> section "Spells" Lobby.MkSpell

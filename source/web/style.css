@@ -3075,3 +3075,10 @@ main.builder {
   color: var(--danger-text);
   font-size: 0.88rem;
 }
+
+/* The sections of an opened list the builder keeps but does not edit. */
+.builder-deck .kept {
+  margin: 0;
+  color: var(--muted);
+  font-size: 0.85rem;
+}
