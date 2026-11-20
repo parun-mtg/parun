@@ -464,6 +464,20 @@ main.lobby {
   padding: max(1em, env(safe-area-inset-top)) 1em calc(2em + env(safe-area-inset-bottom));
 }
 
+.lobby-top {
+  display: flex;
+  align-items: center;
+  gap: 1em;
+}
+
+.lobby-top .hero {
+  flex: 1;
+}
+
+#app button.home-button {
+  flex: none;
+}
+
 .hero {
   display: flex;
   flex-wrap: wrap;

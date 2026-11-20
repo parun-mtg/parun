@@ -1,34 +1,27 @@
--- | A game against one or more random bots in the browser: the lobby picks
--- each deck from the data the page mounted, then `parun play --json`'s game runs with
--- every request line answered on the page (Parun.Web.Question), and the
--- page ends on how it ended (Parun.Web.Ending).
+-- | A game against one or more random bots in the browser: `parun play
+-- --json`'s game with every request line answered on the page
+-- (Parun.Web.Question), ending on how it ended (Parun.Web.Ending).
 module Parun.Browser.Hotseat where
 
 import qualified Control.Exception as Exception
 import qualified Control.Monad as Monad
-import qualified Data.ByteString as ByteString
 import qualified Data.Either as Either
 import qualified Data.Foldable as Foldable
 import qualified Data.Functor.Identity as Identity
 import qualified Data.IORef as IORef
 import qualified Data.List as List
 import qualified Data.List.NonEmpty as NonEmpty
-import qualified Data.Map.Lazy as LazyMap
 import qualified Data.Map.Strict as Map
 import qualified Data.Maybe as Maybe
 import qualified Data.Sequence as Seq
 import qualified Data.Set as Set
 import qualified Data.Text as Text
-import qualified Data.Text.Encoding as Encoding
 import Numeric.Natural (Natural)
 import qualified Parun.Browser as Browser
 import qualified Parun.DeckList as DeckList
-import qualified Parun.Decks as Decks
 import qualified Parun.Engine.PlayerView as PlayerView.Engine
-import qualified Parun.Engine.Quantity as Quantity
 import qualified Parun.Exceptions.InvalidCorpus as InvalidCorpus
 import qualified Parun.Extra.Int as Int
-import qualified Parun.Extra.Integer as Integer
 import qualified Parun.Extra.Natural as Natural
 import qualified Parun.Interpreter as Interpreter
 import qualified Parun.Play.Command as Command
@@ -38,8 +31,6 @@ import qualified Parun.Play.Render as Render
 import qualified Parun.Registry as Registry
 import qualified Parun.Types.Card as Card
 import qualified Parun.Types.CardName as CardName
-import qualified Parun.Types.CardType as CardType
-import qualified Parun.Types.Face as Face
 import qualified Parun.Types.Key as Key
 import qualified Parun.Types.PlayOptions as PlayOptions
 import qualified Parun.Types.PlayerId as PlayerId
@@ -49,7 +40,6 @@ import qualified Parun.Types.Reply as R
 import qualified Parun.Types.Request as Request
 import qualified Parun.Types.Result as Result
 import qualified Parun.Types.SeatView as SeatView
-import qualified Parun.Types.TypeLine as TypeLine
 import qualified Parun.Web.Card as Web.Card
 import qualified Parun.Web.Element as Element
 import qualified Parun.Web.Ending as Ending
@@ -57,116 +47,29 @@ import qualified Parun.Web.Html as Html
 import qualified Parun.Web.Lobby as Lobby
 import qualified Parun.Web.Log as Log
 import qualified Parun.Web.Question as Web.Question
-import qualified System.Environment as Environment
+import qualified Parun.Web.Screen as Screen
 
--- | The game on a page mounted first, so any exception that escapes it is
--- shown there rather than ending the module unseen.
-start :: Set.Set Text.Text -> IO ()
-start already = do
-  page <- Browser.mount
-  Exception.catch (play already page) $ \problem ->
-    Browser.display page . message $ fmap Text.pack ["The game stopped on an error:", Exception.displayException (problem :: Exception.SomeException)]
-
-play :: Set.Set Text.Text -> Browser.Page (Either Lobby.Event Web.Question.Event) -> IO ()
-play already page = do
-  failed <- Browser.untilArrived page already (fmap Text.pack ["decks", "cards-0", "cards-1", "cards-2", "cards-3", "rules"])
-  Monad.unless (null failed) . Exception.throwIO . userError $ "The data did not load: " <> Text.unpack (Text.intercalate (Text.pack ", ") failed)
-  root <- Registry.defaultRoot
-  loaded <- fmap (Registry.loadBundles root) $ Registry.bundlePaths >>= traverse ByteString.readFile
-  deckRoot <- Decks.defaultRoot
-  paths <- Decks.listRoot deckRoot
-  -- A set's whole card list is no deck to play.
-  let byName = Map.fromList [(name, path) | path <- paths, let name = Lobby.deckName deckRoot path, not (Text.isSuffixOf (Text.pack "/all") name)]
-      names = Seq.fromList (Map.keys byName)
-      -- One of these decks at random.
-      random among = do
-        key <- Key.fresh
-        let roll = foldr (\w acc -> acc * 4294967296 + toInteger w) 0 (Key.unwrap key)
-        pure (Integer.toInt (mod roll (toInteger (max 1 (Seq.length among)))) >>= (\i -> Seq.lookup i among))
-      -- The lobby, with the decks whose colours are still to read: one
-      -- batch at a time while no tap waits, the page given a turn between.
-      choose lobby work = do
-        Browser.display page . fmap Left $ Lobby.view lobby
-        waiting <- Browser.pending page
-        case work of
-          _ : _ | not waiting -> do
-            let (batch, rest) = splitAt 8 work
-            read' <- Monad.forM batch $ \(name, path) -> do
-              contents <- Encoding.decodeUtf8Lenient <$> ByteString.readFile path
-              Exception.evaluate . (,) name $! Lobby.deckColours colours contents
-            Browser.pause
-            choose lobby {Lobby.palette = Map.union (Lobby.palette lobby) (Map.fromList read')} rest
-          _ -> do
-            (event, value) <- Browser.next page
-            case event of
-              Left Lobby.MkStart | Just one <- Lobby.mine lobby >>= (`Map.lookup` byName) -> do
-                others <- traverse (maybe (fmap (Maybe.fromMaybe Text.empty) (random (Lobby.opponents lobby))) pure) (Lobby.theirs lobby)
-                maybe (choose lobby work) (\theirs -> pure (one, theirs)) (traverse (`Map.lookup` byName) others)
-              Left Lobby.MkRandom -> random (if Lobby.choosing lobby == Lobby.MkMine then names else Lobby.opponents lobby) >>= maybe (choose lobby work) (\name -> choose (Lobby.update (Lobby.MkPick name) Text.empty lobby) work)
-              Left e -> previewing (Lobby.update e value lobby) >>= \next -> choose next work
-              Right _ -> choose lobby work
-      -- A deck's colours come from the card files its lines name, each
-      -- parsed only then.
-      -- Lazy, so a file is parsed only when looked up.
-      byFile = LazyMap.fromList loaded
-      colours name = case LazyMap.lookup (Registry.cardPath root (Registry.slugFor name)) byFile of
-        Just (Right card) -> Lobby.cardColours card
-        _ -> Set.empty
-      prepared = Map.toList byName
-      -- The chosen decks' lists, read once each.
-      previewing lobby = do
-        let wanted = [name | name <- Maybe.catMaybes (Lobby.mine lobby : Lobby.theirs lobby), Map.notMember name (Lobby.previews lobby)]
-        read' <- Monad.forM wanted $ \name -> do
-          contents <- maybe (pure Text.empty) (fmap Encoding.decodeUtf8Lenient . ByteString.readFile) (Map.lookup name byName)
-          pure (name, [line n card | (n, card) <- Lobby.entries contents])
-        pure lobby {Lobby.previews = Map.union (Lobby.previews lobby) (Map.fromList read')}
-      line n name = case LazyMap.lookup (Registry.cardPath root (Registry.slugFor name)) byFile of
-        Just (Right c)
-          | face <- NonEmpty.head (Card.faces c) ->
-              let types = TypeLine.types (Face.typeLine face)
-                  kind
-                    | Set.member CardType.Land types = Lobby.MkLand
-                    | Set.member CardType.Creature types = Lobby.MkCreature
-                    | otherwise = Lobby.MkSpell
-               in Lobby.MkLine n name (Face.manaCost face) (Quantity.manaValueOf face) kind
-        _ -> Lobby.MkLine n name Nothing 0 Lobby.MkSpell
-      say = Browser.display page . fmap Right . message
-  -- Each deck's format, from its header alone, so the bot is offered only
-  -- decks a game with yours can start under (Lobby.opponents).
-  formats <- fmap (Map.mapMaybe id) . traverse (fmap (DeckList.formatOf . Encoding.decodeUtf8Lenient) . ByteString.readFile) $ byName
-  initialLevel <- maybe Web.Question.MkStandard (Maybe.fromMaybe Web.Question.MkStandard . Web.Question.levelNamed) <$> Environment.lookupEnv "parun_level"
-  -- A rematch names every deck (Ending.rematch) and skips the lobby.
-  asked <- (,) <$> Environment.lookupEnv "parun_mine" <*> Environment.lookupEnv "parun_theirs"
-  (one, others) <- case asked of
-    (Just mine, Just theirs)
-      | Just a <- Map.lookup (Text.pack mine) byName,
-        Just bs <- traverse (`Map.lookup` byName) (Text.splitOn (Text.pack ",") (Text.pack theirs)) ->
-          pure (a, bs)
-    _ -> choose (Lobby.new (Natural.length loaded) names formats) prepared
-  let seats = one NonEmpty.:| others
-  -- The printing table is the slow part of the registry, so the lobby shows first.
-  Browser.display page . fmap Right $ starting (fmap (Lobby.deckName deckRoot) seats)
-  registry <- Registry.defaultRegistry loaded :: IO (Registry.Registry Identity.Identity)
-  -- The bot needs no screen, so the player is never handed it.
-  seatRef <- IORef.newIORef (newSeat initialLevel)
-  listed <- traverse (Command.load registry) seats
+-- | A game between these decks (name and file, the player's first) on the
+-- page, from this seed or a fresh one, every request line answered there
+-- (Parun.Web.Question): how it ended, or why it could not start.
+game :: Browser.Page Screen.Event -> Registry.Registry Identity.Identity -> Web.Question.Level -> NonEmpty.NonEmpty (Text.Text, FilePath) -> Maybe Key.Key -> IO (Either [Text.Text] Ending.Ending)
+game page registry initial seats given = do
+  seatRef <- IORef.newIORef (newSeat initial)
+  listed <- traverse (Command.load registry . snd) seats
   case sequenceA listed of
+    Left _ -> pure (Left (foldMap (Either.fromLeft []) listed))
     Right lists -> do
-      settled <- Command.settle Nothing (zip (NonEmpty.toList seats) (NonEmpty.toList lists))
+      settled <- Command.settle Nothing (zip (fmap snd (NonEmpty.toList seats)) (NonEmpty.toList lists))
       case settled of
+        Left problems -> pure (Left problems)
         Right format -> do
-          -- A shared "same shuffle" link names its seed (Ending.rematch).
-          given <- (>>= Key.fromHex . Text.pack) <$> Environment.lookupEnv "parun_seed"
           seed <- maybe Key.fresh pure given
           (outcome, recorded) <- Command.game (exchange (Identity.runIdentity . Interpreter.chosenCard registry) page seatRef) (options (Natural.length seats)) registry format (fmap DeckList.deck lists) seed
           -- What the player saw after their last decision: the killing blow, say.
           Monad.forM_ outcome $ IORef.modifyIORef' seatRef . witness . PlayerView.Engine.viewFor player . snd
           finished <- IORef.readIORef seatRef
-          let seen = loggedFor player finished
-              trail = lives finished
-          Browser.display page . Ending.view $ Ending.MkEnding (verdictOf outcome) (either (\reason -> [Text.pack "The game stopped: " <> reason <> Text.pack "."]) (\(result, gs) -> Render.result result : Render.departures gs) outcome) (Command.rendered recorded) seen player (Lobby.deckName deckRoot one, fmap (Lobby.deckName deckRoot) others) (Foldable.toList trail) (Key.toHex seed)
-        Left problems -> say problems
-    Left _ -> say (foldMap (Either.fromLeft []) listed)
+          let names = fmap fst seats
+          pure . Right $ Ending.MkEnding (verdictOf outcome) (either (\reason -> [Text.pack "The game stopped: " <> reason <> Text.pack "."]) (\(result, gs) -> Render.result result : Render.departures gs) outcome) (Command.rendered recorded) (loggedFor player finished) player (NonEmpty.head names, NonEmpty.tail names) (Foldable.toList (lives finished)) (Key.toHex seed)
 
 -- | How the game ended for the seat the page plays.
 verdictOf :: Either a (Result.Result, b) -> Ending.Verdict
@@ -190,7 +93,7 @@ options count = PlayOptions.none {PlayOptions.json = True, PlayOptions.bots = Se
 -- once; else after a hand-off when the screen last faced another seat, the
 -- question's form until it answers, a card tapped showing its text from the
 -- card data through `lookUp`.
-exchange :: (CardName.CardName -> Either InvalidCorpus.InvalidCorpus (Maybe Card.Card)) -> Browser.Page (Either Lobby.Event Web.Question.Event) -> IORef.IORef Seat -> Protocol.Exchange IO
+exchange :: (CardName.CardName -> Either InvalidCorpus.InvalidCorpus (Maybe Card.Card)) -> Browser.Page Screen.Event -> IORef.IORef Seat -> Protocol.Exchange IO
 exchange lookUp page seatRef request = do
   fmap (Just . Right) $ do
     Monad.forM_ (Request.view request) $ IORef.modifyIORef' seatRef . witness
@@ -219,7 +122,7 @@ exchange lookUp page seatRef request = do
             let seen = shown {PlayerView.priority = Nothing}
             Monad.when (watched now /= Just seen) . Monad.forM_ (Web.Question.watching (facing now) request (Web.Question.blank {Web.Question.logged = loggedFor seat now, Web.Question.fresh = freshOf seat now, Web.Question.level = level now})) $ \board -> do
               IORef.writeIORef seatRef now {watched = Just seen}
-              Browser.display page (fmap Right board)
+              Browser.display page (fmap Screen.MkQuestion board)
           pure reply
         conceded = if conceding state && kind == Text.pack "Concede" then Just (R.Text (Text.pack "Concedes")) else Nothing
     reply <- case (Monad.mplus conceded (Web.Question.automatic (level state) request), auto, skipped) of
@@ -228,7 +131,7 @@ exchange lookUp page seatRef request = do
       (_, _, Just reply) -> watch reply
       _ -> do
         Monad.when (facing state /= Just seat) $ do
-          Browser.display page . fmap Right $ Web.Question.handOff request
+          Browser.display page . fmap Screen.MkQuestion $ Web.Question.handOff request
           untilReady
           IORef.modifyIORef' seatRef $ \s -> s {facing = Just seat}
         -- A tap made while the board was only being watched is dropped.
@@ -239,26 +142,26 @@ exchange lookUp page seatRef request = do
     IORef.modifyIORef' seatRef $ \s -> s {decided = Map.insert seat (Seq.length (loggedFor seat s)) (decided s)}
     pure reply
   where
-    untilReady = Browser.next page >>= \(event, _) -> Monad.unless (event == Right Web.Question.MkReady) untilReady
+    untilReady = Browser.next page >>= \(event, _) -> Monad.unless (event == Screen.MkQuestion Web.Question.MkReady) untilReady
     answer pending picked = asking pending picked Nothing Nothing
     asking pending picked reading focus = do
       state <- IORef.readIORef seatRef
       let asked = Question.seat (Request.question pending)
           screen = Web.Question.MkScreen picked reading (loggedFor asked state) (freshOf asked state) focus (level state)
-      Browser.display page . fmap Right $ Web.Question.view pending screen
+      Browser.display page . fmap Screen.MkQuestion $ Web.Question.view pending screen
       (event, value) <- Browser.next page
       case event of
-        Right (Web.Question.MkRead object)
+        Screen.MkQuestion (Web.Question.MkRead object)
           | Just r <- readingOf pending object True -> asking pending picked (Just r) focus
         -- A preview shows only while no tapped sheet is open, and ends only
         -- itself.
-        Right (Web.Question.MkPeek object)
+        Screen.MkQuestion (Web.Question.MkPeek object)
           | maybe True (not . Web.Card.pinned) reading,
             Just r <- readingOf pending object False ->
               asking pending picked (Just r) focus
-        Right Web.Question.MkUnpeek
+        Screen.MkQuestion Web.Question.MkUnpeek
           | maybe False (not . Web.Card.pinned) reading -> asking pending picked Nothing focus
-        Right e -> case Web.Question.step pending picked e value of
+        Screen.MkQuestion e -> case Web.Question.step pending picked e value of
           Web.Question.MkReplied answered -> do
             Monad.when (e == Web.Question.MkAuto) . IORef.modifyIORef' seatRef $ \s -> s {paying = True}
             Monad.when (e == Web.Question.MkSkip) . IORef.modifyIORef' seatRef $ \s -> s {skipping = fmap PlayerView.turn (Request.view pending)}
@@ -271,7 +174,7 @@ exchange lookUp page seatRef request = do
               _ -> pure ()
             asking pending now (if isToggle e then reading else Nothing) (focusAfter e focus)
           Web.Question.MkRefused problem -> asking pending {Request.problem = Just problem} picked Nothing focus
-        Left _ -> asking pending picked reading focus
+        _ -> asking pending picked reading focus
     readingOf pending object pinned = do
       shown <- Request.view pending
       o <- Render.recalled shown object

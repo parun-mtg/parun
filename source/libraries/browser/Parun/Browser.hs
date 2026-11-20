@@ -132,6 +132,10 @@ dispatch page event path value = do
       wake
     _ -> pure ()
 
+-- | Waits for the next tap or chunk without taking it.
+idle :: IO ()
+idle = wait
+
 -- | Waits until 'wake' is called: the waiting thread is suspended, and the
 -- page goes on. The import's result is a thunk, forced here.
 wait :: IO ()

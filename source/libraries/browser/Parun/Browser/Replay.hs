@@ -45,9 +45,9 @@ import qualified Parun.Types.Timed as Timed
 import qualified Parun.Web.Card as Web.Card
 import qualified Parun.Web.Element as Element
 import qualified Parun.Web.Html as Html
-import qualified Parun.Web.Lobby as Lobby
 import qualified Parun.Web.Question as Web.Question
 import qualified Parun.Web.Replay as Web.Replay
+import qualified Parun.Web.Screen as Screen
 import qualified System.Environment as Environment
 import qualified Text.Read as Read
 
@@ -152,7 +152,7 @@ branch already name = do
   Exception.catch (playOn already page name) $ \problem ->
     Browser.display page $ message ["The game stopped on an error:", Exception.displayException (problem :: Exception.SomeException)]
 
-playOn :: Set.Set Text.Text -> Browser.Page (Either Lobby.Event Web.Question.Event) -> Text.Text -> IO ()
+playOn :: Set.Set Text.Text -> Browser.Page Screen.Event -> Text.Text -> IO ()
 playOn already page name =
   opening already page name $ \scenario registry given -> do
     level <- maybe Web.Question.MkStandard (Maybe.fromMaybe Web.Question.MkStandard . Web.Question.levelNamed) <$> Environment.lookupEnv "parun_level"

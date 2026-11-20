@@ -23,13 +23,16 @@ import qualified Parun.Types.ManaSymbol as ManaSymbol
 import qualified Parun.Types.ManaType as ManaType
 import qualified Parun.Web.Card as Web.Card
 import qualified Parun.Web.Element as Element
+import qualified Parun.Web.Home as Home
 import qualified Parun.Web.Html as Html
 import qualified Parun.Web.Mana as Mana
 import qualified Text.Read as Read
 
 data Lobby = MkLobby
-  { -- | The card files the registry holds.
-    cardFiles :: Natural,
+  { -- | The card files the registry holds, once read.
+    cardFiles :: Maybe Natural,
+    -- | Whether the deck lists are still to read.
+    reading :: Bool,
     -- | Every deck, by its path beneath the deck root, less ".txt".
     decks :: Seq.Seq Text.Text,
     -- | The format each deck's header names (Parun.DeckList.formatOf), by
@@ -74,11 +77,18 @@ data Event
     MkDropBot
   | -- | Starts the game.
     MkStart
+  | -- | Goes back to the home screen.
+    MkHome
   deriving (Eq, Show)
 
--- | A lobby holding these decks under these formats, nothing chosen yet.
-new :: Natural -> Seq.Seq Text.Text -> Map.Map Text.Text Text.Text -> Lobby
-new files names named = MkLobby files names named Nothing [Nothing] MkMine Text.empty Map.empty Map.empty
+-- | A lobby whose decks are still to read, nothing chosen yet.
+new :: Lobby
+new = MkLobby Nothing True Seq.empty Map.empty Nothing [Nothing] MkMine Text.empty Map.empty Map.empty
+
+-- | The lobby holding these decks under these formats, what was chosen and
+-- typed kept.
+withDecks :: Seq.Seq Text.Text -> Map.Map Text.Text Text.Text -> Lobby -> Lobby
+withDecks names named lobby = lobby {decks = names, formats = named, reading = False}
 
 -- | The most bots a game seats: a table of four.
 mostBots :: Int
@@ -209,6 +219,7 @@ update event typed lobby = case event of
          in lobby {theirs = kept, choosing = if choosing lobby == MkTheirs (length kept) then MkMine else choosing lobby}
     | otherwise -> lobby
   MkStart -> lobby
+  MkHome -> lobby
 
 -- | The deck chosen for a slot, if any.
 chosen :: Lobby -> Slot -> Maybe Text.Text
@@ -267,13 +278,7 @@ view lobby =
         "main"
         ["lobby"]
         []
-        $ [ Element.el
-              "header"
-              ["hero"]
-              []
-              [ Element.el "h1" [] [] [Element.el "img" ["logo"] [Element.attr "src" (Text.pack "./icon.svg"), Element.attr "alt" Text.empty, Element.attr "width" (Text.pack "40"), Element.attr "height" (Text.pack "40")] [], Element.string "Parun"],
-                Element.el "p" ["tagline"] [] [Element.string ("A Magic rules engine, running in your browser. " <> show (cardFiles lobby) <> " cards loaded.")]
-              ],
+        $ [ Element.el "div" ["lobby-top"] [] [Element.button ["home-button"] MkHome [Element.string "Home"], Home.hero (cardFiles lobby)],
             Element.el
               "section"
               ["matchup"]
@@ -326,6 +331,6 @@ view lobby =
                        ],
                      Element.keyed "div" ["sets"] [] [(group, Element.el "section" ["set"] [] [Element.el "h2" [] [] [Element.text group], Element.keyed "div" ["deck-list"] [] (fmap deck names)]) | (group, names) <- groups]
                    ]
-                     <> [Element.el "p" ["empty"] [] [Element.string "No deck matches."] | null shown]
+                     <> [Element.el "p" ["empty"] [] [Element.string (if reading lobby then "Reading the decks\x2026" else "No deck matches.")] | null shown]
                  )
              ]
