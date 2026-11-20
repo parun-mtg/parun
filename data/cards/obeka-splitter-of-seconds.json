@@ -76,6 +76,7 @@
                             {
                               "type": "AddPhases",
                               "value": {
+                                "grant": "YouGet",
                                 "phases": [
                                   "ExtraUpkeep"
                                 ]

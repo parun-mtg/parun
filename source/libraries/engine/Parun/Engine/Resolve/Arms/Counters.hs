@@ -125,6 +125,7 @@ import Parun.Types.ObjectRef (ObjectRef)
 import qualified Parun.Types.ObjectRef as ObjectRef
 import qualified Parun.Types.PendingReplacementEffect as PendingReplacementEffect
 import qualified Parun.Types.Phase as Phase
+import qualified Parun.Types.PhaseGrant as PhaseGrant
 import qualified Parun.Types.PhaseOut as PhaseOut
 import qualified Parun.Types.PhaseSelector as PhaseSelector
 import qualified Parun.Types.PlaneswalkCause as PlaneswalkCause
@@ -2013,15 +2014,15 @@ phaseOut resolving source controller legal payload = do
   State.put (maybe after (\slot -> Common.bindAmountSlot resolving source slot tally after) (PhaseOut.slot payload))
 
 -- CR 500.8: add the phases directly after the specified phase
--- (Turn.splicePhases), or none when the turn holds no such phase.
---
--- Not implemented: CR 500.10a's "you get" adding nothing on another player's
--- turn (#7602).
-addPhases :: AddPhases.AddPhases -> Game ()
-addPhases added =
-  State.modify' $ \gs -> case Turn.splicePhases added (Turn.mainPhasesBegun gs) (TurnRegisters.phase (GameState.turn gs)) (TurnRegisters.remaining (GameState.turn gs)) of
-    Nothing -> gs
-    Just spliced -> gs {GameState.turn = (GameState.turn gs) {TurnRegisters.remaining = spliced}}
+-- (Turn.splicePhases), or none when the turn holds no such phase, or when
+-- "you get" them on another player's turn (CR 500.10a).
+addPhases :: PlayerId -> AddPhases.AddPhases -> Game ()
+addPhases controller added =
+  State.modify' $ \gs ->
+    let turn = GameState.turn gs
+        elsewhere = AddPhases.grant added == PhaseGrant.YouGet && TurnRegisters.activePlayer turn /= controller
+        spliced = Turn.splicePhases added (Turn.mainPhasesBegun gs) (TurnRegisters.phase turn) (TurnRegisters.remaining turn)
+     in if elsewhere then gs else maybe gs (\phases -> gs {GameState.turn = turn {TurnRegisters.remaining = phases}}) spliced
 
 -- CR 500.9: add the step directly after the one this is resolving in, which is
 -- the head of `remaining`.
