@@ -3,6 +3,8 @@
 module Parun.Codec.BecomesTargetedTrigger where
 
 import qualified Parun.Codec.Batching as Batching
+import qualified Parun.Codec.Filter as Filter
+import qualified Parun.Codec.Keyword as Keyword
 import qualified Parun.Codec.KeywordFamily as KeywordFamily
 import qualified Parun.Codec.PlayerRelation as PlayerRelation
 import qualified Parun.Codec.StackObjectKind as StackObjectKind
@@ -25,6 +27,7 @@ codec = Fields.object $ do
   zones <- Fields.defaulted "zones" (BecomesTargetedTrigger.zones BecomesTargetedTrigger.defaultValue) (Common.set Zone.codec) BecomesTargetedTrigger.zones
   frequency <- Fields.defaulted "frequency" (BecomesTargetedTrigger.frequency BecomesTargetedTrigger.defaultValue) TriggerFrequency.codec BecomesTargetedTrigger.frequency
   sourceKeyword <- Fields.defaulted "sourceKeyword" Nothing (Common.maybe KeywordFamily.codec) BecomesTargetedTrigger.sourceKeyword
+  sourceFilter <- Fields.defaulted "sourceFilter" Nothing (Common.maybe (Filter.codec Keyword.codec)) BecomesTargetedTrigger.sourceFilter
   pure
     BecomesTargetedTrigger.MkBecomesTargetedTrigger
       { BecomesTargetedTrigger.subject = subject,
@@ -33,5 +36,6 @@ codec = Fields.object $ do
         BecomesTargetedTrigger.batching = batching,
         BecomesTargetedTrigger.zones = zones,
         BecomesTargetedTrigger.frequency = frequency,
-        BecomesTargetedTrigger.sourceKeyword = sourceKeyword
+        BecomesTargetedTrigger.sourceKeyword = sourceKeyword,
+        BecomesTargetedTrigger.sourceFilter = sourceFilter
       }

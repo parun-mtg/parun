@@ -647,21 +647,24 @@ firstPlacementOn which holder gs =
         _ -> False
    in Foldable.find placedOnIt (fmap LoggedEvent.event (Turn.eventsThisTurn gs))
 
--- CR 601.2c: whether the condition's road, relation and keyword admit this
--- targeting, the relation read of the targeting object's controller against
--- `you`, the keyword off the event (CR 702.165a's "a backup ability").
-targetingAdmitted :: GameState -> PlayerId -> BecomesTargetedTrigger.BecomesTargetedTrigger -> BecameTarget.BecameTarget -> Bool
-targetingAdmitted gs you c t =
+-- CR 601.2c: whether the condition's road, relation, keyword and filter admit
+-- this targeting, the relation read of the targeting object's controller
+-- against `you`, the keyword off the event (CR 702.165a's "a backup ability"),
+-- the filter off `atEvent`'s view of the targeting object, its last known
+-- information once gone (CR 115.1b's "an Aura spell").
+targetingAdmitted :: Filter.Context -> GameState -> GameState -> PlayerId -> BecomesTargetedTrigger.BecomesTargetedTrigger -> BecameTarget.BecameTarget -> Bool
+targetingAdmitted context atEvent gs you c t =
   Set.member (BecameTarget.kind t) (BecomesTargetedTrigger.kinds c)
     && PlayerRelation.holds (Game.teams gs) (BecomesTargetedTrigger.relation c) you (BecameTarget.controller t)
     && all (\family -> BecameTarget.keyword t == Just family) (BecomesTargetedTrigger.sourceKeyword c)
+    && all (\f -> maybe False (\view -> Filter.matches context view f) (Projection.viewWithLastKnownAnywhere atEvent (BecameTarget.source t))) (BecomesTargetedTrigger.sourceFilter c)
 
 -- CR 601.2c: the first event this turn that made this recipient a target of a
 -- spell or ability the condition admits; Nothing for none.
-firstTargetingOf :: GameState -> PlayerId -> BecomesTargetedTrigger.BecomesTargetedTrigger -> Recipient.Recipient -> Maybe BecameTarget.BecameTarget
-firstTargetingOf gs you c targeted =
+firstTargetingOf :: Filter.Context -> GameState -> GameState -> PlayerId -> BecomesTargetedTrigger.BecomesTargetedTrigger -> Recipient.Recipient -> Maybe BecameTarget.BecameTarget
+firstTargetingOf context atEvent gs you c targeted =
   Foldable.find
-    (\t -> BecameTarget.targeted t == targeted && targetingAdmitted gs you c t)
+    (\t -> BecameTarget.targeted t == targeted && targetingAdmitted context atEvent gs you c t)
     [t | GameEvent.BecameTarget t <- Foldable.toList (fmap LoggedEvent.event (Turn.eventsThisTurn gs))]
 
 -- CR 603.6a: a permanent entered the battlefield, an entry that may trigger
@@ -1877,8 +1880,14 @@ armMatches bindings frozen board atEvent beforeEvent groupEvents gs bearer you c
     _ -> False
   -- CR 601.2c / 603.2c: a permanent or a player became the target of a spell or
   -- ability. A Self subject is the bearer, a bare comparison of ids in a Self
-  -- SpellCast's shape and for its reason -- nothing about the targeting spell is read, so
-  -- no projection can come up empty.
+  -- SpellCast's shape and for its reason -- nothing about the targeted bearer is
+  -- read, so no projection can come up empty.
+  --
+  -- The targeting object is read only under a `sourceFilter` (CR 115.1b's "an
+  -- Aura spell"), off `atEvent`, where CR 601.2a has put the spell on the stack
+  -- before rule 601.2c names its targets. data/scenarios's
+  -- brine-comber-makes-a-spirit-on-entering-and-when-an-aura-spell-targets-it
+  -- proves it.
   --
   -- The RELATION is read off the event's own controller field rather than off the
   -- board, which is what CR 405.4 asks for: the answer wanted is who controlled
@@ -1940,10 +1949,10 @@ armMatches bindings frozen board atEvent beforeEvent groupEvents gs bearer you c
   -- time again.
   TriggerCondition.BecomesTargeted c -> case event of
     GameEvent.BecameTarget t ->
-      targetingAdmitted gs you c t
+      targetingAdmitted bearerContext atEvent gs you c t
         && case BecomesTargetedTrigger.frequency c of
           TriggerFrequency.EveryTime -> True
-          TriggerFrequency.FirstTimeEachTurn -> maybe True (== t) (firstTargetingOf gs you c (BecameTarget.targeted t))
+          TriggerFrequency.FirstTimeEachTurn -> maybe True (== t) (firstTargetingOf bearerContext atEvent gs you c (BecameTarget.targeted t))
         && case (Recipient.playerOf (BecameTarget.targeted t), Recipient.objectOf (BecameTarget.targeted t)) of
           (Just player, _) -> maybe False (\relation -> PlayerRelation.holds (Game.teams gs) relation you player) (TargetedSubject.playerOf (BecomesTargetedTrigger.subject c))
           (Nothing, Nothing) -> False

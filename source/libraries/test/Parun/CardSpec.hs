@@ -4173,7 +4173,7 @@ triggerConditionFilters triggerCondition = case triggerCondition of
   -- Rule 702.21a's Self subject names the bearer and a You subject CR 109.5's
   -- "you", and neither carries a Filter; a Matching one's is card text like any
   -- other: Professor Hojo's "creatures you control".
-  TriggerCondition.BecomesTargeted c -> foldMap actingFilters (TargetedSubject.permanentOf (BecomesTargetedTrigger.subject c))
+  TriggerCondition.BecomesTargeted c -> foldMap actingFilters (TargetedSubject.permanentOf (BecomesTargetedTrigger.subject c)) <> unframed (Maybe.maybeToList (BecomesTargetedTrigger.sourceFilter c))
   where
     actingFilters watched = case watched of
       ActingPermanent.Self -> []
