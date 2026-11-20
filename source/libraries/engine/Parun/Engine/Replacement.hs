@@ -3441,18 +3441,45 @@ amplifiableFromHand pid types gs =
 -- regeneration ability replaces every destruction, not just the next one" is
 -- what proves the difference: a Mossbridge Troll and a Drudge Skeletons take the
 -- same two destructions, and only the Skeletons' shield is spent.
+--
+-- An ENTRY row applied inside a simultaneous move (Event.arrivingTogether) is
+-- held standing until the move ends (Scratch.spentEntries, spent by
+-- `spendEntries`): what enters at once enters in one event, so "the next time
+-- one or more ... enter" serves each of them, as spendPrevented does for a CR
+-- 615.8 damage batch. Each entrant's own CR 616.1 loop still applies the row
+-- once. Proved by the scenario
+-- storyweave-counters-each-enchantment-creature-entering-together-and-no-later-one.
 consume :: CandidateId -> Game ()
 consume identity_ = case identity_ of
   CandidateId.OfPermanent {} -> pure ()
   CandidateId.OfFloating floating ->
     State.modify' $ \gs ->
-      let src = FloatingCandidate.source floating
-          ts = FloatingCandidate.timestamp floating
-          spent active =
-            ActiveReplacement.source active == src
-              && ActiveReplacement.timestamp active == ts
-              && ActiveReplacement.uses active == Uses.Once
-       in gs {GameState.stored = (GameState.stored gs) {StoredEffects.replacements = filter (not . spent) (StoredEffects.replacements (GameState.stored gs))}}
+      let scratch = GameState.scratch gs
+          entry active = case ActiveReplacement.effect active of
+            ReplacementEffect.EntryR {} -> isRow floating active && ActiveReplacement.uses active == Uses.Once
+            _ -> False
+       in if Maybe.isJust (Scratch.arrivals scratch) && any entry (StoredEffects.replacements (GameState.stored gs))
+            then gs {GameState.scratch = scratch {Scratch.spentEntries = Set.insert floating (Scratch.spentEntries scratch)}}
+            else spendOnce floating gs
+
+-- | `consume`'s held-back entry rows, spent as Event.arrivingTogether's scope
+-- ends.
+spendEntries :: GameState -> GameState
+spendEntries gs =
+  let held = Scratch.spentEntries (GameState.scratch gs)
+   in List.foldl' (flip spendOnce) gs {GameState.scratch = (GameState.scratch gs) {Scratch.spentEntries = Set.empty}} (Set.toList held)
+
+-- | Drop a floating row whose `uses` is Once.
+spendOnce :: FloatingCandidate.FloatingCandidate -> GameState -> GameState
+spendOnce floating gs =
+  let spent active = isRow floating active && ActiveReplacement.uses active == Uses.Once
+   in gs {GameState.stored = (GameState.stored gs) {StoredEffects.replacements = filter (not . spent) (StoredEffects.replacements (GameState.stored gs))}}
+
+-- | CR 614.5: the floating row this candidate names.
+isRow :: FloatingCandidate.FloatingCandidate -> ActiveReplacement.ActiveReplacement -> Bool
+isRow floating active =
+  ActiveReplacement.source active == FloatingCandidate.source floating
+    && ActiveReplacement.timestamp active == FloatingCandidate.timestamp floating
 
 -- CR 615.8: spend each one-use prevention row a settled damage batch applied.
 -- "The next time a specific source would deal damage" is every event that
