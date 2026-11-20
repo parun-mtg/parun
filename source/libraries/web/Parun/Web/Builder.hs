@@ -28,9 +28,10 @@ data Builder = MkBuilder
     query :: CardIndex.Query,
     -- | The main deck: how many of each card.
     deck :: Map.Map CardName.CardName Natural,
-    -- | What follows a main-deck card's name on its line: its printing and
-    -- annotations, from a list opened.
-    suffixes :: Map.Map CardName.CardName Text.Text,
+    -- | A main-deck card's lines in a list opened, in order: what follows its
+    -- name on each (its printing and annotations) and how many that line
+    -- names; absent for a card on one bare line.
+    suffixes :: Map.Map CardName.CardName [(Text.Text, Natural)],
     -- | Every line of a list opened after its main deck, kept as written.
     rest :: [Text.Text],
     -- | The format the list's header names; empty for a casual deck, which
@@ -38,8 +39,9 @@ data Builder = MkBuilder
     format :: Text.Text,
     -- | Every shipped format, by name.
     formats :: [Text.Text],
-    -- | The fewest cards the format allows, once known.
-    least :: Maybe Natural,
+    -- | The fewest cards the format allows, and whether a commander counts
+    -- toward them, once known.
+    least :: Maybe (Natural, Bool),
     -- | Why the list as it stands breaks its format.
     problems :: [Text.Text],
     -- | The cards those problems are about.
@@ -111,12 +113,32 @@ listText :: Builder -> Text.Text
 listText builder =
   Text.unlines $
     [Text.pack "Format: " <> format builder | not (Text.null (format builder))]
-      <> [Text.pack (show n) <> Text.singleton ' ' <> CardName.unwrap card <> Map.findWithDefault Text.empty card (suffixes builder) | (card, n) <- List.sortOn (CardName.unwrap . fst) (Map.toList (deck builder))]
+      <> [ Text.pack (show k) <> Text.singleton ' ' <> CardName.unwrap card <> suffix
+         | (card, n) <- List.sortOn (CardName.unwrap . fst) (Map.toList (deck builder)),
+           (suffix, k) <- fitted n (Map.findWithDefault [(Text.empty, n)] card (suffixes builder)),
+           k > 0
+         ]
       <> (if null (rest builder) then [] else Text.empty : rest builder)
 
 -- | The builder with a check's problems, and the cards they name.
 checked :: [Text.Text] -> Set.Set CardName.CardName -> Builder -> Builder
 checked found named builder = builder {problems = found, flagged = named}
+
+-- | A card's lines holding this many copies: copies added go on the first,
+-- copies removed come off the last.
+fitted :: Natural -> [(Text.Text, Natural)] -> [(Text.Text, Natural)]
+fitted n parts
+  | n >= total = case parts of
+      (suffix, k) : more -> (suffix, k + n - total) : more
+      [] -> [(Text.empty, n)]
+  | otherwise = reverse (trimmed (total - n) (reverse parts))
+  where
+    total = sum (fmap snd parts)
+    trimmed d xs = case xs of
+      (suffix, k) : more
+        | k > d -> (suffix, k - d) : more
+        | otherwise -> trimmed (d - k) more
+      [] -> []
 
 -- | The builder once saved as this deck.
 saved :: Text.Text -> Builder -> Builder
@@ -210,9 +232,12 @@ view builder =
                     ]
             | not (null these)
             ]
-      -- CR 903.5a: a commander counts toward the deck's size.
+      -- CR 903.5a / 903.12d: a commander counts toward the size of a deck whose
+      -- format designates one.
       commanders = sum [n | (DeckList.Commander, n) <- kept builder]
-      counted = maybe (show (total + commanders) <> " cards") (\n -> show (total + commanders) <> " / " <> show n) (least builder)
+      counted = case least builder of
+        Nothing -> show total <> " cards"
+        Just (n, withCommander) -> show (if withCommander then total + commanders else total) <> " / " <> show n
       keptNote = [Element.el "p" ["kept"] [] [Element.string "Also kept: ", Element.text (Text.intercalate (Text.pack ", ") [DeckList.heading part <> Text.pack " \x00b7 " <> Text.pack (show n) | (part, n) <- kept builder])] | not (null (kept builder))]
       reading' = do
         card <- reading builder
@@ -293,14 +318,14 @@ open savedName offered text builder =
                 | not inMain -> (inMain, fmt, counts, after, raw : others)
                 | Text.null line -> (inMain, fmt, counts, after, others)
                 | Just (n, card, at, notes) <- DeckList.entryOf line ->
-                    (inMain, fmt, Map.insertWith (+) card n counts, Map.insertWith (\_ old -> old) card (suffixOf at notes) after, others)
+                    (inMain, fmt, Map.insertWith (+) card n counts, Map.insertWith (flip (<>)) card [(suffixOf at notes, n)] after, others)
                 | otherwise -> (inMain, fmt, counts, after, others)
       suffixOf at notes = foldMap (\(set, number) -> Text.pack " (" <> set <> Text.pack ") " <> number) at <> foldMap (\note -> Text.pack " {" <> note <> Text.singleton '}') notes
       (_, format', deck', suffixes', others') = List.foldl' step (True, Text.empty, Map.empty, Map.empty, []) (Text.lines text)
    in builder
         { format = format',
           deck = deck',
-          suffixes = Map.filter (not . Text.null) suffixes',
+          suffixes = Map.filter (\parts -> length parts > 1 || not (all (Text.null . fst) parts)) suffixes',
           rest = reverse (dropWhile (Text.null . Text.strip) others'),
           savedAs = savedName,
           saveName = offered,

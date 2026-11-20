@@ -166,9 +166,9 @@ spec s registry reference = Spec.describe s "Parun.Legality" $ do
     named <- Legality.shippedFormats
     Spec.assertEqWith s "constructed and limited among them, sorted" (all (`elem` named) [Text.pack "constructed", Text.pack "limited"], named == List.sort named) (True, True)
 
-  Spec.it s "CR 100.2a: minimumFor gives constructed's sixty, and nothing for no format" $ do
-    sizes <- traverse (Legality.minimumFor . Text.pack) ["constructed", "nonsense"]
-    Spec.assertEqWith s "the minimums" sizes [Just 60, Nothing]
+  Spec.it s "CR 100.2a / 903.5a: minimumFor gives each format's minimum and whether a commander counts toward it, and nothing for no format" $ do
+    sizes <- traverse (Legality.minimumFor . Text.pack) ["constructed", "commander", "nonsense"]
+    Spec.assertEqWith s "the minimums" sizes [Just (60, False), Just (100, True), Nothing]
 
   Spec.it s "CR 100.2a: a constructed deck of 59 cards is too small" $ do
     found <- violations s registry RuleFamily.Constructed [("Grizzly Bears", 4), ("Mountain", 55)] []

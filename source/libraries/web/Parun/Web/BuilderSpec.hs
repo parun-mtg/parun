@@ -55,7 +55,7 @@ spec s = Spec.describe s "Parun.Web.Builder" $ do
       Spec.assertEq s (Builder.listText built) (Text.pack "Format: constructed\n2 Lightning Bolt\n1 Mountain\n")
 
     Spec.it s "writes back the rest of a list untouched" $ do
-      let opened = constructed {Builder.deck = Map.singleton bolt 4, Builder.suffixes = Map.singleton bolt (Text.pack " (M10) 146"), Builder.rest = [Text.pack "Sideboard", Text.pack "2 Shock"]}
+      let opened = constructed {Builder.deck = Map.singleton bolt 4, Builder.suffixes = Map.singleton bolt [(Text.pack " (M10) 146", 4)], Builder.rest = [Text.pack "Sideboard", Text.pack "2 Shock"]}
       Spec.assertEq s (Builder.listText opened) (Text.pack "Format: constructed\n4 Lightning Bolt (M10) 146\n\nSideboard\n2 Shock\n")
 
     Spec.it s "parses back to the same deck, a split card included" $ do
@@ -64,7 +64,7 @@ spec s = Spec.describe s "Parun.Web.Builder" $ do
 
   Spec.describe s "view" $ do
     Spec.it s "shows the count against the format's minimum" $ do
-      let built = indexed {Builder.deck = Map.fromList [(bolt, 4), (mountain, 39)], Builder.least = Just 60}
+      let built = indexed {Builder.deck = Map.fromList [(bolt, 4), (mountain, 39)], Builder.least = Just (60, False)}
       Spec.assertBool s (Text.isInfixOf (Text.pack "43 / 60") (page built)) "count"
 
     Spec.it s "marks a flagged card" $ do
@@ -115,6 +115,24 @@ spec s = Spec.describe s "Parun.Web.Builder" $ do
       let opened = Builder.open Nothing Text.empty (Text.pack "4 Lightning Bolt (m10) 146\n1 Paliano Vanguard {color: G}\n") fresh
       Spec.assertEq s (Builder.listText opened) (Text.pack "4 Lightning Bolt (M10) 146\n1 Paliano Vanguard {color: G}\n")
 
+    Spec.it s "keeps a card's lines with different printings apart" $ do
+      let text = Text.pack "2 Mountain (ZEN) 246\n2 Mountain (UNH) 140\n"
+          opened = Builder.open Nothing Text.empty text fresh
+      Spec.assertEq s (Builder.deck opened, Builder.listText opened) (Map.singleton mountain 4, text)
+
+    Spec.it s "keeps a bare line beside a printed one" $ do
+      let text = Text.pack "2 Mountain\n1 Mountain (UNH) 140\n"
+      Spec.assertEq s (Builder.listText (Builder.open Nothing Text.empty text fresh)) text
+
+    Spec.it s "takes a copy removed from the last line, and adds one to the first" $ do
+      let opened = Builder.open Nothing Text.empty (Text.pack "2 Mountain (ZEN) 246\n2 Mountain (UNH) 140\n") fresh
+      Spec.assertEq s (Builder.listText (tap (Builder.MkRemove mountain) opened), Builder.listText (tap (Builder.MkAdd mountain) opened)) (Text.pack "2 Mountain (ZEN) 246\n1 Mountain (UNH) 140\n", Text.pack "3 Mountain (ZEN) 246\n2 Mountain (UNH) 140\n")
+
+    Spec.it s "counts a commander only where the format's size counts it" $ do
+      let text = "Commander\n1 Sai, Master Thopterist\nDeck\n59 Island\n"
+          opened = Builder.open Nothing Text.empty (Text.pack text) indexed
+      Spec.assertBool s (Text.isInfixOf (Text.pack "59 / 60") (page opened {Builder.least = Just (60, False)})) "constructed"
+
     Spec.it s "an opened saved deck saves over itself" $ do
       let opened = Builder.open (Just (Text.pack "saved/burn")) (Text.pack "Burn") (Text.pack "4 Lightning Bolt\n") fresh
       Spec.assertEq s (Builder.saveTarget (Seq.singleton (Text.pack "saved/burn")) opened) (Right (Text.pack "saved/burn"))
@@ -128,7 +146,7 @@ spec s = Spec.describe s "Parun.Web.Builder" $ do
 
     Spec.it s "CR 903.5a counts a commander toward the deck, and notes the sections kept" $ do
       let text = "Format: commander\nCommander\n1 Sai, Master Thopterist\nDeck\n99 Island\nSideboard\n2 Shock\n"
-          shown = page (Builder.open Nothing Text.empty (Text.pack text) indexed) {Builder.least = Just 100}
+          shown = page (Builder.open Nothing Text.empty (Text.pack text) indexed) {Builder.least = Just (100, True)}
       Spec.assertBool s (Text.isInfixOf (Text.pack "100 / 100") shown) "count"
       Spec.assertBool s (Text.isInfixOf (Text.pack "Commander \x00b7 1") shown && Text.isInfixOf (Text.pack "Sideboard \x00b7 2") shown) "kept"
 
