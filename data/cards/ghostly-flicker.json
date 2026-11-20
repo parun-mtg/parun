@@ -1,0 +1,102 @@
+{
+  "faces": [
+    {
+      "manaCost": [
+        {
+          "type": "Generic",
+          "value": 2
+        },
+        {
+          "type": "OfType",
+          "value": {
+            "type": "Colored",
+            "value": "Blue"
+          }
+        }
+      ],
+      "name": "Ghostly Flicker",
+      "oracleText": "Exile two target artifacts, creatures, and/or lands you control, then return those cards to the battlefield under your control.",
+      "spell": {
+        "modes": [
+          {
+            "clauses": [
+              {
+                "effects": [
+                  {
+                    "type": "MoveToZone",
+                    "value": {
+                      "ref": {
+                        "type": "InSlot",
+                        "value": "targets"
+                      },
+                      "slot": "exiled",
+                      "zone": "Exile"
+                    }
+                  },
+                  {
+                    "type": "MoveToZone",
+                    "value": {
+                      "ref": {
+                        "type": "InSlot",
+                        "value": "exiled"
+                      },
+                      "zone": "Battlefield"
+                    }
+                  }
+                ]
+              }
+            ],
+            "targetSlots": {
+              "targets": {
+                "count": {
+                  "type": "Printed",
+                  "value": {
+                    "least": 2,
+                    "most": 2
+                  }
+                },
+                "filter": {
+                  "type": "And",
+                  "value": [
+                    {
+                      "type": "Or",
+                      "value": [
+                        {
+                          "type": "HasCardType",
+                          "value": "Artifact"
+                        },
+                        {
+                          "type": "HasCardType",
+                          "value": "Creature"
+                        },
+                        {
+                          "type": "HasCardType",
+                          "value": "Land"
+                        }
+                      ]
+                    },
+                    {
+                      "type": "HeldBy",
+                      "value": {
+                        "holder": "Controller",
+                        "relation": "You"
+                      }
+                    }
+                  ]
+                },
+                "pool": {
+                  "type": "Permanents"
+                }
+              }
+            }
+          }
+        ]
+      },
+      "typeLine": {
+        "types": [
+          "Instant"
+        ]
+      }
+    }
+  ]
+}

@@ -16,7 +16,8 @@
 -- Prodigal Sorcerer's wearing Basilisk Collar, and one moving a card (CR
 -- 400.7) is Blinking Spirit's under Omniscience, and one through an entry
 -- link (CR 607.2c) is two Animate Deads' on an Auramancer beside a Viscera
--- Seer. No printing reaches the Adept's loop: MTGJSON AtomicCards,
+-- Seer, and one through a mana note (CR 607.2e) is Ice Cauldron's beside
+-- Ghostly Flicker and an Archaeomancer. No printing reaches the Adept's loop: MTGJSON AtomicCards,
 -- 2026-10-16, Oracle text matching `loses? all abilities` on a line with {T}
 -- in its cost, answers Immovable Rod, whose
 -- effect ends when it untaps, and Soul Sculptor, whose second activation
@@ -87,6 +88,7 @@ import qualified Parun.Types.PermanentWasSacrificed as PermanentWasSacrificed
 import qualified Parun.Types.Phase as Phase
 import qualified Parun.Types.PlayerId as PlayerId
 import qualified Parun.Types.Printing as Printing
+import qualified Parun.Types.PrintingId as PrintingId
 import qualified Parun.Types.Prompt as Prompt
 import qualified Parun.Types.Recipient as Recipient
 import qualified Parun.Types.ReturnEnding as ReturnEnding
@@ -94,6 +96,7 @@ import qualified Parun.Types.ReturnWatch as ReturnWatch
 import qualified Parun.Types.Settle as Settle
 import qualified Parun.Types.Sickness as Sickness
 import qualified Parun.Types.StoredEffects as StoredEffects
+import qualified Parun.Types.Timestamp as Timestamp
 import qualified Parun.Types.TurnRegisters as TurnRegisters
 import qualified Parun.Types.Undoing as Undoing
 import qualified Parun.Types.Zone as Zone
@@ -229,6 +232,28 @@ spec s registry = Spec.describe s "a fragmented loop (CR 733.3)" $ do
     Spec.assertEqWith s "CR 733.3 a return watch on the Island is a new state" (watched here) False
     Spec.assertEqWith s "CR 733.3 a return watch on the departed Island is no new state" (watched gone) True
 
+  Spec.it s "a note or relation keyed by an object that has left is no new state" $ do
+    tomb <- S.printingOf s registry "Cyclopean Tomb"
+    island <- S.printingOf s registry "Island"
+    -- One state with and without each of the id-keyed notes and relations on
+    -- alice's Island, before and after the Island has left (CR 400.7): what
+    -- reads one asks for an id the state still holds.
+    let (tombId, gs1) = S.addPermanent tomb S.alice (Setup.emptyGame S.bothPlayers)
+        (islandId, here) = S.addPermanent island S.alice gs1
+        gone = S.runPure S.identityAnswer here (Event.changeZone Settle.none islandId Zone.Graveyard)
+        unchanged gs row = Fragmented.digest (row gs) == Fragmented.digest gs
+        rows =
+          [ ("noted mana (CR 607.2e)", \gs -> gs {GameState.notedMana = Map.singleton islandId (Seq.singleton ManaType.Colorless)}),
+            ("a noted card (CR 707.14)", \gs -> gs {GameState.notedCards = Map.singleton islandId (PrintingId.MkPrintingId 0)}),
+            ("a named copy choice (CR 707.13)", \gs -> gs {GameState.namedCopyChoices = Map.singleton islandId (Set.singleton (CardName.MkCardName (Text.pack "Disenchant")))}),
+            ("a haunting (CR 702.55b)", \gs -> gs {GameState.haunting = Map.singleton islandId tombId}),
+            ("an encoding (CR 702.99b)", \gs -> gs {GameState.encoded = Map.singleton islandId tombId}),
+            ("an exile pile (CR 406.4)", \gs -> gs {GameState.exilePiles = Map.singleton islandId (Timestamp.MkTimestamp 0)})
+          ]
+    Foldable.for_ rows $ \(label, row) -> do
+      Spec.assertEqWith s ("CR 733.3 " <> label <> " on the Island is a new state") (unchanged here row) False
+      Spec.assertEqWith s ("CR 733.3 " <> label <> " on the departed Island is no new state") (unchanged gone row) True
+
   Spec.it s "an activation is refused as paid, not as announced" $ do
     birds <- S.printingOf s registry "Birds of Paradise"
     freed <- S.printingOf s registry "Freed from the Real"
@@ -352,6 +377,19 @@ spec s registry = Spec.describe s "a fragmented loop (CR 733.3)" $ do
     -- 611.2c) stay behind naming an Aura that left, which no card can read, so
     -- the laps recur and her third sacrifice is refused.
     Spec.assertEqWith s "CR 733.3 alice's repeated action is refused" (reanimateAttempts animate auramancer seer omniscience) (replicate 5 Nothing <> [Just Undoing.RepeatedLoop])
+
+  Spec.it s "a loop through a mana note recurs once the noted artifact has left" $ do
+    cauldron <- S.printingOf s registry "Ice Cauldron"
+    flicker <- S.printingOf s registry "Ghostly Flicker"
+    archaeomancer <- S.printingOf s registry "Archaeomancer"
+    omniscience <- S.printingOf s registry "Omniscience"
+    -- alice activates her Ice Cauldron for X=0, which notes the mana spent
+    -- (CR 607.2e), then casts Ghostly Flicker free under Omniscience on the
+    -- Cauldron and her Archaeomancer, which returns the Flicker to her hand,
+    -- and so on. Each lap notes mana for a Cauldron that then leaves (CR
+    -- 400.7), which no card can read, so the laps recur and her third
+    -- activation is refused.
+    Spec.assertEqWith s "CR 733.3 alice's repeated action is refused" (flickerAttempts cauldron flicker archaeomancer omniscience) (replicate (flickerBudget - 1) Nothing <> [Just Undoing.RepeatedLoop])
 
 -- How many times the answerer has the tapper activate before it passes
 -- instead, since without CR 733.3 the loop never ends.
@@ -889,6 +927,54 @@ reanimating seerId asked = case Asked.prompt asked of
   where
     casts action = case action of
       Action.Cast {} -> True
+      _ -> False
+
+-- alice, under Omniscience with an Ice Cauldron, an Archaeomancer and an
+-- empty library, holds Ghostly Flicker. She activates the Cauldron for X=0
+-- when it is fresh, declining its exile, and casts the Flicker on the Cauldron
+-- and the Archaeomancer once it has resolved, `flickerBudget` times. Answers,
+-- for each attempt, why it was undone, if it was.
+flickerAttempts :: Printing.Printing -> Printing.Printing -> Printing.Printing -> Printing.Printing -> [Maybe Undoing.Undoing]
+flickerAttempts cauldron flicker archaeomancer omniscience =
+  let (_, gs1) = S.addPermanent omniscience S.alice (Setup.emptyGame S.bothPlayers)
+      (_, gs2) = S.addPermanent cauldron S.alice gs1
+      (_, gs3) = S.addPermanent archaeomancer S.alice gs2
+      (_, gs4) = S.addHandCard flicker S.alice gs3
+      ((_, _), (_, _, _, made)) = State.runState (Engine.runGameAsked flickering (inMain gs4) Engine.priorityLoop) (flickerBudget, False, False, [])
+   in made
+
+-- Two laps of two actions each, then the third lap's activation, which
+-- returns the game to the state the second's left.
+flickerBudget :: Int
+flickerBudget = 5
+
+-- The attempts alice has left, whether she has just made one, whether this
+-- lap's Cauldron has noted its mana, and how each attempt so far ended.
+type Flickering = (Int, Bool, Bool, [Maybe Undoing.Undoing])
+
+flickering :: Asked.Asked GameState.GameState r -> State.State Flickering r
+flickering asked = case Asked.prompt asked of
+  Prompt.ChooseAction _ pid actions | pid == S.alice -> do
+    (left, attempted, noted, made) <- State.get
+    let gs = Asked.game asked
+        stacked = not (null (TurnRegisters.stack (GameState.turn gs)))
+        recorded = if attempted then made <> [undoneFor gs] else made
+        next = List.find (if noted then casts else activations) actions
+    case next of
+      Just action | not stacked && left > 0 -> do
+        State.put (left - 1, True, not noted, recorded)
+        pure action
+      _ -> do
+        State.put (left, False, noted, recorded)
+        pure Action.Pass
+  Prompt.ChooseAction {} -> pure Action.Pass
+  prompt -> pure (S.identityAnswer prompt)
+  where
+    casts action = case action of
+      Action.Cast {} -> True
+      _ -> False
+    activations action = case action of
+      Action.Activate {} -> True
       _ -> False
 
 -- The casts alice has left, whether she has just attempted one, and her

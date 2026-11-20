@@ -123,13 +123,16 @@ import qualified Text.Read as Read
 -- its source cannot read as it writes it.
 --
 -- Trimmed to the ids the rest of the state holds, as `lastKnown` is (CR
--- 400.7): the rows of `movedUntil` (CR 610.3), `exiledWith`, `enteredWith`
--- and `counteredWith`, keyed by the moved or linked object, and the stored
--- rows fixed to TheseObjects (CR 611.2c), each kept while it names one such
--- id. None of them applies to a departed object, and what reads one -- a dies
--- trigger, an ability on the stack -- holds its id. Parun.FragmentedSpec's
--- Animate Dead loop proves the entry and fixed rows, and its departed-link
--- case the other three.
+-- 400.7): the rows of `movedUntil` (CR 610.3), `exiledWith`, `enteredWith`,
+-- `counteredWith`, `notedMana` (CR 607.2e), `notedCards` (CR 707.14),
+-- `namedCopyChoices` (CR 707.13), `haunting` (CR 702.55b), `encoded` (CR
+-- 702.99b) and `exilePiles` (CR 406.4), each keyed by the object it is
+-- about (`keyedTo`), and the stored rows fixed to TheseObjects (CR
+-- 611.2c), each kept while it names one such id. None of them applies to a
+-- departed object, and what reads one -- a dies trigger, an ability on the
+-- stack -- holds its id. Parun.FragmentedSpec's Animate Dead loop proves the
+-- entry and fixed rows, its Ice Cauldron loop the noted mana, and its
+-- departed-link case the rest.
 digest :: GameState -> StateDigest
 digest gs =
   let (effects, objects, reacquire) = canonicalStamps gs
@@ -168,15 +171,14 @@ digest gs =
       fixedTo row = case ContinuousEffect.affected row of
         Affected.TheseObjects oids -> Just oids
         _ -> Nothing
-      unkeyed = show unlinked {GameState.movedUntil = Map.empty, GameState.exiledWith = Map.empty, GameState.enteredWith = Map.empty, GameState.counteredWith = Map.empty, GameState.stored = (GameState.stored unlinked) {StoredEffects.continuousEffects = filter (Maybe.isNothing . fixedTo) effects}}
+      unkeyed = show (keyedTo Set.empty unlinked) {GameState.stored = (GameState.stored unlinked) {StoredEffects.continuousEffects = filter (Maybe.isNothing . fixedTo) effects}}
       linked = Set.fromList (fmap ObjectId.MkObjectId (Map.keys (ranked objectIdTag unkeyed)))
-      watched = Map.restrictKeys (GameState.movedUntil unlinked) linked
-      exiled = Map.restrictKeys (GameState.exiledWith unlinked) linked
-      entered = Map.restrictKeys (GameState.enteredWith unlinked) linked
-      countered = Map.restrictKeys (GameState.counteredWith unlinked) linked
       live row = maybe True (not . Set.disjoint linked) (fixedTo row)
-      trimmed = unlinked {GameState.movedUntil = watched, GameState.exiledWith = exiled, GameState.enteredWith = entered, GameState.counteredWith = countered, GameState.stored = (GameState.stored unlinked) {StoredEffects.continuousEffects = filter live effects}}
-      shown = unkeyed <> show (filter (Maybe.isJust . fixedTo) (filter live effects), watched, exiled, entered, countered)
+      trimmed = (keyedTo linked unlinked) {GameState.stored = (GameState.stored unlinked) {StoredEffects.continuousEffects = filter live effects}}
+      shown =
+        unkeyed
+          <> show (filter (Maybe.isJust . fixedTo) (filter live effects), GameState.movedUntil trimmed, GameState.exiledWith trimmed, GameState.enteredWith trimmed, GameState.counteredWith trimmed)
+          <> show (GameState.notedMana trimmed, GameState.notedCards trimmed, GameState.namedCopyChoices trimmed, GameState.haunting trimmed, GameState.encoded trimmed, GameState.exilePiles trimmed)
       held = Set.fromList (fmap ObjectId.MkObjectId (Map.keys (ranked objectIdTag shown)))
       -- What the log says of each held id, as the readers keyed by one ask it
       -- (`readers`), so a renamed id is the same object only where the
@@ -192,6 +194,23 @@ digest gs =
           StateDigest.events = TurnRegisters.events (GameState.turn gs),
           StateDigest.activations = TurnRegisters.activationsThisTurn (GameState.turn gs)
         }
+
+-- | `gs`'s rows keyed by an object, kept only where the key is in `ids`
+-- (`digest`).
+keyedTo :: Set.Set ObjectId.ObjectId -> GameState -> GameState
+keyedTo ids gs =
+  gs
+    { GameState.movedUntil = Map.restrictKeys (GameState.movedUntil gs) ids,
+      GameState.exiledWith = Map.restrictKeys (GameState.exiledWith gs) ids,
+      GameState.enteredWith = Map.restrictKeys (GameState.enteredWith gs) ids,
+      GameState.counteredWith = Map.restrictKeys (GameState.counteredWith gs) ids,
+      GameState.notedMana = Map.restrictKeys (GameState.notedMana gs) ids,
+      GameState.notedCards = Map.restrictKeys (GameState.notedCards gs) ids,
+      GameState.namedCopyChoices = Map.restrictKeys (GameState.namedCopyChoices gs) ids,
+      GameState.haunting = Map.restrictKeys (GameState.haunting gs) ids,
+      GameState.encoded = Map.restrictKeys (GameState.encoded gs) ids,
+      GameState.exilePiles = Map.restrictKeys (GameState.exilePiles gs) ids
+    }
 
 -- How the derived Show renders an object id and a timestamp, up to the
 -- number.
