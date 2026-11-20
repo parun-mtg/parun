@@ -1,0 +1,98 @@
+{
+  "board": {
+    "active": "alice",
+    "seats": [
+      {
+        "battlefield": [
+          {
+            "card": "Serra Angel"
+          },
+          {
+            "card": "Wind Drake"
+          },
+          {
+            "card": "Knight of Grace"
+          }
+        ],
+        "hand": [
+          {
+            "card": "Odric, Blood-Cursed",
+            "label": "odric"
+          }
+        ],
+        "library": [
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          }
+        ],
+        "manaPool": "RWW",
+        "name": "alice"
+      },
+      {
+        "battlefield": [
+          {
+            "card": "Colossal Dreadmaw"
+          }
+        ],
+        "library": [
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          }
+        ],
+        "name": "bob"
+      }
+    ],
+    "step": "PrecombatMain"
+  },
+  "description": "CR 603.6a / 702.11d: Odric, Blood-Cursed creates a Blood token for each listed ability found among creatures its controller controls, each counted once",
+  "note": "Serra Angel (flying, vigilance), Wind Drake (flying again) and Knight of Grace (first strike, hexproof from black, which counts as hexproof per the card's ruling) find four abilities; Bob's Colossal Dreadmaw's trample is not among Alice's creatures.",
+  "timeline": [
+    {
+      "do": {
+        "Cast": {
+          "object": "$odric"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": "Pass",
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": "Pass",
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Count": {
+          "card": "Blood Token",
+          "count": 4,
+          "player": "alice",
+          "zone": "Battlefield"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    }
+  ]
+}
