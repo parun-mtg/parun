@@ -1396,13 +1396,10 @@ payGateBound modal =
 
 -- Does this cost EXILE a card it names? sacrificesAsCost's shape, for
 -- Binding.exiledCard (Parun.Engine.Cost.payComponent's ExileThis,
--- MoveThisFrom and MoveCardsFromGraveyard arms, folded on by Activate and
--- Resolve.Common.foldPaid), so CR 702.167a's "Return this card to the
--- battlefield" and Lamplight Phoenix's are ordinary slot reads.
---
--- Not offered on the CAST side (cardOffends): no printing in `data/cards/`
--- reads the slot after an additional cost, so the exemption would fence
--- nothing.
+-- MoveThisFrom and MoveCardsFromGraveyard arms, folded on by Activate, Cast
+-- and Resolve.Common.foldPaid), so CR 702.167a's "Return this card to the
+-- battlefield", Lamplight Phoenix's and Corpse Explosion's "the exiled card's
+-- power" are ordinary slot reads. Asked of both halves of the lint.
 exilesCardAsCost :: Cost.Type.Cost Keyword.Keyword -> Bool
 exilesCardAsCost =
   let isExile component = case component of
@@ -6310,6 +6307,10 @@ lintSpec s registry corpus = Spec.describe s "Lint" $ do
         --   * Binding.discardedCard, and only when the cost discards a card,
         --     per `discardsAsCost`: Parun.Engine.Cast folds it onto the spell,
         --     so Grab the Prize's "the discarded card" is an ordinary slot read.
+        --   * Binding.exiledCard, and only when the cost exiles a card, per
+        --     `exilesCardAsCost`: Parun.Engine.Cast folds it onto the spell, so
+        --     Corpse Explosion's "the exiled card's power" is an ordinary slot
+        --     read.
         --   * the slot a CR 118.12 cost paid at resolution binds, per
         --     `payGateBound`.
         --   * Binding.printedAlternativeCost, and only when the face prints an
@@ -6337,6 +6338,10 @@ lintSpec s registry corpus = Spec.describe s "Lint" $ do
                 if any discardsAsCost (spellCostsOf card)
                   then Set.singleton Binding.discardedCard
                   else Set.empty
+              exiled =
+                if any exilesCardAsCost (spellCostsOf card)
+                  then Set.singleton Binding.exiledCard
+                  else Set.empty
               recorded = Set.unions (fmap Cost.announcedRecords (spellCostsOf card))
               chooser =
                 if Face.modeChooser card /= PlayerRelation.You
@@ -6346,7 +6351,7 @@ lintSpec s registry corpus = Spec.describe s "Lint" $ do
                 if null (Face.alternativeCosts card)
                   then Set.empty
                   else Set.singleton Binding.printedAlternativeCost
-           in modalSlotsOffend (armedReads card) (Set.unions [Set.fromList [Binding.you, Binding.triggerSource], announcedX, revealed, sacrificed, discarded, recorded, chooser, alternative, payGateBound (Face.spell card)]) (Face.spell card)
+           in modalSlotsOffend (armedReads card) (Set.unions [Set.fromList [Binding.you, Binding.triggerSource], announcedX, revealed, sacrificed, discarded, exiled, recorded, chooser, alternative, payGateBound (Face.spell card)]) (Face.spell card)
         sweeps = anyFaceOrMinted cardOffends
         offenders = filter (sweeps . Printing.card) ps
         slot = SlotName.MkSlotName (Text.pack "creature")
