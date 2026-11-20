@@ -516,6 +516,11 @@ objectsWith before entry between =
 -- combat-cost/cr-734-1-the-drum-whose-tap-pili-pala-untapped-is-offered-back
 -- and its -and-the-second-drum-redid- sibling are the proof.
 --
+-- Unprinted: a mana ability exerting an attacker exerted as it attacks, whose
+-- `exertedBy` write equals the declaration's and so reads as no write.
+-- Parun.CardSpec's "CR 734.1 no card writes an attack exert beside a mana
+-- ability that exerts" keeps it out of card data.
+--
 -- A TOTAL record construction for `withoutAnnouncement`'s reason: a new Object
 -- field is a `-Wmissing-fields` error here.
 objectWith :: Object -> Object -> [Object] -> Object -> Maybe Object
