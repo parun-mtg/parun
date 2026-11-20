@@ -120,6 +120,10 @@ new = MkLobby True Nothing Seq.empty Map.empty Nothing [Nothing] MkMine Text.emp
 savedPrefix :: Text.Text
 savedPrefix = Text.pack "saved/"
 
+-- | Whether a deck is one to play: not a set's whole card list.
+playable :: Text.Text -> Bool
+playable name = isSaved name || not (Text.isSuffixOf (Text.pack "/all") name)
+
 -- | Whether a deck is one the player saved.
 isSaved :: Text.Text -> Bool
 isSaved = Text.isPrefixOf savedPrefix
@@ -355,37 +359,41 @@ view lobby =
             pips = Element.el "span" ["pips"] [] [Mana.symbol (Text.pack (Web.Card.letterUpper c)) | c <- Set.toList (Map.findWithDefault Set.empty name (palette lobby))]
             format = [Element.el "span" ["deck-format"] [] [Element.text (titled f)] | f <- Maybe.maybeToList (Map.lookup name (formats lobby))]
          in (name, Element.button (["deck"] <> ["picked" | picked]) (MkPick name) [Element.el "span" ["deck-name"] [] (Element.text (snd (describe name)) : format), pips])
-   in Element.el
+   in -- Keyed, so a section coming or going above the panel's fields or the
+      -- filter's keeps their nodes, and what was typed into them.
+      Element.keyed
         "main"
         ["lobby"]
         []
-        $ [ Element.el "div" ["lobby-top"] [] [Element.button ["home-button"] MkHome [Element.string "Home"], Home.hero],
-            Element.el
-              "section"
-              ["matchup"]
-              [Element.attr "aria-label" (Text.pack "Match-up")]
-              [ slot MkMine "You" (mine lobby) "Choose a deck",
-                Element.el "span" ["versus"] [] [Element.string "vs"],
-                Element.el "div" ["bots"] [] $
-                  [slot (MkTheirs i) (if length bots == 1 then "Bot" else "Bot " <> show (i + 1)) held "Random deck" | (i, held) <- zip [0 ..] bots]
-                    <> [ Element.el
-                           "div"
-                           ["bot-count"]
-                           []
-                           ( [Element.button ["add-bot"] MkAddBot [Element.string "Add a bot"] | length bots < mostBots]
-                               <> [Element.button ["drop-bot"] MkDropBot [Element.string "Remove a bot"] | length bots > 1]
-                           )
-                       ],
-                Element.el
-                  "button"
-                  ["primary", "start"]
-                  ([Element.attr "type" (Text.pack "button"), Element.on "click" MkStart] <> [Element.attr "disabled" Text.empty | Maybe.isNothing (mine lobby)])
-                  [Element.string "Start game"]
-              ]
+        $ [ (Text.pack "top", Element.el "div" ["lobby-top"] [] [Element.button ["home-button"] MkHome [Element.string "Home"], Home.hero]),
+            ( Text.pack "matchup",
+              Element.el
+                "section"
+                ["matchup"]
+                [Element.attr "aria-label" (Text.pack "Match-up")]
+                [ slot MkMine "You" (mine lobby) "Choose a deck",
+                  Element.el "span" ["versus"] [] [Element.string "vs"],
+                  Element.el "div" ["bots"] [] $
+                    [slot (MkTheirs i) (if length bots == 1 then "Bot" else "Bot " <> show (i + 1)) held "Random deck" | (i, held) <- zip [0 ..] bots]
+                      <> [ Element.el
+                             "div"
+                             ["bot-count"]
+                             []
+                             ( [Element.button ["add-bot"] MkAddBot [Element.string "Add a bot"] | length bots < mostBots]
+                                 <> [Element.button ["drop-bot"] MkDropBot [Element.string "Remove a bot"] | length bots > 1]
+                             )
+                         ],
+                  Element.el
+                    "button"
+                    ["primary", "start"]
+                    ([Element.attr "type" (Text.pack "button"), Element.on "click" MkStart] <> [Element.attr "disabled" Text.empty | Maybe.isNothing (mine lobby)])
+                    [Element.string "Start game"]
+                ]
+            )
           ]
           -- The list of the deck being chosen, or else of the player's;
           -- a saved one with the ways to copy it out and delete it.
-          <> [ Element.el "div" ["deck-shown"] [] $
+          <> [ (,) (Text.pack "shown") . Element.el "div" ["deck-shown"] [] $
                  preview name lines'
                    : [ Element.el
                          "div"
@@ -397,37 +405,38 @@ view lobby =
              | name <- Maybe.maybeToList (Monad.mplus (chosen lobby (choosing lobby)) (mine lobby)),
                lines' <- Maybe.maybeToList (Map.lookup name (previews lobby))
              ]
-          <> foldMap (pure . exportView) (exporting lobby)
-          <> foldMap (pure . importView) (importing lobby)
-          <> [ Element.el
-                 "section"
-                 ["deck-picker"]
-                 []
-                 ( [ Element.el
-                       "div"
-                       ["deck-tools"]
-                       []
-                       [ Element.el "label" ["sr-only"] [Element.attr "for" (Text.pack "deck-search")] [Element.string "Filter decks"],
-                         Element.el "input" ["search"] [Element.attr "id" (Text.pack "deck-search"), Element.attr "type" (Text.pack "search"), Element.attr "placeholder" (Text.pack "Filter decks or sets"), Element.attr "autocomplete" (Text.pack "off"), Element.on "input" MkSearch] [],
-                         Element.button ["random"] MkRandom [Element.string "Random"],
-                         Element.button ["open-import"] MkOpenImport [Element.string "Import a deck"]
-                       ],
-                     Element.el
-                       "p"
-                       ["choosing-for"]
-                       []
-                       [ Element.string
-                           ( case choosing lobby of
-                               MkMine -> "Choose your deck."
-                               MkTheirs i -> if length bots == 1 then "Choose the bot's deck." else "Choose bot " <> show (i + 1) <> "'s deck."
-                           )
-                       ],
-                     Element.keyed "div" ["sets"] [] [(group, Element.el "section" ["set"] [] [Element.el "h2" [] [] [Element.text group], Element.keyed "div" ["deck-list"] [] (fmap deck names)]) | (group, names) <- groups]
-                   ]
-                     <> case problem lobby of
-                       Just p -> [Element.el "p" ["problem"] [Element.attr "role" (Text.pack "alert")] [Element.text p]]
-                       Nothing -> [Element.el "p" ["empty"] [] [Element.string (if reading lobby then "Reading the decks\x2026" else "No deck matches.")] | null shown]
-                 )
+          <> foldMap (pure . (,) (Text.pack "export") . exportView) (exporting lobby)
+          <> foldMap (pure . (,) (Text.pack "import") . importView) (importing lobby)
+          <> [ (,) (Text.pack "picker") $
+                 Element.el
+                   "section"
+                   ["deck-picker"]
+                   []
+                   ( [ Element.el
+                         "div"
+                         ["deck-tools"]
+                         []
+                         [ Element.el "label" ["sr-only"] [Element.attr "for" (Text.pack "deck-search")] [Element.string "Filter decks"],
+                           Element.el "input" ["search"] [Element.attr "id" (Text.pack "deck-search"), Element.attr "type" (Text.pack "search"), Element.attr "placeholder" (Text.pack "Filter decks or sets"), Element.attr "autocomplete" (Text.pack "off"), Element.on "input" MkSearch] [],
+                           Element.button ["random"] MkRandom [Element.string "Random"],
+                           Element.button ["open-import"] MkOpenImport [Element.string "Import a deck"]
+                         ],
+                       Element.el
+                         "p"
+                         ["choosing-for"]
+                         []
+                         [ Element.string
+                             ( case choosing lobby of
+                                 MkMine -> "Choose your deck."
+                                 MkTheirs i -> if length bots == 1 then "Choose the bot's deck." else "Choose bot " <> show (i + 1) <> "'s deck."
+                             )
+                         ],
+                       Element.keyed "div" ["sets"] [] [(group, Element.el "section" ["set"] [] [Element.el "h2" [] [] [Element.text group], Element.keyed "div" ["deck-list"] [] (fmap deck names)]) | (group, names) <- groups]
+                     ]
+                       <> case problem lobby of
+                         Just p -> [Element.el "p" ["problem"] [Element.attr "role" (Text.pack "alert")] [Element.text p]]
+                         Nothing -> [Element.el "p" ["empty"] [] [Element.string (if reading lobby then "Reading the decks\x2026" else "No deck matches.")] | null shown]
+                   )
              ]
 
 -- | The panel a deck list is pasted into: its name, its list, and why the

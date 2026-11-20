@@ -1,5 +1,6 @@
 module Parun.Web.LobbySpec where
 
+import qualified Data.Foldable as Foldable
 import qualified Data.Map.Strict as Map
 import qualified Data.Sequence as Seq
 import qualified Data.Set as Set
@@ -7,8 +8,10 @@ import qualified Data.Text as Text
 import qualified Parun.Spec as Spec
 import qualified Parun.Types.CardName as CardName
 import qualified Parun.Types.Color as Color
+import qualified Parun.Web.Diff as Diff
 import qualified Parun.Web.Html as Html
 import qualified Parun.Web.Lobby as Lobby
+import qualified Parun.Web.Patch as Patch
 
 spec :: (Monad m, Monad n) => Spec.Spec m n -> n ()
 spec s = Spec.describe s "Parun.Web.Lobby" $ do
@@ -101,12 +104,27 @@ spec s = Spec.describe s "Parun.Web.Lobby" $ do
       Spec.assertEqWith s "seats" (Lobby.mine gone, Lobby.theirs gone) (Nothing, [Nothing])
       Spec.assertEqWith s "decks" (Lobby.decks gone) (Seq.singleton a)
 
+    Spec.it s "plays every deck but a set's whole card list, a saved deck named All included" $ do
+      Spec.assertEqWith s "a set's list" (Lobby.playable (Text.pack "sets/m12/all")) False
+      Spec.assertEqWith s "a set's deck" (Lobby.playable b) True
+      Spec.assertEqWith s "saved" (Lobby.playable (Text.pack "saved/all")) True
+
     Spec.it s "groups saved decks under their own heading" $ do
       Spec.assertEq s (Lobby.describe saved) (Text.pack "SAVED", Text.pack "My Deck")
 
     Spec.it s "shows each problem with the deck imported" $ do
       let failed = lobby {Lobby.importing = Just (Lobby.MkImport (Text.pack "x") (Text.pack "1 Nope") [Text.pack "pasted: no card is named Nope"] False)}
       Spec.assertBool s (Text.isInfixOf (Text.pack "no card is named Nope") (Html.toText (Lobby.view failed))) "problem"
+
+    Spec.it s "keeps the panel's fields, and the filter's, when a deck's list appears above them" $ do
+      let opened = Lobby.update Lobby.MkOpenImport Text.empty (Lobby.update (Lobby.MkPick a) Text.empty lobby)
+          shown = opened {Lobby.previews = Map.fromList [(a, [])]}
+          rebuilt = Foldable.toList (Diff.diff (Lobby.view opened) (Lobby.view shown)) >>= rebuilds
+      Spec.assertBool s (all (`notElem` rebuilt) [Text.pack "import-text", Text.pack "import-name", Text.pack "deck-search"]) (show rebuilt)
+
+    Spec.it s "keeps the filter's field when the panel opens above it" $ do
+      let rebuilt = Foldable.toList (Diff.diff (Lobby.view lobby) (Lobby.view (Lobby.update Lobby.MkOpenImport Text.empty lobby))) >>= rebuilds
+      Spec.assertBool s (Text.pack "deck-search" `notElem` rebuilt) (show rebuilt)
 
     Spec.it s "offers a saved deck chosen as yours for export and deletion, and no other" $ do
       let holding = Lobby.withDecks (Seq.fromList [a, saved]) Map.empty Lobby.new
@@ -186,3 +204,15 @@ saved = Text.pack "saved/my-deck"
 
 lobby :: Lobby.Lobby
 lobby = Lobby.withDecks (Seq.fromList [a, b, c, d]) (Map.fromList [(c, Text.pack "commander"), (d, Text.pack "commander")]) Lobby.new
+
+-- The ids of the fields a patch builds afresh or turns another element
+-- into: a field built afresh loses what was typed into it.
+rebuilds :: Patch.Patch msg -> [Text.Text]
+rebuilds patch = case patch of
+  Patch.MkReplace _ html -> fields html
+  Patch.MkAppend _ htmls -> foldMap fields htmls
+  Patch.MkArrange _ sources -> foldMap (\source -> case source of Patch.MkCreated html -> fields html; Patch.MkKept _ -> []) sources
+  Patch.MkSetProperty _ name value | name == Text.pack "id" -> [value]
+  _ -> []
+  where
+    fields html = [field | field <- [Text.pack "import-text", Text.pack "import-name", Text.pack "deck-search"], Text.isInfixOf (Text.pack "id=\"" <> field <> Text.pack "\"") (Html.toText html)]

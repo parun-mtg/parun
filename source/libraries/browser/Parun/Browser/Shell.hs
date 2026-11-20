@@ -193,8 +193,16 @@ importDeck shell current panel = case Lobby.nameProblems current (Lobby.importNa
   problems@(_ : _) -> pure (refuse problems)
   [] -> do
     Browser.display (page shell) . fmap Screen.MkLobby $ Lobby.view current {Lobby.importing = Just panel {Lobby.checking = True, Lobby.importProblems = []}}
-    built <- untilBuilt shell [Loading.MkCards, Loading.MkRules] (registry <$> IORef.readIORef (loaded shell))
-    problems <- either (pure . pure) (\reg -> Command.check reg "pasted" contents) built
+    built <- untilBuilt shell [Loading.MkDecks, Loading.MkCards, Loading.MkRules] (registry <$> IORef.readIORef (loaded shell))
+    -- The name again, against the saved decks read meanwhile.
+    listed <- IORef.readIORef (loaded shell)
+    let named = Lobby.nameProblems (Lobby.withDecks (Seq.fromList (foldMap Map.keys (deckFiles listed))) (formats listed) current) (Lobby.importName panel)
+    problems <- case built of
+      Left problem -> pure [problem]
+      Right reg
+        | Maybe.isNothing (deckFiles listed) -> pure [Text.pack "The decks did not load: reload to try again."]
+        | null named -> Command.check reg "pasted" contents
+        | otherwise -> pure named
     case problems of
       _ : _ -> pure (refuse problems)
       [] -> do
@@ -493,8 +501,7 @@ work shell = do
     readDecks = do
       deckRoot <- Decks.defaultRoot
       paths <- Decks.listRoot deckRoot
-      -- A set's whole card list is no deck to play.
-      let files = Map.fromList [(name, path) | path <- paths, let name = Lobby.deckName deckRoot path, not (Text.isSuffixOf (Text.pack "/all") name)]
+      let files = Map.fromList [(name, path) | path <- paths, let name = Lobby.deckName deckRoot path, Lobby.playable name]
       named <- fmap (Map.mapMaybe id) . traverse (fmap (DeckList.formatOf . Encoding.decodeUtf8Lenient) . ByteString.readFile) $ files
       IORef.modifyIORef' (loaded shell) $ \l -> l {deckFiles = Just files, formats = named, unread = Map.toList files}
     readCards = do
