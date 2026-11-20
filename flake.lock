@@ -59,33 +59,13 @@
         "type": "github"
       }
     },
-    "hooky": {
-      "inputs": {
-        "nixpkgs": [
-          "nixpkgs"
-        ]
-      },
-      "locked": {
-        "lastModified": 1791235849,
-        "narHash": "sha256-od52CmfU+AFp0nPrAivP0wtmxLgBJ9B5R77yJ8fbrr4=",
-        "owner": "tfausak",
-        "repo": "hooky-nix",
-        "rev": "3fa24006ece261edd9e703f724270fffd3a26318",
-        "type": "github"
-      },
-      "original": {
-        "owner": "tfausak",
-        "repo": "hooky-nix",
-        "type": "github"
-      }
-    },
     "nixpkgs": {
       "locked": {
-        "lastModified": 1791487292,
-        "narHash": "sha256-tqM7xDEsaeK1p6VvRygeZ9LkQRpUUkbRT02BHv6hnTM=",
+        "lastModified": 1795095985,
+        "narHash": "sha256-DOTZsOOoEtOY0ysY9L6JzyDHZm4lGBr6P1bt1mFXcRw=",
         "owner": "NixOS",
         "repo": "nixpkgs",
-        "rev": "8edc0c72e3a38faf5434e40d1f19431125fe4b30",
+        "rev": "19cfded70b91ca0981373973c5b1efffdd4d6647",
         "type": "github"
       },
       "original": {
@@ -99,7 +79,6 @@
       "inputs": {
         "cabal-gild": "cabal-gild",
         "ghc-wasm-meta": "ghc-wasm-meta",
-        "hooky": "hooky",
         "nixpkgs": "nixpkgs"
       }
     },

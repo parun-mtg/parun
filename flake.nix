@@ -4,8 +4,6 @@
     cabal-gild.url = "github:tfausak/cabal-gild-nix";
     ghc-wasm-meta.inputs.nixpkgs.follows = "nixpkgs";
     ghc-wasm-meta.url = "github:haskell-wasm/ghc-wasm-meta";
-    hooky.inputs.nixpkgs.follows = "nixpkgs";
-    hooky.url = "github:tfausak/hooky-nix";
     nixpkgs.url = "github:NixOS/nixpkgs/nixpkgs-unstable";
   };
 
@@ -13,7 +11,6 @@
     {
       cabal-gild,
       ghc-wasm-meta,
-      hooky,
       nixpkgs,
       ...
     }:
@@ -164,7 +161,6 @@
 
             nativeBuildInputs = [
               cabal-gild.packages.${system}.default
-              hooky.packages.${system}.default
               pkgs.bash
               pkgs.coreutils
               pkgs.fzf
@@ -173,6 +169,7 @@
               pkgs.git
               pkgs.haskellPackages.hasktags
               pkgs.hlint
+              pkgs.hooky
               pkgs.jq
               pkgs.nixfmt
               pkgs.ormolu
