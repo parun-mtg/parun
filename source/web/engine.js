@@ -149,12 +149,10 @@ async function fetchAll() {
 }
 fetchAll();
 
-// A rematch's decks (?mine=…&theirs=…) skip the lobby, and a shared seed
-// (&seed=…) shuffles as before (Parun.Web.Ending). A replay names its
-// scenario, the empty name for the list of them, and may name a position
-// (&at=…) and play on from it (&branch).
+// A replay names its scenario, the empty name for the list of them, and may
+// name a position (&at=…) and play on from it (&branch).
 // The auto-pass level the page kept (page.js) goes in as parun_level.
-const passed = ["mine", "theirs", "seed", "level", "scenario", "at", "branch"].filter((key) => query.has(key)).map((key) => `parun_${key}=${query.get(key)}`);
+const passed = ["level", "scenario", "at", "branch"].filter((key) => query.has(key)).map((key) => `parun_${key}=${query.get(key)}`);
 const wasi = new WASI([], ["parun_datadir=/data", ...passed], [
   new OpenFile(new File([])),
   ConsoleStdout.lineBuffered((line) => console.log(line)),

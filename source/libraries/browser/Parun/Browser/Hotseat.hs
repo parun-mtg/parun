@@ -31,7 +31,6 @@ import qualified Parun.Play.Wording as Wording
 import qualified Parun.Registry as Registry
 import qualified Parun.Types.Card as Card
 import qualified Parun.Types.CardName as CardName
-import qualified Parun.Types.Key as Key
 import qualified Parun.Types.PlayOptions as PlayOptions
 import qualified Parun.Types.PlayerId as PlayerId
 import qualified Parun.Types.PlayerView as PlayerView
@@ -70,30 +69,29 @@ data Abandoned = MkAbandonedGame
 
 instance Exception.Exception Abandoned
 
--- | A game between these decks (name and file, the player's first) on the
--- page, from this seed or a fresh one, every request line answered there
+-- | A game between these deck files (the player's first) on the page,
+-- shuffled afresh, every request line answered there
 -- (Parun.Web.Question) at the auto-pass level kept in `levelRef`, and
 -- left with the level last chosen there; leaving for the home screen
 -- through `leave`: how it came out, or why it could not start.
-game :: Browser.Page Screen.Event -> Registry.Registry Identity.Identity -> IORef.IORef Web.Question.Level -> NonEmpty.NonEmpty (Text.Text, FilePath) -> Maybe Key.Key -> IO Leave -> IO (Either [Text.Text] Played)
-game page registry levelRef seats given leave = do
+game :: Browser.Page Screen.Event -> Registry.Registry Identity.Identity -> IORef.IORef Web.Question.Level -> NonEmpty.NonEmpty FilePath -> IO Leave -> IO (Either [Text.Text] Played)
+game page registry levelRef seats leave = do
   seatRef <- IORef.newIORef . newSeat =<< IORef.readIORef levelRef
   keepingLevel levelRef seatRef . Exception.handle (\MkAbandonedGame -> pure (Right MkAbandoned)) $ do
-    listed <- traverse (Command.load registry . snd) seats
+    listed <- traverse (Command.load registry) seats
     case sequenceA listed of
       Left _ -> pure (Left (foldMap (Either.fromLeft []) listed))
       Right lists -> do
-        settled <- Command.settle Nothing (zip (fmap snd (NonEmpty.toList seats)) (NonEmpty.toList lists))
+        settled <- Command.settle Nothing (zip (NonEmpty.toList seats) (NonEmpty.toList lists))
         case settled of
           Left problems -> pure (Left problems)
           Right format -> do
-            seed <- maybe Key.fresh pure given
+            seed <- Key.fresh
             (outcome, recorded) <- Command.game (exchange (Identity.runIdentity . Interpreter.chosenCard registry) page seatRef leave) (options (Natural.length seats)) registry format (fmap DeckList.deck lists) seed
             -- What the player saw after their last decision: the killing blow, say.
             Monad.forM_ outcome $ IORef.modifyIORef' seatRef . witness . PlayerView.Engine.viewFor player . snd
             finished <- IORef.readIORef seatRef
-            let names = fmap fst seats
-            pure . Right . MkFinished $ Ending.MkEnding (verdictOf outcome) (either (\reason -> [Text.pack "The game stopped: " <> reason <> Text.pack "."]) (\(result, gs) -> Wording.result result : Wording.departures gs) outcome) (Command.rendered recorded) (loggedFor player finished) player (NonEmpty.head names, NonEmpty.tail names) (Foldable.toList (lives finished)) (Key.toHex seed)
+            pure . Right . MkFinished $ Ending.MkEnding (verdictOf outcome) (either (\reason -> [Text.pack "The game stopped: " <> reason <> Text.pack "."]) (\(result, gs) -> Wording.result result : Wording.departures gs) outcome) (Command.rendered recorded) (loggedFor player finished) player (Foldable.toList (lives finished))
 
 -- | Runs a game, then keeps the auto-pass level its seat ended on.
 keepingLevel :: IORef.IORef Web.Question.Level -> IORef.IORef Seat -> IO a -> IO a

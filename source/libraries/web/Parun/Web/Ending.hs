@@ -49,14 +49,9 @@ data Ending = MkEnding
     witnessed :: Seq.Seq Log.Entry,
     -- | The seat the page plays.
     viewer :: PlayerId.PlayerId,
-    -- | The player's deck and each bot's in seat order, by name
-    -- (Lobby.deckName).
-    decks :: (Text.Text, [Text.Text]),
     -- | Each seat's life as the game went, a sample whenever it changed,
     -- each beside the turn it was in.
-    trail :: [(Natural, [(PlayerId.PlayerId, Integer)])],
-    -- | The game's shuffle seed, as 64 hexadecimal digits (Key.toHex).
-    seed :: Text.Text
+    trail :: [(Natural, [(PlayerId.PlayerId, Integer)])]
   }
   deriving (Eq, Show)
 
@@ -79,7 +74,6 @@ view ending =
                  ["ending-actions"]
                  []
                  [ Element.button ["primary"] MkRematch [Element.string "Rematch"],
-                   Element.el "a" [] [Element.attr "href" (rematch (decks ending) (Just (seed ending))), Element.attr "title" (Text.pack "A link to the same decks, shuffled the same way")] [Element.string "Share this shuffle"],
                    Element.button [] MkNewGame [Element.string "New game"],
                    Element.el "a" [] [Element.attr "href" (download (scenario ending)), Element.attr "download" (Text.pack "parun-game.json")] [Element.string "Save as a scenario"]
                  ],
@@ -88,16 +82,6 @@ view ending =
                Element.el "h2" [] [] [Element.string "Game log"],
                Element.el "ul" ["game-log"] [] (fmap (Log.item (viewer ending) Nothing False) (Foldable.toList (witnessed ending)))
              ]
-
--- | The page starting a game among these decks at once, shuffled by this
--- seed where one is given (engine.js passes the query on as parun_mine,
--- parun_theirs and parun_seed), the bots' decks joined by commas. A deck's
--- name is a path of lowercase words, so nothing in it needs escaping in a
--- query but what a fragment escapes too.
-rematch :: (Text.Text, [Text.Text]) -> Maybe Text.Text -> Text.Text
-rematch (mine, theirs) shuffle = Text.pack "?mine=" <> query mine <> Text.pack "&theirs=" <> query (Text.intercalate (Text.pack ",") theirs) <> foldMap (Text.pack "&seed=" <>) shuffle
-  where
-    query t = Encoding.decodeLatin1 (LazyByteString.toStrict . Builder.toLazyByteString . Fragment.encode $ Encoding.encodeUtf8Builder t)
 
 -- | Each seat's life through the game as a line chart, and the numbers it
 -- tells: turns played, and each seat's final and lowest life and biggest

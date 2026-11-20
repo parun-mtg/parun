@@ -99,28 +99,22 @@ start :: IO ()
 start = do
   chosen <- maybe Web.Question.MkStandard (Maybe.fromMaybe Web.Question.MkStandard . Web.Question.levelNamed) <$> Environment.lookupEnv "parun_level"
   shell <- MkShell <$> Browser.mount <*> IORef.newIORef (MkLoaded Loading.new Nothing Map.empty Nothing Map.empty [] Nothing Nothing) <*> IORef.newIORef chosen
-  Exception.catch (opening shell >>= follow shell) $ \problem ->
+  Exception.catch (opening >>= follow shell) $ \problem ->
     Browser.display (page shell) $ message ["The page stopped on an error:", Exception.displayException (problem :: Exception.SomeException)]
 
 -- | Where the page's link leads, read once (engine.js passes its query on):
 -- a scenario's replay (parun_scenario, parun_at), played on from there
--- (parun_branch), or the list of them for the empty name; a rematch's game
--- (parun_mine, parun_theirs, parun_seed), or the lobby when it names a deck
--- that no longer exists; else the home screen.
-opening :: Shell -> IO Next
-opening shell = do
+-- (parun_branch), or the list of them for the empty name; else the home
+-- screen.
+opening :: IO Next
+opening = do
   named <- Environment.lookupEnv "parun_scenario"
   at <- Maybe.fromMaybe 0 . (>>= Read.readMaybe) <$> Environment.lookupEnv "parun_at"
   branching <- Maybe.isJust <$> Environment.lookupEnv "parun_branch"
-  asked <- (,,) <$> Environment.lookupEnv "parun_mine" <*> Environment.lookupEnv "parun_theirs" <*> Environment.lookupEnv "parun_seed"
-  case (named, asked) of
-    (Just "", _) -> pure MkToReplays
-    (Just name, _) -> pure ((if branching then MkToPlayOn else MkToReplay) (Text.pack name) at)
-    (Nothing, (Just mine, Just theirs, seed)) -> do
-      files <- decksRead shell
-      let names = Text.pack mine NonEmpty.:| Text.splitOn (Text.pack ",") (Text.pack theirs)
-      maybe (pure MkToLobby) (\seats -> play shell seats (seed >>= Key.fromHex . Text.pack)) (files >>= \known -> traverse (\name -> (,) name <$> Map.lookup name known) names)
-    _ -> pure MkToHome
+  pure $ case named of
+    Just "" -> MkToReplays
+    Just name -> (if branching then MkToPlayOn else MkToReplay) (Text.pack name) at
+    Nothing -> MkToHome
 
 -- | Goes where a screen led, and on from there.
 follow :: Shell -> Next -> IO ()
@@ -174,7 +168,7 @@ lobby shell = do
             files <- Maybe.fromMaybe Map.empty <$> decksRead shell
             -- A bot with no deck to play keeps the lobby up.
             case sequence others >>= traverse (\name -> (,) name <$> Map.lookup name files) . (mine NonEmpty.:|) of
-              Just seats -> play shell seats Nothing
+              Just seats -> play shell seats
               Nothing -> go current
           Lobby.MkRandom -> do
             picked <- randomOf (if Lobby.choosing current == Lobby.MkMine then Lobby.decks current else Lobby.opponents current)
@@ -252,15 +246,15 @@ untilBuilt shell needs built = do
 -- builds; its ending, and the games its Rematch starts;
 -- then where it leads. Home from the game shows the home screen with the
 -- game kept; a new game chosen there gives it up.
-play :: Shell -> NonEmpty.NonEmpty (Text.Text, FilePath) -> Maybe Key.Key -> IO Next
-play shell seats seed = do
+play :: Shell -> NonEmpty.NonEmpty (Text.Text, FilePath) -> IO Next
+play shell seats = do
   Browser.display (page shell) (Hotseat.starting (fmap fst seats))
   built <- untilBuilt shell [Loading.MkCards, Loading.MkRules] (registry <$> IORef.readIORef (loaded shell))
   case built of
     Left problem -> notice shell [problem]
     Right reg -> do
       chosen <- IORef.newIORef MkToHome
-      ended <- Hotseat.game (page shell) reg (level shell) seats seed (leaveFor shell chosen)
+      ended <- Hotseat.game (page shell) reg (level shell) (fmap snd seats) (leaveFor shell chosen)
       case ended of
         Left problems -> notice shell problems
         Right Hotseat.MkAbandoned -> IORef.readIORef chosen
@@ -269,7 +263,7 @@ play shell seats seed = do
                 Browser.display (page shell) (fmap Screen.MkEnding (Ending.view ending))
                 woke <- await shell
                 case woke of
-                  MkTapped (Screen.MkEnding Ending.MkRematch) _ -> play shell seats Nothing
+                  MkTapped (Screen.MkEnding Ending.MkRematch) _ -> play shell seats
                   MkTapped (Screen.MkEnding Ending.MkNewGame) _ -> pure MkToHome
                   _ -> go
           go
