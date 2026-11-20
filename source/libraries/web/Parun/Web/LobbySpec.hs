@@ -71,6 +71,49 @@ spec s = Spec.describe s "Parun.Web.Lobby" $ do
     Spec.it s "filters by what is typed" $ do
       Spec.assertEq s (Lobby.search $ Lobby.update Lobby.MkSearch (Text.pack "webs") lobby) (Text.pack "webs")
 
+  Spec.describe s "import" $ do
+    Spec.it s "slugs a name as lowercase words joined by dashes" $ do
+      Spec.assertEqWith s "words" (Lobby.slugOf (Text.pack "  My  Deck!")) (Text.pack "my-deck")
+      Spec.assertEqWith s "nothing left" (Lobby.slugOf (Text.pack "!!!")) Text.empty
+
+    Spec.it s "refuses an empty name and one a saved deck holds" $ do
+      let holding = Lobby.withDecks (Seq.fromList [a, saved]) Map.empty Lobby.new
+      Spec.assertBool s (not (null (Lobby.nameProblems holding (Text.pack "My Deck")))) "taken"
+      Spec.assertBool s (not (null (Lobby.nameProblems holding (Text.pack "!!!")))) "empty"
+      Spec.assertEqWith s "free" (Lobby.nameProblems holding (Text.pack "Other")) []
+
+    Spec.it s "keeps what is typed into the panel" $ do
+      let opened = Lobby.update Lobby.MkOpenImport Text.empty lobby
+          typed = Lobby.update Lobby.MkImportText (Text.pack "4 Forest") (Lobby.update Lobby.MkImportName (Text.pack "Mine") opened)
+      Spec.assertEqWith s "typed" (fmap (\i -> (Lobby.importName i, Lobby.importText i)) (Lobby.importing typed)) (Just (Text.pack "Mine", Text.pack "4 Forest"))
+      Spec.assertEqWith s "closed" (Lobby.importing (Lobby.update Lobby.MkCloseImport Text.empty typed)) Nothing
+
+    Spec.it s "makes an imported deck yours and closes the panel" $ do
+      let opened = Lobby.withDecks (Seq.fromList [a, saved]) Map.empty (Lobby.update Lobby.MkOpenImport Text.empty lobby)
+          done = Lobby.imported saved opened
+      Spec.assertEqWith s "yours" (Lobby.mine done) (Just saved)
+      Spec.assertEqWith s "closed" (Lobby.importing done) Nothing
+
+    Spec.it s "empties every seat a deleted deck held" $ do
+      let holding = Lobby.withDecks (Seq.fromList [a, saved]) Map.empty Lobby.new
+          seated = Lobby.update (Lobby.MkPick saved) Text.empty . Lobby.update (Lobby.MkChoose (Lobby.MkTheirs 0)) Text.empty $ Lobby.update (Lobby.MkPick saved) Text.empty holding
+          gone = Lobby.deleted saved seated
+      Spec.assertEqWith s "seats" (Lobby.mine gone, Lobby.theirs gone) (Nothing, [Nothing])
+      Spec.assertEqWith s "decks" (Lobby.decks gone) (Seq.singleton a)
+
+    Spec.it s "groups saved decks under their own heading" $ do
+      Spec.assertEq s (Lobby.describe saved) (Text.pack "SAVED", Text.pack "My Deck")
+
+    Spec.it s "shows each problem with the deck imported" $ do
+      let failed = lobby {Lobby.importing = Just (Lobby.MkImport (Text.pack "x") (Text.pack "1 Nope") [Text.pack "pasted: no card is named Nope"] False)}
+      Spec.assertBool s (Text.isInfixOf (Text.pack "no card is named Nope") (Html.toText (Lobby.view failed))) "problem"
+
+    Spec.it s "offers a saved deck chosen as yours for export and deletion, and no other" $ do
+      let holding = Lobby.withDecks (Seq.fromList [a, saved]) Map.empty Lobby.new
+          page deck = Html.toText (Lobby.view (Lobby.update (Lobby.MkPick deck) Text.empty holding) {Lobby.previews = Map.fromList [(deck, [])]})
+      Spec.assertBool s (Text.isInfixOf (Text.pack "Delete") (page saved)) "saved"
+      Spec.assertBool s (not (Text.isInfixOf (Text.pack "Delete") (page a))) "shipped"
+
   Spec.describe s "opponents" $ do
     Spec.it s "offers the bot the decks under your deck's format" $ do
       Spec.assertEq s (Lobby.opponents (Lobby.update (Lobby.MkPick c) Text.empty lobby)) (Seq.fromList [c, d])
@@ -137,6 +180,9 @@ c = Text.pack "sets/fdc/calling-all-angels"
 
 d :: Text.Text
 d = Text.pack "sets/fdc/wretched-ranks"
+
+saved :: Text.Text
+saved = Text.pack "saved/my-deck"
 
 lobby :: Lobby.Lobby
 lobby = Lobby.withDecks (Seq.fromList [a, b, c, d]) (Map.fromList [(c, Text.pack "commander"), (d, Text.pack "commander")]) Lobby.new
