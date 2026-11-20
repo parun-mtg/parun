@@ -522,8 +522,9 @@ exiledPermanent = SlotName.MkSlotName (Text.pack "thatExiledPermanent")
 -- object the cost is on is bound -- what CR 702.167a's "Return this card to the
 -- battlefield" names after craft's "Exile this permanent".
 -- sacrificedPermanent's route: Parun.Engine.Activate folds the payment's bound
--- slots onto the ability object, so the later clause reads it like any other
--- slot.
+-- slots onto the ability object, and Parun.Engine.Cast onto the spell (Corpse
+-- Explosion's "the exiled card's power"), so the later clause reads it like any
+-- other slot.
 --
 -- The EXILE incarnation rather than the id the object had before the move, which
 -- is the other way round from sacrificedPermanent: CR 400.7 makes the exiled
