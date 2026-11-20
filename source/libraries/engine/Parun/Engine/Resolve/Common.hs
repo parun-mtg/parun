@@ -1672,7 +1672,7 @@ preventionRider chosen controller source riderEffects =
 -- `resolving` is the object resolving, which picks the acquisition the duration
 -- reads its source's choices under (Expiry.arm, Game.readingAcquisition).
 installDamageRow :: ObjectId -> Map.Map SlotName (Set Recipient) -> Map.Map SlotName (Set ObjectId) -> PlayerId -> ObjectId -> Duration.Duration -> Maybe DamageKind.DamageKind -> DamageRewrite.DamageRewrite (Effect Card.Type.Card (GrantedAbility.GrantedAbility Card.Type.Card)) -> Uses.Uses -> Maybe PreventionRider.PreventionRider -> Filter.Type.Filter Keyword.Type.Keyword -> (Maybe (Filter.Type.Filter Keyword.Type.Keyword), Maybe PlayerRelation.PlayerRelation) -> GameState -> (Maybe Recipient, Maybe (Filter.Type.Filter Keyword.Type.Keyword, ObjectId)) -> GameState
-installDamageRow resolving targets slots controller source duration kind rewrite uses rider printed describedRecipient g (recipient, sourceChoice) = case Expiry.arm resolving targets controller source duration g of
+installDamageRow resolving targets slots controller source duration kind rewrite uses rider printed describedRecipient g (recipient, sourceChoice) = case Expiry.arm (Just resolving) targets controller source duration g of
   -- CR 611.2b: the duration never started, so no shield is installed.
   Nothing -> g
   Just expiry ->
@@ -4009,11 +4009,16 @@ effectIsImpossible asked resolving source controller legal gs effect = case effe
     viewOf = effectViewOf resolving source legal gs
     context = effectContext gs resolving controller source legal (slotBindings resolving gs)
     -- The two arms' own reads: the sweep names something, and frozenAffected
-    -- leaves none of it still there, or Expiry.arm stores nothing.
+    -- leaves none of it still there, or the duration Expiry.arm stores has not
+    -- begun.
+    --
+    -- Unprinted: a duration a later instruction of the resolution would begin
+    -- (CR 611.2b) needs that instruction foreseen here; asked as of now, the
+    -- offer is withheld.
     noneCanBeHeld duration ref =
       let named = objectRefObjects legal resolving controller source gs ref
           held = frozenAffected gs named
-       in not (null named) && (null held || Maybe.isNothing (Expiry.arm resolving legal controller source duration gs))
+       in not (null named) && (null held || all Expiry.unbegun (Expiry.arm (Just resolving) legal controller source duration gs))
     -- The tap-state half of Effect.Tap's and Effect.Untap's arms: the sweep
     -- names at least one permanent and none of them is in the state the
     -- instruction needs to find.
@@ -5301,7 +5306,7 @@ installControl legal resolving controller source recipient duration ref mSlot gs
       | List.notElem recipient (Game.stillPlaying gs) -> gs
       -- CR 611.2b's condition is baked against `legal` rather than `chosen`, so a
       -- slot CR 608.2b has emptied never starts the duration.
-      | otherwise -> case Expiry.arm resolving legal controller source duration gs of
+      | otherwise -> case Expiry.arm (Just resolving) legal controller source duration gs of
           -- CR 611.2b: the duration never started, so nothing is stored and
           -- control never changed.
           Nothing -> gs

@@ -848,7 +848,7 @@ grantPlayFromExile resolving source controller legal (GrantPlayFromExile.MkGrant
         -- CR 716.3d's "that player" is ONE seat and a permission names
         -- one, so a reference naming nobody -- or naming several -- grants
         -- nothing, PlayerRef.InSlot's own collapse.
-        [holder] -> case Expiry.arm resolving legal controller source duration gs of
+        [holder] -> case Expiry.arm (Just resolving) legal controller source duration gs of
           -- CR 611.2b: the duration never started, so no permission is stored.
           Nothing -> gs
           Just expiry ->
@@ -910,7 +910,7 @@ grantCopyCast resolving source controller legal (GrantCopyCast.MkGrantCopyCast d
   gs <- State.get
   let chosen = Maybe.fromMaybe Map.empty (Game.choiceWithLastKnown Chosen.Names (Game.readingAcquisition resolving source gs source) source gs)
       names = ListUtils.nubOrd (foldMap Set.toList (Map.elems chosen))
-  case (playerRefPlayers legal resolving source controller gs player, Expiry.arm resolving legal controller source duration gs) of
+  case (playerRefPlayers legal resolving source controller gs player, Expiry.arm (Just resolving) legal controller source duration gs) of
     ([holder], Just expiry) -> Monad.forM_ names $ \name -> do
       found <- Game.lookUpCard name
       Monad.forM_ found $ \printingId -> State.modify' $ \g ->
@@ -2122,7 +2122,7 @@ exchangeValues settle resolving source controller legal (ExchangeValues.MkExchan
         previous <- characteristic oid gs
         pure (previous, Just . setBase oid . setting . Quantity.Type.Literal)
       -- CR 611.2c: the one creature is frozen into the stored effect.
-      setBase oid setting = State.modify' $ \g -> case Expiry.arm resolving legal controller source duration g of
+      setBase oid setting = State.modify' $ \g -> case Expiry.arm (Just resolving) legal controller source duration g of
         Nothing -> g
         Just expiry ->
           let (ts, g1) = Game.freshTimestamp g

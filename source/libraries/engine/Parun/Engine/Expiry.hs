@@ -92,6 +92,7 @@ import qualified Parun.Types.PlayerRef as PlayerRef
 import qualified Parun.Types.PreventionRider as PreventionRider
 import Parun.Types.Recipient (Recipient)
 import Parun.Types.SlotName (SlotName)
+import qualified Parun.Types.Snapshots as Snapshots
 import qualified Parun.Types.StepBegan as StepBegan
 import qualified Parun.Types.StepOfControllerOf as StepOfControllerOf
 import qualified Parun.Types.StepOfSeats as StepOfSeats
@@ -117,18 +118,15 @@ import qualified Parun.Types.While as While
 -- holding an OBJECT. Empty for a caller with no resolution behind it, whose
 -- durations name no slot.
 --
--- `resolving` is the object whose resolution stores this, the source itself for
--- a caller with no resolution behind it. It names a CR 116.2c offer
+-- `resolution` is the object whose resolution stores this, Nothing for a caller
+-- with no resolution behind it, which reads as the source itself below
+-- (`resolving`). It names a CR 116.2c offer
 -- (PaidExpiry.resolution), and says which acquisition's choices a slot's object
 -- is read under (CR 607.5), so an ability whose source has since become a copy of
 -- something else still reads the choice its own pair made (CR 607.2d). Proved by
 -- data/scenarios/copy/cr-607-5-a-grudgekeeper-ability-still-times-its-window-by-the-chosen-player-after-mirrorweave.json.
---
--- CR 611.2b's third sentence is vacuous here: this runs once, at the point the
--- effect would be stored, and no opcode both ends and restarts a condition
--- mid-resolution.
-arm :: ObjectId -> Map.Map SlotName (Set.Set Recipient) -> PlayerId -> ObjectId -> Duration -> GameState -> Maybe Expiry
-arm resolving targets controller source duration gs = case duration of
+arm :: Maybe ObjectId -> Map.Map SlotName (Set.Set Recipient) -> PlayerId -> ObjectId -> Duration -> GameState -> Maybe Expiry
+arm resolution targets controller source duration gs = case duration of
   Duration.UntilEndOfTurn -> Just Expiry.AtCleanup
   Duration.Indefinite -> Just Expiry.Never
   -- Alchemy's "perpetually": Never's lifetime under an arm a zone change can
@@ -226,11 +224,18 @@ arm resolving targets controller source duration gs = case duration of
   -- False, and the effect would silently end at the first settle -- or, for an
   -- ability, never start at all, since the same unresolvable reference is read
   -- one line below.
+  --
+  -- CR 611.2b's third sentence: a condition false here may still begin during
+  -- the rest of the resolution, so the row is stored as yet to begin
+  -- (While.unbegun), and sweepConditional holds it off the board until a later
+  -- instruction begins it. With no resolution behind it, nothing can.
   Duration.ForAsLongAs cond ->
     let baked = Condition.bakeBound targets cond
-     in if Condition.holds (Projection.fullView gs) (Projection.sourceContext gs (Just controller) source) gs source baked
-          then Just (Expiry.While (While.MkWhile controller baked))
-          else Nothing
+        holds = Condition.holds (Projection.fullView gs) (Projection.sourceContext gs (Just controller) source) gs source baked
+     in case (holds, resolution) of
+          (True, _) -> Just (Expiry.While (While.MkWhile controller baked Nothing))
+          (False, Just _) -> Just (Expiry.While (While.MkWhile controller baked resolution))
+          (False, Nothing) -> Nothing
   -- CR 500.5a / 511.2: "until end of combat" is the end of the combat PHASE, so
   -- the stored window is PhaseSelector.CombatPhase and never the end of combat
   -- step. Naming the phase is the whole of the arming: unlike UntilNextTurnOf
@@ -284,6 +289,7 @@ arm resolving targets controller source duration gs = case duration of
           )
       )
   where
+    resolving = Maybe.fromMaybe source resolution
     reading = Game.readingAcquisition resolving source gs
 
 -- CR 611.2a: the object whose controller "its controller's next ..." names, a
@@ -416,6 +422,14 @@ begun gs expiry = case expiry of
   Expiry.WhenUsed _ -> True
   Expiry.OnEvent _ -> True
 
+-- CR 611.2b: is this a "for as long as" duration armed false, which only a
+-- later instruction of its resolution can begin (settleUnbegun)? Asked by
+-- Parun.Engine.Resolve.Common's CR 608.2d offers.
+unbegun :: Expiry -> Bool
+unbegun expiry = case expiry of
+  Expiry.While w -> Maybe.isJust (While.unbegun w)
+  _ -> False
+
 -- CR 601.3: may this player use this object's exile permission right now? It
 -- names them, its duration's window has begun (`begun`), and its own condition
 -- holds -- Hama, the Bloodbender's "during your turn", read live against the
@@ -483,8 +497,11 @@ endsAt gs moment source expiry = case expiry of
   -- "perpetually".
   Expiry.Never -> False
   Expiry.Perpetual -> False
-  Expiry.While (While.MkWhile you cond) ->
+  Expiry.While (While.MkWhile you cond Nothing) ->
     moment == Settle && not (Condition.holds (Projection.fullView gs) (Projection.sourceContext gs (Just you) source) gs source cond)
+  -- CR 611.2b: not yet begun, so nothing ends it; sweepConditional begins it
+  -- or holds it off the board.
+  Expiry.While (While.MkWhile _ _ (Just _)) -> False
   Expiry.AtTurnOf p -> moment == TurnOf p
   -- CR 800.4m's "a specific point in that turn": a departed player's step
   -- never begins, so the duration ends where that turn would have, unless
@@ -675,27 +692,100 @@ dropAtCleanup gs =
 
 -- CR 611.2b: drop every While whose condition has stopped holding. The effect
 -- is DELETED, not masked: the duration is one continuous period, so an effect
--- that has ended stays ended even if the condition becomes true again. Reports
--- whether it changed anything, so Engine.settleForPriority knows to run again.
+-- that has ended stays ended even if the condition becomes true again, during
+-- its own resolution too: CR 611.2b lets a duration begin again only where it
+-- ended before the effect first applied (settleUnbegun). Reports whether it
+-- changed anything, so Engine.settleForPriority knows to run again.
 --
 -- Run at every settle and after every instruction of a resolution
 -- (Parun.Engine.Resolve.Effect.applyEffectWith), so a later instruction reads
 -- the board the ended effect leaves.
 -- data/scenarios/aerial-assault-counts-a-flyer-willbreaker-s-death-hands-back.json
--- proves it.
---
--- Not implemented: sparing until the resolution ends a duration the resolving
--- spell or ability began, which CR 611.2b lets begin again before then (#6027).
+-- proves it. `resolution` is that instruction's resolving object, Nothing at a
+-- settle: settleUnbegun begins its rows first.
 --
 -- `changed` is a scan over sourcedExpiries rather than a compare of rebuilt
 -- carriers, and `State.put` is skipped when nothing changed, so a no-op sweep
 -- -- the usual one, since this runs at every settle -- rewrites nothing.
-sweepConditional :: Game Bool
-sweepConditional = do
-  gs <- State.get
-  let changed = any (uncurry (endsAt gs Settle)) (sourcedExpiries gs) || any (orphanedHostCopy gs) (StoredEffects.copyEffects (GameState.stored gs))
+sweepConditional :: Maybe ObjectId -> Game Bool
+sweepConditional resolution = do
+  (moved, gs) <- State.gets (settleUnbegun resolution)
+  let changed = moved || any (uncurry (endsAt gs Settle)) (sourcedExpiries gs) || any (orphanedHostCopy gs) (StoredEffects.copyEffects (GameState.stored gs))
   Monad.when changed $ State.put (dropOrphanedHostCopies (sweep Settle gs))
   pure changed
+
+-- CR 611.2b's third sentence: a "for as long as" duration that has yet to
+-- begin (While.unbegun) begins where its condition holds, and otherwise waits
+-- off the board (Snapshots.unbegunRows), applying to nothing, until a later
+-- instruction of its own `resolution` makes the condition hold. A row whose
+-- resolution has left every stack waits no longer: the effect does nothing.
+-- Each condition is read on the board without the rows yet to begin, so none
+-- begins itself. True where a row moved.
+--
+-- data/scenarios/synthetic-captive-rite-gains-control-once-a-later-instruction-restores-its-condition.json
+-- proves the wait and the beginning, and
+-- data/scenarios/eriette-the-beguiler-takes-nothing-when-her-aura-leaves-before-the-trigger-resolves.json
+-- the lapse. Dropping a lapsed row is hygiene: none can begin it.
+--
+-- Scanned before rebuilding, sweepConditional's reason: with no row yet to
+-- begin on the board or off it, nothing past the scan is read.
+settleUnbegun :: Maybe ObjectId -> GameState -> (Bool, GameState)
+settleUnbegun resolution gs =
+  let parked = Snapshots.unbegunRows (GameState.snapshots gs)
+      unbegunOf expiry = case expiry of
+        Expiry.While w | Just r <- While.unbegun w -> Just (r, w)
+        _ -> Nothing
+      waiting = Maybe.isJust . unbegunOf
+      bare = keepWhere (\_ -> not . waiting) gs
+      holdsNow source expiry = case unbegunOf expiry of
+        Just (_, w) -> Condition.holds (Projection.fullView bare) (Projection.sourceContext bare (Just (While.player w)) source) bare source (While.condition w)
+        Nothing -> False
+      begin expiry = case expiry of
+        Expiry.While w -> Expiry.While w {While.unbegun = Nothing}
+        _ -> expiry
+      ready source expiry = holdsNow source expiry && fmap fst (unbegunOf expiry) == resolution
+      live expiry = case unbegunOf expiry of
+        Just (r, _) -> Just r == resolution || elem r (Game.allStacks gs)
+        Nothing -> False
+      onBoard = editExpiries (\source expiry -> if not (waiting expiry) || holdsNow source expiry then Just (begin expiry) else Nothing) gs
+      fresh = onlyWhere (\source expiry -> waiting expiry && not (holdsNow source expiry)) gs
+      (restored, waits) = case parked of
+        Nothing -> (onBoard, fresh)
+        Just board ->
+          ( withRowsOf (mapExpiries begin (onlyWhere ready board)) onBoard,
+            withRowsOf (onlyWhere (\source expiry -> live expiry && not (ready source expiry)) board) fresh
+          )
+      count = length . sourcedExpiries
+      kept = if count waits == 0 then Nothing else Just waits {GameState.snapshots = Game.blankSnapshots}
+      arrived = any (waiting . snd) (sourcedExpiries gs)
+   in if not arrived && (Maybe.isNothing parked || fmap count parked == fmap count kept)
+        then (False, gs)
+        else (True, restored {GameState.snapshots = (GameState.snapshots restored) {Snapshots.unbegunRows = kept}})
+
+-- `gs` holding only the rows `keep` names: every row without an expiry, and
+-- every other stored row and play permission, dropped.
+onlyWhere :: (ObjectId -> Expiry -> Bool) -> GameState -> GameState
+onlyWhere keep gs =
+  let row :: StoredKind r -> r -> Maybe r
+      row kind r = case Const.getConst (rowExpiry (\source expiry -> Const.Const [(source, expiry)]) kind r) of
+        [(source, expiry)] | keep source expiry -> Just r
+        _ -> Nothing
+      permission p = keep (ExilePlayPermission.source p) (ExilePlayPermission.expiry p)
+   in gs
+        { GameState.stored = Identity.runIdentity (Stored.traverseRows (\kind -> Identity.Identity . row kind) (GameState.stored gs)),
+          GameState.objects = fmap (\o -> o {Object.playPermissions = filter permission (Object.playPermissions o)}) (GameState.objects gs)
+        }
+
+-- `into` with `from`'s stored rows after its own, and each of its objects with
+-- the play permissions `from`'s object of that id holds: one that has since
+-- left (CR 400.7) takes none along.
+withRowsOf :: GameState -> GameState -> GameState
+withRowsOf from into =
+  let permissions oid o = o {Object.playPermissions = Object.playPermissions o <> foldMap Object.playPermissions (Map.lookup oid (GameState.objects from))}
+   in into
+        { GameState.stored = Stored.append (GameState.stored into) (GameState.stored from),
+          GameState.objects = Map.mapWithKey permissions (GameState.objects into)
+        }
 
 -- CR 611.3b / 400.7: a static ability's copy row (CopyCoverage.SourceHost, or an
 -- Attachment carved off one)

@@ -145,16 +145,16 @@ armGs = Setup.emptyGame S.bothPlayers
 armSpec :: (Applicative m, Monad n) => Spec.Spec m n -> n ()
 armSpec s = Spec.describe s "Arm" $ do
   Spec.it s "CR 514.2 an until-end-of-turn duration arms to AtCleanup" $
-    Spec.assertEqWith s "armed" (Expiry.arm S.noSource Map.empty S.alice S.noSource Duration.UntilEndOfTurn armGs) (Just Expiry.Type.AtCleanup)
+    Spec.assertEqWith s "armed" (Expiry.arm Nothing Map.empty S.alice S.noSource Duration.UntilEndOfTurn armGs) (Just Expiry.Type.AtCleanup)
   Spec.it s "CR 611.2a an indefinite duration arms to Never" $
-    Spec.assertEqWith s "armed" (Expiry.arm S.noSource Map.empty S.alice S.noSource Duration.Indefinite armGs) (Just Expiry.Type.Never)
+    Spec.assertEqWith s "armed" (Expiry.arm Nothing Map.empty S.alice S.noSource Duration.Indefinite armGs) (Just Expiry.Type.Never)
   Spec.it s "CR 611.2a / 109.5 'until your next turn' bakes the controller" $
-    Spec.assertEqWith s "armed" (Expiry.arm S.noSource Map.empty S.alice S.noSource (Duration.UntilNextTurnOf (PlayerRef.Relative PlayerRelation.You)) armGs) (Just (Expiry.Type.AtTurnOf S.alice))
+    Spec.assertEqWith s "armed" (Expiry.arm Nothing Map.empty S.alice S.noSource (Duration.UntilNextTurnOf (PlayerRef.Relative PlayerRelation.You)) armGs) (Just (Expiry.Type.AtTurnOf S.alice))
   -- The turn number is sampled as well as the seat, and armGs is turn 1. Without
   -- it the sweep could not tell the controller's CURRENT turn from their next
   -- one, which is exactly the case the two phrasings disagree about.
   Spec.it s "CR 611.2a / 109.5 'until the end of your next turn' bakes the controller AND the turn" $
-    Spec.assertEqWith s "armed" (Expiry.arm S.noSource Map.empty S.alice S.noSource Duration.UntilEndOfYourNextTurn armGs) (Just (Expiry.Type.AtEndOfTurnOf (AfterTurn.MkAfterTurn S.alice 1)))
+    Spec.assertEqWith s "armed" (Expiry.arm Nothing Map.empty S.alice S.noSource Duration.UntilEndOfYourNextTurn armGs) (Just (Expiry.Type.AtEndOfTurnOf (AfterTurn.MkAfterTurn S.alice 1)))
 
 handoffSpec :: (Monad m, Monad n) => Spec.Spec m n -> n ()
 handoffSpec s = Spec.describe s "DropAtTurnOf" $ do
@@ -384,7 +384,7 @@ whileEffect src target you gs =
         ContinuousEffect.MkContinuousEffect
           { ContinuousEffect.source = src,
             ContinuousEffect.timestamp = ts,
-            ContinuousEffect.expiry = Expiry.Type.While (While.MkWhile you S.youControlSource),
+            ContinuousEffect.expiry = Expiry.Type.While (While.MkWhile you S.youControlSource Nothing),
             ContinuousEffect.modification = Modification.SetController you,
             ContinuousEffect.affected = Affected.TheseObjects (Set.singleton target)
           }
@@ -433,7 +433,7 @@ conditionalSpec s registry = Spec.describe s "Conditional" $ do
     Spec.assertEqWith
       s
       "never starts"
-      (Expiry.arm srcId Map.empty S.alice srcId (Duration.ForAsLongAs S.youControlSource) gone)
+      (Expiry.arm Nothing Map.empty S.alice srcId (Duration.ForAsLongAs S.youControlSource) gone)
       Nothing
   Spec.it s "CR 611.2b arm returns a While when the condition holds now" $ do
     piker <- S.printingOf s registry "Goblin Piker"
@@ -442,14 +442,14 @@ conditionalSpec s registry = Spec.describe s "Conditional" $ do
     Spec.assertEqWith
       s
       "starts"
-      (Expiry.arm srcId Map.empty S.alice srcId (Duration.ForAsLongAs S.youControlSource) gs)
-      (Just (Expiry.Type.While (While.MkWhile S.alice S.youControlSource)))
+      (Expiry.arm Nothing Map.empty S.alice srcId (Duration.ForAsLongAs S.youControlSource) gs)
+      (Just (Expiry.Type.While (While.MkWhile S.alice S.youControlSource Nothing)))
   Spec.it s "CR 611.2b the sweep DELETES the effect once the condition fails" $ do
     piker <- S.printingOf s registry "Goblin Piker"
     warMammoth <- S.printingOf s registry "War Mammoth"
     let (srcId, targetId, gs) = board piker warMammoth
         gone = S.runPure S.identityAnswer gs (Event.destroy Settle.none Regenerability.Regenerable [srcId])
-        (changed, swept) = Engine.runGamePure S.identityAnswer gone Expiry.sweepConditional
+        (changed, swept) = Engine.runGamePure S.identityAnswer gone (Expiry.sweepConditional Nothing)
     Spec.assertEqWith s "alice held it while the source stood" (Projection.controllerOf targetId gs) (Just S.alice)
     Spec.assertBool s changed "the sweep reports a change"
     Spec.assertEqWith s "the effect is gone, not masked" (StoredEffects.continuousEffects (GameState.stored swept)) []
@@ -458,7 +458,7 @@ conditionalSpec s registry = Spec.describe s "Conditional" $ do
     piker <- S.printingOf s registry "Goblin Piker"
     warMammoth <- S.printingOf s registry "War Mammoth"
     let (_, _, gs) = board piker warMammoth
-        (changed, _) = Engine.runGamePure S.identityAnswer gs Expiry.sweepConditional
+        (changed, _) = Engine.runGamePure S.identityAnswer gs (Expiry.sweepConditional Nothing)
     Spec.assertBool s (not changed) "no change"
   -- A pair of boards differing only in whether the copy row's source still
   -- exists. Parun.Engine.Interchangeable reads every stored row's timestamp, so
@@ -470,8 +470,8 @@ conditionalSpec s registry = Spec.describe s "Conditional" $ do
         (ts, gs1) = Game.freshTimestamp gs
         stored = gs1 {GameState.stored = (GameState.stored gs1) {StoredEffects.copyEffects = [ActiveCopy.MkActiveCopy srcId ts (Expiry.Type.OnEvent (EventExpiry.MkEventExpiry S.alice DurationEvent.SourceTurnedFaceDown)) (CopyCoverage.These (Set.singleton srcId)) (Projection.project targetId gs) Nothing Nothing]}}
         gone = S.runPure S.identityAnswer stored (Event.destroy Settle.none Regenerability.Regenerable [srcId])
-        (keptChanged, kept) = Engine.runGamePure S.identityAnswer stored Expiry.sweepConditional
-        (goneChanged, swept) = Engine.runGamePure S.identityAnswer gone Expiry.sweepConditional
+        (keptChanged, kept) = Engine.runGamePure S.identityAnswer stored (Expiry.sweepConditional Nothing)
+        (goneChanged, swept) = Engine.runGamePure S.identityAnswer gone (Expiry.sweepConditional Nothing)
     Spec.assertEqWith s "the source gone, the row is dropped" (length (StoredEffects.copyEffects (GameState.stored swept))) 0
     Spec.assertBool s goneChanged "and the sweep reports it"
     Spec.assertEqWith s "the source standing, the row stays" (length (StoredEffects.copyEffects (GameState.stored kept))) 1
@@ -821,7 +821,7 @@ garlandSpec s registry = Spec.describe s "GarlandRoyalKidnapper" $ do
       s
       "CR 611.2b: the duration reads bob's crown, with no slot left to resolve"
       (fmap ContinuousEffect.expiry (filter (S.continuousEffectAffects bobs) (StoredEffects.continuousEffects (GameState.stored stolen))))
-      [Expiry.Type.While (While.MkWhile S.alice garlandCondition)]
+      [Expiry.Type.While (While.MkWhile S.alice garlandCondition Nothing)]
   -- The other half of a duration: it must not end while its condition holds. A
   -- duration that never ends passes every assertion in the case above, so this
   -- and data/scenarios/expiry's two crown-moving scenarios are what separate the
@@ -1068,7 +1068,7 @@ untilEndOfCombatSpec s registry = Spec.describe s "UntilEndOfCombat" $ do
     Spec.assertEqWith
       s
       "armed"
-      (Expiry.arm S.noSource Map.empty S.alice S.noSource Duration.UntilEndOfCombat armGs)
+      (Expiry.arm Nothing Map.empty S.alice S.noSource Duration.UntilEndOfCombat armGs)
       (Just (Expiry.Type.AtEndOf PhaseSelector.CombatPhase))
   -- The unit-level half of CR 500.5a, and the sharpest statement of it: the end
   -- of combat STEP ending does not reach the effect, and the combat PHASE ending
@@ -1095,7 +1095,7 @@ untilEndOfCombatSpec s registry = Spec.describe s "UntilEndOfCombat" $ do
     let armed = effectWith (Expiry.Type.AtEndOf PhaseSelector.CombatPhase) (Setup.emptyGame S.bothPlayers)
     Spec.assertEqWith s "cleanup keeps it" (length ((StoredEffects.continuousEffects . GameState.stored) (Expiry.dropAtCleanup armed))) 1
     Spec.assertEqWith s "the turn handoff keeps it" (length ((StoredEffects.continuousEffects . GameState.stored) (Expiry.dropAtTurnOf S.alice armed))) 1
-    Spec.assertEqWith s "and so does the CR 611.2b sweep" (length ((StoredEffects.continuousEffects . GameState.stored) (S.runPure S.identityAnswer armed Expiry.sweepConditional))) 1
+    Spec.assertEqWith s "and so does the CR 611.2b sweep" (length ((StoredEffects.continuousEffects . GameState.stored) (S.runPure S.identityAnswer armed (Expiry.sweepConditional Nothing)))) 1
   -- CR 500.5's ORDER, which no other test can reach: "those effects expire. THEN
   -- any unspent mana left in a player's mana pool empties."
   --
@@ -1208,7 +1208,7 @@ cannonadeSpec s registry = Spec.describe s "BrazenCannonade" $ do
     Spec.assertEqWith
       s
       "armed"
-      (Expiry.arm S.noSource Map.empty S.alice S.noSource Duration.UntilEndOfCombatOnYourNextTurn armGs)
+      (Expiry.arm Nothing Map.empty S.alice S.noSource Duration.UntilEndOfCombatOnYourNextTurn armGs)
       (Just (Expiry.Type.AtEndOfCombatOn (AfterTurn.MkAfterTurn S.alice 1)))
   Spec.it s "CR 500.5a / 500.8 only a combat PHASE of a later turn of that player ends it" $ do
     let armed = effectWith (Expiry.Type.AtEndOfCombatOn (AfterTurn.MkAfterTurn S.alice 1)) (Setup.emptyGame S.bothPlayers)
@@ -1686,7 +1686,7 @@ whenPaidSpec s = Spec.describe s "WhenPaid" $ do
     Spec.assertEqWith
       s
       "armed"
-      (Expiry.arm S.noSource Map.empty S.alice S.noSource (Duration.UntilPaid (UntilPaid.MkUntilPaid (PlayerRef.Relative PlayerRelation.You) blueCost)) armGs)
+      (Expiry.arm Nothing Map.empty S.alice S.noSource (Duration.UntilPaid (UntilPaid.MkUntilPaid (PlayerRef.Relative PlayerRelation.You) blueCost)) armGs)
       (Just (Expiry.Type.WhenPaid (blueOfferTo S.alice)))
     -- The seat comes from the CONTROLLER argument for "you": the same
     -- duration off the same source arms to a different offer for a different
@@ -1694,14 +1694,14 @@ whenPaidSpec s = Spec.describe s "WhenPaid" $ do
     Spec.assertEqWith
       s
       "armed for the other seat"
-      (Expiry.arm S.noSource Map.empty S.bob S.noSource (Duration.UntilPaid (UntilPaid.MkUntilPaid (PlayerRef.Relative PlayerRelation.You) blueCost)) armGs)
+      (Expiry.arm Nothing Map.empty S.bob S.noSource (Duration.UntilPaid (UntilPaid.MkUntilPaid (PlayerRef.Relative PlayerRelation.You) blueCost)) armGs)
       (Just (Expiry.Type.WhenPaid (blueOfferTo S.bob)))
   -- All four time sweeps, on one board. Never answers True in all four too, so
   -- this case does not distinguish the two arms -- what does is that a WhenPaid
   -- entry can be FOUND, which the case below asserts and Never could not satisfy.
   Spec.it s "CR 116.2c no sweep of the turn's structure ends it" $ do
     let armed = effectWith (Expiry.Type.WhenPaid (blueOfferTo S.alice)) (Setup.emptyGame S.bothPlayers)
-        conditional = S.runPure S.identityAnswer armed Expiry.sweepConditional
+        conditional = S.runPure S.identityAnswer armed (Expiry.sweepConditional Nothing)
     Spec.assertEqWith s "cleanup leaves it" (length ((StoredEffects.continuousEffects . GameState.stored) (Expiry.dropAtCleanup armed))) 1
     Spec.assertEqWith s "a turn handoff leaves it" (length ((StoredEffects.continuousEffects . GameState.stored) (Expiry.dropAtTurnOf S.alice armed))) 1
     Spec.assertEqWith s "the end of a phase leaves it" (length ((StoredEffects.continuousEffects . GameState.stored) (Expiry.dropAtEndOf PhaseSelector.CombatPhase armed))) 1
@@ -1735,8 +1735,8 @@ perpetualSpec :: (Monad m, Monad n) => Spec.Spec m n -> Registry.Registry m -> n
 perpetualSpec s registry = Spec.describe s "Perpetual" $ do
   Spec.it s "a perpetual duration arms to an expiry no sweep of the turn's structure ends" $ do
     let armed = effectWith Expiry.Type.Perpetual (Setup.emptyGame S.bothPlayers)
-        conditional = S.runPure S.identityAnswer armed Expiry.sweepConditional
-    Spec.assertEqWith s "armed" (Expiry.arm S.noSource Map.empty S.alice S.noSource Duration.Perpetual armGs) (Just Expiry.Type.Perpetual)
+        conditional = S.runPure S.identityAnswer armed (Expiry.sweepConditional Nothing)
+    Spec.assertEqWith s "armed" (Expiry.arm Nothing Map.empty S.alice S.noSource Duration.Perpetual armGs) (Just Expiry.Type.Perpetual)
     Spec.assertEqWith s "cleanup leaves it" (length ((StoredEffects.continuousEffects . GameState.stored) (Expiry.dropAtCleanup armed))) 1
     Spec.assertEqWith s "a turn handoff leaves it" (length ((StoredEffects.continuousEffects . GameState.stored) (Expiry.dropAtTurnOf S.alice armed))) 1
     Spec.assertEqWith s "the end of a phase leaves it" (length ((StoredEffects.continuousEffects . GameState.stored) (Expiry.dropAtEndOf PhaseSelector.CombatPhase armed))) 1

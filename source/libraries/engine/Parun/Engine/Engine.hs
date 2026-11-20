@@ -1423,7 +1423,7 @@ settlePasses passes boards = do
   -- unable to run one. Drained FIRST, so the effects land before the SBA pass --
   -- Monstrous War-Leech's mill decides what CR 704.5f then reads.
   Resolve.runEntryEffects playSubgame
-  swept <- Expiry.sweepConditional
+  swept <- Expiry.sweepConditional Nothing
   -- CR 610.3's second one-shot effect, Palace Jailer's and Banisher Priest's
   -- alike: a return zone change is not something an Expiry sweep can perform.
   returned <- MoveDuration.returnDue (Resolve.settleWith playSubgame)
