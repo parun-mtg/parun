@@ -1151,7 +1151,7 @@ throwSettled runSubgame roll perDie = do
                     OptionalDecision.Declines -> Nothing
             case kind of
               Left offer -> do
-                taken <- askPaying Set.empty payer stated mCost ask
+                taken <- askPaying Set.empty thrower payer stated mCost ask
                 case taken of
                   Nothing -> offering rest thrower natural
                   -- The roller throws it: Clam-I-Am's "you may reroll
@@ -1258,7 +1258,7 @@ throwSettled runSubgame roll perDie = do
             Just (chosen@(payer, stated, (offer, amount)), rest) -> do
               let mCost = ModifiedRoll.cost offer
                   passed = adjustingThrough rest (chosen : idle <> waiting) results
-              taken <- askPaying Set.empty payer stated mCost (State.get >>= \now -> Game.choose (Prompt.AdjustDieRoll (Decide.deciderFor payer now) payer shown amount mCost))
+              taken <- askPaying Set.empty controller payer stated mCost (State.get >>= \now -> Game.choose (Prompt.AdjustDieRoll (Decide.deciderFor payer now) payer shown amount mCost))
               case taken of
                 Nothing -> passed
                 Just (index, direction) -> do
@@ -1286,21 +1286,13 @@ throwSettled runSubgame roll perDie = do
       -- own reversible action and the CR 605.3a window it opens is the
       -- payer's to keep.
       --
-      -- Not implemented: CR 706.2a's second sentence gives that mana window to
-      -- the player who ROLLED, where Cost.pay opens it for the payer (#3981).
-      -- NO PRINTING tells the two readings apart, and Monitor Monitor -- the
-      -- one printed modifier carrying a mana cost, an Attraction opener -- will
-      -- not either: its roller IS its payer, "you may pay
-      -- {1} to reroll one or more dice you rolled". Wall of Fortune is the
-      -- only printing whose payer is not the roller and its cost states no
-      -- mana, so it opens no window at all. The shape that would separate them
-      -- is Wall of Fortune's scope with a mana cost, which nothing prints, so
-      -- this is falsifiable only by a synthetic card.
-      --
-      -- Cost.pay takes ONE seat, for the payment and for the window both, so
-      -- the change is a second seat threaded through paySubstituting and
-      -- payManaWindow -- the path every cast, activation and CR 118.12 gate
-      -- also takes.
+      -- CR 706.2a's second sentence gives the ROLLER a chance to activate mana
+      -- abilities before a modifier with a mana cost applies, beside the
+      -- payer's own CR 605.3a window: `rollerWindow`, run ahead of the payment
+      -- (docs/synthetic-readings.md, "When the roller's mana window opens for a
+      -- modifier another player pays for"). Where the roller pays, the
+      -- payment's window is that chance. The scenario "CR 706.2a the roller
+      -- gets a mana window before another player's mana-cost reroll" proves it.
       --
       -- payGateCost's payment, read against no slots and with the bound slots
       -- dropped, which is not an elision: the cost is printed on the
@@ -1308,12 +1300,13 @@ throwSettled runSubgame roll perDie = do
       -- resolving object can name what it took, and the modifier's own change
       -- to the die reads no slot. Proved by Parun.DiceSpec's "CR 701.67a a
       -- modifier's waterbend cost is weighed" case.
-      askPaying failed payer stated mCost ask = do
+      askPaying failed roller payer stated mCost ask = do
         answer <- ask
         case (answer, stated, mCost) of
           (Just taken, Just oid, Just cost) -> do
+            rollerWindow runSubgame roller payer cost
             (paid, answered) <- payGateCost runSubgame Seq.empty Map.empty payer oid cost
-            Common.payAgain failed (taken, answered) paid (fmap (const taken)) (\failed' -> askPaying failed' payer stated mCost ask)
+            Common.payAgain failed (taken, answered) paid (fmap (const taken)) (\failed' -> askPaying failed' roller payer stated mCost ask)
           _ -> pure answer
       duringRoll natural = Common.withThrowing (ThrowResult.DieCameUp natural)
       windowCandidates = fmap (\(pid, oid, ability) -> (pid, Just oid, Right (oid, ability))) . windowAbilities
@@ -1349,7 +1342,7 @@ throwSettled runSubgame roll perDie = do
             Just indices -> do
               let mCost = ModifiedRoll.cost offer
                   shown = fmap (\i -> maybe 1 snd (Maybe.listToMaybe (List.genericDrop i dice))) indices
-              taken <- askPaying Set.empty payer stated mCost $ do
+              taken <- askPaying Set.empty payer payer stated mCost $ do
                 now <- State.get
                 chosen <- Game.choose (Prompt.RerollDice (Decide.deciderFor payer now) payer shown mCost)
                 -- FILTERED, NOT TRUSTED: an index past the end is dropped.
@@ -1640,10 +1633,23 @@ rerollShownDieWith runSubgame payer stated die = do
   Foldable.for_ (List.find (\(s, _, d, _) -> s == stated && d == die) (Dice.shownDieRerolls gs)) $ \(_, offer, _, roller) -> do
     paid <- case ModifiedRoll.cost offer of
       Nothing -> pure True
-      Just cost -> fmap (Maybe.isJust . fst) (payGateCost runSubgame Seq.empty Map.empty payer stated cost)
+      Just cost -> do
+        rollerWindow runSubgame roller payer cost
+        fmap (Maybe.isJust . fst) (payGateCost runSubgame Seq.empty Map.empty payer stated cost)
     Monad.when paid $ do
       State.modify' (Dice.spendLimit (Just stated) offer)
       Damage.rerollShownDie throwDice runSubgame roller die
+
+-- CR 706.2a's second sentence: a modifier with a mana cost gives the player who
+-- ROLLED a chance to activate mana abilities before it applies. A
+-- `Cost.payManaWindow` over an EMPTY cost, `Cost.offerAssist`'s posture: a
+-- chance to activate and nothing to pay. None where the roller is the payer,
+-- whose payment opens their CR 605.3a window anyway, nor where the cost needs no
+-- mana (Wall of Fortune's).
+rollerWindow :: Game Result -> PlayerId -> PlayerId -> Cost.Type.Cost Keyword.Type.Keyword -> Game ()
+rollerWindow runSubgame roller payer cost =
+  Monad.when (roller /= payer && maybe False (not . Cost.requiresNoMana) (Cost.Type.mana cost)) $
+    Monad.void (Cost.payManaWindow (performManaAbility runSubgame) Set.empty Nothing PaymentSubject.ForNeither ManaSpending.AsProduced roller (\mc -> pure (mc, [])) (ManaCost.MkManaCost []))
 
 -- Activate an ability inside throwDice's or reflipWindow's window and resolve
 -- it at once, answering whether it was paid for. The payment is Parun.Engine.Activate's

@@ -44,8 +44,8 @@ import qualified Parun.Types.RollModifier as RollModifier
 -- each turn", spent only when it is taken; Unlimited where the card states
 -- none.
 --
--- Not implemented: a modifier that is MANDATORY (#3981). CR 706.2a allows one
--- and no printing states one: Scryfall @o:reroll@, 2026-09-22, returns seven
+-- Unprinted: a modifier that is MANDATORY. CR 706.2a allows one and no
+-- printing states one: Scryfall @o:reroll@, 2026-09-22, returns seven
 -- printings and @o:reroll is:digital@ none, and every one of the seven is a bare
 -- "may" (Clam-I-Am, Wall of Fortune, Monitor Monitor, Centaur of Attention) or
 -- an activated ability whose cost is the ABILITY's rather than the modifier's

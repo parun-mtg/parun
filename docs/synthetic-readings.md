@@ -211,3 +211,21 @@ Entries take `docs/decisions.md`'s format and order.
   `speed/cr-702-179c-an-effect-raises-speed-past-4-with-no-gomif-out.json`.
   No printing increases a speed but CR 702.179d's own ability.
 - **Issue**: #809, #5326.
+
+## When the roller's mana window opens for a modifier another player pays for
+
+- **Question**: CR 706.2a gives the player who rolled a chance to activate mana
+  abilities before a modifier with a mana cost applies; when the modifier's
+  controller pays (CR 109.5), that payment opens their own CR 605.3a window.
+  Which window comes first?
+- **Rules**: CR 109.5, 605.3a, 706.2a; CR of 2026-11-06.
+- **Decision**: The roller's, once the payer takes the offer and before the
+  payment begins, `Cost.offerAssist`'s order for a helper's window. A failed
+  payment's reversal (CR 734.1) leaves what the roller activated standing.
+- **Rejected**: The roller's window after the payment and before the reroll; and
+  the roller's window in place of the payer's, which CR 605.3a's "whenever a rule
+  or effect asks for a mana payment" refutes.
+- **Site**: `Parun.Engine.Resolve.Effect.rollerWindow`, proved on Synthetic
+  Fortune's Toll by the scenario
+  `cr-706-2a-the-roller-gets-a-mana-window-before-another-player-s-mana-cost-reroll`.
+- **Issue**: #3981.
