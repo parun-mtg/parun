@@ -22,6 +22,9 @@ spec s = Spec.describe s "Parun.Web.Ending" $ do
       has "<ul class=\"game-log\"><li class=\"turn\">Turn 1: your turn</li><li>Player 1 draws a card.</li><li class=\"minor\">Player 2 concedes.</li></ul>"
       has "<div class=\"confetti\""
 
+    Spec.it s "links a rematch against every bot's deck" $ do
+      Spec.assertEq s (Ending.rematch (Text.pack "sets/a/x", [Text.pack "sets/b/y", Text.pack "sets/c/z"]) Nothing) (Text.pack "?mine=sets/a/x&theirs=sets/b/y,sets/c/z")
+
     Spec.it s "charts each seat's life and tells the game's numbers" $ do
       let page = Html.toText (Ending.view ending)
           has piece = Spec.assertBool s (Text.isInfixOf (Text.pack piece) page) piece
@@ -49,7 +52,7 @@ ending =
       Ending.scenario = Text.pack "{}",
       Ending.witnessed = Seq.fromList [Log.MkTurn 1 you, Log.MkEvent Log.MkMajor (Text.pack "Player 1 draws a card."), Log.MkEvent Log.MkMinor (Text.pack "Player 2 concedes.")],
       Ending.viewer = you,
-      Ending.decks = (Text.pack "sets/a/x", Text.pack "sets/b/y"),
+      Ending.decks = (Text.pack "sets/a/x", [Text.pack "sets/b/y"]),
       Ending.trail = [(1, [(you, 20), (bot, 20)]), (2, [(you, 20), (bot, 17)]), (3, [(you, 20), (bot, 0)])],
       Ending.seed = Text.pack "00ff"
     }

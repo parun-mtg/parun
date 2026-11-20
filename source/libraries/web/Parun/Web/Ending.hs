@@ -41,8 +41,9 @@ data Ending = MkEnding
     witnessed :: Seq.Seq Log.Entry,
     -- | The seat the page plays.
     viewer :: PlayerId.PlayerId,
-    -- | The player's deck and the bot's, by name (Lobby.deckName).
-    decks :: (Text.Text, Text.Text),
+    -- | The player's deck and each bot's in seat order, by name
+    -- (Lobby.deckName).
+    decks :: (Text.Text, [Text.Text]),
     -- | Each seat's life as the game went, a sample whenever it changed,
     -- each beside the turn it was in.
     trail :: [(Natural, [(PlayerId.PlayerId, Integer)])],
@@ -81,13 +82,13 @@ view ending =
                Element.el "ul" ["game-log"] [] (fmap (Log.item (viewer ending) Nothing False) (Foldable.toList (witnessed ending)))
              ]
 
--- | The page starting a game between these decks at once, shuffled by this
+-- | The page starting a game among these decks at once, shuffled by this
 -- seed where one is given (engine.js passes the query on as parun_mine,
--- parun_theirs and parun_seed). A deck's name is a path of
--- lowercase words, so nothing in it needs escaping in a query but what a
--- fragment escapes too.
-rematch :: (Text.Text, Text.Text) -> Maybe Text.Text -> Text.Text
-rematch (mine, theirs) shuffle = Text.pack "?mine=" <> query mine <> Text.pack "&theirs=" <> query theirs <> foldMap (Text.pack "&seed=" <>) shuffle
+-- parun_theirs and parun_seed), the bots' decks joined by commas. A deck's
+-- name is a path of lowercase words, so nothing in it needs escaping in a
+-- query but what a fragment escapes too.
+rematch :: (Text.Text, [Text.Text]) -> Maybe Text.Text -> Text.Text
+rematch (mine, theirs) shuffle = Text.pack "?mine=" <> query mine <> Text.pack "&theirs=" <> query (Text.intercalate (Text.pack ",") theirs) <> foldMap (Text.pack "&seed=" <>) shuffle
   where
     query t = Encoding.decodeLatin1 (LazyByteString.toStrict . Builder.toLazyByteString . Fragment.encode $ Encoding.encodeUtf8Builder t)
 

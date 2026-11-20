@@ -7,6 +7,7 @@ import qualified Control.Monad.Trans.Class as Trans
 import qualified Control.Monad.Trans.State.Strict as State
 import qualified Data.Bifunctor as Bifunctor
 import qualified Data.Functor.Identity as Identity
+import qualified Data.List.NonEmpty as NonEmpty
 import qualified Data.Map.Strict as Map
 import qualified Data.Maybe as Maybe
 import qualified Data.Sequence as Seq
@@ -74,10 +75,10 @@ match options registry format decks = do
   tally <-
     Monad.foldM
       ( \tally index -> do
-          let (outcome, timeline) = Identity.runIdentity (game registry format seed index decks)
+          let (outcome, timeline) = Identity.runIdentity (game registry format seed index (both decks))
           TextIO.hPutStrLn IO.stderr (Text.pack ("Game " <> show (index + 1) <> ", seed ") <> Key.toHex (seedAt seed index) <> Text.pack (", seat " <> show (firstAt index) <> " first: ") <> ended outcome)
           Monad.forM_ (MatchOptions.save options) $ \directory ->
-            Command.save (directory <> "/game-" <> show (index + 1) <> ".json") (Command.saved (Registry.printings registry) (Text.pack "Played with parun match, seed " <> Key.toHex (seedAt seed index) <> Text.pack (", seat " <> show (firstAt index) <> " first.")) format Map.empty (Command.seated (firstAt index) decks) timeline)
+            Command.save (directory <> "/game-" <> show (index + 1) <> ".json") (Command.saved (Registry.printings registry) (Text.pack "Played with parun match, seed " <> Key.toHex (seedAt seed index) <> Text.pack (", seat " <> show (firstAt index) <> " first.")) format Map.empty (Command.seated (firstAt index) (both decks)) timeline)
           pure (tallied outcome tally)
       )
       Tally.empty
@@ -85,13 +86,19 @@ match options registry format decks = do
   mapM_ TextIO.putStrLn (summary count tally)
   TextIO.hPutStrLn IO.stderr (Text.pack "Seed " <> Key.toHex seed <> Text.pack ".")
 
--- | Game `index`, from zero, of a match from `seed` under `format`: seeded
--- 'seedAt', seat 'firstAt' playing first, the random bot in both seats; with
--- the entry each answer replays as (Record.recording). It is the game `parun
--- play --bot 1 --bot 2` plays at that seed and `--first`.
-game :: (Monad m) => Registry.Registry m -> Maybe Format.Format -> Key.Type.Key -> Natural -> (Deck.Deck, Deck.Deck) -> m (Either Text.Text (Result.Result, GameState.GameState), Seq.Seq Timed.Timed)
+-- | Game `index`, from zero, of a match from `seed` under `format` among the
+-- decks, seat 1's first: seeded 'seedAt', seat 'firstAt' playing first, the
+-- random bot in every seat; with the entry each answer replays as
+-- (Record.recording). It is the game `parun play --bot 1 --bot 2` plays at
+-- that seed and `--first`.
+game :: (Monad m) => Registry.Registry m -> Maybe Format.Format -> Key.Type.Key -> Natural -> NonEmpty.NonEmpty Deck.Deck -> m (Either Text.Text (Result.Result, GameState.GameState), Seq.Seq Timed.Timed)
 game registry format seed index decks =
-  State.runStateT (Game.run (lifted registry) format [Record.recording Command.labels sink] (Map.fromList [(Command.idOf n, Game.bot (lifted registry)) | n <- [1, 2]]) (const (pure ())) Hotseat.fresh (Generator.fromKey (seedAt seed index)) Map.empty (Command.seated (firstAt index) decks)) Seq.empty
+  let count = Natural.length decks
+   in State.runStateT (Game.run (lifted registry) format [Record.recording (Command.labels count) sink] (Map.fromList [(Command.idOf n, Game.bot (lifted registry)) | n <- [1 .. count]]) (const (pure ())) Hotseat.fresh (Generator.fromKey (seedAt seed index)) Map.empty (Command.seated (firstAt index) decks)) Seq.empty
+
+-- | A pair of decks, seat 1's first.
+both :: (Deck.Deck, Deck.Deck) -> NonEmpty.NonEmpty Deck.Deck
+both (one, two) = one NonEmpty.:| [two]
 
 -- | The registry, beneath the entries kept so far.
 lifted :: (Monad m) => Registry.Registry m -> Registry.Registry (State.StateT (Seq.Seq Timed.Timed) m)

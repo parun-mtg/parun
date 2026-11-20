@@ -31,26 +31,42 @@ spec s = Spec.describe s "Parun.Web.Lobby" $ do
   Spec.describe s "update" $ do
     Spec.it s "picks your deck, then moves on to the bot's" $ do
       let picked = Lobby.update (Lobby.MkPick b) Text.empty lobby
-      Spec.assertEq s (Lobby.mine picked, Lobby.choosing picked) (Just b, Lobby.MkTheirs)
+      Spec.assertEq s (Lobby.mine picked, Lobby.choosing picked) (Just b, Lobby.MkTheirs 0)
 
     Spec.it s "picks the bot's deck once you have one" $ do
       let picked = Lobby.update (Lobby.MkPick a) Text.empty $ Lobby.update (Lobby.MkPick b) Text.empty lobby
-      Spec.assertEq s (Lobby.mine picked, Lobby.theirs picked) (Just b, Just a)
+      Spec.assertEq s (Lobby.mine picked, Lobby.theirs picked) (Just b, [Just a])
 
     Spec.it s "ignores a deck it does not hold" $ do
       Spec.assertEq s (Lobby.update (Lobby.MkPick $ Text.pack "nope") Text.empty lobby) lobby
 
     Spec.it s "drops the bot's deck when your deck is under another format" $ do
       let picked = Lobby.update (Lobby.MkPick c) Text.empty . Lobby.update (Lobby.MkChoose Lobby.MkMine) Text.empty . Lobby.update (Lobby.MkPick a) Text.empty $ Lobby.update (Lobby.MkPick b) Text.empty lobby
-      Spec.assertEq s (Lobby.mine picked, Lobby.theirs picked) (Just c, Nothing)
+      Spec.assertEq s (Lobby.mine picked, Lobby.theirs picked) (Just c, [Nothing])
 
     Spec.it s "keeps the bot's deck when your deck is under its format" $ do
       let picked = Lobby.update (Lobby.MkPick d) Text.empty . Lobby.update (Lobby.MkChoose Lobby.MkMine) Text.empty . Lobby.update (Lobby.MkPick d) Text.empty $ Lobby.update (Lobby.MkPick c) Text.empty lobby
-      Spec.assertEq s (Lobby.mine picked, Lobby.theirs picked) (Just d, Just d)
+      Spec.assertEq s (Lobby.mine picked, Lobby.theirs picked) (Just d, [Just d])
 
     Spec.it s "refuses the bot a deck under another format than yours" $ do
       let mineChosen = Lobby.update (Lobby.MkPick c) Text.empty lobby
-      Spec.assertEq s (Lobby.theirs (Lobby.update (Lobby.MkPick a) Text.empty mineChosen)) Nothing
+      Spec.assertEq s (Lobby.theirs (Lobby.update (Lobby.MkPick a) Text.empty mineChosen)) [Nothing]
+
+    Spec.it s "seats up to three bots, each with its own deck, and unseats the last" $ do
+      let added = Lobby.update Lobby.MkAddBot Text.empty
+          three = added (added lobby)
+          picked = Lobby.update (Lobby.MkPick a) Text.empty . Lobby.update (Lobby.MkChoose (Lobby.MkTheirs 2)) Text.empty . Lobby.update (Lobby.MkPick b) Text.empty . Lobby.update (Lobby.MkChoose (Lobby.MkTheirs 0)) Text.empty $ Lobby.update (Lobby.MkPick a) Text.empty three
+      Spec.assertEqWith s "three bots" (Lobby.theirs picked) [Just b, Nothing, Just a]
+      Spec.assertEqWith s "no fourth" (Lobby.theirs (added three)) (Lobby.theirs three)
+      Spec.assertEqWith s "picking yours moves on to the first bot unchosen" (Lobby.choosing (Lobby.update (Lobby.MkPick a) Text.empty (Lobby.update (Lobby.MkChoose Lobby.MkMine) Text.empty picked))) (Lobby.MkTheirs 1)
+      let dropped = Lobby.update Lobby.MkDropBot Text.empty picked
+      Spec.assertEqWith s "the last unseated, and its slot no longer chosen" (Lobby.theirs dropped, Lobby.choosing dropped) ([Just b, Nothing], Lobby.MkMine)
+      Spec.assertEqWith s "one bot stays" (Lobby.theirs (Lobby.update Lobby.MkDropBot Text.empty lobby)) [Nothing]
+
+    Spec.it s "drops each bot's deck under another format than yours" $ do
+      let two = Lobby.update (Lobby.MkPick a) Text.empty . Lobby.update (Lobby.MkChoose (Lobby.MkTheirs 1)) Text.empty . Lobby.update (Lobby.MkPick c) Text.empty . Lobby.update (Lobby.MkChoose (Lobby.MkTheirs 0)) Text.empty $ Lobby.update Lobby.MkAddBot Text.empty lobby
+          picked = Lobby.update (Lobby.MkPick b) Text.empty (Lobby.update (Lobby.MkChoose Lobby.MkMine) Text.empty two)
+      Spec.assertEqWith s "the commander deck dropped" (Lobby.theirs picked, Lobby.choosing picked) ([Nothing, Just a], Lobby.MkTheirs 0)
 
     Spec.it s "filters by what is typed" $ do
       Spec.assertEq s (Lobby.search $ Lobby.update Lobby.MkSearch (Text.pack "webs") lobby) (Text.pack "webs")
@@ -77,6 +93,12 @@ spec s = Spec.describe s "Parun.Web.Lobby" $ do
 
     Spec.it s "cannot start without your deck" $ do
       Spec.assertBool s (Text.isInfixOf (Text.pack "disabled=\"\">Start game") . Html.toText $ Lobby.view lobby) "disabled"
+
+    Spec.it s "names each bot by its seat once there are two" $ do
+      let one = Html.toText (Lobby.view lobby)
+          two = Html.toText (Lobby.view (Lobby.update Lobby.MkAddBot Text.empty lobby))
+      Spec.assertBool s (Text.isInfixOf (Text.pack ">Bot<") one && not (Text.isInfixOf (Text.pack "Remove a bot") one)) "one bot"
+      Spec.assertBool s (Text.isInfixOf (Text.pack ">Bot 1<") two && Text.isInfixOf (Text.pack ">Bot 2<") two && Text.isInfixOf (Text.pack "Remove a bot") two) "two bots"
 
     Spec.it s "sends a deck's name when it is tapped" $ do
       let page = Lobby.view lobby

@@ -157,6 +157,7 @@ automatic setting request = case Text.unpack (Question.kind question) of
   -- The player is taken to want to play first (CR 103.1), a default of this
   -- client's rather than the engine's, which full control asks.
   "PlayOrDraw" | setting /= MkFull -> Just . R.Text $ Text.pack "Play"
+  "ChooseStarter" | setting /= MkFull -> Just . R.Text . Text.pack . show . PlayerId.unwrap $ Question.seat question
   "ChooseAction"
     | setting /= MkFull,
       Just i <- Offer.onlyPass (Question.offer question) ->
@@ -762,6 +763,8 @@ typedReply request =
 form :: Request.Request -> Set.Set (Natural, Natural) -> [Html.Html Event]
 form request picked = case Text.unpack (Question.kind question) of
   "PlayOrDraw" -> heading "Play first or draw?" : [button (MkAnswer option) (Offer.tagName word) | option@(R.Text word) <- Foldable.fold (Protocol.arrayOf offer)]
+  -- CR 103.1: among three or more seats, the seat to take the first turn.
+  "ChooseStarter" -> heading "Who takes the first turn?" : [button (MkAnswer option) (if option == R.Text (Text.pack (show (PlayerId.unwrap (Question.seat question)))) then Text.pack "You" else Offer.playerName option) | option <- Foldable.fold (Protocol.arrayOf offer)]
   "DeclareMulligan" ->
     heading ("Keep this hand, or mulligan?" <> foldMap (\n -> " A mulligan puts " <> Text.unpack (Render.count n "card") <> " on the bottom.") (Protocol.field "bottom" offer >>= Protocol.naturalOf))
       : [primary (MkAnswer . R.Text $ Text.pack "Keep") (Text.pack "Keep"), button (MkAnswer . R.Text $ Text.pack "Mulligan") (Text.pack "Mulligan")]

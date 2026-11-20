@@ -482,6 +482,23 @@ main.lobby {
   text-transform: uppercase;
 }
 
+/* One slot per bot, stacked, with the buttons seating or unseating one. */
+.bots {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5em;
+}
+
+.bot-count {
+  display: flex;
+  gap: 0.5em;
+}
+
+.bot-count button {
+  flex: 1;
+  font-size: 0.85rem;
+}
+
 #app button.slot {
   appearance: none;
   display: flex;

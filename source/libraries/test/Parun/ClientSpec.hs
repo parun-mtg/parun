@@ -1112,6 +1112,22 @@ spec s registry = Spec.describe s "Client" $ do
     Spec.assertEqWith s "asked again" (fst (fst (starting PlayOptions.none [Text.pack "first", Text.pack " D "] 3))) (firstWhen [Text.pack "draw"] 3)
     Spec.assertEqWith s "end of input" (fst (fst (starting PlayOptions.none [] 3))) Nothing
 
+  Spec.it s "CR 103.1 among three seats, the seat picked chooses which seat takes the first turn" $ do
+    let seeds = [0 .. 15 :: Word.Word32]
+        three = 1 NonEmpty.:| [2, 3 :: Natural]
+        run = startingAmong three PlayOptions.none
+        chooserOf seed = Maybe.listToMaybe [n | n <- [1, 2, 3 :: Natural], Text.pack ("Seat " <> show n <> " was picked at random to choose who plays first.") `elem` written (snd (run [Text.pack "3"] seed))]
+    Spec.assertEqWith s "the seat typed plays first" (fmap (fst . fst . run [Text.pack "3"]) seeds) (fmap (const (Just 3)) seeds)
+    Spec.assertEqWith s "any seat may be picked to choose" (Set.fromList (fmap chooserOf seeds)) (Set.fromList (fmap Just [1, 2, 3]))
+    Spec.assertBool s (all (\seed -> maybe False (\n -> Text.pack ("Seat " <> show n <> ", which seat takes the first turn? Type its number, 1 to 3.") `elem` written (snd (run [Text.pack "3"] seed))) (chooserOf seed)) seeds) "the picked seat is asked"
+    Spec.assertEqWith s "asked again until a seat" (fst (fst (run [Text.pack "play", Text.pack "4", Text.pack " 2 "] 3))) (Just 2)
+    Spec.assertEqWith s "end of input" (fst (fst (run [] 3))) Nothing
+    let bots = fmap (startingAmong three PlayOptions.none {PlayOptions.bots = Set.fromList [1, 2, 3]} []) seeds
+    Spec.assertEqWith s "a bot chooses any seat" (Set.fromList (fmap (fst . fst) bots)) (Set.fromList (fmap Just [1, 2, 3]))
+    let pickedIn shown = [n | n <- [1, 2, 3 :: Natural], Text.pack ("Seat " <> show n <> " was picked at random to choose who plays first.") `elem` written shown]
+        choices = Map.fromListWith Set.union [(picked, Set.singleton first) | ((first, _), shown) <- bots, picked <- pickedIn shown]
+    Spec.assertBool s (any ((> 1) . Set.size) choices) "a bot does not always choose the same seat"
+
   Spec.it s "CR 103.1 --first names the seat that plays first, asking and drawing nothing" $ do
     let ((first, generator), shown) = starting PlayOptions.none {PlayOptions.first = Just 2} [] 5
     Spec.assertEqWith s "first" first (Just 2)
@@ -1642,8 +1658,12 @@ otherSeat n = if n == 1 then 2 else 1
 -- Game.starter from this seed, a person typing these lines in turn: the seat
 -- that plays first and the generator after, and the screen.
 starting :: PlayOptions.PlayOptions -> [Text.Text] -> Word.Word32 -> ((Maybe Natural, Generator.Generator), Screen)
-starting options answers seed =
-  State.runState (State.runStateT (Game.starter (Terminal.say terminal) (Game.playOrDraw terminal) options) (S.seeded seed)) blank
+starting = startingAmong (1 NonEmpty.:| [2])
+
+-- 'starting' among these seats.
+startingAmong :: NonEmpty.NonEmpty Natural -> PlayOptions.PlayOptions -> [Text.Text] -> Word.Word32 -> ((Maybe Natural, Generator.Generator), Screen)
+startingAmong seats options answers seed =
+  State.runState (State.runStateT (Game.starter (Terminal.say terminal) (Game.playOrDraw terminal) seats options) (S.seeded seed)) blank
   where
     terminal = screen (List.genericLength answers) (\sc -> Maybe.listToMaybe (List.genericDrop (typed sc) answers))
 
