@@ -1,0 +1,49 @@
+{
+  "description": "CR 701.21a / 205.2a Fatal Grudge offers each opponent only permanents sharing a card type with the permanent its cost sacrificed",
+  "note": "alice sacrifices Memnite, an artifact creature, over her Glorious Anthem. bob's offer holds his Sol Ring and Hill Giant and not his Bad Moon; he sacrifices Sol Ring. carol's Glorious Anthem shares no card type, so she sacrifices nothing. alice draws one card. Three seats, so an opponent with candidates and one without are told apart.",
+  "board": {
+    "seats": [
+      {
+        "name": "alice",
+        "battlefield": [
+          { "card": "Memnite", "label": "memnite" },
+          { "card": "Glorious Anthem", "label": "anthem" },
+          { "card": "Swamp", "label": "swamp" },
+          { "card": "Mountain", "label": "mountain" }
+        ],
+        "hand": [{ "card": "Fatal Grudge", "label": "grudge" }],
+        "library": [{ "card": "Island" }, { "card": "Island" }]
+      },
+      {
+        "name": "bob",
+        "battlefield": [
+          { "card": "Sol Ring", "label": "ring" },
+          { "card": "Hill Giant", "label": "giant" },
+          { "card": "Bad Moon", "label": "moon" }
+        ],
+        "library": [{ "card": "Island" }, { "card": "Island" }]
+      },
+      {
+        "name": "carol",
+        "battlefield": [{ "card": "Glorious Anthem", "label": "carol-anthem" }],
+        "library": [{ "card": "Island" }, { "card": "Island" }]
+      }
+    ],
+    "active": "alice",
+    "step": "PrecombatMain"
+  },
+  "timeline": [
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "do": { "Cast": { "object": "$grudge", "mana": ["$swamp", "$mountain"] } } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "do": { "Answer": { "prompt": "ChooseSacrifices", "with": ["$memnite"] } } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "do": "Pass" },
+    { "turn": 1, "step": "PrecombatMain", "player": "bob", "check": { "View": { "of": "Prompt", "is": { "kind": "ChooseSacrifices", "offer": { "source": "Fatal Grudge", "earlier": [], "least": 1, "most": 1, "among": ["$ring", "$giant"] } } } } },
+    { "turn": 1, "step": "PrecombatMain", "player": "bob", "do": { "Answer": { "prompt": "ChooseSacrifices", "with": ["$ring"] } } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "check": { "Count": { "player": "bob", "zone": "Graveyard", "card": "Sol Ring", "count": 1 } } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "check": { "Count": { "player": "bob", "zone": "Battlefield", "card": "Hill Giant", "count": 1 } } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "check": { "Count": { "player": "bob", "zone": "Battlefield", "card": "Bad Moon", "count": 1 } } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "check": { "Count": { "player": "carol", "zone": "Battlefield", "card": "Glorious Anthem", "count": 1 } } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "check": { "Count": { "player": "alice", "zone": "Graveyard", "card": "Memnite", "count": 1 } } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "check": { "Count": { "player": "alice", "zone": "Battlefield", "card": "Glorious Anthem", "count": 1 } } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "check": { "Count": { "player": "alice", "zone": "Hand", "card": "Island", "count": 1 } } }
+  ]
+}

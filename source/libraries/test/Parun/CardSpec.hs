@@ -2763,7 +2763,7 @@ withCountersFilters w =
 -- same reason riderFilters is one -- the two halves of a gate must not be swept
 -- apart.
 --
--- The COST half is PayGateCostFramed: Parun.Engine.Resolve.Effect.payGatePaidBy
+-- The COST half is SlotPoolFramed: Parun.Engine.Resolve.Effect.payGatePaidBy
 -- measures and pays it with the resolving object's slots (Cost.canPayReading,
 -- Cost.payReading), the map Cost.announcedSlots hands an announced cost, so
 -- Filter.IsBound there reads them -- Calim, Djinn Emperor's "two other cards
@@ -2776,7 +2776,7 @@ withCountersFilters w =
 -- resolution's slots.
 payGateFilters :: PayGate.PayGate -> [(Framing, Filter.Type.Filter Keyword.Keyword)]
 payGateFilters gate =
-  fmap ((,) PayGateCostFramed) (concatMap costFilters (CostChoice.unwrap (PayGate.cost gate)))
+  fmap ((,) SlotPoolFramed) (concatMap costFilters (CostChoice.unwrap (PayGate.cost gate)))
     <> concatMap quantityFilters (Maybe.maybeToList (PayGate.perEach gate) <> Maybe.maybeToList (PayGate.x gate))
 
 -- CR 122.1b: the one counter kind with a Filter under it, since it carries a
@@ -4843,12 +4843,13 @@ blockPermissionFilters permission =
 --     Parun.Engine.Resolve.gateHolds through Resolve.Slots.effectContext, so
 --     CR 205.3m's Filter.Shares CreatureType Bound answers there (Mudbutton
 --     Clanger).
---   * PayGateCostFramed -- CR 118.12's gate cost, whose pools Parun.Engine.Cost
---     matches through Projection.contextWithSlots over the slot map
---     Resolve.Common.gateCostOf builds, an earlier clause's among them, so CR
---     205.2a's Filter.Shares CardType Bound answers there (Braids, Arisen
---     Nightmare). Unframed until that lint admitted it, and Unframed's posture
---     in every other lint.
+--   * SlotPoolFramed -- a pool of permanents matched through
+--     Projection.contextWithSlots over a resolution's slot map, an earlier
+--     clause's among them, so CR 205.2a's Filter.Shares CardType Bound answers
+--     there: CR 118.12's gate cost, over the map Resolve.Common.gateCostOf
+--     builds (Braids, Arisen Nightmare), and CR 701.21a's edict filter, through
+--     Replacement.sacrificeCandidates (Fatal Grudge). Unframed until that lint
+--     admitted it, and Unframed's posture in every other lint.
 --   * RepeatGateFramed -- a RepeatIf's condition, read by
 --     Parun.Engine.Resolve.Arms.Zones.repeatIf through Resolve.Slots.effectContext
 --     and a view filling Filter.View.hasEntryHost, which no other position does
@@ -5058,9 +5059,9 @@ data Framing
   | -- | CR 608.2c's clause "if", evaluated in the resolution's own context. See
     -- the overview above.
     ClauseGateFramed
-  | -- | CR 118.12's gate cost, matched over the resolution's slots. See the
-    -- overview above.
-    PayGateCostFramed
+  | -- | A gate cost's or an edict's pool, matched over the resolution's slots
+    -- (CR 118.12, 701.21a). See the overview above.
+    SlotPoolFramed
   | -- | A RepeatIf's condition, evaluated in the resolution's own context. See
     -- the overview above.
     RepeatGateFramed
@@ -5162,7 +5163,7 @@ sweptForSingularSlots framing = case framing of
   -- SWEPT for MillTallyFramed's reason: gateHolds' context carries the slots.
   ClauseGateFramed -> True
   -- SWEPT, as it was while Unframed: gateCostOf hands the cost the slots.
-  PayGateCostFramed -> True
+  SlotPoolFramed -> True
   -- SWEPT for MillTallyFramed's reason: repeatIf's context carries the slots.
   RepeatGateFramed -> True
   -- SWEPT for MillTallyFramed's reason: the LoseLife and ModifyTarget arms read
@@ -5450,10 +5451,12 @@ effectFilters effect = case effect of
   Effect.Venture {} -> []
   Effect.ExileHandThenDraw -> []
   Effect.NoteManaSpent -> []
-  Effect.PlayerSacrifices (PlayerSacrifices.MkPlayerSacrifices _ who f quantity _) -> unframed (Foldable.toList who <> [f]) <> frame Unframed (quantityFilters quantity)
-  -- Unframed, PlayerSacrifices' answer and for its reason: rule 701.38b's
-  -- listed choices are judged against each candidate on the battlefield, which
-  -- is neither an attach destination nor a target slot.
+  -- The edict's pool is Replacement.sacrificeCandidates', matched over the
+  -- resolution's slots (Fatal Grudge).
+  Effect.PlayerSacrifices (PlayerSacrifices.MkPlayerSacrifices _ who f quantity _) -> unframed (Foldable.toList who) <> [(SlotPoolFramed, f)] <> frame Unframed (quantityFilters quantity)
+  -- Unframed: rule 701.38b's listed choices are judged against each candidate
+  -- on the battlefield, which is neither an attach destination nor a target
+  -- slot.
   Effect.Bid bid -> frame Unframed (quantityFilters (Bid.opening bid))
   Effect.Vote (Vote.MkVote _ choices _ _) -> case choices of
     VoteChoices.Objects objects -> unframed [VoteObjects.filter objects]
@@ -5461,8 +5464,8 @@ effectFilters effect = case effect of
     VoteChoices.Words _ -> []
     -- Nor do rule 701.38b's players.
     VoteChoices.Players _ -> []
-  -- Unframed, PlayerSacrifices' answer and for its reason: the filter names
-  -- permanents on the battlefield, judged by the ordinary projection.
+  -- Unframed: the filter names permanents on the battlefield, judged by the
+  -- ordinary projection.
   Effect.ActivateManaAbilities (ActivateManaAbilities.MkActivateManaAbilities _ f) -> unframed [f]
   -- No filter: CR 106.13 moves a pool, and a pool is not a set of objects.
   Effect.MoveMana _ -> []
