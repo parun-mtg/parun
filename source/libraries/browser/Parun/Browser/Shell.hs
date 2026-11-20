@@ -92,7 +92,9 @@ data Loaded = MkLoaded
     -- | The saved decks still to check.
     unchecked :: [(Text.Text, FilePath)],
     -- | The legality table, once a check has loaded it (or why it did not).
-    legalityTable :: Maybe (Either Text.Text LegalityTable.LegalityTable)
+    legalityTable :: Maybe (Either Text.Text LegalityTable.LegalityTable),
+    -- | Each set's whole card list, by the set's code, once the decks are read.
+    setLists :: Map.Map Text.Text FilePath
   }
 
 -- | Where a screen leads when it ends.
@@ -118,7 +120,7 @@ data Woke
 start :: IO ()
 start = do
   chosen <- maybe Web.Question.MkStandard (Maybe.fromMaybe Web.Question.MkStandard . Web.Question.levelNamed) <$> Environment.lookupEnv "parun_level"
-  shell <- MkShell <$> Browser.mount <*> IORef.newIORef (MkLoaded Loading.new Nothing Map.empty Nothing Map.empty [] Nothing Nothing Nothing False Nothing Map.empty [] Nothing) <*> IORef.newIORef chosen
+  shell <- MkShell <$> Browser.mount <*> IORef.newIORef (MkLoaded Loading.new Nothing Map.empty Nothing Map.empty [] Nothing Nothing Nothing False Nothing Map.empty [] Nothing Map.empty) <*> IORef.newIORef chosen
   Exception.catch (opening >>= follow shell) $ \problem ->
     Browser.display (page shell) $ message ["The page stopped on an error:", Exception.displayException (problem :: Exception.SomeException)]
 
@@ -305,7 +307,8 @@ builder shell deck = do
       now <- IORef.readIORef (loaded shell)
       named <- if null (Builder.formats shown) then Legality.shippedFormats else pure (Builder.formats shown)
       least <- maybe (Legality.minimumFor (Builder.format shown)) (pure . Just) (Builder.least shown)
-      let filled = shown {Builder.index = cardIndex now, Builder.formats = named, Builder.least = least}
+      let indexed = if Maybe.isNothing (Builder.index shown) then maybe id Builder.withIndex (cardIndex now) shown else shown
+          filled = indexed {Builder.formats = named, Builder.least = least, Builder.sets = Map.keys (setLists now)}
           key = (Builder.deck filled, Builder.format filled)
       -- Taps waiting go first: the list is checked once they are done.
       waiting <- Browser.pending (page shell)
@@ -328,6 +331,17 @@ builder shell deck = do
             saved' <- saveBuilt shell shownNow
             go saved' (snd current)
           Builder.MkFormat -> go (Builder.update event value shownNow) {Builder.least = Nothing} (snd current)
+          Builder.MkPoolChoice
+            | Just code <- Text.stripPrefix (Text.pack "set:") value -> do
+                listed <- setLists <$> IORef.readIORef (loaded shell)
+                read' <- traverse (Exception.try . ByteString.readFile) (Map.lookup code listed)
+                go
+                  ( case read' of
+                      Just (Right bytes) -> Builder.setPool code (fmap snd (Lobby.entries (Encoding.decodeUtf8Lenient bytes))) shownNow
+                      Just (Left problem) -> shownNow {Builder.poolProblems = [Text.pack ("The set's cards did not load: " <> Exception.displayException (problem :: Exception.IOException))]}
+                      Nothing -> shownNow {Builder.poolProblems = [Text.pack "No such set: " <> code]}
+                  )
+                  (snd current)
           _ -> go (Builder.update event value shownNow) (snd current)
         _ -> go shownNow (snd current)
 
@@ -358,7 +372,9 @@ saveBuilt shell built = do
       pure (Builder.saved name built)
 
 -- | Why a deck list breaks the format its header names, as lines, and the
--- cards those lines are about (Legality.namedCard).
+-- cards those lines are about (Legality.namedCard). No card pool is given:
+-- a pooled list writes its pool's other cards as its sideboard (CR 100.4b),
+-- so the pool is the list's own, and the builder caps each card at it.
 -- The legality table is loaded once, at the first check, and kept.
 deckProblems :: Shell -> Registry.Registry Identity.Identity -> Text.Text -> IO ([Text.Text], Set.Set CardName.CardName)
 deckProblems shell reg contents = case Command.loadText reg "deck" contents of
@@ -648,7 +664,8 @@ work shell = do
       paths <- Decks.listRoot deckRoot
       let files = Map.fromList [(name, path) | path <- paths, let name = Lobby.deckName deckRoot path, Lobby.playable name]
       named <- fmap (Map.mapMaybe id) . traverse (fmap (DeckList.formatOf . Encoding.decodeUtf8Lenient) . ByteString.readFile) $ files
-      IORef.modifyIORef' (loaded shell) $ \l -> l {deckFiles = Just files, formats = named, unread = Map.toList files, unchecked = filter (Lobby.isSaved . fst) (Map.toList files)}
+      let lists = Map.fromList [(code, path) | path <- paths, Just code <- [Text.stripPrefix (Text.pack "sets/") (Lobby.deckName deckRoot path) >>= Text.stripSuffix (Text.pack "/all")]]
+      IORef.modifyIORef' (loaded shell) $ \l -> l {deckFiles = Just files, formats = named, unread = Map.toList files, unchecked = filter (Lobby.isSaved . fst) (Map.toList files), setLists = lists}
     readCards = do
       root <- Registry.defaultRoot
       bundles <- Registry.bundlePaths >>= traverse ByteString.readFile

@@ -1,6 +1,8 @@
 module Parun.Web.BuilderSpec where
 
+import qualified Data.Foldable as Foldable
 import qualified Data.Map.Strict as Map
+import qualified Data.Maybe as Maybe
 import qualified Data.Sequence as Seq
 import qualified Data.Set as Set
 import qualified Data.Text as Text
@@ -156,6 +158,88 @@ spec s = Spec.describe s "Parun.Web.Builder" $ do
     Spec.it s "adding then removing a card leaves nothing to save" $ do
       Spec.assertEq s (Builder.dirty (tap (Builder.MkRemove bolt) (tap (Builder.MkAdd bolt) fresh))) False
 
+  Spec.describe s "pool" $ do
+    Spec.it s "CR 100.2b caps a pooled card at its count" $ do
+      let added = iterate (tap (Builder.MkAdd bolt)) (pooled "2 Lightning Bolt\n") !! 3
+      Spec.assertEq s (Builder.deck added) (Map.singleton bolt 2)
+
+    Spec.it s "CR 100.2b never caps a basic land" $ do
+      Spec.assertEq s (Builder.deck (tap (Builder.MkAdd mountain) (pooled "2 Lightning Bolt\n"))) (Map.singleton mountain 1)
+
+    Spec.it s "CR 100.4b chooses Limited and writes the pool's unused cards as the Sideboard" $ do
+      let built = tap (Builder.MkAdd bolt) (pooled "2 Lightning Bolt\n1 Shock\n")
+      Spec.assertEq s (Builder.listText built) (Text.pack "Format: limited\n1 Lightning Bolt\n\nSideboard\n1 Lightning Bolt\n1 Shock\n")
+
+    Spec.it s "returns a removed card to the Sideboard" $ do
+      let built = tap (Builder.MkRemove bolt) (tap (Builder.MkAdd bolt) (pooled "2 Lightning Bolt\n"))
+      Spec.assertEq s (Builder.listText built) (Text.pack "Format: limited\n\nSideboard\n2 Lightning Bolt\n")
+
+    Spec.it s "keeps the pool, and its caps, when the search widens to every card" $ do
+      let widened = Builder.update Builder.MkPoolChoice Text.empty (pooled "2 Lightning Bolt\n")
+          more = iterate (tap (Builder.MkAdd bolt)) widened !! 3
+      Spec.assertEq s (CardIndex.among (Builder.searchQuery widened), Builder.listText more) (Nothing, Text.pack "Format: limited\n2 Lightning Bolt\n")
+
+    Spec.it s "drops the pool, its caps and its Sideboard when asked" $ do
+      let dropped = tap Builder.MkDropPool (pooled "1 Lightning Bolt\n")
+      Spec.assertEq s (Builder.listText (iterate (tap (Builder.MkAdd bolt)) dropped !! 2)) (Text.pack "Format: limited\n2 Lightning Bolt\n")
+
+    Spec.it s "resolves a pasted pool's names to the cards' own, whatever their case" $ do
+      Spec.assertEq s (Builder.listText (tap (Builder.MkAdd bolt) (pooled "3 lightning bolt\n"))) (Text.pack "Format: limited\n1 Lightning Bolt\n\nSideboard\n2 Lightning Bolt\n")
+
+    Spec.it s "refuses a pool naming a card it doesn't know, saying which" $ do
+      let refused = pooled "1 Lightnin Bolt\n2 Shock\n"
+      Spec.assertEq s (Builder.pool refused, Builder.poolProblems refused) (Nothing, [Text.pack "No card is named Lightnin Bolt."])
+
+    Spec.it s "refuses a pool naming no cards" $ do
+      Spec.assertEq s (Builder.poolProblems (pooled "\n")) [Text.pack "The pool names no cards."]
+
+    Spec.it s "writes the pool's Sideboard only under Limited" $ do
+      Spec.assertEq s (Builder.listText (Builder.update Builder.MkFormat (Text.pack "constructed") (pooled "2 Shock\n"))) (Text.pack "Format: constructed\n")
+
+    Spec.it s "leaves basic lands out of the pool's Sideboard" $ do
+      let opened = Builder.open Nothing Text.empty (Text.pack "Format: limited\n9 Mountain\n\nSideboard\n1 Shock\n") indexed
+      Spec.assertEq s (Builder.listText (iterate (tap (Builder.MkRemove mountain)) opened !! 9)) (Text.pack "Format: limited\n\nSideboard\n1 Shock\n")
+
+    Spec.it s "reads a pool's Sideboard back under the cards' own names" $ do
+      let opened = Builder.open Nothing Text.empty (Text.pack "Format: limited\n2 Lightning Bolt\n\nSideboard\n1 lightning bolt\n") indexed
+      Spec.assertEq s (Builder.listText opened) (Text.pack "Format: limited\n2 Lightning Bolt\n\nSideboard\n1 Lightning Bolt\n")
+
+    Spec.it s "a new pool is a change to save" $ do
+      Spec.assertEq s (Builder.dirty (pooled "2 Shock\n")) True
+
+    Spec.it s "dropping an opened deck's pool is a change to save" $ do
+      let opened = Builder.open Nothing Text.empty (Text.pack "Format: limited\n1 Lightning Bolt\n\nSideboard\n1 Shock\n") indexed
+      Spec.assertEq s (Builder.dirty opened, Builder.dirty (tap Builder.MkDropPool opened)) (False, True)
+
+    Spec.it s "a pasted pool replaces a Sideboard an opened list kept" $ do
+      let opened = Builder.open Nothing Text.empty (Text.pack "4 Lightning Bolt\nSideboard\n2 Shock\n") indexed
+          built = Builder.update Builder.MkUsePool Text.empty (Builder.update Builder.MkPoolText (Text.pack "4 Lightning Bolt\n") opened)
+      Spec.assertEq s (Builder.listText built) (Text.pack "Format: limited\n4 Lightning Bolt\n")
+
+    Spec.it s "reads a limited list's main deck and Sideboard back into its pool" $ do
+      let text = Text.pack "Format: limited\n1 Lightning Bolt\n\nSideboard\n1 Lightning Bolt\n1 Shock\n"
+          opened = Builder.open Nothing Text.empty text indexed
+      Spec.assertEq s (Builder.listText opened, Builder.deck (iterate (tap (Builder.MkAdd bolt)) opened !! 2)) (text, Map.singleton bolt 2)
+
+    Spec.it s "finds a double-faced card a set's list names by both faces" $ do
+      let scoped = Builder.setPool (Text.pack "neo") [named "Front Face // Back Face"] indexed
+      Spec.assertEq s (fmap (CardName.unwrap . CardIndex.name) (Foldable.toList (snd (CardIndex.search (Builder.searchQuery scoped) (Maybe.fromMaybe Seq.empty (Builder.index scoped)))))) [Text.pack "Front Face", Text.pack "Mountain"]
+
+    Spec.it s "a set's cards narrow the search without capping" $ do
+      let scoped = Builder.setPool (Text.pack "m10") [bolt] indexed
+      Spec.assertEq s (CardIndex.among (Builder.searchQuery scoped), Builder.deck (iterate (tap (Builder.MkAdd bolt)) scoped !! 5)) (Just (Set.singleton (Text.pack "lightning bolt")), Map.singleton bolt 5)
+
+    Spec.it s "offers every card, each set, and pasting a pool" $ do
+      let shown = page indexed {Builder.sets = [Text.pack "m10"]}
+      Spec.assertBool s (all (`Text.isInfixOf` shown) [Text.pack "<option value=\"\" selected=\"\">Every card</option>", Text.pack "<option value=\"set:m10\">M10</option>", Text.pack "<option value=\"paste\">Paste a pool"]) "options"
+
+    Spec.it s "uses the pool pasted into its panel" $ do
+      let shown = Builder.view (Builder.update Builder.MkPoolChoice (Text.pack "paste") indexed)
+      Spec.assertEq s (Html.labelled (Text.pack "button") (Text.pack "Use this pool") shown >>= \path -> Html.handler (Text.pack "click") path shown) (Just Builder.MkUsePool)
+
+    Spec.it s "shows how many of a pooled card are left" $ do
+      Spec.assertBool s (Text.isInfixOf (Text.pack "1 left") (page (tap (Builder.MkAdd bolt) (pooled "2 Lightning Bolt\n")))) "left"
+
   Spec.describe s "saveTarget" $ do
     Spec.it s "a first save takes the typed name" $ do
       Spec.assertEq s (Builder.saveTarget Seq.empty (Builder.update Builder.MkSaveName (Text.pack "Red Burn") fresh)) (Right (Text.pack "saved/red-burn"))
@@ -168,8 +252,9 @@ spec s = Spec.describe s "Parun.Web.Builder" $ do
       Spec.assertEq s (Builder.saveTarget (Seq.singleton (Text.pack "saved/burn")) again) (Right (Text.pack "saved/burn"))
   where
     page = Html.toText . Builder.view
-    card name = CardIndex.MkEntry (CardName.MkCardName (Text.pack name)) [Text.pack name] Nothing 1 Set.empty Set.empty (Text.pack "Instant") [] (Text.toCaseFold (Text.pack name))
-    indexed = fresh {Builder.index = Just (Seq.fromList [(card "Lightning Bolt") {CardIndex.rules = [Text.pack "Lightning Bolt deals 3 damage to any target."]}, card "Mountain"])}
+    card name = CardIndex.MkEntry (CardName.MkCardName (Text.pack name)) [Text.pack name] Nothing 1 Set.empty Set.empty (Text.pack "Instant") [] (Text.toCaseFold (Text.pack name)) False
+    indexed = Builder.withIndex (Seq.fromList [(card "Lightning Bolt") {CardIndex.rules = [Text.pack "Lightning Bolt deals 3 damage to any target."]}, (card "Mountain") {CardIndex.basic = True}, card "Shock", (card "Front Face") {CardIndex.faceNames = [Text.pack "Front Face", Text.pack "Back Face"]}]) fresh
+    pooled text = Builder.update Builder.MkUsePool Text.empty (Builder.update Builder.MkPoolText (Text.pack text) (Builder.update Builder.MkPoolChoice (Text.pack "paste") indexed))
     constructed = Builder.update Builder.MkFormat (Text.pack "constructed") fresh
     fresh = Builder.new [Text.pack "constructed", Text.pack "pauper"]
     tap event = Builder.update event Text.empty
