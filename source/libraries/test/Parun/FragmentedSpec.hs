@@ -14,9 +14,11 @@
 -- through an all-abilities removal is Synthetic Hushing Adept's ("{T}: Target
 -- creature loses all abilities until end of turn"), and one logging damage is
 -- Prodigal Sorcerer's wearing Basilisk Collar, and one moving a card (CR
--- 400.7) is Blinking Spirit's under Omniscience. No printing reaches the Adept's
--- loop: MTGJSON AtomicCards, 2026-10-16, Oracle text matching `loses? all
--- abilities` on a line with {T} in its cost, answers Immovable Rod, whose
+-- 400.7) is Blinking Spirit's under Omniscience, and one through an entry
+-- link (CR 607.2c) is two Animate Deads' on an Auramancer beside a Viscera
+-- Seer. No printing reaches the Adept's loop: MTGJSON AtomicCards,
+-- 2026-10-16, Oracle text matching `loses? all abilities` on a line with {T}
+-- in its cost, answers Immovable Rod, whose
 -- effect ends when it untaps, and Soul Sculptor, whose second activation
 -- under Opalescence leaves its target no creature to aim at again (CR 613.8c,
 -- data/scenarios/projection).
@@ -26,6 +28,7 @@
 -- one script and records each menu alice is offered, which the harness cannot.
 module Parun.FragmentedSpec where
 
+import Control.Applicative ((<|>))
 import qualified Control.Monad.Trans.State.Strict as State
 import qualified Data.Bifunctor as Bifunctor
 import qualified Data.Foldable as Foldable
@@ -43,6 +46,7 @@ import qualified Parun.Engine.Game as Game
 import qualified Parun.Engine.Mana as Mana
 import qualified Parun.Engine.Projection as Projection
 import qualified Parun.Engine.Setup as Setup
+import qualified Parun.Extra.Natural as Natural
 import qualified Parun.Registry as Registry
 import qualified Parun.Spec as Spec
 import qualified Parun.Support as S
@@ -61,6 +65,8 @@ import qualified Parun.Types.CounterKind as CounterKind
 import qualified Parun.Types.CounterLink as CounterLink
 import qualified Parun.Types.CounterLinked as CounterLinked
 import qualified Parun.Types.Effect as Effect
+import qualified Parun.Types.EntryLink as EntryLink
+import qualified Parun.Types.ExileLink as ExileLink
 import qualified Parun.Types.Expiry as Expiry
 import qualified Parun.Types.GameEvent as GameEvent
 import qualified Parun.Types.GameState as GameState
@@ -83,6 +89,8 @@ import qualified Parun.Types.PlayerId as PlayerId
 import qualified Parun.Types.Printing as Printing
 import qualified Parun.Types.Prompt as Prompt
 import qualified Parun.Types.Recipient as Recipient
+import qualified Parun.Types.ReturnEnding as ReturnEnding
+import qualified Parun.Types.ReturnWatch as ReturnWatch
 import qualified Parun.Types.Settle as Settle
 import qualified Parun.Types.Sickness as Sickness
 import qualified Parun.Types.StoredEffects as StoredEffects
@@ -198,6 +206,29 @@ spec s registry = Spec.describe s "a fragmented loop (CR 733.3)" $ do
     Spec.assertEqWith s "CR 733.3 a Cyclopean Tomb's link is a new state" (recurs tombId gs3) False
     Spec.assertEqWith s "CR 733.3 a dead Cyclopean Tomb's link is a new state" (recurs tombId dead) False
 
+  Spec.it s "a link keyed by an object that has left is no new state" $ do
+    tomb <- S.printingOf s registry "Cyclopean Tomb"
+    island <- S.printingOf s registry "Island"
+    -- One state with and without a counter link, an exile link and a return
+    -- watch on alice's Island, each her Cyclopean Tomb's, before and after the
+    -- Island has left (CR 400.7, 610.3): nothing reads a row keyed by an id
+    -- gone from the game.
+    let (tombId, gs1) = S.addPermanent tomb S.alice (Setup.emptyGame S.bothPlayers)
+        (islandId, here) = S.addPermanent island S.alice gs1
+        gone = S.runPure S.identityAnswer here (Event.changeZone Settle.none islandId Zone.Graveyard)
+        counterLink = CounterLink.MkCounterLink {CounterLink.source = tombId, CounterLink.acquisition = Acquisition.Own, CounterLink.moved = CounterLinked.PutWith CounterKind.PlusOnePlusOne}
+        exileLink = ExileLink.MkExileLink {ExileLink.source = tombId, ExileLink.ability = Nothing, ExileLink.acquisition = Acquisition.Own, ExileLink.chosen = False, ExileLink.controller = Nothing}
+        countered gs = Fragmented.digest gs {GameState.counteredWith = Map.singleton islandId (Set.singleton counterLink)} == Fragmented.digest gs
+        exiled gs = Fragmented.digest gs {GameState.exiledWith = Map.singleton islandId exileLink} == Fragmented.digest gs
+        watch = ReturnWatch.MkReturnWatch {ReturnWatch.ending = ReturnEnding.SourceLeaves tombId, ReturnWatch.zone = Zone.Battlefield, ReturnWatch.link = EntryLink.MkEntryLink {EntryLink.source = tombId, EntryLink.acquisition = Acquisition.Own, EntryLink.resolution = tombId}}
+        watched gs = Fragmented.digest gs {GameState.movedUntil = Map.singleton islandId watch} == Fragmented.digest gs
+    Spec.assertEqWith s "CR 733.3 a counter link on the Island is a new state" (countered here) False
+    Spec.assertEqWith s "CR 733.3 a counter link on the departed Island is no new state" (countered gone) True
+    Spec.assertEqWith s "CR 733.3 an exile link on the Island is a new state" (exiled here) False
+    Spec.assertEqWith s "CR 733.3 an exile link on the departed Island is no new state" (exiled gone) True
+    Spec.assertEqWith s "CR 733.3 a return watch on the Island is a new state" (watched here) False
+    Spec.assertEqWith s "CR 733.3 a return watch on the departed Island is no new state" (watched gone) True
+
   Spec.it s "an activation is refused as paid, not as announced" $ do
     birds <- S.printingOf s registry "Birds of Paradise"
     freed <- S.printingOf s registry "Freed from the Real"
@@ -308,6 +339,19 @@ spec s registry = Spec.describe s "a fragmented loop (CR 733.3)" $ do
     let casts = blinkCasts spirit omniscience
     Spec.assertEqWith s "CR 733.3 alice's repeated cast is refused" (fmap fst casts) [True, False]
     Spec.assertEqWith s "CR 734.1 and her next priority says why" (fmap snd casts) [Nothing, Just Undoing.RepeatedLoop]
+
+  Spec.it s "a loop through an entry-link reader recurs once the entrant has left" $ do
+    animate <- S.printingOf s registry "Animate Dead"
+    auramancer <- S.printingOf s registry "Auramancer"
+    seer <- S.printingOf s registry "Viscera Seer"
+    omniscience <- S.printingOf s registry "Omniscience"
+    -- alice casts one Animate Dead free under Omniscience on her Auramancer,
+    -- which returns her other Animate Dead to her hand, and sacrifices the
+    -- Auramancer to her Viscera Seer, and so on. Each lap links an Auramancer that then
+    -- leaves (CR 400.7, 607.2c), and Animate Dead's own enchant rows (CR
+    -- 611.2c) stay behind naming an Aura that left, which no card can read, so
+    -- the laps recur and her third sacrifice is refused.
+    Spec.assertEqWith s "CR 733.3 alice's repeated action is refused" (reanimateAttempts animate auramancer seer omniscience) (replicate 5 Nothing <> [Just Undoing.RepeatedLoop])
 
 -- How many times the answerer has the tapper activate before it passes
 -- instead, since without CR 733.3 the loop never ends.
@@ -796,6 +840,56 @@ blinkCasts spirit omniscience =
           }
       ((_, _), (_, _, made)) = State.runState (Engine.runGameAsked blinking (inMain board) Engine.priorityLoop) (budget, False, [])
    in made
+
+-- alice, under Omniscience with a Viscera Seer and an empty library, holds an
+-- Animate Dead, and her graveyard holds another and an Auramancer. She casts
+-- an Animate Dead whenever she can, sacrifices the Auramancer to the Seer
+-- otherwise, and accepts the Auramancer's return, `reanimateBudget` times.
+-- Answers, for each attempt, why it was undone, if it was.
+reanimateAttempts :: Printing.Printing -> Printing.Printing -> Printing.Printing -> Printing.Printing -> [Maybe Undoing.Undoing]
+reanimateAttempts animate auramancer seer omniscience =
+  let (_, gs1) = S.addPermanent omniscience S.alice (Setup.emptyGame S.bothPlayers)
+      (seerId, gs2) = S.addPermanent seer S.alice gs1
+      (_, gs3) = S.addHandCard animate S.alice gs2
+      (_, gs4) = S.addGraveyardCard animate S.alice gs3
+      (_, gs5) = S.addGraveyardCard auramancer S.alice gs4
+      ((_, _), (_, _, made)) = State.runState (Engine.runGameAsked (reanimating seerId) (inMain gs5) Engine.priorityLoop) (reanimateBudget, False, [])
+   in made
+
+-- Three laps: the third's sacrifice returns the game to the state the second's
+-- left.
+reanimateBudget :: Int
+reanimateBudget = 6
+
+-- The attempts alice has left, whether she has just made one, and how each
+-- so far ended.
+type Reanimating = (Int, Bool, [Maybe Undoing.Undoing])
+
+reanimating :: ObjectId.ObjectId -> Asked.Asked GameState.GameState r -> State.State Reanimating r
+reanimating seerId asked = case Asked.prompt asked of
+  Prompt.ChooseAction _ pid actions | pid == S.alice -> do
+    (left, attempted, made) <- State.get
+    let gs = Asked.game asked
+        stacked = not (null (TurnRegisters.stack (GameState.turn gs)))
+        recorded = if attempted then made <> [undoneFor gs] else made
+        cast = List.find casts actions
+        -- Only with the Auramancer, and its Aura, beside the Seer.
+        sacrifice = if length (GameState.battlefield gs) > 2 then List.find (activates seerId) actions else Nothing
+    case cast <|> sacrifice of
+      Just action | not stacked && left > 0 -> do
+        State.put (left - 1, True, recorded)
+        pure action
+      _ -> do
+        State.put (left, False, recorded)
+        pure Action.Pass
+  Prompt.ChooseAction {} -> pure Action.Pass
+  Prompt.ChooseSacrifices _ _ _ candidates n _ -> pure (Set.fromList (take (Natural.toIntSaturating n) (filter (/= seerId) candidates)))
+  Prompt.ChooseOptional {} -> pure OptionalDecision.Exercises
+  prompt -> pure (S.identityAnswer prompt)
+  where
+    casts action = case action of
+      Action.Cast {} -> True
+      _ -> False
 
 -- The casts alice has left, whether she has just attempted one, and her
 -- attempts so far.
