@@ -207,6 +207,10 @@ spec s = Spec.describe s "Parun.Web.Builder" $ do
     Spec.it s "a new pool is a change to save" $ do
       Spec.assertEq s (Builder.dirty (pooled "2 Shock\n")) True
 
+    Spec.it s "dropping an opened deck's pool is a change to save" $ do
+      let opened = Builder.open Nothing Text.empty (Text.pack "Format: limited\n1 Lightning Bolt\n\nSideboard\n1 Shock\n") indexed
+      Spec.assertEq s (Builder.dirty opened, Builder.dirty (tap Builder.MkDropPool opened)) (False, True)
+
     Spec.it s "a pasted pool replaces a Sideboard an opened list kept" $ do
       let opened = Builder.open Nothing Text.empty (Text.pack "4 Lightning Bolt\nSideboard\n2 Shock\n") indexed
           built = Builder.update Builder.MkUsePool Text.empty (Builder.update Builder.MkPoolText (Text.pack "4 Lightning Bolt\n") opened)
