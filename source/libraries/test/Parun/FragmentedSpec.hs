@@ -87,6 +87,7 @@ import qualified Parun.Types.PermanentWasSacrificed as PermanentWasSacrificed
 import qualified Parun.Types.Phase as Phase
 import qualified Parun.Types.PlayerId as PlayerId
 import qualified Parun.Types.Printing as Printing
+import qualified Parun.Types.PrintingId as PrintingId
 import qualified Parun.Types.Prompt as Prompt
 import qualified Parun.Types.Recipient as Recipient
 import qualified Parun.Types.ReturnEnding as ReturnEnding
@@ -94,6 +95,7 @@ import qualified Parun.Types.ReturnWatch as ReturnWatch
 import qualified Parun.Types.Settle as Settle
 import qualified Parun.Types.Sickness as Sickness
 import qualified Parun.Types.StoredEffects as StoredEffects
+import qualified Parun.Types.Timestamp as Timestamp
 import qualified Parun.Types.TurnRegisters as TurnRegisters
 import qualified Parun.Types.Undoing as Undoing
 import qualified Parun.Types.Zone as Zone
@@ -228,6 +230,27 @@ spec s registry = Spec.describe s "a fragmented loop (CR 733.3)" $ do
     Spec.assertEqWith s "CR 733.3 an exile link on the departed Island is no new state" (exiled gone) True
     Spec.assertEqWith s "CR 733.3 a return watch on the Island is a new state" (watched here) False
     Spec.assertEqWith s "CR 733.3 a return watch on the departed Island is no new state" (watched gone) True
+
+  Spec.it s "a note or exile relation keyed by an object that has left is no new state" $ do
+    tomb <- S.printingOf s registry "Cyclopean Tomb"
+    island <- S.printingOf s registry "Island"
+    -- One state with and without each row keyed by alice's Island, before and
+    -- after it has left (CR 400.7): a mana note (CR 607.2e), a noted card (CR
+    -- 707.14), a chosen name (CR 707.13), a haunt (CR 702.55b), an encoding
+    -- (CR 702.99b) and an exile pile (CR 406.4), each read only through an id
+    -- the state still holds.
+    let (tombId, gs1) = S.addPermanent tomb S.alice (Setup.emptyGame S.bothPlayers)
+        (islandId, here) = S.addPermanent island S.alice gs1
+        gone = S.runPure S.identityAnswer here (Event.changeZone Settle.none islandId Zone.Graveyard)
+        adds what with = do
+          Spec.assertEqWith s ("CR 733.3 " <> what <> " on the Island is a new state") (Fragmented.digest (with here) == Fragmented.digest here) False
+          Spec.assertEqWith s ("CR 733.3 " <> what <> " on the departed Island is no new state") (Fragmented.digest (with gone) == Fragmented.digest gone) True
+    adds "a mana note" (\gs -> gs {GameState.notedMana = Map.singleton islandId (Seq.singleton ManaType.Colorless)})
+    adds "a noted card" (\gs -> gs {GameState.notedCards = Map.singleton islandId (PrintingId.MkPrintingId 0)})
+    adds "a chosen name" (\gs -> gs {GameState.namedCopyChoices = Map.singleton islandId (Set.singleton (CardName.MkCardName (Text.pack "Terror")))})
+    adds "a haunt" (\gs -> gs {GameState.haunting = Map.singleton islandId tombId})
+    adds "an encoding" (\gs -> gs {GameState.encoded = Map.singleton islandId tombId})
+    adds "an exile pile" (\gs -> gs {GameState.exilePiles = Map.singleton islandId (Timestamp.MkTimestamp 0)})
 
   Spec.it s "an activation is refused as paid, not as announced" $ do
     birds <- S.printingOf s registry "Birds of Paradise"
