@@ -100,7 +100,7 @@ granted oid spent gs =
         -- controllerOf falls back to its owner -- and written out because arm is
         -- total over Duration.
         Nothing -> g
-        Just controller -> case Expiry.arm oid Map.empty controller oid duration g of
+        Just controller -> case Expiry.arm Nothing Map.empty controller oid duration g of
           -- A duration that reads a slot does not arm: the payment binds none,
           -- and no printed rider names one.
           Nothing -> g

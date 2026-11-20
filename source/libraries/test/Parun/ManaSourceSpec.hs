@@ -1743,7 +1743,7 @@ interchangeableSourcesSpec s registry = Spec.describe s "Interchangeable mana so
     let (elves, plain) = elfBoard elf 3
         (bear, withBears) = S.addPermanent bears S.bob plain
         board = S.withEffect bear nothingMore withBears
-        lasting criterion = board {GameState.stored = (GameState.stored board) {StoredEffects.continuousEffects = fmap (\row -> row {ContinuousEffect.expiry = Expiry.While (While.MkWhile S.alice (onBattlefield criterion))}) (StoredEffects.continuousEffects (GameState.stored board))}}
+        lasting criterion = board {GameState.stored = (GameState.stored board) {StoredEffects.continuousEffects = fmap (\row -> row {ContinuousEffect.expiry = Expiry.While (While.MkWhile S.alice (onBattlefield criterion) Nothing)}) (StoredEffects.continuousEffects (GameState.stored board))}}
         (offers, paid, after) = greenWindow (lasting (Filter.HeldByPlayer Holder.Controller S.bob))
         (named, _, _) = greenWindow (lasting (Filter.IsObject (NonEmpty.head elves)))
     Spec.assertEqWith s "asked once, and the three Elves are one candidate" (fmap length offers) [1]

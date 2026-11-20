@@ -550,8 +550,9 @@ applyEffectWith runSubgame resolving source controller legal chosen effect = cau
   runReplacementEffects runSubgame
   -- CR 611.2b: a "for as long as" duration this instruction ended, ended
   -- before the next one reads the board, and before the sample below, so the
-  -- control it handed back is observed.
-  Monad.void Expiry.sweepConditional
+  -- control it handed back is observed; one this resolution stored that has
+  -- yet to begin, begun or held off the board likewise.
+  Monad.void (Expiry.sweepConditional (Just resolving))
   -- CR 603.2 / 603.10d: a control change this instruction made, observed before
   -- the next one can make another.
   Monad.void Event.sampleControl

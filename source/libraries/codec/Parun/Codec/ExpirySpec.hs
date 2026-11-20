@@ -70,7 +70,8 @@ spec s = Spec.describe s "Parun.Codec.Expiry" $ do
       ( Expiry.While
           While.MkWhile
             { While.player = PlayerId.MkPlayerId 0,
-              While.condition = Condition.Compares (Compares.MkCompares (Quantity.Literal 0) Comparison.Exactly (Quantity.Literal 0))
+              While.condition = Condition.Compares (Compares.MkCompares (Quantity.Literal 0) Comparison.Exactly (Quantity.Literal 0)),
+              While.unbegun = Nothing
             }
       )
       " {\"type\":\"While\",\"value\":{\"player\":0,\"condition\":{\"type\":\"Compares\",\"value\":{\"measured\":{\"type\":\"Literal\",\"value\":0},\"comparison\":\"Exactly\",\"threshold\":{\"type\":\"Literal\",\"value\":0}}}}} "

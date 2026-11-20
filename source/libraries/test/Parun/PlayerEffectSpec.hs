@@ -2196,7 +2196,7 @@ storedConditional piker =
       conditional =
         addPlayerEffectAt
           srcId
-          (Expiry.Type.While (While.MkWhile S.alice S.youControlSource))
+          (Expiry.Type.While (While.MkWhile S.alice S.youControlSource Nothing))
           (AffectedPlayers.Scoped (PlayerScope.Related PlayerRelation.Opponent))
           PlayerEffect.Type.CantCastSpells
           S.alice
@@ -2261,7 +2261,7 @@ storedSpec s registry =
     Spec.it s "CR 611.2b the conditional sweep keeps a player effect whose condition still holds" $ do
       piker <- S.printingOf s registry "Goblin Piker"
       let (_, conditional) = storedConditional piker
-          (changed, swept) = Engine.runGamePure S.identityAnswer conditional Expiry.sweepConditional
+          (changed, swept) = Engine.runGamePure S.identityAnswer conditional (Expiry.sweepConditional Nothing)
       Spec.assertBool s (PlayerEffect.prohibitsCasting S.bob anySpellId VariableChoice.Announced conditional) "still prohibited while the source stands"
       Spec.assertBool s (not changed) "the sweep reports no change"
       Spec.assertEqWith s "still stored" (length (StoredEffects.playerEffects (GameState.stored swept))) 1
@@ -2271,7 +2271,7 @@ storedSpec s registry =
       piker <- S.printingOf s registry "Goblin Piker"
       let (srcId, conditional) = storedConditional piker
           gone = S.runPure S.identityAnswer conditional (Event.destroy Settle.none Regenerability.Regenerable [srcId])
-          (changed, swept) = Engine.runGamePure S.identityAnswer gone Expiry.sweepConditional
+          (changed, swept) = Engine.runGamePure S.identityAnswer gone (Expiry.sweepConditional Nothing)
       Spec.assertBool s changed "the sweep reports a change"
       Spec.assertEqWith s "deleted, not masked" (StoredEffects.playerEffects (GameState.stored swept)) []
       Spec.assertBool s (not (PlayerEffect.prohibitsCasting S.bob anySpellId VariableChoice.Announced swept)) "no longer prohibited"

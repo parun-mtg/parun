@@ -163,6 +163,7 @@ codec resolve = Fields.object $ do
   heldBoards <- Fields.defaulted "heldBoards" [] (Common.list (codec resolve)) (Snapshots.heldBoards . GameState.snapshots)
   boardAsCast <- Fields.defaulted "boardAsCast" Map.empty (Common.naturalMap ObjectId.codec (codec resolve)) (Snapshots.boardAsCast . GameState.snapshots)
   replacedDestruction <- Fields.defaulted "replacedDestruction" Nothing (Common.maybe (ReplacedDestruction.codec (codec resolve))) (Snapshots.replacedDestruction . GameState.snapshots)
+  unbegunRows <- Fields.defaulted "unbegunRows" Nothing (Common.maybe (codec resolve)) (Snapshots.unbegunRows . GameState.snapshots)
   delayedTriggers <- Fields.defaulted "delayedTriggers" Seq.empty (Common.seq DelayedTrigger.codec) (StoredEffects.delayedTriggers . GameState.stored)
   continuousEffects <- Fields.defaulted "continuousEffects" [] (Common.list (ContinuousEffect.codec Card.codec)) (StoredEffects.continuousEffects . GameState.stored)
   copyEffects <- Fields.defaulted "copyEffects" [] (Common.list ActiveCopy.codec) (StoredEffects.copyEffects . GameState.stored)
@@ -335,7 +336,8 @@ codec resolve = Fields.object $ do
               Snapshots.boardAtControlSample = boardAtControlSample,
               Snapshots.heldBoards = heldBoards,
               Snapshots.boardAsCast = boardAsCast,
-              Snapshots.replacedDestruction = replacedDestruction
+              Snapshots.replacedDestruction = replacedDestruction,
+              Snapshots.unbegunRows = unbegunRows
             },
         GameState.stored =
           StoredEffects.MkStoredEffects

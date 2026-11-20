@@ -86,6 +86,12 @@ data Snapshots state = MkSnapshots
     -- | CR 614.6 / 608.2f: the destruction whose replacement's queued effects
     -- are running (Parun.Engine.Event.asPartOf), its board's own copy of this
     -- field empty. Nothing outside that drain.
-    replacedDestruction :: !(Maybe (ReplacedDestruction.ReplacedDestruction state))
+    replacedDestruction :: !(Maybe (ReplacedDestruction.ReplacedDestruction state)),
+    -- | CR 611.2b: the rows a resolution stored whose "for as long as"
+    -- duration has yet to begin, held off the board on a copy of it holding
+    -- no other row until a later instruction of that resolution begins them
+    -- (Parun.Engine.Expiry.sweepConditional). Its own copy of this field and
+    -- of the filed boards is empty. Nothing while none waits.
+    unbegunRows :: !(Maybe state)
   }
   deriving (Eq, Ord, Show)

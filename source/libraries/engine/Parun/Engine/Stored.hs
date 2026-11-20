@@ -45,6 +45,34 @@ traverseRows edit stored = case stored of
       <*> queue (edit StoredKind.PendingSkipEffect) skip
       <*> queue (edit StoredKind.PendingEntryEffect) entry
 
+-- | Both stores' rows, kind by kind, the second's after the first's: where
+-- Parun.Engine.Expiry.sweepConditional hands a CR 611.2b row back to the board.
+--
+-- Matched POSITIONALLY, traverseRows' reason.
+append :: StoredEffects -> StoredEffects -> StoredEffects
+append first second = case (first, second) of
+  ( StoredEffects.MkStoredEffects continuous copy replacement player block attack objectProhibition attackProhibition evasion ignored later copyCast delayed prevention replacing skip entry,
+    StoredEffects.MkStoredEffects continuous' copy' replacement' player' block' attack' objectProhibition' attackProhibition' evasion' ignored' later' copyCast' delayed' prevention' replacing' skip' entry'
+    ) ->
+      StoredEffects.MkStoredEffects
+        (continuous <> continuous')
+        (copy <> copy')
+        (replacement <> replacement')
+        (player <> player')
+        (block <> block')
+        (attack <> attack')
+        (objectProhibition <> objectProhibition')
+        (attackProhibition <> attackProhibition')
+        (evasion <> evasion')
+        (ignored <> ignored')
+        (later <> later')
+        (copyCast <> copyCast')
+        (delayed <> delayed')
+        (prevention <> prevention')
+        (replacing <> replacing')
+        (skip <> skip')
+        (entry <> entry')
+
 -- | traverseRows read rather than rebuilt: every row's answer, in that order.
 foldRows :: (Monoid m) => (forall r. StoredKind r -> r -> m) -> StoredEffects -> m
 foldRows answer = Const.getConst . traverseRows (\kind -> Const.Const . answer kind)

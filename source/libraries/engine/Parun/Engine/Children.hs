@@ -3400,7 +3400,7 @@ expiryChildren c expiry = case expiry of
   Expiry.AtCleanup -> pure expiry
   Expiry.Never -> pure expiry
   Expiry.Perpetual -> pure expiry
-  Expiry.While (While.MkWhile you condition) -> fmap Expiry.While (While.MkWhile you <$> storedCondition c condition)
+  Expiry.While (While.MkWhile you condition unbegun) -> fmap Expiry.While (While.MkWhile you <$> storedCondition c condition <*> traverse (storedObject c) unbegun)
   Expiry.AtTurnOf _whose -> pure expiry
   Expiry.AtStepOf _stepOfSeats -> pure expiry
   Expiry.AtStepOfControllerOf (StepOfControllerOf.MkStepOfControllerOf phase whose) -> fmap Expiry.AtStepOfControllerOf (StepOfControllerOf.MkStepOfControllerOf phase <$> storedObject c whose)
