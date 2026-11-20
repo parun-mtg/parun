@@ -230,6 +230,7 @@ import qualified Parun.Types.Designate as Designate
 import qualified Parun.Types.Designation as Designation
 import qualified Parun.Types.Destroy as Destroy
 import qualified Parun.Types.DestructionR as DestructionR
+import qualified Parun.Types.DestructionRewrite as DestructionRewrite
 import qualified Parun.Types.Devour as Devour
 import qualified Parun.Types.DiceReading as DiceReading
 import qualified Parun.Types.Discard as Discard
@@ -1814,6 +1815,7 @@ replacementRewriteEffects replacement = case replacement of
   -- CR 603.11's linked trigger runs these each time the redirect applies.
   -- and CR 614.6's riders as part of the modified event.
   ReplacementEffect.ZoneChangeR r -> Foldable.toList (ZoneChangeR.whenYouDo r) <> Foldable.toList (ZoneChangeR.riders r)
+  ReplacementEffect.DestructionR (DestructionR.MkDestructionR _ (DestructionRewrite.RunEffects effects)) -> Foldable.toList effects
   ReplacementEffect.DestructionR _ -> []
   ReplacementEffect.TokenR {} -> []
   -- The same linked trigger, on the copy a turning face up makes.
@@ -2256,6 +2258,7 @@ reservedSlots =
       Binding.became,
       Binding.handArrival,
       Binding.departedPermanent,
+      Binding.sparedPermanent,
       Binding.earthbentLand,
       Binding.airbentObjects,
       Binding.discoveredCards,

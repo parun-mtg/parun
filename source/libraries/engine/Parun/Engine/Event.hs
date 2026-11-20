@@ -4988,7 +4988,8 @@ apply settle batch applied batchPrevented candidate event =
     -- in Peace's redirect) ever runs. What each does INSTEAD is all that separates
     -- them: regeneration removes marked damage, taps the permanent and removes it
     -- from combat; a shield counter's removal does none of those; umbra armor
-    -- removes the damage and destroys the Aura; and a heal removes the damage.
+    -- removes the damage and destroys the Aura; a heal removes the damage; and
+    -- an instead-effect runs what the card prints.
     (ReplacementEffect.DestructionR (DestructionR.MkDestructionR _ rewrite), ProposedEvent.WouldBeDestroyed oid _ _) -> case rewrite of
       DestructionRewrite.Regenerate -> do
         Replacement.consume (ReplacementCandidate.identity candidate)
@@ -5058,6 +5059,34 @@ apply settle batch applied batchPrevented candidate event =
           held <- State.gets (maybe 0 (Map.findWithDefault 0 k . Object.counters) . Game.lookupObject oid)
           removeCounters oid k held
         State.modify' (\gs -> gs {GameState.objects = Map.adjust (\obj -> obj {Object.damage = 0}) oid (GameState.objects gs)})
+        pure Nothing
+      -- CR 614.1a / 614.6: Crackling Emergence's "instead sacrifice this Aura
+      -- and that land gains indestructible until end of turn". QUEUED for
+      -- DamageRewrite.RunEffects' reason, with `oid` bound under
+      -- Binding.sparedPermanent ("that land") and the row's source under
+      -- Binding.triggerSource ("this Aura", CR 113.7). No controller, nobody to
+      -- perform them; the destruction is replaced all the same.
+      DestructionRewrite.RunEffects effects -> do
+        Replacement.consume (ReplacementCandidate.identity candidate)
+        Foldable.for_ (ReplacementCandidate.controller candidate) $ \controller ->
+          State.modify' $ \g ->
+            g
+              { GameState.stored =
+                  (GameState.stored g)
+                    { StoredEffects.pendingReplacementEffects =
+                        StoredEffects.pendingReplacementEffects (GameState.stored g)
+                          Seq.|> PendingReplacementEffect.MkPendingReplacementEffect
+                            { PendingReplacementEffect.effects = effects,
+                              PendingReplacementEffect.targets =
+                                Map.insert Binding.sparedPermanent (Set.singleton (Recipient.ToObject oid))
+                                  . Map.insert Binding.triggerSource (Set.singleton (Recipient.ToObject (ReplacementCandidate.source candidate)))
+                                  $ ReplacementCandidate.slots candidate,
+                              PendingReplacementEffect.controller = controller,
+                              PendingReplacementEffect.source = ReplacementCandidate.source candidate,
+                              PendingReplacementEffect.bindsArrival = False
+                            }
+                    }
+              }
         pure Nothing
     -- Unreachable: `applies` admits DestructionR only against WouldBeDestroyed.
     (ReplacementEffect.DestructionR _, _) -> pure (Just event)

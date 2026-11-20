@@ -1084,6 +1084,14 @@ manaSource = SlotName.MkSlotName (Text.pack "thatManaSource")
 departedPermanent :: SlotName
 departedPermanent = SlotName.MkSlotName (Text.pack "thatDepartedPermanent")
 
+-- CR 614.1a / 614.6: the reserved slot under which the permanent whose
+-- destruction a DestructionRewrite.RunEffects replaced is bound -- Crackling
+-- Emergence's "that land". Not a target (nothing was chosen), so the same CR
+-- 608.2b posture and the same "no card's targetSlots may name it" sweep as
+-- `departedPermanent`.
+sparedPermanent :: SlotName
+sparedPermanent = SlotName.MkSlotName (Text.pack "thatSparedPermanent")
+
 -- CR 701.66a: the reserved slot under which the land an earthbend animated is
 -- bound -- "that land", the subject of the delayed ability rule 701.66a creates.
 -- Stamped by Parun.Engine.Resolve.Arms.Counters's Earthbend arm onto the resolving
