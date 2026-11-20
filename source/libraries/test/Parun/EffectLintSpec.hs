@@ -221,6 +221,7 @@ import qualified Parun.Types.PreventNextDamage as PreventNextDamage
 import qualified Parun.Types.PrintedReplacement as PrintedReplacement
 import qualified Parun.Types.Printing as Printing
 import qualified Parun.Types.Prohibit as Prohibit
+import qualified Parun.Types.PutCounterOfEachKind as PutCounterOfEachKind
 import qualified Parun.Types.PutCounters as PutCounters
 import qualified Parun.Types.PutCountersFrom as PutCountersFrom
 import qualified Parun.Types.PutSticker as PutSticker
@@ -1670,6 +1671,9 @@ effectObjectRefs effect =
         -- answer (Prompt.ChooseDistribution), not of the ref.
         Effect.Divide divide -> read_ [Divide.among divide]
         Effect.PutCountersFrom (PutCountersFrom.MkPutCountersFrom _ _ ref) -> read_ [ref]
+        -- The kinds are a READ; the recipient goes through askingObjects once
+        -- per kind, Exotic Pets' "either of those tokens".
+        Effect.PutCounterOfEachKind (PutCounterOfEachKind.MkPutCounterOfEachKind among ref) -> read_ [among] <> [([ChosenAmong], ref)]
         -- BOTH sides, each a READ -- CR 122.5 takes no choice of WHICH objects the
         -- counters leave or land on, so this arm goes through the pure objectRefObjects
         -- and a chooser-shaped ref written on either side would name nothing. WHICH

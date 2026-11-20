@@ -431,6 +431,7 @@ import qualified Parun.Types.Prohibit as Prohibit
 import qualified Parun.Types.Prohibition as Prohibition
 import qualified Parun.Types.ProjectedCharacteristics as PC
 import qualified Parun.Types.Protection as Protection
+import qualified Parun.Types.PutCounterOfEachKind as PutCounterOfEachKind
 import qualified Parun.Types.PutCounters as PutCounters
 import qualified Parun.Types.PutCountersFrom as PutCountersFrom
 import qualified Parun.Types.PutIntoZoneTrigger as PutIntoZoneTrigger
@@ -850,6 +851,7 @@ objectRefPositions =
         ("divide", Effect.Divide (Divide.MkDivide (Quantity.Type.Literal 3) (plantedRef "dv") (PlayerRef.Relative PlayerRelation.You) (SlotName.MkSlotName (Text.pack "split"))), [plantedRef "dv"]),
         ("move-counters", Effect.MoveCounters (MoveCounters.MkMoveCounters (plantedRef "mc-from") MovedKinds.Every Nothing (plantedRef "mc-to")), [plantedRef "mc-from", plantedRef "mc-to"]),
         ("put-counters-from", Effect.PutCountersFrom (PutCountersFrom.MkPutCountersFrom (SlotName.MkSlotName (Text.pack "giver")) Nothing (plantedRef "pf")), [plantedRef "pf"]),
+        ("put-counter-of-each-kind", Effect.PutCounterOfEachKind (PutCounterOfEachKind.MkPutCounterOfEachKind (plantedRef "pk-among") (plantedRef "pk-ref")), [plantedRef "pk-among", plantedRef "pk-ref"]),
         ("tap", Effect.Tap (Tap.plain (plantedRef "ta")), [plantedRef "ta"]),
         ("untap", Effect.Untap (plantedRef "un"), [plantedRef "un"]),
         ("set-half-locked", Effect.SetHalfLocked (SetHalfLocked.MkSetHalfLocked False False (plantedRef "hl")), [plantedRef "hl"]),
@@ -5605,6 +5607,8 @@ effectFilters effect = case effect of
   -- sentence lets a card name, which may be a whole Keyword with a Filter under
   -- it; see #2728.
   Effect.PutCountersFrom (PutCountersFrom.MkPutCountersFrom _ kind ref) -> frame Unframed (foldMap counterKindFilters kind) <> frame SourceHostFramed (objectRefFilters ref)
+  -- Both sides ObjectRefs, MoveCounters' framing; no kind or count is written.
+  Effect.PutCounterOfEachKind (PutCounterOfEachKind.MkPutCounterOfEachKind among ref) -> frame SourceHostFramed (objectRefFilters among <> objectRefFilters ref)
   -- FOUR positions, PutCounters' framing: BOTH sides are ObjectRefs and carry a
   -- Filter apiece -- Spike Cannibal's "all creatures" on the first, Forgotten
   -- Ancient's "other creatures" on the second. The moved kinds hold the other

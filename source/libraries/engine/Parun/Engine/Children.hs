@@ -411,6 +411,7 @@ import qualified Parun.Types.PreventionRider as PreventionRider
 import qualified Parun.Types.PrintedReplacement as PrintedReplacement
 import qualified Parun.Types.Prohibit as Prohibit
 import qualified Parun.Types.Protection as Protection
+import qualified Parun.Types.PutCounterOfEachKind as PutCounterOfEachKind
 import qualified Parun.Types.PutCounters as PutCounters
 import qualified Parun.Types.PutCountersFrom as PutCountersFrom
 import qualified Parun.Types.PutIntoZoneTrigger as PutIntoZoneTrigger
@@ -1234,6 +1235,8 @@ effectChildren c effect = case effect of
     fmap Effect.MoveCounters (MoveCounters.MkMoveCounters <$> onObjectRef c from <*> onMovedKinds c kinds <*> traverse (onSlot c) named <*> onObjectRef c to)
   Effect.PutCountersFrom (PutCountersFrom.MkPutCountersFrom from kind ref) ->
     fmap Effect.PutCountersFrom (PutCountersFrom.MkPutCountersFrom <$> onSlot c from <*> traverse (onCounterKind c) kind <*> onObjectRef c ref)
+  Effect.PutCounterOfEachKind (PutCounterOfEachKind.MkPutCounterOfEachKind among ref) ->
+    fmap Effect.PutCounterOfEachKind (PutCounterOfEachKind.MkPutCounterOfEachKind <$> onObjectRef c among <*> onObjectRef c ref)
   Effect.GainPlayerCounters (PlayerCounters.MkPlayerCounters who kind quantity) ->
     fmap Effect.GainPlayerCounters (PlayerCounters.MkPlayerCounters <$> onPlayer c who <*> pure kind <*> onQuantity c quantity)
   Effect.RemovePlayerCounters (RemovePlayerCounters.MkRemovePlayerCounters who kind quantity tally) ->

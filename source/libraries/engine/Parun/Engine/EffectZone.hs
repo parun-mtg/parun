@@ -268,6 +268,7 @@ zonesFunctionedAgainst itself delayed effect = case effect of
   Effect.PutCounters {} -> Set.empty
   Effect.Divide {} -> Set.empty
   Effect.PutCountersFrom {} -> Set.empty
+  Effect.PutCounterOfEachKind {} -> Set.empty
   Effect.RemoveCounters {} -> Set.empty
   Effect.RemoveCountersAmong {} -> Set.empty
   Effect.MoveCounters {} -> Set.empty

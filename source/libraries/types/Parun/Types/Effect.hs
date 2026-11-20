@@ -97,6 +97,7 @@ import qualified Parun.Types.PlayerSacrifices as PlayerSacrifices
 import qualified Parun.Types.PreventAllDamage as PreventAllDamage
 import qualified Parun.Types.PreventNextDamage as PreventNextDamage
 import qualified Parun.Types.Prohibit as Prohibit
+import qualified Parun.Types.PutCounterOfEachKind as PutCounterOfEachKind
 import qualified Parun.Types.PutCounters as PutCounters
 import qualified Parun.Types.PutCountersFrom as PutCountersFrom
 import qualified Parun.Types.PutSticker as PutSticker
@@ -458,6 +459,10 @@ data Effect card ability
     -- ObjectRef names (Iron Apprentice). A put and not a move, CR 122.2 having
     -- already made the first object's counters cease.
     PutCountersFrom PutCountersFrom.PutCountersFrom
+  | -- | CR 122.6: put one counter of each kind among the permanents one
+    -- ObjectRef names on what another names, that one read per kind (Exotic
+    -- Pets).
+    PutCounterOfEachKind PutCounterOfEachKind.PutCounterOfEachKind
   | -- | CR 122 / 107.14: the players the PlayerRef names each get N counters of
     -- a player-counter kind (energy, experience, poison, rad).
     GainPlayerCounters PlayerCounters.PlayerCounters

@@ -937,6 +937,7 @@ effectPlayerRefs effect = case effect of
   Effect.RemoveCountersAmong {} -> []
   Effect.MoveCounters {} -> []
   Effect.PutCountersFrom {} -> []
+  Effect.PutCounterOfEachKind {} -> []
   Effect.GainPlayerCounters (PlayerCounters.MkPlayerCounters ref _ _) -> [ref]
   Effect.RemovePlayerCounters removal -> [RemovePlayerCounters.player removal]
   Effect.PayAnyEnergy {} -> []
@@ -1439,6 +1440,7 @@ slotsOf effect = joinTwo (joinTwo (joinSlots (fmap objectRefSlots (effectObjectR
   -- CR 122.8 reads its tally off ONE object, so `from` is read singly, where the
   -- destination is an ObjectRef and may sweep.
   Effect.PutCountersFrom (PutCountersFrom.MkPutCountersFrom from _ _) -> oneSlot from
+  Effect.PutCounterOfEachKind {} -> Map.empty
   Effect.RemoveCounters (RemoveCounters.MkRemoveCounters _ quantity slot _) -> insertOne slot (quantitySlots quantity)
   Effect.RemoveCountersAmong (RemoveCountersAmong.MkRemoveCountersAmong count _ _ _) -> foldMap quantitySlots (RemovalCount.quantityOf count)
   -- CR 122.5's pair: BOTH sides are ObjectRefs, joined at slotsOf's head with
@@ -2348,6 +2350,7 @@ ownSlotsAreExhaustive effect = case effect of
   Effect.Divide divide -> Quantity.slotsAreExhaustive (Divide.quantity divide)
   -- No Quantity at all: CR 122.8 names neither a kind nor a count.
   Effect.PutCountersFrom {} -> True
+  Effect.PutCounterOfEachKind {} -> True
   Effect.RemoveCounters (RemoveCounters.MkRemoveCounters _ quantity _ _) -> Quantity.slotsAreExhaustive quantity
   Effect.RemoveCountersAmong (RemoveCountersAmong.MkRemoveCountersAmong count _ _ _) -> all Quantity.slotsAreExhaustive (RemovalCount.quantityOf count)
   -- The count the moved kinds may write. CR 122.5's GIVER carries the other one,
@@ -2652,6 +2655,7 @@ hasRead wanted =
         Effect.PutCounters (PutCounters.MkPutCounters _ quantity _ _ _) -> Quantity.hasRead wanted quantity
         Effect.Divide divide -> Quantity.hasRead wanted (Divide.quantity divide)
         Effect.PutCountersFrom {} -> False
+        Effect.PutCounterOfEachKind {} -> False
         Effect.RemoveCounters (RemoveCounters.MkRemoveCounters _ quantity _ _) -> Quantity.hasRead wanted quantity
         Effect.RemoveCountersAmong (RemoveCountersAmong.MkRemoveCountersAmong count _ _ _) -> any (Quantity.hasRead wanted) (RemovalCount.quantityOf count)
         Effect.MoveCounters (MoveCounters.MkMoveCounters _ kinds _ _) -> any (Quantity.hasRead wanted) (MovedKinds.quantityOf kinds)
@@ -2974,6 +2978,7 @@ boundSlots effect = case effect of
   Effect.PutCounters putCounters -> foldMap Set.singleton (PutCounters.slot putCounters)
   Effect.Divide divide -> Set.singleton (Divide.slot divide)
   Effect.PutCountersFrom {} -> Set.empty
+  Effect.PutCounterOfEachKind {} -> Set.empty
   -- CR 122.1: how many counters the removal actually took off, where the card
   -- reads it back -- Destroy's count slot one opcode over.
   Effect.RemoveCounters removeCounters -> foldMap Set.singleton (RemoveCounters.tally removeCounters)

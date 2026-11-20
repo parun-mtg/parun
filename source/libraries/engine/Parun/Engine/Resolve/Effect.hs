@@ -702,6 +702,7 @@ applyOneEffect runSubgame resolving source controller legal chosen effect = case
   Effect.PutCounters payload -> Counters.putCounters resolving source controller legal chosen payload
   Effect.Divide payload -> Counters.divide resolving source controller legal payload
   Effect.PutCountersFrom payload -> Counters.putCountersFrom resolving source controller legal payload
+  Effect.PutCounterOfEachKind payload -> Counters.putCounterOfEachKind resolving source controller legal chosen payload
   Effect.ChooseCardName payload -> Counters.chooseCardName resolving source controller legal payload
   Effect.ChooseQuality payload -> Counters.chooseQuality resolving source controller payload
   Effect.FromOutsideTheGame payload -> Counters.fromOutsideTheGame source controller payload

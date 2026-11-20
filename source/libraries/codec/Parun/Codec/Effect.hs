@@ -109,6 +109,7 @@ import qualified Parun.Codec.PlayerSacrifices as PlayerSacrifices
 import qualified Parun.Codec.PreventAllDamage as PreventAllDamage
 import qualified Parun.Codec.PreventNextDamage as PreventNextDamage
 import qualified Parun.Codec.Prohibit as Prohibit
+import qualified Parun.Codec.PutCounterOfEachKind as PutCounterOfEachKind
 import qualified Parun.Codec.PutCounters as PutCounters
 import qualified Parun.Codec.PutCountersFrom as PutCountersFrom
 import qualified Parun.Codec.PutSticker as PutSticker
@@ -269,6 +270,7 @@ codec cardCodec abilityCodec =
           Arm.payload "Divide" Divide.codec Effect.Divide (\x -> case x of Effect.Divide y -> Just y; _ -> Nothing),
           Arm.payload "MoveCounters" MoveCounters.codec Effect.MoveCounters (\x -> case x of Effect.MoveCounters y -> Just y; _ -> Nothing),
           Arm.payload "PutCountersFrom" PutCountersFrom.codec Effect.PutCountersFrom (\x -> case x of Effect.PutCountersFrom y -> Just y; _ -> Nothing),
+          Arm.payload "PutCounterOfEachKind" PutCounterOfEachKind.codec Effect.PutCounterOfEachKind (\x -> case x of Effect.PutCounterOfEachKind y -> Just y; _ -> Nothing),
           Arm.payload "RemoveCounters" RemoveCounters.codec Effect.RemoveCounters (\x -> case x of Effect.RemoveCounters y -> Just y; _ -> Nothing),
           Arm.payload "RemoveCountersAmong" RemoveCountersAmong.codec Effect.RemoveCountersAmong (\x -> case x of Effect.RemoveCountersAmong y -> Just y; _ -> Nothing),
           Arm.payload "GainPlayerCounters" PlayerCounters.codec Effect.GainPlayerCounters (\x -> case x of Effect.GainPlayerCounters y -> Just y; _ -> Nothing),
@@ -466,6 +468,7 @@ tagOf x = case x of
   Effect.Divide {} -> "Divide"
   Effect.MoveCounters {} -> "MoveCounters"
   Effect.PutCountersFrom {} -> "PutCountersFrom"
+  Effect.PutCounterOfEachKind {} -> "PutCounterOfEachKind"
   Effect.RemoveCounters {} -> "RemoveCounters"
   Effect.RemoveCountersAmong {} -> "RemoveCountersAmong"
   Effect.GainPlayerCounters {} -> "GainPlayerCounters"

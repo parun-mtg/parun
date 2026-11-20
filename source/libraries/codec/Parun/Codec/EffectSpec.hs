@@ -201,6 +201,7 @@ import qualified Parun.Types.PreventAllDamage as PreventAllDamage
 import qualified Parun.Types.PreventNextDamage as PreventNextDamage
 import qualified Parun.Types.Prohibit as Prohibit
 import qualified Parun.Types.Prohibition as Prohibition
+import qualified Parun.Types.PutCounterOfEachKind as PutCounterOfEachKind
 import qualified Parun.Types.PutCounters as PutCounters
 import qualified Parun.Types.PutCountersFrom as PutCountersFrom
 import qualified Parun.Types.PutSticker as PutSticker
@@ -1574,6 +1575,13 @@ spec s = Spec.describe s "Parun.Codec.Effect" $ do
       fromJson
       (Effect.PutCountersFrom (PutCountersFrom.MkPutCountersFrom (SlotName.MkSlotName (Text.pack "self")) Nothing (ObjectRef.InSlot (SlotName.MkSlotName (Text.pack "creature")))))
       " {\"type\":\"PutCountersFrom\",\"value\":{\"from\":\"self\",\"ref\":{\"type\":\"InSlot\",\"value\":\"creature\"}}} "
+  Spec.it s "PutCounterOfEachKind" $
+    Common.assertJsonCodec
+      s
+      toJson
+      fromJson
+      (Effect.PutCounterOfEachKind (PutCounterOfEachKind.MkPutCounterOfEachKind (ObjectRef.EachMatching (Filter.And [])) (ObjectRef.InSlot (SlotName.MkSlotName (Text.pack "fish")))))
+      " {\"type\":\"PutCounterOfEachKind\",\"value\":{\"among\":{\"type\":\"EachMatching\",\"value\":{\"type\":\"And\",\"value\":[]}},\"ref\":{\"type\":\"InSlot\",\"value\":\"fish\"}}} "
   -- CR 122: PutCounters' mirror, and a distinct tag -- a signed amount under one
   -- tag would make the two indistinguishable in a card file.
   Spec.it s "RemoveCounters" $
