@@ -49,6 +49,7 @@ import qualified Parun.Web.Board as Board
 import qualified Parun.Web.Card as Card
 import qualified Parun.Web.Element as Element
 import qualified Parun.Web.Html as Html
+import qualified Parun.Web.Icon as Icon
 import qualified Parun.Web.Log as Log
 import qualified Parun.Web.Mana as Mana
 
@@ -279,7 +280,7 @@ watching facing request screen = do
           | PlayerView.active b /= PlayerView.viewer b -> Text.unpack (Render.player (PlayerView.active b)) <> " is taking their turn\x2026"
         _ -> "Moving on\x2026"
   pure . table request screen (barControls (level screen) False Nothing) (Board.MkMarks (\o -> Card.MkCue [] (MkRead (ObjectView.object o)) Nothing) (const Nothing)) $
-    news (Request.view request) (viewerOf request) screen <> [Element.el "p" ["waiting"] [] [Element.el "span" ["spinner", "small"] [Element.attr "aria-hidden" (Text.pack "true")] [], Element.string status]]
+    news (Request.view request) (viewerOf request) screen <> [Element.el "p" ["waiting"] [] [Icon.loading ["small"], Element.string status]]
 
 -- | A subgame's mark on the turn bar (CR 730.1a), and how deep it is.
 subgameChip :: Natural -> [Html.Html msg]
@@ -325,14 +326,7 @@ settingsButton concede =
         <> foldMap (\event -> [Element.attr "data-concede" Text.empty, Element.on "concede" event]) concede
     )
     -- The gear index.html's own settings button draws off the game screen.
-    [ Element.el
-        "svg"
-        []
-        [Element.attr "viewBox" (Text.pack "0 0 24 24"), Element.attr "aria-hidden" (Text.pack "true"), Element.attr "focusable" (Text.pack "false")]
-        [Element.el "path" [] [Element.attr "d" (Text.pack gear), Element.attr "fill" (Text.pack "currentColor"), Element.attr "fill-rule" (Text.pack "evenodd")] []]
-    ]
-  where
-    gear = "M9.58 4.17L10.14 1.16L13.86 1.16L14.42 4.17L15.83 4.75L18.35 3.02L20.98 5.65L19.25 8.17L19.83 9.58L22.84 10.14L22.84 13.86L19.83 14.42L19.25 15.83L20.98 18.35L18.35 20.98L15.83 19.25L14.42 19.83L13.86 22.84L10.14 22.84L9.58 19.83L8.17 19.25L5.65 20.98L3.02 18.35L4.75 15.83L4.17 14.42L1.16 13.86L1.16 10.14L4.17 9.58L4.75 8.17L3.02 5.65L5.65 3.02L8.17 4.75ZM12 8.4A3.6 3.6 0 1 0 12 15.6A3.6 3.6 0 1 0 12 8.4Z"
+    [Icon.icon [] Icon.MkGear]
 
 -- | The links a log entry's names make: to the sheet of each object the
 -- view shows.

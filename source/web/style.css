@@ -357,22 +357,37 @@ main.message {
   font-size: 0.9rem;
 }
 
-.spinner {
-  width: 40px;
-  height: 40px;
-  border-radius: 50%;
-  border: 4px solid var(--accent-soft);
-  border-top-color: var(--accent);
-  animation: spin 0.9s linear infinite;
-}
-
-.spinner.small {
-  display: inline-block;
+/* Parun's mark with its ring dashed and turning (Parun.Web.Icon's loading,
+   and the splash in index.html): something is loading. */
+.icon {
   width: 1em;
   height: 1em;
-  border-width: 2px;
-  vertical-align: -0.15em;
-  margin-right: 0.5em;
+  flex: none;
+}
+
+.icon.loading .ring {
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2.6;
+  stroke-dasharray: 3.1 3.1;
+}
+
+.loading .ring {
+  transform-origin: center;
+  transform-box: fill-box;
+  animation: spin 2.4s linear infinite;
+}
+
+.splash .logo.loading .ring {
+  stroke-dasharray: 44 22;
+}
+
+.icon.loading.small {
+  width: 1.3em;
+  height: 1.3em;
+  vertical-align: -0.3em;
+  margin-right: 0.45em;
+  color: var(--accent);
 }
 
 .waiting {
@@ -392,34 +407,15 @@ main.message {
   font-size: 0.85rem;
 }
 
-/* The engine is thinking: a thin bar along the top, shown only if it takes
-   a moment, and the page held still so a second tap cannot land. */
+/* The engine is thinking: the page held still so a second tap cannot land. */
 body.busy #app {
   pointer-events: none;
 }
 
-body.busy::before {
-  content: "";
-  position: fixed;
-  z-index: 100;
-  top: 0;
-  left: 0;
-  height: 3px;
-  width: 40%;
-  background: var(--accent);
-  opacity: 0;
-  animation:
-    appear 0s 0.15s forwards,
-    slide 1s 0.15s ease-in-out infinite;
-}
-
-@keyframes appear {
-  to { opacity: 1; }
-}
-
-@keyframes slide {
-  from { transform: translateX(-100%); }
-  to { transform: translateX(250%); }
+/* The settings gear turns while the engine works, once it takes a moment. */
+body.busy .settings-button > svg,
+body.busy #settings-button > svg {
+  animation: spin 1.2s 0.15s linear infinite;
 }
 
 /* ---------- Lobby ---------- */
@@ -744,21 +740,41 @@ main.game {
 }
 
 .phases li {
-  font-size: 0.68rem;
-  padding: 0.2em 0.45em;
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 30px;
+  height: 24px;
   border-radius: 999px;
   background: var(--surface-2);
   color: var(--muted);
+  transition: background-color 0.25s, color 0.25s;
+}
+
+.phases li .icon {
+  width: 16px;
+  height: 16px;
+}
+
+/* The second main phase's card, marked so the two read apart. */
+.phases li.second::after {
+  content: "2";
+  position: absolute;
+  right: 4px;
+  bottom: 1px;
+  font-size: 0.55rem;
+  font-weight: 800;
 }
 
 .phases li.past {
   background: transparent;
+  opacity: 0.6;
 }
 
 .phases li.now {
   background: var(--accent);
   color: var(--accent-text);
-  font-weight: 700;
 }
 
 /* An extra phase or step (CR 500.8, 500.9): the lit phase ringed, and a chip
@@ -907,8 +923,10 @@ main.game {
   .phases li:not(.now) {
     width: 8px;
     height: 8px;
-    padding: 0;
-    font-size: 0;
+  }
+  .phases li:not(.now) > *,
+  .phases li:not(.now)::after {
+    display: none;
   }
   .phases {
     align-items: center;

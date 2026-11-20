@@ -32,6 +32,7 @@ import qualified Parun.Types.SeatView as SeatView
 import qualified Parun.Web.Card as Card
 import qualified Parun.Web.Element as Element
 import qualified Parun.Web.Html as Html
+import qualified Parun.Web.Icon as Icon
 import qualified Parun.Web.Mana as Web.Mana
 
 -- | How each tile and each seat looks and what tapping it sends.
@@ -69,9 +70,19 @@ turnBar controls board =
                   <> [Element.el "span" ["extra"] [Element.attr "title" extraTip] [Element.string "Extra"] | extra]
                   <> foldMap (pure . daytime) (PlayerView.daytime board)
               ),
-            Element.el "ol" ["phases"] [Element.attr "aria-hidden" (Text.pack "true")] [Element.el "li" (shown i) [Element.attr "title" extraTip | i == current, extra] [Element.string label] | (i, label) <- zip [0 :: Integer ..] ["Begin", "Main", "Combat", "Main 2", "End"]]
+            Element.el "ol" ["phases"] [Element.attr "aria-hidden" (Text.pack "true")] [Element.el "li" (shown i <> cls) [Element.attr "title" (if i == current && extra then extraTip else Text.pack tip)] [Icon.icon [] glyph] | (i, (glyph, cls, tip)) <- zip [0 :: Integer ..] phaseIcons]
           ]
           <> controls
+
+-- | Each phase's icon on the strip, its classes and its name (CR 500.1).
+phaseIcons :: [(Icon.Icon, [String], String)]
+phaseIcons =
+  [ (Icon.MkBeginning, [], "Beginning phase"),
+    (Icon.MkMain, [], "Precombat main phase"),
+    (Icon.MkCombat, [], "Combat phase"),
+    (Icon.MkMain, ["second"], "Postcombat main phase"),
+    (Icon.MkEnding, [], "Ending phase")
+  ]
 
 -- | Day or night (CR 732.1), beside the turn.
 daytime :: Daytime.Daytime -> Html.Html msg

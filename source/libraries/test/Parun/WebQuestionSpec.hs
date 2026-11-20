@@ -676,10 +676,11 @@ replaySpec s registry = Spec.describe s "WebQuestion" . Spec.describe s "replay"
     -- and postcombat main phase are still to come.
     stop <- replayed s registry "sphinx-of-the-second-sun-adds-a-beginning-phase-that-neither-settles-nor-grants-a-land" 10
     let bar = turnBarOf stop
+        ahead = ["<li title=\"Combat phase\">", "<li class=\"second\" title=\"Postcombat main phase\">", "<li title=\"Ending phase\">"]
     Spec.assertEqWith s "the step" (PlayerView.Type.phase (boardOf stop)) (Phase.Beginning BeginningStep.Upkeep)
     Spec.assertBool s (Text.isInfixOf (Text.pack "<li class=\"now extra\"") bar) ("lit as extra: " <> Text.unpack bar)
-    Spec.assertBool s (Text.isInfixOf (Text.pack "<li class=\"past\">Main</li>") bar) "the precombat main phase passed"
-    Spec.assertEqWith s "still to come" [label | label <- ["Combat", "Main 2", "End"], Text.isInfixOf (Text.pack ("<li>" <> label <> "</li>")) bar] ["Combat", "Main 2", "End"]
+    Spec.assertBool s (Text.isInfixOf (Text.pack "<li class=\"past\" title=\"Precombat main phase\">") bar) "the precombat main phase passed"
+    Spec.assertEqWith s "still to come" [li | li <- ahead, Text.isInfixOf (Text.pack li) bar] ahead
     Spec.assertBool s (Text.isInfixOf (Text.pack "<span class=\"extra\"") bar) "said beside the turn"
 
   Spec.it s "CR 500.11 a skipped combat phase shows as passed and nothing as extra" $ do
@@ -687,8 +688,8 @@ replaySpec s registry = Spec.describe s "WebQuestion" . Spec.describe s "replay"
     stop <- replayed s registry "blinding-angel-makes-the-player-it-hits-skip-their-next-combat" 2
     let bar = turnBarOf stop
     Spec.assertEqWith s "the step" (PlayerView.Type.phase (boardOf stop)) Phase.PostcombatMain
-    Spec.assertBool s (Text.isInfixOf (Text.pack "<li class=\"past\">Combat</li>") bar) ("combat passed: " <> Text.unpack bar)
-    Spec.assertBool s (Text.isInfixOf (Text.pack "<li class=\"now\">Main 2</li>") bar) "the main phase lit"
+    Spec.assertBool s (Text.isInfixOf (Text.pack "<li class=\"past\" title=\"Combat phase\">") bar) ("combat passed: " <> Text.unpack bar)
+    Spec.assertBool s (Text.isInfixOf (Text.pack "<li class=\"now second\" title=\"Postcombat main phase\">") bar) "the main phase lit"
     Spec.assertBool s (not (Text.isInfixOf (Text.pack "extra") bar)) "nothing extra"
 
   Spec.it s "CR 716.3d a card exiled as its Adventure resolved is marked on its tile and sheet" $ do
