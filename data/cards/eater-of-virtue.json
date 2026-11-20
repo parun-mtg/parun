@@ -1,0 +1,385 @@
+{
+  "faces": [
+    {
+      "keywords": [
+        {
+          "type": "Equip",
+          "value": {
+            "cost": {
+              "mana": [
+                {
+                  "type": "Generic",
+                  "value": 1
+                }
+              ]
+            },
+            "quality": null
+          }
+        }
+      ],
+      "manaCost": [
+        {
+          "type": "Generic",
+          "value": 1
+        }
+      ],
+      "name": "Eater of Virtue",
+      "oracleText": "Whenever equipped creature dies, exile it.\nEquipped creature gets +2/+0.\nAs long as a card exiled with Eater of Virtue has flying, equipped creature has flying. The same is true for first strike, double strike, deathtouch, haste, hexproof, indestructible, lifelink, menace, protection, reach, trample, and vigilance.\nEquip {1}",
+      "staticAbilities": [
+        {
+          "affected": {
+            "type": "Matching",
+            "value": {
+              "type": "And",
+              "value": [
+                {
+                  "type": "HasCardType",
+                  "value": "Creature"
+                },
+                {
+                  "type": "HasAttached",
+                  "value": {
+                    "type": "IsSource"
+                  }
+                }
+              ]
+            }
+          },
+          "modifications": [
+            {
+              "type": "ModifyPowerToughness",
+              "value": {
+                "power": {
+                  "type": "Literal",
+                  "value": 2
+                },
+                "toughness": {
+                  "type": "Literal",
+                  "value": 0
+                }
+              }
+            }
+          ]
+        },
+        {
+          "affected": {
+            "type": "Matching",
+            "value": {
+              "type": "And",
+              "value": [
+                {
+                  "type": "HasCardType",
+                  "value": "Creature"
+                },
+                {
+                  "type": "HasAttached",
+                  "value": {
+                    "type": "IsSource"
+                  }
+                }
+              ]
+            }
+          },
+          "modifications": [
+            {
+              "type": "GainKeywordsAmong",
+              "value": {
+                "among": {
+                  "type": "IsExiledWithSource",
+                  "value": {
+                    "type": "OwnAbilities"
+                  }
+                },
+                "keyword": {
+                  "type": "OfKeyword",
+                  "value": {
+                    "type": "Flying"
+                  }
+                },
+                "zone": "Exile"
+              }
+            },
+            {
+              "type": "GainKeywordsAmong",
+              "value": {
+                "among": {
+                  "type": "IsExiledWithSource",
+                  "value": {
+                    "type": "OwnAbilities"
+                  }
+                },
+                "keyword": {
+                  "type": "OfKeyword",
+                  "value": {
+                    "type": "FirstStrike"
+                  }
+                },
+                "zone": "Exile"
+              }
+            },
+            {
+              "type": "GainKeywordsAmong",
+              "value": {
+                "among": {
+                  "type": "IsExiledWithSource",
+                  "value": {
+                    "type": "OwnAbilities"
+                  }
+                },
+                "keyword": {
+                  "type": "OfKeyword",
+                  "value": {
+                    "type": "DoubleStrike"
+                  }
+                },
+                "zone": "Exile"
+              }
+            },
+            {
+              "type": "GainKeywordsAmong",
+              "value": {
+                "among": {
+                  "type": "IsExiledWithSource",
+                  "value": {
+                    "type": "OwnAbilities"
+                  }
+                },
+                "keyword": {
+                  "type": "OfKeyword",
+                  "value": {
+                    "type": "Deathtouch"
+                  }
+                },
+                "zone": "Exile"
+              }
+            },
+            {
+              "type": "GainKeywordsAmong",
+              "value": {
+                "among": {
+                  "type": "IsExiledWithSource",
+                  "value": {
+                    "type": "OwnAbilities"
+                  }
+                },
+                "keyword": {
+                  "type": "OfKeyword",
+                  "value": {
+                    "type": "Haste"
+                  }
+                },
+                "zone": "Exile"
+              }
+            },
+            {
+              "type": "GainKeywordsAmong",
+              "value": {
+                "among": {
+                  "type": "IsExiledWithSource",
+                  "value": {
+                    "type": "OwnAbilities"
+                  }
+                },
+                "keyword": {
+                  "type": "OfFamily",
+                  "value": "Hexproof"
+                },
+                "zone": "Exile"
+              }
+            },
+            {
+              "type": "GainKeywordsAmong",
+              "value": {
+                "among": {
+                  "type": "IsExiledWithSource",
+                  "value": {
+                    "type": "OwnAbilities"
+                  }
+                },
+                "keyword": {
+                  "type": "OfKeyword",
+                  "value": {
+                    "type": "Indestructible"
+                  }
+                },
+                "zone": "Exile"
+              }
+            },
+            {
+              "type": "GainKeywordsAmong",
+              "value": {
+                "among": {
+                  "type": "IsExiledWithSource",
+                  "value": {
+                    "type": "OwnAbilities"
+                  }
+                },
+                "keyword": {
+                  "type": "OfKeyword",
+                  "value": {
+                    "type": "Lifelink"
+                  }
+                },
+                "zone": "Exile"
+              }
+            },
+            {
+              "type": "GainKeywordsAmong",
+              "value": {
+                "among": {
+                  "type": "IsExiledWithSource",
+                  "value": {
+                    "type": "OwnAbilities"
+                  }
+                },
+                "keyword": {
+                  "type": "OfKeyword",
+                  "value": {
+                    "type": "Menace"
+                  }
+                },
+                "zone": "Exile"
+              }
+            },
+            {
+              "type": "GainKeywordsAmong",
+              "value": {
+                "among": {
+                  "type": "IsExiledWithSource",
+                  "value": {
+                    "type": "OwnAbilities"
+                  }
+                },
+                "keyword": {
+                  "type": "OfFamily",
+                  "value": "Protection"
+                },
+                "zone": "Exile"
+              }
+            },
+            {
+              "type": "GainKeywordsAmong",
+              "value": {
+                "among": {
+                  "type": "IsExiledWithSource",
+                  "value": {
+                    "type": "OwnAbilities"
+                  }
+                },
+                "keyword": {
+                  "type": "OfKeyword",
+                  "value": {
+                    "type": "Reach"
+                  }
+                },
+                "zone": "Exile"
+              }
+            },
+            {
+              "type": "GainKeywordsAmong",
+              "value": {
+                "among": {
+                  "type": "IsExiledWithSource",
+                  "value": {
+                    "type": "OwnAbilities"
+                  }
+                },
+                "keyword": {
+                  "type": "OfKeyword",
+                  "value": {
+                    "type": "Trample"
+                  }
+                },
+                "zone": "Exile"
+              }
+            },
+            {
+              "type": "GainKeywordsAmong",
+              "value": {
+                "among": {
+                  "type": "IsExiledWithSource",
+                  "value": {
+                    "type": "OwnAbilities"
+                  }
+                },
+                "keyword": {
+                  "type": "OfKeyword",
+                  "value": {
+                    "type": "Vigilance"
+                  }
+                },
+                "zone": "Exile"
+              }
+            }
+          ]
+        }
+      ],
+      "triggeredAbilities": [
+        {
+          "condition": {
+            "type": "Leaves",
+            "value": {
+              "destinations": [
+                {
+                  "zone": "Graveyard"
+                }
+              ],
+              "permanent": {
+                "type": "Matching",
+                "value": {
+                  "type": "And",
+                  "value": [
+                    {
+                      "type": "HasCardType",
+                      "value": "Creature"
+                    },
+                    {
+                      "type": "HasAttached",
+                      "value": {
+                        "type": "IsSource"
+                      }
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "modal": {
+            "modes": [
+              {
+                "clauses": [
+                  {
+                    "effects": [
+                      {
+                        "type": "MoveToZone",
+                        "value": {
+                          "origin": "Graveyard",
+                          "ref": {
+                            "type": "InSlot",
+                            "value": "became"
+                          },
+                          "zone": "Exile"
+                        }
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          }
+        }
+      ],
+      "typeLine": {
+        "subtypes": [
+          "Equipment"
+        ],
+        "supertypes": [
+          "Legendary"
+        ],
+        "types": [
+          "Artifact"
+        ]
+      }
+    }
+  ]
+}

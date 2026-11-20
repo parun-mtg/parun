@@ -1,0 +1,247 @@
+{
+  "board": {
+    "active": "alice",
+    "seats": [
+      {
+        "battlefield": [
+          {
+            "card": "Plains",
+            "label": "p1"
+          },
+          {
+            "card": "Plains",
+            "label": "p2"
+          }
+        ],
+        "hand": [
+          {
+            "card": "Era of Enlightenment",
+            "label": "era"
+          }
+        ],
+        "library": [
+          {
+            "card": "Lightning Bolt",
+            "label": "top"
+          },
+          {
+            "card": "Shock",
+            "label": "second"
+          },
+          {
+            "card": "Forest"
+          },
+          {
+            "card": "Swamp"
+          },
+          {
+            "card": "Swamp"
+          },
+          {
+            "card": "Swamp"
+          }
+        ],
+        "name": "alice"
+      },
+      {
+        "library": [
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          }
+        ],
+        "name": "bob"
+      }
+    ],
+    "step": "PrecombatMain",
+    "turn": 1
+  },
+  "description": "CR 715.2b / 715.3a / 715.3c / 701.22a / 712.11a: Era of Enlightenment's chapter I scries 2 as it enters, chapter II gains alice 2 life after her next draw step, and chapter III exiles it and returns it transformed as Hand of Enlightenment, a 2/2 first-striking Human Monk",
+  "timeline": [
+    {
+      "do": {
+        "Cast": {
+          "mana": [
+            "$p1",
+            "$p2"
+          ],
+          "object": "$era"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": "Pass",
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": "Pass",
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": {
+        "Answer": {
+          "prompt": "ChooseScry",
+          "with": [
+            [
+              "$second"
+            ],
+            [
+              "$top"
+            ]
+          ]
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "View": {
+          "is": [
+            "Lightning Bolt",
+            "Forest",
+            "Swamp",
+            "Swamp#2",
+            "Swamp#3",
+            "Shock"
+          ],
+          "of": "Zone",
+          "player": "alice",
+          "zone": "Library"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Life": {
+          "life": 20,
+          "player": "alice"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": "Pass",
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 3
+    },
+    {
+      "check": {
+        "Life": {
+          "life": 22,
+          "player": "alice"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 3
+    },
+    {
+      "check": {
+        "Names": {
+          "names": [
+            "Era of Enlightenment"
+          ],
+          "object": "Era of Enlightenment"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 3
+    },
+    {
+      "do": "Pass",
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 5
+    },
+    {
+      "check": {
+        "Names": {
+          "names": [
+            "Hand of Enlightenment"
+          ],
+          "object": "Hand of Enlightenment"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 5
+    },
+    {
+      "check": {
+        "PowerToughness": {
+          "object": "Hand of Enlightenment",
+          "power": 2,
+          "toughness": 2
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 5
+    },
+    {
+      "check": {
+        "Keywords": {
+          "count": 1,
+          "keyword": {
+            "type": "FirstStrike"
+          },
+          "object": "Hand of Enlightenment"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 5
+    },
+    {
+      "check": {
+        "Subtypes": {
+          "object": "Hand of Enlightenment",
+          "subtypes": [
+            "Human",
+            "Monk"
+          ]
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 5
+    },
+    {
+      "check": {
+        "Count": {
+          "card": "Era of Enlightenment",
+          "count": 0,
+          "player": "alice",
+          "zone": "Exile"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 5
+    }
+  ]
+}
