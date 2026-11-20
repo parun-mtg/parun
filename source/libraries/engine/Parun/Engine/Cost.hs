@@ -5559,13 +5559,9 @@ reverseIllegal windows before =
           ( \window ->
               let pid = ManaWindow.payer window
                   kept = [activation | (key, owner, activation) <- indexed, ManaWindow.payer owner == pid, Set.notMember key reversed]
-                  step held activation = fmap (<> ManaActivation.added activation) (Monad.foldM takeUnit held (ManaActivation.spent activation))
-               in Maybe.isJust (Monad.foldM step (Mana.Type.unwrap (Game.poolOf pid (ManaWindow.opened window))) kept)
+               in Maybe.isJust (replayActivations (Mana.Type.unwrap (Game.poolOf pid (ManaWindow.opened window))) kept)
           )
           (ListUtils.nubOrdOn ManaWindow.payer windows)
-      takeUnit held unit = case break (== unit) held of
-        (above, _ : below) -> Just (above <> below)
-        (_, []) -> Nothing
    in case (indexed, compose Set.empty) of
         ([], _) -> noActivations <$ restoreKeepingLibraryActions before
         (_, Nothing) -> noActivations <$ restoreKeepingLibraryActions before
@@ -5628,17 +5624,38 @@ reverseIllegal windows before =
             Just stood -> case traverse keepingFirst [0 .. length standing - 1] of
               Just states -> mconcat (List.zipWith4 rebased [0 ..] (fmap snd standing) states (drop 1 states <> [live]))
               Nothing ->
-                let activations = fmap snd stood
-                 in rebased
-                      0
-                      ManaActivation.MkManaActivation
-                        { ManaActivation.sources = Semigroup.sconcat (fmap ManaActivation.sources activations),
-                          ManaActivation.spent = foldMap ManaActivation.spent activations,
-                          ManaActivation.added = foldMap ManaActivation.added activations,
-                          ManaActivation.reversible = all ManaActivation.reversible activations
-                        }
-                      (Maybe.fromMaybe before (keepingFirst 0))
-                      live
+                rebased 0 (groupActivations (fmap snd stood)) (Maybe.fromMaybe before (keepingFirst 0)) live
+
+-- CR 734.1's "unless" replayed over `held`: each activation, in order, takes
+-- what it spent and then gives what it added; Nothing where one spent mana not
+-- there to take.
+replayActivations :: [ManaUnit.ManaUnit] -> [ManaActivation.ManaActivation] -> Maybe [ManaUnit.ManaUnit]
+replayActivations =
+  Monad.foldM (\held activation -> fmap (<> ManaActivation.added activation) (Monad.foldM takeUnit held (ManaActivation.spent activation)))
+
+-- Activations `reverseIllegal` cannot tell apart, as the one it offers back:
+-- it spent what its members took from outside the group and added what they
+-- left of their own mana, so `replayActivations` reads it as it reads them in
+-- order. CostSpec's "Grouped mana activations" group is the proof.
+groupActivations :: NonEmpty.NonEmpty ManaActivation.ManaActivation -> ManaActivation.ManaActivation
+groupActivations activations =
+  let step (outside, own) activation =
+        let (outside', own') = List.foldl' spendOne (outside, own) (ManaActivation.spent activation)
+         in (outside', own' <> ManaActivation.added activation)
+      spendOne (outside, own) unit = maybe (outside <> [unit], own) (\rest -> (outside, rest)) (takeUnit own unit)
+      (spentOutside, leftOver) = List.foldl' step ([], []) activations
+   in ManaActivation.MkManaActivation
+        { ManaActivation.sources = Semigroup.sconcat (fmap ManaActivation.sources activations),
+          ManaActivation.spent = spentOutside,
+          ManaActivation.added = leftOver,
+          ManaActivation.reversible = all ManaActivation.reversible activations
+        }
+
+-- `held` less one `unit`, or Nothing where it holds none.
+takeUnit :: [ManaUnit.ManaUnit] -> ManaUnit.ManaUnit -> Maybe [ManaUnit.ManaUnit]
+takeUnit held unit = case break (== unit) held of
+  (above, _ : below) -> Just (above <> below)
+  (_, []) -> Nothing
 
 -- No activations, and so no stretches.
 noActivations :: ([ManaActivation.ManaActivation], [ManaSegment.ManaSegment])
