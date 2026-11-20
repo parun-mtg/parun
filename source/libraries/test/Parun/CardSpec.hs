@@ -265,6 +265,7 @@ import qualified Parun.Types.EntryR as EntryR
 import qualified Parun.Types.EntryRestriction as EntryRestriction
 import qualified Parun.Types.EntryRewrite as EntryRewrite
 import qualified Parun.Types.EntryRiders as EntryRiders
+import qualified Parun.Types.EntryTriggering as EntryTriggering
 import qualified Parun.Types.Equip as Equip
 import qualified Parun.Types.ExchangeCardZones as ExchangeCardZones
 import qualified Parun.Types.ExchangeOwnership as ExchangeOwnership
@@ -2021,18 +2022,30 @@ cardChosenKindReachesPlayer = any (any offends . Modal.modes) . faceModals
         | Effect.Proliferate (Just (AnotherCounter.ChosenKind named)) <- Foldable.toList (Mode.allEffects mode)
         ]
 
--- Unprinted: a TriggeringMove.GainingLife row naming an entrant (CR 119.9's
--- gain is no permanent's), over every player effect a face writes: its own,
--- those it grants, and those its effects store.
-cardGainingLifeNamesEntrant :: Face.Face Card.Type.Card -> Bool
-cardGainingLifeNamesEntrant card =
+-- Whether any EntriesTrigger row a face writes offends: its own player
+-- effects, those it grants, and those its effects store.
+cardWritesEntriesTrigger :: (EntriesTrigger.EntriesTrigger -> Bool) -> Face.Face Card.Type.Card -> Bool
+cardWritesEntriesTrigger offends card =
   let rows =
         fmap PlayerStaticAbility.effect (Face.playerAbilities card <> grantedPlayerAbilities card)
           <> [effect | Effect.AffectPlayers (AffectPlayers.MkAffectPlayers _ _ effect) <- cardAuthoredEffects card]
-      offends effect = case effect of
-        PlayerEffect.EntriesTrigger e -> EntriesTrigger.move e == TriggeringMove.GainingLife && EntriesTrigger.entrants e /= Filter.Type.And []
+      row effect = case effect of
+        PlayerEffect.EntriesTrigger e -> offends e
         _ -> False
-   in any offends rows
+   in any row rows
+
+-- Unprinted: a TriggeringMove.GainingLife row naming an entrant (CR 119.9's
+-- gain is no permanent's).
+cardGainingLifeNamesEntrant :: Face.Face Card.Type.Card -> Bool
+cardGainingLifeNamesEntrant = cardWritesEntriesTrigger $ \e ->
+  EntriesTrigger.move e == TriggeringMove.GainingLife && EntriesTrigger.entrants e /= Filter.Type.And []
+
+-- Unprinted: a creature attacking that doesn't cause abilities to trigger
+-- (CR 508.3, 603.2), which Parun.Engine.Event.Match.matchesTriggerGiven never
+-- reads.
+cardSilencesAttack :: Face.Face Card.Type.Card -> Bool
+cardSilencesAttack = cardWritesEntriesTrigger $ \e ->
+  EntriesTrigger.move e == TriggeringMove.Attacking && EntriesTrigger.triggering e == EntryTriggering.NoTrigger
 
 -- Unprinted: a CounterR's barsAdditional on a pattern reaching a permanent,
 -- which Parun.Engine.Event.apply's object and entry arms never read; Melira,
@@ -6822,6 +6835,22 @@ lintSpec s registry corpus = Spec.describe s "Lint" $ do
     Spec.assertBool s (not (cardGainingLifeNamesEntrant (S.combinedFace crusher))) "Dr. Beverly Crusher, naming no entrant, is accepted"
     Spec.assertBool s (not (cardGainingLifeNamesEntrant face)) "Teysa Karlov's creature dying is accepted"
     Spec.assertBool s (cardGainingLifeNamesEntrant doctored) "her creature entrant under GainingLife is rejected"
+  -- Unprinted: an attack that doesn't cause abilities to trigger: the corpus half.
+  Spec.it s "CR 508.3 no card keeps an attack from causing abilities to trigger" $ do
+    ps <- S.allPrintings s corpus
+    Spec.assertEqWith s "no NoTrigger under Attacking" (fmap (S.nameOf . Printing.card) (filter (anyFaceOrMinted cardSilencesAttack . Printing.card) ps)) []
+  -- And the rejecting direction, against Hushbringer misauthored on purpose.
+  Spec.it s "the lint itself catches an attack that doesn't cause abilities to trigger" $ do
+    hushbringer <- S.printingOf s registry "Hushbringer"
+    isshin <- S.printingOf s registry "Isshin, Two Heavens as One"
+    let face = S.combinedFace hushbringer
+        attacking effect = case effect of
+          PlayerEffect.EntriesTrigger e -> PlayerEffect.EntriesTrigger e {EntriesTrigger.move = TriggeringMove.Attacking}
+          other -> other
+        doctored = face {Face.playerAbilities = fmap (\ability -> ability {PlayerStaticAbility.effect = attacking (PlayerStaticAbility.effect ability)}) (Face.playerAbilities face)}
+    Spec.assertBool s (not (cardSilencesAttack (S.combinedFace isshin))) "Isshin, Two Heavens as One's additional attack trigger is accepted"
+    Spec.assertBool s (not (cardSilencesAttack face)) "Hushbringer's creatures entering or dying are accepted"
+    Spec.assertBool s (cardSilencesAttack doctored) "its creatures attacking without triggering are rejected"
   -- Unprinted: a counter bar on a permanent: the corpus half.
   Spec.it s "barsAdditional only on a player pattern" $ do
     ps <- S.allPrintings s corpus
