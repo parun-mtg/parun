@@ -1,0 +1,40 @@
+{
+  "description": "Sizzling Soloist's second resolution inside its target's controller's beginning of combat step makes the creature attack in his next turn's combat phase, not the one under way (CR 506.1, 508.1d, 611.2a)",
+  "note": "On bob's turn alice flashes in two Spectral Sailors in his beginning of combat step, after that combat phase began; both triggers target his Hill Giant. Declining to attack stands that turn, since a combat phase under way is not its controller's next (docs/decisions.md, \"Whether a combat phase under way is its controller's next\"). On bob's next turn declining is refused and the Giant attacks.",
+  "board": {
+    "active": "bob",
+    "step": "PrecombatMain",
+    "seats": [
+      {
+        "name": "alice",
+        "battlefield": [
+          { "card": "Sizzling Soloist", "label": "soloist", "ready": true },
+          { "card": "Island", "label": "i1" },
+          { "card": "Island", "label": "i2" }
+        ],
+        "hand": [{ "card": "Spectral Sailor", "label": "s1" }, { "card": "Spectral Sailor", "label": "s2" }],
+        "library": [{ "card": "Island" }, { "card": "Island" }]
+      },
+      {
+        "name": "bob",
+        "battlefield": [{ "card": "Hill Giant", "label": "giant", "ready": true }],
+        "library": [{ "card": "Mountain" }, { "card": "Mountain" }]
+      }
+    ]
+  },
+  "timeline": [
+    { "turn": 1, "step": "BeginningOfCombat", "player": "alice", "do": { "Cast": { "object": "$s1", "mana": ["$i1", null] } } },
+    { "turn": 1, "step": "BeginningOfCombat", "player": "alice", "do": "Pass" },
+    { "turn": 1, "step": "BeginningOfCombat", "player": "alice", "do": "Pass" },
+    { "turn": 1, "step": "BeginningOfCombat", "player": "alice", "do": { "Cast": { "object": "$s2", "mana": ["$i2"] } } },
+    { "turn": 1, "step": "BeginningOfCombat", "player": "alice", "do": "Pass" },
+    { "turn": 1, "step": "BeginningOfCombat", "player": "alice", "do": "Pass" },
+    { "turn": 1, "step": "DeclareAttackers", "player": "bob", "do": { "Attack": [] } },
+    { "turn": 1, "step": "EndStep", "player": "bob", "check": { "Life": { "player": "alice", "life": 20 } } },
+    { "turn": 2, "step": "DeclareAttackers", "player": "alice", "do": { "Attack": [] } },
+    { "turn": 3, "step": "DeclareAttackers", "player": "bob", "refuse": { "Attack": [] } },
+    { "turn": 3, "step": "DeclareAttackers", "player": "bob", "do": { "Attack": ["$giant"] } },
+    { "turn": 3, "step": "DeclareBlockers", "player": "alice", "do": { "Block": {} } },
+    { "turn": 3, "step": "PostcombatMain", "player": "bob", "check": { "Life": { "player": "alice", "life": 17 } } }
+  ]
+}

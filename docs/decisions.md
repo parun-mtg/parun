@@ -726,6 +726,49 @@ Entries are ordered by the first rule each cites.
   night-of-the-flying-merfolk-enters-with-no-lore-and-gets-one-at-the-end-step-under-doubling.
 - **Issue**: #5290.
 
+## Whose combat phase its controller's next combat phase is after a control change
+
+- **Question**: Sizzling Soloist's target "attacks during its controller's next
+  combat phase if able". If that creature changes control after the ability
+  resolves and before its controller's combat phase comes, is the window the
+  old controller's next combat phase or the new one's?
+- **Rules**: CR 506.1, 508.1d, 611.2a; Gideon, Battle-Forged's 2015-06-22
+  ruling on "its controller's next turn" and Elvish Hunter's on "its
+  controller's next untap step"; CR of 2026-11-06.
+- **Decision**: The new controller's: the controller is read as each combat
+  phase begins, and the first one beginning on a turn of the creature's
+  controller then is the window.
+- **Rejected**: Sampling the controller as the ability resolves. Both rulings
+  read "its controller" as whoever controls it when the window comes, and
+  nothing in the combat-phase wording sets it apart.
+- **Site**: `Parun.Engine.Expiry.reachCombatPhase`'s
+  `DuringCombatPhaseOfControllerOf` arm, proved by the scenario
+  `sizzling-soloist-s-requirement-follows-its-target-to-a-new-controller`.
+- **Issue**: #8974.
+
+## Whether a combat phase under way is its controller's next
+
+- **Question**: Sizzling Soloist's target "attacks during its controller's next
+  combat phase if able". If the ability resolves after a combat phase of that
+  controller's has begun and before attackers are declared (a flash creature
+  cast in their beginning of combat step), is the window that combat phase or
+  their next one to begin?
+- **Rules**: CR 500.11, 506.1, 508.1d, 611.2a; Moment of Silence's 2004-10-04
+  ruling, "It must be used before the combat phase starts or it has no
+  effect"; Stonehorn Dignitary's 2021-03-19 ruling that one entering during
+  combat "won't affect that combat"; CR of 2026-11-06.
+- **Decision**: The next one to begin. A combat phase under way as the ability
+  resolves is not its controller's next, so declining to attack in it stands.
+- **Rejected**: The phase under way, its declare attackers step still ahead.
+  Both rulings are on skipping, and a phase that has begun "can't be
+  skipped" (Stonehorn's ruling), so neither forces this; but both read "next
+  combat phase" as one not yet begun, and nothing sets the attack wording
+  apart.
+- **Site**: `Parun.Engine.Expiry.arm`'s `NextWindow.CombatPhase` arm, pinned
+  by `Parun.Engine.Expiry.reachCombatPhase`, proved by the scenario
+  `sizzling-soloist-resolving-in-its-target-s-controller-s-combat-names-his-next-turn-s`.
+- **Issue**: #8993.
+
 ## The seat of a departed attacker's planeswalker
 
 - **Question**: Mangara, the Diplomat rechecks, as its trigger resolves, how
@@ -3029,23 +3072,3 @@ Entries are ordered by the first rule each cites.
   `cr-810-10c-melira-the-living-cure-s-bar-stops-a-teammate-s-simultaneous-poison`
   and `...-simultaneous-infect-damage`, each with a `--bob` pair.
 - **Issue**: #8806.
-
-## Whose combat phase its controller's next combat phase is after a control change
-
-- **Question**: Sizzling Soloist's target "attacks during its controller's next
-  combat phase if able". If that creature changes control after the ability
-  resolves and before its controller's combat phase comes, is the window the
-  old controller's next combat phase or the new one's?
-- **Rules**: CR 506.1, 508.1d, 611.2a; Gideon, Battle-Forged's 2015-06-22
-  ruling on "its controller's next turn" and Elvish Hunter's on "its
-  controller's next untap step"; CR of 2026-11-06.
-- **Decision**: The new controller's: the controller is read as each combat
-  phase begins, and the first one beginning on a turn of the creature's
-  controller then is the window.
-- **Rejected**: Sampling the controller as the ability resolves. Both rulings
-  read "its controller" as whoever controls it when the window comes, and
-  nothing in the combat-phase wording sets it apart.
-- **Site**: `Parun.Engine.Expiry.reachCombatPhase`'s
-  `DuringCombatPhaseOfControllerOf` arm, proved by the scenario
-  `sizzling-soloist-s-requirement-follows-its-target-to-a-new-controller`.
-- **Issue**: #8974.

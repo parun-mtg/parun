@@ -1,0 +1,30 @@
+{
+  "description": "Jinnie Fay, Jetmir's Second is asked once across Multiversal Incursion's creations, and the kind picked holds for each (CR 608.2f, 614.1a)",
+  "note": "Multiversal Incursion creates one copy for each of alice's two nontoken creatures, Jinnie Fay and Grizzly Bears, in one action. Alice takes the replacement and picks Dogs once: both creations become Dogs, with no Cat and no copy, and neither prompt is asked again.",
+  "board": {
+    "active": "alice",
+    "step": "PrecombatMain",
+    "seats": [
+      {
+        "name": "alice",
+        "battlefield": [
+          { "card": "Jinnie Fay, Jetmir's Second", "label": "jinnie" },
+          { "card": "Grizzly Bears", "label": "bears" }
+        ],
+        "hand": [{ "card": "Multiversal Incursion", "label": "incursion" }],
+        "manaPool": "UUUUUUU"
+      },
+      { "name": "bob" }
+    ]
+  },
+  "timeline": [
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "do": { "Cast": { "object": "$incursion" } } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "do": "Pass" },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "do": { "Answer": { "prompt": "ChooseSubstitute", "with": "Exercises" } } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "do": { "Answer": { "prompt": "ChooseTokenKind", "with": 1 } } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "check": { "Count": { "player": "alice", "zone": "Battlefield", "card": "Dog Token", "count": 2 } } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "check": { "Count": { "player": "alice", "zone": "Battlefield", "card": "Cat Token", "count": 0 } } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "check": { "Count": { "player": "alice", "zone": "Battlefield", "card": "Grizzly Bears", "count": 1 } } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "check": { "Count": { "player": "alice", "zone": "Battlefield", "card": "Jinnie Fay, Jetmir's Second", "count": 1 } } }
+  ]
+}

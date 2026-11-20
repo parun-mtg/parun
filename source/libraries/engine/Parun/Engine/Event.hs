@@ -5831,8 +5831,9 @@ apply settle batch applied batchPrevented candidate event =
     --
     -- One CR 608.2f action creating through several createTokens calls is one
     -- event to the row (Event.together), so its first answer stands for the
-    -- rest: EnteringTogether.substitutions. Its place among the rows stands
-    -- too (inCreationOrder).
+    -- rest: EnteringTogether.substitutions, Jinnie Fay's kind included
+    -- (data/scenarios/jinnie-fay-s-kind-picked-once-holds-for-every-creation-of-multiversal-incursion.json).
+    -- Its place among the rows stands too (inCreationOrder).
     (ReplacementEffect.TokenR (TokenR.MkTokenR pat scaling plus optional), ProposedEvent.WouldCreateTokens pid lots) -> do
       asked <- State.get
       let identity_ = ReplacementCandidate.identity candidate

@@ -196,7 +196,9 @@ arm resolving targets controller source duration gs = case duration of
     -- CR 506.1: the bound object's controller, read live (docs/decisions.md,
     -- "Whose combat phase its controller's next combat phase is after a control
     -- change"), with no turn sampled: reachCombatPhase pins the row as a combat
-    -- phase BEGINS, so one under way as this arms is not its next.
+    -- phase BEGINS, so one under way as this arms is not its next
+    -- (docs/decisions.md, "Whether a combat phase under way is its controller's
+    -- next").
     --
     -- Unprinted: a combat-phase window counted against a seat would need an
     -- expiry naming one. Parun.EffectLintSpec's "no card counts a combat-phase
@@ -813,10 +815,13 @@ pinAfterDeclareAttackers gs =
 -- A "during its controller's next combat phase" row is pinned the same way
 -- where the phase begins on a turn of its object's controller now (CR 702.26d
 -- keeps a phased-out object waiting, windowReached's guard), and waits where
--- the phase is skipped: CR 500.11 passes it "as though it didn't exist".
+-- the phase is skipped: CR 500.11 passes it "as though it didn't exist", as
+-- Secret of Bloodbending's 2025-10-02 ruling reads "their next combat phase".
 -- data/scenarios' sizzling-soloist-s-second-resolution-makes-its-target-attack-in-the-next-combat
 -- and sizzling-soloist-s-requirement-follows-its-target-to-a-new-controller
--- prove the pin.
+-- prove the pin, and
+-- sizzling-soloist-s-requirement-waits-past-a-combat-phase-false-peace-skips
+-- the wait.
 reachCombatPhase :: Bool -> GameState -> GameState
 reachCombatPhase begins gs =
   let behind = Turn.combatPhasesIn (TurnRegisters.remaining (GameState.turn gs))
