@@ -4275,7 +4275,7 @@ bindEarthbentLand resolving land gs =
 -- (Scryfall `keyword:backup`, 2026-09-24).
 --
 -- Not implemented: the delayed abilities a granted ability arms by name, so
--- it arms none of the source's (#7766).
+-- it arms none of the source's (#9064).
 --
 -- CR 702.1c's grant expands the same way, into one GainKeyword per distinct
 -- keyword the designator names among the projected keywords of the objects in
@@ -4303,8 +4303,10 @@ bindEarthbentLand resolving land gs =
 -- quicksilver-elemental-arms-the-delayed-trigger-of-a-gained-ability proves
 -- it.
 --
--- Not implemented: the lender's triggered abilities where the payload lends
--- them (#7766).
+-- Unprinted: a resolving lend of the lender's triggered abilities, which the
+-- payload can say but nothing here lends; Parun.AbilitySlotLintSpec's "CR
+-- 613.1f no card writes a resolving lend of triggered abilities" keeps it out
+-- of card data.
 expandGrant :: Map.Map SlotName (Set Recipient) -> ObjectId -> PlayerId -> ObjectId -> GameState -> Modification.Modification (GrantedAbility.GrantedAbility Card.Type.Card) -> [Modification.Modification (GrantedAbility.GrantedAbility Card.Type.Card)]
 expandGrant legal resolving controller source gs modification = case modification of
   Modification.GainKeywordsAmong designator zone among ->
