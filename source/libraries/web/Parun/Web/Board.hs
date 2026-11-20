@@ -43,11 +43,13 @@ data Marks msg = MkMarks
     seat :: PlayerId.PlayerId -> Maybe (Card.Cue msg)
   }
 
--- | The turn bar: whose turn, which step, the phases as a strip with the
--- current one lit (marked where it is an extra one, CR 500.8) and those with
--- no step still scheduled passed, and the controls given after them.
-turnBar :: [Html.Html msg] -> PlayerView.PlayerView -> Html.Html msg
-turnBar controls board =
+-- | The turn bar: whose turn and which step, opening the log given (none
+-- while it is empty) as a flyout; the phases as one strip with the current
+-- one lit (marked where it is an extra one, CR 500.8) and those with no step
+-- still scheduled passed, the strip ending in what is given for its end; and
+-- the controls given after them.
+turnBar :: [Html.Html msg] -> [Html.Html msg] -> [Html.Html msg] -> PlayerView.PlayerView -> Html.Html msg
+turnBar logged stripEnd controls board =
   let yours = PlayerView.active board == PlayerView.viewer board
       current = phaseIndex (PlayerView.phase board)
       ahead = Set.fromList (fmap phaseIndex (Foldable.toList (PlayerView.remaining board)))
@@ -57,21 +59,34 @@ turnBar controls board =
         | i == current = ["now"] <> ["extra" | extra]
         | Set.member i ahead = []
         | otherwise = ["past"]
+      label =
+        [ Element.el "strong" [] [] [Element.string ("Turn " <> show (PlayerView.turn board))],
+          Element.text (Text.pack " \x00b7 " <> (if yours then Text.pack "Your " else possessive (PlayerView.active board)) <> Wording.phase (PlayerView.phase board))
+        ]
+          <> [Element.el "span" ["extra"] [Element.attr "title" extraTip] [Element.string "Extra"] | extra]
+          <> foldMap (pure . daytime) (PlayerView.daytime board)
+      heading
+        | null logged = Element.el "p" ["turn-label"] [] label
+        | otherwise =
+            Element.el
+              "details"
+              ["log"]
+              []
+              [ Element.el "summary" ["turn-label"] [Element.attr "title" (Text.pack "The game log (L)")] label,
+                Element.el "div" ["log-panel"] [Element.attr "role" (Text.pack "region"), Element.attr "aria-label" (Text.pack "Log")] logged
+              ]
    in Element.el
         "div"
         ["turn-bar", if yours then "yours" else "theirs"]
         []
-        $ [ Element.el
-              "p"
-              ["turn-label"]
+        $ [ heading,
+            Element.el
+              "div"
+              ["strip"]
               []
-              ( [ Element.el "strong" [] [] [Element.string ("Turn " <> show (PlayerView.turn board))],
-                  Element.text (Text.pack " \x00b7 " <> (if yours then Text.pack "Your " else possessive (PlayerView.active board)) <> Wording.phase (PlayerView.phase board))
-                ]
-                  <> [Element.el "span" ["extra"] [Element.attr "title" extraTip] [Element.string "Extra"] | extra]
-                  <> foldMap (pure . daytime) (PlayerView.daytime board)
-              ),
-            Element.el "ol" ["phases"] [Element.attr "aria-hidden" (Text.pack "true")] [Element.el "li" (shown i <> cls) [Element.attr "title" (if i == current && extra then extraTip else Text.pack tip)] [Icon.icon [] glyph] | (i, (glyph, cls, tip)) <- zip [0 :: Integer ..] phaseIcons]
+              ( Element.el "ol" ["phases"] [Element.attr "aria-hidden" (Text.pack "true")] [Element.el "li" (shown i <> cls) [Element.attr "title" (if i == current && extra then extraTip else Text.pack tip)] [Icon.icon [] glyph] | (i, (glyph, cls, tip)) <- zip [0 :: Integer ..] phaseIcons]
+                  : stripEnd
+              )
           ]
           <> controls
 

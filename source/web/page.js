@@ -27,6 +27,8 @@ function note(line) {
   const phase = document.getElementById("phase");
   const next = nextPhase[line.split(" ")[0]];
   if (phase) phase.textContent = next ? `${next}\u2026` : line;
+  // A failure stops the spinner.
+  if (phase && !next) phase.parentElement.querySelector(".spinner")?.remove();
 }
 
 // The settings menu: theme (the system's unless one is picked), card size
@@ -90,7 +92,7 @@ function openSettings(open) {
 settingsButton.addEventListener("click", () => openSettings(settings.hidden));
 document.addEventListener("click", (event) => {
   if (!settings.hidden && !event.target.closest(".chrome, [data-settings]")) openSettings(false);
-  for (const open of root.querySelectorAll("details.auto-pass[open]")) if (!open.contains(event.target)) open.open = false;
+  for (const open of root.querySelectorAll("details.auto-pass[open], details.log[open]")) if (!open.contains(event.target)) open.open = false;
 });
 document.addEventListener("keydown", (event) => {
   if (event.key === "Escape" && !settings.hidden) {
@@ -213,6 +215,7 @@ function apply(json) {
     }
   }
   holdDock(docked);
+  placePeek();
   syncSettings();
   floatChanges(before);
   announce();
@@ -313,6 +316,27 @@ root.addEventListener("pointerout", (event) => {
   }
 });
 
+// A preview sits beside the card it previews, as a tooltip would: to its
+// right where it fits, else to its left, level with it as far as the window
+// allows.
+function placePeek() {
+  const sheet = root.querySelector(".sheet-backdrop.peek .sheet");
+  if (!sheet || !peeking?.isConnected) return;
+  const card = peeking.getBoundingClientRect();
+  const box = sheet.getBoundingClientRect();
+  const width = document.documentElement.clientWidth;
+  const height = document.documentElement.clientHeight;
+  const gap = 12;
+  let left = card.right + gap;
+  if (left + box.width > width - gap) left = card.left - gap - box.width;
+  if (left < gap) left = Math.max(gap, Math.min(width - gap - box.width, card.left + card.width / 2 - box.width / 2));
+  const top = Math.max(gap, Math.min(height - gap - box.height, card.top + card.height / 2 - box.height / 2));
+  sheet.style.position = "fixed";
+  sheet.style.margin = "0";
+  sheet.style.left = `${left}px`;
+  sheet.style.top = `${top}px`;
+}
+
 // The keyboard, which the shortcuts list (#keys, opened by ?) spells out:
 // Enter or Space presses the prompt's main button, a digit the button
 // numbered for it, a letter the button the view gave that key
@@ -324,6 +348,27 @@ document.getElementById("keys-button").addEventListener("click", () => {
   openSettings(false);
   shortcuts.showModal();
 });
+// A click outside the list closes it, as Escape does.
+shortcuts.addEventListener("click", (event) => {
+  const box = shortcuts.getBoundingClientRect();
+  if (event.clientX < box.left || event.clientX > box.right || event.clientY < box.top || event.clientY > box.bottom) shortcuts.close();
+});
+// The buttons' keys show while Alt is held, and pressing one then works as
+// it does alone.
+function showKeys(on) {
+  document.documentElement.classList.toggle("show-keys", on);
+}
+document.addEventListener("keydown", (event) => showKeys(event.altKey && !event.metaKey && !event.ctrlKey));
+document.addEventListener("keyup", (event) => showKeys(event.altKey && !event.metaKey && !event.ctrlKey));
+window.addEventListener("blur", () => showKeys(false));
+// The key a press means, as though Alt were not held (Alt+A types "\u00e5"
+// on a Mac).
+function pressed(event) {
+  if (!event.altKey) return event.key;
+  if (event.code.startsWith("Key")) return event.code.slice(3).toLowerCase();
+  if (event.code.startsWith("Digit")) return event.code.slice(5);
+  return event.key;
+}
 // Marks a key page.js gave, so unkey takes back only those.
 const given = "data-key-given";
 let returnTo = null;
@@ -397,11 +442,12 @@ function nearest(from, dx, dy) {
 const arrows = { ArrowLeft: [-1, 0], ArrowRight: [1, 0], ArrowUp: [0, -1], ArrowDown: [0, 1] };
 
 document.addEventListener("keydown", (event) => {
-  if (event.defaultPrevented || event.metaKey || event.ctrlKey || event.altKey) return;
+  if (event.defaultPrevented || event.metaKey || event.ctrlKey) return;
   if (!settings.hidden || shortcuts.open) return;
+  const key = pressed(event);
   const sheet = openSheet();
-  if (event.key === "Escape") {
-    const levels = root.querySelector("details.auto-pass[open]");
+  if (key === "Escape") {
+    const levels = root.querySelector("details.auto-pass[open], details.log[open]");
     if (levels) {
       levels.open = false;
       levels.querySelector("summary").focus();
@@ -409,7 +455,7 @@ document.addEventListener("keydown", (event) => {
     return;
   }
   // Tab stays within an open card sheet, as within any dialog.
-  if (event.key === "Tab" && sheet) {
+  if (key === "Tab" && sheet) {
     const stops = Array.from(sheet.querySelectorAll("button"));
     const first = stops[0];
     const last = stops[stops.length - 1];
@@ -428,7 +474,7 @@ document.addEventListener("keydown", (event) => {
   const target = event.target;
   const typing = target instanceof Element && (target.matches("input, textarea, select") || target.isContentEditable);
   if (typing) return;
-  if (event.key === "Enter" || event.key === " ") {
+  if (key === "Enter" || key === " ") {
     // A focused button or summary takes its own Enter.
     // (Safari has no HTMLSummaryElement.)
     const onButton = target instanceof Element && target.matches("button, summary");
@@ -439,28 +485,28 @@ document.addEventListener("keydown", (event) => {
     }
     return;
   }
-  if (event.key === "?") {
+  if (key === "?") {
     event.preventDefault();
     shortcuts.showModal();
     return;
   }
-  if (sheet === null && event.key in arrows) {
-    const next = nearest(target, ...arrows[event.key]);
+  if (sheet === null && key in arrows) {
+    const next = nearest(target, ...arrows[key]);
     if (next) {
       event.preventDefault();
       next.focus();
     }
     return;
   }
-  if (sheet === null && event.key.toUpperCase() === "L") {
+  if (sheet === null && key.toUpperCase() === "L") {
     const log = root.querySelector("details.log");
     if (log) log.open = !log.open;
     return;
   }
-  if (event.key.length !== 1) return;
-  const key = event.key.toUpperCase();
+  if (key.length !== 1) return;
+  const letter = key.toUpperCase();
   const scope = sheet ?? root.querySelector(".prompt");
-  const button = scope && Array.from(scope.querySelectorAll("button[aria-keyshortcuts]")).find((b) => !b.disabled && b.getAttribute("aria-keyshortcuts") === key);
+  const button = scope && Array.from(scope.querySelectorAll("button[aria-keyshortcuts]")).find((b) => !b.disabled && b.getAttribute("aria-keyshortcuts") === letter);
   if (button) {
     event.preventDefault();
     button.click();

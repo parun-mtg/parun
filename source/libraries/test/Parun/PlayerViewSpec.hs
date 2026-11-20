@@ -583,8 +583,8 @@ spec s registry = Spec.describe s "PlayerView" $ do
               "Lizard Warrior deals 4 damage to Grizzly Bears.",
               "Hill Giant deals 3 damage to Player 2.",
               "Player 2 loses 3 life.",
-              "Grizzly Bears is put into a graveyard from the battlefield.",
-              "Lizard Warrior is put into a graveyard from the battlefield."
+              "Grizzly Bears is put into Player 1's graveyard from the battlefield.",
+              "Lizard Warrior is put into Player 2's graveyard from the battlefield."
             ]
     gs <- S.play s registry setup script S.combatGame
     Monad.forM_ [S.alice, S.bob] $ \pid -> do
@@ -608,7 +608,7 @@ spec s registry = Spec.describe s "PlayerView" $ do
     Monad.forM_ [S.alice, S.bob] $ \pid -> do
       let seat = Text.unpack (Wording.player pid) <> ": "
       Spec.assertEqWith s (seat <> "CR 603.10a the giant, seen leaving") [ProjectedCharacteristics.names (Moved.characteristics m) | GameEvent.Moved m <- witnessedBy pid gs, ZoneChange.to (Moved.change m) == Zone.Library] [Set.singleton (CardName.MkCardName (Text.pack "Hill Giant"))]
-      Spec.assertBool s (Text.pack "Hill Giant moves from the battlefield to a library." `elem` drawnFor pid gs) (seat <> "drawn")
+      Spec.assertBool s (Text.pack "Hill Giant moves from the battlefield to Player 2's library." `elem` drawnFor pid gs) (seat <> "drawn")
   Spec.it s "CR 400.2 / 701.23a a land searched out onto the battlefield is witnessed by both seats as it arrives, the rest of the library by neither" $ do
     let mine =
           (S.battlefield S.alice (fmap (uncurry S.settled) [("f1", "Forest"), ("f2", "Forest"), ("f3", "Forest")]))
@@ -630,7 +630,7 @@ spec s registry = Spec.describe s "PlayerView" $ do
     Monad.forM_ [S.alice, S.bob] $ \pid -> do
       let seat = Text.unpack (Wording.player pid) <> ": "
       Spec.assertEqWith s (seat <> "CR 400.2 the land, seen arriving") [ProjectedCharacteristics.names (Moved.characteristics m) | GameEvent.Moved m <- witnessedBy pid gs, ZoneChange.from (Moved.change m) == Zone.Library] [Set.singleton (CardName.MkCardName (Text.pack "Plains"))]
-      Spec.assertBool s (Text.pack "Plains moves from a library to the battlefield." `elem` drawnFor pid gs) (seat <> "drawn")
+      Spec.assertBool s (Text.pack "Plains moves from Player 1's library to the battlefield." `elem` drawnFor pid gs) (seat <> "drawn")
     Spec.assertBool s (not ("Hill Giant" `List.isInfixOf` encodedFor S.bob gs)) "CR 701.23a the card alice saw searching reaches no part of bob's view"
   -- Beacon of Destruction's shuffle keeps the Giant on top, where alice sees it
   -- before and after through Vizier of the Menagerie, a look no event logs; the
@@ -719,15 +719,15 @@ spec s registry = Spec.describe s "PlayerView" $ do
             [ S.on S.precombatMain S.alice (S.playLand (S.aliasRef "played")),
               S.on S.precombatMain S.alice (S.castAction (S.aliasRef "geddon") choices)
             ]
-        died name = Text.pack (name <> " is put into a graveyard from the battlefield.")
+        died name owner = Text.pack (name <> " is put into " <> owner <> "'s graveyard from the battlefield.")
     gs <- S.play s registry setup script S.priorityGame
     Monad.forM_ [S.alice, S.bob] $ \pid -> do
       let drawn = drawnFor pid gs
           seat = Text.unpack (Wording.player pid) <> ": "
-      Spec.assertEqWith s (seat <> "every Plains, the one played this turn too") (length (filter (== died "Plains") drawn)) 5
-      Spec.assertEqWith s (seat <> "bob's Forest") (length (filter (== died "Forest") drawn)) 1
+      Spec.assertEqWith s (seat <> "every Plains, the one played this turn too") (length (filter (== died "Plains" "Player 1") drawn)) 5
+      Spec.assertEqWith s (seat <> "bob's Forest") (length (filter (== died "Forest" "Player 2") drawn)) 1
       Spec.assertEqWith s (seat <> "the land play, once") (filter (Text.isInfixOf (Text.pack "Plains moves")) drawn <> filter (== Text.pack "Player 1 plays Plains.") drawn) [Text.pack "Player 1 plays Plains."]
-      Spec.assertBool s (Text.pack "Armageddon is put into a graveyard from the stack." `elem` drawn) (seat <> "CR 608.2n the spell's own move, told by no other entry")
+      Spec.assertBool s (Text.pack "Armageddon is put into Player 1's graveyard from the stack." `elem` drawn) (seat <> "CR 608.2n the spell's own move, told by no other entry")
       Spec.assertEqWith s (seat <> "CR 601.2a the cast's move, told by the cast") (filter (Text.isInfixOf (Text.pack "to the stack")) drawn) []
   Spec.it s "CR 121.1 / 401.2 a draw is witnessed by both seats as the act alone, never the card" $ do
     let mine = (S.playerSetup S.alice) {Seat.library = Seq.fromList [S.cardSetup "Lava Axe", S.cardSetup "Forest"]}

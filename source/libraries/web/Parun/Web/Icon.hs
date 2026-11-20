@@ -25,10 +25,8 @@ data Icon
     MkGraveyard
   | -- | Exile: a spiral.
     MkExile
-  | -- | The settings: Parun's mark on a gear.
+  | -- | The settings: a cog.
     MkGear
-  | -- | Parun's mark without its ring, which 'loading' draws dashed.
-    MkLambda
   deriving (Bounded, Enum, Eq, Ord, Show)
 
 -- | The id of an icon's @<symbol>@ in the sprite.
@@ -43,7 +41,6 @@ iconId i = Text.pack . ("ui-" <>) $ case i of
   MkGraveyard -> "graveyard"
   MkExile -> "exile"
   MkGear -> "gear"
-  MkLambda -> "lambda"
 
 -- | An icon, hidden from assistive technology: what it means is said by
 -- the element holding it.
@@ -55,13 +52,13 @@ icon classes i =
     [Element.attr "viewBox" (Text.pack "0 0 24 24"), Element.attr "aria-hidden" (Text.pack "true"), Element.attr "focusable" (Text.pack "false")]
     [Element.el "use" [] [Element.attr "href" (Text.pack "#" <> iconId i)] []]
 
--- | Parun's mark with its ring dashed and turning: something is loading.
+-- | A spinner, an arc turning on a faint ring: something is loading.
 loading :: [String] -> Html.Html msg
 loading classes =
   Element.el
     "svg"
-    ("icon" : "loading" : classes)
+    ("icon" : "spinner" : classes)
     [Element.attr "viewBox" (Text.pack "0 0 24 24"), Element.attr "aria-hidden" (Text.pack "true"), Element.attr "focusable" (Text.pack "false")]
-    [ Element.el "circle" ["ring"] [Element.attr "cx" (Text.pack "12"), Element.attr "cy" (Text.pack "12"), Element.attr "r" (Text.pack "7.9")] [],
-      Element.el "use" [] [Element.attr "href" (Text.pack "#" <> iconId MkLambda)] []
+    [ Element.el "circle" ["track"] [Element.attr "cx" (Text.pack "12"), Element.attr "cy" (Text.pack "12"), Element.attr "r" (Text.pack "9")] [],
+      Element.el "path" ["arc"] [Element.attr "d" (Text.pack "M12 3a9 9 0 0 1 9 9")] []
     ]
