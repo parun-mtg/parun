@@ -344,6 +344,32 @@ sharedTurnsSpec s registry = Spec.describe s "SharedTeamTurns" $ do
            in State.execState (Engine.runGame keeping board (Mulligan.openingHands S.performer seats)) []
     Spec.assertEqWith s "CR 805.3a alice and dave, then bob and carol" (run sharedTurns) [S.alice, S.dave, S.bob, S.carol]
     Spec.assertEqWith s "without the option each seat in turn order" (run id) seats
+  -- CR 805.3b / 103.6c: the starting team takes its opening-hand actions in the
+  -- order it likes, dave (the primary player, CR 805.2) naming it. A Synthetic
+  -- Lone Leyline begins the game on the battlefield only while none is there,
+  -- so the teammate named first is the one whose card does.
+  Spec.it s "CR 805.3b the starting team names which teammate takes opening-hand actions first" $ do
+    island <- S.printingOf s registry "Island"
+    leyline <- S.printingOf s registry "Synthetic Lone Leyline"
+    let seats = [S.alice, S.bob, S.carol, S.dave]
+        run option first =
+          let teamed = option (S.inTeams [[S.dave, S.alice], [S.bob, S.carol]] S.fourPlayerGame)
+              stockOne gs pid =
+                let cards = (if pid == S.alice || pid == S.dave then (leyline :) else (island :)) (replicate 6 island)
+                 in List.foldl' (\g card -> snd (S.addLibraryCard card pid g)) gs cards
+              board = List.foldl' stockOne teamed seats
+              answer :: Prompt.Prompt r -> State.State [PlayerId.PlayerId] r
+              answer p = case p of
+                Prompt.DeclareMulligan {} -> pure MulliganDecision.Keep
+                Prompt.ChooseActivePlayer _ pid _ -> State.modify' (<> [pid]) >> pure first
+                Prompt.OpeningHandAction _ _ candidates -> pure (Maybe.listToMaybe candidates)
+                _ -> pure (S.identityAnswer p)
+              ((_, after), asked) = State.runState (Engine.runGame answer board (Mulligan.openingHands S.performer seats)) []
+              onBattlefield pid = length (Game.zoneMembers Zone.Battlefield pid after)
+           in (onBattlefield S.alice, onBattlefield S.dave, asked)
+    Spec.assertEqWith s "CR 805.3b dave names himself, and his leyline begins on the battlefield" (run sharedTurns S.dave) (0, 1, [S.dave])
+    Spec.assertEqWith s "naming alice puts hers there instead" (run sharedTurns S.alice) (1, 0, [S.dave])
+    Spec.assertEqWith s "without the option alice acts first, unasked" (run id S.dave) (1, 0, [])
   -- CR 803.1a / 803.1b: left and right are SEATS, which CR 805.6's team-grouped
   -- APNAP order does not preserve. Dave and alice's team wraps the turn order
   -- [alice, bob, carol, dave], so alice's right-hand seat is her teammate dave

@@ -73,8 +73,8 @@ startingHandSize = Vanguard.handSize openingHand
 -- players go first and then each other team's in turn order, which is `owners`
 -- regrouped by team.
 --
--- Not implemented: CR 103.5d's order within a team under the shared team turns
--- option, which that team chooses (#8002).
+-- Not implemented: CR 805.3a's mulligan declarations within the starting team
+-- come in seat order; the team does not choose it (#8002).
 openingHands :: HandActionPerformer -> [PlayerId] -> Game ()
 openingHands perform seated = do
   owners <- State.gets (\gs -> List.sortOn (\pid -> List.findIndex (Turn.sharesTurn gs pid) seated) seated)
@@ -300,9 +300,19 @@ handWindowExcept cap revealed field question perform pid = do
 -- order, which is exactly the order `owners` arrives in. A player who has left
 -- the game is not here to act -- the rebuild paths derive `owners` from
 -- Game.stillPlayingInOrder, so they get no window and no opening hand.
+--
+-- CR 103.6c / 805.3b: under the shared team turns option the starting team's
+-- players act in the order that team likes (Event.inActiveTeamOrder; CR 101.4e
+-- makes the starting player the active one), asked while any teammate left
+-- has an action to take. TeamSpec's "CR 805.3b the starting team names which
+-- teammate takes opening-hand actions first" proves it.
 openingHandActions :: HandActionPerformer -> [PlayerId] -> Game ()
 openingHandActions perform owners =
-  Monad.forM_ owners (handWindow HandWindowCap.RevealOncePerCard Face.openingHandActions Prompt.OpeningHandAction perform)
+  Event.inActiveTeamOrder
+    (\gs -> any (\pid -> any (\((oid, _), action) -> allows pid oid action gs) (actionsFor Face.openingHandActions pid gs)))
+    owners
+    (\pid () -> handWindow HandWindowCap.RevealOncePerCard Face.openingHandActions Prompt.OpeningHandAction perform pid)
+    ()
 
 -- CR 103.5: repeat the declare-all-then-take-all round until no still-deciding
 -- player mulligans. `deciding` is the players who have NOT yet kept -- keeping

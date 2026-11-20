@@ -1595,15 +1595,18 @@ Entries are ordered by the first rule each cites.
   their draws "in whatever order that team likes". With three or more
   teammates, is the whole order named before the first draw, or the next
   drawer after each?
-- **Rules**: CR 121.2d, 805.2, 805.6, 805.6a; CR of 2026-11-06.
+- **Rules**: CR 103.6c, 121.2d, 805.2, 805.3b, 805.6, 805.6a; CR of
+  2026-11-06.
 - **Decision**: The next drawer is named after each teammate's draws, by the
   team's primary player, so the team sees a draw's outcome first.
 - **Rejected**: One order named up front. Nothing in the rule asks the team
   to announce an order.
 - **Site**: `Parun.Engine.Event.inActiveTeamOrder`, for draws
-  (`Parun.Engine.Event.inDrawOrder`) and, under CR 805.6, a loop's choices
+  (`Parun.Engine.Event.inDrawOrder`), under CR 805.6 a loop's choices
   and an individually processed loop's members
-  (`Parun.Engine.Resolve.Arms.Zones.forEach`). The scenarios "CR 805.6a the
+  (`Parun.Engine.Resolve.Arms.Zones.forEach`), and under CR 805.3b the
+  starting team's opening-hand actions
+  (`Parun.Engine.Mulligan.openingHandActions`). The scenarios "CR 805.6a the
   active team names which teammate draws first" and "CR 805.6 the active team
   names which teammate chooses first for Fortunate Few" prove the choice, on
   two teammates, where the readings agree.
