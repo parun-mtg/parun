@@ -1,0 +1,31 @@
+{
+  "description": "CR 603.2 / 603.10 Curse of Shaken Faith burns bob once, not twice, for two free casts Etali's one trigger lets him make, each read against the board after its own cast",
+  "note": "Bob has cast nothing this turn. Etali exiles both players' Grizzly Bears and bob casts both free: the first is the turn's first spell (no damage), the second is not (2). A board filed only when the instruction ends counts both casts for each and burns bob 4.",
+  "board": {
+    "active": "bob",
+    "step": "PrecombatMain",
+    "seats": [
+      {
+        "name": "alice",
+        "battlefield": [{ "card": "Curse of Shaken Faith", "label": "curse", "attached": "bob" }],
+        "library": [{ "card": "Grizzly Bears", "label": "a" }, { "card": "Island" }, { "card": "Island" }]
+      },
+      {
+        "name": "bob",
+        "battlefield": [{ "card": "Etali, Primal Storm", "label": "e", "ready": true }],
+        "library": [{ "card": "Grizzly Bears", "label": "b" }, { "card": "Island" }, { "card": "Island" }]
+      }
+    ]
+  },
+  "timeline": [
+    { "turn": 1, "step": "DeclareAttackers", "player": "bob", "do": { "Attack": ["$e"] } },
+    { "turn": 1, "step": "DeclareAttackers", "player": "bob", "do": "Pass" },
+    { "turn": 1, "step": "DeclareAttackers", "player": "bob", "do": "Pass" },
+    { "turn": 1, "step": "DeclareAttackers", "player": "bob", "do": { "Answer": { "prompt": "ChooseOfferedCastSpell", "with": ["$a", "Grizzly Bears"] } } },
+    { "turn": 1, "step": "DeclareAttackers", "player": "bob", "do": { "Answer": { "prompt": "OfferedCast", "with": "Exercises" } } },
+    { "turn": 1, "step": "DeclareAttackers", "player": "bob", "do": { "Answer": { "prompt": "OfferedCast", "with": "Exercises" } } },
+    { "turn": 1, "step": "DeclareAttackers", "player": "bob", "check": { "Count": { "card": "Grizzly Bears", "count": 2, "player": "bob", "zone": "Stack" } } },
+    { "turn": 1, "step": "PostcombatMain", "player": "bob", "check": { "Count": { "card": "Grizzly Bears", "count": 2, "player": "bob", "zone": "Battlefield" } } },
+    { "turn": 1, "step": "PostcombatMain", "player": "bob", "check": { "Life": { "player": "bob", "life": 18 } } }
+  ]
+}
