@@ -3091,6 +3091,14 @@ placesCounters effect = case effect of
   ReplacementEffect.EntryR (EntryR.MkEntryR matching (EntryRewrite.InOrder rewrites)) -> all (placesCounters . ReplacementEffect.EntryR . EntryR.MkEntryR matching) rewrites
   _ -> False
 
+-- Whether a row runs a card's effects as its object enters (CR 614.1c's "as
+-- [this permanent] enters, [do something]") -- Event.orderEntries' question.
+runsEffects :: ReplacementEffect Card (GrantedAbility.GrantedAbility Card) (Effect.Effect Card (GrantedAbility.GrantedAbility Card)) -> Bool
+runsEffects effect = case effect of
+  ReplacementEffect.EntryR (EntryR.MkEntryR _ (EntryRewrite.RunEffects _)) -> True
+  ReplacementEffect.EntryR (EntryR.MkEntryR matching (EntryRewrite.InOrder rewrites)) -> any (runsEffects . ReplacementEffect.EntryR . EntryR.MkEntryR matching) rewrites
+  _ -> False
+
 -- Whether a row's whole work is a choice its entering object's controller alone
 -- makes and the object records (Object.chosenColors, chosenSubtype,
 -- chosenCardType, chosenPlayers, chosenNames, chosenNumber) -- `oneSentenceOfChoices`' question.

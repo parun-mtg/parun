@@ -18,6 +18,10 @@ data Settle = MkSettle
   { -- | CR 614.11a: run what a replacement queued in an event's place
     -- (Resolve.runReplacementEffects).
     queued :: Game.Game (),
+    -- | CR 614.1c / 614.13b: run the as-enters effects the entries so far
+    -- queued (Resolve.runEntryEffects), so a member of a batch acts before the
+    -- next member's entry applies.
+    entryEffects :: Game.Game (),
     -- | CR 706.1: throw and record a roll settled below Resolve -- Pokey, the
     -- Scallywagg's instead of a coin flip (CR 614.6), the planar die (CR 901.9)
     -- -- answering the kept results. Nothing where no thrower reaches, which
@@ -35,6 +39,7 @@ none :: Settle
 none =
   MkSettle
     { queued = pure (),
+      entryEffects = pure (),
       throwRecorded = Nothing,
       reflipWindow = \_ _ -> pure False
     }

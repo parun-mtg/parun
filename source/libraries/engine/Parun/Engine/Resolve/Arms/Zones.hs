@@ -281,6 +281,13 @@ moveToZone settle resolving source controller legal chosen (MoveToZone.MkMoveToZ
           Monad.when (landed == Just Zone.Battlefield) $ do
             State.modify' (Common.linkEntrant resolving source newId)
             State.modify' (Common.linkCraftMaterials resolving newId)
+        -- CR 614.13b: the member's as-enters effects run before the next
+        -- member's entry applies, in the order Event.orderEntries settled.
+        -- The rule's exclusion of later members still in a library from a
+        -- mill is not needed: every as-enters mill asks a kicker (Monstrous
+        -- War-Leech, Urborg Lhurgoyf), and only a spell is kicked (CR
+        -- 702.33d), never a member of a batch.
+        Settle.entryEffects settle
         pure (foldr Set.insert sofar mNew, mNew : acc)
       -- CR 303.4f's choice for an Aura the effect puts onto the battlefield
       -- "attached to" a host it describes (EntryHost.Chosen, Nomad
@@ -523,7 +530,14 @@ moveToZone settle resolving source controller legal chosen (MoveToZone.MkMoveToZ
                   let riders = Common.freezeRiders (effectViewOf resolving source legal now) (chooseContext now) now resolving source entry
                   fmap (reverse . snd) (Event.simultaneously (moveOne mover mAttack mBlocked riders now (Set.empty, []) arrival))
               | otherwise -> do
-                  batch <- fmap (reverse . snd) (Event.simultaneously (Event.amongPending (if EntryRiders.under frozen == EntryController.Owner then Nothing else Just mover) (fmap fst arrivals) (Monad.foldM (moveOne mover mAttack mBlocked frozen before) (Set.empty, []) arrivals)))
+                  let under = if EntryRiders.under frozen == EntryController.Owner then Nothing else Just mover
+                  -- CR 616.1 / 101.4c: the order the members' entries apply in.
+                  ordered <-
+                    if zone == Zone.Battlefield
+                      then Event.orderEntries under (fmap fst arrivals)
+                      else pure (fmap fst arrivals)
+                  let inOrder = Maybe.mapMaybe (\oid -> fmap ((,) oid) (lookup oid arrivals)) ordered
+                  batch <- fmap (reverse . snd) (Event.simultaneously (Event.amongPending under (fmap fst arrivals) (Monad.foldM (moveOne mover mAttack mBlocked frozen before) (Set.empty, []) inOrder)))
                   -- CR 613.7m: the members that entered the battlefield together
                   -- take their stamps in APNAP order, each seat choosing its own.
                   -- Not on the one-at-a-time road above, whose cards enter at

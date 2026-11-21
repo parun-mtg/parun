@@ -326,6 +326,8 @@ offerOf namer gs prompt = case prompt of
   Prompt.OrderTimestamps _ _ permanents -> listing namer "order" Nothing [] (fmap (object namer) permanents)
   -- CR 605.3: the first named activated first.
   Prompt.OrderManaActivations _ _ permanents -> listing namer "order" Nothing [] (fmap (object namer) permanents)
+  -- CR 616.1 / 101.4c: the first named applies its as-enters replacements first.
+  Prompt.OrderEntries _ _ permanents -> listing namer "order" Nothing [] (fmap (object namer) permanents)
   -- CR 508.1j / 509.1f: each taxing permanent, the first named paid first.
   Prompt.OrderCombatTolls _ _ permanents -> listing namer "order" Nothing [] (fmap (object namer) permanents)
   -- CR 713.8a / 731.3a: each component card by name, the first named put into

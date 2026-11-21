@@ -484,6 +484,7 @@ shapeOf prompt = case prompt of
   Prompt.ChooseRepeat {} -> viaCodec Codec.OptionalDecision.codec
   Prompt.OrderTimestamps {} -> list natural
   Prompt.OrderManaActivations {} -> list natural
+  Prompt.OrderEntries {} -> list natural
   Prompt.KeepHand {} -> natural
   Prompt.DeclareMulligan {} -> named [MulliganDecision.Mulligan, MulliganDecision.Keep]
   Prompt.Bottom {} -> list object

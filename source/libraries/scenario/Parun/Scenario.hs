@@ -1330,6 +1330,7 @@ withinOffer prompt chosen = case prompt of
   Prompt.Type.OrderTriggers _ _ entries -> permutationOf entries chosen
   Prompt.Type.OrderTimestamps _ _ objects -> permutationOf objects chosen
   Prompt.Type.OrderManaActivations _ _ objects -> permutationOf objects chosen
+  Prompt.Type.OrderEntries _ _ objects -> permutationOf objects chosen
   Prompt.Type.OrderCombatTolls _ _ objects -> permutationOf objects chosen
   Prompt.Type.OrderComponentCards _ _ _ printings -> permutationOf printings chosen
   Prompt.Type.ChooseStickerKeeper _ _ printings -> chosen < Natural.length printings
