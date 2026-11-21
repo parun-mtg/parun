@@ -8,6 +8,7 @@ import qualified Parun.Types.Compares as Compares
 import qualified Parun.Types.Comparison as Comparison
 import qualified Parun.Types.Condition as Condition
 import qualified Parun.Types.ControllerRelation as ControllerRelation
+import qualified Parun.Types.Copies as Copies
 import qualified Parun.Types.Filter as Filter
 import qualified Parun.Types.Holder as Holder
 import qualified Parun.Types.PhaseSelector as PhaseSelector
@@ -31,7 +32,7 @@ spec s = Spec.describe s "Parun.Codec.SpellCast" $ do
             SpellCast.zone = Nothing,
             SpellCast.ordinal = Nothing,
             SpellCast.phase = Nothing,
-            SpellCast.copies = False,
+            SpellCast.copies = Copies.NoCopies,
             SpellCast.while = Nothing
           }
       )
@@ -48,7 +49,7 @@ spec s = Spec.describe s "Parun.Codec.SpellCast" $ do
             SpellCast.zone = Nothing,
             SpellCast.ordinal = Nothing,
             SpellCast.phase = Nothing,
-            SpellCast.copies = False,
+            SpellCast.copies = Copies.NoCopies,
             SpellCast.while = Nothing
           }
       )
@@ -65,7 +66,7 @@ spec s = Spec.describe s "Parun.Codec.SpellCast" $ do
             SpellCast.zone = Just Zone.Hand,
             SpellCast.ordinal = Nothing,
             SpellCast.phase = Nothing,
-            SpellCast.copies = False,
+            SpellCast.copies = Copies.NoCopies,
             SpellCast.while = Nothing
           }
       )
@@ -82,7 +83,7 @@ spec s = Spec.describe s "Parun.Codec.SpellCast" $ do
             SpellCast.zone = Nothing,
             SpellCast.ordinal = Just 2,
             SpellCast.phase = Nothing,
-            SpellCast.copies = False,
+            SpellCast.copies = Copies.NoCopies,
             SpellCast.while = Nothing
           }
       )
@@ -99,7 +100,7 @@ spec s = Spec.describe s "Parun.Codec.SpellCast" $ do
             SpellCast.zone = Nothing,
             SpellCast.ordinal = Nothing,
             SpellCast.phase = Just PhaseSelector.CombatPhase,
-            SpellCast.copies = False,
+            SpellCast.copies = Copies.NoCopies,
             SpellCast.while = Nothing
           }
       )
@@ -115,11 +116,11 @@ spec s = Spec.describe s "Parun.Codec.SpellCast" $ do
             SpellCast.zone = Nothing,
             SpellCast.ordinal = Nothing,
             SpellCast.phase = Nothing,
-            SpellCast.copies = True,
+            SpellCast.copies = Copies.AlsoCopies,
             SpellCast.while = Nothing
           }
       )
-      " {\"spell\":{\"type\":\"Matching\",\"value\":{\"type\":\"HeldBy\",\"value\":{\"holder\":\"Controller\",\"relation\":\"You\"}}},\"scope\":{\"type\":\"PlayersTurn\",\"value\":{\"type\":\"Relative\",\"value\":\"AnyPlayer\"}},\"copies\":true} "
+      " {\"spell\":{\"type\":\"Matching\",\"value\":{\"type\":\"HeldBy\",\"value\":{\"holder\":\"Controller\",\"relation\":\"You\"}}},\"scope\":{\"type\":\"PlayersTurn\",\"value\":{\"type\":\"Relative\",\"value\":\"AnyPlayer\"}},\"copies\":\"AlsoCopies\"} "
   -- Social Snub's "while you control a creature", elided when absent.
   Spec.it s "MkSpellCast, a window holding a state" $
     Common.assertCodec
@@ -131,7 +132,7 @@ spec s = Spec.describe s "Parun.Codec.SpellCast" $ do
             SpellCast.zone = Nothing,
             SpellCast.ordinal = Nothing,
             SpellCast.phase = Nothing,
-            SpellCast.copies = False,
+            SpellCast.copies = Copies.NoCopies,
             SpellCast.while = Just (Condition.Compares (Compares.MkCompares (Quantity.Literal 0) Comparison.Exactly (Quantity.Literal 0)))
           }
       )

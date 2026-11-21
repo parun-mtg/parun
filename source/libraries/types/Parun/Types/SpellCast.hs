@@ -3,6 +3,7 @@ module Parun.Types.SpellCast where
 import qualified Numeric.Natural as Natural
 import qualified Parun.Types.ActingPermanent as ActingPermanent
 import qualified Parun.Types.Condition as Condition
+import qualified Parun.Types.Copies as Copies
 import qualified Parun.Types.Filter as Filter
 import qualified Parun.Types.Keyword as Keyword
 import qualified Parun.Types.PhaseSelector as PhaseSelector
@@ -76,11 +77,12 @@ data SpellCast = MkSpellCast
     -- o:"spell during combat", 2026-09-25, found Zuko alone, which prints no
     -- ordinal.
     phase :: Maybe PhaseSelector.PhaseSelector,
-    -- | Magecraft's "whenever you cast OR COPY" (CR 207.2c): also fires as a
-    -- copy of a matching spell is put onto the stack, which CR 707.10 says is
-    -- not cast (GameEvent.SpellCopied). A copy came from no zone and is no
+    -- | Whether a copy of a matching spell put onto the stack fires it, which
+    -- CR 707.10 says is not cast (GameEvent.SpellCopied): never, also
+    -- (Magecraft's "whenever you cast OR COPY", CR 207.2c), or only (Curse of
+    -- Shaken Faith's "or copies a spell"). A copy came from no zone and is no
     -- cast of the turn, so it never satisfies `zone` or `ordinal` above.
-    copies :: Bool,
+    copies :: Copies.Copies,
     -- | Social Snub's "when you cast this spell WHILE YOU CONTROL A CREATURE"
     -- and Fire Lord Azula's "while Fire Lord Azula is attacking": a state
     -- asked as the cast happens and never re-checked, as
@@ -101,7 +103,7 @@ self =
       zone = Nothing,
       ordinal = Nothing,
       phase = Nothing,
-      copies = False,
+      copies = Copies.NoCopies,
       while = Nothing
     }
 

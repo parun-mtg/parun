@@ -48,7 +48,7 @@
           "condition": {
             "type": "SpellCast",
             "value": {
-              "copies": true,
+              "copies": "AlsoCopies",
               "scope": {
                 "type": "PlayersTurn",
                 "value": {
