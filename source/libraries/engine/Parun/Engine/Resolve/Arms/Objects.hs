@@ -2084,7 +2084,7 @@ exploit settle resolving source controller legal = do
           controller
           source
           gs
-          (Filter.Type.And [Filter.Type.HasCardType CardType.Creature, Filter.Type.HeldBy Holder.Controller PlayerRelation.You])
+          (Filter.Type.And [Filter.Type.HasCardType CardType.Creature, Filter.Type.HeldBy Holder.Controller (ControllerRelation.Related PlayerRelation.You)])
   victims <- Maybe.maybeToList <$> Game.chooseAmong (\decider who pool -> Prompt.ChoosePermanent decider who source pool Seq.empty Nothing) controller candidates
   Monad.forM_ victims $ \victim -> Event.simultaneously $ do
     Event.sacrifice settle controller victim

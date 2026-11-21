@@ -14,6 +14,7 @@ import qualified Parun.Types.ActivationRestriction as ActivationRestriction
 import qualified Parun.Types.Activator as Activator
 import qualified Parun.Types.Clause as Clause
 import qualified Parun.Types.CombatStep as CombatStep
+import qualified Parun.Types.ControllerRelation as ControllerRelation
 import qualified Parun.Types.Copyability as Copyability
 import qualified Parun.Types.Cost as Cost
 import qualified Parun.Types.CostAmount as CostAmount
@@ -87,7 +88,7 @@ spec s = Spec.describe s "Parun.Codec.ActivatedAbility" $ do
               ( Seq.singleton
                   ( Mode.MkMode
                       (Seq.singleton (Clause.MkClause Nothing Nothing Nothing Optionality.Mandatory Nothing (Seq.singleton (Effect.Attach (SlotName.MkSlotName (Text.pack "target"))))))
-                      (Map.singleton (SlotName.MkSlotName (Text.pack "target")) (TargetSlot.required Pool.Creatures (Just (Filter.HeldBy Holder.Controller PlayerRelation.You))))
+                      (Map.singleton (SlotName.MkSlotName (Text.pack "target")) (TargetSlot.required Pool.Creatures (Just (Filter.HeldBy Holder.Controller (ControllerRelation.Related PlayerRelation.You)))))
                   )
               )
               (ModeSelection.ChooseExactly 1)

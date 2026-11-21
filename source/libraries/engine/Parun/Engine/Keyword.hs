@@ -2117,7 +2117,7 @@ ninjutsu (Ninjutsu.MkNinjutsu cost variant) =
             ReturnPermanents.whichPermanents =
               Filter.And
                 [ Filter.HasCardType CardType.Creature,
-                  Filter.HeldBy Holder.Controller PlayerRelation.You,
+                  Filter.HeldBy Holder.Controller (ControllerRelation.Related PlayerRelation.You),
                   Filter.IsAttacking Nothing,
                   Filter.HasBlockStatus BlockStatus.Unblocked
                 ]
@@ -2700,7 +2700,7 @@ crew payload =
         Filter.And
           [ Filter.HasCardType CardType.Creature,
             Filter.Not Filter.IsTapped,
-            Filter.HeldBy Holder.Controller PlayerRelation.You,
+            Filter.HeldBy Holder.Controller (ControllerRelation.Related PlayerRelation.You),
             Filter.Not Filter.IsSource,
             Filter.Not (Filter.CantPayKeywordCost KeywordCostPart.Crew)
           ]
@@ -2768,7 +2768,7 @@ saddle n =
         Filter.And
           [ Filter.HasCardType CardType.Creature,
             Filter.Not Filter.IsTapped,
-            Filter.HeldBy Holder.Controller PlayerRelation.You,
+            Filter.HeldBy Holder.Controller (ControllerRelation.Related PlayerRelation.You),
             Filter.Not Filter.IsSource
           ]
    in ActivatedAbility.MkActivatedAbility
@@ -2863,7 +2863,7 @@ station =
         Filter.And
           [ Filter.HasCardType CardType.Creature,
             Filter.Not Filter.IsTapped,
-            Filter.HeldBy Holder.Controller PlayerRelation.You,
+            Filter.HeldBy Holder.Controller (ControllerRelation.Related PlayerRelation.You),
             Filter.Not Filter.IsSource
           ]
       load =
@@ -3020,7 +3020,7 @@ outlast cost =
 -- 704.5n leaves Luxior on him" proves both.
 equip :: Equip.Equip Keyword -> ActivatedAbility Card (GrantedAbility.GrantedAbility Card)
 equip payload =
-  let narrowed kinds = Just (Filter.And (kinds <> (Filter.HeldBy Holder.Controller PlayerRelation.You : Maybe.maybeToList (Equip.quality payload))))
+  let narrowed kinds = Just (Filter.And (kinds <> (Filter.HeldBy Holder.Controller (ControllerRelation.Related PlayerRelation.You) : Maybe.maybeToList (Equip.quality payload))))
       (slot, effect) = case Equip.target payload of
         EquipTarget.Creature -> (TargetSlot.required Pool.Creatures (narrowed []), Effect.Attach equipTarget)
         EquipTarget.Planeswalker -> (TargetSlot.required Pool.Permanents (narrowed [Filter.HasCardType CardType.Planeswalker]), Effect.AttachAsThoughCreature equipTarget)
@@ -3073,7 +3073,7 @@ fortify cost =
   let slot =
         TargetSlot.required
           Pool.Permanents
-          (Just (Filter.And [Filter.HasCardType CardType.Land, Filter.HeldBy Holder.Controller PlayerRelation.You]))
+          (Just (Filter.And [Filter.HasCardType CardType.Land, Filter.HeldBy Holder.Controller (ControllerRelation.Related PlayerRelation.You)]))
       effect = Effect.Attach fortifyTarget
    in ActivatedAbility.MkActivatedAbility
         { ActivatedAbility.costChoices = [],
@@ -3120,7 +3120,7 @@ reconfigure cost =
   let slot =
         TargetSlot.required
           Pool.Creatures
-          (Just (Filter.And [Filter.HeldBy Holder.Controller PlayerRelation.You, Filter.Not Filter.IsSource]))
+          (Just (Filter.And [Filter.HeldBy Holder.Controller (ControllerRelation.Related PlayerRelation.You), Filter.Not Filter.IsSource]))
       effect = Effect.Attach reconfigureTarget
    in ActivatedAbility.MkActivatedAbility
         { ActivatedAbility.costChoices = [],
@@ -3580,7 +3580,7 @@ plainAlternativeCosts keywords =
               withReturn
                 ( Filter.And
                     [ Filter.HasCardType CardType.Creature,
-                      Filter.HeldBy Holder.Controller PlayerRelation.You,
+                      Filter.HeldBy Holder.Controller (ControllerRelation.Related PlayerRelation.You),
                       Filter.IsTapped
                     ]
                 )
@@ -3597,7 +3597,7 @@ plainAlternativeCosts keywords =
               withReturn
                 ( Filter.And
                     [ Filter.HasCardType CardType.Creature,
-                      Filter.HeldBy Holder.Controller PlayerRelation.You,
+                      Filter.HeldBy Holder.Controller (ControllerRelation.Related PlayerRelation.You),
                       Filter.IsAttacking Nothing,
                       Filter.HasBlockStatus BlockStatus.Unblocked
                     ]
@@ -3768,7 +3768,7 @@ selfCostReductionsFor keyword = case keyword of
     [ oneLessPerEach
         ( Count.MkCount
             (Scope.InZone (InZone.MkInZone Zone.Battlefield (PlayerRef.Relative PlayerRelation.AnyPlayer)))
-            (Filter.And [quality, Filter.HeldBy Holder.Controller PlayerRelation.You])
+            (Filter.And [quality, Filter.HeldBy Holder.Controller (ControllerRelation.Related PlayerRelation.You)])
             Aggregation.Members
         )
     ]
@@ -4126,7 +4126,7 @@ teamworkCost n =
                 ( Filter.And
                     [ Filter.HasCardType CardType.Creature,
                       Filter.Not Filter.IsTapped,
-                      Filter.HeldBy Holder.Controller PlayerRelation.You
+                      Filter.HeldBy Holder.Controller (ControllerRelation.Related PlayerRelation.You)
                     ]
                 )
                 Nothing
@@ -4157,7 +4157,7 @@ conspireCost =
                 ( Filter.And
                     [ Filter.HasCardType CardType.Creature,
                       Filter.Not Filter.IsTapped,
-                      Filter.HeldBy Holder.Controller PlayerRelation.You,
+                      Filter.HeldBy Holder.Controller (ControllerRelation.Related PlayerRelation.You),
                       Filter.Shares Trait.Color Anchor.Source
                     ]
                 )
@@ -4366,7 +4366,7 @@ manaSubstitutesFor symbol keywords =
         Filter.And
           ( [ Filter.HasCardType cardType,
               Filter.Not Filter.IsTapped,
-              Filter.HeldBy Holder.Controller PlayerRelation.You
+              Filter.HeldBy Holder.Controller (ControllerRelation.Related PlayerRelation.You)
             ]
               <> narrower
           )
@@ -4868,7 +4868,7 @@ grantedBy granter chosen colorless subtype cardType you already keyword = case w
   where
     spare filter_ = case filter_ of
       Filter.IsSource -> Filter.IsObject granter
-      Filter.HeldBy Holder.Controller PlayerRelation.You -> maybe (Filter.Or []) (Filter.HeldByPlayer Holder.Controller) you
+      Filter.HeldBy Holder.Controller (ControllerRelation.Related PlayerRelation.You) -> maybe (Filter.Or []) (Filter.HeldByPlayer Holder.Controller) you
       Filter.AttachedNoLaterThanSource -> Filter.Or (fmap Filter.IsObject already)
       Filter.And filters -> Filter.And (fmap spare filters)
       _ -> filter_
@@ -5984,7 +5984,7 @@ unpairedOther :: Filter Keyword
 unpairedOther =
   Filter.And
     [ Filter.HasCardType CardType.Creature,
-      Filter.HeldBy Holder.Controller PlayerRelation.You,
+      Filter.HeldBy Holder.Controller (ControllerRelation.Related PlayerRelation.You),
       Filter.Not Filter.IsSource,
       Filter.Not Filter.IsPaired
     ]
@@ -5995,7 +5995,7 @@ soulbondSelfEligible :: Condition.Condition
 soulbondSelfEligible =
   atLeastOneMatching
     (Scope.InZone (InZone.MkInZone Zone.Battlefield (PlayerRef.Relative PlayerRelation.AnyPlayer)))
-    (Filter.And [Filter.IsSource, Filter.HasCardType CardType.Creature, Filter.HeldBy Holder.Controller PlayerRelation.You, Filter.Not Filter.IsPaired])
+    (Filter.And [Filter.IsSource, Filter.HasCardType CardType.Creature, Filter.HeldBy Holder.Controller (ControllerRelation.Related PlayerRelation.You), Filter.Not Filter.IsPaired])
 
 -- "At least one candidate", as CR 603.4 wants it: a Count of the scope's members
 -- the Filter keeps, against 1.
@@ -6062,7 +6062,7 @@ soulbondOtherEnters =
             ( EntersTrigger.matching
                 ( Filter.And
                     [ Filter.HasCardType CardType.Creature,
-                      Filter.HeldBy Holder.Controller PlayerRelation.You,
+                      Filter.HeldBy Holder.Controller (ControllerRelation.Related PlayerRelation.You),
                       Filter.Not Filter.IsSource
                     ]
                 )
@@ -6073,7 +6073,7 @@ soulbondOtherEnters =
                 [ soulbondSelfEligible,
                   atLeastOneMatching
                     (Scope.OverBound BoundReading.AsBound Binding.became)
-                    (Filter.And [Filter.HasCardType CardType.Creature, Filter.HeldBy Holder.Controller PlayerRelation.You, Filter.Not Filter.IsPaired])
+                    (Filter.And [Filter.HasCardType CardType.Creature, Filter.HeldBy Holder.Controller (ControllerRelation.Related PlayerRelation.You), Filter.Not Filter.IsPaired])
                 ]
             )
         )
@@ -6094,7 +6094,7 @@ evolve =
               (Quantity.Arithmetic (Arithmetic.Plus (Plus.MkPlus quantity (Quantity.Literal 1))))
           )
    in Mint.triggerIf
-        (TriggerCondition.Enters (EntersTrigger.matching (Filter.And [Filter.HasCardType CardType.Creature, Filter.HeldBy Holder.Controller PlayerRelation.You])))
+        (TriggerCondition.Enters (EntersTrigger.matching (Filter.And [Filter.HasCardType CardType.Creature, Filter.HeldBy Holder.Controller (ControllerRelation.Related PlayerRelation.You)])))
         (Condition.All [sourceIsCreature, Condition.Any (fmap (entrantExceeds . Quantity.Measure) [Measure.Power, Measure.Toughness])])
         (Seq.singleton effect)
 
@@ -6123,7 +6123,7 @@ prowess =
    in Mint.trigger
         -- CR 702.108a names no zone and no ordinal: every noncreature spell cast
         -- from anywhere fires it.
-        (Mint.spellCast (Filter.And [Filter.HeldBy Holder.Controller PlayerRelation.You, Filter.Not (Filter.HasCardType CardType.Creature)]))
+        (Mint.spellCast (Filter.And [Filter.HeldBy Holder.Controller (ControllerRelation.Related PlayerRelation.You), Filter.Not (Filter.HasCardType CardType.Creature)]))
         (Seq.singleton effect)
 
 -- CR 702.101a: whenever you cast a spell, you may pay {W/B}; if you do, each
@@ -6159,7 +6159,7 @@ extort =
       gain = Effect.GainLife (PlayerQuantity.MkPlayerQuantity (PlayerRef.Relative PlayerRelation.You) (Quantity.InSlot drained))
       clause = Mint.mandatoryPaying gate (Seq.fromList [loss, gain])
    in Mint.triggerOf
-        (Mint.spellCast (Filter.HeldBy Holder.Controller PlayerRelation.You))
+        (Mint.spellCast (Filter.HeldBy Holder.Controller (ControllerRelation.Related PlayerRelation.You)))
         Nothing
         (Mint.oneModeOf Map.empty (Seq.singleton clause))
 
@@ -6208,7 +6208,7 @@ increment =
               (Quantity.Arithmetic (Arithmetic.Plus (Plus.MkPlus quantity (Quantity.Literal 1))))
           )
    in Mint.triggerIf
-        (Mint.spellCast (Filter.HeldBy Holder.Controller PlayerRelation.You))
+        (Mint.spellCast (Filter.HeldBy Holder.Controller (ControllerRelation.Related PlayerRelation.You)))
         (Condition.All [sourceIsCreature, Condition.Any (fmap (spentExceeds . Quantity.Measure) [Measure.Power, Measure.Toughness])])
         (Seq.singleton grow)
 
@@ -6320,7 +6320,7 @@ exalted =
         ( TriggerCondition.Attacks
             ( AttackTrigger.Attacker
                 AttackerTrigger.defaultValue
-                  { AttackerTrigger.creature = Filter.And [Filter.HasCardType CardType.Creature, Filter.HeldBy Holder.Controller PlayerRelation.You],
+                  { AttackerTrigger.creature = Filter.And [Filter.HasCardType CardType.Creature, Filter.HeldBy Holder.Controller (ControllerRelation.Related PlayerRelation.You)],
                     AttackerTrigger.company = AttackCompany.Alone AloneAmong.EveryAttacker
                   }
             )
@@ -7935,7 +7935,7 @@ recover cost =
       returned = Mint.mandatoryPaying (gate PayBranch.IfPaid Nothing) (Seq.singleton (moveTo Zone.Hand))
       exiled = Mint.mandatoryPaying (gate PayBranch.IfNotPaid (Just (ClauseIndex.MkClauseIndex 0))) (Seq.singleton (moveTo Zone.Exile))
    in Mint.triggerOf
-        (TriggerCondition.Leaves (LeavesTrigger.dies (LeavingPermanent.Matching (Filter.And [Filter.HasCardType CardType.Creature, Filter.HeldBy Holder.Owner PlayerRelation.You]))))
+        (TriggerCondition.Leaves (LeavesTrigger.dies (LeavingPermanent.Matching (Filter.And [Filter.HasCardType CardType.Creature, Filter.HeldBy Holder.Owner (ControllerRelation.Related PlayerRelation.You)]))))
         Nothing
         (Mint.oneModeOf Map.empty (Seq.fromList [returned, exiled]))
 
@@ -8786,7 +8786,7 @@ youControlSource =
         ( Quantity.Count
             ( Count.MkCount
                 (Scope.InZone (InZone.MkInZone Zone.Battlefield (PlayerRef.Relative PlayerRelation.AnyPlayer)))
-                (Filter.And [Filter.IsSource, Filter.HeldBy Holder.Controller PlayerRelation.You])
+                (Filter.And [Filter.IsSource, Filter.HeldBy Holder.Controller (ControllerRelation.Related PlayerRelation.You)])
                 Aggregation.Members
             )
         )
@@ -9067,7 +9067,7 @@ championEnters quality =
   let another =
         Filter.And
           [ quality,
-            Filter.HeldBy Holder.Controller PlayerRelation.You,
+            Filter.HeldBy Holder.Controller (ControllerRelation.Related PlayerRelation.You),
             Filter.Not Filter.IsSource
           ]
       exile =

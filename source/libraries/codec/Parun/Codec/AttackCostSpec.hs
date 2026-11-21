@@ -19,6 +19,7 @@ import qualified Parun.Types.CardType as CardType
 import qualified Parun.Types.Compares as Compares
 import qualified Parun.Types.Comparison as Comparison
 import qualified Parun.Types.Condition as Condition
+import qualified Parun.Types.ControllerRelation as ControllerRelation
 import qualified Parun.Types.Cost as Cost
 import qualified Parun.Types.CostAmount as CostAmount
 import qualified Parun.Types.CostComponent as CostComponent
@@ -64,7 +65,7 @@ spec s = Spec.describe s "Parun.Codec.AttackCost" $ do
               ( Quantity.Count
                   ( Count.MkCount
                       (Scope.InZone (InZone.MkInZone Zone.Battlefield (PlayerRef.Relative PlayerRelation.AnyPlayer)))
-                      (Filter.And [Filter.HasCardType CardType.Enchantment, Filter.HeldBy Holder.Controller PlayerRelation.You])
+                      (Filter.And [Filter.HasCardType CardType.Enchantment, Filter.HeldBy Holder.Controller (ControllerRelation.Related PlayerRelation.You)])
                       Aggregation.Members
                   )
               )

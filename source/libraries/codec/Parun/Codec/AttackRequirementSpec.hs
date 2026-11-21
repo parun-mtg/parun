@@ -10,6 +10,7 @@ import qualified Parun.Types.CardType as CardType
 import qualified Parun.Types.Compares as Compares
 import qualified Parun.Types.Comparison as Comparison
 import qualified Parun.Types.Condition as Condition
+import qualified Parun.Types.ControllerRelation as ControllerRelation
 import qualified Parun.Types.Count as Count
 import qualified Parun.Types.Filter as Filter
 import qualified Parun.Types.Holder as Holder
@@ -81,7 +82,7 @@ spec s = Spec.describe s "Parun.Codec.AttackRequirement" $ do
       s
       AttackRequirement.codec
       ( AttackRequirement.MkAttackRequirement
-          (Affected.Matching (Filter.And [Filter.HasCardType CardType.Creature, Filter.HeldBy Holder.Controller PlayerRelation.Opponent]))
+          (Affected.Matching (Filter.And [Filter.HasCardType CardType.Creature, Filter.HeldBy Holder.Controller (ControllerRelation.Related PlayerRelation.Opponent)]))
           Nothing
           Nothing
           RequirementArity.AnySubject

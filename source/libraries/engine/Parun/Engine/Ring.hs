@@ -52,6 +52,7 @@ import qualified Parun.Types.CardName as CardName
 import qualified Parun.Types.CombatRestriction as CombatRestriction
 import qualified Parun.Types.CombatStep as CombatStep
 import qualified Parun.Types.Comparison as Comparison
+import qualified Parun.Types.ControllerRelation as ControllerRelation
 import qualified Parun.Types.Copyability as Copyability
 import qualified Parun.Types.CountedDiscard as CountedDiscard
 import qualified Parun.Types.Counterability as Counterability
@@ -255,7 +256,7 @@ yourRingBearer :: Filter.Filter Keyword.Keyword
 yourRingBearer =
   Filter.And
     [ Filter.IsRingBearer,
-      Filter.HeldBy Holder.Controller PlayerRelation.You
+      Filter.HeldBy Holder.Controller (ControllerRelation.Related PlayerRelation.You)
     ]
 
 -- | CR 701.54c's two-temptation sentence: "Whenever your Ring-bearer attacks,

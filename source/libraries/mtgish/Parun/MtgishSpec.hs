@@ -39,6 +39,7 @@ import qualified Parun.Types.CombatStep as CombatStep
 import qualified Parun.Types.Compares as Compares
 import qualified Parun.Types.Comparison as Comparison
 import qualified Parun.Types.Condition as Condition
+import qualified Parun.Types.ControllerRelation as ControllerRelation
 import qualified Parun.Types.Cost as Cost
 import qualified Parun.Types.CostAmount as CostAmount
 import qualified Parun.Types.CostChange as CostChange
@@ -201,7 +202,7 @@ spec s = Spec.describe s "Parun.Mtgish" $ do
   Spec.it s "reads entering tapped unless a condition as entering tapped under its complement" $ do
     Spec.assertEq s (Right ()) (accepts fateholdAnnex)
     Spec.assertEq s (Right ()) (accepts desertedBeach)
-    let yours fs = Quantity.Count (Count.MkCount (Scope.InZone (InZone.MkInZone Zone.Battlefield (PlayerRef.Relative PlayerRelation.AnyPlayer))) (Filter.And (fs <> [Filter.HeldBy Holder.Controller PlayerRelation.You])) Aggregation.Members)
+    let yours fs = Quantity.Count (Count.MkCount (Scope.InZone (InZone.MkInZone Zone.Battlefield (PlayerRef.Relative PlayerRelation.AnyPlayer))) (Filter.And (fs <> [Filter.HeldBy Holder.Controller (ControllerRelation.Related PlayerRelation.You)])) Aggregation.Members)
         atMost q k = Just (Condition.Compares (Compares.MkCompares q Comparison.AtMost (Quantity.Literal k)))
         tapped = ReplacementEffect.EntryR (EntryR.MkEntryR Filter.IsSource (EntryRewrite.EntersTapState TapState.Tapped))
     Spec.assertEq s [(atMost (yours [Filter.HasCardType CardType.Planeswalker]) 0, tapped)] [(PrintedReplacement.condition r, PrintedReplacement.effect r) | r <- Face.replacementEffects (translated fateholdAnnex)]
@@ -218,7 +219,7 @@ spec s = Spec.describe s "Parun.Mtgish" $ do
   Spec.it s "reads a cast trigger's caster as the spell's controller" $ do
     Spec.assertEq s (Right ()) (accepts verduranEnchantress)
     Spec.assertEq s (Right ()) (accepts crystalRod)
-    Spec.assertEq s [Filter.And [Filter.HasCardType CardType.Enchantment, Filter.HeldBy Holder.Controller PlayerRelation.You]] (castFilters verduranEnchantress)
+    Spec.assertEq s [Filter.And [Filter.HasCardType CardType.Enchantment, Filter.HeldBy Holder.Controller (ControllerRelation.Related PlayerRelation.You)]] (castFilters verduranEnchantress)
     Spec.assertEq s [Filter.HasColor Color.Blue] (castFilters crystalRod)
 
   -- CR 602.1a / 701.21a: "Sacrifice a creature" as a cost.
@@ -248,7 +249,7 @@ spec s = Spec.describe s "Parun.Mtgish" $ do
   Spec.it s "reads another target as other than the target it names" $ do
     Spec.assertEq s (Right ()) (accepts fallOfTheHammer)
     let filters = fmap TargetSlot.filter (Map.elems (spellSlotMap (translated fallOfTheHammer)))
-    Spec.assertEq s [Just (Filter.HeldBy Holder.Controller PlayerRelation.You), Just (Filter.Not (Filter.IsBound (SlotName.MkSlotName (Text.pack "target1"))))] filters
+    Spec.assertEq s [Just (Filter.HeldBy Holder.Controller (ControllerRelation.Related PlayerRelation.You)), Just (Filter.Not (Filter.IsBound (SlotName.MkSlotName (Text.pack "target1"))))] filters
 
   -- CR 700.2: two modes each targeting name their slot "target", which would
   -- fuse their targets (Parun.CardSpec's "no card's modes share a target slot
@@ -334,13 +335,13 @@ spec s = Spec.describe s "Parun.Mtgish" $ do
     Spec.assertEq s (Right ()) (accepts castleRaptors)
     let battlefield f = Quantity.Count (Count.MkCount (Scope.InZone (InZone.MkInZone Zone.Battlefield (PlayerRef.Relative PlayerRelation.AnyPlayer))) f Aggregation.Members)
         atLeastOne f = Just (Condition.Compares (Compares.MkCompares (battlefield f) Comparison.AtLeast (Quantity.Literal 1)))
-    Spec.assertEq s [atLeastOne (Filter.And [Filter.HasSubtype Subtype.Forest, Filter.HeldBy Holder.Controller PlayerRelation.You])] (fmap StaticAbility.condition (Face.staticAbilities (translated kirdApe)))
-    Spec.assertEq s [atLeastOne (Filter.And [Filter.HasSubtype Subtype.Island, Filter.HeldBy Holder.Controller PlayerRelation.Opponent])] (fmap StaticAbility.condition (Face.staticAbilities (translated wuAdmiral)))
+    Spec.assertEq s [atLeastOne (Filter.And [Filter.HasSubtype Subtype.Forest, Filter.HeldBy Holder.Controller (ControllerRelation.Related PlayerRelation.You)])] (fmap StaticAbility.condition (Face.staticAbilities (translated kirdApe)))
+    Spec.assertEq s [atLeastOne (Filter.And [Filter.HasSubtype Subtype.Island, Filter.HeldBy Holder.Controller (ControllerRelation.Related PlayerRelation.Opponent)])] (fmap StaticAbility.condition (Face.staticAbilities (translated wuAdmiral)))
     Spec.assertEq s [atLeastOne (Filter.And [Filter.IsSource, Filter.Not Filter.IsTapped])] (fmap StaticAbility.condition (Face.staticAbilities (translated castleRaptors)))
     Spec.assertEq s (Right ()) (accepts gaelicat)
     Spec.assertEq s (Right ()) (accepts anuridBarkripper)
     let atLeast q k = Just (Condition.Compares (Compares.MkCompares q Comparison.AtLeast (Quantity.Literal k)))
-    Spec.assertEq s [atLeast (battlefield (Filter.And [Filter.HasCardType CardType.Artifact, Filter.HeldBy Holder.Controller PlayerRelation.You])) 2] (fmap StaticAbility.condition (Face.staticAbilities (translated gaelicat)))
+    Spec.assertEq s [atLeast (battlefield (Filter.And [Filter.HasCardType CardType.Artifact, Filter.HeldBy Holder.Controller (ControllerRelation.Related PlayerRelation.You)])) 2] (fmap StaticAbility.condition (Face.staticAbilities (translated gaelicat)))
     Spec.assertEq s [atLeast (Quantity.Count (Count.MkCount (Scope.InZone (InZone.MkInZone Zone.Graveyard (PlayerRef.Relative PlayerRelation.You))) (Filter.And []) Aggregation.Members)) 7] (fmap StaticAbility.condition (Face.staticAbilities (translated anuridBarkripper)))
     Spec.assertEq s (Right ()) (accepts bloodBurglar)
     Spec.assertEq s [Just (Condition.Compares (Compares.MkCompares (Quantity.IsActivePlayer (PlayerRef.Relative PlayerRelation.You)) Comparison.Exactly (Quantity.Literal 1)))] (fmap StaticAbility.condition (Face.staticAbilities (translated bloodBurglar)))

@@ -38,6 +38,7 @@ import qualified Parun.Engine.Projection as Projection
 import qualified Parun.Engine.Projection.View as Projection
 import qualified Parun.Engine.Target as Target
 import qualified Parun.Types.CardType as CardType
+import qualified Parun.Types.Face as Face
 import qualified Parun.Types.Filter as Filter.Type
 import Parun.Types.Game (Game)
 import Parun.Types.GameState (GameState)
@@ -344,6 +345,16 @@ entryAttachmentFor player subject destination gs = attachmentFor subject destina
 enteringUnder :: PlayerId -> ObjectId -> GameState -> GameState
 enteringUnder player subject gs =
   gs {GameState.objects = Map.adjust (\obj -> obj {Object.enteredUnder = Just player}) subject (GameState.objects gs)}
+
+-- CR 712.11a: `gs` with `subject` showing its back face, for a move the effect
+-- says is transformed, so CR 303.4f's offer reads the enchant ability of the
+-- permanent it will be (Radiant Grace's back face enchants a player).
+-- Unchanged for a card with no back face. Hypothetical, enteringUnder's
+-- posture.
+showingBackFace :: ObjectId -> GameState -> GameState
+showingBackFace subject gs = case Game.cardOf subject gs >>= Card.backFace of
+  Nothing -> gs
+  Just back -> gs {GameState.objects = Map.adjust (\obj -> obj {Object.face = Just (Face.name back)}) subject (GameState.objects gs)}
 
 -- CR 303.4f's choice over entryHostsFor's offer, made by `chooser`, the player
 -- the Aura enters under.

@@ -62,7 +62,7 @@ spec s = Spec.describe s "Parun.Codec.DamagePattern" $ do
     Common.assertCodec
       s
       DamagePattern.codec
-      (DamagePattern.MkDamagePattern Nothing (Filter.And []) (Just (Filter.HeldBy Holder.Controller PlayerRelation.You)) (Just (ControllerRelation.Related PlayerRelation.You)) Nothing Nothing Nothing Nothing)
+      (DamagePattern.MkDamagePattern Nothing (Filter.And []) (Just (Filter.HeldBy Holder.Controller (ControllerRelation.Related PlayerRelation.You))) (Just (ControllerRelation.Related PlayerRelation.You)) Nothing Nothing Nothing Nothing)
       " {\"whatRecipient\":{\"type\":\"HeldBy\",\"value\":{\"holder\":\"Controller\",\"relation\":\"You\"}},\"whoRecipient\":{\"type\":\"You\"}} "
   -- CR 608.2h's player by SLOT on the player half: Lightning, Army of One's
   -- "that player or a permanent that player controls".

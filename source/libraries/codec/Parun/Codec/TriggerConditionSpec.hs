@@ -178,7 +178,7 @@ spec s = Spec.describe s "Parun.Codec.TriggerCondition" $ do
     Common.assertCodec
       s
       TriggerCondition.codec
-      (TriggerCondition.PermanentsDealDamageToPlayer (PermanentsDealDamageToPlayer.MkPermanentsDealDamageToPlayer (Filter.And [Filter.HasCardType CardType.Artifact, Filter.HeldBy Holder.Controller PlayerRelation.You]) (Just DamageKind.Combat) PlayerRelation.AnyPlayer False False False Nothing))
+      (TriggerCondition.PermanentsDealDamageToPlayer (PermanentsDealDamageToPlayer.MkPermanentsDealDamageToPlayer (Filter.And [Filter.HasCardType CardType.Artifact, Filter.HeldBy Holder.Controller (ControllerRelation.Related PlayerRelation.You)]) (Just DamageKind.Combat) PlayerRelation.AnyPlayer False False False Nothing))
       " {\"type\":\"PermanentsDealDamageToPlayer\",\"value\":{\"filter\":{\"type\":\"And\",\"value\":[{\"type\":\"HasCardType\",\"value\":\"Artifact\"},{\"type\":\"HeldBy\",\"value\":{\"holder\":\"Controller\",\"relation\":\"You\"}}]},\"kind\":\"Combat\",\"recipient\":\"AnyPlayer\"}} "
   -- CR 726.2: a creature dealt combat damage to the monarch.
   Spec.it s "CreatureDealtCombatDamageToMonarch" $
@@ -402,7 +402,7 @@ spec s = Spec.describe s "Parun.Codec.TriggerCondition" $ do
     Common.assertCodec
       s
       TriggerCondition.codec
-      (TriggerCondition.SpellCast (SpellCast.MkSpellCast (ActingPermanent.Matching (Filter.And [Filter.HeldBy Holder.Controller PlayerRelation.You, Filter.Or [Filter.HasCardType CardType.Instant, Filter.HasCardType CardType.Sorcery]])) (TurnScope.PlayersTurn (PlayerRef.Relative PlayerRelation.AnyPlayer)) Nothing Nothing Nothing False Nothing))
+      (TriggerCondition.SpellCast (SpellCast.MkSpellCast (ActingPermanent.Matching (Filter.And [Filter.HeldBy Holder.Controller (ControllerRelation.Related PlayerRelation.You), Filter.Or [Filter.HasCardType CardType.Instant, Filter.HasCardType CardType.Sorcery]])) (TurnScope.PlayersTurn (PlayerRef.Relative PlayerRelation.AnyPlayer)) Nothing Nothing Nothing False Nothing))
       " {\"type\":\"SpellCast\",\"value\":{\"spell\":{\"type\":\"Matching\",\"value\":{\"type\":\"And\",\"value\":[{\"type\":\"HeldBy\",\"value\":{\"holder\":\"Controller\",\"relation\":\"You\"}},{\"type\":\"Or\",\"value\":[{\"type\":\"HasCardType\",\"value\":\"Instant\"},{\"type\":\"HasCardType\",\"value\":\"Sorcery\"}]}]}},\"scope\":{\"type\":\"PlayersTurn\",\"value\":{\"type\":\"Relative\",\"value\":\"AnyPlayer\"}}}} "
   -- The other half moved on its own, over the plainest Filter there is: Brineborn
   -- Cutthroat's "during an opponent's turn", which no Filter could have said.
@@ -410,7 +410,7 @@ spec s = Spec.describe s "Parun.Codec.TriggerCondition" $ do
     Common.assertCodec
       s
       TriggerCondition.codec
-      (TriggerCondition.SpellCast (SpellCast.MkSpellCast (ActingPermanent.Matching (Filter.HeldBy Holder.Controller PlayerRelation.You)) (TurnScope.PlayersTurn (PlayerRef.Relative PlayerRelation.Opponent)) Nothing Nothing Nothing False Nothing))
+      (TriggerCondition.SpellCast (SpellCast.MkSpellCast (ActingPermanent.Matching (Filter.HeldBy Holder.Controller (ControllerRelation.Related PlayerRelation.You))) (TurnScope.PlayersTurn (PlayerRef.Relative PlayerRelation.Opponent)) Nothing Nothing Nothing False Nothing))
       " {\"type\":\"SpellCast\",\"value\":{\"spell\":{\"type\":\"Matching\",\"value\":{\"type\":\"HeldBy\",\"value\":{\"holder\":\"Controller\",\"relation\":\"You\"}}},\"scope\":{\"type\":\"PlayersTurn\",\"value\":{\"type\":\"Relative\",\"value\":\"Opponent\"}}}} "
   -- CR 702.21a's ward: a Self subject, the relation on the TARGETING side.
   -- Parun.Codec.BecomesTargetedTriggerSpec has the fields.
@@ -441,14 +441,14 @@ spec s = Spec.describe s "Parun.Codec.TriggerCondition" $ do
     Common.assertCodec
       s
       TriggerCondition.codec
-      (TriggerCondition.BecomesTargeted (BecomesTargetedTrigger.matching (Filter.HeldBy Holder.Controller PlayerRelation.You)) {BecomesTargetedTrigger.kinds = Set.singleton StackObjectKind.ActivatedAbility, BecomesTargetedTrigger.batching = Batching.OneOrMore})
+      (TriggerCondition.BecomesTargeted (BecomesTargetedTrigger.matching (Filter.HeldBy Holder.Controller (ControllerRelation.Related PlayerRelation.You))) {BecomesTargetedTrigger.kinds = Set.singleton StackObjectKind.ActivatedAbility, BecomesTargetedTrigger.batching = Batching.OneOrMore})
       " {\"type\":\"BecomesTargeted\",\"value\":{\"subject\":{\"type\":\"Permanent\",\"value\":{\"type\":\"Matching\",\"value\":{\"type\":\"HeldBy\",\"value\":{\"holder\":\"Controller\",\"relation\":\"You\"}}}},\"kinds\":[\"ActivatedAbility\"],\"batching\":\"OneOrMore\"}} "
   -- Venerated Rotpriest's per-permanent reading, an opponent's spell.
   Spec.it s "BecomesTargeted round-trips a Matching subject per permanent" $
     Common.assertCodec
       s
       TriggerCondition.codec
-      (TriggerCondition.BecomesTargeted (BecomesTargetedTrigger.matching (Filter.HeldBy Holder.Controller PlayerRelation.You)) {BecomesTargetedTrigger.relation = PlayerRelation.Opponent, BecomesTargetedTrigger.kinds = Set.singleton StackObjectKind.Spell})
+      (TriggerCondition.BecomesTargeted (BecomesTargetedTrigger.matching (Filter.HeldBy Holder.Controller (ControllerRelation.Related PlayerRelation.You))) {BecomesTargetedTrigger.relation = PlayerRelation.Opponent, BecomesTargetedTrigger.kinds = Set.singleton StackObjectKind.Spell})
       " {\"type\":\"BecomesTargeted\",\"value\":{\"subject\":{\"type\":\"Permanent\",\"value\":{\"type\":\"Matching\",\"value\":{\"type\":\"HeldBy\",\"value\":{\"holder\":\"Controller\",\"relation\":\"You\"}}}},\"relation\":\"Opponent\",\"kinds\":[\"Spell\"]}} "
   -- CR 601.2i read off the spell itself, Desolation Twin's "when you cast this
   -- spell": a Self subject, every other field at SpellCast.self's value.
@@ -462,7 +462,7 @@ spec s = Spec.describe s "Parun.Codec.TriggerCondition" $ do
     Common.assertCodec
       s
       TriggerCondition.codec
-      (TriggerCondition.AbilityActivated (Filter.HeldBy Holder.Controller PlayerRelation.You))
+      (TriggerCondition.AbilityActivated (Filter.HeldBy Holder.Controller (ControllerRelation.Related PlayerRelation.You)))
       " {\"type\":\"AbilityActivated\",\"value\":{\"type\":\"HeldBy\",\"value\":{\"holder\":\"Controller\",\"relation\":\"You\"}}} "
   -- CR 709.5h. The payload is the DOOR's own name (CR 709.4a), which is what
   -- separates two unlock triggers printed on one Room.
@@ -540,7 +540,7 @@ spec s = Spec.describe s "Parun.Codec.TriggerCondition" $ do
     Common.assertCodec
       s
       TriggerCondition.codec
-      (TriggerCondition.TurnedFaceUp (TurnedFaceUpTrigger.matching (Filter.HeldBy Holder.Controller PlayerRelation.You)))
+      (TriggerCondition.TurnedFaceUp (TurnedFaceUpTrigger.matching (Filter.HeldBy Holder.Controller (ControllerRelation.Related PlayerRelation.You))))
       " {\"type\":\"TurnedFaceUp\",\"value\":{\"permanent\":{\"type\":\"Matching\",\"value\":{\"type\":\"HeldBy\",\"value\":{\"holder\":\"Controller\",\"relation\":\"You\"}}}}} "
   -- CR 603.2: both fields ride on the wire. Renegade Krasis' self-scoped
   -- "whenever this creature evolves", and Wildgrowth Walker's bystander "whenever
@@ -554,7 +554,7 @@ spec s = Spec.describe s "Parun.Codec.TriggerCondition" $ do
     Common.assertCodec
       s
       TriggerCondition.codec
-      (TriggerCondition.PermanentActs (PermanentActsTrigger.MkPermanentActsTrigger (PermanentActed.MkPermanentActed PermanentAction.Explore (ActingPermanent.Matching (Filter.HeldBy Holder.Controller PlayerRelation.You)) Nothing) Batching.EachOccurrence))
+      (TriggerCondition.PermanentActs (PermanentActsTrigger.MkPermanentActsTrigger (PermanentActed.MkPermanentActed PermanentAction.Explore (ActingPermanent.Matching (Filter.HeldBy Holder.Controller (ControllerRelation.Related PlayerRelation.You))) Nothing) Batching.EachOccurrence))
       " {\"type\":\"PermanentActs\",\"value\":{\"action\":\"Explore\",\"permanent\":{\"type\":\"Matching\",\"value\":{\"type\":\"HeldBy\",\"value\":{\"holder\":\"Controller\",\"relation\":\"You\"}}}}} "
   -- CR 708.9: Synthetic Unmasking Witness's condition.
   Spec.it s "FaceDownPermanentLeavesRevealed round-trips" $
@@ -571,7 +571,7 @@ spec s = Spec.describe s "Parun.Codec.TriggerCondition" $ do
     Common.assertCodec
       s
       TriggerCondition.codec
-      (TriggerCondition.PermanentBecomesDesignated (PermanentBecomesDesignated.MkPermanentBecomesDesignated Designation.Renowned (Filter.HeldBy Holder.Controller PlayerRelation.You)))
+      (TriggerCondition.PermanentBecomesDesignated (PermanentBecomesDesignated.MkPermanentBecomesDesignated Designation.Renowned (Filter.HeldBy Holder.Controller (ControllerRelation.Related PlayerRelation.You))))
       " {\"type\":\"PermanentBecomesDesignated\",\"value\":{\"designation\":\"Renowned\",\"filter\":{\"type\":\"HeldBy\",\"value\":{\"holder\":\"Controller\",\"relation\":\"You\"}}}} "
   -- CR 701.37b through the same constructor: Arbor Colossus' "when this creature
   -- becomes monstrous", which is Filter.IsSource beside the other designation.

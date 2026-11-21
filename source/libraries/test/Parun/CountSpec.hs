@@ -37,6 +37,7 @@ import qualified Parun.Types.CardName as CardName
 import qualified Parun.Types.CardType as CardType
 import qualified Parun.Types.Color as Color
 import qualified Parun.Types.Combat as Combat
+import qualified Parun.Types.ControllerRelation as ControllerRelation
 import qualified Parun.Types.Count as Count.Type
 import qualified Parun.Types.CounterKind as CounterKind
 import qualified Parun.Types.Departure as Departure.Type
@@ -83,7 +84,7 @@ swampsYouControl :: Count.Type.Count Quantity.Type.Quantity
 swampsYouControl =
   Count.Type.MkCount
     (Scope.InZone (InZone.MkInZone Zone.Battlefield (PlayerRef.Relative PlayerRelation.AnyPlayer)))
-    (Filter.Type.And [Filter.Type.HasSubtype Subtype.Swamp, Filter.Type.HeldBy Holder.Controller PlayerRelation.You])
+    (Filter.Type.And [Filter.Type.HasSubtype Subtype.Swamp, Filter.Type.HeldBy Holder.Controller (ControllerRelation.Related PlayerRelation.You)])
     Aggregation.Members
 
 spec :: (Monad m, Monad n) => Spec.Spec m n -> Registry.Registry m -> n ()
@@ -381,7 +382,7 @@ spec s registry = Spec.describe s "Parun.Engine.Count" $ do
         count =
           Count.Type.MkCount
             (Scope.InZone (InZone.MkInZone Zone.Battlefield (PlayerRef.Relative PlayerRelation.AnyPlayer)))
-            (Filter.Type.And [Filter.Type.HasSubtype Subtype.Swamp, Filter.Type.HeldBy Holder.Controller PlayerRelation.You])
+            (Filter.Type.And [Filter.Type.HasSubtype Subtype.Swamp, Filter.Type.HeldBy Holder.Controller (ControllerRelation.Related PlayerRelation.You)])
             (Aggregation.Greatest (Quantity.Type.Measure Measure.ManaValue))
     -- Alice keeps none of Bob's one Swamp, so the fold has no members.
     Spec.assertEqWith s "the maximum of nothing" (S.countOf viewOf (Filter.contextFor Teams.none (Just S.alice) Nothing) gs count) (Just 0)
@@ -405,7 +406,7 @@ spec s registry = Spec.describe s "Parun.Engine.Count" $ do
         count =
           Count.Type.MkCount
             (Scope.InZone (InZone.MkInZone Zone.Battlefield (PlayerRef.Relative PlayerRelation.AnyPlayer)))
-            (Filter.Type.And [Filter.Type.HasCardType CardType.Creature, Filter.Type.HeldBy Holder.Controller PlayerRelation.You])
+            (Filter.Type.And [Filter.Type.HasCardType CardType.Creature, Filter.Type.HeldBy Holder.Controller (ControllerRelation.Related PlayerRelation.You)])
             (Aggregation.Greatest (Quantity.Type.Measure Measure.Power))
         greatestPower g =
           S.countOf (\oid -> Just (Projection.viewOfObject oid g)) (Filter.contextFor Teams.none (Just S.alice) Nothing) g count
@@ -421,7 +422,7 @@ spec s registry = Spec.describe s "Parun.Engine.Count" $ do
         count =
           Count.Type.MkCount
             (Scope.InZone (InZone.MkInZone Zone.Battlefield (PlayerRef.Relative PlayerRelation.AnyPlayer)))
-            (Filter.Type.HeldBy Holder.Controller PlayerRelation.You)
+            (Filter.Type.HeldBy Holder.Controller (ControllerRelation.Related PlayerRelation.You))
             (Aggregation.Greatest (Quantity.Type.Measure Measure.Power))
         viewOf = S.stubView [(a1, Set.singleton CardType.Land, Set.singleton Subtype.Swamp, Just S.alice)]
     Spec.assertEqWith s "the Swamp's 0" (S.countOf viewOf (Filter.contextFor Teams.none (Just S.alice) Nothing) gs count) (Just 0)

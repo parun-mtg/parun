@@ -1024,7 +1024,7 @@ permanentDiesSpec s registry =
   let anotherCreatureYouControl =
         Filter.Type.And
           [ Filter.Type.HasCardType CardType.Creature,
-            Filter.Type.HeldBy Holder.Controller PlayerRelation.You,
+            Filter.Type.HeldBy Holder.Controller (ControllerRelation.Related PlayerRelation.You),
             Filter.Type.Not Filter.Type.IsSource
           ]
       sourcesOf gs = fmap PendingTrigger.source (gathered gs)
@@ -1086,7 +1086,7 @@ permanentDiesSpec s registry =
           let anyCreatureYouControl =
                 Filter.Type.And
                   [ Filter.Type.HasCardType CardType.Creature,
-                    Filter.Type.HeldBy Holder.Controller PlayerRelation.You
+                    Filter.Type.HeldBy Holder.Controller (ControllerRelation.Related PlayerRelation.You)
                   ]
               (merenId, gs) = S.addPermanent meren S.alice (Setup.emptyGame S.bothPlayers)
               died = S.runPure S.identityAnswer gs (Event.changeZone Settle.none merenId Zone.Graveyard)
@@ -1314,7 +1314,7 @@ permanentsDieSpec s registry =
             "one triggered ability, batch-scoped"
             (fmap TriggeredAbility.condition (Face.triggeredAbilities (S.combinedFace townsfolk)))
             [ TriggerCondition.Leaves
-                (LeavesTrigger.dies (LeavingPermanent.Matching (Filter.Type.And [Filter.Type.HasCardType CardType.Creature, Filter.Type.HeldBy Holder.Controller PlayerRelation.You, Filter.Type.Not Filter.Type.IsSource])))
+                (LeavesTrigger.dies (LeavingPermanent.Matching (Filter.Type.And [Filter.Type.HasCardType CardType.Creature, Filter.Type.HeldBy Holder.Controller (ControllerRelation.Related PlayerRelation.You), Filter.Type.Not Filter.Type.IsSource])))
                   { LeavesTrigger.batching = Batching.OneOrMore
                   }
             ]

@@ -6,6 +6,7 @@ import qualified Parun.Spec as Spec
 import qualified Parun.Types.Compares as Compares
 import qualified Parun.Types.Comparison as Comparison
 import qualified Parun.Types.Condition as Condition
+import qualified Parun.Types.ControllerRelation as ControllerRelation
 import qualified Parun.Types.DamageKind as DamageKind
 import qualified Parun.Types.Filter as Filter
 import qualified Parun.Types.Holder as Holder
@@ -23,7 +24,7 @@ spec s = Spec.describe s "Parun.Codec.PermanentsDealDamageToPlayer" $ do
       s
       PermanentsDealDamageToPlayer.codec
       ( PermanentsDealDamageToPlayer.MkPermanentsDealDamageToPlayer
-          { PermanentsDealDamageToPlayer.filter = Filter.HeldBy Holder.Controller PlayerRelation.Opponent,
+          { PermanentsDealDamageToPlayer.filter = Filter.HeldBy Holder.Controller (ControllerRelation.Related PlayerRelation.Opponent),
             PermanentsDealDamageToPlayer.kind = Just DamageKind.Combat,
             PermanentsDealDamageToPlayer.recipient = PlayerRelation.You,
             PermanentsDealDamageToPlayer.oneOrMorePlayers = False,
@@ -40,7 +41,7 @@ spec s = Spec.describe s "Parun.Codec.PermanentsDealDamageToPlayer" $ do
       s
       PermanentsDealDamageToPlayer.codec
       ( PermanentsDealDamageToPlayer.MkPermanentsDealDamageToPlayer
-          { PermanentsDealDamageToPlayer.filter = Filter.HeldBy Holder.Controller PlayerRelation.You,
+          { PermanentsDealDamageToPlayer.filter = Filter.HeldBy Holder.Controller (ControllerRelation.Related PlayerRelation.You),
             PermanentsDealDamageToPlayer.kind = Nothing,
             PermanentsDealDamageToPlayer.recipient = PlayerRelation.AnyPlayer,
             PermanentsDealDamageToPlayer.oneOrMorePlayers = True,

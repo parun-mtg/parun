@@ -8,6 +8,7 @@ import qualified Parun.Types.ActingPermanent as ActingPermanent
 import qualified Parun.Types.Batching as Batching
 import qualified Parun.Types.BecomesTargetedTrigger as BecomesTargetedTrigger
 import qualified Parun.Types.CardType as CardType
+import qualified Parun.Types.ControllerRelation as ControllerRelation
 import qualified Parun.Types.Filter as Filter
 import qualified Parun.Types.Holder as Holder
 import qualified Parun.Types.KeywordFamily as KeywordFamily
@@ -38,7 +39,7 @@ spec s = Spec.describe s "Parun.Codec.BecomesTargetedTrigger" $ do
       s
       BecomesTargetedTrigger.codec
       ( BecomesTargetedTrigger.MkBecomesTargetedTrigger
-          { BecomesTargetedTrigger.subject = TargetedSubject.PlayerOrPermanent PlayerRelation.You (ActingPermanent.Matching (Filter.And [Filter.HasCardType CardType.Creature, Filter.HeldBy Holder.Controller PlayerRelation.You])),
+          { BecomesTargetedTrigger.subject = TargetedSubject.PlayerOrPermanent PlayerRelation.You (ActingPermanent.Matching (Filter.And [Filter.HasCardType CardType.Creature, Filter.HeldBy Holder.Controller (ControllerRelation.Related PlayerRelation.You)])),
             BecomesTargetedTrigger.relation = PlayerRelation.Opponent,
             BecomesTargetedTrigger.kinds = Set.fromList [StackObjectKind.ActivatedAbility, StackObjectKind.TriggeredAbility],
             BecomesTargetedTrigger.batching = Batching.OneOrMore,

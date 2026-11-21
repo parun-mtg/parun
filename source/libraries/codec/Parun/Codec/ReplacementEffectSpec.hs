@@ -175,7 +175,7 @@ spec s =
           Common.assertCodec
             s
             codec
-            (ReplacementEffect.EntryR (EntryR.MkEntryR (Filter.And [Filter.HasCardType CardType.Creature, Filter.HeldBy Holder.Controller PlayerRelation.Opponent]) (EntryRewrite.UnderControlOf PlayerRelation.You)))
+            (ReplacementEffect.EntryR (EntryR.MkEntryR (Filter.And [Filter.HasCardType CardType.Creature, Filter.HeldBy Holder.Controller (ControllerRelation.Related PlayerRelation.Opponent)]) (EntryRewrite.UnderControlOf PlayerRelation.You)))
             " {\"type\":\"EntryR\",\"value\":{\"matching\":{\"type\":\"And\",\"value\":[{\"type\":\"HasCardType\",\"value\":\"Creature\"},{\"type\":\"HeldBy\",\"value\":{\"holder\":\"Controller\",\"relation\":\"Opponent\"}}]},\"rewrite\":{\"type\":\"UnderControlOf\",\"value\":\"You\"}}} "
         -- Pattern and rewrite are both DATA, so both have to survive the trip.
         Spec.it s "DamageR (combat damage, prevented)" $

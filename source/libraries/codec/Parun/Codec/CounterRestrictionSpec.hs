@@ -5,6 +5,7 @@ import qualified Parun.JsonCodec.Common as Common
 import qualified Parun.Spec as Spec
 import qualified Parun.Types.Affected as Affected
 import qualified Parun.Types.CardType as CardType
+import qualified Parun.Types.ControllerRelation as ControllerRelation
 import qualified Parun.Types.CounterKind as CounterKind
 import qualified Parun.Types.CounterRestriction as CounterRestriction
 import qualified Parun.Types.Filter as Filter
@@ -30,7 +31,7 @@ spec s = Spec.describe s "Parun.Codec.CounterRestriction" $ do
       s
       CounterRestriction.codec
       ( CounterRestriction.MkCounterRestriction
-          (Affected.Matching (Filter.HeldBy Holder.Controller PlayerRelation.You))
+          (Affected.Matching (Filter.HeldBy Holder.Controller (ControllerRelation.Related PlayerRelation.You)))
           (Just CounterKind.MinusOneMinusOne)
       )
       " {\"affected\":{\"type\":\"Matching\",\"value\":{\"type\":\"HeldBy\",\"value\":{\"holder\":\"Controller\",\"relation\":\"You\"}}},\"kind\":{\"type\":\"MinusOneMinusOne\"}} "

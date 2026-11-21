@@ -303,11 +303,15 @@ moveToZone settle resolving source controller legal chosen (MoveToZone.MkMoveToZ
       -- Players are never admitted: the filter describes objects.
       --
       -- CR 303.4i's EntryHost.Specified narrows the same offer to the objects
-      -- the slot names instead (Necrotic Plague's "attached to that
-      -- creature"), so a named host the Aura could not enchant leaves it where
-      -- it is rather than letting its controller pick another.
+      -- or players the slot names instead (Necrotic Plague's "attached to that
+      -- creature", Radiant Grace's "attached to target opponent", CR 303.4f's
+      -- player host), so a named host the Aura could not enchant leaves it
+      -- where it is rather than letting its controller pick another.
+      --
+      -- A transformed entry is judged on its back face (CR 712.11a,
+      -- Attach.showingBackFace): Radiant Restraints enchants a player.
       chosenHost mover riders sofar target = do
-        now <- State.get
+        now <- State.gets (if EntryRiders.transformed riders then Attach.showingBackFace target else id)
         let pick selection chooser hosts = case selection of
               CardSelection.ByChoice
                 | null hosts -> pure Nothing
@@ -322,8 +326,8 @@ moveToZone settle resolving source controller legal chosen (MoveToZone.MkMoveToZ
                 Maybe.isNothing (EntryRiders.faceDown riders),
                 isAura || isEquipment = do
                   let offered = Attach.entryHostsFor mover target now
-                  admitted <- admits (filter (`Set.notMember` sofar) (Maybe.mapMaybe Recipient.objectOf offered))
-                  let hosts = filter (maybe False (`Set.member` admitted) . Recipient.objectOf) offered
+                  admitted <- admits (filter (maybe True (`Set.notMember` sofar) . Recipient.objectOf) offered)
+                  let hosts = filter (`Set.member` admitted) offered
                   chosenOne <- pick selection chooser hosts
                   pure $ case chosenOne >>= \h -> Attach.entryAttachmentFor mover target h now of
                     Just attachment -> Just (Just attachment)
@@ -334,8 +338,11 @@ moveToZone settle resolving source controller legal chosen (MoveToZone.MkMoveToZ
                       | otherwise -> Just Nothing
               | otherwise = pure (Just Nothing)
         case EntryRiders.attachedTo riders of
-          Just (EntryHost.Chosen selection chooser filter_) -> narrowed selection chooser (pure . Set.fromList . matchingFromAmong legal resolving controller source now filter_)
-          Just (EntryHost.Specified slot) -> narrowed CardSelection.ByChoice Nothing (\candidates -> fmap (Set.intersection (Set.fromList candidates) . Set.fromList) (Common.fromAmongMembers legal resolving chosen slot))
+          Just (EntryHost.Chosen selection chooser filter_) -> narrowed selection chooser (pure . Set.fromList . fmap Recipient.ToObject . matchingFromAmong legal resolving controller source now filter_ . Maybe.mapMaybe Recipient.objectOf)
+          Just (EntryHost.Specified slot) -> narrowed CardSelection.ByChoice Nothing $ \candidates -> do
+            objects <- Common.fromAmongMembers legal resolving chosen slot
+            let players = filter (Maybe.isJust . Recipient.playerOf) (legalMany slot legal)
+            pure (Set.intersection (Set.fromList candidates) (Set.fromList (fmap Recipient.ToObject objects <> players)))
           Nothing -> pure (Just Nothing)
       -- The context a CHOICE's candidates are filtered in, off the board the
       -- choice is being made on: the resolution's own slots ride along, so a

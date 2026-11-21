@@ -6,6 +6,7 @@ import qualified Parun.Codec.PreventNextDamage as PreventNextDamage
 import qualified Parun.JsonCodec.Codec as Codec
 import qualified Parun.JsonCodec.Common as Common
 import qualified Parun.Spec as Spec
+import qualified Parun.Types.ControllerRelation as ControllerRelation
 import qualified Parun.Types.DamageKind as DamageKind
 import qualified Parun.Types.Duration as Duration
 import qualified Parun.Types.Filter as Filter
@@ -93,7 +94,7 @@ spec s = Spec.describe s "Parun.Codec.PreventNextDamage" $ do
           { PreventNextDamage.duration = Duration.UntilEndOfTurn,
             PreventNextDamage.kind = Nothing,
             PreventNextDamage.ref = Nothing,
-            PreventNextDamage.whatRecipient = Just (Filter.HeldBy Holder.Controller PlayerRelation.You),
+            PreventNextDamage.whatRecipient = Just (Filter.HeldBy Holder.Controller (ControllerRelation.Related PlayerRelation.You)),
             PreventNextDamage.whoRecipient = Just PlayerRelation.You,
             PreventNextDamage.chosenSource = Nothing,
             PreventNextDamage.quantity = Quantity.Literal 3,

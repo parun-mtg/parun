@@ -17,6 +17,7 @@ import qualified Parun.Types.ChosenCardFromAmong as ChosenCardFromAmong
 import qualified Parun.Types.ChosenCardInGraveyard as ChosenCardInGraveyard
 import qualified Parun.Types.ChosenCardInHand as ChosenCardInHand
 import qualified Parun.Types.ChosenPermanents as ChosenPermanents
+import qualified Parun.Types.ControllerRelation as ControllerRelation
 import qualified Parun.Types.EachCardFromAmong as EachCardFromAmong
 import qualified Parun.Types.EachCardInExiledPile as EachCardInExiledPile
 import qualified Parun.Types.EachCardInGraveyard as EachCardInGraveyard
@@ -98,7 +99,7 @@ spec s = Spec.describe s "Parun.Codec.ObjectRef" $ do
     Common.assertCodec
       s
       ObjectRef.codec
-      (ObjectRef.EachAbility (Filter.HeldBy Holder.Controller PlayerRelation.Opponent))
+      (ObjectRef.EachAbility (Filter.HeldBy Holder.Controller (ControllerRelation.Related PlayerRelation.Opponent)))
       " {\"type\":\"EachAbility\",\"value\":{\"type\":\"HeldBy\",\"value\":{\"holder\":\"Controller\",\"relation\":\"Opponent\"}}} "
   -- CR 405.1: the same zone with no kind test, so both arms above are in. Glen
   -- Elendra's Answer's "all spells your opponents control and all abilities your
@@ -107,7 +108,7 @@ spec s = Spec.describe s "Parun.Codec.ObjectRef" $ do
     Common.assertCodec
       s
       ObjectRef.codec
-      (ObjectRef.EachOnStack (Filter.HeldBy Holder.Controller PlayerRelation.Opponent))
+      (ObjectRef.EachOnStack (Filter.HeldBy Holder.Controller (ControllerRelation.Related PlayerRelation.Opponent)))
       " {\"type\":\"EachOnStack\",\"value\":{\"type\":\"HeldBy\",\"value\":{\"holder\":\"Controller\",\"relation\":\"Opponent\"}}} "
   -- "each opponent" is a relation the resolution's CR 109.5 "you" answers, so
   -- the PlayerRef carries no seat (Soul Immolation).

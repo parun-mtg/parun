@@ -71,6 +71,7 @@ import qualified Parun.Types.Color as Color
 import qualified Parun.Types.Combat as Combat.Type
 import qualified Parun.Types.CombatStep as CombatStep
 import qualified Parun.Types.Comparison as Comparison
+import qualified Parun.Types.ControllerRelation as ControllerRelation
 import qualified Parun.Types.Copyability as Copyability
 import qualified Parun.Types.Cost as Cost.Type
 import qualified Parun.Types.CostAmount as CostAmount
@@ -4026,7 +4027,7 @@ melokuSpec s registry = Spec.describe s "Meloku the Clouded Mirror" $ do
     island <- S.printingOf s registry "Island"
     let (payableId, landIds, payable) = melokuBoard meloku elves [(island, S.alice)]
         unpayable = S.giveControl (firstOf landIds) S.bob payable
-        component = CostComponent.ReturnPermanents (ReturnPermanents.MkReturnPermanents 1 (Filter.Type.And [Filter.Type.HasCardType CardType.Land, Filter.Type.HeldBy Holder.Controller PlayerRelation.You]))
+        component = CostComponent.ReturnPermanents (ReturnPermanents.MkReturnPermanents 1 (Filter.Type.And [Filter.Type.HasCardType CardType.Land, Filter.Type.HeldBy Holder.Controller (ControllerRelation.Related PlayerRelation.You)]))
     Spec.assertBool s (Activatable.activatable S.alice payableId (theAbility meloku) payable) "a land alice controls: activatable"
     Spec.assertBool s (not (Activatable.activatable S.alice payableId (theAbility meloku) unpayable)) "the same land under bob: not"
     Spec.assertBool s (Cost.canPayComponent Map.empty S.alice payableId component payable) "and the component itself is payable on the one board"
@@ -4696,7 +4697,7 @@ pileDrawSpec s registry =
             { GameState.exilePiles = Map.fromList [(oid, Object.timestamp obj) | Just obj <- [Game.lookupObject giantA faceUp], oid <- [giantA, giantB]]
             }
         discard = CostComponent.DiscardCards (DiscardCards.MkDiscardCards (ObjectCount.Exactly (CostAmount.Fixed 1)) (Filter.Type.And []) CardSelection.ByChoice)
-        exiled = CostComponent.PutExiledIntoGraveyard (Filter.Type.HeldBy Holder.Owner PlayerRelation.Opponent)
+        exiled = CostComponent.PutExiledIntoGraveyard (Filter.Type.HeldBy Holder.Owner (ControllerRelation.Related PlayerRelation.Opponent))
         payment = Cost.payComponents S.manaPerformer PaymentMoment.OutsideResolution Nothing Map.empty S.alice helmId [exiled, discard]
         run board = State.runState (Engine.runGame recordingDiscards board payment) []
         ((_, afterDown), askedDown) = run faceDown

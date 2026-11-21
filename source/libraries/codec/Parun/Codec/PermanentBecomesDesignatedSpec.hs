@@ -3,6 +3,7 @@ module Parun.Codec.PermanentBecomesDesignatedSpec where
 import qualified Parun.Codec.PermanentBecomesDesignated as PermanentBecomesDesignated
 import qualified Parun.JsonCodec.Common as Common
 import qualified Parun.Spec as Spec
+import qualified Parun.Types.ControllerRelation as ControllerRelation
 import qualified Parun.Types.Designation as Designation
 import qualified Parun.Types.Filter as Filter
 import qualified Parun.Types.Holder as Holder
@@ -17,7 +18,7 @@ spec s = Spec.describe s "Parun.Codec.PermanentBecomesDesignated" $ do
       PermanentBecomesDesignated.codec
       ( PermanentBecomesDesignated.MkPermanentBecomesDesignated
           { PermanentBecomesDesignated.designation = Designation.Renowned,
-            PermanentBecomesDesignated.filter = Filter.HeldBy Holder.Controller PlayerRelation.You
+            PermanentBecomesDesignated.filter = Filter.HeldBy Holder.Controller (ControllerRelation.Related PlayerRelation.You)
           }
       )
       " {\"designation\":\"Renowned\",\"filter\":{\"type\":\"HeldBy\",\"value\":{\"holder\":\"Controller\",\"relation\":\"You\"}}} "

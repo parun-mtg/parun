@@ -20,6 +20,7 @@ import qualified Parun.Types.CompanyCount as CompanyCount
 import qualified Parun.Types.Compares as Compares
 import qualified Parun.Types.Comparison as Comparison
 import qualified Parun.Types.Condition as Condition
+import qualified Parun.Types.ControllerRelation as ControllerRelation
 import qualified Parun.Types.Count as Count
 import qualified Parun.Types.Filter as Filter
 import qualified Parun.Types.Holder as Holder
@@ -167,7 +168,7 @@ anotherGiant =
         ( Quantity.Count
             ( Count.MkCount
                 (Scope.InZone (InZone.MkInZone Zone.Battlefield (PlayerRef.Relative PlayerRelation.AnyPlayer)))
-                (Filter.And [Filter.HasSubtype Subtype.Giant, Filter.HeldBy Holder.Controller PlayerRelation.You])
+                (Filter.And [Filter.HasSubtype Subtype.Giant, Filter.HeldBy Holder.Controller (ControllerRelation.Related PlayerRelation.You)])
                 Aggregation.Members
             )
         )

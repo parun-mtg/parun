@@ -6,6 +6,7 @@ import qualified Parun.JsonCodec.Common as Common
 import qualified Parun.Spec as Spec
 import qualified Parun.Types.Aggregation as Aggregation
 import qualified Parun.Types.CardType as CardType
+import qualified Parun.Types.ControllerRelation as ControllerRelation
 import qualified Parun.Types.Count as Count
 import qualified Parun.Types.DistinctOf as DistinctOf
 import qualified Parun.Types.EventShape as EventShape
@@ -31,7 +32,7 @@ spec s = Spec.describe s "Parun.Codec.Count" $ do
       (Count.codec Common.integer)
       ( Count.MkCount
           (Scope.InZone (InZone.MkInZone Zone.Battlefield (PlayerRef.Relative PlayerRelation.AnyPlayer)))
-          (Filter.And [Filter.HasSubtype Subtype.Swamp, Filter.HeldBy Holder.Controller PlayerRelation.You])
+          (Filter.And [Filter.HasSubtype Subtype.Swamp, Filter.HeldBy Holder.Controller (ControllerRelation.Related PlayerRelation.You)])
           Aggregation.Members
       )
       " {\"scope\":{\"type\":\"InZone\",\"value\":{\"zone\":\"Battlefield\",\"player\":{\"type\":\"Relative\",\"value\":\"AnyPlayer\"}}},\"filter\":{\"type\":\"And\",\"value\":[{\"type\":\"HasSubtype\",\"value\":\"Swamp\"},{\"type\":\"HeldBy\",\"value\":{\"holder\":\"Controller\",\"relation\":\"You\"}}]},\"aggregation\":{\"type\":\"Members\"}} "

@@ -13,6 +13,7 @@ import qualified Parun.Oracle.Prose as Prose
 import qualified Parun.Types.AloneAmong as AloneAmong
 import qualified Parun.Types.CardType as CardType
 import qualified Parun.Types.Color as Color
+import qualified Parun.Types.ControllerRelation as ControllerRelation
 import qualified Parun.Types.DifferentIn as DifferentIn
 import qualified Parun.Types.Filter as Filter
 import qualified Parun.Types.Holder as Holder
@@ -121,9 +122,9 @@ phraseJoining joining f named = case f of
   Filter.IsAttacking Nothing -> [adjective (Text.pack "attacking")]
   Filter.IsAttacking (Just AloneAmong.EveryAttacker) -> [qualifier (Text.pack "that's attacking alone") (Text.pack "that are attacking alone")]
   Filter.IsBlocking -> [adjective (Text.pack "blocking")]
-  Filter.HeldBy Holder.Controller PlayerRelation.You -> [qualifier (Text.pack "you control") (Text.pack "you control")]
-  Filter.HeldBy Holder.Controller PlayerRelation.Opponent -> [MkPhrase [] [] [opponentControls]]
-  Filter.Not (Filter.HeldBy Holder.Controller PlayerRelation.You) -> [qualifier (Text.pack "you don't control") (Text.pack "you don't control")]
+  Filter.HeldBy Holder.Controller (ControllerRelation.Related PlayerRelation.You) -> [qualifier (Text.pack "you control") (Text.pack "you control")]
+  Filter.HeldBy Holder.Controller (ControllerRelation.Related PlayerRelation.Opponent) -> [MkPhrase [] [] [opponentControls]]
+  Filter.Not (Filter.HeldBy Holder.Controller (ControllerRelation.Related PlayerRelation.You)) -> [qualifier (Text.pack "you don't control") (Text.pack "you don't control")]
   Filter.IsPlayer PlayerRelation.Opponent -> [noun (Text.pack "opponent") (Just (Text.pack "opponents"))]
   Filter.IsPlayer PlayerRelation.AnyPlayer -> [noun (Text.pack "player") (Just (Text.pack "players"))]
   _ -> []

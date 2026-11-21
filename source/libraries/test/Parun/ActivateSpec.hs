@@ -59,6 +59,7 @@ import qualified Parun.Types.Choices as Choices
 import qualified Parun.Types.Color as Color
 import qualified Parun.Types.Combat as Combat.Type
 import qualified Parun.Types.CombatStep as CombatStep
+import qualified Parun.Types.ControllerRelation as ControllerRelation
 import qualified Parun.Types.Copyability as Copyability
 import qualified Parun.Types.Cost as Cost.Type
 import qualified Parun.Types.CostComponent as CostComponent
@@ -818,7 +819,7 @@ ninjutsuSpec s registry = Spec.describe s "Ninjutsu" $ do
                       1
                       ( Filter.Type.And
                           [ Filter.Type.HasCardType CardType.Creature,
-                            Filter.Type.HeldBy Holder.Controller PlayerRelation.You,
+                            Filter.Type.HeldBy Holder.Controller (ControllerRelation.Related PlayerRelation.You),
                             Filter.Type.IsAttacking Nothing,
                             Filter.Type.HasBlockStatus BlockStatus.Unblocked
                           ]

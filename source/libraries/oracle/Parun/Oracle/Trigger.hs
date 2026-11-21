@@ -28,6 +28,7 @@ import qualified Parun.Types.CombatStep as CombatStep
 import qualified Parun.Types.Compares as Compares
 import qualified Parun.Types.Comparison as Comparison
 import qualified Parun.Types.Condition as Condition
+import qualified Parun.Types.ControllerRelation as ControllerRelation
 import qualified Parun.Types.Count as Count
 import qualified Parun.Types.DamageKind as DamageKind
 import qualified Parun.Types.DamageRecipient as DamageRecipient
@@ -198,8 +199,8 @@ event context creature c = case c of
         (casters, rest) = List.partition caster (case f of Filter.Type.And fs -> fs; _ -> [f])
     who <- case casters of
       [] -> ["a player casts"]
-      [Filter.Type.HeldBy Holder.Controller PlayerRelation.You] -> ["you cast"]
-      [Filter.Type.HeldBy Holder.Controller PlayerRelation.Opponent] -> ["an opponent casts"]
+      [Filter.Type.HeldBy Holder.Controller (ControllerRelation.Related PlayerRelation.You)] -> ["you cast"]
+      [Filter.Type.HeldBy Holder.Controller (ControllerRelation.Related PlayerRelation.Opponent)] -> ["an opponent casts"]
       _ -> []
     let spell = Filter.noun (Text.pack "spell") (Just (Text.pack "spells"))
     -- A disjunction of kinds of spell shares the noun, "an instant or
@@ -600,8 +601,8 @@ counted context n comparison k = case Count.scope n of
             [Target.self context <> Text.pack " is " <> status]
       ([], _) -> do
         let controls f = case f of
-              Filter.Type.HeldBy Holder.Controller PlayerRelation.You -> True
-              Filter.Type.HeldBy Holder.Controller PlayerRelation.Opponent -> True
+              Filter.Type.HeldBy Holder.Controller (ControllerRelation.Related PlayerRelation.You) -> True
+              Filter.Type.HeldBy Holder.Controller (ControllerRelation.Related PlayerRelation.Opponent) -> True
               Filter.Type.HeldByBound Holder.Controller _ -> True
               _ -> False
             (controllers, rest) = (filter controls conjuncts, filter (not . controls) conjuncts)
@@ -626,11 +627,11 @@ counted context n comparison k = case Count.scope n of
         case controllers of
           -- Free for none: "you don't control a Glimmer creature" (Glimmer
           -- Seeker).
-          [Filter.Type.HeldBy Holder.Controller PlayerRelation.You] -> [Text.pack "you control " <> some] <> denied
+          [Filter.Type.HeldBy Holder.Controller (ControllerRelation.Related PlayerRelation.You)] -> [Text.pack "you control " <> some] <> denied
           -- The count totals every opponent's permanents, so "an opponent
           -- controls" reads the same only for "a": "your opponents control
           -- eight or more lands" (Turbulent Crater).
-          [Filter.Type.HeldBy Holder.Controller PlayerRelation.Opponent] -> [Text.pack "an opponent controls " <> some | comparison == Comparison.AtLeast, k == 1] <> [Text.pack "your opponents control " <> some]
+          [Filter.Type.HeldBy Holder.Controller (ControllerRelation.Related PlayerRelation.Opponent)] -> [Text.pack "an opponent controls " <> some | comparison == Comparison.AtLeast, k == 1] <> [Text.pack "your opponents control " <> some]
           [Filter.Type.HeldByBound Holder.Controller s] | Just word <- Map.lookup s (Target.bound context) -> [word <> Text.pack " controls " <> some]
           -- Free: "there are no Zombies on the battlefield" (Sarcomancy) or
           -- "no creatures are on the battlefield" (Pestilence, Sixth Edition),

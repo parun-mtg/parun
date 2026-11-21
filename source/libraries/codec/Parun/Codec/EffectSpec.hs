@@ -74,6 +74,7 @@ import qualified Parun.Types.ControlPlayer as ControlPlayer
 import qualified Parun.Types.ControlPlayerNext as ControlPlayerNext
 import qualified Parun.Types.ControlSides as ControlSides
 import qualified Parun.Types.ControlSpan as ControlSpan
+import qualified Parun.Types.ControllerRelation as ControllerRelation
 import qualified Parun.Types.CopyOriginal as CopyOriginal
 import qualified Parun.Types.CopyStackObject as CopyStackObject
 import qualified Parun.Types.CopyTargets as CopyTargets
@@ -1052,7 +1053,7 @@ spec s = Spec.describe s "Parun.Codec.Effect" $ do
       s
       toJson
       fromJson
-      (Effect.CopyStackObject (CopyStackObject.MkCopyStackObject (ObjectRef.InSlot (SlotName.MkSlotName (Text.pack "spell"))) (CopyTargets.ForEach (ObjectRef.EachMatching (Filter.HeldBy Holder.Controller PlayerRelation.You))) CopyStackObject.defaultQuantity CopyStackObject.defaultCopier [] Nothing))
+      (Effect.CopyStackObject (CopyStackObject.MkCopyStackObject (ObjectRef.InSlot (SlotName.MkSlotName (Text.pack "spell"))) (CopyTargets.ForEach (ObjectRef.EachMatching (Filter.HeldBy Holder.Controller (ControllerRelation.Related PlayerRelation.You)))) CopyStackObject.defaultQuantity CopyStackObject.defaultCopier [] Nothing))
       " {\"type\":\"CopyStackObject\",\"value\":{\"ref\":{\"type\":\"InSlot\",\"value\":\"spell\"},\"targets\":{\"type\":\"ForEach\",\"value\":{\"type\":\"EachMatching\",\"value\":{\"type\":\"HeldBy\",\"value\":{\"holder\":\"Controller\",\"relation\":\"You\"}}}}}} "
     Common.assertJsonCodec
       s
@@ -1199,7 +1200,7 @@ spec s = Spec.describe s "Parun.Codec.Effect" $ do
       s
       toJson
       fromJson
-      (Effect.NextDamageInstance (NextDamageInstance.MkNextDamageInstance Duration.UntilEndOfTurn Nothing Nothing (Just (Filter.HeldBy Holder.Controller PlayerRelation.You)) (Just PlayerRelation.You) DamageDirection.DealtTo (Just (Filter.And [])) (Filter.And []) Seq.empty NextDamageOutcome.Prevented))
+      (Effect.NextDamageInstance (NextDamageInstance.MkNextDamageInstance Duration.UntilEndOfTurn Nothing Nothing (Just (Filter.HeldBy Holder.Controller (ControllerRelation.Related PlayerRelation.You))) (Just PlayerRelation.You) DamageDirection.DealtTo (Just (Filter.And [])) (Filter.And []) Seq.empty NextDamageOutcome.Prevented))
       " {\"type\":\"NextDamageInstance\",\"value\":{\"chosenSource\":{\"type\":\"And\",\"value\":[]},\"duration\":{\"type\":\"UntilEndOfTurn\"},\"whatRecipient\":{\"type\":\"HeldBy\",\"value\":{\"holder\":\"Controller\",\"relation\":\"You\"}},\"whoRecipient\":\"You\"}} "
   -- Awe Strike's shield: the ref names the SOURCE, so the key is written.
   Spec.it s "NextDamageInstance dealt by its ref" $
@@ -3084,5 +3085,5 @@ threeArtifacts :: Count.Count Quantity.Quantity
 threeArtifacts =
   Count.MkCount
     (Scope.InZone (InZone.MkInZone Zone.Battlefield (PlayerRef.Relative PlayerRelation.AnyPlayer)))
-    (Filter.And [Filter.HasCardType CardType.Artifact, Filter.HeldBy Holder.Controller PlayerRelation.You])
+    (Filter.And [Filter.HasCardType CardType.Artifact, Filter.HeldBy Holder.Controller (ControllerRelation.Related PlayerRelation.You)])
     Aggregation.Members

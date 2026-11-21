@@ -65,6 +65,7 @@ import qualified Parun.Types.CombatStep as CombatStep
 import qualified Parun.Types.Compares as Compares
 import qualified Parun.Types.Comparison as Comparison
 import qualified Parun.Types.Condition as Condition
+import qualified Parun.Types.ControllerRelation as ControllerRelation
 import qualified Parun.Types.Copyability as Copyability
 import qualified Parun.Types.Cost as Cost
 import qualified Parun.Types.CostAmount as CostAmount
@@ -816,7 +817,7 @@ trigger n = case Node.tag n of
     (who, what) <- pair n
     relation <- players who
     f <- spells what
-    let caster = [Filter.HeldBy Holder.Controller relation | relation /= PlayerRelation.AnyPlayer]
+    let caster = [Filter.HeldBy Holder.Controller (ControllerRelation.Related relation) | relation /= PlayerRelation.AnyPlayer]
         spellCast = SpellCast.matching (conjoined (foldMap conjuncts f <> caster))
     Right (TriggerCondition.SpellCast spellCast, bound [("Trigger_ThatPlayer", Oracle.Trigger.thatPlayer), ("Trigger_ThatSpell", Oracle.Trigger.castSpell)])
   "AtTheBeginningOfTheEndStep" -> Right (TriggerCondition.StepBegins (StepBegins.MkStepBegins (Phase.Ending EndingStep.EndStep) Nothing (TurnScope.PlayersTurn (PlayerRef.Relative PlayerRelation.AnyPlayer))), outermost)
@@ -892,7 +893,7 @@ intervening context n = case Node.tag n of
     case (relation, Node.tag t) of
       (PlayerRelation.Opponent, "ControlsA") -> do
         f <- Node.argument t >>= permanents context
-        Right (compares (battlefield (conjoined (conjuncts f <> [Filter.HeldBy Holder.Controller PlayerRelation.Opponent]))) Comparison.AtLeast 1)
+        Right (compares (battlefield (conjoined (conjuncts f <> [Filter.HeldBy Holder.Controller (ControllerRelation.Related PlayerRelation.Opponent)]))) Comparison.AtLeast 1)
       _ -> Node.untranslated t
   "PlayerPassesFilter" -> do
     (who, test) <- pair n
@@ -916,7 +917,7 @@ intervening context n = case Node.tag n of
   _ -> Node.untranslated n
   where
     battlefield f = Count.MkCount (Scope.InZone (InZone.MkInZone Zone.Battlefield (PlayerRef.Relative PlayerRelation.AnyPlayer))) f Aggregation.Members
-    yours f = conjoined (conjuncts f <> [Filter.HeldBy Holder.Controller PlayerRelation.You])
+    yours f = conjoined (conjuncts f <> [Filter.HeldBy Holder.Controller (ControllerRelation.Related PlayerRelation.You)])
     inZone zone t = do
       c <- Node.child t
       comparison <- comparisonOf c
@@ -1672,7 +1673,7 @@ atom context n = case Node.tag n of
     who <- Node.child n
     case (Node.tag who, fmap Node.node (Node.args who)) of
       ("SinglePlayer", Just (Right p)) | Just s <- Map.lookup (Node.tag p) (references context <> bindings context) -> Right (Filter.HeldByBound Holder.Controller s)
-      _ -> fmap (Filter.HeldBy Holder.Controller) (Node.argument n >>= players)
+      _ -> fmap (Filter.HeldBy Holder.Controller . ControllerRelation.Related) (Node.argument n >>= players)
   -- "Another": other than the source, or than an object a slot names.
   "Other" -> do
     ref <- Node.argument n >>= permanent context

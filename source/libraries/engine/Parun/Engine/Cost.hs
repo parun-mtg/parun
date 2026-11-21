@@ -112,6 +112,7 @@ import qualified Parun.Types.Clause as Clause
 import qualified Parun.Types.ClauseIndex as ClauseIndex
 import qualified Parun.Types.Comparison as Comparison
 import qualified Parun.Types.ComputedLife as ComputedLife
+import qualified Parun.Types.ControllerRelation as ControllerRelation
 import Parun.Types.Cost (Cost)
 import qualified Parun.Types.Cost as Cost
 import qualified Parun.Types.CostAddition as CostAddition
@@ -1114,7 +1115,7 @@ candidateCostsGiven permitted pid name oid gs =
                             yourCreature =
                               Filter.Type.And
                                 ( [ Filter.Type.HasCardType CardType.Creature,
-                                    Filter.Type.HeldBy Holder.Controller PlayerRelation.You,
+                                    Filter.Type.HeldBy Holder.Controller (ControllerRelation.Related PlayerRelation.You),
                                     Filter.Type.Not (Filter.Type.CantPayKeywordCost KeywordCostPart.BeamMeUp)
                                   ]
                                     <> foldMap (pure . Filter.Type.Not) (BeamMeUp.unreturnable beamMeUp)
@@ -1177,7 +1178,7 @@ candidateCostsGiven permitted pid name oid gs =
                       -- payable; its perspective is the payer, which is what lets
                       -- rule 702.180a's "you control" be an atom here.
                       harmonized =
-                        let untappedYours = [Filter.Type.HasCardType CardType.Creature, Filter.Type.Not Filter.Type.IsTapped, Filter.Type.HeldBy Holder.Controller PlayerRelation.You]
+                        let untappedYours = [Filter.Type.HasCardType CardType.Creature, Filter.Type.Not Filter.Type.IsTapped, Filter.Type.HeldBy Holder.Controller (ControllerRelation.Related PlayerRelation.You)]
                             criterion vid = Filter.Type.And (untappedYours <> [Filter.Type.IsObject vid])
                             tappable =
                               Maybe.mapMaybe
@@ -1901,7 +1902,7 @@ waterbendCriterion =
   Filter.Type.And
     [ Filter.Type.Or [Filter.Type.HasCardType CardType.Artifact, Filter.Type.HasCardType CardType.Creature],
       Filter.Type.Not Filter.Type.IsTapped,
-      Filter.Type.HeldBy Holder.Controller PlayerRelation.You
+      Filter.Type.HeldBy Holder.Controller (ControllerRelation.Related PlayerRelation.You)
     ]
 
 -- The body both offers share: one entry per set of symbols the substitutes could

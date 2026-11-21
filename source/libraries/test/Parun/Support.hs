@@ -83,6 +83,7 @@ import qualified Parun.Types.Comparison as Comparison
 import qualified Parun.Types.Condition as Condition.Type
 import qualified Parun.Types.ContinuousEffect as ContinuousEffect
 import qualified Parun.Types.ControlDuration as ControlDuration
+import qualified Parun.Types.ControllerRelation as ControllerRelation
 import qualified Parun.Types.Count as Count.Type
 import qualified Parun.Types.CounterKind as CounterKind
 import qualified Parun.Types.DamageEvent as DamageEvent
@@ -837,7 +838,7 @@ youControlSource =
         ( Quantity.Type.Count
             ( Count.Type.MkCount
                 (Scope.InZone (InZone.MkInZone Zone.Battlefield (PlayerRef.Relative PlayerRelation.AnyPlayer)))
-                (Filter.Type.And [Filter.Type.IsSource, Filter.Type.HeldBy Holder.Controller PlayerRelation.You])
+                (Filter.Type.And [Filter.Type.IsSource, Filter.Type.HeldBy Holder.Controller (ControllerRelation.Related PlayerRelation.You)])
                 Aggregation.Members
             )
         )
@@ -857,7 +858,7 @@ youControlNoSwamps =
         ( Quantity.Type.Count
             ( Count.Type.MkCount
                 (Scope.InZone (InZone.MkInZone Zone.Battlefield (PlayerRef.Relative PlayerRelation.AnyPlayer)))
-                (Filter.Type.And [Filter.Type.HasSubtype Subtype.Swamp, Filter.Type.HeldBy Holder.Controller PlayerRelation.You])
+                (Filter.Type.And [Filter.Type.HasSubtype Subtype.Swamp, Filter.Type.HeldBy Holder.Controller (ControllerRelation.Related PlayerRelation.You)])
                 Aggregation.Members
             )
         )
