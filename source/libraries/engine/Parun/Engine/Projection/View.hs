@@ -1753,8 +1753,8 @@ wipedFace spell face
 spellFaceOf :: ObjectId -> GameState -> Maybe (Face.Face Card.Type.Card)
 spellFaceOf oid gs =
   let copiable = copiableCharacteristics oid gs
-      typeLine face = TypeLine.MkTypeLine (PC.supertypes copiable) (PC.cardTypes copiable) (Subtype.inPrintedOrder (TypeLine.subtypes (Face.typeLine face)) (PC.subtypes copiable))
-   in fmap (\face -> face {Face.spell = PC.spell copiable, Face.typeLine = typeLine face}) (Game.faceOf oid gs)
+      typeLine = TypeLine.MkTypeLine (PC.supertypes copiable) (PC.cardTypes copiable) (Subtype.inPrintedOrder copiable)
+   in fmap (\face -> face {Face.spell = PC.spell copiable, Face.typeLine = typeLine}) (Game.faceOf oid gs)
 
 -- CR 707.2 / 113.6: the face an object OFF the battlefield has its abilities read
 -- from -- Game.faceOfObject with its copiable values' abilities, keywords and type
@@ -1787,7 +1787,7 @@ abilityFaceOf oid obj gs
               else copiableSnapshotOf oid gs
           overlay face pc =
             face
-              { Face.typeLine = TypeLine.MkTypeLine (PC.supertypes pc) (PC.cardTypes pc) (Subtype.inPrintedOrder (TypeLine.subtypes (Face.typeLine face)) (PC.subtypes pc)),
+              { Face.typeLine = TypeLine.MkTypeLine (PC.supertypes pc) (PC.cardTypes pc) (Subtype.inPrintedOrder pc),
                 Face.keywords = PC.keywords pc,
                 Face.staticAbilities = PC.staticAbilities pc,
                 Face.playerAbilities = PC.playerAbilities pc,
@@ -2092,6 +2092,7 @@ noCharacteristics =
       PC.characteristicPT = Nothing,
       PC.cardTypes = Set.empty,
       PC.subtypes = Set.empty,
+      PC.printedSubtypes = [],
       PC.staticAbilities = [],
       PC.playerAbilities = [],
       PC.grantedPlayerAbilities = [],
@@ -2271,6 +2272,7 @@ baseCharacteristics oid gs = case Game.faceOf oid gs of
               PC.characteristicPT = seedCharacteristicPT face,
               PC.cardTypes = TypeLine.types (Face.typeLine face),
               PC.subtypes = Set.fromList (TypeLine.subtypes (Face.typeLine face)),
+              PC.printedSubtypes = TypeLine.subtypes (Face.typeLine face),
               -- CR 604.1 / 613.10: the two ability lists the layer fold never
               -- rewrites. In the SEED for enchant's reason below -- CR 707.2
               -- names rules text among the copiable values -- which is what puts

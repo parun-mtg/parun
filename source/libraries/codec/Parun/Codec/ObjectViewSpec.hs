@@ -97,9 +97,6 @@ spec s = Spec.describe s "Parun.Codec.ObjectView" $ do
     Common.assertCodec s ObjectView.codec hidden {ObjectView.onAdventure = True} (init hiddenJson <> ",\"onAdventure\":true}")
   Spec.it s "an object its own static abilities affect" $
     Common.assertCodec s ObjectView.codec hidden {ObjectView.ownEffects = Just ProjectedCharacteristicsSpec.testCharacteristics} (init hiddenJson <> ",\"ownEffects\":" <> ProjectedCharacteristicsSpec.testCharacteristicsJson <> "}")
-  -- CR 205.3a: Elf before Druid, as Llanowar Elves prints them.
-  Spec.it s "its printed subtypes in printed order" $
-    Common.assertCodec s ObjectView.codec hidden {ObjectView.printedSubtypes = [Subtype.Elf, Subtype.Druid]} (init hiddenJson <> ",\"printedSubtypes\":[\"Elf\",\"Druid\"]}")
   -- CR 731.2 / 708.5: a card merged under it and a face-down one the seat may not look at.
   Spec.it s "a merged permanent" $
     Common.assertCodec s ObjectView.codec hidden {ObjectView.merged = Seq.fromList [Just (CardName.MkCardName (Text.pack "Silent Arbiter")), Nothing]} (init hiddenJson <> ",\"merged\":[\"Silent Arbiter\",null]}")
@@ -122,7 +119,6 @@ hidden =
       ObjectView.face = Nothing,
       ObjectView.foretellCostReduction = Nothing,
       ObjectView.ownEffects = Nothing,
-      ObjectView.printedSubtypes = [],
       ObjectView.merged = Seq.empty,
       ObjectView.ability = Nothing,
       ObjectView.targets = [],

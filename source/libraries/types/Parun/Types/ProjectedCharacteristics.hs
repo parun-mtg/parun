@@ -184,6 +184,8 @@ data ProjectedCharacteristics = MkProjectedCharacteristics
     characteristicPT :: Maybe CharacteristicPT.CharacteristicPT,
     cardTypes :: Set.Set CardType.CardType,
     subtypes :: Set.Set Subtype.Subtype,
+    -- | CR 205.3a / 707.2: the subtypes the copiable type line prints, in printed order (Parun.Engine.Subtype.inPrintedOrder).
+    printedSubtypes :: [Subtype.Subtype],
     -- | CR 604.1 / 613 layer 6: the object's static abilities. Seeded from the
     -- card and touched by no layer but CR 612.5's exchange and CR 612.6's full
     -- text (hasFullText), unlike the three

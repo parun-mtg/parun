@@ -1811,7 +1811,7 @@ castingFaceOf obj card face = case copyStampOf obj of
             Face.costReductions = PC.costReductions stamp,
             Face.castingRestrictions = PC.castingRestrictions stamp,
             Face.spell = PC.spell stamp,
-            Face.typeLine = TypeLine.MkTypeLine (PC.supertypes stamp) (PC.cardTypes stamp) (Subtype.Engine.inPrintedOrder (TypeLine.subtypes (Face.typeLine face)) (PC.subtypes stamp))
+            Face.typeLine = TypeLine.MkTypeLine (PC.supertypes stamp) (PC.cardTypes stamp) (Subtype.Engine.inPrintedOrder stamp)
           }
   _ -> face
 
@@ -2566,7 +2566,7 @@ storedCopyOf oid = fmap ActiveCopy.snapshot . latestStoredCopy oid
 storedCopyFace :: ObjectId -> GameState -> Face Card -> Face Card
 storedCopyFace oid gs face = case storedCopyOf oid gs of
   Nothing -> face
-  Just copied -> face {Face.spell = PC.spell copied, Face.typeLine = TypeLine.MkTypeLine (PC.supertypes copied) (PC.cardTypes copied) (Subtype.Engine.inPrintedOrder (TypeLine.subtypes (Face.typeLine face)) (PC.subtypes copied))}
+  Just copied -> face {Face.spell = PC.spell copied, Face.typeLine = TypeLine.MkTypeLine (PC.supertypes copied) (PC.cardTypes copied) (Subtype.Engine.inPrintedOrder copied)}
 
 -- The row `storedCopyOf` reads: the latest stored copy effect covering the
 -- object (CR 613.7).
