@@ -50,6 +50,7 @@ import qualified Parun.Types.CoinFace as CoinFace
 import qualified Parun.Types.CoinFlipped as CoinFlipped
 import qualified Parun.Types.Combat as Combat.Type
 import qualified Parun.Types.CombatStep as CombatStep
+import qualified Parun.Types.CountedAct as CountedAct
 import qualified Parun.Types.CounterKind as CounterKind
 import qualified Parun.Types.DamageEvent as DamageEvent
 import qualified Parun.Types.DamageKind as DamageKind
@@ -1538,7 +1539,7 @@ feywildTricksterSpec s registry =
             "and without the Trickster the same roll mints nothing"
             (S.countOnBattlefieldByName faerieDragon S.alice baseline)
             0
-          Spec.assertBool s (elem (GameEvent.PlayerActed (PlayerActed.MkPlayerActed PlayerAction.RollDice S.alice)) (S.eventsOf after)) "CR 706.1 the roll recorded its event under the roller"
+          Spec.assertBool s (elem (GameEvent.CountedAct (CountedAct.MkCountedAct PlayerAction.RollDice S.alice 13)) (S.eventsOf after)) "CR 706.1 the roll recorded its event under the roller, with its result"
           Spec.assertEqWith s "the stack is empty, so the trigger really resolved" (TurnRegisters.stack (GameState.turn after)) []
         -- CR 109.5 / 603.3a: the relation is read against the ABILITY'S
         -- CONTROLLER. The same board one seat over -- bob's Windseer, alice's
@@ -1558,8 +1559,8 @@ feywildTricksterSpec s registry =
             "and bob, who rolled, has none either -- he controls no Trickster"
             (S.countOnBattlefieldByName faerieDragon S.bob after)
             0
-          Spec.assertBool s (elem (GameEvent.PlayerActed (PlayerActed.MkPlayerActed PlayerAction.RollDice S.bob)) (S.eventsOf after)) "bob really rolled, so there was an event to match"
-          Spec.assertBool s (notElem (GameEvent.PlayerActed (PlayerActed.MkPlayerActed PlayerAction.RollDice S.alice)) (S.eventsOf after)) "and the event names the roller, not the watcher"
+          Spec.assertBool s (elem (GameEvent.CountedAct (CountedAct.MkCountedAct PlayerAction.RollDice S.bob 13)) (S.eventsOf after)) "bob really rolled, so there was an event to match"
+          Spec.assertBool s (notElem (GameEvent.CountedAct (CountedAct.MkCountedAct PlayerAction.RollDice S.alice 13)) (S.eventsOf after)) "and the event names the roller, not the watcher"
         -- Both seats hold a Trickster and bob rolls, so the two readings of
         -- "you" -- the ability's controller and the roller -- fall on different
         -- seats with the same event on the log. Only bob's fires.

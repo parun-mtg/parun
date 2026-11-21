@@ -3295,3 +3295,19 @@ Entries are ordered by the first rule each cites.
   `Parun.PlanechaseSpec`'s "CR 807.4g a removed turn marker's plane goes to
   the bottom".
 - **Issue**: #9166.
+
+## Which result a reroll's trigger reads
+
+- **Question**: A reroll is a roll of its own (Pippa, Duchess of Dice's ruling),
+  so Farideh, Devil's Chosen triggers for it. Is "those results" the number the
+  reroll came up, or the die's final result once CR 706.2b's later adjustments
+  (Night Shift of the Living Dead) apply to the original roll?
+- **Rules**: CR 706.2, 706.2b, 603.2; no ruling; CR of 2026-11-06.
+- **Decision**: The number the reroll came up, after any rerolls of it; an
+  adjustment applies to the original roll, whose own trigger reads the final
+  result.
+- **Rejected**: The final result: it gives the reroll's event a number from a
+  modifier applied after that event, to a roll it is not part of.
+- **Site**: `Parun.Engine.Resolve.Effect.throwSettled`'s `rethrow`, proved by
+  the scenario `farideh-devil-s-chosen-draws-for-a-reroll-s-result-too`.
+- **Issue**: none.
