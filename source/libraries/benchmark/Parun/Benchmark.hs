@@ -462,6 +462,10 @@ main = do
   behold <- fetchOrThrow registry "Behold the Sinister Six!"
   hinata <- fetchOrThrow registry "Hinata, Dawn-Crowned"
   named <- loadDistinctCreatures registry
+  swamp <- fetchOrThrow registry "Swamp"
+  forest <- fetchOrThrow registry "Forest"
+  signet <- fetchOrThrow registry "Rakdos Signet"
+  guildmage <- fetchOrThrow registry "Simic Guildmage"
   Harness.defaultMain
     [ Harness.whnf "goldfish 2p" (goldfish deck) 0,
       Harness.whnf "casting 2p" (casting deck) 0,
@@ -518,5 +522,17 @@ main = do
       Harness.whnf "legal actions 80 buried statics" (legalActionCountOf [mountain] [anthem]) 80,
       -- #8644: a different-names slot over 20 and 40 cards, each its own name.
       Harness.whnf "legal actions 20 different names" (differentNamesCount behold hinata named) 20,
-      Harness.whnf "legal actions 40 different names" (differentNamesCount behold hinata named) 40
+      Harness.whnf "legal actions 40 different names" (differentNamesCount behold hinata named) 40,
+      -- #9184's shapes. A cost only a filter pays: Frozen Shade's {B} beside a
+      -- Mountain and a Rakdos Signet apiece, which plainPayable leaves to the walk.
+      Harness.whnf "legal actions 40 signet" (legalActionCountOf [shade, mountain, signet] []) 40,
+      Harness.whnf "legal actions 80 signet" (legalActionCountOf [shade, mountain, signet] []) 80,
+      -- The two lines above' paired control: a Swamp for the Mountain, so the
+      -- plain sources pay.
+      Harness.whnf "legal actions 40 signet plain" (legalActionCountOf [shade, swamp, signet] []) 40,
+      Harness.whnf "legal actions 80 signet plain" (legalActionCountOf [shade, swamp, signet] []) 80,
+      -- A jointly judged mode: Simic Guildmage's "another target creature with
+      -- the same controller", beside two Forests apiece.
+      Harness.whnf "legal actions 40 joint modes" (legalActionCountOf [guildmage, forest, forest] []) 40,
+      Harness.whnf "legal actions 80 joint modes" (legalActionCountOf [guildmage, forest, forest] []) 80
     ]
