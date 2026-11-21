@@ -383,8 +383,9 @@ legalActions pid gs =
       -- player rows and the CR 602.5 prohibition rows out of `pools` rather
       -- than walking the board per source (#6432). The supply sweep carries
       -- each source's supplies with it (Mana.Sources), measured once for every
-      -- ability whose cost has mana.
-      capacity = Cost.manaActivationsOn grants (Target.activationProhibitionRows pools) (Target.playerRowsOf pools pid gs)
+      -- ability whose cost has mana. The capacity carries a third, the one
+      -- CR 118.3's read of a mana-eating route pays from (#9296).
+      capacity = Cost.manaActivationsFor grants (Target.activationProhibitionRows pools) (Target.playerRowsOf pools pid gs) pcs pid gs
       manaSources = Cost.activationManaSourcesGiven capacity grants pcs pid gs
       supplySources = Cost.supplyManaSourcesGiven capacity grants pcs pid gs
       -- ONE set of base target pools for the whole enumeration, for the same

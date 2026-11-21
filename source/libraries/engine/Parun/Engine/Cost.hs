@@ -3874,15 +3874,29 @@ manaActivations measure pcs pid oid cost restrictions ability gs = manaActivatio
 -- and no reader here reads: see Parun.Engine.PlayerEffect.matchesObjectFrom.
 manaActivationsGiven :: [(RowSource, PlayerEffect.Type.PlayerEffect)] -> Mana.Capacity
 manaActivationsGiven effects measure pcs pid oid cost restrictions ability gs =
-  manaActivationsOn (Projection.controlGrants gs) (ActivationProhibition.gathered gs) effects measure pcs pid oid cost restrictions ability gs
+  manaActivationsFor (Projection.controlGrants gs) (ActivationProhibition.gathered gs) effects pcs pid gs measure pcs pid oid cost restrictions ability gs
 
 -- The same capacity given the board walks a mana-source sweep would otherwise
 -- take per route: `grants` MUST be `Projection.controlGrants gs`'s answer and
 -- `rows` `ActivationProhibition.gathered gs`'s, for the board this is called
 -- with, as `effects` must be. Partially applied for the same reason, so a sweep
 -- over every permanent shares one walk of each (#6432).
-manaActivationsOn :: [Projection.ControlGrant] -> [(ObjectId, [(TextWord.TextWord, TextWord.TextWord)], ActivationProhibition.Type.ActivationProhibition)] -> [(RowSource, PlayerEffect.Type.PlayerEffect)] -> Mana.Capacity
-manaActivationsOn grants rows effects measure pcs pid oid printedCost restrictions ability gs =
+--
+-- `pid`'s board as one closure: `grants`, `rows` and `effects` as above, and
+-- the supply sweep under this very capacity, which CR 118.3's read of a route's
+-- own mana part pays from. Taken once, so an offer sweep over N mana-eating
+-- sources (Rakdos Signet) asks N payments of one sweep and not one sweep each
+-- (#9296). The knot holds because the sweep asks ForSupply alone
+-- (Mana.supplyCapacity), which never reads it.
+manaActivationsFor :: [Projection.ControlGrant] -> [(ObjectId, [(TextWord.TextWord, TextWord.TextWord)], ActivationProhibition.Type.ActivationProhibition)] -> [(RowSource, PlayerEffect.Type.PlayerEffect)] -> Map.Map ObjectId PC.ProjectedCharacteristics -> PlayerId -> GameState -> Mana.Capacity
+manaActivationsFor grants rows effects pcs pid gs = capacity
+  where
+    capacity = manaActivationsOn grants rows effects (Mana.supplySourcesGiven capacity grants pcs pid gs)
+
+-- The same capacity given that sweep, `sources`, which MUST be
+-- manaActivationsFor's for the pid and the board this is called with.
+manaActivationsOn :: [Projection.ControlGrant] -> [(ObjectId, [(TextWord.TextWord, TextWord.TextWord)], ActivationProhibition.Type.ActivationProhibition)] -> [(RowSource, PlayerEffect.Type.PlayerEffect)] -> Mana.Sources -> Mana.Capacity
+manaActivationsOn grants rows effects sources measure pcs pid oid printedCost restrictions ability gs =
   let adjustments = manaActivationAdjustmentsGiven effects pid (ActivatedAbility.keyword =<< ability) (ActivatedAbility.name =<< ability) oid gs
       -- The COMPONENT half of CR 601.2f, applied here so every conjunct below
       -- measures the components an effect added as well as the printed ones. The
@@ -3905,7 +3919,7 @@ manaActivationsOn grants rows effects measure pcs pid oid printedCost restrictio
       -- its own {B} is payable by a walk that asks the same of the Altar. CR
       -- 118.6's Nothing is still unpayable under both.
       payable = case measure of
-        Mana.ForOffer -> manaPartPayable effects adjustments pid oid (ActivatedAbility.name =<< ability) cost gs
+        Mana.ForOffer -> manaPartPayable sources pcs adjustments pid oid (ActivatedAbility.name =<< ability) cost gs
         Mana.ForSupply -> Maybe.isJust (Cost.mana cost)
    in if payable
         && all (\component -> canPayComponent Map.empty pid oid component gs) (Cost.components cost)
@@ -4012,17 +4026,18 @@ manaActivationAdjustmentsGiven effects pid stamp named = PlayerEffect.activation
 -- reduction's hybrid halves (CR 118.7e) and the order of several reductions are
 -- the payer's, unmade at this moment, so a cost this refuses has to be one NO
 -- resolution could have paid.
-manaPartPayable :: [(RowSource, PlayerEffect.Type.PlayerEffect)] -> CostAdjustments.CostAdjustments -> PlayerId -> ObjectId -> Maybe AbilityName.AbilityName -> Cost Keyword.Type.Keyword -> GameState -> Bool
-manaPartPayable effects adjustments pid oid named cost gs = case Cost.mana cost of
+manaPartPayable :: Mana.Sources -> Map.Map ObjectId PC.ProjectedCharacteristics -> CostAdjustments.CostAdjustments -> PlayerId -> ObjectId -> Maybe AbilityName.AbilityName -> Cost Keyword.Type.Keyword -> GameState -> Bool
+manaPartPayable sources pcs adjustments pid oid named cost gs = case Cost.mana cost of
   Nothing -> False
   Just (ManaCost.MkManaCost []) -> True
   Just manaCost ->
     any
       ( \totalled ->
-          Mana.canPayCommitting
+          Mana.canPayCommittingGiven
             (PaymentSubject.Activating oid AbilityKind.ManaAbility named Nothing ManaNarrowing.none)
-            (manaActivationsGiven effects)
             ManaSpending.AsProduced
+            sources
+            pcs
             pid
             (lifeOwedBy pid gs (Cost.components cost))
             (energyOwedBy (Cost.components cost))
@@ -4333,7 +4348,7 @@ canPaySomeCompletion :: Map.Map SlotName.SlotName (Set.Set Recipient.Recipient) 
 canPaySomeCompletion slots subject spending pid oid total_ substitute cost gs =
   let pcs = Projection.projectAll gs
       grants = Projection.controlGrants gs
-   in canPaySomeCompletionGiven slots subject spending (supplyManaSourcesGiven (manaActivationsOn grants (ActivationProhibition.gathered gs) (PlayerEffect.applying pid gs)) grants pcs pid gs) (Snapshot.given pcs grants gs) pid oid total_ substitute cost gs
+   in canPaySomeCompletionGiven slots subject spending (supplyManaSourcesGiven (manaActivationsFor grants (ActivationProhibition.gathered gs) (PlayerEffect.applying pid gs) pcs pid gs) grants pcs pid gs) (Snapshot.given pcs grants gs) pid oid total_ substitute cost gs
 
 -- CR 116.2c / 119.4: the life `pid` may pay for mana right now, off the same list
 -- at priority (Action.legalActions) and in a payment (`payManaWindowThen`).
