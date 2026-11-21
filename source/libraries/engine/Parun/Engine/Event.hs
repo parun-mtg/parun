@@ -740,8 +740,11 @@ amongPending under members body = do
 -- the order is observable. Each member's seat is the player it enters under,
 -- `under` or else its owner; the members carrying an entry replacement of
 -- their own take the slots they hold in the gathered order, seat by seat in
--- APNAP order (CR 616.1's last sentence, CR 101.4), each seat permuting its
--- own by Prompt.OrderEntries. Every other member keeps its slot.
+-- APNAP order, each seat permuting its own by Prompt.OrderEntries:
+-- docs/decisions.md, "Which seat's simultaneous as-enters effects apply
+-- first". Under the shared team turns option the active team names its seats'
+-- order (CR 805.6, inActiveTeamOrder), asked where one of its members runs
+-- effects. Every other member keeps its slot.
 --
 -- Asked where two or more of a seat's members carry an entry replacement of
 -- their own and one of them runs effects (Replacement.runsEffects), which can
@@ -750,7 +753,9 @@ amongPending under members body = do
 -- data/scenarios/entry-replacement's cr-616-1 Splendor scenarios, an Open the
 -- Vaults pair for Resolve's move and a Banishing Light pair for
 -- changeZonesTogether. The seats' APNAP order is proved by the cr-616-1
--- Ixidron and Clone pair there.
+-- Ixidron and Clone pair there, on Resolve's move by its two Exhume
+-- scenarios, and the team's order by the cr-805-6 Exhume pair in
+-- data/scenarios/team.
 --
 -- A pair neither of which runs effects is not asked, and the token and conjure
 -- batches are not ordered (gap #9255).
@@ -775,7 +780,8 @@ orderEntries under members = do
       place queue oid = case queue of
         next : later | Set.member oid carried -> (later, next)
         _ -> (queue, oid)
-  queue <- fmap concat (traverse ask seats)
+      runs team = any (any Replacement.runsEffects . rows) [oid | (oid, s) <- carrying, s `elem` team]
+  queue <- inActiveTeamOrder (const runs) seats (\seat sofar -> (sofar <>) <$> ask seat) []
   pure (snd (List.mapAccumL place queue members))
 
 together :: Game a -> Game a
@@ -8589,8 +8595,9 @@ changeZonesTogether settle batch = simultaneously . together $ do
   before <- State.get
   let moves = filter ((`Set.notMember` kept) . fst) batch
       entering = [oid | (oid, Zone.Battlefield) <- moves]
-      -- CR 614.1c / 616.1g: each member's as-enters effects run before the next
-      -- member's entry applies, in the order orderEntries settled.
+      -- CR 614.1c with CR 616.1g's Voice of All example: each member's as-enters
+      -- effects run before the next member's entry applies, in the order
+      -- orderEntries settled.
       step (sofar, acc) (oid, dest) = do
         State.modify' (\g -> g {GameState.scratch = (GameState.scratch g) {Scratch.enteringPending = Map.delete oid (Scratch.enteringPending (GameState.scratch g))}})
         new <- changeZoneAttaching settle (Just before) sofar oid dest LibraryPosition.defaultValue Nothing TapState.Untapped Map.empty Nothing Nothing Facing.FaceUp False CarryOver.NotCarried False Seq.empty

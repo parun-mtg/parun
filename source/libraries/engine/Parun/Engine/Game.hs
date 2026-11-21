@@ -3400,8 +3400,9 @@ opponentsOf you gs = filter (areOpponents gs you) (stillPlaying gs)
 -- CR 805.6: under the shared team turns option the whole active team comes
 -- first, then each nonactive team in turn order, each team's players together.
 --
--- A loop's choices (Parun.Engine.Resolve.Arms.Zones.forEach) and draws
--- (Event.inDrawOrder) ask the team its order instead.
+-- A loop's choices (Parun.Engine.Resolve.Arms.Zones.forEach), draws
+-- (Event.inDrawOrder) and simultaneous as-enters effects (Event.orderEntries)
+-- ask the team its order instead.
 --
 -- Every other caller takes a team's players in seat order from the active
 -- player's for CR 805.6's "in whatever order they like": no printed card's

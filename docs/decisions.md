@@ -366,6 +366,40 @@ Entries are ordered by the first rule each cites.
   `harms-way-onto-a-shielded-player-joins-a-division-already-owed`.
 - **Issue**: #5991, #6047.
 
+## Which seat's simultaneous as-enters effects apply first
+
+- **Question**: Alice's Ixidron and bob's Clone enter together with Grizzly
+  Bears out. Each entering object has one effect, so neither player has a CR
+  616.1 choice. Does one seat's effect apply first, so the Clone copies a
+  face-down 2/2 or face-up Bears by turn, or are the choices made against the
+  board before either applies, so the Clone copies face-up Bears whoever is
+  active?
+- **Rules**: CR 101.4, 614.1c, 614.12a, 616.1, 616.1g, 805.6; CR of
+  2026-11-06. Ixidron's and Clone's rulings say only that neither reaches an
+  object entering beside it.
+- **Decision**: The seats apply their members' effects in turn, in APNAP
+  order, each member's effects run before the next member's entry applies:
+  the turn that CR 616.1g's Voice of All example gives one player's two
+  entries, and the order "Whether damage a replacement adds joins a division
+  already owed" settles lone rows in, since there every row that is its
+  event's only effect applies in the batch's APNAP order. The Clone's copy is
+  a CR 614.12a choice made as its row applies, not a CR 616.1 choice, so it
+  gives the row no turn of its own. Under the shared team turns option the
+  active team names its seats' order (CR 805.6).
+- **Rejected**: Every choice made over the pre-batch board, then every action
+  at once (CR 101.4's "Then the actions happen simultaneously"): the Voice of
+  All example orders one player's entries, so an entry's action is not held
+  back for the others, and the damage entry rejects the same reading. Rows
+  with no question first: whether an as-enters row asks anything depends on
+  the effects it runs, where the damage entry's lone row is known by its
+  event's shape alone.
+- **Site**: `Parun.Engine.Event.orderEntries`, proved by the scenarios "CR
+  616.1 / 101.4: Ixidron and a Clone of different players returning together
+  on Ixidron's controller's turn apply in APNAP order" and its control, on
+  Resolve's move by the two `cr-616-1` Exhume scenarios, and for a team by
+  the `cr-805-6` Exhume pair in `data/scenarios/team`.
+- **Issue**: #9259, #9265.
+
 ## Whether "each creature and each planeswalker" reaches a permanent twice
 
 - **Question**: Magmaquake deals X damage "to each creature without flying
@@ -1628,8 +1662,8 @@ Entries are ordered by the first rule each cites.
   CR 805.7's "do the same" does carry a choice, but there the choice is the
   action itself, ordering triggers.
 - **Site**: `Parun.Engine.Event.inActiveTeamOrder`, through
-  `Parun.Engine.Resolve.Arms.Zones.forEach` and
-  `Parun.Engine.Event.inDrawOrder`. The scenario "CR 805.6 a nonactive
+  `Parun.Engine.Resolve.Arms.Zones.forEach`,
+  `Parun.Engine.Event.inDrawOrder` and `Parun.Engine.Event.orderEntries`. The scenario "CR 805.6 a nonactive
   team's Hive Mind copies go in seat order, unasked" proves it.
 - **Issue**: #8206.
 
