@@ -1,0 +1,127 @@
+{
+  "faces": [
+    {
+      "keywords": [
+        {
+          "type": "Menace"
+        }
+      ],
+      "manaCost": [
+        {
+          "type": "Generic",
+          "value": 2
+        },
+        {
+          "type": "OfType",
+          "value": {
+            "type": "Colored",
+            "value": "Red"
+          }
+        }
+      ],
+      "name": "Brimstone Vandal",
+      "oracleText": "Menace (This creature can't be blocked except by two or more creatures.)\nIf it's neither day nor night, it becomes day as this creature enters.\nWhenever day becomes night or night becomes day, this creature deals 1 damage to each opponent.",
+      "power": {
+        "type": "Literal",
+        "value": 2
+      },
+      "replacementEffects": [
+        {
+          "condition": {
+            "type": "Compares",
+            "value": {
+              "comparison": "AtMost",
+              "measured": {
+                "type": "Plus",
+                "value": {
+                  "left": {
+                    "type": "HasDaytime",
+                    "value": "Day"
+                  },
+                  "right": {
+                    "type": "HasDaytime",
+                    "value": "Night"
+                  }
+                }
+              },
+              "threshold": {
+                "type": "Literal",
+                "value": 0
+              }
+            }
+          },
+          "effect": {
+            "type": "EntryR",
+            "value": {
+              "matching": {
+                "type": "IsSource"
+              },
+              "rewrite": {
+                "type": "RunEffects",
+                "value": [
+                  {
+                    "type": "ItBecomes",
+                    "value": "Day"
+                  }
+                ]
+              }
+            }
+          }
+        }
+      ],
+      "toughness": {
+        "type": "Literal",
+        "value": 3
+      },
+      "triggeredAbilities": [
+        {
+          "condition": {
+            "type": "DaytimeChanges"
+          },
+          "modal": {
+            "modes": [
+              {
+                "clauses": [
+                  {
+                    "effects": [
+                      {
+                        "type": "DealDamage",
+                        "value": {
+                          "parts": [
+                            {
+                              "quantity": {
+                                "type": "Literal",
+                                "value": 1
+                              },
+                              "ref": {
+                                "type": "Players",
+                                "value": {
+                                  "players": {
+                                    "type": "Relative",
+                                    "value": "Opponent"
+                                  }
+                                }
+                              }
+                            }
+                          ]
+                        }
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          }
+        }
+      ],
+      "typeLine": {
+        "subtypes": [
+          "Devil"
+        ],
+        "types": [
+          "Creature"
+        ]
+      }
+    }
+  ]
+}

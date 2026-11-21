@@ -1,0 +1,150 @@
+{
+  "faces": [
+    {
+      "manaCost": [
+        {
+          "type": "Generic",
+          "value": 2
+        },
+        {
+          "type": "OfType",
+          "value": {
+            "type": "Colored",
+            "value": "Blue"
+          }
+        }
+      ],
+      "name": "Component Collector",
+      "oracleText": "If it's neither day nor night, it becomes day as this creature enters.\nWhenever day becomes night or night becomes day, you may tap or untap target nonland permanent.",
+      "power": {
+        "type": "Literal",
+        "value": 1
+      },
+      "replacementEffects": [
+        {
+          "condition": {
+            "type": "Compares",
+            "value": {
+              "comparison": "AtMost",
+              "measured": {
+                "type": "Plus",
+                "value": {
+                  "left": {
+                    "type": "HasDaytime",
+                    "value": "Day"
+                  },
+                  "right": {
+                    "type": "HasDaytime",
+                    "value": "Night"
+                  }
+                }
+              },
+              "threshold": {
+                "type": "Literal",
+                "value": 0
+              }
+            }
+          },
+          "effect": {
+            "type": "EntryR",
+            "value": {
+              "matching": {
+                "type": "IsSource"
+              },
+              "rewrite": {
+                "type": "RunEffects",
+                "value": [
+                  {
+                    "type": "ItBecomes",
+                    "value": "Day"
+                  }
+                ]
+              }
+            }
+          }
+        }
+      ],
+      "toughness": {
+        "type": "Literal",
+        "value": 4
+      },
+      "triggeredAbilities": [
+        {
+          "condition": {
+            "type": "DaytimeChanges"
+          },
+          "modal": {
+            "modes": [
+              {
+                "clauses": [
+                  {
+                    "effects": [
+                      {
+                        "type": "Tap",
+                        "value": {
+                          "ref": {
+                            "type": "InSlot",
+                            "value": "target"
+                          }
+                        }
+                      }
+                    ],
+                    "optionality": {
+                      "type": "Optional"
+                    },
+                    "orElse": {
+                      "siblings": [
+                        1
+                      ]
+                    }
+                  },
+                  {
+                    "effects": [
+                      {
+                        "type": "Untap",
+                        "value": {
+                          "type": "InSlot",
+                          "value": "target"
+                        }
+                      }
+                    ],
+                    "optionality": {
+                      "type": "Optional"
+                    },
+                    "orElse": {
+                      "siblings": [
+                        0
+                      ]
+                    }
+                  }
+                ],
+                "targetSlots": {
+                  "target": {
+                    "filter": {
+                      "type": "Not",
+                      "value": {
+                        "type": "HasCardType",
+                        "value": "Land"
+                      }
+                    },
+                    "pool": {
+                      "type": "Permanents"
+                    }
+                  }
+                }
+              }
+            ]
+          }
+        }
+      ],
+      "typeLine": {
+        "subtypes": [
+          "Homunculus"
+        ],
+        "types": [
+          "Creature"
+        ]
+      }
+    }
+  ]
+}
