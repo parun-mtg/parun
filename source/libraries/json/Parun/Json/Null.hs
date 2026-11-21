@@ -2,15 +2,15 @@ module Parun.Json.Null where
 
 import qualified Data.ByteString.Builder as Builder
 import qualified Data.Text as Text
-import qualified Text.Parsec as Parsec
+import qualified Parun.Zepto as Zepto
 
 newtype Null = MkNull
   { unwrap :: ()
   }
   deriving (Eq, Ord, Show)
 
-decode :: Parsec.Parsec Text.Text u Null
-decode = MkNull () <$ Parsec.string' "null"
+decode :: Zepto.Parser Null
+decode = MkNull () <$ Zepto.string (Text.pack "null")
 
 encode :: Null -> Builder.Builder
 encode = const $ Builder.stringUtf8 "null"

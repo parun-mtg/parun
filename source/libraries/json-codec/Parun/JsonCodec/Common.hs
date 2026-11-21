@@ -54,7 +54,7 @@ import qualified Parun.JsonSchema.Pattern as Pattern
 import qualified Parun.JsonSchema.Schema as Schema
 import qualified Parun.JsonSchema.Validate as Validate
 import qualified Parun.Spec as Spec
-import qualified Text.Parsec as Parsec
+import qualified Parun.Zepto as Zepto
 
 -- Tagged objects -------------------------------------------------------------
 
@@ -94,8 +94,8 @@ render = Text.pack . Builder.toString . Value.encode
 -- | 'Value.decode' already consumes the blanks around a document, so this only
 -- has to pin the end of input and adapt the error to the codec's channel.
 parse :: Text.Text -> Either Text.Text Value.Value
-parse input = case Parsec.parse (Value.decode <* Parsec.eof) "" input of
-  Left e -> Left . Text.pack $ show e
+parse input = case Zepto.parse (Value.decode <* Zepto.endOfInput) input of
+  Left e -> Left $ Text.pack e
   Right value -> Right value
 
 -- Extraction -----------------------------------------------------------------
