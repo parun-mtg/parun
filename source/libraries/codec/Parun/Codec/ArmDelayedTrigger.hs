@@ -6,6 +6,7 @@ import qualified Data.Typeable as Typeable
 import qualified Parun.Codec.AbilityName as AbilityName
 import qualified Parun.Codec.Duration as Duration
 import qualified Parun.Codec.Onset as Onset
+import qualified Parun.Codec.PlayerRef as PlayerRef
 import qualified Parun.JsonCodec.Codec as Codec
 import qualified Parun.JsonCodec.Common as Common
 import qualified Parun.JsonCodec.Fields as Fields
@@ -22,7 +23,7 @@ import qualified Parun.Types.Onset as Onset
 -- the arity puzzle: a stated duration alone and a stated onset alone are each
 -- just the one key.
 --
--- The carried `ability` is elided the same way, so an arm naming its card's
+-- The carried `ability` and the `recipient` are elided the same way, so an arm naming its card's
 -- declaration writes nothing more than it did.
 codec :: (Typeable.Typeable ability, Eq ability) => Codec.Codec ability -> Codec.Codec (ArmDelayedTrigger.ArmDelayedTrigger ability)
 codec abilityCodec = Fields.object $ do
@@ -30,10 +31,12 @@ codec abilityCodec = Fields.object $ do
   onset <- Fields.defaulted "onset" Onset.Immediately Onset.codec ArmDelayedTrigger.onset
   duration <- Fields.defaulted "duration" Nothing (Common.maybe Duration.codec) ArmDelayedTrigger.duration
   ability <- Fields.defaulted "ability" Nothing (Common.maybe abilityCodec) ArmDelayedTrigger.ability
+  recipient <- Fields.defaulted "recipient" Nothing (Common.maybe PlayerRef.codec) ArmDelayedTrigger.recipient
   pure
     ArmDelayedTrigger.MkArmDelayedTrigger
       { ArmDelayedTrigger.name = name,
         ArmDelayedTrigger.onset = onset,
         ArmDelayedTrigger.duration = duration,
-        ArmDelayedTrigger.ability = ability
+        ArmDelayedTrigger.ability = ability,
+        ArmDelayedTrigger.recipient = recipient
       }

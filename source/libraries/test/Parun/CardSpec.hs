@@ -985,7 +985,7 @@ playerRefPositions =
         -- join it in are the same ones slotsOf joins durationSlots in --
         -- ModifyTarget, BecomeCopy, Replace, the three prevention opcodes,
         -- RedirectDamage and this one.
-        ("arm-delayed-trigger", Effect.ArmDelayedTrigger (ArmDelayedTrigger.MkArmDelayedTrigger (AbilityName.MkAbilityName (Text.pack "ad")) (Onset.FromNextTurnOf (Just (plantedPlayer "ad-onset"))) (Just (Duration.UntilPaid (UntilPaid.MkUntilPaid (plantedPlayer "ad-payer") (Cost.Type.MkCost Nothing [])))) Nothing), [plantedPlayer "ad-payer", plantedPlayer "ad-onset"]),
+        ("arm-delayed-trigger", Effect.ArmDelayedTrigger (ArmDelayedTrigger.MkArmDelayedTrigger (AbilityName.MkAbilityName (Text.pack "ad")) (Onset.FromNextTurnOf (Just (plantedPlayer "ad-onset"))) (Just (Duration.UntilPaid (UntilPaid.MkUntilPaid (plantedPlayer "ad-payer") (Cost.Type.MkCost Nothing [])))) Nothing (Just (plantedPlayer "ad-recipient"))), [plantedPlayer "ad-payer", plantedPlayer "ad-recipient", plantedPlayer "ad-onset"]),
         ("grant-play-from-exile-duration", Effect.GrantPlayFromExile (GrantPlayFromExile.MkGrantPlayFromExile (Duration.UntilEndOfNextTurnOf (plantedPlayer "gp-duration")) (plantedPlayer "gp-player") (plantedRef "gp-ref") ManaSpending.AsProduced Nothing Nothing PermissionVerb.Play 0 Nothing TapState.Untapped TapState.Untapped Nothing [] GrantZone.Exile), [plantedPlayer "gp-duration", plantedPlayer "gp-player"]),
         -- CR 400.1's reference nested in the PLAYER EFFECT rather than in a field of
         -- the opcode -- the CR 601.3 / 305.1 / 702.170f permissions that name whose
@@ -5702,7 +5702,7 @@ effectFilters effect = case effect of
   Effect.EndCombatPhase -> []
   Effect.GainControl (GainControl.MkGainControl duration ref _ _) -> frame Unframed (durationFilters duration) <> frame SourceHostFramed (objectRefFilters ref)
   Effect.ExchangeControl _ -> []
-  Effect.ArmDelayedTrigger arm@(ArmDelayedTrigger.MkArmDelayedTrigger _ _ mDuration _) -> frame Unframed (concatMap durationFilters (Maybe.maybeToList mDuration)) <> foldMap triggeredAbilityFilters (Game.carriedDelayedAbility arm)
+  Effect.ArmDelayedTrigger arm@(ArmDelayedTrigger.MkArmDelayedTrigger _ _ mDuration _ _) -> frame Unframed (concatMap durationFilters (Maybe.maybeToList mDuration)) <> foldMap triggeredAbilityFilters (Game.carriedDelayedAbility arm)
   Effect.AffectPlayers (AffectPlayers.MkAffectPlayers duration _ playerEffect) -> frame Unframed (durationFilters duration) <> fmap ((,) StoredPlayerEffectFramed) (playerEffectFilters playerEffect)
   Effect.RequireBlock (RequireBlock.MkRequireBlock duration blocker attacker _) -> frame Unframed (durationFilters duration) <> restrictedFilters blocker <> foldMap restrictedFilters attacker
   -- RequireBlock's arm one axis narrower.

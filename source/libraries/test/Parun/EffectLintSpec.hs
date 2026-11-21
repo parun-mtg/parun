@@ -4281,7 +4281,7 @@ effectLintSpec s registry corpus = Spec.describe s "Lint" $ do
     Spec.assertBool s (not (anyFace thatCombatPhaseOffends (Printing.card bumi))) "the real Bumi, Unleashed is accepted"
     Spec.assertBool s (thatCombatPhaseOffends planted) "a restriction naming no added phase is rejected"
     war <- S.printingOf s registry "World at War"
-    let arm = Effect.ArmDelayedTrigger (ArmDelayedTrigger.MkArmDelayedTrigger (AbilityName.MkAbilityName (Text.pack "that combat")) (Onset.FromThatCombatPhase PhaseAnchor.SecondMainPhase) Nothing Nothing)
+    let arm = Effect.ArmDelayedTrigger (ArmDelayedTrigger.MkArmDelayedTrigger (AbilityName.MkAbilityName (Text.pack "that combat")) (Onset.FromThatCombatPhase PhaseAnchor.SecondMainPhase) Nothing Nothing Nothing)
         hereOnly = Effect.AddPhases (AddPhases.MkAddPhases PhaseAnchor.ThisPhase [ExtraPhase.ExtraCombat, ExtraPhase.ExtraMain] PhaseGrant.ThereIs)
         misanchored = (vanillaFace "Planted" instantLine) {Face.spell = Mint.oneMode (Seq.fromList [hereOnly, arm])}
     Spec.assertBool s (not (anyFace thatCombatPhaseOffends (Printing.card war))) "the real World at War is accepted"

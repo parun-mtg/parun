@@ -3,6 +3,7 @@ module Parun.Types.ArmDelayedTrigger where
 import qualified Parun.Types.AbilityName as AbilityName
 import qualified Parun.Types.Duration as Duration
 import qualified Parun.Types.Onset as Onset
+import qualified Parun.Types.PlayerRef as PlayerRef
 
 -- | CR 603.7: which delayed triggered ability to arm, and the temporal envelope
 -- to arm it inside -- when it becomes armed, and how long it stays armed.
@@ -23,6 +24,10 @@ data ArmDelayedTrigger ability = MkArmDelayedTrigger
     -- beginning of the next end step") so it travels with every grant and copy
     -- of the quotation. Nothing for an arm whose `name` the source's own card
     -- declares (Face.delayedAbilities).
-    ability :: Maybe ability
+    ability :: Maybe ability,
+    -- | Who controls the armed ability: Nothing is CR 603.7d-e's controller of
+    -- the arming resolution; a player named here gets it instead, Loch Larent's
+    -- "Target opponent gets a one-time boon", whose "you" is that player.
+    recipient :: Maybe PlayerRef.PlayerRef
   }
   deriving (Eq, Ord, Show)
