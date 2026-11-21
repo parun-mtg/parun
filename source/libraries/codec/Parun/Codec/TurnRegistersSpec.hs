@@ -9,6 +9,7 @@ import qualified Parun.JsonCodec.Common as Common
 import qualified Parun.Spec as Spec
 import qualified Parun.Types.BeginningStep as BeginningStep
 import qualified Parun.Types.EndTurnSignal as EndTurnSignal
+import qualified Parun.Types.LoopTrail as LoopTrail
 import qualified Parun.Types.ObjectId as ObjectId
 import qualified Parun.Types.Phase as Phase
 import qualified Parun.Types.PlayerId as PlayerId
@@ -52,7 +53,8 @@ spec s = Spec.describe s "Parun.Codec.TurnRegisters" $ do
           TurnRegisters.freeCastsUsedThisTurn = Map.empty,
           TurnRegisters.instructionsTakenThisTurn = Seq.empty,
           TurnRegisters.rollsThisTurn = Seq.empty,
-          TurnRegisters.turnResume = TurnResume.InWindow
+          TurnRegisters.turnResume = TurnResume.InWindow,
+          TurnRegisters.loopTrail = LoopTrail.empty
         }
       (" {\"activePlayer\":4,\"phase\":{\"type\":\"Beginning\",\"value\":\"Upkeep\"},\"remaining\":[],\"stack\":[7],\"priority\":5,\"combat\":" <> CombatSpec.emptyJson <> ",\"turnNumber\":2,\"turnResume\":\"InWindow\"} ")
   Spec.it s "has a schema" $

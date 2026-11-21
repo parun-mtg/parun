@@ -32,12 +32,14 @@ import qualified Parun.Engine.Turn as Turn
 import qualified Parun.Registry as Registry
 import qualified Parun.Spec as Spec
 import qualified Parun.Support as S
+import qualified Parun.Types.Action as Action
 import qualified Parun.Types.CardName as CardName
 import qualified Parun.Types.Departure as Departure.Type
 import qualified Parun.Types.EndTurnSignal as EndTurnSignal
 import qualified Parun.Types.ExtraTurn as ExtraTurn
 import qualified Parun.Types.GameState as GameState
 import qualified Parun.Types.LoopTrail as LoopTrail
+import qualified Parun.Types.ObjectId as ObjectId
 import qualified Parun.Types.Phase as Phase
 import Parun.Types.PlayerId (PlayerId)
 import qualified Parun.Types.PlayerId as PlayerId
@@ -383,6 +385,27 @@ spec s registry = Spec.describe s "GrandMelee" $ do
     Spec.assertEqWith s "seat 4's turn is worked" (TurnRegisters.activePlayer (GameState.turn onFour)) (seat 4)
     Spec.assertEqWith s "CR 704.5g the Sage survives on seat 4's turn" (S.onBattlefield sage onFour) True
     Spec.assertEqWith s "CR 601.2i the Zealot counts seat 0's casts on seat 4's turn" (Projection.powerOf zealotId onFour) (Just 4)
+
+  -- CR 733.3 / 807.4b: each running turn's active player -- seats 0 and 4 --
+  -- activates Synthetic Self Tapper, the seat to their left untaps it with
+  -- Synthetic Rouser, and both stacks lap in step, one unit at a time. Once
+  -- the game returns to a state seat 0's lap has left, seat 0 may not
+  -- activate again: its turn's trail outlives the units between. Seat 4's
+  -- next lap head follows seat 0's pass on the other stack, a state the game
+  -- has not been in, so seat 4 still may.
+  Spec.it s "CR 733.3 a fragmented loop is seen across Grand Melee units" $ do
+    forest <- S.printingOf s registry "Forest"
+    tapper <- S.printingOf s registry "Synthetic Self Tapper"
+    rouser <- S.printingOf s registry "Synthetic Rouser"
+    let main = untilPhase Phase.PrecombatMain (melee forest 8)
+        (zeroTapper, withZero) = S.addPermanent tapper (seat 0) main
+        (_, withOne) = S.addPermanent rouser (seat 1) withZero
+        (fourTapper, withFour) = S.addPermanent tapper (seat 4) withOne
+        (_, staged) = S.addPermanent rouser (seat 5) withFour
+        laps = Map.fromList [(seat 0, (seat 1, zeroTapper)), (seat 4, (seat 5, fourTapper))]
+        offers = lapUnits laps 400 staged
+    Spec.assertEqWith s "CR 733.3 seat 0's activation is withheld where the state recurs" (Map.lookup (seat 0) offers) (Just [True, False])
+    Spec.assertEqWith s "CR 733.3 seat 4's activation is offered where the other stack moved on" (Map.lookup (seat 4) offers) (Just [True, True])
   where
     seat = PlayerId.MkPlayerId
     seats :: [Natural] -> [PlayerId]
@@ -511,3 +534,54 @@ recordTargets p = case p of
     State.modify' (<> [foldMap snd slots])
     pure (S.identityAnswer p)
   _ -> pure (S.identityAnswer p)
+
+-- Run up to `budget` scheduler units, each tapper in `laps` lapping as
+-- `lapping` scripts it, until a running turn reaches combat, and answer each tapper's record of whether its activation was on the
+-- menu at the head of a lap.
+lapUnits :: Map.Map PlayerId (PlayerId, ObjectId.ObjectId) -> Int -> GameState.GameState -> Map.Map PlayerId [Bool]
+lapUnits laps budget0 gs0 = fmap (\(_, _, offered) -> offered) (go budget0 gs0 (fmap (const (0, 0, [])) laps))
+  where
+    go budget gs lapped
+      | budget <= 0 || any inCombat (GameState.turn gs : Map.elems (GameState.parkedTurns gs)) = lapped
+      | otherwise =
+          let ((_, next), lapped') = State.runState (Engine.runGame (lapping laps) gs Engine.runStep) lapped
+           in go (budget - 1) next lapped'
+    inCombat registers = case TurnRegisters.phase registers of
+      Phase.Combat _ -> True
+      _ -> False
+
+-- One lap per tapper, in stages, as Parun.FragmentedSpec's `looping` scripts
+-- it: 0, the tapper at the lap's head activates (three times at most) and the
+-- offer is recorded; 1, the rouser passes on the ability; 2, they activate the
+-- Rouser once it has resolved, aimed at the tapper; 3, the tapper passes on
+-- it. Every other prompt passes or declines.
+lapping :: Map.Map PlayerId (PlayerId, ObjectId.ObjectId) -> Prompt.Prompt r -> State.State (Map.Map PlayerId (Int, Int, [Bool])) r
+lapping laps p = case p of
+  Prompt.ChooseAction _ pid actions -> do
+    lapped <- State.get
+    let activationsOf oid = filter (activates oid) actions
+        own = [(tapping, tapperId) | (tapping, (rousing, tapperId)) <- Map.toList laps, pid == tapping || pid == rousing]
+    case own of
+      (tapping, tapperId) : _ -> do
+        let (stage, activations, offered) = Map.findWithDefault (0, 0, []) tapping lapped
+            rousing = maybe tapping fst (Map.lookup tapping laps)
+            put entry action = action <$ State.put (Map.insert tapping entry lapped)
+            rouses = [action | action@(Action.Activate source _) <- actions, source /= tapperId]
+        case stage :: Int of
+          0 | pid == tapping -> case activationsOf tapperId of
+            action : _ | activations < (3 :: Int) -> put (1, activations + 1, offered <> [True]) action
+            seen -> put (0, activations, offered <> [not (null seen)]) Action.Pass
+          1 | pid == rousing -> put (2, activations, offered) Action.Pass
+          2 | pid == rousing -> case rouses of
+            action : _ -> put (3, activations, offered) action
+            [] -> pure Action.Pass
+          3 | pid == tapping -> put (0, activations, offered) Action.Pass
+          _ -> pure Action.Pass
+      [] -> pure Action.Pass
+  -- Each Rouser reaches only the tapper beside it (CR 807.2a).
+  Prompt.ChooseTargets _ _ _ sets -> pure (fmap (Set.filter (`elem` [Recipient.ToCreature tapperId | (_, tapperId) <- Map.elems laps]) . snd) sets)
+  _ -> pure (S.identityAnswer p)
+  where
+    activates oid action = case action of
+      Action.Activate source _ -> source == oid
+      _ -> False

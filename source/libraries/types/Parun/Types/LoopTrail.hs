@@ -8,7 +8,8 @@ import qualified Parun.Types.PlayerId as PlayerId
 import qualified Parun.Types.StateDigest as StateDigest
 
 -- | CR 733.3: the priority choices one priority loop has seen, and where each
--- game state recurred among them. Loop-local, so no codec.
+-- game state recurred among them. Loop-local, so no codec: a decoded turn's
+-- trail is empty, which sees no loop (Parun.Engine.Fragmented).
 data LoopTrail = MkLoopTrail
   { -- | Each choice taken at a prompt that offered one, oldest first, with
     -- the state it was taken in and, for an activation, what it was completed
@@ -21,7 +22,7 @@ data LoopTrail = MkLoopTrail
     -- action, which then never happened.
     pending :: Maybe (StateDigest.StateDigest, PlayerId.PlayerId, Action.Action, Maybe Completion.Completion)
   }
-  deriving (Eq, Show)
+  deriving (Eq, Ord, Show)
 
 -- | A loop that has seen nothing yet.
 empty :: LoopTrail
