@@ -11,30 +11,6 @@
           {
             "card": "Goblin King",
             "label": "king"
-          },
-          {
-            "card": "Island",
-            "label": "i1"
-          },
-          {
-            "card": "Island",
-            "label": "i2"
-          },
-          {
-            "card": "Island",
-            "label": "i3"
-          },
-          {
-            "card": "Island",
-            "label": "i4"
-          },
-          {
-            "card": "Island",
-            "label": "i5"
-          },
-          {
-            "card": "Island",
-            "label": "i6"
           }
         ],
         "hand": [
@@ -51,6 +27,7 @@
             "card": "Island"
           }
         ],
+        "manaPool": "UUUUUU",
         "name": "alice"
       },
       {
@@ -75,10 +52,6 @@
       "do": {
         "Activate": {
           "ability": 0,
-          "mana": [
-            "$i1",
-            "$i2"
-          ],
           "object": "$bear"
         }
       },
@@ -95,10 +68,6 @@
     {
       "do": {
         "Cast": {
-          "mana": [
-            "$i3",
-            "$i4"
-          ],
           "object": "$gifter"
         }
       },
@@ -146,10 +115,6 @@
       "do": {
         "Activate": {
           "ability": 0,
-          "mana": [
-            "$i5",
-            "$i6"
-          ],
           "object": "$bear"
         }
       },
@@ -159,6 +124,18 @@
     },
     {
       "do": "Pass",
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "PowerToughness": {
+          "object": "$bear",
+          "power": 4,
+          "toughness": 4
+        }
+      },
       "player": "alice",
       "step": "PrecombatMain",
       "turn": 1
@@ -184,18 +161,6 @@
           "subtypes": [
             "Bear"
           ]
-        }
-      },
-      "player": "alice",
-      "step": "PrecombatMain",
-      "turn": 1
-    },
-    {
-      "check": {
-        "PowerToughness": {
-          "object": "$bear",
-          "power": 4,
-          "toughness": 4
         }
       },
       "player": "alice",

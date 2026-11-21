@@ -45,7 +45,7 @@
                           "modification": {
                             "type": "CreatureSubtype",
                             "value": {
-                              "mode": "Replace",
+                              "mode": "InAddition",
                               "subtype": "Golem"
                             }
                           },
