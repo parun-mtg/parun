@@ -279,8 +279,9 @@ data Quantity
     -- That player's own attacks: under the shared team turns option each player
     -- on the active team is an attacking player (CR 805.10a).
     OpponentsAttacked AttackWindow.AttackWindow PlayerRef.PlayerRef
-  | -- | CR 508.1a / 608.2i: how many creatures that player declared as attackers
-    -- this turn, folded from the turn-scoped GameEvent.AttackerDeclared log.
+  | -- | CR 508.1a / 608.2i: how many distinct creatures that player declared as
+    -- attackers this turn, folded from the turn-scoped GameEvent.AttackerDeclared
+    -- log. Proved by search-party-captain-counts-a-creature-that-attacked-in-two-combats-once.
     --
     -- Rule 207.2c's raid is this compared against 1, and it is neither of the two
     -- arms it sits between. OpponentsAttacked counts the OPPONENTS a declaration
