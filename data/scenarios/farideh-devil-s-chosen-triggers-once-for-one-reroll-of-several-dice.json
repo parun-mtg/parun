@@ -112,7 +112,7 @@
     "step": "PrecombatMain"
   },
   "description": "CR 603.2 / 706.2b one Monitor Monitor reroll of both dice is one roll, and Farideh, Devil's Chosen triggers once for it",
-  "note": "Grave Endeavor's two d10 come up 2 and 2; one {1} rerolls both, to 10 and 10. Farideh triggers twice, for the roll and the reroll, not once per rerolled die, and draws two cards.",
+  "note": "Grave Endeavor's two d10 come up 2 and 2; one {1} rerolls both, to 3 and 10. Farideh triggers twice, for the roll and the reroll, not once per rerolled die, and each reads the 10, the highest of its dice, so it draws two cards.",
   "timeline": [
     {
       "do": {
@@ -191,7 +191,7 @@
       "do": {
         "Answer": {
           "prompt": "RollDie",
-          "with": 10
+          "with": 3
         }
       },
       "player": "alice",
@@ -203,6 +203,17 @@
         "Answer": {
           "prompt": "RollDie",
           "with": 10
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": {
+        "Answer": {
+          "prompt": "ChooseDieResult",
+          "with": 0
         }
       },
       "player": "alice",
