@@ -6203,7 +6203,8 @@ apply settle batch applied batchPrevented candidate event =
     -- nowhere else. QUEUED for EntryRewrite.RunEffects' reason -- this module
     -- cannot run a card's effects -- and drained before the next instruction
     -- reads the board (Parun.Engine.Resolve.Effect.applyEffectWith) or, off a
-    -- resolution, by the settle loop. Both the performer and CR 113.7's source are
+    -- resolution, right after the CR 702.145 sweep that turned it, before CR
+    -- 704.5m looks (Parun.Engine.Engine). Both the performer and CR 113.7's source are
     -- the transforming permanent, the entry arm's posture. The event survives:
     -- the face is already turned.
     (ReplacementEffect.TransformR (TransformR.MkTransformR _ (TransformRewrite.RunEffects effects)), ProposedEvent.WouldTransform oid) -> do
