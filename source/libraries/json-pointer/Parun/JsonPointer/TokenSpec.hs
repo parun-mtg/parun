@@ -2,45 +2,46 @@ module Parun.JsonPointer.TokenSpec where
 
 import qualified Data.Text as Text
 import qualified Parun.Extra.Builder as Builder
-import qualified Parun.Extra.Parsec as Parsec
 import qualified Parun.JsonPointer.Token as Token
 import qualified Parun.Spec as Spec
-import qualified Text.Parsec as Parsec
+import qualified Parun.Zepto as Zepto
 
 spec :: (Applicative m, Monad n) => Spec.Spec m n -> n ()
 spec s = Spec.describe s "Parun.JsonPointer.Token" $ do
-  let token = Token.MkToken . Text.pack
+  let run :: Zepto.Parser a -> String -> Maybe a
+      run p = Zepto.parseMaybe p . Text.pack
+      token = Token.MkToken . Text.pack
 
   Spec.describe s "decode" $ do
     Spec.it s "succeeds with an empty token" $ do
-      Spec.assertEq s (Parsec.parseString Token.decode "") . Just $ token ""
+      Spec.assertEq s (run Token.decode "") . Just $ token ""
 
     Spec.it s "succeeds with a simple token" $ do
-      Spec.assertEq s (Parsec.parseString Token.decode "foo") . Just $ token "foo"
+      Spec.assertEq s (run Token.decode "foo") . Just $ token "foo"
 
     Spec.it s "succeeds with a numeric token" $ do
-      Spec.assertEq s (Parsec.parseString Token.decode "0") . Just $ token "0"
+      Spec.assertEq s (run Token.decode "0") . Just $ token "0"
 
     Spec.it s "decodes ~0 as tilde" $ do
-      Spec.assertEq s (Parsec.parseString Token.decode "~0") . Just $ token "~"
+      Spec.assertEq s (run Token.decode "~0") . Just $ token "~"
 
     Spec.it s "decodes ~1 as slash" $ do
-      Spec.assertEq s (Parsec.parseString Token.decode "~1") . Just $ token "/"
+      Spec.assertEq s (run Token.decode "~1") . Just $ token "/"
 
     Spec.it s "decodes ~01 as ~1 (not as /)" $ do
-      Spec.assertEq s (Parsec.parseString Token.decode "~01") . Just $ token "~1"
+      Spec.assertEq s (run Token.decode "~01") . Just $ token "~1"
 
     Spec.it s "decodes a~1b as a/b" $ do
-      Spec.assertEq s (Parsec.parseString Token.decode "a~1b") . Just $ token "a/b"
+      Spec.assertEq s (run Token.decode "a~1b") . Just $ token "a/b"
 
     Spec.it s "decodes m~0n as m~n" $ do
-      Spec.assertEq s (Parsec.parseString Token.decode "m~0n") . Just $ token "m~n"
+      Spec.assertEq s (run Token.decode "m~0n") . Just $ token "m~n"
 
     Spec.it s "stops at slash" $ do
-      Spec.assertEq s (Parsec.parseString (Token.decode <* Parsec.char '/') "foo/") . Just $ token "foo"
+      Spec.assertEq s (run (Token.decode <* Zepto.char '/') "foo/") . Just $ token "foo"
 
     Spec.it s "handles multiple escapes" $ do
-      Spec.assertEq s (Parsec.parseString Token.decode "~0~1~0~1") . Just $ token "~/~/"
+      Spec.assertEq s (run Token.decode "~0~1~0~1") . Just $ token "~/~/"
 
   Spec.describe s "encode" $ do
     Spec.it s "works with an empty token" $ do
