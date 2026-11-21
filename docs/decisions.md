@@ -345,14 +345,15 @@ Entries are ordered by the first rule each cites.
   observes it. And if alice has a second effect on her event, and so a choice,
   whose question comes first? Harm's Way moving damage onto the shielded
   recipient asks the same.
-- **Rules**: CR 101.4, 101.4b, 615.7, 616.1, 616.1f; CR of 2026-11-06.
+- **Rules**: CR 101.4, 101.4b, 615.7, 616.1, 616.1f, 805.6; CR of 2026-11-06.
 - **Decision**: A row that adds or moves damage and is its event's only effect
   asks no one anything, so it applies first and the division spans what it
   adds or moves. A row beside another effect is its chooser's choice, which
   takes its APNAP turn: earlier seats' questions and CR 616.1 choices come
   first and cannot see what it may add, and whatever of a shield they leave is
   divided afterwards. A player with neither waits, keeping a shield for the
-  added damage.
+  added damage. Under the shared team turns option the active team names its
+  players' order (CR 805.6) where it decides which of them waits.
 - **Rejected**: Every seat answering first over what exists: bob's shield could
   never meet damage no one had any say in. Every adding row first: bob, the
   nonactive player, would spend a shared shield ahead of alice by a choice
@@ -363,8 +364,9 @@ Entries are ordered by the first rule each cites.
   `eye-for-an-eye-waits-its-apnap-turn-behind-a-shared-shield` and
   `eye-for-an-eye-waits-behind-an-earlier-seats-own-choice`; for a move,
   `harms-way-onto-a-shielded-creature-joins-the-shields-division` and
-  `harms-way-onto-a-shielded-player-joins-a-division-already-owed`.
-- **Issue**: #5991, #6047.
+  `harms-way-onto-a-shielded-player-joins-a-division-already-owed`; for a
+  team, the `cr-805-6` damage-choice pair in `data/scenarios/team`.
+- **Issue**: #5991, #6047, #9273.
 
 ## Which seat's simultaneous as-enters effects apply first
 
@@ -463,8 +465,9 @@ Entries are ordered by the first rule each cites.
   3 is cut to 2 and bob loses his 1; the team ends at 1. A lone floor each is
   no CR 616.1 choice, so CR 805.6 asks no team for an order.
 - **Rejected**: Each floor against the other's proposed loss alone, which cuts
-  both and leaves the team at 4, above the floor neither Worship needed. Asking
-  the team the order: no player has a choice to make.
+  alice's 3 to 2 and bob's 1 to 0 and leaves the team at 2, above the floor
+  neither Worship needed. Asking the team the order: no player has a choice
+  to make.
 - **Site**: `Parun.Engine.Damage.processDamage`, proved by the scenario
   `cr-120-4d-two-teammates-worships-settle-in-seat-order`.
 - **Issue**: #9254.
@@ -478,9 +481,11 @@ Entries are ordered by the first rule each cites.
 - **Rules**: CR 119.3, 120.3f, 120.4d, 614.6, 702.15e; CR of 2026-11-06. Ob
   Nixilis's ruling (2023-05-12) totals combat damage and says nothing of a loss
   that is no damage.
-- **Decision**: Two. CR 702.15e makes the gain an event of its own, and the
-  loss Tainted Remedy makes happens in its place (CR 614.6). Exquisite Blood
-  triggers twice and Ob Nixilis sees bob lose exactly 1.
+- **Decision**: Two. The loss Tainted Remedy makes happens in the gain's place
+  (CR 614.6), a life change of its own beside the damage's. It is still a
+  result of the damage event for a floor's read: "How a life floor treats a
+  loss in the same damage event". Exquisite Blood triggers twice and Ob
+  Nixilis sees bob lose exactly 1.
 - **Rejected**: One loss of 2, summing every loss a player takes in the step,
   which also leaves Exquisite Blood seeing two.
 - **Site**: `Parun.Engine.Event.Match`'s `LifeChanges` arm, proved by the

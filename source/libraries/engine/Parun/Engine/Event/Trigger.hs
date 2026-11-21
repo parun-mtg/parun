@@ -3857,7 +3857,7 @@ delayedPending grouped gs =
         -- and the surviving store's order is the arming order every later pass
         -- reads. Parun.EventTriggerSpec's "the store still holds it" is what pins
         -- that second half.
-        let seated = List.sortOn (Replacement.seatOf gs . DelayedTrigger.controller . snd) (zip [0 :: Int ..] (Foldable.toList store))
+        let seated = List.sortOn (Replacement.seatOf (Game.apnapOrder gs) . DelayedTrigger.controller . snd) (zip [0 :: Int ..] (Foldable.toList store))
             controllers = ListUtils.nubOrd (fmap (DelayedTrigger.controller . snd) seated)
             -- CR 603.3b's entry, built from a STORE entry: the question is asked
             -- before the entry has fired, so the PendingTrigger that

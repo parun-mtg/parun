@@ -4418,16 +4418,16 @@ groupPreventions ps =
 --
 -- `asked` narrows the questions to those touching a thread it admits
 -- (Event.settleThreads). Answers each thread with its division, in batch order.
-orderBatch :: (DamageThread -> Bool) -> [DamageThread] -> Game [(DamageThread, Map.Map CandidateId Natural)]
-orderBatch asked threads = do
+orderBatch :: [PlayerId] -> (DamageThread -> Bool) -> [DamageThread] -> Game [(DamageThread, Map.Map CandidateId Natural)]
+orderBatch order asked threads = do
   gs <- State.get
   -- Sorted FIRST: `contested` and `allocations` both report batch positions, so
   -- they have to see the list `askOne` will splice into.
-  let sorted = byApnap gs threads
+  let sorted = byApnap order gs threads
       (orders, divisions) = batchQuestions asked gs sorted
       seats =
         List.sortOn
-          (seatOf gs)
+          (seatOf order)
           ( Set.toList
               ( Set.fromList
                   (fmap fst orders <> fmap (\(_, _, pid, _) -> pid) divisions)
@@ -4442,9 +4442,9 @@ orderBatch asked threads = do
 type DamageThread = (DamageEvent.DamageEvent, Set.Set CandidateId)
 
 -- The threads some seat's question is about, before any narrowing.
-questioned :: GameState -> [DamageThread] -> [DamageThread]
-questioned gs threads =
-  let sorted = byApnap gs threads
+questioned :: [PlayerId] -> GameState -> [DamageThread] -> [DamageThread]
+questioned order gs threads =
+  let sorted = byApnap order gs threads
       (orders, divisions) = batchQuestions (const True) gs sorted
       positions = Set.fromList (concatMap snd orders <> concatMap (\(_, _, _, ps) -> ps) divisions)
    in fmap snd (filter (\(i, _) -> Set.member i positions) (zip [0 ..] sorted))
@@ -4685,28 +4685,25 @@ passageBy candidate before after = case before of
         Just (ReplacementCandidate.identity candidate, de {DamageEvent.amount = maybe 0 DamageEvent.amount (after >>= asDamageEvent)})
   _ -> Nothing
 
--- CR 616.1 / 101.4: group a batch by whose CR 616.1 choice each event is, active
--- player first. A stable sort, so events sharing a chooser keep their gather
+-- CR 616.1 / 101.4: group a batch by whose CR 616.1 choice each event is, in
+-- `order`, Game.apnapOrder or the order the active team named (CR 805.6,
+-- Event.settleThreads). A stable sort, so events sharing a chooser keep their gather
 -- order and CR 615.7's within-chooser permutation is left to `askOne`.
 --
 -- An event with no chooser -- its affected object has left -- sorts last with
 -- the unseated, since `choose` will not prompt for it either.
-byApnap :: GameState -> [DamageThread] -> [DamageThread]
-byApnap gs = List.sortOn (apnapRank gs . fst)
+byApnap :: [PlayerId] -> GameState -> [DamageThread] -> [DamageThread]
+byApnap order gs = List.sortOn (apnapRank order gs . fst)
 
--- How far down APNAP order this event's CR 616.1 chooser sits.
-apnapRank :: GameState -> DamageEvent.DamageEvent -> Int
-apnapRank gs de = maybe (unseated gs) (seatOf gs) (chooserOf gs (ProposedEvent.WouldDealDamage de))
+-- How far down `order` this event's CR 616.1 chooser sits.
+apnapRank :: [PlayerId] -> GameState -> DamageEvent.DamageEvent -> Int
+apnapRank order gs de = maybe (length order) (seatOf order) (chooserOf gs (ProposedEvent.WouldDealDamage de))
 
--- CR 101.4: how far down APNAP order a player sits. A player off the seating
--- roster sorts last, the fallback Resolve.objectRefObjects takes for the same
--- lookup.
-seatOf :: GameState -> PlayerId -> Int
-seatOf gs pid = Maybe.fromMaybe (unseated gs) (List.elemIndex pid (Game.apnapOrder gs))
-
--- The seat index that sorts after every real one.
-unseated :: GameState -> Int
-unseated = length . Game.apnapOrder
+-- CR 101.4: how far down `order`, usually Game.apnapOrder, a player sits. A
+-- player off it sorts last, the fallback Resolve.objectRefObjects takes for the
+-- same lookup.
+seatOf :: [PlayerId] -> PlayerId -> Int
+seatOf order pid = Maybe.fromMaybe (length order) (List.elemIndex pid order)
 
 -- Ask one chooser for the order of the positions their shields are contested
 -- over, and splice the answer back into the batch.
@@ -4805,7 +4802,7 @@ contested gs threads =
       merged = Map.fromListWith (<>) groups
    in fmap
         (\(pid, positions) -> (pid, Set.toAscList (Set.fromList positions)))
-        (List.sortOn (seatOf gs . fst) (Map.toList merged))
+        (List.sortOn (seatOf (Game.apnapOrder gs) . fst) (Map.toList merged))
 
 -- CR 122.1c / 614.3: a prevention that a batch can exhaust in WHOLE EVENTS or
 -- applications, as the pair (what it has left, what a set of events would demand
