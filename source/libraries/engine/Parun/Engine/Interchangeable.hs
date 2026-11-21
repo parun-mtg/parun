@@ -850,7 +850,7 @@ namedByAnother oid gs =
                  || any (Set.member oid) (Object.chosenObjects obj)
              )
    in any names (Map.toList (GameState.objects gs))
-        || any ((== Just oid) . LastKnown.host) (Snapshots.lastKnown (GameState.snapshots gs))
+        || any (\lk -> (LastKnown.host lk >>= Recipient.objectOf) == Just oid) (Snapshots.lastKnown (GameState.snapshots gs))
 
 -- Whether one slot's binding names this object.
 bindingNames :: ObjectId -> Binding.Binding -> Bool

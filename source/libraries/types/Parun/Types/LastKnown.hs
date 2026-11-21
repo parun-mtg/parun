@@ -22,6 +22,7 @@ import qualified Parun.Types.ObjectId as ObjectId
 import qualified Parun.Types.PlayerChoice as PlayerChoice
 import qualified Parun.Types.PlayerId as PlayerId
 import qualified Parun.Types.ProjectedCharacteristics as ProjectedCharacteristics
+import qualified Parun.Types.Recipient as Recipient
 import qualified Parun.Types.Source as Source
 import qualified Parun.Types.StackedAbility as StackedAbility
 import qualified Parun.Types.StickerPlacement as StickerPlacement
@@ -130,15 +131,18 @@ data LastKnown = MkLastKnown
     --
     -- Empty for everything nothing was attached to, which is most objects.
     attached :: !(Set.Set ObjectId.ObjectId),
-    -- | CR 303.4b: the object it was attached to as it left -- Game.hostOf, the
-    -- other direction of `attached` above. What "enchanted creature" means to an
-    -- ability whose Aura has already gone (CR 608.2h, 113.7a), read by
-    -- Parun.Engine.SourceContext.framedWith through Game.hostWithLastKnown.
-    -- data/scenarios/aura's Bewitching Leechcraft scenario, the Aura destroyed in
-    -- response to its own enters trigger, is the proof.
+    -- | CR 303.4b: the object or player it was attached to as it left --
+    -- Object.attachedTo, the other direction of `attached` above. What
+    -- "enchanted creature" and "enchanted player" mean to an ability whose Aura
+    -- has already gone (CR 608.2h, 113.7a, 603.10a), read by
+    -- Parun.Engine.SourceContext.framedWith through Game.hostWithLastKnown and
+    -- Game.enchantedPlayerWithLastKnown. data/scenarios/aura's Bewitching
+    -- Leechcraft scenario, the Aura destroyed in response to its own enters
+    -- trigger, and the Curse of Clinging Webs one in data/scenarios/, the Curse
+    -- destroyed with the creature, are the proofs.
     --
-    -- Nothing where it was attached to nothing or to a player.
-    host :: !(Maybe ObjectId.ObjectId),
+    -- Nothing where it was attached to nothing.
+    host :: !(Maybe Recipient.Recipient),
     -- | CR 201.4: the card names that had been chosen for it -- the same
     -- Object.chosenNames the live object carried. What CR 608.2h answers for an
     -- ability whose source chose a name and then left the zone it was expected

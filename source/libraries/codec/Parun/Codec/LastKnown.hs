@@ -23,6 +23,7 @@ import qualified Parun.Codec.ObjectId as ObjectId
 import qualified Parun.Codec.PlayerChoice as PlayerChoice
 import qualified Parun.Codec.PlayerId as PlayerId
 import qualified Parun.Codec.ProjectedCharacteristics as ProjectedCharacteristics
+import qualified Parun.Codec.Recipient as Recipient
 import qualified Parun.Codec.Source as Source
 import qualified Parun.Codec.StackedAbility as StackedAbility
 import qualified Parun.Codec.StickerPlacement as StickerPlacement
@@ -48,7 +49,7 @@ codec = Fields.object $ do
   stickers <- Fields.defaulted "stickers" Seq.empty (Common.seq StickerPlacement.codec) LastKnown.stickers
   copiable <- Fields.required "copiable" ProjectedCharacteristics.codec LastKnown.copiable
   attached <- Fields.required "attached" (Common.set ObjectId.codec) LastKnown.attached
-  host <- Fields.defaulted "host" Nothing (Common.maybe ObjectId.codec) LastKnown.host
+  host <- Fields.defaulted "host" Nothing (Common.maybe Recipient.codec) LastKnown.host
   chosenNames <- Fields.required "chosenNames" (Common.keyedList (Common.keyValue Acquisition.codec (Common.naturalMap PlayerId.codec (Common.set CardName.codec)))) LastKnown.chosenNames
   chosenPlayers <- Fields.defaulted "chosenPlayers" Map.empty (Common.keyedList (Common.keyValue Acquisition.codec (Common.keyedList (Common.keyValue PlayerChoice.codec PlayerId.codec)))) LastKnown.chosenPlayers
   chosenColors <- Fields.defaulted "chosenColors" Map.empty (Common.keyedList (Common.keyValue Acquisition.codec (Common.set Color.codec))) LastKnown.chosenColors
