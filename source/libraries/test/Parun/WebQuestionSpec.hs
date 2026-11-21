@@ -462,6 +462,18 @@ spec s registry = Spec.describe s "WebQuestion" $ do
         attackAll = Html.labelled (Text.pack "button") (Text.pack "Attack with all") (Question.Web.view alone Question.Web.blank)
     Spec.assertBool s (Maybe.isJust attackAll) "offered for a lone attacker too"
 
+  Spec.it s "a shared button at the group's most drops a pick, and Start over drops them all" $ do
+    forest <- S.printingOf s registry "Forest"
+    let (one, g1) = S.addObjectIn Zone.Library forest S.alice (Setup.emptyGame S.bothPlayers)
+        (two, g2) = S.addObjectIn Zone.Library forest S.alice g1
+        (three, gs) = S.addObjectIn Zone.Library forest S.alice g2
+        request = requestFor gs (Prompt.Search (Decider.MkDecider S.alice) S.alice [one, two, three] 1)
+        tap picked label = let view = Question.Web.view request Question.Web.blank {Question.Web.selected = picked} in Html.labelled (Text.pack "button") (Text.pack label) view >>= \path -> Html.handler (Text.pack "click") path view
+    Spec.assertEqWith s "first" (tap Set.empty "Forest \x00d7\&3") (Just (Question.Web.MkToggle 0 0))
+    Spec.assertEqWith s "then dropped" (tap (Set.singleton (0, 0)) "1 of Forest \x00d7\&3") (Just (Question.Web.MkToggle 0 0))
+    Spec.assertEqWith s "over the most, dropped" (tap (Set.fromList [(0, 0), (0, 1)]) "2 of Forest \x00d7\&3") (Just (Question.Web.MkToggle 0 1))
+    Spec.assertEqWith s "start over" (tap (Set.singleton (0, 0)) "Start over") (Just Question.Web.MkClear)
+
   Spec.it s "the log heads each turn the seat reads into, once" $ do
     let view = PlayerView.viewFor S.alice (Setup.emptyGame S.bothPlayers)
         (marks, first) = Log.unseen Map.empty view
