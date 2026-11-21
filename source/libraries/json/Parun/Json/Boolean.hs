@@ -1,21 +1,22 @@
 module Parun.Json.Boolean where
 
+import qualified Control.Applicative as Applicative
 import qualified Data.Bool as Bool
 import qualified Data.ByteString.Builder as Builder
 import qualified Data.Text as Text
-import qualified Text.Parsec as Parsec
+import qualified Parun.Zepto as Zepto
 
 newtype Boolean = MkBoolean
   { unwrap :: Bool
   }
   deriving (Eq, Ord, Show)
 
-decode :: Parsec.Parsec Text.Text u Boolean
+decode :: Zepto.Parser Boolean
 decode =
   MkBoolean
-    <$> Parsec.choice
-      [ False <$ Parsec.string' "false",
-        True <$ Parsec.string' "true"
+    <$> Applicative.asum
+      [ False <$ Zepto.string (Text.pack "false"),
+        True <$ Zepto.string (Text.pack "true")
       ]
 
 encode :: Boolean -> Builder.Builder

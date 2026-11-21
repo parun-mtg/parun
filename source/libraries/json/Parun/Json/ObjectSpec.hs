@@ -1,16 +1,15 @@
-{-# LANGUAGE FlexibleContexts #-}
-
 module Parun.Json.ObjectSpec where
 
+import qualified Control.Applicative as Applicative
 import qualified Data.ByteString.Builder as Builder
+import qualified Data.Char as Char
 import qualified Data.Text as Text
 import qualified Parun.Extra.Builder as Builder
-import qualified Parun.Extra.Parsec as Parsec
 import qualified Parun.Json.Object as Object
 import qualified Parun.Json.Pair as Pair
 import qualified Parun.Json.String as String
 import qualified Parun.Spec as Spec
-import qualified Text.Parsec as Parsec
+import qualified Parun.Zepto as Zepto
 
 spec :: (Applicative m, Monad n) => Spec.Spec m n -> n ()
 spec s = Spec.describe s "Parun.Json.Object" $ do
@@ -18,38 +17,38 @@ spec s = Spec.describe s "Parun.Json.Object" $ do
       object = Object.MkObject . fmap (\(n, v) -> Pair.MkPair (String.MkString $ Text.pack n) v)
 
   Spec.describe s "decode" $ do
-    let p :: (Parsec.Stream t m Char) => Parsec.ParsecT t u m Prelude.String
-        p = Parsec.many1 Parsec.digit
+    let p :: Zepto.Parser Prelude.String
+        p = Applicative.some $ Zepto.satisfy Char.isDigit
 
     Spec.it s "succeeds with an empty object" $ do
-      Spec.assertEq s (Parsec.parseText (Object.decode p) "{}") . Just $ object []
+      Spec.assertEq s (Zepto.parseMaybe (Object.decode p) (Text.pack "{}")) . Just $ object []
 
     Spec.it s "succeeds with an empty object with blank space" $ do
-      Spec.assertEq s (Parsec.parseText (Object.decode p) "{ }") . Just $ object []
+      Spec.assertEq s (Zepto.parseMaybe (Object.decode p) (Text.pack "{ }")) . Just $ object []
 
     Spec.it s "succeeds with a single pair" $ do
-      Spec.assertEq s (Parsec.parseText (Object.decode p) "{\"a\":1}") . Just $ object [("a", "1")]
+      Spec.assertEq s (Zepto.parseMaybe (Object.decode p) (Text.pack "{\"a\":1}")) . Just $ object [("a", "1")]
 
     Spec.it s "succeeds with a single pair with blank space" $ do
-      Spec.assertEq s (Parsec.parseText (Object.decode p) "{ \"a\":1 }") . Just $ object [("a", "1")]
+      Spec.assertEq s (Zepto.parseMaybe (Object.decode p) (Text.pack "{ \"a\":1 }")) . Just $ object [("a", "1")]
 
     Spec.it s "succeeds with multiple pairs" $ do
-      Spec.assertEq s (Parsec.parseText (Object.decode p) "{\"a\":1,\"b\":2}") . Just $ object [("a", "1"), ("b", "2")]
+      Spec.assertEq s (Zepto.parseMaybe (Object.decode p) (Text.pack "{\"a\":1,\"b\":2}")) . Just $ object [("a", "1"), ("b", "2")]
 
     Spec.it s "succeeds with multiple pairs with blank space" $ do
-      Spec.assertEq s (Parsec.parseText (Object.decode p) "{ \"a\":1 , \"b\":2 }") . Just $ object [("a", "1"), ("b", "2")]
+      Spec.assertEq s (Zepto.parseMaybe (Object.decode p) (Text.pack "{ \"a\":1 , \"b\":2 }")) . Just $ object [("a", "1"), ("b", "2")]
 
     Spec.it s "fails with leading comma" $ do
-      Spec.assertEq s (Parsec.parseText (Object.decode p) "{,\"a\":1}") Nothing
+      Spec.assertEq s (Zepto.parseMaybe (Object.decode p) (Text.pack "{,\"a\":1}")) Nothing
 
     Spec.it s "fails with trailing comma" $ do
-      Spec.assertEq s (Parsec.parseText (Object.decode p) "{\"a\":1,}") Nothing
+      Spec.assertEq s (Zepto.parseMaybe (Object.decode p) (Text.pack "{\"a\":1,}")) Nothing
 
     Spec.it s "fails with extra comma" $ do
-      Spec.assertEq s (Parsec.parseText (Object.decode p) "{\"a\":1,,\"b\":2}") Nothing
+      Spec.assertEq s (Zepto.parseMaybe (Object.decode p) (Text.pack "{\"a\":1,,\"b\":2}")) Nothing
 
     Spec.it s "fails with only comma" $ do
-      Spec.assertEq s (Parsec.parseText (Object.decode p) "{,}") Nothing
+      Spec.assertEq s (Zepto.parseMaybe (Object.decode p) (Text.pack "{,}")) Nothing
 
   Spec.describe s "encode" $ do
     let b = Builder.integerDec

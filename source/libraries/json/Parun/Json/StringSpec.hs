@@ -2,81 +2,81 @@ module Parun.Json.StringSpec where
 
 import qualified Data.Text as Text
 import qualified Parun.Extra.Builder as Builder
-import qualified Parun.Extra.Parsec as Parsec
 import qualified Parun.Json.String as String
 import qualified Parun.Spec as Spec
+import qualified Parun.Zepto as Zepto
 
 spec :: (Applicative m, Monad n) => Spec.Spec m n -> n ()
 spec s = Spec.describe s "Parun.Json.String" $ do
   Spec.describe s "decode" $ do
     Spec.it s "succeeds with an empty string" $ do
-      Spec.assertEq s (Parsec.parseText String.decode "\"\"") . Just . String.MkString $ Text.pack ""
+      Spec.assertEq s (Zepto.parseMaybe String.decode (Text.pack "\"\"")) . Just . String.MkString $ Text.pack ""
 
     Spec.it s "succeeds with a single character" $ do
-      Spec.assertEq s (Parsec.parseText String.decode "\"a\"") . Just . String.MkString $ Text.pack "a"
+      Spec.assertEq s (Zepto.parseMaybe String.decode (Text.pack "\"a\"")) . Just . String.MkString $ Text.pack "a"
 
     Spec.it s "succeeds with two characters" $ do
-      Spec.assertEq s (Parsec.parseText String.decode "\"ab\"") . Just . String.MkString $ Text.pack "ab"
+      Spec.assertEq s (Zepto.parseMaybe String.decode (Text.pack "\"ab\"")) . Just . String.MkString $ Text.pack "ab"
 
     Spec.it s "succeeds with an escaped quotation mark" $ do
-      Spec.assertEq s (Parsec.parseText String.decode "\" \\\" \"") . Just . String.MkString $ Text.pack " \" "
+      Spec.assertEq s (Zepto.parseMaybe String.decode (Text.pack "\" \\\" \"")) . Just . String.MkString $ Text.pack " \" "
 
     Spec.it s "succeeds with an escaped reverse solidus" $ do
-      Spec.assertEq s (Parsec.parseText String.decode "\" \\\\ \"") . Just . String.MkString $ Text.pack " \\ "
+      Spec.assertEq s (Zepto.parseMaybe String.decode (Text.pack "\" \\\\ \"")) . Just . String.MkString $ Text.pack " \\ "
 
     Spec.it s "succeeds with an escaped solidus" $ do
-      Spec.assertEq s (Parsec.parseText String.decode "\" \\/ \"") . Just . String.MkString $ Text.pack " / "
+      Spec.assertEq s (Zepto.parseMaybe String.decode (Text.pack "\" \\/ \"")) . Just . String.MkString $ Text.pack " / "
 
     Spec.it s "succeeds with an escaped backspace" $ do
-      Spec.assertEq s (Parsec.parseText String.decode "\" \\b \"") . Just . String.MkString $ Text.pack " \b "
+      Spec.assertEq s (Zepto.parseMaybe String.decode (Text.pack "\" \\b \"")) . Just . String.MkString $ Text.pack " \b "
 
     Spec.it s "succeeds with an escaped form feed" $ do
-      Spec.assertEq s (Parsec.parseText String.decode "\" \\f \"") . Just . String.MkString $ Text.pack " \f "
+      Spec.assertEq s (Zepto.parseMaybe String.decode (Text.pack "\" \\f \"")) . Just . String.MkString $ Text.pack " \f "
 
     Spec.it s "succeeds with an escaped line feed" $ do
-      Spec.assertEq s (Parsec.parseText String.decode "\" \\n \"") . Just . String.MkString $ Text.pack " \n "
+      Spec.assertEq s (Zepto.parseMaybe String.decode (Text.pack "\" \\n \"")) . Just . String.MkString $ Text.pack " \n "
 
     Spec.it s "succeeds with an escaped carriage return" $ do
-      Spec.assertEq s (Parsec.parseText String.decode "\" \\r \"") . Just . String.MkString $ Text.pack " \r "
+      Spec.assertEq s (Zepto.parseMaybe String.decode (Text.pack "\" \\r \"")) . Just . String.MkString $ Text.pack " \r "
 
     Spec.it s "succeeds with an escaped tab" $ do
-      Spec.assertEq s (Parsec.parseText String.decode "\" \\t \"") . Just . String.MkString $ Text.pack " \t "
+      Spec.assertEq s (Zepto.parseMaybe String.decode (Text.pack "\" \\t \"")) . Just . String.MkString $ Text.pack " \t "
 
     Spec.it s "succeeds with text either side of an escape" $ do
-      Spec.assertEq s (Parsec.parseText String.decode "\"ab\\ncd\\tef\"") . Just . String.MkString $ Text.pack "ab\ncd\tef"
+      Spec.assertEq s (Zepto.parseMaybe String.decode (Text.pack "\"ab\\ncd\\tef\"")) . Just . String.MkString $ Text.pack "ab\ncd\tef"
 
     Spec.it s "fails with an unescaped tab" $ do
-      Spec.assertEq s (Parsec.parseText String.decode "\" \t \"") Nothing
+      Spec.assertEq s (Zepto.parseMaybe String.decode (Text.pack "\" \t \"")) Nothing
 
     Spec.it s "succeeds with an escaped control character" $ do
-      Spec.assertEq s (Parsec.parseText String.decode "\" \\u001f \"") . Just . String.MkString $ Text.pack " \x1f "
+      Spec.assertEq s (Zepto.parseMaybe String.decode (Text.pack "\" \\u001f \"")) . Just . String.MkString $ Text.pack " \x1f "
 
     Spec.it s "succeeds with an unnecessarily escaped character" $ do
-      Spec.assertEq s (Parsec.parseText String.decode "\" \\u006F \"") . Just . String.MkString $ Text.pack " o "
+      Spec.assertEq s (Zepto.parseMaybe String.decode (Text.pack "\" \\u006F \"")) . Just . String.MkString $ Text.pack " o "
 
     Spec.it s "succeeds with a surrogate pair" $ do
-      Spec.assertEq s (Parsec.parseText String.decode "\" \\uD834\\uDD1E \"") . Just . String.MkString $ Text.pack " \x1d11e "
+      Spec.assertEq s (Zepto.parseMaybe String.decode (Text.pack "\" \\uD834\\uDD1E \"")) . Just . String.MkString $ Text.pack " \x1d11e "
 
     Spec.it s "fails with an unpaired surrogate" $ do
-      Spec.assertEq s (Parsec.parseText String.decode "\"\\uD800\"") Nothing
+      Spec.assertEq s (Zepto.parseMaybe String.decode (Text.pack "\"\\uD800\"")) Nothing
 
     Spec.it s "fails with an unpaired low surrogate" $ do
-      Spec.assertEq s (Parsec.parseText String.decode "\"\\uDC00\"") Nothing
+      Spec.assertEq s (Zepto.parseMaybe String.decode (Text.pack "\"\\uDC00\"")) Nothing
 
     Spec.it s "fails with an invalid low surrogate" $ do
-      Spec.assertEq s (Parsec.parseText String.decode "\"\\uD800\\u0000\"") Nothing
+      Spec.assertEq s (Zepto.parseMaybe String.decode (Text.pack "\"\\uD800\\u0000\"")) Nothing
 
     Spec.it s "fails with a surrogate followed by an unescaped character" $ do
-      Spec.assertEq s (Parsec.parseText String.decode "\"\\uD834x\"") Nothing
+      Spec.assertEq s (Zepto.parseMaybe String.decode (Text.pack "\"\\uD834x\"")) Nothing
 
     Spec.it s "fails with an unknown escape" $ do
-      Spec.assertEq s (Parsec.parseText String.decode "\"\\q\"") Nothing
+      Spec.assertEq s (Zepto.parseMaybe String.decode (Text.pack "\"\\q\"")) Nothing
 
     Spec.it s "fails with a lone reverse solidus" $ do
-      Spec.assertEq s (Parsec.parseText String.decode "\"\\") Nothing
+      Spec.assertEq s (Zepto.parseMaybe String.decode (Text.pack "\"\\")) Nothing
 
     Spec.it s "fails with an unterminated string" $ do
-      Spec.assertEq s (Parsec.parseText String.decode "\"abc") Nothing
+      Spec.assertEq s (Zepto.parseMaybe String.decode (Text.pack "\"abc")) Nothing
 
   Spec.describe s "encode" $ do
     Spec.it s "works with an empty string" $ do

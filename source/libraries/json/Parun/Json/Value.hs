@@ -10,7 +10,7 @@ import qualified Parun.Json.Number as Number
 import qualified Parun.Json.Object as Object
 import qualified Parun.Json.Pair as Pair
 import qualified Parun.Json.String as String
-import qualified Text.Parsec as Parsec
+import qualified Parun.Zepto as Zepto
 
 data Value
   = Null Null.Null
@@ -48,18 +48,22 @@ pair = Pair.MkPair . String.MkString . Text.pack
 object :: [Pair.Pair Value] -> Value
 object = Object . Object.MkObject
 
-decode :: Parsec.Parsec Text.Text u Value
-decode =
-  Parsec.between Array.decodeBlanks Array.decodeBlanks $ do
-    c <- Parsec.lookAhead Parsec.anyChar
-    case c of
-      'n' -> Null <$> Null.decode
-      'f' -> Boolean <$> Boolean.decode
-      't' -> Boolean <$> Boolean.decode
-      '"' -> String <$> String.decode
-      '[' -> Array <$> Array.decode decode
-      '{' -> Object <$> Object.decode decode
-      _ -> Number <$> Number.decode
+decode :: Zepto.Parser Value
+decode = Array.decodeBlanks *> decodeBare <* Array.decodeBlanks
+
+-- | A value with no blanks around it, picked by its first character.
+decodeBare :: Zepto.Parser Value
+decodeBare = do
+  c <- Zepto.peekChar
+  case c of
+    Nothing -> Number <$> Number.decode
+    Just 'n' -> Null <$> Null.decode
+    Just 'f' -> Boolean <$> Boolean.decode
+    Just 't' -> Boolean <$> Boolean.decode
+    Just '"' -> String <$> String.decode
+    Just '[' -> Array <$> Array.decode decode
+    Just '{' -> Object <$> Object.decode decode
+    Just _ -> Number <$> Number.decode
 
 encode :: Value -> Builder.Builder
 encode v = case v of

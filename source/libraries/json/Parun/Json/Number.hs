@@ -6,49 +6,59 @@ import qualified Data.Text as Text
 import qualified Parun.Decimal as Decimal
 import qualified Parun.Extra.Integer as Integer
 import qualified Parun.Extra.Ord as Ord
-import qualified Parun.Extra.Parsec as Parsec
-import qualified Text.Parsec as Parsec
+import qualified Parun.Zepto as Zepto
 
 newtype Number = MkNumber
   { unwrap :: Decimal.Decimal
   }
   deriving (Eq, Ord, Show)
 
-decode :: Parsec.Parsec Text.Text u Number
+decode :: Zepto.Parser Number
 decode = do
-  sign <- Parsec.option id $ negate <$ Parsec.char '-'
+  sign <- ifNext (== '-') id $ negate <$ Zepto.anyChar
   int <- integerPart
-  frac <- Parsec.option Text.empty fractionPart
-  ex <- Parsec.option 0 exponentPart
+  frac <- ifNext (== '.') Text.empty fractionPart
+  ex <- ifNext (\c -> c == 'e' || c == 'E') 0 exponentPart
   let mantissa = sign . fromDigits $ int <> frac
       scale = ex - toInteger (Text.length frac)
   pure . MkNumber $ Decimal.mkDecimal mantissa scale
 
-integerPart :: Parsec.Parsec Text.Text u Text.Text
-integerPart =
-  Parsec.choice
-    [ Text.singleton '0' <$ Parsec.char '0' <* Parsec.notFollowedBy Parsec.digit,
-      Text.cons <$> Parsec.satisfy (Ord.between '1' '9') <*> Parsec.takeWhile Char.isDigit
-    ]
+-- | Runs the parser when the next character satisfies the predicate, committed
+-- to it, and otherwise returns the default without consuming anything.
+ifNext :: (Char -> Bool) -> a -> Zepto.Parser a -> Zepto.Parser a
+ifNext f x p = do
+  c <- Zepto.peekChar
+  case c of
+    Just d | f d -> p
+    _ -> pure x
 
-fractionPart :: Parsec.Parsec Text.Text u Text.Text
-fractionPart = Parsec.char '.' *> digits
+integerPart :: Zepto.Parser Text.Text
+integerPart = do
+  c <- Zepto.peekChar
+  if c == Just '0'
+    then do
+      _ <- Zepto.anyChar
+      d <- Zepto.peekChar
+      case d of
+        Just e | Char.isDigit e -> Zepto.anyChar *> fail ("unexpected " <> show e <> " after a leading zero")
+        _ -> pure $ Text.singleton '0'
+    else Text.cons <$> Zepto.satisfy (Ord.between '1' '9') <*> Zepto.takeWhile Char.isDigit
 
-exponentPart :: Parsec.Parsec Text.Text u Integer
-exponentPart =
-  Parsec.oneOf "eE" *> do
-    sign <-
-      Parsec.option id $
-        Parsec.choice
-          [ negate <$ Parsec.char '-',
-            id <$ Parsec.char '+'
-          ]
-    ds <- digits
-    pure . sign $ fromDigits ds
+fractionPart :: Zepto.Parser Text.Text
+fractionPart = Zepto.char '.' *> digits
+
+exponentPart :: Zepto.Parser Integer
+exponentPart = do
+  _ <- Zepto.anyChar
+  sign <- ifNext (\c -> c == '-' || c == '+') id $ do
+    c <- Zepto.anyChar
+    pure $ if c == '-' then negate else id
+  ds <- digits
+  pure . sign $ fromDigits ds
 
 -- | One or more digits.
-digits :: Parsec.Parsec Text.Text u Text.Text
-digits = Text.cons <$> Parsec.digit <*> Parsec.takeWhile Char.isDigit
+digits :: Zepto.Parser Text.Text
+digits = Text.cons <$> Zepto.satisfy Char.isDigit <*> Zepto.takeWhile Char.isDigit
 
 fromDigits :: Text.Text -> Integer
 fromDigits = Text.foldl' (\n c -> (10 * n) + toInteger (Char.digitToInt c)) 0

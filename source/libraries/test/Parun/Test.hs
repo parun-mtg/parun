@@ -1147,6 +1147,7 @@ import qualified Parun.Web.ManaSpec
 import qualified Parun.Web.ReplaySpec
 import qualified Parun.Web.WireSpec
 import qualified Parun.WebQuestionSpec
+import qualified Parun.ZeptoSpec
 import qualified Parun.ZoneChangeSpec
 import qualified Parun.ZoneReplacementSpec
 import qualified Parun.ZoneTriggerSpec
@@ -2330,6 +2331,7 @@ spec s reference corpus = do
   Parun.WebQuestionSpec.subgameSpec s registry
   Parun.WebQuestionSpec.replaySpec s registry
   Parun.WebQuestionSpec.multiplayerSpec s registry
+  Parun.ZeptoSpec.spec s
   Parun.ZoneChangeSpec.spec s registry
   Parun.ZoneReplacementSpec.spec s registry
   Parun.ZoneTriggerSpec.spec s registry

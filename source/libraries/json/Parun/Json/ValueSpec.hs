@@ -1,48 +1,49 @@
 module Parun.Json.ValueSpec where
 
+import qualified Data.Text as Text
 import qualified Parun.Extra.Builder as Builder
-import qualified Parun.Extra.Parsec as Parsec
 import qualified Parun.Json.Value as Value
 import qualified Parun.Spec as Spec
+import qualified Parun.Zepto as Zepto
 
 spec :: (Applicative m, Monad n) => Spec.Spec m n -> n ()
 spec s = Spec.describe s "Parun.Json.Value" $ do
   Spec.describe s "decode" $ do
     Spec.it s "parses null" $ do
-      Spec.assertEq s (Parsec.parseText Value.decode "null") $ Just Value.null
+      Spec.assertEq s (Zepto.parseMaybe Value.decode (Text.pack "null")) $ Just Value.null
 
     Spec.it s "parses a boolean" $ do
-      Spec.assertEq s (Parsec.parseText Value.decode "false") . Just $ Value.boolean False
+      Spec.assertEq s (Zepto.parseMaybe Value.decode (Text.pack "false")) . Just $ Value.boolean False
 
     Spec.it s "parses a number" $ do
-      Spec.assertEq s (Parsec.parseText Value.decode "0") . Just $ Value.integer 0
+      Spec.assertEq s (Zepto.parseMaybe Value.decode (Text.pack "0")) . Just $ Value.integer 0
 
     Spec.it s "parses a string" $ do
-      Spec.assertEq s (Parsec.parseText Value.decode "\"\"") . Just $ Value.string ""
+      Spec.assertEq s (Zepto.parseMaybe Value.decode (Text.pack "\"\"")) . Just $ Value.string ""
 
     Spec.it s "parses an array" $ do
-      Spec.assertEq s (Parsec.parseText Value.decode "[]") . Just $ Value.array []
+      Spec.assertEq s (Zepto.parseMaybe Value.decode (Text.pack "[]")) . Just $ Value.array []
 
     Spec.it s "parses an object" $ do
-      Spec.assertEq s (Parsec.parseText Value.decode "{}") . Just $ Value.object []
+      Spec.assertEq s (Zepto.parseMaybe Value.decode (Text.pack "{}")) . Just $ Value.object []
 
     Spec.it s "accepts leading blanks" $ do
-      Spec.assertEq s (Parsec.parseText Value.decode " null") $ Just Value.null
+      Spec.assertEq s (Zepto.parseMaybe Value.decode (Text.pack " null")) $ Just Value.null
 
     Spec.it s "accepts trailing blanks" $ do
-      Spec.assertEq s (Parsec.parseText Value.decode "null ") $ Just Value.null
+      Spec.assertEq s (Zepto.parseMaybe Value.decode (Text.pack "null ")) $ Just Value.null
 
     Spec.it s "accepts each kind of blank" $ do
-      Spec.assertEq s (Parsec.parseText Value.decode " \t\n\rnull \t\n\r") $ Just Value.null
+      Spec.assertEq s (Zepto.parseMaybe Value.decode (Text.pack " \t\n\rnull \t\n\r")) $ Just Value.null
 
     Spec.it s "fails with another blank" $ do
-      Spec.assertEq s (Parsec.parseText Value.decode "\fnull") Nothing
+      Spec.assertEq s (Zepto.parseMaybe Value.decode (Text.pack "\fnull")) Nothing
 
     Spec.it s "fails with no input" $ do
-      Spec.assertEq s (Parsec.parseText Value.decode "") Nothing
+      Spec.assertEq s (Zepto.parseMaybe Value.decode (Text.pack "")) Nothing
 
     Spec.it s "fails with an unknown token" $ do
-      Spec.assertEq s (Parsec.parseText Value.decode "x") Nothing
+      Spec.assertEq s (Zepto.parseMaybe Value.decode (Text.pack "x")) Nothing
 
   Spec.describe s "encode" $ do
     Spec.it s "encodes null" $ do

@@ -2350,16 +2350,30 @@ library interpreter
   exposed-modules:
     Parun.Interpreter
 
+-- A small parser-combinator library over strict text, in the spirit of
+-- attoparsec. Only depends on base and text.
+library zepto
+  import: library
+  build-depends:
+    parun:spec,
+    text ^>=2.1.3,
+
+  hs-source-dirs: source/libraries/zepto
+  -- cabal-gild: discover source/libraries/zepto
+  exposed-modules:
+    Parun.Zepto
+    Parun.ZeptoSpec
+
 -- RFC 8259 compliant JSON types, encoders, and decoders. Similar to aeson, but
 -- much simpler.
 library json
   import: library
   build-depends:
     bytestring ^>=0.12.2,
-    parsec ^>=3.1.18,
     parun:decimal,
     parun:extra,
     parun:spec,
+    parun:zepto,
     text ^>=2.1.3,
 
   hs-source-dirs: source/libraries/json
@@ -2387,12 +2401,12 @@ library json-codec
   import: library
   build-depends:
     containers ^>={0.7, 0.8},
-    parsec ^>=3.1.18,
     parun:decimal,
     parun:extra,
     parun:json,
     parun:json-schema,
     parun:spec,
+    parun:zepto,
     text ^>=2.1.3,
 
   hs-source-dirs: source/libraries/json-codec
@@ -2662,6 +2676,7 @@ library test
     parun:types,
     parun:uri,
     parun:web,
+    parun:zepto,
     text ^>=2.1.3,
     transformers ^>=0.6.1,
 

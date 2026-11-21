@@ -36,6 +36,22 @@ spec s = Spec.describe s "Parun.JsonCodec.Common" $ do
     -- trailing garbage.
     Spec.it s "accepts surrounding blanks" $
       Spec.assertEq s (Common.parse (Text.pack " 1 ")) (Right (Value.integer 1))
+    -- Each position is the one parsec reported for the same input.
+    let position t = case Common.parse (Text.pack t) of
+          Left e -> Text.unpack $ Text.takeWhile (/= ':') e
+          Right _ -> "no failure"
+    Spec.it s "reports where a nested failure happened" $
+      Spec.assertEq s (position "{\"a\": [1, {\"b\": tru}]}") "(line 1, column 17)"
+    Spec.it s "reports a failure past a committed decimal point" $
+      Spec.assertEq s (position "[5.]") "(line 1, column 4)"
+    Spec.it s "reports a failure past a trailing comma" $
+      Spec.assertEq s (position "[1,]") "(line 1, column 4)"
+    Spec.it s "reports a digit after a leading zero past it" $
+      Spec.assertEq s (position "[05]") "(line 1, column 4)"
+    Spec.it s "reports trailing input" $
+      Spec.assertEq s (position "{} x") "(line 1, column 4)"
+    Spec.it s "counts lines and tabs" $
+      Spec.assertEq s (position "{\n\t\"a\": [1, 2, x]\n}") "(line 2, column 21)"
 
   Spec.describe s "asInteger" $ do
     Spec.it s "words a refused value as JSON" $
