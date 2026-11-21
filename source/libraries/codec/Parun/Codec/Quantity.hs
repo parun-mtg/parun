@@ -167,6 +167,7 @@ codec =
       Arm.payload "TagWasSpentOfOwnColor" ProductionTag.codec Quantity.TagWasSpentOfOwnColor (\x -> case x of Quantity.TagWasSpentOfOwnColor y -> Just y; _ -> Nothing),
       Arm.nullary "ChosenColorsItIs" Quantity.ChosenColorsItIs,
       Arm.nullary "ChosenNumber" Quantity.ChosenNumber,
+      Arm.nullary "NotedLifeTotal" Quantity.NotedLifeTotal,
       -- CR 702.191a's amount, nothing on the wire for the same reason: the object is
       -- whichever one the quantity is evaluated against.
       Arm.payload "ManaSpent" ManaSpent.codec Quantity.ManaSpent (\x -> case x of Quantity.ManaSpent y -> Just y; _ -> Nothing),
@@ -365,6 +366,7 @@ tagOf x = case x of
   Quantity.TagWasSpentOfOwnColor {} -> "TagWasSpentOfOwnColor"
   Quantity.ChosenColorsItIs {} -> "ChosenColorsItIs"
   Quantity.ChosenNumber {} -> "ChosenNumber"
+  Quantity.NotedLifeTotal {} -> "NotedLifeTotal"
   Quantity.ManaSpent {} -> "ManaSpent"
   Quantity.WasToken {} -> "WasToken"
   Quantity.WasAttacking {} -> "WasAttacking"

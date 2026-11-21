@@ -85,6 +85,7 @@ import qualified Parun.Types.MoveCounters as MoveCounters
 import qualified Parun.Types.MoveMana as MoveMana
 import qualified Parun.Types.MoveToZone as MoveToZone
 import qualified Parun.Types.NextDamageInstance as NextDamageInstance
+import qualified Parun.Types.NoteKind as NoteKind
 import qualified Parun.Types.ObjectRef as ObjectRef
 import qualified Parun.Types.OfferCast as OfferCast
 import qualified Parun.Types.PermanentActed as PermanentActed
@@ -740,9 +741,8 @@ data Effect card ability
     -- hand, then draw that many -- "that many" being the hand size before the
     -- exile, which is why it is one opcode.
     ExileHandThenDraw
-  | -- | CR 607.2e: note, for the source, the type and amount of mana spent to
-    -- activate this ability (Ice Cauldron), replacing any earlier note.
-    NoteManaSpent
+  | -- | CR 607.2e: note this for the source, replacing any earlier note (GameState.notes).
+    Note NoteKind.NoteKind
   | -- | Give each recipient one additional counter of a kind it already has
     -- (CR 122.1): 'Nothing' is CR 701.34a's proliferate, every kind, the
     -- recipients chosen on resolution; 'Just' is the targets in a slot (CR

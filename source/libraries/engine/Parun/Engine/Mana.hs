@@ -119,6 +119,7 @@ import Parun.Types.ManaUnit (ManaUnit)
 import qualified Parun.Types.ManaUnit as ManaUnit
 import qualified Parun.Types.Modal as Modal.Type
 import qualified Parun.Types.ModeIndex as ModeIndex
+import qualified Parun.Types.Noted as Noted
 import qualified Parun.Types.Object as Object
 import qualified Parun.Types.ObjectCount as ObjectCount
 import Parun.Types.ObjectId (ObjectId)
@@ -296,7 +297,7 @@ noActivations = Activations.MkActivations {Activations.times = 0, Activations.cl
 -- ability resolves (CR 608.2d), having sacrificed itself to pay for it.
 --
 -- CR 607.2e's noted mana is a SETTLED production of more than one unit: Ice
--- Cauldron adds the run its linked ability noted for it (GameState.notedMana),
+-- Cauldron adds the run its linked ability noted for it (GameState.notes),
 -- types mixed, and none where nothing is noted.
 --
 -- CR 106.7's "could produce" asks manaTypesOf of every permanent the filter
@@ -353,7 +354,7 @@ producedVisiting bound visited acquisition oid gs poolBoard production = case pr
   ManaProduction.Chosen ->
     among (fmap ManaType.Colored (Set.toList (Maybe.fromMaybe Set.empty (Game.choiceWithLastKnown Chosen.Colors acquisition oid gs))))
   ManaProduction.SnowSymbol -> Settles [ManaType.Colorless]
-  ManaProduction.Noted -> Settles (foldMap Foldable.toList (Map.lookup oid (GameState.notedMana gs)))
+  ManaProduction.Noted -> Settles (case Map.lookup oid (GameState.notes gs) of Just (Noted.NotedMana run) -> Foldable.toList run; _ -> [])
   ManaProduction.CouldProduce could ->
     let visiting = Set.insert oid visited
         context = Projection.framedBySlots gs bound (Projection.sourceContext gs (Projection.controllerOf oid gs) oid)

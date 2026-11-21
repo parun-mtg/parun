@@ -97,6 +97,7 @@ import qualified Parun.Codec.MoveCounters as MoveCounters
 import qualified Parun.Codec.MoveMana as MoveMana
 import qualified Parun.Codec.MoveToZone as MoveToZone
 import qualified Parun.Codec.NextDamageInstance as NextDamageInstance
+import qualified Parun.Codec.NoteKind as NoteKind
 import qualified Parun.Codec.ObjectRef as ObjectRef
 import qualified Parun.Codec.OfferCast as OfferCast
 import qualified Parun.Codec.PermanentActed as PermanentActed
@@ -205,7 +206,7 @@ codec cardCodec abilityCodec =
           Arm.payload "ManifestDread" ManifestDread.codec Effect.ManifestDread (\x -> case x of Effect.ManifestDread y -> Just y; _ -> Nothing),
           Arm.optionalPayload "Venture" Subtype.codec Effect.Venture (\x -> case x of Effect.Venture y -> Just y; _ -> Nothing),
           Arm.nullary "ExileHandThenDraw" Effect.ExileHandThenDraw,
-          Arm.nullary "NoteManaSpent" Effect.NoteManaSpent,
+          Arm.payload "Note" NoteKind.codec Effect.Note (\x -> case x of Effect.Note y -> Just y; _ -> Nothing),
           Arm.payload "PlayerSacrifices" PlayerSacrifices.codec Effect.PlayerSacrifices (\x -> case x of Effect.PlayerSacrifices y -> Just y; _ -> Nothing),
           Arm.payload "Vote" Vote.codec Effect.Vote (\x -> case x of Effect.Vote y -> Just y; _ -> Nothing),
           Arm.payload "Bid" Bid.codec Effect.Bid (\x -> case x of Effect.Bid y -> Just y; _ -> Nothing),
@@ -404,7 +405,7 @@ tagOf x = case x of
   Effect.ManifestDread {} -> "ManifestDread"
   Effect.Venture {} -> "Venture"
   Effect.ExileHandThenDraw {} -> "ExileHandThenDraw"
-  Effect.NoteManaSpent {} -> "NoteManaSpent"
+  Effect.Note {} -> "Note"
   Effect.PlayerSacrifices {} -> "PlayerSacrifices"
   Effect.Vote {} -> "Vote"
   Effect.Bid {} -> "Bid"

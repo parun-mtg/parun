@@ -629,7 +629,7 @@ affectedNames oid source gs affected = case affected of
 --   * The per-object budgets and notes: TurnRegisters.activatedThisTurn (CR
 --     602.5b), castPermissionsUsedThisTurn (CR 601.3), rollModifiersUsedThisTurn
 --     (CR 706.2), freeCastsUsedThisTurn (CR 118.9), namedCopyChoices (CR
---     707.13), notedCards (CR 707.14), notedMana (CR 607.2e), keptFaceDown
+--     707.13), notedCards (CR 707.14), notes (CR 607.2e), keptFaceDown
 --     (CR 121.8), announcedTops and actionTops (CR 401.5), loopPicks (CR
 --     101.4b), repeatPicks (CR 733.3), revealedTops (CR 401.6) and
 --     outsideCopies (CR 400.11), each keyed by the object it is about; and
@@ -665,7 +665,7 @@ affectedNames oid source gs affected = case affected of
 -- green. The line stays because a row does name its key; do not read the green as
 -- coverage. The per-object budgets, notes and logs are fences too: no board in
 -- the suite gives one of two otherwise identical mana sources such a row.
--- notedMana's cannot: Ice Cauldron's noted mana pays only for the card it
+-- GameState.notes' cannot: Ice Cauldron's noted mana pays only for the card it
 -- exiled, so a Cauldron whose mana any payment admits is already named by that
 -- card's exiledWith row.
 namedByRelation :: ObjectId -> GameState -> Bool
@@ -692,7 +692,7 @@ namedByRelation oid gs =
         || keyed (TurnRegisters.freeCastsUsedThisTurn (GameState.turn gs))
         || keyed (GameState.namedCopyChoices gs)
         || keyed (GameState.notedCards gs)
-        || keyed (GameState.notedMana gs)
+        || keyed (GameState.notes gs)
         || maybe False keyed (Scratch.keptFaceDown (GameState.scratch gs))
         || maybe False (elem oid) (Scratch.announcedTops (GameState.scratch gs))
         || maybe False (elem oid) (Scratch.actionTops (GameState.scratch gs))

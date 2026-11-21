@@ -44,7 +44,7 @@ import qualified Parun.Codec.IgnoredAbility as IgnoredAbility
 import qualified Parun.Codec.Keyword as Keyword
 import qualified Parun.Codec.LastKnown as LastKnown
 import qualified Parun.Codec.Mana as Mana
-import qualified Parun.Codec.ManaType as ManaType
+import qualified Parun.Codec.Noted as Noted
 import qualified Parun.Codec.Object as Object
 import qualified Parun.Codec.ObjectId as ObjectId
 import qualified Parun.Codec.OutsideCard as OutsideCard
@@ -207,7 +207,7 @@ codec resolve = Fields.object $ do
   copyStandIns <- Fields.defaulted "copyStandIns" Map.empty (Common.naturalMap ObjectId.codec Timestamp.codec) GameState.copyStandIns
   namedCopyChoices <- Fields.defaulted "namedCopyChoices" Map.empty (Common.naturalMap ObjectId.codec (Common.set CardName.codec)) GameState.namedCopyChoices
   notedCards <- Fields.defaulted "notedCards" Map.empty (Common.naturalMap ObjectId.codec PrintingId.codec) GameState.notedCards
-  notedMana <- Fields.defaulted "notedMana" Map.empty (Common.naturalMap ObjectId.codec (Common.seq ManaType.codec)) GameState.notedMana
+  notes <- Fields.defaulted "notes" Map.empty (Common.naturalMap ObjectId.codec Noted.codec) GameState.notes
   nextPrintingId <- Fields.required "nextPrintingId" PrintingId.codec (Bookkeeping.nextPrintingId . GameState.bookkeeping)
   nextTimestamp <- Fields.required "nextTimestamp" Timestamp.codec (Bookkeeping.nextTimestamp . GameState.bookkeeping)
   lastChoice <- Fields.required "lastChoice" Timestamp.codec (Bookkeeping.lastChoice . GameState.bookkeeping)
@@ -370,7 +370,7 @@ codec resolve = Fields.object $ do
         GameState.copyStandIns = copyStandIns,
         GameState.namedCopyChoices = namedCopyChoices,
         GameState.notedCards = notedCards,
-        GameState.notedMana = notedMana,
+        GameState.notes = notes,
         GameState.loopInvolvement = loopInvolvement,
         GameState.drewFromEmpty = drewFromEmpty,
         GameState.landsPlayed = landsPlayed,

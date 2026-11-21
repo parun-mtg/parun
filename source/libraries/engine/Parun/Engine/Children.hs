@@ -866,6 +866,7 @@ quantityChildren children quantity = case quantity of
   Quantity.TagWasSpentOfOwnColor _ -> pure quantity
   Quantity.ChosenColorsItIs -> pure quantity
   Quantity.ChosenNumber -> pure quantity
+  Quantity.NotedLifeTotal -> pure quantity
   Quantity.ManaSpent _ -> pure quantity
   Quantity.WasToken -> pure quantity
   Quantity.WasAttacking -> pure quantity
@@ -1334,7 +1335,7 @@ effectChildren c effect = case effect of
   Effect.Guess (Guess.MkGuess subject named guesser proposition right) ->
     fmap Effect.Guess (Guess.MkGuess <$> onObjectRef c subject <*> onSlot c named <*> onPlayer c guesser <*> onFilter c proposition <*> onSlot c right)
   Effect.ExileHandThenDraw -> pure effect
-  Effect.NoteManaSpent -> pure effect
+  Effect.Note {} -> pure effect
   Effect.Proliferate targeted -> fmap Effect.Proliferate (traverse anotherCounter targeted)
     where
       anotherCounter x = case x of

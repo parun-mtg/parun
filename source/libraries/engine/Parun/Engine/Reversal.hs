@@ -165,7 +165,7 @@ withoutAnnouncement before entry between closed = do
   copyStandIns <- mapOf GameState.copyStandIns
   namedCopyChoices <- mapOf GameState.namedCopyChoices
   notedCards <- mapOf GameState.notedCards
-  notedMana <- mapOf GameState.notedMana
+  notes <- mapOf GameState.notes
   nextPrintingId <- newest (Bookkeeping.nextPrintingId . GameState.bookkeeping)
   nextTimestamp <- newest (Bookkeeping.nextTimestamp . GameState.bookkeeping)
   lastChoice <- newest (Bookkeeping.lastChoice . GameState.bookkeeping)
@@ -387,7 +387,7 @@ withoutAnnouncement before entry between closed = do
         GameState.copyStandIns = copyStandIns,
         GameState.namedCopyChoices = namedCopyChoices,
         GameState.notedCards = notedCards,
-        GameState.notedMana = notedMana,
+        GameState.notes = notes,
         GameState.loopInvolvement = loopInvolvement,
         GameState.drewFromEmpty = drewFromEmpty,
         GameState.landsPlayed = landsPlayed,

@@ -1330,8 +1330,12 @@ library codec
     Parun.Codec.NinjutsuSpec
     Parun.Codec.NinjutsuVariant
     Parun.Codec.NinjutsuVariantSpec
+    Parun.Codec.Noted
+    Parun.Codec.NotedSpec
     Parun.Codec.NoteFold
     Parun.Codec.NoteFoldSpec
+    Parun.Codec.NoteKind
+    Parun.Codec.NoteKindSpec
     Parun.Codec.NumberFloor
     Parun.Codec.NumberFloorSpec
     Parun.Codec.Object
@@ -3601,7 +3605,9 @@ library types
     Parun.Types.NextWindowOf
     Parun.Types.Ninjutsu
     Parun.Types.NinjutsuVariant
+    Parun.Types.Noted
     Parun.Types.NoteFold
+    Parun.Types.NoteKind
     Parun.Types.NumberFloor
     Parun.Types.Object
     Parun.Types.ObjectCount

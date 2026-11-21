@@ -415,6 +415,7 @@ printedBoxQuantity quantity = case quantity of
   Quantity.Type.TagWasSpentOfOwnColor {} -> False
   Quantity.Type.ChosenColorsItIs -> False
   Quantity.Type.ChosenNumber -> False
+  Quantity.Type.NotedLifeTotal -> False
   Quantity.Type.ManaSpent _ -> False
   Quantity.Type.WasToken -> False
   Quantity.Type.WasAttacking -> False
@@ -1640,7 +1641,7 @@ effectObjectRefs effect =
         Effect.ManifestDread {} -> []
         Effect.Venture {} -> []
         Effect.ExileHandThenDraw -> []
-        Effect.NoteManaSpent -> []
+        Effect.Note {} -> []
         Effect.PlayerSacrifices {} -> []
         Effect.Vote {} -> []
         Effect.Bid {} -> []

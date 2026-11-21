@@ -379,7 +379,7 @@ manaProduced effect = case effect of
   Effect.ManifestDread {} -> Nothing
   Effect.Venture {} -> Nothing
   Effect.ExileHandThenDraw -> Nothing
-  Effect.NoteManaSpent -> Nothing
+  Effect.Note {} -> Nothing
   Effect.PlayerSacrifices {} -> Nothing
   Effect.Vote {} -> Nothing
   Effect.Bid {} -> Nothing
@@ -599,7 +599,7 @@ playerChoice effect = case effect of
   Effect.ManifestDread {} -> Nothing
   Effect.Venture {} -> Nothing
   Effect.ExileHandThenDraw -> Nothing
-  Effect.NoteManaSpent -> Nothing
+  Effect.Note {} -> Nothing
   Effect.PlayerSacrifices {} -> Nothing
   Effect.Vote {} -> Nothing
   Effect.Bid {} -> Nothing
@@ -809,7 +809,7 @@ movesLibraryCard effect = case effect of
   Effect.Shuffle {} -> False
   -- The draw half.
   Effect.ExileHandThenDraw -> True
-  Effect.NoteManaSpent -> False
+  Effect.Note {} -> False
   -- CR 728.2 / 103.3: every card involved in the restarted game is in the new
   -- game, which starts by shuffling each player's deck into their library.
   Effect.RestartGame _ -> True

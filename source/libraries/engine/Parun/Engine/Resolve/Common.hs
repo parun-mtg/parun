@@ -3873,7 +3873,7 @@ effectIsImpossible asked resolving source controller legal gs effect = case effe
   Effect.FlipCoin {} -> False
   Effect.Guess guess -> choosesFromNothing (Guess.subject guess)
   Effect.ExileHandThenDraw {} -> False
-  Effect.NoteManaSpent {} -> False
+  Effect.Note {} -> False
   Effect.Proliferate {} -> False
   Effect.Rethrow -> False
   Effect.RerollStoredResults _ -> False

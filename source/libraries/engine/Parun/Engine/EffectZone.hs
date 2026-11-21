@@ -193,7 +193,7 @@ zonesFunctionedAgainst itself delayed effect = case effect of
   Effect.ManifestDread {} -> Set.empty
   Effect.Venture {} -> Set.empty
   Effect.ExileHandThenDraw -> Set.empty
-  Effect.NoteManaSpent -> Set.empty
+  Effect.Note {} -> Set.empty
   Effect.PlayerSacrifices {} -> Set.empty
   Effect.Vote {} -> Set.empty
   Effect.Bid {} -> Set.empty

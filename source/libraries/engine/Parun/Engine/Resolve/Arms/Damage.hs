@@ -106,6 +106,8 @@ import qualified Parun.Types.ManaUnit as ManaUnit
 import qualified Parun.Types.Modification as Modification
 import qualified Parun.Types.ModifyTarget as ModifyTarget
 import qualified Parun.Types.MoveMana as MoveMana
+import qualified Parun.Types.NoteKind as NoteKind
+import qualified Parun.Types.Noted as Noted
 import qualified Parun.Types.Object as Object
 import Parun.Types.ObjectId (ObjectId)
 import Parun.Types.ObjectRef (ObjectRef)
@@ -114,6 +116,7 @@ import qualified Parun.Types.OutsideDestination as OutsideDestination
 import qualified Parun.Types.PastRoll as PastRoll
 import qualified Parun.Types.PermanentActed as PermanentActed
 import qualified Parun.Types.PermanentAction as PermanentAction
+import qualified Parun.Types.Player as Player
 import qualified Parun.Types.PlayerActed as PlayerActed
 import qualified Parun.Types.PlayerAction as PlayerAction
 import qualified Parun.Types.PlayerControl as PlayerControl
@@ -1303,14 +1306,20 @@ exileHandThenDraw settle controller = do
   -- reflexive after it.
   Monad.when (length got < length handIds) Common.fallShort
 
--- CR 607.2e: the note is the ACTIVATION's CR 602.2b payment -- recorded on
--- the ability object as Object.manaSpent -- filed against the SOURCE, whose linked
--- mana ability reads it back (ManaProduction.Noted). Ice Cauldron's ruling
--- counts the mana spent and not X, so a cost reduction changes nothing.
-noteManaSpent :: ObjectId -> ObjectId -> Game ()
-noteManaSpent resolving source = do
-  spent <- State.gets (foldMap (Mana.Type.unwrap . Object.manaSpent) . Game.lookupObject resolving)
-  State.modify' (\gs -> gs {GameState.notedMana = Map.insert source (Seq.fromList (fmap ManaUnit.manaType spent)) (GameState.notedMana gs)})
+-- CR 607.2e: a note filed against the SOURCE, whose linked ability reads it
+-- back. ManaSpent's is the ACTIVATION's CR 602.2b payment, recorded on the
+-- ability object as Object.manaSpent (ManaProduction.Noted); Ice Cauldron's
+-- ruling counts the mana spent and not X, so a cost reduction changes nothing.
+-- LifeTotal's is the resolving controller's (Quantity.NotedLifeTotal), read
+-- live (CR 119.3).
+noteFor :: ObjectId -> ObjectId -> PlayerId -> NoteKind.NoteKind -> Game ()
+noteFor resolving source controller kind = do
+  noted <- case kind of
+    NoteKind.ManaSpent -> do
+      spent <- State.gets (foldMap (Mana.Type.unwrap . Object.manaSpent) . Game.lookupObject resolving)
+      pure (Just (Noted.NotedMana (Seq.fromList (fmap ManaUnit.manaType spent))))
+    NoteKind.LifeTotal -> State.gets (fmap (Noted.NotedLifeTotal . Player.life) . Map.lookup controller . GameState.players)
+  Foldable.for_ noted $ \value -> State.modify' (\gs -> gs {GameState.notes = Map.insert source value (GameState.notes gs)})
 
 -- CR 728.1/728.1a: restart the game, with this ability's controller as the new
 -- starting player; the rebuild lives in Setup, reached through a generic opcode

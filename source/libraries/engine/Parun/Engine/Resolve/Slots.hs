@@ -1024,7 +1024,7 @@ effectPlayerRefs effect = case effect of
   -- The seat that flips -- Mana Clash's target opponent (CR 705.2).
   Effect.FlipCoin flipCoin -> [FlipCoin.flipper flipCoin]
   Effect.ExileHandThenDraw -> []
-  Effect.NoteManaSpent -> []
+  Effect.Note {} -> []
   Effect.Proliferate _ -> []
   Effect.Rethrow -> []
   Effect.RerollStoredResults _ -> []
@@ -1287,7 +1287,7 @@ slotsOf effect = joinTwo (joinTwo (joinSlots (fmap objectRefSlots (effectObjectR
   Effect.ManifestDread (ManifestDread.Type.MkManifestDread _ quantity _) -> quantitySlots quantity
   Effect.Venture {} -> Map.empty
   Effect.ExileHandThenDraw -> Map.empty
-  Effect.NoteManaSpent -> Map.empty
+  Effect.Note {} -> Map.empty
   -- The players are effectPlayerRefs' half, joined at the head above.
   Effect.PlayerSacrifices (PlayerSacrifices.MkPlayerSacrifices _ _ _ quantity _) -> quantitySlots quantity
   -- The object vote's listed choices are a Filter and nothing else: the starter
@@ -2262,7 +2262,7 @@ ownSlotsAreExhaustive effect = case effect of
   Effect.ManifestDread (ManifestDread.Type.MkManifestDread _ quantity _) -> Quantity.slotsAreExhaustive quantity
   Effect.Venture {} -> True
   Effect.ExileHandThenDraw -> True
-  Effect.NoteManaSpent -> True
+  Effect.Note {} -> True
   Effect.PlayerSacrifices (PlayerSacrifices.MkPlayerSacrifices _ _ _ quantity _) -> Quantity.slotsAreExhaustive quantity
   Effect.Vote {} -> True
   Effect.Bid bid -> Quantity.slotsAreExhaustive (Bid.opening bid)
@@ -2584,7 +2584,7 @@ hasRead wanted =
         Effect.ManifestDread (ManifestDread.Type.MkManifestDread _ quantity _) -> Quantity.hasRead wanted quantity
         Effect.Venture {} -> False
         Effect.ExileHandThenDraw -> False
-        Effect.NoteManaSpent -> False
+        Effect.Note {} -> False
         Effect.PlayerSacrifices (PlayerSacrifices.MkPlayerSacrifices _ _ _ quantity _) -> Quantity.hasRead wanted quantity
         Effect.Vote {} -> False
         Effect.Bid bid -> Quantity.hasRead wanted (Bid.opening bid)
@@ -2910,7 +2910,7 @@ boundSlots effect = case effect of
   Effect.ManifestDread (ManifestDread.Type.MkManifestDread _ _ mSlot) -> foldMap Set.singleton mSlot
   Effect.Venture {} -> Set.empty
   Effect.ExileHandThenDraw -> Set.empty
-  Effect.NoteManaSpent -> Set.empty
+  Effect.Note {} -> Set.empty
   -- CR 701.38a: the objects tied for most votes, for the later effect that
   -- acts on them (Council's Judgment's exile). For a word vote it is one slot
   -- per word, each holding that word's tally for the clause connected to it

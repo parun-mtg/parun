@@ -80,6 +80,7 @@ import qualified Parun.Types.Modal as Modal
 import qualified Parun.Types.Mode as Mode
 import qualified Parun.Types.Modification as Modification
 import qualified Parun.Types.ModifyTarget as ModifyTarget
+import qualified Parun.Types.Noted as Noted
 import qualified Parun.Types.Object as Object
 import qualified Parun.Types.ObjectId as ObjectId
 import qualified Parun.Types.OptionalDecision as OptionalDecision
@@ -245,7 +246,7 @@ spec s registry = Spec.describe s "a fragmented loop (CR 733.3)" $ do
         adds what with = do
           Spec.assertEqWith s ("CR 733.3 " <> what <> " on the Island is a new state") (Fragmented.digest (with here) == Fragmented.digest here) False
           Spec.assertEqWith s ("CR 733.3 " <> what <> " on the departed Island is no new state") (Fragmented.digest (with gone) == Fragmented.digest gone) True
-    adds "a mana note" (\gs -> gs {GameState.notedMana = Map.singleton islandId (Seq.singleton ManaType.Colorless)})
+    adds "a mana note" (\gs -> gs {GameState.notes = Map.singleton islandId (Noted.NotedMana (Seq.singleton ManaType.Colorless))})
     adds "a noted card" (\gs -> gs {GameState.notedCards = Map.singleton islandId (PrintingId.MkPrintingId 0)})
     adds "a chosen name" (\gs -> gs {GameState.namedCopyChoices = Map.singleton islandId (Set.singleton (CardName.MkCardName (Text.pack "Terror")))})
     adds "a haunt" (\gs -> gs {GameState.haunting = Map.singleton islandId tombId})

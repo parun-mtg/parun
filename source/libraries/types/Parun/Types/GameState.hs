@@ -15,8 +15,8 @@ import qualified Parun.Types.ExileLink as ExileLink
 import qualified Parun.Types.ExtraTurn as ExtraTurn
 import qualified Parun.Types.History as History
 import qualified Parun.Types.Mana as Mana
-import qualified Parun.Types.ManaType as ManaType
 import qualified Parun.Types.MatchScope as MatchScope
+import qualified Parun.Types.Noted as Noted
 import qualified Parun.Types.Object as Object
 import qualified Parun.Types.ObjectId as ObjectId
 import qualified Parun.Types.OutsideCard as OutsideCard
@@ -141,10 +141,10 @@ data GameState = MkGameState
     -- (EntryRiders.noted). Keyed by id, so neither CR 400.7's new object nor a
     -- copy of the object knows it.
     notedCards :: Map.Map ObjectId.ObjectId PrintingId.PrintingId,
-    -- | CR 607.2e: the type and amount of mana an ability noted for each object
-    -- (Effect.NoteManaSpent), the last note replacing the one before. Keyed by
-    -- id, so CR 400.7's new object knows none (Ice Cauldron).
-    notedMana :: Map.Map ObjectId.ObjectId (Seq.Seq ManaType.ManaType),
+    -- | CR 607.2e: what an ability last noted for each object (Effect.Note),
+    -- the last note replacing the one before. Keyed by id, so CR 400.7's new
+    -- object knows none (Ice Cauldron, Sigarda's Splendor).
+    notes :: Map.Map ObjectId.ObjectId Noted.Noted,
     -- | CR 801.16: for each player, nextTimestamp as a triggered ability of
     -- theirs, or one an effect of theirs made trigger, was last put on the
     -- stack, or, under limited range, an event last acted on an object of
