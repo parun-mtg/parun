@@ -1,0 +1,29 @@
+{
+  "description": "CR 700.2a, 611.2a: You Find Some Prisoners' Break Their Chains destroys target artifact, not a land; a card Interrogate Them let alice play stays in exile once her next turn has ended",
+  "note": "Three seats: alice's next turn is turn 4, so on turn 7 Raging Goblin, chosen but left unplayed, is refused though her Mountains could pay for it. The Mountain is refused as Break Their Chains' target, Millstone is destroyed and the other artifact, Mind Stone, which makes the target a choice, survives.",
+  "board": {"active": "alice", "step": "PrecombatMain", "seats": [
+    {"name": "alice", "battlefield": [
+      {"card": "Mountain", "label": "m1"}, {"card": "Mountain", "label": "m2"},
+      {"card": "Mountain", "label": "m3"}, {"card": "Mountain", "label": "m4"}],
+     "hand": [{"card": "You Find Some Prisoners", "label": "chains"}, {"card": "You Find Some Prisoners", "label": "inter"}],
+     "library": [{"card": "Island"}, {"card": "Island"}, {"card": "Island"}]},
+    {"name": "bob", "battlefield": [{"card": "Millstone", "label": "stone"}, {"card": "Mountain", "label": "bm"}, {"card": "Mind Stone"}], "library": [
+      {"card": "Raging Goblin"}, {"card": "Grizzly Bears"}, {"card": "Hill Giant"},
+      {"card": "Island"}, {"card": "Island"}, {"card": "Island"}]},
+    {"name": "carol", "library": [{"card": "Island"}, {"card": "Island"}, {"card": "Island"}]}
+  ]},
+  "timeline": [
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "refuse": {"Cast": {"object": "$chains", "modes": [0], "targets": ["$bm"], "mana": ["$m1", "$m2", null]}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": {"Cast": {"object": "$chains", "modes": [0], "targets": ["$stone"], "mana": ["$m1", "$m2", null]}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": "Pass"},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"Count": {"player": "bob", "zone": "Graveyard", "card": "Millstone", "count": 1}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"Count": {"player": "bob", "zone": "Battlefield", "card": "Mind Stone", "count": 1}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"Count": {"player": "bob", "zone": "Library", "card": "Raging Goblin", "count": 1}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": {"Cast": {"object": "$inter", "modes": [1], "targets": ["$bob"], "mana": ["$m3", "$m4"]}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": "Pass"},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": {"Answer": {"prompt": "ChooseCardFromAmong", "with": "Raging Goblin"}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"Count": {"player": "bob", "zone": "Exile", "card": "Raging Goblin", "count": 1}}},
+    {"turn": 7, "step": "PrecombatMain", "player": "alice", "refuse": {"Cast": {"object": "Raging Goblin", "mana": ["$m1", null]}}},
+    {"turn": 7, "step": "PrecombatMain", "player": "alice", "check": {"Count": {"player": "bob", "zone": "Exile", "card": "Raging Goblin", "count": 1}}}
+  ]
+}
