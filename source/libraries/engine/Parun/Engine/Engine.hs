@@ -600,7 +600,7 @@ runTurnBasedActions phase = do
       -- CR 502.2 / 703.4b: the day/night check, second in the step and BEFORE the
       -- untap itself (CR 502.3 / 703.4c). Outside the CR 800.4j guard, rule 703.4b
       -- making it the GAME's action.
-      _ <- Daytime.untapCheck Event.transformed
+      _ <- Daytime.untapCheck
       untapAll live
     -- CR 805.4b: each player on the active team draws.
     -- CR 503.1 gives the upkeep no turn-based action; the Unstable FAQ adds the
@@ -1461,7 +1461,7 @@ settlePasses passes boards = do
   -- state-based actions -- CR 702.145c and CR 702.145f say they are not, and CR
   -- 704.5 lists neither of the others. Before the SBA pass, since turning a
   -- permanent over changes its power and toughness.
-  dayNight <- Daytime.settle Event.transformed
+  dayNight <- Daytime.settle
   -- CR 702.131b / 702.195a, checked here for CR 704.3's reason and not because
   -- they are state-based actions -- rule 704.5 lists neither. Before the SBA pass,
   -- since a mark granted here turns on the "as long as you have" clauses that read

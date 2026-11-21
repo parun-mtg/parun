@@ -28,18 +28,21 @@
 -- anything this module performs.
 module Parun.Engine.Daytime where
 
+import qualified Control.Monad as Monad
 import qualified Control.Monad.Trans.State.Strict as State
 import qualified Data.List as List
 import Data.Map.Strict (Map)
 import qualified Data.Map.Strict as Map
 import qualified Data.Maybe as Maybe
 import qualified Data.Set as Set
+import qualified Parun.Engine.Event as Event
 import qualified Parun.Engine.Game as Game
 import qualified Parun.Engine.Projection as Projection
 import qualified Parun.Engine.Restamp as Restamp
 import Parun.Types.Daytime (Daytime)
 import qualified Parun.Types.Daytime as Daytime
 import Parun.Types.Game (Game)
+import qualified Parun.Types.GameEvent as GameEvent
 import Parun.Types.GameState (GameState)
 import qualified Parun.Types.GameState as GameState
 import qualified Parun.Types.Keyword as Keyword
@@ -158,13 +161,8 @@ dueToTurn gs = case GameState.daytime gs of
 -- `turnOver`, which this does not go through. data/scenarios/daytime proves the
 -- pair -- a spell's transform is refused, the sweep's is not.
 --
--- CR 701.27a's event is recorded through the `record` argument rather than
--- inline, and the argument is there because of the module graph rather than
--- because two callers want two answers: Parun.Engine.Event owns recordEvent and
--- imports THIS module, so the modules above pass Event.transformed down
--- instead.
--- Every road this module has to a turn takes it, so the CR 702.145c/f sweep is
--- not a second, silent way to turn a permanent over.
+-- CR 701.27a's event is recorded through Event.transformed, so the CR
+-- 702.145c/f sweep is not a second, silent way to turn a permanent over.
 --
 -- Proved at gameplay level by Parun.TransformSpec's nightfall case, whose fixture
 -- is Howlpack Piper // Wildsong Howler: its back face prints "whenever this
@@ -173,8 +171,8 @@ dueToTurn gs = case GameState.daytime gs of
 -- record here reddens that case's hand assertion and leaves every case in
 -- Parun.DaytimeSpec green, the one asserting the permanent turned over included:
 -- the record is what is lost, not the turn.
-turnDue :: ([ObjectId] -> Game ()) -> Game Bool
-turnDue record = do
+turnDue :: Game Bool
+turnDue = do
   gs <- State.get
   case dueToTurn gs of
     [] -> pure False
@@ -192,7 +190,7 @@ turnDue record = do
       let (now, g1) = Game.freshTimestamp gs1
           g2 = List.foldl' (flip (Game.turnFaceOver now)) g1 ordered
       State.put g2
-      record (Game.facesTurned (GameState.objects g1) (GameState.objects g2) ordered)
+      Event.transformed (Game.facesTurned (GameState.objects g1) (GameState.objects g2) ordered)
       pure True
 
 -- | CR 732.1: "it becomes day" / "it becomes night" -- the game gains that
@@ -210,14 +208,21 @@ turnDue record = do
 -- 702.145f both say it "happens immediately and isn't a state-based action", so
 -- an effect that goes on to do something else after saying "it becomes night"
 -- (Tovolar, Dire Overlord's upkeep trigger) sees the turned permanent.
-becomes :: ([ObjectId] -> Game ()) -> Daytime -> Game Bool
-becomes record designation = do
+--
+-- CR 732.1a's event is recorded here, the road every designation change
+-- takes, and only when the game HAD the other designation: the game's first designation is
+-- not "day becomes night" (Firmament Sage's ruling of 2021-09-24).
+-- data/scenarios/firmament-sage-draws-when-day-becomes-night-not-when-it-first-becomes-day.json
+-- proves both halves.
+becomes :: Daytime -> Game Bool
+becomes designation = do
   gs <- State.get
-  if GameState.daytime gs == Just designation
-    then pure False
-    else do
+  case GameState.daytime gs of
+    Just held | held == designation -> pure False
+    held -> do
       State.put gs {GameState.daytime = Just designation}
-      _ <- turnDue record
+      Monad.when (Maybe.isJust held) (State.modify' (Event.recordEvent (GameEvent.DaytimeChanged designation)))
+      _ <- turnDue
       pure True
 
 -- | CR 702.145d and CR 702.145g, the two rules that get a game to a designation
@@ -264,19 +269,19 @@ becomes record designation = do
 -- projecting only if one is found -- would be exact today only because nothing
 -- in the pool grants daybound, and that is a claim about the card pool rather
 -- than about the rules.
-settle :: ([ObjectId] -> Game ()) -> Game Bool
-settle record = do
+settle :: Game Bool
+settle = do
   gs <- State.get
   case GameState.daytime gs of
-    Just _ -> turnDue record
+    Just _ -> turnDue
     Nothing ->
       let pcs = Projection.projectAll gs
           onBattlefield = Set.toList (GameState.battlefield gs)
        in if any (hasKeyword Keyword.Daybound pcs) onBattlefield
-            then becomes record Daytime.Day
+            then becomes Daytime.Day
             else
               if any (hasKeyword Keyword.Nightbound pcs) onBattlefield
-                then becomes record Daytime.Night
+                then becomes Daytime.Night
                 else pure False
 
 -- | CR 502.2 (stated again as CR 732.2): as the second part of the untap step,
@@ -299,10 +304,10 @@ settle record = do
 -- CR 502.2a's reading for the shared team turns option needs no arm here: the
 -- count is the most any one player on the previous active team cast, which
 -- answers "none of them" and "any of them two or more" alike.
-untapCheck :: ([ObjectId] -> Game ()) -> Game Bool
-untapCheck record = do
+untapCheck :: Game Bool
+untapCheck = do
   gs <- State.get
   case GameState.daytime gs of
     Nothing -> pure False
-    Just Daytime.Day -> if Game.spellsCastLastTurn gs == 0 then becomes record Daytime.Night else pure False
-    Just Daytime.Night -> if Game.spellsCastLastTurn gs >= 2 then becomes record Daytime.Day else pure False
+    Just Daytime.Day -> if Game.spellsCastLastTurn gs == 0 then becomes Daytime.Night else pure False
+    Just Daytime.Night -> if Game.spellsCastLastTurn gs >= 2 then becomes Daytime.Day else pure False

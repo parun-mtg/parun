@@ -29,6 +29,7 @@ import qualified Parun.Types.CountersPlaced as CountersPlaced
 import qualified Parun.Types.Crewing as Crewing
 import qualified Parun.Types.DamageEvent as DamageEvent
 import qualified Parun.Types.DamagePrevented as DamagePrevented
+import qualified Parun.Types.Daytime as Daytime
 import qualified Parun.Types.DieResult as DieResult
 import qualified Parun.Types.Discarded as Discarded
 import qualified Parun.Types.Drew as Drew
@@ -492,6 +493,10 @@ data GameEvent
     -- resolving spell or ability saying so; for the one plane card named, where
     -- it ensued for a particular object.
     ChaosEnsued (Maybe ObjectId.ObjectId)
+  | -- | CR 732.1a: day became night or night became day, naming the designation
+    -- gained. Recorded by Parun.Engine.Daytime.becomes, never for CR 732.1's
+    -- first designation.
+    DaytimeChanged Daytime.Daytime
   | -- | CR 717.2a: a permanent's class level BECAME something -- the level BEFORE
     -- and the level AFTER, CountersPut's shape and for CR 715.2b's reason, since
     -- "becomes level N" is a threshold crossing. Recorded by Parun.Engine.Resolve's

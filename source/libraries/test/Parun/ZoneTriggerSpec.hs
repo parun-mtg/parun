@@ -113,6 +113,7 @@ import qualified Parun.Types.DamageKind as DamageKind
 import qualified Parun.Types.DamagePrevented as DamagePrevented
 import qualified Parun.Types.DamageRecipient as DamageRecipient
 import qualified Parun.Types.DamageTrigger as DamageTrigger
+import qualified Parun.Types.Daytime as Daytime
 import qualified Parun.Types.DealtDamage as DealtDamage
 import qualified Parun.Types.Decider as Decider
 import qualified Parun.Types.DeclarationTrigger as DeclarationTrigger
@@ -2121,6 +2122,8 @@ representativeEvents cond =
         TriggerCondition.Visit -> one (GameEvent.RolledToVisit DieResult.MkDieResult {DieResult.roller = S.bob, DieResult.result = 3})
         -- CR 311.7's own event, chaos ensuing.
         TriggerCondition.ChaosEnsues -> one (GameEvent.ChaosEnsued Nothing)
+        -- CR 732.1a's own event, day becoming night.
+        TriggerCondition.DaytimeChanges -> one (GameEvent.DaytimeChanged Daytime.Night)
         -- CR 901.9c's own event, a planar die showing the Planeswalker symbol.
         TriggerCondition.PlayerRollsPlaneswalker _ -> one (GameEvent.PlanarDieRolled (PlanarDieRolled.MkPlanarDieRolled S.bob PlanarDieFace.Planeswalker))
         -- CR 701.32's own event, and the only one this condition admits.
@@ -2492,6 +2495,7 @@ everyTriggerCondition =
     TriggerCondition.PlayerRollsResult (RollTrigger.MkRollTrigger PlayerRelation.You 6 RollKind.ToVisit),
     TriggerCondition.Visit,
     TriggerCondition.ChaosEnsues,
+    TriggerCondition.DaytimeChanges,
     TriggerCondition.PlayerRollsPlaneswalker PlayerRelation.You,
     TriggerCondition.PlayerRollsPlaneswalker PlayerRelation.Opponent,
     TriggerCondition.TurnedUpOffDeck ActingPermanent.Self,

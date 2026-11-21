@@ -54,6 +54,7 @@ import qualified Parun.Types.Crewing as Crewing
 import qualified Parun.Types.DamageEvent as DamageEvent
 import qualified Parun.Types.DamageKind as DamageKind
 import qualified Parun.Types.DamagePrevented as DamagePrevented
+import qualified Parun.Types.Daytime as Daytime
 import qualified Parun.Types.Designation as Designation
 import qualified Parun.Types.DieResult as DieResult
 import qualified Parun.Types.DiscardCause as DiscardCause
@@ -701,6 +702,9 @@ spec s = Spec.describe s "Parun.Codec.GameEvent" $ do
   -- CR 311.7's last case: for one plane card.
   Spec.it s "ChaosEnsued for an object" $
     Common.assertCodec s GameEvent.codec (GameEvent.ChaosEnsued (Just (ObjectId.MkObjectId 7))) " {\"type\":\"ChaosEnsued\",\"value\":7} "
+  -- CR 732.1a.
+  Spec.it s "DaytimeChanged" $
+    Common.assertCodec s GameEvent.codec (GameEvent.DaytimeChanged Daytime.Night) " {\"type\":\"DaytimeChanged\",\"value\":\"Night\"} "
   -- CR 701.57b.
   Spec.it s "CountedAct" $
     Common.assertCodec

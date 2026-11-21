@@ -1405,6 +1405,7 @@ damageOf event = case event of
   GameEvent.PlanarDieRolled _ -> Nothing
   GameEvent.TurnedUpOffDeck _ -> Nothing
   GameEvent.ChaosEnsued _ -> Nothing
+  GameEvent.DaytimeChanged _ -> Nothing
   GameEvent.ClassLevelSet _ -> Nothing
   GameEvent.Plotted _ -> Nothing
   GameEvent.BecameAttacked _ -> Nothing
@@ -1490,6 +1491,7 @@ revealOf event = case event of
   GameEvent.PlanarDieRolled _ -> Nothing
   GameEvent.TurnedUpOffDeck _ -> Nothing
   GameEvent.ChaosEnsued _ -> Nothing
+  GameEvent.DaytimeChanged _ -> Nothing
   GameEvent.ClassLevelSet _ -> Nothing
   GameEvent.Plotted _ -> Nothing
   GameEvent.BecameAttacked _ -> Nothing
@@ -13158,6 +13160,7 @@ controllerTurnScoped cond = case cond of
   TriggerCondition.PlayerRollsResult _ -> False
   TriggerCondition.Visit -> False
   TriggerCondition.ChaosEnsues -> False
+  TriggerCondition.DaytimeChanges -> False
   TriggerCondition.PlayerRollsPlaneswalker _ -> False
   TriggerCondition.TurnedUpOffDeck _ -> False
   TriggerCondition.SelfPlaneswalkedAwayFrom -> False
@@ -13742,6 +13745,7 @@ abilityTriggeredOf event = case event of
   GameEvent.PlanarDieRolled _ -> Nothing
   GameEvent.TurnedUpOffDeck _ -> Nothing
   GameEvent.ChaosEnsued _ -> Nothing
+  GameEvent.DaytimeChanged _ -> Nothing
   GameEvent.ClassLevelSet _ -> Nothing
   GameEvent.Plotted _ -> Nothing
   GameEvent.BecameAttacked _ -> Nothing

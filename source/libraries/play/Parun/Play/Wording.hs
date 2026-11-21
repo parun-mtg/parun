@@ -54,6 +54,7 @@ import qualified Parun.Types.CountersPlaced as CountersPlaced
 import qualified Parun.Types.Crewing as Crewing
 import qualified Parun.Types.DamageEvent as DamageEvent
 import qualified Parun.Types.DamagePrevented as DamagePrevented
+import qualified Parun.Types.Daytime as Daytime
 import qualified Parun.Types.Defense as Defense
 import qualified Parun.Types.Departure as Departure
 import qualified Parun.Types.Designation as Designation
@@ -535,6 +536,8 @@ event view logged = case LoggedEvent.event logged of
   GameEvent.PlanarDieRolled r -> said [player (PlanarDieRolled.roller r), Text.pack "rolls", planarFace (PlanarDieRolled.face r), Text.pack "on the planar die"]
   GameEvent.TurnedUpOffDeck t -> said [player (TurnedUpOffDeck.player t), Text.pack "turns up", name (TurnedUpOffDeck.card t), Text.pack "from their", sideDeck (TurnedUpOffDeck.deck t)]
   GameEvent.ChaosEnsued _ -> said [Text.pack "Chaos ensues"]
+  GameEvent.DaytimeChanged Daytime.Day -> said [Text.pack "Night becomes day"]
+  GameEvent.DaytimeChanged Daytime.Night -> said [Text.pack "Day becomes night"]
   GameEvent.ClassLevelSet c -> said [name (ClassLevelChange.object c), Text.pack "becomes level", Text.pack (show (ClassLevel.unwrap (ClassLevelChange.after c)))]
   GameEvent.Plotted oid -> said [name oid, Text.pack "becomes plotted"]
   GameEvent.CoinFlipped c ->
