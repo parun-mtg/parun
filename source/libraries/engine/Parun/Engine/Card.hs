@@ -1545,6 +1545,15 @@ isDoubleFaced card = case Card.layout card of
   Layout.ModalDoubleFaced -> True
   Layout.Meld {} -> False
 
+-- CR 731.2i / 707.8a: this card as the one face it shows, `shown` (Nothing for
+-- its front), for a token copying a merged permanent it tops, since a merged
+-- permanent is not a double-faced permanent. A card that is not double-faced is
+-- itself.
+singleFacedAt :: Maybe CardName.CardName -> Card.Card -> Card.Card
+singleFacedAt shown card
+  | isDoubleFaced card = card {Card.layout = Layout.Normal, Card.faces = NonEmpty.singleton (Maybe.fromMaybe (frontFace card) (shown >>= (`faceNamed` card)))}
+  | otherwise = card
+
 -- CR 712.13 / 713.7: can a permanent this card represents never be turned face
 -- down -- a double-faced card, or a meld card, which CR 713.7 names apart now
 -- that CR 713.1 does not count it double-faced.
