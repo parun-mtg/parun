@@ -390,6 +390,7 @@ spec s registry = Spec.describe s "Protocol" $ do
     Spec.assertEqWith s "library arrivals, beside their end" (fmap (\key -> field key (offerOf arrivals)) ["end", "order"]) [Just (R.Text (Text.pack "Bottom")), both]
     Spec.assertEqWith s "timestamps" (field "order" (offerOf (Prompt.OrderTimestamps alice S.alice [o9, o11]))) both
     Spec.assertEqWith s "mana activations" (field "order" (offerOf (Prompt.OrderManaActivations alice S.alice [o9, o11]))) both
+    Spec.assertEqWith s "entries" (field "order" (offerOf (Prompt.OrderEntries alice S.alice [o9, o11]))) both
     Spec.assertEqWith s "combat tolls" (field "order" (offerOf (Prompt.OrderCombatTolls alice S.alice [o9, o11]))) both
     Spec.assertEqWith s "component cards by name, beside their zone" (fmap (\key -> field key (offerOf cards)) ["zone", "order"]) [Just (R.Text (Text.pack "Graveyard")), Just (R.Array (replicate 2 (R.Text (Text.pack "Hill Giant"))))]
     Spec.assertEqWith s "cost components, beside their source" (field "source" (offerOf cost), fmap (traverse (either (const Nothing) Just . Codec.decode (Codec.CostComponent.codec Codec.Keyword.codec) . Codec.Reply.toValue)) (field "order" (offerOf cost) >>= arrayOf)) (Just (PromptOffer.object Protocol.namer o7), Just (Just components))

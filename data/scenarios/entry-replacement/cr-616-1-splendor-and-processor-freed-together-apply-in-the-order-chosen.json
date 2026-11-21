@@ -111,7 +111,7 @@
     ],
     "step": "PrecombatMain"
   },
-  "description": "CR 616.1 / 614.13b: Sigarda's Splendor and Phyrexian Processor returning together from two Banishing Lights apply in the order chosen, so Splendor applied first notes the life before Processor's payment",
+  "description": "CR 616.1 / 614.1c: Sigarda's Splendor and Phyrexian Processor returning together from two Banishing Lights apply in the order chosen, so Splendor applied first notes the life before Processor's payment",
   "note": "Bob's two Banishing Lights exile both; on her turn alice's Back to Nature destroys the Lights at once, so both return together (MoveDuration's batch). Alice orders Splendor first, then pays 10 life for Processor: Splendor noted 20, so her turn 4 upkeep at 10 draws nothing and two Islands are in hand after the draw step, not three.",
   "timeline": [
     {
