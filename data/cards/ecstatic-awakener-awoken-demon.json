@@ -118,6 +118,7 @@
         "Black"
       ],
       "name": "Awoken Demon",
+      "oracleText": "",
       "power": {
         "type": "Literal",
         "value": 4
