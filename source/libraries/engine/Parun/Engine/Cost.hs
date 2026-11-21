@@ -5486,10 +5486,12 @@ criteriaOf component = case component of
 -- state is always one already composed: the one the last "reverse" answer was
 -- checked against.
 --
--- Not implemented: asking where a set of answers does not compose. With
--- everything kept the whole action goes back unasked, a combat toll's mill
--- (`unreversibleStretch`) with it; otherwise the activation stands unasked
--- (#8008).
+-- Unprinted: a set of answers that does not compose, which needs a leaf both
+-- sides write irreconcilably (Parun.Engine.Reversal.withoutAnnouncement).
+-- There, with everything kept the whole action goes back unasked, a combat
+-- toll's mill (`unreversibleStretch`) with it; otherwise the activation stands
+-- unasked. The one such shape card data could write, an exert, Parun.CardSpec
+-- lints out (Parun.Engine.Reversal.objectWith).
 --
 -- The special actions and CR 118.12's payment announce nothing that writes:
 -- their two states differ only in Bookkeeping.lastChoice and, at
@@ -5512,8 +5514,8 @@ criteriaOf component = case component of
 -- cost/cr-734-1-what-a-nested-window-kept-is-offered-again-one-activation-at-a-time
 -- is the proof.
 --
--- Not implemented: telling them apart where such a state does not compose;
--- they come back as one (#8008).
+-- Unprinted: a re-based state that does not compose, which needs the same
+-- irreconcilable leaf; they come back as one (`groupActivations`).
 --
 -- The CANCELLATION HAPPENS FIRST, before the question: rule 734.1 reverses the
 -- action and cancels the payments flat, and only its last-but-one sentence
