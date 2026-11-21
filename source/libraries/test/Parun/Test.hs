@@ -1007,7 +1007,6 @@ import qualified Parun.Extra.IntegerSpec
 import qualified Parun.Extra.MonoidSpec
 import qualified Parun.Extra.NaturalSpec
 import qualified Parun.Extra.OrdSpec
-import qualified Parun.Extra.ParsecSpec
 import qualified Parun.Extra.SemigroupSpec
 import qualified Parun.Extra.Word32Spec
 import qualified Parun.Extra.Word64Spec
@@ -2187,7 +2186,6 @@ spec s reference corpus = do
   Parun.Play.GeneratorSpec.spec s
   Parun.Play.KeySpec.spec s
   Parun.Extra.OrdSpec.spec s
-  Parun.Extra.ParsecSpec.spec s
   Parun.Extra.SemigroupSpec.spec s
   Parun.Extra.Word8Spec.spec s
   Parun.FaceDownSpec.spec s registry

@@ -1,10 +1,9 @@
-{-# LANGUAGE FlexibleContexts #-}
-
 module Parun.JsonPointer.Token where
 
+import qualified Control.Applicative as Applicative
 import qualified Data.ByteString.Builder as Builder
 import qualified Data.Text as Text
-import qualified Text.Parsec as Parsec
+import qualified Parun.Zepto as Zepto
 
 -- | A reference token in a JSON Pointer, as defined by RFC 6901. The token
 -- stores the unescaped text value.
@@ -16,16 +15,14 @@ newtype Token = MkToken
 -- | Decodes a reference token from a JSON Pointer string. Handles the escape
 -- sequences: @~0 -> ~@, @~1 -> \/@. Per RFC 6901, we must decode @~1@ before
 -- @~0@ to avoid errors.
-decode :: (Parsec.Stream s m Char) => Parsec.ParsecT s u m Token
-decode = MkToken . Text.pack <$> Parsec.many decodeChar
+decode :: Zepto.Parser Token
+decode = MkToken . Text.pack <$> Applicative.many decodeChar
 
-decodeChar :: (Parsec.Stream s m Char) => Parsec.ParsecT s u m Char
+decodeChar :: Zepto.Parser Char
 decodeChar =
-  Parsec.choice
-    [ '/' <$ Parsec.string' "~1",
-      '~' <$ Parsec.string' "~0",
-      Parsec.noneOf "/"
-    ]
+  ('/' <$ Zepto.string (Text.pack "~1"))
+    Applicative.<|> ('~' <$ Zepto.string (Text.pack "~0"))
+    Applicative.<|> Zepto.satisfy (/= '/')
 
 -- | Encodes a token for use in a JSON Pointer string. Escapes @~@ as @~0@ and
 -- @\/@ as @~1@. Per RFC 6901, we must encode @~@ before @\/@ to maintain

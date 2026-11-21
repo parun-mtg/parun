@@ -2,57 +2,59 @@ module Parun.JsonPointer.PointerSpec where
 
 import qualified Data.Text as Text
 import qualified Parun.Extra.Builder as Builder
-import qualified Parun.Extra.Parsec as Parsec
 import qualified Parun.JsonPointer.Pointer as Pointer
 import qualified Parun.JsonPointer.Token as Token
 import qualified Parun.Spec as Spec
+import qualified Parun.Zepto as Zepto
 
 spec :: (Applicative m, Monad n) => Spec.Spec m n -> n ()
 spec s = Spec.describe s "Parun.JsonPointer.Pointer" $ do
-  let pointer = Pointer.MkPointer . fmap (Token.MkToken . Text.pack)
+  let run :: Zepto.Parser a -> String -> Maybe a
+      run p = Zepto.parseMaybe p . Text.pack
+      pointer = Pointer.MkPointer . fmap (Token.MkToken . Text.pack)
 
   Spec.describe s "decode" $ do
     Spec.it s "succeeds with empty string (root pointer)" $ do
-      Spec.assertEq s (Parsec.parseString Pointer.decode "") . Just $ pointer []
+      Spec.assertEq s (run Pointer.decode "") . Just $ pointer []
 
     Spec.it s "succeeds with single slash (empty token)" $ do
-      Spec.assertEq s (Parsec.parseString Pointer.decode "/") . Just $ pointer [""]
+      Spec.assertEq s (run Pointer.decode "/") . Just $ pointer [""]
 
     Spec.it s "succeeds with /foo" $ do
-      Spec.assertEq s (Parsec.parseString Pointer.decode "/foo") . Just $ pointer ["foo"]
+      Spec.assertEq s (run Pointer.decode "/foo") . Just $ pointer ["foo"]
 
     Spec.it s "succeeds with /foo/bar" $ do
-      Spec.assertEq s (Parsec.parseString Pointer.decode "/foo/bar") . Just $ pointer ["foo", "bar"]
+      Spec.assertEq s (run Pointer.decode "/foo/bar") . Just $ pointer ["foo", "bar"]
 
     Spec.it s "succeeds with /foo/0" $ do
-      Spec.assertEq s (Parsec.parseString Pointer.decode "/foo/0") . Just $ pointer ["foo", "0"]
+      Spec.assertEq s (run Pointer.decode "/foo/0") . Just $ pointer ["foo", "0"]
 
     Spec.it s "succeeds with /a~1b (contains /)" $ do
-      Spec.assertEq s (Parsec.parseString Pointer.decode "/a~1b") . Just $ pointer ["a/b"]
+      Spec.assertEq s (run Pointer.decode "/a~1b") . Just $ pointer ["a/b"]
 
     Spec.it s "succeeds with /m~0n (contains ~)" $ do
-      Spec.assertEq s (Parsec.parseString Pointer.decode "/m~0n") . Just $ pointer ["m~n"]
+      Spec.assertEq s (run Pointer.decode "/m~0n") . Just $ pointer ["m~n"]
 
     Spec.it s "succeeds with /c%d (contains percent)" $ do
-      Spec.assertEq s (Parsec.parseString Pointer.decode "/c%d") . Just $ pointer ["c%d"]
+      Spec.assertEq s (run Pointer.decode "/c%d") . Just $ pointer ["c%d"]
 
     Spec.it s "succeeds with /e^f (contains caret)" $ do
-      Spec.assertEq s (Parsec.parseString Pointer.decode "/e^f") . Just $ pointer ["e^f"]
+      Spec.assertEq s (run Pointer.decode "/e^f") . Just $ pointer ["e^f"]
 
     Spec.it s "succeeds with /g|h (contains pipe)" $ do
-      Spec.assertEq s (Parsec.parseString Pointer.decode "/g|h") . Just $ pointer ["g|h"]
+      Spec.assertEq s (run Pointer.decode "/g|h") . Just $ pointer ["g|h"]
 
     Spec.it s "succeeds with /i\\\\j (contains backslash)" $ do
-      Spec.assertEq s (Parsec.parseString Pointer.decode "/i\\j") . Just $ pointer ["i\\j"]
+      Spec.assertEq s (run Pointer.decode "/i\\j") . Just $ pointer ["i\\j"]
 
     Spec.it s "succeeds with /k\"l (contains quote)" $ do
-      Spec.assertEq s (Parsec.parseString Pointer.decode "/k\"l") . Just $ pointer ["k\"l"]
+      Spec.assertEq s (run Pointer.decode "/k\"l") . Just $ pointer ["k\"l"]
 
     Spec.it s "succeeds with / / (contains space)" $ do
-      Spec.assertEq s (Parsec.parseString Pointer.decode "/ ") . Just $ pointer [" "]
+      Spec.assertEq s (run Pointer.decode "/ ") . Just $ pointer [" "]
 
     Spec.it s "handles multiple empty tokens" $ do
-      Spec.assertEq s (Parsec.parseString Pointer.decode "///") . Just $ pointer ["", "", ""]
+      Spec.assertEq s (run Pointer.decode "///") . Just $ pointer ["", "", ""]
 
   Spec.describe s "encode" $ do
     Spec.it s "works with empty pointer (root)" $ do
