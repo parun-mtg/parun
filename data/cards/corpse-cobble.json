@@ -1,0 +1,168 @@
+{
+  "faces": [
+    {
+      "additionalCosts": [
+        {
+          "type": "Sacrifice",
+          "value": {
+            "count": {
+              "type": "Announced",
+              "value": "sacrificeCount"
+            },
+            "whichPermanents": {
+              "type": "And",
+              "value": [
+                {
+                  "type": "HasCardType",
+                  "value": "Creature"
+                },
+                {
+                  "type": "HeldBy",
+                  "value": {
+                    "holder": "Controller",
+                    "relation": "You"
+                  }
+                }
+              ]
+            }
+          }
+        }
+      ],
+      "keywords": [
+        {
+          "type": "Flashback",
+          "value": {
+            "mana": [
+              {
+                "type": "Generic",
+                "value": 3
+              },
+              {
+                "type": "OfType",
+                "value": {
+                  "type": "Colored",
+                  "value": "Blue"
+                }
+              },
+              {
+                "type": "OfType",
+                "value": {
+                  "type": "Colored",
+                  "value": "Black"
+                }
+              }
+            ]
+          }
+        }
+      ],
+      "manaCost": [
+        {
+          "type": "OfType",
+          "value": {
+            "type": "Colored",
+            "value": "Blue"
+          }
+        },
+        {
+          "type": "OfType",
+          "value": {
+            "type": "Colored",
+            "value": "Black"
+          }
+        }
+      ],
+      "name": "Corpse Cobble",
+      "oracleText": "As an additional cost to cast this spell, sacrifice any number of creatures.\nCreate an X/X blue and black Zombie creature token with menace, where X is the total power of the sacrificed creatures.\nFlashback {3}{U}{B} (You may cast this card from your graveyard for its flashback cost and any additional costs. Then exile it.)",
+      "spell": {
+        "modes": [
+          {
+            "clauses": [
+              {
+                "effects": [
+                  {
+                    "type": "Create",
+                    "value": {
+                      "card": {
+                        "faces": [
+                          {
+                            "colorIndicator": [
+                              "Blue",
+                              "Black"
+                            ],
+                            "keywords": [
+                              {
+                                "type": "Menace"
+                              }
+                            ],
+                            "name": "Zombie Token",
+                            "power": {
+                              "type": "Count",
+                              "value": {
+                                "aggregation": {
+                                  "type": "Total",
+                                  "value": {
+                                    "type": "Measure",
+                                    "value": "Power"
+                                  }
+                                },
+                                "filter": {
+                                  "type": "And",
+                                  "value": []
+                                },
+                                "scope": {
+                                  "type": "OverBound",
+                                  "value": "thatSacrificedPermanent"
+                                }
+                              }
+                            },
+                            "toughness": {
+                              "type": "Count",
+                              "value": {
+                                "aggregation": {
+                                  "type": "Total",
+                                  "value": {
+                                    "type": "Measure",
+                                    "value": "Power"
+                                  }
+                                },
+                                "filter": {
+                                  "type": "And",
+                                  "value": []
+                                },
+                                "scope": {
+                                  "type": "OverBound",
+                                  "value": "thatSacrificedPermanent"
+                                }
+                              }
+                            },
+                            "typeLine": {
+                              "subtypes": [
+                                "Zombie"
+                              ],
+                              "types": [
+                                "Creature"
+                              ]
+                            }
+                          }
+                        ]
+                      },
+                      "quantity": {
+                        "type": "Literal",
+                        "value": 1
+                      }
+                    }
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "typeLine": {
+        "types": [
+          "Instant"
+        ]
+      }
+    }
+  ]
+}
