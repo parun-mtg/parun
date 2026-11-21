@@ -1821,7 +1821,13 @@ armMatches bindings frozen board atEvent beforeEvent groupEvents gs bearer you c
           Turn.duringRunningTurn scopeNamed gs window scope you
             && case subject of
               ActingPermanent.Self -> spell == bearer
-              ActingPermanent.Matching f -> Filter.matches (leftPile bearer link spell bearerContext) (Projection.viewOfSpell controller spell gs) f
+              -- The spell and the pools it is compared with, read off the
+              -- game the cast left (CR 603.2): CR 704.3's state-based
+              -- actions can bury a creature its cast shrank (Maro) before
+              -- the gather. data/scenarios's
+              -- volo-guide-to-monsters-skips-a-spell-sharing-a-type-with-a-creature-its-cast-killed
+              -- proves it.
+              ActingPermanent.Matching f -> Filter.matches (leftPile bearer link spell (contextOn atEvent)) (Projection.viewOfSpell controller spell atEvent) f
             -- Social Snub's "while you control a creature", asked of the
             -- game the cast left (CR 601.2i) and never re-checked, as
             -- AttackerTrigger.while is (CR 603.4 is for an "if").
@@ -2672,7 +2678,11 @@ armMatches bindings frozen board atEvent beforeEvent groupEvents gs bearer you c
     --
     -- A delayed ability's choices are `frozen`, the source's as it was created
     -- (DelayedTrigger.choices); every other trigger reads the source's live.
-    bearerContext = Projection.framedByBindings gs bindings (maybe (Projection.framedBy bearer gs) (\choices -> Projection.framedWith choices bearer gs) frozen (Filter.contextIn gs (Just you) (Just bearer)))
+    bearerContext = contextOn gs
+    -- bearerContext framed off another game, `atEvent` for an arm whose pools
+    -- (Filter.Context.battlefieldViews, graveyardViews) CR 603.2 reads as the
+    -- event happened.
+    contextOn g = Projection.framedByBindings g bindings (maybe (Projection.framedBy bearer g) (\choices -> Projection.framedWith choices bearer g) frozen (Filter.contextIn g (Just you) (Just bearer)))
     -- CR 102.1: the seats a TurnScope.PlayersTurn names, read from the bearer.
     scopeNamed = Count.scopePlayers (Projection.viewWithLastKnownAnywhere gs) bearerContext gs
     admitsTurn scope = Turn.duringRunningTurn scopeNamed gs Nothing scope you
