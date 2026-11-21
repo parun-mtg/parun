@@ -64,31 +64,33 @@ view :: Rejoin -> Html.Html Event
 view screen =
   Element.el "main" ["lobby", "rejoin"] [] $
     [ Element.el "h1" [] [] [Element.string (case side screen of MkHost who -> Text.unpack who <> "\x2019s connection dropped"; MkGuest -> "The connection to the host dropped")],
-      Element.el "section" ["join-status"] [Element.attr "aria-label" (Text.pack "Connection")] steps
+      Element.keyed "section" ["join-status"] [Element.attr "aria-label" (Text.pack "Connection")] steps
     ]
       <> [Element.el "p" ["problem"] [Element.attr "role" (Text.pack "alert")] [Element.text p] | p <- Maybe.maybeToList (problem screen)]
       <> [Element.button ["give-up"] MkGiveUp [Element.string (case side screen of MkHost _ -> "Give the game up"; MkGuest -> "Home")]]
   where
+    -- Each step's boxes are keyed apart, and the host's reply box by its
+    -- link: a box kept across steps would keep the text pasted into it.
     box name = [Element.attr "id" (Text.pack name), Element.attr "type" (Text.pack "text"), Element.attr "autocomplete" (Text.pack "off"), Element.attr "spellcheck" (Text.pack "false"), Element.on "input" MkTyped]
     shown name value = Element.el "input" ["invite-link"] [Element.attr "id" (Text.pack name), Element.attr "type" (Text.pack "text"), Element.attr "readonly" Text.empty, Element.attr "value" value] []
     connect label = Element.el "button" ["primary", "connect"] ([Element.attr "type" (Text.pack "button"), Element.on "click" MkConnect] <> [Element.attr "disabled" Text.empty | Text.null (Text.strip (typed screen))]) [Element.string label]
     steps = case (side screen, code screen) of
-      (MkHost _, Nothing) -> [Element.el "p" ["invite-step"] [] [Element.string "Making a new link\x2026"]]
+      (MkHost _, Nothing) -> [(Text.pack "making", Element.el "p" ["invite-step"] [] [Element.string "Making a new link\x2026"])]
       (MkHost _, Just url) ->
-        [ Element.el "p" [] [] [Element.string "The game waits for them. To pick it up where it stopped:"],
-          Element.el "label" [] [Element.attr "for" (Text.pack "rejoin-link")] [Element.string "1. Send them this new link"],
-          shown "rejoin-link" url,
-          Element.el "label" [] [Element.attr "for" (Text.pack "rejoin-reply")] [Element.string "2. Paste the code they send back"],
-          Element.el "input" ["invite-reply"] (box "rejoin-reply") [],
-          connect "Connect"
+        [ (Text.pack "waits", Element.el "p" [] [] [Element.string "The game waits for them. To pick it up where it stopped:"]),
+          (Text.pack "link-label", Element.el "label" [] [Element.attr "for" (Text.pack "rejoin-link")] [Element.string "1. Send them this new link"]),
+          (Text.pack "link", shown "rejoin-link" url),
+          (Text.pack "reply-label", Element.el "label" [] [Element.attr "for" (Text.pack "rejoin-reply")] [Element.string "2. Paste the code they send back"]),
+          (Text.pack "reply " <> url, Element.el "input" ["invite-reply"] (box "rejoin-reply") []),
+          (Text.pack "connect", connect "Connect")
         ]
       (MkGuest, Nothing) ->
-        [ Element.el "label" [] [Element.attr "for" (Text.pack "rejoin-offer")] [Element.string "The game waits for you. Paste the new link the host sends you:"],
-          Element.el "input" ["invite-reply"] (box "rejoin-offer") [],
-          connect "Make my reply code"
+        [ (Text.pack "offer-label", Element.el "label" [] [Element.attr "for" (Text.pack "rejoin-offer")] [Element.string "The game waits for you. Paste the new link the host sends you:"]),
+          (Text.pack "offer", Element.el "input" ["invite-reply"] (box "rejoin-offer") []),
+          (Text.pack "make", connect "Make my reply code")
         ]
       (MkGuest, Just reply) ->
-        [ Element.el "label" [] [Element.attr "for" (Text.pack "rejoin-code")] [Element.string "Send this code back to the host, who pastes it in:"],
-          shown "rejoin-code" reply,
-          Element.el "p" [] [] [Element.string "Waiting for the host to connect\x2026"]
+        [ (Text.pack "code-label", Element.el "label" [] [Element.attr "for" (Text.pack "rejoin-code")] [Element.string "Send this code back to the host, who pastes it in:"]),
+          (Text.pack "code", shown "rejoin-code" reply),
+          (Text.pack "waiting", Element.el "p" [] [] [Element.string "Waiting for the host to connect\x2026"])
         ]

@@ -2,7 +2,9 @@ module Parun.Web.RejoinSpec where
 
 import qualified Data.Text as Text
 import qualified Parun.Spec as Spec
+import qualified Parun.Web.Diff as Diff
 import qualified Parun.Web.Html as Html
+import qualified Parun.Web.Patch as Patch
 import qualified Parun.Web.Rejoin as Rejoin
 
 spec :: (Applicative m, Monad n) => Spec.Spec m n -> n ()
@@ -20,3 +22,10 @@ spec s = Spec.describe s "Parun.Web.Rejoin" $ do
       let asking = Html.toText (Rejoin.view Rejoin.guest)
           made = Html.toText (Rejoin.view Rejoin.guest {Rejoin.code = Just (Text.pack "reply-code")})
       Spec.assertBool s (Text.isInfixOf (Text.pack "id=\"rejoin-offer\"") asking && Text.isInfixOf (Text.pack "reply-code") made) "the link box, then the code"
+
+    Spec.it s "builds the guest's code box afresh rather than setting the box the link was pasted into, whose typed text a value attribute would not replace" $ do
+      let patches = Diff.diff (Rejoin.view Rejoin.guest {Rejoin.typed = Text.pack "pasted"}) (Rejoin.view Rejoin.guest {Rejoin.code = Just (Text.pack "reply-code")})
+          setsValue patch = case patch of
+            Patch.MkSetProperty _ name _ -> name == Text.pack "value"
+            _ -> False
+      Spec.assertBool s (not (any setsValue patches)) "no value set on a kept box"
