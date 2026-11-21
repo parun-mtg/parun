@@ -37,6 +37,7 @@ import qualified Parun.Types.Format as Format
 import qualified Parun.Types.GameState as GameState
 import qualified Parun.Types.GraveyardOrder as GraveyardOrder
 import qualified Parun.Types.Label as Label
+import qualified Parun.Types.Limits as Limits
 import qualified Parun.Types.Move as Move
 import qualified Parun.Types.Observer as Observer
 import qualified Parun.Types.PlayerId as PlayerId
@@ -200,7 +201,7 @@ recorded seats matchup = fmap fst (watched Nothing 1 Nothing seats Map.empty mat
 -- in `orders`.
 watched :: Maybe Natural -> Word.Word32 -> Maybe Format.Format -> Map.Map PlayerId.PlayerId (Answerer.Answerer (Asked.Asked GameState.GameState) (Game.Play Base)) -> Map.Map PlayerId.PlayerId GraveyardOrder.GraveyardOrder -> NonEmpty.NonEmpty (PlayerId.PlayerId, Deck.Deck) -> (Either Text.Text (Result.Result, GameState.GameState), (Seq.Seq Timed.Timed, Maybe GameState.GameState))
 watched curfew seed format seats orders matchup =
-  let played = Game.run (S.fixtureRegistry []) format ([Record.recording labels sink, lastAsked] <> foldMap (pure . after) curfew) seats (S.seeded seed) orders matchup
+  let played = Game.run (S.fixtureRegistry []) format Limits.standard ([Record.recording labels sink, lastAsked] <> foldMap (pure . after) curfew) seats (S.seeded seed) orders matchup
    in State.runState played (Seq.empty, Nothing)
 
 -- Stops play, as a seat out of input does, at the first question of a turn

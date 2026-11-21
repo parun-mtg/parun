@@ -2,6 +2,7 @@ module Parun.Types.MatchScope where
 
 import qualified Numeric.Natural as Natural
 import qualified Parun.Types.GameSettings as GameSettings
+import qualified Parun.Types.Limits as Limits
 
 -- | CR 100.6a: what belongs to the match rather than to one game of it, held
 -- whole as GameState.match. Parun.Engine.Setup's restartGame (CR 728.1) and
@@ -25,6 +26,9 @@ data MatchScope = MkMatchScope
     -- subgame's or a restarted game's turn numbers, which begin again at 1,
     -- are not taken for this game's. Carried only for startGameFromCards to
     -- number the new game. Parun.Engine.PlayerView shows it.
-    gameNumber :: !Natural.Natural
+    gameNumber :: !Natural.Natural,
+    -- | The host's limits on how large the game may grow, which a restarted
+    -- game and a subgame keep.
+    limits :: !Limits.Limits
   }
   deriving (Eq, Ord, Show)

@@ -540,6 +540,7 @@ import qualified Parun.Codec.LifeLossSpec
 import qualified Parun.Codec.LifeTallySpec
 import qualified Parun.Codec.LifeTriggerSpec
 import qualified Parun.Codec.LimitUnlessSpec
+import qualified Parun.Codec.LimitsSpec
 import qualified Parun.Codec.LoggedEventSpec
 import qualified Parun.Codec.LookAtSpec
 import qualified Parun.Codec.LookbackSpec
@@ -1053,6 +1054,7 @@ import qualified Parun.LegalitySpec
 import qualified Parun.LibraryOrderSpec
 import qualified Parun.LifeReplacementSpec
 import qualified Parun.LifeTriggerSpec
+import qualified Parun.LimitSpec
 import qualified Parun.ManaSourceSpec
 import qualified Parun.ManaSpec
 import qualified Parun.ManaSymbolSpec
@@ -2090,6 +2092,7 @@ spec s reference corpus = do
   Parun.Codec.TurnedFaceUpTriggerSpec.spec s
   Parun.Codec.TurnFaceDownSpec.spec s
   Parun.Codec.TurnMarkerSpec.spec s
+  Parun.Codec.LimitsSpec.spec s
   Parun.Codec.TurnRegistersSpec.spec s
   Parun.Codec.TurnResumeSpec.spec s
   Parun.Codec.TurnRoleSpec.spec s
@@ -2269,6 +2272,7 @@ spec s reference corpus = do
   Parun.RadSpec.spec s registry
   Parun.RangeOfInfluenceSpec.spec s registry
   Parun.RecruitSpec.spec s registry
+  Parun.LimitSpec.spec s registry
   Parun.RegistrySpec.spec s
   Parun.RemoveCounterSpec.spec s registry
   Parun.ReplacementSpec.spec s registry

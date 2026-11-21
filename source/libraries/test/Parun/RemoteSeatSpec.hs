@@ -20,6 +20,7 @@ import qualified Parun.Spec as Spec
 import qualified Parun.Support as S
 import qualified Parun.Types.Deck as Deck
 import qualified Parun.Types.GameState as GameState
+import qualified Parun.Types.Limits as Limits
 import qualified Parun.Types.PlayerId as PlayerId
 import qualified Parun.Types.PlayerView as PlayerView
 import qualified Parun.Types.Question as Question
@@ -137,7 +138,7 @@ build = Text.pack "test"
 -- sent over its channel and every other seat's to the host's page. A guest
 -- whose channel drops rejoins the first time, and not again.
 hosted :: (Monad m) => [PlayerId.PlayerId] -> NonEmpty.NonEmpty (PlayerId.PlayerId, Deck.Deck) -> State.StateT Wire m (Either Text.Text (Result.Result, GameState.GameState))
-hosted guests matchup = Game.run (S.fixtureRegistry []) Nothing [] (Map.fromList [(pid, Game.wired (S.fixtureRegistry []) (Protocol.bySeat (Map.fromList [(g, Link.remote rejoined (channel g)) | g <- guests]) (page hostPage))) | (pid, _) <- NonEmpty.toList matchup]) (S.seeded 1) Map.empty matchup
+hosted guests matchup = Game.run (S.fixtureRegistry []) Nothing Limits.standard [] (Map.fromList [(pid, Game.wired (S.fixtureRegistry []) (Protocol.bySeat (Map.fromList [(g, Link.remote rejoined (channel g)) | g <- guests]) (page hostPage))) | (pid, _) <- NonEmpty.toList matchup]) (S.seeded 1) Map.empty matchup
 
 -- A guest rejoining, which connects the first time and not again.
 rejoined :: (Monad m) => State.StateT Wire m Bool
@@ -156,7 +157,7 @@ data Resumed = MkResumed
   }
 
 resumedGame :: (Monad m) => NonEmpty.NonEmpty (PlayerId.PlayerId, Deck.Deck) -> State.StateT Resumed m (Either Text.Text (Result.Result, GameState.GameState))
-resumedGame matchup = Game.run (S.fixtureRegistry []) Nothing [] (Map.fromList [(pid, Game.wired (S.fixtureRegistry []) resuming) | (pid, _) <- NonEmpty.toList matchup]) (S.seeded 1) Map.empty matchup
+resumedGame matchup = Game.run (S.fixtureRegistry []) Nothing Limits.standard [] (Map.fromList [(pid, Game.wired (S.fixtureRegistry []) resuming) | (pid, _) <- NonEmpty.toList matchup]) (S.seeded 1) Map.empty matchup
 
 -- Each request answered from the replies stored, then by a page that passes.
 resuming :: (Monad m) => Protocol.Exchange (State.StateT Resumed m)

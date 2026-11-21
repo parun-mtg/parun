@@ -48,6 +48,7 @@ import qualified Parun.Types.GraveyardOrder as GraveyardOrder
 import Parun.Types.HandActionPerformer (HandActionPerformer)
 import qualified Parun.Types.LeftTheGame as LeftTheGame
 import qualified Parun.Types.LibraryPosition as LibraryPosition
+import qualified Parun.Types.Limits as Limits
 import qualified Parun.Types.LoopTrail as LoopTrail
 import qualified Parun.Types.MatchScope as MatchScope
 import qualified Parun.Types.Object as Object
@@ -268,7 +269,8 @@ newMatch settings =
     { MatchScope.settings = settings,
       MatchScope.subgamesThisMatch = 0,
       MatchScope.gamesThisMatch = 1,
-      MatchScope.gameNumber = 1
+      MatchScope.gameNumber = 1,
+      MatchScope.limits = Limits.standard
     }
 
 -- CR 728.1 / 730.2 / 800.2: a game of `match` nothing has happened in yet, with

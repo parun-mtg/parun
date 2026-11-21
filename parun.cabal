@@ -1170,6 +1170,8 @@ library codec
     Parun.Codec.LifeTallySpec
     Parun.Codec.LifeTrigger
     Parun.Codec.LifeTriggerSpec
+    Parun.Codec.Limits
+    Parun.Codec.LimitsSpec
     Parun.Codec.LimitUnless
     Parun.Codec.LimitUnlessSpec
     Parun.Codec.LoggedEvent
@@ -2161,6 +2163,7 @@ library engine
     Parun.Engine.LaterPayment
     Parun.Engine.Learn
     Parun.Engine.Ledger
+    Parun.Engine.Limit
     Parun.Engine.LinkReaders
     Parun.Engine.Loyalty
     Parun.Engine.Mana
@@ -2782,6 +2785,7 @@ library test
     Parun.LibraryOrderSpec
     Parun.LifeReplacementSpec
     Parun.LifeTriggerSpec
+    Parun.LimitSpec
     Parun.ManaSourceSpec
     Parun.ManaSpec
     Parun.ManaSymbolSpec
@@ -3511,6 +3515,7 @@ library types
     Parun.Types.LifeLossRewrite
     Parun.Types.LifeTally
     Parun.Types.LifeTrigger
+    Parun.Types.Limits
     Parun.Types.LimitUnless
     Parun.Types.LoggedEvent
     Parun.Types.LookAt

@@ -28,6 +28,7 @@ import qualified Parun.Types.Deck as Deck
 import qualified Parun.Types.Format as Format
 import qualified Parun.Types.GameState as GameState
 import qualified Parun.Types.Key as Key.Type
+import qualified Parun.Types.Limits as Limits
 import qualified Parun.Types.MatchOptions as MatchOptions
 import qualified Parun.Types.Result as Result
 import qualified Parun.Types.Tally as Tally
@@ -93,7 +94,7 @@ match options registry format decks = do
 game :: (Monad m) => Registry.Registry m -> Maybe Format.Format -> Key.Type.Key -> Natural -> NonEmpty.NonEmpty Deck.Deck -> m (Either Text.Text (Result.Result, GameState.GameState), Seq.Seq Timed.Timed)
 game registry format seed index decks =
   let count = Natural.length decks
-   in State.runStateT (Game.run (lifted registry) format [Record.recording (Command.labels count) sink] (Map.fromList [(Command.idOf n, Game.bot (lifted registry)) | n <- [1 .. count]]) (Generator.fromKey (seedAt seed index)) Map.empty (Command.seated (firstAt index) decks)) Seq.empty
+   in State.runStateT (Game.run (lifted registry) format Limits.standard [Record.recording (Command.labels count) sink] (Map.fromList [(Command.idOf n, Game.bot (lifted registry)) | n <- [1 .. count]]) (Generator.fromKey (seedAt seed index)) Map.empty (Command.seated (firstAt index) decks)) Seq.empty
 
 -- | A pair of decks, seat 1's first.
 both :: (Deck.Deck, Deck.Deck) -> NonEmpty.NonEmpty Deck.Deck

@@ -45,6 +45,7 @@ import qualified Parun.Codec.GameSettings as GameSettings
 import qualified Parun.Codec.IgnoredAbility as IgnoredAbility
 import qualified Parun.Codec.Keyword as Keyword
 import qualified Parun.Codec.LastKnown as LastKnown
+import qualified Parun.Codec.Limits as Limits
 import qualified Parun.Codec.Mana as Mana
 import qualified Parun.Codec.Noted as Noted
 import qualified Parun.Codec.Object as Object
@@ -83,6 +84,7 @@ import qualified Parun.Types.Card as Card.Type
 import qualified Parun.Types.CardName as CardName.Type
 import qualified Parun.Types.GameState as GameState
 import qualified Parun.Types.History as History
+import qualified Parun.Types.Limits as Limits.Type
 import qualified Parun.Types.MatchScope as MatchScope
 import qualified Parun.Types.Printing as Printing.Type
 import qualified Parun.Types.PrintingId as PrintingId.Type
@@ -254,6 +256,7 @@ codec resolve = Fields.object $ do
   subgamesThisMatch <- Fields.defaulted "subgamesThisMatch" 0 Common.natural (MatchScope.subgamesThisMatch . GameState.match)
   gamesThisMatch <- Fields.defaulted "gamesThisMatch" 1 Common.natural (MatchScope.gamesThisMatch . GameState.match)
   gameNumber <- Fields.defaulted "gameNumber" 1 Common.natural (MatchScope.gameNumber . GameState.match)
+  limits <- Fields.defaulted "limits" Limits.Type.standard Limits.codec (MatchScope.limits . GameState.match)
   throwing <- Fields.defaulted "throwing" Nothing (Common.maybe ThrowResult.codec) (Scratch.throwing . GameState.scratch)
   rethrowRequested <- Fields.defaulted "rethrowRequested" False Common.boolean (Scratch.rethrowRequested . GameState.scratch)
   rerolling <- Fields.defaulted "rerolling" Set.empty (Common.set ObjectId.codec) (Scratch.rerolling . GameState.scratch)
@@ -267,7 +270,8 @@ codec resolve = Fields.object $ do
             { MatchScope.settings = settings,
               MatchScope.subgamesThisMatch = subgamesThisMatch,
               MatchScope.gamesThisMatch = gamesThisMatch,
-              MatchScope.gameNumber = gameNumber
+              MatchScope.gameNumber = gameNumber,
+              MatchScope.limits = limits
             },
         GameState.objects = objects,
         GameState.library = library,

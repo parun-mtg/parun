@@ -86,6 +86,7 @@ import qualified Parun.Types.LandOrNonland as LandOrNonland
 import qualified Parun.Types.LearnMode as LearnMode
 import qualified Parun.Types.LibraryPosition as LibraryPosition
 import qualified Parun.Types.LifeChange as LifeChange
+import qualified Parun.Types.Limits as Limits
 import qualified Parun.Types.LoopMembers as LoopMembers
 import qualified Parun.Types.ManaCost as ManaCost
 import qualified Parun.Types.ManaSpending as ManaSpending
@@ -702,7 +703,7 @@ oid = ObjectId.MkObjectId 7
 data Answered = MkAnswered {within :: Bool, attacked :: Bool}
 
 played :: Word.Word32 -> NonEmpty.NonEmpty (PlayerId.PlayerId, Deck.Deck) -> ((Result.Result, GameState.GameState), [Answered])
-played seed matchup = State.runState (State.evalStateT (Driver.match [watching] seats GameSettings.plain Map.empty matchup) (S.seeded seed)) []
+played seed matchup = State.runState (State.evalStateT (Driver.match [watching] seats GameSettings.plain Limits.standard Map.empty matchup) (S.seeded seed)) []
 
 -- played's game stopped where turn `turn` ends, with no result to wait for.
 playedTo :: Natural -> Word.Word32 -> NonEmpty.NonEmpty (PlayerId.PlayerId, Deck.Deck) -> (GameState.GameState, [Answered])
