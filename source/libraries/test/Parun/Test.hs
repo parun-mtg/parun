@@ -657,6 +657,7 @@ import qualified Parun.Codec.PayObligationSpec
 import qualified Parun.Codec.PayingSpec
 import qualified Parun.Codec.PaymentDecisionSpec
 import qualified Parun.Codec.PendingEntryEffectSpec
+import qualified Parun.Codec.PendingOriginSpec
 import qualified Parun.Codec.PendingReplacementEffectSpec
 import qualified Parun.Codec.PendingSkipEffectSpec
 import qualified Parun.Codec.PerTargetSpec
@@ -1820,6 +1821,7 @@ spec s reference corpus = do
   Parun.Codec.PaymentDecisionSpec.spec s
   Parun.Codec.PayObligationSpec.spec s
   Parun.Codec.PendingEntryEffectSpec.spec s
+  Parun.Codec.PendingOriginSpec.spec s
   Parun.Codec.PendingReplacementEffectSpec.spec s
   Parun.Codec.PendingSkipEffectSpec.spec s
   Parun.Codec.PermanentActionSpec.spec s

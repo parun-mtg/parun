@@ -8,6 +8,7 @@ import qualified Parun.JsonCodec.Common as Common
 import qualified Parun.Spec as Spec
 import qualified Parun.Types.Effect as Effect
 import qualified Parun.Types.ObjectId as ObjectId
+import qualified Parun.Types.PendingOrigin as PendingOrigin
 import qualified Parun.Types.PendingReplacementEffect as PendingReplacementEffect
 import qualified Parun.Types.PendingSkipEffect as PendingSkipEffect
 import qualified Parun.Types.PlayerId as PlayerId
@@ -27,7 +28,7 @@ spec s = Spec.describe s "Parun.Codec.PendingSkipEffect" $ do
                 PendingReplacementEffect.targets = Map.empty,
                 PendingReplacementEffect.controller = PlayerId.MkPlayerId 1,
                 PendingReplacementEffect.source = ObjectId.MkObjectId 3,
-                PendingReplacementEffect.bindsArrival = False
+                PendingReplacementEffect.origin = PendingOrigin.Ordinary
               },
           PendingSkipEffect.extraTurns = [],
           PendingSkipEffect.turnMarkers = [],
@@ -46,7 +47,7 @@ spec s = Spec.describe s "Parun.Codec.PendingSkipEffect" $ do
                 PendingReplacementEffect.targets = Map.empty,
                 PendingReplacementEffect.controller = PlayerId.MkPlayerId 1,
                 PendingReplacementEffect.source = ObjectId.MkObjectId 3,
-                PendingReplacementEffect.bindsArrival = False
+                PendingReplacementEffect.origin = PendingOrigin.Ordinary
               },
           PendingSkipEffect.extraTurns = [],
           PendingSkipEffect.turnMarkers = [],

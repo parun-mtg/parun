@@ -264,6 +264,7 @@ import qualified Parun.Types.PayOffer as PayOffer
 import qualified Parun.Types.PayerAnswer as PayerAnswer
 import qualified Parun.Types.PaymentDecision as PaymentDecision
 import qualified Parun.Types.PendingEntryEffect as PendingEntryEffect
+import qualified Parun.Types.PendingOrigin as PendingOrigin
 import qualified Parun.Types.PendingReplacementEffect as PendingReplacementEffect
 import qualified Parun.Types.PendingSkipEffect as PendingSkipEffect
 import Parun.Types.PendingTrigger (PendingTrigger)
@@ -813,7 +814,8 @@ simultaneouslyPure body = closeEventGroup . body . openEventGroup
 -- ONE event group for the whole set (CR 608.2f): Moonmist transforms every Human
 -- at once, and CR 603.10a must not be able to tell two of them apart.
 -- CR 701.27i: the as-transforms abilities of what turned are applied first
--- (`transformed`), so this record is the event's last step.
+-- (`transformed`), but one that runs effects is only queued there, so its drain
+-- samples the event again (resampleTransformed).
 recordTransformed :: [ObjectId] -> GameState -> GameState
 recordTransformed oids gs = case oids of
   [] -> gs
@@ -884,6 +886,33 @@ restrictsTransform :: Map.Map ObjectId PC.ProjectedCharacteristics -> ObjectId -
 restrictsTransform pcs oid = case Map.lookup oid pcs of
   Nothing -> False
   Just pc -> Map.member Keyword.Type.Daybound (PC.keywords pc) || Map.member Keyword.Type.Nightbound (PC.keywords pc)
+
+-- CR 701.27f / 701.27i: an "as this transforms" row's effects are part of the
+-- transform, so once its drain has run them (Olag, Ludevic's Hubris's copy) the
+-- permanent's unscanned GameEvent.Transformed is sampled again, and its group's
+-- CR 603.10 board with it, resampleEntry's posture. A permanent the effects took
+-- off the battlefield keeps the first sample. data/scenarios/transform's Cult of
+-- the Waxing Moon and Olag scenarios prove the event's resample; the board's is
+-- a regression fence, no pool card's trigger riding on what Olag copies.
+resampleTransformed :: ObjectId -> GameState -> GameState
+resampleTransformed oid gs
+  | Set.notMember oid (GameState.battlefield gs) = gs
+  | otherwise = case Seq.findIndexR ours unscanned of
+      Nothing -> gs
+      Just i ->
+        let at = scanned + i
+            group = LoggedEvent.group (Seq.index logged at)
+            resampled = LoggedEvent.MkLoggedEvent {LoggedEvent.group = group, LoggedEvent.event = GameEvent.Transformed (transformedAt oid gs)}
+         in (Game.overTurn (\registers -> registers {TurnRegisters.events = Seq.update at resampled logged}) gs)
+              { GameState.snapshots = (GameState.snapshots gs) {Snapshots.battlefieldWhenTriggered = Map.adjust (const (battlefieldCandidates gs)) group (Snapshots.battlefieldWhenTriggered (GameState.snapshots gs))}
+              }
+  where
+    logged = TurnRegisters.events (GameState.turn gs)
+    scanned = Natural.toIntSaturating (TurnRegisters.scannedThrough (GameState.turn gs))
+    unscanned = Seq.drop scanned logged
+    ours entry = case LoggedEvent.event entry of
+      GameEvent.Transformed t -> Transformed.object t == oid
+      _ -> False
 
 -- CR 603.10's "what the objects involved in the event look like", sampled off
 -- the board the turn has just been written to: the projected characteristics, and
@@ -3470,7 +3499,7 @@ apply settle batch applied batchPrevented candidate event =
                                   Map.insert Binding.departedPermanent (Set.singleton (Recipient.ToObject (ZoneChange.departed zc))) (ReplacementCandidate.slots candidate),
                                 PendingReplacementEffect.controller = controller,
                                 PendingReplacementEffect.source = ReplacementCandidate.source candidate,
-                                PendingReplacementEffect.bindsArrival = True
+                                PendingReplacementEffect.origin = PendingOrigin.ZoneChangeRider
                               }
                       }
                 }
@@ -5035,7 +5064,7 @@ apply settle batch applied batchPrevented candidate event =
                                 PendingReplacementEffect.targets = ReplacementCandidate.slots candidate,
                                 PendingReplacementEffect.controller = controller,
                                 PendingReplacementEffect.source = ReplacementCandidate.source candidate,
-                                PendingReplacementEffect.bindsArrival = False
+                                PendingReplacementEffect.origin = PendingOrigin.Ordinary
                               }
                       }
                 }
@@ -5310,7 +5339,7 @@ apply settle batch applied batchPrevented candidate event =
                   PendingReplacementEffect.targets = Map.empty,
                   PendingReplacementEffect.controller = pid,
                   PendingReplacementEffect.source = ReplacementCandidate.source candidate,
-                  PendingReplacementEffect.bindsArrival = False
+                  PendingReplacementEffect.origin = PendingOrigin.Ordinary
                 }
         State.modify' (\g -> g {GameState.stored = (GameState.stored g) {StoredEffects.pendingReplacementEffects = StoredEffects.pendingReplacementEffects (GameState.stored g) Seq.|> queued}})
         pure Nothing
@@ -5525,7 +5554,7 @@ apply settle batch applied batchPrevented candidate event =
                   PendingReplacementEffect.targets = Map.empty,
                   PendingReplacementEffect.controller = pid,
                   PendingReplacementEffect.source = ReplacementCandidate.source candidate,
-                  PendingReplacementEffect.bindsArrival = False
+                  PendingReplacementEffect.origin = PendingOrigin.Ordinary
                 }
             queue g = g {GameState.stored = (GameState.stored g) {StoredEffects.pendingReplacementEffects = StoredEffects.pendingReplacementEffects (GameState.stored g) Seq.|> loss}}
         Monad.unless (any (`elem` Game.zoneMembers Zone.Hand pid after) arrived) (State.modify' queue)
@@ -5673,7 +5702,7 @@ apply settle batch applied batchPrevented candidate event =
                                   PendingReplacementEffect.targets = ReplacementCandidate.slots candidate,
                                   PendingReplacementEffect.controller = controller,
                                   PendingReplacementEffect.source = ReplacementCandidate.source candidate,
-                                  PendingReplacementEffect.bindsArrival = False
+                                  PendingReplacementEffect.origin = PendingOrigin.Ordinary
                                 }
                         }
                   }
@@ -5835,7 +5864,7 @@ apply settle batch applied batchPrevented candidate event =
                             PendingReplacementEffect.targets = ReplacementCandidate.slots candidate,
                             PendingReplacementEffect.controller = controller,
                             PendingReplacementEffect.source = ReplacementCandidate.source candidate,
-                            PendingReplacementEffect.bindsArrival = False
+                            PendingReplacementEffect.origin = PendingOrigin.Ordinary
                           }
                   }
             }
@@ -5867,7 +5896,7 @@ apply settle batch applied batchPrevented candidate event =
                                 PendingReplacementEffect.targets = ReplacementCandidate.slots candidate,
                                 PendingReplacementEffect.controller = controller,
                                 PendingReplacementEffect.source = ReplacementCandidate.source candidate,
-                                PendingReplacementEffect.bindsArrival = False
+                                PendingReplacementEffect.origin = PendingOrigin.Ordinary
                               }
                       }
                 }
@@ -6120,7 +6149,7 @@ apply settle batch applied batchPrevented candidate event =
                                     PendingReplacementEffect.targets = Map.insert Binding.triggerSource (Set.singleton (Recipient.ToObject (ReplacementCandidate.source candidate))) (ReplacementCandidate.slots candidate),
                                     PendingReplacementEffect.controller = decider,
                                     PendingReplacementEffect.source = ReplacementCandidate.source candidate,
-                                    PendingReplacementEffect.bindsArrival = False
+                                    PendingReplacementEffect.origin = PendingOrigin.Ordinary
                                   },
                               PendingSkipEffect.extraTurns = GameState.extraTurns gs,
                               PendingSkipEffect.turnMarkers = GameState.turnMarkers gs,
@@ -6247,7 +6276,8 @@ apply settle batch applied batchPrevented candidate event =
     -- 704.5m looks (Parun.Engine.Engine). Both the performer and CR 113.7's source are
     -- the transforming permanent, the entry arm's posture, and so is
     -- Binding.triggerSource, "it" (Olag, Ludevic's Hubris's counters). The
-    -- event survives: the face is already turned.
+    -- event survives: the face is already turned. The drain samples CR 701.27f's
+    -- event again once the row has run (resampleTransformed).
     (ReplacementEffect.TransformR (TransformR.MkTransformR _ (TransformRewrite.RunEffects effects)), ProposedEvent.WouldTransform oid) -> do
       Replacement.consume (ReplacementCandidate.identity candidate)
       gs <- State.get
@@ -6265,7 +6295,7 @@ apply settle batch applied batchPrevented candidate event =
                             PendingReplacementEffect.targets = Map.singleton Binding.triggerSource (Set.singleton (Recipient.ToObject oid)),
                             PendingReplacementEffect.controller = controller,
                             PendingReplacementEffect.source = oid,
-                            PendingReplacementEffect.bindsArrival = False
+                            PendingReplacementEffect.origin = PendingOrigin.AsTransforms
                           }
                   }
             }
@@ -7268,7 +7298,7 @@ queueInstead candidate oid effects =
                             $ ReplacementCandidate.slots candidate,
                         PendingReplacementEffect.controller = controller,
                         PendingReplacementEffect.source = ReplacementCandidate.source candidate,
-                        PendingReplacementEffect.bindsArrival = False
+                        PendingReplacementEffect.origin = PendingOrigin.Ordinary
                       }
               }
         }
