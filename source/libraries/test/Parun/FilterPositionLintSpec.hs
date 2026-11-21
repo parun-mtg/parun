@@ -1336,7 +1336,8 @@ pooledAtom atom = case atom of
 --
 -- A third admits the pooled atoms alone: a printed CR 601.2i cast trigger's
 -- spell filter (Volo, Guide to Monsters, castTriggerCriteria), which
--- Parun.Engine.Event.Match reads in its bearerContext, through framedByBindings.
+-- Parun.Engine.Event.Match reads through framedByBindings off the game the
+-- cast left (`atEvent`).
 -- A Bound name there reads the trigger's bindings, empty for a printed
 -- trigger, so it stays an offence.
 framedNameCounts :: Surveyed -> (Int, Int)
