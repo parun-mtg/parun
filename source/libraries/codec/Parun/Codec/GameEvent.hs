@@ -34,6 +34,7 @@ import qualified Parun.Codec.CountersPlaced as CountersPlaced
 import qualified Parun.Codec.Crewing as Crewing
 import qualified Parun.Codec.DamageEvent as DamageEvent
 import qualified Parun.Codec.DamagePrevented as DamagePrevented
+import qualified Parun.Codec.Daytime as Daytime
 import qualified Parun.Codec.DieResult as DieResult
 import qualified Parun.Codec.Discarded as Discarded
 import qualified Parun.Codec.Drew as Drew
@@ -157,6 +158,7 @@ codec =
       Arm.payload "RolledToVisit" (DieResult.codec PlayerId.codec) GameEvent.RolledToVisit (\x -> case x of GameEvent.RolledToVisit y -> Just y; _ -> Nothing),
       Arm.payload "PlanarDieRolled" PlanarDieRolled.codec GameEvent.PlanarDieRolled (\x -> case x of GameEvent.PlanarDieRolled y -> Just y; _ -> Nothing),
       Arm.optionalPayload "ChaosEnsued" ObjectId.codec GameEvent.ChaosEnsued (\x -> case x of GameEvent.ChaosEnsued y -> Just y; _ -> Nothing),
+      Arm.payload "DaytimeChanged" Daytime.codec GameEvent.DaytimeChanged (\x -> case x of GameEvent.DaytimeChanged y -> Just y; _ -> Nothing),
       Arm.payload "TurnedUpOffDeck" TurnedUpOffDeck.codec GameEvent.TurnedUpOffDeck (\x -> case x of GameEvent.TurnedUpOffDeck y -> Just y; _ -> Nothing),
       Arm.payload "ClassLevelSet" ClassLevelChange.codec GameEvent.ClassLevelSet (\x -> case x of GameEvent.ClassLevelSet y -> Just y; _ -> Nothing),
       Arm.payload "Plotted" ObjectId.codec GameEvent.Plotted (\x -> case x of GameEvent.Plotted y -> Just y; _ -> Nothing),
@@ -246,6 +248,7 @@ tagOf x = case x of
   GameEvent.PlanarDieRolled {} -> "PlanarDieRolled"
   GameEvent.TurnedUpOffDeck {} -> "TurnedUpOffDeck"
   GameEvent.ChaosEnsued {} -> "ChaosEnsued"
+  GameEvent.DaytimeChanged {} -> "DaytimeChanged"
   GameEvent.ClassLevelSet {} -> "ClassLevelSet"
   GameEvent.Plotted {} -> "Plotted"
   GameEvent.BecameTapped {} -> "BecameTapped"

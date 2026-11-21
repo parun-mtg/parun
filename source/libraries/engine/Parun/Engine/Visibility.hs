@@ -135,6 +135,7 @@ witnessed pid logged = case LoggedEvent.event logged of
   GameEvent.PlanarDieRolled {} -> Visibility.Visible
   GameEvent.TurnedUpOffDeck {} -> Visibility.Visible
   GameEvent.ChaosEnsued _ -> Visibility.Visible
+  GameEvent.DaytimeChanged _ -> Visibility.Visible
   GameEvent.ClassLevelSet {} -> Visibility.Visible
   GameEvent.Plotted {} -> Visibility.Visible
   GameEvent.BecameTapped {} -> Visibility.Visible

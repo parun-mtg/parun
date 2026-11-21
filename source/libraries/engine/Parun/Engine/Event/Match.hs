@@ -1139,6 +1139,7 @@ anyTriggerReads event = case event of
   GameEvent.PlanarDieRolled {} -> True
   GameEvent.TurnedUpOffDeck {} -> True
   GameEvent.ChaosEnsued {} -> True
+  GameEvent.DaytimeChanged {} -> True
   GameEvent.ClassLevelSet {} -> True
   GameEvent.Plotted {} -> True
   GameEvent.BecameTapped {} -> True
@@ -2516,6 +2517,11 @@ armMatches bindings frozen board atEvent beforeEvent groupEvents gs bearer you c
   -- still in its planar deck.
   TriggerCondition.ChaosEnsues -> case event of
     GameEvent.ChaosEnsued on -> maybe True (== bearer) on
+    _ -> False
+  -- CR 732.1a: either direction, never the game's first designation, which
+  -- Parun.Engine.Daytime.becomes records no event for.
+  TriggerCondition.DaytimeChanges -> case event of
+    GameEvent.DaytimeChanged _ -> True
     _ -> False
   -- CR 901.8 / 901.9c: the roller, read against CR 109.5's "you" as
   -- PlayerActs does, rolled the Planeswalker symbol.
