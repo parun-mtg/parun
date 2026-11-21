@@ -1864,7 +1864,8 @@ details.pile[open] {
 
 .prompt > button,
 .prompt .actions > button,
-.prompt .passes > button {
+.prompt .passes > button,
+.prompt .until > button {
   width: 100%;
 }
 
@@ -1882,6 +1883,14 @@ details.pile[open] {
 
 .passes > :only-child {
   grid-column: 1 / -1;
+}
+
+/* How far to pass (Question.Until): quieter than the passes above. */
+.until {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 0.4em;
+  font-size: 0.85rem;
 }
 
 .news {

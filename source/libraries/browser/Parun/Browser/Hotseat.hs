@@ -141,18 +141,9 @@ exchange lookUp page seatRef leave request = do
     state <- IORef.readIORef seatRef
     let auto = if paying state || level state == Web.Question.MkAutoPass then Web.Question.paying request else Nothing
         kind = Question.kind $ Request.question request
-        turn = fmap PlayerView.turn (Request.view request)
-        -- The seat's own stop: it asked to pass until the turn ends, which
-        -- holds while the stack is empty, and declares no attackers.
-        skipped = do
-          Monad.guard (Maybe.isJust (skipping state) && skipping state == turn)
-          shown <- Request.view request
-          Monad.guard (null (PlayerView.stack shown))
-          case Text.unpack kind of
-            "ChooseAction" -> fmap R.Number (Web.Question.passIndex request)
-            "DeclareAttackers" -> Just (R.Array [])
-            _ -> Nothing
-    IORef.writeIORef seatRef state {paying = Maybe.isJust auto, skipping = if skipping state == turn then skipping state else Nothing}
+        -- The seat's own stop (Web.Question.passesFor).
+        (skipped, kept) = maybe (Nothing, Nothing) (`Web.Question.passesFor` request) (skipping state)
+    IORef.writeIORef seatRef state {paying = Maybe.isJust auto, skipping = kept}
     let seat = Question.seat $ Request.question request
         -- The board as it stands, while the seat is not asked: redrawn only
         -- when what it shows changed, not at every pass of priority, and
@@ -215,7 +206,9 @@ exchange lookUp page seatRef leave request = do
         Screen.MkQuestion e -> case Web.Question.step pending picked e value of
           Web.Question.MkReplied answered -> do
             Monad.when (e == Web.Question.MkAuto) . IORef.modifyIORef' seatRef $ \s -> s {paying = True}
-            Monad.when (e == Web.Question.MkSkip) . IORef.modifyIORef' seatRef $ \s -> s {skipping = fmap PlayerView.turn (Request.view pending)}
+            case e of
+              Web.Question.MkSkip stop -> IORef.modifyIORef' seatRef $ \s -> s {skipping = Just stop}
+              _ -> pure ()
             Monad.when (e == Web.Question.MkConcede) . IORef.modifyIORef' seatRef $ \s -> s {conceding = True}
             pure answered
           -- A pick made from the card's sheet leaves the sheet open.
@@ -247,8 +240,8 @@ data Seat = MkSeat
     paying :: Bool,
     -- | How much the page answers for the seat (Web.Question.Level).
     level :: Web.Question.Level,
-    -- | The turn the seat asked to pass to the end of (Web.Question.MkSkip).
-    skipping :: Maybe Natural,
+    -- | How far the seat asked to pass (Web.Question.MkSkip).
+    skipping :: Maybe Web.Question.Until,
     -- | Whether the seat conceded (Web.Question.MkConcede).
     conceding :: Bool,
     -- | Each seat's life whenever it changed, beside the turn (Ending.trail).
