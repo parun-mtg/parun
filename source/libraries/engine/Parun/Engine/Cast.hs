@@ -5015,6 +5015,12 @@ castProposed perform baseSpending pid oid sid printedFace castFrom preparedFor k
                           -- while it was being cast turns face up and its reveal
                           -- is offered -- last, past everything that can reject.
                           Event.turnUpKeptDraws
+                          -- CR 603.10: the cast is over, so its board is filed
+                          -- now rather than when the instruction allowing it
+                          -- finishes, which may cast another first (Etali).
+                          -- data/scenarios/curse-of-shaken-faith's two free
+                          -- casts scenario proves it.
+                          State.modify' Trigger.fileBoards
 
 -- CR 702.34a's SECOND static ability -- exile this card instead of putting it
 -- anywhere else any time it would leave the stack -- installed onto the spell's
