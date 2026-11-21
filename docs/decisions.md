@@ -478,7 +478,7 @@ Entries are ordered by the first rule each cites.
   Tainted Remedy. In one combat damage step bob is dealt 1 and his lifelinker
   deals 1, so he loses 1 to the damage and 1 in place of the gain. One loss of
   2, or two of 1?
-- **Rules**: CR 119.3, 120.3f, 120.4d, 614.6, 702.15e; CR of 2026-11-06. Ob
+- **Rules**: CR 119.3, 120.3f, 120.4d, 614.6; CR of 2026-11-06. Ob
   Nixilis's ruling (2023-05-12) totals combat damage and says nothing of a loss
   that is no damage.
 - **Decision**: Two. The loss Tainted Remedy makes happens in the gain's place
@@ -1708,7 +1708,8 @@ Entries are ordered by the first rule each cites.
   action itself, ordering triggers.
 - **Site**: `Parun.Engine.Event.inActiveTeamOrder`, through
   `Parun.Engine.Resolve.Arms.Zones.forEach`,
-  `Parun.Engine.Event.inDrawOrder` and `Parun.Engine.Event.orderEntries`. The scenario "CR 805.6 a nonactive
+  `Parun.Engine.Event.inDrawOrder`, `Parun.Engine.Event.orderEntries` and
+  `Parun.Engine.Event.settleThreads`. The scenario "CR 805.6 a nonactive
   team's Hive Mind copies go in seat order, unasked" proves it.
 - **Issue**: #8206.
 

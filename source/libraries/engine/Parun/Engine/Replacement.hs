@@ -2984,7 +2984,7 @@ instructionRewriteReadsSource rewrite = case rewrite of
 --     opportunity, so every order produces the same board. Only the PROMPT is
 --     elided, never an application.
 --
--- Indistinguishable is `distinguishing` below: equal in `effect` and in CR
+-- Indistinguishable is `interchangeable` below: equal in `effect` and in CR
 -- 614.3's `lifetime`, plus -- for the effects whose application READS the
 -- applying candidate -- equal in CR 109.5's "you". Candidates equal in `effect`
 -- can still differ in `source` and in `controller`, so "equal in `effect`"
@@ -3021,7 +3021,28 @@ instructionRewriteReadsSource rewrite = case rewrite of
 -- and CR 616.1a's bucket is exactly an origin of SelfReplacement, so every
 -- candidate reaching this comparison shares one origin.
 choose :: GameState -> ProposedEvent -> [ReplacementCandidate] -> Game (Maybe ReplacementCandidate)
-choose gs event candidates =
+choose gs event candidates = case candidates of
+  [] -> pure Nothing
+  first : _ ->
+    if interchangeable gs candidates
+      then pure (Just first)
+      else case chooserOf gs event of
+        -- No chooser: the affected object is gone. Apply the canonical first
+        -- rather than prompt nobody -- and in particular make no choice on behalf
+        -- of a player who is not there to make it.
+        Nothing -> pure (Just first)
+        Just pid -> do
+          let decider = Decide.deciderFor pid gs
+          answer <- Game.choose (Prompt.ChooseReplacement decider pid (fmap entryOf candidates))
+          -- Reject-not-repair, as payment and Engine.permute already do: an
+          -- out-of-range index leaves the canonical first standing rather than
+          -- dropping the event or crashing.
+          pure (Just (at candidates answer first))
+
+-- `choose`'s elision: whether every order of these candidates yields the same
+-- board, so CR 616.1 leaves nothing to ask. True of none or one.
+interchangeable :: GameState -> [ReplacementCandidate] -> Bool
+interchangeable gs candidates =
   let -- What two candidates must agree on to be interchangeable here.
       distinguishing c =
         ( ReplacementCandidate.effect c,
@@ -3041,22 +3062,8 @@ choose gs event candidates =
           fmap (\rider -> (PreventionRider.effects rider, Map.delete Binding.triggerSource (PreventionRider.targets rider), PreventionRider.controller rider)) (ReplacementCandidate.rider c)
         )
    in case candidates of
-        [] -> pure Nothing
-        first : rest ->
-          if all (\c -> distinguishing c == distinguishing first) rest || oneSentenceOfChoices candidates
-            then pure (Just first)
-            else case chooserOf gs event of
-              -- No chooser: the affected object is gone. Apply the canonical first
-              -- rather than prompt nobody -- and in particular make no choice on behalf
-              -- of a player who is not there to make it.
-              Nothing -> pure (Just first)
-              Just pid -> do
-                let decider = Decide.deciderFor pid gs
-                answer <- Game.choose (Prompt.ChooseReplacement decider pid (fmap entryOf candidates))
-                -- Reject-not-repair, as payment and Engine.permute already do: an
-                -- out-of-range index leaves the canonical first standing rather than
-                -- dropping the event or crashing.
-                pure (Just (at candidates answer first))
+        [] -> True
+        first : rest -> all (\c -> distinguishing c == distinguishing first) rest || oneSentenceOfChoices candidates
 
 -- Does which of two rows alike in `effect` applied show through this one's source?
 -- Two Mending Hands leave no trace of it, so they are not a choice.
