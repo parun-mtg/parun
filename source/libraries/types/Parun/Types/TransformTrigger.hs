@@ -10,6 +10,10 @@ data TransformTrigger = MkTransformTrigger
     permanent :: ActingPermanent.ActingPermanent,
     -- | CR 701.27f / 201.5: "transforms into [its own name]", the name the
     -- bearer has now, so a copy under another name (Olag) reads its own.
+    --
+    -- Unprinted: beside a Matching subject, which compares the watcher's name
+    -- with the transformer's; Parun.FilterPositionLintSpec's "CR 701.27f no
+    -- card writes intoItself beside a Matching subject" keeps it out.
     intoItself :: Bool
   }
   deriving (Eq, Ord, Show)

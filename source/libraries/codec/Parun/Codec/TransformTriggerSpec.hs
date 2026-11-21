@@ -19,12 +19,13 @@ spec s = Spec.describe s "Parun.Codec.TransformTrigger" $ do
       TransformTrigger.codec
       TransformTrigger.defaultValue {TransformTrigger.intoItself = True}
       " {\"intoItself\":true} "
-  -- Cult of the Waxing Moon's bystander Filter, and intoItself beside it so
-  -- both keys ride the trip.
-  Spec.it s "round-trips every field" $
+  -- Cult of the Waxing Moon's bystander Filter. No printable value writes both
+  -- keys: intoItself beside a Matching subject is unprinted
+  -- (Parun.Types.TransformTrigger), and the case above carries it.
+  Spec.it s "round-trips a Matching subject" $
     Common.assertCodec
       s
       TransformTrigger.codec
-      (TransformTrigger.MkTransformTrigger (ActingPermanent.Matching (Filter.Not (Filter.HasSubtype Subtype.Human))) True)
-      " {\"permanent\":{\"type\":\"Matching\",\"value\":{\"type\":\"Not\",\"value\":{\"type\":\"HasSubtype\",\"value\":\"Human\"}}},\"intoItself\":true} "
+      TransformTrigger.defaultValue {TransformTrigger.permanent = ActingPermanent.Matching (Filter.Not (Filter.HasSubtype Subtype.Human))}
+      " {\"permanent\":{\"type\":\"Matching\",\"value\":{\"type\":\"Not\",\"value\":{\"type\":\"HasSubtype\",\"value\":\"Human\"}}}} "
   Spec.it s "has a schema" $ Common.assertHasSchema s TransformTrigger.codec

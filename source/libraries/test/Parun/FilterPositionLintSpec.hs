@@ -240,6 +240,7 @@ import qualified Parun.Types.TargetSlot as TargetSlot
 import qualified Parun.Types.TopOfLibrary as TopOfLibrary
 import qualified Parun.Types.TopOfLibraryUntil as TopOfLibraryUntil
 import qualified Parun.Types.Trait as Trait
+import qualified Parun.Types.TransformTrigger as TransformTrigger
 import qualified Parun.Types.TriggerCondition as TriggerCondition
 import qualified Parun.Types.TriggerFrequency as TriggerFrequency
 import qualified Parun.Types.TriggeredAbility as TriggeredAbility
@@ -438,6 +439,24 @@ eachOccurrenceWholeBatches value = case value of
         here = [value | keyed "wholeBatch" (Value.boolean True), keyed "batching" (Value.String (String.MkString (Text.pack "EachOccurrence")))]
      in here <> concatMap (eachOccurrenceWholeBatches . Pair.value) pairs
   Value.Array a -> concatMap eachOccurrenceWholeBatches (Array.unwrap a)
+  Value.String _ -> []
+  Value.Null _ -> []
+  Value.Boolean _ -> []
+  Value.Number _ -> []
+
+-- Every encoded object pairing `intoItself: true` with a Matching `permanent`:
+-- Parun.Types.TransformTrigger's unprinted combination.
+matchingIntoItselves :: Value.Value -> [Value.Value]
+matchingIntoItselves value = case value of
+  Value.Object o ->
+    let pairs = Object.unwrap o
+        named k p = String.unwrap (Pair.name p) == Text.pack k
+        matching v = case v of
+          Value.Object inner -> any (\p -> named "type" p && Pair.value p == Value.String (String.MkString (Text.pack "Matching"))) (Object.unwrap inner)
+          _ -> False
+        here = [value | any (\p -> named "intoItself" p && Pair.value p == Value.boolean True) pairs, any (\p -> named "permanent" p && matching (Pair.value p)) pairs]
+     in here <> concatMap (matchingIntoItselves . Pair.value) pairs
+  Value.Array a -> concatMap matchingIntoItselves (Array.unwrap a)
   Value.String _ -> []
   Value.Null _ -> []
   Value.Boolean _ -> []
@@ -3816,6 +3835,20 @@ filterPositionLintSpec s registry corpus = Spec.describe s "Lint" $ do
           _ -> ta
         planted = (S.combinedFace galleon) {Face.triggeredAbilities = fmap perSource (Face.triggeredAbilities (S.combinedFace galleon))}
     Spec.assertEqWith s "a planted per-source whole batch is seen" (length (found planted)) 1
+  -- Parun.Types.TransformTrigger's intoItself reads under a Self subject only:
+  -- no card prints "whenever a permanent transforms into [this card's name]".
+  Spec.it s "CR 701.27f no card writes intoItself beside a Matching subject" $ do
+    ps <- S.allPrintings s corpus
+    cult <- S.printingOf s registry "Cult of the Waxing Moon"
+    let found = matchingIntoItselves . Codec.encode (Face.Codec.codec Card.codec)
+        offenders = filter (anyFace (not . null . found) . Printing.card) ps
+    Spec.assertEqWith s "no card pairs them" (fmap (S.nameOf . Printing.card) offenders) []
+    -- Not vacuous: the Cult's bystander trigger read into itself is seen.
+    let intoItself ta = case TriggeredAbility.condition ta of
+          TriggerCondition.Transforms watched -> ta {TriggeredAbility.condition = TriggerCondition.Transforms watched {TransformTrigger.intoItself = True}}
+          _ -> ta
+        planted = (S.combinedFace cult) {Face.triggeredAbilities = fmap intoItself (Face.triggeredAbilities (S.combinedFace cult))}
+    Spec.assertEqWith s "a planted Matching into itself is seen" (length (found planted)) 1
   -- CR 601.2c's baked "that player's graveyard", for HeldByPlayer's reason:
   -- Parun.Engine.Target.bakePerPlayer writes it, and no card may name a seat.
   Spec.it s "CR 601.2c no card writes ZoneScope.BoundPlayer" $ do

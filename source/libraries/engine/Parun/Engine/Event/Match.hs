@@ -2045,11 +2045,14 @@ armMatches bindings frozen board atEvent beforeEvent groupEvents gs bearer you c
   -- -- and CR 701.27b is why they are two conditions rather than one, turning
   -- over and turning face up being different game actions.
   --
-  -- Both halves are read off the EVENT, neither off the board. The board at the
-  -- CR 117.5 scan is not the board CR 701.27f asks about: a permanent that
-  -- transformed twice before the scan shows only its last face, which would
-  -- answer this arm wrong on both events. Parun.Types.Transformed carries the
-  -- sample for that reason.
+  -- The face turned into is read off the EVENT, not the board: a permanent
+  -- that transformed twice before the CR 117.5 scan shows only its last face,
+  -- which would answer this arm wrong on both events. Parun.Types.Transformed
+  -- carries the sample for that reason. The bearer's own name is read at the
+  -- scan (viewWithLastKnown, so a bearer gone since is still read, CR 608.2h).
+  -- For a Self bearer the sample is the bearer just after the turn, so the two
+  -- differ only when it turned again before the scan, and then the ability the
+  -- scan reads is the shown face's, whose name is the one read here.
   --
   -- An intersection rather than equality because CR 709.4a admits several names
   -- and CR 708.2a admits none; a permanent with no name matches no named face,
