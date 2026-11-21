@@ -1,0 +1,176 @@
+{
+  "board": {
+    "active": "alice",
+    "seats": [
+      {
+        "name": "alice",
+        "team": 1,
+        "battlefield": [
+          {
+            "card": "Grizzly Bears",
+            "label": "abears"
+          },
+          {
+            "card": "Swamp",
+            "label": "s1"
+          },
+          {
+            "card": "Swamp",
+            "label": "s2"
+          }
+        ],
+        "graveyard": [
+          {
+            "card": "Thunder-Thrash Elder",
+            "label": "aelder"
+          }
+        ],
+        "hand": [
+          {
+            "card": "Exhume",
+            "label": "exhume"
+          }
+        ],
+        "library": [
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          }
+        ]
+      },
+      {
+        "name": "bob",
+        "team": 2,
+        "library": [
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          }
+        ]
+      },
+      {
+        "name": "carol",
+        "team": 2,
+        "library": [
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          }
+        ]
+      },
+      {
+        "name": "dave",
+        "team": 1,
+        "battlefield": [
+          {
+            "card": "Hill Giant",
+            "label": "dgiant"
+          }
+        ],
+        "graveyard": [
+          {
+            "card": "Frontier Mastodon",
+            "label": "mastodon"
+          }
+        ],
+        "library": [
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          }
+        ]
+      }
+    ],
+    "sharedTeamTurns": true,
+    "step": "PrecombatMain",
+    "turn": 2
+  },
+  "description": "CR 805.6 / 701.21a: Thunder-Thrash Elder exhumed beside a teammate's Frontier Mastodon raises no team order, since the devour takes only alice's creatures and ferocious counts only dave's",
+  "note": "Shared team turns, alice and dave against bob and carol. Alice's Exhume returns her Elder and dave's Mastodon together. No ChooseActivePlayer prompt: the Elder devours only alice's Grizzly Bears, and the Mastodon's ferocious counts only the creatures dave controls, whose Hill Giant has power 3, so the Mastodon enters 3/2 in either order and the Elder 4/4.",
+  "timeline": [
+    {
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 2,
+      "do": {
+        "Cast": {
+          "mana": [
+            "$s1",
+            "$s2"
+          ],
+          "object": "$exhume"
+        }
+      }
+    },
+    {
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 2,
+      "do": "Pass"
+    },
+    {
+      "player": "bob",
+      "step": "PrecombatMain",
+      "turn": 2,
+      "do": "Pass"
+    },
+    {
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 2,
+      "do": {
+        "Answer": {
+          "prompt": "ChooseAnyNumberToSacrifice",
+          "with": [
+            "$abears"
+          ]
+        }
+      }
+    },
+    {
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 2,
+      "check": {
+        "PowerToughness": {
+          "object": "Thunder-Thrash Elder",
+          "power": 4,
+          "toughness": 4
+        }
+      }
+    },
+    {
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 2,
+      "check": {
+        "PowerToughness": {
+          "object": "Frontier Mastodon",
+          "power": 3,
+          "toughness": 2
+        }
+      }
+    },
+    {
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 2,
+      "check": {
+        "Count": {
+          "card": "Hill Giant",
+          "count": 1,
+          "player": "dave",
+          "zone": "Battlefield"
+        }
+      }
+    }
+  ]
+}

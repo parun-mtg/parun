@@ -1,0 +1,208 @@
+{
+  "board": {
+    "active": "bob",
+    "seats": [
+      {
+        "name": "alice",
+        "battlefield": [
+          {
+            "card": "Sunpetal Grove",
+            "label": "grove"
+          },
+          {
+            "card": "Temple Garden",
+            "label": "garden"
+          }
+        ],
+        "hand": [
+          {
+            "card": "Faith's Reward",
+            "label": "reward"
+          }
+        ],
+        "library": [
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          }
+        ],
+        "manaPool": "WWWW"
+      },
+      {
+        "name": "bob",
+        "hand": [
+          {
+            "card": "Stone Rain",
+            "label": "rain1"
+          },
+          {
+            "card": "Stone Rain",
+            "label": "rain2"
+          }
+        ],
+        "library": [
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          }
+        ],
+        "manaPool": "RRRRRR"
+      }
+    ],
+    "step": "PrecombatMain",
+    "turn": 2
+  },
+  "description": "CR 616.1 / 614.1d: Sunpetal Grove returned beside Temple Garden asks no order, since paying life cannot change the Grove's land count",
+  "note": "On bob's turn his two Stone Rains put alice's Grove and Temple Garden into her graveyard, and alice's Faith's Reward returns both. No OrderEntries prompt: the Garden's life payment reads and changes only life totals, and the Grove counts only the Forests and Plains alice controls, which neither entry changes. The Grove does not see the Garden entering with it, so it enters tapped; alice pays 2 life for the Garden.",
+  "timeline": [
+    {
+      "player": "bob",
+      "step": "PrecombatMain",
+      "turn": 2,
+      "do": {
+        "Cast": {
+          "object": "$rain1",
+          "targets": [
+            "$grove"
+          ]
+        }
+      }
+    },
+    {
+      "player": "bob",
+      "step": "PrecombatMain",
+      "turn": 2,
+      "do": "Pass"
+    },
+    {
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 2,
+      "do": "Pass"
+    },
+    {
+      "player": "bob",
+      "step": "PrecombatMain",
+      "turn": 2,
+      "do": {
+        "Cast": {
+          "object": "$rain2"
+        }
+      }
+    },
+    {
+      "player": "bob",
+      "step": "PrecombatMain",
+      "turn": 2,
+      "do": "Pass"
+    },
+    {
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 2,
+      "do": "Pass"
+    },
+    {
+      "player": "bob",
+      "step": "PrecombatMain",
+      "turn": 2,
+      "do": "Pass"
+    },
+    {
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 2,
+      "do": {
+        "Cast": {
+          "object": "$reward"
+        }
+      }
+    },
+    {
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 2,
+      "do": "Pass"
+    },
+    {
+      "player": "bob",
+      "step": "PrecombatMain",
+      "turn": 2,
+      "do": "Pass"
+    },
+    {
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 2,
+      "do": {
+        "Answer": {
+          "prompt": "ChoosePayLifeOnEntry",
+          "with": "Exercises"
+        }
+      }
+    },
+    {
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 2,
+      "do": {
+        "Answer": {
+          "prompt": "OrderTimestamps",
+          "with": [
+            0,
+            1
+          ]
+        }
+      }
+    },
+    {
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 2,
+      "check": {
+        "Tapped": {
+          "object": "Sunpetal Grove",
+          "tapped": true
+        }
+      }
+    },
+    {
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 2,
+      "check": {
+        "Tapped": {
+          "object": "Temple Garden",
+          "tapped": false
+        }
+      }
+    },
+    {
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 2,
+      "check": {
+        "Life": {
+          "player": "alice",
+          "life": 18
+        }
+      }
+    }
+  ]
+}

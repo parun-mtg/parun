@@ -757,12 +757,14 @@ amongPending under members body = do
 -- Splendor scenarios, an Open the Vaults pair for Resolve's move and a
 -- Banishing Light pair for changeZonesTogether; a devour changing Blackcleave
 -- Cliffs' condition, and Sunpetal Grove's before its row is live, by the
--- cr-616-1 Elder pairs; and a pair that commutes left unasked by the cr-616-1
--- Ixidron and Carrion Crow scenario. The seats' APNAP order is proved by the
+-- cr-616-1 Elder pairs; and pairs that commute left unasked by the cr-616-1
+-- Ixidron and Carrion Crow, Sunpetal Grove and Temple Garden, and Elder and
+-- Horned Loch-Whale scenarios. The seats' APNAP order is proved by the
 -- cr-616-1 Ixidron and Clone pair there, on Resolve's move by its two Exhume
 -- scenarios, and the team's order by the cr-805-6 Exhume pair in
--- data/scenarios/team, and two teammates' devours left unasked by the cr-805-6
--- Thunder-Thrash Elders scenario there.
+-- data/scenarios/team, and two teammates' devours, and a devour beside a
+-- teammate's ferocious, left unasked by the cr-805-6 Thunder-Thrash Elder
+-- scenarios there.
 --
 -- The token and conjure roads do not call this: one creation's members are
 -- copies of one card, whose orders are indistinguishable (CR 616.1g's Voice
