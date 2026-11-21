@@ -26,8 +26,23 @@ const savedArrived = new Promise((resolve) => {
 });
 onmessage = ({ data }) => {
   if ("saved" in data) savedDecks(data.saved);
-  else dispatch?.(data.type, data.path, data.value);
+  else if ("linked" in data) {
+    linked.push(JSON.stringify(data.linked));
+    globalThis.parunWake?.();
+  } else dispatch?.(data.type, data.path, data.value);
 };
+
+// The data channels to other browsers live on the page (page.js), since a
+// worker has no RTCPeerConnection: Haskell asks for each step through
+// parunLink, and what each channel says (Parun.Browser.Linked) waits here,
+// a line of JSON each, until Haskell takes it.
+let linked = [];
+globalThis.parunTakeLinks = () => {
+  const taken = linked.join("\n");
+  linked = [];
+  return taken;
+};
+globalThis.parunLink = (op) => postMessage({ link: op });
 
 // Each load phase's time goes to the page.
 let started = false;
@@ -101,7 +116,8 @@ async function gunzip(url) {
 
 const query = new URLSearchParams(location.search);
 // The engine compiles while the data downloads, and starts on an empty /data.
-const compiling = WebAssembly.compileStreaming(fetch("./parun.wasm"));
+const engineFile = "./parun.wasm";
+const compiling = WebAssembly.compileStreaming(fetch(engineFile));
 const mounted = new PreopenDirectory("/data", new Map());
 
 // Saved decks (Parun.Browser.saveDeck) live at decks/saved/<slug>.txt,
@@ -176,9 +192,12 @@ fetchAll();
 
 // A replay names its scenario, the empty name for the list of them, and may
 // name a position (&at=…) and play on from it (&branch).
-// The auto-pass level the page kept (page.js) goes in as parun_level.
-const passed = ["level", "scenario", "at", "branch"].filter((key) => query.has(key)).map((key) => `parun_${key}=${query.get(key)}`);
-const wasi = new WASI([], ["parun_datadir=/data", ...passed], [
+// The auto-pass level the page kept (page.js) goes in as parun_level, and a
+// host's code from a link to join its game as parun_offer. The engine's
+// file, which script/build-web.sh names by its hash, is the build another
+// page must share to play with this one (Parun.Web.Link).
+const passed = ["level", "scenario", "at", "branch", "offer"].filter((key) => query.has(key)).map((key) => `parun_${key}=${query.get(key)}`);
+const wasi = new WASI([], ["parun_datadir=/data", `parun_build=${engineFile.slice(2)}`, ...passed], [
   new OpenFile(new File([])),
   ConsoleStdout.lineBuffered((line) => console.log(line)),
   ConsoleStdout.lineBuffered((line) => console.warn(line)),

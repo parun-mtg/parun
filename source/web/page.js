@@ -6,6 +6,10 @@ const root = document.getElementById("app");
 const events = ["click", "input", "change"];
 const engineUrl = new URL("./engine.js", import.meta.url);
 engineUrl.search = location.search;
+// A host's link (Parun.Web.Link) carries its code after #offer=, which the
+// engine reads once as its query's "offer".
+const offered = new URLSearchParams(location.hash.slice(1)).get("offer");
+if (offered) engineUrl.searchParams.set("offer", offered);
 // The auto-pass level last chosen (Parun.Web.Question.Level) starts the game.
 const level = localStorage.getItem("parun-level");
 if (level !== null) engineUrl.searchParams.set("level", level);
@@ -16,7 +20,7 @@ const deckKey = "parun-deck:";
 engine.postMessage({ saved: Object.fromEntries(Object.keys(localStorage).filter((key) => key.startsWith(deckKey)).map((key) => [key.slice(deckKey.length), localStorage.getItem(key)])) });
 // The query is read once, by the engine at its start (Parun.Browser.Shell's
 // opening); the page moves on without it.
-if (location.search) history.replaceState(null, "", location.pathname);
+if (location.search || offered) history.replaceState(null, "", location.pathname);
 // Safari runs WebAssembly far slower outside a secure context (#8419), and
 // plain http from a network address is not one.
 if (!isSecureContext) document.getElementById("insecure").hidden = false;
@@ -536,5 +540,123 @@ engine.onmessage = ({ data }) => {
   else if ("phase" in data) note(data.phase);
   else if ("save" in data) localStorage.setItem(deckKey + data.save.slug, data.save.text);
   else if ("forget" in data) localStorage.removeItem(deckKey + data.forget);
+  else if ("link" in data) linkStep(data.link);
 };
 engine.onerror = (error) => note(`engine failed: ${error.message}`);
+
+// Seats played from another browser (Parun.Web.Link): one peer connection
+// and one reliable, ordered data channel each, by the engine's number for
+// it (Parun.Browser.linkHost). Two codes, swapped by hand, connect them: the
+// host's offer, as a link, and the guest's reply. Each is a session
+// description, deflated and base64url-encoded, made once ICE gathering is
+// done, so one code goes each way. Only the STUN server sees either page.
+const links = new Map();
+const iceServers = [{ urls: "stun:stun.l.google.com:19302" }];
+// A line goes in pieces small enough for every browser's channel, each
+// marked with whether more of the line follows.
+const piece = 16000;
+function linked(seat, kind, text = "") {
+  engine.postMessage({ linked: { seat, kind, text } });
+}
+async function pack(description) {
+  const deflated = new Blob([JSON.stringify({ type: description.type, sdp: description.sdp })]).stream().pipeThrough(new CompressionStream("deflate-raw"));
+  const bytes = new Uint8Array(await new Response(deflated).arrayBuffer());
+  let binary = "";
+  for (const byte of bytes) binary += String.fromCharCode(byte);
+  return btoa(binary).replaceAll("+", "-").replaceAll("/", "_").replace(/=+$/, "");
+}
+async function unpack(code) {
+  const base64 = code.trim().replaceAll("-", "+").replaceAll("_", "/");
+  const bytes = Uint8Array.from(atob(base64 + "=".repeat((4 - (base64.length % 4)) % 4)), (c) => c.charCodeAt(0));
+  return JSON.parse(await new Response(new Blob([bytes]).stream().pipeThrough(new DecompressionStream("deflate-raw"))).text());
+}
+function gathered(connection) {
+  return new Promise((resolve) => {
+    const done = () => connection.iceGatheringState === "complete" && resolve();
+    connection.addEventListener("icegatheringstatechange", done);
+    done();
+  });
+}
+// A link's channel says only while it is the seat's current one; a dropped
+// connection closes it, and nothing reconnects.
+function listen(seat, link, channel) {
+  const current = () => links.get(seat) === link;
+  let partial = "";
+  link.channel = channel;
+  channel.onopen = () => current() && linked(seat, "open");
+  channel.onmessage = ({ data }) => {
+    partial += data.slice(1);
+    if (data[0] === "." && current()) {
+      linked(seat, "message", partial);
+      partial = "";
+    }
+  };
+  channel.onclose = () => current() && drop(seat, link);
+  if (channel.readyState === "open") linked(seat, "open");
+}
+function drop(seat, link) {
+  links.delete(seat);
+  link.channel?.close();
+  link.connection.close();
+  linked(seat, "closed");
+}
+function opened(seat) {
+  const old = links.get(seat);
+  if (old) {
+    links.delete(seat);
+    old.channel?.close();
+    old.connection.close();
+  }
+  const link = { connection: new RTCPeerConnection({ iceServers }), channel: null };
+  links.set(seat, link);
+  link.connection.addEventListener("connectionstatechange", () => {
+    if (["failed", "closed"].includes(link.connection.connectionState) && links.get(seat) === link) drop(seat, link);
+  });
+  return link;
+}
+async function linkStep(step) {
+  const { op, seat } = step;
+  try {
+    if (op === "host") {
+      const link = opened(seat);
+      listen(seat, link, link.connection.createDataChannel("parun", { ordered: true }));
+      await link.connection.setLocalDescription(await link.connection.createOffer());
+      await gathered(link.connection);
+      const url = new URL(location.pathname, location.origin);
+      url.hash = `offer=${await pack(link.connection.localDescription)}`;
+      if (links.get(seat) === link) linked(seat, "offer", url.href);
+    } else if (op === "accept") {
+      await links.get(seat)?.connection.setRemoteDescription(await unpack(step.code));
+    } else if (op === "join") {
+      const link = opened(seat);
+      link.connection.addEventListener("datachannel", ({ channel }) => listen(seat, link, channel));
+      await link.connection.setRemoteDescription(await unpack(step.code));
+      await link.connection.setLocalDescription(await link.connection.createAnswer());
+      await gathered(link.connection);
+      if (links.get(seat) === link) linked(seat, "reply", await pack(link.connection.localDescription));
+    } else if (op === "send") {
+      const channel = links.get(seat)?.channel;
+      if (channel?.readyState === "open") for (let at = 0; at < step.text.length || at === 0; at += piece) channel.send((at + piece >= step.text.length ? "." : "+") + step.text.slice(at, at + piece));
+    } else if (op === "close") {
+      const link = links.get(seat);
+      if (link) {
+        links.delete(seat);
+        link.channel?.close();
+        link.connection.close();
+      }
+    }
+  } catch (problem) {
+    // A code that does not read, say, ends the link.
+    console.warn(problem);
+    const link = links.get(seat);
+    if (link) drop(seat, link);
+    else linked(seat, "closed");
+  }
+}
+// Leaving the page ends every link at once, so the other side stops.
+addEventListener("pagehide", () => {
+  for (const link of links.values()) {
+    link.channel?.close();
+    link.connection.close();
+  }
+});

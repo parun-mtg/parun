@@ -69,39 +69,49 @@ data Abandoned = MkAbandonedGame
 
 instance Exception.Exception Abandoned
 
--- | A game between these deck files (the player's first) on the page,
--- shuffled afresh, every request line answered there
--- (Parun.Web.Question) at the auto-pass level kept in `levelRef`, and
--- left with the level last chosen there; leaving for the home screen
--- through `leave`: how it came out, or why it could not start.
-game :: Browser.Page Screen.Event -> Registry.Registry Identity.Identity -> IORef.IORef Web.Question.Level -> NonEmpty.NonEmpty FilePath -> IO Leave -> IO (Either [Text.Text] Played)
-game page registry levelRef seats leave = do
-  seatRef <- IORef.newIORef . newSeat =<< IORef.readIORef levelRef
+-- | A game between these decks, each a label and its list's text (the
+-- player's first), on the page, shuffled afresh: every request line of the
+-- player's seat answered there (Parun.Web.Question) at the auto-pass level
+-- kept in `levelRef`, and left with the level last chosen there; each seat
+-- in `remotes` answered by its own exchange (Parun.Web.Link.remote), and
+-- every other by the random bot; leaving for the home screen through
+-- `leave`. Once over, `tell` is given each seat's verdict, what is said of
+-- the game and its scenario file: how it came out, or why it could not
+-- start.
+game :: Browser.Page Screen.Event -> Registry.Registry Identity.Identity -> IORef.IORef Web.Question.Level -> NonEmpty.NonEmpty (FilePath, Text.Text) -> Map.Map PlayerId.PlayerId (Protocol.Exchange IO) -> ((PlayerId.PlayerId -> Ending.Verdict) -> [Text.Text] -> Text.Text -> IO ()) -> IO Leave -> IO (Either [Text.Text] Played)
+game page registry levelRef seats remotes tell leave = do
+  seatRef <- IORef.newIORef . newSeat player =<< IORef.readIORef levelRef
   keepingLevel levelRef seatRef . Exception.handle (\MkAbandonedGame -> pure (Right MkAbandoned)) $ do
-    listed <- traverse (Command.load registry) seats
+    let listed = fmap (uncurry (Command.loadText registry)) seats
     case sequenceA listed of
       Left _ -> pure (Left (foldMap (Either.fromLeft []) listed))
       Right lists -> do
-        settled <- Command.settle Nothing (zip (NonEmpty.toList seats) (NonEmpty.toList lists))
+        settled <- Command.settle Nothing (zip (fmap fst (NonEmpty.toList seats)) (NonEmpty.toList lists))
         case settled of
           Left problems -> pure (Left problems)
           Right format -> do
             seed <- Key.fresh
-            (outcome, recorded) <- Command.game (exchange (Identity.runIdentity . Interpreter.chosenCard registry) page seatRef leave) (options (Natural.length seats)) registry format (fmap DeckList.deck lists) seed
+            let here = exchange (Identity.runIdentity . Interpreter.chosenCard registry) page seatRef leave
+            (outcome, recorded) <- Command.game (Protocol.bySeat remotes here) (options (Natural.length seats) (Map.keysSet remotes)) registry format (fmap DeckList.deck lists) seed
             -- What the player saw after their last decision: the killing blow, say.
             Monad.forM_ outcome $ IORef.modifyIORef' seatRef . witness . PlayerView.Engine.viewFor player . snd
             finished <- IORef.readIORef seatRef
-            pure . Right . MkFinished $ Ending.MkEnding (verdictOf outcome) (either (\reason -> [Text.pack "The game stopped: " <> reason <> Text.pack "."]) (\(result, gs) -> Wording.result result : Wording.departures gs) outcome) (Command.rendered recorded) (loggedFor player finished) player (Foldable.toList (lives finished))
+            let said = either (\reason -> [Text.pack "The game stopped: " <> stopped reason <> Text.pack "."]) (\(result, gs) -> Wording.result result : Wording.departures gs) outcome
+                -- A remote seat's exchange ends only when its channel closes.
+                stopped reason = if not (Map.null remotes) && reason == Text.pack "end of input" then Text.pack "a player's connection closed" else reason
+                scenario = Command.rendered recorded
+            tell (`verdictOf` outcome) said scenario
+            pure . Right . MkFinished $ Ending.MkEnding (verdictOf player outcome) said scenario (loggedFor player finished) player (Foldable.toList (lives finished))
 
 -- | Runs a game, then keeps the auto-pass level its seat ended on.
 keepingLevel :: IORef.IORef Web.Question.Level -> IORef.IORef Seat -> IO a -> IO a
 keepingLevel levelRef seatRef run = run `Exception.finally` (IORef.readIORef seatRef >>= IORef.writeIORef levelRef . level)
 
--- | How the game ended for the seat the page plays.
-verdictOf :: Either a (Result.Result, b) -> Ending.Verdict
-verdictOf outcome = case outcome of
+-- | How the game ended for this seat.
+verdictOf :: PlayerId.PlayerId -> Either a (Result.Result, b) -> Ending.Verdict
+verdictOf seat outcome = case outcome of
   Left _ -> Ending.MkStopped
-  Right (Result.Won pid, _) -> if pid == player then Ending.MkWon else Ending.MkLost
+  Right (Result.Won pid, _) -> if pid == seat then Ending.MkWon else Ending.MkLost
   Right (Result.TeamWon _, _) -> Ending.MkStopped
   Right (Result.Drawn, _) -> Ending.MkDrawn
 
@@ -109,10 +119,10 @@ verdictOf outcome = case outcome of
 player :: PlayerId.PlayerId
 player = PlayerId.MkPlayerId 0
 
--- | The player is seat 1, over the line protocol, of so many seats; the
--- random bot is every other.
-options :: Natural -> PlayOptions.PlayOptions
-options count = PlayOptions.none {PlayOptions.json = True, PlayOptions.bots = Set.fromList [2 .. count]}
+-- | Of so many seats, the player's (seat 1) and each remote one speak the
+-- line protocol; the random bot plays every other.
+options :: Natural -> Set.Set PlayerId.PlayerId -> PlayOptions.PlayOptions
+options count remote = PlayOptions.none {PlayOptions.json = True, PlayOptions.bots = Set.fromList [n | n <- [2 .. count], Set.notMember (Command.idOf n) remote]}
 
 -- | One request answered on the page, as values (Protocol.Exchange): a reply the seat is never asked
 -- for, or auto's next source once the seat chose auto for this payment, at
@@ -252,8 +262,8 @@ data Seat = MkSeat
 
 -- | The page's state before its first request line, facing the seat it
 -- plays, at that auto-pass level.
-newSeat :: Web.Question.Level -> Seat
-newSeat initial = MkSeat (Just player) False initial Nothing False Seq.empty Nothing Map.empty Map.empty Map.empty
+newSeat :: PlayerId.PlayerId -> Web.Question.Level -> Seat
+newSeat seat initial = MkSeat (Just seat) False initial Nothing False Seq.empty Nothing Map.empty Map.empty Map.empty
 
 -- | The entries a seat has read so far, oldest first.
 loggedFor :: PlayerId.PlayerId -> Seat -> Seq.Seq Log.Entry

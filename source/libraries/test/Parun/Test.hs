@@ -1089,6 +1089,7 @@ import qualified Parun.RecordSpec
 import qualified Parun.RecruitSpec
 import qualified Parun.Registry as Registry
 import qualified Parun.RegistrySpec
+import qualified Parun.RemoteSeatSpec
 import qualified Parun.RemoveCounterSpec
 import qualified Parun.ReplacementSpec
 import qualified Parun.ReplaySpec
@@ -1139,6 +1140,7 @@ import qualified Parun.Web.EndingSpec
 import qualified Parun.Web.HomeSpec
 import qualified Parun.Web.HtmlSpec
 import qualified Parun.Web.IconSpec
+import qualified Parun.Web.LinkSpec
 import qualified Parun.Web.LoadingSpec
 import qualified Parun.Web.LobbySpec
 import qualified Parun.Web.ManaSpec
@@ -2269,6 +2271,7 @@ spec s reference corpus = do
   Parun.SaddleSpec.spec s registry
   Parun.SagaSpec.spec s registry
   Parun.ProtocolSpec.spec s registry
+  Parun.RemoteSeatSpec.spec s registry
   Parun.BotSpec.spec s registry
   Parun.PlaySpec.spec s registry
   Parun.RecordSpec.spec s registry
@@ -2317,6 +2320,7 @@ spec s reference corpus = do
   Parun.Web.BuilderSpec.spec s
   Parun.Web.CardIndexSpec.spec s
   Parun.Web.LobbySpec.spec s
+  Parun.Web.LinkSpec.spec s
   Parun.Web.IconSpec.spec s
   Parun.Web.ManaSpec.spec s
   Parun.Web.ReplaySpec.spec s

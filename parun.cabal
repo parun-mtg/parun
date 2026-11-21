@@ -2793,6 +2793,7 @@ library test
     Parun.RecordSpec
     Parun.RecruitSpec
     Parun.RegistrySpec
+    Parun.RemoteSeatSpec
     Parun.RemoveCounterSpec
     Parun.ReplacementSpec
     Parun.ReplaySpec
@@ -4064,6 +4065,9 @@ library web
     Parun.Web.HtmlSpec
     Parun.Web.Icon
     Parun.Web.IconSpec
+    Parun.Web.Join
+    Parun.Web.Link
+    Parun.Web.LinkSpec
     Parun.Web.Loading
     Parun.Web.LoadingSpec
     Parun.Web.Lobby
@@ -4090,6 +4094,7 @@ library browser
     parun:exceptions,
     parun:extra,
     parun:interpreter,
+    parun:json-codec,
     parun:play,
     parun:registry,
     parun:scenario,
@@ -4104,6 +4109,7 @@ library browser
   -- cabal-gild: discover source/libraries/browser
   exposed-modules:
     Parun.Browser
+    Parun.Browser.Guest
     Parun.Browser.Hotseat
     Parun.Browser.Replay
     Parun.Browser.Shell
