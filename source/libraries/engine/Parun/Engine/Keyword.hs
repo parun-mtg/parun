@@ -8132,7 +8132,7 @@ demonstrate =
           Optionality.Mandatory
           Nothing
           ( Seq.fromList
-              [ Effect.ChoosePlayer (ChoosePlayer.MkChoosePlayer (PlayerScope.Related PlayerRelation.Opponent) demonstrateOpponent Nothing),
+              [ Effect.ChoosePlayer (ChoosePlayer.MkChoosePlayer (PlayerScope.Related PlayerRelation.Opponent) demonstrateOpponent Nothing False),
                 copyBy (PlayerRef.InSlot demonstrateOpponent)
               ]
           )

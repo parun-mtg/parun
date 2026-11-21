@@ -1384,12 +1384,18 @@ playSubgame runSubgame resolving slot = do
 -- 608.2f loop, Binding.chosenForOthers, so "choose a different opponent" for
 -- each member never repeats one. Proved by the scenario
 -- dack-fayden-helping-hand-gives-each-creature-to-a-different-opponent.
+--
+-- An `attaching` choice offers only players the source could become attached
+-- to (CR 701.3a, 608.2d), so Curse of Leeches is never put onto a player it
+-- cannot enchant. Proved by the scenario
+-- curse-of-leeches-is-not-offered-a-player-with-protection-from-its-controller.
 choosePlayer :: ObjectId -> ObjectId -> PlayerId -> ChoosePlayer.ChoosePlayer -> Game ()
 choosePlayer resolving source controller choice = do
   gs <- State.get
   let slot = ChoosePlayer.slot choice
       excluded = foldMap (\name -> Map.findWithDefault Set.empty name (Binding.slotPlayers (slotBindings resolving gs))) (ChoosePlayer.excluding choice)
-      offered = filter (`Set.notMember` excluded) (Maybe.fromMaybe [] (PlayerEffect.playersInScope (Plane.rangePerspective source controller gs) (Just controller) gs (ChoosePlayer.scope choice)))
+      hosts pid = not (ChoosePlayer.attaching choice) || Attach.canHostPlayer source pid gs
+      offered = filter (\pid -> Set.notMember pid excluded && hosts pid) (Maybe.fromMaybe [] (PlayerEffect.playersInScope (Plane.rangePerspective source controller gs) (Just controller) gs (ChoosePlayer.scope choice)))
   chosenPlayer <- Players.chooseOne controller source Nothing offered
   Monad.forM_ chosenPlayer $ \pid -> State.modify' (Common.bindPlayerSlot resolving slot (Set.singleton pid))
 

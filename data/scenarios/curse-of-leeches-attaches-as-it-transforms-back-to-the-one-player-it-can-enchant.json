@@ -8,16 +8,24 @@
             "card": "Curse of Leeches",
             "face": "Leeching Lurker",
             "label": "curse"
+          },
+          {
+            "card": "Plains",
+            "label": "p1"
+          },
+          {
+            "card": "Plains",
+            "label": "p2"
           }
         ],
         "hand": [
           {
-            "card": "Ornithopter",
-            "label": "o1"
+            "card": "Runed Halo",
+            "label": "halo"
           },
           {
             "card": "Ornithopter",
-            "label": "o2"
+            "label": "o1"
           }
         ],
         "library": [
@@ -65,6 +73,11 @@
         "name": "bob"
       },
       {
+        "battlefield": [
+          {
+            "card": "Absolute Virtue"
+          }
+        ],
         "library": [
           {
             "card": "Island"
@@ -87,14 +100,45 @@
     ],
     "step": "PrecombatMain"
   },
-  "description": "CR 701.27i / 702.145f / 303.4b Leeching Lurker transforms into Curse of Leeches as it becomes day in bob's untap step, attaching to the hexproof player alice chooses, so bob's upkeep that turn drains him",
-  "note": "Two Ornithopters on alice's turn make bob's turn day. Alice is offered every player and picks bob through Leyline of Sanctity, since attaching does not target. The attach lands in the untap step, so the trigger sees bob enchanted at his upkeep; carol's upkeep drains no one. Bob casts nothing, so carol's turn is night: the Curse turns into Leeching Lurker with no choice asked and becomes unattached.",
+  "description": "CR 701.27i / 702.145f / 303.4b Leeching Lurker transforms into Curse of Leeches as it becomes day in bob's untap step, attaching unasked to hexproof bob, the one player it can enchant, so bob's upkeep that turn drains him",
+  "note": "Runed Halo and an Ornithopter on alice's turn make bob's turn day. Alice's Halo naming Curse of Leeches and carol's Absolute Virtue leave bob, hexproof through Leyline of Sanctity, the one player the Curse can enchant, since attaching does not target, so no choice is asked. The attach lands in the untap step, so the trigger sees bob enchanted at his upkeep; carol's upkeep drains no one. Bob casts nothing, so carol's turn is night: the Curse turns into Leeching Lurker and becomes unattached.",
   "timeline": [
     {
       "check": {
         "View": {
           "is": "Night",
           "of": "Daytime"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": {
+        "Cast": {
+          "mana": [
+            "$p1",
+            "$p2"
+          ],
+          "object": "$halo"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": "Pass",
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": {
+        "Answer": {
+          "prompt": "ChooseCardName",
+          "with": "Curse of Leeches"
         }
       },
       "player": "alice",
@@ -116,33 +160,6 @@
       "player": "alice",
       "step": "PrecombatMain",
       "turn": 1
-    },
-    {
-      "do": {
-        "Cast": {
-          "object": "$o2"
-        }
-      },
-      "player": "alice",
-      "step": "PrecombatMain",
-      "turn": 1
-    },
-    {
-      "do": "Pass",
-      "player": "alice",
-      "step": "PrecombatMain",
-      "turn": 1
-    },
-    {
-      "do": {
-        "Answer": {
-          "prompt": "ChoosePlayer",
-          "with": "bob"
-        }
-      },
-      "player": "alice",
-      "step": "Untap",
-      "turn": 2
     },
     {
       "check": {

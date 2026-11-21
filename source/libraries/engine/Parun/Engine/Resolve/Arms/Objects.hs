@@ -2116,8 +2116,8 @@ itBecomes designation = do
 -- never a target (CR 115.10a).
 --
 -- A player an earlier ChoosePlayer bound arrives through `legal`, which
--- runCarrying fills from it (Curse of Leeches). Not implemented: that choice
--- offering only players the Aura can enchant, CR 608.2d (#9243).
+-- runCarrying fills from it (Curse of Leeches); an `attaching` choice offers
+-- only players the Aura can enchant (CR 608.2d).
 attach :: ObjectId -> ObjectId -> Map.Map SlotName (Set Recipient) -> SlotName -> Game ()
 attach resolving source legal slot = do
   gs <- State.get

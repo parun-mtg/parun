@@ -18,6 +18,9 @@ data ChoosePlayer = MkChoosePlayer
     -- Hand's "for each of those permanents, choose a different opponent",
     -- over the loop's Parun.Engine.Binding.chosenForOthers. A slot naming
     -- nobody excludes nobody, as PlayerRef.EachPlayerExcept's does.
-    excluding :: Maybe SlotName.SlotName
+    excluding :: Maybe SlotName.SlotName,
+    -- | Whether only players the effect's source could become attached to are
+    -- offered -- Curse of Leeches' "attach it to a player" (CR 701.3a, 608.2d).
+    attaching :: Bool
   }
   deriving (Eq, Ord, Show)
