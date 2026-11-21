@@ -6,4 +6,6 @@ data AnchorPool
     Permanents
   | -- | CR 406.1: the cards in exile (Cemetery Illuminator).
     ExiledCards
+  | -- | CR 404.1: the cards in every graveyard (Volo, Guide to Monsters).
+    GraveyardCards
   deriving (Bounded, Enum, Eq, Ord, Show)

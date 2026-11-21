@@ -1667,7 +1667,9 @@ framedBySlots gs recipients context =
           Filter.slotHostControllers = fmap (foldMap hostController . objectsOf) recipients,
           -- CR 614.12: less a batch still entering (Scratch.enteringBeside),
           -- Resolve.Slots.battlefieldMatching's reading.
-          Filter.battlefieldViews = fmap (viewsOf gs) (Seq.fromList (Set.toList (Set.difference (GameState.battlefield gs) (Scratch.enteringBeside (GameState.scratch gs)))))
+          Filter.battlefieldViews = fmap (viewsOf gs) (Seq.fromList (Set.toList (Set.difference (GameState.battlefield gs) (Scratch.enteringBeside (GameState.scratch gs))))),
+          -- CR 404.1: every graveyard's cards, the group's own filter naming whose.
+          Filter.graveyardViews = fmap (viewsOf gs) (Foldable.fold (GameState.graveyard gs))
         }
 
 -- CR 903.3e: `context` with the creature types of the perspective player's
@@ -4939,7 +4941,7 @@ filterReadsPeers f = case f of
   -- read off Object.owner rather than off a projection -- and the candidate's
   -- own come from its partial, so no PEER is projected.
   -- A group anchor reads every view of its pool (Filter.Context.battlefieldViews,
-  -- exiledViews), and Host the candidate's attachedToView.
+  -- graveyardViews, exiledViews), and Host the candidate's attachedToView.
   Filter.Type.Shares _ anchor -> case anchor of
     Anchor.AnyObject {} -> True
     Anchor.Host -> True

@@ -66,6 +66,18 @@ spec s = Spec.describe s "Parun.Codec.Anchor" $ do
       codec
       (Anchor.AnyObject AnchorPool.ExiledCards SelfInclusion.ExcludesCandidate (Filter.Type.HasCardType CardType.Creature))
       " {\"type\":\"AnyOtherExiledCard\",\"value\":{\"type\":\"HasCardType\",\"value\":\"Creature\"}} "
+  Spec.it s "AnyGraveyardCard" $
+    Common.assertCodec
+      s
+      codec
+      (Anchor.AnyObject AnchorPool.GraveyardCards SelfInclusion.IncludesCandidate (Filter.Type.HasCardType CardType.Creature))
+      " {\"type\":\"AnyGraveyardCard\",\"value\":{\"type\":\"HasCardType\",\"value\":\"Creature\"}} "
+  Spec.it s "AnyOtherGraveyardCard" $
+    Common.assertCodec
+      s
+      codec
+      (Anchor.AnyObject AnchorPool.GraveyardCards SelfInclusion.ExcludesCandidate (Filter.Type.HasCardType CardType.Creature))
+      " {\"type\":\"AnyOtherGraveyardCard\",\"value\":{\"type\":\"HasCardType\",\"value\":\"Creature\"}} "
   Spec.it s "YourCommander" $
     Common.assertCodec
       s
