@@ -352,11 +352,11 @@ legalActions pid gs =
       -- whole chain -- until measuring bytes was judged too compiler-specific
       -- to keep. A regression here fails nothing (gap #578).
       --
-      -- Not implemented: an O(1) per-object path. A mana payment neither the
-      -- plain sources settle (Mana.plainPayable) nor the ceiling refuses
-      -- (Mana.ceilingAdmits) walks every source, and a mode whose slots read
-      -- each other and demand a target builds every slot's whole legal set
-      -- (#9184).
+      -- Per object, a mana payment neither the plain sources settle
+      -- (Mana.plainPayable) nor the ceiling refuses (Mana.ceilingAdmits)
+      -- walks every source, and a mode whose slots read each other builds
+      -- every slot's whole legal set. The benchmark's `legal actions N signet`
+      -- and `joint modes` legs measure both against their controls.
       grants = Projection.controlGrants gs
       pcs = Projection.projectAll gs
       -- ONE mana-source sweep of each kind for the whole enumeration. Each is a
