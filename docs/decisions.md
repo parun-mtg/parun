@@ -3127,18 +3127,26 @@ Entries are ordered by the first rule each cites.
   a card per land they control, and Academy triggers for each member with an
   empty hand. The member, not CR 113.8's planar controller, controls their
   instance, so its choices (Naya's "target creature you control") are theirs.
+  A static ability likewise applies as though each member controlled it:
+  Naya lets each member play any number of lands, and Grixis and The Caldaia
+  reach each member's own cards.
 - **Rejected**: The planar controller controlling every instance, each with a
   member's "you": that player would choose among a teammate's creatures,
   which CR 810.5 keeps theirs. "You" as the team, one instance reading both members at once:
   Tazeem would give each member a card per land the team controls, doubling
   every count, and CR 810.5 keeps a team's resources other than life and
   poison its members' own.
-- **Site**: `Parun.Engine.Plane.triggerControllers`, read by
-  `Parun.Engine.Event.Trigger.eventTriggers`' `teamWide`, proved by the
-  scenarios `cr-901-12c-tazeem-s-chaos-draws-for-each-member-of-the-planar-team`
+- **Site**: `Parun.Engine.Plane.planarYous`, read by
+  `Parun.Engine.Event.Trigger.eventTriggers`' `teamWide`,
+  `Parun.Engine.PlayerEffect.printedRows` and
+  `Parun.Engine.Projection.affectsFramed`, proved by the scenarios
+  `cr-901-12c-tazeem-s-chaos-draws-for-each-member-of-the-planar-team`,
+  `cr-901-12c-academy-at-tolaria-west-triggers-for-each-empty-handed-member-of-the-planar-team`,
+  `cr-901-12c-naya-lets-each-member-of-the-planar-team-play-any-number-of-lands`,
+  `cr-901-12c-grixis-gives-unearth-to-a-creature-card-in-each-planar-team-member-s-graveyard`
   and
-  `cr-901-12c-academy-at-tolaria-west-triggers-for-each-empty-handed-member-of-the-planar-team`.
-- **Issue**: #9165.
+  `cr-901-12c-the-caldaia-gives-blitz-to-a-creature-spell-each-planar-team-member-casts`.
+- **Issue**: #9165, #9178.
 
 ## Which planar controller controls a Grand Melee plane
 

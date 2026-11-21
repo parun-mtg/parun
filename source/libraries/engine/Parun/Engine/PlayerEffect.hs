@@ -415,7 +415,12 @@ printedRows gs =
                     -- permanent that prints no player ability, so the fold runs
                     -- once per ability-bearing permanent instead of once per
                     -- permanent on the battlefield.
-                    rowsOf gs (Projection.readerTextChanges oid gs) oid controller (fmap ((,) (Projection.staticTimestampOf oid object gs)) kept)
+                    --
+                    -- CR 901.12c: a planar card's rows once per member of the
+                    -- planar team, each its own "you" (Plane.planarYous).
+                    let changes = Projection.readerTextChanges oid gs
+                        stamped = fmap ((,) (Projection.staticTimestampOf oid object gs)) kept
+                     in concatMap (\you -> rowsOf gs changes oid you stamped) (Plane.planarYous oid controller gs)
                   else []
       -- CR 613.1f / 613.10 / 613.11: the player abilities layer 6 GRANTED a permanent
       -- (Nerd Rage's "You have no maximum hand size"), read off the finished

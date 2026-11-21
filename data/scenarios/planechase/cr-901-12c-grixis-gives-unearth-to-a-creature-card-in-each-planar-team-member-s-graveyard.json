@@ -1,0 +1,101 @@
+{
+  "board": {
+    "active": "alice",
+    "seats": [
+      {
+        "command": [
+          {
+            "card": "Grixis",
+            "label": "plane"
+          }
+        ],
+        "name": "alice",
+        "team": 1
+      },
+      {
+        "battlefield": [
+          {
+            "card": "Island",
+            "label": "i1"
+          },
+          {
+            "card": "Island",
+            "label": "i2"
+          },
+          {
+            "card": "Island",
+            "label": "i3"
+          }
+        ],
+        "graveyard": [
+          {
+            "card": "Wind Drake",
+            "label": "drake"
+          }
+        ],
+        "name": "dave",
+        "team": 1
+      },
+      {
+        "name": "bob",
+        "team": 2
+      },
+      {
+        "name": "carol",
+        "team": 2
+      }
+    ],
+    "sharedTeamTurns": true,
+    "step": "PrecombatMain",
+    "twoHeadedGiant": true
+  },
+  "description": "CR 901.12c Grixis gives unearth to a creature card in the graveyard of each member of the planar team",
+  "final": [
+    {
+      "Count": {
+        "card": "Wind Drake",
+        "count": 1,
+        "player": "dave",
+        "zone": "Battlefield"
+      }
+    }
+  ],
+  "note": "A Two-Headed Giant Planechase game, alice and dave against bob and carol, alice the active team's primary player and so the planar controller (CR 901.12b). Grixis's 'your graveyard' reads dave's too (CR 901.12c), each member his own 'you' (docs/decisions.md, \"A plane's you is each member of the planar team\"), so dave's Wind Drake has unearth at its mana cost and he unearths it.",
+  "timeline": [
+    {
+      "do": {
+        "Activate": {
+          "ability": 0,
+          "mana": [
+            "$i1",
+            "$i2",
+            "$i3"
+          ],
+          "object": "$drake"
+        }
+      },
+      "player": "dave",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": "Pass",
+      "player": "dave",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Count": {
+          "card": "Wind Drake",
+          "count": 1,
+          "player": "dave",
+          "zone": "Battlefield"
+        }
+      },
+      "player": "dave",
+      "step": "PrecombatMain",
+      "turn": 1
+    }
+  ]
+}

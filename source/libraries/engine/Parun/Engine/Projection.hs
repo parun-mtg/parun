@@ -39,6 +39,7 @@ import qualified Parun.Engine.ManaAbility as ManaAbility
 import qualified Parun.Engine.ManaSymbolText as ManaSymbolText
 import qualified Parun.Engine.Mint as Mint
 import qualified Parun.Engine.NameWords as NameWords
+import qualified Parun.Engine.Plane as Plane
 import Parun.Engine.Projection.Rewrite (Modification, composeWordChanges, rewriteActivatedAbility, rewriteAffected, rewriteCharacteristicPT, rewriteCondition, rewriteModification, rewritePlayerStaticAbility, rewritePrintedReplacement, rewriteRuleAbilities, rewriteStaticAbility, rewriteTriggeredAbility)
 import Parun.Engine.Projection.View (ControlGrant, abilitiesFromCharacteristics, abilityFaceOf, abilityFaceOfId, abilitySources, controlGrants, controllerOf, controllerOfGiven, copiableCharacteristics, copiableRuleAbilitiesOf, copiableSnapshotOf, copiableSpecialActionsOf, correspondsTo, countersOf, definesColorless, definesEveryCreatureType, functionsFromZone, grantedStaticAbilitiesOf, inSourceRangeGiven, lapsedGrantsOf, retainedThroughCardTypeSet, staticAbilitiesOf, staticTimestampOf, viewOfCard, viewOfCharacteristics, withAnnouncedX)
 import qualified Parun.Engine.Quantity as Quantity
@@ -1452,23 +1453,16 @@ affectsFramed frame grants peers source oid a partial gs = case a of
   -- enchant-player Auras go through AttachedPlayerControls below).
   Affected.Attached -> Game.hostOf source gs == Just oid && inReach
   Affected.Matching f ->
-    let -- CR 109.5: "you" is the SOURCE's controller. Safe to force: controlGrants
-        -- consults no liveness gate and so cannot re-enter this function.
-        perspective = controllerOfGiven grants source gs
-     in Set.member oid (GameState.battlefield gs)
-          && inReach
-          && Filter.matches (frame (affectedContext peers source perspective gs)) (viewOfCharacteristics peers oid partial (controllerOfGiven grants oid gs) (countersOf oid gs) gs) f
+    Set.member oid (GameState.battlefield gs)
+      && inReach
+      && matchesForSome f
   -- Matching's body without the battlefield conjunct.
-  Affected.MatchingAnywhere f ->
-    let perspective = controllerOfGiven grants source gs
-     in inReach
-          && Filter.matches (frame (affectedContext peers source perspective gs)) (viewOfCharacteristics peers oid partial (controllerOfGiven grants oid gs) (countersOf oid gs) gs) f
+  Affected.MatchingAnywhere f -> inReach && matchesForSome f
   -- Matching's body with that conjunct NEGATED rather than dropped.
   Affected.MatchingOffBattlefield f ->
-    let perspective = controllerOfGiven grants source gs
-     in not (Set.member oid (GameState.battlefield gs))
-          && inReach
-          && Filter.matches (frame (affectedContext peers source perspective gs)) (viewOfCharacteristics peers oid partial (controllerOfGiven grants oid gs) (countersOf oid gs) gs) f
+    not (Set.member oid (GameState.battlefield gs))
+      && inReach
+      && matchesForSome f
   -- CR 303.4b / 303.4m: the source's attachment again, read for the PLAYER it
   -- names. The Filter's perspective stays the source's controller (CR 109.5), not
   -- the enchanted player's. The candidate's controller is bound once and used
@@ -1493,6 +1487,14 @@ affectsFramed frame grants peers source oid a partial gs = case a of
   -- derived, so a projection's own read of the template names nothing.
   Affected.PlayedThisWay _ -> False
   where
+    -- CR 109.5: "you" is the SOURCE's controller, and under CR 901.12c each
+    -- member of a planar source's team (Plane.planarYous), the candidate
+    -- matching for any of them. Safe to force: controlGrants consults no
+    -- liveness gate and so cannot re-enter this function.
+    perspectives = maybe [Nothing] (\controller -> fmap Just (Plane.planarYous source controller gs)) (controllerOfGiven grants source gs)
+    matchesForSome f =
+      let view = viewOfCharacteristics peers oid partial (controllerOfGiven grants oid gs) (countersOf oid gs) gs
+       in any (\perspective -> Filter.matches (frame (affectedContext peers source perspective gs)) view f) perspectives
     -- CR 801.10: a static ability's effect reaches only objects within its
     -- controller's range of influence. Parun.RangeOfInfluenceSpec's "CR 801.10 a
     -- static ability does not reach a permanent outside its controller's range"
