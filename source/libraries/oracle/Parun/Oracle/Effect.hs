@@ -840,7 +840,8 @@ joined context predicates = case predicates of
         ]
   -- Free: one subject's series, whose last step alone keeps "then"
   -- (Faithful Mending's "You gain 2 life, draw two cards, then discard two
-  -- cards.").
+  -- cards.") or "and" (Demogorgon's Clutches's "discards two cards, mills two
+  -- cards, and loses 2 life").
   p : rest@(_ : _ : _) -> ListUtils.nubOrd (apart <> series)
     where
       apart = do
@@ -850,11 +851,12 @@ joined context predicates = case predicates of
         sentence' <- followedBy context text next
         [(sentence', ms <> ns)]
       series =
-        [ (Prose.sentence (Text.intercalate (Text.pack ", ") (clauseText p : fmap verb middle) <> Text.pack ", then " <> verb q) <> trailing q, allMentions p <> foldMap mentions rest)
+        [ (Prose.sentence (Text.intercalate (Text.pack ", ") (clauseText p : fmap verb middle) <> Text.pack last' <> verb q) <> trailing q, allMentions p <> foldMap mentions rest)
         | all (sameSubject p) rest,
           Just (middle, q) <- [List.unsnoc rest],
           all (null . after) (p : middle),
-          all (Maybe.isNothing . mana) predicates
+          all (Maybe.isNothing . mana) predicates,
+          last' <- [", then ", ", and "]
         ]
   [p, q]
     | not (null (after p)) || Maybe.isJust (mana p) || Maybe.isJust (mana q) -> apart
