@@ -2972,6 +2972,21 @@ pluralBoardSpec s registry = Spec.describe s "plural sources" $ do
     Spec.assertBool s (pays 20 (boardOf 20)) "while twenty Elves make {20}"
     Spec.assertBool s (pays 30 (boardOf 30)) "and thirty a {30}, each board a matching rather than 2^31 subsets"
 
+  -- A Mountain buys one Rakdos Signet's {1} and each Signet's {R} the next's
+  -- (CR 605.3c orders them), so forty Signets chain to forty {B} and an {R}.
+  -- Without the Mountain no Signet's {1} is ever paid, which only the walk
+  -- finds: interchangeable Signets are one class and one ordering, 41 boards
+  -- rather than 2^40 times their 40! orderings, each a matching; see #9226.
+  Spec.it s "CR 602.2b a Mountain and forty Rakdos Signets chain to forty {B}" $ do
+    mountain <- S.printingOf s registry "Mountain"
+    signet <- S.printingOf s registry "Rakdos Signet"
+    let boardOf lands = Foldable.foldl' (\board printing -> snd (S.addPermanent printing S.alice board)) (Setup.emptyGame S.bothPlayers) (replicate lands mountain <> replicate 40 signet)
+        pays lands blacks reds = Mana.canPay Cost.manaActivations S.alice (ManaCost.MkManaCost (replicate blacks (ManaSymbol.OfType (ManaType.Colored Color.Black)) <> replicate reds (ManaSymbol.OfType (ManaType.Colored Color.Red)))) (boardOf lands)
+    Spec.assertBool s (pays 1 40 1) "CR 605.3c forty Signets in turn make forty {B} and an {R}"
+    Spec.assertBool s (not (pays 1 41 0)) "CR 118.3 but not a forty-first {B}"
+    Spec.assertBool s (not (pays 1 40 2)) "CR 118.3 nor a second {R}"
+    Spec.assertBool s (not (pays 0 1 0)) "CR 602.2b and forty Signets alone make nothing"
+
 -- Parun.Engine.Claim's matching on its own, on the shape the Drum board takes:
 -- pools that meet, where the entry asked first takes an object a later one
 -- needs, so only an augmenting path finds the assignment; see #6413.

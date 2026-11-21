@@ -525,14 +525,16 @@ main = do
       Harness.whnf "legal actions 40 different names" (differentNamesCount behold hinata named) 40,
       -- #9184's shapes. A cost only a filter pays: Frozen Shade's {B} beside a
       -- Mountain and a Rakdos Signet apiece, which plainPayable leaves to the
-      -- walk. At 4 and 8: the walk grows with every Signet, and 40 does not end
+      -- walk. Interchangeable Signets are one class of boards and one ordering
       -- (#9226).
       Harness.whnf "legal actions 4 signet" (legalActionCountOf [shade, mountain, signet] []) 4,
       Harness.whnf "legal actions 8 signet" (legalActionCountOf [shade, mountain, signet] []) 8,
-      -- The two lines above' paired control: a Swamp for the Mountain, so the
+      Harness.whnf "legal actions 40 signet" (legalActionCountOf [shade, mountain, signet] []) 40,
+      -- The three lines above' paired control: a Swamp for the Mountain, so the
       -- plain sources pay.
       Harness.whnf "legal actions 4 signet plain" (legalActionCountOf [shade, swamp, signet] []) 4,
       Harness.whnf "legal actions 8 signet plain" (legalActionCountOf [shade, swamp, signet] []) 8,
+      Harness.whnf "legal actions 40 signet plain" (legalActionCountOf [shade, swamp, signet] []) 40,
       -- A jointly judged mode: Simic Guildmage's "another target creature with
       -- the same controller", beside two Forests apiece.
       Harness.whnf "legal actions 40 joint modes" (legalActionCountOf [guildmage, forest, forest] []) 40,
