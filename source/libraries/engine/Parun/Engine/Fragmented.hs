@@ -127,7 +127,7 @@ import qualified Text.Read as Read
 --
 -- Trimmed to the ids the rest of the state holds, as `lastKnown` is (CR
 -- 400.7): the rows of `movedUntil` (CR 610.3), `exiledWith`, `enteredWith`
--- and `counteredWith`, keyed by the moved or linked object; of `notedMana`
+-- and `counteredWith`, keyed by the moved or linked object; of `notes`
 -- (CR 607.2e), `notedCards` (CR 707.14) and `namedCopyChoices` (CR 707.13),
 -- keyed by the noting source; of `haunting` (CR 702.55b), `encoded` (CR
 -- 702.99b) and `exilePiles` (CR 406.4), keyed by the card in exile; and the
@@ -168,20 +168,20 @@ digest gs =
       fixedTo row = case ContinuousEffect.affected row of
         Affected.TheseObjects oids -> Just oids
         _ -> Nothing
-      unkeyed = show unlinked {GameState.movedUntil = Map.empty, GameState.exiledWith = Map.empty, GameState.enteredWith = Map.empty, GameState.counteredWith = Map.empty, GameState.notedMana = Map.empty, GameState.notedCards = Map.empty, GameState.namedCopyChoices = Map.empty, GameState.haunting = Map.empty, GameState.encoded = Map.empty, GameState.exilePiles = Map.empty, GameState.stored = (GameState.stored unlinked) {StoredEffects.continuousEffects = filter (Maybe.isNothing . fixedTo) effects}}
+      unkeyed = show unlinked {GameState.movedUntil = Map.empty, GameState.exiledWith = Map.empty, GameState.enteredWith = Map.empty, GameState.counteredWith = Map.empty, GameState.notes = Map.empty, GameState.notedCards = Map.empty, GameState.namedCopyChoices = Map.empty, GameState.haunting = Map.empty, GameState.encoded = Map.empty, GameState.exilePiles = Map.empty, GameState.stored = (GameState.stored unlinked) {StoredEffects.continuousEffects = filter (Maybe.isNothing . fixedTo) effects}}
       linked = Set.fromList (fmap ObjectId.MkObjectId (Map.keys (ranked objectIdTag unkeyed)))
       watched = Map.restrictKeys (GameState.movedUntil unlinked) linked
       exiled = Map.restrictKeys (GameState.exiledWith unlinked) linked
       entered = Map.restrictKeys (GameState.enteredWith unlinked) linked
       countered = Map.restrictKeys (GameState.counteredWith unlinked) linked
-      noted = Map.restrictKeys (GameState.notedMana unlinked) linked
+      noted = Map.restrictKeys (GameState.notes unlinked) linked
       notedCards = Map.restrictKeys (GameState.notedCards unlinked) linked
       named = Map.restrictKeys (GameState.namedCopyChoices unlinked) linked
       haunts = Map.restrictKeys (GameState.haunting unlinked) linked
       encodings = Map.restrictKeys (GameState.encoded unlinked) linked
       piles = Map.restrictKeys (GameState.exilePiles unlinked) linked
       live row = maybe True (not . Set.disjoint linked) (fixedTo row)
-      trimmed = unlinked {GameState.movedUntil = watched, GameState.exiledWith = exiled, GameState.enteredWith = entered, GameState.counteredWith = countered, GameState.notedMana = noted, GameState.notedCards = notedCards, GameState.namedCopyChoices = named, GameState.haunting = haunts, GameState.encoded = encodings, GameState.exilePiles = piles, GameState.stored = (GameState.stored unlinked) {StoredEffects.continuousEffects = filter live effects}}
+      trimmed = unlinked {GameState.movedUntil = watched, GameState.exiledWith = exiled, GameState.enteredWith = entered, GameState.counteredWith = countered, GameState.notes = noted, GameState.notedCards = notedCards, GameState.namedCopyChoices = named, GameState.haunting = haunts, GameState.encoded = encodings, GameState.exilePiles = piles, GameState.stored = (GameState.stored unlinked) {StoredEffects.continuousEffects = filter live effects}}
       shown = unkeyed <> show (filter (Maybe.isJust . fixedTo) (filter live effects), watched, exiled, entered, countered) <> show (noted, notedCards, named, haunts, encodings, piles)
       held = Set.fromList (fmap ObjectId.MkObjectId (Map.keys (ranked objectIdTag shown)))
       -- What the log says of each held id, as the readers keyed by one ask it

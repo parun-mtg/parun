@@ -617,6 +617,8 @@ import qualified Parun.Codec.NextWindowSpec
 import qualified Parun.Codec.NinjutsuSpec
 import qualified Parun.Codec.NinjutsuVariantSpec
 import qualified Parun.Codec.NoteFoldSpec
+import qualified Parun.Codec.NoteKindSpec
+import qualified Parun.Codec.NotedSpec
 import qualified Parun.Codec.NumberFloorSpec
 import qualified Parun.Codec.ObjectCountSpec
 import qualified Parun.Codec.ObjectDamageSpec
@@ -2044,6 +2046,8 @@ spec s reference corpus = do
   Parun.Codec.TappedIsSpec.spec s
   Parun.Codec.TapPermanentsSpec.spec s
   Parun.Codec.TapStateSpec.spec s
+  Parun.Codec.NoteKindSpec.spec s
+  Parun.Codec.NotedSpec.spec s
   Parun.Codec.TargetCountSpec.spec s
   Parun.Codec.TargetRestrictionSpec.spec s
   Parun.Codec.TargetSlotSpec.spec s

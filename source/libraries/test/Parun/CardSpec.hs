@@ -3716,6 +3716,7 @@ quantityKindFilters quantity = case quantity of
   Quantity.Type.TagWasSpentOfOwnColor {} -> []
   Quantity.Type.ChosenColorsItIs -> []
   Quantity.Type.ChosenNumber -> []
+  Quantity.Type.NotedLifeTotal -> []
   Quantity.Type.ManaSpent _ -> []
   Quantity.Type.WasToken -> []
   Quantity.Type.WasAttacking -> []
@@ -5493,7 +5494,7 @@ effectFilters effect = case effect of
   Effect.ManifestDread (ManifestDread.MkManifestDread _ quantity _) -> frame Unframed (quantityFilters quantity)
   Effect.Venture {} -> []
   Effect.ExileHandThenDraw -> []
-  Effect.NoteManaSpent -> []
+  Effect.Note {} -> []
   -- The edict's pool is Replacement.sacrificeCandidates', matched over the
   -- resolution's slots (Fatal Grudge).
   Effect.PlayerSacrifices (PlayerSacrifices.MkPlayerSacrifices _ who f quantity _) -> unframed (Foldable.toList who) <> [(SlotPoolFramed, f)] <> frame Unframed (quantityFilters quantity)
@@ -7536,7 +7537,7 @@ lintSpec s registry corpus = Spec.describe s "Lint" $ do
         -- Illusionary Mask's offer reads the same thing (CastOffer's
         -- payableFromSpent: "the mana you spent on {X}").
         readsSpent effect = case effect of
-          Effect.NoteManaSpent -> True
+          Effect.Note {} -> True
           Effect.OfferCast offer -> CastOffer.payableFromSpent (OfferCast.offer offer)
           _ -> False
         notesSpent ab = any readsSpent (Modal.allEffects (ActivatedAbility.modal ab))

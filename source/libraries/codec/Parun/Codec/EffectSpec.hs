@@ -180,6 +180,7 @@ import qualified Parun.Types.MovedKinds as MovedKinds
 import qualified Parun.Types.NewX as NewX
 import qualified Parun.Types.NextDamageInstance as NextDamageInstance
 import qualified Parun.Types.NextDamageOutcome as NextDamageOutcome
+import qualified Parun.Types.NoteKind as NoteKind
 import qualified Parun.Types.ObjectRef as ObjectRef
 import qualified Parun.Types.OfferCast as OfferCast
 import qualified Parun.Types.Onset as Onset
@@ -2592,13 +2593,13 @@ spec s = Spec.describe s "Parun.Codec.Effect" $ do
       fromJson
       Effect.ExileHandThenDraw
       " {\"type\":\"ExileHandThenDraw\"} "
-  Spec.it s "NoteManaSpent" $
+  Spec.it s "Note" $
     Common.assertJsonCodec
       s
       toJson
       fromJson
-      Effect.NoteManaSpent
-      " {\"type\":\"NoteManaSpent\"} "
+      (Effect.Note NoteKind.LifeTotal)
+      " {\"type\":\"Note\",\"value\":\"LifeTotal\"} "
   Spec.it s "Proliferate" $
     Common.assertJsonCodec
       s

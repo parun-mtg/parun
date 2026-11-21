@@ -65,7 +65,7 @@ data ManaProduction
     -- cannot pay {S}.
     SnowSymbol
   | -- | CR 607.2e: the run of mana a linked ability noted for the source
-    -- (GameState.notedMana), Ice Cauldron's; the count repeats the whole run.
+    -- (GameState.notes), Ice Cauldron's; the count repeats the whole run.
     Noted
   | -- | CR 106.7: a type other permanents could produce (Star Compass).
     CouldProduce CouldProduce.CouldProduce

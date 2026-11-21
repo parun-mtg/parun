@@ -593,7 +593,7 @@ applyOneEffect runSubgame resolving source controller legal chosen effect = case
   Effect.Search payload -> Damage.search (settleWith runSubgame) performManaAbility runSubgame resolving source controller legal payload
   Effect.ExileAllGraveyards -> Damage.exileAllGraveyards (settleWith runSubgame) source controller
   Effect.ExileHandThenDraw -> Damage.exileHandThenDraw (settleWith runSubgame) controller
-  Effect.NoteManaSpent -> Damage.noteManaSpent resolving source
+  Effect.Note kind -> Damage.noteFor resolving source controller kind
   Effect.RestartGame payload -> Damage.restartGame performHandAction runSubgame resolving source controller legal payload
   Effect.PlaySubgame payload -> Damage.playSubgame runSubgame resolving payload
   Effect.ChoosePlayer payload -> Damage.choosePlayer resolving source controller payload

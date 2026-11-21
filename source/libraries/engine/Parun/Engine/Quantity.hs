@@ -82,6 +82,7 @@ import qualified Parun.Types.Measure as Measure
 import qualified Parun.Types.Moved as Moved
 import qualified Parun.Types.NameStickerTest as NameStickerTest
 import qualified Parun.Types.NoteFold as NoteFold
+import qualified Parun.Types.Noted as Noted
 import qualified Parun.Types.Object as Object
 import qualified Parun.Types.ObjectDamage as ObjectDamage
 import Parun.Types.ObjectId (ObjectId)
@@ -751,6 +752,11 @@ evaluateAgainst viewOf context gs announcedOn mOid mView quantity =
         -- Nothing for an undefined choice (CR 607.5a), which `determine` makes 0
         -- in a CDA's calculation (CR 107.2, 208.2a).
         Quantity.ChosenNumber -> fmap toInteger (Filter.sourceChosenNumber context)
+        -- CR 607.2e: the source's note, Nothing where none was noted (CR
+        -- 607.5a), which a comparison reads as False.
+        Quantity.NotedLifeTotal -> case Filter.source context >>= (`Map.lookup` GameState.notes gs) of
+          Just (Noted.NotedLifeTotal life) -> Just life
+          _ -> Nothing
         -- CR 702.191a's amount, the arm above's read one field over and a COUNT
         -- rather than a 0/1: rule 702.191a's "the amount of mana spent to cast that
         -- spell". Zero for a spell cast for no mana, which is an ordinary answer.
@@ -1887,6 +1893,7 @@ talliesWhatHappened quantity = case quantity of
   Quantity.TagWasSpentOfOwnColor {} -> False
   Quantity.ChosenColorsItIs -> False
   Quantity.ChosenNumber -> False
+  Quantity.NotedLifeTotal -> False
   Quantity.ManaSpent _ -> False
   Quantity.WasToken -> False
   Quantity.WasAttacking -> False

@@ -82,7 +82,8 @@
                         }
                       },
                       {
-                        "type": "NoteManaSpent"
+                        "type": "Note",
+                        "value": "ManaSpent"
                       }
                     ]
                   }

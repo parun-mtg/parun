@@ -512,6 +512,12 @@ spec s = Spec.describe s "Parun.Codec.Quantity" $ do
       Quantity.codec
       Quantity.ChosenNumber
       " {\"type\":\"ChosenNumber\"} "
+  Spec.it s "NotedLifeTotal" $
+    Common.assertCodec
+      s
+      Quantity.codec
+      Quantity.NotedLifeTotal
+      " {\"type\":\"NotedLifeTotal\"} "
   Spec.it s "ChosenColorsItIs" $
     Common.assertCodec
       s
