@@ -766,10 +766,13 @@ amongPending under members body = do
 -- data/scenarios/team, and a devour beside a teammate's devour or Frontier
 -- Mastodon left unasked by the cr-805-6 Thunder-Thrash Elder scenarios there.
 --
--- The token and conjure roads do not call this: one creation's members are
--- copies of one card, whose orders are indistinguishable (CR 616.1g's Voice
--- of All example). One action's separate creations are not ordered against
--- each other (gap #9270).
+-- createTokens calls this over one event's lots, each lot through its first
+-- token: a lot's members are copies of one shape, whose orders are
+-- indistinguishable (CR 616.1g's Voice of All example), so the conjure road,
+-- one card per batch, does not call it. The cr-616-1 Second Harvest pair in
+-- data/scenarios/entry-replacement proves the token road.
+-- Not implemented: ordering separate createTokens calls inside one action
+-- against each other, a ForEach's iterations (#9303).
 orderEntries :: Maybe PlayerId -> [ObjectId] -> Game [ObjectId]
 orderEntries under members = do
   gs <- State.get
@@ -11492,13 +11495,13 @@ sacrificeIn settle asOf victims = simultaneously $ do
 --
 -- Not an event bracket of its own: the caller is the one CR 608.2f event, and
 -- under Event.together the entries are recorded after this returns anyway.
-createTokens :: Settle.Settle -> PlayerId -> Card -> Maybe TokenCopy.TokenCopy -> Maybe (ShownDie.ShownDie Natural) -> Natural -> TapState.TapState -> Map.Map EntryCounter.EntryCounter Natural -> Maybe [Recipient.Recipient] -> Set Designation.Designation -> Game [ObjectId]
-createTokens settle controller card copy die n tapped entering attached marks = do
+createTokens :: Settle.Settle -> PlayerId -> NonEmpty.NonEmpty (Card, Maybe TokenCopy.TokenCopy) -> Maybe (ShownDie.ShownDie Natural) -> Natural -> TapState.TapState -> Map.Map EntryCounter.EntryCounter Natural -> Maybe [Recipient.Recipient] -> Set Designation.Designation -> Game [ObjectId]
+createTokens settle controller shapes die n tapped entering attached marks = do
   gs <- State.get
   if List.notElem controller (Game.stillPlaying gs)
     then pure []
     else do
-      let original = TokenLot.MkTokenLot {TokenLot.card = card, TokenLot.copy = copy, TokenLot.count = n, TokenLot.byEffect = not (Scratch.payingOnResolution (GameState.scratch gs)), TokenLot.die = die}
+      let originals = fmap (\(card, copy) -> TokenLot.MkTokenLot {TokenLot.card = card, TokenLot.copy = copy, TokenLot.count = n, TokenLot.byEffect = not (Scratch.payingOnResolution (GameState.scratch gs)), TokenLot.die = die}) shapes
           -- Every token of one lot, placed onto the battlefield. Interned ONCE
           -- per lot, not once per token: a lot's tokens are copies of one set of
           -- effect-defined characteristics (CR 111.3), so they name one entry.
@@ -11527,11 +11530,11 @@ createTokens settle controller card copy die n tapped entering attached marks = 
       -- because a token takes no move -- it is minted straight onto the
       -- battlefield -- so the funnel's gate cannot see it.
       --
-      -- The ORIGINAL lot is judged BEFORE resolveTokens: a creation that can't
+      -- Each ORIGINAL lot is judged BEFORE resolveTokens: a creation that can't
       -- happen can be replaced only by a self-replacement effect (CR 614.17c),
       -- so no row is offered, nothing is appended and no CR 614.3 use is spent.
-      -- Its refusal takes the whole event, Queen Allenal's Soldier included.
-      -- Parun.EntryRestrictionSpec's Dryad Arbor case is the proof.
+      -- Refusing every lot takes the whole event, Queen Allenal's Soldier
+      -- included. Parun.EntryRestrictionSpec's Dryad Arbor case is the proof.
       --
       -- MINTED AND ROLLED BACK rather than asked of a hypothetical, because the
       -- question is about characteristics the projection answers and
@@ -11548,10 +11551,12 @@ createTokens settle controller card copy die n tapped entering attached marks = 
       -- of the Earth's "lands can't enter the battlefield" is the pool's second
       -- kind.
       unjudged <- State.get
-      judged <- mintLot controller original
-      refused <- State.gets (\g -> not (null (barredIn g judged)))
-      State.put unjudged
-      resolved <- if refused then pure Nothing else resolveTokens controller (Seq.singleton original)
+      creatable <- flip Monad.filterM (NonEmpty.toList originals) $ \original -> do
+        judged <- mintLot controller original
+        refused <- State.gets (\g -> not (null (barredIn g judged)))
+        State.put unjudged
+        pure (not refused)
+      resolved <- if null creatable then pure Nothing else resolveTokens controller (Seq.fromList creatable)
       made <- case resolved of
         Nothing -> pure []
         Just (owner, lots) -> do
@@ -11559,10 +11564,12 @@ createTokens settle controller card copy die n tapped entering attached marks = 
           -- rule 614.3 use a replacement spent on the creation event stays spent
           -- when an Aura token is refused.
           unminted <- State.get
-          -- ONE lot came in; several come out when a CR 614.1a append (Queen
-          -- Allenal of Ruadach) put another shape into the event. Every lot is
-          -- minted here, in the one batch, before any token runs its entry loop.
-          ids <- fmap concat (Monad.forM (Foldable.toList lots) (mintLot owner))
+          -- A lot per shape came in, and more come out when a CR 614.1a append
+          -- (Queen Allenal of Ruadach) put another shape into the event. Every
+          -- lot is minted here, in the one batch, before any token runs its
+          -- entry loop.
+          byLot <- Monad.forM (Foldable.toList lots) (mintLot owner)
+          let ids = concat byLot
           -- CR 111.5 again, PER TOKEN: an appended token is its own token, so one
           -- that can't enter is not created while the rest of the event is
           -- (CR 614.17d reads the permanent as it would exist). The original lot
@@ -11645,8 +11652,22 @@ createTokens settle controller card copy die n tapped entering attached marks = 
               -- `siblingsOf` then hands each entry loop.
               let siblingsOf oid = Set.delete oid (Set.fromList kept)
               Monad.mapM_ (`placeRiderCounters` entering) kept
-              refusals <- traverse (\oid -> (,) oid <$> runEntry settle (Just Zone.Battlefield) Nothing (siblingsOf oid) oid) kept
-              let entered = [oid | (oid, Nothing) <- refusals]
+              -- CR 616.1 / 101.4c: the lots of one event apply their tokens'
+              -- as-enters replacements in the order their seat chooses
+              -- (orderEntries), each lot asked about through its first token:
+              -- one lot's tokens are copies of one shape, whose orders are
+              -- indistinguishable (CR 616.1g's Voice of All example).
+              let keptLots = filter (not . null) (fmap (filter (`elem` kept)) byLot)
+                  firsts = [(first, lot) | lot@(first : _) <- keptLots]
+              orderedFirsts <- orderEntries Nothing (fmap fst firsts)
+              -- CR 614.1c: each lot's as-enters effects run before the next
+              -- lot's entries apply, changeZonesTogether's step. The last
+              -- lot's wait for the instruction to end, as a lone lot's do, so
+              -- a caller's CR 508.4 attack is made first.
+              let enterLot = traverse (\oid -> (,) oid <$> runEntry settle (Just Zone.Battlefield) Nothing (siblingsOf oid) oid)
+                  inOrder = Maybe.mapMaybe (`List.lookup` firsts) orderedFirsts
+              refusals <- concat <$> traverse (\(i, lot) -> enterLot lot <* Monad.when (i < length inOrder) (Settle.entryEffects settle)) (zip [1 :: Int ..] inOrder)
+              let entered = [oid | oid <- kept, Just Nothing == List.lookup oid refusals]
               Monad.mapM_ unmake [oid | (oid, Just refusal) <- refusals, not (isDiverted refusal)]
               settleMinted (Bookkeeping.nextTimestamp (GameState.bookkeeping unminted)) entered
               pure entered

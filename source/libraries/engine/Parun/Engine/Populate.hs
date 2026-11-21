@@ -19,6 +19,7 @@ module Parun.Engine.Populate where
 import qualified Control.Monad as Monad
 import qualified Control.Monad.Trans.State.Strict as State
 import qualified Data.List as List
+import qualified Data.List.NonEmpty as NonEmpty
 import qualified Data.Map.Strict as Map
 import qualified Data.Sequence as Seq
 import qualified Data.Set as Set
@@ -76,4 +77,4 @@ populate settle pid resolving = do
     -- the state from before the prompt would drop that.
     minting <- State.get
     Monad.forM_ (Event.copiedTokenCard token minting) $ \card ->
-      Monad.void (Event.createTokens settle pid card (Just (Event.copiedToken token minting)) Nothing 1 TapState.Untapped Map.empty Nothing Set.empty)
+      Monad.void (Event.createTokens settle pid (NonEmpty.singleton (card, Just (Event.copiedToken token minting))) Nothing 1 TapState.Untapped Map.empty Nothing Set.empty)
