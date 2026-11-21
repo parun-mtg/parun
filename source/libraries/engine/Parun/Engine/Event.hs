@@ -743,23 +743,26 @@ amongPending under members body = do
 -- APNAP order, each seat permuting its own by Prompt.OrderEntries:
 -- docs/decisions.md, "Which seat's simultaneous as-enters effects apply
 -- first". Under the shared team turns option the active team names its seats'
--- order (CR 805.6, inActiveTeamOrder), asked where one of its members runs
--- effects. Every other member keeps its slot.
+-- order (CR 805.6, inActiveTeamOrder), asked where two of the team's members
+-- conflict. Every other member keeps its slot.
 --
 -- Asked where two or more of a seat's members carry an entry replacement of
 -- their own and the order is observable: one member's rows change a pool
--- another's read (Replacement.entryConflicts over Replacement.entryAccess).
+-- another's read, a row's condition included (Replacement.entryConflicts over
+-- Replacement.entryMemberAccess).
 -- data/scenarios/entry-replacement proves it: Thunder-Thrash Elder's devour
 -- beside a Clone by the cr-616-1 Victimize pair; a copy entry taking on
 -- Sigarda's Splendor's note beside Phyrexian Processor's payment by the
 -- cr-616-1 Copy Enchantment scenario; Splendor's own note by the cr-616-1
 -- Splendor scenarios, an Open the Vaults pair for Resolve's move and a
--- Banishing Light pair for changeZonesTogether; and a pair that commutes left
--- unasked by the cr-616-1 Ixidron and Carrion Crow scenario. The seats' APNAP
--- order is proved by the cr-616-1 Ixidron and Clone pair there, on Resolve's
--- move by its two Exhume scenarios, and the team's order by the cr-805-6
--- Exhume pair in data/scenarios/team, asked where two of the team's members
--- conflict, two seats spending from one pool included.
+-- Banishing Light pair for changeZonesTogether; a devour changing Blackcleave
+-- Cliffs' condition, and Sunpetal Grove's before its row is live, by the
+-- cr-616-1 Elder pairs; and a pair that commutes left unasked by the cr-616-1
+-- Ixidron and Carrion Crow scenario. The seats' APNAP order is proved by the
+-- cr-616-1 Ixidron and Clone pair there, on Resolve's move by its two Exhume
+-- scenarios, and the team's order by the cr-805-6 Exhume pair in
+-- data/scenarios/team, and two teammates' devours left unasked by the cr-805-6
+-- Thunder-Thrash Elders scenario there.
 --
 -- The token and conjure roads do not call this: one creation's members are
 -- copies of one card, whose orders are indistinguishable (CR 616.1g's Voice
@@ -769,8 +772,7 @@ orderEntries :: Maybe PlayerId -> [ObjectId] -> Game [ObjectId]
 orderEntries under members = do
   gs <- State.get
   let seatOf oid = fmap (\obj -> Maybe.fromMaybe (Object.owner obj) under) (Game.lookupObject oid gs)
-      rows oid = [effect | (_, effect@(ReplacementEffect.EntryR _)) <- Projection.replacementsOf Zone.Battlefield oid gs]
-      carrying = [(oid, seat) | oid <- members, not (null (rows oid)), Just seat <- [seatOf oid]]
+      carrying = [(oid, seat) | oid <- members, Maybe.isJust (Replacement.entryMemberAccess gs oid), Just seat <- [seatOf oid]]
       apnap = Game.apnapOrder gs
       rank seat = Maybe.fromMaybe (length apnap) (List.elemIndex seat apnap)
       seats = List.sortOn rank (ListUtils.nubOrd (fmap snd carrying))
@@ -786,7 +788,7 @@ orderEntries under members = do
       place queue oid = case queue of
         next : later | Set.member oid carried -> (later, next)
         _ -> (queue, oid)
-      access oid = foldMap (Replacement.entryAccess gs) (rows oid)
+      access oid = Maybe.fromMaybe mempty (Replacement.entryMemberAccess gs oid)
       observable entries =
         or
           [ Replacement.entryConflicts first second || Replacement.entryConflicts second first

@@ -1,0 +1,204 @@
+{
+  "board": {
+    "active": "alice",
+    "seats": [
+      {
+        "name": "alice",
+        "team": 1,
+        "battlefield": [
+          {
+            "card": "Grizzly Bears",
+            "label": "abears"
+          },
+          {
+            "card": "Swamp",
+            "label": "s1"
+          },
+          {
+            "card": "Swamp",
+            "label": "s2"
+          }
+        ],
+        "graveyard": [
+          {
+            "card": "Thunder-Thrash Elder",
+            "label": "aelder"
+          }
+        ],
+        "hand": [
+          {
+            "card": "Exhume",
+            "label": "exhume"
+          }
+        ],
+        "library": [
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          }
+        ]
+      },
+      {
+        "name": "bob",
+        "team": 2,
+        "library": [
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          }
+        ]
+      },
+      {
+        "name": "carol",
+        "team": 2,
+        "library": [
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          }
+        ]
+      },
+      {
+        "name": "dave",
+        "team": 1,
+        "battlefield": [
+          {
+            "card": "Grizzly Bears",
+            "label": "dbears"
+          }
+        ],
+        "graveyard": [
+          {
+            "card": "Thunder-Thrash Elder",
+            "label": "delder"
+          }
+        ],
+        "library": [
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          }
+        ]
+      }
+    ],
+    "sharedTeamTurns": true,
+    "step": "PrecombatMain",
+    "turn": 2
+  },
+  "description": "CR 805.6 / 701.21a: two teammates' Thunder-Thrash Elders exhumed together raise no team order, since each devours only its own creatures",
+  "note": "Shared team turns, alice and dave against bob and carol. Alice's Exhume returns her Elder and dave's together, one entry-carrying member per seat. No ChooseActivePlayer prompt: neither devour can take the other's Grizzly Bears, so the orders commute, and each Elder enters 4/4.",
+  "timeline": [
+    {
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 2,
+      "do": {
+        "Cast": {
+          "mana": [
+            "$s1",
+            "$s2"
+          ],
+          "object": "$exhume"
+        }
+      }
+    },
+    {
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 2,
+      "do": "Pass"
+    },
+    {
+      "player": "bob",
+      "step": "PrecombatMain",
+      "turn": 2,
+      "do": "Pass"
+    },
+    {
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 2,
+      "do": {
+        "Answer": {
+          "prompt": "ChooseAnyNumberToSacrifice",
+          "with": [
+            "$abears"
+          ]
+        }
+      }
+    },
+    {
+      "player": "dave",
+      "step": "PrecombatMain",
+      "turn": 2,
+      "do": {
+        "Answer": {
+          "prompt": "ChooseAnyNumberToSacrifice",
+          "with": [
+            "$dbears"
+          ]
+        }
+      }
+    },
+    {
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 2,
+      "check": {
+        "Count": {
+          "card": "Grizzly Bears",
+          "count": 0,
+          "player": "alice",
+          "zone": "Battlefield"
+        }
+      }
+    },
+    {
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 2,
+      "check": {
+        "Count": {
+          "card": "Grizzly Bears",
+          "count": 0,
+          "player": "dave",
+          "zone": "Battlefield"
+        }
+      }
+    },
+    {
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 2,
+      "check": {
+        "Count": {
+          "card": "Thunder-Thrash Elder",
+          "count": 1,
+          "player": "dave",
+          "zone": "Battlefield"
+        }
+      }
+    },
+    {
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 2,
+      "check": {
+        "Count": {
+          "card": "Thunder-Thrash Elder",
+          "count": 1,
+          "player": "alice",
+          "zone": "Battlefield"
+        }
+      }
+    }
+  ]
+}

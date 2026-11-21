@@ -159,6 +159,7 @@ import Parun.Types.PlayerScope (PlayerScope)
 import Parun.Types.Prevention (Prevention)
 import qualified Parun.Types.Prevention as Prevention
 import qualified Parun.Types.PreventionRider as PreventionRider
+import qualified Parun.Types.PrintedReplacement as PrintedReplacement
 import qualified Parun.Types.ProjectedCharacteristics as PC
 import qualified Parun.Types.Prompt as Prompt
 import Parun.Types.ProposedEvent (ProposedEvent)
@@ -3106,34 +3107,42 @@ data EntryPool = OnBattlefield | InGraveyards | InExile | InHands | LifeTotals |
 
 -- `removes` spends from a pool and `adds` puts into one; `records` is what the
 -- row's result or its offer depends on, other than a pool it only spends from.
+-- `shared` is the part of `removes` another seat's member can spend from
+-- too: not a sacrifice's battlefield, since a player sacrifices only their own
+-- permanents (CR 701.21a).
 data EntryAccess = MkEntryAccess
   { removes :: Set EntryPool,
     adds :: Set EntryPool,
-    records :: Set EntryPool
+    records :: Set EntryPool,
+    shared :: Set EntryPool
   }
   deriving (Eq, Show)
 
 instance Semigroup EntryAccess where
-  MkEntryAccess r a c <> MkEntryAccess r' a' c' = MkEntryAccess (r <> r') (a <> a') (c <> c')
+  MkEntryAccess r a c o <> MkEntryAccess r' a' c' o' = MkEntryAccess (r <> r') (a <> a') (c <> c') (o <> o')
 
 instance Monoid EntryAccess where
-  mempty = MkEntryAccess Set.empty Set.empty Set.empty
+  mempty = MkEntryAccess Set.empty Set.empty Set.empty Set.empty
 
 -- Every pool read and changed: a row whose work is a card's own effects.
 touchesEverything :: EntryAccess
-touchesEverything = let every = Set.fromList [minBound .. maxBound :: EntryPool] in MkEntryAccess every every every
+touchesEverything = let every = Set.fromList [minBound .. maxBound :: EntryPool] in MkEntryAccess every every every every
+
+-- Every pool read: an opponent's choice, or a condition of the board.
+seeingEverything :: EntryAccess
+seeingEverything = mempty {records = records touchesEverything}
 
 -- CR 616.1 with CR 101.4c: whether applying `first`'s row before `second`'s
 -- can leave a different board or different legal choices than the reverse:
 -- `first` changes a pool `second` records. Two members spending from one pool
 -- commute when one seat makes both choices (Thunder-Thrash Elder beside
--- Gorger Wurm); between two seats the first takes its pick first. What
--- `first` adds to a pool `second` spends from is no candidate for it (CR
--- 614.13a).
+-- Gorger Wurm); between two seats the first takes its pick first from a pool
+-- both can spend from (`shared`). What `first` adds to a pool `second`
+-- spends from is no candidate for it (CR 614.13a).
 entryConflicts :: (PlayerId, EntryAccess) -> (PlayerId, EntryAccess) -> Bool
 entryConflicts (seat, first) (otherSeat, second) =
   meets (removes first <> adds first) (records second)
-    || (seat /= otherSeat && meets (removes first) (removes second))
+    || (seat /= otherSeat && meets (shared first) (removes second))
   where
     meets x y = not (Set.null (Set.intersection x y))
 
@@ -3172,8 +3181,8 @@ entryAccess gs = row asEntering
       EntryRewrite.WithCounters counters -> countsFrom (Just counters)
       EntryRewrite.EntersWith with -> countsFrom (EntersWith.counters with)
       EntryRewrite.UnderControlOf _ -> mempty
-      EntryRewrite.SacrificeAnyNumber _ -> spending [OnBattlefield] [InGraveyards]
-      EntryRewrite.SacrificeToEnter _ -> spending [OnBattlefield] [InGraveyards]
+      EntryRewrite.SacrificeAnyNumber _ -> sacrificing
+      EntryRewrite.SacrificeToEnter _ -> sacrificing
       EntryRewrite.ExileFromGraveyard _ -> spending [InGraveyards] [InExile]
       EntryRewrite.EntersAttachedTo _ -> reading [OnBattlefield]
       EntryRewrite.Riot -> mempty
@@ -3198,14 +3207,37 @@ entryAccess gs = row asEntering
       EntryRewrite.EntersTransformed -> mempty
       EntryRewrite.RunEffects _ -> touchesEverything
     reading pools = mempty {records = Set.fromList pools}
-    spending from to = mempty {removes = Set.fromList from, adds = Set.fromList to}
-    seeingEverything = mempty {records = records touchesEverything}
+    spending from to = mempty {removes = Set.fromList from, adds = Set.fromList to, shared = Set.fromList from}
+    sacrificing = (spending [OnBattlefield] [InGraveyards]) {shared = Set.empty}
     -- A count other than a printed number reads the board (Banner of Kinship).
     countsFrom :: Maybe WithCounters.WithCounters -> EntryAccess
     countsFrom = foldMap (\counters -> if all isLiteral (WithCounters.counters counters) then mempty else seeingEverything)
     isLiteral quantity = case quantity of
       Quantity.Type.Literal _ -> True
       _ -> False
+
+-- What a member entering the battlefield touches through its entry rows
+-- (`entryAccess`), Nothing where it carries none. A printed row's condition
+-- (CR 614.1d's "unless") is read again as each member applies, so another
+-- member can change it: a conditioned row records every pool, and counts
+-- whether or not it is live on the board before the batch (Sunpetal Grove
+-- beside Thunder-Thrash Elder devouring Alice's only Forest).
+entryMemberAccess :: GameState -> ObjectId -> Maybe EntryAccess
+entryMemberAccess gs oid = case (live, conditioned) of
+  ([], []) -> Nothing
+  _ -> Just (foldMap (entryAccess gs) live <> foldMap (\effect -> entryAccess gs effect <> seeingEverything) conditioned)
+  where
+    isEntry effect = case effect of
+      ReplacementEffect.EntryR _ -> True
+      _ -> False
+    live = filter isEntry (fmap snd (Projection.replacementsOf Zone.Battlefield oid gs))
+    conditioned =
+      [ PrintedReplacement.effect pr
+      | pr <- PC.replacementEffects (Projection.project oid gs),
+        Projection.functionsFromZoneOfRow Zone.Battlefield pr,
+        Maybe.isJust (PrintedReplacement.condition pr),
+        isEntry (PrintedReplacement.effect pr)
+      ]
 
 -- Whether a row's whole work is a choice its entering object's controller alone
 -- makes and the object records (Object.chosenColors, chosenSubtype,
