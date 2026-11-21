@@ -512,6 +512,10 @@ main = do
       -- Serra Angel's, beside a Mountain apiece.
       Harness.whnf "legal actions 40 buried keywords" (legalActionCountOf [mountain] [angel]) 40,
       Harness.whnf "legal actions 80 buried keywords" (legalActionCountOf [mountain] [angel]) 80,
+      -- #6605: a graveyard of cards printing a static that functions only on
+      -- the battlefield: Glorious Anthem's, beside a Mountain apiece.
+      Harness.whnf "legal actions 40 buried statics" (legalActionCountOf [mountain] [anthem]) 40,
+      Harness.whnf "legal actions 80 buried statics" (legalActionCountOf [mountain] [anthem]) 80,
       -- #8644: a different-names slot over 20 and 40 cards, each its own name.
       Harness.whnf "legal actions 20 different names" (differentNamesCount behold hinata named) 20,
       Harness.whnf "legal actions 40 different names" (differentNamesCount behold hinata named) 40
