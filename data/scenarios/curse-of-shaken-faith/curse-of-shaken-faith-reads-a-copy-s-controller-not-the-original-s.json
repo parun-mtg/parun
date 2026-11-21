@@ -1,0 +1,53 @@
+{
+  "description": "CR 707.10 Curse of Shaken Faith burns bob for a copy he controls of alice's spell, not for alice's copy of his",
+  "note": "On alice's turn, bob's Twincast is his first cast of the turn (no damage), and its copy of alice's Shock is his (2). On his turn his Shock is his first cast (none), and alice's Twincast copy of it is hers (none). A trigger reading the original's controller leaves bob at 20 after the first copy, or burns him to 16 after the second.",
+  "board": {
+    "active": "alice",
+    "step": "PrecombatMain",
+    "seats": [
+      {
+        "name": "alice",
+        "battlefield": [
+          { "card": "Curse of Shaken Faith", "label": "curse", "attached": "bob" },
+          { "card": "Mountain", "label": "am" },
+          { "card": "Island", "label": "ai0" },
+          { "card": "Island", "label": "ai1" }
+        ],
+        "hand": [{ "card": "Shock", "label": "ashock" }, { "card": "Twincast", "label": "atwincast" }],
+        "library": [{ "card": "Island" }, { "card": "Island" }]
+      },
+      {
+        "name": "bob",
+        "battlefield": [
+          { "card": "Mountain", "label": "bm" },
+          { "card": "Island", "label": "bi0" },
+          { "card": "Island", "label": "bi1" }
+        ],
+        "hand": [{ "card": "Shock", "label": "bshock" }, { "card": "Twincast", "label": "btwincast" }],
+        "library": [{ "card": "Island" }, { "card": "Island" }]
+      }
+    ]
+  },
+  "timeline": [
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "do": { "Cast": { "object": "$ashock", "targets": ["$alice"], "mana": ["$am", null] } } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "do": "Pass" },
+    { "turn": 1, "step": "PrecombatMain", "player": "bob", "do": { "Cast": { "object": "$btwincast", "mana": ["$bi0", "$bi1", null] } } },
+    { "turn": 1, "step": "PrecombatMain", "player": "bob", "check": { "Life": { "player": "bob", "life": 20 } } },
+    { "turn": 1, "step": "PrecombatMain", "player": "bob", "do": "Pass" },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "do": "Pass" },
+    { "turn": 1, "step": "PrecombatMain", "player": "bob", "do": { "ChooseTargets": { "target": ["$alice"] } } },
+    { "turn": 1, "step": "PrecombatMain", "player": "bob", "do": "Pass" },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "do": "Pass" },
+    { "turn": 1, "step": "PrecombatMain", "player": "bob", "check": { "Life": { "player": "bob", "life": 18 } } },
+    { "turn": 2, "step": "PrecombatMain", "player": "bob", "do": { "Cast": { "object": "$bshock", "targets": ["$alice"], "mana": ["$bm", null] } } },
+    { "turn": 2, "step": "PrecombatMain", "player": "bob", "do": "Pass" },
+    { "turn": 2, "step": "PrecombatMain", "player": "alice", "do": { "Cast": { "object": "$atwincast", "mana": ["$ai0", "$ai1"] } } },
+    { "turn": 2, "step": "PrecombatMain", "player": "alice", "do": "Pass" },
+    { "turn": 2, "step": "PrecombatMain", "player": "bob", "do": "Pass" },
+    { "turn": 2, "step": "PrecombatMain", "player": "alice", "do": { "ChooseTargets": { "target": ["$alice"] } } },
+    { "turn": 2, "step": "PrecombatMain", "player": "alice", "do": "Pass" },
+    { "turn": 2, "step": "PrecombatMain", "player": "bob", "do": "Pass" },
+    { "turn": 2, "step": "PostcombatMain", "player": "bob", "check": { "Life": { "player": "bob", "life": 18 } } },
+    { "turn": 2, "step": "PostcombatMain", "player": "bob", "check": { "Life": { "player": "alice", "life": 12 } } }
+  ]
+}
