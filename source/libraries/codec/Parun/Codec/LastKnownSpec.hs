@@ -90,6 +90,8 @@ spec s = Spec.describe s "Parun.Codec.LastKnown" $ do
           LastKnown.counters = Map.singleton CounterKind.PlusOnePlusOne 3,
           LastKnown.stickers = Seq.singleton (StickerPlacement.MkStickerPlacement (StickerRef.MkStickerRef (PlayerId.MkPlayerId 1) 2 StickerKind.Name 1) (Timestamp.MkTimestamp 4) (Just 0)),
           LastKnown.copiable = ProjectedCharacteristicsSpec.minimalCharacteristics,
+          LastKnown.turned = Just ProjectedCharacteristicsSpec.minimalCharacteristics,
+          LastKnown.face = Just (CardName.MkCardName (Text.pack "Angelic Enforcer")),
           LastKnown.attached = Set.singleton (ObjectId.MkObjectId 9),
           LastKnown.host = Just (Recipient.ToPlayer (PlayerId.MkPlayerId 11)),
           LastKnown.chosenNames = Map.singleton Acquisition.Own (Map.singleton (PlayerId.MkPlayerId 8) (Set.singleton (CardName.MkCardName (Text.pack "Goblin Piker")))),
@@ -130,6 +132,9 @@ spec s = Spec.describe s "Parun.Codec.LastKnown" $ do
           <> ",\"stickers\":[{\"sticker\":{\"owner\":1,\"sheet\":2,\"kind\":\"Name\",\"index\":1},\"timestamp\":4,\"position\":0}]"
           <> ",\"copiable\":"
           <> minimalJson
+          <> ",\"turned\":"
+          <> minimalJson
+          <> ",\"face\":\"Angelic Enforcer\""
           <> ",\"attached\":[9],\"host\":{\"type\":\"ToPlayer\",\"value\":11}"
           <> ",\"chosenNames\":[{\"key\":{\"type\":\"Own\"},\"value\":{\"8\":[\"Goblin Piker\"]}}],\"chosenPlayers\":[{\"key\":{\"type\":\"Copied\",\"value\":5},\"value\":[{\"key\":{\"type\":\"Promised\",\"value\":[{\"type\":\"Food\"},{\"type\":\"Own\",\"value\":1}]},\"value\":3}]}],\"chosenColors\":[{\"key\":{\"type\":\"Own\"},\"value\":[\"Green\"]}],\"chosenSubtype\":[{\"key\":{\"type\":\"Copied\",\"value\":6},\"value\":[\"Goblin\"]}],\"chosenCardType\":[{\"key\":{\"type\":\"Own\"},\"value\":\"Creature\"}],\"chosenNumber\":[{\"key\":{\"type\":\"Own\"},\"value\":5}],\"chosenObjects\":[{\"key\":{\"type\":\"Own\"},\"value\":[11]}],\"acquisition\":{\"type\":\"Copied\",\"value\":5},\"attacking\":false,\"attackTarget\":null,\"blocking\":[12,13],\"protector\":7"
           <> ",\"paidCosts\":[{\"key\":{\"type\":\"Offspring\",\"value\":{\"mana\":[{\"type\":\"Generic\",\"value\":2}]}},\"value\":[{\"key\":{\"type\":\"Own\",\"value\":1},\"value\":1}]}]"
@@ -161,6 +166,8 @@ spec s = Spec.describe s "Parun.Codec.LastKnown" $ do
           LastKnown.counters = Map.empty,
           LastKnown.stickers = Seq.empty,
           LastKnown.copiable = ProjectedCharacteristicsSpec.minimalCharacteristics,
+          LastKnown.turned = Nothing,
+          LastKnown.face = Nothing,
           LastKnown.attached = Set.empty,
           LastKnown.host = Nothing,
           LastKnown.chosenNames = Map.empty,

@@ -109,6 +109,13 @@ data LastKnown = MkLastKnown
     -- and not whether the object was ITSELF a copy (CR 707.2's "as modified by
     -- other copy effects").
     copiable :: !ProjectedCharacteristics.ProjectedCharacteristics,
+    -- | CR 707.8a: its other face's copiable values, which a token copying it
+    -- after it has left shows once it turns. Nothing where
+    -- Parun.Engine.Event.liveCopiedToken finds none.
+    turned :: !(Maybe ProjectedCharacteristics.ProjectedCharacteristics),
+    -- | CR 707.8a: the face it showed, which a token copying it after it has
+    -- left enters with up. Nothing for its front face, and where `turned` is.
+    face :: !(Maybe CardName.CardName),
     -- | CR 303.4b / CR 301.5a: the permanents that were attached TO it as it
     -- left -- Object.attachedTo with the arrow turned round, swept off the
     -- battlefield by Parun.Engine.Game.attachments as the object ceased. What

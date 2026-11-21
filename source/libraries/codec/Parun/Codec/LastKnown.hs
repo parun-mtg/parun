@@ -48,6 +48,8 @@ codec = Fields.object $ do
   counters <- Fields.required "counters" (Common.multiset (CounterKind.codec Keyword.codec)) LastKnown.counters
   stickers <- Fields.defaulted "stickers" Seq.empty (Common.seq StickerPlacement.codec) LastKnown.stickers
   copiable <- Fields.required "copiable" ProjectedCharacteristics.codec LastKnown.copiable
+  turned <- Fields.defaulted "turned" Nothing (Common.maybe ProjectedCharacteristics.codec) LastKnown.turned
+  face <- Fields.defaulted "face" Nothing (Common.maybe CardName.codec) LastKnown.face
   attached <- Fields.required "attached" (Common.set ObjectId.codec) LastKnown.attached
   host <- Fields.defaulted "host" Nothing (Common.maybe Recipient.codec) LastKnown.host
   chosenNames <- Fields.required "chosenNames" (Common.keyedList (Common.keyValue Acquisition.codec (Common.naturalMap PlayerId.codec (Common.set CardName.codec)))) LastKnown.chosenNames
@@ -89,6 +91,8 @@ codec = Fields.object $ do
         LastKnown.counters = counters,
         LastKnown.stickers = stickers,
         LastKnown.copiable = copiable,
+        LastKnown.turned = turned,
+        LastKnown.face = face,
         LastKnown.attached = attached,
         LastKnown.host = host,
         LastKnown.chosenNames = chosenNames,
