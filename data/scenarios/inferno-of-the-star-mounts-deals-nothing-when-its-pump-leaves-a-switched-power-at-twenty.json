@@ -76,7 +76,8 @@
       "do": {
         "Cast": {
           "mana": [
-            "$i1"
+            "$i1",
+            null
           ],
           "object": "$ti",
           "targets": [
