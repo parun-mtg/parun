@@ -1185,6 +1185,10 @@ assimilatedCards = SlotName.MkSlotName (Text.pack "thoseAssimilatedCards")
 -- Parun.Engine.Cost.armSpendTriggers binds it too, for the same object: the
 -- spell CR 106.6's spend-triggering mana was spent to cast (Pyromancer's
 -- Goggles' "copy that spell").
+--
+-- A CR 305.1 land play binds its land here too, never a spell: the one "it"
+-- a CR 603.1b "play a land or cast a spell" names under both branches
+-- (Cemetery Protector), which Event.eventBindingSlots' intersection needs.
 castSpell :: SlotName
 castSpell = SlotName.MkSlotName (Text.pack "thatSpell")
 

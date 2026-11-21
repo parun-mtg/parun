@@ -2097,7 +2097,7 @@ representativeEvents cond =
         -- CR 603.9's own event, the PlayerActs arm's shape and reasoning.
         TriggerCondition.PlayerLosesGame _ -> one (GameEvent.LostTheGame S.bob)
         TriggerCondition.PlacesSticker _ -> one (GameEvent.StickerPut StickerPut.MkStickerPut {StickerPut.placer = S.bob, StickerPut.object = departed, StickerPut.kind = StickerKind.Art})
-        -- CR 305.1's own event: a land play binds nothing.
+        -- CR 305.1's own event, binding its player and land.
         TriggerCondition.PlayerPlaysLand p -> one (GameEvent.LandPlayed (LandPlayed.MkLandPlayed S.bob departed (CastOrigin.FromZone (Maybe.fromMaybe Zone.Hand (PlaysLand.from p)))))
         -- TWO: CR 701.62b's manifest dread that binned nothing, and one that
         -- binned a card, which is what parts the floor from the ceiling.
