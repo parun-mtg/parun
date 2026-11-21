@@ -25,6 +25,7 @@ import qualified Parun.Types.SideDeck as SideDeck
 import qualified Parun.Types.Source as Source
 import qualified Parun.Types.Teams as Teams
 import qualified Parun.Types.TriggeredAbilitySource as TriggeredAbilitySource
+import qualified Parun.Types.TurnMarker as TurnMarker
 import qualified Parun.Types.TurnRegisters as TurnRegisters
 import qualified Parun.Types.TypeLine as TypeLine
 
@@ -92,25 +93,64 @@ isOrphanedPhenomenonAbility oid gs = maybe False (`List.notElem` Game.stillPlayi
 -- and
 -- data/scenarios/planechase/cr-901-12b-the-active-team-s-primary-player-controls-the-plane.json
 -- prove it.
+--
+-- In Grand Melee, the planar controller of the turn being worked, read off its
+-- active player; each marker's is 'markerController'.
 planarController :: GameState -> PlayerId
-planarController gs =
-  let active = TurnRegisters.activePlayer (GameState.turn gs)
-      playing = Game.stillPlaying gs
-      order = Turn.turnOrder gs
-      after = drop 1 (List.dropWhile (/= active) order) <> order
-      holder = if List.elem active playing then active else Maybe.fromMaybe active (List.find (`List.elem` playing) after)
-   in Game.primaryOf gs holder
+planarController gs = Game.primaryOf gs (heirOf (TurnRegisters.activePlayer (GameState.turn gs)) gs)
 
--- | CR 109.4 for a command-zone object: the planar controller controls a
--- face-up plane or phenomenon card (CR 901.6), and the owner controls
--- everything else there (CR 114.2, CR 902.6).
+-- CR 800.4p / 901.6: this seat's player while they play, and once they have
+-- left the next still-playing seat in turn order.
+heirOf :: PlayerId -> GameState -> PlayerId
+heirOf seat gs =
+  let playing = Game.stillPlaying gs
+      order = Turn.turnOrder gs
+      after = drop 1 (List.dropWhile (/= seat) order) <> order
+   in if List.elem seat playing then seat else Maybe.fromMaybe seat (List.find (`List.elem` playing) after)
+
+-- | CR 901.6 / 901.14a: whose planar control a Grand Melee turn marker
+-- carries: its holder's, the active player of its turn, or while the marker
+-- waits at a departed holder's seat (CR 807.4c) CR 901.6's heir's. Nobody's
+-- once CR 901.14b has ended it (TurnMarker.lapsed).
+markerController :: TurnMarker.TurnMarker -> GameState -> Maybe PlayerId
+markerController marker gs
+  | TurnMarker.lapsed marker = Nothing
+  | otherwise = Just (heirOf (TurnMarker.holder marker) gs)
+
+-- | CR 901.14a: is this a Grand Melee Planechase game's board, where each turn
+-- marker carries its own planar controller?
+isGrandMelee :: GameState -> Bool
+isGrandMelee gs = GameSettings.grandMelee (MatchScope.settings (GameState.match gs))
+
+-- | CR 901.6 / 901.14a: every planar controller: 'planarController', or in
+-- Grand Melee each turn marker's ('markerController').
+planarControllers :: GameState -> [PlayerId]
+planarControllers gs
+  | isGrandMelee gs = Maybe.mapMaybe (`markerController` gs) (GameState.turnMarkers gs)
+  | otherwise = [planarController gs]
+
+-- | CR 901.6 / 901.14a: the controller of this face-up plane or phenomenon
+-- card: the planar controller, or in Grand Melee the planar controller of the
+-- turn marker it was turned face up under (Object.planarMarker;
+-- docs/decisions.md, "Which planar controller controls a Grand Melee plane").
+-- Nothing for a card whose marker carries no planar control.
+planarControllerOf :: Object.Object -> GameState -> Maybe PlayerId
+planarControllerOf obj gs
+  | isGrandMelee gs = Object.planarMarker obj >>= \n -> List.find ((== n) . TurnMarker.number) (GameState.turnMarkers gs) >>= (`markerController` gs)
+  | otherwise = Just (planarController gs)
+
+-- | CR 109.4 for a command-zone object: its planar controller controls a
+-- face-up plane or phenomenon card (CR 901.6, 'planarControllerOf'), and the
+-- owner controls everything else there (CR 114.2, CR 902.6) -- and, unreached,
+-- a Grand Melee planar card whose marker carries no planar control, which
+-- Parun.Engine.Planechase puts on the bottom first.
 commandControllerOf :: ObjectId -> Object.Object -> GameState -> PlayerId
 commandControllerOf oid obj gs
-  | isPlanarCard oid gs = planarController gs
+  | isPlanarCard oid gs = Maybe.fromMaybe (Object.owner obj) (planarControllerOf obj gs)
   | otherwise = Object.owner obj
 
 -- | CR 801.18 / 901.13: is this source exempt from the limited range of
--- influence option? A plane or phenomenon card is. Asked by the readers of a
+-- influence option? A plane or phenomenon card is, outside Grand Melee. Asked by the readers of a
 -- static ability's reach: Projection.View's inSourceRangeGiven and
 -- controlReaches, CombatRestriction's reachesDeclarer, Replacement's reachOf
 -- and PlayerEffect's printedRows. Parun.PlanechaseSpec's "CR 801.18 a face-up Tazeem stops a creature
@@ -120,12 +160,10 @@ commandControllerOf oid obj gs
 -- left its zone: an ability of a plane that has since left the command zone is
 -- still a planar card's.
 -- Parun.PlanechaseSpec's "CR 801.18 Akoum's chaos still reaches outside the
--- range after Akoum leaves the game" proves it.
---
--- Not implemented: CR 901.14's Grand Melee Planechase, where the exemption does
--- not hold (#9166).
+-- range after Akoum leaves the game" proves it, and its "CR 901.13 a Grand
+-- Melee Tazeem reaches only its controller's range" the Grand Melee exception.
 exemptFromRange :: ObjectId -> GameState -> Bool
-exemptFromRange oid gs = maybe False isPlanarFace (Game.faceOfWithLastKnown oid gs)
+exemptFromRange oid gs = not (isGrandMelee gs) && maybe False isPlanarFace (Game.faceOfWithLastKnown oid gs)
 
 -- | CR 801.10 / 801.11 / 801.18: whose range of influence an ability of this
 -- source sees and affects through -- its controller's, or nobody's for a

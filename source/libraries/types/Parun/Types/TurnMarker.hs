@@ -17,6 +17,9 @@ data TurnMarker = MkTurnMarker
     -- kept only for an extra turn.
     owesTurn :: Bool,
     -- | CR 807.4e / 807.4g: how many times it is designated for removal.
-    removals :: Natural.Natural
+    removals :: Natural.Natural,
+    -- | CR 901.14b: whether its planar control ended with its holder's
+    -- departure, nobody taking it over, until it passes on.
+    lapsed :: Bool
   }
   deriving (Eq, Ord, Show)

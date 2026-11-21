@@ -25,7 +25,6 @@ import qualified Parun.Engine.Event as Event
 import qualified Parun.Engine.Event.Trigger as Trigger
 import qualified Parun.Engine.Game as Game
 import qualified Parun.Engine.ObjectRestriction as ObjectRestriction
-import qualified Parun.Engine.Plane as Plane
 import qualified Parun.Engine.Planechase as Planechase
 import qualified Parun.Engine.PlayerEffect as PlayerEffect
 import qualified Parun.Engine.Prepare as Prepare
@@ -1242,8 +1241,10 @@ checkOnce instead boards = do
   State.put undungeoned
   Departure.settle outcome
   -- CR 704.6f: "the planar controller planeswalks", as the board stands once
-  -- the rest of the pass has applied.
+  -- the rest of the pass has applied: in Grand Melee each spent phenomenon's
+  -- (Plane.planarControllerOf).
   Monad.unless (null spentPhenomena) $ do
     settled <- State.get
-    Planechase.planeswalk PlaneswalkCause.Phenomenon Nothing (Plane.planarController settled)
+    let walkers = ListUtils.nubOrd (Maybe.mapMaybe (`Planechase.controllerOfFaceUp` settled) spentPhenomena)
+    Monad.forM_ walkers (Planechase.planeswalk PlaneswalkCause.Phenomenon Nothing)
   pure (acted, thenExile)

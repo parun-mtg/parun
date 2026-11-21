@@ -26,6 +26,7 @@ import qualified Parun.Engine.Engine as Engine
 import qualified Parun.Engine.Event as Event
 import qualified Parun.Engine.Expiry as Expiry
 import qualified Parun.Engine.Game as Game
+import qualified Parun.Engine.GrandMelee as GrandMelee
 import qualified Parun.Engine.Phasing as Phasing
 import qualified Parun.Engine.Planechase as Planechase
 import qualified Parun.Engine.PlayerEffect as PlayerEffect
@@ -35,6 +36,7 @@ import qualified Parun.Engine.Resolve.Common as Resolve
 import qualified Parun.Engine.Resolve.Effect as Resolve
 import qualified Parun.Engine.Setup as Setup
 import qualified Parun.Engine.Stack as Stack
+import qualified Parun.GrandMeleeSpec as Melee
 import qualified Parun.Registry as Registry
 import qualified Parun.Spec as Spec
 import qualified Parun.Support as S
@@ -54,6 +56,7 @@ import qualified Parun.Types.CounterName as CounterName
 import qualified Parun.Types.DamageEvent as DamageEvent
 import qualified Parun.Types.DamageKind as DamageKind
 import qualified Parun.Types.Deck as Deck
+import qualified Parun.Types.Departure as Departure.Type
 import qualified Parun.Types.EndingStep as EndingStep
 import qualified Parun.Types.Face as Face
 import qualified Parun.Types.Facing as Facing
@@ -88,6 +91,7 @@ import qualified Parun.Types.SideDeck as SideDeck
 import qualified Parun.Types.SlotName as SlotName
 import qualified Parun.Types.Source as Source
 import qualified Parun.Types.StepBegan as StepBegan
+import qualified Parun.Types.TurnMarker as TurnMarker
 import qualified Parun.Types.TurnRegisters as TurnRegisters
 import qualified Parun.Types.Zone as Zone
 
@@ -724,6 +728,143 @@ spec s registry = Spec.describe s "Parun.Engine.Planechase" $ do
   carrySpec s registry
   planeswalkSpec s registry
   raidersSpec s registry
+  grandMeleeSpec s registry
+
+-- CR 901.14, Grand Melee Planechase: eight seats unless said, range 1 and two
+-- turn markers, at seats 0 and 4 (CR 807.2a, 807.4b), seat 0's turn worked.
+grandMeleeSpec :: (Monad m, Monad n) => Spec.Spec m n -> Registry.Registry m -> n ()
+grandMeleeSpec s registry = Spec.describe s "CR 901.14" $ do
+  -- CR 901.14a through the whole of Setup.newGame, seated at random (CR
+  -- 807.3): each marker holder's top plane is face up, theirs to control.
+  Spec.it s "CR 901.14a each player with a turn marker sets a starting plane" $ do
+    forest <- S.printingOf s registry "Forest"
+    planes <- traverse (S.printingOf s registry) ["Tazeem", "Academy at Tolaria West", "Naya"]
+    let deck = (Deck.fromCards (Map.singleton forest 20)) {Deck.sideDecks = Map.singleton SideDeck.Planar (Map.fromSet (const 1) (Set.fromList planes))}
+        pids = fmap PlayerId.MkPlayerId [0 .. 7]
+        start = GrandMelee.setUp (Setup.emptyGame (PlayerId.MkPlayerId 0 NonEmpty.:| drop 1 pids))
+        started = S.runPure S.identityAnswer start (Setup.newGame (Resolve.performHandAction Resolve.noSubgame) (fmap (\pid -> (pid, deck)) (PlayerId.MkPlayerId 0 NonEmpty.:| drop 1 pids)))
+        faceUps = List.sort [(Projection.controllerOf oid started, fmap Object.owner (Game.lookupObject oid started)) | oid <- Planechase.faceUp started]
+        holders = List.sort [(Just pid, Just pid) | pid <- fmap TurnMarker.holder (GameState.turnMarkers started)]
+    Spec.assertEqWith s "the premise: two markers" (length (GameState.turnMarkers started)) 2
+    Spec.assertEqWith s "CR 901.14a each holder's own plane is face up, under their control" faceUps holders
+
+  -- CR 901.6 / 901.14a: seat 4's Academy at Tolaria West ("At the beginning
+  -- of your end step, if you have no cards in hand, draw seven cards.") is
+  -- seat 4's, not the worked turn's active player's.
+  Spec.it s "CR 901.6 a Grand Melee plane is its own marker holder's" $ do
+    board <- meleePlanarBoard s registry 8 [(seat 0, ["Tazeem"]), (seat 4, ["Academy at Tolaria West"])]
+    let zeros = endStep (seat 0) board
+        fours = endStep (seat 4) board
+    Spec.assertEqWith s "CR 901.6 seat 0's end step draws nobody seven" (S.handSize (seat 0) zeros, S.handSize (seat 4) zeros) (0, 0)
+    Spec.assertEqWith s "CR 901.6 seat 4's draws seat 4 seven" (S.handSize (seat 0) fours, S.handSize (seat 4) fours) (0, 7)
+
+  -- CR 901.13: seat 0's Tazeem ("Creatures can't block") reaches seat 1, in
+  -- its range, and not seat 2.
+  Spec.it s "CR 901.13 a Grand Melee Tazeem reaches only its controller's range" $ do
+    piker <- S.printingOf s registry "Goblin Piker"
+    board <- meleePlanarBoard s registry 8 [(seat 0, ["Tazeem"]), (seat 4, ["Academy at Tolaria West"])]
+    let (ones, withOne) = S.addPermanent piker (seat 1) board
+        (twos, staged) = S.addPermanent piker (seat 2) withOne
+    Spec.assertBool s (Set.member ones (CombatRestriction.cantBlock (Just (seat 1)) [ones] staged)) "seat 1's creature can't block"
+    Spec.assertBool s (not (Set.member twos (CombatRestriction.cantBlock (Just (seat 2)) [twos] staged))) "CR 901.13 seat 2's, outside seat 0's range, can"
+
+  -- CR 701.31b / 901.11c: seat 0 rolls the Planeswalker symbol and walks away
+  -- from seat 4's Academy as well as its own Tazeem. Seat 4 is a planar
+  -- controller too, so may planeswalk on seat 0's turn, its plane coming
+  -- under its own marker; seat 1 is none.
+  Spec.it s "CR 901.11c a Grand Melee planeswalk walks away from every face-up plane" $ do
+    board <- meleePlanarBoard s registry 8 [(seat 0, ["Tazeem", "Naya"]), (seat 4, ["Academy at Tolaria West", "Panopticon"])]
+    let walked = S.runPure (rolling 6) (inMain (seat 0) board) (Planechase.roll S.manaPerformer (seat 0) >> Engine.priorityLoop)
+        walking pid = S.runPure S.identityAnswer board (Planechase.planeswalk PlaneswalkCause.Instruction Nothing pid)
+    Spec.assertEqWith s "the premise" (List.sort (faceUpNames board)) [cardName "Academy at Tolaria West", cardName "Tazeem"]
+    Spec.assertEqWith s "CR 901.11c only seat 0's Naya is face up" (faceUpNames walked) [cardName "Naya"]
+    Spec.assertEqWith s "and seat 4's Academy is on the bottom" (deckNames (seat 4) walked) (fmap cardName ["Panopticon", "Academy at Tolaria West"])
+    Spec.assertEqWith s "CR 901.14a seat 4 planeswalks to Panopticon" (faceUpNames (walking (seat 4))) [cardName "Panopticon"]
+    Spec.assertEqWith s "under its own control" (faceUpControllers "Panopticon" (walking (seat 4))) [Just (seat 4)]
+    Spec.assertEqWith s "CR 701.31a seat 1 does not planeswalk" (List.sort (faceUpNames (walking (seat 1)))) [cardName "Academy at Tolaria West", cardName "Tazeem"]
+    Spec.assertEqWith s "CR 901.6 passed to seat 5 with the marker (CR 807.4c)" (faceUpControllers "Panopticon" (passed (walking (seat 4)))) [Just (seat 5)]
+
+  -- CR 704.6f / 901.14a: seat 4 planeswalks on seat 0's turn to Mutual
+  -- Epiphany ("When you encounter Mutual Epiphany, each player draws four
+  -- cards."), and as its ability leaves the stack seat 4, its controller,
+  -- planeswalks on to Panopticon ("When you planeswalk to Panopticon, draw a
+  -- card.").
+  Spec.it s "CR 704.6f a Grand Melee phenomenon's own planar controller planeswalks away" $ do
+    board <- meleePlanarBoard s registry 8 [(seat 0, ["Tazeem", "Naya"]), (seat 4, ["Academy at Tolaria West", "Mutual Epiphany", "Panopticon"])]
+    let walked = S.runPure S.identityAnswer board (Planechase.planeswalk PlaneswalkCause.Instruction Nothing (seat 4) >> Engine.priorityLoop)
+    Spec.assertEqWith s "CR 704.6f seat 4 walked on to Panopticon" (faceUpNames walked, faceUpControllers "Panopticon" walked) ([cardName "Panopticon"], [Just (seat 4)])
+    Spec.assertEqWith s "CR 312.5 seat 4 drew four for Mutual Epiphany and one for Panopticon" (S.handSize (seat 4) walked) 5
+
+  -- CR 901.9 / 807.4b: each marker holder rolls in their own turn's main phase
+  -- with its stack empty, and not in another's.
+  Spec.it s "CR 901.9 each Grand Melee marker holder rolls the planar die in their own turn" $ do
+    board <- meleePlanarBoard s registry 8 [(seat 0, ["Tazeem"]), (seat 4, ["Academy at Tolaria West"])]
+    let zeros = Melee.untilPhase Phase.PrecombatMain board
+        fours = Melee.untilPhase Phase.PrecombatMain (Engine.workOn 2 zeros)
+    Spec.assertEqWith s "seat 0's turn is worked" (TurnRegisters.activePlayer (GameState.turn zeros)) (seat 0)
+    Spec.assertEqWith s "CR 901.9 seat 0 may roll, seat 4 not" (Planechase.canRoll (seat 0) zeros, Planechase.canRoll (seat 4) zeros) (True, False)
+    Spec.assertEqWith s "seat 4's turn is worked" (TurnRegisters.activePlayer (GameState.turn fours)) (seat 4)
+    Spec.assertEqWith s "CR 901.9 seat 4 may roll, seat 0 not" (Planechase.canRoll (seat 0) fours, Planechase.canRoll (seat 4) fours) (False, True)
+
+  -- CR 901.10: at nine seats seat 4 concedes without costing a marker, its
+  -- marker going to seat 5 at once (CR 807.4c), and seat 5 turns up its top
+  -- plane in place of seat 4's.
+  Spec.it s "CR 901.10 a departing Grand Melee holder's plane is replaced by its marker's next planar controller" $ do
+    board <- meleePlanarBoard s registry 9 [(seat 0, ["Tazeem"]), (seat 4, ["Academy at Tolaria West"]), (seat 5, ["Panopticon"])]
+    let conceded = S.departs Departure.Type.Conceded (seat 4) board
+    Spec.assertEqWith s "CR 901.10 Panopticon replaces Academy" (List.sort (faceUpNames conceded)) [cardName "Panopticon", cardName "Tazeem"]
+    Spec.assertEqWith s "under seat 5's control" (faceUpControllers "Panopticon" conceded) [Just (seat 5)]
+
+  -- CR 901.14b: at eight seats seat 4's departure costs a marker (CR 807.4e).
+  -- Seat 4 controls its own Academy and seat 0's Naya, turned up under seat
+  -- 4's marker. The Academy leaves the game with seat 4, the Naya goes to the
+  -- bottom of seat 0's planar deck, and nobody turns up a plane. With seat 4's
+  -- turn under way the marker stays at its seat (CR 807.4c), and seat 5, CR
+  -- 901.6's heir, does not become a planar controller.
+  Spec.it s "CR 901.14b a departing marker holder's planes go to the bottom and nobody planeswalks" $ do
+    board <- meleePlanarBoard s registry 8 [(seat 0, ["Tazeem", "Naya", "Orzhova"]), (seat 4, ["Academy at Tolaria West"]), (seat 5, ["Panopticon"])]
+    let lent = S.runPure S.identityAnswer board (Monad.void (Planechase.turnUpTop (Just 2) (seat 0)))
+        underWay = GrandMelee.overMarker 2 (\m -> m {TurnMarker.underWay = True}) lent
+        conceded = S.departs Departure.Type.Conceded (seat 4) lent
+        concededUnderWay = S.departs Departure.Type.Conceded (seat 4) underWay
+    Spec.assertEqWith s "the premise: seat 4 controls Naya" (faceUpControllers "Naya" lent) [Just (seat 4)]
+    Spec.assertEqWith s "CR 901.14b only Tazeem stays face up" (faceUpNames conceded) [cardName "Tazeem"]
+    Spec.assertEqWith s "CR 901.14b Naya is on the bottom of seat 0's planar deck" (deckNames (seat 0) conceded) (fmap cardName ["Orzhova", "Naya"])
+    Spec.assertEqWith s "CR 901.14b nobody planeswalked" (deckNames (seat 5) conceded) [cardName "Panopticon"]
+    Spec.assertEqWith s "the same with seat 4's turn under way" (faceUpNames concededUnderWay, deckNames (seat 5) concededUnderWay) ([cardName "Tazeem"], [cardName "Panopticon"])
+    Spec.assertEqWith s "CR 901.14b and seat 5 is no planar controller" (Planechase.canPlaneswalk (seat 5) concededUnderWay) False
+    Spec.assertEqWith s "while seat 0 still is" (Planechase.canPlaneswalk (seat 0) concededUnderWay) True
+
+  -- CR 807.4g: seat 4's departure designates seat 0's marker for removal (CR
+  -- 807.4e), so as seat 0's turn ends its Tazeem goes to the bottom
+  -- (docs/decisions.md, "Where a removed turn marker's planes go"), before
+  -- seat 5 begins its turn.
+  Spec.it s "CR 807.4g a removed turn marker's plane goes to the bottom" $ do
+    board <- meleePlanarBoard s registry 8 [(seat 0, ["Tazeem", "Naya"]), (seat 4, ["Academy at Tolaria West"])]
+    let conceded = S.departs Departure.Type.Conceded (seat 4) board
+        next = fmap snd (Melee.turnStates 1 conceded)
+    Spec.assertEqWith s "the premise: Tazeem is face up, seat 0's marker designated" (faceUpNames conceded, fmap TurnMarker.removals (GameState.turnMarkers conceded)) ([cardName "Tazeem"], [1, 0])
+    Spec.assertEqWith s "seat 5's turn begins next" (fmap (TurnRegisters.activePlayer . GameState.turn) next) [seat 5]
+    Spec.assertEqWith s "CR 807.4g Tazeem is on the bottom" (fmap (\gs -> (faceUpNames gs, deckNames (seat 0) gs)) next) [([], fmap cardName ["Naya", "Tazeem"])]
+  where
+    seat = PlayerId.MkPlayerId
+    passed gs = maybe gs (`GrandMelee.passLeft` gs) (GrandMelee.markerNumbered 2 gs)
+
+-- A Grand Melee board of `n` seats, seat 0 starting (CR 807.2, 807.4b), each
+-- seat named bringing a planar deck stacked in the order named, top first,
+-- twenty Forests in every library, and each marker holder's starting plane face
+-- up under their marker (CR 901.14a). No opening hands.
+meleePlanarBoard :: (Monad m) => Spec.Spec m n -> Registry.Registry m -> Natural -> [(PlayerId.PlayerId, [String])] -> m GameState.GameState
+meleePlanarBoard s registry n seats = do
+  forest <- S.printingOf s registry "Forest"
+  planar <- traverse (\(pid, order) -> (\planes -> (pid, Map.fromSet (const 1) (Set.fromList planes))) <$> traverse (S.printingOf s registry) order) seats
+  let pids = fmap PlayerId.MkPlayerId [0 .. n - 1]
+      deck pid = (Deck.fromCards (Map.singleton forest 20)) {Deck.sideDecks = maybe Map.empty (Map.singleton SideDeck.Planar) (List.lookup pid planar)}
+      start = GrandMelee.setUp (Setup.emptyGame (PlayerId.MkPlayerId 0 NonEmpty.:| drop 1 pids))
+      built = S.runPure S.identityAnswer start (mapM_ (\pid -> Setup.createDeck pid (deck pid)) pids)
+      rank order oid = maybe (length order) (\face -> Maybe.fromMaybe (length order) (List.elemIndex (Face.name face) (fmap (CardName.MkCardName . Text.pack) order))) (Game.faceOf oid built)
+      stacked = Game.overSideDecks SideDeck.Planar (Map.mapWithKey (\pid d -> maybe d (\order -> Seq.sortOn (rank order) d) (List.lookup pid seats))) built
+  pure (S.runPure S.identityAnswer stacked Planechase.setStartingPlanes)
 
 -- CR 400.7b / 611.3d on The Caldaia, Plane -- Capenna, "Creature spells you cast
 -- from your hand have blitz {3}." (Oracle text checked on Scryfall,
@@ -903,7 +1044,7 @@ planarBoard s registry order = do
       built = S.runPure S.identityAnswer (Setup.emptyGame S.bothPlayers) (Setup.createDeck S.alice alices >> Setup.createDeck S.bob bobs)
       rank oid = maybe (length order) (\face -> Maybe.fromMaybe (length order) (List.elemIndex (Face.name face) (fmap (CardName.MkCardName . Text.pack) order))) (Game.faceOf oid built)
       stacked = Game.overSideDecks SideDeck.Planar (Map.adjust (Seq.sortOn rank) S.alice) built
-  pure (S.runPure S.identityAnswer stacked (Planechase.setStartingPlane S.alice))
+  pure (S.runPure S.identityAnswer stacked (Planechase.setStartingPlane Nothing S.alice))
 
 -- A board seated in the order named, each seat's planar deck stacked in the
 -- order named, top first, and `starter`'s top card face up (CR 103.7). Twenty
@@ -916,7 +1057,7 @@ seatedPlanarBoard s registry starter seats = do
       built = S.runPure S.identityAnswer (Setup.emptyGame seated) (mapM_ (uncurry Setup.createDeck) decks)
       rank order oid = maybe (length order) (\face -> Maybe.fromMaybe (length order) (List.elemIndex (Face.name face) (fmap (CardName.MkCardName . Text.pack) order))) (Game.faceOf oid built)
       stacked = Game.overSideDecks SideDeck.Planar (Map.mapWithKey (\pid deck -> maybe deck (\order -> Seq.sortOn (rank order) deck) (List.lookup pid seats))) built
-  pure (S.runPure S.identityAnswer stacked (Planechase.setStartingPlane starter))
+  pure (S.runPure S.identityAnswer stacked (Planechase.setStartingPlane Nothing starter))
 
 -- A board under CR 901.15's single planar deck option, seated in the order
 -- named and each seat bringing the planar cards named, the communal deck stacked
@@ -931,7 +1072,7 @@ communalBoard s registry starter order seats = do
       built = S.runPure S.identityAnswer (Setup.gameWith settings seated) (mapM_ (uncurry Setup.createDeck) decks)
       rank oid = maybe (length order) (\face -> Maybe.fromMaybe (length order) (List.elemIndex (Face.name face) (fmap (CardName.MkCardName . Text.pack) order))) (Game.faceOf oid built)
       stacked = Game.overSideDecks SideDeck.Planar (fmap (Seq.sortOn rank)) built
-  pure (S.runPure S.identityAnswer stacked (Planechase.setStartingPlane starter))
+  pure (S.runPure S.identityAnswer stacked (Planechase.setStartingPlane Nothing starter))
 
 -- `who` concedes when asked; everyone else plays on, and every other prompt is
 -- answered by identity.
@@ -1279,7 +1420,7 @@ planeswalkSpec s registry = Spec.describe s "CR 901.11" $ do
   Spec.it s "CR 901.11c a departing owner's planeswalk walks away from the plane left face up" $ do
     ring <- S.printingOf s registry "Sol Ring"
     board <- seatedPlanarBoard s registry S.bob [(S.alice, ["Tazeem"]), (S.bob, ["Orzhova"]), (S.carol, ["Sanctum of Serra", "Tazeem"])]
-    let merged = S.runPure S.identityAnswer board (Monad.void (Planechase.turnUpTop S.carol))
+    let merged = S.runPure S.identityAnswer board (Monad.void (Planechase.turnUpTop Nothing S.carol))
         (ringId, stocked) = S.addPermanent ring S.alice (inMain S.bob merged)
         gone = S.runPure (conceding S.bob) stocked Engine.priorityLoop
     Spec.assertEqWith s "the premise: Orzhova and Sanctum of Serra are face up" (List.sort (faceUpNames stocked)) [cardName "Orzhova", cardName "Sanctum of Serra"]
@@ -1525,6 +1666,10 @@ planeswalkSpec s registry = Spec.describe s "CR 901.11" $ do
 -- The controllers of the permanents with this name.
 controllersNamed :: String -> GameState.GameState -> [Maybe PlayerId.PlayerId]
 controllersNamed name gs = fmap (`Projection.controllerOf` gs) (named name gs)
+
+-- The controllers of the face-up planar cards with this name.
+faceUpControllers :: String -> GameState.GameState -> [Maybe PlayerId.PlayerId]
+faceUpControllers name gs = [Projection.controllerOf oid gs | oid <- Planechase.faceUp gs, fmap Face.name (Game.faceOf oid gs) == cardName name]
 
 -- The names of the cards in this player's zone, ordered.
 zoneNames :: Zone.Zone -> PlayerId.PlayerId -> GameState.GameState -> [Maybe CardName.CardName]

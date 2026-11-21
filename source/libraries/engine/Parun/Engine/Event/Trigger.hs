@@ -2142,6 +2142,10 @@ eventTriggersGiven scope standing events gs =
       -- trigger from the command zone, where a planar card lies.
       -- Parun.PlanechaseSpec's "CR 311.7 Pools of Becoming triggers each
       -- revealed plane's chaos ability" proves it.
+      --
+      -- Implementation-defined: in Grand Melee, the worked turn's planar
+      -- controller, CR 311.7 naming one "current planar controller" of
+      -- several.
       chaosEnsuedOn event = case event of
         GameEvent.ChaosEnsued (Just oid)
           | Set.notMember oid (GameState.command gs),

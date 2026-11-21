@@ -487,6 +487,12 @@ data Object = MkObject
     -- Ring-bearer" is the test that keeps it so. Per-incarnation: cleared by
     -- newIncarnation (CR 400.7).
     ringBearerFor :: Maybe PlayerId.PlayerId,
+    -- | CR 901.14a: in a Grand Melee Planechase game, the number of the turn
+    -- marker this face-up plane or phenomenon card was turned face up under,
+    -- whose planar controller controls it (Parun.Engine.Plane.planarControllerOf).
+    -- Nothing in every other game. Per-incarnation: cleared by newIncarnation, a
+    -- card turned face down becoming a new object (CR 901.7a).
+    planarMarker :: Maybe Natural.Natural,
     -- | CR 310.9: the player designated as this battle's protector, chosen as the
     -- battle enters (CR 310.9a). An Object field and not a projection because CR
     -- 310.9g keeps the designation across the permanent ceasing to be a battle or
@@ -1077,6 +1083,7 @@ new o s z t =
       warped = Nothing,
       preparedCopyOf = Nothing,
       ringBearerFor = Nothing,
+      planarMarker = Nothing,
       protector = Nothing,
       ventureRoom = Nothing,
       classLevel = Nothing,

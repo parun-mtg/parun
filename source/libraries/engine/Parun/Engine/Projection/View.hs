@@ -2825,11 +2825,14 @@ controllerOfGiven :: [ControlGrant] -> ObjectId -> GameState -> Maybe PlayerId.P
 controllerOfGiven grants oid gs = case Game.lookupObject oid gs of
   Nothing -> Nothing
   Just obj
-    -- CR 901.6: a face-up plane or phenomenon card's controller is the planar
+    -- CR 901.6: a face-up plane or phenomenon card's controller is its planar
     -- controller.
-    | Object.zone obj == Zone.Command && Plane.isPlanarCard oid gs -> Just (Plane.planarController gs)
+    | Object.zone obj == Zone.Command && Plane.isPlanarCard oid gs -> Just (Plane.commandControllerOf oid obj gs)
     -- CR 901.10b: so is an ability from a phenomenon whose owner has left the
     -- game.
+    --
+    -- Implementation-defined: in Grand Melee, the worked turn's planar
+    -- controller, CR 901.10b naming one "new planar controller" of several.
     | Object.zone obj == Zone.Stack && Plane.isOrphanedPhenomenonAbility oid gs -> Just (Plane.planarController gs)
     | otherwise -> Just (Maybe.fromMaybe (defaultControllerOf obj) (Map.lookup oid (layerTwo grants gs)))
 

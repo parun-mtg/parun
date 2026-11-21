@@ -207,8 +207,8 @@ leaveAll departing = do
   -- CR 800.4a's fourth clause: "Then", so after the instant above.
   pure . Monad.when continues $ do
     Monad.mapM_ remainingControlledExiled pids
-    -- CR 901.10: the replacement plane, once CR 800.4a is done.
-    Planechase.ownersLeft before pids
+    -- CR 901.10 / 901.14b: the replacement plane, once CR 800.4a is done.
+    Planechase.playersLeft before pids
 
 -- | CR 810.8a / 810.8b: the players who leave the game alongside these
 -- departures in Two-Headed Giant -- each departing player's teammates still

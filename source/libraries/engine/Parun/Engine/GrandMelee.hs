@@ -61,7 +61,8 @@ handOut gs
                 TurnMarker.holder = pid,
                 TurnMarker.underWay = n == 1,
                 TurnMarker.owesTurn = n /= 1,
-                TurnMarker.removals = 0
+                TurnMarker.removals = 0,
+                TurnMarker.lapsed = False
               }
        in gs {GameState.turnMarkers = zipWith marker [1 ..] holders}
 
@@ -118,7 +119,7 @@ markerNumbered n gs = List.find ((== n) . TurnMarker.number) (GameState.turnMark
 -- under it is still to come.
 passLeft :: TurnMarker -> GameState -> GameState
 passLeft marker gs = case leftOf (TurnMarker.holder marker) gs of
-  next : _ -> overMarker (TurnMarker.number marker) (\m -> m {TurnMarker.holder = next, TurnMarker.underWay = False, TurnMarker.owesTurn = True}) gs
+  next : _ -> overMarker (TurnMarker.number marker) (\m -> m {TurnMarker.holder = next, TurnMarker.underWay = False, TurnMarker.owesTurn = True, TurnMarker.lapsed = False}) gs
   [] -> overMarker (TurnMarker.number marker) (\m -> m {TurnMarker.underWay = False}) gs
 
 -- | CR 807.4e / 807.4g: designate a marker for removal this many more times.
@@ -165,15 +166,25 @@ departed :: [PlayerId] -> GameState -> GameState
 departed pids gs
   | not (GameSettings.grandMelee (MatchScope.settings (GameState.match gs))) || null (GameState.turnMarkers gs) = gs
   | otherwise =
-      let -- CR 807.4f: markers already designated are disregarded.
-          counted = Natural.minusSaturating (Natural.length (GameState.turnMarkers gs)) (sum (fmap TurnMarker.removals (GameState.turnMarkers gs)))
-          cost = Natural.minusSaturating counted (markersFor (Natural.length (Game.stillPlaying gs)))
-          candidates = List.sort (fmap TurnMarker.number (Maybe.mapMaybe (`nearestRightOf` gs) pids))
+      let candidates = List.sort (fmap TurnMarker.number (Maybe.mapMaybe (`nearestRightOf` gs) pids))
           leaving m = List.elem (TurnMarker.holder m) pids && not (TurnMarker.underWay m)
           moved = List.foldl' (flip passLeft) gs (filter leaving (GameState.turnMarkers gs))
        in case candidates of
-            n : _ -> designate cost n moved
+            n : _ -> designate (cost pids gs) n moved
             _ -> moved
+
+-- | CR 807.4e / 807.4f: how many turn markers these players leaving the game
+-- costs, markers already designated for removal disregarded. Read before or
+-- after they leave: the departing players are not counted either way. None
+-- outside the variant, which has no markers.
+cost :: [PlayerId] -> GameState -> Natural
+cost pids gs =
+  let counted = Natural.minusSaturating (Natural.length (GameState.turnMarkers gs)) (sum (fmap TurnMarker.removals (GameState.turnMarkers gs)))
+   in Natural.minusSaturating counted (markersFor (Natural.length (filter (`List.notElem` pids) (Game.stillPlaying gs))))
+
+-- | CR 901.14b: the marker numbered `n` stops carrying planar control.
+lapse :: Natural -> GameState -> GameState
+lapse n = overMarker n (\m -> m {TurnMarker.lapsed = True})
 
 -- | CR 807.4c / 807.4g / 807.4i: the marker numbered `n` once its holder's
 -- turn ends. Removed if designated; kept if its holder's ordinary turn is
