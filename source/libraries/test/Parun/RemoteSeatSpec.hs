@@ -1,8 +1,9 @@
 -- Covers Parun.Web.Link, Parun.Play.Protocol's bySeat and Parun.Web.Lobby's
--- invites: a game whose second seat is played from another page, over a
--- channel held in memory, and the agreement that starts it.
+-- invites: games whose guests' seats are played from other pages, each over
+-- its own channel held in memory, and the agreement that starts them.
 module Parun.RemoteSeatSpec where
 
+import qualified Control.Monad as Monad
 import qualified Control.Monad.Trans.State.Strict as State
 import qualified Data.Containers.ListUtils as ListUtils
 import qualified Data.List as List
@@ -26,6 +27,7 @@ import qualified Parun.Types.Reply as R
 import qualified Parun.Types.Request as Request
 import qualified Parun.Types.Result as Result
 import qualified Parun.Web.Ending as Ending
+import qualified Parun.Web.Html as Html
 import qualified Parun.Web.Link as Link
 import qualified Parun.Web.Lobby as Lobby
 
@@ -48,65 +50,99 @@ spec s registry = Spec.describe s "RemoteSeat" $ do
     Spec.assertEqWith s "the guest is shown who is ready" (fmap (fmap Link.ready . Lobby.placesFor 0) [hostReady, guestReady]) [[Just True, Just False], [Just False, Just True]]
     Spec.assertEqWith s "a change of deck clears every ready flag" (Lobby.ready changed, guestFlag changed) (False, Just False)
 
+  Spec.it s "a game with two invited players starts only once all three are ready, and each guest is shown its own seat as its own" $ do
+    let one = Text.pack "sets/a/one"
+        two = Text.pack "sets/a/two"
+        added = Lobby.update Lobby.MkAddBot Text.empty (Lobby.update (Lobby.MkPick one) Text.empty (Lobby.withDecks (Seq.fromList [one, two]) Map.empty Lobby.new))
+        invited = Lobby.update (Lobby.MkInviteSlot 1) Text.empty (Lobby.update (Lobby.MkInviteSlot 0) Text.empty added)
+        joined i = Lobby.heard i (Link.MkHello two (Text.pack "20 Forest\n")) . Lobby.linked i (\invite -> invite {Lobby.connected = True})
+        chosen = joined 1 (joined 0 invited)
+        hostReady = Lobby.update Lobby.MkReady Text.empty chosen
+        firstReady = Lobby.heard 0 (Link.MkReady True) hostReady
+        allReady = Lobby.heard 1 (Link.MkReady True) firstReady
+        dropped = Lobby.linked 1 (const Lobby.newInvite) allReady
+        offered = foldr (\i -> Lobby.linked i (\invite -> invite {Lobby.link = Just (Text.pack ("https://example.test/#offer=" <> show i))})) invited [0, 1]
+        shown = Html.toText (Lobby.view offered)
+    Spec.assertBool s (all (\i -> Text.isInfixOf (Text.pack ("id=\"invite-reply-" <> show i <> "\"")) shown && Text.isInfixOf (Text.pack ("#offer=" <> show i)) shown) [0 :: Int, 1]) "each invited seat has its own link and its own reply box"
+    Spec.assertEqWith s "starts" (fmap Lobby.starts [invited, chosen, hostReady, firstReady, allReady, dropped]) [False, False, False, False, True, False]
+    Spec.assertEqWith s "each guest is shown itself as You and the other as a player" (fmap (fmap Link.who . (`Lobby.placesFor` allReady)) [0, 1]) [[Text.pack "Host", Text.pack "You", Text.pack "Player 3"], [Text.pack "Host", Text.pack "Player 2", Text.pack "You"]]
+    Spec.assertEqWith s "a guest dropping clears every ready flag" (Lobby.ready dropped, fmap Lobby.guestReady (Lobby.invites dropped)) (False, Map.fromList [(0, False), (1, False)])
+
   Spec.it s "a whole game in which the guest's seat is answered only through the remote exchange, and the guest sees only its own view" $ do
     matchup <- BotSpec.bears s registry
-    (outcome, wire) <- State.runStateT (hosted matchup) (MkWire [] [] [] Nothing)
-    case outcome of
-      Right (Result.Won winner, _) -> do
-        let verdict = if winner == S.bob then Ending.MkWon else Ending.MkLost
-        told <- State.execStateT (Link.send channel (Link.MkEnd verdict [Text.pack "over"] Text.empty)) wire
-        Spec.assertEqWith s "the guest is told how it ended" (ended told) (Just (Link.MkEnded verdict [Text.pack "over"] Text.empty))
-      _ -> Spec.assertBool s False ("finished: " <> show (fmap fst outcome))
-    Spec.assertBool s (not (null (hostAsked wire)) && all ((== S.alice) . fst) (hostAsked wire)) "the host's page answers only its own seat"
-    Spec.assertBool s (not (null (guestAsked wire)) && all ((== S.bob) . fst) (guestAsked wire)) "the guest's page answers only its own seat"
-    Spec.assertEqWith s "the guest is sent only its own seat's view" (ListUtils.nubOrd (Maybe.mapMaybe snd (guestAsked wire))) [S.bob]
+    wholeGame s matchup [S.bob]
 
--- Both pages and the channel between them: the lines the host has yet to
--- read, the seat of each request each page answered and whose view it
--- carried, and the end the guest was told.
+  Spec.it s "a whole game with two guests, each answering only its own seat over its own channel and seeing only its own view" $ do
+    matchup <- BotSpec.bears s registry
+    wholeGame s (matchup <> pure (S.carol, snd (NonEmpty.head matchup))) [S.bob, S.carol]
+
+-- A game between these seats, every seat in `guests` played from its own
+-- page over its own channel and the rest from the host's: it finishes, each
+-- page answers only its own seat and is sent only its own seat's view, and
+-- each guest is told how it ended.
+wholeGame :: (Monad m) => Spec.Spec m n -> NonEmpty.NonEmpty (PlayerId.PlayerId, Deck.Deck) -> [PlayerId.PlayerId] -> m ()
+wholeGame s matchup guests = do
+  (outcome, wire) <- State.runStateT (hosted guests matchup) (MkWire Map.empty Map.empty Map.empty)
+  case outcome of
+    Right (Result.Won _, _) -> do
+      told <- State.execStateT (Monad.forM_ guests $ \g -> Link.send (channel g) (Link.MkEnd Ending.MkStopped [Text.pack "over"] Text.empty)) wire
+      Spec.assertEqWith s "each guest is told how it ended" (ended told) (Map.fromList [(g, Link.MkEnded Ending.MkStopped [Text.pack "over"] Text.empty) | g <- guests])
+    _ -> Spec.assertBool s False ("finished: " <> show (fmap fst outcome))
+  let host = [pid | (pid, _) <- NonEmpty.toList matchup, pid `notElem` guests]
+      askedOf which = Map.findWithDefault [] which (asked wire)
+  Spec.assertBool s (not (null (askedOf hostPage)) && all ((`elem` host) . fst) (askedOf hostPage)) "the host's page answers only its own seat"
+  Monad.forM_ guests $ \g -> do
+    Spec.assertBool s (not (null (askedOf (Just g))) && all ((== g) . fst) (askedOf (Just g))) ("guest " <> show g <> "'s page answers only its own seat")
+    Spec.assertEqWith s ("guest " <> show g <> " is sent only its own seat's view") (ListUtils.nubOrd (Maybe.mapMaybe snd (askedOf (Just g)))) [g]
+
+-- Every page and the channels between them: the lines the host has yet to
+-- read from each guest, the seat of each request each page (Nothing for the
+-- host's, a guest's seat for its own) answered and whose view it carried,
+-- and the end each guest was told.
 data Wire = MkWire
-  { inbox :: [Text.Text],
-    hostAsked :: [(PlayerId.PlayerId, Maybe PlayerId.PlayerId)],
-    guestAsked :: [(PlayerId.PlayerId, Maybe PlayerId.PlayerId)],
-    ended :: Maybe Link.Heard
+  { inbox :: Map.Map PlayerId.PlayerId [Text.Text],
+    asked :: Map.Map (Maybe PlayerId.PlayerId) [(PlayerId.PlayerId, Maybe PlayerId.PlayerId)],
+    ended :: Map.Map PlayerId.PlayerId Link.Heard
   }
 
 build :: Text.Text
 build = Text.pack "test"
 
--- The host's game: every seat over the line protocol, Player 2's requests
--- sent over the channel and Player 1's to the host's page.
-hosted :: (Monad m) => NonEmpty.NonEmpty (PlayerId.PlayerId, Deck.Deck) -> State.StateT Wire m (Either Text.Text (Result.Result, GameState.GameState))
-hosted = Game.run (S.fixtureRegistry []) Nothing [] (Map.fromList [(pid, Game.wired (S.fixtureRegistry []) (Protocol.bySeat (Map.singleton S.bob (Link.remote channel)) hostPage)) | pid <- [S.alice, S.bob]]) (S.seeded 1) Map.empty
+-- The host's game: every seat over the line protocol, each guest's requests
+-- sent over its channel and every other seat's to the host's page.
+hosted :: (Monad m) => [PlayerId.PlayerId] -> NonEmpty.NonEmpty (PlayerId.PlayerId, Deck.Deck) -> State.StateT Wire m (Either Text.Text (Result.Result, GameState.GameState))
+hosted guests matchup = Game.run (S.fixtureRegistry []) Nothing [] (Map.fromList [(pid, Game.wired (S.fixtureRegistry []) (Protocol.bySeat (Map.fromList [(g, Link.remote (channel g)) | g <- guests]) (page hostPage))) | (pid, _) <- NonEmpty.toList matchup]) (S.seeded 1) Map.empty matchup
 
--- The host's end of the channel: each message rendered and read back as a
--- line, answered at once by the guest's page (Link.guest), whose reply waits
--- for the host to read.
-channel :: (Monad m) => Link.Channel (State.StateT Wire m)
-channel = Link.MkChannel send received
+-- The host's page, as `asked` keys it.
+hostPage :: Maybe PlayerId.PlayerId
+hostPage = Nothing
+
+-- The host's end of this guest's channel: each message rendered and read
+-- back as a line, answered at once by the guest's page (Link.guest), whose
+-- reply waits for the host to read.
+channel :: (Monad m) => PlayerId.PlayerId -> Link.Channel (State.StateT Wire m)
+channel g = Link.MkChannel send (received g)
   where
     send message = case Link.decode build (Link.encode build message) of
       Left _ -> pure ()
       Right line -> do
-        heard <- Link.guest guestPage line
+        heard <- Link.guest (page (Just g)) line
         case heard of
-          Link.MkReply reply -> State.modify' (\w -> w {inbox = inbox w <> [Link.encode build reply]})
-          Link.MkEnded {} -> State.modify' (\w -> w {ended = Just heard})
+          Link.MkReply reply -> State.modify' (\w -> w {inbox = Map.insertWith (flip (<>)) g [Link.encode build reply] (inbox w)})
+          Link.MkEnded {} -> State.modify' (\w -> w {ended = Map.insert g heard (ended w)})
           Link.MkIgnored -> pure ()
 
--- The next line the guest's page sent, read; Nothing once there is none.
-received :: (Monad m) => State.StateT Wire m (Maybe Link.Message)
-received = do
+-- The next line this guest's page sent, read; Nothing once there is none.
+received :: (Monad m) => PlayerId.PlayerId -> State.StateT Wire m (Maybe Link.Message)
+received g = do
   w <- State.get
-  case inbox w of
-    line : rest -> State.put w {inbox = rest} >> pure (either (const Nothing) Just (Link.decode build line))
+  case Map.findWithDefault [] g (inbox w) of
+    line : rest -> State.put w {inbox = Map.insert g rest (inbox w)} >> pure (either (const Nothing) Just (Link.decode build line))
     [] -> pure Nothing
 
-hostPage :: (Monad m) => Protocol.Exchange (State.StateT Wire m)
-hostPage request = State.modify' (\w -> w {hostAsked = hostAsked w <> [seen request]}) >> pure (Just (Right (answer request)))
-
-guestPage :: (Monad m) => Protocol.Exchange (State.StateT Wire m)
-guestPage request = State.modify' (\w -> w {guestAsked = guestAsked w <> [seen request]}) >> pure (Just (Right (answer request)))
+-- A page's own exchange, each request it answers recorded under it.
+page :: (Monad m) => Maybe PlayerId.PlayerId -> Protocol.Exchange (State.StateT Wire m)
+page which request = State.modify' (\w -> w {asked = Map.insertWith (flip (<>)) which [seen request] (asked w)}) >> pure (Just (Right (answer request)))
 
 seen :: Request.Request -> (PlayerId.PlayerId, Maybe PlayerId.PlayerId)
 seen request = (Question.seat (Request.question request), fmap PlayerView.viewer (Request.view request))
