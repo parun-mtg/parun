@@ -320,8 +320,13 @@ entryHostsFor chooser subject before =
       inReach oid = Projection.objectInRangeGiven grants chooser oid gs
       graveyards = concatMap (\pid -> Game.cardsIn Zone.Graveyard pid gs) (Game.stillPlaying gs)
       objects = filter inReach (hostsAmong (Set.toList (GameState.battlefield gs) <> graveyards) context subject Filter.Type.CanHostSubject gs)
-      players = filter (\pid -> Maybe.isJust (attachmentFor subject (Recipient.ToPlayer pid) gs)) (Players.table (Just chooser) gs)
+      players = filter (\pid -> canHostPlayer subject pid gs) (Players.table (Just chooser) gs)
    in fmap Recipient.ToObject objects <> fmap Recipient.ToPlayer players
+
+-- CR 701.3a: whether `subject` could become attached to player `pid`, the test
+-- an offer of players to attach it to filters by (CR 303.4f, 608.2d).
+canHostPlayer :: ObjectId -> PlayerId -> GameState -> Bool
+canHostPlayer subject pid gs = Maybe.isJust (attachmentFor subject (Recipient.ToPlayer pid) gs)
 
 -- CR 303.4f / 303.4g: whether `subject` is an Aura that entryHostsFor would
 -- offer something to under some player still in the game; False for anything

@@ -16,6 +16,7 @@ import qualified Data.Ord as Ord
 import qualified Data.Sequence as Seq
 import qualified Data.Set as Set
 import Numeric.Natural (Natural)
+import qualified Parun.Engine.Attach as Attach
 import qualified Parun.Engine.Binding as Binding
 import qualified Parun.Engine.Children as Children
 import qualified Parun.Engine.Claim as Claim
@@ -835,6 +836,8 @@ manaSuppliesGiven xCeiling capacity watch rewritesOf pcs pid borrowed oid gs =
           | (clause, _) <- ManaOption.steps option,
             choice <- Maybe.mapMaybe ManaAbility.playerChoice (Foldable.toList (Clause.effects clause)),
             List.elem pid (Maybe.fromMaybe [] (PlayerEffect.playersInScope (Just pid) (Just pid) gs (ChoosePlayer.scope choice)))
+              -- The resolving arm's CR 608.2d cut (Resolve.Arms.Damage.choosePlayer).
+              && (not (ChoosePlayer.attaching choice) || Attach.canHostPlayer oid pid gs)
           ]
       options = manaOptionsVisiting Set.empty rewritesOf pcs oid gs
       -- Lazy, and forced only for a permanent mixing open and closed routes or

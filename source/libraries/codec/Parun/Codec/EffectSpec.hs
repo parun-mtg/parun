@@ -2533,14 +2533,14 @@ spec s = Spec.describe s "Parun.Codec.Effect" $ do
       s
       toJson
       fromJson
-      (Effect.ChoosePlayer (ChoosePlayer.MkChoosePlayer (PlayerScope.Related PlayerRelation.Opponent) (SlotName.MkSlotName (Text.pack "opponent")) Nothing))
+      (Effect.ChoosePlayer (ChoosePlayer.MkChoosePlayer (PlayerScope.Related PlayerRelation.Opponent) (SlotName.MkSlotName (Text.pack "opponent")) Nothing False))
       " {\"type\":\"ChoosePlayer\",\"value\":{\"scope\":{\"type\":\"Opponent\"},\"slot\":\"opponent\"}} "
   Spec.it s "ChoosePlayer, a player" $
     Common.assertJsonCodec
       s
       toJson
       fromJson
-      (Effect.ChoosePlayer (ChoosePlayer.MkChoosePlayer (PlayerScope.Related PlayerRelation.AnyPlayer) (SlotName.MkSlotName (Text.pack "chosen")) Nothing))
+      (Effect.ChoosePlayer (ChoosePlayer.MkChoosePlayer (PlayerScope.Related PlayerRelation.AnyPlayer) (SlotName.MkSlotName (Text.pack "chosen")) Nothing False))
       " {\"type\":\"ChoosePlayer\",\"value\":{\"scope\":{\"type\":\"AnyPlayer\"},\"slot\":\"chosen\"}} "
   Spec.it s "ChoosePlayerAtRandom" $
     Common.assertJsonCodec

@@ -74,9 +74,10 @@ data StoredEffects = MkStoredEffects
     pendingPreventionRiders :: Seq.Seq Prevention.Prevention,
     -- | CR 614.1a: the effects a replacement applied in an event's place and
     -- that have not run yet -- a damage event's (DamageRewrite.RunEffects), a
-    -- zone change's (ZoneChangeR.riders), a loss of the game's (GameLossR) or a
-    -- draw's (DrawRewrite.FromGraveyardOrLose, DrawRewrite.RunEffects)
-    -- -- drained by Resolve.runReplacementEffects.
+    -- zone change's (ZoneChangeR.riders), a loss of the game's (GameLossR), a
+    -- draw's (DrawRewrite.FromGraveyardOrLose, DrawRewrite.RunEffects) or a
+    -- transformation's (TransformRewrite.RunEffects, CR 701.27i) -- drained by
+    -- Resolve.runReplacementEffects.
     --
     -- Empty at every priority window because every road that can fill it drains
     -- it: for damage, each road into Parun.Engine.Damage.applyDamage (Resolve's
@@ -85,7 +86,10 @@ data StoredEffects = MkStoredEffects
     -- action pass that met it (Sba.checkOnce, Engine.settlePasses) and each
     -- resolved instruction
     -- (Resolve.applyEffectWith), and each draw of a sequence, an instruction's
-    -- or a replacement's (Event.drawSeries).
+    -- or a replacement's (Event.drawSeries); for a transformation, the CR
+    -- 702.145 sweep that turned it, in the untap step
+    -- (Engine.runTurnBasedActions) or before the state-based action pass
+    -- (Engine.settlePasses), and each resolved instruction.
     pendingReplacementEffects :: Seq.Seq PendingReplacementEffect.PendingReplacementEffect,
     -- | CR 614.10b: the actions a skip put first in the next step, phase or turn
     -- to actually occur (PhaseRewrite.MaySkipFor), drained by

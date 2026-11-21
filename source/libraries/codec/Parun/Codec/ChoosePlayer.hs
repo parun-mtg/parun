@@ -18,9 +18,11 @@ codec = Fields.object $ do
   scope <- Fields.required "scope" PlayerScope.codec ChoosePlayer.scope
   slot <- Fields.required "slot" SlotName.codec ChoosePlayer.slot
   excluding <- Fields.defaulted "excluding" Nothing (Common.maybe SlotName.codec) ChoosePlayer.excluding
+  attaching <- Fields.defaulted "attaching" False Common.boolean ChoosePlayer.attaching
   pure
     ChoosePlayer.MkChoosePlayer
       { ChoosePlayer.scope = scope,
         ChoosePlayer.slot = slot,
-        ChoosePlayer.excluding = excluding
+        ChoosePlayer.excluding = excluding,
+        ChoosePlayer.attaching = attaching
       }
