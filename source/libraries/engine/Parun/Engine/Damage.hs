@@ -1508,7 +1508,7 @@ processDamage settle events = do
   settledLoss <-
     Map.fromList
       <$> Monad.forM
-        (List.sortOn (Replacement.seatOf board . fst) (Map.toList damageTo))
+        (List.sortOn (Replacement.seatOf (Game.apnapOrder board) . fst) (Map.toList damageTo))
         ( \(pid, total) -> do
             loseLife pid (negate (toInteger total))
             n <- Event.resolveLifeLossSpent settle (Just board) Set.empty LifeLossCause.ByDamage pid total

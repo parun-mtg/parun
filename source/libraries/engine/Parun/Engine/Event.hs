@@ -7224,7 +7224,7 @@ resolveDamage allowances spent earlier de = do
 resolveDamageBatch :: [DamageEvent.DamageEvent] -> Game ([DamageEvent.DamageEvent], [Prevention])
 resolveDamageBatch events = do
   before <- State.get
-  (dealt, (prevented, _)) <- settleThreads mempty (fmap (\de -> (de, Set.empty)) events)
+  (dealt, (prevented, _)) <- settleThreads Nothing mempty (fmap (\de -> (de, Set.empty)) events)
   Replacement.spendPrevented prevented
   after <- State.get
   pure (Replacement.oneEventPerRecipient (fmap (asThough after . asDealt before after) dealt), Replacement.groupPreventions prevented)
@@ -7266,11 +7266,27 @@ asDealt before after de
 -- two redirects landing parts of one source's damage on one recipient make one
 -- event there, so Pyromancer's Gauntlet adds 2 to it once (CR 614.5). Proved by
 -- the scenario harms-way-twice-onto-one-recipient-takes-pyromancers-gauntlet-once.
-settleThreads :: Replacement.Tally -> [Replacement.DamageThread] -> Game ([DamageEvent.DamageEvent], Replacement.Tally)
-settleThreads earlier threads = do
+--
+-- CR 805.6: the active team's players make their choices in whatever order
+-- they like, so the first round in which that order changes what settlesFirst
+-- admits (teamOrderMatters) asks the team for it (inActiveTeamOrder), and
+-- `named` carries the answer through every later round. Seat order before
+-- then, where no order is observable. The team scenarios
+-- cr-805-6-the-active-team-names-which-teammate-s-damage-choice-comes-first
+-- and its control prove it.
+settleThreads :: Maybe [PlayerId] -> Replacement.Tally -> [Replacement.DamageThread] -> Game ([DamageEvent.DamageEvent], Replacement.Tally)
+settleThreads named earlier threads = do
+  gs0 <- State.get
+  chosen <- case named of
+    Just order -> pure (Just order)
+    Nothing
+      | teamOrderMatters gs0 threads (Turn.activePlayers gs0) ->
+          Just <$> inActiveTeamOrder (\now team -> teamOrderMatters now threads team) (filter (`elem` Game.stillPlaying gs0) (Game.apnapOrder gs0)) (\pid order -> pure (order <> [pid])) []
+      | otherwise -> pure Nothing
   gs <- State.get
-  let first = settlesFirst gs threads
-  ordered <- Replacement.orderBatch first threads
+  let order = Maybe.fromMaybe (Game.apnapOrder gs) chosen
+      first = settlesFirst order gs threads
+  ordered <- Replacement.orderBatch order first threads
   let (now, later) = List.partition (first . fst) ordered
       step (dealt0, added0, prevented0) ((de, spent), allowance) = do
         (survivors, added, prevented1) <- resolveDamage allowance spent prevented0 de
@@ -7280,7 +7296,7 @@ settleThreads earlier threads = do
   if null waiting
     then pure (dealt, prevented)
     else do
-      (dealt2, prevented2) <- settleThreads prevented waiting
+      (dealt2, prevented2) <- settleThreads chosen prevented waiting
       pure (dealt <> dealt2, prevented2)
 
 -- Which threads settle this round. A row that adds damage or moves it (CR 614.9)
@@ -7290,16 +7306,11 @@ settleThreads earlier threads = do
 -- adding threads settle, behind every earlier seat's threads with a question or a
 -- CR 616.1 choice of their own. A thread with neither waits, its shield free to
 -- meet what is added. docs/decisions.md, "Whether damage a replacement adds joins
--- a division already owed".
-settlesFirst :: GameState -> [Replacement.DamageThread] -> Replacement.DamageThread -> Bool
-settlesFirst gs threads =
-  let rows (de, spent) = filter (\row -> not (Set.member (ReplacementCandidate.identity row) spent)) (Replacement.applicable Nothing gs (ProposedEvent.WouldDealDamage de))
-      delivers de row = Maybe.isJust (alsoDealt gs row de) || any Replacement.redirects (Replacement.damageRewriteOf row)
-      adds thread = any (delivers (fst thread)) (rows thread)
-      lone thread = adds thread && length (rows thread) == 1
-      rank = Replacement.apnapRank gs . fst
-      asked = Replacement.questioned gs threads
-      chooses thread = length (rows thread) >= 2 || elem thread asked
+-- a division already owed". Seats rank by `order` (settleThreads).
+settlesFirst :: [PlayerId] -> GameState -> [Replacement.DamageThread] -> Replacement.DamageThread -> Bool
+settlesFirst order gs threads =
+  let (adds, lone, chooses) = threadShapes order gs threads
+      rank = Replacement.apnapRank order gs . fst
       adding = filter adds threads
       seat = minimum (fmap rank adding)
    in if any lone threads
@@ -7308,6 +7319,30 @@ settlesFirst gs threads =
           if null adding
             then const True
             else \thread -> if rank thread == seat then adds thread else rank thread < seat && chooses thread
+
+-- What settlesFirst reads of each thread: whether a row of it adds or moves
+-- damage, whether that row is its only one, and whether its chooser has a
+-- question or a CR 616.1 choice there.
+threadShapes :: [PlayerId] -> GameState -> [Replacement.DamageThread] -> (Replacement.DamageThread -> Bool, Replacement.DamageThread -> Bool, Replacement.DamageThread -> Bool)
+threadShapes order gs threads =
+  let rows (de, spent) = filter (\row -> not (Set.member (ReplacementCandidate.identity row) spent)) (Replacement.applicable Nothing gs (ProposedEvent.WouldDealDamage de))
+      delivers de row = Maybe.isJust (alsoDealt gs row de) || any Replacement.redirects (Replacement.damageRewriteOf row)
+      adds thread = any (delivers (fst thread)) (rows thread)
+      lone thread = adds thread && length (rows thread) == 1
+      asked = Replacement.questioned order gs threads
+      chooses thread = length (rows thread) >= 2 || elem thread asked
+   in (adds, lone, chooses)
+
+-- CR 805.6: whether the order these active teammates settle in changes what
+-- settlesFirst admits: no lone row goes ahead of every question, and one
+-- teammate's thread adds or moves damage while another's has a choice, so
+-- which of them ranks first decides whether the other's waits for what is
+-- added.
+teamOrderMatters :: GameState -> [Replacement.DamageThread] -> [PlayerId] -> Bool
+teamOrderMatters gs threads team =
+  let (adds, lone, chooses) = threadShapes (Game.apnapOrder gs) gs threads
+      ofTeam holds = [pid | thread <- threads, holds thread, Just pid <- [Replacement.chooserOf gs (ProposedEvent.WouldDealDamage (fst thread))], elem pid team]
+   in not (any lone threads) && or [adder /= chooser | adder <- ofTeam adds, chooser <- ofTeam chooses]
 
 -- What replaced `oid`'s destruction, queued for the drain with `oid` under
 -- Binding.sparedPermanent and the row's source under Binding.triggerSource

@@ -3408,8 +3408,9 @@ opponentsOf you gs = filter (areOpponents gs you) (stillPlaying gs)
 -- first, then each nonactive team in turn order, each team's players together.
 --
 -- A loop's choices (Parun.Engine.Resolve.Arms.Zones.forEach), draws
--- (Event.inDrawOrder) and simultaneous as-enters effects (Event.orderEntries)
--- ask the team its order instead. Parun.Engine.Damage.processDamage's life
+-- (Event.inDrawOrder), simultaneous as-enters effects (Event.orderEntries) and
+-- a damage batch's CR 616.1 choices (Event.settleThreads) ask the team its
+-- order instead. Parun.Engine.Damage.processDamage's life
 -- losses settle in seat order, a choice of no one's: docs/decisions.md, "How
 -- teammates' life floors share one damage event".
 --
