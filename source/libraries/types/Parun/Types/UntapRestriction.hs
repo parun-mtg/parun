@@ -38,9 +38,9 @@ import qualified Parun.Types.UntapHold as UntapHold
 -- card type, or an untap in another player's step (Parun.Types.UntapHold) -- and the "as long as" it applies under (CR 611.3a,
 -- Static Orb's "as long as this artifact is untapped").
 --
--- Gathered LIVE from the battlefield at the untap step and never captured, the
--- posture every sibling carrier takes: a Tsabo's Web that left lifts its
--- prohibition with nothing to unwind.
+-- Gathered LIVE from the battlefield and the command zone (CR 114.4) at the
+-- untap step and never captured, the posture every sibling carrier takes: a
+-- Tsabo's Web that left lifts its prohibition with nothing to unwind.
 --
 -- THE STATIC HALF ONLY, and the "next" is what separates the two: this sentence
 -- forbids the untap for as long as the printing is on the battlefield, while

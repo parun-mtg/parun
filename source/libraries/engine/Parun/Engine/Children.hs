@@ -2344,6 +2344,7 @@ playerEffectChildren c effect = case effect of
   PlayerEffect.CantSetSchemesInMotion -> pure effect
   PlayerEffect.PhasesReversed -> pure effect
   PlayerEffect.TurnOrderReversed -> pure effect
+  PlayerEffect.DrawsDuringDrawSteps _ -> pure effect
   PlayerEffect.EntriesTrigger (EntriesTrigger.MkEntriesTrigger entrants bearers move triggering) ->
     fmap PlayerEffect.EntriesTrigger (EntriesTrigger.MkEntriesTrigger <$> playerFilter c entrants <*> playerFilter c bearers <*> pure move <*> pure triggering)
   PlayerEffect.BearersTrigger (BearersTrigger.MkBearersTrigger bearers abilities triggering) ->

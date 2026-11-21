@@ -3,6 +3,7 @@ module Parun.Types.UntapHold where
 import qualified Data.List.NonEmpty as NonEmpty
 import qualified Numeric.Natural as Natural
 import qualified Parun.Types.CardType as CardType
+import qualified Parun.Types.PlayerRelation as PlayerRelation
 
 -- | CR 502.3: how an untap rule bears on the untap step's untap of the
 -- permanents it names -- an effect's "can't" (CR 101.2), the active player's
@@ -24,10 +25,9 @@ data UntapHold
     -- "players can't untap more than two permanents during their untap steps"
     -- (CR 101.2, CR 502.3).
     AtMost Natural.Natural
-  | -- | It untaps during each other player's untap step too: "Untap all
-    -- permanents you control during each other player's untap step" (Seedborn
-    -- Muse; CR 502.3, 613.11).
-    DuringOthersSteps
+  | -- | It untaps in the untap step of each player in this relation to its
+    -- source's controller too (CR 502.3, 613.11).
+    DuringOthersSteps PlayerRelation.PlayerRelation
   | -- | Only those of the card type the active player chooses from these untap:
     -- "each player chooses artifact, creature, or land during their untap step.
     -- That player can untap only permanents of the chosen type this step"

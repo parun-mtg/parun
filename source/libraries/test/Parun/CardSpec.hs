@@ -4335,6 +4335,7 @@ playerEffectFilters playerEffect = case playerEffect of
   PlayerEffect.CantSetSchemesInMotion -> []
   PlayerEffect.PhasesReversed -> []
   PlayerEffect.TurnOrderReversed -> []
+  PlayerEffect.DrawsDuringDrawSteps _ -> []
   PlayerEffect.EntriesTrigger e -> [EntriesTrigger.entrants e, EntriesTrigger.bearers e]
   PlayerEffect.BearersTrigger e -> [BearersTrigger.bearers e]
   PlayerEffect.ControlledWhileSearching -> []

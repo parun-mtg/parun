@@ -5,6 +5,7 @@ import qualified Parun.Codec.UntapHold as UntapHold
 import qualified Parun.JsonCodec.Common as Common
 import qualified Parun.Spec as Spec
 import qualified Parun.Types.CardType as CardType
+import qualified Parun.Types.PlayerRelation as PlayerRelation
 import qualified Parun.Types.UntapHold as UntapHold
 
 spec :: (Monad m, Monad n) => Spec.Spec m n -> n ()
@@ -31,8 +32,8 @@ spec s = Spec.describe s "Parun.Codec.UntapHold" $ do
     Common.assertCodec
       s
       UntapHold.codec
-      UntapHold.DuringOthersSteps
-      " {\"type\":\"DuringOthersSteps\"} "
+      (UntapHold.DuringOthersSteps PlayerRelation.Opponent)
+      " {\"type\":\"DuringOthersSteps\",\"value\":\"Opponent\"} "
   Spec.it s "OfChosenType" $
     Common.assertCodec
       s

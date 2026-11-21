@@ -12530,13 +12530,15 @@ drawInstructionReturning settle first spent pid n = do
   (outcome, _, _, _, _, _, _, applied) <- applyReplacementsFully settle Nothing Set.empty Map.empty spent (ProposedEvent.WouldPerform PlayerInstruction.DrawCards Nothing pid n)
   maybe (pure []) (uncurry (drawSeries first settle applied)) (outcome >>= Replacement.asPerformed PlayerInstruction.DrawCards)
 
--- CR 504.1: the active player's turn-based draw in their draw step, an
--- instruction to draw one card (CR 121.2a), so Quantum Riddler's "if you would
--- draw one or more cards" reaches it. `settle` is drawSeries', for a sequence a
--- replacement makes in its place, and is run after the draw as well, so what a
--- replacement queued in its place is done before a teammate's draw (CR 805.6a).
-drawForTurn :: Settle.Settle -> PlayerId -> Game ()
-drawForTurn settle pid = drawInstruction settle (DrawKind.TurnBased pid) Set.empty pid 1 <* Settle.queued settle
+-- CR 504.1: a draw in the draw step, an instruction to draw one card (CR
+-- 121.2a), so Quantum Riddler's "if you would draw one or more cards" reaches
+-- it: the active player's turn-based draw (DrawKind.TurnBased), or one a static
+-- ability gives another player (DrawKind.Other, Teferi, Who Slows the Sunset's
+-- emblem). `settle` is drawSeries', for a sequence a replacement makes in its
+-- place, and is run after the draw as well, so what a replacement queued in its
+-- place is done before the next player's draw (CR 805.6a).
+drawForTurn :: Settle.Settle -> DrawKind.DrawKind -> PlayerId -> Game ()
+drawForTurn settle kind pid = drawInstruction settle kind Set.empty pid 1 <* Settle.queued settle
 
 -- CR 121.2d / 805.6a: run `act` for each of these players, each about to
 -- perform their draws -- the active team's in whatever order that team likes,

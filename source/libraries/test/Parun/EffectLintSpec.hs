@@ -1214,6 +1214,7 @@ unpreventableScopeOffends scope playerEffect = case playerEffect of
   PlayerEffect.CantSetSchemesInMotion -> False
   PlayerEffect.PhasesReversed -> False
   PlayerEffect.TurnOrderReversed -> False
+  PlayerEffect.DrawsDuringDrawSteps _ -> False
   PlayerEffect.EntriesTrigger _ -> False
   PlayerEffect.BearersTrigger _ -> False
   PlayerEffect.ControlledWhileSearching -> False
@@ -1304,6 +1305,7 @@ unpreventablePatternOffends playerEffect = case playerEffect of
   PlayerEffect.CantSetSchemesInMotion -> False
   PlayerEffect.PhasesReversed -> False
   PlayerEffect.TurnOrderReversed -> False
+  PlayerEffect.DrawsDuringDrawSteps _ -> False
   PlayerEffect.EntriesTrigger _ -> False
   PlayerEffect.BearersTrigger _ -> False
   PlayerEffect.ControlledWhileSearching -> False
@@ -1905,6 +1907,9 @@ inertChoosers effect =
 -- "each other permanent or player", proved by the scenario
 -- cr-707-10d-radiate-copies-the-bolt-for-each-other-permanent-or-player-it-could --
 -- so it alone is exempt, not the opcode: the copy's own ref stays refused.
+-- Tap reads its ref through objectRefObjects and Untap through askingObjects
+-- -- Teferi, Who Slows the Sunset's "the chosen permanents you control", proved
+-- by the scenarios teferi-who-slows-the-sunset-untaps-the-chosen-permanents-*.
 -- The other opcodes' one-ref reads (a sticker's candidates, a copy's archived
 -- source, a reveal's shower) would read the union as a single arm.
 strayAllOf :: Effect.Effect Card.Type.Card (GrantedAbility.GrantedAbility Card.Type.Card) -> Bool
@@ -1917,6 +1922,8 @@ strayAllOf effect = case effect of
   Effect.ModifyTarget {} -> False
   Effect.ShuffleIntoLibrary {} -> False
   Effect.OfferCast {} -> False
+  Effect.Tap {} -> False
+  Effect.Untap {} -> False
   Effect.CopyStackObject x -> case CopyStackObject.targets x of
     CopyTargets.ForEach _ -> holdsAllOf (CopyStackObject.ref x)
     _ -> any (holdsAllOf . snd) (effectObjectRefs effect)
@@ -2729,7 +2736,7 @@ effectLintSpec s registry corpus = Spec.describe s "Lint" $ do
     -- Exhume, Elvish Piper, Commune with the Gods and Merfolk Spy print them.
     Spec.assertBool s asks "the pool has a card asking a player to pick a card"
     Spec.assertEqWith s "a chosen card under an opcode that cannot ask (CR 608.2d)" (fmap (S.nameOf . Printing.card) offenders) []
-  Spec.it s "no AllOf outside a move, a play grant, a loop, a damage instruction, a destruction, a shuffle-in, a modification, a cast offer or a copy's candidates" $ do
+  Spec.it s "no AllOf outside a move, a play grant, a loop, a damage instruction, a destruction, a shuffle-in, a modification, a cast offer, a tap, an untap or a copy's candidates" $ do
     ps <- S.allPrintings s corpus
     let offenders = filter (anyFace (any strayAllOf . cardAuthoredEffects) . Printing.card) ps
         moved = any (anyFace (any (any (isAllOf . snd) . effectObjectRefs) . cardAuthoredEffects) . Printing.card) ps
@@ -2828,7 +2835,7 @@ effectLintSpec s registry corpus = Spec.describe s "Lint" $ do
       [False, True, True, True]
     -- Hanweir Battlements' "exile them": the source beside one chosen
     -- permanent, fenced by its member's question, and refused outside a move, a
-    -- play grant, a loop or a shuffle-in by strayAllOf.
+    -- play grant, a loop, a shuffle-in, a tap or an untap by strayAllOf.
     Spec.assertEqWith
       s
       "the source with one chosen permanent is allowed where one chosen permanent is"
@@ -2836,9 +2843,9 @@ effectLintSpec s registry corpus = Spec.describe s "Lint" $ do
       [False, False, True, True]
     Spec.assertEqWith
       s
-      "AllOf is refused outside a move, a play grant, a loop or a shuffle-in"
-      (fmap strayAllOf [moves sourceAndOne, Effect.ShuffleIntoLibrary (ShuffleIntoLibrary.MkShuffleIntoLibrary Nothing sourceAndOne Nothing), Effect.Transform sourceAndOne, Effect.Tap (Tap.plain (ObjectRef.AllOf (ObjectRef.EachMatching anyCard NonEmpty.:| [])))])
-      [False, False, True, True]
+      "AllOf is refused outside a move, a play grant, a loop, a shuffle-in, a tap or an untap"
+      (fmap strayAllOf [moves sourceAndOne, Effect.ShuffleIntoLibrary (ShuffleIntoLibrary.MkShuffleIntoLibrary Nothing sourceAndOne Nothing), Effect.Tap (Tap.plain (ObjectRef.AllOf (ObjectRef.EachMatching anyCard NonEmpty.:| []))), Effect.Untap sourceAndOne, Effect.Transform sourceAndOne, Effect.Detain (ObjectRef.AllOf (ObjectRef.EachMatching anyCard NonEmpty.:| []))])
+      [False, False, False, False, True, True]
     -- A copy's per-candidate ref may be an AllOf (Radiate); its own ref and a
     -- stated target may not.
     let both = ObjectRef.AllOf (ObjectRef.EachMatching anyCard NonEmpty.:| [ObjectRef.Players (PlayersWho.MkPlayersWho (PlayerRef.Relative PlayerRelation.AnyPlayer) Nothing Nothing)])

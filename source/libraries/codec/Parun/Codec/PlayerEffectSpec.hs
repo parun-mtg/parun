@@ -480,6 +480,13 @@ spec s = Spec.describe s "Parun.Codec.PlayerEffect" $ do
       PlayerEffect.codec
       PlayerEffect.TurnOrderReversed
       " {\"type\":\"TurnOrderReversed\"} "
+  -- CR 504.1 / Teferi, Who Slows the Sunset's emblem.
+  Spec.it s "DrawsDuringDrawSteps" $
+    Common.assertCodec
+      s
+      PlayerEffect.codec
+      (PlayerEffect.DrawsDuringDrawSteps PlayerRelation.Opponent)
+      " {\"type\":\"DrawsDuringDrawSteps\",\"value\":\"Opponent\"} "
   -- CR 603.2d / Sanctum of All.
   Spec.it s "BearersTrigger" $
     Common.assertCodec

@@ -105,7 +105,8 @@
             }
           },
           "hold": {
-            "type": "DuringOthersSteps"
+            "type": "DuringOthersSteps",
+            "value": "AnotherPlayer"
           }
         }
       ]
