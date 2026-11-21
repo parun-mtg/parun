@@ -66,6 +66,7 @@ import qualified Parun.Extra.Natural as Natural
 import qualified Parun.Types.ActivatedAbility as ActivatedAbility
 import qualified Parun.Types.ActiveCopy as ActiveCopy
 import qualified Parun.Types.ActiveReplacement as ActiveReplacement
+import qualified Parun.Types.AsCopy as AsCopy
 import qualified Parun.Types.AttachR as AttachR
 import qualified Parun.Types.AttachRewrite as AttachRewrite
 import Parun.Types.CandidateId (CandidateId)
@@ -106,7 +107,9 @@ import qualified Parun.Types.DrawR as DrawR
 import qualified Parun.Types.DrawRewrite as DrawRewrite
 import qualified Parun.Types.Effect as Effect
 import qualified Parun.Types.EnteringTogether as EnteringTogether
+import qualified Parun.Types.EntersWith as EntersWith
 import qualified Parun.Types.EntryOption as EntryOption
+import qualified Parun.Types.EntryPrice as EntryPrice
 import qualified Parun.Types.EntryR as EntryR
 import qualified Parun.Types.EntryRewrite as EntryRewrite
 import qualified Parun.Types.Expiry as Expiry
@@ -137,6 +140,7 @@ import qualified Parun.Types.ManaScale as ManaScale
 import qualified Parun.Types.ManaType as ManaType
 import qualified Parun.Types.Object as Object
 import Parun.Types.ObjectId (ObjectId)
+import qualified Parun.Types.OrTapped as OrTapped
 import qualified Parun.Types.PerformerR as PerformerR
 import qualified Parun.Types.PermanentCandidate as PermanentCandidate
 import qualified Parun.Types.PhasePattern as PhasePattern
@@ -199,6 +203,7 @@ import qualified Parun.Types.TurnUpRewrite as TurnUpRewrite
 import qualified Parun.Types.UntapR as UntapR
 import qualified Parun.Types.Uses as Uses
 import qualified Parun.Types.WhichTurn as WhichTurn
+import qualified Parun.Types.WithCounters as WithCounters
 import qualified Parun.Types.Zone as Zone
 import Parun.Types.ZoneChange (ZoneChange)
 import qualified Parun.Types.ZoneChange as ZoneChange
@@ -3091,13 +3096,116 @@ placesCounters effect = case effect of
   ReplacementEffect.EntryR (EntryR.MkEntryR matching (EntryRewrite.InOrder rewrites)) -> all (placesCounters . ReplacementEffect.EntryR . EntryR.MkEntryR matching) rewrites
   _ -> False
 
--- Whether a row runs a card's effects as its object enters (CR 614.1c's "as
--- [this permanent] enters, [do something]") -- Event.orderEntries' question.
-runsEffects :: ReplacementEffect Card (GrantedAbility.GrantedAbility Card) (Effect.Effect Card (GrantedAbility.GrantedAbility Card)) -> Bool
-runsEffects effect = case effect of
-  ReplacementEffect.EntryR (EntryR.MkEntryR _ (EntryRewrite.RunEffects _)) -> True
-  ReplacementEffect.EntryR (EntryR.MkEntryR matching (EntryRewrite.InOrder rewrites)) -> any (runsEffects . ReplacementEffect.EntryR . EntryR.MkEntryR matching) rewrites
-  _ -> False
+-- CR 616.1 / 101.4c: what an entry row reads and changes outside its own
+-- object, the pools Event.orderEntries compares to decide whether the order
+-- two members apply in can be seen. A pool is the battlefield, the graveyards,
+-- exile, the hands, the life totals, or everything else (this turn's damage,
+-- the stack, counters on other permanents).
+data EntryPool = OnBattlefield | InGraveyards | InExile | InHands | LifeTotals | Elsewhere
+  deriving (Eq, Ord, Show, Enum, Bounded)
+
+-- `removes` spends from a pool and `adds` puts into one; `records` is what the
+-- row's result or its offer depends on, other than a pool it only spends from.
+data EntryAccess = MkEntryAccess
+  { removes :: Set EntryPool,
+    adds :: Set EntryPool,
+    records :: Set EntryPool
+  }
+  deriving (Eq, Show)
+
+instance Semigroup EntryAccess where
+  MkEntryAccess r a c <> MkEntryAccess r' a' c' = MkEntryAccess (r <> r') (a <> a') (c <> c')
+
+instance Monoid EntryAccess where
+  mempty = MkEntryAccess Set.empty Set.empty Set.empty
+
+-- Every pool read and changed: a row whose work is a card's own effects.
+touchesEverything :: EntryAccess
+touchesEverything = let every = Set.fromList [minBound .. maxBound :: EntryPool] in MkEntryAccess every every every
+
+-- CR 616.1 with CR 101.4c: whether applying `first`'s row before `second`'s
+-- can leave a different board or different legal choices than the reverse:
+-- `first` changes a pool `second` records. Two members spending from one pool
+-- commute when one seat makes both choices (Thunder-Thrash Elder beside
+-- Gorger Wurm); between two seats the first takes its pick first. What
+-- `first` adds to a pool `second` spends from is no candidate for it (CR
+-- 614.13a).
+entryConflicts :: (PlayerId, EntryAccess) -> (PlayerId, EntryAccess) -> Bool
+entryConflicts (seat, first) (otherSeat, second) =
+  meets (removes first <> adds first) (records second)
+    || (seat /= otherSeat && meets (removes first) (removes second))
+  where
+    meets x y = not (Set.null (Set.intersection x y))
+
+-- What an entry row touches (`EntryAccess`), read against the board it would
+-- enter: a copy entry (CR 707.5) records its domain and may take on any
+-- battlefield permanent's entry rows, so it touches what those touch
+-- (Copy Enchantment copying Sigarda's Splendor beside Phyrexian Processor).
+-- A choice its own controller makes from options no pool limits touches
+-- nothing: the same player answers it in either order. An opponent's
+-- choice records everything, since it is made seeing the board.
+entryAccess :: GameState -> ReplacementEffect Card (GrantedAbility.GrantedAbility Card) (Effect.Effect Card (GrantedAbility.GrantedAbility Card)) -> EntryAccess
+entryAccess gs = row asEntering
+  where
+    row onCopy effect = case effect of
+      ReplacementEffect.EntryR (EntryR.MkEntryR _ rewrite) -> go onCopy rewrite
+      _ -> mempty
+    -- The entering object's own copy entry also takes on what it could copy;
+    -- a copy entry among those rows looks at the same battlefield, so it adds
+    -- only its look.
+    asEntering copy = looking copy <> foldMap (\oid -> foldMap (row looking . snd) (Projection.replacementsOf Zone.Battlefield oid gs)) (copiable copy)
+    looking copy = case AsCopy.among copy of
+      CopyDomain.InZone Zone.Battlefield -> reading [OnBattlefield]
+      _ -> touchesEverything
+    copiable copy = case AsCopy.among copy of
+      CopyDomain.InZone Zone.Battlefield -> GameState.battlefield gs
+      _ -> Set.empty
+    go onCopy rewrite = case rewrite of
+      EntryRewrite.InOrder rewrites -> foldMap (go onCopy) rewrites
+      EntryRewrite.AsCopy copy -> onCopy copy
+      EntryRewrite.ChoiceOf _ -> mempty
+      EntryRewrite.ChoiceByCoinFlip _ -> mempty
+      EntryRewrite.ChooseQuality _ -> mempty
+      EntryRewrite.ChoosePlayer _ -> mempty
+      EntryRewrite.ChooseCardName _ -> mempty
+      EntryRewrite.ChooseCardNames _ -> seeingEverything
+      EntryRewrite.WithCounters counters -> countsFrom (Just counters)
+      EntryRewrite.EntersWith with -> countsFrom (EntersWith.counters with)
+      EntryRewrite.UnderControlOf _ -> mempty
+      EntryRewrite.SacrificeAnyNumber _ -> spending [OnBattlefield] [InGraveyards]
+      EntryRewrite.SacrificeToEnter _ -> spending [OnBattlefield] [InGraveyards]
+      EntryRewrite.ExileFromGraveyard _ -> spending [InGraveyards] [InExile]
+      EntryRewrite.EntersAttachedTo _ -> reading [OnBattlefield]
+      EntryRewrite.Riot -> mempty
+      EntryRewrite.ReadAhead -> mempty
+      EntryRewrite.Unleash -> mempty
+      EntryRewrite.Sunburst -> mempty
+      EntryRewrite.ModularSunburst -> mempty
+      EntryRewrite.Bloodthirst _ -> reading [Elsewhere]
+      EntryRewrite.Amplify _ -> reading [InHands]
+      EntryRewrite.Tribute _ -> seeingEverything
+      EntryRewrite.Compleated _ -> mempty
+      EntryRewrite.EntersTapState _ -> mempty
+      EntryRewrite.Prepared -> mempty
+      EntryRewrite.EntersAttacking -> reading [OnBattlefield]
+      EntryRewrite.OrTapped orTapped ->
+        let paid = case OrTapped.price orTapped of
+              EntryPrice.PayLife _ -> spending [LifeTotals] []
+              EntryPrice.Reveal _ -> reading [InHands]
+              EntryPrice.Behold _ -> reading [OnBattlefield, InHands]
+         in paid <> foldMap (const seeingEverything) (OrTapped.unless orTapped)
+      EntryRewrite.PayAnyLife _ -> spending [LifeTotals] []
+      EntryRewrite.EntersTransformed -> mempty
+      EntryRewrite.RunEffects _ -> touchesEverything
+    reading pools = mempty {records = Set.fromList pools}
+    spending from to = mempty {removes = Set.fromList from, adds = Set.fromList to}
+    seeingEverything = mempty {records = records touchesEverything}
+    -- A count other than a printed number reads the board (Banner of Kinship).
+    countsFrom :: Maybe WithCounters.WithCounters -> EntryAccess
+    countsFrom = foldMap (\counters -> if all isLiteral (WithCounters.counters counters) then mempty else seeingEverything)
+    isLiteral quantity = case quantity of
+      Quantity.Type.Literal _ -> True
+      _ -> False
 
 -- Whether a row's whole work is a choice its entering object's controller alone
 -- makes and the object records (Object.chosenColors, chosenSubtype,
