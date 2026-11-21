@@ -524,31 +524,15 @@ main = do
       Harness.whnf "legal actions 20 different names" (differentNamesCount behold hinata named) 20,
       Harness.whnf "legal actions 40 different names" (differentNamesCount behold hinata named) 40,
       -- #9184's shapes. A cost only a filter pays: Frozen Shade's {B} beside a
-      -- Mountain and a Rakdos Signet apiece, which plainPayable leaves to the walk.
-      Harness.whnf "probe signet 1" (legalActionCountOf [shade, mountain, signet] []) 1,
-      Harness.whnf "probe plain 1" (legalActionCountOf [shade, swamp, signet] []) 1,
-      Harness.whnf "probe joint 1" (legalActionCountOf [guildmage, forest, forest] []) 1,
-      Harness.whnf "probe signet 2" (legalActionCountOf [shade, mountain, signet] []) 2,
-      Harness.whnf "probe plain 2" (legalActionCountOf [shade, swamp, signet] []) 2,
-      Harness.whnf "probe joint 2" (legalActionCountOf [guildmage, forest, forest] []) 2,
-      Harness.whnf "probe signet 3" (legalActionCountOf [shade, mountain, signet] []) 3,
-      Harness.whnf "probe plain 3" (legalActionCountOf [shade, swamp, signet] []) 3,
-      Harness.whnf "probe joint 3" (legalActionCountOf [guildmage, forest, forest] []) 3,
-      Harness.whnf "probe signet 4" (legalActionCountOf [shade, mountain, signet] []) 4,
-      Harness.whnf "probe plain 4" (legalActionCountOf [shade, swamp, signet] []) 4,
-      Harness.whnf "probe joint 4" (legalActionCountOf [guildmage, forest, forest] []) 4,
-      Harness.whnf "probe signet 6" (legalActionCountOf [shade, mountain, signet] []) 6,
-      Harness.whnf "probe plain 6" (legalActionCountOf [shade, swamp, signet] []) 6,
-      Harness.whnf "probe joint 6" (legalActionCountOf [guildmage, forest, forest] []) 6,
-      Harness.whnf "probe signet 8" (legalActionCountOf [shade, mountain, signet] []) 8,
-      Harness.whnf "probe plain 8" (legalActionCountOf [shade, swamp, signet] []) 8,
-      Harness.whnf "probe joint 8" (legalActionCountOf [guildmage, forest, forest] []) 8,
-      Harness.whnf "legal actions 40 signet" (legalActionCountOf [shade, mountain, signet] []) 40,
-      Harness.whnf "legal actions 80 signet" (legalActionCountOf [shade, mountain, signet] []) 80,
+      -- Mountain and a Rakdos Signet apiece, which plainPayable leaves to the
+      -- walk. At 4 and 8: the walk grows with every Signet, and 40 does not end
+      -- (#9226).
+      Harness.whnf "legal actions 4 signet" (legalActionCountOf [shade, mountain, signet] []) 4,
+      Harness.whnf "legal actions 8 signet" (legalActionCountOf [shade, mountain, signet] []) 8,
       -- The two lines above' paired control: a Swamp for the Mountain, so the
       -- plain sources pay.
-      Harness.whnf "legal actions 40 signet plain" (legalActionCountOf [shade, swamp, signet] []) 40,
-      Harness.whnf "legal actions 80 signet plain" (legalActionCountOf [shade, swamp, signet] []) 80,
+      Harness.whnf "legal actions 4 signet plain" (legalActionCountOf [shade, swamp, signet] []) 4,
+      Harness.whnf "legal actions 8 signet plain" (legalActionCountOf [shade, swamp, signet] []) 8,
       -- A jointly judged mode: Simic Guildmage's "another target creature with
       -- the same controller", beside two Forests apiece.
       Harness.whnf "legal actions 40 joint modes" (legalActionCountOf [guildmage, forest, forest] []) 40,
