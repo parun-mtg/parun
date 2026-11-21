@@ -54,7 +54,10 @@ spec s = Spec.describe s "Parun.Zepto" $ do
       Spec.assertEq s (run ((Zepto.char 'a' *> Zepto.char 'b') Applicative.<|> Zepto.char 'a') "ac") $ Just 'a'
 
     Spec.it s "keeps the failure that read further" $ do
-      Spec.assertEq s (Zepto.parse ((Zepto.char 'a' *> Zepto.char 'b') Applicative.<|> Zepto.char 'x') $ Text.pack "ac") $ Left "(line 1, column 2):\nunexpected 'c', expecting 'b'"
+      Spec.assertEq s (Zepto.parse (Zepto.char 'x' Applicative.<|> (Zepto.char 'a' *> Zepto.char 'b')) $ Text.pack "ac") $ Left "(line 1, column 2):\nunexpected 'c', expecting 'b'"
+
+    Spec.it s "keeps the first failure on a tie" $ do
+      Spec.assertEq s (Zepto.parse (Zepto.char 'a' Applicative.<|> Zepto.char 'b') $ Text.pack "c") $ Left "(line 1, column 1):\nunexpected 'c', expecting 'a'"
 
   Spec.describe s "many" $ do
     Spec.it s "collects every match in order" $ do
