@@ -1,0 +1,27 @@
+{
+  "description": "CR 119.4, 118.3: Hand of Vecna's life equip is refused with more cards in hand than life",
+  "note": "alice at 2 life holds three cards, so 3 life is unpayable (CR 119.4) and the activation is refused; nothing is paid.",
+  "board": {
+    "seats": [
+      {
+        "name": "alice",
+        "life": 2,
+        "battlefield": [
+          { "card": "Hand of Vecna", "label": "hand" },
+          { "card": "Grizzly Bears", "label": "bears" },
+          { "card": "Hill Giant" }
+        ],
+        "hand": [{ "card": "Island" }, { "card": "Island" }, { "card": "Island" }]
+      },
+      {
+        "name": "bob"
+      }
+    ],
+    "active": "alice",
+    "step": "PrecombatMain"
+  },
+  "timeline": [
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "refuse": { "Activate": { "object": "$hand", "ability": 0, "targets": ["$bears"] } } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "check": { "Life": { "player": "alice", "life": 2 } } }
+  ]
+}

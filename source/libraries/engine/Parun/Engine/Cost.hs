@@ -4500,12 +4500,17 @@ canPaySomeCompletionGiven slots subject spending sources board pid oid total_ su
 -- CR 903.4 / 702.124c: the colours in the payer's commanders' combined colour
 -- identity, undefined without a commander (CR 903.4f). An empty identity is 0
 -- (War Room's ruling, 2020-11-10).
+--
+-- CR 402.1: the cards in the payer's hand, 0 from an empty one, which CR 119.4b
+-- lets any player pay.
 computedLifeOf :: ComputedLife.ComputedLife -> PlayerId -> GameState -> Maybe Natural
 computedLifeOf computed pid gs = case computed of
   ComputedLife.HalfLife rounding ->
     Just (maybe 0 (Integer.toNaturalSaturating . (\life -> Quantity.divide rounding life 2) . Player.life) (Map.lookup pid (GameState.players gs)))
   ComputedLife.CommanderColorCount ->
     fmap Natural.length (Commander.commanderColorIdentity pid gs)
+  ComputedLife.CardsInHand ->
+    Just (Natural.length (Game.cardsIn Zone.Hand pid gs))
 
 -- CR 601.2f: a computed life cost is fixed to a number once, against the board
 -- as the total cost is determined, so a CR 601.2g mana ability that pays life

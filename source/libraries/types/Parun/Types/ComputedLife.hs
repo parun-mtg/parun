@@ -12,4 +12,7 @@ data ComputedLife
   | -- | CR 903.4 / 702.124c: the number of colours in the paying player's
     -- commanders' colour identity, undefined without one (CR 903.4f; War Room).
     CommanderColorCount
+  | -- | CR 119.4 / 402.1: the number of cards in the paying player's hand (Hand
+    -- of Vecna).
+    CardsInHand
   deriving (Eq, Ord, Show)
