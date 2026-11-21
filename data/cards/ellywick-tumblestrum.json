@@ -1,0 +1,464 @@
+{
+  "faces": [
+    {
+      "activatedAbilities": [
+        {
+          "cost": {
+            "components": [
+              {
+                "type": "AddLoyaltyToThis",
+                "value": 1
+              }
+            ],
+            "mana": []
+          },
+          "modal": {
+            "modes": [
+              {
+                "clauses": [
+                  {
+                    "effects": [
+                      {
+                        "type": "Venture"
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "cost": {
+            "components": [
+              {
+                "type": "RemoveLoyaltyFromThis",
+                "value": {
+                  "type": "Fixed",
+                  "value": 2
+                }
+              }
+            ],
+            "mana": []
+          },
+          "modal": {
+            "modes": [
+              {
+                "clauses": [
+                  {
+                    "effects": [
+                      {
+                        "type": "LookAt",
+                        "value": {
+                          "ref": {
+                            "type": "TopOfLibrary",
+                            "value": {
+                              "count": {
+                                "type": "Literal",
+                                "value": 6
+                              },
+                              "player": {
+                                "type": "Relative",
+                                "value": "You"
+                              }
+                            }
+                          },
+                          "slot": "looked"
+                        }
+                      }
+                    ]
+                  },
+                  {
+                    "effects": [
+                      {
+                        "type": "Reveal",
+                        "value": {
+                          "ref": {
+                            "type": "ChosenCardFromAmong",
+                            "value": {
+                              "filter": {
+                                "type": "HasCardType",
+                                "value": "Creature"
+                              },
+                              "slot": "looked"
+                            }
+                          },
+                          "slot": "taken"
+                        }
+                      },
+                      {
+                        "type": "MoveToZone",
+                        "value": {
+                          "ref": {
+                            "type": "InSlot",
+                            "value": "taken"
+                          },
+                          "slot": "kept",
+                          "zone": "Hand"
+                        }
+                      }
+                    ],
+                    "optionality": {
+                      "type": "Optional"
+                    }
+                  },
+                  {
+                    "condition": {
+                      "type": "Compares",
+                      "value": {
+                        "comparison": "AtLeast",
+                        "measured": {
+                          "type": "Count",
+                          "value": {
+                            "aggregation": {
+                              "type": "Members"
+                            },
+                            "filter": {
+                              "type": "And",
+                              "value": [
+                                {
+                                  "type": "IsBound",
+                                  "value": "kept"
+                                },
+                                {
+                                  "type": "HasSupertype",
+                                  "value": "Legendary"
+                                }
+                              ]
+                            },
+                            "scope": {
+                              "type": "InZone",
+                              "value": {
+                                "player": {
+                                  "type": "Relative",
+                                  "value": "You"
+                                },
+                                "zone": "Hand"
+                              }
+                            }
+                          }
+                        },
+                        "threshold": {
+                          "type": "Literal",
+                          "value": 1
+                        }
+                      }
+                    },
+                    "effects": [
+                      {
+                        "type": "GainLife",
+                        "value": {
+                          "player": {
+                            "type": "Relative",
+                            "value": "You"
+                          },
+                          "quantity": {
+                            "type": "Literal",
+                            "value": 3
+                          }
+                        }
+                      }
+                    ]
+                  },
+                  {
+                    "effects": [
+                      {
+                        "type": "MoveToZone",
+                        "value": {
+                          "placement": {
+                            "type": "RandomOrder",
+                            "value": "Bottom"
+                          },
+                          "ref": {
+                            "type": "InSlot",
+                            "value": "looked"
+                          },
+                          "zone": "Library"
+                        }
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "cost": {
+            "components": [
+              {
+                "type": "RemoveLoyaltyFromThis",
+                "value": {
+                  "type": "Fixed",
+                  "value": 7
+                }
+              }
+            ],
+            "mana": []
+          },
+          "modal": {
+            "modes": [
+              {
+                "clauses": [
+                  {
+                    "effects": [
+                      {
+                        "type": "CreateEmblem",
+                        "value": {
+                          "card": {
+                            "faces": [
+                              {
+                                "name": "Ellywick Tumblestrum Emblem",
+                                "staticAbilities": [
+                                  {
+                                    "affected": {
+                                      "type": "Matching",
+                                      "value": {
+                                        "type": "And",
+                                        "value": [
+                                          {
+                                            "type": "HasCardType",
+                                            "value": "Creature"
+                                          },
+                                          {
+                                            "type": "HeldBy",
+                                            "value": {
+                                              "holder": "Controller",
+                                              "relation": "You"
+                                            }
+                                          }
+                                        ]
+                                      }
+                                    },
+                                    "modifications": [
+                                      {
+                                        "type": "GainKeyword",
+                                        "value": {
+                                          "type": "Trample"
+                                        }
+                                      },
+                                      {
+                                        "type": "GainKeyword",
+                                        "value": {
+                                          "type": "Haste"
+                                        }
+                                      },
+                                      {
+                                        "type": "ModifyPowerToughness",
+                                        "value": {
+                                          "power": {
+                                            "type": "Times",
+                                            "value": {
+                                              "factor": {
+                                                "type": "Literal",
+                                                "value": 2
+                                              },
+                                              "quantity": {
+                                                "type": "Plus",
+                                                "value": {
+                                                  "left": {
+                                                    "type": "Plus",
+                                                    "value": {
+                                                      "left": {
+                                                        "type": "Plus",
+                                                        "value": {
+                                                          "left": {
+                                                            "type": "Plus",
+                                                            "value": {
+                                                              "left": {
+                                                                "type": "CompletedDungeon",
+                                                                "value": {
+                                                                  "dungeon": "Baldur's Gate Wilderness",
+                                                                  "player": {
+                                                                    "type": "Relative",
+                                                                    "value": "You"
+                                                                  }
+                                                                }
+                                                              },
+                                                              "right": {
+                                                                "type": "CompletedDungeon",
+                                                                "value": {
+                                                                  "dungeon": "Dungeon of the Mad Mage",
+                                                                  "player": {
+                                                                    "type": "Relative",
+                                                                    "value": "You"
+                                                                  }
+                                                                }
+                                                              }
+                                                            }
+                                                          },
+                                                          "right": {
+                                                            "type": "CompletedDungeon",
+                                                            "value": {
+                                                              "dungeon": "Lost Mine of Phandelver",
+                                                              "player": {
+                                                                "type": "Relative",
+                                                                "value": "You"
+                                                              }
+                                                            }
+                                                          }
+                                                        }
+                                                      },
+                                                      "right": {
+                                                        "type": "CompletedDungeon",
+                                                        "value": {
+                                                          "dungeon": "Tomb of Annihilation",
+                                                          "player": {
+                                                            "type": "Relative",
+                                                            "value": "You"
+                                                          }
+                                                        }
+                                                      }
+                                                    }
+                                                  },
+                                                  "right": {
+                                                    "type": "CompletedDungeon",
+                                                    "value": {
+                                                      "dungeon": "Undercity",
+                                                      "player": {
+                                                        "type": "Relative",
+                                                        "value": "You"
+                                                      }
+                                                    }
+                                                  }
+                                                }
+                                              }
+                                            }
+                                          },
+                                          "toughness": {
+                                            "type": "Times",
+                                            "value": {
+                                              "factor": {
+                                                "type": "Literal",
+                                                "value": 2
+                                              },
+                                              "quantity": {
+                                                "type": "Plus",
+                                                "value": {
+                                                  "left": {
+                                                    "type": "Plus",
+                                                    "value": {
+                                                      "left": {
+                                                        "type": "Plus",
+                                                        "value": {
+                                                          "left": {
+                                                            "type": "Plus",
+                                                            "value": {
+                                                              "left": {
+                                                                "type": "CompletedDungeon",
+                                                                "value": {
+                                                                  "dungeon": "Baldur's Gate Wilderness",
+                                                                  "player": {
+                                                                    "type": "Relative",
+                                                                    "value": "You"
+                                                                  }
+                                                                }
+                                                              },
+                                                              "right": {
+                                                                "type": "CompletedDungeon",
+                                                                "value": {
+                                                                  "dungeon": "Dungeon of the Mad Mage",
+                                                                  "player": {
+                                                                    "type": "Relative",
+                                                                    "value": "You"
+                                                                  }
+                                                                }
+                                                              }
+                                                            }
+                                                          },
+                                                          "right": {
+                                                            "type": "CompletedDungeon",
+                                                            "value": {
+                                                              "dungeon": "Lost Mine of Phandelver",
+                                                              "player": {
+                                                                "type": "Relative",
+                                                                "value": "You"
+                                                              }
+                                                            }
+                                                          }
+                                                        }
+                                                      },
+                                                      "right": {
+                                                        "type": "CompletedDungeon",
+                                                        "value": {
+                                                          "dungeon": "Tomb of Annihilation",
+                                                          "player": {
+                                                            "type": "Relative",
+                                                            "value": "You"
+                                                          }
+                                                        }
+                                                      }
+                                                    }
+                                                  },
+                                                  "right": {
+                                                    "type": "CompletedDungeon",
+                                                    "value": {
+                                                      "dungeon": "Undercity",
+                                                      "player": {
+                                                        "type": "Relative",
+                                                        "value": "You"
+                                                      }
+                                                    }
+                                                  }
+                                                }
+                                              }
+                                            }
+                                          }
+                                        }
+                                      }
+                                    ]
+                                  }
+                                ]
+                              }
+                            ]
+                          }
+                        }
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          }
+        }
+      ],
+      "loyalty": {
+        "type": "Literal",
+        "value": 4
+      },
+      "manaCost": [
+        {
+          "type": "Generic",
+          "value": 2
+        },
+        {
+          "type": "OfType",
+          "value": {
+            "type": "Colored",
+            "value": "Green"
+          }
+        },
+        {
+          "type": "OfType",
+          "value": {
+            "type": "Colored",
+            "value": "Green"
+          }
+        }
+      ],
+      "name": "Ellywick Tumblestrum",
+      "oracleText": "[+1]: Venture into the dungeon. (Enter the first room or advance to the next room.)\n[−2]: Look at the top six cards of your library. You may reveal a creature card from among them and put it into your hand. If it's legendary, you gain 3 life. Put the rest on the bottom of your library in a random order.\n[−7]: You get an emblem with \"Creatures you control have trample and haste and get +2/+2 for each differently named dungeon you've completed.\"",
+      "typeLine": {
+        "subtypes": [
+          "Ellywick"
+        ],
+        "supertypes": [
+          "Legendary"
+        ],
+        "types": [
+          "Planeswalker"
+        ]
+      }
+    }
+  ]
+}
