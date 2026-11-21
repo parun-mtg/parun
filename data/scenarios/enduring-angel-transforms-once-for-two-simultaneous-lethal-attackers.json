@@ -1,0 +1,108 @@
+{
+  "board": {
+    "active": "bob",
+    "seats": [
+      {
+        "battlefield": [
+          {
+            "card": "Enduring Angel",
+            "label": "angel"
+          }
+        ],
+        "library": [
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          }
+        ],
+        "life": 3,
+        "name": "alice"
+      },
+      {
+        "battlefield": [
+          {
+            "card": "Hill Giant",
+            "label": "g1",
+            "ready": true
+          },
+          {
+            "card": "Hill Giant",
+            "label": "g2",
+            "ready": true
+          }
+        ],
+        "library": [
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          }
+        ],
+        "name": "bob"
+      }
+    ],
+    "step": "BeginningOfCombat"
+  },
+  "description": "CR 120.4c / 120.4d / 614.5: two unblocked attackers' combat damage to Enduring Angel's controller is one life loss, replaced once, so the Angel transforms once",
+  "note": "Alice at 3; Bob's two Hill Giants hit her for 3 each at once. One replacement turns the Angel into Angelic Enforcer and sets her life to 3; a second pass would turn it back.",
+  "timeline": [
+    {
+      "do": {
+        "Attack": [
+          "$g1",
+          "$g2"
+        ]
+      },
+      "player": "bob",
+      "step": "DeclareAttackers",
+      "turn": 1
+    },
+    {
+      "do": {
+        "Block": {}
+      },
+      "player": "alice",
+      "step": "DeclareBlockers",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Life": {
+          "life": 3,
+          "player": "alice"
+        }
+      },
+      "player": "bob",
+      "step": "EndOfCombat",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Names": {
+          "names": [
+            "Angelic Enforcer"
+          ],
+          "object": "$angel"
+        }
+      },
+      "player": "bob",
+      "step": "EndOfCombat",
+      "turn": 1
+    }
+  ]
+}

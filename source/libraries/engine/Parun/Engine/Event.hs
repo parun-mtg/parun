@@ -5255,8 +5255,13 @@ apply settle batch applied batchPrevented candidate event =
       -- didn't transform this way, you lose the game." The loss never happens.
       -- The turn is made here, where its outcome can be read; the life set and
       -- the loss queue behind it (FromGraveyardOrLose's road), so the set is
-      -- CR 119.5's gain or loss with every replacement of its own. Its rulings:
-      -- a token or a single-faced copy does not turn, and its player loses.
+      -- CR 119.5's gain or loss with every replacement of its own. A permanent
+      -- that is neither a double-faced card nor a double-faced token does not
+      -- turn (CR 701.27a) and its player loses; a token copy of the Angel is
+      -- double-faced (CR 707.8a) and turns.
+      --
+      -- Not implemented: a turned token copy showing its back face's copiable
+      -- values (#9249).
       LifeLossRewrite.TransformSourceOrLose total -> do
         Replacement.consume (ReplacementCandidate.identity candidate)
         turned <- transformSource (ReplacementCandidate.source candidate)

@@ -1460,19 +1460,20 @@ processDamage settle events = do
   -- recipient only, so a wither source drains a player like any other. A 0-damage
   -- event needs no guard here: Event.resolveLifeLoss declines a zero itself.
   --
-  -- Sequential in the running life total, and that is the rule rather than an
-  -- accident: each proposal reads the live board, which the previous one has
-  -- already written, so a player at 2 taking two simultaneous lethal hits under
-  -- Worship has the first cut to a loss of 1 and the second cut to nothing, and
-  -- ends at 1. Reading every proposal against the pre-batch board would cut both
-  -- to 1 and kill them.
+  -- ONE proposal per player, of the batch's whole damage to them: CR 120.4d's
+  -- Worship example processes "[10 damage is dealt to the defending player]" from
+  -- two attackers into one loss, so a replacement applies to it once (CR 614.5)
+  -- and judges "would be reduced to 0 or less" on the sum. Per source, Enduring
+  -- Angel turned once per lethal hit and its life set read as a gain; see
+  -- docs/decisions.md, "How simultaneous damage to one player is replaced".
   --
-  -- The same reading is why CR 120.3f's gain is written ABOVE rather than in the
-  -- fold below: the board each proposal reads has to be the one the WHOLE damage
-  -- event's results leave, gains included. CR 120.4d's second Example is that
-  -- board -- at 2, with results "loses 5 life" and "gains 5 life", "Worship's
-  -- effect sees that the damage event would not reduce the player's life total to
-  -- less than 1, so Worship's effect is not applied" -- and Parun.ReplacementSpec's
+  -- The proposal reads the live board, and that is why CR 120.3f's gain is
+  -- written ABOVE rather than in the fold below: the board it reads has to be
+  -- the one the WHOLE damage event's results leave, gains included. CR 120.4d's
+  -- second Example is that board -- at 2, with results "loses 5 life" and
+  -- "gains 5 life", "Worship's effect sees that the damage event would not reduce
+  -- the player's life total to less than 1, so Worship's effect is not applied"
+  -- -- and Parun.ReplacementSpec's
   -- Worship group proves it with a lifelink blocker in place of its Awe Strike.
   --
   -- The DAMAGE is untouched: the lifelink gain pass, `tallyOne` and the
@@ -1481,13 +1482,30 @@ processDamage settle events = do
   -- Worship was still dealt".
   --
   -- Aligned with `survivors` by position, so the fold below can zip the two.
-  lost <-
-    Monad.forM survivors $ \ev -> case DamageEvent.target ev of
-      Recipient.ToPlayer pid | not (DamageEvent.dealtByInfect ev) -> do
-        n <- Event.resolveLifeLossSpent settle (Just board) Set.empty LifeLossCause.ByDamage pid (DamageEvent.amount ev)
-        Monad.when (n > 0) (State.modify' (Game.adjustLife pid (negate (toInteger n))))
-        pure n
-      _ -> pure 0
+  -- An unreplaced loss keeps one record per source; a replaced one is CR
+  -- 614.6's single modified event, so its settled amount goes on the player's
+  -- first event and the rest record nothing.
+  let losingTo ev = case DamageEvent.target ev of
+        Recipient.ToPlayer pid | not (DamageEvent.dealtByInfect ev) -> Just pid
+        _ -> Nothing
+      damageTo = Map.fromListWith (+) [(pid, DamageEvent.amount ev) | ev <- survivors, Just pid <- [losingTo ev]]
+  settledLoss <-
+    Map.traverseWithKey
+      ( \pid total -> do
+          n <- Event.resolveLifeLossSpent settle (Just board) Set.empty LifeLossCause.ByDamage pid total
+          Monad.when (n > 0) (State.modify' (Game.adjustLife pid (negate (toInteger n))))
+          pure (n, total)
+      )
+      damageTo
+  let shareOf (seen, acc) ev = case losingTo ev of
+        Just pid -> case Map.lookup pid settledLoss of
+          Just (n, total)
+            | n == total -> (seen, DamageEvent.amount ev : acc)
+            | Set.member pid seen -> (seen, 0 : acc)
+            | otherwise -> (Set.insert pid seen, n : acc)
+          Nothing -> (seen, 0 : acc)
+        Nothing -> (seen, 0 : acc)
+      lost = reverse (snd (List.foldl' shareOf (Set.empty, []) survivors))
   -- CR 120.4c's counter half for a permanent: CR 120.3c's loyalty and CR
   -- 120.3h's defense counters, each removal settled through
   -- Event.resolveCounterLoss, the CR 616.1 loop, so a CounterLossR row
