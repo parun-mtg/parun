@@ -1110,6 +1110,7 @@ import qualified Parun.RoomSpec
 import qualified Parun.SaddleSpec
 import qualified Parun.SagaSpec
 import qualified Parun.ScenarioSpec
+import qualified Parun.SearchSpec
 import qualified Parun.SeatingSpec
 import qualified Parun.SetupSpec
 import qualified Parun.ShieldCounterSpec
@@ -2303,6 +2304,7 @@ spec s reference corpus = do
   Parun.ScenarioSpec.perturbSpec s registry
   Parun.ScenarioSpec.referenceSpec s
   Parun.ScenarioSpec.spec s registry
+  Parun.SearchSpec.spec s registry
   Parun.SeatingSpec.spec s registry
   Parun.SetupSpec.spec s registry
   Parun.ShieldCounterSpec.spec s registry

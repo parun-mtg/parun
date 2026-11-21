@@ -1606,12 +1606,29 @@ grantAfterAction before p = do
 priorityLoop :: Game ()
 priorityLoop = do
   openPriorityWindow
+  priorityRounds
+
+-- Priority decisions until the window closes, from a fresh trail.
+priorityRounds :: Game ()
+priorityRounds =
   let loop trail = do
         window <- priorityDecision trail
         case window of
           PriorityWindow.Open trail' -> loop trail'
           PriorityWindow.Closed -> pure ()
-  loop LoopTrail.empty
+   in loop LoopTrail.empty
+
+-- | The rest of the game from a priority decision: the holder asked again, the
+-- step ended, and play on to a result. A search bot restarts a sampled world
+-- here (Parun.Play.Search). Only a decision of a step's own priority round
+-- (runStepThatBegan) resumes right: not one inside a subgame or a turn
+-- marker's unit. A fresh trail forgets CR 733's fragmented-loop record.
+resumePriority :: Game Result
+resumePriority = do
+  priorityRounds
+  phase <- State.gets (TurnRegisters.phase . GameState.turn)
+  endStep phase
+  playGame
 
 -- CR 117.3a: a priority round opens with the active player's grant, unless they
 -- have left the game (CR 800.4j).
