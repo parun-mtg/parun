@@ -233,6 +233,8 @@ withoutAnnouncement before entry between closed = do
   gameNumber <- one (MatchScope.gameNumber . GameState.match)
   turnAnchor <- one (TurnRegisters.turnAnchor . GameState.turn)
   extraTurnUnderWay <- one (TurnRegisters.extraTurnUnderWay . GameState.turn)
+  -- Written only between priority decisions, which no announcement spans.
+  loopTrail <- one (TurnRegisters.loopTrail . GameState.turn)
   throwing <- one (Scratch.throwing . GameState.scratch)
   rethrowRequested <- one (Scratch.rethrowRequested . GameState.scratch)
   rerolling <- one (Scratch.rerolling . GameState.scratch)
@@ -288,7 +290,8 @@ withoutAnnouncement before entry between closed = do
               TurnRegisters.rollsThisTurn = rollsThisTurn,
               TurnRegisters.turnResume = turnResume,
               TurnRegisters.turnAnchor = turnAnchor,
-              TurnRegisters.extraTurnUnderWay = extraTurnUnderWay
+              TurnRegisters.extraTurnUnderWay = extraTurnUnderWay,
+              TurnRegisters.loopTrail = loopTrail
             },
         GameState.players = players,
         GameState.outsideObjects = outsideObjects,

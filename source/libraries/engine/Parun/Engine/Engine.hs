@@ -2233,10 +2233,6 @@ unbegunRegisters gs =
 -- being the one worked. A turn running alone takes its step whole, as runStep
 -- does outside the variant. A priority holder reached with priority for
 -- several stacks picks the one this unit's decision is on (chooseStack).
---
--- Not implemented: CR 733.3's fragmented loop is looked for within one unit
--- of a window while another turn runs, its trail starting empty at each
--- (#6537).
 runMarkedUnit :: Game ()
 runMarkedUnit = do
   beginReady
@@ -2269,7 +2265,10 @@ chooseStack n order = do
           pure (if List.elem answered offered then answered else n)
     _ -> pure n
 
--- The worked turn's next unit, or with `alone` the rest of its step.
+-- The worked turn's next unit, or with `alone` the rest of its step. A
+-- window's CR 733.3 trail is kept on its turn between units
+-- (TurnRegisters.loopTrail), so a loop on one stack is seen across them;
+-- Parun.GrandMeleeSpec's "CR 733.3" case is the proof.
 runUnit :: Bool -> Game ()
 runUnit alone = do
   resume <- State.gets (TurnRegisters.turnResume . GameState.turn)
@@ -2291,10 +2290,12 @@ runUnit alone = do
                 case window of
                   PriorityWindow.Open trail' -> loop trail'
                   PriorityWindow.Closed -> pure ()
-          loop LoopTrail.empty
+          State.gets (TurnRegisters.loopTrail . GameState.turn) >>= loop
+          keepTrail LoopTrail.empty
           finishStep
       | otherwise -> do
-          window <- priorityDecision LoopTrail.empty
+          window <- State.gets (TurnRegisters.loopTrail . GameState.turn) >>= priorityDecision
+          keepTrail (case window of PriorityWindow.Open trail -> trail; PriorityWindow.Closed -> LoopTrail.empty)
           restarted <- State.gets GameState.restartSignal
           case (window, restarted) of
             (PriorityWindow.Closed, RestartSignal.Playing) -> resumeAt TurnResume.AtStepEnd
@@ -2308,6 +2309,16 @@ runUnit alone = do
               { GameState.turn =
                   (GameState.turn g)
                     { TurnRegisters.turnResume = resume
+                    }
+              }
+        )
+    keepTrail trail =
+      State.modify'
+        ( \g ->
+            g
+              { GameState.turn =
+                  (GameState.turn g)
+                    { TurnRegisters.loopTrail = trail
                     }
               }
         )

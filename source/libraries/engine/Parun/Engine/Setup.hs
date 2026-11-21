@@ -48,6 +48,7 @@ import qualified Parun.Types.GraveyardOrder as GraveyardOrder
 import Parun.Types.HandActionPerformer (HandActionPerformer)
 import qualified Parun.Types.LeftTheGame as LeftTheGame
 import qualified Parun.Types.LibraryPosition as LibraryPosition
+import qualified Parun.Types.LoopTrail as LoopTrail
 import qualified Parun.Types.MatchScope as MatchScope
 import qualified Parun.Types.Object as Object
 import Parun.Types.ObjectId (ObjectId)
@@ -320,7 +321,8 @@ blankGame match order active =
             TurnRegisters.rollsThisTurn = mempty,
             TurnRegisters.turnResume = TurnResume.AtStepStart,
             TurnRegisters.turnAnchor = Nothing,
-            TurnRegisters.extraTurnUnderWay = Nothing
+            TurnRegisters.extraTurnUnderWay = Nothing,
+            TurnRegisters.loopTrail = LoopTrail.empty
           },
       GameState.players = Map.empty,
       -- CR 730.4: nobody is nested inside another game here.

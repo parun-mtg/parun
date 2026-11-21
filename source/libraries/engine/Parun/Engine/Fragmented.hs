@@ -141,16 +141,10 @@ digest gs =
   let (effects, objects, reacquire) = canonicalStamps gs
       unlinked =
         gs
-          { GameState.turn =
-              (GameState.turn gs)
-                { TurnRegisters.events = Seq.empty,
-                  TurnRegisters.activationsThisTurn = Seq.empty,
-                  TurnRegisters.scannedThrough = 0,
-                  TurnRegisters.damageScannedThrough = 0,
-                  TurnRegisters.stackedIn = Map.empty,
-                  -- One value for a whole turn, and the digest keeps turnNumber.
-                  TurnRegisters.permanentsAsTurnBegan = Nothing
-                },
+          { GameState.turn = untallied (GameState.turn gs),
+            -- CR 807.4b: each parked Grand Melee turn's the same way, so a
+            -- lap on one stack reads as one while another turn runs too.
+            GameState.parkedTurns = fmap untallied (GameState.parkedTurns gs),
             GameState.counteredWith = Map.filter (not . Set.null) (fmap (Set.map (\link -> link {CounterLink.acquisition = reacquire (CounterLink.acquisition link)}) . Set.filter (LinkReaders.readsOwnLinks gs . CounterLink.source)) (GameState.counteredWith gs)),
             -- Only a countdown shield's key is read, and its row, compared here, shrinks as it grows.
             GameState.damagePreventedBy = Map.empty,
@@ -197,13 +191,44 @@ digest gs =
       departed = show (Map.restrictKeys (Snapshots.lastKnown (GameState.snapshots gs)) held, Map.restrictKeys (Snapshots.stackArchive (GameState.snapshots gs)) held, Map.restrictKeys (GameState.cardsPlayed gs) held, fmap told (Set.toAscList held))
       rendered = shown <> departed
       ids = ranked objectIdTag rendered
+      logs registers = (TurnRegisters.events registers, TurnRegisters.activationsThisTurn registers)
    in StateDigest.MkStateDigest
-        { StateDigest.unwrap = trimmed,
+        { StateDigest.cheap =
+            ( ( TurnRegisters.priority (GameState.turn trimmed),
+                TurnRegisters.passed (GameState.turn trimmed),
+                length (TurnRegisters.stack (GameState.turn trimmed)),
+                TurnRegisters.phase (GameState.turn trimmed)
+              ),
+              ( Map.size (GameState.objects trimmed),
+                length (GameState.battlefield trimmed),
+                GameState.manaPool trimmed,
+                fmap length (GameState.hand trimmed)
+              )
+            ),
           StateDigest.canonical = renumber ids (ranked timestampTag rendered) rendered,
           StateDigest.objectRanks = ids,
           StateDigest.events = TurnRegisters.events (GameState.turn gs),
-          StateDigest.activations = TurnRegisters.activationsThisTurn (GameState.turn gs)
+          StateDigest.activations = TurnRegisters.activationsThisTurn (GameState.turn gs),
+          StateDigest.parkedLogs = fmap logs (GameState.parkedTurns gs)
         }
+
+-- | A turn's registers less what the digest drops: its logs and their
+-- watermarks, which `lapIsRead` asks after instead, and the trail of the loop
+-- doing the comparing.
+untallied :: TurnRegisters.TurnRegisters -> TurnRegisters.TurnRegisters
+untallied registers =
+  registers
+    { TurnRegisters.events = Seq.empty,
+      TurnRegisters.activationsThisTurn = Seq.empty,
+      TurnRegisters.scannedThrough = 0,
+      TurnRegisters.damageScannedThrough = 0,
+      TurnRegisters.stackedIn = Map.empty,
+      -- CR 807.5b: groups of `events`, so dropped with them.
+      TurnRegisters.stackCaused = Set.empty,
+      -- One value for a whole turn, and the digest keeps turnNumber.
+      TurnRegisters.permanentsAsTurnBegan = Nothing,
+      TurnRegisters.loopTrail = LoopTrail.empty
+    }
 
 -- How the derived Show renders an object id and a timestamp, up to the
 -- number.
@@ -375,17 +400,22 @@ layeredStamps gs =
 -- and `gs`, the same state again? Asked of what was appended rather than of
 -- the whole history, so a reader of events the loop never writes -- Khabál
 -- Ghoul's deaths -- leaves the loop detectable. History that is not an
--- extension of `there`'s counts as read.
+-- extension of `there`'s counts as read. Every running Grand Melee turn's
+-- log is asked (CR 807.4b), each a turn's own.
 lapIsRead :: StateDigest -> GameState -> Bool
 lapIsRead there gs =
-  case (appended (StateDigest.events there) (TurnRegisters.events (GameState.turn gs)), appended (StateDigest.activations there) (TurnRegisters.activationsThisTurn (GameState.turn gs))) of
-    (Just events, Just activations) ->
-      let wrote reading = case reading of
-            HistoryRead.Activations -> not (Seq.null activations)
-            _ -> any (records reading . LoggedEvent.event) events
-       in any wrote (readers gs)
+  case sequence (lap (StateDigest.events there, StateDigest.activations there) (GameState.turn gs) : Map.elems (Map.intersectionWith lap (StateDigest.parkedLogs there) (GameState.parkedTurns gs))) of
+    Just laps
+      | Map.keysSet (StateDigest.parkedLogs there) == Map.keysSet (GameState.parkedTurns gs) ->
+          let events = foldMap fst laps
+              activations = foldMap snd laps
+              wrote reading = case reading of
+                HistoryRead.Activations -> not (Seq.null activations)
+                _ -> any (records reading . LoggedEvent.event) events
+           in any wrote (readers gs)
     _ -> True
   where
+    lap (events, activations) registers = (,) <$> appended events (TurnRegisters.events registers) <*> appended activations (TurnRegisters.activationsThisTurn registers)
     appended :: (Eq a) => Seq.Seq a -> Seq.Seq a -> Maybe (Seq.Seq a)
     appended before after =
       let (prefix, rest) = Seq.splitAt (Seq.length before) after

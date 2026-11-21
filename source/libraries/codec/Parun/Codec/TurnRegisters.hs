@@ -28,6 +28,7 @@ import qualified Parun.JsonCodec.Codec as Codec
 import qualified Parun.JsonCodec.Common as Common
 import qualified Parun.JsonCodec.Fields as Fields
 import qualified Parun.Types.EndTurnSignal as EndTurnSignal.Type
+import qualified Parun.Types.LoopTrail as LoopTrail
 import qualified Parun.Types.TurnRegisters as TurnRegisters
 import qualified Parun.Types.TurnResume as TurnResume.Type
 
@@ -99,5 +100,7 @@ codec = Fields.object $ do
         TurnRegisters.freeCastsUsedThisTurn = freeCastsUsedThisTurn,
         TurnRegisters.instructionsTakenThisTurn = instructionsTakenThisTurn,
         TurnRegisters.rollsThisTurn = rollsThisTurn,
-        TurnRegisters.turnResume = turnResume
+        TurnRegisters.turnResume = turnResume,
+        -- Loop-local (Parun.Types.LoopTrail).
+        TurnRegisters.loopTrail = LoopTrail.empty
       }

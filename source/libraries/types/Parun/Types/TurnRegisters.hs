@@ -15,6 +15,7 @@ import qualified Parun.Types.FreeCast as FreeCast
 import qualified Parun.Types.GrantedAbility as GrantedAbility
 import qualified Parun.Types.LastKnown as LastKnown
 import qualified Parun.Types.LoggedEvent as LoggedEvent
+import qualified Parun.Types.LoopTrail as LoopTrail
 import qualified Parun.Types.ModifiedRoll as ModifiedRoll
 import qualified Parun.Types.ObjectId as ObjectId
 import qualified Parun.Types.PastActivation as PastActivation
@@ -154,6 +155,10 @@ data TurnRegisters = MkTurnRegisters
     rollsThisTurn :: Seq.Seq PastRoll.PastRoll,
     -- | CR 807.4b: where this turn picks up when the
     -- scheduler next works it; AtStepStart outside Grand Melee.
-    turnResume :: TurnResume.TurnResume
+    turnResume :: TurnResume.TurnResume,
+    -- | CR 733.3 / 807.4b: the trail of this turn's open priority window,
+    -- kept between the units Parun.Engine.Engine.runUnit gives it while
+    -- another Grand Melee turn runs; empty otherwise, and never encoded.
+    loopTrail :: LoopTrail.LoopTrail
   }
   deriving (Eq, Ord, Show)
