@@ -667,6 +667,11 @@ data Response
     -- transcript against the wrong one would reorder a batch of stamps instead
     -- of a batch of activations.
     OrderedManaActivations [Natural.Natural]
+  | -- | CR 616.1 / 101.4c: the order a player chose for their permanents
+    -- entering together to apply their as-enters replacements in, as a
+    -- permutation of the offered indices; separate from the ones above for
+    -- their reason.
+    OrderedEntries [Natural.Natural]
   | -- | CR 616.1: the index of the replacement effect a player chose to apply
     -- next.
     ChoseReplacement Natural.Natural

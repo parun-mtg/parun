@@ -865,12 +865,15 @@ recopyAbility runSubgame row = Monad.forM_ (ActiveCopyCast.recopy row) $ \condit
 -- -- runPreventionRiders above in every structural respect and for the same
 -- reason. Emptied before the effects run.
 --
--- Two callers. applyEffectWith runs it as each instruction finishes, so a later
--- instruction of the same resolution reads the board the effects left (CR
--- 608.2h) -- Parun.FaceDownSpec's "CR 614.1c / 608.2h the reanimated Ixidron's
--- power is read after its own sweep" proves it. Parun.Engine.Engine.performSettle
--- runs it for every other road onto the battlefield (a permanent spell, a land
--- play), before the SBA pass and the trigger scan.
+-- Three callers. Settle.entryEffects runs it after each member of a batch
+-- entering the battlefield, so the next member's entry applies after it (CR
+-- 614.13b, Event.orderEntries). applyEffectWith runs it as each instruction
+-- finishes, so a later instruction of the same resolution reads the board the
+-- effects left (CR 608.2h) -- Parun.FaceDownSpec's "CR 614.1c / 608.2h the
+-- reanimated Ixidron's power is read after its own sweep" proves it.
+-- Parun.Engine.Engine.performSettle runs it for every other road onto the
+-- battlefield (a permanent spell, a land play), before the SBA pass and the
+-- trigger scan.
 runEntryEffects :: Game Result -> Game ()
 runEntryEffects runSubgame = do
   queued <- State.gets (StoredEffects.pendingEntryEffects . GameState.stored)
@@ -947,12 +950,13 @@ runReplacementEffects runSubgame = do
   Foldable.traverse_ (runDamageRewriteEffect runSubgame) queued
 
 -- The Parun.Types.Settle every road below Resolve takes from a resolution:
--- runReplacementEffects, throwRecorded and reflipWindow around CR 730.1a's
--- subgame runner.
+-- runReplacementEffects, runEntryEffects, throwRecorded and reflipWindow around
+-- CR 730.1a's subgame runner.
 settleWith :: Game Result -> Settle.Settle
 settleWith runSubgame =
   Settle.MkSettle
     { Settle.queued = runReplacementEffects runSubgame,
+      Settle.entryEffects = runEntryEffects runSubgame,
       Settle.throwRecorded = Just (throwRecorded runSubgame),
       Settle.reflipWindow = reflipWindow runSubgame
     }

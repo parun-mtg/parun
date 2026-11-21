@@ -90,6 +90,7 @@ bot names = Answerer.MkAnswerer $ \asked -> case Asked.prompt asked of
   Prompt.OrderTriggers _ _ entries -> order entries
   Prompt.OrderTimestamps _ _ objects -> order objects
   Prompt.OrderManaActivations _ _ objects -> order objects
+  Prompt.OrderEntries _ _ objects -> order objects
   Prompt.OrderCombatTolls _ _ objects -> order objects
   Prompt.OrderComponentCards _ _ _ printings -> order printings
   Prompt.OrderCostComponents _ _ _ components -> order components

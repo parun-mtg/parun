@@ -1012,6 +1012,10 @@ data Prompt r where
   -- Parun.Engine.Resolve.Arms.Damage's ActivateManaAbilities arm, per seat in
   -- APNAP order (CR 101.4), for two or more permanents.
   OrderManaActivations :: Decider.Decider -> PlayerId.PlayerId -> [ObjectId.ObjectId] -> Prompt [Natural.Natural]
+  -- | CR 616.1 / 101.4c: the order one player's permanents entering the
+  -- battlefield in one event apply their as-enters replacements in, first named
+  -- first; asked by Parun.Engine.Event.orderEntries.
+  OrderEntries :: Decider.Decider -> PlayerId.PlayerId -> [ObjectId.ObjectId] -> Prompt [Natural.Natural]
   -- | CR 315.5a: which of the hands a player drew as the game began they keep,
   -- by index, the rest being shuffled into their library; asked by
   -- Parun.Engine.Mulligan.additionalHands before any mulligan, of a player

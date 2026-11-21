@@ -396,6 +396,7 @@ orderNote kind offer = case Text.unpack kind of
   -- CR 613.7m.
   "OrderTimestamps" -> Text.pack "the first gets the earliest timestamp"
   "OrderManaActivations" -> Text.pack "the first is activated first"
+  "OrderEntries" -> Text.pack "the first applies its as-enters effects first"
   "OrderCombatTolls" -> Text.pack "the first is paid first"
   -- CR 713.8a.
   "OrderComponentCards" -> Text.pack "the first goes into " <> maybe (Text.pack "the zone") PromptOffer.zoneName (Protocol.field "zone" offer >>= decoded Codec.Zone.codec) <> Text.pack " first"

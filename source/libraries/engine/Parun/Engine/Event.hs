@@ -732,6 +732,41 @@ amongPending under members body = do
   State.modify' (\g -> g {GameState.scratch = (GameState.scratch g) {Scratch.enteringPending = saved}})
   pure result
 
+-- CR 616.1 / 101.4c: the order `members`, entering the battlefield in one
+-- event, apply their as-enters replacements in. CR 616.1g's Voice of All
+-- example applies two entering objects' effects "in either order", and CR
+-- 614.13b acts as an effect is applied, so the order is observable and the
+-- player's: each seat (the player a member enters under, `under` or else its
+-- owner) permutes its own members by Prompt.OrderEntries within the slots they
+-- hold in the gathered order. Seats keep that order among themselves.
+--
+-- Asked where two or more of a seat's members carry an entry replacement of
+-- their own and one of them runs effects (Replacement.runsEffects), which can
+-- read what another member's application did or change what it reads:
+-- Sigarda's Splendor's note beside Phyrexian Processor's payment, proved by
+-- data/scenarios/entry-replacement's cr-616-1 Splendor scenarios, an Open the
+-- Vaults pair for Resolve's move and a Banishing Light pair for
+-- changeZonesTogether.
+--
+-- A pair neither of which runs effects is not asked, and the token and conjure
+-- batches are not ordered (gap #9255).
+orderEntries :: Maybe PlayerId -> [ObjectId] -> Game [ObjectId]
+orderEntries under members = do
+  gs <- State.get
+  let seatOf oid = fmap (\obj -> Maybe.fromMaybe (Object.owner obj) under) (Game.lookupObject oid gs)
+      rows oid = [effect | (_, effect@(ReplacementEffect.EntryR _)) <- Projection.replacementsOf Zone.Battlefield oid gs]
+      seats = ListUtils.nubOrd (Maybe.mapMaybe seatOf members)
+      ask seat = do
+        let carrying = [oid | oid <- members, seatOf oid == Just seat, not (null (rows oid))]
+        if length carrying >= 2 && any (any Replacement.runsEffects . rows) carrying
+          then do
+            now <- State.get
+            answer <- Game.choose (Prompt.OrderEntries (Decide.deciderFor seat now) seat carrying)
+            pure (zip carrying (Game.permute carrying answer))
+          else pure []
+  moved <- fmap (Map.fromList . concat) (traverse ask seats)
+  pure (fmap (\oid -> Map.findWithDefault oid oid moved) members)
+
 together :: Game a -> Game a
 together body = do
   before <- State.get
@@ -8513,21 +8548,27 @@ changeZonesTogether settle batch = simultaneously . together $ do
   before <- State.get
   let moves = filter ((`Set.notMember` kept) . fst) batch
       entering = [oid | (oid, Zone.Battlefield) <- moves]
+      -- CR 614.13b: each member's as-enters effects run before the next
+      -- member's entry applies, in the order orderEntries settled.
       step (sofar, acc) (oid, dest) = do
         State.modify' (\g -> g {GameState.scratch = (GameState.scratch g) {Scratch.enteringPending = Map.delete oid (Scratch.enteringPending (GameState.scratch g))}})
         new <- changeZoneAttaching settle (Just before) sofar oid dest LibraryPosition.defaultValue Nothing TapState.Untapped Map.empty Nothing Nothing Facing.FaceUp False CarryOver.NotCarried False Seq.empty
-        pure (foldr Set.insert sofar new, new : acc)
-  arrived <- fmap (reverse . snd) (amongPending Nothing entering (Monad.foldM step (Set.empty, []) moves))
+        Settle.entryEffects settle
+        pure (foldr Set.insert sofar new, (oid, new) : acc)
+  ordered <- orderEntries Nothing entering
+  -- The battlefield-bound members take the order orderEntries answered, in
+  -- the slots they held; every other member keeps its place.
+  let reorder rest move@(_, dest) = case (dest, rest) of
+        (Zone.Battlefield, oid : later) -> (later, (oid, dest))
+        _ -> (rest, move)
+      fold = snd (List.mapAccumL reorder ordered moves)
+  arrived <- fmap (reverse . snd) (amongPending Nothing entering (Monad.foldM step (Set.empty, []) fold))
   -- CR 613.7m: noted here, ordered as `together` ends.
-  Restamp.settle (Bookkeeping.nextTimestamp (GameState.bookkeeping before)) (concatMap Foldable.toList arrived)
+  Restamp.settle (Bookkeeping.nextTimestamp (GameState.bookkeeping before)) (concatMap (Foldable.toList . snd) arrived)
   -- One answer per member of `batch`, a kept one's empty, so a caller can
   -- line them up with what it asked for (MoveDuration.returnDue).
-  let answer rest (oid, _)
-        | Set.member oid kept = (rest, Seq.empty)
-        | otherwise = case rest of
-            new : later -> (later, new)
-            [] -> ([], Seq.empty)
-  pure (snd (List.mapAccumL answer arrived batch))
+  let byMember = Map.fromList arrived
+  pure (fmap (\(oid, _) -> Map.findWithDefault Seq.empty oid byMember) batch)
 
 -- changeZoneReturning's body, returning the destination incarnations' ids: one
 -- fresh id per arrival on a completed move (CR 400.7), which is one for every

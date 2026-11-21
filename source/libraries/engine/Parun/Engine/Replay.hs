@@ -247,6 +247,7 @@ encode p answer = case p of
   Prompt.ChooseRepeat {} -> Response.ChoseRepeat answer
   Prompt.OrderTimestamps {} -> Response.OrderedTimestamps answer
   Prompt.OrderManaActivations {} -> Response.OrderedManaActivations answer
+  Prompt.OrderEntries {} -> Response.OrderedEntries answer
   Prompt.ChooseReplacement {} -> Response.ChoseReplacement answer
   Prompt.ChooseSacrifices {} -> Response.ChoseSacrifices answer
   Prompt.ChooseExilesFromGraveyard {} -> Response.ChoseExilesFromGraveyard answer
@@ -698,6 +699,9 @@ decode p response = case p of
     _ -> Nothing
   Prompt.OrderManaActivations {} -> case response of
     Response.OrderedManaActivations order -> Just order
+    _ -> Nothing
+  Prompt.OrderEntries {} -> case response of
+    Response.OrderedEntries order -> Just order
     _ -> Nothing
   Prompt.ChooseReplacement {} -> case response of
     Response.ChoseReplacement n -> Just n
@@ -1335,6 +1339,9 @@ defaultAnswer p = case p of
   -- APNAP-then-ascending sweep order -- what parun activated in before the
   -- intra-seat key became that seat's to choose.
   Prompt.OrderManaActivations _ _ batch -> zipWith const [0 ..] batch
+  -- CR 616.1 / 101.4c: likewise, and it is the order the effect gathered the
+  -- members in.
+  Prompt.OrderEntries _ _ batch -> zipWith const [0 ..] batch
   -- CR 616.1: the bucket is non-empty when this is asked, so index 0 is legal.
   Prompt.ChooseReplacement {} -> 0
   -- The first `count` candidates, which the engine offers in ascending order.

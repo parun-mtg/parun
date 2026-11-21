@@ -240,6 +240,7 @@ subjectOf prompt = case prompt of
   Prompt.ChooseRepeat _ pid _ _ -> Just pid
   Prompt.OrderTimestamps _ pid _ -> Just pid
   Prompt.OrderManaActivations _ pid _ -> Just pid
+  Prompt.OrderEntries _ pid _ -> Just pid
   Prompt.KeepHand _ pid _ -> Just pid
   Prompt.DeclareMulligan _ pid _ -> Just pid
   Prompt.Bottom _ pid _ _ -> Just pid
@@ -434,6 +435,7 @@ deciderOf prompt = case prompt of
   Prompt.ChooseRepeat decider _ _ _ -> Just (Decider.unwrap decider)
   Prompt.OrderTimestamps decider _ _ -> Just (Decider.unwrap decider)
   Prompt.OrderManaActivations decider _ _ -> Just (Decider.unwrap decider)
+  Prompt.OrderEntries decider _ _ -> Just (Decider.unwrap decider)
   Prompt.KeepHand decider _ _ -> Just (Decider.unwrap decider)
   Prompt.DeclareMulligan decider _ _ -> Just (Decider.unwrap decider)
   Prompt.Bottom decider _ _ _ -> Just (Decider.unwrap decider)
