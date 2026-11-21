@@ -1,0 +1,77 @@
+{
+  "faces": [
+    {
+      "manaCost": [
+        {
+          "type": "Generic",
+          "value": 1
+        },
+        {
+          "type": "OfType",
+          "value": {
+            "type": "Colored",
+            "value": "White"
+          }
+        },
+        {
+          "type": "OfType",
+          "value": {
+            "type": "Colored",
+            "value": "Blue"
+          }
+        }
+      ],
+      "name": "Hama Pashar, Ruin Seeker",
+      "oracleText": "Room abilities of dungeons you own trigger an additional time.",
+      "playerAbilities": [
+        {
+          "effect": {
+            "type": "BearersTrigger",
+            "value": {
+              "bearers": {
+                "type": "And",
+                "value": [
+                  {
+                    "type": "HasCardType",
+                    "value": "Dungeon"
+                  },
+                  {
+                    "type": "HeldBy",
+                    "value": {
+                      "holder": "Owner",
+                      "relation": "You"
+                    }
+                  }
+                ]
+              },
+              "triggering": "AnAdditionalTime"
+            }
+          },
+          "scope": {
+            "type": "You"
+          }
+        }
+      ],
+      "power": {
+        "type": "Literal",
+        "value": 2
+      },
+      "toughness": {
+        "type": "Literal",
+        "value": 3
+      },
+      "typeLine": {
+        "subtypes": [
+          "Human",
+          "Wizard"
+        ],
+        "supertypes": [
+          "Legendary"
+        ],
+        "types": [
+          "Creature"
+        ]
+      }
+    }
+  ]
+}

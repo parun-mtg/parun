@@ -206,7 +206,7 @@ data PlayerEffect
     -- abilities.
     EntriesTrigger EntriesTrigger.EntriesTrigger
   | -- | CR 603.2d / 613.11 / Sanctum of All, Nowhere to Run: how this player's
-    -- triggered abilities of matching permanents trigger, whatever their event.
+    -- triggered abilities of matching objects trigger, whatever their event.
     BearersTrigger BearersTrigger.BearersTrigger
   | -- | CR 724.2 / Opposition Agent: while this player searches their library,
     -- CR 109.5's "you" of the row controls them.

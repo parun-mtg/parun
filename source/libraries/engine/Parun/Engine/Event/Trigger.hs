@@ -2594,9 +2594,10 @@ oncePerBatch joinOn entries =
 -- player who controls it, matched against a batch of events the way
 -- eventTriggers matches an object's: the same matcher (matchesTriggerGiven), the
 -- same CR 603.2c batching (batchScoped, batchPartition, oncePerBatch), the same
--- CR 805.4d per-player copies (stepCopies) and the same CR 603.4 check
--- (interveningHolds). No such ability reads "that player" yet, so stepCopies is
--- a regression fence here.
+-- CR 805.4d per-player copies (stepCopies), the same CR 603.4 check
+-- (interveningHolds) and the same CR 603.2d additional instances
+-- (PlayerEffect.additionalTriggers). No such ability reads "that player" yet,
+-- so stepCopies is a regression fence here.
 --
 -- Only where the abilities come from differs. The designations' and the planar
 -- die's each "has no source" (TriggerSource.Sourceless), so the scan that walks
@@ -2638,8 +2639,16 @@ inherentTriggers held events gs =
               TriggerSource.OfObject oid -> delayedAsTriggered board oid gs
               TriggerSource.Sourceless -> Map.empty
             pend logged = PendingTrigger.MkPendingTrigger source you ability (eventBindingsOver board gs Nothing Map.empty bearer you cond (LoggedEvent.event logged)) Nothing (Just logged) (EventGroup.next (LoggedEvent.group logged)) 1 frozen Nothing
-            key trigger = if batchScoped cond then Just (batchPartition cond (PendingTrigger.bindings trigger)) else Nothing
-         in oncePerBatch id [(key trigger, trigger) | logged <- NonEmpty.toList block, let event = LoggedEvent.event logged, fires event, trigger <- stepCopies gs bearer you cond event ability (pend logged)]
+            -- CR 603.2d: a room ability triggers additional times (Hama
+            -- Pashar, Ruin Seeker), its dungeon card read as the bearer off the
+            -- game after the event; a sourceless ability has no object to name.
+            additional = case source of
+              TriggerSource.OfObject oid -> PlayerEffect.additionalTriggers you oid ability (gameAfter (LoggedEvent.group (NonEmpty.head block)) gs)
+              TriggerSource.Sourceless -> 0
+            -- Keyed by the instance too, as eventTriggers keys it, so a batch
+            -- trigger's additional instances survive the join.
+            key extra trigger = if batchScoped cond then Just (batchPartition cond (PendingTrigger.bindings trigger), extra :: Natural) else Nothing
+         in oncePerBatch fst [(key extra trigger, trigger) | logged <- NonEmpty.toList block, let event = LoggedEvent.event logged, fires event, extra <- [0 .. additional], trigger <- stepCopies gs bearer you cond event ability (pend logged)]
    in concatMap (filter (interveningHolds gs) . forHeld) held
 
 -- CR 113.6m, read off a TRIGGERED ability: "an ability whose cost or effect

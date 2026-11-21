@@ -5,8 +5,9 @@ import qualified Parun.Types.Filter as Filter
 import qualified Parun.Types.Keyword as Keyword
 import qualified Parun.Types.KeywordDesignator as KeywordDesignator
 
--- | A rule over the triggering of a permanent's triggered abilities, whatever
--- their event, read for the player whose abilities they are
+-- | A rule over the triggering of an object's triggered abilities, a
+-- permanent's or a dungeon's (Hama Pashar, Ruin Seeker), whatever their event,
+-- read for the player whose abilities they are
 -- (Parun.Types.PlayerEffect.BearersTrigger).
 data BearersTrigger = MkBearersTrigger
   { -- | CR 113.7: whose abilities it applies to, CR 109.5's "you" being the
