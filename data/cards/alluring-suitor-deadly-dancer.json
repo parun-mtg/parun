@@ -206,7 +206,7 @@
           "condition": {
             "type": "Transforms",
             "value": {
-              "into": "Deadly Dancer"
+              "intoItself": true
             }
           },
           "modal": {

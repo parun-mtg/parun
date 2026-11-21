@@ -94,7 +94,7 @@
           "condition": {
             "type": "Transforms",
             "value": {
-              "into": "Compleated Conjurer"
+              "intoItself": true
             }
           },
           "modal": {

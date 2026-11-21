@@ -198,7 +198,7 @@
               {
                 "type": "Transforms",
                 "value": {
-                  "into": "Wildsong Howler"
+                  "intoItself": true
                 }
               }
             ]

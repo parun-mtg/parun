@@ -96,7 +96,7 @@
               {
                 "type": "Transforms",
                 "value": {
-                  "into": "Blightsower Thallid"
+                  "intoItself": true
                 }
               },
               {

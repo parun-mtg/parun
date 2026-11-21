@@ -53,7 +53,7 @@
               {
                 "type": "Transforms",
                 "value": {
-                  "into": "Sygg, Wanderwine Wisdom"
+                  "intoItself": true
                 }
               }
             ]
@@ -252,7 +252,7 @@
           "condition": {
             "type": "Transforms",
             "value": {
-              "into": "Sygg, Wanderbrine Shield"
+              "intoItself": true
             }
           },
           "modal": {

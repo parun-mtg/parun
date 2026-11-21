@@ -1,7 +1,6 @@
 module Parun.Types.TransformTrigger where
 
 import qualified Parun.Types.ActingPermanent as ActingPermanent
-import qualified Parun.Types.CardName as CardName
 
 -- | CR 701.27f: which permanent turned over, and the face it turned into.
 data TransformTrigger = MkTransformTrigger
@@ -9,10 +8,9 @@ data TransformTrigger = MkTransformTrigger
     -- the Waxing Moon), the Filter read against the characteristics the event
     -- sampled (Parun.Types.Transformed).
     permanent :: ActingPermanent.ActingPermanent,
-    -- | "Transforms into [face]": the name the face it turned into must carry,
-    -- which is what tells the turn to a face from the turn away from it.
-    -- Nothing is any face.
-    into :: Maybe CardName.CardName
+    -- | CR 701.27f / 201.5: "transforms into [its own name]", the name the
+    -- bearer has now, so a copy under another name (Olag) reads its own.
+    intoItself :: Bool
   }
   deriving (Eq, Ord, Show)
 
@@ -22,5 +20,5 @@ defaultValue :: TransformTrigger
 defaultValue =
   MkTransformTrigger
     { permanent = ActingPermanent.Self,
-      into = Nothing
+      intoItself = False
     }

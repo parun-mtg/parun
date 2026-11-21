@@ -197,7 +197,6 @@ import qualified Parun.Types.PlayerRef as PlayerRef
 import qualified Parun.Types.PlayerRelation as PlayerRelation
 import qualified Parun.Types.PlayerScope as PlayerScope
 import qualified Parun.Types.PlaysLand as PlaysLand
-import qualified Parun.Types.ProjectedCharacteristics as PC
 import qualified Parun.Types.Prompt as Prompt
 import qualified Parun.Types.PutIntoZoneTrigger as PutIntoZoneTrigger
 import qualified Parun.Types.Quantity as Quantity.Type
@@ -1972,11 +1971,10 @@ representativeEvents cond =
               NonEmpty.:| [noTable (GameEvent.TurnedFaceUp TurnedFaceUp.MkTurnedFaceUp {TurnedFaceUp.object = departed, TurnedFaceUp.player = S.alice, TurnedFaceUp.announcedX = Nothing})]
           ActingPermanent.Matching _ -> one (GameEvent.TurnedFaceUp TurnedFaceUp.MkTurnedFaceUp {TurnedFaceUp.object = departed, TurnedFaceUp.player = S.alice, TurnedFaceUp.announcedX = Just 3})
         -- CR 701.27a's own event, and the only one this condition admits, on
-        -- `departed`, the BEARER, naming the face the condition names if it names
-        -- one -- so the pair really matches under either subject, the Matching
-        -- one's Filter below being the trivial one, which the sampled
-        -- characteristics satisfy however empty they are.
-        TriggerCondition.Transforms t -> one (GameEvent.Transformed Transformed.MkTransformed {Transformed.object = departed, Transformed.characteristics = S.emptyCharacteristics {PC.names = maybe Set.empty Set.singleton (TransformTrigger.into t)}, Transformed.controller = Nothing, Transformed.attachments = Set.empty, Transformed.lapsedGrants = Set.empty})
+        -- `departed`, the BEARER -- so the pair really matches under either
+        -- subject, the Matching one's Filter below being the trivial one, which
+        -- the sampled characteristics satisfy however empty they are.
+        TriggerCondition.Transforms _ -> one (GameEvent.Transformed Transformed.MkTransformed {Transformed.object = departed, Transformed.characteristics = S.emptyCharacteristics, Transformed.controller = Nothing, Transformed.attachments = Set.empty, Transformed.lapsedGrants = Set.empty})
         -- CR 603.2's own event, carrying the watched action, on `departed`: under
         -- the trivial Filter the pair really matches, and under Self it does not,
         -- which pins the floor for a matching pair too, this arm binding nothing
@@ -2407,7 +2405,7 @@ everyTriggerCondition =
     -- Sacred Ground's narrowing, over the condition whose bindings it keeps.
     TriggerCondition.CausedBy CausedBy.MkCausedBy {CausedBy.controller = PlayerRelation.Opponent, CausedBy.sourceKeyword = Nothing, CausedBy.condition = TriggerCondition.Leaves (LeavesTrigger.dies (LeavingPermanent.Matching (Filter.Type.And [])))},
     TriggerCondition.TurnedFaceUp TurnedFaceUpTrigger.defaultValue,
-    TriggerCondition.Transforms TransformTrigger.defaultValue {TransformTrigger.into = Just (CardName.MkCardName (Text.pack "Blightsower Thallid"))},
+    TriggerCondition.Transforms TransformTrigger.defaultValue,
     TriggerCondition.Transforms TransformTrigger.defaultValue {TransformTrigger.permanent = ActingPermanent.Matching (Filter.Type.And [])},
     TriggerCondition.TurnedFaceUp (TurnedFaceUpTrigger.matching (Filter.Type.And [])),
     TriggerCondition.FaceDownPermanentLeavesRevealed,

@@ -41,7 +41,7 @@
               {
                 "type": "Transforms",
                 "value": {
-                  "into": "Grub, Storied Matriarch"
+                  "intoItself": true
                 }
               }
             ]
