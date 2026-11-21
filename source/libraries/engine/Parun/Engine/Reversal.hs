@@ -58,7 +58,9 @@ import qualified Parun.Types.TurnRegisters as TurnRegisters
 -- leaves the activation standing, or reverses the whole action unasked, so the
 -- worst it can cost is the question.
 --
--- Not implemented: summing any other leaf two sides wrote (#8008).
+-- Unprinted: any other leaf two sides write to two different values, which
+-- would need its own rule, as `combatWith` has. The one such shape card data
+-- could write, an exert, Parun.CardSpec lints out (`objectWith`).
 --
 -- A TOTAL record construction, one bind per field, never a record update: a new
 -- GameState field is then a `-Wmissing-fields` error here rather than a leaf
