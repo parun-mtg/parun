@@ -2035,17 +2035,50 @@ cardKindChoiceReachesPlayer = any (any offends . Modal.modes) . faceModals
             AnotherCounter.EachKind (EachKind.MkEachKind _ KindStep.Another) -> []
         ]
 
--- Whether any EntriesTrigger row a face writes offends: its own player
--- effects, those it grants, and those its effects store.
-cardWritesEntriesTrigger :: (EntriesTrigger.EntriesTrigger -> Bool) -> Face.Face Card.Type.Card -> Bool
-cardWritesEntriesTrigger offends card =
+-- Whether any player effect a face writes offends: its own, those it grants,
+-- and those its effects store.
+cardWritesPlayerEffect :: (PlayerEffect.PlayerEffect -> Bool) -> Face.Face Card.Type.Card -> Bool
+cardWritesPlayerEffect offends card =
   let rows =
         fmap PlayerStaticAbility.effect (Face.playerAbilities card <> grantedPlayerAbilities card)
           <> [effect | Effect.AffectPlayers (AffectPlayers.MkAffectPlayers _ _ effect) <- cardAuthoredEffects card]
-      row effect = case effect of
-        PlayerEffect.EntriesTrigger e -> offends e
-        _ -> False
-   in any row rows
+   in any offends rows
+
+-- Whether any EntriesTrigger row a face writes offends.
+cardWritesEntriesTrigger :: (EntriesTrigger.EntriesTrigger -> Bool) -> Face.Face Card.Type.Card -> Bool
+cardWritesEntriesTrigger offends = cardWritesPlayerEffect $ \effect -> case effect of
+  PlayerEffect.EntriesTrigger e -> offends e
+  _ -> False
+
+-- CR 309.2c: a BearersTrigger whose bearers could match a dungeon card without
+-- naming one. Parun.Engine.Event.Trigger.inherentTriggers asks the row of a
+-- room ability's dungeon card, so "a permanent" (Fractured Realm) must say
+-- IsInZone Battlefield itself. Conservative: an atom not known to miss a
+-- dungeon card counts as matching it.
+cardBearersReachDungeon :: Face.Face Card.Type.Card -> Bool
+cardBearersReachDungeon = cardWritesPlayerEffect $ \effect -> case effect of
+  PlayerEffect.BearersTrigger rule -> let bearers = BearersTrigger.bearers rule in not (namesDungeon bearers || missesDungeon bearers)
+  _ -> False
+  where
+    namesDungeon filter' = case filter' of
+      Filter.Type.HasCardType CardType.Dungeon -> True
+      Filter.Type.And fs -> any namesDungeon fs
+      _ -> False
+    -- The atoms the pool's bearers write: a dungeon card is in the command
+    -- zone, a Dungeon with no other card type and no subtype but Undercity
+    -- (CR 205.3p), the source of no player effect, attached to nothing and
+    -- bound to no slot.
+    missesDungeon filter' = case filter' of
+      Filter.Type.And fs -> any missesDungeon fs
+      Filter.Type.Or fs -> all missesDungeon fs
+      Filter.Type.IsInZone zone -> zone /= Zone.Command
+      Filter.Type.HasCardType cardType -> cardType /= CardType.Dungeon
+      Filter.Type.HasSubtype subtype -> subtype /= Subtype.Undercity
+      Filter.Type.IsSource -> True
+      Filter.Type.HasAttached _ -> True
+      Filter.Type.IsAttachedTo _ -> True
+      Filter.Type.IsBound _ -> True
+      _ -> False
 
 -- Unprinted: a TriggeringMove.GainingLife row naming an entrant (CR 119.9's
 -- gain is no permanent's).
@@ -6944,6 +6977,21 @@ lintSpec s registry corpus = Spec.describe s "Lint" $ do
     Spec.assertBool s (not (cardSilencesAttack (S.combinedFace isshin))) "Isshin, Two Heavens as One's additional attack trigger is accepted"
     Spec.assertBool s (not (cardSilencesAttack face)) "Hushbringer's creatures entering or dying are accepted"
     Spec.assertBool s (cardSilencesAttack doctored) "its creatures attacking without triggering are rejected"
+  Spec.it s "CR 309.2c no bearer filter reaches a dungeon card unless it names one" $ do
+    ps <- S.allPrintings s corpus
+    Spec.assertEqWith s "no bearers reaching a dungeon" (fmap (S.nameOf . Printing.card) (filter (anyFaceOrMinted cardBearersReachDungeon . Printing.card) ps)) []
+  -- And the rejecting direction, against Fractured Realm misauthored on purpose.
+  Spec.it s "the lint itself catches a bearer filter reaching a dungeon card" $ do
+    room <- S.printingOf s registry "Mirror Room"
+    hama <- S.printingOf s registry "Hama Pashar, Ruin Seeker"
+    let face = S.combinedFace room
+        widened effect = case effect of
+          PlayerEffect.BearersTrigger rule -> PlayerEffect.BearersTrigger rule {BearersTrigger.bearers = Filter.Type.And []}
+          other -> other
+        doctored = face {Face.playerAbilities = fmap (\ability -> ability {PlayerStaticAbility.effect = widened (PlayerStaticAbility.effect ability)}) (Face.playerAbilities face)}
+    Spec.assertBool s (not (cardBearersReachDungeon (S.combinedFace hama))) "Hama Pashar, Ruin Seeker's dungeons are accepted"
+    Spec.assertBool s (not (cardBearersReachDungeon face)) "Fractured Realm's permanents are accepted"
+    Spec.assertBool s (cardBearersReachDungeon doctored) "its bearers widened to every object are rejected"
   -- Unprinted: a counter bar on a permanent: the corpus half.
   Spec.it s "barsAdditional only on a player pattern" $ do
     ps <- S.allPrintings s corpus

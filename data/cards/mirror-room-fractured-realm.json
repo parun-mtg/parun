@@ -105,8 +105,8 @@
             "type": "BearersTrigger",
             "value": {
               "bearers": {
-                "type": "And",
-                "value": []
+                "type": "IsInZone",
+                "value": "Battlefield"
               },
               "triggering": "AnAdditionalTime"
             }
