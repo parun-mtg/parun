@@ -1,0 +1,217 @@
+{
+  "description": "CR 303.4b, 702.20b, 613.1f, 603.2, 513.1, 109.5, 111.1: Cathar's Call's creature has vigilance and makes a 1/1 white Human at the beginning of its controller's end step",
+  "note": "Alice's Cathar's Call enchants bob's Grizzly Bears, so the granted trigger's \"your\" is bob's: alice's end step makes no Human for either player, bob's Bears attack without tapping, and bob's end step makes one 1/1 white Human for bob, none for alice.",
+  "board": {
+    "active": "alice",
+    "step": "PrecombatMain",
+    "seats": [
+      {
+        "name": "alice",
+        "battlefield": [
+          {
+            "card": "Cathar's Call",
+            "label": "call",
+            "attached": "bears"
+          },
+          {
+            "card": "Hill Giant",
+            "label": "giant"
+          }
+        ],
+        "library": [
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          }
+        ]
+      },
+      {
+        "name": "bob",
+        "battlefield": [
+          {
+            "card": "Grizzly Bears",
+            "label": "bears"
+          },
+          {
+            "card": "Goblin Piker",
+            "label": "piker"
+          }
+        ],
+        "library": [
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          }
+        ]
+      }
+    ]
+  },
+  "timeline": [
+    {
+      "turn": 2,
+      "step": "PrecombatMain",
+      "player": "bob",
+      "check": {
+        "Count": {
+          "card": "Human Token",
+          "player": "alice",
+          "zone": "Battlefield",
+          "count": 0
+        }
+      }
+    },
+    {
+      "turn": 2,
+      "step": "PrecombatMain",
+      "player": "bob",
+      "check": {
+        "Count": {
+          "card": "Human Token",
+          "player": "bob",
+          "zone": "Battlefield",
+          "count": 0
+        }
+      }
+    },
+    {
+      "turn": 2,
+      "step": "DeclareAttackers",
+      "player": "bob",
+      "do": {
+        "Attack": [
+          "$bears"
+        ]
+      }
+    },
+    {
+      "turn": 2,
+      "step": "DeclareBlockers",
+      "player": "alice",
+      "do": {
+        "Block": {}
+      }
+    },
+    {
+      "turn": 2,
+      "step": "DeclareBlockers",
+      "player": "bob",
+      "check": {
+        "Tapped": {
+          "object": "$bears",
+          "tapped": false
+        }
+      }
+    },
+    {
+      "turn": 2,
+      "step": "EndStep",
+      "player": "bob",
+      "check": {
+        "View": {
+          "of": "Stack",
+          "is": [
+            "trigger of $bears"
+          ]
+        }
+      }
+    },
+    {
+      "turn": 2,
+      "step": "EndStep",
+      "player": "bob",
+      "do": "Pass"
+    },
+    {
+      "turn": 2,
+      "step": "EndStep",
+      "player": "bob",
+      "check": {
+        "Count": {
+          "card": "Human Token",
+          "player": "bob",
+          "zone": "Battlefield",
+          "count": 1
+        }
+      }
+    },
+    {
+      "turn": 2,
+      "step": "EndStep",
+      "player": "bob",
+      "check": {
+        "Count": {
+          "card": "Human Token",
+          "player": "alice",
+          "zone": "Battlefield",
+          "count": 0
+        }
+      }
+    },
+    {
+      "turn": 2,
+      "step": "EndStep",
+      "player": "bob",
+      "check": {
+        "PowerToughness": {
+          "object": "Human Token",
+          "power": 1,
+          "toughness": 1
+        }
+      }
+    },
+    {
+      "turn": 2,
+      "step": "EndStep",
+      "player": "bob",
+      "check": {
+        "View": {
+          "of": "Colors",
+          "object": "Human Token",
+          "is": [
+            "White"
+          ]
+        }
+      }
+    }
+  ]
+}
