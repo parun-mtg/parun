@@ -252,7 +252,7 @@ create settle resolving source controller legal chosen (Create.MkCreate quantity
             -- CR 122.6's counters ride along through that rule's own door, so a
             -- counter replacement reaches them, in the counts freezeRiders
             -- settled above.
-            made <- Event.createTokens settle creating (NonEmpty.singleton (Common.bakeTokenCharacteristics (Quantity.evaluateFor viewOf context gs resolving source) card, Nothing)) shown (Integer.toNaturalSaturating n) (EntryRiders.tapped entry) (EntryRiders.counters frozen) mAttached (Common.resolvingMarks resolving gs)
+            made <- Common.enteringForRiders entry (Event.createTokens settle creating (NonEmpty.singleton (Common.bakeTokenCharacteristics (Quantity.evaluateFor viewOf context gs resolving source) card, Nothing)) shown (Integer.toNaturalSaturating n) (EntryRiders.tapped entry) (EntryRiders.counters frozen) mAttached (Common.resolvingMarks resolving gs))
             -- CR 508.4: a creature put onto the battlefield attacking has its
             -- defending player chosen in Parun.Engine.Combat, and CR 508.3a's
             -- attack triggers see nothing. After the entry loops rather than
@@ -523,7 +523,7 @@ createCopy settle resolving source controller legal chosen (CreateCopy.MkCreateC
             -- ONE call per creator, a lot per named permanent with the whole
             -- count: CR 614.12's entry loop is handed the batch, so the copies
             -- enter simultaneously and none may copy a sibling, and CR 616.1
-            -- orders the lots' as-enters replacements (Event.createTokens).
+            -- orders the lots' as-enters replacements (Event.enterLots).
             -- The scenario
             -- cr-616-1-second-harvest-s-splendor-copy-applied-first-notes-the-life-before-paying
             -- proves the order.
@@ -545,7 +545,7 @@ createCopy settle resolving source controller legal chosen (CreateCopy.MkCreateC
             case NonEmpty.nonEmpty (Maybe.mapMaybe shapeOf sources) of
               Nothing -> pure []
               Just shapes -> do
-                made <- Event.createTokens settle creating shapes Nothing (Integer.toNaturalSaturating n) (EntryRiders.tapped entry) (EntryRiders.counters frozen) Nothing (Common.resolvingMarks resolving gs)
+                made <- Common.enteringForRiders entry (Event.createTokens settle creating shapes Nothing (Integer.toNaturalSaturating n) (EntryRiders.tapped entry) (EntryRiders.counters frozen) Nothing (Common.resolvingMarks resolving gs))
                 -- CR 508.4, after the entry loop for Create's reason.
                 Monad.forM_ mAttack (\specified -> Monad.mapM_ (Combat.putOntoBattlefieldAttacking specified) made)
                 -- CR 509.4, the blocking twin one rule over, in the same place

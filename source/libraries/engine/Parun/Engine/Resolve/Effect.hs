@@ -638,7 +638,7 @@ applyOneEffect runSubgame resolving source controller legal chosen effect = case
   Effect.MakeForetold payload -> Zones.makeForetold resolving source controller legal payload
   Effect.MakeWarped payload -> Zones.makeWarped resolving source controller legal payload
   Effect.Heal payload -> Zones.healArm resolving source controller legal payload
-  Effect.ForEach payload -> Zones.forEach applyEffectWith loopOffers runSubgame resolving source controller legal chosen payload
+  Effect.ForEach payload -> Zones.forEach (settleWith runSubgame) applyEffectWith loopOffers runSubgame resolving source controller legal chosen payload
   Effect.ForEachNumber payload -> Zones.forEachNumber applyLoopBody runSubgame resolving source controller legal chosen payload
   Effect.Repeat payload -> Zones.repeatArm applyLoopBody runSubgame resolving source controller legal chosen payload
   Effect.RepeatIf payload -> Zones.repeatIf applyLoopBody runSubgame resolving source controller legal chosen payload
