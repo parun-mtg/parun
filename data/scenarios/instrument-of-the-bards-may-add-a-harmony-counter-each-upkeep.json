@@ -1,0 +1,134 @@
+{
+  "description": "Instrument of the Bards may put a harmony counter on itself at the beginning of its controller's upkeep",
+  "note": "alice exercises the upkeep trigger on turn 3, giving the Instrument a second harmony counter, and declines it on turn 5, leaving two; bob's upkeeps trigger nothing.",
+  "board": {
+    "active": "alice",
+    "step": "PrecombatMain",
+    "seats": [
+      {
+        "name": "alice",
+        "battlefield": [
+          {
+            "card": "Instrument of the Bards",
+            "label": "inst",
+            "counters": [
+              {
+                "key": {
+                  "type": "Named",
+                  "value": "harmony"
+                },
+                "value": 1
+              }
+            ]
+          }
+        ],
+        "library": [
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          }
+        ]
+      },
+      {
+        "name": "bob",
+        "library": [
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          }
+        ]
+      }
+    ]
+  },
+  "timeline": [
+    {
+      "turn": 2,
+      "step": "PrecombatMain",
+      "player": "bob",
+      "check": {
+        "Counters": {
+          "object": "$inst",
+          "kind": {
+            "type": "Named",
+            "value": "harmony"
+          },
+          "count": 1
+        }
+      }
+    },
+    {
+      "turn": 3,
+      "step": "Upkeep",
+      "player": "alice",
+      "do": {
+        "ChooseOptional": "Exercises"
+      }
+    },
+    {
+      "turn": 3,
+      "step": "PrecombatMain",
+      "player": "alice",
+      "check": {
+        "Counters": {
+          "object": "$inst",
+          "kind": {
+            "type": "Named",
+            "value": "harmony"
+          },
+          "count": 2
+        }
+      }
+    },
+    {
+      "turn": 5,
+      "step": "Upkeep",
+      "player": "alice",
+      "do": {
+        "ChooseOptional": "Declines"
+      }
+    },
+    {
+      "turn": 5,
+      "step": "PrecombatMain",
+      "player": "alice",
+      "check": {
+        "Counters": {
+          "object": "$inst",
+          "kind": {
+            "type": "Named",
+            "value": "harmony"
+          },
+          "count": 2
+        }
+      }
+    }
+  ]
+}
