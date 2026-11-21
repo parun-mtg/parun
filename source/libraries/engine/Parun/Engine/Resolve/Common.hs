@@ -80,10 +80,12 @@ import qualified Parun.Types.ArrangedArrival as ArrangedArrival
 import qualified Parun.Types.AttachAll as AttachAll
 import qualified Parun.Types.AttachBound as AttachBound
 import qualified Parun.Types.AttachTarget as AttachTarget
+import qualified Parun.Types.AttackChoice as AttackChoice
 import qualified Parun.Types.AttackTarget as AttackTarget
 import qualified Parun.Types.Ballot as Ballot
 import qualified Parun.Types.Binding as Binding.Type
 import qualified Parun.Types.Blight as Blight.Type
+import qualified Parun.Types.BlockChoice as BlockChoice
 import qualified Parun.Types.Bookkeeping as Bookkeeping
 import qualified Parun.Types.Card as Card.Type
 import qualified Parun.Types.CardAbilities as CardAbilities
@@ -124,6 +126,7 @@ import qualified Parun.Types.DamagePattern as DamagePattern
 import qualified Parun.Types.DamageR as DamageR
 import qualified Parun.Types.DamageRewrite as DamageRewrite
 import qualified Parun.Types.Decider as Decider
+import qualified Parun.Types.DeferredLot as DeferredLot
 import qualified Parun.Types.DelayedTrigger as DelayedTrigger
 import qualified Parun.Types.Designation as Designation
 import qualified Parun.Types.DieResult as DieResult
@@ -304,13 +307,29 @@ objectsBound resolving mSlot named = case (mSlot, named) of
   -- Several take the group.
   (Just slot, several) -> bindObjectsSlot resolving slot (Seq.fromList several)
 
--- CR 508.4 / 509.4: a creation whose riders put its tokens into combat enters
--- them before its arm does so (Event.enteringNow); any other waits for its
--- action's other creations (Event.enteringAtOnce).
-enteringForRiders :: EntryRiders.EntryRiders count ability -> Game a -> Game a
-enteringForRiders entry
-  | Maybe.isJust (EntryRiders.attacking entry) || Maybe.isJust (EntryRiders.blocking entry) = Event.enteringNow
-  | otherwise = id
+-- CR 508.4 / 509.4: run `create`, a token creation with these riders, and put
+-- the tokens it makes into combat once they have entered: here, after its entry
+-- loops, for those it entered, and as Event.enteringAtOnce ends for those it
+-- deferred (intoCombatAfterEntry). After the entry loops rather than inside
+-- them: CR 614.16's replacement settles the COUNT first.
+creatingIntoCombat :: Maybe AttackChoice.AttackChoice -> Maybe BlockChoice.BlockChoice -> Game [ObjectId] -> Game [ObjectId]
+creatingIntoCombat attacking blocking create = do
+  (made, deferred) <- Event.deferringRiders attacking blocking create
+  intoCombat attacking blocking (filter (`Set.notMember` deferred) made)
+  pure made
+
+-- Event.enteringAtOnce's `afterEntry`: a deferred lot's riders over its tokens
+-- that entered (creatingIntoCombat).
+intoCombatAfterEntry :: DeferredLot.DeferredLot -> [ObjectId] -> Game ()
+intoCombatAfterEntry lot = intoCombat (DeferredLot.attacking lot) (DeferredLot.blocking lot)
+
+-- CR 508.4's defending player is chosen in Parun.Engine.Combat, and CR 508.3a's
+-- attack triggers see nothing; CR 509.4's twin likewise, its CR 506.3e /
+-- 509.4a no-op conditions living there too.
+intoCombat :: Maybe AttackChoice.AttackChoice -> Maybe BlockChoice.BlockChoice -> [ObjectId] -> Game ()
+intoCombat attacking blocking made = do
+  Monad.forM_ attacking (\specified -> Monad.mapM_ (Combat.putOntoBattlefieldAttacking specified) made)
+  Monad.forM_ blocking (\blocked -> Monad.mapM_ (Combat.putOntoBattlefieldBlocking blocked) made)
 
 -- `bound` without the objects in `gone`, the tokens an action minted that did
 -- not enter (Event.enteringAtOnce). A binding left naming nothing is dropped,
@@ -1506,30 +1525,30 @@ onePlayerNamed legal slot resolving gs = case Maybe.mapMaybe Recipient.playerOf 
   _ -> slotOnePlayer slot resolving gs
 
 -- CR 508.4: what an entry rider says the arriving creature attacks. Nothing: it
--- does not enter attacking. Combat.Any: its controller chooses, which
--- Combat.putOntoBattlefieldAttacking asks. Combat.Specified: the effect
+-- does not enter attacking. AttackChoice.Any: its controller chooses, which
+-- Combat.putOntoBattlefieldAttacking asks. AttackChoice.Specified: the effect
 -- specified it (CR 702.49c), read through CR 608.2h for a slot whose object has
 -- left (ninjutsu's returned creature, CR 400.7). A slot naming no creature that
 -- was attacking specifies nothing to attack, so nothing enters attacking.
 --
--- Combat.Under is CR 702.116a's narrowing: the slot names a PLAYER rather than an
+-- AttackChoice.Under is CR 702.116a's narrowing: the slot names a PLAYER rather than an
 -- object, and a slot naming none narrows to nobody, so nothing enters attacking
 -- -- the myriad iteration whose opponent has left the game (CR 800.4a).
 --
--- EntryAttack.ThatPlayer is Combat.Specified over a slot naming a player: the
+-- EntryAttack.ThatPlayer is AttackChoice.Specified over a slot naming a player: the
 -- effect said which player, so nobody chooses and that player's planeswalkers
 -- are no candidates. The scenario
 -- shark-shredders-creature-attacks-the-damaged-player-not-their-planeswalker
 -- proves it.
-entryAttack :: Map.Map SlotName (Set Recipient) -> ObjectId -> EntryRiders.EntryRiders count ability -> GameState -> Maybe Combat.AttackChoice
+entryAttack :: Map.Map SlotName (Set Recipient) -> ObjectId -> EntryRiders.EntryRiders count ability -> GameState -> Maybe AttackChoice.AttackChoice
 entryAttack legal resolving entry gs = case EntryRiders.attacking entry of
   Nothing -> Nothing
-  Just EntryAttack.Chosen -> Just Combat.Any
+  Just EntryAttack.Chosen -> Just AttackChoice.Any
   Just (EntryAttack.SameAs slot) -> do
     named <- slotOne slot resolving gs
-    fmap Combat.Specified (Game.attackTargetWithLastKnown named gs)
-  Just (EntryAttack.UnderPlayer slot) -> fmap Combat.Under (onePlayerNamed legal slot resolving gs)
-  Just (EntryAttack.ThatPlayer slot) -> fmap (Combat.Specified . AttackTarget.OfPlayer) (onePlayerNamed legal slot resolving gs)
+    fmap AttackChoice.Specified (Game.attackTargetWithLastKnown named gs)
+  Just (EntryAttack.UnderPlayer slot) -> fmap AttackChoice.Under (onePlayerNamed legal slot resolving gs)
+  Just (EntryAttack.ThatPlayer slot) -> fmap (AttackChoice.Specified . AttackTarget.OfPlayer) (onePlayerNamed legal slot resolving gs)
 
 -- CR 707.12: "the copy is created in the same zone the object is in and then
 -- cast". The copy this mints is what `offerCast` above offers in the original's

@@ -252,6 +252,7 @@ library codec
     Parun.Codec.AttachRSpec
     Parun.Codec.AttachTarget
     Parun.Codec.AttachTargetSpec
+    Parun.Codec.AttackChoice
     Parun.Codec.AttackCompany
     Parun.Codec.AttackCompanySpec
     Parun.Codec.AttackCost
@@ -342,6 +343,7 @@ library codec
     Parun.Codec.BindPlayers
     Parun.Codec.BindPlayersSpec
     Parun.Codec.Blight
+    Parun.Codec.BlockChoice
     Parun.Codec.BlockCost
     Parun.Codec.BlockCostSpec
     Parun.Codec.BlockCount
@@ -756,6 +758,8 @@ library codec
     Parun.Codec.DefendersAreSpec
     Parun.Codec.Defense
     Parun.Codec.DefenseSpec
+    Parun.Codec.DeferredLot
+    Parun.Codec.DeferredLotSpec
     Parun.Codec.DefinedX
     Parun.Codec.DefinedXSpec
     Parun.Codec.DelayedTrigger
@@ -2986,6 +2990,7 @@ library types
     Parun.Types.AttachRestriction
     Parun.Types.AttachRewrite
     Parun.Types.AttachTarget
+    Parun.Types.AttackChoice
     Parun.Types.AttackCompany
     Parun.Types.AttackCost
     Parun.Types.AttackCostScope
@@ -3035,6 +3040,7 @@ library types
     Parun.Types.BindLeaders
     Parun.Types.BindPlayers
     Parun.Types.Blight
+    Parun.Types.BlockChoice
     Parun.Types.BlockCost
     Parun.Types.BlockCount
     Parun.Types.BlockersAre
@@ -3264,6 +3270,7 @@ library types
     Parun.Types.DeclaredRole
     Parun.Types.DefendersAre
     Parun.Types.Defense
+    Parun.Types.DeferredLot
     Parun.Types.DefinedX
     Parun.Types.DelayedTrigger
     Parun.Types.Departure

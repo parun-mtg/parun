@@ -340,6 +340,7 @@ import qualified Parun.Codec.DeclarationTriggerSpec
 import qualified Parun.Codec.DeclaredRoleSpec
 import qualified Parun.Codec.DefendersAreSpec
 import qualified Parun.Codec.DefenseSpec
+import qualified Parun.Codec.DeferredLotSpec
 import qualified Parun.Codec.DefinedXSpec
 import qualified Parun.Codec.DelayedTriggerSpec
 import qualified Parun.Codec.DepartureSpec
@@ -1522,6 +1523,7 @@ spec s reference corpus = do
   Parun.Codec.DeclaredRoleSpec.spec s
   Parun.Codec.DefendersAreSpec.spec s
   Parun.Codec.DefenseSpec.spec s
+  Parun.Codec.DeferredLotSpec.spec s
   Parun.Codec.DefinedXSpec.spec s
   Parun.Codec.DelayedTriggerSpec.spec s
   Parun.Codec.DepartureSpec.spec s

@@ -31,6 +31,7 @@ import qualified Parun.Codec.ContinuousEffect as ContinuousEffect
 import qualified Parun.Codec.CounterKind as CounterKind
 import qualified Parun.Codec.CounterLink as CounterLink
 import qualified Parun.Codec.Daytime as Daytime
+import qualified Parun.Codec.DeferredLot as DeferredLot
 import qualified Parun.Codec.DelayedTrigger as DelayedTrigger
 import qualified Parun.Codec.EnteringTogether as EnteringTogether
 import qualified Parun.Codec.EntryLink as EntryLink
@@ -184,7 +185,7 @@ codec resolve = Fields.object $ do
   enteredFrom <- Fields.defaulted "enteredFrom" Map.empty (Common.naturalMap ObjectId.codec EntryOrigin.codec) (Scratch.enteredFrom . GameState.scratch)
   enteringPending <- Fields.defaulted "enteringPending" Map.empty (Common.naturalMap ObjectId.codec PlayerId.codec) (Scratch.enteringPending . GameState.scratch)
   enteringSince <- Fields.defaulted "enteringSince" Nothing (Common.maybe ObjectId.codec) (Scratch.enteringSince . GameState.scratch)
-  deferredLots <- Fields.defaulted "deferredLots" Nothing (Common.maybe (Common.seq (Common.list ObjectId.codec))) (Scratch.deferredLots . GameState.scratch)
+  deferredLots <- Fields.defaulted "deferredLots" Nothing (Common.maybe (Common.seq DeferredLot.codec)) (Scratch.deferredLots . GameState.scratch)
   spentEntries <- Fields.defaulted "spentEntries" Set.empty (Common.set FloatingCandidate.codec) (Scratch.spentEntries . GameState.scratch)
   refusedEntries <- Fields.defaulted "refusedEntries" Nothing (Common.maybe (Common.set ObjectId.codec)) (Scratch.refusedEntries . GameState.scratch)
   enteringCounters <- Fields.defaulted "enteringCounters" Map.empty (Common.naturalMap ObjectId.codec (Common.keyedList (Common.keyValue (Common.maybe PlayerId.codec) (Common.multiset (CounterKind.codec Keyword.codec))))) (Scratch.enteringCounters . GameState.scratch)

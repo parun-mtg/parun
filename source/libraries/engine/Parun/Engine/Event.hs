@@ -96,6 +96,7 @@ import qualified Parun.Types.ArrivalEnd as ArrivalEnd
 import qualified Parun.Types.AsCopy as AsCopy
 import qualified Parun.Types.AttachR as AttachR
 import qualified Parun.Types.AttachRewrite as AttachRewrite
+import qualified Parun.Types.AttackChoice as AttackChoice
 import qualified Parun.Types.AttackTrigger as AttackTrigger
 import qualified Parun.Types.AttackedTrigger as AttackedTrigger
 import qualified Parun.Types.BattlefieldCandidate as BattlefieldCandidate
@@ -104,6 +105,7 @@ import qualified Parun.Types.BecameTapped as BecameTapped
 import qualified Parun.Types.BecameTarget as BecameTarget
 import qualified Parun.Types.BecameUnattached as BecameUnattached
 import qualified Parun.Types.Binding as Binding.Type
+import qualified Parun.Types.BlockChoice as BlockChoice
 import qualified Parun.Types.Bookkeeping as Bookkeeping
 import qualified Parun.Types.CandidateCost as CandidateCost
 import Parun.Types.CandidateId (CandidateId)
@@ -156,6 +158,7 @@ import qualified Parun.Types.DamageR as DamageR
 import qualified Parun.Types.DamageRewrite as DamageRewrite
 import qualified Parun.Types.DealtDamage as DealtDamage
 import qualified Parun.Types.DeclarationTrigger as DeclarationTrigger
+import qualified Parun.Types.DeferredLot as DeferredLot
 import Parun.Types.DelayedTrigger (DelayedTrigger)
 import qualified Parun.Types.DelayedTrigger as DelayedTrigger
 import qualified Parun.Types.Designation as Designation
@@ -11696,7 +11699,8 @@ createTokens settle controller shapes die n tapped entering attached marks = do
               deferring <- State.gets (Scratch.deferredLots . GameState.scratch)
               case deferring of
                 Just pending -> do
-                  State.modify' (\g -> g {GameState.scratch = (GameState.scratch g) {Scratch.deferredLots = Just (pending <> Seq.fromList keptLots)}})
+                  let lotOf lot = DeferredLot.MkDeferredLot {DeferredLot.tokens = lot, DeferredLot.attacking = Nothing, DeferredLot.blocking = Nothing}
+                  State.modify' (\g -> g {GameState.scratch = (GameState.scratch g) {Scratch.deferredLots = Just (pending <> Seq.fromList (fmap lotOf keptLots))}})
                   pure kept
                 Nothing -> enterLots settle (Bookkeeping.nextTimestamp (GameState.bookkeeping unminted)) keptLots
       -- After every rollback above, and after resolveTokens, whose rows ask
@@ -11737,15 +11741,14 @@ enterLots settle start lots = do
 -- CR 616.1 / 608.2f: run `body`, one action that may create tokens in several
 -- createTokens calls -- a ForEach's iterations -- and enter every lot they
 -- mint at once as it ends, so one CR 616.1 order (enterLots) covers them all.
--- Answers the tokens minted that did not enter, for the caller to drop from
--- what the body bound. The OUTERMOST scope wins, `together`'s posture; open
--- it inside `together`, which settles what enters here.
---
--- A call making a CR 508.4 / 509.4 rider's tokens attacking or blocking runs
--- outside it (enteringNow), since its caller acts on them once entered. Not
--- implemented: ordering those against the action's other creations (#9314).
-enteringAtOnce :: Settle.Settle -> Game a -> Game (a, Set ObjectId)
-enteringAtOnce settle body = do
+-- `afterEntry` is then handed each lot, in creation order, with its tokens
+-- that entered: a CR 508.4 / 509.4 rider puts them into combat
+-- (deferringRiders). Answers the tokens minted that did not enter, for the
+-- caller to drop from what the body bound. The OUTERMOST scope wins,
+-- `together`'s posture; open it inside `together`, which settles what enters
+-- here.
+enteringAtOnce :: Settle.Settle -> (DeferredLot.DeferredLot -> [ObjectId] -> Game ()) -> Game a -> Game (a, Set ObjectId)
+enteringAtOnce settle afterEntry body = do
   before <- State.get
   case Scratch.deferredLots (GameState.scratch before) of
     Just _ -> fmap (\result -> (result, Set.empty)) body
@@ -11754,8 +11757,26 @@ enteringAtOnce settle body = do
       result <- body
       lots <- State.gets (Maybe.fromMaybe Seq.empty . Scratch.deferredLots . GameState.scratch)
       State.modify' (\g -> g {GameState.scratch = (GameState.scratch g) {Scratch.deferredLots = Nothing}})
-      entered <- enterLots settle (Bookkeeping.nextTimestamp (GameState.bookkeeping before)) (Foldable.toList lots)
-      pure (result, Set.difference (Set.fromList (concat lots)) (Set.fromList entered))
+      let minted = concatMap DeferredLot.tokens lots
+      entered <- enterLots settle (Bookkeeping.nextTimestamp (GameState.bookkeeping before)) (fmap DeferredLot.tokens (Foldable.toList lots))
+      Monad.forM_ lots (\lot -> afterEntry lot (filter (`elem` entered) (DeferredLot.tokens lot)))
+      pure (result, Set.difference (Set.fromList minted) (Set.fromList entered))
+
+-- Run `body`, a creation with these CR 508.4 / 509.4 riders, marking the lots
+-- it defers inside enteringAtOnce with them. Answers the tokens it deferred,
+-- which its caller leaves to enteringAtOnce's `afterEntry` to put into combat.
+deferringRiders :: Maybe AttackChoice.AttackChoice -> Maybe BlockChoice.BlockChoice -> Game a -> Game (a, Set ObjectId)
+deferringRiders attacking blocking body = do
+  before <- State.gets (fmap Seq.length . Scratch.deferredLots . GameState.scratch)
+  result <- body
+  case before of
+    Nothing -> pure (result, Set.empty)
+    Just n -> do
+      lots <- State.gets (Maybe.fromMaybe Seq.empty . Scratch.deferredLots . GameState.scratch)
+      let (earlier, own) = Seq.splitAt n lots
+          ridden = fmap (\lot -> lot {DeferredLot.attacking = attacking, DeferredLot.blocking = blocking}) own
+      State.modify' (\g -> g {GameState.scratch = (GameState.scratch g) {Scratch.deferredLots = Just (earlier <> ridden)}})
+      pure (result, Set.fromList (concatMap DeferredLot.tokens own))
 
 -- Run `body` with enteringAtOnce's scope suspended, so the tokens it creates
 -- enter before it goes on: a caller that acts on the tokens it creates.

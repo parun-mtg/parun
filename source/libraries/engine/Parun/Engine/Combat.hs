@@ -41,6 +41,7 @@ import qualified Parun.Engine.Turn as Turn
 import qualified Parun.Extra.Integer as Integer
 import qualified Parun.Extra.Natural as Natural
 import qualified Parun.Types.ActivePlayerEffect as ActivePlayerEffect
+import qualified Parun.Types.AttackChoice as AttackChoice
 import qualified Parun.Types.AttackOption as AttackOption
 import qualified Parun.Types.AttackTarget as AttackTarget
 import qualified Parun.Types.AttackTargetKind as AttackTargetKind
@@ -49,6 +50,7 @@ import qualified Parun.Types.AttackerDeclared as AttackerDeclared
 import qualified Parun.Types.AttackerUnblocked as AttackerUnblocked
 import qualified Parun.Types.BecameAttacked as BecameAttacked
 import qualified Parun.Types.BecameBlocking as BecameBlocking
+import qualified Parun.Types.BlockChoice as BlockChoice
 import qualified Parun.Types.BlockProducer as BlockProducer
 import qualified Parun.Types.BlocksDeclared as BlocksDeclared
 import qualified Parun.Types.CardType as CardType
@@ -3238,21 +3240,6 @@ declarationChooser declaration pid = do
 handedTo :: PlayerId -> PlayerId -> Maybe PlayerId
 handedTo chooser pid = if chooser == pid then Nothing else Just chooser
 
--- What an effect leaves open about CR 508.4's choice, which is a question about
--- the EFFECT rather than about the board, so it is settled by
--- Parun.Engine.Resolve.Common's read of Parun.Types.EntryAttack and passed down.
--- Engine-local rather than a Parun.Types module: no card writes it, the arms
--- naming a PlayerId the way Parun.Types.AttackTarget's do.
-data AttackChoice
-  = -- | CR 508.4's main clause: the controller chooses among every legal subject.
-    Any
-  | -- | CR 508.4's parenthetical (CR 702.49c): the effect said what it attacks.
-    Specified AttackTarget.AttackTarget
-  | -- | CR 702.116a: the controller still chooses, among that player and the
-    -- planeswalkers they control.
-    Under PlayerId
-  deriving (Eq, Ord, Show)
-
 -- CR 508.4: a creature put onto the battlefield attacking has its controller
 -- choose what it is attacking as it enters. Resolve calls this for each permanent
 -- an effect's EntryRiders say is attacking, and joinAttack for a creature an
@@ -3284,7 +3271,7 @@ data AttackChoice
 -- candidates is CR 508.4a's no-op, the candidates being exactly the players,
 -- planeswalkers and battles that rule still allows. Parun.ActivateSpec's
 -- Ninjutsu group proves a ninja takes the returned creature's planeswalker.
-putOntoBattlefieldAttacking :: AttackChoice -> ObjectId -> Game ()
+putOntoBattlefieldAttacking :: AttackChoice.AttackChoice -> ObjectId -> Game ()
 putOntoBattlefieldAttacking choice oid = do
   -- CR 508.4e: this effect's specification applies to the entry whatever a
   -- queued EntryRewrite.EntersAttacking (Kira Nerys, Firebrand) would add, so
@@ -3303,9 +3290,9 @@ putOntoBattlefieldAttacking choice oid = do
       -- unattacking (docs/decisions.md, "Whether a myriad token attacks an opponent
       -- who is not a defending player").
       narrowed = case choice of
-        Any -> targets
-        Specified _ -> targets
-        Under pid ->
+        AttackChoice.Any -> targets
+        AttackChoice.Specified _ -> targets
+        AttackChoice.Under pid ->
           filter
             ( \target -> case target of
                 AttackTarget.OfPlayer p -> p == pid
@@ -3328,12 +3315,12 @@ putOntoBattlefieldAttacking choice oid = do
           -- makes the attacking player -- which is what lets CR 508.1b's
           -- announcement and this one share a prompt.
           mTarget <- case choice of
-            Any -> fmap Just (announceAttackTarget controller oid options)
+            AttackChoice.Any -> fmap Just (announceAttackTarget controller oid options)
             -- The narrowing above already cut `options` to this seat's subjects,
             -- so CR 702.116a's choice is the same announcement over fewer of
             -- them -- elided, like every other, at one candidate.
-            Under _ -> fmap Just (announceAttackTarget controller oid options)
-            Specified target -> pure (if List.elem target (NonEmpty.toList options) then Just target else Nothing)
+            AttackChoice.Under _ -> fmap Just (announceAttackTarget controller oid options)
+            AttackChoice.Specified target -> pure (if List.elem target (NonEmpty.toList options) then Just target else Nothing)
           Monad.forM_ mTarget $ \target ->
             State.put
               gs
@@ -3400,7 +3387,7 @@ joinAttack chooser alongside oid = do
           ]
   Monad.forM_ (NonEmpty.nonEmpty attacked) $ \options -> do
     target <- announceAttackTarget chooser oid options
-    putOntoBattlefieldAttacking (Specified target) oid
+    putOntoBattlefieldAttacking (AttackChoice.Specified target) oid
 
 -- CR 508.7: `chooser` may reselect what the attacking creature is attacking,
 -- among the kinds of target `kinds` allows: Capricopian's "which player" or
@@ -3450,15 +3437,6 @@ reselectAttack kinds chooser oid = do
                         }
                   }
             }
-
--- What an effect leaves open about CR 509.4's choice, AttackChoice's twin:
--- settled by Parun.Engine.Resolve.Common's read of Parun.Types.EntryBlock.
-data BlockChoice
-  = -- | CR 509.4's main clause: the controller chooses the attacker.
-    AnyAttacker
-  | -- | CR 509.4's parenthetical: the effect named this attacker.
-    SpecifiedAttacker ObjectId
-  deriving (Eq, Ord, Show)
 
 -- CR 509.4: a creature put onto the battlefield blocking. `choice` is the
 -- rule's two readings: SpecifiedAttacker is the parenthetical, which asks
@@ -3521,7 +3499,7 @@ data BlockChoice
 -- defending players, but Aetherplasm's own trigger still binds an attacker its
 -- controller was allowed to block; the first needs a card that removes the
 -- target from combat between targeting and resolution.
-putOntoBattlefieldBlocking :: BlockChoice -> ObjectId -> Game ()
+putOntoBattlefieldBlocking :: BlockChoice.BlockChoice -> ObjectId -> Game ()
 putOntoBattlefieldBlocking choice oid = do
   start <- State.get
   let blockable controller attacker =
@@ -3537,9 +3515,9 @@ putOntoBattlefieldBlocking choice oid = do
         -- CR 506.3f
         not (Projection.isBattleOf oid start) -> do
           mAttacker <- case choice of
-            SpecifiedAttacker attacker -> pure (if blockable controller attacker then Just attacker else Nothing)
+            BlockChoice.SpecifiedAttacker attacker -> pure (if blockable controller attacker then Just attacker else Nothing)
             -- Through Game.chooseAmong, announceAttackTarget's posture.
-            AnyAttacker -> Game.chooseAmong (\decider who pool -> Prompt.ChoosePermanent decider who oid pool Seq.empty Nothing) controller (filter (blockable controller) (Map.keys (Combat.attackers (TurnRegisters.combat (GameState.turn start)))))
+            BlockChoice.AnyAttacker -> Game.chooseAmong (\decider who pool -> Prompt.ChoosePermanent decider who oid pool Seq.empty Nothing) controller (filter (blockable controller) (Map.keys (Combat.attackers (TurnRegisters.combat (GameState.turn start)))))
           -- CR 702.22h: blocking one member of a band blocks every member.
           Monad.forM_ mAttacker $ \attacker ->
             Monad.forM_ (attacker : Set.toList (bandmatesOf attacker (TurnRegisters.combat (GameState.turn start)))) (enterBlocking controller oid)
