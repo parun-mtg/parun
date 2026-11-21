@@ -1,0 +1,378 @@
+{
+  "faces": [
+    {
+      "activatedAbilities": [
+        {
+          "cost": {
+            "mana": [
+              {
+                "type": "OfType",
+                "value": {
+                  "type": "Colored",
+                  "value": "White"
+                }
+              },
+              {
+                "type": "OfType",
+                "value": {
+                  "type": "Colored",
+                  "value": "Blue"
+                }
+              }
+            ]
+          },
+          "keyword": {
+            "type": "ClassLevel",
+            "value": 2
+          },
+          "modal": {
+            "modes": [
+              {
+                "clauses": [
+                  {
+                    "effects": [
+                      {
+                        "type": "SetClassLevel",
+                        "value": {
+                          "level": 2,
+                          "slot": "self"
+                        }
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "cost": {
+            "mana": [
+              {
+                "type": "Generic",
+                "value": 1
+              },
+              {
+                "type": "OfType",
+                "value": {
+                  "type": "Colored",
+                  "value": "White"
+                }
+              },
+              {
+                "type": "OfType",
+                "value": {
+                  "type": "Colored",
+                  "value": "Blue"
+                }
+              }
+            ]
+          },
+          "keyword": {
+            "type": "ClassLevel",
+            "value": 3
+          },
+          "modal": {
+            "modes": [
+              {
+                "clauses": [
+                  {
+                    "effects": [
+                      {
+                        "type": "SetClassLevel",
+                        "value": {
+                          "level": 3,
+                          "slot": "self"
+                        }
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          }
+        }
+      ],
+      "keywords": [
+        {
+          "type": "ClassLevel",
+          "value": 2
+        },
+        {
+          "type": "ClassLevel",
+          "value": 3
+        }
+      ],
+      "manaCost": [
+        {
+          "type": "OfType",
+          "value": {
+            "type": "Colored",
+            "value": "White"
+          }
+        },
+        {
+          "type": "OfType",
+          "value": {
+            "type": "Colored",
+            "value": "Blue"
+          }
+        }
+      ],
+      "name": "Monk Class",
+      "oracleText": "(Gain the next level as a sorcery to add its ability.)\nThe second spell you cast each turn costs {1} less to cast.\n{W}{U}: Level 2\nWhen this Class becomes level 2, return up to one target nonland permanent to its owner's hand.\n{1}{W}{U}: Level 3\nAt the beginning of your upkeep, exile the top card of your library. For as long as it remains exiled, it has \"You may cast this card from exile as long as you've cast another spell this turn.\"",
+      "playerAbilities": [
+        {
+          "effect": {
+            "type": "ModifyCost",
+            "value": {
+              "change": {
+                "type": "Reduce",
+                "value": {
+                  "amount": [
+                    {
+                      "type": "Generic",
+                      "value": 1
+                    }
+                  ]
+                }
+              },
+              "matching": {
+                "type": "And",
+                "value": []
+              },
+              "onlyNth": {
+                "ordinal": 2,
+                "scope": {
+                  "type": "PlayersTurn",
+                  "value": {
+                    "type": "Relative",
+                    "value": "AnyPlayer"
+                  }
+                }
+              },
+              "subject": {
+                "type": "Spells"
+              }
+            }
+          },
+          "scope": {
+            "type": "You"
+          }
+        }
+      ],
+      "staticAbilities": [
+        {
+          "affected": {
+            "type": "Matching",
+            "value": {
+              "type": "IsSource"
+            }
+          },
+          "condition": {
+            "type": "Compares",
+            "value": {
+              "comparison": "AtLeast",
+              "measured": {
+                "type": "ClassLevel"
+              },
+              "threshold": {
+                "type": "Literal",
+                "value": 2
+              }
+            }
+          },
+          "modifications": [
+            {
+              "type": "GainAbility",
+              "value": {
+                "type": "Triggered",
+                "value": {
+                  "condition": {
+                    "type": "SelfBecomesClassLevel",
+                    "value": 2
+                  },
+                  "modal": {
+                    "modes": [
+                      {
+                        "clauses": [
+                          {
+                            "effects": [
+                              {
+                                "type": "MoveToZone",
+                                "value": {
+                                  "ref": {
+                                    "type": "InSlot",
+                                    "value": "target"
+                                  },
+                                  "zone": "Hand"
+                                }
+                              }
+                            ]
+                          }
+                        ],
+                        "targetSlots": {
+                          "target": {
+                            "count": {
+                              "type": "Printed",
+                              "value": {
+                                "least": 0,
+                                "most": 1
+                              }
+                            },
+                            "filter": {
+                              "type": "Not",
+                              "value": {
+                                "type": "HasCardType",
+                                "value": "Land"
+                              }
+                            },
+                            "pool": {
+                              "type": "Permanents"
+                            }
+                          }
+                        }
+                      }
+                    ]
+                  }
+                }
+              }
+            }
+          ]
+        },
+        {
+          "affected": {
+            "type": "Matching",
+            "value": {
+              "type": "IsSource"
+            }
+          },
+          "condition": {
+            "type": "Compares",
+            "value": {
+              "comparison": "AtLeast",
+              "measured": {
+                "type": "ClassLevel"
+              },
+              "threshold": {
+                "type": "Literal",
+                "value": 3
+              }
+            }
+          },
+          "modifications": [
+            {
+              "type": "GainAbility",
+              "value": {
+                "type": "Triggered",
+                "value": {
+                  "condition": {
+                    "type": "StepBegins",
+                    "value": {
+                      "phase": {
+                        "type": "Beginning",
+                        "value": "Upkeep"
+                      },
+                      "scope": {
+                        "type": "PlayersTurn",
+                        "value": {
+                          "type": "Relative",
+                          "value": "You"
+                        }
+                      }
+                    }
+                  },
+                  "modal": {
+                    "modes": [
+                      {
+                        "clauses": [
+                          {
+                            "effects": [
+                              {
+                                "type": "MoveToZone",
+                                "value": {
+                                  "ref": {
+                                    "type": "TopOfLibrary",
+                                    "value": {
+                                      "count": {
+                                        "type": "Literal",
+                                        "value": 1
+                                      },
+                                      "player": {
+                                        "type": "Relative",
+                                        "value": "You"
+                                      }
+                                    }
+                                  },
+                                  "slot": "exiled",
+                                  "zone": "Exile"
+                                }
+                              },
+                              {
+                                "type": "GrantPlayFromExile",
+                                "value": {
+                                  "condition": {
+                                    "type": "Compares",
+                                    "value": {
+                                      "comparison": "AtLeast",
+                                      "measured": {
+                                        "type": "Count",
+                                        "value": {
+                                          "aggregation": {
+                                            "type": "Members"
+                                          },
+                                          "filter": {
+                                            "type": "HeldBy",
+                                            "value": {
+                                              "holder": "Controller",
+                                              "relation": "You"
+                                            }
+                                          },
+                                          "scope": {
+                                            "type": "InHistory",
+                                            "value": {
+                                              "type": "SpellCast",
+                                              "value": "ThisTurn"
+                                            }
+                                          }
+                                        }
+                                      },
+                                      "threshold": {
+                                        "type": "Literal",
+                                        "value": 1
+                                      }
+                                    }
+                                  },
+                                  "duration": {
+                                    "type": "Indefinite"
+                                  },
+                                  "ref": {
+                                    "type": "InSlot",
+                                    "value": "exiled"
+                                  },
+                                  "verb": "Cast"
+                                }
+                              }
+                            ]
+                          }
+                        ]
+                      }
+                    ]
+                  }
+                }
+              }
+            }
+          ]
+        }
+      ],
+      "typeLine": {
+        "subtypes": [
+          "Class"
+        ],
+        "types": [
+          "Enchantment"
+        ]
+      }
+    }
+  ]
+}
