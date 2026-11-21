@@ -5,6 +5,7 @@ import qualified Parun.JsonCodec.Common as Common
 import qualified Parun.Spec as Spec
 import qualified Parun.Types.Affected as Affected
 import qualified Parun.Types.CardType as CardType
+import qualified Parun.Types.ControllerRelation as ControllerRelation
 import qualified Parun.Types.Filter as Filter
 import qualified Parun.Types.Holder as Holder
 import qualified Parun.Types.ObjectRestriction as ObjectRestriction
@@ -26,8 +27,8 @@ spec s = Spec.describe s "Parun.Codec.ObjectRestriction" $ do
           ( Affected.Matching
               ( Filter.And
                   [ Filter.HasCardType CardType.Creature,
-                    Filter.HeldBy Holder.Controller PlayerRelation.You,
-                    Filter.Not (Filter.HeldBy Holder.Owner PlayerRelation.You)
+                    Filter.HeldBy Holder.Controller (ControllerRelation.Related PlayerRelation.You),
+                    Filter.Not (Filter.HeldBy Holder.Owner (ControllerRelation.Related PlayerRelation.You))
                   ]
               )
           )

@@ -125,8 +125,9 @@ data Filter keyword
     -- Exemplary's {X}, Rage Extractor's {H}, Glava, Five-Advents Mage's {X}).
     ManaCostHasSymbol ManaSymbolKind.ManaSymbolKind
   | -- | CR 108.3 / 108.4 / 110.2: the candidate's holder relates thus to the
-    -- perspective; False where it has none (CR 108.4, 109.1).
-    HeldBy Holder.Holder PlayerRelation.PlayerRelation
+    -- perspective, or is the player the source enchants (CR 303.4b); False
+    -- where it has none (CR 108.4, 109.1).
+    HeldBy Holder.Holder ControllerRelation.ControllerRelation
   | -- | CR 108.3 / 112.2: the candidate's controller is its owner -- Ghostly
     -- Pilferer's "their hand" on a spell (Sen Triplets casts from another's).
     ControllerIsOwner

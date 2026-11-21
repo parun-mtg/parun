@@ -5,6 +5,7 @@ import qualified Data.Text as Text
 import qualified Parun.Codec.CopyStackObject as CopyStackObject
 import qualified Parun.JsonCodec.Common as Common
 import qualified Parun.Spec as Spec
+import qualified Parun.Types.ControllerRelation as ControllerRelation
 import qualified Parun.Types.CopyException as CopyException
 import qualified Parun.Types.CopyStackObject as CopyStackObject
 import qualified Parun.Types.CopyTargets as CopyTargets
@@ -40,7 +41,7 @@ spec s = Spec.describe s "Parun.Codec.CopyStackObject" $ do
     Common.assertCodec
       s
       (CopyStackObject.codec Common.text)
-      (CopyStackObject.MkCopyStackObject (ObjectRef.InSlot (SlotName.MkSlotName (Text.pack "spell"))) (CopyTargets.ForEach (ObjectRef.EachMatching (Filter.HeldBy Holder.Controller PlayerRelation.You))) CopyStackObject.defaultQuantity CopyStackObject.defaultCopier [] Nothing)
+      (CopyStackObject.MkCopyStackObject (ObjectRef.InSlot (SlotName.MkSlotName (Text.pack "spell"))) (CopyTargets.ForEach (ObjectRef.EachMatching (Filter.HeldBy Holder.Controller (ControllerRelation.Related PlayerRelation.You)))) CopyStackObject.defaultQuantity CopyStackObject.defaultCopier [] Nothing)
       " {\"ref\":{\"type\":\"InSlot\",\"value\":\"spell\"},\"targets\":{\"type\":\"ForEach\",\"value\":{\"type\":\"EachMatching\",\"value\":{\"type\":\"HeldBy\",\"value\":{\"holder\":\"Controller\",\"relation\":\"You\"}}}}} "
   -- CR 702.40a, storm's "copy it for each": a count other than one is written.
   Spec.it s "MkCopyStackObject, a count: it is written" $

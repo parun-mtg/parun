@@ -7,6 +7,7 @@ import qualified Parun.Types.ActingPermanent as ActingPermanent
 import qualified Parun.Types.Compares as Compares
 import qualified Parun.Types.Comparison as Comparison
 import qualified Parun.Types.Condition as Condition
+import qualified Parun.Types.ControllerRelation as ControllerRelation
 import qualified Parun.Types.Filter as Filter
 import qualified Parun.Types.Holder as Holder
 import qualified Parun.Types.PhaseSelector as PhaseSelector
@@ -25,7 +26,7 @@ spec s = Spec.describe s "Parun.Codec.SpellCast" $ do
       s
       SpellCast.codec
       ( SpellCast.MkSpellCast
-          { SpellCast.spell = ActingPermanent.Matching (Filter.HeldBy Holder.Controller PlayerRelation.You),
+          { SpellCast.spell = ActingPermanent.Matching (Filter.HeldBy Holder.Controller (ControllerRelation.Related PlayerRelation.You)),
             SpellCast.scope = TurnScope.PlayersTurn (PlayerRef.Relative PlayerRelation.AnyPlayer),
             SpellCast.zone = Nothing,
             SpellCast.ordinal = Nothing,
@@ -42,7 +43,7 @@ spec s = Spec.describe s "Parun.Codec.SpellCast" $ do
       s
       SpellCast.codec
       ( SpellCast.MkSpellCast
-          { SpellCast.spell = ActingPermanent.Matching (Filter.HeldBy Holder.Controller PlayerRelation.You),
+          { SpellCast.spell = ActingPermanent.Matching (Filter.HeldBy Holder.Controller (ControllerRelation.Related PlayerRelation.You)),
             SpellCast.scope = TurnScope.PlayersTurn (PlayerRef.Relative PlayerRelation.Opponent),
             SpellCast.zone = Nothing,
             SpellCast.ordinal = Nothing,
@@ -59,7 +60,7 @@ spec s = Spec.describe s "Parun.Codec.SpellCast" $ do
       s
       SpellCast.codec
       ( SpellCast.MkSpellCast
-          { SpellCast.spell = ActingPermanent.Matching (Filter.HeldBy Holder.Controller PlayerRelation.You),
+          { SpellCast.spell = ActingPermanent.Matching (Filter.HeldBy Holder.Controller (ControllerRelation.Related PlayerRelation.You)),
             SpellCast.scope = TurnScope.PlayersTurn (PlayerRef.Relative PlayerRelation.AnyPlayer),
             SpellCast.zone = Just Zone.Hand,
             SpellCast.ordinal = Nothing,
@@ -76,7 +77,7 @@ spec s = Spec.describe s "Parun.Codec.SpellCast" $ do
       s
       SpellCast.codec
       ( SpellCast.MkSpellCast
-          { SpellCast.spell = ActingPermanent.Matching (Filter.HeldBy Holder.Controller PlayerRelation.You),
+          { SpellCast.spell = ActingPermanent.Matching (Filter.HeldBy Holder.Controller (ControllerRelation.Related PlayerRelation.You)),
             SpellCast.scope = TurnScope.PlayersTurn (PlayerRef.Relative PlayerRelation.AnyPlayer),
             SpellCast.zone = Nothing,
             SpellCast.ordinal = Just 2,
@@ -93,7 +94,7 @@ spec s = Spec.describe s "Parun.Codec.SpellCast" $ do
       s
       SpellCast.codec
       ( SpellCast.MkSpellCast
-          { SpellCast.spell = ActingPermanent.Matching (Filter.HeldBy Holder.Controller PlayerRelation.You),
+          { SpellCast.spell = ActingPermanent.Matching (Filter.HeldBy Holder.Controller (ControllerRelation.Related PlayerRelation.You)),
             SpellCast.scope = TurnScope.PlayersTurn (PlayerRef.Relative PlayerRelation.AnyPlayer),
             SpellCast.zone = Nothing,
             SpellCast.ordinal = Nothing,
@@ -109,7 +110,7 @@ spec s = Spec.describe s "Parun.Codec.SpellCast" $ do
       s
       SpellCast.codec
       ( SpellCast.MkSpellCast
-          { SpellCast.spell = ActingPermanent.Matching (Filter.HeldBy Holder.Controller PlayerRelation.You),
+          { SpellCast.spell = ActingPermanent.Matching (Filter.HeldBy Holder.Controller (ControllerRelation.Related PlayerRelation.You)),
             SpellCast.scope = TurnScope.PlayersTurn (PlayerRef.Relative PlayerRelation.AnyPlayer),
             SpellCast.zone = Nothing,
             SpellCast.ordinal = Nothing,

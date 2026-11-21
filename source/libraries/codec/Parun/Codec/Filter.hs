@@ -59,6 +59,7 @@ import qualified Parun.Types.Anchor as Anchor
 import qualified Parun.Types.BoundReading as BoundReading
 import qualified Parun.Types.ChoiceOrdinal as ChoiceOrdinal
 import qualified Parun.Types.ControlMargin as ControlMargin
+import qualified Parun.Types.ControllerRelation as ControllerRelation
 import qualified Parun.Types.CounterKind as CounterKind
 import qualified Parun.Types.CounterMotion as CounterMotion
 import qualified Parun.Types.DamageKind as DamageKind.Type
@@ -302,12 +303,12 @@ countersMovedThisTurn keywordCodec =
       <*> Fields.defaulted "kind" Nothing (Common.maybe (CounterKind.codec keywordCodec)) snd
 
 -- | Which of the candidate's players, and how it relates to the perspective.
-heldBy :: Codec.Codec (Holder.Holder, PlayerRelation.PlayerRelation)
+heldBy :: Codec.Codec (Holder.Holder, ControllerRelation.ControllerRelation)
 heldBy =
   Fields.object $
     (,)
       <$> Fields.required "holder" Holder.codec fst
-      <*> Fields.required "relation" PlayerRelation.codec snd
+      <*> Fields.required "relation" ControllerRelation.bare snd
 
 -- | CR 603.2's bound holder keyed by name: which of the candidate's players,
 -- and the slot binding the player it must be.

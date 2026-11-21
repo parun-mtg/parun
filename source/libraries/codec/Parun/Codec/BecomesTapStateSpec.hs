@@ -11,6 +11,7 @@ import qualified Parun.Types.Batching as Batching
 import qualified Parun.Types.BecomesTapState as BecomesTapState
 import qualified Parun.Types.BeginningStep as BeginningStep
 import qualified Parun.Types.Condition as Condition
+import qualified Parun.Types.ControllerRelation as ControllerRelation
 import qualified Parun.Types.DuringPhase as DuringPhase
 import qualified Parun.Types.Filter as Filter
 import qualified Parun.Types.Holder as Holder
@@ -30,7 +31,7 @@ spec s = Spec.describe s "Parun.Codec.BecomesTapState" $ do
       BecomesTapState.codec
       ( BecomesTapState.MkBecomesTapState
           { BecomesTapState.status = TapState.Untapped,
-            BecomesTapState.actor = ActingPermanent.Matching (Filter.HeldBy Holder.Controller PlayerRelation.You),
+            BecomesTapState.actor = ActingPermanent.Matching (Filter.HeldBy Holder.Controller (ControllerRelation.Related PlayerRelation.You)),
             BecomesTapState.batching = Batching.EachOccurrence,
             BecomesTapState.paying = Nothing,
             BecomesTapState.tapper = Nothing,

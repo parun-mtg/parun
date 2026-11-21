@@ -68,6 +68,7 @@ import qualified Parun.Types.ColorSpread as ColorSpread
 import qualified Parun.Types.CombatStep as CombatStep
 import qualified Parun.Types.ControlPlayerNext as ControlPlayerNext
 import qualified Parun.Types.ControlSpan as ControlSpan
+import qualified Parun.Types.ControllerRelation as ControllerRelation
 import qualified Parun.Types.Copyability as Copyability
 import qualified Parun.Types.Cost as Cost.Type
 import qualified Parun.Types.CostComponent as CostComponent
@@ -304,7 +305,7 @@ targetSpec s registry = Spec.describe s "Target" $ do
     let gs0 = Setup.emptyGame S.bothPlayers
         (mine, gs1) = S.addPermanent piker S.alice gs0
         (theirs, gs2) = S.addPermanent warMammoth S.bob gs1
-        legal = Target.legalRecipients StackObjectKind.Spell (Just S.alice) mine (TargetSlot.required Pool.Creatures (Just (Filter.Type.HeldBy Holder.Controller PlayerRelation.Opponent))) gs2
+        legal = Target.legalRecipients StackObjectKind.Spell (Just S.alice) mine (TargetSlot.required Pool.Creatures (Just (Filter.Type.HeldBy Holder.Controller (ControllerRelation.Related PlayerRelation.Opponent)))) gs2
     Spec.assertEqWith s "only the opponent's creature" legal (Set.singleton (Recipient.ToCreature theirs))
     Spec.assertBool s (not (Set.member (Recipient.ToCreature mine) legal)) "not the source's controller's own"
   -- CR 115.1 / 109.5: "target OPPONENT". Until Ravenous Rats there was no
@@ -370,7 +371,7 @@ targetSpec s registry = Spec.describe s "Target" $ do
         (mine, gs1) = S.addPermanent piker S.alice gs0
         (bobs, gs2) = S.addPermanent warMammoth S.bob gs1
         (carols, gs3) = S.addPermanent piker S.carol gs2
-        legal = Target.legalRecipients StackObjectKind.Spell (Just S.alice) mine (TargetSlot.required Pool.Creatures (Just (Filter.Type.HeldBy Holder.Controller PlayerRelation.Opponent))) gs3
+        legal = Target.legalRecipients StackObjectKind.Spell (Just S.alice) mine (TargetSlot.required Pool.Creatures (Just (Filter.Type.HeldBy Holder.Controller (ControllerRelation.Related PlayerRelation.Opponent)))) gs3
     Spec.assertEqWith
       s
       "exactly bob's and carol's, and nothing of alice's"
@@ -390,12 +391,12 @@ targetSpec s registry = Spec.describe s "Target" $ do
     Spec.assertEqWith
       s
       "for alice's source, only the creature still under bob's control"
-      (Target.legalRecipients StackObjectKind.Spell (Projection.controllerOf mine stolen) mine (TargetSlot.required Pool.Creatures (Just (Filter.Type.HeldBy Holder.Controller PlayerRelation.Opponent))) stolen)
+      (Target.legalRecipients StackObjectKind.Spell (Projection.controllerOf mine stolen) mine (TargetSlot.required Pool.Creatures (Just (Filter.Type.HeldBy Holder.Controller (ControllerRelation.Related PlayerRelation.Opponent)))) stolen)
       (Set.singleton (Recipient.ToCreature alsoTheirs))
     Spec.assertEqWith
       s
       "for bob's source, the two alice now controls"
-      (Target.legalRecipients StackObjectKind.Spell (Projection.controllerOf alsoTheirs stolen) alsoTheirs (TargetSlot.required Pool.Creatures (Just (Filter.Type.HeldBy Holder.Controller PlayerRelation.Opponent))) stolen)
+      (Target.legalRecipients StackObjectKind.Spell (Projection.controllerOf alsoTheirs stolen) alsoTheirs (TargetSlot.required Pool.Creatures (Just (Filter.Type.HeldBy Holder.Controller (ControllerRelation.Related PlayerRelation.Opponent)))) stolen)
       (Set.fromList [Recipient.ToCreature mine, Recipient.ToCreature theirs])
   -- P9 (#40): the reshaped TargetSlot = Pool + Maybe Filter reproduces the
   -- retired hand-carved constructors as data. A black creature

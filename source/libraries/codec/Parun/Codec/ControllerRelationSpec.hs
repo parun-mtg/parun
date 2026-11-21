@@ -3,6 +3,7 @@ module Parun.Codec.ControllerRelationSpec where
 import qualified Data.Set as Set
 import qualified Data.Text as Text
 import qualified Parun.Codec.ControllerRelation as ControllerRelation
+import qualified Parun.JsonCodec.Codec as Codec
 import qualified Parun.JsonCodec.Common as Common
 import qualified Parun.Spec as Spec
 import qualified Parun.Types.ControllerRelation as ControllerRelation
@@ -57,3 +58,14 @@ spec s = Spec.describe s "Parun.Codec.ControllerRelation" $ do
       [minBound .. maxBound :: PlayerRelation.PlayerRelation]
   Spec.it s "has a schema" $
     Common.assertHasSchema s ControllerRelation.codec
+  -- Filter.HeldBy's wire: a nullary arm bare, a payload arm tagged.
+  Spec.it s "bare Opponent" $
+    Common.assertCodec s ControllerRelation.bare (ControllerRelation.Related PlayerRelation.Opponent) " \"Opponent\" "
+  Spec.it s "bare EnchantedPlayers" $
+    Common.assertCodec s ControllerRelation.bare ControllerRelation.EnchantedPlayers " \"EnchantedPlayers\" "
+  Spec.it s "bare InSlot" $
+    Common.assertCodec s ControllerRelation.bare (ControllerRelation.InSlot (SlotName.MkSlotName (Text.pack "target"))) " {\"type\":\"InSlot\",\"value\":\"target\"} "
+  Spec.it s "bare reads a tagged nullary arm" $
+    Common.assertFromJson s (Codec.decode ControllerRelation.bare) " {\"type\":\"You\"} " (ControllerRelation.Related PlayerRelation.You)
+  Spec.it s "bare has a schema" $
+    Common.assertHasSchema s ControllerRelation.bare

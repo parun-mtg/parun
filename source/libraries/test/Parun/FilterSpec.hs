@@ -618,7 +618,7 @@ spec s = Spec.describe s "Parun.Engine.Filter" $ do
     -- would answer the opposite of this one on the very same view. CR 506.2a is
     -- what makes them different questions.
     Spec.it s "is not HeldBy Controller Opponent" $ do
-      Spec.assertBool s (not (Filter.matches (defended 0) blackCreature (Filter.Type.HeldBy Holder.Controller PlayerRelation.Opponent))) "player 0 is the perspective"
+      Spec.assertBool s (not (Filter.matches (defended 0) blackCreature (Filter.Type.HeldBy Holder.Controller (ControllerRelation.Related PlayerRelation.Opponent)))) "player 0 is the perspective"
 
     -- HeldBy's vacuity posture on both sides.
     Spec.it s "is False when either player is absent" $ do
@@ -642,8 +642,8 @@ spec s = Spec.describe s "Parun.Engine.Filter" $ do
     -- "you control" on one board.
     Spec.it s "is not HeldBy Controller You, and needs no perspective" $ do
       Spec.assertBool s (Filter.matches (noPerspective {Filter.recipient = Just (PlayerId.MkPlayerId 0)}) blackCreature (Filter.Type.HeldByRecipient Holder.Controller)) "no perspective needed"
-      Spec.assertBool s (not (Filter.matches noPerspective blackCreature (Filter.Type.HeldBy Holder.Controller PlayerRelation.You))) "where HeldBy Controller You cannot answer"
-      Spec.assertBool s (Filter.matches (reached 1) blackCreature (Filter.Type.HeldBy Holder.Controller PlayerRelation.You)) "and disagrees with it on the very same view: the perspective still controls this creature where the recipient does not"
+      Spec.assertBool s (not (Filter.matches noPerspective blackCreature (Filter.Type.HeldBy Holder.Controller (ControllerRelation.Related PlayerRelation.You)))) "where HeldBy Controller You cannot answer"
+      Spec.assertBool s (Filter.matches (reached 1) blackCreature (Filter.Type.HeldBy Holder.Controller (ControllerRelation.Related PlayerRelation.You))) "and disagrees with it on the very same view: the perspective still controls this creature where the recipient does not"
 
     -- HeldBy's vacuity posture on both sides. No recipient at all is every
     -- position but a per-recipient effect's quantity and a fold over players'
@@ -882,19 +882,19 @@ spec s = Spec.describe s "Parun.Engine.Filter" $ do
     Spec.assertBool s (not (Filter.matches self blackCreature owns)) "object"
 
   Spec.it s "HeldBy Controller You holds for own object" $ do
-    Spec.assertBool s (Filter.matches self blackCreature (Filter.Type.HeldBy Holder.Controller PlayerRelation.You)) "you"
+    Spec.assertBool s (Filter.matches self blackCreature (Filter.Type.HeldBy Holder.Controller (ControllerRelation.Related PlayerRelation.You))) "you"
 
   Spec.it s "HeldBy Controller You fails from an opponent's perspective" $ do
-    Spec.assertBool s (not (Filter.matches other blackCreature (Filter.Type.HeldBy Holder.Controller PlayerRelation.You))) "not you"
+    Spec.assertBool s (not (Filter.matches other blackCreature (Filter.Type.HeldBy Holder.Controller (ControllerRelation.Related PlayerRelation.You)))) "not you"
 
   Spec.it s "HeldBy Controller Opponent holds across differing players" $ do
-    Spec.assertBool s (Filter.matches other blackCreature (Filter.Type.HeldBy Holder.Controller PlayerRelation.Opponent)) "opponent"
+    Spec.assertBool s (Filter.matches other blackCreature (Filter.Type.HeldBy Holder.Controller (ControllerRelation.Related PlayerRelation.Opponent))) "opponent"
 
   Spec.it s "HeldBy Controller is False when the object has no controller" $ do
-    Spec.assertBool s (not (Filter.matches self devoidBigCreature (Filter.Type.HeldBy Holder.Controller PlayerRelation.Opponent))) "no controller"
+    Spec.assertBool s (not (Filter.matches self devoidBigCreature (Filter.Type.HeldBy Holder.Controller (ControllerRelation.Related PlayerRelation.Opponent)))) "no controller"
 
   Spec.it s "HeldBy Controller is False when the context has no perspective" $ do
-    Spec.assertBool s (not (Filter.matches noPerspective blackCreature (Filter.Type.HeldBy Holder.Controller PlayerRelation.You))) "no perspective"
+    Spec.assertBool s (not (Filter.matches noPerspective blackCreature (Filter.Type.HeldBy Holder.Controller (ControllerRelation.Related PlayerRelation.You)))) "no perspective"
 
   -- CR 108.3 against CR 109.5's controller, on the ONE view where the two
   -- disagree: blackCreature is controlled by player 0 and owned by player 1, so
@@ -902,21 +902,21 @@ spec s = Spec.describe s "Parun.Engine.Filter" $ do
   -- An implementation reading the controller for the owner flips all four.
   Spec.describe s "HeldBy Owner" $ do
     Spec.it s "CR 108.3 HeldBy Owner You fails for an object its controller does not own" $ do
-      Spec.assertBool s (not (Filter.matches self blackCreature (Filter.Type.HeldBy Holder.Owner PlayerRelation.You))) "controlled, not owned"
+      Spec.assertBool s (not (Filter.matches self blackCreature (Filter.Type.HeldBy Holder.Owner (ControllerRelation.Related PlayerRelation.You)))) "controlled, not owned"
 
     Spec.it s "CR 108.3 HeldBy Owner You holds from the OWNER's perspective" $ do
-      Spec.assertBool s (Filter.matches other blackCreature (Filter.Type.HeldBy Holder.Owner PlayerRelation.You)) "player 1 owns it"
+      Spec.assertBool s (Filter.matches other blackCreature (Filter.Type.HeldBy Holder.Owner (ControllerRelation.Related PlayerRelation.You))) "player 1 owns it"
 
     Spec.it s "CR 108.3 HeldBy Owner Opponent holds from the controller's perspective" $ do
-      Spec.assertBool s (Filter.matches self blackCreature (Filter.Type.HeldBy Holder.Owner PlayerRelation.Opponent)) "someone else owns it"
+      Spec.assertBool s (Filter.matches self blackCreature (Filter.Type.HeldBy Holder.Owner (ControllerRelation.Related PlayerRelation.Opponent))) "someone else owns it"
 
     -- The two vacuity postures, matching HeldBy Controller's: no object behind the
     -- view, and no "you" for the relation to be about.
     Spec.it s "CR 108.3 HeldBy Owner is False when the view has no owner" $ do
-      Spec.assertBool s (not (Filter.matches self devoidBigCreature (Filter.Type.HeldBy Holder.Owner PlayerRelation.Opponent))) "no owner"
+      Spec.assertBool s (not (Filter.matches self devoidBigCreature (Filter.Type.HeldBy Holder.Owner (ControllerRelation.Related PlayerRelation.Opponent)))) "no owner"
 
     Spec.it s "CR 108.3 HeldBy Owner is False when the context has no perspective" $ do
-      Spec.assertBool s (not (Filter.matches noPerspective blackCreature (Filter.Type.HeldBy Holder.Owner PlayerRelation.Opponent))) "no perspective"
+      Spec.assertBool s (not (Filter.matches noPerspective blackCreature (Filter.Type.HeldBy Holder.Owner (ControllerRelation.Related PlayerRelation.Opponent)))) "no perspective"
 
   -- CR 702.140a's owner comparison: HeldBy Owner's question asked of the SOURCE's
   -- owner instead of CR 109.5's perspective. blackCreature is the one view the
@@ -1041,8 +1041,8 @@ spec s = Spec.describe s "Parun.Engine.Filter" $ do
       Spec.assertBool s (Filter.matches self (aimedAt (Recipient.ToObject (ObjectId.MkObjectId 9)) blackCreature) (Filter.Type.TargetsOnlyOne (Filter.Type.HasCardType CardType.Creature))) "and so is the same creature named by CR 110.1's permanent pool"
 
     Spec.it s "CR 115.1 judges the nest in the candidate's own context" $ do
-      Spec.assertBool s (Filter.matches self (aimedAt (Recipient.ToCreature (ObjectId.MkObjectId 9)) blackCreature) (Filter.Type.TargetsOnlyOne (Filter.Type.HeldBy Holder.Controller PlayerRelation.You))) "player 0 controls the one target, from player 0"
-      Spec.assertBool s (not (Filter.matches other (aimedAt (Recipient.ToCreature (ObjectId.MkObjectId 9)) blackCreature) (Filter.Type.TargetsOnlyOne (Filter.Type.HeldBy Holder.Controller PlayerRelation.You)))) "and player 1 does not, from player 1"
+      Spec.assertBool s (Filter.matches self (aimedAt (Recipient.ToCreature (ObjectId.MkObjectId 9)) blackCreature) (Filter.Type.TargetsOnlyOne (Filter.Type.HeldBy Holder.Controller (ControllerRelation.Related PlayerRelation.You)))) "player 0 controls the one target, from player 0"
+      Spec.assertBool s (not (Filter.matches other (aimedAt (Recipient.ToCreature (ObjectId.MkObjectId 9)) blackCreature) (Filter.Type.TargetsOnlyOne (Filter.Type.HeldBy Holder.Controller (ControllerRelation.Related PlayerRelation.You))))) "and player 1 does not, from player 1"
 
     Spec.it s "CR 115.1 a player target answers a player view" $ do
       Spec.assertBool s (Filter.matches self (aimedAt (Recipient.ToPlayer (PlayerId.MkPlayerId 1)) aPlayer) (Filter.Type.TargetsOnlyOne (Filter.Type.IsPlayer PlayerRelation.AnyPlayer))) "one player target"
@@ -2082,7 +2082,7 @@ spec s = Spec.describe s "Parun.Engine.Filter" $ do
     -- each source as it dealt the damage, off the event's riders, and "you"
     -- the perspective's.
     Spec.it s "a source filter reads the source as it dealt the damage" $ do
-      let byYourSpell = Filter.Type.DealtDamageThisTurn Nothing (Just (Filter.Type.And [Filter.Type.IsInZone Zone.Stack, Filter.Type.HeldBy Holder.Controller PlayerRelation.You])) False
+      let byYourSpell = Filter.Type.DealtDamageThisTurn Nothing (Just (Filter.Type.And [Filter.Type.IsInZone Zone.Stack, Filter.Type.HeldBy Holder.Controller (ControllerRelation.Related PlayerRelation.You)])) False
           byWizard = Filter.Type.DealtDamageThisTurn Nothing (Just (Filter.Type.HasSubtype Subtype.Wizard)) False
           dealt ev = blackCreature {Filter.dealtDamageThisTurn = [ev]}
       Spec.assertBool s (Filter.matches self (dealt aDamage {DamageEvent.dealtFromZone = Just Zone.Stack}) byYourSpell) "your spell"
@@ -2232,7 +2232,7 @@ spec s = Spec.describe s "Parun.Engine.Filter" $ do
     -- the composition no nullary atom expresses (CR 109.5, CR 303.4b).
     let onYourCreature =
           Filter.Type.AttachedTo
-            (Filter.Type.And [Filter.Type.HasCardType CardType.Creature, Filter.Type.HeldBy Holder.Controller PlayerRelation.You])
+            (Filter.Type.And [Filter.Type.HasCardType CardType.Creature, Filter.Type.HeldBy Holder.Controller (ControllerRelation.Related PlayerRelation.You)])
         -- Crown of the Ages' "attached to a creature" and Aura Graft's "attached
         -- to a permanent" respectively, both spelled in the general form.
         onACreature = Filter.Type.AttachedTo (Filter.Type.HasCardType CardType.Creature)
@@ -2318,7 +2318,7 @@ spec s = Spec.describe s "Parun.Engine.Filter" $ do
         carrying attachers = blackCreature {Filter.attachedViews = attachers}
         byAnAura = Filter.Type.HasAttached (Filter.Type.HasSubtype Subtype.Aura)
         byAnything = Filter.Type.HasAttached (Filter.Type.And [])
-        byYourAura = Filter.Type.HasAttached (Filter.Type.And [Filter.Type.HasSubtype Subtype.Aura, Filter.Type.HeldBy Holder.Controller PlayerRelation.You])
+        byYourAura = Filter.Type.HasAttached (Filter.Type.And [Filter.Type.HasSubtype Subtype.Aura, Filter.Type.HeldBy Holder.Controller (ControllerRelation.Related PlayerRelation.You)])
 
     Spec.it s "matches a candidate something matching the nest is attached to" $ do
       Spec.assertBool s (Filter.matches self (carrying [anAura]) byAnAura) "an Aura is on it"

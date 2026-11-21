@@ -1766,12 +1766,12 @@ data Context = MkContext
     -- "CR 303.4b no card asks IsHostOfSource where the source's host is unknown".
     sourceAttachedTo :: Maybe ObjectId.ObjectId,
     -- CR 303.4b's "enchanted player": WHICH player the SOURCE is attached to, for
-    -- IsAttackingPlayer EnchantedPlayers; sourceAttachedTo's other destination.
+    -- IsAttackingPlayer's and HeldBy's EnchantedPlayers; sourceAttachedTo's other destination.
     -- Filled beside it by Parun.Engine.SourceContext, live off the board: a
     -- source that has left enchants nobody (Replacement.relationHolds' reading).
     -- Nothing in contextFor, where the atom answers False; Parun.FilterPositionLintSpec's
-    -- "CR 303.4b no card asks IsAttackingPlayer of a player the filter cannot
-    -- read" keeps a card out of those positions.
+    -- "CR 303.4b no card asks IsAttackingPlayer or HeldBy of a player the
+    -- filter cannot read" keeps a card out of those positions.
     sourceEnchantedPlayer :: Maybe PlayerId.PlayerId,
     -- The object the surrounding Quantity is evaluated against, which
     -- IsAttachedTo Evaluated compares a candidate's host with and IsEvaluated the
@@ -2555,9 +2555,20 @@ matches context view predicate = case predicate of
   -- don't own" is the two holders conjoined. Vacuously False where `heldBy`
   -- reads Nothing.
   Filter.ControllerIsOwner -> Maybe.isJust (controller view) && controller view == owner view
-  Filter.HeldBy holder relation -> case (heldBy holder view, perspective context) of
-    (Just h, Just p) -> PlayerRelation.holds (teams context) relation p h
-    _ -> False
+  --
+  -- CR 303.4b's enchanted player is read off the context's source,
+  -- IsAttackingPlayer's reading.
+  --
+  -- Unprinted: an InSlot or Among relation, a resolution's players, which
+  -- HeldByBound and HeldByPlayer spell instead, so both admit nobody.
+  -- Parun.FilterPositionLintSpec's "CR 303.4b no card asks IsAttackingPlayer
+  -- or HeldBy of a player the filter cannot read" rejects either.
+  Filter.HeldBy holder rel -> case (heldBy holder view, rel) of
+    (Nothing, _) -> False
+    (Just h, ControllerRelation.Related relation) -> maybe False (\p -> PlayerRelation.holds (teams context) relation p h) (perspective context)
+    (Just h, ControllerRelation.EnchantedPlayers) -> sourceEnchantedPlayer context == Just h
+    (Just _, ControllerRelation.InSlot _) -> False
+    (Just _, ControllerRelation.Among _) -> False
   -- CR 508.5 / 702.39a: the candidate's controller IS the defending player, which
   -- the Context supplies because it is a fact about the combat record rather than
   -- about the candidate -- or, for a source with no attack, IS ONE of the
@@ -2840,8 +2851,8 @@ matches context view predicate = case predicate of
   --
   -- Unprinted: an InSlot or Among relation, a resolution's players, which no
   -- filter here is baked with, so both admit nobody. Parun.FilterPositionLintSpec's
-  -- "CR 303.4b no card asks IsAttackingPlayer of a player the filter cannot
-  -- read" rejects either.
+  -- "CR 303.4b no card asks IsAttackingPlayer or HeldBy of a player the filter
+  -- cannot read" rejects either.
   Filter.IsAttackingPlayer rel -> case (attackingPlayer view, rel) of
     (Nothing, _) -> False
     (Just a, ControllerRelation.Related relation) -> maybe False (\p -> PlayerRelation.holds (teams context) relation p a) (perspective context)
@@ -3488,7 +3499,10 @@ bakeBound players objects controllers measures predicate = case predicate of
 -- read for. bakeBound's descent, and its reason for not entering a keyword.
 bakeRelations :: (PlayerRelation.PlayerRelation -> [PlayerId.PlayerId]) -> Filter.Filter Keyword.Type.Keyword -> Filter.Filter Keyword.Type.Keyword
 bakeRelations related predicate = case predicate of
-  Filter.HeldBy holder relation -> Filter.Or (fmap (Filter.HeldByPlayer holder) (related relation))
+  Filter.HeldBy holder (ControllerRelation.Related relation) -> Filter.Or (fmap (Filter.HeldByPlayer holder) (related relation))
+  -- CR 303.4b: the enchanted player is the source's, not the perspective's, so
+  -- it is read where the stored class is matched.
+  Filter.HeldBy _ _ -> predicate
   _ -> Identity.runIdentity (Children.filterChildren (Children.descending (Identity.Identity . bakeRelations related)) predicate)
 
 -- CR 608.2h: every HasChosenColor named outright as the colours `chosen`

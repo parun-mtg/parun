@@ -4,6 +4,7 @@ import qualified Data.List.NonEmpty as NonEmpty
 import qualified Parun.Codec.CopyTargets as CopyTargets
 import qualified Parun.JsonCodec.Common as Common
 import qualified Parun.Spec as Spec
+import qualified Parun.Types.ControllerRelation as ControllerRelation
 import qualified Parun.Types.CopyTargets as CopyTargets
 import qualified Parun.Types.Filter as Filter
 import qualified Parun.Types.Holder as Holder
@@ -22,7 +23,7 @@ spec s = Spec.describe s "Parun.Codec.CopyTargets" $ do
     Common.assertCodec
       s
       CopyTargets.codec
-      (CopyTargets.ForEach (ObjectRef.AllOf (ObjectRef.EachMatching (Filter.HeldBy Holder.Controller PlayerRelation.You) NonEmpty.:| [ObjectRef.Players (PlayersWho.MkPlayersWho (PlayerRef.Relative PlayerRelation.AnyPlayer) Nothing Nothing)])))
+      (CopyTargets.ForEach (ObjectRef.AllOf (ObjectRef.EachMatching (Filter.HeldBy Holder.Controller (ControllerRelation.Related PlayerRelation.You)) NonEmpty.:| [ObjectRef.Players (PlayersWho.MkPlayersWho (PlayerRef.Relative PlayerRelation.AnyPlayer) Nothing Nothing)])))
       " {\"type\":\"ForEach\",\"value\":{\"type\":\"AllOf\",\"value\":[{\"type\":\"EachMatching\",\"value\":{\"type\":\"HeldBy\",\"value\":{\"holder\":\"Controller\",\"relation\":\"You\"}}},{\"type\":\"Players\",\"value\":{\"players\":{\"type\":\"Relative\",\"value\":\"AnyPlayer\"}}}]}} "
   Spec.it s "Stated" $
     Common.assertCodec

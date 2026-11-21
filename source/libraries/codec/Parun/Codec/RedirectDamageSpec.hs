@@ -5,6 +5,7 @@ import qualified Parun.Codec.RedirectDamage as RedirectDamage
 import qualified Parun.JsonCodec.Common as Common
 import qualified Parun.Spec as Spec
 import qualified Parun.Types.BlockStatus as BlockStatus
+import qualified Parun.Types.ControllerRelation as ControllerRelation
 import qualified Parun.Types.DamageKind as DamageKind
 import qualified Parun.Types.Duration as Duration
 import qualified Parun.Types.Filter as Filter
@@ -91,7 +92,7 @@ spec s = Spec.describe s "Parun.Codec.RedirectDamage" $ do
             RedirectDamage.kind = Nothing,
             RedirectDamage.amount = Just (Quantity.Literal 2),
             RedirectDamage.from = Nothing,
-            RedirectDamage.whatRecipient = Just (Filter.HeldBy Holder.Controller PlayerRelation.You),
+            RedirectDamage.whatRecipient = Just (Filter.HeldBy Holder.Controller (ControllerRelation.Related PlayerRelation.You)),
             RedirectDamage.whoRecipient = Just PlayerRelation.You,
             RedirectDamage.to = ObjectRef.InSlot (SlotName.MkSlotName (Text.pack "target")),
             RedirectDamage.chosenSource = Just (Filter.And []),
