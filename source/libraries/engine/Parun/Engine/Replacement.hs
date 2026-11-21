@@ -30,6 +30,7 @@ import qualified Control.Monad as Monad
 import qualified Control.Monad.Trans.State.Strict as State
 import qualified Data.Containers.ListUtils as ListUtils
 import qualified Data.Foldable as Foldable
+import qualified Data.Functor.Const as Const
 import qualified Data.List as List
 import qualified Data.List.NonEmpty as NonEmpty
 import qualified Data.Map.Strict as Map
@@ -41,6 +42,7 @@ import qualified Data.Set as Set
 import Numeric.Natural (Natural)
 import qualified Parun.Engine.Binding as Binding
 import qualified Parun.Engine.Card as Card
+import qualified Parun.Engine.Children as Children
 import qualified Parun.Engine.Condition as Condition
 import qualified Parun.Engine.Count as Count
 import qualified Parun.Engine.CounterRestriction as CounterRestriction
@@ -76,11 +78,13 @@ import qualified Parun.Types.Card as Card.Type
 import qualified Parun.Types.Cause as Cause
 import qualified Parun.Types.Chosen as Chosen
 import qualified Parun.Types.ComparedTo as ComparedTo
+import qualified Parun.Types.Condition as Condition.Type
 import Parun.Types.ControllerRelation (ControllerRelation)
 import qualified Parun.Types.ControllerRelation as ControllerRelation
 import qualified Parun.Types.CopyCoverage as CopyCoverage
 import qualified Parun.Types.CopyDomain as CopyDomain
 import qualified Parun.Types.CopyException as CopyException
+import qualified Parun.Types.Count as Count.Type
 import qualified Parun.Types.CounterCause as CounterCause
 import qualified Parun.Types.CounterKind as CounterKind
 import qualified Parun.Types.CounterLossR as CounterLossR
@@ -123,6 +127,8 @@ import qualified Parun.Types.GameLossR as GameLossR
 import Parun.Types.GameState (GameState)
 import qualified Parun.Types.GameState as GameState
 import qualified Parun.Types.GrantedAbility as GrantedAbility
+import qualified Parun.Types.Holder as Holder
+import qualified Parun.Types.InZone as InZone
 import qualified Parun.Types.InstanceOrdinal as InstanceOrdinal
 import qualified Parun.Types.InstructionR as InstructionR
 import qualified Parun.Types.InstructionRewrite as InstructionRewrite
@@ -179,6 +185,7 @@ import qualified Parun.Types.ReplacementOrigin as ReplacementOrigin
 import qualified Parun.Types.ReplacementProvenance as ReplacementProvenance
 import qualified Parun.Types.SacrificeToEnter as SacrificeToEnter
 import qualified Parun.Types.Scaling as Scaling
+import qualified Parun.Types.Scope as Scope
 import qualified Parun.Types.Scratch as Scratch
 import Parun.Types.SkipWindow (SkipWindow)
 import qualified Parun.Types.SkipWindow as SkipWindow
@@ -3106,7 +3113,9 @@ data EntryPool = OnBattlefield | InGraveyards | InExile | InHands | LifeTotals |
   deriving (Eq, Ord, Show, Enum, Bounded)
 
 -- `removes` spends from a pool and `adds` puts into one; `records` is what the
--- row's result or its offer depends on, other than a pool it only spends from.
+-- row's result or its offer depends on, other than a pool it only spends from,
+-- and `ownRecords` the part of it confined to what the row's controller
+-- controls or owns ("you control", "your graveyard").
 -- `shared` is the part of `removes` another seat's member can spend from
 -- too: not a sacrifice's battlefield, since a player sacrifices only their own
 -- permanents (CR 701.21a).
@@ -3114,19 +3123,20 @@ data EntryAccess = MkEntryAccess
   { removes :: Set EntryPool,
     adds :: Set EntryPool,
     records :: Set EntryPool,
+    ownRecords :: Set EntryPool,
     shared :: Set EntryPool
   }
   deriving (Eq, Show)
 
 instance Semigroup EntryAccess where
-  MkEntryAccess r a c o <> MkEntryAccess r' a' c' o' = MkEntryAccess (r <> r') (a <> a') (c <> c') (o <> o')
+  MkEntryAccess r a c y o <> MkEntryAccess r' a' c' y' o' = MkEntryAccess (r <> r') (a <> a') (c <> c') (y <> y') (o <> o')
 
 instance Monoid EntryAccess where
-  mempty = MkEntryAccess Set.empty Set.empty Set.empty Set.empty
+  mempty = MkEntryAccess Set.empty Set.empty Set.empty Set.empty Set.empty
 
 -- Every pool read and changed: a row whose work is a card's own effects.
 touchesEverything :: EntryAccess
-touchesEverything = let every = Set.fromList [minBound .. maxBound :: EntryPool] in MkEntryAccess every every every every
+touchesEverything = let every = Set.fromList [minBound .. maxBound :: EntryPool] in MkEntryAccess every every every Set.empty every
 
 -- Every pool read: an opponent's choice, or a condition of the board.
 seeingEverything :: EntryAccess
@@ -3134,17 +3144,22 @@ seeingEverything = mempty {records = records touchesEverything}
 
 -- CR 616.1 with CR 101.4c: whether applying `first`'s row before `second`'s
 -- can leave a different board or different legal choices than the reverse:
--- `first` changes a pool `second` records. Two members spending from one pool
--- commute when one seat makes both choices (Thunder-Thrash Elder beside
--- Gorger Wurm); between two seats the first takes its pick first from a pool
--- both can spend from (`shared`). What `first` adds to a pool `second`
--- spends from is no candidate for it (CR 614.13a).
+-- `first` changes a pool `second` records, or, from another seat, a pool
+-- `second` records of its own controller's that `first` can reach (`shared`)
+-- or adds to: a sacrifice spends only its own seat's permanents (CR 701.21a,
+-- Thunder-Thrash Elder beside a teammate's Frontier Mastodon). Two members
+-- spending from one pool commute when one seat makes both choices
+-- (Thunder-Thrash Elder beside Gorger Wurm); between two seats the first takes
+-- its pick first from a pool both can spend from. What `first` adds to a pool
+-- `second` spends from is no candidate for it (CR 614.13a).
 entryConflicts :: (PlayerId, EntryAccess) -> (PlayerId, EntryAccess) -> Bool
 entryConflicts (seat, first) (otherSeat, second) =
   meets (removes first <> adds first) (records second)
+    || meets (reaching <> adds first) (ownRecords second)
     || (seat /= otherSeat && meets (shared first) (removes second))
   where
     meets x y = not (Set.null (Set.intersection x y))
+    reaching = if seat == otherSeat then removes first else shared first
 
 -- What an entry row touches (`EntryAccess`), read against the board it would
 -- enter: a copy entry (CR 707.5) records its domain and may take on any
@@ -3202,7 +3217,7 @@ entryAccess gs = row asEntering
               EntryPrice.PayLife _ -> spending [LifeTotals] []
               EntryPrice.Reveal _ -> reading [InHands]
               EntryPrice.Behold _ -> reading [OnBattlefield, InHands]
-         in paid <> foldMap (const seeingEverything) (OrTapped.unless orTapped)
+         in paid <> foldMap conditionAccess (OrTapped.unless orTapped)
       EntryRewrite.PayAnyLife _ -> spending [LifeTotals] []
       EntryRewrite.EntersTransformed -> mempty
       EntryRewrite.RunEffects _ -> touchesEverything
@@ -3216,27 +3231,103 @@ entryAccess gs = row asEntering
       Quantity.Type.Literal _ -> True
       _ -> False
 
+-- What a condition (CR 614.1d's "unless") reads, as entry pools: a count of a
+-- zone records that zone, confined to the reader's own where the count is of
+-- what it controls or owns; a fact of the turn or of the cast no entry changes
+-- (whose turn it is, a kicker paid, attackers declared) records nothing; any
+-- other quantity, or a count of anything but a zone, records every pool.
+conditionAccess :: Condition.Type.Condition -> EntryAccess
+conditionAccess =
+  Const.getConst
+    . Children.conditionChildren
+      Children.conditionLeaves
+        { Children.conditionQuantity = Const.Const . quantityAccess,
+          Children.conditionNested = Const.Const . conditionAccess
+        }
+
+quantityAccess :: Quantity.Type.Quantity -> EntryAccess
+quantityAccess quantity = case quantity of
+  Quantity.Type.Count (Count.Type.MkCount over criterion aggregation) ->
+    zoneAccess over criterion <> filterAccess criterion <> Const.getConst (Children.aggregationChildren accessChildren aggregation)
+  Quantity.Type.Literal _ -> nested
+  Quantity.Type.Arithmetic _ -> nested
+  Quantity.Type.AtMost _ -> nested
+  Quantity.Type.InSlot _ -> nested
+  Quantity.Type.IsActivePlayer _ -> nested
+  Quantity.Type.TurnsBegun _ _ -> nested
+  Quantity.Type.TimesPaid _ -> nested
+  Quantity.Type.CastUsing _ -> nested
+  Quantity.Type.ManaSpent _ -> nested
+  Quantity.Type.AttackersDeclaredThisTurn _ -> nested
+  Quantity.Type.AttackersDeclaredThisCombat -> nested
+  -- Every other quantity is read as reading every pool, the answer that asks.
+  _ -> seeingEverything
+  where
+    nested = Const.getConst (Children.quantityChildren accessChildren quantity)
+
+filterAccess :: Filter.Type.Filter Keyword.Type.Keyword -> EntryAccess
+filterAccess = Const.getConst . Children.filterChildren accessChildren
+
+-- A nested filter's or quantity's reads; a scope other than a count's own
+-- records every pool.
+accessChildren :: Children.Children Keyword.Type.Keyword (Const.Const EntryAccess)
+accessChildren =
+  (Children.descendingQuantities (Const.Const . quantityAccess))
+    { Children.connective = Const.Const . filterAccess,
+      Children.nest = Const.Const . filterAccess,
+      Children.scope = const (Const.Const seeingEverything)
+    }
+
+-- The pool a count's scope reaches, with the state of its members
+-- (`Elsewhere`): its controller's own where the count is of permanents it
+-- controls or of its own zone.
+zoneAccess :: Scope.Scope Keyword.Type.Keyword -> Filter.Type.Filter Keyword.Type.Keyword -> EntryAccess
+zoneAccess over criterion = case over of
+  Scope.InZone (InZone.MkInZone zone player)
+    | yours -> mempty {ownRecords = pools}
+    | otherwise -> mempty {records = pools}
+    where
+      pools = Set.fromList [poolOf zone, Elsewhere]
+      yours = case zone of
+        Zone.Battlefield -> controlledByYou criterion
+        _ -> player == PlayerRef.Relative PlayerRelation.You
+  _ -> seeingEverything
+  where
+    controlledByYou predicate = case predicate of
+      Filter.Type.HeldBy Holder.Controller (ControllerRelation.Related PlayerRelation.You) -> True
+      Filter.Type.And conjuncts -> any controlledByYou conjuncts
+      _ -> False
+    poolOf zone = case zone of
+      Zone.Battlefield -> OnBattlefield
+      Zone.Graveyard -> InGraveyards
+      Zone.Exile -> InExile
+      Zone.Hand -> InHands
+      Zone.Library -> Elsewhere
+      Zone.Stack -> Elsewhere
+      Zone.Command -> Elsewhere
+      Zone.Ante -> Elsewhere
+
 -- What a member entering the battlefield touches through its entry rows
 -- (`entryAccess`), Nothing where it carries none. A printed row's condition
 -- (CR 614.1d's "unless") is read again as each member applies, so another
--- member can change it: a conditioned row records every pool, and counts
--- whether or not it is live on the board before the batch (Sunpetal Grove
--- beside Thunder-Thrash Elder devouring Alice's only Forest).
+-- member can change it: a conditioned row records what its condition reads
+-- (`conditionAccess`), whether or not it is live on the board before the batch
+-- (Sunpetal Grove beside Thunder-Thrash Elder devouring Alice's only Forest).
 entryMemberAccess :: GameState -> ObjectId -> Maybe EntryAccess
 entryMemberAccess gs oid = case (live, conditioned) of
   ([], []) -> Nothing
-  _ -> Just (foldMap (entryAccess gs) live <> foldMap (\effect -> entryAccess gs effect <> seeingEverything) conditioned)
+  _ -> Just (foldMap (entryAccess gs) live <> foldMap (\(effect, condition) -> entryAccess gs effect <> conditionAccess condition) conditioned)
   where
     isEntry effect = case effect of
       ReplacementEffect.EntryR _ -> True
       _ -> False
     live = filter isEntry (fmap snd (Projection.replacementsOf Zone.Battlefield oid gs))
     conditioned =
-      [ PrintedReplacement.effect pr
+      [ (PrintedReplacement.effect pr, condition)
       | pr <- PC.replacementEffects (Projection.project oid gs),
         Projection.functionsFromZoneOfRow Zone.Battlefield pr,
-        Maybe.isJust (PrintedReplacement.condition pr),
-        isEntry (PrintedReplacement.effect pr)
+        isEntry (PrintedReplacement.effect pr),
+        Just condition <- [PrintedReplacement.condition pr]
       ]
 
 -- Whether a row's whole work is a choice its entering object's controller alone
