@@ -1598,7 +1598,9 @@ effectObjectRefs effect =
         Effect.AttachAll (AttachAll.MkAttachAll ref _) -> [(ChosenAmong : permanentQuestions, ref)]
         -- The dealers are swept through the pure objectRefObjects too.
         Effect.DealDamage (DealDamage.MkDealDamage parts _ dealers _ _ _ _) -> read_ (Foldable.toList dealers <> fmap DamagePart.ref (Foldable.toList parts))
-        Effect.ModifyTarget (ModifyTarget.MkModifyTarget _ _ ref _) -> [(permanentQuestions, ref)]
+        -- CardInHand: the scenario
+        -- riveteers-provocateur-perpetually-gives-a-creature-card-in-hand-blitz-at-its-own-mana-cost.
+        Effect.ModifyTarget (ModifyTarget.MkModifyTarget _ _ ref _) -> [(CardInHand : permanentQuestions, ref)]
         Effect.ChangeText {} -> []
         Effect.AddMana {} -> []
         Effect.Firebend {} -> []
@@ -1711,7 +1713,7 @@ effectObjectRefs effect =
         -- The WRITTEN arm is a token's case above: the card is minted text, not a
         -- ref. A DUPLICATE names an object already in the game, and reads it the
         -- way CreateCopy's arm below reads its own.
-        Effect.Conjure (Conjure.MkConjure _ cards _ _ _ _) -> case cards of
+        Effect.Conjure (Conjure.MkConjure _ cards _ _ _ _ _) -> case cards of
           ConjureCards.Written {} -> []
           ConjureCards.Duplicate ref -> read_ [ref]
           -- A reference pick names no object at all.
@@ -4281,7 +4283,7 @@ effectLintSpec s registry corpus = Spec.describe s "Lint" $ do
     Spec.assertBool s (not (anyFace thatCombatPhaseOffends (Printing.card bumi))) "the real Bumi, Unleashed is accepted"
     Spec.assertBool s (thatCombatPhaseOffends planted) "a restriction naming no added phase is rejected"
     war <- S.printingOf s registry "World at War"
-    let arm = Effect.ArmDelayedTrigger (ArmDelayedTrigger.MkArmDelayedTrigger (AbilityName.MkAbilityName (Text.pack "that combat")) (Onset.FromThatCombatPhase PhaseAnchor.SecondMainPhase) Nothing Nothing)
+    let arm = Effect.ArmDelayedTrigger (ArmDelayedTrigger.MkArmDelayedTrigger (AbilityName.MkAbilityName (Text.pack "that combat")) (Onset.FromThatCombatPhase PhaseAnchor.SecondMainPhase) Nothing Nothing Nothing)
         hereOnly = Effect.AddPhases (AddPhases.MkAddPhases PhaseAnchor.ThisPhase [ExtraPhase.ExtraCombat, ExtraPhase.ExtraMain] PhaseGrant.ThereIs)
         misanchored = (vanillaFace "Planted" instantLine) {Face.spell = Mint.oneMode (Seq.fromList [hereOnly, arm])}
     Spec.assertBool s (not (anyFace thatCombatPhaseOffends (Printing.card war))) "the real World at War is accepted"

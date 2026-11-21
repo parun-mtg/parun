@@ -947,6 +947,7 @@ playerRefPositions =
         ("decrease-speed", Effect.DecreaseSpeed (SpeedDecrease.MkSpeedDecrease (plantedPlayer "ds") one 0), [plantedPlayer "ds"]),
         ("create", Effect.Create (Create.MkCreate one () EntryRiders.defaultValue Nothing (plantedPlayer "cr") False Nothing), [plantedPlayer "cr"]),
         ("create-copy", Effect.CreateCopy (CreateCopy.MkCreateCopy one (plantedRef "cp") EntryRiders.defaultValue Nothing [] (plantedPlayer "ccp") False), [plantedPlayer "ccp"]),
+        ("conjure", Effect.Conjure (Conjure.MkConjure one (ConjureCards.Written (NonEmpty.singleton ())) Conjure.defaultSelection False ConjureDestination.Hand Nothing (plantedPlayer "cj")), [plantedPlayer "cj"]),
         ("create-emblem", Effect.CreateEmblem (CreateEmblem.MkCreateEmblem () (plantedPlayer "ce")), [plantedPlayer "ce"]),
         ("skip-phase", Effect.SkipPhase SkipPhase.MkSkipPhase {SkipPhase.player = plantedPlayer "sn", SkipPhase.selector = SkipWindow.PartOfTurn PhaseSelector.CombatPhase, SkipPhase.uses = Uses.Once, SkipPhase.duration = Duration.Indefinite, SkipPhase.count = SkipPhase.defaultCount}, [plantedPlayer "sn"]),
         ("gain-player-counters", Effect.GainPlayerCounters (PlayerCounters.MkPlayerCounters (plantedPlayer "gp") PlayerCounterKind.Rad one), [plantedPlayer "gp"]),
@@ -985,7 +986,7 @@ playerRefPositions =
         -- join it in are the same ones slotsOf joins durationSlots in --
         -- ModifyTarget, BecomeCopy, Replace, the three prevention opcodes,
         -- RedirectDamage and this one.
-        ("arm-delayed-trigger", Effect.ArmDelayedTrigger (ArmDelayedTrigger.MkArmDelayedTrigger (AbilityName.MkAbilityName (Text.pack "ad")) (Onset.FromNextTurnOf (Just (plantedPlayer "ad-onset"))) (Just (Duration.UntilPaid (UntilPaid.MkUntilPaid (plantedPlayer "ad-payer") (Cost.Type.MkCost Nothing [])))) Nothing), [plantedPlayer "ad-payer", plantedPlayer "ad-onset"]),
+        ("arm-delayed-trigger", Effect.ArmDelayedTrigger (ArmDelayedTrigger.MkArmDelayedTrigger (AbilityName.MkAbilityName (Text.pack "ad")) (Onset.FromNextTurnOf (Just (plantedPlayer "ad-onset"))) (Just (Duration.UntilPaid (UntilPaid.MkUntilPaid (plantedPlayer "ad-payer") (Cost.Type.MkCost Nothing [])))) Nothing (Just (plantedPlayer "ad-recipient"))), [plantedPlayer "ad-payer", plantedPlayer "ad-recipient", plantedPlayer "ad-onset"]),
         ("grant-play-from-exile-duration", Effect.GrantPlayFromExile (GrantPlayFromExile.MkGrantPlayFromExile (Duration.UntilEndOfNextTurnOf (plantedPlayer "gp-duration")) (plantedPlayer "gp-player") (plantedRef "gp-ref") ManaSpending.AsProduced Nothing Nothing PermissionVerb.Play 0 Nothing TapState.Untapped TapState.Untapped Nothing [] GrantZone.Exile), [plantedPlayer "gp-duration", plantedPlayer "gp-player"]),
         -- CR 400.1's reference nested in the PLAYER EFFECT rather than in a field of
         -- the opcode -- the CR 601.3 / 305.1 / 702.170f permissions that name whose
@@ -5585,7 +5586,7 @@ effectFilters effect = case effect of
   -- A DUPLICATE names an object rather than writing a card out, so the Filters
   -- it can carry are the ref's, framed the way CreateCopy's arm below frames its
   -- own.
-  Effect.Conjure (Conjure.MkConjure quantity cards _ _ _ _) -> frame Unframed (quantityFilters quantity <> conjureReferenceFilters cards) <> foldMap (overFaces cardFilters) (ConjureCards.written cards) <> frame SourceHostFramed (conjureCardsRefFilters cards)
+  Effect.Conjure (Conjure.MkConjure quantity cards _ _ _ _ _) -> frame Unframed (quantityFilters quantity <> conjureReferenceFilters cards) <> foldMap (overFaces cardFilters) (ConjureCards.written cards) <> frame SourceHostFramed (conjureCardsRefFilters cards)
   -- An EachMatching ref's Filter is card text like RequireBlock's below, and the
   -- count's and the riders' Filters are as much card text as Create's. The
   -- exceptions frame themselves, BecomeCopy's arm below.
@@ -5702,7 +5703,7 @@ effectFilters effect = case effect of
   Effect.EndCombatPhase -> []
   Effect.GainControl (GainControl.MkGainControl duration ref _ _) -> frame Unframed (durationFilters duration) <> frame SourceHostFramed (objectRefFilters ref)
   Effect.ExchangeControl _ -> []
-  Effect.ArmDelayedTrigger arm@(ArmDelayedTrigger.MkArmDelayedTrigger _ _ mDuration _) -> frame Unframed (concatMap durationFilters (Maybe.maybeToList mDuration)) <> foldMap triggeredAbilityFilters (Game.carriedDelayedAbility arm)
+  Effect.ArmDelayedTrigger arm@(ArmDelayedTrigger.MkArmDelayedTrigger _ _ mDuration _ _) -> frame Unframed (concatMap durationFilters (Maybe.maybeToList mDuration)) <> foldMap triggeredAbilityFilters (Game.carriedDelayedAbility arm)
   Effect.AffectPlayers (AffectPlayers.MkAffectPlayers duration _ playerEffect) -> frame Unframed (durationFilters duration) <> fmap ((,) StoredPlayerEffectFramed) (playerEffectFilters playerEffect)
   Effect.RequireBlock (RequireBlock.MkRequireBlock duration blocker attacker _) -> frame Unframed (durationFilters duration) <> restrictedFilters blocker <> foldMap restrictedFilters attacker
   -- RequireBlock's arm one axis narrower.
@@ -6279,7 +6280,7 @@ createToken face = Effect.Create (Create.MkCreate (Quantity.Type.Literal 1) (one
 
 -- "Conjure a card named ... into your hand", the card being `face`.
 conjureCard :: Face.Face Card.Type.Card -> Effect.Effect Card.Type.Card (GrantedAbility.GrantedAbility Card.Type.Card)
-conjureCard face = Effect.Conjure (Conjure.MkConjure Conjure.defaultQuantity (ConjureCards.Written (NonEmpty.singleton (oneFaced face))) Conjure.defaultSelection False ConjureDestination.Hand Nothing)
+conjureCard face = Effect.Conjure (Conjure.MkConjure Conjure.defaultQuantity (ConjureCards.Written (NonEmpty.singleton (oneFaced face))) Conjure.defaultSelection False ConjureDestination.Hand Nothing (PlayerRef.Relative PlayerRelation.You))
 
 -- The same fanout for a lint that GATHERS rather than decides.
 overFaces :: (Face.Face Card.Type.Card -> [a]) -> Card.Type.Card -> [a]

@@ -112,7 +112,7 @@ import qualified Parun.Types.Zone as Zone
 armedAbilities :: [Effect Card.Type.Card (GrantedAbility.GrantedAbility Card.Type.Card)] -> Set AbilityName
 armedAbilities effects =
   let named effect = case effect of
-        Effect.ArmDelayedTrigger (ArmDelayedTrigger.MkArmDelayedTrigger name _ _ Nothing) -> Just name
+        Effect.ArmDelayedTrigger (ArmDelayedTrigger.MkArmDelayedTrigger name _ _ Nothing _) -> Just name
         Effect.AddMana addition -> fmap WhenSpent.ability (ManaAddition.whenSpent addition)
         Effect.Firebend addition -> fmap WhenSpent.ability (ManaAddition.whenSpent addition)
         _ -> Nothing
@@ -124,7 +124,7 @@ armedAbilities effects =
 onsetGatedAbilities :: [Effect Card.Type.Card (GrantedAbility.GrantedAbility Card.Type.Card)] -> Set AbilityName
 onsetGatedAbilities effects =
   let named effect = case effect of
-        Effect.ArmDelayedTrigger (ArmDelayedTrigger.MkArmDelayedTrigger name onset _ Nothing)
+        Effect.ArmDelayedTrigger (ArmDelayedTrigger.MkArmDelayedTrigger name onset _ Nothing _)
           | namesOwnTurn onset -> Just name
         _ -> Nothing
    in Set.fromList (Maybe.mapMaybe named effects)

@@ -59,6 +59,7 @@ import qualified Parun.Types.ContinuousEffect as ContinuousEffect
 import qualified Parun.Types.CopyException as CopyException
 import qualified Parun.Types.CopyPowerToughness as CopyPowerToughness
 import qualified Parun.Types.Copyability as Copyability
+import qualified Parun.Types.Cost as Cost
 import qualified Parun.Types.CounterKind as CounterKind
 import qualified Parun.Types.Counterability as Counterability
 import qualified Parun.Types.Face as Face
@@ -1924,14 +1925,35 @@ staticAbilitiesOf carrier gs =
 -- proves it. A STATIC ability's grant of such a keyword mints here once CR
 -- 400.7b has stored it against the permanent (Parun.Engine.Stack.carryGrants),
 -- which stores a keyword granted at a mana cost already priced: The Caldaia's
--- blitz {3} and Henzie "Toolbox" Torre's. A quoted static ability another
--- static ability grants is gathered by Parun.Engine.Projection.withStaticGrants.
+-- blitz {3} and Henzie "Toolbox" Torre's. A perpetual grant stays unpriced
+-- wherever it goes, so it is priced here: on a permanent cast for that
+-- keyword's family, as the instance paid, which a copy effect repricing the
+-- grant leaves it (CR 702.152b); at the copiable mana cost otherwise. Where a
+-- copiable or stored instance equals the one paid, that instance took the
+-- payment and the grant mints nothing, its only minted statics being blitz's
+-- while-paid ones, which a second would grant twice. The scenarios
+-- riveteers-provocateur-perpetually-gives-a-creature-card-in-hand-blitz-at-its-own-mana-cost,
+-- riveteers-provocateur-s-blitz-stays-paid-when-cytoshape-reprices-it and
+-- riveteers-provocateur-s-blitz-beside-henzie-s-draws-once prove the three.
+--
+-- A quoted static ability another static ability grants is gathered by
+-- Parun.Engine.Projection.withStaticGrants.
 grantedStaticAbilitiesOf :: ObjectId -> GameState -> [(Timestamp, StaticAbility.StaticAbility (GrantedAbility.GrantedAbility Card.Type.Card))]
 grantedStaticAbilitiesOf oid gs =
   let grant eff = case (ContinuousEffect.modification eff, ContinuousEffect.affected eff) of
         (Modification.GainAbility (GrantedAbility.Static sa), Affected.TheseObjects held) | Set.member oid held -> [(ContinuousEffect.timestamp eff, sa)]
         (Modification.GainKeyword keyword, Affected.TheseObjects held) | Set.member oid held -> fmap ((,) (ContinuousEffect.timestamp eff)) (Keyword.mintedStaticAbilitiesOf (Set.singleton keyword))
+        (Modification.GainKeywordAtManaCost keyword, Affected.TheseObjects held) | Set.member oid held -> fmap ((,) (ContinuousEffect.timestamp eff)) (foldMap (Keyword.mintedStaticAbilitiesOf . Set.singleton) (pricedAtManaCost keyword))
         _ -> []
+      copiable = copiableCharacteristics oid gs
+      otherInstances = Map.keysSet (PC.keywords copiable) <> Set.fromList [keyword | eff <- StoredEffects.continuousEffects (GameState.stored gs), Modification.GainKeyword keyword <- [ContinuousEffect.modification eff], Affected.TheseObjects held <- [ContinuousEffect.affected eff], Set.member oid held]
+      pricedAtManaCost keyword =
+        let current = Keyword.withCost keyword (Cost.MkCost (PC.manaCost copiable) [])
+         in case Object.castUsing =<< Game.lookupObject oid gs of
+              Just paid
+                | Keyword.familyOf paid == Keyword.familyOf current ->
+                    if Set.member paid otherInstances then Nothing else Just paid
+              _ -> Just current
       stickered = case Game.lookupObject oid gs of
         Just obj
           | not (Seq.null (Object.stickers obj)) ->

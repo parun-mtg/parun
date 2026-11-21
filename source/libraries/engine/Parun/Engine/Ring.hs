@@ -363,7 +363,8 @@ theRingSacrificesTheBlocker =
               -- CR 603.7b's default, spelled as the absence that rule words it as:
               -- "at end of combat" states no duration, so it fires once.
               ArmDelayedTrigger.duration = Nothing,
-              ArmDelayedTrigger.ability = Nothing
+              ArmDelayedTrigger.ability = Nothing,
+              ArmDelayedTrigger.recipient = Nothing
             }
    in Mint.trigger (TriggerCondition.Blocks (BlockTrigger.MkBlockTrigger BlockRole.Attacker yourRingBearer (BlockCount.EachCreature (Filter.And [])) Batching.EachOccurrence Nothing)) (Seq.singleton effect)
 

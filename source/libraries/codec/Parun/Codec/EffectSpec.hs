@@ -1005,7 +1005,7 @@ spec s = Spec.describe s "Parun.Codec.Effect" $ do
       s
       toJson
       fromJson
-      (Effect.Conjure (Conjure.MkConjure Conjure.defaultQuantity (ConjureCards.Written (Text.pack "Ornithopter" NonEmpty.:| [])) Conjure.defaultSelection False ConjureDestination.Hand Nothing))
+      (Effect.Conjure (Conjure.MkConjure Conjure.defaultQuantity (ConjureCards.Written (Text.pack "Ornithopter" NonEmpty.:| [])) Conjure.defaultSelection False ConjureDestination.Hand Nothing (PlayerRef.Relative PlayerRelation.You)))
       " {\"type\":\"Conjure\",\"value\":{\"cards\":{\"type\":\"Written\",\"value\":[\"Ornithopter\"]},\"destination\":{\"type\":\"Hand\"}}} "
   -- Toralf's Disciple's form: a stated count and a library.
   Spec.it s "Conjure with a stated count" $
@@ -1013,7 +1013,7 @@ spec s = Spec.describe s "Parun.Codec.Effect" $ do
       s
       toJson
       fromJson
-      (Effect.Conjure (Conjure.MkConjure (Quantity.Literal 4) (ConjureCards.Written (Text.pack "Lightning Bolt" NonEmpty.:| [])) Conjure.defaultSelection False (ConjureDestination.Library Nothing) Nothing))
+      (Effect.Conjure (Conjure.MkConjure (Quantity.Literal 4) (ConjureCards.Written (Text.pack "Lightning Bolt" NonEmpty.:| [])) Conjure.defaultSelection False (ConjureDestination.Library Nothing) Nothing (PlayerRef.Relative PlayerRelation.You)))
       " {\"type\":\"Conjure\",\"value\":{\"quantity\":{\"type\":\"Literal\",\"value\":4},\"cards\":{\"type\":\"Written\",\"value\":[\"Lightning Bolt\"]},\"destination\":{\"type\":\"Library\"}}} "
   -- Both ObjectRef arms have to survive. A count of one is elided, so both of
   -- these write the ref alone.
@@ -2287,7 +2287,8 @@ spec s = Spec.describe s "Parun.Codec.Effect" $ do
             { ArmDelayedTrigger.name = sacrificeIt,
               ArmDelayedTrigger.onset = Onset.Immediately,
               ArmDelayedTrigger.duration = Nothing,
-              ArmDelayedTrigger.ability = Nothing
+              ArmDelayedTrigger.ability = Nothing,
+              ArmDelayedTrigger.recipient = Nothing
             }
       )
       " {\"type\":\"ArmDelayedTrigger\",\"value\":{\"name\":\"sacrifice it\"}} "
@@ -2300,7 +2301,8 @@ spec s = Spec.describe s "Parun.Codec.Effect" $ do
             { ArmDelayedTrigger.name = eachCombat,
               ArmDelayedTrigger.onset = Onset.Immediately,
               ArmDelayedTrigger.duration = Just Duration.UntilEndOfTurn,
-              ArmDelayedTrigger.ability = Nothing
+              ArmDelayedTrigger.ability = Nothing,
+              ArmDelayedTrigger.recipient = Nothing
             }
       )
       " {\"type\":\"ArmDelayedTrigger\",\"value\":{\"name\":\"each combat\",\"duration\":{\"type\":\"UntilEndOfTurn\"}}} "
@@ -2313,7 +2315,8 @@ spec s = Spec.describe s "Parun.Codec.Effect" $ do
             { ArmDelayedTrigger.name = returnIt,
               ArmDelayedTrigger.onset = Onset.FromNextTurnOf (Just (PlayerRef.Relative PlayerRelation.You)),
               ArmDelayedTrigger.duration = Nothing,
-              ArmDelayedTrigger.ability = Nothing
+              ArmDelayedTrigger.ability = Nothing,
+              ArmDelayedTrigger.recipient = Nothing
             }
       )
       " {\"type\":\"ArmDelayedTrigger\",\"value\":{\"name\":\"return it\",\"onset\":{\"type\":\"FromNextTurnOf\",\"value\":{\"type\":\"Relative\",\"value\":\"You\"}}}} "
@@ -2326,7 +2329,8 @@ spec s = Spec.describe s "Parun.Codec.Effect" $ do
             { ArmDelayedTrigger.name = returnIt,
               ArmDelayedTrigger.onset = Onset.FromNextTurnOf (Just (PlayerRef.Relative PlayerRelation.You)),
               ArmDelayedTrigger.duration = Just Duration.UntilEndOfTurn,
-              ArmDelayedTrigger.ability = Nothing
+              ArmDelayedTrigger.ability = Nothing,
+              ArmDelayedTrigger.recipient = Nothing
             }
       )
       " {\"type\":\"ArmDelayedTrigger\",\"value\":{\"name\":\"return it\",\"onset\":{\"type\":\"FromNextTurnOf\",\"value\":{\"type\":\"Relative\",\"value\":\"You\"}},\"duration\":{\"type\":\"UntilEndOfTurn\"}}} "
