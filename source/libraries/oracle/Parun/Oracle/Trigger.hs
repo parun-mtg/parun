@@ -29,6 +29,7 @@ import qualified Parun.Types.Compares as Compares
 import qualified Parun.Types.Comparison as Comparison
 import qualified Parun.Types.Condition as Condition
 import qualified Parun.Types.ControllerRelation as ControllerRelation
+import qualified Parun.Types.Copies as Copies
 import qualified Parun.Types.Count as Count
 import qualified Parun.Types.DamageKind as DamageKind
 import qualified Parun.Types.DamageRecipient as DamageRecipient
@@ -193,7 +194,7 @@ event context creature c = case c of
     [other ("At the beginning of " <> when) [(thatPlayer, "that player")]]
   -- CR 601.2i: who casts the spell is its controller (CR 112.2), which the
   -- filter names among the spell's other qualities.
-  TriggerCondition.SpellCast (SpellCast.MkSpellCast (ActingPermanent.Matching f) (TurnScope.PlayersTurn (PlayerRef.Relative PlayerRelation.AnyPlayer)) Nothing Nothing Nothing False Nothing) -> do
+  TriggerCondition.SpellCast (SpellCast.MkSpellCast (ActingPermanent.Matching f) (TurnScope.PlayersTurn (PlayerRef.Relative PlayerRelation.AnyPlayer)) Nothing Nothing Nothing Copies.NoCopies Nothing) -> do
     let caster g = case g of
           Filter.Type.HeldBy Holder.Controller _ -> True
           _ -> False

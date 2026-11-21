@@ -78,6 +78,7 @@ import qualified Parun.Types.CoinFlipTrigger as CoinFlipTrigger
 import qualified Parun.Types.CoinFlipped as CoinFlipped
 import qualified Parun.Types.CommittedCrime as CommittedCrime
 import qualified Parun.Types.ControlChanged as ControlChanged
+import qualified Parun.Types.Copies as Copies
 import qualified Parun.Types.CounterChange as CounterChange
 import qualified Parun.Types.CounterHolder as CounterHolder
 import qualified Parun.Types.CounterKind as CounterKind
@@ -1835,7 +1836,10 @@ armMatches bindings frozen board atEvent beforeEvent groupEvents gs bearer you c
           GameEvent.SpellCast (SpellWasCast.MkSpellWasCast caster spell _ castFrom _ _ link) -> case Game.lookupObject spell gs of
             Nothing -> False
             Just _ ->
-              admits link caster spell
+              -- Curse of Shaken Faith's "or copies a spell" watches no cast, a
+              -- cast copy (CR 707.12) included.
+              copies /= Copies.OnlyCopies
+                && admits link caster spell
                 -- CR 601.2a's zone, read off the EVENT and not off the spell: rule
                 -- 400.7 left the stack incarnation with no memory of it. A
                 -- condition that names no zone admits every cast, which is what
@@ -1851,7 +1855,7 @@ armMatches bindings frozen board atEvent beforeEvent groupEvents gs bearer you c
           -- Twincast-and-magecraft case proves it. A copy left no zone and is
           -- no cast of the turn, so a zone or an ordinal never admits it.
           GameEvent.SpellCopied (SpellWasCopied.MkSpellWasCopied copier copy) ->
-            copies
+            copies /= Copies.NoCopies
               && Maybe.isNothing fromZone
               && Maybe.isNothing ordinal
               && Maybe.isJust (Game.lookupObject copy gs)

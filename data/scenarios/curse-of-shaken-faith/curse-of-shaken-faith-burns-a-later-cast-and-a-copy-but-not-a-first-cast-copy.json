@@ -1,0 +1,61 @@
+{
+  "description": "CR 707.10 / 707.12 Curse of Shaken Faith burns its player for a cast after the turn's first and for a copy, not for a first cast or a cast copy that is the turn's first spell",
+  "note": "Bob's Isochron Scepter is his first cast of turn 1 (no damage). On turn 3 it casts a copy of Lightning Bolt first (a cast, not a copy, and the first: no damage). His Shock, then his Twincast, are later casts (2 each), and Twincast's copy of Shock is a copy (2 more). A copy trigger that also matched casts would burn the Scepter's copy; one that missed copies would leave bob at 16.",
+  "board": {
+    "active": "bob",
+    "step": "PrecombatMain",
+    "seats": [
+      {
+        "name": "alice",
+        "battlefield": [{ "card": "Curse of Shaken Faith", "label": "curse", "attached": "bob" }],
+        "library": [{ "card": "Island" }, { "card": "Island" }, { "card": "Island" }, { "card": "Island" }]
+      },
+      {
+        "name": "bob",
+        "battlefield": [
+          { "card": "Plains", "label": "p0" },
+          { "card": "Plains", "label": "p1" },
+          { "card": "Mountain", "label": "m0" },
+          { "card": "Island", "label": "i0" },
+          { "card": "Island", "label": "i1" }
+        ],
+        "hand": [
+          { "card": "Isochron Scepter", "label": "scepter" },
+          { "card": "Lightning Bolt", "label": "bolt" },
+          { "card": "Shock", "label": "shock" },
+          { "card": "Twincast", "label": "twincast" }
+        ],
+        "library": [{ "card": "Island" }, { "card": "Island" }, { "card": "Island" }, { "card": "Island" }]
+      }
+    ]
+  },
+  "timeline": [
+    { "turn": 1, "step": "PrecombatMain", "player": "bob", "do": { "Cast": { "object": "$scepter", "mana": ["$p0", "$p1", null] } } },
+    { "turn": 1, "step": "PrecombatMain", "player": "bob", "do": "Pass" },
+    { "turn": 1, "step": "PrecombatMain", "player": "bob", "do": "Pass" },
+    { "turn": 1, "step": "PrecombatMain", "player": "bob", "do": { "ChooseOptional": "Exercises" } },
+    { "turn": 1, "step": "PrecombatMain", "player": "bob", "do": { "Answer": { "prompt": "ChooseCardInHand", "with": "$bolt" } } },
+    { "turn": 1, "step": "PrecombatMain", "player": "bob", "check": { "Life": { "player": "bob", "life": 20 } } },
+    { "turn": 3, "step": "PrecombatMain", "player": "bob", "do": { "Activate": { "object": "Isochron Scepter", "mana": ["$p0", "$p1", null] } } },
+    { "turn": 3, "step": "PrecombatMain", "player": "bob", "do": "Pass" },
+    { "turn": 3, "step": "PrecombatMain", "player": "bob", "do": { "ChooseOptional": "Exercises" } },
+    { "turn": 3, "step": "PrecombatMain", "player": "bob", "do": { "Answer": { "prompt": "OfferedCast", "with": "Exercises" } } },
+    { "turn": 3, "step": "PrecombatMain", "player": "bob", "do": { "ChooseTargets": { "target": ["$alice"] } } },
+    { "turn": 3, "step": "PrecombatMain", "player": "bob", "do": "Pass" },
+    { "turn": 3, "step": "PrecombatMain", "player": "bob", "check": { "Life": { "player": "alice", "life": 17 } } },
+    { "turn": 3, "step": "PrecombatMain", "player": "bob", "check": { "Life": { "player": "bob", "life": 20 } } },
+    { "turn": 3, "step": "PrecombatMain", "player": "bob", "do": { "Cast": { "object": "$shock", "targets": ["$alice"], "mana": ["$m0", null] } } },
+    { "turn": 3, "step": "PrecombatMain", "player": "bob", "do": "Pass" },
+    { "turn": 3, "step": "PrecombatMain", "player": "bob", "check": { "Life": { "player": "bob", "life": 18 } } },
+    { "turn": 3, "step": "PrecombatMain", "player": "bob", "do": { "Cast": { "object": "$twincast", "mana": ["$i0", "$i1"] } } },
+    { "turn": 3, "step": "PrecombatMain", "player": "bob", "do": "Pass" },
+    { "turn": 3, "step": "PrecombatMain", "player": "bob", "check": { "Life": { "player": "bob", "life": 16 } } },
+    { "turn": 3, "step": "PrecombatMain", "player": "bob", "do": "Pass" },
+    { "turn": 3, "step": "PrecombatMain", "player": "bob", "do": { "ChooseTargets": { "target": ["$alice"] } } },
+    { "turn": 3, "step": "PrecombatMain", "player": "bob", "do": "Pass" },
+    { "turn": 3, "step": "PrecombatMain", "player": "bob", "check": { "Life": { "player": "bob", "life": 14 } } },
+    { "turn": 3, "step": "PrecombatMain", "player": "bob", "do": "Pass" },
+    { "turn": 3, "step": "PrecombatMain", "player": "bob", "do": "Pass" },
+    { "turn": 3, "step": "PrecombatMain", "player": "bob", "check": { "Life": { "player": "alice", "life": 13 } } }
+  ]
+}

@@ -4,12 +4,14 @@ module Parun.Codec.SpellCast where
 
 import qualified Parun.Codec.ActingPermanent as ActingPermanent
 import qualified Parun.Codec.Condition as Condition
+import qualified Parun.Codec.Copies as Copies
 import qualified Parun.Codec.PhaseSelector as PhaseSelector
 import qualified Parun.Codec.TurnScope as TurnScope
 import qualified Parun.Codec.Zone as Zone
 import qualified Parun.JsonCodec.Codec as Codec
 import qualified Parun.JsonCodec.Common as Common
 import qualified Parun.JsonCodec.Fields as Fields
+import qualified Parun.Types.Copies as Copies
 import qualified Parun.Types.SpellCast as SpellCast
 
 -- | A bare object keyed by the record's field names, replacing the two-element
@@ -17,7 +19,7 @@ import qualified Parun.Types.SpellCast as SpellCast
 -- this spell and a cast of a matching one are different cards, and so are an
 -- unscoped trigger and a scoped one, not defaulted ones. The zone and the ordinal are
 -- elided instead, because a trigger that names neither is what almost every
--- printing writes, and the phase, the copy flag and the while for the same
+-- printing writes, and the phase, the copy choice and the while for the same
 -- reason.
 codec :: Codec.Codec SpellCast.SpellCast
 codec = Fields.object $ do
@@ -26,6 +28,6 @@ codec = Fields.object $ do
   zone <- Fields.defaulted "zone" Nothing (Common.maybe Zone.codec) SpellCast.zone
   ordinal <- Fields.defaulted "ordinal" Nothing (Common.maybe Common.natural) SpellCast.ordinal
   phase <- Fields.defaulted "phase" Nothing (Common.maybe PhaseSelector.codec) SpellCast.phase
-  copies <- Fields.defaulted "copies" False Common.boolean SpellCast.copies
+  copies <- Fields.defaulted "copies" Copies.NoCopies Copies.codec SpellCast.copies
   while_ <- Fields.defaulted "while" Nothing (Common.maybe Condition.codec) SpellCast.while
   pure SpellCast.MkSpellCast {SpellCast.spell = spell, SpellCast.scope = scope, SpellCast.zone = zone, SpellCast.ordinal = ordinal, SpellCast.phase = phase, SpellCast.copies = copies, SpellCast.while = while_}

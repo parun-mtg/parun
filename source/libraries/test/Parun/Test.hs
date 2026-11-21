@@ -250,6 +250,7 @@ import qualified Parun.Codec.ControlSpanSpec
 import qualified Parun.Codec.ControllerGrantSpec
 import qualified Parun.Codec.ControllerRelationSpec
 import qualified Parun.Codec.ConvokingSpec
+import qualified Parun.Codec.CopiesSpec
 import qualified Parun.Codec.CopyClauseSpec
 import qualified Parun.Codec.CopyCoverageSpec
 import qualified Parun.Codec.CopyDomainSpec
@@ -1412,6 +1413,7 @@ spec s reference corpus = do
   Parun.Codec.ControlSidesSpec.spec s
   Parun.Codec.ControlSlotsSpec.spec s
   Parun.Codec.ConvokingSpec.spec s
+  Parun.Codec.CopiesSpec.spec s
   Parun.Codec.CopyClauseSpec.spec s
   Parun.Codec.CopyCoverageSpec.spec s
   Parun.Codec.CopyExceptionSpec.spec s

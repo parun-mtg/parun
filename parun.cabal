@@ -573,6 +573,8 @@ library codec
     Parun.Codec.ControlSpanSpec
     Parun.Codec.Convoking
     Parun.Codec.ConvokingSpec
+    Parun.Codec.Copies
+    Parun.Codec.CopiesSpec
     Parun.Codec.Copyability
     Parun.Codec.CopyabilitySpec
     Parun.Codec.CopyClause
@@ -3164,6 +3166,7 @@ library types
     Parun.Types.ControlSpan
     Parun.Types.ControlWindow
     Parun.Types.Convoking
+    Parun.Types.Copies
     Parun.Types.Copyability
     Parun.Types.CopyClause
     Parun.Types.CopyCoverage

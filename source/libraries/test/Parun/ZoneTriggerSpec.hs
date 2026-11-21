@@ -92,6 +92,7 @@ import qualified Parun.Types.Comparison as Comparison
 import qualified Parun.Types.Condition as Condition.Type
 import qualified Parun.Types.ControlChanged as ControlChanged
 import qualified Parun.Types.ControllerRelation as ControllerRelation
+import qualified Parun.Types.Copies as Copies
 import qualified Parun.Types.Cost as Cost.Type
 import qualified Parun.Types.CostAmount as CostAmount
 import qualified Parun.Types.CostComponent as CostComponent
@@ -1909,14 +1910,18 @@ representativeEvents cond =
         -- CR 717.2a's own event, on `departed` and not the bearer, the arm above's
         -- shape: the pair does not match, which is what pins the floor.
         TriggerCondition.SelfBecomesClassLevel n -> one (GameEvent.ClassLevelSet (ClassLevelChange.MkClassLevelChange departed (ClassLevel.MkClassLevel 1) n))
-        -- CR 601.2i's own event, and CR 707.10's copy where the condition
-        -- watches copies too. Both halves are bound whichever ids the event
+        -- CR 601.2i's own event, CR 707.10's copy, or both, as the condition
+        -- watches. Both halves are bound whichever ids the event
         -- names -- the spell under `thatSpell`, the caster or copier under
         -- `thatPlayer` -- so the two sides agree on the pair. A Self subject binds
         -- nothing whichever ids the event names, since the spell IS the bearer.
         TriggerCondition.SpellCast (SpellCast.MkSpellCast _ _ _ _ _ copies _) ->
-          noTable (GameEvent.SpellCast (SpellWasCast.MkSpellWasCast S.alice arrived S.emptyCharacteristics (Just Zone.Hand) Nothing Set.empty Nothing))
-            NonEmpty.:| [noTable (GameEvent.SpellCopied (SpellWasCopied.MkSpellWasCopied S.alice arrived)) | copies]
+          let cast = noTable (GameEvent.SpellCast (SpellWasCast.MkSpellWasCast S.alice arrived S.emptyCharacteristics (Just Zone.Hand) Nothing Set.empty Nothing))
+              copied = noTable (GameEvent.SpellCopied (SpellWasCopied.MkSpellWasCopied S.alice arrived))
+           in case copies of
+                Copies.NoCopies -> cast NonEmpty.:| []
+                Copies.AlsoCopies -> cast NonEmpty.:| [copied]
+                Copies.OnlyCopies -> copied NonEmpty.:| []
         -- CR 602.2b's activation, binding the ability and its activator.
         TriggerCondition.AbilityActivated _ -> one (GameEvent.AbilityActivated (AbilityWasActivated.MkAbilityWasActivated S.alice (Just arrived) departed (AbilityFacts.MkAbilityFacts Nothing Nothing AbilityKind.NonManaAbility LoyaltyKind.NonLoyaltyAbility) Nothing))
         -- CR 601.2c's event. Under a Self subject, the bearer is the targeted
@@ -2339,20 +2344,22 @@ everyTriggerCondition =
     -- eventBindings stamps for every event -- so an arm that had cased on the
     -- scope and stamped nothing under one of them would go unseen if only one
     -- were listed.
-    TriggerCondition.SpellCast (SpellCast.MkSpellCast (ActingPermanent.Matching Filter.Type.IsSource) (TurnScope.PlayersTurn (PlayerRef.Relative PlayerRelation.AnyPlayer)) Nothing Nothing Nothing False Nothing),
-    TriggerCondition.SpellCast (SpellCast.MkSpellCast (ActingPermanent.Matching Filter.Type.IsSource) (TurnScope.PlayersTurn (PlayerRef.Relative PlayerRelation.Opponent)) Nothing Nothing Nothing False Nothing),
+    TriggerCondition.SpellCast (SpellCast.MkSpellCast (ActingPermanent.Matching Filter.Type.IsSource) (TurnScope.PlayersTurn (PlayerRef.Relative PlayerRelation.AnyPlayer)) Nothing Nothing Nothing Copies.NoCopies Nothing),
+    TriggerCondition.SpellCast (SpellCast.MkSpellCast (ActingPermanent.Matching Filter.Type.IsSource) (TurnScope.PlayersTurn (PlayerRef.Relative PlayerRelation.Opponent)) Nothing Nothing Nothing Copies.NoCopies Nothing),
     -- And the zone axis, listed for the TurnScope pair's reason one field over:
     -- an arm that cased on the zone and stamped nothing when one was named would
     -- go unseen if every entry here left it Nothing.
-    TriggerCondition.SpellCast (SpellCast.MkSpellCast (ActingPermanent.Matching Filter.Type.IsSource) (TurnScope.PlayersTurn (PlayerRef.Relative PlayerRelation.AnyPlayer)) (Just Zone.Hand) Nothing Nothing False Nothing),
+    TriggerCondition.SpellCast (SpellCast.MkSpellCast (ActingPermanent.Matching Filter.Type.IsSource) (TurnScope.PlayersTurn (PlayerRef.Relative PlayerRelation.AnyPlayer)) (Just Zone.Hand) Nothing Nothing Copies.NoCopies Nothing),
     -- And the ordinal axis, for the same reason again: Clarion Spirit's "your
     -- second spell each turn" narrows which cast fires the ability and stamps
     -- nothing of its own, which an entry leaving it Nothing could not show.
-    TriggerCondition.SpellCast (SpellCast.MkSpellCast (ActingPermanent.Matching Filter.Type.IsSource) (TurnScope.PlayersTurn (PlayerRef.Relative PlayerRelation.AnyPlayer)) Nothing (Just 2) Nothing False Nothing),
+    TriggerCondition.SpellCast (SpellCast.MkSpellCast (ActingPermanent.Matching Filter.Type.IsSource) (TurnScope.PlayersTurn (PlayerRef.Relative PlayerRelation.AnyPlayer)) Nothing (Just 2) Nothing Copies.NoCopies Nothing),
     -- And the phase axis, Zuko, Firebending Master's "during combat".
-    TriggerCondition.SpellCast (SpellCast.MkSpellCast (ActingPermanent.Matching Filter.Type.IsSource) (TurnScope.PlayersTurn (PlayerRef.Relative PlayerRelation.AnyPlayer)) Nothing Nothing (Just PhaseSelector.CombatPhase) False Nothing),
-    -- And magecraft's "or copy", whose second event binds the same pair.
-    TriggerCondition.SpellCast (SpellCast.MkSpellCast (ActingPermanent.Matching Filter.Type.IsSource) (TurnScope.PlayersTurn (PlayerRef.Relative PlayerRelation.AnyPlayer)) Nothing Nothing Nothing True Nothing),
+    TriggerCondition.SpellCast (SpellCast.MkSpellCast (ActingPermanent.Matching Filter.Type.IsSource) (TurnScope.PlayersTurn (PlayerRef.Relative PlayerRelation.AnyPlayer)) Nothing Nothing (Just PhaseSelector.CombatPhase) Copies.NoCopies Nothing),
+    -- And magecraft's "or copy", whose second event binds the same pair, and
+    -- Curse of Shaken Faith's copy alone.
+    TriggerCondition.SpellCast (SpellCast.MkSpellCast (ActingPermanent.Matching Filter.Type.IsSource) (TurnScope.PlayersTurn (PlayerRef.Relative PlayerRelation.AnyPlayer)) Nothing Nothing Nothing Copies.AlsoCopies Nothing),
+    TriggerCondition.SpellCast (SpellCast.MkSpellCast (ActingPermanent.Matching Filter.Type.IsSource) (TurnScope.PlayersTurn (PlayerRef.Relative PlayerRelation.AnyPlayer)) Nothing Nothing Nothing Copies.OnlyCopies Nothing),
     TriggerCondition.SpellCast SpellCast.self,
     -- And Social Snub's "while", a state that stamps nothing of its own.
     TriggerCondition.SpellCast SpellCast.self {SpellCast.while = Just (Condition.Type.Compares (Compares.MkCompares (Quantity.Type.Literal 0) Comparison.Exactly (Quantity.Type.Literal 0)))},

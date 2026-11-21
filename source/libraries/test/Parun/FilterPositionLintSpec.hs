@@ -2710,7 +2710,7 @@ filterPositionLintSpec s registry corpus = Spec.describe s "Lint" $ do
   Spec.it s "CR 303.4b no card asks IsAttackingPlayer or HeldBy of a player the filter cannot read" $ do
     let offenders = fmap fst (filter (any attackedPlayerOffends . snd) pool)
     Spec.assertEqWith s "the atom names only a player its position supplies" (fmap (S.nameOf . Printing.card) offenders) []
-    assertAuthors s registry pool "each author's atoms are framed" enchantedAttackedCounts [("Curse of Clinging Webs", 1), ("Curse of Hospitality", 1), ("Curse of Silence", 1), ("Radiant Grace", 1)]
+    assertAuthors s registry pool "each author's atoms are framed" enchantedAttackedCounts [("Curse of Clinging Webs", 1), ("Curse of Hospitality", 1), ("Curse of Shaken Faith", 3), ("Curse of Silence", 1), ("Radiant Grace", 1)]
     -- The rejected side: the atom in a spell's draw count, which no source
     -- frames, and an InSlot relation in a target slot, which one does.
     piker <- S.printingOf s registry "Goblin Piker"
