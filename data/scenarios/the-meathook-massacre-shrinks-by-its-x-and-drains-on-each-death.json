@@ -1,0 +1,70 @@
+{
+  "description": "CR 107.3m / 611.2c / 704.5f / 603.10a The Meathook Massacre cast for X=2 gives each creature -2/-2 until end of turn; each creature alice controls that dies drains each opponent 1, and each creature an opponent controls that dies gains alice 1",
+  "note": "Two of alice's creatures, one of bob's and two of carol's die to the shrink, so bob and carol each lose 2 and alice gains 3; a dies trigger reading the wrong controller would move those totals. Alice and bob each sacrifice a Black Lotus while the dies triggers wait: a noncreature permanent going to the graveyard triggers neither, and the mana ability bob activates means alice passes once more before the last trigger resolves (CR 117.4). Hill Giant and Craw Wurm survive shrunk by exactly X, and are whole again on bob's turn.",
+  "board": {
+    "seats": [
+      {
+        "name": "alice",
+        "battlefield": [
+          { "card": "Grizzly Bears", "label": "abears" },
+          { "card": "Savannah Lions", "label": "alions" },
+          { "card": "Hill Giant", "label": "agiant" },
+          { "card": "Black Lotus", "label": "alotus" },
+          { "card": "Swamp", "label": "s1", "ready": true },
+          { "card": "Swamp", "label": "s2", "ready": true },
+          { "card": "Swamp", "label": "s3", "ready": true },
+          { "card": "Swamp", "label": "s4", "ready": true }
+        ],
+        "hand": [{ "card": "The Meathook Massacre", "label": "meathook" }],
+        "library": [{ "card": "Plains" }, { "card": "Plains" }, { "card": "Plains" }]
+      },
+      {
+        "name": "bob",
+        "life": 19,
+        "battlefield": [
+          { "card": "Llanowar Elves", "label": "belves" },
+          { "card": "Craw Wurm", "label": "bwurm" },
+          { "card": "Black Lotus", "label": "blotus" }
+        ],
+        "library": [{ "card": "Island" }, { "card": "Island" }, { "card": "Island" }]
+      },
+      {
+        "name": "carol",
+        "life": 18,
+        "battlefield": [
+          { "card": "Memnite", "label": "cmemnite" },
+          { "card": "Gray Ogre", "label": "cogre" }
+        ],
+        "library": [{ "card": "Island" }, { "card": "Island" }, { "card": "Island" }]
+      }
+    ],
+    "active": "alice",
+    "step": "PrecombatMain"
+  },
+  "timeline": [
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "do": { "Cast": { "object": "$meathook", "x": 2, "mana": ["$s1", "$s2", "$s3", "$s4", null] } } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "do": "Pass" },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "do": "Pass" },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "do": { "OrderTriggers": ["The Meathook Massacre", "The Meathook Massacre", "The Meathook Massacre", "The Meathook Massacre", "The Meathook Massacre"] } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "check": { "PowerToughness": { "object": "$agiant", "power": 1, "toughness": 1 } } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "check": { "PowerToughness": { "object": "$bwurm", "power": 4, "toughness": 2 } } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "check": { "Count": { "player": "alice", "zone": "Graveyard", "card": "Grizzly Bears", "count": 1 } } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "check": { "Count": { "player": "carol", "zone": "Graveyard", "card": "Gray Ogre", "count": 1 } } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "do": { "Take": { "action": "ActivateManaAbility $alotus", "yields": [[{ "manaType": { "type": "Colored", "value": "Black" }, "restriction": null, "retention": "Ordinary", "rider": null, "sourceChoices": null, "tags": [{ "CardType": "Artifact" }] }, { "manaType": { "type": "Colored", "value": "Black" }, "restriction": null, "retention": "Ordinary", "rider": null, "sourceChoices": null, "tags": [{ "CardType": "Artifact" }] }, { "manaType": { "type": "Colored", "value": "Black" }, "restriction": null, "retention": "Ordinary", "rider": null, "sourceChoices": null, "tags": [{ "CardType": "Artifact" }] }]] } } },
+    { "turn": 1, "step": "PrecombatMain", "player": "bob", "do": "Pass" },
+    { "turn": 1, "step": "PrecombatMain", "player": "bob", "do": "Pass" },
+    { "turn": 1, "step": "PrecombatMain", "player": "bob", "do": { "Take": { "action": "ActivateManaAbility $blotus", "yields": [[{ "manaType": { "type": "Colored", "value": "Green" }, "restriction": null, "retention": "Ordinary", "rider": null, "sourceChoices": null, "tags": [{ "CardType": "Artifact" }] }, { "manaType": { "type": "Colored", "value": "Green" }, "restriction": null, "retention": "Ordinary", "rider": null, "sourceChoices": null, "tags": [{ "CardType": "Artifact" }] }, { "manaType": { "type": "Colored", "value": "Green" }, "restriction": null, "retention": "Ordinary", "rider": null, "sourceChoices": null, "tags": [{ "CardType": "Artifact" }] }]] } } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "do": "Pass" },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "do": "Pass" },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "do": "Pass" },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "do": "Pass" },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "do": "Pass" },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "do": "Pass" },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "check": { "View": { "of": "Stack", "is": [] } } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "check": { "Life": { "player": "alice", "life": 23 } } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "check": { "Life": { "player": "bob", "life": 17 } } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "check": { "Life": { "player": "carol", "life": 16 } } },
+    { "turn": 2, "step": "PrecombatMain", "player": "bob", "check": { "PowerToughness": { "object": "$agiant", "power": 3, "toughness": 3 } } },
+    { "turn": 2, "step": "PrecombatMain", "player": "bob", "check": { "PowerToughness": { "object": "$bwurm", "power": 6, "toughness": 4 } } }
+  ]
+}

@@ -1,0 +1,41 @@
+{
+  "description": "CR 606.4 / 305.4 Wrenn and Seven's 0 puts the land cards alice chooses from her hand onto the battlefield tapped, any number of them, and no nonland card",
+  "note": "Alice chooses two of her three lands; the third stays in hand, as does Grizzly Bears, which the land filter does not offer. Wrenn's loyalty is unchanged, and the land put onto the battlefield is not her land play: she still plays the Plains.",
+  "board": {
+    "seats": [
+      {
+        "name": "alice",
+        "battlefield": [
+          { "card": "Wrenn and Seven", "label": "wrenn", "counters": [{ "key": { "type": "Loyalty" }, "value": 5 }] }
+        ],
+        "hand": [
+          { "card": "Forest", "label": "forest" },
+          { "card": "Mountain", "label": "mountain" },
+          { "card": "Plains", "label": "plains" },
+          { "card": "Grizzly Bears", "label": "bears" }
+        ],
+        "library": [{ "card": "Island" }, { "card": "Island" }]
+      },
+      {
+        "name": "bob",
+        "library": [{ "card": "Island" }, { "card": "Island" }]
+      }
+    ],
+    "active": "alice",
+    "step": "PrecombatMain"
+  },
+  "timeline": [
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "do": { "Activate": { "object": "$wrenn", "ability": 1 } } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "do": "Pass" },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "refuse": { "Answer": { "prompt": "ChooseCardsInHand", "with": ["$forest", "$bears"] } } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "do": { "Answer": { "prompt": "ChooseCardsInHand", "with": ["$forest", "$mountain"] } } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "do": { "OrderTimestamps": ["Forest", "Mountain"] } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "check": { "Count": { "player": "alice", "zone": "Battlefield", "card": "Forest", "count": 1 } } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "check": { "Tapped": { "object": "Forest", "tapped": true } } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "check": { "Tapped": { "object": "Mountain", "tapped": true } } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "check": { "Count": { "player": "alice", "zone": "Hand", "card": "Grizzly Bears", "count": 1 } } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "check": { "Counters": { "object": "$wrenn", "kind": { "type": "Loyalty" }, "count": 5 } } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "do": { "PlayLand": "$plains" } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "check": { "Count": { "player": "alice", "zone": "Battlefield", "card": "Plains", "count": 1 } } }
+  ]
+}

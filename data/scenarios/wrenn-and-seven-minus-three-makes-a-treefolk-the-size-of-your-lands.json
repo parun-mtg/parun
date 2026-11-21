@@ -1,0 +1,43 @@
+{
+  "description": "CR 606.4 / 604.3 / 111.1 Wrenn and Seven's -3 creates a green Treefolk token with reach whose power and toughness are each the number of lands alice controls, counted as they change",
+  "note": "Alice controls three lands and bob four, so the token is 3/3, not 7/7; it grows to 4/4 when alice plays a fourth land.",
+  "board": {
+    "seats": [
+      {
+        "name": "alice",
+        "battlefield": [
+          { "card": "Wrenn and Seven", "label": "wrenn", "counters": [{ "key": { "type": "Loyalty" }, "value": 5 }] },
+          { "card": "Forest" },
+          { "card": "Forest" },
+          { "card": "Swamp" }
+        ],
+        "hand": [{ "card": "Plains", "label": "plains" }],
+        "library": [{ "card": "Island" }, { "card": "Island" }]
+      },
+      {
+        "name": "bob",
+        "battlefield": [
+          { "card": "Island" },
+          { "card": "Island" },
+          { "card": "Island" },
+          { "card": "Island" }
+        ],
+        "library": [{ "card": "Island" }, { "card": "Island" }]
+      }
+    ],
+    "active": "alice",
+    "step": "PrecombatMain"
+  },
+  "timeline": [
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "do": { "Activate": { "object": "$wrenn", "ability": 2 } } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "check": { "Counters": { "object": "$wrenn", "kind": { "type": "Loyalty" }, "count": 2 } } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "do": "Pass" },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "check": { "PowerToughness": { "object": "Treefolk Token", "power": 3, "toughness": 3 } } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "check": { "Keywords": { "object": "Treefolk Token", "keyword": { "type": "Reach" }, "count": 1 } } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "check": { "View": { "of": "Colors", "object": "Treefolk Token", "is": ["Green"] } } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "check": { "Subtypes": { "object": "Treefolk Token", "subtypes": ["Treefolk"] } } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "check": { "Types": { "object": "Treefolk Token", "types": ["Creature"] } } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "do": { "PlayLand": "$plains" } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "check": { "PowerToughness": { "object": "Treefolk Token", "power": 4, "toughness": 4 } } }
+  ]
+}
