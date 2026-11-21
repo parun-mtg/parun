@@ -547,7 +547,7 @@ eventBindingsOver board gs bearerBecame becameInGraveyard bearer you cond event 
   -- the copy, the player who copied it, and the copy's targets.
   (TriggerCondition.SpellCast (SpellCast.MkSpellCast (ActingPermanent.Matching _) _ _ _ _ _ _), GameEvent.SpellCopied (SpellWasCopied.MkSpellWasCopied copier copy)) ->
     Binding.setTriggerPlayer copier (Binding.setCastSpellTargets (ProjectionView.targetsOfStackObject gs copy) (Binding.setCastSpellX (castX gs copy) (Binding.setCastSpell copy Map.empty)))
-  -- CR 305.1's player and the land as it arrived (CR 400.7i), the land under
+  -- CR 305.1's player and the land as it arrived (CR 400.7), the land under
   -- the cast spell's slot: under CR 603.1b's AnyOf "play a land or cast a
   -- spell", "it" and "that player" must be one slot for both branches
   -- (eventBindingSlots intersects) -- Cemetery Gatekeeper.
