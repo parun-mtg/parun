@@ -45,6 +45,7 @@ import qualified Parun.Engine.GrandMelee as GrandMelee
 import qualified Parun.Engine.Ignore as Ignore
 import qualified Parun.Engine.Initiative as Initiative
 import qualified Parun.Engine.LaterPayment as LaterPayment
+import qualified Parun.Engine.Limit as Limit
 import qualified Parun.Engine.Mana as Mana
 import qualified Parun.Engine.ManaAbility as ManaAbility
 import qualified Parun.Engine.Modal as Modal
@@ -1701,7 +1702,9 @@ priorityDecision trail = do
                       State.modify' (Event.offerOutside p)
                       offering <- State.get
                       let decider = Decide.deciderFor p gs
-                          actions = Action.legalActions p offering
+                          -- A host limit narrows the menu before anything
+                          -- reads it (Limit.offered).
+                          actions = Limit.offered offering (Action.legalActions p offering)
                       -- CR 104.4b: a menu that is only Pass offers no
                       -- optional action, so it does not break a loop of
                       -- mandatory actions -- still ASKED, just not RECORDED

@@ -3265,7 +3265,7 @@ stateTriggersOn gs
       -- CR 603.3a / 109.5: the ability's controller is its source's, and that is
       -- what "you" in the condition means. Outside the layer fold, so the ViewOf
       -- is the FULL projection rather than the layer-bounded one.
-      Just ctrl -> forOne oid ctrl (Projection.triggeredAbilitiesOf oid gs)
+      Just ctrl -> forOne oid ctrl (PC.triggeredAbilities (projected oid gs))
     -- standingOf's `commandCandidate`, read the same way: CR 113.6p's objects
     -- only, unfiltered by `functionsIn` (CR 114.4 is about the object), the owner
     -- as controller (CR 114.2, CR 902.6), and the ability face's (CR 114.3).
@@ -3277,6 +3277,10 @@ stateTriggersOn gs
       _ -> []
     -- The same hoist eventTriggers' `grants` binding makes.
     grants = Projection.controlGrants gs
+    -- Projection.project with one gather for the whole board, as
+    -- Projection.projectAll shares it: per permanent, the sweep cost the
+    -- square of the board (#9339).
+    projected = Projection.projectFrom (Projection.gather gs)
     -- CR 603.8's suppression, COUNTED rather than tested. Scoped to (source,
     -- ability), so two permanents bearing the identical triggered ability
     -- suppress independently -- one instance per source, not one for the whole

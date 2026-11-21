@@ -75,7 +75,10 @@ gaining pcs gs =
     <> owed Keyword.Storied PlayerDesignation.EnduringStory 3 storyMaterial
   where
     battlefield = Set.toList (GameState.battlefield gs)
-    controlled = Maybe.mapMaybe (\oid -> fmap ((,) oid) (Projection.controllerOf oid gs)) battlefield
+    -- Hoisted, as Event.Trigger.stateTriggersOn's is: per permanent, the
+    -- grant walk cost the square of the board (#9339).
+    grants = Projection.controlGrants gs
+    controlled = Maybe.mapMaybe (\oid -> fmap ((,) oid) (Projection.controllerOfGiven grants oid gs)) battlefield
     carries kw pid = any (\(oid, c) -> c == pid && maybe False (Map.member kw . PC.keywords) (Map.lookup oid pcs)) controlled
     counted matches pid = length [() | (oid, c) <- controlled, c == pid, maybe False matches (Map.lookup oid pcs)]
     holds pid mark = maybe False (Set.member mark . Player.designations) (Map.lookup pid (GameState.players gs))

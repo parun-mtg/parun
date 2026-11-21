@@ -184,6 +184,30 @@ Entries are ordered by the first rule each cites.
   adds to their first turn too".
 - **Issue**: #4782.
 
+## What a game does at a host limit
+
+- **Question**: A loop with an optional action never ends by itself (CR
+  104.4b), and nothing in the CR bounds how large a board may grow. Once a
+  game holds as many objects as its host allows (`Parun.Types.Limits`), what
+  happens?
+- **Rules**: CR 104.4b, 117.1, 733.1b; CR of 2026-11-06.
+- **Decision**: A player with priority is offered only Pass until the game
+  holds fewer objects. Nothing already begun is stopped: a spell or ability
+  resolves, triggers trigger and state-based actions are checked, so the game
+  may overshoot the limit by what one action sets off. Conceding (CR 104.3a)
+  and every choice outside the priority menu, combat's included, stay open.
+- **Rejected**: (a) Ending the game, as a draw or with no result, at the
+  limit: the players' game is taken from them where refusing one action would
+  do. (b) Stopping an action, a resolution or a state-based action check
+  halfway: it leaves a state no rule describes. (c) Refusing only actions that
+  could add objects: which ones can is the open half's to say, and no
+  classification answers it today.
+- **Site**: `Parun.Engine.Limit.offered`, read by
+  `Parun.Engine.Engine.priorityDecision`; proved by `Parun.LimitSpec`'s "a
+  player at the object limit is offered only Pass, so a loop they would repeat
+  forever stops there".
+- **Issue**: #9339.
+
 ## A rider ability regained from one granter stays spent
 
 - **Question**: A permanent loses a "triggers only once each turn" or "activate

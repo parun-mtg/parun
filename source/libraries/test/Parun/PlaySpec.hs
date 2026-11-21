@@ -50,6 +50,7 @@ import qualified Parun.Types.GameEvent as GameEvent
 import qualified Parun.Types.GameSettings as GameSettings
 import qualified Parun.Types.GameState as GameState
 import qualified Parun.Types.Generator as Generator
+import qualified Parun.Types.Limits as Limits
 import qualified Parun.Types.LoggedEvent as LoggedEvent
 import qualified Parun.Types.Moved as Moved
 import qualified Parun.Types.MulliganDecision as MulliganDecision
@@ -155,7 +156,7 @@ spec s registry = Spec.describe s "Play" $ do
     matchup <- BotSpec.sevens s registry
     let bots :: Map.Map PlayerId.PlayerId (Answerer.Answerer (Asked.Asked GameState.GameState) (Game.Play Identity.Identity))
         bots = Map.fromList [(S.alice, Game.bot (S.fixtureRegistry [])), (S.bob, Game.bot (S.fixtureRegistry []))]
-    case Identity.runIdentity (Game.run (S.fixtureRegistry []) Nothing [] bots (S.seeded 1) Map.empty matchup) of
+    case Identity.runIdentity (Game.run (S.fixtureRegistry []) Nothing Limits.standard [] bots (S.seeded 1) Map.empty matchup) of
       Right (Result.Won winner, gs) ->
         let loser = if winner == S.alice then S.bob else S.alice
          in Spec.assertEq s (Wording.departures gs) [Wording.player loser <> Text.pack " lost the game: drew from an empty library."]

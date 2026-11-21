@@ -233,6 +233,7 @@ withoutAnnouncement before entry between closed = do
   -- CR 728.1 / 730.1a: the same, and the game the window was in.
   gamesThisMatch <- newest (MatchScope.gamesThisMatch . GameState.match)
   gameNumber <- one (MatchScope.gameNumber . GameState.match)
+  limits <- one (MatchScope.limits . GameState.match)
   turnAnchor <- one (TurnRegisters.turnAnchor . GameState.turn)
   extraTurnUnderWay <- one (TurnRegisters.extraTurnUnderWay . GameState.turn)
   -- Written only between priority decisions, which no announcement spans.
@@ -251,7 +252,8 @@ withoutAnnouncement before entry between closed = do
             { MatchScope.settings = settings,
               MatchScope.subgamesThisMatch = subgamesThisMatch,
               MatchScope.gamesThisMatch = gamesThisMatch,
-              MatchScope.gameNumber = gameNumber
+              MatchScope.gameNumber = gameNumber,
+              MatchScope.limits = limits
             },
         GameState.objects = objects,
         GameState.library = library,

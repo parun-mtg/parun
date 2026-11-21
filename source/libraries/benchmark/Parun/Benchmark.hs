@@ -1,3 +1,5 @@
+{-# LANGUAGE GADTs #-}
+
 module Parun.Benchmark where
 
 import qualified Control.Exception as Exception
@@ -6,6 +8,7 @@ import qualified Data.List as List
 import qualified Data.List.NonEmpty as NonEmpty
 import qualified Data.Map.Strict as Map
 import qualified Data.Sequence as Seq
+import qualified Data.Set as Set
 import Numeric.Natural (Natural)
 import qualified Parun.Benchmark.Harness as Harness
 import qualified Parun.Engine.Action as Action
@@ -16,7 +19,10 @@ import qualified Parun.Engine.Game as Game
 import qualified Parun.Engine.Mana as Mana
 import qualified Parun.Engine.Script as Script
 import qualified Parun.Engine.Setup as Setup
+import qualified Parun.Extra.Natural as Natural
 import qualified Parun.Registry as Registry
+import qualified Parun.Types.Action as Action.Type
+import qualified Parun.Types.Asked as Asked
 import qualified Parun.Types.Color as Color
 import qualified Parun.Types.Deck as Deck
 import qualified Parun.Types.GameSettings as GameSettings
@@ -32,6 +38,8 @@ import qualified Parun.Types.Phase as Phase
 import Parun.Types.PlayerId (PlayerId)
 import qualified Parun.Types.PlayerId as PlayerId
 import qualified Parun.Types.Printing as Printing
+import qualified Parun.Types.Prompt as Prompt
+import qualified Parun.Types.Recipient as Recipient
 import Parun.Types.Result (Result)
 import qualified Parun.Types.Sickness as Sickness
 import qualified Parun.Types.TurnRegisters as TurnRegisters
@@ -299,6 +307,30 @@ inZones players held printings buried =
               }
         }
 
+-- #9339: Intruder Alarm and Presence of Gond on Grizzly Bears, the first
+-- player activating the granted ability until the battlefield holds `n`
+-- permanents, then passing: every loop's cost grows with the board it built.
+intruderLoop :: Printing.Printing -> Printing.Printing -> Printing.Printing -> Natural -> Int
+intruderLoop alarm gond bears n =
+  let players = playersFrom 0
+      alice = NonEmpty.head players
+      board = onBattlefield players [alarm, bears, gond]
+      -- The Aura on the Bears, both placed after the Alarm.
+      attached = case Set.toAscList (GameState.battlefield board) of
+        [_, bearsId, gondId] -> board {GameState.objects = Map.adjust (\o -> o {Object.attachedTo = Just (Recipient.ToCreature bearsId)}) gondId (GameState.objects board)}
+        _ -> board
+      ready = attached {GameState.turn = (GameState.turn attached) {TurnRegisters.priority = Just alice}}
+      answer :: Asked.Asked GameState r -> r
+      answer asked = case Asked.prompt asked of
+        Prompt.ChooseAction _ _ actions
+          | Natural.length (GameState.battlefield (Asked.game asked)) < n,
+            activation : _ <- [a | a@Action.Type.Activate {} <- actions] ->
+              activation
+          | otherwise -> Action.Type.Pass
+        p -> Script.scripted p
+   in Set.size (GameState.battlefield (snd (Engine.runGameAskedPure answer ready Engine.priorityLoop)))
+{-# NOINLINE intruderLoop #-}
+
 -- Mana.canPay's answer for one cost on one board. Parameterized for the reason
 -- 'goldfish' gives: the board depends on the argument, so nothing floats out.
 payable :: [Printing.Printing] -> ManaCost -> Natural -> Bool
@@ -466,8 +498,15 @@ main = do
   forest <- fetchOrThrow registry "Forest"
   signet <- fetchOrThrow registry "Rakdos Signet"
   guildmage <- fetchOrThrow registry "Simic Guildmage"
+  alarm <- fetchOrThrow registry "Intruder Alarm"
+  gond <- fetchOrThrow registry "Presence of Gond"
+  bears <- fetchOrThrow registry "Grizzly Bears"
   Harness.defaultMain
-    [ Harness.whnf "goldfish 2p" (goldfish deck) 0,
+    [ -- #9339: a loop's cost by the size of the board it builds.
+      Harness.whnf "intruder loop 25" (intruderLoop alarm gond bears) 25,
+      Harness.whnf "intruder loop 50" (intruderLoop alarm gond bears) 50,
+      Harness.whnf "intruder loop 100" (intruderLoop alarm gond bears) 100,
+      Harness.whnf "goldfish 2p" (goldfish deck) 0,
       Harness.whnf "casting 2p" (casting deck) 0,
       Harness.whnf "fighting 2p" (fighting deck) 0,
       Harness.whnf "fighting 2p aura" (fighting controlDeck) 0,

@@ -12,6 +12,7 @@ import qualified Data.Maybe as Maybe
 import Numeric.Natural (Natural)
 import qualified Parun.Engine.Engine as Engine
 import qualified Parun.Engine.Game as Game
+import qualified Parun.Engine.Limit as Limit
 import qualified Parun.Engine.PlayerView as PlayerView
 import qualified Parun.Engine.Setup as Setup
 import qualified Parun.Types.Answerer as Answerer
@@ -21,6 +22,7 @@ import qualified Parun.Types.Deck as Deck
 import qualified Parun.Types.GameSettings as GameSettings
 import qualified Parun.Types.GameState as GameState
 import qualified Parun.Types.GraveyardOrder as GraveyardOrder
+import qualified Parun.Types.Limits as Limits
 import qualified Parun.Types.Observer as Observer
 import qualified Parun.Types.PlayerId as PlayerId
 import qualified Parun.Types.PlayerView as PlayerView.Type
@@ -53,10 +55,11 @@ ask observers answerer asked = do
   pure answer
 
 -- | A whole game, from setup to its result, each player in `orders` starting
--- at that graveyard order (CR 404.3) and every other at Indifferent.
-match :: (Monad m) => [Observer.Observer m] -> Answerer.Answerer (Asked.Asked GameState.GameState) m -> GameSettings.GameSettings -> Map.Map PlayerId.PlayerId GraveyardOrder.GraveyardOrder -> NonEmpty.NonEmpty (PlayerId.PlayerId, Deck.Deck) -> m (Result.Result, GameState.GameState)
-match observers answerer settings orders matchup =
-  Engine.runGameAsked (ask observers answerer) (Map.foldrWithKey Game.setGraveyardOrder (Setup.gameWith settings (fmap fst matchup)) orders) (Engine.playFrom matchup)
+-- at that graveyard order (CR 404.3) and every other at Indifferent, under the
+-- host's `limits`.
+match :: (Monad m) => [Observer.Observer m] -> Answerer.Answerer (Asked.Asked GameState.GameState) m -> GameSettings.GameSettings -> Limits.Limits -> Map.Map PlayerId.PlayerId GraveyardOrder.GraveyardOrder -> NonEmpty.NonEmpty (PlayerId.PlayerId, Deck.Deck) -> m (Result.Result, GameState.GameState)
+match observers answerer settings limits orders matchup =
+  Engine.runGameAsked (ask observers answerer) (Map.foldrWithKey Game.setGraveyardOrder (Limit.under limits (Setup.gameWith settings (fmap fst matchup))) orders) (Engine.playFrom matchup)
 
 -- | Whole steps (CR 500.1) from a state, until the game has a result, the
 -- budget is spent, or the predicate holds. In Grand Melee the budget counts

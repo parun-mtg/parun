@@ -3183,7 +3183,7 @@ battlefieldMatching legal resolving controller source gs filter_ =
             (Set.toList (Set.difference (GameState.battlefield gs) (Scratch.enteringBeside (GameState.scratch gs))))
       order = Game.apnapOrder gs
       last_ = length order
-      seat oid = case Projection.controllerOf oid gs of
+      seat oid = case Projection.controllerOfGiven grants oid gs of
         Nothing -> last_
         Just pid -> Maybe.fromMaybe last_ (List.elemIndex pid order)
    in List.sortOn (\oid -> (seat oid, oid)) matching

@@ -40,6 +40,7 @@ import qualified Parun.Types.GameState as GameState
 import qualified Parun.Types.GraveyardOrder as GraveyardOrder
 import qualified Parun.Types.Key as Key.Type
 import qualified Parun.Types.Label as Label
+import qualified Parun.Types.Limits as Limits
 import qualified Parun.Types.PlayOptions as PlayOptions
 import qualified Parun.Types.PlayerId as PlayerId
 import qualified Parun.Types.PrintingTable as PrintingTable
@@ -73,7 +74,8 @@ flags =
     GetOpt.Option [] ["json"] (GetOpt.NoArg (\o -> Right o {PlayOptions.json = True})) "speak the line protocol on standard input and output",
     GetOpt.Option [] ["save"] (GetOpt.ReqArg (\s o -> Right o {PlayOptions.save = Just s}) "FILE") "save the game as a scenario, even one cut short",
     GetOpt.Option [] ["arrange-graveyard"] (GetOpt.ReqArg (\s o -> fmap (\n -> o {PlayOptions.arrangesGraveyard = Set.insert n (PlayOptions.arrangesGraveyard o)}) (seat s)) "SEAT") "a seat asked to order cards put into its graveyard at the same time",
-    GetOpt.Option [] ["format"] (GetOpt.ReqArg (\s o -> Right o {PlayOptions.format = Just (Text.pack s)}) "FORMAT") "play under this format, refusing a deck not legal in it: constructed, limited, or one with a pool, such as vintage"
+    GetOpt.Option [] ["format"] (GetOpt.ReqArg (\s o -> Right o {PlayOptions.format = Just (Text.pack s)}) "FORMAT") "play under this format, refusing a deck not legal in it: constructed, limited, or one with a pool, such as vintage",
+    GetOpt.Option [] ["object-limit"] (GetOpt.ReqArg (\s o -> maybe (Left ("not a number of objects: " <> s)) (\n -> Right o {PlayOptions.limits = (PlayOptions.limits o) {Limits.objects = n}}) (Read.readMaybe s)) "N") ("the most objects the game may hold before a player with priority may only pass; " <> show (Limits.objects Limits.standard) <> " when absent")
   ]
   where
     seat s = case Read.readMaybe s of
@@ -200,7 +202,7 @@ game send options registry format decks seed = do
           interrupted e = case e of
             Exception.UserInterrupt -> pure (Left (Text.pack "interrupted"))
             _ -> Exception.throwIO e
-      outcome <- Exception.catch (Game.run reference format observers seats generator orders matchup) interrupted
+      outcome <- Exception.catch (Game.run reference format (PlayOptions.limits options) observers seats generator orders matchup) interrupted
       timeline <- IORef.readIORef entries
       pure (outcome, record matchup timeline)
 
