@@ -187,6 +187,7 @@ import qualified Parun.Types.PlanarDieFace as PlanarDieFace
 import qualified Parun.Types.PlanarDieRolled as PlanarDieRolled
 import qualified Parun.Types.Player as Player
 import qualified Parun.Types.PlayerActed as PlayerActed
+import qualified Parun.Types.PlayerAction as PlayerAction
 import qualified Parun.Types.PlayerActsOn as PlayerActsOn
 import qualified Parun.Types.PlayerCounterKind as PlayerCounterKind
 import qualified Parun.Types.PlayerCountersPlaced as PlayerCountersPlaced
@@ -2099,6 +2100,12 @@ representativeEvents cond =
         -- agree with eventBindingSlots here if the two coincided.
         -- A counted act is its own event, carrying the count: CR 701.57b's N.
         TriggerCondition.PlayerActs watched | Set.member (PlayerActed.action watched) Game.countedActions -> one (GameEvent.CountedAct (CountedAct.MkCountedAct (PlayerActed.action watched) S.bob 3))
+        -- TWO for a roll: the planar die's, which has no number (CR 901.9d), and
+        -- a numbered roll's, carrying its highest result.
+        TriggerCondition.PlayerActs watched
+          | PlayerActed.action watched == PlayerAction.RollDice ->
+              noTable (GameEvent.PlayerActed (PlayerActed.MkPlayerActed PlayerAction.RollDice S.bob))
+                NonEmpty.:| [noTable (GameEvent.CountedAct (CountedAct.MkCountedAct PlayerAction.RollDice S.bob 13))]
         TriggerCondition.PlayerActs watched -> one (GameEvent.PlayerActed (PlayerActed.MkPlayerActed (PlayerActed.action watched) S.bob))
         -- CR 603.9's own event, the PlayerActs arm's shape and reasoning.
         TriggerCondition.PlayerLosesGame _ -> one (GameEvent.LostTheGame S.bob)

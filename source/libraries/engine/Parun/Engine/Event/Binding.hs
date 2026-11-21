@@ -103,6 +103,7 @@ import qualified Parun.Types.PermanentIsDealtDamage as PermanentIsDealtDamage
 import qualified Parun.Types.PermanentWasSacrificed as PermanentWasSacrificed
 import qualified Parun.Types.PermanentsDealDamageToPlayer as PermanentsDealDamageToPlayer
 import qualified Parun.Types.PlayerActed as PlayerActed
+import qualified Parun.Types.PlayerAction as PlayerAction
 import qualified Parun.Types.PlayerCountersPlaced as PlayerCountersPlaced
 import Parun.Types.PlayerId (PlayerId)
 import qualified Parun.Types.PlayerIsDealtDamage as PlayerIsDealtDamage
@@ -565,7 +566,8 @@ eventBindingsOver board gs bearerBecame becameInGraveyard bearer you cond event 
   (TriggerCondition.PlayerActs _, GameEvent.PlayerActed acted) ->
     Binding.setTriggerPlayer (PlayerActed.player acted) Map.empty
   -- And a counted act, with its count under the event amount: Curator of Sun's
-  -- Creation's "for the same value", The Temporal Anchor's "that many".
+  -- Creation's "for the same value", The Temporal Anchor's "that many", Farideh,
+  -- Devil's Chosen's highest result of a numbered roll.
   (TriggerCondition.PlayerActs _, GameEvent.CountedAct counted) ->
     Binding.setTriggerPlayer (CountedAct.player counted) (Binding.setEventAmount (CountedAct.value counted) Map.empty)
   -- CR 601.2c / 603.2c: becomesTargetedSlots' slots, off the announcement
@@ -2090,6 +2092,10 @@ eventBindingSlotsSometimes cond = case cond of
   -- data/cards/paranormal-analyst.json is the reader, and finding nothing there
   -- is the rule's own answer.
   TriggerCondition.PlayerManifestsDread _ -> Set.singleton Binding.became
+  -- CR 706.2's highest result of a numbered roll (Common.recordRoll), which
+  -- the planar die has none of (CR 901.9d). data/cards/farideh-devils-chosen.json
+  -- is the reader.
+  TriggerCondition.PlayerActs acted | PlayerActed.action acted == PlayerAction.RollDice -> Set.singleton Binding.eventAmount
   TriggerCondition.BecomesTargeted c -> snd (becomesTargetedSlots c)
   -- The holder a counter trigger watching players too names: the permanent
   -- under `became`, the player under `triggerPlayer`, whichever got the

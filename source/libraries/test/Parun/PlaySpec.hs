@@ -39,6 +39,7 @@ import qualified Parun.Types.BecameAttached as BecameAttached
 import qualified Parun.Types.BecameUnattached as BecameUnattached
 import qualified Parun.Types.CardName as CardName
 import qualified Parun.Types.Convoking as Convoking
+import qualified Parun.Types.CountedAct as CountedAct
 import qualified Parun.Types.CounterKind as CounterKind
 import qualified Parun.Types.CountersPlaced as CountersPlaced
 import qualified Parun.Types.Decider as Decider
@@ -147,7 +148,7 @@ spec s registry = Spec.describe s "Play" $ do
     let logged =
           [ GameEvent.PlayerActed (PlayerActed.MkPlayerActed PlayerAction.Scry S.alice),
             GameEvent.PlayerActed (PlayerActed.MkPlayerActed PlayerAction.Surveil S.bob),
-            GameEvent.PlayerActed (PlayerActed.MkPlayerActed PlayerAction.RollDice S.alice),
+            GameEvent.CountedAct (CountedAct.MkCountedAct PlayerAction.RollDice S.alice 4),
             GameEvent.DieResultSettled DieResult.MkDieResult {DieResult.roller = S.alice, DieResult.result = 4}
           ]
     Spec.assertEqWith s "told" (told (PlayerView.viewFor S.bob (witnessing (inOneGroup logged) gs))) [Text.pack "Player 1 scries.", Text.pack "Player 2 surveils.", Text.pack "Player 1 rolls 4."]

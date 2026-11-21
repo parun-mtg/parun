@@ -71,6 +71,7 @@ import qualified Parun.Types.ControlDuration as ControlDuration
 import qualified Parun.Types.CopyStackObject as CopyStackObject
 import qualified Parun.Types.CopyTargets as CopyTargets
 import qualified Parun.Types.Cost as Cost.Type
+import qualified Parun.Types.CountedAct as CountedAct
 import qualified Parun.Types.Decider as Decider
 import qualified Parun.Types.DieResult as DieResult
 import Parun.Types.Effect (Effect)
@@ -1223,8 +1224,15 @@ throwSettled runSubgame roll perDie = do
         case settled of
           Left results -> rerollingWith False by (Maybe.fromMaybe 1 (Maybe.listToMaybe results))
           Right again -> do
-            State.modify' (Event.recordEvent (GameEvent.PlayerActed (PlayerActed.MkPlayerActed PlayerAction.RollDice by)))
             kept <- naturals False again (pure 0)
+            -- Recorded once its number is up, as recordRoll records a roll:
+            -- the reroll's own natural result is "those results" for Farideh,
+            -- Devil's Chosen (docs/decisions.md, "Which result a reroll's
+            -- trigger reads"). The planar die's has no number (CR 901.9d).
+            let rerolled = case kept of
+                  (total, _) : _ | numbered -> GameEvent.CountedAct (CountedAct.MkCountedAct PlayerAction.RollDice by (Integer.toNaturalSaturating total))
+                  _ -> GameEvent.PlayerActed (PlayerActed.MkPlayerActed PlayerAction.RollDice by)
+            State.modify' (Event.recordEvent rerolled)
             -- One kept: a reroll names one die, and every die a row adds comes
             -- with an ignore. A d20 rolled for a coin flipped for the reroll
             -- reads back as that coin's 1 or 20.

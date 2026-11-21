@@ -4654,6 +4654,8 @@ lifeChangedAmong direction events admits =
 
 -- | The acts recorded as GameEvent.CountedAct rather than GameEvent.PlayerActed:
 -- each carries a count, which a trigger watching it binds as its event amount.
+-- PlayerAction.RollDice is a CountedAct only for a numbered die (CR 901.9d), so
+-- it is not here (Parun.Engine.Event.Binding.eventBindingSlotsSometimes).
 countedActions :: Set.Set PlayerAction.PlayerAction
 countedActions = Set.fromList [PlayerAction.Discover, PlayerAction.ScryToBottom]
 

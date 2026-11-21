@@ -113,6 +113,7 @@ import qualified Parun.Types.Cost as Cost.Type
 import qualified Parun.Types.CostBasis as CostBasis
 import qualified Parun.Types.CostChoice as CostChoice
 import qualified Parun.Types.Count as Count.Type
+import qualified Parun.Types.CountedAct as CountedAct
 import qualified Parun.Types.CountedDiscard as CountedDiscard
 import qualified Parun.Types.CounterCause as CounterCause
 import qualified Parun.Types.CounterChange as CounterChange
@@ -4434,10 +4435,12 @@ storeOn acquisition target sides results gs =
    in gs {GameState.objects = Map.adjust store target (GameState.objects gs)}
 
 -- | CR 706.1's roll, as the log records it once throwDice's results are
--- settled.
+-- settled: one CountedAct whose value is the highest kept result, which is all
+-- Farideh, Devil's Chosen's "if any of those results was 10 or higher" reads
+-- under the trigger's event amount.
 recordRoll :: PlayerId -> [PlayerId] -> [Natural] -> Game ()
 recordRoll controller throwers results = do
-  State.modify' (Event.recordEvent (GameEvent.PlayerActed (PlayerActed.MkPlayerActed PlayerAction.RollDice controller)))
+  State.modify' (Event.recordEvent (GameEvent.CountedAct (CountedAct.MkCountedAct PlayerAction.RollDice controller (Foldable.foldl' max 0 results))))
   -- CR 706.2's final number, one entry per die the instruction kept, for
   -- "whenever you roll a 6" -- after every modifier, and never for an ignored
   -- roll (CR 706.6). Recorded under the player who threw the die's final
