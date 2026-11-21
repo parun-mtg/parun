@@ -1,6 +1,7 @@
 module Parun.Web.LobbySpec where
 
 import qualified Data.Foldable as Foldable
+import qualified Data.List.NonEmpty as NonEmpty
 import qualified Data.Map.Strict as Map
 import qualified Data.Sequence as Seq
 import qualified Data.Set as Set
@@ -10,6 +11,7 @@ import qualified Parun.Types.CardName as CardName
 import qualified Parun.Types.Color as Color
 import qualified Parun.Web.Diff as Diff
 import qualified Parun.Web.Html as Html
+import qualified Parun.Web.Link as Link
 import qualified Parun.Web.Lobby as Lobby
 import qualified Parun.Web.Patch as Patch
 
@@ -176,6 +178,14 @@ spec s = Spec.describe s "Parun.Web.Lobby" $ do
     Spec.it s "offers the bot the decks under your deck's format" $ do
       Spec.assertEq s (Lobby.opponents (Lobby.update (Lobby.MkPick c) Text.empty lobby)) (Seq.fromList [c, d])
       Spec.assertEq s (Lobby.opponents (Lobby.update (Lobby.MkPick a) Text.empty lobby)) (Seq.fromList [a, b])
+
+  Spec.describe s "rematch" $ do
+    Spec.it s "returns to the decks played, the invited slot still connected, and nobody ready" $ do
+      let back = Lobby.rematch ((a, Text.pack "list a") NonEmpty.:| [(b, Text.pack "list b"), (c, Text.pack "list c")]) (Set.singleton 1)
+      Spec.assertEq s (Lobby.mine back, Lobby.theirs back) (Just a, [Just b, Nothing])
+      Spec.assertEq s (Map.toList (fmap (\i -> (Lobby.connected i, Lobby.guestDeck i, Lobby.guestReady i)) (Lobby.invites back))) [(1, (True, Just (c, Text.pack "list c"), False))]
+      Spec.assertBool s (not (Lobby.ready back) && not (Lobby.starts back)) "nobody ready"
+      Spec.assertBool s (Lobby.starts (Lobby.heard 1 (Link.MkReady True) (Lobby.update Lobby.MkReady Text.empty back))) "starts once both are ready"
 
   Spec.describe s "withDecks" $ do
     Spec.it s "keeps what was picked and typed" $ do

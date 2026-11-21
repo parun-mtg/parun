@@ -6,6 +6,7 @@ import qualified Control.Monad as Monad
 import qualified Data.Char as Char
 import qualified Data.Foldable as Foldable
 import qualified Data.List as List
+import qualified Data.List.NonEmpty as NonEmpty
 import qualified Data.Map.Strict as Map
 import qualified Data.Maybe as Maybe
 import qualified Data.Sequence as Seq
@@ -419,9 +420,24 @@ linked i f lobby = settled lobby lobby {invites = Map.adjust f i (invites lobby)
 settled :: Lobby -> Lobby -> Lobby
 settled before after
   | matchupOf before == matchupOf after = after
-  | otherwise = after {ready = False, invites = fmap (\invite -> invite {guestReady = False}) (invites after)}
+  | otherwise = unready after
   where
     matchupOf l = (mine l, theirs l, fmap (\invite -> (connected invite, fmap fst (guestDeck invite), fmap snd (guestDeck invite))) (invites l))
+
+-- | The lobby with every ready flag cleared.
+unready :: Lobby -> Lobby
+unready lobby = lobby {ready = False, invites = fmap (\invite -> invite {guestReady = False}) (invites lobby)}
+
+-- | The lobby a Rematch of a game with players invited returns to: the
+-- decks played, your own first, each bot's slot in `invited` held by its
+-- player, still connected over the channel the game used, and nobody ready.
+rematch :: NonEmpty.NonEmpty (Text.Text, Text.Text) -> Set.Set Int -> Lobby
+rematch (yours NonEmpty.:| rest) invited =
+  new
+    { mine = Just (fst yours),
+      theirs = [if Set.member i invited then Nothing else Just name | (i, (name, _)) <- zip [0 ..] rest],
+      invites = Map.fromList [(i, newInvite {connected = True, guestDeck = Just seat}) | (i, seat) <- zip [0 ..] rest, Set.member i invited]
+    }
 
 -- | Whether a game with the players invited starts: there is one, your
 -- deck is chosen, and every player is connected, has a deck and is ready.

@@ -170,7 +170,7 @@ opening build' = do
 follow :: Shell -> Next -> IO ()
 follow shell next = case next of
   MkToHome -> home shell Home.new >>= follow shell . afterHome
-  MkToLobby -> lobby shell >>= follow shell
+  MkToLobby -> lobby shell Lobby.new [] >>= follow shell
   MkToBuilder deck -> builder shell deck >>= follow shell
   MkToReplays -> replays shell >>= follow shell
   MkToReplay name at -> replay shell name at >>= follow shell
@@ -201,15 +201,17 @@ home shell = go
           outcome -> pure outcome
         _ -> go current
 
--- | The lobby until it goes home or starts a game, filling in as decks
--- and cards arrive, and as the players invited from other browsers connect
--- and choose (Parun.Web.Link), each told the match-up at every change;
--- where the game, played from here, then leads.
-lobby :: Shell -> IO Next
-lobby shell = do
+-- | The lobby, from this one once the invited slots' channels said these,
+-- until it goes home or starts a game, filling in as decks and cards
+-- arrive, and as the players invited from other browsers connect and
+-- choose (Parun.Web.Link), each told the match-up at every change; where
+-- the game, played from here, then leads.
+lobby :: Shell -> Lobby.Lobby -> [Browser.Linked] -> IO Next
+lobby shell initial said = do
   need shell Loading.MkDecks
   need shell Loading.MkCards
-  go' Lobby.new Map.empty
+  heard' <- Monad.foldM heardBy initial said
+  go' heard' Map.empty
   where
     go' shown told = do
       current <- refreshed shell shown
@@ -267,12 +269,8 @@ lobby shell = do
             "open" -> pure (Lobby.linked i (\invite -> invite {Lobby.connected = True, Lobby.inviteProblem = Nothing}) current)
             "message" -> case Link.decode (build shell) (Browser.said heard') of
               Right told -> pure (Lobby.heard i told current)
-              Left problem -> do
-                Browser.linkHost i
-                pure (Lobby.linked i (const Lobby.newInvite {Lobby.inviteProblem = Just (capitalised problem <> Text.pack ".")}) current)
-            "closed" -> do
-              Browser.linkHost i
-              pure (Lobby.linked i (const Lobby.newInvite {Lobby.inviteProblem = Just (Text.pack "The connection closed: send them the new link.")}) current)
+              Left problem -> reinvite i (capitalised problem <> Text.pack ".") current
+            "closed" -> reinvite i connectionClosed current
             _ -> pure current
     -- Each connected player told the match-up where it changed since.
     tellPlaces current told =
@@ -296,6 +294,17 @@ lobby shell = do
           play shell (mine NonEmpty.:| rest) (Map.keysSet invited) Nothing
         -- A bot with no deck to play keeps the lobby up.
         _ -> go' current {Lobby.ready = False} told
+
+-- | The lobby with invited slot `i` made afresh, a new link made for it,
+-- saying why.
+reinvite :: Int -> Text.Text -> Lobby.Lobby -> IO Lobby.Lobby
+reinvite i problem current = do
+  Browser.linkHost i
+  pure (Lobby.linked i (const Lobby.newInvite {Lobby.inviteProblem = Just problem}) current)
+
+-- | Why an invited slot was made afresh once its channel closed.
+connectionClosed :: Text.Text
+connectionClosed = Text.pack "The connection closed: send them the new link."
 
 -- | The seat the player invited to this bot's slot plays.
 seatOf :: Int -> PlayerId.PlayerId
@@ -530,8 +539,10 @@ untilBuilt shell needs built = do
 -- is over (Link.saved), and a guest whose connection drops, or every guest
 -- of a game picked up, is asked to rejoin (rejoin) when next asked. Home
 -- from the game shows the home screen with the game kept; a new game chosen
--- there gives it up. Every player invited is told how it ended, and their
--- channel closed; a Rematch with them goes back to the lobby.
+-- there gives it up. Every player invited is told how it ended; a Rematch
+-- with them goes back to the lobby on the match-up played (Lobby.rematch),
+-- their channels kept open and what they said meanwhile heard there, and a
+-- new game closes them.
 play :: Shell -> NonEmpty.NonEmpty (Text.Text, Text.Text) -> Set.Set Int -> Maybe Link.Saved -> IO Next
 play shell seats invited resuming = do
   Browser.display (page shell) (if Maybe.isJust resuming then message ["Picking the game up where it stopped\x2026"] else Hotseat.starting (fmap fst seats))
@@ -560,17 +571,21 @@ play shell seats invited resuming = do
         Left problems -> stopped problems >> notice shell problems
         Right Hotseat.MkAbandoned -> stopped [Text.pack "The host gave the game up."] >> IORef.readIORef chosen
         Right (Hotseat.MkFinished ending) -> do
-          mapM_ Browser.linkClose invited
-          let go = do
+          lost <- IORef.readIORef down
+          let go said = do
                 Browser.display (page shell) (fmap Screen.MkEnding (Ending.view ending))
                 woke <- await shell
                 case woke of
                   MkTapped (Screen.MkEnding Ending.MkRematch) _
                     | Set.null invited -> play shell seats invited Nothing
-                    | otherwise -> pure MkToLobby
-                  MkTapped (Screen.MkEnding Ending.MkNewGame) _ -> pure MkToHome
-                  _ -> go
-          go
+                    | otherwise -> do
+                        -- A slot whose channel closed in the game is invited afresh.
+                        back <- Monad.foldM (\l i -> reinvite i connectionClosed l) (Lobby.rematch seats invited) (Set.toList lost)
+                        lobby shell back (reverse said)
+                  MkTapped (Screen.MkEnding Ending.MkNewGame) _ -> mapM_ Browser.linkClose invited >> pure MkToHome
+                  MkHeard heard' -> go (heard' : said)
+                  _ -> go said
+          go []
 
 -- | Invited slot `i`'s channel, closed at once while `down` holds the slot,
 -- and held there once it closes.
@@ -655,9 +670,9 @@ joinGame shell offer = do
           "message" -> case Link.decode (build shell) (Browser.said heard') of
             Left problem -> Browser.linkClose n >> go (lost (capitalised problem <> Text.pack ".") current)
             Right (Link.MkMatchup places) -> go current {Join.places = places}
-            Right (Link.MkStart seat) -> guestGame seat
+            Right (Link.MkStart seat) -> guestGame current seat
             Right _ -> go current
-          "closed" -> go (lost (Text.pack "The connection to the host closed: ask them for a new link.") current)
+          "closed" -> go (lost hostClosed current)
           _ -> go current
         MkTapped (Screen.MkJoin event) value -> case event of
           Join.MkHome -> Browser.linkClose n >> pure MkToHome
@@ -668,6 +683,7 @@ joinGame shell offer = do
             Monad.when (Join.connected next && Join.picked next /= Join.picked current) (hello next)
             go next
         _ -> go current
+    hostClosed = Text.pack "The connection to the host closed: ask them for a new link."
     lost problem current = current {Join.connected = False, Join.reply = Nothing, Join.places = [], Join.problem = Just problem}
     -- The deck chosen, sent to the host.
     hello current = do
@@ -676,8 +692,10 @@ joinGame shell offer = do
         contents <- Encoding.decodeUtf8Lenient <$> ByteString.readFile path
         Link.send hostChannel (Link.MkHello name contents)
     -- The game as this seat, once the registry is built for the cards'
-    -- text; then its ending, until the player goes home.
-    guestGame seat = do
+    -- text; then its ending, the channel kept open, until the host's
+    -- Rematch tells the match-up again, the player's Rematch goes back to
+    -- it, or the player goes home.
+    guestGame current seat = do
       Browser.display (page shell) (message ["Loading the cards\x2026"])
       built <- untilBuilt shell [Loading.MkCards, Loading.MkRules] (registry <$> IORef.readIORef (loaded shell))
       case built of
@@ -685,17 +703,25 @@ joinGame shell offer = do
         Right reg -> do
           chosen <- IORef.newIORef MkToHome
           played <- Guest.play (page shell) (Identity.runIdentity . Interpreter.chosenCard reg) (level shell) hostChannel (rejoin shell n Rejoin.guest) seat (leaveFor shell chosen)
-          Browser.linkClose n
           case played of
-            Hotseat.MkAbandoned -> IORef.readIORef chosen
+            Hotseat.MkAbandoned -> Browser.linkClose n >> IORef.readIORef chosen
             Hotseat.MkFinished ending -> do
-              let ended = do
+              let back = Join.rematched current
+                  ended closed = do
                     Browser.display (page shell) (fmap Screen.MkEnding (Ending.view ending))
                     woke <- await shell
                     case woke of
-                      MkTapped (Screen.MkEnding _) _ -> pure MkToHome
-                      _ -> ended
-              ended
+                      MkHeard heard' | Browser.link heard' == n -> case Text.unpack (Browser.kind heard') of
+                        "message" | Right (Link.MkMatchup places) <- Link.decode (build shell) (Browser.said heard') -> go back {Join.places = places}
+                        "closed" -> ended True
+                        _ -> ended closed
+                      MkTapped (Screen.MkEnding Ending.MkRematch) _
+                        | closed -> go (lost hostClosed back)
+                        | otherwise -> go back
+                      MkTapped (Screen.MkEnding _) _ -> Browser.linkClose n >> pure MkToHome
+                      _ -> ended closed
+              -- A game stopped on a dropped connection left it closed.
+              ended (Ending.verdict ending == Ending.MkStopped)
 
 -- | The home screen with a game paused, the replays reachable from it,
 -- until the player resumes the game or gives it up for another, recorded

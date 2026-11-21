@@ -1142,6 +1142,7 @@ import qualified Parun.Web.EndingSpec
 import qualified Parun.Web.HomeSpec
 import qualified Parun.Web.HtmlSpec
 import qualified Parun.Web.IconSpec
+import qualified Parun.Web.JoinSpec
 import qualified Parun.Web.LinkSpec
 import qualified Parun.Web.LoadingSpec
 import qualified Parun.Web.LobbySpec
@@ -2326,6 +2327,7 @@ spec s reference corpus = do
   Parun.Web.BuilderSpec.spec s
   Parun.Web.CardIndexSpec.spec s
   Parun.Web.LobbySpec.spec s
+  Parun.Web.JoinSpec.spec s
   Parun.Web.LinkSpec.spec s
   Parun.Web.IconSpec.spec s
   Parun.Web.ManaSpec.spec s
