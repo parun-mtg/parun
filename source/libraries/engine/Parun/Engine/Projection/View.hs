@@ -761,7 +761,7 @@ viewOfCharacteristics peers oid pc controller counters gs =
                   then Just BlockStatus.Unblocked
                   else Nothing,
       Filter.blockers = Map.findWithDefault Set.empty oid (Combat.blockers (TurnRegisters.combat (GameState.turn gs))),
-      Filter.blocked = Map.keysSet (Map.filter (Set.member oid) (Combat.blockers (TurnRegisters.combat (GameState.turn gs)))),
+      Filter.blocked = Maybe.fromMaybe Set.empty (Game.blockingOf oid gs),
       -- CR 608.2i: what this object did this turn and this combat, off the
       -- turn's log and the combat record. Each reader is shared with
       -- Count.lastKnownView, which asks it of an id that has ceased.

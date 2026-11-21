@@ -1409,7 +1409,12 @@ lastKnownView peers oid gs lastKnown =
           Filter.attackingPlaneswalkerController = case LastKnown.attackTarget lastKnown of
             Just (AttackTarget.OfPlaneswalker _) -> Map.lookup oid (Combat.removedDefending (TurnRegisters.combat (GameState.turn gs)))
             _ -> Nothing,
-          Filter.blocking = LastKnown.blocking lastKnown,
+          Filter.blocking = Maybe.isJust (LastKnown.blocking lastKnown),
+          -- CR 603.10a: the attackers it was blocking as it left, which CR
+          -- 506.4 has since cleared from the live record. Baneclaw Marauder's
+          -- scenarios prove it. `blockers` keeps the snapshot's empty set: no
+          -- card asks a departed attacker which creatures blocked it.
+          Filter.blocked = Maybe.fromMaybe Set.empty (LastKnown.blocking lastKnown),
           -- CR 310.9e / 608.2h: who protected it as it left.
           Filter.protector = LastKnown.protector lastKnown,
           Filter.paidCosts = LastKnown.paidCosts lastKnown,

@@ -1153,13 +1153,20 @@ overLastKnownChoices field f lk = case field of
 -- the answer is membership in some attacker's set rather than a key lookup, or
 -- in Combat.blockingNothing once every attacker it blocked has left combat.
 --
--- The ONE fold, so Parun.Engine.Projection's live Filter.blocking and the
+-- Built on blockingOf, so Parun.Engine.Projection's live Filter.blocking and the
 -- CR 608.2h record Parun.Types.LastKnown.blocking keeps cannot answer it
 -- differently -- sourceIsToken's posture one field over.
 isBlocking :: ObjectId -> GameState -> Bool
-isBlocking oid gs =
+isBlocking oid = Maybe.isJust . blockingOf oid
+
+-- CR 509.1g: WHICH attackers this creature is blocking, Nothing where it is not
+-- blocking. The ONE fold: an empty set is a creature in Combat.blockingNothing,
+-- still blocking once every attacker it blocked has left combat.
+blockingOf :: ObjectId -> GameState -> Maybe (Set.Set ObjectId)
+blockingOf oid gs =
   let c = TurnRegisters.combat (GameState.turn gs)
-   in Set.member oid (Combat.blockingNothing c) || any (Set.member oid) (Map.elems (Combat.blockers c))
+      blocked = Map.keysSet (Map.filter (Set.member oid) (Combat.blockers c))
+   in if Set.null blocked && not (Set.member oid (Combat.blockingNothing c)) then Nothing else Just blocked
 
 -- CR 303.4b: WHICH object this one is attached to -- what an Aura "enchants".
 -- Nothing where it is attached to nothing, and where it is attached to a PLAYER

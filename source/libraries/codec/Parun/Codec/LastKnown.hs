@@ -61,7 +61,7 @@ codec = Fields.object $ do
   acquisition <- Fields.defaulted "acquisition" Acquisition.Own Acquisition.codec LastKnown.acquisition
   attacking <- Fields.required "attacking" Common.boolean LastKnown.attacking
   attackTarget <- Fields.required "attackTarget" (Common.maybe AttackTarget.codec) LastKnown.attackTarget
-  blocking <- Fields.required "blocking" Common.boolean LastKnown.blocking
+  blocking <- Fields.required "blocking" (Common.maybe (Common.set ObjectId.codec)) LastKnown.blocking
   protector <- Fields.required "protector" (Common.maybe PlayerId.codec) LastKnown.protector
   paidCosts <- Fields.defaulted "paidCosts" Map.empty (Common.keyedList (Common.keyValue Keyword.codec (Common.keyedList (Common.keyValue KeywordInstance.codec Common.natural)))) LastKnown.paidCosts
   castUsing <- Fields.defaulted "castUsing" Nothing (Common.maybe Keyword.codec) LastKnown.castUsing

@@ -369,8 +369,8 @@ data View = MkView
     -- `blockers` read from the other side: the keys of Combat.blockers whose
     -- member set holds it. Empty for a creature blocking nothing, and for one
     -- whose every attacker has left combat (Combat.blockingNothing), which
-    -- `blocking` still counts. Empty from Count.lastKnownView too, as
-    -- `blockers` is: CR 506.4 takes a departed creature out of combat.
+    -- `blocking` still counts. Count.lastKnownView answers it for a departed
+    -- blocker from LastKnown.blocking (CR 603.10a).
     blocked :: Set.Set ObjectId.ObjectId,
     -- CR 608.2i: did this candidate attack or block earlier this turn? Unlike
     -- `attacking` not even a present state: it is a look-back read of the
