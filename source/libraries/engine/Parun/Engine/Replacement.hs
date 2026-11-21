@@ -189,6 +189,7 @@ import qualified Parun.Types.Subtype as Subtype
 import qualified Parun.Types.Throw as Throw
 import qualified Parun.Types.ThrowKind as ThrowKind
 import Parun.Types.Timestamp (Timestamp)
+import qualified Parun.Types.TokenCopy as TokenCopy
 import qualified Parun.Types.TokenLot as TokenLot
 import qualified Parun.Types.TokenPattern as TokenPattern
 import qualified Parun.Types.TokenPlus as TokenPlus
@@ -2141,7 +2142,7 @@ matchesTokenLot :: GameState -> Filter.Context -> Filter.Type.Filter Keyword.Typ
 matchesTokenLot gs context filter_ pid lot =
   let deploys = Count.deployIn gs Zone.Battlefield
       clausesOf = Set.fromList . Maybe.mapMaybe ActivatedAbility.condition
-      view = case TokenLot.copy lot of
+      view = case fmap TokenCopy.values (TokenLot.copy lot) of
         -- No OWNER, matching the viewOfCard branch below, which has no object to
         -- read CR 108.3 off either: a lot that named one would answer two ways
         -- for the same token depending on whether it was a copy.

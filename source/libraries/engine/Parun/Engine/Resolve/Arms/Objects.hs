@@ -177,6 +177,7 @@ import qualified Parun.Types.Source as Source
 import qualified Parun.Types.SpellWasCopied as SpellWasCopied
 import qualified Parun.Types.StackObjectKind as StackObjectKind
 import qualified Parun.Types.StoredEffects as StoredEffects
+import qualified Parun.Types.TokenCopy as TokenCopy
 import qualified Parun.Types.TurnRegisters as TurnRegisters
 import qualified Parun.Types.Undesignate as Undesignate
 import qualified Parun.Types.Uses as Uses
@@ -531,8 +532,12 @@ createCopy settle resolving source controller legal chosen (CreateCopy.MkCreateC
               -- way the BecomeCopy arm below reads it.
               -- Nothing for the subject's own copiable values: CR 707.9c's
               -- retained original belongs to an object that already existed,
-              -- and a token minted by CR 707.1 did not.
-              made <- Event.createTokens settle creating card (Just (Replacement.applyCopyExceptions (Common.thisAbilitySource resolving gs) Nothing exceptions (Event.copiedSnapshotWithLastKnown src gs))) Nothing (Integer.toNaturalSaturating n) (EntryRiders.tapped entry) (EntryRiders.counters frozen) Nothing (Common.resolvingMarks resolving gs)
+              -- and a token minted by CR 707.1 did not. Both faces of a
+              -- double-faced copy take them (CR 707.8a).
+              let except = Replacement.applyCopyExceptions (Common.thisAbilitySource resolving gs) Nothing exceptions
+                  copied = Event.copiedToken src gs
+                  excepted = copied {TokenCopy.values = except (TokenCopy.values copied), TokenCopy.turned = fmap except (TokenCopy.turned copied)}
+              made <- Event.createTokens settle creating card (Just excepted) Nothing (Integer.toNaturalSaturating n) (EntryRiders.tapped entry) (EntryRiders.counters frozen) Nothing (Common.resolvingMarks resolving gs)
               -- CR 508.4, after the entry loop for Create's reason.
               Monad.forM_ mAttack (\specified -> Monad.mapM_ (Combat.putOntoBattlefieldAttacking specified) made)
               -- CR 509.4, the blocking twin one rule over, in the same place

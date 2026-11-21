@@ -65,13 +65,14 @@ copySource = SlotName.MkSlotName (Text.pack "copySource")
 ownCopySource :: SlotName
 ownCopySource = SlotName.MkSlotName (Text.pack "ownCopySource")
 
--- CR 731.2i: the reserved slot under which a MERGED permanent's reading of its
--- merge with each double-faced component turned over is stored, beside
--- `ownCopySource` above, its CR 731.2h flipped reading nested as PC.flipped as
--- the current one's is. No card's targetSlots may name it: a merge is not a
--- target.
-turnedMergeSource :: SlotName
-turnedMergeSource = SlotName.MkSlotName (Text.pack "turnedMergeSource")
+-- CR 731.2i / 707.8a: the reserved slot under which an object's own values
+-- with it turned over are stored, beside `ownCopySource` above -- a MERGED
+-- permanent's merge with each double-faced component turned, or a double-faced
+-- token copy's other face -- its CR 731.2h flipped reading nested as PC.flipped
+-- as the current one's is. No card's targetSlots may name it: an object's own
+-- values are not a target.
+turnedCopySource :: SlotName
+turnedCopySource = SlotName.MkSlotName (Text.pack "turnedCopySource")
 
 -- CR 731.2e / 731.2f: the reserved slot under which a face-up MERGED permanent
 -- holding a face-down component keeps the reading of its merge with every
@@ -2017,6 +2018,11 @@ setCopy pc = Map.insert copySource (Binding.empty {Binding.copy = Just pc})
 setOwnCopy :: ProjectedCharacteristics -> Map SlotName Binding -> Map SlotName Binding
 setOwnCopy pc = Map.insert ownCopySource (Binding.empty {Binding.copy = Just pc}) . Map.delete copySource
 
+-- CR 707.8a / 731.2i: stamp an object's own values with it turned over, under
+-- `turnedCopySource`, beside the ones `setOwnCopy` stamps.
+setTurnedCopy :: ProjectedCharacteristics -> Map SlotName Binding -> Map SlotName Binding
+setTurnedCopy pc = Map.insert turnedCopySource (Binding.empty {Binding.copy = Just pc})
+
 -- CR 731.2a with CR 731.2i: readings of one merge, the current one as the
 -- object's own values, the turned-over one beside it, and CR 701.20a's shown
 -- one where it differs, each carrying its CR 731.2h flipped reading as
@@ -2033,7 +2039,7 @@ setMergeCopy :: ProjectedCharacteristics -> ProjectedCharacteristics -> Maybe Pr
 setMergeCopy pc turnedPc upPc shownPc =
   Map.alter (const (if shownPc == Maybe.fromMaybe pc upPc then Nothing else Just (Binding.empty {Binding.copy = Just shownPc}))) shownMergeSource
     . Map.alter (const (fmap (\up -> Binding.empty {Binding.copy = Just up}) upPc)) upMergeSource
-    . Map.insert turnedMergeSource (Binding.empty {Binding.copy = Just turnedPc})
+    . setTurnedCopy turnedPc
     . setOwnCopy pc
 
 -- CR 731.2f: a merged permanent turns face up or down, so every component
@@ -2045,25 +2051,26 @@ setMergeCopy pc turnedPc upPc shownPc =
 -- pile with its components turned up are the callers.
 unstashMergeCopy :: Map SlotName Binding -> Map SlotName Binding
 unstashMergeCopy m = case Map.lookup upMergeSource m of
-  Just up -> Map.insert ownCopySource up (Map.insert turnedMergeSource up (Map.delete upMergeSource m))
+  Just up -> Map.insert ownCopySource up (Map.insert turnedCopySource up (Map.delete upMergeSource m))
   Nothing -> m
 
--- CR 731.2i: a merged permanent transforms, so each double-faced component turns
--- over and the turned reading of its merge becomes the current one, its flipped
--- reading with it, since CR 731.2h's flip component stays flipped (CR 710.4). A
--- SWAP, so turning it back restores the reading it had. The components turn
--- under a later copy effect too, which keeps covering them. The shown reading
--- (`shownMergeSource`) stays: it is read face down alone, and CR 731.2j keeps a
--- pile holding a face-up double-faced component from ever being turned so.
-turnMergeCopy :: Map SlotName Binding -> Map SlotName Binding
-turnMergeCopy m = case (Map.lookup ownCopySource m, Map.lookup turnedMergeSource m) of
-  (Just current, Just turned) -> Map.insert ownCopySource turned (Map.insert turnedMergeSource current m)
+-- CR 731.2i / 707.8a: a merged permanent or a double-faced token copy
+-- transforms, so the turned reading of its own values becomes the current one,
+-- its flipped reading with it, since CR 731.2h's flip component stays flipped
+-- (CR 710.4). A SWAP, so turning it back restores the reading it had. It turns
+-- under a later copy effect too, which keeps covering it. A merge's shown
+-- reading (`shownMergeSource`) stays: it is read face down alone, and CR 731.2j
+-- keeps a pile holding a face-up double-faced component from ever being turned
+-- so.
+turnCopy :: Map SlotName Binding -> Map SlotName Binding
+turnCopy m = case (Map.lookup ownCopySource m, Map.lookup turnedCopySource m) of
+  (Just current, Just turned) -> Map.insert ownCopySource turned (Map.insert turnedCopySource current m)
   _ -> m
 
 -- CR 613.7 / 731.2a: is this merged permanent's copy stamp still its merge's,
 -- rather than a later copy effect's that covers it?
 mergeStampHolds :: Map SlotName Binding -> Bool
-mergeStampHolds m = Map.member turnedMergeSource m && not (Map.member copySource m)
+mergeStampHolds m = Map.member turnedCopySource m && not (Map.member copySource m)
 
 -- CR 708.10: these bindings without a copy effect's stamp -- the card beneath
 -- a face-down permanent that is a copy. The object's own values stay

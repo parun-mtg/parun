@@ -76,4 +76,4 @@ populate settle pid resolving = do
     -- the state from before the prompt would drop that.
     minting <- State.get
     Monad.forM_ (Game.cardOfWithLastKnown token minting) $ \card ->
-      Monad.void (Event.createTokens settle pid card (Just (Event.copiedSnapshotWithLastKnown token minting)) Nothing 1 TapState.Untapped Map.empty Nothing Set.empty)
+      Monad.void (Event.createTokens settle pid card (Just (Event.copiedToken token minting)) Nothing 1 TapState.Untapped Map.empty Nothing Set.empty)

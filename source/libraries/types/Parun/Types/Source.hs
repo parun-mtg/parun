@@ -65,7 +65,7 @@ data Source
     --
     -- CR 731.2i's double-faced components each show a face of their own, which
     -- is why a component carries one here, and the merge stamps a turned reading
-    -- for turning them over (Parun.Engine.Binding.turnMergeCopy).
+    -- for turning them over (Parun.Engine.Binding.turnCopy).
     OfMerge (NonEmpty.NonEmpty ShownComponent.ShownComponent)
   | -- | CR 111.3/111.6: a token -- a permanent not represented by a card. Its
     -- characteristics ARE a Card (CR 111.3: effect-defined values are functionally
