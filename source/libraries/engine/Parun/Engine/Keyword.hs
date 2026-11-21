@@ -2242,7 +2242,8 @@ unearth cost =
             { ArmDelayedTrigger.name = unearthExileName,
               ArmDelayedTrigger.onset = Onset.Immediately,
               ArmDelayedTrigger.duration = Nothing,
-              ArmDelayedTrigger.ability = Nothing
+              ArmDelayedTrigger.ability = Nothing,
+              ArmDelayedTrigger.recipient = Nothing
             }
       redirected =
         Effect.Replace
@@ -2543,7 +2544,8 @@ encore cost =
             { ArmDelayedTrigger.name = encoreSacrificeName,
               ArmDelayedTrigger.onset = Onset.Immediately,
               ArmDelayedTrigger.duration = Nothing,
-              ArmDelayedTrigger.ability = Nothing
+              ArmDelayedTrigger.ability = Nothing,
+              ArmDelayedTrigger.recipient = Nothing
             }
    in ActivatedAbility.MkActivatedAbility
         { ActivatedAbility.costChoices = [],
@@ -5744,7 +5746,8 @@ myriad =
             { ArmDelayedTrigger.name = myriadExileName,
               ArmDelayedTrigger.onset = Onset.Immediately,
               ArmDelayedTrigger.duration = Nothing,
-              ArmDelayedTrigger.ability = Nothing
+              ArmDelayedTrigger.ability = Nothing,
+              ArmDelayedTrigger.recipient = Nothing
             }
       anyToken = atLeastOneMatching (Scope.OverBound BoundReading.AsBound myriadTokenSlot) (Filter.And [])
    in Mint.triggerOf
@@ -5808,7 +5811,8 @@ mobilize n =
             { ArmDelayedTrigger.name = mobilizeSacrificeName,
               ArmDelayedTrigger.onset = Onset.Immediately,
               ArmDelayedTrigger.duration = Nothing,
-              ArmDelayedTrigger.ability = Nothing
+              ArmDelayedTrigger.ability = Nothing,
+              ArmDelayedTrigger.recipient = Nothing
             }
    in Mint.trigger (TriggerCondition.Attacks (AttackTrigger.Attacker AttackerTrigger.defaultValue)) (Seq.fromList [spawn, arm])
 
@@ -6541,7 +6545,8 @@ decayed =
             { ArmDelayedTrigger.name = decayedSacrificeName,
               ArmDelayedTrigger.onset = Onset.Immediately,
               ArmDelayedTrigger.duration = Nothing,
-              ArmDelayedTrigger.ability = Nothing
+              ArmDelayedTrigger.ability = Nothing,
+              ArmDelayedTrigger.recipient = Nothing
             }
    in Mint.trigger (TriggerCondition.Attacks (AttackTrigger.Attacker AttackerTrigger.defaultValue)) (Seq.singleton effect)
 

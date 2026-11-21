@@ -1280,8 +1280,8 @@ effectChildren c effect = case effect of
   Effect.EndCombatPhase -> pure effect
   Effect.GainControl (GainControl.MkGainControl duration ref named to) -> fmap Effect.GainControl (GainControl.MkGainControl <$> onDuration c duration <*> onObjectRef c ref <*> traverse (onSlot c) named <*> onPlayer c to)
   Effect.ExchangeControl sides -> fmap Effect.ExchangeControl (controlSidesChildren c sides)
-  Effect.ArmDelayedTrigger (ArmDelayedTrigger.MkArmDelayedTrigger name onset duration ability) ->
-    fmap Effect.ArmDelayedTrigger (ArmDelayedTrigger.MkArmDelayedTrigger name <$> onOnset c onset <*> traverse (onDuration c) duration <*> traverse (onAbility c) ability)
+  Effect.ArmDelayedTrigger (ArmDelayedTrigger.MkArmDelayedTrigger name onset duration ability recipient) ->
+    fmap Effect.ArmDelayedTrigger (ArmDelayedTrigger.MkArmDelayedTrigger name <$> onOnset c onset <*> traverse (onDuration c) duration <*> traverse (onAbility c) ability <*> traverse (onPlayer c) recipient)
   Effect.AffectPlayers (AffectPlayers.MkAffectPlayers duration players playerEffect) ->
     fmap Effect.AffectPlayers (AffectPlayers.MkAffectPlayers <$> onDuration c duration <*> onAffectedPlayers c players <*> onPlayerEffect c playerEffect)
   Effect.RequireBlock (RequireBlock.MkRequireBlock duration blocker attacker arity) ->

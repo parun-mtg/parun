@@ -10,6 +10,7 @@ import qualified Parun.Types.Duration as Duration
 import qualified Parun.Types.Onset as Onset
 import qualified Parun.Types.PlayerRef as PlayerRef
 import qualified Parun.Types.PlayerRelation as PlayerRelation
+import qualified Parun.Types.SlotName as SlotName
 
 spec :: (Monad m, Monad n) => Spec.Spec m n -> n ()
 spec s = Spec.describe s "Parun.Codec.ArmDelayedTrigger" $ do
@@ -23,7 +24,8 @@ spec s = Spec.describe s "Parun.Codec.ArmDelayedTrigger" $ do
           { ArmDelayedTrigger.name = AbilityName.MkAbilityName (Text.pack "sacrifice it"),
             ArmDelayedTrigger.onset = Onset.Immediately,
             ArmDelayedTrigger.duration = Nothing,
-            ArmDelayedTrigger.ability = Nothing
+            ArmDelayedTrigger.ability = Nothing,
+            ArmDelayedTrigger.recipient = Nothing
           }
       )
       " {\"name\":\"sacrifice it\"} "
@@ -36,7 +38,8 @@ spec s = Spec.describe s "Parun.Codec.ArmDelayedTrigger" $ do
           { ArmDelayedTrigger.name = AbilityName.MkAbilityName (Text.pack "each combat"),
             ArmDelayedTrigger.onset = Onset.Immediately,
             ArmDelayedTrigger.duration = Just Duration.UntilEndOfTurn,
-            ArmDelayedTrigger.ability = Nothing
+            ArmDelayedTrigger.ability = Nothing,
+            ArmDelayedTrigger.recipient = Nothing
           }
       )
       " {\"name\":\"each combat\",\"duration\":{\"type\":\"UntilEndOfTurn\"}} "
@@ -52,7 +55,8 @@ spec s = Spec.describe s "Parun.Codec.ArmDelayedTrigger" $ do
           { ArmDelayedTrigger.name = AbilityName.MkAbilityName (Text.pack "return it"),
             ArmDelayedTrigger.onset = Onset.FromNextTurnOf (Just (PlayerRef.Relative PlayerRelation.You)),
             ArmDelayedTrigger.duration = Nothing,
-            ArmDelayedTrigger.ability = Nothing
+            ArmDelayedTrigger.ability = Nothing,
+            ArmDelayedTrigger.recipient = Nothing
           }
       )
       " {\"name\":\"return it\",\"onset\":{\"type\":\"FromNextTurnOf\",\"value\":{\"type\":\"Relative\",\"value\":\"You\"}}} "
@@ -66,8 +70,23 @@ spec s = Spec.describe s "Parun.Codec.ArmDelayedTrigger" $ do
           { ArmDelayedTrigger.name = AbilityName.MkAbilityName (Text.pack "exile that token"),
             ArmDelayedTrigger.onset = Onset.Immediately,
             ArmDelayedTrigger.duration = Nothing,
-            ArmDelayedTrigger.ability = Just (Text.pack "at end step")
+            ArmDelayedTrigger.ability = Just (Text.pack "at end step"),
+            ArmDelayedTrigger.recipient = Nothing
           }
       )
       " {\"name\":\"exile that token\",\"ability\":\"at end step\"} "
+  -- Loch Larent's "Target opponent gets a one-time boon".
+  Spec.it s "MkArmDelayedTrigger, recipient alone" $
+    Common.assertCodec
+      s
+      (ArmDelayedTrigger.codec Common.text)
+      ( ArmDelayedTrigger.MkArmDelayedTrigger
+          { ArmDelayedTrigger.name = AbilityName.MkAbilityName (Text.pack "boon"),
+            ArmDelayedTrigger.onset = Onset.Immediately,
+            ArmDelayedTrigger.duration = Nothing,
+            ArmDelayedTrigger.ability = Nothing,
+            ArmDelayedTrigger.recipient = Just (PlayerRef.InSlot (SlotName.MkSlotName (Text.pack "target")))
+          }
+      )
+      " {\"name\":\"boon\",\"recipient\":{\"type\":\"InSlot\",\"value\":\"target\"}} "
   Spec.it s "has a schema" $ Common.assertHasSchema s (ArmDelayedTrigger.codec Common.text)

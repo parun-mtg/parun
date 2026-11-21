@@ -1225,7 +1225,7 @@ abilitySlotLintSpec s registry corpus = Spec.describe s "Lint" $ do
           (vanillaFace "Nester" instantLine)
             { Face.delayedAbilities =
                 Map.fromList
-                  [ (AbilityName.MkAbilityName (Text.pack "dies"), modalTrigger (TriggerCondition.Leaves (LeavesTrigger.dies LeavingPermanent.Self)) [lintMode [Effect.ArmDelayedTrigger (ArmDelayedTrigger.MkArmDelayedTrigger returning Onset.Immediately Nothing Nothing) | arms] []]),
+                  [ (AbilityName.MkAbilityName (Text.pack "dies"), modalTrigger (TriggerCondition.Leaves (LeavesTrigger.dies LeavingPermanent.Self)) [lintMode [Effect.ArmDelayedTrigger (ArmDelayedTrigger.MkArmDelayedTrigger returning Onset.Immediately Nothing Nothing Nothing) | arms] []]),
                     (returning, modalTrigger (TriggerCondition.LosesControl (LostPermanent.Bound Binding.triggerSource)) [lintMode [Effect.Tap (Tap.plain (ObjectRef.InSlot Binding.became))] []])
                   ]
             }
@@ -2103,7 +2103,7 @@ abilitySlotLintSpec s registry corpus = Spec.describe s "Lint" $ do
   Spec.it s "a slot only an armed delayed ability's condition names is read" $ do
     let chosen = SlotName.MkSlotName (Text.pack "chosen")
         later = AbilityName.MkAbilityName (Text.pack "later")
-        arming = [lintMode [Effect.ArmDelayedTrigger (ArmDelayedTrigger.MkArmDelayedTrigger later Onset.Immediately Nothing Nothing)] [chosen]]
+        arming = [lintMode [Effect.ArmDelayedTrigger (ArmDelayedTrigger.MkArmDelayedTrigger later Onset.Immediately Nothing Nothing Nothing)] [chosen]]
         watching permanent = (vanillaFace "Arming" instantLine) {Face.delayedAbilities = Map.singleton later (modalTrigger (TriggerCondition.Leaves (LeavesTrigger.dies permanent)) [lintMode [] []])}
         named = watching (LeavingPermanent.Bound chosen)
         unnamed = watching LeavingPermanent.Self
