@@ -2519,7 +2519,10 @@ eventTriggersGiven scope standing events gs =
       -- comes last so the bias hands them the id: each offers the stated
       -- abilities the scan would, plus its keyword-minted ones.
       candidates onBattlefield logged later same graveyard = let event = LoggedEvent.event logged in Map.toAscList (restrict (Map.unions [lookedBackAt onBattlefield logged, onBattlefield, leftBattlefield event, later, same, walkedAwayFrom event, chaosEnsuedOn event, cycledCard event, spellCast event, revealedInHand event, graveyard, inCommand, Map.unionWith (\(c, a) (_, b) -> (c, a <> b)) inExile (exiledForMadness event), inStatedZones]))
-      scanOne board later same graveyard logged = concatMap (forOne board logged) (candidates (onBattlefieldOf (restrict board)) logged later same graveyard)
+      -- CR 901.12c: a planar bearer's candidate once per member of its
+      -- controller's team (Plane.triggerControllers).
+      teamWide (oid, (sampled, abilities)) = fmap (\you -> (oid, (you, abilities))) (Plane.triggerControllers oid sampled gs)
+      scanOne board later same graveyard logged = concatMap (forOne board logged) (concatMap teamWide (candidates (onBattlefieldOf (restrict board)) logged later same graveyard))
       -- The battlefield reading is per GROUP and so is hoisted out of the block:
       -- every event in one group happened at the same time, so they share it. A
       -- group with no events cannot occur, which `eventGroups` states in the type.

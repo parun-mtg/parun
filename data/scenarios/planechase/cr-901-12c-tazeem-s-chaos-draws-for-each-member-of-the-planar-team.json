@@ -1,0 +1,181 @@
+{
+  "board": {
+    "active": "alice",
+    "seats": [
+      {
+        "battlefield": [
+          {
+            "card": "Forest"
+          },
+          {
+            "card": "Forest"
+          }
+        ],
+        "command": [
+          {
+            "card": "Tazeem",
+            "label": "tazeem"
+          }
+        ],
+        "library": [
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          }
+        ],
+        "name": "alice",
+        "sideDecks": [
+          {
+            "key": "Planar",
+            "value": [
+              {
+                "card": "Academy at Tolaria West"
+              }
+            ]
+          }
+        ],
+        "team": 1
+      },
+      {
+        "battlefield": [
+          {
+            "card": "Forest"
+          }
+        ],
+        "library": [
+          {
+            "card": "Plains"
+          },
+          {
+            "card": "Plains"
+          },
+          {
+            "card": "Plains"
+          }
+        ],
+        "name": "dave",
+        "team": 1
+      },
+      {
+        "battlefield": [
+          {
+            "card": "Forest"
+          }
+        ],
+        "library": [
+          {
+            "card": "Swamp"
+          },
+          {
+            "card": "Swamp"
+          },
+          {
+            "card": "Swamp"
+          }
+        ],
+        "name": "bob",
+        "team": 2
+      },
+      {
+        "battlefield": [
+          {
+            "card": "Forest"
+          }
+        ],
+        "library": [
+          {
+            "card": "Mountain"
+          },
+          {
+            "card": "Mountain"
+          },
+          {
+            "card": "Mountain"
+          }
+        ],
+        "name": "carol",
+        "team": 2
+      }
+    ],
+    "sharedTeamTurns": true,
+    "step": "PrecombatMain",
+    "twoHeadedGiant": true
+  },
+  "description": "CR 901.12c Tazeem's chaos draws for each member of the planar team",
+  "final": [
+    {
+      "Count": {
+        "card": "Island",
+        "count": 2,
+        "player": "alice",
+        "zone": "Hand"
+      }
+    },
+    {
+      "Count": {
+        "card": "Plains",
+        "count": 1,
+        "player": "dave",
+        "zone": "Hand"
+      }
+    },
+    {
+      "Count": {
+        "card": "Swamp",
+        "count": 0,
+        "player": "bob",
+        "zone": "Hand"
+      }
+    },
+    {
+      "Count": {
+        "card": "Mountain",
+        "count": 0,
+        "player": "carol",
+        "zone": "Hand"
+      }
+    }
+  ],
+  "note": "A Two-Headed Giant Planechase game, alice and dave against bob and carol, alice the active team's primary player and so the planar controller (CR 901.12b). She rolls chaos under her Tazeem, whose 'you' applies to both members of her team (CR 901.12c): the ability triggers once for each, each its own 'you' (docs/decisions.md, \"A plane's you is each member of the planar team\"), so alice draws two for her two Forests and dave one for his one, and the opposing team draws nothing.",
+  "timeline": [
+    {
+      "do": {
+        "Take": {
+          "action": "RollPlanarDie"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": {
+        "Answer": {
+          "prompt": "RollDie",
+          "with": 5
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Count": {
+          "card": "Plains",
+          "count": 1,
+          "player": "dave",
+          "zone": "Hand"
+        }
+      },
+      "player": "alice",
+      "step": "EndStep",
+      "turn": 1
+    }
+  ]
+}
