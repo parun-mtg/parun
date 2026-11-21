@@ -762,12 +762,14 @@ amongPending under members body = do
 -- Banishing Light pair for changeZonesTogether; a devour changing Blackcleave
 -- Cliffs' condition, and Sunpetal Grove's before its row is live, by the
 -- cr-616-1 Elder pairs; and pairs that commute left unasked by the cr-616-1
--- Ixidron and Carrion Crow, Sunpetal Grove and Temple Garden, and Eddymurk
--- Crab and Elder scenarios. The seats' APNAP order is proved by the cr-616-1
--- Ixidron and Clone pair there, on Resolve's move by its two Exhume
--- scenarios, and the team's order by the cr-805-6 Exhume pair in
--- data/scenarios/team, and a devour beside a teammate's devour or Frontier
--- Mastodon left unasked by the cr-805-6 Thunder-Thrash Elder scenarios there.
+-- Ixidron and Carrion Crow, Sunpetal Grove, Morphic Pool and Temple Garden,
+-- and Eddymurk Crab, Murky Sewer, Effortless Master and Elder scenarios. The
+-- seats' APNAP order is proved by the cr-616-1 Ixidron and Clone pair there,
+-- on Resolve's move by its two Exhume scenarios, and the team's order by the
+-- cr-805-6 Exhume pair in data/scenarios/team and, for a devoured Goblin King
+-- beside a teammate's Frontier Mastodon, its Goblin King pair; a devour beside
+-- a teammate's devour, Frontier Mastodon or Putrid Pals is left unasked by the
+-- cr-805-6 Thunder-Thrash Elder scenarios there.
 --
 -- createTokens calls this over one event's lots, each lot through its first
 -- token: a lot's members are copies of one shape, whose orders are
@@ -780,7 +782,7 @@ orderEntries :: Maybe PlayerId -> [ObjectId] -> Game [ObjectId]
 orderEntries under members = do
   gs <- State.get
   let seatOf oid = fmap (\obj -> Maybe.fromMaybe (Object.owner obj) under) (Game.lookupObject oid gs)
-      carrying = [(oid, seat) | oid <- members, Maybe.isJust (Replacement.entryMemberAccess gs oid), Just seat <- [seatOf oid]]
+      carrying = [(oid, seat) | oid <- members, Just seat <- [seatOf oid], Maybe.isJust (Replacement.entryMemberAccess gs seat oid)]
       apnap = Game.apnapOrder gs
       rank seat = Maybe.fromMaybe (length apnap) (List.elemIndex seat apnap)
       seats = List.sortOn rank (ListUtils.nubOrd (fmap snd carrying))
@@ -796,14 +798,14 @@ orderEntries under members = do
       place queue oid = case queue of
         next : later | Set.member oid carried -> (later, next)
         _ -> (queue, oid)
-      access oid = Maybe.fromMaybe mempty (Replacement.entryMemberAccess gs oid)
+      access seat oid = Maybe.fromMaybe mempty (Replacement.entryMemberAccess gs seat oid)
       observable entries =
         or
           [ Replacement.entryConflicts first second || Replacement.entryConflicts second first
           | (seat, oid) : rest <- List.tails entries,
-            let first = (seat, access oid),
+            let first = (seat, access seat oid),
             (otherSeat, other) <- rest,
-            let second = (otherSeat, access other)
+            let second = (otherSeat, access otherSeat other)
           ]
       runs team = observable [(s, oid) | (oid, s) <- carrying, s `elem` team]
   queue <- inActiveTeamOrder (const runs) seats (\seat sofar -> (sofar <>) <$> ask seat) []

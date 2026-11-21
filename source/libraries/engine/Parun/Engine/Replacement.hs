@@ -75,6 +75,7 @@ import Parun.Types.CandidateId (CandidateId)
 import qualified Parun.Types.CandidateId as CandidateId
 import Parun.Types.Card (Card)
 import qualified Parun.Types.Card as Card.Type
+import qualified Parun.Types.CardArrivedIn as CardArrivedIn
 import qualified Parun.Types.Cause as Cause
 import qualified Parun.Types.Chosen as Chosen
 import qualified Parun.Types.ComparedTo as ComparedTo
@@ -116,6 +117,7 @@ import qualified Parun.Types.EntryOption as EntryOption
 import qualified Parun.Types.EntryPrice as EntryPrice
 import qualified Parun.Types.EntryR as EntryR
 import qualified Parun.Types.EntryRewrite as EntryRewrite
+import qualified Parun.Types.EventShape as EventShape
 import qualified Parun.Types.Expiry as Expiry
 import Parun.Types.ExtraTurn (ExtraTurn)
 import qualified Parun.Types.ExtraTurn as ExtraTurn
@@ -144,6 +146,7 @@ import qualified Parun.Types.ManaInstead as ManaInstead
 import qualified Parun.Types.ManaR as ManaR
 import qualified Parun.Types.ManaScale as ManaScale
 import qualified Parun.Types.ManaType as ManaType
+import qualified Parun.Types.MovedBetween as MovedBetween
 import qualified Parun.Types.Object as Object
 import Parun.Types.ObjectId (ObjectId)
 import qualified Parun.Types.OrTapped as OrTapped
@@ -183,6 +186,7 @@ import Parun.Types.ReplacementEntry (ReplacementEntry)
 import qualified Parun.Types.ReplacementEntry as ReplacementEntry
 import qualified Parun.Types.ReplacementOrigin as ReplacementOrigin
 import qualified Parun.Types.ReplacementProvenance as ReplacementProvenance
+import qualified Parun.Types.SacrificeAnyNumber as SacrificeAnyNumber
 import qualified Parun.Types.SacrificeToEnter as SacrificeToEnter
 import qualified Parun.Types.Scaling as Scaling
 import qualified Parun.Types.Scope as Scope
@@ -3123,7 +3127,7 @@ placesCounters effect = case effect of
 -- object, the pools Event.orderEntries compares to decide whether the order
 -- two members apply in can be seen. A pool is the battlefield, the graveyards,
 -- exile, the hands, the life totals, or everything else (this turn's damage,
--- the stack, counters on other permanents).
+-- the stack, counters on other permanents, what static abilities give them).
 data EntryPool = OnBattlefield | InGraveyards | InExile | InHands | LifeTotals | Elsewhere
   deriving (Eq, Ord, Show, Enum, Bounded)
 
@@ -3162,7 +3166,8 @@ seeingEverything = mempty {records = records touchesEverything}
 -- `first` changes a pool `second` records, or, from another seat, a pool
 -- `second` records of its own controller's that `first` can reach (`shared`)
 -- or adds to: a sacrifice spends only its own seat's permanents (CR 701.21a,
--- Thunder-Thrash Elder beside a teammate's Frontier Mastodon). Two members
+-- Thunder-Thrash Elder beside a teammate's Frontier Mastodon), though one that
+-- can take a static ability's source adds to `Elsewhere` (CR 611.3a). Two members
 -- spending from one pool commute when one seat makes both choices
 -- (Thunder-Thrash Elder beside Gorger Wurm); between two seats the first takes
 -- its pick first from a pool both can spend from. What `first` adds to a pool
@@ -3182,9 +3187,13 @@ entryConflicts (seat, first) (otherSeat, second) =
 -- (Copy Enchantment copying Sigarda's Splendor beside Phyrexian Processor).
 -- A choice its own controller makes from options no pool limits touches
 -- nothing: the same player answers it in either order. An opponent's
--- choice records everything, since it is made seeing the board.
-entryAccess :: GameState -> ReplacementEffect Card (GrantedAbility.GrantedAbility Card) (Effect.Effect Card (GrantedAbility.GrantedAbility Card)) -> EntryAccess
-entryAccess gs = row asEntering
+-- choice records everything, since it is made seeing the board. A sacrifice
+-- by `seat` for `oid` that can take a permanent with a static ability also
+-- changes the state of the permanents it affects (`Elsewhere`), another
+-- seat's included (Thunder-Thrash Elder devouring Goblin King beside a
+-- teammate's Frontier Mastodon).
+entryAccess :: GameState -> PlayerId -> ObjectId -> ReplacementEffect Card (GrantedAbility.GrantedAbility Card) (Effect.Effect Card (GrantedAbility.GrantedAbility Card)) -> EntryAccess
+entryAccess gs seat oid = row asEntering
   where
     row onCopy effect = case effect of
       ReplacementEffect.EntryR (EntryR.MkEntryR _ rewrite) -> go onCopy rewrite
@@ -3192,7 +3201,7 @@ entryAccess gs = row asEntering
     -- The entering object's own copy entry also takes on what it could copy;
     -- a copy entry among those rows looks at the same battlefield, so it adds
     -- only its look.
-    asEntering copy = looking copy <> foldMap (\oid -> foldMap (row looking . snd) (Projection.replacementsOf Zone.Battlefield oid gs)) (copiable copy)
+    asEntering copy = looking copy <> foldMap (\copied -> foldMap (row looking . snd) (Projection.replacementsOf Zone.Battlefield copied gs)) (copiable copy)
     looking copy = case AsCopy.among copy of
       CopyDomain.InZone Zone.Battlefield -> reading [OnBattlefield]
       _ -> touchesEverything
@@ -3211,8 +3220,8 @@ entryAccess gs = row asEntering
       EntryRewrite.WithCounters counters -> countsFrom (Just counters)
       EntryRewrite.EntersWith with -> countsFrom (EntersWith.counters with)
       EntryRewrite.UnderControlOf _ -> mempty
-      EntryRewrite.SacrificeAnyNumber _ -> sacrificing
-      EntryRewrite.SacrificeToEnter _ -> sacrificing
+      EntryRewrite.SacrificeAnyNumber (SacrificeAnyNumber.MkSacrificeAnyNumber criterion _ _) -> sacrificing criterion
+      EntryRewrite.SacrificeToEnter sacrifice -> sacrificing (SacrificeToEnter.filter sacrifice)
       EntryRewrite.ExileFromGraveyard _ -> spending [InGraveyards] [InExile]
       EntryRewrite.EntersAttachedTo _ -> reading [OnBattlefield]
       EntryRewrite.Riot -> mempty
@@ -3238,7 +3247,10 @@ entryAccess gs = row asEntering
       EntryRewrite.RunEffects _ -> touchesEverything
     reading pools = mempty {records = Set.fromList pools}
     spending from to = mempty {removes = Set.fromList from, adds = Set.fromList to, shared = Set.fromList from}
-    sacrificing = (spending [OnBattlefield] [InGraveyards]) {shared = Set.empty}
+    sacrificing criterion =
+      let candidates = sacrificeCandidates (Just seat) Map.empty seat (Just oid) criterion gs
+          statics = [Elsewhere | not (all (null . flip Projection.staticAbilitiesOf gs) candidates)]
+       in (spending [OnBattlefield] [InGraveyards]) {adds = Set.fromList (InGraveyards : statics), shared = Set.empty}
     -- A count other than a printed number reads the board (Banner of Kinship).
     countsFrom :: Maybe WithCounters.WithCounters -> EntryAccess
     countsFrom = foldMap (\counters -> if all isLiteral (WithCounters.counters counters) then mempty else seeingEverything)
@@ -3248,9 +3260,12 @@ entryAccess gs = row asEntering
 
 -- What a condition (CR 614.1d's "unless") reads, as entry pools: a count of a
 -- zone records that zone, confined to the reader's own where the count is of
--- what it controls or owns; a fact of the turn or of the cast no entry changes
--- (whose turn it is, a kicker paid, attackers declared) records nothing; any
--- other quantity, or a count of anything but a zone, records every pool.
+-- what it controls or owns; a count of the turn's moves records the zone they
+-- leave or enter, confined likewise; a count of players records only what its
+-- aggregation reads (a life total); a fact of the turn or of the cast no entry
+-- changes (whose turn it is, a kicker paid, a spell cast, attackers declared)
+-- records nothing; any other quantity, or a count of anything else, records
+-- every pool.
 conditionAccess :: Condition.Type.Condition -> EntryAccess
 conditionAccess =
   Const.getConst
@@ -3275,6 +3290,7 @@ quantityAccess quantity = case quantity of
   Quantity.Type.ManaSpent _ -> nested
   Quantity.Type.AttackersDeclaredThisTurn _ -> nested
   Quantity.Type.AttackersDeclaredThisCombat -> nested
+  Quantity.Type.LifeTotal _ -> mempty {records = Set.singleton LifeTotals}
   -- Every other quantity is read as reading every pool, the answer that asks.
   _ -> seeingEverything
   where
@@ -3295,7 +3311,10 @@ accessChildren =
 
 -- The pool a count's scope reaches, with the state of its members
 -- (`Elsewhere`): its controller's own where the count is of permanents it
--- controls or of its own zone.
+-- controls or of its own zone. A count of the turn's moves reaches the zone
+-- an entry row's move spends from or adds to, its controller's own where the
+-- mover is (Putrid Pals); of players, nothing where the filter asks nothing of
+-- them (Morphic Pool).
 zoneAccess :: Scope.Scope Keyword.Type.Keyword -> Filter.Type.Filter Keyword.Type.Keyword -> EntryAccess
 zoneAccess over criterion = case over of
   Scope.InZone (InZone.MkInZone zone player)
@@ -3306,8 +3325,27 @@ zoneAccess over criterion = case over of
       yours = case zone of
         Zone.Battlefield -> controlledByYou criterion
         _ -> player == PlayerRef.Relative PlayerRelation.You
+  Scope.InHistory shape -> case shape of
+    EventShape.MovedBetween moved -> moves (MovedBetween.from moved)
+    EventShape.MovedFrom zone -> moves zone
+    EventShape.CardArrivedIn arrived -> moves (CardArrivedIn.to arrived)
+    EventShape.Sacrificed -> moves Zone.Battlefield
+    EventShape.SpellCast _ -> mempty
+    EventShape.AttackerDeclared _ -> mempty
+    EventShape.TurnedFaceUp -> mempty
+    EventShape.CountersMoved -> seeingEverything
+    EventShape.SourceDealtDamage _ -> seeingEverything
+    EventShape.PermanentDealtDamage -> seeingEverything
+  Scope.OverPlayers _
+    | asksNothing criterion -> mempty
   _ -> seeingEverything
   where
+    moves zone
+      | controlledByYou criterion = mempty {ownRecords = Set.singleton (poolOf zone)}
+      | otherwise = mempty {records = Set.singleton (poolOf zone)}
+    asksNothing predicate = case predicate of
+      Filter.Type.And conjuncts -> all asksNothing conjuncts
+      _ -> False
     controlledByYou predicate = case predicate of
       Filter.Type.HeldBy Holder.Controller (ControllerRelation.Related PlayerRelation.You) -> True
       Filter.Type.And conjuncts -> any controlledByYou conjuncts
@@ -3328,10 +3366,10 @@ zoneAccess over criterion = case over of
 -- member can change it: a conditioned row records what its condition reads
 -- (`conditionAccess`), whether or not it is live on the board before the batch
 -- (Sunpetal Grove beside Thunder-Thrash Elder devouring Alice's only Forest).
-entryMemberAccess :: GameState -> ObjectId -> Maybe EntryAccess
-entryMemberAccess gs oid = case (live, conditioned) of
+entryMemberAccess :: GameState -> PlayerId -> ObjectId -> Maybe EntryAccess
+entryMemberAccess gs seat oid = case (live, conditioned) of
   ([], []) -> Nothing
-  _ -> Just (foldMap (entryAccess gs) live <> foldMap (\(effect, condition) -> entryAccess gs effect <> conditionAccess condition) conditioned)
+  _ -> Just (foldMap (entryAccess gs seat oid) live <> foldMap (\(effect, condition) -> entryAccess gs seat oid effect <> conditionAccess condition) conditioned)
   where
     isEntry effect = case effect of
       ReplacementEffect.EntryR _ -> True
