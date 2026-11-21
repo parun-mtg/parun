@@ -31,6 +31,8 @@ import qualified Parun.Play.Offer as Offer
 import qualified Parun.Play.Protocol as Protocol
 import qualified Parun.Play.Wording as Wording
 import qualified Parun.Types.CombatDamageOption as CombatDamageOption
+import qualified Parun.Types.CombatStep as CombatStep
+import qualified Parun.Types.EndingStep as EndingStep
 import qualified Parun.Types.Mana as Mana.Type
 import qualified Parun.Types.ManaRetention as ManaRetention
 import qualified Parun.Types.ManaType as ManaType
@@ -86,9 +88,8 @@ data Event
     MkUnpeek
   | -- | Makes this blocker the one the next attacker tapped is for.
     MkFocus Natural
-  | -- | Passes now, and every priority after it until the turn ends while
-    -- the stack is empty (the seat's own stop, not the engine's choice).
-    MkSkip
+  | -- | Passes now, and the priorities after it until this stop (passesFor).
+    MkSkip Until
   deriving (Eq, Show)
 
 -- | Where an answer stands after an event.
@@ -140,6 +141,43 @@ levelName l = case l of
 -- | A level by its stored name.
 levelNamed :: String -> Maybe Level
 levelNamed name = List.find ((== name) . fst . levelName) [minBound .. maxBound]
+
+-- | How far the seat asked the page to pass for it (MkSkip), its own choice
+-- and binding no other player, so no shortcut is proposed (CR 733.2b's
+-- second example, as one seat's setting).
+data Until
+  = -- | The end of this turn: passes while the stack is empty, and declares
+    -- no attackers.
+    MkTurnEnds Natural
+  | -- | The seat's priority in this step of this turn.
+    MkStep Natural Phase.Phase
+  | -- | Something on the stack.
+    MkStacked
+  deriving (Eq, Show)
+
+-- | The reply a seat's stop makes for it, and the stop it keeps. Short of a
+-- stop the seat passes a priority with an empty stack; MkTurnEnds keeps
+-- through a response and ends with its turn; any other ends where it is
+-- reached, at something on the stack, or at any question but priority (an
+-- attack's blockers, say), so the seat is never answered for a real decision.
+passesFor :: Until -> Request.Request -> (Maybe R.Reply, Maybe Until)
+passesFor stop request = case (stop, Request.view request) of
+  (_, Nothing) -> (Nothing, Nothing)
+  (MkTurnEnds turn, Just shown)
+    | PlayerView.turn shown /= turn -> (Nothing, Nothing)
+    | not (null (PlayerView.stack shown)) -> (Nothing, Just stop)
+    | kind == "ChooseAction" -> (pass, Just stop)
+    | kind == "DeclareAttackers" -> (Just (R.Array []), Just stop)
+    | otherwise -> (Nothing, Just stop)
+  (_, Just shown)
+    | reached shown || not (null (PlayerView.stack shown)) || kind /= "ChooseAction" -> (Nothing, Nothing)
+    | otherwise -> (pass, Just stop)
+  where
+    kind = Text.unpack (Question.kind (Request.question request))
+    pass = R.Number <$> passIndex request
+    reached shown = case stop of
+      MkStep turn phase -> PlayerView.turn shown /= turn || PlayerView.phase shown >= phase
+      _ -> False
 
 -- | The reply that finishes a payment auto is making: auto's next source,
 -- or paying once the cost is covered.
@@ -529,7 +567,7 @@ step request picked event typed = case event of
   MkUnpeek -> MkPicking picked
   MkLevel _ -> MkPicking picked
   MkConcede -> maybe (MkRefused $ Text.pack "Concede when you have priority.") (MkReplied . R.Number) $ passIndex request
-  MkSkip -> maybe (MkRefused $ Text.pack "There is no pass to make.") (MkReplied . R.Number) $ passIndex request
+  MkSkip _ -> maybe (MkRefused $ Text.pack "There is no pass to make.") (MkReplied . R.Number) $ passIndex request
   MkAuto -> maybe (MkRefused $ Text.pack "Auto can't pay the rest of this cost. Choose a source.") MkReplied $ auto request
 
 bounds :: Group -> String
@@ -786,6 +824,12 @@ form request picked = case Text.unpack (Question.kind question) of
             -- CR 724.1: a turn the seat controls is played as its own.
             yours = PlayerView.active shown == PlayerView.viewer shown || controlled == Just (PlayerView.active shown)
             settled = null (PlayerView.stack shown)
+            turn = PlayerView.turn shown
+            -- Where in this turn the seat may ask to pass to; its own combat
+            -- starts with its declaration, which ends a skip anyway.
+            steps =
+              [(Phase.Combat CombatStep.BeginningOfCombat, "Pass to their combat") | not yours]
+                <> [(Phase.Ending EndingStep.EndStep, if yours then "Pass to end step" else "Pass to their end step")]
             prompt
               | not settled = "Respond, or pass to let the top of the stack resolve."
               | Just p <- controlled, yours = Text.unpack (Wording.player p) <> "'s turn, which you control. Play something for them, or pass to move on."
@@ -808,7 +852,13 @@ form request picked = case Text.unpack (Question.kind question) of
                 <> [Element.el "div" ["actions"] [] [button (MkAnswer $ R.Number i) (Offer.actionName shown option) | (i, option) <- rest] | not (null rest)]
                 <> [ Element.el "div" ["passes"] [] $
                        [primary (MkAnswer $ R.Number i) (Text.pack (if settled then "Pass" else "Pass and resolve")) | (i, _) <- passes]
-                         <> [shortcut ["danger"] "E" MkSkip (Text.pack (if yours then "End turn" else "Pass to my turn")) | settled, not (null passes)]
+                         <> [shortcut ["danger"] "E" (MkSkip (MkTurnEnds turn)) (Text.pack (if yours then "End turn" else "Pass to my turn")) | settled, not (null passes)]
+                   ]
+                <> [ Element.el "div" ["until"] [] $
+                       [button (MkSkip (MkStep turn target)) (Text.pack label) | (target, label) <- steps, PlayerView.phase shown < target]
+                         <> [button (MkSkip MkStacked) (Text.pack "Pass until a spell or ability")]
+                   | settled,
+                     not (null passes)
                    ]
   kind
     | kind `elem` ["ChooseManaSource", "ChooseExtraManaSource"],
