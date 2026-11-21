@@ -11,6 +11,7 @@ import qualified Data.Char as Char
 import qualified Data.Containers.ListUtils as ListUtils
 import qualified Data.List as List
 import qualified Data.List.NonEmpty as NonEmpty
+import qualified Data.Map.Strict as Map
 import qualified Data.Maybe as Maybe
 import qualified Data.Text as Text
 import Numeric.Natural (Natural)
@@ -100,6 +101,12 @@ render = Common.render . Codec.encode Codec.Request.codec
 -- end of input or else its reply, Left where the reply does not read. A
 -- client in the engine's process answers so, skipping the lines' JSON.
 type Exchange m = Request.Request -> m (Maybe (Either Text.Text R.Reply))
+
+-- | Each request sent to its question's seat's exchange in `seats`, the rest
+-- to `others`: the web client's page, and each seat a guest plays from
+-- another browser (Parun.Web.Link.remote).
+bySeat :: Map.Map PlayerId.PlayerId (Exchange m) -> Exchange m -> Exchange m
+bySeat seats others request = Map.findWithDefault others (Question.seat (Request.question request)) seats request
 
 -- | An exchange over lines: each request rendered, and its reply line read.
 overLines :: (Functor m) => (Text.Text -> m (Maybe Text.Text)) -> Exchange m

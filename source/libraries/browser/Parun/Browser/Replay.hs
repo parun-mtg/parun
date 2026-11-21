@@ -118,7 +118,7 @@ viewer page registry name scenario given = do
 -- (`leave`).
 playOn :: Browser.Page Screen.Event -> Registry.Registry Identity.Identity -> IORef.IORef Web.Question.Level -> Scenario.Type.Scenario -> Natural -> IO Hotseat.Leave -> IO (Maybe [Text.Text])
 playOn page registry levelRef scenario given leave = do
-  seatRef <- IORef.newIORef . Hotseat.newSeat =<< IORef.readIORef levelRef
+  seatRef <- IORef.newIORef . Hotseat.newSeat Hotseat.player =<< IORef.readIORef levelRef
   Hotseat.keepingLevel levelRef seatRef . Exception.handle (\Hotseat.MkAbandonedGame -> pure Nothing) $ do
     key <- Key.fresh
     let at = min (Natural.length (Scenario.Type.timeline scenario)) given

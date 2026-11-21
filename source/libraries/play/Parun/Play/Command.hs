@@ -171,8 +171,9 @@ play send options registry format decks = do
 
 -- | A game among the decks, seat 1's first, under `format`, the one 'settle'
 -- names (CR 100.2), from the generator keyed by `seed`: its result and final state,
--- or why it stopped first (Game.run); and the scenario it replays as, up to
--- where it stopped. With --json, each line protocol request goes out through
+-- or why it stopped first (Game.run), the end of input before a seat chose
+-- who plays first among them; and the scenario it replays as, up to where it
+-- stopped. With --json, each line protocol request goes out through
 -- `send` and its reply comes back: over standard input and output in `parun
 -- play` ('exchange'), as values in the web client.
 game :: Protocol.Exchange IO -> PlayOptions.PlayOptions -> Registry.Registry Identity.Identity -> Maybe Format.Format -> NonEmpty.NonEmpty Deck.Deck -> Key.Type.Key -> IO (Either Text.Text (Result.Result, GameState.GameState), Scenario.Scenario)
@@ -183,21 +184,25 @@ game send options registry format decks seed = do
       numbers = NonEmpty.fromList [1 .. count]
       ask chooser among = fmap (fmap ((+ 1) . PlayerId.unwrap)) (Protocol.playOrDraw send (idOf chooser) (fmap idOf among))
   (starter, generator) <- State.runStateT (Game.starter (TextIO.hPutStrLn IO.stderr) ask numbers options) (Generator.fromKey seed)
-  first <- maybe (failWith "end of input") pure starter
-  let matchup = seated first decks
-      answerer n
-        | Set.member n (PlayOptions.bots options) = Game.bot reference
-        | otherwise = Game.wired reference send
-      seats = Map.fromList [(idOf n, answerer n) | n <- NonEmpty.toList numbers]
-  entries <- IORef.newIORef Seq.empty
   let orders = Map.fromList [(idOf n, GraveyardOrder.Matters) | n <- Set.toList (PlayOptions.arrangesGraveyard options)]
-      observers = [Record.recording (labels count) (Game.underneath . IORef.modifyIORef' entries . flip (Seq.|>))]
-      interrupted e = case e of
-        Exception.UserInterrupt -> pure (Left (Text.pack "interrupted"))
-        _ -> Exception.throwIO e
-  outcome <- Exception.catch (Game.run reference format observers seats generator orders matchup) interrupted
-  timeline <- IORef.readIORef entries
-  pure (outcome, saved (Registry.printings registry) (Text.pack "Played with parun play, seed " <> Key.toHex seed <> Text.pack ".") format orders matchup timeline)
+      record = saved (Registry.printings registry) (Text.pack "Played with parun play, seed " <> Key.toHex seed <> Text.pack ".") format orders
+  case starter of
+    -- No seat chose who plays first: the game never began.
+    Nothing -> pure (Left (Text.pack "end of input"), record (seated 1 decks) Seq.empty)
+    Just first -> do
+      let matchup = seated first decks
+          answerer n
+            | Set.member n (PlayOptions.bots options) = Game.bot reference
+            | otherwise = Game.wired reference send
+          seats = Map.fromList [(idOf n, answerer n) | n <- NonEmpty.toList numbers]
+      entries <- IORef.newIORef Seq.empty
+      let observers = [Record.recording (labels count) (Game.underneath . IORef.modifyIORef' entries . flip (Seq.|>))]
+          interrupted e = case e of
+            Exception.UserInterrupt -> pure (Left (Text.pack "interrupted"))
+            _ -> Exception.throwIO e
+      outcome <- Exception.catch (Game.run reference format observers seats generator orders matchup) interrupted
+      timeline <- IORef.readIORef entries
+      pure (outcome, record matchup timeline)
 
 idOf :: Natural -> PlayerId.PlayerId
 idOf n = PlayerId.MkPlayerId (n - 1)
@@ -238,9 +243,6 @@ exchange line = do
   IO.hFlush IO.stdout
   done <- IO.isEOF
   if done then pure Nothing else fmap Just TextIO.getLine
-
-failWith :: String -> IO a
-failWith problem = IO.hPutStrLn IO.stderr problem >> Exit.exitFailure
 
 -- | The answer, or its problems on standard error and a failed exit.
 orExit :: IO (Either [Text.Text] a) -> IO a

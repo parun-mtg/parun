@@ -599,6 +599,82 @@ main.lobby {
   font-weight: 600;
 }
 
+/* A bot's slot with the button switching it to a player invited from
+   another browser, and an invited slot: its link, the box for the reply
+   code, and whether the player is ready (Parun.Web.Lobby.inviteView). */
+.seat {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35em;
+}
+
+#app button.invite-slot,
+#app button.bot-slot {
+  font-size: 0.8rem;
+  align-self: flex-start;
+}
+
+.invite {
+  padding: 0.6em 0.8em;
+  border: 2px dashed var(--border-strong);
+  border-radius: var(--radius);
+  background: var(--surface);
+}
+
+.slot.invited {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15em;
+}
+
+.slot-ready {
+  font-size: 0.8rem;
+  color: var(--muted);
+}
+
+.invite input,
+.join-status input {
+  width: 100%;
+  min-width: 0;
+  font-family: ui-monospace, monospace;
+  font-size: 0.8rem;
+}
+
+.invite-warning {
+  margin: 0;
+  font-size: 0.8rem;
+  color: var(--muted);
+}
+
+.matchup .start.is-ready {
+  background: var(--accent-soft);
+  color: inherit;
+}
+
+/* The screen a host's link opens (Parun.Web.Join). */
+.join-status {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5em;
+  margin-bottom: 1em;
+}
+
+.places {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.35em;
+}
+
+.place {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5em;
+  align-items: baseline;
+}
+
 /* A chosen deck's list: its curve in the summary, its cards on opening. */
 .deck-preview {
   margin: -0.4em 0 1em;

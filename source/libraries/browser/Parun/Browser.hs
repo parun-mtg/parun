@@ -10,20 +10,36 @@ import qualified Data.Foldable as Foldable
 import qualified Data.IORef as IORef
 import qualified Data.Sequence as Seq
 import qualified Data.Text as Text
+import qualified Parun.Extra.Integer as Integer
+import qualified Parun.JsonCodec.Common as Common
 import qualified Parun.Trustworthy.Wasm as Prim
 import qualified Parun.Web.Diff as Diff
 import qualified Parun.Web.Html as Html
+import qualified Parun.Web.Link as Link
 import qualified Parun.Web.Patch as Patch
 import qualified Parun.Web.Wire as Wire
 
 -- | The view the page shows, the events its handlers took that no one
--- has waited for yet, each with the value of the element it came from, and
--- the data chunks that arrived since last read.
+-- has waited for yet, each with the value of the element it came from, the
+-- data chunks that arrived since last read, and what the page's data
+-- channels said since.
 data Page msg = MkPage
   { shown :: IORef.IORef (Maybe (Html.Html msg)),
     taken :: IORef.IORef (Seq.Seq (msg, Text.Text)),
-    arrived :: IORef.IORef (Seq.Seq Arrival)
+    arrived :: IORef.IORef (Seq.Seq Arrival),
+    heard :: IORef.IORef (Seq.Seq Linked)
   }
+
+-- | What a data channel to another browser said (page.js), by the number
+-- the engine gave it: "offer" with the link to send (linkHost), "reply"
+-- with the code to send back (linkJoin), "open", "message" with a line, or
+-- "closed".
+data Linked = MkLinked
+  { link :: Int,
+    kind :: Text.Text,
+    said :: Text.Text
+  }
+  deriving (Eq, Show)
 
 -- | A chunk of the data directory (engine.js) merged into it, or failed:
 -- "decks", "cards-0" to "cards-3", "rules" or "scenarios".
@@ -32,15 +48,16 @@ data Arrival
   | MkFailed Text.Text
   deriving (Eq, Show)
 
--- | What woke the page's loop: a tap, or a chunk.
+-- | What woke the page's loop: a tap, a chunk, or a data channel.
 data Input msg
   = MkTap msg Text.Text
   | MkArrival Arrival
+  | MkLink Linked
 
 -- | A page showing nothing yet, its events listened for.
 mount :: IO (Page msg)
 mount = do
-  page <- MkPage <$> IORef.newIORef Nothing <*> IORef.newIORef Seq.empty <*> IORef.newIORef Seq.empty
+  page <- MkPage <$> IORef.newIORef Nothing <*> IORef.newIORef Seq.empty <*> IORef.newIORef Seq.empty <*> IORef.newIORef Seq.empty
   listen =<< wrap (dispatch page)
   pure page
 
@@ -61,7 +78,8 @@ next page = do
     Seq.EmptyL -> (events, Nothing)
   maybe (wait >> next page) pure queued
 
--- | The next chunk arrived, else the next tap, waiting for either.
+-- | The next chunk arrived, else the next tap, else what a data channel
+-- said, waiting for any.
 nextInput :: Page msg -> IO (Input msg)
 nextInput page = do
   collect page
@@ -72,7 +90,9 @@ nextInput page = do
     Just c -> pure (MkArrival c)
     Nothing -> do
       queued <- pending page
-      if queued then fmap (uncurry MkTap) (next page) else wait >> nextInput page
+      if queued
+        then fmap (uncurry MkTap) (next page)
+        else takeLinked page >>= maybe (wait >> nextInput page) (pure . MkLink)
 
 -- | The chunks arrived since last asked, without waiting.
 arrivals :: Page msg -> IO [Arrival]
@@ -106,6 +126,65 @@ collect page = do
   names <- fmap (Text.lines . Text.pack . Prim.fromJSString) takeArrivals
   let arrival n = maybe (MkArrived n) MkFailed (Text.stripPrefix (Text.pack "!") n)
   Monad.unless (null names) . IORef.atomicModifyIORef' (arrived page) $ \cs -> (cs <> Seq.fromList (fmap arrival names), ())
+
+-- | What a data channel said first since last asked, without waiting.
+takeLinked :: Page msg -> IO (Maybe Linked)
+takeLinked page = takeLinkedWith page (const True)
+
+-- | What this data channel said first since last asked, waiting for it;
+-- what the others say stays for later.
+nextLinked :: Page msg -> Int -> IO Linked
+nextLinked page n = takeLinkedWith page ((== n) . link) >>= maybe (wait >> nextLinked page n) pure
+
+takeLinkedWith :: Page msg -> (Linked -> Bool) -> IO (Maybe Linked)
+takeLinkedWith page wanted = do
+  received <- fmap (Text.lines . Text.pack . Prim.fromJSString) takeLinks
+  let parsed = foldMap (either (const []) pure . (Common.parse Monad.>=> linkedOf)) received
+  Monad.unless (null parsed) . IORef.atomicModifyIORef' (heard page) $ \ls -> (ls <> Seq.fromList parsed, ())
+  IORef.atomicModifyIORef' (heard page) $ \ls -> case Seq.findIndexL wanted ls of
+    Just i -> (Seq.deleteAt i ls, Seq.lookup i ls)
+    Nothing -> (ls, Nothing)
+  where
+    linkedOf value = do
+      fields <- Common.asObject value
+      MkLinked
+        <$> (Common.field "seat" fields >>= Common.asInteger >>= maybe (Left (Text.pack "not a channel")) Right . Integer.toInt)
+        <*> (Common.field "kind" fields >>= Common.asText)
+        <*> (Common.field "text" fields >>= Common.asText)
+
+-- | Data channel `n` as one end of a link (Parun.Web.Link), each message
+-- stamped with this build and one from another build refused.
+channel :: Page msg -> Text.Text -> Int -> Link.Channel IO
+channel page build n = Link.MkChannel (linkSend n . Link.encode build) receive
+  where
+    receive = do
+      heard' <- nextLinked page n
+      case Text.unpack (kind heard') of
+        "message" -> pure (either (const Nothing) Just (Link.decode build (said heard')))
+        "closed" -> pure Nothing
+        _ -> receive
+
+-- | Opens data channel `n`, for a seat a guest plays: page.js says
+-- "offer" with the link to send them once it is made.
+linkHost :: Int -> IO ()
+linkHost = hostJs
+
+-- | Connects data channel `n` with the code its guest sent back.
+linkAccept :: Int -> Text.Text -> IO ()
+linkAccept n code = acceptJs n (Prim.toJSString (Text.unpack code))
+
+-- | Answers a host's code on data channel `n`: page.js says "reply" with
+-- the code to send back once it is made.
+linkJoin :: Int -> Text.Text -> IO ()
+linkJoin n code = joinJs n (Prim.toJSString (Text.unpack code))
+
+-- | Sends a line over data channel `n`.
+linkSend :: Int -> Text.Text -> IO ()
+linkSend n line = sendJs n (Prim.toJSString (Text.unpack line))
+
+-- | Closes data channel `n`, if open.
+linkClose :: Int -> IO ()
+linkClose = closeJs
 
 -- | Whether an event taken waits to be read.
 pending :: Page msg -> IO Bool
@@ -169,3 +248,21 @@ foreign import javascript unsafe "console.log($1)"
 
 foreign import javascript unsafe "globalThis.parunForget($1)"
   forgetJs :: Prim.JSString -> IO ()
+
+foreign import javascript unsafe "globalThis.parunTakeLinks()"
+  takeLinks :: IO Prim.JSString
+
+foreign import javascript unsafe "globalThis.parunLink({ op: 'host', seat: $1 })"
+  hostJs :: Int -> IO ()
+
+foreign import javascript unsafe "globalThis.parunLink({ op: 'accept', seat: $1, code: $2 })"
+  acceptJs :: Int -> Prim.JSString -> IO ()
+
+foreign import javascript unsafe "globalThis.parunLink({ op: 'join', seat: $1, code: $2 })"
+  joinJs :: Int -> Prim.JSString -> IO ()
+
+foreign import javascript unsafe "globalThis.parunLink({ op: 'send', seat: $1, text: $2 })"
+  sendJs :: Int -> Prim.JSString -> IO ()
+
+foreign import javascript unsafe "globalThis.parunLink({ op: 'close', seat: $1 })"
+  closeJs :: Int -> IO ()

@@ -28,6 +28,7 @@ import qualified Parun.Web.Card as Web.Card
 import qualified Parun.Web.Element as Element
 import qualified Parun.Web.Home as Home
 import qualified Parun.Web.Html as Html
+import qualified Parun.Web.Link as Link
 import qualified Parun.Web.Mana as Mana
 import qualified Text.Read as Read
 
@@ -63,9 +64,35 @@ data Lobby = MkLobby
     -- | Why Start was last refused, until the next pick.
     refusal :: Maybe [Text.Text],
     -- | How many cards each deck's main deck holds, by name, as read so far.
-    sizes :: Map.Map Text.Text Natural
+    sizes :: Map.Map Text.Text Natural,
+    -- | Each bot's slot switched to a player invited from another browser,
+    -- by its place in 'theirs' (Parun.Web.Link).
+    invites :: Map.Map Int Invite,
+    -- | Whether you are ready to start a game with the players invited.
+    ready :: Bool
   }
   deriving (Eq, Show)
+
+-- | A slot a player from another browser takes.
+data Invite = MkInvite
+  { -- | The link to send them, once made.
+    link :: Maybe Text.Text,
+    -- | The reply code they sent back, as typed.
+    replyCode :: Text.Text,
+    -- | Whether their page is connected.
+    connected :: Bool,
+    -- | Their deck's name and list, once they chose one.
+    guestDeck :: Maybe (Text.Text, Text.Text),
+    -- | Whether they are ready to start.
+    guestReady :: Bool,
+    -- | Why the connection failed or ended.
+    inviteProblem :: Maybe Text.Text
+  }
+  deriving (Eq, Show)
+
+-- | An invite just made: no link yet, nothing typed.
+newInvite :: Invite
+newInvite = MkInvite Nothing Text.empty False Nothing False Nothing
 
 -- | A deck list being pasted in, to save under a name.
 data Import = MkImport
@@ -124,11 +151,23 @@ data Event
   | -- | Opens this deck in the builder, a saved one to save over, any other
     -- as a copy; the shell does it.
     MkEdit Text.Text
+  | -- | Switches this bot's slot to a player invited from another browser;
+    -- the shell makes the link.
+    MkInviteSlot Int
+  | -- | Switches this invited slot back to a bot; the shell closes the link.
+    MkBotSlot Int
+  | -- | The reply code typed for this invited slot.
+    MkReplyCode Int
+  | -- | Connects this invited slot with the reply code typed; the shell
+    -- does it.
+    MkConnect Int
+  | -- | Toggles whether you are ready to start with the players invited.
+    MkReady
   deriving (Eq, Show)
 
 -- | A lobby whose decks are still to read, nothing chosen yet.
 new :: Lobby
-new = MkLobby True Nothing Seq.empty Map.empty Nothing [Nothing] MkMine Text.empty Map.empty Map.empty Nothing Nothing Map.empty Nothing Map.empty
+new = MkLobby True Nothing Seq.empty Map.empty Nothing [Nothing] MkMine Text.empty Map.empty Map.empty Nothing Nothing Map.empty Nothing Map.empty Map.empty False
 
 -- | Where saved decks sit beneath the deck root.
 savedPrefix :: Text.Text
@@ -315,16 +354,22 @@ deckName root path =
 -- deck moves on to the first bot's still unchosen, and drops each bot's deck
 -- under another format; a bot is offered only its 'opponents'.
 update :: Event -> Text.Text -> Lobby -> Lobby
-update event typed lobby = case event of
+update event typed lobby = settled lobby (updated event typed lobby)
+
+-- | 'update' before any ready flag is cleared.
+updated :: Event -> Text.Text -> Lobby -> Lobby
+updated event typed lobby = case event of
   MkPick name
     | Foldable.notElem name (decks lobby) -> lobby
-    | Maybe.isJust (refusal lobby) -> update event typed lobby {refusal = Nothing}
+    | Maybe.isJust (refusal lobby) -> updated event typed lobby {refusal = Nothing}
     | MkTheirs i <- choosing lobby ->
         if Foldable.notElem name (opponents lobby) then lobby else lobby {theirs = [if j == i then Just name else deck | (j, deck) <- zip [0 ..] (theirs lobby)]}
     | otherwise ->
         let kept = fmap (Monad.mfilter (together lobby name)) (theirs lobby)
          in lobby {mine = Just name, theirs = kept, choosing = maybe MkMine MkTheirs (List.elemIndex Nothing kept)}
-  MkChoose slot -> lobby {choosing = slot}
+  MkChoose slot
+    | MkTheirs i <- slot, Map.member i (invites lobby) -> lobby
+    | otherwise -> lobby {choosing = slot}
   MkSearch -> lobby {search = typed}
   MkRandom -> lobby
   MkAddBot
@@ -333,7 +378,7 @@ update event typed lobby = case event of
   MkDropBot
     | length (theirs lobby) > 1 ->
         let kept = take (length (theirs lobby) - 1) (theirs lobby)
-         in lobby {theirs = kept, choosing = if choosing lobby == MkTheirs (length kept) then MkMine else choosing lobby}
+         in lobby {theirs = kept, choosing = if choosing lobby == MkTheirs (length kept) then MkMine else choosing lobby, invites = Map.delete (length kept) (invites lobby)}
     | otherwise -> lobby
   MkStart -> lobby {refusal = either (\problems -> if null problems then Nothing else Just problems) (const Nothing) (startable lobby)}
   MkOpenImport -> lobby {importing = Just (MkImport Text.empty Text.empty [] False)}
@@ -347,6 +392,55 @@ update event typed lobby = case event of
   MkOpenBuilder -> lobby
   MkEdit _ -> lobby
   MkHome -> lobby
+  MkInviteSlot i
+    | i >= 0 && i < length (theirs lobby) -> lobby {invites = Map.insertWith (\_ old -> old) i newInvite (invites lobby), choosing = if choosing lobby == MkTheirs i then MkMine else choosing lobby}
+    | otherwise -> lobby
+  MkBotSlot i -> lobby {invites = Map.delete i (invites lobby)}
+  MkReplyCode i -> lobby {invites = Map.adjust (\invite -> invite {replyCode = typed}) i (invites lobby)}
+  MkConnect _ -> lobby
+  MkReady -> lobby {ready = not (ready lobby)}
+
+-- | The lobby once the page of the player invited to this slot said this
+-- (Parun.Web.Link): their deck, and whether they are ready.
+heard :: Int -> Link.Message -> Lobby -> Lobby
+heard i message lobby =
+  let adjust f = lobby {invites = Map.adjust f i (invites lobby)}
+   in settled lobby $ case message of
+        Link.MkHello name contents -> adjust (\invite -> invite {guestDeck = Just (name, contents)})
+        Link.MkReady on -> adjust (\invite -> invite {guestReady = on})
+        _ -> lobby
+
+-- | An invited slot's link made, connected, or ended, saying why.
+linked :: Int -> (Invite -> Invite) -> Lobby -> Lobby
+linked i f lobby = settled lobby lobby {invites = Map.adjust f i (invites lobby)}
+
+-- | The lobby after a change, every ready flag cleared where the match-up
+-- changed: a deck, a seat or an invite.
+settled :: Lobby -> Lobby -> Lobby
+settled before after
+  | matchupOf before == matchupOf after = after
+  | otherwise = after {ready = False, invites = fmap (\invite -> invite {guestReady = False}) (invites after)}
+  where
+    matchupOf l = (mine l, theirs l, fmap (\invite -> (connected invite, fmap fst (guestDeck invite), fmap snd (guestDeck invite))) (invites l))
+
+-- | Whether a game with the players invited starts: there is one, your
+-- deck is chosen, and every player is connected, has a deck and is ready.
+starts :: Lobby -> Bool
+starts lobby =
+  not (Map.null (invites lobby))
+    && ready lobby
+    && Maybe.isJust (mine lobby)
+    && all (\invite -> connected invite && Maybe.isJust (guestDeck invite) && guestReady invite) (invites lobby)
+
+-- | The match-up as the player invited to this slot is shown it.
+placesFor :: Int -> Lobby -> [Link.Place]
+placesFor i lobby =
+  Link.MkPlace (Text.pack "Host") (maybe (Text.pack "Choosing a deck") label (mine lobby)) (Just (ready lobby))
+    : [ case Map.lookup j (invites lobby) of
+          Just invite -> Link.MkPlace (if j == i then Text.pack "You" else Text.pack ("Player " <> show (j + 2))) (maybe (Text.pack "Choosing a deck") (label . fst) (guestDeck invite)) (Just (guestReady invite))
+          Nothing -> Link.MkPlace (Text.pack (if length (theirs lobby) == 1 then "Bot" else "Bot " <> show (j + 1))) (maybe (Text.pack "Random deck") label held) Nothing
+      | (j, held) <- zip [0 ..] (theirs lobby)
+      ]
 
 -- | Your deck, to start a game with; or why it may not: the problems a
 -- check found with it, or none while there is no deck.
@@ -423,7 +517,12 @@ view lobby =
                 [ slot MkMine "You" (mine lobby) "Choose a deck",
                   Element.el "span" ["versus"] [] [Element.string "vs"],
                   Element.el "div" ["bots"] [] $
-                    [slot (MkTheirs i) (if length bots == 1 then "Bot" else "Bot " <> show (i + 1)) held "Random deck" | (i, held) <- zip [0 ..] bots]
+                    concat
+                      [ case Map.lookup i (invites lobby) of
+                          Just invite -> [inviteView i invite]
+                          Nothing -> [Element.el "div" ["seat"] [] [slot (MkTheirs i) (if length bots == 1 then "Bot" else "Bot " <> show (i + 1)) held "Random deck", Element.button ["invite-slot"] (MkInviteSlot i) [Element.string "Invite a player"]]]
+                      | (i, held) <- zip [0 ..] bots
+                      ]
                       <> [ Element.el
                              "div"
                              ["bot-count"]
@@ -432,11 +531,20 @@ view lobby =
                                  <> [Element.button ["drop-bot"] MkDropBot [Element.string "Remove a bot"] | length bots > 1]
                              )
                          ],
-                  Element.el
-                    "button"
-                    ["primary", "start"]
-                    ([Element.attr "type" (Text.pack "button"), Element.on "click" MkStart] <> [Element.attr "disabled" Text.empty | Maybe.isNothing (mine lobby)])
-                    [Element.string "Start game"]
+                  if Map.null (invites lobby)
+                    then
+                      Element.el
+                        "button"
+                        ["primary", "start"]
+                        ([Element.attr "type" (Text.pack "button"), Element.on "click" MkStart] <> [Element.attr "disabled" Text.empty | Maybe.isNothing (mine lobby)])
+                        [Element.string "Start game"]
+                    else
+                      -- The game starts once every player is ready.
+                      Element.el
+                        "button"
+                        (["primary", "start", "ready"] <> ["is-ready" | ready lobby])
+                        ([Element.attr "type" (Text.pack "button"), Element.attr "aria-pressed" (Text.pack (if ready lobby then "true" else "false")), Element.on "click" MkReady] <> [Element.attr "disabled" Text.empty | Maybe.isNothing (mine lobby)])
+                        [Element.string (if ready lobby then "Ready \x2713 \x00b7 waiting for every player" else "Ready")]
                 ]
             )
           ]
@@ -487,6 +595,44 @@ view lobby =
                          Nothing -> [Element.el "p" ["empty"] [] [Element.string (if reading lobby then "Reading the decks\x2026" else "No deck matches.")] | null shown]
                    )
              ]
+
+-- | A slot a player from another browser takes: the link to send them, the
+-- box their reply code goes in, and once connected their deck and whether
+-- they are ready; the way back to a bot; and the warning that the host sees
+-- every card.
+inviteView :: Int -> Invite -> Html.Html Event
+inviteView i invite =
+  Element.el
+    "div"
+    ["seat", "invite"]
+    [Element.attr "aria-label" (Text.pack ("Invited player, seat " <> show (i + 2)))]
+    $ [ Element.el
+          "span"
+          ["slot", "invited"]
+          []
+          [ Element.el "span" ["slot-title"] [] [Element.string ("Player " <> show (i + 2))],
+            Element.el "span" ["slot-deck"] [] [Element.text (maybe (Text.pack (if connected invite then "Choosing a deck\x2026" else "Not connected")) (label . fst) (guestDeck invite))],
+            Element.el "span" ["slot-ready"] [] [Element.string (if guestReady invite then "Ready" else "Not ready") | connected invite]
+          ]
+      ]
+      <> ( if connected invite
+             then []
+             else case link invite of
+               Nothing -> [Element.el "p" ["invite-step"] [] [Element.string "Making the link\x2026"]]
+               Just url ->
+                 [ Element.el "label" [] [Element.attr "for" (field "invite-link")] [Element.string "1. Send them this link"],
+                   Element.el "input" ["invite-link"] [Element.attr "id" (field "invite-link"), Element.attr "type" (Text.pack "text"), Element.attr "readonly" Text.empty, Element.attr "value" url] [],
+                   Element.el "label" [] [Element.attr "for" (field "invite-reply")] [Element.string "2. Paste the code they send back"],
+                   Element.el "input" ["invite-reply"] [Element.attr "id" (field "invite-reply"), Element.attr "type" (Text.pack "text"), Element.attr "autocomplete" (Text.pack "off"), Element.attr "spellcheck" (Text.pack "false"), Element.on "input" (MkReplyCode i)] [],
+                   Element.el "button" ["connect"] ([Element.attr "type" (Text.pack "button"), Element.on "click" (MkConnect i)] <> [Element.attr "disabled" Text.empty | Text.null (Text.strip (replyCode invite))]) [Element.string "Connect"]
+                 ]
+         )
+      <> [Element.el "p" ["problem"] [Element.attr "role" (Text.pack "alert")] [Element.text p] | p <- Maybe.maybeToList (inviteProblem invite)]
+      <> [ Element.el "p" ["invite-warning"] [] [Element.string "Your browser runs the game, so you could see their hidden cards: invite only friends."],
+           Element.button ["bot-slot"] (MkBotSlot i) [Element.string "Play a bot instead"]
+         ]
+  where
+    field name = Text.pack (name <> "-" <> show i)
 
 -- | The panel a deck list is pasted into: its name, its list, and why the
 -- last import was refused.
