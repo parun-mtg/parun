@@ -97,8 +97,8 @@ data StoredEffects = MkStoredEffects
     pendingSkipEffects :: Seq.Seq PendingSkipEffect.PendingSkipEffect,
     -- | CR 614.1c: as-enters rewrites whose effects, or CR 508.4 entry into
     -- combat, have not run yet. Drained after each member of a batch moving
-    -- onto the battlefield (Settle.entryEffects, CR 616.1g), as
-    -- the instruction that entered the permanent finishes
+    -- onto the battlefield (Settle.entryEffects, CR 616.1g's Voice of All
+    -- example), as the instruction that entered the permanent finishes
     -- (Parun.Engine.Resolve.Effect.applyEffectWith), and first thing in
     -- Parun.Engine.Engine.performSettle for every other road; either way the entry's
     -- CR 603.10 sample is retaken after them. Empty at every priority window.

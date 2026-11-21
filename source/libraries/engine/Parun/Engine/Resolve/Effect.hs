@@ -867,7 +867,7 @@ recopyAbility runSubgame row = Monad.forM_ (ActiveCopyCast.recopy row) $ \condit
 --
 -- Three callers. Settle.entryEffects runs it after each member of a batch
 -- entering the battlefield, so the next member's entry applies after it (CR
--- 616.1g, Event.orderEntries). applyEffectWith runs it as each instruction
+-- 616.1g's Voice of All example, Event.orderEntries). applyEffectWith runs it as each instruction
 -- finishes, so a later instruction of the same resolution reads the board the
 -- effects left (CR 608.2h) -- Parun.FaceDownSpec's "CR 614.1c / 608.2h the
 -- reanimated Ixidron's power is read after its own sweep" proves it.

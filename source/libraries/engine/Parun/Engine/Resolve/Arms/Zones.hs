@@ -281,8 +281,9 @@ moveToZone settle resolving source controller legal chosen (MoveToZone.MkMoveToZ
           Monad.when (landed == Just Zone.Battlefield) $ do
             State.modify' (Common.linkEntrant resolving source newId)
             State.modify' (Common.linkCraftMaterials resolving newId)
-        -- CR 614.1c / 616.1g: the member's as-enters effects run before the next
-        -- member's entry applies, in the order Event.orderEntries settled.
+        -- CR 614.1c with CR 616.1g's Voice of All example: the member's
+        -- as-enters effects run before the next member's entry applies, in the
+        -- order Event.orderEntries settled.
         -- CR 614.13b's exclusion of later members still in a library from a
         -- mill is not needed: every as-enters mill asks a kicker (Monstrous
         -- War-Leech, Urborg Lhurgoyf), and only a spell is kicked (CR
