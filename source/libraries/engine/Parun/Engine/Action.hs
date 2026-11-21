@@ -354,11 +354,9 @@ legalActions pid gs =
       --
       -- Not implemented: an O(1) per-object path. A mana payment neither the
       -- plain sources settle (Mana.plainPayable) nor the ceiling refuses
-      -- (Mana.ceilingAdmits) walks every source, a graveyard card printing a
-      -- static ability or permission, or reached by an effect beyond power and
-      -- toughness (Cast.unpermittedInGraveyard), is projected against the
-      -- whole board per proposal, and a mode whose slots read each other and
-      -- demand a target builds every slot's whole legal set (#6605).
+      -- (Mana.ceilingAdmits) walks every source, and a mode whose slots read
+      -- each other and demand a target builds every slot's whole legal set
+      -- (#9184).
       grants = Projection.controlGrants gs
       pcs = Projection.projectAll gs
       -- ONE mana-source sweep of each kind for the whole enumeration. Each is a

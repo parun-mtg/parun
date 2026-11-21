@@ -3160,13 +3160,8 @@ gatherGiven stripped waited functioning seed gs =
             -- CR 113.6c's negative form arrives here as a stated set holding
             -- the graveyard, so Grist, the Hunger Tide is kept by the second
             -- limb rather than by CR 113.6f's classification.
-            let qualifies sa = any (grantsKeywordWhere (castZoneKeyword face)) (StaticAbility.modifications sa)
-                keeps sa =
-                  if Set.null (StaticAbility.functionsFrom sa)
-                    then qualifies sa
-                    else statesZone Zone.Graveyard sa
-                indexed = zip [0 :: Natural ..] (Face.staticAbilities face)
-             in concatMap (uncurry (gatherStatic (functioning cardId) cardId (Object.timestamp cardObj) [] (const False))) (filter (\(_, sa) -> keeps sa) indexed)
+            let indexed = zip [0 :: Natural ..] (Face.staticAbilities face)
+             in concatMap (uncurry (gatherStatic (functioning cardId) cardId (Object.timestamp cardObj) [] (const False))) (filter (functionsInGraveyard face . snd) indexed)
       graveyards = concatMap fromGraveyardCard (graveyardCards gs)
       -- CR 113.6b/c: the three zones no default in CR 113.6 ever reaches -- the
       -- two HIDDEN ones (CR 400.2) and exile, whose being public buys it no
@@ -3398,6 +3393,17 @@ graveyardCards = foldMap (foldr (:) []) . Map.elems . GameState.graveyard
 -- creature card grant nothing.
 castZoneKeyword :: Face.Face card -> Keyword -> Bool
 castZoneKeyword face keyword = not (null (Keyword.permissionsFor (TypeLine.types (Face.typeLine face)) keyword))
+
+-- CR 113.6b / 113.6f: does this static of `face` function while its card is in a
+-- graveyard? A stated set decides alone; an unstated one functions there only
+-- if it grants a keyword castZoneKeyword classifies. gatherGiven's
+-- fromGraveyardCard gathers exactly these, and Cast.unpermittedInGraveyard
+-- rules out a card printing none of them.
+functionsInGraveyard :: Face.Face Card.Type.Card -> StaticAbility.StaticAbility (GrantedAbility.GrantedAbility Card.Type.Card) -> Bool
+functionsInGraveyard face sa =
+  if Set.null (StaticAbility.functionsFrom sa)
+    then any (grantsKeywordWhere (castZoneKeyword face)) (StaticAbility.modifications sa)
+    else statesZone Zone.Graveyard sa
 
 -- CR 113.6's first sentence: the card types whose object has its abilities
 -- function on the stack rather than on the battlefield. anyConditional
