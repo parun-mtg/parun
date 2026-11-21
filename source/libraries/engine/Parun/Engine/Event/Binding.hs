@@ -83,6 +83,7 @@ import qualified Parun.Types.GameEvent as GameEvent
 import Parun.Types.GameState (GameState)
 import qualified Parun.Types.Keyword as Keyword.Type
 import qualified Parun.Types.KeywordFamily as KeywordFamily
+import qualified Parun.Types.LandPlayed as LandPlayed
 import qualified Parun.Types.LastKnown as LastKnown
 import qualified Parun.Types.LeavesTrigger as LeavesTrigger
 import qualified Parun.Types.LeavesZoneTrigger as LeavesZoneTrigger
@@ -546,6 +547,12 @@ eventBindingsOver board gs bearerBecame becameInGraveyard bearer you cond event 
   -- the copy, the player who copied it, and the copy's targets.
   (TriggerCondition.SpellCast (SpellCast.MkSpellCast (ActingPermanent.Matching _) _ _ _ _ _ _), GameEvent.SpellCopied (SpellWasCopied.MkSpellWasCopied copier copy)) ->
     Binding.setTriggerPlayer copier (Binding.setCastSpellTargets (ProjectionView.targetsOfStackObject gs copy) (Binding.setCastSpellX (castX gs copy) (Binding.setCastSpell copy Map.empty)))
+  -- CR 305.1's player and the land as it arrived (CR 400.7), the land under
+  -- the cast spell's slot: under CR 603.1b's AnyOf "play a land or cast a
+  -- spell", "it" and "that player" must be one slot for both branches
+  -- (eventBindingSlots intersects) -- Cemetery Gatekeeper.
+  (TriggerCondition.PlayerPlaysLand _, GameEvent.LandPlayed (LandPlayed.MkLandPlayed player land _)) ->
+    Binding.setTriggerPlayer player (Binding.setCastSpell land Map.empty)
   -- CR 602.2b's "that ability" and "that player": the ability on the stack and
   -- its activator (CR 602.2a). Unconditional given a match. An activation that
   -- put nothing on the stack leaves "that ability" unbound, so a copy of it
@@ -1628,8 +1635,9 @@ eventBindingSlots cond = case cond of
   TriggerCondition.PlayerActs _ -> Set.singleton Binding.triggerPlayer
   -- Nothing: Withengar Unbound's payload points at no one -- it grows itself.
   TriggerCondition.PlayerLosesGame _ -> Set.empty
-  -- Nothing: CR 305.1's land play binds nothing.
-  TriggerCondition.PlayerPlaysLand _ -> Set.empty
+  -- CR 305.1's player and the land, every event the condition admits carrying
+  -- both (eventBindings' arm).
+  TriggerCondition.PlayerPlaysLand _ -> Set.fromList [Binding.castSpell, Binding.triggerPlayer]
   -- Nothing: CR 702.170a names an object, but Aloe Alchemist targets a creature
   -- of its controller's choosing rather than pointing at it.
   TriggerCondition.SelfBecomesPlotted -> Set.empty
