@@ -1,0 +1,164 @@
+{
+  "board": {
+    "active": "bob",
+    "seats": [
+      {
+        "battlefield": [
+          {
+            "card": "Avabruck Caretaker",
+            "label": "caretaker"
+          }
+        ],
+        "hand": [
+          {
+            "card": "Cackling Counterpart",
+            "label": "counterpart"
+          }
+        ],
+        "library": [
+          {
+            "card": "Island",
+            "label": "a1"
+          },
+          {
+            "card": "Island",
+            "label": "a2"
+          },
+          {
+            "card": "Island",
+            "label": "a3"
+          },
+          {
+            "card": "Island",
+            "label": "a4"
+          },
+          {
+            "card": "Island",
+            "label": "a5"
+          },
+          {
+            "card": "Island",
+            "label": "a6"
+          }
+        ],
+        "manaPool": "UUU",
+        "name": "alice"
+      },
+      {
+        "library": [
+          {
+            "card": "Island",
+            "label": "b1"
+          },
+          {
+            "card": "Island",
+            "label": "b2"
+          },
+          {
+            "card": "Island",
+            "label": "b3"
+          },
+          {
+            "card": "Island",
+            "label": "b4"
+          },
+          {
+            "card": "Island",
+            "label": "b5"
+          },
+          {
+            "card": "Island",
+            "label": "b6"
+          }
+        ],
+        "name": "bob"
+      }
+    ],
+    "step": "PrecombatMain"
+  },
+  "description": "CR 707.8a / 702.145c: a token copy of Avabruck Caretaker is double-faced, so when it becomes night the token shows Hollowhenge Huntmaster",
+  "note": "On bob's turn 1 alice copies her daybound Caretaker with the instant Cackling Counterpart. Bob, the active player, cast no spell, so it becomes night as alice's turn 2 begins and both turn over; the token shows its back face's copiable values, a 6/6 Hollowhenge Huntmaster.",
+  "timeline": [
+    {
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1,
+      "do": {
+        "Cast": {
+          "object": "$counterpart"
+        }
+      }
+    },
+    {
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1,
+      "do": "Pass"
+    },
+    {
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1,
+      "check": {
+        "Count": {
+          "card": "Avabruck Caretaker",
+          "count": 2,
+          "player": "alice",
+          "zone": "Battlefield"
+        }
+      }
+    },
+    {
+      "do": {
+        "Answer": {
+          "prompt": "OrderTimestamps",
+          "with": [
+            0,
+            1
+          ]
+        }
+      },
+      "player": "alice",
+      "step": "Untap",
+      "turn": 2
+    },
+    {
+      "player": "alice",
+      "step": "Upkeep",
+      "turn": 2,
+      "check": {
+        "Count": {
+          "card": "Hollowhenge Huntmaster",
+          "count": 2,
+          "player": "alice",
+          "zone": "Battlefield"
+        }
+      }
+    },
+    {
+      "player": "alice",
+      "step": "Upkeep",
+      "turn": 2,
+      "check": {
+        "Count": {
+          "card": "Avabruck Caretaker",
+          "count": 0,
+          "player": "alice",
+          "zone": "Battlefield"
+        }
+      }
+    },
+    {
+      "player": "alice",
+      "step": "Upkeep",
+      "turn": 2,
+      "check": {
+        "PowerToughness": {
+          "object": "Hollowhenge Huntmaster#2",
+          "power": 6,
+          "toughness": 6
+        }
+      }
+    }
+  ]
+}

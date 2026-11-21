@@ -343,6 +343,7 @@ import qualified Parun.Types.TapState as TapState
 import qualified Parun.Types.Throw as Throw
 import qualified Parun.Types.ThrowKind as ThrowKind
 import qualified Parun.Types.Timestamp as Timestamp
+import qualified Parun.Types.TokenCopy as TokenCopy
 import qualified Parun.Types.TokenLot as TokenLot
 import qualified Parun.Types.TokenPattern as TokenPattern
 import qualified Parun.Types.TokenPlus as TokenPlus
@@ -5353,10 +5354,9 @@ apply settle batch applied batchPrevented candidate event =
       -- CR 119.5's gain or loss with every replacement of its own. A permanent
       -- that is neither a double-faced card nor a double-faced token does not
       -- turn (CR 701.27a) and its player loses; a token copy of the Angel is
-      -- double-faced (CR 707.8a) and turns.
-      --
-      -- Not implemented: a turned token copy showing its back face's copiable
-      -- values (#9249).
+      -- double-faced (CR 707.8a) and turns to show its back face: data/scenarios'
+      -- reflection-of-kiki-jiki-copy-of-enduring-angel-transforms-into-angelic-enforcer
+      -- proves it.
       LifeLossRewrite.TransformSourceOrLose total -> do
         Replacement.consume (ReplacementCandidate.identity candidate)
         turned <- transformSource (ReplacementCandidate.source candidate)
@@ -6104,7 +6104,7 @@ apply settle batch applied batchPrevented candidate event =
                 -- docs/decisions.md, "Whether a replaced copy effect's
                 -- exceptions reach Mirrormind Crown's copies".
                 Just (TokenPlus.InsteadCopies _) -> case picked >>= \src -> (,) src <$> Game.cardOfWithLastKnown src gs of
-                  Just (src, card) -> fmap (swapFor card (Just (copiedSnapshot src gs))) scaled
+                  Just (src, card) -> fmap (swapFor card (Just ((copiedToken src gs) {TokenCopy.values = copiedSnapshot src gs}))) scaled
                   Nothing -> scaled
           pure (Just (ProposedEvent.WouldCreateTokens pid appended))
     -- Unreachable: `applies` admits TokenR only against WouldCreateTokens.
@@ -6803,6 +6803,25 @@ copiedSnapshotWithLastKnown :: ObjectId -> GameState -> PC.ProjectedCharacterist
 copiedSnapshotWithLastKnown oid gs = case Game.lastKnownOf oid gs of
   Just lk -> LastKnown.copiable lk
   Nothing -> copiedSnapshot oid gs
+
+-- CR 707.1 / 707.8a: what a token copying this object is minted with
+-- (createTokens): its copiable values, `copiedSnapshotWithLastKnown`'s, and
+-- for a double-faced object the face it shows and its other face's values,
+-- `copiedSnapshot` off a board with it turned over (Game.withFaceTurned), so a
+-- copy effect over it carries to both faces. Neither for an object that would
+-- not turn (Game.turnedObject): a one-faced card, a face-down one (CR
+-- 712.12a), a meld.
+--
+-- Not implemented: the face and other face of an object that has already left
+-- (CR 608.2h), whose last known information keeps neither (#9280).
+copiedToken :: ObjectId -> GameState -> TokenCopy.TokenCopy
+copiedToken oid gs =
+  let turning = Game.lookupObject oid gs >>= \object -> object <$ Game.turnedObject object gs
+   in TokenCopy.MkTokenCopy
+        { TokenCopy.values = copiedSnapshotWithLastKnown oid gs,
+          TokenCopy.turned = fmap (const (copiedSnapshot oid (Game.withFaceTurned oid gs))) turning,
+          TokenCopy.face = Game.shownFace =<< turning
+        }
 
 -- CR 614.1c / 614.12: run the entry loop for an object that has just been
 -- materialized on the battlefield, from `origin` (Game.entryOriginOf), the zone
@@ -11396,7 +11415,7 @@ sacrificeIn settle asOf victims = simultaneously $ do
 -- export lists, so a second top-level name would be a public door past the check.
 --
 -- The Maybe snapshot is CR 707.1's other kind of token -- one whose text is a
--- copy of a permanent rather than given (`copiedSnapshot`) -- and it comes
+-- copy of a permanent rather than given (`copiedToken`) -- and it comes
 -- through this one funnel rather than a second so that CR 614.16's count
 -- replacement, CR 800.4b's departed-player guard and each token's own CR 614.12
 -- entry loop are the same code for both kinds.
@@ -11423,7 +11442,7 @@ sacrificeIn settle asOf victims = simultaneously $ do
 --
 -- Not an event bracket of its own: the caller is the one CR 608.2f event, and
 -- under Event.together the entries are recorded after this returns anyway.
-createTokens :: Settle.Settle -> PlayerId -> Card -> Maybe PC.ProjectedCharacteristics -> Maybe (ShownDie.ShownDie Natural) -> Natural -> TapState.TapState -> Map.Map EntryCounter.EntryCounter Natural -> Maybe [Recipient.Recipient] -> Set Designation.Designation -> Game [ObjectId]
+createTokens :: Settle.Settle -> PlayerId -> Card -> Maybe TokenCopy.TokenCopy -> Maybe (ShownDie.ShownDie Natural) -> Natural -> TapState.TapState -> Map.Map EntryCounter.EntryCounter Natural -> Maybe [Recipient.Recipient] -> Set Designation.Designation -> Game [ObjectId]
 createTokens settle controller card copy die n tapped entering attached marks = do
   gs <- State.get
   if List.notElem controller (Game.stillPlaying gs)

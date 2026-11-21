@@ -3950,6 +3950,7 @@ library types
     Parun.Types.Timestamp
     Parun.Types.TimeTravelChoice
     Parun.Types.Together
+    Parun.Types.TokenCopy
     Parun.Types.TokenLot
     Parun.Types.TokenPattern
     Parun.Types.TokenPlus

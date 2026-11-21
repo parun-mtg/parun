@@ -138,6 +138,7 @@ import qualified Parun.Types.TappedForMana as TappedForMana
 import qualified Parun.Types.TargetSlot as TargetSlot
 import qualified Parun.Types.Teams as Teams
 import qualified Parun.Types.Timestamp as Timestamp
+import qualified Parun.Types.TokenCopy as TokenCopy
 import qualified Parun.Types.TokenLot as TokenLot
 import qualified Parun.Types.TriggeredAbility as TriggeredAbility
 import qualified Parun.Types.TriggeredAbilitySource as TriggeredAbilitySource
@@ -388,11 +389,14 @@ sheetContent sheet kind index = do
 -- rather than after the entry loop because CR 614.12 asks for the
 -- characteristics the permanent would have on the battlefield, and for this
 -- token those are the copy's from the instant it exists. The creation's own
--- status (CR 110.5b) is the caller's, Parun.Engine.Event.createTokens.
+-- status (CR 110.5b) is the caller's, Parun.Engine.Event.createTokens. A
+-- double-faced copy shows the face its original showed, and its other face is
+-- stamped beside it (CR 707.8a), which `turnedObject` swaps in when it turns.
 tokenOfLot :: PlayerId -> PrintingId.PrintingId -> TokenLot.TokenLot -> Timestamp.Timestamp -> Object
 tokenOfLot owner printing lot ts =
   (Object.new owner (Source.OfToken printing) Zone.Battlefield ts)
-    { Object.bindings = maybe Map.empty (\pc -> Binding.setOwnCopy pc Map.empty) (TokenLot.copy lot),
+    { Object.bindings = maybe Map.empty (\copied -> maybe id Binding.setTurnedCopy (TokenCopy.turned copied) (Binding.setOwnCopy (TokenCopy.values copied) Map.empty)) (TokenLot.copy lot),
+      Object.face = TokenCopy.face =<< TokenLot.copy lot,
       Object.die = TokenLot.die lot
     }
 
@@ -2399,8 +2403,8 @@ isDoubleFacedPermanent oid gs = case lookupObject oid gs of
 -- from an ability on the stack.
 --
 -- ONE FIELD, in place (for a merged permanent its components' faces and its
--- merge stamps, `turnedObject` below), because CR 712.15 says the permanent is
--- not a new object:
+-- merge stamps, for a double-faced token copy its stamps, `turnedObject`
+-- below), because CR 712.15 says the permanent is not a new object:
 -- "when a double-faced permanent transforms or converts, it doesn't become a new
 -- object. Any effects that applied to that permanent will continue to apply to
 -- it." So no id is minted and damage, counters and attachments ride through
@@ -2474,7 +2478,7 @@ withFaceTurned oid gs =
 
 -- CR 731.2i under a stored copy row: a merge applied over the row turns with
 -- the permanent, so each row covering `oid` that carries a turned reading
--- swaps it in, `Binding.turnMergeCopy`'s swap one carrier over. Only a merge
+-- swaps it in, `Binding.turnCopy`'s swap one carrier over. Only a merge
 -- writes that reading (Parun.Engine.Event.merge), on a row carved out for its
 -- permanent alone, so no other object's row is touched.
 turnStoredCopies :: ObjectId -> GameState -> GameState
@@ -2751,9 +2755,15 @@ turnsTo oid gs
 -- causes each of those double-faced components to turn so that its other face
 -- is up", so each component turns from the face IT shows, the pile turns if any
 -- component does, and the merge's turned reading becomes the current one
--- (Binding.turnMergeCopy), since its characteristics come off that stamp.
+-- (Binding.turnCopy), since its characteristics come off that stamp.
 -- Parun.MutateSpec's "CR 731.2i each double-faced component of a merged
 -- permanent turns over on its own" proves it.
+--
+-- CR 707.8a for a double-faced token copy: its other face's values, stamped as
+-- it was created (Parun.Engine.Event.copiedToken), become the current ones the
+-- same way. data/scenarios'
+-- reflection-of-kiki-jiki-copy-of-enduring-angel-transforms-into-angelic-enforcer
+-- proves it.
 turnedObject :: Object -> GameState -> Maybe Object
 turnedObject object gs
   -- CR 713.1c: "Meld cards cannot be transformed or converted. Any
@@ -2790,8 +2800,8 @@ turnedObject object gs
             turnOne (shown, turned) = maybe shown (\name -> shown {ShownComponent.face = Just name}) turned
          in if all (Maybe.isNothing . snd) turns
               then Nothing
-              else Just object {Object.source = Source.OfMerge (fmap turnOne turns), Object.bindings = Binding.turnMergeCopy (Object.bindings object)}
-      source -> cardOfSource gs (Just source) >>= Card.turnedOver (Object.face object) >>= \name -> Just object {Object.face = Just name}
+              else Just object {Object.source = Source.OfMerge (fmap turnOne turns), Object.bindings = Binding.turnCopy (Object.bindings object)}
+      source -> cardOfSource gs (Just source) >>= Card.turnedOver (Object.face object) >>= \name -> Just object {Object.face = Just name, Object.bindings = Binding.turnCopy (Object.bindings object)}
 
 -- The face one component of a merged permanent would turn to (CR 731.2i), off
 -- its printed card, `turnsTo`'s footing. Nothing for a melded component, which
