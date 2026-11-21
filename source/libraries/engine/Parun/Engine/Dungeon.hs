@@ -24,6 +24,7 @@ import qualified Parun.Engine.Card as Card
 import qualified Parun.Engine.Event as Event
 import qualified Parun.Engine.Game as Game
 import qualified Parun.Engine.Mint as Mint
+import qualified Parun.Engine.PlayerEffect as PlayerEffect
 import qualified Parun.Engine.Projection as Projection
 import qualified Parun.Extra.Natural as Natural
 import qualified Parun.Types.Card as Card.Type
@@ -35,6 +36,7 @@ import qualified Parun.Types.GameEvent as GameEvent
 import qualified Parun.Types.GameState as GameState
 import qualified Parun.Types.GrantedAbility as GrantedAbility
 import qualified Parun.Types.LibraryPosition as LibraryPosition
+import qualified Parun.Types.LimitedAct as LimitedAct
 import qualified Parun.Types.Object as Object
 import Parun.Types.ObjectId (ObjectId)
 import qualified Parun.Types.Player as Player
@@ -329,10 +331,15 @@ advance pid oid room = do
 -- CR 701.49c's "doing so causes the player to complete that dungeon" is `remove`
 -- above's business, not this case's -- which is why the tally lives there and CR
 -- 704.5t's road records it too.
+--
+-- CR 101.2: a player an effect limits (Keen-Eared Sentry) does nothing at all,
+-- CR 701.49d's venture into Undercity included, which is how CR 727.2's
+-- initiative ventures; data/scenarios/dungeon's Keen-Eared Sentry scenarios
+-- prove both.
 venture :: PlayerId -> Maybe Subtype.Subtype -> Game ()
 venture pid quality = do
   gs <- State.get
-  case inDungeon pid gs of
+  Monad.unless (PlayerEffect.prohibitsMore LimitedAct.Venture 1 pid gs) $ case inDungeon pid gs of
     Nothing -> enter pid quality
     Just oid -> case Object.ventureRoom =<< Game.lookupObject oid gs of
       -- A dungeon in the command zone with no marker on it is a state no rule

@@ -1170,6 +1170,8 @@ library codec
     Parun.Codec.LifeTallySpec
     Parun.Codec.LifeTrigger
     Parun.Codec.LifeTriggerSpec
+    Parun.Codec.LimitedAct
+    Parun.Codec.LimitedActSpec
     Parun.Codec.Limits
     Parun.Codec.LimitsSpec
     Parun.Codec.LimitUnless
@@ -3515,6 +3517,7 @@ library types
     Parun.Types.LifeLossRewrite
     Parun.Types.LifeTally
     Parun.Types.LifeTrigger
+    Parun.Types.LimitedAct
     Parun.Types.Limits
     Parun.Types.LimitUnless
     Parun.Types.LoggedEvent

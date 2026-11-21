@@ -540,6 +540,7 @@ import qualified Parun.Codec.LifeLossSpec
 import qualified Parun.Codec.LifeTallySpec
 import qualified Parun.Codec.LifeTriggerSpec
 import qualified Parun.Codec.LimitUnlessSpec
+import qualified Parun.Codec.LimitedActSpec
 import qualified Parun.Codec.LimitsSpec
 import qualified Parun.Codec.LoggedEventSpec
 import qualified Parun.Codec.LookAtSpec
@@ -1654,6 +1655,7 @@ spec s reference corpus = do
   Parun.Codec.GameEventSpec.spec s
   Parun.Codec.GameLossRSpec.spec s
   Parun.Codec.ForbiddenActSpec.spec s
+  Parun.Codec.LimitedActSpec.spec s
   Parun.Codec.GameOutcomeSpec.spec s
   Parun.Codec.GameSettingsSpec.spec s
   Parun.Codec.GiftSpec.spec s

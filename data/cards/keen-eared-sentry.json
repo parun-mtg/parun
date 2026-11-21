@@ -1,0 +1,68 @@
+{
+  "faces": [
+    {
+      "manaCost": [
+        {
+          "type": "Generic",
+          "value": 1
+        },
+        {
+          "type": "OfType",
+          "value": {
+            "type": "Colored",
+            "value": "White"
+          }
+        }
+      ],
+      "name": "Keen-Eared Sentry",
+      "oracleText": "You have hexproof. (You can't be the target of spells or abilities your opponents control.)\nEach opponent can't venture into the dungeon more than once each turn.",
+      "playerAbilities": [
+        {
+          "effect": {
+            "type": "CantBeTargetedBy",
+            "value": {
+              "scope": {
+                "type": "Opponent"
+              }
+            }
+          },
+          "scope": {
+            "type": "You"
+          }
+        },
+        {
+          "effect": {
+            "type": "Cant",
+            "value": {
+              "type": "MoreThanEachTurn",
+              "value": {
+                "act": "Venture",
+                "count": 1
+              }
+            }
+          },
+          "scope": {
+            "type": "Opponent"
+          }
+        }
+      ],
+      "power": {
+        "type": "Literal",
+        "value": 2
+      },
+      "toughness": {
+        "type": "Literal",
+        "value": 1
+      },
+      "typeLine": {
+        "subtypes": [
+          "Human",
+          "Soldier"
+        ],
+        "types": [
+          "Creature"
+        ]
+      }
+    }
+  ]
+}

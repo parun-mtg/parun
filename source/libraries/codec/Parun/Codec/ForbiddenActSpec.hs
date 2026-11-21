@@ -4,6 +4,7 @@ import qualified Parun.Codec.ForbiddenAct as ForbiddenAct
 import qualified Parun.JsonCodec.Common as Common
 import qualified Parun.Spec as Spec
 import qualified Parun.Types.ForbiddenAct as ForbiddenAct
+import qualified Parun.Types.LimitedAct as LimitedAct
 
 spec :: (Monad m, Monad n) => Spec.Spec m n -> n ()
 spec s = Spec.describe s "Parun.Codec.ForbiddenAct" $ do
@@ -11,8 +12,8 @@ spec s = Spec.describe s "Parun.Codec.ForbiddenAct" $ do
     Common.assertCodec s ForbiddenAct.codec ForbiddenAct.GainLife " {\"type\":\"GainLife\"} "
   Spec.it s "LoseLife" $
     Common.assertCodec s ForbiddenAct.codec ForbiddenAct.LoseLife " {\"type\":\"LoseLife\"} "
-  Spec.it s "DrawMoreThan" $
-    Common.assertCodec s ForbiddenAct.codec (ForbiddenAct.DrawMoreThan 1) " {\"type\":\"DrawMoreThan\",\"value\":1} "
+  Spec.it s "MoreThanEachTurn" $
+    Common.assertCodec s ForbiddenAct.codec (ForbiddenAct.MoreThanEachTurn LimitedAct.Venture 1) " {\"type\":\"MoreThanEachTurn\",\"value\":{\"act\":\"Venture\",\"count\":1}} "
   Spec.it s "PayLifeToCastOrActivate" $
     Common.assertCodec s ForbiddenAct.codec ForbiddenAct.PayLifeToCastOrActivate " {\"type\":\"PayLifeToCastOrActivate\"} "
   Spec.it s "BecomeMonarch" $

@@ -173,6 +173,7 @@ import qualified Parun.Types.LentKeyword as LentKeyword
 import qualified Parun.Types.LibraryPlacement as LibraryPlacement
 import qualified Parun.Types.LibraryPosition as LibraryPosition
 import qualified Parun.Types.LifeLossCause as LifeLossCause
+import qualified Parun.Types.LimitedAct as LimitedAct
 import qualified Parun.Types.LoggedEvent as LoggedEvent
 import qualified Parun.Types.LookAt as LookAt
 import qualified Parun.Types.Mana as Mana.Type
@@ -3689,7 +3690,7 @@ effectIsImpossible asked resolving source controller legal gs effect = case effe
   Effect.Draw (Draw.MkDraw ref quantity _ _) ->
     let drawers = playerRefPlayers legal resolving source controller gs ref
         offered = maybe 1 (max 1 . Integer.toNaturalSaturating) (Quantity.evaluateFor viewOf context gs resolving source quantity)
-     in not (null drawers) && all (\drawer -> PlayerEffect.prohibitsDrawingCards offered drawer gs) drawers
+     in not (null drawers) && all (\drawer -> PlayerEffect.prohibitsMore LimitedAct.Draw offered drawer gs) drawers
   -- CR 701.17b: "a player can't mill a number of cards greater than the number
   -- of cards in their library. If given the choice to do so, they can't choose
   -- to take that action." The rule states the whole comparison and not merely

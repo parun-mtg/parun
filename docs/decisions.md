@@ -3313,3 +3313,20 @@ Entries are ordered by the first rule each cites.
   the scenario
   `farideh-devil-s-chosen-reads-a-reroll-s-own-result-not-a-later-reroll-s`.
 - **Issue**: none.
+
+## Which ventures Keen-Eared Sentry counts
+
+- **Question**: "Each opponent can't venture into the dungeon more than once
+  each turn." Does an instruction to venture that moves no marker (a player
+  owning only Undercity told to venture into the dungeon) count as the one
+  venture, so their initiative's venture into Undercity later that turn does
+  nothing?
+- **Rules**: CR 101.2, 309.2a, 701.49a, 701.49d, 727.2; the card has no
+  ruling; CR of 2026-11-06.
+- **Decision**: Only a venture that moved the player's venture marker counts:
+  each of CR 701.49a-c ends by moving it, and one that enters no dungeon
+  carried out none of them.
+- **Rejected**: Counting every instruction to venture: the restriction is on
+  the act, and a player who could choose no dungeon did not perform it.
+- **Site**: `Parun.Engine.PlayerEffect.prohibitsMore`'s Venture count.
+- **Issue**: none.

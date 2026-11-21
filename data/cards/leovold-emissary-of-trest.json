@@ -31,8 +31,11 @@
           "effect": {
             "type": "Cant",
             "value": {
-              "type": "DrawMoreThan",
-              "value": 1
+              "type": "MoreThanEachTurn",
+              "value": {
+                "act": "Draw",
+                "count": 1
+              }
             }
           },
           "scope": {
