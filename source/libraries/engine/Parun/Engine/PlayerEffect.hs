@@ -109,6 +109,8 @@ import qualified Parun.Types.InZone as InZone
 import Parun.Types.Keyword (Keyword)
 import qualified Parun.Types.KeywordRiderGrant as KeywordRiderGrant
 import qualified Parun.Types.LandAllowance as LandAllowance
+import qualified Parun.Types.LimitedAct as LimitedAct
+import qualified Parun.Types.LoggedEvent as LoggedEvent
 import qualified Parun.Types.LoyaltyClause as LoyaltyClause
 import qualified Parun.Types.LoyaltyGrant as LoyaltyGrant
 import qualified Parun.Types.LoyaltyKind as LoyaltyKind
@@ -169,6 +171,7 @@ import qualified Parun.Types.TurnOrdinal as TurnOrdinal
 import qualified Parun.Types.TurnRegisters as TurnRegisters
 import qualified Parun.Types.TurnScope as TurnScope
 import qualified Parun.Types.VariableChoice as VariableChoice
+import qualified Parun.Types.VentureMarkerEntered as VentureMarkerEntered
 import qualified Parun.Types.Zone as Zone
 
 -- CR 109.5: "you" on an object is its controller, and for a static ability the
@@ -4503,7 +4506,7 @@ prohibitsGainingLife pid gs = any (\member -> forbids (== ForbiddenAct.GainLife)
 
 -- CR 101.2 / 614.17: does an effect say `pid` can't perform an act `reaches`
 -- names? The one reading of PlayerEffect.Cant, behind prohibitsGainingLife,
--- prohibitsLosingLife, prohibitsDrawingCards, prohibitsPayingLife and
+-- prohibitsLosingLife, prohibitsMore, prohibitsPayingLife and
 -- prohibitsBecomingMonarch, which say who else is asked.
 --
 -- A DISJUNCTION, CR 101.2's posture: one applicable "can't" outranks every
@@ -4599,23 +4602,28 @@ prohibitsLosingLife pid gs = any (\member -> forbids (== ForbiddenAct.LoseLife) 
 -- CR 614.17c lets no replacement effect modify an event that can't happen.
 -- data/scenarios/cant-draw proves each.
 prohibitsDrawing :: PlayerId -> GameState -> Bool
-prohibitsDrawing = prohibitsDrawingCards 1
+prohibitsDrawing = prohibitsMore LimitedAct.Draw 1
 
--- CR 121.2b / 121.3: does an effect say this player can't draw this many more
--- cards? Read at 1 by prohibitsDrawing, rule 121.2b's individual draw, and at
--- the number offered by Parun.Engine.Resolve.Common.effectIsImpossible, the
--- choice the same rule withholds. Per player: CR 810 shares life totals and
--- poison, not draws.
+-- CR 101.2: does an effect say this player can't perform the act this many
+-- more times this turn? Read for Draw at 1 by prohibitsDrawing, rule 121.2b's
+-- individual draw, and at the number offered by
+-- Parun.Engine.Resolve.Common.effectIsImpossible, the choice the same rule
+-- withholds; for Venture at 1 by Parun.Engine.Dungeon.venture. Per player: CR
+-- 810 shares life totals and poison, not draws or ventures.
 --
--- A limit counts TurnRegisters.drawsThisTurn, the cards this player has DRAWN
--- this turn: one drawn before the effect began counts (Narset, Parter of
+-- A Draw limit counts TurnRegisters.drawsThisTurn, the cards this player has
+-- DRAWN this turn: one drawn before the effect began counts (Narset, Parter of
 -- Veils's 2019-05-03 ruling) and a draw a replacement took does not (Spirit of
--- the Labyrinth's 2014-02-01 ruling).
-prohibitsDrawingCards :: Natural -> PlayerId -> GameState -> Bool
-prohibitsDrawingCards count pid gs =
-  let drawn = maybe 0 Natural.length (Map.lookup pid (Turn.drawsThisTurn gs))
-      reaches act = case act of
-        ForbiddenAct.DrawMoreThan limit -> drawn + count > limit
+-- the Labyrinth's 2014-02-01 ruling). A Venture limit counts the turn's
+-- GameEvent.VentureMarkerEntered of this player's, one per venture that moved
+-- their marker (docs/decisions.md, "Which ventures Keen-Eared Sentry counts").
+prohibitsMore :: LimitedAct.LimitedAct -> Natural -> PlayerId -> GameState -> Bool
+prohibitsMore act count pid gs =
+  let done = case act of
+        LimitedAct.Draw -> maybe 0 Natural.length (Map.lookup pid (Turn.drawsThisTurn gs))
+        LimitedAct.Venture -> Natural.length [() | GameEvent.VentureMarkerEntered entered <- fmap LoggedEvent.event (Foldable.toList (Turn.eventsThisTurn gs)), VentureMarkerEntered.player entered == pid]
+      reaches forbidden = case forbidden of
+        ForbiddenAct.MoreThanEachTurn limited limit -> limited == act && done + count > limit
         ForbiddenAct.GainLife -> False
         ForbiddenAct.LoseLife -> False
         ForbiddenAct.PayLifeToCastOrActivate -> False

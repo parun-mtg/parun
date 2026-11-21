@@ -1,6 +1,7 @@
 module Parun.Types.ForbiddenAct where
 
 import qualified Numeric.Natural as Natural
+import qualified Parun.Types.LimitedAct as LimitedAct
 
 -- | What Parun.Types.PlayerEffect's Cant arm says a player can't do (CR 101.2):
 -- the restrictions that name an act and nothing else, each asked of the player
@@ -22,12 +23,14 @@ data ForbiddenAct
     -- cr-119-8-alice-s-platinum-emperion-makes-greed-s-cost-unpayable prove the
     -- two.
     LoseLife
-  | -- | CR 121.2b / 121.3 / Spirit of the Labyrinth: drawing more than this many
-    -- cards each turn; 0 is Mornsong Aria's "can't draw cards".
+  | -- | CR 101.2 / Spirit of the Labyrinth, Keen-Eared Sentry: doing the act
+    -- more than this many times each turn; Draw at 0 is Mornsong Aria's "can't
+    -- draw cards" (CR 121.3).
     --
     -- data\/scenarios\/cant-draw proves the draw step's draw, an effect's, a
-    -- replaced one, an offered one and the limit's.
-    DrawMoreThan Natural.Natural
+    -- replaced one, an offered one and the limit's; data\/scenarios\/dungeon's
+    -- Keen-Eared Sentry scenarios prove Venture's.
+    MoreThanEachTurn LimitedAct.LimitedAct Natural.Natural
   | -- | CR 119.4b / 601.2h / 602.2b / Karn's Sylex: paying life toward the cost
     -- of a spell or of an activated ability that isn't a mana ability.
     --
