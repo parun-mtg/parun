@@ -57,6 +57,11 @@ update event typed screen = case event of
   MkSearch -> screen {search = typed}
   _ -> screen
 
+-- | The screen a Rematch returns to, still connected: the match-up just
+-- played, nobody ready, until the host tells it afresh.
+rematched :: Join -> Join
+rematched screen = screen {connected = True, problem = Nothing, places = fmap (\p -> p {Link.ready = False <$ Link.ready p}) (places screen)}
+
 -- | Whether the host last said you are ready.
 isReady :: Join -> Bool
 isReady screen = Maybe.fromMaybe False (List.find ((== Text.pack "You") . Link.who) (places screen) >>= Link.ready)

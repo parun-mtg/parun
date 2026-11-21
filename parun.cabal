@@ -4088,6 +4088,7 @@ library web
     Parun.Web.Icon
     Parun.Web.IconSpec
     Parun.Web.Join
+    Parun.Web.JoinSpec
     Parun.Web.Link
     Parun.Web.LinkSpec
     Parun.Web.Loading
