@@ -1,0 +1,274 @@
+{
+  "board": {
+    "active": "alice",
+    "seats": [
+      {
+        "hand": [
+          {
+            "card": "Tiamat",
+            "label": "tiamat"
+          }
+        ],
+        "library": [
+          {
+            "card": "Shivan Dragon",
+            "label": "sh1"
+          },
+          {
+            "card": "Shivan Dragon",
+            "label": "sh2"
+          },
+          {
+            "card": "Alabaster Dragon",
+            "label": "ala"
+          },
+          {
+            "card": "Volcanic Dragon",
+            "label": "vol"
+          },
+          {
+            "card": "Cloud Dragon",
+            "label": "clo"
+          },
+          {
+            "card": "Brimstone Dragon",
+            "label": "bri"
+          },
+          {
+            "card": "Predator Dragon",
+            "label": "pre"
+          },
+          {
+            "card": "Tiamat",
+            "label": "tia2"
+          },
+          {
+            "card": "Grizzly Bears",
+            "label": "gb"
+          }
+        ],
+        "manaPool": "WUBRGCC",
+        "name": "alice"
+      },
+      {
+        "library": [
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          }
+        ],
+        "name": "bob"
+      }
+    ],
+    "step": "PrecombatMain"
+  },
+  "description": "Tiamat cast from hand finds up to five Dragon cards with different names, none named Tiamat, reveals them and puts them into its controller's hand",
+  "note": "CR 603.4 / 701.23a / 701.23b / 201.2. Cast, Tiamat's intervening if holds. Six Dragons with six names are one too many; both Shivan Dragons share a name; the second Tiamat is named Tiamat; Grizzly Bears is no Dragon. Five Dragons with five names go to hand, revealed to bob; the second Shivan Dragon, Predator Dragon, the second Tiamat and the Bears stay in the shuffled library. The uncast control is tiamat-put-onto-the-battlefield-by-minion-of-the-mighty-searches-nothing.",
+  "timeline": [
+    {
+      "do": {
+        "Cast": {
+          "object": "$tiamat"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": "Pass",
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "View": {
+          "is": [
+            "trigger of Tiamat"
+          ],
+          "of": "Stack"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": "Pass",
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "player": "alice",
+      "refuse": {
+        "Answer": {
+          "prompt": "Search",
+          "with": [
+            "$sh1",
+            "$ala",
+            "$vol",
+            "$clo",
+            "$bri",
+            "$pre"
+          ]
+        }
+      },
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "player": "alice",
+      "refuse": {
+        "Answer": {
+          "prompt": "Search",
+          "with": [
+            "$sh1",
+            "$sh2"
+          ]
+        }
+      },
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "player": "alice",
+      "refuse": {
+        "Answer": {
+          "prompt": "Search",
+          "with": [
+            "$tia2"
+          ]
+        }
+      },
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "player": "alice",
+      "refuse": {
+        "Answer": {
+          "prompt": "Search",
+          "with": [
+            "$gb"
+          ]
+        }
+      },
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": {
+        "Answer": {
+          "prompt": "Search",
+          "with": [
+            "$sh1",
+            "$ala",
+            "$vol",
+            "$clo",
+            "$bri"
+          ]
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": {
+        "Answer": {
+          "prompt": "Shuffle",
+          "with": [
+            "$sh2",
+            "$pre",
+            "$tia2",
+            "$gb"
+          ]
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "View": {
+          "is": [],
+          "of": "Stack"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "View": {
+          "is": [
+            "Shivan Dragon",
+            "Alabaster Dragon",
+            "Volcanic Dragon",
+            "Cloud Dragon",
+            "Brimstone Dragon"
+          ],
+          "of": "Zone",
+          "player": "alice",
+          "zone": "Hand"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Count": {
+          "card": "Tiamat",
+          "count": 1,
+          "player": "alice",
+          "zone": "Library"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Count": {
+          "card": "Shivan Dragon",
+          "count": 1,
+          "player": "alice",
+          "zone": "Library"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "View": {
+          "is": [
+            "Shivan Dragon",
+            "Alabaster Dragon",
+            "Volcanic Dragon",
+            "Cloud Dragon",
+            "Brimstone Dragon"
+          ],
+          "of": "Witnessed",
+          "player": "bob"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    }
+  ]
+}

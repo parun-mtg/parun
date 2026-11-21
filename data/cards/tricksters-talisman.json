@@ -1,0 +1,135 @@
+{
+  "faces": [
+    {
+      "keywords": [
+        {
+          "type": "Equip",
+          "value": {
+            "cost": {
+              "mana": [
+                {
+                  "type": "Generic",
+                  "value": 2
+                }
+              ]
+            },
+            "quality": null
+          }
+        }
+      ],
+      "manaCost": [
+        {
+          "type": "OfType",
+          "value": {
+            "type": "Colored",
+            "value": "Blue"
+          }
+        }
+      ],
+      "name": "Trickster's Talisman",
+      "oracleText": "Invoke Duplicity — Equipped creature gets +1/+1 and has \"Whenever this creature deals combat damage to a player, you may sacrifice Trickster's Talisman. If you do, create a token that's a copy of this creature.\"\nEquip {2}",
+      "staticAbilities": [
+        {
+          "affected": {
+            "type": "Attached"
+          },
+          "modifications": [
+            {
+              "type": "ModifyPowerToughness",
+              "value": {
+                "power": {
+                  "type": "Literal",
+                  "value": 1
+                },
+                "toughness": {
+                  "type": "Literal",
+                  "value": 1
+                }
+              }
+            },
+            {
+              "type": "GainAbility",
+              "value": {
+                "type": "Triggered",
+                "value": {
+                  "condition": {
+                    "type": "DealsDamage",
+                    "value": {
+                      "actor": {
+                        "type": "Self"
+                      },
+                      "kind": "Combat",
+                      "recipients": [
+                        {
+                          "type": "Player",
+                          "value": {
+                            "type": "Relative",
+                            "value": "AnyPlayer"
+                          }
+                        }
+                      ]
+                    }
+                  },
+                  "modal": {
+                    "modes": [
+                      {
+                        "clauses": [
+                          {
+                            "effects": [
+                              {
+                                "type": "CreateCopy",
+                                "value": {
+                                  "ref": {
+                                    "type": "InSlot",
+                                    "value": "self"
+                                  }
+                                }
+                              }
+                            ],
+                            "payGate": {
+                              "branch": "IfPaid",
+                              "cost": {
+                                "components": [
+                                  {
+                                    "type": "Sacrifice",
+                                    "value": {
+                                      "count": {
+                                        "type": "Fixed",
+                                        "value": 1
+                                      },
+                                      "whichPermanents": {
+                                        "type": "IsBound",
+                                        "value": "thatGrantingPermanent"
+                                      }
+                                    }
+                                  }
+                                ],
+                                "mana": []
+                              },
+                              "payer": {
+                                "type": "InSlot",
+                                "value": "you"
+                              }
+                            }
+                          }
+                        ]
+                      }
+                    ]
+                  }
+                }
+              }
+            }
+          ]
+        }
+      ],
+      "typeLine": {
+        "subtypes": [
+          "Equipment"
+        ],
+        "types": [
+          "Artifact"
+        ]
+      }
+    }
+  ]
+}

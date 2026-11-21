@@ -1,0 +1,133 @@
+{
+  "faces": [
+    {
+      "activatedAbilities": [
+        {
+          "cost": {
+            "components": [
+              {
+                "type": "TapThis"
+              }
+            ],
+            "mana": []
+          },
+          "modal": {
+            "modes": [
+              {
+                "clauses": [
+                  {
+                    "effects": [
+                      {
+                        "type": "AddMana",
+                        "value": {
+                          "production": {
+                            "type": "Chosen"
+                          }
+                        }
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          }
+        }
+      ],
+      "name": "Temple of the Dragon Queen",
+      "oracleText": "As this land enters, you may reveal a Dragon card from your hand. This land enters tapped unless you revealed a Dragon card this way or you control a Dragon.\nAs this land enters, choose a color.\n{T}: Add one mana of the chosen color.",
+      "replacementEffects": [
+        {
+          "effect": {
+            "type": "EntryR",
+            "value": {
+              "matching": {
+                "type": "IsSource"
+              },
+              "rewrite": {
+                "type": "OrTapped",
+                "value": {
+                  "price": {
+                    "type": "Reveal",
+                    "value": {
+                      "type": "HasSubtype",
+                      "value": "Dragon"
+                    }
+                  },
+                  "unless": {
+                    "type": "Compares",
+                    "value": {
+                      "comparison": "AtLeast",
+                      "measured": {
+                        "type": "Count",
+                        "value": {
+                          "aggregation": {
+                            "type": "Members"
+                          },
+                          "filter": {
+                            "type": "And",
+                            "value": [
+                              {
+                                "type": "HasSubtype",
+                                "value": "Dragon"
+                              },
+                              {
+                                "type": "HeldBy",
+                                "value": {
+                                  "holder": "Controller",
+                                  "relation": "You"
+                                }
+                              }
+                            ]
+                          },
+                          "scope": {
+                            "type": "InZone",
+                            "value": {
+                              "player": {
+                                "type": "Relative",
+                                "value": "AnyPlayer"
+                              },
+                              "zone": "Battlefield"
+                            }
+                          }
+                        }
+                      },
+                      "threshold": {
+                        "type": "Literal",
+                        "value": 1
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        {
+          "effect": {
+            "type": "EntryR",
+            "value": {
+              "matching": {
+                "type": "IsSource"
+              },
+              "rewrite": {
+                "type": "ChooseQuality",
+                "value": {
+                  "type": "Colors",
+                  "value": {
+                    "least": 1,
+                    "most": 1
+                  }
+                }
+              }
+            }
+          }
+        }
+      ],
+      "typeLine": {
+        "types": [
+          "Land"
+        ]
+      }
+    }
+  ]
+}

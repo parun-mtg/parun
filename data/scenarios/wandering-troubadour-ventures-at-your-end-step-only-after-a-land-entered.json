@@ -1,0 +1,178 @@
+{
+  "board": {
+    "active": "alice",
+    "seats": [
+      {
+        "battlefield": [
+          {
+            "card": "Wandering Troubadour",
+            "label": "troubadour"
+          }
+        ],
+        "dungeons": [
+          "Lost Mine of Phandelver"
+        ],
+        "hand": [
+          {
+            "card": "Forest",
+            "label": "forest"
+          }
+        ],
+        "library": [
+          {
+            "card": "Forest",
+            "label": "top"
+          },
+          {
+            "card": "Forest"
+          },
+          {
+            "card": "Forest"
+          },
+          {
+            "card": "Forest"
+          },
+          {
+            "card": "Forest"
+          },
+          {
+            "card": "Forest"
+          },
+          {
+            "card": "Forest"
+          },
+          {
+            "card": "Forest"
+          }
+        ],
+        "name": "alice"
+      },
+      {
+        "library": [
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          }
+        ],
+        "name": "bob"
+      }
+    ],
+    "step": "PrecombatMain"
+  },
+  "description": "Wandering Troubadour ventures at your end step only on a turn a land entered under your control",
+  "note": "CR 603.4, 701.49a: turn 1 alice plays a Forest, so the end-step trigger ventures into Cave Entrance; turn 3 she plays none, so it does not trigger and no Goblin Lair token or ChooseRoom follows.",
+  "timeline": [
+    {
+      "do": {
+        "PlayLand": "$forest"
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": "Pass",
+      "player": "alice",
+      "step": "EndStep",
+      "turn": 1
+    },
+    {
+      "do": "Pass",
+      "player": "alice",
+      "step": "EndStep",
+      "turn": 1
+    },
+    {
+      "do": {
+        "Answer": {
+          "prompt": "ChooseScry",
+          "with": [
+            [],
+            [
+              "$top"
+            ]
+          ]
+        }
+      },
+      "player": "alice",
+      "step": "EndStep",
+      "turn": 1
+    },
+    {
+      "check": {
+        "View": {
+          "is": [
+            "Lost Mine of Phandelver"
+          ],
+          "of": "Zone",
+          "player": "alice",
+          "zone": "Command"
+        }
+      },
+      "player": "alice",
+      "step": "Upkeep",
+      "turn": 2
+    },
+    {
+      "do": {
+        "Attack": []
+      },
+      "player": "alice",
+      "step": "DeclareAttackers",
+      "turn": 3
+    },
+    {
+      "check": {
+        "View": {
+          "is": [],
+          "of": "Stack"
+        }
+      },
+      "player": "alice",
+      "step": "EndStep",
+      "turn": 3
+    },
+    {
+      "check": {
+        "View": {
+          "is": [
+            "Lost Mine of Phandelver"
+          ],
+          "of": "Zone",
+          "player": "alice",
+          "zone": "Command"
+        }
+      },
+      "player": "alice",
+      "step": "Upkeep",
+      "turn": 4
+    },
+    {
+      "check": {
+        "Count": {
+          "card": "Goblin Token",
+          "count": 0,
+          "player": "alice",
+          "zone": "Battlefield"
+        }
+      },
+      "player": "alice",
+      "step": "Upkeep",
+      "turn": 4
+    }
+  ]
+}

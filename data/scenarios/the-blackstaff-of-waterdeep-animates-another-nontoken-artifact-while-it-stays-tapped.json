@@ -1,0 +1,328 @@
+{
+  "board": {
+    "active": "alice",
+    "seats": [
+      {
+        "battlefield": [
+          {
+            "card": "The Blackstaff of Waterdeep",
+            "label": "staff"
+          },
+          {
+            "card": "Millstone",
+            "label": "stone"
+          },
+          {
+            "card": "Millstone",
+            "label": "tokstone",
+            "token": true
+          },
+          {
+            "card": "Millstone",
+            "label": "stone2"
+          },
+          {
+            "card": "Island",
+            "label": "i1"
+          },
+          {
+            "card": "Island",
+            "label": "i2"
+          }
+        ],
+        "library": [
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          }
+        ],
+        "name": "alice"
+      },
+      {
+        "battlefield": [
+          {
+            "card": "Millstone",
+            "label": "bobstone"
+          }
+        ],
+        "library": [
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          }
+        ],
+        "name": "bob"
+      }
+    ],
+    "step": "Upkeep"
+  },
+  "description": "CR 611.2b, 502.3, 602.5d: The Blackstaff of Waterdeep makes another target nontoken artifact you control a 4/4 artifact creature for as long as it stays tapped, and its controller may keep it tapped through the untap step",
+  "note": "The upkeep activation is refused (sorcery speed); bob's Millstone, alice's token Millstone and the Blackstaff itself are refused as targets. Alice's Millstone is a 4/4 artifact creature, stays one while she keeps the Blackstaff tapped through turn 3's untap step, and is only an artifact once turn 5 untaps it.",
+  "timeline": [
+    {
+      "player": "alice",
+      "refuse": {
+        "Activate": {
+          "mana": [
+            "$i1",
+            "$i2"
+          ],
+          "object": "$staff",
+          "targets": [
+            "$stone"
+          ]
+        }
+      },
+      "step": "Upkeep",
+      "turn": 1
+    },
+    {
+      "player": "alice",
+      "refuse": {
+        "Activate": {
+          "mana": [
+            "$i1",
+            "$i2"
+          ],
+          "object": "$staff",
+          "targets": [
+            "$bobstone"
+          ]
+        }
+      },
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "player": "alice",
+      "refuse": {
+        "Activate": {
+          "mana": [
+            "$i1",
+            "$i2"
+          ],
+          "object": "$staff",
+          "targets": [
+            "$tokstone"
+          ]
+        }
+      },
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "player": "alice",
+      "refuse": {
+        "Activate": {
+          "mana": [
+            "$i1",
+            "$i2"
+          ],
+          "object": "$staff",
+          "targets": [
+            "$staff"
+          ]
+        }
+      },
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": {
+        "Activate": {
+          "mana": [
+            "$i1",
+            "$i2"
+          ],
+          "object": "$staff",
+          "targets": [
+            "$stone"
+          ]
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": "Pass",
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Types": {
+          "object": "$stone",
+          "types": [
+            "Artifact",
+            "Creature"
+          ]
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "PowerToughness": {
+          "object": "$stone",
+          "power": 4,
+          "toughness": 4
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Types": {
+          "object": "$tokstone",
+          "types": [
+            "Artifact"
+          ]
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": {
+        "Answer": {
+          "prompt": "ChooseAnyNumberToUntap",
+          "with": []
+        }
+      },
+      "player": "alice",
+      "step": "Untap",
+      "turn": 3
+    },
+    {
+      "check": {
+        "Tapped": {
+          "object": "$staff",
+          "tapped": true
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 3
+    },
+    {
+      "check": {
+        "Types": {
+          "object": "$stone",
+          "types": [
+            "Artifact",
+            "Creature"
+          ]
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 3
+    },
+    {
+      "do": {
+        "Attack": []
+      },
+      "player": "alice",
+      "step": "DeclareAttackers",
+      "turn": 3
+    },
+    {
+      "do": {
+        "Answer": {
+          "prompt": "ChooseAnyNumberToUntap",
+          "with": [
+            "$staff"
+          ]
+        }
+      },
+      "player": "alice",
+      "step": "Untap",
+      "turn": 5
+    },
+    {
+      "check": {
+        "Types": {
+          "object": "$stone",
+          "types": [
+            "Artifact"
+          ]
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 5
+    },
+    {
+      "check": {
+        "Types": {
+          "object": "$stone2",
+          "types": [
+            "Artifact"
+          ]
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 5
+    }
+  ]
+}

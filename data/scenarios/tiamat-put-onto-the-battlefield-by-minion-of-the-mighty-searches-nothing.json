@@ -1,0 +1,153 @@
+{
+  "board": {
+    "active": "alice",
+    "seats": [
+      {
+        "battlefield": [
+          {
+            "card": "Minion of the Mighty",
+            "label": "minion",
+            "ready": true
+          },
+          {
+            "card": "Hill Giant",
+            "label": "giant1",
+            "ready": true
+          },
+          {
+            "card": "Hill Giant",
+            "label": "giant2",
+            "ready": true
+          }
+        ],
+        "hand": [
+          {
+            "card": "Tiamat",
+            "label": "tiamat"
+          },
+          {
+            "card": "Alabaster Dragon",
+            "label": "ala"
+          }
+        ],
+        "library": [
+          {
+            "card": "Shivan Dragon"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          }
+        ],
+        "name": "alice"
+      },
+      {
+        "library": [
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          }
+        ],
+        "life": 30,
+        "name": "bob"
+      }
+    ],
+    "step": "PrecombatMain"
+  },
+  "description": "Tiamat put onto the battlefield by Minion of the Mighty was not cast, so its enters ability does not trigger",
+  "note": "CR 603.4 / 601.2. Minion of the Mighty and two Hill Giants attack for 6, and its pack tactics puts Tiamat from hand, rather than Alabaster Dragon, onto the battlefield tapped and attacking. Tiamat was never cast, so its intervening if is false: nothing goes on the stack and the Dragon in the library stays there. The cast positive is tiamat-cast-finds-five-dragons-with-different-names-none-named-tiamat.",
+  "timeline": [
+    {
+      "do": {
+        "Attack": [
+          "$minion",
+          "$giant1",
+          "$giant2"
+        ]
+      },
+      "player": "alice",
+      "step": "DeclareAttackers",
+      "turn": 1
+    },
+    {
+      "do": "Pass",
+      "player": "alice",
+      "step": "DeclareAttackers",
+      "turn": 1
+    },
+    {
+      "do": {
+        "ChooseOptional": "Exercises"
+      },
+      "player": "alice",
+      "step": "DeclareAttackers",
+      "turn": 1
+    },
+    {
+      "do": {
+        "Answer": {
+          "prompt": "ChooseCardInHand",
+          "with": "$tiamat"
+        }
+      },
+      "player": "alice",
+      "step": "DeclareAttackers",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Count": {
+          "card": "Tiamat",
+          "count": 1,
+          "player": "alice",
+          "zone": "Battlefield"
+        }
+      },
+      "player": "alice",
+      "step": "DeclareAttackers",
+      "turn": 1
+    },
+    {
+      "check": {
+        "View": {
+          "is": [],
+          "of": "Stack"
+        }
+      },
+      "player": "alice",
+      "step": "DeclareAttackers",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Count": {
+          "card": "Shivan Dragon",
+          "count": 1,
+          "player": "alice",
+          "zone": "Library"
+        }
+      },
+      "player": "alice",
+      "step": "EndOfCombat",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Life": {
+          "life": 17,
+          "player": "bob"
+        }
+      },
+      "player": "alice",
+      "step": "EndOfCombat",
+      "turn": 1
+    }
+  ]
+}

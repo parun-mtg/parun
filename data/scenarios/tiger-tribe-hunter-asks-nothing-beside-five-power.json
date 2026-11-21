@@ -1,0 +1,128 @@
+{
+  "board": {
+    "active": "alice",
+    "seats": [
+      {
+        "battlefield": [
+          {
+            "card": "Tiger-Tribe Hunter",
+            "label": "hunter",
+            "ready": true
+          },
+          {
+            "card": "Raging Goblin",
+            "label": "goblin",
+            "ready": true
+          },
+          {
+            "card": "Barony Vampire",
+            "label": "vamp",
+            "ready": true
+          }
+        ],
+        "library": [
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          }
+        ],
+        "name": "alice"
+      },
+      {
+        "battlefield": [
+          {
+            "card": "Craw Wurm",
+            "label": "wurm"
+          }
+        ],
+        "library": [
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          }
+        ],
+        "name": "bob"
+      }
+    ],
+    "step": "PrecombatMain"
+  },
+  "description": "Tiger-Tribe Hunter's pack tactics asks for no sacrifice when it and Raging Goblin attack for only 5",
+  "note": "CR 603.4. The 4-power Hunter and 1-power Raging Goblin total 5, so the intervening if is false: nothing goes on the stack, no sacrifice is asked for, and Barony Vampire stays on the battlefield. The 6-power positive is tiger-tribe-hunter-sacrifices-a-barony-vampire-for-three-to-a-creature-beside-six-power.",
+  "timeline": [
+    {
+      "do": {
+        "Attack": [
+          "$hunter",
+          "$goblin"
+        ]
+      },
+      "player": "alice",
+      "step": "DeclareAttackers",
+      "turn": 1
+    },
+    {
+      "check": {
+        "View": {
+          "is": [],
+          "of": "Stack"
+        }
+      },
+      "player": "alice",
+      "step": "DeclareAttackers",
+      "turn": 1
+    },
+    {
+      "do": {
+        "Block": {}
+      },
+      "player": "bob",
+      "step": "DeclareBlockers",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Count": {
+          "card": "Barony Vampire",
+          "count": 1,
+          "player": "alice",
+          "zone": "Battlefield"
+        }
+      },
+      "player": "alice",
+      "step": "EndOfCombat",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Damage": {
+          "damage": 0,
+          "object": "$wurm"
+        }
+      },
+      "player": "alice",
+      "step": "EndOfCombat",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Life": {
+          "life": 15,
+          "player": "bob"
+        }
+      },
+      "player": "alice",
+      "step": "EndOfCombat",
+      "turn": 1
+    }
+  ]
+}
