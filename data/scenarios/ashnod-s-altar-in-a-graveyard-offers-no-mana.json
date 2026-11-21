@@ -1,0 +1,53 @@
+{
+  "board": {
+    "active": "alice",
+    "seats": [
+      {
+        "battlefield": [
+          {
+            "card": "Grizzly Bears",
+            "label": "bears"
+          }
+        ],
+        "graveyard": [
+          {
+            "card": "Ashnod's Altar",
+            "label": "altar"
+          }
+        ],
+        "name": "alice"
+      },
+      {
+        "name": "bob"
+      }
+    ],
+    "step": "PrecombatMain"
+  },
+  "description": "Ashnod's Altar in a graveyard offers no mana though its cost is payable there",
+  "note": "The Altar's cost names no zone, so its ability functions only on the battlefield (CR 113.6); the Bears alice could sacrifice make the cost payable from the graveyard, so only the zone keeps the ability from being offered.",
+  "timeline": [
+    {
+      "player": "alice",
+      "refuse": {
+        "Take": {
+          "action": "ActivateManaAbility $altar"
+        }
+      },
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Count": {
+          "card": "Grizzly Bears",
+          "count": 1,
+          "player": "alice",
+          "zone": "Battlefield"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    }
+  ]
+}

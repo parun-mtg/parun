@@ -463,8 +463,9 @@ chooseTwoSpec s registry = Spec.describe s "ChooseTwo (CR 700.2)" $ do
     -- The forced case's own boundary, and why casting does not reach it: modes 2
     -- and 3 take no targets, so they are fillable even on an empty board --
     -- exactly the two the selection demands. No cast in this pool arrives here,
-    -- since every mana source in it is a permanent, and a permanent on the
-    -- battlefield is a legal target for mode 1.
+    -- since every mana source in it is a permanent or needs one to pay its own
+    -- cost (Jack-o'-Lantern's {1}), and a permanent on the battlefield is a
+    -- legal target for mode 1.
     Spec.assertEqWith
       s
       "on an empty board only the two targetless modes are fillable"
