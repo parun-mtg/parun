@@ -1464,8 +1464,7 @@ processDamage settle events = do
   -- Worship example processes "[10 damage is dealt to the defending player]" from
   -- two attackers into one loss, so a replacement applies to it once (CR 614.5)
   -- and judges "would be reduced to 0 or less" on the sum. Per source, Enduring
-  -- Angel turned once per lethal hit and its life set read as a gain; see
-  -- docs/decisions.md, "How simultaneous damage to one player is replaced".
+  -- Angel turned once per lethal hit and its life set read as a gain.
   --
   -- The proposal reads the live board, and that is why CR 120.3f's gain is
   -- written ABOVE rather than in the fold below: the board it reads has to be
@@ -1481,10 +1480,18 @@ processDamage settle events = do
   -- replaces a RESULT of it -- Worship's ruling, "any damage rendered useless by
   -- Worship was still dealt".
   --
-  -- Aligned with `survivors` by position, so the fold below can zip the two.
-  -- An unreplaced loss keeps one record per source; a replaced one is CR
-  -- 614.6's single modified event, so its settled amount goes on the player's
-  -- first event and the rest record nothing.
+  -- And ONE loss per player, replaced or not: the rulings of Vampire Scrivener
+  -- (2024-11-08, "just once for each ... life-losing event") and Ob Nixilis,
+  -- Captive Kingpin (2023-05-12, three 1/1s connecting are a loss of 3) read the
+  -- batch's damage to a player as one life-loss event; only lifelink's gain is
+  -- split per source (CR 702.15e). The settled amount goes on the player's first
+  -- event and the rest record nothing. Proved by the scenario
+  -- `exquisite-blood-triggers-once-for-two-simultaneous-attackers`.
+  --
+  -- Not implemented: teammates sharing a life total (CR 810.9) settled as one
+  -- event; each is settled in turn against the live shared total (#9254).
+  --
+  -- `lost` is aligned with `survivors` by position, so the fold below can zip the two.
   let losingTo ev = case DamageEvent.target ev of
         Recipient.ToPlayer pid | not (DamageEvent.dealtByInfect ev) -> Just pid
         _ -> Nothing
@@ -1494,17 +1501,13 @@ processDamage settle events = do
       ( \pid total -> do
           n <- Event.resolveLifeLossSpent settle (Just board) Set.empty LifeLossCause.ByDamage pid total
           Monad.when (n > 0) (State.modify' (Game.adjustLife pid (negate (toInteger n))))
-          pure (n, total)
+          pure n
       )
       damageTo
   let shareOf (seen, acc) ev = case losingTo ev of
-        Just pid -> case Map.lookup pid settledLoss of
-          Just (n, total)
-            | n == total -> (seen, DamageEvent.amount ev : acc)
-            | Set.member pid seen -> (seen, 0 : acc)
-            | otherwise -> (Set.insert pid seen, n : acc)
-          Nothing -> (seen, 0 : acc)
-        Nothing -> (seen, 0 : acc)
+        Just pid
+          | Set.notMember pid seen -> (Set.insert pid seen, Map.findWithDefault 0 pid settledLoss : acc)
+        _ -> (seen, 0 : acc)
       lost = reverse (snd (List.foldl' shareOf (Set.empty, []) survivors))
   -- CR 120.4c's counter half for a permanent: CR 120.3c's loyalty and CR
   -- 120.3h's defense counters, each removal settled through

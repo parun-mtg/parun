@@ -414,24 +414,6 @@ Entries are ordered by the first rule each cites.
   `cr-120-4c-elderscale-wurm-reads-the-life-before-tainted-remedy-s-loss-from-the-same-damage`.
 - **Issue**: #5809.
 
-## How simultaneous damage to one player is replaced
-
-- **Question**: CR 120.4d's Worship example processes two attackers' damage to a
-  player as one loss, so a life-loss replacement applies to the sum once (CR
-  614.5). Unreplaced, how many life-loss events does it record, and replaced?
-  Alice at 5 under Worship takes 3 and 3 at once.
-- **Rules**: CR 119.3, 120.4c, 120.4d, 614.5, 614.6; CR of 2026-11-06.
-- **Decision**: Unreplaced, one loss per source, as before. Replaced, one loss of
-  the settled amount, CR 614.6's modified event. Alice loses 4 in one event.
-- **Rejected**: one record per source of a replaced loss (3 then 1), which
-  splits a modified event no rule splits; one record per player always, which
-  the rules do not force and would change every "whenever a player loses life"
-  count for unreplaced combat damage.
-- **Site**: `Parun.Engine.Damage`'s `processDamage` loss pass, proved by the
-  scenarios `enduring-angel-transforms-once-for-two-simultaneous-lethal-attackers`
-  and `enduring-angel-replaces-simultaneous-damage-whole-so-life-is-lost-not-gained`.
-- **Issue**: #9247.
-
 ## Whether infect and toxic from one source give poison once
 
 - **Question**: CR 120.3b and 702.164c each give poison counters for one source's

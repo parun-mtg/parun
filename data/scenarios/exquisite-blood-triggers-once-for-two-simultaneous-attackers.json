@@ -1,0 +1,115 @@
+{
+  "board": {
+    "active": "alice",
+    "seats": [
+      {
+        "battlefield": [
+          {
+            "card": "Exquisite Blood"
+          },
+          {
+            "card": "Ajani's Pridemate",
+            "label": "pridemate"
+          },
+          {
+            "card": "Hill Giant",
+            "label": "a1",
+            "ready": true
+          },
+          {
+            "card": "Hill Giant",
+            "label": "a2",
+            "ready": true
+          }
+        ],
+        "library": [
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          }
+        ],
+        "life": 10,
+        "name": "alice"
+      },
+      {
+        "battlefield": [],
+        "library": [
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          }
+        ],
+        "life": 17,
+        "name": "bob"
+      }
+    ],
+    "step": "BeginningOfCombat"
+  },
+  "description": "CR 120.4c / 120.4d: two unblocked attackers' combat damage to bob is one life loss, so Exquisite Blood triggers once",
+  "note": "Rulings of Vampire Scrivener (2024-11-08) and Ob Nixilis, Captive Kingpin (2023-05-12). Bob at 17 takes 3 and 3 at once and loses 6 in one event: one gain of 6 for alice, one counter on Ajani's Pridemate. A loss per source would give two.",
+  "timeline": [
+    {
+      "do": {
+        "Attack": [
+          "$a1",
+          "$a2"
+        ]
+      },
+      "player": "alice",
+      "step": "DeclareAttackers",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Counters": {
+          "count": 1,
+          "kind": {
+            "type": "PlusOnePlusOne"
+          },
+          "object": "$pridemate"
+        }
+      },
+      "player": "alice",
+      "step": "EndOfCombat",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Life": {
+          "life": 11,
+          "player": "bob"
+        }
+      },
+      "player": "alice",
+      "step": "EndOfCombat",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Life": {
+          "life": 16,
+          "player": "alice"
+        }
+      },
+      "player": "alice",
+      "step": "EndOfCombat",
+      "turn": 1
+    }
+  ]
+}
