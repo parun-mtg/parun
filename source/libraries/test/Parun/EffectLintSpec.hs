@@ -1598,7 +1598,9 @@ effectObjectRefs effect =
         Effect.AttachAll (AttachAll.MkAttachAll ref _) -> [(ChosenAmong : permanentQuestions, ref)]
         -- The dealers are swept through the pure objectRefObjects too.
         Effect.DealDamage (DealDamage.MkDealDamage parts _ dealers _ _ _ _) -> read_ (Foldable.toList dealers <> fmap DamagePart.ref (Foldable.toList parts))
-        Effect.ModifyTarget (ModifyTarget.MkModifyTarget _ _ ref _) -> [(permanentQuestions, ref)]
+        -- CardInHand: the scenario
+        -- riveteers-provocateur-perpetually-gives-a-creature-card-in-hand-blitz-at-its-own-mana-cost.
+        Effect.ModifyTarget (ModifyTarget.MkModifyTarget _ _ ref _) -> [(CardInHand : permanentQuestions, ref)]
         Effect.ChangeText {} -> []
         Effect.AddMana {} -> []
         Effect.Firebend {} -> []
