@@ -273,18 +273,18 @@ create settle resolving source controller legal chosen (Create.MkCreate quantity
 
 -- CR 111.3 / 603.1: `card` with the triggered abilities of each of `lenders`
 -- written onto every face, as its copiable values list them, with the delayed
--- abilities they arm (Projection.lentTriggersOf).
+-- abilities they arm (Projection.lentTriggersOf). A keyword's triggered
+-- abilities (CR 702.1) are among them, and its other abilities are not. The
+-- scenario
+-- the-book-of-vile-darkness-s-vecna-has-prowess-from-a-swiftspear-exiled-as-an-eye
+-- proves it.
 --
--- Unprinted: a lender's keyword with a triggered ability (CR 702) lends
--- nothing here. The one printing, The Book of Vile Darkness, exiles itself and
--- artifacts named Eye of Vecna and Hand of Vecna, none printing such a keyword.
--- Of the cards with a keyword that can enter as or become a copy of one
--- (MTGJSON AtomicCards, 2026-11-21), Sakashima's Protege alone prints a
--- triggered keyword, cascade, which functions only on the stack (CR 702.85a),
--- and no card in data/cards/ filters on cascade.
+-- Not implemented: the token does not have such a keyword for a filter's "with
+-- [keyword]" (CR 702.1d) (#9386).
 withLentTriggers :: GameState.GameState -> [ObjectId] -> Card.Type.Card -> Card.Type.Card
 withLentTriggers gs lenders card =
-  let (triggers, delayeds) = foldMap (\lender -> Projection.lentTriggersOf lender (Projection.copiableCharacteristics lender gs)) lenders
+  let lent lender = let pc = Projection.copiableCharacteristics lender gs in pc {PC.triggeredAbilities = PC.triggeredAbilities pc <> Keyword.triggeredAbilitiesOf (PC.keywords pc)}
+      (triggers, delayeds) = foldMap (\lender -> Projection.lentTriggersOf lender (lent lender)) lenders
       onFace face = face {Face.triggeredAbilities = Face.triggeredAbilities face <> triggers, Face.delayedAbilities = Map.union (Face.delayedAbilities face) delayeds}
    in if null lenders then card else card {Card.Type.faces = fmap onFace (Card.Type.faces card)}
 
