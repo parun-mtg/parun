@@ -944,7 +944,7 @@ form request picked = case Text.unpack (Question.kind question) of
       Just shown <- Request.view request ->
         let count = Set.size picked
          in [ heading "Declare attackers: tap your creatures to attack with them.",
-              Element.el "div" ["actions"] [] (toggles 0 [(i, Offer.listedName shown option) | (i, option) <- zip [0 ..] attackers]),
+              Element.el "div" ["actions"] [] (toggles 0 (Natural.length attackers) [(i, Offer.listedName shown option) | (i, option) <- zip [0 ..] attackers]),
               Element.el "div" ["passes"] [] $
                 [primary MkSubmit (Text.pack (if count == 0 then "No attack" else "Attack with " <> show count))]
                   <> [shortcut [] "A" (MkAnswer (R.Array attackers)) (Text.pack "Attack with all") | not (null attackers)]
@@ -1005,7 +1005,7 @@ form request picked = case Text.unpack (Question.kind question) of
         heading "Declare blockers: tap a creature of yours, then the attacker it blocks."
           : concat
             [ Element.el "h3" ["subhead"] [] (Mana.rich (title group))
-                : toggles g [(i, label) | (i, (_, label)) <- zip [0 ..] (options group)]
+                : toggles g (most group) [(i, label) | (i, (_, label)) <- zip [0 ..] (options group)]
             | (g, group) <- zip [0 ..] (groups chooser)
             ]
             <> [primary MkSubmit (Text.pack (if Set.null picked then "No blocks" else "Block"))]
@@ -1013,25 +1013,26 @@ form request picked = case Text.unpack (Question.kind question) of
     | Just chooser <- picker request ->
         concat
           [ Html.element (Text.pack "h2") [] (Mana.rich $ title group <> (if Text.any Char.isDigit (title group) then Text.empty else Text.pack (" (choose " <> bounds group <> ")")))
-              : toggles g [(i, label) | (i, (_, label)) <- zip [0 ..] (options group)]
+              : toggles g (most group) [(i, label) | (i, (_, label)) <- zip [0 ..] (options group)]
           | (g, group) <- zip [0 ..] (groups chooser)
           ]
-          <> [primary MkSubmit $ send chooser]
+          <> [Element.el "div" ["passes"] [] $ primary MkSubmit (send chooser) : [button MkClear (Text.pack "Start over") | not (Set.null picked)]]
   _ -> typedReply request
   where
     question = Request.question request
     offer = Question.offer question
     toggle g i label = button (MkToggle g i) $ (if Set.member (g, i) picked then Text.pack "\x2713 " else Text.empty) <> label
     -- Options the seat can't tell apart share a button: a tap picks the
-    -- first unpicked, or once all are picked drops the last.
-    toggles g labelled =
+    -- first unpicked while the group has room, else drops the last picked.
+    toggles g room labelled =
       [ case indices of
           [i] -> toggle g i label
           _ ->
             let chosen = filter (\i -> Set.member (g, i) picked) indices
+                full = Natural.length (filter ((== g) . fst) (Set.toList picked)) >= room
                 next = case filter (\i -> not (Set.member (g, i) picked)) indices of
-                  i : _ -> i
-                  [] -> List.last indices
+                  i : _ | null chosen || not full -> i
+                  _ -> List.last chosen
              in button (MkToggle g next) ((if null chosen then Text.empty else Text.pack (show (length chosen) <> " of ")) <> label <> many (length indices))
       | (indices, label, _) <- collapsed labelled
       ]
