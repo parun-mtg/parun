@@ -2167,6 +2167,7 @@ subgameSpellOn borrowed name effects gs0 =
             Face.replacementEffects = [],
             Face.triggeredAbilities = [],
             Face.delayedAbilities = Map.empty,
+            Face.lentKeywords = [],
             Face.rooms = Seq.empty,
             Face.dungeonEntryQuality = Nothing,
             Face.castingPermissions = [],

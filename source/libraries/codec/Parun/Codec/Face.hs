@@ -52,6 +52,7 @@ import qualified Parun.Codec.GrantedAbility as GrantedAbility
 import qualified Parun.Codec.HandAction as HandAction
 import qualified Parun.Codec.Keyword as Keyword
 import qualified Parun.Codec.KeywordCostRestriction as KeywordCostRestriction
+import qualified Parun.Codec.LentKeyword as LentKeyword
 import qualified Parun.Codec.Loyalty as Loyalty
 import qualified Parun.Codec.ManaCost as ManaCost
 import qualified Parun.Codec.Modal as Modal
@@ -145,6 +146,7 @@ codec cardCodec = Fields.objectWith (modeCostsInRange Monad.>=> chooserHasModes)
   replacementEffects <- Fields.defaulted "replacementEffects" [] (Common.list (PrintedReplacement.codec cardCodec (GrantedAbility.codec cardCodec) (Effect.codec cardCodec (GrantedAbility.codec cardCodec)))) Face.replacementEffects
   triggeredAbilities <- Fields.defaulted "triggeredAbilities" [] (Common.list (TriggeredAbility.codec cardCodec (GrantedAbility.codec cardCodec))) Face.triggeredAbilities
   delayedAbilities <- Fields.defaulted "delayedAbilities" Map.empty (TriggeredAbility.codecDelayed cardCodec (GrantedAbility.codec cardCodec)) Face.delayedAbilities
+  lentKeywords <- Fields.defaulted "lentKeywords" [] (Common.list LentKeyword.codec) Face.lentKeywords
   -- CR 309.4: the rooms of a dungeon card, topmost first.
   rooms <- Fields.defaulted "rooms" Seq.empty (Common.seq (DungeonRoom.codec cardCodec)) Face.rooms
   -- CR 701.49d: the quality a venture must indicate to bring this dungeon in.
@@ -239,6 +241,7 @@ codec cardCodec = Fields.objectWith (modeCostsInRange Monad.>=> chooserHasModes)
         Face.replacementEffects = replacementEffects,
         Face.triggeredAbilities = triggeredAbilities,
         Face.delayedAbilities = delayedAbilities,
+        Face.lentKeywords = lentKeywords,
         Face.rooms = rooms,
         Face.dungeonEntryQuality = dungeonEntryQuality,
         Face.castingPermissions = castingPermissions,

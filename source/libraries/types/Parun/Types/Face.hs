@@ -52,6 +52,7 @@ import qualified Parun.Types.GrantedAbility as GrantedAbility
 import qualified Parun.Types.HandAction as HandAction
 import qualified Parun.Types.Keyword as Keyword
 import qualified Parun.Types.KeywordCostRestriction as KeywordCostRestriction
+import qualified Parun.Types.LentKeyword as LentKeyword
 import qualified Parun.Types.Loyalty as Loyalty
 import qualified Parun.Types.ManaCost as ManaCost
 import qualified Parun.Types.Modal as Modal
@@ -260,6 +261,11 @@ data Face card = MkFace
     -- copy arms the text it copied (CR 707.2) -- but never stripped by layer
     -- 6: a delayed ability is not ON the source object (CR 603.7, 603.2d).
     delayedAbilities :: Map.Map AbilityName.AbilityName (TriggeredAbility.TriggeredAbility card (GrantedAbility.GrantedAbility card)),
+    -- | CR 702.1d: the keywords this face has only through the triggered
+    -- abilities of them it was given (Parun.Types.LentKeyword), which the
+    -- projection mints. Never printed: The Book of Vile Darkness writes them
+    -- into Vecna's text (Parun.Engine.Resolve.Arms.Objects.withLentTriggers).
+    lentKeywords :: [LentKeyword.LentKeyword],
     -- | CR 309.4: this face's rooms, topmost first -- the room graph of a dungeon
     -- card, and empty for every card that is not a dungeon. The CardSpec lint
     -- family holds that biconditional in both directions, as it does for loyalty

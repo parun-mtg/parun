@@ -124,6 +124,7 @@ import qualified Parun.Types.Holder as Holder
 import qualified Parun.Types.Hop as Hop
 import qualified Parun.Types.InitiativeTarget as InitiativeTarget
 import qualified Parun.Types.LaterPayment as LaterPayment
+import qualified Parun.Types.LentKeyword as LentKeyword
 import qualified Parun.Types.LibraryDepth as LibraryDepth
 import qualified Parun.Types.LibraryPosition as LibraryPosition
 import qualified Parun.Types.Mana as Mana.Type
@@ -280,13 +281,21 @@ create settle resolving source controller legal chosen (Create.MkCreate quantity
 -- the-book-of-vile-darkness-s-vecna-has-prowess-from-a-swiftspear-exiled-as-an-eye
 -- proves it.
 --
--- Not implemented: the token does not have such a keyword for a filter's "with
--- [keyword]" (CR 702.1d) (#9386).
+-- CR 702.1d: such a keyword is recorded (Face.lentKeywords), so the token has
+-- it for a filter's "with [keyword]" (Keyword.heldBy) and the projection mints
+-- its triggered abilities from the record, as Koh, the Face Stealer's are. No
+-- CR 702 keyword states both a triggered and an activated ability
+-- (Keyword.expansionOf), so the record lends nothing else. The scenario
+-- the-book-of-vile-darkness-s-vecna-has-modular-from-an-arcbound-worker-exiled-as-an-eye
+-- proves it, per docs/decisions.md's "Whether Vecna has a keyword whose
+-- triggered abilities it has".
 withLentTriggers :: GameState.GameState -> [ObjectId] -> Card.Type.Card -> Card.Type.Card
 withLentTriggers gs lenders card =
-  let lent lender = let pc = Projection.copiableCharacteristics lender gs in pc {PC.triggeredAbilities = PC.triggeredAbilities pc <> Keyword.triggeredAbilitiesOf (PC.keywords pc)}
-      (triggers, delayeds) = foldMap (\lender -> Projection.lentTriggersOf lender (lent lender)) lenders
-      onFace face = face {Face.triggeredAbilities = Face.triggeredAbilities face <> triggers, Face.delayedAbilities = Map.union (Face.delayedAbilities face) delayeds}
+  let lent lender =
+        let pc = Projection.copiableCharacteristics lender gs
+         in (Projection.lentTriggersOf lender pc, [LentKeyword.MkLentKeyword k n (Binding.acquiredFrom lender Nothing) True [] | (k, n) <- Map.toAscList (PC.keywords pc), not (null (Keyword.abilitiesFor k n))])
+      ((triggers, delayeds), keywords) = foldMap lent lenders
+      onFace face = face {Face.triggeredAbilities = Face.triggeredAbilities face <> triggers, Face.delayedAbilities = Map.union (Face.delayedAbilities face) delayeds, Face.lentKeywords = Face.lentKeywords face <> keywords}
    in if null lenders then card else card {Card.Type.faces = fmap onFace (Card.Type.faces card)}
 
 -- Alchemy's conjure keyword action. Digital-only, so there is no rule to cite;

@@ -3331,3 +3331,21 @@ Entries are ordered by the first rule each cites.
   the act, and a player who could choose no dungeon did not perform it.
 - **Site**: `Parun.Engine.PlayerEffect.prohibitsMore`'s Venture count.
 - **Issue**: none.
+
+## Whether Vecna has a keyword whose triggered abilities it has
+
+- **Question**: Vecna, the token The Book of Vile Darkness creates, has "all
+  triggered abilities of the exiled cards". Given an exiled card with modular,
+  is Vecna a creature "with modular" (Arcbound Overseer), though it has only
+  that keyword's triggered ability and not its static one?
+- **Rules**: CR 702.1d, 702.43a, 111.3; the Book's rulings say only that the
+  abilities are copiable values; CR of 2026-11-06.
+- **Decision**: It has the keyword. CR 702.1d makes "with modular" mean "with
+  a modular ability", and the triggered ability is one of the two modular
+  represents. Koh, the Face Stealer's lent keywords read the same way.
+- **Rejected**: Lacking it: that asks for every ability the keyword
+  represents, which CR 702.1d's "a [keyword] ability" does not.
+- **Site**: `Parun.Engine.Resolve.Arms.Objects.withLentTriggers`, proved by the
+  scenario
+  `the-book-of-vile-darkness-s-vecna-has-modular-from-an-arcbound-worker-exiled-as-an-eye`.
+- **Issue**: none.

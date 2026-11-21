@@ -2338,7 +2338,8 @@ baseCharacteristics oid gs = case Game.faceOf oid gs of
               -- applyModification's LoseAllAbilities arm is the only writer.
               PC.lostAllAbilities = False,
               PC.barredKeywords = Set.empty,
-              PC.lentKeywords = [],
+              -- CR 707.2: what Vecna's text records, so a copy has it too.
+              PC.lentKeywords = Face.lentKeywords face,
               -- Nor has layer 3.
               PC.hasFullText = False,
               -- The seed is CR 613.1's starting point, before layer 3 has run.
