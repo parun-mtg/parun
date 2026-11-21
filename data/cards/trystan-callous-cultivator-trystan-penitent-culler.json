@@ -41,7 +41,7 @@
               {
                 "type": "Transforms",
                 "value": {
-                  "into": "Trystan, Callous Cultivator"
+                  "intoItself": true
                 }
               }
             ]
@@ -214,7 +214,7 @@
           "condition": {
             "type": "Transforms",
             "value": {
-              "into": "Trystan, Penitent Culler"
+              "intoItself": true
             }
           },
           "modal": {

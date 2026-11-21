@@ -242,7 +242,7 @@
           "condition": {
             "type": "Transforms",
             "value": {
-              "into": "Black Chocobo"
+              "intoItself": true
             }
           },
           "modal": {

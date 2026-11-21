@@ -137,7 +137,7 @@
           "condition": {
             "type": "Transforms",
             "value": {
-              "into": "Hideous Fleshwheeler"
+              "intoItself": true
             }
           },
           "modal": {

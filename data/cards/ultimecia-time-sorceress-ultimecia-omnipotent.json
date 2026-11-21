@@ -209,7 +209,7 @@
           "condition": {
             "type": "Transforms",
             "value": {
-              "into": "Ultimecia, Omnipotent"
+              "intoItself": true
             }
           },
           "modal": {

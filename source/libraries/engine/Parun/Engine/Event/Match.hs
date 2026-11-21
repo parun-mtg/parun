@@ -2035,10 +2035,15 @@ armMatches bindings frozen board atEvent beforeEvent groupEvents gs bearer you c
     _ -> False
   -- CR 701.27f through CR 603.2: a Self subject is the permanent that
   -- transformed, and the names the event carries are what it turned INTO, which
-  -- `into` asks for when it names a face. TurnedFaceUp's Self subject above is
-  -- the neighbouring shape, plus the name -- and CR 701.27b is why they are two
-  -- conditions rather than one, turning over and turning face up being
-  -- different game actions.
+  -- `intoItself` asks for: one of the bearer's own names now, CR 201.5's
+  -- reading of a printed name, so Olag copying Brutal Cathar except its name
+  -- asks for "Olag, Ludevic's Hubris"
+  -- (cr-201-5-olag-as-brutal-cathar-triggers-its-transforms-into-under-its-own-name),
+  -- and a Cubwarden over a Wildsong Howler for "Cubwarden"
+  -- (cr-731-2i-702-145c-a-cubwarden-over-a-nightbound-werewolf-turns-with-the-day-and).
+  -- TurnedFaceUp's Self subject above is the neighbouring shape, plus the name
+  -- -- and CR 701.27b is why they are two conditions rather than one, turning
+  -- over and turning face up being different game actions.
   --
   -- Both halves are read off the EVENT, neither off the board. The board at the
   -- CR 117.5 scan is not the board CR 701.27f asks about: a permanent that
@@ -2046,8 +2051,8 @@ armMatches bindings frozen board atEvent beforeEvent groupEvents gs bearer you c
   -- answer this arm wrong on both events. Parun.Types.Transformed carries the
   -- sample for that reason.
   --
-  -- Set.member rather than equality because CR 709.4a admits several names and
-  -- CR 708.2a admits none; a permanent with no name matches no named face,
+  -- An intersection rather than equality because CR 709.4a admits several names
+  -- and CR 708.2a admits none; a permanent with no name matches no named face,
   -- which is the rule's own answer rather than a guard.
   --
   -- A Matching subject is CR 701.27f's OTHER written form, read by a bystander:
@@ -2087,9 +2092,9 @@ armMatches bindings frozen board atEvent beforeEvent groupEvents gs bearer you c
   -- viewWithLastKnown rather than viewOfObject, a Matching TurnedFaceUp's reason:
   -- a permanent that turned over and left before the CR 117.5 boundary is still
   -- read as it was on the battlefield (CR 608.2h).
-  TriggerCondition.Transforms (TransformTrigger.MkTransformTrigger subject into) -> case event of
+  TriggerCondition.Transforms (TransformTrigger.MkTransformTrigger subject intoItself) -> case event of
     GameEvent.Transformed transformed ->
-      maybe True (\name -> Set.member name (PC.names (Transformed.characteristics transformed))) into && case subject of
+      (not intoItself || maybe False (\own -> not (Set.disjoint (Filter.names own) (PC.names (Transformed.characteristics transformed)))) (Projection.viewWithLastKnown bearer gs bearer)) && case subject of
         ActingPermanent.Self -> Transformed.object transformed == bearer
         ActingPermanent.Matching f ->
           let oid = Transformed.object transformed

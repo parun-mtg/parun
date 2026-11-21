@@ -95,7 +95,7 @@
     "step": "PrecombatMain"
   },
   "description": "CR 731.2i/702.145c a Cubwarden over a nightbound Werewolf turns with the day and back with the night",
-  "note": "Howlpack Piper's daybound makes it day; alice casts nothing on turn 1, so it is night on turn 2 and the Piper is Wildsong Howler. On turn 3 Cubwarden mutates over it, so every characteristic but the abilities is Cubwarden's, and the pile is nightbound. Alice casts a second spell (Fog), so turn 4 is day and the pile daybound; bob casts nothing, so turn 5 is night and it is nightbound again, the second night being the one a front-face read off the topmost card gets wrong. It is a 3/5 Cubwarden throughout.",
+  "note": "Howlpack Piper's daybound makes it day; alice casts nothing on turn 1, so it is night on turn 2 and the Piper is Wildsong Howler. On turn 3 Cubwarden mutates over it, so every characteristic but the abilities is Cubwarden's, and the pile is nightbound. Alice casts a second spell (Fog), so turn 4 is day and the pile daybound; bob casts nothing, so turn 5 is night and it is nightbound again, the second night being the one a front-face read off the topmost card gets wrong. That night the Howler's \"transforms into Wildsong Howler\" names the pile, whatever its name (CR 201.5), so it triggers again. It is a 3/5 Cubwarden throughout.",
   "timeline": [
     {
       "check": {
@@ -324,6 +324,23 @@
       "player": "alice",
       "step": "DrawStep",
       "turn": 4
+    },
+    {
+      "do": {
+        "Answer": {
+          "prompt": "Shuffle",
+          "with": [
+            "Plains#9",
+            "Plains#10",
+            "Plains#11",
+            "Plains#12",
+            "Plains#13"
+          ]
+        }
+      },
+      "player": "alice",
+      "step": "Upkeep",
+      "turn": 5
     },
     {
       "check": {

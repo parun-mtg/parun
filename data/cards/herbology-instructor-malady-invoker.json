@@ -127,7 +127,7 @@
           "condition": {
             "type": "Transforms",
             "value": {
-              "into": "Malady Invoker"
+              "intoItself": true
             }
           },
           "modal": {

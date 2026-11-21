@@ -472,14 +472,14 @@ spec s = Spec.describe s "Parun.Codec.TriggerCondition" $ do
       TriggerCondition.codec
       (TriggerCondition.SelfHalfUnlocked (CardName.MkCardName (Text.pack "Steaming Sauna")))
       " {\"type\":\"SelfHalfUnlocked\",\"value\":\"Steaming Sauna\"} "
-  -- CR 701.27f: Blightreaper Thallid's Self subject and the face it names.
+  -- CR 701.27f: Blightreaper Thallid's Self subject, into its own name.
   -- Parun.Codec.TransformTriggerSpec has the fields.
-  Spec.it s "Transforms round-trips the face a Self subject names" $
+  Spec.it s "Transforms round-trips a Self subject into itself" $
     Common.assertCodec
       s
       TriggerCondition.codec
-      (TriggerCondition.Transforms TransformTrigger.defaultValue {TransformTrigger.into = Just (CardName.MkCardName (Text.pack "Blightsower Thallid"))})
-      " {\"type\":\"Transforms\",\"value\":{\"into\":\"Blightsower Thallid\"}} "
+      (TriggerCondition.Transforms TransformTrigger.defaultValue {TransformTrigger.intoItself = True})
+      " {\"type\":\"Transforms\",\"value\":{\"intoItself\":true}} "
   -- The same rule read by a bystander, Cult of the Waxing Moon's Filter.
   Spec.it s "Transforms round-trips a Matching subject" $
     Common.assertCodec

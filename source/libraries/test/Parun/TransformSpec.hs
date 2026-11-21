@@ -770,19 +770,21 @@ transformTriggerSpec s registry = Spec.describe s "TransformsInto" $ do
     Spec.assertEqWith s "the settle placed two triggers" (length (TurnRegisters.stack (GameState.turn settled))) 2
     Spec.assertEqWith s "and both really turned over" (fmap (\oid -> faceNameOf oid turned) [first, second]) [Just thallidBack, Just thallidBack]
   -- CR 701.27f's "with a specified characteristic", asked of the match alone,
-  -- because no BOARD can ask it: Parun.Engine.Card gives a transforming permanent
-  -- only the shown face's abilities, so a "transforms into X" trigger exists
-  -- exactly when the permanent is showing X and every printed pair matches. The
-  -- name becomes load-bearing under a copy effect, which is why the check is
-  -- here rather than dropped -- a UNIT fence, stated as one, since the gameplay
-  -- cases above stay green without it.
-  Spec.it s "CR 701.27f the condition refuses an event naming a different face" $ do
-    let board = emptyBoard
-        bearer = S.noSource
+  -- because no BOARD of printed pairs can ask it: Parun.Engine.Card gives a
+  -- transforming permanent only the shown face's abilities, so a "transforms
+  -- into X" trigger exists exactly when the permanent is showing X. The name
+  -- is CR 201.5's, the bearer's own now (the bearer here shows its front
+  -- face), and becomes load-bearing under a copy effect -- a UNIT fence, stated
+  -- as one; the scenario
+  -- cr-201-5-olag-as-brutal-cathar-triggers-its-transforms-into-under-its-own-name is
+  -- the gameplay case.
+  Spec.it s "CR 701.27f / 201.5 the condition asks for the bearer's own name" $ do
+    thallid <- S.printingOf s registry "Blightreaper Thallid"
+    let (bearer, board) = S.addPermanent thallid S.alice emptyBoard
         event into = GameEvent.Transformed Transformed.MkTransformed {Transformed.object = bearer, Transformed.characteristics = S.emptyCharacteristics {PC.names = Set.singleton into}, Transformed.controller = Nothing, Transformed.attachments = Set.empty, Transformed.lapsedGrants = Set.empty}
-        matches into = Event.matchesTrigger board bearer S.alice (TriggerCondition.Transforms TransformTrigger.defaultValue {TransformTrigger.into = Just thallidBack}) (event into)
-    Spec.assertBool s (matches thallidBack) "the face it names matches"
-    Spec.assertBool s (not (matches thallidFront)) "and the other face of the same card does not"
+        matches into = Event.matchesTrigger board bearer S.alice (TriggerCondition.Transforms TransformTrigger.defaultValue {TransformTrigger.intoItself = True}) (event into)
+    Spec.assertBool s (matches thallidFront) "an event naming the bearer's own name matches"
+    Spec.assertBool s (not (matches thallidBack)) "and one naming another name does not"
   -- CR 702.145c's road to the same event, and the reason this group needs a
   -- second fixture: no spell and no activated ability turns this permanent over.
   -- NIGHTFALL does, through Parun.Engine.Daytime's sweep, which reaches

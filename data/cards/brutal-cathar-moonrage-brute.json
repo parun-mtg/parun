@@ -41,7 +41,7 @@
               {
                 "type": "Transforms",
                 "value": {
-                  "into": "Brutal Cathar"
+                  "intoItself": true
                 }
               }
             ]

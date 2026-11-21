@@ -101,7 +101,7 @@
           "condition": {
             "type": "Transforms",
             "value": {
-              "into": "Revealing Eye"
+              "intoItself": true
             }
           },
           "modal": {

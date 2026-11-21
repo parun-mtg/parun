@@ -1756,7 +1756,7 @@ triggerConditionChildren c condition = case condition of
   TriggerCondition.AnyOf conditions -> fmap TriggerCondition.AnyOf (traverse (triggerNested c) conditions)
   TriggerCondition.CausedBy (CausedBy.MkCausedBy controller sourceKeyword narrowed) -> fmap (TriggerCondition.CausedBy . CausedBy.MkCausedBy controller sourceKeyword) (triggerNested c narrowed)
   TriggerCondition.TurnedFaceUp (TurnedFaceUpTrigger.MkTurnedFaceUpTrigger permanent turner) -> fmap (\renamed -> TriggerCondition.TurnedFaceUp (TurnedFaceUpTrigger.MkTurnedFaceUpTrigger renamed turner)) (actingChildren c permanent)
-  TriggerCondition.Transforms (TransformTrigger.MkTransformTrigger permanent into) -> fmap (\renamed -> TriggerCondition.Transforms (TransformTrigger.MkTransformTrigger renamed into)) (actingChildren c permanent)
+  TriggerCondition.Transforms (TransformTrigger.MkTransformTrigger permanent intoItself) -> fmap (\renamed -> TriggerCondition.Transforms (TransformTrigger.MkTransformTrigger renamed intoItself)) (actingChildren c permanent)
   TriggerCondition.FaceDownPermanentLeavesRevealed -> pure condition
   TriggerCondition.PermanentBecomesDesignated (PermanentBecomesDesignated.MkPermanentBecomesDesignated designation filter_) ->
     fmap (TriggerCondition.PermanentBecomesDesignated . PermanentBecomesDesignated.MkPermanentBecomesDesignated designation) (triggerFilter c filter_)
