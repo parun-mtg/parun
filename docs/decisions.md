@@ -1543,12 +1543,16 @@ Entries are ordered by the first rule each cites.
   roll" points one way, its "results tied for the lowest" and CR 706.2 the other.
 - **Rules**: CR 706.2, 706.2b, 706.6; CR of 2026-11-06.
 - **Decision**: Rerolls first. Valiant Endeavor with Clam-I-Am on 3, 5, 5: the 3
-  may be rerolled, and a 6 gives results 6 and 5.
+  may be rerolled, and a 6 gives results 6 and 5. A reroll's event is recorded
+  only for a die the ignore then keeps: an ignored die never happened, its
+  rerolls included, and nothing triggers for them (CR 706.6; Grave Endeavor's
+  ruling, "any extra dice were never rolled").
 - **Rejected**: Ignoring first, so the 3 "never happened" and the results are 5 and
   5. The 2026-11-04 audit preferred this, moderate confidence: it is the printed
   order and CR 706.6's plainer sentence.
-- **Site**: `Parun.Engine.Resolve.Effect.throwDice`, pinned by the scenario
-  `cr-706-2b-pixie-guide-adds-a-die-to-clam-i-am-s-reroll`.
+- **Site**: `Parun.Engine.Resolve.Effect.throwSettled`, pinned by the scenarios
+  `cr-706-2b-pixie-guide-adds-a-die-to-clam-i-am-s-reroll` and
+  `cr-706-6-an-ignored-die-s-reroll-triggers-nothing`.
 - **Issue**: none.
 
 ## Whether a copy of an ability rolls for this ability

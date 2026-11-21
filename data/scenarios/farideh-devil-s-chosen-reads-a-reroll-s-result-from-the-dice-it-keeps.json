@@ -86,7 +86,7 @@
     "step": "PrecombatMain"
   },
   "description": "CR 706.6 a reroll's own result is read from the dice it keeps, not one its ignore drops",
-  "note": "Under Pixie Guide, Arcane Investigator's first d20 comes up 12 and a Wall of Fortune rerolls it, as two dice: 18 and 5. The other Wall rerolls the 18, which comes up 2 (and 1, ignored), so the 2 is the first reroll's lowest and is ignored. That reroll's result is the 5, not the 18, and the roll's is the 6 the second d20 came up: Farideh triggers three times and draws nothing, and the Investigator draws the Forest.",
+  "note": "Under Pixie Guide, Arcane Investigator's first d20 comes up 12 and a Wall of Fortune rerolls it, as two dice: 18 and 5. The other Wall rerolls the 18, which comes up 2 (and 1, ignored), so the 2 is the first reroll's lowest and is ignored: that die never happened, and neither did the second reroll (CR 706.6). The first reroll's result is the 5, not the 18, and the roll's is that 5 too, the second d20 having come up 3: Farideh triggers twice and draws nothing, and the Investigator draws the Forest.",
   "timeline": [
     {
       "do": {
@@ -119,7 +119,7 @@
       "do": {
         "Answer": {
           "prompt": "RollDie",
-          "with": 6
+          "with": 3
         }
       },
       "player": "alice",
@@ -233,8 +233,7 @@
           "prompt": "OrderTriggers",
           "with": [
             0,
-            1,
-            2
+            1
           ]
         }
       },
@@ -247,18 +246,11 @@
         "View": {
           "is": [
             "trigger of $farideh",
-            "trigger of $farideh",
             "trigger of $farideh"
           ],
           "of": "Stack"
         }
       },
-      "player": "alice",
-      "step": "PrecombatMain",
-      "turn": 1
-    },
-    {
-      "do": "Pass",
       "player": "alice",
       "step": "PrecombatMain",
       "turn": 1
