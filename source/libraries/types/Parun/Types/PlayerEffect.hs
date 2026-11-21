@@ -27,6 +27,7 @@ import qualified Parun.Types.ManaFilter as ManaFilter
 import qualified Parun.Types.ManaType as ManaType
 import qualified Parun.Types.ModifiedRoll as ModifiedRoll
 import qualified Parun.Types.PlayerCounterKind as PlayerCounterKind
+import qualified Parun.Types.PlayerRelation as PlayerRelation
 import qualified Parun.Types.PlayerScope as PlayerScope
 import qualified Parun.Types.PlotFromZone as PlotFromZone
 import qualified Parun.Types.Quantity as Quantity
@@ -196,6 +197,9 @@ data PlayerEffect
     PhasesReversed
   | -- | CR 101.4 / Topsy Turvy: the turn order is reversed.
     TurnOrderReversed
+  | -- | CR 504.1 / 613.11 / Teferi, Who Slows the Sunset's emblem: this player
+    -- draws a card during the draw step of each player in this relation to them.
+    DrawsDuringDrawSteps PlayerRelation.PlayerRelation
   | -- | CR 603.6a / 603.2d / 700.4 / 508.3 / 613.11 / Hushwing Gryff, Yarok,
     -- the Desecrated, Hushbringer, Teysa Karlov, The Masamune, Windcrag Siege:
     -- how entries, deaths or attacks change the triggering of this player's

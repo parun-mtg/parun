@@ -98,6 +98,7 @@ import qualified Parun.Types.Decider as Decider
 import qualified Parun.Types.Deck as Deck
 import qualified Parun.Types.Departure as Departure.Type
 import qualified Parun.Types.DiscardCause as DiscardCause
+import qualified Parun.Types.DrawKind as DrawKind
 import qualified Parun.Types.EndTurnSignal as EndTurnSignal
 import qualified Parun.Types.EndingStep as EndingStep
 import qualified Parun.Types.EntersTrigger as EntersTrigger
@@ -318,7 +319,7 @@ untapAll actives = do
   determined <- Monad.mapM determineUntap actives
   gs <- State.get
   let others = [oid | pid <- GameState.seating gs, not (Turn.isActive gs pid), oid <- Projection.controls pid gs]
-      extended = Set.unions [named | (UntapHold.DuringOthersSteps, named) <- UntapRestriction.gathered others gs]
+      extended = Set.unions [named | (UntapHold.DuringOthersSteps _, named) <- UntapRestriction.gathered others gs]
       untapping = concatMap fst determined <> filter (`Set.member` extended) others
       held = concatMap snd determined
       countDown obj = obj {Object.doesNotUntapFor = Object.doesNotUntapFor obj - 1}
@@ -614,8 +615,23 @@ runTurnBasedActions phase = do
     Phase.Beginning BeginningStep.Upkeep -> Monad.forM_ live $ \pid -> do
       gs <- State.get
       Monad.when (Attraction.controlsSubtype Subtype.Contraption pid gs) (Contraption.crank pid)
-    Phase.Beginning BeginningStep.DrawStep ->
-      Monad.void (Event.inDrawOrder live (Event.drawForTurn (Resolve.settleWith playSubgame)))
+    -- CR 504.1 / 121.2c: the active players' turn-based draws, then the draws a
+    -- static ability gives each other player during this step, in turn order
+    -- (Teferi, Who Slows the Sunset's emblem, whose ruling puts its draw after
+    -- the active player's with no priority between). Each row's draw is an
+    -- instruction of its own (CR 121.2a), counted when that player's turn to
+    -- draw comes.
+    Phase.Beginning BeginningStep.DrawStep -> do
+      others <- State.gets (\gs -> filter (not . Turn.isActive gs) (Game.apnapOrder gs))
+      let settle = Resolve.settleWith playSubgame
+          draw pid = do
+            isActive <- State.gets (`Turn.isActive` pid)
+            if isActive
+              then Event.drawForTurn settle (DrawKind.TurnBased pid) pid
+              else do
+                n <- State.gets (PlayerEffect.drawStepDraws pid)
+                Monad.replicateM_ (Natural.toIntSaturating n) (Event.drawForTurn settle DrawKind.Other pid)
+      Monad.void (Event.inDrawOrder (live <> others) draw)
     -- CR 703.4h: choose the defending player. The active player's action (CR
     -- 507.1), and the one item on the list CR 800.4h hands to another seat rather
     -- than dropping, so it is NOT guarded here -- designateDefenders asks

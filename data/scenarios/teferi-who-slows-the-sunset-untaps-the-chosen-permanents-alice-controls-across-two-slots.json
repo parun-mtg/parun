@@ -1,0 +1,34 @@
+{
+  "description": "CR 115.1 / 608.2b: Teferi, Who Slows the Sunset's +1 untaps alice's chosen artifact and creature, two slots, and taps bob's chosen land",
+  "note": "The companion to the scenario tapping two of bob's: here the untap reaches two slots. Alice's tapped Ornithopter and Bears untap, bob's Mountain taps, and alice's tapped Forest, not chosen, stays tapped.",
+  "board": {
+    "seats": [
+      {
+        "name": "alice",
+        "battlefield": [
+          { "card": "Teferi, Who Slows the Sunset", "label": "teferi", "counters": [{ "key": { "type": "Loyalty" }, "value": 4 }] },
+          { "card": "Ornithopter", "label": "thopter", "tapped": true },
+          { "card": "Grizzly Bears", "label": "bears", "tapped": true },
+          { "card": "Forest", "label": "forest", "tapped": true }
+        ],
+        "library": [{ "card": "Island" }, { "card": "Island" }]
+      },
+      {
+        "name": "bob",
+        "battlefield": [{ "card": "Mountain", "label": "mountain" }],
+        "library": [{ "card": "Island" }, { "card": "Island" }]
+      }
+    ],
+    "active": "alice",
+    "step": "PrecombatMain"
+  },
+  "timeline": [
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "do": { "Activate": { "object": "$teferi", "ability": 0, "targetsBySlot": { "artifact": ["$thopter"], "creature": ["$bears"], "land": ["$mountain"] } } } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "do": "Pass" },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "check": { "Tapped": { "object": "$thopter", "tapped": false } } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "check": { "Tapped": { "object": "$bears", "tapped": false } } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "check": { "Tapped": { "object": "$mountain", "tapped": true } } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "check": { "Tapped": { "object": "$forest", "tapped": true } } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "check": { "Life": { "player": "alice", "life": 22 } } }
+  ]
+}

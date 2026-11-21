@@ -1,0 +1,47 @@
+{
+  "description": "CR 811 / 102.3 / 502.3 / 504.1: Teferi, Who Slows the Sunset's emblem untaps and draws for alice in an opponent's steps and not in her teammate carol's",
+  "note": "Alice taps Prodigal Sorcerer in bob's turn 2, after his untap step. In carol's turn 3 it stays tapped and alice draws nothing, carol being a teammate rather than an opponent (Seedborn Muse's 'each other player' would reach her). In dave's turn 4 it untaps and alice draws Divination.",
+  "board": {
+    "alternatingTeams": true,
+    "seats": [
+      {
+        "name": "alice",
+        "team": 1,
+        "battlefield": [
+          { "card": "Teferi, Who Slows the Sunset", "label": "teferi", "counters": [{ "key": { "type": "Loyalty" }, "value": 7 }] },
+          { "card": "Prodigal Sorcerer", "label": "sorcerer", "ready": true }
+        ],
+        "library": [{ "card": "Opt" }, { "card": "Divination" }, { "card": "Anticipate" }, { "card": "Island" }]
+      },
+      {
+        "name": "bob",
+        "team": 2,
+        "library": [{ "card": "Mountain" }, { "card": "Mountain" }, { "card": "Mountain" }]
+      },
+      {
+        "name": "carol",
+        "team": 1,
+        "library": [{ "card": "Plains" }, { "card": "Plains" }, { "card": "Plains" }]
+      },
+      {
+        "name": "dave",
+        "team": 2,
+        "library": [{ "card": "Swamp" }, { "card": "Swamp" }, { "card": "Swamp" }]
+      }
+    ],
+    "active": "alice",
+    "step": "PrecombatMain"
+  },
+  "timeline": [
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "do": { "Activate": { "object": "$teferi", "ability": 2 } } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "do": "Pass" },
+    { "turn": 1, "step": "DeclareAttackers", "player": "alice", "do": { "Attack": [] } },
+    { "turn": 2, "step": "PrecombatMain", "player": "alice", "check": { "View": { "of": "Zone", "player": "alice", "zone": "Hand", "is": ["Opt"] } } },
+    { "turn": 2, "step": "PrecombatMain", "player": "alice", "do": { "Activate": { "object": "$sorcerer", "targets": ["$bob"] } } },
+    { "turn": 2, "step": "PrecombatMain", "player": "alice", "check": { "Tapped": { "object": "$sorcerer", "tapped": true } } },
+    { "turn": 3, "step": "Upkeep", "player": "carol", "check": { "Tapped": { "object": "$sorcerer", "tapped": true } } },
+    { "turn": 3, "step": "PrecombatMain", "player": "carol", "check": { "View": { "of": "Zone", "player": "alice", "zone": "Hand", "is": ["Opt"] } } },
+    { "turn": 4, "step": "Upkeep", "player": "dave", "check": { "Tapped": { "object": "$sorcerer", "tapped": false } } },
+    { "turn": 4, "step": "PrecombatMain", "player": "dave", "check": { "View": { "of": "Zone", "player": "alice", "zone": "Hand", "is": ["Opt", "Divination"] } } }
+  ]
+}

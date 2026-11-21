@@ -26,6 +26,7 @@ import qualified Parun.Codec.ManaFilter as ManaFilter
 import qualified Parun.Codec.ManaType as ManaType
 import qualified Parun.Codec.ModifiedRoll as ModifiedRoll
 import qualified Parun.Codec.PlayerCounterKind as PlayerCounterKind
+import qualified Parun.Codec.PlayerRelation as PlayerRelation
 import qualified Parun.Codec.PlayerScope as PlayerScope
 import qualified Parun.Codec.PlotFromZone as PlotFromZone
 import qualified Parun.Codec.Quantity as Quantity
@@ -139,6 +140,7 @@ codec =
           Arm.nullary "CantSetSchemesInMotion" PlayerEffect.CantSetSchemesInMotion,
           Arm.nullary "PhasesReversed" PlayerEffect.PhasesReversed,
           Arm.nullary "TurnOrderReversed" PlayerEffect.TurnOrderReversed,
+          Arm.payload "DrawsDuringDrawSteps" PlayerRelation.codec PlayerEffect.DrawsDuringDrawSteps (\x -> case x of PlayerEffect.DrawsDuringDrawSteps y -> Just y; _ -> Nothing),
           Arm.payload "EntriesTrigger" EntriesTrigger.codec PlayerEffect.EntriesTrigger (\x -> case x of PlayerEffect.EntriesTrigger y -> Just y; _ -> Nothing),
           Arm.payload "BearersTrigger" BearersTrigger.codec PlayerEffect.BearersTrigger (\x -> case x of PlayerEffect.BearersTrigger y -> Just y; _ -> Nothing),
           Arm.nullary "ControlledWhileSearching" PlayerEffect.ControlledWhileSearching,
@@ -202,6 +204,7 @@ tagOf x = case x of
   PlayerEffect.CantSetSchemesInMotion {} -> "CantSetSchemesInMotion"
   PlayerEffect.PhasesReversed {} -> "PhasesReversed"
   PlayerEffect.TurnOrderReversed {} -> "TurnOrderReversed"
+  PlayerEffect.DrawsDuringDrawSteps {} -> "DrawsDuringDrawSteps"
   PlayerEffect.EntriesTrigger {} -> "EntriesTrigger"
   PlayerEffect.BearersTrigger {} -> "BearersTrigger"
   PlayerEffect.ControlledWhileSearching {} -> "ControlledWhileSearching"

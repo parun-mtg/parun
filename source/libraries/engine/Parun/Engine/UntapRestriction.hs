@@ -23,7 +23,7 @@
 -- (Object.doesNotUntapFor, written by Effect.DoesNotUntapNext, and
 -- Object.exertedBy, written by CR 508.1g's exert payment) are not gathered here
 -- and could not be: they are fields on the VICTIM rather than on anything the
--- battlefield walk below would reach. Engine.untapAll subtracts them beside
+-- battlefield and command-zone walk below would reach. Engine.untapAll subtracts them beside
 -- this module's answer.
 module Parun.Engine.UntapRestriction where
 
@@ -32,15 +32,18 @@ import Data.Set (Set)
 import qualified Data.Set as Set
 import Numeric.Natural (Natural)
 import qualified Parun.Engine.Condition as Condition
+import qualified Parun.Engine.Game as Game
 import qualified Parun.Engine.Projection as Projection
 import qualified Parun.Engine.Projection.Rewrite as Projection
 import qualified Parun.Engine.Projection.View as Projection
 import qualified Parun.Engine.RestrictedCreatures as RestrictedCreatures
 import qualified Parun.Engine.Turn as Turn
+import qualified Parun.Engine.Vanguard as Vanguard
 import qualified Parun.Extra.Natural as Natural
 import Parun.Types.GameState (GameState)
 import qualified Parun.Types.GameState as GameState
 import Parun.Types.ObjectId (ObjectId)
+import qualified Parun.Types.PlayerRelation as PlayerRelation
 import qualified Parun.Types.Prohibition as Prohibition
 import qualified Parun.Types.RuleAbilities as RuleAbilities
 import qualified Parun.Types.UntapHold as UntapHold
@@ -109,11 +112,17 @@ gathered candidates gs =
             (if null changes then condition else Projection.rewriteCondition changes condition)
       -- CR 502.3: "during each other player's untap step" is not the untap step
       -- of a player whose turn it is, CR 805.4 making every member of a team
-      -- sharing its turn one. A regression fence, not a proof: every printing
-      -- names only its controller's own permanents, which Engine.untapAll's
-      -- candidates already leave out when that controller is active.
+      -- sharing its turn one. That half is a regression fence, not a proof:
+      -- every printing names only its controller's own permanents, which
+      -- Engine.untapAll's candidates already leave out when that controller is
+      -- active. The relation is the other half: "each opponent's untap step"
+      -- is not a teammate's (CR 102.3).
       othersStep source restriction = case UntapRestriction.hold restriction of
-        UntapHold.DuringOthersSteps -> maybe True (not . Turn.isActive gs) (Projection.controllerOf source gs)
+        UntapHold.DuringOthersSteps relation ->
+          maybe
+            True
+            (\controller -> not (Turn.isActive gs controller) && any (PlayerRelation.holds (Game.teams gs) relation controller) (Turn.activePlayers gs))
+            (Projection.controllerOf source gs)
         _ -> True
       fromRestriction source changes restriction
         | othersStep source restriction && inForce source changes restriction =
@@ -125,9 +134,18 @@ gathered candidates gs =
       -- of the untap step's untap, or of every untap (Spider-Woman, Secret
       -- Agent; CR 701.26b).
       stored scope = RestrictedCreatures.prohibited (Prohibition.Untap scope) candidates gs
+      -- CR 114.4: an emblem's abilities function in the command zone (Teferi,
+      -- Who Slows the Sunset's). CombatRestriction.gathered's command-zone
+      -- branch, gate for gate: CR 113.6p's list rather than the whole zone, and
+      -- no liveness gate or CR 612.1 word swap, nothing in the pool reaching an
+      -- object there.
+      fromCommandZone source
+        | Vanguard.functionsFromCommandZone source gs = concatMap (fromRestriction source []) (RuleAbilities.untapRestrictions (Projection.ruleAbilitiesOf source gs))
+        | otherwise = []
    in (UntapHold.Forbidden, stored UntapScope.UntapStep)
         : (UntapHold.Never, stored UntapScope.AnyUntap)
         : concatMap (\source -> fromPermanent source <> fromGrant source) (Set.toList (GameState.battlefield gs))
+          <> concatMap fromCommandZone (Set.toList (GameState.command gs))
 
 -- CR 502.3 / 101.2: which of `offered` untap, given the active player's
 -- `chosen` and the caps (UntapHold.AtMost) in force. Every cap holds at once

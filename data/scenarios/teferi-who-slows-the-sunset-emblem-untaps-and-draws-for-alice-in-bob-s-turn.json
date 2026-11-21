@@ -1,0 +1,37 @@
+{
+  "description": "CR 114.4 / 502.3 / 504.1: Teferi, Who Slows the Sunset's emblem untaps alice's permanents in bob's untap step and draws her a card in his draw step, not in her own",
+  "note": "Teferi's -7 leaves him at 0 loyalty, so only the emblem in the command zone is left to do anything. In bob's turn 2 the tapped Forest and Bears untap and alice draws Opt beside bob's own draw. In alice's turn 3 she draws only her own card, Divination.",
+  "board": {
+    "seats": [
+      {
+        "name": "alice",
+        "battlefield": [
+          { "card": "Teferi, Who Slows the Sunset", "label": "teferi", "counters": [{ "key": { "type": "Loyalty" }, "value": 7 }] },
+          { "card": "Forest", "label": "forest", "tapped": true },
+          { "card": "Grizzly Bears", "label": "bears", "tapped": true }
+        ],
+        "library": [{ "card": "Opt" }, { "card": "Divination" }, { "card": "Anticipate" }, { "card": "Island" }]
+      },
+      {
+        "name": "bob",
+        "battlefield": [{ "card": "Mountain", "label": "mountain", "tapped": true }],
+        "library": [{ "card": "Mountain" }, { "card": "Mountain" }, { "card": "Mountain" }]
+      }
+    ],
+    "active": "alice",
+    "step": "PrecombatMain"
+  },
+  "timeline": [
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "do": { "Activate": { "object": "$teferi", "ability": 2 } } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "do": "Pass" },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "check": { "View": { "of": "Zone", "player": "alice", "zone": "Battlefield", "is": ["$forest", "$bears"] } } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "check": { "Tapped": { "object": "$forest", "tapped": true } } },
+    { "turn": 2, "step": "Upkeep", "player": "bob", "check": { "Tapped": { "object": "$forest", "tapped": false } } },
+    { "turn": 2, "step": "Upkeep", "player": "bob", "check": { "Tapped": { "object": "$bears", "tapped": false } } },
+    { "turn": 2, "step": "Upkeep", "player": "bob", "check": { "Tapped": { "object": "$mountain", "tapped": false } } },
+    { "turn": 2, "step": "Upkeep", "player": "bob", "check": { "View": { "of": "Zone", "player": "alice", "zone": "Hand", "is": [] } } },
+    { "turn": 2, "step": "PrecombatMain", "player": "bob", "check": { "View": { "of": "Zone", "player": "alice", "zone": "Hand", "is": ["Opt"] } } },
+    { "turn": 2, "step": "PrecombatMain", "player": "bob", "check": { "View": { "of": "Zone", "player": "bob", "zone": "Hand", "is": ["Mountain#4"] } } },
+    { "turn": 3, "step": "PrecombatMain", "player": "alice", "check": { "View": { "of": "Zone", "player": "alice", "zone": "Hand", "is": ["Opt", "Divination"] } } }
+  ]
+}

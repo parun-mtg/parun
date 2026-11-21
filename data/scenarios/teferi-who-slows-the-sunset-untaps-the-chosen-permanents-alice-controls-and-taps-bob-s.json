@@ -1,0 +1,39 @@
+{
+  "description": "CR 115.1 / 608.2b: Teferi, Who Slows the Sunset's +1 untaps the chosen permanents alice controls, taps the chosen ones she doesn't, and gains her 2 life",
+  "note": "Alice's tapped Bears untap; bob's untapped Ornithopter and Mountain tap. Bob's tapped Island is not chosen and stays tapped, and alice's tapped Forest, not chosen, stays tapped too.",
+  "board": {
+    "seats": [
+      {
+        "name": "alice",
+        "battlefield": [
+          { "card": "Teferi, Who Slows the Sunset", "label": "teferi", "counters": [{ "key": { "type": "Loyalty" }, "value": 4 }] },
+          { "card": "Grizzly Bears", "label": "bears", "tapped": true },
+          { "card": "Forest", "label": "forest", "tapped": true }
+        ],
+        "library": [{ "card": "Island" }, { "card": "Island" }]
+      },
+      {
+        "name": "bob",
+        "battlefield": [
+          { "card": "Ornithopter", "label": "thopter" },
+          { "card": "Mountain", "label": "mountain" },
+          { "card": "Island", "label": "island", "tapped": true }
+        ],
+        "library": [{ "card": "Island" }, { "card": "Island" }]
+      }
+    ],
+    "active": "alice",
+    "step": "PrecombatMain"
+  },
+  "timeline": [
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "do": { "Activate": { "object": "$teferi", "ability": 0, "targetsBySlot": { "artifact": ["$thopter"], "creature": ["$bears"], "land": ["$mountain"] } } } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "do": "Pass" },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "check": { "Tapped": { "object": "$bears", "tapped": false } } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "check": { "Tapped": { "object": "$thopter", "tapped": true } } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "check": { "Tapped": { "object": "$mountain", "tapped": true } } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "check": { "Tapped": { "object": "$island", "tapped": true } } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "check": { "Tapped": { "object": "$forest", "tapped": true } } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "check": { "Life": { "player": "alice", "life": 22 } } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "check": { "Counters": { "object": "$teferi", "kind": { "type": "Loyalty" }, "count": 5 } } }
+  ]
+}
