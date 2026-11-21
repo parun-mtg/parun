@@ -1030,6 +1030,26 @@ Entries are ordered by the first rule each cites.
   so a graveyard trigger does not see it".
 - **Issue**: #2809.
 
+## Which object a one-time boon's damage comes from
+
+- **Question**: Molten Impact's boon "deals damage". Tenacious Pup's ruling
+  says a boon "has no source", and no rule gives a boon characteristics. Is
+  the damage Molten Impact's (a red sorcery Torbran, Thane of Red Fell adds 2
+  to), or a colorless source's?
+- **Rules**: CR 603.7d, 113.7a, 120.1, 120.2b; Tenacious Pup's ruling; Molten
+  Impact has no ruling; CR of 2026-11-06.
+- **Decision**: The spell's that armed the boon, by its last known
+  information: CR 603.7d names that spell the delayed ability's source, and CR
+  113.7a lets a gone source still deal damage. The ruling is read as the boon
+  living on no object, not as damage with no source.
+- **Rejected**: A colorless dealer with no characteristics, an emblem's (CR
+  114.3): no rule makes a boon an object, and CR 120.1 has every damage dealt
+  by one.
+- **Site**: Molten Impact's card data, the default dealer of
+  `Parun.Types.DealDamage`; proved by the scenario
+  `molten-impact-s-boon-deals-its-damage-as-the-red-sorcery-under-torbran`.
+- **Issue**: #9335.
+
 ## Whether an ability a merge grafts is still characteristic-defining
 
 - **Question**: CR 702.140e gives a mutated permanent every component's

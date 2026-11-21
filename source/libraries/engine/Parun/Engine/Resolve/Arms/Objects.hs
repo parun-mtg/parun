@@ -1058,7 +1058,9 @@ armDelayedTrigger resolving source controller legal arm@(ArmDelayedTrigger.MkArm
       -- ability AS IT RESOLVED, baked in now. A boon's holder replaces it
       -- (Loch Larent's boon for its target opponent), CR 114.2's "gets an
       -- emblem" reading of "gets a one-time boon"; one naming no single seat
-      -- arms nothing. The entry is marked a boon for Quantity.Boons. The onset and the duration stay the arming text's, whose
+      -- arms nothing. The entry is marked a boon for Quantity.Boons. Its
+      -- source stays CR 603.7d's (docs/decisions.md, "Which object a one-time
+      -- boon's damage comes from"). The onset and the duration stay the arming text's, whose
       -- "you" is still the resolution's controller. The scenario "Loch
       -- Larent's boon makes the opponent's next creature spell enter tapped
       -- and stunned" proves it.
