@@ -61,7 +61,7 @@
         ],
         "library": [
           {
-            "card": "Mountain"
+            "card": "Taiga"
           },
           {
             "card": "Lightning Bolt"
@@ -126,7 +126,7 @@
     "step": "PrecombatMain"
   },
   "description": "Bard Class at level 3: casting a legendary spell exiles your top two cards, which you may play this turn; a nonlegendary spell exiles nothing",
-  "note": "Grizzly Bears is cast first and exiles nothing. Isamaru's cast exiles Mountain and Lightning Bolt; the Mountain is played from exile and pays for the Bolt, cast from exile at bob for 3.",
+  "note": "Grizzly Bears is cast first and exiles nothing. Isamaru's cast exiles Taiga and Lightning Bolt; the Taiga is played from exile and pays for the Bolt, cast from exile at bob for 3.",
   "timeline": [
     {
       "do": {
@@ -199,7 +199,7 @@
     {
       "check": {
         "Count": {
-          "card": "Mountain",
+          "card": "Taiga",
           "count": 0,
           "player": "alice",
           "zone": "Exile"
@@ -212,7 +212,7 @@
     {
       "check": {
         "Count": {
-          "card": "Mountain",
+          "card": "Taiga",
           "count": 1,
           "player": "alice",
           "zone": "Library"
@@ -244,7 +244,7 @@
     {
       "check": {
         "Count": {
-          "card": "Mountain",
+          "card": "Taiga",
           "count": 1,
           "player": "alice",
           "zone": "Exile"
@@ -288,7 +288,7 @@
     },
     {
       "do": {
-        "PlayLand": "Mountain"
+        "PlayLand": "Taiga"
       },
       "player": "alice",
       "step": "PrecombatMain",
@@ -298,12 +298,26 @@
       "do": {
         "Cast": {
           "mana": [
-            "Mountain",
-            null
+            "Taiga"
           ],
           "object": "Lightning Bolt",
           "targets": [
             "$bob"
+          ],
+          "yields": [
+            [
+              {
+                "manaType": {
+                  "type": "Colored",
+                  "value": "Red"
+                },
+                "restriction": null,
+                "retention": "Ordinary",
+                "rider": null,
+                "sourceChoices": null,
+                "tags": []
+              }
+            ]
           ]
         }
       },

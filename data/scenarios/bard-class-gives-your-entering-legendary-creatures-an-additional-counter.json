@@ -207,8 +207,7 @@
         "Cast": {
           "mana": [
             "$i1",
-            "$i2",
-            null
+            "$i2"
           ],
           "object": "$caelorna"
         }

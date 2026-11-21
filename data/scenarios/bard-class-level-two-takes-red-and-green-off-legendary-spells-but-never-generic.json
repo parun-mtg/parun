@@ -103,8 +103,8 @@
     ],
     "step": "PrecombatMain"
   },
-  "description": "Bard Class at level 2: legendary spells you cast cost {R}{G} less, reducing only colored mana: Rorix Bladewing's {3}{R}{R}{R} costs {3}{R}{R}, its generic untouched; a nonlegendary spell pays in full",
-  "note": "Five lands after the level-up pay Rorix exactly: no green symbol to remove and the generic stays, so all five tap; at level 1 the same cast could not be paid. Rorix then enters with level 1's counter. Hill Giant ({3}{R}) is nonlegendary and is left uncastable with what remains.",
+  "description": "Bard Class at level 2: legendary spells you cast cost {R}{G} less, reducing only colored mana: Rorix Bladewing's {3}{R}{R}{R} costs {3}{R}{R}, its generic untouched",
+  "note": "Five lands after the level-up pay Rorix exactly: with no green symbol to remove, the {G} does not come off the generic, so all five tap and no mana floats. Rorix then enters with level 1's counter.",
   "timeline": [
     {
       "do": {
@@ -172,6 +172,18 @@
         "Tapped": {
           "object": "$f4",
           "tapped": true
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "View": {
+          "is": [],
+          "of": "ManaPool",
+          "player": "alice"
         }
       },
       "player": "alice",
