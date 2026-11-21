@@ -111,7 +111,7 @@
     ],
     "step": "PrecombatMain"
   },
-  "description": "CR 616.1 / 614.13b: Sigarda's Splendor and Phyrexian Processor returning together from two Banishing Lights apply in the order chosen, so Processor applied first leaves Splendor the life after the payment",
+  "description": "CR 616.1 / 614.1c: Sigarda's Splendor and Phyrexian Processor returning together from two Banishing Lights apply in the order chosen, so Processor applied first leaves Splendor the life after the payment",
   "note": "The board of the Splendor-first case, with alice ordering Processor first: Splendor notes the 10 left after the payment, so her turn 4 upkeep at 10 draws and three Islands are in hand after the draw step.",
   "timeline": [
     {

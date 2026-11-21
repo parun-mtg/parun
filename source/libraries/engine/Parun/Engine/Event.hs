@@ -734,11 +734,13 @@ amongPending under members body = do
 
 -- CR 616.1 / 101.4c: the order `members`, entering the battlefield in one
 -- event, apply their as-enters replacements in. CR 616.1g's Voice of All
--- example applies two entering objects' effects "in either order", and CR
--- 614.13b acts as an effect is applied, so the order is observable and the
--- player's: each seat (the player a member enters under, `under` or else its
--- owner) permutes its own members by Prompt.OrderEntries within the slots they
--- hold in the gathered order. Seats keep that order among themselves.
+-- example applies two entering objects' effects "in either order", and an
+-- as-enters action happens as its effect is applied (CR 614.1c), so
+-- the order is observable. Each member's seat is the player it enters under,
+-- `under` or else its owner; the members carrying an entry replacement of
+-- their own take the slots they hold in the gathered order, seat by seat in
+-- APNAP order (CR 616.1's last sentence, CR 101.4), each seat permuting its
+-- own by Prompt.OrderEntries. Every other member keeps its slot.
 --
 -- Asked where two or more of a seat's members carry an entry replacement of
 -- their own and one of them runs effects (Replacement.runsEffects), which can
@@ -746,7 +748,8 @@ amongPending under members body = do
 -- Sigarda's Splendor's note beside Phyrexian Processor's payment, proved by
 -- data/scenarios/entry-replacement's cr-616-1 Splendor scenarios, an Open the
 -- Vaults pair for Resolve's move and a Banishing Light pair for
--- changeZonesTogether.
+-- changeZonesTogether. The seats' APNAP order is proved by the cr-616-1
+-- Ixidron and Clone pair there.
 --
 -- A pair neither of which runs effects is not asked, and the token and conjure
 -- batches are not ordered (gap #9255).
@@ -755,17 +758,24 @@ orderEntries under members = do
   gs <- State.get
   let seatOf oid = fmap (\obj -> Maybe.fromMaybe (Object.owner obj) under) (Game.lookupObject oid gs)
       rows oid = [effect | (_, effect@(ReplacementEffect.EntryR _)) <- Projection.replacementsOf Zone.Battlefield oid gs]
-      seats = ListUtils.nubOrd (Maybe.mapMaybe seatOf members)
+      carrying = [(oid, seat) | oid <- members, not (null (rows oid)), Just seat <- [seatOf oid]]
+      apnap = Game.apnapOrder gs
+      rank seat = Maybe.fromMaybe (length apnap) (List.elemIndex seat apnap)
+      seats = List.sortOn rank (ListUtils.nubOrd (fmap snd carrying))
       ask seat = do
-        let carrying = [oid | oid <- members, seatOf oid == Just seat, not (null (rows oid))]
-        if length carrying >= 2 && any (any Replacement.runsEffects . rows) carrying
+        let own = [oid | (oid, s) <- carrying, s == seat]
+        if length own >= 2 && any (any Replacement.runsEffects . rows) own
           then do
             now <- State.get
-            answer <- Game.choose (Prompt.OrderEntries (Decide.deciderFor seat now) seat carrying)
-            pure (zip carrying (Game.permute carrying answer))
-          else pure []
-  moved <- fmap (Map.fromList . concat) (traverse ask seats)
-  pure (fmap (\oid -> Map.findWithDefault oid oid moved) members)
+            answer <- Game.choose (Prompt.OrderEntries (Decide.deciderFor seat now) seat own)
+            pure (Game.permute own answer)
+          else pure own
+      carried = Set.fromList (fmap fst carrying)
+      place queue oid = case queue of
+        next : later | Set.member oid carried -> (later, next)
+        _ -> (queue, oid)
+  queue <- fmap concat (traverse ask seats)
+  pure (snd (List.mapAccumL place queue members))
 
 together :: Game a -> Game a
 together body = do
@@ -8548,7 +8558,7 @@ changeZonesTogether settle batch = simultaneously . together $ do
   before <- State.get
   let moves = filter ((`Set.notMember` kept) . fst) batch
       entering = [oid | (oid, Zone.Battlefield) <- moves]
-      -- CR 614.13b: each member's as-enters effects run before the next
+      -- CR 614.1c / 616.1g: each member's as-enters effects run before the next
       -- member's entry applies, in the order orderEntries settled.
       step (sofar, acc) (oid, dest) = do
         State.modify' (\g -> g {GameState.scratch = (GameState.scratch g) {Scratch.enteringPending = Map.delete oid (Scratch.enteringPending (GameState.scratch g))}})

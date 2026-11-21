@@ -18,7 +18,7 @@ data Settle = MkSettle
   { -- | CR 614.11a: run what a replacement queued in an event's place
     -- (Resolve.runReplacementEffects).
     queued :: Game.Game (),
-    -- | CR 614.1c / 614.13b: run the as-enters effects the entries so far
+    -- | CR 614.1c / 616.1g: run the as-enters effects the entries so far
     -- queued (Resolve.runEntryEffects), so a member of a batch acts before the
     -- next member's entry applies.
     entryEffects :: Game.Game (),

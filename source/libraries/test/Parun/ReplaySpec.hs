@@ -803,6 +803,23 @@ combatReplaySpec s =
             "identity permutation"
             (Replay.defaultAnswer (Prompt.OrderManaActivations decider S.alice [oid, ObjectId.MkObjectId 8]))
             [0, 1 :: Natural.Natural]
+        -- CR 616.1's entry order, another [Natural] permutation, discriminating
+        -- against OrderManaActivations for the same reason.
+        Spec.it s "OrderEntries records and replays a permutation" $ do
+          let p = Prompt.OrderEntries decider S.alice [oid, ObjectId.MkObjectId 8]
+              answer = [1, 0] :: [Natural.Natural]
+          Spec.assertEqWith s "round-trip" (Replay.decode p (Replay.encode p answer)) (Just answer)
+          Spec.assertEqWith
+            s
+            "an OrderManaActivations transcript entry does not answer an OrderEntries"
+            (Replay.decode p (Replay.encode (Prompt.OrderManaActivations decider S.alice [oid, ObjectId.MkObjectId 8]) answer))
+            Nothing
+        Spec.it s "defaultAnswer keeps the order the entries were gathered in" $
+          Spec.assertEqWith
+            s
+            "identity permutation"
+            (Replay.defaultAnswer (Prompt.OrderEntries decider S.alice [oid, ObjectId.MkObjectId 8]))
+            [0, 1 :: Natural.Natural]
         Spec.it s "ChooseSacrifices records and replays a Set ObjectId" $ do
           let p = Prompt.ChooseSacrifices decider S.alice oid [oid, ObjectId.MkObjectId 8] 1 Seq.empty
               answer = Set.singleton (ObjectId.MkObjectId 8)

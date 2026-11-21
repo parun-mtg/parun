@@ -68,7 +68,7 @@
     ],
     "step": "PrecombatMain"
   },
-  "description": "CR 616.1 / 614.13b: Open the Vaults returns Sigarda's Splendor and Phyrexian Processor together; with Splendor applied first, Splendor notes 20 life",
+  "description": "CR 616.1 / 614.1c: Open the Vaults returns Sigarda's Splendor and Phyrexian Processor together; with Splendor applied first, Splendor notes 20 life",
   "note": "Alice orders the two entries (Splendor first), then pays 10 life for Processor, so she is at 10. Her turn 3 upkeep compares 10 against the 20 noted: no draw, one Island in hand after the draw step.",
   "timeline": [
     {
