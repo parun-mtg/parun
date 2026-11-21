@@ -84,6 +84,7 @@ import qualified Parun.Types.PutIntoZoneTrigger as PutIntoZoneTrigger
 import qualified Parun.Types.Quantity as Quantity
 import qualified Parun.Types.RevealedThisWay as RevealedThisWay
 import qualified Parun.Types.RollKind as RollKind
+import qualified Parun.Types.RollReading as RollReading
 import qualified Parun.Types.RollTrigger as RollTrigger
 import qualified Parun.Types.RoomIndex as RoomIndex
 import qualified Parun.Types.SacrificeTrigger as SacrificeTrigger
@@ -731,7 +732,7 @@ spec s = Spec.describe s "Parun.Codec.TriggerCondition" $ do
     Common.assertCodec
       s
       TriggerCondition.codec
-      (TriggerCondition.PlayerRollsResult (RollTrigger.MkRollTrigger PlayerRelation.You 6 RollKind.AnyRoll))
+      (TriggerCondition.PlayerRollsResult (RollTrigger.MkRollTrigger PlayerRelation.You 6 RollKind.AnyRoll RollReading.FinalResult))
       " {\"type\":\"PlayerRollsResult\",\"value\":{\"roller\":\"You\",\"result\":6}} "
   -- CR 702.159a: nullary, the lights being the printing's.
   Spec.it s "Visit" $

@@ -1713,6 +1713,8 @@ library codec
     Parun.Codec.RollKindSpec
     Parun.Codec.RollModifier
     Parun.Codec.RollModifierSpec
+    Parun.Codec.RollReading
+    Parun.Codec.RollReadingSpec
     Parun.Codec.RollTotalsThisTurn
     Parun.Codec.RollTotalsThisTurnSpec
     Parun.Codec.RollTrigger
@@ -3839,6 +3841,7 @@ library types
     Parun.Types.RollExtreme
     Parun.Types.RollKind
     Parun.Types.RollModifier
+    Parun.Types.RollReading
     Parun.Types.RollTotalsThisTurn
     Parun.Types.RollTrigger
     Parun.Types.RoomHalf

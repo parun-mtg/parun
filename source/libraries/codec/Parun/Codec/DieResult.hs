@@ -14,4 +14,5 @@ codec :: (Typeable.Typeable player) => Codec.Codec player -> Codec.Codec (DieRes
 codec player = Fields.object $ do
   roller <- Fields.required "roller" player DieResult.roller
   result <- Fields.required "result" Common.natural DieResult.result
-  pure DieResult.MkDieResult {DieResult.roller = roller, DieResult.result = result}
+  natural <- Fields.defaulted "natural" Nothing (Common.maybe Common.natural) DieResult.natural
+  pure DieResult.MkDieResult {DieResult.roller = roller, DieResult.result = result, DieResult.natural = natural}

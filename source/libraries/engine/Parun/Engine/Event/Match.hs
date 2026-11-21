@@ -172,6 +172,7 @@ import qualified Parun.Types.RevealCause as RevealCause
 import qualified Parun.Types.Revealed as Revealed
 import qualified Parun.Types.RevealedThisWay as RevealedThisWay
 import qualified Parun.Types.RollKind as RollKind
+import qualified Parun.Types.RollReading as RollReading
 import qualified Parun.Types.RollTrigger as RollTrigger
 import qualified Parun.Types.SacrificeTrigger as SacrificeTrigger
 import qualified Parun.Types.Saddling as Saddling
@@ -2498,14 +2499,18 @@ armMatches bindings frozen board atEvent beforeEvent groupEvents gs bearer you c
         && Expended.after ev >= n
         && PlayerRelation.holds (Game.teams gs) relation you (Expended.player ev)
     _ -> False
-  -- CR 706.2: one die's RESULT, after every modifier, was the stated number,
-  -- the roller read against CR 109.5's "you" as PlayerActs does.
+  -- CR 706.2: one die's RESULT, after every modifier, or its natural result
+  -- where the condition reads that, was the stated number, the roller read
+  -- against CR 109.5's "you" as PlayerActs does.
   -- Per die rather than per instruction, since each die is its own roll. A roll
   -- to visit is a die roll (CR 701.52a), so any roll reads its die too; only a
   -- roll to visit reads RolledToVisit, the one result CR 706.6 leaves it.
   TriggerCondition.PlayerRollsResult watched ->
-    let rolledBy settled =
-          DieResult.result settled == RollTrigger.result watched
+    let number settled = case RollTrigger.reading watched of
+          RollReading.FinalResult -> Just (DieResult.result settled)
+          RollReading.NaturalResult -> DieResult.natural settled
+        rolledBy settled =
+          number settled == Just (RollTrigger.result watched)
             && PlayerRelation.holds (Game.teams gs) (RollTrigger.roller watched) you (DieResult.roller settled)
      in case (RollTrigger.roll watched, event) of
           (RollKind.AnyRoll, GameEvent.DieResultSettled settled) -> rolledBy settled

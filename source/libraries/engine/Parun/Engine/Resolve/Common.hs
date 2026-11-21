@@ -4439,7 +4439,7 @@ storeOn acquisition target sides results gs =
 -- settled: one CountedAct whose value is the highest kept result, which is all
 -- Farideh, Devil's Chosen's "if any of those results was 10 or higher" reads
 -- under the trigger's event amount.
-recordRoll :: PlayerId -> [PlayerId] -> [Natural] -> Game ()
+recordRoll :: PlayerId -> [(PlayerId, Maybe Natural)] -> [Natural] -> Game ()
 recordRoll controller throwers results = do
   State.modify' (Event.recordEvent (GameEvent.CountedAct (CountedAct.MkCountedAct PlayerAction.RollDice controller (Foldable.foldl' max 0 results))))
   -- CR 706.2's final number, one entry per die the instruction kept, for
@@ -4447,8 +4447,11 @@ recordRoll controller throwers results = do
   -- roll (CR 706.6). Recorded under the player who threw the die's final
   -- natural result: Pippa, Duchess of Dice's ruling gives a reroll of another
   -- player's die to the rerolling player's "whenever you roll" triggers.
-  Foldable.for_ (zip throwers results) $ \(thrower, result) ->
-    State.modify' (Event.recordEvent (GameEvent.DieResultSettled DieResult.MkDieResult {DieResult.roller = thrower, DieResult.result = result}))
+  -- Beside it the die's natural result once its rerolls are done, for
+  -- "whenever you roll a natural 20" (docs/decisions.md, "Whether a natural
+  -- 20 rerolled away was rolled").
+  Foldable.for_ (zip throwers results) $ \((thrower, natural), result) ->
+    State.modify' (Event.recordEvent (GameEvent.DieResultSettled DieResult.MkDieResult {DieResult.roller = thrower, DieResult.result = result, DieResult.natural = natural}))
 
 -- | CR 614.12a: `act` run with every materialized-but-not-entered permanent
 -- (Scratch.enteringSubjects, Scratch.enteringBeside) out of the battlefield
