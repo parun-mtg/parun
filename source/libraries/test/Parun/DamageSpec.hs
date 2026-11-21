@@ -801,6 +801,9 @@ lastKnownRiderSpec s registry =
                     -- Nothing here copies anything; the field is filled to
                     -- build the record.
                     LastKnown.copiable = Projection.copiableCharacteristics srcId equipped,
+                    -- Nor does anything turn over.
+                    LastKnown.turned = Nothing,
+                    LastKnown.face = Nothing,
                     -- The Collar is attached to the Sorcerer, but this record
                     -- is filed under a still-live id by hand rather than by the
                     -- funnel, and nothing here reads the look-back.

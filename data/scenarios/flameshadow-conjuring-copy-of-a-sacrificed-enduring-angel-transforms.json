@@ -1,0 +1,60 @@
+{
+  "board": {
+    "active": "alice",
+    "seats": [
+      {
+        "battlefield": [
+          {"card": "Flameshadow Conjuring", "label": "conj"},
+          {"card": "Ashnod's Altar", "label": "altar"},
+          {"card": "Plains", "label": "p1"},
+          {"card": "Plains", "label": "p2"},
+          {"card": "Plains", "label": "p3"},
+          {"card": "Plains", "label": "p4"},
+          {"card": "Plains", "label": "p5"},
+          {"card": "Mountain", "label": "m1"},
+          {"card": "Mountain", "label": "m2"}
+        ],
+        "hand": [
+          {"card": "Enduring Angel", "label": "angel"},
+          {"card": "Lightning Bolt", "label": "bolt"}
+        ],
+        "library": [
+          {"card": "Island"},
+          {"card": "Island"},
+          {"card": "Island"}
+        ],
+        "life": 3,
+        "name": "alice"
+      },
+      {
+        "library": [
+          {"card": "Island"},
+          {"card": "Island"},
+          {"card": "Island"}
+        ],
+        "name": "bob"
+      }
+    ],
+    "step": "PrecombatMain"
+  },
+  "description": "CR 707.8a / 608.2h: a token copy of an Enduring Angel already sacrificed is double-faced from its last known information, so when its replacement transforms it the token shows Angelic Enforcer",
+  "note": "Alice at 3 casts the Angel and sacrifices it to Ashnod's Altar with Flameshadow Conjuring's trigger on the stack, then pays {R}: the token is minted from the Angel's last known information. She bolts herself; the token turns over and shows Angelic Enforcer, without double strike but with the haste the Conjuring gave it, and her life becomes 3.",
+  "timeline": [
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": {"Cast": {"mana": ["$p1", "$p2", "$p3", "$p4", "$p5", null], "object": "$angel"}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": "Pass"},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": {"Take": {"action": "ActivateManaAbility $altar"}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"Count": {"card": "Enduring Angel", "count": 1, "player": "alice", "zone": "Graveyard"}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": "Pass"},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": {"ChooseToPay": {"decision": "Pays", "mana": ["$m1", null]}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"Count": {"card": "Enduring Angel", "count": 1, "player": "alice", "zone": "Battlefield"}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": {"Cast": {"mana": ["$m2", null], "object": "$bolt", "targets": ["$alice"]}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": "Pass"},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"Life": {"life": 3, "player": "alice"}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"Count": {"card": "Angelic Enforcer", "count": 1, "player": "alice", "zone": "Battlefield"}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"Count": {"card": "Enduring Angel", "count": 0, "player": "alice", "zone": "Battlefield"}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"Names": {"names": ["Angelic Enforcer"], "object": "Enduring Angel#2"}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"Keywords": {"count": 0, "keyword": {"type": "DoubleStrike"}, "object": "Enduring Angel#2"}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"Keywords": {"count": 1, "keyword": {"type": "Haste"}, "object": "Enduring Angel#2"}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"View": {"is": null, "of": "Result"}}}
+  ]
+}
