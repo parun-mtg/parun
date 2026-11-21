@@ -2056,7 +2056,8 @@ filterPositionLintSpec s registry corpus = Spec.describe s "Lint" $ do
         ("Necromentia", 1), -- its own search
         ("Sphinx Ambassador", 1), -- its move clause's gate
         ("Diviner's Lockbox", 1), -- its sacrifice clause's gate
-        ("The Stone Brain", 1) -- its own search, Ancient Vendetta's shape
+        ("The Stone Brain", 1), -- its own search, Ancient Vendetta's shape
+        ("Curse of Silence", 2) -- Anointed Peacekeeper's tax and its trigger condition
       ]
   -- CR 702.16k's chosen player and CR 123.6's carrier stickers in the same
   -- frame one atom over: answerable only where a protection quality is read,
@@ -2690,7 +2691,7 @@ filterPositionLintSpec s registry corpus = Spec.describe s "Lint" $ do
   Spec.it s "CR 303.4b no card asks IsAttackingPlayer or HeldBy of a player the filter cannot read" $ do
     let offenders = fmap fst (filter (any attackedPlayerOffends . snd) pool)
     Spec.assertEqWith s "the atom names only a player its position supplies" (fmap (S.nameOf . Printing.card) offenders) []
-    assertAuthors s registry pool "each author's atoms are framed" enchantedAttackedCounts [("Curse of Clinging Webs", 1), ("Curse of Hospitality", 1), ("Radiant Grace", 1)]
+    assertAuthors s registry pool "each author's atoms are framed" enchantedAttackedCounts [("Curse of Clinging Webs", 1), ("Curse of Hospitality", 1), ("Curse of Silence", 1), ("Radiant Grace", 1)]
     -- The rejected side: the atom in a spell's draw count, which no source
     -- frames, and an InSlot relation in a target slot, which one does.
     piker <- S.printingOf s registry "Goblin Piker"
@@ -2832,7 +2833,8 @@ filterPositionLintSpec s registry corpus = Spec.describe s "Lint" $ do
         ("Sleep with the Fishes", 1), -- Claustrophobia's entering tap, before a token
         ("Crackling Emergence", 1), -- Pariah's replacement row, on a destruction
         ("Harmonious Emergence", 1), -- Crackling Emergence's wording
-        ("Cradle of Safety", 1) -- Aquitect's Defenses' entering hexproof
+        ("Cradle of Safety", 1), -- Aquitect's Defenses' entering hexproof
+        ("Candletrap", 1) -- Path to Redemption's wording, an exile behind coven
       ]
     -- The rejected side, which the sweep above cannot show while the pool has no
     -- offender: the same atom planted in a SPELL's target slot -- the position a
