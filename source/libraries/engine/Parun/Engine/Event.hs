@@ -6210,8 +6210,9 @@ apply settle batch applied batchPrevented candidate event =
     -- reads the board (Parun.Engine.Resolve.Effect.applyEffectWith) or, off a
     -- resolution, right after the CR 702.145 sweep that turned it, before CR
     -- 704.5m looks (Parun.Engine.Engine). Both the performer and CR 113.7's source are
-    -- the transforming permanent, the entry arm's posture. The event survives:
-    -- the face is already turned.
+    -- the transforming permanent, the entry arm's posture, and so is
+    -- Binding.triggerSource, "it" (Olag, Ludevic's Hubris's counters). The
+    -- event survives: the face is already turned.
     (ReplacementEffect.TransformR (TransformR.MkTransformR _ (TransformRewrite.RunEffects effects)), ProposedEvent.WouldTransform oid) -> do
       Replacement.consume (ReplacementCandidate.identity candidate)
       gs <- State.get
@@ -6226,7 +6227,7 @@ apply settle batch applied batchPrevented candidate event =
                       StoredEffects.pendingReplacementEffects (GameState.stored g)
                         Seq.|> PendingReplacementEffect.MkPendingReplacementEffect
                           { PendingReplacementEffect.effects = effects,
-                            PendingReplacementEffect.targets = Map.empty,
+                            PendingReplacementEffect.targets = Map.singleton Binding.triggerSource (Set.singleton (Recipient.ToObject oid)),
                             PendingReplacementEffect.controller = controller,
                             PendingReplacementEffect.source = oid,
                             PendingReplacementEffect.bindsArrival = False

@@ -5,6 +5,7 @@ import qualified Data.Sequence as Seq
 import qualified Data.Set as Set
 import qualified Numeric.Natural as Natural
 import qualified Parun.Types.AbilityWasActivated as AbilityWasActivated
+import qualified Parun.Types.Acquisition as Acquisition
 import qualified Parun.Types.Arrival as Arrival
 import qualified Parun.Types.Cause as Cause
 import qualified Parun.Types.CounterKind as CounterKind
@@ -133,6 +134,12 @@ data Scratch = MkScratch
     -- Moved.whileActivating records. Empty outside one. A mana ability's is
     -- not pushed: LeavesTrigger.whileActivating names a CR 702 keyword, and
     -- none is a mana ability.
-    activating :: ![AbilityWasActivated.AbilityWasActivated]
+    activating :: ![AbilityWasActivated.AbilityWasActivated],
+    -- | CR 607.5: the acquisition each source's abilities had as the effects a
+    -- replacement it generated began to run (Parun.Engine.Resolve.Effect's
+    -- runDamageRewriteEffect), which those effects read its links under
+    -- (Parun.Engine.Game.readingAcquisition) though one of them makes it a
+    -- copy (Olag, Ludevic's Hubris). Empty outside such a drain.
+    replacementAcquisitions :: !(Map.Map ObjectId.ObjectId Acquisition.Acquisition)
   }
   deriving (Eq, Ord, Show)

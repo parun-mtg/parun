@@ -36,6 +36,7 @@ import qualified Parun.Engine.Card as Card
 import qualified Parun.Engine.Cast as Cast
 import qualified Parun.Engine.Children as Children
 import qualified Parun.Engine.Cost as Cost
+import qualified Parun.Engine.CostAmount as CostAmount.Engine
 import qualified Parun.Engine.Event.Binding as Event
 import qualified Parun.Engine.Filter as Filter
 import qualified Parun.Engine.Game as Game
@@ -7546,9 +7547,13 @@ lintSpec s registry corpus = Spec.describe s "Lint" $ do
         -- cost; an effect reading the stamped X would then miss a change the
         -- rule lets happen while the ability is on the stack, so none may.
         defined ab = Maybe.isJust (ActivatedAbility.definedX ab)
+        -- CR 107.3a: a cost component stating X reads the X its mana cost
+        -- declares -- Ludevic, Necrogenius's "Exile X creature cards from your
+        -- graveyard", which no effect reads.
+        costReadsIt ab = any (any CostAmount.Engine.componentHasVariable . Cost.Type.components) (activationCostsOf ab)
         offends (_, ab) =
           let effectsReadIt = Resolve.hasRead StaticRead.ReadsX (Modal.allEffects (ActivatedAbility.modal ab)) || modalReadsAnnouncedX (ActivatedAbility.modal ab) || any declaresVariable (announcedGateCostsOf (ActivatedAbility.modal ab))
-              readsIt = effectsReadIt || defined ab
+              readsIt = effectsReadIt || defined ab || costReadsIt ab
               declared = any declaresVariable (activationCostsOf ab)
            in (readsIt /= declared && not (declared && notesSpent ab)) || (defined ab && effectsReadIt)
     -- Guards the sweep against passing vacuously, in both directions: an empty
