@@ -252,7 +252,7 @@ create settle resolving source controller legal chosen (Create.MkCreate quantity
             -- CR 122.6's counters ride along through that rule's own door, so a
             -- counter replacement reaches them, in the counts freezeRiders
             -- settled above.
-            made <- Event.createTokens settle creating (Common.bakeTokenCharacteristics (Quantity.evaluateFor viewOf context gs resolving source) card) Nothing shown (Integer.toNaturalSaturating n) (EntryRiders.tapped entry) (EntryRiders.counters frozen) mAttached (Common.resolvingMarks resolving gs)
+            made <- Event.createTokens settle creating (NonEmpty.singleton (Common.bakeTokenCharacteristics (Quantity.evaluateFor viewOf context gs resolving source) card, Nothing)) shown (Integer.toNaturalSaturating n) (EntryRiders.tapped entry) (EntryRiders.counters frozen) mAttached (Common.resolvingMarks resolving gs)
             -- CR 508.4: a creature put onto the battlefield attacking has its
             -- defending player chosen in Parun.Engine.Combat, and CR 508.3a's
             -- attack triggers see nothing. After the entry loops rather than
@@ -508,43 +508,50 @@ createCopy settle resolving source controller legal chosen (CreateCopy.MkCreateC
       | n > 0 ->
           -- CR 613.7m over copies of SEVERAL sources, which enter together:
           -- one batch across every createTokens call (Event.together).
-          Event.simultaneously . Event.together . fmap concat . Monad.forM ((,) <$> creators <*> sources) $ \(creating, src) ->
-            fmap concat . Monad.forM (Maybe.maybeToList (Event.copiedTokenCard src gs)) $ \card -> do
-              -- CR 707.2 copies no counters, so what the token arrives with
-              -- is what the EFFECT said and nothing the original carried --
-              -- Littjara Mirrorlake's "except it enters with an additional
-              -- +1/+1 counter on it". Through Event.createTokens' own counter
-              -- argument, CR 122.6's door, so CR 614.16's replacements see
-              -- them; Create's arm one case up hands over the same value.
-              --
-              -- CR 110.5b's tap state rides through the same funnel, Create's
-              -- road; Parun.EffectLintSpec lints that no CreateCopy in the pool
-              -- sets a rider this arm does not read.
-              --
-              -- ONE call per named permanent, with the whole count: CR 614.12's
-              -- entry loop is handed the batch, so the copies enter
-              -- simultaneously and none may copy a sibling.
-              --
-              -- CR 707.9's exceptions are folded into the snapshot on the way
-              -- in, exactly as the CR 707.5 entry road folds AsCopy's, so the
-              -- excepted value is part of the token's own copiable values (CR
-              -- 707.9b) -- Multiversal Recruitment's "except it isn't
-              -- legendary". "This ability" is the resolving object's, read the
-              -- way the BecomeCopy arm below reads it.
-              -- Nothing for the subject's own copiable values: CR 707.9c's
-              -- retained original belongs to an object that already existed,
-              -- and a token minted by CR 707.1 did not. Both faces of a
-              -- double-faced copy take them (CR 707.8a).
-              let except = Replacement.applyCopyExceptions (Common.thisAbilitySource resolving gs) Nothing exceptions
-                  copied = Event.copiedToken src gs
-                  excepted = copied {TokenCopy.values = except (TokenCopy.values copied), TokenCopy.turned = fmap except (TokenCopy.turned copied)}
-              made <- Event.createTokens settle creating card (Just excepted) Nothing (Integer.toNaturalSaturating n) (EntryRiders.tapped entry) (EntryRiders.counters frozen) Nothing (Common.resolvingMarks resolving gs)
-              -- CR 508.4, after the entry loop for Create's reason.
-              Monad.forM_ mAttack (\specified -> Monad.mapM_ (Combat.putOntoBattlefieldAttacking specified) made)
-              -- CR 509.4, the blocking twin one rule over, in the same place
-              -- and for the same reason Create's arm puts it there.
-              Monad.forM_ mBlocked (\blocked -> Monad.mapM_ (Combat.putOntoBattlefieldBlocking blocked) made)
-              pure made
+          Event.simultaneously . Event.together . fmap concat . Monad.forM creators $ \creating -> do
+            -- CR 707.2 copies no counters, so what the token arrives with
+            -- is what the EFFECT said and nothing the original carried --
+            -- Littjara Mirrorlake's "except it enters with an additional
+            -- +1/+1 counter on it". Through Event.createTokens' own counter
+            -- argument, CR 122.6's door, so CR 614.16's replacements see
+            -- them; Create's arm one case up hands over the same value.
+            --
+            -- CR 110.5b's tap state rides through the same funnel, Create's
+            -- road; Parun.EffectLintSpec lints that no CreateCopy in the pool
+            -- sets a rider this arm does not read.
+            --
+            -- ONE call per creator, a lot per named permanent with the whole
+            -- count: CR 614.12's entry loop is handed the batch, so the copies
+            -- enter simultaneously and none may copy a sibling, and CR 616.1
+            -- orders the lots' as-enters replacements (Event.createTokens).
+            -- The scenario
+            -- cr-616-1-second-harvest-s-splendor-copy-applied-first-notes-the-life-before-paying
+            -- proves the order.
+            --
+            -- CR 707.9's exceptions are folded into the snapshot on the way
+            -- in, exactly as the CR 707.5 entry road folds AsCopy's, so the
+            -- excepted value is part of the token's own copiable values (CR
+            -- 707.9b) -- Multiversal Recruitment's "except it isn't
+            -- legendary". "This ability" is the resolving object's, read the
+            -- way the BecomeCopy arm below reads it.
+            -- Nothing for the subject's own copiable values: CR 707.9c's
+            -- retained original belongs to an object that already existed,
+            -- and a token minted by CR 707.1 did not. Both faces of a
+            -- double-faced copy take them (CR 707.8a).
+            let except = Replacement.applyCopyExceptions (Common.thisAbilitySource resolving gs) Nothing exceptions
+                shapeOf src =
+                  let copied = Event.copiedToken src gs
+                   in fmap (\card -> (card, Just copied {TokenCopy.values = except (TokenCopy.values copied), TokenCopy.turned = fmap except (TokenCopy.turned copied)})) (Event.copiedTokenCard src gs)
+            case NonEmpty.nonEmpty (Maybe.mapMaybe shapeOf sources) of
+              Nothing -> pure []
+              Just shapes -> do
+                made <- Event.createTokens settle creating shapes Nothing (Integer.toNaturalSaturating n) (EntryRiders.tapped entry) (EntryRiders.counters frozen) Nothing (Common.resolvingMarks resolving gs)
+                -- CR 508.4, after the entry loop for Create's reason.
+                Monad.forM_ mAttack (\specified -> Monad.mapM_ (Combat.putOntoBattlefieldAttacking specified) made)
+                -- CR 509.4, the blocking twin one rule over, in the same place
+                -- and for the same reason Create's arm puts it there.
+                Monad.forM_ mBlocked (\blocked -> Monad.mapM_ (Combat.putOntoBattlefieldBlocking blocked) made)
+                pure made
     _ -> pure []
   -- Dance of Many's later abilities mean this token.
   Monad.when linked (State.modify' (\g -> foldr (Common.linkEntrant resolving source) g minted))

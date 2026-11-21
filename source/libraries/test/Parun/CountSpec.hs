@@ -11,6 +11,7 @@
 module Parun.CountSpec where
 
 import qualified Data.List as List
+import qualified Data.List.NonEmpty as NonEmpty
 import qualified Data.Map.Strict as Map
 import qualified Data.Set as Set
 import qualified Data.Text as Text
@@ -971,7 +972,7 @@ leftBattlefieldSpec s registry =
         Spec.it s "CR 603.6c a nonland token entering is no permanent leaving, so Insatiable Skittermaw gets no counter" $ do
           (skittermawId, _, _, ready) <- board "Insatiable Skittermaw"
           hillGiant <- S.printingOf s registry "Hill Giant"
-          let minted = S.runPure S.identityAnswer ready (Event.createTokens Settle.none S.bob (Printing.card hillGiant) Nothing Nothing 1 TapState.Untapped Map.empty Nothing Set.empty)
+          let minted = S.runPure S.identityAnswer ready (Event.createTokens Settle.none S.bob (NonEmpty.singleton (Printing.card hillGiant, Nothing)) Nothing 1 TapState.Untapped Map.empty Nothing Set.empty)
           Spec.assertEqWith s "CR 603.6c a Hill Giant token entered and nothing left, so no counter" (S.counterOf CounterKind.PlusOnePlusOne skittermawId (endStepOf minted)) 0
           Spec.assertEqWith s "setup: the token is on the battlefield beside bob's Hill Giant" (length (Game.zoneMembers Zone.Battlefield S.bob minted)) 3
         Spec.it s "CR 603.6c Minthara counts a permanent alice controlled leaving, not the same one while bob controlled it" $ do
