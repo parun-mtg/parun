@@ -1,0 +1,141 @@
+{
+  "board": {
+    "active": "alice",
+    "seats": [
+      {
+        "battlefield": [
+          {
+            "card": "Exquisite Blood"
+          },
+          {
+            "card": "Bloodletter of Aclazotz"
+          },
+          {
+            "card": "Ajani's Pridemate",
+            "label": "pridemate"
+          },
+          {
+            "card": "Grizzly Bears",
+            "label": "a1",
+            "ready": true
+          },
+          {
+            "card": "Grizzly Bears",
+            "label": "a2",
+            "ready": true
+          }
+        ],
+        "library": [
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          }
+        ],
+        "life": 10,
+        "name": "alice"
+      },
+      {
+        "battlefield": [
+          {
+            "card": "Elderscale Wurm"
+          }
+        ],
+        "library": [
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          }
+        ],
+        "life": 9,
+        "name": "bob"
+      }
+    ],
+    "step": "BeginningOfCombat"
+  },
+  "description": "CR 614.6 / 616.1: Elderscale Wurm then Bloodletter of Aclazotz replace two attackers' damage to bob as one loss of 4, so Exquisite Blood triggers once",
+  "note": "Bob at 9 is dealt 2 and 2 at once: Elderscale Wurm cuts the loss of 4 to 2, Bloodletter doubles it back to 4. The settled loss equals the damage, yet it is one modified event: one gain of 4, one counter on Ajani's Pridemate.",
+  "timeline": [
+    {
+      "do": {
+        "Attack": [
+          "$a1",
+          "$a2"
+        ]
+      },
+      "player": "alice",
+      "step": "DeclareAttackers",
+      "turn": 1
+    },
+    {
+      "do": {
+        "Block": {}
+      },
+      "player": "bob",
+      "step": "DeclareBlockers",
+      "turn": 1
+    },
+    {
+      "do": {
+        "Answer": {
+          "prompt": "ChooseReplacement",
+          "with": 1
+        }
+      },
+      "player": "bob",
+      "step": "CombatDamage",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Counters": {
+          "count": 1,
+          "kind": {
+            "type": "PlusOnePlusOne"
+          },
+          "object": "$pridemate"
+        }
+      },
+      "player": "alice",
+      "step": "EndOfCombat",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Life": {
+          "life": 5,
+          "player": "bob"
+        }
+      },
+      "player": "alice",
+      "step": "EndOfCombat",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Life": {
+          "life": 14,
+          "player": "alice"
+        }
+      },
+      "player": "alice",
+      "step": "EndOfCombat",
+      "turn": 1
+    }
+  ]
+}
