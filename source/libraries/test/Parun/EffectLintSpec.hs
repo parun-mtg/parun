@@ -3119,18 +3119,21 @@ effectLintSpec s registry corpus = Spec.describe s "Lint" $ do
           Effect.MoveToZone (MoveToZone.MkMoveToZone _ _ riders _ _ _ _) -> chosenAmong riders
           _ -> False
         -- moveOne narrows only an Aura's host to OBJECTS the slot names, so a
-        -- Specified move is performed only for an Aura moving itself that
-        -- enchants no player: an Equipment (CR 303.4h) or a player host would
-        -- enter unattached or stay put.
-        selfAuraMove face effect = case effect of
+        -- Specified move is performed only for a card moving itself that
+        -- enters as an Aura enchanting no player: an Equipment (CR 303.4h) or a
+        -- player host would enter unattached or stay put. The face judged is
+        -- the one it enters as, its back face when transformed (CR 712.11a):
+        -- Vengeful Strangler's creature front returns as Strangling Grasp.
+        selfAuraMove card face effect = case effect of
           Effect.MoveToZone (MoveToZone.MkMoveToZone ref _ riders _ _ _ _)
             | specified riders ->
-                not
-                  ( ref `elem` [ObjectRef.InSlot Binding.became, ObjectRef.InSlot Binding.triggerSource]
-                      && elem Subtype.Type.Aura (TypeLine.subtypes (Face.typeLine face))
-                      && not (any (holdsPlayer . TargetSlot.pool) (Face.enchant face))
-                  )
-                  && ref `notElem` fmap ObjectRef.InSlot (auraLoopSlots face)
+                let entering = if EntryRiders.transformed riders then Maybe.fromMaybe face (Card.backFace card) else face
+                 in not
+                      ( ref `elem` [ObjectRef.InSlot Binding.became, ObjectRef.InSlot Binding.triggerSource]
+                          && elem Subtype.Type.Aura (TypeLine.subtypes (Face.typeLine entering))
+                          && not (any (holdsPlayer . TargetSlot.pool) (Face.enchant entering))
+                      )
+                      && ref `notElem` fmap ObjectRef.InSlot (auraLoopSlots face)
           _ -> False
         -- Or for a loop member drawn only from Auras that were attached to a
         -- host, which enchanted an object and so no player: Cass, Hand of
@@ -3143,8 +3146,8 @@ effectLintSpec s registry corpus = Spec.describe s "Lint" $ do
           Filter.Type.HasSubtype Subtype.Type.Aura -> True
           Filter.Type.And filters -> any requiresAura filters
           _ -> False
-        offendsOn face = any (\effect -> offends effect || selfAuraMove face effect) (cardResolutionEffects face)
-        offenders = filter (anyFace offendsOn . Printing.card) ps
+        offendsOn card face = any (\effect -> offends effect || selfAuraMove card face effect) (cardResolutionEffects face)
+        offenders = filter ((\card -> anyFace (offendsOn card) card) . Printing.card) ps
     -- Guards against a vacuous sweep, one per arm: Preston Garvey, Minuteman
     -- creates a token attached to a target, Nomad Mythmaker moves an Aura card
     -- attached to a creature its controller controls, and Necrotic Plague and
@@ -3160,7 +3163,7 @@ effectLintSpec s registry corpus = Spec.describe s "Lint" $ do
     Spec.assertEqWith
       s
       "a self-moving Aura is refused exactly where its enchant pool can hold a player"
-      (fmap (offendsOn . enchanting) [Pool.Creatures, Pool.PlayersAndPlaneswalkers, Pool.AnyTarget, Pool.Players])
+      (fmap (offendsOn (Printing.card plague) . enchanting) [Pool.Creatures, Pool.PlayersAndPlaneswalkers, Pool.AnyTarget, Pool.Players])
       [False, True, True, True]
   -- The sibling lint for the OTHER face-down rider, one field over and pointed
   -- at the opposite zone: CR 708.3 is a rule about entering the BATTLEFIELD, so
