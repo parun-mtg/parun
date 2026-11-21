@@ -3409,7 +3409,9 @@ opponentsOf you gs = filter (areOpponents gs you) (stillPlaying gs)
 --
 -- A loop's choices (Parun.Engine.Resolve.Arms.Zones.forEach), draws
 -- (Event.inDrawOrder) and simultaneous as-enters effects (Event.orderEntries)
--- ask the team its order instead.
+-- ask the team its order instead. Parun.Engine.Damage.processDamage's life
+-- losses settle in seat order, a choice of no one's: docs/decisions.md, "How
+-- teammates' life floors share one damage event".
 --
 -- Every other caller takes a team's players in seat order from the active
 -- player's for CR 805.6's "in whatever order they like": no printed card's

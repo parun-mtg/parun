@@ -1,0 +1,154 @@
+{
+  "board": {
+    "active": "alice",
+    "seats": [
+      {
+        "battlefield": [
+          {
+            "card": "Ob Nixilis, Captive Kingpin",
+            "label": "ob",
+            "ready": true
+          },
+          {
+            "card": "Exquisite Blood",
+            "label": "blood"
+          },
+          {
+            "card": "Tainted Remedy"
+          },
+          {
+            "card": "Llanowar Elves",
+            "label": "e1",
+            "ready": true
+          },
+          {
+            "card": "Llanowar Elves",
+            "label": "e2",
+            "ready": true
+          }
+        ],
+        "library": [
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          }
+        ],
+        "name": "alice"
+      },
+      {
+        "battlefield": [
+          {
+            "card": "Charity Extractor",
+            "label": "cx",
+            "ready": true
+          }
+        ],
+        "library": [
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          }
+        ],
+        "name": "bob"
+      }
+    ],
+    "step": "PrecombatMain"
+  },
+  "description": "CR 702.15e / 614.6 the loss Tainted Remedy makes of a lifelink gain is its own event, so Ob Nixilis, Captive Kingpin sees bob lose exactly 1",
+  "note": "Alice controls Ob Nixilis, Captive Kingpin, Exquisite Blood and Tainted Remedy. Bob's Charity Extractor blocks one of her Llanowar Elves and the other hits him. His combat damage is one loss of 1 (Ob Nixilis's ruling of 2023-05-12), and the lifelink gain Tainted Remedy turns into a loss of 1 is a separate event (CR 702.15e, 614.6), so Exquisite Blood triggers for each and Ob Nixilis sees an opponent lose exactly 1 (docs/decisions.md, \"Whether a lifelink gain's replacement loss joins the damage's loss\"). Summing the two would leave Ob Nixilis without a counter.",
+  "timeline": [
+    {
+      "do": {
+        "Attack": [
+          "$e1",
+          "$e2"
+        ]
+      },
+      "player": "alice",
+      "step": "DeclareAttackers",
+      "turn": 1
+    },
+    {
+      "do": {
+        "Block": {
+          "$cx": [
+            "$e1"
+          ]
+        }
+      },
+      "player": "bob",
+      "step": "DeclareBlockers",
+      "turn": 1
+    },
+    {
+      "do": {
+        "OrderTriggers": [
+          "$ob",
+          "$blood",
+          "$blood"
+        ]
+      },
+      "player": "alice",
+      "step": "CombatDamage",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Life": {
+          "life": 18,
+          "player": "bob"
+        }
+      },
+      "player": "alice",
+      "step": "EndOfCombat",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Life": {
+          "life": 22,
+          "player": "alice"
+        }
+      },
+      "player": "alice",
+      "step": "EndOfCombat",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Counters": {
+          "count": 1,
+          "kind": {
+            "type": "PlusOnePlusOne"
+          },
+          "object": "$ob"
+        }
+      },
+      "player": "alice",
+      "step": "EndOfCombat",
+      "turn": 1
+    }
+  ]
+}

@@ -1,0 +1,112 @@
+{
+  "board": {
+    "active": "carol",
+    "seats": [
+      {
+        "life": 5,
+        "name": "alice",
+        "team": 1
+      },
+      {
+        "battlefield": [
+          {
+            "card": "Worship"
+          },
+          {
+            "card": "Grizzly Bears"
+          }
+        ],
+        "life": 5,
+        "name": "bob",
+        "team": 1
+      },
+      {
+        "battlefield": [
+          {
+            "card": "Centaur Courser",
+            "label": "courser-1",
+            "ready": true
+          },
+          {
+            "card": "Centaur Courser",
+            "label": "courser-2",
+            "ready": true
+          }
+        ],
+        "name": "carol",
+        "team": 2
+      },
+      {
+        "name": "dave",
+        "team": 2
+      }
+    ],
+    "sharedTeamLife": true,
+    "sharedTeamTurns": true,
+    "step": "PrecombatMain",
+    "twoHeadedGiant": true
+  },
+  "description": "CR 120.4d / 810.9a Worship judges both teammates' combat damage to the shared life total together (bob)",
+  "note": "A Two-Headed Giant game with alice and bob's team at 5. Bob controls Worship and Grizzly Bears. Carol's two Centaur Coursers attack alice and bob, unblocked, so the damage event is [3 to alice, 3 to bob] (CR 510.2). Worship reads the team's total (CR 810.9a) and the event's other results first (docs/decisions.md, \"How a life floor treats a loss in the same damage event\"): alice's 3 takes the team to 2, and Worship lets bob's damage take it only to 1, whichever teammate is settled first. Its pair seats Worship on the other teammate.",
+  "timeline": [
+    {
+      "do": {
+        "Attack": [
+          "$courser-1",
+          "$courser-2"
+        ]
+      },
+      "player": "carol",
+      "step": "DeclareAttackers",
+      "turn": 1
+    },
+    {
+      "do": {
+        "ChooseAttackTarget": "$alice"
+      },
+      "player": "carol",
+      "source": "$courser-1",
+      "step": "DeclareAttackers",
+      "turn": 1
+    },
+    {
+      "do": {
+        "ChooseAttackTarget": "$bob"
+      },
+      "player": "carol",
+      "source": "$courser-2",
+      "step": "DeclareAttackers",
+      "turn": 1
+    },
+    {
+      "do": {
+        "Block": {}
+      },
+      "player": "alice",
+      "step": "DeclareBlockers",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Life": {
+          "life": 1,
+          "player": "alice"
+        }
+      },
+      "player": "carol",
+      "step": "PostcombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Life": {
+          "life": 1,
+          "player": "bob"
+        }
+      },
+      "player": "carol",
+      "step": "PostcombatMain",
+      "turn": 1
+    }
+  ]
+}

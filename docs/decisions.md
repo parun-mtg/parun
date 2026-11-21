@@ -448,6 +448,42 @@ Entries are ordered by the first rule each cites.
   `cr-120-4c-elderscale-wurm-reads-the-life-before-tainted-remedy-s-loss-from-the-same-damage`.
 - **Issue**: #5809.
 
+## How teammates' life floors share one damage event
+
+- **Question**: In Two-Headed Giant the team at 4 is dealt 3 at alice and 1 at
+  bob at once, and each controls Worship. Each floor reads the team's total (CR
+  810.9a) and the event's other results. Whose loss does the floor cut?
+- **Rules**: CR 101.4, 120.4d, 616.1, 805.6, 810.9, 810.9a; CR of 2026-11-06.
+- **Decision**: The players settle in APNAP order, each counting a teammate's
+  loss as settled if that teammate came first and as proposed if not. Alice's
+  3 is cut to 2 and bob loses his 1; the team ends at 1. A lone floor each is
+  no CR 616.1 choice, so CR 805.6 asks no team for an order.
+- **Rejected**: Each floor against the other's proposed loss alone, which cuts
+  both and leaves the team at 4, above the floor neither Worship needed. Asking
+  the team the order: no player has a choice to make.
+- **Site**: `Parun.Engine.Damage.processDamage`, proved by the scenario
+  `cr-120-4d-two-teammates-worships-settle-in-seat-order`.
+- **Issue**: #9254.
+
+## Whether a lifelink gain's replacement loss joins the damage's loss
+
+- **Question**: Alice controls Ob Nixilis, Captive Kingpin, Exquisite Blood and
+  Tainted Remedy. In one combat damage step bob is dealt 1 and his lifelinker
+  deals 1, so he loses 1 to the damage and 1 in place of the gain. One loss of
+  2, or two of 1?
+- **Rules**: CR 119.3, 120.3f, 120.4d, 614.6, 702.15e; CR of 2026-11-06. Ob
+  Nixilis's ruling (2023-05-12) totals combat damage and says nothing of a loss
+  that is no damage.
+- **Decision**: Two. CR 702.15e makes the gain an event of its own, and the
+  loss Tainted Remedy makes happens in its place (CR 614.6). Exquisite Blood
+  triggers twice and Ob Nixilis sees bob lose exactly 1.
+- **Rejected**: One loss of 2, summing every loss a player takes in the step,
+  which also leaves Exquisite Blood seeing two.
+- **Site**: `Parun.Engine.Event.Match`'s `LifeChanges` arm, proved by the
+  scenario
+  `cr-702-15e-tainted-remedy-s-loss-of-a-lifelink-gain-is-its-own-exactly-1-for-ob-nixilis`.
+- **Issue**: #9254.
+
 ## Whether infect and toxic from one source give poison once
 
 - **Question**: CR 120.3b and 702.164c each give poison counters for one source's

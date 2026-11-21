@@ -65,7 +65,7 @@
     "step": "PrecombatMain"
   },
   "description": "CR 510.2 / 603.2: three 1/1s dealing combat damage to bob at once make him lose 3 in total, so Ob Nixilis, Captive Kingpin does not trigger",
-  "note": "The card's ruling of 2023-05-12: combat damage to an opponent is looked at in total. Each Memnite' damage is its own loss of 1, all in one combat damage step; Ob Nixilis gets no counter and nothing is exiled. Reading each loss alone would give it a counter.",
+  "note": "The card's ruling of 2023-05-12: combat damage to an opponent is looked at in total. The three Memnites' damage in one combat damage step is one loss of 3; Ob Nixilis gets no counter and nothing is exiled. Reading each source's damage alone would give it a counter.",
   "timeline": [
     {
       "do": {
