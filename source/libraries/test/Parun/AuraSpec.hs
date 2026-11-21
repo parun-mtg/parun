@@ -23,6 +23,7 @@
 -- proving it needs a real cast through this file's machinery.
 module Parun.AuraSpec where
 
+import qualified Control.Monad as Monad
 import qualified Control.Monad.Trans.State.Strict as State
 import qualified Data.Foldable as Foldable
 import qualified Data.List as List
@@ -355,7 +356,7 @@ equipmentSpec s registry = Spec.describe s "Equipment" $ do
     Spec.assertEqWith s "the enchanted Piker is tapped, the bystander is not" (tappedOf enchanted resolved, tappedOf bystander resolved) (Just TapState.Tapped, Just TapState.Untapped)
     Spec.assertEqWith s "while the trigger waits, the enchanted Piker is not alike with the bystander" (alike enchanted bystander, alike bystander enchanted) (False, False)
     Spec.assertEqWith s "control leg: two Pikers the Aura never touched are alike" (alike bystander untouched) True
-    Spec.assertEqWith s "CR 608.2h the departed Aura's view names the host it had" (fmap (fmap Filter.attachedTo . Projection.viewWithLastKnownAnywhere destroyed) auras) [Just (Just enchanted)]
+    Spec.assertEqWith s "CR 608.2h the departed Aura's view names the host it had" (fmap (fmap (Recipient.objectOf Monad.<=< Filter.attachedTo) . Projection.viewWithLastKnownAnywhere destroyed) auras) [Just (Just enchanted)]
     Spec.assertEqWith s "setup: one Aura, gone, its trigger waiting, the Piker untapped" (length auras, any (`Set.member` GameState.battlefield destroyed) auras, length (TurnRegisters.stack (GameState.turn destroyed)), tappedOf enchanted destroyed) (1, False, 1, Just TapState.Untapped)
   -- CR 301.5c's RESTRICTION, the arm the case above is the exception to. One
   -- board, one move, and the only difference is a Humility on the battlefield:

@@ -1,0 +1,35 @@
+{
+  "description": "CR 303.4b / 701.3a Curse of Surveillance: at the enchanted player's upkeep, the targets other than that player each draw one card per Curse attached to that player",
+  "note": "Two Curses enchant bob, Surveillance itself and carol's Hospitality; alice's Curse of Vitality enchants carol. At bob's upkeep the trigger offers alice and carol but not bob, and each draws two: a count of every Curse would be three, and a count blind to an Aura's player host would be zero.",
+  "board": {
+    "active": "bob",
+    "turn": 2,
+    "step": "Untap",
+    "seats": [
+      {
+        "name": "alice",
+        "battlefield": [
+          { "card": "Curse of Surveillance", "label": "surveil", "attached": "bob" },
+          { "card": "Curse of Vitality", "attached": "carol" }
+        ],
+        "library": [{ "card": "Island" }, { "card": "Island" }, { "card": "Island" }, { "card": "Island" }]
+      },
+      {
+        "name": "bob",
+        "library": [{ "card": "Swamp" }, { "card": "Swamp" }, { "card": "Swamp" }, { "card": "Swamp" }]
+      },
+      {
+        "name": "carol",
+        "battlefield": [{ "card": "Curse of Hospitality", "attached": "bob" }],
+        "library": [{ "card": "Plains" }, { "card": "Plains" }, { "card": "Plains" }, { "card": "Plains" }]
+      }
+    ]
+  },
+  "timeline": [
+    { "turn": 2, "step": "Upkeep", "player": "alice", "check": { "View": { "of": "Prompt", "is": { "kind": "AnnounceTargets", "offer": { "source": "trigger of $surveil", "recipients": [["targets", [["Player", "alice"], ["Player", "carol"]]]], "amounts": [["targets", 2]] } } } } },
+    { "turn": 2, "step": "Upkeep", "player": "alice", "source": "$surveil", "do": { "ChooseTargets": { "targets": ["$alice", "$carol"] } } },
+    { "turn": 2, "step": "DrawStep", "player": "bob", "check": { "Count": { "player": "alice", "zone": "Hand", "card": "Island", "count": 2 } } },
+    { "turn": 2, "step": "DrawStep", "player": "bob", "check": { "Count": { "player": "carol", "zone": "Hand", "card": "Plains", "count": 2 } } },
+    { "turn": 2, "step": "DrawStep", "player": "bob", "check": { "Count": { "player": "bob", "zone": "Hand", "card": "Swamp", "count": 1 } } }
+  ]
+}

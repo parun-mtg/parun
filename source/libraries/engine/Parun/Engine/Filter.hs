@@ -559,19 +559,18 @@ data View = MkView
     -- re-entering `gather`. Descending into a nest descends the FILTER, which is
     -- finite, so an attachment cycle terminates too.
     attachedViews :: [View],
-    -- CR 701.3a / 301.5a: WHICH object this candidate is attached to, for
-    -- IsAttachedTo Source to compare against Context.source -- the id and not a
-    -- Bool, because the atom's answer depends on the match's source and this
-    -- record is built once per candidate.
+    -- CR 701.3a / 301.5a / 303.4b: WHICH object or player this candidate is
+    -- attached to, for IsAttachedTo to compare against its anchor -- the
+    -- recipient and not a Bool, because the atom's answer depends on the match's
+    -- context and this record is built once per candidate.
     --
-    -- Nothing where Object.attachedTo is, and also where it names a PLAYER (CR
-    -- 303.4's other destination), which is Recipient.objectOf's Nothing. Reads no
-    -- second projection, so unlike `attachedToView` it needs no laziness
-    -- argument -- an ObjectId is not a characteristic. Deliberately NOT narrowed
-    -- to a host on the battlefield the way `attachedToView` is; see
+    -- Nothing where Object.attachedTo is. Reads no second projection, so unlike
+    -- `attachedToView` it needs no laziness argument -- a recipient is not a
+    -- characteristic. Deliberately NOT narrowed to a host on the battlefield the
+    -- way `attachedToView` is; see
     -- Parun.Engine.Projection.View.viewOfCharacteristics. For an object that has
     -- left, the host it had as it left (Parun.Types.LastKnown.host).
-    attachedTo :: Maybe ObjectId.ObjectId,
+    attachedTo :: Maybe Recipient.Recipient,
     -- CR 701.3a: could the SUBJECT of the attach now being performed -- the
     -- permanent an Effect.AttachTarget is moving -- legally be attached to this
     -- candidate?
@@ -2406,24 +2405,31 @@ sharesAnchored trait anchor = case anchor of
     landTypes = Set.filter Subtype.Engine.isLandType . subtypes
     creatureTypes = Set.filter Subtype.Engine.isCreatureType . subtypes
 
--- CR 701.3a / 301.5a: does a candidate attached to this object relate to the
--- anchor -- the match's source, or under CR 613.4c the object the surrounding
--- quantity is aimed at, which need not be the source.
+-- CR 701.3a / 301.5a: does a candidate attached to this object or player
+-- relate to the anchor -- the match's source, or under CR 613.4c the object the
+-- surrounding quantity is aimed at, which need not be the source. Neither is a
+-- player, so a candidate attached to one (CR 303.4b) matches neither.
 --
 -- At Bound, the objects the slot holds, and VACUOUSLY TRUE for a slot with no
 -- key in slotControllers, ControllerRelatesToBound's posture and for its reason:
 -- CR 601.2c's offer is made before the sibling target is chosen, and
 -- Parun.Engine.Target.selectionLegal's joint check narrows it. The scenarios
--- named for Fiery Annihilation prove it.
-attachedAnchored :: Anchor.Anchor nested -> Maybe (Context -> ObjectId.ObjectId -> Bool)
+-- named for Fiery Annihilation prove it. A candidate attached to a PLAYER asks
+-- the slot's player half, IsBound's reading, and with no vacuous answer:
+-- Curse of Surveillance's "Curses attached to that player", which the scenario
+-- curse-of-surveillance-draws-per-curse-attached-to-the-enchanted-player proves.
+attachedAnchored :: Anchor.Anchor nested -> Maybe (Context -> Recipient.Recipient -> Bool)
 attachedAnchored anchor = case anchor of
-  Anchor.Source -> Just (\context host -> source context == Just host)
-  Anchor.Evaluated -> Just (\context host -> evaluated context == Just host)
+  Anchor.Source -> Just (\context -> objectHost (\host -> source context == Just host))
+  Anchor.Evaluated -> Just (\context -> objectHost (\host -> evaluated context == Just host))
   Anchor.Bound Nothing slot ->
     Just
-      ( \context host ->
-          Map.notMember slot (slotControllers context)
-            || Set.member host (Map.findWithDefault Set.empty slot (slotObjects context))
+      ( \context attachment -> case (Recipient.objectOf attachment, Recipient.playerOf attachment) of
+          (Just host, _) ->
+            Map.notMember slot (slotControllers context)
+              || Set.member host (Map.findWithDefault Set.empty slot (slotObjects context))
+          (Nothing, Just pid) -> Set.member pid (Map.findWithDefault Set.empty slot (slotPlayers context))
+          (Nothing, Nothing) -> False
       )
   -- Unprinted: a slot narrowed to the members the candidate's holder holds.
   -- sharesAnchored's lint keeps it out of card data too.
@@ -2433,6 +2439,8 @@ attachedAnchored anchor = case anchor of
   Anchor.YourCommander -> Nothing
   -- The candidate's own host is the candidate's attachment, not an anchor.
   Anchor.Host -> Nothing
+  where
+    objectHost answer = maybe False answer . Recipient.objectOf
 
 -- CR 205.2a: a view's card types, among the named ones where a Trait names some.
 cardTypesAmong :: Maybe (Set.Set CardType.CardType) -> View -> Set.Set CardType.CardType
@@ -3070,7 +3078,7 @@ matches context view predicate = case predicate of
   -- candidate's HOST against the anchored object, rather than the candidate
   -- itself. A live read of Object.attachedTo, so an Equipment unequipped by CR
   -- 704.5n stops matching at once. Vacuously False where the candidate is
-  -- attached to nothing or to a player, and where nothing fills the anchor.
+  -- attached to nothing, and where nothing fills the anchor.
   Filter.IsAttachedTo anchor -> case (attachedTo view, attachedAnchored anchor) of
     (Just host, Just anchored) -> anchored context host
     _ -> False
