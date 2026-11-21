@@ -33,7 +33,6 @@ import qualified Parun.Engine.CostAdjustments as CostAdjustments.Engine
 import qualified Parun.Engine.Count as Count
 import qualified Parun.Engine.CounterRestriction as CounterRestriction
 import qualified Parun.Engine.Damage as Damage
-import qualified Parun.Engine.Daytime as Daytime
 import qualified Parun.Engine.Decide as Decide
 import qualified Parun.Engine.Departure as Departure
 import qualified Parun.Engine.Event as Event
@@ -1056,7 +1055,7 @@ turnPermanentsOver legal chosen resolving controller source ref = do
 -- half of this question. What this adds is the two gates that belong to an
 -- INSTRUCTION rather than to the act, and a static ability's turn has neither: CR
 -- 701.27g's already-turned check, and CR 702.145b/e's "can't transform except due
--- to its daybound/nightbound ability" (Parun.Engine.Daytime.restrictsTransform).
+-- to its daybound/nightbound ability" (Parun.Engine.Event.restrictsTransform).
 --
 -- Asked of the PRE-TURN board (CR 608.2f's simultaneous processing), so no member
 -- of the batch is judged against a board a sibling has already turned over on,
@@ -1064,7 +1063,7 @@ turnPermanentsOver legal chosen resolving controller source ref = do
 turnsOver :: Map.Map ObjectId PC.ProjectedCharacteristics -> ObjectId -> GameState -> ObjectId -> Bool
 turnsOver pcs resolving frozen oid =
   not (alreadyTurnedFor resolving oid frozen)
-    && not (Daytime.restrictsTransform pcs oid)
+    && not (Event.restrictsTransform pcs oid)
     && Maybe.isJust (Game.turnsTo oid frozen)
 
 -- CR 701.27g. True when this resolution must be ignored: the resolving object is

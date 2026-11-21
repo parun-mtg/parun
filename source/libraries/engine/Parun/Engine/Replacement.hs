@@ -1369,6 +1369,11 @@ breaches gs candidate rewrite pid n = case rewrite of
   -- removes it whatever the board says. Event.resolveLifeLoss never proposes a
   -- loss of 0, so there is no zero case to refuse.
   LifeLossRewrite.GainInstead -> True
+  -- Enduring Angel's "would be reduced to 0 or less", off the live total as
+  -- LeaveAtLeast's threshold is.
+  LifeLossRewrite.TransformSourceOrLose _ -> case Map.lookup pid (GameState.players gs) of
+    Nothing -> False
+    Just player -> Player.life player - toInteger n <= 0
 
 -- CR 609.1: whether a gain's cause is the one a row's pattern names. Rain of
 -- Gore's "a spell or ability would cause its controller to gain life" is the
@@ -2629,6 +2634,9 @@ readsApplier re = case re of
   -- so two rows alike in `effect` gain the same player the same life whoever holds
   -- them -- the resizing arms' answer, not the exiling arm's.
   ReplacementEffect.LifeLossR (LifeLossR.MkLifeLossR _ LifeLossRewrite.GainInstead) -> False
+  -- The life set and the loss are the seat the EVENT named, FromGraveyardOrLose's
+  -- answer; what turns over is the source, readsSource's question.
+  ReplacementEffect.LifeLossR (LifeLossR.MkLifeLossR _ (LifeLossRewrite.TransformSourceOrLose _)) -> False
   -- The gain side's whole rewrite sum, and the two resizing loss arms' answer:
   -- the scaling is the effect's own field and the player is the one the event
   -- named. Cased on the inner sum, LifeLossR's discipline above for its reason.
@@ -2920,6 +2928,9 @@ readsSource effect = case effect of
   ReplacementEffect.TransformR {} -> False
   ReplacementEffect.UntapR _ -> False
   ReplacementEffect.LifeLossR (LifeLossR.MkLifeLossR _ (LifeLossRewrite.Scaled scaling)) -> computedScaling scaling
+  -- Enduring Angel transforms the row's own source, so two such rows leave
+  -- different boards: DestructionRewrite.UmbraArmor's answer.
+  ReplacementEffect.LifeLossR (LifeLossR.MkLifeLossR _ (LifeLossRewrite.TransformSourceOrLose _)) -> True
   ReplacementEffect.LifeLossR {} -> False
   ReplacementEffect.LifeGainR (LifeGainR.MkLifeGainR _ _ (LifeGainRewrite.Scaled scaling)) -> computedScaling scaling
   ReplacementEffect.LifeGainR {} -> False

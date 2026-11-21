@@ -1,0 +1,200 @@
+{
+  "faces": [
+    {
+      "keywords": [
+        {
+          "type": "DoubleStrike"
+        },
+        {
+          "type": "Flying"
+        }
+      ],
+      "manaCost": [
+        {
+          "type": "Generic",
+          "value": 2
+        },
+        {
+          "type": "OfType",
+          "value": {
+            "type": "Colored",
+            "value": "White"
+          }
+        },
+        {
+          "type": "OfType",
+          "value": {
+            "type": "Colored",
+            "value": "White"
+          }
+        },
+        {
+          "type": "OfType",
+          "value": {
+            "type": "Colored",
+            "value": "White"
+          }
+        }
+      ],
+      "name": "Enduring Angel",
+      "oracleText": "Flying, double strike\nYou have hexproof.\nIf your life total would be reduced to 0 or less, instead transform this creature and your life total becomes 3. Then if this creature didn't transform this way, you lose the game.",
+      "playerAbilities": [
+        {
+          "effect": {
+            "type": "CantBeTargetedBy",
+            "value": {
+              "scope": {
+                "type": "Opponent"
+              }
+            }
+          },
+          "scope": {
+            "type": "You"
+          }
+        }
+      ],
+      "power": {
+        "type": "Literal",
+        "value": 3
+      },
+      "replacementEffects": [
+        {
+          "effect": {
+            "type": "LifeLossR",
+            "value": {
+              "matching": {
+                "whose": {
+                  "type": "You"
+                }
+              },
+              "rewrite": {
+                "type": "TransformSourceOrLose",
+                "value": 3
+              }
+            }
+          }
+        }
+      ],
+      "toughness": {
+        "type": "Literal",
+        "value": 3
+      },
+      "typeLine": {
+        "subtypes": [
+          "Angel"
+        ],
+        "types": [
+          "Creature"
+        ]
+      }
+    },
+    {
+      "characteristicPT": {
+        "power": {
+          "type": "LifeTotal",
+          "value": {
+            "type": "Relative",
+            "value": "You"
+          }
+        },
+        "toughness": {
+          "type": "LifeTotal",
+          "value": {
+            "type": "Relative",
+            "value": "You"
+          }
+        }
+      },
+      "colorIndicator": [
+        "White"
+      ],
+      "keywords": [
+        {
+          "type": "Flying"
+        }
+      ],
+      "name": "Angelic Enforcer",
+      "oracleText": "Flying\nYou have hexproof.\nAngelic Enforcer's power and toughness are each equal to your life total.\nWhenever this creature attacks, double your life total.",
+      "playerAbilities": [
+        {
+          "effect": {
+            "type": "CantBeTargetedBy",
+            "value": {
+              "scope": {
+                "type": "Opponent"
+              }
+            }
+          },
+          "scope": {
+            "type": "You"
+          }
+        }
+      ],
+      "power": {
+        "type": "Star"
+      },
+      "toughness": {
+        "type": "Star"
+      },
+      "triggeredAbilities": [
+        {
+          "condition": {
+            "type": "Attacks",
+            "value": {
+              "type": "Attacker",
+              "value": {}
+            }
+          },
+          "modal": {
+            "modes": [
+              {
+                "clauses": [
+                  {
+                    "effects": [
+                      {
+                        "type": "SetLifeTotal",
+                        "value": {
+                          "player": {
+                            "type": "Relative",
+                            "value": "You"
+                          },
+                          "quantity": {
+                            "type": "Times",
+                            "value": {
+                              "factor": {
+                                "type": "Literal",
+                                "value": 2
+                              },
+                              "quantity": {
+                                "type": "LifeTotal",
+                                "value": {
+                                  "type": "Relative",
+                                  "value": "You"
+                                }
+                              }
+                            }
+                          }
+                        }
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          }
+        }
+      ],
+      "typeLine": {
+        "subtypes": [
+          "Angel"
+        ],
+        "types": [
+          "Creature"
+        ]
+      }
+    }
+  ],
+  "layout": {
+    "type": "Transforming"
+  }
+}
