@@ -7,6 +7,7 @@ import qualified Parun.Types.Card as Card
 import qualified Parun.Types.Effect as Effect
 import qualified Parun.Types.GrantedAbility as GrantedAbility
 import qualified Parun.Types.ObjectId as ObjectId
+import qualified Parun.Types.PendingOrigin as PendingOrigin
 import qualified Parun.Types.PlayerId as PlayerId
 import qualified Parun.Types.Recipient as Recipient
 import qualified Parun.Types.SlotName as SlotName
@@ -38,10 +39,8 @@ data PendingReplacementEffect = MkPendingReplacementEffect
     targets :: Map.Map SlotName.SlotName (Set.Set Recipient.Recipient),
     controller :: PlayerId.PlayerId,
     source :: ObjectId.ObjectId,
-    -- | CR 400.7 / 614.6: the drain binds what the Binding.departedPermanent
-    -- target arrived as under Binding.became, so a ZoneChangeR rider names the
-    -- card it moved (Ravenloft Adventurer's "instead exile it and put a hit
-    -- counter on it"). False for every other queuer.
-    bindsArrival :: Bool
+    -- | Which kind of replacement queued the row, for what the drain does
+    -- besides running the effects.
+    origin :: PendingOrigin.PendingOrigin
   }
   deriving (Eq, Ord, Show)

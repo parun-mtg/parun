@@ -1412,6 +1412,8 @@ library codec
     Parun.Codec.PayObligationSpec
     Parun.Codec.PendingEntryEffect
     Parun.Codec.PendingEntryEffectSpec
+    Parun.Codec.PendingOrigin
+    Parun.Codec.PendingOriginSpec
     Parun.Codec.PendingReplacementEffect
     Parun.Codec.PendingReplacementEffectSpec
     Parun.Codec.PendingSkipEffect
@@ -3653,6 +3655,7 @@ library types
     Parun.Types.PayObligation
     Parun.Types.PayOffer
     Parun.Types.PendingEntryEffect
+    Parun.Types.PendingOrigin
     Parun.Types.PendingReplacementEffect
     Parun.Types.PendingSkipEffect
     Parun.Types.PendingTrigger
