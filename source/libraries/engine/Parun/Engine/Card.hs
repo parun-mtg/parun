@@ -144,6 +144,7 @@ faceDownFace listed =
       Face.replacementEffects = [a | GrantedAbility.Replacement a <- listedAbilities],
       Face.triggeredAbilities = [a | GrantedAbility.Triggered a <- listedAbilities],
       Face.delayedAbilities = Map.empty,
+      Face.lentKeywords = [],
       Face.rooms = Seq.empty,
       Face.dungeonEntryQuality = Nothing,
       Face.castingPermissions = [],
@@ -495,6 +496,7 @@ merge2 l r =
           -- off this view (CR 702.102b), where before it was combined-view-only and
           -- CR 709.3b kept every resolution on one half.
           Face.delayedAbilities = Map.union (Face.delayedAbilities l) (Face.delayedAbilities r),
+          Face.lentKeywords = Face.lentKeywords l <> Face.lentKeywords r,
           -- Unreachable rather than merged: CR 709.4's combined view is a Room's, and
           -- CR 309.2c keeps a dungeon card out of every zone but the command zone, so
           -- no card has both halves and rooms. Concatenating would be wrong if one ever
@@ -1701,6 +1703,7 @@ subtractHalf face =
       Face.replacementEffects = [],
       Face.triggeredAbilities = [],
       Face.delayedAbilities = Map.empty,
+      Face.lentKeywords = [],
       Face.rooms = Seq.empty,
       Face.dungeonEntryQuality = Nothing,
       Face.castingPermissions = [],

@@ -62,6 +62,7 @@ import qualified Parun.Types.HandAction as HandAction
 import qualified Parun.Types.Keyword as Keyword
 import qualified Parun.Types.KeywordCostPart as KeywordCostPart
 import qualified Parun.Types.KeywordCostRestriction as KeywordCostRestriction
+import qualified Parun.Types.LentKeyword as LentKeyword
 import qualified Parun.Types.Loyalty as Loyalty
 import qualified Parun.Types.ManaCost as ManaCost
 import qualified Parun.Types.ManaSymbol as ManaSymbol
@@ -179,6 +180,7 @@ baseFace =
       Face.characteristicPT = Nothing,
       Face.characteristicColors = Nothing,
       Face.delayedAbilities = Map.empty,
+      Face.lentKeywords = [],
       Face.rooms = Seq.empty,
       Face.dungeonEntryQuality = Nothing,
       Face.playerAbilities = [],
@@ -247,6 +249,7 @@ minimalFace =
       Face.replacementEffects = [],
       Face.triggeredAbilities = [],
       Face.delayedAbilities = Map.empty,
+      Face.lentKeywords = [],
       Face.rooms = Seq.empty,
       Face.dungeonEntryQuality = Nothing,
       Face.castingPermissions = [],
@@ -319,6 +322,7 @@ populatedFace =
       Face.colorIndicator = Set.singleton Color.White,
       Face.characteristicPT = Just CharacteristicPT.MkCharacteristicPT {CharacteristicPT.power = Quantity.Measure Measure.ManaValue, CharacteristicPT.toughness = Quantity.Measure Measure.ManaValue},
       Face.delayedAbilities = Map.singleton (AbilityName.MkAbilityName (Text.pack "trigger")) minimalTriggeredAbility,
+      Face.lentKeywords = [LentKeyword.MkLentKeyword {LentKeyword.keyword = Keyword.Flanking, LentKeyword.instances = 1, LentKeyword.lender = AbilityName.MkAbilityName (Text.pack "acquiredFrom7"), LentKeyword.triggered = True, LentKeyword.restrictions = []}],
       Face.rooms = Seq.empty,
       Face.dungeonEntryQuality = Nothing,
       Face.playerAbilities = [PlayerStaticAbility.MkPlayerStaticAbility {PlayerStaticAbility.scope = PlayerScope.Related PlayerRelation.You, PlayerStaticAbility.condition = Nothing, PlayerStaticAbility.functionsFrom = Set.empty, PlayerStaticAbility.name = Nothing, PlayerStaticAbility.effect = PlayerEffect.CantCastSpells}],
@@ -368,6 +372,7 @@ populatedFaceJson =
     <> "\"loyalty\":{\"type\":\"Literal\",\"value\":3},\"colorIndicator\":[\"White\"],\"characteristicPT\":{\"power\":{\"type\":\"Measure\",\"value\":\"ManaValue\"},\"toughness\":{\"type\":\"Measure\",\"value\":\"ManaValue\"}},"
     <> "\"delayedAbilities\":{\"trigger\":{\"condition\":{\"type\":\"Enters\",\"value\":{}},"
     <> "\"modal\":{\"modes\":[{}]}}},"
+    <> "\"lentKeywords\":[{\"keyword\":{\"type\":\"Flanking\"},\"lender\":\"acquiredFrom7\",\"triggered\":true}],"
     <> "\"playerAbilities\":[{\"scope\":{\"type\":\"You\"},\"effect\":{\"type\":\"CantCastSpells\"}}],"
     <> "\"blockRequirements\":[{\"attacker\":{\"type\":\"Attached\"}}],"
     <> "\"blockPermissions\":[{\"affected\":{\"type\":\"Attached\"},\"additional\":{\"type\":\"Literal\",\"value\":1}}],"

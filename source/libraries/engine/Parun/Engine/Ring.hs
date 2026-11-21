@@ -196,6 +196,7 @@ theRingEmblem temptations =
                 if temptations >= 3
                   then Map.singleton theRingBlockerSacrificeName theRingBlockerSacrifice
                   else Map.empty,
+              Face.lentKeywords = [],
               Face.rooms = Seq.empty,
               Face.dungeonEntryQuality = Nothing,
               Face.castingPermissions = [],

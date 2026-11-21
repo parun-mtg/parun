@@ -3101,6 +3101,8 @@ data FaceChildren card f = MkFaceChildren
     faceReplacement :: PrintedReplacement.PrintedReplacement card (GrantedAbility.GrantedAbility card) (Effect.Effect card (GrantedAbility.GrantedAbility card)) -> f (PrintedReplacement.PrintedReplacement card (GrantedAbility.GrantedAbility card) (Effect.Effect card (GrantedAbility.GrantedAbility card))),
     -- | A triggered ability (CR 603), printed or delayed (CR 603.7), whole.
     faceTriggered :: TriggeredAbility.TriggeredAbility card (GrantedAbility.GrantedAbility card) -> f (TriggeredAbility.TriggeredAbility card (GrantedAbility.GrantedAbility card)),
+    -- | A keyword it has through its triggered abilities alone (CR 702.1d), whole.
+    faceLentKeyword :: LentKeyword.LentKeyword -> f LentKeyword.LentKeyword,
     -- | A dungeon's room (CR 309.4), whole.
     faceRoom :: DungeonRoom.DungeonRoom card -> f (DungeonRoom.DungeonRoom card),
     -- | A permission to cast (CR 601.3), whole.
@@ -3179,6 +3181,7 @@ faceLeaves =
       faceActivated = pure,
       faceReplacement = pure,
       faceTriggered = pure,
+      faceLentKeyword = pure,
       faceRoom = pure,
       faceCastingPermission = pure,
       faceCastingRestriction = pure,
@@ -3213,7 +3216,7 @@ faceLeaves =
 
 -- | A face's children. A delayed ability's name and a mode cost's index are keys, left as they are.
 faceChildren :: (Applicative f) => FaceChildren card f -> Face.Face card -> f (Face.Face card)
-faceChildren c (Face.MkFace name oracleText manaCost typeLine power toughness loyalty defense startingIntensity vanguard canBeYourCommander claimsStartingPlayer additionalHand anteOnly circlesTwo deckLimit commanderDeckRules pregameExile keywords colorIndicator characteristicPT characteristicColors staticAbilities spell activatedAbilities replacementEffects triggeredAbilities delayedAbilities rooms dungeonEntryQuality castingPermissions castingRestrictions enchant counterability copyability additionalCosts additionalCostChoices modeCosts modeChooser maximumX minimumX alternativeCosts costReductions playerAbilities blockRequirements blockPermissions attackRequirements combatRestrictions objectRestrictions untapRestrictions keywordCostRestrictions targetRestrictions rulePermissions attachRestrictions entryRestrictions counterRestrictions activationProhibitions attackCosts blockCosts counterLimits mulliganActions openingHandActions specialActions) =
+faceChildren c (Face.MkFace name oracleText manaCost typeLine power toughness loyalty defense startingIntensity vanguard canBeYourCommander claimsStartingPlayer additionalHand anteOnly circlesTwo deckLimit commanderDeckRules pregameExile keywords colorIndicator characteristicPT characteristicColors staticAbilities spell activatedAbilities replacementEffects triggeredAbilities delayedAbilities lentKeywords rooms dungeonEntryQuality castingPermissions castingRestrictions enchant counterability copyability additionalCosts additionalCostChoices modeCosts modeChooser maximumX minimumX alternativeCosts costReductions playerAbilities blockRequirements blockPermissions attackRequirements combatRestrictions objectRestrictions untapRestrictions keywordCostRestrictions targetRestrictions rulePermissions attachRestrictions entryRestrictions counterRestrictions activationProhibitions attackCosts blockCosts counterLimits mulliganActions openingHandActions specialActions) =
   Face.MkFace name oracleText manaCost typeLine
     <$> traverse (facePower c) power
     <*> traverse (faceToughness c) toughness
@@ -3239,6 +3242,7 @@ faceChildren c (Face.MkFace name oracleText manaCost typeLine power toughness lo
     <*> traverse (faceReplacement c) replacementEffects
     <*> traverse (faceTriggered c) triggeredAbilities
     <*> traverse (faceTriggered c) delayedAbilities
+    <*> traverse (faceLentKeyword c) lentKeywords
     <*> traverse (faceRoom c) rooms
     <*> pure dungeonEntryQuality
     <*> traverse (faceCastingPermission c) castingPermissions

@@ -762,6 +762,7 @@ faceNames asking onCard =
           Children.faceActivated = Const.Const . activatedAbilityNames asking onCard (grantedAbilityNames asking onCard),
           Children.faceReplacement = Const.Const . printedReplacementNames asking onCard (grantedAbilityNames asking onCard) (effectNames asking onCard (grantedAbilityNames asking onCard)),
           Children.faceTriggered = Const.Const . triggeredAbilityNames asking onCard (grantedAbilityNames asking onCard),
+          Children.faceLentKeyword = Const.Const . lentKeywordNames asking,
           Children.faceRoom = Const.Const . dungeonRoomNames asking onCard,
           Children.faceCastingPermission = Const.Const . castingPermissionNames asking,
           Children.faceCastingRestriction = Const.Const . castingRestrictionNames asking,
