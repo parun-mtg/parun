@@ -39,6 +39,7 @@ import qualified Parun.Types.Condition as Condition.Type
 import qualified Parun.Types.ContinuousEffect as ContinuousEffect
 import qualified Parun.Types.ControlDuration as ControlDuration
 import qualified Parun.Types.Cost as Cost
+import qualified Parun.Types.DelayedKind as DelayedKind
 import qualified Parun.Types.DelayedTrigger as DelayedTrigger
 import qualified Parun.Types.DiscardSubject as DiscardSubject
 import qualified Parun.Types.DiscardTrigger as DiscardTrigger
@@ -772,7 +773,7 @@ armBecame oid obj gs1 arrivals = do
   let permanents = filter (\arrival -> fmap Object.zone (Game.lookupObject arrival gs) == Just Zone.Battlefield) (Foldable.toList arrivals)
       stillHas keyword = Map.member keyword (Projection.keywordsOf oid gs1)
       ability = Keyword.resolutionDelayedAbility (Monad.mfilter stillHas (Object.castUsing obj)) >>= Keyword.mintedDelayedAbility
-      arm delayed permanent g = Event.armDelayed delayed (Projection.delayedSnapshotOf oid gs1) oid (Game.acquisitionOf oid g) Nothing (Resolve.spellController obj oid gs1) (Map.singleton Keyword.becameSlot (Binding.toObject permanent)) (Just TurnWindow.AnyTurn) Nothing g
+      arm delayed permanent g = Event.armDelayed DelayedKind.Ordinary delayed (Projection.delayedSnapshotOf oid gs1) oid (Game.acquisitionOf oid g) Nothing (Resolve.spellController obj oid gs1) (Map.singleton Keyword.becameSlot (Binding.toObject permanent)) (Just TurnWindow.AnyTurn) Nothing g
       -- CR 603.7g: a delayed ability the cast itself created
       -- (Parun.Engine.Cast.armCastUnder) names the spell under that slot until
       -- now. Ahead of the arming below, whose entries already name a permanent.

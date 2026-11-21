@@ -131,6 +131,7 @@ import qualified Parun.Types.CountersOnPayer as CountersOnPayer
 import qualified Parun.Types.CountersOnThis as CountersOnThis
 import qualified Parun.Types.Decider as Decider
 import qualified Parun.Types.DefinedX as DefinedX
+import qualified Parun.Types.DelayedKind as DelayedKind
 import qualified Parun.Types.DelayedTrigger as DelayedTrigger
 import qualified Parun.Types.DiscardCards as DiscardCards
 import qualified Parun.Types.DiscardCause as DiscardCause
@@ -7094,6 +7095,7 @@ armSpendTriggers sid spent gs =
   let fires trigger = Game.isSpell sid gs && ManaRider.spentOnMatches sid gs (SpendTrigger.casts trigger)
       arm g trigger =
         Event.armDelayed
+          DelayedKind.Ordinary
           (SpendTrigger.ability trigger)
           (Projection.delayedSnapshotOf (SpendTrigger.source trigger) g)
           (SpendTrigger.source trigger)

@@ -25,9 +25,10 @@ data ArmDelayedTrigger ability = MkArmDelayedTrigger
     -- of the quotation. Nothing for an arm whose `name` the source's own card
     -- declares (Face.delayedAbilities).
     ability :: Maybe ability,
-    -- | Who controls the armed ability: Nothing is CR 603.7d-e's controller of
-    -- the arming resolution; a player named here gets it instead, Loch Larent's
-    -- "Target opponent gets a one-time boon", whose "you" is that player.
-    recipient :: Maybe PlayerRef.PlayerRef
+    -- | A one-time boon for this player (Tenacious Pup's ruling), who controls
+    -- it in place of CR 603.7d-e's controller of the arming resolution: "you
+    -- get" (Dunbarrow Revivalist), or Loch Larent's "Target opponent gets",
+    -- whose "you" is that player. Nothing is an ordinary delayed trigger.
+    boon :: Maybe PlayerRef.PlayerRef
   }
   deriving (Eq, Ord, Show)

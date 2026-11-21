@@ -138,6 +138,9 @@ data Quantity
   | -- | CR 726.1: 1 if that player is the monarch, else 0; no monarch reads 0
     -- (CR 726.5).
     IsMonarch PlayerRef.PlayerRef
+  | -- | How many unfired one-time boons that player has (Tenacious Pup's
+    -- ruling): their delayed triggers marked DelayedKind.OneTimeBoon.
+    Boons PlayerRef.PlayerRef
   | -- | CR 732.1: 1 if the game has that designation, else 0; neither reads 0.
     HasDaytime Daytime.Daytime
   | -- | CR 702.131c \/ 702.195b: 1 if that player has that rest-of-game mark, else

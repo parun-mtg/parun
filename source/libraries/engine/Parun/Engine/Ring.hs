@@ -364,7 +364,7 @@ theRingSacrificesTheBlocker =
               -- "at end of combat" states no duration, so it fires once.
               ArmDelayedTrigger.duration = Nothing,
               ArmDelayedTrigger.ability = Nothing,
-              ArmDelayedTrigger.recipient = Nothing
+              ArmDelayedTrigger.boon = Nothing
             }
    in Mint.trigger (TriggerCondition.Blocks (BlockTrigger.MkBlockTrigger BlockRole.Attacker yourRingBearer (BlockCount.EachCreature (Filter.And [])) Batching.EachOccurrence Nothing)) (Seq.singleton effect)
 

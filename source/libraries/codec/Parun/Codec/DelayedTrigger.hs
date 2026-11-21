@@ -5,6 +5,7 @@ module Parun.Codec.DelayedTrigger where
 import qualified Data.Map.Strict as Map
 import qualified Parun.Codec.Binding as Binding
 import qualified Parun.Codec.Card as Card
+import qualified Parun.Codec.DelayedKind as DelayedKind
 import qualified Parun.Codec.EventGroup as EventGroup
 import qualified Parun.Codec.Expiry as Expiry
 import qualified Parun.Codec.GrantedAbility as GrantedAbility
@@ -17,6 +18,7 @@ import qualified Parun.Codec.TurnWindow as TurnWindow
 import qualified Parun.JsonCodec.Codec as Codec
 import qualified Parun.JsonCodec.Common as Common
 import qualified Parun.JsonCodec.Fields as Fields
+import qualified Parun.Types.DelayedKind as DelayedKind
 import qualified Parun.Types.DelayedTrigger as DelayedTrigger
 
 -- | The wire format is unchanged by the conversion to a bundle; what it adds is
@@ -41,6 +43,8 @@ codec = Fields.object $ do
   -- CR 603.12: always present, an entry having been created between two
   -- event groups.
   armedIn <- Fields.required "armedIn" EventGroup.codec DelayedTrigger.armedIn
+  -- Absent for an ordinary delayed trigger.
+  kind <- Fields.defaulted "kind" DelayedKind.Ordinary DelayedKind.codec DelayedTrigger.kind
   pure
     DelayedTrigger.MkDelayedTrigger
       { DelayedTrigger.ability = ability,
@@ -52,5 +56,6 @@ codec = Fields.object $ do
         DelayedTrigger.window = window,
         DelayedTrigger.expiry = expiry,
         DelayedTrigger.createdAt = createdAt,
-        DelayedTrigger.armedIn = armedIn
+        DelayedTrigger.armedIn = armedIn,
+        DelayedTrigger.kind = kind
       }

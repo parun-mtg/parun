@@ -118,6 +118,7 @@ codec =
       -- a 0/1 rather than a stored number, so there is nothing beside the
       -- reference.
       Arm.payload "IsMonarch" PlayerRef.codec Quantity.IsMonarch (\x -> case x of Quantity.IsMonarch y -> Just y; _ -> Nothing),
+      Arm.payload "Boons" PlayerRef.codec Quantity.Boons (\x -> case x of Quantity.Boons y -> Just y; _ -> Nothing),
       Arm.payload "HasDaytime" Daytime.codec Quantity.HasDaytime (\x -> case x of Quantity.HasDaytime y -> Just y; _ -> Nothing),
       -- CR 702.131c / 702.195b's marks, IsMonarch's 0/1 answer with the mark
       -- beside the reference, since a player may hold either or both.
@@ -342,6 +343,7 @@ tagOf x = case x of
   Quantity.StartingDeckSize {} -> "StartingDeckSize"
   Quantity.Speed {} -> "Speed"
   Quantity.IsMonarch {} -> "IsMonarch"
+  Quantity.Boons {} -> "Boons"
   Quantity.HasDaytime {} -> "HasDaytime"
   Quantity.HasPlayerDesignation {} -> "HasPlayerDesignation"
   Quantity.OnEventTeam {} -> "OnEventTeam"

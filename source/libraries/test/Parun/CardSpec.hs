@@ -3733,6 +3733,7 @@ quantityKindFilters quantity = case quantity of
   Quantity.Type.StartingDeckSize _ -> []
   Quantity.Type.Speed _ -> []
   Quantity.Type.IsMonarch _ -> []
+  Quantity.Type.Boons _ -> []
   Quantity.Type.HasDaytime _ -> []
   Quantity.Type.HasPlayerDesignation {} -> []
   Quantity.Type.OnEventTeam {} -> []

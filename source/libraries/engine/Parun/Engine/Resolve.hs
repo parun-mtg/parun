@@ -51,6 +51,7 @@ import qualified Parun.Types.Clause as Clause
 import Parun.Types.ClauseIndex (ClauseIndex)
 import qualified Parun.Types.ClauseIndex as ClauseIndex
 import qualified Parun.Types.Crewing as Crewing
+import qualified Parun.Types.DelayedKind as DelayedKind
 import Parun.Types.Effect (Effect)
 import qualified Parun.Types.Effect as Effect
 import qualified Parun.Types.ExilePlayPermission as ExilePlayPermission
@@ -612,6 +613,7 @@ applyEpic oid controller = do
       let archived = obj {Object.bindings = Binding.setCopy (Keyword.Engine.withoutEpic (Event.copiedSnapshot oid gs)) (Object.bindings obj)}
        in State.modify' $ \g ->
             Event.armDelayed
+              DelayedKind.Ordinary
               Keyword.Engine.epicCopy
               (Projection.delayedSnapshotOf oid g)
               oid
@@ -662,6 +664,7 @@ applyParadigm settle oid controller firstOfName = do
     else do
       Monad.when firstOfName . State.modify' $
         Event.armDelayed
+          DelayedKind.Ordinary
           Keyword.Engine.paradigmCopy
           (Projection.delayedSnapshotOf oid gs)
           oid
@@ -756,7 +759,7 @@ finishSpell settle oid face controller = do
     -- Rule 702.88a makes the delayed ability part of the SAME rewrite as the
     -- exile, so it is armed only where that rewrite is what moved the card.
     Monad.when (took reboundRow) $
-      State.modify' (\g -> Event.armDelayed Keyword.Engine.reboundUpkeep (Projection.delayedSnapshotOf newId g) newId (Game.acquisitionOf newId g) Nothing controller (Map.singleton Keyword.Engine.reboundSlot (Binding.toObject newId)) (Just TurnWindow.AnyTurn) Nothing g)
+      State.modify' (\g -> Event.armDelayed DelayedKind.Ordinary Keyword.Engine.reboundUpkeep (Projection.delayedSnapshotOf newId g) newId (Game.acquisitionOf newId g) Nothing controller (Map.singleton Keyword.Engine.reboundSlot (Binding.toObject newId)) (Just TurnWindow.AnyTurn) Nothing g)
     -- CR 716.3d's "for as long as that card remains exiled, that player may play
     -- it", which is the same sentence as the exile it hangs off.
     Monad.when (took adventureRow) . State.modify' $ \gs ->

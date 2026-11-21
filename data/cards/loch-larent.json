@@ -79,11 +79,11 @@
                       {
                         "type": "ArmDelayedTrigger",
                         "value": {
-                          "name": "loch larent boon",
-                          "recipient": {
+                          "boon": {
                             "type": "InSlot",
                             "value": "target"
-                          }
+                          },
+                          "name": "loch larent boon"
                         }
                       }
                     ]

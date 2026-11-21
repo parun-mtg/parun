@@ -976,7 +976,7 @@ effectPlayerRefs effect = case effect of
   Effect.GainControl (GainControl.MkGainControl _ _ _ to) -> [to]
   Effect.ExchangeControl {} -> []
   Effect.ArmDelayedTrigger arm ->
-    foldMap durationPlayerRefs (ArmDelayedTrigger.duration arm) <> Maybe.maybeToList (ArmDelayedTrigger.recipient arm) <> case ArmDelayedTrigger.onset arm of
+    foldMap durationPlayerRefs (ArmDelayedTrigger.duration arm) <> Maybe.maybeToList (ArmDelayedTrigger.boon arm) <> case ArmDelayedTrigger.onset arm of
       Onset.FromNextTurnOf ref -> Maybe.maybeToList ref
       Onset.Immediately -> []
       Onset.FromThatExtraTurn -> []

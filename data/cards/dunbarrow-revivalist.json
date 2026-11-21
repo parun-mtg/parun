@@ -199,6 +199,10 @@
                       {
                         "type": "ArmDelayedTrigger",
                         "value": {
+                          "boon": {
+                            "type": "Relative",
+                            "value": "You"
+                          },
                           "name": "dunbarrow revivalist boon"
                         }
                       }
