@@ -2067,7 +2067,7 @@ matchedClausePassSpec s registry =
 
             batch = do
               Engine.runTurnBasedActions Phase.PrecombatMain
-              Event.createTokens Settle.none S.alice (Printing.card giant) Nothing Nothing 1 TapState.Untapped Map.empty Nothing Set.empty
+              Event.createTokens Settle.none S.alice (NonEmpty.singleton (Printing.card giant, Nothing)) Nothing 1 TapState.Untapped Map.empty Nothing Set.empty
             advanced = S.runPure S.identityAnswer ready batch
             ((_, settled), asked) = State.runState (Engine.runGame (chronicleFirst chronicleId) advanced Engine.settleForPriority) []
         Spec.assertEqWith s "the Chronicle's chapter trigger on top, then chapter III, then its entering trigger" (triggerSourcesOnStack settled) [chronicleId, sagaId, chronicleId]
