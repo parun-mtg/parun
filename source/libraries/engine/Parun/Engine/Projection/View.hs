@@ -812,10 +812,11 @@ viewOfCharacteristics peers oid pc controller counters gs =
       -- The list must stay lazy in its spine: nothing forces the sweep unless a
       -- Filter names the atom.
       Filter.attachedViews = Maybe.mapMaybe peers (Set.toList (Game.attachments oid gs)),
-      -- CR 701.3a / 301.5a: the same attachment as the HOST'S ID -- IsAttachedTo Source
-      -- compares it against the match's source, which this builder does not know.
+      -- CR 701.3a / 301.5a / 303.4b: the same attachment as the host's id or the
+      -- enchanted player -- IsAttachedTo compares it against its anchor, which
+      -- this builder does not know.
       -- Not narrowed to the battlefield the way `attachedToView` is.
-      Filter.attachedTo = Game.hostOf oid gs,
+      Filter.attachedTo = Game.lookupObject oid gs >>= Object.attachedTo,
       -- CR 701.3a: filled only by Resolve's AttachTarget arm, the one place that
       -- knows what is being moved.
       Filter.canHostSubject = False,

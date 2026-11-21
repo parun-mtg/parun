@@ -4904,7 +4904,8 @@ blockPermissionFilters permission =
 --     Resolve.Slots.effectContext: CR 119.3's, which the Effect.LoseLife arm
 --     reads per recipient, so Filter.Context.slotNames is filled and CR
 --     709.4a's Filter.Shares Name Bound answers in its Count filter (Grim
---     Reminder); and the quantities an Effect.ModifyTarget's modification
+--     Reminder), and CR 121.1's, which the Effect.Draw arm reads per drawer
+--     (Curse of Surveillance); and the quantities an Effect.ModifyTarget's modification
 --     carries, which CR 608.2h locks as it resolves
 --     (Parun.Engine.Projection.freezeQuantities), so CR 205.3m's
 --     Filter.Shares CreatureType Bound answers there (Shared Animosity).
@@ -5531,7 +5532,7 @@ effectFilters effect = case effect of
   -- canHostSubjects sweeps the same shape -- the lint is about the positions a
   -- card author can write, not about which of them the pool has used.
   Effect.MoveToZone (MoveToZone.MkMoveToZone ref _ riders _ _ placement _) -> frame SourceHostFramed (objectRefFilters ref) <> frame Unframed (riderFilters riders <> concatMap quantityFilters (Resolve.placementQuantities placement))
-  Effect.Draw (Draw.MkDraw _ quantity _ _) -> frame Unframed (quantityFilters quantity)
+  Effect.Draw (Draw.MkDraw _ quantity _ _) -> frame ResolutionAmountFramed (quantityFilters quantity)
   -- The tally's Filter is a position a card author writes, so the lint reaches
   -- it: rule 729.1's "nonland card" is one of these, and Predict's chosen name
   -- another -- which is why the tally carries a framing of its own.

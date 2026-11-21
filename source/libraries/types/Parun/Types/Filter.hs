@@ -506,11 +506,12 @@ data Filter keyword
   | -- | CR 701.3a / 301.5a: the candidate is attached to the anchored object --
     -- Kemba's Legion's "for each Equipment attached to this creature" at Source,
     -- Bruenor Battlehammer's "for each Equipment attached to it" at Evaluated,
-    -- Fiery Annihilation's "target Equipment attached to that creature" at Bound.
-    -- Host IDENTITY and not a host quality, so it reads an ObjectId off the
+    -- Fiery Annihilation's "target Equipment attached to that creature" at Bound,
+    -- and at Bound the player it holds (CR 303.4b, Curse of Surveillance).
+    -- Host IDENTITY and not a host quality, so it reads the host off the
     -- candidate's own view; vacuously False where the candidate is attached to
-    -- nothing or to a player, and where nothing fills the anchor, but for Bound's
-    -- unanswered slot (Parun.Engine.Filter.attachedAnchored).
+    -- nothing, and where nothing fills the anchor, but for Bound's unanswered
+    -- slot (Parun.Engine.Filter.attachedAnchored).
     IsAttachedTo (Anchor.Anchor (Filter keyword))
   | -- | CR 613.4c: the candidate IS the object the surrounding QUANTITY is
     -- evaluated against -- Coat of Arms' "each other creature" is @Not
