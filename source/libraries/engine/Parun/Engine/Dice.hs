@@ -176,8 +176,9 @@ spendLimit stated modifier gs = case stated of
 -- transcript replays. `key` is what else a roll carries: the player who threw it
 -- (Pippa, Duchess of Dice's ruling gives a reroll to its thrower's "whenever you
 -- roll"), or the outcome of the call a coin standing for a die was flipped
--- against, or inside a reroll the face it was thrown with before a reroll of
--- it, which the reroll's own event reads. Where the tied rolls differ in it,
+-- against, inside a reroll the face it was thrown with before a reroll of it,
+-- which the reroll's own event reads, or the rerolls whose events wait on it
+-- being kept. Where the tied rolls differ in it,
 -- the roller chooses which is ignored, through Prompt.ChooseDieResult, offered
 -- one roll per distinct key, earliest first. The options show the tied number
 -- alone: they are the rolls in the order thrown, whose faces and throwers the

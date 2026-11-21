@@ -1524,11 +1524,17 @@ Entries are ordered by the first rule each cites.
 - **Rules**: CR 706.2, 706.2b, 706.6; CR of 2026-11-06.
 - **Decision**: Rerolls first. Valiant Endeavor with Clam-I-Am on 3, 5, 5: the 3
   may be rerolled, and a 6 gives results 6 and 5.
+  A reroll's own event then stands only if the ignore keeps a die it threw
+  (CR 706.6's "no abilities trigger because of the ignored roll"; Grave
+  Endeavor's ruling): under Wall of Fortune and Farideh, Devil's Chosen, a 4
+  and 15 whose 4 is rerolled to a 12 that is then ignored triggers Farideh
+  once. A reroll of several dice reads the highest the ignore keeps.
 - **Rejected**: Ignoring first, so the 3 "never happened" and the results are 5 and
   5. The 2026-11-04 audit preferred this, moderate confidence: it is the printed
   order and CR 706.6's plainer sentence.
-- **Site**: `Parun.Engine.Resolve.Effect.throwDice`, pinned by the scenario
-  `cr-706-2b-pixie-guide-adds-a-die-to-clam-i-am-s-reroll`.
+- **Site**: `Parun.Engine.Resolve.Effect.throwDice`, pinned by the scenarios
+  `cr-706-2b-pixie-guide-adds-a-die-to-clam-i-am-s-reroll` and
+  `farideh-devil-s-chosen-ignores-a-reroll-whose-die-the-lowest-roll-ignore-drops`.
 - **Issue**: none.
 
 ## Whether a copy of an ability rolls for this ability
