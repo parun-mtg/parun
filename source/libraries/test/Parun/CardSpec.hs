@@ -186,6 +186,7 @@ import qualified Parun.Types.CopyTargets as CopyTargets
 import qualified Parun.Types.Copyability as Copyability
 import qualified Parun.Types.Cost as Cost.Type
 import qualified Parun.Types.CostAddition as CostAddition
+import qualified Parun.Types.CostAmount as CostAmount
 import qualified Parun.Types.CostChange as CostChange
 import qualified Parun.Types.CostChoice as CostChoice
 import qualified Parun.Types.CostComponent as CostComponent
@@ -7412,23 +7413,36 @@ lintSpec s registry corpus = Spec.describe s "Lint" $ do
       (fmap offends [serpent, untriggered serpent, champion, untriggered champion, unreplaced champion, untriggered (unreplaced champion)])
       [False, True, False, False, False, True]
   -- CR 601.2b's count announced BESIDE X (Cost.announcedCounts), the lint above
-  -- for a variable of its own name: a spell's cost declares it exactly where the
-  -- face's own CR 601.2f reduction reads it, since nothing else binds the slot
-  -- (Cast.castProposed's announcement). An activation cost declaring one would
+  -- for a variable of its own name: a spell's cost declares every count the
+  -- face's own CR 601.2f reduction reads, since nothing else binds the slot
+  -- (Cast.castProposed's announcement). A count no reduction reads is the
+  -- cost's own (CR 601.2b, 601.2h: Corpse Cobble's "sacrifice any number of
+  -- creatures"), so a component's demand must grow with it: otherwise
+  -- Cast.countValues asks it only at 0. An activation cost declaring one would
   -- never be asked for it, and so never be payable. A slot the spell's own
   -- modes target is CR 601.2c's, not a count: Fireball's "for each target
   -- beyond the first".
-  Spec.it s "CR 601.2b a count announced beside X is read by the spell's own reduction and declared nowhere else" $ do
+  Spec.it s "CR 601.2b a count announced beside X is read by the spell's own reduction or grows its own cost, and is declared nowhere else" $ do
     ps <- S.allPrintings s corpus
     let declared f = Set.fromList (concatMap Cost.announcedCounts (spellCostsOf f))
         targeted f = foldMap (Map.keysSet . Mode.targetSlots) (Modal.modes (Face.spell f))
         read_ f = Set.difference (Set.delete Binding.variableX (foldMap (QuantitySlot.slots . CostReduction.perEach) (Face.costReductions f))) (targeted f)
+        grows f slot = any (any (Cost.componentDemandGrowsWith slot) . Cost.Type.components) (spellCostsOf f)
         activated f = concatMap (concatMap Cost.announcedCounts . activationCostsOf) (Face.activatedAbilities f)
-        offends f = declared f /= read_ f || not (null (activated f))
+        offends f =
+          not (Set.isSubsetOf (read_ f) (declared f))
+            || not (all (grows f) (Set.difference (declared f) (read_ f)))
+            || not (null (activated f))
         offenders = filter (anyFace offends . Printing.card) ps
-    Spec.assertEqWith s "a count is read iff declared" (fmap (S.nameOf . Printing.card) offenders) []
+    Spec.assertEqWith s "a count is read or grows its cost iff declared" (fmap (S.nameOf . Printing.card) offenders) []
     sorrow <- S.printingOf s registry "March of Wretched Sorrow"
     Spec.assertEqWith s "and March of Wretched Sorrow declares one" (declared (S.combinedFace sorrow)) (Set.singleton (SlotName.MkSlotName (Text.pack "exiledCount")))
+    -- Corpse Cobble's count is read by no reduction; a blight of that many
+    -- counters (CR 701.68b names no ceiling) would leave it asked only at 0.
+    cobble <- S.combinedFace <$> S.printingOf s registry "Corpse Cobble"
+    let count = SlotName.MkSlotName (Text.pack "sacrificeCount")
+        blighted = cobble {Face.additionalCosts = [CostComponent.Blight (CostAmount.Announced count)]}
+    Spec.assertEqWith s "Corpse Cobble's unread count passes; blighted, it offends" (fmap offends [cobble, blighted]) [False, True]
   -- The ACTIVATED-ABILITY half, and it is a separate sweep because it is a
   -- separate cost: CR 602.2b makes "an activated ability's analog to a spell's
   -- mana cost (as referenced in rule 601.2f) ... its activation cost", so an
