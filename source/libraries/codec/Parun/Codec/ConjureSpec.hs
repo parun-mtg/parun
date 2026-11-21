@@ -10,7 +10,11 @@ import qualified Parun.Types.CardSelection as CardSelection
 import qualified Parun.Types.Conjure as Conjure
 import qualified Parun.Types.ConjureCards as ConjureCards
 import qualified Parun.Types.ConjureDestination as ConjureDestination
+import qualified Parun.Types.Holder as Holder
+import qualified Parun.Types.Hop as Hop
 import qualified Parun.Types.ObjectRef as ObjectRef
+import qualified Parun.Types.PlayerRef as PlayerRef
+import qualified Parun.Types.PlayerRelation as PlayerRelation
 import qualified Parun.Types.Quantity as Quantity
 import qualified Parun.Types.SlotName as SlotName
 
@@ -18,6 +22,10 @@ import qualified Parun.Types.SlotName as SlotName
 -- only through the supplied codec, so any type proves the shape.
 codec :: Codec.Codec (Conjure.Conjure Text.Text)
 codec = Conjure.codec Common.text
+
+-- | CR 109.5's "you", the conjurer the codec elides.
+you :: PlayerRef.PlayerRef
+you = PlayerRef.Relative PlayerRelation.You
 
 spec :: (Monad m, Monad n) => Spec.Spec m n -> n ()
 spec s = Spec.describe s "Parun.Codec.Conjure" $ do
@@ -33,7 +41,8 @@ spec s = Spec.describe s "Parun.Codec.Conjure" $ do
             Conjure.selection = Conjure.defaultSelection,
             Conjure.drafted = False,
             Conjure.destination = ConjureDestination.Hand,
-            Conjure.slot = Nothing
+            Conjure.slot = Nothing,
+            Conjure.conjurer = you
           }
       )
       " {\"cards\":{\"type\":\"Written\",\"value\":[\"Ornithopter\"]},\"destination\":{\"type\":\"Hand\"}} "
@@ -49,7 +58,8 @@ spec s = Spec.describe s "Parun.Codec.Conjure" $ do
             Conjure.selection = Conjure.defaultSelection,
             Conjure.drafted = False,
             Conjure.destination = ConjureDestination.Library Nothing,
-            Conjure.slot = Nothing
+            Conjure.slot = Nothing,
+            Conjure.conjurer = you
           }
       )
       " {\"quantity\":{\"type\":\"Literal\",\"value\":4},\"cards\":{\"type\":\"Written\",\"value\":[\"Lightning Bolt\"]},\"destination\":{\"type\":\"Library\"}} "
@@ -65,7 +75,8 @@ spec s = Spec.describe s "Parun.Codec.Conjure" $ do
             Conjure.selection = Conjure.defaultSelection,
             Conjure.drafted = False,
             Conjure.destination = ConjureDestination.Hand,
-            Conjure.slot = Nothing
+            Conjure.slot = Nothing,
+            Conjure.conjurer = you
           }
       )
       " {\"cards\":{\"type\":\"Written\",\"value\":[\"Ponder\",\"Dark Ritual\"]},\"destination\":{\"type\":\"Hand\"}} "
@@ -81,7 +92,8 @@ spec s = Spec.describe s "Parun.Codec.Conjure" $ do
             Conjure.selection = CardSelection.ByChoice,
             Conjure.drafted = False,
             Conjure.destination = ConjureDestination.Hand,
-            Conjure.slot = Nothing
+            Conjure.slot = Nothing,
+            Conjure.conjurer = you
           }
       )
       " {\"cards\":{\"type\":\"Written\",\"value\":[\"Ponder\",\"Dark Ritual\"]},\"selection\":\"ByChoice\",\"destination\":{\"type\":\"Hand\"}} "
@@ -96,7 +108,8 @@ spec s = Spec.describe s "Parun.Codec.Conjure" $ do
             Conjure.selection = CardSelection.ByChoice,
             Conjure.drafted = True,
             Conjure.destination = ConjureDestination.Hand,
-            Conjure.slot = Nothing
+            Conjure.slot = Nothing,
+            Conjure.conjurer = you
           }
       )
       " {\"cards\":{\"type\":\"Written\",\"value\":[\"Ponder\",\"Dark Ritual\"]},\"selection\":\"ByChoice\",\"drafted\":true,\"destination\":{\"type\":\"Hand\"}} "
@@ -112,7 +125,8 @@ spec s = Spec.describe s "Parun.Codec.Conjure" $ do
             Conjure.selection = Conjure.defaultSelection,
             Conjure.drafted = False,
             Conjure.destination = ConjureDestination.Hand,
-            Conjure.slot = Nothing
+            Conjure.slot = Nothing,
+            Conjure.conjurer = you
           }
       )
       " {\"cards\":{\"type\":\"Duplicate\",\"value\":{\"type\":\"InSlot\",\"value\":\"target\"}},\"destination\":{\"type\":\"Hand\"}} "
@@ -127,8 +141,26 @@ spec s = Spec.describe s "Parun.Codec.Conjure" $ do
             Conjure.selection = Conjure.defaultSelection,
             Conjure.drafted = False,
             Conjure.destination = ConjureDestination.Hand,
-            Conjure.slot = Just (SlotName.MkSlotName (Text.pack "conjured"))
+            Conjure.slot = Just (SlotName.MkSlotName (Text.pack "conjured")),
+            Conjure.conjurer = you
           }
       )
       " {\"cards\":{\"type\":\"Written\",\"value\":[\"Ragavan\"]},\"destination\":{\"type\":\"Hand\"},\"slot\":\"conjured\"} "
+  -- Thendar, the Overminer's "its controller conjures": the key a card writes
+  -- only when the conjurer is not CR 109.5's "you".
+  Spec.it s "MkConjure with a conjurer other than you" $
+    Common.assertCodec
+      s
+      codec
+      ( Conjure.MkConjure
+          { Conjure.quantity = Conjure.defaultQuantity,
+            Conjure.cards = ConjureCards.Written (Text.pack "Wastes" NonEmpty.:| []),
+            Conjure.selection = Conjure.defaultSelection,
+            Conjure.drafted = False,
+            Conjure.destination = ConjureDestination.Hand,
+            Conjure.slot = Nothing,
+            Conjure.conjurer = PlayerRef.HolderOfBound Holder.Controller Hop.Itself (SlotName.MkSlotName (Text.pack "land"))
+          }
+      )
+      " {\"cards\":{\"type\":\"Written\",\"value\":[\"Wastes\"]},\"destination\":{\"type\":\"Hand\"},\"conjurer\":{\"type\":\"HolderOfBound\",\"value\":{\"holder\":\"Controller\",\"hop\":\"Itself\",\"slot\":\"land\"}}} "
   Spec.it s "has a schema" $ Common.assertHasSchema s codec

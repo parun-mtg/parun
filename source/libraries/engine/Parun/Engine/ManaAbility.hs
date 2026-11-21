@@ -937,7 +937,7 @@ movesLibraryCard effect = case effect of
   -- move for a mana ability". The scenario "CR 605.1a conjuring into a library keeps an
   -- ability that adds mana off the mana path" proves it on Synthetic Seeded
   -- Grove.
-  Effect.Conjure (Conjure.MkConjure _ _ _ _ destination _) -> case destination of
+  Effect.Conjure (Conjure.MkConjure _ _ _ _ destination _ _) -> case destination of
     ConjureDestination.Hand -> False
     ConjureDestination.Library _ -> True
     ConjureDestination.Graveyard -> False

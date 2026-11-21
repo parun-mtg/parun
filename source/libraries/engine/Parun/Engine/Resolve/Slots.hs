@@ -921,7 +921,7 @@ effectPlayerRefs effect = case effect of
   Effect.IncreaseSpeed (PlayerQuantity.MkPlayerQuantity ref _) -> [ref]
   Effect.DecreaseSpeed (SpeedDecrease.MkSpeedDecrease ref _ _) -> [ref]
   Effect.Create (Create.MkCreate _ _ _ _ creator _ _) -> [creator]
-  Effect.Conjure {} -> []
+  Effect.Conjure x -> [Conjure.conjurer x]
   Effect.CreateCopy x -> [CreateCopy.creator x]
   Effect.BecomeCopy x -> foldMap durationPlayerRefs (BecomeCopy.duration x)
   Effect.CopyStackObject (CopyStackObject.MkCopyStackObject _ _ _ copier _ _) -> [copier]
@@ -2783,7 +2783,7 @@ boundSlots effect = case effect of
   -- The tokens this Create minted, for CR 603.7c's delayed trigger to name.
   Effect.Create (Create.MkCreate _ _ _ mSlot _ _ _) -> foldMap Set.singleton mSlot
   -- Create's reason: the conjured cards, for CR 603.7c.
-  Effect.Conjure (Conjure.MkConjure _ _ _ _ _ mSlot) -> foldMap Set.singleton mSlot
+  Effect.Conjure (Conjure.MkConjure _ _ _ _ _ mSlot _) -> foldMap Set.singleton mSlot
   -- Create's reason: the copy tokens minted, for CR 603.7c.
   Effect.CreateCopy (CreateCopy.MkCreateCopy _ _ _ mSlot _ _ _) -> foldMap Set.singleton mSlot
   -- CR 400.7h: the spell the offered cast put on the stack.
