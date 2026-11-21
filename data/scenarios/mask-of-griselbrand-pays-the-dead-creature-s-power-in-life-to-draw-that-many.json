@@ -1,0 +1,35 @@
+{
+  "description": "CR 603.10a, 608.2h, 118.12: Mask of Griselbrand's creature has flying and lifelink; when it dies, its controller pays life equal to its last-known power (Giant Growth makes it 6, not the printed 3) and draws that many. A Declines twin keeps the life and draws nothing.",
+  "board": {
+    "active": "alice",
+    "step": "PrecombatMain",
+    "seats": [
+      {
+        "name": "alice",
+        "life": 23,
+        "manaPool": "GBBB",
+        "hand": [{"card": "Giant Growth", "label": "growth"}, {"card": "Murder", "label": "murder"}],
+        "battlefield": [{"card": "Hill Giant", "label": "giant"}, {"card": "Mask of Griselbrand", "label": "mask", "attached": "giant"}],
+        "library": [{"card": "Island"}, {"card": "Forest"}, {"card": "Mountain"}, {"card": "Plains"}, {"card": "Swamp"}, {"card": "Wind Drake"}, {"card": "Goblin Piker"}, {"card": "Grizzly Bears"}]
+      },
+      {
+        "name": "bob",
+        "library": [{"card": "Llanowar Elves"}, {"card": "Llanowar Elves"}, {"card": "Llanowar Elves"}]
+      }
+    ]
+  },
+  "timeline": [
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"Keywords": {"object": "$giant", "keyword": {"type": "Flying"}, "count": 1}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"Keywords": {"object": "$giant", "keyword": {"type": "Lifelink"}, "count": 1}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": {"Cast": {"object": "$growth"}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": "Pass"},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"PowerToughness": {"object": "$giant", "power": 6, "toughness": 6}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": {"Cast": {"object": "$murder"}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": "Pass"},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": "Pass"},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": {"ChooseToPay": {"decision": "Pays", "source": "$mask"}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"Life": {"player": "alice", "life": 17}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"View": {"of": "Zone", "player": "alice", "zone": "Hand", "is": ["Island", "Forest", "Mountain", "Plains", "Swamp", "Wind Drake"]}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"Count": {"player": "alice", "zone": "Library", "card": "Goblin Piker", "count": 1}}}
+  ]
+}
