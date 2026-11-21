@@ -1,0 +1,224 @@
+{
+  "board": {
+    "active": "alice",
+    "seats": [
+      {
+        "battlefield": [
+          {
+            "card": "Healer's Hawk",
+            "label": "mine",
+            "ready": true
+          },
+          {
+            "card": "Hill Giant",
+            "label": "giant",
+            "ready": true
+          },
+          {
+            "card": "Buried Treasure",
+            "label": "bt1"
+          },
+          {
+            "card": "Buried Treasure",
+            "label": "bt2"
+          },
+          {
+            "card": "Forest",
+            "label": "f1"
+          }
+        ],
+        "hand": [
+          {
+            "card": "Spoils of the Hunt",
+            "label": "spoils"
+          }
+        ],
+        "library": [
+          {
+            "card": "Forest"
+          },
+          {
+            "card": "Forest"
+          },
+          {
+            "card": "Forest"
+          },
+          {
+            "card": "Forest"
+          },
+          {
+            "card": "Forest"
+          },
+          {
+            "card": "Forest"
+          }
+        ],
+        "life": 15,
+        "name": "alice"
+      },
+      {
+        "battlefield": [
+          {
+            "card": "Colossal Dreadmaw",
+            "label": "maw"
+          }
+        ],
+        "library": [
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          }
+        ],
+        "name": "bob"
+      }
+    ],
+    "step": "PrecombatMain"
+  },
+  "description": "CR 106.3, 608.2h: Spoils of the Hunt gives +1/+0 per Treasure mana spent on it, then the creature deals damage equal to its power",
+  "note": "Two of the three mana come from Buried Treasures: the 1/1 Healer's Hawk becomes 3/1 and deals 3 to the 6/6 Dreadmaw, which survives so the damage can be read. The Hawk's lifelink takes alice from 15 to 18, so the Hawk, not the Dreadmaw, is the damage's source.",
+  "timeline": [
+    {
+      "do": {
+        "Cast": {
+          "mana": [
+            "$f1",
+            "$bt1",
+            "$bt2"
+          ],
+          "object": "$spoils",
+          "targetsBySlot": {
+            "target": [
+              "$mine"
+            ],
+            "victim": [
+              "$maw"
+            ]
+          },
+          "yields": [
+            [
+              {
+                "manaType": {
+                  "type": "Colored",
+                  "value": "Green"
+                },
+                "restriction": null,
+                "retention": "Ordinary",
+                "rider": null,
+                "sourceChoices": null,
+                "tags": [
+                  {
+                    "Subtype": "Treasure"
+                  },
+                  {
+                    "CardType": "Artifact"
+                  }
+                ]
+              }
+            ],
+            [
+              {
+                "manaType": {
+                  "type": "Colored",
+                  "value": "Green"
+                },
+                "restriction": null,
+                "retention": "Ordinary",
+                "rider": null,
+                "sourceChoices": null,
+                "tags": [
+                  {
+                    "Subtype": "Treasure"
+                  },
+                  {
+                    "CardType": "Artifact"
+                  }
+                ]
+              }
+            ]
+          ]
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": "Pass",
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "PowerToughness": {
+          "object": "$mine",
+          "power": 3,
+          "toughness": 1
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Damage": {
+          "damage": 3,
+          "object": "$maw"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Life": {
+          "life": 18,
+          "player": "alice"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Damage": {
+          "damage": 0,
+          "object": "$giant"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Count": {
+          "card": "Buried Treasure",
+          "count": 2,
+          "player": "alice",
+          "zone": "Graveyard"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    }
+  ]
+}

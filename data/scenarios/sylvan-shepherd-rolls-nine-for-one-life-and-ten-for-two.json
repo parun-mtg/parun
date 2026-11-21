@@ -1,0 +1,201 @@
+{
+  "board": {
+    "active": "alice",
+    "seats": [
+      {
+        "battlefield": [
+          {
+            "card": "Sylvan Shepherd",
+            "label": "shep",
+            "ready": true
+          }
+        ],
+        "library": [
+          {
+            "card": "Forest"
+          },
+          {
+            "card": "Forest"
+          },
+          {
+            "card": "Forest"
+          },
+          {
+            "card": "Forest"
+          },
+          {
+            "card": "Forest"
+          },
+          {
+            "card": "Forest"
+          }
+        ],
+        "life": 17,
+        "name": "alice"
+      },
+      {
+        "library": [
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          }
+        ],
+        "name": "bob"
+      }
+    ],
+    "step": "DeclareAttackers"
+  },
+  "description": "CR 508.1m, 706.3a, 702.20b: Sylvan Shepherd's attack d20 gains 1 life on a 9 and 2 on a 10, and vigilance leaves it untapped",
+  "note": "alice starts at 17 so no total is 20: 17 + 1 = 18 on turn 1, 18 + 2 = 20 on turn 3. Two unblocked attacks deal bob 4.",
+  "timeline": [
+    {
+      "do": {
+        "Attack": [
+          "$shep"
+        ]
+      },
+      "player": "alice",
+      "step": "DeclareAttackers",
+      "turn": 1
+    },
+    {
+      "check": {
+        "View": {
+          "is": [
+            "trigger of $shep"
+          ],
+          "of": "Stack"
+        }
+      },
+      "player": "alice",
+      "step": "DeclareAttackers",
+      "turn": 1
+    },
+    {
+      "do": "Pass",
+      "player": "alice",
+      "step": "DeclareAttackers",
+      "turn": 1
+    },
+    {
+      "do": {
+        "Answer": {
+          "prompt": "RollDie",
+          "with": 9
+        }
+      },
+      "player": "alice",
+      "step": "DeclareAttackers",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Life": {
+          "life": 18,
+          "player": "alice"
+        }
+      },
+      "player": "alice",
+      "step": "DeclareAttackers",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Tapped": {
+          "object": "$shep",
+          "tapped": false
+        }
+      },
+      "player": "alice",
+      "step": "DeclareAttackers",
+      "turn": 1
+    },
+    {
+      "do": {
+        "Attack": [
+          "$shep"
+        ]
+      },
+      "player": "alice",
+      "step": "DeclareAttackers",
+      "turn": 3
+    },
+    {
+      "check": {
+        "View": {
+          "is": [
+            "trigger of $shep"
+          ],
+          "of": "Stack"
+        }
+      },
+      "player": "alice",
+      "step": "DeclareAttackers",
+      "turn": 3
+    },
+    {
+      "do": "Pass",
+      "player": "alice",
+      "step": "DeclareAttackers",
+      "turn": 3
+    },
+    {
+      "do": {
+        "Answer": {
+          "prompt": "RollDie",
+          "with": 10
+        }
+      },
+      "player": "alice",
+      "step": "DeclareAttackers",
+      "turn": 3
+    },
+    {
+      "check": {
+        "Life": {
+          "life": 20,
+          "player": "alice"
+        }
+      },
+      "player": "alice",
+      "step": "DeclareAttackers",
+      "turn": 3
+    },
+    {
+      "check": {
+        "Tapped": {
+          "object": "$shep",
+          "tapped": false
+        }
+      },
+      "player": "alice",
+      "step": "DeclareAttackers",
+      "turn": 3
+    },
+    {
+      "check": {
+        "Life": {
+          "life": 16,
+          "player": "bob"
+        }
+      },
+      "player": "alice",
+      "step": "PostcombatMain",
+      "turn": 3
+    }
+  ]
+}

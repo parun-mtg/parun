@@ -1,0 +1,206 @@
+{
+  "board": {
+    "active": "alice",
+    "seats": [
+      {
+        "battlefield": [
+          {
+            "card": "Grizzly Bears",
+            "label": "bears",
+            "ready": true
+          },
+          {
+            "card": "Reaper's Talisman",
+            "label": "talisman"
+          },
+          {
+            "card": "Gray Ogre",
+            "label": "ogre",
+            "ready": true
+          },
+          {
+            "card": "Swamp",
+            "label": "s1"
+          },
+          {
+            "card": "Swamp",
+            "label": "s2"
+          }
+        ],
+        "library": [
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          }
+        ],
+        "life": 17,
+        "name": "alice"
+      },
+      {
+        "library": [
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          }
+        ],
+        "life": 19,
+        "name": "bob"
+      }
+    ],
+    "step": "PrecombatMain"
+  },
+  "description": "CR 506.5: Reaper's Talisman's equipped creature attacking beside another gains deathtouch, and the attacks-alone drain does not trigger; the other attacker gains nothing; equip costs {2}",
+  "timeline": [
+    {
+      "turn": 1,
+      "step": "PrecombatMain",
+      "player": "alice",
+      "do": {
+        "Activate": {
+          "object": "$talisman",
+          "targets": [
+            "$bears"
+          ],
+          "mana": [
+            "$s1",
+            "$s2"
+          ]
+        }
+      }
+    },
+    {
+      "turn": 1,
+      "step": "PrecombatMain",
+      "player": "alice",
+      "do": "Pass"
+    },
+    {
+      "turn": 1,
+      "step": "PrecombatMain",
+      "player": "alice",
+      "check": {
+        "View": {
+          "of": "AttachedTo",
+          "object": "$talisman",
+          "is": "$bears"
+        }
+      }
+    },
+    {
+      "turn": 1,
+      "step": "PrecombatMain",
+      "player": "alice",
+      "check": {
+        "View": {
+          "of": "ManaPool",
+          "player": "alice",
+          "is": []
+        }
+      }
+    },
+    {
+      "do": {
+        "Attack": [
+          "$bears",
+          "$ogre"
+        ]
+      },
+      "player": "alice",
+      "step": "DeclareAttackers",
+      "turn": 1
+    },
+    {
+      "check": {
+        "View": {
+          "is": [
+            "trigger of $talisman"
+          ],
+          "of": "Stack"
+        }
+      },
+      "player": "alice",
+      "step": "DeclareAttackers",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Keywords": {
+          "count": 1,
+          "keyword": {
+            "type": "Deathtouch"
+          },
+          "object": "$bears"
+        }
+      },
+      "player": "alice",
+      "step": "DeclareBlockers",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Keywords": {
+          "count": 0,
+          "keyword": {
+            "type": "Deathtouch"
+          },
+          "object": "$ogre"
+        }
+      },
+      "player": "alice",
+      "step": "DeclareBlockers",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Life": {
+          "life": 19,
+          "player": "bob"
+        }
+      },
+      "player": "alice",
+      "step": "DeclareBlockers",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Life": {
+          "life": 17,
+          "player": "alice"
+        }
+      },
+      "player": "alice",
+      "step": "DeclareBlockers",
+      "turn": 1
+    },
+    {
+      "turn": 2,
+      "step": "Upkeep",
+      "player": "alice",
+      "check": {
+        "Keywords": {
+          "object": "$bears",
+          "keyword": {
+            "type": "Deathtouch"
+          },
+          "count": 0
+        }
+      }
+    }
+  ]
+}

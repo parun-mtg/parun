@@ -1,0 +1,189 @@
+{
+  "board": {
+    "active": "bob",
+    "seats": [
+      {
+        "battlefield": [
+          {
+            "card": "Island",
+            "label": "i0"
+          },
+          {
+            "card": "Island",
+            "label": "i1"
+          },
+          {
+            "card": "Island",
+            "label": "i2"
+          },
+          {
+            "card": "Island",
+            "label": "i3"
+          },
+          {
+            "card": "Island",
+            "label": "i4"
+          },
+          {
+            "card": "Island",
+            "label": "i5"
+          }
+        ],
+        "hand": [
+          {
+            "card": "Spiked Pit Trap",
+            "label": "trap"
+          }
+        ],
+        "library": [
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          }
+        ],
+        "name": "alice"
+      },
+      {
+        "battlefield": [
+          {
+            "card": "Colossal Dreadmaw",
+            "label": "dreadmaw"
+          },
+          {
+            "card": "Grizzly Bears",
+            "label": "bears"
+          }
+        ],
+        "library": [
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          }
+        ],
+        "name": "bob"
+      }
+    ],
+    "step": "Upkeep"
+  },
+  "description": "CR 702.8a: Spiked Pit Trap cast with flash in an opponent's upkeep rolls a ten, deals 5 damage and makes a Treasure",
+  "note": "alice casts the Trap in bob's upkeep with one Island and activates it with the other five; on a ten the Dreadmaw takes 5 and alice gets one Treasure.",
+  "timeline": [
+    {
+      "do": {
+        "Cast": {
+          "mana": [
+            "$i0",
+            null
+          ],
+          "object": "$trap"
+        }
+      },
+      "player": "alice",
+      "step": "Upkeep",
+      "turn": 1
+    },
+    {
+      "do": "Pass",
+      "player": "alice",
+      "step": "Upkeep",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Count": {
+          "card": "Spiked Pit Trap",
+          "count": 1,
+          "player": "alice",
+          "zone": "Battlefield"
+        }
+      },
+      "player": "alice",
+      "step": "Upkeep",
+      "turn": 1
+    },
+    {
+      "do": {
+        "Activate": {
+          "mana": [
+            "$i1",
+            "$i2",
+            "$i3",
+            "$i4",
+            "$i5"
+          ],
+          "object": "Spiked Pit Trap",
+          "targets": [
+            "$dreadmaw"
+          ]
+        }
+      },
+      "player": "alice",
+      "step": "Upkeep",
+      "turn": 1
+    },
+    {
+      "do": "Pass",
+      "player": "alice",
+      "step": "Upkeep",
+      "turn": 1
+    },
+    {
+      "do": {
+        "Answer": {
+          "prompt": "RollDie",
+          "with": 10
+        }
+      },
+      "player": "bob",
+      "step": "Upkeep",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Damage": {
+          "damage": 5,
+          "object": "$dreadmaw"
+        }
+      },
+      "player": "alice",
+      "step": "Upkeep",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Count": {
+          "card": "Treasure Token",
+          "count": 1,
+          "player": "alice",
+          "zone": "Battlefield"
+        }
+      },
+      "player": "alice",
+      "step": "Upkeep",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Count": {
+          "card": "Spiked Pit Trap",
+          "count": 1,
+          "player": "alice",
+          "zone": "Graveyard"
+        }
+      },
+      "player": "alice",
+      "step": "Upkeep",
+      "turn": 1
+    }
+  ]
+}

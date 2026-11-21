@@ -1,0 +1,162 @@
+{
+  "board": {
+    "active": "alice",
+    "seats": [
+      {
+        "battlefield": [
+          {
+            "card": "Swamp",
+            "label": "swamp"
+          },
+          {
+            "card": "Island",
+            "label": "island"
+          },
+          {
+            "card": "Savannah Lions",
+            "label": "lions"
+          },
+          {
+            "card": "Grizzly Bears",
+            "label": "bears"
+          }
+        ],
+        "hand": [
+          {
+            "card": "Sphere of Annihilation",
+            "label": "sphere"
+          }
+        ],
+        "library": [
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          }
+        ],
+        "name": "alice"
+      },
+      {
+        "library": [
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          }
+        ],
+        "name": "bob"
+      }
+    ],
+    "step": "PrecombatMain"
+  },
+  "description": "CR 614.1c: Sphere of Annihilation cast for X=1 enters with one void counter and exiles only mana value 1 or less at your next upkeep",
+  "note": "Cast for X=1, the Sphere carries one void counter. bob's upkeep does nothing; at alice's turn 3 upkeep her Savannah Lions (1) goes, her Grizzly Bears (2) stays.",
+  "timeline": [
+    {
+      "do": {
+        "Cast": {
+          "mana": [
+            "$swamp",
+            "$island"
+          ],
+          "object": "$sphere",
+          "x": 1
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": "Pass",
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Counters": {
+          "count": 1,
+          "kind": {
+            "type": "Named",
+            "value": "void"
+          },
+          "object": "Sphere of Annihilation"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "View": {
+          "is": [],
+          "of": "Stack"
+        }
+      },
+      "player": "bob",
+      "step": "Upkeep",
+      "turn": 2
+    },
+    {
+      "do": "Pass",
+      "player": "alice",
+      "step": "Upkeep",
+      "turn": 3
+    },
+    {
+      "check": {
+        "Count": {
+          "card": "Sphere of Annihilation",
+          "count": 1,
+          "player": "alice",
+          "zone": "Exile"
+        }
+      },
+      "player": "alice",
+      "step": "Upkeep",
+      "turn": 3
+    },
+    {
+      "check": {
+        "Count": {
+          "card": "Savannah Lions",
+          "count": 1,
+          "player": "alice",
+          "zone": "Exile"
+        }
+      },
+      "player": "alice",
+      "step": "Upkeep",
+      "turn": 3
+    },
+    {
+      "check": {
+        "Count": {
+          "card": "Grizzly Bears",
+          "count": 1,
+          "player": "alice",
+          "zone": "Battlefield"
+        }
+      },
+      "player": "alice",
+      "step": "Upkeep",
+      "turn": 3
+    }
+  ]
+}

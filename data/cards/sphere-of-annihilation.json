@@ -1,0 +1,184 @@
+{
+  "faces": [
+    {
+      "manaCost": [
+        {
+          "type": "Variable"
+        },
+        {
+          "type": "OfType",
+          "value": {
+            "type": "Colored",
+            "value": "Black"
+          }
+        }
+      ],
+      "name": "Sphere of Annihilation",
+      "oracleText": "This artifact enters with X void counters on it.\nAt the beginning of your upkeep, exile this artifact, all creatures and planeswalkers with mana value less than or equal to the number of void counters on it, and all creature and planeswalker cards in graveyards with mana value less than or equal to the number of void counters on it.",
+      "replacementEffects": [
+        {
+          "effect": {
+            "type": "EntryR",
+            "value": {
+              "matching": {
+                "type": "IsSource"
+              },
+              "rewrite": {
+                "type": "WithCounters",
+                "value": [
+                  {
+                    "count": {
+                      "type": "InSlot",
+                      "value": "X"
+                    },
+                    "kind": {
+                      "type": "Named",
+                      "value": "void"
+                    }
+                  }
+                ]
+              }
+            }
+          }
+        }
+      ],
+      "triggeredAbilities": [
+        {
+          "condition": {
+            "type": "StepBegins",
+            "value": {
+              "phase": {
+                "type": "Beginning",
+                "value": "Upkeep"
+              },
+              "scope": {
+                "type": "PlayersTurn",
+                "value": {
+                  "type": "Relative",
+                  "value": "You"
+                }
+              }
+            }
+          },
+          "modal": {
+            "modes": [
+              {
+                "clauses": [
+                  {
+                    "effects": [
+                      {
+                        "type": "BindAmount",
+                        "value": {
+                          "quantity": {
+                            "type": "ObjectCounters",
+                            "value": {
+                              "type": "Named",
+                              "value": "void"
+                            }
+                          },
+                          "slot": "void"
+                        }
+                      },
+                      {
+                        "type": "MoveToZone",
+                        "value": {
+                          "ref": {
+                            "type": "AllOf",
+                            "value": [
+                              {
+                                "type": "InSlot",
+                                "value": "self"
+                              },
+                              {
+                                "type": "EachMatching",
+                                "value": {
+                                  "type": "And",
+                                  "value": [
+                                    {
+                                      "type": "Or",
+                                      "value": [
+                                        {
+                                          "type": "HasCardType",
+                                          "value": "Creature"
+                                        },
+                                        {
+                                          "type": "HasCardType",
+                                          "value": "Planeswalker"
+                                        }
+                                      ]
+                                    },
+                                    {
+                                      "type": "Measures",
+                                      "value": {
+                                        "comparison": "AtMost",
+                                        "measure": "ManaValue",
+                                        "operand": {
+                                          "type": "AmountInSlot",
+                                          "value": "void"
+                                        }
+                                      }
+                                    }
+                                  ]
+                                }
+                              },
+                              {
+                                "type": "EachCardInGraveyard",
+                                "value": {
+                                  "filter": {
+                                    "type": "And",
+                                    "value": [
+                                      {
+                                        "type": "Or",
+                                        "value": [
+                                          {
+                                            "type": "HasCardType",
+                                            "value": "Creature"
+                                          },
+                                          {
+                                            "type": "HasCardType",
+                                            "value": "Planeswalker"
+                                          }
+                                        ]
+                                      },
+                                      {
+                                        "type": "Measures",
+                                        "value": {
+                                          "comparison": "AtMost",
+                                          "measure": "ManaValue",
+                                          "operand": {
+                                            "type": "AmountInSlot",
+                                            "value": "void"
+                                          }
+                                        }
+                                      }
+                                    ]
+                                  },
+                                  "graveyards": {
+                                    "type": "Scoped",
+                                    "value": {
+                                      "type": "AnyPlayer"
+                                    }
+                                  }
+                                }
+                              }
+                            ]
+                          },
+                          "zone": "Exile"
+                        }
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          }
+        }
+      ],
+      "typeLine": {
+        "types": [
+          "Artifact"
+        ]
+      }
+    }
+  ]
+}

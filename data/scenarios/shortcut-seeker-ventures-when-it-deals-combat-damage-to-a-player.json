@@ -1,0 +1,145 @@
+{
+  "board": {
+    "active": "alice",
+    "seats": [
+      {
+        "battlefield": [
+          {
+            "card": "Shortcut Seeker",
+            "label": "seeker",
+            "ready": true
+          }
+        ],
+        "dungeons": [
+          "Tomb of Annihilation"
+        ],
+        "library": [
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          }
+        ],
+        "name": "alice"
+      },
+      {
+        "battlefield": [
+          {
+            "card": "Grizzly Bears",
+            "label": "bears"
+          }
+        ],
+        "library": [
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          }
+        ],
+        "name": "bob"
+      }
+    ],
+    "step": "PrecombatMain"
+  },
+  "description": "CR 701.49a: Shortcut Seeker ventures into the dungeon when it deals combat damage to a player",
+  "note": "Unblocked, the Seeker deals 2 to bob and alice enters Tomb of Annihilation, whose Trapped Entry costs each player 1. bob's Grizzly Bears could block but bob declines.",
+  "timeline": [
+    {
+      "check": {
+        "ManaValue": {
+          "object": "$seeker",
+          "value": 4
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": {
+        "Attack": [
+          "$seeker"
+        ]
+      },
+      "player": "alice",
+      "step": "DeclareAttackers",
+      "turn": 1
+    },
+    {
+      "do": {
+        "Block": {}
+      },
+      "player": "bob",
+      "step": "DeclareBlockers",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Life": {
+          "life": 18,
+          "player": "bob"
+        }
+      },
+      "player": "alice",
+      "step": "CombatDamage",
+      "turn": 1
+    },
+    {
+      "do": "Pass",
+      "player": "alice",
+      "step": "CombatDamage",
+      "turn": 1
+    },
+    {
+      "check": {
+        "View": {
+          "is": [
+            "Tomb of Annihilation"
+          ],
+          "of": "Zone",
+          "player": "alice",
+          "zone": "Command"
+        }
+      },
+      "player": "alice",
+      "step": "CombatDamage",
+      "turn": 1
+    },
+    {
+      "do": "Pass",
+      "player": "alice",
+      "step": "CombatDamage",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Life": {
+          "life": 19,
+          "player": "alice"
+        }
+      },
+      "player": "alice",
+      "step": "CombatDamage",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Life": {
+          "life": 17,
+          "player": "bob"
+        }
+      },
+      "player": "alice",
+      "step": "CombatDamage",
+      "turn": 1
+    }
+  ]
+}

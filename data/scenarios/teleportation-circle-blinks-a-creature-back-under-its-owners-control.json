@@ -1,0 +1,190 @@
+{
+  "board": {
+    "active": "alice",
+    "seats": [
+      {
+        "battlefield": [
+          {
+            "card": "Teleportation Circle",
+            "label": "circle"
+          },
+          {
+            "card": "Grizzly Bears"
+          }
+        ],
+        "library": [
+          {
+            "card": "Plains"
+          },
+          {
+            "card": "Plains"
+          },
+          {
+            "card": "Plains"
+          },
+          {
+            "card": "Plains"
+          },
+          {
+            "card": "Plains"
+          },
+          {
+            "card": "Plains"
+          }
+        ],
+        "name": "alice"
+      },
+      {
+        "battlefield": [
+          {
+            "card": "Elvish Visionary",
+            "controller": "alice",
+            "label": "vis"
+          },
+          {
+            "card": "Hill Giant",
+            "label": "giant"
+          }
+        ],
+        "library": [
+          {
+            "card": "Forest"
+          },
+          {
+            "card": "Forest"
+          },
+          {
+            "card": "Forest"
+          },
+          {
+            "card": "Forest"
+          },
+          {
+            "card": "Forest"
+          },
+          {
+            "card": "Forest"
+          }
+        ],
+        "name": "bob"
+      }
+    ],
+    "step": "PrecombatMain"
+  },
+  "description": "CR 115.1d, 603.3d, 400.7: Teleportation Circle's end-step blink returns the creature under its owner's control, a new object",
+  "note": "alice controls bob's Elvish Visionary; exiled and returned, it comes back under bob, whose enters trigger draws him a Forest. bob's own Hill Giant and the Circle itself (an enchantment) are refused as targets.",
+  "timeline": [
+    {
+      "player": "alice",
+      "refuse": {
+        "ChooseTargets": {
+          "target": [
+            "$giant"
+          ]
+        }
+      },
+      "step": "EndStep",
+      "turn": 1
+    },
+    {
+      "player": "alice",
+      "refuse": {
+        "ChooseTargets": {
+          "target": [
+            "$circle"
+          ]
+        }
+      },
+      "step": "EndStep",
+      "turn": 1
+    },
+    {
+      "do": {
+        "ChooseTargets": {
+          "target": [
+            "$vis"
+          ]
+        }
+      },
+      "player": "alice",
+      "step": "EndStep",
+      "turn": 1
+    },
+    {
+      "do": "Pass",
+      "player": "alice",
+      "step": "EndStep",
+      "turn": 1
+    },
+    {
+      "check": {
+        "View": {
+          "is": "bob",
+          "object": "Elvish Visionary",
+          "of": "Controller"
+        }
+      },
+      "player": "alice",
+      "step": "EndStep",
+      "turn": 1
+    },
+    {
+      "check": {
+        "View": {
+          "is": [
+            "trigger of Elvish Visionary"
+          ],
+          "of": "Stack"
+        }
+      },
+      "player": "alice",
+      "step": "EndStep",
+      "turn": 1
+    },
+    {
+      "do": "Pass",
+      "player": "alice",
+      "step": "EndStep",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Count": {
+          "card": "Forest",
+          "count": 1,
+          "player": "bob",
+          "zone": "Hand"
+        }
+      },
+      "player": "alice",
+      "step": "EndStep",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Count": {
+          "card": "Plains",
+          "count": 0,
+          "player": "alice",
+          "zone": "Hand"
+        }
+      },
+      "player": "alice",
+      "step": "EndStep",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Count": {
+          "card": "Grizzly Bears",
+          "count": 1,
+          "player": "alice",
+          "zone": "Battlefield"
+        }
+      },
+      "player": "alice",
+      "step": "EndStep",
+      "turn": 1
+    }
+  ]
+}

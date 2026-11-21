@@ -1,0 +1,153 @@
+{
+  "board": {
+    "active": "alice",
+    "seats": [
+      {
+        "battlefield": [
+          {
+            "card": "Teleportation Circle"
+          },
+          {
+            "card": "Mind Stone",
+            "counters": [
+              {
+                "key": {
+                  "type": "Named",
+                  "value": "charge"
+                },
+                "value": 2
+              }
+            ],
+            "label": "stone"
+          }
+        ],
+        "library": [
+          {
+            "card": "Plains"
+          },
+          {
+            "card": "Plains"
+          },
+          {
+            "card": "Plains"
+          },
+          {
+            "card": "Plains"
+          },
+          {
+            "card": "Plains"
+          },
+          {
+            "card": "Plains"
+          }
+        ],
+        "name": "alice"
+      },
+      {
+        "library": [
+          {
+            "card": "Forest"
+          },
+          {
+            "card": "Forest"
+          },
+          {
+            "card": "Forest"
+          },
+          {
+            "card": "Forest"
+          },
+          {
+            "card": "Forest"
+          },
+          {
+            "card": "Forest"
+          }
+        ],
+        "name": "bob"
+      }
+    ],
+    "step": "PrecombatMain"
+  },
+  "description": "CR 601.2c, 603.3d, 400.7: Teleportation Circle may choose no target, and an artifact it blinks returns as a new object without its counters",
+  "note": "Turn 1 chooses no target and the Mind Stone keeps its two charge counters; turn 3 blinks it, and it returns with none.",
+  "timeline": [
+    {
+      "do": {
+        "ChooseTargets": {
+          "target": []
+        }
+      },
+      "player": "alice",
+      "step": "EndStep",
+      "turn": 1
+    },
+    {
+      "do": "Pass",
+      "player": "alice",
+      "step": "EndStep",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Counters": {
+          "count": 2,
+          "kind": {
+            "type": "Named",
+            "value": "charge"
+          },
+          "object": "Mind Stone"
+        }
+      },
+      "player": "alice",
+      "step": "EndStep",
+      "turn": 1
+    },
+    {
+      "do": {
+        "ChooseTargets": {
+          "target": [
+            "Mind Stone"
+          ]
+        }
+      },
+      "player": "alice",
+      "step": "EndStep",
+      "turn": 3
+    },
+    {
+      "do": "Pass",
+      "player": "alice",
+      "step": "EndStep",
+      "turn": 3
+    },
+    {
+      "check": {
+        "Counters": {
+          "count": 0,
+          "kind": {
+            "type": "Named",
+            "value": "charge"
+          },
+          "object": "Mind Stone"
+        }
+      },
+      "player": "alice",
+      "step": "EndStep",
+      "turn": 3
+    },
+    {
+      "check": {
+        "Count": {
+          "card": "Mind Stone",
+          "count": 1,
+          "player": "alice",
+          "zone": "Battlefield"
+        }
+      },
+      "player": "alice",
+      "step": "EndStep",
+      "turn": 3
+    }
+  ]
+}

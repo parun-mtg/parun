@@ -1,0 +1,138 @@
+{
+  "board": {
+    "active": "alice",
+    "seats": [
+      {
+        "graveyard": [
+          {
+            "card": "Grizzly Bears"
+          },
+          {
+            "card": "Gray Ogre"
+          },
+          {
+            "card": "Shock"
+          },
+          {
+            "card": "Lightning Bolt"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Craw Wurm"
+          }
+        ],
+        "hand": [
+          {
+            "card": "Sudden Insight",
+            "label": "insight"
+          }
+        ],
+        "library": [
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          }
+        ],
+        "manaPool": "UUUUUU",
+        "name": "alice"
+      },
+      {
+        "graveyard": [
+          {
+            "card": "Hill Giant"
+          }
+        ],
+        "library": [
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          }
+        ],
+        "name": "bob"
+      }
+    ],
+    "step": "PrecombatMain"
+  },
+  "description": "CR 202.3, 608.2h: Sudden Insight draws a card for each different mana value among nonland cards in your graveyard",
+  "note": "alice's nonland graveyard cards have mana values 2, 3, 1, 1 and 6: four different values, so she draws 4 of her 8. The Island (mana value 0) is a land and adds no fifth value; bob's Hill Giant (4) is in another graveyard and adds none either.",
+  "timeline": [
+    {
+      "do": {
+        "Cast": {
+          "object": "$insight"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": "Pass",
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Count": {
+          "card": "Island",
+          "count": 4,
+          "player": "alice",
+          "zone": "Hand"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Count": {
+          "card": "Island",
+          "count": 4,
+          "player": "alice",
+          "zone": "Library"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    }
+  ]
+}

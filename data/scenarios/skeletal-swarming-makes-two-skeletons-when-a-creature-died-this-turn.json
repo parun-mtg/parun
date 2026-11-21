@@ -1,0 +1,156 @@
+{
+  "board": {
+    "active": "alice",
+    "seats": [
+      {
+        "battlefield": [
+          {
+            "card": "Skeletal Swarming",
+            "label": "swarming"
+          },
+          {
+            "card": "Mountain",
+            "label": "mountain"
+          }
+        ],
+        "hand": [
+          {
+            "card": "Shock",
+            "label": "shock"
+          }
+        ],
+        "library": [
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          }
+        ],
+        "name": "alice"
+      },
+      {
+        "battlefield": [
+          {
+            "card": "Grizzly Bears",
+            "label": "bears"
+          }
+        ],
+        "library": [
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          }
+        ],
+        "name": "bob"
+      }
+    ],
+    "step": "PrecombatMain"
+  },
+  "description": "CR 700.4: Skeletal Swarming makes two tapped Skeletons at your end step when a creature died this turn",
+  "note": "alice's Shock kills bob's Grizzly Bears, an opponent's creature, which still counts. Each of the two tokens counts the other: 2/1. bob's end step makes nothing.",
+  "timeline": [
+    {
+      "do": {
+        "Cast": {
+          "mana": [
+            "$mountain"
+          ],
+          "object": "$shock",
+          "targets": [
+            "$bears"
+          ]
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": "Pass",
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Count": {
+          "card": "Grizzly Bears",
+          "count": 1,
+          "player": "bob",
+          "zone": "Graveyard"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": "Pass",
+      "player": "alice",
+      "step": "EndStep",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Count": {
+          "card": "Skeleton Token",
+          "count": 2,
+          "player": "alice",
+          "zone": "Battlefield"
+        }
+      },
+      "player": "alice",
+      "step": "EndStep",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Tapped": {
+          "object": "Skeleton Token#2",
+          "tapped": true
+        }
+      },
+      "player": "alice",
+      "step": "EndStep",
+      "turn": 1
+    },
+    {
+      "check": {
+        "PowerToughness": {
+          "object": "Skeleton Token",
+          "power": 2,
+          "toughness": 1
+        }
+      },
+      "player": "alice",
+      "step": "EndStep",
+      "turn": 1
+    },
+    {
+      "check": {
+        "View": {
+          "is": [],
+          "of": "Stack"
+        }
+      },
+      "player": "bob",
+      "step": "EndStep",
+      "turn": 2
+    }
+  ]
+}

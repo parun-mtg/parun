@@ -1,0 +1,72 @@
+{
+  "faces": [
+    {
+      "manaCost": [
+        {
+          "type": "Generic",
+          "value": 1
+        },
+        {
+          "type": "OfType",
+          "value": {
+            "type": "Colored",
+            "value": "Blue"
+          }
+        },
+        {
+          "type": "OfType",
+          "value": {
+            "type": "Colored",
+            "value": "Blue"
+          }
+        }
+      ],
+      "name": "Tasha's Hideous Laughter",
+      "oracleText": "Each opponent exiles cards from the top of their library until that player has exiled cards with total mana value 20 or greater.",
+      "spell": {
+        "modes": [
+          {
+            "clauses": [
+              {
+                "effects": [
+                  {
+                    "type": "MoveToZone",
+                    "value": {
+                      "ref": {
+                        "type": "TopOfLibraryUntil",
+                        "value": {
+                          "count": {
+                            "type": "Literal",
+                            "value": 20
+                          },
+                          "filter": {
+                            "type": "And",
+                            "value": []
+                          },
+                          "player": {
+                            "type": "Relative",
+                            "value": "Opponent"
+                          },
+                          "weight": {
+                            "type": "Measure",
+                            "value": "ManaValue"
+                          }
+                        }
+                      },
+                      "zone": "Exile"
+                    }
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "typeLine": {
+        "types": [
+          "Sorcery"
+        ]
+      }
+    }
+  ]
+}

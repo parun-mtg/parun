@@ -1,0 +1,134 @@
+{
+  "board": {
+    "active": "alice",
+    "seats": [
+      {
+        "battlefield": [
+          {
+            "card": "Targ Nar, Demon-Fang Gnoll",
+            "label": "targ",
+            "ready": true
+          },
+          {
+            "card": "Gray Ogre",
+            "label": "ogre",
+            "ready": true
+          },
+          {
+            "card": "Raging Goblin",
+            "label": "rager",
+            "ready": true
+          }
+        ],
+        "library": [
+          {
+            "card": "Forest"
+          },
+          {
+            "card": "Forest"
+          },
+          {
+            "card": "Forest"
+          },
+          {
+            "card": "Forest"
+          },
+          {
+            "card": "Forest"
+          },
+          {
+            "card": "Forest"
+          }
+        ],
+        "name": "alice"
+      },
+      {
+        "library": [
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          }
+        ],
+        "life": 19,
+        "name": "bob"
+      }
+    ],
+    "step": "PrecombatMain"
+  },
+  "description": "CR 603.4: Targ Nar's pack tactics does not trigger beside five attacking power",
+  "note": "2 + 2 + 1 attacking power falls one short: nothing goes on the stack and bob takes 5 from 19.",
+  "timeline": [
+    {
+      "do": {
+        "Attack": [
+          "$targ",
+          "$ogre",
+          "$rager"
+        ]
+      },
+      "player": "alice",
+      "step": "DeclareAttackers",
+      "turn": 1
+    },
+    {
+      "check": {
+        "View": {
+          "is": [],
+          "of": "Stack"
+        }
+      },
+      "player": "alice",
+      "step": "DeclareAttackers",
+      "turn": 1
+    },
+    {
+      "check": {
+        "PowerToughness": {
+          "object": "$ogre",
+          "power": 2,
+          "toughness": 2
+        }
+      },
+      "player": "alice",
+      "step": "DeclareAttackers",
+      "turn": 1
+    },
+    {
+      "check": {
+        "PowerToughness": {
+          "object": "$targ",
+          "power": 2,
+          "toughness": 2
+        }
+      },
+      "player": "alice",
+      "step": "DeclareAttackers",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Life": {
+          "life": 14,
+          "player": "bob"
+        }
+      },
+      "player": "alice",
+      "step": "PostcombatMain",
+      "turn": 1
+    }
+  ]
+}

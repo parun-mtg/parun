@@ -1,0 +1,146 @@
+{
+  "faces": [
+    {
+      "keywords": [
+        {
+          "type": "Equip",
+          "value": {
+            "cost": {
+              "mana": [
+                {
+                  "type": "Generic",
+                  "value": 2
+                }
+              ]
+            },
+            "quality": null
+          }
+        }
+      ],
+      "manaCost": [
+        {
+          "type": "OfType",
+          "value": {
+            "type": "Colored",
+            "value": "Black"
+          }
+        }
+      ],
+      "name": "Reaper's Talisman",
+      "oracleText": "Whenever equipped creature attacks, it gains deathtouch until end of turn.\nWhenever equipped creature attacks alone, defending player loses 2 life and you gain 2 life.\nEquip {2} ({2}: Attach to target creature you control. Equip only as a sorcery.)",
+      "triggeredAbilities": [
+        {
+          "condition": {
+            "type": "Attacks",
+            "value": {
+              "type": "Attacker",
+              "value": {
+                "creature": {
+                  "type": "HasAttached",
+                  "value": {
+                    "type": "IsSource"
+                  }
+                }
+              }
+            }
+          },
+          "modal": {
+            "modes": [
+              {
+                "clauses": [
+                  {
+                    "effects": [
+                      {
+                        "type": "ModifyTarget",
+                        "value": {
+                          "duration": {
+                            "type": "UntilEndOfTurn"
+                          },
+                          "modification": {
+                            "type": "GainKeyword",
+                            "value": {
+                              "type": "Deathtouch"
+                            }
+                          },
+                          "ref": {
+                            "type": "InSlot",
+                            "value": "thatAttackingCreature"
+                          }
+                        }
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "condition": {
+            "type": "Attacks",
+            "value": {
+              "type": "Attacker",
+              "value": {
+                "company": {
+                  "type": "Alone"
+                },
+                "creature": {
+                  "type": "HasAttached",
+                  "value": {
+                    "type": "IsSource"
+                  }
+                }
+              }
+            }
+          },
+          "modal": {
+            "modes": [
+              {
+                "clauses": [
+                  {
+                    "effects": [
+                      {
+                        "type": "LoseLife",
+                        "value": {
+                          "player": {
+                            "type": "InSlot",
+                            "value": "thatPlayer"
+                          },
+                          "quantity": {
+                            "type": "Literal",
+                            "value": 2
+                          }
+                        }
+                      },
+                      {
+                        "type": "GainLife",
+                        "value": {
+                          "player": {
+                            "type": "Relative",
+                            "value": "You"
+                          },
+                          "quantity": {
+                            "type": "Literal",
+                            "value": 2
+                          }
+                        }
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          }
+        }
+      ],
+      "typeLine": {
+        "subtypes": [
+          "Equipment"
+        ],
+        "types": [
+          "Artifact"
+        ]
+      }
+    }
+  ]
+}
