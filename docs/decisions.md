@@ -3303,11 +3303,13 @@ Entries are ordered by the first rule each cites.
   reroll came up, or the die's final result once CR 706.2b's later adjustments
   (Night Shift of the Living Dead) apply to the original roll?
 - **Rules**: CR 706.2, 706.2b, 603.2; no ruling; CR of 2026-11-06.
-- **Decision**: The number the reroll came up, after any rerolls of it; an
-  adjustment applies to the original roll, whose own trigger reads the final
+- **Decision**: The number the reroll came up. A later reroll of the die, like
+  an adjustment, modifies the original roll, whose own trigger reads the final
   result.
-- **Rejected**: The final result: it gives the reroll's event a number from a
+- **Rejected**: The final result, or the number after later rerolls of the die
+  (two Walls of Fortune): either gives the reroll's event a number from a
   modifier applied after that event, to a roll it is not part of.
 - **Site**: `Parun.Engine.Resolve.Effect.throwSettled`'s `rethrow`, proved by
-  the scenario `farideh-devil-s-chosen-draws-for-a-reroll-s-result-too`.
+  the scenario
+  `farideh-devil-s-chosen-reads-a-reroll-s-own-result-not-a-later-reroll-s`.
 - **Issue**: none.
