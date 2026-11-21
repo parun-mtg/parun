@@ -1,0 +1,250 @@
+{
+  "board": {
+    "active": "alice",
+    "seats": [
+      {
+        "hand": [
+          {
+            "card": "Tasha's Hideous Laughter",
+            "label": "laugh"
+          }
+        ],
+        "library": [
+          {
+            "card": "Hill Giant",
+            "label": "a0"
+          },
+          {
+            "card": "Island",
+            "label": "a1"
+          },
+          {
+            "card": "Island",
+            "label": "a2"
+          },
+          {
+            "card": "Island",
+            "label": "a3"
+          },
+          {
+            "card": "Island",
+            "label": "a4"
+          },
+          {
+            "card": "Island",
+            "label": "a5"
+          }
+        ],
+        "manaPool": "UUU",
+        "name": "alice"
+      },
+      {
+        "library": [
+          {
+            "card": "Hill Giant",
+            "label": "b0"
+          },
+          {
+            "card": "Craw Wurm",
+            "label": "b1"
+          },
+          {
+            "card": "Island",
+            "label": "b2"
+          },
+          {
+            "card": "Serra Angel",
+            "label": "b3"
+          },
+          {
+            "card": "Hill Giant",
+            "label": "b4"
+          },
+          {
+            "card": "Grizzly Bears",
+            "label": "b5"
+          },
+          {
+            "card": "Shivan Dragon",
+            "label": "b6"
+          },
+          {
+            "card": "Island",
+            "label": "b7"
+          },
+          {
+            "card": "Island",
+            "label": "b8"
+          },
+          {
+            "card": "Island",
+            "label": "b9"
+          },
+          {
+            "card": "Island",
+            "label": "b10"
+          }
+        ],
+        "name": "bob"
+      },
+      {
+        "library": [
+          {
+            "card": "Craw Wurm",
+            "label": "c0"
+          },
+          {
+            "card": "Craw Wurm",
+            "label": "c1"
+          },
+          {
+            "card": "Serra Angel",
+            "label": "c2"
+          },
+          {
+            "card": "Gray Ogre",
+            "label": "c3"
+          },
+          {
+            "card": "Shock",
+            "label": "c4"
+          },
+          {
+            "card": "Island",
+            "label": "c5"
+          },
+          {
+            "card": "Island",
+            "label": "c6"
+          },
+          {
+            "card": "Island",
+            "label": "c7"
+          },
+          {
+            "card": "Island",
+            "label": "c8"
+          }
+        ],
+        "name": "carol"
+      }
+    ],
+    "step": "PrecombatMain"
+  },
+  "description": "CR 406.3, 608.2c: Tasha's Hideous Laughter makes each opponent exile from the top until the exiled cards total mana value 20",
+  "note": "bob's running total is 4, 10, 10 (an Island adds 0), 15, 19, 21: 19 is short, the Grizzly Bears overshoots, and his Shivan Dragon stays. carol's reaches 20 exactly on the Gray Ogre and her Shock stays. Three seats, so each opponent is counted on its own; alice's library is untouched.",
+  "timeline": [
+    {
+      "do": {
+        "Cast": {
+          "object": "$laugh"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": "Pass",
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "View": {
+          "is": [
+            "Hill Giant#2",
+            "Craw Wurm",
+            "Island#14",
+            "Serra Angel",
+            "Hill Giant#3",
+            "Grizzly Bears"
+          ],
+          "of": "Zone",
+          "player": "bob",
+          "zone": "Exile"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "View": {
+          "is": [
+            "$b6",
+            "$b7",
+            "$b8",
+            "$b9",
+            "$b10"
+          ],
+          "of": "Zone",
+          "player": "bob",
+          "zone": "Library"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "View": {
+          "is": [
+            "Craw Wurm#2",
+            "Craw Wurm#3",
+            "Serra Angel#2",
+            "Gray Ogre"
+          ],
+          "of": "Zone",
+          "player": "carol",
+          "zone": "Exile"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "View": {
+          "is": [
+            "$c4",
+            "$c5",
+            "$c6",
+            "$c7",
+            "$c8"
+          ],
+          "of": "Zone",
+          "player": "carol",
+          "zone": "Library"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "View": {
+          "is": [
+            "$a0",
+            "$a1",
+            "$a2",
+            "$a3",
+            "$a4",
+            "$a5"
+          ],
+          "of": "Zone",
+          "player": "alice",
+          "zone": "Library"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    }
+  ]
+}
