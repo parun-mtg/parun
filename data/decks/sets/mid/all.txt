@@ -1,0 +1,272 @@
+1 Abandon the Post
+1 Adeline, Resplendent Cathar
+1 Ambitious Farmhand // Seasoned Cathar
+1 Angelfire Ignition
+1 Arcane Infusion
+1 Ardent Elementalist
+1 Arlinn, the Pack's Hope // Arlinn, the Moon's Fury
+1 Arrogant Outlaw
+1 Augur of Autumn
+1 Baithook Angler // Hook-Haunt Drifter
+1 Baneblade Scoundrel // Baneclaw Marauder
+1 Bat Whisperer
+1 Beloved Beggar // Generous Soul
+1 Bereaved Survivor // Dauntless Avenger
+1 Bird Admirer // Wing Shredder
+1 Bladebrand
+1 Bladestitched Skaab
+1 Blessed Defiance
+1 Blood Pact
+1 Bloodline Culling
+1 Bloodthirsty Adversary
+1 Bloodtithe Collector
+1 Borrowed Time
+1 Bounding Wolf
+1 Bramble Armor
+1 Briarbridge Tracker
+1 Brimstone Vandal
+1 Brood Weaver
+1 Brutal Cathar // Moonrage Brute
+1 Burly Breaker // Dire-Strain Demolisher
+1 Burn Down the House
+1 Burn the Accursed
+1 Can't Stay Away
+1 Candlegrove Witch
+1 Candlelit Cavalry
+1 Candletrap
+1 Cathar Commando
+1 Cathar's Call
+1 Cathartic Pyre
+1 Celestus Sanctifier
+1 Champion of the Perished
+1 Chaplain of Alms // Chapel Shieldgeist
+1 Clarion Cathars
+1 Clear Shot
+1 Component Collector
+1 Consider
+1 Consuming Blob
+1 Contortionist Troupe
+1 Corpse Cobble
+1 Covert Cutpurse // Covetous Geist
+1 Covetous Castaway // Ghostly Castigator
+1 Crawl from the Cellar
+1 Croaking Counterpart
+1 Crossroads Candleguide
+1 Curse of Leeches // Leeching Lurker
+1 Curse of Shaken Faith
+1 Curse of Silence
+1 Curse of Surveillance
+1 Dawnhart Mentor
+1 Dawnhart Rejuvenator
+1 Dawnhart Wardens
+1 Deathbonnet Sprout // Deathbonnet Hulk
+1 Defend the Celestus
+1 Defenestrate
+1 Delver of Secrets // Insectile Aberration
+1 Dennick, Pious Apprentice // Dennick, Pious Apparition
+1 Deserted Beach
+1 Devious Cover-Up
+1 Devoted Grafkeeper // Departed Soulkeeper
+1 Dire-Strain Rampage
+1 Diregraf Horde
+1 Diregraf Rebirth
+1 Dissipate
+1 Dreadhound
+1 Drownyard Amalgam
+1 Dryad's Revival
+1 Duel for Dominance
+1 Duelcraft Trainer
+1 Duress
+1 Eaten Alive
+1 Eccentric Farmer
+1 Ecstatic Awakener // Awoken Demon
+1 Electric Revelation
+1 Enduring Angel // Angelic Enforcer
+1 Evolving Wilds
+1 Fading Hope
+1 Faithful Mending
+1 Falcon Abomination
+1 Falkenrath Perforator
+1 Falkenrath Pit Fighter
+1 Famished Foragers
+1 Fangblade Brigand // Fangblade Eviscerator
+1 Fateful Absence
+1 Festival Crasher
+1 Field of Ruin
+1 Firmament Sage
+1 Flame Channeler // Embodiment of Flame
+1 Flare of Faith
+1 Fleshtaker
+1 Flip the Switch
+1 Florian, Voldaren Scion
+1 Forest
+1 Foul Play
+1 Galedrifter // Waildrifter
+1 Galvanic Iteration
+1 Gavony Dawnguard
+1 Gavony Silversmith
+1 Gavony Trapper
+1 Geistflame Reservoir
+1 Geistwave
+1 Ghoulcaller's Harvest
+1 Ghoulish Procession
+1 Gisa, Glorious Resurrector
+1 Grafted Identity
+1 Graveyard Trespasser // Graveyard Glutton
+1 Grizzly Ghoul
+1 Hallowed Respite
+1 Harvesttide Infiltrator // Harvesttide Assailant
+1 Harvesttide Sentry
+1 Haunted Ridge
+1 Hedgewitch's Mask
+1 Heirloom Mirror // Inherited Fiend
+1 Hobbling Zombie
+1 Homestead Courage
+1 Hostile Hostel // Creeping Inn
+1 Hound Tamer // Untamed Pup
+1 Howl of the Hunt
+1 Hungry for More
+1 Immolation
+1 Infernal Grasp
+1 Intrepid Adversary
+1 Island
+1 Jack-o'-Lantern
+1 Jadar, Ghoulcaller of Nephalia
+1 Jerren, Corrupted Bishop // Ormendahl, the Corrupter
+1 Join the Dance
+1 Katilda, Dawnhart Prime
+1 Kessig Naturalist // Lord of the Ulvenwald
+1 Lambholt Harrier
+1 Larder Zombie
+1 Lier, Disciple of the Drowned
+1 Liesa, Forgotten Archangel
+1 Light Up the Night
+1 Locked in the Cemetery
+1 Lord of the Forsaken
+1 Loyal Gryff
+1 Ludevic, Necrogenius // Olag, Ludevic's Hubris
+1 Lunar Frenzy
+1 Lunarch Veteran // Luminous Phantom
+1 Malevolent Hermit // Benevolent Geist
+1 Mask of Griselbrand
+1 Memory Deluge
+1 Might of the Old Ways
+1 Moonrager's Slash
+1 Moonsilver Key
+1 Moonveil Regent
+1 Morbid Opportunist
+1 Morkrut Behemoth
+1 Mountain
+1 Mounted Dreadknight
+1 Mourning Patrol // Morning Apparition
+1 Mysterious Tome // Chilling Chronicle
+1 Mystic Skull // Mystic Monstrosity
+1 Nebelgast Intruder
+1 Necrosynthesis
+1 Neonate's Rush
+1 No Way Out
+1 Novice Occultist
+1 Obsessive Astronomer
+1 Odric's Outrider
+1 Old Stickfingers
+1 Olivia's Midnight Ambush
+1 Ominous Roost
+1 Organ Hoarder
+1 Otherworldly Gaze
+1 Outland Liberator // Frenzied Trapbreaker
+1 Overgrown Farmland
+1 Overwhelmed Archivist // Archive Haunt
+1 Pack's Betrayal
+1 Path to the Festival
+1 Patrician Geist
+1 Pestilent Wolf
+1 Phantom Carriage
+1 Pithing Needle
+1 Plains
+1 Play with Fire
+1 Plummet
+1 Poppet Stitcher // Poppet Factory
+1 Primal Adversary
+1 Purifying Dragon
+1 Raze the Effigy
+1 Reckless Stormseeker // Storm-Charged Slasher
+1 Rem Karolus, Stalwart Slayer
+1 Return to Nature
+1 Revenge of the Drowned
+1 Rise of the Ants
+1 Rite of Harmony
+1 Rite of Oblivion
+1 Ritual Guardian
+1 Ritual of Hope
+1 Rockfall Vale
+1 Rootcoil Creeper
+1 Rotten Reunion
+1 Sacred Fire
+1 Saryth, the Viper's Fang
+1 Search Party Captain
+1 Secrets of the Key
+1 Seize the Storm
+1 Shadowbeast Sighting
+1 Shady Traveler // Stalking Predator
+1 Shipwreck Marsh
+1 Shipwreck Sifters
+1 Siege Zombie
+1 Sigarda's Splendor
+1 Sigarda, Champion of Light
+1 Sigardian Savior
+1 Silver Bolt
+1 Siphon Insight
+1 Skaab Wrangler
+1 Slaughter Specialist
+1 Slogurk, the Overslime
+1 Sludge Monster
+1 Smoldering Egg // Ashmouth Dragon
+1 Snarling Wolf
+1 Soul-Guide Gryff
+1 Spectral Adversary
+1 Spellrune Painter // Spellrune Howler
+1 Startle
+1 Stolen Vitality
+1 Storm Skreelix
+1 Storm the Festival
+1 Stormrider Spirit
+1 Stromkirk Bloodthief
+1 Stuffed Bear
+1 Sungold Barrage
+1 Sungold Sentinel
+1 Sunrise Cavalier
+1 Sunset Revelry
+1 Sunstreak Phoenix
+1 Suspicious Stowaway // Seafaring Werewolf
+1 Swamp
+1 Tainted Adversary
+1 Tapping at the Window
+1 Tavern Ruffian // Tavern Smasher
+1 Teferi, Who Slows the Sunset
+1 The Celestus
+1 The Meathook Massacre
+1 Thermo-Alchemist
+1 Thraben Exorcism
+1 Timberland Guide
+1 Tireless Hauler // Dire-Strain Brawler
+1 Tovolar's Huntmaster // Tovolar's Packleader
+1 Tovolar, Dire Overlord // Tovolar, the Midnight Scourge
+1 Triskaidekaphile
+1 Turn the Earth
+1 Unblinking Observer
+1 Unnatural Growth
+1 Unnatural Moonrise
+1 Unruly Mob
+1 Vadrik, Astral Archmage
+1 Vampire Interloper
+1 Vampire Socialite
+1 Vanquish the Horde
+1 Vengeful Strangler // Strangling Grasp
+1 Village Watch // Village Reavers
+1 Vivisection
+1 Voldaren Ambusher
+1 Voldaren Stinger
+1 Wake to Slaughter
+1 Willow Geist
+1 Winterthorn Blessing
+1 Wrenn and Seven
