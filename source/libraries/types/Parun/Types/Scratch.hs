@@ -9,6 +9,7 @@ import qualified Parun.Types.Acquisition as Acquisition
 import qualified Parun.Types.Arrival as Arrival
 import qualified Parun.Types.Cause as Cause
 import qualified Parun.Types.CounterKind as CounterKind
+import qualified Parun.Types.DeferredLot as DeferredLot
 import qualified Parun.Types.EnteringTogether as EnteringTogether
 import qualified Parun.Types.EntryOrigin as EntryOrigin
 import qualified Parun.Types.FloatingCandidate as FloatingCandidate
@@ -84,9 +85,8 @@ data Scratch = MkScratch
     enteringSince :: !(Maybe ObjectId.ObjectId),
     -- | CR 616.1 / 608.2f: inside Parun.Engine.Event.enteringAtOnce, the token
     -- lots each creation of the action has minted and not yet entered, in
-    -- creation order, a lot's tokens in mint order. Nothing outside one, and
-    -- at every priority window.
-    deferredLots :: !(Maybe (Seq.Seq [ObjectId.ObjectId])),
+    -- creation order. Nothing outside one, and at every priority window.
+    deferredLots :: !(Maybe (Seq.Seq DeferredLot.DeferredLot)),
     -- | CR 614.3: the one-use floating entry replacements applied in the
     -- Event.arrivingTogether scope under way, held standing until it ends,
     -- since what enters at once enters in one event

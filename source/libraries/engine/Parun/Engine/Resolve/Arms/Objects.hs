@@ -68,10 +68,12 @@ import qualified Parun.Types.ArmDelayedTrigger as ArmDelayedTrigger
 import qualified Parun.Types.AttachAll as AttachAll
 import qualified Parun.Types.AttachBound as AttachBound
 import qualified Parun.Types.AttachTarget as AttachTarget
+import qualified Parun.Types.AttackChoice as AttackChoice
 import qualified Parun.Types.AttackTarget as AttackTarget
 import qualified Parun.Types.BecameDesignated as BecameDesignated
 import qualified Parun.Types.BecomeCopy as BecomeCopy
 import qualified Parun.Types.Binding as Binding.Type
+import qualified Parun.Types.BlockChoice as BlockChoice
 import qualified Parun.Types.Card as Card.Type
 import qualified Parun.Types.CardSelection as CardSelection
 import qualified Parun.Types.CardType as CardType
@@ -213,11 +215,11 @@ create settle resolving source controller legal chosen (Create.MkCreate quantity
   mBlocked <- case EntryRiders.blocking entry of
     Nothing -> pure Nothing
     -- CR 509.4's main clause: Combat asks the controller.
-    Just EntryBlock.Chosen -> pure (Just Combat.AnyAttacker)
+    Just EntryBlock.Chosen -> pure (Just BlockChoice.AnyAttacker)
     Just (EntryBlock.Specified slot) -> do
       named <- Common.fromAmongMembers legal resolving chosen slot
       pure $ case named of
-        [attacker] -> Just (Combat.SpecifiedAttacker attacker)
+        [attacker] -> Just (BlockChoice.SpecifiedAttacker attacker)
         _ -> Nothing
   -- CR 303.4i's "attached to", read ONCE ahead of the minting loop for
   -- mBlocked's reason and through the same reader: Nothing where the effect
@@ -252,18 +254,9 @@ create settle resolving source controller legal chosen (Create.MkCreate quantity
             -- CR 122.6's counters ride along through that rule's own door, so a
             -- counter replacement reaches them, in the counts freezeRiders
             -- settled above.
-            made <- Common.enteringForRiders entry (Event.createTokens settle creating (NonEmpty.singleton (Common.bakeTokenCharacteristics (Quantity.evaluateFor viewOf context gs resolving source) card, Nothing)) shown (Integer.toNaturalSaturating n) (EntryRiders.tapped entry) (EntryRiders.counters frozen) mAttached (Common.resolvingMarks resolving gs))
-            -- CR 508.4: a creature put onto the battlefield attacking has its
-            -- defending player chosen in Parun.Engine.Combat, and CR 508.3a's
-            -- attack triggers see nothing. After the entry loops rather than
-            -- inside them: CR 614.16's replacement settles the COUNT first.
-            Monad.forM_ mAttack (\specified -> Monad.mapM_ (Combat.putOntoBattlefieldAttacking specified) made)
-            -- CR 509.4, the blocking twin one rule over, and in the same place
-            -- for the same reason: CR 614.16's replacement settles the COUNT
-            -- first, and CR 506.3e / CR 509.4a's no-op conditions live in
-            -- Parun.Engine.Combat rather than here.
-            Monad.forM_ mBlocked (\blocked -> Monad.mapM_ (Combat.putOntoBattlefieldBlocking blocked) made)
-            pure made
+            --
+            -- CR 508.4 / 509.4: the riders put them into combat once entered.
+            Common.creatingIntoCombat mAttack mBlocked (Event.createTokens settle creating (NonEmpty.singleton (Common.bakeTokenCharacteristics (Quantity.evaluateFor viewOf context gs resolving source) card, Nothing)) shown (Integer.toNaturalSaturating n) (EntryRiders.tapped entry) (EntryRiders.counters frozen) mAttached (Common.resolvingMarks resolving gs))
       _ -> pure []
   -- CR 607.2c / 607.5: `minted` were created with `source`.
   Monad.when linked (State.modify' (\g -> foldr (Common.linkEntrant resolving source) g minted))
@@ -442,7 +435,7 @@ conjure settle resolving source controller legal payload = do
             -- CR 508.4, Create's arm's posture and in the same place: after the
             -- entry loops, with the controller choosing what it attacks, and CR
             -- 508.3a's attack triggers seeing nothing.
-            Monad.when (ConjureEntry.attacking entry) (Monad.mapM_ (Combat.putOntoBattlefieldAttacking Combat.Any) made)
+            Monad.when (ConjureEntry.attacking entry) (Monad.mapM_ (Combat.putOntoBattlefieldAttacking AttackChoice.Any) made)
             pure made
       case Common.evaluateForRecipient viewOf context gs resolving source conjuring quantity of
         Just n
@@ -511,11 +504,11 @@ createCopy settle resolving source controller legal chosen (CreateCopy.MkCreateC
   mBlocked <- case EntryRiders.blocking entry of
     Nothing -> pure Nothing
     -- CR 509.4's main clause: Combat asks the controller.
-    Just EntryBlock.Chosen -> pure (Just Combat.AnyAttacker)
+    Just EntryBlock.Chosen -> pure (Just BlockChoice.AnyAttacker)
     Just (EntryBlock.Specified blockedSlot) -> do
       named <- Common.fromAmongMembers legal resolving chosen blockedSlot
       pure $ case named of
-        [attacker] -> Just (Combat.SpecifiedAttacker attacker)
+        [attacker] -> Just (BlockChoice.SpecifiedAttacker attacker)
         _ -> Nothing
   -- The count is Create's, read the same way and off the same `gs` (CR 707.1).
   minted <- case Quantity.evaluateFor viewOf context gs resolving source quantity of
@@ -559,14 +552,8 @@ createCopy settle resolving source controller legal chosen (CreateCopy.MkCreateC
                    in fmap (\card -> (card, Just copied {TokenCopy.values = except (TokenCopy.values copied), TokenCopy.turned = fmap except (TokenCopy.turned copied)})) (Event.copiedTokenCard src gs)
             case NonEmpty.nonEmpty (Maybe.mapMaybe shapeOf sources) of
               Nothing -> pure []
-              Just shapes -> do
-                made <- Common.enteringForRiders entry (Event.createTokens settle creating shapes Nothing (Integer.toNaturalSaturating n) (EntryRiders.tapped entry) (EntryRiders.counters frozen) Nothing (Common.resolvingMarks resolving gs))
-                -- CR 508.4, after the entry loop for Create's reason.
-                Monad.forM_ mAttack (\specified -> Monad.mapM_ (Combat.putOntoBattlefieldAttacking specified) made)
-                -- CR 509.4, the blocking twin one rule over, in the same place
-                -- and for the same reason Create's arm puts it there.
-                Monad.forM_ mBlocked (\blocked -> Monad.mapM_ (Combat.putOntoBattlefieldBlocking blocked) made)
-                pure made
+              -- CR 508.4 / 509.4, Create's road.
+              Just shapes -> Common.creatingIntoCombat mAttack mBlocked (Event.createTokens settle creating shapes Nothing (Integer.toNaturalSaturating n) (EntryRiders.tapped entry) (EntryRiders.counters frozen) Nothing (Common.resolvingMarks resolving gs))
     _ -> pure []
   -- Dance of Many's later abilities mean this token.
   Monad.when linked (State.modify' (\g -> foldr (Common.linkEntrant resolving source) g minted))

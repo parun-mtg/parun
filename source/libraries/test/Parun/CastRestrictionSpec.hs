@@ -37,6 +37,7 @@ import qualified Parun.Registry as Registry
 import qualified Parun.Spec as Spec
 import qualified Parun.Support as S
 import qualified Parun.Types.Action as A
+import qualified Parun.Types.AttackChoice as AttackChoice
 import qualified Parun.Types.AttackTarget as AttackTarget
 import qualified Parun.Types.BeginningStep as BeginningStep
 import qualified Parun.Types.CardName as CardName
@@ -142,7 +143,7 @@ printedCastingRestrictionSpec s registry = Spec.describe s "PrintedCastingRestri
     rally <- S.printingOf s registry "Rally the Troops"
     let (bobsRally, _, _, board) = rallyBoard piker plains rally
         mine = Projection.controls S.alice board
-        joined = S.runPure S.identityAnswer board (Foldable.traverse_ (Combat.putOntoBattlefieldAttacking Combat.Any) mine)
+        joined = S.runPure S.identityAnswer board (Foldable.traverse_ (Combat.putOntoBattlefieldAttacking AttackChoice.Any) mine)
         combat = TurnRegisters.combat (GameState.turn joined)
     Spec.assertEqWith s "nothing was DECLARED" (S.attackerDeclarationsOf joined) []
     -- CR 508.8's record does count it -- that is the rule's second clause, and

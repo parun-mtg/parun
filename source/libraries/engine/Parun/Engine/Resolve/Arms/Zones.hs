@@ -61,6 +61,7 @@ import qualified Parun.Types.Ballot as Ballot
 import qualified Parun.Types.BallotChoice as BallotChoice
 import qualified Parun.Types.Bid as Bid
 import qualified Parun.Types.Binding as Binding.Type
+import qualified Parun.Types.BlockChoice as BlockChoice
 import qualified Parun.Types.Bookkeeping as Bookkeeping
 import qualified Parun.Types.Card as Card.Type
 import qualified Parun.Types.CardName as CardName
@@ -468,11 +469,11 @@ moveToZone settle resolving source controller legal chosen (MoveToZone.MkMoveToZ
           mBlocked <- case EntryRiders.blocking entry of
             Nothing -> pure Nothing
             -- CR 509.4's main clause: Combat asks the controller.
-            Just EntryBlock.Chosen -> pure (Just Combat.AnyAttacker)
+            Just EntryBlock.Chosen -> pure (Just BlockChoice.AnyAttacker)
             Just (EntryBlock.Specified slot) -> do
               named <- Common.fromAmongMembers legal resolving chosen slot
               pure $ case named of
-                [attacker] -> Just (Combat.SpecifiedAttacker attacker)
+                [attacker] -> Just (BlockChoice.SpecifiedAttacker attacker)
                 _ -> Nothing
           -- CR 508.4's rider, read ONCE off the same pre-move board for
           -- mBlocked's reason.
@@ -1241,14 +1242,15 @@ forEach settle applyEffectWith loopOffers runSubgame resolving source controller
       -- CR 616.1 over that unit: the tokens the pass creates, across its
       -- members' separate creations, enter at once as it ends
       -- (Event.enteringAtOnce), so their seats order every lot's as-enters
-      -- replacements together, and a token that did not enter is dropped from
-      -- what the members bound.
+      -- replacements together, then join combat as their riders say
+      -- (Common.intoCombatAfterEntry), and a token that did not enter is
+      -- dropped from what the members bound.
       actionMajor state0 =
         Monad.foldM
           ( \state (choices, action) -> do
               chosenFor <- overMembers (not (null choices)) (\member state' -> Monad.foldM (step member) state' choices) state
               let pass effect = do
-                    ((made', asked'), unentered) <- Event.enteringAtOnce settle (overMembers False (\member state' -> step member state' effect) chosenFor)
+                    ((made', asked'), unentered) <- Event.enteringAtOnce settle Common.intoCombatAfterEntry (overMembers False (\member state' -> step member state' effect) chosenFor)
                     pure (fmap (Common.withoutObjects unentered) made', asked')
               maybe (pure chosenFor) (Event.simultaneously . Event.together . pass) action
           )

@@ -38,6 +38,7 @@ import qualified Parun.Support as S
 import qualified Parun.Types.Action as Action
 import qualified Parun.Types.ActivatedAbility as ActivatedAbility
 import qualified Parun.Types.AddPhases as AddPhases
+import qualified Parun.Types.AttackChoice as AttackChoice
 import qualified Parun.Types.BeginningStep as BeginningStep
 import qualified Parun.Types.Card as Card.Type
 import qualified Parun.Types.CardName as CardName
@@ -405,7 +406,7 @@ skipSpec s registry = Spec.describe s "Skip" $ do
     -- that one for anything between the attack and the return going wrong.
     piker <- S.printingOf s registry "Goblin Piker"
     let (base, ours, _) = S.combatBoardOf [piker] []
-        joined = S.runPure S.identityAnswer base (Foldable.traverse_ (Combat.putOntoBattlefieldAttacking Combat.Any) ours)
+        joined = S.runPure S.identityAnswer base (Foldable.traverse_ (Combat.putOntoBattlefieldAttacking AttackChoice.Any) ours)
         after = Combat.skipEmptyCombat joined
         remaining = foldr (:) [] (TurnRegisters.remaining (GameState.turn after))
     Spec.assertEqWith s "no declaration was made" (S.attackerDeclarationsOf after) []

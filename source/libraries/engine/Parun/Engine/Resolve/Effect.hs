@@ -56,6 +56,7 @@ import qualified Parun.Types.ActivatedAbility as ActivatedAbility
 import qualified Parun.Types.ActivationRestriction as ActivationRestriction.Type
 import qualified Parun.Types.ActiveCopyCast as ActiveCopyCast
 import qualified Parun.Types.AppliedReduction as AppliedReduction
+import qualified Parun.Types.AttackChoice as AttackChoice
 import qualified Parun.Types.Binding as Binding.Type
 import qualified Parun.Types.CandidateCost as CandidateCost
 import qualified Parun.Types.Card as Card.Type
@@ -922,7 +923,7 @@ runEntryEffect runSubgame pending = do
   -- 508.4e); skipped for a creature a second row already put in combat, since
   -- it enters attacking once.
   attacking <- State.gets (Map.member oid . Combat.Type.attackers . TurnRegisters.combat . GameState.turn)
-  Monad.when (PendingEntryEffect.attacking pending && not attacking) (Combat.putOntoBattlefieldAttacking Combat.Any oid)
+  Monad.when (PendingEntryEffect.attacking pending && not attacking) (Combat.putOntoBattlefieldAttacking AttackChoice.Any oid)
   State.modify' (Trigger.resampleEntry oid)
 
 -- CR 614.1a: run the effects a replacement put in an event's place -- Kill-Suit

@@ -61,6 +61,7 @@ import qualified Parun.Engine.Stack as Stack
 import qualified Parun.Registry as Registry
 import qualified Parun.Spec as Spec
 import qualified Parun.Support as S
+import qualified Parun.Types.AttackChoice as AttackChoice
 import qualified Parun.Types.AttackTarget as AttackTarget
 import qualified Parun.Types.AttackerDeclared as AttackerDeclared
 import qualified Parun.Types.CardName as CardName
@@ -261,7 +262,7 @@ attackSpec s registry = Spec.describe s "Attacking" $ do
     (gs, battle, mine, _, _) <- battleCombatOf s registry S.carol S.carol ["Goblin Piker"] [] []
     case mine of
       [arrival] -> do
-        let after = S.runPure (attackTheBattle battle) gs (Combat.putOntoBattlefieldAttacking Combat.Any arrival)
+        let after = S.runPure (attackTheBattle battle) gs (Combat.putOntoBattlefieldAttacking AttackChoice.Any arrival)
             combat = TurnRegisters.combat (GameState.turn after)
         Spec.assertEqWith s "it is attacking the Siege" (Map.lookup arrival (Combat.Type.attackers combat)) (Just (AttackTarget.OfBattle battle))
         -- The two records hold DIFFERENT seats, which is the whole reason there
