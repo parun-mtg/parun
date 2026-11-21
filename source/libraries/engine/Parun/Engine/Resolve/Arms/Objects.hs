@@ -187,8 +187,17 @@ import qualified Parun.Types.WithCounters as WithCounters
 import qualified Parun.Types.Zone as Zone
 
 create :: Settle.Settle -> ObjectId -> ObjectId -> PlayerId -> Map.Map SlotName (Set Recipient) -> Map.Map SlotName (Set Recipient) -> Create.Create Card.Type.Card (GrantedAbility.GrantedAbility Card.Type.Card) -> Game ()
-create settle resolving source controller legal chosen (Create.MkCreate quantity card entry mSlot creator linked die) = do
+create settle resolving source controller legal chosen (Create.MkCreate quantity card entry mSlot creator linked die lenders) = do
   gs <- State.get
+  -- CR 111.3: the token's text, with every triggered ability of each object
+  -- `lenders` names written into it off the pre-effect board (CR 608.2h), so
+  -- the abilities are copiable values (The Book of Vile Darkness's ruling)
+  -- rather than a layer-6 grant. The scenarios
+  -- the-book-of-vile-darkness-creates-vecna-with-the-triggered-abilities-of-the-exiled-cards
+  -- and the-book-of-vile-darkness-s-vecna-copied-by-spark-double-keeps-the-triggered-abilities
+  -- prove it.
+  let lending = [oid | ref <- Maybe.maybeToList lenders, Recipient.ToObject oid <- Common.objectRefRecipients legal resolving controller source gs ref]
+      written = withLentTriggers gs lending card
   let viewOf = effectViewOf resolving source legal gs
       context = effectContext gs resolving controller source legal (slotBindings resolving gs)
       -- CR 608.2h: the counts the tokens enter with, settled ONCE off the
@@ -256,11 +265,28 @@ create settle resolving source controller legal chosen (Create.MkCreate quantity
             -- settled above.
             --
             -- CR 508.4 / 509.4: the riders put them into combat once entered.
-            Common.creatingIntoCombat mAttack mBlocked (Event.createTokens settle creating (NonEmpty.singleton (Common.bakeTokenCharacteristics (Quantity.evaluateFor viewOf context gs resolving source) card, Nothing)) shown (Integer.toNaturalSaturating n) (EntryRiders.tapped entry) (EntryRiders.counters frozen) mAttached (Common.resolvingMarks resolving gs))
+            Common.creatingIntoCombat mAttack mBlocked (Event.createTokens settle creating (NonEmpty.singleton (Common.bakeTokenCharacteristics (Quantity.evaluateFor viewOf context gs resolving source) written, Nothing)) shown (Integer.toNaturalSaturating n) (EntryRiders.tapped entry) (EntryRiders.counters frozen) mAttached (Common.resolvingMarks resolving gs))
       _ -> pure []
   -- CR 607.2c / 607.5: `minted` were created with `source`.
   Monad.when linked (State.modify' (\g -> foldr (Common.linkEntrant resolving source) g minted))
   Common.bindObjects resolving mSlot minted
+
+-- CR 111.3 / 603.1: `card` with the triggered abilities of each of `lenders`
+-- written onto every face, as its copiable values list them, with the delayed
+-- abilities they arm (Projection.lentTriggersOf).
+--
+-- Unprinted: a lender's keyword with a triggered ability (CR 702) lends
+-- nothing here. The one printing, The Book of Vile Darkness, exiles itself and
+-- artifacts named Eye of Vecna and Hand of Vecna, none printing such a keyword.
+-- Of the cards with a keyword that can enter as or become a copy of one
+-- (MTGJSON AtomicCards, 2026-11-21), Sakashima's Protege alone prints a
+-- triggered keyword, cascade, which functions only on the stack (CR 702.85a),
+-- and no card in data/cards/ filters on cascade.
+withLentTriggers :: GameState.GameState -> [ObjectId] -> Card.Type.Card -> Card.Type.Card
+withLentTriggers gs lenders card =
+  let (triggers, delayeds) = foldMap (\lender -> Projection.lentTriggersOf lender (Projection.copiableCharacteristics lender gs)) lenders
+      onFace face = face {Face.triggeredAbilities = Face.triggeredAbilities face <> triggers, Face.delayedAbilities = Map.union (Face.delayedAbilities face) delayeds}
+   in if null lenders then card else card {Card.Type.faces = fmap onFace (Card.Type.faces card)}
 
 -- Alchemy's conjure keyword action. Digital-only, so there is no rule to cite;
 -- what the CR settles is that the result is a CARD and not CR 111.1's token,

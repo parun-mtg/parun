@@ -1,6 +1,7 @@
 module Parun.Types.Create where
 
 import qualified Parun.Types.EntryRiders as EntryRiders
+import qualified Parun.Types.ObjectRef as ObjectRef
 import qualified Parun.Types.PlayerRef as PlayerRef
 import qualified Parun.Types.Quantity as Quantity
 import qualified Parun.Types.ShownDie as ShownDie
@@ -42,6 +43,11 @@ data Create card ability = MkCreate
     -- pre-effect board (CR 608.2h) -- Pippa, Duchess of Dice's "it becomes a
     -- green Die creature token", whose rulings have the token represented by the
     -- die just rolled. Nothing for every other token.
-    die :: Maybe (ShownDie.ShownDie Quantity.Quantity)
+    die :: Maybe (ShownDie.ShownDie Quantity.Quantity),
+    -- | CR 111.3: the objects whose triggered abilities join the token's
+    -- effect-defined text, read as the effect executes (The Book of Vile
+    -- Darkness's "all triggered abilities of the exiled cards", copiable values
+    -- by its ruling). Nothing for every other token.
+    triggeredAbilitiesOf :: Maybe ObjectRef.ObjectRef
   }
   deriving (Eq, Ord, Show)

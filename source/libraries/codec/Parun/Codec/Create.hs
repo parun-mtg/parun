@@ -4,6 +4,7 @@ module Parun.Codec.Create where
 
 import qualified Data.Typeable as Typeable
 import qualified Parun.Codec.EntryRiders as EntryRiders
+import qualified Parun.Codec.ObjectRef as ObjectRef
 import qualified Parun.Codec.PlayerRef as PlayerRef
 import qualified Parun.Codec.Quantity as Quantity
 import qualified Parun.Codec.ShownDie as ShownDie
@@ -38,6 +39,7 @@ codec cardCodec abilityCodec = Fields.object $ do
   creator <- Fields.defaulted "creator" (PlayerRef.Relative PlayerRelation.You) PlayerRef.codec Create.creator
   linked <- Fields.defaulted "linked" False Common.boolean Create.linked
   die <- Fields.defaulted "die" Nothing (Common.maybe (ShownDie.codec Quantity.codec)) Create.die
+  lenders <- Fields.defaulted "triggeredAbilitiesOf" Nothing (Common.maybe ObjectRef.codec) Create.triggeredAbilitiesOf
   pure
     Create.MkCreate
       { Create.quantity = quantity,
@@ -46,5 +48,6 @@ codec cardCodec abilityCodec = Fields.object $ do
         Create.slot = slot,
         Create.creator = creator,
         Create.linked = linked,
-        Create.die = die
+        Create.die = die,
+        Create.triggeredAbilitiesOf = lenders
       }

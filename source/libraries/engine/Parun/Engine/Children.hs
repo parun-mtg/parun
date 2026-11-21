@@ -1157,8 +1157,8 @@ effectChildren c effect = case effect of
   Effect.RedistributeLifeTotals -> pure effect
   Effect.IncreaseSpeed x -> fmap Effect.IncreaseSpeed (playerQuantityChildren c x)
   Effect.DecreaseSpeed (SpeedDecrease.MkSpeedDecrease who quantity floor_) -> fmap Effect.DecreaseSpeed (SpeedDecrease.MkSpeedDecrease <$> onPlayer c who <*> onQuantity c quantity <*> pure floor_)
-  Effect.Create (Create.MkCreate quantity card riders named creator linked die) ->
-    fmap Effect.Create (Create.MkCreate <$> onQuantity c quantity <*> onCard c card <*> onEntryRiders c riders <*> traverse (onSlot c) named <*> onPlayer c creator <*> pure linked <*> traverse (\shown -> fmap (\r -> shown {ShownDie.result = r}) (onQuantity c (ShownDie.result shown))) die)
+  Effect.Create (Create.MkCreate quantity card riders named creator linked die lenders) ->
+    fmap Effect.Create (Create.MkCreate <$> onQuantity c quantity <*> onCard c card <*> onEntryRiders c riders <*> traverse (onSlot c) named <*> onPlayer c creator <*> pure linked <*> traverse (\shown -> fmap (\r -> shown {ShownDie.result = r}) (onQuantity c (ShownDie.result shown))) die <*> traverse (onObjectRef c) lenders)
   Effect.Conjure (Conjure.MkConjure quantity cards selection drafted destination named conjurer) ->
     fmap Effect.Conjure (Conjure.MkConjure <$> onQuantity c quantity <*> conjureCardsChildren c cards <*> pure selection <*> pure drafted <*> pure destination <*> traverse (onSlot c) named <*> onPlayer c conjurer)
   Effect.CreateCopy (CreateCopy.MkCreateCopy quantity ref riders named exceptions creator linked) ->

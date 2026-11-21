@@ -10,6 +10,7 @@ import qualified Parun.Types.EntryAttack as EntryAttack
 import qualified Parun.Types.EntryRiders as EntryRiders
 import qualified Parun.Types.Holder as Holder
 import qualified Parun.Types.Hop as Hop
+import qualified Parun.Types.ObjectRef as ObjectRef
 import qualified Parun.Types.PlayerRef as PlayerRef
 import qualified Parun.Types.PlayerRelation as PlayerRelation
 import qualified Parun.Types.Quantity as Quantity
@@ -46,7 +47,8 @@ spec s = Spec.describe s "Parun.Codec.Create" $ do
             Create.slot = Nothing,
             Create.creator = you,
             Create.linked = False,
-            Create.die = Nothing
+            Create.die = Nothing,
+            Create.triggeredAbilitiesOf = Nothing
           }
       )
       " {\"quantity\":{\"type\":\"Literal\",\"value\":2},\"card\":\"Spirit Token\"} "
@@ -64,7 +66,8 @@ spec s = Spec.describe s "Parun.Codec.Create" $ do
             Create.slot = Just (SlotName.MkSlotName (Text.pack "token")),
             Create.creator = you,
             Create.linked = False,
-            Create.die = Nothing
+            Create.die = Nothing,
+            Create.triggeredAbilitiesOf = Nothing
           }
       )
       " {\"quantity\":{\"type\":\"Literal\",\"value\":1},\"card\":\"Spirit Token\",\"slot\":\"token\"} "
@@ -80,7 +83,8 @@ spec s = Spec.describe s "Parun.Codec.Create" $ do
             Create.slot = Nothing,
             Create.creator = you,
             Create.linked = False,
-            Create.die = Nothing
+            Create.die = Nothing,
+            Create.triggeredAbilitiesOf = Nothing
           }
       )
       " {\"quantity\":{\"type\":\"Literal\",\"value\":2},\"card\":\"Spirit Token\",\"riders\":{\"attacking\":{\"type\":\"Chosen\"}}} "
@@ -97,7 +101,8 @@ spec s = Spec.describe s "Parun.Codec.Create" $ do
             Create.slot = Nothing,
             Create.creator = PlayerRef.HolderOfBound Holder.Controller Hop.Itself (SlotName.MkSlotName (Text.pack "victim")),
             Create.linked = False,
-            Create.die = Nothing
+            Create.die = Nothing,
+            Create.triggeredAbilitiesOf = Nothing
           }
       )
       " {\"quantity\":{\"type\":\"Literal\",\"value\":1},\"card\":\"Centaur Token\",\"creator\":{\"type\":\"HolderOfBound\",\"value\":{\"holder\":\"Controller\",\"hop\":\"Itself\",\"slot\":\"victim\"}}} "
@@ -112,7 +117,8 @@ spec s = Spec.describe s "Parun.Codec.Create" $ do
             Create.slot = Nothing,
             Create.creator = you,
             Create.linked = True,
-            Create.die = Nothing
+            Create.die = Nothing,
+            Create.triggeredAbilitiesOf = Nothing
           }
       )
       " {\"quantity\":{\"type\":\"Literal\",\"value\":1},\"card\":\"Tetravite Token\",\"linked\":true} "
@@ -128,8 +134,27 @@ spec s = Spec.describe s "Parun.Codec.Create" $ do
             Create.slot = Nothing,
             Create.creator = you,
             Create.linked = False,
-            Create.die = Just ShownDie.MkShownDie {ShownDie.sides = 6, ShownDie.result = Quantity.InSlot (SlotName.MkSlotName (Text.pack "result"))}
+            Create.die = Just ShownDie.MkShownDie {ShownDie.sides = 6, ShownDie.result = Quantity.InSlot (SlotName.MkSlotName (Text.pack "result"))},
+            Create.triggeredAbilitiesOf = Nothing
           }
       )
       " {\"quantity\":{\"type\":\"Literal\",\"value\":1},\"card\":\"Die Token\",\"die\":{\"sides\":6,\"result\":{\"type\":\"InSlot\",\"value\":\"result\"}}} "
+  -- The objects lending their triggered abilities, alone (The Book of Vile
+  -- Darkness).
+  Spec.it s "MkCreate, a token with the triggered abilities of the exiled cards" $
+    Common.assertCodec
+      s
+      codec
+      ( Create.MkCreate
+          { Create.quantity = Quantity.Literal 1,
+            Create.card = Text.pack "Vecna",
+            Create.riders = plain,
+            Create.slot = Nothing,
+            Create.creator = you,
+            Create.linked = False,
+            Create.die = Nothing,
+            Create.triggeredAbilitiesOf = Just (ObjectRef.InSlot (SlotName.MkSlotName (Text.pack "exiled")))
+          }
+      )
+      " {\"quantity\":{\"type\":\"Literal\",\"value\":1},\"card\":\"Vecna\",\"triggeredAbilitiesOf\":{\"type\":\"InSlot\",\"value\":\"exiled\"}} "
   Spec.it s "has a schema" $ Common.assertHasSchema s codec
