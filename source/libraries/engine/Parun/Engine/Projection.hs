@@ -627,11 +627,9 @@ applyModification textBoxOf viewOf src stamp gs oid unitTypes affected m pc =
               lent card = let copied = lenderOf card in filter (lendsKind only loyalty) (intrinsicManaAbilitiesOf copied <> filter (AbilityZone.grantFunctionsIn Zone.Battlefield (PC.delayedAbilities copied) zone) (PC.activatedAbilities copied))
               gained = foldMap (\card -> fmap (named card) (lent card)) cards
               restricted a = a {ActivatedAbility.restrictions = ActivatedAbility.restrictions a <> extra}
-              titled card t = t {TriggeredAbility.name = Just (Binding.acquiredFrom card (TriggeredAbility.name t))}
-              triggers card = PC.triggeredAbilities (lenderOf card)
               keywords card = [LentKeyword.MkLentKeyword k n (Binding.acquiredFrom card Nothing) triggered extra | (k, n) <- Map.toAscList (PC.keywords (lenderOf card)), Keyword.lends triggered k n, not (barred (PC.barredKeywords pc) k)]
-              fired = if triggered then foldMap (\card -> fmap (titled card) (triggers card)) cards else []
-              armable card = Map.mapKeys (Binding.acquiredFrom card . Just) (fmap (titled card) (PC.delayedAbilities (lenderOf card)))
+              fired = if triggered then foldMap (\card -> fst (lentTriggersOf card (lenderOf card))) cards else []
+              armable card = snd (lentTriggersOf card (lenderOf card))
            in pc {PC.activatedAbilities = PC.activatedAbilities pc <> fmap restricted gained, PC.triggeredAbilities = PC.triggeredAbilities pc <> fired, PC.delayedAbilities = Map.union (PC.delayedAbilities pc) (foldMap armable cards), PC.lentKeywords = PC.lentKeywords pc <> foldMap keywords cards}
         -- CR 702.1d: a keyword a resolving lend took (Resolve.Common's
         -- expandGrant), recorded as the arm above records one, and kept out
@@ -7554,6 +7552,16 @@ grantsAbilityWhere p m = case m of
 -- from. Rule 715.3a's Saga is a SUBTYPE and so is asked one function up.
 mintingCardType :: CardType.CardType -> Bool
 mintingCardType cardType = cardType == CardType.Planeswalker || cardType == CardType.Battle
+
+-- | CR 603.1 / 603.7: the triggered abilities `lender`'s characteristics `pc`
+-- list, and the delayed abilities they arm by name, each titled for `lender`
+-- (Binding.acquiredFrom), so an acquired ability reads its own card's delayed
+-- abilities (Binding.delayedAsRead). What Modification.GainCardAbilities lends
+-- and what Create.triggeredAbilitiesOf writes into a token's text.
+lentTriggersOf :: ObjectId -> PC.ProjectedCharacteristics -> ([TriggeredAbility Card.Type.Card (GrantedAbility.GrantedAbility Card.Type.Card)], Map.Map AbilityName.AbilityName (TriggeredAbility Card.Type.Card (GrantedAbility.GrantedAbility Card.Type.Card)))
+lentTriggersOf lender pc =
+  let titled t = t {TriggeredAbility.name = Just (Binding.acquiredFrom lender (TriggeredAbility.name t))}
+   in (fmap titled (PC.triggeredAbilities pc), Map.mapKeys (Binding.acquiredFrom lender . Just) (fmap titled (PC.delayedAbilities pc)))
 
 -- CR 603 / 613 layer 6: an object's printed-and-granted triggered abilities
 -- after the layer system. A Humility'd creature has none.

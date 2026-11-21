@@ -1708,8 +1708,9 @@ effectObjectRefs effect =
         Effect.DecreaseSpeed {} -> []
         -- CR 111.1's token holds a whole card, but the refs printed ON it are another
         -- object's; mintedFaces is that axis, and every caller here sweeps one face at
-        -- a time. CreateEmblem answers the same way for CR 114.2's emblem.
-        Effect.Create {} -> []
+        -- a time. CreateEmblem answers the same way for CR 114.2's emblem. The
+        -- objects lending the token their triggered abilities are read here.
+        Effect.Create create -> read_ (Maybe.maybeToList (Create.triggeredAbilitiesOf create))
         -- The WRITTEN arm is a token's case above: the card is minted text, not a
         -- ref. A DUPLICATE names an object already in the game, and reads it the
         -- way CreateCopy's arm below reads its own.
@@ -1926,6 +1927,10 @@ strayAllOf effect = case effect of
   Effect.OfferCast {} -> False
   Effect.Tap {} -> False
   Effect.Untap {} -> False
+  -- The lenders of a token's triggered abilities, read through
+  -- Resolve.Common.objectRefRecipients, which takes every ref an AllOf holds
+  -- (The Book of Vile Darkness).
+  Effect.Create {} -> False
   Effect.CopyStackObject x -> case CopyStackObject.targets x of
     CopyTargets.ForEach _ -> holdsAllOf (CopyStackObject.ref x)
     _ -> any (holdsAllOf . snd) (effectObjectRefs effect)
@@ -2221,7 +2226,7 @@ effectLintSpec s registry corpus = Spec.describe s "Lint" $ do
   Spec.it s "no Create carries CR 712.11a's transformed entry rider" $ do
     ps <- S.allPrintings s corpus
     let creates effect = case effect of
-          Effect.Create (Create.MkCreate _ _ riders _ _ _ _) -> EntryRiders.transformed riders
+          Effect.Create (Create.MkCreate _ _ riders _ _ _ _ _) -> EntryRiders.transformed riders
           _ -> False
         moves effect = case effect of
           Effect.MoveToZone (MoveToZone.MkMoveToZone _ _ riders _ _ _ _) -> EntryRiders.transformed riders
@@ -2428,7 +2433,7 @@ effectLintSpec s registry corpus = Spec.describe s "Lint" $ do
           Effect.Discard (Discard.Counted (CountedDiscard.MkCountedDiscard _ _ mDiscarded)) -> Maybe.isJust mDiscarded
           _ -> False
         bindsTokens effect = case effect of
-          Effect.Create (Create.MkCreate _ _ _ mSlot _ _ _) -> Maybe.isJust mSlot
+          Effect.Create (Create.MkCreate _ _ _ mSlot _ _ _ _) -> Maybe.isJust mSlot
           _ -> False
         exiledSlot = SlotName.MkSlotName (Text.pack "exiled")
         destroyedSlot = SlotName.MkSlotName (Text.pack "destroyed")
@@ -2492,10 +2497,11 @@ effectLintSpec s registry corpus = Spec.describe s "Lint" $ do
                 (PlayerRef.Relative PlayerRelation.You)
                 False
                 Nothing
+                Nothing
             )
         victimSlot = SlotName.MkSlotName (Text.pack "victim")
         discarding = Effect.Discard (Discard.Counted (CountedDiscard.MkCountedDiscard (PlayerRef.InSlot victimSlot) (Quantity.Type.Literal 1) (Just destroyedSlot)))
-        minting n = Effect.Create (Create.MkCreate (Quantity.Type.Literal n) (oneFaced (vanillaFace "Soldier" (spellLine CardType.Creature Set.empty []))) EntryRiders.defaultValue (Just destroyedSlot) (PlayerRef.Relative PlayerRelation.You) False Nothing)
+        minting n = Effect.Create (Create.MkCreate (Quantity.Type.Literal n) (oneFaced (vanillaFace "Soldier" (spellLine CardType.Creature Set.empty []))) EntryRiders.defaultValue (Just destroyedSlot) (PlayerRef.Relative PlayerRelation.You) False Nothing Nothing)
     -- Half the rejected shape is in the pool: Act on Impulse binds a group. No
     -- card in data/cards/ pairs one with a singular read of the same slot, so the
     -- REJECTING direction is proven against a hand-built pair rather than by a
@@ -2738,7 +2744,7 @@ effectLintSpec s registry corpus = Spec.describe s "Lint" $ do
     -- Exhume, Elvish Piper, Commune with the Gods and Merfolk Spy print them.
     Spec.assertBool s asks "the pool has a card asking a player to pick a card"
     Spec.assertEqWith s "a chosen card under an opcode that cannot ask (CR 608.2d)" (fmap (S.nameOf . Printing.card) offenders) []
-  Spec.it s "no AllOf outside a move, a play grant, a loop, a damage instruction, a destruction, a shuffle-in, a modification, a cast offer, a tap, an untap or a copy's candidates" $ do
+  Spec.it s "no AllOf outside a move, a play grant, a loop, a damage instruction, a destruction, a shuffle-in, a modification, a cast offer, a tap, an untap, a token's lenders or a copy's candidates" $ do
     ps <- S.allPrintings s corpus
     let offenders = filter (anyFace (any strayAllOf . cardAuthoredEffects) . Printing.card) ps
         moved = any (anyFace (any (any (isAllOf . snd) . effectObjectRefs) . cardAuthoredEffects) . Printing.card) ps
@@ -2943,7 +2949,7 @@ effectLintSpec s registry corpus = Spec.describe s "Lint" $ do
             (vanillaFace "Nightmare" (spellLine CardType.Creature Set.empty []))
               { Face.spell = oneEffectSpell [reading]
               }
-        creating = Effect.Create (Create.MkCreate (Quantity.Type.Literal 1) token EntryRiders.defaultValue Nothing (PlayerRef.Relative PlayerRelation.You) False Nothing)
+        creating = Effect.Create (Create.MkCreate (Quantity.Type.Literal 1) token EntryRiders.defaultValue Nothing (PlayerRef.Relative PlayerRelation.You) False Nothing Nothing)
         collided = (vanillaFace "Collided" instantLine) {Face.spell = oneEffectSpell [creating, reading]}
     Spec.assertBool s (Set.member victim (mintedOwn creating)) "the minted face does carry the predicate"
     Spec.assertBool s (Set.member victim (viaFilters collided)) "a minted face cancels its own effect's position and not another effect's"
@@ -2957,7 +2963,7 @@ effectLintSpec s registry corpus = Spec.describe s "Lint" $ do
     ps <- S.allPrintings s corpus
     let offends effect = case effect of
           Effect.MoveToZone (MoveToZone.MkMoveToZone _ zone riders _ _ _ _) -> EntryRiders.exiledFaceDown riders && zone /= Zone.Exile
-          Effect.Create (Create.MkCreate _ _ riders _ _ _ _) -> EntryRiders.exiledFaceDown riders
+          Effect.Create (Create.MkCreate _ _ riders _ _ _ _ _) -> EntryRiders.exiledFaceDown riders
           _ -> False
         hides effect = case effect of
           Effect.MoveToZone (MoveToZone.MkMoveToZone _ _ riders _ _ _ _) -> EntryRiders.exiledFaceDown riders
@@ -3068,7 +3074,7 @@ effectLintSpec s registry corpus = Spec.describe s "Lint" $ do
           Effect.MoveToZone (MoveToZone.MkMoveToZone _ zone riders _ _ _ _) -> Maybe.isJust (EntryRiders.blocking riders) && zone /= Zone.Battlefield
           _ -> False
         creates effect = case effect of
-          Effect.Create (Create.MkCreate _ _ riders _ _ _ _) -> Maybe.isJust (EntryRiders.blocking riders)
+          Effect.Create (Create.MkCreate _ _ riders _ _ _ _ _) -> Maybe.isJust (EntryRiders.blocking riders)
           _ -> False
         moves effect = case effect of
           Effect.MoveToZone (MoveToZone.MkMoveToZone _ _ riders _ _ _ _) -> Maybe.isJust (EntryRiders.blocking riders)
@@ -3101,10 +3107,10 @@ effectLintSpec s registry corpus = Spec.describe s "Lint" $ do
           _ -> False
         offends effect = case effect of
           Effect.MoveToZone (MoveToZone.MkMoveToZone _ zone riders _ _ _ _) -> (specified riders || chosenAmong riders) && zone /= Zone.Battlefield
-          Effect.Create (Create.MkCreate _ _ riders _ _ _ _) -> chosenAmong riders
+          Effect.Create (Create.MkCreate _ _ riders _ _ _ _ _) -> chosenAmong riders
           _ -> False
         creates effect = case effect of
-          Effect.Create (Create.MkCreate _ _ riders _ _ _ _) -> specified riders
+          Effect.Create (Create.MkCreate _ _ riders _ _ _ _ _) -> specified riders
           _ -> False
         moves effect = case effect of
           Effect.MoveToZone (MoveToZone.MkMoveToZone _ _ riders _ _ _ _) -> chosenAmong riders
@@ -3171,7 +3177,7 @@ effectLintSpec s registry corpus = Spec.describe s "Lint" $ do
     ps <- S.allPrintings s corpus
     let offends effect = case effect of
           Effect.MoveToZone (MoveToZone.MkMoveToZone _ zone riders _ _ _ _) -> Maybe.isJust (EntryRiders.faceDown riders) && zone /= Zone.Battlefield
-          Effect.Create (Create.MkCreate _ _ riders _ _ _ _) -> Maybe.isJust (EntryRiders.faceDown riders)
+          Effect.Create (Create.MkCreate _ _ riders _ _ _ _ _) -> Maybe.isJust (EntryRiders.faceDown riders)
           _ -> False
         entersFaceDown effect = case effect of
           Effect.MoveToZone (MoveToZone.MkMoveToZone _ _ riders _ _ _ _) -> Maybe.isJust (EntryRiders.faceDown riders)
@@ -3189,7 +3195,7 @@ effectLintSpec s registry corpus = Spec.describe s "Lint" $ do
     ps <- S.allPrintings s corpus
     let offends effect = case effect of
           Effect.MoveToZone (MoveToZone.MkMoveToZone _ zone riders _ _ _ _) -> EntryRiders.noted riders && zone /= Zone.Battlefield
-          Effect.Create (Create.MkCreate _ _ riders _ _ _ _) -> EntryRiders.noted riders
+          Effect.Create (Create.MkCreate _ _ riders _ _ _ _ _) -> EntryRiders.noted riders
           _ -> False
         notes effect = case effect of
           Effect.MoveToZone (MoveToZone.MkMoveToZone _ _ riders _ _ _ _) -> EntryRiders.noted riders
@@ -3206,7 +3212,7 @@ effectLintSpec s registry corpus = Spec.describe s "Lint" $ do
     let carries riders = not (Seq.null (EntryRiders.characteristics riders))
         offends effect = case effect of
           Effect.MoveToZone (MoveToZone.MkMoveToZone _ zone riders _ _ _ _) -> carries riders && zone /= Zone.Battlefield
-          Effect.Create (Create.MkCreate _ _ riders _ _ _ _) -> carries riders
+          Effect.Create (Create.MkCreate _ _ riders _ _ _ _ _) -> carries riders
           Effect.CreateCopy (CreateCopy.MkCreateCopy _ _ riders _ _ _ _) -> carries riders
           _ -> False
         defines effect = case effect of
@@ -3273,7 +3279,7 @@ effectLintSpec s registry corpus = Spec.describe s "Lint" $ do
     ps <- S.allPrintings s corpus
     let gated riders = any (Maybe.isJust . EntryCounter.onlyIf) (Map.keys (EntryRiders.counters riders))
         offends effect = case effect of
-          Effect.Create (Create.MkCreate _ _ riders _ _ _ _) -> gated riders
+          Effect.Create (Create.MkCreate _ _ riders _ _ _ _ _) -> gated riders
           Effect.CreateCopy (CreateCopy.MkCreateCopy _ _ riders _ _ _ _) -> gated riders
           _ -> False
         doctored = EntryRiders.defaultValue {EntryRiders.counters = Map.singleton (EntryCounter.MkEntryCounter CounterKind.PlusOnePlusOne (Just (Filter.Type.HasCardType CardType.Creature))) (Quantity.Type.Literal 1)}
@@ -3301,7 +3307,7 @@ effectLintSpec s registry corpus = Spec.describe s "Lint" $ do
   Spec.it s "no Create names an instructed player in its entry rider" $ do
     ps <- S.allPrintings s corpus
     let offends effect = case effect of
-          Effect.Create (Create.MkCreate _ _ riders _ _ _ _) -> EntryRiders.under riders /= EntryRiders.under EntryRiders.defaultValue && EntryRiders.under riders /= EntryController.Owner
+          Effect.Create (Create.MkCreate _ _ riders _ _ _ _ _) -> EntryRiders.under riders /= EntryRiders.under EntryRiders.defaultValue && EntryRiders.under riders /= EntryController.Owner
           _ -> False
         offenders = filter (anyFace (any offends . cardResolutionEffects) . Printing.card) ps
     Spec.assertEqWith s "a token's controller is its creator" (fmap (S.nameOf . Printing.card) offenders) []
@@ -4733,7 +4739,7 @@ boundPlurally effect = case effect of
   -- effect created whatever the printed count says, so CR 614.16 makes
   -- a literal one plural too -- a doubler, or Queen Allenal of Ruadach
   -- appending a Soldier.
-  Effect.Create (Create.MkCreate _ _ _ mSlot _ _ _) -> Maybe.maybeToList mSlot
+  Effect.Create (Create.MkCreate _ _ _ mSlot _ _ _ _) -> Maybe.maybeToList mSlot
   -- Create's arm and Create's test: Resolve.bindObjects binds both.
   Effect.CreateCopy (CreateCopy.MkCreateCopy _ _ _ mSlot _ _ _) -> Maybe.maybeToList mSlot
   -- CR 707.10's copies, bound through Resolve.bindObjects as well:

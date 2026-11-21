@@ -4162,7 +4162,8 @@ filterPositionLintSpec s registry corpus = Spec.describe s "Lint" $ do
                               Create.slot = Nothing,
                               Create.creator = PlayerRef.Relative PlayerRelation.You,
                               Create.linked = False,
-                              Create.die = Nothing
+                              Create.die = Nothing,
+                              Create.triggeredAbilitiesOf = Nothing
                             }
                       ]
                       Map.empty
@@ -4316,7 +4317,8 @@ filterPositionLintSpec s registry corpus = Spec.describe s "Lint" $ do
                               Create.slot = Nothing,
                               Create.creator = PlayerRef.Relative PlayerRelation.You,
                               Create.linked = False,
-                              Create.die = Nothing
+                              Create.die = Nothing,
+                              Create.triggeredAbilitiesOf = Nothing
                             }
                       ]
                       Map.empty

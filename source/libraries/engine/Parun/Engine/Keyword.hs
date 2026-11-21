@@ -5803,7 +5803,8 @@ mobilize n =
               -- CR 111.2 under CR 109.5: the keyword ability's own controller.
               Create.creator = PlayerRef.Relative PlayerRelation.You,
               Create.linked = False,
-              Create.die = Nothing
+              Create.die = Nothing,
+              Create.triggeredAbilitiesOf = Nothing
             }
       arm =
         Effect.ArmDelayedTrigger
@@ -6903,7 +6904,8 @@ giftToken chosen tapped token =
         Create.slot = Nothing,
         Create.creator = chosen,
         Create.linked = False,
-        Create.die = Nothing
+        Create.die = Nothing,
+        Create.triggeredAbilitiesOf = Nothing
       }
 
 -- | CR 702.174f's 1\/1 and CR 702.174i's 8\/8 blue creature token of this type,
@@ -6998,7 +7000,8 @@ afterlife n =
               -- CR 111.2 under CR 109.5: the keyword ability's own controller.
               Create.creator = PlayerRef.Relative PlayerRelation.You,
               Create.linked = False,
-              Create.die = Nothing
+              Create.die = Nothing,
+              Create.triggeredAbilitiesOf = Nothing
             }
    in Mint.trigger (TriggerCondition.Leaves (LeavesTrigger.dies LeavingPermanent.Self)) (Seq.singleton spawn)
 
@@ -7157,7 +7160,8 @@ fabricate n =
               -- CR 111.2 under CR 109.5: the keyword ability's own controller.
               Create.creator = PlayerRef.Relative PlayerRelation.You,
               Create.linked = False,
-              Create.die = Nothing
+              Create.die = Nothing,
+              Create.triggeredAbilitiesOf = Nothing
             }
    in Mint.triggerOf
         (TriggerCondition.Enters EntersTrigger.defaultValue)
@@ -7365,7 +7369,8 @@ attachToOwnToken token =
               -- CR 111.2 under CR 109.5: the keyword ability's own controller.
               Create.creator = PlayerRef.Relative PlayerRelation.You,
               Create.linked = False,
-              Create.die = Nothing
+              Create.die = Nothing,
+              Create.triggeredAbilitiesOf = Nothing
             }
    in Mint.trigger (TriggerCondition.Enters EntersTrigger.defaultValue) (Seq.fromList [spawn, Effect.Attach attachedTokenSlot])
 
