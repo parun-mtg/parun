@@ -201,6 +201,7 @@ import qualified Parun.Types.PermanentIsDealtDamage as PermanentIsDealtDamage
 import qualified Parun.Types.PlayerCounterKind as PlayerCounterKind
 import qualified Parun.Types.PlayerEffect as PlayerEffect
 import qualified Parun.Types.PlayerId as PlayerId
+import qualified Parun.Types.PlayerQuantity as PlayerQuantity
 import qualified Parun.Types.PlayerRef as PlayerRef
 import qualified Parun.Types.PlayerRelation as PlayerRelation
 import qualified Parun.Types.PlayerScope as PlayerScope
@@ -1460,13 +1461,16 @@ hostRelatesToBoundOffends card =
    in elsewhere /= 0 || framed + elsewhere /= relatesToBoundAtoms Hop.Host (Codec.encode (Face.Codec.codec Card.codec) (surveyedFace card))
 
 -- How many CR 301.5a "attached to that creature" atoms this card carries in a
--- mode's target slot, the position a joint check stands behind, and how many
--- anywhere else. The second number is the offence: elsewhere the atom's
--- unanswered slot is a silent True (Parun.Engine.Filter.attachedAnchored). An
--- effect's object says it with ObjectRef.AttachedToBound.
+-- mode's target slot, the position a joint check stands behind, or in an
+-- amount a resolution reads, where Resolve.Slots.effectContext keys
+-- slotControllers by every bound slot, a player's included (Curse of
+-- Surveillance's "Curses attached to that player"); and how many anywhere else.
+-- The second number is the offence: elsewhere the atom's unanswered slot is a
+-- silent True (Parun.Engine.Filter.attachedAnchored). An effect's object says
+-- it with ObjectRef.AttachedToBound.
 attachedToBoundCounts :: Surveyed -> (Int, Int)
 attachedToBoundCounts card =
-  let total wanted = sum (fmap (\(_, f) -> attachedToBoundAtoms (atomJson f)) (filter (\(framing, _) -> (framing == InTargetSlot) == wanted) (surveyedFilters card)))
+  let total wanted = sum (fmap (\(_, f) -> attachedToBoundAtoms (atomJson f)) (filter (\(framing, _) -> elem framing [InTargetSlot, ResolutionAmountFramed] == wanted) (surveyedFilters card)))
    in (total True, total False)
 
 attachedToBoundAtoms :: Value.Value -> Int
@@ -2384,7 +2388,7 @@ filterPositionLintSpec s registry corpus = Spec.describe s "Lint" $ do
     Spec.assertBool s (not (controllerRelatesToBoundOffends (survey (S.combinedFace piker)))) "where the ungrafted card is accepted"
   -- CR 301.5a's Filter.IsAttachedTo at Bound, vacuously TRUE at an unanswered
   -- slot for ControllerRelatesToBound's reason above. See attachedToBoundOffends.
-  Spec.it s "CR 301.5a no card asks IsAttachedTo at a bound slot outside a mode's target slot" $ do
+  Spec.it s "CR 301.5a no card asks IsAttachedTo at a bound slot outside a target slot or a resolution's amount" $ do
     let offenders = fmap fst (filter (any attachedToBoundOffends . snd) pool)
     Spec.assertEqWith s "the atom sits only in an admitted position" (fmap (S.nameOf . Printing.card) offenders) []
     assertAuthors
@@ -2393,7 +2397,8 @@ filterPositionLintSpec s registry corpus = Spec.describe s "Lint" $ do
       pool
       "each author's atom is in an admitted position"
       attachedToBoundCounts
-      [ ("Fiery Annihilation", 1) -- its second target slot
+      [ ("Curse of Surveillance", 1), -- its draw amount
+        ("Fiery Annihilation", 1) -- its second target slot
       ]
     piker <- S.printingOf s registry "Goblin Piker"
     let atom = Filter.Type.IsAttachedTo (Anchor.Bound Nothing (SlotName.MkSlotName (Text.pack "from")))
@@ -2711,14 +2716,14 @@ filterPositionLintSpec s registry corpus = Spec.describe s "Lint" $ do
     let offenders = fmap fst (filter (any attackedPlayerOffends . snd) pool)
     Spec.assertEqWith s "the atom names only a player its position supplies" (fmap (S.nameOf . Printing.card) offenders) []
     assertAuthors s registry pool "each author's atoms are framed" enchantedAttackedCounts [("Curse of Clinging Webs", 1), ("Curse of Hospitality", 1), ("Curse of Shaken Faith", 3), ("Curse of Silence", 1), ("Radiant Grace", 1)]
-    -- The rejected side: the atom in a spell's draw count, which no source
+    -- The rejected side: the atom in a spell's life-gain amount, which no source
     -- frames, and an InSlot relation in a target slot, which one does.
     piker <- S.printingOf s registry "Goblin Piker"
     curse <- S.printingOf s registry "Curse of Hospitality"
     let counting atom =
           (S.combinedFace piker)
             { Face.spell =
-                Mint.oneMode (Seq.singleton (Effect.Draw (Draw.MkDraw (PlayerRef.InSlot Binding.you) (Quantity.Type.Count (Count.Type.MkCount (Scope.InZone (InZone.MkInZone Zone.Battlefield (PlayerRef.Relative PlayerRelation.AnyPlayer))) (Filter.Type.And [Filter.Type.Not atom]) Aggregation.Members)) Nothing Nothing)))
+                Mint.oneMode (Seq.singleton (Effect.GainLife (PlayerQuantity.MkPlayerQuantity (PlayerRef.InSlot Binding.you) (Quantity.Type.Count (Count.Type.MkCount (Scope.InZone (InZone.MkInZone Zone.Battlefield (PlayerRef.Relative PlayerRelation.AnyPlayer))) (Filter.Type.And [Filter.Type.Not atom]) Aggregation.Members)))))
             }
         slotted atom =
           (S.combinedFace piker)
@@ -2742,21 +2747,21 @@ filterPositionLintSpec s registry corpus = Spec.describe s "Lint" $ do
     let offenders = fmap fst (filter (any exiledAnchorOffends . snd) pool)
     Spec.assertEqWith s "the anchor sits only where the exiled pool is supplied" (fmap (S.nameOf . Printing.card) offenders) []
     assertAuthors s registry pool "each author's anchors are framed" exiledAnchorCounts [("Cemetery Gatekeeper", 1), ("Cemetery Illuminator", 1), ("Cemetery Protector", 1), ("Circle of Confinement", 1)]
-    -- The rejected side: the anchor in a spell's draw count, which no source
+    -- The rejected side: the anchor in a spell's life-gain amount, which no source
     -- frames, beside the same anchor in a target slot, which one does.
     piker <- S.printingOf s registry "Goblin Piker"
     let exiled = Filter.Type.Shares Trait.Color (Anchor.AnyObject AnchorPool.ExiledCards SelfInclusion.IncludesCandidate (Filter.Type.And []))
         counting =
           (S.combinedFace piker)
             { Face.spell =
-                Mint.oneMode (Seq.singleton (Effect.Draw (Draw.MkDraw (PlayerRef.InSlot Binding.you) (Quantity.Type.Count (Count.Type.MkCount (Scope.InZone (InZone.MkInZone Zone.Battlefield (PlayerRef.Relative PlayerRelation.AnyPlayer))) (Filter.Type.And [Filter.Type.Not exiled]) Aggregation.Members)) Nothing Nothing)))
+                Mint.oneMode (Seq.singleton (Effect.GainLife (PlayerQuantity.MkPlayerQuantity (PlayerRef.InSlot Binding.you) (Quantity.Type.Count (Count.Type.MkCount (Scope.InZone (InZone.MkInZone Zone.Battlefield (PlayerRef.Relative PlayerRelation.AnyPlayer))) (Filter.Type.And [Filter.Type.Not exiled]) Aggregation.Members)))))
             }
         slotted =
           (S.combinedFace piker)
             { Face.spell =
                 Mint.oneModeTargeting (Map.singleton (SlotName.MkSlotName (Text.pack "target")) (TargetSlot.required Pool.Creatures (Just exiled))) Seq.empty
             }
-    Spec.assertEqWith s "a planted anchor in a draw count is an offence" (exiledAnchorCounts (survey counting)) (0, 1)
+    Spec.assertEqWith s "a planted anchor in a life-gain amount is an offence" (exiledAnchorCounts (survey counting)) (0, 1)
     Spec.assertBool s (exiledAnchorOffends (survey counting)) "and the lint says so"
     Spec.assertEqWith s "the same anchor in a target slot is not" (exiledAnchorCounts (survey slotted)) (1, 0)
     Spec.assertBool s (not (exiledAnchorOffends (survey slotted))) "and the lint accepts it"
@@ -4646,7 +4651,7 @@ filterPositionLintSpec s registry corpus = Spec.describe s "Lint" $ do
             ("a spell's own filter before its own choice", base {Face.spell = spellOf [destroying f, Effect.ChooseQuality (ChooseQuality.MkChooseQuality quality False False)] Map.empty}),
             ("a spell's draw count with no choice", base {Face.spell = spellOf [drawing f] Map.empty}),
             ("a spell's draw count before its own choice", base {Face.spell = spellOf [drawing f, Effect.ChooseQuality (ChooseQuality.MkChooseQuality quality False False)] Map.empty}),
-            ("an activated ability's draw count with no entry choice", withAbility (\a -> a {ActivatedAbility.modal = spellOf [drawing f] Map.empty})),
+            ("an activated ability's life-gain amount with no entry choice", withAbility (\a -> a {ActivatedAbility.modal = spellOf [gaining f] Map.empty})),
             ( "a spell's own filter in another mode than its choice",
               base {Face.spell = (spellOf [Effect.ChooseQuality (ChooseQuality.MkChooseQuality quality False False)] Map.empty) {Modal.modes = Modal.modes (spellOf [Effect.ChooseQuality (ChooseQuality.MkChooseQuality quality False False)] Map.empty) <> Modal.modes (spellOf [destroying f] Map.empty)}}
             )
@@ -4667,6 +4672,7 @@ filterPositionLintSpec s registry corpus = Spec.describe s "Lint" $ do
         draw = Effect.Draw (Draw.MkDraw (PlayerRef.InSlot Binding.you) (Quantity.Type.Literal 1) Nothing Nothing)
         choosingAsItEnters quality = [PrintedReplacement.MkPrintedReplacement Nothing (ReplacementEffect.EntryR (EntryR.MkEntryR Filter.Type.IsSource (EntryRewrite.ChooseQuality quality))) Set.empty Nothing]
         drawing f = Effect.Draw (Draw.MkDraw (PlayerRef.InSlot Binding.you) (Quantity.Type.Count (Count.Type.MkCount (Scope.InZone (InZone.MkInZone Zone.Battlefield (PlayerRef.Relative PlayerRelation.AnyPlayer))) f Aggregation.Members)) Nothing Nothing)
+        gaining f = Effect.GainLife (PlayerQuantity.MkPlayerQuantity (PlayerRef.InSlot Binding.you) (Quantity.Type.Count (Count.Type.MkCount (Scope.InZone (InZone.MkInZone Zone.Battlefield (PlayerRef.Relative PlayerRelation.AnyPlayer))) f Aggregation.Members)))
     Monad.forM_
       [ (Filter.Type.HasChosenColor, ChosenQuality.Colors (ChooseBetween.MkChooseBetween 1 1) ColorlessOption.ColorsOnly, hasChosenColorCounts, hasChosenColorTag),
         (Filter.Type.HasChosenSubtype ChoiceOrdinal.First, ChosenQuality.Subtype ChoiceOrdinal.First ChoiceDistinct.MayRepeat SubtypeFamily.BasicLandType Nothing, hasChosenSubtypeCounts, hasChosenSubtypeTag),

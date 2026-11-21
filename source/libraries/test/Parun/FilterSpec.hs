@@ -2397,14 +2397,14 @@ spec s = Spec.describe s "Parun.Engine.Filter" $ do
     -- candidate is attached to.
     let framed = Filter.contextFor Teams.none (Just (PlayerId.MkPlayerId 0)) (Just (ObjectId.MkObjectId 7))
     Spec.it s "matches a candidate attached to the source" $ do
-      Spec.assertBool s (Filter.matches framed (blackCreature {Filter.attachedTo = Just (ObjectId.MkObjectId 7)}) (Filter.Type.IsAttachedTo Anchor.Source)) "on the source"
+      Spec.assertBool s (Filter.matches framed (blackCreature {Filter.attachedTo = Just (Recipient.ToObject (ObjectId.MkObjectId 7))}) (Filter.Type.IsAttachedTo Anchor.Source)) "on the source"
 
     -- The discriminating case, and the whole reason the field is an id rather than
     -- a Bool: an Equipment attached to SOME creature is not one attached to this
     -- creature, so Kemba's Legion does not count the Bonesplitter on another
     -- creature.
     Spec.it s "does not match a candidate attached to another object" $ do
-      let elsewhere = (onHost aHost) {Filter.attachedTo = Just (ObjectId.MkObjectId 8)}
+      let elsewhere = (onHost aHost) {Filter.attachedTo = Just (Recipient.ToObject (ObjectId.MkObjectId 8))}
       Spec.assertBool s (not (Filter.matches framed elsewhere (Filter.Type.IsAttachedTo Anchor.Source))) "on another creature"
       Spec.assertBool s (Filter.matches framed elsewhere (Filter.Type.AttachedTo (Filter.Type.HasCardType CardType.Creature))) "still attached to a creature"
 
@@ -2413,12 +2413,29 @@ spec s = Spec.describe s "Parun.Engine.Filter" $ do
 
     -- Vacuously False where nothing frames the match, IsSource's own posture.
     Spec.it s "no source in context is vacuously false" $ do
-      Spec.assertBool s (not (Filter.matches self (blackCreature {Filter.attachedTo = Just (ObjectId.MkObjectId 7)}) (Filter.Type.IsAttachedTo Anchor.Source))) "no source"
+      Spec.assertBool s (not (Filter.matches self (blackCreature {Filter.attachedTo = Just (Recipient.ToObject (ObjectId.MkObjectId 7))}) (Filter.Type.IsAttachedTo Anchor.Source))) "no source"
 
     -- CR 303.4b: a player is enchanted BY an attachment and is attached to
     -- nothing itself, so there is no host id to compare.
     Spec.it s "a player candidate is vacuously false" $ do
       Spec.assertBool s (not (Filter.matches framed aPlayer (Filter.Type.IsAttachedTo Anchor.Source))) "player"
+
+  -- CR 303.4b: a candidate attached to a PLAYER, against the player a slot holds
+  -- (Curse of Surveillance's "Curses attached to that player").
+  Spec.describe s "IsAttachedTo Bound at a player" $ do
+    let slot = SlotName.MkSlotName (Text.pack "thatPlayer")
+        holding pid = self {Filter.slotPlayers = Map.singleton slot (Set.singleton (PlayerId.MkPlayerId pid))}
+        cursing pid = blackCreature {Filter.attachedTo = Just (Recipient.ToPlayer (PlayerId.MkPlayerId pid))}
+        atom = Filter.Type.IsAttachedTo (Anchor.Bound Nothing slot)
+    Spec.it s "matches a candidate attached to the bound player" $ do
+      Spec.assertBool s (Filter.matches (holding 1) (cursing 1) atom) "that player"
+    Spec.it s "does not match one attached to another player" $ do
+      Spec.assertBool s (not (Filter.matches (holding 1) (cursing 2) atom)) "another player"
+    Spec.it s "does not match one attached to an object" $ do
+      let objectSlotted = (holding 1) {Filter.slotControllers = Map.singleton slot Set.empty}
+      Spec.assertBool s (not (Filter.matches objectSlotted (blackCreature {Filter.attachedTo = Just (Recipient.ToObject (ObjectId.MkObjectId 1))}) atom)) "an object"
+    Spec.it s "does not match against the source" $ do
+      Spec.assertBool s (not (Filter.matches (holding 1) (cursing 1) (Filter.Type.IsAttachedTo Anchor.Source))) "no source is a player"
 
   Spec.describe s "IsHostOfSource" $ do
     -- CR 303.4b: the SOURCE's host against the candidate, the direction the two

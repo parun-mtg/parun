@@ -8,7 +8,7 @@ import qualified Parun.Types.SlotName as SlotName
 -- | Which object a Parun.Types.Filter atom relates its candidate to. Parametric
 -- in the filter, so the group arm can hold one without a module cycle.
 data Anchor nested
-  = -- | CR 608.2c: the object an earlier clause bound at this slot; of a group, given a holder, only the members whose holder is the candidate's (CR 108.3 / 108.4).
+  = -- | CR 608.2c: the object an earlier clause bound at this slot, or for IsAttachedTo its player (CR 303.4b); of a group, given a holder, only the members whose holder is the candidate's (CR 108.3 / 108.4).
     Bound (Maybe Holder.Holder) SlotName.SlotName
   | -- | CR 613.4c: the object the surrounding Quantity is evaluated against.
     Evaluated
