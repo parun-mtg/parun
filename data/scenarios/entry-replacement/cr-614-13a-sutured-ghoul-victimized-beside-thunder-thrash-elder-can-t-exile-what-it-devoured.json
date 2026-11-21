@@ -50,7 +50,7 @@
     "step": "PrecombatMain"
   },
   "description": "CR 614.13a: Sutured Ghoul returned beside Thunder-Thrash Elder by Victimize can't exile the creature the Elder devoured as they entered",
-  "note": "Victimize returns both from alice's graveyard after she sacrifices Hill Giant. The Elder applies first and devours Grizzly Bears, which left the battlefield while the Ghoul was entering, so the Ghoul's exile is offered only the Giant: answering both exiles the Giant alone, leaving the Ghoul 3/3 and the Bears in the graveyard.",
+  "note": "Victimize returns both from alice's graveyard after she sacrifices Hill Giant. The Elder applies first and devours Grizzly Bears, which left the battlefield while the Ghoul was entering, so the Ghoul's exile is offered only the Giant: her answer naming both, flagged unoffered, exiles the Giant alone, leaving the Ghoul 3/3 and the Bears in the graveyard.",
   "timeline": [
     {
       "do": {
@@ -103,6 +103,7 @@
       "do": {
         "Answer": {
           "prompt": "ChooseAnyNumberToExile",
+          "unoffered": true,
           "with": [
             "Grizzly Bears",
             "Hill Giant"
