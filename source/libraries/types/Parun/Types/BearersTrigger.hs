@@ -11,7 +11,10 @@ import qualified Parun.Types.KeywordDesignator as KeywordDesignator
 -- (Parun.Types.PlayerEffect.BearersTrigger).
 data BearersTrigger = MkBearersTrigger
   { -- | CR 113.7: whose abilities it applies to, CR 109.5's "you" being the
-    -- bearer's controller.
+    -- bearer's controller, or a dungeon card's owner. A dungeon card is no
+    -- permanent (CR 309.2c), so a row about permanents says IsInZone
+    -- Battlefield (Parun.CardSpec's "CR 309.2c no bearer filter reaches a
+    -- dungeon card unless it names one").
     bearers :: Filter.Filter Keyword.Keyword,
     -- | CR 702: which of them, by the keyword that minted them (Nowhere to
     -- Run's "ward abilities"), or Nothing for every one (Sanctum of All).

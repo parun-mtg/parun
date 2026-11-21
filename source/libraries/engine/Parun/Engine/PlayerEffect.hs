@@ -1564,7 +1564,8 @@ additionalMoveTriggers move pid subjects bearer effects board = List.genericLeng
 -- event, one entry per effect admitting it (Roaming Throne's ruling on two
 -- Thrones), asked of the game `gs` as the ability triggers: a Sanctum of All's
 -- "while you control six or more Shrines" is the row's own condition (Event.Match
--- picks the board). CR 109.5's "you" in the bearers is the bearer's controller.
+-- picks the board). CR 109.5's "you" in the bearers is the bearer's controller,
+-- or its owner for a dungeon card, which has none.
 -- An ability is admitted by the keyword that minted it (TriggeredAbility.keyword),
 -- so Nowhere to Run's "ward abilities" reach rule 702.21a's and no printed twin.
 bearerTriggerings :: PlayerId -> ObjectId -> TriggeredAbility.TriggeredAbility card ability -> GameState -> [EntryTriggering.EntryTriggering]
