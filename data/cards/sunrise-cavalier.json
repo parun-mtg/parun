@@ -1,0 +1,146 @@
+{
+  "faces": [
+    {
+      "keywords": [
+        {
+          "type": "Haste"
+        },
+        {
+          "type": "Trample"
+        }
+      ],
+      "manaCost": [
+        {
+          "type": "Generic",
+          "value": 1
+        },
+        {
+          "type": "OfType",
+          "value": {
+            "type": "Colored",
+            "value": "Red"
+          }
+        },
+        {
+          "type": "OfType",
+          "value": {
+            "type": "Colored",
+            "value": "White"
+          }
+        }
+      ],
+      "name": "Sunrise Cavalier",
+      "oracleText": "Trample, haste\nIf it's neither day nor night, it becomes day as this creature enters.\nWhenever day becomes night or night becomes day, put a +1/+1 counter on target creature you control.",
+      "power": {
+        "type": "Literal",
+        "value": 3
+      },
+      "replacementEffects": [
+        {
+          "condition": {
+            "type": "Compares",
+            "value": {
+              "comparison": "AtMost",
+              "measured": {
+                "type": "Plus",
+                "value": {
+                  "left": {
+                    "type": "HasDaytime",
+                    "value": "Day"
+                  },
+                  "right": {
+                    "type": "HasDaytime",
+                    "value": "Night"
+                  }
+                }
+              },
+              "threshold": {
+                "type": "Literal",
+                "value": 0
+              }
+            }
+          },
+          "effect": {
+            "type": "EntryR",
+            "value": {
+              "matching": {
+                "type": "IsSource"
+              },
+              "rewrite": {
+                "type": "RunEffects",
+                "value": [
+                  {
+                    "type": "ItBecomes",
+                    "value": "Day"
+                  }
+                ]
+              }
+            }
+          }
+        }
+      ],
+      "toughness": {
+        "type": "Literal",
+        "value": 3
+      },
+      "triggeredAbilities": [
+        {
+          "condition": {
+            "type": "DaytimeChanges"
+          },
+          "modal": {
+            "modes": [
+              {
+                "clauses": [
+                  {
+                    "effects": [
+                      {
+                        "type": "PutCounters",
+                        "value": {
+                          "kind": {
+                            "type": "PlusOnePlusOne"
+                          },
+                          "quantity": {
+                            "type": "Literal",
+                            "value": 1
+                          },
+                          "ref": {
+                            "type": "InSlot",
+                            "value": "target"
+                          }
+                        }
+                      }
+                    ]
+                  }
+                ],
+                "targetSlots": {
+                  "target": {
+                    "filter": {
+                      "type": "HeldBy",
+                      "value": {
+                        "holder": "Controller",
+                        "relation": "You"
+                      }
+                    },
+                    "pool": {
+                      "type": "Creatures"
+                    }
+                  }
+                }
+              }
+            ]
+          }
+        }
+      ],
+      "typeLine": {
+        "subtypes": [
+          "Human",
+          "Knight"
+        ],
+        "types": [
+          "Creature"
+        ]
+      }
+    }
+  ]
+}
