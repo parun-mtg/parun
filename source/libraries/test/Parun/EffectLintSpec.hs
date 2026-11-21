@@ -1711,7 +1711,7 @@ effectObjectRefs effect =
         -- The WRITTEN arm is a token's case above: the card is minted text, not a
         -- ref. A DUPLICATE names an object already in the game, and reads it the
         -- way CreateCopy's arm below reads its own.
-        Effect.Conjure (Conjure.MkConjure _ cards _ _ _ _) -> case cards of
+        Effect.Conjure (Conjure.MkConjure _ cards _ _ _ _ _) -> case cards of
           ConjureCards.Written {} -> []
           ConjureCards.Duplicate ref -> read_ [ref]
           -- A reference pick names no object at all.

@@ -279,187 +279,202 @@ create settle resolving source controller legal chosen (Create.MkCreate quantity
 -- pre-effect board, ahead of the minting loop, so a card arriving cannot
 -- change how many arrive.
 --
--- The conjurer is the resolving CONTROLLER (CR 109.5's "you"). Not implemented:
--- a printing that states one instead, which is a shape rather than one card --
--- Parun.Types.Conjure lists the two forms (#3970).
+-- WHO conjures is Create's creator read the same way: CR 109.5's "you" by
+-- default, and otherwise the players the sentence identified (Thendar, the
+-- Overminer's "its controller", read off the departed land through CR 608.2h),
+-- in APNAP order (CR 608.2f), apnapPlayersOf's intersection dropping a departed
+-- seat. Every conjurer's cards are read off the same pre-effect `gs`, and a
+-- battlefield arrival is ONE event for every conjurer's batch, as Create's
+-- tokens are; the cards conjured are bound for a later clause to name (CR
+-- 603.7c's "that card"), Create's bindObjects.
+-- data/scenarios/conjure/thendar-the-overminer-conjures-wastes-for-the-controller-of-the-destroyed-land.json
+-- proves the conjurer is the land's controller rather than Thendar's.
 conjure :: Settle.Settle -> ObjectId -> ObjectId -> PlayerId -> Map.Map SlotName (Set Recipient) -> Conjure.Conjure Card.Type.Card -> Game ()
-conjure settle resolving source controller legal (Conjure.MkConjure quantity cards selection drafted destination mSlot) = do
+conjure settle resolving source controller legal payload = do
   gs <- State.get
-  let viewOf = effectViewOf resolving source legal gs
-      context = effectContext gs resolving controller source legal (slotBindings resolving gs)
-      -- Four of the five arrivals are no zone change -- the card was in no
-      -- zone to leave -- so nothing triggers and nothing is revealed. The rule
-      -- behind that: CR 603.6 makes a "put into a graveyard from anywhere"
-      -- ability a zone-change trigger, CR 603.6c's last sentence naming that
-      -- wording outright, and CR 400.6's event moves an object from one zone to
-      -- another, so a materialization is no event such a trigger or a CR 614.1
-      -- replacement can see. Parun.ConjureSpec's Planar Void case proves it,
-      -- against a cast Think Twice reaching the same graveyard on the same
-      -- board.
-      --
-      -- The BATTLEFIELD is the exception and takes its own road below, because
-      -- CR 616.1's entry loop and CR 603.6a's trigger scan both have to see a
-      -- permanent enter: that scan reads the event that PUTS a permanent there
-      -- rather than a zone change, CR 111.2's token being the CR's own object
-      -- that enters having left no zone.
-      --
-      -- A stated library DEPTH is settled per card, as each lands, so a later
-      -- card of the same conjure is placed in a library already holding the
-      -- earlier ones; unproven, since no card in data/cards/ conjures more
-      -- than one card to a depth. A random depth is ASKED (Prompt.RandomDepth), over the places the
-      -- library has -- a library of k other cards has k + 1 -- and never
-      -- raised for one place. Parun.ConjureSpec's Calim and Mine Security cases
-      -- prove the two. The clamp of an answer outside the places is a
-      -- regression fence: no case there answers outside them.
-      --
-      -- The CANDIDATES of a WRITTEN conjure are picked over once per card
-      -- conjured, and the pick is
-      -- ASKED rather than rolled: docs/design.md section 2.2 makes randomness
-      -- a prompt, RandomObject's posture. A one-candidate list is the card the
-      -- sentence names outright, which no board can tell from a pick, so no
-      -- prompt is raised there (Parun.Types.Prompt's rule). The answer is
-      -- filtered back to a candidate rather than trusted, and a name that
-      -- matches none takes the head. Two candidates sharing a name would be
-      -- indistinguishable to the answer, and the first is what is conjured.
-      --
-      -- WHICH question is asked is the opcode's own field, and the two are not
-      -- interchangeable (CR 701.9b): a random pick goes through Game.ask,
-      -- since randomness is not CR 104.4b's optional action, and a chosen pick
-      -- through Game.choose, carrying the Decider and the seat that a choice
-      -- owes. Parun.ConjureSpec's Follow the Tracks case proves the chosen half
-      -- reaches the answer rather than the head of the offer.
-      --
-      -- Not implemented: "X random cards" picking X DISTINCT cards (Giant
-      -- Secrets' "conjure X random cards from Giant Secrets's spellbook into
-      -- your hand"). Each pick here is independent, so one card can come up
-      -- twice (#3648).
-      --
-      -- A DUPLICATE names objects already in the game rather than candidates
-      -- written out in the card file, so there is nothing to pick over and
-      -- `selection` asks nothing. Each named object is duplicated in turn, the
-      -- whole count per object -- Gyox, Brutal Carnivora's "conjure X
-      -- duplicates of it" names one object and makes X cards -- and the set is
-      -- swept ONCE off the pre-effect board (CR 608.2f), as CreateCopy's arm
-      -- below sweeps its own.
-      --
-      -- What is duplicated is the object's COPIABLE values (CR 707.2) and not
-      -- the card printed under it: a Clone that is a copy of an Ornithopter
-      -- duplicates as an Ornithopter. The PAIR of reads is CreateCopy's, less
-      -- the CR 731.2i cut its token takes (Event.copiedTokenCard), and has
-      -- to move together -- Game.cardOfWithLastKnown for the card a reader
-      -- past the projection sees, Event.copiedSnapshotWithLastKnown for the
-      -- values themselves -- and both take CR 608.2h's last-known branch, since
-      -- the object a trigger named can be gone by the time it resolves
-      -- (Sinister Reflections is an instant and its targets can be killed in
-      -- response to it). Every later incarnation keeps those values
-      -- (Object.duplicate); Parun.ConjureSpec's "a duplicate of a Clone cast
-      -- and resolved is the Piker" proves it.
-      duplicatesOf ref = Maybe.mapMaybe (\oid -> fmap (\card -> (card, Just (Event.copiedSnapshotWithLastKnown oid gs))) (Game.cardOfWithLastKnown oid gs)) (objectRefObjects legal resolving controller source gs ref)
-      answered written answer = Maybe.fromMaybe (NonEmpty.head written) (List.find (\candidate -> Common.conjuredName candidate == answer) (NonEmpty.toList written))
-      -- The question `selection` names, put over a list of NAMES of two or
-      -- more; a one-name list is taken outright.
-      --
-      -- A DRAFT first narrows the names to three drawn at random, distinct
-      -- since Arena's "look at three random cards" shows three different
-      -- cards, each drawn through Prompt.RandomCard before the question is
-      -- put over the three. Three names or fewer are offered whole, no draw
-      -- raised: which of them a draw would leave out is no question there.
-      -- data/scenarios/conjure/big-spender-drafts-the-chosen-card-of-three-drawn-at-random-from-its-spellbook.json
-      -- proves both: a repeated draw and a choice outside the three are
-      -- refused.
-      offerOf names
-        | drafted && length names > 3 = Maybe.fromMaybe names . NonEmpty.nonEmpty <$> Game.drawDistinct Prompt.RandomCard 3 (NonEmpty.toList names)
-        | otherwise = pure names
-      pickName names = do
-        offered <- offerOf names
-        Maybe.fromMaybe (NonEmpty.head offered) <$> case selection of
-          CardSelection.AtRandom -> Game.drawAmong Prompt.RandomCard (NonEmpty.toList offered)
-          CardSelection.ByChoice -> Game.chooseAmong Prompt.ChooseConjuredCard controller (NonEmpty.toList offered)
-      pickWritten written = fmap (\answer -> (answered written answer, Nothing)) (pickName (fmap Common.conjuredName written))
-      -- A REFERENCE pick (CR 108.1) asks the interpreter which of the
-      -- reference's cards the filter admits -- ONCE, off the pre-effect board
-      -- like the count -- then puts the written road's question over their
-      -- names and looks the picked name up. Filtered, not trusted: an answer
-      -- outside the names takes the head, and a card the lookup hands back
-      -- that the filter does not admit is not conjured. A reference admitting
-      -- nothing conjures nothing.
-      referenceAmount from = FromReference.amount from >>= Common.evaluateForRecipient viewOf context gs resolving source controller
-      pickReference predicate amount names = do
-        answer <- pickName names
-        found <- Game.lookUpCard answer
-        g <- State.get
-        pure $ do
-          card <- found >>= (`Game.cardOfPrinting` g)
-          Monad.guard (Projection.referenceAdmits (Game.teams g) amount predicate card)
-          Just (card, Nothing)
-      referencePickers from count = do
-        let amount = referenceAmount from
-            predicate = FromReference.filter from
-        names <- Game.ask (Prompt.ReferenceCards predicate amount)
-        pure $ case NonEmpty.nonEmpty (ListUtils.nubOrd names) of
-          Nothing -> []
-          Just offered -> replicate count (pickReference predicate amount offered)
-      -- One pick per card conjured on the written and reference roads, and
-      -- `n` entries per named object on the duplicate road, the whole count
-      -- per object as the battlefield road below mints it. `pure` rather than
-      -- a prompt for a duplicate: the object was named before the conjure ran.
-      -- Parun.ConjureSpec's Gyox case proves the count reaches exile.
-      pickers n = case cards of
-        ConjureCards.Written written -> pure (replicate (Integer.toIntSaturating n) (fmap Just (pickWritten written)))
-        ConjureCards.Duplicate ref -> pure (concatMap (replicate (Integer.toIntSaturating n) . pure . Just) (duplicatesOf ref))
-        ConjureCards.Reference from -> referencePickers from (Integer.toIntSaturating n)
-      intoZone zone place n = fmap (concatMap Maybe.catMaybes) (pickers n >>= Monad.mapM (\p -> p >>= Monad.mapM (\(card, copied) -> Event.conjure controller card copied zone LibraryPosition.defaultValue >>= \made -> made <$ Monad.mapM_ place made) . Maybe.maybeToList))
-      sink depth oid = do
-        g <- State.get
-        let places = Natural.length (Map.findWithDefault Seq.empty controller (GameState.library g))
-        ordinal <- case depth of
-          LibraryDepth.FromTop k -> pure k
-          LibraryDepth.AtRandomInTop k -> case min k places of
-            reach
-              | reach < 2 -> pure 1
-              | otherwise -> fmap (max 1 . min reach) (Game.ask (Prompt.RandomDepth reach))
-        State.modify' (Game.sinkInLibrary (Natural.toIntSaturating ordinal - 1) controller oid)
-      onto entry n (card, copied) = do
-        made <- Foldable.toList <$> Event.conjureOntoBattlefield settle controller card copied (Integer.toNaturalSaturating n) (ConjureEntry.tapped entry)
-        -- CR 508.4, Create's arm's posture and in the same place: after the
-        -- entry loops, with the controller choosing what it attacks, and CR
-        -- 508.3a's attack triggers seeing nothing.
-        Monad.when (ConjureEntry.attacking entry) (Monad.mapM_ (Combat.putOntoBattlefieldAttacking Combat.Any) made)
-        pure made
-  -- The cards conjured, bound for a later clause to name (CR 603.7c's "that
-  -- card"), Create's bindObjects.
-  conjured <- case Common.evaluateForRecipient viewOf context gs resolving source controller quantity of
-    Just n
-      | n > 0 -> case destination of
-          ConjureDestination.Hand -> intoZone Zone.Hand (const (pure ())) n
-          ConjureDestination.Library depth -> intoZone Zone.Library (\oid -> Monad.mapM_ (`sink` oid) depth) n
-          ConjureDestination.Graveyard -> intoZone Zone.Graveyard (const (pure ())) n
-          ConjureDestination.Exile -> intoZone Zone.Exile (const (pure ())) n
-          -- CR 110.2a: the resolving controller is who the permanent enters
-          -- under, which conjureOntoBattlefield stamps.
-          -- One pick for the whole BATCH rather than one per card, which is
-          -- the card conjureOntoBattlefield mints every member of its CR
-          -- 614.12 entry loop from. Nothing in data/cards/ states a count
-          -- above one over a spellbook, so which reading this is stays a
-          -- regression fence (#3648).
-          -- CR 110.5b's status is the arm's own payload, stated by the
-          -- sentence rather than defaulted here (Foundry Groundbreaker's
-          -- "onto the battlefield tapped"), and it reaches the mint rather
-          -- than a tap afterwards: a permanent that arrived untapped and was
-          -- tapped after would have been read untapped by its own CR 616.1
-          -- loop and by every CR 603.6a watcher of the entry.
-          -- One batch per pick, which on the written road is the one pick the
-          -- whole count is minted from and on the duplicate road is one batch
-          -- of `n` per named object. Every batch enters at one moment, so
-          -- Event.together orders them all as one CR 613.7m batch -- a
-          -- regression fence, since no card in data/cards/ conjures a duplicate
-          -- of two or more objects onto the battlefield.
-          ConjureDestination.Battlefield entry -> Event.simultaneously . Event.together $ case cards of
-            ConjureCards.Written written -> pickWritten written >>= onto entry n
-            ConjureCards.Duplicate ref -> concat <$> Monad.mapM (onto entry n) (duplicatesOf ref)
-            ConjureCards.Reference from -> referencePickers from 1 >>= fmap concat . Monad.mapM (\p -> p >>= fmap concat . Monad.mapM (onto entry n) . Maybe.maybeToList)
-    _ -> pure []
-  Common.bindObjects resolving mSlot conjured
+  let conjurers = Common.apnapPlayersOf (Conjure.conjurer payload) legal resolving source controller gs
+      batch = case Conjure.destination payload of
+        ConjureDestination.Battlefield {} -> Event.simultaneously . Event.together
+        _ -> id
+  conjured <- batch (concat <$> Monad.mapM (conjureFor gs payload) conjurers)
+  Common.bindObjects resolving (Conjure.slot payload) conjured
+  where
+    -- One conjurer's share of the arm: `conjuring` is who the cards are
+    -- conjured for, owned by and, on the battlefield, controlled by, and `gs` the
+    -- pre-effect board every count and pick reads.
+    conjureFor gs (Conjure.MkConjure quantity cards selection drafted destination _ _) conjuring = do
+      let viewOf = effectViewOf resolving source legal gs
+          context = effectContext gs resolving controller source legal (slotBindings resolving gs)
+          -- Four of the five arrivals are no zone change -- the card was in no
+          -- zone to leave -- so nothing triggers and nothing is revealed. The rule
+          -- behind that: CR 603.6 makes a "put into a graveyard from anywhere"
+          -- ability a zone-change trigger, CR 603.6c's last sentence naming that
+          -- wording outright, and CR 400.6's event moves an object from one zone to
+          -- another, so a materialization is no event such a trigger or a CR 614.1
+          -- replacement can see. Parun.ConjureSpec's Planar Void case proves it,
+          -- against a cast Think Twice reaching the same graveyard on the same
+          -- board.
+          --
+          -- The BATTLEFIELD is the exception and takes its own road below, because
+          -- CR 616.1's entry loop and CR 603.6a's trigger scan both have to see a
+          -- permanent enter: that scan reads the event that PUTS a permanent there
+          -- rather than a zone change, CR 111.2's token being the CR's own object
+          -- that enters having left no zone.
+          --
+          -- A stated library DEPTH is settled per card, as each lands, so a later
+          -- card of the same conjure is placed in a library already holding the
+          -- earlier ones; unproven, since no card in data/cards/ conjures more
+          -- than one card to a depth. A random depth is ASKED (Prompt.RandomDepth), over the places the
+          -- library has -- a library of k other cards has k + 1 -- and never
+          -- raised for one place. Parun.ConjureSpec's Calim and Mine Security cases
+          -- prove the two. The clamp of an answer outside the places is a
+          -- regression fence: no case there answers outside them.
+          --
+          -- The CANDIDATES of a WRITTEN conjure are picked over once per card
+          -- conjured, and the pick is
+          -- ASKED rather than rolled: docs/design.md section 2.2 makes randomness
+          -- a prompt, RandomObject's posture. A one-candidate list is the card the
+          -- sentence names outright, which no board can tell from a pick, so no
+          -- prompt is raised there (Parun.Types.Prompt's rule). The answer is
+          -- filtered back to a candidate rather than trusted, and a name that
+          -- matches none takes the head. Two candidates sharing a name would be
+          -- indistinguishable to the answer, and the first is what is conjured.
+          --
+          -- WHICH question is asked is the opcode's own field, and the two are not
+          -- interchangeable (CR 701.9b): a random pick goes through Game.ask,
+          -- since randomness is not CR 104.4b's optional action, and a chosen pick
+          -- through Game.choose, carrying the Decider and the seat that a choice
+          -- owes. Parun.ConjureSpec's Follow the Tracks case proves the chosen half
+          -- reaches the answer rather than the head of the offer.
+          --
+          -- Not implemented: "X random cards" picking X DISTINCT cards (Giant
+          -- Secrets' "conjure X random cards from Giant Secrets's spellbook into
+          -- your hand"). Each pick here is independent, so one card can come up
+          -- twice (#3648).
+          --
+          -- A DUPLICATE names objects already in the game rather than candidates
+          -- written out in the card file, so there is nothing to pick over and
+          -- `selection` asks nothing. Each named object is duplicated in turn, the
+          -- whole count per object -- Gyox, Brutal Carnivora's "conjure X
+          -- duplicates of it" names one object and makes X cards -- and the set is
+          -- swept ONCE off the pre-effect board (CR 608.2f), as CreateCopy's arm
+          -- below sweeps its own.
+          --
+          -- What is duplicated is the object's COPIABLE values (CR 707.2) and not
+          -- the card printed under it: a Clone that is a copy of an Ornithopter
+          -- duplicates as an Ornithopter. The PAIR of reads is CreateCopy's, less
+          -- the CR 731.2i cut its token takes (Event.copiedTokenCard), and has
+          -- to move together -- Game.cardOfWithLastKnown for the card a reader
+          -- past the projection sees, Event.copiedSnapshotWithLastKnown for the
+          -- values themselves -- and both take CR 608.2h's last-known branch, since
+          -- the object a trigger named can be gone by the time it resolves
+          -- (Sinister Reflections is an instant and its targets can be killed in
+          -- response to it). Every later incarnation keeps those values
+          -- (Object.duplicate); Parun.ConjureSpec's "a duplicate of a Clone cast
+          -- and resolved is the Piker" proves it.
+          duplicatesOf ref = Maybe.mapMaybe (\oid -> fmap (\card -> (card, Just (Event.copiedSnapshotWithLastKnown oid gs))) (Game.cardOfWithLastKnown oid gs)) (objectRefObjects legal resolving controller source gs ref)
+          answered written answer = Maybe.fromMaybe (NonEmpty.head written) (List.find (\candidate -> Common.conjuredName candidate == answer) (NonEmpty.toList written))
+          -- The question `selection` names, put over a list of NAMES of two or
+          -- more; a one-name list is taken outright.
+          --
+          -- A DRAFT first narrows the names to three drawn at random, distinct
+          -- since Arena's "look at three random cards" shows three different
+          -- cards, each drawn through Prompt.RandomCard before the question is
+          -- put over the three. Three names or fewer are offered whole, no draw
+          -- raised: which of them a draw would leave out is no question there.
+          -- data/scenarios/conjure/big-spender-drafts-the-chosen-card-of-three-drawn-at-random-from-its-spellbook.json
+          -- proves both: a repeated draw and a choice outside the three are
+          -- refused.
+          offerOf names
+            | drafted && length names > 3 = Maybe.fromMaybe names . NonEmpty.nonEmpty <$> Game.drawDistinct Prompt.RandomCard 3 (NonEmpty.toList names)
+            | otherwise = pure names
+          pickName names = do
+            offered <- offerOf names
+            Maybe.fromMaybe (NonEmpty.head offered) <$> case selection of
+              CardSelection.AtRandom -> Game.drawAmong Prompt.RandomCard (NonEmpty.toList offered)
+              CardSelection.ByChoice -> Game.chooseAmong Prompt.ChooseConjuredCard conjuring (NonEmpty.toList offered)
+          pickWritten written = fmap (\answer -> (answered written answer, Nothing)) (pickName (fmap Common.conjuredName written))
+          -- A REFERENCE pick (CR 108.1) asks the interpreter which of the
+          -- reference's cards the filter admits -- ONCE, off the pre-effect board
+          -- like the count -- then puts the written road's question over their
+          -- names and looks the picked name up. Filtered, not trusted: an answer
+          -- outside the names takes the head, and a card the lookup hands back
+          -- that the filter does not admit is not conjured. A reference admitting
+          -- nothing conjures nothing.
+          referenceAmount from = FromReference.amount from >>= Common.evaluateForRecipient viewOf context gs resolving source conjuring
+          pickReference predicate amount names = do
+            answer <- pickName names
+            found <- Game.lookUpCard answer
+            g <- State.get
+            pure $ do
+              card <- found >>= (`Game.cardOfPrinting` g)
+              Monad.guard (Projection.referenceAdmits (Game.teams g) amount predicate card)
+              Just (card, Nothing)
+          referencePickers from count = do
+            let amount = referenceAmount from
+                predicate = FromReference.filter from
+            names <- Game.ask (Prompt.ReferenceCards predicate amount)
+            pure $ case NonEmpty.nonEmpty (ListUtils.nubOrd names) of
+              Nothing -> []
+              Just offered -> replicate count (pickReference predicate amount offered)
+          -- One pick per card conjured on the written and reference roads, and
+          -- `n` entries per named object on the duplicate road, the whole count
+          -- per object as the battlefield road below mints it. `pure` rather than
+          -- a prompt for a duplicate: the object was named before the conjure ran.
+          -- Parun.ConjureSpec's Gyox case proves the count reaches exile.
+          pickers n = case cards of
+            ConjureCards.Written written -> pure (replicate (Integer.toIntSaturating n) (fmap Just (pickWritten written)))
+            ConjureCards.Duplicate ref -> pure (concatMap (replicate (Integer.toIntSaturating n) . pure . Just) (duplicatesOf ref))
+            ConjureCards.Reference from -> referencePickers from (Integer.toIntSaturating n)
+          intoZone zone place n = fmap (concatMap Maybe.catMaybes) (pickers n >>= Monad.mapM (\p -> p >>= Monad.mapM (\(card, copied) -> Event.conjure conjuring card copied zone LibraryPosition.defaultValue >>= \made -> made <$ Monad.mapM_ place made) . Maybe.maybeToList))
+          sink depth oid = do
+            g <- State.get
+            let places = Natural.length (Map.findWithDefault Seq.empty conjuring (GameState.library g))
+            ordinal <- case depth of
+              LibraryDepth.FromTop k -> pure k
+              LibraryDepth.AtRandomInTop k -> case min k places of
+                reach
+                  | reach < 2 -> pure 1
+                  | otherwise -> fmap (max 1 . min reach) (Game.ask (Prompt.RandomDepth reach))
+            State.modify' (Game.sinkInLibrary (Natural.toIntSaturating ordinal - 1) conjuring oid)
+          onto entry n (card, copied) = do
+            made <- Foldable.toList <$> Event.conjureOntoBattlefield settle conjuring card copied (Integer.toNaturalSaturating n) (ConjureEntry.tapped entry)
+            -- CR 508.4, Create's arm's posture and in the same place: after the
+            -- entry loops, with the controller choosing what it attacks, and CR
+            -- 508.3a's attack triggers seeing nothing.
+            Monad.when (ConjureEntry.attacking entry) (Monad.mapM_ (Combat.putOntoBattlefieldAttacking Combat.Any) made)
+            pure made
+      case Common.evaluateForRecipient viewOf context gs resolving source conjuring quantity of
+        Just n
+          | n > 0 -> case destination of
+              ConjureDestination.Hand -> intoZone Zone.Hand (const (pure ())) n
+              ConjureDestination.Library depth -> intoZone Zone.Library (\oid -> Monad.mapM_ (`sink` oid) depth) n
+              ConjureDestination.Graveyard -> intoZone Zone.Graveyard (const (pure ())) n
+              ConjureDestination.Exile -> intoZone Zone.Exile (const (pure ())) n
+              -- CR 110.2a: the conjurer is who the permanent enters under, which
+              -- conjureOntoBattlefield stamps.
+              -- One pick for the whole BATCH rather than one per card, which is
+              -- the card conjureOntoBattlefield mints every member of its CR
+              -- 614.12 entry loop from. Nothing in data/cards/ states a count
+              -- above one over a spellbook, so which reading this is stays a
+              -- regression fence (#3648).
+              -- CR 110.5b's status is the arm's own payload, stated by the
+              -- sentence rather than defaulted here (Foundry Groundbreaker's
+              -- "onto the battlefield tapped"), and it reaches the mint rather
+              -- than a tap afterwards: a permanent that arrived untapped and was
+              -- tapped after would have been read untapped by its own CR 616.1
+              -- loop and by every CR 603.6a watcher of the entry.
+              -- One batch per pick, which on the written road is the one pick the
+              -- whole count is minted from and on the duplicate road is one batch
+              -- of `n` per named object. Every batch enters at one moment, so
+              -- `conjure`'s Event.together orders them all as one CR 613.7m batch
+              -- -- a regression fence, since no card in data/cards/ conjures a
+              -- duplicate of two or more objects onto the battlefield.
+              ConjureDestination.Battlefield entry -> case cards of
+                ConjureCards.Written written -> pickWritten written >>= onto entry n
+                ConjureCards.Duplicate ref -> concat <$> Monad.mapM (onto entry n) (duplicatesOf ref)
+                ConjureCards.Reference from -> referencePickers from 1 >>= fmap concat . Monad.mapM (\p -> p >>= fmap concat . Monad.mapM (onto entry n) . Maybe.maybeToList)
+        _ -> pure []
 
 createCopy :: Settle.Settle -> ObjectId -> ObjectId -> PlayerId -> Map.Map SlotName (Set Recipient) -> Map.Map SlotName (Set Recipient) -> CreateCopy.CreateCopy (GrantedAbility.GrantedAbility Card.Type.Card) -> Game ()
 createCopy settle resolving source controller legal chosen (CreateCopy.MkCreateCopy quantity ref entry mSlot exceptions creator linked) = do

@@ -2613,7 +2613,7 @@ filterPositionLintSpec s registry corpus = Spec.describe s "Lint" $ do
     let conjuring amount =
           (S.combinedFace piker)
             { Face.spell =
-                Mint.oneMode (Seq.singleton (Effect.Conjure (Conjure.MkConjure Conjure.defaultQuantity (ConjureCards.Reference (FromReference.MkFromReference buried amount)) Conjure.defaultSelection False (ConjureDestination.Battlefield ConjureEntry.defaultValue) Nothing)))
+                Mint.oneMode (Seq.singleton (Effect.Conjure (Conjure.MkConjure Conjure.defaultQuantity (ConjureCards.Reference (FromReference.MkFromReference buried amount)) Conjure.defaultSelection False (ConjureDestination.Battlefield ConjureEntry.defaultValue) Nothing (PlayerRef.Relative PlayerRelation.You))))
             }
     Spec.assertEqWith s "a planted atom in a reference pick naming no amount is an offence" (enclosingAmountCounts (conjuring Nothing)) (0, 1)
     Spec.assertEqWith s "and one naming an amount is not" (enclosingAmountCounts (conjuring (Just (Quantity.Type.Literal 4)))) (1, 0)

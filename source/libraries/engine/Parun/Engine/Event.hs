@@ -1863,25 +1863,23 @@ markDuplicate oid snapshot =
 -- createTokens' callers do: Parun.Engine.Resolve's Conjure arm hands the ids to
 -- Combat.putOntoBattlefieldAttacking.
 --
--- CR 110.2a's `Just controller` is correct by construction and unobservable: a
--- conjured card's OWNER is the player who conjured it (mintCard's `pid`, the
--- same seat), and Projection.defaultControllerOf answers the owner when
--- `enteredUnder` is Nothing, so no board can tell the two writings apart.
--- Mutating it to Nothing leaves Parun.ConjureSpec green, and would stop doing so
--- the day a printing names a conjurer other than the resolving controller
--- (#3970).
+-- CR 110.2a's `Just controller` is correct by construction and unobservable:
+-- `controller` is the CONJURER, who the Alchemy rulings make the card's OWNER
+-- too (mintCard's `pid`, the same seat), and Projection.defaultControllerOf
+-- answers the owner when `enteredUnder` is Nothing, so no board can tell the two
+-- writings apart even where the conjurer is not the resolving controller.
 --
 -- CR 800.4d's guard, `conjure` above's, for the same reason and read off the
 -- same parameter -- and CR 800.4b's third sentence agrees for this destination
 -- once the card exists, since an object that would be put onto the battlefield
 -- under a departed player's control does not arrive. `controller` is also the
 -- OWNER (mintCard's `pid` below is the same seat), so one read answers both
--- rules. Reachable in gameplay the day a printing names a conjurer other than
--- the resolving controller (#3970); until then a departed player controls no
--- resolving spell or ability (CR 800.4a, whose three clauses
--- Parun.Engine.Departure performs), so Parun.EventSpec's "CR 800.4d no card is
--- conjured under a player who has left the game" drives both funnels directly,
--- as the createTokens case beside it does.
+-- rules. A departed conjurer is reachable in gameplay (Thendar, the
+-- Overminer's "its controller" after that player concedes), but the Conjure arm
+-- reads its conjurers through Common.apnapPlayersOf, which drops a departed
+-- seat first, so Parun.EventSpec's "CR 800.4d no card is conjured under a
+-- player who has left the game" drives both funnels directly, as the
+-- createTokens case beside it does.
 --
 -- Inline rather than delegating to a `conjureOntoBattlefieldFor` body, which is
 -- createTokens' reason: the project writes no export lists, so a second

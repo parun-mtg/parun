@@ -3,6 +3,7 @@ module Parun.Types.Conjure where
 import qualified Parun.Types.CardSelection as CardSelection
 import qualified Parun.Types.ConjureCards as ConjureCards
 import qualified Parun.Types.ConjureDestination as ConjureDestination
+import qualified Parun.Types.PlayerRef as PlayerRef
 import qualified Parun.Types.Quantity as Quantity
 import qualified Parun.Types.SlotName as SlotName
 
@@ -31,14 +32,6 @@ import qualified Parun.Types.SlotName as SlotName
 -- Parametric in @card@ for 'Parun.Types.Effect.Effect''s reason: the conjured
 -- card is card DATA nested inside card data, and the parameter is what keeps
 -- 'Parun.Types.Effect' from naming a concrete card type.
---
--- Not implemented: a conjurer other than the resolving controller. That is a
--- SHAPE and not one card -- a chosen player (Juggernaut Peddler\'s "that player
--- exiles it and conjures a card named Juggernaut into their hand") and the
--- controller of another object (Thendar, the Overminer\'s "its controller
--- conjures a card named Wastes onto the battlefield tapped") are both printed --
--- so a 'Parun.Types.PlayerRef.PlayerRef' is what this would carry, the field
--- 'Parun.Types.Create.Create' already has (#3970).
 data Conjure card = MkConjure
   { -- | How many copies of the card. Toralf\'s Disciple\'s "conjure four cards
     -- named Lightning Bolt"; a printed "a card" is one.
@@ -59,7 +52,12 @@ data Conjure card = MkConjure
     -- | The slot the conjured cards are bound to, for a later clause to name --
     -- Kari Zev, Crew of Two\'s "if that card is on the battlefield, return it
     -- to its owner\'s hand" (CR 603.7c). 'Parun.Types.Create.slot''s shape.
-    slot :: Maybe SlotName.SlotName
+    slot :: Maybe SlotName.SlotName,
+    -- | Who conjures, and so who owns the card (the Alchemy rulings) and who
+    -- controls it on the battlefield (CR 110.2a): CR 109.5's "you" unless the
+    -- sentence names another -- Thendar, the Overminer\'s "its controller
+    -- conjures". 'Parun.Types.Create.creator''s shape.
+    conjurer :: PlayerRef.PlayerRef
   }
   deriving (Eq, Ord, Show)
 
