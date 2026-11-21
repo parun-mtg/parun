@@ -1,3 +1,5 @@
+{-# LANGUAGE GADTs #-}
+
 -- Covers Parun.Web.Question and Parun.Web.Board: a line protocol request as a
 -- page, and the reply its taps build, from requests the engine makes.
 module Parun.WebQuestionSpec where
@@ -21,11 +23,13 @@ import Numeric.Natural (Natural)
 import qualified Parun.Codec.ManaType as Codec.ManaType
 import qualified Parun.Codec.Reply as Codec.Reply
 import qualified Parun.Engine.Departure as Departure
+import qualified Parun.Engine.Engine as Engine
 import qualified Parun.Engine.Event as Event
 import qualified Parun.Engine.Game as Game
 import qualified Parun.Engine.PlayerView as PlayerView
 import qualified Parun.Engine.Projection as Projection
 import qualified Parun.Engine.Setup as Setup
+import qualified Parun.Engine.Stack as Stack
 import qualified Parun.Extra.Int as Int
 import qualified Parun.Extra.Natural as Natural
 import qualified Parun.JsonCodec.Codec as Codec
@@ -747,6 +751,19 @@ replaySpec s registry = Spec.describe s "WebQuestion" . Spec.describe s "replay"
         Spec.assertEqWith s "a gained subtype" (Card.typeLine gained) (Text.pack "Elf Druid Ally")
       [] -> Spec.assertFailure s "expected Llanowar Elves on the battlefield"
 
+  Spec.it s "CR 707.2 / 205.3a a Clone of Llanowar Elves lists the subtypes as the Elves print them" $ do
+    elves <- S.printingOf s registry "Llanowar Elves"
+    clone <- S.printingOf s registry "Clone"
+    let (elvesId, board) = S.addPermanent elves S.alice (Setup.emptyGame S.bothPlayers)
+        (_, staged) = S.spellOnStack clone S.alice board
+        resolved = snd (Engine.runGamePure (copying elvesId) staged (Stack.resolveTop >> Engine.settleForPriority))
+        view = PlayerView.viewFor S.alice resolved
+    case [o | o <- PlayerView.Type.battlefield view, ObjectView.object o /= elvesId] of
+      [o] -> do
+        Spec.assertEqWith s "the tile" (Card.typeLine o) (Text.pack "Elf Druid")
+        Spec.assertEqWith s "the sheet" (Card.fullType o) (Text.pack "Creature \8212 Elf Druid")
+      other -> Spec.assertFailure s ("expected the Clone beside the Elves, got " <> show (length other))
+
   Spec.it s "CR 716.3d a card exiled as its Adventure resolved is marked on its tile and sheet" $ do
     -- Entry 10 follows Can't Wake Up's resolution.
     after <- replayed s registry "chancellor-of-tales-copies-an-adventure-onto-a-new-target" 9
@@ -901,6 +918,13 @@ replayed s registry name at = do
     Right scenario -> do
       stopped <- Scenario.replay registry (Just at) scenario
       either (Spec.assertFailure s . Text.unpack . Scenario.render) pure stopped
+
+-- | Answers the as-enters copy choice with ONE PINNED object, and every other
+-- prompt by S.identityAnswer.
+copying :: ObjectId.ObjectId -> Prompt.Prompt r -> r
+copying original p = case p of
+  Prompt.ChooseCopyTarget {} -> Just original
+  _ -> S.identityAnswer p
 
 -- | The stop's board as its active player sees it.
 boardOf :: Stop.Stop -> PlayerView.Type.PlayerView

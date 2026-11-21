@@ -97,6 +97,7 @@ testCharacteristics =
       PC.characteristicPT = Nothing,
       PC.cardTypes = Set.singleton CardType.Creature,
       PC.subtypes = Set.singleton Subtype.Human,
+      PC.printedSubtypes = [Subtype.Human],
       PC.staticAbilities = [StaticAbility.MkStaticAbility Affected.Attached Nothing Set.empty Nothing Nothing (NonEmpty.singleton (Modification.GainKeyword Keyword.Flying))],
       PC.playerAbilities = [PlayerStaticAbility.MkPlayerStaticAbility {PlayerStaticAbility.scope = PlayerScope.Related PlayerRelation.AnyPlayer, PlayerStaticAbility.condition = Nothing, PlayerStaticAbility.functionsFrom = Set.empty, PlayerStaticAbility.name = Nothing, PlayerStaticAbility.effect = PlayerEffect.CantCastMoreThan (Filter.And []) 1}],
       PC.grantedPlayerAbilities = [(Timestamp.MkTimestamp 3, PlayerStaticAbility.MkPlayerStaticAbility {PlayerStaticAbility.scope = PlayerScope.Related PlayerRelation.You, PlayerStaticAbility.condition = Nothing, PlayerStaticAbility.functionsFrom = Set.empty, PlayerStaticAbility.name = Nothing, PlayerStaticAbility.effect = PlayerEffect.NoMaximumHandSize})],
@@ -175,7 +176,7 @@ testCharacteristicsJson =
     <> "\"colors\":[\"Blue\"],\"strippedColors\":[\"Red\"],"
     <> "\"manaCost\":[{\"type\":\"Generic\",\"value\":2},{\"type\":\"OfType\",\"value\":{\"type\":\"Colored\",\"value\":\"Blue\"}}],"
     <> "\"manaValue\":3,\"power\":1,\"toughness\":2,\"basePower\":1,\"baseToughness\":2,"
-    <> "\"cardTypes\":[\"Creature\"],\"subtypes\":[\"Human\"],"
+    <> "\"cardTypes\":[\"Creature\"],\"subtypes\":[\"Human\"],\"printedSubtypes\":[\"Human\"],"
     <> "\"staticAbilities\":[{\"affected\":{\"type\":\"Attached\"},\"modifications\":[{\"type\":\"GainKeyword\",\"value\":{\"type\":\"Flying\"}}]}],"
     <> "\"playerAbilities\":[{\"scope\":{\"type\":\"AnyPlayer\"},\"effect\":{\"type\":\"CantCastMoreThan\",\"value\":{\"count\":1}}}],"
     <> "\"grantedPlayerAbilities\":[{\"key\":3,\"value\":{\"scope\":{\"type\":\"You\"},\"effect\":{\"type\":\"NoMaximumHandSize\"}}}],"
@@ -246,6 +247,7 @@ minimalCharacteristics =
       PC.characteristicPT = Nothing,
       PC.cardTypes = Set.singleton CardType.Land,
       PC.subtypes = Set.empty,
+      PC.printedSubtypes = [],
       PC.staticAbilities = [],
       PC.playerAbilities = [],
       PC.grantedPlayerAbilities = [],
@@ -303,3 +305,6 @@ spec s = Spec.describe s "Parun.Codec.ProjectedCharacteristics" $ do
       PC.codec
       minimalCharacteristics
       " {\"names\":[\"Mountain\"],\"cardTypes\":[\"Land\"]} "
+  -- CR 205.3a: Elf before Druid, as Llanowar Elves prints them.
+  Spec.it s "its printed subtypes in printed order" $
+    Common.assertCodec s PC.codec minimalCharacteristics {PC.printedSubtypes = [Subtype.Elf, Subtype.Druid]} "{\"names\":[\"Mountain\"],\"cardTypes\":[\"Land\"],\"printedSubtypes\":[\"Elf\",\"Druid\"]}"

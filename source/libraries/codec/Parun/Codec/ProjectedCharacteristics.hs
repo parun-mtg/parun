@@ -80,6 +80,7 @@ codec = Fields.object $ do
   characteristicPT <- Fields.defaulted "characteristicPT" Nothing (Common.maybe CharacteristicPT.codec) PC.characteristicPT
   cardTypes <- Fields.required "cardTypes" (Common.set CardType.codec) PC.cardTypes
   subtypes <- Fields.defaulted "subtypes" Set.empty (Common.set Subtype.codec) PC.subtypes
+  printedSubtypes <- Fields.defaulted "printedSubtypes" [] (Common.distinctList Subtype.codec) PC.printedSubtypes
   staticAbilities <- Fields.defaulted "staticAbilities" [] (Common.list (StaticAbility.codec (GrantedAbility.codec Card.codec))) PC.staticAbilities
   playerAbilities <- Fields.defaulted "playerAbilities" [] (Common.list PlayerStaticAbility.codec) PC.playerAbilities
   grantedPlayerAbilities <- Fields.defaulted "grantedPlayerAbilities" [] (Common.list (Common.keyValue Timestamp.codec PlayerStaticAbility.codec)) PC.grantedPlayerAbilities
@@ -144,6 +145,7 @@ codec = Fields.object $ do
         PC.characteristicPT = characteristicPT,
         PC.cardTypes = cardTypes,
         PC.subtypes = subtypes,
+        PC.printedSubtypes = printedSubtypes,
         PC.staticAbilities = staticAbilities,
         PC.playerAbilities = playerAbilities,
         PC.grantedPlayerAbilities = grantedPlayerAbilities,

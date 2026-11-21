@@ -41,6 +41,7 @@ sampleSnapshot =
       PC.characteristicPT = Nothing,
       PC.cardTypes = Set.empty,
       PC.subtypes = Set.empty,
+      PC.printedSubtypes = [],
       PC.staticAbilities = [],
       PC.playerAbilities = [],
       PC.grantedPlayerAbilities = [],

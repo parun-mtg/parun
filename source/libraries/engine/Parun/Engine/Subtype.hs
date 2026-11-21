@@ -76,10 +76,10 @@ intrinsicManaOf pc =
     then []
     else intrinsicMana (PC.cardTypes pc) (PC.subtypes pc)
 
--- | A set of subtypes in printed order (CR 205.3a): those printed first, as
--- printed, then the rest ascending.
-inPrintedOrder :: [Subtype.Subtype] -> Set.Set Subtype.Subtype -> [Subtype.Subtype]
-inPrintedOrder printed subtypes = filter (`Set.member` subtypes) printed <> Set.toAscList (Set.difference subtypes (Set.fromList printed))
+-- | CR 205.3a: the subtypes `pc` gives an object, those its copiable type line
+-- prints first (PC.printedSubtypes), as printed, then the rest ascending.
+inPrintedOrder :: PC.ProjectedCharacteristics -> [Subtype.Subtype]
+inPrintedOrder pc = filter (`Set.member` PC.subtypes pc) (PC.printedSubtypes pc) <> Set.toAscList (Set.difference (PC.subtypes pc) (Set.fromList (PC.printedSubtypes pc)))
 
 -- | CR 205.3i / 305.6: Forest, Island, Mountain, Plains or Swamp -- the five
 -- `subtypeMana` names, so the list exists once.

@@ -225,17 +225,16 @@ typeLine o = case ObjectView.ability o of
   Nothing -> case ObjectView.characteristics o of
     Nothing -> Text.pack "Face down"
     Just c ->
-      let subtypes = subtypeWords o c
+      let subtypes = subtypeWords c
           types = fmap (Text.pack . show) (Set.toList (ProjectedCharacteristics.cardTypes c))
           named = Set.map CardName.unwrap (ProjectedCharacteristics.names c)
        in -- A basic land's subtype is its name, so its card types say more;
           -- an object with no types is an emblem (CR 114.3).
           if null subtypes && null types then Text.pack "Emblem" else if null subtypes || Set.member (Text.unwords subtypes) named then Text.unwords types else Text.unwords subtypes
 
--- | The subtypes `c` gives the object, those printed on its face in printed
--- order (ObjectView.printedSubtypes), then any others.
-subtypeWords :: ObjectView.ObjectView -> ProjectedCharacteristics.ProjectedCharacteristics -> [Text.Text]
-subtypeWords o c = fmap (Text.pack . show) (Subtype.inPrintedOrder (ObjectView.printedSubtypes o) (ProjectedCharacteristics.subtypes c))
+-- | The subtypes `c` gives the object, in printed order (Subtype.inPrintedOrder).
+subtypeWords :: ProjectedCharacteristics.ProjectedCharacteristics -> [Text.Text]
+subtypeWords c = fmap (Text.pack . show) (Subtype.inPrintedOrder c)
 
 -- | Damage marked and counters, each a small badge.
 badges :: ObjectView.ObjectView -> [Html.Html msg]
@@ -490,7 +489,7 @@ fullType o = case (ObjectView.ability o, ObjectView.characteristics o) of
   (Nothing, Just c) ->
     let supertypes = fmap (Text.pack . show) (Set.toList (ProjectedCharacteristics.supertypes c))
         types = fmap (Text.pack . show) (Set.toList (ProjectedCharacteristics.cardTypes c))
-        subtypes = subtypeWords o c
+        subtypes = subtypeWords c
      in -- An object with no types is an emblem (CR 114.3).
         if null (supertypes <> types <> subtypes) then Text.pack "Emblem" else Text.unwords (supertypes <> types <> if null subtypes then [] else Text.pack "\8212" : subtypes)
 
