@@ -38,4 +38,12 @@ spec s = Spec.describe s "Parun.Codec.LifeLossRewrite" $ do
       LifeLossRewrite.codec
       LifeLossRewrite.GainInstead
       " {\"type\":\"GainInstead\"} "
+  -- Enduring Angel's "instead transform this creature and your life total
+  -- becomes 3".
+  Spec.it s "TransformSourceOrLose" $
+    Common.assertCodec
+      s
+      LifeLossRewrite.codec
+      (LifeLossRewrite.TransformSourceOrLose 3)
+      " {\"type\":\"TransformSourceOrLose\",\"value\":3} "
   Spec.it s "has a schema" $ Common.assertHasSchema s LifeLossRewrite.codec

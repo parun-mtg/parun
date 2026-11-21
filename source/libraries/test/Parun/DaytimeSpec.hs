@@ -18,7 +18,7 @@
 --
 -- Also CR 702.145b's third static ability and CR 702.145e's second -- "this
 -- permanent can't transform except due to its daybound/nightbound ability" --
--- which is Parun.Engine.Daytime.restrictsTransform read by Parun.Engine.Resolve's
+-- which is Parun.Engine.Event.restrictsTransform read by Parun.Engine.Resolve's
 -- `turnOver`. See data/scenarios/daytime.
 --
 -- Gameplay-level throughout. Tovolar, Dire Overlord // Tovolar, the Midnight

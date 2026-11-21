@@ -64,4 +64,7 @@ data LifeLossRewrite
     -- 614.1's funnel for the gain class, so a Parun.Types.LifeGainR row resizes it
     -- -- Parun.Types.DrawRewrite's GainLife arm for its reason.
     GainInstead
+  | -- | CR 614.1a / 701.27a / 119.5: transform the row's source and set the
+    -- player's life total to this, and they lose if it did not turn (Enduring Angel).
+    TransformSourceOrLose Natural.Natural
   deriving (Eq, Ord, Show)

@@ -2676,6 +2676,7 @@ lifeLossRewriteChildren c rewrite = case rewrite of
   LifeLossRewrite.Scaled scaling -> LifeLossRewrite.Scaled <$> scalingChildren c scaling
   LifeLossRewrite.ExileFromTopOfYourLibrary -> pure rewrite
   LifeLossRewrite.GainInstead -> pure rewrite
+  LifeLossRewrite.TransformSourceOrLose _ -> pure rewrite
 
 -- | What a life gain replacement does (CR 614.1a).
 lifeGainRewriteChildren :: (Applicative f) => ReplacementChildren card ability effect f -> LifeGainRewrite.LifeGainRewrite -> f LifeGainRewrite.LifeGainRewrite

@@ -13,7 +13,8 @@ codec =
     [ Arm.payload "LeaveAtLeast" Common.natural LifeLossRewrite.LeaveAtLeast (\x -> case x of LifeLossRewrite.LeaveAtLeast y -> Just y; _ -> Nothing),
       Arm.payload "Scaled" Scaling.codec LifeLossRewrite.Scaled (\x -> case x of LifeLossRewrite.Scaled y -> Just y; _ -> Nothing),
       Arm.nullary "ExileFromTopOfYourLibrary" LifeLossRewrite.ExileFromTopOfYourLibrary,
-      Arm.nullary "GainInstead" LifeLossRewrite.GainInstead
+      Arm.nullary "GainInstead" LifeLossRewrite.GainInstead,
+      Arm.payload "TransformSourceOrLose" Common.natural LifeLossRewrite.TransformSourceOrLose (\x -> case x of LifeLossRewrite.TransformSourceOrLose y -> Just y; _ -> Nothing)
     ]
 
 tagOf :: LifeLossRewrite.LifeLossRewrite -> String
@@ -22,3 +23,4 @@ tagOf x = case x of
   LifeLossRewrite.Scaled {} -> "Scaled"
   LifeLossRewrite.ExileFromTopOfYourLibrary {} -> "ExileFromTopOfYourLibrary"
   LifeLossRewrite.GainInstead {} -> "GainInstead"
+  LifeLossRewrite.TransformSourceOrLose {} -> "TransformSourceOrLose"

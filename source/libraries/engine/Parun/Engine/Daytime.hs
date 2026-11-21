@@ -64,37 +64,6 @@ hasKeyword kw pcs oid = case Map.lookup oid pcs of
   Nothing -> False
   Just pc -> Map.member kw (PC.keywords pc)
 
--- | CR 702.145b's third static ability -- "this permanent can't transform except
--- due to its daybound ability" -- and CR 702.145e's second, its nightbound
--- mirror. True when this permanent refuses a transform.
---
--- Stated as a question about the PERMANENT rather than about the instruction,
--- because that is how both rules are worded and because it is what makes the
--- exception fall out for free: the transform the rules DO permit is CR 702.145c's
--- and CR 702.145f's own sweep, `turnDue` below, which reaches
--- Parun.Engine.Game.turnFaceOver directly and never asks this. Every other road to
--- a turn goes through an instruction, and Parun.Engine.Resolve's `turnOver` -- the
--- instruction-level wrapper -- is the one caller.
---
--- Daybound and nightbound together, in one predicate, because the two rules
--- forbid the same thing in the same words and neither one's clause reads the
--- designation or the face: CR 702.145c and CR 702.145f do that, and they are
--- `dueToTurn` below. Which of the pair a permanent has decides which of THOSE
--- fires, and decides nothing here.
---
--- The PROJECTED keywords, `hasKeyword` above, for that function's own reason: a
--- permanent stripped by Humility (CR 613.1f) has no daybound ability left, so it
--- has no restriction either -- the restriction IS part of the ability. A GRANTED
--- daybound brings its restriction with it by the same read.
---
--- Read by CR 701.28's convert too, and CR 701.28g is why it must be: "if a spell
--- or ability states that a permanent can't transform, that permanent also can't
--- convert". The two opcodes share one Parun.Engine.Resolve.Common.turnPermanentsOver, so
--- that holds by construction rather than by a second check.
-restrictsTransform :: Map ObjectId PC.ProjectedCharacteristics -> ObjectId -> Bool
-restrictsTransform pcs oid =
-  hasKeyword Keyword.Daybound pcs oid || hasKeyword Keyword.Nightbound pcs oid
-
 -- | CR 702.145c and CR 702.145f: the permanents that must turn over right now,
 -- given the designation the game has.
 --

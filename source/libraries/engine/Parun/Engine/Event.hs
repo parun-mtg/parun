@@ -287,6 +287,7 @@ import qualified Parun.Types.PlayerEffect as PlayerEffect.Type
 import Parun.Types.PlayerId (PlayerId)
 import qualified Parun.Types.PlayerInstruction as PlayerInstruction
 import qualified Parun.Types.PlayerIsDealtDamage as PlayerIsDealtDamage
+import qualified Parun.Types.PlayerQuantity as PlayerQuantity
 import qualified Parun.Types.PlayerRef as PlayerRef
 import qualified Parun.Types.PlayerRelation as PlayerRelation
 import Parun.Types.Prevention (Prevention)
@@ -800,6 +801,54 @@ transformed :: [ObjectId] -> Game ()
 transformed oids = do
   Monad.mapM_ (applyReplacements . ProposedEvent.WouldTransform) oids
   State.modify' (recordTransformed oids)
+
+-- CR 701.27a: turn one permanent over as a replacement's instruction, answering
+-- whether it turned. No CR 701.27g gate: that rule asks of an activated or
+-- triggered ability, and a replacement is neither.
+transformSource :: ObjectId -> Game Bool
+transformSource oid = do
+  gs <- State.get
+  if restrictsTransform (Projection.projectAll gs) oid
+    then pure False
+    else do
+      let (now, g1) = Game.freshTimestamp gs
+          g2 = Game.turnFaceOver now oid g1
+          turned = Game.facesTurned (GameState.objects g1) (GameState.objects g2) [oid]
+      State.put g2
+      transformed turned
+      pure (not (null turned))
+
+-- | CR 702.145b's third static ability -- "this permanent can't transform except
+-- due to its daybound ability" -- and CR 702.145e's second, its nightbound
+-- mirror. True when this permanent refuses a transform.
+--
+-- Stated as a question about the PERMANENT rather than about the instruction,
+-- because that is how both rules are worded and because it is what makes the
+-- exception fall out for free: the transform the rules DO permit is CR 702.145c's
+-- and CR 702.145f's own sweep, Parun.Engine.Daytime's `turnDue`, which reaches
+-- Parun.Engine.Game.turnFaceOver directly and never asks this. Every other road to
+-- a turn goes through an instruction: Parun.Engine.Resolve.Common.turnsOver, or
+-- a replacement's (transformSource).
+--
+-- Daybound and nightbound together, in one predicate, because the two rules
+-- forbid the same thing in the same words and neither one's clause reads the
+-- designation or the face: CR 702.145c and CR 702.145f do that, and they are
+-- Parun.Engine.Daytime's `dueToTurn`. Which of the pair a permanent has decides
+-- which of THOSE fires, and decides nothing here.
+--
+-- The PROJECTED keywords, as Parun.Engine.Daytime's sweep reads them: a
+-- permanent stripped by Humility (CR 613.1f) has no daybound ability left, so it
+-- has no restriction either -- the restriction IS part of the ability. A GRANTED
+-- daybound brings its restriction with it by the same read.
+--
+-- Read by CR 701.28's convert too, and CR 701.28g is why it must be: "if a spell
+-- or ability states that a permanent can't transform, that permanent also can't
+-- convert". The two opcodes share one Parun.Engine.Resolve.Common.turnPermanentsOver, so
+-- that holds by construction rather than by a second check.
+restrictsTransform :: Map.Map ObjectId PC.ProjectedCharacteristics -> ObjectId -> Bool
+restrictsTransform pcs oid = case Map.lookup oid pcs of
+  Nothing -> False
+  Just pc -> Map.member Keyword.Type.Daybound (PC.keywords pc) || Map.member Keyword.Type.Nightbound (PC.keywords pc)
 
 -- CR 603.10's "what the objects involved in the event look like", sampled off
 -- the board the turn has just been written to: the projected characteristics, and
@@ -5200,6 +5249,30 @@ apply settle batch applied batchPrevented candidate event =
         Replacement.consume (ReplacementCandidate.identity candidate)
         settled <- resolveLifeGainSpent settle (spentWith candidate applied) (candidateCause candidate) pid n
         changeLife pid (toInteger settled)
+        pure Nothing
+      -- CR 614.6 with CR 701.27a / 119.5: Enduring Angel's "instead transform
+      -- this creature and your life total becomes 3. Then if this creature
+      -- didn't transform this way, you lose the game." The loss never happens.
+      -- The turn is made here, where its outcome can be read; the life set and
+      -- the loss queue behind it (FromGraveyardOrLose's road), so the set is
+      -- CR 119.5's gain or loss with every replacement of its own. Its rulings:
+      -- a token or a single-faced copy does not turn, and its player loses.
+      LifeLossRewrite.TransformSourceOrLose total -> do
+        Replacement.consume (ReplacementCandidate.identity candidate)
+        turned <- transformSource (ReplacementCandidate.source candidate)
+        let you = PlayerRef.Relative PlayerRelation.You
+            effects =
+              Seq.singleton (Effect.Type.SetLifeTotal (PlayerQuantity.MkPlayerQuantity you (Quantity.Type.Literal (toInteger total))))
+                <> (if turned then Seq.empty else Seq.singleton (Effect.Type.LoseGame you))
+            queued =
+              PendingReplacementEffect.MkPendingReplacementEffect
+                { PendingReplacementEffect.effects = effects,
+                  PendingReplacementEffect.targets = Map.empty,
+                  PendingReplacementEffect.controller = pid,
+                  PendingReplacementEffect.source = ReplacementCandidate.source candidate,
+                  PendingReplacementEffect.bindsArrival = False
+                }
+        State.modify' (\g -> g {GameState.stored = (GameState.stored g) {StoredEffects.pendingReplacementEffects = StoredEffects.pendingReplacementEffects (GameState.stored g) Seq.|> queued}})
         pure Nothing
     -- Unreachable: `applies` admits LifeLossR only against WouldLoseLife.
     (ReplacementEffect.LifeLossR {}, _) -> pure (Just event)
