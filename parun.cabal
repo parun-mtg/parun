@@ -762,6 +762,8 @@ library codec
     Parun.Codec.DeferredLotSpec
     Parun.Codec.DefinedX
     Parun.Codec.DefinedXSpec
+    Parun.Codec.DelayedKind
+    Parun.Codec.DelayedKindSpec
     Parun.Codec.DelayedTrigger
     Parun.Codec.DelayedTriggerSpec
     Parun.Codec.Departure
@@ -3276,6 +3278,7 @@ library types
     Parun.Types.Defense
     Parun.Types.DeferredLot
     Parun.Types.DefinedX
+    Parun.Types.DelayedKind
     Parun.Types.DelayedTrigger
     Parun.Types.Departure
     Parun.Types.Designate

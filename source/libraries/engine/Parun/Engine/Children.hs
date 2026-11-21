@@ -842,6 +842,7 @@ quantityChildren children quantity = case quantity of
   Quantity.StartingDeckSize ref -> fmap Quantity.StartingDeckSize (player children ref)
   Quantity.Speed ref -> fmap Quantity.Speed (player children ref)
   Quantity.IsMonarch ref -> fmap Quantity.IsMonarch (player children ref)
+  Quantity.Boons ref -> fmap Quantity.Boons (player children ref)
   Quantity.HasDaytime daytime -> pure (Quantity.HasDaytime daytime)
   Quantity.HasPlayerDesignation (PlayerDesignationTally.MkPlayerDesignationTally ref mark) -> fmap (\renamed -> Quantity.HasPlayerDesignation (PlayerDesignationTally.MkPlayerDesignationTally renamed mark)) (player children ref)
   Quantity.OnEventTeam (EventTeamTally.MkEventTeamTally ref team) -> fmap (\renamed -> Quantity.OnEventTeam (EventTeamTally.MkEventTeamTally renamed team)) (player children ref)
@@ -1280,8 +1281,8 @@ effectChildren c effect = case effect of
   Effect.EndCombatPhase -> pure effect
   Effect.GainControl (GainControl.MkGainControl duration ref named to) -> fmap Effect.GainControl (GainControl.MkGainControl <$> onDuration c duration <*> onObjectRef c ref <*> traverse (onSlot c) named <*> onPlayer c to)
   Effect.ExchangeControl sides -> fmap Effect.ExchangeControl (controlSidesChildren c sides)
-  Effect.ArmDelayedTrigger (ArmDelayedTrigger.MkArmDelayedTrigger name onset duration ability recipient) ->
-    fmap Effect.ArmDelayedTrigger (ArmDelayedTrigger.MkArmDelayedTrigger name <$> onOnset c onset <*> traverse (onDuration c) duration <*> traverse (onAbility c) ability <*> traverse (onPlayer c) recipient)
+  Effect.ArmDelayedTrigger (ArmDelayedTrigger.MkArmDelayedTrigger name onset duration ability boon) ->
+    fmap Effect.ArmDelayedTrigger (ArmDelayedTrigger.MkArmDelayedTrigger name <$> onOnset c onset <*> traverse (onDuration c) duration <*> traverse (onAbility c) ability <*> traverse (onPlayer c) boon)
   Effect.AffectPlayers (AffectPlayers.MkAffectPlayers duration players playerEffect) ->
     fmap Effect.AffectPlayers (AffectPlayers.MkAffectPlayers <$> onDuration c duration <*> onAffectedPlayers c players <*> onPlayerEffect c playerEffect)
   Effect.RequireBlock (RequireBlock.MkRequireBlock duration blocker attacker arity) ->
@@ -3342,7 +3343,7 @@ activeReplacementChildren c (ActiveReplacement.MkActiveReplacement effect source
 
 -- | A delayed triggered ability's children (CR 603.7a).
 delayedTriggerChildren :: (Applicative f) => StoredChildren f -> DelayedTrigger.DelayedTrigger -> f DelayedTrigger.DelayedTrigger
-delayedTriggerChildren c (DelayedTrigger.MkDelayedTrigger ability source controller bindings choices delayed window expiry createdAt armedIn) =
+delayedTriggerChildren c (DelayedTrigger.MkDelayedTrigger ability source controller bindings choices delayed window expiry createdAt armedIn kind) =
   DelayedTrigger.MkDelayedTrigger
     <$> storedTriggered c ability
     <*> storedObject c source
@@ -3354,6 +3355,7 @@ delayedTriggerChildren c (DelayedTrigger.MkDelayedTrigger ability source control
     <*> traverse (expiryChildren c) expiry
     <*> pure createdAt
     <*> pure armedIn
+    <*> pure kind
 
 -- | A later payment's children (CR 116.2c): its price, its payoff and its expiry.
 activeLaterPaymentChildren :: (Applicative f) => StoredChildren f -> ActiveLaterPayment.ActiveLaterPayment -> f ActiveLaterPayment.ActiveLaterPayment

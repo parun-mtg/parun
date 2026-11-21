@@ -79,6 +79,7 @@ import qualified Parun.Types.Cost as Cost.Type
 import qualified Parun.Types.CostComponent as CostComponent
 import qualified Parun.Types.CostReduction as CostReduction
 import qualified Parun.Types.CounterCause as CounterCause
+import qualified Parun.Types.DelayedKind as DelayedKind
 import qualified Parun.Types.DelayedTrigger as DelayedTrigger
 import qualified Parun.Types.DuringPhase as DuringPhase
 import qualified Parun.Types.Effect as Effect
@@ -3578,7 +3579,7 @@ carryCopyIntoSpell before old new gs = case Game.lookupObject old before of
 armCastUnder :: PlayerId -> ObjectId -> AbilityName.AbilityName -> GameState -> GameState
 armCastUnder caster sid name gs = case Projection.declaredDelayedAbility sid name gs of
   Nothing -> gs
-  Just ability -> Event.armDelayed ability (Projection.delayedSnapshotOf sid gs) sid (Game.acquisitionOf sid gs) Nothing caster (Map.singleton Keyword.becameSlot (Binding.toObject sid)) (Just TurnWindow.AnyTurn) Nothing gs
+  Just ability -> Event.armDelayed DelayedKind.Ordinary ability (Projection.delayedSnapshotOf sid gs) sid (Game.acquisitionOf sid gs) Nothing caster (Map.singleton Keyword.becameSlot (Binding.toObject sid)) (Just TurnWindow.AnyTurn) Nothing gs
 
 -- CR 611.2a / 611.2c: Savage Summoning's "the next creature spell you cast
 -- this turn ... That spell can't be countered. That creature enters with an

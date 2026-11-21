@@ -2243,7 +2243,7 @@ unearth cost =
               ArmDelayedTrigger.onset = Onset.Immediately,
               ArmDelayedTrigger.duration = Nothing,
               ArmDelayedTrigger.ability = Nothing,
-              ArmDelayedTrigger.recipient = Nothing
+              ArmDelayedTrigger.boon = Nothing
             }
       redirected =
         Effect.Replace
@@ -2545,7 +2545,7 @@ encore cost =
               ArmDelayedTrigger.onset = Onset.Immediately,
               ArmDelayedTrigger.duration = Nothing,
               ArmDelayedTrigger.ability = Nothing,
-              ArmDelayedTrigger.recipient = Nothing
+              ArmDelayedTrigger.boon = Nothing
             }
    in ActivatedAbility.MkActivatedAbility
         { ActivatedAbility.costChoices = [],
@@ -5747,7 +5747,7 @@ myriad =
               ArmDelayedTrigger.onset = Onset.Immediately,
               ArmDelayedTrigger.duration = Nothing,
               ArmDelayedTrigger.ability = Nothing,
-              ArmDelayedTrigger.recipient = Nothing
+              ArmDelayedTrigger.boon = Nothing
             }
       anyToken = atLeastOneMatching (Scope.OverBound BoundReading.AsBound myriadTokenSlot) (Filter.And [])
    in Mint.triggerOf
@@ -5812,7 +5812,7 @@ mobilize n =
               ArmDelayedTrigger.onset = Onset.Immediately,
               ArmDelayedTrigger.duration = Nothing,
               ArmDelayedTrigger.ability = Nothing,
-              ArmDelayedTrigger.recipient = Nothing
+              ArmDelayedTrigger.boon = Nothing
             }
    in Mint.trigger (TriggerCondition.Attacks (AttackTrigger.Attacker AttackerTrigger.defaultValue)) (Seq.fromList [spawn, arm])
 
@@ -6546,7 +6546,7 @@ decayed =
               ArmDelayedTrigger.onset = Onset.Immediately,
               ArmDelayedTrigger.duration = Nothing,
               ArmDelayedTrigger.ability = Nothing,
-              ArmDelayedTrigger.recipient = Nothing
+              ArmDelayedTrigger.boon = Nothing
             }
    in Mint.trigger (TriggerCondition.Attacks (AttackTrigger.Attacker AttackerTrigger.defaultValue)) (Seq.singleton effect)
 

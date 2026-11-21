@@ -4,6 +4,7 @@ import qualified Data.Map.Strict as Map
 import qualified Parun.Types.AbilityName as AbilityName
 import qualified Parun.Types.Binding as Binding
 import qualified Parun.Types.Card as Card
+import qualified Parun.Types.DelayedKind as DelayedKind
 import qualified Parun.Types.EventGroup as EventGroup
 import qualified Parun.Types.Expiry as Expiry
 import qualified Parun.Types.GrantedAbility as GrantedAbility
@@ -88,6 +89,9 @@ data DelayedTrigger = MkDelayedTrigger
     -- | CR 603.12 / 610.3b: the first event group after this entry was
     -- created, which is when a reflexive one triggered: its firing's
     -- PendingTrigger.since.
-    armedIn :: EventGroup.EventGroup
+    armedIn :: EventGroup.EventGroup,
+    -- | Whether this entry is a one-time boon, stamped from the arming's
+    -- ArmDelayedTrigger.boon.
+    kind :: DelayedKind.DelayedKind
   }
   deriving (Eq, Ord, Show)

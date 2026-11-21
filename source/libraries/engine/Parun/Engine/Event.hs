@@ -159,6 +159,7 @@ import qualified Parun.Types.DamageRewrite as DamageRewrite
 import qualified Parun.Types.DealtDamage as DealtDamage
 import qualified Parun.Types.DeclarationTrigger as DeclarationTrigger
 import qualified Parun.Types.DeferredLot as DeferredLot
+import qualified Parun.Types.DelayedKind as DelayedKind
 import Parun.Types.DelayedTrigger (DelayedTrigger)
 import qualified Parun.Types.DelayedTrigger as DelayedTrigger
 import qualified Parun.Types.Designation as Designation
@@ -3522,7 +3523,7 @@ apply settle batch applied batchPrevented candidate event =
           -- its controller's (Replacement.linkedTrigger). No controller,
           -- no "you" to do it.
           Foldable.for_ ((,) <$> Replacement.linkedTrigger whenYouDo <*> ReplacementCandidate.controller candidate) $ \(linked, you) ->
-            State.modify' (\g -> armDelayed linked (Projection.delayedSnapshotOf (ReplacementCandidate.source candidate) g) (ReplacementCandidate.source candidate) (Game.acquisitionOf (ReplacementCandidate.source candidate) g) Nothing you Map.empty (Just TurnWindow.AnyTurn) Nothing g)
+            State.modify' (\g -> armDelayed DelayedKind.Ordinary linked (Projection.delayedSnapshotOf (ReplacementCandidate.source candidate) g) (ReplacementCandidate.source candidate) (Game.acquisitionOf (ReplacementCandidate.source candidate) g) Nothing you Map.empty (Just TurnWindow.AnyTurn) Nothing g)
           -- CR 614.1a / 614.6: "instead exile it and ...", the riders part of
           -- the modified event. QUEUED for DamageRewrite.RunEffects' reason
           -- below, with the moving object bound under
@@ -6700,7 +6701,7 @@ becomeCopyAs batch candidate asCopy oid = do
         let linkedEarlier entry = DelayedTrigger.source entry == oid && Map.member Binding.copiedObject (DelayedTrigger.bindings entry)
         State.modify' (\g -> g {GameState.stored = (GameState.stored g) {StoredEffects.delayedTriggers = Seq.filter (not . linkedEarlier) (StoredEffects.delayedTriggers (GameState.stored g))}})
         Foldable.for_ (Replacement.linkedTrigger (AsCopy.whenYouDo asCopy)) $ \linked ->
-          State.modify' (\g -> armDelayed linked (Projection.delayedSnapshotOf oid g) oid (Game.acquisitionOf oid g) Nothing controller (Map.singleton Binding.copiedObject (Binding.toObject src2)) (Just TurnWindow.AnyTurn) Nothing g)
+          State.modify' (\g -> armDelayed DelayedKind.Ordinary linked (Projection.delayedSnapshotOf oid g) oid (Game.acquisitionOf oid g) Nothing controller (Map.singleton Binding.copiedObject (Binding.toObject src2)) (Just TurnWindow.AnyTurn) Nothing g)
       -- CR 707.9e / 122.1: Dominion Saboteur's copied counters, read off the
       -- copied permanent as the copy is made, ride the printed rows' funnel
       -- and are taken back with them (docs/decisions.md, "Whether Dominion
@@ -13730,8 +13731,8 @@ controllerTurnScoped cond = case cond of
 -- every other creator Game.acquisitionOf. CR 603.7 / 608.2c: `resolution` is
 -- the resolving object creating it, whose entry links alone the entry reads
 -- ("this way"), and Nothing for every other creator.
-armDelayed :: TriggeredAbility.TriggeredAbility Card.Type.Card (GrantedAbility.Type.GrantedAbility Card.Type.Card) -> Map.Map AbilityName.AbilityName (TriggeredAbility.TriggeredAbility Card.Type.Card (GrantedAbility.Type.GrantedAbility Card.Type.Card)) -> ObjectId -> Acquisition.Acquisition -> Maybe ObjectId -> PlayerId -> Map.Map SlotName.SlotName Binding.Type.Binding -> Maybe TurnWindow -> Maybe Expiry.Type.Expiry -> GameState -> GameState
-armDelayed ability declared source acquisition resolution controller captured armed expiry gs = case armed of
+armDelayed :: DelayedKind.DelayedKind -> TriggeredAbility.TriggeredAbility Card.Type.Card (GrantedAbility.Type.GrantedAbility Card.Type.Card) -> Map.Map AbilityName.AbilityName (TriggeredAbility.TriggeredAbility Card.Type.Card (GrantedAbility.Type.GrantedAbility Card.Type.Card)) -> ObjectId -> Acquisition.Acquisition -> Maybe ObjectId -> PlayerId -> Map.Map SlotName.SlotName Binding.Type.Binding -> Maybe TurnWindow -> Maybe Expiry.Type.Expiry -> GameState -> GameState
+armDelayed kind ability declared source acquisition resolution controller captured armed expiry gs = case armed of
   -- "That turn" names no turn this resolution created, or "that player's next
   -- turn" no player, so the ability could never fire (CR 603.7a).
   Nothing -> gs
@@ -13757,7 +13758,8 @@ armDelayed ability declared source acquisition resolution controller captured ar
               DelayedTrigger.createdAt = createdAt,
               -- CR 603.12: a reflexive entry triggers as it is created, so
               -- every event already recorded is behind it.
-              DelayedTrigger.armedIn = Bookkeeping.nextEventGroup (GameState.bookkeeping gs)
+              DelayedTrigger.armedIn = Bookkeeping.nextEventGroup (GameState.bookkeeping gs),
+              DelayedTrigger.kind = kind
             }
      in gs1 {GameState.stored = (GameState.stored gs1) {StoredEffects.delayedTriggers = StoredEffects.delayedTriggers (GameState.stored gs1) Seq.|> entry}}
 

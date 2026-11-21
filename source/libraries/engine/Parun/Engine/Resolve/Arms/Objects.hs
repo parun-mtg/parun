@@ -99,6 +99,7 @@ import qualified Parun.Types.DamageDirection as DamageDirection
 import qualified Parun.Types.DamageR as DamageR
 import qualified Parun.Types.DamageRewrite as DamageRewrite
 import qualified Parun.Types.Daytime as Daytime
+import qualified Parun.Types.DelayedKind as DelayedKind
 import qualified Parun.Types.Designate as Designate
 import qualified Parun.Types.DrawR as DrawR
 import qualified Parun.Types.DrawRewrite as DrawRewrite
@@ -1014,7 +1015,7 @@ setX resolving source controller legal (SetX.MkSetX value ref) = do
   State.modify (\g -> g {GameState.objects = Foldable.foldl' (flip (Map.adjust put)) (GameState.objects g) named})
 
 armDelayedTrigger :: ObjectId -> ObjectId -> PlayerId -> Map.Map SlotName (Set Recipient) -> ArmDelayedTrigger.ArmDelayedTrigger (GrantedAbility.GrantedAbility Card.Type.Card) -> Game ()
-armDelayedTrigger resolving source controller legal arm@(ArmDelayedTrigger.MkArmDelayedTrigger name onset duration _ recipient) = do
+armDelayedTrigger resolving source controller legal arm@(ArmDelayedTrigger.MkArmDelayedTrigger name onset duration _ boon) = do
   gs <- State.get
   -- CR 608.2h's last-known fallback, and not belt and braces: the source can
   -- have left an opcode earlier in this same list, CR 400.7 having deleted the
@@ -1028,10 +1029,10 @@ armDelayedTrigger resolving source controller legal arm@(ArmDelayedTrigger.MkArm
     Nothing -> pure ()
     Just ability ->
       -- CR 603.7d-f: the controller is the player who controlled the spell or
-      -- ability AS IT RESOLVED, baked in now. A stated recipient replaces it
+      -- ability AS IT RESOLVED, baked in now. A boon's holder replaces it
       -- (Loch Larent's boon for its target opponent), CR 114.2's "gets an
       -- emblem" reading of "gets a one-time boon"; one naming no single seat
-      -- arms nothing. The onset and the duration stay the arming text's, whose
+      -- arms nothing. The entry is marked a boon for Quantity.Boons. The onset and the duration stay the arming text's, whose
       -- "you" is still the resolution's controller. The scenario "Loch
       -- Larent's boon makes the opponent's next creature spell enter tapped
       -- and stunned" proves it.
@@ -1065,8 +1066,11 @@ armDelayedTrigger resolving source controller legal arm@(ArmDelayedTrigger.MkArm
           -- the OUTER Maybe is the card printing no duration; the inner one is
           -- Expiry.arm reporting that a printed duration never STARTED (CR
           -- 611.2b).
-          Foldable.for_ (maybe (Just controller) (Common.oneSeat legal resolving source controller gs) recipient) $ \holder ->
-            State.put (Event.armDelayed ability (Projection.delayedReadBy resolving source gs) source (Game.readingAcquisition resolving source gs source) (Just resolving) holder captured (Event.armOnset (Common.oneSeat legal resolving source controller gs) source controller gs onset) (duration >>= \d -> Expiry.arm (Just resolving) legal controller source d gs) gs)
+          let (kind, holders) = case boon of
+                Nothing -> (DelayedKind.Ordinary, Just controller)
+                Just ref -> (DelayedKind.OneTimeBoon, Common.oneSeat legal resolving source controller gs ref)
+           in Foldable.for_ holders $ \holder ->
+                State.put (Event.armDelayed kind ability (Projection.delayedReadBy resolving source gs) source (Game.readingAcquisition resolving source gs source) (Just resolving) holder captured (Event.armOnset (Common.oneSeat legal resolving source controller gs) source controller gs onset) (duration >>= \d -> Expiry.arm (Just resolving) legal controller source d gs) gs)
 
 replace :: ObjectId -> ObjectId -> PlayerId -> Map.Map SlotName (Set Recipient) -> Replace.Replace Card.Type.Card (GrantedAbility.GrantedAbility Card.Type.Card) (Effect Card.Type.Card (GrantedAbility.GrantedAbility Card.Type.Card)) -> Game ()
 replace resolving source controller legal (Replace.MkReplace duration uses origin condition re) =

@@ -2288,7 +2288,7 @@ spec s = Spec.describe s "Parun.Codec.Effect" $ do
               ArmDelayedTrigger.onset = Onset.Immediately,
               ArmDelayedTrigger.duration = Nothing,
               ArmDelayedTrigger.ability = Nothing,
-              ArmDelayedTrigger.recipient = Nothing
+              ArmDelayedTrigger.boon = Nothing
             }
       )
       " {\"type\":\"ArmDelayedTrigger\",\"value\":{\"name\":\"sacrifice it\"}} "
@@ -2302,7 +2302,7 @@ spec s = Spec.describe s "Parun.Codec.Effect" $ do
               ArmDelayedTrigger.onset = Onset.Immediately,
               ArmDelayedTrigger.duration = Just Duration.UntilEndOfTurn,
               ArmDelayedTrigger.ability = Nothing,
-              ArmDelayedTrigger.recipient = Nothing
+              ArmDelayedTrigger.boon = Nothing
             }
       )
       " {\"type\":\"ArmDelayedTrigger\",\"value\":{\"name\":\"each combat\",\"duration\":{\"type\":\"UntilEndOfTurn\"}}} "
@@ -2316,7 +2316,7 @@ spec s = Spec.describe s "Parun.Codec.Effect" $ do
               ArmDelayedTrigger.onset = Onset.FromNextTurnOf (Just (PlayerRef.Relative PlayerRelation.You)),
               ArmDelayedTrigger.duration = Nothing,
               ArmDelayedTrigger.ability = Nothing,
-              ArmDelayedTrigger.recipient = Nothing
+              ArmDelayedTrigger.boon = Nothing
             }
       )
       " {\"type\":\"ArmDelayedTrigger\",\"value\":{\"name\":\"return it\",\"onset\":{\"type\":\"FromNextTurnOf\",\"value\":{\"type\":\"Relative\",\"value\":\"You\"}}}} "
@@ -2330,7 +2330,7 @@ spec s = Spec.describe s "Parun.Codec.Effect" $ do
               ArmDelayedTrigger.onset = Onset.FromNextTurnOf (Just (PlayerRef.Relative PlayerRelation.You)),
               ArmDelayedTrigger.duration = Just Duration.UntilEndOfTurn,
               ArmDelayedTrigger.ability = Nothing,
-              ArmDelayedTrigger.recipient = Nothing
+              ArmDelayedTrigger.boon = Nothing
             }
       )
       " {\"type\":\"ArmDelayedTrigger\",\"value\":{\"name\":\"return it\",\"onset\":{\"type\":\"FromNextTurnOf\",\"value\":{\"type\":\"Relative\",\"value\":\"You\"}},\"duration\":{\"type\":\"UntilEndOfTurn\"}}} "

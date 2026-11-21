@@ -59,6 +59,7 @@ import Parun.Types.Combat (Combat)
 import qualified Parun.Types.Combat as Combat
 import qualified Parun.Types.CombatDeclaration as CombatDeclaration
 import Parun.Types.Cost (Cost)
+import qualified Parun.Types.DelayedKind as DelayedKind
 import qualified Parun.Types.Enlisted as Enlisted
 import qualified Parun.Types.Filter as Filter.Type
 import Parun.Types.Game (Game)
@@ -2943,7 +2944,7 @@ attemptAttackDeclaration perform pid asked forced rejected = do
             Monad.forM_ answer $ \tapped -> do
               Event.tap you tapped
               State.modify' (Event.recordEvent (GameEvent.Enlisted Enlisted.MkEnlisted {Enlisted.enlister = oid, Enlisted.enlisted = tapped}))
-              State.modify' (\armed -> Event.armDelayed Keyword.Engine.enlistReflexive (Projection.delayedSnapshotOf oid armed) oid (Game.acquisitionOf oid armed) Nothing you (Map.singleton Binding.tappedPermanent (Binding.toObject tapped)) (Just TurnWindow.AnyTurn) Nothing armed)
+              State.modify' (\armed -> Event.armDelayed DelayedKind.Ordinary Keyword.Engine.enlistReflexive (Projection.delayedSnapshotOf oid armed) oid (Game.acquisitionOf oid armed) Nothing you (Map.singleton Binding.tappedPermanent (Binding.toObject tapped)) (Just TurnWindow.AnyTurn) Nothing armed)
             pure (fmap ((,) you) answer)
         gs1 <- State.get
         -- CR 508.1h: the total cost to attack is determined once and then LOCKED

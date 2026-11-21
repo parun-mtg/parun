@@ -12,6 +12,7 @@ import qualified Parun.Spec as Spec
 import qualified Parun.Types.AbilityName as AbilityName
 import qualified Parun.Types.Acquisition as Acquisition
 import qualified Parun.Types.Binding as Binding
+import qualified Parun.Types.DelayedKind as DelayedKind
 import qualified Parun.Types.DelayedTrigger as DelayedTrigger
 import qualified Parun.Types.EventGroup as EventGroup
 import qualified Parun.Types.Expiry as Expiry
@@ -38,7 +39,8 @@ entry =
       DelayedTrigger.window = TurnWindow.AnyTurn,
       DelayedTrigger.expiry = Nothing,
       DelayedTrigger.createdAt = Timestamp.MkTimestamp 7,
-      DelayedTrigger.armedIn = EventGroup.MkEventGroup 3
+      DelayedTrigger.armedIn = EventGroup.MkEventGroup 3,
+      DelayedTrigger.kind = DelayedKind.Ordinary
     }
 
 -- | A source that had chosen nothing (CR 607.2d).
@@ -87,6 +89,16 @@ spec s = Spec.describe s "Parun.Codec.DelayedTrigger" $ do
           <> "\"bindings\":{\"token\":{\"amount\":9}},\"choices\":{\"subtype\":[\"Goblin\"]},"
           <> "\"window\":{\"type\":\"NextTurnOf\",\"value\":2},\"createdAt\":7,\"armedIn\":3}"
       )
+  -- Underbridge Warlock's "if you have a boon" counts this mark.
+  Spec.it s "MkDelayedTrigger, a one-time boon" $
+    Common.assertCodec
+      s
+      DelayedTrigger.codec
+      entry {DelayedTrigger.kind = DelayedKind.OneTimeBoon}
+      ( "{\"ability\":{\"condition\":{\"type\":\"Enters\",\"value\":{}},\"modal\":{\"modes\":[{}]}},\"source\":4,\"controller\":0,"
+          <> "\"bindings\":{\"token\":{\"amount\":9}},\"choices\":{\"subtype\":[\"Goblin\"]},"
+          <> "\"window\":{\"type\":\"AnyTurn\"},\"createdAt\":7,\"armedIn\":3,\"kind\":\"OneTimeBoon\"}"
+      )
   -- 'bindings' at its default and no stated 'expiry'. 'window' stays a required
   -- key regardless: CR 603.7a's "no restriction" is one of TurnWindow's arms,
   -- not the absence of one.
@@ -104,6 +116,7 @@ spec s = Spec.describe s "Parun.Codec.DelayedTrigger" $ do
           DelayedTrigger.window = TurnWindow.AnyTurn,
           DelayedTrigger.expiry = Nothing,
           DelayedTrigger.createdAt = Timestamp.MkTimestamp 7,
-          DelayedTrigger.armedIn = EventGroup.MkEventGroup 3
+          DelayedTrigger.armedIn = EventGroup.MkEventGroup 3,
+          DelayedTrigger.kind = DelayedKind.Ordinary
         }
       "{\"ability\":{\"condition\":{\"type\":\"Enters\",\"value\":{}},\"modal\":{\"modes\":[{}]}},\"source\":4,\"controller\":0,\"choices\":{},\"window\":{\"type\":\"AnyTurn\"},\"createdAt\":7,\"armedIn\":3}"

@@ -53,6 +53,8 @@ import qualified Parun.Types.CostPortion as CostPortion
 import qualified Parun.Types.DamageEvent as DamageEvent
 import qualified Parun.Types.DamageTally as DamageTally
 import qualified Parun.Types.DealtDamage as DealtDamage
+import qualified Parun.Types.DelayedKind as DelayedKind
+import qualified Parun.Types.DelayedTrigger as DelayedTrigger
 import qualified Parun.Types.Devotion as Devotion
 import qualified Parun.Types.DraftNote as DraftNote
 import qualified Parun.Types.DraftNoteTally as DraftNoteTally
@@ -113,6 +115,7 @@ import qualified Parun.Types.SpellTally as SpellTally
 import qualified Parun.Types.SpellWasCast as SpellWasCast
 import qualified Parun.Types.StaticRead as StaticRead
 import qualified Parun.Types.StickerContent as StickerContent
+import qualified Parun.Types.StoredEffects as StoredEffects
 import qualified Parun.Types.StoredResult as StoredResult
 import qualified Parun.Types.Subtype as Subtype
 import qualified Parun.Types.TapKeyword as TapKeyword
@@ -561,6 +564,14 @@ evaluateAgainst viewOf context gs announcedOn mOid mView quantity =
         Quantity.IsMonarch ref -> case playersOf ref of
           Nothing -> Nothing
           Just pids -> Just (if any (\pid -> GameState.monarch gs == Just pid) pids then 1 else 0)
+        -- Tenacious Pup's ruling: a one-time boon is a delayed trigger that goes
+        -- away as it fires (DelayedTrigger.expiry Nothing), so every marked
+        -- entry still stored is unfired. Summed over the named seats.
+        Quantity.Boons ref -> case playersOf ref of
+          Nothing -> Nothing
+          Just pids ->
+            let held entry = DelayedTrigger.kind entry == DelayedKind.OneTimeBoon && elem (DelayedTrigger.controller entry) pids
+             in Just (toInteger (length (Seq.filter held (StoredEffects.delayedTriggers (GameState.stored gs)))))
         -- CR 732.1: the game's designation, IsMonarch's posture -- the neither-state
         -- (Nothing) answers 0.
         Quantity.HasDaytime daytime -> Just (if GameState.daytime gs == Just daytime then 1 else 0)
@@ -1865,6 +1876,7 @@ talliesWhatHappened quantity = case quantity of
   Quantity.StartingDeckSize _ -> False
   Quantity.Speed _ -> False
   Quantity.IsMonarch _ -> False
+  Quantity.Boons _ -> False
   Quantity.HasDaytime _ -> False
   Quantity.HasPlayerDesignation {} -> False
   Quantity.OnEventTeam {} -> False
