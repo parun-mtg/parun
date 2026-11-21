@@ -6106,7 +6106,7 @@ apply settle batch applied batchPrevented candidate event =
                 -- nothing. The swap drops a replaced copy effect's exceptions:
                 -- docs/decisions.md, "Whether a replaced copy effect's
                 -- exceptions reach Mirrormind Crown's copies".
-                Just (TokenPlus.InsteadCopies _) -> case picked >>= \src -> (,) src <$> Game.cardOfWithLastKnown src gs of
+                Just (TokenPlus.InsteadCopies _) -> case picked >>= \src -> (,) src <$> copiedTokenCard src gs of
                   Just (src, card) -> fmap (swapFor card (Just ((copiedToken src gs) {TokenCopy.values = copiedSnapshot src gs}))) scaled
                   Nothing -> scaled
           pure (Just (ProposedEvent.WouldCreateTokens pid appended))
@@ -6813,18 +6813,30 @@ copiedSnapshotWithLastKnown oid gs = case Game.lastKnownOf oid gs of
 -- `copiedSnapshot` off a board with it turned over (Game.withFaceTurned), so a
 -- copy effect over it carries to both faces. Neither for an object that would
 -- not turn (Game.turnedObject): a one-faced card, a face-down one (CR
--- 712.12a), a meld.
+-- 712.12a), a meld; nor for a merged permanent, which is not double-faced
+-- (CR 731.2i) and whose copy is minted on one face (`copiedTokenCard`).
 --
 -- Not implemented: the face and other face of an object that has already left
 -- (CR 608.2h), whose last known information keeps neither (#9280).
 copiedToken :: ObjectId -> GameState -> TokenCopy.TokenCopy
 copiedToken oid gs =
-  let turning = Game.lookupObject oid gs >>= \object -> object <$ Game.turnedObject object gs
+  let turning = Game.lookupObject oid gs >>= \object -> if Seq.null (Game.mergeComponentsOf (Object.source object)) then object <$ Game.turnedObject object gs else Nothing
    in TokenCopy.MkTokenCopy
         { TokenCopy.values = copiedSnapshotWithLastKnown oid gs,
           TokenCopy.turned = fmap (const (copiedSnapshot oid (Game.withFaceTurned oid gs))) turning,
           TokenCopy.face = Game.shownFace =<< turning
         }
+
+-- CR 707.8a / 731.2i: the card a token copying this object is minted on,
+-- Game.cardOfWithLastKnown's, except that a copy of a merged permanent is not
+-- double-faced, so its topmost component's card is cut to the face that
+-- component shows (Card.singleFacedAt). data/scenarios/mutate's
+-- cr-731-2i-707-8a-a-cackling-counterpart-copy-of-a-merged-huntmaster-stays-huntmaster-by-day
+-- proves it.
+copiedTokenCard :: ObjectId -> GameState -> Maybe Card
+copiedTokenCard oid gs = case Game.sourceOfWithLastKnown oid gs of
+  Just (Source.OfMerge (top NonEmpty.:| _)) -> Card.singleFacedAt (ShownComponent.face top) <$> Game.cardOfWithLastKnown oid gs
+  _ -> Game.cardOfWithLastKnown oid gs
 
 -- CR 614.1c / 614.12: run the entry loop for an object that has just been
 -- materialized on the battlefield, from `origin` (Game.entryOriginOf), the zone

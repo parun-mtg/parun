@@ -344,8 +344,9 @@ conjure settle resolving source controller legal (Conjure.MkConjure quantity car
       --
       -- What is duplicated is the object's COPIABLE values (CR 707.2) and not
       -- the card printed under it: a Clone that is a copy of an Ornithopter
-      -- duplicates as an Ornithopter. The PAIR of reads is CreateCopy's and
-      -- has to move together -- Game.cardOfWithLastKnown for the card a reader
+      -- duplicates as an Ornithopter. The PAIR of reads is CreateCopy's, less
+      -- the CR 731.2i cut its token takes (Event.copiedTokenCard), and has
+      -- to move together -- Game.cardOfWithLastKnown for the card a reader
       -- past the projection sees, Event.copiedSnapshotWithLastKnown for the
       -- values themselves -- and both take CR 608.2h's last-known branch, since
       -- the object a trigger named can be gone by the time it resolves
@@ -508,7 +509,7 @@ createCopy settle resolving source controller legal chosen (CreateCopy.MkCreateC
           -- CR 613.7m over copies of SEVERAL sources, which enter together:
           -- one batch across every createTokens call (Event.together).
           Event.simultaneously . Event.together . fmap concat . Monad.forM ((,) <$> creators <*> sources) $ \(creating, src) ->
-            fmap concat . Monad.forM (Maybe.maybeToList (Game.cardOfWithLastKnown src gs)) $ \card -> do
+            fmap concat . Monad.forM (Maybe.maybeToList (Event.copiedTokenCard src gs)) $ \card -> do
               -- CR 707.2 copies no counters, so what the token arrives with
               -- is what the EFFECT said and nothing the original carried --
               -- Littjara Mirrorlake's "except it enters with an additional
