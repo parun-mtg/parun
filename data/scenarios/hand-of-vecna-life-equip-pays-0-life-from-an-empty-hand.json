@@ -1,0 +1,28 @@
+{
+  "description": "CR 119.4b: Hand of Vecna's life equip pays 0 life from an empty hand, even at 1 life",
+  "note": "alice at 1 life with an empty hand owes 0 life, which any player can pay, so the equip attaches with her life unchanged.",
+  "board": {
+    "seats": [
+      {
+        "name": "alice",
+        "life": 1,
+        "battlefield": [
+          { "card": "Hand of Vecna", "label": "hand" },
+          { "card": "Grizzly Bears", "label": "bears" },
+          { "card": "Hill Giant" }
+        ]
+      },
+      {
+        "name": "bob"
+      }
+    ],
+    "active": "alice",
+    "step": "PrecombatMain"
+  },
+  "timeline": [
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "do": { "Activate": { "object": "$hand", "ability": 0, "targets": ["$bears"] } } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "do": "Pass" },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "check": { "Life": { "player": "alice", "life": 1 } } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "check": { "View": { "of": "AttachedTo", "object": "$hand", "is": "$bears" } } }
+  ]
+}

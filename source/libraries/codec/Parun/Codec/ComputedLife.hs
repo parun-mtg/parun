@@ -10,10 +10,12 @@ codec =
   Arm.tagged
     tagOf
     [ Arm.payload "HalfLife" Rounding.codec ComputedLife.HalfLife (\x -> case x of ComputedLife.HalfLife y -> Just y; _ -> Nothing),
-      Arm.nullary "CommanderColorCount" ComputedLife.CommanderColorCount
+      Arm.nullary "CommanderColorCount" ComputedLife.CommanderColorCount,
+      Arm.nullary "CardsInHand" ComputedLife.CardsInHand
     ]
 
 tagOf :: ComputedLife.ComputedLife -> String
 tagOf x = case x of
   ComputedLife.HalfLife {} -> "HalfLife"
   ComputedLife.CommanderColorCount {} -> "CommanderColorCount"
+  ComputedLife.CardsInHand {} -> "CardsInHand"

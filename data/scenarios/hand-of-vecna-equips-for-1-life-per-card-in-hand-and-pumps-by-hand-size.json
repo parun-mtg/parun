@@ -1,0 +1,35 @@
+{
+  "description": "CR 702.6a, 119.4, 608.2d: Hand of Vecna equips for 1 life per card in hand, and pumps the equipped creature by the hand's size at beginning of combat",
+  "note": "Three cards in alice's hand at 17 life: the life equip pays 3, and no land pays the {2} one. Hill Giant, unequipped and not named Vecna, is not a candidate, so the trigger picks the Bears alone and makes it 5/5. bob holds one card, so a count of the wrong hand shows in both the life and the pump.",
+  "board": {
+    "seats": [
+      {
+        "name": "alice",
+        "life": 17,
+        "battlefield": [
+          { "card": "Hand of Vecna", "label": "hand" },
+          { "card": "Grizzly Bears", "label": "bears" },
+          { "card": "Hill Giant", "label": "giant" }
+        ],
+        "hand": [{ "card": "Island" }, { "card": "Island" }, { "card": "Island" }]
+      },
+      {
+        "name": "bob",
+        "hand": [{ "card": "Island" }]
+      }
+    ],
+    "active": "alice",
+    "step": "PrecombatMain"
+  },
+  "timeline": [
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "refuse": { "Activate": { "object": "$hand", "ability": 1, "targets": ["$bears"] } } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "do": { "Activate": { "object": "$hand", "ability": 0, "targets": ["$bears"] } } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "check": { "Life": { "player": "alice", "life": 14 } } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "do": "Pass" },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "check": { "View": { "of": "AttachedTo", "object": "$hand", "is": "$bears" } } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "check": { "PowerToughness": { "object": "$bears", "power": 2, "toughness": 2 } } },
+    { "turn": 1, "step": "BeginningOfCombat", "player": "alice", "do": "Pass" },
+    { "turn": 1, "step": "BeginningOfCombat", "player": "alice", "check": { "PowerToughness": { "object": "$bears", "power": 5, "toughness": 5 } } },
+    { "turn": 1, "step": "BeginningOfCombat", "player": "alice", "check": { "PowerToughness": { "object": "$giant", "power": 3, "toughness": 3 } } }
+  ]
+}

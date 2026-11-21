@@ -20,4 +20,10 @@ spec s = Spec.describe s "Parun.Codec.ComputedLife" $ do
       ComputedLife.codec
       ComputedLife.CommanderColorCount
       " {\"type\":\"CommanderColorCount\"} "
+  Spec.it s "CardsInHand" $
+    Common.assertCodec
+      s
+      ComputedLife.codec
+      ComputedLife.CardsInHand
+      " {\"type\":\"CardsInHand\"} "
   Spec.it s "has a schema" $ Common.assertHasSchema s ComputedLife.codec
