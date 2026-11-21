@@ -232,6 +232,7 @@ import qualified Parun.Types.SearchDestination as SearchDestination
 import qualified Parun.Types.SelfInclusion as SelfInclusion
 import qualified Parun.Types.SlotName as SlotName
 import qualified Parun.Types.SpecialAction as SpecialAction
+import qualified Parun.Types.SpellCast as SpellCast
 import qualified Parun.Types.StaticAbility as StaticAbility
 import qualified Parun.Types.Subtype as Subtype
 import qualified Parun.Types.SubtypeFamily as SubtypeFamily
@@ -1280,10 +1281,34 @@ decodedAtoms tag wanted value =
 
 -- The CR 709.4a atoms Parun.Engine.Projection.framedBySlots answers, in an
 -- encoding: Filter.Shares Name at a Bound anchor (Filter.Context.slotNames) or
--- Name, Controller, Color, CreatureType or CardType at AnyObject's Permanents
--- (Filter.Context.battlefieldViews).
+-- the pooled atoms below (pooledAtoms).
 framedNameAtoms :: Value.Value -> Int
-framedNameAtoms = decodedAtoms "Shares" (\atom -> case atom of Filter.Type.Shares Trait.Name (Anchor.Bound _ _) -> True; Filter.Type.Shares Trait.Name (Anchor.AnyObject AnchorPool.Permanents _ _) -> True; Filter.Type.Shares Trait.Controller (Anchor.AnyObject AnchorPool.Permanents _ _) -> True; Filter.Type.Shares Trait.Color (Anchor.AnyObject AnchorPool.Permanents _ _) -> True; Filter.Type.Shares Trait.CreatureType (Anchor.AnyObject AnchorPool.Permanents _ _) -> True; Filter.Type.Shares (Trait.CardType _) (Anchor.AnyObject AnchorPool.Permanents _ _) -> True; _ -> False)
+framedNameAtoms = decodedAtoms "Shares" (\atom -> case atom of Filter.Type.Shares Trait.Name (Anchor.Bound _ _) -> True; _ -> pooledAtom atom)
+
+-- Name, Controller, Color, CreatureType or CardType at AnyObject's Permanents
+-- or GraveyardCards (Filter.Context.battlefieldViews, graveyardViews), in an
+-- encoding: the framedBySlots atoms that read no slot.
+pooledAtoms :: Value.Value -> Int
+pooledAtoms = decodedAtoms "Shares" pooledAtom
+
+pooledAtom :: Filter.Type.Filter Keyword.Keyword -> Bool
+pooledAtom atom = case atom of
+  Filter.Type.Shares trait (Anchor.AnyObject pool _ _) ->
+    let framedPool = case pool of
+          AnchorPool.Permanents -> True
+          AnchorPool.GraveyardCards -> True
+          AnchorPool.ExiledCards -> False
+        pooledTrait = case trait of
+          Trait.Name -> True
+          Trait.Controller -> True
+          Trait.Color -> True
+          Trait.CreatureType -> True
+          Trait.CardType _ -> True
+          Trait.Owner -> False
+          Trait.Sector -> False
+          Trait.LandType -> False
+     in framedPool && pooledTrait
+  _ -> False
 
 -- How many CR 709.4a atoms this card carries in one of the ADMITTED positions
 -- -- a MODE's target slot filter (Harness the Storm), a CR 701.23 search filter
@@ -1308,11 +1333,33 @@ framedNameAtoms = decodedAtoms "Shares" (\atom -> case atom of Filter.Type.Share
 -- Parun.Engine.Projection.contextWithSlots, and a ChoosePermanents choice's
 -- filter (Spellweaver Helix, choiceCriteria). The rest of ActivationCostFramed is
 -- not, since Cost.xValue and Cost.tapForManaWith read a bare source context.
+--
+-- A third admits the pooled atoms alone: a printed CR 601.2i cast trigger's
+-- spell filter (Volo, Guide to Monsters, castTriggerCriteria), which
+-- Parun.Engine.Event.Match reads in its bearerContext, through framedByBindings.
+-- A Bound name there reads the trigger's bindings, empty for a printed
+-- trigger, so it stays an offence.
 framedNameCounts :: Surveyed -> (Int, Int)
 framedNameCounts card =
   let total wanted = sum (fmap (\(_, f) -> framedNameAtoms (atomJson f)) (filter (\(framing, _) -> elem framing [InTargetSlot, SearchFramed, HandSweepFramed, ResolutionAmountFramed, SourceHostFramed, InterveningFramed, ClauseGateFramed] == wanted) (surveyedFilters card)))
-      inside = sum (fmap (framedNameAtoms . atomJson) (discardCostCriteria (surveyedFace card) <> choiceCriteria (surveyedFace card)))
+      inside =
+        sum (fmap (framedNameAtoms . atomJson) (discardCostCriteria (surveyedFace card) <> choiceCriteria (surveyedFace card)))
+          + sum (fmap (pooledAtoms . atomJson) (castTriggerCriteria (surveyedFace card)))
    in (total True + inside, total False - inside)
+
+-- The spell filters of this face's printed CR 601.2i cast triggers, each among
+-- cardFilters' TriggerConditionFramed positions.
+castTriggerCriteria :: Face.Face Card.Type.Card -> [Filter.Type.Filter Keyword.Keyword]
+castTriggerCriteria card =
+  let casts condition = case condition of
+        TriggerCondition.SpellCast cast -> [cast]
+        TriggerCondition.AnyOf conditions -> concatMap casts conditions
+        _ -> []
+   in [ f
+      | ability <- Face.triggeredAbilities card,
+        cast <- casts (TriggeredAbility.condition ability),
+        ActingPermanent.Matching f <- [SpellCast.spell cast]
+      ]
 
 -- The criteria of this face's ChoosePermanents choices, each among cardFilters'
 -- Unframed positions though Parun.Engine.Resolve.Slots.chosenCandidates matches
@@ -2162,16 +2209,18 @@ filterPositionLintSpec s registry corpus = Spec.describe s "Lint" $ do
   -- intervening "if" (framedByBindings, Spellweaver Helix), the five before it since
   -- their arms take their context from the resolution (Parun.ResolveSpec's
   -- Bifurcate, Hour of Glory and Grim Reminder cases; Legion's End's scenario),
-  -- and an activated ability's discard cost criterion (framedNameCounts; Key to
-  -- the Side-Door's scenario). That set
+  -- an activated ability's discard cost criterion (framedNameCounts; Key to
+  -- the Side-Door's scenario), and, for the pooled atoms alone, a cast
+  -- trigger's spell filter (castTriggerCriteria; Volo, Guide to Monsters's
+  -- scenarios). That set
   -- is narrower than the set that would answer -- framedNameCounts says why
   -- -- so this rejects in the safe direction only. See framedNameOffends
   -- for the two offences and Framing for why CR 303.4a's enchant slot is not one
   -- of the safe positions.
-  Spec.it s "CR 709.4a no card asks a framed Shares Name outside a mode's target slot, a search filter, a hand sweep, a resolution's amount, an effect's object, a clause's if or a discard cost" $ do
+  Spec.it s "CR 709.4a no card asks a framed Shares Name outside a mode's target slot, a search filter, a hand sweep, a resolution's amount, an effect's object, a clause's if, a discard cost or a cast trigger's spell" $ do
     ps <- S.allPrintings s corpus
     let offenders = fmap fst (filter (any framedNameOffends . snd) pool)
-    Spec.assertEqWith s "the atom sits only in a target slot's, a search's, a hand sweep's, a resolution's amount's, an effect object's, a clause if's or a discard cost's filter" (fmap (S.nameOf . Printing.card) offenders) []
+    Spec.assertEqWith s "the atom sits only in a target slot's, a search's, a hand sweep's, a resolution's amount's, an effect object's, a clause if's, a discard cost's or a cast trigger spell's filter" (fmap (S.nameOf . Printing.card) offenders) []
     -- NOT vacuous, the way the sibling sweeps would be alone: the pool authors the
     -- atom, and the cards that do are ACCEPTED here rather than skipped -- one in
     -- each admitted position, so no member of the set is unwitnessed.
@@ -2208,8 +2257,19 @@ filterPositionLintSpec s registry corpus = Spec.describe s "Lint" $ do
         ("The Apprentice's Folly", 2), -- its chapters' target slots, negated, at AnyPermanent
         ("Yenna, Redtooth Regent", 1), -- its ability's target slot, negated, at AnyPermanent excluding the candidate
         ("The End", 1), -- its search's filter, against its exiled target
-        ("Light-Paws, Emperor's Voice", 1) -- its search's filter, negated, at AnyPermanent
+        ("Light-Paws, Emperor's Voice", 1), -- its search's filter, negated, at AnyPermanent
+        ("Volo, Guide to Monsters", 2) -- its cast trigger's spell filter, negated, at AnyPermanent and AnyGraveyardCard
       ]
+    -- The cast trigger admits the pooled atoms alone: the same trigger asking a
+    -- Bound name is an offence.
+    volo <- S.printingOf s registry "Volo, Guide to Monsters"
+    let voloFace = S.combinedFace volo
+        boundName = Filter.Type.Shares Trait.Name (Anchor.Bound Nothing (SlotName.MkSlotName (Text.pack "target")))
+        rebind condition = case condition of
+          TriggerCondition.SpellCast cast -> TriggerCondition.SpellCast cast {SpellCast.spell = ActingPermanent.Matching boundName}
+          other -> other
+        rebound = voloFace {Face.triggeredAbilities = fmap (\ability -> ability {TriggeredAbility.condition = rebind (TriggeredAbility.condition ability)}) (Face.triggeredAbilities voloFace)}
+    Spec.assertEqWith s "a Bound name in Volo's cast trigger is an offence" (framedNameCounts (survey rebound)) (0, 1)
     -- Both sides of the split, with room to spare under the pool's real figures:
     -- a traversal that had stopped walking, or a Framing that had stopped marking
     -- target slots, would fail here rather than pass the sweep above by iterating
