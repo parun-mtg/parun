@@ -1552,7 +1552,7 @@ withLastTurn events gs =
 -- for.
 afterCasting :: Natural -> GameState.GameState -> GameState.GameState
 afterCasting n gs =
-  let spell = GameEvent.SpellCast (SpellWasCast.MkSpellWasCast (TurnRegisters.activePlayer (GameState.turn gs)) noSource emptyCharacteristics (Just Zone.Hand) Nothing Set.empty)
+  let spell = GameEvent.SpellCast (SpellWasCast.MkSpellWasCast (TurnRegisters.activePlayer (GameState.turn gs)) noSource emptyCharacteristics (Just Zone.Hand) Nothing Set.empty Nothing)
    in withLastTurn (TurnRegisters.events (GameState.turn (withEvents (List.genericReplicate n spell) gs))) gs
 
 -- Each event gets its OWN EventGroup, which is what a hand-built list means: the

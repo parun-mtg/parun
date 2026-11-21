@@ -4,6 +4,7 @@ module Parun.Codec.SpellWasCast where
 
 import qualified Data.Set as Set
 import qualified Parun.Codec.Condition as Condition
+import qualified Parun.Codec.ExileLink as ExileLink
 import qualified Parun.Codec.Keyword as Keyword
 import qualified Parun.Codec.ObjectId as ObjectId
 import qualified Parun.Codec.PlayerId as PlayerId
@@ -25,6 +26,7 @@ codec = Fields.object $ do
   zone <- Fields.defaulted "zone" Nothing (Common.maybe Zone.codec) SpellWasCast.zone
   castUsing <- Fields.defaulted "castUsing" Nothing (Common.maybe Keyword.codec) SpellWasCast.castUsing
   lapsedGrants <- Fields.defaulted "lapsedGrants" Set.empty (Common.set Condition.codec) SpellWasCast.lapsedGrants
+  exiledWith <- Fields.defaulted "exiledWith" Nothing (Common.maybe ExileLink.codec) SpellWasCast.exiledWith
   pure
     SpellWasCast.MkSpellWasCast
       { SpellWasCast.player = player,
@@ -32,5 +34,6 @@ codec = Fields.object $ do
         SpellWasCast.characteristics = characteristics,
         SpellWasCast.zone = zone,
         SpellWasCast.castUsing = castUsing,
-        SpellWasCast.lapsedGrants = lapsedGrants
+        SpellWasCast.lapsedGrants = lapsedGrants,
+        SpellWasCast.exiledWith = exiledWith
       }

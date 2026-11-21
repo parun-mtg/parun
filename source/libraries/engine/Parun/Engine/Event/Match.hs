@@ -107,6 +107,7 @@ import qualified Parun.Types.Enlisted as Enlisted
 import qualified Parun.Types.EntersTrigger as EntersTrigger
 import qualified Parun.Types.EventGroup as EventGroup
 import qualified Parun.Types.EventShape as EventShape
+import qualified Parun.Types.ExileLink as ExileLink
 import qualified Parun.Types.Expended as Expended
 import qualified Parun.Types.ExploitTrigger as ExploitTrigger
 import qualified Parun.Types.Exploited as Exploited
@@ -1812,14 +1813,14 @@ armMatches bindings frozen board atEvent beforeEvent groupEvents gs bearer you c
     let -- What a cast and a copy are both asked: whose turn, which phase,
         -- which spell -- the bearer, or one the Filter admits as its
         -- controller sees it -- and the state the cast happens in.
-        admits controller spell =
+        admits link controller spell =
           -- "During combat" off the running turns, the TurnScope's reason:
           -- the event happened in this same settle, so the step each turn
           -- stands in now is its step there.
           Turn.duringRunningTurn scopeNamed gs window scope you
             && case subject of
               ActingPermanent.Self -> spell == bearer
-              ActingPermanent.Matching f -> Filter.matches bearerContext (Projection.viewOfSpell controller spell gs) f
+              ActingPermanent.Matching f -> Filter.matches (leftPile bearer link spell bearerContext) (Projection.viewOfSpell controller spell gs) f
             -- Social Snub's "while you control a creature", asked of the
             -- game the cast left (CR 601.2i) and never re-checked, as
             -- AttackerTrigger.while is (CR 603.4 is for an "if").
@@ -1831,10 +1832,10 @@ armMatches bindings frozen board atEvent beforeEvent groupEvents gs bearer you c
           ActingPermanent.Self -> Just 1
           ActingPermanent.Matching f -> castOrdinal bearerContext f fromZone caster spell gs
      in case event of
-          GameEvent.SpellCast (SpellWasCast.MkSpellWasCast caster spell _ castFrom _ _) -> case Game.lookupObject spell gs of
+          GameEvent.SpellCast (SpellWasCast.MkSpellWasCast caster spell _ castFrom _ _ link) -> case Game.lookupObject spell gs of
             Nothing -> False
             Just _ ->
-              admits caster spell
+              admits link caster spell
                 -- CR 601.2a's zone, read off the EVENT and not off the spell: rule
                 -- 400.7 left the stack incarnation with no memory of it. A
                 -- condition that names no zone admits every cast, which is what
@@ -1854,7 +1855,7 @@ armMatches bindings frozen board atEvent beforeEvent groupEvents gs bearer you c
               && Maybe.isNothing fromZone
               && Maybe.isNothing ordinal
               && Maybe.isJust (Game.lookupObject copy gs)
-              && admits copier copy
+              && admits Nothing copier copy
           _ -> False
   -- CR 602.2b / 601.2i: the Filter over the ability on the stack, its
   -- controller the activator (CR 602.2a), read live for SpellCast's reason --
@@ -2458,7 +2459,7 @@ armMatches bindings frozen board atEvent beforeEvent groupEvents gs bearer you c
         -- The land as it arrived (CR 400.7i), read the way a Matching Enters
         -- reads an entrant, so Fires of Mount Doom's Filter.IsBound names the
         -- permanent Cast.playLand's follow moved the binding onto.
-        && maybe False (\view -> Filter.matches bearerContext view (PlaysLand.filter p)) (postEventView board gs (LandPlayed.land played))
+        && maybe False (\view -> Filter.matches (leftPile bearer (LandPlayed.exiledWith played) (LandPlayed.land played) bearerContext) view (PlaysLand.filter p)) (postEventView board gs (LandPlayed.land played))
     _ -> False
   -- CR 701.62b: Paranormal Analyst's "whenever you manifest dread", which an
   -- empty library still fires -- why it watches the keyword action's own event
@@ -2756,3 +2757,13 @@ causeAdmitted :: GameState -> ObjectId -> PlayerId -> CausedBy.CausedBy conditio
 causeAdmitted gs bearer you narrowed cause =
   PlayerRelation.holds (Game.teams gs) (CausedBy.controller narrowed) you (Cause.controller cause)
     && all (\family -> Cause.source cause == bearer && Cause.keyword cause == Just family) (CausedBy.sourceKeyword narrowed)
+
+-- CR 607.2a: `context` with the played card, as `arrived`, still in the
+-- bearer's pile it left (`link`, off the play's event), so an
+-- IsExiledWithSource reads the card as it was in exile (Voltaic Visionary's
+-- "a card exiled with this creature"). The scenarios named for Voltaic
+-- Visionary prove it.
+leftPile :: ObjectId -> Maybe ExileLink.ExileLink -> ObjectId -> Filter.Context -> Filter.Context
+leftPile bearer link arrived context = case link of
+  Just l | ExileLink.source l == bearer -> context {Filter.sourceExiled = Map.insert arrived l (Filter.sourceExiled context)}
+  _ -> context

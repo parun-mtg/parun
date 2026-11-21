@@ -935,7 +935,7 @@ snapshotView viewOf context gs shape event = case event of
   -- which it can -- CR 601.2i's trigger is checked while the spell is still
   -- there. The CHARACTERISTICS, that is: Game.ownerWithLastKnown reads the live object
   -- for the one field a snapshot cannot carry, wherever there still is one.
-  GameEvent.SpellCast (SpellWasCast.MkSpellWasCast caster spell snapshot from _ lapsed) -> case shape of
+  GameEvent.SpellCast (SpellWasCast.MkSpellWasCast caster spell snapshot from _ lapsed _) -> case shape of
     -- CR 601.2a: "that player becomes its controller", so the caster the event
     -- recorded IS the view's controller and Filter.HeldBy Holder.Controller You answers "a
     -- spell you've cast". The view is OF the stack object the cast made, so

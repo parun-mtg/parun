@@ -181,7 +181,7 @@ spec s = Spec.describe s "Parun.Codec.GameEvent" $ do
     Common.assertCodec
       s
       GameEvent.codec
-      (GameEvent.SpellCast (SpellWasCast.MkSpellWasCast (PlayerId.MkPlayerId 0) (ObjectId.MkObjectId 7) ProjectedCharacteristicsSpec.testCharacteristics (Just Zone.Hand) Nothing Set.empty))
+      (GameEvent.SpellCast (SpellWasCast.MkSpellWasCast (PlayerId.MkPlayerId 0) (ObjectId.MkObjectId 7) ProjectedCharacteristicsSpec.testCharacteristics (Just Zone.Hand) Nothing Set.empty Nothing))
       ( "{\"type\":\"SpellCast\",\"value\":{\"player\":0,\"spell\":7,\"characteristics\":"
           <> ProjectedCharacteristicsSpec.testCharacteristicsJson
           <> ",\"zone\":\"Hand\"}}"
@@ -640,7 +640,7 @@ spec s = Spec.describe s "Parun.Codec.GameEvent" $ do
     Common.assertCodec
       s
       GameEvent.codec
-      (GameEvent.LandPlayed (LandPlayed.MkLandPlayed (PlayerId.MkPlayerId 1) (ObjectId.MkObjectId 7) (CastOrigin.FromZone Zone.Exile)))
+      (GameEvent.LandPlayed (LandPlayed.MkLandPlayed (PlayerId.MkPlayerId 1) (ObjectId.MkObjectId 7) (CastOrigin.FromZone Zone.Exile) Nothing))
       " {\"type\":\"LandPlayed\",\"value\":{\"player\":1,\"land\":7,\"from\":{\"type\":\"FromZone\",\"value\":\"Exile\"}}} "
   -- CR 701.62b. The cards the process put into the graveyard ride along, the
   -- "this way" a trigger on it reads back.

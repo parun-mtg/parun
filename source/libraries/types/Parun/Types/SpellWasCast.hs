@@ -2,6 +2,7 @@ module Parun.Types.SpellWasCast where
 
 import qualified Data.Set as Set
 import qualified Parun.Types.Condition as Condition
+import qualified Parun.Types.ExileLink as ExileLink
 import qualified Parun.Types.Keyword as Keyword
 import qualified Parun.Types.ObjectId as ObjectId
 import qualified Parun.Types.PlayerId as PlayerId
@@ -43,6 +44,9 @@ data SpellWasCast = MkSpellWasCast
     -- | CR 611.3a: the "as long as" clauses of its granted activated abilities
     -- that did not hold as it became cast, which `characteristics` carries
     -- unasked (Parun.Engine.Projection.View.lapsedGrantsOf).
-    lapsedGrants :: Set.Set Condition.Condition
+    lapsedGrants :: Set.Set Condition.Condition,
+    -- | CR 607.2a: the card's link to the object that exiled it, as CR 601.2a
+    -- moved it out of exile, for `zone`'s reason (Parun.Types.LandPlayed.exiledWith).
+    exiledWith :: Maybe ExileLink.ExileLink
   }
   deriving (Eq, Ord, Show)
