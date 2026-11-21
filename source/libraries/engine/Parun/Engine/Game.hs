@@ -559,7 +559,8 @@ blankScratch =
       Scratch.throwing = Nothing,
       Scratch.rethrowRequested = False,
       Scratch.rerolling = Set.empty,
-      Scratch.activating = []
+      Scratch.activating = [],
+      Scratch.replacementAcquisitions = Map.empty
     }
 
 -- The history of a game nothing has happened in yet.
@@ -2632,11 +2633,13 @@ acquisitionFor reader oid gs
 -- `oid`. For an ability reading its own source, the one it froze as it went
 -- on the stack (Parun.Types.TriggeredAbilitySource,
 -- Parun.Types.ActivatedAbilitySource), since it stays linked to the abilities it
--- came with whatever that source has since become; otherwise the one `oid`
--- has now (acquisitionOf).
+-- came with whatever that source has since become; for a replacement's effects
+-- run as their source (Scratch.replacementAcquisitions), the one it had as they
+-- began, for the same reason; otherwise the one `oid` has now (acquisitionOf).
 readingAcquisition :: ObjectId -> ObjectId -> GameState -> ObjectId -> Acquisition.Acquisition
 readingAcquisition resolving source gs oid
   | oid == source, Just frozen <- frozenAcquisition . Object.source =<< lookupObject resolving gs = frozen
+  | oid == source, resolving == source, Just applying <- Map.lookup source (Scratch.replacementAcquisitions (GameState.scratch gs)) = applying
   | otherwise = acquisitionOf oid gs
 
 -- | CR 607.5: the acquisition an ability on the stack froze as it went there,

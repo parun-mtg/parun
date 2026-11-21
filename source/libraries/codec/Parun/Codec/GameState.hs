@@ -10,6 +10,7 @@ import qualified Data.Set as Set
 import qualified Data.Text as Text
 import qualified Parun.Codec.AbilityTriggered as AbilityTriggered
 import qualified Parun.Codec.AbilityWasActivated as AbilityWasActivated
+import qualified Parun.Codec.Acquisition as Acquisition
 import qualified Parun.Codec.ActiveAttackProhibition as ActiveAttackProhibition
 import qualified Parun.Codec.ActiveAttackRequirement as ActiveAttackRequirement
 import qualified Parun.Codec.ActiveBlockRequirement as ActiveBlockRequirement
@@ -254,6 +255,7 @@ codec resolve = Fields.object $ do
   rethrowRequested <- Fields.defaulted "rethrowRequested" False Common.boolean (Scratch.rethrowRequested . GameState.scratch)
   rerolling <- Fields.defaulted "rerolling" Set.empty (Common.set ObjectId.codec) (Scratch.rerolling . GameState.scratch)
   activating <- Fields.defaulted "activating" [] (Common.list AbilityWasActivated.codec) (Scratch.activating . GameState.scratch)
+  replacementAcquisitions <- Fields.defaulted "replacementAcquisitions" Map.empty (Common.naturalMap ObjectId.codec Acquisition.codec) (Scratch.replacementAcquisitions . GameState.scratch)
   undone <- Fields.defaulted "undone" Map.empty (Common.naturalMap PlayerId.codec Undoing.codec) (Bookkeeping.undone . GameState.bookkeeping)
   pure
     GameState.MkGameState
@@ -304,7 +306,8 @@ codec resolve = Fields.object $ do
               Scratch.throwing = throwing,
               Scratch.rethrowRequested = rethrowRequested,
               Scratch.rerolling = rerolling,
-              Scratch.activating = activating
+              Scratch.activating = activating,
+              Scratch.replacementAcquisitions = replacementAcquisitions
             },
         GameState.bookkeeping =
           Bookkeeping.MkBookkeeping

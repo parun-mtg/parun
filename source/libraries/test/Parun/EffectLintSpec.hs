@@ -1717,8 +1717,9 @@ effectObjectRefs effect =
         -- Twilight Diviner's "a copy of one of them", asked by
         -- Resolve.Common.askingObjects.
         Effect.CreateCopy (CreateCopy.MkCreateCopy _ ref _ _ _ _ _) -> [([CardFromAmong], ref)]
-        -- Volatile Chimera's "choose a card at random", the original alone.
-        Effect.BecomeCopy (BecomeCopy.MkBecomeCopy original subject _ _ _) -> [([RandomAmong], ref) | CopyOriginal.OfObject ref <- [original]] <> read_ [subject]
+        -- Volatile Chimera's "choose a card at random" and Olag, Ludevic's
+        -- Hubris's "a creature card exiled with it", the original alone.
+        Effect.BecomeCopy (BecomeCopy.MkBecomeCopy original subject _ _ _) -> [([RandomAmong, ChosenAmong], ref) | CopyOriginal.OfObject ref <- [original]] <> read_ [subject]
         Effect.CopyStackObject (CopyStackObject.MkCopyStackObject ref targets _ _ _ _) -> read_ (ref : copyTargetsRefs targets)
         Effect.SetX (SetX.MkSetX _ ref) -> read_ [ref]
         Effect.Replace {} -> []

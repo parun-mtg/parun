@@ -985,7 +985,16 @@ runDamageRewriteEffect runSubgame pending = do
         | PendingReplacementEffect.bindsArrival pending && not (Set.null arrivals) = Map.insert Binding.became arrivals carried
         | otherwise = carried
       src = PendingReplacementEffect.source pending
+      outer = Scratch.replacementAcquisitions (GameState.scratch gs)
+      frozen acquisitions g = g {GameState.scratch = (GameState.scratch g) {Scratch.replacementAcquisitions = acquisitions}}
+  -- CR 607.5: the effects read the source's links as the abilities it had as
+  -- they began, so Olag, Ludevic's Hubris's counters, put after it becomes a
+  -- copy, still count the cards exiled with it. data/scenarios/
+  -- ludevic-necrogenius-transforms-into-olag-a-copy-of-a-chosen-exiled-creature-card.json
+  -- is the proof.
+  State.modify' (frozen (Map.insert src (Game.acquisitionOf src gs) outer))
   Monad.void (Event.payingOnResolution False (runCarrying runSubgame src (PendingReplacementEffect.controller pending) Map.empty targets (PendingReplacementEffect.effects pending)))
+  State.modify' (frozen outer)
 
 -- CR 103.5b / CR 103.6: perform the effects of an action a card grants from a
 -- player's hand. Parun.Engine.Mulligan's window loops reach this through the

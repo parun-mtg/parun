@@ -1,0 +1,330 @@
+{
+  "faces": [
+    {
+      "activatedAbilities": [
+        {
+          "cost": {
+            "components": [
+              {
+                "type": "VariableAtLeast",
+                "value": 1
+              },
+              {
+                "type": "MoveCardsFromGraveyard",
+                "value": {
+                  "count": {
+                    "type": "Announced",
+                    "value": "X"
+                  },
+                  "whichCards": {
+                    "type": "HasCardType",
+                    "value": "Creature"
+                  }
+                }
+              }
+            ],
+            "mana": [
+              {
+                "type": "Variable"
+              },
+              {
+                "type": "OfType",
+                "value": {
+                  "type": "Colored",
+                  "value": "Blue"
+                }
+              },
+              {
+                "type": "OfType",
+                "value": {
+                  "type": "Colored",
+                  "value": "Blue"
+                }
+              },
+              {
+                "type": "OfType",
+                "value": {
+                  "type": "Colored",
+                  "value": "Black"
+                }
+              },
+              {
+                "type": "OfType",
+                "value": {
+                  "type": "Colored",
+                  "value": "Black"
+                }
+              }
+            ]
+          },
+          "modal": {
+            "modes": [
+              {
+                "clauses": [
+                  {
+                    "effects": [
+                      {
+                        "type": "Transform",
+                        "value": {
+                          "type": "InSlot",
+                          "value": "self"
+                        }
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          },
+          "restrictions": [
+            {
+              "type": "SorcerySpeed"
+            }
+          ]
+        }
+      ],
+      "manaCost": [
+        {
+          "type": "OfType",
+          "value": {
+            "type": "Colored",
+            "value": "Blue"
+          }
+        },
+        {
+          "type": "OfType",
+          "value": {
+            "type": "Colored",
+            "value": "Black"
+          }
+        }
+      ],
+      "name": "Ludevic, Necrogenius",
+      "oracleText": "Whenever Ludevic enters or attacks, mill a card.\n{X}{U}{U}{B}{B}, Exile X creature cards from your graveyard: Transform Ludevic. X can't be 0. Activate only as a sorcery.",
+      "power": {
+        "type": "Literal",
+        "value": 2
+      },
+      "toughness": {
+        "type": "Literal",
+        "value": 3
+      },
+      "triggeredAbilities": [
+        {
+          "condition": {
+            "type": "AnyOf",
+            "value": [
+              {
+                "type": "Enters",
+                "value": {}
+              },
+              {
+                "type": "Attacks",
+                "value": {
+                  "type": "Attacker",
+                  "value": {}
+                }
+              }
+            ]
+          },
+          "modal": {
+            "modes": [
+              {
+                "clauses": [
+                  {
+                    "effects": [
+                      {
+                        "type": "Mill",
+                        "value": {
+                          "player": {
+                            "type": "Relative",
+                            "value": "You"
+                          },
+                          "quantity": {
+                            "type": "Literal",
+                            "value": 1
+                          }
+                        }
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          }
+        }
+      ],
+      "typeLine": {
+        "subtypes": [
+          "Human",
+          "Wizard"
+        ],
+        "supertypes": [
+          "Legendary"
+        ],
+        "types": [
+          "Creature"
+        ]
+      }
+    },
+    {
+      "colorIndicator": [
+        "Blue",
+        "Black"
+      ],
+      "name": "Olag, Ludevic's Hubris",
+      "oracleText": "As this creature transforms into Olag, Ludevic's Hubris, it becomes a copy of a creature card exiled with it, except its name is Olag, Ludevic's Hubris, it's 4/4, and it's a legendary blue and black Zombie in addition to its other colors and types. Put a number of +1/+1 counters on Olag equal to the number of creature cards exiled with it.",
+      "power": {
+        "type": "Literal",
+        "value": 4
+      },
+      "replacementEffects": [
+        {
+          "effect": {
+            "type": "TransformR",
+            "value": {
+              "matching": {
+                "type": "IsSource"
+              },
+              "rewrite": {
+                "type": "RunEffects",
+                "value": [
+                  {
+                    "type": "BecomeCopy",
+                    "value": {
+                      "exceptions": [
+                        {
+                          "type": "SetName",
+                          "value": "Olag, Ludevic's Hubris"
+                        },
+                        {
+                          "type": "SetPowerToughness",
+                          "value": {
+                            "type": "Numbers",
+                            "value": {
+                              "power": 4,
+                              "toughness": 4
+                            }
+                          }
+                        },
+                        {
+                          "type": "AddSupertypes",
+                          "value": [
+                            "Legendary"
+                          ]
+                        },
+                        {
+                          "type": "SetColors",
+                          "value": {
+                            "colors": [
+                              "Blue",
+                              "Black"
+                            ],
+                            "mode": "InAddition"
+                          }
+                        },
+                        {
+                          "type": "AddSubtypes",
+                          "value": [
+                            "Zombie"
+                          ]
+                        }
+                      ],
+                      "original": {
+                        "type": "OfObject",
+                        "value": {
+                          "type": "OneChosenAmong",
+                          "value": {
+                            "type": "EachCardInExiledPile",
+                            "value": {
+                              "filter": {
+                                "type": "HasCardType",
+                                "value": "Creature"
+                              },
+                              "pile": {
+                                "type": "OwnAbilities"
+                              }
+                            }
+                          }
+                        }
+                      },
+                      "subject": {
+                        "type": "EachMatching",
+                        "value": {
+                          "type": "IsSource"
+                        }
+                      }
+                    }
+                  },
+                  {
+                    "type": "PutCounters",
+                    "value": {
+                      "kind": {
+                        "type": "PlusOnePlusOne"
+                      },
+                      "quantity": {
+                        "type": "Count",
+                        "value": {
+                          "aggregation": {
+                            "type": "Members"
+                          },
+                          "filter": {
+                            "type": "And",
+                            "value": [
+                              {
+                                "type": "IsExiledWithSource",
+                                "value": {
+                                  "type": "OwnAbilities"
+                                }
+                              },
+                              {
+                                "type": "HasCardType",
+                                "value": "Creature"
+                              }
+                            ]
+                          },
+                          "scope": {
+                            "type": "InZone",
+                            "value": {
+                              "player": {
+                                "type": "Relative",
+                                "value": "AnyPlayer"
+                              },
+                              "zone": "Exile"
+                            }
+                          }
+                        }
+                      },
+                      "ref": {
+                        "type": "InSlot",
+                        "value": "self"
+                      }
+                    }
+                  }
+                ]
+              }
+            }
+          }
+        }
+      ],
+      "toughness": {
+        "type": "Literal",
+        "value": 4
+      },
+      "typeLine": {
+        "subtypes": [
+          "Zombie"
+        ],
+        "supertypes": [
+          "Legendary"
+        ],
+        "types": [
+          "Creature"
+        ]
+      }
+    }
+  ],
+  "layout": {
+    "type": "Transforming"
+  }
+}
