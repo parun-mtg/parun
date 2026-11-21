@@ -1,0 +1,59 @@
+{
+  "description": "CR 601.3, 305.1, 401.5, 609.4b, 611.2a: Xanathar's upkeep trigger stops the target opponent casting spells until end of turn and lets its controller look at and play the top card of that player's library, spending mana as though it were any color",
+  "note": "Alice targets bob after the trigger refuses her as its target. With only Islands she casts bob's top Hill Giant, then plays his next card, a Mountain, as her land. She sees each of bob's top cards in turn, but not carol's, and cannot cast carol's top Opt with the same Islands. Bob, holding a Lightning Bolt and an untapped Mountain, cannot cast it on alice's turn; on his own turn the look is over and the Bolt resolves.",
+  "board": {
+    "active": "alice",
+    "step": "Untap",
+    "seats": [
+      {
+        "name": "alice",
+        "battlefield": [
+          {"card": "Xanathar, Guild Kingpin", "label": "xan"},
+          {"card": "Island", "label": "i1"},
+          {"card": "Island", "label": "i2"},
+          {"card": "Island", "label": "i3"},
+          {"card": "Island", "label": "i4"},
+          {"card": "Island", "label": "i5"},
+          {"card": "Island", "label": "i6"}
+        ],
+        "library": [{"card": "Forest"}, {"card": "Forest"}, {"card": "Forest"}]
+      },
+      {
+        "name": "bob",
+        "battlefield": [{"card": "Mountain", "label": "bm"}],
+        "hand": [{"card": "Lightning Bolt", "label": "bolt"}],
+        "library": [
+          {"card": "Hill Giant", "label": "bgiant"},
+          {"card": "Mountain", "label": "bmtn"},
+          {"card": "Shock", "label": "bshock"},
+          {"card": "Island"},
+          {"card": "Island"}
+        ]
+      },
+      {
+        "name": "carol",
+        "library": [{"card": "Opt", "label": "copt"}, {"card": "Island"}, {"card": "Island"}]
+      }
+    ]
+  },
+  "timeline": [
+    {"turn": 1, "step": "Upkeep", "player": "alice", "refuse": {"ChooseTargets": {"opponent": ["$alice"]}}},
+    {"turn": 1, "step": "Upkeep", "player": "alice", "do": {"ChooseTargets": {"opponent": ["$bob"]}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"View": {"of": "Seers", "object": "$bgiant", "is": ["alice"]}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"View": {"of": "Seers", "object": "$copt", "is": []}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "refuse": {"Cast": {"object": "$copt", "mana": ["$i5"]}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": {"Cast": {"object": "$bgiant", "mana": ["$i1", "$i2", "$i3", "$i4", null]}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "bob", "refuse": {"Cast": {"object": "$bolt", "targets": ["$alice"], "mana": ["$bm"]}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": "Pass"},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"Count": {"player": "alice", "zone": "Battlefield", "card": "Hill Giant", "count": 1}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"View": {"of": "Seers", "object": "$bmtn", "is": ["alice"]}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": {"PlayLand": "$bmtn"}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"Count": {"player": "alice", "zone": "Battlefield", "card": "Mountain", "count": 1}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"View": {"of": "Seers", "object": "$bshock", "is": ["alice"]}}},
+    {"turn": 1, "step": "DeclareAttackers", "player": "alice", "do": {"Attack": []}},
+    {"turn": 2, "step": "Upkeep", "player": "bob", "check": {"View": {"of": "Seers", "object": "$bshock", "is": []}}},
+    {"turn": 2, "step": "Upkeep", "player": "bob", "do": {"Cast": {"object": "$bolt", "targets": ["$alice"], "mana": ["$bm"]}}},
+    {"turn": 2, "step": "Upkeep", "player": "bob", "do": "Pass"},
+    {"turn": 2, "step": "PrecombatMain", "player": "bob", "check": {"Life": {"player": "alice", "life": 17}}}
+  ]
+}
