@@ -601,6 +601,10 @@ runTurnBasedActions phase = do
       -- untap itself (CR 502.3 / 703.4c). Outside the CR 800.4j guard, rule 703.4b
       -- making it the GAME's action.
       _ <- Daytime.untapCheck
+      -- CR 701.27i: what an "as this transforms" rewrite queued runs while the
+      -- permanent transforms, so a Curse of Leeches is attached before the
+      -- upkeep's triggers and CR 704.5m look.
+      Resolve.runReplacementEffects playSubgame
       untapAll live
     -- CR 805.4b: each player on the active team draws.
     -- CR 503.1 gives the upkeep no turn-based action; the Unstable FAQ adds the
@@ -1462,6 +1466,8 @@ settlePasses passes boards = do
   -- 704.5 lists neither of the others. Before the SBA pass, since turning a
   -- permanent over changes its power and toughness.
   dayNight <- Daytime.settle
+  -- CR 701.27i: the sweep's "as this transforms" effects, before CR 704.5m.
+  Monad.when dayNight (Resolve.runReplacementEffects playSubgame)
   -- CR 702.131b / 702.195a, checked here for CR 704.3's reason and not because
   -- they are state-based actions -- rule 704.5 lists neither. Before the SBA pass,
   -- since a mark granted here turns on the "as long as you have" clauses that read

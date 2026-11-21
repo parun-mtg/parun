@@ -2114,6 +2114,10 @@ itBecomes designation = do
 -- Attach.arbitrate is that rule (CR 303.4d is its Aura twin). Ahead of the
 -- target read for slotGroup's usual reason: a group binding is a definition,
 -- never a target (CR 115.10a).
+--
+-- A player an earlier ChoosePlayer bound arrives through `legal`, which
+-- runCarrying fills from it (Curse of Leeches). Not implemented: that choice
+-- offering only players the Aura can enchant, CR 608.2d (#9243).
 attach :: ObjectId -> ObjectId -> Map.Map SlotName (Set Recipient) -> SlotName -> Game ()
 attach resolving source legal slot = do
   gs <- State.get
