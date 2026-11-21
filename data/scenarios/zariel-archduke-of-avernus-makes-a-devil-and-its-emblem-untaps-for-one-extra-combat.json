@@ -1,0 +1,42 @@
+{
+  "description": "CR 606.4, 704.5i, 114.1, 511.2, 500.8: Zariel's [0] makes a 1/1 red Devil; its [−6] emblem, at the end of alice's first combat phase only, untaps the creature she targets and adds one combat phase after that one",
+  "note": "Turn 3: Bears and the Devil attack (bob 17); at the first end of combat alice targets the Bears, which untap and attack alone in the extra combat (bob 15). The second end of combat triggers nothing: a trigger there would raise an unscheduled target prompt, as would one at the end of bob's combat on turn 4. bob's Wall of Wood, a creature alice does not control, is refused as the target; it has defender and bob declares no blocks. Zariel goes to the graveyard with no loyalty left; the emblem stays in alice's command zone.",
+  "board": {"active": "alice", "step": "PrecombatMain", "seats": [
+    {"name": "alice", "battlefield": [
+      {"card": "Zariel, Archduke of Avernus", "label": "z", "counters": [{"key": {"type": "Loyalty"}, "value": 6}]},
+      {"card": "Grizzly Bears", "label": "bears", "ready": true}],
+     "library": [{"card": "Island"}, {"card": "Island"}, {"card": "Island"}]},
+    {"name": "bob", "battlefield": [{"card": "Wall of Wood", "label": "wall"}], "library": [{"card": "Island"}, {"card": "Island"}, {"card": "Island"}]}
+  ]},
+  "timeline": [
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": {"Activate": {"object": "$z", "ability": 1}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": "Pass"},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"Count": {"player": "alice", "zone": "Battlefield", "card": "Devil Token", "count": 1}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"PowerToughness": {"object": "Devil Token", "power": 1, "toughness": 1}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"View": {"of": "Colors", "object": "Devil Token", "is": ["Red"]}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"Subtypes": {"object": "Devil Token", "subtypes": ["Devil"]}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"Counters": {"object": "$z", "kind": {"type": "Loyalty"}, "count": 6}}},
+    {"turn": 1, "step": "DeclareAttackers", "player": "alice", "do": {"Attack": []}},
+    {"turn": 3, "step": "PrecombatMain", "player": "alice", "do": {"Activate": {"object": "$z", "ability": 2}}},
+    {"turn": 3, "step": "PrecombatMain", "player": "alice", "do": "Pass"},
+    {"turn": 3, "step": "PrecombatMain", "player": "alice", "check": {"Count": {"player": "alice", "zone": "Graveyard", "card": "Zariel, Archduke of Avernus", "count": 1}}},
+    {"turn": 3, "step": "PrecombatMain", "player": "alice", "check": {"Count": {"player": "alice", "zone": "Command", "card": "Zariel, Archduke of Avernus Emblem", "count": 1}}},
+    {"turn": 3, "step": "DeclareAttackers", "player": "alice", "do": {"Attack": ["$bears", "Devil Token"]}},
+    {"turn": 3, "step": "DeclareBlockers", "player": "bob", "do": {"Block": {}}},
+    {"turn": 3, "step": "EndOfCombat", "player": "alice", "refuse": {"ChooseTargets": {"target": ["$wall"]}}},
+    {"turn": 3, "step": "EndOfCombat", "player": "alice", "do": {"ChooseTargets": {"target": ["$bears"]}}},
+    {"turn": 3, "step": "EndOfCombat", "player": "alice", "check": {"Tapped": {"object": "$bears", "tapped": true}}},
+    {"turn": 3, "step": "EndOfCombat", "player": "alice", "check": {"Life": {"player": "bob", "life": 17}}},
+    {"turn": 3, "step": "EndOfCombat", "player": "alice", "do": "Pass"},
+    {"turn": 3, "step": "EndOfCombat", "player": "alice", "check": {"Tapped": {"object": "$bears", "tapped": false}}},
+    {"turn": 3, "step": "EndOfCombat", "player": "alice", "check": {"Tapped": {"object": "Devil Token", "tapped": true}}},
+    {"turn": 3, "step": "DeclareAttackers", "player": "alice", "do": {"Attack": ["$bears"]}},
+    {"turn": 3, "step": "DeclareBlockers", "player": "bob", "do": {"Block": {}}},
+    {"turn": 3, "step": "PostcombatMain", "player": "alice", "check": {"Life": {"player": "bob", "life": 15}}},
+    {"turn": 3, "step": "PostcombatMain", "player": "alice", "check": {"Tapped": {"object": "$bears", "tapped": true}}},
+    {"turn": 4, "step": "EndOfCombat", "player": "alice", "check": {"View": {"of": "Stack", "is": []}}}
+  ],
+  "final": [
+    {"Life": {"player": "bob", "life": 15}}
+  ]
+}

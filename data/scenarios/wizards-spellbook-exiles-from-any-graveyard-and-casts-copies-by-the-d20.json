@@ -1,0 +1,73 @@
+{
+  "description": "CR 706.2, 707.12, 118.9, 607.2a, 602.5d: Wizard's Spellbook exiles an instant or sorcery card from any graveyard and rolls a d20: on 1-9 the copy is cast for its mana cost, on 10-19 for {1}, and on 20 any number of copies of every card it has exiled are cast free",
+  "note": "Not as an upkeep activation, and bob's Grizzly Bears is no legal target. Turn 1 rolls 5: bob's Lightning Bolt is copied and alice pays {R} to hit carol (20 to 17). Turn 4 rolls 15: alice's own Shock is copied and paid for with one Island, so bob goes to 18 with her Mountain untapped. Turn 7 rolls 20 on carol's Lava Axe, her Divination left behind: the pile holds the Bolt, the Shock and the Axe, and alice casts the Axe and the Bolt but not the Shock, so bob goes 18 - 5 - 3 = 10.",
+  "board": {
+    "active": "alice",
+    "step": "Upkeep",
+    "seats": [
+      {
+        "name": "alice",
+        "battlefield": [
+          {"card": "Wizard's Spellbook", "label": "book"},
+          {"card": "Mountain", "label": "m1"},
+          {"card": "Island", "label": "i1"}
+        ],
+        "graveyard": [{"card": "Shock", "label": "shock"}],
+        "library": [{"card": "Forest"}, {"card": "Forest"}, {"card": "Forest"}, {"card": "Forest"}]
+      },
+      {
+        "name": "bob",
+        "graveyard": [{"card": "Lightning Bolt", "label": "bolt"}, {"card": "Grizzly Bears", "label": "bears"}],
+        "library": [{"card": "Forest"}, {"card": "Forest"}, {"card": "Forest"}, {"card": "Forest"}]
+      },
+      {
+        "name": "carol",
+        "graveyard": [{"card": "Lava Axe", "label": "axe"}, {"card": "Divination", "label": "div"}],
+        "library": [{"card": "Forest"}, {"card": "Forest"}, {"card": "Forest"}, {"card": "Forest"}]
+      }
+    ]
+  },
+  "timeline": [
+    {"turn": 1, "step": "Upkeep", "player": "alice", "refuse": {"Activate": {"object": "$book", "ability": 0, "targets": ["$bolt"]}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "refuse": {"Activate": {"object": "$book", "ability": 0, "targets": ["$bears"]}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": {"Activate": {"object": "$book", "ability": 0, "targets": ["$bolt"]}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": "Pass"},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": {"Answer": {"prompt": "RollDie", "with": 5}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": {"Answer": {"prompt": "OfferedCast", "with": "Exercises"}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": {"ChooseTargets": {"target": ["$carol"]}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": {"Answer": {"prompt": "ChooseManaSource", "with": "$m1"}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": {"Answer": {"prompt": "ChooseExtraManaSource", "with": null}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": "Pass"},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"Life": {"player": "carol", "life": 17}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"Tapped": {"object": "$m1", "tapped": true}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"Count": {"player": "bob", "zone": "Exile", "card": "Lightning Bolt", "count": 1}}},
+    {"turn": 4, "step": "PrecombatMain", "player": "alice", "do": {"Activate": {"object": "$book", "ability": 0, "targets": ["$shock"]}}},
+    {"turn": 4, "step": "PrecombatMain", "player": "alice", "do": "Pass"},
+    {"turn": 4, "step": "PrecombatMain", "player": "alice", "do": {"Answer": {"prompt": "RollDie", "with": 15}}},
+    {"turn": 4, "step": "PrecombatMain", "player": "alice", "do": {"Answer": {"prompt": "OfferedCast", "with": "Exercises"}}},
+    {"turn": 4, "step": "PrecombatMain", "player": "alice", "do": {"ChooseTargets": {"target": ["$bob"]}}},
+    {"turn": 4, "step": "PrecombatMain", "player": "alice", "do": {"Answer": {"prompt": "ChooseManaSource", "with": "$i1"}}},
+    {"turn": 4, "step": "PrecombatMain", "player": "alice", "do": {"Answer": {"prompt": "ChooseExtraManaSource", "with": null}}},
+    {"turn": 4, "step": "PrecombatMain", "player": "alice", "do": "Pass"},
+    {"turn": 4, "step": "PrecombatMain", "player": "alice", "check": {"Life": {"player": "bob", "life": 18}}},
+    {"turn": 4, "step": "PrecombatMain", "player": "alice", "check": {"Tapped": {"object": "$m1", "tapped": false}}},
+    {"turn": 4, "step": "PrecombatMain", "player": "alice", "check": {"Tapped": {"object": "$i1", "tapped": true}}},
+    {"turn": 7, "step": "PrecombatMain", "player": "alice", "do": {"Activate": {"object": "$book", "ability": 0, "targets": ["$axe"]}}},
+    {"turn": 7, "step": "PrecombatMain", "player": "alice", "do": "Pass"},
+    {"turn": 7, "step": "PrecombatMain", "player": "alice", "do": {"Answer": {"prompt": "RollDie", "with": 20}}},
+    {"turn": 7, "step": "PrecombatMain", "player": "alice", "do": {"Answer": {"prompt": "ChooseOfferedCastSpell", "with": ["Lava Axe#2", "Lava Axe"]}}},
+    {"turn": 7, "step": "PrecombatMain", "player": "alice", "do": {"Answer": {"prompt": "OfferedCast", "with": "Exercises"}}},
+    {"turn": 7, "step": "PrecombatMain", "player": "alice", "do": {"ChooseTargets": {"target": ["$bob"]}}},
+    {"turn": 7, "step": "PrecombatMain", "player": "alice", "do": {"Answer": {"prompt": "ChooseOfferedCastSpell", "with": ["Lightning Bolt#2", "Lightning Bolt"]}}},
+    {"turn": 7, "step": "PrecombatMain", "player": "alice", "do": {"Answer": {"prompt": "OfferedCast", "with": "Exercises"}}},
+    {"turn": 7, "step": "PrecombatMain", "player": "alice", "do": {"ChooseTargets": {"target": ["$bob"]}}},
+    {"turn": 7, "step": "PrecombatMain", "player": "alice", "do": {"Answer": {"prompt": "OfferedCast", "with": "Declines"}}},
+    {"turn": 7, "step": "PrecombatMain", "player": "alice", "do": "Pass"},
+    {"turn": 7, "step": "PrecombatMain", "player": "alice", "do": "Pass"},
+    {"turn": 7, "step": "PrecombatMain", "player": "alice", "check": {"Life": {"player": "bob", "life": 10}}},
+    {"turn": 7, "step": "PrecombatMain", "player": "alice", "check": {"Life": {"player": "carol", "life": 17}}},
+    {"turn": 7, "step": "PrecombatMain", "player": "alice", "check": {"Count": {"player": "carol", "zone": "Exile", "card": "Lava Axe", "count": 1}}},
+    {"turn": 7, "step": "PrecombatMain", "player": "alice", "check": {"Count": {"player": "carol", "zone": "Graveyard", "card": "Divination", "count": 1}}},
+    {"turn": 7, "step": "PrecombatMain", "player": "alice", "check": {"Count": {"player": "alice", "zone": "Exile", "card": "Shock", "count": 1}}}
+  ]
+}

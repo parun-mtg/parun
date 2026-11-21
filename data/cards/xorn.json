@@ -1,0 +1,108 @@
+{
+  "faces": [
+    {
+      "manaCost": [
+        {
+          "type": "Generic",
+          "value": 2
+        },
+        {
+          "type": "OfType",
+          "value": {
+            "type": "Colored",
+            "value": "Red"
+          }
+        }
+      ],
+      "name": "Xorn",
+      "oracleText": "If you would create one or more Treasure tokens, instead create those tokens plus an additional Treasure token.",
+      "power": {
+        "type": "Literal",
+        "value": 3
+      },
+      "replacementEffects": [
+        {
+          "effect": {
+            "type": "TokenR",
+            "value": {
+              "matching": {
+                "whatToken": {
+                  "type": "HasSubtype",
+                  "value": "Treasure"
+                },
+                "whose": {
+                  "type": "You"
+                }
+              },
+              "plus": {
+                "type": "One",
+                "value": {
+                  "faces": [
+                    {
+                      "activatedAbilities": [
+                        {
+                          "cost": {
+                            "components": [
+                              {
+                                "type": "TapThis"
+                              },
+                              {
+                                "type": "SacrificeThis"
+                              }
+                            ],
+                            "mana": []
+                          },
+                          "modal": {
+                            "modes": [
+                              {
+                                "clauses": [
+                                  {
+                                    "effects": [
+                                      {
+                                        "type": "AddMana",
+                                        "value": {
+                                          "production": {
+                                            "type": "AnyColor"
+                                          }
+                                        }
+                                      }
+                                    ]
+                                  }
+                                ]
+                              }
+                            ]
+                          }
+                        }
+                      ],
+                      "name": "Treasure Token",
+                      "typeLine": {
+                        "subtypes": [
+                          "Treasure"
+                        ],
+                        "types": [
+                          "Artifact"
+                        ]
+                      }
+                    }
+                  ]
+                }
+              }
+            }
+          }
+        }
+      ],
+      "toughness": {
+        "type": "Literal",
+        "value": 2
+      },
+      "typeLine": {
+        "subtypes": [
+          "Elemental"
+        ],
+        "types": [
+          "Creature"
+        ]
+      }
+    }
+  ]
+}

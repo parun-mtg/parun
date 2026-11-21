@@ -1,0 +1,67 @@
+{
+  "description": "CR 717.2a, 402.2: Wizard Class lifts its controller's maximum hand size, draws two on becoming level 2, and at level 3 puts a +1/+1 counter on target creature its controller controls whenever its controller draws a card",
+  "note": "The two level-2 draws come before level 3, so neither grows anything. Alice ends turn 1 holding ten cards and keeps them. Bob's turn-2 draw raises no trigger. Alice's turn-3 draw does: bob's Grizzly Bears is refused as a target, and her Hill Giant, not her Grizzly Bears, takes the counter.",
+  "board": {
+    "active": "alice",
+    "step": "PrecombatMain",
+    "seats": [
+      {
+        "name": "alice",
+        "battlefield": [
+          {"card": "Wizard Class", "label": "wiz"},
+          {"card": "Grizzly Bears", "label": "bear"},
+          {"card": "Hill Giant", "label": "giant"},
+          {"card": "Island", "label": "i1"},
+          {"card": "Island", "label": "i2"},
+          {"card": "Island", "label": "i3"},
+          {"card": "Island", "label": "i4"},
+          {"card": "Island", "label": "i5"},
+          {"card": "Island", "label": "i6"},
+          {"card": "Island", "label": "i7"},
+          {"card": "Island", "label": "i8"}
+        ],
+        "hand": [
+          {"card": "Plains"}, {"card": "Plains"}, {"card": "Plains"}, {"card": "Plains"},
+          {"card": "Plains"}, {"card": "Plains"}, {"card": "Plains"}, {"card": "Plains"}
+        ],
+        "library": [
+          {"card": "Lightning Bolt"}, {"card": "Shock"}, {"card": "Divination"},
+          {"card": "Forest"}, {"card": "Forest"}, {"card": "Forest"}
+        ]
+      },
+      {
+        "name": "bob",
+        "battlefield": [{"card": "Grizzly Bears", "label": "bbear"}],
+        "library": [{"card": "Island"}, {"card": "Island"}, {"card": "Island"}]
+      },
+      {
+        "name": "carol",
+        "library": [{"card": "Island"}, {"card": "Island"}, {"card": "Island"}]
+      }
+    ]
+  },
+  "timeline": [
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": {"Activate": {"object": "$wiz", "ability": 0, "mana": ["$i1", "$i2", "$i3", null]}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": "Pass"},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"Count": {"player": "alice", "zone": "Hand", "card": "Lightning Bolt", "count": 0}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": "Pass"},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"Count": {"player": "alice", "zone": "Hand", "card": "Lightning Bolt", "count": 1}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"Count": {"player": "alice", "zone": "Hand", "card": "Shock", "count": 1}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"Count": {"player": "alice", "zone": "Hand", "card": "Divination", "count": 0}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": {"Activate": {"object": "$wiz", "ability": 1, "mana": ["$i4", "$i5", "$i6", "$i7", "$i8"]}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": "Pass"},
+    {"turn": 1, "step": "PostcombatMain", "player": "alice", "check": {"Counters": {"object": "$giant", "kind": {"type": "PlusOnePlusOne"}, "count": 0}}},
+    {"turn": 1, "step": "PostcombatMain", "player": "alice", "check": {"Counters": {"object": "$bear", "kind": {"type": "PlusOnePlusOne"}, "count": 0}}},
+    {"turn": 2, "step": "Upkeep", "player": "bob", "check": {"Count": {"player": "alice", "zone": "Hand", "card": "Plains", "count": 8}}},
+    {"turn": 2, "step": "Upkeep", "player": "bob", "check": {"Count": {"player": "alice", "zone": "Hand", "card": "Shock", "count": 1}}},
+    {"turn": 2, "step": "PrecombatMain", "player": "bob", "check": {"Counters": {"object": "$bbear", "kind": {"type": "PlusOnePlusOne"}, "count": 0}}},
+    {"turn": 2, "step": "DeclareAttackers", "player": "bob", "do": {"Attack": []}},
+    {"turn": 4, "step": "DeclareAttackers", "player": "alice", "do": {"Attack": []}},
+    {"turn": 4, "step": "DrawStep", "player": "alice", "refuse": {"ChooseTargets": {"target": ["$bbear"]}}},
+    {"turn": 4, "step": "DrawStep", "player": "alice", "do": {"ChooseTargets": {"target": ["$giant"]}}},
+    {"turn": 4, "step": "PrecombatMain", "player": "alice", "check": {"Count": {"player": "alice", "zone": "Hand", "card": "Divination", "count": 1}}},
+    {"turn": 4, "step": "PrecombatMain", "player": "alice", "check": {"Counters": {"object": "$giant", "kind": {"type": "PlusOnePlusOne"}, "count": 1}}},
+    {"turn": 4, "step": "PrecombatMain", "player": "alice", "check": {"Counters": {"object": "$bear", "kind": {"type": "PlusOnePlusOne"}, "count": 0}}},
+    {"turn": 4, "step": "PrecombatMain", "player": "alice", "check": {"Counters": {"object": "$bbear", "kind": {"type": "PlusOnePlusOne"}, "count": 0}}}
+  ]
+}
