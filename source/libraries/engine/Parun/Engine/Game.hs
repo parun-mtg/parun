@@ -1177,7 +1177,13 @@ enchantedPlayerOf oid gs = lookupObject oid gs >>= Object.attachedTo >>= Recipie
 -- hostOf through CR 608.2h: for an object that has left, what it was attached
 -- to as it left (Parun.Types.LastKnown.host).
 hostWithLastKnown :: ObjectId -> GameState -> Maybe ObjectId
-hostWithLastKnown oid gs = Monad.join (liveOrLastKnown (const (hostOf oid gs)) LastKnown.host oid gs)
+hostWithLastKnown oid gs = Monad.join (liveOrLastKnown (const (hostOf oid gs)) (Recipient.objectOf Monad.<=< LastKnown.host) oid gs)
+
+-- enchantedPlayerOf through CR 608.2h: for an Aura that has left, the player it
+-- enchanted as it left (Parun.Types.LastKnown.host), which CR 603.10a's
+-- look-back asks of a curse that died beside the creature.
+enchantedPlayerWithLastKnown :: ObjectId -> GameState -> Maybe PlayerId
+enchantedPlayerWithLastKnown oid gs = Monad.join (liveOrLastKnown (const (enchantedPlayerOf oid gs)) (Recipient.playerOf Monad.<=< LastKnown.host) oid gs)
 
 -- CR 303.4b / 301.5a with the arrow turned round: the permanents attached to
 -- this one. parun keeps the link on the ATTACHED permanent, so there is nothing

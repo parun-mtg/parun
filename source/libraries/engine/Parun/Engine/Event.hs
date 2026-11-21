@@ -12145,7 +12145,7 @@ lastKnownFrom gs oid obj =
     -- still exists (CR 603.10a).
     (Game.attachments oid gs)
     -- CR 303.4b in its own direction: what it was attached to (CR 608.2h).
-    (Game.hostOf oid gs)
+    (Object.attachedTo obj)
     (Object.chosenNames obj)
     (Object.chosenPlayers obj)
     (Object.chosenColors obj)

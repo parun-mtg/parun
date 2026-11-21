@@ -1460,7 +1460,7 @@ lastKnownView peers oid gs lastKnown =
               (\attacher -> attacher {Filter.attachedToView = Just (lastKnownView peers oid gs lastKnown)})
               (Maybe.mapMaybe (orLastKnown peers gs) (Set.toList (LastKnown.attached lastKnown))),
           -- CR 303.4b: the host's id as it left, the live builder's Game.hostOf.
-          Filter.attachedTo = LastKnown.host lastKnown
+          Filter.attachedTo = LastKnown.host lastKnown >>= Recipient.objectOf
         }
 
 -- CR 608.2i: did this object attack or block this turn? From the turn's event

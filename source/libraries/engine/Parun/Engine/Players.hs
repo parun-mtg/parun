@@ -268,9 +268,8 @@ namedUncut given gs ref =
           let pile' = Game.linkedPile you Nothing (acquisitionOf given src) pile src gs
           Just (Set.toList (Set.fromList (Maybe.mapMaybe (ownerOf given) pile')))
         -- CR 303.4b / 303.4m: the player the object a slot names is attached
-        -- to, read live -- Parun.Types.LastKnown.host records an object host
-        -- only. Unanswered where the slot names no one object or its host is
-        -- not a player. Paradox Haze's scenarios prove it.
+        -- to, read live. Unanswered where the slot names no one object or its
+        -- host is not a player. Paradox Haze's scenarios prove it.
         PlayerRef.PlayerHostOfBound slot -> fmap pure (slotObject given slot >>= \oid -> Game.lookupObject oid gs >>= Object.attachedTo >>= Recipient.playerOf)
         -- CR 508.1b / 508.7: the player the attacker a slot names is attacking,
         -- read live off Combat.attackers. Unanswered while it attacks a
