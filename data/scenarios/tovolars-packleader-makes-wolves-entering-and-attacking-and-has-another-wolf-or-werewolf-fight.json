@@ -1,0 +1,566 @@
+{
+  "board": {
+    "active": "alice",
+    "seats": [
+      {
+        "battlefield": [
+          {
+            "card": "Tovolar's Huntmaster",
+            "face": "Tovolar's Packleader",
+            "label": "pack",
+            "ready": true
+          },
+          {
+            "card": "Tireless Hauler",
+            "face": "Dire-Strain Brawler",
+            "label": "brawler"
+          },
+          {
+            "card": "Grizzly Bears",
+            "label": "abear"
+          },
+          {
+            "card": "Forest",
+            "label": "f0"
+          },
+          {
+            "card": "Forest",
+            "label": "f1"
+          },
+          {
+            "card": "Forest",
+            "label": "f2"
+          },
+          {
+            "card": "Forest",
+            "label": "f3"
+          },
+          {
+            "card": "Forest",
+            "label": "f4"
+          },
+          {
+            "card": "Forest",
+            "label": "f5"
+          },
+          {
+            "card": "Forest",
+            "label": "f6"
+          },
+          {
+            "card": "Forest",
+            "label": "f7"
+          },
+          {
+            "card": "Forest",
+            "label": "f8"
+          },
+          {
+            "card": "Forest",
+            "label": "f9"
+          },
+          {
+            "card": "Forest",
+            "label": "f10"
+          },
+          {
+            "card": "Forest",
+            "label": "f11"
+          },
+          {
+            "card": "Forest",
+            "label": "f12"
+          },
+          {
+            "card": "Forest",
+            "label": "f13"
+          }
+        ],
+        "hand": [
+          {
+            "card": "Tovolar's Huntmaster",
+            "label": "hunt2"
+          }
+        ],
+        "library": [
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          }
+        ],
+        "name": "alice"
+      },
+      {
+        "battlefield": [
+          {
+            "card": "Llanowar Elves",
+            "label": "belf"
+          },
+          {
+            "card": "Bounding Wolf",
+            "label": "bwolf"
+          }
+        ],
+        "library": [
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          }
+        ],
+        "name": "bob"
+      },
+      {
+        "battlefield": [
+          {
+            "card": "Hill Giant",
+            "label": "cgiant"
+          }
+        ],
+        "library": [
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          }
+        ],
+        "name": "carol"
+      }
+    ],
+    "step": "PrecombatMain",
+    "turn": 1
+  },
+  "description": "CR 702.145b, 603.6a, 508.3a, 701.14a: Tovolar's Packleader makes two 2/2 green Wolves when it enters or attacks, and its {2}{G}{G} has another Wolf or Werewolf you control fight a creature you don't control",
+  "note": "It is night (the placed Packleader is nightbound), so the second Huntmaster enters transformed and only Packleader's trigger fires: two Wolves, then two more when the first Packleader attacks bob. The fight refuses Packleader itself (another), alice's Grizzly Bears (not a Wolf or Werewolf), bob's Bounding Wolf (not alice's) and alice's own bears as the second target. A Wolf token fights bob's Llanowar Elves, and Dire-Strain Brawler, a Werewolf and no Wolf, fights carol's Hill Giant.",
+  "timeline": [
+    {
+      "check": {
+        "View": {
+          "is": "Night",
+          "of": "Daytime"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": {
+        "Cast": {
+          "mana": [
+            "$f0",
+            "$f1",
+            "$f2",
+            "$f3",
+            "$f4",
+            "$f5",
+            null
+          ],
+          "object": "$hunt2"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": "Pass",
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "View": {
+          "is": [
+            "trigger of Tovolar's Huntmaster"
+          ],
+          "of": "Stack"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": "Pass",
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Names": {
+          "names": [
+            "Tovolar's Packleader"
+          ],
+          "object": "Tovolar's Huntmaster#2"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Count": {
+          "card": "Wolf Token",
+          "count": 2,
+          "player": "alice",
+          "zone": "Battlefield"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": {
+        "Attack": [
+          "$pack"
+        ]
+      },
+      "player": "alice",
+      "step": "DeclareAttackers",
+      "turn": 1
+    },
+    {
+      "do": {
+        "ChooseAttackTarget": "$bob"
+      },
+      "player": "alice",
+      "step": "DeclareAttackers",
+      "turn": 1
+    },
+    {
+      "do": "Pass",
+      "player": "alice",
+      "step": "DeclareAttackers",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Count": {
+          "card": "Wolf Token",
+          "count": 4,
+          "player": "alice",
+          "zone": "Battlefield"
+        }
+      },
+      "player": "alice",
+      "step": "DeclareAttackers",
+      "turn": 1
+    },
+    {
+      "check": {
+        "PowerToughness": {
+          "object": "Wolf Token",
+          "power": 2,
+          "toughness": 2
+        }
+      },
+      "player": "alice",
+      "step": "DeclareAttackers",
+      "turn": 1
+    },
+    {
+      "check": {
+        "View": {
+          "is": [
+            "Green"
+          ],
+          "object": "Wolf Token",
+          "of": "Colors"
+        }
+      },
+      "player": "alice",
+      "step": "DeclareAttackers",
+      "turn": 1
+    },
+    {
+      "do": {
+        "Block": {}
+      },
+      "player": "bob",
+      "step": "DeclareBlockers",
+      "turn": 1
+    },
+    {
+      "player": "alice",
+      "refuse": {
+        "Activate": {
+          "ability": 0,
+          "mana": [
+            "$f6",
+            "$f7",
+            "$f8",
+            "$f9",
+            null
+          ],
+          "object": "$pack",
+          "targetsBySlot": {
+            "mine": [
+              "$pack"
+            ],
+            "theirs": [
+              "$belf"
+            ]
+          }
+        }
+      },
+      "step": "PostcombatMain",
+      "turn": 1
+    },
+    {
+      "player": "alice",
+      "refuse": {
+        "Activate": {
+          "ability": 0,
+          "mana": [
+            "$f6",
+            "$f7",
+            "$f8",
+            "$f9",
+            null
+          ],
+          "object": "$pack",
+          "targetsBySlot": {
+            "mine": [
+              "$abear"
+            ],
+            "theirs": [
+              "$belf"
+            ]
+          }
+        }
+      },
+      "step": "PostcombatMain",
+      "turn": 1
+    },
+    {
+      "player": "alice",
+      "refuse": {
+        "Activate": {
+          "ability": 0,
+          "mana": [
+            "$f6",
+            "$f7",
+            "$f8",
+            "$f9",
+            null
+          ],
+          "object": "$pack",
+          "targetsBySlot": {
+            "mine": [
+              "$bwolf"
+            ],
+            "theirs": [
+              "$belf"
+            ]
+          }
+        }
+      },
+      "step": "PostcombatMain",
+      "turn": 1
+    },
+    {
+      "player": "alice",
+      "refuse": {
+        "Activate": {
+          "ability": 0,
+          "mana": [
+            "$f6",
+            "$f7",
+            "$f8",
+            "$f9",
+            null
+          ],
+          "object": "$pack",
+          "targetsBySlot": {
+            "mine": [
+              "Wolf Token"
+            ],
+            "theirs": [
+              "$abear"
+            ]
+          }
+        }
+      },
+      "step": "PostcombatMain",
+      "turn": 1
+    },
+    {
+      "do": {
+        "Activate": {
+          "ability": 0,
+          "mana": [
+            "$f6",
+            "$f7",
+            "$f8",
+            "$f9",
+            null
+          ],
+          "object": "$pack",
+          "targetsBySlot": {
+            "mine": [
+              "Wolf Token"
+            ],
+            "theirs": [
+              "$belf"
+            ]
+          }
+        }
+      },
+      "player": "alice",
+      "step": "PostcombatMain",
+      "turn": 1
+    },
+    {
+      "do": "Pass",
+      "player": "alice",
+      "step": "PostcombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Count": {
+          "card": "Llanowar Elves",
+          "count": 0,
+          "player": "bob",
+          "zone": "Battlefield"
+        }
+      },
+      "player": "alice",
+      "step": "PostcombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Damage": {
+          "damage": 1,
+          "object": "Wolf Token"
+        }
+      },
+      "player": "alice",
+      "step": "PostcombatMain",
+      "turn": 1
+    },
+    {
+      "do": {
+        "Activate": {
+          "ability": 0,
+          "mana": [
+            "$f10",
+            "$f11",
+            "$f12",
+            "$f13"
+          ],
+          "object": "$pack",
+          "targetsBySlot": {
+            "mine": [
+              "$brawler"
+            ],
+            "theirs": [
+              "$cgiant"
+            ]
+          }
+        }
+      },
+      "player": "alice",
+      "step": "PostcombatMain",
+      "turn": 1
+    },
+    {
+      "do": "Pass",
+      "player": "alice",
+      "step": "PostcombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Count": {
+          "card": "Hill Giant",
+          "count": 0,
+          "player": "carol",
+          "zone": "Battlefield"
+        }
+      },
+      "player": "alice",
+      "step": "PostcombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Damage": {
+          "damage": 3,
+          "object": "$brawler"
+        }
+      },
+      "player": "alice",
+      "step": "PostcombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Life": {
+          "life": 13,
+          "player": "bob"
+        }
+      },
+      "player": "alice",
+      "step": "PostcombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Damage": {
+          "damage": 0,
+          "object": "$bwolf"
+        }
+      },
+      "player": "alice",
+      "step": "PostcombatMain",
+      "turn": 1
+    }
+  ]
+}

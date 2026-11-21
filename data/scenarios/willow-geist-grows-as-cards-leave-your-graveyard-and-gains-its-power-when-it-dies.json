@@ -1,0 +1,28 @@
+{
+  "description": "CR 603.2c / 603.10a / 700.4: Willow Geist gets a +1/+1 counter whenever one or more cards leave its controller's graveyard, on any player's turn, and gains its controller life equal to its power when it dies",
+  "note": "On bob's turn, Scavenging Ooze exiles one card from alice's graveyard and one from bob's; Tormod's Crypt then exiles alice's other two cards at once for one counter. Bolted as a 5/3 under Bonesplitter, the Geist gains alice 5.",
+  "board": {"active": "alice", "step": "PrecombatMain", "seats": [{"name": "alice", "battlefield": [{"card": "Willow Geist", "label": "geist"}, {"card": "Bonesplitter", "attached": "geist"}], "graveyard": [{"card": "Island", "label": "ag1"}, {"card": "Island"}, {"card": "Island"}], "library": [{"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}]}, {"name": "bob", "battlefield": [{"card": "Scavenging Ooze", "label": "ooze"}, {"card": "Tormod's Crypt", "label": "crypt"}, {"card": "Forest", "label": "bf1"}, {"card": "Forest", "label": "bf2"}, {"card": "Mountain", "label": "bm"}], "graveyard": [{"card": "Island", "label": "bg1"}], "hand": [{"card": "Lightning Bolt", "label": "bolt"}], "library": [{"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}]}]},
+  "timeline": [
+    {"turn": 2, "step": "PrecombatMain", "player": "bob", "do": {"Activate": {"object": "$ooze", "ability": 0, "targets": ["$ag1"], "mana": ["$bf1", null]}}},
+    {"turn": 2, "step": "PrecombatMain", "player": "bob", "do": "Pass"},
+    {"turn": 2, "step": "PrecombatMain", "player": "bob", "do": "Pass"},
+    {"turn": 2, "step": "PrecombatMain", "player": "bob", "check": {"Counters": {"object": "$geist", "kind": {"type": "PlusOnePlusOne"}, "count": 1}}},
+    {"turn": 2, "step": "PrecombatMain", "player": "bob", "do": {"Activate": {"object": "$ooze", "ability": 0, "targets": ["$bg1"], "mana": ["$bf2", null]}}},
+    {"turn": 2, "step": "PrecombatMain", "player": "bob", "do": "Pass"},
+    {"turn": 2, "step": "PrecombatMain", "player": "bob", "check": {"View": {"of": "Stack", "is": []}}},
+    {"turn": 2, "step": "PrecombatMain", "player": "bob", "check": {"Counters": {"object": "$geist", "kind": {"type": "PlusOnePlusOne"}, "count": 1}}},
+    {"turn": 2, "step": "PrecombatMain", "player": "bob", "do": {"Activate": {"object": "$crypt", "ability": 0, "targets": ["$alice"]}}},
+    {"turn": 2, "step": "PrecombatMain", "player": "bob", "do": "Pass"},
+    {"turn": 2, "step": "PrecombatMain", "player": "bob", "do": "Pass"},
+    {"turn": 2, "step": "PrecombatMain", "player": "bob", "check": {"Count": {"player": "alice", "zone": "Graveyard", "card": "Island", "count": 0}}},
+    {"turn": 2, "step": "PrecombatMain", "player": "bob", "check": {"View": {"of": "Stack", "is": []}}},
+    {"turn": 2, "step": "PrecombatMain", "player": "bob", "check": {"Counters": {"object": "$geist", "kind": {"type": "PlusOnePlusOne"}, "count": 2}}},
+    {"turn": 2, "step": "PrecombatMain", "player": "bob", "check": {"PowerToughness": {"object": "$geist", "power": 5, "toughness": 3}}},
+    {"turn": 2, "step": "PrecombatMain", "player": "bob", "check": {"Keywords": {"object": "$geist", "keyword": {"type": "Trample"}, "count": 1}}},
+    {"turn": 2, "step": "PrecombatMain", "player": "bob", "do": {"Cast": {"object": "$bolt", "targets": ["$geist"], "mana": ["$bm"]}}},
+    {"turn": 2, "step": "PrecombatMain", "player": "bob", "do": "Pass"},
+    {"turn": 2, "step": "PrecombatMain", "player": "bob", "do": "Pass"},
+    {"turn": 2, "step": "PrecombatMain", "player": "bob", "check": {"Count": {"player": "alice", "zone": "Graveyard", "card": "Willow Geist", "count": 1}}},
+    {"turn": 2, "step": "PrecombatMain", "player": "bob", "check": {"Life": {"player": "alice", "life": 25}}}
+  ]
+}

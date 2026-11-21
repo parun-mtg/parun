@@ -1,0 +1,18 @@
+{
+  "description": "CR 603.4 / 104.2b / 402.2: Triskaidekaphile wins its controller the game at their upkeep only with exactly thirteen cards in hand, draws for {3}{U}, and lifts its controller's maximum hand size",
+  "note": "Alice holds twelve at her upkeep and thirteen, after her draw, at bob's and carol's; bob holds fourteen at his, then draws to sixteen and keeps them through cleanup; carol holds thirteen at her own upkeep and wins.",
+  "board": {"active": "alice", "step": "Untap", "seats": [{"name": "alice", "battlefield": [{"card": "Triskaidekaphile"}], "hand": [{"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}], "library": [{"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}]}, {"name": "bob", "battlefield": [{"card": "Triskaidekaphile", "label": "bob-trisk"}, {"card": "Island", "label": "i1"}, {"card": "Island", "label": "i2"}, {"card": "Island", "label": "i3"}, {"card": "Island", "label": "i4"}], "hand": [{"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}], "library": [{"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}]}, {"name": "carol", "battlefield": [{"card": "Triskaidekaphile", "label": "carol-trisk"}], "hand": [{"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}], "library": [{"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}]}]},
+  "timeline": [
+    {"turn": 1, "step": "DeclareAttackers", "player": "alice", "do": {"Attack": []}},
+    {"turn": 2, "step": "DeclareAttackers", "player": "bob", "do": {"Attack": []}},
+    {"turn": 2, "step": "PrecombatMain", "player": "bob", "check": {"Count": {"player": "alice", "zone": "Hand", "card": "Island", "count": 13}}},
+    {"turn": 2, "step": "PrecombatMain", "player": "bob", "check": {"View": {"of": "Result", "is": null}}},
+    {"turn": 2, "step": "PrecombatMain", "player": "bob", "do": {"Activate": {"object": "$bob-trisk", "ability": 0, "mana": ["$i1", "$i2", "$i3", "$i4"]}}},
+    {"turn": 2, "step": "PrecombatMain", "player": "bob", "do": "Pass"},
+    {"turn": 2, "step": "PrecombatMain", "player": "bob", "check": {"Count": {"player": "bob", "zone": "Hand", "card": "Island", "count": 16}}},
+    {"turn": 2, "step": "PrecombatMain", "player": "bob", "check": {"View": {"of": "ManaPool", "player": "bob", "is": []}}},
+    {"turn": 3, "step": "Upkeep", "player": "carol", "check": {"Count": {"player": "bob", "zone": "Hand", "card": "Island", "count": 16}}},
+    {"turn": 3, "step": "Upkeep", "player": "carol", "check": {"View": {"of": "Stack", "is": ["trigger of $carol-trisk"]}}}
+  ],
+  "final": [{"View": {"of": "Result", "is": {"won": "carol"}}}]
+}

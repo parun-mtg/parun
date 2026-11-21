@@ -1,0 +1,45 @@
+{
+  "description": "CR 115.1a / 601.2c / 702.146a / 205.3m Thraben Exorcism exiles target Spirit, creature with disturb, or enchantment: it takes a Spirit creature with no disturb, a non-Spirit creature whose front face has disturb, and a noncreature enchantment, and refuses a creature that is none of these",
+  "note": "Each legal target answers exactly one disjunct: Accursed Spirit is a Spirit without disturb, Baithook Angler a Human Peasant with disturb, Glorious Anthem an enchantment that is neither. Grizzly Bears is a plain creature, so the cast at it is refused and it stays; the third cast binds the anthem as its one legal target, and with only the bears left the fourth copy is not offered.",
+  "board": {
+    "seats": [
+      {
+        "name": "alice",
+        "manaPool": "WWWWWWWW",
+        "hand": [
+          { "card": "Thraben Exorcism", "label": "e1" },
+          { "card": "Thraben Exorcism", "label": "e2" },
+          { "card": "Thraben Exorcism", "label": "e3" },
+          { "card": "Thraben Exorcism", "label": "e4" }
+        ],
+        "library": [{ "card": "Plains" }, { "card": "Plains" }]
+      },
+      {
+        "name": "bob",
+        "battlefield": [
+          { "card": "Grizzly Bears", "label": "bears" },
+          { "card": "Accursed Spirit", "label": "spirit" },
+          { "card": "Baithook Angler", "label": "angler" },
+          { "card": "Glorious Anthem", "label": "anthem" }
+        ],
+        "library": [{ "card": "Island" }, { "card": "Island" }]
+      }
+    ],
+    "active": "alice",
+    "step": "PrecombatMain"
+  },
+  "timeline": [
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "refuse": { "Cast": { "object": "$e1", "targets": ["$bears"] } } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "do": { "Cast": { "object": "$e1", "targets": ["$spirit"] } } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "do": "Pass" },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "do": { "Cast": { "object": "$e2", "targets": ["$angler"] } } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "do": "Pass" },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "do": { "Cast": { "object": "$e3" } } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "do": "Pass" },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "check": { "Count": { "player": "bob", "zone": "Exile", "card": "Accursed Spirit", "count": 1 } } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "check": { "Count": { "player": "bob", "zone": "Exile", "card": "Baithook Angler", "count": 1 } } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "check": { "Count": { "player": "bob", "zone": "Exile", "card": "Glorious Anthem", "count": 1 } } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "check": { "Count": { "player": "bob", "zone": "Battlefield", "card": "Grizzly Bears", "count": 1 } } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "check": { "View": { "of": "Offered", "player": "alice", "is": ["Pass"] } } }
+  ]
+}

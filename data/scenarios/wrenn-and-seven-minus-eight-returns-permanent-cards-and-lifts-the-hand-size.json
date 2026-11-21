@@ -1,0 +1,53 @@
+{
+  "description": "CR 606.4 / 110.4a / 704.5i / 114.4 / 402.2 Wrenn and Seven's -8 returns every permanent card from alice's graveyard to her hand, Wrenn itself included once the cost leaves it with no loyalty, and gives her an emblem with no maximum hand size",
+  "note": "The cost removes all eight counters, so Wrenn is put into the graveyard before the ability resolves and comes back with the artifact, battle, creature, enchantment and land; the instant stays, as does the creature card in bob's graveyard. Alice ends her turn holding eleven cards and discards nothing: an unscheduled discard prompt would fail the run.",
+  "board": {
+    "seats": [
+      {
+        "name": "alice",
+        "battlefield": [
+          { "card": "Wrenn and Seven", "label": "wrenn", "counters": [{ "key": { "type": "Loyalty" }, "value": 8 }] }
+        ],
+        "graveyard": [
+          { "card": "Sol Ring" },
+          { "card": "Grizzly Bears" },
+          { "card": "Glorious Anthem" },
+          { "card": "Forest" },
+          { "card": "Invasion of Ixalan" },
+          { "card": "Lightning Bolt" }
+        ],
+        "hand": [
+          { "card": "Plains" },
+          { "card": "Plains" },
+          { "card": "Plains" },
+          { "card": "Plains" },
+          { "card": "Plains" }
+        ],
+        "library": [{ "card": "Island" }, { "card": "Island" }, { "card": "Island" }]
+      },
+      {
+        "name": "bob",
+        "graveyard": [{ "card": "Hill Giant" }],
+        "library": [{ "card": "Island" }, { "card": "Island" }, { "card": "Island" }]
+      }
+    ],
+    "active": "alice",
+    "step": "PrecombatMain"
+  },
+  "timeline": [
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "do": { "Activate": { "object": "$wrenn", "ability": 3 } } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "check": { "Count": { "player": "alice", "zone": "Graveyard", "card": "Wrenn and Seven", "count": 1 } } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "do": "Pass" },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "check": { "Count": { "player": "alice", "zone": "Hand", "card": "Wrenn and Seven", "count": 1 } } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "check": { "Count": { "player": "alice", "zone": "Hand", "card": "Sol Ring", "count": 1 } } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "check": { "Count": { "player": "alice", "zone": "Hand", "card": "Grizzly Bears", "count": 1 } } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "check": { "Count": { "player": "alice", "zone": "Hand", "card": "Glorious Anthem", "count": 1 } } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "check": { "Count": { "player": "alice", "zone": "Hand", "card": "Forest", "count": 1 } } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "check": { "Count": { "player": "alice", "zone": "Hand", "card": "Invasion of Ixalan", "count": 1 } } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "check": { "Count": { "player": "alice", "zone": "Graveyard", "card": "Lightning Bolt", "count": 1 } } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "check": { "Count": { "player": "bob", "zone": "Graveyard", "card": "Hill Giant", "count": 1 } } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "check": { "Count": { "player": "alice", "zone": "Command", "card": "Wrenn and Seven Emblem", "count": 1 } } },
+    { "turn": 2, "step": "Upkeep", "player": "bob", "check": { "Count": { "player": "alice", "zone": "Hand", "card": "Plains", "count": 5 } } },
+    { "turn": 2, "step": "Upkeep", "player": "bob", "check": { "Count": { "player": "alice", "zone": "Hand", "card": "Sol Ring", "count": 1 } } }
+  ]
+}

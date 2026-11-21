@@ -1,0 +1,19 @@
+{
+  "description": "CR 106.6 / 702.146a: Unblinking Observer's {U} pays Lantern Bearer's disturb cost, an instant and a sorcery, and not Lantern Bearer cast from hand",
+  "note": "Lantern Bearer from hand is a creature spell with disturb not cast for its disturb cost, so neither half of the restriction admits it.",
+  "board": {"active": "alice", "step": "PrecombatMain", "seats": [{"name": "alice", "battlefield": [{"card": "Unblinking Observer", "label": "o1", "ready": true}, {"card": "Unblinking Observer", "label": "o2", "ready": true}, {"card": "Unblinking Observer", "label": "o3", "ready": true}, {"card": "Island", "label": "i1"}, {"card": "Island", "label": "i2"}], "hand": [{"card": "Lantern Bearer", "label": "held"}, {"card": "Think Twice", "label": "tt"}, {"card": "Divination", "label": "div"}], "graveyard": [{"card": "Lantern Bearer", "label": "buried"}], "library": [{"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}]}, {"name": "bob", "library": [{"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}]}]},
+  "timeline": [
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "refuse": {"Cast": {"object": "$held", "mana": ["$o1", null]}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": {"ChooseOptional": "Exercises"}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": {"Cast": {"object": "$buried", "mana": ["$o1", "$i1", "$i2", null], "targets": ["$o3"]}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": "Pass"},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"Count": {"player": "alice", "zone": "Battlefield", "card": "Lanterns' Lift", "count": 1}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": {"Cast": {"object": "$tt", "mana": ["$o2", "$o3"]}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": "Pass"},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"Count": {"player": "alice", "zone": "Graveyard", "card": "Think Twice", "count": 1}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"Count": {"player": "alice", "zone": "Hand", "card": "Lantern Bearer", "count": 1}}},
+    {"turn": 3, "step": "PrecombatMain", "player": "alice", "do": {"Cast": {"object": "$div", "mana": ["$o1", "$o2", "$o3", null]}}},
+    {"turn": 3, "step": "PrecombatMain", "player": "alice", "do": "Pass"},
+    {"turn": 3, "step": "PrecombatMain", "player": "alice", "check": {"Count": {"player": "alice", "zone": "Graveyard", "card": "Divination", "count": 1}}}
+  ]
+}
