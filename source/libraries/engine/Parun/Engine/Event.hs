@@ -6808,21 +6808,29 @@ copiedSnapshotWithLastKnown oid gs = case Game.lastKnownOf oid gs of
   Nothing -> copiedSnapshot oid gs
 
 -- CR 707.1 / 707.8a: what a token copying this object is minted with
--- (createTokens): its copiable values, `copiedSnapshotWithLastKnown`'s, and
--- for a double-faced object the face it shows and its other face's values,
--- `copiedSnapshot` off a board with it turned over (Game.withFaceTurned), so a
--- copy effect over it carries to both faces. Neither for an object that would
--- not turn (Game.turnedObject): a one-faced card, a face-down one (CR
--- 712.12a), a meld; nor for a merged permanent, which is not double-faced
--- (CR 731.2i) and whose copy is minted on one face (`copiedTokenCard`).
---
--- Not implemented: the face and other face of an object that has already left
--- (CR 608.2h), whose last known information keeps neither (#9280).
+-- (createTokens), `liveCopiedToken`'s, or for an object that has already left
+-- (CR 608.2h) what its last known information filed off that same reading.
+-- data/scenarios' flameshadow-conjuring-copy-of-a-sacrificed-enduring-angel-transforms
+-- and flameshadow-conjuring-copy-of-a-bounced-hollowhenge-huntmaster-turns-by-day
+-- prove the latter, its other face and its shown face.
 copiedToken :: ObjectId -> GameState -> TokenCopy.TokenCopy
-copiedToken oid gs =
+copiedToken oid gs = case Game.lastKnownOf oid gs of
+  Just lk -> TokenCopy.MkTokenCopy (LastKnown.copiable lk) (LastKnown.turned lk) (LastKnown.face lk)
+  Nothing -> liveCopiedToken oid gs
+
+-- CR 707.1 / 707.8a: `copiedToken` off the object itself: its copiable values,
+-- `copiedSnapshot`'s, and for a double-faced object the face it shows and its
+-- other face's values, `copiedSnapshot` off a board with it turned over
+-- (Game.withFaceTurned), so a copy effect over it carries to both faces.
+-- Neither for an object that would not turn (Game.turnedObject): a one-faced
+-- card, a face-down one (CR 712.12a), a meld; nor for a merged permanent, which
+-- is not double-faced (CR 731.2i) and whose copy is minted on one face
+-- (`copiedTokenCard`).
+liveCopiedToken :: ObjectId -> GameState -> TokenCopy.TokenCopy
+liveCopiedToken oid gs =
   let turning = Game.lookupObject oid gs >>= \object -> if Seq.null (Game.mergeComponentsOf (Object.source object)) then object <$ Game.turnedObject object gs else Nothing
    in TokenCopy.MkTokenCopy
-        { TokenCopy.values = copiedSnapshotWithLastKnown oid gs,
+        { TokenCopy.values = copiedSnapshot oid gs,
           TokenCopy.turned = fmap (const (copiedSnapshot oid (Game.withFaceTurned oid gs))) turning,
           TokenCopy.face = Game.shownFace =<< turning
         }
@@ -12393,8 +12401,13 @@ lastKnownFrom gs oid obj =
     (Object.counters obj)
     -- CR 123.1: the stickers, per-incarnation like the counters.
     (Object.stickers obj)
-    -- CR 613.1a's layer, read off the copy binding and face `obj` carries.
-    (copiedSnapshot oid gs)
+    -- CR 613.1a's layer, read off the copy binding and face `obj` carries,
+    -- with CR 707.8a's other face and shown face beside it. The other face is
+    -- forced as deep as the strict fields force the rest: a thunk under its
+    -- Just would retain this board.
+    (TokenCopy.values copied)
+    ((\pc -> pc `seq` Just pc) =<< TokenCopy.turned copied)
+    (TokenCopy.face copied)
     -- CR 303.4b / 301.5a with the arrow turned round, taken while the answer
     -- still exists (CR 603.10a).
     (Game.attachments oid gs)
@@ -12453,6 +12466,7 @@ lastKnownFrom gs oid obj =
   where
     -- CR 305.7's strip written in, so the record says what the land had.
     characteristics = Projection.withRulesTextStrip oid gs (Projection.project oid gs)
+    copied = liveCopiedToken oid gs
 
 -- | An object leaves the GAME rather than a zone -- CR 800.4a's first clause,
 -- or CR 730.4a's crossing into a subgame -- at the instant `asOf` describes,
