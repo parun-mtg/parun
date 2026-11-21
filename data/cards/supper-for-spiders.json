@@ -70,7 +70,7 @@
                           {
                             "type": "Subtype",
                             "value": {
-                              "mode": "InAddition",
+                              "mode": "Replace",
                               "subtype": "Food"
                             }
                           },
