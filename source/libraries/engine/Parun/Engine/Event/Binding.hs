@@ -1629,10 +1629,11 @@ eventBindingSlots cond = case cond of
   -- reserved source slot, which every borne trigger gets at placement.
   TriggerCondition.RoomEntered _ -> Set.empty
   -- The acting player, Ob Nixilis, Unshackled's "that player". CR 701.68c's
-  -- "blighted creature" and CR 706.2's result are not this condition's to bind:
-  -- the INSTRUCTING effect binds each at its own slot (Parun.Types.Blight,
-  -- Parun.Types.RollDie). A counted act binds its count too: CR 701.57b's
-  -- discover its N, CR 701.22a's scry how many it put on the bottom.
+  -- "blighted creature" is not this condition's to bind: the INSTRUCTING
+  -- effect binds it (Parun.Types.Blight). CR 706.2's result is bound only
+  -- sometimes (eventBindingSlotsSometimes). A counted act binds its count too:
+  -- CR 701.57b's discover its N, CR 701.22a's scry how many it put on the
+  -- bottom.
   TriggerCondition.PlayerActs acted | Set.member (PlayerActed.action acted) Game.countedActions -> Set.fromList [Binding.triggerPlayer, Binding.eventAmount]
   TriggerCondition.PlayerActs _ -> Set.singleton Binding.triggerPlayer
   -- Nothing: Withengar Unbound's payload points at no one -- it grows itself.

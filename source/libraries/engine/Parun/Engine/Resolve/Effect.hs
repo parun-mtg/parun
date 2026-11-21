@@ -1179,7 +1179,7 @@ throwSettled runSubgame roll perDie = do
                   -- that player rolled".
                   Just () -> do
                     State.modify' (Dice.spendLimit stated offer)
-                    rethrow controller
+                    rethrowRecorded controller
               Right (oid, ability) -> do
                 answer <- ask
                 case answer of
@@ -1190,7 +1190,7 @@ throwSettled runSubgame roll perDie = do
                       after <- State.get
                       pure (activated && Scratch.rethrowRequested (GameState.scratch after))
                     if requested
-                      then rethrow payer
+                      then rethrowRecorded payer
                       else offering rest thrower natural
       -- CR 706.2b's reroll is a roll: Pippa, Duchess of Dice's ruling has it
       -- trigger "whenever you roll a die", so it is CR 706.1's event and goes
@@ -1214,6 +1214,10 @@ throwSettled runSubgame roll perDie = do
       -- A die the CR 706.6 ignore would take may still be rerolled first:
       -- docs/decisions.md, "Whether a reroll reaches a die before the lowest roll is
       -- ignored".
+      --
+      -- Answers, beside the die, the number the reroll came up for its event,
+      -- Nothing where a coin stood in for it: the caller records the event,
+      -- since one reroll may reroll several dice at once (`rerollingDiceThrough`).
       rethrow by = do
         -- The planar die past CR 614.1a's loop: every printed row reads a
         -- number (Parun.Engine.Replacement's DieRollR arm).
@@ -1222,23 +1226,37 @@ throwSettled runSubgame roll perDie = do
             then Event.proposeDiceRoll (reflipWindow runSubgame) by sides 1 0
             else pure (Right roll {Throw.thrower = by, Throw.units = Seq.singleton 1, Throw.ignored = 0})
         case settled of
-          Left results -> rerollingWith False by (Maybe.fromMaybe 1 (Maybe.listToMaybe results))
+          Left results -> fmap (\die -> (die, Nothing)) (rerollingWith False by (Maybe.fromMaybe 1 (Maybe.listToMaybe results)))
           Right again -> do
-            kept <- naturals False again (pure 0)
-            -- Recorded once its number is up, as recordRoll records a roll:
-            -- the reroll's own natural result is "those results" for Farideh,
-            -- Devil's Chosen (docs/decisions.md, "Which result a reroll's
-            -- trigger reads"). The planar die's has no number (CR 901.9d).
-            let rerolled = case kept of
-                  (total, _) : _ | numbered -> GameEvent.CountedAct (CountedAct.MkCountedAct PlayerAction.RollDice by (Integer.toNaturalSaturating total))
-                  _ -> GameEvent.PlayerActed (PlayerActed.MkPlayerActed PlayerAction.RollDice by)
-            State.modify' (Event.recordEvent rerolled)
+            (faces, kept) <- naturals False again (pure 0)
             -- One kept: a reroll names one die, and every die a row adds comes
             -- with an ignore. A d20 rolled for a coin flipped for the reroll
             -- reads back as that coin's 1 or 20.
+            --
+            -- The number is the highest its kept dice came up, before any
+            -- reroll of them: a later reroll modifies the original roll, not
+            -- this one (docs/decisions.md, "Which result a reroll's trigger
+            -- reads").
+            let came = Foldable.foldl' max 0 faces
             pure $ case kept of
-              (total, thrower) : _ -> (thrower, readBack again (Integer.toNaturalSaturating total))
-              [] -> (by, 1)
+              (total, thrower) : _ -> ((thrower, readBack again (Integer.toNaturalSaturating total)), Just came)
+              [] -> ((by, 1), Just came)
+      -- CR 706.1's event for one reroll, which rerolls its dice at once, so
+      -- "whenever you roll one or more dice" triggers once for it (CR 603.2):
+      -- its number is the highest among them, as recordRoll's is. Under the
+      -- rerolling player (Pippa, Duchess of Dice's ruling). The planar die's
+      -- has no number (CR 901.9d). Nothing for a reroll a coin stood in for.
+      recordReroll by came = case Maybe.catMaybes came of
+        [] -> pure ()
+        numbers ->
+          State.modify' . Event.recordEvent $
+            if numbered
+              then GameEvent.CountedAct (CountedAct.MkCountedAct PlayerAction.RollDice by (Foldable.foldl' max 0 numbers))
+              else GameEvent.PlayerActed (PlayerActed.MkPlayerActed PlayerAction.RollDice by)
+      rethrowRecorded by = do
+        (die, came) <- rethrow by
+        recordReroll by [came]
+        pure die
       readBack again natural = if Throw.instead again then maybe natural Event.resultOfFace (Event.faceOfResult natural) else natural
       -- Whether an offer can still go through: a static offer's budget admits
       -- it and its cost is payable, an activation passes the gate a priority
@@ -1337,17 +1355,19 @@ throwSettled runSubgame roll perDie = do
           _ -> pure answer
       duringRoll natural = Common.withThrowing (ThrowResult.DieCameUp natural)
       windowCandidates = fmap (\(pid, oid, ability) -> (pid, Just oid, Right (oid, ability))) . windowAbilities
+      -- The face thrown beside the die once its offers are done.
       rollOne by = do
         rolled <- Game.ask (Prompt.RollDie sides)
-        rerolling by (faceOf rolled)
+        fmap (\die -> (faceOf rolled, die)) (rerolling by (faceOf rolled))
       -- CR 706.2b's first step over the roll as a whole, once each of its dice
       -- has had the offers that reach that die alone: a modifier reaching any
       -- number of the dice its payer rolled at the same time, for one payment
       -- (Monitor Monitor, Parun.Types.RerollReach). Its payer picks the dice
       -- (Prompt.RerollDice), and each picked die is rerolled as `rethrow`
-      -- rerolls one, with its own offers. The offers are re-read after each
-      -- one taken, Night Shift's budget (Dice.withinLimit) keeping a spent one
-      -- out, so a second Monitor Monitor sees the dice the first left.
+      -- rerolls one, with its own offers, under one event (`recordReroll`).
+      -- The offers are re-read after each one taken, Night Shift's budget
+      -- (Dice.withinLimit) keeping a spent one out, so a second Monitor
+      -- Monitor sees the dice the first left.
       --
       -- Only at the roll's top: a die `rethrow` throws is one of this roll's
       -- dice, so it is offered here, with the others, rather than alone.
@@ -1380,8 +1400,9 @@ throwSettled runSubgame roll perDie = do
                 Just chosen -> do
                   State.modify' (Dice.spendLimit stated offer)
                   let targets = Set.map (List.genericIndex (NonEmpty.toList indices)) chosen
-                  rerolled <- traverse (\(i, die) -> if Set.member i targets then rethrow payer else pure die) (zip [0 :: Natural ..] dice)
-                  rerollingDice rerolled
+                  rerolled <- traverse (\(i, die) -> if Set.member i targets then rethrow payer else pure (die, Nothing)) (zip [0 :: Natural ..] dice)
+                  recordReroll payer (fmap snd rerolled)
+                  rerollingDice (fmap fst rerolled)
       -- The roll's units again, `flat` cut back to their sizes.
       regroup units flat = case units of
         [] -> []
@@ -1408,8 +1429,16 @@ throwSettled runSubgame roll perDie = do
       --
       -- `atTop` is whether this is the roll itself, which takes the offers over
       -- several dice (rerollingDice), or a die `rethrow` rerolls.
+      --
+      -- Answers, beside each die kept, the face it was thrown with before any
+      -- reroll of it, for a reroll's event (`rethrow`); Nothing at the top,
+      -- which reads none. Carried through the choice and the ignore, so a face
+      -- whose die is not kept is not read (CR 706.6), and two dice differing
+      -- in it are told apart there.
       naturals atTop settled modifierOf = do
-        thrown <- traverse (\n -> traverse (const (rollOne (Throw.thrower settled))) [1 .. n]) (Foldable.toList (Throw.units settled))
+        rolledWithFaces <- traverse (\n -> traverse (const (rollOne (Throw.thrower settled))) [1 .. n]) (Foldable.toList (Throw.units settled))
+        let thrown = fmap (fmap snd) rolledWithFaces
+            faces = fmap (fmap (\(face, _) -> if atTop then Nothing else Just face)) rolledWithFaces
         rerolled <- if atTop then fmap (regroup thrown) (rerollingDice (concat thrown)) else pure thrown
         -- After the rerolls above, which is CR 706.2b's order: rerolls are
         -- considered first, and what they leave is the natural result the
@@ -1418,19 +1447,20 @@ throwSettled runSubgame roll perDie = do
         -- Left unclamped: CR 706.2's result is the number after EVERY
         -- modifier, so a shift from another source applies to this sum as it
         -- stands, negative or not, and only the final figure is clamped below.
-        units <- traverse (traverse (\(thrower, natural) -> fmap (\modifier -> (toInteger natural + modifier, thrower)) modifierOf)) rerolled
+        units <- traverse (traverse (\((thrower, natural), face) -> fmap (\modifier -> ((toInteger natural + modifier, thrower), face)) modifierOf)) (zipWith zip rerolled faces)
         picked <- Monad.forM units $ \dice -> case NonEmpty.nonEmpty dice of
           -- Unreachable: a unit starts at one die and only a scaling that
           -- cannot reach zero resizes it. Defensive: a die of 1.
-          Nothing -> pure (1, Throw.thrower settled)
+          Nothing -> pure ((1, Throw.thrower settled), Nothing)
           Just offered
             | all (== NonEmpty.head offered) (NonEmpty.tail offered) -> pure (NonEmpty.head offered)
             | otherwise -> do
                 gs <- State.get
-                answer <- Game.choose (Prompt.ChooseDieResult (Decide.deciderFor (Throw.thrower settled) gs) (Throw.thrower settled) Nothing (fmap (Integer.toNaturalSaturating . fst) offered))
+                answer <- Game.choose (Prompt.ChooseDieResult (Decide.deciderFor (Throw.thrower settled) gs) (Throw.thrower settled) Nothing (fmap (Integer.toNaturalSaturating . fst . fst) offered))
                 pure (Replacement.at dice answer (NonEmpty.head offered))
-        Dice.ignoreLowest (Throw.thrower settled) fst snd (Throw.ignored settled) picked
-  kept <- naturals True roll perDie
+        kept <- Dice.ignoreLowest (Throw.thrower settled) (fst . fst) (\((_, thrower), face) -> (thrower, face)) (Throw.ignored settled) picked
+        pure (Maybe.mapMaybe snd kept, fmap fst kept)
+  (_, kept) <- naturals True roll perDie
   -- CR 706.6 before the second step: an ignored roll is one "no effects apply
   -- to", so it is not offered for an adjustment.
   --
