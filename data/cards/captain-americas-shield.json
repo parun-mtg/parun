@@ -108,8 +108,11 @@
                 "targetSlots": {
                   "target": {
                     "filter": {
-                      "type": "ControlledByRole",
-                      "value": "Defending"
+                      "type": "HeldByBound",
+                      "value": {
+                        "holder": "Controller",
+                        "slot": "thatPlayer"
+                      }
                     },
                     "pool": {
                       "type": "Creatures"
