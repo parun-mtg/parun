@@ -822,7 +822,7 @@ lastKnownRiderSpec s registry =
                     -- CR 508.1k / 509.1g: this board declares no combat at all.
                     LastKnown.attacking = False,
                     LastKnown.attackTarget = Nothing,
-                    LastKnown.blocking = False,
+                    LastKnown.blocking = Nothing,
                     -- CR 310.9a: the Sorcerer is no battle, so nobody protects it.
                     LastKnown.protector = Nothing,
                     LastKnown.paidCosts = Map.empty,

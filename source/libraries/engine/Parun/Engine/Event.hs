@@ -12322,7 +12322,7 @@ lastKnownFrom gs oid obj =
     -- CR 508.1k / 509.1g.
     (Game.isAttacking oid gs)
     (Game.attackTargetOf oid gs)
-    (Game.isBlocking oid gs)
+    (Game.blockingOf oid gs)
     -- CR 310.9a: Nothing for everything that is not a battle.
     (Object.protector obj)
     -- CR 400.7d's cost record.

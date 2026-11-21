@@ -103,7 +103,7 @@ spec s = Spec.describe s "Parun.Codec.LastKnown" $ do
           LastKnown.acquisition = Acquisition.Copied (Timestamp.MkTimestamp 5),
           LastKnown.attacking = False,
           LastKnown.attackTarget = Nothing,
-          LastKnown.blocking = True,
+          LastKnown.blocking = Just (Set.fromList [ObjectId.MkObjectId 12, ObjectId.MkObjectId 13]),
           LastKnown.protector = Just (PlayerId.MkPlayerId 7),
           LastKnown.paidCosts = Map.singleton (Keyword.Offspring (Cost.MkCost (Just (ManaCost.MkManaCost [ManaSymbol.Generic 2])) [])) (Map.singleton (KeywordInstance.Own 1) 1),
           LastKnown.castUsing = Just Keyword.Flash,
@@ -131,7 +131,7 @@ spec s = Spec.describe s "Parun.Codec.LastKnown" $ do
           <> ",\"copiable\":"
           <> minimalJson
           <> ",\"attached\":[9],\"host\":{\"type\":\"ToPlayer\",\"value\":11}"
-          <> ",\"chosenNames\":[{\"key\":{\"type\":\"Own\"},\"value\":{\"8\":[\"Goblin Piker\"]}}],\"chosenPlayers\":[{\"key\":{\"type\":\"Copied\",\"value\":5},\"value\":[{\"key\":{\"type\":\"Promised\",\"value\":[{\"type\":\"Food\"},{\"type\":\"Own\",\"value\":1}]},\"value\":3}]}],\"chosenColors\":[{\"key\":{\"type\":\"Own\"},\"value\":[\"Green\"]}],\"chosenSubtype\":[{\"key\":{\"type\":\"Copied\",\"value\":6},\"value\":[\"Goblin\"]}],\"chosenCardType\":[{\"key\":{\"type\":\"Own\"},\"value\":\"Creature\"}],\"chosenNumber\":[{\"key\":{\"type\":\"Own\"},\"value\":5}],\"chosenObjects\":[{\"key\":{\"type\":\"Own\"},\"value\":[11]}],\"acquisition\":{\"type\":\"Copied\",\"value\":5},\"attacking\":false,\"attackTarget\":null,\"blocking\":true,\"protector\":7"
+          <> ",\"chosenNames\":[{\"key\":{\"type\":\"Own\"},\"value\":{\"8\":[\"Goblin Piker\"]}}],\"chosenPlayers\":[{\"key\":{\"type\":\"Copied\",\"value\":5},\"value\":[{\"key\":{\"type\":\"Promised\",\"value\":[{\"type\":\"Food\"},{\"type\":\"Own\",\"value\":1}]},\"value\":3}]}],\"chosenColors\":[{\"key\":{\"type\":\"Own\"},\"value\":[\"Green\"]}],\"chosenSubtype\":[{\"key\":{\"type\":\"Copied\",\"value\":6},\"value\":[\"Goblin\"]}],\"chosenCardType\":[{\"key\":{\"type\":\"Own\"},\"value\":\"Creature\"}],\"chosenNumber\":[{\"key\":{\"type\":\"Own\"},\"value\":5}],\"chosenObjects\":[{\"key\":{\"type\":\"Own\"},\"value\":[11]}],\"acquisition\":{\"type\":\"Copied\",\"value\":5},\"attacking\":false,\"attackTarget\":null,\"blocking\":[12,13],\"protector\":7"
           <> ",\"paidCosts\":[{\"key\":{\"type\":\"Offspring\",\"value\":{\"mana\":[{\"type\":\"Generic\",\"value\":2}]}},\"value\":[{\"key\":{\"type\":\"Own\",\"value\":1},\"value\":1}]}]"
           <> ",\"castUsing\":{\"type\":\"Flash\"}"
           <> ",\"prototyped\":true"
@@ -174,7 +174,7 @@ spec s = Spec.describe s "Parun.Codec.LastKnown" $ do
           LastKnown.acquisition = Acquisition.Own,
           LastKnown.attacking = True,
           LastKnown.attackTarget = Just (AttackTarget.OfPlaneswalker (ObjectId.MkObjectId 8)),
-          LastKnown.blocking = False,
+          LastKnown.blocking = Nothing,
           LastKnown.protector = Nothing,
           LastKnown.paidCosts = Map.empty,
           LastKnown.castUsing = Nothing,
@@ -201,7 +201,7 @@ spec s = Spec.describe s "Parun.Codec.LastKnown" $ do
           <> ",\"copiable\":"
           <> minimalJson
           <> ",\"attached\":[]"
-          <> ",\"chosenNames\":[],\"attacking\":true,\"attackTarget\":{\"type\":\"OfPlaneswalker\",\"value\":8},\"blocking\":false,\"protector\":null"
+          <> ",\"chosenNames\":[],\"attacking\":true,\"attackTarget\":{\"type\":\"OfPlaneswalker\",\"value\":8},\"blocking\":null,\"protector\":null"
           <> ",\"zone\":\"Stack\"} "
       )
   Spec.it s "has a schema" $

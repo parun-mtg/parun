@@ -209,18 +209,20 @@ data LastKnown = MkLastKnown
     -- which Combat.attackingNothing records. Parun.BattleSpec's Ninja returning a
     -- Piker whose Siege was stolen is the proof.
     attackTarget :: !(Maybe AttackTarget.AttackTarget),
-    -- | CR 509.1g: was it blocking as it left -- the same membership
-    -- Parun.Engine.Filter.View's `blocking` reports, read off TurnRegisters.combat
-    -- before the object ceased.
+    -- | CR 509.1g: the attackers it was blocking as it left, through the one
+    -- classifier Game.blockingOf, read off TurnRegisters.combat before the object
+    -- ceased: Nothing when it was not blocking, and an empty set when every
+    -- attacker it blocked had left combat (Combat.blockingNothing).
     --
     -- Not a characteristic either (CR 109.3's list has no combat status), and not
     -- recoverable from anything above: CR 506.4 takes a departed creature out of
     -- combat, so the live read is unavailable exactly when CR 603.4's intervening
     -- "if" on a dies-trigger still asks for it (Guildsworn Prowler).
     --
-    -- A Bool rather than the attackers this creature was blocking, because that
-    -- is the whole of what the view reports and all any clause in the pool asks.
-    blocking :: !Bool,
+    -- Which attackers, beside whether, because CR 603.10a asks it of a dead
+    -- blocker: Baneclaw Marauder's "a creature blocking this creature dies"
+    -- (Parun.Engine.Count.lastKnownView's Filter.blocked).
+    blocking :: !(Maybe (Set.Set ObjectId.ObjectId)),
     -- | CR 310.9a: which player protected it as it left -- the same
     -- Object.protector the live object carried, and Nothing for everything that
     -- is not a battle.
