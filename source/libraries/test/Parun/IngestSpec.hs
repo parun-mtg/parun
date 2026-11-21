@@ -57,9 +57,8 @@ spec s corpus = Spec.describe s "Parun.Ingest" $ do
   -- that does not has an empty marker, data/oracle-unrendered/SLUG.txt, one
   -- path per card so that parallel branches cannot conflict: a card that
   -- stops rendering fails here, and one that starts loses its marker;
-  -- `parun oracle` syncs them. Not
-  -- implemented: checking the abilities that do render on a listed card
-  -- (#5488).
+  -- `parun oracle` syncs them. A listed card's rendered abilities go
+  -- unchecked until parsing and rendering are revisited; see #5488.
   Spec.it s "the cards that do not render are exactly those listed" $ do
     root <- Registry.defaultRoot
     markers <- Directory.listDirectory (root <> "/../oracle-unrendered")
