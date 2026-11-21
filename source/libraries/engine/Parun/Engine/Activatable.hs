@@ -365,7 +365,7 @@ activationSourcesGiven grants pcs pid gs =
       mine = Set.fromList own
       openToThem oid ability = ActivatedAbility.activator ability /= Activator.Related PlayerRelation.You && mayActivateGiven grants pid oid ability gs
       others = filter (\oid -> not (Set.member oid mine) && any (openToThem oid) (abilitiesForGiven pcs Map.empty oid gs)) (Set.toList (GameState.battlefield gs))
-   in own <> others <> Game.zoneMembers Zone.Hand pid gs <> Game.zoneMembers Zone.Graveyard pid gs <> Game.zoneMembers Zone.Command pid gs <> Game.zoneMembers Zone.Exile pid gs
+   in own <> others <> Game.activationZoneMembers pid gs
 
 -- CR 606.3 (CR 306.5d says the same for planeswalkers): a loyalty ability may be
 -- activated only with priority and an empty stack during a main phase of its

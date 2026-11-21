@@ -16,6 +16,7 @@ import qualified Data.Ord as Ord
 import qualified Data.Sequence as Seq
 import qualified Data.Set as Set
 import Numeric.Natural (Natural)
+import qualified Parun.Engine.AbilityZone as AbilityZone
 import qualified Parun.Engine.Attach as Attach
 import qualified Parun.Engine.Binding as Binding
 import qualified Parun.Engine.Children as Children
@@ -48,6 +49,7 @@ import qualified Parun.Engine.Resolve.Slots as Slots
 import qualified Parun.Engine.SourceContext as SourceContext
 import qualified Parun.Engine.Subtype as Subtype.Engine
 import qualified Parun.Engine.Turn as Turn
+import qualified Parun.Engine.Vanguard as Vanguard
 import qualified Parun.Extra.Integer as Integer
 import qualified Parun.Extra.Natural as Natural
 import qualified Parun.Types.AbilityKind as AbilityKind
@@ -534,11 +536,23 @@ choicesOf howMany spread offered = case spread of
 -- which is printed on no card and whose one clause is minted here.
 manaRoutesOfGiven :: Map.Map ObjectId PC.ProjectedCharacteristics -> ObjectId -> GameState -> [(Cost Keyword.Keyword, [ActivationRestriction.ActivationRestriction], Maybe (ActivatedAbility.ActivatedAbility Card.Type.Card (GrantedAbility.GrantedAbility Card.Type.Card)), [(Clause.Clause Card.Type.Card (GrantedAbility.GrantedAbility Card.Type.Card), [ManaAddition.ManaAddition])])]
 manaRoutesOfGiven pcs oid gs =
-  let pc = Projection.projectGiven pcs oid gs
+  let pc
+        | Set.member oid (GameState.battlefield gs) = Projection.projectGiven pcs oid gs
+        | otherwise = Projection.projectEachGiven pcs oid gs
+      -- CR 113.6 / 113.6m: only the routes functioning in the object's zone,
+      -- as Parun.Engine.Activatable.abilitiesForGiven reads it: Jack-o'-Lantern
+      -- in a graveyard offers its "Exile this card from your graveyard" and an
+      -- Ashnod's Altar there nothing, which data/scenarios'
+      -- ashnod-s-altar-in-a-graveyard-offers-no-mana proves. CR 305.6's
+      -- intrinsic route states no zone either; that gate is a fence, {T} being
+      -- unpayable off the battlefield. An id that has ceased keeps every route.
+      home = Vanguard.homeZoneOf oid gs
+      functionsHere ability = maybe True (\zone -> AbilityZone.functionsIn home (PC.delayedAbilities pc) zone ability) zoneNow
+      zoneNow = fmap Object.zone (Game.lookupObject oid gs)
       fromSubtypes =
         fmap
           (\manaType -> (Mint.intrinsicManaCost, [], Nothing, [(Mint.intrinsicManaClause manaType, [Mint.intrinsicManaAddition manaType])]))
-          (Subtype.Engine.intrinsicManaOf pc)
+          (if maybe True (== home) zoneNow then Subtype.Engine.intrinsicManaOf pc else [])
       context = Projection.sourceContext gs (Projection.controllerOf oid gs) oid
       applies = maybe True (Condition.holds (Projection.fullView gs) context gs oid) . Clause.condition
       selectionRoutes ability =
@@ -548,7 +562,7 @@ manaRoutesOfGiven pcs oid gs =
                in (ActivatedAbility.cost ability, Keyword.Engine.restrictionsOf ability, Just ability, fmap (\clause -> (clause, offered clause)) clauses)
           )
           (Modal.selectionClauses (ActivatedAbility.modal ability))
-      fromAbilities = concatMap selectionRoutes (filter ManaAbility.isManaAbility (Projection.abilitiesGiven pcs oid gs))
+      fromAbilities = concatMap selectionRoutes (filter (\ability -> ManaAbility.isManaAbility ability && functionsHere ability) (Projection.abilitiesFromCharacteristics (Projection.fullView gs) pc oid gs))
    in fromSubtypes <> fromAbilities
 
 -- What tapping this object for mana could actually put in a pool: every route
@@ -1437,9 +1451,10 @@ lastExiledWith reader acquisition oid gs = Game.lastExiled (Game.linkedPile Noth
 -- CR 205.2a's card type.
 --
 -- CR 205.4g is PERMANENT-scoped and CR 106.3's first clause is
--- wider, so this read would be too narrow for a source that is not a permanent. Nothing reaches
--- it with one. Parun.Engine.Cost.tapForMana and payableResolutions take their oid
--- from manaSourcesGiven, which filters the battlefield; Parun.Engine.Resolve's
+-- wider, so the snow read would be too narrow for a source that is not a
+-- permanent. The one such source in the pool, Jack-o'-Lantern exiling itself
+-- from a graveyard (manaSourcesGiven's off-battlefield cards), is not snow; its
+-- artifact type is CR 205.2a's, a card's in every zone. Parun.Engine.Resolve's
 -- Effect.AddMana arm takes the resolving ability's source, which is a permanent
 -- for every producer in the pool and need not be one in general.
 --
@@ -1769,10 +1784,11 @@ endRetentionAtEndOf ending gs =
       ended pool = Mana.MkMana (fmap ordinary (Mana.unwrap pool))
    in gs {GameState.manaPool = fmap ended (GameState.manaPool gs)}
 
--- Permanents with a mana ability this player could activate right now: their
--- own (CR 602.2), and another player's whose ability says any player may
--- activate it (CR 602.1b). CR 109.4a and CR 113.8 make the player activating
--- it the ability's controller either way.
+-- Objects with a mana ability this player could activate right now: their own
+-- permanents and their own cards in a hand, a graveyard, the command zone or
+-- exile (CR 602.2, 113.6j), and another player's permanent whose ability says
+-- any player may activate it (CR 602.1b). CR 109.4a and CR 113.8 make the
+-- player activating it the ability's controller either way.
 --
 -- ONE control-grant walk and ONE whole-board projection for the whole sweep,
 -- threaded into every question asked of every permanent -- the hoist
@@ -1810,16 +1826,23 @@ manaSourcesGiven inFlight capacity grants pcs pid gs =
       -- the tap and sickness rules reach only such a cost. A Blood Pet is a
       -- black source while tapped and on the turn it arrives, because
       -- "Sacrifice this creature: Add {B}" is neither (#1116).
-      isSource oid = any (\(cost, restrictions, ability, _) -> Maybe.isJust (routeAccess (mayTakeRoute (Set.member oid mine) pid oid gs) (borrowed oid) cost ability) && not (inFlightRoute inFlight oid ability) && Activations.times (capacity ForOffer pcs pid oid cost restrictions ability gs) > 0) (manaRoutesOfGiven pcs oid gs)
+      isSource oid = any (\(cost, restrictions, ability, _) -> Maybe.isJust (routeAccess (mayTakeRoute (Set.member oid mine || Set.member oid owned) pid oid gs) (borrowed oid) cost ability) && not (inFlightRoute inFlight oid ability) && Activations.times (capacity ForOffer pcs pid oid cost restrictions ability gs) > 0) (manaRoutesOfGiven routesBoard oid gs)
       -- CR 602.2's candidates: what this player controls, then its exceptions
       -- -- a permanent someone else controls, which isSource then asks of its
       -- routes open to them (CR 602.1b) and of the {T} routes an
       -- effect lets this player tap for mana (`borrowed`, Piracy).
       borrowed = PlayerEffect.tapForManaGrants pid gs
-      -- Activatable.activationSourcesGiven is the same list for the stack.
+      -- Activatable.activationSourcesGiven is the same list for the stack,
+      -- with the same off-battlefield cards (`offBoard`), which this player
+      -- activates as their owner (CR 108.4a) and which offer only the routes
+      -- functioning where they are (manaRoutesOfGiven).
       own = Projection.controlsGiven grants pid gs
       mine = Set.fromList own
       others = filter (`Set.notMember` mine) (Set.toList (GameState.battlefield gs))
+      offBoard = Game.activationZoneMembers pid gs
+      owned = Set.fromList offBoard
+      -- One gather for every off-battlefield card, each projected only once read.
+      routesBoard = Map.union pcs (Projection.projectEach owned gs)
       -- CR 724.7, in the one form a card prints it: Word of Command's "the
       -- player can activate mana abilities only if they're from lands that
       -- player controls". Read off the control row rather than from the
@@ -1836,7 +1859,7 @@ manaSourcesGiven inFlight capacity grants pcs pid gs =
       -- Sol Ring is a land here and a Dryad Arbor is one too.
       landsOnly = maybe False PlayerControl.manaFromLandsOnly (Map.lookup pid (GameState.control gs) >>= Decide.effective)
       isLand oid = maybe False (Set.member CardType.Land . PC.cardTypes) (Map.lookup oid pcs)
-   in filter (\oid -> isSource oid && (not landsOnly || (isLand oid && Set.member oid mine))) (own <> others)
+   in filter (\oid -> isSource oid && (not landsOnly || (isLand oid && Set.member oid mine))) (own <> others <> offBoard)
 
 -- CR 602.2's permission over one mana route: whoever its ability's activator
 -- admits (`mayTake`, mayTakeRoute; CR 602.1b, Mana Cache) or, where an effect

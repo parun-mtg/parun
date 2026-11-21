@@ -869,6 +869,13 @@ zoneMembers zone pid gs =
         Zone.Ante -> ownedShared (GameState.ante gs)
         Zone.Stack -> filter ownedBy (allStacks gs)
 
+-- CR 602.2's off-battlefield candidates: this player's own cards in a hand, a
+-- graveyard, the command zone or exile, whose owner activates them (CR 108.4a).
+-- Parun.Engine.Activatable.activationSourcesGiven and
+-- Parun.Engine.Mana.manaSourcesGiven both sweep it.
+activationZoneMembers :: PlayerId -> GameState -> [ObjectId]
+activationZoneMembers pid gs = foldMap (\zone -> zoneMembers zone pid gs) [Zone.Hand, Zone.Graveyard, Zone.Command, Zone.Exile]
+
 -- CR 404.1: the top card of a player's graveyard, its NEWEST arrival and so its
 -- LAST member (insertIntoZone appends one). Parun.Types.ObjectRef.TopOfGraveyard
 -- and Parun.Types.Scope.InPosition both read topDown, so the card a Condition tests

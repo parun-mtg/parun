@@ -4360,8 +4360,8 @@ payLifeForMana perform pid life manaType = do
           [ManaSegment.MkManaSegment {ManaSegment.activation = 0, ManaSegment.opened = start, ManaSegment.closed = end}]
         )
 
--- The mana sources CR 605.3a OFFERS: every permanent this player could tap for
--- mana right now, whatever that tap itself costs. ONE function pairing
+-- The mana sources CR 605.3a OFFERS: every object whose mana ability this
+-- player could activate right now, whatever that activation itself costs. ONE function pairing
 -- `manaActivations` with the sweep taken under it, so a hoisted list cannot be
 -- built under a capacity the reader does not read.
 --
