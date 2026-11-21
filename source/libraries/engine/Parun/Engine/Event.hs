@@ -7359,24 +7359,50 @@ settlesFirst order gs threads =
 -- question or a CR 616.1 choice there.
 threadShapes :: [PlayerId] -> GameState -> [Replacement.DamageThread] -> (Replacement.DamageThread -> Bool, Replacement.DamageThread -> Bool, Replacement.DamageThread -> Bool)
 threadShapes order gs threads =
-  let rows (de, spent) = filter (\row -> not (Set.member (ReplacementCandidate.identity row) spent)) (Replacement.applicable Nothing gs (ProposedEvent.WouldDealDamage de))
-      delivers de row = Maybe.isJust (alsoDealt gs row de) || any Replacement.redirects (Replacement.damageRewriteOf row)
-      adds thread = any (delivers (fst thread)) (rows thread)
-      lone thread = adds thread && length (rows thread) == 1
+  let delivers de row = Maybe.isJust (alsoDealt gs row de) || any Replacement.redirects (Replacement.damageRewriteOf row)
+      adds thread = any (delivers (fst thread)) (threadRows gs thread)
+      lone thread = adds thread && length (threadRows gs thread) == 1
       asked = Replacement.questioned order gs threads
-      chooses thread = length (rows thread) >= 2 || elem thread asked
+      chooses thread = length (threadRows gs thread) >= 2 || elem thread asked
    in (adds, lone, chooses)
 
--- CR 805.6: whether the order these active teammates settle in changes what
--- settlesFirst admits: no lone row goes ahead of every question, and one
--- teammate's thread adds or moves damage while another's has a choice, so
--- which of them ranks first decides whether the other's waits for what is
--- added.
+-- The rows still applicable to a thread: those CR 614.5 has not spent on it.
+threadRows :: GameState -> Replacement.DamageThread -> [ReplacementCandidate]
+threadRows gs (de, spent) = filter (\row -> not (Set.member (ReplacementCandidate.identity row) spent)) (Replacement.applicable Nothing gs (ProposedEvent.WouldDealDamage de))
+
+-- CR 805.6: whether the order these active teammates settle in changes the
+-- game. Which of two teammates ranks first decides whether the second's
+-- thread waits for what the first's adds or moves (settlesFirst), and that is
+-- observable only where the damage lands on a recipient the second chooses
+-- for (CR 616.1, `landsFor`) and the second has a question or rows whose order
+-- shows (Replacement.interchangeable): a lone row goes ahead of every
+-- question, damage landing elsewhere meets none of the second's choices, and
+-- rows that commute are no choice. The team scenarios
+-- cr-805-6-damage-eye-for-an-eye-adds-elsewhere-raises-no-order,
+-- cr-805-6-damage-eye-for-an-eye-adds-onto-its-own-chooser-raises-no-order,
+-- cr-805-6-damage-onto-a-teammate-s-commuting-furnaces-raises-no-order,
+-- cr-805-6-damage-a-lone-eye-for-an-eye-raises-no-order and
+-- cr-805-6-damage-a-teammate-with-no-choice-raises-no-order prove each.
 teamOrderMatters :: GameState -> [Replacement.DamageThread] -> [PlayerId] -> Bool
 teamOrderMatters gs threads team =
-  let (adds, lone, chooses) = threadShapes (Game.apnapOrder gs) gs threads
-      ofTeam holds = [pid | thread <- threads, holds thread, Just pid <- [Replacement.chooserOf gs (ProposedEvent.WouldDealDamage (fst thread))], elem pid team]
-   in not (any lone threads) && or [adder /= chooser | adder <- ofTeam adds, chooser <- ofTeam chooses]
+  let (adds, lone, _) = threadShapes (Game.apnapOrder gs) gs threads
+      asked = Replacement.questioned (Game.apnapOrder gs) gs threads
+      decides thread = elem thread asked || not (Replacement.interchangeable gs (threadRows gs thread))
+      ofTeam holds = [(pid, thread) | thread <- threads, holds thread, Just pid <- [Replacement.chooserOf gs (ProposedEvent.WouldDealDamage (fst thread))], elem pid team]
+   in not (any lone threads)
+        && or
+          [ adder /= chooser && any (landsFor gs chooser (fst added)) (threadRows gs added)
+          | (adder, added) <- ofTeam adds,
+            (chooser, _) <- ofTeam decides
+          ]
+
+-- Whether damage this row adds to or moves off `de` may land on a recipient
+-- `pid` chooses for (CR 616.1): what it adds, read off its recipient, and
+-- anything it redirects, whose destination is not read here.
+landsFor :: GameState -> PlayerId -> DamageEvent -> ReplacementCandidate -> Bool
+landsFor gs pid de row =
+  any ((== Just pid) . Replacement.chooserOf gs . ProposedEvent.WouldDealDamage) (alsoDealt gs row de)
+    || any Replacement.redirects (Replacement.damageRewriteOf row)
 
 -- What replaced `oid`'s destruction, queued for the drain with `oid` under
 -- Binding.sparedPermanent and the row's source under Binding.triggerSource
