@@ -1,0 +1,126 @@
+{
+  "board": {
+    "active": "bob",
+    "seats": [
+      {
+        "battlefield": [
+          {
+            "card": "Enduring Angel",
+            "label": "angel"
+          },
+          {
+            "card": "Ajani's Pridemate",
+            "label": "pridemate"
+          }
+        ],
+        "library": [
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          }
+        ],
+        "life": 5,
+        "name": "alice"
+      },
+      {
+        "battlefield": [
+          {
+            "card": "Hill Giant",
+            "label": "g1",
+            "ready": true
+          },
+          {
+            "card": "Hill Giant",
+            "label": "g2",
+            "ready": true
+          }
+        ],
+        "library": [
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          }
+        ],
+        "name": "bob"
+      }
+    ],
+    "step": "BeginningOfCombat"
+  },
+  "description": "CR 120.4d / 119.5: simultaneous combat damage reducing Enduring Angel's controller from 5 to 0 or less is replaced whole, and the life set to 3 is a loss, so Ajani's Pridemate does not trigger",
+  "note": "Alice at 5 with the Angel and Ajani's Pridemate; Bob's two Hill Giants deal her 6 at once. Settled per source, the first 3 would take her to 2 and the replaced second would set her to 3, a gain of 1 that puts a counter on Pridemate.",
+  "timeline": [
+    {
+      "do": {
+        "Attack": [
+          "$g1",
+          "$g2"
+        ]
+      },
+      "player": "bob",
+      "step": "DeclareAttackers",
+      "turn": 1
+    },
+    {
+      "do": {
+        "Block": {}
+      },
+      "player": "alice",
+      "step": "DeclareBlockers",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Life": {
+          "life": 3,
+          "player": "alice"
+        }
+      },
+      "player": "bob",
+      "step": "EndOfCombat",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Names": {
+          "names": [
+            "Angelic Enforcer"
+          ],
+          "object": "$angel"
+        }
+      },
+      "player": "bob",
+      "step": "EndOfCombat",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Counters": {
+          "count": 0,
+          "kind": {
+            "type": "PlusOnePlusOne"
+          },
+          "object": "$pridemate"
+        }
+      },
+      "player": "bob",
+      "step": "EndOfCombat",
+      "turn": 1
+    }
+  ]
+}
