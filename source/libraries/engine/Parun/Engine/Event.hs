@@ -11664,7 +11664,8 @@ createTokens settle controller shapes die n tapped entering attached marks = do
               -- lot's entries apply, changeZonesTogether's step. The last
               -- lot's wait for the instruction to end, as a lone lot's do, so
               -- a caller's CR 508.4 attack is made first.
-              let enterLot = traverse (\oid -> (,) oid <$> runEntry settle (Just Zone.Battlefield) Nothing (siblingsOf oid) oid)
+              let enterLot :: [ObjectId] -> Game [(ObjectId, Maybe EntryRefusal.EntryRefusal)]
+                  enterLot = traverse (\oid -> (,) oid <$> runEntry settle (Just Zone.Battlefield) Nothing (siblingsOf oid) oid)
                   inOrder = Maybe.mapMaybe (`List.lookup` firsts) orderedFirsts
               refusals <- concat <$> traverse (\(i, lot) -> enterLot lot <* Monad.when (i < length inOrder) (Settle.entryEffects settle)) (zip [1 :: Int ..] inOrder)
               let entered = [oid | oid <- kept, Just Nothing == List.lookup oid refusals]
