@@ -5373,6 +5373,7 @@ quantityReads q = case q of
   Quantity.Type.StartingDeckSize _ -> Set.empty
   Quantity.Type.Speed _ -> Set.empty
   Quantity.Type.IsMonarch _ -> Set.empty
+  Quantity.Type.HasDaytime _ -> Set.empty
   -- Reads Player.designations, which no Modification writes, so CR 613.8a's
   -- dependency cannot turn on it.
   Quantity.Type.HasPlayerDesignation {} -> Set.empty

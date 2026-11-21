@@ -31,6 +31,7 @@ import qualified Parun.Types.CounterKind as CounterKind
 import qualified Parun.Types.DamageDirection as DamageDirection
 import qualified Parun.Types.DamageKind as DamageKind
 import qualified Parun.Types.DamageTally as DamageTally
+import qualified Parun.Types.Daytime as Daytime
 import qualified Parun.Types.DealtDamage as DealtDamage
 import qualified Parun.Types.Designation as Designation
 import qualified Parun.Types.Devotion as Devotion
@@ -343,6 +344,12 @@ spec s = Spec.describe s "Parun.Codec.Quantity" $ do
       Quantity.codec
       (Quantity.HasPlayerDesignation (PlayerDesignationTally.MkPlayerDesignationTally (PlayerRef.Relative PlayerRelation.You) PlayerDesignation.EnduringStory))
       " {\"type\":\"HasPlayerDesignation\",\"value\":{\"player\":{\"type\":\"Relative\",\"value\":\"You\"},\"designation\":\"EnduringStory\"}} "
+  Spec.it s "HasDaytime" $
+    Common.assertCodec
+      s
+      Quantity.codec
+      (Quantity.HasDaytime Daytime.Night)
+      " {\"type\":\"HasDaytime\",\"value\":\"Night\"} "
   Spec.it s "OnEventTeam" $
     Common.assertCodec
       s

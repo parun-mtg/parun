@@ -383,6 +383,7 @@ printedBoxQuantity quantity = case quantity of
   Quantity.Type.StartingDeckSize {} -> False
   Quantity.Type.Speed {} -> False
   Quantity.Type.IsMonarch {} -> False
+  Quantity.Type.HasDaytime {} -> False
   Quantity.Type.HasPlayerDesignation {} -> False
   Quantity.Type.OnEventTeam {} -> False
   Quantity.Type.IsStartingPlayer {} -> False

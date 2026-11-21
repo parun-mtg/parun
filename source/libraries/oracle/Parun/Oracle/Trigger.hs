@@ -32,6 +32,7 @@ import qualified Parun.Types.Count as Count
 import qualified Parun.Types.DamageKind as DamageKind
 import qualified Parun.Types.DamageRecipient as DamageRecipient
 import qualified Parun.Types.DamageTrigger as DamageTrigger
+import qualified Parun.Types.Daytime as Daytime
 import qualified Parun.Types.DealtDamage as DealtDamage
 import qualified Parun.Types.DeclarationTrigger as DeclarationTrigger
 import qualified Parun.Types.Designation as Designation
@@ -430,7 +431,8 @@ castSpell = SlotName.MkSlotName (Text.pack "thatSpell")
 -- a hand ("you have no cards in hand"), of permanents ("you control no
 -- creatures", "there are no Zombies on the battlefield"), the source's own
 -- status ("this artifact is untapped"), a player's life, monarchy or attack
--- this turn, whose turn it is, or whether a player has begun an extra turn.
+-- this turn, whose turn it is, whether it's day or night, or whether a player
+-- has begun an extra turn.
 -- Any other condition is not spelled out here.
 condition :: Target.Context -> Condition.Condition -> [Text.Text]
 condition context c = case c of
@@ -447,6 +449,8 @@ condition context c = case c of
     (Quantity.IsMonarch who, Quantity.Literal 1) | comparison == Comparison.AtLeast -> do
       (subject, _) <- holder context who
       [subject <> (if subject == Text.pack "you" then Text.pack " are" else Text.pack " is") <> Text.pack " the monarch"]
+    -- CR 732.1, as Oracle text writes it (Wolf Strike).
+    (Quantity.HasDaytime daytime, Quantity.Literal 1) | comparison == Comparison.AtLeast -> [Text.pack (if daytime == Daytime.Day then "it's day" else "it's night")]
     -- CR 102.1, as Oracle text writes it (Blood Burglar).
     (Quantity.IsActivePlayer (PlayerRef.Relative PlayerRelation.You), Quantity.Literal 1) | comparison == Comparison.Exactly -> [Text.pack "it's your turn"]
     (Quantity.AttackersDeclaredThisTurn who, Quantity.Literal 1) | comparison == Comparison.AtLeast -> do
