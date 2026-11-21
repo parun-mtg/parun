@@ -4696,9 +4696,10 @@ manaExpendedThisTurn gs pid =
         _ -> Nothing
    in Maybe.fromMaybe 0 (Foldable.foldl' (\latest logged -> reached (LoggedEvent.event logged) Applicative.<|> latest) Nothing (Turn.eventsThisTurn gs))
 
--- CR 508.1a / 608.2i: how many creatures this player declared as attackers this
--- turn. lifeChangedIn's footing -- a fold over TurnRegisters.events, whose
--- extent Parun.Engine.Engine.beginTurnOf's clearing makes "this turn".
+-- CR 508.1a / 608.2i: how many distinct creatures this player declared as
+-- attackers this turn, one declared in two combat phases once (Windbrisk
+-- Heights' ruling, 2007-10-01). lifeChangedIn's footing -- a fold over
+-- TurnRegisters.events, whose extent Parun.Engine.Engine.beginTurnOf's clearing makes "this turn".
 --
 -- The ATTACKING PLAYER is read off the event rather than resolved through CR
 -- 506.2, because under the shared team turns option each player on the active
@@ -4708,7 +4709,16 @@ manaExpendedThisTurn gs pid =
 -- Parun.Engine.Combat.declareAttackers appending the event -- the same scope
 -- Parun.Engine.Count.declaredThisTurn reads.
 attackersDeclaredThisTurn :: GameState -> PlayerId -> Natural
-attackersDeclaredThisTurn gs pid = Natural.length (filter (declaredBy pid . LoggedEvent.event) (Foldable.toList (Turn.eventsThisTurn gs)))
+attackersDeclaredThisTurn gs pid =
+  Natural.length
+    ( Set.toList
+        ( Set.fromList
+            [ AttackerDeclared.attacker declared
+            | declared <- Foldable.toList (attacksInLog (Turn.eventsThisTurn gs)),
+              AttackerDeclared.attackingPlayer declared == pid
+            ]
+        )
+    )
 
 -- CR 508.1b / 508.3b: what that player declared creatures attacking this turn,
 -- attackersDeclaredThisTurn's log and scope -- a target attacked in an earlier
@@ -4826,13 +4836,6 @@ blockedAttacker :: GameEvent -> Maybe ObjectId
 blockedAttacker event = case event of
   GameEvent.AttackerBlocked x -> Just (AttackerBlocked.attacker x)
   _ -> Nothing
-
--- Does this event record an attacker declaration (CR 508.1k) by this attacking
--- player?
-declaredBy :: PlayerId -> GameEvent -> Bool
-declaredBy pid event = case event of
-  GameEvent.AttackerDeclared x -> AttackerDeclared.attackingPlayer x == pid
-  _ -> False
 
 -- | One ask for up to `ceiling_` of `candidates`. FILTERED, not trusted: an
 -- answer naming an object never offered is dropped. One naming more than the
