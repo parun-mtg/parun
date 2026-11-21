@@ -747,18 +747,24 @@ amongPending under members body = do
 -- effects. Every other member keeps its slot.
 --
 -- Asked where two or more of a seat's members carry an entry replacement of
--- their own and one of them runs effects (Replacement.runsEffects), which can
--- read what another member's application did or change what it reads:
--- Sigarda's Splendor's note beside Phyrexian Processor's payment, proved by
--- data/scenarios/entry-replacement's cr-616-1 Splendor scenarios, an Open the
--- Vaults pair for Resolve's move and a Banishing Light pair for
--- changeZonesTogether. The seats' APNAP order is proved by the cr-616-1
--- Ixidron and Clone pair there, on Resolve's move by its two Exhume
--- scenarios, and the team's order by the cr-805-6 Exhume pair in
--- data/scenarios/team.
+-- their own and the order is observable: one member's rows change a pool
+-- another's read (Replacement.entryConflicts over Replacement.entryAccess).
+-- data/scenarios/entry-replacement proves it: Thunder-Thrash Elder's devour
+-- beside a Clone by the cr-616-1 Victimize pair; a copy entry taking on
+-- Sigarda's Splendor's note beside Phyrexian Processor's payment by the
+-- cr-616-1 Copy Enchantment scenario; Splendor's own note by the cr-616-1
+-- Splendor scenarios, an Open the Vaults pair for Resolve's move and a
+-- Banishing Light pair for changeZonesTogether; and a pair that commutes left
+-- unasked by the cr-616-1 Ixidron and Carrion Crow scenario. The seats' APNAP
+-- order is proved by the cr-616-1 Ixidron and Clone pair there, on Resolve's
+-- move by its two Exhume scenarios, and the team's order by the cr-805-6
+-- Exhume pair in data/scenarios/team, asked where two of the team's members
+-- conflict, two seats spending from one pool included.
 --
--- A pair neither of which runs effects is not asked, and the token and conjure
--- batches are not ordered (gap #9255).
+-- The token and conjure roads do not call this: one creation's members are
+-- copies of one card, whose orders are indistinguishable (CR 616.1g's Voice
+-- of All example). One action's separate creations are not ordered against
+-- each other (gap #9270).
 orderEntries :: Maybe PlayerId -> [ObjectId] -> Game [ObjectId]
 orderEntries under members = do
   gs <- State.get
@@ -770,7 +776,7 @@ orderEntries under members = do
       seats = List.sortOn rank (ListUtils.nubOrd (fmap snd carrying))
       ask seat = do
         let own = [oid | (oid, s) <- carrying, s == seat]
-        if length own >= 2 && any (any Replacement.runsEffects . rows) own
+        if observable [(seat, oid) | oid <- own]
           then do
             now <- State.get
             answer <- Game.choose (Prompt.OrderEntries (Decide.deciderFor seat now) seat own)
@@ -780,7 +786,16 @@ orderEntries under members = do
       place queue oid = case queue of
         next : later | Set.member oid carried -> (later, next)
         _ -> (queue, oid)
-      runs team = any (any Replacement.runsEffects . rows) [oid | (oid, s) <- carrying, s `elem` team]
+      access oid = foldMap (Replacement.entryAccess gs) (rows oid)
+      observable entries =
+        or
+          [ Replacement.entryConflicts first second || Replacement.entryConflicts second first
+          | (seat, oid) : rest <- List.tails entries,
+            let first = (seat, access oid),
+            (otherSeat, other) <- rest,
+            let second = (otherSeat, access other)
+          ]
+      runs team = observable [(s, oid) | (oid, s) <- carrying, s `elem` team]
   queue <- inActiveTeamOrder (const runs) seats (\seat sofar -> (sofar <>) <$> ask seat) []
   pure (snd (List.mapAccumL place queue members))
 

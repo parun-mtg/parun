@@ -387,12 +387,16 @@ Entries are ordered by the first rule each cites.
   gives the row no turn of its own. Under the shared team turns option the
   active team names its seats' order (CR 805.6).
 - **Rejected**: Every choice made over the pre-batch board, then every action
-  at once (CR 101.4's "Then the actions happen simultaneously"): the Voice of
-  All example orders one player's entries, so an entry's action is not held
-  back for the others, and the damage entry rejects the same reading. Rows
-  with no question first: whether an as-enters row asks anything depends on
-  the effects it runs, where the damage entry's lone row is known by its
-  event's shape alone.
+  at once (CR 101.4's "Then the actions happen simultaneously", and CR
+  805.6's "Once all choices have been made, the actions happen
+  simultaneously"). Neither rule is about replacement effects, and CR 616.1g's
+  Voice of All example, whose two choices commute, settles no order between
+  actions; sequential application is preferred because an as-enters action
+  happens as its effect is applied (CR 614.1c), so the next member's choice
+  sees it, and because the damage entry already applies lone rows that way.
+  Rows with no question first: whether an as-enters row asks anything
+  depends on the effects it runs, where the damage entry's lone row is known
+  by its event's shape alone.
 - **Site**: `Parun.Engine.Event.orderEntries`, proved by the scenarios "CR
   616.1 / 101.4: Ixidron and a Clone of different players returning together
   on Ixidron's controller's turn apply in APNAP order" and its control, on
