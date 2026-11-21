@@ -136,6 +136,7 @@ codec = Fields.object $ do
   warped <- Fields.defaulted "warped" (Object.warped defaults) (Common.maybe Common.natural) Object.warped
   preparedCopyOf <- Fields.defaulted "preparedCopyOf" (Object.preparedCopyOf defaults) (Common.maybe ObjectId.codec) Object.preparedCopyOf
   ringBearerFor <- Fields.defaulted "ringBearerFor" (Object.ringBearerFor defaults) (Common.maybe PlayerId.codec) Object.ringBearerFor
+  planarMarker <- Fields.defaulted "planarMarker" (Object.planarMarker defaults) (Common.maybe Common.natural) Object.planarMarker
   paired <- Fields.defaulted "paired" (Object.paired defaults) (Common.maybe Pairing.codec) Object.paired
   duplicate <- Fields.defaulted "duplicate" (Object.duplicate defaults) (Common.maybe ProjectedCharacteristics.codec) Object.duplicate
   stickers <- Fields.defaulted "stickers" (Object.stickers defaults) (Common.seq StickerPlacement.codec) Object.stickers
@@ -214,6 +215,7 @@ codec = Fields.object $ do
         Object.warped = warped,
         Object.preparedCopyOf = preparedCopyOf,
         Object.ringBearerFor = ringBearerFor,
+        Object.planarMarker = planarMarker,
         Object.duplicate = duplicate,
         Object.stickers = stickers,
         Object.paired = paired,

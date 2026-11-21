@@ -11,7 +11,6 @@
 -- WHAT IS NOT IMPLEMENTED:
 --
 --   * CR 901.12c's plane "you" reaching both Two-Headed Giant teammates (#9165).
---   * CR 901.14's Grand Melee option (#9166).
 module Parun.Engine.Planechase where
 
 import qualified Control.Monad as Monad
@@ -29,6 +28,7 @@ import qualified Parun.Engine.Decide as Decide
 import qualified Parun.Engine.Event as Event
 import qualified Parun.Engine.Expiry as Expiry
 import qualified Parun.Engine.Game as Game
+import qualified Parun.Engine.GrandMelee as GrandMelee
 import qualified Parun.Engine.Mint as Mint
 import qualified Parun.Engine.MoveDuration as MoveDuration
 import qualified Parun.Engine.Plane as Plane
@@ -73,6 +73,8 @@ import qualified Parun.Types.TriggerCondition as TriggerCondition
 import qualified Parun.Types.TriggerSource as TriggerSource
 import Parun.Types.TriggeredAbility (TriggeredAbility)
 import qualified Parun.Types.TriggeredAbilitySource as TriggeredAbilitySource
+import qualified Parun.Types.TurnMarker as TurnMarker
+import qualified Parun.Types.TurnRegisters as TurnRegisters
 import qualified Parun.Types.TurnedUpOffDeck as TurnedUpOffDeck
 
 -- | CR 901.3: this player's planar deck, top first; under CR 901.15c, the
@@ -110,12 +112,32 @@ faceUp :: GameState -> [ObjectId]
 faceUp gs = filter (`Plane.isPlanarCard` gs) (Set.toAscList (GameState.command gs))
 
 -- | CR 701.31a: may this player planeswalk? Only in a Planechase game, and only
--- the planar controller. So the planeswalking ability of a Two-Headed Giant
--- teammate who is not the primary player does nothing (CR 901.8, 901.12b):
+-- a planar controller (Plane.planarControllers). So the planeswalking ability
+-- of a Two-Headed Giant teammate who is not the primary player does nothing
+-- (CR 901.8, 901.12b):
 -- data/scenarios/planechase/cr-901-12b-the-active-team-s-primary-player-controls-the-plane.json
 -- proves it.
 canPlaneswalk :: PlayerId -> GameState -> Bool
-canPlaneswalk pid gs = isPlanechase gs && pid == Plane.planarController gs
+canPlaneswalk pid gs = isPlanechase gs && List.elem pid (Plane.planarControllers gs)
+
+-- | CR 901.14a: the Grand Melee turn marker a plane this player turns face up
+-- comes under: the marker of the turn being worked if its planar control is
+-- theirs, and otherwise the lowest-numbered one whose is. Nothing outside
+-- Grand Melee.
+--
+-- Implementation-defined: CR 901.6's heir of a departed holder can carry two
+-- markers' planar control, and the CR does not say under which their plane
+-- comes.
+markerOf :: PlayerId -> GameState -> Maybe Natural
+markerOf pid gs =
+  let theirs = [m | m <- GameState.turnMarkers gs, Plane.markerController m gs == Just pid]
+      worked = [m | m <- theirs, Just (TurnMarker.number m) == Turn.workedMarker gs]
+   in if Plane.isGrandMelee gs then fmap TurnMarker.number (Maybe.listToMaybe (worked <> theirs)) else Nothing
+
+-- | CR 901.6: the controller of this face-up plane or phenomenon card on `gs`
+-- (Plane.planarControllerOf).
+controllerOfFaceUp :: ObjectId -> GameState -> Maybe PlayerId
+controllerOfFaceUp oid gs = Game.lookupObject oid gs >>= (`Plane.planarControllerOf` gs)
 
 -- | CR 701.31b: put each face-up plane and phenomenon card on the bottom of its
 -- owner's planar deck, then turn the top card of this player's planar deck
@@ -123,14 +145,20 @@ canPlaneswalk pid gs = isPlanechase gs && pid == Plane.planarController gs
 -- Spatial Merging's "Simultaneously planeswalk to both of them". Nothing for a
 -- player CR 701.31a does not let planeswalk. Proposed first as WouldPlaneswalk
 -- for this cause (CR 701.31c), so CR 614's replacements see it once.
+--
+-- In Grand Melee too every face-up card goes, whoever controls it (CR 701.31b,
+-- 901.11c), and the plane turned up comes under this player's marker
+-- (markerOf). Parun.PlanechaseSpec's "CR 901.11c a Grand Melee planeswalk
+-- walks away from every face-up plane" proves it.
 planeswalk :: PlaneswalkCause.PlaneswalkCause -> Maybe [ObjectId] -> PlayerId -> Game ()
 planeswalk cause to pid = proposed cause pid $ do
   now <- State.get
   let away = faceUp now
+      marker = markerOf pid now
   bottomAll away
   case to of
-    Nothing -> encounterTop pid (Set.fromList away)
-    Just cards -> encounterAll pid cards (Set.fromList away)
+    Nothing -> encounterTop marker pid (Set.fromList away)
+    Just cards -> encounterAll marker pid cards (Set.fromList away)
 
 -- CR 614.1a: propose this player's planeswalk for this cause, and perform it
 -- unless a replacement took its place. Nothing for a player CR 701.31a does not
@@ -145,28 +173,42 @@ proposed cause pid perform = do
 -- | CR 103.7: the starting player turns up planar cards until a plane is face
 -- up, putting each phenomenon on the bottom. No ability triggers (CR 901.5):
 -- nothing here records an event. Bounded by the deck's size, so a deck of
--- phenomena alone ends with none face up rather than looping.
-setStartingPlane :: PlayerId -> Game ()
-setStartingPlane pid = do
+-- phenomena alone ends with none face up rather than looping. In Grand Melee
+-- the plane comes under the turn marker given (CR 901.14a).
+setStartingPlane :: Maybe Natural -> PlayerId -> Game ()
+setStartingPlane marker pid = do
   gs <- State.get
   let go :: Int -> Game ()
       go n = Monad.when (n > 0) $ do
-        turned <- turnUpTop pid
+        turned <- turnUpTop marker pid
         g <- State.get
         case turned of
           Just oid | maybe False Plane.isPhenomenonFace (Game.faceOf oid g) -> toBottom oid >> go (n - 1)
           _ -> pure ()
   go (length (deckOf pid gs))
 
--- | CR 901.10 / 901.10a, run as these players leave the game and read against
--- `before`, the board as it was: if a face-up plane or phenomenon card they own
--- left with them, the planar controller -- already CR 800.4p's heir -- turns up
--- the top card of their planar deck, and if a face-up plane left, every
--- planeswalking ability on the stack ceases to exist. Not a state-based action.
--- The turn-up is a planeswalk (CR 701.31c), proposed for CR 614's replacements,
--- with nothing to put on the bottom: the face-up card has left the game.
--- Parun.PlanechaseSpec's "CR 701.31c Susan Foreman arranges the planeswalk a
--- plane's departing owner causes" proves it.
+-- | CR 103.7 / 901.14a: the starting planes. The starting player sets one, or
+-- in Grand Melee each player starting with a turn marker does, in marker
+-- order, under that marker. Nothing outside a Planechase game.
+-- Parun.PlanechaseSpec's "CR 901.14a each player with a turn marker sets a
+-- starting plane" proves it.
+setStartingPlanes :: Game ()
+setStartingPlanes = do
+  gs <- State.get
+  Monad.when (isPlanechase gs) $
+    if Plane.isGrandMelee gs
+      then Monad.forM_ (GameState.turnMarkers gs) (\m -> setStartingPlane (Just (TurnMarker.number m)) (TurnMarker.holder m))
+      else setStartingPlane Nothing (TurnRegisters.activePlayer (GameState.turn gs))
+
+-- | CR 901.10 / 901.10a / 901.14b, run as these players leave the game and
+-- read against `before`, the board as it was: if a face-up plane or phenomenon
+-- card they own left with them, its planar controller -- already CR 800.4p's
+-- heir -- turns up the top card of their planar deck, and if a face-up plane
+-- left, every planeswalking ability on the stack ceases to exist. Not a
+-- state-based action. The turn-up is a planeswalk (CR 701.31c), proposed for
+-- CR 614's replacements, with nothing to put on the bottom: the face-up card
+-- has left the game. Parun.PlanechaseSpec's "CR 701.31c Susan Foreman arranges
+-- the planeswalk a plane's departing owner causes" proves it.
 --
 -- A phenomenon leaving alone spares the ability, CR 901.10a naming a plane.
 -- Unobserved: a phenomenon is face up beside a planeswalking ability only after
@@ -177,17 +219,49 @@ setStartingPlane pid = do
 -- every plane still face up beside them. Parun.PlanechaseSpec's "CR 901.11c a
 -- departing owner's planeswalk walks away from the plane left face up" proves
 -- it.
-ownersLeft :: GameState -> [PlayerId] -> Game ()
-ownersLeft before pids = do
+--
+-- In Grand Melee each card's own planar controller turns up one card, under
+-- that card's marker. A departure that costs a turn marker (CR 901.14b) first
+-- ends the departing players' planar control, nobody taking it over
+-- (GrandMelee.lapse): the face-up cards they controlled that stay in the
+-- command zone go to the bottom, and nobody replaces the ones they owned and
+-- controlled. Then a face-up card whose marker is gone goes to the bottom too
+-- (markerlessToBottom). Parun.PlanechaseSpec's "CR 901.14b a departing marker
+-- holder's planes go to the bottom and nobody planeswalks" proves it.
+playersLeft :: GameState -> [PlayerId] -> Game ()
+playersLeft before pids = do
   let owned oid = maybe False (\obj -> List.elem (Object.owner obj) pids) (Game.lookupObject oid before)
       left = filter owned (faceUp before)
       isPlane oid = maybe False (not . Plane.isPhenomenonFace) (Game.faceOf oid before)
+      ceases = GrandMelee.cost pids before > 0
+      departing = maybe False (`List.elem` pids)
+      lapsing = [TurnMarker.number m | ceases, m <- GameState.turnMarkers before, departing (Plane.markerController m before)]
+      unheld gs n = maybe False (\m -> List.notElem (TurnMarker.holder m) (Game.stillPlaying gs)) (GrandMelee.markerNumbered n gs)
+  -- CR 901.14b: "first ceases to be a planar controller". A marker already
+  -- passed on (CR 807.4c) carries its new holder's.
+  State.modify' (\gs -> List.foldl' (flip GrandMelee.lapse) gs (filter (unheld gs) lapsing))
+  stayed <- State.gets faceUp
+  let ceased = [oid | ceases, oid <- stayed, departing (controllerOfFaceUp oid before)]
+  bottomAll ceased
   Monad.unless (null left) $ do
     Monad.when (any isPlane left) (State.modify' ceasePlaneswalking)
     gs <- State.get
-    let walker = Plane.planarController gs
-        away = Set.fromList (left <> filter isPlane (faceUp before))
-    proposed PlaneswalkCause.OwnerLeft walker (encounterTop walker away)
+    let walkers = ListUtils.nubOrd [(walker, Object.planarMarker obj) | oid <- left, not (ceases && departing (controllerOfFaceUp oid before)), Just obj <- [Game.lookupObject oid before], Just walker <- [Plane.planarControllerOf obj gs]]
+        away = Set.fromList (left <> filter (\oid -> isPlane oid && List.notElem oid ceased) (faceUp before))
+    Monad.forM_ walkers (\(walker, marker) -> proposed PlaneswalkCause.OwnerLeft walker (encounterTop marker walker away))
+  markerlessToBottom
+
+-- | CR 807.4g: a face-up plane or phenomenon card whose Grand Melee turn marker
+-- is gone goes to the bottom of its owner's planar deck, and nobody
+-- planeswalks (docs/decisions.md, "Where a removed turn marker's planes go").
+-- Nothing outside Grand Melee. Parun.PlanechaseSpec's "CR 807.4g a removed
+-- turn marker's plane goes to the bottom" proves it.
+markerlessToBottom :: Game ()
+markerlessToBottom = do
+  gs <- State.get
+  let numbers = fmap TurnMarker.number (GameState.turnMarkers gs)
+      gone oid = maybe False (maybe True (`List.notElem` numbers) . Object.planarMarker) (Game.lookupObject oid gs)
+  Monad.when (Plane.isGrandMelee gs) (bottomAll (filter gone (faceUp gs)))
 
 -- CR 901.10a: every planeswalking ability on the stack ceases to exist.
 ceasePlaneswalking :: GameState -> GameState
@@ -208,9 +282,9 @@ isPlaneswalkingAbility oid gs = case fmap Object.source (Game.lookupObject oid g
 -- "until a player planeswalks", marking every CR 610.3 and 610.4 watch on it
 -- (Parun.Engine.MoveDuration.markPlaneswalked). CR 103.7's starting plane is turned up by
 -- turnUpTop alone, CR 901.5 letting nothing trigger.
-encounterTop :: PlayerId -> Set.Set ObjectId -> Game ()
-encounterTop pid away = do
-  turned <- turnUpTop pid
+encounterTop :: Maybe Natural -> PlayerId -> Set.Set ObjectId -> Game ()
+encounterTop marker pid away = do
+  turned <- turnUpTop marker pid
   Monad.forM_ turned $ \oid -> do
     State.modify' MoveDuration.markPlaneswalked
     State.modify' (Event.recordEvent (GameEvent.TurnedUpOffDeck (TurnedUpOffDeck.MkTurnedUpOffDeck SideDeck.Planar pid oid away)))
@@ -223,15 +297,15 @@ encounterTop pid away = do
 -- "away from" triggers once. Effects lasting "until a player planeswalks" end
 -- once. Parun.PlanechaseSpec's "CR 701.31d Spatial Merging planeswalks to two
 -- planes at once" proves it.
-encounterAll :: PlayerId -> [ObjectId] -> Set.Set ObjectId -> Game ()
-encounterAll pid cards away = do
-  turned <- Monad.filterM (turnUp pid) cards
+encounterAll :: Maybe Natural -> PlayerId -> [ObjectId] -> Set.Set ObjectId -> Game ()
+encounterAll marker pid cards away = do
+  turned <- Monad.filterM (turnUp marker pid) cards
   Monad.unless (null turned) (State.modify' MoveDuration.markPlaneswalked)
   Monad.forM_ (zip turned (away : repeat Set.empty)) $ \(oid, from) ->
     State.modify' (Event.recordEvent (GameEvent.TurnedUpOffDeck (TurnedUpOffDeck.MkTurnedUpOffDeck SideDeck.Planar pid oid from)))
   Monad.unless (null turned) (State.modify' (Expiry.sweep Expiry.Planeswalked))
 
--- | CR 704.6f / 312.7: the face-up phenomena that make the planar controller
+-- | CR 704.6f / 312.7: the face-up phenomena that make their planar controller
 -- planeswalk, each the source of no triggered ability on the stack or among
 -- `waiting`, the abilities triggered on events not yet scanned
 -- (Parun.Engine.Archenemy.abandonedBySba's reason).
@@ -247,22 +321,23 @@ spentPhenomena waiting gs =
 
 -- CR 701.31b's second half: move the top card off the planar deck and turn it
 -- face up, which is joining GameState.command. A fresh timestamp (CR
--- 613.7h), which its static abilities' effects share (CR 613.7a).
+-- 613.7h), which its static abilities' effects share (CR 613.7a). In Grand
+-- Melee it comes under the turn marker given (Object.planarMarker).
 --
 -- Off the communal deck, the card keeps the owner CR 901.15b gave it there:
 -- `pid`, the planar controller at every caller. See docs/decisions.md, "Who
 -- owns a face-up card off the communal planar deck".
-turnUpTop :: PlayerId -> Game (Maybe ObjectId)
-turnUpTop pid = do
+turnUpTop :: Maybe Natural -> PlayerId -> Game (Maybe ObjectId)
+turnUpTop marker pid = do
   gs <- State.get
   case deckOf pid gs of
     [] -> pure Nothing
-    top : _ -> (\moved -> if moved then Just top else Nothing) <$> turnUp pid top
+    top : _ -> (\moved -> if moved then Just top else Nothing) <$> turnUp marker pid top
 
 -- turnUpTop for a card anywhere in this player's planar deck (Spatial
 -- Merging's revealed planes). False, and nothing done, for a card not in it.
-turnUp :: PlayerId -> ObjectId -> Game Bool
-turnUp pid card = do
+turnUp :: Maybe Natural -> PlayerId -> ObjectId -> Game Bool
+turnUp marker pid card = do
   gs <- State.get
   let holder = Plane.planarDeckHolder pid gs
       owned o = if GameSettings.singlePlanarDeck (MatchScope.settings (GameState.match gs)) then o {Object.owner = pid} else o
@@ -273,7 +348,7 @@ turnUp pid card = do
       State.modify' $ \g ->
         (Game.overSideDecks SideDeck.Planar (Map.insert holder (Seq.fromList (List.delete card (deckOf pid g)))) g)
           { GameState.command = Set.insert card (GameState.command g),
-            GameState.objects = Map.adjust (\o -> owned o {Object.timestamp = ts}) card (GameState.objects g)
+            GameState.objects = Map.adjust (\o -> owned o {Object.timestamp = ts, Object.planarMarker = marker}) card (GameState.objects g)
           }
       pure True
 
@@ -298,7 +373,7 @@ bottomAll away = do
 -- CR 701.31b's first half: a face-up card goes to the bottom of its owner's
 -- planar deck (CR 901.15c: the communal one) face down, and CR 311.6 / 312.6
 -- make it a new object. Plane.phenomenonOwnerOf reads the old id's record.
--- Unobserved, as ownersLeft's phenomenon gate is: it needs a planeswalk while
+-- Unobserved, as playersLeft's phenomenon gate is: it needs a planeswalk while
 -- that ability waits.
 toBottom :: ObjectId -> Game ()
 toBottom oid = State.modify' $ \gs ->

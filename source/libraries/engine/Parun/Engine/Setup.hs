@@ -614,10 +614,9 @@ newGame perform matchup = do
   anteFromLibraries seated
   Mulligan.openingHands perform seated
   -- CR 103.7: in a Planechase game the starting player sets the starting plane,
-  -- after every opening hand is kept (CR 901.5).
-  starting <- State.gets (TurnRegisters.activePlayer . GameState.turn)
-  planechase <- State.gets Planechase.isPlanechase
-  Monad.when planechase (Planechase.setStartingPlane starting)
+  -- after every opening hand is kept (CR 901.5); in Grand Melee each player
+  -- with a turn marker does (CR 901.14a).
+  Planechase.setStartingPlanes
 
 -- CR 713.8 / CR 108.2: a melded permanent is ONE object represented by TWO
 -- cards, so a funnel that carries cards over -- CR 728.2's restart and CR
@@ -866,10 +865,9 @@ startGameFromCards perform exemptions = do
   anteFromLibraries seated
   Mulligan.openingHands perform seated
   -- CR 103.7, newGame's step: the new game's starting player sets a starting
-  -- plane after the opening hands.
-  starting <- State.gets (TurnRegisters.activePlayer . GameState.turn)
-  planechase <- State.gets Planechase.isPlanechase
-  Monad.when planechase (Planechase.setStartingPlane starting)
+  -- plane after the opening hands (CR 901.14a: in Grand Melee, each marker
+  -- holder).
+  Planechase.setStartingPlanes
 
 -- CR 315.2 / 905.4: in a game rebuilt from cards (CR 728.1, 730.2), this player
 -- may put any number of conspiracy cards from their sideboard into the command

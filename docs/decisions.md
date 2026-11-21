@@ -3139,3 +3139,47 @@ Entries are ordered by the first rule each cites.
   and
   `cr-901-12c-academy-at-tolaria-west-triggers-for-each-empty-handed-member-of-the-planar-team`.
 - **Issue**: #9165.
+
+## Which planar controller controls a Grand Melee plane
+
+- **Question**: In Grand Melee Planechase each player who starts with a turn
+  marker is a planar controller (CR 901.14a), and CR 901.6 makes the planar
+  controller "whoever the active player is". Once several planes are face up,
+  who controls each, and who controls it once its marker has passed on?
+- **Rules**: CR 807.4, 807.4c, 901.6, 901.14a, 901.14b; no ruling; CR of
+  2026-11-06.
+- **Decision**: The planar controller of the turn marker it was turned face up
+  under: its holder, the active player of that marker's turn, or CR 901.6's
+  heir while the marker waits at a departed holder's seat. A plane passes with
+  its marker, so the player to the left controls it once the marker reaches
+  them (CR 807.4c), even before their turn begins.
+- **Rejected**: (a) The player who turned it up, for as long as they play: CR
+  901.6 ends a planar controller's designation when a different player becomes
+  the active player, which the marker's passing does. (b) The active player of
+  whichever turn is being worked: it gives one player every plane at once,
+  which CR 901.14a's several planar controllers exclude.
+- **Site**: `Parun.Engine.Plane.planarControllerOf`, proved by
+  `Parun.PlanechaseSpec`'s "CR 901.6 a Grand Melee plane is its own marker
+  holder's" and "CR 901.11c a Grand Melee planeswalk walks away from every
+  face-up plane".
+- **Issue**: #9166.
+
+## Where a removed turn marker's planes go
+
+- **Question**: CR 807.4g removes a turn marker designated for removal as its
+  holder's turn ends. Its holder is still playing, so CR 901.14b, about a
+  departing holder, does not apply. Who controls the planes face up under the
+  removed marker?
+- **Rules**: CR 807.4e, 807.4g, 901.6, 901.14a, 901.14b; no ruling; CR of
+  2026-11-06.
+- **Decision**: Nobody: they go to the bottom of their owners' planar decks
+  and nobody planeswalks, as CR 901.14b does for a planar controller whom
+  nobody replaces.
+- **Rejected**: (a) Their old holder keeps them: CR 901.6 ends the designation
+  once that player is no longer the active player, and no turn of theirs is
+  under way. (b) The marker to the right inherits them, as it inherits the
+  designations (CR 807.4g): that rule moves designations, not planar control.
+- **Site**: `Parun.Engine.Planechase.markerlessToBottom`, proved by
+  `Parun.PlanechaseSpec`'s "CR 807.4g a removed turn marker's plane goes to
+  the bottom".
+- **Issue**: #9166.

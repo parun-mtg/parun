@@ -568,6 +568,7 @@ objectWith before entry between closed = do
   warped <- field Object.warped
   preparedCopyOf <- field Object.preparedCopyOf
   ringBearerFor <- field Object.ringBearerFor
+  planarMarker <- field Object.planarMarker
   protector <- field Object.protector
   ventureRoom <- field Object.ventureRoom
   classLevel <- field Object.classLevel
@@ -644,6 +645,7 @@ objectWith before entry between closed = do
         Object.warped = warped,
         Object.preparedCopyOf = preparedCopyOf,
         Object.ringBearerFor = ringBearerFor,
+        Object.planarMarker = planarMarker,
         Object.protector = protector,
         Object.ventureRoom = ventureRoom,
         Object.classLevel = classLevel,

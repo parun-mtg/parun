@@ -19,8 +19,9 @@ spec s = Spec.describe s "Parun.Codec.TurnMarker" $ do
           TurnMarker.holder = PlayerId.MkPlayerId 4,
           TurnMarker.underWay = True,
           TurnMarker.owesTurn = False,
-          TurnMarker.removals = 1
+          TurnMarker.removals = 1,
+          TurnMarker.lapsed = True
         }
-      " {\"number\":2,\"holder\":4,\"underWay\":true,\"owesTurn\":false,\"removals\":1} "
+      " {\"number\":2,\"holder\":4,\"underWay\":true,\"owesTurn\":false,\"removals\":1,\"lapsed\":true} "
   Spec.it s "has a schema" $
     Common.assertHasSchema s TurnMarker.codec

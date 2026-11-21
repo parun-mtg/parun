@@ -1297,7 +1297,7 @@ supplementaryDeckSpec s registry = Spec.describe s "supplementary decks" $ do
     tazeem <- S.printingOf s registry "Tazeem"
     karn <- S.printingOf s registry "Karn Liberated"
     board <- supplementaryBoardWith communalPlanes s registry (\d -> d {Deck.sideDecks = Map.singleton SideDeck.Planar (Map.singleton academy 1)}) (\d -> d {Deck.sideDecks = Map.singleton SideDeck.Planar (Map.singleton tazeem 1)})
-    let started = S.runPure S.identityAnswer board (Planechase.setStartingPlane S.alice)
+    let started = S.runPure S.identityAnswer board (Planechase.setStartingPlane Nothing S.alice)
         (karnId, withKarn) = S.addPermanent karn S.bob started
         before =
           Game.overTurn
@@ -1323,7 +1323,7 @@ supplementaryDeckSpec s registry = Spec.describe s "supplementary decks" $ do
     tazeem <- S.printingOf s registry "Tazeem"
     let planes d = d {Deck.sideDecks = Map.singleton SideDeck.Planar (Map.fromSet (const 1) (Set.fromList [academy, tazeem]))}
     board <- supplementaryBoard s registry planes planes
-    before <- withShahrazad s registry (S.runPure S.identityAnswer board (Planechase.setStartingPlane S.alice))
+    before <- withShahrazad s registry (S.runPure S.identityAnswer board (Planechase.setStartingPlane Nothing S.alice))
     let ((_, after), asks) = State.runState (Engine.runGameAsked recordAsked before Engine.priorityLoop) []
         subStates = [g | (depth, g, _) <- asks, depth == 1]
         up = cardNames (Planechase.faceUp before) before
@@ -1345,7 +1345,7 @@ supplementaryDeckSpec s registry = Spec.describe s "supplementary decks" $ do
     tazeem <- S.printingOf s registry "Tazeem"
     caldaia <- S.printingOf s registry "The Caldaia"
     board <- supplementaryBoardWith communalPlanes s registry (\d -> d {Deck.sideDecks = Map.singleton SideDeck.Planar (Map.singleton academy 1)}) (\d -> d {Deck.sideDecks = Map.singleton SideDeck.Planar (Map.fromList [(tazeem, 1), (caldaia, 1)])})
-    before <- withShahrazad s registry (S.runPure S.identityAnswer board (Planechase.setStartingPlane S.alice))
+    before <- withShahrazad s registry (S.runPure S.identityAnswer board (Planechase.setStartingPlane Nothing S.alice))
     let ((_, after), asks) = State.runState (Engine.runGameAsked recordAsked before Engine.priorityLoop) []
         subStates = [g | (depth, g, _) <- asks, depth == 1]
     Spec.assertEqWith s "the main game turned up alice's Academy" (cardNames (Planechase.faceUp before) before) ["Academy at Tolaria West"]

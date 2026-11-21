@@ -2149,6 +2149,8 @@ takeMarkedTurn = do
       (gone, staying) = List.partition (\entry -> List.notElem (ExtraTurn.taker entry) playing) (GameState.extraTurns gs)
       spent = List.foldl' (flip wouldHaveBegun) gs {GameState.extraTurns = staying} (fmap ExtraTurn.taker gone)
   State.put (closeTurn (maybe id GrandMelee.passTurn (Turn.workedMarker spent) spent))
+  -- CR 807.4g: a removed marker's planes.
+  Planechase.markerlessToBottom
   beginReady
 
 -- CR 807.4b / 807.4d: begin the turn of each marker with none under way whose

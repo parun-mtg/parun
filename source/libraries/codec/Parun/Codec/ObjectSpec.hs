@@ -179,6 +179,7 @@ spec s = Spec.describe s "Parun.Codec.Object" $ do
           Object.warped = Just 28,
           Object.preparedCopyOf = Just (ObjectId.MkObjectId 26),
           Object.ringBearerFor = Just (PlayerId.MkPlayerId 16),
+          Object.planarMarker = Just 2,
           Object.duplicate = Just ProjectedCharacteristicsSpec.minimalCharacteristics,
           Object.stickers = Seq.singleton (StickerPlacement.MkStickerPlacement (StickerRef.MkStickerRef (PlayerId.MkPlayerId 1) 0 StickerKind.Art 2) (Timestamp.MkTimestamp 5) Nothing),
           Object.paired = Nothing,
@@ -255,7 +256,7 @@ spec s = Spec.describe s "Parun.Codec.Object" $ do
           <> ",\"plotted\":0,\"foretold\":15"
           <> ",\"foretellCostReduction\":[{\"type\":\"Generic\",\"value\":29}]"
           <> ",\"warped\":28,\"preparedCopyOf\":26"
-          <> ",\"ringBearerFor\":16"
+          <> ",\"ringBearerFor\":16,\"planarMarker\":2"
           <> ",\"duplicate\":{\"names\":[\"Mountain\"],\"cardTypes\":[\"Land\"]}"
           <> ",\"stickers\":[{\"sticker\":{\"owner\":1,\"sheet\":0,\"kind\":\"Art\",\"index\":2},\"timestamp\":5}]"
           <> ",\"protector\":17"

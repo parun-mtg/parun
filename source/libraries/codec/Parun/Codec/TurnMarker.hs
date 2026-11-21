@@ -15,11 +15,13 @@ codec = Fields.object $ do
   underWay <- Fields.required "underWay" Common.boolean TurnMarker.underWay
   owesTurn <- Fields.required "owesTurn" Common.boolean TurnMarker.owesTurn
   removals <- Fields.required "removals" Common.natural TurnMarker.removals
+  lapsed <- Fields.defaulted "lapsed" False Common.boolean TurnMarker.lapsed
   pure
     TurnMarker.MkTurnMarker
       { TurnMarker.number = number,
         TurnMarker.holder = holder,
         TurnMarker.underWay = underWay,
         TurnMarker.owesTurn = owesTurn,
-        TurnMarker.removals = removals
+        TurnMarker.removals = removals,
+        TurnMarker.lapsed = lapsed
       }
