@@ -98,6 +98,17 @@
       "turn": 1,
       "step": "PrecombatMain",
       "player": "alice",
+      "do": {
+        "Answer": {
+          "prompt": "RollDie",
+          "with": 2
+        }
+      }
+    },
+    {
+      "turn": 1,
+      "step": "PrecombatMain",
+      "player": "alice",
       "check": {
         "View": {
           "of": "Prompt",
@@ -175,17 +186,6 @@
         "Answer": {
           "prompt": "RollDie",
           "with": 5
-        }
-      }
-    },
-    {
-      "turn": 1,
-      "step": "PrecombatMain",
-      "player": "alice",
-      "do": {
-        "Answer": {
-          "prompt": "RollDie",
-          "with": 2
         }
       }
     },

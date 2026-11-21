@@ -3309,7 +3309,8 @@ Entries are ordered by the first rule each cites.
 - **Rejected**: The final result, or the number after later rerolls of the die
   (two Walls of Fortune): either gives the reroll's event a number from a
   modifier applied after that event, to a roll it is not part of.
-- **Site**: `Parun.Engine.Resolve.Effect.throwSettled`'s `rethrow`, proved by
+- **Site**: `Parun.Engine.Resolve.Effect.throwSettled`'s `rethrow` and
+  `recordReroll`, proved by
   the scenario
   `farideh-devil-s-chosen-reads-a-reroll-s-own-result-not-a-later-reroll-s`.
 - **Issue**: none.

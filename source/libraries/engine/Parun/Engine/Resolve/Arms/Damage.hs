@@ -1567,7 +1567,7 @@ chooseGroup resolving source controller legal (ChooseGroup.MkChooseGroup among s
 --
 -- One writer per road: Prompt.RollDie is asked from throwSettled alone, and
 -- this arm records the roll it throws -- a reroll records its own, see
--- `rethrow`.
+-- throwSettled's `recordReroll`.
 --
 -- Recorded AFTER the binding, so a trigger placed by CR 603.3 sees the same
 -- state a later effect of this resolution would. Nothing observes the order --
@@ -1730,7 +1730,7 @@ rollDieArm throwDice runSubgame resolving source controller legal rollDie = do
 -- CR 706.2b's reroll or a coin's reflip, asked for by the ability Goblin
 -- Bookie activates inside throwDice's window or Parun.Engine.Resolve.Effect's
 -- reflipWindow, through Scratch.rethrowRequested. The die is thrown again
--- once the ability is done, by throwSettled's `rethrow`, as the activating
+-- once the ability is done, by throwSettled's `rethrowRecorded`, as the activating
 -- player's CR 706.1 roll; the coin by Parun.Engine.Event.settleCoins.
 --
 -- A permanent that IS a die is "any die" too (Pippa, Duchess of Dice's
@@ -1770,6 +1770,10 @@ rethrow throwDice runSubgame resolving controller = do
 -- Dice's rulings having a reroll be one -- and the die shows the new result.
 -- Nothing where `oid` is no die. The throw runs with `oid` in
 -- Scratch.rerolling, restored on the way out.
+--
+-- Recorded with its final result, as an original roll: it modifies no roll
+-- under way. Unobservable against throwSettled's `recordReroll` reading: a Die
+-- creature is a d6 and Farideh, Devil's Chosen reads 10 or higher.
 rerollShownDie :: (Game Result -> PlayerId -> Natural -> Natural -> Natural -> Game Integer -> Game ([Natural], [PlayerId], [Natural])) -> Game Result -> PlayerId -> ObjectId -> Game ()
 rerollShownDie throwDice runSubgame roller oid = do
   gs <- State.get
