@@ -1488,22 +1488,33 @@ processDamage settle events = do
   -- event and the rest record nothing. Proved by the scenario
   -- `exquisite-blood-triggers-once-for-two-simultaneous-attackers`.
   --
-  -- Not implemented: teammates sharing a life total (CR 810.9) settled as one
-  -- event; each is settled in turn against the live shared total (#9254).
+  -- Teammates sharing a life total (CR 810.9) are dealt their damage in the
+  -- same event, so each one's loss is another result of it for the other's
+  -- floor (CR 810.9a, 120.4d). Every proposal is written first; each player's
+  -- own comes back off while it settles, so a teammate's loss counts settled if
+  -- settled already and as proposed if not. Players settle in APNAP order (CR
+  -- 101.4): docs/decisions.md, "How teammates' life floors share one damage
+  -- event". The scenarios
+  -- `cr-120-4d-worship-judges-both-teammates-combat-damage-to-the-shared-life-total-together`
+  -- prove it.
   --
   -- `lost` is aligned with `survivors` by position, so the fold below can zip the two.
   let losingTo ev = case DamageEvent.target ev of
         Recipient.ToPlayer pid | not (DamageEvent.dealtByInfect ev) -> Just pid
         _ -> Nothing
       damageTo = Map.fromListWith (+) [(pid, DamageEvent.amount ev) | ev <- survivors, Just pid <- [losingTo ev]]
+      loseLife pid n = State.modify' (Game.adjustLife pid (negate n))
+  Monad.forM_ (Map.toList damageTo) (\(pid, total) -> loseLife pid (toInteger total))
   settledLoss <-
-    Map.traverseWithKey
-      ( \pid total -> do
-          n <- Event.resolveLifeLossSpent settle (Just board) Set.empty LifeLossCause.ByDamage pid total
-          Monad.when (n > 0) (State.modify' (Game.adjustLife pid (negate (toInteger n))))
-          pure n
-      )
-      damageTo
+    Map.fromList
+      <$> Monad.forM
+        (List.sortOn (Replacement.seatOf board . fst) (Map.toList damageTo))
+        ( \(pid, total) -> do
+            loseLife pid (negate (toInteger total))
+            n <- Event.resolveLifeLossSpent settle (Just board) Set.empty LifeLossCause.ByDamage pid total
+            loseLife pid (toInteger n)
+            pure (pid, n)
+        )
   let shareOf (seen, acc) ev = case losingTo ev of
         Just pid
           | Set.notMember pid seen -> (Set.insert pid seen, Map.findWithDefault 0 pid settledLoss : acc)

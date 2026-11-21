@@ -1680,23 +1680,22 @@ armMatches bindings frozen board atEvent beforeEvent groupEvents gs bearer you c
   -- (Event.lifeChanged). Batching is not read here: batchScoped and
   -- eventTriggers' dedup are what separate "a player" from "one or more".
   --
-  -- An exact amount is the changing player's total over the event's whole
-  -- group, not this event's: Damage.lifeLostBy records one loss per damage
-  -- event, and Ob Nixilis, Captive Kingpin's ruling (2023-05-12) totals combat
-  -- damage, so three 1/1s are a loss of 3. A batch trigger matches when any
-  -- admitted player's total is the amount (docs/decisions.md, "One opponent
-  -- losing exactly the amount is enough"). An event missing from the log is
-  -- its own group (Event.matchesTrigger).
+  -- An exact amount is this event's: Damage.lifeLostBy records one loss per
+  -- player per damage batch, which is Ob Nixilis, Captive Kingpin's ruling
+  -- (2023-05-12) totalling combat damage, so three 1/1s are a loss of 3. A
+  -- loss Tainted Remedy makes of a lifelink gain is an event of its own
+  -- (docs/decisions.md, "Whether a lifelink gain's replacement loss joins the
+  -- damage's loss"). A batch trigger matches when any admitted player's loss
+  -- is the amount (docs/decisions.md, "One opponent losing exactly the amount
+  -- is enough").
   TriggerCondition.LifeChanges (LifeTrigger.MkLifeTrigger direction relation scope _ frequency exactly) ->
-    let batch = if event `elem` groupEvents then groupEvents else [event]
-        totalFor pid = sum [amount | Just (changed, amount) <- fmap (Game.lifeChangeOf direction) batch, changed == pid]
-        admits (LifeChange.MkLifeChange pid _ first) =
+    let admits (LifeChange.MkLifeChange pid amount first) =
           PlayerRelation.holds (Game.teams gs) relation you pid
             && Turn.duringRunningTurn scopeNamed gs Nothing scope you
             && case frequency of
               TriggerFrequency.EveryTime -> True
               TriggerFrequency.FirstTimeEachTurn -> first
-            && Maybe.maybe True (== totalFor pid) exactly
+            && Maybe.maybe True (== amount) exactly
      in case (direction, event) of
           (LifeDirection.Gained, GameEvent.LifeGained change) -> admits change
           (LifeDirection.Lost, GameEvent.LifeLost change) -> admits change

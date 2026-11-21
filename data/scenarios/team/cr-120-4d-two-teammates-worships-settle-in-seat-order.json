@@ -1,0 +1,145 @@
+{
+  "board": {
+    "active": "carol",
+    "seats": [
+      {
+        "battlefield": [
+          {
+            "card": "Worship"
+          },
+          {
+            "card": "Grizzly Bears"
+          }
+        ],
+        "life": 4,
+        "name": "alice",
+        "team": 1
+      },
+      {
+        "battlefield": [
+          {
+            "card": "Worship"
+          },
+          {
+            "card": "Grizzly Bears"
+          }
+        ],
+        "life": 4,
+        "name": "bob",
+        "team": 1
+      },
+      {
+        "battlefield": [
+          {
+            "card": "Ob Nixilis, Captive Kingpin",
+            "label": "ob",
+            "ready": true
+          },
+          {
+            "card": "Centaur Courser",
+            "label": "courser",
+            "ready": true
+          },
+          {
+            "card": "Llanowar Elves",
+            "label": "elves",
+            "ready": true
+          }
+        ],
+        "library": [
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          }
+        ],
+        "name": "carol",
+        "team": 2
+      },
+      {
+        "name": "dave",
+        "team": 2
+      }
+    ],
+    "sharedTeamLife": true,
+    "sharedTeamTurns": true,
+    "step": "PrecombatMain",
+    "twoHeadedGiant": true
+  },
+  "description": "CR 120.4d / 810.9a two teammates' Worships settle in seat order, so bob's 1 is the loss Ob Nixilis sees",
+  "note": "A Two-Headed Giant game with alice and bob's team at 4, each controlling Worship and Grizzly Bears. Carol's Centaur Courser attacks alice and her Llanowar Elves attack bob, unblocked. The nonactive team's losses settle in seat order, each Worship counting the other teammate's loss first (docs/decisions.md, \"How teammates' life floors share one damage event\"): bob's proposed 1 leaves alice's 3 room for 2, then bob's 1 takes the team from 2 to 1. Bob loses exactly 1, so carol's Ob Nixilis, Captive Kingpin triggers. Settling bob first would cut his loss to 0 and leave Ob Nixilis without a counter.",
+  "timeline": [
+    {
+      "do": {
+        "Attack": [
+          "$courser",
+          "$elves"
+        ]
+      },
+      "player": "carol",
+      "step": "DeclareAttackers",
+      "turn": 1
+    },
+    {
+      "do": {
+        "ChooseAttackTarget": "$alice"
+      },
+      "player": "carol",
+      "source": "$courser",
+      "step": "DeclareAttackers",
+      "turn": 1
+    },
+    {
+      "do": {
+        "ChooseAttackTarget": "$bob"
+      },
+      "player": "carol",
+      "source": "$elves",
+      "step": "DeclareAttackers",
+      "turn": 1
+    },
+    {
+      "do": {
+        "Block": {}
+      },
+      "player": "alice",
+      "step": "DeclareBlockers",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Life": {
+          "life": 1,
+          "player": "alice"
+        }
+      },
+      "player": "carol",
+      "step": "PostcombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Counters": {
+          "count": 1,
+          "kind": {
+            "type": "PlusOnePlusOne"
+          },
+          "object": "$ob"
+        }
+      },
+      "player": "carol",
+      "step": "PostcombatMain",
+      "turn": 1
+    }
+  ]
+}
