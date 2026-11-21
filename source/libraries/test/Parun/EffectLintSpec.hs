@@ -2037,25 +2037,6 @@ viaFilters card =
         (cardResolutionEffects card)
     )
 
--- Whether a target pool can hold a player (CR 115.1). Exhaustive with no `_`,
--- so a new pool has to be classified.
-holdsPlayer :: Pool.Pool -> Bool
-holdsPlayer pool = case pool of
-  Pool.Players -> True
-  Pool.AnyTarget -> True
-  Pool.PlayersAndPlaneswalkers -> True
-  Pool.PermanentsAndPlayers -> True
-  Pool.Creatures -> False
-  Pool.Permanents -> False
-  Pool.Spells -> False
-  Pool.Abilities -> False
-  Pool.SpellsAndPermanents -> False
-  Pool.SpellsAndAbilities -> False
-  Pool.CardsInGraveyard _ -> False
-  Pool.CardsInExile -> False
-  Pool.CardsInAnte -> False
-  Pool.CardsInGraveyardAnd _ _ -> False
-
 effectLintSpec :: (Monad n) => Spec.Spec IO n -> Registry.Registry IO -> [(FilePath, Either Text.Text Card.Type.Card)] -> n ()
 effectLintSpec s registry corpus = Spec.describe s "Lint" $ do
   -- CR 208.1 / 208.2: a printed power or toughness box holds a number, or a value
@@ -3119,23 +3100,26 @@ effectLintSpec s registry corpus = Spec.describe s "Lint" $ do
         moves effect = case effect of
           Effect.MoveToZone (MoveToZone.MkMoveToZone _ _ riders _ _ _ _) -> chosenAmong riders
           _ -> False
-        -- moveOne narrows only an Aura's host to OBJECTS the slot names, so a
-        -- Specified move is performed only for an Aura moving itself that
-        -- enchants no player: an Equipment (CR 303.4h) or a player host would
-        -- enter unattached or stay put.
-        selfAuraMove face effect = case effect of
+        -- moveOne narrows only an Aura's host to what the slot names, so a
+        -- Specified move is performed only for a card moving itself that
+        -- enters as an Aura: an Equipment (CR 303.4h) would enter unattached.
+        -- The face judged is the one it enters as, its back face when
+        -- transformed (CR 712.11a): Vengeful Strangler's creature front
+        -- returns as Strangling Grasp, and Radiant Grace as Radiant
+        -- Restraints, which enchants a player.
+        selfAuraMove card face effect = case effect of
           Effect.MoveToZone (MoveToZone.MkMoveToZone ref _ riders _ _ _ _)
             | specified riders ->
-                not
-                  ( ref `elem` [ObjectRef.InSlot Binding.became, ObjectRef.InSlot Binding.triggerSource]
-                      && elem Subtype.Type.Aura (TypeLine.subtypes (Face.typeLine face))
-                      && not (any (holdsPlayer . TargetSlot.pool) (Face.enchant face))
-                  )
-                  && ref `notElem` fmap ObjectRef.InSlot (auraLoopSlots face)
+                let entering = if EntryRiders.transformed riders then Maybe.fromMaybe face (Card.backFace card) else face
+                 in not
+                      ( ref `elem` [ObjectRef.InSlot Binding.became, ObjectRef.InSlot Binding.triggerSource]
+                          && elem Subtype.Type.Aura (TypeLine.subtypes (Face.typeLine entering))
+                      )
+                      && ref `notElem` fmap ObjectRef.InSlot (auraLoopSlots face)
           _ -> False
         -- Or for a loop member drawn only from Auras that were attached to a
-        -- host, which enchanted an object and so no player: Cass, Hand of
-        -- Vengeance's "Aura cards that were attached to it".
+        -- host: Cass, Hand of Vengeance's "Aura cards that were attached to
+        -- it".
         auraLoopSlots face = [ForEach.slot loop | Effect.ForEach loop <- cardResolutionEffects face, attachedAuras (ForEach.ref loop)]
         attachedAuras ref = case ref of
           ObjectRef.AttachedToBound bound -> requiresAura (AttachedToBound.filter bound)
@@ -3144,8 +3128,8 @@ effectLintSpec s registry corpus = Spec.describe s "Lint" $ do
           Filter.Type.HasSubtype Subtype.Type.Aura -> True
           Filter.Type.And filters -> any requiresAura filters
           _ -> False
-        offendsOn face = any (\effect -> offends effect || selfAuraMove face effect) (cardResolutionEffects face)
-        offenders = filter (anyFace offendsOn . Printing.card) ps
+        offendsOn card face = any (\effect -> offends effect || selfAuraMove card face effect) (cardResolutionEffects face)
+        offenders = filter ((\card -> anyFace (offendsOn card) card) . Printing.card) ps
     -- Guards against a vacuous sweep, one per arm: Preston Garvey, Minuteman
     -- creates a token attached to a target, Nomad Mythmaker moves an Aura card
     -- attached to a creature its controller controls, and Necrotic Plague and
@@ -3154,15 +3138,19 @@ effectLintSpec s registry corpus = Spec.describe s "Lint" $ do
     Spec.assertBool s (any (anyFace (any moves . cardResolutionEffects) . Printing.card) ps) "the pool has a card moving an Aura attached to a host it describes"
     Spec.assertBool s (any (anyFace (any (\effect -> case effect of Effect.MoveToZone m -> specified (MoveToZone.riders m); _ -> False) . cardResolutionEffects) . Printing.card) ps) "the pool has a card moving an Aura attached to a host a slot names"
     Spec.assertEqWith s "each attachment rider is on the opcode that reads it (CR 303.4f, 303.4i)" (fmap (S.nameOf . Printing.card) offenders) []
-    -- The rejecting side, Necrotic Plague's self-move differing in its enchant
-    -- pool alone: a mixed pool that can hold a player is refused too.
-    plague <- S.printingOf s registry "Necrotic Plague"
-    let enchanting pool = (S.combinedFace plague) {Face.enchant = fmap (\slot -> slot {TargetSlot.pool = pool}) (Face.enchant (S.combinedFace plague))}
+    -- The rejecting side, Vengeful Strangler differing in its back face's
+    -- Aura subtype alone: a transformed self-move is judged on the face it
+    -- enters as, not the creature face whose trigger moves it.
+    strangler <- Printing.card <$> S.printingOf s registry "Vengeful Strangler"
+    let withBackSubtypes subtypes = case Card.Type.faces strangler of
+          front NonEmpty.:| back : rest -> strangler {Card.Type.faces = front NonEmpty.:| (back {Face.typeLine = (Face.typeLine back) {TypeLine.subtypes = subtypes}} : rest)}
+          _ -> strangler
+        frontOffends card = offendsOn card (NonEmpty.head (Card.Type.faces card))
     Spec.assertEqWith
       s
-      "a self-moving Aura is refused exactly where its enchant pool can hold a player"
-      (fmap (offendsOn . enchanting) [Pool.Creatures, Pool.PlayersAndPlaneswalkers, Pool.AnyTarget, Pool.Players])
-      [False, True, True, True]
+      "a transformed self-move is refused exactly where its back face is no Aura"
+      (fmap (frontOffends . withBackSubtypes) [[Subtype.Type.Aura], []])
+      [False, True]
   -- The sibling lint for the OTHER face-down rider, one field over and pointed
   -- at the opposite zone: CR 708.3 is a rule about entering the BATTLEFIELD, so
   -- on any other destination it is inert card data. Inert on a Create outright,
