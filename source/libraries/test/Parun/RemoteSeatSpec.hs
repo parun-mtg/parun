@@ -76,13 +76,33 @@ spec s registry = Spec.describe s "RemoteSeat" $ do
     matchup <- BotSpec.bears s registry
     wholeGame s (matchup <> pure (S.carol, snd (NonEmpty.head matchup))) [S.bob, S.carol]
 
+  Spec.it s "a guest whose connection drops mid-game rejoins, is sent its seat and the request again, and the game finishes" $ do
+    matchup <- BotSpec.bears s registry
+    (outcome, wire) <- State.runStateT (hosted [S.bob] matchup) (MkWire Map.empty Map.empty Map.empty (Map.singleton S.bob 5) 0 [])
+    Spec.assertEqWith s "finished" (Monad.void outcome) (Right ())
+    Spec.assertEqWith s "rejoined once" (rejoins wire) 1
+    Spec.assertEqWith s "the guest is sent its seat again" (starts wire) [S.bob]
+
+  Spec.it s "a game picked up from its seed and the replies so far asks what the game played through asked, and ends the same" $ do
+    matchup <- BotSpec.bears s registry
+    let replayed whole k = State.runStateT (resumedGame matchup) (MkResumed (take k whole) 0 [] [])
+    (outcome, whole) <- replayed [] 0
+    let replies = reverse (kept whole)
+        k = div (length replies) 2
+    (again, resumed) <- replayed replies k
+    Spec.assertBool s (k > 0) "the game asks something"
+    Spec.assertEqWith s "ends the same" (fmap fst again) (fmap fst outcome)
+    Spec.assertEqWith s "the requests made again are seen, not asked" (replays resumed) k
+    Spec.assertEqWith s "asks what the game played through asked after them" (reverse (live resumed)) (drop k (reverse (live whole)))
+    Spec.assertEqWith s "keeps only the replies made after them" (take k replies <> reverse (kept resumed)) replies
+
 -- A game between these seats, every seat in `guests` played from its own
 -- page over its own channel and the rest from the host's: it finishes, each
 -- page answers only its own seat and is sent only its own seat's view, and
 -- each guest is told how it ended.
 wholeGame :: (Monad m) => Spec.Spec m n -> NonEmpty.NonEmpty (PlayerId.PlayerId, Deck.Deck) -> [PlayerId.PlayerId] -> m ()
 wholeGame s matchup guests = do
-  (outcome, wire) <- State.runStateT (hosted guests matchup) (MkWire Map.empty Map.empty Map.empty)
+  (outcome, wire) <- State.runStateT (hosted guests matchup) (MkWire Map.empty Map.empty Map.empty Map.empty 0 [])
   case outcome of
     Right (Result.Won _, _) -> do
       told <- State.execStateT (Monad.forM_ guests $ \g -> Link.send (channel g) (Link.MkEnd Ending.MkStopped [Text.pack "over"] Text.empty)) wire
@@ -98,20 +118,51 @@ wholeGame s matchup guests = do
 -- Every page and the channels between them: the lines the host has yet to
 -- read from each guest, the seat of each request each page (Nothing for the
 -- host's, a guest's seat for its own) answered and whose view it carried,
--- and the end each guest was told.
+-- and the end each guest was told; how many more lines each guest's channel
+-- carries before it drops once, how many times a guest rejoined, and each
+-- seat a guest was sent again.
 data Wire = MkWire
   { inbox :: Map.Map PlayerId.PlayerId [Text.Text],
     asked :: Map.Map (Maybe PlayerId.PlayerId) [(PlayerId.PlayerId, Maybe PlayerId.PlayerId)],
-    ended :: Map.Map PlayerId.PlayerId Link.Heard
+    ended :: Map.Map PlayerId.PlayerId Link.Heard,
+    dropping :: Map.Map PlayerId.PlayerId Int,
+    rejoins :: Int,
+    starts :: [PlayerId.PlayerId]
   }
 
 build :: Text.Text
 build = Text.pack "test"
 
 -- The host's game: every seat over the line protocol, each guest's requests
--- sent over its channel and every other seat's to the host's page.
+-- sent over its channel and every other seat's to the host's page. A guest
+-- whose channel drops rejoins the first time, and not again.
 hosted :: (Monad m) => [PlayerId.PlayerId] -> NonEmpty.NonEmpty (PlayerId.PlayerId, Deck.Deck) -> State.StateT Wire m (Either Text.Text (Result.Result, GameState.GameState))
-hosted guests matchup = Game.run (S.fixtureRegistry []) Nothing [] (Map.fromList [(pid, Game.wired (S.fixtureRegistry []) (Protocol.bySeat (Map.fromList [(g, Link.remote (channel g)) | g <- guests]) (page hostPage))) | (pid, _) <- NonEmpty.toList matchup]) (S.seeded 1) Map.empty matchup
+hosted guests matchup = Game.run (S.fixtureRegistry []) Nothing [] (Map.fromList [(pid, Game.wired (S.fixtureRegistry []) (Protocol.bySeat (Map.fromList [(g, Link.remote rejoined (channel g)) | g <- guests]) (page hostPage))) | (pid, _) <- NonEmpty.toList matchup]) (S.seeded 1) Map.empty matchup
+
+-- A guest rejoining, which connects the first time and not again.
+rejoined :: (Monad m) => State.StateT Wire m Bool
+rejoined = do
+  State.modify' (\w -> w {rejoins = rejoins w + 1})
+  (<= 1) . rejoins <$> State.get
+
+-- A game the host's page plays every seat of, picked up after the replies
+-- stored (Protocol.resumed): the requests seen while they last, and each
+-- one asked and reply kept after.
+data Resumed = MkResumed
+  { stored :: [R.Reply],
+    replays :: Int,
+    live :: [Request.Request],
+    kept :: [R.Reply]
+  }
+
+resumedGame :: (Monad m) => NonEmpty.NonEmpty (PlayerId.PlayerId, Deck.Deck) -> State.StateT Resumed m (Either Text.Text (Result.Result, GameState.GameState))
+resumedGame matchup = Game.run (S.fixtureRegistry []) Nothing [] (Map.fromList [(pid, Game.wired (S.fixtureRegistry []) resuming) | (pid, _) <- NonEmpty.toList matchup]) (S.seeded 1) Map.empty matchup
+
+-- Each request answered from the replies stored, then by a page that passes.
+resuming :: (Monad m) => Protocol.Exchange (State.StateT Resumed m)
+resuming = Protocol.resumed nextStored (const (State.modify' (\r -> r {replays = replays r + 1}))) (\reply -> State.modify' (\r -> r {kept = reply : kept r})) asking
+  where
+    asking request = State.modify' (\r -> r {live = request : live r}) >> pure (Just (Right (answer request)))
 
 -- The host's page, as `asked` keys it.
 hostPage :: Maybe PlayerId.PlayerId
@@ -125,6 +176,7 @@ channel g = Link.MkChannel send (received g)
   where
     send message = case Link.decode build (Link.encode build message) of
       Left _ -> pure ()
+      Right (Link.MkStart seat) -> State.modify' (\w -> w {starts = starts w <> [seat]})
       Right line -> do
         heard <- Link.guest (page (Just g)) line
         case heard of
@@ -132,13 +184,15 @@ channel g = Link.MkChannel send (received g)
           Link.MkEnded {} -> State.modify' (\w -> w {ended = Map.insert g heard (ended w)})
           Link.MkIgnored -> pure ()
 
--- The next line this guest's page sent, read; Nothing once there is none.
+-- The next line this guest's page sent, read; Nothing once there is none,
+-- and once the channel drops, which loses the line unread.
 received :: (Monad m) => PlayerId.PlayerId -> State.StateT Wire m (Maybe Link.Message)
 received g = do
   w <- State.get
-  case Map.findWithDefault [] g (inbox w) of
-    line : rest -> State.put w {inbox = Map.insert g rest (inbox w)} >> pure (either (const Nothing) Just (Link.decode build line))
-    [] -> pure Nothing
+  case (Map.findWithDefault [] g (inbox w), Map.lookup g (dropping w)) of
+    (_ : _, Just 0) -> State.put w {inbox = Map.delete g (inbox w), dropping = Map.delete g (dropping w)} >> pure Nothing
+    (line : rest, left) -> State.put w {inbox = Map.insert g rest (inbox w), dropping = maybe (dropping w) (\n -> Map.insert g (n - 1) (dropping w)) left} >> pure (either (const Nothing) Just (Link.decode build line))
+    ([], _) -> pure Nothing
 
 -- A page's own exchange, each request it answers recorded under it.
 page :: (Monad m) => Maybe PlayerId.PlayerId -> Protocol.Exchange (State.StateT Wire m)
@@ -166,3 +220,9 @@ answer request =
           (Just (R.Array from), Just (R.Number count)) -> R.Array (List.genericTake count from)
           _ -> R.Null
         _ -> R.Null
+
+-- The next reply stored, taken.
+nextStored :: (Monad m) => State.StateT Resumed m (Maybe R.Reply)
+nextStored = State.state $ \r -> case stored r of
+  reply : rest -> (Just reply, r {stored = rest})
+  [] -> (Nothing, r)

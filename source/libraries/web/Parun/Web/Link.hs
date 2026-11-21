@@ -6,6 +6,7 @@
 module Parun.Web.Link where
 
 import qualified Control.Monad as Monad
+import qualified Data.List.NonEmpty as NonEmpty
 import qualified Data.Text as Text
 import qualified Parun.Codec.Reply as Codec.Reply
 import qualified Parun.Codec.Request as Codec.Request
@@ -13,8 +14,11 @@ import qualified Parun.Extra.Integer as Integer
 import qualified Parun.Json.Value as Value
 import qualified Parun.JsonCodec.Codec as Codec
 import qualified Parun.JsonCodec.Common as Common
+import qualified Parun.Play.Key as Key
 import qualified Parun.Play.Protocol as Protocol
+import qualified Parun.Types.Key as Key.Type
 import qualified Parun.Types.PlayerId as PlayerId
+import qualified Parun.Types.Question as Question
 import qualified Parun.Types.Reply as R
 import qualified Parun.Types.Request as Request
 import qualified Parun.Web.Ending as Ending
@@ -117,17 +121,22 @@ data Channel m = MkChannel
 
 -- | The host's side of a guest's seat (Protocol.Exchange): each request sent,
 -- answered by the reply that comes back, any other message (a Ready toggled
--- as the game began) skipped; the end of input once the channel closes,
--- which stops the game.
-remote :: (Monad m) => Channel m -> Protocol.Exchange m
-remote channel request = send channel (MkAsk request) >> replied
+-- as the game began, a rejoining guest's Hello) skipped. Once the channel
+-- closes, `rejoin` connects it anew and the guest is sent its seat and the
+-- request again, which a guest whose page reloaded needs both of; the end of
+-- input, which stops the game, only where it does not.
+remote :: (Monad m) => m Bool -> Channel m -> Protocol.Exchange m
+remote rejoin channel request = asked
   where
+    asked = send channel (MkAsk request) >> replied
     replied = do
       heard <- receive channel
       case heard of
         Just (MkAnswer reply) -> pure (Just (Right reply))
         Just _ -> replied
-        Nothing -> pure Nothing
+        Nothing -> do
+          back <- rejoin
+          if back then send channel (MkStart (Question.seat (Request.question request))) >> asked else pure Nothing
 
 -- | What the guest does with a message from the host once the game is under
 -- way: a request is answered through `local`, its reply what to send back;
@@ -147,3 +156,54 @@ guest local message = case message of
   MkAsk request -> maybe MkIgnored (either (const MkIgnored) (MkReply . MkAnswer)) <$> local request
   MkEnd verdict said scenario -> pure (MkEnded verdict said scenario)
   _ -> pure MkIgnored
+
+-- | A game with guests as the host's page keeps it, to pick it up after a
+-- reload (Protocol.resumed): its seed, each seat's deck as a label and its
+-- list's text (the host's first), the bots' slots players were invited to,
+-- and every reply so far.
+data Saved = MkSaved
+  { seed :: Key.Type.Key,
+    seats :: NonEmpty.NonEmpty (Text.Text, Text.Text),
+    invited :: [Int],
+    replies :: [R.Reply]
+  }
+  deriving (Eq, Show)
+
+-- | A saved game as the page keeps it, stamped with the build that played
+-- it: a line for the game, then one per reply (savedReply), so a reply is
+-- kept by adding its line.
+saved :: Text.Text -> Saved -> Text.Text
+saved build game =
+  let seat (name, contents) = Value.object [Value.pair "deck" (Value.text name), Value.pair "list" (Value.text contents)]
+      header =
+        Value.object
+          [ Value.pair "build" (Value.text build),
+            Value.pair "seed" (Value.text (Key.toHex (seed game))),
+            Value.pair "seats" (Value.array (fmap seat (NonEmpty.toList (seats game)))),
+            Value.pair "invited" (Value.array (fmap (Value.integer . toInteger) (invited game)))
+          ]
+   in Text.intercalate (Text.pack "\n") (Common.render header : fmap savedReply (replies game))
+
+-- | A reply's line in a saved game.
+savedReply :: R.Reply -> Text.Text
+savedReply = Common.render . Codec.Reply.toValue
+
+-- | The game a page kept, or why it does not read: one another build played
+-- is refused, since its replies may not replay the same game.
+unsaved :: Text.Text -> Text.Text -> Either Text.Text Saved
+unsaved build kept = case Text.lines kept of
+  [] -> Left (Text.pack "no game")
+  first : rest -> do
+    pairs <- Common.parse first >>= Common.asObject
+    theirs <- Common.field "build" pairs >>= Common.asText
+    Monad.unless (theirs == build) . Left $ Text.pack "the game was played on another build of Parun"
+    key <- Common.field "seed" pairs >>= Common.asText >>= maybe (Left (Text.pack "not a seed")) Right . Key.fromHex
+    listed <- Common.field "seats" pairs >>= Common.asArray >>= traverse seat
+    decks <- maybe (Left (Text.pack "no seats")) Right (NonEmpty.nonEmpty listed)
+    slots <- Common.field "invited" pairs >>= Common.asArray >>= traverse (Common.asInteger Monad.>=> maybe (Left (Text.pack "not a slot")) Right . Integer.toInt)
+    answers <- traverse (Common.parse Monad.>=> Codec.Reply.fromValue) (filter (not . Text.null) rest)
+    pure (MkSaved key decks slots answers)
+  where
+    seat value = do
+      fields <- Common.asObject value
+      (,) <$> (Common.field "deck" fields >>= Common.asText) <*> (Common.field "list" fields >>= Common.asText)

@@ -22,16 +22,20 @@ import qualified Parun.Web.Screen as Screen
 -- | The game as seat `seat`, over `channel` to the host: each request
 -- answered on the page at the auto-pass level kept in `levelRef`, a card
 -- tapped showing its text through `lookUp`, the home screen through
--- `leave`; how it came out, which a closed channel stops.
-play :: Browser.Page Screen.Event -> (CardName.CardName -> Either InvalidCorpus.InvalidCorpus (Maybe Card.Card)) -> IORef.IORef Web.Question.Level -> Link.Channel IO -> PlayerId.PlayerId -> IO Hotseat.Leave -> IO Hotseat.Played
-play page lookUp levelRef channel seat leave = do
+-- `leave`; how it came out. Once the channel closes, `rejoin` connects it
+-- anew, and the game goes on as the host asks again; it stops where `rejoin`
+-- does not connect.
+play :: Browser.Page Screen.Event -> (CardName.CardName -> Either InvalidCorpus.InvalidCorpus (Maybe Card.Card)) -> IORef.IORef Web.Question.Level -> Link.Channel IO -> IO Bool -> PlayerId.PlayerId -> IO Hotseat.Leave -> IO Hotseat.Played
+play page lookUp levelRef channel rejoin seat leave = do
   seatRef <- IORef.newIORef . Hotseat.newSeat seat =<< IORef.readIORef levelRef
   Hotseat.keepingLevel levelRef seatRef . Exception.handle (\Hotseat.MkAbandonedGame -> pure Hotseat.MkAbandoned) $ do
     let local = Hotseat.exchange lookUp page seatRef leave
         loop = do
           heard <- Link.receive channel
           case heard of
-            Nothing -> pure (Ending.MkStopped, [Text.pack "The game stopped: the connection to the host closed."], Text.empty)
+            Nothing -> do
+              back <- rejoin
+              if back then loop else pure (Ending.MkStopped, [Text.pack "The game stopped: the connection to the host closed."], Text.empty)
             Just message -> do
               answered <- Link.guest local message
               case answered of

@@ -119,6 +119,23 @@ logLine = logJs . Prim.toJSString . Text.unpack
 forgetDeck :: Text.Text -> IO ()
 forgetDeck = forgetJs . Prim.toJSString . Text.unpack
 
+-- | Keeps a game with guests as Parun.Web.Link.saved writes it, in place of
+-- any kept before: the page keeps it for a reload to pick up (engine.js).
+keepGame :: Text.Text -> IO ()
+keepGame = keepGameJs . Prim.toJSString . Text.unpack
+
+-- | Adds a reply's line (Parun.Web.Link.savedReply) to the game kept.
+keepReply :: Text.Text -> IO ()
+keepReply = keepReplyJs . Prim.toJSString . Text.unpack
+
+-- | Forgets the game kept, once it is over.
+forgetGame :: IO ()
+forgetGame = forgetGameJs
+
+-- | The game the page kept when it loaded, empty if none.
+keptGame :: IO Text.Text
+keptGame = fmap (Text.pack . Prim.fromJSString) keptGameJs
+
 -- | Moves the chunks the worker named since last asked onto the page's own
 -- queue.
 collect :: Page msg -> IO ()
@@ -266,3 +283,15 @@ foreign import javascript unsafe "globalThis.parunLink({ op: 'send', seat: $1, t
 
 foreign import javascript unsafe "globalThis.parunLink({ op: 'close', seat: $1 })"
   closeJs :: Int -> IO ()
+
+foreign import javascript unsafe "globalThis.parunKeepGame({ start: $1 })"
+  keepGameJs :: Prim.JSString -> IO ()
+
+foreign import javascript unsafe "globalThis.parunKeepGame({ reply: $1 })"
+  keepReplyJs :: Prim.JSString -> IO ()
+
+foreign import javascript unsafe "globalThis.parunKeepGame({})"
+  forgetGameJs :: IO ()
+
+foreign import javascript unsafe "globalThis.parunKeptGame"
+  keptGameJs :: IO Prim.JSString

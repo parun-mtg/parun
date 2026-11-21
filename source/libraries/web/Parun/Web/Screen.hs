@@ -8,6 +8,7 @@ import qualified Parun.Web.Home as Home
 import qualified Parun.Web.Join as Join
 import qualified Parun.Web.Lobby as Lobby
 import qualified Parun.Web.Question as Web.Question
+import qualified Parun.Web.Rejoin as Rejoin
 import qualified Parun.Web.Replay as Web.Replay
 
 data Event
@@ -18,4 +19,5 @@ data Event
   | MkEnding Ending.Event
   | MkBuilder Builder.Event
   | MkJoin Join.Event
+  | MkRejoin Rejoin.Event
   deriving (Eq, Show)

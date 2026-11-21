@@ -15,9 +15,11 @@ const level = localStorage.getItem("parun-level");
 if (level !== null) engineUrl.searchParams.set("level", level);
 const engine = new Worker(engineUrl, { type: "module" });
 // The decks saved in this browser go to the engine first (engine.js), each
-// kept as parun-deck:<slug>.
+// kept as parun-deck:<slug>, with the game with guests kept as parun-game
+// (Parun.Web.Link.saved), unless a link joins another browser's game.
 const deckKey = "parun-deck:";
-engine.postMessage({ saved: Object.fromEntries(Object.keys(localStorage).filter((key) => key.startsWith(deckKey)).map((key) => [key.slice(deckKey.length), localStorage.getItem(key)])) });
+const gameKey = "parun-game";
+engine.postMessage({ saved: Object.fromEntries(Object.keys(localStorage).filter((key) => key.startsWith(deckKey)).map((key) => [key.slice(deckKey.length), localStorage.getItem(key)])), game: offered ? "" : (localStorage.getItem(gameKey) ?? "") });
 // The query is read once, by the engine at its start (Parun.Browser.Shell's
 // opening); the page moves on without it.
 if (location.search || offered) history.replaceState(null, "", location.pathname);
@@ -541,7 +543,22 @@ engine.onmessage = ({ data }) => {
   else if ("save" in data) localStorage.setItem(deckKey + data.save.slug, data.save.text);
   else if ("forget" in data) localStorage.removeItem(deckKey + data.forget);
   else if ("link" in data) linkStep(data.link);
+  else if ("game" in data) keepGame(data.game);
 };
+// The game with guests: its first line once it starts, each reply's line
+// added as it is made, and all of it forgotten once it is over. A reply
+// with no game kept to add to is dropped.
+function keepGame({ start, reply }) {
+  try {
+    const kept = localStorage.getItem(gameKey);
+    if (start !== undefined) localStorage.setItem(gameKey, start);
+    else if (reply !== undefined) {
+      if (kept !== null) localStorage.setItem(gameKey, `${kept}\n${reply}`);
+    } else localStorage.removeItem(gameKey);
+  } catch (problem) {
+    console.warn(problem);
+  }
+}
 engine.onerror = (error) => note(`engine failed: ${error.message}`);
 
 // Seats played from another browser (Parun.Web.Link): one peer connection
@@ -578,7 +595,8 @@ function gathered(connection) {
   });
 }
 // A link's channel says only while it is the seat's current one; a dropped
-// connection closes it, and nothing reconnects.
+// connection closes it, and only a new link, its codes swapped by hand again
+// (Parun.Web.Rejoin), reconnects.
 function listen(seat, link, channel) {
   const current = () => links.get(seat) === link;
   let partial = "";

@@ -90,8 +90,8 @@ view screen =
                   then [Element.el "p" [] [] [Element.string "Connected to the host."], Element.el "ul" ["places"] [] (fmap place (places screen)), readyButton]
                   else case reply screen of
                     Nothing ->
-                      [ Element.el "p" [] [] [Element.string "Choose your deck, then make the code to send back to the host."],
-                        Element.el "button" ["primary", "make-reply"] ([Element.attr "type" (Text.pack "button"), Element.on "click" MkMakeReply] <> [Element.attr "disabled" Text.empty | Maybe.isNothing (picked screen)]) [Element.string "Make my reply code"]
+                      [ Element.el "p" [] [] [Element.string "Choose your deck and make the code to send back to the host. A game under way picks up where it stopped, whatever deck you choose."],
+                        Element.el "button" ["primary", "make-reply"] [Element.attr "type" (Text.pack "button"), Element.on "click" MkMakeReply] [Element.string "Make my reply code"]
                       ]
                     Just code ->
                       [ Element.el "label" [] [Element.attr "for" (Text.pack "join-reply")] [Element.string "Send this code back to the host, who pastes it in:"],

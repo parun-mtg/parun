@@ -1146,6 +1146,7 @@ import qualified Parun.Web.LinkSpec
 import qualified Parun.Web.LoadingSpec
 import qualified Parun.Web.LobbySpec
 import qualified Parun.Web.ManaSpec
+import qualified Parun.Web.RejoinSpec
 import qualified Parun.Web.ReplaySpec
 import qualified Parun.Web.WireSpec
 import qualified Parun.WebQuestionSpec
@@ -2328,6 +2329,7 @@ spec s reference corpus = do
   Parun.Web.LinkSpec.spec s
   Parun.Web.IconSpec.spec s
   Parun.Web.ManaSpec.spec s
+  Parun.Web.RejoinSpec.spec s
   Parun.Web.ReplaySpec.spec s
   Parun.Web.WireSpec.spec s
   Parun.WebQuestionSpec.spec s registry
