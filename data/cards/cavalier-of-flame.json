@@ -280,13 +280,10 @@
                                       "value": "Planeswalker"
                                     },
                                     {
-                                      "type": "Not",
+                                      "type": "HeldBy",
                                       "value": {
-                                        "type": "HeldBy",
-                                        "value": {
-                                          "holder": "Controller",
-                                          "relation": "You"
-                                        }
+                                        "holder": "Controller",
+                                        "relation": "Opponent"
                                       }
                                     }
                                   ]
