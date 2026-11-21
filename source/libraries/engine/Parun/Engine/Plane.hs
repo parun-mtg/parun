@@ -185,19 +185,19 @@ exemptFromRange oid gs = not (isGrandMelee gs) && maybe False isPlanarFace (Game
 rangePerspective :: ObjectId -> PlayerId -> GameState -> Maybe PlayerId
 rangePerspective source controller gs = if exemptFromRange source gs then Nothing else Just controller
 
--- | CR 901.12c: the players a triggered ability of this source triggers for,
--- each as its "you" and controller: the trigger's controller alone, but in a
--- Two-Headed Giant game every still-playing member of that controller's team
--- for a planar source ('exemptFromRange'), the controller first
--- (docs/decisions.md, "A plane's you is each member of the planar team").
--- Asked by Event.Trigger's eventTriggers.
+-- | CR 901.12c: the players an ability of this source reads as its "you":
+-- its controller alone, but in a Two-Headed Giant game every still-playing
+-- member of that controller's team for a planar source ('exemptFromRange'),
+-- the controller first (docs/decisions.md, "A plane's you is each member of
+-- the planar team"). A triggered ability triggers once for each, each its
+-- instance's controller (Event.Trigger's eventTriggers); a static ability
+-- applies as though each controlled it (PlayerEffect's printedRows,
+-- Projection's affectsFramed).
 -- data/scenarios/planechase/cr-901-12c-tazeem-s-chaos-draws-for-each-member-of-the-planar-team.json
--- and its Academy at Tolaria West sibling prove it.
---
--- Not implemented: a planar card's static ability's "you" (Naya, Grixis,
--- The Caldaia) still names the planar controller alone (#9178).
-triggerControllers :: ObjectId -> PlayerId -> GameState -> [PlayerId]
-triggerControllers source controller gs
+-- and its Academy at Tolaria West, Naya, Grixis and The Caldaia siblings
+-- prove it.
+planarYous :: ObjectId -> PlayerId -> GameState -> [PlayerId]
+planarYous source controller gs
   | GameSettings.twoHeadedGiant (MatchScope.settings (GameState.match gs)) && exemptFromRange source gs =
       controller : filter (Teams.sameTeam (Game.teams gs) controller) (Game.stillPlaying gs)
   | otherwise = [controller]

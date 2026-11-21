@@ -1,0 +1,111 @@
+{
+  "board": {
+    "active": "alice",
+    "seats": [
+      {
+        "command": [
+          {
+            "card": "The Caldaia",
+            "label": "plane"
+          }
+        ],
+        "name": "alice",
+        "team": 1
+      },
+      {
+        "battlefield": [
+          {
+            "card": "Mountain",
+            "label": "m1"
+          },
+          {
+            "card": "Mountain",
+            "label": "m2"
+          },
+          {
+            "card": "Mountain",
+            "label": "m3"
+          },
+          {
+            "card": "Mountain",
+            "label": "m4"
+          }
+        ],
+        "hand": [
+          {
+            "card": "Hill Giant",
+            "label": "giant"
+          }
+        ],
+        "name": "dave",
+        "team": 1
+      },
+      {
+        "name": "bob",
+        "team": 2
+      },
+      {
+        "name": "carol",
+        "team": 2
+      }
+    ],
+    "sharedTeamTurns": true,
+    "step": "PrecombatMain",
+    "twoHeadedGiant": true
+  },
+  "description": "CR 901.12c The Caldaia gives blitz to a creature spell each member of the planar team casts from hand",
+  "final": [
+    {
+      "Count": {
+        "card": "Hill Giant",
+        "count": 1,
+        "player": "dave",
+        "zone": "Battlefield"
+      }
+    }
+  ],
+  "note": "A Two-Headed Giant Planechase game, alice and dave against bob and carol, alice the active team's primary player and so the planar controller (CR 901.12b). The Caldaia's 'you' applies to dave as well (CR 901.12c), as his own 'you' (docs/decisions.md, \"A plane's you is each member of the planar team\"), so the Hill Giant he casts from his hand has blitz {3}, offered beside its printed {3}{R}, and he casts it for that.",
+  "timeline": [
+    {
+      "do": {
+        "Cast": {
+          "cost": [
+            {
+              "type": "Generic",
+              "value": 3
+            }
+          ],
+          "mana": [
+            "$m1",
+            "$m2",
+            "$m3",
+            null
+          ],
+          "object": "$giant"
+        }
+      },
+      "player": "dave",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": "Pass",
+      "player": "dave",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Count": {
+          "card": "Hill Giant",
+          "count": 1,
+          "player": "dave",
+          "zone": "Battlefield"
+        }
+      },
+      "player": "dave",
+      "step": "PrecombatMain",
+      "turn": 1
+    }
+  ]
+}
