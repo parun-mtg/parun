@@ -9,9 +9,8 @@ module Parun.Play.Search where
 import qualified Control.Monad as Monad
 import qualified Control.Monad.Trans.State.Strict as State
 import qualified Data.Foldable as Foldable
-import qualified Data.List as List
+import qualified Data.List.NonEmpty as NonEmpty
 import qualified Data.Map.Strict as Map
-import qualified Data.Ord as Ord
 import Numeric.Natural (Natural)
 import qualified Parun.Engine.Engine as Engine
 import qualified Parun.Engine.Game as Engine.Game
@@ -81,7 +80,7 @@ sample prior viewer gs =
 -- | The search bot for its seat: each of a priority decision's 'options',
 -- where they offer a choice ('searchable'), played out
 -- `SearchBudget.samples` times, each in a fresh 'sample', the best total
--- taken, the earliest on a tie; every other prompt answered by the random bot
+-- taken, one of the best at random on a tie; every other prompt answered by the random bot
 -- (Game.bot). It reads the whole game only through 'sample', which deals
 -- every card its seat cannot see now; a card it saw before is dealt anew
 -- (#9345).
@@ -93,7 +92,8 @@ search registry budget prior = Answerer.MkAnswerer $ \asked -> case Asked.prompt
   Prompt.ChooseAction decider pid menu
     | searchable asked decider pid (options menu) -> do
         scored <- traverse (\option -> fmap (\scores -> (sum scores, option)) (Monad.replicateM (Natural.toIntSaturating (SearchBudget.samples budget)) (sample prior pid (Asked.game asked) >>= rollout registry budget pid option))) (options menu)
-        pure (snd (List.minimumBy (Ord.comparing (Ord.Down . fst)) scored))
+        let top = maximum (fmap fst scored)
+        maybe (pure Action.Pass) Generator.pick (NonEmpty.nonEmpty [option | (total, option) <- scored, total == top])
   _ -> Answerer.unwrap (Game.bot registry) asked
 
 -- | The actions of a priority menu worth searching: all but CR 605.3a's mana
@@ -118,12 +118,12 @@ searchable asked decider pid menu =
         && Map.null (GameState.parkedTurns gs)
 
 -- | One playout of `option` for `pid` from a world at their priority decision,
--- scored in halves: 2 a win, 1 a draw, 0 a loss; a playout cut off after
+-- scored 'won' a win, minus it a loss, 0 a draw; a playout cut off after
 -- `SearchBudget.prompts` prompts is scored by 'standing'.
-rollout :: forall m. (Monad m) => Registry.Registry m -> SearchBudget.SearchBudget -> PlayerId.PlayerId -> Action.Action -> GameState.GameState -> Game.Play m Natural
+rollout :: forall m. (Monad m) => Registry.Registry m -> SearchBudget.SearchBudget -> PlayerId.PlayerId -> Action.Action -> GameState.GameState -> Game.Play m Integer
 rollout registry budget pid option world =
   let random = Game.consulting registry (Map.fromList [(seat, Game.bot registry) | seat <- Map.keys (GameState.players world)])
-      go :: Natural -> Bool -> Program.Program (Asked.Asked GameState.GameState) (Result.Result, GameState.GameState) -> Game.Play m Natural
+      go :: Natural -> Bool -> Program.Program (Asked.Asked GameState.GameState) (Result.Result, GameState.GameState) -> Game.Play m Integer
       go left pending program = case program of
         Program.Return (result, _) -> pure (score pid result)
         Program.Then asked k
@@ -134,19 +134,21 @@ rollout registry budget pid option world =
               _ -> Answerer.unwrap random asked >>= go (left - 1) pending . k
    in go (SearchBudget.prompts budget) True (State.runStateT Engine.resumePriority world)
 
--- | A result for `pid`, in halves.
-score :: PlayerId.PlayerId -> Result.Result -> Natural
+-- | A result for `pid`.
+score :: PlayerId.PlayerId -> Result.Result -> Integer
 score pid result = case result of
-  Result.Won winner | winner == pid -> 2
-  Result.Drawn -> 1
-  _ -> 0
+  Result.Won winner | winner == pid -> won
+  Result.Drawn -> 0
+  _ -> negate won
 
--- | A cut-off playout for `pid`, in halves: 2 if their life is above every
--- other player's, 0 if some other player's is above theirs, 1 otherwise. The
--- crudest score; #9342 replaces it.
-standing :: PlayerId.PlayerId -> GameState.GameState -> Natural
+-- | A win's score, above any cut-off playout's 'standing' a game of ordinary
+-- life totals reaches.
+won :: Integer
+won = 100
+
+-- | A cut-off playout for `pid`: their life less the highest other player's.
+-- The crudest score; #9342 replaces it.
+standing :: PlayerId.PlayerId -> GameState.GameState -> Integer
 standing pid gs =
   let lives = Map.map Player.life (GameState.players gs)
-      own = Map.findWithDefault 0 pid lives
-      others = Map.elems (Map.delete pid lives)
-   in if all (< own) others then 2 else if any (> own) others then 0 else 1
+   in Map.findWithDefault 0 pid lives - maybe 0 maximum (NonEmpty.nonEmpty (Map.elems (Map.delete pid lives)))
