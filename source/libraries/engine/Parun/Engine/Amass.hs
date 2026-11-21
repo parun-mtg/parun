@@ -285,6 +285,8 @@ amass settle pid source resolving kind n = do
   -- First: the token, and only if they control no candidate.
   Monad.when (null (candidatesOf kind pid gs0))
     . Monad.void
+    -- Entered before the choice below, which may pick it.
+    . Event.enteringNow
     $ Event.createTokens settle pid (NonEmpty.singleton (tokenOf kind, Nothing)) Nothing 1 TapState.Untapped Map.empty Nothing Set.empty
   gs1 <- State.get
   -- CR 701.47b: an impossible choice is not a failed amass. Neither rule is a

@@ -1025,8 +1025,8 @@ healArm resolving source controller legal ref =
               foldr (Map.adjust heal) (GameState.objects gs) (objectRefObjects legal resolving controller source gs ref)
           }
 
-forEach :: (Game Result -> ObjectId -> ObjectId -> PlayerId -> Map.Map SlotName (Set Recipient) -> Map.Map SlotName (Set Recipient) -> Effect Card.Type.Card (GrantedAbility.GrantedAbility Card.Type.Card) -> Game ()) -> (Game Result -> ObjectId -> ObjectId -> PlayerId -> SlotName -> Map.Map SlotName (Set Recipient) -> [Recipient] -> PayGate.PayGate -> Game [Recipient]) -> Game Result -> ObjectId -> ObjectId -> PlayerId -> Map.Map SlotName (Set Recipient) -> Map.Map SlotName (Set Recipient) -> ForEach.ForEach (Effect Card.Type.Card (GrantedAbility.GrantedAbility Card.Type.Card)) -> Game ()
-forEach applyEffectWith loopOffers runSubgame resolving source controller legal chosen (ForEach.MkForEach ref membership slot body individually gate startingWith) = do
+forEach :: Settle.Settle -> (Game Result -> ObjectId -> ObjectId -> PlayerId -> Map.Map SlotName (Set Recipient) -> Map.Map SlotName (Set Recipient) -> Effect Card.Type.Card (GrantedAbility.GrantedAbility Card.Type.Card) -> Game ()) -> (Game Result -> ObjectId -> ObjectId -> PlayerId -> SlotName -> Map.Map SlotName (Set Recipient) -> [Recipient] -> PayGate.PayGate -> Game [Recipient]) -> Game Result -> ObjectId -> ObjectId -> PlayerId -> Map.Map SlotName (Set Recipient) -> Map.Map SlotName (Set Recipient) -> ForEach.ForEach (Effect Card.Type.Card (GrantedAbility.GrantedAbility Card.Type.Card)) -> Game ()
+forEach settle applyEffectWith loopOffers runSubgame resolving source controller legal chosen (ForEach.MkForEach ref membership slot body individually gate startingWith) = do
   -- CR 608.2f: WHICH members, swept ONCE from the pre-loop board and then fixed,
   -- so the body can neither shorten the batch nor add to it. Recipients rather
   -- than objects, since rule 608.2f is about "players and/or objects" and
@@ -1237,11 +1237,20 @@ forEach applyEffectWith loopOffers runSubgame resolving source controller legal 
       -- order, whose chooser is the resolving controller. An individually
       -- processed loop's iterations are separate moments, and each call
       -- settles its own.
+      --
+      -- CR 616.1 over that unit: the tokens the pass creates, across its
+      -- members' separate creations, enter at once as it ends
+      -- (Event.enteringAtOnce), so their seats order every lot's as-enters
+      -- replacements together, and a token that did not enter is dropped from
+      -- what the members bound.
       actionMajor state0 =
         Monad.foldM
           ( \state (choices, action) -> do
               chosenFor <- overMembers (not (null choices)) (\member state' -> Monad.foldM (step member) state' choices) state
-              maybe (pure chosenFor) (\effect -> Event.simultaneously (Event.together (overMembers False (\member state' -> step member state' effect) chosenFor))) action
+              let pass effect = do
+                    ((made', asked'), unentered) <- Event.enteringAtOnce settle (overMembers False (\member state' -> step member state' effect) chosenFor)
+                    pure (fmap (Common.withoutObjects unentered) made', asked')
+              maybe (pure chosenFor) (Event.simultaneously . Event.together . pass) action
           )
           state0
           (Common.loopActions (Foldable.toList body))

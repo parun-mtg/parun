@@ -304,6 +304,29 @@ objectsBound resolving mSlot named = case (mSlot, named) of
   -- Several take the group.
   (Just slot, several) -> bindObjectsSlot resolving slot (Seq.fromList several)
 
+-- CR 508.4 / 509.4: a creation whose riders put its tokens into combat enters
+-- them before its arm does so (Event.enteringNow); any other waits for its
+-- action's other creations (Event.enteringAtOnce).
+enteringForRiders :: EntryRiders.EntryRiders count ability -> Game a -> Game a
+enteringForRiders entry
+  | Maybe.isJust (EntryRiders.attacking entry) || Maybe.isJust (EntryRiders.blocking entry) = Event.enteringNow
+  | otherwise = id
+
+-- `bound` without the objects in `gone`, the tokens an action minted that did
+-- not enter (Event.enteringAtOnce). A binding left naming nothing is dropped,
+-- objectsBound's posture: no slot names an empty set.
+withoutObjects :: Set ObjectId -> Map.Map SlotName Binding.Type.Binding -> Map.Map SlotName Binding.Type.Binding
+withoutObjects gone
+  | Set.null gone = id
+  | otherwise = Map.mapMaybe $ \binding ->
+      let kept = Set.filter (maybe True (`Set.notMember` gone) . Recipient.objectOf)
+          scrubbed =
+            binding
+              { Binding.Type.targets = Monad.mfilter (not . Set.null) (fmap kept (Binding.Type.targets binding)),
+                Binding.Type.objects = Monad.mfilter (not . Seq.null) (fmap (Seq.filter (`Set.notMember` gone)) (Binding.Type.objects binding))
+              }
+       in if scrubbed == Binding.Type.empty then Nothing else Just scrubbed
+
 -- CR 111.3: the values the creating effect defines become the token's text, so a
 -- computed power or toughness is settled here and stamped as a literal. Left as a
 -- quantity it would be re-read on every projection, and TurnRegisters.events is

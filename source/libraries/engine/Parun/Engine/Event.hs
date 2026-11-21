@@ -769,13 +769,12 @@ amongPending under members body = do
 -- data/scenarios/team, and a devour beside a teammate's devour or Frontier
 -- Mastodon left unasked by the cr-805-6 Thunder-Thrash Elder scenarios there.
 --
--- createTokens calls this over one event's lots, each lot through its first
+-- enterLots calls this over one event's lots, each lot through its first
 -- token: a lot's members are copies of one shape, whose orders are
 -- indistinguishable (CR 616.1g's Voice of All example), so the conjure road,
 -- one card per batch, does not call it. The cr-616-1 Second Harvest pair in
--- data/scenarios/entry-replacement proves the token road.
--- Not implemented: ordering separate createTokens calls inside one action
--- against each other, a ForEach's iterations (#9303).
+-- data/scenarios/entry-replacement proves the token road, and its cr-616-1
+-- Foggy Swamp Visions pair a ForEach's separate creations (enteringAtOnce).
 orderEntries :: Maybe PlayerId -> [ObjectId] -> Game [ObjectId]
 orderEntries under members = do
   gs <- State.get
@@ -11687,34 +11686,84 @@ createTokens settle controller shapes die n tapped entering attached marks = do
               -- the map is per-object, so no sibling's loop reads another's pending
               -- counters whenever they were written. What CR 614.12 does rest on is
               -- `placeObject` above having materialized every token first, which is what
-              -- `siblingsOf` then hands each entry loop.
-              let siblingsOf oid = Set.delete oid (Set.fromList kept)
+              -- enterLots' `siblingsOf` then hands each entry loop.
               Monad.mapM_ (`placeRiderCounters` entering) kept
-              -- CR 616.1 / 101.4c: the lots of one event apply their tokens'
-              -- as-enters replacements in the order their seat chooses
-              -- (orderEntries), each lot asked about through its first token:
-              -- one lot's tokens are copies of one shape, whose orders are
-              -- indistinguishable (CR 616.1g's Voice of All example).
               let keptLots = filter (not . null) (fmap (filter (`elem` kept)) byLot)
-                  firsts = [(first, lot) | lot@(first : _) <- keptLots]
-              orderedFirsts <- orderEntries Nothing (fmap fst firsts)
-              -- CR 614.1c: each lot's as-enters effects run before the next
-              -- lot's entries apply, changeZonesTogether's step. The last
-              -- lot's wait for the instruction to end, as a lone lot's do, so
-              -- a caller's CR 508.4 attack is made first.
-              let enterLot :: [ObjectId] -> Game [(ObjectId, Maybe EntryRefusal.EntryRefusal)]
-                  enterLot = traverse (\oid -> (,) oid <$> runEntry settle (Just Zone.Battlefield) Nothing (siblingsOf oid) oid)
-                  inOrder = Maybe.mapMaybe (`List.lookup` firsts) orderedFirsts
-              refusals <- concat <$> traverse (\(i, lot) -> enterLot lot <* Monad.when (i < length inOrder) (Settle.entryEffects settle)) (zip [1 :: Int ..] inOrder)
-              let entered = [oid | oid <- kept, Just Nothing == List.lookup oid refusals]
-              Monad.mapM_ unmake [oid | (oid, Just refusal) <- refusals, not (isDiverted refusal)]
-              settleMinted (Bookkeeping.nextTimestamp (GameState.bookkeeping unminted)) entered
-              pure entered
+              -- Inside enteringAtOnce the lots wait for the action's other
+              -- creations, and enter with them as it ends.
+              deferring <- State.gets (Scratch.deferredLots . GameState.scratch)
+              case deferring of
+                Just pending -> do
+                  State.modify' (\g -> g {GameState.scratch = (GameState.scratch g) {Scratch.deferredLots = Just (pending <> Seq.fromList keptLots)}})
+                  pure kept
+                Nothing -> enterLots settle (Bookkeeping.nextTimestamp (GameState.bookkeeping unminted)) keptLots
       -- After every rollback above, and after resolveTokens, whose rows ask
       -- about the creations BEFORE this one. CR 614.1a's "one or more": no
       -- caller passes zero, so the guard is a fence.
       Monad.when (n > 0) (noteWouldCreate controller)
       pure made
+
+-- CR 614.12: run the entry loops of token lots minted onto the battlefield
+-- together, answering the tokens that entered; createTokens' tail, and
+-- enteringAtOnce's over an action's creations. Every lot's tokens are each
+-- loop's siblings, which is what lets none copy another (CR 614.12's "as it
+-- would exist").
+--
+-- CR 616.1 / 101.4c: the lots apply their tokens' as-enters replacements in
+-- the order their seats choose (orderEntries), each lot asked about through
+-- its first token: one lot's tokens are copies of one shape, whose orders are
+-- indistinguishable (CR 616.1g's Voice of All example).
+enterLots :: Settle.Settle -> Timestamp.Timestamp -> [[ObjectId]] -> Game [ObjectId]
+enterLots settle start lots = do
+  let kept = concat lots
+      siblingsOf oid = Set.delete oid (Set.fromList kept)
+      firsts = [(first, lot) | lot@(first : _) <- lots]
+  orderedFirsts <- orderEntries Nothing (fmap fst firsts)
+  -- CR 614.1c: each lot's as-enters effects run before the next lot's
+  -- entries apply, changeZonesTogether's step. The last lot's wait for the
+  -- instruction to end, as a lone lot's do, so a caller's CR 508.4 attack is
+  -- made first.
+  let enterLot :: [ObjectId] -> Game [(ObjectId, Maybe EntryRefusal.EntryRefusal)]
+      enterLot = traverse (\oid -> (,) oid <$> runEntry settle (Just Zone.Battlefield) Nothing (siblingsOf oid) oid)
+      inOrder = Maybe.mapMaybe (`List.lookup` firsts) orderedFirsts
+  refusals <- concat <$> traverse (\(i, lot) -> enterLot lot <* Monad.when (i < length inOrder) (Settle.entryEffects settle)) (zip [1 :: Int ..] inOrder)
+  let entered = [oid | oid <- kept, Just Nothing == List.lookup oid refusals]
+  Monad.mapM_ unmake [oid | (oid, Just refusal) <- refusals, not (isDiverted refusal)]
+  settleMinted start entered
+  pure entered
+
+-- CR 616.1 / 608.2f: run `body`, one action that may create tokens in several
+-- createTokens calls -- a ForEach's iterations -- and enter every lot they
+-- mint at once as it ends, so one CR 616.1 order (enterLots) covers them all.
+-- Answers the tokens minted that did not enter, for the caller to drop from
+-- what the body bound. The OUTERMOST scope wins, `together`'s posture; open
+-- it inside `together`, which settles what enters here.
+--
+-- A call making a CR 508.4 / 509.4 rider's tokens attacking or blocking runs
+-- outside it (enteringNow), since its caller acts on them once entered. Not
+-- implemented: ordering those against the action's other creations (#9314).
+enteringAtOnce :: Settle.Settle -> Game a -> Game (a, Set ObjectId)
+enteringAtOnce settle body = do
+  before <- State.get
+  case Scratch.deferredLots (GameState.scratch before) of
+    Just _ -> fmap (\result -> (result, Set.empty)) body
+    Nothing -> do
+      State.put before {GameState.scratch = (GameState.scratch before) {Scratch.deferredLots = Just Seq.empty}}
+      result <- body
+      lots <- State.gets (Maybe.fromMaybe Seq.empty . Scratch.deferredLots . GameState.scratch)
+      State.modify' (\g -> g {GameState.scratch = (GameState.scratch g) {Scratch.deferredLots = Nothing}})
+      entered <- enterLots settle (Bookkeeping.nextTimestamp (GameState.bookkeeping before)) (Foldable.toList lots)
+      pure (result, Set.difference (Set.fromList (concat lots)) (Set.fromList entered))
+
+-- Run `body` with enteringAtOnce's scope suspended, so the tokens it creates
+-- enter before it goes on: a caller that acts on the tokens it creates.
+enteringNow :: Game a -> Game a
+enteringNow body = do
+  saved <- State.gets (Scratch.deferredLots . GameState.scratch)
+  State.modify' (\g -> g {GameState.scratch = (GameState.scratch g) {Scratch.deferredLots = Nothing}})
+  result <- body
+  State.modify' (\g -> g {GameState.scratch = (GameState.scratch g) {Scratch.deferredLots = saved}})
+  pure result
 
 -- CR 614.1a: this player would have created one or more tokens, whatever came
 -- of it: CR 111.5, 303.4g and 303.4i each leave uncreated a token an effect
