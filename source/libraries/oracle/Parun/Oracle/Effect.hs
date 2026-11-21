@@ -848,8 +848,16 @@ joined context predicates = case predicates of
         (first, rest') <- [splitAt 1 predicates, splitAt 2 predicates]
         (text, ms) <- joined context first
         (next, ns) <- joined context rest'
-        sentence' <- followedBy context text next
+        sentence' <- followedBy context text next <> thenJoined text next
         [(sentence', ms <> ns)]
+      -- Free: one sentence, its second part opened by ", then" (Krydle of
+      -- Baldur's Gate's "that player loses 1 life and mills a card, then you
+      -- gain 1 life and scry 1").
+      thenJoined text next =
+        [ body <> Text.pack ", then " <> (if Text.isPrefixOf (Target.self context) next then next else Prose.decapitalise next)
+        | Just body <- [Text.stripSuffix (Text.pack ".") text],
+          not (Text.isInfixOf (Text.pack ". ") body)
+        ]
       series =
         [ (Prose.sentence (Text.intercalate (Text.pack ", ") (clauseText p : fmap verb middle) <> Text.pack last' <> verb q) <> trailing q, allMentions p <> foldMap mentions rest)
         | all (sameSubject p) rest,
