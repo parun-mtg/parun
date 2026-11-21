@@ -23,6 +23,7 @@ import Parun.Types.ObjectId (ObjectId)
 import Parun.Types.PlayerId (PlayerId)
 import qualified Parun.Types.SideDeck as SideDeck
 import qualified Parun.Types.Source as Source
+import qualified Parun.Types.Teams as Teams
 import qualified Parun.Types.TriggeredAbilitySource as TriggeredAbilitySource
 import qualified Parun.Types.TurnRegisters as TurnRegisters
 import qualified Parun.Types.TypeLine as TypeLine
@@ -145,3 +146,20 @@ exemptFromRange oid gs = maybe False isPlanarFace (Game.faceOfWithLastKnown oid 
 -- Minister's Cabinet Room's vote is cast by a player outside" prove them.
 rangePerspective :: ObjectId -> PlayerId -> GameState -> Maybe PlayerId
 rangePerspective source controller gs = if exemptFromRange source gs then Nothing else Just controller
+
+-- | CR 901.12c: the players a triggered ability of this source triggers for,
+-- each as its "you" and controller: the trigger's controller alone, but in a
+-- Two-Headed Giant game every still-playing member of that controller's team
+-- for a planar source ('exemptFromRange'), the controller first
+-- (docs/decisions.md, "A plane's you is each member of the planar team").
+-- Asked by Event.Trigger's eventTriggers.
+-- data/scenarios/planechase/cr-901-12c-tazeem-s-chaos-draws-for-each-member-of-the-planar-team.json
+-- and its Academy at Tolaria West sibling prove it.
+--
+-- Not implemented: a planar card's static ability's "you" (Naya, Grixis,
+-- The Caldaia) still names the planar controller alone (#9178).
+triggerControllers :: ObjectId -> PlayerId -> GameState -> [PlayerId]
+triggerControllers source controller gs
+  | GameSettings.twoHeadedGiant (MatchScope.settings (GameState.match gs)) && exemptFromRange source gs =
+      controller : filter (Teams.sameTeam (Game.teams gs) controller) (Game.stillPlaying gs)
+  | otherwise = [controller]

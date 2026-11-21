@@ -3109,3 +3109,33 @@ Entries are ordered by the first rule each cites.
   `cr-810-10c-melira-the-living-cure-s-bar-stops-a-teammate-s-simultaneous-poison`
   and `...-simultaneous-infect-damage`, each with a `--bob` pair.
 - **Issue**: #8806.
+
+## A plane's you is each member of the planar team
+
+- **Question**: CR 901.12c applies a plane's or phenomenon's "you" to both
+  members of the planar controller's team. Does Tazeem's "draw a card for
+  each land you control" have each member draw for their own lands, or both
+  draw for the team's? Does Academy at Tolaria West's "at the beginning of
+  your end step, if you have no cards in hand" trigger once for the team, or
+  once for each member whose hand is empty?
+- **Rules**: CR 113.8, 603.3a, 810.5, 901.12c; no ruling; CR of
+  2026-11-06.
+- **Decision**: Each member in turn. A triggered ability of a planar card
+  triggers once for each still-playing member of its controller's team, each
+  instance controlled by that member and its "you", so its trigger condition,
+  intervening "if" and effect read that member alone: Tazeem draws each member
+  a card per land they control, and Academy triggers for each member with an
+  empty hand. The member, not CR 113.8's planar controller, controls their
+  instance, so its choices (Naya's "target creature you control") are theirs.
+- **Rejected**: The planar controller controlling every instance, each with a
+  member's "you": that player would choose among a teammate's creatures,
+  which CR 810.5 keeps theirs. "You" as the team, one instance reading both members at once:
+  Tazeem would give each member a card per land the team controls, doubling
+  every count, and CR 810.5 keeps a team's resources other than life and
+  poison its members' own.
+- **Site**: `Parun.Engine.Plane.triggerControllers`, read by
+  `Parun.Engine.Event.Trigger.eventTriggers`' `teamWide`, proved by the
+  scenarios `cr-901-12c-tazeem-s-chaos-draws-for-each-member-of-the-planar-team`
+  and
+  `cr-901-12c-academy-at-tolaria-west-triggers-for-each-empty-handed-member-of-the-planar-team`.
+- **Issue**: #9165.
