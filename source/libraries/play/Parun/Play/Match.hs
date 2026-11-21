@@ -60,8 +60,8 @@ flags =
     GetOpt.Option [] ["games"] (GetOpt.ReqArg (\s o -> maybe (Left ("not a number of games: " <> s)) (\n -> Right o {MatchOptions.games = n}) (Read.readMaybe s)) "N") "how many games to play; 100 when absent",
     GetOpt.Option [] ["save"] (GetOpt.ReqArg (\s o -> Right o {MatchOptions.save = Just s}) "DIR") "save each game in this directory as a scenario",
     GetOpt.Option [] ["search"] (GetOpt.ReqArg (\s o -> maybe (Left ("not a seat: " <> s)) (\n -> Right o {MatchOptions.searching = Set.insert n (MatchOptions.searching o)}) (Monad.mfilter (`elem` [1, 2]) (Read.readMaybe s))) "SEAT") "the search bot plays this seat, 1 or 2; the random bot plays every other",
-    GetOpt.Option [] ["samples"] (GetOpt.ReqArg (\s o -> maybe (Left ("not a number of samples: " <> s)) (\n -> Right o {MatchOptions.budget = (MatchOptions.budget o) {SearchBudget.samples = n}}) (Monad.mfilter (> 0) (Read.readMaybe s))) "N") "the search bot's playouts of each option; 4 when absent",
-    GetOpt.Option [] ["cutoff"] (GetOpt.ReqArg (\s o -> maybe (Left ("not a number of prompts: " <> s)) (\n -> Right o {MatchOptions.budget = (MatchOptions.budget o) {SearchBudget.prompts = n}}) (Read.readMaybe s)) "N") "the prompts a playout is answered before it is cut off and scored by life; 4000 when absent"
+    GetOpt.Option [] ["samples"] (GetOpt.ReqArg (\s o -> maybe (Left ("not a number of samples: " <> s)) (\n -> Right o {MatchOptions.budget = (MatchOptions.budget o) {SearchBudget.samples = n}}) (Monad.mfilter (> 0) (Read.readMaybe s))) "N") "the search bot's playouts of each option; 2 when absent",
+    GetOpt.Option [] ["cutoff"] (GetOpt.ReqArg (\s o -> maybe (Left ("not a number of prompts: " <> s)) (\n -> Right o {MatchOptions.budget = (MatchOptions.budget o) {SearchBudget.prompts = n}}) (Read.readMaybe s)) "N") "the prompts a playout is answered before it is cut off and scored by life; 300 when absent"
   ]
 
 usage :: [String] -> IO a

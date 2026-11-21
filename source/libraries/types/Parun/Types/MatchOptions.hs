@@ -24,4 +24,4 @@ data MatchOptions = MkMatchOptions
 -- | A hundred games keyed from the operating system's entropy, none saved,
 -- the random bot in every seat.
 none :: MatchOptions
-none = MkMatchOptions {seed = Nothing, games = 100, save = Nothing, searching = Set.empty, budget = SearchBudget.MkSearchBudget {SearchBudget.samples = 4, SearchBudget.prompts = 4000}}
+none = MkMatchOptions {seed = Nothing, games = 100, save = Nothing, searching = Set.empty, budget = SearchBudget.MkSearchBudget {SearchBudget.samples = 2, SearchBudget.prompts = 300}}
