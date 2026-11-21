@@ -1914,7 +1914,7 @@ representativeEvents cond =
         -- `thatPlayer` -- so the two sides agree on the pair. A Self subject binds
         -- nothing whichever ids the event names, since the spell IS the bearer.
         TriggerCondition.SpellCast (SpellCast.MkSpellCast _ _ _ _ _ copies _) ->
-          noTable (GameEvent.SpellCast (SpellWasCast.MkSpellWasCast S.alice arrived S.emptyCharacteristics (Just Zone.Hand) Nothing Set.empty))
+          noTable (GameEvent.SpellCast (SpellWasCast.MkSpellWasCast S.alice arrived S.emptyCharacteristics (Just Zone.Hand) Nothing Set.empty Nothing))
             NonEmpty.:| [noTable (GameEvent.SpellCopied (SpellWasCopied.MkSpellWasCopied S.alice arrived)) | copies]
         -- CR 602.2b's activation, binding the ability and its activator.
         TriggerCondition.AbilityActivated _ -> one (GameEvent.AbilityActivated (AbilityWasActivated.MkAbilityWasActivated S.alice (Just arrived) departed (AbilityFacts.MkAbilityFacts Nothing Nothing AbilityKind.NonManaAbility LoyaltyKind.NonLoyaltyAbility) Nothing))
@@ -2098,7 +2098,7 @@ representativeEvents cond =
         TriggerCondition.PlayerLosesGame _ -> one (GameEvent.LostTheGame S.bob)
         TriggerCondition.PlacesSticker _ -> one (GameEvent.StickerPut StickerPut.MkStickerPut {StickerPut.placer = S.bob, StickerPut.object = departed, StickerPut.kind = StickerKind.Art})
         -- CR 305.1's own event, binding its player and land.
-        TriggerCondition.PlayerPlaysLand p -> one (GameEvent.LandPlayed (LandPlayed.MkLandPlayed S.bob departed (CastOrigin.FromZone (Maybe.fromMaybe Zone.Hand (PlaysLand.from p)))))
+        TriggerCondition.PlayerPlaysLand p -> one (GameEvent.LandPlayed (LandPlayed.MkLandPlayed S.bob departed (CastOrigin.FromZone (Maybe.fromMaybe Zone.Hand (PlaysLand.from p))) Nothing))
         -- TWO: CR 701.62b's manifest dread that binned nothing, and one that
         -- binned a card, which is what parts the floor from the ceiling.
         TriggerCondition.PlayerManifestsDread _ ->

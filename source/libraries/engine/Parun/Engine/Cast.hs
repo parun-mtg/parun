@@ -85,6 +85,7 @@ import qualified Parun.Types.Effect as Effect
 import qualified Parun.Types.EntryR as EntryR
 import qualified Parun.Types.EntryRewrite as EntryRewrite
 import qualified Parun.Types.EntwineDecision as EntwineDecision
+import qualified Parun.Types.ExileLink as ExileLink
 import qualified Parun.Types.ExilePlayPermission as ExilePlayPermission
 import qualified Parun.Types.Expended as Expended
 import qualified Parun.Types.Expiry as Expiry
@@ -1309,6 +1310,14 @@ grantedCastKeyword castFor oid gs = do
   Monad.guard (not (null (Keyword.permissionsFor (PC.cardTypes copiable) keyword)) || not (null (Keyword.warpCosts (Set.singleton keyword))))
   Monad.guard (not (Map.member keyword (PC.keywords copiable)))
   pure keyword
+
+-- | CR 607.2a: the link `oid` has, in exile in `before`, to the object that
+-- exiled it, which the move out drops with the card (CR 400.7); recorded on
+-- the play's event for Voltaic Visionary's "a card exiled with this creature".
+exileLinkLeaving :: ObjectId -> GameState -> Maybe ExileLink.ExileLink
+exileLinkLeaving oid before
+  | Game.zoneOf oid before == Just Zone.Exile = Map.lookup oid (GameState.exiledWith before)
+  | otherwise = Nothing
 
 -- CR 601.2a: record on the spell the zone it was moved to the stack from, which
 -- CR 400.7 otherwise leaves it no memory of. `asProposed` wrote the same value
@@ -3162,7 +3171,7 @@ playLand settle offered pid oid mName = do
       State.modify' (followIntoSpell (heldPermission oid held) oid land)
     -- CR 305.1: the play itself, for a condition watching land plays
     -- (TriggerCondition.PlayerPlaysLand), naming the zone it was played from.
-    State.modify' (Event.recordEvent (GameEvent.LandPlayed (LandPlayed.MkLandPlayed pid (Maybe.fromMaybe oid (Seq.lookup 0 moved)) (Game.castOrigin (Game.zoneOf oid before)))))
+    State.modify' (Event.recordEvent (GameEvent.LandPlayed (LandPlayed.MkLandPlayed pid (Maybe.fromMaybe oid (Seq.lookup 0 moved)) (Game.castOrigin (Game.zoneOf oid before)) (exileLinkLeaving oid before))))
   -- CR 305.2a counts the lands played this turn, so this TALLIES rather than
   -- flagging. CR 305.4: the only tally, an effect that PUTS a land onto the
   -- battlefield not being one.
@@ -4923,7 +4932,7 @@ castProposed perform baseSpending pid oid sid printedFace castFrom preparedFor k
                           -- this spell" quantities read, once the cast is
                           -- finished.
                           State.modify' (fileCastBoard sid)
-                          State.modify' (\g -> let pc = Projection.project sid g in Event.recordEvent (GameEvent.SpellCast (SpellWasCast.MkSpellWasCast pid sid pc castFrom (Object.castUsing =<< Game.lookupObject sid g) (Projection.lapsedGrantsOf (Projection.fullView g) pc sid g))) g)
+                          State.modify' (\g -> let pc = Projection.project sid g in Event.recordEvent (GameEvent.SpellCast (SpellWasCast.MkSpellWasCast pid sid pc castFrom (Object.castUsing =<< Game.lookupObject sid g) (Projection.lapsedGrantsOf (Projection.fullView g) pc sid g) (exileLinkLeaving oid before))) g)
                           -- CR 611.2a: the durations this cast ends (Soul
                           -- Sculptor's), off the spell as it became cast.
                           State.modify' (Expiry.sweep (Expiry.Cast oid sid))
