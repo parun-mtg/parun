@@ -590,7 +590,7 @@ spec s registry = Spec.describe s "WebQuestion" $ do
 
   Spec.it s "CR 701.23b a search finds up to its count, none included" $ do
     let request = asking (Text.pack "Search") (R.Object [(Text.pack "from", R.Array [R.Text (Text.pack "$1"), R.Text (Text.pack "$2")]), (Text.pack "names", R.Array [R.Text (Text.pack "Forest"), R.Text (Text.pack "Plains")]), (Text.pack "count", R.Number 1)])
-    Spec.assertBool s (Text.pack "<button type=\"button\">Forest</button><button type=\"button\">Plains</button><button class=\"primary\" type=\"button\">Find</button>" `Text.isInfixOf` Html.toText (Question.Web.view request Question.Web.blank)) "names"
+    Spec.assertBool s (Text.pack "<button type=\"button\">Forest</button><button type=\"button\">Plains</button><div class=\"passes\"><button class=\"primary\" type=\"button\">Find</button></div>" `Text.isInfixOf` Html.toText (Question.Web.view request Question.Web.blank)) "names"
     Spec.assertEqWith s "none" (Question.Web.step request Set.empty Question.Web.MkSubmit Text.empty) (Question.Web.MkReplied (R.Array []))
     Spec.assertBool s (case Question.Web.step request (picking request [Question.Web.MkToggle 0 0, Question.Web.MkToggle 0 1]) Question.Web.MkSubmit Text.empty of Question.Web.MkRefused _ -> True; _ -> False) "too many"
 
