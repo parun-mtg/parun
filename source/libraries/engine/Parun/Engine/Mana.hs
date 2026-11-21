@@ -3646,6 +3646,16 @@ boundedMultisets k xs = case (k, xs) of
   (_, []) -> []
   (_, (x, limit) : rest) -> [List.genericReplicate n x <> more | n <- reverse [0 .. min k limit], more <- boundedMultisets (k - n) rest]
 
+-- Every ordering of these entries that differs in its KEYS, each entry once:
+-- entries of one key are taken in the order given.
+distinctOrderings :: (Ord k) => [(k, a)] -> [[a]]
+distinctOrderings entries =
+  let go pending =
+        if Map.null pending
+          then [[]]
+          else [entry : rest | (key, entry : more) <- Map.toList pending, rest <- go (if null more then Map.delete key pending else Map.insert key more pending)]
+   in go (Map.fromListWith (flip (<>)) [(key, [entry]) | (key, entry) <- entries])
+
 -- The resolutions of `cost` this player could actually pay right now, in
 -- `resolutions`' order -- so the head costs the least life of any of them, which
 -- is what lifeNeeded reads. NOT the resolution `spend` will take: `spend` walks
@@ -3990,13 +4000,44 @@ payableResolutionsGiven subject spending swept pcs pid committed committedEnergy
       -- supply serves a demand only from strictly earlier, which gives all three
       -- readings at once.
       --
-      -- The SEARCH grows by the permutations of the eating options a board takes,
+      -- The SEARCH grows by the orderings of the eating options a board takes,
       -- and `orderings` walks exactly one where there are fewer than two -- which
-      -- is every board a single mana-eating source can build.
+      -- is every board a single mana-eating source can build. Two options alike
+      -- at a position (`placed`) swap to the same board, so only the distinct
+      -- orderings are walked: n Signets are one ordering, not n! (#9226).
       orderings taken = case taken of
         [] -> [[]]
         [_] -> [taken]
-        _ -> List.permutations taken
+        _ -> distinctOrderings (fmap (\entry -> (placed entry, entry)) taken)
+      -- What a position reads of the option holding it: its supplies, demands
+      -- and doublings, and of its payment (`subjectAt`) only CR 609.4b's
+      -- clauses about it (`servesAt`) and which supplies admit it (`admits`).
+      subjectOf oid = PaymentSubject.Activating oid AbilityKind.ManaAbility Nothing Nothing ManaNarrowing.none
+      admitSets = Set.toList (Set.fromList (fmap supplyAdmits (pooled <> concatMap (\(_, option) -> optionSupplies option <> concatMap (concat . Map.elems) (optionDoublings option)) (concat options))))
+      standing (oid, lender) = (Map.lookup (oid, lender) activatingAt, fmap (Set.member (subjectOf oid)) admitSets)
+      placed (key, option) = (standing key, optionSupplies option, optionDemands option, optionDoublings option)
+      -- Groups INTERCHANGEABLE to every board, so a board need take only the
+      -- multiset of options a class of them takes, not every assignment: n
+      -- Signets are n + 1 boards, not 2^n (#9226). Alike at every position
+      -- (`placed`), in life and energy, and in claims -- verbatim, or, where a
+      -- group's claims draw on no object another group's or the cost's do,
+      -- only in whether each option's own claims are satisfiable, since
+      -- Claim.satisfiable then asks them apart from the rest of the board.
+      marks = Claim.contested (claimed : fmap (concatMap (optionClaims . snd)) options)
+      classKey group =
+        let isolated = not (Claim.contends marks (concatMap (optionClaims . snd) group))
+            shown option = if isolated then (option {optionClaims = []}, Claim.satisfiable (optionClaims option)) else (option, True)
+         in (fmap (standing . fst) (take 1 group), fmap (shown . snd) group)
+      classes = fmap snd (List.sortOn fst (Map.elems (Map.fromListWith (\(_, new) (first, old) -> (first, old <> new)) [(classKey group, (index, [group])) | (index, group) <- zip [0 :: Int ..] options])))
+      -- A class's members' options are aligned, so a multiset of indices is
+      -- one option for each member, the most of the first index first as
+      -- sourceOptions orders them.
+      choose members = case members of
+        [one] -> fmap pure one
+        first : _ -> do
+          picks <- boundedMultisets (Natural.length members) [(index, Natural.length members) | (index, _) <- zip [0 :: Int ..] first]
+          pure (concat (zipWith (\member index -> take 1 (drop index member)) members picks))
+        [] -> [[]]
       -- WHOSE payment each position is, carried alongside: position k is the
       -- k-th eating option's source activating (CR 602.2b), and `costPosition`
       -- is the payment this walk was asked about. That map is CR 106.6's other
@@ -4004,7 +4045,7 @@ payableResolutionsGiven subject spending swept pcs pid committed committedEnergy
       -- asking whether the mana admits it. Each payment carries the card that
       -- lent its ability (CR 613.1f), which `servesAt` reads.
       boards = do
-        taken <- sequenceA options
+        taken <- concat <$> traverse choose classes
         Monad.guard (Claim.satisfiable (claimed <> concatMap (optionClaims . snd) taken))
         -- CR 107.14's one count of energy counters, held across the board's
         -- activations and the cost's own components exactly as the claims are:
@@ -4059,8 +4100,8 @@ payableResolutionsGiven subject spending swept pcs pid committed committedEnergy
                   -- a count, which is what makes CR 106.6 reach it: a generic
                   -- symbol takes any mana (`anyTypeDemand`), but only mana this
                   -- payment may spend, and a count cannot say which supplies it
-                  -- may draw on. Multiplicity is what `demandedIn` reads, so the
-                  -- copies cost `Set.fromList` one element however large the symbol.
+                  -- may draw on. Its copies are one entry of their count, however
+                  -- large the symbol.
                   wanted_ = fmap ((,) costPosition) (demands <> List.genericReplicate generic anyTypeDemand) <> eaten
                   -- CR 106.6 asked of the demand rather than of the mana: WHICH
                   -- payment a demand belongs to is what the restriction asks
@@ -4076,18 +4117,18 @@ payableResolutionsGiven subject spending swept pcs pid committed committedEnergy
                     (if wantedAt == costPosition then servesCost else servesAt subjectAt wantedAt) supply demand
                       && from < wantedAt
                       && maybe False ((`Set.member` supplyAdmits supply) . fst) (Map.lookup wantedAt subjectAt)
-                  -- "The supplies that could serve this set of demands" and "the
-                  -- demands in it", the two sides of Hall's condition for one
-                  -- subset.
-                  couldServe subset = length (filter (\supply -> any (admits supply) subset) supplies)
-                  demandedIn subset = length (filter (`elem` subset) wanted_)
-                  hallHolds subset = demandedIn subset <= couldServe subset
+                  -- Hall's condition, asked as the matching it is equivalent to
+                  -- (Claim.fillable): every eating option's demands sit at a
+                  -- position of their own, so asking every subset of them is
+                  -- 2^n (#9226).
+                  servers wanted = Set.fromList [index | (index, supply) <- zip [0 :: Int ..] supplies, admits supply wanted]
+                  hallHolds = Claim.fillable (const 1) [(servers wanted, count) | (wanted, count) <- Map.toList (Map.fromListWith (+) (fmap (\each -> (each, 1 :: Natural)) wanted_))]
                in affordable (committed + life + spent)
                     -- A cheap necessary condition, and nothing more: Hall's own
                     -- clause over the whole demand set implies it, since a supply
                     -- serving nothing is still counted here.
                     && Natural.length supplies >= Natural.length wanted_
-                    && all hallHolds (List.subsequences (Set.toList (Set.fromList wanted_)))
+                    && hallHolds
             -- CR 118.3 asked of a RELAXATION first, which no board beats: each
             -- group takes whichever option serves the clause at hand best, with
             -- only CR 119.4's one life total and the contended objects' count
