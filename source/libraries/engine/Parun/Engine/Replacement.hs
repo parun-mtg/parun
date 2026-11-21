@@ -2040,12 +2040,19 @@ sacrificeCandidatesGiven board you slots pid source filter_ gs =
 -- siblings that have already ARRIVED, whose CR 400.7 incarnations are on the
 -- battlefield and so are no candidate here. Parun.PowerToughnessSpec's Sutured
 -- Ghoul pair proves it.
+--
+-- MINUS too a card minted since the batch began (Scratch.enteringSince), the
+-- rule's object "leaving any zone at the same time": an earlier member's
+-- entry put it there (Thunder-Thrash Elder's devour). The cr-614-13a
+-- Victimize scenario in data/scenarios/entry-replacement proves it.
 graveyardCandidates :: PlayerId -> PlayerScope -> Filter.Type.Filter Keyword.Type.Keyword -> GameState -> [ObjectId]
 graveyardCandidates pid scope filter_ gs =
   let context = Filter.contextIn gs (Just pid) Nothing
       viewOf = Projection.viewsOf gs
       owners = Maybe.fromMaybe [] (PlayerEffect.playersInScope (Just pid) (Just pid) gs scope)
-      offered oid = not (Map.member oid (Scratch.enteringPending (GameState.scratch gs))) && Filter.matches context (viewOf oid) filter_
+      scratch = GameState.scratch gs
+      movedWithBatch oid = maybe False (<= oid) (Scratch.enteringSince scratch)
+      offered oid = not (Map.member oid (Scratch.enteringPending scratch)) && not (movedWithBatch oid) && Filter.matches context (viewOf oid) filter_
    in List.sort (concatMap (\owner -> filter offered (Game.cardsIn Zone.Graveyard owner gs)) owners)
 
 -- CR 614.1a / 614.1c-d: does the event's subject satisfy this replacement's

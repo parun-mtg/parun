@@ -130,6 +130,7 @@ withoutAnnouncement before entry between closed = do
   enteringSpells <- mapOf (Scratch.enteringSpells . GameState.scratch)
   enteredFrom <- mapOf (Scratch.enteredFrom . GameState.scratch)
   enteringPending <- mapOf (Scratch.enteringPending . GameState.scratch)
+  enteringSince <- one (Scratch.enteringSince . GameState.scratch)
   spentEntries <- setOf (Scratch.spentEntries . GameState.scratch)
   refusedEntries <- one (Scratch.refusedEntries . GameState.scratch)
   enteringCounters <- mapOfMapsOfMaps (Scratch.enteringCounters . GameState.scratch)
@@ -312,6 +313,7 @@ withoutAnnouncement before entry between closed = do
               Scratch.enteringSpells = enteringSpells,
               Scratch.enteredFrom = enteredFrom,
               Scratch.enteringPending = enteringPending,
+              Scratch.enteringSince = enteringSince,
               Scratch.spentEntries = spentEntries,
               Scratch.refusedEntries = refusedEntries,
               Scratch.enteringCounters = enteringCounters,

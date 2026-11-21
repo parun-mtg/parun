@@ -552,6 +552,7 @@ blankScratch =
       Scratch.enteringSpells = Map.empty,
       Scratch.enteredFrom = Map.empty,
       Scratch.enteringPending = Map.empty,
+      Scratch.enteringSince = Nothing,
       Scratch.spentEntries = Set.empty,
       Scratch.refusedEntries = Nothing,
       Scratch.enteringCounters = Map.empty,

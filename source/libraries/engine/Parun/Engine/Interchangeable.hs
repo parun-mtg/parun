@@ -377,6 +377,7 @@ quiet gs =
     && Map.null (Scratch.enteringSpells (GameState.scratch gs))
     && Map.null (Scratch.enteredFrom (GameState.scratch gs))
     && Map.null (Scratch.enteringPending (GameState.scratch gs))
+    && Maybe.isNothing (Scratch.enteringSince (GameState.scratch gs))
     && Maybe.isNothing (Scratch.refusedEntries (GameState.scratch gs))
     && Map.null (Scratch.enteringCounters (GameState.scratch gs))
     && Map.null (Scratch.copyExceptionCounters (GameState.scratch gs))
