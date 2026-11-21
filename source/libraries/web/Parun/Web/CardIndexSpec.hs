@@ -68,6 +68,14 @@ spec s = Spec.describe s "Parun.Web.CardIndex" $ do
       let land supertypes = "{\"faces\":[{\"name\":\"Probe\",\"typeLine\":{\"supertypes\":[" <> supertypes <> "],\"types\":[\"Land\"]}}]}"
       Spec.assertEq s (fmap (fmap CardIndex.basic . CardIndex.entryOf . decoded . land) ["\"Basic\"", "\"Basic\",\"Snow\"", ""]) [Just True, Just True, Just False]
 
+    Spec.it s "CR 709.4b gives a split card its halves' combined mana value" $ do
+      let json = "{\"faces\":[{\"name\":\"Commit\",\"manaCost\":[{\"type\":\"Generic\",\"value\":3},{\"type\":\"OfType\",\"value\":{\"type\":\"Colored\",\"value\":\"Blue\"}}],\"oracleText\":\"Put a spell on top.\",\"typeLine\":{\"types\":[\"Instant\"]}},{\"name\":\"Memory\",\"manaCost\":[{\"type\":\"Generic\",\"value\":4},{\"type\":\"OfType\",\"value\":{\"type\":\"Colored\",\"value\":\"Blue\"}},{\"type\":\"OfType\",\"value\":{\"type\":\"Colored\",\"value\":\"Blue\"}}],\"oracleText\":\"Each player shuffles.\",\"typeLine\":{\"types\":[\"Sorcery\"]}}],\"layout\":{\"type\":\"Split\"}}"
+      Spec.assertEq s (fmap CardIndex.value (CardIndex.entryOf (decoded json))) (Just 10)
+
+    Spec.it s "groups a card's rules text by face" $ do
+      let json = "{\"faces\":[{\"name\":\"Front\",\"oracleText\":\"Flying\",\"typeLine\":{\"types\":[\"Creature\"]}},{\"name\":\"Back\",\"oracleText\":\"Trample\",\"typeLine\":{\"types\":[\"Creature\"]}}],\"layout\":{\"type\":\"Transforming\"}}"
+      Spec.assertEq s (fmap CardIndex.rules (CardIndex.entryOf (decoded json))) (Just [(Text.pack "Front", [Text.pack "Flying"]), (Text.pack "Back", [Text.pack "Trample"])])
+
     Spec.it s "leaves out a synthetic card" $ do
       Spec.assertEq s (fmap CardIndex.name (CardIndex.entryOf (card True "Instant"))) Nothing
 
@@ -83,16 +91,17 @@ spec s = Spec.describe s "Parun.Web.CardIndex" $ do
     typed t = CardIndex.everything {CardIndex.text = Text.pack t}
     pool :: Seq.Seq CardIndex.Entry
     pool =
-      Seq.fromList
-        [ entry "Lightning Bolt" [Color.Red] 1 [CardType.Instant] "Lightning Bolt deals 3 damage to any target.",
-          entry "Llanowar Elves" [Color.Green] 1 [CardType.Creature] "{T}: Add {G}.",
-          entry "Elvish Champion" [Color.Green] 3 [CardType.Creature] "Other Elf creatures get +1/+1.",
-          entry "Wood Elf" [Color.Green] 1 [CardType.Creature] "",
-          entry "Elf Replica" [] 3 [CardType.Artifact, CardType.Creature] "",
-          entry "Gruul Signet" [Color.Red, Color.Green] 2 [CardType.Artifact] "",
-          entry "Big One" [Color.Red] 7 [CardType.Creature] "",
-          entry "Bigger One" [Color.Red] 9 [CardType.Creature] ""
-        ]
+      Seq.sortOn CardIndex.name $
+        Seq.fromList
+          [ entry "Lightning Bolt" [Color.Red] 1 [CardType.Instant] "Lightning Bolt deals 3 damage to any target.",
+            entry "Llanowar Elves" [Color.Green] 1 [CardType.Creature] "{T}: Add {G}.",
+            entry "Elvish Champion" [Color.Green] 3 [CardType.Creature] "Other Elf creatures get +1/+1.",
+            entry "Wood Elf" [Color.Green] 1 [CardType.Creature] "",
+            entry "Elf Replica" [] 3 [CardType.Artifact, CardType.Creature] "",
+            entry "Gruul Signet" [Color.Red, Color.Green] 2 [CardType.Artifact] "",
+            entry "Big One" [Color.Red] 7 [CardType.Creature] "",
+            entry "Bigger One" [Color.Red] 9 [CardType.Creature] ""
+          ]
 
 -- | An entry as the index would build it, for the tests.
 entry :: String -> [Color.Color] -> Integer -> [CardType.CardType] -> String -> CardIndex.Entry
@@ -105,9 +114,10 @@ entry name colours value kinds rules =
       CardIndex.colours = Set.fromList colours,
       CardIndex.types = Set.fromList kinds,
       CardIndex.typeLine = Text.unwords (fmap (Text.pack . show) kinds),
-      CardIndex.rules = [Text.pack rules | not (null rules)],
+      CardIndex.rules = [(Text.pack name, [Text.pack rules]) | not (null rules)],
       CardIndex.folded = Text.toCaseFold (Text.unwords [Text.pack name, Text.pack rules]),
-      CardIndex.basic = False
+      CardIndex.basic = False,
+      CardIndex.choices = Set.empty
     }
 
 -- | A one-face card named Probe, of the one type given, synthetic or not.

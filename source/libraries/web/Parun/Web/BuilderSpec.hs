@@ -6,6 +6,7 @@ import qualified Data.Maybe as Maybe
 import qualified Data.Sequence as Seq
 import qualified Data.Set as Set
 import qualified Data.Text as Text
+import qualified Parun.DeckList as DeckList
 import qualified Parun.Spec as Spec
 import qualified Parun.Types.CardName as CardName
 import qualified Parun.Types.Color as Color
@@ -18,13 +19,13 @@ spec :: (Monad m, Monad n) => Spec.Spec m n -> n ()
 spec s = Spec.describe s "Parun.Web.Builder" $ do
   Spec.describe s "update" $ do
     Spec.it s "adds and removes a copy at a time, dropping a card at none" $ do
-      let added = tap (Builder.MkAdd bolt) (tap (Builder.MkAdd bolt) fresh)
-          once = tap (Builder.MkRemove bolt) added
-          none = tap (Builder.MkRemove bolt) once
+      let added = tap (Builder.MkAdd DeckList.Main bolt) (tap (Builder.MkAdd DeckList.Main bolt) fresh)
+          once = tap (Builder.MkRemove DeckList.Main bolt) added
+          none = tap (Builder.MkRemove DeckList.Main bolt) once
       Spec.assertEq s (fmap Builder.deck [added, once, none]) [Map.singleton bolt 2, Map.singleton bolt 1, Map.empty]
 
     Spec.it s "an edit marks the deck changed and a save clears it" $ do
-      let added = tap (Builder.MkAdd bolt) fresh
+      let added = tap (Builder.MkAdd DeckList.Main bolt) fresh
       Spec.assertEq s (Builder.dirty fresh, Builder.dirty added, Builder.dirty (Builder.saved (Text.pack "saved/burn") added)) (False, True, False)
 
     Spec.it s "toggling a colour twice clears it" $ do
@@ -32,7 +33,7 @@ spec s = Spec.describe s "Parun.Web.Builder" $ do
       Spec.assertEq s (CardIndex.wanted (Builder.query once), CardIndex.wanted (Builder.query (tap (Builder.MkToggleColour Color.Red) once))) (Set.singleton Color.Red, Set.empty)
 
     Spec.it s "Back with changes asks first; Stay closes the question" $ do
-      let asked = tap Builder.MkBack (tap (Builder.MkAdd bolt) fresh)
+      let asked = tap Builder.MkBack (tap (Builder.MkAdd DeckList.Main bolt) fresh)
       Spec.assertEq s (Builder.leaving (tap Builder.MkBack fresh), Builder.leaving asked, Builder.leaving (tap Builder.MkStay asked)) (False, True, False)
 
     Spec.it s "takes the format chosen, which counts as a change" $ do
@@ -46,18 +47,18 @@ spec s = Spec.describe s "Parun.Web.Builder" $ do
 
   Spec.describe s "listText" $ do
     Spec.it s "writes no header for a casual deck, which names no format" $ do
-      Spec.assertEq s (Builder.listText (tap (Builder.MkAdd bolt) fresh)) (Text.pack "1 Lightning Bolt\n")
+      Spec.assertEq s (Builder.listText (tap (Builder.MkAdd DeckList.Main bolt) fresh)) (Text.pack "1 Lightning Bolt\n")
 
     Spec.it s "offers casual first, and chooses it" $ do
       let shown = Html.toText (Builder.view fresh)
       Spec.assertBool s (Text.isInfixOf (Text.pack "<option value=\"\" selected=\"\">Casual (no format)</option>") shown) "casual chosen"
 
     Spec.it s "writes the format header, then the main deck by name" $ do
-      let built = (tap (Builder.MkAdd bolt) . tap (Builder.MkAdd mountain) . tap (Builder.MkAdd bolt)) constructed
+      let built = (tap (Builder.MkAdd DeckList.Main bolt) . tap (Builder.MkAdd DeckList.Main mountain) . tap (Builder.MkAdd DeckList.Main bolt)) constructed
       Spec.assertEq s (Builder.listText built) (Text.pack "Format: constructed\n2 Lightning Bolt\n1 Mountain\n")
 
     Spec.it s "writes back the rest of a list untouched" $ do
-      let opened = constructed {Builder.deck = Map.singleton bolt 4, Builder.suffixes = Map.singleton bolt [(Text.pack " (M10) 146", 4)], Builder.rest = [Text.pack "Sideboard", Text.pack "2 Shock"]}
+      let opened = constructed {Builder.deck = Map.singleton bolt 4, Builder.suffixes = Map.singleton (DeckList.Main, bolt) [(Text.pack " (M10) 146", 4)], Builder.rest = [Text.pack "Sideboard", Text.pack "2 Shock"]}
       Spec.assertEq s (Builder.listText opened) (Text.pack "Format: constructed\n4 Lightning Bolt (M10) 146\n\nSideboard\n2 Shock\n")
 
     Spec.it s "parses back to the same deck, a split card included" $ do
@@ -90,11 +91,11 @@ spec s = Spec.describe s "Parun.Web.Builder" $ do
     Spec.it s "offers the five basic lands whatever the search" $ do
       let shown = Builder.view (Builder.update Builder.MkSearch (Text.pack "zzzz") indexed)
           tapped name = Html.labelled (Text.pack "button") (Text.pack name) shown >>= \path -> Html.handler (Text.pack "click") path shown
-      Spec.assertEq s (fmap tapped ["Plains", "Island", "Swamp", "Mountain", "Forest"]) (fmap (Just . Builder.MkAdd . CardName.MkCardName . Text.pack) ["Plains", "Island", "Swamp", "Mountain", "Forest"])
+      Spec.assertEq s (fmap tapped ["Plains", "Island", "Swamp", "Mountain", "Forest"]) (fmap (Just . Builder.MkAdd DeckList.Main . CardName.MkCardName . Text.pack) ["Plains", "Island", "Swamp", "Mountain", "Forest"])
 
     Spec.it s "adds a result when its name's button is tapped" $ do
       let shown = Builder.view indexed
-      Spec.assertEq s (Html.labelled (Text.pack "button") (Text.pack "Add Lightning Bolt") shown >>= \path -> Html.handler (Text.pack "click") path shown) (Just (Builder.MkAdd bolt))
+      Spec.assertEq s (Html.labelled (Text.pack "button") (Text.pack "Add Lightning Bolt") shown >>= \path -> Html.handler (Text.pack "click") path shown) (Just (Builder.MkAdd DeckList.Main bolt))
 
     Spec.it s "shows the rules text of the card being read" $ do
       Spec.assertBool s (Text.isInfixOf (Text.pack "deals 3 damage") (page (Builder.update (Builder.MkRead bolt) Text.empty indexed))) "rules"
@@ -104,7 +105,7 @@ spec s = Spec.describe s "Parun.Web.Builder" $ do
       let text = "Format: commander\n\nCommander\n1 Sai, Master Thopterist\n\nDeck\n1 Ornithopter\n30 Island\n"
           opened = Builder.open Nothing (Text.pack "Sai") (Text.pack text) fresh
       Spec.assertEq s (Builder.format opened, Builder.deck opened) (Text.pack "commander", Map.fromList [(named "Ornithopter", 1), (named "Island", 30)])
-      Spec.assertEq s (Builder.listText opened) (Text.pack "Format: commander\n30 Island\n1 Ornithopter\n\nCommander\n1 Sai, Master Thopterist\n")
+      Spec.assertEq s (Builder.listText opened) (Text.pack "Format: commander\nCommander\n1 Sai, Master Thopterist\n\nDeck\n30 Island\n1 Ornithopter\n")
 
     Spec.it s "opens a list with no header as a casual main deck" $ do
       let opened = Builder.open Nothing (Text.pack "Mine") (Text.pack "4 Lightning Bolt\n\n20 Mountain\n") fresh
@@ -128,7 +129,7 @@ spec s = Spec.describe s "Parun.Web.Builder" $ do
 
     Spec.it s "takes a copy removed from the last line, and adds one to the first" $ do
       let opened = Builder.open Nothing Text.empty (Text.pack "2 Mountain (ZEN) 246\n2 Mountain (UNH) 140\n") fresh
-      Spec.assertEq s (Builder.listText (tap (Builder.MkRemove mountain) opened), Builder.listText (tap (Builder.MkAdd mountain) opened)) (Text.pack "2 Mountain (ZEN) 246\n1 Mountain (UNH) 140\n", Text.pack "3 Mountain (ZEN) 246\n2 Mountain (UNH) 140\n")
+      Spec.assertEq s (Builder.listText (tap (Builder.MkRemove DeckList.Main mountain) opened), Builder.listText (tap (Builder.MkAdd DeckList.Main mountain) opened)) (Text.pack "2 Mountain (ZEN) 246\n1 Mountain (UNH) 140\n", Text.pack "3 Mountain (ZEN) 246\n2 Mountain (UNH) 140\n")
 
     Spec.it s "counts a commander only where the format's size counts it" $ do
       let text = "Commander\n1 Sai, Master Thopterist\nDeck\n59 Island\n"
@@ -156,35 +157,35 @@ spec s = Spec.describe s "Parun.Web.Builder" $ do
       Spec.assertBool s (Text.isInfixOf (Text.pack "value=\"Entangling Webs\"") (page (Builder.open Nothing (Text.pack "Entangling Webs") (Text.pack "4 Lightning Bolt\n") indexed))) "name"
 
     Spec.it s "adding then removing a card leaves nothing to save" $ do
-      Spec.assertEq s (Builder.dirty (tap (Builder.MkRemove bolt) (tap (Builder.MkAdd bolt) fresh))) False
+      Spec.assertEq s (Builder.dirty (tap (Builder.MkRemove DeckList.Main bolt) (tap (Builder.MkAdd DeckList.Main bolt) fresh))) False
 
   Spec.describe s "pool" $ do
     Spec.it s "CR 100.2b caps a pooled card at its count" $ do
-      let added = iterate (tap (Builder.MkAdd bolt)) (pooled "2 Lightning Bolt\n") !! 3
+      let added = iterate (tap (Builder.MkAdd DeckList.Main bolt)) (pooled "2 Lightning Bolt\n") !! 3
       Spec.assertEq s (Builder.deck added) (Map.singleton bolt 2)
 
     Spec.it s "CR 100.2b never caps a basic land" $ do
-      Spec.assertEq s (Builder.deck (tap (Builder.MkAdd mountain) (pooled "2 Lightning Bolt\n"))) (Map.singleton mountain 1)
+      Spec.assertEq s (Builder.deck (tap (Builder.MkAdd DeckList.Main mountain) (pooled "2 Lightning Bolt\n"))) (Map.singleton mountain 1)
 
     Spec.it s "CR 100.4b chooses Limited and writes the pool's unused cards as the Sideboard" $ do
-      let built = tap (Builder.MkAdd bolt) (pooled "2 Lightning Bolt\n1 Shock\n")
+      let built = tap (Builder.MkAdd DeckList.Main bolt) (pooled "2 Lightning Bolt\n1 Shock\n")
       Spec.assertEq s (Builder.listText built) (Text.pack "Format: limited\n1 Lightning Bolt\n\nSideboard\n1 Lightning Bolt\n1 Shock\n")
 
     Spec.it s "returns a removed card to the Sideboard" $ do
-      let built = tap (Builder.MkRemove bolt) (tap (Builder.MkAdd bolt) (pooled "2 Lightning Bolt\n"))
+      let built = tap (Builder.MkRemove DeckList.Main bolt) (tap (Builder.MkAdd DeckList.Main bolt) (pooled "2 Lightning Bolt\n"))
       Spec.assertEq s (Builder.listText built) (Text.pack "Format: limited\n\nSideboard\n2 Lightning Bolt\n")
 
     Spec.it s "keeps the pool, and its caps, when the search widens to every card" $ do
       let widened = Builder.update Builder.MkPoolChoice Text.empty (pooled "2 Lightning Bolt\n")
-          more = iterate (tap (Builder.MkAdd bolt)) widened !! 3
+          more = iterate (tap (Builder.MkAdd DeckList.Main bolt)) widened !! 3
       Spec.assertEq s (CardIndex.among (Builder.searchQuery widened), Builder.listText more) (Nothing, Text.pack "Format: limited\n2 Lightning Bolt\n")
 
     Spec.it s "drops the pool, its caps and its Sideboard when asked" $ do
       let dropped = tap Builder.MkDropPool (pooled "1 Lightning Bolt\n")
-      Spec.assertEq s (Builder.listText (iterate (tap (Builder.MkAdd bolt)) dropped !! 2)) (Text.pack "Format: limited\n2 Lightning Bolt\n")
+      Spec.assertEq s (Builder.listText (iterate (tap (Builder.MkAdd DeckList.Main bolt)) dropped !! 2)) (Text.pack "Format: limited\n2 Lightning Bolt\n")
 
     Spec.it s "resolves a pasted pool's names to the cards' own, whatever their case" $ do
-      Spec.assertEq s (Builder.listText (tap (Builder.MkAdd bolt) (pooled "3 lightning bolt\n"))) (Text.pack "Format: limited\n1 Lightning Bolt\n\nSideboard\n2 Lightning Bolt\n")
+      Spec.assertEq s (Builder.listText (tap (Builder.MkAdd DeckList.Main bolt) (pooled "3 lightning bolt\n"))) (Text.pack "Format: limited\n1 Lightning Bolt\n\nSideboard\n2 Lightning Bolt\n")
 
     Spec.it s "refuses a pool naming a card it doesn't know, saying which" $ do
       let refused = pooled "1 Lightnin Bolt\n2 Shock\n"
@@ -198,7 +199,7 @@ spec s = Spec.describe s "Parun.Web.Builder" $ do
 
     Spec.it s "leaves basic lands out of the pool's Sideboard" $ do
       let opened = Builder.open Nothing Text.empty (Text.pack "Format: limited\n9 Mountain\n\nSideboard\n1 Shock\n") indexed
-      Spec.assertEq s (Builder.listText (iterate (tap (Builder.MkRemove mountain)) opened !! 9)) (Text.pack "Format: limited\n\nSideboard\n1 Shock\n")
+      Spec.assertEq s (Builder.listText (iterate (tap (Builder.MkRemove DeckList.Main mountain)) opened !! 9)) (Text.pack "Format: limited\n\nSideboard\n1 Shock\n")
 
     Spec.it s "reads a pool's Sideboard back under the cards' own names" $ do
       let opened = Builder.open Nothing Text.empty (Text.pack "Format: limited\n2 Lightning Bolt\n\nSideboard\n1 lightning bolt\n") indexed
@@ -219,7 +220,7 @@ spec s = Spec.describe s "Parun.Web.Builder" $ do
     Spec.it s "reads a limited list's main deck and Sideboard back into its pool" $ do
       let text = Text.pack "Format: limited\n1 Lightning Bolt\n\nSideboard\n1 Lightning Bolt\n1 Shock\n"
           opened = Builder.open Nothing Text.empty text indexed
-      Spec.assertEq s (Builder.listText opened, Builder.deck (iterate (tap (Builder.MkAdd bolt)) opened !! 2)) (text, Map.singleton bolt 2)
+      Spec.assertEq s (Builder.listText opened, Builder.deck (iterate (tap (Builder.MkAdd DeckList.Main bolt)) opened !! 2)) (text, Map.singleton bolt 2)
 
     Spec.it s "finds a double-faced card a set's list names by both faces" $ do
       let scoped = Builder.setPool (Text.pack "neo") [named "Front Face // Back Face"] indexed
@@ -227,7 +228,7 @@ spec s = Spec.describe s "Parun.Web.Builder" $ do
 
     Spec.it s "a set's cards narrow the search without capping" $ do
       let scoped = Builder.setPool (Text.pack "m10") [bolt] indexed
-      Spec.assertEq s (CardIndex.among (Builder.searchQuery scoped), Builder.deck (iterate (tap (Builder.MkAdd bolt)) scoped !! 5)) (Just (Set.singleton (Text.pack "lightning bolt")), Map.singleton bolt 5)
+      Spec.assertEq s (CardIndex.among (Builder.searchQuery scoped), Builder.deck (iterate (tap (Builder.MkAdd DeckList.Main bolt)) scoped !! 5)) (Just (Set.singleton (Text.pack "lightning bolt")), Map.singleton bolt 5)
 
     Spec.it s "offers every card, each set, and pasting a pool" $ do
       let shown = page indexed {Builder.sets = [Text.pack "m10"]}
@@ -238,22 +239,122 @@ spec s = Spec.describe s "Parun.Web.Builder" $ do
       Spec.assertEq s (Html.labelled (Text.pack "button") (Text.pack "Use this pool") shown >>= \path -> Html.handler (Text.pack "click") path shown) (Just Builder.MkUsePool)
 
     Spec.it s "shows how many of a pooled card are left" $ do
-      Spec.assertBool s (Text.isInfixOf (Text.pack "1 left") (page (tap (Builder.MkAdd bolt) (pooled "2 Lightning Bolt\n")))) "left"
+      Spec.assertBool s (Text.isInfixOf (Text.pack "1 left") (page (tap (Builder.MkAdd DeckList.Main bolt) (pooled "2 Lightning Bolt\n")))) "left"
+
+  Spec.describe s "kept" $ do
+    Spec.it s "counts no cards for the sections whose lines are not cards" $ do
+      let opened = Builder.open Nothing Text.empty (Text.pack "1 Island\nDraft Notes\n3 Lurking Automaton\nStickers\n1 Ancestral Hot Dog Minotaur\n") indexed
+      Spec.assertBool s (Text.isInfixOf (Text.pack "Also kept: Draft Notes, Stickers") (page opened)) "kept"
+
+  Spec.describe s "fidelity" $ do
+    Spec.it s "keeps the first Format header, as a deck list reads it" $ do
+      Spec.assertEq s (Builder.format (Builder.open Nothing Text.empty (Text.pack "Format: commander\nFormat: standard\n1 Island\n") fresh)) (Text.pack "commander")
+
+    Spec.it s "drops a line of no copies" $ do
+      Spec.assertEq s (Builder.deck (Builder.open Nothing Text.empty (Text.pack "0 Island\n1 Mountain\n") fresh)) (Map.singleton mountain 1)
+
+    Spec.it s "notes a line it cannot read" $ do
+      Spec.assertEq s (Builder.notices (Builder.open Nothing Text.empty (Text.pack "4\n1 Mountain\n") fresh)) [Text.pack "Couldn't read this line, which saving drops: 4"]
+
+    Spec.it s "renames an opened deck's cards as the index names them, with nothing to save" $ do
+      let renamed = Builder.withIndex (Maybe.fromMaybe Seq.empty (Builder.index indexed)) (Builder.open Nothing Text.empty (Text.pack "4 lightning bolt\n") fresh)
+      Spec.assertEq s (Builder.deck renamed, Builder.dirty renamed) (Map.singleton bolt 4, False)
+
+  Spec.describe s "review" $ do
+    Spec.it s "CR 207.5 keeps each line's choice when a card's copies circle different colours" $ do
+      let text = Text.pack "2 Cryptic Spires {circled: W U}\n1 Cryptic Spires {circled: B R}\n"
+          opened = Builder.open Nothing Text.empty text indexed
+      Spec.assertEq s (Builder.listText opened, length (Builder.notices opened)) (text, 1)
+
+    Spec.it s "offers a choice for a pool's unused card that makes one" $ do
+      let shown = page (pooled "1 Cryptic Spires\n")
+      Spec.assertBool s (Text.isInfixOf (Text.pack "Circle two colours") shown) "offered"
+
+    Spec.it s "folds the sideboard into a held pool when the format turns Limited" $ do
+      let held = Builder.update Builder.MkFormat Text.empty (pooled "1 Shock\n")
+          sided = tap (Builder.MkAdd DeckList.Side bolt) (tap (Builder.MkTarget DeckList.Side) held)
+          back = Builder.update Builder.MkFormat (Text.pack "limited") sided
+      Spec.assertEq s (Builder.target back, Builder.listText back) (DeckList.Main, Text.pack "Format: limited\n\nSideboard\n1 Lightning Bolt\n1 Shock\n")
+
+    Spec.it s "takes a later Format header over an empty one" $ do
+      Spec.assertEq s (Builder.format (Builder.open Nothing Text.empty (Text.pack "Format:\nFormat: modern\n1 Island\n") fresh)) (Text.pack "modern")
+
+    Spec.it s "CR 903.4b replaces a commander's chosen colour" $ do
+      let piper = (card "The Prismatic Piper") {CardIndex.choices = Set.singleton (DeckList.Commander, DeckList.CommanderColor)}
+          b = tap (Builder.MkAdd DeckList.Commander (named "The Prismatic Piper")) (Builder.withIndex (Seq.singleton piper) fresh)
+          picked = tap (Builder.MkChoose DeckList.Commander (named "The Prismatic Piper") Color.Green) (tap (Builder.MkChoose DeckList.Commander (named "The Prismatic Piper") Color.Red) b)
+      Spec.assertEq s (Builder.chosenFor DeckList.Commander (named "The Prismatic Piper") picked) (Set.singleton Color.Green)
+
+    Spec.it s "saves a pasted pool before any card is in the deck" $ do
+      Spec.assertEq s (Builder.saveTarget Seq.empty (Builder.update Builder.MkSaveName (Text.pack "Sealed") (pooled "1 Shock\n"))) (Right (Text.pack "saved/sealed"))
+
+    Spec.it s "drops a choice a card does not make, saying so" $ do
+      let renamed = Builder.withIndex (Maybe.fromMaybe Seq.empty (Builder.index indexed)) (Builder.open Nothing Text.empty (Text.pack "1 Lightning Bolt {circled: W U}\n") fresh)
+      Spec.assertEq s (Builder.listText renamed, length (Builder.notices renamed)) (Text.pack "1 Lightning Bolt\n", 1)
+
+    Spec.it s "keeps a bare copy bare when spellings merge" $ do
+      let renamed = Builder.withIndex (Maybe.fromMaybe Seq.empty (Builder.index indexed)) (Builder.open Nothing Text.empty (Text.pack "2 Lightning Bolt (M10) 146\n1 lightning bolt\n") fresh)
+      Spec.assertEq s (Builder.listText renamed) (Text.pack "2 Lightning Bolt (M10) 146\n1 Lightning Bolt\n")
+
+  Spec.describe s "zones" $ do
+    Spec.it s "opens a commander and a sideboard into zones, and edits them" $ do
+      let opened = Builder.open Nothing Text.empty (Text.pack "Format: commander\nCommander\n1 Sai, Master Thopterist\nDeck\n30 Island\nSideboard\n2 Shock\n") indexed
+          edited = tap (Builder.MkAdd DeckList.Side (named "Shock")) (tap (Builder.MkRemove DeckList.Commander (named "Sai, Master Thopterist")) opened)
+      Spec.assertEq s (Builder.zoneOf DeckList.Commander opened, Builder.zoneOf DeckList.Side opened) (Map.singleton (named "Sai, Master Thopterist") 1, Map.singleton (named "Shock") 2)
+      Spec.assertEq s (Builder.listText edited) (Text.pack "Format: commander\n30 Island\n\nSideboard\n3 Shock\n")
+
+    Spec.it s "writes a commander first, under its own header" $ do
+      let built = tap (Builder.MkAdd DeckList.Main mountain) (tap (Builder.MkAdd DeckList.Commander bolt) fresh)
+      Spec.assertEq s (Builder.listText built) (Text.pack "Commander\n1 Lightning Bolt\n\nDeck\n1 Mountain\n")
+
+    Spec.it s "adds a search result to the zone chosen" $ do
+      let chosen = tap (Builder.MkTarget DeckList.Side) indexed
+          shown = Builder.view chosen
+      Spec.assertEq s (Html.labelled (Text.pack "button") (Text.pack "Add Lightning Bolt") shown >>= \path -> Html.handler (Text.pack "click") path shown) (Just (Builder.MkAdd DeckList.Side bolt))
+
+    Spec.it s "a sideboard edit is a change to save" $ do
+      Spec.assertEq s (Builder.dirty (tap (Builder.MkAdd DeckList.Side bolt) fresh)) True
+
+  Spec.describe s "choices" $ do
+    Spec.it s "CR 207.5 reads a circled choice into colours, and writes it back" $ do
+      let opened = Builder.open Nothing Text.empty (Text.pack "2 Cryptic Spires {circled: U B}\n") indexed
+      Spec.assertEq s (Builder.chosenFor DeckList.Main spires opened, Builder.listText opened) (Set.fromList [Color.Blue, Color.Black], Text.pack "2 Cryptic Spires {circled: U B}\n")
+
+    Spec.it s "CR 207.5 toggles a circled colour" $ do
+      let picked = tap (Builder.MkChoose DeckList.Main spires Color.Red) (tap (Builder.MkChoose DeckList.Main spires Color.Green) (tap (Builder.MkAdd DeckList.Main spires) indexed))
+      Spec.assertEq s (Builder.listText picked) (Text.pack "1 Cryptic Spires {circled: R G}\n")
+
+    Spec.it s "offers the colours to circle on a card that circles them" $ do
+      let shown = page (tap (Builder.MkAdd DeckList.Main spires) indexed)
+      Spec.assertBool s (Text.isInfixOf (Text.pack "Circle two colours") shown) "offered"
+
+  Spec.describe s "polish" $ do
+    Spec.it s "refuses to save an empty deck" $ do
+      Spec.assertEq s (Builder.saveTarget Seq.empty (Builder.update Builder.MkSaveName (Text.pack "Empty") fresh)) (Left [Text.pack "Add some cards before saving."])
+
+    Spec.it s "sums the deck's colours" $ do
+      let red = (card "Lightning Bolt") {CardIndex.colours = Set.singleton Color.Red}
+          built = tap (Builder.MkAdd DeckList.Main bolt) (Builder.withIndex (Seq.singleton red) fresh)
+      Spec.assertEq s (Builder.deckColours built) (Set.singleton Color.Red)
+
+    Spec.it s "shows why the cards or rules did not load" $ do
+      Spec.assertBool s (Text.isInfixOf (Text.pack "Couldn't load the rules.") (page indexed {Builder.loadProblem = Just (Text.pack "Couldn't load the rules.")})) "shown"
 
   Spec.describe s "saveTarget" $ do
     Spec.it s "a first save takes the typed name" $ do
-      Spec.assertEq s (Builder.saveTarget Seq.empty (Builder.update Builder.MkSaveName (Text.pack "Red Burn") fresh)) (Right (Text.pack "saved/red-burn"))
+      Spec.assertEq s (Builder.saveTarget Seq.empty (Builder.update Builder.MkSaveName (Text.pack "Red Burn") (tap (Builder.MkAdd DeckList.Main bolt) fresh))) (Right (Text.pack "saved/red-burn"))
 
     Spec.it s "refuses a first save under a saved deck's name" $ do
-      Spec.assertEq s (Builder.saveTarget (Seq.singleton (Text.pack "saved/burn")) (Builder.update Builder.MkSaveName (Text.pack "Burn") fresh)) (Left [Text.pack "A saved deck is already named that."])
+      Spec.assertEq s (Builder.saveTarget (Seq.singleton (Text.pack "saved/burn")) (Builder.update Builder.MkSaveName (Text.pack "Burn") (tap (Builder.MkAdd DeckList.Main bolt) fresh))) (Left [Text.pack "A saved deck is already named that."])
 
     Spec.it s "later saves keep the name saved under" $ do
-      let again = Builder.update Builder.MkSaveName (Text.pack "Other") (Builder.saved (Text.pack "saved/burn") fresh)
+      let again = Builder.update Builder.MkSaveName (Text.pack "Other") (Builder.saved (Text.pack "saved/burn") (tap (Builder.MkAdd DeckList.Main bolt) fresh))
       Spec.assertEq s (Builder.saveTarget (Seq.singleton (Text.pack "saved/burn")) again) (Right (Text.pack "saved/burn"))
   where
     page = Html.toText . Builder.view
-    card name = CardIndex.MkEntry (CardName.MkCardName (Text.pack name)) [Text.pack name] Nothing 1 Set.empty Set.empty (Text.pack "Instant") [] (Text.toCaseFold (Text.pack name)) False
-    indexed = Builder.withIndex (Seq.fromList [(card "Lightning Bolt") {CardIndex.rules = [Text.pack "Lightning Bolt deals 3 damage to any target."]}, (card "Mountain") {CardIndex.basic = True}, card "Shock", (card "Front Face") {CardIndex.faceNames = [Text.pack "Front Face", Text.pack "Back Face"]}]) fresh
+    card name = CardIndex.MkEntry (CardName.MkCardName (Text.pack name)) [Text.pack name] Nothing 1 Set.empty Set.empty (Text.pack "Instant") [] (Text.toCaseFold (Text.pack name)) False Set.empty
+    spires = named "Cryptic Spires"
+    indexed = Builder.withIndex (Seq.fromList [(card "Cryptic Spires") {CardIndex.choices = Set.fromList [(section, DeckList.CircledColors) | section <- [DeckList.Main, DeckList.Side, DeckList.Commander]]}, (card "Lightning Bolt") {CardIndex.rules = [(Text.pack "Lightning Bolt", [Text.pack "Lightning Bolt deals 3 damage to any target."])]}, (card "Mountain") {CardIndex.basic = True}, card "Shock", (card "Front Face") {CardIndex.faceNames = [Text.pack "Front Face", Text.pack "Back Face"]}]) fresh
     pooled text = Builder.update Builder.MkUsePool Text.empty (Builder.update Builder.MkPoolText (Text.pack text) (Builder.update Builder.MkPoolChoice (Text.pack "paste") indexed))
     constructed = Builder.update Builder.MkFormat (Text.pack "constructed") fresh
     fresh = Builder.new [Text.pack "constructed", Text.pack "pauper"]

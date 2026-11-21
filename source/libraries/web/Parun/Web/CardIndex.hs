@@ -4,9 +4,11 @@ module Parun.Web.CardIndex where
 
 import qualified Data.Foldable as Foldable
 import qualified Data.List.NonEmpty as NonEmpty
+import qualified Data.Maybe as Maybe
 import qualified Data.Sequence as Seq
 import qualified Data.Set as Set
 import qualified Data.Text as Text
+import qualified Parun.DeckList as DeckList
 import qualified Parun.Engine.Card as EngineCard
 import qualified Parun.Engine.Quantity as Quantity
 import qualified Parun.Types.Card as Card
@@ -24,22 +26,25 @@ data Entry = MkEntry
   { name :: CardName.CardName,
     -- | Each face's name, in printed order.
     faceNames :: [Text.Text],
-    -- | The first face's cost.
+    -- | Its cost as its faces combine (CR 709.4b), or else its first face's.
     cost :: Maybe ManaCost.ManaCost,
-    -- | The first face's mana value (CR 202.3).
+    -- | Its mana value, likewise (CR 202.3, 709.4b).
     value :: Integer,
     colours :: Set.Set Color.Color,
     -- | Every face's card types.
     types :: Set.Set CardType.CardType,
     -- | The first face's type line, as words.
     typeLine :: Text.Text,
-    -- | Every face's rules text, a line each.
-    rules :: [Text.Text],
+    -- | Each face's name and its rules text, a line each.
+    rules :: [(Text.Text, [Text.Text])],
     -- | Every face's name, type line and rules text, case-folded, to match.
     folded :: Text.Text,
     -- | Whether the card is a basic land, which every card pool admits
     -- (CR 100.2b, 205.4c).
-    basic :: Bool
+    basic :: Bool,
+    -- | The choices the card makes as its deck is built, in each section of
+    -- a list that reads one (Parun.DeckList.makes).
+    choices :: Set.Set (DeckList.Section, DeckList.Choice)
   }
   deriving (Eq, Show)
 
@@ -78,13 +83,14 @@ entryOf c
           { -- As a deck list writes it (Parun.DeckList.written).
             name = CardName.MkCardName (Text.intercalate (Text.pack " // ") (NonEmpty.toList (fmap (CardName.unwrap . Face.name) (EngineCard.combinedFaces c)))),
             faceNames = named,
-            cost = Face.manaCost front,
-            value = Quantity.manaValueOf front,
+            cost = Face.manaCost (EngineCard.combined c),
+            value = Quantity.manaValueOf (EngineCard.combined c),
             colours = Lobby.cardColours c,
             types = kindsOf,
             typeLine = typeWords (Face.typeLine front),
-            rules = said,
+            rules = [(CardName.unwrap (Face.name face), foldMap Text.lines (Face.oracleText face)) | face <- faces, Maybe.isJust (Face.oracleText face)],
             folded = Text.toCaseFold (Text.unlines (named <> fmap (typeWords . Face.typeLine) faces <> said)),
+            choices = Set.fromList [(section, choice) | section <- [DeckList.Main, DeckList.Side, DeckList.Commander], choice <- [minBound .. maxBound], DeckList.makes section choice c],
             basic = Set.member Supertype.Basic (TypeLine.supertypes (Face.typeLine front)) && Set.member CardType.Land (TypeLine.types (Face.typeLine front))
           }
   where
@@ -106,7 +112,7 @@ typeWords line =
 
 -- | How many entries match, and the first 'cap' of them: those whose name
 -- starts with the text, then those with it in a face's name, then those
--- with it anywhere else, each by name.
+-- with it anywhere else, each in the order given, which is by name.
 search :: Query -> Seq.Seq Entry -> (Int, Seq.Seq Entry)
 search query entries =
   let needle = Text.toCaseFold (Text.strip (text query))
@@ -119,5 +125,6 @@ search query entries =
       ofKind e = Set.null (kinds query) || not (Set.disjoint (types e) (kinds query))
       pooled e = basic e || maybe True (Set.member (Text.toCaseFold (CardName.unwrap (name e)))) (among query)
       atValue e = maybe True (\v -> if v >= 7 then value e >= 7 else value e == v) (valued query)
-      ranked = Seq.sortOn (\(r, e) -> (r, CardName.unwrap (name e))) (Seq.fromList [(r, e) | e <- Foldable.toList entries, pooled e, within e, ofKind e, atValue e, Just r <- [rank e]])
+      -- Stable, so each rank keeps the entries' own order.
+      ranked = Seq.sortOn fst (Seq.fromList [(r, e) | e <- Foldable.toList entries, pooled e, within e, ofKind e, atValue e, Just r <- [rank e]])
    in (Seq.length ranked, fmap snd (Seq.take cap ranked))

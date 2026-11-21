@@ -25,6 +25,7 @@ import qualified Parun.Browser.Hotseat as Hotseat
 import qualified Parun.Browser.Replay as Replay
 import qualified Parun.DeckList as DeckList
 import qualified Parun.Decks as Decks
+import qualified Parun.Engine.Card as EngineCard
 import qualified Parun.Engine.Quantity as Quantity
 import qualified Parun.Extra.Integer as Integer
 import qualified Parun.Legality as Legality
@@ -94,7 +95,9 @@ data Loaded = MkLoaded
     -- | The legality table, once a check has loaded it (or why it did not).
     legalityTable :: Maybe (Either Text.Text LegalityTable.LegalityTable),
     -- | Each set's whole card list, by the set's code, once the decks are read.
-    setLists :: Map.Map Text.Text FilePath
+    setLists :: Map.Map Text.Text FilePath,
+    -- | How many cards each deck's main deck holds, by name, as read so far.
+    deckSizes :: Map.Map Text.Text Natural
   }
 
 -- | Where a screen leads when it ends.
@@ -120,7 +123,7 @@ data Woke
 start :: IO ()
 start = do
   chosen <- maybe Web.Question.MkStandard (Maybe.fromMaybe Web.Question.MkStandard . Web.Question.levelNamed) <$> Environment.lookupEnv "parun_level"
-  shell <- MkShell <$> Browser.mount <*> IORef.newIORef (MkLoaded Loading.new Nothing Map.empty Nothing Map.empty [] Nothing Nothing Nothing False Nothing Map.empty [] Nothing Map.empty) <*> IORef.newIORef chosen
+  shell <- MkShell <$> Browser.mount <*> IORef.newIORef (MkLoaded Loading.new Nothing Map.empty Nothing Map.empty [] Nothing Nothing Nothing False Nothing Map.empty [] Nothing Map.empty Map.empty) <*> IORef.newIORef chosen
   Exception.catch (opening >>= follow shell) $ \problem ->
     Browser.display (page shell) $ message ["The page stopped on an error:", Exception.displayException (problem :: Exception.SomeException)]
 
@@ -269,6 +272,7 @@ refreshed shell shown = do
       { Lobby.problem = Loading.problemFor Loading.MkDecks (loading now),
         Lobby.palette = palette now,
         Lobby.illegal = illegal now,
+        Lobby.sizes = deckSizes now,
         Lobby.previews = Map.union (Lobby.previews withDecks) (Map.fromList read')
       }
 
@@ -282,7 +286,8 @@ lineOf root byFile n name = case LazyMap.lookup (Registry.cardPath root (Registr
               | Set.member CardType.Land types = Lobby.MkLand
               | Set.member CardType.Creature types = Lobby.MkCreature
               | otherwise = Lobby.MkSpell
-         in Lobby.MkLine n name (Face.manaCost face) (Quantity.manaValueOf face) kind
+         in -- CR 709.4b: a split card's cost and mana value are its halves'.
+            Lobby.MkLine n name (Face.manaCost (EngineCard.combined c)) (Quantity.manaValueOf (EngineCard.combined c)) kind
   _ -> Lobby.MkLine n name Nothing 0 Lobby.MkSpell
 
 -- | The deck builder until it leads back to the lobby, on this deck if any
@@ -299,17 +304,18 @@ builder shell deck = do
     Just (name, path) -> do
       contents <- Encoding.decodeUtf8Lenient <$> ByteString.readFile path
       pure (Builder.open (if Lobby.isSaved name then Just name else Nothing) (snd (Lobby.describe name)) contents (Builder.new []))
-    Nothing -> pure (Builder.new [])
+    Nothing -> pure (Builder.new []) {Builder.notices = [Text.pack "That deck could not be opened, so this is a new one." | Maybe.isJust deck]}
   go initial Nothing
   where
-    -- The builder, and the list and format it was last checked at.
+    -- The builder, and the list it was last checked at.
     go shown lastChecked = do
       now <- IORef.readIORef (loaded shell)
       named <- if null (Builder.formats shown) then Legality.shippedFormats else pure (Builder.formats shown)
       least <- maybe (Legality.minimumFor (Builder.format shown)) (pure . Just) (Builder.least shown)
       let indexed = if Maybe.isNothing (Builder.index shown) then maybe id Builder.withIndex (cardIndex now) shown else shown
-          filled = indexed {Builder.formats = named, Builder.least = least, Builder.sets = Map.keys (setLists now)}
-          key = (Builder.deck filled, Builder.format filled)
+          filled = indexed {Builder.formats = named, Builder.least = least, Builder.sets = Map.keys (setLists now), Builder.loadProblem = Loading.problem (loading now)}
+          -- Checked again whenever the list it saves would change.
+          key = Builder.listText filled
       -- Taps waiting go first: the list is checked once they are done.
       waiting <- Browser.pending (page shell)
       current <- case registry now of
@@ -378,7 +384,7 @@ saveBuilt shell built = do
 -- The legality table is loaded once, at the first check, and kept.
 deckProblems :: Shell -> Registry.Registry Identity.Identity -> Text.Text -> IO ([Text.Text], Set.Set CardName.CardName)
 deckProblems shell reg contents = case Command.loadText reg "deck" contents of
-  Left problems -> pure (problems, Set.empty)
+  Left problems -> pure (fmap (\p -> Maybe.fromMaybe p (Text.stripPrefix (Text.pack "deck: ") p)) problems, Set.empty)
   Right listed -> do
     kept <- legalityTable <$> IORef.readIORef (loaded shell)
     table <- case kept of
@@ -618,8 +624,9 @@ work shell = do
                 _ -> Set.empty
           read' <- Monad.forM batch $ \(name, path) -> do
             contents <- Encoding.decodeUtf8Lenient <$> ByteString.readFile path
-            Exception.evaluate . (,) name $! Lobby.deckColours colours contents
-          IORef.modifyIORef' (loaded shell) $ \l -> l {palette = Map.union (palette l) (Map.fromList read'), unread = rest}
+            size <- Exception.evaluate (Lobby.mainCount contents)
+            Exception.evaluate . (,) name . (,) size $! Lobby.deckColours colours contents
+          IORef.modifyIORef' (loaded shell) $ \l -> l {palette = Map.union (Map.fromList [(name, colours') | (name, (_, colours')) <- read']) (palette l), deckSizes = Map.union (Map.fromList [(name, size) | (name, (size, _)) <- read']) (deckSizes l), unread = rest}
         _ -> Nothing
       -- The builder's index, 500 cards a batch, timed to the console.
       buildIndex = case (cards now, indexing now) of
