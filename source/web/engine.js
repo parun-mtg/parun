@@ -19,13 +19,14 @@ globalThis.parunListen = (listener) => {
   dispatch = listener;
 };
 // The page's first message holds the decks it saved (page.js), mounted
-// before the deck list is read; every other is an event.
+// before the deck list is read, and the game with guests it kept, read
+// before the engine starts; every other is an event.
 let savedDecks;
 const savedArrived = new Promise((resolve) => {
   savedDecks = resolve;
 });
 onmessage = ({ data }) => {
-  if ("saved" in data) savedDecks(data.saved);
+  if ("saved" in data) savedDecks(data);
   else if ("linked" in data) {
     linked.push(JSON.stringify(data.linked));
     globalThis.parunWake?.();
@@ -43,6 +44,10 @@ globalThis.parunTakeLinks = () => {
   return taken;
 };
 globalThis.parunLink = (op) => postMessage({ link: op });
+
+// A game with guests is kept by the page (Parun.Browser.keepGame) to pick up
+// after a reload, as parunKeptGame.
+globalThis.parunKeepGame = (op) => postMessage({ game: op });
 
 // Each load phase's time goes to the page.
 let started = false;
@@ -175,7 +180,7 @@ async function fetchAll() {
     const name = queue.shift();
     try {
       merge(mounted.dir, untar(await gunzip(urls[name])));
-      if (name === "decks") merge(mounted.dir, savedTree(await savedArrived));
+      if (name === "decks") merge(mounted.dir, savedTree((await savedArrived).saved));
       // The root's listing, if read, is read afresh.
       mounted.listing = undefined;
       phase(name);
@@ -211,6 +216,7 @@ const instance = await WebAssembly.instantiate(await compiling, {
 Object.assign(exports, instance.exports);
 phase("compiled");
 wasi.initialize(instance);
+globalThis.parunKeptGame = (await savedArrived).game ?? "";
 // The game runs inside start, waiting on the page between answers.
 // An exception Haskell does not catch rejects start's promise; the page says so.
 instance.exports.start().catch((error) => postMessage({ phase: `engine failed: ${error.message}` }));

@@ -108,6 +108,22 @@ type Exchange m = Request.Request -> m (Maybe (Either Text.Text R.Reply))
 bySeat :: Map.Map PlayerId.PlayerId (Exchange m) -> Exchange m -> Exchange m
 bySeat seats others request = Map.findWithDefault others (Question.seat (Request.question request)) seats request
 
+-- | A game picked up where it left off: each request answered from `stored`
+-- while it has a reply, the request passed to `replayed` meanwhile, then by
+-- `live`, each reply that reads passed to `kept`. A game from the same seed
+-- with the same replies asks the same requests (Game.run is pure), so the
+-- replies kept so far are the whole game. RemoteSeatSpec's resumed game is
+-- the proof.
+resumed :: (Monad m) => m (Maybe R.Reply) -> (Request.Request -> m ()) -> (R.Reply -> m ()) -> Exchange m -> Exchange m
+resumed stored replayed kept live request = do
+  next <- stored
+  case next of
+    Just reply -> replayed request >> pure (Just (Right reply))
+    Nothing -> do
+      answered <- live request
+      Monad.forM_ answered (either (const (pure ())) kept)
+      pure answered
+
 -- | An exchange over lines: each request rendered, and its reply line read.
 overLines :: (Functor m) => (Text.Text -> m (Maybe Text.Text)) -> Exchange m
 overLines send = fmap (fmap readReply) . send . render

@@ -25,12 +25,12 @@ import qualified Parun.Extra.Int as Int
 import qualified Parun.Extra.Natural as Natural
 import qualified Parun.Interpreter as Interpreter
 import qualified Parun.Play.Command as Command
-import qualified Parun.Play.Key as Key
 import qualified Parun.Play.Protocol as Protocol
 import qualified Parun.Play.Wording as Wording
 import qualified Parun.Registry as Registry
 import qualified Parun.Types.Card as Card
 import qualified Parun.Types.CardName as CardName
+import qualified Parun.Types.Key as Key.Type
 import qualified Parun.Types.PlayOptions as PlayOptions
 import qualified Parun.Types.PlayerId as PlayerId
 import qualified Parun.Types.PlayerView as PlayerView
@@ -70,16 +70,17 @@ data Abandoned = MkAbandonedGame
 instance Exception.Exception Abandoned
 
 -- | A game between these decks, each a label and its list's text (the
--- player's first), on the page, shuffled afresh: every request line of the
+-- player's first), on the page, shuffled by `seed`: every request line of the
 -- player's seat answered there (Parun.Web.Question) at the auto-pass level
 -- kept in `levelRef`, and left with the level last chosen there; each seat
 -- in `remotes` answered by its own exchange (Parun.Web.Link.remote), and
 -- every other by the random bot; leaving for the home screen through
--- `leave`. Once over, `tell` is given each seat's verdict, what is said of
--- the game and its scenario file: how it came out, or why it could not
--- start.
-game :: Browser.Page Screen.Event -> Registry.Registry Identity.Identity -> IORef.IORef Web.Question.Level -> NonEmpty.NonEmpty (FilePath, Text.Text) -> Map.Map PlayerId.PlayerId (Protocol.Exchange IO) -> ((PlayerId.PlayerId -> Ending.Verdict) -> [Text.Text] -> Text.Text -> IO ()) -> IO Leave -> IO (Either [Text.Text] Played)
-game page registry levelRef seats remotes tell leave = do
+-- `leave`. The game picks up after the replies in `stored`, each made again
+-- (Protocol.resumed), and every reply made from there is given to `kept`.
+-- Once over, `tell` is given each seat's verdict, what is said of the game
+-- and its scenario file: how it came out, or why it could not start.
+game :: Browser.Page Screen.Event -> Registry.Registry Identity.Identity -> IORef.IORef Web.Question.Level -> NonEmpty.NonEmpty (FilePath, Text.Text) -> Map.Map PlayerId.PlayerId (Protocol.Exchange IO) -> Key.Type.Key -> [R.Reply] -> (R.Reply -> IO ()) -> ((PlayerId.PlayerId -> Ending.Verdict) -> [Text.Text] -> Text.Text -> IO ()) -> IO Leave -> IO (Either [Text.Text] Played)
+game page registry levelRef seats remotes seed stored kept tell leave = do
   seatRef <- IORef.newIORef . newSeat player =<< IORef.readIORef levelRef
   keepingLevel levelRef seatRef . Exception.handle (\MkAbandonedGame -> pure (Right MkAbandoned)) $ do
     let listed = fmap (uncurry (Command.loadText registry)) seats
@@ -90,9 +91,12 @@ game page registry levelRef seats remotes tell leave = do
         case settled of
           Left problems -> pure (Left problems)
           Right format -> do
-            seed <- Key.fresh
+            storedRef <- IORef.newIORef stored
             let here = exchange (Identity.runIdentity . Interpreter.chosenCard registry) page seatRef leave
-            (outcome, recorded) <- Command.game (Protocol.bySeat remotes here) (options (Natural.length seats) (Map.keysSet remotes)) registry format (fmap DeckList.deck lists) seed
+                next = IORef.atomicModifyIORef' storedRef $ \left -> maybe ([], Nothing) (\(reply, rest) -> (rest, Just reply)) (List.uncons left)
+                -- What a seat this page plays sees as its reply is made again.
+                replayed request = Monad.when (Map.notMember (Question.seat (Request.question request)) remotes) . Monad.forM_ (Request.view request) $ IORef.modifyIORef' seatRef . witness
+            (outcome, recorded) <- Command.game (Protocol.resumed next replayed kept (Protocol.bySeat remotes here)) (options (Natural.length seats) (Map.keysSet remotes)) registry format (fmap DeckList.deck lists) seed
             -- What the player saw after their last decision: the killing blow, say.
             Monad.forM_ outcome $ IORef.modifyIORef' seatRef . witness . PlayerView.Engine.viewFor player . snd
             finished <- IORef.readIORef seatRef

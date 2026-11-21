@@ -4098,6 +4098,8 @@ library web
     Parun.Web.ManaSpec
     Parun.Web.Patch
     Parun.Web.Question
+    Parun.Web.Rejoin
+    Parun.Web.RejoinSpec
     Parun.Web.Replay
     Parun.Web.ReplaySpec
     Parun.Web.Screen
