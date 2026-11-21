@@ -511,7 +511,7 @@ Only now, once the DSL has shape. Two inputs:
 
 Bot (MCTS over suspended continuations — resuming twice with different decisions is free; Forge and XMage deep-copy state to search, you just hold the continuation). WASM for the browser. WebSocket server. Headless simulation harness for deckbuilding.
 
-`parun play` is the first interpreter: seats played by a random bot or over a stdio line protocol (`--json`) that is the server's first form; people play in the browser, through the web client. `parun match` is the headless harness: seeded bot-vs-bot games, the decks taking turns to play first, tallied.
+`parun play` is the first interpreter: seats played by a random bot or over a stdio line protocol (`--json`) that is the server's first form; people play in the browser, through the web client. `parun match` is the headless harness: seeded bot-vs-bot games, the random or search bot in each seat (`--search`), the decks taking turns to play first, tallied.
 
 ---
 

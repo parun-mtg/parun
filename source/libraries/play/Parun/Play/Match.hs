@@ -1,5 +1,5 @@
--- | `parun match`: many seeded games between two decks, the random bot in both
--- seats, and how often each seat won.
+-- | `parun match`: many seeded games between two decks, each seat played by
+-- the random bot or the search bot, and how often each seat won.
 module Parun.Play.Match where
 
 import qualified Control.Monad as Monad
@@ -11,6 +11,7 @@ import qualified Data.List.NonEmpty as NonEmpty
 import qualified Data.Map.Strict as Map
 import qualified Data.Maybe as Maybe
 import qualified Data.Sequence as Seq
+import qualified Data.Set as Set
 import qualified Data.Text as Text
 import qualified Data.Text.IO as TextIO
 import Numeric.Natural (Natural)
@@ -21,6 +22,7 @@ import qualified Parun.Play.Game as Game
 import qualified Parun.Play.Generator as Generator
 import qualified Parun.Play.Key as Key
 import qualified Parun.Play.Record as Record
+import qualified Parun.Play.Search as Search
 import qualified Parun.Play.Wording as Wording
 import qualified Parun.Registry as Registry
 import qualified Parun.Trustworthy.Directory as Directory
@@ -31,6 +33,7 @@ import qualified Parun.Types.Key as Key.Type
 import qualified Parun.Types.Limits as Limits
 import qualified Parun.Types.MatchOptions as MatchOptions
 import qualified Parun.Types.Result as Result
+import qualified Parun.Types.SearchBudget as SearchBudget
 import qualified Parun.Types.Tally as Tally
 import qualified Parun.Types.TeamId as TeamId
 import qualified Parun.Types.Timed as Timed
@@ -55,7 +58,10 @@ flags :: [GetOpt.OptDescr (MatchOptions.MatchOptions -> Either String MatchOptio
 flags =
   [ GetOpt.Option [] ["seed"] (GetOpt.ReqArg (\s o -> maybe (Left ("not a seed: " <> s)) (\k -> Right o {MatchOptions.seed = Just k}) (Key.fromHex (Text.pack s))) "KEY") "the key each game's is derived from, 64 hexadecimal digits, said when the match ends; drawn from the operating system when absent",
     GetOpt.Option [] ["games"] (GetOpt.ReqArg (\s o -> maybe (Left ("not a number of games: " <> s)) (\n -> Right o {MatchOptions.games = n}) (Read.readMaybe s)) "N") "how many games to play; 100 when absent",
-    GetOpt.Option [] ["save"] (GetOpt.ReqArg (\s o -> Right o {MatchOptions.save = Just s}) "DIR") "save each game in this directory as a scenario"
+    GetOpt.Option [] ["save"] (GetOpt.ReqArg (\s o -> Right o {MatchOptions.save = Just s}) "DIR") "save each game in this directory as a scenario",
+    GetOpt.Option [] ["search"] (GetOpt.ReqArg (\s o -> maybe (Left ("not a seat: " <> s)) (\n -> Right o {MatchOptions.searching = Set.insert n (MatchOptions.searching o)}) (Monad.mfilter (`elem` [1, 2]) (Read.readMaybe s))) "SEAT") "the search bot plays this seat, 1 or 2; the random bot plays every other",
+    GetOpt.Option [] ["samples"] (GetOpt.ReqArg (\s o -> maybe (Left ("not a number of samples: " <> s)) (\n -> Right o {MatchOptions.budget = (MatchOptions.budget o) {SearchBudget.samples = n}}) (Monad.mfilter (> 0) (Read.readMaybe s))) "N") "the search bot's playouts of each option; 4 when absent",
+    GetOpt.Option [] ["cutoff"] (GetOpt.ReqArg (\s o -> maybe (Left ("not a number of prompts: " <> s)) (\n -> Right o {MatchOptions.budget = (MatchOptions.budget o) {SearchBudget.prompts = n}}) (Read.readMaybe s)) "N") "the prompts a playout is answered before it is cut off and scored by life; 4000 when absent"
   ]
 
 usage :: [String] -> IO a
@@ -72,10 +78,11 @@ match options registry format decks = do
   seed <- maybe Key.fresh pure (MatchOptions.seed options)
   Monad.forM_ (MatchOptions.save options) (Directory.createDirectoryIfMissing True)
   let count = MatchOptions.games options
+      searchers = Map.fromSet (const (MatchOptions.budget options)) (MatchOptions.searching options)
   tally <-
     Monad.foldM
       ( \tally index -> do
-          let (outcome, timeline) = Identity.runIdentity (game registry format seed index (both decks))
+          let (outcome, timeline) = Identity.runIdentity (game registry format searchers seed index (both decks))
           TextIO.hPutStrLn IO.stderr (Text.pack ("Game " <> show (index + 1) <> ", seed ") <> Key.toHex (seedAt seed index) <> Text.pack (", seat " <> show (firstAt index) <> " first: ") <> ended outcome)
           Monad.forM_ (MatchOptions.save options) $ \directory ->
             Command.save (directory <> "/game-" <> show (index + 1) <> ".json") (Command.saved (Registry.printings registry) (Text.pack "Played with parun match, seed " <> Key.toHex (seedAt seed index) <> Text.pack (", seat " <> show (firstAt index) <> " first.")) format Map.empty (Command.seated (firstAt index) (both decks)) timeline)
@@ -88,13 +95,15 @@ match options registry format decks = do
 
 -- | Game `index`, from zero, of a match from `seed` under `format` among the
 -- decks, seat 1's first: seeded 'seedAt', seat 'firstAt' playing first, the
--- random bot in every seat; with the entry each answer replays as
--- (Record.recording). It is the game `parun play --bot 1 --bot 2` plays at
--- that seed and `--first`.
-game :: (Monad m) => Registry.Registry m -> Maybe Format.Format -> Key.Type.Key -> Natural -> NonEmpty.NonEmpty Deck.Deck -> m (Either Text.Text (Result.Result, GameState.GameState), Seq.Seq Timed.Timed)
-game registry format seed index decks =
+-- search bot in each seat of `searchers` at its budget (Search.search, over
+-- the known lists) and the random bot in every other; with the entry each
+-- answer replays as (Record.recording). Without searchers it is the game
+-- `parun play --bot 1 --bot 2` plays at that seed and `--first`.
+game :: (Monad m) => Registry.Registry m -> Maybe Format.Format -> Map.Map Natural SearchBudget.SearchBudget -> Key.Type.Key -> Natural -> NonEmpty.NonEmpty Deck.Deck -> m (Either Text.Text (Result.Result, GameState.GameState), Seq.Seq Timed.Timed)
+game registry format searchers seed index decks =
   let count = Natural.length decks
-   in State.runStateT (Game.run (lifted registry) format Limits.standard [Record.recording (Command.labels count) sink] (Map.fromList [(Command.idOf n, Game.bot (lifted registry)) | n <- [1 .. count]]) (Generator.fromKey (seedAt seed index)) Map.empty (Command.seated (firstAt index) decks)) Seq.empty
+      seat n = maybe (Game.bot (lifted registry)) (\budget -> Search.search (lifted registry) budget Search.known) (Map.lookup n searchers)
+   in State.runStateT (Game.run (lifted registry) format Limits.standard [Record.recording (Command.labels count) sink] (Map.fromList [(Command.idOf n, seat n) | n <- [1 .. count]]) (Generator.fromKey (seedAt seed index)) Map.empty (Command.seated (firstAt index) decks)) Seq.empty
 
 -- | A pair of decks, seat 1's first.
 both :: (Deck.Deck, Deck.Deck) -> NonEmpty.NonEmpty Deck.Deck

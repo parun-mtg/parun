@@ -2569,6 +2569,7 @@ library play
     Parun.Play.Offer
     Parun.Play.Protocol
     Parun.Play.Record
+    Parun.Play.Search
     Parun.Play.Wording
 
 -- The registry provides a way to load and cache card data from disk.
@@ -2834,6 +2835,7 @@ library test
     Parun.SaddleSpec
     Parun.SagaSpec
     Parun.ScenarioSpec
+    Parun.SearchSpec
     Parun.SeatingSpec
     Parun.SetupSpec
     Parun.ShieldCounterSpec
@@ -3856,6 +3858,7 @@ library types
     Parun.Types.Scope
     Parun.Types.Scratch
     Parun.Types.Search
+    Parun.Types.SearchBudget
     Parun.Types.SearchDestination
     Parun.Types.SearchPlace
     Parun.Types.Seat
