@@ -104,6 +104,17 @@
       "player": "alice",
       "do": {
         "Answer": {
+          "prompt": "RollDie",
+          "with": 2
+        }
+      }
+    },
+    {
+      "turn": 1,
+      "step": "PrecombatMain",
+      "player": "alice",
+      "do": {
+        "Answer": {
           "prompt": "ChooseRollModifier",
           "with": 0
         }
@@ -152,17 +163,6 @@
         "Answer": {
           "prompt": "RollDie",
           "with": 6
-        }
-      }
-    },
-    {
-      "turn": 1,
-      "step": "PrecombatMain",
-      "player": "alice",
-      "do": {
-        "Answer": {
-          "prompt": "RollDie",
-          "with": 2
         }
       }
     },
@@ -279,5 +279,5 @@
       }
     }
   ],
-  "note": "The first Rethrow offer is declined and the second exercised, both before the second die is thrown, so both are over the natural 3; Six Knights mean the exercised one rerolled that 3. Either Wall pays for either Wall's offer, so later offers recur until the dice are done; each is declined."
+  "note": "The first Rethrow offer is declined and the second exercised, both over the natural 3; Six Knights mean the exercised one rerolled that 3. Either Wall pays for either Wall's offer, so later offers recur until the dice are done; each is declined."
 }

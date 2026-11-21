@@ -306,8 +306,8 @@ costedRerollSpec s registry = Spec.describe s "Costed reroll" $ do
     wall <- S.printingOf s registry "Wall of Fortune"
     let (clammer, clammed) = S.addPermanent clam S.alice board
         (walled, both) = S.addPermanent wall S.bob clammed
-        pickedWall = pickRun [3, 6, 2] [OptionalDecision.Exercises] walled spell both
-        pickedClam = pickRun [3, 6, 2] [OptionalDecision.Exercises] clammer spell both
+        pickedWall = pickRun [3, 2, 6] [OptionalDecision.Exercises] walled spell both
+        pickedClam = pickRun [3, 2, 6] [OptionalDecision.Exercises] clammer spell both
     -- THE GAMEPLAY ASSERTION: alice's Clam-I-Am and bob's Wall of Fortune
     -- both offer to reroll alice's natural 3, and every offer put is taken.
     -- Alice picks the Wall, so bob is asked first and his Wall pays. An engine
@@ -331,7 +331,7 @@ costedRerollSpec s registry = Spec.describe s "Costed reroll" $ do
     Spec.assertEqWith
       s
       "CR 706.2b: the Clam first, then the Wall over its 1"
-      (S.countOnBattlefieldByName knight S.alice (pickRun [3, 1, 6, 2] [OptionalDecision.Exercises, OptionalDecision.Exercises] clammer spell both))
+      (S.countOnBattlefieldByName knight S.alice (pickRun [3, 2, 1, 6] [OptionalDecision.Exercises, OptionalDecision.Exercises] clammer spell both))
       6
 
 -- The Endeavor cast under rerollAnswer, except that the roller's CR 706.2b

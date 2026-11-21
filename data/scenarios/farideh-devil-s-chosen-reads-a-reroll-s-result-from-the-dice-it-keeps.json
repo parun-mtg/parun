@@ -118,6 +118,17 @@
     {
       "do": {
         "Answer": {
+          "prompt": "RollDie",
+          "with": 6
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": {
+        "Answer": {
           "prompt": "ChooseRollModifier",
           "with": 0
         }
@@ -164,6 +175,17 @@
     {
       "do": {
         "Answer": {
+          "prompt": "RollDie",
+          "with": 5
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": {
+        "Answer": {
           "prompt": "ChooseRollModifier",
           "with": 1
         }
@@ -199,28 +221,6 @@
         "Answer": {
           "prompt": "RollDie",
           "with": 1
-        }
-      },
-      "player": "alice",
-      "step": "PrecombatMain",
-      "turn": 1
-    },
-    {
-      "do": {
-        "Answer": {
-          "prompt": "RollDie",
-          "with": 5
-        }
-      },
-      "player": "alice",
-      "step": "PrecombatMain",
-      "turn": 1
-    },
-    {
-      "do": {
-        "Answer": {
-          "prompt": "RollDie",
-          "with": 6
         }
       },
       "player": "alice",
