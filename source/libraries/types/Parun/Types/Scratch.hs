@@ -77,6 +77,11 @@ data Scratch = MkScratch
     -- the one-at-a-time funnel would otherwise hide from an earlier member's
     -- entry choice. Empty at every priority window.
     enteringPending :: !(Map.Map ObjectId.ObjectId PlayerId.PlayerId),
+    -- | CR 614.13a: the first object id minted in the outermost
+    -- Parun.Engine.Event.amongPending scope under way; a card in a graveyard
+    -- at or past it changed zones during the batch's entry. Nothing at every
+    -- priority window.
+    enteringSince :: !(Maybe ObjectId.ObjectId),
     -- | CR 614.3: the one-use floating entry replacements applied in the
     -- Event.arrivingTogether scope under way, held standing until it ends,
     -- since what enters at once enters in one event

@@ -723,15 +723,18 @@ arrangedAlready cards gs =
 -- the ones moved before it (Scratch.enteringPending). `under` is the player
 -- they enter under, Nothing for each member's owner -- changeZoneEnteringIn's
 -- reading of the same move. Saved and restored, so a move nested inside an
--- entry leaves the outer one's members pending.
+-- entry leaves the outer one's members pending. The outermost scope also
+-- notes the first id it mints (Scratch.enteringSince, CR 614.13a).
 amongPending :: Maybe PlayerId -> [ObjectId] -> Game a -> Game a
 amongPending under members body = do
-  saved <- State.gets (Scratch.enteringPending . GameState.scratch)
   gs <- State.get
-  let enteringUnder member = fmap (\obj -> (member, Maybe.fromMaybe (Object.owner obj) under)) (Game.lookupObject member gs)
-  State.modify' (\g -> g {GameState.scratch = (GameState.scratch g) {Scratch.enteringPending = saved <> Map.fromList (Maybe.mapMaybe enteringUnder members)}})
+  let saved = Scratch.enteringPending (GameState.scratch gs)
+      savedSince = Scratch.enteringSince (GameState.scratch gs)
+      since = Maybe.fromMaybe (Bookkeeping.nextObjectId (GameState.bookkeeping gs)) savedSince
+      enteringUnder member = fmap (\obj -> (member, Maybe.fromMaybe (Object.owner obj) under)) (Game.lookupObject member gs)
+  State.modify' (\g -> g {GameState.scratch = (GameState.scratch g) {Scratch.enteringPending = saved <> Map.fromList (Maybe.mapMaybe enteringUnder members), Scratch.enteringSince = Just since}})
   result <- body
-  State.modify' (\g -> g {GameState.scratch = (GameState.scratch g) {Scratch.enteringPending = saved}})
+  State.modify' (\g -> g {GameState.scratch = (GameState.scratch g) {Scratch.enteringPending = saved, Scratch.enteringSince = savedSince}})
   pure result
 
 -- CR 616.1 / 101.4c: the order `members`, entering the battlefield in one
@@ -4163,8 +4166,9 @@ apply settle batch applied batchPrevented candidate event =
       -- CR 614.12b's combined budget across a batch falls out here for the same
       -- reason, the choice being made and paid inside the entry loop before the
       -- next member of the batch runs its own (CR 614.13a's object "leaving any
-      -- zone at the same time"). Its exclusion of a card entering beside this one
-      -- does not fall out with it; Replacement.graveyardCandidates writes it.
+      -- zone at the same time"). Its exclusion of a card entering beside this one,
+      -- or put there by an earlier member's entry, does not fall out with it;
+      -- Replacement.graveyardCandidates writes it.
       --
       -- MANDATORY at a fixed count, and so unlike the two "or tapped" arms there
       -- is no declining half: Living Lore prints no "may". An empty offer exiles
