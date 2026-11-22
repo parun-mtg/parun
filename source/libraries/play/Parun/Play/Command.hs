@@ -228,6 +228,52 @@ seated first decks =
       (before, from) = NonEmpty.break ((== first) . fst) numbered
    in fmap (Bifunctor.first idOf) (Maybe.fromMaybe numbered (NonEmpty.nonEmpty (from <> before)))
 
+-- | The decks of the meta file at `path`, each with its share and its path as
+-- the file names it, or exits saying why it holds none.
+loadMeta :: Registry.Registry Identity.Identity -> FilePath -> IO (NonEmpty.NonEmpty (Natural, (Text.Text, DeckList.Listed)))
+loadMeta registry path = do
+  meta <- orExit (readMeta path)
+  traverse (\(share, name) -> (,) share . (,) name <$> orExit (load registry (relativeTo path (Text.unpack name)))) meta
+
+-- | The meta file at `path`, or why it holds none.
+readMeta :: FilePath -> IO (Either [Text.Text] (NonEmpty.NonEmpty (Natural, Text.Text)))
+readMeta path = do
+  bytes <- ByteString.readFile path
+  pure $ case Encoding.decodeUtf8' bytes of
+    Left err -> Left [Text.pack (path <> ": not valid UTF-8: " <> show err)]
+    Right contents -> case parseMeta contents of
+      Left problems -> Left (fmap (Text.pack (path <> ": ") <>) problems)
+      Right meta -> Right meta
+
+-- | A meta file's decks, each with its share: one deck list's path a line,
+-- after a share (a positive whole number) and a space, or alone for a share
+-- of 1. A blank line and one starting `#` say nothing. Or every bad line.
+parseMeta :: Text.Text -> Either [Text.Text] (NonEmpty.NonEmpty (Natural, Text.Text))
+parseMeta contents =
+  let entry :: (Natural, Text.Text) -> Either Text.Text (Maybe (Natural, Text.Text))
+      entry (number, line) =
+        let stripped = Text.strip line
+            (first, rest) = Text.break (== ' ') stripped
+            path = Text.strip rest
+         in case Read.readMaybe (Text.unpack first) of
+              _ | Text.null stripped || Text.isPrefixOf (Text.pack "#") stripped -> Right Nothing
+              Just 0 | not (Text.null path) -> Left (Text.pack ("line " <> show number <> ": a share of 0"))
+              Just share | not (Text.null path) -> Right (Just (share, path))
+              _ -> Right (Just (1, stripped))
+      parsed :: ([Text.Text], [Maybe (Natural, Text.Text)])
+      parsed = Either.partitionEithers (fmap entry (zip [1 ..] (Text.lines contents)))
+      (problems, entries) = parsed
+   in case (problems, NonEmpty.nonEmpty (Maybe.catMaybes entries)) of
+        ([], Just meta) -> Right meta
+        ([], Nothing) -> Left [Text.pack "no deck"]
+        _ -> Left problems
+
+-- | `path` read from the directory holding `meta`, unless it is absolute.
+relativeTo :: FilePath -> FilePath -> FilePath
+relativeTo meta path = case (path, List.dropWhileEnd (/= '/') meta) of
+  ('/' : _, _) -> path
+  (_, directory) -> directory <> path
+
 -- | Each of so many seats' label in a saved game.
 labels :: Natural -> Map.Map PlayerId.PlayerId Label.Label
 labels count = Map.fromList [(idOf n, Label.MkLabel (Text.pack ("player" <> show n))) | n <- [1 .. count]]

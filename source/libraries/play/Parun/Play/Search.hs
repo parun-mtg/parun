@@ -8,8 +8,10 @@
 -- seen, the random bot in every seat, and the option winning most is taken.
 module Parun.Play.Search where
 
+import Control.Applicative ((<|>))
 import qualified Control.Monad as Monad
 import qualified Control.Monad.Trans.State.Strict as State
+import qualified Data.Bifunctor as Bifunctor
 import qualified Data.Containers.ListUtils as ListUtils
 import qualified Data.Foldable as Foldable
 import qualified Data.List as List
@@ -34,6 +36,7 @@ import qualified Parun.Types.CardIdentity as CardIdentity
 import qualified Parun.Types.CardType as CardType
 import qualified Parun.Types.Combat as Combat
 import qualified Parun.Types.Decider as Decider
+import qualified Parun.Types.Deck as Deck
 import qualified Parun.Types.Features as Features
 import qualified Parun.Types.Game as Game.Type
 import qualified Parun.Types.GameState as GameState
@@ -42,6 +45,7 @@ import qualified Parun.Types.Object as Object
 import qualified Parun.Types.ObjectId as ObjectId
 import qualified Parun.Types.Player as Player
 import qualified Parun.Types.PlayerId as PlayerId
+import qualified Parun.Types.Printing as Printing
 import qualified Parun.Types.Program as Program
 import qualified Parun.Types.ProjectedCharacteristics as ProjectedCharacteristics
 import qualified Parun.Types.Prompt as Prompt
@@ -51,25 +55,87 @@ import qualified Parun.Types.Source as Source
 import qualified Parun.Types.TurnRegisters as TurnRegisters
 import qualified Parun.Types.Visibility as Visibility.Type
 import qualified Parun.Types.Weights as Weights
+import qualified Parun.Types.Zone as Zone
 
--- | What an owner's unseen cards may be, given the viewer and the game: the
--- contents (Object.source and Object.identity) to deal onto that owner's
--- unseen objects. #9344 swaps it for an inferred deck.
-type Prior = PlayerId.PlayerId -> GameState.GameState -> PlayerId.PlayerId -> [Contents]
+-- | How a viewer deals an owner's unseen cards in a world it samples: given
+-- the viewer, the world so far and the owner, the world with every printing
+-- the deal names interned and the contents to deal onto that owner's 'unseen'
+-- objects, in their order, any object past the last keeping its own.
+newtype Prior = MkPrior (forall m. (Monad m) => PlayerId.PlayerId -> GameState.GameState -> PlayerId.PlayerId -> State.StateT Generator.Type.Generator m (GameState.GameState, [Contents]))
 
 -- | What a card object is, apart from where it sits: the card behind it and
 -- its identity (CR 108.3).
 type Contents = (Source.Source, Maybe CardIdentity.CardIdentity)
 
 -- | The known deck list: an owner's unseen objects hold exactly their list
--- less every card the viewer has seen, so dealing their own contents anew is
--- dealing from that remainder. It assumes each list is known.
+-- less every card the viewer has seen, so dealing their own contents anew,
+-- shuffled, is dealing from that remainder. It assumes each list is known.
 known :: Prior
-known viewer gs owner =
-  [ (Object.source object, Object.identity object)
-  | oid <- unseen viewer gs owner,
-    object <- Foldable.toList (Engine.Game.lookupObject oid gs)
-  ]
+known = MkPrior $ \viewer gs owner ->
+  fmap ((,) gs) . Generator.shuffle $
+    [ (Object.source object, Object.identity object)
+    | oid <- unseen viewer gs owner,
+      object <- Foldable.toList (Engine.Game.lookupObject oid gs)
+    ]
+
+-- | A meta's decks, each with its share, for lists not known: the viewer's
+-- own cards dealt as 'known' deals them, and each other owner's from one deck
+-- drawn by its 'posterior' given what the viewer 'seen' of theirs, less those
+-- cards, shuffled, and once that runs short from the whole deck shuffled.
+inferred :: NonEmpty.NonEmpty (Natural, Deck.Deck) -> Prior
+inferred meta = MkPrior $ \viewer gs owner ->
+  let MkPrior ownList = known
+      shown = seen viewer gs owner
+      hidden = unseen viewer gs owner
+   in if owner == viewer
+        then ownList viewer gs owner
+        else do
+          deck <- Generator.weighted (posterior meta shown)
+          rest <- Generator.shuffle (spread (Map.differenceWith (\k s -> if k > s then Just (k - s) else Nothing) (Deck.cards deck) shown))
+          whole <- Generator.shuffle (spread (Deck.cards deck))
+          let (world, ids) = Foldable.foldl' (\(w, acc) printing -> let (pid, w') = Engine.Game.intern printing w in (w', Map.insert printing pid acc)) (gs, Map.empty) (Map.keys (Deck.cards deck))
+              identityOf oid = Object.identity =<< Engine.Game.lookupObject oid gs
+              dealt = zip hidden (rest <> if null whole then [] else cycle whole)
+          pure (world, [(Source.OfCard pid, identityOf oid) | (oid, printing) <- dealt, pid <- Foldable.toList (Map.lookup printing ids)])
+
+-- | Each printing as many times as its count.
+spread :: Map.Map Printing.Printing Natural -> [Printing.Printing]
+spread = foldMap (\(printing, n) -> List.genericReplicate n printing) . Map.toList
+
+-- | The cards of `owner`'s that `viewer` sees now, by printing: the cards in
+-- the game outside the command zone (CR 408.1), which holds what a player
+-- brings beside their deck's cards (Deck).
+--
+-- Not implemented: counting a card seen before and not now (#9345).
+seen :: PlayerId.PlayerId -> GameState.GameState -> PlayerId.PlayerId -> Map.Map Printing.Printing Natural
+seen viewer gs owner =
+  Map.fromListWith
+    (+)
+    [ (printing, 1)
+    | (oid, object) <- Map.toList (GameState.objects gs),
+      Object.owner object == owner,
+      maybe False (/= Zone.Command) (Engine.Game.zoneOf oid gs),
+      Visibility.sees viewer oid gs == Visibility.Type.Visible,
+      Source.OfCard pid <- [Object.source object],
+      printing <- Foldable.toList (Engine.Game.printingOf pid gs)
+    ]
+
+-- | Each deck of a meta weighed by its share times the chance a hand of its
+-- cards the size of those seen is exactly them (multivariate hypergeometric),
+-- normalised; by its share alone when no deck holds them all, and evenly when
+-- no share is positive.
+posterior :: NonEmpty.NonEmpty (Natural, Deck.Deck) -> Map.Map Printing.Printing Natural -> NonEmpty.NonEmpty (Rational, Deck.Deck)
+posterior meta shown =
+  let choose :: Natural -> Natural -> Rational
+      choose n k = if k > n then 0 else toRational (product [n - k + 1 .. n] `div` product [1 .. k])
+      likelihood deck =
+        let ways = choose (sum (Deck.cards deck)) (sum shown)
+         in if ways == 0 then 0 else product [choose (Map.findWithDefault 0 printing (Deck.cards deck)) k | (printing, k) <- Map.toList shown] / ways
+      normalised weights =
+        let total = sum (fmap fst weights)
+         in if total == 0 then Nothing else Just (fmap (Bifunctor.first (/ total)) weights)
+      evenly = fmap (\(_, deck) -> (1 / toRational (length meta), deck)) meta
+   in Maybe.fromMaybe evenly (normalised (fmap (\(share, deck) -> (toRational share * likelihood deck, deck)) meta) <|> normalised (fmap (Bifunctor.first toRational) meta))
 
 -- | CR 400.2: the objects in `owner`'s hand and library `viewer` may not see,
 -- in hand-then-library order.
@@ -79,15 +145,15 @@ unseen viewer gs owner =
    in filter hidden (Foldable.toList (Map.findWithDefault mempty owner (GameState.hand gs)) <> Foldable.toList (Map.findWithDefault mempty owner (GameState.library gs)))
 
 -- | A world `viewer` cannot tell from `gs`: each owner's unseen objects dealt
--- the prior's contents, shuffled, one each, every id staying where it is. Following
+-- the prior's contents, one each, every id staying where it is. Following
 -- Magarena's showRandomizedHiddenCards (docs/prior-art-lessons.md, 10.3).
 -- SearchSpec proves the viewer's view is unchanged.
 sample :: (Monad m) => Prior -> PlayerId.PlayerId -> GameState.GameState -> State.StateT Generator.Type.Generator m GameState.GameState
-sample prior viewer gs =
+sample (MkPrior prior) viewer gs =
   Monad.foldM
     ( \world owner -> do
-        dealt <- Generator.shuffle (prior viewer gs owner)
-        pure world {GameState.objects = Foldable.foldl' (\objects (oid, contents) -> Map.adjust (\target -> target {Object.source = fst contents, Object.identity = snd contents}) oid objects) (GameState.objects world) (zip (unseen viewer gs owner) dealt)}
+        (dealing, dealt) <- prior viewer world owner
+        pure dealing {GameState.objects = Foldable.foldl' (\objects (oid, contents) -> Map.adjust (\target -> target {Object.source = fst contents, Object.identity = snd contents}) oid objects) (GameState.objects dealing) (zip (unseen viewer world owner) dealt)}
     )
     gs
     (Map.keys (GameState.players gs))
