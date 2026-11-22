@@ -978,8 +978,8 @@ assertWithdrawn s kind card lands board = do
 
 -- Casts `card` the first time it is offered and withdraws it at the first
 -- prompt offering a withdrawal and no later one, paying with the first source
--- and choosing the first mode should the cast go on regardless; then answers
--- as `client` does.
+-- choosing the first mode, the least X and one target per slot should the cast
+-- go on regardless; then answers as `client` does.
 withdrawsOnce :: ObjectId.ObjectId -> Text.Text -> State.State Log Text.Text
 withdrawsOnce card line = do
   offers <- State.gets (length . filter (List.isInfixOf "\"withdraw\":") . Either.rights)
@@ -998,6 +998,12 @@ withdrawsOnce card line = do
       | Question.kind question == Text.pack "ChooseModes",
         Just (mode : _) <- field "among" (Question.offer question) >>= arrayOf ->
           pure (Common.render (Codec.Reply.toValue (R.Array [mode])))
+      | Question.kind question == Text.pack "ChooseX",
+        Just least <- field "least" (Question.offer question) ->
+          pure (Common.render (Codec.Reply.toValue least))
+      | Question.kind question == Text.pack "AnnounceTargets",
+        Just slots <- field "recipients" (Question.offer question) >>= arrayOf ->
+          pure (Common.render (Codec.Reply.toValue (R.Array [R.Array [slot, R.Number 1] | R.Array [slot, _] <- slots])))
       | Question.kind question == Text.pack "ChooseTargets",
         Just slots <- field "slots" (Question.offer question) >>= arrayOf ->
           pure (Common.render (Codec.Reply.toValue (R.Array [R.Array [slot, R.Array (take 1 recipients)] | R.Array [slot, R.Array [_, R.Array recipients]] <- slots])))
