@@ -44,21 +44,26 @@ data Marks msg = MkMarks
 
 -- | The turn bar: the turn and its step; the phases as a labelled track,
 -- the current one marked (and marked as an extra one, CR 500.8) and those
--- with no step still scheduled passed; then what is given for after them
--- and the controls given.
+-- with no step still scheduled passed, none marked before the first turn
+-- (CR 103.8); then what is given for after them and the controls given.
 turnBar :: [Html.Html msg] -> [Html.Html msg] -> PlayerView.PlayerView -> Html.Html msg
 turnBar after controls board =
   let current = phaseIndex (PlayerView.phase board)
       ahead = Set.fromList (fmap phaseIndex (Foldable.toList (PlayerView.remaining board)))
       extra = PlayerView.extra board
       shown i
+        | not (PlayerView.begun board) = []
         | i == current = ["now"] <> ["extra" | extra]
         | Set.member i ahead = []
         | otherwise = ["past"]
       label =
-        [ Element.el "strong" [] [] [Element.string ("Turn " <> show (PlayerView.turn board))],
-          Element.el "span" ["step"] [] [Element.text (Text.pack " \x00b7 " <> moment board)]
-        ]
+        ( if PlayerView.begun board
+            then
+              [ Element.el "strong" [] [] [Element.string ("Turn " <> show (PlayerView.turn board))],
+                Element.el "span" ["step"] [] [Element.text (Text.pack " \x00b7 " <> moment board)]
+              ]
+            else [Element.el "strong" [] [] [Element.text (moment board)]]
+        )
           <> [Element.el "span" ["extra"] [Element.attr "title" extraTip] [Element.string "Extra"] | extra]
           <> foldMap (pure . daytime) (PlayerView.daytime board)
    in Element.el
@@ -70,7 +75,7 @@ turnBar after controls board =
               "ol"
               ["phases"]
               [Element.attr "aria-label" (Text.pack "Phases")]
-              [ Element.el "li" (shown i) ([Element.attr "title" (if i == current && extra then extraTip else Text.pack tip)] <> [Element.attr "aria-current" (Text.pack "step") | i == current]) [Element.string name']
+              [ Element.el "li" (shown i) ([Element.attr "title" (if i == current && extra then extraTip else Text.pack tip)] <> [Element.attr "aria-current" (Text.pack "step") | i == current, PlayerView.begun board]) [Element.string name']
               | (i, (name', tip)) <- zip [0 :: Integer ..] phaseNames
               ]
           ]
@@ -80,13 +85,18 @@ turnBar after controls board =
 extraTip :: Text.Text
 extraTip = Text.pack "An extra phase or step this turn (CR 500.8, 500.9, 514.3a)"
 
--- | Whether the turn is the viewer's.
+-- | Whether the turn is the viewer's: no one's before the first turn begins
+-- (CR 103.8).
 yours :: PlayerView.PlayerView -> Bool
-yours board = PlayerView.active board == PlayerView.viewer board
+yours board = PlayerView.begun board && PlayerView.active board == PlayerView.viewer board
 
--- | Whose turn it is and its step: "Your upkeep", "Player 2's end step".
+-- | Whose turn it is and its step: "Your upkeep", "Player 2's end step";
+-- before the first turn, the mulligans and opening-hand actions (CR 103.5,
+-- 103.6).
 moment :: PlayerView.PlayerView -> Text.Text
-moment board = (if yours board then Text.pack "Your " else possessive (PlayerView.active board)) <> Wording.phase (PlayerView.phase board)
+moment board
+  | not (PlayerView.begun board) = Text.pack "Before the first turn"
+  | otherwise = (if yours board then Text.pack "Your " else possessive (PlayerView.active board)) <> Wording.phase (PlayerView.phase board)
 
 -- | Each phase's name on the track, and in full (CR 500.1).
 phaseNames :: [(String, String)]
@@ -274,7 +284,7 @@ seatHead marks board own s =
           <> [chip (if kind == PlayerCounterKind.Poison then "poison" else "player-counter") (capitalized (counterWord kind)) (show n) (counterWord kind <> " counters") | (kind, n) <- Map.toList (SeatView.counters s), n > 0]
       -- CR 102.1 / 117.1: whose turn it is and who holds priority.
       holding =
-        [chip "turn" (if own then "Your turn" else "Their turn") "" "Whose turn it is: the active player (CR 102.1)" | PlayerView.active board == pid]
+        [chip "turn" (if own then "Your turn" else "Their turn") "" "Whose turn it is: the active player (CR 102.1)" | PlayerView.active board == pid, PlayerView.begun board]
           <> [chip "priority" (if own then "You have priority" else "Has priority") "" "Holds priority (CR 117.1)" | PlayerView.priority board == Just pid]
       pool = Mana.unwrap (SeatView.manaPool s)
       aimed = Card.targetingPlayer board pid

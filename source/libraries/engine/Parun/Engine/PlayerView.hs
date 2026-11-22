@@ -64,6 +64,7 @@ viewFor pid gs =
     { PlayerView.viewer = pid,
       PlayerView.game = MatchScope.gameNumber (GameState.match gs),
       PlayerView.turn = TurnRegisters.turnNumber (GameState.turn gs),
+      PlayerView.begun = not (Turn.pregame gs),
       PlayerView.phase = TurnRegisters.phase (GameState.turn gs),
       PlayerView.remaining = TurnRegisters.remaining (GameState.turn gs),
       PlayerView.extra = extraStep gs,

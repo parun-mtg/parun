@@ -501,7 +501,7 @@ seatsView lobby =
                   ["seat-head"]
                   []
                   ( [Element.el "span" ["avatar"] [] [avatar], Element.el "strong" ["seat-name"] [] [Element.string (seatName lobby which)]]
-                      <> [Element.el "span" ["chip", "choosing"] [] [Element.string "Choosing a deck"] | on]
+                      <> [Element.el "span" ["chip", "choosing"] [] [Element.string "Choosing a deck"] | on, Maybe.isNothing held]
                   ),
                 Element.el "span" ["seat-deck"] [] $ case held of
                   Just name -> [DeckBrowser.pips (Map.findWithDefault Set.empty name (DeckBrowser.palette (browser lobby))), Element.el "span" ["seat-deck-name"] [] [Element.text (snd (DeckBrowser.describe name))]]

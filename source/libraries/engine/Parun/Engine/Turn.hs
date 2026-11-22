@@ -155,6 +155,20 @@ eventsThisTurn gs
   | Map.null (GameState.parkedTurns gs) = TurnRegisters.events (GameState.turn gs)
   | otherwise = mergedOn LoggedEvent.group (fmap TurnRegisters.events (runningRegisters gs))
 
+-- | CR 103.8: whether the game's first turn is yet to begin: the players
+-- mulligan (CR 103.5) and take opening-hand actions (CR 103.6), the turn
+-- registers waiting at its untap step.
+pregame :: GameState -> Bool
+pregame gs =
+  let registers = GameState.turn gs
+   in TurnRegisters.turnNumber registers == 1
+        && TurnRegisters.phase registers == Phase.Beginning BeginningStep.Untap
+        && not (any began (TurnRegisters.events registers))
+  where
+    began logged = case LoggedEvent.event logged of
+      GameEvent.StepBegan _ -> True
+      _ -> False
+
 -- | CR 121.1: the cards each player has drawn this turn, in draw order. Each
 -- running turn's entries take the groups of that log's GameEvent.Drew for the
 -- player, which Event.drawCard writes beside each entry, to merge by.

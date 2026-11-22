@@ -26,6 +26,7 @@ codec = Fields.object $ do
   viewer <- Fields.required "viewer" PlayerId.codec PlayerView.viewer
   game <- Fields.required "game" Common.natural PlayerView.game
   turn <- Fields.required "turn" Common.natural PlayerView.turn
+  begun <- Fields.defaulted "begun" True Common.boolean PlayerView.begun
   phase <- Fields.required "phase" Phase.codec PlayerView.phase
   remaining <- Fields.defaulted "remaining" Seq.empty (Common.seq Phase.codec) PlayerView.remaining
   extra <- Fields.defaulted "extra" False Common.boolean PlayerView.extra
@@ -51,6 +52,7 @@ codec = Fields.object $ do
       { PlayerView.viewer = viewer,
         PlayerView.game = game,
         PlayerView.turn = turn,
+        PlayerView.begun = begun,
         PlayerView.phase = phase,
         PlayerView.remaining = remaining,
         PlayerView.extra = extra,

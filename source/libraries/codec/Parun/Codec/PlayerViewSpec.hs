@@ -51,6 +51,13 @@ spec s = Spec.describe s "Parun.Codec.PlayerView" $ do
       PlayerView.codec
       testView {PlayerView.remaining = Seq.singleton Phase.PostcombatMain, PlayerView.extra = True}
       (Text.unpack (Text.replace (Text.pack "\"phase\":{\"type\":\"PrecombatMain\"},") (Text.pack "\"phase\":{\"type\":\"PrecombatMain\"},\"remaining\":[{\"type\":\"PostcombatMain\"}],\"extra\":true,") (Text.pack testViewJson)))
+  -- CR 103.5 / 103.8: a mulligan, before the first turn begins.
+  Spec.it s "before the first turn" $
+    Common.assertCodec
+      s
+      PlayerView.codec
+      testView {PlayerView.begun = False}
+      (Text.unpack (Text.replace (Text.pack "\"turn\":3,") (Text.pack "\"turn\":3,\"begun\":false,") (Text.pack testViewJson)))
   Spec.it s "has a schema" $ Common.assertHasSchema s PlayerView.codec
 
 testView :: PlayerView.PlayerView
@@ -59,6 +66,7 @@ testView =
     { PlayerView.viewer = PlayerId.MkPlayerId 0,
       PlayerView.game = 2,
       PlayerView.turn = 3,
+      PlayerView.begun = True,
       PlayerView.phase = Phase.PrecombatMain,
       PlayerView.remaining = Seq.empty,
       PlayerView.extra = False,

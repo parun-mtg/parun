@@ -283,6 +283,7 @@ spec s = Spec.describe s "Parun.Web.Lobby" $ do
       Spec.assertEqWith s "yours" (marked (Lobby.view lobby)) [Text.pack "YYouChoosing a deckNo deck yetChoose one to start"]
       Spec.assertEqWith s "the bot's" (marked (Lobby.view forBot)) [Text.pack "BotChoosing a deckRandom deckDrawn when the game starts"]
       Spec.assertBool s (Text.isInfixOf (Text.pack "<h2>Deck for Bot</h2>") (Html.toText (Lobby.view forBot))) "heading"
+      Spec.assertEqWith s "once yours is chosen" (marked (Lobby.view (Lobby.update (Lobby.MkPick a) Text.empty lobby))) [Text.pack "YYouDemo APOR"]
 
     Spec.it s "shows a deck's list to copy only under that deck" $ do
       let holding = Lobby.withDecks (Seq.fromList [a, saved]) Map.empty Lobby.new

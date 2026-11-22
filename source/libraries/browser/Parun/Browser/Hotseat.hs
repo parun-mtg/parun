@@ -158,6 +158,7 @@ exchange lookUp page seatRef leave request = do
         -- when what it shows changed, not at every pass of priority, and
         -- only while the screen faces the seat, else what it last showed stays.
         watch reply = do
+          keepLevel
           Monad.forM_ (Request.view request) $ \shown -> do
             now <- IORef.readIORef seatRef
             let seen = shown {PlayerView.priority = Nothing}
@@ -175,14 +176,21 @@ exchange lookUp page seatRef leave request = do
           Browser.display page . fmap Screen.MkQuestion $ Web.Question.handOff request
           untilReady
           IORef.modifyIORef' seatRef $ \s -> s {facing = Just seat}
-        -- A tap made while the board was only being watched is dropped.
-        Browser.flush page
+        -- A tap made while the board was only being watched is dropped,
+        -- but for the auto-pass level.
+        keepLevel
         -- The question replaces the watched board, which is drawn afresh after.
         IORef.modifyIORef' seatRef $ \st -> st {watched = Nothing}
         answer request (Web.Question.initial request)
     IORef.modifyIORef' seatRef $ \s -> s {decided = Map.insert seat (Seq.length (loggedFor seat s)) (decided s)}
     pure reply
   where
+    -- The last auto-pass level tapped while the seat watched, kept, and the
+    -- watched board drawn afresh to show it; every other tap dropped.
+    keepLevel = do
+      dropped <- Browser.flush page
+      Monad.forM_ (Maybe.listToMaybe (reverse [l | Screen.MkQuestion (Web.Question.MkLevel l) <- dropped])) $ \l ->
+        IORef.modifyIORef' seatRef $ \st -> st {level = l, watched = Nothing}
     untilReady = Browser.next page >>= \(event, _) -> Monad.unless (event == Screen.MkQuestion Web.Question.MkReady) untilReady
     answer pending picked = asking pending picked Nothing Nothing
     asking pending picked reading focus = do

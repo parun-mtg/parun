@@ -238,9 +238,10 @@ pending page = not . Seq.null <$> IORef.readIORef (taken page)
 pause :: IO ()
 pause = pausePromise >>= \() -> pure ()
 
--- | Drops the events taken that no one has waited for yet.
-flush :: Page msg -> IO ()
-flush page = IORef.atomicWriteIORef (taken page) Seq.empty
+-- | Drops the events taken that no one has waited for yet, giving them in
+-- the order taken.
+flush :: Page msg -> IO [msg]
+flush page = IORef.atomicModifyIORef' (taken page) $ \events -> (Seq.empty, fmap fst (Foldable.toList events))
 
 dispatch :: Page msg -> Prim.JSString -> Prim.JSString -> Prim.JSString -> IO ()
 dispatch page event path value = do
