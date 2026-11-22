@@ -1417,7 +1417,7 @@ throwSettled runSubgame roll perDie = do
         where
           -- Defensive: a short answer is filled with a die of 1.
           padded filler xs = take (Natural.toIntSaturating count) (xs <> repeat filler)
-          rerolled again face (thrower, natural, faces, pending) = (thrower, readBack again natural, [], pending <> foldMap (\(came, landed) -> (key, Right (by, came), landed) : fmap (\(who, shown) -> (Nothing, Left (Common.naturalResult who shown), landed)) faces) face)
+          rerolled again face (thrower, natural, faces, pending) = (thrower, readBack again natural, [], pending <> foldMap (\(came, landed) -> (key, Right (by, came), landed) : fmap (\(who, shown) -> (Nothing, Left (Common.settledResult RollReading.NaturalResult who shown), landed)) faces) face)
       -- CR 706.1's event for each reroll a kept die carries, once the roll's
       -- own CR 706.6 ignore is done: a die it ignores "never happened", so
       -- neither did its rerolls, and "no abilities trigger because of the
@@ -1439,6 +1439,12 @@ throwSettled runSubgame roll perDie = do
       --
       -- A coin flipped instead of a reroll (Left) is that coin's own event, and
       -- a reroll's natural result (Left) is its own per die, uncounted.
+      --
+      -- Beside it, per die, the result "whenever you roll a 6" reads: the face
+      -- the reroll came up, as Farideh's reading has it (docs/decisions.md,
+      -- "Which result a reroll's trigger reads"). The scenario
+      -- night-shift-of-the-living-dead-triggers-for-a-6-rerolled-away proves
+      -- it.
       recordRerolls pending = Foldable.for_ (groups Set.empty pending) $ \(event, landed) ->
         State.modify' (Event.recordEventOver landed event)
         where
@@ -1446,13 +1452,14 @@ throwSettled runSubgame roll perDie = do
             if numbered
               then GameEvent.CountedAct (CountedAct.MkCountedAct PlayerAction.RollDice by number)
               else GameEvent.PlayerActed (PlayerActed.MkPlayerActed PlayerAction.RollDice by)
+          settled by face landed = [(Common.settledResult RollReading.FinalResult by face, landed) | numbered]
           groups seen entries = case entries of
             [] -> []
             (_, Left event, landed) : rest -> (event, landed) : groups seen rest
-            (Nothing, Right (by, face), landed) : rest -> (rolled by face, landed) : groups seen rest
+            (Nothing, Right (by, face), landed) : rest -> (rolled by face, landed) : settled by face landed <> groups seen rest
             (Just key, Right (by, face), landed) : rest
-              | Set.member key seen -> groups seen rest
-              | otherwise -> (rolled by (Foldable.foldl' max face [other | (Just k, Right (_, other), _) <- rest, k == key]), landed) : groups (Set.insert key seen) rest
+              | Set.member key seen -> settled by face landed <> groups seen rest
+              | otherwise -> (rolled by (Foldable.foldl' max face [other | (Just k, Right (_, other), _) <- rest, k == key]), landed) : settled by face landed <> groups (Set.insert key seen) rest
       rethrowOne by = fmap (Maybe.fromMaybe (DoneDie (by, 1, [], [])) . Maybe.listToMaybe) (rethrow by Nothing (1 :: Natural))
       readBack again natural = if Throw.instead again then maybe natural Event.resultOfFace (Event.faceOfResult natural) else natural
       -- Whether an offer can still go through: a static offer's budget admits
@@ -1687,9 +1694,9 @@ throwSettled runSubgame roll perDie = do
       asOption by ((total, thrower, rolls, pending), face) =
         ( Integer.toNaturalSaturating total,
           thrower,
-          foldMap (\(came, _) -> [Common.naturalResult by came]) face
-            <> fmap (uncurry Common.naturalResult) rolls
-            <> fmap (\(_, entry, _) -> either id (uncurry Common.naturalResult) entry) pending
+          foldMap (\(came, _) -> [Common.settledResult RollReading.NaturalResult by came]) face
+            <> fmap (uncurry (Common.settledResult RollReading.NaturalResult)) rolls
+            <> fmap (\(_, entry, _) -> either id (uncurry (Common.settledResult RollReading.NaturalResult)) entry) pending
         )
   (thrownFaces, landed, dice) <- throwing roll
   kept <- offeringAll dice >>= settling True roll perDie thrownFaces landed

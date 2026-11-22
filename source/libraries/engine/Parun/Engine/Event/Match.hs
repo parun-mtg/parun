@@ -2513,7 +2513,9 @@ armMatches bindings frozen board atEvent beforeEvent groupEvents gs bearer you c
   -- CR 706.2: one die's RESULT, after every modifier, or one roll's natural
   -- result where the condition reads that, was the stated number, the roller
   -- read against CR 109.5's "you" as PlayerActs does.
-  -- Per die rather than per instruction, since each die is its own roll. A roll
+  -- Per die rather than per instruction, since each die is its own roll, and
+  -- each reroll is one too, read at the face it came up (docs/decisions.md,
+  -- "Which result a reroll's trigger reads"). A roll
   -- to visit is a die roll (CR 701.52a), so any roll reads its die too; only a
   -- roll to visit reads RolledToVisit, the one result CR 706.6 leaves it.
   TriggerCondition.PlayerRollsResult watched ->
