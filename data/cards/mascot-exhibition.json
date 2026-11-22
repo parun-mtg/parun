@@ -1,0 +1,147 @@
+{
+  "faces": [
+    {
+      "manaCost": [
+        {
+          "type": "Generic",
+          "value": 7
+        }
+      ],
+      "name": "Mascot Exhibition",
+      "oracleText": "Create a 2/1 white and black Inkling creature token with flying, a 3/2 red and white Spirit creature token, and a 4/4 blue and red Elemental creature token.",
+      "spell": {
+        "modes": [
+          {
+            "clauses": [
+              {
+                "effects": [
+                  {
+                    "type": "Create",
+                    "value": {
+                      "card": {
+                        "faces": [
+                          {
+                            "colorIndicator": [
+                              "White",
+                              "Black"
+                            ],
+                            "keywords": [
+                              {
+                                "type": "Flying"
+                              }
+                            ],
+                            "name": "Inkling Token",
+                            "power": {
+                              "type": "Literal",
+                              "value": 2
+                            },
+                            "toughness": {
+                              "type": "Literal",
+                              "value": 1
+                            },
+                            "typeLine": {
+                              "subtypes": [
+                                "Inkling"
+                              ],
+                              "types": [
+                                "Creature"
+                              ]
+                            }
+                          }
+                        ]
+                      },
+                      "quantity": {
+                        "type": "Literal",
+                        "value": 1
+                      }
+                    }
+                  },
+                  {
+                    "type": "Create",
+                    "value": {
+                      "card": {
+                        "faces": [
+                          {
+                            "colorIndicator": [
+                              "White",
+                              "Red"
+                            ],
+                            "name": "Spirit Token",
+                            "power": {
+                              "type": "Literal",
+                              "value": 3
+                            },
+                            "toughness": {
+                              "type": "Literal",
+                              "value": 2
+                            },
+                            "typeLine": {
+                              "subtypes": [
+                                "Spirit"
+                              ],
+                              "types": [
+                                "Creature"
+                              ]
+                            }
+                          }
+                        ]
+                      },
+                      "quantity": {
+                        "type": "Literal",
+                        "value": 1
+                      }
+                    }
+                  },
+                  {
+                    "type": "Create",
+                    "value": {
+                      "card": {
+                        "faces": [
+                          {
+                            "colorIndicator": [
+                              "Blue",
+                              "Red"
+                            ],
+                            "name": "Elemental Token",
+                            "power": {
+                              "type": "Literal",
+                              "value": 4
+                            },
+                            "toughness": {
+                              "type": "Literal",
+                              "value": 4
+                            },
+                            "typeLine": {
+                              "subtypes": [
+                                "Elemental"
+                              ],
+                              "types": [
+                                "Creature"
+                              ]
+                            }
+                          }
+                        ]
+                      },
+                      "quantity": {
+                        "type": "Literal",
+                        "value": 1
+                      }
+                    }
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "typeLine": {
+        "subtypes": [
+          "Lesson"
+        ],
+        "types": [
+          "Sorcery"
+        ]
+      }
+    }
+  ]
+}
