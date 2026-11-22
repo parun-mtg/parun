@@ -4126,7 +4126,9 @@ body:has(main.game, #app [data-settings], #app .splash, #app main.loading) #sett
 
 #settings[hidden],
 #settings .concede[hidden],
-#concede-why[hidden] {
+#concede-why[hidden],
+#concede-button[hidden],
+#concede-confirm[hidden] {
   display: none;
 }
 
@@ -4158,6 +4160,10 @@ body:has(main.game, #app [data-settings], #app .splash, #app main.loading) #sett
   gap: 0.2em 0.8em;
   padding-top: 0.5em;
   border-top: 1px solid var(--line);
+}
+
+#concede-confirm {
+  flex-basis: 100%;
 }
 
 #concede-why {
