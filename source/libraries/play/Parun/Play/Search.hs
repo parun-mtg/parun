@@ -39,6 +39,7 @@ import qualified Parun.Types.ActivatedAbility as ActivatedAbility
 import qualified Parun.Types.ActivatedAbilitySource as ActivatedAbilitySource
 import qualified Parun.Types.Answerer as Answerer
 import qualified Parun.Types.Asked as Asked
+import qualified Parun.Types.CandidateCost as CandidateCost
 import qualified Parun.Types.Card as Card
 import qualified Parun.Types.CardIdentity as CardIdentity
 import qualified Parun.Types.CardType as CardType
@@ -56,6 +57,9 @@ import qualified Parun.Types.Generator as Generator.Type
 import qualified Parun.Types.GrantedAbility as GrantedAbility
 import qualified Parun.Types.History as History
 import qualified Parun.Types.InherentTriggerSource as InherentTriggerSource
+import qualified Parun.Types.Keyword as Keyword
+import qualified Parun.Types.KeywordInstance as KeywordInstance
+import qualified Parun.Types.KickerDecision as KickerDecision
 import qualified Parun.Types.LoggedEvent as LoggedEvent
 import qualified Parun.Types.ModeIndex as ModeIndex
 import qualified Parun.Types.Moved as Moved
@@ -342,19 +346,19 @@ sample (MkPrior prior) memory viewer gs =
 -- 'mistaken' decision the best below the best taken, where one is; every other
 -- prompt answered by the random bot (Game.bot). It searches priority
 -- decisions ('options'), each action beside each 'Line' of answers to the
--- modes, announced numbers of targets and first choice of targets it leads to
--- ('aimed'), and the first declaration of attackers ('attacks') and of
--- blockers ('blocks'). The line of the action taken is kept in `aim` and
--- answers those prompts where it still may, past each step that lapses
--- ('stepping'). It reads the whole game only through 'sample', which deals
+-- CR 601.2b announcements, announced numbers of targets and first choice of
+-- targets it leads to ('aimed', 'lined'), and the first declaration of
+-- attackers ('attacks') and of blockers ('blocks'). The line of the action
+-- taken is kept in `aim` and answers those prompts where it still may, past
+-- each step that lapses ('stepping'). It reads the whole game only through 'sample', which deals
 -- every card its seat cannot see now and does not remember by the memory
 -- `recalled` gives ('remembering'), and the opponents' plays `watched` gives
 -- ('watching') only through 'plausibility'.
 --
--- Not implemented: searching a line past another CR 601.2b announcement (an
--- alternative or additional cost, X), more than 'widest' lines, or any choice
--- of targets but the first an action leads to; the random bot answers them
--- (#9481).
+-- Not implemented: searching a line past a buyback, entwine, splice or
+-- assist announcement (CR 601.2b, 702.132a), more than 'widest' lines, or any
+-- choice of targets but the first an action leads to; the random bot answers
+-- them (#9488).
 search :: forall m. (Monad m) => Registry.Registry m -> SearchBudget.SearchBudget -> Weights.Weights -> Prior -> Game.Play m [Watched] -> Game.Play m Memory -> Aim m -> Answerer.Answerer (Asked.Asked GameState.GameState) (Game.Play m)
 search registry budget weights prior watched recalled aim = Answerer.MkAnswerer $ \asked ->
   let dealing pid = do
@@ -385,9 +389,7 @@ search registry budget weights prior watched recalled aim = Answerer.MkAnswerer 
               (action, line) <- best Engine.resumePriority pid deal (actions >>= aimed pid probe) (\(a, l) -> maybe (Acted a) (Aimed a) l)
               action <$ hold aim line
           | otherwise -> unaimed
-        Prompt.ChooseModes decider pid _ _ _ | Decider.unwrap decider == pid -> kept pid
-        Prompt.AnnounceTargets decider pid _ _ | Decider.unwrap decider == pid -> kept pid
-        Prompt.ChooseTargets decider pid _ _ | Decider.unwrap decider == pid -> kept pid
+        prompt | Just (decider, pid, _) <- lined prompt, Decider.unwrap decider == pid -> kept pid
         Prompt.DeclareAttackers decider pid offered
           | searchable asked decider pid (attacks offered),
             Just choices <- NonEmpty.nonEmpty (attacks offered) -> do
@@ -407,6 +409,13 @@ type Targets = Map.Map SlotName.SlotName (Set.Set Recipient.Recipient)
 data Step
   = -- | The modes chosen (CR 601.2b, 700.2).
     Moded (Seq.Seq ModeIndex.ModeIndex)
+  | -- | The cost the spell is cast for (CR 601.2b, 118.9a).
+    Costed CandidateCost.CandidateCost
+  | -- | The times an optional additional cost of that keyword's instance is
+    -- paid (CR 601.2b, 702.33a).
+    Kicked Keyword.Keyword (Maybe KeywordInstance.KeywordInstance) KickerDecision.KickerDecision
+  | -- | The value announced for that variable (CR 601.2b, 107.3a).
+    Valued SlotName.SlotName Natural
   | -- | Each slot's announced number of targets (CR 601.2c).
     Announced (Map.Map SlotName.SlotName Natural)
   | -- | The targets chosen (CR 601.2c).
@@ -443,11 +452,10 @@ aimed pid world action = case Maybe.mapMaybe NonEmpty.nonEmpty (take (widest + 1
 
 -- | Every line of answers `pid` gives once taking `action` at the priority
 -- decision restarted in `world` (Engine.resumePriority), a spell's or an
--- ability's (CR 601.2b, 601.2c, 602.2b, 603.3d): each choice of modes
--- (Engine.Modal.selections), announced number of targets ('announcements')
--- and first choice of targets ('aims') `pid` makes for themselves, every
--- concession prompt answered Continues, a line ending at its first choice of
--- targets or at any other prompt, a prompt offering none ending it there.
+-- ability's (CR 601.2b, 601.2c, 602.2b, 603.3d): each answer to each prompt
+-- 'lined' offers that `pid` decides for themselves, every concession prompt
+-- answered Continues, a line ending at its first choice of targets or at any
+-- other prompt, a prompt offering none ending it there.
 linesAfter :: PlayerId.PlayerId -> Action.Action -> GameState.GameState -> [[Step]]
 linesAfter pid action world =
   let go :: Bool -> [Step] -> Program.Program (Asked.Asked GameState.GameState) a -> [[Step]]
@@ -455,21 +463,45 @@ linesAfter pid action world =
         Program.Then asked k -> case Asked.prompt asked of
           Prompt.Concede _ -> go acted taken (k Concession.Continues)
           Prompt.ChooseAction _ holder _ | holder == pid && not acted -> go True taken (k action)
-          Prompt.ChooseModes decider chooser _ legal selection
-            | acted && chooser == pid && Decider.unwrap decider == pid,
-              picks@(_ : _) <- Engine.Modal.selections legal selection ->
-                foldMap (\modes -> go acted (Moded modes : taken) (k modes)) picks
-          Prompt.AnnounceTargets decider chooser _ offers
-            | acted && chooser == pid && Decider.unwrap decider == pid,
-              counts@(_ : _) <- announcements offers ->
-                foldMap (\count -> go acted (Announced count : taken) (k count)) counts
-          Prompt.ChooseTargets decider chooser _ offered
-            | acted && chooser == pid && Decider.unwrap decider == pid,
-              choices@(_ : _) <- aims offered ->
-                [reverse (Targeted targets : taken) | targets <- choices]
+          prompt
+            | acted,
+              Just (decider, chooser, MkLined offers _ ends) <- lined prompt,
+              chooser == pid && Decider.unwrap decider == pid,
+              _ : _ <- offers ->
+                if ends
+                  then [reverse (step : taken) | (step, _) <- offers]
+                  else foldMap (\(step, answer) -> go acted (step : taken) (k answer)) offers
           _ -> [reverse taken]
         Program.Return _ -> [reverse taken]
    in go False [] (State.runStateT Engine.resumePriority world)
+
+-- | How a line answers a prompt: every answer it may give, as the random bot
+-- gives them (Bot.bot), each beside its step; the answer a kept step gives it,
+-- where the step may; and whether the line ends there.
+data Lined r = MkLined [(Step, r)] (Step -> Maybe r) Bool
+
+-- | The prompt's decider, chooser and how a line answers it, where a line
+-- does: a modal choice (Engine.Modal.selections), a cost to cast for, an
+-- optional additional cost's times paid, a variable's value (CR 601.2b), an
+-- announcement of numbers of targets ('announcements', 'announcing') and a
+-- choice of targets, which ends it ('aims', 'fitting'; CR 601.2c).
+lined :: Prompt.Prompt r -> Maybe (Decider.Decider, PlayerId.PlayerId, Lined r)
+lined prompt = case prompt of
+  Prompt.ChooseModes decider chooser _ legal selection ->
+    let picks = Engine.Modal.selections legal selection
+     in Just (decider, chooser, MkLined [(Moded modes, modes) | modes <- picks] (\step -> case step of Moded modes | elem modes picks -> Just modes; _ -> Nothing) False)
+  Prompt.ChooseKicker decider chooser _ keyword which limit ->
+    let paid = fmap KickerDecision.MkKickerDecision [0 .. Maybe.fromMaybe 1 limit]
+     in Just (decider, chooser, MkLined [(Kicked keyword which times, times) | times <- paid] (\step -> case step of Kicked k i times | k == keyword && i == which && maybe True (KickerDecision.unwrap times <=) limit -> Just times; _ -> Nothing) False)
+  Prompt.ChooseCost decider chooser _ candidates _ ->
+    Just (decider, chooser, MkLined [(Costed candidate, candidate) | candidate <- candidates] (\step -> case step of Costed candidate | elem candidate candidates -> Just candidate; _ -> Nothing) False)
+  Prompt.ChooseX decider chooser _ slot least greatest ->
+    Just (decider, chooser, MkLined [(Valued slot value, value) | value <- [least .. greatest]] (\step -> case step of Valued named value | named == slot && least <= value && value <= greatest -> Just value; _ -> Nothing) False)
+  Prompt.AnnounceTargets decider chooser _ offers ->
+    Just (decider, chooser, MkLined [(Announced counts, counts) | counts <- announcements offers] (\step -> case step of Announced counts | announcing offers counts -> Just counts; _ -> Nothing) False)
+  Prompt.ChooseTargets decider chooser _ offered ->
+    Just (decider, chooser, MkLined [(Targeted targets, targets) | targets <- aims offered] (\step -> case step of Targeted targets | fitting offered targets -> Just targets; _ -> Nothing) True)
+  _ -> Nothing
 
 -- | Every announcement of these slots' numbers of targets, each slot's from
 -- its least through what its legal recipients allow (TargetCount.ceilingOn),
@@ -913,23 +945,14 @@ blocking pid declared = MkPick $ \prompt -> case prompt of
   Prompt.DeclareBlockers _ declarer _ _ | declarer == pid -> Fits declared
   _ -> Waits
 
--- | `pid`'s next prompt of a step's kind answered by the step where it may
--- (Engine.Modal.selections, 'announcing', 'fitting'), lapsing there
--- otherwise, at a prompt of another step's kind of `pid`'s, or at `pid`'s
--- next priority decision.
+-- | `pid`'s next prompt a line answers ('lined') answered by the step where
+-- it may, lapsing there otherwise or at `pid`'s next priority decision.
 stepping :: PlayerId.PlayerId -> Step -> Pick
-stepping pid step = MkPick $ \prompt -> case (prompt, step) of
-  (Prompt.ChooseModes _ chooser _ legal selection, Moded modes)
-    | chooser == pid -> if elem modes (Engine.Modal.selections legal selection) then Fits modes else Lapses
-  (Prompt.AnnounceTargets _ chooser _ offers, Announced counts)
-    | chooser == pid -> if announcing offers counts then Fits counts else Lapses
-  (Prompt.ChooseTargets _ chooser _ offered, Targeted targets)
-    | chooser == pid -> if fitting offered targets then Fits targets else Lapses
-  (Prompt.ChooseModes _ chooser _ _ _, _) | chooser == pid -> Lapses
-  (Prompt.AnnounceTargets _ chooser _ _, _) | chooser == pid -> Lapses
-  (Prompt.ChooseTargets _ chooser _ _, _) | chooser == pid -> Lapses
-  (Prompt.ChooseAction _ holder _, _) | holder == pid -> Lapses
-  _ -> Waits
+stepping pid step = MkPick $ \prompt -> case lined prompt of
+  Just (_, chooser, MkLined _ answers _) | chooser == pid -> maybe Lapses Fits (answers step)
+  _ -> case prompt of
+    Prompt.ChooseAction _ holder _ | holder == pid -> Lapses
+    _ -> Waits
 
 -- | The actions of a priority menu worth searching: all but CR 605.3a's mana
 -- abilities activated at priority, which a payment activates as it needs
