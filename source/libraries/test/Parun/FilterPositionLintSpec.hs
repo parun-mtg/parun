@@ -3564,7 +3564,9 @@ filterPositionLintSpec s registry corpus = Spec.describe s "Lint" $ do
   -- target slot's filter (Stone Giant's, which Parun.Engine.Target.slotContext
   -- frames through Projection.framedWith), an effect-stated alternative cost's
   -- payment (Dream Halls', which Parun.Engine.Cost.discardCandidates frames
-  -- through Projection.framedBy), a static lend's lenders, names only
+  -- through Projection.framedBy), a search's filter (Kasmina, Enigma Sage's,
+  -- which Resolve.Slots.effectContext frames through Projection.framedWith),
+  -- a static lend's lenders, names only
   -- (Marvin, Murderous Mimic's), and the affected set of a static applied
   -- after every layer, measures only (Baeloth Barrityl, Entertainer's), only Parun.Engine.Keyword's keywords and Parun.Engine.Ring's emblem write them, and
   -- this is what keeps that true.
@@ -3589,9 +3591,12 @@ filterPositionLintSpec s registry corpus = Spec.describe s "Lint" $ do
         -- 613.11), matched in Projection.affectedContext, which fills the
         -- source's measures off the layers before; its other atoms stay out.
         inRulesStatics needle c = if needle /= ofSource then 0 else sum [occurrences needle (atomJson f) | a <- Face.staticAbilities (surveyedFace c), all ((== Layer.Rules) . Projection.layer) (StaticAbility.modifications a), Affected.Matching f <- [StaticAbility.affected a]]
+        -- A search's filter, matched in Resolve.Slots.effectContext, which frames
+        -- it through Projection.framedWith.
+        inSearches needle c = sum [occurrences needle (atomJson f) | (SearchFramed, f) <- surveyedFilters c]
         -- `e` is the face's encoding, made once however many needles read it.
-        admittedIn e needle c = (pairwise e needle c, wishFilterAtoms needle e, triggerConditionAtoms needle e, inSlots needle c, inPayments needle c, inLends needle c, inRulesStatics needle c)
-        outsideIn e needle c = let (p, w, t, i, a, l, r) = admittedIn e needle c in occurrences needle e - p - w - t - i - a - l - r
+        admittedIn e needle c = (pairwise e needle c, wishFilterAtoms needle e, triggerConditionAtoms needle e, inSlots needle c, inPayments needle c, inLends needle c, inRulesStatics needle c, inSearches needle c)
+        outsideIn e needle c = let (p, w, t, i, a, l, r, h) = admittedIn e needle c in occurrences needle e - p - w - t - i - a - l - r - h
         admitted needle c = admittedIn (encoded c) needle c
         outside needle c = outsideIn (encoded c) needle c
         strays c = let e = encoded c in filter (\needle -> outsideIn e needle c /= 0) needles
@@ -3606,24 +3611,26 @@ filterPositionLintSpec s registry corpus = Spec.describe s "Lint" $ do
       s
       "the Djinn's is in a wish, the Kami's in a trigger condition, the Handler's pairwise, the Giant's in a target slot"
       (fmap (\p -> (admitted ofSource (survey (S.combinedFace p)), outside ofSource (survey (S.combinedFace p)))) [djinn, kami, spitfire, giant])
-      [((0, 1, 0, 0, 0, 0, 0), 0), ((0, 0, 1, 0, 0, 0, 0), 0), ((1, 0, 0, 0, 0, 0, 0), 0), ((0, 0, 0, 1, 0, 0, 0), 0)]
+      [((0, 1, 0, 0, 0, 0, 0, 0), 0), ((0, 0, 1, 0, 0, 0, 0, 0), 0), ((1, 0, 0, 0, 0, 0, 0, 0), 0), ((0, 0, 0, 1, 0, 0, 0, 0), 0)]
     halls <- S.printingOf s registry "Dream Halls"
     let sameColor = atomJson (Filter.Type.Shares Trait.Color Anchor.Source)
-    Spec.assertEqWith s "Dream Halls' is in an alternative cost's payment" (admitted sameColor (survey (S.combinedFace halls)), outside sameColor (survey (S.combinedFace halls))) ((0, 0, 0, 0, 1, 0, 0), 0)
+    Spec.assertEqWith s "Dream Halls' is in an alternative cost's payment" (admitted sameColor (survey (S.combinedFace halls)), outside sameColor (survey (S.combinedFace halls))) ((0, 0, 0, 0, 1, 0, 0, 0), 0)
     marvin <- S.printingOf s registry "Marvin, Murderous Mimic"
-    Spec.assertEqWith s "Marvin, Murderous Mimic's is in a static lend's lenders" (admitted sameName (survey (S.combinedFace marvin)), outside sameName (survey (S.combinedFace marvin))) ((0, 0, 0, 0, 0, 1, 0), 0)
+    Spec.assertEqWith s "Marvin, Murderous Mimic's is in a static lend's lenders" (admitted sameName (survey (S.combinedFace marvin)), outside sameName (survey (S.combinedFace marvin))) ((0, 0, 0, 0, 0, 1, 0, 0), 0)
     baeloth <- S.printingOf s registry "Baeloth Barrityl, Entertainer"
-    Spec.assertEqWith s "Baeloth Barrityl, Entertainer's is in a goad's affected set" (admitted ofSource (survey (S.combinedFace baeloth)), outside ofSource (survey (S.combinedFace baeloth))) ((0, 0, 0, 0, 0, 0, 1), 0)
+    Spec.assertEqWith s "Baeloth Barrityl, Entertainer's is in a goad's affected set" (admitted ofSource (survey (S.combinedFace baeloth)), outside ofSource (survey (S.combinedFace baeloth))) ((0, 0, 0, 0, 0, 0, 1, 0), 0)
     -- The resolved row's blocker filter is pairwise too, and Space Beleren's +1
     -- writes one there.
     beleren <- S.printingOf s registry "Space Beleren"
     let sameSector = atomJson (Filter.Type.Shares Trait.Sector Anchor.Source)
-    Spec.assertEqWith s "Space Beleren's is in a resolved evasion's blocker filter" (admitted sameSector (survey (S.combinedFace beleren)), outside sameSector (survey (S.combinedFace beleren))) ((1, 0, 0, 0, 0, 0, 0), 0)
+    Spec.assertEqWith s "Space Beleren's is in a resolved evasion's blocker filter" (admitted sameSector (survey (S.combinedFace beleren)), outside sameSector (survey (S.combinedFace beleren))) ((1, 0, 0, 0, 0, 0, 0, 0), 0)
+    kasmina <- S.printingOf s registry "Kasmina, Enigma Sage"
+    Spec.assertEqWith s "Kasmina, Enigma Sage's is in a search's filter" (admitted sameColor (survey (S.combinedFace kasmina)), outside sameColor (survey (S.combinedFace kasmina))) ((0, 0, 0, 0, 0, 0, 0, 1), 0)
     -- NOT vacuous the other way either: the same counter over a hand-built face
     -- that DOES carry each atom -- buried under all three combinators, in a
     -- layer-6 static ability's affected set, outside the after-every-layer
     -- position Projection.affectedContext fills measures for -- finds it. An effect's ObjectRef would answer
-    -- (Resolve.Slots.effectContext frames it through Projection.framedWith), but
+    -- (Resolve.Slots.effectContext frames it, as it does a search's filter), but
     -- no card writes one there, so the lint refuses it in the safe direction.
     piker <- S.printingOf s registry "Goblin Piker"
     let atoms = [Filter.Type.Measures (Measures.MkMeasures Measure.Power Comparison.LessThan (Operand.OfSource Measure.Power)), Filter.Type.Shares Trait.Name Anchor.Source, Filter.Type.Shares Trait.Color Anchor.Source, Filter.Type.Shares Trait.Sector Anchor.Source]
