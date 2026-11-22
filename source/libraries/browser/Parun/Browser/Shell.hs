@@ -41,9 +41,11 @@ import qualified Parun.Types.Card as Card
 import qualified Parun.Types.CardName as CardName
 import qualified Parun.Types.CardType as CardType
 import qualified Parun.Types.Color as Color
+import qualified Parun.Types.Difficulty as Difficulty
 import qualified Parun.Types.Face as Face
 import qualified Parun.Types.Key as Key
 import qualified Parun.Types.LegalityTable as LegalityTable
+import qualified Parun.Types.Persona as Persona
 import qualified Parun.Types.PlayerId as PlayerId
 import qualified Parun.Types.PlayerView as PlayerView
 import qualified Parun.Types.Scenario as Scenario.Type
@@ -79,7 +81,10 @@ data Shell = MkShell
     -- (Parun.Web.Link).
     build :: Text.Text,
     -- | The games finished in this browser, newest first (Parun.Web.History).
-    finished :: IORef.IORef [History.Game]
+    finished :: IORef.IORef [History.Game],
+    -- | How every bot plays, as the lobby last left it: its difficulty and
+    -- its persona (Parun.Play.Opponent).
+    opponent :: IORef.IORef (Difficulty.Difficulty, Persona.Persona)
   }
 
 -- | The data so far: which chunks arrived, and what has been built from
@@ -162,7 +167,7 @@ start = do
   -- A summary that does not read, or a game past the cap, is forgotten.
   (games, gone) <- History.loaded <$> Browser.playedGames
   mapM_ Browser.forgetPlayed gone
-  shell <- MkShell <$> Browser.mount <*> IORef.newIORef (MkLoaded Loading.new Nothing Map.empty Nothing Map.empty [] Nothing Nothing Nothing False Nothing Map.empty [] Nothing Map.empty Map.empty Map.empty) <*> IORef.newIORef chosen <*> pure built <*> IORef.newIORef games
+  shell <- MkShell <$> Browser.mount <*> IORef.newIORef (MkLoaded Loading.new Nothing Map.empty Nothing Map.empty [] Nothing Nothing Nothing False Nothing Map.empty [] Nothing Map.empty Map.empty Map.empty) <*> IORef.newIORef chosen <*> pure built <*> IORef.newIORef games <*> IORef.newIORef (Lobby.difficulty Lobby.new, Lobby.persona Lobby.new)
   Exception.catch (opening built >>= follow shell) $ \problem ->
     Browser.display (page shell) $ message ["The page stopped on an error:", Exception.displayException (problem :: Exception.SomeException)]
 
@@ -262,11 +267,13 @@ lobby :: Shell -> Lobby.Lobby -> [Browser.Linked] -> IO Next
 lobby shell initial said = do
   need shell Loading.MkDecks
   need shell Loading.MkCards
-  heard' <- Monad.foldM heardBy initial said
+  (difficulty, persona) <- IORef.readIORef (opponent shell)
+  heard' <- Monad.foldM heardBy initial {Lobby.difficulty = difficulty, Lobby.persona = persona} said
   go' heard' Map.empty
   where
     go' shown told = do
       current <- refreshed shell shown
+      IORef.writeIORef (opponent shell) (Lobby.difficulty current, Lobby.persona current)
       told' <- tellPlaces current told
       if Lobby.starts current
         then startWith current told'
@@ -707,7 +714,8 @@ loadingScreen :: Shell -> Loading.Loading -> IO ()
 loadingScreen shell = Browser.display (page shell) . Loading.view
 
 -- | A game between these decks, each a name and its list's text, once the
--- registry is built, shown while it builds, each bot's slot in `invited`
+-- registry is built, shown while it builds, every bot playing as the lobby
+-- last left it (opponent), each bot's slot in `invited`
 -- played from another browser over its channel (Parun.Web.Link), or that
 -- game picked up where `resuming` stopped; its ending, and the games its
 -- Rematch starts; then where it leads. A game with guests is kept until it
@@ -744,7 +752,8 @@ play shell seats invited resuming = do
           remotes = Map.fromList [(seatOf i, Link.remote (rejoinSlot i) (channelOf i)) | i <- Set.toList invited]
           kept = if keeping then Browser.keepReply . Link.savedReply else const (pure ())
       parsed <- foldMap LazyMap.elems . cards <$> IORef.readIORef (loaded shell)
-      ended <- Hotseat.game (page shell) reg parsed (tableOf shell) (level shell) (fmap (Bifunctor.first Text.unpack) seats) remotes seed (foldMap Link.replies resuming) kept tellAll (leaveFor shell chosen)
+      bots <- IORef.readIORef (opponent shell)
+      ended <- Hotseat.game (page shell) reg parsed (tableOf shell) (level shell) bots (fmap (Bifunctor.first Text.unpack) seats) remotes seed (foldMap Link.replies resuming) kept tellAll (leaveFor shell chosen)
       Monad.when keeping Browser.forgetGame
       case ended of
         Left problems -> stopped problems >> notice shell problems

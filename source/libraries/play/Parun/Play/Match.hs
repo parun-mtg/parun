@@ -21,6 +21,7 @@ import qualified Parun.Play.Command as Command
 import qualified Parun.Play.Game as Game
 import qualified Parun.Play.Generator as Generator
 import qualified Parun.Play.Key as Key
+import qualified Parun.Play.Opponent as Opponent
 import qualified Parun.Play.Record as Record
 import qualified Parun.Play.Search as Search
 import qualified Parun.Play.Wording as Wording
@@ -32,6 +33,7 @@ import qualified Parun.Types.GameState as GameState
 import qualified Parun.Types.Key as Key.Type
 import qualified Parun.Types.Limits as Limits
 import qualified Parun.Types.MatchOptions as MatchOptions
+import qualified Parun.Types.Persona as Persona
 import qualified Parun.Types.PlayerId as PlayerId
 import qualified Parun.Types.Playout as Playout
 import qualified Parun.Types.Result as Result
@@ -71,7 +73,10 @@ flags =
     GetOpt.Option [] ["cutoff"] (GetOpt.ReqArg (perSeat "a number of prompts" Read.readMaybe (\n b -> b {SearchBudget.prompts = n})) "[SEAT=]N") "the prompts a playout is answered before it is cut off and its position scored, in every seat or in SEAT alone; 300 when absent",
     GetOpt.Option [] ["playout"] (GetOpt.ReqArg (perSeat "a playout policy, random or greedy" playoutNamed (\n b -> b {SearchBudget.playout = n})) "[SEAT=]POLICY") "who answers every seat in the search bot's playouts, random (the random bot) or greedy (playing a land, else casting a permanent spell, where it can), in every seat or in SEAT alone; random when absent",
     GetOpt.Option [] ["candidates"] (GetOpt.ReqArg (perSeat "a number of candidate worlds" Read.readMaybe (\n b -> b {SearchBudget.candidates = n})) "[SEAT=]N") "the worlds the search bot deals once at a decision and weighs by how likely each made the passes its opponents made, every playout's world drawn among them, in every seat or in SEAT alone; 0 when absent, each playout's world dealt fresh",
-    GetOpt.Option [] ["weights"] (GetOpt.ReqArg (\s o -> Right $ case seated s of Just (n, path) -> o {MatchOptions.weighing = Map.insert n path (MatchOptions.weighing o)}; Nothing -> o {MatchOptions.weighing = Map.fromList [(n, s) | n <- [1, 2]]}) "[SEAT=]FILE") "the file of the weights the search bot scores a cut-off playout's position by (Parun.Codec.Weights), in every seat or in SEAT alone; every feature weighted 1 on each side when absent",
+    GetOpt.Option [] ["mistakes"] (GetOpt.ReqArg (perSeat "a percent of decisions" (Monad.mfilter (<= 100) . Read.readMaybe) (\n b -> b {SearchBudget.mistakes = n})) "[SEAT=]PERCENT") "the percent of the search bot's decisions at which it takes the option scored next below the best, in every seat or in SEAT alone; 0 when absent",
+    GetOpt.Option [] ["level"] (GetOpt.ReqArg (perSeat "a level, easy, medium or hard" (Opponent.named Opponent.difficultyName) Opponent.budgetAt) "[SEAT=]LEVEL") "how strongly the search bot plays, easy, medium or hard, setting its samples and mistakes (Parun.Play.Opponent), in every seat or in SEAT alone; hard when absent",
+    GetOpt.Option [] ["weights"] (GetOpt.ReqArg (weighed (Just . Right)) "[SEAT=]FILE") "the file of the weights the search bot scores a cut-off playout's position by (Parun.Codec.Weights), in every seat or in SEAT alone; every feature weighted 1 on each side when absent",
+    GetOpt.Option [] ["persona"] (GetOpt.ReqArg (weighed (fmap Left . Opponent.named Opponent.personaName)) "[SEAT=]PERSONA") "the weights the search bot scores a cut-off playout's position by named, balanced, aggro or control (Parun.Play.Opponent), in every seat or in SEAT alone; balanced when absent",
     GetOpt.Option [] ["meta"] (GetOpt.ReqArg (\s o -> Right o {MatchOptions.meta = Just s}) "META") "the deck lists are not known: the search bot infers each opponent's from this meta file's decks; each list known when absent",
     GetOpt.Option [] ["pool"] (GetOpt.ReqArg (\s o -> Right o {MatchOptions.pool = Just (Text.pack s)}) "FORMAT") "the deck lists are not known and no meta is named: the search bot deals each opponent's unseen cards from this format's pool, from every card where it has none"
   ]
@@ -84,6 +89,14 @@ perSeat what parse set s o = case seated s of
   _ | Just x <- parse s -> Right o {MatchOptions.budgets = Map.map (set x) (MatchOptions.budgets o)}
   _ -> Left ("not " <> what <> ": " <> s)
 
+-- | A flag's weights for each seat, or with a `SEAT=` prefix for that seat
+-- alone, the last flag for a seat winning.
+weighed :: (String -> Maybe (Either Persona.Persona FilePath)) -> String -> MatchOptions.MatchOptions -> Either String MatchOptions.MatchOptions
+weighed parse s o = case seated s of
+  Just (n, value) | Just x <- parse value -> Right o {MatchOptions.weighing = Map.insert n x (MatchOptions.weighing o)}
+  _ | Just x <- parse s -> Right o {MatchOptions.weighing = Map.fromList [(n, x) | n <- [1, 2]]}
+  _ -> Left ("not a persona: " <> s)
+
 -- | The playout policy a `--playout` value names.
 playoutNamed :: String -> Maybe Playout.Playout
 playoutNamed s = lookup s [("random", Playout.Random), ("greedy", Playout.Greedy)]
@@ -94,13 +107,17 @@ seated s = case break (== '=') s of
   (seat, '=' : value) | Just n <- Monad.mfilter (`elem` [1, 2]) (Read.readMaybe seat) -> Just (n, value)
   _ -> Nothing
 
--- | Each searching seat's budget and the weights its file holds (Parun.Weights).
+-- | Each searching seat's budget and its weights: its persona's, or those
+-- its file holds (Parun.Weights).
 searchersOf :: MatchOptions.MatchOptions -> IO (Either Text.Text (Map.Map Natural (SearchBudget.SearchBudget, Weights.Type.Weights)))
 searchersOf options =
   fmap sequence . sequence $
     Map.fromSet
       ( \n -> do
-          weights <- maybe (pure (Right Weights.Type.neutral)) (\path -> fmap (either (\problem -> Left (Text.pack path <> Text.pack ": " <> problem)) Right) (Weights.load path)) (Map.lookup n (MatchOptions.weighing options))
+          weights <- case Map.lookup n (MatchOptions.weighing options) of
+            Nothing -> pure (Right Weights.Type.neutral)
+            Just (Left persona) -> pure (Right (Opponent.weightsOf persona))
+            Just (Right path) -> fmap (either (\problem -> Left (Text.pack path <> Text.pack ": " <> problem)) Right) (Weights.load path)
           pure ((,) (Map.findWithDefault MatchOptions.budget n (MatchOptions.budgets options)) <$> weights)
       )
       (MatchOptions.searching options)

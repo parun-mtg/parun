@@ -324,7 +324,8 @@ sample (MkPrior prior) memory viewer gs =
 -- where they offer a choice ('searchable'), played out in
 -- `SearchBudget.samples` worlds ('worlds'), every option in each world from
 -- the same random stream, the best total taken, one of the best at random on
--- a tie; every other prompt answered by the random bot (Game.bot). It
+-- a tie, or at a 'mistaken' decision the best below it, where one is;
+-- every other prompt answered by the random bot (Game.bot). It
 -- searches priority decisions ('options') and the first declaration of
 -- attackers ('attacks') and of blockers ('blocks'). It reads the whole game
 -- only through 'sample', which deals every card its seat cannot see now and
@@ -346,7 +347,9 @@ search registry budget weights prior watched recalled = Answerer.MkAnswerer $ \a
           traverse (\option -> State.put shared >> rollout registry budget weights restart pid (pick option) world) choices
         let scored = NonEmpty.zip (foldr (NonEmpty.zipWith (+)) (0 <$ choices) rounds) choices
             top = maximum (fmap fst scored)
-        maybe (pure (NonEmpty.head choices)) Generator.pick (NonEmpty.nonEmpty [option | (total, option) <- NonEmpty.toList scored, total == top])
+        slipped <- mistaken budget
+        let aim = if slipped then maybe top maximum (NonEmpty.nonEmpty [total | (total, _) <- NonEmpty.toList scored, total < top]) else top
+        maybe (pure (NonEmpty.head choices)) Generator.pick (NonEmpty.nonEmpty [option | (total, option) <- NonEmpty.toList scored, total == aim])
    in case Asked.prompt asked of
         Prompt.ChooseAction decider pid menu
           | searchable asked decider pid (options menu),
@@ -361,6 +364,14 @@ search registry budget weights prior watched recalled = Answerer.MkAnswerer $ \a
             Just choices <- NonEmpty.nonEmpty (blocks candidates attacked) ->
               best Engine.resumeTurnBasedAction pid choices (blocking pid)
         _ -> Answerer.unwrap (Game.bot registry) asked
+
+-- | Whether a searched decision is a mistake, at the budget's
+-- `SearchBudget.mistakes` percent: drawn once its playouts are, and only at
+-- a rate above 0, so a budget making none plays as it did without the field.
+mistaken :: (Monad m) => SearchBudget.SearchBudget -> State.StateT Generator.Type.Generator m Bool
+mistaken budget
+  | SearchBudget.mistakes budget == 0 = pure False
+  | otherwise = fmap (< SearchBudget.mistakes budget) (Generator.between 0 99)
 
 -- | A priority decision a player passed at (CR 117.3d): the player and
 -- the game as they were asked.

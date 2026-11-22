@@ -30,6 +30,7 @@ import qualified Parun.Legality as Legality
 import qualified Parun.Play.Game as Game
 import qualified Parun.Play.Generator as Generator
 import qualified Parun.Play.Key as Key
+import qualified Parun.Play.Opponent as Opponent
 import qualified Parun.Play.Protocol as Protocol
 import qualified Parun.Play.Record as Record
 import qualified Parun.Play.Search as Search
@@ -88,6 +89,8 @@ flags =
     GetOpt.Option [] ["save"] (GetOpt.ReqArg (\s o -> Right o {PlayOptions.save = Just s}) "FILE") "save the game as a scenario, even one cut short",
     GetOpt.Option [] ["arrange-graveyard"] (GetOpt.ReqArg (\s o -> fmap (\n -> o {PlayOptions.arrangesGraveyard = Set.insert n (PlayOptions.arrangesGraveyard o)}) (seat s)) "SEAT") "a seat asked to order cards put into its graveyard at the same time",
     GetOpt.Option [] ["format"] (GetOpt.ReqArg (\s o -> Right o {PlayOptions.format = Just (Text.pack s)}) "FORMAT") "play under this format, refusing a deck not legal in it: constructed, limited, or one with a pool, such as vintage",
+    GetOpt.Option [] ["level"] (GetOpt.ReqArg (\s o -> maybe (Left ("not a level, easy, medium or hard: " <> s)) (\d -> Right o {PlayOptions.budget = Opponent.budgetAt d (PlayOptions.budget o)}) (Opponent.named Opponent.difficultyName s)) "LEVEL") "how strongly the search bot plays, easy, medium or hard (Parun.Play.Opponent); hard when absent",
+    GetOpt.Option [] ["persona"] (GetOpt.ReqArg (\s o -> maybe (Left ("not a persona, balanced, aggro or control: " <> s)) (\p -> Right o {PlayOptions.weights = Opponent.weightsOf p}) (Opponent.named Opponent.personaName s)) "PERSONA") "what the search bot values in a position, balanced, aggro or control (Parun.Play.Opponent); balanced when absent",
     GetOpt.Option [] ["meta"] (GetOpt.ReqArg (\s o -> Right o {PlayOptions.meta = Just s}) "META") "the search bot infers each opponent's deck list from this meta file's decks",
     GetOpt.Option [] ["pool"] (GetOpt.ReqArg (\s o -> Right o {PlayOptions.pool = Just (Text.pack s)}) "FORMAT") "no meta named, the search bot deals each opponent's unseen cards from this format's pool, from every card where it has none; the game's format's when absent",
     GetOpt.Option [] ["object-limit"] (GetOpt.ReqArg (\s o -> maybe (Left ("not a number of objects: " <> s)) (\n -> Right o {PlayOptions.limits = (PlayOptions.limits o) {Limits.objects = n}}) (Read.readMaybe s)) "N") ("the most objects the game may hold before a player with priority may only pass; " <> show (Limits.objects Limits.standard) <> " when absent")
