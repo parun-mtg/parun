@@ -231,6 +231,27 @@ spec s registry = Spec.describe s "WebQuestion" $ do
         view = Question.Web.view (requestFor gs (Prompt.ChooseCardFromAmong (Decider.MkDecider S.alice) S.alice source (NonEmpty.fromList [a, b]))) Question.Web.blank
     Spec.assertBool s (Text.isInfixOf (Text.pack "Choose a card for Mosswort Bridge.") (Html.content view)) ("asks: " <> Text.unpack (Html.content view))
 
+  Spec.it s "CR 701.20e a card chosen from among those looked at shows them all, alike candidates sharing a button" $ do
+    bridge <- S.printingOf s registry "Mosswort Bridge"
+    bears <- S.printingOf s registry "Grizzly Bears"
+    giant <- S.printingOf s registry "Hill Giant"
+    forest <- S.printingOf s registry "Forest"
+    let (source, g1) = S.addPermanent bridge S.alice (Setup.emptyGame S.bothPlayers)
+        (top, g2) = S.addObjectIn Zone.Library forest S.alice g1
+        (a, g3) = S.addObjectIn Zone.Library bears S.alice g2
+        (b, g4) = S.addObjectIn Zone.Library bears S.alice g3
+        (c, gs) = S.addObjectIn Zone.Library giant S.alice g4
+        looked = Foldable.foldl' (\g oid -> Event.recordEvent (GameEvent.Looked (Looked.MkLooked oid (Projection.project oid gs) (Set.singleton S.alice))) g) gs [top, a, b, c]
+        request = requestFor looked (Prompt.ChooseCardFromAmong (Decider.MkDecider S.alice) S.alice source (NonEmpty.fromList [a, b, c]))
+        view = Question.Web.view request Question.Web.blank
+        tap label = Html.labelled (Text.pack "button") (Text.pack label) view >>= \path -> Html.handler (Text.pack "click") path view
+        among = amongTiles view
+    Spec.assertEqWith s "every card looked at" (length among) 4
+    Spec.assertEqWith s "the candidates choosable" (length (filter (Text.isInfixOf (Text.pack " choosable\"") . Html.toText) among)) 3
+    Spec.assertEqWith s "alike, once" (tap "Grizzly Bears \x00d7\&2") (Just (Question.Web.MkAnswer (R.Text (Text.pack ("$" <> show (ObjectId.unwrap a))))))
+    Spec.assertEqWith s "alone" (tap "Hill Giant") (Just (Question.Web.MkAnswer (R.Text (Text.pack ("$" <> show (ObjectId.unwrap c))))))
+    Spec.assertBool s (Maybe.isNothing (tap "Grizzly Bears")) "no button per copy"
+
   Spec.it s "CR 601.2b a keyword paid any number of times offers the first few and a field" $ do
     bears <- S.printingOf s registry "Grizzly Bears"
     let (source, gs) = S.addPermanent bears S.alice (Setup.emptyGame S.bothPlayers)
@@ -765,6 +786,12 @@ spec s registry = Spec.describe s "WebQuestion" $ do
     Spec.assertEqWith s "read" (Question.Web.step request Set.empty Question.Web.MkTyped (Text.pack "3")) (Question.Web.MkReplied (R.Number 3))
     Spec.assertBool s (case Question.Web.step request Set.empty Question.Web.MkTyped (Text.pack "{") of Question.Web.MkRefused _ -> True; _ -> False) "refused"
 
+-- | The cards' tiles a question shows beside its answers (CR 701.20e).
+amongTiles :: Html.Html msg -> [Html.Html msg]
+amongTiles page = case Html.search (\html -> Text.pack "<div class=\"seen among\">" `Text.isPrefixOf` Html.toText html) page >>= \path -> Html.at path page of
+  Just (Html.MkElement node) -> filter isCard (Foldable.toList (Html.childList (Html.children node)))
+  _ -> []
+
 -- | Whether a node is a card's tile.
 isCard :: Html.Html msg -> Bool
 isCard html = Text.pack "<button class=\"card " `Text.isPrefixOf` Html.toText html
@@ -857,6 +884,22 @@ replaySpec s registry = Spec.describe s "WebQuestion" . Spec.describe s "replay"
     let marked stop = Text.isInfixOf (Text.pack "class=\"subgame\"") (Html.toText (Replay.view (frameAt stop)))
     Spec.assertBool s (not (marked before)) "the main game is not"
     Spec.assertBool s (marked inside) "the subgame is"
+
+  Spec.it s "CR 701.20e Commune with Nature's choices show the five cards looked at" $ do
+    let named = "commune-with-nature-takes-a-creature-from-the-top-five"
+        asked stop = case stop of
+          Stop.MkBefore _ _ a -> Protocol.requestFor a
+          _ -> Nothing
+        tiles request = amongTiles (Question.Web.view request Question.Web.blank)
+        choosable = filter (Text.isInfixOf (Text.pack " choosable\"") . Html.toText)
+    -- Entry 2 answers whether to reveal a creature, entry 4 which.
+    optional <- maybe (Spec.assertFailure s "no question") pure . asked =<< replayed s registry named 2
+    among <- maybe (Spec.assertFailure s "no question") pure . asked =<< replayed s registry named 4
+    Spec.assertEqWith s "kinds" (fmap (Question.kind . Request.question) [optional, among]) (fmap Text.pack ["ChooseOptional", "ChooseCardFromAmong"])
+    Spec.assertEqWith s "the five, asked whether" (length (tiles optional)) 5
+    Spec.assertEqWith s "none answers whether" (length (choosable (tiles optional))) 0
+    Spec.assertEqWith s "the five, asked which" (length (tiles among)) 5
+    Spec.assertEqWith s "the creatures answer which" (length (choosable (tiles among))) 2
 
   Spec.it s "CR 500.8 an added beginning phase is lit as extra, the phase before it passed" $ do
     -- Entry 11 is answered in the upkeep Sphinx of the Second Sun adds after
