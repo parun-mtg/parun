@@ -4087,6 +4087,10 @@ library uri
   exposed-modules:
     Parun.Uri.Fragment
     Parun.Uri.FragmentSpec
+    Parun.Uri.Percent
+    Parun.Uri.PercentSpec
+    Parun.Uri.Query
+    Parun.Uri.QuerySpec
 
 -- An Elm-architecture view layer for the web client: an Html tree, the
 -- patches between two of them, and the pure update loop. The browser glue
@@ -4157,6 +4161,8 @@ library web
     Parun.Web.RejoinSpec
     Parun.Web.Replay
     Parun.Web.ReplaySpec
+    Parun.Web.Route
+    Parun.Web.RouteSpec
     Parun.Web.Screen
     Parun.Web.Wire
     Parun.Web.WireSpec
