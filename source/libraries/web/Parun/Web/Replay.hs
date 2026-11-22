@@ -139,6 +139,8 @@ data Frame = MkFrame
     position :: Natural,
     -- | How many entries the timeline holds.
     positions :: Natural,
+    -- | The positions at which a turn begins (turnStarts), ascending.
+    turns :: [Natural],
     -- | The table as the viewer sees it; Nothing where the run failed first.
     board :: Maybe PlayerView.PlayerView,
     -- | CR 730.1a: how many games the board's game is nested inside, as
@@ -215,6 +217,7 @@ controls frame =
           ["scrubber"]
           []
           [ step "First position" "\x23EE" "<" 0 (at > 0),
+            step "Previous turn" "\x23EA" "[" (Maybe.fromMaybe 0 (Maybe.listToMaybe (reverse (filter (< at) (turns frame))))) (at > 0),
             step "Previous position" "\x25C0" "," (Natural.minusSaturating at 1) (at > 0),
             Element.el
               "input"
@@ -228,6 +231,7 @@ controls frame =
               ]
               [],
             step "Next position" "\x25B6" "." (min count (at + 1)) (at < count),
+            step "Next turn" "\x23E9" "]" (Maybe.fromMaybe count (List.find (> at) (turns frame))) (at < count),
             step "Last position" "\x23ED" ">" count (at < count)
           ],
         Element.el "p" ["position"] [] [Element.string (if at < count then "Before entry " <> show (at + 1) <> " of " <> show count else "After all " <> show count <> " entries")],
@@ -276,6 +280,13 @@ tableName frame pid = if pid == viewer frame then Text.pack "You" else Board.nam
 
 seatName :: Frame -> PlayerId.PlayerId -> Text.Text
 seatName frame pid = maybe (Wording.player pid) snd (List.find ((== pid) . fst) (seats frame))
+
+-- | The positions at which a turn begins: the first entry's, and each
+-- entry's whose turn differs from the entry's before it.
+turnStarts :: [Timed.Timed] -> [Natural]
+turnStarts timed =
+  let turned = fmap (When.turn . Timed.when) timed
+   in [i | (i, t, before) <- zip3 [0 ..] turned (Nothing : fmap Just turned), Just t /= before]
 
 -- | A timeline entry in a line, its seat named as `names` names it by its
 -- label, else by the label, saying what the entry does as the question

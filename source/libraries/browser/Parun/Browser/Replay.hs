@@ -8,6 +8,7 @@ module Parun.Browser.Replay where
 import Control.Applicative ((<|>))
 import qualified Control.Exception as Exception
 import qualified Data.ByteString as ByteString
+import qualified Data.Foldable as Foldable
 import qualified Data.Functor.Identity as Identity
 import qualified Data.IORef as IORef
 import qualified Data.List.NonEmpty as NonEmpty
@@ -155,7 +156,7 @@ seatsOf scenario =
 -- `names` names it by its label.
 frameOf :: (CardName.CardName -> Either e (Maybe Card.Card)) -> Map.Map Text.Text Text.Text -> Text.Text -> Scenario.Type.Scenario -> [(PlayerId.PlayerId, Text.Text)] -> Natural -> Natural -> Either ScenarioFailure.ScenarioFailure Stop.Stop -> PlayerId.PlayerId -> Maybe Web.Card.Reading -> Web.Replay.Frame
 frameOf lookUp names name scenario seats count at stop seen reading =
-  let base = Web.Replay.MkFrame name (Scenario.Type.description scenario) seats seen at count Nothing 0 Nothing Nothing Nothing Nothing reading Map.empty
+  let base = Web.Replay.MkFrame name (Scenario.Type.description scenario) seats seen at count (Web.Replay.turnStarts (Foldable.toList (Scenario.Type.timeline scenario))) Nothing 0 Nothing Nothing Nothing Nothing reading Map.empty
       shown board = base {Web.Replay.board = Just board, Web.Replay.written = Web.Card.written lookUp board}
    in case stop of
         Left failure -> base {Web.Replay.failure = Just (Scenario.render failure)}
