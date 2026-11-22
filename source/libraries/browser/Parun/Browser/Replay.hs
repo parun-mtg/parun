@@ -41,6 +41,7 @@ import qualified Parun.Types.Start as Start
 import qualified Parun.Types.Stop as Stop
 import qualified Parun.Types.Timed as Timed
 import qualified Parun.Web.Card as Web.Card
+import qualified Parun.Web.History as History
 import qualified Parun.Web.Question as Web.Question
 import qualified Parun.Web.Replay as Web.Replay
 import qualified Parun.Web.Screen as Screen
@@ -75,13 +76,17 @@ data Exit
   | -- | Plays on by hand from this position.
     MkPlayOn Natural
 
--- | The scenario at a position as a seat sees it (the one named `seen`,
--- else the first), replayed afresh at each position the page goes to,
--- until the page leaves it.
-viewer :: Browser.Page Screen.Event -> Registry.Registry Identity.Identity -> Text.Text -> Maybe Text.Text -> Scenario.Type.Scenario -> Natural -> IO Exit
-viewer page registry name seen scenario given = do
+-- | The scenario at a position as a seat sees it (the player's of a game
+-- finished here, `played`, else the first), replayed afresh at each
+-- position the page goes to, until the page leaves it; a game finished here
+-- names each seat by who played it (History.seatNames).
+viewer :: Browser.Page Screen.Event -> Registry.Registry Identity.Identity -> Text.Text -> Maybe History.Game -> Scenario.Type.Scenario -> Natural -> IO Exit
+viewer page registry name played scenario given = do
   let count = Natural.length (Scenario.Type.timeline scenario)
-      seats = seatsOf scenario
+      labelled = seatsOf scenario
+      names = foldMap History.seatNames played
+      seats = [(pid, Map.findWithDefault label label names) | (pid, label) <- labelled]
+      seen = played >>= History.viewerLabel
       lookUp = Identity.runIdentity . Interpreter.chosenCard registry
       -- The run to a position.
       reach at = Exception.evaluate . Identity.runIdentity $ Scenario.replay registry (Just at) scenario
@@ -110,7 +115,7 @@ viewer page registry name seen scenario given = do
           _ -> go at stop viewing reading
       first = min count given
   stop <- reach first
-  go first stop (maybe (PlayerId.MkPlayerId 0) fst (Maybe.listToMaybe (filter ((`elem` seen) . snd) seats <> seats))) Nothing
+  go first stop (maybe (PlayerId.MkPlayerId 0) fst (Maybe.listToMaybe (filter ((`elem` seen) . snd) labelled <> labelled))) Nothing
 
 -- | Plays on by hand from a position of the scenario: the run takes the
 -- timeline to that stop (Scenario.branch), then every seat is answered on

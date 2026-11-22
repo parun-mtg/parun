@@ -205,7 +205,7 @@ controls frame =
           "div"
           ["segmented", "seats"]
           [Element.attr "role" (Text.pack "group"), Element.attr "aria-label" (Text.pack "View as")]
-          [ Element.el "button" ["on" | pid == viewer frame] [Element.attr "type" (Text.pack "button"), Element.attr "title" (label <> Text.pack " is " <> Wording.player pid <> Text.pack " on the table"), Element.attr "aria-pressed" (Text.pack (if pid == viewer frame then "true" else "false")), Element.on "click" (MkSeat pid)] [Element.text label]
+          [ Element.el "button" ["on" | pid == viewer frame] [Element.attr "type" (Text.pack "button"), Element.attr "title" (label <> Text.pack ": " <> Wording.player pid <> Text.pack " on the table"), Element.attr "aria-pressed" (Text.pack (if pid == viewer frame then "true" else "false")), Element.on "click" (MkSeat pid)] [Element.text label]
           | (pid, label) <- seats frame
           ]
       ]
@@ -218,7 +218,7 @@ stop frame asked =
     <> [Element.el "pre" ["entry"] [] [Element.text e] | e <- Maybe.maybeToList (entry frame)]
     <> case (question frame, asked) of
       (_, Just r) -> fmap (fmap MkTable) (Web.Question.form r Set.empty)
-      (Just r, Nothing) -> [Element.el "p" ["waiting"] [] [Element.text (seatName frame (Question.seat (Request.question r)) <> Text.pack " is asked " <> Question.kind (Request.question r) <> Text.pack ".")]]
+      (Just r, Nothing) -> [Element.el "p" ["waiting"] [] [Element.text (Text.pack "Waiting on " <> seatName frame (Question.seat (Request.question r)) <> Text.pack ": " <> Question.kind (Request.question r) <> Text.pack ".")]]
       (Nothing, Nothing) -> []
 
 seatName :: Frame -> PlayerId.PlayerId -> Text.Text

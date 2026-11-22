@@ -1030,8 +1030,9 @@ main.home .confirm .choices {
   gap: 8px;
 }
 
-/* The Fan Content Policy's notice, at the foot of the home screen. */
-.legal {
+/* The Fan Content Policy's notice, at the foot of the home screen; the
+   settings menu's copy is one paragraph, its link inline. */
+footer.legal {
   margin-top: auto;
   display: flex;
   flex-direction: column;
@@ -3172,6 +3173,8 @@ details.pile[open] {
 .segmented {
   display: inline-flex;
   flex-wrap: wrap;
+  gap: 0;
+  background: var(--surface);
   border: 1px solid var(--control);
   border-radius: var(--radius);
   overflow: hidden;
@@ -3193,6 +3196,7 @@ details.pile[open] {
 
 #app .segmented button.on {
   background: var(--act);
+  border-color: var(--act);
   color: var(--on-act);
   font-weight: 700;
 }
@@ -4017,6 +4021,7 @@ body:has(main.game, #app [data-settings], #app .splash, #app main.loading) #sett
 }
 
 #settings .legal {
+  display: block;
   margin: 0;
   font-size: 12px;
   color: var(--muted);
@@ -4234,6 +4239,52 @@ body:has(main.game, #app [data-settings], #app .splash, #app main.loading) #sett
   order: 1;
   flex-basis: 100%;
   min-width: 0;
+}
+
+/* The scrubber drawn from the roles, not the browser's blue: a control-grey
+   track (3:1 on the surface in both themes) and an act thumb, ringed in the
+   surface so it reads on the track. */
+#app input[type="range"] {
+  appearance: none;
+  -webkit-appearance: none;
+  height: 44px;
+  margin: 0;
+  background: transparent;
+  accent-color: var(--act);
+  cursor: pointer;
+}
+
+#app input[type="range"]::-webkit-slider-runnable-track {
+  height: 6px;
+  border-radius: 999px;
+  background: var(--control);
+}
+
+#app input[type="range"]::-moz-range-track {
+  height: 6px;
+  border-radius: 999px;
+  background: var(--control);
+}
+
+#app input[type="range"]::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 22px;
+  height: 22px;
+  margin-top: -8px;
+  border: 3px solid var(--surface);
+  border-radius: 50%;
+  background: var(--act);
+  box-shadow: 0 0 0 1px var(--act);
+}
+
+#app input[type="range"]::-moz-range-thumb {
+  width: 16px;
+  height: 16px;
+  border: 3px solid var(--surface);
+  border-radius: 50%;
+  background: var(--act);
+  box-shadow: 0 0 0 1px var(--act);
 }
 
 .replay-description,

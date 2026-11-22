@@ -1,5 +1,6 @@
 module Parun.Web.HistorySpec where
 
+import qualified Data.Map.Strict as Map
 import qualified Data.Sequence as Seq
 import qualified Data.Set as Set
 import qualified Data.Text as Text
@@ -48,6 +49,12 @@ spec s = Spec.describe s "Parun.Web.History" $ do
     Spec.it s "names the player's seat as the game's scenario does" $ do
       Spec.assertEqWith s "the host" (History.viewerLabel game) (Just (Text.pack "player1"))
       Spec.assertEqWith s "a guest" (History.viewerLabel game {History.seats = reverse (History.seats game)}) (Just (Text.pack "player2"))
+
+  Spec.describe s "seatNames" $ do
+    Spec.it s "names each seat by who played it, numbered where two match" $ do
+      let bots = game {History.seats = History.seats game <> [History.MkSeat History.MkBot (Text.pack "Vivien (M19)") Nothing Set.empty]}
+      Spec.assertEqWith s "two seats" (History.seatNames game) (Map.fromList [(Text.pack "player1", Text.pack "You"), (Text.pack "player2", Text.pack "Bot")])
+      Spec.assertEqWith s "two bots" (History.seatNames bots) (Map.fromList [(Text.pack "player1", Text.pack "You"), (Text.pack "player2", Text.pack "Bot 2"), (Text.pack "player3", Text.pack "Bot 3")])
 
   Spec.describe s "date" $ do
     Spec.it s "tells the day and time on the page's clock then" $ do

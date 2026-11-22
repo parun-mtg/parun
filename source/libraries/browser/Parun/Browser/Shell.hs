@@ -749,9 +749,10 @@ play shell seats invited resuming = do
           remember shell (fmap seatOf' (zip [0 :: Int ..] (NonEmpty.toList seats))) played
           lost <- IORef.readIORef down
           let go said = do
-                Browser.display (page shell) (fmap Screen.MkEnding (Ending.view ending))
+                Browser.display (page shell) (endingScreen ending)
                 woke <- await shell
                 case woke of
+                  MkTapped (Screen.MkNav section) _ -> mapM_ Browser.linkClose invited >> pure (sectionNext section)
                   MkTapped (Screen.MkEnding Ending.MkRematch) _
                     | Set.null invited -> play shell seats invited Nothing
                     | otherwise -> do
@@ -762,6 +763,10 @@ play shell seats invited resuming = do
                   MkHeard heard' -> go (heard' : said)
                   _ -> go said
           go []
+
+-- | How a game ended, under the top bar with no section current.
+endingScreen :: Ending.Ending -> Html.Html Screen.Event
+endingScreen = Bar.framed Screen.MkNav Nothing . fmap Screen.MkEnding . Ending.view
 
 -- | Keeps a game this page played among these seats, once it is over with
 -- a result (History.recordOf), dropping the oldest kept past the cap.
@@ -902,9 +907,10 @@ joinGame shell offer = do
               remember shell (fmap placed (Join.places current)) played
               let back = Join.rematched current
                   ended closed = do
-                    Browser.display (page shell) (fmap Screen.MkEnding (Ending.view ending))
+                    Browser.display (page shell) (endingScreen ending)
                     woke <- await shell
                     case woke of
+                      MkTapped (Screen.MkNav section) _ -> Browser.linkClose n >> pure (sectionNext section)
                       MkHeard heard' | Browser.link heard' == n -> case Text.unpack (Browser.kind heard') of
                         "message" | Right (Link.MkMatchup places) <- Link.decode (build shell) (Browser.said heard') -> go back {Join.places = places}
                         "closed" -> ended True
@@ -1018,11 +1024,11 @@ playOnFrom shell source at = opened shell source $ \reg _ _ scenario -> do
               _ -> go
       go
 
--- | The registry and the replay, its title, the seat to watch it as, if any,
--- and its scenario, handed on once loaded, a message shown meanwhile; else
--- why either did not load. A game finished here waits on no scenarios, is
--- described by how it ended, and is watched as the player's seat.
-opened :: Shell -> Web.Replay.Source -> (Registry.Registry Identity.Identity -> Text.Text -> Maybe Text.Text -> Scenario.Type.Scenario -> IO Next) -> IO Next
+-- | The registry and the replay, its title, the game finished here it is,
+-- if it is one, and its scenario, handed on once loaded, a message shown
+-- meanwhile; else why either did not load. A game finished here waits on no
+-- scenarios, and is described by how it ended.
+opened :: Shell -> Web.Replay.Source -> (Registry.Registry Identity.Identity -> Text.Text -> Maybe History.Game -> Scenario.Type.Scenario -> IO Next) -> IO Next
 opened shell source continue = do
   Browser.display (page shell) (message ["Loading the cards\x2026"])
   let needs = [Loading.MkCards, Loading.MkRules] <> [Loading.MkScenarios | Web.Replay.MkScenario _ <- [source]]
@@ -1041,7 +1047,7 @@ opened shell source continue = do
         case (game, History.scenarioOf file) of
           (Nothing, _) -> notice shell [Text.pack "That game is no longer kept here."]
           (_, Left problem) -> notice shell [Text.pack "The game kept does not decode:", problem]
-          (Just g, Right scenario) -> continue reg (History.matchup g) (History.viewerLabel g) scenario {Scenario.Type.description = Text.unwords (History.said g)}
+          (Just g, Right scenario) -> continue reg (History.matchup g) (Just g) scenario {Scenario.Type.description = Text.unwords (History.said g)}
 
 -- | Why a game could not be played, until the player goes home.
 notice :: Shell -> [Text.Text] -> IO Next

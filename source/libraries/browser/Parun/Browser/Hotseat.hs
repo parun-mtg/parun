@@ -238,7 +238,7 @@ data Seat = MkSeat
     skipping :: Maybe Web.Question.Until,
     -- | Whether the seat conceded (Web.Question.MkConcede).
     conceding :: Bool,
-    -- | Each seat's life whenever it changed, beside the turn (Ending.trail).
+    -- | Each seat's life whenever it or the turn changed (Ending.sampled).
     lives :: Seq.Seq (Natural, [(PlayerId.PlayerId, Integer)]),
     -- | The view last drawn while watching, less whose priority it was.
     watched :: Maybe PlayerView.PlayerView,
@@ -270,8 +270,7 @@ witness :: PlayerView.PlayerView -> Seat -> Seat
 witness view state =
   let (moved, unread) = Log.unseen (marks state) view
       now = [(SeatView.player seat, SeatView.life seat) | seat <- PlayerView.seats view]
-      changed = fmap snd (Seq.lookup (Seq.length (lives state) - 1) (lives state)) /= Just now
-   in state {marks = moved, logged = Map.insertWith (flip (<>)) (PlayerView.viewer view) (Seq.fromList unread) (logged state), lives = if changed then lives state Seq.|> (PlayerView.turn view, now) else lives state}
+   in state {marks = moved, logged = Map.insertWith (flip (<>)) (PlayerView.viewer view) (Seq.fromList unread) (logged state), lives = Ending.sampled (PlayerView.turn view) now (lives state)}
 
 message :: [Text.Text] -> Html.Html msg
 message said = Element.el "main" ["message"] [] [Element.el "p" [] [] [Html.text t] | t <- said]

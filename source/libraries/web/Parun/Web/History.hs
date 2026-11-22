@@ -146,6 +146,25 @@ viewerLabel game = do
   at <- List.findIndex ((== MkYou) . who) (seats game)
   fmap Label.unwrap (Map.lookup (Command.idOf (Int.toNaturalSaturating at + 1)) (Command.labels (Natural.length (seats game))))
 
+-- | What the replay calls each seat, by the label the game's scenario gives
+-- it (Command.labels): who played it, numbered by seat where two kinds
+-- match, "You", "Bot 2", "Bot 3".
+seatNames :: Game -> Map.Map Text.Text Text.Text
+seatNames game =
+  let count = Natural.length (seats game)
+      named (n, seat) =
+        let kind = whoName (who seat)
+            shared = length (filter ((== who seat) . who) (seats game)) > 1
+         in (Label.unwrap <$> Map.lookup (Command.idOf n) (Command.labels count), Text.pack (if shared then kind <> " " <> show n else kind))
+   in Map.fromList [(label, name) | (Just label, name) <- fmap named (zip [1 ..] (seats game))]
+
+-- | Who played a seat, as a word.
+whoName :: Who -> String
+whoName w = case w of
+  MkYou -> "You"
+  MkBot -> "Bot"
+  MkPerson -> "Player"
+
 -- | How the game ended for the player, as a word.
 outcome :: Game -> String
 outcome game = case verdict game of
@@ -161,11 +180,6 @@ matchup = Text.intercalate (Text.pack " vs ") . fmap deck . seats
 -- | Who played, "You vs Bot".
 players :: Game -> Text.Text
 players = Text.intercalate (Text.pack " vs ") . fmap (Text.pack . whoName . who) . seats
-  where
-    whoName w = case w of
-      MkYou -> "You"
-      MkBot -> "Bot"
-      MkPerson -> "Player"
 
 -- | When the game ended on the page's clock then: "21 Nov 2026, 14:05".
 date :: Game -> String

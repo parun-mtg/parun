@@ -56,11 +56,17 @@ data Ending = MkEnding
     witnessed :: Seq.Seq Log.Entry,
     -- | The seat the page plays.
     viewer :: PlayerId.PlayerId,
-    -- | Each seat's life as the game went, a sample whenever it changed,
-    -- each beside the turn it was in.
+    -- | Each seat's life as the game went, a sample whenever it or the turn
+    -- changed (sampled), each beside the turn it was in.
     trail :: [(Natural, [(PlayerId.PlayerId, Integer)])]
   }
   deriving (Eq, Show)
+
+-- | The trail with each seat's life at this turn added, where it or the
+-- turn changed since the last sample, so the trail ends on the turn last
+-- seen though no life changed in it.
+sampled :: Natural -> [(PlayerId.PlayerId, Integer)] -> Seq.Seq (Natural, [(PlayerId.PlayerId, Integer)]) -> Seq.Seq (Natural, [(PlayerId.PlayerId, Integer)])
+sampled turn now trail' = if Seq.lookup (Seq.length trail' - 1) trail' == Just (turn, now) then trail' else trail' Seq.|> (turn, now)
 
 view :: Ending -> Html.Html Event
 view ending =
