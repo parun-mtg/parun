@@ -2315,6 +2315,7 @@ spec s reference corpus = do
   Parun.ScenarioSpec.referenceSpec s
   Parun.ScenarioSpec.spec s registry
   Parun.SearchSpec.spec s registry
+  Parun.SearchSpec.poolSpec s registry
   Parun.SeatingSpec.spec s registry
   Parun.SetupSpec.spec s registry
   Parun.ShieldCounterSpec.spec s registry

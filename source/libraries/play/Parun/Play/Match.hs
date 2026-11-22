@@ -72,7 +72,8 @@ flags =
     GetOpt.Option [] ["playout"] (GetOpt.ReqArg (perSeat "a playout policy, random or greedy" playoutNamed (\n b -> b {SearchBudget.playout = n})) "[SEAT=]POLICY") "who answers every seat in the search bot's playouts, random (the random bot) or greedy (playing a land, else casting a permanent spell, where it can), in every seat or in SEAT alone; random when absent",
     GetOpt.Option [] ["candidates"] (GetOpt.ReqArg (perSeat "a number of candidate worlds" Read.readMaybe (\n b -> b {SearchBudget.candidates = n})) "[SEAT=]N") "the worlds the search bot deals once at a decision and weighs by how likely each made the passes its opponents made, every playout's world drawn among them, in every seat or in SEAT alone; 0 when absent, each playout's world dealt fresh",
     GetOpt.Option [] ["weights"] (GetOpt.ReqArg (\s o -> Right $ case seated s of Just (n, path) -> o {MatchOptions.weighing = Map.insert n path (MatchOptions.weighing o)}; Nothing -> o {MatchOptions.weighing = Map.fromList [(n, s) | n <- [1, 2]]}) "[SEAT=]FILE") "the file of the weights the search bot scores a cut-off playout's position by (Parun.Codec.Weights), in every seat or in SEAT alone; every feature weighted 1 on each side when absent",
-    GetOpt.Option [] ["meta"] (GetOpt.ReqArg (\s o -> Right o {MatchOptions.meta = Just s}) "META") "the deck lists are not known: the search bot infers each opponent's from this meta file's decks; each list known when absent"
+    GetOpt.Option [] ["meta"] (GetOpt.ReqArg (\s o -> Right o {MatchOptions.meta = Just s}) "META") "the deck lists are not known: the search bot infers each opponent's from this meta file's decks; each list known when absent",
+    GetOpt.Option [] ["pool"] (GetOpt.ReqArg (\s o -> Right o {MatchOptions.pool = Just (Text.pack s)}) "FORMAT") "the deck lists are not known and no meta is named: the search bot deals each opponent's unseen cards from this format's pool, from every card where it has none"
   ]
 
 -- | A flag's value for each seat, or with a `SEAT=` prefix for that seat
@@ -104,12 +105,10 @@ searchersOf options =
       )
       (MatchOptions.searching options)
 
--- | How the search bot deals what it cannot see: from the decks of the meta
--- file named (Search.inferred), else from the known lists (Search.known).
+-- | How the search bot deals what it cannot see: as Command.inferring says,
+-- else from the known lists (Search.known).
 priorOf :: Registry.Registry Identity.Identity -> MatchOptions.MatchOptions -> IO Search.Prior
-priorOf registry options = case MatchOptions.meta options of
-  Nothing -> pure Search.known
-  Just path -> Search.inferred . fmap (fmap (DeckList.deck . snd)) <$> Command.loadMeta registry path
+priorOf registry options = Maybe.fromMaybe (pure Search.known) (Command.inferring registry (MatchOptions.meta options) (MatchOptions.pool options))
 
 usage :: [String] -> IO a
 usage problems = do
