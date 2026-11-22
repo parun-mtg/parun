@@ -1,0 +1,49 @@
+{
+  "description": "CR 503.1a / 701.21a / 603.10a whole card: at alice's upkeep Daemogoth Woe-Eater has her sacrifice a creature, and when she sacrifices it, each opponent discards a card, she draws a card and gains 2 life",
+  "note": "Three seats so 'each opponent' is both bob and carol. At upkeep she sacrifices Grizzly Bears over the Woe-Eater, Blood Bairn and Gray Ogre, and nothing pays out; in her main phase Blood Bairn sacrifices the Woe-Eater over the Ogre, so bob and carol each discard their one card, she draws the Swamp and goes to 22.",
+  "board": {
+    "active": "carol",
+    "step": "EndStep",
+    "seats": [
+      {
+        "name": "alice",
+        "battlefield": [
+          { "card": "Daemogoth Woe-Eater", "label": "eater" },
+          { "card": "Grizzly Bears", "label": "bears" },
+          { "card": "Blood Bairn", "label": "bairn" },
+          { "card": "Gray Ogre", "label": "ogre" }
+        ],
+        "library": [{ "card": "Island" }, { "card": "Swamp" }, { "card": "Island" }, { "card": "Island" }]
+      },
+      {
+        "name": "bob",
+        "hand": [{ "card": "Hill Giant" }],
+        "library": [{ "card": "Island" }, { "card": "Island" }, { "card": "Island" }, { "card": "Island" }]
+      },
+      {
+        "name": "carol",
+        "hand": [{ "card": "Goblin Piker" }],
+        "library": [{ "card": "Island" }, { "card": "Island" }, { "card": "Island" }, { "card": "Island" }]
+      }
+    ]
+  },
+  "timeline": [
+    { "turn": 2, "step": "Upkeep", "player": "alice", "do": "Pass" },
+    { "turn": 2, "step": "Upkeep", "player": "alice", "do": { "Answer": { "prompt": "ChooseSacrifices", "with": ["$bears"] } } },
+    { "turn": 2, "step": "Upkeep", "player": "alice", "check": { "View": { "of": "Stack", "is": [] } } },
+    { "turn": 2, "step": "Upkeep", "player": "alice", "check": { "Count": { "player": "alice", "zone": "Graveyard", "card": "Grizzly Bears", "count": 1 } } },
+    { "turn": 2, "step": "Upkeep", "player": "alice", "check": { "Life": { "player": "alice", "life": 20 } } },
+    { "turn": 2, "step": "Upkeep", "player": "alice", "check": { "Count": { "player": "bob", "zone": "Hand", "card": "Hill Giant", "count": 1 } } },
+    { "turn": 2, "step": "PrecombatMain", "player": "alice", "do": { "Answer": { "prompt": "ChooseSacrifices", "with": ["$eater"] } } },
+    { "turn": 2, "step": "PrecombatMain", "player": "alice", "do": { "Activate": { "object": "$bairn", "ability": 0 } } },
+    { "turn": 2, "step": "PrecombatMain", "player": "alice", "do": "Pass" },
+    { "turn": 2, "step": "PrecombatMain", "player": "alice", "do": "Pass" },
+    { "turn": 2, "step": "PrecombatMain", "player": "alice", "check": { "View": { "of": "Stack", "is": [] } } },
+    { "turn": 2, "step": "PrecombatMain", "player": "alice", "check": { "Count": { "player": "bob", "zone": "Graveyard", "card": "Hill Giant", "count": 1 } } },
+    { "turn": 2, "step": "PrecombatMain", "player": "alice", "check": { "Count": { "player": "carol", "zone": "Graveyard", "card": "Goblin Piker", "count": 1 } } },
+    { "turn": 2, "step": "PrecombatMain", "player": "alice", "check": { "Count": { "player": "alice", "zone": "Hand", "card": "Swamp", "count": 1 } } },
+    { "turn": 2, "step": "PrecombatMain", "player": "alice", "check": { "Life": { "player": "alice", "life": 22 } } },
+    { "turn": 2, "step": "PrecombatMain", "player": "alice", "check": { "PowerToughness": { "object": "$bairn", "power": 4, "toughness": 4 } } },
+    { "turn": 2, "step": "DeclareAttackers", "player": "alice", "do": { "Attack": [] } }
+  ]
+}
