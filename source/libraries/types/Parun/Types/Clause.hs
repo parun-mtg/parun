@@ -166,7 +166,10 @@ data Clause card ability = MkClause
     -- instructions), then `orElse` (a branch a player did not announce has no
     -- "may" and no payment left to offer THEM -- Twiddle prints one "may" over
     -- the pair, not one per branch), then the "may", then this -- a declined
-    -- clause has no instruction left for a payment to qualify.
+    -- clause has no instruction left for a payment to qualify. A clause
+    -- carrying both a "may" and this asks this first: the "may" is CR 118.12's
+    -- "[effect]", Wandering Archaic's "If they don't, you may copy that spell"
+    -- (Parun.Engine.Resolve.mayAndGate).
     payGate :: Maybe PayGate.PayGate,
     effects :: Seq.Seq (Effect.Effect card ability)
   }

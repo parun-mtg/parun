@@ -22,8 +22,9 @@ module Parun.Types.PayBranch where
 -- makes the "unless" cost an offer -- "[A player may do something else]" -- and
 -- the positive half generally prints that "may" itself, so Parun.Types.PayGate's
 -- own Prompt.ChooseToPay IS the printed "may" and
--- Parun.Types.Clause.optionality stays Mandatory on both. A card setting both
--- would ask twice.
+-- Parun.Types.Clause.optionality stays Mandatory on both for the payment's own
+-- "may". A clause's optionality is the "may" of its "[effect]" instead, asked
+-- after the payment: Wandering Archaic's "If they don't, you may copy".
 data PayBranch
   = -- | The instructions run when the cost WAS paid -- CR 118.12's "if [a
     -- player] does".

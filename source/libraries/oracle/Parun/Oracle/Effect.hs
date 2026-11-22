@@ -425,7 +425,10 @@ clause context c
       perColor context c <> do
         predicates <- instructions context (Foldable.toList (Clause.effects c))
         case (Clause.payGate c, Clause.optionality c, List.foldr addedTogether [] predicates) of
-          (Just g, Optionality.Mandatory, together) -> paid context g together
+          (Just g, Optionality.Mandatory, together) -> paid context False g together
+          -- The "may" of the instruction the payment gates, after it (Wandering
+          -- Archaic's "If they don't, you may copy that spell").
+          (Just g, Optionality.Optional (PlayerRef.Relative PlayerRelation.You) _, together) -> paid context True g together
           (Nothing, Optionality.Mandatory, together) -> joined context together
           -- A continuous change names its objects, never "you", so its
           -- duration-first reading is no imperative to follow "you may"
@@ -502,8 +505,8 @@ condition context c = case c of
 -- player pays {2}" (Nakaya Shade). A choice of more than two costs, one offered
 -- by an earlier clause or reckoned from an object's mana cost, or one the
 -- payer is not asked about, is not spelled out here.
-paid :: Target.Context -> PayGate.PayGate -> [Predicate] -> [(Text.Text, [SlotName.SlotName])]
-paid context g predicates
+paid :: Target.Context -> Bool -> PayGate.PayGate -> [Predicate] -> [(Text.Text, [SlotName.SlotName])]
+paid context mayYou g predicates
   | Maybe.isJust (PayGate.basis g) || Maybe.isJust (PayGate.offeredAt g) || PayGate.obligation g /= PayObligation.Optional = []
   | otherwise = do
       (second, third) <- Cost.paymentChoice (Target.self context) (Target.keyword context) (CostChoice.unwrap (PayGate.cost g))
@@ -516,6 +519,7 @@ paid context g predicates
             _ -> []
       case PayGate.branch g of
         PayBranch.IfPaid -> do
+          Monad.guard (not mayYou)
           (_, person) <- Target.player context (PayGate.payer g)
           Monad.guard (person == Target.Second)
           (body, ms) <- joined context predicates
@@ -529,7 +533,10 @@ paid context g predicates
             [p] | null (after p), Maybe.isNothing (mana p) -> [p]
             _ -> []
           let pays = if person == Target.Third then third else second
-              instruction = if implied p then verb p else clauseText p
+              instruction
+                | mayYou = Text.pack "you may " <> verb p
+                | implied p = verb p
+                | otherwise = clauseText p
               payment' = Target.wording who <> Text.pack " " <> pays <> each'
           -- Free: "unless" after the instruction (Soul Strings) or before it
           -- (Rhystic Tutor), and "unless they" where the instruction opens with
@@ -547,8 +554,10 @@ paid context g predicates
                        | Target.self context `Text.isInfixOf` instruction,
                          Just stem <- [Text.stripSuffix (Target.self context) pays]
                        ]
+                Monad.guard (not mayYou)
                 [(Prose.sentence text, mentioned)]
-              mayNot = [(Prose.sentence (Target.wording who <> Text.pack " may " <> second <> each') <> Text.pack " If they don't, " <> clauseText p <> Text.pack ".", mentioned) | branch == PayBranch.IfNotPaid, person == Target.Third]
+              afterNo = if mayYou then instruction else clauseText p
+              mayNot = [(Prose.sentence (Target.wording who <> Text.pack " may " <> second <> each') <> Text.pack " If they don't, " <> afterNo <> Text.pack ".", mentioned) | branch == PayBranch.IfNotPaid, person == Target.Third, not mayYou || maybe True ((== Text.pack "you") . Target.wording) (subject p)]
           unless' <> mayNot
 
 -- | A clause's instructions as predicates, consecutive changes to the same
