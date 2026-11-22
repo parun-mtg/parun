@@ -422,6 +422,7 @@ leastOf selection = case selection of
   ModeSelection.ChooseBetweenWithRepeats cb -> ChooseBetween.least cb
   ModeSelection.ChooseInstead ci -> min (leastOf (ChooseInstead.ordinary ci)) (leastOf (ChooseInstead.instead ci))
   ModeSelection.ChooseUpTo _ -> 0
+  ModeSelection.ChooseOptionally _ -> 0
   ModeSelection.ChoosePawprintsWithRepeats _ -> 0
 
 -- CR 700.2: the MOST modes a selection satisfying this instruction may name --
@@ -438,6 +439,7 @@ mostOf selection = case selection of
   ModeSelection.ChooseBetweenWithRepeats cb -> Just (ChooseBetween.most cb)
   ModeSelection.ChooseInstead ci -> max <$> mostOf (ChooseInstead.ordinary ci) <*> mostOf (ChooseInstead.instead ci)
   ModeSelection.ChooseUpTo _ -> Nothing
+  ModeSelection.ChooseOptionally inner -> mostOf inner
   ModeSelection.ChoosePawprintsWithRepeats cp -> Just (ChoosePawprints.most cp)
 
 -- CR 700.2d: does this instruction print "You may choose the same mode more than
@@ -453,16 +455,19 @@ allowsRepeatsIn selection = case selection of
   ModeSelection.ChooseBetweenWithRepeats {} -> True
   ModeSelection.ChooseInstead ci -> allowsRepeatsIn (ChooseInstead.ordinary ci) || allowsRepeatsIn (ChooseInstead.instead ci)
   ModeSelection.ChooseUpTo _ -> False
+  ModeSelection.ChooseOptionally inner -> allowsRepeatsIn inner
   ModeSelection.ChoosePawprintsWithRepeats _ -> True
 
 -- Every size a selection satisfying the printed instruction may have, ascending.
--- One element for an exact instruction, `most - least + 1` for a range, and
--- either instruction's for an unsettled ChooseInstead. `ceiling` stands in for
+-- One element for an exact instruction, `most - least + 1` for a range,
+-- either instruction's for an unsettled ChooseInstead, and zero beside the
+-- wrapped instruction's for a ChooseOptionally. `ceiling` stands in for
 -- a most the instruction does not fix (mostOf), and is never below the sizes
 -- that can matter: the legal modes, or the printed ones.
 selectionSizes :: Natural -> ModeSelection.ModeSelection -> [Natural]
 selectionSizes ceiling_ selection = case selection of
   ModeSelection.ChooseInstead ci -> Set.toAscList (Set.fromList (selectionSizes ceiling_ (ChooseInstead.ordinary ci) <> selectionSizes ceiling_ (ChooseInstead.instead ci)))
+  ModeSelection.ChooseOptionally inner -> Set.toAscList (Set.insert 0 (Set.fromList (selectionSizes ceiling_ inner)))
   _ -> [leastOf selection .. Maybe.fromMaybe ceiling_ (mostOf selection)]
 
 -- CR 601.4: the instruction an unsettled ChooseInstead stands for once its
@@ -477,6 +482,7 @@ settle :: (Condition.Condition -> Bool) -> (Quantity.Quantity -> Natural) -> Mod
 settle holds counting selection = case selection of
   ModeSelection.ChooseInstead ci -> settle holds counting (if holds (ChooseInstead.condition ci) then ChooseInstead.instead ci else ChooseInstead.ordinary ci)
   ModeSelection.ChooseUpTo q -> ModeSelection.ChooseBetween ChooseBetween.MkChooseBetween {ChooseBetween.least = 0, ChooseBetween.most = counting q}
+  ModeSelection.ChooseOptionally inner -> ModeSelection.ChooseOptionally (settle holds counting inner)
   _ -> selection
 
 -- allowsRepeatsIn over the payload's own printed selection.
@@ -513,6 +519,10 @@ forcedSelection legal selection
   | ModeSelection.ChooseInstead ci <- selection =
       let ordinary = forcedSelection legal (ChooseInstead.ordinary ci)
        in if ordinary == forcedSelection legal (ChooseInstead.instead ci) then ordinary else Nothing
+  -- Forced to none only where the wrapped instruction admits nothing else:
+  -- otherwise declining and choosing are both answers.
+  | ModeSelection.ChooseOptionally inner <- selection =
+      if all Seq.null (selections legal inner) then Just Seq.empty else Nothing
   -- "Choose zero" names nothing whatever is legal. No printing says it; the arm
   -- is here so the two below may assume a positive ceiling.
   | mostOf selection == Just 0 = Just Seq.empty
@@ -535,6 +545,8 @@ forcedSelection legal selection
 selectionPossible :: Set ModeIndex.ModeIndex -> ModeSelection.ModeSelection -> Bool
 selectionPossible legal selection
   | ModeSelection.ChooseInstead ci <- selection = selectionPossible legal (ChooseInstead.ordinary ci) || selectionPossible legal (ChooseInstead.instead ci)
+  -- Declining is always an answer.
+  | ModeSelection.ChooseOptionally _ <- selection = True
   | mostOf selection == Just 0 = True
   | allowsRepeatsIn selection = leastOf selection == 0 || not (Set.null legal)
   | otherwise = Natural.length legal >= leastOf selection
@@ -547,6 +559,7 @@ selectionPossible legal selection
 -- gate every announcement path runs before it stamps anything.
 selectionSatisfiedBy :: Set ModeIndex.ModeIndex -> ModeSelection.ModeSelection -> Seq.Seq ModeIndex.ModeIndex -> Bool
 selectionSatisfiedBy legal (ModeSelection.ChooseInstead ci) chosen = selectionSatisfiedBy legal (ChooseInstead.ordinary ci) chosen || selectionSatisfiedBy legal (ChooseInstead.instead ci) chosen
+selectionSatisfiedBy legal (ModeSelection.ChooseOptionally inner) chosen = Seq.null chosen || selectionSatisfiedBy legal inner chosen
 selectionSatisfiedBy legal selection chosen =
   let distinct = Set.fromList (Foldable.toList chosen)
       size = Natural.length chosen
@@ -562,6 +575,7 @@ selectionSatisfiedBy legal selection chosen =
 withinPawprints :: ModeSelection.ModeSelection -> Seq.Seq ModeIndex.ModeIndex -> Bool
 withinPawprints selection chosen = case selection of
   ModeSelection.ChoosePawprintsWithRepeats cp -> maybe False ((<= ChoosePawprints.most cp) . sum) (traverse (pawprintsOf selection) chosen)
+  ModeSelection.ChooseOptionally inner -> withinPawprints inner chosen
   _ -> True
 
 -- CR 107.18: how many pawprints a pawprint selection lists for this mode;
@@ -569,6 +583,7 @@ withinPawprints selection chosen = case selection of
 pawprintsOf :: ModeSelection.ModeSelection -> ModeIndex.ModeIndex -> Maybe Natural
 pawprintsOf selection idx = case selection of
   ModeSelection.ChoosePawprintsWithRepeats cp -> Seq.lookup (Natural.toIntSaturating (ModeIndex.unwrap idx)) (ChoosePawprints.pawprints cp)
+  ModeSelection.ChooseOptionally inner -> pawprintsOf inner idx
   _ -> Nothing
 
 -- CR 700.2: every answer selectionSatisfiedBy accepts over `legal`, each in
@@ -578,6 +593,7 @@ pawprintsOf selection idx = case selection of
 -- pawprint selection in its budget, which none takes past five either.
 selections :: Set ModeIndex.ModeIndex -> ModeSelection.ModeSelection -> [Seq.Seq ModeIndex.ModeIndex]
 selections legal (ModeSelection.ChooseInstead ci) = ListUtils.nubOrd (selections legal (ChooseInstead.ordinary ci) <> selections legal (ChooseInstead.instead ci))
+selections legal (ModeSelection.ChooseOptionally inner) = ListUtils.nubOrd (Seq.empty : selections legal inner)
 selections legal selection =
   let choose :: Natural -> [ModeIndex.ModeIndex] -> [[ModeIndex.ModeIndex]]
       choose n pool

@@ -1232,8 +1232,8 @@ effectChildren c effect = case effect of
       )
   Effect.Counter (Counter.MkCounter ref named sources instead) ->
     fmap Effect.Counter (Counter.MkCounter <$> onObjectRef c ref <*> traverse (onSlot c) named <*> traverse (onSlot c) sources <*> traverse (counterDestinationChildren c) instead)
-  Effect.PutCounters (PutCounters.MkPutCounters kind alternatives quantity ref totalAtMost placed) ->
-    fmap Effect.PutCounters (PutCounters.MkPutCounters <$> onCounterKind c kind <*> traverse (onCounterKind c) alternatives <*> onQuantity c quantity <*> onObjectRef c ref <*> pure totalAtMost <*> traverse (onSlot c) placed)
+  Effect.PutCounters (PutCounters.MkPutCounters kind alternatives quantity ref totalAtMost placed putter) ->
+    fmap Effect.PutCounters (PutCounters.MkPutCounters <$> onCounterKind c kind <*> traverse (onCounterKind c) alternatives <*> onQuantity c quantity <*> onObjectRef c ref <*> pure totalAtMost <*> traverse (onSlot c) placed <*> traverse (onPlayer c) putter)
   Effect.Divide (Divide.MkDivide quantity among chooser named) -> fmap Effect.Divide (Divide.MkDivide <$> onQuantity c quantity <*> onObjectRef c among <*> onPlayer c chooser <*> onSlot c named)
   Effect.RemoveCounters (RemoveCounters.MkRemoveCounters kind quantity named tally) ->
     fmap Effect.RemoveCounters (RemoveCounters.MkRemoveCounters <$> onCounterKind c kind <*> onQuantity c quantity <*> onSlot c named <*> traverse (onSlot c) tally)
@@ -3047,6 +3047,7 @@ modeSelectionChildren c selection = case selection of
   ModeSelection.ChooseBetweenWithRepeats _ -> pure selection
   ModeSelection.ChooseInstead (ChooseInstead.MkChooseInstead condition ordinary instead) -> fmap ModeSelection.ChooseInstead (ChooseInstead.MkChooseInstead <$> modalInstead c condition <*> modeSelectionChildren c ordinary <*> modeSelectionChildren c instead)
   ModeSelection.ChooseUpTo quantity -> ModeSelection.ChooseUpTo <$> modalQuantity c quantity
+  ModeSelection.ChooseOptionally inner -> ModeSelection.ChooseOptionally <$> modeSelectionChildren c inner
   ModeSelection.ChoosePawprintsWithRepeats _ -> pure selection
 
 -- | A mode's children. Slots a visitor renames together merge.

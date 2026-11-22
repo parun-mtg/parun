@@ -25,7 +25,8 @@ spec s = Spec.describe s "Parun.Codec.PutCounters" $ do
             PutCounters.quantity = Quantity.Literal 1,
             PutCounters.ref = ObjectRef.InSlot (SlotName.MkSlotName (Text.pack "target")),
             PutCounters.totalAtMost = Nothing,
-            PutCounters.slot = Nothing
+            PutCounters.slot = Nothing,
+            PutCounters.putter = Nothing
           }
       )
       " {\"kind\":{\"type\":\"PlusOnePlusOne\"},\"quantity\":{\"type\":\"Literal\",\"value\":1},\"ref\":{\"type\":\"InSlot\",\"value\":\"target\"}} "
@@ -39,7 +40,8 @@ spec s = Spec.describe s "Parun.Codec.PutCounters" $ do
             PutCounters.quantity = Quantity.Literal 1,
             PutCounters.ref = ObjectRef.InSlot (SlotName.MkSlotName (Text.pack "target")),
             PutCounters.totalAtMost = Just 7,
-            PutCounters.slot = Nothing
+            PutCounters.slot = Nothing,
+            PutCounters.putter = Nothing
           }
       )
       " {\"kind\":{\"type\":\"PlusOnePlusOne\"},\"quantity\":{\"type\":\"Literal\",\"value\":1},\"ref\":{\"type\":\"InSlot\",\"value\":\"target\"},\"totalAtMost\":7} "
@@ -53,7 +55,8 @@ spec s = Spec.describe s "Parun.Codec.PutCounters" $ do
             PutCounters.quantity = Quantity.Literal 1,
             PutCounters.ref = ObjectRef.InSlot (SlotName.MkSlotName (Text.pack "target")),
             PutCounters.totalAtMost = Nothing,
-            PutCounters.slot = Just (SlotName.MkSlotName (Text.pack "placed"))
+            PutCounters.slot = Just (SlotName.MkSlotName (Text.pack "placed")),
+            PutCounters.putter = Nothing
           }
       )
       " {\"kind\":{\"type\":\"PlusOnePlusOne\"},\"quantity\":{\"type\":\"Literal\",\"value\":1},\"ref\":{\"type\":\"InSlot\",\"value\":\"target\"},\"slot\":\"placed\"} "
@@ -67,7 +70,8 @@ spec s = Spec.describe s "Parun.Codec.PutCounters" $ do
             PutCounters.quantity = Quantity.Literal 1,
             PutCounters.ref = ObjectRef.InSlot (SlotName.MkSlotName (Text.pack "token")),
             PutCounters.totalAtMost = Nothing,
-            PutCounters.slot = Nothing
+            PutCounters.slot = Nothing,
+            PutCounters.putter = Nothing
           }
       )
       " {\"kind\":{\"type\":\"Keyword\",\"value\":{\"type\":\"Reach\"}},\"alternatives\":[{\"type\":\"Keyword\",\"value\":{\"type\":\"Vigilance\"}},{\"type\":\"Keyword\",\"value\":{\"type\":\"Trample\"}}],\"quantity\":{\"type\":\"Literal\",\"value\":1},\"ref\":{\"type\":\"InSlot\",\"value\":\"token\"}} "

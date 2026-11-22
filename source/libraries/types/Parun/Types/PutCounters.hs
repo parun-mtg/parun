@@ -4,6 +4,7 @@ import qualified Numeric.Natural as Natural
 import qualified Parun.Types.CounterKind as CounterKind
 import qualified Parun.Types.Keyword as Keyword
 import qualified Parun.Types.ObjectRef as ObjectRef
+import qualified Parun.Types.PlayerRef as PlayerRef
 import qualified Parun.Types.Quantity as Quantity
 import qualified Parun.Types.SlotName as SlotName
 
@@ -53,6 +54,10 @@ data PutCounters = MkPutCounters
     quantity :: Quantity.Quantity,
     ref :: ObjectRef.ObjectRef,
     totalAtMost :: Maybe Natural.Natural,
-    slot :: Maybe SlotName.SlotName
+    slot :: Maybe SlotName.SlotName,
+    -- | CR 608.2c: the player the instruction names as putting the
+    -- counters, "target player puts" (Shadrix Silverquill); Nothing is the
+    -- resolution's controller.
+    putter :: Maybe PlayerRef.PlayerRef
   }
   deriving (Eq, Ord, Show)

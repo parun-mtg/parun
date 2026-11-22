@@ -27,6 +27,8 @@ codec =
       -- Recurses on 'codec' itself, Parun.Codec.Condition's reason.
       Arm.payload "ChooseInstead" (ChooseInstead.codec codec) ModeSelection.ChooseInstead (\x -> case x of ModeSelection.ChooseInstead y -> Just y; _ -> Nothing),
       Arm.payload "ChooseUpTo" Quantity.codec ModeSelection.ChooseUpTo (\x -> case x of ModeSelection.ChooseUpTo y -> Just y; _ -> Nothing),
+      -- Recurses on 'codec' itself, as ChooseInstead does.
+      Arm.payload "ChooseOptionally" codec ModeSelection.ChooseOptionally (\x -> case x of ModeSelection.ChooseOptionally y -> Just y; _ -> Nothing),
       Arm.payload "ChoosePawprintsWithRepeats" ChoosePawprints.codec ModeSelection.ChoosePawprintsWithRepeats (\x -> case x of ModeSelection.ChoosePawprintsWithRepeats y -> Just y; _ -> Nothing)
     ]
 
@@ -38,4 +40,5 @@ tagOf x = case x of
   ModeSelection.ChooseBetweenWithRepeats {} -> "ChooseBetweenWithRepeats"
   ModeSelection.ChooseInstead {} -> "ChooseInstead"
   ModeSelection.ChooseUpTo {} -> "ChooseUpTo"
+  ModeSelection.ChooseOptionally {} -> "ChooseOptionally"
   ModeSelection.ChoosePawprintsWithRepeats {} -> "ChoosePawprintsWithRepeats"

@@ -69,6 +69,14 @@ spec s = Spec.describe s "Parun.Codec.ModeSelection" $ do
       (ModeSelection.ChooseUpTo (Quantity.InSlot (SlotName.MkSlotName (Text.pack "X"))))
       " {\"type\":\"ChooseUpTo\",\"value\":{\"type\":\"InSlot\",\"value\":\"X\"}} "
 
+  -- Shadrix Silverquill (data/cards/shadrix-silverquill.json).
+  Spec.it s "ChooseOptionally" $
+    Common.assertCodec
+      s
+      ModeSelection.codec
+      (ModeSelection.ChooseOptionally (ModeSelection.ChooseExactly 2))
+      " {\"type\":\"ChooseOptionally\",\"value\":{\"type\":\"ChooseExactly\",\"value\":2}} "
+
   -- CR 700.2i (data/cards/season-of-loss.json).
   Spec.it s "ChoosePawprintsWithRepeats" $
     Common.assertCodec

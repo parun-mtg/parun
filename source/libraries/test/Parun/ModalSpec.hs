@@ -719,6 +719,22 @@ chooseOneOrBothSpec s registry = Spec.describe s "ChooseOneOrBoth (CR 700.2)" $ 
     Spec.assertBool s (Modal.selectionSatisfiedBy vandalizeModes (ModeSelection.ChooseBetween (ChooseBetween.MkChooseBetween 1 2)) both) "both modes satisfy one-or-both"
     Spec.assertBool s (not (Modal.selectionSatisfiedBy vandalizeModes (ModeSelection.ChooseBetween (ChooseBetween.MkChooseBetween 0 1)) both)) "two modes do not satisfy a zero-to-one range"
 
+  -- "You may choose two" (Shadrix Silverquill) read directly, because no board
+  -- of that card leaves a mode unfillable: its controller is always a legal
+  -- target. Zero or two, never one (its ruling); and where fewer than two modes
+  -- are legal, choosing none is the only answer, so it is forced and CR 603.3c
+  -- removes the ability unasked.
+  Spec.it s "CR 700.2 'you may choose two' admits none or two, and forces none below two legal modes" $ do
+    let optional = ModeSelection.ChooseOptionally (ModeSelection.ChooseExactly 2)
+        modes = Seq.fromList . fmap ModeIndex.MkModeIndex
+        three = Set.fromList (fmap ModeIndex.MkModeIndex [0, 1, 2])
+    Spec.assertEqWith s "the sizes" (fmap (Modal.selectionSatisfiedBy three optional . modes) [[], [0], [0, 1], [0, 1, 2]]) [True, False, True, False]
+    Spec.assertEqWith s "the answers" (Modal.selections three optional) (fmap modes [[], [0, 1], [0, 2], [1, 2]])
+    Spec.assertEqWith s "a real choice over three" (Modal.forcedSelection three optional) Nothing
+    Spec.assertEqWith s "none, over one" (Modal.forcedSelection (Set.singleton (ModeIndex.MkModeIndex 0)) optional) (Just Seq.empty)
+    Spec.assertEqWith s "none, over none" (Modal.forcedSelection Set.empty optional) (Just Seq.empty)
+    Spec.assertBool s (Modal.selectionPossible Set.empty optional) "declining is always possible"
+
   -- The floor, on that same board: "one or both" is not "up to both", so naming no
   -- mode is not an answer and Cast.castProposed's reject-not-repair rewinds.
   Spec.it s "CR 700.2 naming no mode does not satisfy 'one or both'" $ do

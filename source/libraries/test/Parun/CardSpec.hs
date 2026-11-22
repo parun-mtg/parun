@@ -854,7 +854,7 @@ objectRefPositions =
         ("prevent-all-damage", Effect.PreventAllDamage (PreventAllDamage.MkPreventAllDamage Duration.UntilEndOfTurn Nothing (Just (plantedRef "pa")) Nothing Nothing DamageDirection.DealtTo Nothing (Filter.Type.And []) Seq.empty), [plantedRef "pa"]),
         ("redirect-damage", Effect.RedirectDamage (RedirectDamage.MkRedirectDamage Duration.UntilEndOfTurn Nothing Nothing (Just (plantedRef "rd-from")) Nothing Nothing (plantedRef "rd-to") Nothing Uses.Unlimited (Filter.Type.And [])), [plantedRef "rd-from", plantedRef "rd-to"]),
         ("counter", Effect.Counter (Counter.MkCounter (plantedRef "co") Nothing Nothing Nothing), [plantedRef "co"]),
-        ("put-counters", Effect.PutCounters (PutCounters.MkPutCounters CounterKind.PlusOnePlusOne [] (Quantity.Type.Literal 1) (plantedRef "pc") Nothing Nothing), [plantedRef "pc"]),
+        ("put-counters", Effect.PutCounters (PutCounters.MkPutCounters CounterKind.PlusOnePlusOne [] (Quantity.Type.Literal 1) (plantedRef "pc") Nothing Nothing Nothing), [plantedRef "pc"]),
         ("divide", Effect.Divide (Divide.MkDivide (Quantity.Type.Literal 3) (plantedRef "dv") (PlayerRef.Relative PlayerRelation.You) (SlotName.MkSlotName (Text.pack "split"))), [plantedRef "dv"]),
         ("move-counters", Effect.MoveCounters (MoveCounters.MkMoveCounters (plantedRef "mc-from") MovedKinds.Every Nothing (plantedRef "mc-to")), [plantedRef "mc-from", plantedRef "mc-to"]),
         ("put-counters-from", Effect.PutCountersFrom (PutCountersFrom.MkPutCountersFrom (SlotName.MkSlotName (Text.pack "giver")) Nothing (plantedRef "pf")), [plantedRef "pf"]),
@@ -926,6 +926,7 @@ playerRefPositions =
         ("firebend", Effect.Firebend (ManaAddition.MkManaAddition (plantedPlayer "fb") (ManaProduction.AnyColor ColorSpread.OneColor) (Quantity.Type.Literal 1) ManaRetention.Ordinary Nothing Nothing Nothing False), [plantedPlayer "fb"]),
         ("search", Effect.Search (Search.MkSearch (plantedPlayer "se-searcher") (plantedPlayer "se-owner") Set.empty False Nothing (Filter.Type.And []) Seq.empty False SearchDestination.Battlefield Map.empty Nothing Nothing Nothing Nothing Set.empty False False Nothing), [plantedPlayer "se-searcher", plantedPlayer "se-owner"]),
         ("draw", Effect.Draw (Draw.MkDraw (plantedPlayer "dr") one Nothing Nothing), [plantedPlayer "dr"]),
+        ("put-counters-putter", Effect.PutCounters (PutCounters.MkPutCounters CounterKind.PlusOnePlusOne [] one (ObjectRef.EachMatching (Filter.Type.And [])) Nothing Nothing (Just (plantedPlayer "pp"))), [plantedPlayer "pp"]),
         ("mill", Effect.Mill (Mill.MkMill (plantedPlayer "mi") one Nothing Nothing), [plantedPlayer "mi"]),
         ("scry", Effect.Scry (playerQuantity "sc"), [plantedPlayer "sc"]),
         ("surveil", Effect.Surveil (Surveil.MkSurveil (plantedPlayer "su") one Nothing), [plantedPlayer "su"]),
@@ -1647,7 +1648,15 @@ modalSlotsOffend armed abilityBound modal =
             -- delayed ability the mode arms reads of the objects it refers to
             -- (armedReads).
             wanted = Set.union (Map.keysSet (Resolve.modeSlots mode)) (armed mode)
-         in Set.difference (Set.difference wanted defined) abilityBound
+         in Set.difference (Set.difference (Set.difference wanted defined) abilityBound) (siblingExclusions mode)
+      -- CR 601.2c: the chosen modes' targets are one announcement, so a target
+      -- slot's filter may read a SIBLING mode's declared slot, unbound where
+      -- that mode is not chosen: Shadrix Silverquill's "each mode must target a
+      -- different player".
+      siblingExclusions mode =
+        Set.intersection
+          (Set.difference declared (Map.keysSet (Mode.targetSlots mode)))
+          (foldMap (foldMap Filter.boundSlots . TargetSlot.filter) (Mode.targetSlots mode))
       -- CR 608.2c: the shared clauses read every mode's slots, so a mode's slot
       -- they read is read, and they may read no other.
       sharedReads = unboundReads (Modal.sharedMode modal)
@@ -1760,6 +1769,7 @@ selectionReadsX selection = case selection of
   ModeSelection.ChooseBetweenWithRepeats _ -> False
   ModeSelection.ChooseInstead ci -> selectionReadsX (ChooseInstead.ordinary ci) || selectionReadsX (ChooseInstead.instead ci)
   ModeSelection.ChooseUpTo quantity -> Set.member Binding.variableX (QuantitySlot.slots quantity)
+  ModeSelection.ChooseOptionally inner -> selectionReadsX inner
   ModeSelection.ChoosePawprintsWithRepeats _ -> False
 
 -- CR 601.2c with CR 601.2b: does this slot's COUNT read the announced X?
@@ -5688,7 +5698,7 @@ effectFilters effect = case effect of
   -- creature you control with a +1/+1 counter on it", and a Filter there would
   -- otherwise escape the lint; the count is a Quantity like any other; and CR
   -- 122.1b's kind may be a whole Keyword with a Filter under it; see #2728.
-  Effect.PutCounters (PutCounters.MkPutCounters kind alternatives quantity ref _ _) -> frame Unframed (foldMap counterKindFilters (kind : alternatives) <> quantityFilters quantity) <> frame SourceHostFramed (objectRefFilters ref)
+  Effect.PutCounters (PutCounters.MkPutCounters kind alternatives quantity ref _ _ _) -> frame Unframed (foldMap counterKindFilters (kind : alternatives) <> quantityFilters quantity) <> frame SourceHostFramed (objectRefFilters ref)
   Effect.Divide (Divide.MkDivide quantity among _ _) -> frame Unframed (quantityFilters quantity) <> frame SourceHostFramed (objectRefFilters among)
   -- The destination and CR 122.1b's kind, PutCounters' framing: `from` is a bare
   -- SlotName and carries no Filter, and the kind is the one rule 122.8's second
