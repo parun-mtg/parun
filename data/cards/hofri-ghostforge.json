@@ -203,7 +203,7 @@
                                                     "type": "EachCardInExiledPile",
                                                     "value": {
                                                       "pile": {
-                                                        "type": "OwnAbilities"
+                                                        "type": "ForToken"
                                                       }
                                                     }
                                                   },
