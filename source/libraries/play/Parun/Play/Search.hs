@@ -644,7 +644,7 @@ greedy registry = Answerer.MkAnswerer $ \asked -> case Asked.prompt asked of
 -- classification; the random bot answers them (gap #9476).
 aimed :: (Monad m) => Registry.Registry m -> Answerer.Answerer (Asked.Asked GameState.GameState) (Game.Play m)
 aimed registry = Answerer.MkAnswerer $ \asked -> case Asked.prompt asked of
-  Prompt.ChooseAction _ _ menu -> greedyAction True (Asked.game asked) menu
+  Prompt.ChooseAction _ _ menu -> greedyAction False (Asked.game asked) menu
   Prompt.ChooseTargets _ chooser oid slots -> aimedTargets chooser oid (Asked.game asked) slots
   _ -> Answerer.unwrap (Game.bot registry) asked
 
