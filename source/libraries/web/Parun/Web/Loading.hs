@@ -85,22 +85,20 @@ problemFor need loading =
 -- | Where a step of loading stands.
 data Step
   = MkDone
-  | -- | Under way, this percentage through where that is known.
+  | -- | Under way, the cards this percentage through where that is known.
     MkDoing (Maybe Natural)
   | MkWaiting
   deriving (Eq, Show)
 
--- | The steps a screen waits through once the engine runs: the engine,
--- started; the cards, as far as their chunks have arrived; then the rest of
--- what the screen waits on, read and built, how far unknown. The splash
--- (index.html) fetches the engine and the cards at once, so names them as
--- one step.
+-- | The steps a screen waits through, as the splash (index.html) names
+-- them: the engine and the cards, fetched at once, the cards as far as their
+-- chunks have arrived (the engine runs, so it is fetched); then the rest of
+-- what the screen waits on, read and built, how far unknown.
 steps :: Loading -> [(String, Step)]
 steps loading =
   let cards = chunksOf MkCards
       fetched = length (filter (`Set.member` arrived loading) cards)
-   in [ ("Starting the engine", MkDone),
-        ("Fetching the cards", if ready MkCards loading then MkDone else MkDoing (Just (Int.toNaturalSaturating (div (100 * fetched) (length cards))))),
+   in [ ("Fetching the engine and the cards", if ready MkCards loading then MkDone else MkDoing (Just (Int.toNaturalSaturating (div (100 * fetched) (length cards))))),
         ("Setting the table", if ready MkCards loading then MkDoing Nothing else MkWaiting)
       ]
 
@@ -115,7 +113,7 @@ ring :: Html.Html msg
 ring =
   Element.el
     "div"
-    ["ring"]
+    ["loading-ring"]
     []
     [ Element.el
         "svg"
@@ -128,7 +126,7 @@ ring =
     ]
 
 -- | Each step, marked done, under way or waiting, said so beside it: done,
--- or the percentage where one is known.
+-- or the cards' percentage where one is known.
 stepList :: [(String, Step)] -> Html.Html msg
 stepList listed =
   Element.el
@@ -149,5 +147,5 @@ stepList listed =
       MkWaiting -> "waiting"
     said step = case step of
       MkDone -> "Done"
-      MkDoing percent -> foldMap (\p -> show p <> "%") percent
+      MkDoing percent -> foldMap (\p -> "Cards " <> show p <> "%") percent
       MkWaiting -> ""

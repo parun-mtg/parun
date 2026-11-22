@@ -592,7 +592,8 @@ loadingScreen shell = Browser.display (page shell) . Loading.view
 -- new game closes them.
 play :: Shell -> NonEmpty.NonEmpty (Text.Text, Text.Text) -> Set.Set Int -> Maybe Link.Saved -> IO Next
 play shell seats invited resuming = do
-  Browser.display (page shell) (if Maybe.isJust resuming then message ["Picking the game up where it stopped\x2026"] else Hotseat.starting (fmap fst seats))
+  let starting = Browser.display (page shell) (if Maybe.isJust resuming then message ["Picking the game up where it stopped\x2026"] else Hotseat.starting (fmap fst seats))
+  starting
   built <- untilBuilt shell (loadingScreen shell) [Loading.MkCards, Loading.MkRules] (registry <$> IORef.readIORef (loaded shell))
   -- The invited slots whose connection is down: every one of a game picked up.
   down <- IORef.newIORef (if Maybe.isJust resuming then invited else Set.empty)
@@ -603,6 +604,8 @@ play shell seats invited resuming = do
   case built of
     Left problem -> stopped [problem] >> notice shell [problem]
     Right reg -> do
+      -- Again, should the loading screen have replaced it meanwhile.
+      starting
       chosen <- IORef.newIORef MkToHome
       seed <- maybe Key.fresh (pure . Link.seed) resuming
       Monad.when (keeping && Maybe.isNothing resuming) . Browser.keepGame $ Link.saved (build shell) (Link.MkSaved seed seats (Set.toList invited) [])
@@ -744,6 +747,7 @@ joinGame shell offer = do
     -- Rematch tells the match-up again, the player's Rematch goes back to
     -- it, or the player goes home.
     guestGame current seat = do
+      Browser.display (page shell) (message ["Loading the cards\x2026"])
       built <- untilBuilt shell (loadingScreen shell) [Loading.MkCards, Loading.MkRules] (registry <$> IORef.readIORef (loaded shell))
       case built of
         Left problem -> Browser.linkClose n >> notice shell [problem]
@@ -859,6 +863,7 @@ playOnFrom shell name at = opened shell name $ \reg scenario -> do
 -- shown meanwhile; else why either did not load.
 opened :: Shell -> Text.Text -> (Registry.Registry Identity.Identity -> Scenario.Type.Scenario -> IO Next) -> IO Next
 opened shell name continue = do
+  Browser.display (page shell) (message ["Loading the cards\x2026"])
   built <- untilBuilt shell (loadingScreen shell) [Loading.MkCards, Loading.MkRules, Loading.MkScenarios] $ do
     now <- IORef.readIORef (loaded shell)
     pure (if Loading.ready Loading.MkScenarios (loading now) then registry now else Nothing)

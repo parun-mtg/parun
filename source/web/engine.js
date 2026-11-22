@@ -154,6 +154,8 @@ const urls = {
   scenarios: "./scenarios.tar.gz",
 };
 const queue = ["decks", "cards-0", "cards-1", "cards-2", "cards-3", "rules"];
+// The page's loading screen counts the cards' chunks as they arrive.
+postMessage({ cardChunks: Object.keys(urls).filter((name) => name.startsWith("cards-")).length });
 const asked = new Set(queue);
 let arrivals = [];
 globalThis.parunTakeArrivals = () => {

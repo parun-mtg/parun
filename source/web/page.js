@@ -36,8 +36,8 @@ if ("serviceWorker" in navigator && isSecureContext) navigator.serviceWorker.reg
 // is compiled. A failure is said as it is, and stops the ring.
 const cardsFetched = new Set();
 let compiled = false;
-// The cards' chunks (engine.js, script/build-web.sh).
-const cardChunks = 4;
+// How many chunks the cards come in, as engine.js says before fetching any.
+let cardChunks = Infinity;
 function step(name, state, said = "") {
   const item = document.querySelector(`.splash [data-step="${name}"]`);
   if (!item) return;
@@ -57,7 +57,7 @@ function note(line) {
   } else if (!["decks", "rules", "scenarios", "started"].includes(name)) {
     const phase = document.getElementById("phase");
     if (phase) phase.textContent = line;
-    document.querySelector(".splash .ring")?.classList.add("stopped");
+    document.querySelector(".splash .loading-ring")?.classList.add("stopped");
   }
 }
 
@@ -560,6 +560,7 @@ document.addEventListener("keydown", (event) => {
 engine.onmessage = ({ data }) => {
   if ("patches" in data) apply(data.patches);
   else if ("phase" in data) note(data.phase);
+  else if ("cardChunks" in data) cardChunks = data.cardChunks;
   else if ("save" in data) localStorage.setItem(deckKey + data.save.slug, data.save.text);
   else if ("forget" in data) localStorage.removeItem(deckKey + data.forget);
   else if ("link" in data) linkStep(data.link);

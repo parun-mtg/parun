@@ -460,7 +460,7 @@ main.message {
 
 /* The logo in a ring whose arc turns while something loads (index.html's
    splash and Parun.Web.Loading's view); a failure stops it. */
-.ring {
+.loading-ring {
   position: relative;
   width: 168px;
   height: 168px;
@@ -469,7 +469,7 @@ main.message {
   flex: none;
 }
 
-.ring > svg {
+.loading-ring > svg {
   position: absolute;
   inset: 0;
   width: 100%;
@@ -477,31 +477,31 @@ main.message {
   animation: spin 1.6s linear infinite;
 }
 
-.ring .track,
-.ring .arc {
+.loading-ring .track,
+.loading-ring .arc {
   fill: none;
   stroke-width: 4;
 }
 
-.ring .track {
+.loading-ring .track {
   stroke: var(--line);
 }
 
-.ring .arc {
+.loading-ring .arc {
   stroke: var(--act);
   stroke-linecap: round;
   stroke-dasharray: 130 360;
 }
 
-.ring.stopped > svg {
+.loading-ring.stopped > svg {
   animation: none;
 }
 
-.ring.stopped .arc {
+.loading-ring.stopped .arc {
   display: none;
 }
 
-.ring .logo {
+.loading-ring .logo {
   border-radius: 24px;
 }
 
@@ -624,9 +624,10 @@ body.busy #app {
   pointer-events: none;
 }
 
-/* The page's settings gear turns while the engine works, once it takes a
-   moment. */
-body.busy #settings-button > svg {
+/* The settings gear, the page's or the top bar's, turns while the engine
+   works, once it takes a moment. */
+body.busy #settings-button > svg,
+body.busy .topbar .settings-button > svg {
   animation: spin 1.2s 0.15s linear infinite;
 }
 
@@ -3008,8 +3009,8 @@ kbd {
 }
 
 /* The top bar and the game's turn bar carry their own (page.js opens the
-   menu beneath it); the splash has none. */
-body:has(main.game, #app [data-settings], #app .splash) #settings-button {
+   menu beneath it); the loading screens have none. */
+body:has(main.game, #app [data-settings], #app .splash, #app main.loading) #settings-button {
   display: none;
 }
 
@@ -3044,6 +3045,12 @@ body:has(main.game, #app [data-settings], #app .splash) #settings-button {
   flex-direction: column;
   gap: 0.5em;
   font-size: 0.9rem;
+}
+
+#settings .legal {
+  margin: 0;
+  font-size: 12px;
+  color: var(--muted);
 }
 
 #settings .about {

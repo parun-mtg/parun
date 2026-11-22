@@ -41,12 +41,12 @@ spec s = Spec.describe s "Parun.Web.Loading" $ do
 
   Spec.describe s "steps" $ do
     Spec.it s "says how far the cards have come, then sets the table" $ do
-      Spec.assertEqWith s "none" (fmap snd (Loading.steps Loading.new)) [Loading.MkDone, Loading.MkDoing (Just 0), Loading.MkWaiting]
-      Spec.assertEqWith s "half" (fmap snd (Loading.steps (arrived ["cards-0", "cards-2"] Loading.new))) [Loading.MkDone, Loading.MkDoing (Just 50), Loading.MkWaiting]
-      Spec.assertEqWith s "all" (fmap snd (Loading.steps (arrived ["cards-0", "cards-1", "cards-2", "cards-3"] Loading.new))) [Loading.MkDone, Loading.MkDone, Loading.MkDoing Nothing]
+      Spec.assertEqWith s "none" (fmap snd (Loading.steps Loading.new)) [Loading.MkDoing (Just 0), Loading.MkWaiting]
+      Spec.assertEqWith s "half" (fmap snd (Loading.steps (arrived ["cards-0", "cards-2"] Loading.new))) [Loading.MkDoing (Just 50), Loading.MkWaiting]
+      Spec.assertEqWith s "all" (fmap snd (Loading.steps (arrived ["cards-0", "cards-1", "cards-2", "cards-3"] Loading.new))) [Loading.MkDone, Loading.MkDoing Nothing]
 
   Spec.describe s "view" $ do
     Spec.it s "shows a percentage only where one is known" $ do
       let page ns = Html.toText (Loading.view (arrived ns Loading.new))
-      Spec.assertEqWith s "cards" (Text.isInfixOf (Text.pack "<li class=\"now\"><span class=\"dot\" aria-hidden=\"true\"></span><span class=\"label\">Fetching the cards</span><span class=\"state\">75%</span></li>") (page ["cards-0", "cards-1", "cards-2"])) True
+      Spec.assertEqWith s "cards" (Text.isInfixOf (Text.pack "<li class=\"now\"><span class=\"dot\" aria-hidden=\"true\"></span><span class=\"label\">Fetching the engine and the cards</span><span class=\"state\">Cards 75%</span></li>") (page ["cards-0", "cards-1", "cards-2"])) True
       Spec.assertEqWith s "table" (Text.isInfixOf (Text.pack "<span class=\"label\">Setting the table</span><span class=\"state\"></span>") (page ["cards-0", "cards-1", "cards-2", "cards-3"])) True
