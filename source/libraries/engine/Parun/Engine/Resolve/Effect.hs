@@ -1092,6 +1092,10 @@ data RollSlot open done
     DoneDie done
   | -- | A reroll's dice, open beside the roll's others, kept from once no offer is left (CR 706.6).
     RerolledDice [RollSlot open done] ([done] -> Game [done])
+  | -- | The first place a reroll of several of the roll's dice took, answering it the first of what that reroll keeps.
+    SharedDice Natural (RollSlot open done)
+  | -- | Another place that reroll took: it holds no die and answers the next of what the reroll keeps.
+    TakenDie Natural
 
 -- | The dice a roll's places hold, in roll order: Right where still open.
 slotDice :: RollSlot open done -> [Either done open]
@@ -1099,11 +1103,15 @@ slotDice slot = case slot of
   OpenDie die -> [Right die]
   DoneDie die -> [Left die]
   RerolledDice dice _ -> concatMap slotDice dice
+  SharedDice _ inner -> slotDice inner
+  TakenDie _ -> []
 
 -- | The dice the roll's places hold, in `slotDice`'s order, each beside
 -- whether it is one of the roll's own places rather than a reroll's.
 ownDice :: [RollSlot open done] -> [(Bool, Either done open)]
-ownDice = concatMap (\slot -> case slot of RerolledDice inner _ -> fmap ((,) False) (concatMap slotDice inner); _ -> fmap ((,) True) (slotDice slot))
+ownDice = concatMap (\slot -> case slot of OpenDie _ -> own slot; DoneDie _ -> own slot; _ -> fmap ((,) False) (slotDice slot))
+  where
+    own = fmap ((,) True) . slotDice
 
 -- | The roll's places with the `index`th of their dice (`slotDice`'s order)
 -- replaced by `new`.
@@ -1118,6 +1126,8 @@ replacingDie index new = snd . places (toInteger index)
          in (at'', slot' : rest')
     place at slot = case slot of
       RerolledDice dice settle -> fmap (`RerolledDice` settle) (places at dice)
+      SharedDice key inner -> fmap (SharedDice key) (place at inner)
+      TakenDie _ -> (at, slot)
       _ -> (at - 1, if at == 0 then new else slot)
 
 -- | `finish` over what a place answers once its offers are done.
@@ -1126,6 +1136,32 @@ finishingSlot finish slot = case slot of
   OpenDie (byNumber, thrower, natural, declined, finish') -> OpenDie (byNumber, thrower, natural, declined, finish . finish')
   DoneDie die -> DoneDie (finish die)
   RerolledDice dice settle -> RerolledDice dice (fmap (fmap finish) . settle)
+  SharedDice key inner -> SharedDice key (finishingSlot finish inner)
+  TakenDie key -> TakenDie key
+
+-- | Every place's answer once no offer is left, in roll order: a reroll's
+-- dice are settled into what it keeps only then, inner rerolls first, and
+-- what a reroll of several places keeps is handed out over those places in
+-- order, `held` carrying what is still owed to a later one.
+settledSlots :: (open -> done) -> Map.Map Natural [done] -> [RollSlot open done] -> Game (Map.Map Natural [done], [done])
+settledSlots closed held slots = case slots of
+  [] -> pure (held, [])
+  slot : rest -> do
+    (held', here) <- settledSlot held slot
+    (held'', after) <- settledSlots closed held' rest
+    pure (held'', here <> after)
+  where
+    settledSlot owed slot = case slot of
+      OpenDie die -> pure (owed, [closed die])
+      DoneDie die -> pure (owed, [die])
+      RerolledDice dice settle -> do
+        (owed', inner) <- settledSlots closed owed dice
+        fmap ((,) owed') (settle inner)
+      SharedDice key inner -> do
+        (owed', kept) <- settledSlot owed inner
+        pure (Map.insert key (drop 1 kept) owed', take 1 kept)
+      -- Defensive: a place no reroll owes answers nothing.
+      TakenDie key -> pure (Map.adjust (drop 1) key owed, take 1 (Map.findWithDefault [] key owed))
 
 -- | `throwDice` once CR 614.1a's loop has settled the roll: how many dice to
 -- throw, which to keep, and how many of the lowest CR 706.6 then ignores
@@ -1196,12 +1232,6 @@ throwSettled runSubgame roll perDie = do
       opened byNumber thrower natural finish = OpenDie (byNumber, thrower, natural, [], finish . prefixed byNumber thrower natural)
       prefixed byNumber thrower natural (by, number, faces, pending) = (by, number, [(thrower, natural) | byNumber] <> faces, pending)
       closed (_, thrower, natural, _, finish) = finish (thrower, natural, [], [])
-      -- Every place's answer once no offer is left: a reroll's dice are
-      -- settled into what it keeps only then, inner rerolls first.
-      settledSlot slot = case slot of
-        OpenDie die -> pure [closed die]
-        DoneDie die -> pure [die]
-        RerolledDice dice settle -> traverse settledSlot dice >>= settle . concat
       -- The standing offers over one open die, each tagged with the die's
       -- place and natural result. A declined candidate is not asked again
       -- over the same die, nor is another free one to the same payer
@@ -1252,22 +1282,36 @@ throwSettled runSubgame roll perDie = do
       -- both choices being the roller's. The scenario
       -- cr-608-2d-the-activating-player-picks-the-die-their-reroll-reaches
       -- proves it.
-      offeringAll slots = do
+      --
+      -- An offer reaching several dice (`severalOver`) is one more candidate
+      -- in the same pick, so the roller may take it before deciding on another
+      -- die, and decide on that die having seen what it came up. The scenario
+      -- cr-706-2b-the-roller-turns-to-another-die-after-monitor-monitor-s-reroll
+      -- proves it.
+      --
+      -- `next` is the `key` the next reroll of several dice takes, and
+      -- `passed` the offers over several dice declined since a die last
+      -- changed.
+      offeringAll next passed slots = do
         let dice = concatMap slotDice slots
+            settle = fmap snd (settledSlots closed Map.empty slots)
         candidates <- fmap (unrepeated (ownDice slots) . concat) (traverse candidatesOver (zip [0 :: Natural ..] dice))
-        effect <- Dice.pickModifier controller (\reached -> case reached of [(index, natural, _)] -> Just (index, natural); _ -> Nothing) (effectsOf candidates)
-        picked <- case effect of
-          Just ((payer, stated, reached), _) -> Dice.pickModifier payer (\(index, natural, _) -> Just (index, natural)) (fmap (\die -> (payer, stated, die)) reached)
-          Nothing -> pure Nothing
-        case (picked, picked >>= \((_, _, (index, _, _)), _) -> Maybe.listToMaybe (List.genericDrop index dice)) of
-          (Just ((payer, stated, (index, natural, kind)), _), Just (Right (byNumber, thrower, _, declined, finish))) -> do
-            outcome <- takeOffer (shownDice natural dice) index thrower natural payer stated kind
-            let slot = case outcome of
-                  Nothing -> OpenDie (byNumber, thrower, natural, (payer, stated, kind) : declined, finish)
-                  Just rerolled -> finishingSlot finish rerolled
-            offeringAll (replacingDie index slot slots)
-          -- Nothing picked; a candidate naming no open die is unreachable.
-          _ -> fmap concat (traverse settledSlot slots)
+        several <- severalOver passed dice
+        let dieOf = either (const Nothing) (\reached -> case reached of [(index, natural, _)] -> Just (index, natural); _ -> Nothing)
+        effect <- Dice.pickModifier controller dieOf (fmap (\(payer, stated, reached) -> (payer, stated, Right reached)) (effectsOf candidates) <> several)
+        case effect of
+          Just ((payer, stated, Left (offer, reached)), _) -> rerollingDice next passed slots dice payer stated offer reached
+          Just ((payer, stated, Right reached), _) -> do
+            picked <- Dice.pickModifier payer (\(index, natural, _) -> Just (index, natural)) (fmap (\die -> (payer, stated, die)) reached)
+            case (picked, picked >>= \((_, _, (index, _, _)), _) -> Maybe.listToMaybe (List.genericDrop index dice)) of
+              (Just ((_, _, (index, natural, kind)), _), Just (Right (byNumber, thrower, _, declined, finish))) -> do
+                outcome <- takeOffer (shownDice natural dice) index thrower natural payer stated kind
+                case outcome of
+                  Nothing -> offeringAll next passed (replacingDie index (OpenDie (byNumber, thrower, natural, (payer, stated, kind) : declined, finish)) slots)
+                  Just rerolled -> offeringAll next [] (replacingDie index (finishingSlot finish rerolled) slots)
+              -- A candidate naming no open die is unreachable.
+              _ -> settle
+          Nothing -> settle
       -- A candidate over a die is dropped where an earlier die is its twin and
       -- carries the same candidate: rerolling either leaves the same board, so
       -- the pick would be among options nothing tells apart. Twins are two of
@@ -1562,62 +1606,50 @@ throwSettled runSubgame roll perDie = do
           _ -> pure answer
       duringRoll natural = Common.withThrowing (ThrowResult.DieCameUp natural)
       windowCandidates = fmap (\(pid, oid, ability) -> (pid, Just oid, Right (oid, ability))) . windowAbilities
-      -- CR 706.2b's first step over the roll as a whole, once each of its dice
-      -- has had the offers that reach that die alone: a modifier reaching any
-      -- number of the dice its payer rolled at the same time, for one payment
-      -- (Monitor Monitor, Parun.Types.RerollReach). Its payer picks the dice
-      -- (Prompt.RerollDice), and the picked dice are rerolled as one roll
-      -- (`rethrow`), each with its own offers, under one event
-      -- (`recordRerolls`), the new dice taking the picked places in order,
-      -- each keeping the rerolls the die it replaces carried.
-      -- The offers are re-read after each one taken, Night Shift's budget
-      -- (Dice.withinLimit) keeping a spent one out, so a second Monitor
-      -- Monitor sees the dice the first left.
-      --
-      -- Only at the roll's top: a die `rethrow` throws is one of this roll's
-      -- dice, so it is offered here, with the others, rather than alone.
-      --
-      -- `next` is the `key` the next reroll's event takes.
-      --
-      -- Not implemented: offering these in the same pick as the offers over
-      -- each die, before any die is done with those, and so showing the
-      -- roll's other dice beside a die one rerolls (#9445).
-      rerollingDice next dice = do
+      -- CR 706.2b's first step over several dice at once: a modifier reaching
+      -- any number of the dice its payer rolled at the same time, for one
+      -- payment (Monitor Monitor, Parun.Types.RerollReach), standing beside
+      -- the offers over each die (`offeringAll`). "Dice you rolled": the open
+      -- dice whose natural result its payer threw, a reroll's included. Night
+      -- Shift's budget (Dice.withinLimit) keeps a spent one out, so a second
+      -- Monitor Monitor sees the dice the first left. One declined is not
+      -- asked again until a die changes (`passed`).
+      severalOver passed dice = do
         modifiers <- Dice.modifiersFor controller
         gs <- State.get
-        rerollingDiceThrough next (fmap (offerOf gs) (Dice.rerollOffers RerollReach.AnyOfTheDice sides Nothing modifiers)) dice
-      rerollingDiceThrough next offers dice = do
-        gs <- State.get
-        -- "Dice you rolled": the dice whose natural result its payer threw.
-        let reachable payer = [i | (i, (thrower, _, _, _)) <- zip [0 :: Natural ..] dice, thrower == payer]
-            standing (payer, stated, offer) = not (null (reachable payer)) && Dice.withinLimit gs payer stated offer && payable gs payer stated (ModifiedRoll.cost offer)
-        picked <- Dice.pickModifier controller (const Nothing) (filter standing offers)
-        case picked of
-          Nothing -> pure dice
-          Just ((payer, stated, offer), rest) -> case NonEmpty.nonEmpty (reachable payer) of
-            -- Unreachable: `standing` kept only an offer with a die to reach.
-            Nothing -> rerollingDiceThrough next rest dice
-            Just indices -> do
-              let mCost = ModifiedRoll.cost offer
-                  shown = fmap (\i -> maybe 1 (\(_, natural, _, _) -> natural) (Maybe.listToMaybe (List.genericDrop i dice))) indices
-              taken <- askPaying Set.empty payer payer stated mCost $ do
-                now <- State.get
-                chosen <- Game.choose (Prompt.RerollDice (Decide.deciderFor payer now) payer shown mCost)
-                -- FILTERED, NOT TRUSTED: an index past the end is dropped.
-                let kept = Set.filter (< List.genericLength (NonEmpty.toList indices)) chosen
-                pure (if Set.null kept then Nothing else Just kept)
-              case taken of
-                Nothing -> rerollingDiceThrough next rest dice
-                Just chosen -> do
-                  State.modify' (Dice.spendLimit stated offer)
-                  let targets = Set.map (List.genericIndex (NonEmpty.toList indices)) chosen
-                  again <- rethrow payer (Just next) (Natural.length targets) >>= offeringAll
-                  let placed fresh held = case held of
-                        [] -> []
-                        (i, die@(_, _, rolled, carried)) : others
-                          | Set.member i targets, (thrower, natural, faces, pending) : later <- fresh -> (thrower, natural, rolled <> faces, carried <> pending) : placed later others
-                          | otherwise -> die : placed fresh others
-                  rerollingDice (next + 1) (placed again (zip [0 :: Natural ..] dice))
+        let reachable payer = [(index, natural) | (index, Right (_, thrower, natural, _, _)) <- zip [0 :: Natural ..] dice, thrower == payer]
+            standing (payer, stated, offer) = notElem (payer, stated, offer) passed && not (null (reachable payer)) && Dice.withinLimit gs payer stated offer && payable gs payer stated (ModifiedRoll.cost offer)
+        pure [(payer, stated, Left (offer, reachable payer)) | candidate@(payer, stated, offer) <- fmap (offerOf gs) (Dice.rerollOffers RerollReach.AnyOfTheDice sides Nothing modifiers), standing candidate]
+      -- Its payer picks the dice (Prompt.RerollDice), and the picked dice are
+      -- rerolled as one roll (`rethrow`) under one event (`recordRerolls`),
+      -- the new dice taking the picked places in order, each open to the
+      -- offers beside the roll's others and keeping the rerolls the die it
+      -- replaces carried. A reroll whose keep waits on its dice (RerolledDice)
+      -- sits at the first picked place (SharedDice), the others answering
+      -- from it (TakenDie).
+      rerollingDice next passed slots dice payer stated offer reached = case NonEmpty.nonEmpty reached of
+        -- Unreachable: `severalOver` offers only a modifier with a die to reach.
+        Nothing -> offeringAll next ((payer, stated, offer) : passed) slots
+        Just shown -> do
+          let mCost = ModifiedRoll.cost offer
+          taken <- askPaying Set.empty payer payer stated mCost $ do
+            now <- State.get
+            chosen <- Game.choose (Prompt.RerollDice (Decide.deciderFor payer now) payer (fmap snd shown) mCost)
+            -- FILTERED, NOT TRUSTED: an index past the end is dropped.
+            let kept = Set.filter (< List.genericLength reached) chosen
+            pure (if Set.null kept then Nothing else Just kept)
+          case taken of
+            Nothing -> offeringAll next ((payer, stated, offer) : passed) slots
+            Just chosen -> do
+              State.modify' (Dice.spendLimit stated offer)
+              let targets = fmap (fst . List.genericIndex reached) (Set.toAscList chosen)
+                  finishes = [finish | index <- targets, Right (_, _, _, _, finish) <- take 1 (List.genericDrop index dice)]
+              thrown <- rethrow payer (Just next) (List.genericLength targets)
+              let placed = case (thrown, targets) of
+                    ([RerolledDice inner keep], first : others@(_ : _)) -> (first, SharedDice next (RerolledDice inner (fmap (zipWith ($) finishes) . keep))) : fmap (\index -> (index, TakenDie next)) others
+                    _ -> zip targets (zipWith finishingSlot finishes thrown)
+              -- The last place first, so each place's index still holds.
+              offeringAll (next + 1) [] (foldr (uncurry replacingDie) slots placed)
       -- The roll's units again, `flat` cut back to their sizes.
       regroup units flat = case units of
         [] -> []
@@ -1646,8 +1678,7 @@ throwSettled runSubgame roll perDie = do
       -- dice tied for CR 706.6's lowest but thrown by different players are
       -- asked about (Dice.ignoreLowest).
       --
-      -- `atTop` is whether this is the roll itself, which takes the offers over
-      -- several dice (rerollingDice), or a die `rethrow` rerolls.
+      -- `atTop` is whether this is the roll itself or a die `rethrow` rerolls.
       --
       -- Answers, beside each die kept, the face it was thrown with before any
       -- reroll of it and the board once every face was up, for a reroll's
@@ -1672,15 +1703,14 @@ throwSettled runSubgame roll perDie = do
       settling atTop settled modifierOf thrownFaces landed done = do
         let thrown = regroup thrownFaces done
             faces = fmap (fmap (\face -> if atTop then Nothing else Just (face, landed))) thrownFaces
-        rerolled <- if atTop then fmap (regroup thrown) (rerollingDice (0 :: Natural) (concat thrown)) else pure thrown
-        -- After the rerolls above, which is CR 706.2b's order: rerolls are
+        -- After the rerolls (`offeringAll`), which is CR 706.2b's order: rerolls are
         -- considered first, and what they leave is the natural result the
         -- instruction's own modifier adds to.
         --
         -- Left unclamped: CR 706.2's result is the number after EVERY
         -- modifier, so a shift from another source applies to this sum as it
         -- stands, negative or not, and only the final figure is clamped below.
-        units <- traverse (traverse (\((thrower, natural, rolls, pending), face) -> fmap (\modifier -> ((toInteger natural + modifier, thrower, rolls, pending), face)) modifierOf)) (zipWith zip rerolled faces)
+        units <- traverse (traverse (\((thrower, natural, rolls, pending), face) -> fmap (\modifier -> ((toInteger natural + modifier, thrower, rolls, pending), face)) modifierOf)) (zipWith zip thrown faces)
         picked <- Monad.forM units $ \dice -> case NonEmpty.nonEmpty dice of
           -- Unreachable: a unit starts at one die and only a scaling that
           -- cannot reach zero resizes it. Defensive: a die of 1.
@@ -1714,7 +1744,7 @@ throwSettled runSubgame roll perDie = do
           [place | (place, stamp) <- zip [1 ..] made, any (\(carried, _, _, _) -> carried == stamp) pending]
         )
   (thrownFaces, landed, dice) <- throwing roll
-  kept <- offeringAll dice >>= settling True roll perDie thrownFaces landed
+  kept <- offeringAll (0 :: Natural) [] dice >>= settling True roll perDie thrownFaces landed
   recordRerolls (foldMap (\((_, _, _, pending), _) -> pending) kept)
   -- CR 706.6 before the second step: an ignored roll is one "no effects apply
   -- to", so it is not offered for an adjustment.
