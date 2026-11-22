@@ -79,10 +79,6 @@
                             "type": "And",
                             "value": [
                               {
-                                "type": "HasCardType",
-                                "value": "Land"
-                              },
-                              {
                                 "type": "HasSupertype",
                                 "value": "Basic"
                               },
