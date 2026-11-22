@@ -265,10 +265,28 @@ spec s registry = Spec.describe s "Search" $ do
   Spec.it s "CR 601.2c the search bot casting Shock with an opponent at 2 life aims it at them, flat or by an information-set tree" $ do
     gs <- shockAtTwo s registry
     let budget method = SearchBudget.MkSearchBudget {SearchBudget.samples = 2, SearchBudget.turns = 1000, SearchBudget.prompts = 40, SearchBudget.candidates = 0, SearchBudget.playout = Playout.Random, SearchBudget.mistakes = 0, SearchBudget.method = method}
-    flatly <- traverse (aimedIn s (budget SearchMethod.Flat) gs) [1 .. 4]
+    flatly <- traverse (fmap (fmap recipientsOf) . linedIn s (budget SearchMethod.Flat) gs) [1 .. 4]
     Spec.assertEqWith s "Shock at Bob in every seed, flat" flatly (Just (Set.singleton (Recipient.ToPlayer S.bob)) <$ flatly)
-    treed <- traverse (aimedIn s (budget SearchMethod.InformationSet) gs) [1 .. 4]
+    treed <- traverse (fmap (fmap recipientsOf) . linedIn s (budget SearchMethod.InformationSet) gs) [1 .. 4]
     Spec.assertEqWith s "Shock at Bob in every seed, by the tree" treed (Just (Set.singleton (Recipient.ToPlayer S.bob)) <$ treed)
+
+  Spec.it s "CR 601.2b the search bot casting Abrade chooses its damage mode and aims it at the Grizzly Bears rather than destroy the Ornithopter, flat or by an information-set tree" $ do
+    (gs, bears) <- abradeAtBears s registry
+    let budget method = SearchBudget.MkSearchBudget {SearchBudget.samples = 4, SearchBudget.turns = 1000, SearchBudget.prompts = 40, SearchBudget.candidates = 0, SearchBudget.playout = Playout.Random, SearchBudget.mistakes = 0, SearchBudget.method = method}
+        expected = Just ([Seq.singleton (ModeIndex.MkModeIndex 0)], [] :: [Natural], Set.singleton (Recipient.ToCreature bears))
+    flatly <- traverse (fmap (fmap answersOf) . linedIn s (budget SearchMethod.Flat) gs) [1 .. 4]
+    Spec.assertEqWith s "Abrade's damage at the Bears in every seed, flat" flatly (expected <$ flatly)
+    treed <- traverse (fmap (fmap answersOf) . linedIn s (budget SearchMethod.InformationSet) gs) [1 .. 4]
+    Spec.assertEqWith s "Abrade's damage at the Bears in every seed, by the tree" treed (expected <$ treed)
+
+  Spec.it s "CR 601.2c the search bot casting Forked Bolt with an opponent at 2 life announces one target and aims it at them, flat or by an information-set tree" $ do
+    gs <- forkedBoltAtTwo s registry
+    let budget method = SearchBudget.MkSearchBudget {SearchBudget.samples = 2, SearchBudget.turns = 1000, SearchBudget.prompts = 40, SearchBudget.candidates = 0, SearchBudget.playout = Playout.Random, SearchBudget.mistakes = 0, SearchBudget.method = method}
+        expected = Just ([], [1 :: Natural], Set.singleton (Recipient.ToPlayer S.bob))
+    flatly <- traverse (fmap (fmap answersOf) . linedIn s (budget SearchMethod.Flat) gs) [1 .. 4]
+    Spec.assertEqWith s "one target, Bob, in every seed, flat" flatly (expected <$ flatly)
+    treed <- traverse (fmap (fmap answersOf) . linedIn s (budget SearchMethod.InformationSet) gs) [1 .. 4]
+    Spec.assertEqWith s "one target, Bob, in every seed, by the tree" treed (expected <$ treed)
 
   Spec.it s "the search bot making a mistake at every decision takes the option scored next below the best: no attack on an opponent at 1 life who has nothing untapped" $ do
     (_, asked) <- openAttack s registry
@@ -592,23 +610,56 @@ shockAtTwo s registry = do
       bob = (S.battlefield S.bob [S.settled "his" "Grizzly Bears"]) {Seat.life = 2, Seat.library = Seq.fromList (cards (replicate 5 "Forest"))}
   Staged.state <$> S.buildBoardOrFail s registry (S.board (alice NonEmpty.:| [bob]) S.alice S.precombatMain)
 
--- The targets of Alice's first choice of targets in the game played on from
--- `gs`'s priority decision (Engine.resumePriority), Alice the search bot at
--- `budget` keeping the targets it chose, Bob the random bot, from `seed`:
--- each slot's, or Nothing if none is asked within 200 prompts.
-aimedIn :: forall m n. (Monad m) => Spec.Spec m n -> SearchBudget.SearchBudget -> GameState.GameState -> Word.Word32 -> m (Maybe (Set.Set Recipient.Recipient))
-aimedIn s budget gs seed = either (Spec.assertFailure s . Text.unpack) pure =<< State.evalStateT (Except.runExceptT (State.evalStateT (go (200 :: Int) (State.runStateT Engine.resumePriority gs)) (S.seeded seed))) Nothing
+-- Alice's board for Abrade: two Mountains and Abrade in hand, Bob's
+-- Grizzly Bears and Ornithopter, and the Bears' id.
+abradeAtBears :: (Monad m) => Spec.Spec m n -> Registry.Registry m -> m (GameState.GameState, ObjectId.ObjectId)
+abradeAtBears s registry = do
+  let cards :: [String] -> [Placement.Placement]
+      cards = fmap S.cardSetup
+      alice = (S.battlefield S.alice (cards ["Mountain", "Mountain"])) {Seat.hand = Seq.fromList (cards ["Abrade"]), Seat.library = Seq.fromList (cards (replicate 5 "Mountain"))}
+      bob = (S.battlefield S.bob [S.settled "bears" "Grizzly Bears", S.settled "thopter" "Ornithopter"]) {Seat.library = Seq.fromList (cards (replicate 5 "Forest"))}
+  built <- S.buildBoardOrFail s registry (S.board (alice NonEmpty.:| [bob]) S.alice S.precombatMain)
+  bears <- maybe (Spec.assertFailure s "no Grizzly Bears") pure (Map.lookup (Label.MkLabel (Text.pack "bears")) (Staged.objects built))
+  pure (Staged.state built, bears)
+
+-- Alice's board for Forked Bolt: a Mountain and Forked Bolt in hand, Bob at
+-- 2 life with Grizzly Bears.
+forkedBoltAtTwo :: (Monad m) => Spec.Spec m n -> Registry.Registry m -> m GameState.GameState
+forkedBoltAtTwo s registry = do
+  let cards :: [String] -> [Placement.Placement]
+      cards = fmap S.cardSetup
+      alice = (S.battlefield S.alice [S.cardSetup "Mountain"]) {Seat.hand = Seq.fromList (cards ["Forked Bolt"]), Seat.library = Seq.fromList (cards (replicate 5 "Mountain"))}
+      bob = (S.battlefield S.bob [S.settled "his" "Grizzly Bears"]) {Seat.life = 2, Seat.library = Seq.fromList (cards (replicate 5 "Forest"))}
+  Staged.state <$> S.buildBoardOrFail s registry (S.board (alice NonEmpty.:| [bob]) S.alice S.precombatMain)
+
+-- Every recipient a line's targets name.
+recipientsOf :: [Search.Step] -> Set.Set Recipient.Recipient
+recipientsOf = foldMap (\step -> case step of Search.Targeted targets -> Set.unions (Map.elems targets); _ -> Set.empty)
+
+-- A line's modes chosen, numbers of targets announced, and recipients.
+answersOf :: [Search.Step] -> ([Seq.Seq ModeIndex.ModeIndex], [Natural], Set.Set Recipient.Recipient)
+answersOf line = ([modes | Search.Moded modes <- line], [n | Search.Announced counts <- line, n <- Map.elems counts], recipientsOf line)
+
+-- Alice's answers to her modes, announced numbers of targets and first
+-- choice of targets in the game played on from `gs`'s priority decision
+-- (Engine.resumePriority), through that choice of targets, Alice the search
+-- bot at `budget` keeping the line it chose, Bob the random bot, from `seed`;
+-- Nothing if no choice of targets of hers is asked within 200 prompts.
+linedIn :: forall m n. (Monad m) => Spec.Spec m n -> SearchBudget.SearchBudget -> GameState.GameState -> Word.Word32 -> m (Maybe [Search.Step])
+linedIn s budget gs seed = either (Spec.assertFailure s . Text.unpack) pure =<< State.evalStateT (Except.runExceptT (State.evalStateT (go (200 :: Int) [] (State.runStateT Engine.resumePriority gs)) (S.seeded seed))) Nothing
   where
-    lifted :: Registry.Registry (State.StateT (Maybe Search.Targets) m)
+    lifted :: Registry.Registry (State.StateT (Maybe Search.Line) m)
     lifted = Registry.hoist Trans.lift (S.fixtureRegistry [])
     searcher = Search.search lifted budget Weights.neutral Search.known (pure []) (pure Search.blank) (Search.MkAim (Game.underneath State.get) (Game.underneath . State.put))
     seats = Game.consulting lifted (Map.fromList [(S.alice, searcher), (S.bob, Game.bot lifted)])
-    go :: Int -> Program.Program (Asked.Asked GameState.GameState) a -> Game.Play (State.StateT (Maybe Search.Targets) m) (Maybe (Set.Set Recipient.Recipient))
-    go left program = case program of
+    go :: Int -> [Search.Step] -> Program.Program (Asked.Asked GameState.GameState) a -> Game.Play (State.StateT (Maybe Search.Line) m) (Maybe [Search.Step])
+    go left taken program = case program of
       Program.Then asked k
         | left > 0 -> case Asked.prompt asked of
-            Prompt.ChooseTargets _ chooser _ _ | chooser == S.alice -> fmap (fmap Set.unions . Just . Map.elems) (Answerer.unwrap seats asked)
-            _ -> Answerer.unwrap seats asked >>= go (left - 1) . k
+            Prompt.ChooseTargets _ chooser _ _ | chooser == S.alice -> fmap (\targets -> Just (reverse (Search.Targeted targets : taken))) (Answerer.unwrap seats asked)
+            Prompt.ChooseModes _ chooser _ _ _ | chooser == S.alice -> Answerer.unwrap seats asked >>= \modes -> go (left - 1) (Search.Moded modes : taken) (k modes)
+            Prompt.AnnounceTargets _ chooser _ _ | chooser == S.alice -> Answerer.unwrap seats asked >>= \counts -> go (left - 1) (Search.Announced counts : taken) (k counts)
+            _ -> Answerer.unwrap seats asked >>= go (left - 1) taken . k
       _ -> pure Nothing
 
 -- The search bot's answer at `budget` and `weights`, from `seed`.

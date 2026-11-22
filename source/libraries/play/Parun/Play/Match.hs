@@ -167,7 +167,7 @@ match options searchers prior registry format decks = do
 -- search bot in each seat of `searchers` at its budget and weights
 -- (Search.search, dealing what it cannot see by `prior` and weighing it by
 -- every play at priority watched (Search.watching), remembering what it saw
--- (Search.remembering), keeping the targets it chose (Search.keptBy),
+-- (Search.remembering), keeping the line it chose (Search.keptBy),
 -- drawing apart as parun play's does:
 -- Game.remembered) and the random bot in every other; with the entry each
 -- answer replays as (Record.recording). With every seat searching at
@@ -193,8 +193,8 @@ sink entry = Game.underneath (State.modify' (\(timeline, plays, memories, aims) 
 
 -- | What a match's game keeps beside its play: the entries so far, the
 -- plays kept (Search.watching), the memories kept (Search.remembering) and
--- each search bot's targets kept (Search.keptBy).
-type Played = (Seq.Seq Timed.Timed, [Search.Watched], Map.Map PlayerId.PlayerId Search.Memory, Map.Map PlayerId.PlayerId Search.Targets)
+-- each search bot's line kept (Search.keptBy).
+type Played = (Seq.Seq Timed.Timed, [Search.Watched], Map.Map PlayerId.PlayerId Search.Memory, Map.Map PlayerId.PlayerId Search.Line)
 
 -- | Game `index`'s key, derived from the match's (Generator.derive), the
 -- index wrapping at 2^64.
