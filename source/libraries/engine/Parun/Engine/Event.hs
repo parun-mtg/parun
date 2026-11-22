@@ -8288,7 +8288,7 @@ settleCoins reflip flipper settled called stated = do
   -- 706.6's "the player chooses" is asked of them (Dice.ignoreLowest), each
   -- shown with its flip's event.
   let flipped won = GameEvent.CoinFlipped CoinFlipped.MkCoinFlipped {CoinFlipped.flipper = flipper, CoinFlipped.won = won}
-  survivors <- Dice.ignoreLowest flipper (toInteger . resultOfFace . fst) snd (\(face, won) -> (resultOfFace face, flipper, [flipped won])) (Throw.ignored settled) outcomes
+  survivors <- Dice.ignoreLowest flipper (toInteger . resultOfFace . fst) snd (\(face, won) -> (resultOfFace face, flipper, [flipped won], [])) (Throw.ignored settled) outcomes
   pure [(face, wins, flipped won) | (face, won) <- survivors]
 
 -- The face kept of one unit's coins (Krark's Thumb's "ignore one").

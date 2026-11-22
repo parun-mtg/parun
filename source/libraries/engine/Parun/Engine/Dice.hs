@@ -182,18 +182,18 @@ spendLimit stated modifier gs = case stated of
 -- (Pippa, Duchess of Dice's ruling gives a reroll to its thrower's "whenever you
 -- roll"), or the outcome of the call a coin standing for a die was flipped
 -- against, or inside a reroll the face it was thrown with before a reroll of
--- it, which the reroll's own event reads. Where the tied rolls differ in it,
--- the roller chooses which is ignored, through Prompt.ChooseDieResult, offered
--- one roll per distinct key, earliest first, each as `shownOf` shows it: the
--- tied number, its thrower and the events it carries, which is what tells the
--- options apart. FILTERED, NOT TRUSTED: an index past the end ignores the
--- first.
+-- it, which the reroll's own event reads, or the rerolls it carries and the
+-- board each came up on. Where the tied rolls differ in it, the roller chooses
+-- which is ignored, through Prompt.ChooseDieResult, offered one roll per
+-- distinct key, earliest first, each as `shownOf` shows it, which the caller
+-- keeps apart wherever the keys differ. FILTERED, NOT TRUSTED: an index past
+-- the end ignores the first.
 --
 -- Ignoring more rolls than were made leaves none rather than failing; the
 -- instruction then binds nothing and reads an unbound slot. Unreachable from card
 -- data -- every ignore comes from a row that added the die it ignores -- and so
 -- defensive.
-ignoreLowest :: (Ord k) => PlayerId -> (a -> Integer) -> (a -> k) -> (a -> (Natural.Natural, PlayerId, [GameEvent])) -> Natural.Natural -> [a] -> Game [a]
+ignoreLowest :: (Ord k) => PlayerId -> (a -> Integer) -> (a -> k) -> (a -> (Natural.Natural, PlayerId, [GameEvent], [Natural.Natural])) -> Natural.Natural -> [a] -> Game [a]
 ignoreLowest roller valueOf keyOf shownOf n rolls = case NonEmpty.nonEmpty rolls of
   Just held | n > 0 -> do
     let low = minimum (fmap valueOf held)
@@ -208,7 +208,7 @@ ignoreLowest roller valueOf keyOf shownOf n rolls = case NonEmpty.nonEmpty rolls
     dropped <- case firstOfEach Set.empty tied of
       first : rest@(_ : _) -> do
         gs <- State.get
-        answer <- Game.choose (Prompt.ChooseDieResult (Decide.deciderFor roller gs) roller Nothing (fmap (\i -> maybe (Integer.toNaturalSaturating low, roller, []) shownOf (Maybe.listToMaybe (drop i rolls))) (first NonEmpty.:| rest)))
+        answer <- Game.choose (Prompt.ChooseDieResult (Decide.deciderFor roller gs) roller Nothing (fmap (\i -> maybe (Integer.toNaturalSaturating low, roller, [], []) shownOf (Maybe.listToMaybe (drop i rolls))) (first NonEmpty.:| rest)))
         pure (Maybe.fromMaybe first (Maybe.listToMaybe (List.genericDrop answer (first : rest))))
       first : _ -> pure first
       -- Unreachable: the minimum of a non-empty list is one of its members.

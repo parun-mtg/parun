@@ -400,8 +400,9 @@ offerOf namer gs prompt = case prompt of
   Prompt.RollDie sides -> fields [("sides", natural sides)]
   -- CR 706.4: each result as its number and, where any was thrown by another
   -- player or carries events, each one's thrower and events under "carries",
-  -- in the same order.
-  Prompt.ChooseDieResult _ roller source results -> indexing namer prompt source [("carries", R.Array [fields [("thrower", Reply.encode Reply.player namer thrower), ("events", R.Array (fmap (delayedEvent namer (Driver.deciderOf prompt)) events))] | (_, thrower, events) <- NonEmpty.toList results]) | any (\(_, thrower, events) -> not (null events) || thrower /= roller) results] (fmap (\(n, _, _) -> natural n) (NonEmpty.toList results))
+  -- in the same order, with the places of the rerolls it carries under
+  -- "rerolls" where it carries any.
+  Prompt.ChooseDieResult _ roller source results -> indexing namer prompt source [("carries", R.Array [fields ([("thrower", Reply.encode Reply.player namer thrower), ("events", R.Array (fmap (delayedEvent namer (Driver.deciderOf prompt)) events))] <> [("rerolls", R.Array (fmap natural rerolls)) | not (null rerolls)]) | (_, thrower, events, rerolls) <- NonEmpty.toList results]) | any (\(_, thrower, events, _) -> not (null events) || thrower /= roller) results] (fmap (\(n, _, _, _) -> natural n) (NonEmpty.toList results))
   -- CR 701.48a: each branch, then neither.
   Prompt.ChooseLearn _ _ source modes -> choosing namer prompt "options" (Just source) [("entries", R.Array (fmap (R.Text . Text.pack . show) (NonEmpty.toList modes)))] (orNone modes)
   -- CR 608.2d / 701.55a: each branch by its Oracle text, then neither where it

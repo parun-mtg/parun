@@ -509,9 +509,11 @@ spec s registry = Spec.describe s "WebQuestion" $ do
     let rethrow = shown (Prompt.Rethrow alice S.alice (ThrowResult.DieCameUp 2 NonEmpty.:| [ThrowResult.DieCameUp 3]) 1 Nothing)
     Spec.assertBool s (Text.pack "Reroll die 2 of 2, showing 3? The roll: 2, 3." `Text.isInfixOf` Html.content rethrow) "a reroll names its die and the roll"
     Spec.assertBool s (button "Reroll" rethrow && button "Keep it" rethrow) "a reroll is a yes or no"
-    let results = shown (Prompt.ChooseDieResult alice S.alice Nothing ((5, S.bob, []) NonEmpty.:| [(5, S.alice, [Resolve.Common.settledResult RollReading.NaturalResult S.alice 3])]))
+    let results = shown (Prompt.ChooseDieResult alice S.alice Nothing ((5, S.bob, [], []) NonEmpty.:| [(5, S.alice, [Resolve.Common.settledResult RollReading.NaturalResult S.alice 3], [])]))
     Spec.assertBool s (button "5 (thrown by Player 2)" results) "a result another player threw"
     Spec.assertBool s (button "5 (you rolled 3)" results) "a result carrying a natural result"
+    let rerolled = shown (Prompt.ChooseDieResult alice S.alice Nothing ((2, S.alice, [Resolve.Common.settledResult RollReading.NaturalResult S.alice 2], [1]) NonEmpty.:| [(2, S.alice, [Resolve.Common.settledResult RollReading.NaturalResult S.alice 2], [2])]))
+    Spec.assertBool s (button "2 (you rolled 2; from the roll's reroll 1)" rerolled && button "2 (you rolled 2; from the roll's reroll 2)" rerolled) "CR 706.6 results alike but for the reroll each carries"
 
   Spec.it s "options the seat can't tell apart share one button, which picks the next" $ do
     bears <- S.printingOf s registry "Grizzly Bears"
