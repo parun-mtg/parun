@@ -39,7 +39,10 @@ import qualified Parun.Types.WithCounters as WithCounters
 -- tells them apart. The VERB rides in the same key, so a Play permission's one
 -- budget is spent by a land play or a cast alike (Serra Paragon).
 data CastFromZone = MkCastFromZone
-  { from :: InZone.InZone,
+  { -- | CR 400.1: the zone it opens, and whose copy. Nothing where it opens
+    -- only the cards outside the game (Wish), `outsideTheGame` then being
+    -- True: Parun.Codec.CastFromZone refuses a permission opening neither.
+    from :: Maybe InZone.InZone,
     matching :: Filter.Filter Keyword.Keyword,
     limit :: PermissionLimit.PermissionLimit,
     verb :: PermissionVerb.PermissionVerb,
@@ -73,9 +76,10 @@ data CastFromZone = MkCastFromZone
     -- becomes (The Tomb of Aclazotz's Vampire). Empty where it states none.
     creatureTypes :: Set.Set Subtype.Subtype,
     -- | CR 400.11: whether it also opens the cards `from`'s player owns outside
-    -- the game (The Holodeck). A Bool beside `from`, Parun.Types.Search's
-    -- `outsideTheGame` being the precedent: outside the game is no zone, and
-    -- one budget covers both.
+    -- the game (The Holodeck), or, with no `from`, the holder's own (CR
+    -- 400.11a). A Bool beside `from`, Parun.Types.Search's `outsideTheGame`
+    -- being the precedent: outside the game is no zone, and one budget covers
+    -- both.
     outsideTheGame :: Bool
   }
   deriving (Eq, Ord, Show)
