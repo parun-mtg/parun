@@ -6,6 +6,7 @@ import qualified Numeric.Natural as Natural
 import qualified Parun.Types.Key as Key
 import qualified Parun.Types.Limits as Limits
 import qualified Parun.Types.SearchBudget as SearchBudget
+import qualified Parun.Types.Weights as Weights
 
 -- | What `parun play` was asked for, seats numbered from one.
 data PlayOptions = MkPlayOptions
@@ -27,13 +28,16 @@ data PlayOptions = MkPlayOptions
     -- | How large the game may grow.
     limits :: Limits.Limits,
     -- | How hard the search bot looks.
-    budget :: SearchBudget.SearchBudget
+    budget :: SearchBudget.SearchBudget,
+    -- | What the search bot values in a position it cuts a playout off at.
+    weights :: Weights.Weights
   }
   deriving (Eq, Show)
 
 -- | A game keyed from the operating system's entropy, no seat the bot's and
 -- none over the line protocol, the seat to play first asked for, under the
--- standard limits, the search bot looking at 2 samples cut off after 40
--- prompts, a budget a browser turn stays responsive at.
+-- standard limits, the search bot looking at 2 samples cut off as the next
+-- turn begins or after 40 prompts, a budget a browser turn stays responsive
+-- at, weighing the neutral weights.
 none :: PlayOptions
-none = MkPlayOptions {seed = Nothing, first = Nothing, bots = Set.empty, json = False, save = Nothing, arrangesGraveyard = Set.empty, format = Nothing, limits = Limits.standard, budget = SearchBudget.MkSearchBudget {SearchBudget.samples = 2, SearchBudget.prompts = 40}}
+none = MkPlayOptions {seed = Nothing, first = Nothing, bots = Set.empty, json = False, save = Nothing, arrangesGraveyard = Set.empty, format = Nothing, limits = Limits.standard, budget = SearchBudget.MkSearchBudget {SearchBudget.samples = 2, SearchBudget.turns = 0, SearchBudget.prompts = 40}, weights = Weights.neutral}

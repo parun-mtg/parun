@@ -988,6 +988,7 @@ library codec
     Parun.Codec.FaceSpec
     Parun.Codec.Facing
     Parun.Codec.FacingSpec
+    Parun.Codec.Features
     Parun.Codec.Fight
     Parun.Codec.FightSpec
     Parun.Codec.Filter
@@ -2031,6 +2032,8 @@ library codec
     Parun.Codec.WardSpec
     Parun.Codec.WatchedAbility
     Parun.Codec.WatchedAbilitySpec
+    Parun.Codec.Weights
+    Parun.Codec.WeightsSpec
     Parun.Codec.When
     Parun.Codec.WhenSpec
     Parun.Codec.WhenSpent
@@ -2608,6 +2611,7 @@ library registry
     Parun.Legality
     Parun.Registry
     Parun.StickerSheets
+    Parun.Weights
 
 -- Scenarios: a board, a timeline of decisions and checks, and the runner that
 -- plays one against the engine. The boundary through which anything other than
@@ -3412,6 +3416,7 @@ library types
     Parun.Types.FaceDownState
     Parun.Types.Facing
     Parun.Types.Feasibility
+    Parun.Types.Features
     Parun.Types.Fight
     Parun.Types.Filter
     Parun.Types.FlipCoin
@@ -4043,6 +4048,7 @@ library types
     Parun.Types.VotesReceived
     Parun.Types.Ward
     Parun.Types.WatchedAbility
+    Parun.Types.Weights
     Parun.Types.When
     Parun.Types.WhenSpent
     Parun.Types.WhichCounters

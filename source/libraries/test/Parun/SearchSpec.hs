@@ -13,6 +13,7 @@ import qualified Control.Monad.Trans.State.Strict as State
 import qualified Data.Foldable as Foldable
 import qualified Data.List as List
 import qualified Data.Map.Strict as Map
+import qualified Data.Maybe as Maybe
 import qualified Data.Set as Set
 import qualified Data.Text as Text
 import qualified Data.Word as Word
@@ -20,6 +21,8 @@ import qualified Parun.BotSpec as BotSpec
 import qualified Parun.Engine.Engine as Engine
 import qualified Parun.Engine.Game as Engine.Game
 import qualified Parun.Engine.PlayerView as PlayerView
+import qualified Parun.Engine.Projection as Projection
+import qualified Parun.Engine.Projection.View as Projection.View
 import qualified Parun.Play.Command as Command
 import qualified Parun.Play.Game as Game
 import qualified Parun.Play.Search as Search
@@ -29,7 +32,9 @@ import qualified Parun.Support as S
 import qualified Parun.Types.Action as Action
 import qualified Parun.Types.Answerer as Answerer
 import qualified Parun.Types.Asked as Asked
+import qualified Parun.Types.CardType as CardType
 import qualified Parun.Types.Concession as Concession
+import qualified Parun.Types.Features as Features
 import qualified Parun.Types.GameState as GameState
 import qualified Parun.Types.Limits as Limits
 import qualified Parun.Types.Object as Object
@@ -39,11 +44,13 @@ import qualified Parun.Types.PlayOptions as PlayOptions
 import qualified Parun.Types.Player as Player
 import qualified Parun.Types.PlayerId as PlayerId
 import qualified Parun.Types.Program as Program
+import qualified Parun.Types.ProjectedCharacteristics as ProjectedCharacteristics
 import qualified Parun.Types.Prompt as Prompt
 import qualified Parun.Types.SearchBudget as SearchBudget
 import qualified Parun.Types.Source as Source
 import qualified Parun.Types.TapState as TapState
 import qualified Parun.Types.TurnRegisters as TurnRegisters
+import qualified Parun.Types.Weights as Weights
 import qualified Parun.Types.Zone as Zone
 
 spec :: (Monad m, Monad n) => Spec.Spec m n -> Registry.Registry m -> n ()
@@ -62,8 +69,8 @@ spec s registry = Spec.describe s "Search" $ do
 
   Spec.it s "two playouts of one decision share no state" $ do
     (gs, menu) <- decision s registry
-    let budget = SearchBudget.MkSearchBudget {SearchBudget.samples = 1, SearchBudget.prompts = 400}
-        playout option n = either (Spec.assertFailure s . Text.unpack) pure =<< Except.runExceptT (State.evalStateT (Search.rollout (S.fixtureRegistry []) budget Engine.resumePriority viewer (Search.acting viewer option) gs) (S.seeded n))
+    let budget = SearchBudget.MkSearchBudget {SearchBudget.samples = 1, SearchBudget.turns = 1000, SearchBudget.prompts = 400}
+        playout option n = either (Spec.assertFailure s . Text.unpack) pure =<< Except.runExceptT (State.evalStateT (Search.rollout (S.fixtureRegistry []) budget Weights.neutral Engine.resumePriority viewer (Search.acting viewer option) gs) (S.seeded n))
     case Search.options menu of
       one : two : _ -> do
         first <- playout one 3
@@ -71,6 +78,37 @@ spec s registry = Spec.describe s "Search" $ do
         again <- playout one 3
         Spec.assertEqWith s "the first option's playout again" again first
       _ -> Spec.assertFailure s "a decision offers two options"
+
+  Spec.it s "a playout is cut off once it begins the turn after its decision's, short of a result" $ do
+    (gs, menu) <- decision s registry
+    let budget = SearchBudget.MkSearchBudget {SearchBudget.samples = 1, SearchBudget.turns = 0, SearchBudget.prompts = 100000}
+    scores <- traverse (\(option, n) -> either (Spec.assertFailure s . Text.unpack) pure =<< Except.runExceptT (State.evalStateT (Search.rollout (S.fixtureRegistry []) budget Weights.neutral Engine.resumePriority viewer (Search.acting viewer option) gs) (S.seeded n))) (zip (Search.options menu) [1 ..])
+    Spec.assertBool s (all (\score -> abs score < Search.won) scores) ("every playout scored short of a result: " <> show scores)
+
+  Spec.it s "a cut-off playout scores its position by the weights, each side's features weighted" $ do
+    (gs, attacker) <- capturing s registry 3 "a declaration of attackers" $ \asked -> case Asked.prompt asked of
+      Prompt.DeclareAttackers decider pid candidates | Search.searchable asked decider pid (Search.attacks candidates) -> Just (Asked.game asked, pid)
+      _ -> Nothing
+    let budget = SearchBudget.MkSearchBudget {SearchBudget.samples = 1, SearchBudget.turns = 1000, SearchBudget.prompts = 0}
+        only side feature = Weights.MkWeights {Weights.ours = if side then feature else zero, Weights.theirs = if side then zero else feature}
+        scored weights = either (Spec.assertFailure s . Text.unpack) pure =<< Except.runExceptT (State.evalStateT (Search.rollout (S.fixtureRegistry []) budget weights Engine.resumeTurnBasedAction attacker (Search.attacking attacker []) gs) (S.seeded 1))
+        controlled pid = [oid | oid <- Set.toList (GameState.battlefield gs), Projection.View.controllerOf oid gs == Just pid]
+        creatures pid = [oid | oid <- controlled pid, Set.member CardType.Creature (ProjectedCharacteristics.cardTypes (Projection.project oid gs))]
+        counts pid =
+          [ ("life", zero {Features.life = 1}, maybe 0 Player.life (Map.lookup pid (GameState.players gs))),
+            ("hand", zero {Features.hand = 1}, toInteger (length (handOf gs pid))),
+            ("power", zero {Features.power = 1}, sum [max 0 (Maybe.fromMaybe 0 (Projection.powerOf oid gs)) | oid <- creatures pid]),
+            ("toughness", zero {Features.toughness = 1}, sum [max 0 (Maybe.fromMaybe 0 (Projection.toughnessOf oid gs)) | oid <- creatures pid]),
+            ("lands", zero {Features.lands = 1}, toInteger (length [oid | oid <- controlled pid, Set.member CardType.Land (ProjectedCharacteristics.cardTypes (Projection.project oid gs))])),
+            ("permanents", zero {Features.permanents = 1}, toInteger (length (controlled pid)))
+          ]
+    Spec.assertBool s (not (null (creatures attacker))) "the attacker controls a creature"
+    Foldable.for_ (counts attacker) $ \(name, feature, count) -> do
+      got <- scored (only True feature)
+      Spec.assertEqWith s ("our " <> name) got count
+    Foldable.for_ (foldMap counts (filter (/= attacker) (Map.keys (GameState.players gs)))) $ \(name, feature, count) -> do
+      got <- scored (only False feature)
+      Spec.assertEqWith s ("their " <> name) got (negate count)
 
   Spec.it s "CR 508.1 a restarted declaration of attackers asks its declarer again, offering the same creatures" $ do
     (gs, offered) <- capturing s registry 3 "a declaration of attackers" $ \asked -> case Asked.prompt asked of
@@ -144,11 +182,15 @@ openAttack s registry = do
   pure (pid, Asked.MkAsked [] world (Prompt.DeclareAttackers decider pid candidates))
 
 -- The search bot's answer, at a budget of 2 samples cut off after 40 prompts,
--- from `seed`.
+-- the neutral weights, from `seed`.
 searched :: (Monad m) => Spec.Spec m n -> Asked.Asked GameState.GameState r -> Word.Word32 -> m r
 searched s asked seed =
-  let budget = SearchBudget.MkSearchBudget {SearchBudget.samples = 2, SearchBudget.prompts = 40}
-   in either (Spec.assertFailure s . Text.unpack) pure =<< Except.runExceptT (State.evalStateT (Answerer.unwrap (Search.search (S.fixtureRegistry []) budget Search.known) asked) (S.seeded seed))
+  let budget = SearchBudget.MkSearchBudget {SearchBudget.samples = 2, SearchBudget.turns = 1000, SearchBudget.prompts = 40}
+   in either (Spec.assertFailure s . Text.unpack) pure =<< Except.runExceptT (State.evalStateT (Answerer.unwrap (Search.search (S.fixtureRegistry []) budget Weights.neutral Search.known) asked) (S.seeded seed))
+
+-- No feature weighted.
+zero :: Features.Features
+zero = Features.MkFeatures 0 0 0 0 0 0
 
 -- The game with every player but `pid` at 1 life.
 othersAtOneLife :: PlayerId.PlayerId -> GameState.GameState -> GameState.GameState
