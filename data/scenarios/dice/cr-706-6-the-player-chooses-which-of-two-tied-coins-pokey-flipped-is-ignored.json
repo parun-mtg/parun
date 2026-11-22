@@ -116,6 +116,55 @@
       }
     },
     {
+      "check": {
+        "View": {
+          "of": "Prompt",
+          "is": {
+            "kind": "ChooseDieResult",
+            "offer": {
+              "carries": [
+                {
+                  "thrower": "alice",
+                  "events": [
+                    {
+                      "type": "CoinFlipped",
+                      "value": {
+                        "flipper": 0,
+                        "won": true
+                      }
+                    }
+                  ]
+                },
+                {
+                  "thrower": "alice",
+                  "events": [
+                    {
+                      "type": "CoinFlipped",
+                      "value": {
+                        "flipper": 0,
+                        "won": false
+                      }
+                    }
+                  ]
+                }
+              ],
+              "entries": [
+                20,
+                20
+              ],
+              "options": [
+                0,
+                1
+              ]
+            }
+          }
+        }
+      },
+      "player": "alice",
+      "step": "CombatDamage",
+      "turn": 1
+    },
+    {
       "turn": 1,
       "step": "CombatDamage",
       "player": "alice",

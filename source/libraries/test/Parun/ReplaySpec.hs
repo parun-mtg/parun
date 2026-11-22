@@ -1060,7 +1060,7 @@ combatReplaySpec s =
         -- results may compare equal, which is why it is a position and not the
         -- number itself.
         Spec.it s "ChooseDieResult round-trips through the transcript" $ do
-          let p = Prompt.ChooseDieResult decider S.alice (Just oid) (5 NonEmpty.:| [2])
+          let p = Prompt.ChooseDieResult decider S.alice (Just oid) ((5, S.alice, []) NonEmpty.:| [(2, S.alice, [])])
           Spec.assertEqWith s "choosing the second round trips" (Replay.decode p (Replay.encode p 1)) (Just 1)
           Spec.assertEqWith s "choosing the first round trips" (Replay.decode p (Replay.encode p 0)) (Just 0)
         -- Discriminating: fails if ChooseDieResult reuses ChoseDelayedTriggerEvent
@@ -1071,10 +1071,10 @@ combatReplaySpec s =
           Spec.assertEqWith
             s
             "mismatch"
-            (Replay.decode (Prompt.ChooseDieResult decider S.alice (Just oid) (5 NonEmpty.:| [2])) (Response.ChoseDelayedTriggerEvent 1))
+            (Replay.decode (Prompt.ChooseDieResult decider S.alice (Just oid) ((5, S.alice, []) NonEmpty.:| [(2, S.alice, [])])) (Response.ChoseDelayedTriggerEvent 1))
             Nothing
         Spec.it s "a short die-result transcript takes the first die rolled" $
-          Spec.assertEqWith s "the head" (Replay.defaultAnswer (Prompt.ChooseDieResult decider S.alice (Just oid) (5 NonEmpty.:| [2]))) 0
+          Spec.assertEqWith s "the head" (Replay.defaultAnswer (Prompt.ChooseDieResult decider S.alice (Just oid) ((5, S.alice, []) NonEmpty.:| [(2, S.alice, [])]))) 0
         -- The assertion that fails if RollDie reuses Response.ChoseX rather than
         -- getting its own constructor: both carry one Natural, so the types
         -- would not object, and a player's ANNOUNCED X replaying as a die roll
@@ -1343,7 +1343,7 @@ combatReplaySpec s =
           Spec.assertEqWith s "a short transcript declines" (Replay.defaultAnswer p) Set.empty
         -- CR 706.2b: which modifier the roller applied next is a decision.
         Spec.it s "ChooseRollModifier round-trips through the transcript" $ do
-          let p = Prompt.ChooseRollModifier decider S.alice ((Just (ObjectId.MkObjectId 7), Just 2) NonEmpty.:| [(Just (ObjectId.MkObjectId 9), Nothing)])
+          let p = Prompt.ChooseRollModifier decider S.alice ((Just (ObjectId.MkObjectId 7), Just (0, 2)) NonEmpty.:| [(Just (ObjectId.MkObjectId 9), Nothing)])
           Spec.assertEqWith s "picking the second round trips" (Replay.decode p (Replay.encode p 1)) (Just 1)
           Spec.assertEqWith s "a replacement choice does not decode as one" (Replay.decode p (Response.ChoseReplacement 1)) Nothing
         Spec.it s "an explore choice does not decode as a riot choice" $ do

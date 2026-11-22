@@ -96,7 +96,7 @@ subjectOf prompt = case prompt of
   Prompt.ReferenceNames {} -> Nothing
   Prompt.ChooseDieResult _ pid _ _ -> Just pid
   Prompt.ChooseStoredRerolls _ pid _ _ -> Just pid
-  Prompt.Rethrow _ pid _ _ -> Just pid
+  Prompt.Rethrow _ pid _ _ _ -> Just pid
   Prompt.RerollDice _ pid _ _ -> Just pid
   Prompt.AdjustDieRoll _ pid _ _ _ -> Just pid
   Prompt.ChooseRollModifier _ pid _ -> Just pid
@@ -298,7 +298,7 @@ deciderOf prompt = case prompt of
   Prompt.ChooseSurveil decider _ _ -> Just (Decider.unwrap decider)
   Prompt.ChooseFateseal decider _ _ _ -> Just (Decider.unwrap decider)
   Prompt.ChooseExplore decider _ _ _ -> Just (Decider.unwrap decider)
-  Prompt.Rethrow decider _ _ _ -> Just (Decider.unwrap decider)
+  Prompt.Rethrow decider _ _ _ _ -> Just (Decider.unwrap decider)
   Prompt.RerollDice decider _ _ _ -> Just (Decider.unwrap decider)
   Prompt.AdjustDieRoll decider _ _ _ _ -> Just (Decider.unwrap decider)
   Prompt.ChooseRollModifier decider _ _ -> Just (Decider.unwrap decider)

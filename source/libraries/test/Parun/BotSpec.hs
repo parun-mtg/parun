@@ -460,7 +460,7 @@ spec s registry = Spec.describe s "Bot" $ do
             ("unleashes", Prompt.ChooseUnleash decider S.alice oid),
             ("extras", Prompt.OfferedExtra decider S.alice oid PlayerEffect.CantCastSpells),
             ("miracles", Prompt.OfferedMiracleReveal decider S.alice oid (CardName.MkCardName (Text.pack "Temporal Mastery")) free),
-            ("rerolls", Prompt.Rethrow decider S.alice (ThrowResult.DieCameUp 3) Nothing)
+            ("rerolls", Prompt.Rethrow decider S.alice (ThrowResult.DieCameUp 3 NonEmpty.:| []) 0 Nothing)
           ]
         both = Set.fromList [OptionalDecision.Exercises, OptionalDecision.Declines]
     Spec.assertEqWith s "mays" (fmap (fmap drawn) prompts) (fmap (fmap (const both)) prompts)
@@ -574,7 +574,7 @@ spec s registry = Spec.describe s "Bot" $ do
         shape power = EntryOption.MkEntryOption {EntryOption.power = power, EntryOption.toughness = 3, EntryOption.keywords = Set.empty, EntryOption.subtypes = Set.empty}
         entry source = ReplacementEntry.MkReplacementEntry (ObjectId.MkObjectId source) (ReplacementEffect.PerformerR (PerformerR.MkPerformerR PlayerInstruction.Assemble (Filter.And []) (InstructionRewrite.Scaled (Scaling.Multiply 2))))
     Spec.assertEqWith s "occurrences" (drawn (Prompt.ChooseDelayedTriggerEvent decider S.alice oid (gained S.alice NonEmpty.:| [gained S.bob]))) (Set.fromList [0, 1])
-    Spec.assertEqWith s "die results" (drawn (Prompt.ChooseDieResult decider S.alice Nothing (3 NonEmpty.:| [5, 5]))) (Set.fromList [0, 1, 2])
+    Spec.assertEqWith s "die results" (drawn (Prompt.ChooseDieResult decider S.alice Nothing ((3, S.alice, []) NonEmpty.:| [(5, S.alice, []), (5, S.alice, [])]))) (Set.fromList [0, 1, 2])
     Spec.assertEqWith s "entry options" (drawn (Prompt.ChooseEntryOption decider S.alice oid [shape 3, shape 2])) (Set.fromList [0, 1])
     Spec.assertEqWith s "replacements" (drawn (Prompt.ChooseReplacement decider S.alice [entry 8, entry 9, entry 10])) (Set.fromList [0, 1, 2])
     Spec.assertEqWith s "roll modifiers" (drawn (Prompt.ChooseRollModifier decider S.alice ((Just oid, Nothing) NonEmpty.:| [(Nothing, Nothing)]))) (Set.fromList [0, 1])
