@@ -1,0 +1,376 @@
+{
+  "board": {
+    "active": "bob",
+    "seats": [
+      {
+        "battlefield": [
+          {
+            "card": "Mila, Crafty Companion",
+            "label": "mila"
+          },
+          {
+            "card": "Gideon Jura",
+            "counters": [
+              {
+                "key": {
+                  "type": "Loyalty"
+                },
+                "value": 6
+              }
+            ],
+            "label": "gideon"
+          },
+          {
+            "card": "Koth, Fire of Resistance",
+            "counters": [
+              {
+                "key": {
+                  "type": "Loyalty"
+                },
+                "value": 4
+              }
+            ],
+            "label": "koth"
+          },
+          {
+            "card": "Jace Beleren",
+            "counters": [
+              {
+                "key": {
+                  "type": "Loyalty"
+                },
+                "value": 3
+              }
+            ],
+            "label": "jace"
+          }
+        ],
+        "library": [
+          {
+            "card": "Plains"
+          },
+          {
+            "card": "Plains"
+          },
+          {
+            "card": "Plains"
+          },
+          {
+            "card": "Plains"
+          },
+          {
+            "card": "Plains"
+          },
+          {
+            "card": "Plains"
+          },
+          {
+            "card": "Plains"
+          },
+          {
+            "card": "Plains"
+          }
+        ],
+        "name": "alice"
+      },
+      {
+        "battlefield": [
+          {
+            "card": "Hill Giant",
+            "label": "bgiant",
+            "ready": true
+          },
+          {
+            "card": "Grizzly Bears",
+            "label": "bbears",
+            "ready": true
+          }
+        ],
+        "library": [
+          {
+            "card": "Swamp"
+          },
+          {
+            "card": "Swamp"
+          },
+          {
+            "card": "Swamp"
+          },
+          {
+            "card": "Swamp"
+          },
+          {
+            "card": "Swamp"
+          },
+          {
+            "card": "Swamp"
+          },
+          {
+            "card": "Swamp"
+          },
+          {
+            "card": "Swamp"
+          }
+        ],
+        "name": "bob"
+      },
+      {
+        "battlefield": [
+          {
+            "card": "Centaur Courser",
+            "label": "courser",
+            "ready": true
+          }
+        ],
+        "library": [
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          }
+        ],
+        "name": "carol"
+      }
+    ],
+    "step": "PrecombatMain"
+  },
+  "description": "CR 508.3d / 508.1b / 122.1: Mila, Crafty Companion triggers once when an opponent's declaration attacks planeswalkers its controller controls, putting a loyalty counter on each of them, attacked or not; an attack on the player alone does not trigger it",
+  "note": "Three seats. Bob attacks Gideon Jura and Koth with one creature each in one declaration: one trigger, so each gets one counter (a trigger per attacked planeswalker would give two), and Jace Beleren, unattacked, gets one too. Carol then attacks alice herself, and nothing triggers. Loyalties 6, 4 and 3 stay distinct through combat damage of 3 and 2.",
+  "timeline": [
+    {
+      "do": {
+        "Attack": [
+          "$bgiant",
+          "$bbears"
+        ]
+      },
+      "player": "bob",
+      "step": "DeclareAttackers",
+      "turn": 1
+    },
+    {
+      "do": {
+        "ChooseAttackTarget": "$gideon"
+      },
+      "player": "bob",
+      "source": "$bgiant",
+      "step": "DeclareAttackers",
+      "turn": 1
+    },
+    {
+      "do": {
+        "ChooseAttackTarget": "$koth"
+      },
+      "player": "bob",
+      "source": "$bbears",
+      "step": "DeclareAttackers",
+      "turn": 1
+    },
+    {
+      "check": {
+        "View": {
+          "is": [
+            "trigger of $mila"
+          ],
+          "of": "Stack"
+        }
+      },
+      "player": "bob",
+      "step": "DeclareAttackers",
+      "turn": 1
+    },
+    {
+      "do": "Pass",
+      "player": "bob",
+      "step": "DeclareAttackers",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Counters": {
+          "count": 7,
+          "kind": {
+            "type": "Loyalty"
+          },
+          "object": "$gideon"
+        }
+      },
+      "player": "bob",
+      "step": "DeclareAttackers",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Counters": {
+          "count": 5,
+          "kind": {
+            "type": "Loyalty"
+          },
+          "object": "$koth"
+        }
+      },
+      "player": "bob",
+      "step": "DeclareAttackers",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Counters": {
+          "count": 4,
+          "kind": {
+            "type": "Loyalty"
+          },
+          "object": "$jace"
+        }
+      },
+      "player": "bob",
+      "step": "DeclareAttackers",
+      "turn": 1
+    },
+    {
+      "do": {
+        "Block": {}
+      },
+      "player": "alice",
+      "step": "DeclareBlockers",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Counters": {
+          "count": 4,
+          "kind": {
+            "type": "Loyalty"
+          },
+          "object": "$gideon"
+        }
+      },
+      "player": "bob",
+      "step": "EndOfCombat",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Counters": {
+          "count": 3,
+          "kind": {
+            "type": "Loyalty"
+          },
+          "object": "$koth"
+        }
+      },
+      "player": "bob",
+      "step": "EndOfCombat",
+      "turn": 1
+    },
+    {
+      "do": {
+        "Attack": [
+          "$courser"
+        ]
+      },
+      "player": "carol",
+      "step": "DeclareAttackers",
+      "turn": 2
+    },
+    {
+      "do": {
+        "ChooseAttackTarget": "$alice"
+      },
+      "player": "carol",
+      "step": "DeclareAttackers",
+      "turn": 2
+    },
+    {
+      "check": {
+        "View": {
+          "is": [],
+          "of": "Stack"
+        }
+      },
+      "player": "carol",
+      "step": "DeclareAttackers",
+      "turn": 2
+    },
+    {
+      "do": {
+        "Block": {}
+      },
+      "player": "alice",
+      "step": "DeclareBlockers",
+      "turn": 2
+    },
+    {
+      "check": {
+        "Life": {
+          "life": 17,
+          "player": "alice"
+        }
+      },
+      "player": "carol",
+      "step": "EndOfCombat",
+      "turn": 2
+    },
+    {
+      "check": {
+        "Counters": {
+          "count": 4,
+          "kind": {
+            "type": "Loyalty"
+          },
+          "object": "$gideon"
+        }
+      },
+      "player": "carol",
+      "step": "EndOfCombat",
+      "turn": 2
+    },
+    {
+      "check": {
+        "Counters": {
+          "count": 3,
+          "kind": {
+            "type": "Loyalty"
+          },
+          "object": "$koth"
+        }
+      },
+      "player": "carol",
+      "step": "EndOfCombat",
+      "turn": 2
+    },
+    {
+      "check": {
+        "Counters": {
+          "count": 4,
+          "kind": {
+            "type": "Loyalty"
+          },
+          "object": "$jace"
+        }
+      },
+      "player": "carol",
+      "step": "EndOfCombat",
+      "turn": 2
+    }
+  ]
+}

@@ -859,12 +859,22 @@ joined context predicates = case predicates of
           not (Text.isInfixOf (Text.pack ". ") body)
         ]
       series =
-        [ (Prose.sentence (Text.intercalate (Text.pack ", ") (clauseText p : fmap verb middle) <> Text.pack last' <> verb q) <> trailing q, allMentions p <> foldMap mentions rest)
+        [ (Prose.sentence (Text.intercalate (Text.pack ", ") (opening : middle') <> Text.pack last' <> q') <> trailing q, allMentions p <> foldMap mentions rest)
         | all (sameSubject p) rest,
+          -- Free: an imperative series drops its "you" (Mascot Exhibition).
+          opening <- clauseText p : [verb p | all implied predicates],
           Just (middle, q) <- [List.unsnoc rest],
           all (null . after) (p : middle),
           all (Maybe.isNothing . mana) predicates,
+          (middle', q') <- (fmap verb middle, verb q) : sharedVerbElided (verb p) (fmap verb middle) (verb q),
           last' <- [", then ", ", and "]
+        ]
+      -- Free: a verb every step shares, said once (Mascot Exhibition's "Create
+      -- a 2/1 ... token, a 3/2 ... token, and a 4/4 ... token.").
+      sharedVerbElided vp vms vq =
+        [ (fmap (Text.drop (Text.length word)) vms, Text.drop (Text.length word) vq)
+        | let word = fst (Text.breakOn (Text.pack " ") vp) <> Text.pack " ",
+          all (Text.isPrefixOf word) (vq : vms)
         ]
   [p, q]
     | not (null (after p)) || Maybe.isJust (mana p) || Maybe.isJust (mana q) -> apart
