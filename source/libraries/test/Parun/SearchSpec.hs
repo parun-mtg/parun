@@ -41,13 +41,16 @@ import qualified Parun.Types.Answerer as Answerer
 import qualified Parun.Types.Asked as Asked
 import qualified Parun.Types.CardType as CardType
 import qualified Parun.Types.Concession as Concession
+import qualified Parun.Types.Decider as Decider
 import qualified Parun.Types.Deck as Deck
 import qualified Parun.Types.Features as Features
 import qualified Parun.Types.GameState as GameState
+import qualified Parun.Types.Label as Label
 import qualified Parun.Types.Limits as Limits
 import qualified Parun.Types.Object as Object
 import qualified Parun.Types.ObjectId as ObjectId
 import qualified Parun.Types.Phase as Phase
+import qualified Parun.Types.Placement as Placement
 import qualified Parun.Types.PlayOptions as PlayOptions
 import qualified Parun.Types.Player as Player
 import qualified Parun.Types.PlayerId as PlayerId
@@ -59,8 +62,10 @@ import qualified Parun.Types.Prompt as Prompt
 import qualified Parun.Types.RevealCause as RevealCause
 import qualified Parun.Types.SearchBudget as SearchBudget
 import qualified Parun.Types.SearchMethod as SearchMethod
+import qualified Parun.Types.Seat as Seat
 import qualified Parun.Types.Settle as Settle
 import qualified Parun.Types.Source as Source
+import qualified Parun.Types.Staged as Staged
 import qualified Parun.Types.TapState as TapState
 import qualified Parun.Types.TurnRegisters as TurnRegisters
 import qualified Parun.Types.Weights as Weights
@@ -246,12 +251,13 @@ spec s registry = Spec.describe s "Search" $ do
     declared <- traverse (searched s asked) [1 .. 4]
     Spec.assertBool s (not (any null declared)) "attacked in every seed"
 
-  Spec.it s "the information-set search bot declines an attack into an untapped blocker and open mana that a pump spell may punish, which the flat one makes" $ do
+  Spec.it s "the information-set search bot declines an attack into an untapped blocker and open mana a pump spell in hand may punish, which the flat one makes" $ do
     asked <- intoOpenMana s registry
     let budget method = SearchBudget.MkSearchBudget {SearchBudget.samples = 48, SearchBudget.turns = 0, SearchBudget.prompts = 80, SearchBudget.candidates = 0, SearchBudget.playout = Playout.Random, SearchBudget.method = method}
-    flatly <- traverse (searchedAt s (budget SearchMethod.Flat) asked) [1 .. 4]
+        weights = Weights.neutral {Weights.theirs = (Weights.theirs Weights.neutral) {Features.life = 4}}
+    flatly <- traverse (searchedAt s (budget SearchMethod.Flat) weights asked) [1 .. 4]
     Spec.assertBool s (not (any null flatly)) ("the flat bot attacked in every seed: " <> show flatly)
-    treed <- traverse (searchedAt s (budget SearchMethod.InformationSet) asked) [1 .. 4]
+    treed <- traverse (searchedAt s (budget SearchMethod.InformationSet) weights asked) [1 .. 4]
     Spec.assertBool s (all null treed) ("the information-set bot attacked in no seed: " <> show treed)
 
   Spec.it s "parun play's bot seat is the search bot, attacking an opponent at 1 life who has nothing untapped" $ do
@@ -412,35 +418,23 @@ openAttack s registry = do
   let world = othersAtOneLife pid gs {GameState.objects = Map.map (\o -> if Object.owner o /= pid && Object.zone o == Zone.Battlefield then o {Object.tapped = TapState.Tapped} else o) (GameState.objects gs)}
   pure (pid, Asked.MkAsked [] world (Prompt.DeclareAttackers decider pid candidates))
 
--- Seat 1's declaration of attackers from turn 3 on, offering one creature,
--- in a game of a deck of 12 Grizzly Bears and 8 Forest against one of 6
--- Grizzly Bears, 6 Blossoming Defense and 8 Forest, seat 2 controlling one
--- creature and a land, every permanent of seat 2's untapped.
+-- Seat 1's declaration of attackers, offering its one Grizzly Bears, seat 2
+-- controlling an untapped Grizzly Bears and Forest and holding a Blossoming
+-- Defense and a Forest, with two more of each and a Grizzly Bears in its
+-- library: CR 400.2 hides which two it holds.
 intoOpenMana :: (Monad m) => Spec.Spec m n -> Registry.Registry m -> m (Asked.Asked GameState.GameState [ObjectId.ObjectId])
 intoOpenMana s registry = do
-  bear <- S.printingOf s registry "Grizzly Bears"
-  defense <- S.printingOf s registry "Blossoming Defense"
-  forest <- S.printingOf s registry "Forest"
-  let ours = Deck.fromCards (Map.fromList [(bear, 12), (forest, 8)])
-      theirs = Deck.fromCards (Map.fromList [(bear, 6), (defense, 6), (forest, 8)])
-      controlled gs cardType = [oid | oid <- Set.toList (GameState.battlefield gs), Projection.View.controllerOf oid gs == Just S.bob, Set.member cardType (ProjectedCharacteristics.cardTypes (Projection.project oid gs))]
-      found :: Asked.Asked GameState.GameState r -> Maybe (GameState.GameState, Asked.Asked GameState.GameState [ObjectId.ObjectId])
-      found asked = case Asked.prompt asked of
-        Prompt.DeclareAttackers decider pid candidates
-          | pid == S.alice,
-            not (null candidates),
-            Search.searchable asked decider pid (Search.attacks candidates),
-            not (null (controlled (Asked.game asked) CardType.Creature)),
-            not (null (controlled (Asked.game asked) CardType.Land)) ->
-              let gs = Asked.game asked
-                  world = gs {GameState.objects = Map.map (\o -> if Object.owner o == S.bob && Object.zone o == Zone.Battlefield then o {Object.tapped = TapState.Untapped} else o) (GameState.objects gs)}
-               in Just (gs, Asked.MkAsked [] world (Prompt.DeclareAttackers decider pid candidates))
-        _ -> Nothing
-  fmap snd (capturingIn s (ours NonEmpty.:| [theirs]) 3 "a declaration of attackers offering one creature, the opponent controlling one creature and a land" found)
+  let cards :: [String] -> [Placement.Placement]
+      cards = fmap S.cardSetup
+      alice = (S.battlefield S.alice [S.settled "attacker" "Grizzly Bears", S.cardSetup "Forest"]) {Seat.library = Seq.fromList (cards (replicate 5 "Forest"))}
+      bob = (S.battlefield S.bob [S.settled "blocker" "Grizzly Bears", S.cardSetup "Forest"]) {Seat.hand = Seq.fromList (cards ["Blossoming Defense", "Forest"]), Seat.library = Seq.fromList (cards ["Forest", "Blossoming Defense", "Forest", "Grizzly Bears", "Blossoming Defense"])}
+  built <- S.buildBoardOrFail s registry (S.board (alice NonEmpty.:| [bob]) S.alice S.declareAttackers)
+  attacker <- maybe (Spec.assertFailure s "no attacker") pure (Map.lookup (Label.MkLabel (Text.pack "attacker")) (Staged.objects built))
+  pure (Asked.MkAsked [] (Staged.state built) (Prompt.DeclareAttackers (Decider.MkDecider S.alice) S.alice [attacker]))
 
--- The search bot's answer at `budget`, the neutral weights, from `seed`.
-searchedAt :: (Monad m) => Spec.Spec m n -> SearchBudget.SearchBudget -> Asked.Asked GameState.GameState r -> Word.Word32 -> m r
-searchedAt s budget asked seed = either (Spec.assertFailure s . Text.unpack) pure =<< Except.runExceptT (State.evalStateT (Answerer.unwrap (Search.search (S.fixtureRegistry []) budget Weights.neutral Search.known (pure []) (pure Search.blank)) asked) (S.seeded seed))
+-- The search bot's answer at `budget` and `weights`, from `seed`.
+searchedAt :: (Monad m) => Spec.Spec m n -> SearchBudget.SearchBudget -> Weights.Weights -> Asked.Asked GameState.GameState r -> Word.Word32 -> m r
+searchedAt s budget weights asked seed = either (Spec.assertFailure s . Text.unpack) pure =<< Except.runExceptT (State.evalStateT (Answerer.unwrap (Search.search (S.fixtureRegistry []) budget weights Search.known (pure []) (pure Search.blank)) asked) (S.seeded seed))
 
 -- The search bot's answer, at a budget of 2 samples cut off after 40 prompts,
 -- the neutral weights, from `seed`.

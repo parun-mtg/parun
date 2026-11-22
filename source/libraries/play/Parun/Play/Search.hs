@@ -360,7 +360,7 @@ informationSet registry budget weights restart viewer gs deal choices move = do
           (path, value) <- descend registry budget weights restart viewer tree world
           pure (backup value path tree)
       )
-      (MkTree (MkNode Map.empty) 1)
+      (MkTree (MkNode Map.empty) Nothing)
       (replicate iterations ())
   let tried option = maybe (0, 0) (\branch -> (visits branch, reward branch)) (Map.lookup (edgeOf viewer gs viewer (move option)) root)
       ranked = fmap (\option -> (tried option, option)) choices
@@ -424,9 +424,9 @@ objectsIn f action = case action of
   Action.RollPlanarDie -> pure action
   Action.RerollShownDie die modifier -> Action.RerollShownDie <$> f die <*> f modifier
 
--- | The tree's root and the largest reward backed up through it, which
--- scales its exploration ('select').
-data Tree = MkTree Node Integer
+-- | The tree's root and the lowest and highest rewards backed up through it,
+-- whose spread scales its exploration ('select').
+data Tree = MkTree Node (Maybe (Integer, Integer))
 
 -- | A decision of the tree: each move tried from it, by its 'Edge'.
 newtype Node = MkNode (Map.Map Edge Branch)
@@ -453,8 +453,9 @@ data Branch = MkBranch
 -- its node, and the reward for each player: 'score' at a result, else
 -- 'evaluate' short of a win or a loss.
 descend :: forall m. (Monad m) => Registry.Registry m -> SearchBudget.SearchBudget -> Weights.Weights -> Game.Type.Game Result.Result -> PlayerId.PlayerId -> Tree -> GameState.GameState -> Game.Play m ([([Edge], Edge)], PlayerId.PlayerId -> Integer)
-descend registry budget weights restart viewer (MkTree root scale) world =
-  let seats = Game.consulting registry (Map.fromList [(seat, policyOf registry budget) | seat <- Map.keys (GameState.players world)])
+descend registry budget weights restart viewer (MkTree root range) world =
+  let scale = maybe 1 (\(lowest, highest) -> max 1 (highest - lowest)) range
+      seats = Game.consulting registry (Map.fromList [(seat, policyOf registry budget) | seat <- Map.keys (GameState.players world)])
       final = TurnRegisters.turnNumber (GameState.turn world) + SearchBudget.turns budget
       go :: Natural -> Maybe Node -> [([Edge], Edge)] -> Program.Program (Asked.Asked GameState.GameState) (Result.Result, GameState.GameState) -> Game.Play m ([([Edge], Edge)], PlayerId.PlayerId -> Integer)
       go left at path program = case program of
@@ -513,14 +514,16 @@ exploration = 0.7
 -- legal edges tried before made available once more and the one walked
 -- visited, given its mover's reward, and made available.
 backup :: (PlayerId.PlayerId -> Integer) -> [([Edge], Edge)] -> Tree -> Tree
-backup value path (MkTree root scale) =
+backup value path (MkTree root range) =
   let along steps (MkNode branches) = case steps of
         [] -> MkNode branches
         (legal, taken@(MkEdge mover _ _)) : rest ->
           let offered = Foldable.foldl' (flip (Map.adjust (\branch -> branch {available = available branch + 1}))) branches (filter (/= taken) legal)
               before = Map.findWithDefault (MkBranch 0 0 0 (MkNode Map.empty)) taken offered
            in MkNode (Map.insert taken before {reward = reward before + value mover, visits = visits before + 1, available = available before + 1, child = along rest (child before)} offered)
-   in MkTree (along path root) (maximum (scale : [abs (value mover) | (_, MkEdge mover _ _) <- path]))
+      rewards = [value mover | (_, MkEdge mover _ _) <- path]
+      widened = foldr (\r -> Just . maybe (r, r) (\(lowest, highest) -> (min lowest r, max highest r))) range rewards
+   in MkTree (along path root) widened
 
 -- | A priority decision a player passed at (CR 117.3d): the player and
 -- the game as they were asked.
