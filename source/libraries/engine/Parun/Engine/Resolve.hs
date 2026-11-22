@@ -395,12 +395,17 @@ resolveSpellWith runSubgame oid = do
                               legalHere = instanceView (Map.mapWithKey legalSlot (Binding.targetsOf gateBindings))
                               boundHere = Map.keysSet (instanceView (Set.empty <$ gateBindings))
                           gated <- gateHolds effectController oid oid (instanceView (Binding.targetsOf gateBindings)) gateBindings limb
-                          (taken, _) <- if gated then exercises (namedByCouldnt indexedClauses limbIdx) oid oid effectController idx limbIdx boundHere legalHere (Just facing) Set.empty Seq.empty limb else pure (False, Seq.empty)
                           before <- State.get
-                          (admitted, answers2) <-
-                            if taken
-                              then payGateAdmits runSubgame oid oid effectController idx limbIdx (instanceView (Map.mapWithKey legalSlot (Binding.targetsOf (Object.bindings obj)))) (Just facing) Set.empty answers limb
-                              else pure (False, answers)
+                          (_, _, admitted, answers2) <-
+                            if gated
+                              then
+                                mayAndGate
+                                  limb
+                                  (exercises (namedByCouldnt indexedClauses limbIdx) oid oid effectController idx limbIdx boundHere legalHere (Just facing) Set.empty Seq.empty limb)
+                                  Seq.empty
+                                  (payGateAdmits runSubgame oid oid effectController idx limbIdx (instanceView (Map.mapWithKey legalSlot (Binding.targetsOf (Object.bindings obj)))) (Just facing) Set.empty answers limb)
+                                  answers
+                              else pure (False, Seq.empty, False, answers)
                           Monad.when admitted (asCostWhenNamed indexedClauses limbIdx (Common.applyClauseEffects oid oid applyOne (Foldable.toList (Clause.effects limb))))
                           after <- State.get
                           pure (answers2, recordTaken limb admitted before after limbIdx ran)
@@ -455,31 +460,37 @@ resolveSpellWith runSubgame oid = do
                             (announced, committed, picked2) <- if gated then chosenBranch oid oid effectController idx cIdx legalNowForMay eligible (`lookup` indexedClauses) picked clause else pure (Just Set.empty, Set.empty, picked)
                             let branch = maybe True (not . Set.null) announced
                                 attempt seats prior (answersIn, ranIn) = do
-                                  (taken, made) <- if branch then exercises (namedByCouldnt indexedClauses cIdx) oid oid effectController idx cIdx boundNowForMay legalNowForMay seats committed prior clause else pure (False, prior)
-                                  -- CR 118.12: then the cost paid on resolution, against the
+                                  -- CR 118.12: the "may" and the cost paid on resolution, in
+                                  -- printed order (mayAndGate). The cost is read against the
                                   -- START-of-resolution targets to match CR 608.2b's single
                                   -- re-validation, to which Common.gateCostOf adds the slots
                                   -- earlier clauses bound (CR 608.2c). Both maps are projected into THIS
                                   -- instance's view (CR 700.2d) after legality is decided,
                                   -- since deciding it after the rename would miss in `slots`.
                                   before <- State.get
-                                  (admitted, answers2) <-
-                                    if taken
+                                  (taken, made, admitted, answers2) <-
+                                    if branch
                                       then
                                         let chosenAtStart = Binding.targetsOf (Object.bindings obj)
-                                         in payGateAdmits
-                                              runSubgame
-                                              oid
-                                              oid
-                                              effectController
-                                              idx
-                                              cIdx
-                                              (Modal.instanceView modeOwnedSlots mi (Mode.targetSlots mode) (Map.mapWithKey legalSlot chosenAtStart))
-                                              seats
-                                              committed
-                                              answersIn
+                                         in mayAndGate
                                               clause
-                                      else pure (False, answersIn)
+                                              (exercises (namedByCouldnt indexedClauses cIdx) oid oid effectController idx cIdx boundNowForMay legalNowForMay seats committed prior clause)
+                                              prior
+                                              ( payGateAdmits
+                                                  runSubgame
+                                                  oid
+                                                  oid
+                                                  effectController
+                                                  idx
+                                                  cIdx
+                                                  (Modal.instanceView modeOwnedSlots mi (Mode.targetSlots mode) (Map.mapWithKey legalSlot chosenAtStart))
+                                                  seats
+                                                  committed
+                                                  answersIn
+                                                  clause
+                                              )
+                                              answersIn
+                                      else pure (False, prior, False, answersIn)
                                   Monad.when admitted (asCostWhenNamed indexedClauses cIdx (Common.applyClauseEffects oid oid applyOne (Foldable.toList (Clause.effects clause))))
                                   after <- State.get
                                   pure ((answers2, recordTaken clause admitted before after cIdx ranIn), made, taken)
@@ -905,9 +916,17 @@ resolveChosenModes runSubgame stackId srcId modes = do
                       let legalHere = instanceView (Map.mapWithKey legalSlot (Binding.targetsOf gateBindings))
                           boundHere = Map.keysSet (instanceView (Set.empty <$ gateBindings))
                       gated <- gateHolds effectController stackId srcId (instanceView (Binding.targetsOf gateBindings)) gateBindings limb
-                      (taken, _) <- if gated then exercises (namedByCouldnt indexedClauses limbIdx) stackId srcId effectController idx limbIdx boundHere legalHere (Just facing) Set.empty Seq.empty limb else pure (False, Seq.empty)
                       before <- State.get
-                      (admitted, answers2) <- if taken then payGateAdmits runSubgame stackId srcId effectController idx limbIdx (instanceView legal) (Just facing) Set.empty answers limb else pure (False, answers)
+                      (_, _, admitted, answers2) <-
+                        if gated
+                          then
+                            mayAndGate
+                              limb
+                              (exercises (namedByCouldnt indexedClauses limbIdx) stackId srcId effectController idx limbIdx boundHere legalHere (Just facing) Set.empty Seq.empty limb)
+                              Seq.empty
+                              (payGateAdmits runSubgame stackId srcId effectController idx limbIdx (instanceView legal) (Just facing) Set.empty answers limb)
+                              answers
+                          else pure (False, Seq.empty, False, answers)
                       Monad.when admitted (asCostWhenNamed indexedClauses limbIdx (Common.applyClauseEffects stackId srcId applyOne (Foldable.toList (Clause.effects limb))))
                       after <- State.get
                       pure (answers2, recordTaken limb admitted before after limbIdx ran)
@@ -966,12 +985,21 @@ resolveChosenModes runSubgame stackId srcId modes = do
                             (announced, committed, picked2) <- if gated then chosenBranch stackId srcId effectController idx cIdx legalNowForMay eligible (`lookup` indexedClauses) picked clause else pure (Just Set.empty, Set.empty, picked)
                             let branch = maybe True (not . Set.null) announced
                                 attempt seats prior (answersIn, ranIn) = do
-                                  (taken, made) <- if branch then exercises (namedByCouldnt indexedClauses cIdx) stackId srcId effectController idx cIdx boundNowForMay legalNowForMay seats committed prior clause else pure (False, prior)
-                                  -- CR 118.12: then the cost paid on resolution, against the
+                                  -- CR 118.12: the "may" and the cost paid on resolution, in
+                                  -- printed order (mayAndGate), the cost against the
                                   -- START-of-resolution slots, to which Common.gateCostOf
                                   -- adds those earlier clauses bound (CR 608.2c).
                                   before <- State.get
-                                  (admitted, answers2) <- if taken then payGateAdmits runSubgame stackId srcId effectController idx cIdx (instanceView legal) seats committed answersIn clause else pure (False, answersIn)
+                                  (taken, made, admitted, answers2) <-
+                                    if branch
+                                      then
+                                        mayAndGate
+                                          clause
+                                          (exercises (namedByCouldnt indexedClauses cIdx) stackId srcId effectController idx cIdx boundNowForMay legalNowForMay seats committed prior clause)
+                                          prior
+                                          (payGateAdmits runSubgame stackId srcId effectController idx cIdx (instanceView legal) seats committed answersIn clause)
+                                          answersIn
+                                      else pure (False, prior, False, answersIn)
                                   Monad.when admitted (asCostWhenNamed indexedClauses cIdx (Common.applyClauseEffects stackId srcId applyOne (Foldable.toList (Clause.effects clause))))
                                   after <- State.get
                                   pure ((answers2, recordTaken clause admitted before after cIdx ranIn), made, taken)
@@ -1461,6 +1489,27 @@ exercises couldnt resolving source controller idx cIdx bound legal announced com
           let accepted = Set.fromList [pid | (pid, OptionalDecision.Exercises) <- Foldable.toList (Seq.drop (Seq.length prior) answers)]
           State.modify' (bindPlayersSlot resolving Binding.mayPlayers accepted)
           pure (not (Set.null accepted), answers)
+
+-- CR 118.12 / 608.2c: a clause's printed "may" (`ask`) and its cost paid on
+-- resolution (`offer`), in printed order, each passed the value it leaves when
+-- not run. The payment is CR 118.12's "[do something]" and a "may" beside it
+-- belongs to the "[effect]" after it, so a clause carrying both offers the
+-- cost first and asks the "may" only on the branch the answer admits:
+-- Wandering Archaic's "they may pay {2}. If they don't, you may copy that
+-- spell", proved by the scenario "Wandering Archaic asks the casting opponent
+-- to pay {2} first". A clause lacking either asks its "may", if any, first, a
+-- declined clause leaving no instruction for a payment to qualify. Admitted
+-- only when both admit.
+mayAndGate :: Clause.Clause card ability -> Game (Bool, m) -> m -> Game (Bool, g) -> g -> Game (Bool, m, Bool, g)
+mayAndGate clause ask unasked offer unoffered = case (Clause.payGate clause, Clause.optionality clause) of
+  (Just _, Optionality.Optional _ _) -> do
+    (opened, g) <- offer
+    (taken, m) <- if opened then ask else pure (False, unasked)
+    pure (taken, m, opened && taken, g)
+  _ -> do
+    (taken, m) <- ask
+    (admitted, g) <- if taken then offer else pure (False, unoffered)
+    pure (taken, m, admitted, g)
 
 -- CR 101.4 / 608.2e: put a clause's "may" to its seats and carry the clause
 -- out. Under MayPass.AllSeatsFirst that is `attempt` once, over `announced`.

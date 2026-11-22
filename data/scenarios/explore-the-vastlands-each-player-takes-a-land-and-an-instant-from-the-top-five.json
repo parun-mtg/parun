@@ -1,0 +1,307 @@
+{
+  "board": {
+    "active": "alice",
+    "seats": [
+      {
+        "hand": [
+          {
+            "card": "Wandering Archaic",
+            "label": "ev"
+          }
+        ],
+        "library": [
+          {
+            "card": "Forest",
+            "label": "af"
+          },
+          {
+            "card": "Lightning Bolt",
+            "label": "ab"
+          },
+          {
+            "card": "Plains",
+            "label": "ap"
+          },
+          {
+            "card": "Divination",
+            "label": "ad"
+          },
+          {
+            "card": "Hill Giant",
+            "label": "ah"
+          },
+          {
+            "card": "Mountain",
+            "label": "a6"
+          }
+        ],
+        "manaPool": "CCC",
+        "name": "alice"
+      },
+      {
+        "library": [
+          {
+            "card": "Grizzly Bears",
+            "label": "bb1"
+          },
+          {
+            "card": "Island",
+            "label": "bi"
+          },
+          {
+            "card": "Giant Growth",
+            "label": "bg"
+          },
+          {
+            "card": "Hill Giant",
+            "label": "bh"
+          },
+          {
+            "card": "Grizzly Bears",
+            "label": "bb2"
+          },
+          {
+            "card": "Swamp",
+            "label": "b6"
+          }
+        ],
+        "name": "bob"
+      }
+    ],
+    "step": "PrecombatMain"
+  },
+  "description": "Explore the Vastlands lets each player reveal a land and/or an instant or sorcery from their top five into hand, the rest to the bottom, and each player gains 3 life",
+  "note": "Alice takes one card of each kind, leaving a second land and an instant; Bob takes a land and declines the instant. Each player's rest goes under the sixth card, which stays on top. Each player witnesses their own five and the other's reveals, never the other's five.",
+  "timeline": [
+    {
+      "do": {
+        "Cast": {
+          "face": "Explore the Vastlands",
+          "object": "$ev"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": "Pass",
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": {
+        "Answer": {
+          "prompt": "ChooseCardsFromAmong",
+          "with": [
+            "$af"
+          ]
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": {
+        "Answer": {
+          "prompt": "ChooseCardsFromAmong",
+          "with": [
+            "$ab"
+          ]
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": {
+        "Answer": {
+          "prompt": "Shuffle",
+          "with": [
+            "$ad",
+            "$ap",
+            "$ah"
+          ]
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": {
+        "Answer": {
+          "prompt": "ChooseCardsFromAmong",
+          "with": [
+            "$bi"
+          ]
+        }
+      },
+      "player": "bob",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": {
+        "Answer": {
+          "prompt": "ChooseCardsFromAmong",
+          "with": []
+        }
+      },
+      "player": "bob",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": {
+        "Answer": {
+          "prompt": "Shuffle",
+          "with": [
+            "$bg",
+            "$bb1",
+            "$bh",
+            "$bb2"
+          ]
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "View": {
+          "is": [
+            "Forest",
+            "Lightning Bolt"
+          ],
+          "of": "Zone",
+          "player": "alice",
+          "zone": "Hand"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "View": {
+          "is": [
+            "Island"
+          ],
+          "of": "Zone",
+          "player": "bob",
+          "zone": "Hand"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Life": {
+          "life": 23,
+          "player": "alice"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Life": {
+          "life": 23,
+          "player": "bob"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "View": {
+          "is": [
+            "$a6",
+            "Hill Giant",
+            "Plains",
+            "Divination"
+          ],
+          "of": "Zone",
+          "player": "alice",
+          "zone": "Library"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "View": {
+          "is": [
+            "Forest",
+            "Lightning Bolt",
+            "Plains",
+            "Divination",
+            "Hill Giant",
+            "Forest",
+            "Island",
+            "Lightning Bolt"
+          ],
+          "of": "Witnessed",
+          "player": "alice"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "View": {
+          "is": [
+            "$b6",
+            "Grizzly Bears",
+            "Hill Giant#2",
+            "Grizzly Bears#2",
+            "Giant Growth"
+          ],
+          "of": "Zone",
+          "player": "bob",
+          "zone": "Library"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "View": {
+          "is": [
+            "Grizzly Bears",
+            "Island",
+            "Giant Growth",
+            "Hill Giant",
+            "Grizzly Bears",
+            "Forest",
+            "Island",
+            "Lightning Bolt"
+          ],
+          "of": "Witnessed",
+          "player": "bob"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    }
+  ]
+}
