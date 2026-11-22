@@ -200,7 +200,7 @@ loadControlDeck registry = do
 --
 -- Deck size and creature count are held fixed on purpose, because both drive
 -- the workload. 60 cards means the same number of turns: both decks are observed
--- (via 'cabal repl bench:parun-benchmark', reading 'TurnRegisters.turnNumber' after
+-- (via 'cabal repl parun:benchmark', reading 'TurnRegisters.turnNumber' after
 -- 'Engine.runMatchPure Script.fighting') to deck out on turn 108, and to leave a
 -- battlefield of comparable size -- 115 permanents here against 120 there. And 4
 -- Darksteel Myr a side is the same attack/block/damage cycle, since a 0/1

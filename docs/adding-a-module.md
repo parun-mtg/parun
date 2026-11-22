@@ -4,9 +4,9 @@ Pick the sublibrary by what the module *is*, not by who calls it. Each is
 `source/libraries/<name>/`, declared as a `library <name>` stanza in
 `parun.cabal` whose comment states its scope; read those comments for the list.
 
-Every module belongs to exactly one sublibrary. The `parun`, `parun-test-suite` and
-`parun-benchmark` targets are three-line `Main.hs` wrappers under
-`source/executable/`, `source/test-suite/` and `source/benchmark/` that call
+Every module belongs to exactly one sublibrary. The `parun` and `parun-test-suite`
+targets are three-line `Main.hs` wrappers under `source/executable/` and
+`source/test-suite/` that call
 the matching library's `main` and nothing else --- a subcommand or a scenario
 goes in the library, never in a wrapper. A sublibrary may only depend on ones
 declared above it in `parun.cabal`; adding an edge that inverts it means the module is in
