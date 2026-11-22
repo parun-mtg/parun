@@ -108,7 +108,9 @@ adjustOffers sides modifiers =
 -- tagged with its payer and the object that states it, and the rest. Every
 -- candidate must already be applicable now; Nothing when none is. `dieOf`
 -- names the one die a candidate reaches, by its place in the roll and its
--- natural result, Nothing where it reaches the roll as a whole.
+-- natural result, Nothing where it reaches the roll as a whole. Also which
+-- die one player's own effect reaches, `roller` being that player (CR 608.2d,
+-- throwSettled's `offeringAll`).
 --
 -- Asked whenever two or more stand, the roller's own included (Parun.DiceSpec's
 -- "CR 706.2b the roller picks among their own modifiers").
