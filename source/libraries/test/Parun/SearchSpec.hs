@@ -17,6 +17,7 @@ import qualified Data.Maybe as Maybe
 import qualified Data.Set as Set
 import qualified Data.Text as Text
 import qualified Data.Word as Word
+import qualified Numeric.Natural as Natural
 import qualified Parun.BotSpec as BotSpec
 import qualified Parun.Engine.Engine as Engine
 import qualified Parun.Engine.Game as Engine.Game
@@ -34,6 +35,7 @@ import qualified Parun.Types.Answerer as Answerer
 import qualified Parun.Types.Asked as Asked
 import qualified Parun.Types.CardType as CardType
 import qualified Parun.Types.Concession as Concession
+import qualified Parun.Types.CounterKind as CounterKind
 import qualified Parun.Types.Features as Features
 import qualified Parun.Types.GameState as GameState
 import qualified Parun.Types.Limits as Limits
@@ -43,6 +45,7 @@ import qualified Parun.Types.Phase as Phase
 import qualified Parun.Types.PlayOptions as PlayOptions
 import qualified Parun.Types.Player as Player
 import qualified Parun.Types.PlayerId as PlayerId
+import qualified Parun.Types.Playout as Playout
 import qualified Parun.Types.Program as Program
 import qualified Parun.Types.ProjectedCharacteristics as ProjectedCharacteristics
 import qualified Parun.Types.Prompt as Prompt
@@ -69,7 +72,7 @@ spec s registry = Spec.describe s "Search" $ do
 
   Spec.it s "two playouts of one decision share no state" $ do
     (gs, menu) <- decision s registry
-    let budget = SearchBudget.MkSearchBudget {SearchBudget.samples = 1, SearchBudget.turns = 1000, SearchBudget.prompts = 400}
+    let budget = SearchBudget.MkSearchBudget {SearchBudget.samples = 1, SearchBudget.turns = 1000, SearchBudget.prompts = 400, SearchBudget.playout = Playout.Random}
         playout option n = either (Spec.assertFailure s . Text.unpack) pure =<< Except.runExceptT (State.evalStateT (Search.rollout (S.fixtureRegistry []) budget Weights.neutral Engine.resumePriority viewer (Search.acting viewer option) gs) (S.seeded n))
     case Search.options menu of
       one : two : _ -> do
@@ -81,7 +84,7 @@ spec s registry = Spec.describe s "Search" $ do
 
   Spec.it s "a playout is cut off once it begins the turn after its decision's, short of a result" $ do
     (gs, menu) <- decision s registry
-    let budget = SearchBudget.MkSearchBudget {SearchBudget.samples = 1, SearchBudget.turns = 0, SearchBudget.prompts = 100000}
+    let budget = SearchBudget.MkSearchBudget {SearchBudget.samples = 1, SearchBudget.turns = 0, SearchBudget.prompts = 100000, SearchBudget.playout = Playout.Random}
     scores <- traverse (\(option, n) -> either (Spec.assertFailure s . Text.unpack) pure =<< Except.runExceptT (State.evalStateT (Search.rollout (S.fixtureRegistry []) budget Weights.neutral Engine.resumePriority viewer (Search.acting viewer option) gs) (S.seeded n))) (zip (Search.options menu) [1 ..])
     Spec.assertBool s (all (\score -> abs score < Search.won) scores) ("every playout scored short of a result: " <> show scores)
 
@@ -89,7 +92,7 @@ spec s registry = Spec.describe s "Search" $ do
     (gs, attacker) <- capturing s registry 3 "a declaration of attackers" $ \asked -> case Asked.prompt asked of
       Prompt.DeclareAttackers decider pid candidates | Search.searchable asked decider pid (Search.attacks candidates) -> Just (Asked.game asked, pid)
       _ -> Nothing
-    let budget = SearchBudget.MkSearchBudget {SearchBudget.samples = 1, SearchBudget.turns = 1000, SearchBudget.prompts = 0}
+    let budget = SearchBudget.MkSearchBudget {SearchBudget.samples = 1, SearchBudget.turns = 1000, SearchBudget.prompts = 0, SearchBudget.playout = Playout.Random}
         only side feature = Weights.MkWeights {Weights.ours = if side then feature else zero, Weights.theirs = if side then zero else feature}
         scored weights = either (Spec.assertFailure s . Text.unpack) pure =<< Except.runExceptT (State.evalStateT (Search.rollout (S.fixtureRegistry []) budget weights Engine.resumeTurnBasedAction attacker (Search.attacking attacker []) gs) (S.seeded 1))
         controlled pid = [oid | oid <- Set.toList (GameState.battlefield gs), Projection.View.controllerOf oid gs == Just pid]
@@ -141,6 +144,48 @@ spec s registry = Spec.describe s "Search" $ do
       _ -> Nothing
     declared <- traverse (searched s (Asked.MkAsked [] (atOneLife pid gs) (Prompt.DeclareBlockers decider pid blockers attackers))) [1 .. 4]
     Spec.assertBool s (all (\declaration -> all (\attacker -> any (Set.member attacker) (Map.elems declaration)) attackers) declared) "blocked in every seed"
+
+  Spec.it s "the greedy policy plays a land where it may, else casts a spell" $ do
+    let greedily asked seed = either (Spec.assertFailure s . Text.unpack) pure =<< Except.runExceptT (State.evalStateT (Answerer.unwrap (Search.greedy (S.fixtureRegistry [])) asked) (S.seeded seed))
+    (_, landed) <- capturing s registry 3 "a menu offering a land play" $ \asked -> case Asked.prompt asked of
+      Prompt.ChooseAction _ _ menu | any isPlay menu && any isCast menu -> Just (Asked.game asked, Asked.MkAsked [] (Asked.game asked) (Asked.prompt asked))
+      _ -> Nothing
+    played <- traverse (greedily landed) [1 .. 4]
+    Spec.assertBool s (all isPlay played) ("a land played in every seed: " <> show played)
+    (_, casting) <- capturing s registry 3 "a menu offering a cast and no land play" $ \asked -> case Asked.prompt asked of
+      Prompt.ChooseAction _ _ menu | any isCast menu && not (any isPlay menu) -> Just (Asked.game asked, Asked.MkAsked [] (Asked.game asked) (Asked.prompt asked))
+      _ -> Nothing
+    cast <- traverse (greedily casting) [1 .. 4]
+    Spec.assertBool s (all isCast cast) ("a spell cast in every seed: " <> show cast)
+
+  Spec.it s "the greedy policy attacks unless an untapped creature could block, kill the attacker and survive" $ do
+    (gs, (pid, candidates)) <- capturing s registry 3 "a declaration of attackers facing a creature" $ \asked -> case Asked.prompt asked of
+      Prompt.DeclareAttackers decider pid candidates
+        | Search.searchable asked decider pid (Search.attacks candidates),
+          not (null (opposing pid (Asked.game asked))) ->
+            Just (Asked.game asked, (pid, candidates))
+      _ -> Nothing
+    let blocker = take 1 (opposing pid gs)
+        tapped = Map.map (\o -> if Object.owner o /= pid && Object.zone o == Zone.Battlefield then o {Object.tapped = TapState.Tapped} else o) (GameState.objects gs)
+    Spec.assertEqWith s "against nothing untapped" (Search.greedyAttacks pid candidates gs {GameState.objects = tapped}) candidates
+    Spec.assertEqWith s "against an untapped creature of equal size" (Search.greedyAttacks pid candidates gs {GameState.objects = grown 0 blocker tapped}) candidates
+    Spec.assertEqWith s "against an untapped creature that kills and survives" (Search.greedyAttacks pid candidates gs {GameState.objects = grown 1 blocker tapped}) []
+
+  Spec.it s "the greedy policy blocks when the block wins, or to survive" $ do
+    (gs, (pid, blockers, attackers)) <- capturing s registry 3 "a declaration of blockers against one attacker" $ \asked -> case Asked.prompt asked of
+      Prompt.DeclareBlockers decider pid blockers attackers | length attackers == 1 && Search.firstBlocks pid (Asked.game asked) && Search.searchable asked decider pid (Search.blocks blockers attackers) -> Just (Asked.game asked, (pid, blockers, attackers))
+      _ -> Nothing
+    let blocked world = Set.unions (Map.elems (Search.greedyBlocks pid blockers attackers world))
+    Spec.assertEqWith s "an even trade at 20 life" (blocked gs) Set.empty
+    Spec.assertEqWith s "an even trade at 1 life" (blocked (atOneLife pid gs)) (Set.fromList attackers)
+    Spec.assertEqWith s "a blocker that kills and survives" (blocked gs {GameState.objects = grown 1 (take 1 blockers) (GameState.objects gs)}) (Set.fromList attackers)
+
+  Spec.it s "a greedy playout attacks an opponent at 1 life who has nothing untapped, and wins" $ do
+    (pid, asked) <- openAttack s registry
+    let budget = SearchBudget.MkSearchBudget {SearchBudget.samples = 1, SearchBudget.turns = 0, SearchBudget.prompts = 400, SearchBudget.playout = Playout.Greedy}
+        unpicked = Search.MkPick (const Nothing)
+    scores <- traverse (\n -> either (Spec.assertFailure s . Text.unpack) pure =<< Except.runExceptT (State.evalStateT (Search.rollout (S.fixtureRegistry []) budget Weights.neutral Engine.resumeTurnBasedAction pid unpicked (Asked.game asked)) (S.seeded n))) [1 .. 8]
+    Spec.assertEqWith s "won in every seed" scores (Search.won <$ scores)
   where
     viewer = S.alice
 
@@ -185,8 +230,30 @@ openAttack s registry = do
 -- the neutral weights, from `seed`.
 searched :: (Monad m) => Spec.Spec m n -> Asked.Asked GameState.GameState r -> Word.Word32 -> m r
 searched s asked seed =
-  let budget = SearchBudget.MkSearchBudget {SearchBudget.samples = 2, SearchBudget.turns = 1000, SearchBudget.prompts = 40}
+  let budget = SearchBudget.MkSearchBudget {SearchBudget.samples = 2, SearchBudget.turns = 1000, SearchBudget.prompts = 40, SearchBudget.playout = Playout.Random}
    in either (Spec.assertFailure s . Text.unpack) pure =<< Except.runExceptT (State.evalStateT (Answerer.unwrap (Search.search (S.fixtureRegistry []) budget Weights.neutral Search.known) asked) (S.seeded seed))
+
+-- The creatures on the battlefield another player than `pid` controls.
+opposing :: PlayerId.PlayerId -> GameState.GameState -> [ObjectId.ObjectId]
+opposing pid gs = [oid | oid <- Set.toList (GameState.battlefield gs), maybe False (/= pid) (Projection.View.controllerOf oid gs), Set.member CardType.Creature (ProjectedCharacteristics.cardTypes (Projection.project oid gs))]
+
+-- The objects with each of `oids` untapped and given `n` +1/+1 counters.
+grown :: Natural.Natural -> [ObjectId.ObjectId] -> Map.Map ObjectId.ObjectId Object.Object -> Map.Map ObjectId.ObjectId Object.Object
+grown n oids objects =
+  let grow o = o {Object.tapped = TapState.Untapped, Object.counters = if n == 0 then Object.counters o else Map.insertWith (+) CounterKind.PlusOnePlusOne n (Object.counters o)}
+   in Foldable.foldl' (flip (Map.adjust grow)) objects oids
+
+-- Whether an action plays a land.
+isPlay :: Action.Action -> Bool
+isPlay action = case action of
+  Action.Play {} -> True
+  _ -> False
+
+-- Whether an action casts a spell.
+isCast :: Action.Action -> Bool
+isCast action = case action of
+  Action.Cast {} -> True
+  _ -> False
 
 -- No feature weighted.
 zero :: Features.Features

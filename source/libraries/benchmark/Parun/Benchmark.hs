@@ -3,14 +3,21 @@
 module Parun.Benchmark where
 
 import qualified Control.Exception as Exception
+import qualified Control.Monad.Trans.Class as Trans
+import qualified Control.Monad.Trans.State.Strict as State
+import qualified Data.Either as Either
 import qualified Data.Foldable as Foldable
+import qualified Data.Functor.Identity as Identity
 import qualified Data.List as List
 import qualified Data.List.NonEmpty as NonEmpty
 import qualified Data.Map.Strict as Map
 import qualified Data.Sequence as Seq
 import qualified Data.Set as Set
+import qualified Data.Text as Text
+import qualified Data.Word as Word
 import Numeric.Natural (Natural)
 import qualified Parun.Benchmark.Harness as Harness
+import qualified Parun.DeckList as DeckList
 import qualified Parun.Engine.Action as Action
 import qualified Parun.Engine.Cast as Cast
 import qualified Parun.Engine.Cost as Cost
@@ -20,15 +27,23 @@ import qualified Parun.Engine.Mana as Mana
 import qualified Parun.Engine.Script as Script
 import qualified Parun.Engine.Setup as Setup
 import qualified Parun.Extra.Natural as Natural
+import qualified Parun.Play.Command as Command
+import qualified Parun.Play.Game as Play.Game
+import qualified Parun.Play.Generator as Play.Generator
+import qualified Parun.Play.Search as Search
 import qualified Parun.Registry as Registry
 import qualified Parun.Types.Action as Action.Type
+import qualified Parun.Types.Answerer as Answerer
 import qualified Parun.Types.Asked as Asked
 import qualified Parun.Types.Color as Color
 import qualified Parun.Types.Deck as Deck
 import qualified Parun.Types.GameSettings as GameSettings
 import Parun.Types.GameState (GameState)
 import qualified Parun.Types.GameState as GameState
+import qualified Parun.Types.Generator as Generator
+import qualified Parun.Types.Key as Key
 import qualified Parun.Types.LibraryPosition as LibraryPosition
+import qualified Parun.Types.Limits as Limits
 import Parun.Types.ManaCost (ManaCost)
 import qualified Parun.Types.ManaCost as ManaCost
 import qualified Parun.Types.ManaSymbol as ManaSymbol
@@ -37,12 +52,15 @@ import qualified Parun.Types.Object as Object
 import qualified Parun.Types.Phase as Phase
 import Parun.Types.PlayerId (PlayerId)
 import qualified Parun.Types.PlayerId as PlayerId
+import qualified Parun.Types.Playout as Playout
 import qualified Parun.Types.Printing as Printing
 import qualified Parun.Types.Prompt as Prompt
 import qualified Parun.Types.Recipient as Recipient
 import Parun.Types.Result (Result)
+import qualified Parun.Types.SearchBudget as SearchBudget
 import qualified Parun.Types.Sickness as Sickness
 import qualified Parun.Types.TurnRegisters as TurnRegisters
+import qualified Parun.Types.Weights as Weights
 import qualified Parun.Types.Zone as Zone
 
 -- Two players, seeded from the benchmark's argument.
@@ -469,10 +487,45 @@ generic n = ManaCost.MkManaCost [ManaSymbol.Generic n]
 colored :: Color.Color -> Int -> ManaCost
 colored color n = ManaCost.MkManaCost (replicate n (ManaSymbol.OfType (ManaType.Colored color)))
 
+-- #9341: playouts of the search bot's (Search.rollout) under each policy,
+-- from seat 1's first priority decision with a choice from turn 3 on in a
+-- Kamahl's Temper mirror the random bot plays, at parun match's default budget;
+-- the argument the playouts' count, each seeded by its index. Its time over
+-- the count is the inverse of rollouts per second.
+playouts :: Registry.Registry Identity.Identity -> GameState -> Playout.Playout -> Word.Word32 -> Integer
+playouts registry gs policy count = sum (fmap (playout registry gs policy) (takeWhile (<= count) [1 ..]))
+{-# NOINLINE playouts #-}
+
+-- One of 'playouts', seeded by `seed`.
+playout :: Registry.Registry Identity.Identity -> GameState -> Playout.Playout -> Word.Word32 -> Integer
+playout registry gs policy seed =
+  let budget = SearchBudget.MkSearchBudget {SearchBudget.samples = 1, SearchBudget.turns = 0, SearchBudget.prompts = 300, SearchBudget.playout = policy}
+   in Either.fromRight 0 (Identity.runIdentity (Play.Game.playing (seeded seed) (Search.rollout registry budget Weights.neutral Engine.resumePriority (PlayerId.MkPlayerId 0) (Search.MkPick (const Nothing)) gs)))
+
+-- A generator keyed by `n` alone.
+seeded :: Word.Word32 -> Generator.Generator
+seeded n = Play.Generator.fromKey (Key.UnsafeKey (Seq.fromList (n : replicate 7 0)))
+
+-- The game at that decision.
+decisionIn :: Registry.Registry Identity.Identity -> Deck.Deck -> IO GameState
+decisionIn registry deck =
+  let lifted = Registry.hoist Trans.lift registry
+      capture = Answerer.MkAnswerer $ \asked -> case Asked.prompt asked of
+        Prompt.ChooseAction decider pid menu
+          | pid == PlayerId.MkPlayerId 0 && TurnRegisters.turnNumber (GameState.turn (Asked.game asked)) >= 3 && Search.searchable asked decider pid (Search.options menu) -> do
+              Play.Game.underneath (State.put (Just (Asked.game asked)))
+              Play.Game.stop (Text.pack "found")
+        _ -> Answerer.unwrap (Play.Game.bot lifted) asked
+      taken = snd (Identity.runIdentity (State.runStateT (Play.Game.run lifted Nothing Limits.standard [] (Map.fromList [(Command.idOf 1, capture), (Command.idOf 2, capture)]) (seeded 3) Map.empty (Command.seated 1 (deck NonEmpty.:| [deck]))) Nothing))
+   in maybe (Exception.throwIO (userError "no decision from turn 3 on")) pure taken
+
 main :: IO ()
 main = do
   root <- Registry.defaultRoot
   registry <- Registry.fileRegistry root
+  reference <- Registry.loadRoot root >>= Registry.defaultRegistry
+  temper <- Command.load reference "data/decks/sets/10e/kamahls-temper.txt" >>= either (Exception.throwIO . userError . show) (pure . DeckList.deck)
+  decided <- decisionIn reference temper
   deck <- loadRedDeck registry
   controlDeck <- loadControlDeck registry
   noAuraDeck <- loadNoAuraDeck registry
@@ -502,7 +555,9 @@ main = do
   gond <- fetchOrThrow registry "Presence of Gond"
   bears <- fetchOrThrow registry "Grizzly Bears"
   Harness.defaultMain
-    [ -- #9339: a loop's cost by the size of the board it builds.
+    [ Harness.whnf "playouts random 8" (playouts reference decided Playout.Random) 8,
+      Harness.whnf "playouts greedy 8" (playouts reference decided Playout.Greedy) 8,
+      -- #9339: a loop's cost by the size of the board it builds.
       Harness.whnf "intruder loop 25" (intruderLoop alarm gond bears) 25,
       Harness.whnf "intruder loop 50" (intruderLoop alarm gond bears) 50,
       Harness.whnf "intruder loop 100" (intruderLoop alarm gond bears) 100,
