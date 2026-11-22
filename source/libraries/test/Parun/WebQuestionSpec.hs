@@ -625,6 +625,7 @@ spec s registry = Spec.describe s "WebQuestion" $ do
     let cut = Question.Web.blank {Question.Web.logged = Seq.fromList ([turn 1, event "old", turn 2] <> fmap (event . show) [1 :: Int .. 10])}
     Spec.assertBool s (maybe False (not . Text.isInfixOf (Text.pack "Turn 1") . Html.toText) (within "div class=\"log-recent\"" (Question.Web.view asked cut))) "no heading whose events the cut left out"
     Spec.assertBool s (maybe False (Text.isInfixOf (Text.pack "<div class=\"log-panel\"") . Html.toText) (within "section class=\"log-pane\"" (Question.Web.view asked busy))) "the whole log opens from the log's heading"
+    Spec.assertBool s (maybe False (Text.isPrefixOf (Text.pack "<div class=\"log-panel\" role=\"region\" aria-labelledby=\"log-panel-heading\"><h2 class=\"log-panel-heading\" id=\"log-panel-heading\">The whole log</h2>") . Html.toText) (within "div class=\"log-panel\"" (Question.Web.view asked busy))) "under its own heading"
     Spec.assertBool s (maybe False (not . Text.isInfixOf (Text.pack "log-") . Html.toText) (within "div class=\"turn-bar" (Question.Web.view asked busy))) "not from the turn bar"
     Spec.assertBool s (maybe False (not . Text.isInfixOf (Text.pack "log-") . Html.toText) (within "section class=\"prompt\"" (Question.Web.view asked busy))) "nor above the prompt"
     let shock = ObjectId.MkObjectId 5
