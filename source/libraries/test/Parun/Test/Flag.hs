@@ -3,11 +3,7 @@
 module Parun.Test.Flag where
 
 import qualified Control.Monad.Catch as Catch
-import qualified Data.Char as Char
-import qualified Data.List as List
-import qualified Parun.Exceptions.InvalidOption as InvalidOption
-import qualified Parun.Exceptions.UnexpectedArgument as UnexpectedArgument
-import qualified Parun.Exceptions.UnknownOption as UnknownOption
+import qualified Parun.CommandLine as CommandLine
 import qualified System.Console.GetOpt as GetOpt
 
 -- | One flag on the command line, its argument as given.
@@ -42,8 +38,5 @@ usage = GetOpt.usageInfo "usage: parun test [OPTION...]" flags
 -- or option missing its argument.
 fromArguments :: (Catch.MonadThrow m) => [String] -> m [Flag]
 fromArguments arguments = do
-  let (fs, positional, unknown, problems) = GetOpt.getOpt' GetOpt.Permute flags arguments
-  mapM_ (Catch.throwM . UnexpectedArgument.MkUnexpectedArgument) positional
-  mapM_ (Catch.throwM . UnknownOption.MkUnknownOption) unknown
-  mapM_ (Catch.throwM . InvalidOption.MkInvalidOption . List.dropWhileEnd Char.isSpace) problems
-  pure fs
+  (fs, positional) <- CommandLine.options flags arguments
+  fs <$ CommandLine.positionals [] (Just 0) positional

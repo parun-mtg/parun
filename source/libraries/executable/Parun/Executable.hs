@@ -13,11 +13,22 @@ import qualified Data.Set as Set
 import qualified Data.Text as Text
 import qualified Data.Text.Encoding as Encoding
 import qualified Data.Text.IO as TextIO
+import Numeric.Natural (Natural)
 import qualified Parun.Benchmark
 import qualified Parun.Codec.Card as Card
 import qualified Parun.Codec.Scenario as Codec.Scenario
 import qualified Parun.Codec.StickerSheet as StickerSheet
+import qualified Parun.CommandLine as CommandLine
+import qualified Parun.CommandLine.Bare.Config as Bare.Config
+import qualified Parun.CommandLine.Bare.Flag as Bare.Flag
+import qualified Parun.CommandLine.Deck.Config as Deck.Config
+import qualified Parun.CommandLine.Deck.Flag as Deck.Flag
+import qualified Parun.CommandLine.Scenario.Config as Scenario.Config
+import qualified Parun.CommandLine.Scenario.Flag as Scenario.Flag
+import qualified Parun.CommandLine.Translate.Config as Translate.Config
+import qualified Parun.CommandLine.Translate.Flag as Translate.Flag
 import qualified Parun.DeckList as DeckList
+import qualified Parun.Exceptions.UnexpectedArgument as UnexpectedArgument
 import qualified Parun.Ingest as Ingest
 import qualified Parun.Json.Value as Value
 import qualified Parun.JsonCodec.Codec as Codec
@@ -61,17 +72,12 @@ main :: IO ()
 main = do
   arguments <- Environment.getArgs
   case arguments of
-    ["schema"] -> schema
-    ["schema", "scenario"] -> scenarioSchema
-    ["deck", path] -> deck Nothing Nothing path
-    ["deck", "--format", format, path] -> deck (Just (Text.pack format)) Nothing path
-    ["deck", "--pool", pool, path] -> deck Nothing (Just pool) path
-    ["deck", "--format", format, "--pool", pool, path] -> deck (Just (Text.pack format)) (Just pool) path
-    ["ingest", path] -> ingest path
-    ["oracle"] -> oracle
-    "translate" : mtgish : candidates : rest@(_ : _) -> translate mtgish candidates rest
-    "scenario" : "--perturb" : paths@(_ : _) -> scenario perturbed paths
-    "scenario" : paths@(_ : _) -> scenario plainly paths
+    "schema" : rest -> schemaCommand rest
+    "deck" : rest -> deckCommand rest
+    "ingest" : rest -> ingestCommand rest
+    "oracle" : rest -> oracleCommand rest
+    "translate" : rest -> translateCommand rest
+    "scenario" : rest -> scenarioCommand rest
     "play" : rest -> Parun.Play.Command.main rest
     "match" : rest -> Parun.Play.Match.main rest
     "meta" : rest -> Parun.Play.Meta.main rest
@@ -81,6 +87,13 @@ main = do
       name <- Environment.getProgName
       IO.hPutStrLn IO.stderr $ "usage: " <> name <> " (schema [scenario] | deck [--format FORMAT] [--pool FILE] FILE | ingest FILE | oracle | translate MTGISH CANDIDATES [--out DIR] [--set CODE] [NAME | @FILE...] | scenario [--perturb] FILE... | play [OPTION...] DECK DECK | match [OPTION...] DECK DECK | meta [OPTION...] META DECK [DECK] | bench | test)"
       Exit.exitFailure
+
+-- | `parun deck`: its command line read (Parun.CommandLine.Deck.Config), then
+-- 'deck'.
+deckCommand :: [String] -> IO ()
+deckCommand arguments = do
+  config <- CommandLine.configured Deck.Flag.usage Deck.Config.help (Deck.Flag.fromArguments arguments >>= uncurry Deck.Config.fromFlags)
+  Foldable.for_ (Deck.Config.file config) $ deck (Deck.Config.format config) (Deck.Config.pool config)
 
 -- | Reads a deck list and writes back the deck it means, which is what makes a
 -- deck expressible as the text a player types rather than only as Haskell.
@@ -124,6 +137,24 @@ readDeckList registry path = do
           IO.hPutStrLn IO.stderr (Exception.displayException corpus)
           Exit.exitFailure
         Right listed -> pure listed
+
+-- | `parun ingest`: its command line read (Parun.CommandLine.Bare.Config),
+-- then 'ingest'.
+ingestCommand :: [String] -> IO ()
+ingestCommand arguments = do
+  config <- bare "ingest" "FILE" ["FILE"] (Just 1) arguments
+  Foldable.traverse_ ingest . Maybe.listToMaybe $ Bare.Config.arguments config
+
+-- | `parun oracle`: its command line read (Parun.CommandLine.Bare.Config),
+-- then 'oracle'.
+oracleCommand :: [String] -> IO ()
+oracleCommand arguments = bare "oracle" "" [] (Just 0) arguments >> oracle
+
+-- | The config of a command taking no option but the usage's, under the usage
+-- of its name and positional arguments ('Bare.Flag.usage'), those checked
+-- against the names required and the most allowed; or the exit refusing it.
+bare :: String -> String -> [String] -> Maybe Natural -> [String] -> IO Bare.Config.Config
+bare name positional required most arguments = CommandLine.configured (Bare.Flag.usage name positional) Bare.Config.help (Bare.Flag.fromArguments arguments >>= uncurry (Bare.Config.fromFlags required most))
 
 -- | Reads script/ingest/candidates.jq's reduction of MTGJSON's AtomicCards and
 -- writes a card file for every keyword-only card it holds, Oracle text included
@@ -191,6 +222,14 @@ oracle = do
   putStrLn $ "rendered: " <> show (length rendered) <> " of " <> show (length cards)
   putStrLn $ "abilities rendered: " <> show (length (filter (not . null) abilities)) <> " of " <> show (length abilities) <> ", " <> show (length whole) <> " of them on cards rendered in full"
 
+-- | `parun translate`: its command line read
+-- (Parun.CommandLine.Translate.Config), then 'translate'.
+translateCommand :: [String] -> IO ()
+translateCommand arguments = do
+  config <- CommandLine.configured Translate.Flag.usage Translate.Config.help (Translate.Flag.fromArguments arguments >>= uncurry Translate.Config.fromFlags)
+  Foldable.for_ (Translate.Config.sources config) $ \(mtgish, candidates) ->
+    translate mtgish candidates (Translate.Config.out config) (Translate.Config.set config) (Translate.Config.names config)
+
 -- | Translates the named cards, or a set's, from mtgish's AST file (one card
 -- per line) and writes a card file for each that renders back to its Oracle
 -- text, which CANDIDATES (script/ingest/candidates.jq's output) supplies, as
@@ -203,14 +242,8 @@ oracle = do
 -- mtgish's ('Ingest.reprint'). Each card accepted is listed with its
 -- abilities, each marked new or named with a pool card that shares its
 -- wording.
-translate :: FilePath -> FilePath -> [String] -> IO ()
-translate mtgishPath candidatesPath options = do
-  let go (o, c, names) rest = case rest of
-        "--out" : dir : more -> go (Just dir, c, names) more
-        "--set" : code : more -> go (o, Just (Text.pack code), names) more
-        name : more -> go (o, c, names <> [Text.pack name]) more
-        [] -> (o, c, names)
-      (out, set, requested) = go (Nothing, Nothing, []) options
+translate :: FilePath -> FilePath -> Maybe FilePath -> Maybe Text.Text -> [Text.Text] -> IO ()
+translate mtgishPath candidatesPath out set requested = do
   bytes <- ByteString.readFile candidatesPath
   let parsed = do
         contents <- either (Left . Text.pack . show) Right (Encoding.decodeUtf8' bytes)
@@ -377,6 +410,17 @@ reportMarkers (added, removed) = do
 writeCard :: FilePath -> Card.Type.Card -> IO ()
 writeCard file = ByteString.writeFile file . Encoding.encodeUtf8 . Common.render . Codec.encode Card.codec
 
+-- | `parun schema`: its command line read (Parun.CommandLine.Bare.Config),
+-- then 'scenarioSchema' for a `scenario` argument and 'schema' for none.
+schemaCommand :: [String] -> IO ()
+schemaCommand arguments = do
+  let usage = Bare.Flag.usage "schema" "[scenario]"
+  config <- CommandLine.configured usage Bare.Config.help $ do
+    config <- Bare.Flag.fromArguments arguments >>= uncurry (Bare.Config.fromFlags [] (Just 1))
+    Monad.unless (Bare.Config.help config) $ mapM_ (Exception.throwIO . UnexpectedArgument.MkUnexpectedArgument) (filter (/= "scenario") (Bare.Config.arguments config))
+    pure config
+  if null (Bare.Config.arguments config) then schema else scenarioSchema
+
 -- | Emits the card format's JSON Schema, which is otherwise reachable only
 -- from a REPL. Card rather than Printing because Parun.Registry.parseCard is what reads
 -- a committed file and it decodes a Card; the two write the same wire.
@@ -396,6 +440,14 @@ scenarioSchema :: IO ()
 scenarioSchema =
   Builder.hPutBuilder IO.stdout $
     Value.encode (Define.toValue (Define.run (Codec.schema Codec.Scenario.codec))) <> Builder.charUtf8 '\n'
+
+-- | `parun scenario`: its command line read
+-- (Parun.CommandLine.Scenario.Config), then 'scenario', 'perturbed' under
+-- `--perturb`.
+scenarioCommand :: [String] -> IO ()
+scenarioCommand arguments = do
+  config <- CommandLine.configured Scenario.Flag.usage Scenario.Config.help (Scenario.Flag.fromArguments arguments >>= uncurry Scenario.Config.fromFlags)
+  scenario (if Scenario.Config.perturb config then perturbed else plainly) (Scenario.Config.files config)
 
 -- | Runs each scenario file against the bundled cards and says how it went,
 -- one line each: the first way to drive the engine that is not the test suite.

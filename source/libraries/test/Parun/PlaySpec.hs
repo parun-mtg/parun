@@ -1,8 +1,9 @@
 {-# LANGUAGE GADTs #-}
 
--- Covers Parun.Play.Game and Parun.Play.Wording: who plays first, the card
--- names a seat may choose, and how a seat's view and a finished game are
--- worded for people.
+-- Covers Parun.Play.Game, Parun.Play.Wording and Parun.Play.Command.game:
+-- who plays first, the card names a seat may choose, how a seat's view and a
+-- finished game are worded for people, and what a saved game says it was
+-- played with.
 module Parun.PlaySpec where
 
 import qualified Control.Monad.Trans.Except as Except
@@ -27,6 +28,8 @@ import qualified Parun.Engine.Setup as Setup
 import qualified Parun.Engine.Stack as Stack
 import qualified Parun.Play.Command as Command
 import qualified Parun.Play.Game as Game
+import qualified Parun.Play.Key as Key
+import qualified Parun.Play.Search as Search
 import qualified Parun.Play.Wording as Wording
 import qualified Parun.Registry as Registry
 import qualified Parun.ResolveSpec as ResolveSpec
@@ -44,6 +47,7 @@ import qualified Parun.Types.CountedAct as CountedAct
 import qualified Parun.Types.CounterKind as CounterKind
 import qualified Parun.Types.CountersPlaced as CountersPlaced
 import qualified Parun.Types.Decider as Decider
+import qualified Parun.Types.Deck as Deck
 import qualified Parun.Types.Departure as Departure.Type
 import qualified Parun.Types.DieResult as DieResult
 import qualified Parun.Types.Drew as Drew
@@ -75,6 +79,7 @@ import qualified Parun.Types.Prompt as Prompt
 import qualified Parun.Types.Recipient as Recipient
 import qualified Parun.Types.Result as Result
 import qualified Parun.Types.RollReading as RollReading
+import qualified Parun.Types.Scenario as Scenario
 import qualified Parun.Types.TurnRegisters as TurnRegisters
 import qualified Parun.Types.Zone as Zone
 import qualified Parun.Types.ZoneChange as ZoneChange
@@ -394,3 +399,12 @@ startingAmong seats options given seed =
 -- The seats told they were picked to choose who plays first.
 pickedIn :: Heard -> [Natural]
 pickedIn heard = [n | n <- [1, 2, 3], Text.pack ("Seat " <> show n <> " was picked at random to choose who plays first.") `elem` said heard]
+
+-- | Command.game, which runs in IO.
+gameSpec :: Spec.Spec IO n -> n ()
+gameSpec s = Spec.describe s "Play.Command" $ do
+  Spec.it s "a game's saved scenario names what it was played with" $ do
+    let seed = Generator.key (S.seeded 7)
+        deck = Deck.fromCards Map.empty
+    (_, recorded) <- Command.game (Text.pack "the web client") (const (pure Nothing)) (pure Nothing) (const (pure ())) PlayOptions.none Search.known (S.fixtureRegistry []) Nothing (deck NonEmpty.:| [deck]) seed
+    Spec.assertEqWith s "description" (Scenario.description recorded) (Text.pack "Played with the web client, seed " <> Key.toHex seed <> Text.pack ".")
