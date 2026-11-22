@@ -28,7 +28,12 @@ spec s = Spec.describe s "Parun.Web.Replay" $ do
     Spec.it s "steps back only past the start and on only before the end" $ do
       let page at = Html.toText . Replay.view $ frame {Replay.position = at}
           off label at = Text.isInfixOf (Text.pack "disabled=\"\"") . Text.takeWhile (/= '>') . snd . Text.breakOn (Text.pack ("aria-label=\"" <> label <> "\"")) $ page at
-      Spec.assertEq s (fmap (\label -> (off label 0, off label 3)) ["First position", "Previous position", "Next position", "Last position"]) [(True, False), (True, False), (False, True), (False, True)]
+      Spec.assertEq s (fmap (\label -> (off label 0, off label 3)) ["First position", "Previous turn", "Previous position", "Next position", "Next turn", "Last position"]) [(True, False), (True, False), (True, False), (False, True), (False, True), (False, True)]
+
+    Spec.it s "steps a turn at a time, to the turn's first position or the end" $ do
+      let tapped label at = let page = Replay.view frame {Replay.position = at} in Html.labelled (Text.pack "button") (Text.pack label) page >>= \path -> Html.handler (Text.pack "click") path page
+      Spec.assertEqWith s "next turn" (fmap (tapped "\x23E9") [0, 1, 2]) (fmap (Just . Replay.MkGo) [2, 2, 3])
+      Spec.assertEqWith s "previous turn" (fmap (tapped "\x23EA") [1, 2, 3]) (fmap (Just . Replay.MkGo) [0, 0, 2])
 
     Spec.it s "says where the run stands, and why it stopped short" $ do
       let page = Html.toText . Replay.view $ frame {Replay.position = 1, Replay.failure = Just (Text.pack "the entry was never reached")}
@@ -77,6 +82,12 @@ spec s = Spec.describe s "Parun.Web.Replay" $ do
       Spec.assertEqWith s "cited" (Replay.titled (Text.pack "x") (Text.pack "CR 702.9b, 509.1: flying blocks")) (Text.pack "Flying blocks", Text.pack "CR 702.9b, 509.1")
       Spec.assertEqWith s "uncited" (Replay.titled (Text.pack "x") (Text.pack "Grizzly Bears attacks: it hits")) (Text.pack "Grizzly Bears attacks: it hits", Text.empty)
       Spec.assertEqWith s "undescribed" (Replay.titled (Text.pack "game/cr-305-2a-a-land-is-played") Text.empty) (Text.pack "CR 305 2a a land is played", Text.empty)
+
+  Spec.describe s "turnStarts" $ do
+    Spec.it s "names the first entry and each entry opening a turn" $ do
+      let on turn = Timed.MkTimed (When.MkWhen turn Phase.PrecombatMain (Label.MkLabel (Text.pack "player1")) 0) Nothing (Entry.Do Move.Pass)
+      Spec.assertEqWith s "starts" (Replay.turnStarts (fmap on [1, 1, 2, 2, 2, 3, 1])) [0, 2, 5, 6]
+      Spec.assertEqWith s "empty" (Replay.turnStarts []) []
 
   Spec.describe s "lineOf" $ do
     let at turn phase label = When.MkWhen turn phase (Label.MkLabel (Text.pack label)) 0
@@ -172,6 +183,7 @@ frame =
       Replay.viewer = PlayerId.MkPlayerId 0,
       Replay.position = 0,
       Replay.positions = 3,
+      Replay.turns = [0, 2],
       Replay.board = Nothing,
       Replay.depth = 0,
       Replay.entry = Nothing,

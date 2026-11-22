@@ -1234,6 +1234,7 @@ frameAt stop =
       Replay.viewer = PlayerView.Type.viewer (boardOf stop),
       Replay.position = 0,
       Replay.positions = 0,
+      Replay.turns = [],
       Replay.board = Just (boardOf stop),
       Replay.depth = case stop of
         Stop.MkBefore _ _ asked -> Protocol.depthOf asked
