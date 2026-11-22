@@ -26,6 +26,7 @@ import qualified Parun.Engine.PlayerView as PlayerView
 import qualified Parun.Engine.Resolve.Effect as Resolve
 import qualified Parun.Engine.Setup as Setup
 import qualified Parun.Engine.Stack as Stack
+import qualified Parun.Play.Command as Command
 import qualified Parun.Play.Command.Config as Config
 import qualified Parun.Play.Game as Game
 import qualified Parun.Play.Key as Key
