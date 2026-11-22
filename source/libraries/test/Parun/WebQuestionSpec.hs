@@ -654,6 +654,10 @@ spec s registry = Spec.describe s "WebQuestion" $ do
     let bob = R.Array [R.Text (Text.pack "Player"), R.Text (Text.pack "1")]
         request = asking (Text.pack "ChooseTargets") (R.Object [(Text.pack "source", R.Text (Text.pack "$9")), (Text.pack "slots", R.Array [R.Array [R.Text (Text.pack "target"), R.Array [R.Number 1, R.Array [bob]]]])])
     Spec.assertBool s (Maybe.isJust (Html.labelled (Text.pack "button") (Text.pack "Player 2 (20 life)") (Question.Web.view request Question.Web.blank))) "Player 2 (20 life)"
+    -- The seat itself is named as its side of the table is.
+    let alice = R.Array [R.Text (Text.pack "Player"), R.Text (Text.pack "0")]
+        yours = asking (Text.pack "ChooseTargets") (R.Object [(Text.pack "source", R.Text (Text.pack "$9")), (Text.pack "slots", R.Array [R.Array [R.Text (Text.pack "target"), R.Array [R.Number 1, R.Array [alice, bob]]]])])
+    Spec.assertEqWith s "You (20 life)" (fmap (\label -> Maybe.isJust (Html.labelled (Text.pack "button") (Text.pack label) (Question.Web.view yours Question.Web.blank))) ["You (20 life)", "Player 1 (20 life)", "Player 2 (20 life)"]) [True, False, True]
 
   Spec.it s "CR 603.3b triggered abilities are ordered by tapping each in turn, answered by Done" $ do
     let request = asking (Text.pack "OrderTriggers") (R.Array [R.Object [(Text.pack "source", R.Text (Text.pack "$1"))], R.Object [(Text.pack "source", R.Text (Text.pack "$2"))], R.Object [(Text.pack "source", R.Text (Text.pack "$3"))]])
@@ -1110,10 +1114,11 @@ multiplayerSpec s registry = Spec.describe s "WebQuestion" . Spec.describe s "mu
 
   Spec.it s "CR 724.1 a controlled seat's defender is chosen by its controller among three seats, the hand-off naming both" $ do
     -- Seated alice, carol, bob: carol, Player 2, controls bob's turn with Mindslaver.
+    -- carol, the seat asked, is "You" among the candidates as at the table.
     (asked, gs) <- playedThrough s registry "combat/cr-724-1-a-controlled-active-player-s-choice-of-defender-routes-to-their-controller" 6 "ChooseDefender" [["Player 1"]]
     Spec.assertEqWith s "for" (fmap (Question.for . Request.question) asked) [Just S.carol]
     Spec.assertEqWith s "handed" (fmap (Html.content . Question.Web.handOff) asked) [Text.pack "Pass the screen to Player 2, deciding for Player 3.Ready"]
-    Spec.assertBool s (all (Text.isInfixOf (Text.pack "You're deciding for Player 3, whom you control.Choose defender.Player 1Player 2") . Html.content . (`Question.Web.view` Question.Web.blank)) asked) "the banner and both candidates"
+    Spec.assertBool s (all (Text.isInfixOf (Text.pack "You're deciding for Player 3, whom you control.Choose defender.Player 1You") . Html.content . (`Question.Web.view` Question.Web.blank)) asked) "the banner and both candidates"
     Spec.assertEqWith s "defender" (Combat.defenders (TurnRegisters.combat (GameState.turn gs))) [S.alice]
 
 -- | The scenario named played to the stop at `at`, then on: each question of
