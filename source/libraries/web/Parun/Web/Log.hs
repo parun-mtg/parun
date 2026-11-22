@@ -94,6 +94,29 @@ item viewer linked fresh entry = case entry of
   MkTurn _ _ -> Element.el "li" ["turn"] [] [Element.text (sentence viewer entry)]
   MkEvent w t -> Element.el "li" (["fresh" | fresh] <> ["minor" | w == MkMinor]) [] (maybe (Mana.rich t) (\(known, reading) -> linking known reading t) linked)
 
+-- | Entries in the order given, each beside its place in the log, as a list
+-- per turn under that turn's heading ("Turn 5 · You"); `linked` says by an
+-- entry's position here what its names link to (item), `lit` by its place
+-- whether it is fresh.
+grouped :: PlayerId.PlayerId -> (Int -> Maybe (Map.Map Text.Text ObjectId.ObjectId, ObjectId.ObjectId -> msg)) -> (Int -> Bool) -> Seq.Seq (Int, Entry) -> Html.Html msg
+grouped viewer linked lit entries =
+  let numbered = Foldable.toList (Seq.mapWithIndex (\j (i, e) -> (j, i, e)) entries)
+      -- Runs each starting at a heading, the first perhaps without one.
+      runs = List.groupBy (\_ (_, _, e) -> not (isTurn e)) numbered
+      heading e = case e of
+        MkTurn n active -> [Element.el "h3" ["log-turn-heading"] [] [Element.text (Text.pack ("Turn " <> show n <> " \x00b7 ") <> (if active == viewer then Text.pack "You" else Wording.player active))]]
+        MkEvent _ _ -> []
+      run items = case items of
+        (_, i, first) : _ ->
+          [ ( Text.pack (show i),
+              Element.el "section" ["log-turn"] [] $
+                heading first
+                  <> [Element.keyed "ul" ["log-list"] [] [(Text.pack (show i'), item viewer (linked j) (lit i') e) | (j, i', e) <- items, not (isTurn e)] | any (\(_, _, e) -> not (isTurn e)) items]
+            )
+          ]
+        [] -> []
+   in Element.keyed "div" ["log-turns"] [] (concatMap run runs)
+
 -- | The text, each name it holds a link (the longest where two start
 -- together), the rest drawn as Mana.rich draws it.
 linking :: Map.Map Text.Text ObjectId.ObjectId -> (ObjectId.ObjectId -> msg) -> Text.Text -> [Html.Html msg]

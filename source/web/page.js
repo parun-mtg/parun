@@ -259,6 +259,10 @@ function apply(json) {
     }
   }
   holdDock(docked);
+  syncSheet();
+  // A preview the view no longer shows previews again when its card is next
+  // focused.
+  if (root.querySelector(".sheet-backdrop.peek") === null) peeking = null;
   placePeek();
   syncSettings();
   floatChanges(before);
@@ -333,39 +337,73 @@ for (const type of events) {
 
 // A pointer resting on a card (a mouse, not a finger) previews its sheet
 // after a moment, and leaving the card ends the preview (Parun.Web.Card's
-// "peek" and "unpeek").
+// "peek" and "unpeek"). Where the side column has room for the card being
+// read (style.css's inspector), a card the keyboard focuses previews too,
+// and a preview stays until the next.
 const hovering = matchMedia("(hover: hover) and (pointer: fine)");
+const inspecting = matchMedia("(min-width: 900px)");
 let resting = null;
 let peeking = null;
+function peek(card) {
+  if (!card.isConnected || root.querySelector(".sheet-backdrop:not(.peek)")) return;
+  const path = pathOf(card);
+  if (path === null) return;
+  peeking = card;
+  engine.postMessage({ type: "peek", path, value: "" });
+}
 root.addEventListener("pointerover", (event) => {
   const card = event.target.closest?.(".card, .stack-item");
   if (!hovering.matches || !card || card === resting) return;
   resting = card;
   setTimeout(() => {
-    if (resting !== card || !card.isConnected || root.querySelector(".sheet-backdrop:not(.peek)")) return;
-    const path = pathOf(card);
-    if (path === null) return;
-    peeking = card;
-    engine.postMessage({ type: "peek", path, value: "" });
+    if (resting === card) peek(card);
   }, 450);
 });
 root.addEventListener("pointerout", (event) => {
   const card = event.target.closest?.(".card, .stack-item");
   if (!card || card.contains(event.relatedTarget)) return;
   if (resting === card) resting = null;
-  if (peeking === card) {
+  if (peeking === card && !inspecting.matches) {
     peeking = null;
     const path = pathOf(card);
     if (path !== null) engine.postMessage({ type: "unpeek", path, value: "" });
   }
 });
+root.addEventListener("focusin", (event) => {
+  const card = event.target.closest?.(".card, .stack-item");
+  if (inspecting.matches && card && card !== peeking && !card.closest(".sheet-backdrop") && card.matches(":focus-visible")) peek(card);
+});
+
+// The open card sheet where it is a dialog over the table, as on a phone,
+// rather than the side column's inspector; only then does it take the
+// keys from the prompt.
+function modalSheet() {
+  return inspecting.matches ? null : openSheet();
+}
+function syncSheet() {
+  const backdrop = root.querySelector(".sheet-backdrop:not(.peek)");
+  if (backdrop === null) return;
+  if (inspecting.matches) backdrop.removeAttribute("aria-modal");
+  else backdrop.setAttribute("aria-modal", "true");
+}
+// A preview left in the inspector would float unplaced over the table once
+// the window narrows, so narrowing withdraws it.
+inspecting.addEventListener("change", () => {
+  syncSheet();
+  if (inspecting.matches || peeking === null) return;
+  const from = peeking.isConnected ? peeking : cards()[0];
+  peeking = null;
+  const path = from ? pathOf(from) : null;
+  if (path !== null) engine.postMessage({ type: "unpeek", path, value: "" });
+});
 
 // A preview sits beside the card it previews, as a tooltip would: to its
 // right where it fits, else to its left, level with it as far as the window
-// allows.
+// allows; in the inspector, where it is.
 function placePeek() {
   const sheet = root.querySelector(".sheet-backdrop.peek .sheet");
-  if (!sheet || !peeking?.isConnected) return;
+  if (sheet && inspecting.matches) sheet.removeAttribute("style");
+  if (!sheet || !peeking?.isConnected || inspecting.matches) return;
   const card = peeking.getBoundingClientRect();
   const box = sheet.getBoundingClientRect();
   const width = document.documentElement.clientWidth;
@@ -434,21 +472,21 @@ function unkey() {
   }
 }
 
-// Gives the main button Enter, then numbers 1 to 9 and 0 the buttons an
-// open card sheet offers, or else the prompt's: in the order shown, but the
-// main button, any with a key of the view's, the news's card links and the
-// damage rows' amounts. A prompt's numbers follow its own buttons, so the same
-// kind of prompt numbers alike; a meaning that recurs has its letter.
+// Gives the main button Enter, then numbers 1 to 9 and 0 the buttons a
+// card sheet over the table offers, or else the prompt's: in the order
+// shown, but the main button, any with a key of the view's and the damage
+// rows' amounts. A prompt's numbers follow its own buttons, so the same kind
+// of prompt numbers alike; a meaning that recurs has its letter.
 function rekey() {
   const give = (button, key) => {
     button.setAttribute("aria-keyshortcuts", key);
     button.setAttribute(given, "");
   };
-  const sheet = openSheet();
+  const sheet = modalSheet();
   const main = sheet ? null : mainButton();
   if (main && !main.hasAttribute("aria-keyshortcuts")) give(main, "Enter");
   const candidates = sheet ? sheet.querySelectorAll(".sheet-actions button") : root.querySelectorAll(".prompt button");
-  const numbered = Array.from(candidates).filter((button) => button !== main && !button.disabled && !button.hasAttribute("aria-keyshortcuts") && !button.closest(".news, .segmented"));
+  const numbered = Array.from(candidates).filter((button) => button !== main && !button.disabled && !button.hasAttribute("aria-keyshortcuts") && !button.closest(".segmented"));
   // Buttons that are numbers themselves (choosing X) each take their own digit.
   if (numbered.length > 0 && numbered.every((button) => /^\d+$/.test(button.textContent))) {
     for (const button of numbered) if (/^\d$/.test(button.textContent)) give(button, button.textContent);
@@ -489,7 +527,7 @@ document.addEventListener("keydown", (event) => {
   if (event.defaultPrevented || event.metaKey || event.ctrlKey) return;
   if (!settings.hidden || shortcuts.open) return;
   const key = pressed(event);
-  const sheet = openSheet();
+  const sheet = modalSheet();
   if (key === "Escape") {
     const levels = root.querySelector("details.auto-pass[open], details.log[open]");
     if (levels) {
@@ -498,7 +536,7 @@ document.addEventListener("keydown", (event) => {
     } else root.querySelector(".sheet button.close")?.click();
     return;
   }
-  // Tab stays within an open card sheet, as within any dialog.
+  // Tab stays within an open card sheet over the table, as within any dialog.
   if (key === "Tab" && sheet) {
     const stops = Array.from(sheet.querySelectorAll("button"));
     const first = stops[0];

@@ -80,13 +80,20 @@ listedName view reply = maybe (Text.pack "something") (Wording.choosable view) (
 -- | A seat a listed offer names by its bare id, or declining as None.
 playerName :: R.Reply -> Text.Text
 playerName reply = case reply of
-  R.Text x -> maybe x (Wording.player . PlayerId.MkPlayerId) (Read.readMaybe (Text.unpack x))
+  R.Text x -> maybe x Wording.player (playerOf reply)
   _ -> Text.pack "None"
+
+-- | The seat a bare id names, as a listed offer and a player recipient
+-- (recipientPlayer) carry it.
+playerOf :: R.Reply -> Maybe PlayerId.PlayerId
+playerOf reply = case reply of
+  R.Text x -> PlayerId.MkPlayerId <$> Read.readMaybe (Text.unpack x)
+  _ -> Nothing
 
 recipientName :: PlayerView.PlayerView -> R.Reply -> Text.Text
 recipientName view reply = case reply of
   R.Array [R.Text tag, R.Text x]
-    | tag == Text.pack "Player" -> maybe x (Wording.player . PlayerId.MkPlayerId) (Read.readMaybe (Text.unpack x))
+    | tag == Text.pack "Player" -> maybe x Wording.player (playerOf (R.Text x))
     | otherwise -> listedName view (R.Text x)
   R.Array [R.Text tag, draw] | tag == Text.pack "Pile" -> pileName draw
   _ -> Text.pack "something"
@@ -256,7 +263,7 @@ bySeat view = List.sortOn key
 -- | The player a recipient names, if it is one.
 recipientPlayer :: R.Reply -> Maybe PlayerId.PlayerId
 recipientPlayer reply = case reply of
-  R.Array [R.Text tag, R.Text x] | tag == Text.pack "Player" -> fmap PlayerId.MkPlayerId (Read.readMaybe (Text.unpack x))
+  R.Array [R.Text tag, x] | tag == Text.pack "Player" -> playerOf x
   _ -> Nothing
 
 -- | The object a recipient names, if it is not a player.
@@ -340,10 +347,9 @@ targetName view legal reply =
   where
     -- A player by their life total too, which aiming damage weighs.
     life = case reply of
-      R.Array [R.Text tag, R.Text x]
-        | tag == Text.pack "Player",
-          Just n <- Read.readMaybe (Text.unpack x),
-          seat : _ <- filter ((== PlayerId.MkPlayerId n) . SeatView.player) (PlayerView.seats view) ->
+      _
+        | Just pid <- recipientPlayer reply,
+          seat : _ <- filter ((== pid) . SeatView.player) (PlayerView.seats view) ->
             Text.pack (" (" <> show (SeatView.life seat) <> " life)")
       _ -> Text.empty
     piles = ListUtils.nubOrd (Maybe.mapMaybe pileOf legal)
