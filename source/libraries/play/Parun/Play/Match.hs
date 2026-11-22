@@ -32,6 +32,7 @@ import qualified Parun.Types.GameState as GameState
 import qualified Parun.Types.Key as Key.Type
 import qualified Parun.Types.Limits as Limits
 import qualified Parun.Types.MatchOptions as MatchOptions
+import qualified Parun.Types.Playout as Playout
 import qualified Parun.Types.Result as Result
 import qualified Parun.Types.SearchBudget as SearchBudget
 import qualified Parun.Types.Tally as Tally
@@ -67,6 +68,7 @@ flags =
     GetOpt.Option [] ["samples"] (GetOpt.ReqArg (perSeat "a number of samples" (Monad.mfilter (> 0) . Read.readMaybe) (\n b -> b {SearchBudget.samples = n})) "[SEAT=]N") "the search bot's playouts of each option, in every seat or in SEAT alone; 2 when absent",
     GetOpt.Option [] ["turns"] (GetOpt.ReqArg (perSeat "a number of turns" Read.readMaybe (\n b -> b {SearchBudget.turns = n})) "[SEAT=]N") "the turns a playout may begin after the decision's before it is cut off and its position scored, in every seat or in SEAT alone; 0 when absent, ending a playout as the next turn begins",
     GetOpt.Option [] ["cutoff"] (GetOpt.ReqArg (perSeat "a number of prompts" Read.readMaybe (\n b -> b {SearchBudget.prompts = n})) "[SEAT=]N") "the prompts a playout is answered before it is cut off and its position scored, in every seat or in SEAT alone; 300 when absent",
+    GetOpt.Option [] ["playout"] (GetOpt.ReqArg (perSeat "a playout policy, random or greedy" playoutNamed (\n b -> b {SearchBudget.playout = n})) "[SEAT=]POLICY") "who answers every seat in the search bot's playouts, random (the random bot) or greedy (playing a land, else casting a permanent spell, where it can), in every seat or in SEAT alone; random when absent",
     GetOpt.Option [] ["candidates"] (GetOpt.ReqArg (perSeat "a number of candidate worlds" Read.readMaybe (\n b -> b {SearchBudget.candidates = n})) "[SEAT=]N") "the worlds the search bot deals once at a decision and weighs by how likely each made the passes its opponents made, every playout's world drawn among them, in every seat or in SEAT alone; 0 when absent, each playout's world dealt fresh",
     GetOpt.Option [] ["weights"] (GetOpt.ReqArg (\s o -> Right $ case seated s of Just (n, path) -> o {MatchOptions.weighing = Map.insert n path (MatchOptions.weighing o)}; Nothing -> o {MatchOptions.weighing = Map.fromList [(n, s) | n <- [1, 2]]}) "[SEAT=]FILE") "the file of the weights the search bot scores a cut-off playout's position by (Parun.Codec.Weights), in every seat or in SEAT alone; every feature weighted 1 on each side when absent",
     GetOpt.Option [] ["meta"] (GetOpt.ReqArg (\s o -> Right o {MatchOptions.meta = Just s}) "META") "the deck lists are not known: the search bot infers each opponent's from this meta file's decks; each list known when absent"
@@ -79,6 +81,10 @@ perSeat what parse set s o = case seated s of
   Just (n, value) | Just x <- parse value -> Right o {MatchOptions.budgets = Map.adjust (set x) n (MatchOptions.budgets o)}
   _ | Just x <- parse s -> Right o {MatchOptions.budgets = Map.map (set x) (MatchOptions.budgets o)}
   _ -> Left ("not " <> what <> ": " <> s)
+
+-- | The playout policy a `--playout` value names.
+playoutNamed :: String -> Maybe Playout.Playout
+playoutNamed s = lookup s [("random", Playout.Random), ("greedy", Playout.Greedy)]
 
 -- | A seat, 1 or 2, and the value it prefixes with `=`.
 seated :: String -> Maybe (Natural, String)
