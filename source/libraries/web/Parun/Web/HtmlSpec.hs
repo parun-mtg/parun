@@ -31,6 +31,18 @@ spec s = Spec.describe s "Parun.Web.Html" $ do
     Spec.it s "finds nothing at a path leading nowhere" $ do
       Spec.assertEq s (Html.handler click (Seq.fromList [2]) page) Nothing
 
+  Spec.describe s "inert" $ do
+    Spec.it s "drops every handler and disables each control once" $ do
+      let form =
+            Html.element
+              (Text.pack "div")
+              [Attribute.MkOn click 'd']
+              [ Html.element (Text.pack "button") [Attribute.MkOn click 'b'] [Html.text (Text.pack "Go")],
+                Html.element (Text.pack "input") [Attribute.MkProperty (Text.pack "disabled") Text.empty] []
+              ]
+          dead = Html.inert form :: Html.Html Char
+      Spec.assertEq s (Html.toText dead, Html.handler click (Seq.fromList [0]) dead) (Text.pack "<div><button disabled=\"\">Go</button><input disabled=\"\"></input></div>", Nothing)
+
 click :: Text.Text
 click = Text.pack "click"
 

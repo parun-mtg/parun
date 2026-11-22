@@ -71,6 +71,21 @@ childList kids = case kids of
   MkUnkeyed items -> items
   MkKeyed items -> fmap snd items
 
+-- | The view drawn but dead: every handler dropped and every control
+-- disabled, so nothing in it looks or acts pressable.
+inert :: Html a -> Html b
+inert html = case html of
+  MkText t -> MkText t
+  MkElement node ->
+    let kept = Seq.fromList [Attribute.MkProperty name value | Attribute.MkProperty name value <- Foldable.toList (attributes node)]
+        disabled = Text.pack "disabled"
+        control = tag node `elem` fmap Text.pack ["button", "input", "select", "textarea"]
+        already = any (\attribute -> case attribute of Attribute.MkProperty name _ -> name == disabled; Attribute.MkOn _ _ -> False) kept
+        kids = case children node of
+          MkUnkeyed items -> MkUnkeyed (fmap inert items)
+          MkKeyed items -> MkKeyed (fmap (Bifunctor.second inert) items)
+     in MkElement (MkNode (tag node) (if control && not already then kept Seq.|> Attribute.MkProperty disabled Text.empty else kept) kids)
+
 -- | The node a path of child indices leads to from the root, if any.
 at :: Seq.Seq Natural -> Html msg -> Maybe (Html msg)
 at path html = case Seq.viewl path of
