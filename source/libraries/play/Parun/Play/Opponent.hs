@@ -1,5 +1,5 @@
 -- | The search bot's settings named for a person choosing an opponent: a
--- difficulty's budget and a persona's weights (#9348). Parun.Play.OpponentSpec
+-- difficulty's budget and a persona's weights. Parun.Play.OpponentSpec
 -- proves their order; the rates each level wins at against the one below
 -- are measured with `parun match --level`.
 module Parun.Play.Opponent where
