@@ -5,12 +5,12 @@
 -- newest 'cap' of them, as rows for the home screen and the replays.
 module Parun.Web.History where
 
+import qualified Data.Either as Either
 import qualified Data.Foldable as Foldable
 import qualified Data.List as List
 import qualified Data.Map.Strict as Map
 import qualified Data.Maybe as Maybe
 import qualified Data.Ord as Ord
-import qualified Data.Sequence as Seq
 import qualified Data.Set as Set
 import qualified Data.Text as Text
 import Numeric.Natural (Natural)
@@ -26,8 +26,6 @@ import qualified Parun.Play.Command as Command
 import qualified Parun.Types.Color as Color
 import qualified Parun.Types.Label as Label
 import qualified Parun.Types.Scenario as Scenario
-import qualified Parun.Types.Timed as Timed
-import qualified Parun.Types.When as When
 import qualified Parun.Web.Card as Card
 import qualified Parun.Web.Element as Element
 import qualified Parun.Web.Ending as Ending
@@ -121,24 +119,36 @@ adding game games = splitAt cap (newestFirst (game : filter ((/= key game) . key
 newestFirst :: [Game] -> [Game]
 newestFirst = List.sortOn (Ord.Down . ended)
 
+-- | The games kept, read back as keys and summaries: those that read,
+-- newest first, up to the 'cap', and the keys of the rest, to forget: a
+-- summary that does not read, and any game past the cap, which another tab
+-- may have kept meanwhile.
+loaded :: [(Text.Text, Text.Text)] -> ([Game], [Text.Text])
+loaded kept =
+  let (unread, games) = Either.partitionEithers [either (const (Left k)) Right (decode summary) | (k, summary) <- kept]
+      (keeping, past) = splitAt cap (newestFirst games)
+   in (keeping, unread <> fmap key past)
+
+-- | What to say of a game a build other than the one running played: its
+-- answers may not replay the same game under rules or cards since changed.
+drift :: Text.Text -> Game -> Maybe Text.Text
+drift running game
+  | build game == running = Nothing
+  | otherwise = Just (Text.pack "Recorded on an older version; it may not replay exactly.")
+
 -- | The game a play keeps, with its scenario file, ended `at` milliseconds
 -- since the epoch, the clock `ahead` minutes ahead of UTC, on `build`,
--- between these seats: one with a result, which a concession gives; none
--- for one given up from the home screen or stopped short.
+-- between these seats, in the turn its trail last sampled (Ending.sampled):
+-- one with a result, which a concession gives; none for one given up from
+-- the home screen or stopped short.
 recordOf :: Integer -> Integer -> Text.Text -> [Seat] -> Ending.Played -> Maybe (Game, Text.Text)
 recordOf at ahead build' seats' played = case played of
   Ending.MkAbandoned -> Nothing
   Ending.MkFinished ending
     | Ending.verdict ending == Ending.MkStopped -> Nothing
     | otherwise ->
-        let scenario = Ending.scenario ending
-         in Just (MkGame at ahead build' (Ending.verdict ending) (either (const 0) lastTurn (scenarioOf scenario)) (Ending.said ending) seats', scenario)
-
--- | The turn of the scenario's last entry, which the game ended in.
-lastTurn :: Scenario.Scenario -> Natural
-lastTurn scenario = case Seq.viewr (Scenario.timeline scenario) of
-  _ Seq.:> timed -> When.turn (Timed.when timed)
-  Seq.EmptyR -> 0
+        -- A trail is empty only where no board was ever seen: no turn began.
+        Just (MkGame at ahead build' (Ending.verdict ending) (maybe 0 fst (Maybe.listToMaybe (reverse (Ending.trail ending)))) (Ending.said ending) seats', Ending.scenario ending)
 
 -- | The label the game's scenario gives the player's seat (Command.labels).
 viewerLabel :: Game -> Maybe Text.Text

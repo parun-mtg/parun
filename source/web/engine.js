@@ -92,7 +92,8 @@ function changePlayed(change) {
     .catch((problem) => console.warn(problem));
 }
 let played = new Map();
-globalThis.parunPlayed = () => Array.from(played.values(), (game) => game.summary).join("\n");
+// Each game's key and summary, a tab between them, a line each.
+globalThis.parunPlayed = () => Array.from(played, ([key, game]) => `${key}\t${game.summary}`).join("\n");
 globalThis.parunPlayedScenario = (key) => played.get(key)?.scenario ?? "";
 globalThis.parunKeepPlayed = (key, summary, scenario) => {
   played.set(key, { summary, scenario });
@@ -101,6 +102,11 @@ globalThis.parunKeepPlayed = (key, summary, scenario) => {
 globalThis.parunForgetPlayed = (key) => {
   played.delete(key);
   changePlayed((store) => store.delete(key));
+};
+// Every game, those another tab kept since this one loaded too.
+globalThis.parunClearPlayed = () => {
+  played.clear();
+  changePlayed((store) => store.clear());
 };
 
 // Each load phase's time goes to the page.

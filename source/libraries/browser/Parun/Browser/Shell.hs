@@ -159,10 +159,10 @@ start :: IO ()
 start = do
   chosen <- maybe Web.Question.MkStandard (Maybe.fromMaybe Web.Question.MkStandard . Web.Question.levelNamed) <$> Environment.lookupEnv "parun_level"
   built <- maybe (Text.pack "unknown") Text.pack <$> Environment.lookupEnv "parun_build"
-  kept <- Browser.playedGames
-  let (unread', games) = Either.partitionEithers (fmap History.decode kept)
-  mapM_ (Browser.logLine . (Text.pack "A finished game kept does not read: " <>)) unread'
-  shell <- MkShell <$> Browser.mount <*> IORef.newIORef (MkLoaded Loading.new Nothing Map.empty Nothing Map.empty [] Nothing Nothing Nothing False Nothing Map.empty [] Nothing Map.empty Map.empty Map.empty) <*> IORef.newIORef chosen <*> pure built <*> IORef.newIORef (History.newestFirst games)
+  -- A summary that does not read, or a game past the cap, is forgotten.
+  (games, gone) <- History.loaded <$> Browser.playedGames
+  mapM_ Browser.forgetPlayed gone
+  shell <- MkShell <$> Browser.mount <*> IORef.newIORef (MkLoaded Loading.new Nothing Map.empty Nothing Map.empty [] Nothing Nothing Nothing False Nothing Map.empty [] Nothing Map.empty Map.empty Map.empty) <*> IORef.newIORef chosen <*> pure built <*> IORef.newIORef games
   Exception.catch (opening built >>= follow shell) $ \problem ->
     Browser.display (page shell) $ message ["The page stopped on an error:", Exception.displayException (problem :: Exception.SomeException)]
 
@@ -343,7 +343,11 @@ lobby shell initial said = do
       seated <- traverse slot (zip [0 ..] others)
       case (,) <$> Lobby.mine current <*> Monad.join mineFile of
         Just mine | Just rest <- sequence seated -> do
-          Monad.forM_ (Map.keys invited) $ \i -> Link.send (Browser.channel (page shell) (build shell) i) (Link.MkStart (seatOf i))
+          -- Each player told the match-up again with every bot's deck drawn,
+          -- which the history of their game names (Join.places), then their seat.
+          Monad.forM_ (Map.keys invited) $ \i -> do
+            Link.send (Browser.channel (page shell) (build shell) i) (Link.MkMatchup (Lobby.placesFor i current {Lobby.theirs = others}))
+            Link.send (Browser.channel (page shell) (build shell) i) (Link.MkStart (seatOf i))
           play shell (mine NonEmpty.:| rest) (Map.keysSet invited) Nothing
         -- A bot with no deck to play keeps the lobby up.
         _ -> go' current {Lobby.ready = False} told
@@ -985,12 +989,10 @@ replays shell = do
               MkTapped (Screen.MkReplay (Web.Replay.MkPlayAgain k)) _
                 | Just decks <- List.find ((== k) . History.key) (Web.Replay.games shown) >>= traverse History.deckName . History.seats >>= NonEmpty.nonEmpty -> pure (MkToMatchup decks)
               MkTapped (Screen.MkReplay Web.Replay.MkConfirmForget) _ -> do
-                let gone = case Web.Replay.forgetting shown of
-                      Just (Web.Replay.MkForgetGame k) -> [k]
-                      Just Web.Replay.MkForgetAll -> fmap History.key (Web.Replay.games shown)
-                      Nothing -> []
-                mapM_ Browser.forgetPlayed gone
-                IORef.modifyIORef' (finished shell) (filter ((`notElem` gone) . History.key))
+                case Web.Replay.forgetting shown of
+                  Just (Web.Replay.MkForgetGame k) -> Browser.forgetPlayed k >> IORef.modifyIORef' (finished shell) (filter ((/= k) . History.key))
+                  Just Web.Replay.MkForgetAll -> Browser.clearPlayed >> IORef.writeIORef (finished shell) []
+                  Nothing -> pure ()
                 go (Web.Replay.forgot shown)
               MkTapped (Screen.MkReplay event) value -> go (Web.Replay.listed event value shown)
               _ -> go shown
@@ -1009,12 +1011,13 @@ replay shell source at = opened shell source $ \reg title seen scenario -> do
 -- with the way back to the position and to play on again; given up from
 -- the home screen for another game, that one.
 playOnFrom :: Shell -> Web.Replay.Source -> Natural -> IO Next
-playOnFrom shell source at = opened shell source $ \reg _ _ scenario -> do
+playOnFrom shell source at = opened shell source $ \reg _ played scenario -> do
   chosen <- IORef.newIORef MkToHome
   ended <- Replay.playOn (page shell) reg (level shell) scenario at (leaveFor shell chosen)
   case ended of
     Nothing -> IORef.readIORef chosen
-    Just said -> do
+    Just said' -> do
+      let said = foldMap (Maybe.maybeToList . History.drift (build shell)) played <> said'
       let go = do
             Browser.display (page shell) . fmap Screen.MkReplay $ Web.Replay.ended said
             woke <- await shell
@@ -1027,7 +1030,8 @@ playOnFrom shell source at = opened shell source $ \reg _ _ scenario -> do
 -- | The registry and the replay, its title, the game finished here it is,
 -- if it is one, and its scenario, handed on once loaded, a message shown
 -- meanwhile; else why either did not load. A game finished here waits on no
--- scenarios, and is described by how it ended.
+-- scenarios, and is described by how it ended, after a note where another
+-- build played it (History.drift).
 opened :: Shell -> Web.Replay.Source -> (Registry.Registry Identity.Identity -> Text.Text -> Maybe History.Game -> Scenario.Type.Scenario -> IO Next) -> IO Next
 opened shell source continue = do
   Browser.display (page shell) (message ["Loading the cards\x2026"])
@@ -1047,7 +1051,7 @@ opened shell source continue = do
         case (game, History.scenarioOf file) of
           (Nothing, _) -> notice shell [Text.pack "That game is no longer kept here."]
           (_, Left problem) -> notice shell [Text.pack "The game kept does not decode:", problem]
-          (Just g, Right scenario) -> continue reg (History.matchup g) (Just g) scenario {Scenario.Type.description = Text.unwords (History.said g)}
+          (Just g, Right scenario) -> continue reg (History.matchup g) (Just g) scenario {Scenario.Type.description = Text.unwords (Maybe.maybeToList (History.drift (build shell) g) <> History.said g)}
 
 -- | Why a game could not be played, until the player goes home.
 notice :: Shell -> [Text.Text] -> IO Next

@@ -6,6 +6,7 @@
 module Parun.Web.Replay where
 
 import qualified Data.Bifunctor as Bifunctor
+import qualified Data.Char as Char
 import qualified Data.List as List
 import qualified Data.Map.Strict as Map
 import qualified Data.Maybe as Maybe
@@ -13,13 +14,20 @@ import qualified Data.Sequence as Seq
 import qualified Data.Set as Set
 import qualified Data.Text as Text
 import Numeric.Natural (Natural)
+import qualified Parun.Codec.Phase as Codec.Phase
 import qualified Parun.Extra.Natural as Natural
 import qualified Parun.Play.Wording as Wording
+import qualified Parun.Types.Answer as Answer
+import qualified Parun.Types.Entry as Entry
+import qualified Parun.Types.Label as Label
+import qualified Parun.Types.Move as Move
 import qualified Parun.Types.ObjectView as ObjectView
 import qualified Parun.Types.PlayerId as PlayerId
 import qualified Parun.Types.PlayerView as PlayerView
 import qualified Parun.Types.Question as Question
 import qualified Parun.Types.Request as Request
+import qualified Parun.Types.Timed as Timed
+import qualified Parun.Types.When as When
 import qualified Parun.Web.Bar as Bar
 import qualified Parun.Web.Board as Board
 import qualified Parun.Web.Card as Card
@@ -135,6 +143,8 @@ data Frame = MkFrame
     -- | The entry the run takes next, as the scenario writes it, and its
     -- moment; Nothing at the end.
     entry :: Maybe Text.Text,
+    -- | That entry in a line (lineOf), where it answers or concedes.
+    entryLine :: Maybe Text.Text,
     -- | The question the entry answers or is checked at, as its seat is sent it.
     question :: Maybe Request.Request,
     -- | Why the run stopped short of this position.
@@ -215,7 +225,11 @@ controls frame =
 stop :: Frame -> Maybe Request.Request -> [Html.Html Event]
 stop frame asked =
   [Element.el "p" ["problem"] [Element.attr "role" (Text.pack "alert")] [Element.text problem] | problem <- Maybe.maybeToList (failure frame)]
-    <> [Element.el "pre" ["entry"] [] [Element.text e] | e <- Maybe.maybeToList (entry frame)]
+    <> [Element.el "p" ["entry-line"] [] [Element.text l] | l <- Maybe.maybeToList (entryLine frame)]
+    <> [ if Maybe.isJust (entryLine frame) then Element.el "details" ["entry-details"] [] [Element.el "summary" [] [] [Element.string "Details"], raw] else raw
+       | e <- Maybe.maybeToList (entry frame),
+         let raw = Element.el "pre" ["entry"] [] [Element.text e]
+       ]
     <> case (question frame, asked) of
       (_, Just r) -> fmap (fmap MkTable) (Web.Question.form r Set.empty)
       (Just r, Nothing) -> [Element.el "p" ["waiting"] [] [Element.text (Text.pack "Waiting on " <> seatName frame (Question.seat (Request.question r)) <> Text.pack ": " <> Question.kind (Request.question r) <> Text.pack ".")]]
@@ -223,6 +237,24 @@ stop frame asked =
 
 seatName :: Frame -> PlayerId.PlayerId -> Text.Text
 seatName frame pid = maybe (Wording.player pid) snd (List.find ((== pid) . fst) (seats frame))
+
+-- | A timeline entry in a line, each seat named as `names` names it by its
+-- label, else by the label: "Turn 1 · Untap · You: shuffle". Only an answer
+-- or a concession has one, the entries a played game records
+-- (Parun.Play.Record.entryFor).
+lineOf :: Map.Map Text.Text Text.Text -> Timed.Timed -> Maybe Text.Text
+lineOf names timed =
+  let at = Timed.when timed
+      label = Label.unwrap (When.player at)
+      what = case Timed.entry timed of
+        Entry.Do (Move.Answer answer) -> Just (spaced (Answer.prompt answer))
+        Entry.Do Move.Concede -> Just (Text.pack "concede")
+        _ -> Nothing
+   in fmap (\did -> Text.intercalate (Text.pack " \x00b7 ") [Text.pack ("Turn " <> show (When.turn at)), capitalised (spaced (Text.pack (Codec.Phase.flatName (When.phase at)))), Map.findWithDefault label label names <> Text.pack ": " <> did]) what
+  where
+    -- "ChooseAction" as "choose action".
+    spaced = Text.toLower . Text.strip . Text.concatMap (\c -> if Char.isUpper c then Text.pack [' ', c] else Text.singleton c)
+    capitalised t = maybe t (\(c, rest) -> Text.cons (Char.toUpper c) rest) (Text.uncons t)
 
 -- | The sheet of the card being read.
 sheet :: Frame -> Maybe (Html.Html Event)

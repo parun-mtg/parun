@@ -4302,6 +4302,20 @@ body:has(main.game, #app [data-settings], #app .splash, #app main.loading) #sett
   padding: 0.4em 0.55em;
 }
 
+/* The entry in a line, the entry as written behind Details. */
+.replay .entry-line {
+  font-weight: 600;
+}
+
+.replay .entry-details > summary {
+  padding: 12px 0;
+  line-height: 20px;
+  color: var(--act-text);
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
 main.scenarios {
   justify-content: flex-start;
   align-items: stretch;

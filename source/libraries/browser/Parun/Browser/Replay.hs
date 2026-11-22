@@ -91,7 +91,7 @@ viewer page registry name played scenario given = do
       -- The run to a position.
       reach at = Exception.evaluate . Identity.runIdentity $ Scenario.replay registry (Just at) scenario
       go at stop viewing reading = do
-        let frame = frameOf name scenario seats count at stop viewing reading
+        let frame = frameOf names name scenario seats count at stop viewing reading
         Browser.display page . fmap Screen.MkReplay $ Web.Replay.view frame
         (tapped, value) <- Browser.next page
         let moveTo target = if target == at then go at stop viewing Nothing else reach target >>= \next -> go target next viewing Nothing
@@ -146,10 +146,11 @@ seatsOf scenario =
         Start.FromDecks _ entrants -> fmap Entrant.name (NonEmpty.toList entrants)
    in zip (fmap PlayerId.MkPlayerId [0 ..]) (fmap Label.unwrap labels)
 
--- | What the page shows of a stop.
-frameOf :: Text.Text -> Scenario.Type.Scenario -> [(PlayerId.PlayerId, Text.Text)] -> Natural -> Natural -> Either ScenarioFailure.ScenarioFailure Stop.Stop -> PlayerId.PlayerId -> Maybe Web.Card.Reading -> Web.Replay.Frame
-frameOf name scenario seats count at stop seen reading =
-  let base = Web.Replay.MkFrame name (Scenario.Type.description scenario) seats seen at count Nothing 0 Nothing Nothing Nothing reading
+-- | What the page shows of a stop, each seat named in its entry's line as
+-- `names` names it by its label.
+frameOf :: Map.Map Text.Text Text.Text -> Text.Text -> Scenario.Type.Scenario -> [(PlayerId.PlayerId, Text.Text)] -> Natural -> Natural -> Either ScenarioFailure.ScenarioFailure Stop.Stop -> PlayerId.PlayerId -> Maybe Web.Card.Reading -> Web.Replay.Frame
+frameOf names name scenario seats count at stop seen reading =
+  let base = Web.Replay.MkFrame name (Scenario.Type.description scenario) seats seen at count Nothing 0 Nothing Nothing Nothing Nothing reading
    in case stop of
         Left failure -> base {Web.Replay.failure = Just (Scenario.render failure)}
         Right reached@(Stop.MkBefore _ timed asked) ->
@@ -157,6 +158,7 @@ frameOf name scenario seats count at stop seen reading =
             { Web.Replay.board = Just (PlayerView.Engine.viewFor seen (Stop.state reached)),
               Web.Replay.depth = Protocol.depthOf asked,
               Web.Replay.entry = Just (Scenario.renderWhen (Timed.when timed) <> Text.pack ": " <> Scenario.renderEntry (Timed.entry timed)),
+              Web.Replay.entryLine = Web.Replay.lineOf names timed,
               Web.Replay.question = Protocol.requestFor asked
             }
         Right reached@(Stop.MkEnded _) -> base {Web.Replay.board = Just (PlayerView.Engine.viewFor seen (Stop.state reached))}

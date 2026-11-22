@@ -3,7 +3,17 @@ module Parun.Web.ReplaySpec where
 import qualified Data.Map.Strict as Map
 import qualified Data.Text as Text
 import qualified Parun.Spec as Spec
+import qualified Parun.Types.Answer as Answer
+import qualified Parun.Types.BeginningStep as BeginningStep
+import qualified Parun.Types.CombatStep as CombatStep
+import qualified Parun.Types.Entry as Entry
+import qualified Parun.Types.Label as Label
+import qualified Parun.Types.Move as Move
+import qualified Parun.Types.Phase as Phase
 import qualified Parun.Types.PlayerId as PlayerId
+import qualified Parun.Types.Reply as Reply
+import qualified Parun.Types.Timed as Timed
+import qualified Parun.Types.When as When
 import qualified Parun.Web.History as History
 import qualified Parun.Web.HistorySpec as HistorySpec
 import qualified Parun.Web.Html as Html
@@ -33,6 +43,20 @@ spec s = Spec.describe s "Parun.Web.Replay" $ do
       Spec.assertEqWith s "play on" (tapped "Play on from here") (Just Replay.MkBranch)
       Spec.assertEqWith s "back" (tapped "All replays") (Just Replay.MkBack)
       Spec.assertBool s (not (Text.isInfixOf (Text.pack "&amp;branch") (Html.toText page))) "no branch link"
+
+    Spec.it s "says an answer in a line, the entry as written behind Details" $ do
+      let page = Html.toText . Replay.view $ frame {Replay.entry = Just (Text.pack "raw"), Replay.entryLine = Just (Text.pack "Turn 1 \x00b7 Untap \x00b7 You: shuffle")}
+      Spec.assertBool s (Text.isInfixOf (Text.pack "<p class=\"entry-line\">Turn 1 \x00b7 Untap \x00b7 You: shuffle</p><details class=\"entry-details\"><summary>Details</summary><pre class=\"entry\">raw</pre></details>") page) "line, then details"
+      Spec.assertBool s (Text.isInfixOf (Text.pack "<pre class=\"entry\">raw</pre>") (Html.toText (Replay.view frame {Replay.entry = Just (Text.pack "raw")}))) "raw alone without a line"
+
+  Spec.describe s "lineOf" $ do
+    Spec.it s "names the turn, the step, the seat and what it answers" $ do
+      let at turn phase label = When.MkWhen turn phase (Label.MkLabel (Text.pack label)) 0
+          answering prompt = Entry.Do (Move.Answer (Answer.MkAnswer (Text.pack prompt) (Reply.Array []) False))
+          names = Map.fromList [(Text.pack "player1", Text.pack "You")]
+      Spec.assertEqWith s "an answer" (Replay.lineOf names (Timed.MkTimed (at 1 (Phase.Beginning BeginningStep.Untap) "player1") Nothing (answering "Shuffle"))) (Just (Text.pack "Turn 1 \x00b7 Untap \x00b7 You: shuffle"))
+      Spec.assertEqWith s "a concession, its seat unnamed" (Replay.lineOf names (Timed.MkTimed (at 3 Phase.PrecombatMain "player2") Nothing (Entry.Do Move.Concede))) (Just (Text.pack "Turn 3 \x00b7 Precombat main \x00b7 player2: concede"))
+      Spec.assertEqWith s "a multiword prompt" (Replay.lineOf Map.empty (Timed.MkTimed (at 2 (Phase.Combat CombatStep.DeclareAttackers) "player1") Nothing (answering "DeclareAttackers"))) (Just (Text.pack "Turn 2 \x00b7 Declare attackers \x00b7 player1: declare attackers"))
 
   Spec.describe s "picker" $ do
     Spec.it s "lists the names holding what is typed, whatever its case" $ do
@@ -105,6 +129,7 @@ frame =
       Replay.board = Nothing,
       Replay.depth = 0,
       Replay.entry = Nothing,
+      Replay.entryLine = Nothing,
       Replay.question = Nothing,
       Replay.failure = Nothing,
       Replay.reading = Nothing

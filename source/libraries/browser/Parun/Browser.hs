@@ -136,10 +136,10 @@ forgetGame = forgetGameJs
 keptGame :: IO Text.Text
 keptGame = fmap (Text.pack . Prim.fromJSString) keptGameJs
 
--- | The summaries of the games this browser finished (Parun.Web.History),
--- one a line, as the worker read them when the page loaded and kept since.
-playedGames :: IO [Text.Text]
-playedGames = fmap (filter (not . Text.null) . Text.lines . Text.pack . Prim.fromJSString) playedJs
+-- | The games this browser finished (Parun.Web.History), each its key and
+-- its summary, as the worker read them when the page loaded and kept since.
+playedGames :: IO [(Text.Text, Text.Text)]
+playedGames = fmap (fmap (fmap (Text.drop 1) . Text.breakOn (Text.pack "\t")) . filter (not . Text.null) . Text.lines . Text.pack . Prim.fromJSString) playedJs
 
 -- | The scenario file of the finished game of this key, empty if none.
 playedScenario :: Text.Text -> IO Text.Text
@@ -153,6 +153,10 @@ keepPlayed k summary scenario = keepPlayedJs (Prim.toJSString (Text.unpack k)) (
 -- | Forgets the finished game of this key.
 forgetPlayed :: Text.Text -> IO ()
 forgetPlayed = forgetPlayedJs . Prim.toJSString . Text.unpack
+
+-- | Forgets every finished game, those another tab kept too.
+clearPlayed :: IO ()
+clearPlayed = clearPlayedJs
 
 -- | The page's clock: milliseconds since the Unix epoch, and how many
 -- minutes it runs ahead of UTC.
@@ -330,6 +334,9 @@ foreign import javascript unsafe "globalThis.parunKeepPlayed($1, $2, $3)"
 
 foreign import javascript unsafe "globalThis.parunForgetPlayed($1)"
   forgetPlayedJs :: Prim.JSString -> IO ()
+
+foreign import javascript unsafe "globalThis.parunClearPlayed()"
+  clearPlayedJs :: IO ()
 
 foreign import javascript unsafe "Date.now()"
   nowJs :: IO Double

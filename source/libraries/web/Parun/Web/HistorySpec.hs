@@ -34,10 +34,22 @@ spec s = Spec.describe s "Parun.Web.History" $ do
       Spec.assertEqWith s "kept" kept [game]
       Spec.assertEqWith s "dropped" dropped []
 
+  Spec.describe s "loaded" $ do
+    Spec.it s "reads the games kept newest first, forgetting a summary that does not read and any past the cap" $ do
+      let kept = [(Text.pack "bad", Text.pack "{")] <> [(History.key g, History.encode g) | n <- [1 .. toInteger History.cap + 1], let g = game {History.ended = n}]
+          (games, gone) = History.loaded kept
+      Spec.assertEqWith s "kept" (fmap History.ended games) [toInteger History.cap + 1, toInteger History.cap .. 2]
+      Spec.assertEqWith s "forgotten" gone [Text.pack "bad", Text.pack "1"]
+
+  Spec.describe s "drift" $ do
+    Spec.it s "notes a game another build played, and only one" $ do
+      Spec.assertEqWith s "this build" (History.drift (Text.pack "build") game) Nothing
+      Spec.assertEqWith s "another" (History.drift (Text.pack "newer") game) (Just (Text.pack "Recorded on an older version; it may not replay exactly."))
+
   Spec.describe s "recordOf" $ do
-    let finished verdict = Ending.MkFinished (Ending.MkEnding verdict [Text.pack "Player 1 wins."] scenario Seq.empty (PlayerId.MkPlayerId 0) [])
+    let finished verdict = Ending.MkFinished (Ending.MkEnding verdict [Text.pack "Player 1 wins."] scenario Seq.empty (PlayerId.MkPlayerId 0) [(1, []), (6, []), (7, [])])
         recorded = History.recordOf 1795266300000 60 (Text.pack "build") (History.seats game)
-    Spec.it s "keeps a game that ended with a result, its turn read off its last entry" $ do
+    Spec.it s "keeps a game that ended with a result, in the turn its trail last sampled" $ do
       Spec.assertEqWith s "won" (fmap fst (recorded (finished Ending.MkWon))) (Just game {History.verdict = Ending.MkWon, History.turns = 7})
       Spec.assertEqWith s "the scenario" (fmap snd (recorded (finished Ending.MkDrawn))) (Just scenario)
 

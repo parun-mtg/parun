@@ -75,7 +75,6 @@ spec s registry = Spec.describe s "Record" $ do
     case (outcome, kept) of
       (Right (_, final), Just (game, stored)) -> do
         Spec.assertEqWith s "the summary reads back" (History.decode (History.encode game)) (Right game)
-        Spec.assertEqWith s "the turn it ended in" (History.turns game) (TurnRegisters.turnNumber (GameState.turn final))
         replayed <- either (Spec.assertFailure s . Text.unpack) (Scenario.run registry) (History.scenarioOf stored)
         either (Spec.assertFailure s . Text.unpack . Scenario.render) (\gs -> Spec.assertBool s (gs == final) "the state it ended in") replayed
       (Left reason, _) -> Spec.assertFailure s (Text.unpack reason)
