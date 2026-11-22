@@ -1148,6 +1148,8 @@ import qualified Parun.Web.AppSpec
 import qualified Parun.Web.BarSpec
 import qualified Parun.Web.BuilderSpec
 import qualified Parun.Web.CardIndexSpec
+import qualified Parun.Web.DeckBrowserSpec
+import qualified Parun.Web.DecksSpec
 import qualified Parun.Web.DiffSpec
 import qualified Parun.Web.EndingSpec
 import qualified Parun.Web.HomeSpec
@@ -2349,6 +2351,8 @@ spec s reference corpus = do
   Parun.Web.BuilderSpec.spec s
   Parun.Web.CardIndexSpec.spec s
   Parun.Web.LobbySpec.spec s
+  Parun.Web.DeckBrowserSpec.spec s
+  Parun.Web.DecksSpec.spec s
   Parun.Web.JoinSpec.spec s
   Parun.Web.LinkSpec.spec s
   Parun.Web.IconSpec.spec s

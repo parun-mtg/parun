@@ -3357,9 +3357,9 @@ Entries are ordered by the first rule each cites.
 - **Rejected**: Reading each die once, at its face after its last reroll. CR
   706.2b has a reroll modify "the natural result", which leaves that reading
   open, but it drops a roll that displayed 20, the reminder text's own test.
-- **Site**: `Parun.Engine.Resolve.Effect.throwSettled`'s `rerollingWith` and
-  `Parun.Engine.Resolve.Common.recordRoll`, proved by the scenarios
-  `critical-hit-returns-for-a-natural-20-rerolled-away`,
+- **Site**: `Parun.Engine.Resolve.Effect.throwSettled`'s `rethrow` and
+  `recordRerolls`, and `Parun.Engine.Resolve.Common.recordRoll`, proved by
+  the scenarios `critical-hit-returns-for-a-natural-20-rerolled-away`,
   `critical-hit-returns-once-for-a-20-rerolled-between-two-rerolls` and
   `critical-hit-triggers-twice-for-a-20-rerolled-to-20`.
 - **Issue**: none.

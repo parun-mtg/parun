@@ -5,7 +5,8 @@
 -- | The search bot: flat Monte Carlo over a seat's priority and combat
 -- decisions. Each
 -- option is played out in worlds dealt consistently with what the seat has
--- seen, the random bot in every seat, and the option winning most is taken.
+-- seen, the budget's playout policy in every seat, and the option winning
+-- most is taken.
 module Parun.Play.Search where
 
 import Control.Applicative ((<|>))
@@ -21,6 +22,7 @@ import qualified Data.Maybe as Maybe
 import qualified Data.Sequence as Seq
 import qualified Data.Set as Set
 import Numeric.Natural (Natural)
+import qualified Parun.Engine.Card as Engine.Card
 import qualified Parun.Engine.Engine as Engine
 import qualified Parun.Engine.Event as Event
 import qualified Parun.Engine.Game as Engine.Game
@@ -56,6 +58,7 @@ import qualified Parun.Types.Player as Player
 import qualified Parun.Types.PlayerActed as PlayerActed
 import qualified Parun.Types.PlayerAction as PlayerAction
 import qualified Parun.Types.PlayerId as PlayerId
+import qualified Parun.Types.Playout as Playout
 import qualified Parun.Types.Printing as Printing
 import qualified Parun.Types.Program as Program
 import qualified Parun.Types.ProjectedCharacteristics as ProjectedCharacteristics
@@ -325,9 +328,9 @@ search registry budget weights prior watched recalled = Answerer.MkAnswerer $ \a
           | searchable asked decider pid (attacks offered),
             Just choices <- NonEmpty.nonEmpty (attacks offered) ->
               best Engine.resumeTurnBasedAction pid choices (attacking pid)
-        Prompt.DeclareBlockers decider pid blockers attackers
-          | firstBlocks pid (Asked.game asked) && searchable asked decider pid (blocks blockers attackers),
-            Just choices <- NonEmpty.nonEmpty (blocks blockers attackers) ->
+        Prompt.DeclareBlockers decider pid candidates attacked
+          | firstBlocks pid (Asked.game asked) && searchable asked decider pid (blocks candidates attacked),
+            Just choices <- NonEmpty.nonEmpty (blocks candidates attacked) ->
               best Engine.resumeTurnBasedAction pid choices (blocking pid)
         _ -> Answerer.unwrap (Game.bot registry) asked
 
@@ -471,9 +474,9 @@ attacks offered
 -- attacker each, where there are up to 'widest', else none and each blocker
 -- alone on each attacker. The engine judges each (CR 509.1b, 509.1c).
 blocks :: [ObjectId.ObjectId] -> [ObjectId.ObjectId] -> [Map.Map ObjectId.ObjectId (Set.Set ObjectId.ObjectId)]
-blocks blockers attackers
-  | (length attackers + 1) ^ length blockers <= widest = fmap (Map.fromList . Maybe.catMaybes) (traverse (\blocker -> Nothing : [Just (blocker, Set.singleton attacker) | attacker <- attackers]) blockers)
-  | otherwise = Map.empty : [Map.singleton blocker (Set.singleton attacker) | blocker <- blockers, attacker <- attackers]
+blocks candidates attacked
+  | (length attacked + 1) ^ length candidates <= widest = fmap (Map.fromList . Maybe.catMaybes) (traverse (\blocker -> Nothing : [Just (blocker, Set.singleton attacker) | attacker <- attacked]) candidates)
+  | otherwise = Map.empty : [Map.singleton blocker (Set.singleton attacker) | blocker <- candidates, attacker <- attacked]
 
 -- | The most declarations 'attacks' and 'blocks' search exhaustively.
 widest :: Int
@@ -504,13 +507,17 @@ restartable asked decider pid =
         && Map.null (GameState.parkedTurns gs)
 
 -- | One playout for `pid` from a world at a decision, `restart` asking it
--- again and `pick` answering it, scored 'won' a win, minus it a loss, 0 a
+-- again and `pick` answering it, every seat answered by the budget's
+-- 'Playout.Playout', scored 'won' a win, minus it a loss, 0 a
 -- draw; a playout cut off once it begins `SearchBudget.turns` turns after the
 -- decision's, or after `SearchBudget.prompts` prompts, is scored by
 -- 'evaluate' at the prompt it stopped at, short of a win or a loss.
 rollout :: forall m. (Monad m) => Registry.Registry m -> SearchBudget.SearchBudget -> Weights.Weights -> Game.Type.Game Result.Result -> PlayerId.PlayerId -> Pick -> GameState.GameState -> Game.Play m Integer
 rollout registry budget weights restart pid (MkPick pick) world =
-  let random = Game.consulting registry (Map.fromList [(seat, Game.bot registry) | seat <- Map.keys (GameState.players world)])
+  let policy = case SearchBudget.playout budget of
+        Playout.Random -> Game.bot registry
+        Playout.Greedy -> greedy registry
+      seats = Game.consulting registry (Map.fromList [(seat, policy) | seat <- Map.keys (GameState.players world)])
       final = TurnRegisters.turnNumber (GameState.turn world) + SearchBudget.turns budget
       go :: Natural -> Bool -> Program.Program (Asked.Asked GameState.GameState) (Result.Result, GameState.GameState) -> Game.Play m Integer
       go left pending program = case program of
@@ -518,7 +525,7 @@ rollout registry budget weights restart pid (MkPick pick) world =
         Program.Then asked k
           | left == 0 || TurnRegisters.turnNumber (GameState.turn (Asked.game asked)) > final -> pure (max (1 - won) (min (won - 1) (evaluate weights pid (Asked.game asked))))
           | pending, Just answer <- pick (Asked.prompt asked) -> go (left - 1) False (k answer)
-          | otherwise -> Answerer.unwrap random asked >>= go (left - 1) pending . k
+          | otherwise -> Answerer.unwrap seats asked >>= go (left - 1) pending . k
    in go (SearchBudget.prompts budget) True (State.runStateT restart world)
 
 -- | A result for `pid`.
@@ -562,3 +569,34 @@ features board grants pid gs =
           Features.lands = toInteger (length (typed CardType.Land)),
           Features.permanents = toInteger (length controlled)
         }
+
+-- | The greedy playout policy, cheap enough to answer every prompt of every
+-- playout: a land played where one may be, else a permanent spell cast, else
+-- another action or a pass ('greedyAction'). Every other prompt is the random
+-- bot's (Game.bot). It reads only its own menu and the card types of the
+-- cards on it.
+--
+-- Not implemented: choosing targets, modes and payments by their effect's
+-- classification; the random bot answers them (#9442).
+greedy :: (Monad m) => Registry.Registry m -> Answerer.Answerer (Asked.Asked GameState.GameState) (Game.Play m)
+greedy registry = Answerer.MkAnswerer $ \asked -> case Asked.prompt asked of
+  Prompt.ChooseAction _ _ menu -> greedyAction (Asked.game asked) menu
+  _ -> Answerer.unwrap (Game.bot registry) asked
+
+-- | A priority decision: a land play (CR 305.1) at random where the menu
+-- offers one, else a cast (CR 601) of a card with a permanent type (CR
+-- 110.4), else one of the other 'options' or a pass, each equally likely.
+-- The menu offers only what may be afforded (Engine.Cast.castableSpells).
+-- Another spell waits for the random pick, since the random bot chooses its
+-- targets (#9442) and casting it at the first chance would hit either side
+-- alike.
+greedyAction :: (Monad m) => GameState.GameState -> [Action.Action] -> State.StateT Generator.Type.Generator m Action.Action
+greedyAction gs menu =
+  let plays = [action | action@Action.Play {} <- menu]
+      permanent oid = any Engine.Card.isPermanentType (ProjectedCharacteristics.cardTypes (Projection.project oid gs))
+      casts = [action | action@(Action.Cast oid _ _) <- menu, permanent oid]
+      rest = [action | action <- options menu, notElem action (Action.Pass : plays <> casts)]
+   in case (NonEmpty.nonEmpty plays, NonEmpty.nonEmpty casts) of
+        (Just some, _) -> Generator.pick some
+        (_, Just some) -> Generator.pick some
+        _ -> Generator.pick (Action.Pass NonEmpty.:| rest)

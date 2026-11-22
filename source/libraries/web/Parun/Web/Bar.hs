@@ -13,7 +13,7 @@ data Section
   = MkHome
   | -- | The lobby, where a game is set up.
     MkPlay
-  | -- | The deck builder.
+  | -- | The decks screen (Parun.Web.Decks), and the builder from it.
     MkDecks
   | -- | The scenarios' replays.
     MkReplays

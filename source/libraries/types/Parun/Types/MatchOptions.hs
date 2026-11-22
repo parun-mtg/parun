@@ -4,6 +4,7 @@ import qualified Data.Map.Strict as Map
 import qualified Data.Set as Set
 import qualified Numeric.Natural as Natural
 import qualified Parun.Types.Key as Key
+import qualified Parun.Types.Playout as Playout
 import qualified Parun.Types.SearchBudget as SearchBudget
 
 -- | What `parun match` was asked for.
@@ -33,6 +34,7 @@ data MatchOptions = MkMatchOptions
 none :: MatchOptions
 none = MkMatchOptions {seed = Nothing, games = 100, save = Nothing, searching = Set.empty, budgets = Map.fromList [(1, budget), (2, budget)], weighing = Map.empty, meta = Nothing}
 
--- | The search bot's budget unless told otherwise.
+-- | The search bot's budget unless told otherwise, played out by the random
+-- bot.
 budget :: SearchBudget.SearchBudget
-budget = SearchBudget.MkSearchBudget {SearchBudget.samples = 2, SearchBudget.turns = 0, SearchBudget.prompts = 300, SearchBudget.candidates = 0}
+budget = SearchBudget.MkSearchBudget {SearchBudget.samples = 2, SearchBudget.turns = 0, SearchBudget.prompts = 300, SearchBudget.candidates = 0, SearchBudget.playout = Playout.Random}
