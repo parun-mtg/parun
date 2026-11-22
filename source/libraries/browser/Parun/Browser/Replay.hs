@@ -136,14 +136,14 @@ playOn page registry levelRef scenario given leave = do
     pure . Just $ case outcome of
       Left reason -> [Text.pack "The game stopped: " <> reason <> Text.pack "."]
       Right (Left failure) -> [Text.pack "The scenario failed before the position:", Scenario.render failure]
-      Right (Right gs) -> maybe [Text.pack "The game ran out of steps."] (\result -> Wording.result result : Wording.departures gs) (GameState.result gs)
+      Right (Right gs) -> maybe [Text.pack "The game ran out of steps."] (\result -> Wording.result Nothing result : Wording.departures Nothing gs) (GameState.result gs)
 
--- | Each seat and the name the scenario gives it, in turn order.
+-- | Each seat and the name the scenario gives it, in seating order.
 seatsOf :: Scenario.Type.Scenario -> [(PlayerId.PlayerId, Text.Text)]
 seatsOf scenario =
   let labels = case Scenario.Type.start scenario of
         Start.FromBoard board -> fmap Seat.name (NonEmpty.toList (Board.seats board))
-        Start.FromDecks _ entrants -> fmap Entrant.name (NonEmpty.toList entrants)
+        Start.FromDecks _ entrants _ -> fmap Entrant.name (NonEmpty.toList entrants)
    in zip (fmap PlayerId.MkPlayerId [0 ..]) (fmap Label.unwrap labels)
 
 -- | What the page shows of a stop, each seat named in its entry's line as

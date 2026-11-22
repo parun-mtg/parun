@@ -97,13 +97,18 @@ labelOf :: Map.Map PlayerId.PlayerId Label.Label -> PlayerId.PlayerId -> Label.L
 labelOf seats pid = Maybe.fromMaybe (Label.MkLabel (Text.pack ("player " <> show (PlayerId.unwrap pid)))) (Map.lookup pid seats)
 
 -- | The scenario a game played from these decks under `format` (CR 100.2),
--- each seat at its graveyard order, replays as, each printing named as
--- `table` names it.
-scenario :: PrintingTable.PrintingTable -> Text.Text -> Maybe Format.Format -> NonEmpty.NonEmpty (Label.Label, GraveyardOrder.GraveyardOrder, Deck.Deck) -> Seq.Seq Timed.Timed -> Scenario.Type.Scenario
-scenario table description format entrants timeline =
-  Scenario.Type.MkScenario
-    { Scenario.Type.description = description,
-      Scenario.Type.start = Start.FromDecks format (fmap (\(label, order, deck) -> Entrant.MkEntrant label (Text.lines (DeckList.render table Nothing deck)) order) entrants),
-      Scenario.Type.timeline = timeline,
-      Scenario.Type.final = Seq.empty
-    }
+-- each seat by its number, label and graveyard order, in turn order,
+-- replays as, each printing named as `table` names it: the seats in their
+-- numbers' order, so a replay numbers each as the game did, and the turn
+-- order's head its starting player (CR 103.1) where not the first of them.
+scenario :: PrintingTable.PrintingTable -> Text.Text -> Maybe Format.Format -> NonEmpty.NonEmpty (PlayerId.PlayerId, Label.Label, GraveyardOrder.GraveyardOrder, Deck.Deck) -> Seq.Seq Timed.Timed -> Scenario.Type.Scenario
+scenario table description format turnOrder timeline =
+  let seats = NonEmpty.sortWith (\(pid, _, _, _) -> pid) turnOrder
+      label (_, l, _, _) = l
+      starter = if label (NonEmpty.head turnOrder) == label (NonEmpty.head seats) then Nothing else Just (label (NonEmpty.head turnOrder))
+   in Scenario.Type.MkScenario
+        { Scenario.Type.description = description,
+          Scenario.Type.start = Start.FromDecks format (fmap (\(_, l, order, deck) -> Entrant.MkEntrant l (Text.lines (DeckList.render table Nothing deck)) order) seats) starter,
+          Scenario.Type.timeline = timeline,
+          Scenario.Type.final = Seq.empty
+        }

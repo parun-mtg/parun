@@ -747,18 +747,20 @@ sticker k = Text.pack $ case k of
   StickerKind.PowerToughness -> "a power and toughness sticker"
   StickerKind.Art -> "an art sticker"
 
-result :: Result.Result -> Text.Text
-result r = case r of
-  Result.Won pid -> player pid <> Text.pack " wins."
+-- | How the game came out, to the sentence's reader.
+result :: Maybe PlayerId.PlayerId -> Result.Result -> Text.Text
+result reader r = case r of
+  Result.Won pid -> acts reader pid "wins" <> Text.pack "."
   Result.TeamWon _ -> Text.pack "A team wins."
   Result.Drawn -> Text.pack "The game is a draw."
 
--- | How each player who left the game left, in seating order: by conceding
--- (CR 104.3a), a draw (CR 104.4), or losing, to each state-based action they
--- meet (Sba.lossCauses) or, meeting none, to an effect (CR 104.3e).
-departures :: GameState.GameState -> [Text.Text]
-departures gs =
-  [ player pid <> how pid departure p
+-- | How each player who left the game left, to the sentence's reader, in
+-- seating order: by conceding (CR 104.3a), a draw (CR 104.4), or losing, to
+-- each state-based action they meet (Sba.lossCauses) or, meeting none, to an
+-- effect (CR 104.3e).
+departures :: Maybe PlayerId.PlayerId -> GameState.GameState -> [Text.Text]
+departures reader gs =
+  [ subject reader pid <> how pid departure p
   | pid <- GameState.seating gs,
     Just p <- [Map.lookup pid (GameState.players gs)],
     Status.Departed departure <- [Player.status p]

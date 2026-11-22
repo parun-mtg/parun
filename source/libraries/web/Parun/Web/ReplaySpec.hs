@@ -35,7 +35,13 @@ spec s = Spec.describe s "Parun.Web.Replay" $ do
     Spec.it s "sends a step's position and a seat when tapped" $ do
       let page = Replay.view frame {Replay.position = 1}
           tapped name label = Html.labelled (Text.pack name) (Text.pack label) page >>= \path -> Html.handler (Text.pack "click") path page
-      Spec.assertEq s (tapped "button" "\x25B6", tapped "button" "\x25C0", tapped "button" "bob") (Just (Replay.MkGo 2), Just (Replay.MkGo 0), Just (Replay.MkSeat (PlayerId.MkPlayerId 1)))
+      Spec.assertEq s (tapped "button" "\x25B6", tapped "button" "\x25C0", tapped "button" "bob (Player 2)") (Just (Replay.MkGo 2), Just (Replay.MkGo 0), Just (Replay.MkSeat (PlayerId.MkPlayerId 1)))
+
+    Spec.it s "names each seat to view as by its name and the name the table gives it" $ do
+      let page = Html.toText (Replay.view frame)
+      Spec.assertBool s (Text.isInfixOf (Text.pack ">alice (You)</button>") page) "the seat viewed as"
+      Spec.assertBool s (Text.isInfixOf (Text.pack ">bob (Player 2)</button>") page) "another"
+      Spec.assertBool s (Text.isInfixOf (Text.pack ">You</button>") (Html.toText (Replay.view frame {Replay.seats = [(PlayerId.MkPlayerId 0, Text.pack "You")]}))) "a name the table shares"
 
     Spec.it s "offers to play on from the position, and to go back to the list" $ do
       let page = Replay.view frame {Replay.position = 1}

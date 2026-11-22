@@ -241,19 +241,23 @@ spec s registry = Spec.describe s "Play" $ do
     case Identity.runIdentity (Game.run (S.fixtureRegistry []) Nothing Limits.standard [] bots (S.seeded 1) Map.empty matchup) of
       Right (Result.Won winner, gs) ->
         let loser = if winner == S.alice then S.bob else S.alice
-         in Spec.assertEq s (Wording.departures gs) [Wording.player loser <> Text.pack " lost the game: drew from an empty library."]
+         in Spec.assertEq s (Wording.departures Nothing gs) [Wording.player loser <> Text.pack " lost the game: drew from an empty library."]
       outcome -> Spec.assertBool s False ("won: " <> show (fmap fst outcome))
 
   Spec.it s "CR 704.5 a player who lost is told by every state-based action they met" $ do
     let board = Setup.emptyGame S.bothPlayers
         dying player = player {Player.life = -2, Player.counters = Map.singleton PlayerCounterKind.Poison 10}
         settled = S.settleSba board {GameState.players = Map.adjust dying S.alice (GameState.players board), GameState.drewFromEmpty = Set.singleton S.bob}
-    Spec.assertEq s (Wording.departures settled) [Text.pack "Player 1 lost the game: life total -2 and 10 poison counters.", Text.pack "Player 2 lost the game: drew from an empty library."]
+    Spec.assertEq s (Wording.departures Nothing settled) [Text.pack "Player 1 lost the game: life total -2 and 10 poison counters.", Text.pack "Player 2 lost the game: drew from an empty library."]
+    Spec.assertEqWith s "to the loser" (Wording.departures (Just S.alice) settled) [Text.pack "You lost the game: life total -2 and 10 poison counters.", Text.pack "Player 2 lost the game: drew from an empty library."]
 
   Spec.it s "CR 104.3a CR 104.3e a concession and an effect's loss are told apart" $ do
     let board = Setup.emptyGame S.bothPlayers
         left = S.runPure S.identityAnswer board (Departure.leaveGame Departure.Type.Conceded S.alice >> Departure.leaveGame Departure.Type.Lost S.bob)
-    Spec.assertEq s (Wording.departures left) [Text.pack "Player 1 conceded.", Text.pack "Player 2 lost the game to an effect."]
+    Spec.assertEq s (Wording.departures Nothing left) [Text.pack "Player 1 conceded.", Text.pack "Player 2 lost the game to an effect."]
+
+  Spec.it s "CR 104.2a a win is told to its reader as the board names the seat" $
+    Spec.assertEq s (fmap (\reader -> Wording.result reader (Result.Won S.alice)) [Nothing, Just S.alice, Just S.bob]) [Text.pack "Player 1 wins.", Text.pack "You win.", Text.pack "Player 1 wins."]
 
   Spec.it s "CR 201.4 / 201.4a a name chosen over the line is refused, saying why, unless the reference holds it and the choice allows it" $ do
     reference <- mapM (S.cardOf s registry) ["Forest", "Goblin Piker"]

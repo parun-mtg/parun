@@ -217,7 +217,7 @@ tallied outcome tally = case outcome of
 -- | How one game ended.
 ended :: Either Text.Text (Result.Result, GameState.GameState) -> Text.Text
 ended outcome = case outcome of
-  Right (result, gs) -> Wording.result result <> Text.pack (" Turn " <> show (TurnRegisters.turnNumber (GameState.turn gs)) <> ".")
+  Right (result, gs) -> Wording.result Nothing result <> Text.pack (" Turn " <> show (TurnRegisters.turnNumber (GameState.turn gs)) <> ".")
   Left reason -> Text.pack "stopped: " <> reason <> Text.pack "."
 
 -- | The tally of `count` games: each seat's wins, any team's, the draws and

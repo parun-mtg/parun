@@ -280,10 +280,10 @@ replay :: (Monad m) => Registry.Registry m -> Maybe Natural -> Scenario.Scenario
 replay registry stop scenario = do
   staging <- case Scenario.start scenario of
     Start.FromBoard board -> fmap (fmap (\placed' -> (placed', Driver.drive [] scripted stepBudget finished (Staged.state placed')))) (stage registry board)
-    Start.FromDecks format entrants -> fmap (fmap (\(seated, matchup) -> (seated, setUp matchup (Staged.state seated)))) (enter registry format entrants)
+    Start.FromDecks format entrants starter -> fmap (fmap (\(seated, matchup) -> (seated, setUp matchup (Staged.state seated)))) (enter registry format entrants starter)
   let fromDecks = case Scenario.start scenario of
         Start.FromBoard _ -> False
-        Start.FromDecks _ _ -> True
+        Start.FromDecks {} -> True
       attempt whole known = do
         (board, playing) <- Bifunctor.first Failed staging
         (reached, rehearsal) <- State.runStateT playing ((rehearsalOf (Scenario.timeline scenario) board) {reference = Just known, catalogue = whole, replaying = fromDecks, stopAt = stop})
@@ -328,7 +328,7 @@ branch :: (Monad m) => Registry.Registry m -> Natural -> Answerer.Answerer (Aske
 branch registry at onward scenario = do
   staging <- case Scenario.start scenario of
     Start.FromBoard board -> fmap (fmap (\placed' -> (placed', Nothing))) (stage registry board)
-    Start.FromDecks format entrants -> fmap (fmap (fmap Just)) (enter registry format entrants)
+    Start.FromDecks format entrants starter -> fmap (fmap (fmap Just)) (enter registry format entrants starter)
   case staging of
     Left failure -> pure (Left failure)
     Right (board, matchup) ->
@@ -365,21 +365,27 @@ answerBranch registry onward asked = do
   where
     again = answerBranch registry onward asked
 
--- | CR 103: each entrant seated in turn order, its deck list read and its
--- graveyard order set (CR 404.3), under `format` (CR 100.2), nothing yet
--- created; Setup.newGame builds the libraries.
-enter :: (Monad m) => Registry.Registry m -> Maybe Format.Format -> NonEmpty.NonEmpty Entrant.Entrant -> m (Either Failure.ScenarioFailure (Staged.Staged, NonEmpty.NonEmpty (PlayerId.PlayerId, Deck.Deck)))
-enter registry format entrants = do
+-- | CR 103: each entrant seated in seating order, numbered by its place, its
+-- deck list read and its graveyard order set (CR 404.3), under `format` (CR
+-- 100.2), nothing yet created, the matchup in turn order from the starting
+-- player `starter` names, else the first (CR 103.1); Setup.newGame builds
+-- the libraries.
+enter :: (Monad m) => Registry.Registry m -> Maybe Format.Format -> NonEmpty.NonEmpty Entrant.Entrant -> Maybe Label.Label -> m (Either Failure.ScenarioFailure (Staged.Staged, NonEmpty.NonEmpty (PlayerId.PlayerId, Deck.Deck)))
+enter registry format entrants starter = do
   let seated = NonEmpty.zip entrants (fmap PlayerId.MkPlayerId (0 NonEmpty.:| [1 ..]))
       ids = Map.fromList (fmap (Bifunctor.first Entrant.name) (NonEmpty.toList seated))
   decks <- traverse (\(entrant, pid) -> fmap (either (Left . Failure.MkInvalidCorpus) (Bifunctor.bimap (Failure.MkUnreadableDeck (Entrant.name entrant) . Text.intercalate (Text.pack "; ") . fmap DeckList.explain) ((,) pid) . DeckList.sound)) (DeckList.parse registry (Text.unlines (Entrant.deck entrant)))) seated
   pure $ case List.find ((> 1) . length) (List.group (List.sort (fmap Entrant.name (NonEmpty.toList entrants)))) of
     Just (label : _) -> Left (Failure.MkDuplicateLabel label)
     _ -> do
+      -- The starting player is the first turn's active player.
+      first <- maybe (Right (PlayerId.MkPlayerId 0)) (\label -> maybe (Left (Failure.MkUnknownActivePlayer label)) Right (Map.lookup label ids)) starter
       matchup <- sequence decks
-      let base = Setup.gameWith GameSettings.plain {GameSettings.format = format} (fmap fst matchup)
+      let (before, from) = NonEmpty.break ((== first) . fst) matchup
+          turnOrder = Maybe.fromMaybe matchup (NonEmpty.nonEmpty (from <> before))
+          base = Setup.gameWith GameSettings.plain {GameSettings.format = format} (fmap fst turnOrder)
           ordered = foldr (\(entrant, pid) -> Game.setGraveyardOrder pid (Entrant.graveyardOrder entrant)) base seated
-      pure (Staged.MkStaged ordered ids Map.empty, matchup)
+      pure (Staged.MkStaged ordered ids Map.empty, turnOrder)
 
 -- | How many steps a replayed game may run: a whole game's worth.
 replayBudget :: Natural

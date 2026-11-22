@@ -101,11 +101,11 @@ replace at check scenario = case at of
     let swap index old = if Int.toNaturalSaturating index == n then check else old
      in scenario {Scenario.final = Seq.mapWithIndex swap (Scenario.final scenario)}
 
--- | The seats in turn order, which a perturbation naming a player draws on.
+-- | The seats in seating order, which a perturbation naming a player draws on.
 seatsOf :: Scenario.Scenario -> [Label.Label]
 seatsOf scenario = case Scenario.start scenario of
   Start.FromBoard board -> fmap Seat.name (NonEmpty.toList (Board.seats board))
-  Start.FromDecks _ entrants -> fmap Entrant.name (NonEmpty.toList entrants)
+  Start.FromDecks _ entrants _ -> fmap Entrant.name (NonEmpty.toList entrants)
 
 -- | Every changed expected value tried for a check: a number off by one each
 -- way (down only from above zero), a tap state flipped, a set or list with an

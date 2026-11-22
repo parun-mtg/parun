@@ -51,6 +51,7 @@ import qualified Parun.Types.Result as Result
 import qualified Parun.Types.RuleFamily as RuleFamily
 import qualified Parun.Types.Scenario as Scenario.Type
 import qualified Parun.Types.Settle as Settle
+import qualified Parun.Types.Start as Start
 import qualified Parun.Types.Timed as Timed
 import qualified Parun.Types.TurnRegisters as TurnRegisters
 import qualified Parun.Web.Ending as Ending
@@ -67,10 +68,31 @@ spec s registry = Spec.describe s "Record" $ do
       (_, Left failure) -> Spec.assertFailure s (Text.unpack (Scenario.render failure))
       (Left reason, _) -> Spec.assertFailure s (Text.unpack reason)
 
+  Spec.it s "CR 103.1 a recorded game the second seat started replays each seat under its number" $ do
+    matchup <- BotSpec.sevens s registry
+    let started = NonEmpty.reverse matchup
+        (outcome, timeline) = recorded bots started
+    replayed <- Scenario.run registry (saved started timeline)
+    case (outcome, replayed) of
+      (Right (result, gs), Right final) -> do
+        Spec.assertEqWith s "turn order" (GameState.seating final) (GameState.seating gs)
+        Spec.assertEqWith s "same result" (GameState.result final) (Just result)
+      (_, Left failure) -> Spec.assertFailure s (Text.unpack (Scenario.render failure))
+      (Left reason, _) -> Spec.assertFailure s (Text.unpack reason)
+
+  Spec.it s "CR 103.1 a starting player with no seat fails the scenario" $ do
+    matchup <- BotSpec.sevens s registry
+    let base = saved matchup Seq.empty
+        unseated = case Scenario.Type.start base of
+          Start.FromDecks format entrants _ -> base {Scenario.Type.start = Start.FromDecks format entrants (Just (Label.MkLabel (Text.pack "carol")))}
+          Start.FromBoard _ -> base
+    replayed <- Scenario.run registry unseated
+    Spec.assertEq s (either (Just . Scenario.render) (const Nothing) replayed) (Just (Text.pack "carol is active but has no seat"))
+
   Spec.it s "a game the web client keeps replays to the state it ended in" $ do
     matchup <- BotSpec.sevens s registry
     let (outcome, timeline) = recorded bots matchup
-        file = Command.rendered (Record.scenario PrintingTable.empty Text.empty Nothing (fmap (\(pid, deck) -> (Record.labelOf labels pid, GraveyardOrder.Indifferent, deck)) matchup) timeline)
+        file = Command.rendered (Record.scenario PrintingTable.empty Text.empty Nothing (fmap (\(pid, deck) -> (pid, Record.labelOf labels pid, GraveyardOrder.Indifferent, deck)) matchup) timeline)
         kept = History.recordOf 0 0 (Text.pack "build") [] (Ending.MkFinished (Ending.MkEnding Ending.MkWon [] file Seq.empty S.alice []))
     case (outcome, kept) of
       (Right (_, final), Just (game, stored)) -> do
@@ -249,7 +271,7 @@ savedWith = savedUnder Nothing
 -- savedWith's scenario of a game played under a format.
 savedUnder :: Maybe Format.Format -> Map.Map PlayerId.PlayerId GraveyardOrder.GraveyardOrder -> NonEmpty.NonEmpty (PlayerId.PlayerId, Deck.Deck) -> Seq.Seq Timed.Timed -> Scenario.Type.Scenario
 savedUnder format orders matchup timeline =
-  let scenario = Record.scenario PrintingTable.empty Text.empty format (fmap (\(pid, deck) -> (Record.labelOf labels pid, Map.findWithDefault GraveyardOrder.Indifferent pid orders, deck)) matchup) timeline
+  let scenario = Record.scenario PrintingTable.empty Text.empty format (fmap (\(pid, deck) -> (pid, Record.labelOf labels pid, Map.findWithDefault GraveyardOrder.Indifferent pid orders, deck)) matchup) timeline
    in Either.either (error . Text.unpack) id (Codec.decode Codec.Scenario.codec (Codec.encode Codec.Scenario.codec scenario))
 
 labels :: Map.Map PlayerId.PlayerId Label.Label
