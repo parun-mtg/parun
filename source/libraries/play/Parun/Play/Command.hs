@@ -198,10 +198,11 @@ game send stored kept options registry format decks seed = do
     -- No seat chose who plays first: the game never began.
     Nothing -> pure (Left (Text.pack "end of input"), record (seated 1 decks) Seq.empty)
     Just first -> do
+      memories <- IORef.newIORef Map.empty
       let matchup = seated first decks
-          seats = Map.fromList [(idOf n, answerer reference send stored kept options n) | n <- NonEmpty.toList numbers]
+          seats = Map.fromList [(idOf n, answerer reference send stored kept (IORef.readIORef memories) options n) | n <- NonEmpty.toList numbers]
       entries <- IORef.newIORef Seq.empty
-      let observers = [Record.recording (labels count) (Game.underneath . IORef.modifyIORef' entries . flip (Seq.|>))]
+      let observers = [Record.recording (labels count) (Game.underneath . IORef.modifyIORef' entries . flip (Seq.|>)), Search.remembering (IORef.modifyIORef' memories)]
           interrupted e = case e of
             Exception.UserInterrupt -> pure (Left (Text.pack "interrupted"))
             _ -> Exception.throwIO e
@@ -210,11 +211,12 @@ game send stored kept options registry format decks seed = do
       pure (outcome, record matchup timeline)
 
 -- | Who answers seat `n`: the search bot at the options' budget and weights,
--- over the known lists, if it is a bot's, its answers taken from `stored` and
--- given to `kept` (Game.remembered); otherwise `send`.
-answerer :: (Monad m) => Registry.Registry m -> Protocol.Exchange m -> m (Maybe R.Reply) -> (R.Reply -> m ()) -> PlayOptions.PlayOptions -> Natural -> Answerer.Answerer (Asked.Asked GameState.GameState) (Game.Play m)
-answerer registry send stored kept options n
-  | Set.member n (PlayOptions.bots options) = Game.remembered stored kept (Search.search registry (PlayOptions.budget options) (PlayOptions.weights options) Search.known (pure []))
+-- over the known lists, remembering what its seat's memory in `memories`
+-- holds (Search.remembering), if it is a bot's, its answers taken from
+-- `stored` and given to `kept` (Game.remembered); otherwise `send`.
+answerer :: (Monad m) => Registry.Registry m -> Protocol.Exchange m -> m (Maybe R.Reply) -> (R.Reply -> m ()) -> m (Map.Map PlayerId.PlayerId Search.Memory) -> PlayOptions.PlayOptions -> Natural -> Answerer.Answerer (Asked.Asked GameState.GameState) (Game.Play m)
+answerer registry send stored kept memories options n
+  | Set.member n (PlayOptions.bots options) = Game.remembered stored kept (Search.search registry (PlayOptions.budget options) (PlayOptions.weights options) Search.known (pure []) (Game.underneath (fmap (Map.findWithDefault Search.blank (idOf n)) memories)))
   | otherwise = Game.wired registry send
 
 idOf :: Natural -> PlayerId.PlayerId

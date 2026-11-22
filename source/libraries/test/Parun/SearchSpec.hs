@@ -16,12 +16,14 @@ import qualified Data.List as List
 import qualified Data.List.NonEmpty as NonEmpty
 import qualified Data.Map.Strict as Map
 import qualified Data.Maybe as Maybe
+import qualified Data.Sequence as Seq
 import qualified Data.Set as Set
 import qualified Data.Text as Text
 import qualified Data.Word as Word
 import Numeric.Natural (Natural)
 import qualified Parun.BotSpec as BotSpec
 import qualified Parun.Engine.Engine as Engine
+import qualified Parun.Engine.Event as Event
 import qualified Parun.Engine.Game as Engine.Game
 import qualified Parun.Engine.PlayerView as PlayerView
 import qualified Parun.Engine.Projection as Projection
@@ -52,7 +54,9 @@ import qualified Parun.Types.Printing as Printing
 import qualified Parun.Types.Program as Program
 import qualified Parun.Types.ProjectedCharacteristics as ProjectedCharacteristics
 import qualified Parun.Types.Prompt as Prompt
+import qualified Parun.Types.RevealCause as RevealCause
 import qualified Parun.Types.SearchBudget as SearchBudget
+import qualified Parun.Types.Settle as Settle
 import qualified Parun.Types.Source as Source
 import qualified Parun.Types.TapState as TapState
 import qualified Parun.Types.TurnRegisters as TurnRegisters
@@ -63,18 +67,18 @@ spec :: forall m n. (Monad m, Monad n) => Spec.Spec m n -> Registry.Registry m -
 spec s registry = Spec.describe s "Search" $ do
   Spec.it s "CR 400.2 a sampled world looks the same to its viewer, its unseen cards dealt anew" $ do
     (gs, _) <- decision s registry
-    worlds <- traverse (\n -> either (Spec.assertFailure s . Text.unpack) pure =<< Except.runExceptT (State.evalStateT (Search.sample Search.known viewer gs) (S.seeded n))) [1 .. 8 :: Word.Word32]
+    worlds <- traverse (\n -> either (Spec.assertFailure s . Text.unpack) pure =<< Except.runExceptT (State.evalStateT (Search.sample Search.known Search.blank viewer gs) (S.seeded n))) [1 .. 8 :: Word.Word32]
     Foldable.for_ worlds $ \world -> do
       Spec.assertEqWith s "the viewer's view" (PlayerView.viewFor viewer world) (PlayerView.viewFor viewer gs)
-      Spec.assertEqWith s "the opponent's unseen cards, as a whole" (List.sort (sources world (Search.unseen viewer gs S.bob))) (List.sort (sources gs (Search.unseen viewer gs S.bob)))
+      Spec.assertEqWith s "the opponent's unseen cards, as a whole" (List.sort (sources world (Search.unseen Search.blank viewer gs S.bob))) (List.sort (sources gs (Search.unseen Search.blank viewer gs S.bob)))
     Spec.assertBool s (any (\world -> handOf world S.bob /= handOf gs S.bob) worlds) "some world deals the opponent another hand"
 
   Spec.it s "a meta's posterior moves to the deck playing a card the opponent showed, once they show it" $ do
     (bear, meta) <- bearsOrCoursers s registry
     after <- showing s registry (Map.member bear)
-    Spec.assertEqWith s "the opponent's cards shown and unseen, their 20 once each" (sum (Search.seen viewer after S.bob) + Natural.length (Search.unseen viewer after S.bob)) 20
+    Spec.assertEqWith s "the opponent's cards shown and unseen, their 20 once each" (sum (Search.seen Search.blank viewer after S.bob) + Natural.length (Search.unseen Search.blank viewer after S.bob)) 20
     before <- showing s registry (\shown -> not (Map.null shown) && Map.notMember bear shown)
-    let weights gs = fmap fst (Search.posterior meta (Search.seen viewer gs S.bob))
+    let weights gs = fmap fst (Search.posterior meta (Search.seen Search.blank viewer gs S.bob))
     Spec.assertEqWith s "the weights, only Forests shown" (weights before) (1 / 2 NonEmpty.:| [1 / 2])
     Spec.assertEqWith s "the weights, a Grizzly Bears shown" (weights after) (0 NonEmpty.:| [1])
 
@@ -82,36 +86,95 @@ spec s registry = Spec.describe s "Search" $ do
     (bear, meta) <- bearsOrCoursers s registry
     before <- showing s registry (\shown -> not (Map.null shown) && Map.notMember bear shown)
     after <- showing s registry (Map.member bear)
-    let from decks gs = traverse (\n -> either (Spec.assertFailure s . Text.unpack) pure =<< Except.runExceptT (State.evalStateT (Search.sample (Search.inferred decks) viewer gs) (S.seeded n))) [1 .. 8 :: Word.Word32]
+    let from decks gs = traverse (\n -> either (Spec.assertFailure s . Text.unpack) pure =<< Except.runExceptT (State.evalStateT (Search.sample (Search.inferred decks) Search.blank viewer gs) (S.seeded n))) [1 .. 8 :: Word.Word32]
         worlds = from meta
         bears = snd (NonEmpty.last meta)
-        rest gs = Map.differenceWith (\k n -> if k > n then Just (k - n) else Nothing) (Deck.cards bears) (Search.seen viewer gs S.bob)
+        rest gs = Map.differenceWith (\k n -> if k > n then Just (k - n) else Nothing) (Deck.cards bears) (Search.seen Search.blank viewer gs S.bob)
     early <- worlds before
     late <- worlds after
     Foldable.for_ [(world, gs) | (gs, sampled) <- [(before, early), (after, late)], world <- sampled] $ \(world, gs) ->
       Spec.assertEqWith s "the viewer's view" (PlayerView.viewFor viewer world) (PlayerView.viewFor viewer gs)
     Foldable.for_ late $ \world -> do
-      Spec.assertEqWith s "the opponent's unseen cards, the bears deck less what they showed" (List.sort (printingsOf world (Search.unseen viewer after S.bob))) (Search.spread (rest after))
+      Spec.assertEqWith s "the opponent's unseen cards, the bears deck less what they showed" (List.sort (printingsOf world (Search.unseen Search.blank viewer after S.bob))) (Search.spread (rest after))
     coursersOnly <- from (NonEmpty.head meta NonEmpty.:| []) before
     Foldable.for_ coursersOnly $ \world ->
-      Spec.assertEqWith s "the viewer's own unseen cards, as a whole, from a meta without their deck" (List.sort (sources world (Search.unseen viewer before viewer))) (List.sort (sources before (Search.unseen viewer before viewer)))
+      Spec.assertEqWith s "the viewer's own unseen cards, as a whole, from a meta without their deck" (List.sort (sources world (Search.unseen Search.blank viewer before viewer))) (List.sort (sources before (Search.unseen Search.blank viewer before viewer)))
     courser <- S.printingOf s registry "Centaur Courser"
-    Spec.assertBool s (any (\world -> elem courser (printingsOf world (Search.unseen viewer before S.bob))) early) "some world, only Forests shown, deals the opponent a Centaur Courser"
+    Spec.assertBool s (any (\world -> elem courser (printingsOf world (Search.unseen Search.blank viewer before S.bob))) early) "some world, only Forests shown, deals the opponent a Centaur Courser"
+
+  Spec.it s "a card the viewer saw bounced to its owner's hand keeps being dealt there" $ do
+    (gs, _) <- decision s registry
+    let theirs oid = fmap Object.owner (Engine.Game.lookupObject oid gs) == Just S.bob && not (null (printingsOf gs [oid]))
+    oid <- maybe (Spec.assertFailure s "the opponent has a card on the battlefield") pure (List.find theirs (Set.toList (GameState.battlefield gs)))
+    let bounced = S.runPure S.identityAnswer gs (Event.changeZone Settle.none oid Zone.Hand)
+        returned = filter (`notElem` handIds gs S.bob) (handIds bounced S.bob)
+        memory = Search.remember viewer bounced (Search.remember viewer gs Search.blank)
+        from remembered n = either (Spec.assertFailure s . Text.unpack) pure =<< Except.runExceptT (State.evalStateT (Search.sample Search.known remembered viewer bounced) (S.seeded n))
+    remembering <- traverse (from memory) [1 .. 8 :: Word.Word32]
+    Foldable.for_ remembering $ \world -> do
+      Spec.assertEqWith s "the viewer's view" (PlayerView.viewFor viewer world) (PlayerView.viewFor viewer bounced)
+      Spec.assertEqWith s "the card returned" (sources world returned) (sources bounced returned)
+    forgetting <- traverse (from Search.blank) [1 .. 8 :: Word.Word32]
+    Spec.assertBool s (any (\world -> sources world returned /= sources bounced returned) forgetting) "forgetting it, some world deals another card there"
+    Spec.assertEqWith s "the opponent's cards seen, the bounced one still among them" (Search.seen memory viewer bounced S.bob) (Search.seen Search.blank viewer gs S.bob)
+    let shuffledIn = S.runPure S.identityAnswer bounced (Foldable.traverse_ (\o -> Event.changeZone Settle.none o Zone.Library) returned >> Event.shuffleLibrary S.bob)
+        mixed = Search.remember viewer shuffledIn memory
+    Spec.assertEqWith s "CR 701.24a put into the library and shuffled, it is no longer followed" (Search.pinned mixed viewer shuffledIn S.bob) []
+    Spec.assertEqWith s "CR 701.24a and still counts among the opponent's cards" (Search.seen mixed viewer shuffledIn S.bob) (Search.seen Search.blank viewer gs S.bob)
+
+  Spec.it s "CR 701.24a a card the viewer saw revealed and shuffled into its owner's library still counts among theirs, for the meta's posterior and the deal" $ do
+    (bear, meta) <- bearsOrCoursers s registry
+    before <- showing s registry (\shown -> not (Map.null shown) && Map.notMember bear shown)
+    let library = Foldable.toList (Map.findWithDefault mempty S.bob (GameState.library before))
+    oid <- maybe (Spec.assertFailure s "a Grizzly Bears in the opponent's library") pure (List.find (\o -> printingsOf before [o] == [bear]) library)
+    let revealed = S.runPure S.identityAnswer before (Event.reveal RevealCause.Ordinary S.bob oid)
+        shuffled = S.runPure S.identityAnswer revealed (Event.shuffleLibrary S.bob)
+        memory = Search.remember viewer shuffled (Search.remember viewer revealed (Search.remember viewer before Search.blank))
+        weights remembered = fmap fst (Search.posterior meta (Search.seen remembered viewer shuffled S.bob))
+        bears = snd (NonEmpty.last meta)
+        rest = Map.differenceWith (\k n -> if k > n then Just (k - n) else Nothing) (Deck.cards bears) (Search.seen memory viewer shuffled S.bob)
+    Spec.assertBool s (Map.notMember oid (GameState.objects shuffled)) "the shuffle re-mints the card revealed"
+    Spec.assertEqWith s "the Grizzly Bears, loose among the opponent's" (Map.lookup S.bob (Search.loose memory)) (Just (Map.singleton bear 1))
+    Spec.assertEqWith s "the weights, remembering it" (weights memory) (0 NonEmpty.:| [1])
+    Spec.assertEqWith s "the weights, forgetting it" (weights Search.blank) (1 / 2 NonEmpty.:| [1 / 2])
+    worlds <- traverse (\n -> either (Spec.assertFailure s . Text.unpack) pure =<< Except.runExceptT (State.evalStateT (Search.sample (Search.inferred meta) memory viewer shuffled) (S.seeded n))) [1 .. 8 :: Word.Word32]
+    Foldable.for_ worlds $ \world ->
+      Spec.assertEqWith s "the opponent's unseen cards, the bears deck less what they showed, the Grizzly Bears dealt among them" (List.sort (printingsOf world (Search.unseen memory viewer shuffled S.bob))) (List.sort (bear : Search.spread rest))
+    let library' = Foldable.toList (Map.findWithDefault mempty S.bob (GameState.library shuffled))
+    again <- maybe (Spec.assertFailure s "a Grizzly Bears in the shuffled library") pure (List.find (\o -> printingsOf shuffled [o] == [bear]) library')
+    let shownAgain = S.runPure S.identityAnswer shuffled (Event.reveal RevealCause.Ordinary S.bob again)
+        recalled = Search.remember viewer shownAgain memory
+    Spec.assertEqWith s "a Grizzly Bears shown again, counted once" (Search.seen recalled viewer shownAgain S.bob) (Search.seen memory viewer shuffled S.bob)
+    top <- maybe (Spec.assertFailure s "a card atop the viewer's library") pure (Maybe.listToMaybe (Foldable.toList (Map.findWithDefault mempty viewer (GameState.library before))))
+    let ownShown = S.runPure S.identityAnswer before (Event.reveal RevealCause.Ordinary viewer top)
+        ownShuffled = S.runPure S.identityAnswer ownShown (Event.shuffleLibrary viewer)
+        drew = S.runPure S.identityAnswer ownShuffled (Event.drawCard Settle.none viewer)
+        shownMemory = Search.remember viewer ownShown (Search.remember viewer before Search.blank)
+        shuffledMemory = Search.remember viewer ownShuffled shownMemory
+        looseOf remembered = sum [n | printing <- printingsOf before [top], n <- Foldable.toList (Map.lookup printing (Map.findWithDefault Map.empty viewer (Search.loose remembered)))]
+    Spec.assertEqWith s "the viewer's own card, drawn once shuffled atop its library, loosened then taken back" (looseOf shuffledMemory - looseOf shownMemory, looseOf shuffledMemory - looseOf (Search.remember viewer drew shuffledMemory)) (1, 1)
+
+  Spec.it s "each player's memory is brought up to the game before a prompt is answered, from nothing once the log no longer extends what it read" $ do
+    (gs, memories) <- recalling s registry
+    Spec.assertEqWith s "the log read, for each player" (fmap Search.logged memories) (Map.fromList [(pid, Seq.length (Search.logOf gs)) | pid <- Map.keys (GameState.players gs)])
+    hiddenCard <- maybe (Spec.assertFailure s "a card in the opponent's library") pure (Maybe.listToMaybe (Search.hidden viewer gs S.bob))
+    let stale = Search.blank {Search.remembered = Map.fromList [(hiddenCard, (S.bob, Zone.Library, printing)) | printing <- printingsOf gs [hiddenCard]], Search.logged = 1, Search.lastRead = Nothing}
+    Spec.assertEqWith s "a memory of a log this game's does not extend, brought up to it, read from nothing" (Search.remember viewer gs stale) (Search.remember viewer gs Search.blank)
 
   Spec.it s "an opponent's pass in their main phase, a land played and two untapped, weighs worlds dealing them a Grizzly Bears to cast less" $ do
     (gs, passes) <- afterPass s registry
     bear <- S.printingOf s registry "Grizzly Bears"
     let played :: Game.Play m a -> Word.Word32 -> m a
         played act n = either (Spec.assertFailure s . Text.unpack) pure =<< Except.runExceptT (State.evalStateT act (S.seeded n))
-        heldBears world = toRational (length (filter (== bear) (printingsOf world (filter (`elem` handIds gs S.bob) (Search.unseen viewer gs S.bob)))))
+        heldBears world = toRational (length (filter (== bear) (printingsOf world (filter (`elem` handIds gs S.bob) (Search.unseen Search.blank viewer gs S.bob)))))
         mean weighed = sum [w * heldBears world | (w, world) <- weighed] / sum (fmap fst weighed)
-    candidates <- traverse (played (Search.sample Search.known viewer gs)) [1 .. 32]
-    unweighed <- traverse (\(world, n) -> fmap (\w -> (w, world)) (played (Search.plausibility Search.known viewer [] gs world) n)) (zip candidates [1 ..])
-    weighed <- traverse (\(world, n) -> fmap (\w -> (w, world)) (played (Search.plausibility Search.known viewer passes gs world) n)) (zip candidates [1 ..])
+    candidates <- traverse (played (Search.sample Search.known Search.blank viewer gs)) [1 .. 32]
+    unweighed <- traverse (\(world, n) -> fmap (\w -> (w, world)) (played (Search.plausibility Search.known Search.blank viewer [] gs world) n)) (zip candidates [1 ..])
+    weighed <- traverse (\(world, n) -> fmap (\w -> (w, world)) (played (Search.plausibility Search.known Search.blank viewer passes gs world) n)) (zip candidates [1 ..])
     Spec.assertEqWith s "every weight, no pass watched" (fmap fst unweighed) (1 <$ candidates)
     Spec.assertBool s (mean weighed < mean unweighed) ("the Grizzly Bears held, weighed by the pass (" <> show (fromRational (mean weighed) :: Double) <> ") fewer than not (" <> show (fromRational (mean unweighed) :: Double) <> ")")
     let budget = SearchBudget.MkSearchBudget {SearchBudget.samples = 1, SearchBudget.turns = 0, SearchBudget.prompts = 0, SearchBudget.candidates = 32}
-        dealt watched = played (Search.worlds budget Search.known watched viewer gs >>= Monad.replicateM 200) 1
+        dealt watched = played (Search.worlds budget Search.known Search.blank watched viewer gs >>= Monad.replicateM 200) 1
     inferring <- dealt passes
     blind <- dealt []
     Spec.assertBool s (mean (fmap ((,) 1) inferring) < mean (fmap ((,) 1) blind)) ("the Grizzly Bears held in the worlds dealt, weighing the pass (" <> show (fromRational (mean (fmap ((,) 1) inferring)) :: Double) <> ") fewer than not (" <> show (fromRational (mean (fmap ((,) 1) blind)) :: Double) <> ")")
@@ -184,7 +247,7 @@ spec s registry = Spec.describe s "Search" $ do
     (pid, asked) <- openAttack s registry
     let seat = PlayerId.unwrap pid + 1
         options = PlayOptions.none {PlayOptions.bots = Set.singleton seat}
-        answered seed = either (Spec.assertFailure s . Text.unpack) pure =<< Except.runExceptT (State.evalStateT (Answerer.unwrap (Command.answerer (S.fixtureRegistry []) (const (pure Nothing)) (pure Nothing) (const (pure ())) options seat) asked) (S.seeded seed))
+        answered seed = either (Spec.assertFailure s . Text.unpack) pure =<< Except.runExceptT (State.evalStateT (Answerer.unwrap (Command.answerer (S.fixtureRegistry []) (const (pure Nothing)) (pure Nothing) (const (pure ())) (pure Map.empty) options seat) asked) (S.seeded seed))
     declared <- traverse answered [1 .. 8]
     Spec.assertBool s (not (any null declared)) "attacked in every seed"
 
@@ -261,6 +324,28 @@ afterPass s registry = do
               Game.stop (Text.pack "found")
         _ -> Answerer.unwrap (Game.bot lifted) asked
 
+-- Seat 1's first priority decision from turn 3 on, in a game of the bears
+-- decks from seed 5 watched by Search.remembering, the random bot in both
+-- seats: the game as asked and the memories kept then.
+recalling :: forall m n. (Monad m) => Spec.Spec m n -> Registry.Registry m -> m (GameState.GameState, Map.Map PlayerId.PlayerId Search.Memory)
+recalling s registry = do
+  decks <- fmap snd <$> BotSpec.bears s registry
+  (_, (_, taken)) <- State.runStateT (Game.run lifted Nothing Limits.standard [Search.remembering (\f -> State.modify' (\(memories, taken) -> let kept = f memories in kept `seq` (kept, taken)))] (Map.fromList [(Command.idOf 1, capture), (Command.idOf 2, capture)]) (S.seeded 5) Map.empty (Command.seated 1 decks)) (Map.empty, Nothing)
+  maybe (Spec.assertFailure s "no decision from turn 3 on") pure taken
+  where
+    lifted :: Registry.Registry (State.StateT (Map.Map PlayerId.PlayerId Search.Memory, Maybe (GameState.GameState, Map.Map PlayerId.PlayerId Search.Memory)) m)
+    lifted = Registry.hoist Trans.lift (S.fixtureRegistry [])
+    capture :: Answerer.Answerer (Asked.Asked GameState.GameState) (Game.Play (State.StateT (Map.Map PlayerId.PlayerId Search.Memory, Maybe (GameState.GameState, Map.Map PlayerId.PlayerId Search.Memory)) m))
+    capture = Answerer.MkAnswerer $ \asked -> do
+      (memories, _) <- Game.underneath State.get
+      case Asked.prompt asked of
+        Prompt.ChooseAction _ pid _
+          | pid == S.alice,
+            TurnRegisters.turnNumber (GameState.turn (Asked.game asked)) >= 3 -> do
+              Game.underneath (State.put (memories, Just (Asked.game asked, memories)))
+              Game.stop (Text.pack "found")
+        _ -> Answerer.unwrap (Game.bot lifted) asked
+
 -- The ids in a player's hand.
 handIds :: GameState.GameState -> PlayerId.PlayerId -> [ObjectId.ObjectId]
 handIds gs pid = Foldable.toList (Map.findWithDefault mempty pid (GameState.hand gs))
@@ -280,7 +365,7 @@ openAttack s registry = do
 searched :: (Monad m) => Spec.Spec m n -> Asked.Asked GameState.GameState r -> Word.Word32 -> m r
 searched s asked seed =
   let budget = SearchBudget.MkSearchBudget {SearchBudget.samples = 2, SearchBudget.turns = 1000, SearchBudget.prompts = 40, SearchBudget.candidates = 0}
-   in either (Spec.assertFailure s . Text.unpack) pure =<< Except.runExceptT (State.evalStateT (Answerer.unwrap (Search.search (S.fixtureRegistry []) budget Weights.neutral Search.known (pure [])) asked) (S.seeded seed))
+   in either (Spec.assertFailure s . Text.unpack) pure =<< Except.runExceptT (State.evalStateT (Answerer.unwrap (Search.search (S.fixtureRegistry []) budget Weights.neutral Search.known (pure []) (pure Search.blank)) asked) (S.seeded seed))
 
 -- No feature weighted.
 zero :: Features.Features
@@ -333,7 +418,7 @@ showing s registry shown = fmap fst (capturing s registry 5 "a decision" found)
     found :: Asked.Asked GameState.GameState r -> Maybe (GameState.GameState, ())
     found asked = case Asked.prompt asked of
       Prompt.ChooseAction decider pid menu
-        | pid == S.alice && Search.searchable asked decider pid (Search.options menu) && shown (Search.seen S.alice (Asked.game asked) S.bob) -> Just (Asked.game asked, ())
+        | pid == S.alice && Search.searchable asked decider pid (Search.options menu) && shown (Search.seen Search.blank S.alice (Asked.game asked) S.bob) -> Just (Asked.game asked, ())
       _ -> Nothing
 
 -- The printings behind objects.

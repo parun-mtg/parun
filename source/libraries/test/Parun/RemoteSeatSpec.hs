@@ -189,7 +189,7 @@ againstSearch matchup =
 searching :: (Monad m) => Answerer.Answerer (Asked.Asked GameState.GameState) (Game.Play (State.StateT Resumed m))
 searching = Answerer.MkAnswerer $ \prompted -> do
   Monad.when (Maybe.isJust (Protocol.requestFor prompted)) $ Game.underneath (State.modify' (\r -> r {searches = length (kept r) : searches r}))
-  Answerer.unwrap (Search.search (S.fixtureRegistry []) budget Weights.neutral Search.known (pure [])) prompted
+  Answerer.unwrap (Search.search (S.fixtureRegistry []) budget Weights.neutral Search.known (pure []) (pure Search.blank)) prompted
   where
     budget = SearchBudget.MkSearchBudget {SearchBudget.samples = 2, SearchBudget.turns = 1000, SearchBudget.prompts = 40, SearchBudget.candidates = 0}
 
