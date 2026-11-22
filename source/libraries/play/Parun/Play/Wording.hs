@@ -453,20 +453,29 @@ witnessed :: PlayerView.PlayerView -> [LoggedEvent.LoggedEvent]
 witnessed view = PlayerView.witnessedLastTurn view <> PlayerView.witnessed view
 
 -- | Witnessed entries as sentences to a reader (objective), as `kept` keeps
--- them, a run of one player's draws or looks told as one.
+-- them, a run of one player's draws, looks or mana abilities (those
+-- paying for a spell, CR 601.2g) told as one.
 events :: Maybe PlayerId.PlayerId -> PlayerView.PlayerView -> [LoggedEvent.LoggedEvent] -> [Text.Text]
 events reader view = concatMap sentences . List.groupBy (\a b -> Maybe.isJust (runner a) && runner a == runner b) . kept . filter (Maybe.isJust . event reader view)
   where
+    -- The player and the predicate a run of their entries shares.
     runner logged = case LoggedEvent.event logged of
-      GameEvent.Drew d -> Just (Left (Drew.player d))
-      GameEvent.Looked l -> Just (Right (Looked.player l))
+      GameEvent.Drew d -> Just (Drew.player d, "draws")
+      GameEvent.Looked l -> Just (Looked.player l, "looks at")
+      GameEvent.AbilityActivated a | isManaAbility a -> Just (AbilityWasActivated.player a, "gets mana from")
       _ -> Nothing
     sentences run = case run of
-      first : _ : _ -> case runner first of
-        Just (Left pid) -> [acts reader pid "draws" <> Text.pack " " <> count (List.genericLength run) "card" <> Text.pack "."]
-        Just (Right pid) -> [acts reader pid "looks at" <> Text.pack " " <> listing [PromptOffer.snapshotName (Looked.characteristics l) | GameEvent.Looked l <- fmap LoggedEvent.event run] <> Text.pack "."]
-        Nothing -> Maybe.mapMaybe (event reader view) run
+      first : _ : _
+        | Just (pid, predicate) <- runner first ->
+            let what = case LoggedEvent.event first of
+                  GameEvent.Drew _ -> count (List.genericLength run) "card"
+                  _ -> listing (fmap object run)
+             in [acts reader pid predicate <> Text.pack " " <> what <> Text.pack "."]
       _ -> Maybe.mapMaybe (event reader view) run
+    object logged = case LoggedEvent.event logged of
+      GameEvent.Looked l -> PromptOffer.snapshotName (Looked.characteristics l)
+      GameEvent.AbilityActivated a -> named view (AbilityWasActivated.source a)
+      _ -> Text.empty
 
 -- | The entries a log tells, less those another entry beside them already
 -- tells or no seat acts on: a search's looks at the cards it searches (CR
@@ -497,14 +506,15 @@ kept = go Nothing Map.empty
 
 -- | A witnessed entry as a sentence naming its cards, players and amounts, or
 -- nothing for the bookkeeping a seat can read off the board (a step, a tap,
--- mana and the mana ability making it, a trigger) or another entry already tells (a die roll, a spell's move
+-- mana, a trigger) or another entry already tells (a die roll, a spell's move
 -- to the stack, a land play's, discard's or mill's move, a block's
--- per-attacker records); to a reader, as objective says.
+-- per-attacker records, a mana ability's tap and mana, told by its
+-- activation); to a reader, as objective says.
 event :: Maybe PlayerId.PlayerId -> PlayerView.PlayerView -> LoggedEvent.LoggedEvent -> Maybe Text.Text
 event reader view logged = case LoggedEvent.event logged of
   GameEvent.SpellCast c -> said [acts reader (SpellWasCast.player c) "casts", PromptOffer.snapshotName (SpellWasCast.characteristics c)]
   GameEvent.AbilityActivated a
-    | AbilityFacts.kind (AbilityWasActivated.facts a) == AbilityKind.ManaAbility -> Nothing
+    | isManaAbility a -> said [acts reader (AbilityWasActivated.player a) "gets mana from", name (AbilityWasActivated.source a)]
     | otherwise -> said [acts reader (AbilityWasActivated.player a) "activates", name (AbilityWasActivated.source a) <> Text.pack "'s ability"]
   GameEvent.LandPlayed l -> said [acts reader (LandPlayed.player l) "plays", name (LandPlayed.land l)]
   GameEvent.AttackerDeclared a -> said [name (AttackerDeclared.attacker a), Text.pack "attacks", attacked (AttackerDeclared.target a)]
@@ -642,6 +652,10 @@ event reader view logged = case LoggedEvent.event logged of
     recipient r = case r of
       Recipient.ToPlayer pid -> objective reader pid
       _ -> recipientName view r
+
+-- | Whether an activation is of a mana ability (CR 605.1a).
+isManaAbility :: AbilityWasActivated.AbilityWasActivated -> Bool
+isManaAbility a = AbilityFacts.kind (AbilityWasActivated.facts a) == AbilityKind.ManaAbility
 
 -- | A player or object a damage event, an attachment or a target names.
 recipientName :: PlayerView.PlayerView -> Recipient.Recipient -> Text.Text

@@ -567,7 +567,8 @@ spec s registry = Spec.describe s "PlayerView" $ do
       Spec.assertEqWith s (seat <> "CR 120.3a the damage") [(DamageEvent.amount d, DamageEvent.target d) | GameEvent.DamageDealt d <- seen] [(3, Recipient.ToPlayer S.bob)]
       Spec.assertEqWith s (seat <> "CR 119.3 the life lost and gained") ([LifeChange.amount l | GameEvent.LifeLost l <- seen], [LifeChange.amount l | GameEvent.LifeGained l <- seen]) ([3], [4])
       Spec.assertEqWith s (seat <> "drawn") (List.sort (filter (`elem` sentences) (drawnFor pid gs))) (List.sort sentences)
-    Spec.assertEqWith s "CR 120.3a / 700.13 / 700.14 logged, life lost to damage told by the damage, the crime and the mana spent not told" (loggedFor S.alice gs) (fmap Text.pack ["You cast Mind Rot.", "Player 2 discards Hill Giant.", "Player 2 discards Grizzly Bears.", "Mind Rot is put into your graveyard from the stack.", "You cast Volcanic Hammer.", "Volcanic Hammer deals 3 damage to Player 2.", "Volcanic Hammer is put into your graveyard from the stack.", "You cast Sacred Nectar.", "You gain 4 life.", "Sacred Nectar is put into your graveyard from the stack.", "You play Forest."])
+    Spec.assertEqWith s "CR 601.2g the lands paying for a spell, told to its caster's opponent as one line beside the cast" (take 2 (loggedFor S.bob gs)) (fmap Text.pack ["Player 1 gets mana from Swamp, Swamp and Swamp.", "Player 1 casts Mind Rot."])
+    Spec.assertEqWith s "CR 120.3a / 700.13 / 700.14 logged, life lost to damage told by the damage, the crime and the mana spent not told" (loggedFor S.alice gs) (fmap Text.pack ["You get mana from Swamp, Swamp and Swamp.", "You cast Mind Rot.", "Player 2 discards Hill Giant.", "Player 2 discards Grizzly Bears.", "Mind Rot is put into your graveyard from the stack.", "You get mana from Mountain and Mountain.", "You cast Volcanic Hammer.", "Volcanic Hammer deals 3 damage to Player 2.", "Volcanic Hammer is put into your graveyard from the stack.", "You get mana from Plains and Plains.", "You cast Sacred Nectar.", "You gain 4 life.", "Sacred Nectar is put into your graveyard from the stack.", "You play Forest."])
   Spec.it s "CR 508.1 / 509.1 / 510.2 attackers, blockers, combat damage and the creatures that died are witnessed by both seats, by name" $ do
     let setup = S.duel S.declareAttackers [S.settled "bear" "Grizzly Bears", S.settled "giant" "Hill Giant"] [S.settled "lizard" "Lizard Warrior"]
         script =
@@ -632,7 +633,7 @@ spec s registry = Spec.describe s "PlayerView" $ do
               S.on S.precombatMain S.alice (answering "Shuffle" (fmap (\n -> "$bears" <> show n) [1 :: Int .. 29]))
             ]
     gs <- S.play s registry setup script S.priorityGame
-    Spec.assertEqWith s "alice's log" (loggedFor S.alice gs) (fmap Text.pack ["You cast Civic Wayfinder.", "Civic Wayfinder moves from the stack to the battlefield.", "You search your library.", "You reveal Forest.", "Forest moves from your library to your hand.", "Your library is shuffled."])
+    Spec.assertEqWith s "alice's log" (loggedFor S.alice gs) (fmap Text.pack ["You get mana from Forest, Forest and Forest.", "You cast Civic Wayfinder.", "Civic Wayfinder moves from the stack to the battlefield.", "You search your library.", "You reveal Forest.", "Forest moves from your library to your hand.", "Your library is shuffled."])
   Spec.it s "CR 400.2 / 701.23a a land searched out onto the battlefield is witnessed by both seats as it arrives, the rest of the library by neither" $ do
     let mine =
           (S.battlefield S.alice (fmap (uncurry S.settled) [("f1", "Forest"), ("f2", "Forest"), ("f3", "Forest")]))
