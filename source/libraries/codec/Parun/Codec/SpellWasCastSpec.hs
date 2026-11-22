@@ -31,7 +31,7 @@ spec s = Spec.describe s "Parun.Codec.SpellWasCast" $ do
             SpellWasCast.zone = Just Zone.Hand,
             SpellWasCast.castUsing = Just Keyword.JumpStart,
             SpellWasCast.lapsedGrants = Set.singleton (Condition.Compares (Compares.MkCompares (Quantity.Literal 3) Comparison.AtLeast (Quantity.Literal 5))),
-            SpellWasCast.exiledWith = Just ExileLink.MkExileLink {ExileLink.source = ObjectId.MkObjectId 3, ExileLink.ability = Nothing, ExileLink.acquisition = Acquisition.Own, ExileLink.chosen = False, ExileLink.controller = Nothing}
+            SpellWasCast.exiledWith = Just ExileLink.MkExileLink {ExileLink.source = ObjectId.MkObjectId 3, ExileLink.ability = Nothing, ExileLink.acquisition = Acquisition.Own, ExileLink.chosen = False, ExileLink.controller = Nothing, ExileLink.tokens = Set.empty}
           }
       )
       ( "{\"player\":0,\"spell\":7,\"characteristics\":"

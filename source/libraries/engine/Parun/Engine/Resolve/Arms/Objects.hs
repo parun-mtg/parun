@@ -110,6 +110,7 @@ import qualified Parun.Types.EntryR as EntryR
 import qualified Parun.Types.EntryRewrite as EntryRewrite
 import qualified Parun.Types.EntryRiders as EntryRiders
 import qualified Parun.Types.ExileHaunting as ExileHaunting
+import qualified Parun.Types.ExileLink as ExileLink
 import qualified Parun.Types.Exploited as Exploited
 import qualified Parun.Types.Face as Face
 import qualified Parun.Types.Filter as Filter.Type
@@ -508,7 +509,7 @@ conjure settle resolving source controller legal payload = do
         _ -> pure []
 
 createCopy :: Settle.Settle -> ObjectId -> ObjectId -> PlayerId -> Map.Map SlotName (Set Recipient) -> Map.Map SlotName (Set Recipient) -> CreateCopy.CreateCopy (GrantedAbility.GrantedAbility Card.Type.Card) -> Game ()
-createCopy settle resolving source controller legal chosen (CreateCopy.MkCreateCopy quantity ref entry mSlot exceptions creator linked) = do
+createCopy settle resolving source controller legal chosen (CreateCopy.MkCreateCopy quantity ref entry mSlot exceptions creator linked linkExiled) = do
   -- Asked before the board is read (CR 608.2d), so Twilight Diviner's "a copy
   -- of one of them" is chosen. Common.LastKnown, since the copy only reads its
   -- pick: CR 608.2h's branch below answers for one that has left.
@@ -595,6 +596,15 @@ createCopy settle resolving source controller legal chosen (CreateCopy.MkCreateC
     _ -> pure []
   -- Dance of Many's later abilities mean this token.
   Monad.when linked (State.modify' (\g -> foldr (Common.linkEntrant resolving source) g minted))
+  -- CR 607.1d / 607.2a: Hofri Ghostforge's tokens' "the exiled card" is the
+  -- card this resolution exiled, so each token minted joins its link; a copy
+  -- of a token is another object and reads nothing (Binding.isLinkedExile).
+  -- Only a link already filed is joined: a card a replacement sent elsewhere
+  -- is not in exile (CR 400.7).
+  Monad.forM_ linkExiled $ \exiledSlot -> do
+    exiled <- Common.fromAmongMembers legal resolving chosen exiledSlot
+    let join link = link {ExileLink.tokens = ExileLink.tokens link <> Set.fromList minted}
+    State.modify' (\g -> g {GameState.exiledWith = foldr (Map.adjust join) (GameState.exiledWith g) exiled})
   Common.bindObjects resolving mSlot minted
 
 becomeCopy :: ObjectId -> ObjectId -> PlayerId -> Map.Map SlotName (Set Recipient) -> Map.Map SlotName (Set Recipient) -> BecomeCopy.BecomeCopy Card.Type.Card (GrantedAbility.GrantedAbility Card.Type.Card) -> Game ()

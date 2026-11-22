@@ -2387,7 +2387,8 @@ graveyardTokenCopy exceptions cost =
               CreateCopy.slot = Nothing,
               CreateCopy.exceptions = exceptions,
               CreateCopy.creator = PlayerRef.Relative PlayerRelation.You,
-              CreateCopy.linked = False
+              CreateCopy.linked = False,
+              CreateCopy.linkExiled = Nothing
             }
    in ActivatedAbility.MkActivatedAbility
         { ActivatedAbility.costChoices = [],
@@ -2508,7 +2509,8 @@ encore cost =
               CreateCopy.slot = Just encoreTokenSlot,
               CreateCopy.exceptions = [],
               CreateCopy.creator = PlayerRef.Relative PlayerRelation.You,
-              CreateCopy.linked = False
+              CreateCopy.linked = False,
+              CreateCopy.linkExiled = Nothing
             }
       required =
         Effect.RequireAttack
@@ -5725,7 +5727,8 @@ myriad =
               CreateCopy.slot = Just myriadTokenSlot,
               CreateCopy.exceptions = [],
               CreateCopy.creator = PlayerRef.Relative PlayerRelation.You,
-              CreateCopy.linked = False
+              CreateCopy.linked = False,
+              CreateCopy.linkExiled = Nothing
             }
       loop =
         Effect.ForEach
@@ -6966,7 +6969,8 @@ paidTokenCopies keyword quantity exceptions ordinal =
               CreateCopy.slot = Nothing,
               CreateCopy.exceptions = exceptions,
               CreateCopy.creator = PlayerRef.Relative PlayerRelation.You,
-              CreateCopy.linked = False
+              CreateCopy.linked = False,
+              CreateCopy.linkExiled = Nothing
             }
    in Mint.triggerIf
         (TriggerCondition.Enters EntersTrigger.defaultValue)

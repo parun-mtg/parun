@@ -1725,7 +1725,7 @@ effectObjectRefs effect =
           ConjureCards.Reference {} -> []
         -- Twilight Diviner's "a copy of one of them", asked by
         -- Resolve.Common.askingObjects.
-        Effect.CreateCopy (CreateCopy.MkCreateCopy _ ref _ _ _ _ _) -> [([CardFromAmong], ref)]
+        Effect.CreateCopy (CreateCopy.MkCreateCopy _ ref _ _ _ _ _ _) -> [([CardFromAmong], ref)]
         -- Volatile Chimera's "choose a card at random" and Olag, Ludevic's
         -- Hubris's "a creature card exiled with it", the original alone.
         Effect.BecomeCopy (BecomeCopy.MkBecomeCopy original subject _ _ _) -> [([RandomAmong, ChosenAmong], ref) | CopyOriginal.OfObject ref <- [original]] <> read_ [subject]
@@ -2832,7 +2832,7 @@ effectLintSpec s registry corpus = Spec.describe s "Lint" $ do
     let anyFromAmong = ObjectRef.ChosenCardFromAmong (ChosenCardFromAmong.MkChosenCardFromAmong group anyCard (HowMany.UpTo Nothing) Nothing Nothing Set.empty (PlayerRef.Relative PlayerRelation.You) Nothing False CardSelection.ByChoice)
     Spec.assertEqWith s "any number from among them is allowed by a reveal and a move alone" (inert [reveals anyFromAmong, moves anyFromAmong, discardsThese anyFromAmong]) [False, False, True]
     -- Twilight Diviner's "a copy of one of them" is the one question a copy asks.
-    let tokenCopies ref = Effect.CreateCopy (CreateCopy.MkCreateCopy (Quantity.Type.Literal 1) ref EntryRiders.defaultValue Nothing [] (PlayerRef.Relative PlayerRelation.You) False)
+    let tokenCopies ref = Effect.CreateCopy (CreateCopy.MkCreateCopy (Quantity.Type.Literal 1) ref EntryRiders.defaultValue Nothing [] (PlayerRef.Relative PlayerRelation.You) False Nothing)
     Spec.assertEqWith s "a copy allows one card from among them and no other chosen arm" (inert (fmap tokenCopies [inGraveyard, inHand, fromAmong, atRandom, anyFromAmong])) [True, True, False, True, True]
     -- An exact count other than one: only a move's test (Split the Party) reaches it.
     let exactlyTwo = ObjectRef.ChosenPermanents (ChosenPermanents.MkChosenPermanents anyCard (PlayerRef.Relative PlayerRelation.You) (HowMany.Exactly (Quantity.Type.Literal 2)) Nothing Zone.Battlefield Set.empty)
@@ -3217,7 +3217,7 @@ effectLintSpec s registry corpus = Spec.describe s "Lint" $ do
         offends effect = case effect of
           Effect.MoveToZone (MoveToZone.MkMoveToZone _ zone riders _ _ _ _) -> carries riders && zone /= Zone.Battlefield
           Effect.Create (Create.MkCreate _ _ riders _ _ _ _ _) -> carries riders
-          Effect.CreateCopy (CreateCopy.MkCreateCopy _ _ riders _ _ _ _) -> carries riders
+          Effect.CreateCopy (CreateCopy.MkCreateCopy _ _ riders _ _ _ _ _) -> carries riders
           _ -> False
         defines effect = case effect of
           Effect.MoveToZone (MoveToZone.MkMoveToZone _ _ riders _ _ _ _) -> carries riders
@@ -3247,10 +3247,10 @@ effectLintSpec s registry corpus = Spec.describe s "Lint" $ do
     ps <- S.allPrintings s corpus
     let bare riders = riders == EntryRiders.defaultValue {EntryRiders.counters = EntryRiders.counters riders, EntryRiders.tapped = EntryRiders.tapped riders, EntryRiders.attacking = EntryRiders.attacking riders, EntryRiders.blocking = EntryRiders.blocking riders}
         offends effect = case effect of
-          Effect.CreateCopy (CreateCopy.MkCreateCopy _ _ riders _ _ _ _) -> not (bare riders)
+          Effect.CreateCopy (CreateCopy.MkCreateCopy _ _ riders _ _ _ _ _) -> not (bare riders)
           _ -> False
         counters effect = case effect of
-          Effect.CreateCopy (CreateCopy.MkCreateCopy _ _ riders _ _ _ _) -> not (Map.null (EntryRiders.counters riders))
+          Effect.CreateCopy (CreateCopy.MkCreateCopy _ _ riders _ _ _ _ _) -> not (Map.null (EntryRiders.counters riders))
           _ -> False
         offenders = filter (anyFace (any offends . cardResolutionEffects) . Printing.card) ps
     -- Guards against a vacuous sweep: with no copy token carrying a rider at all
@@ -3284,7 +3284,7 @@ effectLintSpec s registry corpus = Spec.describe s "Lint" $ do
     let gated riders = any (Maybe.isJust . EntryCounter.onlyIf) (Map.keys (EntryRiders.counters riders))
         offends effect = case effect of
           Effect.Create (Create.MkCreate _ _ riders _ _ _ _ _) -> gated riders
-          Effect.CreateCopy (CreateCopy.MkCreateCopy _ _ riders _ _ _ _) -> gated riders
+          Effect.CreateCopy (CreateCopy.MkCreateCopy _ _ riders _ _ _ _ _) -> gated riders
           _ -> False
         doctored = EntryRiders.defaultValue {EntryRiders.counters = Map.singleton (EntryCounter.MkEntryCounter CounterKind.PlusOnePlusOne (Just (Filter.Type.HasCardType CardType.Creature))) (Quantity.Type.Literal 1)}
         offenders = filter (anyFace (any offends . cardResolutionEffects) . Printing.card) ps
@@ -4745,7 +4745,7 @@ boundPlurally effect = case effect of
   -- appending a Soldier.
   Effect.Create (Create.MkCreate _ _ _ mSlot _ _ _ _) -> Maybe.maybeToList mSlot
   -- Create's arm and Create's test: Resolve.bindObjects binds both.
-  Effect.CreateCopy (CreateCopy.MkCreateCopy _ _ _ mSlot _ _ _) -> Maybe.maybeToList mSlot
+  Effect.CreateCopy (CreateCopy.MkCreateCopy _ _ _ mSlot _ _ _ _) -> Maybe.maybeToList mSlot
   -- CR 707.10's copies, bound through Resolve.bindObjects as well:
   -- `quantity` and a plural `copier` each make several.
   Effect.CopyStackObject copyStackObject -> Maybe.maybeToList (CopyStackObject.slot copyStackObject)

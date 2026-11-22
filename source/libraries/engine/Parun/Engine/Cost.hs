@@ -3122,7 +3122,7 @@ printedLink pid oid = exileLink pid oid Nothing Acquisition.Own
 -- The link `oid` keeps to a card a cost `pid` paid exiled under `ability` (CR
 -- 607.2a), `pid` controlling what it paid for (CR 113.8).
 exileLink :: PlayerId -> ObjectId -> Maybe AbilityName.AbilityName -> Acquisition.Acquisition -> ExileLink.ExileLink
-exileLink pid oid ability acquisition = ExileLink.MkExileLink {ExileLink.source = oid, ExileLink.ability = ability, ExileLink.acquisition = acquisition, ExileLink.chosen = False, ExileLink.controller = Just pid}
+exileLink pid oid ability acquisition = ExileLink.MkExileLink {ExileLink.source = oid, ExileLink.ability = ability, ExileLink.acquisition = acquisition, ExileLink.chosen = False, ExileLink.controller = Just pid, ExileLink.tokens = Set.empty}
 
 -- File `link` for each of `arrived` still in exile. A new link ends a
 -- DurationEvent.SourceExiledCard duration, as Resolve.Common.recordExiledWith's

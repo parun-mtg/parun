@@ -2,6 +2,7 @@
 
 module Parun.Codec.ExileLink where
 
+import qualified Data.Set as Set
 import qualified Parun.Codec.AbilityName as AbilityName
 import qualified Parun.Codec.Acquisition as Acquisition
 import qualified Parun.Codec.ObjectId as ObjectId
@@ -14,7 +15,7 @@ import qualified Parun.Types.ExileLink as ExileLink
 
 -- | An object keyed by the record's field names; "ability" defaults to Nothing,
 -- the unnamed exiling ability, "acquisition" to Own, the abilities the
--- source has of its own, and "chosen" to false.
+-- source has of its own, "chosen" to false, and "tokens" to none.
 codec :: Codec.Codec ExileLink.ExileLink
 codec = Fields.object $ do
   source <- Fields.required "source" ObjectId.codec ExileLink.source
@@ -22,4 +23,5 @@ codec = Fields.object $ do
   acquisition <- Fields.defaulted "acquisition" Acquisition.Own Acquisition.codec ExileLink.acquisition
   chosen <- Fields.defaulted "chosen" False Common.boolean ExileLink.chosen
   controller <- Fields.defaulted "controller" Nothing (Common.maybe PlayerId.codec) ExileLink.controller
-  pure ExileLink.MkExileLink {ExileLink.source = source, ExileLink.ability = ability, ExileLink.acquisition = acquisition, ExileLink.chosen = chosen, ExileLink.controller = controller}
+  tokens <- Fields.defaulted "tokens" Set.empty (Common.set ObjectId.codec) ExileLink.tokens
+  pure ExileLink.MkExileLink {ExileLink.source = source, ExileLink.ability = ability, ExileLink.acquisition = acquisition, ExileLink.chosen = chosen, ExileLink.controller = controller, ExileLink.tokens = tokens}

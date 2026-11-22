@@ -681,7 +681,7 @@ namedByRelation oid gs =
         || relates returnWatchNames (GameState.movedUntil gs)
         || relates Set.singleton (GameState.haunting gs)
         || relates Set.singleton (GameState.encoded gs)
-        || relates (Set.singleton . ExileLink.source) (GameState.exiledWith gs)
+        || relates (\link -> Set.insert (ExileLink.source link) (ExileLink.tokens link)) (GameState.exiledWith gs)
         || relates pileNames (GameState.exilePiles gs)
         || keyed (GameState.exiledBeforeGame gs)
         || relates (Set.map EntryLink.source) (GameState.enteredWith gs)

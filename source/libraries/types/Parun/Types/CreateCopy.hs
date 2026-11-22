@@ -53,7 +53,11 @@ data CreateCopy ability = MkCreateCopy
     -- row keeps two otherwise identical mana sources from being interchangeable
     -- (Parun.Engine.Interchangeable.namedByRelation). Dance of Many's scenarios
     -- prove it.
-    linked :: Bool
+    linked :: Bool,
+    -- | CR 607.1d / 607.2a: the slot holding the cards this ability exiled that
+    -- the token's own abilities call "the exiled card"; their links move to the
+    -- token. Hofri Ghostforge's scenarios prove it.
+    linkExiled :: Maybe SlotName.SlotName
   }
   deriving (Eq, Ord, Show)
 

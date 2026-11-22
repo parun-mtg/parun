@@ -1,5 +1,6 @@
 module Parun.Types.ExileLink where
 
+import qualified Data.Set as Set
 import qualified Parun.Types.AbilityName as AbilityName
 import qualified Parun.Types.Acquisition as Acquisition
 import qualified Parun.Types.ObjectId as ObjectId
@@ -23,6 +24,9 @@ data ExileLink = MkExileLink
     chosen :: Bool,
     -- | CR 113.8: the exiling spell or ability's controller as it exiled the
     -- card; Nothing where none can be read (a replacement whose source left).
-    controller :: Maybe PlayerId.PlayerId
+    controller :: Maybe PlayerId.PlayerId,
+    -- | CR 607.1d: the tokens the exiling ability created whose own abilities
+    -- refer to this card as "the exiled card" (Hofri Ghostforge's Spirits).
+    tokens :: Set.Set ObjectId.ObjectId
   }
   deriving (Eq, Ord, Show)
