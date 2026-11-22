@@ -52,6 +52,7 @@ import qualified Parun.Types.BeginningStep as BeginningStep
 import qualified Parun.Types.Card as Card.Type
 import qualified Parun.Types.CardName as CardName
 import qualified Parun.Types.CastFromZone as CastFromZone
+import qualified Parun.Types.CoinFace as CoinFace
 import qualified Parun.Types.Color as Color
 import qualified Parun.Types.Combat as Combat
 import qualified Parun.Types.CombatStep as CombatStep
@@ -509,9 +510,14 @@ spec s registry = Spec.describe s "WebQuestion" $ do
     let rethrow = shown (Prompt.Rethrow alice S.alice (ThrowResult.DieCameUp 2 NonEmpty.:| [ThrowResult.DieCameUp 3]) 1 Nothing)
     Spec.assertBool s (Text.pack "Reroll die 2 of 2, showing 3? The roll: 2, 3." `Text.isInfixOf` Html.content rethrow) "a reroll names its die and the roll"
     Spec.assertBool s (button "Reroll" rethrow && button "Keep it" rethrow) "a reroll is a yes or no"
-    let results = shown (Prompt.ChooseDieResult alice S.alice Nothing ((5, S.bob, []) NonEmpty.:| [(5, S.alice, [Resolve.Common.settledResult RollReading.NaturalResult S.alice 3])]))
+    let reflip = shown (Prompt.Rethrow alice S.alice (ThrowResult.CoinCameUp CoinFace.Tails NonEmpty.:| [ThrowResult.CoinCameUp CoinFace.Heads]) 1 Nothing)
+    Spec.assertBool s (Text.pack "Reflip coin 2 of 2, showing heads? The coins: tails, heads." `Text.isInfixOf` Html.content reflip) "a reflip names its coin and every coin of its unit"
+    Spec.assertBool s (button "Reflip" reflip && button "Keep it" reflip) "a reflip is a yes or no"
+    let results = shown (Prompt.ChooseDieResult alice S.alice Nothing ((5, S.bob, [], []) NonEmpty.:| [(5, S.alice, [Resolve.Common.settledResult RollReading.NaturalResult S.alice 3], [])]))
     Spec.assertBool s (button "5 (thrown by Player 2)" results) "a result another player threw"
     Spec.assertBool s (button "5 (you rolled 3)" results) "a result carrying a natural result"
+    let rerolled = shown (Prompt.ChooseDieResult alice S.alice Nothing ((2, S.alice, [Resolve.Common.settledResult RollReading.NaturalResult S.alice 2], [1]) NonEmpty.:| [(2, S.alice, [Resolve.Common.settledResult RollReading.NaturalResult S.alice 2], [2])]))
+    Spec.assertBool s (button "2 (you rolled 2; from the roll's reroll 1)" rerolled && button "2 (you rolled 2; from the roll's reroll 2)" rerolled) "CR 706.6 results alike but for the reroll each carries"
 
   Spec.it s "options the seat can't tell apart share one button, which picks the next" $ do
     bears <- S.printingOf s registry "Grizzly Bears"
@@ -1084,6 +1090,7 @@ frameAt stop =
         Stop.MkBefore _ _ asked -> Protocol.depthOf asked
         Stop.MkEnded _ -> 0,
       Replay.entry = Nothing,
+      Replay.entryLine = Nothing,
       Replay.question = Nothing,
       Replay.failure = Nothing,
       Replay.reading = Nothing

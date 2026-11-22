@@ -1554,9 +1554,9 @@ chooseGroup resolving source controller legal (ChooseGroup.MkChooseGroup among s
 -- after -- a d20 answered 20 with a modifier of 5 is a result of 25, past the
 -- die's own top face. CR 107.1b for a sum a negative modifier drove below zero.
 --
--- CR 706.2b's two steps are taken in the rule's order: `rerolling` below,
--- per die on its natural result, then `rerollingDice` over the roll's dice
--- together, and then `adjusting`, once every die is up.
+-- CR 706.2b's two steps are taken in the rule's order: throwSettled's
+-- `offeringAll`, the rerolls over each die and over several at once in one
+-- pick, and then `adjusting`, once every die is up.
 --
 -- CR 706.1's roll is also the PlayerAction.RollDice TriggerCondition.PlayerActs watches
 -- (Feywild Trickster). Recorded under each ROLLER, not `source`: rule 706.1's
@@ -1657,7 +1657,7 @@ rollDieArm throwDice runSubgame resolving source controller legal rollDie = do
               if all (== NonEmpty.head offered) (NonEmpty.tail offered)
                 then pure 0
                 else do
-                  answer <- Game.choose (Prompt.ChooseDieResult (Decide.deciderFor roller gs) roller (Just resolving) (fmap (\n -> (n, roller, [])) offered))
+                  answer <- Game.choose (Prompt.ChooseDieResult (Decide.deciderFor roller gs) roller (Just resolving) (fmap (\n -> (n, roller, [], [])) offered))
                   pure (if answer < List.genericLength results then answer else 0)
             -- CR 706.4's "the other result", off the same throw rather than
             -- re-derived from the count, FlipCoin's `misses` below and for its

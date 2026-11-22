@@ -143,42 +143,12 @@
                   "place": 0
                 },
                 {
-                  "source": "$w2",
-                  "result": 2,
-                  "place": 0
-                },
-                {
-                  "source": "$w3",
-                  "result": 2,
-                  "place": 0
-                },
-                {
                   "source": "$w1",
                   "result": 3,
                   "place": 1
                 },
                 {
-                  "source": "$w2",
-                  "result": 3,
-                  "place": 1
-                },
-                {
-                  "source": "$w3",
-                  "result": 3,
-                  "place": 1
-                },
-                {
                   "source": "$w1",
-                  "result": 4,
-                  "place": 2
-                },
-                {
-                  "source": "$w2",
-                  "result": 4,
-                  "place": 2
-                },
-                {
-                  "source": "$w3",
                   "result": 4,
                   "place": 2
                 }
@@ -186,13 +156,7 @@
               "options": [
                 0,
                 1,
-                2,
-                3,
-                4,
-                5,
-                6,
-                7,
-                8
+                2
               ]
             }
           },
@@ -273,27 +237,7 @@
                   "place": 0
                 },
                 {
-                  "source": "$w2",
-                  "result": 1,
-                  "place": 0
-                },
-                {
-                  "source": "$w3",
-                  "result": 1,
-                  "place": 0
-                },
-                {
                   "source": "$w1",
-                  "result": 5,
-                  "place": 1
-                },
-                {
-                  "source": "$w2",
-                  "result": 5,
-                  "place": 1
-                },
-                {
-                  "source": "$w3",
                   "result": 5,
                   "place": 1
                 },
@@ -303,27 +247,7 @@
                   "place": 2
                 },
                 {
-                  "source": "$w2",
-                  "result": 3,
-                  "place": 2
-                },
-                {
-                  "source": "$w3",
-                  "result": 3,
-                  "place": 2
-                },
-                {
                   "source": "$w1",
-                  "result": 4,
-                  "place": 3
-                },
-                {
-                  "source": "$w2",
-                  "result": 4,
-                  "place": 3
-                },
-                {
-                  "source": "$w3",
                   "result": 4,
                   "place": 3
                 }
@@ -332,15 +256,7 @@
                 0,
                 1,
                 2,
-                3,
-                4,
-                5,
-                6,
-                7,
-                8,
-                9,
-                10,
-                11
+                3
               ]
             }
           },
@@ -355,7 +271,7 @@
       "do": {
         "Answer": {
           "prompt": "ChooseRollModifier",
-          "with": 6
+          "with": 2
         }
       },
       "player": "alice",
@@ -421,27 +337,7 @@
                   "place": 0
                 },
                 {
-                  "source": "$w2",
-                  "result": 1,
-                  "place": 0
-                },
-                {
-                  "source": "$w3",
-                  "result": 1,
-                  "place": 0
-                },
-                {
                   "source": "$w1",
-                  "result": 5,
-                  "place": 1
-                },
-                {
-                  "source": "$w2",
-                  "result": 5,
-                  "place": 1
-                },
-                {
-                  "source": "$w3",
                   "result": 5,
                   "place": 1
                 },
@@ -451,42 +347,12 @@
                   "place": 2
                 },
                 {
-                  "source": "$w2",
-                  "result": 9,
-                  "place": 2
-                },
-                {
-                  "source": "$w3",
-                  "result": 9,
-                  "place": 2
-                },
-                {
                   "source": "$w1",
                   "result": 6,
                   "place": 3
                 },
                 {
-                  "source": "$w2",
-                  "result": 6,
-                  "place": 3
-                },
-                {
-                  "source": "$w3",
-                  "result": 6,
-                  "place": 3
-                },
-                {
                   "source": "$w1",
-                  "result": 4,
-                  "place": 4
-                },
-                {
-                  "source": "$w2",
-                  "result": 4,
-                  "place": 4
-                },
-                {
-                  "source": "$w3",
                   "result": 4,
                   "place": 4
                 }
@@ -496,17 +362,7 @@
                 1,
                 2,
                 3,
-                4,
-                5,
-                6,
-                7,
-                8,
-                9,
-                10,
-                11,
-                12,
-                13,
-                14
+                4
               ]
             }
           },
@@ -521,7 +377,7 @@
       "do": {
         "Answer": {
           "prompt": "ChooseRollModifier",
-          "with": 3
+          "with": 1
         }
       },
       "player": "alice",

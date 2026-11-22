@@ -2,8 +2,10 @@ module Parun.Types.MatchOptions where
 
 import qualified Data.Map.Strict as Map
 import qualified Data.Set as Set
+import qualified Data.Text as Text
 import qualified Numeric.Natural as Natural
 import qualified Parun.Types.Key as Key
+import qualified Parun.Types.Persona as Persona
 import qualified Parun.Types.Playout as Playout
 import qualified Parun.Types.SearchBudget as SearchBudget
 import qualified Parun.Types.SearchMethod as SearchMethod
@@ -21,21 +23,25 @@ data MatchOptions = MkMatchOptions
     searching :: Set.Set Natural.Natural,
     -- | How hard the search bot looks in each seat it may play.
     budgets :: Map.Map Natural.Natural SearchBudget.SearchBudget,
-    -- | The file of the search bot's weights in a seat (Parun.Weights),
-    -- Weights.neutral in a seat absent.
-    weighing :: Map.Map Natural.Natural FilePath,
+    -- | The search bot's weights in a seat: a persona's
+    -- (Parun.Play.Opponent) or a file's (Parun.Weights), Weights.neutral in
+    -- a seat absent.
+    weighing :: Map.Map Natural.Natural (Either Persona.Persona FilePath),
     -- | The meta file whose decks the search bot infers an opponent's unseen
     -- cards from, the lists not being known; each list known when absent.
-    meta :: Maybe FilePath
+    meta :: Maybe FilePath,
+    -- | The name of the format whose pool the search bot deals an opponent's
+    -- unseen cards from, the lists not being known and no meta named.
+    pool :: Maybe Text.Text
   }
   deriving (Eq, Show)
 
 -- | A hundred games keyed from the operating system's entropy, none saved,
 -- the random bot in every seat, every list known.
 none :: MatchOptions
-none = MkMatchOptions {seed = Nothing, games = 100, save = Nothing, searching = Set.empty, budgets = Map.fromList [(1, budget), (2, budget)], weighing = Map.empty, meta = Nothing}
+none = MkMatchOptions {seed = Nothing, games = 100, save = Nothing, searching = Set.empty, budgets = Map.fromList [(1, budget), (2, budget)], weighing = Map.empty, meta = Nothing, pool = Nothing}
 
 -- | The search bot's budget unless told otherwise, played out by the random
 -- bot.
 budget :: SearchBudget.SearchBudget
-budget = SearchBudget.MkSearchBudget {SearchBudget.samples = 2, SearchBudget.turns = 0, SearchBudget.prompts = 300, SearchBudget.candidates = 0, SearchBudget.playout = Playout.Random, SearchBudget.method = SearchMethod.Flat}
+budget = SearchBudget.MkSearchBudget {SearchBudget.samples = 2, SearchBudget.turns = 0, SearchBudget.prompts = 300, SearchBudget.candidates = 0, SearchBudget.playout = Playout.Random, SearchBudget.mistakes = 0, SearchBudget.method = SearchMethod.Flat}

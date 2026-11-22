@@ -111,10 +111,38 @@ inferred meta = MkPrior $ \memory viewer gs owner ->
           deck <- Generator.weighted (posterior meta shown)
           rest <- Generator.shuffle (spread (Map.differenceWith (\k s -> if k > s then Just (k - s) else Nothing) (Deck.cards deck) shown) <> spread loosened)
           whole <- Generator.shuffle (spread (Deck.cards deck))
-          let (world, ids) = Foldable.foldl' (\(w, acc) printing -> let (pid, w') = Engine.Game.intern printing w in (w', Map.insert printing pid acc)) (gs, Map.empty) (Map.keys (Deck.cards deck <> loosened))
-              identityOf oid = Object.identity =<< Engine.Game.lookupObject oid gs
-              dealt = zip dealtOnto (rest <> if null whole then [] else cycle whole)
-          pure (world, [(Source.OfCard pid, identityOf oid) | (oid, printing) <- dealt, pid <- Foldable.toList (Map.lookup printing ids)])
+          pure (dealtAs gs (zip dealtOnto (rest <> if null whole then [] else cycle whole)))
+
+-- | A format's pool, for lists not known and no meta to infer them from, each
+-- candidate a printing in it or Nothing for one not: the viewer's own cards
+-- dealt as 'known' deals them, and each other owner's the 'loose' ones,
+-- shuffled, then each a printing of the pool drawn evenly and independently,
+-- blind to what they showed and to any copy limit. A candidate drawn that is
+-- not one is drawn again, so a candidate is read only once drawn. Nothing
+-- when no candidate is a printing.
+pooled :: Seq.Seq (Maybe Printing.Printing) -> Maybe Prior
+pooled candidates =
+  let draw :: (Monad m) => State.StateT Generator.Type.Generator m Printing.Printing
+      draw = Generator.between 0 (Natural.length candidates - 1) >>= maybe draw pure . Seq.index candidates . Natural.toIntSaturating
+      deal :: (Monad m) => Memory -> PlayerId.PlayerId -> GameState.GameState -> PlayerId.PlayerId -> State.StateT Generator.Type.Generator m (GameState.GameState, [Contents])
+      deal memory viewer gs owner =
+        let MkPrior ownList = known
+            dealtOnto = unseen memory viewer gs owner
+         in if owner == viewer
+              then ownList memory viewer gs owner
+              else do
+                rest <- Generator.shuffle (spread (Map.findWithDefault Map.empty owner (loose memory)))
+                drawn <- Monad.replicateM (length dealtOnto - length rest) draw
+                pure (dealtAs gs (zip dealtOnto (rest <> drawn)))
+   in if any Maybe.isJust candidates then Just (MkPrior deal) else Nothing
+
+-- | The world with each printing dealt interned, and the contents to deal
+-- onto each object, its identity kept.
+dealtAs :: GameState.GameState -> [(ObjectId.ObjectId, Printing.Printing)] -> (GameState.GameState, [Contents])
+dealtAs gs dealt =
+  let (world, ids) = Foldable.foldl' (\(w, acc) printing -> let (pid, w') = Engine.Game.intern printing w in (w', Map.insert printing pid acc)) (gs, Map.empty) (ListUtils.nubOrd (fmap snd dealt))
+      identityOf oid = Object.identity =<< Engine.Game.lookupObject oid gs
+   in (world, [(Source.OfCard pid, identityOf oid) | (oid, printing) <- dealt, pid <- Foldable.toList (Map.lookup printing ids)])
 
 -- | Each printing as many times as its count.
 spread :: Map.Map Printing.Printing Natural -> [Printing.Printing]
@@ -294,7 +322,8 @@ sample (MkPrior prior) memory viewer gs =
 
 -- | The search bot for its seat: each decision it searches, where it offers
 -- a choice ('searchable'), searched by the budget's 'SearchBudget.method'
--- ('flat' or 'informationSet') over worlds dealt by 'worlds'; every other
+-- ('flat' or 'informationSet') over worlds dealt by 'worlds', at a
+-- 'mistaken' decision the best below the best taken, where one is; every other
 -- prompt answered by the random bot (Game.bot). It searches priority
 -- decisions ('options') and the first declaration of attackers ('attacks')
 -- and of blockers ('blocks'). It reads the whole game only through 'sample',
@@ -330,17 +359,14 @@ search registry budget weights prior watched recalled = Answerer.MkAnswerer $ \a
 
 -- | Flat Monte Carlo: each of `pid`'s choices played out ('rollout') in
 -- `SearchBudget.samples` worlds `deal` deals, every option in each world from
--- the same random stream, the best total taken, one of the best at random on
--- a tie.
+-- the same random stream, the best total taken ('slipping').
 flat :: (Monad m) => Registry.Registry m -> SearchBudget.SearchBudget -> Weights.Weights -> Game.Type.Game Result.Result -> PlayerId.PlayerId -> Game.Play m GameState.GameState -> NonEmpty.NonEmpty a -> (a -> Pick) -> Game.Play m a
 flat registry budget weights restart pid deal choices pick = do
   rounds <- Monad.replicateM (Natural.toIntSaturating (SearchBudget.samples budget)) $ do
     world <- deal
     shared <- State.get
     traverse (\option -> State.put shared >> rollout registry budget weights restart pid (pick option) world) choices
-  let scored = NonEmpty.zip (foldr (NonEmpty.zipWith (+)) (0 <$ choices) rounds) choices
-      top = maximum (fmap fst scored)
-  maybe (pure (NonEmpty.head choices)) Generator.pick (NonEmpty.nonEmpty [option | (total, option) <- NonEmpty.toList scored, total == top])
+  slipping budget (NonEmpty.zip (foldr (NonEmpty.zipWith (+)) (0 <$ choices) rounds) choices)
 
 -- | Single-observer information-set Monte Carlo tree search (Cowling, Powley
 -- & Whitehouse 2012, "Information Set Monte Carlo Tree Search", SO-ISMCTS):
@@ -349,7 +375,7 @@ flat registry budget weights restart pid deal choices pick = do
 -- plays its options, each descending one 'Node' tree shared by every world
 -- ('descend'), so a later decision is valued over the worlds `viewer` cannot
 -- tell apart rather than in each as if it could see it. Taken: the choice
--- whose tries scored best on average, one of those at random on a tie.
+-- whose tries scored best on average ('slipping').
 -- Parun.SearchSpec's attack into a pump spell is the proof.
 informationSet :: (Monad m) => Registry.Registry m -> SearchBudget.SearchBudget -> Weights.Weights -> Game.Type.Game Result.Result -> PlayerId.PlayerId -> GameState.GameState -> Game.Play m GameState.GameState -> NonEmpty.NonEmpty a -> (a -> Move) -> Game.Play m a
 informationSet registry budget weights restart viewer gs deal choices move = do
@@ -367,9 +393,7 @@ informationSet registry budget weights restart viewer gs deal choices move = do
           choices
   MkTree (MkNode root) _ <- Monad.foldM (const . once) (MkTree (MkNode Map.empty) Nothing) (replicate (Natural.toIntSaturating (SearchBudget.samples budget)) ())
   let tried option = (\branch -> toRational (reward branch) / toRational (max 1 (visits branch))) <$> Map.lookup (edgeFor option) root
-      ranked = fmap (\option -> (tried option, option)) choices
-      top = maximum (fmap fst ranked)
-  maybe (pure (NonEmpty.head choices)) Generator.pick (NonEmpty.nonEmpty [option | (rank, option) <- NonEmpty.toList ranked, rank == top])
+  slipping budget (fmap (\option -> (tried option, option)) choices)
 
 -- | A choice at a decision the tree holds, whatever its prompt answers.
 data Move
@@ -530,6 +554,23 @@ backup value path (MkTree root range) =
       rewards = [value mover | (_, MkEdge mover _ _) <- path]
       widened = foldr (\r -> Just . maybe (r, r) (\(lowest, highest) -> (min lowest r, max highest r))) range rewards
    in MkTree (along path root) widened
+
+-- | The choice scored best, one of the best at random on a tie, or at a
+-- 'mistaken' decision one of those scored best below it, where one is.
+slipping :: (Monad m, Ord s) => SearchBudget.SearchBudget -> NonEmpty.NonEmpty (s, a) -> State.StateT Generator.Type.Generator m a
+slipping budget scored = do
+  let top = maximum (fmap fst scored)
+  slipped <- mistaken budget
+  let aim = if slipped then maybe top maximum (NonEmpty.nonEmpty [total | (total, _) <- NonEmpty.toList scored, total < top]) else top
+  maybe (pure (snd (NonEmpty.head scored))) Generator.pick (NonEmpty.nonEmpty [option | (total, option) <- NonEmpty.toList scored, total == aim])
+
+-- | Whether a searched decision is a mistake, at the budget's
+-- `SearchBudget.mistakes` percent: drawn once its playouts are, and only at
+-- a rate above 0, so a budget making none plays as it did without the field.
+mistaken :: (Monad m) => SearchBudget.SearchBudget -> State.StateT Generator.Type.Generator m Bool
+mistaken budget
+  | SearchBudget.mistakes budget == 0 = pure False
+  | otherwise = fmap (< SearchBudget.mistakes budget) (Generator.between 0 99)
 
 -- | A priority decision a player passed at (CR 117.3d): the player and
 -- the game as they were asked.

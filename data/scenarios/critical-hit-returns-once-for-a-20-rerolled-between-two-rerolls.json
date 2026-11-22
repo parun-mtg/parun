@@ -113,17 +113,6 @@
     {
       "do": {
         "Answer": {
-          "prompt": "ChooseRollModifier",
-          "with": 0
-        }
-      },
-      "player": "alice",
-      "step": "PrecombatMain",
-      "turn": 1
-    },
-    {
-      "do": {
-        "Answer": {
           "prompt": "Rethrow",
           "with": "Exercises"
         }
@@ -150,17 +139,6 @@
         "Answer": {
           "prompt": "RollDie",
           "with": 20
-        }
-      },
-      "player": "alice",
-      "step": "PrecombatMain",
-      "turn": 1
-    },
-    {
-      "do": {
-        "Answer": {
-          "prompt": "ChooseRollModifier",
-          "with": 0
         }
       },
       "player": "alice",

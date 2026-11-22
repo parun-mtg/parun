@@ -26,10 +26,10 @@ import qualified Parun.Web.Screen as Screen
 -- `leave`; how it came out. Once the channel closes, `rejoin` connects it
 -- anew, and the game goes on as the host asks again; it stops where `rejoin`
 -- does not connect.
-play :: Browser.Page Screen.Event -> (CardName.CardName -> Either InvalidCorpus.InvalidCorpus (Maybe Card.Card)) -> IORef.IORef Web.Question.Level -> Link.Channel IO -> IO Bool -> PlayerId.PlayerId -> (Maybe PlayerView.PlayerView -> IO Hotseat.Leave) -> IO Hotseat.Played
+play :: Browser.Page Screen.Event -> (CardName.CardName -> Either InvalidCorpus.InvalidCorpus (Maybe Card.Card)) -> IORef.IORef Web.Question.Level -> Link.Channel IO -> IO Bool -> PlayerId.PlayerId -> (Maybe PlayerView.PlayerView -> IO Hotseat.Leave) -> IO Ending.Played
 play page lookUp levelRef channel rejoin seat leave = do
   seatRef <- IORef.newIORef . Hotseat.newSeat seat =<< IORef.readIORef levelRef
-  Hotseat.keepingLevel levelRef seatRef . Exception.handle (\Hotseat.MkAbandonedGame -> pure Hotseat.MkAbandoned) $ do
+  Hotseat.keepingLevel levelRef seatRef . Exception.handle (\Hotseat.MkAbandonedGame -> pure Ending.MkAbandoned) $ do
     let local = Hotseat.exchange lookUp page seatRef leave
         loop = do
           heard <- Link.receive channel
@@ -45,4 +45,4 @@ play page lookUp levelRef channel rejoin seat leave = do
                 Link.MkIgnored -> loop
     (verdict, said, scenario) <- loop
     finished <- IORef.readIORef seatRef
-    pure (Hotseat.MkFinished (Ending.MkEnding verdict said scenario (Hotseat.loggedFor seat finished) seat (Foldable.toList (Hotseat.lives finished))))
+    pure (Ending.MkFinished (Ending.MkEnding verdict said scenario (Hotseat.loggedFor seat finished) seat (Foldable.toList (Hotseat.lives finished))))

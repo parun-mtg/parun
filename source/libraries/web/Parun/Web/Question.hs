@@ -1085,7 +1085,7 @@ yesOrNo shown request = case Text.unpack (Question.kind (Request.question reques
     Just (self <> wording, ("Exercises", "Yes"), ("Declines", "No"))
   "ChooseGuess" -> Just (self <> Text.pack ": guess whether the hidden card is as its text says.", ("Holds", "It is"), ("DoesNotHold", "It isn't"))
   "ReturnCommander" -> Just (Text.pack "Put " <> self <> Text.pack " into the command zone?", ("Returns", "Command zone"), ("Leaves", "Don't"))
-  "Rethrow" -> fmap (\asked -> (asked, ("Exercises", "Reroll"), ("Declines", "Keep it"))) (Offer.rerollQuestion self offer)
+  "Rethrow" -> fmap (\asked -> (asked, ("Exercises", if Maybe.isJust (Protocol.field "face" offer) then "Reflip" else "Reroll"), ("Declines", "Keep it"))) (Offer.rerollQuestion self offer)
   _ -> Nothing
   where
     offer = Question.offer (Request.question request)

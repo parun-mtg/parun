@@ -62,7 +62,7 @@
     "step": "PrecombatMain"
   },
   "description": "CR 706.2b a pick over two dice showing the same number names each by its place",
-  "note": "Grave Endeavor's two d10 come up 3 and 5 under two Walls of Fortune. Alice rerolls the 5 to a 3: the two 3s differ in what they came up, so the next pick offers each Wall over each, the same number at two places. She rerolls the second 3 again, to an 8, with the last untapped Wall. The Bears return with eight counters and bob loses 3.",
+  "note": "Grave Endeavor's two d10 come up 3 and 5 under two Walls of Fortune. Alice rerolls the 5 to a 3: the two 3s differ in what they came up, so the next pick offers the reroll over each, the same number at two places. She rerolls the second 3 again, to an 8, with the last untapped Wall. The Bears return with eight counters and bob loses 3.",
   "timeline": [
     {
       "do": {
@@ -125,26 +125,14 @@
                   "place": 0
                 },
                 {
-                  "source": "$w2",
-                  "result": 3,
-                  "place": 0
-                },
-                {
                   "source": "$w1",
-                  "result": 5,
-                  "place": 1
-                },
-                {
-                  "source": "$w2",
                   "result": 5,
                   "place": 1
                 }
               ],
               "options": [
                 0,
-                1,
-                2,
-                3
+                1
               ]
             }
           }
@@ -158,7 +146,7 @@
       "do": {
         "Answer": {
           "prompt": "ChooseRollModifier",
-          "with": 2
+          "with": 1
         }
       },
       "player": "alice",
@@ -275,26 +263,14 @@
                   "place": 0
                 },
                 {
-                  "source": "$w2",
-                  "result": 3,
-                  "place": 0
-                },
-                {
                   "source": "$w1",
-                  "result": 3,
-                  "place": 1
-                },
-                {
-                  "source": "$w2",
                   "result": 3,
                   "place": 1
                 }
               ],
               "options": [
                 0,
-                1,
-                2,
-                3
+                1
               ]
             }
           }
@@ -308,7 +284,7 @@
       "do": {
         "Answer": {
           "prompt": "ChooseRollModifier",
-          "with": 2
+          "with": 1
         }
       },
       "player": "alice",

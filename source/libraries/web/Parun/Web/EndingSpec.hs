@@ -1,5 +1,6 @@
 module Parun.Web.EndingSpec where
 
+import qualified Data.Foldable as Foldable
 import qualified Data.Sequence as Seq
 import qualified Data.Text as Text
 import qualified Parun.Spec as Spec
@@ -26,6 +27,13 @@ spec s = Spec.describe s "Parun.Web.Ending" $ do
       has "<a href=\"data:application/json;charset=utf-8,%7b%7d\" download=\"parun-game.json\">Save as a scenario</a>"
       has "<ul class=\"game-log\"><li class=\"turn\">Turn 1: your turn</li><li>Player 1 draws a card.</li><li class=\"minor\">Player 2 concedes.</li></ul>"
       has "<div class=\"confetti\""
+
+    Spec.it s "ends the chart on the turn the game ended in, though no life changed in it" $ do
+      let lives = [(PlayerId.MkPlayerId 0, 20 :: Integer), (PlayerId.MkPlayerId 1, 20)]
+          trail = Ending.sampled 3 lives (Ending.sampled 2 lives (Ending.sampled 1 lives (Ending.sampled 1 lives Seq.empty)))
+          page = Html.toText (Ending.view ending {Ending.trail = Foldable.toList trail})
+      Spec.assertEqWith s "a sample a turn" (fmap fst trail) (Seq.fromList [1, 2, 3])
+      Spec.assertBool s (Text.isInfixOf (Text.pack "<span>Turn 3</span>") page) "the axis"
 
     Spec.it s "charts each seat's life and tells the game's numbers" $ do
       let page = Html.toText (Ending.view ending)

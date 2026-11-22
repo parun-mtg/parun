@@ -1082,6 +1082,7 @@ import qualified Parun.PlaneswalkerCombatSpec
 import qualified Parun.PlaneswalkerSpec
 import qualified Parun.Play.GeneratorSpec
 import qualified Parun.Play.KeySpec
+import qualified Parun.Play.OpponentSpec
 import qualified Parun.PlaySpec
 import qualified Parun.PlayerDesignationSpec
 import qualified Parun.PlayerEffectSpec
@@ -1152,6 +1153,7 @@ import qualified Parun.Web.DeckBrowserSpec
 import qualified Parun.Web.DecksSpec
 import qualified Parun.Web.DiffSpec
 import qualified Parun.Web.EndingSpec
+import qualified Parun.Web.HistorySpec
 import qualified Parun.Web.HomeSpec
 import qualified Parun.Web.HtmlSpec
 import qualified Parun.Web.IconSpec
@@ -2207,6 +2209,7 @@ spec s reference corpus = do
   Parun.Extra.Word64Spec.spec s
   Parun.Play.GeneratorSpec.spec s
   Parun.Play.KeySpec.spec s
+  Parun.Play.OpponentSpec.spec s
   Parun.Extra.OrdSpec.spec s
   Parun.Extra.SemigroupSpec.spec s
   Parun.Extra.Word8Spec.spec s
@@ -2314,6 +2317,7 @@ spec s reference corpus = do
   Parun.ScenarioSpec.referenceSpec s
   Parun.ScenarioSpec.spec s registry
   Parun.SearchSpec.spec s registry
+  Parun.SearchSpec.poolSpec s registry
   Parun.SeatingSpec.spec s registry
   Parun.SetupSpec.spec s registry
   Parun.ShieldCounterSpec.spec s registry
@@ -2347,6 +2351,7 @@ spec s reference corpus = do
   Parun.Web.EndingSpec.spec s
   Parun.Web.HtmlSpec.spec s
   Parun.Web.HomeSpec.spec s
+  Parun.Web.HistorySpec.spec s
   Parun.Web.LoadingSpec.spec s
   Parun.Web.BuilderSpec.spec s
   Parun.Web.CardIndexSpec.spec s

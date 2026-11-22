@@ -1,6 +1,7 @@
 {
-  "description": "CR 706.2a each costed modifier is its own offer",
   "board": {
+    "active": "alice",
+    "step": "PrecombatMain",
     "seats": [
       {
         "name": "alice",
@@ -30,12 +31,12 @@
             "label": "p6"
           },
           {
-            "card": "Wall of Fortune",
-            "label": "w1"
+            "card": "Pixie Guide",
+            "label": "guide"
           },
           {
-            "card": "Wall of Fortune",
-            "label": "w2"
+            "card": "Clam-I-Am",
+            "label": "clam"
           }
         ],
         "hand": [
@@ -46,22 +47,12 @@
         ]
       },
       {
-        "name": "bob",
-        "battlefield": [
-          {
-            "card": "Bird Maiden",
-            "label": "maiden"
-          },
-          {
-            "card": "Barkhide Mauler",
-            "label": "mauler"
-          }
-        ]
+        "name": "bob"
       }
-    ],
-    "active": "alice",
-    "step": "PrecombatMain"
+    ]
   },
+  "description": "CR 706.6 dice tied for the lowest after alike rerolls leave nothing to ask",
+  "note": "Under Pixie Guide, Valiant Endeavor's three d6 come up 3, 3 and 6. Clam-I-Am rerolls each 3, each reroll itself one more die and an ignored 1, and both come up 5 over the same board. The two 5s tie for the lowest, and ignoring either records the same reroll over the same board, so nothing is asked and the next question is CR 706.4's between the 5 and the 6.",
   "timeline": [
     {
       "turn": 1,
@@ -105,75 +96,7 @@
       "do": {
         "Answer": {
           "prompt": "RollDie",
-          "with": 2
-        }
-      }
-    },
-    {
-      "turn": 1,
-      "step": "PrecombatMain",
-      "player": "alice",
-      "do": {
-        "Answer": {
-          "prompt": "ChooseRollModifier",
-          "with": 0
-        }
-      }
-    },
-    {
-      "turn": 1,
-      "step": "PrecombatMain",
-      "player": "alice",
-      "do": {
-        "Answer": {
-          "prompt": "ChooseRollModifier",
-          "with": 0
-        }
-      }
-    },
-    {
-      "turn": 1,
-      "step": "PrecombatMain",
-      "player": "alice",
-      "do": {
-        "Answer": {
-          "prompt": "ChooseRollModifier",
-          "with": 0
-        }
-      }
-    },
-    {
-      "turn": 1,
-      "step": "PrecombatMain",
-      "player": "alice",
-      "do": {
-        "Answer": {
-          "prompt": "Rethrow",
-          "with": "Declines"
-        }
-      }
-    },
-    {
-      "turn": 1,
-      "step": "PrecombatMain",
-      "player": "alice",
-      "do": {
-        "Answer": {
-          "prompt": "Rethrow",
-          "with": "Exercises"
-        }
-      }
-    },
-    {
-      "turn": 1,
-      "step": "PrecombatMain",
-      "player": "alice",
-      "do": {
-        "Answer": {
-          "prompt": "ChooseTaps",
-          "with": [
-            "$w2"
-          ]
+          "with": 3
         }
       }
     },
@@ -194,7 +117,29 @@
       "player": "alice",
       "do": {
         "Answer": {
-          "prompt": "ChooseDieResult",
+          "prompt": "Rethrow",
+          "with": "Exercises"
+        }
+      }
+    },
+    {
+      "turn": 1,
+      "step": "PrecombatMain",
+      "player": "alice",
+      "do": {
+        "Answer": {
+          "prompt": "RollDie",
+          "with": 5
+        }
+      }
+    },
+    {
+      "turn": 1,
+      "step": "PrecombatMain",
+      "player": "alice",
+      "do": {
+        "Answer": {
+          "prompt": "RollDie",
           "with": 1
         }
       }
@@ -205,19 +150,8 @@
       "player": "alice",
       "do": {
         "Answer": {
-          "prompt": "ChooseRollModifier",
-          "with": 0
-        }
-      }
-    },
-    {
-      "turn": 1,
-      "step": "PrecombatMain",
-      "player": "alice",
-      "do": {
-        "Answer": {
           "prompt": "Rethrow",
-          "with": "Declines"
+          "with": "Exercises"
         }
       }
     },
@@ -227,8 +161,8 @@
       "player": "alice",
       "do": {
         "Answer": {
-          "prompt": "Rethrow",
-          "with": "Declines"
+          "prompt": "RollDie",
+          "with": 5
         }
       }
     },
@@ -238,8 +172,32 @@
       "player": "alice",
       "do": {
         "Answer": {
-          "prompt": "ChooseRollModifier",
-          "with": 0
+          "prompt": "RollDie",
+          "with": 1
+        }
+      }
+    },
+    {
+      "turn": 1,
+      "step": "PrecombatMain",
+      "player": "alice",
+      "check": {
+        "View": {
+          "of": "Prompt",
+          "is": {
+            "kind": "ChooseDieResult",
+            "offer": {
+              "source": "Valiant Endeavor",
+              "entries": [
+                5,
+                6
+              ],
+              "options": [
+                0,
+                1
+              ]
+            }
+          }
         }
       }
     },
@@ -249,19 +207,8 @@
       "player": "alice",
       "do": {
         "Answer": {
-          "prompt": "Rethrow",
-          "with": "Declines"
-        }
-      }
-    },
-    {
-      "turn": 1,
-      "step": "PrecombatMain",
-      "player": "alice",
-      "do": {
-        "Answer": {
-          "prompt": "Rethrow",
-          "with": "Declines"
+          "prompt": "ChooseDieResult",
+          "with": 1
         }
       }
     },
@@ -274,32 +221,9 @@
           "player": "alice",
           "zone": "Battlefield",
           "card": "Knight Token",
-          "count": 6
-        }
-      }
-    },
-    {
-      "turn": 1,
-      "step": "PrecombatMain",
-      "player": "alice",
-      "check": {
-        "Tapped": {
-          "object": "$w1",
-          "tapped": false
-        }
-      }
-    },
-    {
-      "turn": 1,
-      "step": "PrecombatMain",
-      "player": "alice",
-      "check": {
-        "Tapped": {
-          "object": "$w2",
-          "tapped": true
+          "count": 5
         }
       }
     }
-  ],
-  "note": "The first Rethrow offer is declined and the second exercised, both over the natural 3; Six Knights mean the exercised one rerolled that 3. Either Wall pays for either Wall's offer, so later offers recur until the dice are done; each is declined."
+  ]
 }

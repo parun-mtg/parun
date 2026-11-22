@@ -17,15 +17,18 @@ import qualified Data.Text as Text
 import Numeric.Natural (Natural)
 import qualified Parun.DeckList as DeckList
 import qualified Parun.Engine.RuleFamily as RuleFamily.Engine
+import qualified Parun.Play.Opponent as Opponent
 import qualified Parun.Types.Card as Card
 import qualified Parun.Types.CardName as CardName
 import qualified Parun.Types.Color as Color
+import qualified Parun.Types.Difficulty as Difficulty
 import qualified Parun.Types.Face as Face
 import qualified Parun.Types.Hybrid as Hybrid
 import qualified Parun.Types.HybridPhyrexian as HybridPhyrexian
 import qualified Parun.Types.ManaCost as ManaCost
 import qualified Parun.Types.ManaSymbol as ManaSymbol
 import qualified Parun.Types.ManaType as ManaType
+import qualified Parun.Types.Persona as Persona
 import qualified Parun.Types.RuleFamily as RuleFamily
 import qualified Parun.Web.DeckBrowser as DeckBrowser
 import qualified Parun.Web.Element as Element
@@ -48,7 +51,11 @@ data Lobby = MkLobby
     -- by its place in 'theirs' (Parun.Web.Link).
     invites :: Map.Map Int Invite,
     -- | Whether you are ready to start a game with the players invited.
-    ready :: Bool
+    ready :: Bool,
+    -- | How strongly every bot plays (Parun.Play.Opponent).
+    difficulty :: Difficulty.Difficulty,
+    -- | What every bot values in a position (Parun.Play.Opponent).
+    persona :: Persona.Persona
   }
   deriving (Eq, Show)
 
@@ -114,9 +121,14 @@ data Event
     MkConnect Int
   | -- | Toggles whether you are ready to start with the players invited.
     MkReady
+  | -- | Sets every bot's difficulty to the one whose name is chosen.
+    MkDifficulty
+  | -- | Sets every bot's persona to the one whose name is chosen.
+    MkPersona
   deriving (Eq, Show)
 
--- | A lobby whose decks are still to read, nothing chosen yet.
+-- | A lobby whose decks are still to read, nothing chosen yet, every bot
+-- playing as `parun play`'s does unless told otherwise.
 new :: Lobby
 new =
   MkLobby
@@ -125,7 +137,9 @@ new =
       theirs = [Nothing],
       choosing = MkMine,
       invites = Map.empty,
-      ready = False
+      ready = False,
+      difficulty = Difficulty.MkHard,
+      persona = Persona.MkBalanced
     }
 
 -- | A new lobby with this deck yours, on the shelf it is on.
@@ -288,6 +302,8 @@ updated event typed lobby = case event of
   MkReplyCode i -> lobby {invites = Map.adjust (\invite -> invite {replyCode = typed}) i (invites lobby)}
   MkConnect _ -> lobby
   MkReady -> lobby {ready = not (ready lobby)}
+  MkDifficulty -> maybe lobby (\d -> lobby {difficulty = d}) (Opponent.named Opponent.difficultyName (Text.unpack typed))
+  MkPersona -> maybe lobby (\p -> lobby {persona = p}) (Opponent.named Opponent.personaName (Text.unpack typed))
 
 -- | The lobby once the page of the player invited to this slot said this
 -- (Parun.Web.Link): their deck, and whether they are ready.
@@ -448,9 +464,10 @@ seatsView lobby =
              []
              ( [Element.button ["add-bot"] MkAddBot [Element.string "Add a bot"] | length bots < mostBots]
                  <> [Element.button ["invite-slot"] (MkInviteSlot i) [Element.string "Invite a player"] | i <- Maybe.maybeToList (inviteTarget lobby)]
-             ),
-           startView lobby
+             )
          ]
+      <> [botView lobby | length bots > Map.size (invites lobby)]
+      <> [startView lobby]
   where
     bots = theirs lobby
     -- Only the last seat is unseated: the invites' links are numbered by
@@ -479,6 +496,31 @@ seatsView lobby =
                 Element.el "span" ["seat-note", "muted"] [] [Element.string (maybe (if which == MkMine then "Choose one to start" else "Drawn when the game starts") (DeckBrowser.counted (browser lobby)) held)]
               ]
               : [Element.el "div" ["seat-actions"] [] extra | not (null extra)]
+
+-- | How every bot plays: its difficulty and its persona, each a choice of
+-- those named (Parun.Play.Opponent).
+botView :: Lobby -> Html.Html Event
+botView lobby =
+  Element.el
+    "div"
+    ["bot-settings"]
+    []
+    [ Element.el "label" [] [Element.attr "for" (Text.pack "bot-difficulty")] [Element.string "Bot level"],
+      choice "bot-difficulty" MkDifficulty Opponent.difficultyName (difficulty lobby),
+      Element.el "label" [] [Element.attr "for" (Text.pack "bot-persona")] [Element.string "Bot style"],
+      choice "bot-persona" MkPersona Opponent.personaName (persona lobby)
+    ]
+  where
+    choice :: (Bounded a, Enum a, Eq a) => String -> Event -> (a -> (String, String)) -> a -> Html.Html Event
+    choice field event nameOf current =
+      Element.el
+        "select"
+        [field]
+        [Element.attr "id" (Text.pack field), Element.on "change" event]
+        [ Element.el "option" [] ([Element.attr "value" (Text.pack value)] <> [Element.attr "selected" Text.empty | option == current]) [Element.string label]
+        | option <- [minBound .. maxBound],
+          let (value, label) = nameOf option
+        ]
 
 -- | Start, or Ready with players invited, and what it waits on.
 startView :: Lobby -> Html.Html Event

@@ -1,0 +1,366 @@
+{
+  "board": {
+    "active": "alice",
+    "seats": [
+      {
+        "battlefield": [
+          {
+            "card": "Barbarian Class",
+            "label": "class"
+          },
+          {
+            "card": "Brazen Dwarf",
+            "label": "dwarf"
+          },
+          {
+            "card": "Wall of Fortune",
+            "label": "wall"
+          },
+          {
+            "card": "Monitor Monitor",
+            "label": "monitor"
+          },
+          {
+            "card": "Island",
+            "label": "i1"
+          },
+          {
+            "card": "Swamp",
+            "label": "s1"
+          },
+          {
+            "card": "Swamp",
+            "label": "s2"
+          },
+          {
+            "card": "Swamp",
+            "label": "s3"
+          },
+          {
+            "card": "Swamp",
+            "label": "s4"
+          },
+          {
+            "card": "Swamp",
+            "label": "s5"
+          },
+          {
+            "card": "Swamp",
+            "label": "s6"
+          },
+          {
+            "card": "Swamp",
+            "label": "s7"
+          }
+        ],
+        "graveyard": [
+          {
+            "card": "Grizzly Bears",
+            "label": "bears"
+          }
+        ],
+        "hand": [
+          {
+            "card": "Grave Endeavor",
+            "label": "ge"
+          }
+        ],
+        "name": "alice"
+      },
+      {
+        "name": "bob"
+      }
+    ],
+    "step": "PrecombatMain"
+  },
+  "description": "CR 706.6 dice tied for the lowest are told apart by the reroll group they carry (control)",
+  "note": "Under Barbarian Class, Grave Endeavor's three d10 come up 5, 5 and 7. Wall of Fortune rerolls the second 5 to a 3, then Monitor Monitor rerolls the first 5 and the 7 together to a 3 and an 8, each reroll itself one more die and an ignored 1. The two 3s tie for the lowest with the same thrower and the same numbers, but only one of them shares its reroll with the 8, so the question shows each as the place of the reroll it carries. Ignoring the Monitor's 3 keeps the Wall's reroll beside the Monitor's 8, so Brazen Dwarf triggers for both rerolls and the roll; the control ignores the Wall's, and the Dwarf triggers for the Monitor's reroll and the roll.",
+  "timeline": [
+    {
+      "do": {
+        "Cast": {
+          "mana": [
+            "$s1",
+            "$s2",
+            "$s3",
+            "$s4",
+            "$s5",
+            "$s6",
+            "$s7",
+            null
+          ],
+          "object": "$ge"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": "Pass",
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "turn": 1,
+      "step": "PrecombatMain",
+      "player": "alice",
+      "do": {
+        "Answer": {
+          "prompt": "RollDie",
+          "with": 5
+        }
+      }
+    },
+    {
+      "turn": 1,
+      "step": "PrecombatMain",
+      "player": "alice",
+      "do": {
+        "Answer": {
+          "prompt": "RollDie",
+          "with": 5
+        }
+      }
+    },
+    {
+      "turn": 1,
+      "step": "PrecombatMain",
+      "player": "alice",
+      "do": {
+        "Answer": {
+          "prompt": "RollDie",
+          "with": 7
+        }
+      }
+    },
+    {
+      "turn": 1,
+      "step": "PrecombatMain",
+      "player": "alice",
+      "do": {
+        "Answer": {
+          "prompt": "ChooseRollModifier",
+          "with": 0
+        }
+      }
+    },
+    {
+      "turn": 1,
+      "step": "PrecombatMain",
+      "player": "alice",
+      "do": {
+        "Answer": {
+          "prompt": "Rethrow",
+          "with": "Exercises"
+        }
+      }
+    },
+    {
+      "turn": 1,
+      "step": "PrecombatMain",
+      "player": "alice",
+      "do": {
+        "Answer": {
+          "prompt": "RollDie",
+          "with": 3
+        }
+      }
+    },
+    {
+      "turn": 1,
+      "step": "PrecombatMain",
+      "player": "alice",
+      "do": {
+        "Answer": {
+          "prompt": "RollDie",
+          "with": 1
+        }
+      }
+    },
+    {
+      "turn": 1,
+      "step": "PrecombatMain",
+      "player": "alice",
+      "do": {
+        "Answer": {
+          "prompt": "RerollDice",
+          "with": [
+            2,
+            3
+          ]
+        }
+      }
+    },
+    {
+      "turn": 1,
+      "step": "PrecombatMain",
+      "player": "alice",
+      "do": {
+        "Answer": {
+          "prompt": "ChooseManaSource",
+          "with": "$i1"
+        }
+      }
+    },
+    {
+      "turn": 1,
+      "step": "PrecombatMain",
+      "player": "alice",
+      "do": {
+        "Answer": {
+          "prompt": "RollDie",
+          "with": 3
+        }
+      }
+    },
+    {
+      "turn": 1,
+      "step": "PrecombatMain",
+      "player": "alice",
+      "do": {
+        "Answer": {
+          "prompt": "RollDie",
+          "with": 8
+        }
+      }
+    },
+    {
+      "turn": 1,
+      "step": "PrecombatMain",
+      "player": "alice",
+      "do": {
+        "Answer": {
+          "prompt": "RollDie",
+          "with": 1
+        }
+      }
+    },
+    {
+      "turn": 1,
+      "step": "PrecombatMain",
+      "player": "alice",
+      "check": {
+        "View": {
+          "of": "Prompt",
+          "is": {
+            "kind": "ChooseDieResult",
+            "offer": {
+              "carries": [
+                {
+                  "thrower": "alice",
+                  "events": [
+                    {
+                      "type": "DieResultSettled",
+                      "value": {
+                        "roller": 0,
+                        "result": 5,
+                        "reading": "NaturalResult"
+                      }
+                    },
+                    {
+                      "type": "DieResultSettled",
+                      "value": {
+                        "roller": 0,
+                        "result": 3,
+                        "reading": "NaturalResult"
+                      }
+                    },
+                    {
+                      "type": "DieResultSettled",
+                      "value": {
+                        "roller": 0,
+                        "result": 3,
+                        "reading": "NaturalResult"
+                      }
+                    }
+                  ],
+                  "rerolls": [
+                    1
+                  ]
+                },
+                {
+                  "thrower": "alice",
+                  "events": [
+                    {
+                      "type": "DieResultSettled",
+                      "value": {
+                        "roller": 0,
+                        "result": 5,
+                        "reading": "NaturalResult"
+                      }
+                    },
+                    {
+                      "type": "DieResultSettled",
+                      "value": {
+                        "roller": 0,
+                        "result": 3,
+                        "reading": "NaturalResult"
+                      }
+                    },
+                    {
+                      "type": "DieResultSettled",
+                      "value": {
+                        "roller": 0,
+                        "result": 3,
+                        "reading": "NaturalResult"
+                      }
+                    }
+                  ],
+                  "rerolls": [
+                    2
+                  ]
+                }
+              ],
+              "entries": [
+                3,
+                3
+              ],
+              "options": [
+                0,
+                1
+              ]
+            }
+          }
+        }
+      }
+    },
+    {
+      "turn": 1,
+      "step": "PrecombatMain",
+      "player": "alice",
+      "do": {
+        "Answer": {
+          "prompt": "ChooseDieResult",
+          "with": 0
+        }
+      }
+    },
+    {
+      "turn": 1,
+      "step": "PrecombatMain",
+      "player": "alice",
+      "do": {
+        "Answer": {
+          "prompt": "ChooseDieResult",
+          "with": 0
+        }
+      }
+    },
+    {
+      "turn": 1,
+      "step": "PrecombatMain",
+      "player": "alice",
+      "check": {
+        "View": {
+          "of": "Stack",
+          "is": [
+            "trigger of $dwarf",
+            "trigger of $dwarf"
+          ]
+        }
+      }
+    }
+  ]
+}

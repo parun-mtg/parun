@@ -22,6 +22,7 @@ import qualified Data.Text.IO as TextIO
 import Numeric.Natural (Natural)
 import qualified Parun.Codec.Scenario as Codec.Scenario
 import qualified Parun.DeckList as DeckList
+import qualified Parun.Engine.Game as Engine.Game
 import qualified Parun.Extra.Natural as Natural
 import qualified Parun.JsonCodec.Codec as Codec
 import qualified Parun.JsonCodec.Common as Common
@@ -29,6 +30,7 @@ import qualified Parun.Legality as Legality
 import qualified Parun.Play.Game as Game
 import qualified Parun.Play.Generator as Generator
 import qualified Parun.Play.Key as Key
+import qualified Parun.Play.Opponent as Opponent
 import qualified Parun.Play.Protocol as Protocol
 import qualified Parun.Play.Record as Record
 import qualified Parun.Play.Search as Search
@@ -36,21 +38,28 @@ import qualified Parun.Play.Wording as Wording
 import qualified Parun.Registry as Registry
 import qualified Parun.Types.Answerer as Answerer
 import qualified Parun.Types.Asked as Asked
+import qualified Parun.Types.Card as Card
+import qualified Parun.Types.CardType as CardType
 import qualified Parun.Types.Deck as Deck
+import qualified Parun.Types.Face as Face
 import qualified Parun.Types.Format as Format
 import qualified Parun.Types.GameSettings as GameSettings
 import qualified Parun.Types.GameState as GameState
 import qualified Parun.Types.GraveyardOrder as GraveyardOrder
 import qualified Parun.Types.Key as Key.Type
 import qualified Parun.Types.Label as Label
+import qualified Parun.Types.Legality as Legality.Type
+import qualified Parun.Types.LegalityTable as LegalityTable
 import qualified Parun.Types.Limits as Limits
 import qualified Parun.Types.PlayOptions as PlayOptions
 import qualified Parun.Types.PlayerId as PlayerId
+import qualified Parun.Types.Printing as Printing
 import qualified Parun.Types.PrintingTable as PrintingTable
 import qualified Parun.Types.Reply as R
 import qualified Parun.Types.Result as Result
 import qualified Parun.Types.Scenario as Scenario
 import qualified Parun.Types.Timed as Timed
+import qualified Parun.Types.TypeLine as TypeLine
 import qualified System.Console.GetOpt as GetOpt
 import qualified System.Exit as Exit
 import qualified System.IO as IO
@@ -67,7 +76,8 @@ main arguments = case GetOpt.getOpt GetOpt.Permute flags arguments of
           registry <- Registry.defaultRoot >>= Registry.loadRoot >>= Registry.defaultRegistry
           lists <- traverse (orExit . load registry) paths
           format <- orExit (settle (PlayOptions.format options) (zip paths lists))
-          play (Protocol.overLines exchange) options registry format (fmap DeckList.deck (NonEmpty.fromList lists))
+          prior <- priorOf registry options format
+          play (Protocol.overLines exchange) options prior registry format (fmap DeckList.deck (NonEmpty.fromList lists))
   (_, _, problems) -> usage problems
 
 flags :: [GetOpt.OptDescr (PlayOptions.PlayOptions -> Either String PlayOptions.PlayOptions)]
@@ -79,6 +89,10 @@ flags =
     GetOpt.Option [] ["save"] (GetOpt.ReqArg (\s o -> Right o {PlayOptions.save = Just s}) "FILE") "save the game as a scenario, even one cut short",
     GetOpt.Option [] ["arrange-graveyard"] (GetOpt.ReqArg (\s o -> fmap (\n -> o {PlayOptions.arrangesGraveyard = Set.insert n (PlayOptions.arrangesGraveyard o)}) (seat s)) "SEAT") "a seat asked to order cards put into its graveyard at the same time",
     GetOpt.Option [] ["format"] (GetOpt.ReqArg (\s o -> Right o {PlayOptions.format = Just (Text.pack s)}) "FORMAT") "play under this format, refusing a deck not legal in it: constructed, limited, or one with a pool, such as vintage",
+    GetOpt.Option [] ["level"] (GetOpt.ReqArg (\s o -> maybe (Left ("not a level, easy, medium or hard: " <> s)) (\d -> Right o {PlayOptions.budget = Opponent.budgetAt d (PlayOptions.budget o)}) (Opponent.named Opponent.difficultyName s)) "LEVEL") "how strongly the search bot plays, easy, medium or hard (Parun.Play.Opponent); hard when absent",
+    GetOpt.Option [] ["persona"] (GetOpt.ReqArg (\s o -> maybe (Left ("not a persona, balanced, aggro or control: " <> s)) (\p -> Right o {PlayOptions.weights = Opponent.weightsOf p}) (Opponent.named Opponent.personaName s)) "PERSONA") "what the search bot values in a position, balanced, aggro or control (Parun.Play.Opponent); balanced when absent",
+    GetOpt.Option [] ["meta"] (GetOpt.ReqArg (\s o -> Right o {PlayOptions.meta = Just s}) "META") "the search bot infers each opponent's deck list from this meta file's decks",
+    GetOpt.Option [] ["pool"] (GetOpt.ReqArg (\s o -> Right o {PlayOptions.pool = Just (Text.pack s)}) "FORMAT") "no meta named, the search bot deals each opponent's unseen cards from this format's pool, from every card where it has none; the game's format's when absent",
     GetOpt.Option [] ["object-limit"] (GetOpt.ReqArg (\s o -> maybe (Left ("not a number of objects: " <> s)) (\n -> Right o {PlayOptions.limits = (PlayOptions.limits o) {Limits.objects = n}}) (Read.readMaybe s)) "N") ("the most objects the game may hold before a player with priority may only pass; " <> show (Limits.objects Limits.standard) <> " when absent")
   ]
   where
@@ -162,13 +176,57 @@ refusals format lists = do
   let together = if Maybe.isJust format then fmap Legality.explain (Legality.checkGame GameSettings.plain (fmap (DeckList.deck . snd) lists)) else []
   pure (concat reports <> together)
 
+-- | How `parun play`'s search bot deals what it cannot see: as 'inferring'
+-- says, else from the game's `format`'s pool (Search.pooled), since outside
+-- tournament play an opponent's list is not known.
+priorOf :: Registry.Registry Identity.Identity -> PlayOptions.PlayOptions -> Maybe Format.Format -> IO Search.Prior
+priorOf registry options format = Maybe.fromMaybe (poolIn registry format) (inferring registry (PlayOptions.meta options) (PlayOptions.pool options))
+
+-- | The search bot dealing from the decks of the meta file at `meta`
+-- (Search.inferred), else from the pool of the format named `pool`
+-- (Search.pooled); Nothing when neither is given.
+inferring :: Registry.Registry Identity.Identity -> Maybe FilePath -> Maybe Text.Text -> Maybe (IO Search.Prior)
+inferring registry meta pool = case (meta, pool) of
+  (Just path, _) -> Just (Search.inferred . fmap (fmap (DeckList.deck . snd)) <$> loadMeta registry path)
+  (Nothing, Just name) -> Just (poolIn registry . Just =<< orExit (fmap (Bifunctor.first pure) (Legality.shipped name)))
+  (Nothing, Nothing) -> Nothing
+
+-- | The search bot dealing from `format`'s pool among the registry's cards,
+-- by the shipped legality table ('pooled'); or the problem on standard error
+-- and a failed exit.
+poolIn :: Registry.Registry Identity.Identity -> Maybe Format.Format -> IO Search.Prior
+poolIn registry format = do
+  cards <- orExit (pure (Bifunctor.bimap (pure . Text.pack . Exception.displayException) (fmap Right) (Identity.runIdentity (Registry.cards registry))))
+  orExit (pooled (Legality.tablePath >>= Legality.loadTable) format cards)
+
+-- | The search bot dealing from `format`'s pool among `cards` ('poolOf'), or
+-- why it can't: the table unread, or no card in the pool.
+pooled :: IO (Either Text.Text LegalityTable.LegalityTable) -> Maybe Format.Format -> [Either Text.Text Card.Card] -> IO (Either [Text.Text] Search.Prior)
+pooled table format cards = fmap (>>= maybe (Left [Text.pack "no card in the pool"]) Right . Search.pooled) (poolOf table format cards)
+
+-- | Each of `cards` as a candidate of `format`'s pool (Search.pooled): its
+-- printing if it is in the pool, else Nothing, read only once asked. The pool
+-- is the cards of the Oracle card reference legal or restricted in the
+-- format's pool, every one where it has none or there is no format, but those
+-- no deck holds: a nontraditional card (CR 108.2a), Attractions and
+-- Contraptions among them (Engine.Game.isNontraditional), and a conspiracy
+-- (CR 315.3). `table`, the legality table, is read only for a pool.
+poolOf :: IO (Either Text.Text LegalityTable.LegalityTable) -> Maybe Format.Format -> [Either Text.Text Card.Card] -> IO (Either [Text.Text] (Seq.Seq (Maybe Printing.Printing)))
+poolOf table format cards = do
+  standing <- case Format.pool =<< format of
+    Nothing -> pure (Right (const True))
+    Just key -> fmap (fmap (\t card -> Legality.poolStanding t key card `elem` [Just (Just Legality.Type.Legal), Just (Just Legality.Type.Restricted)])) table
+  let library card = not (Card.synthetic card) && not (Engine.Game.isNontraditional card) && all (Set.notMember CardType.Conspiracy . TypeLine.types . Face.typeLine) (Card.faces card)
+      candidate legal = either (const Nothing) (\card -> if library card && legal card then Just (Printing.ofCard card) else Nothing)
+  pure (either (Left . pure) (\legal -> Right (Seq.fromList (fmap (candidate legal) cards))) standing)
+
 -- | `parun play`'s game ('game'), its result said, its seed drawn where none
 -- is given and said, and its scenario saved where asked.
-play :: Protocol.Exchange IO -> PlayOptions.PlayOptions -> Registry.Registry Identity.Identity -> Maybe Format.Format -> NonEmpty.NonEmpty Deck.Deck -> IO ()
-play send options registry format decks = do
+play :: Protocol.Exchange IO -> PlayOptions.PlayOptions -> Search.Prior -> Registry.Registry Identity.Identity -> Maybe Format.Format -> NonEmpty.NonEmpty Deck.Deck -> IO ()
+play send options prior registry format decks = do
   IO.hSetBuffering IO.stdout IO.LineBuffering
   seed <- maybe Key.fresh pure (PlayOptions.seed options)
-  (outcome, recorded) <- game send (pure Nothing) (const (pure ())) options registry format decks seed
+  (outcome, recorded) <- game send (pure Nothing) (const (pure ())) options prior registry format decks seed
   Monad.forM_ (PlayOptions.save options) (`save` recorded)
   case outcome of
     Right (result, _) -> (if PlayOptions.json options then TextIO.hPutStrLn IO.stderr else TextIO.putStrLn) (Wording.result result)
@@ -181,11 +239,11 @@ play send options registry format decks = do
 -- who plays first among them; and the scenario it replays as, up to where it
 -- stopped. With --json, each line protocol request goes out through
 -- `send` and its reply comes back: over standard input and output in `parun
--- play` ('exchange'), as values in the web client. Each bot seat's answer is
--- taken from `stored` while it has one, and otherwise given to `kept`
--- ('answerer').
-game :: Protocol.Exchange IO -> IO (Maybe R.Reply) -> (R.Reply -> IO ()) -> PlayOptions.PlayOptions -> Registry.Registry Identity.Identity -> Maybe Format.Format -> NonEmpty.NonEmpty Deck.Deck -> Key.Type.Key -> IO (Either Text.Text (Result.Result, GameState.GameState), Scenario.Scenario)
-game send stored kept options registry format decks seed = do
+-- play` ('exchange'), as values in the web client. Each bot seat deals what
+-- it cannot see by `prior`, and its answer is taken from `stored` while it
+-- has one, and otherwise given to `kept` ('answerer').
+game :: Protocol.Exchange IO -> IO (Maybe R.Reply) -> (R.Reply -> IO ()) -> PlayOptions.PlayOptions -> Search.Prior -> Registry.Registry Identity.Identity -> Maybe Format.Format -> NonEmpty.NonEmpty Deck.Deck -> Key.Type.Key -> IO (Either Text.Text (Result.Result, GameState.GameState), Scenario.Scenario)
+game send stored kept options prior registry format decks seed = do
   let reference :: Registry.Registry IO
       reference = Registry.hoist (pure . Identity.runIdentity) registry
   let count = Natural.length decks
@@ -200,7 +258,7 @@ game send stored kept options registry format decks seed = do
     Just first -> do
       memories <- IORef.newIORef Map.empty
       let matchup = seated first decks
-          seats = Map.fromList [(idOf n, answerer reference send stored kept (IORef.readIORef memories) options n) | n <- NonEmpty.toList numbers]
+          seats = Map.fromList [(idOf n, answerer reference send stored kept (IORef.readIORef memories) options prior n) | n <- NonEmpty.toList numbers]
       entries <- IORef.newIORef Seq.empty
       let observers = [Record.recording (labels count) (Game.underneath . IORef.modifyIORef' entries . flip (Seq.|>)), Search.remembering (IORef.modifyIORef' memories)]
           interrupted e = case e of
@@ -211,12 +269,13 @@ game send stored kept options registry format decks seed = do
       pure (outcome, record matchup timeline)
 
 -- | Who answers seat `n`: the search bot at the options' budget and weights,
--- over the known lists, remembering what its seat's memory in `memories`
--- holds (Search.remembering), if it is a bot's, its answers taken from
--- `stored` and given to `kept` (Game.remembered); otherwise `send`.
-answerer :: (Monad m) => Registry.Registry m -> Protocol.Exchange m -> m (Maybe R.Reply) -> (R.Reply -> m ()) -> m (Map.Map PlayerId.PlayerId Search.Memory) -> PlayOptions.PlayOptions -> Natural -> Answerer.Answerer (Asked.Asked GameState.GameState) (Game.Play m)
-answerer registry send stored kept memories options n
-  | Set.member n (PlayOptions.bots options) = Game.remembered stored kept (Search.search registry (PlayOptions.budget options) (PlayOptions.weights options) Search.known (pure []) (Game.underneath (fmap (Map.findWithDefault Search.blank (idOf n)) memories)))
+-- dealing what it cannot see by `prior`, remembering what its seat's memory
+-- in `memories` holds (Search.remembering), if it is a bot's, its answers
+-- taken from `stored` and given to `kept` (Game.remembered); otherwise
+-- `send`.
+answerer :: (Monad m) => Registry.Registry m -> Protocol.Exchange m -> m (Maybe R.Reply) -> (R.Reply -> m ()) -> m (Map.Map PlayerId.PlayerId Search.Memory) -> PlayOptions.PlayOptions -> Search.Prior -> Natural -> Answerer.Answerer (Asked.Asked GameState.GameState) (Game.Play m)
+answerer registry send stored kept memories options prior n
+  | Set.member n (PlayOptions.bots options) = Game.remembered stored kept (Search.search registry (PlayOptions.budget options) (PlayOptions.weights options) prior (pure []) (Game.underneath (fmap (Map.findWithDefault Search.blank (idOf n)) memories)))
   | otherwise = Game.wired registry send
 
 idOf :: Natural -> PlayerId.PlayerId

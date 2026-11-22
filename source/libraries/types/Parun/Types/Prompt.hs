@@ -188,16 +188,16 @@ data Prompt r where
   -- either answer. Also which d20 of several Pokey, the Scallywagg rolled for
   -- Krark's Thumb's coins is kept (the Thumb's "ignore one"), and which of
   -- rolls tied for the lowest CR 706.6 ignores where they differ in thrower,
-  -- call or, inside a reroll, face (Parun.Engine.Dice.ignoreLowest), where no
-  -- resolving object is at hand.
+  -- call, the rerolls they carry or, inside a reroll, face
+  -- (Parun.Engine.Dice.ignoreLowest), where no resolving object is at hand.
   --
-  -- Each result is its number, the player who threw it, and the events the
-  -- die carries (the natural results it came up, a coin flipped for it), which
-  -- tell apart results reading the same number.
-  --
-  -- Not implemented: telling apart results differing only in the board a
-  -- reroll they carry came up on (#9436).
-  ChooseDieResult :: Decider.Decider -> PlayerId.PlayerId -> Maybe ObjectId.ObjectId -> NonEmpty.NonEmpty (Natural.Natural, PlayerId.PlayerId, [GameEvent.GameEvent]) -> Prompt Natural.Natural
+  -- Each result is its number, the player who threw it, the events the die
+  -- carries (the natural results it came up, a coin flipped for it), and the
+  -- place of each reroll it carries among those the roll's dice carry,
+  -- counted from 1 in the order made, which tell apart results reading the
+  -- same number: two rerolls differing only in the board they came up on, or
+  -- in the group they record under, differ in place.
+  ChooseDieResult :: Decider.Decider -> PlayerId.PlayerId -> Maybe ObjectId.ObjectId -> NonEmpty.NonEmpty (Natural.Natural, PlayerId.PlayerId, [GameEvent.GameEvent], [Natural.Natural]) -> Prompt Natural.Natural
   -- | CR 706.8b: how many of each stored result on the object the seat
   -- rerolls (Centaur of Attention's "reroll any number of this creature's
   -- stored results"); the Map is what the object has, the answer clamped to

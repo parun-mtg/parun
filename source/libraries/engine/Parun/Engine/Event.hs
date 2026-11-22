@@ -8089,7 +8089,7 @@ resolveLifeGainSpent settle spent cause pid n =
 -- stands for the d20 and is called, `settleCoins`' posture.
 --
 -- `settle` carries the caller's CR 706 road for that roll (Settle.throwRecorded)
--- and its CR 705.1 window over each coin flipped (Settle.reflipWindow; see
+-- and its CR 705.1 window over the coins flipped (Settle.reflipWindow; see
 -- `settleCoins`), which this module cannot reach. A road with no thrower
 -- carries Nothing, and the substitution is then kept out of CR 616.1's offer
 -- through Replacement.allocatedOut, a share of 0 in the loop's allowances.
@@ -8256,18 +8256,21 @@ substitutes candidate = case ReplacementCandidate.controller candidate of
 -- A dropped unit's coin records nothing: CR 706.6's ignored roll "is considered
 -- to have never happened", and the coin stands for that roll.
 --
--- Each coin, once it lands, is open to Goblin Bookie's "reflip any coin"
--- (`reflip`, Parun.Engine.Resolve.Effect.reflipWindow): the same coin flipped
--- again, its first face discarded, before Krark's Thumb's ignore is chosen.
--- docs/decisions.md, "What Goblin Bookie's reflip is", says why it is neither a
--- new flip nor called again.
-settleCoins :: (PlayerId -> CoinFace.CoinFace -> Game Bool) -> PlayerId -> Throw.Throw -> Maybe CoinFace.CoinFace -> [StatedFlip.StatedFlip] -> Game [(CoinFace.CoinFace, Bool, GameEvent)]
+-- The coins, once every coin of every unit has landed, are open to Goblin
+-- Bookie's "reflip any coin" (`reflip`, Parun.Engine.Resolve.Effect.reflipWindow):
+-- the coin at the place it answers is flipped again, its first face discarded,
+-- and the window opens again over the faces then showing, until it answers
+-- none -- all before Krark's Thumb's ignore is chosen, whose ruling has every
+-- simultaneous flip known first. It is offered the places of the coins told
+-- apart: a coin showing an earlier coin's face under the same call is not one,
+-- reflipping either leaving the same flip, `keepCoin`'s posture; the scenario
+-- coin/cr-705-1-goblin-bookie-is-asked-once-over-krark-s-thumb-s-coins-showing-the-same-face
+-- proves it.
+-- docs/decisions.md, "What Goblin Bookie's reflip is", says why a reflip is
+-- neither a new flip nor called again.
+settleCoins :: (PlayerId -> NonEmpty.NonEmpty CoinFace.CoinFace -> [Natural] -> Game (Maybe Natural)) -> PlayerId -> Throw.Throw -> Maybe CoinFace.CoinFace -> [StatedFlip.StatedFlip] -> Game [(CoinFace.CoinFace, Bool, GameEvent)]
 settleCoins reflip flipper settled called stated = do
-  let flipReflipped = do
-        face <- Game.ask Prompt.FlipCoin
-        again <- reflip flipper face
-        if again then flipReflipped else pure face
-  flips <- Monad.forM (Foldable.toList (Throw.units settled)) $ \coins -> do
+  landed <- Monad.forM (Foldable.toList (Throw.units settled)) $ \coins -> do
     call <- case called of
       Just face -> pure (Just face)
       Nothing
@@ -8275,8 +8278,24 @@ settleCoins reflip flipper settled called stated = do
             gs <- State.get
             Just <$> Game.choose (Prompt.CallCoin (Decide.deciderFor flipper gs) flipper)
         | otherwise -> pure Nothing
-    faces <- Monad.replicateM (Natural.toIntSaturating coins) flipReflipped
+    faces <- Monad.replicateM (Natural.toIntSaturating coins) (Game.ask Prompt.FlipCoin)
     pure (call, faces)
+  let calls = concatMap (\(call, faces) -> fmap (const call) faces) landed
+      reflipping faces = do
+        let coins = zip calls (NonEmpty.toList faces)
+            places = [place | (place, coin) <- zip [0 :: Natural ..] coins, coin `notElem` List.genericTake place coins]
+        again <- reflip flipper faces places
+        case again of
+          Nothing -> pure (NonEmpty.toList faces)
+          Just place -> do
+            face <- Game.ask Prompt.FlipCoin
+            reflipping (NonEmpty.zipWith (\at old -> if at == place then face else old) (0 NonEmpty.:| [1 ..]) faces)
+  settledFaces <- maybe (pure []) reflipping (NonEmpty.nonEmpty (concatMap snd landed))
+  -- Each unit takes back its own coins, in order.
+  let regroup faces units = case units of
+        [] -> []
+        (call, flippedFaces) : rest -> let (own, later) = List.splitAt (length flippedFaces) faces in (call, own) : regroup later rest
+      flips = regroup settledFaces landed
   kept <- Monad.forM flips $ \(call, faces) -> do
     face <- keepCoin flipper faces
     pure (call, Maybe.fromMaybe face (Coin.statedFace stated))
@@ -8288,7 +8307,7 @@ settleCoins reflip flipper settled called stated = do
   -- 706.6's "the player chooses" is asked of them (Dice.ignoreLowest), each
   -- shown with its flip's event.
   let flipped won = GameEvent.CoinFlipped CoinFlipped.MkCoinFlipped {CoinFlipped.flipper = flipper, CoinFlipped.won = won}
-  survivors <- Dice.ignoreLowest flipper (toInteger . resultOfFace . fst) snd (\(face, won) -> (resultOfFace face, flipper, [flipped won])) (Throw.ignored settled) outcomes
+  survivors <- Dice.ignoreLowest flipper (toInteger . resultOfFace . fst) snd (\(face, won) -> (resultOfFace face, flipper, [flipped won], [])) (Throw.ignored settled) outcomes
   pure [(face, wins, flipped won) | (face, won) <- survivors]
 
 -- The face kept of one unit's coins (Krark's Thumb's "ignore one").
@@ -8338,7 +8357,7 @@ keepCoin flipper faces =
 -- A cancelled event is unreachable -- no arm of Parun.Types.DieRollRewrite replaces
 -- the roll with nothing -- so the fallback is defensive, and in the direction rule
 -- 706.1 leaves standing: the instruction's own dice, none of them ignored.
-proposeDiceRoll :: (PlayerId -> CoinFace.CoinFace -> Game Bool) -> PlayerId -> Natural -> Natural -> Natural -> Game (Either [(Natural, GameEvent)] Throw.Throw)
+proposeDiceRoll :: (PlayerId -> NonEmpty.NonEmpty CoinFace.CoinFace -> [Natural] -> Game (Maybe Natural)) -> PlayerId -> Natural -> Natural -> Natural -> Game (Either [(Natural, GameEvent)] Throw.Throw)
 proposeDiceRoll reflip pid sides named ignore = do
   let proposed = Throw.MkThrow {Throw.thrower = pid, Throw.kind = ThrowKind.Dice sides, Throw.units = Seq.replicate (Natural.toIntSaturating named) 1, Throw.ignored = ignore, Throw.instead = False}
   if named == 0

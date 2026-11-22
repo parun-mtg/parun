@@ -453,21 +453,26 @@ modifierName view entry place =
 
 -- | CR 706.2a: a reroll's question (Prompt.Rethrow's offer): the die by its
 -- place in the roll, counted from 1, and what it shows, the roll's every
--- result where it has more than one, and the cost where there is one.
+-- result where it has more than one, and the cost where there is one. A
+-- coin's (CR 705.1, Goblin Bookie's reflip) is worded as a reflip, beside
+-- every coin of its unit.
 rerollQuestion :: Text.Text -> R.Reply -> Maybe Text.Text
 rerollQuestion self offer = do
-  shown <- Monad.mplus (fmap (Text.pack . show) (Protocol.field "result" offer >>= Protocol.naturalOf)) (fmap Text.toLower (Protocol.field "face" offer >>= textOf))
+  let face = fmap Text.toLower (Protocol.field "face" offer >>= textOf)
+      (verb, thing, whole) = if Maybe.isJust face then ("Reflip", "coin", "The coins") else ("Reroll", "die", "The roll")
+  shown <- Monad.mplus (fmap (Text.pack . show) (Protocol.field "result" offer >>= Protocol.naturalOf)) face
   results <- Protocol.field "results" offer >>= Protocol.arrayOf
   place <- Protocol.field "place" offer >>= Protocol.naturalOf
-  let named result = maybe (plainName result) (Text.pack . show) (Protocol.naturalOf result)
+  let named result = maybe (Text.toLower (plainName result)) (Text.pack . show) (Protocol.naturalOf result)
       which
-        | length results > 1 = Text.pack ("Reroll die " <> show (place + 1) <> " of " <> show (length results) <> ", showing ") <> shown <> Text.pack "? The roll: " <> Text.intercalate (Text.pack ", ") (fmap named results) <> Text.pack "."
-        | otherwise = Text.pack "Reroll the die showing " <> shown <> Text.pack "?"
+        | length results > 1 = Text.pack (verb <> " " <> thing <> " " <> show (place + 1) <> " of " <> show (length results) <> ", showing ") <> shown <> Text.pack ("? " <> whole <> ": ") <> Text.intercalate (Text.pack ", ") (fmap named results) <> Text.pack "."
+        | otherwise = Text.pack (verb <> " the " <> thing <> " showing ") <> shown <> Text.pack "?"
   pure (which <> foldMap (\cost -> Text.pack " Cost: " <> candidateName self cost <> Text.pack ".") (Protocol.field "cost" offer))
 
 -- | CR 706.4: a result Prompt.ChooseDieResult offers, beside what its
--- `carries` entry tells: who threw it, where another player did, and each
--- natural result and event it carries, an unwitnessed one as unseen.
+-- `carries` entry tells: who threw it, where another player did, each
+-- natural result and event it carries, an unwitnessed one as unseen, and the
+-- places of the roll's rerolls it carries.
 resultName :: PlayerView.PlayerView -> R.Reply -> R.Reply -> Text.Text
 resultName view result carry =
   let seat = fmap PlayerId.MkPlayerId (Protocol.field "thrower" carry >>= textOf >>= Read.readMaybe . Text.unpack)
@@ -479,7 +484,8 @@ resultName view result carry =
           DieResult.reading r == RollReading.NaturalResult =
             who (DieResult.roller r) <> Text.pack (" rolled " <> show (DieResult.result r))
         | otherwise = entryName view reply
-      notes = thrower <> foldMap (fmap event) (Protocol.field "events" carry >>= Protocol.arrayOf)
+      rerolls = [Text.pack ("from the roll's reroll " <> show place) | Just places <- [Protocol.field "rerolls" carry >>= Protocol.arrayOf], Just place <- fmap Protocol.naturalOf places]
+      notes = thrower <> foldMap (fmap event) (Protocol.field "events" carry >>= Protocol.arrayOf) <> rerolls
    in optionName view result <> (if null notes then Text.empty else Text.pack " (" <> Text.intercalate (Text.pack "; ") notes <> Text.pack ")")
 
 -- | An amount-per-item offer's shape with these amounts in amountLeaves'

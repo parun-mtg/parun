@@ -1,9 +1,11 @@
 -- | The web client's first screen: what to do, drawn before any data has
 -- loaded (#9075). A game left for here comes first, to resume; then the
--- ways to play, to build a deck and to watch a replay; then the decks
--- saved in this browser; then the legal notice.
+-- ways to play, to build a deck and to watch a replay; then the games
+-- finished lately and the decks saved in this browser; then the legal
+-- notice.
 module Parun.Web.Home where
 
+import qualified Data.List.NonEmpty as NonEmpty
 import qualified Data.Maybe as Maybe
 import qualified Data.Set as Set
 import qualified Data.Text as Text
@@ -16,8 +18,10 @@ import qualified Parun.Web.Bar as Bar
 import qualified Parun.Web.Card as Card
 import qualified Parun.Web.DeckBrowser as DeckBrowser
 import qualified Parun.Web.Element as Element
+import qualified Parun.Web.History as History
 import qualified Parun.Web.Html as Html
 import qualified Parun.Web.Mana as Mana
+import qualified Parun.Web.Replay as Replay
 
 data Home = MkHome
   { -- | The game left for here, to resume.
@@ -27,7 +31,9 @@ data Home = MkHome
     -- | Why something the screen waits on did not load.
     problem :: Maybe Text.Text,
     -- | The decks saved in this browser, as read so far.
-    saved :: [Deck]
+    saved :: [Deck],
+    -- | The games finished in this browser, newest first (Parun.Web.History).
+    finished :: [History.Game]
   }
   deriving (Eq, Show)
 
@@ -65,8 +71,12 @@ data Choice
   | -- | The Decks screen, with this deck selected if any.
     MkBrowseDecks (Maybe Text.Text)
   | MkReplays
-  | -- | Plays on by hand from this position of this scenario.
-    MkPlayOn Text.Text Natural
+  | -- | This replay, from its start.
+    MkWatch Replay.Source
+  | -- | Plays on by hand from this position of this replay.
+    MkPlayOn Replay.Source Natural
+  | -- | The lobby, on these decks: yours, then each bot's.
+    MkPlayAgain (NonEmpty.NonEmpty Text.Text)
   deriving (Eq, Show)
 
 -- | What a tap on the home screen does.
@@ -90,7 +100,7 @@ data Outcome
 
 -- | Nothing loaded, no game paused.
 new :: Home
-new = MkHome Nothing Nothing Nothing []
+new = MkHome Nothing Nothing Nothing [] []
 
 -- | A game paused at the board the question waiting showed, if any.
 pausedOn :: Maybe PlayerView.PlayerView -> Paused
@@ -107,7 +117,9 @@ starts choice = case choice of
   MkEditDeck _ -> False
   MkBrowseDecks _ -> False
   MkReplays -> False
+  MkWatch _ -> False
   MkPlayOn _ _ -> True
+  MkPlayAgain _ -> True
 
 -- | What a tap on the top bar's section means here.
 navigate :: Bar.Section -> Event
@@ -155,9 +167,10 @@ view home =
                    [ tile ["lead" | Maybe.isNothing (paused home)] (MkPlayBots Nothing) "Play a bot" "Pick a deck for each seat and start.",
                      tile [] MkPlayFriend "Play a friend" "Invite someone in another browser with a link.",
                      tile [] MkBuildDeck "Build a deck" "Start from a blank list, then save it to play.",
-                     tile [] MkReplays "Replays" "Step through the scenarios the rules are tested on."
+                     tile [] MkReplays "Replays" "Watch your games again, or the scenarios the rules are tested on."
                    ]
                ]
+            <> [recentView (take recentCount (finished home)) | not (null (finished home))]
             <> [decksView (saved home) | not (null (saved home))]
       <> [legal]
   where
@@ -191,6 +204,21 @@ pausedView game =
         []
         [Element.el "div" ["seat-life"] [] [Element.el "dt" ["eyebrow"] [] [Element.text who], Element.el "dd" [] [] [Element.string (show life)]] | (who, life) <- lives game],
       Element.button ["primary", "resume"] MkResume [Element.string "Resume"]
+    ]
+
+-- | How many of the games finished lately the home screen lists.
+recentCount :: Int
+recentCount = 5
+
+-- | The games finished lately, each to watch again, and the way to every one.
+recentView :: [History.Game] -> Html.Html Event
+recentView games =
+  Element.el
+    "section"
+    ["panel", "recent-games"]
+    []
+    [ Element.el "div" ["panel-head"] [] [Element.el "h2" [] [] [Element.string "Recent games"], Element.button ["quiet"] (MkChoose MkReplays) [Element.string "All games"]],
+      Element.el "ul" ["game-rows"] [] [History.row game [Element.button ["quiet"] (MkChoose (MkWatch (Replay.MkPlayed (History.key game)))) [Element.string "Watch"]] | game <- games]
     ]
 
 -- | The decks saved in this browser, each opening the Decks screen on it,
