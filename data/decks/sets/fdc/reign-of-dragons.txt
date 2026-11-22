@@ -1,3 +1,4 @@
+Name: Reign of Dragons
 Format: commander
 
 Commander

@@ -1,3 +1,5 @@
+Name: Demonic Deals
+
 1 Evolving Wilds
 10 Mountain
 14 Swamp

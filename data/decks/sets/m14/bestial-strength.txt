@@ -1,3 +1,5 @@
+Name: Bestial Strength
+
 17 Forest
 9 Swamp
 2 Accursed Spirit

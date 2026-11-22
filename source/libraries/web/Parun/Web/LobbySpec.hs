@@ -126,9 +126,14 @@ spec s = Spec.describe s "Parun.Web.Lobby" $ do
       Spec.assertBool s (not (offers invited)) "every seat invited"
 
     Spec.it s "shows the saved decks apart from the shipped" $ do
-      let holding = Lobby.withDecks (Seq.fromList [a, saved]) Map.empty Lobby.new
+      let holding = Lobby.withDecks (Seq.fromList [a, saved]) Map.empty Map.empty Lobby.new
       Spec.assertEqWith s "precons" (Lobby.shown holding) [a]
       Spec.assertEqWith s "my decks" (Lobby.shown (Lobby.update (Lobby.MkBrowse (DeckBrowser.MkShelf DeckBrowser.MkSaved)) Text.empty holding)) [saved]
+
+    Spec.it s "names the deck chosen as its header does, on its seat and in the match-up" $ do
+      let named = Lobby.update (Lobby.MkPick saved) Text.empty (Lobby.withDecks (Seq.fromList [a, saved]) Map.empty (Map.singleton saved (Text.pack "Tiny <b>Bolt</b>")) Lobby.new)
+      Spec.assertBool s (Text.isInfixOf (Text.pack "<span class=\"seat-deck-name\">Tiny &lt;b&gt;Bolt&lt;/b&gt;</span>") (Html.toText (Lobby.view named))) "the seat card"
+      Spec.assertEqWith s "the match-up" (fmap Link.deck (take 1 (Lobby.placesFor 0 named))) [Text.pack "Tiny <b>Bolt</b>"]
 
     Spec.it s "invites a player to the bot left to a random deck, else to a new seat" $ do
       let botChosen = botPicks a lobby
@@ -139,7 +144,7 @@ spec s = Spec.describe s "Parun.Web.Lobby" $ do
 
   Spec.describe s "pairing" $ do
     Spec.it s "offers a Limited deck the decks naming no format that a Limited game takes" $ do
-      let holding = Lobby.browsed (\b' -> b' {DeckBrowser.sizes = Map.fromList [(a, 40), (b, 30)]}) (Lobby.withDecks (Seq.fromList [a, b, saved]) (Map.singleton saved (Text.pack "limited")) Lobby.new)
+      let holding = Lobby.browsed (\b' -> b' {DeckBrowser.sizes = Map.fromList [(a, 40), (b, 30)]}) (Lobby.withDecks (Seq.fromList [a, b, saved]) (Map.singleton saved (Text.pack "limited")) Map.empty Lobby.new)
       Spec.assertEq s (Lobby.opponents (Lobby.update (Lobby.MkPick saved) Text.empty holding)) (Seq.fromList [a, saved])
 
     Spec.it s "counts a deck list's main deck" $ do
@@ -164,7 +169,7 @@ spec s = Spec.describe s "Parun.Web.Lobby" $ do
 
   Spec.describe s "flagged decks" $ do
     Spec.it s "badges a saved deck with problems Not legal" $ do
-      let holding = Lobby.browsed (\b' -> b' {DeckBrowser.illegal = Map.singleton saved [Text.pack "43 cards in the deck, fewer than 60"], DeckBrowser.shelf = DeckBrowser.MkSaved}) (Lobby.withDecks (Seq.fromList [a, saved]) Map.empty Lobby.new)
+      let holding = Lobby.browsed (\b' -> b' {DeckBrowser.illegal = Map.singleton saved [Text.pack "43 cards in the deck, fewer than 60"], DeckBrowser.shelf = DeckBrowser.MkSaved}) (Lobby.withDecks (Seq.fromList [a, saved]) Map.empty Map.empty Lobby.new)
       Spec.assertBool s (Text.isInfixOf (Text.pack "Not legal") (Html.toText (Lobby.view holding))) "badge"
       Spec.assertBool s (not (Text.isInfixOf (Text.pack "Not legal") (Html.toText (Lobby.view (Lobby.browsed (\b' -> b' {DeckBrowser.illegal = Map.empty}) holding))))) "no badge"
 
@@ -198,7 +203,7 @@ spec s = Spec.describe s "Parun.Web.Lobby" $ do
       Spec.assertEqWith s "closed" (DeckBrowser.importing (Lobby.browser (Lobby.update (Lobby.MkBrowse DeckBrowser.MkCloseImport) Text.empty typed))) Nothing
 
     Spec.it s "gives an imported deck to the seat chosen for, shows the saved decks and closes the panel" $ do
-      let opened = Lobby.withDecks (Seq.fromList [a, saved]) Map.empty (Lobby.update (Lobby.MkBrowse DeckBrowser.MkOpenImport) Text.empty lobby)
+      let opened = Lobby.withDecks (Seq.fromList [a, saved]) Map.empty Map.empty (Lobby.update (Lobby.MkBrowse DeckBrowser.MkOpenImport) Text.empty lobby)
           done = Lobby.imported saved opened
           forBot = Lobby.imported saved (Lobby.update (Lobby.MkChoose (Lobby.MkTheirs 0)) Text.empty opened)
       Spec.assertEqWith s "yours" (Lobby.mine done, Lobby.choosing done) (Just saved, Lobby.MkMine)
@@ -207,7 +212,7 @@ spec s = Spec.describe s "Parun.Web.Lobby" $ do
       Spec.assertEqWith s "closed" (DeckBrowser.importing (Lobby.browser done)) Nothing
 
     Spec.it s "empties every seat a deleted deck held" $ do
-      let holding = Lobby.withDecks (Seq.fromList [a, saved]) Map.empty Lobby.new
+      let holding = Lobby.withDecks (Seq.fromList [a, saved]) Map.empty Map.empty Lobby.new
           seated = Lobby.update (Lobby.MkPick saved) Text.empty . Lobby.update (Lobby.MkChoose (Lobby.MkTheirs 0)) Text.empty $ Lobby.update (Lobby.MkPick saved) Text.empty holding
           gone = Lobby.deleted saved seated
       Spec.assertEqWith s "seats" (Lobby.mine gone, Lobby.theirs gone) (Nothing, [Nothing])
@@ -219,7 +224,7 @@ spec s = Spec.describe s "Parun.Web.Lobby" $ do
       Spec.assertEqWith s "saved" (Lobby.playable (Text.pack "saved/all")) True
 
     Spec.it s "seats an imported deck on yours where the bot chosen for may not play it" $ do
-      let opened = Lobby.update (Lobby.MkChoose (Lobby.MkTheirs 0)) Text.empty . Lobby.update (Lobby.MkBrowse DeckBrowser.MkOpenImport) Text.empty $ Lobby.update (Lobby.MkPick c) Text.empty (Lobby.withDecks (Seq.fromList [a, c, saved]) (Map.singleton c (Text.pack "commander")) Lobby.new)
+      let opened = Lobby.update (Lobby.MkChoose (Lobby.MkTheirs 0)) Text.empty . Lobby.update (Lobby.MkBrowse DeckBrowser.MkOpenImport) Text.empty $ Lobby.update (Lobby.MkPick c) Text.empty (Lobby.withDecks (Seq.fromList [a, c, saved]) (Map.singleton c (Text.pack "commander")) Map.empty Lobby.new)
           done = Lobby.imported saved opened
       Spec.assertEq s (Lobby.mine done, Lobby.theirs done, Lobby.choosing done) (Just saved, [Nothing], Lobby.MkMine)
 
@@ -238,7 +243,7 @@ spec s = Spec.describe s "Parun.Web.Lobby" $ do
       Spec.assertBool s (Text.pack "deck-search" `notElem` rebuilt) (show rebuilt)
 
     Spec.it s "offers a saved deck chosen as yours for export and deletion, and no other" $ do
-      let holding = Lobby.withDecks (Seq.fromList [a, saved]) Map.empty Lobby.new
+      let holding = Lobby.withDecks (Seq.fromList [a, saved]) Map.empty Map.empty Lobby.new
           page deck = Html.toText (Lobby.view (previewing (Map.fromList [(deck, [])]) (Lobby.update (Lobby.MkPick deck) Text.empty holding)))
       Spec.assertBool s (Text.isInfixOf (Text.pack "Delete") (page saved)) "saved"
       Spec.assertBool s (not (Text.isInfixOf (Text.pack "Delete") (page a))) "shipped"
@@ -259,7 +264,7 @@ spec s = Spec.describe s "Parun.Web.Lobby" $ do
   Spec.describe s "withDecks" $ do
     Spec.it s "keeps what was picked and typed" $ do
       let early = Lobby.browsed (\b' -> b' {DeckBrowser.search = Text.pack "web"}) (Lobby.update (Lobby.MkPick a) Text.empty lobby)
-          later = Lobby.withDecks (Seq.fromList [a, b]) Map.empty early
+          later = Lobby.withDecks (Seq.fromList [a, b]) Map.empty Map.empty early
       Spec.assertEqWith s "mine" (Lobby.mine later) (Just a)
       Spec.assertEqWith s "search" (DeckBrowser.search (Lobby.browser later)) (Text.pack "web")
       Spec.assertEqWith s "read" (DeckBrowser.reading (Lobby.browser later)) False
@@ -285,7 +290,7 @@ spec s = Spec.describe s "Parun.Web.Lobby" $ do
       Spec.assertBool s (Text.isInfixOf (Text.pack "<h2>Deck for Bot</h2>") (Html.toText (Lobby.view forBot))) "heading"
 
     Spec.it s "shows a deck's list to copy only under that deck" $ do
-      let holding = Lobby.withDecks (Seq.fromList [a, saved]) Map.empty Lobby.new
+      let holding = Lobby.withDecks (Seq.fromList [a, saved]) Map.empty Map.empty Lobby.new
           exported = Lobby.browsed (\b' -> b' {DeckBrowser.exporting = Just (saved, Text.pack "4 Exported Card"), DeckBrowser.previews = Map.fromList [(saved, []), (a, [])]}) (Lobby.update (Lobby.MkPick saved) Text.empty holding)
           elsewhere = Lobby.update (Lobby.MkPick a) Text.empty . Lobby.update (Lobby.MkChoose (Lobby.MkTheirs 0)) Text.empty $ exported
       Spec.assertBool s (Text.isInfixOf (Text.pack "4 Exported Card") (Html.toText (Lobby.view exported))) "its own"
@@ -358,7 +363,7 @@ saved = Text.pack "saved/my-deck"
 
 -- | Your deck a saved one the check flagged.
 flaggedMine :: Lobby.Lobby
-flaggedMine = Lobby.browsed (\b' -> b' {DeckBrowser.illegal = Map.singleton saved [Text.pack "43 cards in the deck, fewer than 60"]}) (Lobby.update (Lobby.MkPick saved) Text.empty (Lobby.withDecks (Seq.fromList [a, saved]) Map.empty Lobby.new))
+flaggedMine = Lobby.browsed (\b' -> b' {DeckBrowser.illegal = Map.singleton saved [Text.pack "43 cards in the deck, fewer than 60"]}) (Lobby.update (Lobby.MkPick saved) Text.empty (Lobby.withDecks (Seq.fromList [a, saved]) Map.empty Map.empty Lobby.new))
 
 -- | The bot's seat chosen, this deck picked for it.
 botPicks :: Text.Text -> Lobby.Lobby -> Lobby.Lobby
@@ -400,7 +405,7 @@ seatPicks html = case html of
   Html.MkText _ -> []
 
 lobby :: Lobby.Lobby
-lobby = Lobby.withDecks (Seq.fromList [a, b, c, d]) (Map.fromList [(c, Text.pack "commander"), (d, Text.pack "commander")]) Lobby.new
+lobby = Lobby.withDecks (Seq.fromList [a, b, c, d]) (Map.fromList [(c, Text.pack "commander"), (d, Text.pack "commander")]) Map.empty Lobby.new
 
 -- The ids of the fields a patch builds afresh or turns another element
 -- into: a field built afresh loses what was typed into it.

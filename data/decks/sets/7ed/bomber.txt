@@ -1,3 +1,5 @@
+Name: Bomber
+
 17 Island
 1 Air Elemental
 1 Ancestral Memories

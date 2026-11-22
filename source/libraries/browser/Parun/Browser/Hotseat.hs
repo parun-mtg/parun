@@ -290,8 +290,9 @@ witness view state =
 message :: [Text.Text] -> Html.Html msg
 message said = Element.el "main" ["message"] [] [Element.el "p" [] [] [Html.text t] | t <- said]
 
--- | While the registry builds and the game deals: the match-up, and a spinner.
-starting :: NonEmpty.NonEmpty Text.Text -> Html.Html msg
+-- | While the registry builds and the game deals: the match-up, each seat's
+-- deck by its name and list, and a spinner.
+starting :: NonEmpty.NonEmpty (Text.Text, Text.Text) -> Html.Html msg
 starting decks =
   Element.el
     "main"
@@ -299,5 +300,5 @@ starting decks =
     []
     [ Element.el "div" ["spinner"] [Element.attr "aria-hidden" (Text.pack "true")] [],
       Element.el "p" [] [] [Element.string "Shuffling up\x2026"],
-      Element.el "p" ["matchup-line"] [] (List.intersperse (Element.el "span" ["versus"] [] [Element.string " vs "]) (fmap (Html.text . DeckBrowser.label) (NonEmpty.toList decks)))
+      Element.el "p" ["matchup-line"] [] (List.intersperse (Element.el "span" ["versus"] [] [Element.string " vs "]) (fmap (\deck -> Html.text (DeckBrowser.label (DeckBrowser.titleIn deck) (fst deck))) (NonEmpty.toList decks)))
     ]

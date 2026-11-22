@@ -5,6 +5,7 @@ module Parun.Web.Join where
 
 import qualified Data.Foldable as Foldable
 import qualified Data.List as List
+import qualified Data.Map.Strict as Map
 import qualified Data.Maybe as Maybe
 import qualified Data.Sequence as Seq
 import qualified Data.Text as Text
@@ -19,6 +20,8 @@ data Join = MkJoin
     reading :: Bool,
     -- | Every deck, by its path beneath the deck root, less ".txt".
     decks :: Seq.Seq Text.Text,
+    -- | The name each deck's header gives it (DeckBrowser.titles).
+    titles :: Map.Map Text.Text Text.Text,
     -- | What the deck list is filtered by.
     search :: Text.Text,
     -- | The deck chosen.
@@ -47,7 +50,7 @@ data Event
 
 -- | A join screen whose decks are still to read.
 new :: Join
-new = MkJoin True Seq.empty Text.empty Nothing Nothing False [] Nothing
+new = MkJoin True Seq.empty Map.empty Text.empty Nothing Nothing False [] Nothing
 
 -- | The screen after an event, the value typed being `typed`.
 update :: Event -> Text.Text -> Join -> Join
@@ -67,8 +70,8 @@ isReady screen = Maybe.fromMaybe False (List.find ((== Text.pack "You") . Link.w
 
 view :: Join -> Html.Html Event
 view screen =
-  let shown = filter (DeckBrowser.matches (search screen)) (filter Lobby.playable (Foldable.toList (decks screen)))
-      deck name = (name, Element.button (["deck"] <> ["picked" | picked screen == Just name]) (MkPick name) [Element.el "span" ["deck-name"] [] [Element.text (DeckBrowser.label name)]])
+  let shown = filter (DeckBrowser.matches (titles screen) (search screen)) (filter Lobby.playable (Foldable.toList (decks screen)))
+      deck name = (name, Element.button (["deck"] <> ["picked" | picked screen == Just name]) (MkPick name) [Element.el "span" ["deck-name"] [] [Element.text (DeckBrowser.label (titles screen) name)]])
       place p =
         Element.el
           "li"
@@ -117,7 +120,7 @@ view screen =
                        [ Element.el "label" ["sr-only"] [Element.attr "for" (Text.pack "deck-search")] [Element.string "Filter decks"],
                          Element.el "input" ["search"] [Element.attr "id" (Text.pack "deck-search"), Element.attr "type" (Text.pack "search"), Element.attr "placeholder" (Text.pack "Filter decks or sets"), Element.attr "autocomplete" (Text.pack "off"), Element.on "input" MkSearch] []
                        ],
-                     Element.el "p" ["choosing-for"] [] [Element.string (maybe "Choose your deck." (\name -> "Your deck: " <> Text.unpack (DeckBrowser.label name) <> ".") (picked screen))],
+                     Element.el "p" ["choosing-for"] [] [Element.string (maybe "Choose your deck." (\name -> "Your deck: " <> Text.unpack (DeckBrowser.label (titles screen) name) <> ".") (picked screen))],
                      if null shown
                        then Element.el "p" ["empty"] [] [Element.string (if reading screen then "Reading the decks\x2026" else "No deck matches.")]
                        else Element.keyed "div" ["deck-list"] [] (fmap deck shown)

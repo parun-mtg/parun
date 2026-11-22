@@ -38,7 +38,7 @@ spec s = Spec.describe s "Parun.Web.Home" $ do
       Spec.assertEqWith s "paused" (has "<button class=\"tile lead\"" paused) False
 
     Spec.it s "lists the decks saved here, each to open on the Decks screen or edit" $ do
-      let saved = Home.new {Home.saved = [Home.MkDeck (Text.pack "saved/red-deck-wins") (Set.singleton Color.Red) (Just 60)]}
+      let saved = Home.new {Home.saved = [Home.MkDeck (Text.pack "saved/red-deck-wins") (Text.pack "Red Deck Wins") (Set.singleton Color.Red) (Just 60)]}
       Spec.assertEqWith s "none" (has "Your decks" Home.new) False
       Spec.assertEqWith s "named" (has "Red Deck Wins" saved && has "60 cards" saved) True
       Spec.assertEqWith s "edit" (tapping "Edit" saved) (Just (Home.MkChoose (Home.MkEditDeck (Text.pack "saved/red-deck-wins"))))

@@ -1,3 +1,4 @@
+Name: We Are the Borg
 Format: commander
 
 Commander

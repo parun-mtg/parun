@@ -1,3 +1,5 @@
+Name: Deck A
+
 7 Forest
 3 Plains
 7 Swamp

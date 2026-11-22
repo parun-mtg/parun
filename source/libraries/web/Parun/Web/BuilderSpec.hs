@@ -250,6 +250,12 @@ spec s = Spec.describe s "Parun.Web.Builder" $ do
     Spec.it s "keeps the first Format header, as a deck list reads it" $ do
       Spec.assertEq s (Builder.format (Builder.open Nothing Text.empty (Text.pack "Format: commander\nFormat: standard\n1 Island\n") fresh)) (Text.pack "commander")
 
+    Spec.it s "reads a Name header as no card, and nothing to note" $ do
+      let opened = Builder.open Nothing (Text.pack "Kamahl's Temper") (Text.pack "Name: Kamahl's Temper\n1 Mountain\n") fresh
+      Spec.assertEqWith s "the deck" (Builder.deck opened) (Map.singleton mountain 1)
+      Spec.assertEqWith s "no notice" (Builder.notices opened) []
+      Spec.assertEqWith s "the pool" (fmap fst (Builder.entriesOf [Text.pack "Name: Kamahl's Temper", Text.pack "1 Mountain"])) [mountain]
+
     Spec.it s "drops a line of no copies" $ do
       Spec.assertEq s (Builder.deck (Builder.open Nothing Text.empty (Text.pack "0 Island\n1 Mountain\n") fresh)) (Map.singleton mountain 1)
 

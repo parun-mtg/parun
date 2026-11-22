@@ -70,12 +70,13 @@ new chosen = MkDecks DeckBrowser.new {DeckBrowser.shelf = DeckBrowser.MkSaved} c
 browsed :: (DeckBrowser.DeckBrowser -> DeckBrowser.DeckBrowser) -> Decks -> Decks
 browsed f screen = screen {browser = f (browser screen)}
 
--- | The screen holding these decks under these formats, what was typed
+-- | The screen holding these decks under these formats and these names,
+-- what was typed
 -- kept: on the first read, on the selected deck's shelf, else on My decks
 -- where any is saved and the precons where none is; a selected deck no
 -- longer held is dropped.
-withDecks :: Seq.Seq Text.Text -> Map.Map Text.Text Text.Text -> Decks -> Decks
-withDecks names named screen =
+withDecks :: Seq.Seq Text.Text -> Map.Map Text.Text Text.Text -> Map.Map Text.Text Text.Text -> Decks -> Decks
+withDecks names named titled screen =
   let held = Monad.mfilter (`Foldable.elem` names) (selected screen)
       shelf read'
         | not (DeckBrowser.reading (browser screen)) = DeckBrowser.shelf read'
@@ -83,7 +84,7 @@ withDecks names named screen =
         | DeckBrowser.anySaved read' = DeckBrowser.MkSaved
         | otherwise = DeckBrowser.MkPrecons
    in browsed
-        (\b -> let read' = DeckBrowser.withDecks names named b in read' {DeckBrowser.shelf = shelf read'})
+        (\b -> let read' = DeckBrowser.withDecks names named titled b in read' {DeckBrowser.shelf = shelf read'})
         screen
           { selected = held,
             renaming = if Maybe.isJust held then renaming screen else Nothing,
@@ -98,7 +99,7 @@ update event typed screen = case event of
   MkNewDeck -> screen
   MkPlay _ -> screen
   MkEdit _ -> screen
-  MkRename -> screen {renaming = fmap (\name -> (snd (DeckBrowser.describe name), [])) (selected screen), deleting = Nothing}
+  MkRename -> screen {renaming = fmap (\name -> (snd (DeckBrowser.describe (DeckBrowser.titles (browser screen)) name), [])) (selected screen), deleting = Nothing}
   MkRenameName -> screen {renaming = fmap (\(_, problems) -> (typed, problems)) (renaming screen)}
   MkSubmitRename -> screen
   MkCancelRename -> screen {renaming = Nothing}
@@ -132,6 +133,11 @@ copyName names name =
     head' xs = case xs of
       x : _ -> x
       [] -> name
+
+-- | The name a copy (copyName) of this saved deck is given, its names
+-- `named`: the deck's own, then what the copy's file adds, "Copy 2".
+copyTitle :: Map.Map Text.Text Text.Text -> Text.Text -> Text.Text -> Text.Text
+copyTitle named name copy = snd (DeckBrowser.describe named name) <> Text.singleton ' ' <> DeckBrowser.titled (Text.drop (Text.length name + 1) copy)
 
 -- | The screen once this deck is saved here, by import, rename or copy: the
 -- saved decks shown, it selected, and any panel closed.
@@ -225,7 +231,7 @@ detailView screen =
               "div"
               ["confirm-delete"]
               [Element.attr "role" (Text.pack "alertdialog"), Element.attr "aria-label" (Text.pack "Delete this deck?")]
-              [ Element.el "p" [] [] [Element.string "Delete ", Element.el "strong" [] [] [Element.text (snd (DeckBrowser.describe name))], Element.string " from this browser? This cannot be undone."],
+              [ Element.el "p" [] [] [Element.string "Delete ", Element.el "strong" [] [] [Element.text (snd (DeckBrowser.describe (DeckBrowser.titles (browser screen)) name))], Element.string " from this browser? This cannot be undone."],
                 Element.el
                   "div"
                   ["saved-tools"]

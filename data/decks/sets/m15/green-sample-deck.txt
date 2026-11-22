@@ -1,3 +1,5 @@
+Name: Green Sample Deck
+
 13 Forest
 1 Centaur Courser
 1 Charging Rhino

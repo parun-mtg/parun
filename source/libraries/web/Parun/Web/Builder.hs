@@ -585,6 +585,8 @@ open savedName offered text builder =
               -- The first header naming a format names it, as Parun.DeckList
               -- reads it.
               (_, Just named) -> (current, maybe fmt (\f -> Just (Maybe.fromMaybe f fmt)) named, counts, after, picked, others, unreadable)
+              -- The deck's name is `offered`, and saving writes it back.
+              _ | DeckList.isNameHeader line -> (current, fmt, counts, after, picked, others, unreadable)
               _ -> case current of
                 Nothing -> (current, fmt, counts, after, picked, raw : others, unreadable)
                 Just section
@@ -725,8 +727,8 @@ capOf builder card
 isBasic :: Builder -> CardName.CardName -> Bool
 isBasic builder card = maybe (card `elem` basics) CardIndex.basic (Map.lookup (canonical builder card) (byName builder))
 
--- | The cards a list's lines name, whatever section they are in, headers
--- and a format skipped.
+-- | The cards a list's lines name, whatever section they are in, headers,
+-- a format and a name skipped.
 entriesOf :: [Text.Text] -> [(CardName.CardName, Natural)]
 entriesOf lines' =
   [ (card, n)
@@ -735,6 +737,7 @@ entriesOf lines' =
     not (Text.null line),
     Maybe.isNothing (DeckList.sectionNamed line),
     Maybe.isNothing (DeckList.formatNamed line),
+    not (DeckList.isNameHeader line),
     Just (n, card, _, _) <- [DeckList.entryOf line]
   ]
 

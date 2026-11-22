@@ -1,3 +1,5 @@
+Name: Mob Rule
+
 1 Evolving Wilds
 8 Forest
 15 Mountain

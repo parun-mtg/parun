@@ -1,3 +1,5 @@
+Name: Red Sample Deck
+
 13 Mountain
 2 Borderland Marauder
 1 Cone of Flame

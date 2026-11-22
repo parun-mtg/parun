@@ -13,6 +13,7 @@ import qualified Data.Sequence as Seq
 import qualified Data.Set as Set
 import qualified Data.Text as Text
 import Numeric.Natural (Natural)
+import qualified Parun.DeckList as DeckList
 import qualified Parun.Types.CardName as CardName
 import qualified Parun.Types.Color as Color
 import qualified Parun.Types.ManaCost as ManaCost
@@ -31,6 +32,9 @@ data DeckBrowser = MkDeckBrowser
     -- | The format each deck's header names (Parun.DeckList.formatOf), by
     -- name; a deck naming none is absent.
     formats :: Map.Map Text.Text Text.Text,
+    -- | The name each deck's header gives it (Parun.DeckList.nameOf), by
+    -- name; a deck naming none is absent.
+    titles :: Map.Map Text.Text Text.Text,
     -- | What the deck list is filtered by.
     search :: Text.Text,
     -- | The colours a deck shown must hold, each of them.
@@ -113,6 +117,7 @@ new =
       problem = Nothing,
       decks = Seq.empty,
       formats = Map.empty,
+      titles = Map.empty,
       search = Text.empty,
       colourFilter = Set.empty,
       setFilter = Nothing,
@@ -142,10 +147,10 @@ update event typed browser = case event of
   MkExport _ -> browser
   MkCloseExport -> browser {exporting = Nothing}
 
--- | The browser holding these decks under these formats, what was typed
--- kept.
-withDecks :: Seq.Seq Text.Text -> Map.Map Text.Text Text.Text -> DeckBrowser -> DeckBrowser
-withDecks names named browser = browser {decks = names, formats = named, reading = False}
+-- | The browser holding these decks under these formats and these names,
+-- what was typed kept.
+withDecks :: Seq.Seq Text.Text -> Map.Map Text.Text Text.Text -> Map.Map Text.Text Text.Text -> DeckBrowser -> DeckBrowser
+withDecks names named titled' browser = browser {decks = names, formats = named, titles = titled', reading = False}
 
 -- | The browser once a deck is imported: the panel closed, the saved decks
 -- shown.
@@ -158,6 +163,7 @@ deleted name browser =
   browser
     { decks = Seq.filter (/= name) (decks browser),
       formats = Map.delete name (formats browser),
+      titles = Map.delete name (titles browser),
       palette = Map.delete name (palette browser),
       previews = Map.delete name (previews browser),
       curves = Map.delete name (curves browser),
@@ -187,16 +193,17 @@ nameProblems names typed
   where
     slug = slugOf typed
 
--- | A deck's set and its own name: "sets/m12/entangling-webs" is set "M12",
--- deck "Entangling Webs".
-describe :: Text.Text -> (Text.Text, Text.Text)
-describe name =
+-- | A deck's set and its own name, the one its header gives (`titles`), else
+-- its file's: "sets/m12/entangling-webs" is set "M12", deck "Entangling
+-- Webs".
+describe :: Map.Map Text.Text Text.Text -> Text.Text -> (Text.Text, Text.Text)
+describe named name =
   let parts = Text.splitOn (Text.pack "/") name
       (group, leaf) = case reverse parts of
         l : s : _ -> (Text.toUpper s, l)
         [l] -> (Text.pack "Decks", l)
         [] -> (Text.pack "Decks", name)
-   in (group, titled leaf)
+   in (group, Map.findWithDefault (titled leaf) name named)
 
 -- | "entangling-webs" as "Entangling Webs".
 titled :: Text.Text -> Text.Text
@@ -206,19 +213,24 @@ titled = Text.unwords . fmap capital . Text.split (\c -> c == '-' || c == '_')
       Just (c, rest) -> Text.cons (Char.toUpper c) rest
       Nothing -> w
 
+-- | The name a held deck's list gives it, by its name, as `titles` holds
+-- one read: for a deck sent rather than read here.
+titleIn :: (Text.Text, Text.Text) -> Map.Map Text.Text Text.Text
+titleIn (name, contents) = foldMap (Map.singleton name) (DeckList.nameOf contents)
+
 -- | The deck as the match-up names it: its own name, and a precon's set.
-label :: Text.Text -> Text.Text
-label name
+label :: Map.Map Text.Text Text.Text -> Text.Text -> Text.Text
+label named name
   | isSaved name = deck
   | otherwise = deck <> Text.pack " (" <> group <> Text.pack ")"
   where
-    (group, deck) = describe name
+    (group, deck) = describe named name
 
 -- | Whether the deck matches what is typed, by its path or its name, any case.
-matches :: Text.Text -> Text.Text -> Bool
-matches typed name =
+matches :: Map.Map Text.Text Text.Text -> Text.Text -> Text.Text -> Bool
+matches named typed name =
   let needle = Text.toCaseFold (Text.strip typed)
-   in Text.null needle || Text.isInfixOf needle (Text.toCaseFold name) || Text.isInfixOf needle (Text.toCaseFold (label name))
+   in Text.null needle || Text.isInfixOf needle (Text.toCaseFold name) || Text.isInfixOf needle (Text.toCaseFold (label named name))
 
 -- | Those of the decks `offered` on the shelf shown.
 shelved :: Seq.Seq Text.Text -> DeckBrowser -> [Text.Text]
@@ -230,8 +242,8 @@ shelved offered browser = filter ((== (shelf browser == MkSaved)) . isSaved) (Fo
 shown :: Seq.Seq Text.Text -> DeckBrowser -> [Text.Text]
 shown offered browser =
   let coloured name = maybe True (Set.isSubsetOf (colourFilter browser)) (Map.lookup name (palette browser))
-      ofSet name = shelf browser == MkSaved || all (== fst (describe name)) (setFilter browser)
-   in filter (\name -> matches (search browser) name && coloured name && ofSet name) (shelved offered browser)
+      ofSet name = shelf browser == MkSaved || all (== fst (describe (titles browser) name)) (setFilter browser)
+   in filter (\name -> matches (titles browser) (search browser) name && coloured name && ofSet name) (shelved offered browser)
 
 -- | Whether any deck is saved here.
 anySaved :: DeckBrowser -> Bool
@@ -243,7 +255,7 @@ shelfOf name = if isSaved name then MkSaved else MkPrecons
 
 -- | The sets the shipped decks come from, by code, in order.
 setsOf :: DeckBrowser -> [Text.Text]
-setsOf browser = Set.toList (Set.fromList [fst (describe name) | name <- Foldable.toList (decks browser), not (isSaved name)])
+setsOf browser = Set.toList (Set.fromList [fst (describe (titles browser) name) | name <- Foldable.toList (decks browser), not (isSaved name)])
 
 -- | A card of a deck's list, as a deck's detail previews it.
 data Line = MkLine
@@ -315,7 +327,7 @@ pips colours = Element.el "span" ["pips"] [] [Mana.symbol (Text.pack (Web.Card.l
 -- | A deck's set and its card count, as far as read: "M12 · 60 cards".
 counted :: DeckBrowser -> Text.Text -> String
 counted browser name =
-  List.intercalate " \x00b7 " ([Text.unpack (fst (describe name)) | not (isSaved name)] <> ["Saved" | isSaved name] <> [show n <> " cards" | n <- Maybe.maybeToList (Map.lookup name (sizes browser))])
+  List.intercalate " \x00b7 " ([Text.unpack (fst (describe (titles browser) name)) | not (isSaved name)] <> ["Saved" | isSaved name] <> [show n <> " cards" | n <- Maybe.maybeToList (Map.lookup name (sizes browser))])
 
 -- | A shelf's name on its tab.
 shelfTitle :: Shelf -> String
@@ -394,7 +406,7 @@ resultsView pick picked none offered browser =
 -- `picked`.
 tile :: (Text.Text -> msg) -> Bool -> DeckBrowser -> Text.Text -> Html.Html msg
 tile pick picked browser name =
-  let (code, own) = describe name
+  let (code, own) = describe (titles browser) name
       format = [Element.el "span" ["deck-format"] [] [Element.text (titled f)] | f <- Maybe.maybeToList (Map.lookup name (formats browser))] <> [Element.el "span" ["not-legal"] [] [Element.string "Not legal"] | Map.member name (illegal browser)]
    in Element.el
         "button"
@@ -411,7 +423,7 @@ tile pick picked browser name =
 -- curve, its kinds of card and its list once read.
 detailBody :: DeckBrowser -> Text.Text -> [Html.Html msg]
 detailBody browser name =
-  [ Element.el "div" ["detail-name"] [] [pips colours, Element.el "h2" [] [] [Element.text (snd (describe name))]],
+  [ Element.el "div" ["detail-name"] [] [pips colours, Element.el "h2" [] [] [Element.text (snd (describe (titles browser) name))]],
     Element.el "p" ["muted"] [] [Element.string (List.intercalate " \x00b7 " ([counted browser name] <> [colourWords colours | Map.member name (palette browser)] <> [Text.unpack (titled f) | f <- Maybe.maybeToList (Map.lookup name (formats browser))]))]
   ]
     <> case Map.lookup name (previews browser) of
@@ -426,7 +438,7 @@ detailBody browser name =
 
 -- | This deck's list to copy, while it is the one exported.
 exportedView :: DeckBrowser -> Text.Text -> [Html.Html Event]
-exportedView browser name = [exportView shown' | shown'@(exported, _) <- Maybe.maybeToList (exporting browser), exported == name]
+exportedView browser name = [exportView (titles browser) shown' | shown'@(exported, _) <- Maybe.maybeToList (exporting browser), exported == name]
 
 -- | The panel a deck list is pasted into: its name, its list, and why the
 -- last import was refused.
@@ -453,13 +465,13 @@ importView panel =
          ]
 
 -- | A deck's list, to copy.
-exportView :: (Text.Text, Text.Text) -> Html.Html Event
-exportView (name, contents) =
+exportView :: Map.Map Text.Text Text.Text -> (Text.Text, Text.Text) -> Html.Html Event
+exportView named (name, contents) =
   Element.el
     "section"
     ["export"]
     [Element.attr "aria-label" (Text.pack "Export a deck")]
-    [ Element.el "h2" [] [] [Element.text (snd (describe name))],
+    [ Element.el "h2" [] [] [Element.text (snd (describe named name))],
       Element.el "textarea" ["export-text"] [Element.attr "readonly" Text.empty, Element.attr "rows" (Text.pack "12"), Element.attr "aria-label" (Text.pack "Deck list")] [Element.text contents],
       Element.button [] MkCloseExport [Element.string "Close"]
     ]

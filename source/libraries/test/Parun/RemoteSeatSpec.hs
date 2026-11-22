@@ -35,7 +35,6 @@ import qualified Parun.Types.Result as Result
 import qualified Parun.Types.SearchBudget as SearchBudget
 import qualified Parun.Types.SearchMethod as SearchMethod
 import qualified Parun.Types.Weights as Weights
-import qualified Parun.Web.DeckBrowser as DeckBrowser
 import qualified Parun.Web.Ending as Ending
 import qualified Parun.Web.Html as Html
 import qualified Parun.Web.Link as Link
@@ -47,7 +46,7 @@ spec s registry = Spec.describe s "RemoteSeat" $ do
     let one = Text.pack "sets/a/one"
         two = Text.pack "sets/a/two"
         pick name = Lobby.update (Lobby.MkPick name) Text.empty
-        picked = pick one (Lobby.withDecks (Seq.fromList [one, two]) Map.empty Lobby.new)
+        picked = pick one (Lobby.withDecks (Seq.fromList [one, two]) Map.empty Map.empty Lobby.new)
         invited = Lobby.update (Lobby.MkInviteSlot 0) Text.empty picked
         connected = Lobby.linked 0 (\invite -> invite {Lobby.connected = True}) invited
         chosen = Lobby.heard 0 (Link.MkHello two (Text.pack "20 Forest\n")) connected
@@ -63,7 +62,7 @@ spec s registry = Spec.describe s "RemoteSeat" $ do
   Spec.it s "a game with two invited players starts only once all three are ready, and each guest is shown its own seat as its own" $ do
     let one = Text.pack "sets/a/one"
         two = Text.pack "sets/a/two"
-        added = Lobby.update Lobby.MkAddBot Text.empty (Lobby.update (Lobby.MkPick one) Text.empty (Lobby.withDecks (Seq.fromList [one, two]) Map.empty Lobby.new))
+        added = Lobby.update Lobby.MkAddBot Text.empty (Lobby.update (Lobby.MkPick one) Text.empty (Lobby.withDecks (Seq.fromList [one, two]) Map.empty Map.empty Lobby.new))
         invited = Lobby.update (Lobby.MkInviteSlot 1) Text.empty (Lobby.update (Lobby.MkInviteSlot 0) Text.empty added)
         joined i = Lobby.heard i (Link.MkHello two (Text.pack "20 Forest\n")) . Lobby.linked i (\invite -> invite {Lobby.connected = True})
         chosen = joined 1 (joined 0 invited)
@@ -95,11 +94,11 @@ spec s registry = Spec.describe s "RemoteSeat" $ do
 
   Spec.it s "the match-up a game's guests are told again names every seat and every bot's deck drawn" $ do
     let seat name = (Text.pack name, Text.pack "20 Forest\n")
-        seats = seat "sets/a/one" NonEmpty.:| [seat "sets/a/two", seat "sets/a/three"]
+        seats = seat "sets/a/one" NonEmpty.:| [(Text.pack "sets/a/two", Text.pack "Name: Kamahl's Temper\n20 Forest\n"), seat "sets/a/three"]
         rematched = Lobby.rematch seats (Set.singleton 1)
         told = Lobby.placesFor 1 rematched
     Spec.assertEqWith s "every seat named" (fmap Link.who told) [Text.pack "Host", Text.pack "Bot 1", Text.pack "You"]
-    Spec.assertEqWith s "every deck named, the bot's among them" (fmap Link.deck told) (fmap (DeckBrowser.label . fst) (NonEmpty.toList seats))
+    Spec.assertEqWith s "every deck named, the bot's among them" (fmap Link.deck told) [Text.pack "One (A)", Text.pack "Kamahl's Temper (A)", Text.pack "Three (A)"]
 
   Spec.it s "a game picked up from its seed and the replies so far asks what the game played through asked, and ends the same" $ do
     matchup <- BotSpec.bears s registry

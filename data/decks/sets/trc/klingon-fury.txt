@@ -1,3 +1,4 @@
+Name: Klingon Fury
 Format: commander
 
 Commander

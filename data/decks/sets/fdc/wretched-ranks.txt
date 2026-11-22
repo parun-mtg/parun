@@ -1,3 +1,4 @@
+Name: Wretched Ranks
 Format: commander
 
 Commander

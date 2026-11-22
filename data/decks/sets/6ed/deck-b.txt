@@ -1,3 +1,5 @@
+Name: Deck B
+
 6 Island
 6 Mountain
 5 Plains

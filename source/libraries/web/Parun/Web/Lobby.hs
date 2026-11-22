@@ -174,10 +174,10 @@ deleted name lobby =
       emptied = Monad.mfilter (/= name)
    in browsed (DeckBrowser.deleted name) lobby {mine = emptied (mine lobby), theirs = fmap emptied (theirs lobby)}
 
--- | The lobby holding these decks under these formats, what was chosen and
--- typed kept.
-withDecks :: Seq.Seq Text.Text -> Map.Map Text.Text Text.Text -> Lobby -> Lobby
-withDecks names named = browsed (DeckBrowser.withDecks names named)
+-- | The lobby holding these decks under these formats and these names, what
+-- was chosen and typed kept.
+withDecks :: Seq.Seq Text.Text -> Map.Map Text.Text Text.Text -> Map.Map Text.Text Text.Text -> Lobby -> Lobby
+withDecks names named titled = browsed (DeckBrowser.withDecks names named titled)
 
 -- | The most bots a game seats: a table of four.
 mostBots :: Int
@@ -353,7 +353,10 @@ rematch (yours NonEmpty.:| rest) invited =
   new
     { mine = Just (fst yours),
       theirs = [if Set.member i invited then Nothing else Just name | (i, (name, _)) <- zip [0 ..] rest],
-      invites = Map.fromList [(i, newInvite {connected = True, guestDeck = Just seat}) | (i, seat) <- zip [0 ..] rest, Set.member i invited]
+      invites = Map.fromList [(i, newInvite {connected = True, guestDeck = Just seat}) | (i, seat) <- zip [0 ..] rest, Set.member i invited],
+      -- Your deck's and each bot's name, as their lists give them, until
+      -- the decks are read again.
+      browser = (browser new) {DeckBrowser.titles = foldMap DeckBrowser.titleIn (yours : [seat | (i, seat) <- zip [0 ..] rest, Set.notMember i invited])}
     }
 
 -- | Whether a game with the players invited starts: there is one, your
@@ -368,10 +371,10 @@ starts lobby =
 -- | The match-up as the player invited to this slot is shown it.
 placesFor :: Int -> Lobby -> [Link.Place]
 placesFor i lobby =
-  Link.MkPlace (Text.pack "Host") (maybe (Text.pack "Choosing a deck") DeckBrowser.label (mine lobby)) (Just (ready lobby))
+  Link.MkPlace (Text.pack "Host") (maybe (Text.pack "Choosing a deck") (DeckBrowser.label (DeckBrowser.titles (browser lobby))) (mine lobby)) (Just (ready lobby))
     : [ case Map.lookup j (invites lobby) of
-          Just invite -> Link.MkPlace (if j == i then Text.pack "You" else Text.pack ("Player " <> show (j + 2))) (maybe (Text.pack "Choosing a deck") (DeckBrowser.label . fst) (guestDeck invite)) (Just (guestReady invite))
-          Nothing -> Link.MkPlace (Text.pack (if length (theirs lobby) == 1 then "Bot" else "Bot " <> show (j + 1))) (maybe (Text.pack "Random deck") DeckBrowser.label held) Nothing
+          Just invite -> Link.MkPlace (if j == i then Text.pack "You" else Text.pack ("Player " <> show (j + 2))) (maybe (Text.pack "Choosing a deck") (\deck -> DeckBrowser.label (DeckBrowser.titleIn deck) (fst deck)) (guestDeck invite)) (Just (guestReady invite))
+          Nothing -> Link.MkPlace (Text.pack (if length (theirs lobby) == 1 then "Bot" else "Bot " <> show (j + 1))) (maybe (Text.pack "Random deck") (DeckBrowser.label (DeckBrowser.titles (browser lobby))) held) Nothing
       | (j, held) <- zip [0 ..] (theirs lobby)
       ]
 
@@ -504,7 +507,7 @@ seatsView lobby =
                       <> [Element.el "span" ["chip", "choosing"] [] [Element.string "Choosing a deck"] | on]
                   ),
                 Element.el "span" ["seat-deck"] [] $ case held of
-                  Just name -> [DeckBrowser.pips (Map.findWithDefault Set.empty name (DeckBrowser.palette (browser lobby))), Element.el "span" ["seat-deck-name"] [] [Element.text (snd (DeckBrowser.describe name))]]
+                  Just name -> [DeckBrowser.pips (Map.findWithDefault Set.empty name (DeckBrowser.palette (browser lobby))), Element.el "span" ["seat-deck-name"] [] [Element.text (snd (DeckBrowser.describe (DeckBrowser.titles (browser lobby)) name))]]
                   Nothing -> [Element.el "span" ["seat-deck-name"] [] [Element.string (if which == MkMine then "No deck yet" else "Random deck")]],
                 Element.el "span" ["seat-note", "muted"] [] [Element.string (maybe (if which == MkMine then "Choose one to start" else "Drawn when the game starts") (DeckBrowser.counted (browser lobby)) held)]
               ]
@@ -623,7 +626,7 @@ inviteView i invite extra =
               ( [Element.el "span" ["avatar"] [] [Element.string "P"], Element.el "strong" ["seat-name"] [] [Element.string ("Player " <> show (i + 2))]]
                   <> [Element.el "span" ["chip"] [] [Element.string (if guestReady invite then "Ready \x2713" else "Not ready")] | connected invite]
               ),
-            Element.el "span" ["seat-deck"] [] [Element.el "span" ["seat-deck-name"] [] [Element.text (maybe (Text.pack (if connected invite then "Choosing a deck\x2026" else "Not connected")) (snd . DeckBrowser.describe . fst) (guestDeck invite))]],
+            Element.el "span" ["seat-deck"] [] [Element.el "span" ["seat-deck-name"] [] [Element.text (maybe (Text.pack (if connected invite then "Choosing a deck\x2026" else "Not connected")) (\deck -> snd (DeckBrowser.describe (DeckBrowser.titleIn deck) (fst deck))) (guestDeck invite))]],
             Element.el "span" ["seat-note", "muted"] [] [Element.string (if connected invite then "Chooses their own deck" else "Invited from another browser")]
           ]
       ]

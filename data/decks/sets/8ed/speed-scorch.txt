@@ -1,3 +1,5 @@
+Name: Speed Scorch
+
 17 Mountain
 1 Blaze
 1 Demolish

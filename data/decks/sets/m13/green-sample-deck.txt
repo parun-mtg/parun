@@ -1,3 +1,5 @@
+Name: Green Sample Deck
+
 12 Forest
 1 Borderland Ranger
 1 Bountiful Harvest
