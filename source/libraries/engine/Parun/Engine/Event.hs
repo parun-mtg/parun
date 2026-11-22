@@ -4707,13 +4707,24 @@ apply settle batch applied batchPrevented candidate event =
       -- proves both halves; fortified-beachhead-made-a-soldier-as-it-enters-does-not-count-itself
       -- and fortified-beachhead-returned-beside-a-soldier-does-not-count-it
       -- prove the board.
-      EntryRewrite.OrTapped (OrTapped.MkOrTapped price unless_) -> do
+      --
+      -- Where the price buys counters instead (Dragon's Disciple), paying or the
+      -- waiver places them through placeEntryCounters, the WithCounters arm's
+      -- funnel, and declining without the waiver changes nothing. The offer is
+      -- still made beside a Dragon, per the card's ruling that revealing while
+      -- controlling one still gives a single counter:
+      -- data/scenarios/dragons-disciple-declining-the-reveal-beside-a-dragon-still-enters-with-a-counter.json
+      -- proves it.
+      EntryRewrite.OrTapped (OrTapped.MkOrTapped price unless_ counters) -> do
         Replacement.consume (ReplacementCandidate.identity candidate)
         gs <- State.get
-        let declined = do
+        let bought = Foldable.for_ counters (placeEntryCounters candidate oid . WithCounters.counters)
+            declined = do
               now <- State.get
-              let waived = Condition.holds (Projection.fullView now) (Replacement.candidateContext now candidate) (Projection.boardAsEntering now) oid
-              Monad.unless (any waived unless_) (enterTapState TapState.Tapped oid)
+              let waived = any (Condition.holds (Projection.fullView now) (Replacement.candidateContext now candidate) (Projection.boardAsEntering now) oid) unless_
+              case counters of
+                Nothing -> Monad.unless waived (enterTapState TapState.Tapped oid)
+                Just _ -> Monad.when waived bought
         case Projection.controllerOf oid gs of
           -- Unreachable, and defensive for the arms above's reason: the object is
           -- materialized on the battlefield before this loop runs, so controllerOf
@@ -4742,7 +4753,7 @@ apply settle batch applied batchPrevented candidate event =
                   then Game.choose (Prompt.ChoosePayLifeOnEntry (Decide.deciderFor controller gs) controller oid n)
                   else pure OptionalDecision.Declines
               case answer of
-                OptionalDecision.Exercises -> payLife settle controller n
+                OptionalDecision.Exercises -> payLife settle controller n >> bought
                 OptionalDecision.Declines -> declined
             -- CR 701.20a: through `reveal`, its own funnel, so the shown card
             -- reaches the public log with the projection a player at the table
@@ -4769,7 +4780,7 @@ apply settle batch applied batchPrevented candidate event =
               -- takes a transcript naming a card that was never offered to reach
               -- the refusal.
               case answer of
-                Just shown | List.elem shown candidates -> reveal RevealCause.Ordinary controller shown
+                Just shown | List.elem shown candidates -> reveal RevealCause.Ordinary controller shown >> bought
                 _ -> declined
             -- CR 701.4a: the reveal above, with the permanents the controller
             -- controls offered beside the hand, on the same prompt and posture.
@@ -4782,7 +4793,7 @@ apply settle batch applied batchPrevented candidate event =
               case answer of
                 Just shown
                   | List.elem shown candidates ->
-                      Monad.when (fmap Object.zone (Game.lookupObject shown gs) == Just Zone.Hand) (reveal RevealCause.Ordinary controller shown)
+                      Monad.when (fmap Object.zone (Game.lookupObject shown gs) == Just Zone.Hand) (reveal RevealCause.Ordinary controller shown) >> bought
                 _ -> declined
         pure (Just event)
       -- CR 614.1c / 119.4: "As this enters, pay any amount of life" (Phyrexian
