@@ -10,4 +10,7 @@ data Playout
   | -- | The greedy policy, each target chosen by its effect's polarity
     -- (Parun.Play.Search.polar).
     Polar
+  | -- | The polar policy, its modes and payments too chosen by their effects'
+    -- classification (Parun.Play.Search.classified).
+    Classified
   deriving (Bounded, Enum, Eq, Ord, Show)

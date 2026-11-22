@@ -559,6 +559,7 @@ main = do
     [ Harness.whnf "playouts random 8" (playouts reference decided Playout.Random) 8,
       Harness.whnf "playouts greedy 8" (playouts reference decided Playout.Greedy) 8,
       Harness.whnf "playouts polar 8" (playouts reference decided Playout.Polar) 8,
+      Harness.whnf "playouts classified 8" (playouts reference decided Playout.Classified) 8,
       -- #9339: a loop's cost by the size of the board it builds.
       Harness.whnf "intruder loop 25" (intruderLoop alarm gond bears) 25,
       Harness.whnf "intruder loop 50" (intruderLoop alarm gond bears) 50,

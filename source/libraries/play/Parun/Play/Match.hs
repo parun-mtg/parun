@@ -72,7 +72,7 @@ flags =
     GetOpt.Option [] ["samples"] (GetOpt.ReqArg (perSeat "a number of samples" (Monad.mfilter (> 0) . Read.readMaybe) (\n b -> b {SearchBudget.samples = n})) "[SEAT=]N") "the search bot's playouts of each option, in every seat or in SEAT alone; 2 when absent",
     GetOpt.Option [] ["turns"] (GetOpt.ReqArg (perSeat "a number of turns" Read.readMaybe (\n b -> b {SearchBudget.turns = n})) "[SEAT=]N") "the turns a playout may begin after the decision's before it is cut off and its position scored, in every seat or in SEAT alone; 0 when absent, ending a playout as the next turn begins",
     GetOpt.Option [] ["cutoff"] (GetOpt.ReqArg (perSeat "a number of prompts" Read.readMaybe (\n b -> b {SearchBudget.prompts = n})) "[SEAT=]N") "the prompts a playout is answered before it is cut off and its position scored, in every seat or in SEAT alone; 300 when absent",
-    GetOpt.Option [] ["playout"] (GetOpt.ReqArg (perSeat "a playout policy, random, greedy or polar" playoutNamed (\n b -> b {SearchBudget.playout = n})) "[SEAT=]POLICY") "who answers every seat in the search bot's playouts, random (the random bot), greedy (playing a land, else casting a permanent spell, where it can) or polar (greedy, choosing targets by whether their effect harms or helps them), in every seat or in SEAT alone; random when absent",
+    GetOpt.Option [] ["playout"] (GetOpt.ReqArg (perSeat "a playout policy, random, greedy, polar or classified" playoutNamed (\n b -> b {SearchBudget.playout = n})) "[SEAT=]POLICY") "who answers every seat in the search bot's playouts, random (the random bot), greedy (playing a land, else casting a permanent spell, where it can), polar (greedy, choosing targets by whether their effect harms or helps them) or classified (polar, choosing modes and payments that way too), in every seat or in SEAT alone; random when absent",
     GetOpt.Option [] ["method"] (GetOpt.ReqArg (perSeat "a search method, flat or tree" methodNamed (\n b -> b {SearchBudget.method = n})) "[SEAT=]METHOD") "how the search bot spends its playouts, flat (each option played out alike) or tree (one information-set tree over every seat's decisions, the playouts of every option shared by it), in every seat or in SEAT alone; flat when absent",
     GetOpt.Option [] ["candidates"] (GetOpt.ReqArg (perSeat "a number of candidate worlds" Read.readMaybe (\n b -> b {SearchBudget.candidates = n})) "[SEAT=]N") "the worlds the search bot deals once at a decision and weighs by how likely each made the plays its opponents made at priority, every playout's world drawn among them, in every seat or in SEAT alone; 0 when absent, each playout's world dealt fresh",
     GetOpt.Option [] ["mistakes"] (GetOpt.ReqArg (perSeat "a percent of decisions" (Monad.mfilter (<= 100) . Read.readMaybe) (\n b -> b {SearchBudget.mistakes = n})) "[SEAT=]PERCENT") "the percent of the search bot's decisions at which it takes the option scored next below the best, in every seat or in SEAT alone; 0 when absent",
@@ -101,7 +101,7 @@ weighed parse s o = case seated s of
 
 -- | The playout policy a `--playout` value names.
 playoutNamed :: String -> Maybe Playout.Playout
-playoutNamed s = lookup s [("random", Playout.Random), ("greedy", Playout.Greedy), ("polar", Playout.Polar)]
+playoutNamed s = lookup s [("random", Playout.Random), ("greedy", Playout.Greedy), ("polar", Playout.Polar), ("classified", Playout.Classified)]
 
 -- | The search method a `--method` value names.
 methodNamed :: String -> Maybe SearchMethod.SearchMethod
