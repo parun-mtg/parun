@@ -345,19 +345,19 @@ sample (MkPrior prior) memory viewer gs =
 -- taken are kept in `aim` and answer that choice where they still may
 -- ('fitting'). It reads the whole game only through 'sample', which deals
 -- every card its seat cannot see now and does not remember by the memory
--- `recalled` gives ('remembering'), and the opponents' passes `watched` gives
+-- `recalled` gives ('remembering'), and the opponents' plays `watched` gives
 -- ('watching') only through 'plausibility'.
 --
 -- Not implemented: searching targets asked after another choice of the same
 -- action's (CR 601.2b), more than 'widest' choices of them, or any choice of
 -- targets but the first an action leads to; the random bot answers them
 -- (#9477).
-search :: forall m. (Monad m) => Registry.Registry m -> SearchBudget.SearchBudget -> Weights.Weights -> Prior -> Game.Play m [Passed] -> Game.Play m Memory -> Aim m -> Answerer.Answerer (Asked.Asked GameState.GameState) (Game.Play m)
+search :: forall m. (Monad m) => Registry.Registry m -> SearchBudget.SearchBudget -> Weights.Weights -> Prior -> Game.Play m [Watched] -> Game.Play m Memory -> Aim m -> Answerer.Answerer (Asked.Asked GameState.GameState) (Game.Play m)
 search registry budget weights prior watched recalled aim = Answerer.MkAnswerer $ \asked ->
   let dealing pid = do
-        passes <- watched
+        plays <- watched
         memory <- recalled
-        worlds budget prior memory passes pid (Asked.game asked)
+        worlds budget prior memory plays pid (Asked.game asked)
       best :: Game.Type.Game Result.Result -> PlayerId.PlayerId -> Game.Play m GameState.GameState -> NonEmpty.NonEmpty a -> (a -> Move) -> Game.Play m a
       best restart pid deal choices move = case SearchBudget.method budget of
         SearchMethod.Flat -> flat registry budget weights restart pid deal choices (picking pid . move)
@@ -708,33 +708,34 @@ mistaken budget
   | SearchBudget.mistakes budget == 0 = pure False
   | otherwise = fmap (< SearchBudget.mistakes budget) (Generator.between 0 99)
 
--- | A priority decision a player passed at (CR 117.3d): the player and
--- the game as they were asked.
-type Passed = (PlayerId.PlayerId, GameState.GameState)
+-- | A priority decision a player made (CR 117.1): the player, the game as
+-- they were asked and the action they took.
+type Watched = (PlayerId.PlayerId, GameState.GameState, Action.Action)
 
--- | Keeps each 'restartable' priority decision a player passes at, however
--- many options its player saw, through `keep`, which is given the passes
--- kept before and returns them less every one 'stale' now, the new one after
--- them, its spine forced once the result is, so no stale game is held.
---
--- Not implemented: weighing a play other than a pass, or a declaration of
--- attackers or blockers (#9448).
-watching :: (Monad m) => (([Passed] -> [Passed]) -> m ()) -> Observer.Observer (Game.Play m)
+-- | Keeps each 'restartable' priority decision a player makes, however many
+-- options its player saw, its action one of the 'options' searched, through
+-- `keep`, which is given the decisions kept before and returns them less
+-- every one 'stale' now, the new one after them, its spine forced once the
+-- result is, so no stale game is held. A declaration of attackers or
+-- blockers is not kept: what it may declare is of the battlefield (CR
+-- 508.1a, 509.1a), which every world deals alike, so the opponent model makes
+-- it as likely in each.
+watching :: (Monad m) => (([Watched] -> [Watched]) -> m ()) -> Observer.Observer (Game.Play m)
 watching keep =
   Observer.MkObserver
     { Observer.before = const (pure ()),
       Observer.after = \asked answer -> case Asked.prompt asked of
         Prompt.ChooseAction decider pid _
-          | answer == Action.Pass && restartable asked decider pid ->
-              Game.underneath (keep (\passes -> let kept = filter (not . stale (Asked.game asked)) passes <> [(pid, Asked.game asked)] in length kept `seq` kept))
+          | not (null (options [answer])) && restartable asked decider pid ->
+              Game.underneath (keep (\plays -> let kept = filter (not . stale (Asked.game asked)) plays <> [(pid, Asked.game asked, answer)] in length kept `seq` kept))
         _ -> pure ()
     }
 
--- | Whether a pass is no longer weighed in `gs`: made before the turn
+-- | Whether a play is no longer weighed in `gs`: made before the turn
 -- before `gs`'s, which keeps the weighing to a reduced budget, or none of the
--- cards in the passer's hand then is there now, so it says nothing of it.
-stale :: GameState.GameState -> Passed -> Bool
-stale gs (pid, past) =
+-- cards in its player's hand then is there now, so it says nothing of it.
+stale :: GameState.GameState -> Watched -> Bool
+stale gs (pid, past, _) =
   let handIn g = Map.findWithDefault mempty pid (GameState.hand g)
       turnOf g = TurnRegisters.turnNumber (GameState.turn g)
    in turnOf past + 1 < turnOf gs || not (any (`elem` handIn gs) (handIn past))
@@ -742,14 +743,14 @@ stale gs (pid, past) =
 -- | How `viewer`, remembering `memory`, deals each playout's world from
 -- `gs`: with no `SearchBudget.candidates`, a fresh 'sample' each; otherwise
 -- that many samples drawn once, then each playout's drawn among them weighted
--- by its 'plausibility' given the opponents' `passes`, evenly when every
+-- by its 'plausibility' given the opponents' `plays`, evenly when every
 -- weight is 0.
-worlds :: (Monad m) => SearchBudget.SearchBudget -> Prior -> Memory -> [Passed] -> PlayerId.PlayerId -> GameState.GameState -> Game.Play m (Game.Play m GameState.GameState)
-worlds budget prior memory passes viewer gs
+worlds :: (Monad m) => SearchBudget.SearchBudget -> Prior -> Memory -> [Watched] -> PlayerId.PlayerId -> GameState.GameState -> Game.Play m (Game.Play m GameState.GameState)
+worlds budget prior memory plays viewer gs
   | SearchBudget.candidates budget == 0 = pure (sample prior memory viewer gs)
   | otherwise = do
       drawn <- Monad.replicateM (Natural.toIntSaturating (SearchBudget.candidates budget)) (sample prior memory viewer gs)
-      weighed <- traverse (\world -> fmap (\w -> (w, world)) (plausibility prior memory viewer passes gs world)) drawn
+      weighed <- traverse (\world -> fmap (\w -> (w, world)) (plausibility prior memory viewer plays gs world)) drawn
       pure $ case NonEmpty.nonEmpty weighed of
         Nothing -> sample prior memory viewer gs
         Just pool
@@ -757,38 +758,51 @@ worlds budget prior memory passes viewer gs
           | otherwise -> Generator.weighted pool
 
 -- | How likely the opponents of `viewer`, remembering `memory`, were to make
--- their `passes` not 'stale' had `gs`'s unseen cards been `world`'s, each
--- pass scored as the random bot choosing among the options searched
+-- their `plays` not 'stale' had `gs`'s unseen cards been `world`'s, each
+-- play scored as the random bot choosing among the options searched
 -- ('options'), the opponent model: one over their number in the game as it
--- was, its cards `viewer` could not see then dealt anew ('sample') save those
--- it still cannot see now, which hold `world`'s. A pass none of whose
--- then-unseen cards in the passer's hand is still unseen counts 1, as does
--- one whose restarted menu is not asked first (Engine.resumePriority).
-plausibility :: (Monad m) => Prior -> Memory -> PlayerId.PlayerId -> [Passed] -> GameState.GameState -> GameState.GameState -> Game.Play m Rational
-plausibility prior memory viewer passes gs world =
-  fmap product . Monad.forM [(pid, past) | (pid, past) <- passes, pid /= viewer, not (stale gs (pid, past))] $ \(pid, past) -> do
+-- was, 0 if its action is not among them, its cards `viewer` could not see
+-- then dealt anew ('sample') save those it still cannot see now, which hold
+-- `world`'s, and those its action names, which hold what each 'became' in
+-- `world`. A play none of whose then-unseen cards in its player's hand is
+-- still unseen counts 1, as does one whose restarted menu is not asked
+-- first (Engine.resumePriority).
+plausibility :: (Monad m) => Prior -> Memory -> PlayerId.PlayerId -> [Watched] -> GameState.GameState -> GameState.GameState -> Game.Play m Rational
+plausibility prior memory viewer plays gs world =
+  fmap product . Monad.forM [play | play@(pid, _, _) <- plays, pid /= viewer, not (stale gs play)] $ \(pid, past, action) -> do
     let hiddenNow = Set.fromList (unseen memory viewer gs pid)
-        shared = filter (`Set.member` hiddenNow) (unseen memory viewer past pid)
+        hiddenThen = unseen memory viewer past pid
+        shared = filter (`Set.member` hiddenNow) hiddenThen
+        named = filter (`elem` hiddenThen) (fst (objectsIn (\oid -> ([oid], oid)) action))
         heldThen = Map.findWithDefault mempty pid (GameState.hand past)
     if not (any (`elem` heldThen) shared)
       then pure 1
       else do
         redealt <- sample prior memory viewer past
-        let carried = Foldable.foldl' (carry world) redealt shared
+        let carried = Foldable.foldl' (carry world) redealt ([(oid, oid) | oid <- shared] <> [(became past gs oid, oid) | oid <- named])
         pure $ case menuAgain pid carried of
-          Just menu | n <- length (options menu), n > 0, elem Action.Pass menu -> 1 / toRational n
+          Just menu | n <- length (options menu), n > 0 -> if elem action menu then 1 / toRational n else 0
           _ -> 1
 
--- | `target` with object `oid` holding what it holds in `from`, its printing
--- interned in `target`.
-carry :: GameState.GameState -> GameState.GameState -> ObjectId.ObjectId -> GameState.GameState
-carry from target oid = case Engine.Game.lookupObject oid from of
+-- | The object `oid` of `past` became in `gs`, following each move of it
+-- logged since ('logOf'), as each makes it a new object (CR 400.7).
+became :: GameState.GameState -> GameState.GameState -> ObjectId.ObjectId -> ObjectId.ObjectId
+became past gs oid =
+  let follow current entry = case LoggedEvent.event entry of
+        GameEvent.Moved moved | ZoneChange.departed (Moved.change moved) == current -> ZoneChange.object (Moved.change moved)
+        _ -> current
+   in Foldable.foldl' follow oid (Seq.drop (Seq.length (logOf past)) (logOf gs))
+
+-- | `target` with its object `into` holding what object `from` holds in
+-- `holder`, its printing interned in `target`.
+carry :: GameState.GameState -> GameState.GameState -> (ObjectId.ObjectId, ObjectId.ObjectId) -> GameState.GameState
+carry holder target (from, into) = case Engine.Game.lookupObject from holder of
   Nothing -> target
   Just object ->
     let (source, interned) = case Object.source object of
-          Source.OfCard pid | Just printing <- Engine.Game.printingOf pid from -> let (pid', g) = Engine.Game.intern printing target in (Source.OfCard pid', g)
+          Source.OfCard pid | Just printing <- Engine.Game.printingOf pid holder -> let (pid', g) = Engine.Game.intern printing target in (Source.OfCard pid', g)
           other -> (other, target)
-     in interned {GameState.objects = Map.adjust (\o -> o {Object.source = source, Object.identity = Object.identity object}) oid (GameState.objects interned)}
+     in interned {GameState.objects = Map.adjust (\o -> o {Object.source = source, Object.identity = Object.identity object}) into (GameState.objects interned)}
 
 -- | The menu of `pid`'s priority decision restarted in `gs`
 -- (Engine.resumePriority), every concession prompt before it answered
