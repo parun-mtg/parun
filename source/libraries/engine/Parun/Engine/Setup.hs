@@ -581,11 +581,13 @@ newGame perform matchup = do
   -- CR 806.3 / 807.3, once CR 904.2's teams are known.
   randomSeating
   -- CR 103.3: build and shuffle every library before any opening hand is drawn,
-  -- so CR 103.5's declaration round sees settled libraries.
+  -- so CR 103.5's declaration round sees settled libraries. Every deck is built
+  -- (CR 103.2a) before any is shuffled, so the first shuffle's prompt, where a
+  -- replay starts, shows every library.
   communal <- State.gets (GameSettings.singlePlanarDeck . MatchScope.settings . GameState.match)
   let ownDecks = filter (\kind -> not (communal && kind == SideDeck.Planar)) [minBound .. maxBound]
-  Monad.forM_ (NonEmpty.toList matchup) $ \(pid, deck) -> do
-    createDeck pid deck
+  Monad.forM_ (NonEmpty.toList matchup) (uncurry createDeck)
+  Monad.forM_ (NonEmpty.toList matchup) $ \(pid, _) -> do
     Event.shuffleLibrary pid
     -- CR 718.2 / 901.3 / 904.3 / 103.3a.
     Monad.forM_ ownDecks (`Game.shuffleSideDeck` pid)
