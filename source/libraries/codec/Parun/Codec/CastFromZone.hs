@@ -2,6 +2,7 @@
 
 module Parun.Codec.CastFromZone where
 
+import qualified Data.Maybe as Maybe
 import qualified Data.Set as Set
 import qualified Data.Text as Text
 import qualified Parun.Codec.CostComponent as CostComponent
@@ -36,12 +37,15 @@ import qualified Parun.Types.PermissionVerb as PermissionVerb
 -- mana as produced, and the alternative cost, the entry counters and the added creature types to
 -- none, the exile rider to absent, and outside the game to unopened.
 --
+-- The zone defaults to none, which only a permission opening outside the game
+-- may write (Wish): one opening neither opens nothing, and is refused.
+--
 -- Unprinted: a permission to cast cards as an Adventure. It is refused, and
 -- Parun.Codec.CastFromZoneSpec's "rejects casting as an Adventure" proves the
 -- refusal.
 codec :: Codec.Codec CastFromZone.CastFromZone
 codec = Fields.objectWith verbIsPrinted $ do
-  from <- Fields.required "from" InZone.codec CastFromZone.from
+  from <- Fields.defaulted "from" Nothing (Common.maybe InZone.codec) CastFromZone.from
   matching <- Fields.required "matching" (Filter.codec Keyword.codec) CastFromZone.matching
   limit <- Fields.defaulted "limit" PermissionLimit.Unlimited PermissionLimit.codec CastFromZone.limit
   verb <- Fields.defaulted "verb" PermissionVerb.Cast PermissionVerb.codec CastFromZone.verb
@@ -60,4 +64,5 @@ codec = Fields.objectWith verbIsPrinted $ do
 verbIsPrinted :: CastFromZone.CastFromZone -> Either Text.Text CastFromZone.CastFromZone
 verbIsPrinted grant
   | CastFromZone.verb grant == PermissionVerb.CastAsAdventure = Left (Text.pack "CastFromZone: casting as an Adventure is unprinted and not supported")
+  | Maybe.isNothing (CastFromZone.from grant) && not (CastFromZone.outsideTheGame grant) = Left (Text.pack "CastFromZone: a permission opening no zone must open outside the game")
   | otherwise = Right grant

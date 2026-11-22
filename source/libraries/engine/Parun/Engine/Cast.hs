@@ -3398,7 +3398,7 @@ ownPayingWays :: ObjectId -> Face.Face Card.Type.Card -> GameState -> [(Maybe Ob
 ownPayingWays oid face gs =
   [ ( Just oid,
       CastFromZone.MkCastFromZone
-        { CastFromZone.from = InZone.MkInZone Zone.Graveyard (PlayerRef.Relative PlayerRelation.You),
+        { CastFromZone.from = Just (InZone.MkInZone Zone.Graveyard (PlayerRef.Relative PlayerRelation.You)),
           CastFromZone.matching = Filter.Type.And [],
           CastFromZone.limit = PermissionLimit.Unlimited,
           CastFromZone.verb = PermissionVerb.Cast,
