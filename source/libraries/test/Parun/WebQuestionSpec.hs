@@ -140,6 +140,7 @@ spec s registry = Spec.describe s "WebQuestion" $ do
     -- The hand's Mountain is lit, since the seat may play it, and tapping it reads it.
     Spec.assertBool s (Text.pack "<section class=\"hand\"" `Text.isInfixOf` page) "hand"
     Spec.assertBool s (Text.pack "class=\"card c-land playable\"" `Text.isInfixOf` page) "playable"
+    Spec.assertBool s (Text.pack "<span class=\"type\">Land</span><span class=\"keywords\"></span>" `Text.isInfixOf` page) "a land's tile has a spell's lines"
     Spec.assertEqWith s "a card in hand is tapped to read it" (Html.search isCard view >>= \path -> Html.handler (Text.pack "click") path view) (Just (Question.Web.MkRead land))
     -- Reading it opens its sheet, whose button plays it.
     let reading = Question.Web.view request Question.Web.blank {Question.Web.reading = Just (Card.MkReading land [Text.pack "({T}: Add {R}.)"] True)}
@@ -174,6 +175,7 @@ spec s registry = Spec.describe s "WebQuestion" $ do
         sheet = maybe Text.empty Html.toText (Html.search (\html -> Text.pack "<section class=\"sheet" `Text.isPrefixOf` Html.toText html) reading >>= (`Html.at` reading))
     Spec.assertBool s (Text.pack "Keyword abilities: Flying, Ward <span class=\"ms ms-generic\" title=\"{2}\"" `Text.isInfixOf` sheet) "the sheet lists ward"
     Spec.assertBool s (not (Text.pack "Ward {2}" `Text.isInfixOf` board)) "the tile leaves it out"
+    Spec.assertBool s (Text.pack "<span class=\"type\">Dragon Wizard</span><span class=\"keywords\">Flying</span>" `Text.isInfixOf` board) "the tile's keywords are a line of their own, under its type"
 
   Spec.it s "CR 601.2d a division starts one to each target and the rest to the first, and reads as the engine's" $ do
     bears <- S.printingOf s registry "Grizzly Bears"

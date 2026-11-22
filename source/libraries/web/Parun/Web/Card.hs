@@ -60,7 +60,8 @@ data Cue msg = MkCue
   }
   deriving (Eq, Show)
 
--- | An object's tile.
+-- | An object's tile: its name and cost, type line, keywords, and a foot of
+-- its status and stats.
 tile :: PlayerView.PlayerView -> Cue msg -> ObjectView.ObjectView -> Html.Html msg
 tile view cue o = case ObjectView.characteristics o of
   Nothing | Maybe.isNothing (ObjectView.face o) -> Element.button (["card", "back"] <> marks cue <> tapped o) (tap cue) [Element.el "span" ["name"] [] [Element.string "Hidden card"]]
@@ -70,10 +71,10 @@ tile view cue o = case ObjectView.characteristics o of
       (["card", colour o] <> marks cue <> tapped o <> combat view o <> ["sick" | ObjectView.summoningSick o] <> ["targeted" | not (null (targetedBy view (ObjectView.object o)))])
       ([Element.attr "type" (Text.pack "button"), Element.attr "aria-label" (summary view cue o), Element.on "click" (tap cue)] <> peeking cue)
       [ Element.el "span" ["top"] [] $ [Element.el "span" ["name"] [] [Element.text (Wording.nameOf view o)]] <> foldMap (pure . Mana.cost) (ObjectView.characteristics o >>= ProjectedCharacteristics.manaCost),
-        -- On the table, what a permanent can do says more than its subtypes.
-        case tileKeywords o of
-          [] -> Element.el "span" ["type"] [] [Element.text (typeLine o)]
-          words' -> Element.el "span" ["type", "keywords"] [] [Element.text (Text.intercalate (Text.pack ", ") words')],
+        -- Every tile has the same lines, each empty or cut short rather than
+        -- moved or wrapped, so a row of them is one height.
+        Element.el "span" ["type"] [] [Element.text (typeLine o)],
+        Element.el "span" ["keywords"] [] [Element.text (Text.intercalate (Text.pack ", ") (tileKeywords o))],
         Element.el "span" ["foot"] [] (states view o <> badges o <> stats o)
       ]
 
@@ -167,7 +168,7 @@ tileKeywords = filter (\t -> Text.length t <= 18 && not (Text.any (== '{') t)) .
 peeking :: Cue msg -> [Attribute.Attribute msg]
 peeking cue = foldMap (\(on, off) -> [Element.on "peek" on, Element.on "unpeek" off]) (peek cue)
 
--- | The tile read aloud: its name, type or keywords, power and toughness,
+-- | The tile read aloud: its name, type and keywords, power and toughness,
 -- status, and what tapping it does.
 summary :: PlayerView.PlayerView -> Cue msg -> ObjectView.ObjectView -> Text.Text
 summary view cue o =
