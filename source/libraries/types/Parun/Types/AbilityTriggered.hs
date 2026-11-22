@@ -1,5 +1,6 @@
 module Parun.Types.AbilityTriggered where
 
+import qualified Data.Map.Strict as Map
 import qualified Data.Set as Set
 import qualified Parun.Types.Card as Card
 import qualified Parun.Types.GrantedAbility as GrantedAbility
@@ -7,6 +8,7 @@ import qualified Parun.Types.ObjectId as ObjectId
 import qualified Parun.Types.PlayerId as PlayerId
 import qualified Parun.Types.TriggerSource as TriggerSource
 import qualified Parun.Types.TriggeredAbility as TriggeredAbility
+import qualified Parun.Types.TriggeringMove as TriggeringMove
 
 -- | CR 603.2: an ability triggered -- what it hangs on, its controller, and the
 -- ability itself.
@@ -31,8 +33,9 @@ data AbilityTriggered = MkAbilityTriggered
     -- Parun.Engine.Engine.reactions reserved as it triggered; Nothing for a
     -- record that is only a "triggers only once" key.
     stackObject :: Maybe ObjectId.ObjectId,
-    -- | CR 508.3: the creatures whose attacking was the trigger event; empty
-    -- for every other event.
-    attackers :: Set.Set ObjectId.ObjectId
+    -- | The objects whose move caused the ability to trigger, by move: CR
+    -- 508.3's attackers and CR 603.6a's entrant; no other move is recorded,
+    -- and a move that caused nothing has no key.
+    causers :: Map.Map TriggeringMove.TriggeringMove (Set.Set ObjectId.ObjectId)
   }
   deriving (Eq, Ord, Show)

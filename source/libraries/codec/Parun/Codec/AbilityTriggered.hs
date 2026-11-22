@@ -2,13 +2,14 @@
 
 module Parun.Codec.AbilityTriggered where
 
-import qualified Data.Set as Set
+import qualified Data.Map.Strict as Map
 import qualified Parun.Codec.Card as Card
 import qualified Parun.Codec.GrantedAbility as GrantedAbility
 import qualified Parun.Codec.ObjectId as ObjectId
 import qualified Parun.Codec.PlayerId as PlayerId
 import qualified Parun.Codec.TriggerSource as TriggerSource
 import qualified Parun.Codec.TriggeredAbility as TriggeredAbility
+import qualified Parun.Codec.TriggeringMove as TriggeringMove
 import qualified Parun.JsonCodec.Codec as Codec
 import qualified Parun.JsonCodec.Common as Common
 import qualified Parun.JsonCodec.Fields as Fields
@@ -28,12 +29,12 @@ codec = Fields.object $ do
   controller <- Fields.required "controller" PlayerId.codec AbilityTriggered.controller
   ability <- Fields.required "ability" (TriggeredAbility.codec Card.codec (GrantedAbility.codec Card.codec)) AbilityTriggered.ability
   stackObject <- Fields.defaulted "stackObject" Nothing (Common.maybe ObjectId.codec) AbilityTriggered.stackObject
-  attackers <- Fields.defaulted "attackers" Set.empty (Common.set ObjectId.codec) AbilityTriggered.attackers
+  causers <- Fields.defaulted "causers" Map.empty (Common.keyedList (Common.keyValue TriggeringMove.codec (Common.set ObjectId.codec))) AbilityTriggered.causers
   pure
     AbilityTriggered.MkAbilityTriggered
       { AbilityTriggered.source = source,
         AbilityTriggered.controller = controller,
         AbilityTriggered.ability = ability,
         AbilityTriggered.stackObject = stackObject,
-        AbilityTriggered.attackers = attackers
+        AbilityTriggered.causers = causers
       }

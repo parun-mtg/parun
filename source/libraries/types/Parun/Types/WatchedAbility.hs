@@ -10,4 +10,7 @@ data WatchedAbility
   | -- | CR 508.3: an ability of a creature, triggering because that creature
     -- attacked (Firebender Ascension).
     CausedByOwnAttack
+  | -- | CR 603.6a: any triggered ability, triggering because a permanent
+    -- entered (Strict Proctor).
+    CausedByEntry
   deriving (Eq, Ord, Show)

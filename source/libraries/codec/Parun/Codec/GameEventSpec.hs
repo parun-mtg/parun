@@ -554,7 +554,7 @@ spec s = Spec.describe s "Parun.Codec.GameEvent" $ do
               AbilityTriggered.controller = PlayerId.MkPlayerId 1,
               AbilityTriggered.ability = TriggeredAbilitySourceSpec.ability,
               AbilityTriggered.stackObject = Nothing,
-              AbilityTriggered.attackers = Set.empty
+              AbilityTriggered.causers = Map.empty
             }
       )
       " {\"type\":\"AbilityTriggered\",\"value\":{\"source\":{\"type\":\"OfObject\",\"value\":7},\"controller\":1,\"ability\":{\"condition\":{\"type\":\"Enters\",\"value\":{}},\"modal\":{\"modes\":[{}]}}}} "
@@ -892,7 +892,7 @@ spec s = Spec.describe s "Parun.Codec.GameEvent" $ do
               AbilityTriggered.controller = PlayerId.MkPlayerId 1,
               AbilityTriggered.ability = TriggeredAbilitySourceSpec.ability,
               AbilityTriggered.stackObject = Nothing,
-              AbilityTriggered.attackers = Set.empty
+              AbilityTriggered.causers = Map.empty
             }
       )
       " {\"type\":\"TriggeredAbilityFinished\",\"value\":{\"source\":{\"type\":\"OfObject\",\"value\":7},\"controller\":1,\"ability\":{\"condition\":{\"type\":\"Enters\",\"value\":{}},\"modal\":{\"modes\":[{}]}}}} "

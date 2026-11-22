@@ -21,4 +21,11 @@ spec s = Spec.describe s "Parun.Codec.WatchedAbility" $ do
       WatchedAbility.codec
       WatchedAbility.CausedByOwnAttack
       " {\"type\":\"CausedByOwnAttack\"} "
+  -- Strict Proctor's payload.
+  Spec.it s "CausedByEntry is a bare tag" $
+    Common.assertCodec
+      s
+      WatchedAbility.codec
+      WatchedAbility.CausedByEntry
+      " {\"type\":\"CausedByEntry\"} "
   Spec.it s "has a schema" $ Common.assertHasSchema s WatchedAbility.codec

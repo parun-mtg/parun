@@ -239,6 +239,7 @@ import qualified Parun.Types.TriggerCondition as TriggerCondition
 import qualified Parun.Types.TriggerFrequency as TriggerFrequency
 import qualified Parun.Types.TriggerSource as TriggerSource
 import qualified Parun.Types.TriggeredAbility as TriggeredAbility
+import qualified Parun.Types.TriggeringMove as TriggeringMove
 import qualified Parun.Types.TurnRegisters as TurnRegisters
 import qualified Parun.Types.TurnScope as TurnScope
 import qualified Parun.Types.TurnedFaceUp as TurnedFaceUp
@@ -2061,7 +2062,7 @@ representativeEvents cond =
         -- A watcher of the TRIGGERING reads the id Engine.reactions reserved,
         -- which every record that function mints carries; CR 608.2n's names
         -- none. The source is among the attackers, the one shape
-        -- CausedByOwnAttack accepts.
+        -- CausedByOwnAttack accepts, and among the entrants, CausedByEntry's.
         TriggerCondition.AbilityWatch watcher ->
           let record =
                 AbilityTriggered.MkAbilityTriggered
@@ -2069,13 +2070,14 @@ representativeEvents cond =
                     AbilityTriggered.controller = S.alice,
                     AbilityTriggered.ability = bareAbility (TriggerCondition.CountersChange (CounterTrigger.MkCounterTrigger (WhichCounters.OfKind CounterKind.Lore) (CounterMotion.Put PlayerRelation.AnyPlayer) CounterHolder.Self (Just 3) CounterGrouping.EachPermanent TriggerFrequency.EveryTime)),
                     AbilityTriggered.stackObject = Nothing,
-                    AbilityTriggered.attackers = Set.singleton departed
+                    AbilityTriggered.causers = Map.fromList [(TriggeringMove.Attacking, Set.singleton departed), (TriggeringMove.Entering, Set.singleton departed)]
                   }
               triggering = GameEvent.AbilityTriggered record {AbilityTriggered.stackObject = Just (ObjectId.MkObjectId 9)}
            in one $ case AbilityWatch.ability watcher of
                 WatchedAbility.SagaFinalChapter ChapterMoment.Triggers -> triggering
                 WatchedAbility.SagaFinalChapter ChapterMoment.Resolves -> GameEvent.TriggeredAbilityFinished record
                 WatchedAbility.CausedByOwnAttack -> triggering
+                WatchedAbility.CausedByEntry -> triggering
         -- CR 726.1's own event, and the only one this condition admits. CR 726.3
         -- makes it name exactly one player, so there is no second shape of the
         -- event for the floor to differ on. bob rather than the perspective
@@ -2478,6 +2480,7 @@ everyTriggerCondition =
     TriggerCondition.AbilityWatch (AbilityWatch.MkAbilityWatch (WatchedAbility.SagaFinalChapter ChapterMoment.Triggers) PlayerRelation.You),
     TriggerCondition.AbilityWatch (AbilityWatch.MkAbilityWatch (WatchedAbility.SagaFinalChapter ChapterMoment.Resolves) PlayerRelation.You),
     TriggerCondition.AbilityWatch (AbilityWatch.MkAbilityWatch WatchedAbility.CausedByOwnAttack PlayerRelation.You),
+    TriggerCondition.AbilityWatch (AbilityWatch.MkAbilityWatch WatchedAbility.CausedByEntry PlayerRelation.AnyPlayer),
     -- BOTH relations, on the SpellCast pair's reasoning above: an eventBindings
     -- arm that had cased on the relation and stamped nothing under one of them
     -- would go unseen if only one were listed. Custodi Lich prints the You form

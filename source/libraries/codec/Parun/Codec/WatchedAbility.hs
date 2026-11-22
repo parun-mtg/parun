@@ -10,10 +10,12 @@ codec =
   Arm.tagged
     tagOf
     [ Arm.payload "SagaFinalChapter" ChapterMoment.codec WatchedAbility.SagaFinalChapter (\x -> case x of WatchedAbility.SagaFinalChapter y -> Just y; _ -> Nothing),
-      Arm.nullary "CausedByOwnAttack" WatchedAbility.CausedByOwnAttack
+      Arm.nullary "CausedByOwnAttack" WatchedAbility.CausedByOwnAttack,
+      Arm.nullary "CausedByEntry" WatchedAbility.CausedByEntry
     ]
 
 tagOf :: WatchedAbility.WatchedAbility -> String
 tagOf x = case x of
   WatchedAbility.SagaFinalChapter {} -> "SagaFinalChapter"
   WatchedAbility.CausedByOwnAttack -> "CausedByOwnAttack"
+  WatchedAbility.CausedByEntry -> "CausedByEntry"

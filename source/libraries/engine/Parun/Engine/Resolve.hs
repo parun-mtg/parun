@@ -1038,7 +1038,7 @@ recordAbilityFinished controller obj = case Object.source obj of
                   AbilityTriggered.controller = controller,
                   AbilityTriggered.ability = TriggeredAbilitySource.ability triggered,
                   AbilityTriggered.stackObject = Nothing,
-                  AbilityTriggered.attackers = Set.empty
+                  AbilityTriggered.causers = Map.empty
                 }
           )
       )

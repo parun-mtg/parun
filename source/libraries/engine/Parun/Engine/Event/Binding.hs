@@ -1973,6 +1973,7 @@ eventBindingSlots cond = case cond of
     WatchedAbility.SagaFinalChapter ChapterMoment.Triggers -> Set.fromList [Binding.became, Binding.thatAbility, Binding.triggerPlayer]
     WatchedAbility.SagaFinalChapter ChapterMoment.Resolves -> Set.fromList [Binding.became, Binding.triggerPlayer]
     WatchedAbility.CausedByOwnAttack -> Set.fromList [Binding.became, Binding.thatAbility, Binding.triggerPlayer]
+    WatchedAbility.CausedByEntry -> Set.fromList [Binding.became, Binding.thatAbility, Binding.triggerPlayer]
   -- CR 726.1's newly crowned player -- Garland, Royal Kidnapper watches an
   -- OPPONENT take the crown, so the seat is one nothing else on the ability
   -- names. Under the You relation it is also CR 109.5's "you", a second name for

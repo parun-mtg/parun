@@ -161,6 +161,7 @@ import qualified Parun.Types.TriggerLimit as TriggerLimit
 import qualified Parun.Types.TriggerSource as TriggerSource
 import qualified Parun.Types.TriggeredAbility as TriggeredAbility
 import qualified Parun.Types.TriggeredAbilitySource as TriggeredAbilitySource
+import qualified Parun.Types.TriggeringMove as TriggeringMove
 import qualified Parun.Types.TurnKind as TurnKind
 import qualified Parun.Types.TurnMarker as TurnMarker
 import qualified Parun.Types.TurnRegisters as TurnRegisters
@@ -169,6 +170,7 @@ import qualified Parun.Types.TurnedFaceUpTrigger as TurnedFaceUpTrigger
 import qualified Parun.Types.Undoing as Undoing
 import qualified Parun.Types.UntapHold as UntapHold
 import qualified Parun.Types.Zone as Zone
+import qualified Parun.Types.ZoneChange as ZoneChange
 
 -- The interpreter seam: every decision the engine suspends on is answered here.
 -- The PRIMITIVE form, and the only one that sees which game asked -- an Asked
@@ -833,8 +835,9 @@ reacts = Maybe.isJust . (Event.abilityTriggeredOf . LoggedEvent.event Monad.<=< 
 -- bound on the rounds, and none needed: the one condition of this class
 -- (TriggerCondition.AbilityWatch) watches a Saga's final chapter ability,
 -- which triggers off lore counters (CR 715.2b), or an ability a creature's
--- attack caused to trigger (CR 508.3), never one that triggered off an
--- ability triggering, so what reacts to it fires nothing further. Every round is
+-- attack (CR 508.3) or a permanent's entering (CR 603.6a) caused to trigger,
+-- never one that triggered off an ability triggering, so what reacts to it
+-- fires nothing further. Every round is
 -- filtered by `Event.withinTriggerLimit` first, the ONE place a "triggers only once"
 -- rider is spent.
 --
@@ -895,7 +898,8 @@ reactions samples incoming = do
 -- controller as it triggered (CR 603.3a) and WHICH ABILITY it is. Every pending
 -- trigger gets one, a SOURCELESS inherent ability included -- the record names a
 -- Parun.Types.TriggerSource, so there is no id it lacks. Its attackers are read
--- off the firing event's CR 603.10 sample, as the trigger matched them.
+-- off the firing event's CR 603.10 sample, as the trigger matched them, and its
+-- entrant off the firing event.
 triggeredEvent :: Map.Map EventGroup.EventGroup (Map.Map ObjectId.ObjectId (BattlefieldCandidate.BattlefieldCandidate PC.ProjectedCharacteristics)) -> GameState -> PendingTrigger.PendingTrigger -> GameEvent.GameEvent
 triggeredEvent samples gs pending =
   GameEvent.AbilityTriggered
@@ -904,10 +908,21 @@ triggeredEvent samples gs pending =
         AbilityTriggered.controller = PendingTrigger.controller pending,
         AbilityTriggered.ability = PendingTrigger.ability pending,
         AbilityTriggered.stackObject = PendingTrigger.stackId pending,
-        AbilityTriggered.attackers = case (PendingTrigger.source pending, PendingTrigger.firedBy pending) of
-          (TriggerSource.OfObject bearer, Just logged) -> EventBinding.attackCausers (Map.findWithDefault Map.empty (LoggedEvent.group logged) samples) gs bearer (PendingTrigger.controller pending) (TriggeredAbility.condition (PendingTrigger.ability pending)) (LoggedEvent.event logged)
-          _ -> Set.empty
+        AbilityTriggered.causers = Map.filter (not . Set.null) $ case (PendingTrigger.source pending, PendingTrigger.firedBy pending) of
+          (TriggerSource.OfObject bearer, Just logged) ->
+            Map.fromList
+              [ (TriggeringMove.Attacking, EventBinding.attackCausers (Map.findWithDefault Map.empty (LoggedEvent.group logged) samples) gs bearer (PendingTrigger.controller pending) (TriggeredAbility.condition (PendingTrigger.ability pending)) (LoggedEvent.event logged)),
+                (TriggeringMove.Entering, entrantOf logged)
+              ]
+          (TriggerSource.Sourceless, Just logged) -> Map.singleton TriggeringMove.Entering (entrantOf logged)
+          _ -> Map.empty
       }
+  where
+    -- CR 603.6a: the permanent whose entering the firing event was, by
+    -- Parun.Engine.Event.Trigger's reading for Yarok, the Desecrated
+    -- (docs/decisions.md, "A silenced entry silences its departure" and "An
+    -- entry's own triggers are the zone change's").
+    entrantOf logged = foldMap (Set.singleton . ZoneChange.object) (Game.enteredBattlefieldChange (LoggedEvent.event logged))
 
 -- CR 603.3: reserve the id one triggered ability takes on the stack.
 reserve :: PendingTrigger.PendingTrigger -> Game PendingTrigger.PendingTrigger
@@ -934,7 +949,7 @@ perGameRecord pending = case TriggeredAbility.limit (PendingTrigger.ability pend
           AbilityTriggered.controller = PendingTrigger.controller pending,
           AbilityTriggered.ability = PendingTrigger.ability pending,
           AbilityTriggered.stackObject = Nothing,
-          AbilityTriggered.attackers = Set.empty
+          AbilityTriggered.causers = Map.empty
         }
 
 -- CR 807.5b: put `pending` on the stack its controller chooses, asked only

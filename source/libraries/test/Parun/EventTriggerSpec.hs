@@ -1138,7 +1138,7 @@ wellRestedSpec s registry =
         [] -> Spec.assertFailure s "Acrobatic Cheerleader should declare one triggered ability"
         ability : _ -> do
           let (oid, g0) = S.addPermanent cheerleader S.alice (Setup.emptyGame S.bothPlayers)
-              record = AbilityTriggered.MkAbilityTriggered (TriggerSource.OfObject oid) S.alice ability Nothing Set.empty
+              record = AbilityTriggered.MkAbilityTriggered (TriggerSource.OfObject oid) S.alice ability Nothing Map.empty
               spent = Event.recordEvent (GameEvent.AbilityTriggered record) g0 {GameState.history = (GameState.history g0) {History.triggeredThisGame = Seq.singleton record}}
               pending n = PendingTrigger.MkPendingTrigger (TriggerSource.OfObject oid) S.alice ability Map.empty Nothing Nothing EventGroup.first n Map.empty Nothing
           Spec.assertEqWith s "the second of two instances still triggers" (length (Event.withinTriggerLimit spent [pending 2])) 1
@@ -1160,7 +1160,7 @@ baronStruckerSpec s registry =
         [] -> Spec.assertFailure s "Baron Strucker should declare one triggered ability"
         ability : _ -> do
           let (oid, g0) = S.addPermanent baron S.alice (Setup.emptyGame S.bothPlayers)
-              taken = Event.instructionTaken (AbilityTriggered.MkAbilityTriggered (TriggerSource.OfObject oid) S.alice ability Nothing Set.empty) g0
+              taken = Event.instructionTaken (AbilityTriggered.MkAbilityTriggered (TriggerSource.OfObject oid) S.alice ability Nothing Map.empty) g0
               pending who = PendingTrigger.MkPendingTrigger (TriggerSource.OfObject oid) who ability Map.empty Nothing Nothing EventGroup.first 1 Map.empty Nothing
           Spec.assertEqWith s "untaken, alice's instance triggers" (length (Event.withinTriggerLimit g0 [pending S.alice])) 1
           Spec.assertEqWith s "taken by alice, her next instance does not" (length (Event.withinTriggerLimit taken [pending S.alice])) 0
