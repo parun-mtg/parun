@@ -133,12 +133,12 @@
               "entries": [
                 {
                   "source": "$b1",
-                  "die": null,
+                  "result": null,
                   "place": null
                 },
                 {
                   "source": "$b2",
-                  "die": null,
+                  "result": null,
                   "place": null
                 }
               ],
@@ -175,12 +175,12 @@
               "entries": [
                 {
                   "source": "$b2",
-                  "die": 3,
+                  "result": 3,
                   "place": 0
                 },
                 {
                   "source": "$b2",
-                  "die": 2,
+                  "result": 2,
                   "place": 1
                 }
               ],

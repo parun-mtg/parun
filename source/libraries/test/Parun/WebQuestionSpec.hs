@@ -28,6 +28,7 @@ import qualified Parun.Engine.Event as Event
 import qualified Parun.Engine.Game as Game
 import qualified Parun.Engine.PlayerView as PlayerView
 import qualified Parun.Engine.Projection as Projection
+import qualified Parun.Engine.Resolve.Common as Resolve.Common
 import qualified Parun.Engine.Setup as Setup
 import qualified Parun.Engine.Stack as Stack
 import qualified Parun.Extra.Int as Int
@@ -108,6 +109,7 @@ import qualified Parun.Types.SlotName as SlotName
 import qualified Parun.Types.Stop as Stop
 import qualified Parun.Types.Subtype as Subtype
 import qualified Parun.Types.TextWord as TextWord
+import qualified Parun.Types.ThrowResult as ThrowResult
 import qualified Parun.Types.TurnRegisters as TurnRegisters
 import qualified Parun.Types.WordFamily as WordFamily
 import qualified Parun.Types.Zone as Zone
@@ -488,6 +490,27 @@ spec s registry = Spec.describe s "WebQuestion" $ do
         content = Html.content (Question.Web.view request Question.Web.blank)
     Spec.assertBool s (Text.pack "The Holodeck, from outside the game or the graveyard" `Text.isInfixOf` content) "The Holodeck's, by both places"
     Spec.assertBool s (Text.pack "Your Wish, in a graveyard, from outside the game" `Text.isInfixOf` content) "Wish's, by outside the game"
+
+  -- Grave Endeavor's d10s under two Walls of Fortune: each offer names the die
+  -- it reaches, and each result what tells it apart.
+  Spec.it s "CR 706.2b / 706.4 a roll's prompts name each die by its place and each result by what it carries" $ do
+    wall <- S.printingOf s registry "Wall of Fortune"
+    let (w1, g1) = S.addPermanent wall S.alice (Setup.emptyGame S.bothPlayers)
+        (w2, gs) = S.addPermanent wall S.alice g1
+        alice = Decider.MkDecider S.alice
+        shown :: Prompt.Prompt r -> Html.Html Question.Web.Event
+        shown prompt = Question.Web.view (requestFor gs prompt) Question.Web.blank
+        button label = Maybe.isJust . Html.labelled (Text.pack "button") (Text.pack label)
+        modifiers = shown (Prompt.ChooseRollModifier alice S.alice ((Just w1, Just (0, 2)) NonEmpty.:| [(Just w2, Just (1, 2)), (Nothing, Nothing)]))
+    Spec.assertBool s (button "Your Wall of Fortune 0/4: die 1, showing 2" modifiers) "the first die"
+    Spec.assertBool s (button "Your Wall of Fortune 0/4: die 2, showing 2" modifiers) "the second die, showing the same number"
+    Spec.assertBool s (button "A rule: the whole roll" modifiers) "the whole roll"
+    let rethrow = shown (Prompt.Rethrow alice S.alice (ThrowResult.DieCameUp 2 NonEmpty.:| [ThrowResult.DieCameUp 3]) 1 Nothing)
+    Spec.assertBool s (Text.pack "Reroll die 2 of 2, showing 3? The roll: 2, 3." `Text.isInfixOf` Html.content rethrow) "a reroll names its die and the roll"
+    Spec.assertBool s (button "Reroll" rethrow && button "Keep it" rethrow) "a reroll is a yes or no"
+    let results = shown (Prompt.ChooseDieResult alice S.alice Nothing ((5, S.bob, []) NonEmpty.:| [(5, S.alice, [Resolve.Common.naturalResult S.alice 3])]))
+    Spec.assertBool s (button "5 (thrown by Player 2)" results) "a result another player threw"
+    Spec.assertBool s (button "5 (you rolled 3)" results) "a result carrying a natural result"
 
   Spec.it s "options the seat can't tell apart share one button, which picks the next" $ do
     bears <- S.printingOf s registry "Grizzly Bears"

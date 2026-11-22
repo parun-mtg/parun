@@ -377,10 +377,10 @@ offerOf namer gs prompt = case prompt of
   -- one cost; none picked declines.
   Prompt.RerollDice _ _ results cost -> subset namer Nothing ([("results", R.Array (fmap natural (NonEmpty.toList results)))] <> [("cost", payment namer c) | Just c <- [cost]]) (Nothing, Nothing) (zipWith (\index _ -> natural index) [0 ..] (NonEmpty.toList results))
   -- CR 706.2a: the result rerolled, every die of the roll in roll order and
-  -- which of them it is, and what rerolling costs where it costs.
+  -- its place among them, and what rerolling costs where it costs.
   Prompt.Rethrow _ _ dice index cost ->
     let landed = Maybe.fromMaybe (NonEmpty.head dice) (Maybe.listToMaybe (List.genericDrop index (NonEmpty.toList dice)))
-     in choosing namer prompt "options" Nothing ([thrown landed, ("results", R.Array (fmap (snd . thrown) (NonEmpty.toList dice))), ("die", natural index)] <> [("cost", payment namer c) | Just c <- [cost]]) yesOrNo
+     in choosing namer prompt "options" Nothing ([thrown landed, ("results", R.Array (fmap (snd . thrown) (NonEmpty.toList dice))), ("place", natural index)] <> [("cost", payment namer c) | Just c <- [cost]]) yesOrNo
   -- CR 616.1: each entry as its source and, where it renders, its Oracle text.
   Prompt.ChooseReplacement _ _ entries -> indexing namer prompt Nothing [] (fmap (replacementEntry namer gs) entries)
   -- CR 208.2b / 614.1c: each shape's power, toughness, keywords and subtypes.
@@ -388,9 +388,9 @@ offerOf namer gs prompt = case prompt of
   -- CR 603.7b: each event, or null for one the seat did not witness.
   Prompt.ChooseDelayedTriggerEvent _ _ source events -> indexing namer prompt (Just source) [] (fmap (delayedEvent namer (Driver.deciderOf prompt)) (NonEmpty.toList events))
   -- CR 706.2b: each modifier by the object stating it and the die it
-  -- reaches, its natural result and its place in the roll, null for none and
-  -- for the whole roll.
-  Prompt.ChooseRollModifier _ _ modifiers -> indexing namer prompt Nothing [] (fmap (\(stated, die) -> fields [("source", maybe R.Null (object namer) stated), ("die", maybe R.Null (natural . snd) die), ("place", maybe R.Null (natural . fst) die)]) (NonEmpty.toList modifiers))
+  -- reaches, its natural result and its place in the roll as Rethrow's
+  -- `result` and `place`, null for none and for the whole roll.
+  Prompt.ChooseRollModifier _ _ modifiers -> indexing namer prompt Nothing [] (fmap (\(stated, die) -> fields [("source", maybe R.Null (object namer) stated), ("result", maybe R.Null (natural . snd) die), ("place", maybe R.Null (natural . fst) die)]) (NonEmpty.toList modifiers))
   -- CR 123.5c: each object by its card's name.
   Prompt.KeepHand _ _ hands -> indexing namer prompt Nothing [] (fmap (objects namer) (NonEmpty.toList hands))
   Prompt.ChooseStickerKeeper _ _ printings -> indexing namer prompt Nothing [] (fmap (R.Text . printingName gs) (NonEmpty.toList printings))

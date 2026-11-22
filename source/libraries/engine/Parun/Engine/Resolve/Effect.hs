@@ -1100,6 +1100,11 @@ slotDice slot = case slot of
   DoneDie die -> [Left die]
   RerolledDice dice _ -> concatMap slotDice dice
 
+-- | The dice the roll's places hold, in `slotDice`'s order, each beside
+-- whether it is one of the roll's own places rather than a reroll's.
+ownDice :: [RollSlot open done] -> [(Bool, Either done open)]
+ownDice = concatMap (\slot -> case slot of RerolledDice inner _ -> fmap ((,) False) (concatMap slotDice inner); _ -> fmap ((,) True) (slotDice slot))
+
 -- | The roll's places with the `index`th of their dice (`slotDice`'s order)
 -- replaced by `new`.
 replacingDie :: Natural -> RollSlot open done -> [RollSlot open done] -> [RollSlot open done]
@@ -1249,7 +1254,7 @@ throwSettled runSubgame roll perDie = do
       -- proves it.
       offeringAll slots = do
         let dice = concatMap slotDice slots
-        candidates <- fmap concat (traverse candidatesOver (zip [0 :: Natural ..] dice))
+        candidates <- fmap (unrepeated (ownDice slots) . concat) (traverse candidatesOver (zip [0 :: Natural ..] dice))
         effect <- Dice.pickModifier controller (\reached -> case reached of [(index, natural, _)] -> Just (index, natural); _ -> Nothing) (effectsOf candidates)
         picked <- case effect of
           Just ((payer, stated, reached), _) -> Dice.pickModifier payer (\(index, natural, _) -> Just (index, natural)) (fmap (\die -> (payer, stated, die)) reached)
@@ -1263,6 +1268,25 @@ throwSettled runSubgame roll perDie = do
             offeringAll (replacingDie index slot slots)
           -- Nothing picked; a candidate naming no open die is unreachable.
           _ -> fmap concat (traverse settledSlot slots)
+      -- A candidate over a die is dropped where an earlier die is its twin and
+      -- carries the same candidate: rerolling either leaves the same board, so
+      -- the pick would be among options nothing tells apart. Twins are two of
+      -- the roll's own places (not a reroll's, whose keep waits on its own
+      -- dice) in a roll of single-die units (none a CR 706.4 choice sets apart),
+      -- showing the same natural result by the same thrower, with the same
+      -- history and the same offers declined over each. The scenario
+      -- cr-706-2b-one-offer-over-two-dice-nothing-tells-apart-is-one-question
+      -- proves it.
+      unrepeated held candidates =
+        [ candidate
+        | (k, candidate@(payer, stated, (index, _, kind))) <- zip [0 :: Int ..] candidates,
+          not (any (\(payer', stated', (index', _, kind')) -> payer' == payer && stated' == stated && kind' == kind && twins held index' index) (take k candidates))
+        ]
+      twins held i j =
+        i /= j && all (== 1) (Throw.units roll) && case (List.genericDrop i held, List.genericDrop j held) of
+          ((True, Right a@(byNumber, thrower, natural, declined, _)) : _, (True, Right b@(byNumber', thrower', natural', declined', _)) : _) ->
+            byNumber == byNumber' && thrower == thrower' && natural == natural' && declined == declined' && closed a == closed b
+          _ -> False
       -- The candidates as effects, in the order first offered: one of another
       -- player's, over every die it reaches, and one of the roller's per die.
       effectsOf candidates = case candidates of
@@ -1546,7 +1570,8 @@ throwSettled runSubgame roll perDie = do
       -- `next` is the `key` the next reroll's event takes.
       --
       -- Not implemented: offering these in the same pick as the offers over
-      -- each die, before any die is done with those (#9445).
+      -- each die, before any die is done with those, and so showing the
+      -- roll's other dice beside a die one rerolls (#9445).
       rerollingDice next dice = do
         modifiers <- Dice.modifiersFor controller
         gs <- State.get
