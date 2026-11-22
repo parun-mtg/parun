@@ -1770,8 +1770,9 @@ rethrow throwDice runSubgame resolving controller = do
 -- Scratch.rerolling, restored on the way out.
 --
 -- Recorded with its final result, as an original roll: it modifies no roll
--- under way. Unobservable against throwSettled's `recordRerolls` reading: a Die
--- creature is a d6 and Farideh, Devil's Chosen reads 10 or higher.
+-- under way, so an adjustment after it (Night Shift of the Living Dead's)
+-- modifies this one, where throwSettled's `recordRerolls` reads a reroll at
+-- the face it came up.
 rerollShownDie :: (Game Result -> PlayerId -> Natural -> Natural -> Natural -> Game Integer -> Game ([Natural], [(PlayerId, [(PlayerId, Natural)])], [Natural])) -> Game Result -> PlayerId -> ObjectId -> Game ()
 rerollShownDie throwDice runSubgame roller oid = do
   gs <- State.get

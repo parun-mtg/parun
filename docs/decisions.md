@@ -3325,18 +3325,21 @@ Entries are ordered by the first rule each cites.
 - **Question**: A reroll is a roll of its own (Pippa, Duchess of Dice's ruling),
   so Farideh, Devil's Chosen triggers for it. Is "those results" the number the
   reroll came up, or the die's final result once CR 706.2b's later adjustments
-  (Night Shift of the Living Dead) apply to the original roll?
+  (Night Shift of the Living Dead) apply to the original roll? And does Night
+  Shift's "whenever you roll a 6" read a reroll the same way?
 - **Rules**: CR 706.2, 706.2b, 603.2; no ruling; CR of 2026-11-06.
-- **Decision**: The number the reroll came up. A later reroll of the die, like
-  an adjustment, modifies the original roll, whose own trigger reads the final
-  result.
+- **Decision**: The number the reroll came up, for both. A later reroll of the
+  die, like an adjustment, modifies the original roll, whose own trigger reads
+  the final result. So 3 rerolled to 6 then to 2 is one roll of a 6, and 6
+  rerolled to 6 is two, as a 20 rerolled to 20 is two natural 20s.
 - **Rejected**: The final result, or the number after later rerolls of the die
   (two Walls of Fortune): either gives the reroll's event a number from a
   modifier applied after that event, to a roll it is not part of.
 - **Site**: `Parun.Engine.Resolve.Effect.throwSettled`'s `rethrow` and
-  `recordRerolls`, proved by
-  the scenario
-  `farideh-devil-s-chosen-reads-a-reroll-s-own-result-not-a-later-reroll-s`.
+  `recordRerolls`, proved by the scenarios
+  `farideh-devil-s-chosen-reads-a-reroll-s-own-result-not-a-later-reroll-s`,
+  `night-shift-of-the-living-dead-triggers-for-a-6-rerolled-away` and
+  `night-shift-of-the-living-dead-triggers-twice-for-a-6-rerolled-to-6`.
 - **Issue**: none.
 
 ## Whether a natural 20 rerolled away was rolled

@@ -4447,19 +4447,21 @@ recordRoll controller throwers results = do
   -- "whenever you roll a 6" -- after every modifier, and never for an ignored
   -- roll (CR 706.6). Recorded under the player who threw the die's final
   -- natural result: Pippa, Duchess of Dice's ruling gives a reroll of another
-  -- player's die to the rerolling player's "whenever you roll" triggers.
+  -- player's die to the rerolling player's "whenever you roll" triggers. A
+  -- reroll's own result is recorded with the reroll (docs/decisions.md,
+  -- "Which result a reroll's trigger reads").
   -- Beside it the natural result of the die's first roll, under the player
   -- who threw it, for "whenever you roll a natural 20"; a reroll's is
   -- recorded with the reroll (docs/decisions.md, "Whether a natural 20
   -- rerolled away was rolled").
   Foldable.for_ (zip throwers results) $ \((thrower, naturals), result) -> do
-    State.modify' (Event.recordEvent (GameEvent.DieResultSettled DieResult.MkDieResult {DieResult.roller = thrower, DieResult.result = result, DieResult.reading = RollReading.FinalResult}))
-    Foldable.for_ naturals (State.modify' . Event.recordEvent . uncurry naturalResult)
+    State.modify' (Event.recordEvent (settledResult RollReading.FinalResult thrower result))
+    Foldable.for_ naturals (State.modify' . Event.recordEvent . uncurry (settledResult RollReading.NaturalResult))
 
--- | CR 706.2: the natural result one roll by `by` came up, the event "a
--- natural 20" reads.
-naturalResult :: PlayerId -> Natural -> GameEvent.GameEvent
-naturalResult by face = GameEvent.DieResultSettled DieResult.MkDieResult {DieResult.roller = by, DieResult.result = face, DieResult.reading = RollReading.NaturalResult}
+-- | CR 706.2: the number one roll by `by` came up, under `reading`: the
+-- event "a natural 20" and "whenever you roll a 6" read.
+settledResult :: RollReading.RollReading -> PlayerId -> Natural -> GameEvent.GameEvent
+settledResult reading by face = GameEvent.DieResultSettled DieResult.MkDieResult {DieResult.roller = by, DieResult.result = face, DieResult.reading = reading}
 
 -- | CR 614.12a: `act` run with every materialized-but-not-entered permanent
 -- (Scratch.enteringSubjects, Scratch.enteringBeside) out of the battlefield

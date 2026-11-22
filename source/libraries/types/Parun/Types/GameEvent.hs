@@ -476,10 +476,11 @@ data GameEvent
   | -- | CR 700.14: a player spent mana paying a cost to cast a spell.
     Expended Expended.Expended
   | -- | CR 706.2: one die's result, after every modifier, recorded per die the
-    -- instruction left unignored (CR 706.6) -- what "whenever you roll a 6"
-    -- reads, where PlayerAction.RollDice is one entry per instruction -- and
-    -- beside it, read as RollReading.NaturalResult, the natural result of each
-    -- roll that die took, its rerolls included.
+    -- instruction left unignored (CR 706.6), and each reroll's at the face it
+    -- came up -- what "whenever you roll a 6" reads, where
+    -- PlayerAction.RollDice is one entry per instruction -- and beside it,
+    -- read as RollReading.NaturalResult, the natural result of each roll that
+    -- die took, its rerolls included.
     DieResultSettled (DieResult.DieResult PlayerId.PlayerId)
   | -- | CR 701.52a: a player rolled to visit their Attractions, with the result
     -- the Visit triggers read (CR 702.159a).
