@@ -1613,7 +1613,9 @@ throwSettled runSubgame roll perDie = do
       -- dice whose natural result its payer threw, a reroll's included. Night
       -- Shift's budget (Dice.withinLimit) keeps a spent one out, so a second
       -- Monitor Monitor sees the dice the first left. One declined is not
-      -- asked again until a die changes (`passed`).
+      -- asked again until a die changes (`passed`). The scenario
+      -- cr-706-2b-monitor-monitor-declined-is-offered-again-once-a-die-changes
+      -- proves it.
       severalOver passed dice = do
         modifiers <- Dice.modifiersFor controller
         gs <- State.get
@@ -1626,7 +1628,9 @@ throwSettled runSubgame roll perDie = do
       -- offers beside the roll's others and keeping the rerolls the die it
       -- replaces carried. A reroll whose keep waits on its dice (RerolledDice)
       -- sits at the first picked place (SharedDice), the others answering
-      -- from it (TakenDie).
+      -- from it (TakenDie). The scenario
+      -- cr-706-2b-a-reroll-of-dice-apart-under-barbarian-class-takes-their-places
+      -- proves it.
       rerollingDice next passed slots dice payer stated offer reached = case NonEmpty.nonEmpty reached of
         -- Unreachable: `severalOver` offers only a modifier with a die to reach.
         Nothing -> offeringAll next ((payer, stated, offer) : passed) slots

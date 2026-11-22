@@ -124,7 +124,7 @@
     "step": "PrecombatMain"
   },
   "description": "CR 706.6 a reroll of several dice reads only the dice the roll's ignore keeps",
-  "note": "Under Pixie Guide, Grave Endeavor throws three d10: 2, 4 and 6. One Monitor Monitor rerolls the 2 and the 4 as three dice, 10, 3 and 1, keeping the 10 and the 3; the other rerolls the 10, which comes up 1 (and 1). CR 706.6 ignores that 1: its die never happened, so neither did the second reroll, and the first reroll's result is the 3 it kept, not the 10. Farideh triggers twice, for the roll and the first reroll, and draws nothing.",
+  "note": "Under Pixie Guide, Grave Endeavor throws three d10: 2, 4 and 6. One Monitor Monitor rerolls the 2 and the 4 as three dice, 10, 3 and 1; before that reroll's ignore, the other rerolls the 10, which comes up 1 (and 1). The first reroll's ignore takes its own 1, keeping the second reroll's 1 and the 3, and the roll's CR 706.6 ignore then takes that 1: its die never happened, so neither did the second reroll, and the first reroll's result is the 3 it kept, not the 10. Farideh triggers twice, for the roll and the first reroll, and draws nothing.",
   "timeline": [
     {
       "do": {
@@ -304,6 +304,17 @@
       "do": {
         "Answer": {
           "prompt": "RollDie",
+          "with": 1
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": {
+        "Answer": {
+          "prompt": "ChooseDieResult",
           "with": 1
         }
       },

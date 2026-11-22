@@ -170,7 +170,31 @@
         "View": {
           "of": "Prompt",
           "is": {
-            "kind": "ChooseRollModifier"
+            "kind": "ChooseRollModifier",
+            "offer": {
+              "entries": [
+                {
+                  "source": "$wall",
+                  "result": 2,
+                  "place": 0
+                },
+                {
+                  "source": "$wall",
+                  "result": 3,
+                  "place": 1
+                },
+                {
+                  "source": "$monitor",
+                  "result": null,
+                  "place": null
+                }
+              ],
+              "options": [
+                0,
+                1,
+                2
+              ]
+            }
           }
         }
       }
@@ -229,7 +253,25 @@
         "View": {
           "of": "Prompt",
           "is": {
-            "kind": "ChooseRollModifier"
+            "kind": "ChooseRollModifier",
+            "offer": {
+              "entries": [
+                {
+                  "source": "$wall",
+                  "result": 2,
+                  "place": 0
+                },
+                {
+                  "source": "$wall",
+                  "result": 7,
+                  "place": 1
+                }
+              ],
+              "options": [
+                0,
+                1
+              ]
+            }
           }
         }
       }
@@ -261,6 +303,42 @@
                 7
               ],
               "place": 1,
+              "cost": {
+                "mana": [],
+                "components": [
+                  {
+                    "type": "TapPermanents",
+                    "value": {
+                      "count": {
+                        "type": "Fixed",
+                        "value": 1
+                      },
+                      "whichPermanents": {
+                        "type": "And",
+                        "value": [
+                          {
+                            "type": "HasSubtype",
+                            "value": "Wall"
+                          },
+                          {
+                            "type": "HeldBy",
+                            "value": {
+                              "holder": "Controller",
+                              "relation": "You"
+                            }
+                          },
+                          {
+                            "type": "Not",
+                            "value": {
+                              "type": "IsTapped"
+                            }
+                          }
+                        ]
+                      }
+                    }
+                  }
+                ]
+              },
               "options": [
                 "Exercises",
                 "Declines"
