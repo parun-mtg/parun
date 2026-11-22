@@ -67,6 +67,7 @@ flags =
     GetOpt.Option [] ["samples"] (GetOpt.ReqArg (perSeat "a number of samples" (Monad.mfilter (> 0) . Read.readMaybe) (\n b -> b {SearchBudget.samples = n})) "[SEAT=]N") "the search bot's playouts of each option, in every seat or in SEAT alone; 2 when absent",
     GetOpt.Option [] ["turns"] (GetOpt.ReqArg (perSeat "a number of turns" Read.readMaybe (\n b -> b {SearchBudget.turns = n})) "[SEAT=]N") "the turns a playout may begin after the decision's before it is cut off and its position scored, in every seat or in SEAT alone; 0 when absent, ending a playout as the next turn begins",
     GetOpt.Option [] ["cutoff"] (GetOpt.ReqArg (perSeat "a number of prompts" Read.readMaybe (\n b -> b {SearchBudget.prompts = n})) "[SEAT=]N") "the prompts a playout is answered before it is cut off and its position scored, in every seat or in SEAT alone; 300 when absent",
+    GetOpt.Option [] ["candidates"] (GetOpt.ReqArg (perSeat "a number of candidate worlds" Read.readMaybe (\n b -> b {SearchBudget.candidates = n})) "[SEAT=]N") "the worlds the search bot deals once at a decision and weighs by how likely each made the passes its opponents made, every playout's world drawn among them, in every seat or in SEAT alone; 0 when absent, each playout's world dealt fresh",
     GetOpt.Option [] ["weights"] (GetOpt.ReqArg (\s o -> Right $ case seated s of Just (n, path) -> o {MatchOptions.weighing = Map.insert n path (MatchOptions.weighing o)}; Nothing -> o {MatchOptions.weighing = Map.fromList [(n, s) | n <- [1, 2]]}) "[SEAT=]FILE") "the file of the weights the search bot scores a cut-off playout's position by (Parun.Codec.Weights), in every seat or in SEAT alone; every feature weighted 1 on each side when absent",
     GetOpt.Option [] ["meta"] (GetOpt.ReqArg (\s o -> Right o {MatchOptions.meta = Just s}) "META") "the deck lists are not known: the search bot infers each opponent's from this meta file's decks; each list known when absent"
   ]
@@ -134,28 +135,30 @@ match options searchers prior registry format decks = do
 -- | Game `index`, from zero, of a match from `seed` under `format` among the
 -- decks, seat 1's first: seeded 'seedAt', seat 'firstAt' playing first, the
 -- search bot in each seat of `searchers` at its budget and weights
--- (Search.search, dealing what it cannot see by `prior`, drawing apart as
--- parun play's does: Game.remembered) and the random bot in every other; with the entry each
+-- (Search.search, dealing what it cannot see by `prior` and weighing it by
+-- every pass watched (Search.watching), drawing apart as parun play's does:
+-- Game.remembered) and the random bot in every other; with the entry each
 -- answer replays as (Record.recording). With every seat searching at
 -- PlayOptions.none's budget and weights and Search.known it is the game `parun play --bot 1
 -- --bot 2` plays at that seed and `--first`.
 game :: (Monad m) => Registry.Registry m -> Maybe Format.Format -> Map.Map Natural (SearchBudget.SearchBudget, Weights.Type.Weights) -> Search.Prior -> Key.Type.Key -> Natural -> NonEmpty.NonEmpty Deck.Deck -> m (Either Text.Text (Result.Result, GameState.GameState), Seq.Seq Timed.Timed)
 game registry format searchers prior seed index decks =
   let count = Natural.length decks
-      seat n = maybe (Game.bot (lifted registry)) (\(budget, weights) -> Game.remembered (pure Nothing) (const (pure ())) (Search.search (lifted registry) budget weights prior)) (Map.lookup n searchers)
-   in State.runStateT (Game.run (lifted registry) format Limits.standard [Record.recording (Command.labels count) sink] (Map.fromList [(Command.idOf n, seat n) | n <- [1 .. count]]) (Generator.fromKey (seedAt seed index)) Map.empty (Command.seated (firstAt index) decks)) Seq.empty
+      seat n = maybe (Game.bot (lifted registry)) (\(budget, weights) -> Game.remembered (pure Nothing) (const (pure ())) (Search.search (lifted registry) budget weights prior (Game.underneath (State.gets snd)))) (Map.lookup n searchers)
+   in fmap (fmap fst) (State.runStateT (Game.run (lifted registry) format Limits.standard [Record.recording (Command.labels count) sink, Search.watching (\f -> State.modify' (\(timeline, passes) -> let kept = f passes in kept `seq` (timeline, kept)))] (Map.fromList [(Command.idOf n, seat n) | n <- [1 .. count]]) (Generator.fromKey (seedAt seed index)) Map.empty (Command.seated (firstAt index) decks)) (Seq.empty, []))
 
 -- | A pair of decks, seat 1's first.
 both :: (Deck.Deck, Deck.Deck) -> NonEmpty.NonEmpty Deck.Deck
 both (one, two) = one NonEmpty.:| [two]
 
--- | The registry, beneath the entries kept so far.
-lifted :: (Monad m) => Registry.Registry m -> Registry.Registry (State.StateT (Seq.Seq Timed.Timed) m)
+-- | The registry, beneath the entries and the passes kept so far
+-- (Search.watching).
+lifted :: (Monad m) => Registry.Registry m -> Registry.Registry (State.StateT (Seq.Seq Timed.Timed, [Search.Passed]) m)
 lifted = Registry.hoist Trans.lift
 
 -- | Keeps an answer's entry, after those before it.
-sink :: (Monad m) => Timed.Timed -> Game.Play (State.StateT (Seq.Seq Timed.Timed) m) ()
-sink entry = Game.underneath (State.modify' (Seq.|> entry))
+sink :: (Monad m) => Timed.Timed -> Game.Play (State.StateT (Seq.Seq Timed.Timed, [Search.Passed]) m) ()
+sink entry = Game.underneath (State.modify' (Bifunctor.first (Seq.|> entry)))
 
 -- | Game `index`'s key, derived from the match's (Generator.derive), the
 -- index wrapping at 2^64.

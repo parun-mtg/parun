@@ -214,7 +214,7 @@ game send stored kept options registry format decks seed = do
 -- given to `kept` (Game.remembered); otherwise `send`.
 answerer :: (Monad m) => Registry.Registry m -> Protocol.Exchange m -> m (Maybe R.Reply) -> (R.Reply -> m ()) -> PlayOptions.PlayOptions -> Natural -> Answerer.Answerer (Asked.Asked GameState.GameState) (Game.Play m)
 answerer registry send stored kept options n
-  | Set.member n (PlayOptions.bots options) = Game.remembered stored kept (Search.search registry (PlayOptions.budget options) (PlayOptions.weights options) Search.known)
+  | Set.member n (PlayOptions.bots options) = Game.remembered stored kept (Search.search registry (PlayOptions.budget options) (PlayOptions.weights options) Search.known (pure []))
   | otherwise = Game.wired registry send
 
 idOf :: Natural -> PlayerId.PlayerId
