@@ -1,0 +1,175 @@
+{
+  "faces": [
+    {
+      "alternativeCosts": [
+        {
+          "cost": {
+            "mana": [
+              {
+                "type": "Generic",
+                "value": 2
+              },
+              {
+                "type": "OfType",
+                "value": {
+                  "type": "Colored",
+                  "value": "Red"
+                }
+              },
+              {
+                "type": "OfType",
+                "value": {
+                  "type": "Colored",
+                  "value": "Red"
+                }
+              }
+            ]
+          }
+        }
+      ],
+      "manaCost": [
+        {
+          "type": "Generic",
+          "value": 3
+        },
+        {
+          "type": "OfType",
+          "value": {
+            "type": "Colored",
+            "value": "Red"
+          }
+        },
+        {
+          "type": "OfType",
+          "value": {
+            "type": "Colored",
+            "value": "Red"
+          }
+        }
+      ],
+      "name": "Fervent Mastery",
+      "oracleText": "You may pay {2}{R}{R} rather than pay this spell's mana cost.\nIf the {2}{R}{R} cost was paid, an opponent discards any number of cards, then draws that many cards.\nSearch your library for up to three cards, put them into your hand, shuffle, then discard three cards at random.",
+      "spell": {
+        "modes": [
+          {
+            "clauses": [
+              {
+                "condition": {
+                  "type": "Compares",
+                  "value": {
+                    "comparison": "AtLeast",
+                    "measured": {
+                      "type": "WasBound",
+                      "value": "thatAlternativeCost"
+                    },
+                    "threshold": {
+                      "type": "Literal",
+                      "value": 1
+                    }
+                  }
+                },
+                "effects": [
+                  {
+                    "type": "ChoosePlayer",
+                    "value": {
+                      "scope": {
+                        "type": "Opponent"
+                      },
+                      "slot": "opponent"
+                    }
+                  },
+                  {
+                    "type": "Discard",
+                    "value": {
+                      "type": "AnyNumber",
+                      "value": {
+                        "cards": {
+                          "filter": {
+                            "type": "And",
+                            "value": []
+                          }
+                        },
+                        "discarded": "discarded",
+                        "player": {
+                          "type": "InSlot",
+                          "value": "opponent"
+                        }
+                      }
+                    }
+                  },
+                  {
+                    "type": "Draw",
+                    "value": {
+                      "player": {
+                        "type": "InSlot",
+                        "value": "opponent"
+                      },
+                      "quantity": {
+                        "type": "BoundCount",
+                        "value": "discarded"
+                      }
+                    }
+                  }
+                ]
+              },
+              {
+                "effects": [
+                  {
+                    "type": "Search",
+                    "value": {
+                      "destination": "Hand",
+                      "filter": {
+                        "type": "And",
+                        "value": []
+                      },
+                      "owner": {
+                        "type": "Relative",
+                        "value": "You"
+                      },
+                      "quantity": {
+                        "type": "Literal",
+                        "value": 3
+                      },
+                      "searcher": {
+                        "type": "Relative",
+                        "value": "You"
+                      },
+                      "upTo": true
+                    }
+                  },
+                  {
+                    "type": "Discard",
+                    "value": {
+                      "type": "These",
+                      "value": {
+                        "cards": {
+                          "type": "RandomCard",
+                          "value": {
+                            "count": {
+                              "type": "Literal",
+                              "value": 3
+                            },
+                            "player": {
+                              "type": "Relative",
+                              "value": "You"
+                            },
+                            "zone": "Hand"
+                          }
+                        }
+                      }
+                    }
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "typeLine": {
+        "types": [
+          "Sorcery"
+        ]
+      }
+    }
+  ]
+}

@@ -1,0 +1,97 @@
+{
+  "faces": [
+    {
+      "manaCost": [
+        {
+          "type": "Variable"
+        },
+        {
+          "type": "Variable"
+        },
+        {
+          "type": "OfType",
+          "value": {
+            "type": "Colored",
+            "value": "Green"
+          }
+        },
+        {
+          "type": "OfType",
+          "value": {
+            "type": "Colored",
+            "value": "Green"
+          }
+        }
+      ],
+      "name": "Exponential Growth",
+      "oracleText": "Until end of turn, double target creature's power X times.",
+      "spell": {
+        "modes": [
+          {
+            "clauses": [
+              {
+                "effects": [
+                  {
+                    "type": "ForEachNumber",
+                    "value": {
+                      "body": [
+                        {
+                          "type": "ModifyTarget",
+                          "value": {
+                            "duration": {
+                              "type": "UntilEndOfTurn"
+                            },
+                            "modification": {
+                              "type": "ModifyPowerToughness",
+                              "value": {
+                                "power": {
+                                  "type": "AgainstSlot",
+                                  "value": {
+                                    "quantity": {
+                                      "type": "Measure",
+                                      "value": "Power"
+                                    },
+                                    "slot": "target"
+                                  }
+                                },
+                                "toughness": {
+                                  "type": "Literal",
+                                  "value": 0
+                                }
+                              }
+                            },
+                            "ref": {
+                              "type": "InSlot",
+                              "value": "target"
+                            }
+                          }
+                        }
+                      ],
+                      "slot": "number",
+                      "upTo": {
+                        "type": "InSlot",
+                        "value": "X"
+                      }
+                    }
+                  }
+                ]
+              }
+            ],
+            "targetSlots": {
+              "target": {
+                "pool": {
+                  "type": "Creatures"
+                }
+              }
+            }
+          }
+        ]
+      },
+      "typeLine": {
+        "types": [
+          "Sorcery"
+        ]
+      }
+    }
+  ]
+}
