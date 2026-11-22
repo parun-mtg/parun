@@ -130,6 +130,17 @@ document.addEventListener("click", (event) => {
   if (!settings.hidden && !event.target.closest(".chrome, [data-settings]")) openSettings(false);
   for (const open of root.querySelectorAll("details.auto-pass[open], details.log[open]")) if (!open.contains(event.target)) open.open = false;
 });
+// The whole log opens below the turn bar (style.css's .log-panel).
+root.addEventListener(
+  "toggle",
+  (event) => {
+    if (!event.target.matches?.("details.log") || !event.target.open) return;
+    const bar = root.querySelector(".turn-bar");
+    if (bar) root.style.setProperty("--log-top", `${Math.max(0, bar.getBoundingClientRect().bottom)}px`);
+    else root.style.removeProperty("--log-top");
+  },
+  true,
+);
 document.addEventListener("keydown", (event) => {
   if (event.key === "Escape" && !settings.hidden) {
     event.preventDefault();

@@ -424,7 +424,9 @@ side label prompt card entries =
       <> entries
 
 -- | The log: a heading saying how many entries are new and opening the
--- whole log over the table (L), then the newest few entries. Each turn is
+-- whole log, under its own heading, over the table below the turn bar (L),
+-- then the newest few entries, hidden while the whole log is open
+-- (style.css). Each turn is
 -- under its own heading, newest first, the entries since the seat last
 -- decided lit; nothing while the log is empty.
 logView :: Maybe PlayerView.PlayerView -> PlayerId.PlayerId -> Screen -> [Html.Html Event]
@@ -451,7 +453,7 @@ logView board viewer screen =
                       <> [Element.el "span" ["unread"] [] [Element.string (show unread <> " new")] | unread > 0]
                       <> [Element.el "span" ["expand"] [] [Element.el "span" ["closed"] [] [Element.string "Expand"], Element.el "span" ["opened"] [] [Element.string "Close"], Element.el "kbd" ["keys-only"] [Element.attr "aria-hidden" (Text.pack "true")] [Element.string "L"]]]
                   ),
-                Element.el "div" ["log-panel"] [Element.attr "role" (Text.pack "region"), Element.attr "aria-label" (Text.pack "The whole log")] [listed 300]
+                Element.el "div" ["log-panel"] [Element.attr "role" (Text.pack "region"), Element.attr "aria-labelledby" (Text.pack "log-panel-heading")] [Element.el "h2" ["log-panel-heading"] [Element.attr "id" (Text.pack "log-panel-heading")] [Element.string "The whole log"], listed 300]
               ],
             Element.el "div" ["log-recent"] [Element.attr "aria-live" (Text.pack "polite")] [listed 12]
           ]
