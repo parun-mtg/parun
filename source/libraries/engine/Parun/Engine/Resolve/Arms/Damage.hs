@@ -1569,11 +1569,12 @@ chooseGroup resolving source controller legal (ChooseGroup.MkChooseGroup among s
 -- this arm records the roll it throws -- a reroll records its own, see
 -- throwSettled's `recordRerolls`.
 --
--- Recorded AFTER the binding, so a trigger placed by CR 603.3 sees the same
--- state a later effect of this resolution would. Nothing observes the order --
--- the trigger goes on the stack only once this resolution finishes. Where
--- several roll, `slot` binds the highest result any of them used and
--- `extreme` the players at one end of them (Chaos Dragon, Ricochet).
+-- Recorded as each roller's roll is done, so CR 603.10 checks it against the
+-- board it left, not one a later roller's, or a tie reroll's, payment left:
+-- the scenario
+-- cr-603-10-ricochet-s-first-roll-triggers-a-brazen-dwarf-sacrificed-for-its-tie-reroll
+-- proves it. Where several roll, `slot` binds the highest result any of them
+-- used and `extreme` the players at one end of them (Chaos Dragon, Ricochet).
 --
 -- ONE ENTRY PER INSTRUCTION, however many dice CR 706.1's count named, where
 -- FlipCoin below records one per coin: the condition reading this event is
@@ -1624,6 +1625,7 @@ rollDieArm throwDice runSubgame resolving source controller legal rollDie = do
       rollers = filter (`elem` named') (Game.apnapOrder before)
       rollOne roller = do
         (results, throwers, thrown) <- throwDice runSubgame roller sides named (RollDie.ignore rollDie) perDie
+        Monad.unless (null thrown) (Common.recordRoll roller throwers thrown)
         used <- case (RollDie.store rollDie, RollDie.reading rollDie) of
           -- CR 706.8a: a storing instruction keeps every result rather than
           -- using one, so CR 706.4's reading is never asked.
@@ -1669,8 +1671,8 @@ rollDieArm throwDice runSubgame resolving source controller legal rollDie = do
                 [rest] -> State.modify' (Common.bindAmountSlot resolving source other rest)
                 _ -> pure ()
             pure (Replacement.at results index (NonEmpty.head offered))
-        pure (roller, used, (throwers, thrown), results)
-      usedBy current = [(roller, n) | (roller, Just n, _, _) <- current]
+        pure (roller, used, results)
+      usedBy current = [(roller, n) | (roller, Just n, _) <- current]
       -- Ricochet's "reroll to break ties, if necessary": the players tied for
       -- the lowest result reroll, each a fresh roll of the instruction's own
       -- (CR 706.1), in APNAP order, until one is lowest (docs/decisions.md,
@@ -1680,8 +1682,7 @@ rollDieArm throwDice runSubgame resolving source controller legal rollDie = do
       -- judged among the `contenders` alone, the players the last tie left:
       -- a standing result outside it neither wins nor ties, as the scenario
       -- cr-706-1-the-players-tied-for-the-lowest-roll-reroll-until-one-is-lowest--bystander
-      -- proves. Returns the renewed table, the lowest contenders and the
-      -- rerolls.
+      -- proves. Returns the renewed table and the lowest contenders.
       breakTies contenders current =
         let standing = [(roller, n) | (roller, n) <- usedBy current, roller `elem` contenders]
             lowest = case fmap minimum (NonEmpty.nonEmpty (fmap snd standing)) of
@@ -1690,15 +1691,14 @@ rollDieArm throwDice runSubgame resolving source controller legal rollDie = do
          in if length lowest > 1
               then do
                 again <- Monad.forM lowest rollOne
-                let renewed row@(roller, _, _, _) = Maybe.fromMaybe row (List.find (\(r, _, _, _) -> r == roller) again)
-                (settled, winners, later) <- breakTies lowest (fmap renewed current)
-                pure (settled, winners, again <> later)
-              else pure (current, lowest, [])
+                let renewed row@(roller, _, _) = Maybe.fromMaybe row (List.find (\(r, _, _) -> r == roller) again)
+                breakTies lowest (fmap renewed current)
+              else pure (current, lowest)
   opening <- Monad.forM rollers rollOne
-  (rolled, lowest, rerolled) <- case fmap RollExtreme.end (RollDie.extreme rollDie) of
+  (rolled, lowest) <- case fmap RollExtreme.end (RollDie.extreme rollDie) of
     Just RollEnd.LowestBreakingTies -> breakTies rollers opening
-    Just RollEnd.Highest -> pure (opening, [], [])
-    Nothing -> pure (opening, [], [])
+    Just RollEnd.Highest -> pure (opening, [])
+    Nothing -> pure (opening, [])
   let kept = usedBy rolled
   Foldable.for_ (NonEmpty.nonEmpty (fmap snd kept)) $ \results -> do
     State.modify' (Common.bindAmountSlot resolving source (RollDie.slot rollDie) (maximum results))
@@ -1707,13 +1707,11 @@ rollDieArm throwDice runSubgame resolving source controller legal rollDie = do
             RollEnd.Highest -> [roller | (roller, m) <- kept, m == maximum results]
             RollEnd.LowestBreakingTies -> lowest
       State.modify' (Common.bindPlayerSlot resolving slot (Set.fromList extremes))
-  Foldable.for_ (opening <> rerolled) $ \(roller, _, (throwers, thrown), _) ->
-    Monad.unless (null thrown) (Common.recordRoll roller throwers thrown)
   -- CR 706.1: each roller's total, filed against the rolling ability for
   -- Quantity.RollTotalsThisTurn. Only an ability's: a spell has no "this
   -- ability" to roll for.
   ability <- State.gets (fmap Object.source . Game.lookupObject resolving)
-  let fileTotals rolling = Foldable.for_ rolled $ \(roller, _, _, results) ->
+  let fileTotals rolling = Foldable.for_ rolled $ \(roller, _, results) ->
         Monad.unless (null results) . State.modify' $ \g ->
           let past = PastRoll.MkPastRoll {PastRoll.ability = rolling, PastRoll.resolution = resolving, PastRoll.roller = roller, PastRoll.total = toInteger (sum results)}
            in g {GameState.turn = (GameState.turn g) {TurnRegisters.rollsThisTurn = TurnRegisters.rollsThisTurn (GameState.turn g) Seq.|> past}}
@@ -1725,7 +1723,7 @@ rollDieArm throwDice runSubgame resolving source controller legal rollDie = do
   -- permanent.
   Foldable.for_ (RollDie.store rollDie >>= \slot -> legalOne slot legal >>= Recipient.objectOf) $ \target -> do
     acquisition <- State.gets (\g -> Game.readingAcquisition resolving source g target)
-    State.modify' (Common.storeOn acquisition target sides (foldMap (\(_, _, _, results) -> results) rolled))
+    State.modify' (Common.storeOn acquisition target sides (foldMap (\(_, _, results) -> results) rolled))
 
 -- CR 706.2b's reroll or a coin's reflip, asked for by the ability Goblin
 -- Bookie activates inside throwDice's window or Parun.Engine.Resolve.Effect's

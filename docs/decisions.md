@@ -3375,9 +3375,11 @@ Entries are ordered by the first rule each cites.
 - **Rejected**: Checking the roll against the board its dice came up on: its
   event carries a result that board never saw, and would split one event
   across two moments.
-- **Site**: `Parun.Engine.Resolve.Effect.throwSettled`'s `recordRerolls`,
-  proved by the scenario
-  `cr-603-10-a-reroll-triggers-a-brazen-dwarf-sacrificed-for-a-later-reroll`.
+- **Site**: `Parun.Engine.Resolve.Effect.throwSettled`'s `recordRerolls` and
+  `Parun.Engine.Resolve.Arms.Damage`'s RollDie arm, proved by the scenarios
+  `cr-603-10-a-reroll-triggers-a-brazen-dwarf-sacrificed-for-a-later-reroll`
+  and
+  `cr-603-10-ricochet-s-first-roll-triggers-a-brazen-dwarf-sacrificed-for-its-tie-reroll`.
 - **Issue**: none.
 
 ## Whether a coin flipped for an ignored die's reroll was flipped
