@@ -1234,7 +1234,7 @@ throwSettled runSubgame roll perDie = do
       closed (_, thrower, natural, _, finish) = finish (thrower, natural, [], [])
       -- The standing offers over one open die, each tagged with the die's
       -- place and natural result. A declined candidate is not asked again
-      -- over the same die, nor is another free one to the same payer
+      -- over the same die, nor is another stating the same question
       -- (`distinct`'s reason).
       candidatesOver (index, slot) = case slot of
         Left _ -> pure []
@@ -1243,9 +1243,11 @@ throwSettled runSubgame roll perDie = do
           modifiers <- Dice.modifiersFor controller
           activations <- duringRoll natural (State.gets windowCandidates)
           let gated (_, offer) = byNumber || Maybe.isNothing (ModifiedRoll.natural offer)
-              free = either (Maybe.isNothing . ModifiedRoll.cost) (const False)
-              fresh candidate@(payer, _, kind) = notElem candidate declined && not (free kind && any (\(asked, _, earlier) -> asked == payer && free earlier) declined)
-              static = distinct Set.empty (filter (\(payer, stated, offer) -> fresh (payer, stated, Left offer)) (fmap (offerOf gs) (filter gated (Dice.rerollOffers RerollReach.ThatDie sides (Just natural) modifiers))))
+              alike (payer, stated, kind) (payer', stated', kind') = case (kind, kind') of
+                (Left offer, Left offer') -> Dice.sameOffer (payer, stated, offer) (payer', stated', offer')
+                _ -> False
+              fresh candidate = notElem candidate declined && not (any (alike candidate) declined)
+              static = distinct [] (filter (\(payer, stated, offer) -> fresh (payer, stated, Left offer)) (fmap (offerOf gs) (filter gated (Dice.rerollOffers RerollReach.ThatDie sides (Just natural) modifiers))))
               offers = fmap (\(payer, stated, offer) -> (payer, stated, Left offer)) static <> filter fresh activations
           standing <- duringRoll natural (State.gets (\now -> filter (live now) offers))
           pure (fmap (\(payer, stated, kind) -> (payer, stated, (index, natural, kind))) standing)
@@ -1256,17 +1258,15 @@ throwSettled runSubgame roll perDie = do
       -- be and no printing of this family is.
       offerOf gs (stated, offer) = (payerOf gs stated, stated, offer)
       payerOf gs stated = Maybe.fromMaybe controller (stated >>= \oid -> Projection.controllerOf oid gs)
-      -- Two FREE offers to the same player are the same question asked twice:
-      -- the answers are indistinguishable, and either accepted throws the same
-      -- die. So two Clam-I-Ams ask once. Where CR 706.2a's cost is stated the
-      -- offers stand apart -- what is paid, and the permanent it is paid
-      -- against, are things the payer can tell apart -- so each is asked.
-      distinct seen candidates = case candidates of
+      -- Two offers stating the same question (Dice.sameOffer) are asked once,
+      -- the first kept: two Clam-I-Ams, or two Walls of Fortune. Where the cost
+      -- reads the object stating it, or a budget is spent against it, the
+      -- offers stand apart, so each is asked.
+      distinct kept candidates = case candidates of
         [] -> []
-        candidate@(payer, _, offer) : rest
-          | Maybe.isJust (ModifiedRoll.cost offer) -> candidate : distinct seen rest
-          | Set.member payer seen -> distinct seen rest
-          | otherwise -> candidate : distinct (Set.insert payer seen) rest
+        candidate : rest
+          | any (Dice.sameOffer candidate) kept -> distinct kept rest
+          | otherwise -> candidate : distinct (candidate : kept) rest
       -- CR 706.2b's pick: the roller chooses which standing offer, over which
       -- die, is put next (Dice.pickModifier), and its payer decides whether to
       -- take it -- the modifier's own "may" (CR 706.2a). A declined offer

@@ -18,10 +18,16 @@ import qualified Parun.Engine.Game as Game
 import qualified Parun.Engine.PlayerEffect as PlayerEffect
 import qualified Parun.Engine.Turn as Turn
 import qualified Parun.Extra.Integer as Integer
+import qualified Parun.Types.ControllerRelation as ControllerRelation
+import qualified Parun.Types.Cost as Cost
+import qualified Parun.Types.CostAmount as CostAmount
+import qualified Parun.Types.CostComponent as CostComponent
+import qualified Parun.Types.Filter as Filter
 import Parun.Types.Game (Game)
 import Parun.Types.GameEvent (GameEvent)
 import Parun.Types.GameState (GameState)
 import qualified Parun.Types.GameState as GameState
+import qualified Parun.Types.ManaCost as ManaCost
 import qualified Parun.Types.ModifiedRoll as ModifiedRoll
 import qualified Parun.Types.Object as Object
 import Parun.Types.ObjectId (ObjectId)
@@ -31,6 +37,7 @@ import qualified Parun.Types.Prompt as Prompt
 import qualified Parun.Types.RerollReach as RerollReach
 import qualified Parun.Types.RollModifier as RollModifier
 import qualified Parun.Types.ShownDie as ShownDie
+import qualified Parun.Types.TapPermanents as TapPermanents
 import qualified Parun.Types.TurnRegisters as TurnRegisters
 
 -- | The CR 706.2 modifiers in force over the rolls `pid` is making, read fresh
@@ -146,6 +153,50 @@ withinLimit gs payer stated modifier =
         PermissionLimit.OnceEachOfYourTurns -> Turn.isActive gs payer && unspent
         -- A modifier is never a stored row with a use to drop.
         PermissionLimit.OncePerEffect -> False
+
+-- | Whether two offers state the same question to the same payer, so asking
+-- both is asking among options nothing tells apart. Two free offers always
+-- are: either throws the same die. Two with a CR 706.2a cost are where the
+-- modifier is the same and unbudgeted (`withinLimit` then reads no object),
+-- and paying the cost reads nothing of the object stating it: Wall of
+-- Fortune's "tap an untapped Wall you control" taps any Wall, whichever Wall
+-- states it. The scenario
+-- cr-706-2b-offers-from-walls-nothing-tells-apart-are-one-question proves it.
+sameOffer :: (PlayerId, Maybe ObjectId, ModifiedRoll.ModifiedRoll) -> (PlayerId, Maybe ObjectId, ModifiedRoll.ModifiedRoll) -> Bool
+sameOffer (payer, stated, offer) (payer', stated', offer') =
+  payer == payer' && case (ModifiedRoll.cost offer, ModifiedRoll.cost offer') of
+    (Nothing, Nothing) -> True
+    (Just cost, Just _) ->
+      offer == offer'
+        && ModifiedRoll.limit offer == PermissionLimit.Unlimited
+        && Maybe.isJust stated
+        && Maybe.isJust stated'
+        && readsNoStater cost
+    _ -> False
+
+-- Whether paying this cost reads nothing of the object it is paid against.
+-- CONSERVATIVE, an allowlist: any mana (whose spending a restriction may read
+-- the object by), a component other than tapping a fixed number of
+-- permanents, or a Filter atom other than those read of the candidate and of
+-- the payer alone, answers False, which only keeps two offers apart.
+readsNoStater :: Cost.Cost keyword -> Bool
+readsNoStater cost = maybe False (null . ManaCost.unwrap) (Cost.mana cost) && all component (Cost.components cost)
+  where
+    component c = case c of
+      CostComponent.TapPermanents tap -> case TapPermanents.count tap of
+        CostAmount.Fixed _ -> candidateOnly (TapPermanents.whichPermanents tap)
+        CostAmount.Announced _ -> False
+      _ -> False
+    candidateOnly f = case f of
+      Filter.And fs -> all candidateOnly fs
+      Filter.Or fs -> all candidateOnly fs
+      Filter.Not g -> candidateOnly g
+      Filter.HasSubtype _ -> True
+      Filter.HasCardType _ -> True
+      Filter.IsTapped -> True
+      -- "You" is the payer, whom both offers share.
+      Filter.HeldBy _ (ControllerRelation.Related _) -> True
+      _ -> False
 
 -- | Spend a modifier's budget once it is taken; a no-op for an unbudgeted one.
 spendLimit :: Maybe ObjectId -> ModifiedRoll.ModifiedRoll -> GameState -> GameState
