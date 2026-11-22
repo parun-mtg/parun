@@ -1,0 +1,32 @@
+{
+  "description": "CR 606.3 / 613.1f whole card: Kasmina, Enigma Sage gives Gideon Jura its loyalty abilities, so Gideon's borrowed −X makes a Fractal with X counters, while Kasmina's own +2 scries 1 the same turn; Ornithopter, no planeswalker, gains none",
+  "note": "Gideon has 6 loyalty and borrows −X at X 4: a 4/4 Fractal, Gideon at 2. Kasmina at 3 then uses its own +2 (5), scrying the Opt to the bottom. Each walker activates one loyalty ability, as CR 606.3 allows. Alice's Ornithopter is offered no loyalty ability.",
+  "board": {
+    "active": "alice",
+    "step": "PrecombatMain",
+    "seats": [
+      {
+        "name": "alice",
+        "battlefield": [{ "card": "Kasmina, Enigma Sage", "label": "kasmina", "counters": [{ "key": { "type": "Loyalty" }, "value": 3 }] }, { "card": "Gideon Jura", "label": "gideon", "counters": [{ "key": { "type": "Loyalty" }, "value": 6 }] }, { "card": "Ornithopter", "label": "thopter" }],
+        "library": [{ "card": "Opt", "label": "top" }, { "card": "Island", "label": "second" }, { "card": "Island" }, { "card": "Island" }]
+      },
+      {
+        "name": "bob",
+        "library": [{ "card": "Island" }, { "card": "Island" }, { "card": "Island" }, { "card": "Island" }]
+      }
+    ]
+  },
+  "timeline": [
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "check": { "View": { "of": "Offered", "player": "alice", "is": ["Pass", "Activate $kasmina 0", "Activate $kasmina 1", "Activate $gideon 0", "Activate $gideon 2", "Activate $gideon 3", "Activate $gideon 4"] } } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "do": { "Activate": { "object": "$gideon", "ability": 4, "x": 4 } } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "do": "Pass" },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "check": { "View": { "of": "Stack", "is": [] } } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "check": { "Counters": { "object": "$gideon", "kind": { "type": "Loyalty" }, "count": 2 } } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "check": { "PowerToughness": { "object": "Fractal Token", "power": 4, "toughness": 4 } } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "do": { "Activate": { "object": "$kasmina", "ability": 0 } } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "do": "Pass" },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "do": { "Answer": { "prompt": "ChooseScry", "with": [["$top"], []] } } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "check": { "Counters": { "object": "$kasmina", "kind": { "type": "Loyalty" }, "count": 5 } } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "check": { "View": { "of": "Zone", "player": "alice", "zone": "Library", "is": ["$second", "Island#2", "Island#3", "Opt"] } } }
+  ]
+}
