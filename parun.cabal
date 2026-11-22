@@ -3883,6 +3883,7 @@ library types
     Parun.Types.Search
     Parun.Types.SearchBudget
     Parun.Types.SearchDestination
+    Parun.Types.SearchMethod
     Parun.Types.SearchPlace
     Parun.Types.Seat
     Parun.Types.SeatView

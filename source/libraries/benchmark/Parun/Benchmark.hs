@@ -58,6 +58,7 @@ import qualified Parun.Types.Prompt as Prompt
 import qualified Parun.Types.Recipient as Recipient
 import Parun.Types.Result (Result)
 import qualified Parun.Types.SearchBudget as SearchBudget
+import qualified Parun.Types.SearchMethod as SearchMethod
 import qualified Parun.Types.Sickness as Sickness
 import qualified Parun.Types.TurnRegisters as TurnRegisters
 import qualified Parun.Types.Weights as Weights
@@ -499,7 +500,7 @@ playouts registry gs policy count = sum (fmap (playout registry gs policy) (take
 -- One of 'playouts', seeded by `seed`.
 playout :: Registry.Registry Identity.Identity -> GameState -> Playout.Playout -> Word.Word32 -> Integer
 playout registry gs policy seed =
-  let budget = SearchBudget.MkSearchBudget {SearchBudget.samples = 1, SearchBudget.turns = 0, SearchBudget.prompts = 300, SearchBudget.candidates = 0, SearchBudget.playout = policy, SearchBudget.mistakes = 0}
+  let budget = SearchBudget.MkSearchBudget {SearchBudget.samples = 1, SearchBudget.turns = 0, SearchBudget.prompts = 300, SearchBudget.candidates = 0, SearchBudget.playout = policy, SearchBudget.mistakes = 0, SearchBudget.method = SearchMethod.Flat}
    in Either.fromRight 0 (Identity.runIdentity (Play.Game.playing (seeded seed) (Search.rollout registry budget Weights.neutral Engine.resumePriority (PlayerId.MkPlayerId 0) (Search.MkPick (const Nothing)) gs)))
 
 -- A generator keyed by `n` alone.

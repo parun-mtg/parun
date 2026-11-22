@@ -7,6 +7,7 @@ import qualified Parun.Types.Key as Key
 import qualified Parun.Types.Limits as Limits
 import qualified Parun.Types.Playout as Playout
 import qualified Parun.Types.SearchBudget as SearchBudget
+import qualified Parun.Types.SearchMethod as SearchMethod
 import qualified Parun.Types.Weights as Weights
 
 -- | What `parun play` was asked for, seats numbered from one.
@@ -49,4 +50,4 @@ data PlayOptions = MkPlayOptions
 -- the random bot, dealing an opponent's unseen cards from the game's
 -- format's pool.
 none :: PlayOptions
-none = MkPlayOptions {seed = Nothing, first = Nothing, bots = Set.empty, json = False, save = Nothing, arrangesGraveyard = Set.empty, format = Nothing, limits = Limits.standard, budget = SearchBudget.MkSearchBudget {SearchBudget.samples = 2, SearchBudget.turns = 0, SearchBudget.prompts = 40, SearchBudget.candidates = 0, SearchBudget.playout = Playout.Random, SearchBudget.mistakes = 0}, weights = Weights.neutral, meta = Nothing, pool = Nothing}
+none = MkPlayOptions {seed = Nothing, first = Nothing, bots = Set.empty, json = False, save = Nothing, arrangesGraveyard = Set.empty, format = Nothing, limits = Limits.standard, budget = SearchBudget.MkSearchBudget {SearchBudget.samples = 2, SearchBudget.turns = 0, SearchBudget.prompts = 40, SearchBudget.candidates = 0, SearchBudget.playout = Playout.Random, SearchBudget.mistakes = 0, SearchBudget.method = SearchMethod.Flat}, weights = Weights.neutral, meta = Nothing, pool = Nothing}

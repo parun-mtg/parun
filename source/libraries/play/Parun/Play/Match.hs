@@ -38,6 +38,7 @@ import qualified Parun.Types.PlayerId as PlayerId
 import qualified Parun.Types.Playout as Playout
 import qualified Parun.Types.Result as Result
 import qualified Parun.Types.SearchBudget as SearchBudget
+import qualified Parun.Types.SearchMethod as SearchMethod
 import qualified Parun.Types.Tally as Tally
 import qualified Parun.Types.TeamId as TeamId
 import qualified Parun.Types.Timed as Timed
@@ -72,6 +73,7 @@ flags =
     GetOpt.Option [] ["turns"] (GetOpt.ReqArg (perSeat "a number of turns" Read.readMaybe (\n b -> b {SearchBudget.turns = n})) "[SEAT=]N") "the turns a playout may begin after the decision's before it is cut off and its position scored, in every seat or in SEAT alone; 0 when absent, ending a playout as the next turn begins",
     GetOpt.Option [] ["cutoff"] (GetOpt.ReqArg (perSeat "a number of prompts" Read.readMaybe (\n b -> b {SearchBudget.prompts = n})) "[SEAT=]N") "the prompts a playout is answered before it is cut off and its position scored, in every seat or in SEAT alone; 300 when absent",
     GetOpt.Option [] ["playout"] (GetOpt.ReqArg (perSeat "a playout policy, random or greedy" playoutNamed (\n b -> b {SearchBudget.playout = n})) "[SEAT=]POLICY") "who answers every seat in the search bot's playouts, random (the random bot) or greedy (playing a land, else casting a permanent spell, where it can), in every seat or in SEAT alone; random when absent",
+    GetOpt.Option [] ["method"] (GetOpt.ReqArg (perSeat "a search method, flat or tree" methodNamed (\n b -> b {SearchBudget.method = n})) "[SEAT=]METHOD") "how the search bot spends its playouts, flat (each option played out alike) or tree (one information-set tree over every seat's decisions, the playouts of every option shared by it), in every seat or in SEAT alone; flat when absent",
     GetOpt.Option [] ["candidates"] (GetOpt.ReqArg (perSeat "a number of candidate worlds" Read.readMaybe (\n b -> b {SearchBudget.candidates = n})) "[SEAT=]N") "the worlds the search bot deals once at a decision and weighs by how likely each made the passes its opponents made, every playout's world drawn among them, in every seat or in SEAT alone; 0 when absent, each playout's world dealt fresh",
     GetOpt.Option [] ["mistakes"] (GetOpt.ReqArg (perSeat "a percent of decisions" (Monad.mfilter (<= 100) . Read.readMaybe) (\n b -> b {SearchBudget.mistakes = n})) "[SEAT=]PERCENT") "the percent of the search bot's decisions at which it takes the option scored next below the best, in every seat or in SEAT alone; 0 when absent",
     GetOpt.Option [] ["level"] (GetOpt.ReqArg (perSeat "a level, easy, medium or hard" (Opponent.named Opponent.difficultyName) Opponent.budgetAt) "[SEAT=]LEVEL") "how strongly the search bot plays, easy, medium or hard, setting its samples and mistakes (Parun.Play.Opponent), in every seat or in SEAT alone; hard when absent",
@@ -100,6 +102,10 @@ weighed parse s o = case seated s of
 -- | The playout policy a `--playout` value names.
 playoutNamed :: String -> Maybe Playout.Playout
 playoutNamed s = lookup s [("random", Playout.Random), ("greedy", Playout.Greedy)]
+
+-- | The search method a `--method` value names.
+methodNamed :: String -> Maybe SearchMethod.SearchMethod
+methodNamed s = lookup s [("flat", SearchMethod.Flat), ("tree", SearchMethod.InformationSet)]
 
 -- | A seat, 1 or 2, and the value it prefixes with `=`.
 seated :: String -> Maybe (Natural, String)
