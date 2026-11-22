@@ -15,9 +15,12 @@ import qualified Data.Text as Text
 import qualified Parun.BotSpec as BotSpec
 import qualified Parun.Play.Game as Game
 import qualified Parun.Play.Protocol as Protocol
+import qualified Parun.Play.Search as Search
 import qualified Parun.Registry as Registry
 import qualified Parun.Spec as Spec
 import qualified Parun.Support as S
+import qualified Parun.Types.Answerer as Answerer
+import qualified Parun.Types.Asked as Asked
 import qualified Parun.Types.Deck as Deck
 import qualified Parun.Types.GameState as GameState
 import qualified Parun.Types.Limits as Limits
@@ -27,6 +30,7 @@ import qualified Parun.Types.Question as Question
 import qualified Parun.Types.Reply as R
 import qualified Parun.Types.Request as Request
 import qualified Parun.Types.Result as Result
+import qualified Parun.Types.SearchBudget as SearchBudget
 import qualified Parun.Web.Ending as Ending
 import qualified Parun.Web.Html as Html
 import qualified Parun.Web.Link as Link
@@ -86,7 +90,7 @@ spec s registry = Spec.describe s "RemoteSeat" $ do
 
   Spec.it s "a game picked up from its seed and the replies so far asks what the game played through asked, and ends the same" $ do
     matchup <- BotSpec.bears s registry
-    let replayed whole k = State.runStateT (resumedGame matchup) (MkResumed (take k whole) 0 [] [])
+    let replayed whole k = State.runStateT (resumedGame matchup) (MkResumed (take k whole) 0 [] [] [])
     (outcome, whole) <- replayed [] 0
     let replies = reverse (kept whole)
         k = div (length replies) 2
@@ -96,6 +100,18 @@ spec s registry = Spec.describe s "RemoteSeat" $ do
     Spec.assertEqWith s "the requests made again are seen, not asked" (replays resumed) k
     Spec.assertEqWith s "asks what the game played through asked after them" (reverse (live resumed)) (drop k (reverse (live whole)))
     Spec.assertEqWith s "keeps only the replies made after them" (take k replies <> reverse (kept resumed)) replies
+
+  Spec.it s "a game against the search bot picked up from its seed and the replies so far, the bot's among them, searches none of the bot's decisions made before, and ends the same" $ do
+    matchup <- BotSpec.bears s registry
+    let replayed whole k = State.runStateT (againstSearch matchup) (MkResumed (take k whole) 0 [] [] [])
+    (outcome, whole) <- replayed [] 0
+    let replies = reverse (kept whole)
+        k = div (length replies) 2
+    (again, resumed) <- replayed replies k
+    Spec.assertBool s (any (< k) (searches whole)) "the bot decides before the replies stored run out"
+    Spec.assertEqWith s "ends the same" (fmap fst again) (fmap fst outcome)
+    Spec.assertEqWith s "searches only the bot's decisions after them" (reverse (searches resumed)) [n - k | n <- reverse (searches whole), n >= k]
+    Spec.assertEqWith s "keeps only the replies made after them, the bot's among them" (take k replies <> reverse (kept resumed)) replies
 
 -- A game between these seats, every seat in `guests` played from its own
 -- page over its own channel and the rest from the host's: it finishes, each
@@ -148,16 +164,33 @@ rejoined = do
 
 -- A game the host's page plays every seat of, picked up after the replies
 -- stored (Protocol.resumed): the requests seen while they last, and each
--- one asked and reply kept after.
+-- one asked and reply kept after; and before each search the bot made, how
+-- many replies were kept.
 data Resumed = MkResumed
   { stored :: [R.Reply],
     replays :: Int,
     live :: [Request.Request],
-    kept :: [R.Reply]
+    kept :: [R.Reply],
+    searches :: [Int]
   }
 
 resumedGame :: (Monad m) => NonEmpty.NonEmpty (PlayerId.PlayerId, Deck.Deck) -> State.StateT Resumed m (Either Text.Text (Result.Result, GameState.GameState))
 resumedGame matchup = Game.run (S.fixtureRegistry []) Nothing Limits.standard [] (Map.fromList [(pid, Game.wired (S.fixtureRegistry []) resuming) | (pid, _) <- NonEmpty.toList matchup]) (S.seeded 1) Map.empty matchup
+
+-- resumedGame with Bob's seat the search bot ('searching'), its answers
+-- stored and kept alongside the page's (Game.remembered).
+againstSearch :: (Monad m) => NonEmpty.NonEmpty (PlayerId.PlayerId, Deck.Deck) -> State.StateT Resumed m (Either Text.Text (Result.Result, GameState.GameState))
+againstSearch matchup =
+  let seat pid = if pid == S.bob then Game.remembered nextStored (\reply -> State.modify' (\r -> r {kept = reply : kept r})) searching else Game.wired (S.fixtureRegistry []) resuming
+   in Game.run (S.fixtureRegistry []) Nothing Limits.standard [] (Map.fromList [(pid, seat pid) | (pid, _) <- NonEmpty.toList matchup]) (S.seeded 1) Map.empty matchup
+
+-- The search bot, at 2 samples cut off after 40 prompts, noting each search.
+searching :: (Monad m) => Answerer.Answerer (Asked.Asked GameState.GameState) (Game.Play (State.StateT Resumed m))
+searching = Answerer.MkAnswerer $ \prompted -> do
+  Monad.when (Maybe.isJust (Protocol.requestFor prompted)) $ Game.underneath (State.modify' (\r -> r {searches = length (kept r) : searches r}))
+  Answerer.unwrap (Search.search (S.fixtureRegistry []) budget Search.known) prompted
+  where
+    budget = SearchBudget.MkSearchBudget {SearchBudget.samples = 2, SearchBudget.prompts = 40}
 
 -- Each request answered from the replies stored, then by a page that passes.
 resuming :: (Monad m) => Protocol.Exchange (State.StateT Resumed m)

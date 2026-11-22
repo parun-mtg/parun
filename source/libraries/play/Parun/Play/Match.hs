@@ -96,14 +96,15 @@ match options registry format decks = do
 -- | Game `index`, from zero, of a match from `seed` under `format` among the
 -- decks, seat 1's first: seeded 'seedAt', seat 'firstAt' playing first, the
 -- search bot in each seat of `searchers` at its budget (Search.search, over
--- the known lists) and the random bot in every other; with the entry each
--- answer replays as (Record.recording). With every seat searching at
+-- the known lists, drawing apart as parun play's does: Game.remembered) and
+-- the random bot in every other; with the entry each answer replays as
+-- (Record.recording). With every seat searching at
 -- PlayOptions.none's budget it is the game `parun play --bot 1 --bot 2`
 -- plays at that seed and `--first`.
 game :: (Monad m) => Registry.Registry m -> Maybe Format.Format -> Map.Map Natural SearchBudget.SearchBudget -> Key.Type.Key -> Natural -> NonEmpty.NonEmpty Deck.Deck -> m (Either Text.Text (Result.Result, GameState.GameState), Seq.Seq Timed.Timed)
 game registry format searchers seed index decks =
   let count = Natural.length decks
-      seat n = maybe (Game.bot (lifted registry)) (\budget -> Search.search (lifted registry) budget Search.known) (Map.lookup n searchers)
+      seat n = maybe (Game.bot (lifted registry)) (\budget -> Game.remembered (pure Nothing) (const (pure ())) (Search.search (lifted registry) budget Search.known)) (Map.lookup n searchers)
    in State.runStateT (Game.run (lifted registry) format Limits.standard [Record.recording (Command.labels count) sink] (Map.fromList [(Command.idOf n, seat n) | n <- [1 .. count]]) (Generator.fromKey (seedAt seed index)) Map.empty (Command.seated (firstAt index) decks)) Seq.empty
 
 -- | A pair of decks, seat 1's first.
