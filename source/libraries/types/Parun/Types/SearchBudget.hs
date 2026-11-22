@@ -19,6 +19,9 @@ data SearchBudget = MkSearchBudget
     -- playout's world dealt fresh.
     candidates :: Natural.Natural,
     -- | Who answers every seat's prompts in a playout.
-    playout :: Playout.Playout
+    playout :: Playout.Playout,
+    -- | The percent of searched decisions at which the option scored best
+    -- among those scored below the best is taken, a mistake.
+    mistakes :: Natural.Natural
   }
   deriving (Eq, Show)

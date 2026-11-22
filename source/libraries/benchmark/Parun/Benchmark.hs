@@ -499,7 +499,7 @@ playouts registry gs policy count = sum (fmap (playout registry gs policy) (take
 -- One of 'playouts', seeded by `seed`.
 playout :: Registry.Registry Identity.Identity -> GameState -> Playout.Playout -> Word.Word32 -> Integer
 playout registry gs policy seed =
-  let budget = SearchBudget.MkSearchBudget {SearchBudget.samples = 1, SearchBudget.turns = 0, SearchBudget.prompts = 300, SearchBudget.candidates = 0, SearchBudget.playout = policy}
+  let budget = SearchBudget.MkSearchBudget {SearchBudget.samples = 1, SearchBudget.turns = 0, SearchBudget.prompts = 300, SearchBudget.candidates = 0, SearchBudget.playout = policy, SearchBudget.mistakes = 0}
    in Either.fromRight 0 (Identity.runIdentity (Play.Game.playing (seeded seed) (Search.rollout registry budget Weights.neutral Engine.resumePriority (PlayerId.MkPlayerId 0) (Search.MkPick (const Nothing)) gs)))
 
 -- A generator keyed by `n` alone.

@@ -10,6 +10,8 @@ import qualified Data.Text as Text
 import qualified Parun.Spec as Spec
 import qualified Parun.Types.CardName as CardName
 import qualified Parun.Types.Color as Color
+import qualified Parun.Types.Difficulty as Difficulty
+import qualified Parun.Types.Persona as Persona
 import qualified Parun.Web.Attribute as Attribute
 import qualified Parun.Web.DeckBrowser as DeckBrowser
 import qualified Parun.Web.Diff as Diff
@@ -106,6 +108,21 @@ spec s = Spec.describe s "Parun.Web.Lobby" $ do
       Spec.assertEqWith s "no seat left to a random deck" (Lobby.inviteTarget seated) Nothing
       Spec.assertEqWith s "the first bot's own" invites [Just (Lobby.MkInviteSlot 0)]
       Spec.assertEqWith s "one per bot" (length (filter (Text.isInfixOf (Text.pack "Invite a player instead")) (Text.splitOn (Text.pack "</button>") (Html.toText page)))) 3
+
+    Spec.it s "sets every bot's level and style by the name chosen, ignoring one it does not know" $ do
+      let set event value = Lobby.update event (Text.pack value)
+          easy = set Lobby.MkPersona "control" (set Lobby.MkDifficulty "easy" lobby)
+      Spec.assertEqWith s "unless told otherwise" (Lobby.difficulty lobby, Lobby.persona lobby) (Difficulty.MkHard, Persona.MkBalanced)
+      Spec.assertEqWith s "chosen" (Lobby.difficulty easy, Lobby.persona easy) (Difficulty.MkEasy, Persona.MkControl)
+      Spec.assertEqWith s "unknown" (set Lobby.MkDifficulty "impossible" easy) easy
+      Spec.assertBool s (Text.isInfixOf (Text.pack "<option value=\"easy\" selected=\"\">Easy</option>") (Html.toText (Lobby.view easy))) "the level chosen in its menu"
+      Spec.assertBool s (Text.isInfixOf (Text.pack "<option value=\"control\" selected=\"\">Control</option>") (Html.toText (Lobby.view easy))) "the style chosen in its menu"
+
+    Spec.it s "offers the bots' level and style only while a bot is seated" $ do
+      let invited = Lobby.update (Lobby.MkInviteSlot 0) Text.empty lobby
+          offers = Text.isInfixOf (Text.pack "bot-settings") . Html.toText . Lobby.view
+      Spec.assertBool s (offers lobby) "a bot seated"
+      Spec.assertBool s (not (offers invited)) "every seat invited"
 
     Spec.it s "shows the saved decks apart from the shipped" $ do
       let holding = Lobby.withDecks (Seq.fromList [a, saved]) Map.empty Lobby.new

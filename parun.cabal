@@ -2579,6 +2579,8 @@ library play
     Parun.Play.Match
     Parun.Play.Meta
     Parun.Play.Offer
+    Parun.Play.Opponent
+    Parun.Play.OpponentSpec
     Parun.Play.Protocol
     Parun.Play.Record
     Parun.Play.Search
@@ -3311,6 +3313,7 @@ library types
     Parun.Types.DieRollRewrite
     Parun.Types.DifferentIn
     Parun.Types.DifferingValue
+    Parun.Types.Difficulty
     Parun.Types.Discard
     Parun.Types.DiscardCards
     Parun.Types.DiscardCause
@@ -3704,6 +3707,7 @@ library types
     Parun.Types.PermissionLimit
     Parun.Types.PermissionPool
     Parun.Types.PermissionVerb
+    Parun.Types.Persona
     Parun.Types.PerTarget
     Parun.Types.Phase
     Parun.Types.PhaseAnchor

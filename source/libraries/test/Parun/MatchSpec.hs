@@ -2,6 +2,7 @@
 -- tally.
 module Parun.MatchSpec where
 
+import qualified Control.Monad as Monad
 import qualified Data.Either as Either
 import qualified Data.Foldable as Foldable
 import qualified Data.List.NonEmpty as NonEmpty
@@ -16,28 +17,43 @@ import qualified Parun.Extra.Natural as Natural
 import qualified Parun.JsonCodec.Codec as Codec
 import qualified Parun.Play.Command as Command
 import qualified Parun.Play.Match as Match
+import qualified Parun.Play.Opponent as Opponent
 import qualified Parun.Play.Search as Search
 import qualified Parun.Registry as Registry
 import qualified Parun.Scenario as Scenario
 import qualified Parun.Spec as Spec
 import qualified Parun.Support as S
 import qualified Parun.Types.Deck as Deck
+import qualified Parun.Types.Difficulty as Difficulty
 import qualified Parun.Types.GameState as GameState
 import qualified Parun.Types.Generator as Generator
 import qualified Parun.Types.Key as Key
 import qualified Parun.Types.Label as Label
+import qualified Parun.Types.MatchOptions as MatchOptions
+import qualified Parun.Types.Persona as Persona
 import qualified Parun.Types.PlayerId as PlayerId
 import qualified Parun.Types.PrintingTable as PrintingTable
 import qualified Parun.Types.Result as Result
 import qualified Parun.Types.Scenario as Scenario.Type
+import qualified Parun.Types.SearchBudget as SearchBudget
 import qualified Parun.Types.Tally as Tally
 import qualified Parun.Types.TeamId as TeamId
 import qualified Parun.Types.Timed as Timed
 import qualified Parun.Types.TurnRegisters as TurnRegisters
 import qualified Parun.Types.When as When
+import qualified System.Console.GetOpt as GetOpt
 
 spec :: (Monad m, Monad n) => Spec.Spec m n -> Registry.Registry m -> n ()
 spec s registry = Spec.describe s "Match" $ do
+  Spec.it s "--level, --mistakes and --persona set the search bot's budget and weights by name, in every seat or one" $ do
+    let parse arguments = case GetOpt.getOpt GetOpt.Permute Match.flags arguments of
+          (updates, [], []) -> Monad.foldM (\options update -> update options) MatchOptions.none updates
+          (_, _, problems) -> Left (concat problems)
+        parsed = parse ["--level", "2=easy", "--mistakes", "1=5", "--persona", "aggro", "--persona", "2=control"]
+    Spec.assertEqWith s "the budgets" (fmap MatchOptions.budgets parsed) (Right (Map.fromList [(1, MatchOptions.budget {SearchBudget.mistakes = 5}), (2, Opponent.budgetAt Difficulty.MkEasy MatchOptions.budget)]))
+    Spec.assertEqWith s "the weights" (fmap MatchOptions.weighing parsed) (Right (Map.fromList [(1, Left Persona.MkAggro), (2, Left Persona.MkControl)]))
+    Spec.assertBool s (Either.isLeft (parse ["--level", "impossible"])) "an unnamed level refused"
+
   Spec.it s "the decks take turns playing first, game by game" $ do
     decks <- pair <$> BotSpec.sevens s registry
     starts <- mapM (\index -> firstToAct . snd <$> Match.game (S.fixtureRegistry []) Nothing Map.empty Search.known (key 7) index (Match.both decks)) [0, 1, 2, 3]

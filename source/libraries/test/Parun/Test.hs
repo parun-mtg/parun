@@ -1082,6 +1082,7 @@ import qualified Parun.PlaneswalkerCombatSpec
 import qualified Parun.PlaneswalkerSpec
 import qualified Parun.Play.GeneratorSpec
 import qualified Parun.Play.KeySpec
+import qualified Parun.Play.OpponentSpec
 import qualified Parun.PlaySpec
 import qualified Parun.PlayerDesignationSpec
 import qualified Parun.PlayerEffectSpec
@@ -2208,6 +2209,7 @@ spec s reference corpus = do
   Parun.Extra.Word64Spec.spec s
   Parun.Play.GeneratorSpec.spec s
   Parun.Play.KeySpec.spec s
+  Parun.Play.OpponentSpec.spec s
   Parun.Extra.OrdSpec.spec s
   Parun.Extra.SemigroupSpec.spec s
   Parun.Extra.Word8Spec.spec s

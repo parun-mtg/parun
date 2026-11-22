@@ -1281,6 +1281,19 @@ main.lobby.new-game {
   flex: 1;
 }
 
+/* How every bot plays: a label above each menu, the two side by side. */
+.bot-settings {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  grid-auto-flow: column;
+  grid-template-rows: auto auto;
+  gap: 4px 8px;
+}
+
+.bot-settings select {
+  width: 100%;
+}
+
 /* An invited player's seat: the link to send, the box their code goes in. */
 .lobby-seat.invite {
   border-style: dashed;
