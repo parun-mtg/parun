@@ -178,7 +178,7 @@ spec s registry = Spec.describe s "Protocol" $ do
     Spec.assertEqWith s "plays" (fst (asking ["\"Play\""])) (Just S.bob)
     Spec.assertEqWith s "end of input" (fst (asking [])) Nothing
     Spec.assertEqWith s "views" (fmap (fmap Request.view) requests) [Just Nothing, Just Nothing]
-    Spec.assertEqWith s "questions" (fmap (fmap Request.question) requests) (replicate 2 (Just (Question.MkQuestion S.bob (Text.pack "PlayOrDraw") (R.Array [R.Text (Text.pack "Play"), R.Text (Text.pack "Draw")]) Nothing)))
+    Spec.assertEqWith s "questions" (fmap (fmap Request.question) requests) (replicate 2 (Just (Question.MkQuestion S.bob (Text.pack "PlayOrDraw") (R.Array [R.Text (Text.pack "Play"), R.Text (Text.pack "Draw")]) Nothing Nothing)))
     Spec.assertEqWith s "problems" (fmap (fmap Request.problem) requests) [Just Nothing, Just (Just (Text.pack "expected Play or Draw"))]
   Spec.it s "CR 103.1 among three seats, a seat on the line chooses the seat that takes the first turn" $ do
     let asking replies = State.runState (Protocol.playOrDraw (Protocol.overLines (\line -> State.state (\(out, rest) -> (Maybe.listToMaybe rest, (out <> [line], drop 1 rest))))) S.bob (S.alice NonEmpty.:| [S.bob, S.carol])) ([], fmap Text.pack replies)
@@ -186,7 +186,7 @@ spec s registry = Spec.describe s "Protocol" $ do
         requests = fmap (requestOf . Text.unpack) sent
     Spec.assertEqWith s "chooses" chose (Just S.carol)
     Spec.assertEqWith s "end of input" (fst (asking [])) Nothing
-    Spec.assertEqWith s "questions" (fmap (fmap Request.question) requests) (replicate 2 (Just (Question.MkQuestion S.bob (Text.pack "ChooseStarter") (R.Array (fmap (R.Text . Text.pack) ["0", "1", "2"])) Nothing)))
+    Spec.assertEqWith s "questions" (fmap (fmap Request.question) requests) (replicate 2 (Just (Question.MkQuestion S.bob (Text.pack "ChooseStarter") (R.Array (fmap (R.Text . Text.pack) ["0", "1", "2"])) Nothing Nothing)))
     Spec.assertEqWith s "problems" (fmap (fmap Request.problem) requests) [Just Nothing, Just (Just (Text.pack "expected a seat's id"))]
   Spec.it s "an activated ability is offered by its place among its source's, so two abilities of one source differ" $ do
     vane <- S.printingOf s registry "Arcum's Weathervane"
@@ -657,6 +657,29 @@ spec s registry = Spec.describe s "Protocol" $ do
         Spec.assertEqWith s "and no later one says anything" (filter Maybe.isJust later) []
       [] -> Spec.assertFailure s "alice never stopped a payment"
 
+  Spec.it s "CR 734.1 a seat withdraws the spell it is casting at its targets, and it is back in hand with nothing paid" $ do
+    gs <- started s registry
+    shock <- S.printingOf s registry "Shock"
+    mountain <- S.printingOf s registry "Mountain"
+    let (land, g1) = S.addPermanent mountain S.alice gs
+        (card, board) = S.addHandCard shock S.alice g1
+        logged = State.execState (Driver.drive [observer] (Protocol.over trusting (Protocol.viaLines (exchanging (withdrawsOnce card))) chance) 10000 (pure . (>= 2) . (TurnRegisters.turnNumber . GameState.turn)) board) []
+        sent = linesWithState logged
+        targeting = [request | (_, line) <- sent, Just request <- [requestOf line], Question.kind (Request.question request) == Text.pack "ChooseTargets"]
+        after = [gs' | (gs', line) <- drop 1 (dropWhile (not . List.isInfixOf "\"kind\":\"ChooseTargets\"" . snd) sent), Just request <- [requestOf line], Question.seat (Request.question request) == S.alice, Question.kind (Request.question request) == Text.pack "ChooseAction"]
+    case (targeting, after) of
+      ([request], next : _) -> do
+        Spec.assertBool s (Maybe.isJust (Question.withdraw (Request.question request))) "the targets offer a withdrawal"
+        Spec.assertEqWith s "Shock is back in alice's hand" (Game.zoneMembers Zone.Hand S.alice next `List.intersect` [card]) [card]
+        Spec.assertEqWith s "and nothing is on the stack" (Game.zoneMembers Zone.Stack S.alice next) []
+        Spec.assertBool s (not (Game.isTapped land next)) "the Mountain stays untapped"
+      _ -> Spec.assertFailure s "alice was asked for Shock's targets once and then for an action"
+  Spec.it s "CR 734.1 no withdrawal is offered outside an announcement" $ do
+    gs <- started s registry
+    let slot = SlotName.MkSlotName (Text.pack "target")
+        prompt = Prompt.ChooseTargets (Decider.MkDecider S.alice) S.alice (ObjectId.MkObjectId 7) (Map.singleton slot (1, Set.singleton (Recipient.ToPlayer S.bob)))
+    Spec.assertEqWith s "a resolution's targets" (fmap Question.withdraw (Protocol.questionOf gs prompt)) (Just Nothing)
+
   Spec.it s "CR 205.3e a subtype of the wrong kind is refused and asked again" $ do
     gs <- started s registry
     let oid = ObjectId.MkObjectId 1
@@ -859,6 +882,31 @@ stopsOnce line = do
         R.Array actions <- Question.offer question,
         Just i <- List.findIndex ((== Just (R.Text (Text.pack "Cast"))) . field "action") actions ->
           pure (Text.pack (show i))
+    _ -> client line
+
+-- Casts `card` the first time it is offered and withdraws it at its targets,
+-- paying with the first source should the cast go on regardless; then answers
+-- as `client` does.
+withdrawsOnce :: ObjectId.ObjectId -> Text.Text -> State.State Log Text.Text
+withdrawsOnce card line = do
+  withdrawn <- State.gets (any (List.isInfixOf "\"kind\":\"ChooseTargets\"") . Either.rights)
+  case requestOf (Text.unpack line) of
+    Just request
+      | Just withdrawal <- Question.withdraw question,
+        Maybe.isNothing (Request.problem request) ->
+          pure (Common.render (Codec.Reply.toValue withdrawal))
+      | Question.kind question == Text.pack "ChooseManaSource",
+        Just (source : _) <- field "sources" (Question.offer question) >>= arrayOf,
+        Just object <- field "source" source ->
+          pure (Common.render (Codec.Reply.toValue object))
+      | Question.kind question == Text.pack "ChooseExtraManaSource" -> pure (Text.pack "null")
+      | Question.kind question == Text.pack "ChooseAction",
+        not withdrawn,
+        R.Array actions <- Question.offer question,
+        Just i <- List.findIndex (\action -> field "action" action == Just (R.Text (Text.pack "Cast")) && field "object" action == Just (PromptOffer.object Protocol.namer card)) actions ->
+          pure (Text.pack (show i))
+      where
+        question = Request.question request
     _ -> client line
 
 -- Passes, keeps, declines and discards the first cards offered, reading only

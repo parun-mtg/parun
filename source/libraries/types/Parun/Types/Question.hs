@@ -15,6 +15,10 @@ data Question = MkQuestion
     -- | CR 724.1: the player the seat makes this choice for, while it
     -- controls them; Nothing for the seat's own choice, and for one an effect
     -- has it make for another player it does not control.
-    for :: Maybe PlayerId.PlayerId
+    for :: Maybe PlayerId.PlayerId,
+    -- | CR 734.1: the reply that takes back the spell or ability the seat is
+    -- announcing (Parun.Play.Protocol.withdrawalOf); Nothing at any other
+    -- prompt.
+    withdraw :: Maybe Reply.Reply
   }
   deriving (Eq, Show)

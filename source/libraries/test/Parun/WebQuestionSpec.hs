@@ -546,7 +546,7 @@ spec s registry = Spec.describe s "WebQuestion" $ do
     bears <- S.printingOf s registry "Grizzly Bears"
     let (one, g1) = S.addPermanent bears S.alice (Setup.emptyGame S.bothPlayers)
         (two, gs) = S.addPermanent bears S.alice g1
-        request = (requestFor gs (Prompt.ChooseAction (Decider.MkDecider S.alice) S.alice [Action.Pass])) {Request.question = Question.MkQuestion S.alice (Text.pack "DeclareAttackers") (R.Array [PromptOffer.object Protocol.namer one, PromptOffer.object Protocol.namer two]) Nothing}
+        request = (requestFor gs (Prompt.ChooseAction (Decider.MkDecider S.alice) S.alice [Action.Pass])) {Request.question = Question.MkQuestion S.alice (Text.pack "DeclareAttackers") (R.Array [PromptOffer.object Protocol.namer one, PromptOffer.object Protocol.namer two]) Nothing Nothing}
         tap picked label = let view = Question.Web.view request Question.Web.blank {Question.Web.selected = picked} in Html.labelled (Text.pack "button") (Text.pack label) view >>= \path -> Html.handler (Text.pack "click") path view
     Spec.assertEqWith s "first" (tap Set.empty "Your Grizzly Bears 2/2 \x00d7\&2") (Just (Question.Web.MkToggle 0 0))
     Spec.assertEqWith s "then the next" (tap (Set.singleton (0, 0)) "1 of Your Grizzly Bears 2/2 \x00d7\&2") (Just (Question.Web.MkToggle 0 1))
@@ -664,7 +664,7 @@ spec s registry = Spec.describe s "WebQuestion" $ do
     let (land, gs) = S.addPermanent mountain S.alice (Setup.emptyGame S.bothPlayers)
         source = R.Object [(Text.pack "source", PromptOffer.object Protocol.namer land), (Text.pack "makes", R.Array [R.Array [Either.fromRight R.Null (Codec.Reply.fromValue (Codec.encode Codec.ManaType.codec (ManaType.Colored Color.Red)))]])]
         shown = requestFor gs (Prompt.ChooseAction (Decider.MkDecider S.alice) S.alice [Action.Pass])
-        request = shown {Request.question = Question.MkQuestion S.alice (Text.pack "ChooseManaSource") (R.Object [(Text.pack "sources", R.Array [source])]) Nothing}
+        request = shown {Request.question = Question.MkQuestion S.alice (Text.pack "ChooseManaSource") (R.Object [(Text.pack "sources", R.Array [source])]) Nothing Nothing}
         page = Question.Web.view request Question.Web.blank
     Spec.assertBool s (Text.pack "<h2>Choose a source.</h2>" `Text.isInfixOf` Html.toText page) "heading"
     Spec.assertEqWith s "tap" (fmap (\event -> Question.Web.step request Set.empty event Text.empty) (Html.labelled (Text.pack "button") (Text.pack "Your Mountain (makes )") page >>= \path -> Html.handler (Text.pack "click") path page)) (Just (Question.Web.MkReplied (PromptOffer.object Protocol.namer land)))
@@ -708,6 +708,16 @@ spec s registry = Spec.describe s "WebQuestion" $ do
     Spec.assertBool s (Text.pack "<h2>Choose 1 target for object 9</h2>" `Text.isInfixOf` refused) ("its heading: " <> Text.unpack refused)
     Spec.assertBool s (Text.pack "role=\"alert\">Pick 1 first.</p>" `Text.isInfixOf` refused) "the banner"
     Spec.assertEqWith s "one" (Question.Web.step request (picking request [Question.Web.MkToggle 0 0]) Question.Web.MkSubmit Text.empty) (Question.Web.MkReplied (R.Array [R.Array [slot, R.Array [R.Text (Text.pack "$1")]]]))
+    -- Done waits on a pick; a withdrawal, where the question carries one, is
+    -- a Cancel answering it (CR 734.1).
+    let withdrawal = R.Array [R.Array [slot, R.Array [R.Text (Text.pack "$9")]]]
+        withdrawing = request {Request.question = (Request.question request) {Question.withdraw = Just withdrawal}}
+        page picks = Html.toText (Question.Web.view withdrawing Question.Web.blank {Question.Web.selected = picks})
+        cancel = let view = Question.Web.view withdrawing Question.Web.blank in Html.labelled (Text.pack "button") (Text.pack "Cancel") view >>= \path -> Html.handler (Text.pack "click") path view
+    Spec.assertBool s (Text.pack "disabled=\"\">Done</button>" `Text.isInfixOf` page Set.empty) "Done is disabled with nothing picked"
+    Spec.assertBool s (not (Text.pack "disabled=\"\">Done</button>" `Text.isInfixOf` page (Set.singleton (0, 0)))) "and enabled with the target picked"
+    Spec.assertEqWith s "Cancel withdraws" cancel (Just (Question.Web.MkAnswer withdrawal))
+    Spec.assertBool s (not (Text.pack ">Cancel</button>" `Text.isInfixOf` Html.toText (Question.Web.view request Question.Web.blank))) "no Cancel without a withdrawal"
 
   Spec.it s "a player offered as a target is labelled with their life total" $ do
     let bob = R.Array [R.Text (Text.pack "Player"), R.Text (Text.pack "1")]
@@ -810,11 +820,11 @@ starters :: R.Reply
 starters = R.Array (fmap (R.Text . Text.pack) ["0", "1", "2"])
 
 bare :: Text.Text -> R.Reply -> Request.Request
-bare kind offer = Request.MkRequest Nothing (Question.MkQuestion S.alice kind offer Nothing) Nothing 0
+bare kind offer = Request.MkRequest Nothing (Question.MkQuestion S.alice kind offer Nothing Nothing) Nothing 0
 
 -- | A request asking the kind with the offer, with a view of an empty game.
 asking :: Text.Text -> R.Reply -> Request.Request
-asking kind offer = (requestFor (Setup.emptyGame S.bothPlayers) (Prompt.ChooseAction (Decider.MkDecider S.alice) S.alice [Action.Pass])) {Request.question = Question.MkQuestion S.alice kind offer Nothing}
+asking kind offer = (requestFor (Setup.emptyGame S.bothPlayers) (Prompt.ChooseAction (Decider.MkDecider S.alice) S.alice [Action.Pass])) {Request.question = Question.MkQuestion S.alice kind offer Nothing Nothing}
 
 -- | Every kind of question the scenario corpus answers has a form of its own,
 -- none falling back to a reply typed as JSON or labelling an option in JSON,

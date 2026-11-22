@@ -1051,7 +1051,13 @@ form request picked = case Text.unpack (Question.kind question) of
               : toggles g (most group) [(i, label) | (i, (_, label)) <- zip [0 ..] (options group)]
           | (g, group) <- zip [0 ..] (groups chooser)
           ]
-          <> [Element.el "div" ["passes"] [] $ primary MkSubmit (send chooser) : [button MkClear (Text.pack "Start over") | not (Set.null picked)]]
+          -- Answering waits on picks within every group's bounds, the refusal
+          -- in `step` a fence behind it.
+          <> [ Element.el "div" ["passes"] [] $
+                 Element.el "button" ["primary"] ([Element.attr "type" (Text.pack "button"), Element.on "click" MkSubmit] <> [Element.attr "disabled" Text.empty | not (all fits (zip [0 ..] (groups chooser)))]) (Mana.rich (send chooser))
+                   : [button MkClear (Text.pack "Start over") | not (Set.null picked)]
+                     <> [button (MkAnswer withdrawal) (Text.pack "Cancel") | Just withdrawal <- [Question.withdraw question]]
+             ]
   _ -> typedReply request
   where
     question = Request.question request
@@ -1072,6 +1078,7 @@ form request picked = case Text.unpack (Question.kind question) of
       | (indices, label, _) <- collapsed (const True) labelled
       ]
     many n = if n > 1 then Text.pack (" \x00d7" <> show n) else Text.empty
+    fits (g, group) = let n = Natural.length (filter ((== g) . fst) (Set.toList picked)) in least group <= n && n <= most group
     makes yields = if null yields then Text.empty else Text.pack " (makes " <> Text.intercalate (Text.pack " or ") (fmap (foldMap (\m -> Text.pack "{" <> Wording.manaType m <> Text.pack "}")) yields) <> Text.pack ")"
     heading t = Html.element (Text.pack "h2") [] (Mana.rich $ Text.pack t)
 
