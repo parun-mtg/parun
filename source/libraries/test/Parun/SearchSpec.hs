@@ -12,14 +12,17 @@ import qualified Control.Monad.Trans.Except as Except
 import qualified Control.Monad.Trans.State.Strict as State
 import qualified Data.Foldable as Foldable
 import qualified Data.List as List
+import qualified Data.List.NonEmpty as NonEmpty
 import qualified Data.Map.Strict as Map
 import qualified Data.Set as Set
 import qualified Data.Text as Text
 import qualified Data.Word as Word
+import Numeric.Natural (Natural)
 import qualified Parun.BotSpec as BotSpec
 import qualified Parun.Engine.Engine as Engine
 import qualified Parun.Engine.Game as Engine.Game
 import qualified Parun.Engine.PlayerView as PlayerView
+import qualified Parun.Extra.Natural as Natural
 import qualified Parun.Play.Command as Command
 import qualified Parun.Play.Game as Game
 import qualified Parun.Play.Search as Search
@@ -30,6 +33,7 @@ import qualified Parun.Types.Action as Action
 import qualified Parun.Types.Answerer as Answerer
 import qualified Parun.Types.Asked as Asked
 import qualified Parun.Types.Concession as Concession
+import qualified Parun.Types.Deck as Deck
 import qualified Parun.Types.GameState as GameState
 import qualified Parun.Types.Limits as Limits
 import qualified Parun.Types.Object as Object
@@ -38,6 +42,7 @@ import qualified Parun.Types.Phase as Phase
 import qualified Parun.Types.PlayOptions as PlayOptions
 import qualified Parun.Types.Player as Player
 import qualified Parun.Types.PlayerId as PlayerId
+import qualified Parun.Types.Printing as Printing
 import qualified Parun.Types.Program as Program
 import qualified Parun.Types.Prompt as Prompt
 import qualified Parun.Types.SearchBudget as SearchBudget
@@ -55,6 +60,35 @@ spec s registry = Spec.describe s "Search" $ do
       Spec.assertEqWith s "the viewer's view" (PlayerView.viewFor viewer world) (PlayerView.viewFor viewer gs)
       Spec.assertEqWith s "the opponent's unseen cards, as a whole" (List.sort (sources world (Search.unseen viewer gs S.bob))) (List.sort (sources gs (Search.unseen viewer gs S.bob)))
     Spec.assertBool s (any (\world -> handOf world S.bob /= handOf gs S.bob) worlds) "some world deals the opponent another hand"
+
+  Spec.it s "a meta's posterior moves to the deck playing a card the opponent showed, once they show it" $ do
+    (bear, meta) <- bearsOrCoursers s registry
+    after <- showing s registry (Map.member bear)
+    Spec.assertEqWith s "the opponent's cards shown and unseen, their 20 once each" (sum (Search.seen viewer after S.bob) + Natural.length (Search.unseen viewer after S.bob)) 20
+    before <- showing s registry (\shown -> not (Map.null shown) && Map.notMember bear shown)
+    let weights gs = fmap fst (Search.posterior meta (Search.seen viewer gs S.bob))
+    Spec.assertEqWith s "the weights, only Forests shown" (weights before) (1 / 2 NonEmpty.:| [1 / 2])
+    Spec.assertEqWith s "the weights, a Grizzly Bears shown" (weights after) (0 NonEmpty.:| [1])
+
+  Spec.it s "CR 400.2 a world sampled from a meta looks the same to its viewer, an opponent's unseen cards dealt from a deck explaining what they showed" $ do
+    (bear, meta) <- bearsOrCoursers s registry
+    before <- showing s registry (\shown -> not (Map.null shown) && Map.notMember bear shown)
+    after <- showing s registry (Map.member bear)
+    let from decks gs = traverse (\n -> either (Spec.assertFailure s . Text.unpack) pure =<< Except.runExceptT (State.evalStateT (Search.sample (Search.inferred decks) viewer gs) (S.seeded n))) [1 .. 8 :: Word.Word32]
+        worlds = from meta
+        bears = snd (NonEmpty.last meta)
+        rest gs = Map.differenceWith (\k n -> if k > n then Just (k - n) else Nothing) (Deck.cards bears) (Search.seen viewer gs S.bob)
+    early <- worlds before
+    late <- worlds after
+    Foldable.for_ [(world, gs) | (gs, sampled) <- [(before, early), (after, late)], world <- sampled] $ \(world, gs) ->
+      Spec.assertEqWith s "the viewer's view" (PlayerView.viewFor viewer world) (PlayerView.viewFor viewer gs)
+    Foldable.for_ late $ \world -> do
+      Spec.assertEqWith s "the opponent's unseen cards, the bears deck less what they showed" (List.sort (printingsOf world (Search.unseen viewer after S.bob))) (Search.spread (rest after))
+    coursersOnly <- from (NonEmpty.head meta NonEmpty.:| []) before
+    Foldable.for_ coursersOnly $ \world ->
+      Spec.assertEqWith s "the viewer's own unseen cards, as a whole, from a meta without their deck" (List.sort (sources world (Search.unseen viewer before viewer))) (List.sort (sources before (Search.unseen viewer before viewer)))
+    courser <- S.printingOf s registry "Centaur Courser"
+    Spec.assertBool s (any (\world -> elem courser (printingsOf world (Search.unseen viewer before S.bob))) early) "some world, only Forests shown, deals the opponent a Centaur Courser"
 
   Spec.it s "a restarted priority decision asks its holder again, in the same step, offering the same menu" $ do
     (gs, menu) <- decision s registry
@@ -177,6 +211,32 @@ asksAgain program = case program of
     Prompt.ChooseAction _ pid menu | pid == S.alice -> Just (TurnRegisters.phase (GameState.turn (Asked.game asked)), menu)
     _ -> Nothing
   Program.Return _ -> Nothing
+
+-- A meta of two decks with even shares, 12 Centaur Courser and 12 Grizzly
+-- Bears each beside 8 Forest, the bears deck the opponent's in 'capturing';
+-- and the Grizzly Bears.
+bearsOrCoursers :: (Monad m) => Spec.Spec m n -> Registry.Registry m -> m (Printing.Printing, NonEmpty.NonEmpty (Natural, Deck.Deck))
+bearsOrCoursers s registry = do
+  bear <- S.printingOf s registry "Grizzly Bears"
+  courser <- S.printingOf s registry "Centaur Courser"
+  forest <- S.printingOf s registry "Forest"
+  let deck creature = Deck.fromCards (Map.fromList [(creature, 12), (forest, 8)])
+  pure (bear, (1, deck courser) NonEmpty.:| [(1, deck bear)])
+
+-- Seat 1's first priority decision with a choice from turn 3 on, in
+-- 'capturing''s game, at which seat 2 shows cards `shown` takes.
+showing :: (Monad m) => Spec.Spec m n -> Registry.Registry m -> (Map.Map Printing.Printing Natural -> Bool) -> m GameState.GameState
+showing s registry shown = fmap fst (capturing s registry 5 "a decision" found)
+  where
+    found :: Asked.Asked GameState.GameState r -> Maybe (GameState.GameState, ())
+    found asked = case Asked.prompt asked of
+      Prompt.ChooseAction decider pid menu
+        | pid == S.alice && Search.searchable asked decider pid (Search.options menu) && shown (Search.seen S.alice (Asked.game asked) S.bob) -> Just (Asked.game asked, ())
+      _ -> Nothing
+
+-- The printings behind objects.
+printingsOf :: GameState.GameState -> [ObjectId.ObjectId] -> [Printing.Printing]
+printingsOf gs oids = [printing | oid <- oids, object <- Foldable.toList (Engine.Game.lookupObject oid gs), Source.OfCard pid <- [Object.source object], printing <- Foldable.toList (Engine.Game.printingOf pid gs)]
 
 -- The cards behind objects.
 sources :: GameState.GameState -> [ObjectId.ObjectId] -> [Source.Source]

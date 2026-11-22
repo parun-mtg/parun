@@ -82,6 +82,16 @@ spec s = Spec.describe s "Parun.Play.Generator" $ do
       let picked = from (keyed 0) (Monad.replicateM 100 (Generator.pick ('a' NonEmpty.:| "bc")))
       Spec.assertEq s (Set.toList (Set.fromList picked)) "abc"
 
+  Spec.describe s "weighted" $ do
+    Spec.it s "draws each option about as often as its weight, never one weighing nothing" $ do
+      let drawn = from (keyed 0) (Monad.replicateM 4000 (Generator.weighted ((0, 'a') NonEmpty.:| [(1, 'b'), (3, 'c')])))
+          counts = Map.fromListWith (+) (fmap (\o -> (o, 1 :: Int)) drawn)
+      Spec.assertEq s (Map.keys counts) "bc"
+      Spec.assertBool s (Map.findWithDefault 0 'b' counts > 900 && Map.findWithDefault 0 'b' counts < 1100) ("weighted: " <> show counts)
+
+    Spec.it s "answers the first option when no weight is positive" $ do
+      Spec.assertEq s (from (keyed 0) (Generator.weighted ((0, 'a') NonEmpty.:| [(0, 'b')]))) 'a'
+
   Spec.describe s "shuffle" $ do
     Spec.it s "is a permutation" $ do
       let shuffled = from (keyed 0) (Generator.shuffle [1 .. 20 :: Int])

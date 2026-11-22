@@ -1,5 +1,6 @@
--- Covers Parun.Play.Meta: a meta file, a deck's matchups against it over
--- shared seeds, and the report's rates and intervals.
+-- Covers Parun.Play.Meta and Parun.Play.Command.parseMeta: a meta file, a
+-- deck's matchups against it over shared seeds, and the report's rates and
+-- intervals.
 module Parun.MetaSpec where
 
 import qualified Data.List.NonEmpty as NonEmpty
@@ -8,7 +9,9 @@ import qualified Data.Text as Text
 import qualified Data.Word as Word
 import Numeric.Natural (Natural)
 import qualified Parun.BotSpec as BotSpec
+import qualified Parun.Play.Command as Command
 import qualified Parun.Play.Meta as Meta
+import qualified Parun.Play.Search as Search
 import qualified Parun.Registry as Registry
 import qualified Parun.Spec as Spec
 import qualified Parun.Support as S
@@ -18,10 +21,10 @@ import qualified Parun.Types.Key as Key
 spec :: (Monad m, Monad n) => Spec.Spec m n -> Registry.Registry m -> n ()
 spec s registry = Spec.describe s "Meta" $ do
   Spec.it s "a meta file names each deck with its share, 1 when unsaid" $ do
-    Spec.assertEqWith s "meta" (Meta.parseMeta (Text.pack "# a meta\n3 decks/red.txt\n\nblue deck.txt\n")) (Right ((3, Text.pack "decks/red.txt") NonEmpty.:| [(1, Text.pack "blue deck.txt")]))
-    Spec.assertEqWith s "a share of 0" (Meta.parseMeta (Text.pack "red.txt\n0 blue.txt\n")) (Left [Text.pack "line 2: a share of 0"])
-    Spec.assertEqWith s "no deck" (Meta.parseMeta (Text.pack "# nothing\n")) (Left [Text.pack "no deck"])
-    Spec.assertEqWith s "beside the meta" (fmap (Meta.relativeTo "metas/standard.txt") ["red.txt", "/decks/blue.txt"]) ["metas/red.txt", "/decks/blue.txt"]
+    Spec.assertEqWith s "meta" (Command.parseMeta (Text.pack "# a meta\n3 decks/red.txt\n\nblue deck.txt\n")) (Right ((3, Text.pack "decks/red.txt") NonEmpty.:| [(1, Text.pack "blue deck.txt")]))
+    Spec.assertEqWith s "a share of 0" (Command.parseMeta (Text.pack "red.txt\n0 blue.txt\n")) (Left [Text.pack "line 2: a share of 0"])
+    Spec.assertEqWith s "no deck" (Command.parseMeta (Text.pack "# nothing\n")) (Left [Text.pack "no deck"])
+    Spec.assertEqWith s "beside the meta" (fmap (Command.relativeTo "metas/standard.txt") ["red.txt", "/decks/blue.txt"]) ["metas/red.txt", "/decks/blue.txt"]
 
   Spec.it s "a matchup's rate carries its Wilson interval" $ do
     Spec.assertEqWith s "5 of 10" (Meta.percent (Meta.wilson 5 10)) (Text.pack "50.0% (23.7% to 76.3%).")
@@ -59,9 +62,9 @@ spec s registry = Spec.describe s "Meta" $ do
   Spec.it s "two versions meet a meta deck over the same seeds, and each meta deck over its own" $ do
     bears <- snd . NonEmpty.head <$> BotSpec.bears s registry
     sevens <- snd . NonEmpty.head <$> BotSpec.sevens s registry
-    first <- Meta.matchup (S.fixtureRegistry []) Nothing Map.empty (key 7) 4 0 bears sevens
-    again <- Meta.matchup (S.fixtureRegistry []) Nothing Map.empty (key 7) 4 0 bears sevens
-    other <- Meta.matchup (S.fixtureRegistry []) Nothing Map.empty (key 7) 4 1 bears sevens
+    first <- Meta.matchup (S.fixtureRegistry []) Nothing Map.empty Search.known (key 7) 4 0 bears sevens
+    again <- Meta.matchup (S.fixtureRegistry []) Nothing Map.empty Search.known (key 7) 4 0 bears sevens
+    other <- Meta.matchup (S.fixtureRegistry []) Nothing Map.empty Search.known (key 7) 4 1 bears sevens
     Spec.assertEqWith s "games played" (length first) 4
     Spec.assertEqWith s "the same games again" (fmap Meta.won first) (fmap Meta.won again)
     Spec.assertEqWith s "no lead over itself" (Meta.report (Text.pack "a" NonEmpty.:| [Text.pack "b"]) ((1, Text.pack "x", fmap Meta.won first NonEmpty.:| [fmap Meta.won again]) NonEmpty.:| []) !! 4) (Text.pack "  a minus b, over the same seeds: +0.0 points (-50.6 to +50.6).")

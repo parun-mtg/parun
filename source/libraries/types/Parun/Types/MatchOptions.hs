@@ -17,11 +17,14 @@ data MatchOptions = MkMatchOptions
     -- playing the rest.
     searching :: Set.Set Natural.Natural,
     -- | How hard the search bot looks.
-    budget :: SearchBudget.SearchBudget
+    budget :: SearchBudget.SearchBudget,
+    -- | The meta file whose decks the search bot infers an opponent's unseen
+    -- cards from, the lists not being known; each list known when absent.
+    meta :: Maybe FilePath
   }
   deriving (Eq, Show)
 
 -- | A hundred games keyed from the operating system's entropy, none saved,
--- the random bot in every seat.
+-- the random bot in every seat, every list known.
 none :: MatchOptions
-none = MkMatchOptions {seed = Nothing, games = 100, save = Nothing, searching = Set.empty, budget = SearchBudget.MkSearchBudget {SearchBudget.samples = 2, SearchBudget.prompts = 300}}
+none = MkMatchOptions {seed = Nothing, games = 100, save = Nothing, searching = Set.empty, budget = SearchBudget.MkSearchBudget {SearchBudget.samples = 2, SearchBudget.prompts = 300}, meta = Nothing}
