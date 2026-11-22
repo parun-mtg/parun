@@ -422,7 +422,7 @@ function openSheet() {
 }
 
 function mainButton() {
-  return root.querySelector(".prompt button.primary:not(:disabled), .handoff button.primary, .lobby-start button.primary:not(:disabled)");
+  return root.querySelector(".prompt button.primary:not(:disabled), .handoff button.primary, .lobby-start button.start:not(.ready, :disabled)");
 }
 
 // Takes back the keys rekey gave, leaving the page as the engine built it,

@@ -242,9 +242,13 @@ nameProblems names typed
     slug = slugOf typed
 
 -- | The lobby once this deck is imported: the panel closed, the saved decks
--- shown, and the deck the seat's being chosen for, where it may play it.
+-- shown, and the deck the seat's being chosen for, or, where that bot may
+-- not play it, yours, your seat then chosen so the chip shows where it went.
 imported :: Text.Text -> Lobby -> Lobby
-imported name lobby = (update (MkPick name) Text.empty lobby) {importing = Nothing, shelf = MkSaved}
+imported name lobby =
+  let picked = update (MkPick name) Text.empty lobby
+      seated = if chosen picked (choosing picked) == Just name then picked else update (MkPick name) Text.empty lobby {choosing = MkMine}
+   in seated {importing = Nothing, shelf = MkSaved}
 
 -- | The lobby without this deck, every seat holding it emptied.
 deleted :: Text.Text -> Lobby -> Lobby
@@ -320,13 +324,18 @@ deckColours colours contents = foldMap colours (Set.fromList (fmap snd (entries 
 -- | How many cards a deck list's main deck holds: its lines before any
 -- other section's header, and those under the main deck's.
 mainCount :: Text.Text -> Natural
-mainCount contents =
-  let step (inMain, n) line = case DeckList.sectionNamed (Text.strip line) of
-        Just section -> (section == DeckList.Main, n)
+mainCount = sum . fmap fst . mainEntries
+
+-- | A deck list's main deck ('entries'): its lines before any other
+-- section's header, and those under the main deck's.
+mainEntries :: Text.Text -> [(Natural, CardName.CardName)]
+mainEntries contents =
+  let step (inMain, kept) line = case DeckList.sectionNamed (Text.strip line) of
+        Just section -> (section == DeckList.Main, kept)
         Nothing
-          | inMain, Just (k, _) <- Maybe.listToMaybe (entries line) -> (inMain, n + k)
-          | otherwise -> (inMain, n)
-   in snd (List.foldl' step (True, 0) (Text.lines contents))
+          | inMain -> (inMain, kept <> entries line)
+          | otherwise -> (inMain, kept)
+   in snd (List.foldl' step (True, []) (Text.lines contents))
 
 -- | A deck list's lines that name a card ("4 Forest", "1 Shock (M19) 156"),
 -- each as its count and the card; other lines skipped.
@@ -559,10 +568,11 @@ shelved :: Lobby -> [Text.Text]
 shelved lobby = filter ((== (shelf lobby == MkSaved)) . isSaved) (Foldable.toList (offered lobby))
 
 -- | The decks shown: those shelved that match what is typed, hold every
--- colour toggled on, and, among the shipped, are of the set chosen.
+-- colour toggled on (or are still to have their colours read), and, among
+-- the shipped, are of the set chosen.
 shown :: Lobby -> [Text.Text]
 shown lobby =
-  let coloured name = Set.isSubsetOf (colourFilter lobby) (Map.findWithDefault Set.empty name (palette lobby))
+  let coloured name = maybe True (Set.isSubsetOf (colourFilter lobby)) (Map.lookup name (palette lobby))
       ofSet name = shelf lobby == MkSaved || all (== fst (describe name)) (setFilter lobby)
    in filter (\name -> matches (search lobby) name && coloured name && ofSet name) (shelved lobby)
 
@@ -591,29 +601,31 @@ seatName lobby slot = case slot of
     | length (theirs lobby) == 1 -> "Bot"
     | otherwise -> "Bot " <> show (i + 1)
 
--- | Why the game may not start yet, if anything stops it: the decks
--- unread, your deck unchosen or breaking its format, or no deck for a bot
--- to draw; with players invited, who is still to connect, choose or be
--- ready, which Ready does not wait on.
-waiting :: Lobby -> Maybe String
-waiting lobby
+-- | What stops Start, or Ready with players invited: the decks unread, or
+-- your deck unchosen or breaking its format. A bot always has a deck to
+-- draw, since your deck is among its 'opponents'.
+blocking :: Lobby -> Maybe String
+blocking lobby
   | reading lobby = Just "Reading the decks\x2026"
   | Maybe.isNothing (mine lobby) = Just "Choose your deck to start."
   | Left (_ : _) <- startable lobby = Just "Your deck breaks its format:"
-  | any (\(i, held) -> Maybe.isNothing held && Map.notMember i (invites lobby)) (zip [0 ..] (theirs lobby)),
-    null (opponents lobby) =
-      Just "No deck shares your deck's format for a bot to draw."
-  | otherwise = case [(i, invite) | (i, invite) <- Map.toList (invites lobby), not (connected invite && Maybe.isJust (guestDeck invite) && guestReady invite)] of
-      (i, invite) : _
-        | not (connected invite) -> Just (seatName lobby (MkTheirs i) <> " is still to connect.")
-        | Maybe.isNothing (guestDeck invite) -> Just (seatName lobby (MkTheirs i) <> " is choosing a deck.")
-        | otherwise -> Just (seatName lobby (MkTheirs i) <> " is not ready yet.")
-      [] -> Nothing
+  | otherwise = Nothing
 
--- | Whether Start (or Ready, with players invited) may be pressed: it waits
--- on nothing a player invited is still to do.
+-- | Why the game may not start yet: what is 'blocking', else who invited
+-- is still to connect, choose or be ready, which Ready does not wait on.
+waiting :: Lobby -> Maybe String
+waiting lobby = case blocking lobby of
+  Just why -> Just why
+  Nothing -> case [(i, invite) | (i, invite) <- Map.toList (invites lobby), not (connected invite && Maybe.isJust (guestDeck invite) && guestReady invite)] of
+    (i, invite) : _
+      | not (connected invite) -> Just (seatName lobby (MkTheirs i) <> " is still to connect.")
+      | Maybe.isNothing (guestDeck invite) -> Just (seatName lobby (MkTheirs i) <> " is choosing a deck.")
+      | otherwise -> Just (seatName lobby (MkTheirs i) <> " is not ready yet.")
+    [] -> Nothing
+
+-- | Whether Start, or Ready with players invited, may be pressed.
 pressable :: Lobby -> Bool
-pressable lobby = Maybe.isJust (mine lobby) && not (reading lobby) && either null (const True) (startable lobby) && (not (Map.null (invites lobby)) || Maybe.isNothing (waiting lobby))
+pressable = Maybe.isNothing . blocking
 
 -- | A colour's name.
 colourName :: Color.Color -> String
@@ -652,8 +664,8 @@ seatsView lobby =
       <> concat
         [ Element.el "span" ["eyebrow", "versus"] [] [Element.string "versus"]
             : case Map.lookup i (invites lobby) of
-              Just invite -> [inviteView i invite]
-              Nothing -> [seat (MkTheirs i) (Icon.icon [] Icon.MkBot) held [Element.button ["quiet", "drop-bot"] MkDropBot [Element.string "Remove"] | i == length bots - 1, length bots > 1]]
+              Just invite -> [inviteView i invite (remove i)]
+              Nothing -> [seat (MkTheirs i) (Icon.icon [] Icon.MkBot) held (Element.button ["quiet", "invite-seat"] (MkInviteSlot i) [Element.string "Invite a player instead"] : remove i)]
         | (i, held) <- zip [0 ..] bots
         ]
       <> [ Element.el
@@ -667,6 +679,9 @@ seatsView lobby =
          ]
   where
     bots = theirs lobby
+    -- Only the last seat is unseated: the invites' links are numbered by
+    -- seat, so unseating another would renumber a live connection.
+    remove i = [Element.button ["quiet", "drop-bot"] MkDropBot [Element.string "Remove"] | i == length bots - 1, length bots > 1]
     seat which avatar held extra =
       let on = choosing lobby == which
        in Element.el
@@ -689,7 +704,7 @@ seatsView lobby =
                   Nothing -> [Element.el "span" ["seat-deck-name"] [] [Element.string (if which == MkMine then "No deck yet" else "Random deck")]],
                 Element.el "span" ["seat-note", "muted"] [] [Element.string (maybe (if which == MkMine then "Choose one to start" else "Drawn when the game starts") (counted lobby) held)]
               ]
-              : extra
+              : [Element.el "div" ["seat-actions"] [] extra | not (null extra)]
 
 -- | A deck's set and its card count, as far as read: "M12 · 60 cards".
 counted :: Lobby -> Text.Text -> String
@@ -834,16 +849,16 @@ detailView lobby =
                      then [Element.button ["edit"] (MkEdit name) [Element.string "Edit"], Element.button ["export"] (MkExport name) [Element.string "Export"], Element.button ["delete"] (MkDelete name) [Element.string "Delete"]]
                      else [Element.button ["edit"] (MkEdit name) [Element.string "Edit a copy"]]
                ]
-            <> foldMap (pure . exportView) (exporting lobby)
+            <> [exportView shown' | shown'@(exported, _) <- Maybe.maybeToList (exporting lobby), exported == name]
           where
             colours = Map.findWithDefault Set.empty name (palette lobby)
 
 -- | A slot a player from another browser takes: the link to send them, the
 -- box their reply code goes in, and once connected their deck and whether
--- they are ready; the way back to a bot; and the warning that the host sees
--- every card.
-inviteView :: Int -> Invite -> Html.Html Event
-inviteView i invite =
+-- they are ready; the warning that the host sees every card; the way back
+-- to a bot; and `extra`, the way to unseat it where there is one.
+inviteView :: Int -> Invite -> [Html.Html Event] -> Html.Html Event
+inviteView i invite extra =
   Element.el
     "div"
     ["lobby-seat", "invite"]
@@ -877,7 +892,7 @@ inviteView i invite =
          )
       <> [Element.el "p" ["problem"] [Element.attr "role" (Text.pack "alert")] [Element.text p] | p <- Maybe.maybeToList (inviteProblem invite)]
       <> [ Element.el "p" ["invite-warning"] [] [Element.string "Your browser runs the game, so you could see their hidden cards: invite only friends."],
-           Element.button ["bot-slot"] (MkBotSlot i) [Element.string "Play a bot instead"]
+           Element.el "div" ["seat-actions"] [] (Element.button ["quiet", "bot-slot"] (MkBotSlot i) [Element.string "Play a bot instead"] : extra)
          ]
   where
     field name = Text.pack (name <> "-" <> show i)

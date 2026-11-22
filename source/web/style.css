@@ -1072,10 +1072,17 @@ main.lobby.new-game {
   cursor: default;
 }
 
-.lobby-seat > button.drop-bot,
-.lobby-seat > button.bot-slot {
-  align-self: flex-start;
+/* A seat's ways to change it, under the card's button. */
+.seat-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
   margin: -6px 12px 12px;
+}
+
+#app .seat-actions button {
+  min-height: 36px;
+  padding: 4px 10px;
   font-size: 13px;
 }
 
@@ -1148,7 +1155,7 @@ main.lobby.new-game {
   border-style: dashed;
 }
 
-.lobby-seat.invite > :not(.seat-pick) {
+.lobby-seat.invite > :not(.seat-pick, .seat-actions) {
   margin: 0 16px;
 }
 
@@ -3728,6 +3735,10 @@ main.scenarios h2 {
 }
 
 /* ---------- Deck builder ---------- */
+
+#app button.home-button {
+  flex: none;
+}
 
 main.builder {
   max-width: 1200px;

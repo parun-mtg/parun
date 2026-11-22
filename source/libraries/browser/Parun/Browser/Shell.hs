@@ -965,7 +965,7 @@ work shell = do
           read' <- Monad.forM batch $ \(name, path) -> do
             contents <- Encoding.decodeUtf8Lenient <$> ByteString.readFile path
             size <- Exception.evaluate (Lobby.mainCount contents)
-            shape <- Exception.evaluate (Lobby.curveOf [lineOf root byFile n card | (n, card) <- Lobby.entries contents])
+            shape <- Exception.evaluate (Lobby.curveOf [lineOf root byFile n card | (n, card) <- Lobby.mainEntries contents])
             _ <- Exception.evaluate (sum shape)
             Exception.evaluate . (,) name . (,,) size shape $! Lobby.deckColours colours contents
           IORef.modifyIORef' (loaded shell) $ \l -> l {palette = Map.union (Map.fromList [(name, colours') | (name, (_, _, colours')) <- read']) (palette l), deckSizes = Map.union (Map.fromList [(name, size) | (name, (size, _, _)) <- read']) (deckSizes l), deckCurves = Map.union (Map.fromList [(name, shape) | (name, (_, shape, _)) <- read']) (deckCurves l), unread = rest}
