@@ -453,16 +453,20 @@ modifierName view entry place =
 
 -- | CR 706.2a: a reroll's question (Prompt.Rethrow's offer): the die by its
 -- place in the roll, counted from 1, and what it shows, the roll's every
--- result where it has more than one, and the cost where there is one.
+-- result where it has more than one, and the cost where there is one. A
+-- coin's (CR 705.1, Goblin Bookie's reflip) is worded as a reflip, beside
+-- every coin of its unit.
 rerollQuestion :: Text.Text -> R.Reply -> Maybe Text.Text
 rerollQuestion self offer = do
-  shown <- Monad.mplus (fmap (Text.pack . show) (Protocol.field "result" offer >>= Protocol.naturalOf)) (fmap Text.toLower (Protocol.field "face" offer >>= textOf))
+  let face = fmap Text.toLower (Protocol.field "face" offer >>= textOf)
+      (verb, thing, whole) = if Maybe.isJust face then ("Reflip", "coin", "The coins") else ("Reroll", "die", "The roll")
+  shown <- Monad.mplus (fmap (Text.pack . show) (Protocol.field "result" offer >>= Protocol.naturalOf)) face
   results <- Protocol.field "results" offer >>= Protocol.arrayOf
   place <- Protocol.field "place" offer >>= Protocol.naturalOf
-  let named result = maybe (plainName result) (Text.pack . show) (Protocol.naturalOf result)
+  let named result = maybe (Text.toLower (plainName result)) (Text.pack . show) (Protocol.naturalOf result)
       which
-        | length results > 1 = Text.pack ("Reroll die " <> show (place + 1) <> " of " <> show (length results) <> ", showing ") <> shown <> Text.pack "? The roll: " <> Text.intercalate (Text.pack ", ") (fmap named results) <> Text.pack "."
-        | otherwise = Text.pack "Reroll the die showing " <> shown <> Text.pack "?"
+        | length results > 1 = Text.pack (verb <> " " <> thing <> " " <> show (place + 1) <> " of " <> show (length results) <> ", showing ") <> shown <> Text.pack ("? " <> whole <> ": ") <> Text.intercalate (Text.pack ", ") (fmap named results) <> Text.pack "."
+        | otherwise = Text.pack (verb <> " the " <> thing <> " showing ") <> shown <> Text.pack "?"
   pure (which <> foldMap (\cost -> Text.pack " Cost: " <> candidateName self cost <> Text.pack ".") (Protocol.field "cost" offer))
 
 -- | CR 706.4: a result Prompt.ChooseDieResult offers, beside what its
