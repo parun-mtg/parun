@@ -32,7 +32,7 @@ three, and it reaches the other two: `cabal run parun -- test -p Engine.Trigger`
 (`-p SUBSTRING` selects tests and repeats, `--list` prints what it selects
 without running it, `--seed KEY` replays the order a run's summary names,
 `--fail-fast` stops at the first failure, `--json FILE` writes each case's
-name, failure, site and nanoseconds, and `--help` lists the rest) and `cabal run parun -- bench` (`-p SUBSTRING` selects benchmarks, `--json
+name, failure, site and nanoseconds, and `--help` lists the rest) and `cabal run parun -- bench` (`-p SUBSTRING` selects benchmarks and repeats, `--json
 FILE` writes the results).
 
 Prefer clarity over cleverness: code that is easy to read, debug, and modify.

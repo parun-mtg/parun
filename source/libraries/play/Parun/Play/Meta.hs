@@ -4,6 +4,7 @@
 module Parun.Play.Meta where
 
 import qualified Control.Monad as Monad
+import qualified Control.Monad.Catch as Catch
 import qualified Data.Bifunctor as Bifunctor
 import qualified Data.Functor.Identity as Identity
 import qualified Data.List.NonEmpty as NonEmpty
@@ -11,11 +12,15 @@ import qualified Data.Map.Strict as Map
 import qualified Data.Text as Text
 import qualified Data.Text.IO as TextIO
 import Numeric.Natural (Natural)
+import qualified Parun.CommandLine as CommandLine
 import qualified Parun.DeckList as DeckList
+import qualified Parun.Exceptions.InvalidOption as InvalidOption
 import qualified Parun.Extra.Natural as Natural
 import qualified Parun.Play.Command as Command
 import qualified Parun.Play.Key as Key
 import qualified Parun.Play.Match as Match
+import qualified Parun.Play.Match.Config as Config
+import qualified Parun.Play.Match.Flag as Flag
 import qualified Parun.Play.Search as Search
 import qualified Parun.Registry as Registry
 import qualified Parun.Types.Deck as Deck
@@ -27,35 +32,42 @@ import qualified Parun.Types.Result as Result
 import qualified Parun.Types.SearchBudget as SearchBudget
 import qualified Parun.Types.Weights as Weights
 import qualified System.Console.GetOpt as GetOpt
-import qualified System.Exit as Exit
 import qualified System.IO as IO
 
 main :: [String] -> IO ()
-main arguments = case GetOpt.getOpt GetOpt.Permute flags arguments of
-  (updates, metaPath : one : rest, []) | length rest <= 1 -> case Monad.foldM (\options update -> update options) MatchOptions.none updates of
-    Left problem -> usage [problem]
-    Right options
-      | MatchOptions.games options == 0 -> usage ["no games to play\n"]
-      | otherwise -> do
-          registry <- Registry.defaultRoot >>= Registry.loadRoot >>= Registry.defaultRegistry
-          versions <- traverse (\path -> (,) path <$> Command.orExit (Command.load registry path)) (one NonEmpty.:| rest)
-          opponents <- Command.loadMeta registry metaPath
-          prior <- Match.priorOf registry options
-          format <- Command.orExit (Command.settle Nothing (NonEmpty.toList versions <> NonEmpty.toList (fmap (\(_, (name, list)) -> (Text.unpack name, list)) opponents)))
-          searchers <- Command.orExit (fmap (Bifunctor.first pure) (Match.searchersOf options))
-          run options searchers prior registry format (fmap (Bifunctor.bimap Text.pack DeckList.deck) versions) (fmap (\(share, (name, list)) -> (share, (name, DeckList.deck list))) opponents)
-  (_, _, problems) -> usage problems
+main arguments = do
+  config <- CommandLine.configured usage Config.help (fromArguments arguments)
+  Monad.forM_ (metaAndDecks (Config.files config)) $ \(metaPath, paths) -> do
+    let options = Config.options config
+    registry <- Registry.defaultRoot >>= Registry.loadRoot >>= Registry.defaultRegistry
+    versions <- traverse (\path -> (,) path <$> Command.orExit (Command.load registry path)) paths
+    opponents <- Command.loadMeta registry metaPath
+    prior <- Match.priorOf registry options
+    format <- Command.orExit (Command.settle Nothing (NonEmpty.toList versions <> NonEmpty.toList (fmap (\(_, (name, list)) -> (Text.unpack name, list)) opponents)))
+    searchers <- Command.orExit (fmap (Bifunctor.first pure) (Match.searchersOf options))
+    run options searchers prior registry format (fmap (Bifunctor.bimap Text.pack DeckList.deck) versions) (fmap (\(share, (name, list)) -> (share, (name, DeckList.deck list))) opponents)
 
--- | `parun match`'s options but `--save`, seat 1 being the deck tried and
+-- | What a command line asks for, as `parun match`'s does
+-- ('Config.fromFlags') under 'flags'; throws as that does, and at no games
+-- to play.
+fromArguments :: (Catch.MonadThrow m) => [String] -> m Config.Config
+fromArguments arguments = do
+  config <- CommandLine.options flags arguments >>= uncurry (Config.fromFlags ["META", "DECK"] (Just 3))
+  config <$ Monad.when (not (Config.help config) && MatchOptions.games (Config.options config) == 0) (Catch.throwM (InvalidOption.MkInvalidOption "no games to play"))
+
+-- | The meta file and the decks a command line's positional arguments name.
+metaAndDecks :: [FilePath] -> Maybe (FilePath, NonEmpty.NonEmpty FilePath)
+metaAndDecks files = case files of
+  metaPath : one : rest -> Just (metaPath, one NonEmpty.:| rest)
+  _ -> Nothing
+
+-- | `parun match`'s flags but `--save`, seat 1 being the deck tried and
 -- seat 2 the meta's.
-flags :: [GetOpt.OptDescr (MatchOptions.MatchOptions -> Either String MatchOptions.MatchOptions)]
-flags = filter (\(GetOpt.Option _ long _ _) -> notElem "save" long) Match.flags
+flags :: [GetOpt.OptDescr Flag.Flag]
+flags = filter (\(GetOpt.Option _ long _ _) -> notElem "save" long) Flag.flags
 
-usage :: [String] -> IO a
-usage problems = do
-  mapM_ (IO.hPutStr IO.stderr) problems
-  IO.hPutStr IO.stderr (GetOpt.usageInfo "usage: parun meta [OPTION...] META DECK [DECK]" flags)
-  Exit.exitFailure
+usage :: String
+usage = GetOpt.usageInfo "usage: parun meta [OPTION...] META DECK [DECK]" flags
 
 -- | Plays every version against every deck of the meta under `format`,
 -- saying how each game ended on standard error, then the report on standard

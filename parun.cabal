@@ -80,6 +80,8 @@ library benchmark
   build-depends:
     bytestring ^>=0.12.2,
     containers ^>={0.7, 0.8},
+    exceptions ^>=0.10.9,
+    parun:command-line,
     parun:engine,
     parun:extra,
     parun:json-codec,
@@ -94,6 +96,10 @@ library benchmark
   -- cabal-gild: discover source/libraries/benchmark
   exposed-modules:
     Parun.Benchmark
+    Parun.Benchmark.Config
+    Parun.Benchmark.ConfigSpec
+    Parun.Benchmark.Flag
+    Parun.Benchmark.FlagSpec
     Parun.Benchmark.Harness
     Parun.Benchmark.HarnessSpec
 
@@ -2585,7 +2591,9 @@ library play
   build-depends:
     bytestring ^>=0.12.2,
     containers ^>={0.7, 0.8},
+    exceptions ^>=0.10.9,
     parun:codec,
+    parun:command-line,
     parun:engine,
     parun:entropy,
     parun:exceptions,
@@ -2607,12 +2615,20 @@ library play
     Parun.Play.Bot
     Parun.Play.Chance
     Parun.Play.Command
+    Parun.Play.Command.Config
+    Parun.Play.Command.ConfigSpec
+    Parun.Play.Command.Flag
+    Parun.Play.Command.FlagSpec
     Parun.Play.Game
     Parun.Play.Generator
     Parun.Play.GeneratorSpec
     Parun.Play.Key
     Parun.Play.KeySpec
     Parun.Play.Match
+    Parun.Play.Match.Config
+    Parun.Play.Match.ConfigSpec
+    Parun.Play.Match.Flag
+    Parun.Play.Match.FlagSpec
     Parun.Play.Meta
     Parun.Play.Offer
     Parun.Play.Opponent

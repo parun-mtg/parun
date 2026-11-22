@@ -522,6 +522,7 @@ decisionIn registry deck =
 
 main :: IO ()
 main = do
+  config <- Harness.configured
   root <- Registry.defaultRoot
   registry <- Registry.fileRegistry root
   reference <- Registry.loadRoot root >>= Registry.defaultRegistry
@@ -556,6 +557,7 @@ main = do
   gond <- fetchOrThrow registry "Presence of Gond"
   bears <- fetchOrThrow registry "Grizzly Bears"
   Harness.defaultMain
+    config
     [ Harness.whnf "playouts random 8" (playouts reference decided Playout.Random) 8,
       Harness.whnf "playouts greedy 8" (playouts reference decided Playout.Greedy) 8,
       Harness.whnf "playouts polar 8" (playouts reference decided Playout.Polar) 8,

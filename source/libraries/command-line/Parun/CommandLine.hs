@@ -34,6 +34,11 @@ positionals required most given = do
   mapM_ (Catch.throwM . MissingArgument.MkMissingArgument) . take 1 $ List.genericDrop (List.genericLength given :: Natural) required
   mapM_ (Catch.throwM . UnexpectedArgument.MkUnexpectedArgument) . take 1 $ foldMap (`List.genericDrop` given) most
 
+-- | The value an option's argument parses as, or 'InvalidOption.InvalidOption'
+-- saying `problem` where it parses as none.
+orInvalid :: (Catch.MonadThrow m) => String -> Maybe a -> m a
+orInvalid problem = maybe (Catch.throwM $ InvalidOption.MkInvalidOption problem) pure
+
 -- | The config a command line asks for, or the exit 'refusals' makes of it
 -- under this usage: its parse, and 'ShowHelp.ShowHelp' when the config asks
 -- for the usage instead.

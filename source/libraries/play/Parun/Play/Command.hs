@@ -21,16 +21,18 @@ import qualified Data.Text.Encoding as Encoding
 import qualified Data.Text.IO as TextIO
 import Numeric.Natural (Natural)
 import qualified Parun.Codec.Scenario as Codec.Scenario
+import qualified Parun.CommandLine as CommandLine
 import qualified Parun.DeckList as DeckList
 import qualified Parun.Engine.Game as Engine.Game
 import qualified Parun.Extra.Natural as Natural
 import qualified Parun.JsonCodec.Codec as Codec
 import qualified Parun.JsonCodec.Common as Common
 import qualified Parun.Legality as Legality
+import qualified Parun.Play.Command.Config as Config
+import qualified Parun.Play.Command.Flag as Flag
 import qualified Parun.Play.Game as Game
 import qualified Parun.Play.Generator as Generator
 import qualified Parun.Play.Key as Key
-import qualified Parun.Play.Opponent as Opponent
 import qualified Parun.Play.Protocol as Protocol
 import qualified Parun.Play.Record as Record
 import qualified Parun.Play.Search as Search
@@ -50,7 +52,6 @@ import qualified Parun.Types.Key as Key.Type
 import qualified Parun.Types.Label as Label
 import qualified Parun.Types.Legality as Legality.Type
 import qualified Parun.Types.LegalityTable as LegalityTable
-import qualified Parun.Types.Limits as Limits
 import qualified Parun.Types.PlayOptions as PlayOptions
 import qualified Parun.Types.PlayerId as PlayerId
 import qualified Parun.Types.Printing as Printing
@@ -60,58 +61,20 @@ import qualified Parun.Types.Result as Result
 import qualified Parun.Types.Scenario as Scenario
 import qualified Parun.Types.Timed as Timed
 import qualified Parun.Types.TypeLine as TypeLine
-import qualified System.Console.GetOpt as GetOpt
 import qualified System.Exit as Exit
 import qualified System.IO as IO
 import qualified Text.Read as Read
 
 main :: [String] -> IO ()
-main arguments = case GetOpt.getOpt GetOpt.Permute flags arguments of
-  (updates, paths@(_ : _ : _), []) -> case foldr (=<<) (Right PlayOptions.none) updates of
-    Left problem -> usage [problem]
-    Right options
-      | Just n <- List.find (> List.genericLength paths) (Maybe.maybeToList (PlayOptions.first options) <> Set.toList (PlayOptions.bots options <> PlayOptions.arrangesGraveyard options)) -> usage ["not a seat: " <> show n <> "\n"]
-      | Just n <- unplayed options (List.genericLength paths) -> usage ["seat " <> show n <> " has no player: name it with --bot, or speak the line protocol with --json\n"]
-      | otherwise -> do
-          registry <- Registry.defaultRoot >>= Registry.loadRoot >>= Registry.defaultRegistry
-          lists <- traverse (orExit . load registry) paths
-          format <- orExit (settle (PlayOptions.format options) (zip paths lists))
-          prior <- priorOf registry options format
-          play (Protocol.overLines exchange) options prior registry format (fmap DeckList.deck (NonEmpty.fromList lists))
-  (_, _, problems) -> usage problems
-
-flags :: [GetOpt.OptDescr (PlayOptions.PlayOptions -> Either String PlayOptions.PlayOptions)]
-flags =
-  [ GetOpt.Option [] ["seed"] (GetOpt.ReqArg (\s o -> maybe (Left ("not a seed: " <> s)) (\k -> Right o {PlayOptions.seed = Just k}) (Key.fromHex (Text.pack s))) "KEY") "the generator's key, 64 hexadecimal digits, said when the game ends; drawn from the operating system when absent",
-    GetOpt.Option [] ["first"] (GetOpt.ReqArg (\s o -> fmap (\n -> o {PlayOptions.first = Just n}) (seat s)) "SEAT") "which seat plays first; a seat picked at random chooses when absent",
-    GetOpt.Option [] ["bot"] (GetOpt.ReqArg (\s o -> fmap (\n -> o {PlayOptions.bots = Set.insert n (PlayOptions.bots o)}) (seat s)) "SEAT") "a seat the search bot plays",
-    GetOpt.Option [] ["json"] (GetOpt.NoArg (\o -> Right o {PlayOptions.json = True})) "speak the line protocol on standard input and output",
-    GetOpt.Option [] ["save"] (GetOpt.ReqArg (\s o -> Right o {PlayOptions.save = Just s}) "FILE") "save the game as a scenario, even one cut short",
-    GetOpt.Option [] ["arrange-graveyard"] (GetOpt.ReqArg (\s o -> fmap (\n -> o {PlayOptions.arrangesGraveyard = Set.insert n (PlayOptions.arrangesGraveyard o)}) (seat s)) "SEAT") "a seat asked to order cards put into its graveyard at the same time",
-    GetOpt.Option [] ["format"] (GetOpt.ReqArg (\s o -> Right o {PlayOptions.format = Just (Text.pack s)}) "FORMAT") "play under this format, refusing a deck not legal in it: constructed, limited, or one with a pool, such as vintage",
-    GetOpt.Option [] ["level"] (GetOpt.ReqArg (\s o -> maybe (Left ("not a level, easy, medium or hard: " <> s)) (\d -> Right o {PlayOptions.budget = Opponent.budgetAt d (PlayOptions.budget o)}) (Opponent.named Opponent.difficultyName s)) "LEVEL") "how strongly the search bot plays, easy, medium or hard (Parun.Play.Opponent); hard when absent",
-    GetOpt.Option [] ["persona"] (GetOpt.ReqArg (\s o -> maybe (Left ("not a persona, balanced, aggro or control: " <> s)) (\p -> Right o {PlayOptions.weights = Opponent.weightsOf p}) (Opponent.named Opponent.personaName s)) "PERSONA") "what the search bot values in a position, balanced, aggro or control (Parun.Play.Opponent); balanced when absent",
-    GetOpt.Option [] ["meta"] (GetOpt.ReqArg (\s o -> Right o {PlayOptions.meta = Just s}) "META") "the search bot infers each opponent's deck list from this meta file's decks",
-    GetOpt.Option [] ["pool"] (GetOpt.ReqArg (\s o -> Right o {PlayOptions.pool = Just (Text.pack s)}) "FORMAT") "no meta named, the search bot deals each opponent's unseen cards from this format's pool, from every card where it has none; the game's format's when absent",
-    GetOpt.Option [] ["object-limit"] (GetOpt.ReqArg (\s o -> maybe (Left ("not a number of objects: " <> s)) (\n -> Right o {PlayOptions.limits = (PlayOptions.limits o) {Limits.objects = n}}) (Read.readMaybe s)) "N") ("the most objects the game may hold before a player with priority may only pass; " <> show (Limits.objects Limits.standard) <> " when absent")
-  ]
-  where
-    seat s = case Read.readMaybe s of
-      Just n | n >= 1 -> Right n
-      _ -> Left ("not a seat: " <> s)
-
--- | The first seat of so many that nobody plays: one not the bot's, in a game
--- not over the line protocol.
-unplayed :: PlayOptions.PlayOptions -> Natural -> Maybe Natural
-unplayed options count
-  | PlayOptions.json options = Nothing
-  | otherwise = List.find (`Set.notMember` PlayOptions.bots options) [1 .. count]
-
-usage :: [String] -> IO a
-usage problems = do
-  mapM_ (IO.hPutStr IO.stderr) problems
-  IO.hPutStr IO.stderr (GetOpt.usageInfo "usage: parun play [OPTION...] DECK DECK [DECK...]" flags)
-  Exit.exitFailure
+main arguments = do
+  config <- CommandLine.configured Flag.usage Config.help (Flag.fromArguments arguments >>= uncurry Config.fromFlags)
+  Monad.forM_ (NonEmpty.nonEmpty (Config.decks config)) $ \paths -> do
+    let options = Config.options config
+    registry <- Registry.defaultRoot >>= Registry.loadRoot >>= Registry.defaultRegistry
+    lists <- traverse (orExit . load registry) paths
+    format <- orExit (settle (PlayOptions.format options) (NonEmpty.toList (NonEmpty.zip paths lists)))
+    prior <- priorOf registry options format
+    play (Protocol.overLines exchange) options prior registry format (fmap DeckList.deck lists)
 
 -- | A deck list file with no bad line, as `parun deck` reads it; or every
 -- problem with it.
