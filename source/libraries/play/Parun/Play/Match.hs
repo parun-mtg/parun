@@ -97,8 +97,9 @@ match options registry format decks = do
 -- decks, seat 1's first: seeded 'seedAt', seat 'firstAt' playing first, the
 -- search bot in each seat of `searchers` at its budget (Search.search, over
 -- the known lists) and the random bot in every other; with the entry each
--- answer replays as (Record.recording). Without searchers it is the game
--- `parun play --bot 1 --bot 2` plays at that seed and `--first`.
+-- answer replays as (Record.recording). With every seat searching at
+-- PlayOptions.none's budget it is the game `parun play --bot 1 --bot 2`
+-- plays at that seed and `--first`.
 game :: (Monad m) => Registry.Registry m -> Maybe Format.Format -> Map.Map Natural SearchBudget.SearchBudget -> Key.Type.Key -> Natural -> NonEmpty.NonEmpty Deck.Deck -> m (Either Text.Text (Result.Result, GameState.GameState), Seq.Seq Timed.Timed)
 game registry format searchers seed index decks =
   let count = Natural.length decks

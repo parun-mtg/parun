@@ -35,6 +35,7 @@ import qualified Parun.Types.Limits as Limits
 import qualified Parun.Types.Object as Object
 import qualified Parun.Types.ObjectId as ObjectId
 import qualified Parun.Types.Phase as Phase
+import qualified Parun.Types.PlayOptions as PlayOptions
 import qualified Parun.Types.Player as Player
 import qualified Parun.Types.PlayerId as PlayerId
 import qualified Parun.Types.Program as Program
@@ -84,11 +85,16 @@ spec s registry = Spec.describe s "Search" $ do
     Spec.assertEqWith s "the declarer and the creatures asked again" (declaresAgain (State.runStateT Engine.resumeTurnBasedAction gs)) (Just (Right offered))
 
   Spec.it s "the search bot attacks an opponent at 1 life who has nothing untapped" $ do
-    (gs, (decider, pid, candidates)) <- capturing s registry 3 "a declaration of attackers" $ \asked -> case Asked.prompt asked of
-      Prompt.DeclareAttackers decider pid candidates | Search.searchable asked decider pid (Search.attacks candidates) -> Just (Asked.game asked, (decider, pid, candidates))
-      _ -> Nothing
-    let world = othersAtOneLife pid gs {GameState.objects = Map.map (\o -> if Object.owner o /= pid && Object.zone o == Zone.Battlefield then o {Object.tapped = TapState.Tapped} else o) (GameState.objects gs)}
-    declared <- traverse (searched s (Asked.MkAsked [] world (Prompt.DeclareAttackers decider pid candidates))) [1 .. 4]
+    (_, asked) <- openAttack s registry
+    declared <- traverse (searched s asked) [1 .. 4]
+    Spec.assertBool s (not (any null declared)) "attacked in every seed"
+
+  Spec.it s "parun play's bot seat is the search bot, attacking an opponent at 1 life who has nothing untapped" $ do
+    (pid, asked) <- openAttack s registry
+    let seat = PlayerId.unwrap pid + 1
+        options = PlayOptions.none {PlayOptions.bots = Set.singleton seat}
+        answered seed = either (Spec.assertFailure s . Text.unpack) pure =<< Except.runExceptT (State.evalStateT (Answerer.unwrap (Command.answerer (S.fixtureRegistry []) (const (pure Nothing)) options seat) asked) (S.seeded seed))
+    declared <- traverse answered [1 .. 8]
     Spec.assertBool s (not (any null declared)) "attacked in every seed"
 
   Spec.it s "the search bot blocks a lone attacker at 1 life" $ do
@@ -126,6 +132,16 @@ capturing s registry seed what found = do
             Game.underneath (State.put (Just taken))
             Game.stop (Text.pack "found")
       _ -> Answerer.unwrap (Game.bot lifted) asked
+
+-- A declaration of attackers from turn 3 on, every opponent of its declarer
+-- at 1 life with every permanent tapped: the declarer and the prompt.
+openAttack :: (Monad m) => Spec.Spec m n -> Registry.Registry m -> m (PlayerId.PlayerId, Asked.Asked GameState.GameState [ObjectId.ObjectId])
+openAttack s registry = do
+  (gs, (decider, pid, candidates)) <- capturing s registry 3 "a declaration of attackers" $ \asked -> case Asked.prompt asked of
+    Prompt.DeclareAttackers decider pid candidates | Search.searchable asked decider pid (Search.attacks candidates) -> Just (Asked.game asked, (decider, pid, candidates))
+    _ -> Nothing
+  let world = othersAtOneLife pid gs {GameState.objects = Map.map (\o -> if Object.owner o /= pid && Object.zone o == Zone.Battlefield then o {Object.tapped = TapState.Tapped} else o) (GameState.objects gs)}
+  pure (pid, Asked.MkAsked [] world (Prompt.DeclareAttackers decider pid candidates))
 
 -- The search bot's answer, at a budget of 2 samples cut off after 40 prompts,
 -- from `seed`.

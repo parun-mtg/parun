@@ -1,4 +1,4 @@
--- | A game against one or more random bots in the browser: `parun play
+-- | A game against one or more search bots in the browser: `parun play
 -- --json`'s game with every request line answered on the page
 -- (Parun.Web.Question), ending on how it ended (Parun.Web.Ending).
 module Parun.Browser.Hotseat where
@@ -74,7 +74,7 @@ instance Exception.Exception Abandoned
 -- player's seat answered there (Parun.Web.Question) at the auto-pass level
 -- kept in `levelRef`, and left with the level last chosen there; each seat
 -- in `remotes` answered by its own exchange (Parun.Web.Link.remote), and
--- every other by the random bot; leaving for the home screen through
+-- every other by the search bot; leaving for the home screen through
 -- `leave`. The game picks up after the replies in `stored`, each made again
 -- (Protocol.resumed), and every reply made from there is given to `kept`.
 -- Once over, `tell` is given each seat's verdict, what is said of the game
@@ -124,7 +124,7 @@ player :: PlayerId.PlayerId
 player = PlayerId.MkPlayerId 0
 
 -- | Of so many seats, the player's (seat 1) and each remote one speak the
--- line protocol; the random bot plays every other.
+-- line protocol; the search bot plays every other.
 options :: Natural -> Set.Set PlayerId.PlayerId -> PlayOptions.PlayOptions
 options count remote = PlayOptions.none {PlayOptions.json = True, PlayOptions.bots = Set.fromList [n | n <- [2 .. count], Set.notMember (Command.idOf n) remote]}
 
