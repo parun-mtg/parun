@@ -1,0 +1,612 @@
+{
+  "board": {
+    "active": "alice",
+    "seats": [
+      {
+        "battlefield": [
+          {
+            "card": "Wall of Fortune",
+            "label": "w1"
+          },
+          {
+            "card": "Wall of Fortune",
+            "label": "w2"
+          },
+          {
+            "card": "Wall of Fortune",
+            "label": "w3"
+          },
+          {
+            "card": "Pixie Guide",
+            "label": "pixie"
+          },
+          {
+            "card": "Swamp",
+            "label": "s1"
+          },
+          {
+            "card": "Swamp",
+            "label": "s2"
+          },
+          {
+            "card": "Swamp",
+            "label": "s3"
+          },
+          {
+            "card": "Swamp",
+            "label": "s4"
+          },
+          {
+            "card": "Swamp",
+            "label": "s5"
+          },
+          {
+            "card": "Swamp",
+            "label": "s6"
+          },
+          {
+            "card": "Swamp",
+            "label": "s7"
+          }
+        ],
+        "graveyard": [
+          {
+            "card": "Grizzly Bears",
+            "label": "bears"
+          }
+        ],
+        "hand": [
+          {
+            "card": "Grave Endeavor",
+            "label": "ge"
+          }
+        ],
+        "name": "alice"
+      },
+      {
+        "name": "bob"
+      }
+    ],
+    "step": "PrecombatMain"
+  },
+  "description": "CR 706.2b the roller turns to another die before a reroll's ignore",
+  "note": "Pixie Guide makes Grave Endeavor's two d10 three, 2, 3 and 4, and each reroll two, the higher kept. Alice rerolls the 2 to 1 and 5; before deciding on those she turns to the 3, which comes up 9 and 6; then she rerolls the 5, to 7 and 8. Every die of the roll, a reroll's among them, is in the one pick, and each reroll's lower die is ignored only once no offer is left. The 8, 9 and 4 leave 8 and 9: the Bears return with nine counters and bob loses 8. Deciding on the first reroll's dice before the 3 would have closed the 5 to the last Wall.",
+  "timeline": [
+    {
+      "do": {
+        "Cast": {
+          "mana": [
+            "$s1",
+            "$s2",
+            "$s3",
+            "$s4",
+            "$s5",
+            "$s6",
+            "$s7"
+          ],
+          "object": "$ge"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": "Pass",
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": {
+        "Answer": {
+          "prompt": "RollDie",
+          "with": 2
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": {
+        "Answer": {
+          "prompt": "RollDie",
+          "with": 3
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": {
+        "Answer": {
+          "prompt": "RollDie",
+          "with": 4
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "View": {
+          "is": {
+            "kind": "ChooseRollModifier",
+            "offer": {
+              "entries": [
+                {
+                  "source": "$w1",
+                  "die": 2,
+                  "place": 0
+                },
+                {
+                  "source": "$w2",
+                  "die": 2,
+                  "place": 0
+                },
+                {
+                  "source": "$w3",
+                  "die": 2,
+                  "place": 0
+                },
+                {
+                  "source": "$w1",
+                  "die": 3,
+                  "place": 1
+                },
+                {
+                  "source": "$w2",
+                  "die": 3,
+                  "place": 1
+                },
+                {
+                  "source": "$w3",
+                  "die": 3,
+                  "place": 1
+                },
+                {
+                  "source": "$w1",
+                  "die": 4,
+                  "place": 2
+                },
+                {
+                  "source": "$w2",
+                  "die": 4,
+                  "place": 2
+                },
+                {
+                  "source": "$w3",
+                  "die": 4,
+                  "place": 2
+                }
+              ],
+              "options": [
+                0,
+                1,
+                2,
+                3,
+                4,
+                5,
+                6,
+                7,
+                8
+              ]
+            }
+          },
+          "of": "Prompt"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": {
+        "Answer": {
+          "prompt": "ChooseRollModifier",
+          "with": 0
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": {
+        "Answer": {
+          "prompt": "Rethrow",
+          "with": "Exercises"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": {
+        "Answer": {
+          "prompt": "ChooseTaps",
+          "with": [
+            "$w1"
+          ]
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": {
+        "Answer": {
+          "prompt": "RollDie",
+          "with": 1
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": {
+        "Answer": {
+          "prompt": "RollDie",
+          "with": 5
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "View": {
+          "is": {
+            "kind": "ChooseRollModifier",
+            "offer": {
+              "entries": [
+                {
+                  "source": "$w1",
+                  "die": 1,
+                  "place": 0
+                },
+                {
+                  "source": "$w2",
+                  "die": 1,
+                  "place": 0
+                },
+                {
+                  "source": "$w3",
+                  "die": 1,
+                  "place": 0
+                },
+                {
+                  "source": "$w1",
+                  "die": 5,
+                  "place": 1
+                },
+                {
+                  "source": "$w2",
+                  "die": 5,
+                  "place": 1
+                },
+                {
+                  "source": "$w3",
+                  "die": 5,
+                  "place": 1
+                },
+                {
+                  "source": "$w1",
+                  "die": 3,
+                  "place": 2
+                },
+                {
+                  "source": "$w2",
+                  "die": 3,
+                  "place": 2
+                },
+                {
+                  "source": "$w3",
+                  "die": 3,
+                  "place": 2
+                },
+                {
+                  "source": "$w1",
+                  "die": 4,
+                  "place": 3
+                },
+                {
+                  "source": "$w2",
+                  "die": 4,
+                  "place": 3
+                },
+                {
+                  "source": "$w3",
+                  "die": 4,
+                  "place": 3
+                }
+              ],
+              "options": [
+                0,
+                1,
+                2,
+                3,
+                4,
+                5,
+                6,
+                7,
+                8,
+                9,
+                10,
+                11
+              ]
+            }
+          },
+          "of": "Prompt"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": {
+        "Answer": {
+          "prompt": "ChooseRollModifier",
+          "with": 6
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": {
+        "Answer": {
+          "prompt": "Rethrow",
+          "with": "Exercises"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": {
+        "Answer": {
+          "prompt": "ChooseTaps",
+          "with": [
+            "$w2"
+          ]
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": {
+        "Answer": {
+          "prompt": "RollDie",
+          "with": 9
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": {
+        "Answer": {
+          "prompt": "RollDie",
+          "with": 6
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "View": {
+          "is": {
+            "kind": "ChooseRollModifier",
+            "offer": {
+              "entries": [
+                {
+                  "source": "$w1",
+                  "die": 1,
+                  "place": 0
+                },
+                {
+                  "source": "$w2",
+                  "die": 1,
+                  "place": 0
+                },
+                {
+                  "source": "$w3",
+                  "die": 1,
+                  "place": 0
+                },
+                {
+                  "source": "$w1",
+                  "die": 5,
+                  "place": 1
+                },
+                {
+                  "source": "$w2",
+                  "die": 5,
+                  "place": 1
+                },
+                {
+                  "source": "$w3",
+                  "die": 5,
+                  "place": 1
+                },
+                {
+                  "source": "$w1",
+                  "die": 9,
+                  "place": 2
+                },
+                {
+                  "source": "$w2",
+                  "die": 9,
+                  "place": 2
+                },
+                {
+                  "source": "$w3",
+                  "die": 9,
+                  "place": 2
+                },
+                {
+                  "source": "$w1",
+                  "die": 6,
+                  "place": 3
+                },
+                {
+                  "source": "$w2",
+                  "die": 6,
+                  "place": 3
+                },
+                {
+                  "source": "$w3",
+                  "die": 6,
+                  "place": 3
+                },
+                {
+                  "source": "$w1",
+                  "die": 4,
+                  "place": 4
+                },
+                {
+                  "source": "$w2",
+                  "die": 4,
+                  "place": 4
+                },
+                {
+                  "source": "$w3",
+                  "die": 4,
+                  "place": 4
+                }
+              ],
+              "options": [
+                0,
+                1,
+                2,
+                3,
+                4,
+                5,
+                6,
+                7,
+                8,
+                9,
+                10,
+                11,
+                12,
+                13,
+                14
+              ]
+            }
+          },
+          "of": "Prompt"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": {
+        "Answer": {
+          "prompt": "ChooseRollModifier",
+          "with": 3
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": {
+        "Answer": {
+          "prompt": "Rethrow",
+          "with": "Exercises"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": {
+        "Answer": {
+          "prompt": "RollDie",
+          "with": 7
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": {
+        "Answer": {
+          "prompt": "RollDie",
+          "with": 8
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": {
+        "Answer": {
+          "prompt": "ChooseDieResult",
+          "with": 1
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Counters": {
+          "count": 9,
+          "kind": {
+            "type": "PlusOnePlusOne"
+          },
+          "object": "Grizzly Bears"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Life": {
+          "life": 12,
+          "player": "bob"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Life": {
+          "life": 28,
+          "player": "alice"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    }
+  ]
+}
