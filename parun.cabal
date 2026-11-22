@@ -2581,6 +2581,7 @@ library play
     Parun.Play.Offer
     Parun.Play.Opponent
     Parun.Play.OpponentSpec
+    Parun.Play.Polarity
     Parun.Play.Protocol
     Parun.Play.Record
     Parun.Play.Search
@@ -3765,6 +3766,7 @@ library types
     Parun.Types.PlaysLand
     Parun.Types.PlotFromZone
     Parun.Types.Plus
+    Parun.Types.Polarity
     Parun.Types.Pool
     Parun.Types.Power
     Parun.Types.PowerToughnessIs

@@ -25,28 +25,37 @@ import qualified Parun.Engine.Card as Engine.Card
 import qualified Parun.Engine.Engine as Engine
 import qualified Parun.Engine.Event as Event
 import qualified Parun.Engine.Game as Engine.Game
+import qualified Parun.Engine.Modal as Engine.Modal
 import qualified Parun.Engine.Projection as Projection
 import qualified Parun.Engine.Projection.View as Projection.View
 import qualified Parun.Engine.Visibility as Visibility
 import qualified Parun.Extra.Natural as Natural
 import qualified Parun.Play.Game as Game
 import qualified Parun.Play.Generator as Generator
+import qualified Parun.Play.Polarity as Polarity
 import qualified Parun.Registry as Registry
 import qualified Parun.Types.Action as Action
+import qualified Parun.Types.ActivatedAbility as ActivatedAbility
+import qualified Parun.Types.ActivatedAbilitySource as ActivatedAbilitySource
 import qualified Parun.Types.Answerer as Answerer
 import qualified Parun.Types.Asked as Asked
+import qualified Parun.Types.Card as Card
 import qualified Parun.Types.CardIdentity as CardIdentity
 import qualified Parun.Types.CardType as CardType
 import qualified Parun.Types.Combat as Combat
 import qualified Parun.Types.Concession as Concession
 import qualified Parun.Types.Decider as Decider
 import qualified Parun.Types.Deck as Deck
+import qualified Parun.Types.Effect as Effect
+import qualified Parun.Types.Face as Face
 import qualified Parun.Types.Features as Features
 import qualified Parun.Types.Game as Game.Type
 import qualified Parun.Types.GameEvent as GameEvent
 import qualified Parun.Types.GameState as GameState
 import qualified Parun.Types.Generator as Generator.Type
+import qualified Parun.Types.GrantedAbility as GrantedAbility
 import qualified Parun.Types.History as History
+import qualified Parun.Types.InherentTriggerSource as InherentTriggerSource
 import qualified Parun.Types.LoggedEvent as LoggedEvent
 import qualified Parun.Types.Moved as Moved
 import qualified Parun.Types.Object as Object
@@ -58,6 +67,7 @@ import qualified Parun.Types.PlayerActed as PlayerActed
 import qualified Parun.Types.PlayerAction as PlayerAction
 import qualified Parun.Types.PlayerId as PlayerId
 import qualified Parun.Types.Playout as Playout
+import qualified Parun.Types.Polarity as Polarity.Type
 import qualified Parun.Types.Printing as Printing
 import qualified Parun.Types.Program as Program
 import qualified Parun.Types.ProjectedCharacteristics as ProjectedCharacteristics
@@ -68,6 +78,8 @@ import qualified Parun.Types.SearchBudget as SearchBudget
 import qualified Parun.Types.SearchMethod as SearchMethod
 import qualified Parun.Types.SlotName as SlotName
 import qualified Parun.Types.Source as Source
+import qualified Parun.Types.TriggeredAbility as TriggeredAbility
+import qualified Parun.Types.TriggeredAbilitySource as TriggeredAbilitySource
 import qualified Parun.Types.TurnRegisters as TurnRegisters
 import qualified Parun.Types.Visibility as Visibility.Type
 import qualified Parun.Types.Weights as Weights
@@ -928,6 +940,7 @@ policyOf :: (Monad m) => Registry.Registry m -> SearchBudget.SearchBudget -> Ans
 policyOf registry budget = case SearchBudget.playout budget of
   Playout.Random -> Game.bot registry
   Playout.Greedy -> greedy registry
+  Playout.Polar -> polar registry
 
 -- | A cut-off playout's position for `pid`: 'evaluate', short of a win or a
 -- loss.
@@ -979,23 +992,32 @@ features board grants pid gs =
 -- | The greedy playout policy, cheap enough to answer every prompt of every
 -- playout: a land played where one may be, else a permanent spell cast, else
 -- another action or a pass ('greedyAction'). Every other prompt is the random
--- bot's (Game.bot). It reads only its own menu and the card types of the
--- cards on it.
---
--- Not implemented: choosing targets, modes and payments by their effect's
--- classification; the random bot answers them (#9442).
+-- bot's (Game.bot), targets included. It reads only its own menu and the card
+-- types of the cards on it.
 greedy :: (Monad m) => Registry.Registry m -> Answerer.Answerer (Asked.Asked GameState.GameState) (Game.Play m)
 greedy registry = Answerer.MkAnswerer $ \asked -> case Asked.prompt asked of
   Prompt.ChooseAction _ _ menu -> greedyAction (Asked.game asked) menu
+  _ -> Answerer.unwrap (Game.bot registry) asked
+
+-- | The greedy policy choosing targets by polarity: each slot's targets chosen by the
+-- polarity of the effects naming it ('polarTargets'), its priority decisions
+-- the greedy policy's ('greedyAction'). It reads effects' classification
+-- (Parun.Play.Polarity), never their identity.
+--
+-- Not implemented: choosing modes and payments by their effect's
+-- classification; the random bot answers them (gap #9476).
+polar :: (Monad m) => Registry.Registry m -> Answerer.Answerer (Asked.Asked GameState.GameState) (Game.Play m)
+polar registry = Answerer.MkAnswerer $ \asked -> case Asked.prompt asked of
+  Prompt.ChooseAction _ _ menu -> greedyAction (Asked.game asked) menu
+  Prompt.ChooseTargets _ chooser oid slots -> polarTargets chooser oid (Asked.game asked) slots
   _ -> Answerer.unwrap (Game.bot registry) asked
 
 -- | A priority decision: a land play (CR 305.1) at random where the menu
 -- offers one, else a cast (CR 601) of a card with a permanent type (CR
 -- 110.4), else one of the other 'options' or a pass, each equally likely.
 -- The menu offers only what may be afforded (Engine.Cast.castableSpells).
--- Another spell waits for the random pick, since the random bot chooses its
--- targets (#9442) and casting it at the first chance would hit either side
--- alike.
+-- Another spell waits for the random pick, cast at its first chance being
+-- worse with polar targets (Playout.Polar) as well as random ones.
 greedyAction :: (Monad m) => GameState.GameState -> [Action.Action] -> State.StateT Generator.Type.Generator m Action.Action
 greedyAction gs menu =
   let plays = [action | action@Action.Play {} <- menu]
@@ -1006,3 +1028,35 @@ greedyAction gs menu =
         (Just some, _) -> Generator.pick some
         (_, Just some) -> Generator.pick some
         _ -> Generator.pick (Action.Pass NonEmpty.:| rest)
+
+-- | CR 601.2c's targets for `chooser`, each slot's drawn first from the
+-- recipients on the side its polarity favours (Polarity.slotPolarity over
+-- 'stackEffects'): an opponent or what an opponent controls where the slot's
+-- effect harms, `chooser` or what they control where it helps. The rest of a
+-- slot's count, and a slot with no polarity, is drawn at random from the
+-- other recipients.
+polarTargets :: (Monad m) => PlayerId.PlayerId -> ObjectId.ObjectId -> GameState.GameState -> Map.Map SlotName.SlotName (Natural, Set.Set Recipient.Recipient) -> State.StateT Generator.Type.Generator m (Map.Map SlotName.SlotName (Set.Set Recipient.Recipient))
+polarTargets chooser oid gs =
+  let effects = stackEffects oid gs
+      side recipient = Recipient.playerOf recipient <|> (owned =<< Recipient.objectOf recipient)
+      -- CR 108.4a: a card with no controller is its owner's.
+      owned target = Projection.View.controllerOf target gs <|> fmap Object.owner (Engine.Game.lookupObject target gs)
+      favoured polarity recipient = case polarity of
+        Polarity.Type.Harms -> maybe False (/= chooser) (side recipient)
+        Polarity.Type.Helps -> side recipient == Just chooser
+      choose slot (count, legal) = do
+        let polarity = Polarity.slotPolarity slot effects
+            (first, second) = List.partition (\recipient -> any (`favoured` recipient) polarity) (Set.toList legal)
+        ahead <- Generator.shuffle first
+        behind <- Generator.shuffle second
+        pure (Set.fromList (List.genericTake count (ahead <> behind)))
+   in Map.traverseWithKey choose
+
+-- | The effects the stack object `oid` may carry out: an ability's every
+-- mode's, a spell's face's every mode's (Engine.Modal.allEffects).
+stackEffects :: ObjectId.ObjectId -> GameState.GameState -> [Effect.Effect Card.Card (GrantedAbility.GrantedAbility Card.Card)]
+stackEffects oid gs = case fmap Object.source (Engine.Game.lookupObject oid gs) of
+  Just (Source.OfAbility src) -> Engine.Modal.allEffects (ActivatedAbility.modal (ActivatedAbilitySource.ability src))
+  Just (Source.OfTrigger src) -> Engine.Modal.allEffects (TriggeredAbility.modal (TriggeredAbilitySource.ability src))
+  Just (Source.OfInherentTrigger src) -> Engine.Modal.allEffects (TriggeredAbility.modal (InherentTriggerSource.ability src))
+  _ -> foldMap (Engine.Modal.allEffects . Face.spell) (Projection.View.spellFaceOf oid gs)

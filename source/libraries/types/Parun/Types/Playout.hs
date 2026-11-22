@@ -7,4 +7,7 @@ data Playout
     Random
   | -- | The greedy policy (Parun.Play.Search.greedy).
     Greedy
+  | -- | The greedy policy, each target chosen by its effect's polarity
+    -- (Parun.Play.Search.polar).
+    Polar
   deriving (Bounded, Enum, Eq, Ord, Show)

@@ -2,11 +2,12 @@
 {-# LANGUAGE RankNTypes #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 
--- Covers Parun.Play.Search, Parun.Engine.Engine.resumePriority and
+-- Covers Parun.Play.Search, Parun.Play.Polarity, Parun.Engine.Engine.resumePriority and
 -- Parun.Engine.Engine.resumeTurnBasedAction: a sampled world, a restarted
 -- priority decision or combat declaration, and playouts of one decision.
 module Parun.SearchSpec where
 
+import Control.Applicative ((<|>))
 import qualified Control.Monad as Monad
 import qualified Control.Monad.Trans.Class as Trans
 import qualified Control.Monad.Trans.Except as Except
@@ -26,6 +27,7 @@ import qualified Parun.Engine.Card as Card
 import qualified Parun.Engine.Engine as Engine
 import qualified Parun.Engine.Event as Event
 import qualified Parun.Engine.Game as Engine.Game
+import qualified Parun.Engine.Modal as Engine.Modal
 import qualified Parun.Engine.PlayerView as PlayerView
 import qualified Parun.Engine.Projection as Projection
 import qualified Parun.Engine.Projection.View as Projection.View
@@ -33,6 +35,7 @@ import qualified Parun.Extra.Natural as Natural
 import qualified Parun.Legality as Legality
 import qualified Parun.Play.Command as Command
 import qualified Parun.Play.Game as Game
+import qualified Parun.Play.Polarity as Polarity
 import qualified Parun.Play.Search as Search
 import qualified Parun.Registry as Registry
 import qualified Parun.Spec as Spec
@@ -40,6 +43,7 @@ import qualified Parun.Support as S
 import qualified Parun.Types.Action as Action
 import qualified Parun.Types.Answerer as Answerer
 import qualified Parun.Types.Asked as Asked
+import qualified Parun.Types.Card as Card.Type
 import qualified Parun.Types.CardName as CardName
 import qualified Parun.Types.CardType as CardType
 import qualified Parun.Types.Concession as Concession
@@ -58,6 +62,7 @@ import qualified Parun.Types.PlayOptions as PlayOptions
 import qualified Parun.Types.Player as Player
 import qualified Parun.Types.PlayerId as PlayerId
 import qualified Parun.Types.Playout as Playout
+import qualified Parun.Types.Polarity as Polarity.Type
 import qualified Parun.Types.Printing as Printing
 import qualified Parun.Types.Program as Program
 import qualified Parun.Types.ProjectedCharacteristics as ProjectedCharacteristics
@@ -68,6 +73,7 @@ import qualified Parun.Types.SearchBudget as SearchBudget
 import qualified Parun.Types.SearchMethod as SearchMethod
 import qualified Parun.Types.Seat as Seat
 import qualified Parun.Types.Settle as Settle
+import qualified Parun.Types.SlotName as SlotName
 import qualified Parun.Types.Source as Source
 import qualified Parun.Types.Staged as Staged
 import qualified Parun.Types.TapState as TapState
@@ -318,6 +324,38 @@ spec s registry = Spec.describe s "Search" $ do
     chosen <- traverse (\seed -> either (Spec.assertFailure s . Text.unpack) pure =<< Except.runExceptT (State.evalStateT (Answerer.unwrap (Search.greedy (S.fixtureRegistry [])) instant) (S.seeded seed))) [1 .. 8]
     Spec.assertBool s (elem Action.Pass chosen) ("passed in some seed: " <> show chosen)
 
+  Spec.it s "an effect's polarity toward its target slot, by the card behind each arm" $ do
+    let table =
+          [ ("Lightning Bolt", "target", Just Polarity.Type.Harms),
+            ("Murder", "target", Just Polarity.Type.Harms),
+            ("Counterspell", "spell", Just Polarity.Type.Harms),
+            ("Downpour", "target", Just Polarity.Type.Harms),
+            ("Blatant Thievery", "target", Just Polarity.Type.Harms),
+            ("Unsummon", "target", Just Polarity.Type.Harms),
+            ("Ashen Powder", "target", Just Polarity.Type.Helps),
+            ("Giant Growth", "target", Just Polarity.Type.Helps),
+            ("Disfigure", "target", Just Polarity.Type.Harms),
+            ("Critical Hit", "target", Just Polarity.Type.Helps),
+            ("Battlegrowth", "target", Just Polarity.Type.Helps),
+            ("Blight Rot", "target", Just Polarity.Type.Harms),
+            ("Ancestral Recall", "target", Just Polarity.Type.Helps),
+            ("Natural Spring", "target", Just Polarity.Type.Helps),
+            ("Final Punishment", "target", Just Polarity.Type.Harms),
+            ("Dreadwaters", "target", Just Polarity.Type.Harms),
+            ("Deception", "target", Just Polarity.Type.Harms),
+            ("Lightning Bolt", "other", Nothing)
+          ]
+    Foldable.for_ table $ \(name, slot, expected) -> do
+      card <- S.cardOf s registry name
+      let effects = Engine.Modal.allEffects (Face.spell (NonEmpty.head (Card.Type.faces card)))
+      Spec.assertEqWith s (name <> "'s " <> slot) (Polarity.slotPolarity (SlotName.MkSlotName (Text.pack slot)) effects) expected
+
+  Spec.it s "the polar policy aims a harmful spell's targets at the chooser's opponent" $
+    aiming s registry "Lightning Bolt" (/=)
+
+  Spec.it s "the polar policy aims a helpful spell's targets at the chooser's own side" $
+    aiming s registry "Giant Growth" (==)
+
   Spec.it s "a greedy playout plays a land at the decision it restarts" $ do
     (gs, pid) <- capturing s registry 3 "a menu offering a land play" $ \asked -> case Asked.prompt asked of
       Prompt.ChooseAction decider pid menu | any isPlay menu && Search.searchable asked decider pid (Search.options menu) -> Just (Asked.game asked, pid)
@@ -329,6 +367,29 @@ spec s registry = Spec.describe s "Search" $ do
     Spec.assertEqWith s "a land more in every seed" scores ((before + 1) <$ scores)
   where
     viewer = S.alice
+
+-- The first targets announced for `spell` from turn 3 on whose every slot
+-- offers recipients on both sides, in a game of decks of bears and `spell`,
+-- answered by Search.polar in eight seeds: every target chosen lies on a side
+-- `related` to the chooser.
+aiming :: (Monad m) => Spec.Spec m n -> Registry.Registry m -> String -> (PlayerId.PlayerId -> PlayerId.PlayerId -> Bool) -> m ()
+aiming s registry spell related = do
+  bear <- S.printingOf s registry "Grizzly Bears"
+  cast <- S.printingOf s registry spell
+  mountain <- S.printingOf s registry "Mountain"
+  forest <- S.printingOf s registry "Forest"
+  let deck = Deck.fromCards (Map.fromList [(bear, 16), (cast, 4), (mountain, 4), (forest, 8)])
+      side gs recipient = Recipient.playerOf recipient <|> ((`Projection.View.controllerOf` gs) =<< Recipient.objectOf recipient)
+      both gs chooser legal = any (\r -> side gs r == Just chooser) legal && any (maybe False (/= chooser) . side gs) legal
+      named gs oid = Set.member (CardName.MkCardName (Text.pack spell)) (ProjectedCharacteristics.names (Projection.project oid gs))
+  (gs, (chooser, asked :: Asked.Asked GameState.GameState (Map.Map SlotName.SlotName (Set.Set Recipient.Recipient)))) <- capturingIn s (deck NonEmpty.:| [deck]) 3 ("targets for " <> spell <> " on both sides") $ \asked -> case Asked.prompt asked of
+    Prompt.ChooseTargets decider chooser oid slots
+      | named (Asked.game asked) oid && all (both (Asked.game asked) chooser . snd) slots ->
+          Just (Asked.game asked, (chooser, Asked.MkAsked [] (Asked.game asked) (Prompt.ChooseTargets decider chooser oid slots)))
+    _ -> Nothing
+  chosen <- traverse (\seed -> either (Spec.assertFailure s . Text.unpack) pure =<< Except.runExceptT (State.evalStateT (Answerer.unwrap (Search.polar (S.fixtureRegistry [])) asked) (S.seeded seed))) [1 .. 8]
+  let sides = [side gs recipient | answer <- chosen, recipient <- foldMap Set.toList (Map.elems answer)]
+  Spec.assertBool s (not (null sides) && all (maybe False (related chooser)) sides) ("every target on the side wanted: " <> show sides)
 
 -- Seat 1's first priority decision with a choice from turn 3 on, in a seeded
 -- game of the bears decks, the random bot in both seats: the game as asked
