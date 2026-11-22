@@ -23,9 +23,11 @@ import qualified Data.Set as Set
 import Numeric.Natural (Natural)
 import qualified Parun.Engine.Binding as Binding
 import qualified Parun.Engine.Card as Engine.Card
+import qualified Parun.Engine.Cost as Engine.Cost
 import qualified Parun.Engine.Engine as Engine
 import qualified Parun.Engine.Event as Event
 import qualified Parun.Engine.Game as Engine.Game
+import qualified Parun.Engine.Mana as Engine.Mana
 import qualified Parun.Engine.Modal as Engine.Modal
 import qualified Parun.Engine.Projection as Projection
 import qualified Parun.Engine.Projection.View as Projection.View
@@ -65,6 +67,7 @@ import qualified Parun.Types.Keyword as Keyword
 import qualified Parun.Types.KeywordInstance as KeywordInstance
 import qualified Parun.Types.KickerDecision as KickerDecision
 import qualified Parun.Types.LoggedEvent as LoggedEvent
+import qualified Parun.Types.ManaCost as ManaCost
 import qualified Parun.Types.Modal as Modal
 import qualified Parun.Types.Mode as Mode
 import qualified Parun.Types.ModeIndex as ModeIndex
@@ -95,6 +98,7 @@ import qualified Parun.Types.SearchMethod as SearchMethod
 import qualified Parun.Types.SlotName as SlotName
 import qualified Parun.Types.Source as Source
 import qualified Parun.Types.StackObjectKind as StackObjectKind
+import qualified Parun.Types.TapState as TapState
 import qualified Parun.Types.TargetCount as TargetCount
 import qualified Parun.Types.TriggeredAbility as TriggeredAbility
 import qualified Parun.Types.TriggeredAbilitySource as TriggeredAbilitySource
@@ -362,7 +366,11 @@ sample (MkPrior prior) memory viewer gs =
 -- targets it leads to ('aimed', 'lined'), and the first declaration of
 -- attackers ('attacks') and of blockers ('blocks'). The line of the action
 -- taken is kept in `aim` and answers those prompts where it still may, past
--- each step that lapses ('stepping'). It reads the whole game only through 'sample', which deals
+-- each step that lapses ('stepping'). A priority decision it does not search
+-- is the random bot's over the 'options' alone; a payment taps a source
+-- 'paymentSource' finds needed and nothing past what covers the cost. Past
+-- its own mana sources and pool there, it reads the whole game only through
+-- 'sample', which deals
 -- every card its seat cannot see now and does not remember by the memory
 -- `recalled` gives ('remembering'), and the opponents' plays `watched` gives
 -- ('watching') only through 'plausibility'.
@@ -400,7 +408,7 @@ search registry budget weights prior watched recalled aim = Answerer.MkAnswerer 
               probe <- deal
               (action, line) <- best Engine.resumePriority pid deal (actions >>= aimed pid probe) (\(a, l) -> maybe (Acted a) (Aimed a) l)
               action <$ hold aim line
-          | otherwise -> unaimed
+          | otherwise -> hold aim Nothing >> Answerer.unwrap (Game.bot registry) asked {Asked.prompt = Prompt.ChooseAction decider pid (options menu)}
         prompt | Just (decider, pid, _) <- lined prompt, Decider.unwrap decider == pid -> kept pid
         Prompt.DeclareAttackers decider pid offered
           | searchable asked decider pid (attacks offered),
@@ -412,6 +420,9 @@ search registry budget weights prior watched recalled aim = Answerer.MkAnswerer 
             Just choices <- NonEmpty.nonEmpty (blocks candidates attacked) -> do
               deal <- dealing pid
               best Engine.resumeTurnBasedAction pid deal choices Blocked
+        Prompt.ChooseManaSource _ pid cost sources
+          | Just source <- paymentSource pid cost sources (Asked.game asked) -> pure (Just source)
+        Prompt.ChooseExtraManaSource {} -> pure Nothing
         _ -> Answerer.unwrap (Game.bot registry) asked
 
 -- | What a choice of targets takes: each slot's targets (CR 601.2c).
@@ -974,6 +985,20 @@ options = filter $ \action -> case action of
   Action.ActivateManaAbility {} -> False
   Action.PayLifeForMana {} -> False
   _ -> True
+
+-- | The first candidate a fewest group of `pid`'s mana sources paying
+-- `cost` beside the pool needs (CR 601.2g): the others set aside one at a
+-- time while the rest still pays, the cost is not paid without it. Setting a
+-- source aside taps it in a copy of `gs`, so one whose ability does not tap
+-- it is never needed; Nothing where no candidate is.
+paymentSource :: PlayerId.PlayerId -> ManaCost.ManaCost -> NonEmpty.NonEmpty ObjectId.ObjectId -> GameState.GameState -> Maybe ObjectId.ObjectId
+paymentSource pid cost candidates gs =
+  let sources = Engine.Mana.manaSources Engine.Cost.manaActivations pid gs
+      paysWithout aside = Engine.Mana.canPay Engine.Cost.manaActivations pid cost gs {GameState.objects = List.foldl' (flip (Map.adjust (\o -> o {Object.tapped = TapState.Tapped}))) (GameState.objects gs) aside}
+      needed candidate =
+        let aside = List.foldl' (\kept source -> if paysWithout (source : kept) then source : kept else kept) [] (filter (/= candidate) sources)
+         in paysWithout aside && not (paysWithout (candidate : aside))
+   in List.find needed (NonEmpty.toList candidates)
 
 -- | The declarations of attackers searched, from the creatures offered (CR
 -- 508.1a): every subset of up to 'widest' declarations, else none, all, each
