@@ -753,7 +753,8 @@ play shell seats invited resuming = do
             back <- rejoin shell i (Rejoin.host (Text.pack ("Player " <> show (i + 2))))
             Monad.when back (IORef.modifyIORef' down (Set.delete i))
             pure back
-          remotes = Map.fromList [(seatOf i, Link.remote (rejoinSlot i) (channelOf i)) | i <- Set.toList invited]
+          -- A rejoining guest is told the match-up played, every bot's deck drawn.
+          remotes = Map.fromList [(seatOf i, Link.remote (rejoinSlot i) (Lobby.placesFor i (Lobby.rematch seats invited)) (channelOf i)) | i <- Set.toList invited]
           kept = if keeping then Browser.keepReply . Link.savedReply else const (pure ())
       parsed <- foldMap LazyMap.elems . cards <$> IORef.readIORef (loaded shell)
       ended <- Hotseat.game (page shell) reg parsed (tableOf shell) (level shell) bots (fmap (Bifunctor.first Text.unpack) seats) remotes seed (foldMap Link.replies resuming) kept tellAll (leaveFor shell chosen)

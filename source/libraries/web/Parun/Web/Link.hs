@@ -125,11 +125,12 @@ data Channel m = MkChannel
 -- | The host's side of a guest's seat (Protocol.Exchange): each request sent,
 -- answered by the reply that comes back, any other message (a Ready toggled
 -- as the game began, a rejoining guest's Hello) skipped. Once the channel
--- closes, `rejoin` connects it anew and the guest is sent its seat and the
--- request again, which a guest whose page reloaded needs both of; the end of
--- input, which stops the game, only where it does not.
-remote :: (Monad m) => m Bool -> Channel m -> Protocol.Exchange m
-remote rejoin channel request = asked
+-- closes, `rejoin` connects it anew and the guest is sent `places`, the
+-- match-up its history names, its seat and the request again, which a guest
+-- whose page reloaded needs all of; the end of input, which stops the game,
+-- only where it does not.
+remote :: (Monad m) => m Bool -> [Place] -> Channel m -> Protocol.Exchange m
+remote rejoin places channel request = asked
   where
     asked = send channel (MkAsk request) >> replied
     replied = do
@@ -139,7 +140,7 @@ remote rejoin channel request = asked
         Just _ -> replied
         Nothing -> do
           back <- rejoin
-          if back then send channel (MkStart (Question.seat (Request.question request))) >> asked else pure Nothing
+          if back then send channel (MkMatchup places) >> send channel (MkStart (Question.seat (Request.question request))) >> asked else pure Nothing
 
 -- | What the guest does with a message from the host once the game is under
 -- way: a request is answered through `local`, its reply what to send back;

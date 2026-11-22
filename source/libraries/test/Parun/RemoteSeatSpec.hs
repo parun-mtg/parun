@@ -11,6 +11,7 @@ import qualified Data.List.NonEmpty as NonEmpty
 import qualified Data.Map.Strict as Map
 import qualified Data.Maybe as Maybe
 import qualified Data.Sequence as Seq
+import qualified Data.Set as Set
 import qualified Data.Text as Text
 import qualified Parun.BotSpec as BotSpec
 import qualified Parun.Play.Game as Game
@@ -33,6 +34,7 @@ import qualified Parun.Types.Request as Request
 import qualified Parun.Types.Result as Result
 import qualified Parun.Types.SearchBudget as SearchBudget
 import qualified Parun.Types.Weights as Weights
+import qualified Parun.Web.DeckBrowser as DeckBrowser
 import qualified Parun.Web.Ending as Ending
 import qualified Parun.Web.Html as Html
 import qualified Parun.Web.Link as Link
@@ -83,12 +85,20 @@ spec s registry = Spec.describe s "RemoteSeat" $ do
     matchup <- BotSpec.bears s registry
     wholeGame s (matchup <> pure (S.carol, snd (NonEmpty.head matchup))) [S.bob, S.carol]
 
-  Spec.it s "a guest whose connection drops mid-game rejoins, is sent its seat and the request again, and the game finishes" $ do
+  Spec.it s "a guest whose connection drops mid-game rejoins, is sent the match-up, its seat and the request again, and the game finishes" $ do
     matchup <- BotSpec.bears s registry
     (outcome, wire) <- State.runStateT (hosted [S.bob] matchup) (MkWire Map.empty Map.empty Map.empty (Map.singleton S.bob 5) 0 [])
     Spec.assertEqWith s "finished" (Monad.void outcome) (Right ())
     Spec.assertEqWith s "rejoined once" (rejoins wire) 1
-    Spec.assertEqWith s "the guest is sent its seat again" (starts wire) [S.bob]
+    Spec.assertEqWith s "the guest is sent the match-up, then its seat, again" (sentAgain wire) [Link.MkMatchup played, Link.MkStart S.bob]
+
+  Spec.it s "the match-up a game's guests are told again names every seat and every bot's deck drawn" $ do
+    let seat name = (Text.pack name, Text.pack "20 Forest\n")
+        seats = seat "sets/a/one" NonEmpty.:| [seat "sets/a/two", seat "sets/a/three"]
+        rematched = Lobby.rematch seats (Set.singleton 1)
+        told = Lobby.placesFor 1 rematched
+    Spec.assertEqWith s "every seat named" (fmap Link.who told) [Text.pack "Host", Text.pack "Bot 1", Text.pack "You"]
+    Spec.assertEqWith s "every deck named, the bot's among them" (fmap Link.deck told) (fmap (DeckBrowser.label . fst) (NonEmpty.toList seats))
 
   Spec.it s "a game picked up from its seed and the replies so far asks what the game played through asked, and ends the same" $ do
     matchup <- BotSpec.bears s registry
@@ -139,14 +149,14 @@ wholeGame s matchup guests = do
 -- host's, a guest's seat for its own) answered and whose view it carried,
 -- and the end each guest was told; how many more lines each guest's channel
 -- carries before it drops once, how many times a guest rejoined, and each
--- seat a guest was sent again.
+-- match-up and seat a guest was sent again.
 data Wire = MkWire
   { inbox :: Map.Map PlayerId.PlayerId [Text.Text],
     asked :: Map.Map (Maybe PlayerId.PlayerId) [(PlayerId.PlayerId, Maybe PlayerId.PlayerId)],
     ended :: Map.Map PlayerId.PlayerId Link.Heard,
     dropping :: Map.Map PlayerId.PlayerId Int,
     rejoins :: Int,
-    starts :: [PlayerId.PlayerId]
+    sentAgain :: [Link.Message]
   }
 
 build :: Text.Text
@@ -156,7 +166,11 @@ build = Text.pack "test"
 -- sent over its channel and every other seat's to the host's page. A guest
 -- whose channel drops rejoins the first time, and not again.
 hosted :: (Monad m) => [PlayerId.PlayerId] -> NonEmpty.NonEmpty (PlayerId.PlayerId, Deck.Deck) -> State.StateT Wire m (Either Text.Text (Result.Result, GameState.GameState))
-hosted guests matchup = Game.run (S.fixtureRegistry []) Nothing Limits.standard [] (Map.fromList [(pid, Game.wired (S.fixtureRegistry []) (Protocol.bySeat (Map.fromList [(g, Link.remote rejoined (channel g)) | g <- guests]) (page hostPage))) | (pid, _) <- NonEmpty.toList matchup]) (S.seeded 1) Map.empty matchup
+hosted guests matchup = Game.run (S.fixtureRegistry []) Nothing Limits.standard [] (Map.fromList [(pid, Game.wired (S.fixtureRegistry []) (Protocol.bySeat (Map.fromList [(g, Link.remote rejoined played (channel g)) | g <- guests]) (page hostPage))) | (pid, _) <- NonEmpty.toList matchup]) (S.seeded 1) Map.empty matchup
+
+-- The match-up a rejoining guest is told.
+played :: [Link.Place]
+played = [Link.MkPlace (Text.pack "Host") (Text.pack "Bears") (Just True), Link.MkPlace (Text.pack "You") (Text.pack "Bears") (Just True)]
 
 -- A guest rejoining, which connects the first time and not again.
 rejoined :: (Monad m) => State.StateT Wire m Bool
@@ -212,7 +226,8 @@ channel g = Link.MkChannel send (received g)
   where
     send message = case Link.decode build (Link.encode build message) of
       Left _ -> pure ()
-      Right (Link.MkStart seat) -> State.modify' (\w -> w {starts = starts w <> [seat]})
+      Right again@(Link.MkStart _) -> State.modify' (\w -> w {sentAgain = sentAgain w <> [again]})
+      Right again@(Link.MkMatchup _) -> State.modify' (\w -> w {sentAgain = sentAgain w <> [again]})
       Right line -> do
         heard <- Link.guest (page (Just g)) line
         case heard of
