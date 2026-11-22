@@ -19,10 +19,12 @@ import qualified Data.List as List
 import qualified Data.List.NonEmpty as NonEmpty
 import qualified Data.Map.Strict as Map
 import qualified Data.Maybe as Maybe
+import qualified Data.Sequence as Seq
 import qualified Data.Set as Set
 import Numeric.Natural (Natural)
 import qualified Parun.Engine.Card as Engine.Card
 import qualified Parun.Engine.Engine as Engine
+import qualified Parun.Engine.Event as Event
 import qualified Parun.Engine.Game as Engine.Game
 import qualified Parun.Engine.Projection as Projection
 import qualified Parun.Engine.Projection.View as Projection.View
@@ -42,12 +44,19 @@ import qualified Parun.Types.Decider as Decider
 import qualified Parun.Types.Deck as Deck
 import qualified Parun.Types.Features as Features
 import qualified Parun.Types.Game as Game.Type
+import qualified Parun.Types.GameEvent as GameEvent
 import qualified Parun.Types.GameState as GameState
 import qualified Parun.Types.Generator as Generator.Type
+import qualified Parun.Types.History as History
+import qualified Parun.Types.LoggedEvent as LoggedEvent
+import qualified Parun.Types.Moved as Moved
 import qualified Parun.Types.Object as Object
 import qualified Parun.Types.ObjectId as ObjectId
 import qualified Parun.Types.Observer as Observer
+import qualified Parun.Types.PastTurn as PastTurn
 import qualified Parun.Types.Player as Player
+import qualified Parun.Types.PlayerActed as PlayerActed
+import qualified Parun.Types.PlayerAction as PlayerAction
 import qualified Parun.Types.PlayerId as PlayerId
 import qualified Parun.Types.Playout as Playout
 import qualified Parun.Types.Printing as Printing
@@ -61,12 +70,14 @@ import qualified Parun.Types.TurnRegisters as TurnRegisters
 import qualified Parun.Types.Visibility as Visibility.Type
 import qualified Parun.Types.Weights as Weights
 import qualified Parun.Types.Zone as Zone
+import qualified Parun.Types.ZoneChange as ZoneChange
 
 -- | How a viewer deals an owner's unseen cards in a world it samples: given
--- the viewer, the world so far and the owner, the world with every printing
--- the deal names interned and the contents to deal onto that owner's 'unseen'
--- objects, in their order, any object past the last keeping its own.
-newtype Prior = MkPrior (forall m. (Monad m) => PlayerId.PlayerId -> GameState.GameState -> PlayerId.PlayerId -> State.StateT Generator.Type.Generator m (GameState.GameState, [Contents]))
+-- what the viewer remembers, the viewer, the world so far and the owner, the
+-- world with every printing the deal names interned and the contents to deal
+-- onto that owner's 'unseen' objects, in their order, any object past the
+-- last keeping its own.
+newtype Prior = MkPrior (forall m. (Monad m) => Memory -> PlayerId.PlayerId -> GameState.GameState -> PlayerId.PlayerId -> State.StateT Generator.Type.Generator m (GameState.GameState, [Contents]))
 
 -- | What a card object is, apart from where it sits: the card behind it and
 -- its identity (CR 108.3).
@@ -76,54 +87,65 @@ type Contents = (Source.Source, Maybe CardIdentity.CardIdentity)
 -- less every card the viewer has seen, so dealing their own contents anew,
 -- shuffled, is dealing from that remainder. It assumes each list is known.
 known :: Prior
-known = MkPrior $ \viewer gs owner ->
+known = MkPrior $ \memory viewer gs owner ->
   fmap ((,) gs) . Generator.shuffle $
     [ (Object.source object, Object.identity object)
-    | oid <- unseen viewer gs owner,
+    | oid <- unseen memory viewer gs owner,
       object <- Foldable.toList (Engine.Game.lookupObject oid gs)
     ]
 
 -- | A meta's decks, each with its share, for lists not known: the viewer's
 -- own cards dealt as 'known' deals them, and each other owner's from one deck
 -- drawn by its 'posterior' given what the viewer 'seen' of theirs, less those
--- cards, shuffled, and once that runs short from the whole deck shuffled.
+-- cards, with the 'loose' ones, shuffled, and once that runs short from
+-- the whole deck shuffled.
 inferred :: NonEmpty.NonEmpty (Natural, Deck.Deck) -> Prior
-inferred meta = MkPrior $ \viewer gs owner ->
+inferred meta = MkPrior $ \memory viewer gs owner ->
   let MkPrior ownList = known
-      shown = seen viewer gs owner
-      hidden = unseen viewer gs owner
+      shown = seen memory viewer gs owner
+      dealtOnto = unseen memory viewer gs owner
+      loosened = Map.findWithDefault Map.empty owner (loose memory)
    in if owner == viewer
-        then ownList viewer gs owner
+        then ownList memory viewer gs owner
         else do
           deck <- Generator.weighted (posterior meta shown)
-          rest <- Generator.shuffle (spread (Map.differenceWith (\k s -> if k > s then Just (k - s) else Nothing) (Deck.cards deck) shown))
+          rest <- Generator.shuffle (spread (Map.differenceWith (\k s -> if k > s then Just (k - s) else Nothing) (Deck.cards deck) shown) <> spread loosened)
           whole <- Generator.shuffle (spread (Deck.cards deck))
-          let (world, ids) = Foldable.foldl' (\(w, acc) printing -> let (pid, w') = Engine.Game.intern printing w in (w', Map.insert printing pid acc)) (gs, Map.empty) (Map.keys (Deck.cards deck))
+          let (world, ids) = Foldable.foldl' (\(w, acc) printing -> let (pid, w') = Engine.Game.intern printing w in (w', Map.insert printing pid acc)) (gs, Map.empty) (Map.keys (Deck.cards deck <> loosened))
               identityOf oid = Object.identity =<< Engine.Game.lookupObject oid gs
-              dealt = zip hidden (rest <> if null whole then [] else cycle whole)
+              dealt = zip dealtOnto (rest <> if null whole then [] else cycle whole)
           pure (world, [(Source.OfCard pid, identityOf oid) | (oid, printing) <- dealt, pid <- Foldable.toList (Map.lookup printing ids)])
 
 -- | Each printing as many times as its count.
 spread :: Map.Map Printing.Printing Natural -> [Printing.Printing]
 spread = foldMap (\(printing, n) -> List.genericReplicate n printing) . Map.toList
 
--- | The cards of `owner`'s that `viewer` sees now, by printing: the cards in
--- the game outside the command zone (CR 408.1), which holds what a player
--- brings beside their deck's cards (Deck).
---
--- Not implemented: counting a card seen before and not now (#9444).
-seen :: PlayerId.PlayerId -> GameState.GameState -> PlayerId.PlayerId -> Map.Map Printing.Printing Natural
-seen viewer gs owner =
-  Map.fromListWith
+-- | The cards of `owner`'s that `viewer` sees now, by printing, with those it
+-- remembers in their hand or library: the cards in the game outside the
+-- command zone (CR 408.1), which holds what a player brings beside their
+-- deck's cards (Deck).
+seen :: Memory -> PlayerId.PlayerId -> GameState.GameState -> PlayerId.PlayerId -> Map.Map Printing.Printing Natural
+seen memory viewer gs owner =
+  Map.unionsWith
     (+)
-    [ (printing, 1)
-    | (oid, object) <- Map.toList (GameState.objects gs),
-      Object.owner object == owner,
-      maybe False (/= Zone.Command) (Engine.Game.zoneOf oid gs),
-      Visibility.sees viewer oid gs == Visibility.Type.Visible,
-      Source.OfCard pid <- [Object.source object],
-      printing <- Foldable.toList (Engine.Game.printingOf pid gs)
+    [ Map.fromListWith
+        (+)
+        [ (printing, 1)
+        | (oid, object) <- Map.toList (GameState.objects gs),
+          Object.owner object == owner,
+          maybe False (/= Zone.Command) (Engine.Game.zoneOf oid gs),
+          Visibility.sees viewer oid gs == Visibility.Type.Visible,
+          printing <- Foldable.toList (printingOf object gs)
+        ],
+      Map.fromListWith (+) [(printing, 1) | oid <- pinned memory viewer gs owner, (_, _, printing) <- Foldable.toList (Map.lookup oid (remembered memory))],
+      Map.findWithDefault Map.empty owner (loose memory)
     ]
+
+-- | The printing behind a card object.
+printingOf :: Object.Object -> GameState.GameState -> Maybe Printing.Printing
+printingOf object gs = case Object.source object of
+  Source.OfCard pid -> Engine.Game.printingOf pid gs
+  _ -> Nothing
 
 -- | Each deck of a meta weighed by its share times the chance a hand of its
 -- cards the size of those seen is exactly them (multivariate hypergeometric),
@@ -144,21 +166,128 @@ posterior meta shown =
 
 -- | CR 400.2: the objects in `owner`'s hand and library `viewer` may not see,
 -- in hand-then-library order.
-unseen :: PlayerId.PlayerId -> GameState.GameState -> PlayerId.PlayerId -> [ObjectId.ObjectId]
-unseen viewer gs owner =
-  let hidden oid = Visibility.sees viewer oid gs /= Visibility.Type.Visible
-   in filter hidden (Foldable.toList (Map.findWithDefault mempty owner (GameState.hand gs)) <> Foldable.toList (Map.findWithDefault mempty owner (GameState.library gs)))
+hidden :: PlayerId.PlayerId -> GameState.GameState -> PlayerId.PlayerId -> [ObjectId.ObjectId]
+hidden viewer gs owner =
+  let unseeable oid = Visibility.sees viewer oid gs /= Visibility.Type.Visible
+   in filter unseeable (Foldable.toList (Map.findWithDefault mempty owner (GameState.hand gs)) <> Foldable.toList (Map.findWithDefault mempty owner (GameState.library gs)))
+
+-- | The 'hidden' objects of `owner`'s that `viewer` does not remember, which
+-- a world deals anew.
+unseen :: Memory -> PlayerId.PlayerId -> GameState.GameState -> PlayerId.PlayerId -> [ObjectId.ObjectId]
+unseen memory viewer gs owner = filter (`Map.notMember` remembered memory) (hidden viewer gs owner)
+
+-- | The 'hidden' objects of `owner`'s that `viewer` remembers, which keep
+-- what they hold in every world.
+pinned :: Memory -> PlayerId.PlayerId -> GameState.GameState -> PlayerId.PlayerId -> [ObjectId.ObjectId]
+pinned memory viewer gs owner = filter (`Map.member` remembered memory) (hidden viewer gs owner)
+
+-- | What a viewer remembers of the cards it has seen, as of the first
+-- `logged` entries of the game's whole log ('logOf').
+data Memory = MkMemory
+  { -- | Each card object it knows, with its owner, its zone and its printing.
+    remembered :: Map.Map ObjectId.ObjectId (PlayerId.PlayerId, Zone.Zone, Printing.Printing),
+    -- | By owner, the printings it knows among that owner's hand and library
+    -- without knowing which object holds them (CR 701.24a).
+    loose :: Map.Map PlayerId.PlayerId (Map.Map Printing.Printing Natural),
+    -- | How many entries of the whole log it has read.
+    logged :: Int,
+    -- | The last of them.
+    lastRead :: Maybe LoggedEvent.LoggedEvent
+  }
+  deriving (Eq, Show)
+
+-- | Remembering nothing, the log unread.
+blank :: Memory
+blank = MkMemory {remembered = Map.empty, loose = Map.empty, logged = 0, lastRead = Nothing}
+
+-- | The game's whole log, oldest first: every finished turn's
+-- (History.pastTurns), then this one's.
+logOf :: GameState.GameState -> Seq.Seq LoggedEvent.LoggedEvent
+logOf gs = foldMap PastTurn.events (History.pastTurns (GameState.history gs)) <> TurnRegisters.events (GameState.turn gs)
+
+-- | `memory` brought up to `gs` for `viewer`, reading the log past what it
+-- read, or all of it from 'blank' once the log no longer extends what it read
+-- (a restart, a subgame, a rollback): each move of a card remembered, or seen
+-- (Visibility.witnessed), remembers the object it became; each
+-- shuffle loosens the cards remembered in the shuffled library; then every
+-- card `viewer` sees is remembered, and a card remembered last in a hand or
+-- library that is gone is loosened. A card seen leaving a hand or library, or
+-- seen in one, not remembered before takes one of its printing off its
+-- owner's loose ones, as it may be that one, so none counts twice.
+-- Parun.SearchSpec's bounce and shuffle cases are the proof.
+remember :: PlayerId.PlayerId -> GameState.GameState -> Memory -> Memory
+remember viewer gs memory
+  | logged memory > 0 && Seq.lookup (logged memory - 1) whole /= lastRead memory = remember viewer gs blank
+  | otherwise =
+      let unread = Seq.drop (logged memory) whole
+          witnessed entry = Visibility.witnessed viewer entry == Visibility.Type.Visible
+          reading m entry = case LoggedEvent.event entry of
+            GameEvent.Moved moved -> follow (witnessed entry) (Moved.change moved) m
+            GameEvent.PlayerActed acted | PlayerActed.action acted == PlayerAction.Shuffle -> shuffled (PlayerActed.player acted) m
+            event
+              | witnessed entry,
+                Just oid <- Event.shownCard event,
+                Map.notMember oid (remembered m),
+                Just object <- Engine.Game.lookupObject oid gs,
+                Just printing <- printingOf object gs ->
+                  (if Engine.Game.isHiddenZone (Object.zone object) then unloose (Object.owner object) printing else id)
+                    m {remembered = Map.insert oid (Object.owner object, Object.zone object, printing) (remembered m)}
+            _ -> m
+          follow sawIt change m =
+            let arrived = ZoneChange.object change
+                to = ZoneChange.to change
+             in case Map.lookup (ZoneChange.departed change) (remembered m) of
+                  Just (owner, _, printing) -> m {remembered = Map.insert arrived (owner, to, printing) (Map.delete (ZoneChange.departed change) (remembered m))}
+                  Nothing
+                    | sawIt,
+                      Just object <- Engine.Game.lookupObject arrived gs,
+                      Just printing <- printingOf object gs ->
+                        (if Engine.Game.isHiddenZone (ZoneChange.from change) then unloose (Object.owner object) printing else id)
+                          m {remembered = Map.insert arrived (Object.owner object, to, printing) (remembered m)}
+                  Nothing -> m
+          shuffled pid m =
+            let (mixed, kept) = Map.partition (\(owner, zone, _) -> owner == pid && zone == Zone.Library) (remembered m)
+             in Foldable.foldl' (\m' (owner, _, printing) -> loosen owner printing m') m {remembered = kept} mixed
+          loosen owner printing m = m {loose = Map.insertWith (Map.unionWith (+)) owner (Map.singleton printing 1) (loose m)}
+          unloose owner printing m = m {loose = Map.update (\counts -> let less = Map.update (\n -> if n > 1 then Just (n - 1) else Nothing) printing counts in if Map.null less then Nothing else Just less) owner (loose m)}
+          followed = Foldable.foldl' reading memory unread
+          (present, gone) = Map.partitionWithKey (\oid _ -> Map.member oid (GameState.objects gs)) (remembered followed)
+          loosened = Foldable.foldl' (\m (owner, zone, printing) -> if Engine.Game.isHiddenZone zone then loosen owner printing m else m) followed {remembered = present} gone
+          sighted =
+            [ (oid, (Object.owner object, Object.zone object, printing))
+            | (oid, object) <- Map.toList (GameState.objects gs),
+              Maybe.isJust (Engine.Game.zoneOf oid gs),
+              Visibility.sees viewer oid gs == Visibility.Type.Visible,
+              printing <- Foldable.toList (printingOf object gs)
+            ]
+          newly = [(owner, printing) | (oid, (owner, zone, printing)) <- sighted, Map.notMember oid present, Engine.Game.isHiddenZone zone]
+          unloosened = Foldable.foldl' (\m (owner, printing) -> unloose owner printing m) loosened newly
+       in unloosened {remembered = Map.union (Map.fromList sighted) present, logged = Seq.length whole, lastRead = Seq.lookup (Seq.length whole - 1) whole}
+  where
+    whole = logOf gs
+
+-- | Brings each player's memory up to the game as each prompt is asked
+-- ('remember'), through `keep`, which is given the memories before, a player
+-- with none starting 'blank'.
+remembering :: (Monad m) => ((Map.Map PlayerId.PlayerId Memory -> Map.Map PlayerId.PlayerId Memory) -> m ()) -> Observer.Observer (Game.Play m)
+remembering keep =
+  Observer.MkObserver
+    { Observer.before = \asked ->
+        let gs = Asked.game asked
+         in Game.underneath (keep (\memories -> let brought = Map.fromList [(pid, remember pid gs (Map.findWithDefault blank pid memories)) | pid <- Map.keys (GameState.players gs)] in foldr seq brought brought)),
+      Observer.after = \_ _ -> pure ()
+    }
 
 -- | A world `viewer` cannot tell from `gs`: each owner's unseen objects dealt
 -- the prior's contents, one each, every id staying where it is. Following
 -- Magarena's showRandomizedHiddenCards (docs/prior-art-lessons.md, 10.3).
 -- SearchSpec proves the viewer's view is unchanged.
-sample :: (Monad m) => Prior -> PlayerId.PlayerId -> GameState.GameState -> State.StateT Generator.Type.Generator m GameState.GameState
-sample (MkPrior prior) viewer gs =
+sample :: (Monad m) => Prior -> Memory -> PlayerId.PlayerId -> GameState.GameState -> State.StateT Generator.Type.Generator m GameState.GameState
+sample (MkPrior prior) memory viewer gs =
   Monad.foldM
     ( \world owner -> do
-        (dealing, dealt) <- prior viewer world owner
-        pure dealing {GameState.objects = Foldable.foldl' (\objects (oid, contents) -> Map.adjust (\target -> target {Object.source = fst contents, Object.identity = snd contents}) oid objects) (GameState.objects dealing) (zip (unseen viewer world owner) dealt)}
+        (dealing, dealt) <- prior memory viewer world owner
+        pure dealing {GameState.objects = Foldable.foldl' (\objects (oid, contents) -> Map.adjust (\target -> target {Object.source = fst contents, Object.identity = snd contents}) oid objects) (GameState.objects dealing) (zip (unseen memory viewer world owner) dealt)}
     )
     gs
     (Map.keys (GameState.players gs))
@@ -170,17 +299,19 @@ sample (MkPrior prior) viewer gs =
 -- a tie; every other prompt answered by the random bot (Game.bot). It
 -- searches priority decisions ('options') and the first declaration of
 -- attackers ('attacks') and of blockers ('blocks'). It reads the whole game
--- only through 'sample', which deals every card its seat cannot see now, and
--- the opponents' passes `watched` gives ('watching') only through
+-- only through 'sample', which deals every card its seat cannot see now and
+-- does not remember by the memory `recalled` gives ('remembering'), and the
+-- opponents' passes `watched` gives ('watching') only through
 -- 'plausibility'.
 --
 -- Not implemented: searching targets, which the random bot answers (#9409).
-search :: forall m. (Monad m) => Registry.Registry m -> SearchBudget.SearchBudget -> Weights.Weights -> Prior -> Game.Play m [Passed] -> Answerer.Answerer (Asked.Asked GameState.GameState) (Game.Play m)
-search registry budget weights prior watched = Answerer.MkAnswerer $ \asked ->
+search :: forall m. (Monad m) => Registry.Registry m -> SearchBudget.SearchBudget -> Weights.Weights -> Prior -> Game.Play m [Passed] -> Game.Play m Memory -> Answerer.Answerer (Asked.Asked GameState.GameState) (Game.Play m)
+search registry budget weights prior watched recalled = Answerer.MkAnswerer $ \asked ->
   let best :: Game.Type.Game Result.Result -> PlayerId.PlayerId -> NonEmpty.NonEmpty a -> (a -> Pick) -> Game.Play m a
       best restart pid choices pick = do
         passes <- watched
-        deal <- worlds budget prior passes pid (Asked.game asked)
+        memory <- recalled
+        deal <- worlds budget prior memory passes pid (Asked.game asked)
         rounds <- Monad.replicateM (Natural.toIntSaturating (SearchBudget.samples budget)) $ do
           world <- deal
           shared <- State.get
@@ -234,40 +365,41 @@ stale gs (pid, past) =
       turnOf g = TurnRegisters.turnNumber (GameState.turn g)
    in turnOf past + 1 < turnOf gs || not (any (`elem` handIn gs) (handIn past))
 
--- | How `viewer` deals each playout's world from `gs`: with no
--- `SearchBudget.candidates`, a fresh 'sample' each; otherwise that many
--- samples drawn once, then each playout's drawn among them weighted by its
--- 'plausibility' given the opponents' `passes`, evenly when every weight is 0.
-worlds :: (Monad m) => SearchBudget.SearchBudget -> Prior -> [Passed] -> PlayerId.PlayerId -> GameState.GameState -> Game.Play m (Game.Play m GameState.GameState)
-worlds budget prior passes viewer gs
-  | SearchBudget.candidates budget == 0 = pure (sample prior viewer gs)
+-- | How `viewer`, remembering `memory`, deals each playout's world from
+-- `gs`: with no `SearchBudget.candidates`, a fresh 'sample' each; otherwise
+-- that many samples drawn once, then each playout's drawn among them weighted
+-- by its 'plausibility' given the opponents' `passes`, evenly when every
+-- weight is 0.
+worlds :: (Monad m) => SearchBudget.SearchBudget -> Prior -> Memory -> [Passed] -> PlayerId.PlayerId -> GameState.GameState -> Game.Play m (Game.Play m GameState.GameState)
+worlds budget prior memory passes viewer gs
+  | SearchBudget.candidates budget == 0 = pure (sample prior memory viewer gs)
   | otherwise = do
-      drawn <- Monad.replicateM (Natural.toIntSaturating (SearchBudget.candidates budget)) (sample prior viewer gs)
-      weighed <- traverse (\world -> fmap (\w -> (w, world)) (plausibility prior viewer passes gs world)) drawn
+      drawn <- Monad.replicateM (Natural.toIntSaturating (SearchBudget.candidates budget)) (sample prior memory viewer gs)
+      weighed <- traverse (\world -> fmap (\w -> (w, world)) (plausibility prior memory viewer passes gs world)) drawn
       pure $ case NonEmpty.nonEmpty weighed of
-        Nothing -> sample prior viewer gs
+        Nothing -> sample prior memory viewer gs
         Just pool
           | all ((== 0) . fst) pool -> Generator.pick (fmap snd pool)
           | otherwise -> Generator.weighted pool
 
--- | How likely the opponents of `viewer` were to make their `passes` not
--- 'stale' had `gs`'s unseen cards been `world`'s, each pass scored as the
--- random bot choosing among the options searched ('options'), the opponent
--- model: one over their number in the game as it was, its cards `viewer`
--- could not see then dealt anew ('sample') save those it still cannot see
--- now, which hold `world`'s. A pass none of whose then-unseen cards in the
--- passer's hand is still unseen counts 1, as does one whose restarted menu
--- is not asked first (Engine.resumePriority).
-plausibility :: (Monad m) => Prior -> PlayerId.PlayerId -> [Passed] -> GameState.GameState -> GameState.GameState -> Game.Play m Rational
-plausibility prior viewer passes gs world =
+-- | How likely the opponents of `viewer`, remembering `memory`, were to make
+-- their `passes` not 'stale' had `gs`'s unseen cards been `world`'s, each
+-- pass scored as the random bot choosing among the options searched
+-- ('options'), the opponent model: one over their number in the game as it
+-- was, its cards `viewer` could not see then dealt anew ('sample') save those
+-- it still cannot see now, which hold `world`'s. A pass none of whose
+-- then-unseen cards in the passer's hand is still unseen counts 1, as does
+-- one whose restarted menu is not asked first (Engine.resumePriority).
+plausibility :: (Monad m) => Prior -> Memory -> PlayerId.PlayerId -> [Passed] -> GameState.GameState -> GameState.GameState -> Game.Play m Rational
+plausibility prior memory viewer passes gs world =
   fmap product . Monad.forM [(pid, past) | (pid, past) <- passes, pid /= viewer, not (stale gs (pid, past))] $ \(pid, past) -> do
-    let hiddenNow = Set.fromList (unseen viewer gs pid)
-        shared = filter (`Set.member` hiddenNow) (unseen viewer past pid)
+    let hiddenNow = Set.fromList (unseen memory viewer gs pid)
+        shared = filter (`Set.member` hiddenNow) (unseen memory viewer past pid)
         heldThen = Map.findWithDefault mempty pid (GameState.hand past)
     if not (any (`elem` heldThen) shared)
       then pure 1
       else do
-        redealt <- sample prior viewer past
+        redealt <- sample prior memory viewer past
         let carried = Foldable.foldl' (carry world) redealt shared
         pure $ case menuAgain pid carried of
           Just menu | n <- length (options menu), n > 0, elem Action.Pass menu -> 1 / toRational n
