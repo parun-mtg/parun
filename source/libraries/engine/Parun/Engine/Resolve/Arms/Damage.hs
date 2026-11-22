@@ -1581,7 +1581,7 @@ chooseGroup resolving source controller legal (ChooseGroup.MkChooseGroup among s
 -- words scope to the instruction rather than to the die. An instruction that
 -- rolls no dice at all records nothing, having rolled none; a reroll is a
 -- roll of its own and records its own.
-rollDieArm :: (Game Result -> PlayerId -> Natural -> Natural -> Natural -> Game Integer -> Game ([Natural], [(PlayerId, Maybe Natural)], [Natural])) -> Game Result -> ObjectId -> ObjectId -> PlayerId -> Map.Map SlotName (Set Recipient) -> RollDie.RollDie -> Game ()
+rollDieArm :: (Game Result -> PlayerId -> Natural -> Natural -> Natural -> Game Integer -> Game ([Natural], [(PlayerId, [(PlayerId, Natural)])], [Natural])) -> Game Result -> ObjectId -> ObjectId -> PlayerId -> Map.Map SlotName (Set Recipient) -> RollDie.RollDie -> Game ()
 rollDieArm throwDice runSubgame resolving source controller legal rollDie = do
   before <- State.get
   let sides = RollDie.sides rollDie
@@ -1750,7 +1750,7 @@ rollDieArm throwDice runSubgame resolving source controller legal rollDie = do
 -- Not implemented: choosing a Die creature whose reroll is thrown further out
 -- than the current throw, to reroll that throw once the inner one is done; it
 -- is not offered (#8628).
-rethrow :: (Game Result -> PlayerId -> Natural -> Natural -> Natural -> Game Integer -> Game ([Natural], [(PlayerId, Maybe Natural)], [Natural])) -> Game Result -> ObjectId -> PlayerId -> Game ()
+rethrow :: (Game Result -> PlayerId -> Natural -> Natural -> Natural -> Game Integer -> Game ([Natural], [(PlayerId, [(PlayerId, Natural)])], [Natural])) -> Game Result -> ObjectId -> PlayerId -> Game ()
 rethrow throwDice runSubgame resolving controller = do
   gs <- State.get
   let dice = filter (`Set.notMember` Scratch.rerolling (GameState.scratch gs)) (Game.diceOnBattlefield gs)
@@ -1774,7 +1774,7 @@ rethrow throwDice runSubgame resolving controller = do
 -- Recorded with its final result, as an original roll: it modifies no roll
 -- under way. Unobservable against throwSettled's `recordRerolls` reading: a Die
 -- creature is a d6 and Farideh, Devil's Chosen reads 10 or higher.
-rerollShownDie :: (Game Result -> PlayerId -> Natural -> Natural -> Natural -> Game Integer -> Game ([Natural], [(PlayerId, Maybe Natural)], [Natural])) -> Game Result -> PlayerId -> ObjectId -> Game ()
+rerollShownDie :: (Game Result -> PlayerId -> Natural -> Natural -> Natural -> Game Integer -> Game ([Natural], [(PlayerId, [(PlayerId, Natural)])], [Natural])) -> Game Result -> PlayerId -> ObjectId -> Game ()
 rerollShownDie throwDice runSubgame roller oid = do
   gs <- State.get
   Foldable.for_ (Game.lookupObject oid gs >>= Object.die) $ \shown -> do
@@ -1795,7 +1795,7 @@ rerollShownDie throwDice runSubgame roller oid = do
 --
 -- CR 607.5 / 706.8c: only the results the resolving ability's own pair
 -- stored, so a copy's reroll finds none its printed pair stored.
-rerollStoredResults :: (Game Result -> PlayerId -> Natural -> Natural -> Natural -> Game Integer -> Game ([Natural], [(PlayerId, Maybe Natural)], [Natural])) -> Game Result -> ObjectId -> ObjectId -> PlayerId -> Map.Map SlotName (Set Recipient) -> SlotName -> Game ()
+rerollStoredResults :: (Game Result -> PlayerId -> Natural -> Natural -> Natural -> Game Integer -> Game ([Natural], [(PlayerId, [(PlayerId, Natural)])], [Natural])) -> Game Result -> ObjectId -> ObjectId -> PlayerId -> Map.Map SlotName (Set Recipient) -> SlotName -> Game ()
 rerollStoredResults throwDice runSubgame resolving source controller legal slot = Foldable.for_ (legalOne slot legal >>= Recipient.objectOf) $ \target -> do
   gs <- State.get
   let acquisition = Game.readingAcquisition resolving source gs target

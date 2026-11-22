@@ -107,6 +107,7 @@ import qualified Parun.Types.ProjectedCharacteristics as ProjectedCharacteristic
 import qualified Parun.Types.Recipient as Recipient
 import qualified Parun.Types.Result as Result
 import qualified Parun.Types.Revealed as Revealed
+import qualified Parun.Types.RollReading as RollReading
 import qualified Parun.Types.Saddling as Saddling
 import qualified Parun.Types.SeatView as SeatView
 import qualified Parun.Types.SecretChoice as SecretChoice
@@ -531,7 +532,10 @@ event view logged = case LoggedEvent.event logged of
   GameEvent.FacedDilemma d -> said [player (FacedDilemma.player d), Text.pack "faces a dilemma over", name (FacedDilemma.object d)]
   GameEvent.CommittedCrime c -> said [player (CommittedCrime.player c), Text.pack "commits a crime with", name (CommittedCrime.object c)]
   GameEvent.Expended e -> said [player (Expended.player e), Text.pack "has spent", Text.pack (show (Expended.after e)), Text.pack "mana on spells this turn"]
-  GameEvent.DieResultSettled r -> said [player (DieResult.roller r), Text.pack "rolls", Text.pack (show (DieResult.result r))]
+  -- A roll is told by its result; its natural results beside it are not.
+  GameEvent.DieResultSettled r -> case DieResult.reading r of
+    RollReading.FinalResult -> said [player (DieResult.roller r), Text.pack "rolls", Text.pack (show (DieResult.result r))]
+    RollReading.NaturalResult -> Nothing
   GameEvent.RolledToVisit r -> said [player (DieResult.roller r), Text.pack "rolls", Text.pack (show (DieResult.result r)), Text.pack "to visit their Attractions"]
   GameEvent.PlanarDieRolled r -> said [player (PlanarDieRolled.roller r), Text.pack "rolls", planarFace (PlanarDieRolled.face r), Text.pack "on the planar die"]
   GameEvent.TurnedUpOffDeck t -> said [player (TurnedUpOffDeck.player t), Text.pack "turns up", name (TurnedUpOffDeck.card t), Text.pack "from their", sideDeck (TurnedUpOffDeck.deck t)]

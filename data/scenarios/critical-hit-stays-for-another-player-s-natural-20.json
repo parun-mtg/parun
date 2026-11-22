@@ -8,16 +8,6 @@
             "card": "Arcane Investigator",
             "label": "investigator",
             "ready": true
-          },
-          {
-            "card": "Wall of Fortune",
-            "label": "wall"
-          }
-        ],
-        "graveyard": [
-          {
-            "card": "Critical Hit",
-            "label": "hit"
           }
         ],
         "library": [
@@ -45,6 +35,12 @@
         "name": "alice"
       },
       {
+        "graveyard": [
+          {
+            "card": "Critical Hit",
+            "label": "hit"
+          }
+        ],
         "library": [
           {
             "card": "Island"
@@ -76,8 +72,8 @@
     ],
     "step": "PrecombatMain"
   },
-  "description": "CR 706.2b a natural 20 rerolled to 4 is no natural 20",
-  "note": "The d20 comes up 20 and Wall of Fortune rerolls it to 4, the die's natural result once rerolled (docs/decisions.md, \"Whether a natural 20 rerolled away was rolled\"). Critical Hit stays in the graveyard, and the Investigator draws.",
+  "description": "CR 109.5 another player's natural 20 is not yours",
+  "note": "Alice's d20 comes up 20, but Critical Hit is in bob's graveyard: its \"you\" is bob, who rolled nothing. It stays put.",
   "timeline": [
     {
       "do": {
@@ -109,8 +105,8 @@
     {
       "do": {
         "Answer": {
-          "prompt": "Rethrow",
-          "with": "Exercises"
+          "prompt": "ChooseCardFromAmong",
+          "with": "$keep"
         }
       },
       "player": "alice",
@@ -120,8 +116,11 @@
     {
       "do": {
         "Answer": {
-          "prompt": "RollDie",
-          "with": 4
+          "prompt": "ArrangeLibraryArrivals",
+          "with": [
+            1,
+            0
+          ]
         }
       },
       "player": "alice",
@@ -161,7 +160,7 @@
             "$hit"
           ],
           "of": "Zone",
-          "player": "alice",
+          "player": "bob",
           "zone": "Graveyard"
         }
       },

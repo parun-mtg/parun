@@ -101,6 +101,7 @@ import qualified Parun.Types.PlayerId as PlayerId
 import qualified Parun.Types.Recipient as Recipient
 import qualified Parun.Types.RevealCause as RevealCause
 import qualified Parun.Types.Revealed as Revealed
+import qualified Parun.Types.RollReading as RollReading
 import qualified Parun.Types.RoomIndex as RoomIndex
 import qualified Parun.Types.Saddling as Saddling
 import qualified Parun.Types.SecretChoice as SecretChoice
@@ -674,20 +675,20 @@ spec s = Spec.describe s "Parun.Codec.GameEvent" $ do
       GameEvent.codec
       (GameEvent.Expended (Expended.MkExpended (PlayerId.MkPlayerId 1) 2 5))
       " {\"type\":\"Expended\",\"value\":{\"player\":1,\"before\":2,\"after\":5}} "
-  -- CR 706.2. The roller, one die's result and its natural result, distinct
-  -- numbers so a codec that swapped them would not round-trip.
+  -- CR 706.2. The roller, a number distinct from it so a codec that swapped
+  -- them would not round-trip, and a natural result's reading.
   Spec.it s "DieResultSettled" $
     Common.assertCodec
       s
       GameEvent.codec
-      (GameEvent.DieResultSettled DieResult.MkDieResult {DieResult.roller = PlayerId.MkPlayerId 3, DieResult.result = 6, DieResult.natural = Just 5})
-      " {\"type\":\"DieResultSettled\",\"value\":{\"roller\":3,\"result\":6,\"natural\":5}} "
+      (GameEvent.DieResultSettled DieResult.MkDieResult {DieResult.roller = PlayerId.MkPlayerId 3, DieResult.result = 6, DieResult.reading = RollReading.NaturalResult})
+      " {\"type\":\"DieResultSettled\",\"value\":{\"roller\":3,\"result\":6,\"reading\":\"NaturalResult\"}} "
   -- CR 701.52a.
   Spec.it s "RolledToVisit" $
     Common.assertCodec
       s
       GameEvent.codec
-      (GameEvent.RolledToVisit DieResult.MkDieResult {DieResult.roller = PlayerId.MkPlayerId 2, DieResult.result = 5, DieResult.natural = Nothing})
+      (GameEvent.RolledToVisit DieResult.MkDieResult {DieResult.roller = PlayerId.MkPlayerId 2, DieResult.result = 5, DieResult.reading = RollReading.FinalResult})
       " {\"type\":\"RolledToVisit\",\"value\":{\"roller\":2,\"result\":5}} "
   -- CR 701.32.
   Spec.it s "TurnedUpOffDeck" $
