@@ -242,6 +242,7 @@ import qualified Parun.Types.Result as Result
 import qualified Parun.Types.Reveal as Reveal
 import qualified Parun.Types.RevealCause as RevealCause
 import qualified Parun.Types.Revealed as Revealed
+import qualified Parun.Types.RollReading as RollReading
 import qualified Parun.Types.Sacrificer as Sacrificer
 import qualified Parun.Types.Scratch as Scratch
 import qualified Parun.Types.SearchDestination as SearchDestination
@@ -4439,7 +4440,7 @@ storeOn acquisition target sides results gs =
 -- settled: one CountedAct whose value is the highest kept result, which is all
 -- Farideh, Devil's Chosen's "if any of those results was 10 or higher" reads
 -- under the trigger's event amount.
-recordRoll :: PlayerId -> [(PlayerId, Maybe Natural)] -> [Natural] -> Game ()
+recordRoll :: PlayerId -> [(PlayerId, [(PlayerId, Natural)])] -> [Natural] -> Game ()
 recordRoll controller throwers results = do
   State.modify' (Event.recordEvent (GameEvent.CountedAct (CountedAct.MkCountedAct PlayerAction.RollDice controller (Foldable.foldl' max 0 results))))
   -- CR 706.2's final number, one entry per die the instruction kept, for
@@ -4447,11 +4448,18 @@ recordRoll controller throwers results = do
   -- roll (CR 706.6). Recorded under the player who threw the die's final
   -- natural result: Pippa, Duchess of Dice's ruling gives a reroll of another
   -- player's die to the rerolling player's "whenever you roll" triggers.
-  -- Beside it the die's natural result once its rerolls are done, for
-  -- "whenever you roll a natural 20" (docs/decisions.md, "Whether a natural
-  -- 20 rerolled away was rolled").
-  Foldable.for_ (zip throwers results) $ \((thrower, natural), result) ->
-    State.modify' (Event.recordEvent (GameEvent.DieResultSettled DieResult.MkDieResult {DieResult.roller = thrower, DieResult.result = result, DieResult.natural = natural}))
+  -- Beside it the natural result of the die's first roll, under the player
+  -- who threw it, for "whenever you roll a natural 20"; a reroll's is
+  -- recorded with the reroll (docs/decisions.md, "Whether a natural 20
+  -- rerolled away was rolled").
+  Foldable.for_ (zip throwers results) $ \((thrower, naturals), result) -> do
+    State.modify' (Event.recordEvent (GameEvent.DieResultSettled DieResult.MkDieResult {DieResult.roller = thrower, DieResult.result = result, DieResult.reading = RollReading.FinalResult}))
+    Foldable.for_ naturals (State.modify' . Event.recordEvent . uncurry naturalResult)
+
+-- | CR 706.2: the natural result one roll by `by` came up, the event "a
+-- natural 20" reads.
+naturalResult :: PlayerId -> Natural -> GameEvent.GameEvent
+naturalResult by face = GameEvent.DieResultSettled DieResult.MkDieResult {DieResult.roller = by, DieResult.result = face, DieResult.reading = RollReading.NaturalResult}
 
 -- | CR 614.12a: `act` run with every materialized-but-not-entered permanent
 -- (Scratch.enteringSubjects, Scratch.enteringBeside) out of the battlefield

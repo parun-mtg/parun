@@ -1,6 +1,9 @@
 module Parun.Codec.RollTriggerSpec where
 
+import qualified Data.Either as Either
+import qualified Data.Text as Text
 import qualified Parun.Codec.RollTrigger as RollTrigger
+import qualified Parun.JsonCodec.Codec as Codec
 import qualified Parun.JsonCodec.Common as Common
 import qualified Parun.Spec as Spec
 import qualified Parun.Types.PlayerRelation as PlayerRelation
@@ -32,4 +35,9 @@ spec s = Spec.describe s "Parun.Codec.RollTrigger" $ do
       RollTrigger.codec
       (RollTrigger.MkRollTrigger PlayerRelation.You 20 RollKind.AnyRoll RollReading.NaturalResult)
       " {\"roller\":\"You\",\"result\":20,\"reading\":\"NaturalResult\"} "
+  Spec.it s "rejects a natural roll to visit" $
+    Spec.assertBool
+      s
+      (Either.isLeft (Codec.decode RollTrigger.codec =<< Common.parse (Text.pack "{\"roller\":\"You\",\"result\":6,\"roll\":\"ToVisit\",\"reading\":\"NaturalResult\"}")))
+      "expected a decode failure"
   Spec.it s "has a schema" $ Common.assertHasSchema s RollTrigger.codec

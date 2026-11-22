@@ -132,6 +132,7 @@ import qualified Parun.Types.RerollReach as RerollReach
 import qualified Parun.Types.Response as Response
 import Parun.Types.Result (Result)
 import qualified Parun.Types.RollAdjustment as RollAdjustment
+import qualified Parun.Types.RollReading as RollReading
 import qualified Parun.Types.Scratch as Scratch
 import qualified Parun.Types.Settle as Settle
 import Parun.Types.SlotName (SlotName)
@@ -1032,14 +1033,15 @@ rollToVisit runSubgame pid = do
   (results, throwers, rolled) <- throwDice runSubgame pid 6 1 0 (pure 0)
   Monad.unless (null rolled) (Common.recordRoll pid throwers rolled)
   -- CR 706.6 can throw a second die and ignore the lower; one is left.
-  Foldable.for_ (Maybe.listToMaybe (zip results throwers)) $ \(result, (_, natural)) ->
-    State.modify' (Event.recordEvent (GameEvent.RolledToVisit DieResult.MkDieResult {DieResult.roller = pid, DieResult.result = result, DieResult.natural = natural}))
+  Foldable.for_ (Maybe.listToMaybe results) $ \result ->
+    State.modify' (Event.recordEvent (GameEvent.RolledToVisit DieResult.MkDieResult {DieResult.roller = pid, DieResult.result = result, DieResult.reading = RollReading.FinalResult}))
 
 -- | CR 706.1-706.6: throw `named` dice with `sides` sides for `controller`,
 -- through every modification rule 706 names -- CR 614.1a's replacements, CR
 -- 706.2b's rerolls and adjustments, CR 706.6's ignored rolls -- and answer each
 -- kept die's final result beside the player who threw its final natural result
--- and that natural result, Nothing where a coin gave it.
+-- and the natural result of the die's first roll, with its thrower, none where
+-- a coin gave it; each reroll's is recorded with the reroll (`throwSettled`).
 -- `ignore` is the instruction's own CR 706.6 ignore (Parun.Types.RollDie's), and
 -- `perDie` its own modifier (CR 706.2). Shared by
 -- Effect.RollDie's arm and CR 701.52a's roll to visit, which records nothing
@@ -1051,13 +1053,13 @@ rollToVisit runSubgame pid = do
 -- rolls nothing, and a roll standing for that flip (Pokey's other half, applied
 -- in the same loop) is recorded as rolled and read back through the face it is
 -- -- nothing where it was neither.
-throwDice :: Game Result -> PlayerId -> Natural -> Natural -> Natural -> Game Integer -> Game ([Natural], [(PlayerId, Maybe Natural)], [Natural])
+throwDice :: Game Result -> PlayerId -> Natural -> Natural -> Natural -> Game Integer -> Game ([Natural], [(PlayerId, [(PlayerId, Natural)])], [Natural])
 throwDice runSubgame controller sides named ignore perDie = do
   settled <- Event.proposeDiceRoll (reflipWindow runSubgame) controller sides named ignore
   case settled of
     Left flipped -> do
       Foldable.for_ flipped (State.modify' . Event.recordEvent . snd)
-      pure (fmap fst flipped, fmap (const (controller, Nothing)) flipped, [])
+      pure (fmap fst flipped, fmap (const (controller, [])) flipped, [])
     Right roll -> do
       -- A roll standing for Pokey's flip throws with no modifier of the
       -- instruction's own, throwRecorded's reason: the flip named none, and
@@ -1084,7 +1086,7 @@ throwRecorded runSubgame roll = do
 -- | `throwDice` once CR 614.1a's loop has settled the roll: how many dice to
 -- throw, which to keep, and how many of the lowest CR 706.6 then ignores
 -- (Parun.Types.Throw).
-throwSettled :: Game Result -> Throw.Throw -> Game Integer -> Game ([Natural], [(PlayerId, Maybe Natural)])
+throwSettled :: Game Result -> Throw.Throw -> Game Integer -> Game ([Natural], [(PlayerId, [(PlayerId, Natural)])])
 throwSettled runSubgame roll perDie = do
   let controller = Throw.thrower roll
       -- Unreachable for coins: both funnels settle a flip themselves
@@ -1127,8 +1129,13 @@ throwSettled runSubgame roll perDie = do
       --
       -- Answers the natural result with the player who THREW it: the roller,
       -- or whoever activated a reroll in the window below (`windowCandidates`),
-      -- the face the die shows, Nothing where a coin gave the natural result,
-      -- and the die's rerolls not yet recorded (`rethrow`).
+      -- the face of the die's first roll with its thrower, none where a coin
+      -- gave it, and the die's rerolls not yet recorded, each with its own
+      -- natural result (`rethrow`).
+      -- Each roll is read at the face it came up: CR 706.2's natural result
+      -- is "before any modifiers", and a reroll is a modifier (CR 706.2b)
+      -- and a roll of its own (docs/decisions.md, "Whether a natural 20
+      -- rerolled away was rolled").
       -- The static offers and those activations compete in the one step, so
       -- both are candidates for the roller's pick.
       rerolling = rerollingWith numbered
@@ -1141,7 +1148,8 @@ throwSettled runSubgame roll perDie = do
         activations <- duringRoll natural (State.gets windowCandidates)
         let gated (_, offer) = byNumber || Maybe.isNothing (ModifiedRoll.natural offer)
             static = fmap (\(payer, stated, offer) -> (payer, stated, Left offer)) (distinct Set.empty (fmap (offerOf gs) (filter gated (Dice.rerollOffers RerollReach.ThatDie sides (Just natural) modifiers))))
-        offering byNumber (static <> activations) thrower natural
+        (by, number, faces, pending) <- offering (static <> activations) thrower natural
+        pure (by, number, [(thrower, natural) | byNumber] <> faces, pending)
       -- CR 109.5's "you" on the modifier, which is the player its "may" and
       -- its CR 706.2a cost belong to -- Clam-I-Am's own controller, who is
       -- also the roller, and Wall of Fortune's, who need not be. The ROLLER
@@ -1164,11 +1172,11 @@ throwSettled runSubgame roll perDie = do
       -- (Dice.pickModifier), and its payer decides whether to take it -- the
       -- modifier's own "may" (CR 706.2a). A declined offer leaves the rest to
       -- be re-checked against the board as it then stands.
-      offering byNumber offers thrower natural = do
+      offering offers thrower natural = do
         standing <- duringRoll natural (State.gets (\gs -> filter (live gs) offers))
         picked <- Dice.pickModifier controller standing
         case picked of
-          Nothing -> pure (thrower, natural, if byNumber then Just natural else Nothing, [])
+          Nothing -> pure (thrower, natural, [], [])
           Just ((payer, stated, kind), rest) -> do
             let mCost = either ModifiedRoll.cost (Just . ActivatedAbility.cost . snd) kind
                 ask = do
@@ -1181,7 +1189,7 @@ throwSettled runSubgame roll perDie = do
               Left offer -> do
                 taken <- askPaying Set.empty thrower payer stated mCost ask
                 case taken of
-                  Nothing -> offering byNumber rest thrower natural
+                  Nothing -> offering rest thrower natural
                   -- The roller throws it: Clam-I-Am's "you may reroll
                   -- it", Wall of Fortune's "have any player reroll a die
                   -- that player rolled".
@@ -1191,7 +1199,7 @@ throwSettled runSubgame roll perDie = do
               Right (oid, ability) -> do
                 answer <- ask
                 case answer of
-                  Nothing -> offering byNumber rest thrower natural
+                  Nothing -> offering rest thrower natural
                   Just () -> do
                     requested <- duringRoll natural $ do
                       activated <- activateWhileRolling runSubgame payer oid ability
@@ -1199,7 +1207,7 @@ throwSettled runSubgame roll perDie = do
                       pure (activated && Scratch.rethrowRequested (GameState.scratch after))
                     if requested
                       then rethrowOne payer
-                      else offering byNumber rest thrower natural
+                      else offering rest thrower natural
       -- CR 706.2b's reroll is a roll: Pippa, Duchess of Dice's ruling has it
       -- trigger "whenever you roll a die", so it is CR 706.1's event and goes
       -- through CR 614's loop, Event.proposeDiceRoll, as ONE roll of `count`
@@ -1248,8 +1256,8 @@ throwSettled runSubgame roll perDie = do
             landed <- State.gets Trigger.battlefieldCandidates
             traverse
               ( \(result, event) -> do
-                  (thrower, natural, showing, pending) <- rerollingWith False by result
-                  pure (thrower, natural, showing, foldMap (\e -> [(Nothing, Left e, landed)]) event <> pending)
+                  (thrower, natural, rolls, pending) <- rerollingWith False by result
+                  pure (thrower, natural, rolls, foldMap (\e -> [(Nothing, Left e, landed)]) event <> pending)
               )
               (padded (1, Nothing) (fmap (fmap Just) flipped))
           Right again -> do
@@ -1261,9 +1269,12 @@ throwSettled runSubgame roll perDie = do
             -- Each kept die carries the face it came up, before any reroll of
             -- it: a later reroll modifies the original roll, not this one
             -- (docs/decisions.md, "Which result a reroll's trigger reads").
-            -- A d20 rolled for that coin shows its own face, the one "a
+            -- A d20 rolled for that coin keeps its own face, the one "a
             -- natural 20" reads (Pokey, the Scallywagg's rulings).
-            pure (padded (by, 1, Just 1, []) (fmap (\((total, thrower, showing, pending), face) -> (thrower, readBack again (Integer.toNaturalSaturating total), showing, pending <> foldMap (\(came, landed) -> [(key, Right (by, came), landed)]) face)) kept))
+            --
+            -- The reroll's natural result rides beside its event, over the
+            -- board it came up on, rather than with the die's first roll.
+            pure (padded (by, 1, [], []) (fmap (\((total, thrower, faces, pending), face) -> (thrower, readBack again (Integer.toNaturalSaturating total), [], pending <> foldMap (\(came, landed) -> (key, Right (by, came), landed) : fmap (\(who, shown) -> (Nothing, Left (Common.naturalResult who shown), landed)) faces) face)) kept))
         where
           -- Defensive: a short answer is filled with a die of 1.
           padded filler xs = take (Natural.toIntSaturating count) (xs <> repeat filler)
@@ -1286,7 +1297,8 @@ throwSettled runSubgame roll perDie = do
       -- cr-603-10-a-reroll-triggers-a-brazen-dwarf-sacrificed-for-a-later-reroll
       -- proves it.
       --
-      -- A coin flipped instead of a reroll (Left) is that coin's own event.
+      -- A coin flipped instead of a reroll (Left) is that coin's own event, and
+      -- a reroll's natural result (Left) is its own per die, uncounted.
       recordRerolls pending = Foldable.for_ (groups Set.empty pending) $ \(event, landed) ->
         State.modify' (Event.recordEventOver landed event)
         where
@@ -1303,7 +1315,7 @@ throwSettled runSubgame roll perDie = do
               | otherwise -> (rolled by (Foldable.foldl' max face [other | (Just k, Right (_, other), _) <- rest, k == key]), landed) : groups (Set.insert key seen) rest
       rethrowOne by = do
         dice <- rethrow by Nothing (1 :: Natural)
-        pure (Maybe.fromMaybe (by, 1, Just 1, []) (Maybe.listToMaybe dice))
+        pure (Maybe.fromMaybe (by, 1, [], []) (Maybe.listToMaybe dice))
       readBack again natural = if Throw.instead again then maybe natural Event.resultOfFace (Event.faceOfResult natural) else natural
       -- Whether an offer can still go through: a static offer's budget admits
       -- it and its cost is payable, an activation passes the gate a priority
@@ -1452,8 +1464,8 @@ throwSettled runSubgame roll perDie = do
                   again <- rethrow payer (Just next) (Natural.length targets)
                   let placed fresh held = case held of
                         [] -> []
-                        (i, die@(_, _, _, carried)) : others
-                          | Set.member i targets, (thrower, natural, showing, pending) : later <- fresh -> (thrower, natural, showing, carried <> pending) : placed later others
+                        (i, die@(_, _, rolled, carried)) : others
+                          | Set.member i targets, (thrower, natural, faces, pending) : later <- fresh -> (thrower, natural, rolled <> faces, carried <> pending) : placed later others
                           | otherwise -> die : placed fresh others
                   rerollingDice (next + 1) (placed again (zip [0 :: Natural ..] dice))
       -- The roll's units again, `flat` cut back to their sizes.
@@ -1515,18 +1527,18 @@ throwSettled runSubgame roll perDie = do
         -- Left unclamped: CR 706.2's result is the number after EVERY
         -- modifier, so a shift from another source applies to this sum as it
         -- stands, negative or not, and only the final figure is clamped below.
-        units <- traverse (traverse (\((thrower, natural, showing, pending), face) -> fmap (\modifier -> ((toInteger natural + modifier, thrower, showing, pending), face)) modifierOf)) (zipWith zip rerolled faces)
+        units <- traverse (traverse (\((thrower, natural, rolls, pending), face) -> fmap (\modifier -> ((toInteger natural + modifier, thrower, rolls, pending), face)) modifierOf)) (zipWith zip rerolled faces)
         picked <- Monad.forM units $ \dice -> case NonEmpty.nonEmpty dice of
           -- Unreachable: a unit starts at one die and only a scaling that
           -- cannot reach zero resizes it. Defensive: a die of 1.
-          Nothing -> pure ((1, Throw.thrower settled, Just 1, []), Nothing)
+          Nothing -> pure ((1, Throw.thrower settled, [], []), Nothing)
           Just offered
             | all (== NonEmpty.head offered) (NonEmpty.tail offered) -> pure (NonEmpty.head offered)
             | otherwise -> do
                 gs <- State.get
                 answer <- Game.choose (Prompt.ChooseDieResult (Decide.deciderFor (Throw.thrower settled) gs) (Throw.thrower settled) Nothing (fmap (\((total, _, _, _), _) -> Integer.toNaturalSaturating total) offered))
                 pure (Replacement.at dice answer (NonEmpty.head offered))
-        Dice.ignoreLowest (Throw.thrower settled) (\((total, _, _, _), _) -> total) (\((_, thrower, showing, pending), face) -> (thrower, showing, pending, face)) (Throw.ignored settled) picked
+        Dice.ignoreLowest (Throw.thrower settled) (\((total, _, _, _), _) -> total) (\((_, thrower, rolls, pending), face) -> (thrower, rolls, pending, face)) (Throw.ignored settled) picked
   kept <- naturals True roll perDie
   recordRerolls (foldMap (\((_, _, _, pending), _) -> pending) kept)
   -- CR 706.6 before the second step: an ignored roll is one "no effects apply
@@ -1536,7 +1548,7 @@ throwSettled runSubgame roll perDie = do
   -- Many Things' natural 3, four cards in hand and a shift up is a 0, not a 1
   -- (Parun.DiceSpec's "CR 706.2 a shift applies to the unclamped sum").
   results <- fmap (fmap Integer.toNaturalSaturating) (adjusting (fmap (\((total, _, _, _), _) -> total) kept))
-  pure (results, fmap (\((_, thrower, showing, _), _) -> (thrower, showing)) kept)
+  pure (results, fmap (\((_, thrower, faces, _), _) -> (thrower, faces)) kept)
 
 -- What Parun.Engine.Cost reaches through the Parun.Types.ManaAbilityPerformer
 -- parameter: CR 405.6c's other effects of the activated mana ability being paid,
