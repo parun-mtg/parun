@@ -116,6 +116,7 @@ function syncSettings() {
   concede.hidden = !playing;
   concedeButton.disabled = conceding === null;
   document.getElementById("concede-why").hidden = conceding !== null;
+  if (settings.hidden || conceding === null) askConcede(false);
 }
 function openSettings(open) {
   settings.hidden = !open;
@@ -145,12 +146,28 @@ leaveButton.addEventListener("click", () => {
   document.body.classList.add("busy");
   engine.postMessage({ type: "home", path: pathOf(leaving), value: "" });
 });
+// Conceding asks first, in the menu: the button gives way to the question
+// and its own Concede and Cancel.
 const concede = settings.querySelector(".concede");
 const concedeButton = document.getElementById("concede-button");
+const concedeConfirm = document.getElementById("concede-confirm");
+function askConcede(open) {
+  concedeConfirm.hidden = !open;
+  concedeButton.hidden = open;
+}
 concedeButton.addEventListener("click", () => {
+  if (root.querySelector("[data-concede]") === null) return;
+  askConcede(true);
+  document.getElementById("concede-no").focus();
+});
+document.getElementById("concede-no").addEventListener("click", () => {
+  askConcede(false);
+  concedeButton.focus();
+});
+document.getElementById("concede-yes").addEventListener("click", () => {
   const conceding = root.querySelector("[data-concede]");
-  if (conceding === null || !confirm("Concede this game?")) return;
   openSettings(false);
+  if (conceding === null) return;
   document.body.classList.add("busy");
   engine.postMessage({ type: "concede", path: pathOf(conceding), value: "" });
 });

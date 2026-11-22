@@ -115,6 +115,14 @@
         <div class="concede" hidden>
           <button type="button" id="concede-button" class="danger" aria-describedby="concede-why">Concede</button>
           <p id="concede-why">You can concede when you have priority.</p>
+          <!-- Asked before conceding, in place of the button above. -->
+          <div id="concede-confirm" class="confirm-delete" role="alertdialog" aria-labelledby="concede-ask" hidden>
+            <p id="concede-ask">Concede this game?</p>
+            <div class="choices">
+              <button type="button" id="concede-yes" class="danger">Concede</button>
+              <button type="button" id="concede-no">Cancel</button>
+            </div>
+          </div>
         </div>
         <p class="about">Parun <span title="@COMMIT@">@VERSION@</span> · <a href="https://github.com/parun-mtg/parun" target="_blank" rel="noopener">GitHub</a></p>
         <p class="legal">Parun is unofficial Fan Content permitted under the <a href="https://company.wizards.com/en/legal/fancontentpolicy" target="_blank" rel="noopener">Fan Content Policy</a>. Not approved/endorsed by Wizards. Portions of the materials used are property of Wizards of the Coast. ©Wizards of the Coast LLC. Magic: The Gathering is a trademark of Wizards of the Coast LLC; Universes Beyond names belong to their respective owners.</p>
