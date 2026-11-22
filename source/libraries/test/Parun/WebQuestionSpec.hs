@@ -67,6 +67,7 @@ import qualified Parun.Types.Designation as Designation
 import qualified Parun.Types.Dividing as Dividing
 import qualified Parun.Types.EndingStep as EndingStep
 import qualified Parun.Types.Face as Face
+import qualified Parun.Types.Facing as Facing
 import qualified Parun.Types.Filter as Filter.Type
 import qualified Parun.Types.GameEvent as GameEvent
 import qualified Parun.Types.GameState as GameState
@@ -512,12 +513,23 @@ spec s registry = Spec.describe s "WebQuestion" $ do
 
   Spec.it s "CR 602.1a an activated ability is offered by its Oracle text" $ do
     sorcerer <- S.printingOf s registry "Prodigal Sorcerer"
-    let (oid, gs) = S.addPermanent sorcerer S.alice (Setup.emptyGame S.bothPlayers)
+    let (oid, gs) = S.addPermanent sorcerer S.alice (inMain (Setup.emptyGame S.bothPlayers))
         request = requestFor gs (Prompt.ChooseAction (Decider.MkDecider S.alice) S.alice (Action.Pass : fmap (Action.Activate oid) (Projection.abilitiesOf oid gs)))
     -- The tap symbol is drawn, so the text around it is matched.
     Spec.assertBool s (Text.pack ": Prodigal Sorcerer deals 1 damage to any target." `Text.isInfixOf` Html.content (Question.Web.view request Question.Web.blank)) "labelled"
-    -- The end-of-turn reminder names the activation by its source, as a phrase.
-    Spec.assertBool s (Text.pack "Before you pass: you can still activate Prodigal Sorcerer." `Text.isInfixOf` Html.content (Question.Web.view request Question.Web.blank)) "reminded"
+    -- CR 117.4: the next step offers it again, so passing gives nothing up.
+    Spec.assertBool s (not (Text.pack "Before you pass" `Text.isInfixOf` Html.content (Question.Web.view request Question.Web.blank))) "not reminded"
+
+  Spec.it s "CR 117.4 the reminder before a pass names only what the step's end gives up" $ do
+    shock <- S.printingOf s registry "Shock"
+    mountain <- S.printingOf s registry "Mountain"
+    let (bolt, g1) = S.addObjectIn Zone.Hand shock S.alice (inMain (Setup.emptyGame S.bothPlayers))
+        (_, g2) = S.addPermanent mountain S.alice g1
+        (land, gs) = S.addObjectIn Zone.Hand mountain S.alice g2
+        reminder menu = Html.content (Question.Web.view (requestFor gs (Prompt.ChooseAction (Decider.MkDecider S.alice) S.alice (Action.Pass : menu))) Question.Web.blank)
+        cast = Action.Cast bolt (CardName.MkCardName (Text.pack "Shock")) Facing.FaceUp
+    Spec.assertBool s (not (Text.pack "Before you pass" `Text.isInfixOf` reminder [cast])) "CR 117.1a: an instant is castable in the next step too"
+    Spec.assertBool s (Text.pack "Before you pass: you can still play Mountain." `Text.isInfixOf` reminder [cast, Action.Play land Nothing]) "CR 305.1: the land play lapses, and the instant goes unnamed"
 
   -- CR 601.3: The Holodeck's and Wish's permissions both reach a card outside
   -- the game, and each option says where its permission opens.
@@ -855,7 +867,7 @@ isCard html = Text.pack "<button class=\"card " `Text.isPrefixOf` Html.toText ht
 -- | CR 103.8: the game in the first turn's precombat main phase, past the
 -- untap step a fresh game waits at before it begins.
 inMain :: GameState.GameState -> GameState.GameState
-inMain gs = gs {GameState.turn = (GameState.turn gs) {TurnRegisters.phase = Phase.PrecombatMain}}
+inMain gs = gs {GameState.turn = (GameState.turn gs) {TurnRegisters.phase = Phase.PrecombatMain, TurnRegisters.remaining = Seq.drop 1 (Seq.dropWhileL (/= Phase.PrecombatMain) (TurnRegisters.remaining (GameState.turn gs)))}}
 
 -- | The request the line protocol sends for a prompt, with the deciding seat's view.
 requestFor :: GameState.GameState -> Prompt.Prompt r -> Request.Request

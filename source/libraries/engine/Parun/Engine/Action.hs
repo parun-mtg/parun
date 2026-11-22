@@ -3,6 +3,7 @@ module Parun.Engine.Action where
 import qualified Data.Containers.ListUtils as ListUtils
 import qualified Data.List as List
 import qualified Data.Maybe as Maybe
+import qualified Data.Sequence as Seq
 import qualified Data.Set as Set
 import qualified Parun.Engine.Activatable as Activatable
 import qualified Parun.Engine.Cast as Cast
@@ -31,12 +32,14 @@ import qualified Parun.Types.Action as Action
 import qualified Parun.Types.CardName as CardName
 import qualified Parun.Types.Facing as Facing
 import Parun.Types.GameState (GameState)
+import qualified Parun.Types.GameState as GameState
 import qualified Parun.Types.ModifiedRoll as ModifiedRoll
 import Parun.Types.ObjectId (ObjectId)
 import qualified Parun.Types.PaymentSubject as PaymentSubject
 import qualified Parun.Types.PermissionVerb as PermissionVerb
 import Parun.Types.PlayerId (PlayerId)
 import qualified Parun.Types.SpecialAction as SpecialAction
+import qualified Parun.Types.TurnRegisters as TurnRegisters
 import qualified Parun.Types.Zone as Zone
 
 -- The land plays this player may make right now: CR 305.1's land cards in their
@@ -429,3 +432,26 @@ legalActions pid gs =
       -- the proof.
       manaAbilityActivations = fmap Action.ActivateManaAbility manaSources
    in Action.Pass : lands <> spells <> turnUps <> unlocks <> discards <> ignores <> endings <> laterPayments <> lifeForMana <> plots <> foretells <> suspends <> companions <> planarRolls <> conspiracies <> shownDieRerolls <> activations <> manaAbilityActivations
+
+-- | The actions of `offered` passing priority may give up: legal now, with
+-- the stack empty, and not in the next step of this turn that grants
+-- priority, which an all-pass moves to (CR 117.4, 500.2) -- CR 307.1's
+-- sorcery, CR 305.1's land and CR 602.5d's "only as a sorcery" among them.
+-- Asked of the same board in that step, so a step's own gate is read as
+-- legalActions reads it. With the stack non-empty nothing lapses: an all-pass
+-- resolves its top object and the step goes on (CR 117.4). Nor in a step
+-- granting no priority (CR 502.4), where nothing is offered.
+--
+-- Implementation-defined: past the turn's last step granting priority,
+-- nothing is said to lapse, the next turn's state being unknown.
+lapsing :: PlayerId -> GameState -> [Action] -> Set.Set Action
+lapsing pid gs offered =
+  let registers = GameState.turn gs
+      later = Seq.dropWhileL (not . Turn.grantsPriority) (TurnRegisters.remaining registers)
+   in case Seq.viewl later of
+        next Seq.:< rest
+          | Turn.grantsPriority (TurnRegisters.phase registers),
+            null (TurnRegisters.stack registers) ->
+              let there = Set.fromList (legalActions pid gs {GameState.turn = registers {TurnRegisters.phase = next, TurnRegisters.remaining = rest}})
+               in Set.fromList (filter (`Set.notMember` there) offered)
+        _ -> Set.empty

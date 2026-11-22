@@ -285,6 +285,10 @@ passIndex request = do
 isManaAbility :: R.Reply -> Bool
 isManaAbility option = (Protocol.field "action" option >>= Offer.textOf) == Just (Text.pack "ActivateManaAbility")
 
+-- | Whether passing priority may give the offered action up.
+lapses :: R.Reply -> Bool
+lapses option = Protocol.field "lapses" option == Just (R.Boolean True)
+
 isPass :: R.Reply -> Bool
 isPass option = (Protocol.field "action" option >>= Offer.textOf) == Just (Text.pack "Pass")
 
@@ -863,8 +867,9 @@ form request picked = case Text.unpack (Question.kind question) of
         let (passes, others) = List.partition (isPass . snd) (Offer.distinct shown options')
             -- A mana ability is in its permanent's sheet, not the list.
             rest = filter (not . isManaAbility . snd) others
-            -- Two abilities of one source read alike as phrases.
-            reminders = ListUtils.nubOrd (fmap (Offer.actionPhrase shown . snd) rest)
+            -- What passing gives up, the offer's `lapses`; two abilities of
+            -- one source read alike as phrases.
+            reminders = ListUtils.nubOrd [Offer.actionPhrase shown option | (_, option) <- rest, lapses option]
             controlled = Question.for question
             -- CR 724.1: a turn the seat controls is played as its own.
             yours = PlayerView.active shown == PlayerView.viewer shown || controlled == Just (PlayerView.active shown)
@@ -890,7 +895,7 @@ form request picked = case Text.unpack (Question.kind question) of
                 <> [ nudge (Text.pack "Before you pass: you can still " <> Wording.listing (take 3 reminders) <> (if length reminders > 3 then Text.pack ", and more." else Text.pack "."))
                    | yours,
                      settled,
-                     not (null rest)
+                     not (null reminders)
                    ]
          in heading prompt
               : nudges

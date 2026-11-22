@@ -39,6 +39,7 @@ import qualified Parun.Codec.Reference as Codec.Reference
 import qualified Parun.Codec.SlotName as Codec.SlotName
 import qualified Parun.Codec.WordFamily as Codec.WordFamily
 import qualified Parun.Codec.Zone as Codec.Zone
+import qualified Parun.Engine.Action as Engine.Action
 import qualified Parun.Engine.Binding as Binding
 import qualified Parun.Engine.Cost as Cost
 import qualified Parun.Engine.Driver as Driver
@@ -130,7 +131,13 @@ import qualified Parun.Types.Zone as Zone
 -- which are never sent. RollDie is never sent either; a scenario reads it.
 offerOf :: Reply.Namer -> GameState.GameState -> Prompt.Prompt r -> R.Reply
 offerOf namer gs prompt = case prompt of
-  Prompt.ChooseAction _ _ offered -> R.Array (fmap (Offer.offer namer gs) offered)
+  -- What passing gives up is marked, for a client's reminder.
+  Prompt.ChooseAction _ pid offered ->
+    let lapsing = Engine.Action.lapsing pid gs offered
+        marked action = case Offer.offer namer gs action of
+          R.Object pairs | Set.member action lapsing -> R.Object (pairs <> [(Text.pack "lapses", R.Boolean True)])
+          shown -> shown
+     in R.Array (fmap marked offered)
   Prompt.DeclareMulligan _ _ offer ->
     fields [("taken", natural (MulliganOffer.taken offer)), ("bottom", natural (MulliganOffer.bottomCount offer))]
   Prompt.Bottom _ _ from count -> fields [("from", objects namer from), ("count", natural count)]
