@@ -55,8 +55,11 @@ import qualified Parun.Types.Features as Features
 import qualified Parun.Types.GameState as GameState
 import qualified Parun.Types.Label as Label
 import qualified Parun.Types.Limits as Limits
+import qualified Parun.Types.ModeIndex as ModeIndex
 import qualified Parun.Types.Object as Object
 import qualified Parun.Types.ObjectId as ObjectId
+import qualified Parun.Types.PayOffer as PayOffer
+import qualified Parun.Types.PaymentDecision as PaymentDecision
 import qualified Parun.Types.Phase as Phase
 import qualified Parun.Types.Placement as Placement
 import qualified Parun.Types.PlayOptions as PlayOptions
@@ -345,6 +348,35 @@ spec s registry = Spec.describe s "Search" $ do
   Spec.it s "the polar policy aims a helpful spell's targets at the chooser's own side" $
     aiming s registry "Giant Growth" (==)
 
+  Spec.it s "the classified policy chooses the mode whose targets its effect favours" $ do
+    -- Boros Charm's caster controls no creature, so its double strike
+    -- helps only an opponent's bear and its indestructible names no slot:
+    -- the 4 damage to a player is the one mode a target favours.
+    charm <- S.printingOf s registry "Boros Charm"
+    mountain <- S.printingOf s registry "Mountain"
+    plains <- S.printingOf s registry "Plains"
+    bears <- fmap snd <$> BotSpec.bears s registry
+    let caster = Deck.fromCards (Map.fromList [(charm, 12), (mountain, 12), (plains, 12)])
+    (_, asked :: Asked.Asked GameState.GameState (Seq.Seq ModeIndex.ModeIndex)) <- capturingIn s (caster NonEmpty.:| [NonEmpty.last bears]) 3 "Boros Charm's modes with a creature to target" $ \asked -> case Asked.prompt asked of
+      Prompt.ChooseModes decider chooser oid legal selection
+        | Set.member (ModeIndex.MkModeIndex 2) legal -> Just (Asked.game asked, Asked.MkAsked [] (Asked.game asked) (Prompt.ChooseModes decider chooser oid legal selection))
+      _ -> Nothing
+    chosen <- traverse (\seed -> either (Spec.assertFailure s . Text.unpack) pure =<< Except.runExceptT (State.evalStateT (Answerer.unwrap (Search.classified (S.fixtureRegistry [])) asked) (S.seeded seed))) [1 .. 8]
+    Spec.assertEqWith s "the damage mode in every seed" chosen (Seq.singleton (ModeIndex.MkModeIndex 0) <$ chosen)
+
+  Spec.it s "the classified policy pays to keep its own spell from being countered" $ do
+    spike <- S.printingOf s registry "Force Spike"
+    island <- S.printingOf s registry "Island"
+    bear <- S.printingOf s registry "Grizzly Bears"
+    forest <- S.printingOf s registry "Forest"
+    let caster = Deck.fromCards (Map.fromList [(spike, 12), (island, 24)])
+        bears = Deck.fromCards (Map.fromList [(bear, 12), (forest, 24)])
+    (_, asked :: Asked.Asked GameState.GameState PaymentDecision.PaymentDecision) <- capturingAmong s (caster NonEmpty.:| [bears]) [1 .. 16] "Force Spike's offer" $ \asked -> case Asked.prompt asked of
+      prompt@(Prompt.ChooseToPay _ _ _ PayOffer.AtClause {} _ _) -> Just (Asked.game asked, Asked.MkAsked [] (Asked.game asked) prompt)
+      _ -> Nothing
+    chosen <- traverse (\seed -> either (Spec.assertFailure s . Text.unpack) pure =<< Except.runExceptT (State.evalStateT (Answerer.unwrap (Search.classified (S.fixtureRegistry [])) asked) (S.seeded seed))) [1 .. 8]
+    Spec.assertEqWith s "paid in every seed" chosen (PaymentDecision.Pays <$ chosen)
+
   Spec.it s "a greedy playout plays a land at the decision it restarts" $ do
     (gs, pid) <- capturing s registry 3 "a menu offering a land play" $ \asked -> case Asked.prompt asked of
       Prompt.ChooseAction decider pid menu | any isPlay menu && Search.searchable asked decider pid (Search.options menu) -> Just (Asked.game asked, pid)
@@ -398,10 +430,17 @@ capturing s registry seed what found = do
 
 -- 'capturing' in a game of these decks.
 capturingIn :: forall m n x. (Monad m) => Spec.Spec m n -> NonEmpty.NonEmpty Deck.Deck -> Word.Word32 -> String -> (forall r. Asked.Asked GameState.GameState r -> Maybe (GameState.GameState, x)) -> m (GameState.GameState, x)
-capturingIn s decks seed what found = do
-  (_, taken) <- State.runStateT (Game.run lifted Nothing Limits.standard [] (Map.fromList [(Command.idOf 1, capture), (Command.idOf 2, capture)]) (S.seeded seed) Map.empty (Command.seated 1 decks)) Nothing
-  maybe (Spec.assertFailure s ("no " <> what <> " from turn 3 on")) pure taken
+capturingIn s decks seed = capturingAmong s decks [seed]
+
+-- 'capturingIn' in the game of the first of `seeds` reaching the prompt.
+capturingAmong :: forall m n x. (Monad m) => Spec.Spec m n -> NonEmpty.NonEmpty Deck.Deck -> [Word.Word32] -> String -> (forall r. Asked.Asked GameState.GameState r -> Maybe (GameState.GameState, x)) -> m (GameState.GameState, x)
+capturingAmong s decks seeds what found = go seeds
   where
+    go remaining = case remaining of
+      [] -> Spec.assertFailure s ("no " <> what <> " from turn 3 on")
+      seed : rest -> do
+        (_, taken) <- State.runStateT (Game.run lifted Nothing Limits.standard [] (Map.fromList [(Command.idOf 1, capture), (Command.idOf 2, capture)]) (S.seeded seed) Map.empty (Command.seated 1 decks)) Nothing
+        maybe (go rest) pure taken
     lifted :: Registry.Registry (State.StateT (Maybe (GameState.GameState, x)) m)
     lifted = Registry.hoist Trans.lift (S.fixtureRegistry [])
     capture :: Answerer.Answerer (Asked.Asked GameState.GameState) (Game.Play (State.StateT (Maybe (GameState.GameState, x)) m))

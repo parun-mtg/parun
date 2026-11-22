@@ -21,6 +21,7 @@ import qualified Data.Maybe as Maybe
 import qualified Data.Sequence as Seq
 import qualified Data.Set as Set
 import Numeric.Natural (Natural)
+import qualified Parun.Engine.Binding as Binding
 import qualified Parun.Engine.Card as Engine.Card
 import qualified Parun.Engine.Engine as Engine
 import qualified Parun.Engine.Event as Event
@@ -28,6 +29,7 @@ import qualified Parun.Engine.Game as Engine.Game
 import qualified Parun.Engine.Modal as Engine.Modal
 import qualified Parun.Engine.Projection as Projection
 import qualified Parun.Engine.Projection.View as Projection.View
+import qualified Parun.Engine.Target as Target
 import qualified Parun.Engine.Visibility as Visibility
 import qualified Parun.Extra.Natural as Natural
 import qualified Parun.Play.Game as Game
@@ -42,6 +44,8 @@ import qualified Parun.Types.Asked as Asked
 import qualified Parun.Types.Card as Card
 import qualified Parun.Types.CardIdentity as CardIdentity
 import qualified Parun.Types.CardType as CardType
+import qualified Parun.Types.Clause as Clause
+import qualified Parun.Types.ClauseIndex as ClauseIndex
 import qualified Parun.Types.Combat as Combat
 import qualified Parun.Types.Concession as Concession
 import qualified Parun.Types.Decider as Decider
@@ -57,11 +61,19 @@ import qualified Parun.Types.GrantedAbility as GrantedAbility
 import qualified Parun.Types.History as History
 import qualified Parun.Types.InherentTriggerSource as InherentTriggerSource
 import qualified Parun.Types.LoggedEvent as LoggedEvent
+import qualified Parun.Types.Modal as Modal
+import qualified Parun.Types.Mode as Mode
+import qualified Parun.Types.ModeIndex as ModeIndex
+import qualified Parun.Types.ModeSelection as ModeSelection
 import qualified Parun.Types.Moved as Moved
 import qualified Parun.Types.Object as Object
 import qualified Parun.Types.ObjectId as ObjectId
 import qualified Parun.Types.Observer as Observer
 import qualified Parun.Types.PastTurn as PastTurn
+import qualified Parun.Types.PayBranch as PayBranch
+import qualified Parun.Types.PayGate as PayGate
+import qualified Parun.Types.PayOffer as PayOffer
+import qualified Parun.Types.PaymentDecision as PaymentDecision
 import qualified Parun.Types.Player as Player
 import qualified Parun.Types.PlayerActed as PlayerActed
 import qualified Parun.Types.PlayerAction as PlayerAction
@@ -78,6 +90,7 @@ import qualified Parun.Types.SearchBudget as SearchBudget
 import qualified Parun.Types.SearchMethod as SearchMethod
 import qualified Parun.Types.SlotName as SlotName
 import qualified Parun.Types.Source as Source
+import qualified Parun.Types.StackObjectKind as StackObjectKind
 import qualified Parun.Types.TriggeredAbility as TriggeredAbility
 import qualified Parun.Types.TriggeredAbilitySource as TriggeredAbilitySource
 import qualified Parun.Types.TurnRegisters as TurnRegisters
@@ -955,6 +968,7 @@ policyOf registry budget = case SearchBudget.playout budget of
   Playout.Random -> Game.bot registry
   Playout.Greedy -> greedy registry
   Playout.Polar -> polar registry
+  Playout.Classified -> classified registry
 
 -- | A cut-off playout's position for `pid`: 'evaluate', short of a win or a
 -- loss.
@@ -1016,15 +1030,83 @@ greedy registry = Answerer.MkAnswerer $ \asked -> case Asked.prompt asked of
 -- | The greedy policy choosing targets by polarity: each slot's targets chosen by the
 -- polarity of the effects naming it ('polarTargets'), its priority decisions
 -- the greedy policy's ('greedyAction'). It reads effects' classification
--- (Parun.Play.Polarity), never their identity.
---
--- Not implemented: choosing modes and payments by their effect's
--- classification; the random bot answers them (gap #9476).
+-- (Parun.Play.Polarity), never their identity. Its modes and payments are
+-- the random bot's ('classified' chooses them).
 polar :: (Monad m) => Registry.Registry m -> Answerer.Answerer (Asked.Asked GameState.GameState) (Game.Play m)
 polar registry = Answerer.MkAnswerer $ \asked -> case Asked.prompt asked of
   Prompt.ChooseAction _ _ menu -> greedyAction (Asked.game asked) menu
-  Prompt.ChooseTargets _ chooser oid slots -> polarTargets chooser oid (Asked.game asked) slots
+  Prompt.ChooseTargets _ chooser oid slots -> polarTargets chooser (stackEffects oid (Asked.game asked)) (Asked.game asked) slots
   _ -> Answerer.unwrap (Game.bot registry) asked
+
+-- | The polar policy, its modes, its resolution payments and its targets
+-- chosen by classification: modes by 'classifiedModes', a CR 118.12 offer at
+-- a clause by 'classifiedPayment', and targets by the polarity of the chosen
+-- modes' effects alone ('chosenEffects'). Every other prompt, and a mode or
+-- payment no classification separates, is the polar policy's.
+classified :: (Monad m) => Registry.Registry m -> Answerer.Answerer (Asked.Asked GameState.GameState) (Game.Play m)
+classified registry = Answerer.MkAnswerer $ \asked -> case Asked.prompt asked of
+  Prompt.ChooseModes _ chooser oid legal selection
+    | Just best <- NonEmpty.nonEmpty (classifiedModes chooser oid (Asked.game asked) legal selection) -> Generator.pick best
+  Prompt.ChooseToPay _ payer oid (PayOffer.AtClause mode clause) _ _
+    | Just decision <- classifiedPayment payer oid mode clause (Asked.game asked) -> pure decision
+  Prompt.ChooseTargets _ chooser oid slots -> polarTargets chooser (chosenEffects oid (Asked.game asked)) (Asked.game asked) slots
+  _ -> Answerer.unwrap (polar registry) asked
+
+-- | Of CR 700.2's selections over the `legal` modes, those scoring highest
+-- for `chooser`, lowest where another player chooses for the object's
+-- controller (CR 700.2e). A mode scores a point for each slot whose polarity
+-- (over that mode's effects) some legal recipient is favoured by, from the
+-- controller's side ('favouredBy'), and loses one for each polar slot none
+-- is; a selection is the sum of its modes'.
+classifiedModes :: PlayerId.PlayerId -> ObjectId.ObjectId -> GameState.GameState -> Set.Set ModeIndex.ModeIndex -> ModeSelection.ModeSelection -> [Seq.Seq ModeIndex.ModeIndex]
+classifiedModes chooser oid gs legal selection =
+  let (kind, modals) = stackModals oid gs
+      controller = Maybe.fromMaybe chooser (Projection.View.controllerOf oid gs)
+      sign = if controller == chooser then 1 else -1
+      slotScore effects (slot, targetSlot) = case Polarity.slotPolarity slot effects of
+        Nothing -> 0
+        Just polarity
+          | any (favouredBy controller gs polarity) (Target.legalRecipients kind (Just controller) oid targetSlot gs) -> 1
+          | otherwise -> -1 :: Integer
+      modeScore idx =
+        sum
+          [ sum (fmap (slotScore (Mode.allEffects mode)) (Map.toList (Mode.targetSlots mode)))
+          | modal <- modals,
+            mode <- Foldable.toList (Engine.Modal.modeAtIndex idx modal)
+          ]
+      scored = [(sign * sum (fmap modeScore modes), modes) | modes <- Engine.Modal.selections legal selection]
+   in case NonEmpty.nonEmpty scored of
+        Nothing -> []
+        Just some -> let top = maximum (fmap fst some) in [modes | (worth, modes) <- scored, worth == top]
+
+-- | Whether `payer` takes the CR 118.12 offer the resolving `oid` makes at
+-- `clause` of `mode`, Nothing where the classification does not separate the
+-- answers. Each recipient bound to a polar slot of a clause the offer gates
+-- (its own, and those naming it as `PayGate.offeredAt`) counts toward the
+-- payer where its effect helps the payer's side or harms another's
+-- ('favouredBy'), against them where the reverse; paying is worth what the
+-- IfPaid clauses count less what the others do.
+classifiedPayment :: PlayerId.PlayerId -> ObjectId.ObjectId -> ModeIndex.ModeIndex -> ClauseIndex.ClauseIndex -> GameState.GameState -> Maybe PaymentDecision.PaymentDecision
+classifiedPayment payer oid mode clause gs =
+  let targets = Projection.View.targetSlotsOfStackObject gs oid
+      gated =
+        [ (PayGate.branch gate, Foldable.toList (Clause.effects c))
+        | modal <- snd (stackModals oid gs),
+          m <- Foldable.toList (Engine.Modal.resolvingModeAt mode modal),
+          (i, c) <- zip [0 ..] (Foldable.toList (Mode.clauses m)),
+          Just gate <- [Clause.payGate c],
+          Maybe.fromMaybe (ClauseIndex.MkClauseIndex i) (PayGate.offeredAt gate) == clause
+        ]
+      toward polarity recipient
+        | Maybe.isNothing (recipientSide gs recipient) = 0
+        | favouredBy payer gs polarity recipient = 1
+        | otherwise = -1 :: Integer
+      worth effects = sum [toward polarity recipient | (slot, recipients) <- Map.toList targets, Just polarity <- [Polarity.slotPolarity slot effects], recipient <- Set.toList recipients]
+      paying = sum [(if branch == PayBranch.IfPaid then 1 else -1) * worth effects | (branch, effects) <- gated]
+   in case compare paying 0 of
+        GT -> Just PaymentDecision.Pays
+        LT -> Just PaymentDecision.Declines
+        EQ -> Nothing
 
 -- | A priority decision: a land play (CR 305.1) at random where the menu
 -- offers one, else a cast (CR 601) of a card with a permanent type (CR
@@ -1045,32 +1127,54 @@ greedyAction gs menu =
 
 -- | CR 601.2c's targets for `chooser`, each slot's drawn first from the
 -- recipients on the side its polarity favours (Polarity.slotPolarity over
--- 'stackEffects'): an opponent or what an opponent controls where the slot's
+-- `effects`, 'favouredBy'): an opponent or what an opponent controls where the slot's
 -- effect harms, `chooser` or what they control where it helps. The rest of a
 -- slot's count, and a slot with no polarity, is drawn at random from the
 -- other recipients.
-polarTargets :: (Monad m) => PlayerId.PlayerId -> ObjectId.ObjectId -> GameState.GameState -> Map.Map SlotName.SlotName (Natural, Set.Set Recipient.Recipient) -> State.StateT Generator.Type.Generator m (Map.Map SlotName.SlotName (Set.Set Recipient.Recipient))
-polarTargets chooser oid gs =
-  let effects = stackEffects oid gs
-      side recipient = Recipient.playerOf recipient <|> (owned =<< Recipient.objectOf recipient)
-      -- CR 108.4a: a card with no controller is its owner's.
-      owned target = Projection.View.controllerOf target gs <|> fmap Object.owner (Engine.Game.lookupObject target gs)
-      favoured polarity recipient = case polarity of
-        Polarity.Type.Harms -> maybe False (/= chooser) (side recipient)
-        Polarity.Type.Helps -> side recipient == Just chooser
-      choose slot (count, legal) = do
+polarTargets :: (Monad m) => PlayerId.PlayerId -> [Effect.Effect Card.Card (GrantedAbility.GrantedAbility Card.Card)] -> GameState.GameState -> Map.Map SlotName.SlotName (Natural, Set.Set Recipient.Recipient) -> State.StateT Generator.Type.Generator m (Map.Map SlotName.SlotName (Set.Set Recipient.Recipient))
+polarTargets chooser effects gs =
+  let choose slot (count, legal) = do
         let polarity = Polarity.slotPolarity slot effects
-            (first, second) = List.partition (\recipient -> any (`favoured` recipient) polarity) (Set.toList legal)
+            (first, second) = List.partition (\recipient -> any (\p -> favouredBy chooser gs p recipient) polarity) (Set.toList legal)
         ahead <- Generator.shuffle first
         behind <- Generator.shuffle second
         pure (Set.fromList (List.genericTake count (ahead <> behind)))
    in Map.traverseWithKey choose
 
+-- | Whether `recipient` is on the side `polarity` favours for `chooser`: an
+-- opponent or what an opponent controls where it harms, `chooser` or what
+-- they control where it helps ('recipientSide').
+favouredBy :: PlayerId.PlayerId -> GameState.GameState -> Polarity.Type.Polarity -> Recipient.Recipient -> Bool
+favouredBy chooser gs polarity recipient = case polarity of
+  Polarity.Type.Harms -> maybe False (/= chooser) (recipientSide gs recipient)
+  Polarity.Type.Helps -> recipientSide gs recipient == Just chooser
+
+-- | The player `recipient` is or belongs to: a player, else an object's
+-- controller, else its owner (CR 108.4a: a card with no controller is its
+-- owner's).
+recipientSide :: GameState.GameState -> Recipient.Recipient -> Maybe PlayerId.PlayerId
+recipientSide gs recipient = Recipient.playerOf recipient <|> (owned =<< Recipient.objectOf recipient)
+  where
+    owned target = Projection.View.controllerOf target gs <|> fmap Object.owner (Engine.Game.lookupObject target gs)
+
 -- | The effects the stack object `oid` may carry out: an ability's every
 -- mode's, a spell's face's every mode's (Engine.Modal.allEffects).
 stackEffects :: ObjectId.ObjectId -> GameState.GameState -> [Effect.Effect Card.Card (GrantedAbility.GrantedAbility Card.Card)]
-stackEffects oid gs = case fmap Object.source (Engine.Game.lookupObject oid gs) of
-  Just (Source.OfAbility src) -> Engine.Modal.allEffects (ActivatedAbility.modal (ActivatedAbilitySource.ability src))
-  Just (Source.OfTrigger src) -> Engine.Modal.allEffects (TriggeredAbility.modal (TriggeredAbilitySource.ability src))
-  Just (Source.OfInherentTrigger src) -> Engine.Modal.allEffects (TriggeredAbility.modal (InherentTriggerSource.ability src))
-  _ -> foldMap (Engine.Modal.allEffects . Face.spell) (Projection.View.spellFaceOf oid gs)
+stackEffects oid gs = foldMap Engine.Modal.allEffects (snd (stackModals oid gs))
+
+-- | The effects of the modes chosen for `oid` (CR 601.2b), and its shared
+-- clauses', once they are bound; 'stackEffects' before.
+chosenEffects :: ObjectId.ObjectId -> GameState.GameState -> [Effect.Effect Card.Card (GrantedAbility.GrantedAbility Card.Card)]
+chosenEffects oid gs = case foldMap (Binding.modesOf . Object.bindings) (Engine.Game.lookupObject oid gs) of
+  chosen
+    | Seq.null chosen -> stackEffects oid gs
+    | otherwise -> foldMap (\modal -> Engine.Modal.modesEffects chosen modal <> Foldable.toList (Mode.allEffects (Engine.Modal.sharedMode modal))) (snd (stackModals oid gs))
+
+-- | The stack object `oid`'s kind (CR 601.2c's announcement roads) and the
+-- modal payloads it may carry out: an ability's, a spell's face's.
+stackModals :: ObjectId.ObjectId -> GameState.GameState -> (StackObjectKind.StackObjectKind, [Modal.Modal Card.Card (GrantedAbility.GrantedAbility Card.Card)])
+stackModals oid gs = case fmap Object.source (Engine.Game.lookupObject oid gs) of
+  Just (Source.OfAbility src) -> (StackObjectKind.ActivatedAbility, [ActivatedAbility.modal (ActivatedAbilitySource.ability src)])
+  Just (Source.OfTrigger src) -> (StackObjectKind.TriggeredAbility, [TriggeredAbility.modal (TriggeredAbilitySource.ability src)])
+  Just (Source.OfInherentTrigger src) -> (StackObjectKind.TriggeredAbility, [TriggeredAbility.modal (InherentTriggerSource.ability src)])
+  _ -> (StackObjectKind.Spell, fmap Face.spell (Foldable.toList (Projection.View.spellFaceOf oid gs)))
