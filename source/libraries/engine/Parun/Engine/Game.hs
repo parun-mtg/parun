@@ -4019,6 +4019,19 @@ controlChangesThisTurn :: ObjectId -> GameState -> [ControlChanged.ControlChange
 controlChangesThisTurn oid gs =
   [change | GameEvent.ControlChanged change <- fmap LoggedEvent.event (Foldable.toList (Turn.eventsThisTurn gs)), ControlChanged.object change == oid]
 
+-- CR 110.2 / 608.2i: this object's first controller this turn: the `before`
+-- of its first control change, else `current`, the controller it has or last
+-- had. For an entrant, the player it entered under.
+firstControllerThisTurn :: ObjectId -> Maybe PlayerId -> GameState -> Maybe PlayerId
+firstControllerThisTurn oid current gs = maybe current (Just . ControlChanged.before) (Maybe.listToMaybe (controlChangesThisTurn oid gs))
+
+-- CR 110.2 / 608.2i: the player this object entered the battlefield under, if
+-- it entered this turn. Filter.EnteredThisTurn's `under` reads it.
+enteredUnderThisTurn :: ObjectId -> Maybe PlayerId -> GameState -> Maybe PlayerId
+enteredUnderThisTurn oid current gs
+  | enteredThisTurn oid gs = firstControllerThisTurn oid current gs
+  | otherwise = Nothing
+
 -- CR 400.7 / 608.2i: the zone change this turn that made this object the object
 -- it is now, keyed on the ARRIVAL's id. Every arrival counts: a move's leading
 -- one, and each further card a melded permanent's departure put into a zone (CR

@@ -603,7 +603,7 @@ spec s = Spec.describe s "Parun.Codec.Filter" $ do
     Common.assertCodec
       s
       codec
-      (Filter.EnteredThisTurn EnteredZone.MkEnteredZone {EnteredZone.to = Zone.Graveyard, EnteredZone.from = Set.singleton Zone.Battlefield, EnteredZone.window = EntryWindow.ThisTurn})
+      (Filter.EnteredThisTurn EnteredZone.MkEnteredZone {EnteredZone.to = Zone.Graveyard, EnteredZone.from = Set.singleton Zone.Battlefield, EnteredZone.window = EntryWindow.ThisTurn, EnteredZone.under = Nothing})
       " {\"type\":\"EnteredThisTurn\",\"value\":{\"from\":[\"Battlefield\"],\"to\":\"Graveyard\"}} "
   Spec.it s "ControlledSinceTurnBegan" $
     Common.assertCodec

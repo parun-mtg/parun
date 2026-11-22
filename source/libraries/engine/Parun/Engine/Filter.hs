@@ -441,6 +441,10 @@ data View = MkView
     -- window turns on the perspective, which the builders that fill this field
     -- do not hold. LAZY for `arrivalThisTurn`'s reason.
     arrivalSinceOwnLastTurn :: Map.Map PlayerId.PlayerId MovedBetween.MovedBetween,
+    -- CR 110.2 / 608.2i: the player this candidate entered the battlefield
+    -- under, if it entered this turn (Game.enteredUnderThisTurn). LAZY for
+    -- `arrivalThisTurn`'s reason.
+    enteredUnderThisTurn :: Maybe PlayerId.PlayerId,
     -- CR 702.122c: which objects did this candidate crew earlier this turn? The
     -- same log the three fields above read, and LAZY for their reason -- nothing
     -- forces it unless a Filter contains CrewedThisTurn.
@@ -1193,6 +1197,7 @@ nobodyView =
       actedThisTurn = Set.empty,
       arrivalThisTurn = Nothing,
       arrivalSinceOwnLastTurn = Map.empty,
+      enteredUnderThisTurn = Nothing,
       -- CR 702.122b crews with a CREATURE, and a player is not one -- CR 506.3
       -- rules the combat fields above out for the same kind of reason.
       crewedThisTurn = Set.empty,
@@ -3010,13 +3015,17 @@ matches context view predicate = case predicate of
   -- in or turned face up made no entry at all (CR 702.26d, CR 708.8). A card that
   -- died, came back and died again is the second death's arrival.
   -- SinceOwnLastTurn's "your" is the perspective's, so it is vacuously False for
-  -- a match no perspective frames.
-  Filter.EnteredThisTurn (EnteredZone.MkEnteredZone to from window) ->
+  -- a match no perspective frames, as is `under`'s relation (CR 110.2), which
+  -- the codec admits only beside an entry to the battlefield this turn.
+  Filter.EnteredThisTurn (EnteredZone.MkEnteredZone to from window under) ->
     let arrival = case window of
           EntryWindow.ThisTurn -> arrivalThisTurn view
           EntryWindow.SinceOwnLastTurn -> perspective context >>= \you -> Map.lookup you (arrivalSinceOwnLastTurn view)
+        enteredUnder relation = case (perspective context, enteredUnderThisTurn view) of
+          (Just you, Just player) -> PlayerRelation.holds (teams context) relation you player
+          _ -> False
      in case arrival of
-          Just moved -> MovedBetween.to moved == to && (Set.null from || Set.member (MovedBetween.from moved) from)
+          Just moved -> MovedBetween.to moved == to && (Set.null from || Set.member (MovedBetween.from moved) from) && all enteredUnder under
           Nothing -> False
   -- CR 122.6 / 122.6a: the same look-back over the counters moved, a put's
   -- putter answered against the perspective as IsAttackingPlayer's seat is. The

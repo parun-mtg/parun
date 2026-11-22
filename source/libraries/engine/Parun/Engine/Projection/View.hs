@@ -237,6 +237,7 @@ viewOfCardLapsed lapsed face =
           -- `leftLibraryThisTurn` above's reason.
           Filter.arrivalThisTurn = Nothing,
           Filter.arrivalSinceOwnLastTurn = Map.empty,
+          Filter.enteredUnderThisTurn = Nothing,
           -- CR 702.122c relates a creature to a Vehicle it crewed, and this
           -- builder describes a printed FACE rather than either --
           -- `leftLibraryThisTurn` above's reason.
@@ -783,6 +784,7 @@ viewOfCharacteristics peers oid pc controller counters gs =
       Filter.actedThisTurn = Count.actedThisTurn oid gs,
       Filter.arrivalThisTurn = Game.arrivalThisTurn oid gs,
       Filter.arrivalSinceOwnLastTurn = Game.arrivalSinceOwnLastTurn oid gs,
+      Filter.enteredUnderThisTurn = Game.enteredUnderThisTurn oid controller gs,
       Filter.beforeMoveView = Count.departedAs gs oid >>= Count.orLastZoned peers gs,
       Filter.crewedThisTurn = Count.crewedThisTurn oid gs,
       Filter.convokedThisTurn = Count.convokedThisTurn oid gs,

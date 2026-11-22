@@ -49,7 +49,6 @@ import qualified Parun.Types.CardType as CardType
 import qualified Parun.Types.CastWindow as CastWindow
 import qualified Parun.Types.Combat as Combat
 import qualified Parun.Types.Condition as Condition
-import qualified Parun.Types.ControlChanged as ControlChanged
 import qualified Parun.Types.ControlMargin as ControlMargin
 import qualified Parun.Types.Convoking as Convoking
 import qualified Parun.Types.Copyability as Copyability
@@ -1254,10 +1253,7 @@ oncePerObject shape = case shape of
 -- control change, else the view's own controller. A move to any zone but the
 -- battlefield mints an id no change can name.
 asArrived :: GameState -> ObjectId -> Filter.View -> Filter.View
-asArrived gs oid view =
-  case Game.controlChangesThisTurn oid gs of
-    first : _ -> view {Filter.controller = Just (ControlChanged.before first)}
-    [] -> view
+asArrived gs oid view = view {Filter.controller = Game.firstControllerThisTurn oid (Filter.controller view) gs}
 
 -- CR 713.8e's destination narrowed by the printed clause's origin: the arrival
 -- landed in the named zone, and it did not come from one this shape excludes. An
@@ -1447,6 +1443,7 @@ lastKnownView peers oid gs lastKnown =
           Filter.actedThisTurn = actedThisTurn oid gs,
           Filter.arrivalThisTurn = Game.arrivalThisTurn oid gs,
           Filter.arrivalSinceOwnLastTurn = Game.arrivalSinceOwnLastTurn oid gs,
+          Filter.enteredUnderThisTurn = Game.enteredUnderThisTurn oid (Just (LastKnown.controller lastKnown)) gs,
           -- Zoned as Projection.View.viewOfCharacteristics' is. A regression
           -- fence: no card asks it of an arrival that has left again.
           Filter.beforeMoveView = departedAs gs oid >>= orLastZoned peers gs,
@@ -1878,6 +1875,7 @@ viewOfSnapshot deploy mController mOwner isToken counters zone home lapsed snaps
       -- than one -- `leftLibraryThisTurn` above's reason again.
       Filter.arrivalThisTurn = Nothing,
       Filter.arrivalSinceOwnLastTurn = Map.empty,
+      Filter.enteredUnderThisTurn = Nothing,
       -- CR 702.122c relates two OBJECTS, and this view describes a snapshot
       -- rather than one -- `leftLibraryThisTurn` above's reason again.
       Filter.crewedThisTurn = Set.empty,
