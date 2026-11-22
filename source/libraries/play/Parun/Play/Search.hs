@@ -205,7 +205,7 @@ logOf gs = foldMap PastTurn.events (History.pastTurns (GameState.history gs)) <>
 -- | `memory` brought up to `gs` for `viewer`, reading the log past what it
 -- read, or all of it from 'blank' once the log no longer extends what it read
 -- (a restart, a subgame, a rollback): each move of a card remembered, or seen
--- leaving or arriving (CR 603.10a), remembers the object it became; each
+-- (Visibility.witnessed), remembers the object it became; each
 -- shuffle loosens the cards remembered in the shuffled library; then every
 -- card `viewer` sees is remembered, and a card remembered last in a hand or
 -- library that is gone is loosened. A card seen leaving a hand or library, or
