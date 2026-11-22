@@ -122,7 +122,7 @@ spec s registry = Spec.describe s "WebQuestion" $ do
     Spec.assertEqWith s "tap" (fmap (\event -> Question.Web.step request Set.empty event Text.empty) (tap "Play Mountain")) (Just (Question.Web.MkReplied (R.Number 1)))
     Spec.assertEqWith s "skip" (fmap (\event -> Question.Web.step request Set.empty event Text.empty) (tap "End turn")) (Just (Question.Web.MkReplied (R.Number 0)))
     Spec.assertEqWith s "not automatic" (Question.Web.automatic Question.Web.MkStandard request) Nothing
-    Spec.assertBool s (Text.pack "<button class=\"danger\" type=\"button\" aria-keyshortcuts=\"E\">End turn</button>" `Text.isInfixOf` page) "E ends the turn, a button marked as giving something up"
+    Spec.assertBool s (Text.pack "<button class=\"turn\" type=\"button\" aria-keyshortcuts=\"E\">End turn</button>" `Text.isInfixOf` page) "E ends the turn, a button in the turn's colour"
     Spec.assertBool s (Text.pack "Before you pass: you can still play Mountain." `Text.isInfixOf` Html.content view) "a card keeps its name's case"
     -- The hand's Mountain is lit, since the seat may play it, and tapping it reads it.
     Spec.assertBool s (Text.pack "<section class=\"hand\"" `Text.isInfixOf` page) "hand"

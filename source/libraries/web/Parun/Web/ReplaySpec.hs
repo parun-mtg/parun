@@ -49,10 +49,8 @@ spec s = Spec.describe s "Parun.Web.Replay" $ do
       Spec.assertBool s (not (Text.isInfixOf (Text.pack ">Burn<") page)) "a theme with no match left out"
       Spec.assertBool s (at ">Combat<" < at ">a-piker-blocks<") "the theme's match"
 
-    Spec.it s "says the scenarios are being fetched until they are, and goes home" $ do
-      let view = Replay.picker Text.empty Nothing
-      Spec.assertBool s (Text.isInfixOf (Text.pack "Fetching the scenarios") (Html.toText view)) "fetching"
-      Spec.assertEq s (Html.labelled (Text.pack "button") (Text.pack "Home") view >>= \path -> Html.handler (Text.pack "click") path view) (Just Replay.MkHome)
+    Spec.it s "says the scenarios are being fetched until they are" $ do
+      Spec.assertBool s (Text.isInfixOf (Text.pack "Fetching the scenarios") (Html.toText (Replay.picker Text.empty Nothing))) "fetching"
 
   Spec.describe s "ended" $ do
     Spec.it s "goes back to the position and plays on from it again" $ do

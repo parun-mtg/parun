@@ -1,11 +1,15 @@
 -- | What the web client has loaded of its data, chunk by chunk (engine.js),
--- and what its screens wait on.
+-- what its screens wait on, and the screen shown while they wait.
 module Parun.Web.Loading where
 
 import qualified Data.List as List
 import qualified Data.Maybe as Maybe
 import qualified Data.Set as Set
 import qualified Data.Text as Text
+import Numeric.Natural (Natural)
+import qualified Parun.Extra.Int as Int
+import qualified Parun.Web.Element as Element
+import qualified Parun.Web.Html as Html
 
 -- | Something a screen waits on.
 data Need
@@ -77,3 +81,72 @@ problemFor need loading =
         MkRules -> "rules"
         MkScenarios -> "scenarios"
    in Text.pack ("Couldn't load the " <> said <> ". Reload to try again.") <$ blocked need loading
+
+-- | Where a step of loading stands.
+data Step
+  = MkDone
+  | -- | Under way, this percentage through where that is known.
+    MkDoing (Maybe Natural)
+  | MkWaiting
+  deriving (Eq, Show)
+
+-- | The steps a screen waits through once the engine runs, as the splash
+-- (index.html) names them: the engine, started; the cards, as far as their
+-- chunks have arrived; then the rest of what the screen waits on, read and
+-- built, how far unknown.
+steps :: Loading -> [(String, Step)]
+steps loading =
+  let cards = chunksOf MkCards
+      fetched = length (filter (`Set.member` arrived loading) cards)
+   in [ ("Starting the engine", MkDone),
+        ("Fetching the cards", if ready MkCards loading then MkDone else MkDoing (Just (Int.toNaturalSaturating (div (100 * fetched) (length cards))))),
+        ("Setting the table", if ready MkCards loading then MkDoing Nothing else MkWaiting)
+      ]
+
+-- | The screen shown while loading: the logo in a turning ring, and the
+-- steps with where each stands.
+view :: Loading -> Html.Html msg
+view loading = Element.el "main" ["message", "loading"] [Element.attr "aria-busy" (Text.pack "true")] [ring, stepList (steps loading)]
+
+-- | The logo in a ring whose arc turns while something loads (index.html's
+-- splash draws the same).
+ring :: Html.Html msg
+ring =
+  Element.el
+    "div"
+    ["ring"]
+    []
+    [ Element.el
+        "svg"
+        []
+        [Element.attr "viewBox" (Text.pack "0 0 168 168"), Element.attr "aria-hidden" (Text.pack "true"), Element.attr "focusable" (Text.pack "false")]
+        [ Element.el "circle" ["track"] [Element.attr "cx" (Text.pack "84"), Element.attr "cy" (Text.pack "84"), Element.attr "r" (Text.pack "78")] [],
+          Element.el "circle" ["arc"] [Element.attr "cx" (Text.pack "84"), Element.attr "cy" (Text.pack "84"), Element.attr "r" (Text.pack "78")] []
+        ],
+      Element.el "img" ["logo"] [Element.attr "src" (Text.pack "./icon.svg"), Element.attr "alt" Text.empty, Element.attr "width" (Text.pack "104"), Element.attr "height" (Text.pack "104")] []
+    ]
+
+-- | Each step, marked done, under way or waiting, said so beside it: done,
+-- or the percentage where one is known.
+stepList :: [(String, Step)] -> Html.Html msg
+stepList listed =
+  Element.el
+    "ol"
+    ["steps", "panel"]
+    [Element.attr "aria-label" (Text.pack "Loading progress")]
+    [ Element.el
+        "li"
+        [stateClass step]
+        []
+        [Element.el "span" ["dot"] [Element.attr "aria-hidden" (Text.pack "true")] [], Element.el "span" ["label"] [] [Element.string label], Element.el "span" ["state"] [] [Element.string (said step)]]
+    | (label, step) <- listed
+    ]
+  where
+    stateClass step = case step of
+      MkDone -> "done"
+      MkDoing _ -> "now"
+      MkWaiting -> "waiting"
+    said step = case step of
+      MkDone -> "Done"
+      MkDoing percent -> foldMap (\p -> show p <> "%") percent
+      MkWaiting -> ""

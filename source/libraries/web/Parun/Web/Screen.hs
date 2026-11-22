@@ -2,6 +2,7 @@
 -- event type, each screen's own wrapped.
 module Parun.Web.Screen where
 
+import qualified Parun.Web.Bar as Bar
 import qualified Parun.Web.Builder as Builder
 import qualified Parun.Web.Ending as Ending
 import qualified Parun.Web.Home as Home
@@ -20,4 +21,6 @@ data Event
   | MkBuilder Builder.Event
   | MkJoin Join.Event
   | MkRejoin Rejoin.Event
+  | -- | A section tapped on the top bar (Parun.Web.Bar).
+    MkNav Bar.Section
   deriving (Eq, Show)

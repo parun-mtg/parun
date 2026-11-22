@@ -33,6 +33,7 @@ import qualified Parun.Types.Entrant as Entrant
 import qualified Parun.Types.GameState as GameState
 import qualified Parun.Types.Label as Label
 import qualified Parun.Types.PlayerId as PlayerId
+import qualified Parun.Types.PlayerView as PlayerView
 import qualified Parun.Types.Scenario as Scenario.Type
 import qualified Parun.Types.ScenarioFailure as ScenarioFailure
 import qualified Parun.Types.Seat as Seat
@@ -116,7 +117,7 @@ viewer page registry name scenario given = do
 -- fresh key, at the auto-pass level kept in `levelRef`, until the game
 -- ends; how it ended, or nothing when it was given up from the home screen
 -- (`leave`).
-playOn :: Browser.Page Screen.Event -> Registry.Registry Identity.Identity -> IORef.IORef Web.Question.Level -> Scenario.Type.Scenario -> Natural -> IO Hotseat.Leave -> IO (Maybe [Text.Text])
+playOn :: Browser.Page Screen.Event -> Registry.Registry Identity.Identity -> IORef.IORef Web.Question.Level -> Scenario.Type.Scenario -> Natural -> (Maybe PlayerView.PlayerView -> IO Hotseat.Leave) -> IO (Maybe [Text.Text])
 playOn page registry levelRef scenario given leave = do
   seatRef <- IORef.newIORef . Hotseat.newSeat Hotseat.player =<< IORef.readIORef levelRef
   Hotseat.keepingLevel levelRef seatRef . Exception.handle (\Hotseat.MkAbandonedGame -> pure Nothing) $ do

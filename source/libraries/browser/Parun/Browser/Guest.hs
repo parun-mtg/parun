@@ -14,6 +14,7 @@ import qualified Parun.Exceptions.InvalidCorpus as InvalidCorpus
 import qualified Parun.Types.Card as Card
 import qualified Parun.Types.CardName as CardName
 import qualified Parun.Types.PlayerId as PlayerId
+import qualified Parun.Types.PlayerView as PlayerView
 import qualified Parun.Web.Ending as Ending
 import qualified Parun.Web.Link as Link
 import qualified Parun.Web.Question as Web.Question
@@ -25,7 +26,7 @@ import qualified Parun.Web.Screen as Screen
 -- `leave`; how it came out. Once the channel closes, `rejoin` connects it
 -- anew, and the game goes on as the host asks again; it stops where `rejoin`
 -- does not connect.
-play :: Browser.Page Screen.Event -> (CardName.CardName -> Either InvalidCorpus.InvalidCorpus (Maybe Card.Card)) -> IORef.IORef Web.Question.Level -> Link.Channel IO -> IO Bool -> PlayerId.PlayerId -> IO Hotseat.Leave -> IO Hotseat.Played
+play :: Browser.Page Screen.Event -> (CardName.CardName -> Either InvalidCorpus.InvalidCorpus (Maybe Card.Card)) -> IORef.IORef Web.Question.Level -> Link.Channel IO -> IO Bool -> PlayerId.PlayerId -> (Maybe PlayerView.PlayerView -> IO Hotseat.Leave) -> IO Hotseat.Played
 play page lookUp levelRef channel rejoin seat leave = do
   seatRef <- IORef.newIORef . Hotseat.newSeat seat =<< IORef.readIORef levelRef
   Hotseat.keepingLevel levelRef seatRef . Exception.handle (\Hotseat.MkAbandonedGame -> pure Hotseat.MkAbandoned) $ do

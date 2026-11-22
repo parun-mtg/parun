@@ -29,16 +29,34 @@ if (!isSecureContext) document.getElementById("insecure").hidden = false;
 // Once fetched, the engine is kept for later visits (sw.js).
 if ("serviceWorker" in navigator && isSecureContext) navigator.serviceWorker.register("./sw.js").catch((problem) => console.warn(problem));
 
-// The engine's load phases go to the console, and the loading screen says
-// what comes after each (engine.js); a failure is said as it is.
-const nextPhase = { compiled: "Fetching the cards", decks: "Fetching the cards", "cards-0": "Fetching the cards", "cards-1": "Fetching the cards", "cards-2": "Fetching the cards", "cards-3": "Fetching the rules", rules: "Reading the cards" };
+// The engine's load phases go to the console, and the loading screen marks
+// each step as it is heard of (engine.js): the engine done once compiled,
+// when the table is set; the cards by how many of their chunks have
+// arrived. A failure is said as it is, and stops the ring.
+const cardsFetched = new Set();
+// The cards' chunks (engine.js, script/build-web.sh).
+const cardChunks = 4;
+function step(name, state, said = "") {
+  const item = document.querySelector(`.splash [data-step="${name}"]`);
+  if (!item) return;
+  item.className = state;
+  item.querySelector(".state").textContent = said;
+}
 function note(line) {
   console.log(line);
-  const phase = document.getElementById("phase");
-  const next = nextPhase[line.split(" ")[0]];
-  if (phase) phase.textContent = next ? `${next}\u2026` : line;
-  // A failure stops the spinner.
-  if (phase && !next) phase.parentElement.querySelector(".spinner")?.remove();
+  const name = line.split(" ")[0];
+  if (name === "compiled") {
+    step("engine", "done", "Done");
+    step("table", "now");
+  } else if (name.startsWith("cards-")) {
+    cardsFetched.add(name);
+    const done = cardsFetched.size === cardChunks;
+    step("cards", done ? "done" : "now", done ? "Done" : `${Math.round((100 * cardsFetched.size) / cardChunks)}%`);
+  } else if (!["decks", "rules", "scenarios", "started"].includes(name)) {
+    const phase = document.getElementById("phase");
+    if (phase) phase.textContent = line;
+    document.querySelector(".splash .ring")?.classList.add("stopped");
+  }
 }
 
 // The settings menu: theme (the system's unless one is picked), card size

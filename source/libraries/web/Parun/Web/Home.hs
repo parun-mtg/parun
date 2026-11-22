@@ -1,27 +1,66 @@
 -- | The web client's first screen: what to do, drawn before any data has
--- loaded (#9075). Playing comes first, replays second, and a game left
--- for here can be resumed.
+-- loaded (#9075). A game left for here comes first, to resume; then the
+-- ways to play, to build a deck and to watch a replay; then the decks
+-- saved in this browser; then the legal notice.
 module Parun.Web.Home where
 
 import qualified Data.Maybe as Maybe
+import qualified Data.Set as Set
 import qualified Data.Text as Text
 import Numeric.Natural (Natural)
+import qualified Parun.Play.Wording as Wording
+import qualified Parun.Types.Color as Color
+import qualified Parun.Types.PlayerView as PlayerView
+import qualified Parun.Types.SeatView as SeatView
+import qualified Parun.Web.Bar as Bar
+import qualified Parun.Web.Card as Card
 import qualified Parun.Web.Element as Element
 import qualified Parun.Web.Html as Html
+import qualified Parun.Web.Lobby as Lobby
+import qualified Parun.Web.Mana as Mana
 
 data Home = MkHome
-  { -- | Whether a game was left for here, to resume.
-    paused :: Bool,
+  { -- | The game left for here, to resume.
+    paused :: Maybe Paused,
     -- | A new game chosen while one is paused, asked about first.
     confirming :: Maybe Choice,
     -- | Why something the screen waits on did not load.
-    problem :: Maybe Text.Text
+    problem :: Maybe Text.Text,
+    -- | The decks saved in this browser, as read so far.
+    saved :: [Deck]
+  }
+  deriving (Eq, Show)
+
+-- | Where a game left for the home screen stands, as the question waiting
+-- showed it.
+data Paused = MkPaused
+  { -- | Nothing where the question showed no board.
+    turn :: Maybe Natural,
+    -- | Each seat's name and life, in turn order.
+    lives :: [(Text.Text, Integer)]
+  }
+  deriving (Eq, Show)
+
+-- | A saved deck as the home screen lists it.
+data Deck = MkDeck
+  { -- | Its name (Lobby.deckName).
+    name :: Text.Text,
+    -- | Its colours, empty until read.
+    colours :: Set.Set Color.Color,
+    -- | How many cards its main deck holds, once read.
+    size :: Maybe Natural
   }
   deriving (Eq, Show)
 
 -- | Where the home screen leads.
 data Choice
   = MkPlayBots
+  | -- | The lobby, with a bot's seat given to a player invited by link.
+    MkPlayFriend
+  | -- | The deck builder, on a new deck.
+    MkBuildDeck
+  | -- | The deck builder, on this saved deck.
+    MkEditDeck Text.Text
   | MkReplays
   | -- | Plays on by hand from this position of this scenario.
     MkPlayOn Text.Text Natural
@@ -48,45 +87,50 @@ data Outcome
 
 -- | Nothing loaded, no game paused.
 new :: Home
-new = MkHome False Nothing Nothing
+new = MkHome Nothing Nothing Nothing []
+
+-- | A game paused at the board the question waiting showed, if any.
+pausedOn :: Maybe PlayerView.PlayerView -> Paused
+pausedOn board = case board of
+  Nothing -> MkPaused Nothing []
+  Just b -> MkPaused (Just (PlayerView.turn b)) [(if SeatView.player s == PlayerView.viewer b then Text.pack "You" else Wording.player (SeatView.player s), SeatView.life s) | s <- PlayerView.seats b]
 
 -- | Whether a choice starts a game, and so concedes a paused one.
 starts :: Choice -> Bool
 starts choice = case choice of
   MkPlayBots -> True
+  MkPlayFriend -> True
+  MkBuildDeck -> False
+  MkEditDeck _ -> False
   MkReplays -> False
   MkPlayOn _ _ -> True
+
+-- | What a tap on the top bar's section means here.
+navigate :: Bar.Section -> Event
+navigate section = case section of
+  Bar.MkHome -> MkCancel
+  Bar.MkPlay -> MkChoose MkPlayBots
+  Bar.MkDecks -> MkChoose MkBuildDeck
+  Bar.MkReplays -> MkChoose MkReplays
 
 update :: Event -> Home -> Outcome
 update event home = case event of
   MkChoose choice
-    | paused home && starts choice -> MkStay home {confirming = Just choice}
+    | Maybe.isJust (paused home) && starts choice -> MkStay home {confirming = Just choice}
     | otherwise -> MkGo choice
   MkResume -> MkBack
   MkConfirm -> maybe (MkStay home) MkGo (confirming home)
   MkCancel -> MkStay home {confirming = Nothing}
 
--- | The logo, the name, and the tagline.
-hero :: Html.Html msg
-hero =
-  Element.el
-    "header"
-    ["hero"]
-    []
-    [ Element.el "h1" [] [] [Element.el "img" ["logo"] [Element.attr "src" (Text.pack "./icon.svg"), Element.attr "alt" Text.empty, Element.attr "width" (Text.pack "40"), Element.attr "height" (Text.pack "40")] [], Element.string "Parun"],
-      Element.el "p" ["tagline"] [] [Element.string "A Magic rules engine, running in your browser."]
-    ]
-
 view :: Home -> Html.Html Event
 view home =
   Element.el "main" ["home"] [] $
-    [hero]
-      <> [Element.el "p" ["problem"] [Element.attr "role" (Text.pack "alert")] [Element.text p] | p <- Maybe.maybeToList (problem home)]
+    [Element.el "p" ["problem"] [Element.attr "role" (Text.pack "alert")] [Element.text p] | p <- Maybe.maybeToList (problem home)]
       <> case confirming home of
         Just choice ->
           [ Element.el
               "section"
-              ["confirm"]
+              ["panel", "confirm"]
               [Element.attr "role" (Text.pack "alertdialog"), Element.attr "aria-label" (Text.pack "Concede the game in progress?")]
               [ Element.el "p" [] [] [Element.string "Starting a new game concedes the one in progress."],
                 Element.el
@@ -99,14 +143,90 @@ view home =
               ]
           ]
         Nothing ->
-          [ Element.el "nav" ["choices"] [Element.attr "aria-label" (Text.pack "What to do")] $
-              [Element.button ["primary", "resume"] MkResume [Element.string "Resume game"] | paused home]
-                <> [ Element.button (["play"] <> ["primary" | not (paused home)]) (MkChoose MkPlayBots) [Element.string (if paused home then "Start a new game" else "Play against bots")],
-                     Element.button ["replays"] (MkChoose MkReplays) [Element.string "Replays"]
+          foldMap (pure . pausedView) (paused home)
+            <> [ Element.el
+                   "nav"
+                   ["tiles"]
+                   [Element.attr "aria-label" (Text.pack "What to do")]
+                   [ tile ["lead" | Maybe.isNothing (paused home)] MkPlayBots "Play a bot" "Pick a deck for each seat and start.",
+                     tile [] MkPlayFriend "Play a friend" "Invite someone in another browser with a link.",
+                     tile [] MkBuildDeck "Build a deck" "Start from a blank list, then save it to play.",
+                     tile [] MkReplays "Replays" "Step through the scenarios the rules are tested on."
                    ]
-          ]
+               ]
+            <> [decksView (saved home) | not (null (saved home))]
+      <> [legal]
   where
     confirmLabel choice = case choice of
-      MkPlayBots -> "Concede and play"
-      MkReplays -> "Concede"
       MkPlayOn _ _ -> "Concede and play on"
+      _ -> "Concede and play"
+    tile classes choice title said =
+      Element.button
+        ("tile" : classes)
+        (MkChoose choice)
+        [Element.el "strong" [] [] [Element.string title], Element.el "span" ["muted"] [] [Element.string said]]
+
+-- | The game in progress: its turn and life totals, and the way back to it.
+pausedView :: Paused -> Html.Html Event
+pausedView game =
+  Element.el
+    "section"
+    ["panel", "in-progress"]
+    [Element.attr "aria-label" (Text.pack "Game in progress")]
+    [ Element.el
+        "div"
+        ["where"]
+        []
+        [ Element.el "span" ["eyebrow"] [] [Element.string "Game in progress"],
+          Element.el "h1" [] [] [Element.string (maybe "Waiting for you" (\n -> "Turn " <> show n) (turn game))],
+          Element.el "p" ["muted"] [] [Element.string "Starting another game concedes this one."]
+        ],
+      Element.el
+        "dl"
+        ["lives"]
+        []
+        (concat [[Element.el "dt" ["eyebrow"] [] [Element.text who], Element.el "dd" [] [] [Element.string (show life)]] | (who, life) <- lives game]),
+      Element.button ["primary", "resume"] MkResume [Element.string "Resume"]
+    ]
+
+-- | The decks saved in this browser, each with the way to edit it.
+decksView :: [Deck] -> Html.Html Event
+decksView decks =
+  Element.el
+    "section"
+    ["panel", "your-decks"]
+    []
+    [ Element.el "h2" [] [] [Element.string "Your decks"],
+      Element.el "ul" ["deck-rows"] [] (fmap row decks)
+    ]
+  where
+    row deck =
+      Element.el
+        "li"
+        []
+        []
+        [ Element.el "span" ["pips"] [] [Mana.symbol (Text.pack (Card.letterUpper c)) | c <- Set.toList (colours deck)],
+          Element.el "span" ["deck-row-name"] [] [Element.text (snd (Lobby.describe (name deck)))],
+          Element.el "span" ["muted"] [] [Element.string (maybe "" (\n -> show n <> " cards") (size deck))],
+          Element.button ["quiet"] (MkChoose (MkEditDeck (name deck))) [Element.string "Edit"]
+        ]
+
+-- | The Fan Content Policy's notice, and where Parun's source is.
+legal :: Html.Html msg
+legal =
+  Element.el
+    "footer"
+    ["legal"]
+    []
+    [ Element.el
+        "p"
+        []
+        []
+        [ Element.string "Parun is unofficial Fan Content permitted under the ",
+          link "https://company.wizards.com/en/legal/fancontentpolicy" "Fan Content Policy",
+          Element.string ". Not approved/endorsed by Wizards. Portions of the materials used are property of Wizards of the Coast. \x00a9Wizards of the Coast LLC. Magic: The Gathering is a trademark of Wizards of the Coast LLC; Universes Beyond names belong to their respective owners."
+        ],
+      Element.el "p" [] [] [link "https://github.com/parun-mtg/parun" "Parun on GitHub"]
+    ]
+  where
+    link href said = Element.el "a" [] [Element.attr "href" (Text.pack href), Element.attr "target" (Text.pack "_blank"), Element.attr "rel" (Text.pack "noopener")] [Element.string said]
