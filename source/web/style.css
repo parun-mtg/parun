@@ -19,6 +19,9 @@
    cards), 16 (panels), round (chips); targets 44px at least. */
 :root {
   color-scheme: light;
+  /* Every scrolling box's bar in the theme's colours, its track unpainted
+     (inherited, so dark's --control darkens it). */
+  scrollbar-color: var(--control) transparent;
   --bg: #f4f4f6;
   --surface: #ffffff;
   --raised: #ececf1;
@@ -2196,8 +2199,8 @@ main.game {
   height: 22px;
 }
 
-/* On a phone the track takes its own row as segments, the current phase
-   named in the turn's label. */
+/* On a phone the track takes its own row, its phases in equal shares,
+   still named; and the turn's label wraps rather than being cut short. */
 @media (max-width: 599px) {
   .turn-bar {
     gap: 6px 8px;
@@ -2206,34 +2209,29 @@ main.game {
 
   .turn-label {
     flex: 1 1 0;
+    white-space: normal;
+    line-height: 1.25;
+  }
+
+  /* The stops menu says only its level; its label says what it is. */
+  .auto-pass > summary > .k {
+    display: none;
   }
 
   .phases {
     order: 1;
     flex-basis: 100%;
-    gap: 3px;
     margin: 0;
-    padding: 0;
-    background: none;
   }
 
   .phases li {
-    flex: 1;
-    height: 5px;
-    padding: 0;
-    border-radius: 3px;
-    background: var(--line);
-    font-size: 0;
-  }
-
-  .phases li.past {
-    background: var(--control);
-  }
-
-  .phases li.now,
-  .phases li.now.extra {
-    background: var(--act);
-    box-shadow: none;
+    flex: 1 1 0;
+    justify-content: center;
+    min-width: 0;
+    height: 24px;
+    padding: 0 2px;
+    border-radius: 6px;
+    font-size: 11px;
   }
 }
 
@@ -2293,18 +2291,22 @@ main.game {
 }
 
 /* The other seats at the top, yours at the foot, and the stack between
-   taking the room they leave. */
+   taking the room they leave. The table fits the screen: a board too tall
+   for it shrinks each zone and scrolls each in its own box, so every zone
+   stays in view and no seat's head covers a permanent. */
 .table {
   display: flex;
   flex-direction: column;
-  min-height: 100%;
+  height: 100%;
 }
 
 .seat {
+  --seat-pad-y: 12px;
+  --seat-pad-x: 12px;
   display: flex;
   flex-direction: column;
   gap: 12px;
-  padding: 12px;
+  padding: var(--seat-pad-y) var(--seat-pad-x);
 }
 
 .seat.opponent {
@@ -2312,15 +2314,34 @@ main.game {
 }
 
 .seat.you {
+  flex: 0 1 auto;
+  min-height: 0;
   background: var(--surface);
   border-top: 1px solid var(--line);
 }
 
+/* Your permanents scroll under your seat's head, never behind it; the box
+   reaches the seat's edges, room for a tapped tile's corners. */
+.seat.you .battlefield {
+  min-height: 0;
+  margin: calc(-1 * var(--seat-pad-y)) calc(-1 * var(--seat-pad-x));
+  padding: var(--seat-pad-y) var(--seat-pad-x);
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  scrollbar-width: thin;
+}
+
 /* The other seats, in turn order from yours: side by side where they fit,
-   each battlefield capped so yours stays on screen. */
+   each battlefield capped so yours stays on screen, all of them scrolling
+   together under their heads. */
 .opponents {
+  flex: 0 1 auto;
+  min-height: 0;
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(min(100%, 22rem), 1fr));
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  scrollbar-width: thin;
   border-bottom: 1px solid var(--line);
 }
 
@@ -2341,7 +2362,9 @@ main.game {
   gap: 8px 12px;
 }
 
-/* Each seat's totals stay in view while the table scrolls under them. */
+/* Each seat's totals stay in view while its zone scrolls: the other
+   seats' heads stick to their zone's top, and yours stands below your
+   permanents' box. */
 .seat .seat-head {
   position: sticky;
   z-index: 3;
@@ -2349,16 +2372,14 @@ main.game {
   background: var(--bg);
 }
 
-.seat.you .seat-head {
-  background: var(--surface);
-}
-
 .seat.opponent .seat-head {
   top: 0;
 }
 
 .seat.you .seat-head {
-  bottom: 0;
+  position: static;
+  flex: none;
+  background: var(--surface);
 }
 
 /* The seat's name and its life, a large number. */
@@ -2515,24 +2536,26 @@ details.pile[open] {
   gap: 4px;
 }
 
+/* The creatures, the other permanents and the lands, each group a row of
+   its own only where they do not fit side by side, so a small board takes
+   one line. */
 .battlefield {
-  display: flex;
-  flex-direction: column;
-  gap: var(--gap);
-}
-
-/* The other permanents and the lands, two groups side by side. */
-.battlefield > .back {
   display: flex;
   flex-wrap: wrap;
   align-items: flex-start;
-  gap: var(--gap) 28px;
+  gap: 0 28px;
+}
+
+.battlefield > .back {
+  display: contents;
 }
 
 .row {
   display: flex;
+  flex: 0 1 auto;
   flex-wrap: wrap;
   gap: var(--gap);
+  max-width: 100%;
   min-height: 0;
   /* Room for a tapped tile's turned corners. */
   padding-block: 8px;
@@ -2633,12 +2656,18 @@ details.pile[open] {
 
 /* The stack: a lane between the seats, a quiet rule while it is empty. */
 .stack-lane {
-  flex: 1 0 auto;
+  flex: 1 1 auto;
   display: flex;
   flex-direction: column;
-  justify-content: center;
   min-height: 44px;
   padding: 8px 12px;
+  overflow-y: auto;
+  scrollbar-width: thin;
+}
+
+/* Centred while it fits, and scrolled from its top once it does not. */
+.stack-lane > * {
+  margin-block: auto;
 }
 
 .stack-empty {
@@ -2778,11 +2807,46 @@ details.pile[open] {
   translate: 0 -20px;
 }
 
-/* On a phone the seats and their chips tighten. */
+/* On a phone the seats and their chips tighten, a seat's chips one line
+   beside its life that scrolls sideways, so its head stays short enough to
+   keep in view; and the hand's tiles narrow as far as fits a hand of five
+   or so before they overlap, all one height, each name wrapping onto a
+   second line and its cost below it. */
 @media (max-width: 599px) {
+  .seat-head .counts {
+    flex: 1 1 0;
+    flex-wrap: nowrap;
+    min-width: 0;
+    overflow-x: auto;
+    scrollbar-width: none;
+  }
+
+  .hand-cards {
+    align-items: stretch;
+  }
+
+  #app .hand-cards > .card {
+    --tile: max(64px, min(var(--card-w-size), calc((100% - (var(--n) - 1) * var(--gap)) / var(--n))));
+    padding-inline: 0.3em;
+  }
+
+  .hand-cards > .card .top {
+    flex-wrap: wrap;
+  }
+
+  .hand-cards > .card .name {
+    display: -webkit-box;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 2;
+    line-clamp: 2;
+    white-space: normal;
+    overflow-wrap: anywhere;
+  }
+
   .seat {
+    --seat-pad-y: 8px;
+    --seat-pad-x: 10px;
     gap: 8px;
-    padding: 8px 10px;
   }
 
   .life .value {
@@ -3145,9 +3209,10 @@ details.pile[open] {
   border-color: var(--act-line);
 }
 
+/* Pass, wider, and the other answer beside it, its label on one line. */
 .passes {
   display: grid;
-  grid-template-columns: 2fr 1fr;
+  grid-template-columns: minmax(0, 2fr) minmax(max-content, 1fr);
   gap: 8px;
 }
 
@@ -3518,6 +3583,7 @@ details.log .unread {
     height: auto;
     flex: 1 1 auto;
     overflow-y: auto;
+    scrollbar-width: thin;
     clip-path: none;
     white-space: normal;
   }
@@ -3786,11 +3852,21 @@ main.ending h2 {
 .seat-4 { --seat: #c98a12; }
 .seat-5 { --seat: #1d9aa6; }
 
-.chart-axis {
-  display: flex;
-  justify-content: space-between;
-  font-size: 0.75rem;
-  color: var(--muted);
+/* The chart's labels: its scale, each seat's final life in the seat's
+   colour, and the turns. */
+.life-chart text {
+  font-size: 12px;
+  font-weight: 600;
+  fill: var(--muted);
+  font-variant-numeric: tabular-nums;
+}
+
+.life-chart text.value {
+  font-weight: 700;
+}
+
+.life-chart text.value[class*="seat-"] {
+  fill: var(--seat);
 }
 
 .stats {
@@ -3893,8 +3969,9 @@ main.ending h2 {
 /* ---------- Keyboard shortcuts (page.js) ---------- */
 
 /* A button's key, as a keycap after its label, while Alt is held (page.js)
-   where there is a keyboard to press it with. */
-@media (hover: hover) and (pointer: fine) {
+   where there is a keyboard to press it with and the screen is wider than a
+   phone's (the phone layout's 600px), which has no room for them. */
+@media (hover: hover) and (pointer: fine) and (min-width: 600px) {
   /* The prompt's main button and those the view gave a key show it always. */
   .prompt button.primary[aria-keyshortcuts]::after,
   .prompt button[aria-keyshortcuts]:not([data-key-given])::after,
@@ -3921,7 +3998,7 @@ main.ending h2 {
   }
 }
 
-@media not ((hover: hover) and (pointer: fine)) {
+@media not ((hover: hover) and (pointer: fine) and (min-width: 600px)) {
   .keys-only {
     display: none;
   }
@@ -4183,11 +4260,12 @@ body:has(main.game, #app [data-settings], #app .splash, #app main.loading) #sett
 }
 
 
-/* A life total's change, floating up from it (page.js). */
+/* A life total's change, floating up from just above it (page.js), so it
+   never covers the digits. */
 .float-delta {
   position: fixed;
   z-index: 90;
-  transform: translate(-50%, 0);
+  transform: translate(-50%, -100%);
   padding: 0.1em 0.5em;
   border-radius: 999px;
   font-weight: 800;
@@ -4207,9 +4285,9 @@ body:has(main.game, #app [data-settings], #app .splash, #app main.loading) #sett
 }
 
 @keyframes float-up {
-  0% { transform: translate(-50%, 0) scale(0.8); }
-  15% { transform: translate(-50%, -12px) scale(1.15); }
-  100% { transform: translate(-50%, -48px) scale(1); opacity: 0; }
+  0% { transform: translate(-50%, -100%) scale(0.8); }
+  15% { transform: translate(-50%, calc(-100% - 12px)) scale(1.15); }
+  100% { transform: translate(-50%, calc(-100% - 48px)) scale(1); opacity: 0; }
 }
 
 .badge.damage,

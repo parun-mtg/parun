@@ -33,7 +33,7 @@ spec s = Spec.describe s "Parun.Web.Ending" $ do
           trail = Ending.sampled 3 lives (Ending.sampled 2 lives (Ending.sampled 1 lives (Ending.sampled 1 lives Seq.empty)))
           page = Html.toText (Ending.view ending {Ending.trail = Foldable.toList trail})
       Spec.assertEqWith s "a sample a turn" (fmap fst trail) (Seq.fromList [1, 2, 3])
-      Spec.assertBool s (Text.isInfixOf (Text.pack "<span>Turn 3</span>") page) "the axis"
+      Spec.assertBool s (Text.isInfixOf (Text.pack "text-anchor=\"end\" dominant-baseline=\"middle\">Turn 3</text>") page) "the axis"
 
     Spec.it s "charts each seat's life and tells the game's numbers" $ do
       let page = Html.toText (Ending.view ending)
@@ -44,12 +44,27 @@ spec s = Spec.describe s "Parun.Web.Ending" $ do
       has "<polyline class=\"life-line seat-0 you\""
       has "Player 2</strong>: ended on 0 life, lowest 0, biggest hit 17"
       has "Turn 3"
+      -- The scale, 20 at the top and 0 at the floor, and each seat's final
+      -- life at its line's end in its colour.
+      has "<text class=\"scale\" x=\"-6\" y=\"0\" text-anchor=\"end\" dominant-baseline=\"middle\">20</text>"
+      has "<text class=\"scale\" x=\"-6\" y=\"120\" text-anchor=\"end\" dominant-baseline=\"middle\">0</text>"
+      has "<text class=\"value seat-0 you\" x=\"326\" y=\"0\" text-anchor=\"start\" dominant-baseline=\"middle\">20</text>"
+      has "<text class=\"value seat-1\" x=\"326\" y=\"120\" text-anchor=\"start\" dominant-baseline=\"middle\">0</text>"
 
     Spec.it s "CR 103.4c a seat that never fell to 20 life has a lowest above it" $ do
       let page = Html.toText (Ending.view ending {Ending.trail = [(1, [(you, 40), (bot, 40)]), (2, [(you, 33), (bot, 12)]), (3, [(you, 37), (bot, -8)])]})
           you = PlayerId.MkPlayerId 0
           bot = PlayerId.MkPlayerId 1
       Spec.assertBool s (Text.isInfixOf (Text.pack "You</strong>: ended on 37 life, lowest 33, biggest hit 7") page) (Text.unpack page)
+      -- Below 0, the floor gets its own label beside the baseline's.
+      Spec.assertBool s (Text.isInfixOf (Text.pack "<text class=\"scale\" x=\"-6\" y=\"120\" text-anchor=\"end\" dominant-baseline=\"middle\">-8</text>") page) "the floor"
+
+    Spec.it s "keeps the final lives' labels apart where the lines end close together" $ do
+      let page = Html.toText (Ending.view ending {Ending.trail = [(1, [(you, 20), (bot, 20)]), (2, [(you, 20), (bot, 19)])]})
+          you = PlayerId.MkPlayerId 0
+          bot = PlayerId.MkPlayerId 1
+      -- 19 life is 6 below the top, the label 12 below the one for 20.
+      Spec.assertBool s (Text.isInfixOf (Text.pack "<text class=\"value seat-1\" x=\"326\" y=\"12\"") page) (Text.unpack page)
 
   Spec.describe s "download" $ do
     Spec.it s "percent-encodes the text's UTF-8, a space and a number sign included" $ do

@@ -230,7 +230,8 @@ seatArea marks board own s =
           ]
       row cls objects = [Element.keyed "div" ["row", cls] [] (concatMap group (List.groupBy alike (Wording.ordered board objects))) | not (null objects)]
       front = row "front" creatures
-      -- The other permanents and the lands, two groups side by side.
+      -- The other permanents and the lands, each group sharing a line with
+      -- the creatures' where they fit (style.css).
       back = [Element.el "div" ["back"] [] (row "others" others <> row "lands" lands) | not (null others && null lands)]
       labelled cls title objects = [Element.el "div" ["row", cls] [Element.attr "aria-label" (Text.pack title)] (Element.el "span" ["row-label"] [] [Element.string title] : fmap tileOf objects) | not (null objects)]
       extra = labelled "phased" "Phased out" phased <> labelled "command" "Command zone" commanded
