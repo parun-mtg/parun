@@ -33,6 +33,9 @@ import qualified Parun.Play.Wording as Wording
 import qualified Parun.Types.CombatDamageOption as CombatDamageOption
 import qualified Parun.Types.CombatStep as CombatStep
 import qualified Parun.Types.EndingStep as EndingStep
+import qualified Parun.Types.GameEvent as GameEvent
+import qualified Parun.Types.LoggedEvent as LoggedEvent
+import qualified Parun.Types.Looked as Looked
 import qualified Parun.Types.Mana as Mana.Type
 import qualified Parun.Types.ManaRetention as ManaRetention
 import qualified Parun.Types.ManaType as ManaType
@@ -46,6 +49,7 @@ import qualified Parun.Types.Question as Question
 import qualified Parun.Types.Reply as R
 import qualified Parun.Types.Request as Request
 import qualified Parun.Types.SeatView as SeatView
+import qualified Parun.Types.Zone as Zone
 import qualified Parun.Web.Attribute as Attribute
 import qualified Parun.Web.Bar as Bar
 import qualified Parun.Web.Board as Board
@@ -890,7 +894,7 @@ form request picked = case Text.unpack (Question.kind question) of
         Html.element (Text.pack "h2") [] (Mana.rich $ foldMap (\cost -> Text.pack "Paying " <> Wording.manaCost cost <> Text.pack ". ") (Protocol.field "cost" offer >>= Offer.decoded Codec.ManaCost.codec) <> Text.pack (if kind == "ChooseManaSource" then "Choose a source." else "The cost is covered. Activate another source, or pay now."))
           : [primary MkAuto (Text.pack "Pay automatically") | Maybe.isJust (auto request)]
             -- Sources the seat can't tell apart are one button, for the first.
-            <> [button (MkAnswer source) (label <> many count) | (source : _, label, count) <- collapsed [(source, Offer.listedName shown source <> makes yields) | (source, yields) <- sources]]
+            <> [button (MkAnswer source) (label <> many count) | (source : _, label, count) <- collapsed (const True) [(source, Offer.listedName shown source <> makes yields) | (source, yields) <- sources]]
             <> [(if kind == "ChooseManaSource" then button else primary) (MkAnswer R.Null) $ Text.pack (if kind == "ChooseManaSource" then "Stop paying" else "Pay now")]
   kind
     | kind `elem` ["ChooseOptional", "ReverseManaAbilities"],
@@ -901,7 +905,9 @@ form request picked = case Text.unpack (Question.kind question) of
                 then foldMap (Offer.objectName shown) (Protocol.field "source" offer) <> Text.pack ": use its optional effect?"
                 else Text.pack "That action was reversed. Reverse the mana ability of " <> Text.intercalate (Text.pack " and ") (foldMap (fmap (Offer.listedName shown)) (Protocol.field "sources" offer >>= Protocol.arrayOf)) <> Text.pack " too?"
           )
-          : [button (MkAnswer . R.Text $ Text.pack tag) (Text.pack label) | (tag, label) <- [("Exercises", "Yes"), ("Declines", "No")]]
+          -- The cards an optional effect asked right after a look is about.
+          : [looking shown looked (const Nothing) | kind == "ChooseOptional", Just (looked, True) <- [latestLook shown]]
+            <> [button (MkAnswer . R.Text $ Text.pack tag) (Text.pack label) | (tag, label) <- [("Exercises", "Yes"), ("Declines", "No")]]
   kind
     | Just shown <- Request.view request,
       Nothing <- Protocol.field "among" offer,
@@ -963,8 +969,11 @@ form request picked = case Text.unpack (Question.kind question) of
               | kind == "ChooseRoom", Just n <- Protocol.naturalOf option = Text.pack ("Room " <> show (n + 1))
               | Just carried <- carry = Offer.resultName shown (Maybe.fromMaybe option entry) carried
               | otherwise = maybe (name option) (Offer.entryName shown) entry
+            labelled = [(option, label option entry) | (option, entry) <- zip options' (zip entries carries)]
          in Html.element (Text.pack "h2") [] (Mana.rich $ Maybe.fromMaybe (capitalized (Question.kind question) <> foldMap (\source -> Text.pack " for " <> Offer.objectName shown source) (Protocol.field "source" offer) <> Text.pack ".") (headingOf shown request))
-              : [button (MkAnswer option) (label option entry) | (option, entry) <- zip options' (zip entries carries)]
+              : foldMap (\among -> [looking shown among (`lookup` [(oid, option) | option <- options', Just oid <- [Offer.objectOf option]])]) (amongCards shown options')
+                -- Cards the seat can't tell apart share a button, for the first.
+                <> [button (MkAnswer option) (named' <> many count) | (option : _, named', count) <- collapsed (Maybe.isJust . Offer.objectOf) labelled]
   "DeclareAttackers"
     | Just attackers <- Protocol.arrayOf offer,
       Just shown <- Request.view request ->
@@ -1060,7 +1069,7 @@ form request picked = case Text.unpack (Question.kind question) of
                   i : _ | null chosen || not full -> i
                   _ -> List.last chosen
              in button (MkToggle g next) ((if null chosen then Text.empty else Text.pack (show (length chosen) <> " of ")) <> label <> many (length indices))
-      | (indices, label, _) <- collapsed labelled
+      | (indices, label, _) <- collapsed (const True) labelled
       ]
     many n = if n > 1 then Text.pack (" \x00d7" <> show n) else Text.empty
     makes yields = if null yields then Text.empty else Text.pack " (makes " <> Text.intercalate (Text.pack " or ") (fmap (foldMap (\m -> Text.pack "{" <> Wording.manaType m <> Text.pack "}")) yields) <> Text.pack ")"
@@ -1151,12 +1160,50 @@ indexed shown request = case Text.unpack (Question.kind (Request.question reques
     symbols :: [ManaType.ManaType] -> Text.Text
     symbols = foldMap (\t -> Text.pack "{" <> Wording.manaType t <> Text.pack "}")
 
--- | Options by label, each label once with every option bearing it, in the
--- order labels first appear; the label's count is the third part.
-collapsed :: [(a, Text.Text)] -> [([a], Text.Text, Int)]
-collapsed labelled =
-  let order = ListUtils.nubOrd (fmap snd labelled)
-   in [(xs, label, length xs) | label <- order, let xs = [x | (x, l) <- labelled, l == label]]
+-- | Options by label, each shareable label once with every shareable option
+-- bearing it, in the order labels first appear, and every other option
+-- alone; the label's count is the third part.
+collapsed :: (a -> Bool) -> [(a, Text.Text)] -> [([a], Text.Text, Int)]
+collapsed shareable labelled =
+  let keyed = [(if shareable x then Left label else Right i, (x, label)) | (i, (x, label)) <- zip [0 :: Int ..] labelled]
+   in [(fmap fst xs, label, length xs) | key <- ListUtils.nubOrd (fmap fst keyed), let xs = [v | (k, v) <- keyed, k == key], (_, label) : _ <- [xs]]
+
+-- | CR 701.20e: the cards the seat's latest look showed it, in the order
+-- looked at, and whether that look is the last thing the seat saw happen;
+-- Nothing where the seat saw no look.
+latestLook :: PlayerView.PlayerView -> Maybe ([ObjectId.ObjectId], Bool)
+latestLook shown =
+  let card entry = case LoggedEvent.event entry of
+        GameEvent.Looked l -> Just (Looked.card l)
+        _ -> Nothing
+      newest = reverse (Wording.witnessed shown)
+      run = takeWhile (Maybe.isJust . card) (dropWhile (Maybe.isNothing . card) newest)
+   in if null run then Nothing else Just (ListUtils.nubOrd (reverse (Maybe.mapMaybe card run)), Maybe.isJust (card =<< Maybe.listToMaybe newest))
+
+-- | The cards a choice among cards is among, where none is on the
+-- battlefield or the stack, whose tiles the table already shows: every card
+-- the latest look showed, where the options are among them, else the
+-- options.
+amongCards :: PlayerView.PlayerView -> [R.Reply] -> Maybe [ObjectId.ObjectId]
+amongCards shown options' = do
+  oids <- traverse Offer.objectOf options'
+  Monad.guard (not (null oids) && all (maybe True ((`notElem` [Zone.Battlefield, Zone.Stack]) . fst) . Wording.located shown) oids)
+  pure $ case latestLook shown of
+    Just (looked, _) | all (`elem` looked) oids -> looked
+    _ -> oids
+
+-- | Cards as tiles beside a question: each answering with the reply given
+-- for it, the rest opening their sheets.
+looking :: PlayerView.PlayerView -> [ObjectId.ObjectId] -> (ObjectId.ObjectId -> Maybe R.Reply) -> Html.Html Event
+looking shown oids answer =
+  Element.el
+    "div"
+    ["seen", "among"]
+    []
+    [ Card.tile shown (Card.MkCue (["choosable" | Maybe.isJust (answer oid)]) (maybe (MkRead oid) MkAnswer (answer oid)) (Just (MkPeek oid, MkUnpeek))) o
+    | oid <- oids,
+      Just o <- [Wording.recalled shown oid]
+    ]
 
 -- | A label naming a player, the seat itself named as its table names it
 -- (Parun.Web.Board's seats): "You (20 life)", not "Player 1 (20 life)".

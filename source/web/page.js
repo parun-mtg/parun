@@ -474,9 +474,10 @@ function unkey() {
 
 // Gives the main button Enter, then numbers 1 to 9 and 0 the buttons a
 // card sheet over the table offers, or else the prompt's: in the order
-// shown, but the main button, any with a key of the view's and the damage
-// rows' amounts. A prompt's numbers follow its own buttons, so the same kind
-// of prompt numbers alike; a meaning that recurs has its letter.
+// shown, but the main button, any with a key of the view's, the damage
+// rows' amounts and cards' tiles. A prompt's numbers follow its own
+// buttons, so the same kind of prompt numbers alike; a meaning that recurs
+// has its letter.
 function rekey() {
   const give = (button, key) => {
     button.setAttribute("aria-keyshortcuts", key);
@@ -486,7 +487,7 @@ function rekey() {
   const main = sheet ? null : mainButton();
   if (main && !main.hasAttribute("aria-keyshortcuts")) give(main, "Enter");
   const candidates = sheet ? sheet.querySelectorAll(".sheet-actions button") : root.querySelectorAll(".prompt button");
-  const numbered = Array.from(candidates).filter((button) => button !== main && !button.disabled && !button.hasAttribute("aria-keyshortcuts") && !button.closest(".segmented"));
+  const numbered = Array.from(candidates).filter((button) => button !== main && !button.disabled && !button.hasAttribute("aria-keyshortcuts") && !button.closest(".segmented") && !button.classList.contains("card"));
   // Buttons that are numbers themselves (choosing X) each take their own digit.
   if (numbered.length > 0 && numbered.every((button) => /^\d+$/.test(button.textContent))) {
     for (const button of numbered) if (/^\d$/.test(button.textContent)) give(button, button.textContent);
