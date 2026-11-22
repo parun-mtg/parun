@@ -30,10 +30,12 @@ if (!isSecureContext) document.getElementById("insecure").hidden = false;
 if ("serviceWorker" in navigator && isSecureContext) navigator.serviceWorker.register("./sw.js").catch((problem) => console.warn(problem));
 
 // The engine's load phases go to the console, and the loading screen marks
-// each step as it is heard of (engine.js): the engine done once compiled,
-// when the table is set; the cards by how many of their chunks have
-// arrived. A failure is said as it is, and stops the ring.
+// each step as it is heard of (engine.js). The engine compiles while the
+// cards download, so the two are one step, done once both are, saying how
+// many of the cards' chunks have arrived; the table is set once the engine
+// is compiled. A failure is said as it is, and stops the ring.
 const cardsFetched = new Set();
+let compiled = false;
 // The cards' chunks (engine.js, script/build-web.sh).
 const cardChunks = 4;
 function step(name, state, said = "") {
@@ -45,13 +47,13 @@ function step(name, state, said = "") {
 function note(line) {
   console.log(line);
   const name = line.split(" ")[0];
-  if (name === "compiled") {
-    step("engine", "done", "Done");
-    step("table", "now");
-  } else if (name.startsWith("cards-")) {
-    cardsFetched.add(name);
-    const done = cardsFetched.size === cardChunks;
-    step("cards", done ? "done" : "now", done ? "Done" : `${Math.round((100 * cardsFetched.size) / cardChunks)}%`);
+  if (name === "compiled" || name.startsWith("cards-")) {
+    if (name === "compiled") compiled = true;
+    else cardsFetched.add(name);
+    const cardsDone = cardsFetched.size === cardChunks;
+    if (cardsDone && compiled) step("fetch", "done", "Done");
+    else step("fetch", "now", cardsDone ? "Cards done" : `Cards ${Math.round((100 * cardsFetched.size) / cardChunks)}%`);
+    if (compiled) step("table", "now");
   } else if (!["decks", "rules", "scenarios", "started"].includes(name)) {
     const phase = document.getElementById("phase");
     if (phase) phase.textContent = line;

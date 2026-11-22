@@ -75,15 +75,15 @@
     </svg>
     <p id="insecure" hidden>This page is not a secure context, so Safari runs the engine many times slower. Load it over https or from localhost (script/serve-web.sh).</p>
     <!-- Until the engine draws its first screen: the logo in a turning ring,
-         and each step of loading as page.js hears of it, a percentage only
-         for the cards, whose chunks it counts (Parun.Web.Loading draws the
-         same once the engine runs). -->
+         and each step of loading as page.js hears of it. The engine and the
+         cards download at once, so they are one step, with a percentage
+         only for the cards, whose chunks page.js counts (Parun.Web.Loading
+         draws the same once the engine runs). -->
     <div id="app"><div class="splash">
       <div class="ring"><svg viewBox="0 0 168 168" aria-hidden="true" focusable="false"><circle class="track" cx="84" cy="84" r="78"/><circle class="arc" cx="84" cy="84" r="78"/></svg><img class="logo" src="./icon.svg" alt="" width="104" height="104"></div>
       <div class="heading"><h1>Parun</h1><p class="tagline">A Magic rules engine, running in your browser.</p></div>
       <ol class="steps panel" aria-label="Loading progress">
-        <li class="now" data-step="engine"><span class="dot" aria-hidden="true"></span><span class="label">Starting the engine</span><span class="state"></span></li>
-        <li class="now" data-step="cards"><span class="dot" aria-hidden="true"></span><span class="label">Fetching the cards</span><span class="state">0%</span></li>
+        <li class="now" data-step="fetch"><span class="dot" aria-hidden="true"></span><span class="label">Fetching the engine and the cards</span><span class="state">Cards 0%</span></li>
         <li class="waiting" data-step="table"><span class="dot" aria-hidden="true"></span><span class="label">Setting the table</span><span class="state"></span></li>
       </ol>
       <p class="phase" id="phase" role="alert"></p>

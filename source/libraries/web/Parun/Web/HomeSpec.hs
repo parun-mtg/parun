@@ -22,7 +22,7 @@ spec s = Spec.describe s "Parun.Web.Home" $ do
       Spec.assertEqWith s "unpaused" (tapping "Resume" Home.new) Nothing
       Spec.assertEqWith s "paused" (tapping "Resume" paused) (Just Home.MkResume)
       Spec.assertEqWith s "turn" (has "<h1>Turn 11</h1>" paused) True
-      Spec.assertEqWith s "lives" (has "<dt class=\"eyebrow\">Player 2</dt><dd>14</dd>" paused) True
+      Spec.assertEqWith s "lives" (has "<div class=\"seat-life\"><dt class=\"eyebrow\">Player 2</dt><dd>14</dd></div>" paused) True
 
     Spec.it s "leads from its tiles to a game, the builder and the replays" $ do
       Spec.assertEqWith s "bots" (tapping "Play a bot" Home.new) (Just (Home.MkChoose Home.MkPlayBots))

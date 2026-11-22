@@ -185,7 +185,7 @@ pausedView game =
         "dl"
         ["lives"]
         []
-        (concat [[Element.el "dt" ["eyebrow"] [] [Element.text who], Element.el "dd" [] [] [Element.string (show life)]] | (who, life) <- lives game]),
+        [Element.el "div" ["seat-life"] [] [Element.el "dt" ["eyebrow"] [] [Element.text who], Element.el "dd" [] [] [Element.string (show life)]] | (who, life) <- lives game],
       Element.button ["primary", "resume"] MkResume [Element.string "Resume"]
     ]
 

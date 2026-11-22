@@ -776,22 +776,22 @@ main.home .in-progress {
   line-height: 1.15;
 }
 
-/* Each seat's life above its name, side by side. */
+/* Each seat a column, its life above its name, side by side. */
 .in-progress .lives {
-  display: grid;
-  grid-auto-flow: column;
-  grid-template-rows: auto auto;
-  gap: 4px 24px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 24px;
   margin: 0;
-  text-align: center;
 }
 
-.in-progress .lives dt {
-  grid-row: 2;
+.in-progress .seat-life {
+  display: flex;
+  flex-direction: column-reverse;
+  align-items: center;
+  gap: 4px;
 }
 
 .in-progress .lives dd {
-  grid-row: 1;
   margin: 0;
   font-size: 30px;
   font-weight: 700;
@@ -835,6 +835,13 @@ main.home .in-progress {
 #app button.tile.lead {
   background: var(--act-soft);
   border-color: var(--act-line);
+}
+
+@media (max-width: 560px) {
+  #app button.tile {
+    min-height: 0;
+    padding: 16px;
+  }
 }
 
 #app button.tile strong {
@@ -3001,8 +3008,8 @@ kbd {
 }
 
 /* The top bar and the game's turn bar carry their own (page.js opens the
-   menu beneath it). */
-body:has(main.game, #app [data-settings]) #settings-button {
+   menu beneath it); the splash has none. */
+body:has(main.game, #app [data-settings], #app .splash) #settings-button {
   display: none;
 }
 

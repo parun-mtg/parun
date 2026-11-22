@@ -90,10 +90,11 @@ data Step
   | MkWaiting
   deriving (Eq, Show)
 
--- | The steps a screen waits through once the engine runs, as the splash
--- (index.html) names them: the engine, started; the cards, as far as their
--- chunks have arrived; then the rest of what the screen waits on, read and
--- built, how far unknown.
+-- | The steps a screen waits through once the engine runs: the engine,
+-- started; the cards, as far as their chunks have arrived; then the rest of
+-- what the screen waits on, read and built, how far unknown. The splash
+-- (index.html) fetches the engine and the cards at once, so names them as
+-- one step.
 steps :: Loading -> [(String, Step)]
 steps loading =
   let cards = chunksOf MkCards
