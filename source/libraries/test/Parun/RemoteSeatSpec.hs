@@ -20,6 +20,7 @@ import qualified Parun.Registry as Registry
 import qualified Parun.Spec as Spec
 import qualified Parun.Support as S
 import qualified Parun.Types.Answerer as Answerer
+import qualified Parun.Types.Asked as Asked
 import qualified Parun.Types.Deck as Deck
 import qualified Parun.Types.GameState as GameState
 import qualified Parun.Types.Limits as Limits
@@ -176,19 +177,20 @@ data Resumed = MkResumed
 resumedGame :: (Monad m) => NonEmpty.NonEmpty (PlayerId.PlayerId, Deck.Deck) -> State.StateT Resumed m (Either Text.Text (Result.Result, GameState.GameState))
 resumedGame matchup = Game.run (S.fixtureRegistry []) Nothing Limits.standard [] (Map.fromList [(pid, Game.wired (S.fixtureRegistry []) resuming) | (pid, _) <- NonEmpty.toList matchup]) (S.seeded 1) Map.empty matchup
 
--- resumedGame with its second seat the search bot, at 2 samples cut off after
--- 40 prompts, its answers stored and kept alongside the page's
--- (Game.remembered); each prompt a seat answers it is asked, a search.
+-- resumedGame with Bob's seat the search bot ('searching'), its answers
+-- stored and kept alongside the page's (Game.remembered).
 againstSearch :: (Monad m) => NonEmpty.NonEmpty (PlayerId.PlayerId, Deck.Deck) -> State.StateT Resumed m (Either Text.Text (Result.Result, GameState.GameState))
 againstSearch matchup =
-  let registry = S.fixtureRegistry []
-      budget = SearchBudget.MkSearchBudget {SearchBudget.samples = 2, SearchBudget.prompts = 40}
-      searching = Answerer.MkAnswerer $ \asked -> do
-        Monad.when (Maybe.isJust (Protocol.requestFor asked)) $ Game.underneath (State.modify' (\r -> r {searches = length (kept r) : searches r}))
-        Answerer.unwrap (Search.search registry budget Search.known) asked
-      bot = Game.remembered nextStored (\reply -> State.modify' (\r -> r {kept = reply : kept r})) searching
-      seat pid = if pid == S.bob then bot else Game.wired registry resuming
-   in Game.run registry Nothing Limits.standard [] (Map.fromList [(pid, seat pid) | (pid, _) <- NonEmpty.toList matchup]) (S.seeded 1) Map.empty matchup
+  let seat pid = if pid == S.bob then Game.remembered nextStored (\reply -> State.modify' (\r -> r {kept = reply : kept r})) searching else Game.wired (S.fixtureRegistry []) resuming
+   in Game.run (S.fixtureRegistry []) Nothing Limits.standard [] (Map.fromList [(pid, seat pid) | (pid, _) <- NonEmpty.toList matchup]) (S.seeded 1) Map.empty matchup
+
+-- The search bot, at 2 samples cut off after 40 prompts, noting each search.
+searching :: (Monad m) => Answerer.Answerer (Asked.Asked GameState.GameState) (Game.Play (State.StateT Resumed m))
+searching = Answerer.MkAnswerer $ \prompted -> do
+  Monad.when (Maybe.isJust (Protocol.requestFor prompted)) $ Game.underneath (State.modify' (\r -> r {searches = length (kept r) : searches r}))
+  Answerer.unwrap (Search.search (S.fixtureRegistry []) budget Search.known) prompted
+  where
+    budget = SearchBudget.MkSearchBudget {SearchBudget.samples = 2, SearchBudget.prompts = 40}
 
 -- Each request answered from the replies stored, then by a page that passes.
 resuming :: (Monad m) => Protocol.Exchange (State.StateT Resumed m)

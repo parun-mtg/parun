@@ -91,8 +91,10 @@ next = do
 apart :: (Monad m) => State.StateT Generator.Generator m a -> State.StateT Generator.Generator m a
 apart draws = do
   index <- next
-  key <- State.gets Generator.key
-  State.lift (State.evalStateT draws (fromKey (derive key index)))
+  outer <- State.get
+  State.put (fromKey (derive (Generator.key outer) index))
+  drawn <- draws
+  drawn <$ State.put outer
 
 -- | Uniform from least to greatest, both included; least when they cross. A
 -- range wider than 2^64 is drawn from its first 2^64 values.
