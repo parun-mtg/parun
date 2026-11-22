@@ -691,6 +691,7 @@ spec s registry = Spec.describe s "WebQuestion" $ do
     Spec.assertBool s (Text.pack "<h2>Choose a source.</h2>" `Text.isInfixOf` Html.toText page) "heading"
     Spec.assertEqWith s "tap" (fmap (\event -> Question.Web.step request Set.empty event Text.empty) (Html.labelled (Text.pack "button") (Text.pack "Your Mountain (makes )") page >>= \path -> Html.handler (Text.pack "click") path page)) (Just (Question.Web.MkReplied (PromptOffer.object Protocol.namer land)))
     Spec.assertBool s (Text.pack "Your Mountain (makes <span class=\"ms\" title=\"{R}\"" `Text.isInfixOf` Html.toText page) "what it makes, drawn"
+    Spec.assertEqWith s "what it makes, read aloud" (fmap Html.spoken (filter ((== Text.pack "Your Mountain (makes )") . Html.content) (Html.elements (Text.pack "button") page))) [Text.pack "Your Mountain (makes red)"]
     -- The Mountain's tile on the battlefield pays too.
     Spec.assertEqWith s "tile" (Html.search isCard page >>= \path -> Html.handler (Text.pack "click") path page) (Just (Question.Web.MkAnswer (PromptOffer.object Protocol.namer land)))
 

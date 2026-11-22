@@ -142,3 +142,24 @@ labelled :: Text.Text -> Text.Text -> Html msg -> Maybe (Seq.Seq Natural)
 labelled name label = search $ \html -> case html of
   MkElement node -> tag node == name && content html == label
   MkText _ -> False
+
+-- | The name a screen reader gives a node: its aria-label, else its
+-- descendants' in order, an aria-hidden one's empty. Neither title nor
+-- aria-labelledby is read: the client names nothing by them alone.
+spoken :: Html msg -> Text.Text
+spoken html = case html of
+  MkText t -> t
+  MkElement node
+    | Just label <- propertyOf (Text.pack "aria-label") node -> label
+    | propertyOf (Text.pack "aria-hidden") node == Just (Text.pack "true") -> Text.empty
+    | otherwise -> foldMap spoken (childList (children node))
+
+-- | An element's property, by name.
+propertyOf :: Text.Text -> Node msg -> Maybe Text.Text
+propertyOf name = Foldable.foldl' (\found attribute -> case attribute of Attribute.MkProperty k v | k == name -> Just v; _ -> found) Nothing . attributes
+
+-- | Every element with this tag, in document order.
+elements :: Text.Text -> Html msg -> [Html msg]
+elements name html = case html of
+  MkText _ -> []
+  MkElement node -> [html | tag node == name] <> foldMap (elements name) (childList (children node))

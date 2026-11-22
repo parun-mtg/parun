@@ -395,7 +395,7 @@ view builder =
               prompt = if DeckList.colorCount choice == 1 then "Choose a colour" else "Circle two colours"
            in [ Element.el "div" ["choice"] [Element.attr "role" (Text.pack "group"), Element.attr "aria-label" (Text.pack prompt <> Text.pack " for " <> named card)] $
                   Element.el "span" ["choice-prompt"] [] [Element.string prompt]
-                    : [Element.el "button" (toggled (Set.member c picked)) [Element.attr "type" (Text.pack "button"), Element.attr "aria-pressed" (Text.pack (if Set.member c picked then "true" else "false")), Element.on "click" (MkChoose section card c)] [Mana.symbol (Text.pack (Web.Card.letterUpper c))] | c <- [minBound .. maxBound]]
+                    : [DeckBrowser.colourToggle (Set.member c picked) (MkChoose section card c) c | c <- [minBound .. maxBound]]
               ]
       deckLine section card n cost' =
         Element.el "div" (["deck-line"] <> ["flagged" | Set.member card (flagged builder)]) [] $
@@ -538,7 +538,7 @@ view builder =
                   [ Element.el "label" ["sr-only"] [Element.attr "for" (Text.pack "card-search")] [Element.string "Search cards"],
                     Element.el "input" ["search"] [Element.attr "id" (Text.pack "card-search"), Element.attr "type" (Text.pack "search"), Element.attr "placeholder" (Text.pack "Search names and rules text"), Element.attr "autocomplete" (Text.pack "off"), Element.on "input" MkSearch] [],
                     Element.el "div" ["filters"] [] $
-                      [Element.el "button" (toggled (Set.member c (CardIndex.wanted q))) [Element.attr "type" (Text.pack "button"), Element.attr "aria-pressed" (Text.pack (if Set.member c (CardIndex.wanted q) then "true" else "false")), Element.on "click" (MkToggleColour c)] [Mana.symbol (Text.pack (Web.Card.letterUpper c))] | c <- [minBound .. maxBound]]
+                      [DeckBrowser.colourToggle (Set.member c (CardIndex.wanted q)) (MkToggleColour c) c | c <- [minBound .. maxBound]]
                         <> [Element.el "button" (toggled (Set.member k (CardIndex.kinds q))) [Element.attr "type" (Text.pack "button"), Element.attr "aria-pressed" (Text.pack (if Set.member k (CardIndex.kinds q) then "true" else "false")), Element.on "click" (MkToggleKind k)] [Element.string (show k)] | k <- searchKinds]
                         <> [Element.el "select" ["mana-value"] [Element.attr "aria-label" (Text.pack "Mana value"), Element.on "change" MkValue] (fmap (option chosenValue) valueChoices)],
                     targets,

@@ -40,6 +40,12 @@ spec s = Spec.describe s "Parun.Web.Builder" $ do
       let chosen = Builder.update Builder.MkFormat (Text.pack "pauper") fresh
       Spec.assertEq s (Builder.format chosen, Builder.dirty chosen) (Text.pack "pauper", True)
 
+  Spec.describe s "view" $ do
+    Spec.it s "names each colour filter by its colour, and every button" $ do
+      let names = fmap Html.spoken (Html.elements (Text.pack "button") (Builder.view fresh))
+      Spec.assertEqWith s "colours" (filter (`elem` fmap (Text.pack . show) [minBound .. maxBound :: Color.Color]) names) (fmap Text.pack ["White", "Blue", "Black", "Red", "Green"])
+      Spec.assertEqWith s "unnamed" (filter (Text.null . Text.strip) names) []
+
   Spec.describe s "checked" $ do
     Spec.it s "holds the check's problems and the cards they name" $ do
       let found = Builder.checked [Text.pack "5 copies"] (Set.singleton bolt) fresh
