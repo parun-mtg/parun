@@ -15,8 +15,11 @@ import qualified Parun.Json.Value as Value
 import qualified Parun.JsonCodec.Codec as Codec
 import qualified Parun.JsonCodec.Common as Common
 import qualified Parun.Play.Key as Key
+import qualified Parun.Play.Opponent as Opponent
 import qualified Parun.Play.Protocol as Protocol
+import qualified Parun.Types.Difficulty as Difficulty
 import qualified Parun.Types.Key as Key.Type
+import qualified Parun.Types.Persona as Persona
 import qualified Parun.Types.PlayerId as PlayerId
 import qualified Parun.Types.Question as Question
 import qualified Parun.Types.Reply as R
@@ -160,11 +163,13 @@ guest local message = case message of
 -- | A game with guests as the host's page keeps it, to pick it up after a
 -- reload (Protocol.resumed): its seed, each seat's deck as a label and its
 -- list's text (the host's first), the bots' slots players were invited to,
--- and every reply so far.
+-- how every other bot plays (Parun.Play.Opponent), and every reply so far.
 data Saved = MkSaved
   { seed :: Key.Type.Key,
     seats :: NonEmpty.NonEmpty (Text.Text, Text.Text),
     invited :: [Int],
+    difficulty :: Difficulty.Difficulty,
+    persona :: Persona.Persona,
     replies :: [R.Reply]
   }
   deriving (Eq, Show)
@@ -180,7 +185,9 @@ saved build game =
           [ Value.pair "build" (Value.text build),
             Value.pair "seed" (Value.text (Key.toHex (seed game))),
             Value.pair "seats" (Value.array (fmap seat (NonEmpty.toList (seats game)))),
-            Value.pair "invited" (Value.array (fmap (Value.integer . toInteger) (invited game)))
+            Value.pair "invited" (Value.array (fmap (Value.integer . toInteger) (invited game))),
+            Value.pair "difficulty" (Value.string (fst (Opponent.difficultyName (difficulty game)))),
+            Value.pair "persona" (Value.string (fst (Opponent.personaName (persona game))))
           ]
    in Text.intercalate (Text.pack "\n") (Common.render header : fmap savedReply (replies game))
 
@@ -201,9 +208,13 @@ unsaved build kept = case Text.lines kept of
     listed <- Common.field "seats" pairs >>= Common.asArray >>= traverse seat
     decks <- maybe (Left (Text.pack "no seats")) Right (NonEmpty.nonEmpty listed)
     slots <- Common.field "invited" pairs >>= Common.asArray >>= traverse (Common.asInteger Monad.>=> maybe (Left (Text.pack "not a slot")) Right . Integer.toInt)
+    level <- Common.field "difficulty" pairs >>= Common.asText >>= named "a difficulty" Opponent.difficultyName
+    style <- Common.field "persona" pairs >>= Common.asText >>= named "a persona" Opponent.personaName
     answers <- traverse (Common.parse Monad.>=> Codec.Reply.fromValue) (filter (not . Text.null) rest)
-    pure (MkSaved key decks slots answers)
+    pure (MkSaved key decks slots level style answers)
   where
+    named :: (Bounded a, Enum a) => String -> (a -> (String, String)) -> Text.Text -> Either Text.Text a
+    named what nameOf name = maybe (Left (Text.pack ("not " <> what <> ": ") <> name)) Right (Opponent.named nameOf (Text.unpack name))
     seat value = do
       fields <- Common.asObject value
       (,) <$> (Common.field "deck" fields >>= Common.asText) <*> (Common.field "list" fields >>= Common.asText)

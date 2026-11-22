@@ -717,8 +717,8 @@ loadingScreen shell = Browser.display (page shell) . Loading.view
 -- registry is built, shown while it builds, every bot playing as the lobby
 -- last left it (opponent), each bot's slot in `invited`
 -- played from another browser over its channel (Parun.Web.Link), or that
--- game picked up where `resuming` stopped; its ending, and the games its
--- Rematch starts; then where it leads. A game with guests is kept until it
+-- game picked up where `resuming` stopped, its bots playing as it was
+-- kept; its ending, and the games its Rematch starts; then where it leads. A game with guests is kept until it
 -- is over (Link.saved), and a guest whose connection drops, or every guest
 -- of a game picked up, is asked to rejoin (rejoin) when next asked. Home
 -- from the game shows the home screen with the game kept; a new game chosen
@@ -744,7 +744,11 @@ play shell seats invited resuming = do
       starting
       chosen <- IORef.newIORef MkToHome
       seed <- maybe Key.fresh (pure . Link.seed) resuming
-      Monad.when (keeping && Maybe.isNothing resuming) . Browser.keepGame $ Link.saved (build shell) (Link.MkSaved seed seats (Set.toList invited) [])
+      -- A game picked up plays its bots as it was kept, and the lobby a
+      -- Rematch leads to offers that.
+      Monad.forM_ resuming $ \game -> IORef.writeIORef (opponent shell) (Link.difficulty game, Link.persona game)
+      bots@(difficulty, persona) <- IORef.readIORef (opponent shell)
+      Monad.when (keeping && Maybe.isNothing resuming) . Browser.keepGame $ Link.saved (build shell) (Link.MkSaved seed seats (Set.toList invited) difficulty persona [])
       let rejoinSlot i = do
             back <- rejoin shell i (Rejoin.host (Text.pack ("Player " <> show (i + 2))))
             Monad.when back (IORef.modifyIORef' down (Set.delete i))
@@ -752,7 +756,6 @@ play shell seats invited resuming = do
           remotes = Map.fromList [(seatOf i, Link.remote (rejoinSlot i) (channelOf i)) | i <- Set.toList invited]
           kept = if keeping then Browser.keepReply . Link.savedReply else const (pure ())
       parsed <- foldMap LazyMap.elems . cards <$> IORef.readIORef (loaded shell)
-      bots <- IORef.readIORef (opponent shell)
       ended <- Hotseat.game (page shell) reg parsed (tableOf shell) (level shell) bots (fmap (Bifunctor.first Text.unpack) seats) remotes seed (foldMap Link.replies resuming) kept tellAll (leaveFor shell chosen)
       Monad.when keeping Browser.forgetGame
       case ended of
