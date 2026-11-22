@@ -16,6 +16,8 @@ import qualified Parun.AttackKeywordTriggerSpec
 import qualified Parun.AttractionSpec
 import qualified Parun.AuraSpec
 import qualified Parun.BattleSpec
+import qualified Parun.Benchmark.ConfigSpec
+import qualified Parun.Benchmark.FlagSpec
 import qualified Parun.Benchmark.HarnessSpec
 import qualified Parun.BindingSpec
 import qualified Parun.BoardEffectSpec
@@ -1089,8 +1091,12 @@ import qualified Parun.PhasingSpec
 import qualified Parun.PlanechaseSpec
 import qualified Parun.PlaneswalkerCombatSpec
 import qualified Parun.PlaneswalkerSpec
+import qualified Parun.Play.Command.ConfigSpec
+import qualified Parun.Play.Command.FlagSpec
 import qualified Parun.Play.GeneratorSpec
 import qualified Parun.Play.KeySpec
+import qualified Parun.Play.Match.ConfigSpec
+import qualified Parun.Play.Match.FlagSpec
 import qualified Parun.Play.OpponentSpec
 import qualified Parun.PlaySpec
 import qualified Parun.PlayerDesignationSpec
@@ -1212,6 +1218,8 @@ spec s reference corpus = do
   Parun.AttractionSpec.spec s registry
   Parun.AuraSpec.spec s registry
   Parun.BattleSpec.spec s registry
+  Parun.Benchmark.ConfigSpec.spec s
+  Parun.Benchmark.FlagSpec.spec s
   Parun.Benchmark.HarnessSpec.spec s
   Parun.BindingSpec.spec s
   Parun.BoardEffectSpec.spec s registry
@@ -2230,6 +2238,10 @@ spec s reference corpus = do
   Parun.Extra.Word64Spec.spec s
   Parun.Play.GeneratorSpec.spec s
   Parun.Play.KeySpec.spec s
+  Parun.Play.Command.ConfigSpec.spec s
+  Parun.Play.Command.FlagSpec.spec s
+  Parun.Play.Match.ConfigSpec.spec s
+  Parun.Play.Match.FlagSpec.spec s
   Parun.Play.OpponentSpec.spec s
   Parun.Extra.OrdSpec.spec s
   Parun.Extra.SemigroupSpec.spec s

@@ -14,12 +14,14 @@ import qualified Data.Text.Encoding as Encoding
 import qualified GHC.Clock as Clock
 import qualified GHC.Stats as Stats
 import qualified Numeric.Natural as Natural
+import qualified Parun.Benchmark.Config as Config
+import qualified Parun.Benchmark.Flag as Flag
+import qualified Parun.CommandLine as CommandLine
 import qualified Parun.Extra.Word64 as Word64
 import qualified Parun.JsonCodec.Codec as Codec
 import qualified Parun.JsonCodec.Common as Common
 import qualified Parun.JsonCodec.Fields as Fields
 import qualified System.Environment as Environment
-import qualified System.Exit as Exit
 import qualified System.IO as IO
 import qualified System.Mem as Mem
 
@@ -72,48 +74,28 @@ resultCodec = Fields.object $ do
   a <- Fields.defaulted "allocatedBytes" Nothing (Common.maybe Common.natural) allocatedBytes
   pure MkResult {label = l, meanPicoseconds = m, stdevPicoseconds = s, allocatedBytes = a}
 
--- | Selected benchmarks and where to write their JSON.
-data Options = MkOptions
-  { substring :: Maybe Text.Text,
-    json :: Maybe FilePath
-  }
-  deriving (Eq, Show)
+-- | Whether the config selects the benchmark: its name holds one of the
+-- patterns, or there are none.
+selected :: Config.Config -> Benchmark -> Bool
+selected config benchmark = null (Config.patterns config) || any (`Text.isInfixOf` name benchmark) (Config.patterns config)
 
-parseOptions :: [String] -> Either String Options
-parseOptions arguments = case arguments of
-  [] -> Right MkOptions {substring = Nothing, json = Nothing}
-  "-p" : p : rest -> do
-    o <- parseOptions rest
-    pure o {substring = Just (Text.pack p)}
-  "--json" : file : rest -> do
-    o <- parseOptions rest
-    pure o {json = Just file}
-  argument : _ -> Left $ "unexpected argument: " <> argument
-
-usage :: String
-usage = "usage: parun bench [-p SUBSTRING] [--json FILE]"
-
-selected :: Options -> Benchmark -> Bool
-selected options benchmark = case substring options of
-  Nothing -> True
-  Just p -> Text.isInfixOf p (name benchmark)
-
--- | Runs every selected benchmark, printing each result as it lands.
-defaultMain :: [Benchmark] -> IO ()
-defaultMain benchmarks = do
+-- | What the command line asks for, or the exit refusing it
+-- ('CommandLine.configured'), read before any benchmark's input is.
+configured :: IO Config.Config
+configured = do
   arguments <- Environment.getArgs
-  options <- case parseOptions arguments of
-    Left problem -> do
-      IO.hPutStrLn IO.stderr problem
-      IO.hPutStrLn IO.stderr usage
-      Exit.exitFailure
-    Right o -> pure o
+  CommandLine.configured Flag.usage Config.help (Flag.fromArguments arguments >>= Config.fromFlags)
+
+-- | Runs every benchmark the config selects, printing each result as it
+-- lands.
+defaultMain :: Config.Config -> [Benchmark] -> IO ()
+defaultMain config benchmarks = do
   IO.hSetBuffering IO.stdout IO.LineBuffering
-  results <- Monad.forM (filter (selected options) benchmarks) $ \benchmark -> do
+  results <- Monad.forM (filter (selected config) benchmarks) $ \benchmark -> do
     result <- measureBenchmark benchmark
     putStrLn $ renderResult result
     pure result
-  Foldable.for_ (json options) $ \file ->
+  Foldable.for_ (Config.json config) $ \file ->
     ByteString.writeFile file . Encoding.encodeUtf8 . Common.render . Codec.encode (Common.list resultCodec) $ results
 
 measure :: Benchmark -> Natural.Natural -> IO Measurement

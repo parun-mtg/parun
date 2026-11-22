@@ -83,10 +83,22 @@ main = do
     "meta" : rest -> Parun.Play.Meta.main rest
     "bench" : rest -> Environment.withArgs rest Parun.Benchmark.main
     "test" : rest -> Environment.withArgs rest Parun.Test.main
+    [help] | elem help ["-h", "--help"] -> Environment.getProgName >>= putStr . overview
     _ -> do
-      name <- Environment.getProgName
-      IO.hPutStrLn IO.stderr $ "usage: " <> name <> " (schema [scenario] | deck [--format FORMAT] [--pool FILE] FILE | ingest FILE | oracle | translate MTGISH CANDIDATES [--out DIR] [--set CODE] [NAME | @FILE...] | scenario [--perturb] FILE... | play [OPTION...] DECK DECK | match [OPTION...] DECK DECK | meta [OPTION...] META DECK [DECK] | bench | test)"
+      Environment.getProgName >>= IO.hPutStr IO.stderr . overview
       Exit.exitFailure
+
+-- | The commands the executable named `name` dispatches to, each with its own
+-- usage behind `--help`.
+overview :: String -> String
+overview name =
+  unlines
+    [ "usage: " <> name <> " COMMAND [ARGUMENT...]",
+      "",
+      "commands: schema, deck, ingest, oracle, translate, scenario, play, match, meta, bench, test",
+      "",
+      "Run `" <> name <> " COMMAND --help` for a command's usage."
+    ]
 
 -- | `parun deck`: its command line read (Parun.CommandLine.Deck.Config), then
 -- 'deck'.

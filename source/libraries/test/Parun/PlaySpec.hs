@@ -25,7 +25,7 @@ import qualified Parun.Engine.PlayerView as PlayerView
 import qualified Parun.Engine.Resolve.Effect as Resolve
 import qualified Parun.Engine.Setup as Setup
 import qualified Parun.Engine.Stack as Stack
-import qualified Parun.Play.Command as Command
+import qualified Parun.Play.Command.Config as Config
 import qualified Parun.Play.Game as Game
 import qualified Parun.Play.Wording as Wording
 import qualified Parun.Registry as Registry
@@ -339,10 +339,10 @@ spec s registry = Spec.describe s "Play" $ do
     Spec.assertBool s (any (\((first, _), heard) -> any (\n -> otherSeat n `elem` pickedIn heard) first) runs) "the bot sometimes draws"
 
   Spec.it s "parun play refuses a seat neither the bot nor the line protocol plays" $ do
-    Spec.assertEqWith s "no seat the bot's" (Command.unplayed PlayOptions.none 2) (Just 1)
-    Spec.assertEqWith s "one seat the bot's" (Command.unplayed PlayOptions.none {PlayOptions.bots = Set.singleton 1} 3) (Just 2)
-    Spec.assertEqWith s "every seat the bot's" (Command.unplayed PlayOptions.none {PlayOptions.bots = Set.fromList [1, 2]} 2) Nothing
-    Spec.assertEqWith s "over the line protocol" (Command.unplayed PlayOptions.none {PlayOptions.json = True} 2) Nothing
+    Spec.assertEqWith s "no seat the bot's" (Config.unplayed PlayOptions.none 2) (Just 1)
+    Spec.assertEqWith s "one seat the bot's" (Config.unplayed PlayOptions.none {PlayOptions.bots = Set.singleton 1} 3) (Just 2)
+    Spec.assertEqWith s "every seat the bot's" (Config.unplayed PlayOptions.none {PlayOptions.bots = Set.fromList [1, 2]} 2) Nothing
+    Spec.assertEqWith s "over the line protocol" (Config.unplayed PlayOptions.none {PlayOptions.json = True} 2) Nothing
 
 -- A game after setup: alice red, bob green, hands drawn.
 started :: (Monad m) => Spec.Spec m n -> Registry.Registry m -> m GameState.GameState

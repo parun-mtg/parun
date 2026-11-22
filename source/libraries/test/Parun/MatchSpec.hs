@@ -2,7 +2,8 @@
 -- tally.
 module Parun.MatchSpec where
 
-import qualified Control.Monad as Monad
+import qualified Control.Exception as Exception
+import qualified Data.Bifunctor as Bifunctor
 import qualified Data.Either as Either
 import qualified Data.Foldable as Foldable
 import qualified Data.List.NonEmpty as NonEmpty
@@ -16,6 +17,8 @@ import qualified Parun.Codec.Scenario as Codec.Scenario
 import qualified Parun.JsonCodec.Codec as Codec
 import qualified Parun.Play.Command as Command
 import qualified Parun.Play.Match as Match
+import qualified Parun.Play.Match.Config as Config
+import qualified Parun.Play.Match.Flag as Flag
 import qualified Parun.Play.Opponent as Opponent
 import qualified Parun.Play.Search as Search
 import qualified Parun.Registry as Registry
@@ -40,14 +43,12 @@ import qualified Parun.Types.TeamId as TeamId
 import qualified Parun.Types.Timed as Timed
 import qualified Parun.Types.TurnRegisters as TurnRegisters
 import qualified Parun.Types.When as When
-import qualified System.Console.GetOpt as GetOpt
 
 spec :: (Monad m, Monad n) => Spec.Spec m n -> Registry.Registry m -> n ()
 spec s registry = Spec.describe s "Match" $ do
   Spec.it s "--level, --mistakes and --persona set the search bot's budget and weights by name, in every seat or one" $ do
-    let parse arguments = case GetOpt.getOpt GetOpt.Permute Match.flags arguments of
-          (updates, [], []) -> Monad.foldM (\options update -> update options) MatchOptions.none updates
-          (_, _, problems) -> Left (concat problems)
+    let parse :: [String] -> Either String MatchOptions.MatchOptions
+        parse arguments = Bifunctor.bimap (\(Exception.SomeException e) -> Exception.displayException e) Config.options (Flag.fromArguments arguments >>= uncurry (Config.fromFlags [] (Just 0)))
         parsed = parse ["--level", "2=easy", "--mistakes", "1=5", "--persona", "aggro", "--persona", "2=control"]
     Spec.assertEqWith s "the budgets" (fmap MatchOptions.budgets parsed) (Right (Map.fromList [(1, MatchOptions.budget {SearchBudget.mistakes = 5}), (2, Opponent.budgetAt Difficulty.MkEasy MatchOptions.budget)]))
     Spec.assertEqWith s "the weights" (fmap MatchOptions.weighing parsed) (Right (Map.fromList [(1, Left Persona.MkAggro), (2, Left Persona.MkControl)]))

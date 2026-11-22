@@ -1,6 +1,7 @@
 module Parun.Benchmark.HarnessSpec where
 
 import qualified Data.Text as Text
+import qualified Parun.Benchmark.Config as Config
 import qualified Parun.Benchmark.Harness as Harness
 import qualified Parun.JsonCodec.Codec as Codec
 import qualified Parun.JsonCodec.Common as Common
@@ -8,24 +9,15 @@ import qualified Parun.Spec as Spec
 
 spec :: (Monad m, Monad n) => Spec.Spec m n -> n ()
 spec s = Spec.describe s "Parun.Benchmark.Harness" $ do
-  Spec.describe s "parseOptions" $ do
-    Spec.it s "selects nothing and writes nothing by default" $
-      Spec.assertEq s (Harness.parseOptions []) (Right Harness.MkOptions {Harness.substring = Nothing, Harness.json = Nothing})
-    Spec.it s "reads a pattern and a JSON file in either order" $
-      Spec.assertEq
-        s
-        (Harness.parseOptions ["--json", "bench.json", "-p", "legal"])
-        (Right Harness.MkOptions {Harness.substring = Just (Text.pack "legal"), Harness.json = Just "bench.json"})
-    Spec.it s "refuses a tasty-bench flag" $
-      Spec.assertEq s (Harness.parseOptions ["--csv", "bench.csv"]) (Left "unexpected argument: --csv")
-
   Spec.describe s "selected" $ do
     let benchmark = Harness.whnf "legal actions 40" id ()
-        options p = Harness.MkOptions {Harness.substring = fmap Text.pack p, Harness.json = Nothing}
-    Spec.it s "keeps a name holding the substring" $
-      Spec.assertBool s (Harness.selected (options (Just "actions 4")) benchmark) "expected a match"
-    Spec.it s "drops a name lacking it" $
-      Spec.assertBool s (not $ Harness.selected (options (Just "payable")) benchmark) "expected no match"
+        config ps = Config.initial {Config.patterns = fmap Text.pack ps}
+    Spec.it s "keeps every name when no pattern is given" $
+      Spec.assertBool s (Harness.selected (config []) benchmark) "expected a match"
+    Spec.it s "keeps a name holding any pattern" $
+      Spec.assertBool s (Harness.selected (config ["payable", "actions 4"]) benchmark) "expected a match"
+    Spec.it s "drops a name lacking every pattern" $
+      Spec.assertBool s (not $ Harness.selected (config ["payable", "goldfish"]) benchmark) "expected no match"
 
   Spec.describe s "fitTimes" $ do
     Spec.it s "fits exactly linear timings with no residual" $

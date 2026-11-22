@@ -6,21 +6,24 @@ import qualified Control.Monad as Monad
 import qualified Control.Monad.Trans.Class as Trans
 import qualified Control.Monad.Trans.State.Strict as State
 import qualified Data.Bifunctor as Bifunctor
+import qualified Data.Foldable as Foldable
 import qualified Data.Functor.Identity as Identity
 import qualified Data.List.NonEmpty as NonEmpty
 import qualified Data.Map.Strict as Map
 import qualified Data.Maybe as Maybe
 import qualified Data.Sequence as Seq
-import qualified Data.Set as Set
 import qualified Data.Text as Text
 import qualified Data.Text.IO as TextIO
 import Numeric.Natural (Natural)
+import qualified Parun.CommandLine as CommandLine
 import qualified Parun.DeckList as DeckList
 import qualified Parun.Extra.Natural as Natural
 import qualified Parun.Play.Command as Command
 import qualified Parun.Play.Game as Game
 import qualified Parun.Play.Generator as Generator
 import qualified Parun.Play.Key as Key
+import qualified Parun.Play.Match.Config as Config
+import qualified Parun.Play.Match.Flag as Flag
 import qualified Parun.Play.Opponent as Opponent
 import qualified Parun.Play.Record as Record
 import qualified Parun.Play.Search as Search
@@ -33,85 +36,32 @@ import qualified Parun.Types.GameState as GameState
 import qualified Parun.Types.Key as Key.Type
 import qualified Parun.Types.Limits as Limits
 import qualified Parun.Types.MatchOptions as MatchOptions
-import qualified Parun.Types.Persona as Persona
 import qualified Parun.Types.PlayerId as PlayerId
-import qualified Parun.Types.Playout as Playout
 import qualified Parun.Types.Result as Result
 import qualified Parun.Types.SearchBudget as SearchBudget
-import qualified Parun.Types.SearchMethod as SearchMethod
 import qualified Parun.Types.Tally as Tally
 import qualified Parun.Types.TeamId as TeamId
 import qualified Parun.Types.Timed as Timed
 import qualified Parun.Types.TurnRegisters as TurnRegisters
 import qualified Parun.Types.Weights as Weights.Type
 import qualified Parun.Weights as Weights
-import qualified System.Console.GetOpt as GetOpt
-import qualified System.Exit as Exit
 import qualified System.IO as IO
-import qualified Text.Read as Read
 
 main :: [String] -> IO ()
-main arguments = case GetOpt.getOpt GetOpt.Permute flags arguments of
-  (updates, [one, two], []) -> case Monad.foldM (\options update -> update options) MatchOptions.none updates of
-    Left problem -> usage [problem]
-    Right options -> do
-      registry <- Registry.defaultRoot >>= Registry.loadRoot >>= Registry.defaultRegistry
-      lists <- (,) <$> Command.orExit (Command.load registry one) <*> Command.orExit (Command.load registry two)
-      format <- Command.orExit (Command.settle Nothing [(one, fst lists), (two, snd lists)])
-      searchers <- Command.orExit (fmap (Bifunctor.first pure) (searchersOf options))
-      prior <- priorOf registry options
-      match options searchers prior registry format (Bifunctor.bimap DeckList.deck DeckList.deck lists)
-  (_, _, problems) -> usage problems
-
-flags :: [GetOpt.OptDescr (MatchOptions.MatchOptions -> Either String MatchOptions.MatchOptions)]
-flags =
-  [ GetOpt.Option [] ["seed"] (GetOpt.ReqArg (\s o -> maybe (Left ("not a seed: " <> s)) (\k -> Right o {MatchOptions.seed = Just k}) (Key.fromHex (Text.pack s))) "KEY") "the key each game's is derived from, 64 hexadecimal digits, said when the match ends; drawn from the operating system when absent",
-    GetOpt.Option [] ["games"] (GetOpt.ReqArg (\s o -> maybe (Left ("not a number of games: " <> s)) (\n -> Right o {MatchOptions.games = n}) (Read.readMaybe s)) "N") "how many games to play; 100 when absent",
-    GetOpt.Option [] ["save"] (GetOpt.ReqArg (\s o -> Right o {MatchOptions.save = Just s}) "DIR") "save each game in this directory as a scenario",
-    GetOpt.Option [] ["search"] (GetOpt.ReqArg (\s o -> maybe (Left ("not a seat: " <> s)) (\n -> Right o {MatchOptions.searching = Set.insert n (MatchOptions.searching o)}) (Monad.mfilter (`elem` [1, 2]) (Read.readMaybe s))) "SEAT") "the search bot plays this seat, 1 or 2; the random bot plays every other",
-    GetOpt.Option [] ["samples"] (GetOpt.ReqArg (perSeat "a number of samples" (Monad.mfilter (> 0) . Read.readMaybe) (\n b -> b {SearchBudget.samples = n})) "[SEAT=]N") "the search bot's playouts of each option, in every seat or in SEAT alone; 2 when absent",
-    GetOpt.Option [] ["turns"] (GetOpt.ReqArg (perSeat "a number of turns" Read.readMaybe (\n b -> b {SearchBudget.turns = n})) "[SEAT=]N") "the turns a playout may begin after the decision's before it is cut off and its position scored, in every seat or in SEAT alone; 0 when absent, ending a playout as the next turn begins",
-    GetOpt.Option [] ["cutoff"] (GetOpt.ReqArg (perSeat "a number of prompts" Read.readMaybe (\n b -> b {SearchBudget.prompts = n})) "[SEAT=]N") "the prompts a playout is answered before it is cut off and its position scored, in every seat or in SEAT alone; 300 when absent",
-    GetOpt.Option [] ["playout"] (GetOpt.ReqArg (perSeat "a playout policy, random, greedy, polar or classified" playoutNamed (\n b -> b {SearchBudget.playout = n})) "[SEAT=]POLICY") "who answers every seat in the search bot's playouts, random (the random bot), greedy (playing a land, else casting a permanent spell, where it can), polar (greedy, choosing targets by whether their effect harms or helps them) or classified (polar, choosing modes and payments that way too), in every seat or in SEAT alone; random when absent",
-    GetOpt.Option [] ["method"] (GetOpt.ReqArg (perSeat "a search method, flat or tree" methodNamed (\n b -> b {SearchBudget.method = n})) "[SEAT=]METHOD") "how the search bot spends its playouts, flat (each option played out alike) or tree (one information-set tree over every seat's decisions, the playouts of every option shared by it), in every seat or in SEAT alone; flat when absent",
-    GetOpt.Option [] ["candidates"] (GetOpt.ReqArg (perSeat "a number of candidate worlds" Read.readMaybe (\n b -> b {SearchBudget.candidates = n})) "[SEAT=]N") "the worlds the search bot deals once at a decision and weighs by how likely each made the plays its opponents made at priority, every playout's world drawn among them, in every seat or in SEAT alone; 0 when absent, each playout's world dealt fresh",
-    GetOpt.Option [] ["mistakes"] (GetOpt.ReqArg (perSeat "a percent of decisions" (Monad.mfilter (<= 100) . Read.readMaybe) (\n b -> b {SearchBudget.mistakes = n})) "[SEAT=]PERCENT") "the percent of the search bot's decisions at which it takes the option scored next below the best, in every seat or in SEAT alone; 0 when absent",
-    GetOpt.Option [] ["level"] (GetOpt.ReqArg (perSeat "a level, easy, medium or hard" (Opponent.named Opponent.difficultyName) Opponent.budgetAt) "[SEAT=]LEVEL") "how strongly the search bot plays, easy, medium or hard, setting its samples and mistakes (Parun.Play.Opponent), in every seat or in SEAT alone; hard when absent",
-    GetOpt.Option [] ["weights"] (GetOpt.ReqArg (weighed (Just . Right)) "[SEAT=]FILE") "the file of the weights the search bot scores a cut-off playout's position by (Parun.Codec.Weights), in every seat or in SEAT alone; every feature weighted 1 on each side when absent",
-    GetOpt.Option [] ["persona"] (GetOpt.ReqArg (weighed (fmap Left . Opponent.named Opponent.personaName)) "[SEAT=]PERSONA") "the weights the search bot scores a cut-off playout's position by named, balanced, aggro or control (Parun.Play.Opponent), in every seat or in SEAT alone; balanced when absent",
-    GetOpt.Option [] ["meta"] (GetOpt.ReqArg (\s o -> Right o {MatchOptions.meta = Just s}) "META") "the deck lists are not known: the search bot infers each opponent's from this meta file's decks; each list known when absent",
-    GetOpt.Option [] ["pool"] (GetOpt.ReqArg (\s o -> Right o {MatchOptions.pool = Just (Text.pack s)}) "FORMAT") "the deck lists are not known and no meta is named: the search bot deals each opponent's unseen cards from this format's pool, from every card where it has none"
-  ]
-
--- | A flag's value for each seat, or with a `SEAT=` prefix for that seat
--- alone, set in its budget.
-perSeat :: String -> (String -> Maybe a) -> (a -> SearchBudget.SearchBudget -> SearchBudget.SearchBudget) -> String -> MatchOptions.MatchOptions -> Either String MatchOptions.MatchOptions
-perSeat what parse set s o = case seated s of
-  Just (n, value) | Just x <- parse value -> Right o {MatchOptions.budgets = Map.adjust (set x) n (MatchOptions.budgets o)}
-  _ | Just x <- parse s -> Right o {MatchOptions.budgets = Map.map (set x) (MatchOptions.budgets o)}
-  _ -> Left ("not " <> what <> ": " <> s)
-
--- | A flag's weights for each seat, or with a `SEAT=` prefix for that seat
--- alone, the last flag for a seat winning.
-weighed :: (String -> Maybe (Either Persona.Persona FilePath)) -> String -> MatchOptions.MatchOptions -> Either String MatchOptions.MatchOptions
-weighed parse s o = case seated s of
-  Just (n, value) | Just x <- parse value -> Right o {MatchOptions.weighing = Map.insert n x (MatchOptions.weighing o)}
-  _ | Just x <- parse s -> Right o {MatchOptions.weighing = Map.fromList [(n, x) | n <- [1, 2]]}
-  _ -> Left ("not a persona: " <> s)
-
--- | The playout policy a `--playout` value names.
-playoutNamed :: String -> Maybe Playout.Playout
-playoutNamed s = lookup s [("random", Playout.Random), ("greedy", Playout.Greedy), ("polar", Playout.Polar), ("classified", Playout.Classified)]
-
--- | The search method a `--method` value names.
-methodNamed :: String -> Maybe SearchMethod.SearchMethod
-methodNamed s = lookup s [("flat", SearchMethod.Flat), ("tree", SearchMethod.InformationSet)]
-
--- | A seat, 1 or 2, and the value it prefixes with `=`.
-seated :: String -> Maybe (Natural, String)
-seated s = case break (== '=') s of
-  (seat, '=' : value) | Just n <- Monad.mfilter (`elem` [1, 2]) (Read.readMaybe seat) -> Just (n, value)
-  _ -> Nothing
+main arguments = do
+  config <- CommandLine.configured Flag.usage Config.help (Flag.fromArguments arguments >>= uncurry (Config.fromFlags ["DECK", "DECK"] (Just 2)))
+  Foldable.for_ (pair (Config.files config)) $ \(one, two) -> do
+    let options = Config.options config
+    registry <- Registry.defaultRoot >>= Registry.loadRoot >>= Registry.defaultRegistry
+    lists <- (,) <$> Command.orExit (Command.load registry one) <*> Command.orExit (Command.load registry two)
+    format <- Command.orExit (Command.settle Nothing [(one, fst lists), (two, snd lists)])
+    searchers <- Command.orExit (fmap (Bifunctor.first pure) (searchersOf options))
+    prior <- priorOf registry options
+    match options searchers prior registry format (Bifunctor.bimap DeckList.deck DeckList.deck lists)
+  where
+    pair files = case files of
+      [one, two] -> Just (one, two)
+      _ -> Nothing
 
 -- | Each searching seat's budget and its weights: its persona's, or those
 -- its file holds (Parun.Weights).
@@ -132,12 +82,6 @@ searchersOf options =
 -- else from the known lists (Search.known).
 priorOf :: Registry.Registry Identity.Identity -> MatchOptions.MatchOptions -> IO Search.Prior
 priorOf registry options = Maybe.fromMaybe (pure Search.known) (Command.inferring registry (MatchOptions.meta options) (MatchOptions.pool options))
-
-usage :: [String] -> IO a
-usage problems = do
-  mapM_ (IO.hPutStr IO.stderr) problems
-  IO.hPutStr IO.stderr (GetOpt.usageInfo "usage: parun match [OPTION...] DECK DECK" flags)
-  Exit.exitFailure
 
 -- | Plays the games one after another under `format`, saying how each ended
 -- on standard error, then the tally on standard output.
