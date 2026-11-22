@@ -16,6 +16,11 @@ import qualified Paths_parun as Paths
 defaultRoot :: IO FilePath
 defaultRoot = Paths.getDataFileName "decks"
 
+-- | Where the sets data/decks/sets holds are named and dated, which the web
+-- client's deck browser reads (Parun.Web.DeckBrowser.releasesOf).
+setsPath :: IO FilePath
+setsPath = Paths.getDataFileName "decks/sets.json"
+
 -- | Every deck file beneath a root, ascending by path.
 listRoot :: FilePath -> IO [FilePath]
 listRoot = fmap List.sort . deckFiles
