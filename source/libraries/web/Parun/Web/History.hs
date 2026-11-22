@@ -68,7 +68,8 @@ data Who
   = -- | The player this page plays.
     MkYou
   | MkBot
-  | -- | A player invited from another browser, or the host who invited you.
+  | -- | A player invited from another browser or on this screen, or the
+    -- host who invited you.
     MkPerson
   deriving (Bounded, Enum, Eq, Show)
 

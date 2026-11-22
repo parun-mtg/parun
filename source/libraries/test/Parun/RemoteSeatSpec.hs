@@ -1,6 +1,7 @@
 -- Covers Parun.Web.Link, Parun.Play.Protocol's bySeat and Parun.Web.Lobby's
--- invites: games whose guests' seats are played from other pages, each over
--- its own channel held in memory, and the agreement that starts them.
+-- invites and players here: games whose guests' seats are played from other
+-- pages, each over its own channel held in memory, the agreement that starts
+-- them, and a game whose seats share the host's page.
 module Parun.RemoteSeatSpec where
 
 import qualified Control.Monad as Monad
@@ -14,6 +15,7 @@ import qualified Data.Sequence as Seq
 import qualified Data.Set as Set
 import qualified Data.Text as Text
 import qualified Parun.BotSpec as BotSpec
+import qualified Parun.Play.Command as Command
 import qualified Parun.Play.Game as Game
 import qualified Parun.Play.Protocol as Protocol
 import qualified Parun.Play.Search as Search
@@ -23,8 +25,11 @@ import qualified Parun.Support as S
 import qualified Parun.Types.Answerer as Answerer
 import qualified Parun.Types.Asked as Asked
 import qualified Parun.Types.Deck as Deck
+import qualified Parun.Types.Difficulty as Difficulty
 import qualified Parun.Types.GameState as GameState
 import qualified Parun.Types.Limits as Limits
+import qualified Parun.Types.Persona as Persona
+import qualified Parun.Types.PlayOptions as PlayOptions
 import qualified Parun.Types.PlayerId as PlayerId
 import qualified Parun.Types.PlayerView as PlayerView
 import qualified Parun.Types.Playout as Playout
@@ -39,6 +44,7 @@ import qualified Parun.Web.Ending as Ending
 import qualified Parun.Web.Html as Html
 import qualified Parun.Web.Link as Link
 import qualified Parun.Web.Lobby as Lobby
+import qualified Parun.Web.Question as Question.Web
 
 spec :: (Monad m, Monad n) => Spec.Spec m n -> Registry.Registry m -> n ()
 spec s registry = Spec.describe s "RemoteSeat" $ do
@@ -47,7 +53,7 @@ spec s registry = Spec.describe s "RemoteSeat" $ do
         two = Text.pack "sets/a/two"
         pick name = Lobby.update (Lobby.MkPick name) Text.empty
         picked = pick one (Lobby.withDecks (Seq.fromList [one, two]) Map.empty Map.empty Lobby.new)
-        invited = Lobby.update (Lobby.MkInviteSlot 0) Text.empty picked
+        invited = Lobby.update (Lobby.MkOccupy Lobby.MkInvited 0) Text.empty picked
         connected = Lobby.linked 0 (\invite -> invite {Lobby.connected = True}) invited
         chosen = Lobby.heard 0 (Link.MkHello two (Text.pack "20 Forest\n")) connected
         hostReady = Lobby.update Lobby.MkReady Text.empty chosen
@@ -63,7 +69,7 @@ spec s registry = Spec.describe s "RemoteSeat" $ do
     let one = Text.pack "sets/a/one"
         two = Text.pack "sets/a/two"
         added = Lobby.update Lobby.MkAddBot Text.empty (Lobby.update (Lobby.MkPick one) Text.empty (Lobby.withDecks (Seq.fromList [one, two]) Map.empty Map.empty Lobby.new))
-        invited = Lobby.update (Lobby.MkInviteSlot 1) Text.empty (Lobby.update (Lobby.MkInviteSlot 0) Text.empty added)
+        invited = Lobby.update (Lobby.MkOccupy Lobby.MkInvited 1) Text.empty (Lobby.update (Lobby.MkOccupy Lobby.MkInvited 0) Text.empty added)
         joined i = Lobby.heard i (Link.MkHello two (Text.pack "20 Forest\n")) . Lobby.linked i (\invite -> invite {Lobby.connected = True})
         chosen = joined 1 (joined 0 invited)
         hostReady = Lobby.update Lobby.MkReady Text.empty chosen
@@ -85,6 +91,19 @@ spec s registry = Spec.describe s "RemoteSeat" $ do
     matchup <- BotSpec.bears s registry
     wholeGame s (matchup <> pure (S.carol, snd (NonEmpty.head matchup))) [S.bob, S.carol]
 
+  Spec.it s "a whole game with a player on the host's screen: the lobby's options seat no bot there, and the screen is handed between the seats" $ do
+    matchup <- BotSpec.bears s registry
+    let options = Lobby.playOptions (Difficulty.MkEasy, Persona.MkBalanced) 2 (Set.singleton S.bob)
+        onScreen request = State.modify' (request :) >> pure (Just (Right (answer request)))
+    (outcome, requests) <- State.runStateT (Game.run (S.fixtureRegistry []) Nothing Limits.standard [] (Map.fromList [(Command.idOf n, Command.answerer (S.fixtureRegistry []) onScreen (pure Nothing) (const (pure ())) (pure Map.empty) Search.unkept options Search.known n) | n <- [1, 2]]) (S.seeded 1) Map.empty matchup) []
+    let inOrder = reverse requests
+        seats = fmap (Question.seat . Request.question) inOrder
+        handed = [Html.content (Question.Web.handOff request) | (before, request) <- zip seats (drop 1 inOrder), Question.seat (Request.question request) /= before]
+    Spec.assertBool s (case outcome of Right (Result.Won _, _) -> True; _ -> False) ("finished: " <> show (fmap fst outcome))
+    Spec.assertEqWith s "both seats asked on the one page" (ListUtils.nubOrd seats) [S.alice, S.bob]
+    Spec.assertBool s (elem (Text.pack "Pass the screen to Player 2.Ready") handed && elem (Text.pack "Pass the screen to Player 1.Ready") handed) "handed each way"
+    Spec.assertEqWith s "no bot seated" (PlayOptions.bots options) Set.empty
+
   Spec.it s "a guest whose connection drops mid-game rejoins, is sent the match-up, its seat and the request again, and the game finishes" $ do
     matchup <- BotSpec.bears s registry
     (outcome, wire) <- State.runStateT (hosted [S.bob] matchup) (MkWire Map.empty Map.empty Map.empty (Map.singleton S.bob 5) 0 [])
@@ -95,7 +114,7 @@ spec s registry = Spec.describe s "RemoteSeat" $ do
   Spec.it s "the match-up a game's guests are told again names every seat and every bot's deck drawn" $ do
     let seat name = (Text.pack name, Text.pack "20 Forest\n")
         seats = seat "sets/a/one" NonEmpty.:| [(Text.pack "sets/a/two", Text.pack "Name: Kamahl's Temper\n20 Forest\n"), seat "sets/a/three"]
-        rematched = Lobby.rematch seats (Set.singleton 1)
+        rematched = Lobby.rematch seats (Set.singleton 1) Set.empty
         told = Lobby.placesFor 1 rematched
     Spec.assertEqWith s "every seat named" (fmap Link.who told) [Text.pack "Host", Text.pack "Bot 1", Text.pack "You"]
     Spec.assertEqWith s "every deck named, the bot's among them" (fmap Link.deck told) [Text.pack "One (A)", Text.pack "Kamahl's Temper (A)", Text.pack "Three (A)"]
