@@ -3,12 +3,14 @@ module Parun.Web.LobbySpec where
 import qualified Data.Foldable as Foldable
 import qualified Data.List.NonEmpty as NonEmpty
 import qualified Data.Map.Strict as Map
+import qualified Data.Maybe as Maybe
 import qualified Data.Sequence as Seq
 import qualified Data.Set as Set
 import qualified Data.Text as Text
 import qualified Parun.Spec as Spec
 import qualified Parun.Types.CardName as CardName
 import qualified Parun.Types.Color as Color
+import qualified Parun.Web.Attribute as Attribute
 import qualified Parun.Web.Diff as Diff
 import qualified Parun.Web.Html as Html
 import qualified Parun.Web.Link as Link
@@ -34,47 +36,78 @@ spec s = Spec.describe s "Parun.Web.Lobby" $ do
       Spec.assertEq s (Lobby.deckColours (\name -> Map.findWithDefault Set.empty name known) (Text.pack "4 Shock (M19) 156\n18 Forest\n# a comment\n2 Giant Growth\n1 Unknown Card")) (Set.fromList [Color.Red, Color.Green])
 
   Spec.describe s "update" $ do
-    Spec.it s "picks your deck, then moves on to the bot's" $ do
+    Spec.it s "picks your deck and stays on your seat" $ do
       let picked = Lobby.update (Lobby.MkPick b) Text.empty lobby
-      Spec.assertEq s (Lobby.mine picked, Lobby.choosing picked) (Just b, Lobby.MkTheirs 0)
+      Spec.assertEq s (Lobby.mine picked, Lobby.choosing picked) (Just b, Lobby.MkMine)
 
-    Spec.it s "picks the bot's deck once you have one" $ do
-      let picked = Lobby.update (Lobby.MkPick a) Text.empty $ Lobby.update (Lobby.MkPick b) Text.empty lobby
+    Spec.it s "never moves the seat chosen for on a pick" $ do
+      let seats = [Lobby.MkMine, Lobby.MkTheirs 0, Lobby.MkTheirs 1, Lobby.MkTheirs 2]
+          three = Lobby.update Lobby.MkAddBot Text.empty (Lobby.update Lobby.MkAddBot Text.empty lobby)
+          moved = [(slot, deck) | slot <- seats, let held = Lobby.update (Lobby.MkChoose slot) Text.empty three, deck <- [a, b, c, d], Lobby.choosing (Lobby.update (Lobby.MkPick deck) Text.empty held) /= slot]
+      Spec.assertEq s moved []
+
+    Spec.it s "picks the bot's deck once its seat is chosen" $ do
+      let picked = Lobby.update (Lobby.MkPick a) Text.empty . Lobby.update (Lobby.MkChoose (Lobby.MkTheirs 0)) Text.empty $ Lobby.update (Lobby.MkPick b) Text.empty lobby
       Spec.assertEq s (Lobby.mine picked, Lobby.theirs picked) (Just b, [Just a])
 
     Spec.it s "ignores a deck it does not hold" $ do
       Spec.assertEq s (Lobby.update (Lobby.MkPick $ Text.pack "nope") Text.empty lobby) lobby
 
     Spec.it s "drops the bot's deck when your deck is under another format" $ do
-      let picked = Lobby.update (Lobby.MkPick c) Text.empty . Lobby.update (Lobby.MkChoose Lobby.MkMine) Text.empty . Lobby.update (Lobby.MkPick a) Text.empty $ Lobby.update (Lobby.MkPick b) Text.empty lobby
+      let picked = Lobby.update (Lobby.MkPick c) Text.empty . Lobby.update (Lobby.MkChoose Lobby.MkMine) Text.empty . botPicks a $ Lobby.update (Lobby.MkPick b) Text.empty lobby
       Spec.assertEq s (Lobby.mine picked, Lobby.theirs picked) (Just c, [Nothing])
 
     Spec.it s "keeps the bot's deck when your deck is under its format" $ do
-      let picked = Lobby.update (Lobby.MkPick d) Text.empty . Lobby.update (Lobby.MkChoose Lobby.MkMine) Text.empty . Lobby.update (Lobby.MkPick d) Text.empty $ Lobby.update (Lobby.MkPick c) Text.empty lobby
+      let picked = Lobby.update (Lobby.MkPick d) Text.empty . Lobby.update (Lobby.MkChoose Lobby.MkMine) Text.empty . botPicks d $ Lobby.update (Lobby.MkPick c) Text.empty lobby
       Spec.assertEq s (Lobby.mine picked, Lobby.theirs picked) (Just d, [Just d])
 
     Spec.it s "refuses the bot a deck under another format than yours" $ do
-      let mineChosen = Lobby.update (Lobby.MkPick c) Text.empty lobby
-      Spec.assertEq s (Lobby.theirs (Lobby.update (Lobby.MkPick a) Text.empty mineChosen)) [Nothing]
+      Spec.assertEq s (Lobby.theirs (botPicks a (Lobby.update (Lobby.MkPick c) Text.empty lobby))) [Nothing]
 
     Spec.it s "seats up to three bots, each with its own deck, and unseats the last" $ do
       let added = Lobby.update Lobby.MkAddBot Text.empty
           three = added (added lobby)
-          picked = Lobby.update (Lobby.MkPick a) Text.empty . Lobby.update (Lobby.MkChoose (Lobby.MkTheirs 2)) Text.empty . Lobby.update (Lobby.MkPick b) Text.empty . Lobby.update (Lobby.MkChoose (Lobby.MkTheirs 0)) Text.empty $ Lobby.update (Lobby.MkPick a) Text.empty three
+          picked = Lobby.update (Lobby.MkPick a) Text.empty . Lobby.update (Lobby.MkChoose (Lobby.MkTheirs 2)) Text.empty . botPicks b $ Lobby.update (Lobby.MkPick a) Text.empty three
       Spec.assertEqWith s "three bots" (Lobby.theirs picked) [Just b, Nothing, Just a]
       Spec.assertEqWith s "no fourth" (Lobby.theirs (added three)) (Lobby.theirs three)
-      Spec.assertEqWith s "picking yours moves on to the first bot unchosen" (Lobby.choosing (Lobby.update (Lobby.MkPick a) Text.empty (Lobby.update (Lobby.MkChoose Lobby.MkMine) Text.empty picked))) (Lobby.MkTheirs 1)
       let dropped = Lobby.update Lobby.MkDropBot Text.empty picked
       Spec.assertEqWith s "the last unseated, and its slot no longer chosen" (Lobby.theirs dropped, Lobby.choosing dropped) ([Just b, Nothing], Lobby.MkMine)
       Spec.assertEqWith s "one bot stays" (Lobby.theirs (Lobby.update Lobby.MkDropBot Text.empty lobby)) [Nothing]
 
     Spec.it s "drops each bot's deck under another format than yours" $ do
-      let two = Lobby.update (Lobby.MkPick a) Text.empty . Lobby.update (Lobby.MkChoose (Lobby.MkTheirs 1)) Text.empty . Lobby.update (Lobby.MkPick c) Text.empty . Lobby.update (Lobby.MkChoose (Lobby.MkTheirs 0)) Text.empty $ Lobby.update Lobby.MkAddBot Text.empty lobby
+      let two = Lobby.update (Lobby.MkPick a) Text.empty . Lobby.update (Lobby.MkChoose (Lobby.MkTheirs 1)) Text.empty . botPicks c $ Lobby.update Lobby.MkAddBot Text.empty lobby
           picked = Lobby.update (Lobby.MkPick b) Text.empty (Lobby.update (Lobby.MkChoose Lobby.MkMine) Text.empty two)
-      Spec.assertEqWith s "the commander deck dropped" (Lobby.theirs picked, Lobby.choosing picked) ([Nothing, Just a], Lobby.MkTheirs 0)
+      Spec.assertEqWith s "the commander deck dropped" (Lobby.theirs picked, Lobby.choosing picked) ([Nothing, Just a], Lobby.MkMine)
 
     Spec.it s "filters by what is typed" $ do
       Spec.assertEq s (Lobby.search $ Lobby.update Lobby.MkSearch (Text.pack "webs") lobby) (Text.pack "webs")
+
+    Spec.it s "shows only the decks holding every colour toggled on" $ do
+      let red = Lobby.update (Lobby.MkColour Color.Red) Text.empty coloured
+          redGreen = Lobby.update (Lobby.MkColour Color.Green) Text.empty red
+      Spec.assertEqWith s "red" (Lobby.shown red) [a, b]
+      Spec.assertEqWith s "red and green" (Lobby.shown redGreen) [b]
+      Spec.assertEqWith s "toggled off" (Lobby.shown (Lobby.update (Lobby.MkColour Color.Red) Text.empty red)) (Lobby.shown coloured)
+      Spec.assertEqWith s "pressed" (Maybe.isJust (Html.search (pressedWith (Text.pack "Red")) (Lobby.view red)), Maybe.isJust (Html.search (pressedWith (Text.pack "Red")) (Lobby.view coloured))) (True, False)
+
+    Spec.it s "shows only the set chosen, and every set for none" $ do
+      let m12 = Lobby.update Lobby.MkSet (Text.pack "M12") lobby
+      Spec.assertEqWith s "one set" (Lobby.shown m12) [b]
+      Spec.assertEqWith s "every set" (Lobby.shown (Lobby.update Lobby.MkSet Text.empty m12)) [a, b, c, d]
+      Spec.assertEqWith s "the sets offered, by code" (Lobby.setsOf lobby) (fmap Text.pack ["FDC", "M12", "POR"])
+      Spec.assertBool s (Text.isInfixOf (Text.pack "<option value=\"M12\" selected=\"\">M12</option>") (Html.toText (Lobby.view m12))) "chosen in the menu"
+
+    Spec.it s "shows the saved decks apart from the shipped" $ do
+      let holding = Lobby.withDecks (Seq.fromList [a, saved]) Map.empty Lobby.new
+      Spec.assertEqWith s "precons" (Lobby.shown holding) [a]
+      Spec.assertEqWith s "my decks" (Lobby.shown (Lobby.update (Lobby.MkShelf Lobby.MkSaved) Text.empty holding)) [saved]
+
+    Spec.it s "invites a player to the bot left to a random deck, else to a new seat" $ do
+      let botChosen = botPicks a lobby
+      Spec.assertEqWith s "the random bot" (Lobby.inviteTarget lobby) (Just 0)
+      Spec.assertEqWith s "a new seat" (Lobby.inviteTarget botChosen) (Just 1)
+      let invited = Lobby.update (Lobby.MkInviteSlot 1) Text.empty botChosen
+      Spec.assertEqWith s "seated" (Lobby.theirs invited, Map.keys (Lobby.invites invited)) ([Just a, Nothing], [1])
 
   Spec.describe s "pairing" $ do
     Spec.it s "offers a Limited deck the decks naming no format that a Limited game takes" $ do
@@ -86,22 +119,18 @@ spec s = Spec.describe s "Parun.Web.Lobby" $ do
 
   Spec.describe s "flagged decks" $ do
     Spec.it s "badges a saved deck with problems Not legal" $ do
-      let holding = (Lobby.withDecks (Seq.fromList [a, saved]) Map.empty Lobby.new) {Lobby.illegal = Map.singleton saved [Text.pack "43 cards in the deck, fewer than 60"]}
+      let holding = (Lobby.withDecks (Seq.fromList [a, saved]) Map.empty Lobby.new) {Lobby.illegal = Map.singleton saved [Text.pack "43 cards in the deck, fewer than 60"], Lobby.shelf = Lobby.MkSaved}
       Spec.assertBool s (Text.isInfixOf (Text.pack "Not legal") (Html.toText (Lobby.view holding))) "badge"
       Spec.assertBool s (not (Text.isInfixOf (Text.pack "Not legal") (Html.toText (Lobby.view holding {Lobby.illegal = Map.empty})))) "no badge"
 
-    Spec.it s "refuses to start a flagged deck, listing why" $ do
-      let holding = flaggedMine
-          started = Lobby.update Lobby.MkStart Text.empty holding
-      Spec.assertEq s (Lobby.startable holding) (Left [Text.pack "43 cards in the deck, fewer than 60"])
-      Spec.assertBool s (Text.isInfixOf (Text.pack "43 cards in the deck, fewer than 60") (Html.toText (Lobby.view started))) "reason"
+    Spec.it s "cannot start a flagged deck, listing why" $ do
+      let page = Html.toText (Lobby.view flaggedMine)
+      Spec.assertEq s (Lobby.startable flaggedMine) (Left [Text.pack "43 cards in the deck, fewer than 60"])
+      Spec.assertBool s (Text.isInfixOf (Text.pack "disabled=\"\">Start game") page) "disabled"
+      Spec.assertBool s (Text.isInfixOf (Text.pack "43 cards in the deck, fewer than 60") page) "reason"
 
     Spec.it s "starts an unflagged deck" $ do
-      Spec.assertEq s (Lobby.startable (Lobby.update (Lobby.MkPick a) Text.empty flaggedMine {Lobby.choosing = Lobby.MkMine})) (Right a)
-
-    Spec.it s "a new pick clears the refusal" $ do
-      let started = Lobby.update Lobby.MkStart Text.empty flaggedMine
-      Spec.assertEq s (Lobby.refusal (Lobby.update (Lobby.MkPick a) Text.empty (started {Lobby.choosing = Lobby.MkMine}))) Nothing
+      Spec.assertEq s (Lobby.startable (Lobby.update (Lobby.MkPick a) Text.empty flaggedMine)) (Right a)
 
     Spec.it s "offers Build a deck" $ do
       let page = Lobby.view lobby
@@ -133,10 +162,13 @@ spec s = Spec.describe s "Parun.Web.Lobby" $ do
       Spec.assertEqWith s "typed" (fmap (\i -> (Lobby.importName i, Lobby.importText i)) (Lobby.importing typed)) (Just (Text.pack "Mine", Text.pack "4 Forest"))
       Spec.assertEqWith s "closed" (Lobby.importing (Lobby.update Lobby.MkCloseImport Text.empty typed)) Nothing
 
-    Spec.it s "makes an imported deck yours and closes the panel" $ do
+    Spec.it s "gives an imported deck to the seat chosen for, shows the saved decks and closes the panel" $ do
       let opened = Lobby.withDecks (Seq.fromList [a, saved]) Map.empty (Lobby.update Lobby.MkOpenImport Text.empty lobby)
           done = Lobby.imported saved opened
-      Spec.assertEqWith s "yours" (Lobby.mine done) (Just saved)
+          forBot = Lobby.imported saved (Lobby.update (Lobby.MkChoose (Lobby.MkTheirs 0)) Text.empty opened)
+      Spec.assertEqWith s "yours" (Lobby.mine done, Lobby.choosing done) (Just saved, Lobby.MkMine)
+      Spec.assertEqWith s "the bot's" (Lobby.mine forBot, Lobby.theirs forBot, Lobby.choosing forBot) (Nothing, [Just saved], Lobby.MkTheirs 0)
+      Spec.assertEqWith s "shelf" (Lobby.shelf done) Lobby.MkSaved
       Spec.assertEqWith s "closed" (Lobby.importing done) Nothing
 
     Spec.it s "empties every seat a deleted deck held" $ do
@@ -151,7 +183,7 @@ spec s = Spec.describe s "Parun.Web.Lobby" $ do
       Spec.assertEqWith s "a set's deck" (Lobby.playable b) True
       Spec.assertEqWith s "saved" (Lobby.playable (Text.pack "saved/all")) True
 
-    Spec.it s "groups saved decks under their own heading" $ do
+    Spec.it s "describes a saved deck as saved" $ do
       Spec.assertEq s (Lobby.describe saved) (Text.pack "SAVED", Text.pack "My Deck")
 
     Spec.it s "shows each problem with the deck imported" $ do
@@ -196,28 +228,42 @@ spec s = Spec.describe s "Parun.Web.Lobby" $ do
       Spec.assertEqWith s "read" (Lobby.reading later) False
 
   Spec.describe s "view" $ do
-    Spec.it s "lists the decks matching the filter, grouped by set" $ do
+    Spec.it s "lists the decks matching the filter, each badged with its set" $ do
       let page = Html.toText . Lobby.view $ lobby {Lobby.search = Text.pack "WEB"}
-      Spec.assertBool s (Text.isInfixOf (Text.pack "<h2>M12</h2>") page) "set"
+      Spec.assertBool s (Text.isInfixOf (Text.pack "<span class=\"set-badge\">M12</span>") page) "badge"
+      Spec.assertBool s (not (Text.isInfixOf (Text.pack "<h2>M12</h2>") page)) "no heading"
       Spec.assertBool s (Text.isInfixOf (Text.pack "Entangling Webs") page) "match"
       Spec.assertBool s (not $ Text.isInfixOf (Text.pack "Demo A") page) "filtered out"
 
     Spec.it s "lists only the decks the bot may play while choosing its deck" $ do
-      let page = Html.toText . Lobby.view $ Lobby.update (Lobby.MkPick c) Text.empty lobby
+      let page = Html.toText . Lobby.view . Lobby.update (Lobby.MkChoose (Lobby.MkTheirs 0)) Text.empty $ Lobby.update (Lobby.MkPick c) Text.empty lobby
       Spec.assertBool s (Text.isInfixOf (Text.pack "Wretched Ranks") page) "your format"
       Spec.assertBool s (not $ Text.isInfixOf (Text.pack "Entangling Webs") page) "another format"
+
+    Spec.it s "heads the decks with the seat chosen for, and marks that seat alone" $ do
+      let forBot = Lobby.update (Lobby.MkChoose (Lobby.MkTheirs 0)) Text.empty lobby
+          marked page = [Html.content seat | seat <- seatPicks page, pressed seat]
+      Spec.assertEqWith s "yours" (marked (Lobby.view lobby)) [Text.pack "YYouChoosing a deckNo deck yetChoose one to start"]
+      Spec.assertEqWith s "the bot's" (marked (Lobby.view forBot)) [Text.pack "BotChoosing a deckRandom deckDrawn when the game starts"]
+      Spec.assertBool s (Text.isInfixOf (Text.pack "<h2>Deck for Bot</h2>") (Html.toText (Lobby.view forBot))) "heading"
 
     Spec.it s "names a deck's format" $ do
       Spec.assertBool s (Text.isInfixOf (Text.pack "Commander") . Html.toText $ Lobby.view lobby) "format"
 
-    Spec.it s "cannot start without your deck" $ do
-      Spec.assertBool s (Text.isInfixOf (Text.pack "disabled=\"\">Start game") . Html.toText $ Lobby.view lobby) "disabled"
+    Spec.it s "disables Start, saying why, until every seat is ready" $ do
+      let state held = (Text.isInfixOf (Text.pack "disabled=\"\">Start game") (Html.toText (Lobby.view held)), Lobby.waiting held)
+          picked = Lobby.update (Lobby.MkPick a) Text.empty lobby
+      Spec.assertEqWith s "reading" (state Lobby.new) (True, Just "Reading the decks\x2026")
+      Spec.assertEqWith s "no deck" (state lobby) (True, Just "Choose your deck to start.")
+      Spec.assertEqWith s "ready" (state picked) (False, Nothing)
+      Spec.assertBool s (Text.isInfixOf (Text.pack "Choose your deck to start.") (Html.toText (Lobby.view lobby))) "the reason said"
+      Spec.assertBool s (Text.isInfixOf (Text.pack "Every seat has a deck. Ready to start.") (Html.toText (Lobby.view picked))) "ready said"
 
     Spec.it s "names each bot by its seat once there are two" $ do
       let one = Html.toText (Lobby.view lobby)
           two = Html.toText (Lobby.view (Lobby.update Lobby.MkAddBot Text.empty lobby))
-      Spec.assertBool s (Text.isInfixOf (Text.pack ">Bot<") one && not (Text.isInfixOf (Text.pack "Remove a bot") one)) "one bot"
-      Spec.assertBool s (Text.isInfixOf (Text.pack ">Bot 1<") two && Text.isInfixOf (Text.pack ">Bot 2<") two && Text.isInfixOf (Text.pack "Remove a bot") two) "two bots"
+      Spec.assertBool s (Text.isInfixOf (Text.pack ">Bot<") one && not (Text.isInfixOf (Text.pack ">Remove<") one)) "one bot"
+      Spec.assertBool s (Text.isInfixOf (Text.pack ">Bot 1<") two && Text.isInfixOf (Text.pack ">Bot 2<") two && Text.isInfixOf (Text.pack ">Remove<") two) "two bots"
 
     Spec.it s "says the decks are being read until they are" $ do
       let page = Html.toText (Lobby.view Lobby.new)
@@ -227,11 +273,22 @@ spec s = Spec.describe s "Parun.Web.Lobby" $ do
     Spec.it s "says why the decks did not load in place of reading them" $ do
       let page = Html.toText (Lobby.view Lobby.new {Lobby.problem = Just (Text.pack "Reload to try again.")})
       Spec.assertBool s (Text.isInfixOf (Text.pack "role=\"alert\">Reload to try again.") page) "problem"
-      Spec.assertBool s (not (Text.isInfixOf (Text.pack "Reading the decks") page)) "not reading"
+      Spec.assertBool s (not (Text.isInfixOf (Text.pack "<p class=\"empty\">Reading the decks") page)) "not reading"
 
     Spec.it s "sends a deck's name when it is tapped" $ do
       let page = Lobby.view lobby
-      Spec.assertEq s (Html.labelled (Text.pack "button") (Text.pack "Entangling Webs") page >>= \path -> Html.handler (Text.pack "click") path page) . Just $ Lobby.MkPick b
+      Spec.assertEq s (Html.search (tileOf (Text.pack "Entangling Webs")) page >>= \path -> Html.handler (Text.pack "click") path page) . Just $ Lobby.MkPick b
+
+    Spec.it s "draws a deck's curve on its tile once read" $ do
+      let page = Html.toText (Lobby.view lobby {Lobby.curves = Map.singleton b [0, 4, 8, 6, 2, 0, 1]})
+      Spec.assertBool s (Text.isInfixOf (Text.pack "class=\"curve spark\" aria-hidden=\"true\"><span class=\"bar\" title=\"0 at mana value 0\"") page && Text.isInfixOf (Text.pack "title=\"8 at mana value 2\"") page) "curve"
+
+    Spec.it s "details the chosen deck: its kinds of card and its curve" $ do
+      let lines' = [Lobby.MkLine 4 (CardName.MkCardName (Text.pack "Shock")) Nothing 1 Lobby.MkSpell, Lobby.MkLine 2 (CardName.MkCardName (Text.pack "Bears")) Nothing 2 Lobby.MkCreature, Lobby.MkLine 17 (CardName.MkCardName (Text.pack "Mountain")) Nothing 0 Lobby.MkLand]
+          page = Html.toText (Lobby.view (Lobby.update (Lobby.MkPick a) Text.empty lobby) {Lobby.previews = Map.singleton a lines'})
+      Spec.assertEqWith s "curve" (Lobby.curveOf lines') [0, 4, 2, 0, 0, 0, 0]
+      Spec.assertBool s (Text.isInfixOf (Text.pack "<dt>Creatures</dt><dd class=\"muted\">2</dd>") page && Text.isInfixOf (Text.pack "<dt>Lands</dt><dd class=\"muted\">17</dd>") page) "kinds"
+      Spec.assertBool s (Text.isInfixOf (Text.pack "See all 23 cards") page) "list"
 
 a :: Text.Text
 a = Text.pack "sets/por/demo-a"
@@ -251,6 +308,41 @@ saved = Text.pack "saved/my-deck"
 -- | Your deck a saved one the check flagged.
 flaggedMine :: Lobby.Lobby
 flaggedMine = Lobby.update (Lobby.MkPick saved) Text.empty (Lobby.withDecks (Seq.fromList [a, saved]) Map.empty Lobby.new) {Lobby.illegal = Map.singleton saved [Text.pack "43 cards in the deck, fewer than 60"]}
+
+-- | The bot's seat chosen, this deck picked for it.
+botPicks :: Text.Text -> Lobby.Lobby -> Lobby.Lobby
+botPicks deck = Lobby.update (Lobby.MkPick deck) Text.empty . Lobby.update (Lobby.MkChoose (Lobby.MkTheirs 0)) Text.empty
+
+-- | 'lobby' with each deck's colours read: a red, b red and green, c white,
+-- d black.
+coloured :: Lobby.Lobby
+coloured = lobby {Lobby.palette = Map.fromList [(a, Set.singleton Color.Red), (b, Set.fromList [Color.Red, Color.Green]), (c, Set.singleton Color.White), (d, Set.singleton Color.Black)]}
+
+-- | An element's property by name, if it has it.
+propertyOf :: String -> Html.Html msg -> Maybe Text.Text
+propertyOf name html = case html of
+  Html.MkElement node -> Maybe.listToMaybe [v | Attribute.MkProperty k v <- Foldable.toList (Html.attributes node), k == Text.pack name]
+  Html.MkText _ -> Nothing
+
+-- | Whether an element is a pressed toggle with this label.
+pressedWith :: Text.Text -> Html.Html msg -> Bool
+pressedWith label html = propertyOf "aria-label" html == Just label && pressed html
+
+-- | Whether an element is marked pressed.
+pressed :: Html.Html msg -> Bool
+pressed html = propertyOf "aria-pressed" html == Just (Text.pack "true")
+
+-- | Whether an element is the deck tile naming this deck.
+tileOf :: Text.Text -> Html.Html msg -> Bool
+tileOf name html = propertyOf "class" html == Just (Text.pack "deck") && Text.isInfixOf name (Html.content html)
+
+-- | Each seat's button choosing it, in order.
+seatPicks :: Html.Html msg -> [Html.Html msg]
+seatPicks html = case html of
+  Html.MkElement node
+    | propertyOf "class" html == Just (Text.pack "seat-pick") -> [html]
+    | otherwise -> foldMap seatPicks (Html.childList (Html.children node))
+  Html.MkText _ -> []
 
 lobby :: Lobby.Lobby
 lobby = Lobby.withDecks (Seq.fromList [a, b, c, d]) (Map.fromList [(c, Text.pack "commander"), (d, Text.pack "commander")]) Lobby.new

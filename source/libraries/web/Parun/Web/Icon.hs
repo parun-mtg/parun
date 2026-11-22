@@ -29,6 +29,8 @@ data Icon
     MkGear
   | -- | The game's menu: three lines.
     MkMenu
+  | -- | A bot's seat: a robot's head.
+    MkBot
   deriving (Bounded, Enum, Eq, Ord, Show)
 
 -- | The id of an icon's @<symbol>@ in the sprite.
@@ -44,6 +46,7 @@ iconId i = Text.pack . ("ui-" <>) $ case i of
   MkExile -> "exile"
   MkGear -> "gear"
   MkMenu -> "menu"
+  MkBot -> "bot"
 
 -- | An icon, hidden from assistive technology: what it means is said by
 -- the element holding it.
