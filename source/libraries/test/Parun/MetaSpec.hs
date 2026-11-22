@@ -44,15 +44,15 @@ spec s registry = Spec.describe s "Meta" $ do
             "Against red.txt (share 3 of 4):",
             "  a.txt: won 2 of 4 games, 50.0% (15.0% to 85.0%).",
             "  b.txt: won 1 of 4 games, 25.0% (4.6% to 69.9%).",
-            "  a.txt minus b.txt, over the same seeds: +25.0 points (-24.0 to +74.0).",
+            "  a.txt minus b.txt, over the same seeds: +25.0 points (-35.2 to +85.2).",
             "Against blue.txt (share 1 of 4):",
             "  a.txt: won 4 of 4 games, 100.0% (51.0% to 100.0%).",
             "  b.txt: won 3 of 4 games, 75.0% (30.1% to 95.4%).",
-            "  a.txt minus b.txt, over the same seeds: +25.0 points (-24.0 to +74.0).",
+            "  a.txt minus b.txt, over the same seeds: +25.0 points (-35.2 to +85.2).",
             "Overall, weighted by share:",
             "  a.txt: 62.5% (35.5% to 89.5%).",
             "  b.txt: 37.5% (11.0% to 64.0%).",
-            "  a.txt minus b.txt, over the same seeds: +25.0 points (-13.7 to +63.7)."
+            "  a.txt minus b.txt, over the same seeds: +25.0 points (-22.6 to +72.6)."
           ]
       )
 
@@ -64,7 +64,7 @@ spec s registry = Spec.describe s "Meta" $ do
     other <- Meta.matchup (S.fixtureRegistry []) Nothing Map.empty (key 7) 4 1 bears sevens
     Spec.assertEqWith s "games played" (length first) 4
     Spec.assertEqWith s "the same games again" (fmap Meta.won first) (fmap Meta.won again)
-    Spec.assertEqWith s "no lead over itself" (Meta.report (Text.pack "a" NonEmpty.:| [Text.pack "b"]) ((1, Text.pack "x", fmap Meta.won first NonEmpty.:| [fmap Meta.won again]) NonEmpty.:| []) !! 4) (Text.pack "  a minus b, over the same seeds: +0.0 points (+0.0 to +0.0).")
+    Spec.assertEqWith s "no lead over itself" (Meta.report (Text.pack "a" NonEmpty.:| [Text.pack "b"]) ((1, Text.pack "x", fmap Meta.won first NonEmpty.:| [fmap Meta.won again]) NonEmpty.:| []) !! 4) (Text.pack "  a minus b, over the same seeds: +0.0 points (-50.6 to +50.6).")
     Spec.assertBool s (first /= other) "another meta deck, other games"
 
 -- The key 'S.seeded' starts from.

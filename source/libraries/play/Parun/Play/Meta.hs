@@ -213,16 +213,20 @@ rate wins =
    in (if n == 0 then 0 else k / n, adjusted * (1 - adjusted) / (n + 4))
 
 -- | Paired games' mean difference, the first's win minus the second's, and
--- the variance of that mean; a single pair's taken as the largest possible.
+-- the variance of that mean, estimated with one pair the first won alone and
+-- one the second did added, so paired games that all agree still count as
+-- uncertain.
 difference :: [(Bool, Bool)] -> (Rational, Rational)
 difference pairs =
   let ds :: [Rational]
       ds = fmap (\(one, two) -> score one - score two) pairs
       score b = if b then 1 else 0
       n = toRational (Natural.length ds)
-      mean = if n == 0 then 0 else sum ds / n
-      spread = if n < 2 then 1 else sum (fmap (\d -> (d - mean) * (d - mean)) ds) / (n - 1)
-   in (mean, if n == 0 then 1 else spread / n)
+      adjusted = 1 : -1 : ds
+      m = n + 2
+      centre = sum adjusted / m
+      spread = sum (fmap (\d -> (d - centre) * (d - centre)) adjusted) / (m - 1)
+   in (if n == 0 then 0 else sum ds / n, spread / m)
 
 -- | A weighted sum of independent estimates, each with its variance, and its
 -- normal interval, clamped to `bounds`.
