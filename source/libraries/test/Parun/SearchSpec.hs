@@ -62,6 +62,7 @@ import qualified Parun.Types.Printing as Printing
 import qualified Parun.Types.Program as Program
 import qualified Parun.Types.ProjectedCharacteristics as ProjectedCharacteristics
 import qualified Parun.Types.Prompt as Prompt
+import qualified Parun.Types.Recipient as Recipient
 import qualified Parun.Types.RevealCause as RevealCause
 import qualified Parun.Types.SearchBudget as SearchBudget
 import qualified Parun.Types.SearchMethod as SearchMethod
@@ -197,7 +198,7 @@ spec s registry = Spec.describe s "Search" $ do
   Spec.it s "two playouts of one decision share no state" $ do
     (gs, menu) <- decision s registry
     let budget = SearchBudget.MkSearchBudget {SearchBudget.samples = 1, SearchBudget.turns = 1000, SearchBudget.prompts = 400, SearchBudget.candidates = 0, SearchBudget.playout = Playout.Random, SearchBudget.mistakes = 0, SearchBudget.method = SearchMethod.Flat}
-        playout option n = either (Spec.assertFailure s . Text.unpack) pure =<< Except.runExceptT (State.evalStateT (Search.rollout (S.fixtureRegistry []) budget Weights.neutral Engine.resumePriority viewer (Search.acting viewer option) gs) (S.seeded n))
+        playout option n = either (Spec.assertFailure s . Text.unpack) pure =<< Except.runExceptT (State.evalStateT (Search.rollout (S.fixtureRegistry []) budget Weights.neutral Engine.resumePriority viewer [Search.acting viewer option] gs) (S.seeded n))
     case Search.options menu of
       one : two : _ -> do
         first <- playout one 3
@@ -209,7 +210,7 @@ spec s registry = Spec.describe s "Search" $ do
   Spec.it s "a playout is cut off once it begins the turn after its decision's, short of a result" $ do
     (gs, menu) <- decision s registry
     let budget = SearchBudget.MkSearchBudget {SearchBudget.samples = 1, SearchBudget.turns = 0, SearchBudget.prompts = 100000, SearchBudget.candidates = 0, SearchBudget.playout = Playout.Random, SearchBudget.mistakes = 0, SearchBudget.method = SearchMethod.Flat}
-    scores <- traverse (\(option, n) -> either (Spec.assertFailure s . Text.unpack) pure =<< Except.runExceptT (State.evalStateT (Search.rollout (S.fixtureRegistry []) budget Weights.neutral Engine.resumePriority viewer (Search.acting viewer option) gs) (S.seeded n))) (zip (Search.options menu) [1 ..])
+    scores <- traverse (\(option, n) -> either (Spec.assertFailure s . Text.unpack) pure =<< Except.runExceptT (State.evalStateT (Search.rollout (S.fixtureRegistry []) budget Weights.neutral Engine.resumePriority viewer [Search.acting viewer option] gs) (S.seeded n))) (zip (Search.options menu) [1 ..])
     Spec.assertBool s (all (\score -> abs score < Search.won) scores) ("every playout scored short of a result: " <> show scores)
 
   Spec.it s "a cut-off playout scores its position by the weights, each side's features weighted" $ do
@@ -218,7 +219,7 @@ spec s registry = Spec.describe s "Search" $ do
       _ -> Nothing
     let budget = SearchBudget.MkSearchBudget {SearchBudget.samples = 1, SearchBudget.turns = 1000, SearchBudget.prompts = 0, SearchBudget.candidates = 0, SearchBudget.playout = Playout.Random, SearchBudget.mistakes = 0, SearchBudget.method = SearchMethod.Flat}
         only side feature = Weights.MkWeights {Weights.ours = if side then feature else zero, Weights.theirs = if side then zero else feature}
-        scored weights = either (Spec.assertFailure s . Text.unpack) pure =<< Except.runExceptT (State.evalStateT (Search.rollout (S.fixtureRegistry []) budget weights Engine.resumeTurnBasedAction attacker (Search.attacking attacker []) gs) (S.seeded 1))
+        scored weights = either (Spec.assertFailure s . Text.unpack) pure =<< Except.runExceptT (State.evalStateT (Search.rollout (S.fixtureRegistry []) budget weights Engine.resumeTurnBasedAction attacker [Search.attacking attacker []] gs) (S.seeded 1))
         controlled pid = [oid | oid <- Set.toList (GameState.battlefield gs), Projection.View.controllerOf oid gs == Just pid]
         creatures pid = [oid | oid <- controlled pid, Set.member CardType.Creature (ProjectedCharacteristics.cardTypes (Projection.project oid gs))]
         counts pid =
@@ -263,6 +264,14 @@ spec s registry = Spec.describe s "Search" $ do
     treed <- traverse (searchedAt s (budget SearchMethod.InformationSet) weights asked) [1 .. 4]
     Spec.assertBool s (all null treed) ("the information-set bot attacked in no seed: " <> show treed)
 
+  Spec.it s "CR 601.2c the search bot casting Shock with an opponent at 2 life aims it at them, flat or by an information-set tree" $ do
+    gs <- shockAtTwo s registry
+    let budget method = SearchBudget.MkSearchBudget {SearchBudget.samples = 2, SearchBudget.turns = 1000, SearchBudget.prompts = 40, SearchBudget.candidates = 0, SearchBudget.playout = Playout.Random, SearchBudget.mistakes = 0, SearchBudget.method = method}
+    flatly <- traverse (aimedIn s (budget SearchMethod.Flat) gs) [1 .. 4]
+    Spec.assertEqWith s "Shock at Bob in every seed, flat" flatly (Just (Set.singleton (Recipient.ToPlayer S.bob)) <$ flatly)
+    treed <- traverse (aimedIn s (budget SearchMethod.InformationSet) gs) [1 .. 4]
+    Spec.assertEqWith s "Shock at Bob in every seed, by the tree" treed (Just (Set.singleton (Recipient.ToPlayer S.bob)) <$ treed)
+
   Spec.it s "the search bot making a mistake at every decision takes the option scored next below the best: no attack on an opponent at 1 life who has nothing untapped" $ do
     (_, asked) <- openAttack s registry
     declared <- traverse (searchedMaking s 100 asked) [1 .. 4]
@@ -272,7 +281,7 @@ spec s registry = Spec.describe s "Search" $ do
     (pid, asked) <- openAttack s registry
     let seat = PlayerId.unwrap pid + 1
         options = PlayOptions.none {PlayOptions.bots = Set.singleton seat}
-        answered seed = either (Spec.assertFailure s . Text.unpack) pure =<< Except.runExceptT (State.evalStateT (Answerer.unwrap (Command.answerer (S.fixtureRegistry []) (const (pure Nothing)) (pure Nothing) (const (pure ())) (pure Map.empty) options Search.known seat) asked) (S.seeded seed))
+        answered seed = either (Spec.assertFailure s . Text.unpack) pure =<< Except.runExceptT (State.evalStateT (Answerer.unwrap (Command.answerer (S.fixtureRegistry []) (const (pure Nothing)) (pure Nothing) (const (pure ())) (pure Map.empty) Search.unkept options Search.known seat) asked) (S.seeded seed))
     declared <- traverse answered [1 .. 8]
     Spec.assertBool s (not (any null declared)) "attacked in every seed"
 
@@ -316,7 +325,7 @@ spec s registry = Spec.describe s "Search" $ do
     let budget = SearchBudget.MkSearchBudget {SearchBudget.samples = 1, SearchBudget.turns = 1000, SearchBudget.prompts = 3, SearchBudget.candidates = 0, SearchBudget.playout = Playout.Greedy, SearchBudget.mistakes = 0, SearchBudget.method = SearchMethod.Flat}
         lands = Weights.MkWeights {Weights.ours = zero {Features.lands = 1}, Weights.theirs = zero}
         before = toInteger (length [oid | oid <- Set.toList (GameState.battlefield gs), Projection.View.controllerOf oid gs == Just pid, Set.member CardType.Land (ProjectedCharacteristics.cardTypes (Projection.project oid gs))])
-    scores <- traverse (\n -> either (Spec.assertFailure s . Text.unpack) pure =<< Except.runExceptT (State.evalStateT (Search.rollout (S.fixtureRegistry []) budget lands Engine.resumePriority pid (Search.MkPick (const Nothing)) gs) (S.seeded n))) [1 .. 8]
+    scores <- traverse (\n -> either (Spec.assertFailure s . Text.unpack) pure =<< Except.runExceptT (State.evalStateT (Search.rollout (S.fixtureRegistry []) budget lands Engine.resumePriority pid [] gs) (S.seeded n))) [1 .. 8]
     Spec.assertEqWith s "a land more in every seed" scores ((before + 1) <$ scores)
   where
     viewer = S.alice
@@ -440,9 +449,39 @@ intoOpenMana s registry = do
   attacker <- maybe (Spec.assertFailure s "no attacker") pure (Map.lookup (Label.MkLabel (Text.pack "attacker")) (Staged.objects built))
   pure (Asked.MkAsked [] (Staged.state built) (Prompt.DeclareAttackers (Decider.MkDecider S.alice) S.alice [attacker]))
 
+-- Alice in her precombat main phase with an untapped Mountain and a Shock
+-- in hand; Bob at 2 life with a Grizzly Bears, his hand empty: the game as
+-- built.
+shockAtTwo :: (Monad m) => Spec.Spec m n -> Registry.Registry m -> m GameState.GameState
+shockAtTwo s registry = do
+  let cards :: [String] -> [Placement.Placement]
+      cards = fmap S.cardSetup
+      alice = (S.battlefield S.alice [S.cardSetup "Mountain"]) {Seat.hand = Seq.fromList (cards ["Shock"]), Seat.library = Seq.fromList (cards (replicate 5 "Mountain"))}
+      bob = (S.battlefield S.bob [S.settled "his" "Grizzly Bears"]) {Seat.life = 2, Seat.library = Seq.fromList (cards (replicate 5 "Forest"))}
+  Staged.state <$> S.buildBoardOrFail s registry (S.board (alice NonEmpty.:| [bob]) S.alice S.precombatMain)
+
+-- The targets of Alice's first choice of targets in the game played on from
+-- `gs`'s priority decision (Engine.resumePriority), Alice the search bot at
+-- `budget` keeping the targets it chose, Bob the random bot, from `seed`:
+-- each slot's, or Nothing if none is asked within 200 prompts.
+aimedIn :: forall m n. (Monad m) => Spec.Spec m n -> SearchBudget.SearchBudget -> GameState.GameState -> Word.Word32 -> m (Maybe (Set.Set Recipient.Recipient))
+aimedIn s budget gs seed = either (Spec.assertFailure s . Text.unpack) pure =<< State.evalStateT (Except.runExceptT (State.evalStateT (go (200 :: Int) (State.runStateT Engine.resumePriority gs)) (S.seeded seed))) Nothing
+  where
+    lifted :: Registry.Registry (State.StateT (Maybe Search.Targets) m)
+    lifted = Registry.hoist Trans.lift (S.fixtureRegistry [])
+    searcher = Search.search lifted budget Weights.neutral Search.known (pure []) (pure Search.blank) (Search.MkAim (Game.underneath State.get) (Game.underneath . State.put))
+    seats = Game.consulting lifted (Map.fromList [(S.alice, searcher), (S.bob, Game.bot lifted)])
+    go :: Int -> Program.Program (Asked.Asked GameState.GameState) a -> Game.Play (State.StateT (Maybe Search.Targets) m) (Maybe (Set.Set Recipient.Recipient))
+    go left program = case program of
+      Program.Then asked k
+        | left > 0 -> case Asked.prompt asked of
+            Prompt.ChooseTargets _ chooser _ _ | chooser == S.alice -> fmap (fmap Set.unions . Just . Map.elems) (Answerer.unwrap seats asked)
+            _ -> Answerer.unwrap seats asked >>= go (left - 1) . k
+      _ -> pure Nothing
+
 -- The search bot's answer at `budget` and `weights`, from `seed`.
 searchedAt :: (Monad m) => Spec.Spec m n -> SearchBudget.SearchBudget -> Weights.Weights -> Asked.Asked GameState.GameState r -> Word.Word32 -> m r
-searchedAt s budget weights asked seed = either (Spec.assertFailure s . Text.unpack) pure =<< Except.runExceptT (State.evalStateT (Answerer.unwrap (Search.search (S.fixtureRegistry []) budget weights Search.known (pure []) (pure Search.blank)) asked) (S.seeded seed))
+searchedAt s budget weights asked seed = either (Spec.assertFailure s . Text.unpack) pure =<< Except.runExceptT (State.evalStateT (Answerer.unwrap (Search.search (S.fixtureRegistry []) budget weights Search.known (pure []) (pure Search.blank) Search.unkept) asked) (S.seeded seed))
 
 -- The search bot's answer, at a budget of 2 samples cut off after 40 prompts,
 -- the neutral weights, from `seed`.
@@ -453,7 +492,7 @@ searched s = searchedMaking s 0
 searchedMaking :: (Monad m) => Spec.Spec m n -> Natural -> Asked.Asked GameState.GameState r -> Word.Word32 -> m r
 searchedMaking s mistakes asked seed =
   let budget = SearchBudget.MkSearchBudget {SearchBudget.samples = 2, SearchBudget.turns = 1000, SearchBudget.prompts = 40, SearchBudget.candidates = 0, SearchBudget.playout = Playout.Random, SearchBudget.mistakes = mistakes, SearchBudget.method = SearchMethod.Flat}
-   in either (Spec.assertFailure s . Text.unpack) pure =<< Except.runExceptT (State.evalStateT (Answerer.unwrap (Search.search (S.fixtureRegistry []) budget Weights.neutral Search.known (pure []) (pure Search.blank)) asked) (S.seeded seed))
+   in either (Spec.assertFailure s . Text.unpack) pure =<< Except.runExceptT (State.evalStateT (Answerer.unwrap (Search.search (S.fixtureRegistry []) budget Weights.neutral Search.known (pure []) (pure Search.blank) Search.unkept) asked) (S.seeded seed))
 
 -- Whether an action plays a land.
 isPlay :: Action.Action -> Bool

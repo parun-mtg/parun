@@ -167,7 +167,8 @@ match options searchers prior registry format decks = do
 -- search bot in each seat of `searchers` at its budget and weights
 -- (Search.search, dealing what it cannot see by `prior` and weighing it by
 -- every pass watched (Search.watching), remembering what it saw
--- (Search.remembering), drawing apart as parun play's does:
+-- (Search.remembering), keeping the targets it chose (Search.keptBy),
+-- drawing apart as parun play's does:
 -- Game.remembered) and the random bot in every other; with the entry each
 -- answer replays as (Record.recording). With every seat searching at
 -- PlayOptions.none's budget and weights and Search.known it is the game `parun play --bot 1
@@ -175,21 +176,25 @@ match options searchers prior registry format decks = do
 game :: (Monad m) => Registry.Registry m -> Maybe Format.Format -> Map.Map Natural (SearchBudget.SearchBudget, Weights.Type.Weights) -> Search.Prior -> Key.Type.Key -> Natural -> NonEmpty.NonEmpty Deck.Deck -> m (Either Text.Text (Result.Result, GameState.GameState), Seq.Seq Timed.Timed)
 game registry format searchers prior seed index decks =
   let count = Natural.length decks
-      seat n = maybe (Game.bot (lifted registry)) (\(budget, weights) -> Game.remembered (pure Nothing) (const (pure ())) (Search.search (lifted registry) budget weights prior (Game.underneath (State.gets (\(_, passes, _) -> passes))) (Game.underneath (State.gets (\(_, _, memories) -> Map.findWithDefault Search.blank (Command.idOf n) memories))))) (Map.lookup n searchers)
-   in fmap (fmap (\(timeline, _, _) -> timeline)) (State.runStateT (Game.run (lifted registry) format Limits.standard [Record.recording (Command.labels count) sink, Search.watching (\f -> State.modify' (\(timeline, passes, memories) -> let kept = f passes in kept `seq` (timeline, kept, memories))), Search.remembering (\f -> State.modify' (\(timeline, passes, memories) -> let kept = f memories in kept `seq` (timeline, passes, kept)))] (Map.fromList [(Command.idOf n, seat n) | n <- [1 .. count]]) (Generator.fromKey (seedAt seed index)) Map.empty (Command.seated (firstAt index) decks)) (Seq.empty, [], Map.empty))
+      seat n = maybe (Game.bot (lifted registry)) (\(budget, weights) -> Game.remembered (pure Nothing) (const (pure ())) (Search.search (lifted registry) budget weights prior (Game.underneath (State.gets (\(_, passes, _, _) -> passes))) (Game.underneath (State.gets (\(_, _, memories, _) -> Map.findWithDefault Search.blank (Command.idOf n) memories))) (Search.keptBy (State.gets (\(_, _, _, aims) -> aims)) (\f -> State.modify' (\(timeline, passes, memories, aims) -> (timeline, passes, memories, f aims))) (Command.idOf n)))) (Map.lookup n searchers)
+   in fmap (fmap (\(timeline, _, _, _) -> timeline)) (State.runStateT (Game.run (lifted registry) format Limits.standard [Record.recording (Command.labels count) sink, Search.watching (\f -> State.modify' (\(timeline, passes, memories, aims) -> let kept = f passes in kept `seq` (timeline, kept, memories, aims))), Search.remembering (\f -> State.modify' (\(timeline, passes, memories, aims) -> let kept = f memories in kept `seq` (timeline, passes, kept, aims)))] (Map.fromList [(Command.idOf n, seat n) | n <- [1 .. count]]) (Generator.fromKey (seedAt seed index)) Map.empty (Command.seated (firstAt index) decks)) (Seq.empty, [], Map.empty, Map.empty))
 
 -- | A pair of decks, seat 1's first.
 both :: (Deck.Deck, Deck.Deck) -> NonEmpty.NonEmpty Deck.Deck
 both (one, two) = one NonEmpty.:| [two]
 
--- | The registry, beneath the entries and the passes kept so far
--- (Search.watching) and the memories kept (Search.remembering).
-lifted :: (Monad m) => Registry.Registry m -> Registry.Registry (State.StateT (Seq.Seq Timed.Timed, [Search.Passed], Map.Map PlayerId.PlayerId Search.Memory) m)
+-- | The registry, beneath what a game keeps ('Played').
+lifted :: (Monad m) => Registry.Registry m -> Registry.Registry (State.StateT Played m)
 lifted = Registry.hoist Trans.lift
 
 -- | Keeps an answer's entry, after those before it.
-sink :: (Monad m) => Timed.Timed -> Game.Play (State.StateT (Seq.Seq Timed.Timed, [Search.Passed], Map.Map PlayerId.PlayerId Search.Memory) m) ()
-sink entry = Game.underneath (State.modify' (\(timeline, passes, memories) -> (timeline Seq.|> entry, passes, memories)))
+sink :: (Monad m) => Timed.Timed -> Game.Play (State.StateT Played m) ()
+sink entry = Game.underneath (State.modify' (\(timeline, passes, memories, aims) -> (timeline Seq.|> entry, passes, memories, aims)))
+
+-- | What a match's game keeps beside its play: the entries so far, the
+-- passes kept (Search.watching), the memories kept (Search.remembering) and
+-- each search bot's targets kept (Search.keptBy).
+type Played = (Seq.Seq Timed.Timed, [Search.Passed], Map.Map PlayerId.PlayerId Search.Memory, Map.Map PlayerId.PlayerId Search.Targets)
 
 -- | Game `index`'s key, derived from the match's (Generator.derive), the
 -- index wrapping at 2^64.
