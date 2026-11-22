@@ -377,14 +377,53 @@ located view oid =
         )
         (PlayerView.seats view)
 
--- | A zone as an entry names it: a library, hand or graveyard by its owner
--- where the entry knows them (CR 400.3), else as PromptOffer.zoneName does.
-ownedZone :: Maybe PlayerId.PlayerId -> Zone.Zone -> Text.Text
-ownedZone owner z = case (owner, z) of
-  (Just p, Zone.Library) -> player p <> Text.pack "'s library"
-  (Just p, Zone.Hand) -> player p <> Text.pack "'s hand"
-  (Just p, Zone.Graveyard) -> player p <> Text.pack "'s graveyard"
+-- | A zone as an entry names it to its reader: a library, hand or graveyard
+-- by its owner where the entry knows them (CR 400.3), else as
+-- PromptOffer.zoneName does.
+ownedZone :: Maybe PlayerId.PlayerId -> Maybe PlayerId.PlayerId -> Zone.Zone -> Text.Text
+ownedZone reader owner z = case (owner, z) of
+  (Just p, Zone.Library) -> possessive reader p <> Text.pack " library"
+  (Just p, Zone.Hand) -> possessive reader p <> Text.pack " hand"
+  (Just p, Zone.Graveyard) -> possessive reader p <> Text.pack " graveyard"
   _ -> PromptOffer.zoneName z
+
+-- | A seat as a sentence's object, to the sentence's reader: "you" for the
+-- reader, else as `player` names it. The reader is the seat a sentence
+-- addresses, if any: the web client's viewer; nobody for the line protocol.
+objective :: Maybe PlayerId.PlayerId -> PlayerId.PlayerId -> Text.Text
+objective reader pid = if reader == Just pid then Text.pack "you" else player pid
+
+-- | A seat's, to the sentence's reader: "your", else "Player 1's".
+possessive :: Maybe PlayerId.PlayerId -> PlayerId.PlayerId -> Text.Text
+possessive reader pid = if reader == Just pid then Text.pack "your" else player pid <> Text.pack "'s"
+
+-- | What a seat does, to the sentence's reader, the predicate given in the
+-- third person: "Player 1 casts", or "You cast" for the reader.
+acts :: Maybe PlayerId.PlayerId -> PlayerId.PlayerId -> String -> Text.Text
+acts reader pid predicate = subject reader pid <> Text.pack " " <> conjugated reader pid predicate
+
+-- | A seat as a sentence's subject, to the sentence's reader: "You", else as
+-- `player` names it.
+subject :: Maybe PlayerId.PlayerId -> PlayerId.PlayerId -> Text.Text
+subject reader pid = if reader == Just pid then Text.pack "You" else player pid
+
+-- | A third-person predicate as said of the seat: its first word in the
+-- second person for the reader ("has" as "have", "draws" as "draw").
+conjugated :: Maybe PlayerId.PlayerId -> PlayerId.PlayerId -> String -> Text.Text
+conjugated reader pid predicate
+  | reader == Just pid, (verb, rest) <- Text.break (== ' ') (Text.pack predicate), (word, punctuation) <- Text.span Char.isLetter verb = secondPerson word <> punctuation <> rest
+  | otherwise = Text.pack predicate
+  where
+    secondPerson word
+      | word == Text.pack "has" = Text.pack "have"
+      | word == Text.pack "is" = Text.pack "are"
+      | Just stem <- Text.stripSuffix (Text.pack "ies") word = stem <> Text.pack "y"
+      | Just stem <- Text.stripSuffix (Text.pack "es") word, any ((`Text.isSuffixOf` stem) . Text.pack) ["ch", "sh", "ss", "x"] = stem
+      | otherwise = Maybe.fromMaybe word (Text.stripSuffix (Text.pack "s") word)
+
+-- | The seat's own, to the sentence's reader: "your", else "their".
+their :: Maybe PlayerId.PlayerId -> PlayerId.PlayerId -> Text.Text
+their reader pid = if reader == Just pid then Text.pack "your" else Text.pack "their"
 
 -- | An object's name, if the view shows it or a witnessed move, look or
 -- reveal of it did.
@@ -413,34 +452,35 @@ snapshots view =
 witnessed :: PlayerView.PlayerView -> [LoggedEvent.LoggedEvent]
 witnessed view = PlayerView.witnessedLastTurn view <> PlayerView.witnessed view
 
--- | Witnessed entries as sentences, a run of one player's draws told as one.
-events :: PlayerView.PlayerView -> [LoggedEvent.LoggedEvent] -> [Text.Text]
-events view = concatMap sentences . List.groupBy (\a b -> Maybe.isJust (drawer a) && drawer a == drawer b) . filter (Maybe.isJust . event view)
+-- | Witnessed entries as sentences to a reader (objective), a run of one
+-- player's draws told as one.
+events :: Maybe PlayerId.PlayerId -> PlayerView.PlayerView -> [LoggedEvent.LoggedEvent] -> [Text.Text]
+events reader view = concatMap sentences . List.groupBy (\a b -> Maybe.isJust (drawer a) && drawer a == drawer b) . filter (Maybe.isJust . event reader view)
   where
     drawer logged = case LoggedEvent.event logged of
       GameEvent.Drew d -> Just (Drew.player d)
       _ -> Nothing
     sentences run = case run of
-      first : _ : _ | Just pid <- drawer first -> [player pid <> Text.pack " draws " <> count (List.genericLength run) "card" <> Text.pack "."]
-      _ -> Maybe.mapMaybe (event view) run
+      first : _ : _ | Just pid <- drawer first -> [acts reader pid "draws" <> Text.pack " " <> count (List.genericLength run) "card" <> Text.pack "."]
+      _ -> Maybe.mapMaybe (event reader view) run
 
 -- | A witnessed entry as a sentence naming its cards, players and amounts, or
 -- nothing for the bookkeeping a seat can read off the board (a step, a tap,
 -- mana and the mana ability making it, a trigger) or another entry already tells (a die roll, a spell's move
 -- to the stack, a land play's, discard's or mill's move, a block's
--- per-attacker records).
-event :: PlayerView.PlayerView -> LoggedEvent.LoggedEvent -> Maybe Text.Text
-event view logged = case LoggedEvent.event logged of
-  GameEvent.SpellCast c -> said [player (SpellWasCast.player c), Text.pack "casts", PromptOffer.snapshotName (SpellWasCast.characteristics c)]
+-- per-attacker records); to a reader, as objective says.
+event :: Maybe PlayerId.PlayerId -> PlayerView.PlayerView -> LoggedEvent.LoggedEvent -> Maybe Text.Text
+event reader view logged = case LoggedEvent.event logged of
+  GameEvent.SpellCast c -> said [acts reader (SpellWasCast.player c) "casts", PromptOffer.snapshotName (SpellWasCast.characteristics c)]
   GameEvent.AbilityActivated a
     | AbilityFacts.kind (AbilityWasActivated.facts a) == AbilityKind.ManaAbility -> Nothing
-    | otherwise -> said [player (AbilityWasActivated.player a), Text.pack "activates", name (AbilityWasActivated.source a) <> Text.pack "'s ability"]
-  GameEvent.LandPlayed l -> said [player (LandPlayed.player l), Text.pack "plays", name (LandPlayed.land l)]
+    | otherwise -> said [acts reader (AbilityWasActivated.player a) "activates", name (AbilityWasActivated.source a) <> Text.pack "'s ability"]
+  GameEvent.LandPlayed l -> said [acts reader (LandPlayed.player l) "plays", name (LandPlayed.land l)]
   GameEvent.AttackerDeclared a -> said [name (AttackerDeclared.attacker a), Text.pack "attacks", attacked (AttackerDeclared.target a)]
   GameEvent.BecameBlocking b -> said [name (BecameBlocking.blocker b), Text.pack "blocks", name (BecameBlocking.attacker b)]
   GameEvent.DamageDealt d -> said [name (DamageEvent.source d), Text.pack "deals", Text.pack (show (DamageEvent.amount d)), Text.pack "damage to", recipient (DamageEvent.target d)]
-  GameEvent.LifeLost l -> said [player (LifeChange.player l), Text.pack "loses", Text.pack (show (LifeChange.amount l)), Text.pack "life"]
-  GameEvent.LifeGained l -> said [player (LifeChange.player l), Text.pack "gains", Text.pack (show (LifeChange.amount l)), Text.pack "life"]
+  GameEvent.LifeLost l -> said [acts reader (LifeChange.player l) "loses", Text.pack (show (LifeChange.amount l)), Text.pack "life"]
+  GameEvent.LifeGained l -> said [acts reader (LifeChange.player l) "gains", Text.pack (show (LifeChange.amount l)), Text.pack "life"]
   GameEvent.Moved m
     | any (`Set.member` told view) (Moved.arrivals m) -> Nothing
     -- CR 601.2a: a spell's move to the stack begins its cast, which the
@@ -454,18 +494,18 @@ event view logged = case LoggedEvent.event logged of
     where
       -- CR 400.3: a library, hand or graveyard a card is in is its owner's.
       owner = Monad.mplus (fmap ObjectSnapshot.owner (Moved.arrived m)) (fmap (ObjectView.owner . snd) (located view (ZoneChange.object (Moved.change m))))
-      zoneOf = ownedZone owner
+      zoneOf = ownedZone reader owner
       from = ZoneChange.from (Moved.change m)
       to = ZoneChange.to (Moved.change m)
-  GameEvent.Discarded d -> said [player (Discarded.player d), Text.pack "discards", name (Discarded.card d)]
-  GameEvent.Milled m -> said [player (Milled.player m), Text.pack "mills", Text.intercalate (Text.pack ", ") (fmap name (Foldable.toList (Milled.cards m)))]
-  GameEvent.Drew d -> said [player (Drew.player d), Text.pack "draws a card"]
-  GameEvent.Revealed r -> said [player (Revealed.player r), Text.pack "reveals", PromptOffer.snapshotName (Revealed.characteristics r)]
+  GameEvent.Discarded d -> said [acts reader (Discarded.player d) "discards", name (Discarded.card d)]
+  GameEvent.Milled m -> said [acts reader (Milled.player m) "mills", Text.intercalate (Text.pack ", ") (fmap name (Foldable.toList (Milled.cards m)))]
+  GameEvent.Drew d -> said [acts reader (Drew.player d) "draws a card"]
+  GameEvent.Revealed r -> said [acts reader (Revealed.player r) "reveals", PromptOffer.snapshotName (Revealed.characteristics r)]
   GameEvent.Looked l -> said [Text.pack "Looked at", PromptOffer.snapshotName (Looked.characteristics l)]
   GameEvent.SpellCountered c -> said [name (Countering.countered c), Text.pack "is countered"]
   GameEvent.MulliganDeclared d -> case MulliganDeclared.decision d of
-    MulliganDecision.Keep -> said [player (MulliganDeclared.player d), Text.pack "keeps"]
-    MulliganDecision.Mulligan -> said [player (MulliganDeclared.player d), Text.pack "mulligans, bottoming", count (MulliganDeclared.bottomCount d) "card"]
+    MulliganDecision.Keep -> said [acts reader (MulliganDeclared.player d) "keeps"]
+    MulliganDecision.Mulligan -> said [acts reader (MulliganDeclared.player d) "mulligans, bottoming", count (MulliganDeclared.bottomCount d) "card"]
   GameEvent.StepBegan {} -> Nothing
   GameEvent.CardArrived {} -> Nothing
   GameEvent.AttackersDeclared {} -> Nothing
@@ -485,11 +525,11 @@ event view logged = case LoggedEvent.event logged of
   GameEvent.TriggeredAbilityFinished _ -> Nothing
   GameEvent.BecameTarget {} -> Nothing
   GameEvent.PermanentActed {} -> Nothing
-  GameEvent.PlayerActed a -> playerActed (PlayerActed.player a) (PlayerActed.action a)
+  GameEvent.PlayerActed a -> playerActed reader (PlayerActed.player a) (PlayerActed.action a)
   GameEvent.CountedAct d -> case CountedAct.action d of
-    PlayerAction.Discover -> said [player (CountedAct.player d), Text.pack "discovers", Text.pack (show (CountedAct.value d))]
-    PlayerAction.ScryToBottom -> said [player (CountedAct.player d), Text.pack "puts", Text.pack (show (CountedAct.value d)), Text.pack "scried cards on the bottom"]
-    action -> playerActed (CountedAct.player d) action
+    PlayerAction.Discover -> said [acts reader (CountedAct.player d) "discovers", Text.pack (show (CountedAct.value d))]
+    PlayerAction.ScryToBottom -> said [acts reader (CountedAct.player d) "puts", Text.pack (show (CountedAct.value d)), Text.pack "scried cards on the bottom"]
+    action -> playerActed reader (CountedAct.player d) action
   -- CR 702.26b / 702.26n: a phased-out card's arrival in exile, which no seat sees.
   GameEvent.ArrivedUnseen {} -> Nothing
   GameEvent.DamagePrevented p ->
@@ -497,20 +537,20 @@ event view logged = case LoggedEvent.event logged of
       [ Text.intercalate (Text.pack " and ") [Text.pack (show n <> " damage ") <> name source <> Text.pack " would deal to " <> recipient r | (source, toward) <- Map.toList (DamagePrevented.amounts p), (r, n) <- Map.toList toward],
         Text.pack "is prevented"
       ]
-  GameEvent.SpellCopied c -> said [player (SpellWasCopied.player c), Text.pack "copies", name (SpellWasCopied.copy c)]
-  GameEvent.BecameMonarch pid -> said [player pid, Text.pack "becomes the monarch"]
-  GameEvent.TookInitiative pid -> said [player pid, Text.pack "takes the initiative"]
+  GameEvent.SpellCopied c -> said [acts reader (SpellWasCopied.player c) "copies", name (SpellWasCopied.copy c)]
+  GameEvent.BecameMonarch pid -> said [acts reader pid "becomes the monarch"]
+  GameEvent.TookInitiative pid -> said [acts reader pid "takes the initiative"]
   GameEvent.Voted v -> said [ballot (Voted.ballot v)]
   GameEvent.VotesRevealed ballots -> said [Text.pack "The votes are revealed:", listing (fmap ballot (Foldable.toList ballots))]
-  GameEvent.ChoseSecretly c -> said [player (SecretChoice.player (ChoseSecretly.choice c)), Text.pack "secretly chooses", Maybe.fromMaybe (Text.pack (show (SecretChoice.subtype (ChoseSecretly.choice c)))) (Subtype.creatureTypeWord (SecretChoice.subtype (ChoseSecretly.choice c)))]
-  GameEvent.ChoiceRevealed c -> said [player (SecretChoice.player c), Text.pack "reveals the chosen", Maybe.fromMaybe (Text.pack (show (SecretChoice.subtype c))) (Subtype.creatureTypeWord (SecretChoice.subtype c))]
+  GameEvent.ChoseSecretly c -> said [subject reader (SecretChoice.player (ChoseSecretly.choice c)), Text.pack "secretly", conjugated reader (SecretChoice.player (ChoseSecretly.choice c)) "chooses", Maybe.fromMaybe (Text.pack (show (SecretChoice.subtype (ChoseSecretly.choice c)))) (Subtype.creatureTypeWord (SecretChoice.subtype (ChoseSecretly.choice c)))]
+  GameEvent.ChoiceRevealed c -> said [acts reader (SecretChoice.player c) "reveals the chosen", Maybe.fromMaybe (Text.pack (show (SecretChoice.subtype c))) (Subtype.creatureTypeWord (SecretChoice.subtype c))]
   GameEvent.AbilityCountered c -> said [name (Countering.countered c), Text.pack "is countered"]
-  GameEvent.CountersPut c -> said [player (CountersPlaced.putter c), Text.pack "puts", counters (CountersPlaced.after c `less` CountersPlaced.before c) (CountersPlaced.kind c), Text.pack "on", name (CountersPlaced.object c)]
-  GameEvent.PlayerCountersPut c -> said [player (PlayerCountersPlaced.putter c), Text.pack "puts", count (PlayerCountersPlaced.after c `less` PlayerCountersPlaced.before c) (Char.toLower <$> show (PlayerCountersPlaced.kind c) <> " counter"), Text.pack "on", player (PlayerCountersPlaced.player c)]
+  GameEvent.CountersPut c -> said [acts reader (CountersPlaced.putter c) "puts", counters (CountersPlaced.after c `less` CountersPlaced.before c) (CountersPlaced.kind c), Text.pack "on", name (CountersPlaced.object c)]
+  GameEvent.PlayerCountersPut c -> said [acts reader (PlayerCountersPlaced.putter c) "puts", count (PlayerCountersPlaced.after c `less` PlayerCountersPlaced.before c) (Char.toLower <$> show (PlayerCountersPlaced.kind c) <> " counter"), Text.pack "on", if PlayerCountersPlaced.player c == PlayerCountersPlaced.putter c && reader == Just (PlayerCountersPlaced.putter c) then Text.pack "yourself" else objective reader (PlayerCountersPlaced.player c)]
   GameEvent.CountersRemoved c ->
     let n = CounterChange.before c `less` CounterChange.after c
      in said [counters n (CounterChange.kind c), Text.pack (if n == 1 then "is removed from" else "are removed from"), name (CounterChange.object c)]
-  GameEvent.HalfUnlocked h -> said [player (HalfUnlocked.actor h), Text.pack "unlocks", CardName.unwrap (HalfUnlocked.name h)]
+  GameEvent.HalfUnlocked h -> said [acts reader (HalfUnlocked.actor h) "unlocks", CardName.unwrap (HalfUnlocked.name h)]
   GameEvent.TurnedFaceUp t -> said [name (TurnedFaceUp.object t), Text.pack "is turned face up"]
   GameEvent.Transformed t -> said [name (Transformed.object t), Text.pack "transforms"]
   GameEvent.BecameDesignated d -> said [name (BecameDesignated.object d), designation (BecameDesignated.designation d)]
@@ -521,24 +561,24 @@ event view logged = case LoggedEvent.event logged of
   GameEvent.BecameCrewed c -> said [name (Crewing.vehicle c), Text.pack "becomes crewed"]
   GameEvent.Saddled c -> by (Saddling.saddledBy c) "saddles" "saddle" (Saddling.mount c)
   GameEvent.Enlisted e -> said [name (Enlisted.enlister e), Text.pack "enlists", name (Enlisted.enlisted e)]
-  GameEvent.PermanentSacrificed p -> said [player (PermanentWasSacrificed.player p), Text.pack "sacrifices", name (PermanentWasSacrificed.permanent p)]
-  GameEvent.ControlChanged c -> said [player (ControlChanged.after c), Text.pack "gains control of", name (ControlChanged.object c)]
-  GameEvent.VentureMarkerEntered v -> said [player (VentureMarkerEntered.player v), Text.pack "moves their venture marker in", name (VentureMarkerEntered.dungeon v)]
+  GameEvent.PermanentSacrificed p -> said [acts reader (PermanentWasSacrificed.player p) "sacrifices", name (PermanentWasSacrificed.permanent p)]
+  GameEvent.ControlChanged c -> said [acts reader (ControlChanged.after c) "gains control of", name (ControlChanged.object c)]
+  GameEvent.VentureMarkerEntered v -> said [acts reader (VentureMarkerEntered.player v) "moves", their reader (VentureMarkerEntered.player v), Text.pack "venture marker in", name (VentureMarkerEntered.dungeon v)]
   GameEvent.BecameAttached a -> said [name (BecameAttached.attachment a), Text.pack "becomes attached to", recipient (BecameAttached.host a)]
   GameEvent.BecameUnattached a -> said [name (BecameUnattached.attachment a), Text.pack "becomes unattached from", recipient (BecameUnattached.host a)]
   GameEvent.LeftTheGame l -> said [name (LeftTheGame.object l), Text.pack "leaves the game"]
-  GameEvent.LostTheGame pid -> said [player pid, Text.pack "loses the game"]
-  GameEvent.ManifestedDread d -> said [player (ManifestedDread.player d), Text.pack "manifests dread"]
-  GameEvent.FacedDilemma d -> said [player (FacedDilemma.player d), Text.pack "faces a dilemma over", name (FacedDilemma.object d)]
-  GameEvent.CommittedCrime c -> said [player (CommittedCrime.player c), Text.pack "commits a crime with", name (CommittedCrime.object c)]
-  GameEvent.Expended e -> said [player (Expended.player e), Text.pack "has spent", Text.pack (show (Expended.after e)), Text.pack "mana on spells this turn"]
+  GameEvent.LostTheGame pid -> said [acts reader pid "loses the game"]
+  GameEvent.ManifestedDread d -> said [acts reader (ManifestedDread.player d) "manifests dread"]
+  GameEvent.FacedDilemma d -> said [acts reader (FacedDilemma.player d) "faces a dilemma over", name (FacedDilemma.object d)]
+  GameEvent.CommittedCrime c -> said [acts reader (CommittedCrime.player c) "commits a crime with", name (CommittedCrime.object c)]
+  GameEvent.Expended e -> said [acts reader (Expended.player e) "has spent", Text.pack (show (Expended.after e)), Text.pack "mana on spells this turn"]
   -- A roll is told by its result; its natural results beside it are not.
   GameEvent.DieResultSettled r -> case DieResult.reading r of
-    RollReading.FinalResult -> said [player (DieResult.roller r), Text.pack "rolls", Text.pack (show (DieResult.result r))]
+    RollReading.FinalResult -> said [acts reader (DieResult.roller r) "rolls", Text.pack (show (DieResult.result r))]
     RollReading.NaturalResult -> Nothing
-  GameEvent.RolledToVisit r -> said [player (DieResult.roller r), Text.pack "rolls", Text.pack (show (DieResult.result r)), Text.pack "to visit their Attractions"]
-  GameEvent.PlanarDieRolled r -> said [player (PlanarDieRolled.roller r), Text.pack "rolls", planarFace (PlanarDieRolled.face r), Text.pack "on the planar die"]
-  GameEvent.TurnedUpOffDeck t -> said [player (TurnedUpOffDeck.player t), Text.pack "turns up", name (TurnedUpOffDeck.card t), Text.pack "from their", sideDeck (TurnedUpOffDeck.deck t)]
+  GameEvent.RolledToVisit r -> said [acts reader (DieResult.roller r) "rolls", Text.pack (show (DieResult.result r)), Text.pack "to visit", their reader (DieResult.roller r), Text.pack "Attractions"]
+  GameEvent.PlanarDieRolled r -> said [acts reader (PlanarDieRolled.roller r) "rolls", planarFace (PlanarDieRolled.face r), Text.pack "on the planar die"]
+  GameEvent.TurnedUpOffDeck t -> said [acts reader (TurnedUpOffDeck.player t) "turns up", name (TurnedUpOffDeck.card t), Text.pack "from", their reader (TurnedUpOffDeck.player t), sideDeck (TurnedUpOffDeck.deck t)]
   GameEvent.ChaosEnsued _ -> said [Text.pack "Chaos ensues"]
   GameEvent.DaytimeChanged Daytime.Day -> said [Text.pack "Night becomes day"]
   GameEvent.DaytimeChanged Daytime.Night -> said [Text.pack "Day becomes night"]
@@ -546,10 +586,10 @@ event view logged = case LoggedEvent.event logged of
   GameEvent.Plotted oid -> said [name oid, Text.pack "becomes plotted"]
   GameEvent.CoinFlipped c ->
     said
-      ( [player (CoinFlipped.flipper c), Text.pack "flips a coin"]
-          <> foldMap (\won -> [Text.pack (if won then "and wins the flip" else "and loses the flip")]) (CoinFlipped.won c)
+      ( [acts reader (CoinFlipped.flipper c) "flips a coin"]
+          <> foldMap (\won -> [Text.pack "and", conjugated reader (CoinFlipped.flipper c) (if won then "wins the flip" else "loses the flip")]) (CoinFlipped.won c)
       )
-  GameEvent.StickerPut p -> said [player (StickerPut.placer p), Text.pack "puts", sticker (StickerPut.kind p), Text.pack "on", name (StickerPut.object p)]
+  GameEvent.StickerPut p -> said [acts reader (StickerPut.placer p) "puts", sticker (StickerPut.kind p), Text.pack "on", name (StickerPut.object p)]
   where
     name = named view
     said parts = Just (Text.unwords parts <> Text.pack ".")
@@ -558,15 +598,19 @@ event view logged = case LoggedEvent.event logged of
       let names = fmap name (Set.toList actors)
        in said [listing names, Text.pack (if length names == 1 then one else many), name object]
     ballot b =
-      player (Ballot.voter b) <> Text.pack " votes for " <> case Ballot.choice b of
+      acts reader (Ballot.voter b) "votes for" <> Text.pack " " <> case Ballot.choice b of
         BallotChoice.ForObject o -> PromptOffer.snapshotName (ObjectSnapshot.characteristics o)
         BallotChoice.ForWord w -> SlotName.unwrap w
-        BallotChoice.ForPlayer pid -> player pid
+        BallotChoice.ForPlayer pid
+          | pid == Ballot.voter b && reader == Just pid -> Text.pack "yourself"
+          | otherwise -> objective reader pid
     attacked target = case target of
-      AttackTarget.OfPlayer pid -> player pid
+      AttackTarget.OfPlayer pid -> objective reader pid
       AttackTarget.OfPlaneswalker oid -> name oid
       AttackTarget.OfBattle oid -> name oid
-    recipient = recipientName view
+    recipient r = case r of
+      Recipient.ToPlayer pid -> objective reader pid
+      _ -> recipientName view r
 
 -- | A player or object a damage event, an attachment or a target names.
 recipientName :: PlayerView.PlayerView -> Recipient.Recipient -> Text.Text
@@ -580,8 +624,8 @@ recipientName view r = case r of
 
 -- | A player action as a sentence, or nothing for a die roll (CR 706.1), whose
 -- DieResultSettled or PlanarDieRolled entries tell it.
-playerActed :: PlayerId.PlayerId -> PlayerAction.PlayerAction -> Maybe Text.Text
-playerActed pid action = case action of
+playerActed :: Maybe PlayerId.PlayerId -> PlayerId.PlayerId -> PlayerAction.PlayerAction -> Maybe Text.Text
+playerActed reader pid action = case action of
   PlayerAction.Scry -> does "scries"
   PlayerAction.Surveil -> does "surveils"
   PlayerAction.Proliferate -> does "proliferates"
@@ -600,12 +644,12 @@ playerActed pid action = case action of
   PlayerAction.Firebend -> does "firebends"
   PlayerAction.CompleteDungeon -> does "completes a dungeon"
   -- Logged under the library's owner, who need not be the shuffler.
-  PlayerAction.Shuffle -> Just (player pid <> Text.pack "'s library is shuffled.")
-  PlayerAction.SearchLibrary -> does "searches their library"
+  PlayerAction.Shuffle -> Just (if reader == Just pid then Text.pack "Your library is shuffled." else player pid <> Text.pack "'s library is shuffled.")
+  PlayerAction.SearchLibrary -> Just (acts reader pid "searches" <> Text.pack " " <> their reader pid <> Text.pack " library.")
   PlayerAction.Discover -> does "discovers"
   PlayerAction.ScryToBottom -> does "puts scried cards on the bottom"
   where
-    does predicate = Just (player pid <> Text.pack " " <> Text.pack predicate <> Text.pack ".")
+    does predicate = Just (acts reader pid predicate <> Text.pack ".")
 
 -- | The objects whose arrival another witnessed entry already tells: a spell
 -- cast, a land played, a card discarded or milled. Only the move that made

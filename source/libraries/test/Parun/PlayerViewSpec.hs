@@ -827,7 +827,7 @@ witnessedBy pid = fmap LoggedEvent.event . PlayerView.Type.witnessed . PlayerVie
 drawnFor :: PlayerId.PlayerId -> GameState.GameState -> [Text.Text]
 drawnFor pid gs =
   let view = PlayerView.viewFor pid gs
-   in Maybe.mapMaybe (Wording.event view) (PlayerView.Type.witnessed view)
+   in Maybe.mapMaybe (Wording.event Nothing view) (PlayerView.Type.witnessed view)
 
 -- A seat's view as its client receives it.
 encodedFor :: PlayerId.PlayerId -> GameState.GameState -> String
