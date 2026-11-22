@@ -1,0 +1,554 @@
+{
+  "board": {
+    "active": "alice",
+    "seats": [
+      {
+        "battlefield": [
+          {
+            "card": "Rowan, Scholar of Sparks",
+            "counters": [
+              {
+                "key": {
+                  "type": "Loyalty"
+                },
+                "value": 4
+              }
+            ],
+            "label": "rowan"
+          },
+          {
+            "card": "Mountain",
+            "label": "m1"
+          },
+          {
+            "card": "Mountain",
+            "label": "m2"
+          },
+          {
+            "card": "Mountain",
+            "label": "m3"
+          },
+          {
+            "card": "Mountain",
+            "label": "m4"
+          },
+          {
+            "card": "Forest",
+            "label": "f1"
+          },
+          {
+            "card": "Forest",
+            "label": "f2"
+          },
+          {
+            "card": "Island",
+            "label": "i1"
+          },
+          {
+            "card": "Island",
+            "label": "i2"
+          },
+          {
+            "card": "Island",
+            "label": "i3"
+          }
+        ],
+        "hand": [
+          {
+            "card": "Lightning Bolt",
+            "label": "bolt1"
+          },
+          {
+            "card": "Shock",
+            "label": "shock"
+          },
+          {
+            "card": "Grizzly Bears",
+            "label": "bears"
+          },
+          {
+            "card": "Divination",
+            "label": "div"
+          }
+        ],
+        "library": [
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          }
+        ],
+        "name": "alice"
+      },
+      {
+        "battlefield": [
+          {
+            "card": "Mountain",
+            "label": "bm"
+          }
+        ],
+        "hand": [
+          {
+            "card": "Tarfire",
+            "label": "tarfire"
+          }
+        ],
+        "library": [
+          {
+            "card": "Swamp"
+          },
+          {
+            "card": "Swamp"
+          },
+          {
+            "card": "Swamp"
+          },
+          {
+            "card": "Swamp"
+          },
+          {
+            "card": "Swamp"
+          },
+          {
+            "card": "Swamp"
+          },
+          {
+            "card": "Swamp"
+          },
+          {
+            "card": "Swamp"
+          }
+        ],
+        "name": "bob"
+      },
+      {
+        "library": [
+          {
+            "card": "Swamp"
+          },
+          {
+            "card": "Swamp"
+          },
+          {
+            "card": "Swamp"
+          },
+          {
+            "card": "Swamp"
+          },
+          {
+            "card": "Swamp"
+          },
+          {
+            "card": "Swamp"
+          },
+          {
+            "card": "Swamp"
+          },
+          {
+            "card": "Swamp"
+          }
+        ],
+        "name": "carol"
+      }
+    ],
+    "step": "PrecombatMain"
+  },
+  "description": "CR 114.1, 707.10: Rowan, Scholar of Sparks' -4 emblem copies its owner's instant for {2} with a new target, copies nothing when the payment is declined, triggers on a sorcery too, and not on a creature spell or an opponent's instant",
+  "timeline": [
+    {
+      "do": {
+        "Activate": {
+          "ability": 1,
+          "object": "$rowan"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": "Pass",
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Count": {
+          "card": "Rowan, Scholar of Sparks Emblem",
+          "count": 1,
+          "player": "alice",
+          "zone": "Command"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Count": {
+          "card": "Rowan, Scholar of Sparks",
+          "count": 1,
+          "player": "alice",
+          "zone": "Graveyard"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": {
+        "Cast": {
+          "mana": [
+            "$m1",
+            null
+          ],
+          "object": "$bolt1",
+          "targets": [
+            "$bob"
+          ]
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "View": {
+          "is": [
+            "trigger of Rowan, Scholar of Sparks Emblem",
+            "Lightning Bolt"
+          ],
+          "of": "Stack"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": "Pass",
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": {
+        "ChooseToPay": {
+          "decision": "Pays",
+          "mana": [
+            "$m2",
+            "$m3",
+            null
+          ]
+        }
+      },
+      "player": "alice",
+      "source": "Rowan, Scholar of Sparks Emblem",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": {
+        "ChooseTargets": {
+          "target": [
+            "$carol"
+          ]
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "View": {
+          "is": [
+            "Lightning Bolt#2",
+            "Lightning Bolt"
+          ],
+          "of": "Stack"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": "Pass",
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Life": {
+          "life": 17,
+          "player": "carol"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Life": {
+          "life": 20,
+          "player": "bob"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": "Pass",
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Life": {
+          "life": 17,
+          "player": "bob"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": {
+        "Cast": {
+          "mana": [
+            "$m4",
+            null
+          ],
+          "object": "$shock",
+          "targets": [
+            "$bob"
+          ]
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": "Pass",
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": {
+        "ChooseToPay": {
+          "decision": "Declines"
+        }
+      },
+      "player": "alice",
+      "source": "Rowan, Scholar of Sparks Emblem",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "View": {
+          "is": [
+            "Shock"
+          ],
+          "of": "Stack"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": "Pass",
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Life": {
+          "life": 15,
+          "player": "bob"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Life": {
+          "life": 17,
+          "player": "carol"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": {
+        "Cast": {
+          "mana": [
+            "$f1",
+            "$f2",
+            null
+          ],
+          "object": "$bears"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "View": {
+          "is": [
+            "Grizzly Bears"
+          ],
+          "of": "Stack"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": "Pass",
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": {
+        "Cast": {
+          "mana": [
+            "$i1",
+            "$i2",
+            "$i3"
+          ],
+          "object": "$div"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "View": {
+          "is": [
+            "trigger of Rowan, Scholar of Sparks Emblem",
+            "Divination"
+          ],
+          "of": "Stack"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": "Pass",
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": "Pass",
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Count": {
+          "card": "Island",
+          "count": 2,
+          "player": "alice",
+          "zone": "Hand"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": {
+        "Cast": {
+          "mana": [
+            "$bm"
+          ],
+          "object": "$tarfire",
+          "targets": [
+            "$alice"
+          ]
+        }
+      },
+      "player": "bob",
+      "step": "PrecombatMain",
+      "turn": 2
+    },
+    {
+      "check": {
+        "View": {
+          "is": [
+            "Tarfire"
+          ],
+          "of": "Stack"
+        }
+      },
+      "player": "bob",
+      "step": "PrecombatMain",
+      "turn": 2
+    },
+    {
+      "do": "Pass",
+      "player": "bob",
+      "step": "PrecombatMain",
+      "turn": 2
+    },
+    {
+      "check": {
+        "Life": {
+          "life": 18,
+          "player": "alice"
+        }
+      },
+      "player": "bob",
+      "step": "PrecombatMain",
+      "turn": 2
+    }
+  ]
+}

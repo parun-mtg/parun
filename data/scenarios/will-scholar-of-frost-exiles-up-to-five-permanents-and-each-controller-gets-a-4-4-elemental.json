@@ -1,0 +1,350 @@
+{
+  "board": {
+    "active": "alice",
+    "seats": [
+      {
+        "battlefield": [
+          {
+            "card": "Rowan, Scholar of Sparks",
+            "counters": [
+              {
+                "key": {
+                  "type": "Loyalty"
+                },
+                "value": 7
+              }
+            ],
+            "face": "Will, Scholar of Frost",
+            "label": "will"
+          },
+          {
+            "card": "Grizzly Bears",
+            "label": "abear"
+          }
+        ],
+        "library": [
+          {
+            "card": "Forest"
+          },
+          {
+            "card": "Forest"
+          },
+          {
+            "card": "Forest"
+          },
+          {
+            "card": "Forest"
+          },
+          {
+            "card": "Forest"
+          },
+          {
+            "card": "Forest"
+          },
+          {
+            "card": "Forest"
+          },
+          {
+            "card": "Forest"
+          },
+          {
+            "card": "Forest"
+          },
+          {
+            "card": "Forest"
+          }
+        ],
+        "name": "alice"
+      },
+      {
+        "battlefield": [
+          {
+            "card": "Hill Giant",
+            "controller": "alice",
+            "label": "stolen"
+          },
+          {
+            "card": "Llanowar Elves",
+            "label": "elves"
+          },
+          {
+            "card": "Grizzly Bears",
+            "label": "bbear"
+          }
+        ],
+        "library": [
+          {
+            "card": "Swamp"
+          },
+          {
+            "card": "Swamp"
+          },
+          {
+            "card": "Swamp"
+          },
+          {
+            "card": "Swamp"
+          },
+          {
+            "card": "Swamp"
+          },
+          {
+            "card": "Swamp"
+          },
+          {
+            "card": "Swamp"
+          },
+          {
+            "card": "Swamp"
+          },
+          {
+            "card": "Swamp"
+          },
+          {
+            "card": "Swamp"
+          }
+        ],
+        "name": "bob"
+      },
+      {
+        "battlefield": [
+          {
+            "card": "Forest",
+            "label": "cf"
+          }
+        ],
+        "library": [
+          {
+            "card": "Swamp"
+          },
+          {
+            "card": "Swamp"
+          },
+          {
+            "card": "Swamp"
+          },
+          {
+            "card": "Swamp"
+          },
+          {
+            "card": "Swamp"
+          },
+          {
+            "card": "Swamp"
+          },
+          {
+            "card": "Swamp"
+          },
+          {
+            "card": "Swamp"
+          },
+          {
+            "card": "Swamp"
+          },
+          {
+            "card": "Swamp"
+          }
+        ],
+        "name": "carol"
+      }
+    ],
+    "step": "PrecombatMain"
+  },
+  "description": "CR 701.13a, 111.2: Will, Scholar of Frost's -7 exiles up to five target permanents and has each one's controller, a thief over its owner, create a 4/4 blue and red Elemental",
+  "timeline": [
+    {
+      "do": {
+        "Activate": {
+          "ability": 2,
+          "object": "$will",
+          "targets": [
+            "$abear",
+            "$stolen",
+            "$elves",
+            "$cf"
+          ]
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": "Pass",
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": {
+        "Answer": {
+          "prompt": "OrderForEach",
+          "with": [
+            0,
+            1
+          ]
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Count": {
+          "card": "Elemental Token",
+          "count": 2,
+          "player": "alice",
+          "zone": "Battlefield"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Count": {
+          "card": "Elemental Token",
+          "count": 1,
+          "player": "bob",
+          "zone": "Battlefield"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Count": {
+          "card": "Elemental Token",
+          "count": 1,
+          "player": "carol",
+          "zone": "Battlefield"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Count": {
+          "card": "Hill Giant",
+          "count": 1,
+          "player": "bob",
+          "zone": "Exile"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Count": {
+          "card": "Grizzly Bears",
+          "count": 1,
+          "player": "alice",
+          "zone": "Exile"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Count": {
+          "card": "Llanowar Elves",
+          "count": 1,
+          "player": "bob",
+          "zone": "Exile"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Count": {
+          "card": "Forest",
+          "count": 1,
+          "player": "carol",
+          "zone": "Exile"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Count": {
+          "card": "Grizzly Bears",
+          "count": 1,
+          "player": "bob",
+          "zone": "Battlefield"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Count": {
+          "card": "Rowan, Scholar of Sparks",
+          "count": 1,
+          "player": "alice",
+          "zone": "Graveyard"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "PowerToughness": {
+          "object": "Elemental Token",
+          "power": 4,
+          "toughness": 4
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Subtypes": {
+          "object": "Elemental Token",
+          "subtypes": [
+            "Elemental"
+          ]
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "View": {
+          "is": [
+            "Blue",
+            "Red"
+          ],
+          "object": "Elemental Token",
+          "of": "Colors"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    }
+  ]
+}

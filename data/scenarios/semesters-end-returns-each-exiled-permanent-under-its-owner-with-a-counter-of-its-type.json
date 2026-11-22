@@ -1,0 +1,291 @@
+{
+  "board": {
+    "active": "alice",
+    "seats": [
+      {
+        "battlefield": [
+          {
+            "card": "Grizzly Bears",
+            "label": "bears"
+          },
+          {
+            "card": "Jace Beleren",
+            "counters": [
+              {
+                "key": {
+                  "type": "Loyalty"
+                },
+                "value": 3
+              }
+            ],
+            "label": "jace"
+          },
+          {
+            "card": "Llanowar Elves",
+            "label": "elves"
+          }
+        ],
+        "hand": [
+          {
+            "card": "Semester's End",
+            "label": "se"
+          }
+        ],
+        "library": [
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          }
+        ],
+        "manaPool": "WCCC",
+        "name": "alice"
+      },
+      {
+        "battlefield": [
+          {
+            "card": "Hill Giant",
+            "controller": "alice",
+            "label": "giant"
+          },
+          {
+            "card": "Serra Angel",
+            "label": "angel"
+          }
+        ],
+        "library": [
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          }
+        ],
+        "name": "bob"
+      }
+    ],
+    "step": "PrecombatMain"
+  },
+  "description": "CR 122.6, 110.2a, 306.5b: Semester's End exiles the creatures and planeswalkers its caster controls that it targets, and at the next end step returns each under its owner's control with an additional +1/+1 counter if a creature and an additional loyalty counter if a planeswalker",
+  "note": "Bob's Serra Angel is not alice's to target. Alice controls bob's Hill Giant, which returns under bob. Llanowar Elves is untargeted and gets nothing; Jace gets no +1/+1 counter and the creatures no loyalty counter.",
+  "timeline": [
+    {
+      "player": "alice",
+      "refuse": {
+        "Cast": {
+          "object": "$se",
+          "targets": [
+            "$angel"
+          ]
+        }
+      },
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": {
+        "Cast": {
+          "object": "$se",
+          "targets": [
+            "$bears",
+            "$jace",
+            "$giant"
+          ]
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": "Pass",
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Count": {
+          "card": "Grizzly Bears",
+          "count": 1,
+          "player": "alice",
+          "zone": "Exile"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Count": {
+          "card": "Jace Beleren",
+          "count": 1,
+          "player": "alice",
+          "zone": "Exile"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Count": {
+          "card": "Hill Giant",
+          "count": 1,
+          "player": "bob",
+          "zone": "Exile"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": "Pass",
+      "player": "alice",
+      "step": "EndStep",
+      "turn": 1
+    },
+    {
+      "do": {
+        "OrderTimestamps": [
+          "Grizzly Bears",
+          "Jace Beleren"
+        ]
+      },
+      "player": "alice",
+      "step": "EndStep",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Counters": {
+          "count": 1,
+          "kind": {
+            "type": "PlusOnePlusOne"
+          },
+          "object": "Grizzly Bears"
+        }
+      },
+      "player": "alice",
+      "step": "EndStep",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Counters": {
+          "count": 0,
+          "kind": {
+            "type": "Loyalty"
+          },
+          "object": "Grizzly Bears"
+        }
+      },
+      "player": "alice",
+      "step": "EndStep",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Counters": {
+          "count": 4,
+          "kind": {
+            "type": "Loyalty"
+          },
+          "object": "Jace Beleren"
+        }
+      },
+      "player": "alice",
+      "step": "EndStep",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Counters": {
+          "count": 0,
+          "kind": {
+            "type": "PlusOnePlusOne"
+          },
+          "object": "Jace Beleren"
+        }
+      },
+      "player": "alice",
+      "step": "EndStep",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Counters": {
+          "count": 1,
+          "kind": {
+            "type": "PlusOnePlusOne"
+          },
+          "object": "Hill Giant"
+        }
+      },
+      "player": "alice",
+      "step": "EndStep",
+      "turn": 1
+    },
+    {
+      "check": {
+        "View": {
+          "is": "bob",
+          "object": "Hill Giant",
+          "of": "Controller"
+        }
+      },
+      "player": "alice",
+      "step": "EndStep",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Counters": {
+          "count": 0,
+          "kind": {
+            "type": "PlusOnePlusOne"
+          },
+          "object": "$elves"
+        }
+      },
+      "player": "alice",
+      "step": "EndStep",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Count": {
+          "card": "Grizzly Bears",
+          "count": 1,
+          "player": "alice",
+          "zone": "Battlefield"
+        }
+      },
+      "player": "alice",
+      "step": "EndStep",
+      "turn": 1
+    }
+  ]
+}

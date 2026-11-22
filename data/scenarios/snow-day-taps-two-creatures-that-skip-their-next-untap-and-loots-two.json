@@ -1,0 +1,245 @@
+{
+  "board": {
+    "active": "alice",
+    "seats": [
+      {
+        "battlefield": [
+          {
+            "card": "Island",
+            "label": "i0"
+          },
+          {
+            "card": "Island",
+            "label": "i1"
+          },
+          {
+            "card": "Island",
+            "label": "i2"
+          },
+          {
+            "card": "Island",
+            "label": "i3"
+          },
+          {
+            "card": "Island",
+            "label": "i4"
+          },
+          {
+            "card": "Island",
+            "label": "i5"
+          }
+        ],
+        "hand": [
+          {
+            "card": "Snow Day",
+            "label": "snow"
+          }
+        ],
+        "library": [
+          {
+            "card": "Hill Giant"
+          },
+          {
+            "card": "Gray Ogre"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          }
+        ],
+        "name": "alice"
+      },
+      {
+        "battlefield": [
+          {
+            "card": "Craw Wurm",
+            "label": "wurm"
+          },
+          {
+            "card": "Grizzly Bears",
+            "label": "bears"
+          },
+          {
+            "card": "Savannah Lions",
+            "label": "lions",
+            "tapped": true
+          }
+        ],
+        "library": [
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          }
+        ],
+        "name": "bob"
+      }
+    ],
+    "step": "PrecombatMain"
+  },
+  "description": "Snow Day taps two creatures that skip their controller's next untap step, then draws two and discards one",
+  "note": "bob's tapped Savannah Lions, not targeted, untaps as usual; alice keeps Hill Giant and discards Gray Ogre, the second card drawn.",
+  "timeline": [
+    {
+      "do": {
+        "Cast": {
+          "mana": [
+            "$i0",
+            "$i1",
+            "$i2",
+            "$i3",
+            "$i4",
+            "$i5"
+          ],
+          "object": "$snow",
+          "targets": [
+            "$wurm",
+            "$bears"
+          ]
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": "Pass",
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": {
+        "Answer": {
+          "prompt": "ChooseDiscard",
+          "with": [
+            "Gray Ogre"
+          ]
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Tapped": {
+          "object": "$wurm",
+          "tapped": true
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "View": {
+          "is": [
+            "Hill Giant"
+          ],
+          "of": "Zone",
+          "player": "alice",
+          "zone": "Hand"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "View": {
+          "is": [
+            "Gray Ogre",
+            "Snow Day"
+          ],
+          "of": "Zone",
+          "player": "alice",
+          "zone": "Graveyard"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Tapped": {
+          "object": "$wurm",
+          "tapped": true
+        }
+      },
+      "player": "bob",
+      "step": "Upkeep",
+      "turn": 2
+    },
+    {
+      "check": {
+        "Tapped": {
+          "object": "$bears",
+          "tapped": true
+        }
+      },
+      "player": "bob",
+      "step": "Upkeep",
+      "turn": 2
+    },
+    {
+      "check": {
+        "Tapped": {
+          "object": "$lions",
+          "tapped": false
+        }
+      },
+      "player": "bob",
+      "step": "Upkeep",
+      "turn": 2
+    }
+  ]
+}

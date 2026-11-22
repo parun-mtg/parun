@@ -1,0 +1,361 @@
+{
+  "board": {
+    "active": "alice",
+    "seats": [
+      {
+        "battlefield": [
+          {
+            "card": "Mountain",
+            "label": "m0"
+          },
+          {
+            "card": "Mountain",
+            "label": "m1"
+          },
+          {
+            "card": "Mountain",
+            "label": "m2"
+          },
+          {
+            "card": "Plains",
+            "label": "p0"
+          },
+          {
+            "card": "Plains",
+            "label": "p1"
+          },
+          {
+            "card": "Plains",
+            "label": "p2"
+          }
+        ],
+        "hand": [
+          {
+            "card": "Rip Apart",
+            "label": "r0"
+          },
+          {
+            "card": "Rip Apart",
+            "label": "r1"
+          },
+          {
+            "card": "Rip Apart",
+            "label": "r2"
+          }
+        ],
+        "library": [
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          }
+        ],
+        "name": "alice"
+      },
+      {
+        "battlefield": [
+          {
+            "card": "Craw Wurm",
+            "label": "wurm"
+          },
+          {
+            "card": "Ajani Goldmane",
+            "counters": [
+              {
+                "key": {
+                  "type": "Loyalty"
+                },
+                "value": 4
+              }
+            ],
+            "label": "ajani"
+          },
+          {
+            "card": "Glorious Anthem",
+            "label": "anthem"
+          },
+          {
+            "card": "Mind Stone",
+            "label": "stone"
+          },
+          {
+            "card": "Ornithopter",
+            "label": "thopter"
+          }
+        ],
+        "library": [
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          }
+        ],
+        "name": "bob"
+      }
+    ],
+    "step": "PrecombatMain"
+  },
+  "description": "Rip Apart's two modes: 3 damage to a creature or planeswalker, or destroy an artifact or enchantment; neither mode reaches the other's object",
+  "note": "Ornithopter, an artifact creature, is a candidate for both modes, so neither slot binds unasked when a mutation narrows it; Mind Stone and Ornithopter survive the destroy.",
+  "timeline": [
+    {
+      "player": "alice",
+      "refuse": {
+        "Cast": {
+          "mana": [
+            "$m0",
+            "$p0",
+            null
+          ],
+          "modes": [
+            0
+          ],
+          "object": "$r0",
+          "targetsBySlot": {
+            "target": [
+              "$anthem"
+            ]
+          }
+        }
+      },
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": {
+        "Cast": {
+          "mana": [
+            "$m0",
+            "$p0",
+            null
+          ],
+          "modes": [
+            0
+          ],
+          "object": "$r0",
+          "targetsBySlot": {
+            "target": [
+              "$wurm"
+            ]
+          }
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": "Pass",
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Damage": {
+          "damage": 3,
+          "object": "$wurm"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": {
+        "Cast": {
+          "mana": [
+            "$m1",
+            "$p1",
+            null
+          ],
+          "modes": [
+            0
+          ],
+          "object": "$r1",
+          "targetsBySlot": {
+            "target": [
+              "$ajani"
+            ]
+          }
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": "Pass",
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Counters": {
+          "count": 1,
+          "kind": {
+            "type": "Loyalty"
+          },
+          "object": "$ajani"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "player": "alice",
+      "refuse": {
+        "Cast": {
+          "mana": [
+            "$m2",
+            "$p2",
+            null
+          ],
+          "modes": [
+            1
+          ],
+          "object": "$r2",
+          "targetsBySlot": {
+            "permanent": [
+              "$wurm"
+            ]
+          }
+        }
+      },
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": {
+        "Cast": {
+          "mana": [
+            "$m2",
+            "$p2"
+          ],
+          "modes": [
+            1
+          ],
+          "object": "$r2",
+          "targetsBySlot": {
+            "permanent": [
+              "$anthem"
+            ]
+          }
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": "Pass",
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Count": {
+          "card": "Glorious Anthem",
+          "count": 1,
+          "player": "bob",
+          "zone": "Graveyard"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Count": {
+          "card": "Craw Wurm",
+          "count": 1,
+          "player": "bob",
+          "zone": "Battlefield"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Count": {
+          "card": "Mind Stone",
+          "count": 1,
+          "player": "bob",
+          "zone": "Battlefield"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Count": {
+          "card": "Ornithopter",
+          "count": 1,
+          "player": "bob",
+          "zone": "Battlefield"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    }
+  ]
+}

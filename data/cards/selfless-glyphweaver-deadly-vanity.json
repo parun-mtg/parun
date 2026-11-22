@@ -1,0 +1,201 @@
+{
+  "faces": [
+    {
+      "activatedAbilities": [
+        {
+          "cost": {
+            "components": [
+              {
+                "type": "ExileThis"
+              }
+            ],
+            "mana": []
+          },
+          "modal": {
+            "modes": [
+              {
+                "clauses": [
+                  {
+                    "effects": [
+                      {
+                        "type": "ModifyTarget",
+                        "value": {
+                          "duration": {
+                            "type": "UntilEndOfTurn"
+                          },
+                          "modification": {
+                            "type": "GainKeyword",
+                            "value": {
+                              "type": "Indestructible"
+                            }
+                          },
+                          "ref": {
+                            "type": "EachMatching",
+                            "value": {
+                              "type": "And",
+                              "value": [
+                                {
+                                  "type": "HasCardType",
+                                  "value": "Creature"
+                                },
+                                {
+                                  "type": "HeldBy",
+                                  "value": {
+                                    "holder": "Controller",
+                                    "relation": "You"
+                                  }
+                                }
+                              ]
+                            }
+                          }
+                        }
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          }
+        }
+      ],
+      "manaCost": [
+        {
+          "type": "Generic",
+          "value": 2
+        },
+        {
+          "type": "OfType",
+          "value": {
+            "type": "Colored",
+            "value": "White"
+          }
+        }
+      ],
+      "name": "Selfless Glyphweaver",
+      "oracleText": "Exile this creature: Creatures you control gain indestructible until end of turn.",
+      "power": {
+        "type": "Literal",
+        "value": 2
+      },
+      "toughness": {
+        "type": "Literal",
+        "value": 3
+      },
+      "typeLine": {
+        "subtypes": [
+          "Human",
+          "Cleric"
+        ],
+        "types": [
+          "Creature"
+        ]
+      }
+    },
+    {
+      "manaCost": [
+        {
+          "type": "Generic",
+          "value": 5
+        },
+        {
+          "type": "OfType",
+          "value": {
+            "type": "Colored",
+            "value": "Black"
+          }
+        },
+        {
+          "type": "OfType",
+          "value": {
+            "type": "Colored",
+            "value": "Black"
+          }
+        },
+        {
+          "type": "OfType",
+          "value": {
+            "type": "Colored",
+            "value": "Black"
+          }
+        }
+      ],
+      "name": "Deadly Vanity",
+      "oracleText": "Choose a creature or planeswalker, then destroy all other creatures and planeswalkers.",
+      "spell": {
+        "modes": [
+          {
+            "clauses": [
+              {
+                "effects": [
+                  {
+                    "type": "ChoosePermanents",
+                    "value": {
+                      "permanents": {
+                        "filter": {
+                          "type": "Or",
+                          "value": [
+                            {
+                              "type": "HasCardType",
+                              "value": "Creature"
+                            },
+                            {
+                              "type": "HasCardType",
+                              "value": "Planeswalker"
+                            }
+                          ]
+                        }
+                      },
+                      "slot": "chosen"
+                    }
+                  },
+                  {
+                    "type": "Destroy",
+                    "value": {
+                      "ref": {
+                        "type": "EachMatching",
+                        "value": {
+                          "type": "And",
+                          "value": [
+                            {
+                              "type": "Or",
+                              "value": [
+                                {
+                                  "type": "HasCardType",
+                                  "value": "Creature"
+                                },
+                                {
+                                  "type": "HasCardType",
+                                  "value": "Planeswalker"
+                                }
+                              ]
+                            },
+                            {
+                              "type": "Not",
+                              "value": {
+                                "type": "IsBound",
+                                "value": "chosen"
+                              }
+                            }
+                          ]
+                        }
+                      },
+                      "regenerability": "Regenerable"
+                    }
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "typeLine": {
+        "types": [
+          "Sorcery"
+        ]
+      }
+    }
+  ],
+  "layout": {
+    "type": "ModalDoubleFaced"
+  }
+}
