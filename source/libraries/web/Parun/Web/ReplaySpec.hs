@@ -32,8 +32,8 @@ spec s = Spec.describe s "Parun.Web.Replay" $ do
 
     Spec.it s "steps a turn at a time, to the turn's first position or the end" $ do
       let tapped label at = let page = Replay.view frame {Replay.position = at} in Html.labelled (Text.pack "button") (Text.pack label) page >>= \path -> Html.handler (Text.pack "click") path page
-      Spec.assertEqWith s "next turn" (fmap (tapped "Next turn") [0, 1, 2]) (fmap (Just . Replay.MkGo) [2, 2, 3])
-      Spec.assertEqWith s "previous turn" (fmap (tapped "Previous turn") [1, 2, 3]) (fmap (Just . Replay.MkGo) [0, 0, 2])
+      Spec.assertEqWith s "next turn" (fmap (tapped "\x23E9") [0, 1, 2]) (fmap (Just . Replay.MkGo) [2, 2, 3])
+      Spec.assertEqWith s "previous turn" (fmap (tapped "\x23EA") [1, 2, 3]) (fmap (Just . Replay.MkGo) [0, 0, 2])
 
     Spec.it s "says where the run stands, and why it stopped short" $ do
       let page = Html.toText . Replay.view $ frame {Replay.position = 1, Replay.failure = Just (Text.pack "the entry was never reached")}
