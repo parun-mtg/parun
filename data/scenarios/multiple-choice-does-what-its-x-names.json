@@ -93,17 +93,17 @@
     ],
     "step": "PrecombatMain"
   },
-  "description": "Multiple Choice reads X in each clause's condition: 1 scries and draws, 2 lets its caster choose a player who returns a creature, 3 makes a 4/4 Elemental, 4 does all three",
+  "description": "CR 107.3a, 608.2c: Multiple Choice reads X in each clause's condition: 1 scries and draws, 2 lets its caster choose a player who returns a creature, 3 makes a 4/4 Elemental, 4 does all three",
   "timeline": [
     {
       "do": {
         "Answer": {
           "prompt": "ChooseScry",
           "with": [
-            [],
             [
               "$top"
-            ]
+            ],
+            []
           ]
         }
       },
@@ -304,10 +304,10 @@
         "Answer": {
           "prompt": "ChooseScry",
           "with": [
+            [],
             [
               "Island"
-            ],
-            []
+            ]
           ]
         }
       },
