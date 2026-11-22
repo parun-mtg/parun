@@ -19,10 +19,12 @@ import qualified Parun.Types.PlayerId as PlayerId
 import qualified Parun.Types.PlayerView as PlayerView
 import qualified Parun.Types.Question as Question
 import qualified Parun.Types.Request as Request
+import qualified Parun.Web.Bar as Bar
 import qualified Parun.Web.Board as Board
 import qualified Parun.Web.Card as Card
 import qualified Parun.Web.Element as Element
 import qualified Parun.Web.Html as Html
+import qualified Parun.Web.Icon as Icon
 import qualified Parun.Web.Log as Log
 import qualified Parun.Web.Mana as Mana
 import qualified Parun.Web.Question as Web.Question
@@ -47,8 +49,6 @@ data Event
     MkBack
   | -- | Back from a game played on to the replay where it began.
     MkResumeReplay
-  | -- | Back from the list to the home screen.
-    MkHome
   deriving (Eq, Show)
 
 -- | One position of a replay, as the page shows it.
@@ -85,7 +85,7 @@ view frame =
       marks = maybe readOnly (\r -> mapMarks (Web.Question.cues r Set.empty Nothing)) asked
       logged = foldMap (Seq.fromList . snd . Log.unseen Map.empty) (board frame)
    in Element.el "main" ["game", "replay"] [] $
-        foldMap (\b -> [Board.turnBar (fmap (fmap MkTable) (Web.Question.logView (board frame) (viewer frame) Web.Question.blank {Web.Question.logged = logged})) [] (Web.Question.subgameChip (depth frame) <> [Web.Question.settingsButton Nothing Nothing]) b]) (board frame)
+        foldMap (\b -> [Board.turnBar (fmap (fmap MkTable) (Web.Question.logView (board frame) (viewer frame) Web.Question.blank {Web.Question.logged = logged})) [] (Web.Question.subgameChip (depth frame) <> [Bar.settingsButton Icon.MkMenu "Menu" Nothing Nothing]) b]) (board frame)
           <> [Element.el "div" ["play-area"] [] (foldMap (\b -> [Board.view marks b]) (board frame))]
           <> foldMap (Board.hand marks) (board frame)
           <> [Element.el "aside" ["side"] [] [Element.el "section" ["prompt"] [Element.attr "aria-label" (Text.pack "Replay")] (controls frame <> stop frame asked)]]
@@ -178,7 +178,7 @@ picker typed listed =
   let matches = Text.isInfixOf (Text.toLower typed) . Text.toLower
       shown = 200 :: Int
       links = Element.keyed "ul" ["scenario-list"] [] . fmap (\n -> (n, Element.el "li" [] [] [Element.button [] (MkOpen n) [Element.text n]]))
-      top = [Element.button ["home-button"] MkHome [Element.string "Home"], Element.el "h1" [] [] [Element.string "Scenarios"]]
+      top = [Element.el "h1" [] [] [Element.string "Scenarios"]]
    in Element.el "main" ["message", "scenarios"] [] $ case listed of
         Nothing -> top <> [Element.el "p" [] [] [Element.string "Fetching the scenarios\x2026"]]
         Just (themes, names) ->

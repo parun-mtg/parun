@@ -36,6 +36,7 @@ import qualified Parun.Types.Observer as Observer
 import qualified Parun.Types.PlayOptions as PlayOptions
 import qualified Parun.Types.PlayerId as PlayerId
 import qualified Parun.Types.Prompt as Prompt
+import qualified Parun.Types.Reply as R
 import qualified Parun.Types.Result as Result
 
 -- | The generator over the base monad, play stopping with why (stop).
@@ -55,6 +56,24 @@ bot registry = Answerer.MkAnswerer $ \asked -> do
 -- its reply back, Nothing at the end of input.
 wired :: (Monad m) => Registry.Registry m -> Protocol.Exchange m -> Answerer.Answerer (Asked.Asked GameState.GameState) (Play m)
 wired registry exchange = Protocol.over (judgingNames registry) (\request -> underneath (exchange request) >>= maybe (stop (Text.pack "end of input")) pure) Chance.chance
+
+-- | `live` with its answers to each prompt a seat answers (Protocol.requestFor)
+-- given to `kept` as replies, and taken from `stored` instead while it has
+-- one: a game picked up from its seed (Protocol.resumed) asks `live` nothing it
+-- answered before. Either way the answer draws apart from the game's generator
+-- (Generator.Play.apart), so the game draws alike. RemoteSeatSpec's resumed
+-- game against the search bot is the proof.
+remembered :: (Monad m) => m (Maybe R.Reply) -> (R.Reply -> m ()) -> Answerer.Answerer (Asked.Asked GameState.GameState) (Play m) -> Answerer.Answerer (Asked.Asked GameState.GameState) (Play m)
+remembered stored kept live = Answerer.MkAnswerer $ \asked -> case Protocol.requestFor asked of
+  Nothing -> Answerer.unwrap live asked
+  Just _ -> do
+    recalled <- underneath stored
+    Generator.Play.apart $ case recalled of
+      Just reply -> either stop pure (Protocol.decodeAnswer (Asked.prompt asked) reply)
+      Nothing -> do
+        answer <- Answerer.unwrap live asked
+        underneath (kept (Protocol.encodeAnswer (Asked.prompt asked) answer))
+        pure answer
 
 -- | A plain two-player game over the card reference `registry`
 -- ('consulting'), under `format` (CR 100.2), from setup to its result; the

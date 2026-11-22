@@ -44,8 +44,10 @@ import qualified Parun.Types.Face as Face
 import qualified Parun.Types.Key as Key
 import qualified Parun.Types.LegalityTable as LegalityTable
 import qualified Parun.Types.PlayerId as PlayerId
+import qualified Parun.Types.PlayerView as PlayerView
 import qualified Parun.Types.Scenario as Scenario.Type
 import qualified Parun.Types.TypeLine as TypeLine
+import qualified Parun.Web.Bar as Bar
 import qualified Parun.Web.Builder as Builder
 import qualified Parun.Web.CardIndex as CardIndex
 import qualified Parun.Web.Element as Element
@@ -115,8 +117,10 @@ data Loaded = MkLoaded
 data Next
   = MkToHome
   | MkToLobby
-  | -- | The builder, on this deck if any.
-    MkToBuilder (Maybe Text.Text)
+  | -- | The lobby, a bot's seat given to a player invited by link.
+    MkToInvite
+  | -- | The builder, on this deck if any, its Back leading here.
+    MkToBuilder (Maybe Text.Text) Next
   | MkToReplays
   | -- | This scenario's replay, at this position.
     MkToReplay Text.Text Natural
@@ -171,7 +175,8 @@ follow :: Shell -> Next -> IO ()
 follow shell next = case next of
   MkToHome -> home shell Home.new >>= follow shell . afterHome
   MkToLobby -> lobby shell Lobby.new [] >>= follow shell
-  MkToBuilder deck -> builder shell deck >>= follow shell
+  MkToInvite -> Browser.linkHost 0 >> lobby shell (Lobby.update (Lobby.MkInviteSlot 0) Text.empty Lobby.new) [] >>= follow shell
+  MkToBuilder deck back -> builder shell deck back >>= follow shell
   MkToReplays -> replays shell >>= follow shell
   MkToReplay name at -> replay shell name at >>= follow shell
   MkToPlayOn name at -> playOnFrom shell name at >>= follow shell
@@ -182,23 +187,45 @@ follow shell next = case next of
 afterHome :: Home.Outcome -> Next
 afterHome outcome = case outcome of
   Home.MkGo Home.MkPlayBots -> MkToLobby
+  Home.MkGo Home.MkPlayFriend -> MkToInvite
+  Home.MkGo Home.MkBuildDeck -> MkToBuilder Nothing MkToHome
+  Home.MkGo (Home.MkEditDeck name) -> MkToBuilder (Just name) MkToHome
   Home.MkGo Home.MkReplays -> MkToReplays
   Home.MkGo (Home.MkPlayOn name at) -> MkToPlayOn name at
   _ -> MkToHome
 
--- | The home screen, from this one, until it leads somewhere.
+-- | Where a section of the top bar leads.
+sectionNext :: Bar.Section -> Next
+sectionNext section = case section of
+  Bar.MkHome -> MkToHome
+  Bar.MkPlay -> MkToLobby
+  Bar.MkDecks -> MkToBuilder Nothing MkToHome
+  Bar.MkReplays -> MkToReplays
+
+-- | A screen under the top bar, in this section.
+framed :: Bar.Section -> Html.Html Screen.Event -> Html.Html Screen.Event
+framed section = Bar.framed Screen.MkNav (Just section)
+
+-- | The home screen, from this one, until it leads somewhere, listing the
+-- decks saved here as they are read.
 home :: Shell -> Home.Home -> IO Home.Outcome
 home shell = go
   where
     go shown = do
       now <- IORef.readIORef (loaded shell)
-      let current = shown {Home.problem = Loading.problem (loading now)}
-      Browser.display (page shell) (fmap Screen.MkHome (Home.view current))
+      let current =
+            shown
+              { Home.problem = Loading.problem (loading now),
+                Home.saved = [Home.MkDeck name (Map.findWithDefault Set.empty name (palette now)) (Map.lookup name (deckSizes now)) | name <- foldMap Map.keys (deckFiles now), Lobby.isSaved name]
+              }
+      Browser.display (page shell) (framed Bar.MkHome (fmap Screen.MkHome (Home.view current)))
       woke <- await shell
+      let tapped event = case Home.update event current of
+            Home.MkStay next -> go next
+            outcome -> pure outcome
       case woke of
-        MkTapped (Screen.MkHome event) _ -> case Home.update event current of
-          Home.MkStay next -> go next
-          outcome -> pure outcome
+        MkTapped (Screen.MkHome event) _ -> tapped event
+        MkTapped (Screen.MkNav section) _ -> tapped (Home.navigate section)
         _ -> go current
 
 -- | The lobby, from this one once the invited slots' channels said these,
@@ -219,7 +246,7 @@ lobby shell initial said = do
       if Lobby.starts current
         then startWith current told'
         else do
-          Browser.display (page shell) (fmap Screen.MkLobby (Lobby.view current))
+          Browser.display (page shell) (framed Bar.MkPlay (fmap Screen.MkLobby (Lobby.view current)))
           woke <- await shell
           -- Every invite the lobby drops has its channel closed.
           let go next = do
@@ -228,10 +255,11 @@ lobby shell initial said = do
               leaving next = mapM_ Browser.linkClose (Map.keys (Lobby.invites current)) >> pure next
           case woke of
             MkHeard heard' -> heardBy current heard' >>= go
+            MkTapped (Screen.MkNav section) _
+              | section /= Bar.MkPlay -> leaving (sectionNext section)
             MkTapped (Screen.MkLobby event) value -> case event of
-              Lobby.MkHome -> leaving MkToHome
-              Lobby.MkOpenBuilder -> leaving (MkToBuilder Nothing)
-              Lobby.MkEdit name -> leaving (MkToBuilder (Just name))
+              Lobby.MkOpenBuilder -> leaving (MkToBuilder Nothing MkToLobby)
+              Lobby.MkEdit name -> leaving (MkToBuilder (Just name) MkToLobby)
               Lobby.MkStart
                 | Map.null (Lobby.invites current),
                   Right mine <- Lobby.startable current -> do
@@ -325,8 +353,8 @@ importDeck :: Shell -> Lobby.Lobby -> Lobby.Import -> IO Lobby.Lobby
 importDeck shell current panel = case Lobby.nameProblems (Lobby.decks current) (Lobby.importName panel) of
   problems@(_ : _) -> pure (refuse problems)
   [] -> do
-    Browser.display (page shell) . fmap Screen.MkLobby $ Lobby.view current {Lobby.importing = Just panel {Lobby.checking = True, Lobby.importProblems = []}}
-    built <- untilBuilt shell [Loading.MkDecks, Loading.MkCards, Loading.MkRules] (registry <$> IORef.readIORef (loaded shell))
+    Browser.display (page shell) . framed Bar.MkPlay . fmap Screen.MkLobby $ Lobby.view current {Lobby.importing = Just panel {Lobby.checking = True, Lobby.importProblems = []}}
+    built <- untilBuilt shell quiet [Loading.MkDecks, Loading.MkCards, Loading.MkRules] (registry <$> IORef.readIORef (loaded shell))
     -- The name again, against the saved decks read meanwhile.
     listed <- IORef.readIORef (loaded shell)
     let named = Lobby.nameProblems (Seq.fromList (foldMap Map.keys (deckFiles listed))) (Lobby.importName panel)
@@ -395,12 +423,13 @@ lineOf root byFile n name = case LazyMap.lookup (Registry.cardPath root (Registr
             Lobby.MkLine n name (Face.manaCost (EngineCard.combined c)) (Quantity.manaValueOf (EngineCard.combined c)) kind
   _ -> Lobby.MkLine n name Nothing 0 Lobby.MkSpell
 
--- | The deck builder until it leads back to the lobby, on this deck if any
--- (a saved one to save over, any other as a copy): its cards indexed as they
--- load, its list checked after each change once the registry is built, and
--- saved as a lobby deck.
-builder :: Shell -> Maybe Text.Text -> IO Next
-builder shell deck = do
+-- | The deck builder until it leads back where `back` says, or elsewhere
+-- from the top bar, on this deck if any (a saved one to save over, any
+-- other as a copy): its cards indexed as they load, its list checked after
+-- each change once the registry is built, and saved as a lobby deck. Leaving
+-- with changes unsaved asks first.
+builder :: Shell -> Maybe Text.Text -> Next -> IO Next
+builder shell deck back = do
   need shell Loading.MkDecks
   need shell Loading.MkCards
   IORef.modifyIORef' (loaded shell) $ \l -> l {indexWanted = True}
@@ -410,10 +439,11 @@ builder shell deck = do
       contents <- Encoding.decodeUtf8Lenient <$> ByteString.readFile path
       pure (Builder.open (if Lobby.isSaved name then Just name else Nothing) (snd (Lobby.describe name)) contents (Builder.new []))
     Nothing -> pure (Builder.new []) {Builder.notices = [Text.pack "That deck could not be opened, so this is a new one." | Maybe.isJust deck]}
-  go initial Nothing
+  go initial Nothing back
   where
-    -- The builder, and the list it was last checked at.
-    go shown lastChecked = do
+    -- The builder, the list it was last checked at, and where leaving it
+    -- leads.
+    go shown lastChecked leaving = do
       now <- IORef.readIORef (loaded shell)
       named <- if null (Builder.formats shown) then Legality.shippedFormats else pure (Builder.formats shown)
       least <- maybe (Legality.minimumFor (Builder.format shown)) (pure . Just) (Builder.least shown)
@@ -431,17 +461,23 @@ builder shell deck = do
               (found, cards') <- deckProblems shell reg (Builder.listText filled)
               pure (Builder.checked found cards' filled, Just key)
         _ -> pure (filled, lastChecked)
-      Browser.display (page shell) (fmap Screen.MkBuilder (Builder.view (fst current)))
+      Browser.display (page shell) (framed Bar.MkDecks (fmap Screen.MkBuilder (Builder.view (fst current))))
       woke <- await shell
       let shownNow = fst current
+          -- Leaves for `next`, asking first while changes are unsaved.
+          leave next
+            | Builder.dirty shownNow = go (Builder.update Builder.MkBack Text.empty shownNow) (snd current) next
+            | otherwise = pure next
       case woke of
+        MkTapped (Screen.MkNav section) _
+          | section /= Bar.MkDecks -> leave (sectionNext section)
         MkTapped (Screen.MkBuilder event) value -> case event of
-          Builder.MkBack | not (Builder.dirty shownNow) -> pure MkToLobby
-          Builder.MkLeave -> pure MkToLobby
+          Builder.MkBack -> leave back
+          Builder.MkLeave -> pure leaving
           Builder.MkSave -> do
             saved' <- saveBuilt shell shownNow
-            go saved' (snd current)
-          Builder.MkFormat -> go (Builder.update event value shownNow) {Builder.least = Nothing} (snd current)
+            go saved' (snd current) leaving
+          Builder.MkFormat -> go (Builder.update event value shownNow) {Builder.least = Nothing} (snd current) leaving
           Builder.MkPoolChoice
             | Just code <- Text.stripPrefix (Text.pack "set:") value -> do
                 listed <- setLists <$> IORef.readIORef (loaded shell)
@@ -453,8 +489,9 @@ builder shell deck = do
                       Nothing -> shownNow {Builder.poolProblems = [Text.pack "No such set: " <> code]}
                   )
                   (snd current)
-          _ -> go (Builder.update event value shownNow) (snd current)
-        _ -> go shownNow (snd current)
+                  leaving
+          _ -> go (Builder.update event value shownNow) (snd current) leaving
+        _ -> go shownNow (snd current) leaving
 
 -- | The builder once its deck is saved under the name it was saved as, or
 -- the name typed (Builder.saveTarget): written to the deck root and the
@@ -511,14 +548,15 @@ randomOf among = do
 
 -- | The deck files, once read; nothing if the decks failed to load.
 decksRead :: Shell -> IO (Maybe (Map.Map Text.Text FilePath))
-decksRead shell = either (const Nothing) Just <$> untilBuilt shell [Loading.MkDecks] (deckFiles <$> IORef.readIORef (loaded shell))
+decksRead shell = either (const Nothing) Just <$> untilBuilt shell quiet [Loading.MkDecks] (deckFiles <$> IORef.readIORef (loaded shell))
 
--- | Waits, loading meanwhile, until the value is built, taps waiting; or
--- why one of the needs it is built from did not load.
-untilBuilt :: Shell -> [Loading.Need] -> IO (Maybe a) -> IO (Either Text.Text a)
-untilBuilt shell needs built = do
+-- | Waits, loading meanwhile, until the value is built, taps waiting,
+-- showing each change in what has loaded as `waiting` says; or why one of
+-- the needs it is built from did not load.
+untilBuilt :: Shell -> (Loading.Loading -> IO ()) -> [Loading.Need] -> IO (Maybe a) -> IO (Either Text.Text a)
+untilBuilt shell waiting needs built = do
   mapM_ (need shell) needs
-  let go = do
+  let go before = do
         done <- built
         now <- loading <$> IORef.readIORef (loaded shell)
         case done of
@@ -526,10 +564,19 @@ untilBuilt shell needs built = do
           Nothing
             | problem : _ <- Maybe.mapMaybe (`Loading.problemFor` now) needs -> pure (Left problem)
             | otherwise -> do
+                Monad.when (before /= Just now) (waiting now)
                 progressed <- awaitWork shell
                 Monad.unless progressed Browser.idle
-                go
-  go
+                go (Just now)
+  go Nothing
+
+-- | Nothing shown while waiting (untilBuilt): the screen already says so.
+quiet :: Loading.Loading -> IO ()
+quiet = const (pure ())
+
+-- | The loading screen shown while waiting (untilBuilt).
+loadingScreen :: Shell -> Loading.Loading -> IO ()
+loadingScreen shell = Browser.display (page shell) . Loading.view
 
 -- | A game between these decks, each a name and its list's text, once the
 -- registry is built, shown while it builds, each bot's slot in `invited`
@@ -545,8 +592,9 @@ untilBuilt shell needs built = do
 -- new game closes them.
 play :: Shell -> NonEmpty.NonEmpty (Text.Text, Text.Text) -> Set.Set Int -> Maybe Link.Saved -> IO Next
 play shell seats invited resuming = do
-  Browser.display (page shell) (if Maybe.isJust resuming then message ["Picking the game up where it stopped\x2026"] else Hotseat.starting (fmap fst seats))
-  built <- untilBuilt shell [Loading.MkCards, Loading.MkRules] (registry <$> IORef.readIORef (loaded shell))
+  let starting = Browser.display (page shell) (if Maybe.isJust resuming then message ["Picking the game up where it stopped\x2026"] else Hotseat.starting (fmap fst seats))
+  starting
+  built <- untilBuilt shell (loadingScreen shell) [Loading.MkCards, Loading.MkRules] (registry <$> IORef.readIORef (loaded shell))
   -- The invited slots whose connection is down: every one of a game picked up.
   down <- IORef.newIORef (if Maybe.isJust resuming then invited else Set.empty)
   let channelOf i = tracked down i (Browser.channel (page shell) (build shell) i)
@@ -556,6 +604,8 @@ play shell seats invited resuming = do
   case built of
     Left problem -> stopped [problem] >> notice shell [problem]
     Right reg -> do
+      -- Again, should the loading screen have replaced it meanwhile.
+      starting
       chosen <- IORef.newIORef MkToHome
       seed <- maybe Key.fresh (pure . Link.seed) resuming
       Monad.when (keeping && Maybe.isNothing resuming) . Browser.keepGame $ Link.saved (build shell) (Link.MkSaved seed seats (Set.toList invited) [])
@@ -661,9 +711,11 @@ joinGame shell offer = do
       let current = case files of
             Just named | Join.reading shown -> shown {Join.reading = False, Join.decks = Seq.fromList (Map.keys named)}
             _ -> shown
-      Browser.display (page shell) (fmap Screen.MkJoin (Join.view current))
+      Browser.display (page shell) (framed Bar.MkPlay (fmap Screen.MkJoin (Join.view current)))
       woke <- await shell
       case woke of
+        MkTapped (Screen.MkNav section) _
+          | section /= Bar.MkPlay -> Browser.linkClose n >> pure (sectionNext section)
         MkHeard heard' | Browser.link heard' == n -> case Text.unpack (Browser.kind heard') of
           "reply" -> go current {Join.reply = Just (Browser.said heard')}
           "open" -> hello current >> go current {Join.connected = True, Join.problem = Nothing}
@@ -675,7 +727,6 @@ joinGame shell offer = do
           "closed" -> go (lost hostClosed current)
           _ -> go current
         MkTapped (Screen.MkJoin event) value -> case event of
-          Join.MkHome -> Browser.linkClose n >> pure MkToHome
           Join.MkMakeReply -> Browser.linkJoin n offer >> go current
           Join.MkReady | Join.connected current -> Link.send hostChannel (Link.MkReady (not (Join.isReady current))) >> go current
           _ -> do
@@ -697,7 +748,7 @@ joinGame shell offer = do
     -- it, or the player goes home.
     guestGame current seat = do
       Browser.display (page shell) (message ["Loading the cards\x2026"])
-      built <- untilBuilt shell [Loading.MkCards, Loading.MkRules] (registry <$> IORef.readIORef (loaded shell))
+      built <- untilBuilt shell (loadingScreen shell) [Loading.MkCards, Loading.MkRules] (registry <$> IORef.readIORef (loaded shell))
       case built of
         Left problem -> Browser.linkClose n >> notice shell [problem]
         Right reg -> do
@@ -723,22 +774,28 @@ joinGame shell offer = do
               -- A game stopped on a dropped connection left it closed.
               ended (Ending.verdict ending == Ending.MkStopped)
 
--- | The home screen with a game paused, the replays reachable from it,
--- until the player resumes the game or gives it up for another, recorded
--- in `chosen`.
-leaveFor :: Shell -> IORef.IORef Next -> IO Hotseat.Leave
-leaveFor shell chosen = go Home.new {Home.paused = True}
+-- | The home screen with a game paused at this board, the replays and the
+-- builder reachable from it, until the player resumes the game or gives it
+-- up for another, recorded in `chosen`; a new game chosen elsewhere is
+-- asked about on the home screen first.
+leaveFor :: Shell -> IORef.IORef Next -> Maybe PlayerView.PlayerView -> IO Hotseat.Leave
+leaveFor shell chosen board = go paused
   where
+    paused = Home.new {Home.paused = Just (Home.pausedOn board)}
     go shown = do
       outcome <- home shell shown
       case outcome of
-        Home.MkGo Home.MkReplays -> do
-          next <- replays shell
-          case next of
-            MkToPlayOn name at -> go Home.new {Home.paused = True, Home.confirming = Just (Home.MkPlayOn name at)}
-            _ -> go Home.new {Home.paused = True}
-        Home.MkGo _ -> IORef.writeIORef chosen (afterHome outcome) >> pure Hotseat.MkAbandon
+        Home.MkGo choice
+          | Home.starts choice -> IORef.writeIORef chosen (afterHome outcome) >> pure Hotseat.MkAbandon
+          | otherwise -> visit (afterHome outcome)
         _ -> pure Hotseat.MkResume
+    visit next = case next of
+      MkToReplays -> replays shell >>= visit
+      MkToBuilder deck back -> builder shell deck back >>= visit
+      MkToPlayOn name at -> go paused {Home.confirming = Just (Home.MkPlayOn name at)}
+      MkToLobby -> go paused {Home.confirming = Just Home.MkPlayBots}
+      MkToInvite -> go paused {Home.confirming = Just Home.MkPlayFriend}
+      _ -> go paused
 
 -- | The list of scenarios, fetched first, until one is opened and left for
 -- a game or the home screen.
@@ -760,16 +817,17 @@ replays shell = do
           Just (Left problem, []) -> notice shell [problem]
           Just (Left problem, _) -> notice shell [Text.pack "The scenario manifest does not decode:", problem]
           _ -> do
-            Browser.display (page shell) . fmap Screen.MkReplay $ Web.Replay.picker typed (fmap (Bifunctor.first (Either.fromRight Map.empty)) listed)
+            Browser.display (page shell) . framed Bar.MkReplays . fmap Screen.MkReplay $ Web.Replay.picker typed (fmap (Bifunctor.first (Either.fromRight Map.empty)) listed)
             woke <- await shell
             case woke of
+              MkTapped (Screen.MkNav section) _
+                | section /= Bar.MkReplays -> pure (sectionNext section)
               MkTapped (Screen.MkReplay Web.Replay.MkSearch) value -> go value
               MkTapped (Screen.MkReplay (Web.Replay.MkOpen name)) _ -> do
                 next <- replay shell name 0
                 case next of
                   MkToReplays -> go typed
                   _ -> pure next
-              MkTapped (Screen.MkReplay Web.Replay.MkHome) _ -> pure MkToHome
               _ -> go typed
   go Text.empty
 
@@ -806,7 +864,7 @@ playOnFrom shell name at = opened shell name $ \reg scenario -> do
 opened :: Shell -> Text.Text -> (Registry.Registry Identity.Identity -> Scenario.Type.Scenario -> IO Next) -> IO Next
 opened shell name continue = do
   Browser.display (page shell) (message ["Loading the cards\x2026"])
-  built <- untilBuilt shell [Loading.MkCards, Loading.MkRules, Loading.MkScenarios] $ do
+  built <- untilBuilt shell (loadingScreen shell) [Loading.MkCards, Loading.MkRules, Loading.MkScenarios] $ do
     now <- IORef.readIORef (loaded shell)
     pure (if Loading.ready Loading.MkScenarios (loading now) then registry now else Nothing)
   case built of

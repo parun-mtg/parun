@@ -27,7 +27,6 @@ import qualified Parun.Types.ManaType as ManaType
 import qualified Parun.Types.RuleFamily as RuleFamily
 import qualified Parun.Web.Card as Web.Card
 import qualified Parun.Web.Element as Element
-import qualified Parun.Web.Home as Home
 import qualified Parun.Web.Html as Html
 import qualified Parun.Web.Link as Link
 import qualified Parun.Web.Mana as Mana
@@ -129,8 +128,6 @@ data Event
     MkDropBot
   | -- | Starts the game.
     MkStart
-  | -- | Goes back to the home screen.
-    MkHome
   | -- | Opens the panel a deck list is pasted into.
     MkOpenImport
   | -- | Closes it.
@@ -392,7 +389,6 @@ updated event typed lobby = case event of
   MkCloseExport -> lobby {exporting = Nothing}
   MkOpenBuilder -> lobby
   MkEdit _ -> lobby
-  MkHome -> lobby
   MkInviteSlot i
     | i >= 0 && i < length (theirs lobby) -> lobby {invites = Map.insertWith (\_ old -> old) i newInvite (invites lobby), choosing = if choosing lobby == MkTheirs i then MkMine else choosing lobby}
     | otherwise -> lobby
@@ -524,8 +520,7 @@ view lobby =
         "main"
         ["lobby"]
         []
-        $ [ (Text.pack "top", Element.el "div" ["lobby-top"] [] [Element.button ["home-button"] MkHome [Element.string "Home"], Home.hero]),
-            ( Text.pack "matchup",
+        $ [ ( Text.pack "matchup",
               Element.el
                 "section"
                 ["matchup"]

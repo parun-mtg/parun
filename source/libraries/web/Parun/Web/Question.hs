@@ -47,6 +47,7 @@ import qualified Parun.Types.Reply as R
 import qualified Parun.Types.Request as Request
 import qualified Parun.Types.SeatView as SeatView
 import qualified Parun.Web.Attribute as Attribute
+import qualified Parun.Web.Bar as Bar
 import qualified Parun.Web.Board as Board
 import qualified Parun.Web.Card as Card
 import qualified Parun.Web.Element as Element
@@ -357,22 +358,7 @@ autoPass current asked =
 -- the game for the home screen while the seat is asked, and concedes
 -- (CR 104.3a) by the event given where the seat may.
 barControls :: Bool -> Maybe Event -> [Html.Html Event]
-barControls asked concede = [settingsButton (if asked then Just MkHome else Nothing) concede]
-
--- | The menu button page.js opens its menu from, on the game screen's turn
--- bar: the settings, and the game's actions, each sending the event given
--- where there is one (Home, then Concede).
-settingsButton :: Maybe msg -> Maybe msg -> Html.Html msg
-settingsButton home concede =
-  Element.el
-    "button"
-    ["settings-button"]
-    ( [Element.attr "type" (Text.pack "button"), Element.attr "aria-label" (Text.pack "Menu"), Element.attr "aria-haspopup" (Text.pack "true"), Element.attr "aria-controls" (Text.pack "settings"), Element.attr "data-settings" Text.empty]
-        <> foldMap (\event -> [Element.attr "data-home" Text.empty, Element.on "home" event]) home
-        <> foldMap (\event -> [Element.attr "data-concede" Text.empty, Element.on "concede" event]) concede
-    )
-    -- The gear stays index.html's own settings button's, off the game screen.
-    [Icon.icon [] Icon.MkMenu]
+barControls asked concede = [Bar.settingsButton Icon.MkMenu "Menu" (if asked then Just MkHome else Nothing) concede]
 
 -- | The links a log entry's names make: to the sheet of each object the
 -- view shows.
@@ -852,7 +838,7 @@ form request picked = case Text.unpack (Question.kind question) of
                 <> [Element.el "div" ["actions"] [] [button (MkAnswer $ R.Number i) (Offer.actionName shown option) | (i, option) <- rest] | not (null rest)]
                 <> [ Element.el "div" ["passes"] [] $
                        [primary (MkAnswer $ R.Number i) (Text.pack (if settled then "Pass" else "Pass and resolve")) | (i, _) <- passes]
-                         <> [shortcut ["danger"] "E" (MkSkip (MkTurnEnds turn)) (Text.pack (if yours then "End turn" else "Pass to my turn")) | settled, not (null passes)]
+                         <> [shortcut ["turn"] "E" (MkSkip (MkTurnEnds turn)) (Text.pack (if yours then "End turn" else "Pass to my turn")) | settled, not (null passes)]
                    ]
                 <> [ Element.el "div" ["until"] [] $
                        [button (MkSkip (MkStep turn target)) (Text.pack label) | (target, label) <- steps, PlayerView.phase shown < target]
@@ -1135,9 +1121,8 @@ button :: Event -> Text.Text -> Html.Html Event
 button event label = Element.button [] event (Mana.rich label)
 
 -- | A button its key presses wherever it shows (page.js): a meaning's key,
--- the same from prompt to prompt, where page.js numbers the rest; "danger"
--- among its classes marks one that gives something up, as ending the turn
--- gives up the rest of it.
+-- the same from prompt to prompt, where page.js numbers the rest; "turn"
+-- among its classes marks the one ending the turn, in the turn's colour.
 shortcut :: [String] -> String -> Event -> Text.Text -> Html.Html Event
 shortcut classes key event label = Element.el "button" classes [Element.attr "type" (Text.pack "button"), Element.attr "aria-keyshortcuts" (Text.pack key), Element.on "click" event] (Mana.rich label)
 
