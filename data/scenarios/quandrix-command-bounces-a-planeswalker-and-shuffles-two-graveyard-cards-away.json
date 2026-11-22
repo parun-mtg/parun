@@ -1,0 +1,34 @@
+{
+  "description": "CR 700.2 / 701.24a: Quandrix Command's chosen modes return target planeswalker to its owner's hand and make target player shuffle up to three target cards from their graveyard into their library",
+  "note": "Bob's Jace Beleren goes to his hand. Two of his three graveyard cards (Hill Giant, Shock) go into his library and Lightning Bolt stays, so his library grows from four to six.",
+  "board": {
+    "active": "alice",
+    "step": "PrecombatMain",
+    "seats": [
+      {
+        "name": "alice",
+        "battlefield": [{ "card": "Forest", "label": "f" }, { "card": "Island", "label": "i1" }, { "card": "Island", "label": "i2" }, { "card": "Grizzly Bears", "label": "bears" }],
+        "hand": [{ "card": "Quandrix Command", "label": "command" }],
+        "library": [{ "card": "Island" }, { "card": "Island" }, { "card": "Island" }, { "card": "Island" }]
+      },
+      {
+        "name": "bob",
+        "battlefield": [{ "card": "Jace Beleren", "label": "jace", "counters": [{ "key": { "type": "Loyalty" }, "value": 3 }] }],
+        "graveyard": [{ "card": "Hill Giant", "label": "giant" }, { "card": "Shock", "label": "shock" }, { "card": "Lightning Bolt", "label": "bolt" }],
+        "library": [{ "card": "Island", "label": "b1" }, { "card": "Island", "label": "b2" }, { "card": "Island", "label": "b3" }, { "card": "Island", "label": "b4" }]
+      }
+    ]
+  },
+  "timeline": [
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "do": { "Cast": { "object": "$command", "modes": [0, 3], "targetsBySlot": { "bounced": ["$jace"], "player": ["$bob"], "cards": ["$giant", "$shock"] }, "mana": ["$f", "$i1", "$i2"] } } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "do": "Pass" },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "do": { "Answer": { "prompt": "Shuffle", "with": ["$b1", "Hill Giant", "$b2", "$b3", "Shock", "$b4"] } } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "check": { "View": { "of": "Stack", "is": [] } } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "check": { "Count": { "player": "bob", "zone": "Hand", "card": "Jace Beleren", "count": 1 } } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "check": { "Count": { "player": "bob", "zone": "Library", "card": "Hill Giant", "count": 1 } } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "check": { "Count": { "player": "bob", "zone": "Library", "card": "Shock", "count": 1 } } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "check": { "View": { "of": "Zone", "player": "bob", "zone": "Library", "is": ["$b1", "Hill Giant", "$b2", "$b3", "Shock", "$b4"] } } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "check": { "Count": { "player": "bob", "zone": "Graveyard", "card": "Lightning Bolt", "count": 1 } } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "check": { "Count": { "player": "alice", "zone": "Graveyard", "card": "Quandrix Command", "count": 1 } } }
+  ]
+}
