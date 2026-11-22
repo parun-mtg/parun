@@ -647,21 +647,25 @@ saveBuilt shell built = do
 -- cards those lines are about (Legality.namedCard). No card pool is given:
 -- a pooled list writes its pool's other cards as its sideboard (CR 100.4b),
 -- so the pool is the list's own, and the builder caps each card at it.
--- The legality table is loaded once, at the first check, and kept.
 deckProblems :: Shell -> Registry.Registry Identity.Identity -> Text.Text -> IO ([Text.Text], Set.Set CardName.CardName)
 deckProblems shell reg contents = case Command.loadText reg "deck" contents of
   Left problems -> pure (fmap (\p -> Maybe.fromMaybe p (Text.stripPrefix (Text.pack "deck: ") p)) problems, Set.empty)
   Right listed -> do
-    kept <- legalityTable <$> IORef.readIORef (loaded shell)
-    table <- case kept of
-      Just t -> pure t
-      Nothing -> do
-        t <- Legality.tablePath >>= Legality.loadTable
-        IORef.modifyIORef' (loaded shell) $ \l -> l {legalityTable = Just t}
-        pure t
+    table <- tableOf shell
     let lookUp = either (const . pure . Left) Legality.namedIn table
     (_, lines', violations) <- Legality.assess lookUp Nothing Nothing listed
     pure (lines' <> fmap Legality.explain violations, Set.fromList (Maybe.mapMaybe Legality.namedCard violations))
+
+-- | The legality table, loaded at the first ask and kept.
+tableOf :: Shell -> IO (Either Text.Text LegalityTable.LegalityTable)
+tableOf shell = do
+  kept <- legalityTable <$> IORef.readIORef (loaded shell)
+  case kept of
+    Just t -> pure t
+    Nothing -> do
+      t <- Legality.tablePath >>= Legality.loadTable
+      IORef.modifyIORef' (loaded shell) $ \l -> l {legalityTable = Just t}
+      pure t
 
 -- | One of these decks at random.
 randomOf :: Seq.Seq Text.Text -> IO (Maybe Text.Text)
@@ -739,7 +743,8 @@ play shell seats invited resuming = do
             pure back
           remotes = Map.fromList [(seatOf i, Link.remote (rejoinSlot i) (channelOf i)) | i <- Set.toList invited]
           kept = if keeping then Browser.keepReply . Link.savedReply else const (pure ())
-      ended <- Hotseat.game (page shell) reg (level shell) (fmap (Bifunctor.first Text.unpack) seats) remotes seed (foldMap Link.replies resuming) kept tellAll (leaveFor shell chosen)
+      parsed <- foldMap LazyMap.elems . cards <$> IORef.readIORef (loaded shell)
+      ended <- Hotseat.game (page shell) reg parsed (tableOf shell) (level shell) (fmap (Bifunctor.first Text.unpack) seats) remotes seed (foldMap Link.replies resuming) kept tellAll (leaveFor shell chosen)
       Monad.when keeping Browser.forgetGame
       case ended of
         Left problems -> stopped problems >> notice shell problems

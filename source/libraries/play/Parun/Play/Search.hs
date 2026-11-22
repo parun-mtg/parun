@@ -111,10 +111,38 @@ inferred meta = MkPrior $ \memory viewer gs owner ->
           deck <- Generator.weighted (posterior meta shown)
           rest <- Generator.shuffle (spread (Map.differenceWith (\k s -> if k > s then Just (k - s) else Nothing) (Deck.cards deck) shown) <> spread loosened)
           whole <- Generator.shuffle (spread (Deck.cards deck))
-          let (world, ids) = Foldable.foldl' (\(w, acc) printing -> let (pid, w') = Engine.Game.intern printing w in (w', Map.insert printing pid acc)) (gs, Map.empty) (Map.keys (Deck.cards deck <> loosened))
-              identityOf oid = Object.identity =<< Engine.Game.lookupObject oid gs
-              dealt = zip dealtOnto (rest <> if null whole then [] else cycle whole)
-          pure (world, [(Source.OfCard pid, identityOf oid) | (oid, printing) <- dealt, pid <- Foldable.toList (Map.lookup printing ids)])
+          pure (dealtAs gs (zip dealtOnto (rest <> if null whole then [] else cycle whole)))
+
+-- | A format's pool, for lists not known and no meta to infer them from, each
+-- candidate a printing in it or Nothing for one not: the viewer's own cards
+-- dealt as 'known' deals them, and each other owner's the 'loose' ones,
+-- shuffled, then each a printing of the pool drawn evenly and independently,
+-- blind to what they showed and to any copy limit. A candidate drawn that is
+-- not one is drawn again, so a candidate is read only once drawn. Nothing
+-- when no candidate is a printing.
+pooled :: Seq.Seq (Maybe Printing.Printing) -> Maybe Prior
+pooled candidates =
+  let draw :: (Monad m) => State.StateT Generator.Type.Generator m Printing.Printing
+      draw = Generator.between 0 (Natural.length candidates - 1) >>= maybe draw pure . Seq.index candidates . Natural.toIntSaturating
+      deal :: (Monad m) => Memory -> PlayerId.PlayerId -> GameState.GameState -> PlayerId.PlayerId -> State.StateT Generator.Type.Generator m (GameState.GameState, [Contents])
+      deal memory viewer gs owner =
+        let MkPrior ownList = known
+            dealtOnto = unseen memory viewer gs owner
+         in if owner == viewer
+              then ownList memory viewer gs owner
+              else do
+                rest <- Generator.shuffle (spread (Map.findWithDefault Map.empty owner (loose memory)))
+                drawn <- Monad.replicateM (length dealtOnto - length rest) draw
+                pure (dealtAs gs (zip dealtOnto (rest <> drawn)))
+   in if any Maybe.isJust candidates then Just (MkPrior deal) else Nothing
+
+-- | The world with each printing dealt interned, and the contents to deal
+-- onto each object, its identity kept.
+dealtAs :: GameState.GameState -> [(ObjectId.ObjectId, Printing.Printing)] -> (GameState.GameState, [Contents])
+dealtAs gs dealt =
+  let (world, ids) = Foldable.foldl' (\(w, acc) printing -> let (pid, w') = Engine.Game.intern printing w in (w', Map.insert printing pid acc)) (gs, Map.empty) (ListUtils.nubOrd (fmap snd dealt))
+      identityOf oid = Object.identity =<< Engine.Game.lookupObject oid gs
+   in (world, [(Source.OfCard pid, identityOf oid) | (oid, printing) <- dealt, pid <- Foldable.toList (Map.lookup printing ids)])
 
 -- | Each printing as many times as its count.
 spread :: Map.Map Printing.Printing Natural -> [Printing.Printing]

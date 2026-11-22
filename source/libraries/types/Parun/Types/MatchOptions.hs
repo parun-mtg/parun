@@ -2,6 +2,7 @@ module Parun.Types.MatchOptions where
 
 import qualified Data.Map.Strict as Map
 import qualified Data.Set as Set
+import qualified Data.Text as Text
 import qualified Numeric.Natural as Natural
 import qualified Parun.Types.Key as Key
 import qualified Parun.Types.Playout as Playout
@@ -25,14 +26,17 @@ data MatchOptions = MkMatchOptions
     weighing :: Map.Map Natural.Natural FilePath,
     -- | The meta file whose decks the search bot infers an opponent's unseen
     -- cards from, the lists not being known; each list known when absent.
-    meta :: Maybe FilePath
+    meta :: Maybe FilePath,
+    -- | The name of the format whose pool the search bot deals an opponent's
+    -- unseen cards from, the lists not being known and no meta named.
+    pool :: Maybe Text.Text
   }
   deriving (Eq, Show)
 
 -- | A hundred games keyed from the operating system's entropy, none saved,
 -- the random bot in every seat, every list known.
 none :: MatchOptions
-none = MkMatchOptions {seed = Nothing, games = 100, save = Nothing, searching = Set.empty, budgets = Map.fromList [(1, budget), (2, budget)], weighing = Map.empty, meta = Nothing}
+none = MkMatchOptions {seed = Nothing, games = 100, save = Nothing, searching = Set.empty, budgets = Map.fromList [(1, budget), (2, budget)], weighing = Map.empty, meta = Nothing, pool = Nothing}
 
 -- | The search bot's budget unless told otherwise, played out by the random
 -- bot.
