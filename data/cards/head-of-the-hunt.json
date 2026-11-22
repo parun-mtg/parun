@@ -1,6 +1,60 @@
 {
   "faces": [
     {
+      "delayedAbilities": {
+        "wolf": {
+          "condition": {
+            "type": "Reflexive"
+          },
+          "modal": {
+            "modes": [
+              {
+                "clauses": [
+                  {
+                    "effects": [
+                      {
+                        "type": "Create",
+                        "value": {
+                          "card": {
+                            "faces": [
+                              {
+                                "colorIndicator": [
+                                  "Green"
+                                ],
+                                "name": "Wolf Token",
+                                "power": {
+                                  "type": "Literal",
+                                  "value": 2
+                                },
+                                "toughness": {
+                                  "type": "Literal",
+                                  "value": 2
+                                },
+                                "typeLine": {
+                                  "subtypes": [
+                                    "Wolf"
+                                  ],
+                                  "types": [
+                                    "Creature"
+                                  ]
+                                }
+                              }
+                            ]
+                          },
+                          "quantity": {
+                            "type": "Literal",
+                            "value": 1
+                          }
+                        }
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          }
+        }
+      },
       "keywords": [
         {
           "type": "Flash"
@@ -61,40 +115,11 @@
                 },
                 "whenDestination": "Graveyard"
               },
-              "whenYouDo": [
+              "riders": [
                 {
-                  "type": "Create",
+                  "type": "ArmDelayedTrigger",
                   "value": {
-                    "card": {
-                      "faces": [
-                        {
-                          "colorIndicator": [
-                            "Green"
-                          ],
-                          "name": "Wolf Token",
-                          "power": {
-                            "type": "Literal",
-                            "value": 2
-                          },
-                          "toughness": {
-                            "type": "Literal",
-                            "value": 2
-                          },
-                          "typeLine": {
-                            "subtypes": [
-                              "Wolf"
-                            ],
-                            "types": [
-                              "Creature"
-                            ]
-                          }
-                        }
-                      ]
-                    },
-                    "quantity": {
-                      "type": "Literal",
-                      "value": 1
-                    }
+                    "name": "wolf"
                   }
                 }
               ]

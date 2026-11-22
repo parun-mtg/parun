@@ -125,6 +125,60 @@
           }
         }
       ],
+      "delayedAbilities": {
+        "saproling": {
+          "condition": {
+            "type": "Reflexive"
+          },
+          "modal": {
+            "modes": [
+              {
+                "clauses": [
+                  {
+                    "effects": [
+                      {
+                        "type": "Create",
+                        "value": {
+                          "card": {
+                            "faces": [
+                              {
+                                "colorIndicator": [
+                                  "Green"
+                                ],
+                                "name": "Saproling Token",
+                                "power": {
+                                  "type": "Literal",
+                                  "value": 1
+                                },
+                                "toughness": {
+                                  "type": "Literal",
+                                  "value": 1
+                                },
+                                "typeLine": {
+                                  "subtypes": [
+                                    "Saproling"
+                                  ],
+                                  "types": [
+                                    "Creature"
+                                  ]
+                                }
+                              }
+                            ]
+                          },
+                          "quantity": {
+                            "type": "Literal",
+                            "value": 1
+                          }
+                        }
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          }
+        }
+      },
       "keywords": [
         {
           "type": "Reach"
@@ -185,40 +239,11 @@
                 },
                 "whenDestination": "Graveyard"
               },
-              "whenYouDo": [
+              "riders": [
                 {
-                  "type": "Create",
+                  "type": "ArmDelayedTrigger",
                   "value": {
-                    "card": {
-                      "faces": [
-                        {
-                          "colorIndicator": [
-                            "Green"
-                          ],
-                          "name": "Saproling Token",
-                          "power": {
-                            "type": "Literal",
-                            "value": 1
-                          },
-                          "toughness": {
-                            "type": "Literal",
-                            "value": 1
-                          },
-                          "typeLine": {
-                            "subtypes": [
-                              "Saproling"
-                            ],
-                            "types": [
-                              "Creature"
-                            ]
-                          }
-                        }
-                      ]
-                    },
-                    "quantity": {
-                      "type": "Literal",
-                      "value": 1
-                    }
+                    "name": "saproling"
                   }
                 }
               ]

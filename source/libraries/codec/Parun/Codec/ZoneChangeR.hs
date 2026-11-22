@@ -28,7 +28,6 @@ codec effectCodec = Fields.object $ do
   position <- Fields.defaulted "position" LibraryPosition.defaultValue LibraryPosition.codec ZoneChangeR.position
   optional <- Fields.defaulted "optional" False Common.boolean ZoneChangeR.optional
   counters <- Fields.defaulted "counters" Nothing (Common.maybe WithCounters.codec) ZoneChangeR.counters
-  whenYouDo <- Fields.defaulted "whenYouDo" Seq.empty (Common.seq effectCodec) ZoneChangeR.whenYouDo
   riders <- Fields.defaulted "riders" Seq.empty (Common.seq effectCodec) ZoneChangeR.riders
   pure
     ZoneChangeR.MkZoneChangeR
@@ -39,6 +38,5 @@ codec effectCodec = Fields.object $ do
         ZoneChangeR.position = position,
         ZoneChangeR.optional = optional,
         ZoneChangeR.counters = counters,
-        ZoneChangeR.whenYouDo = whenYouDo,
         ZoneChangeR.riders = riders
       }
