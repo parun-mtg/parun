@@ -148,6 +148,19 @@ spec s = Spec.describe s "Parun.Web.Lobby" $ do
     Spec.it s "keeps the main deck's lines alone" $ do
       Spec.assertEq s (fmap fst (Lobby.mainEntries (Text.pack "Format: commander\nCommander\n1 Sai\nDeck\n4 Island\n2 Shock\nSideboard\n3 Bolt\n"))) [4, 2]
 
+  Spec.describe s "dealt" $ do
+    -- The list monad rolls every deck at each draw, so this is every deal.
+    Spec.it s "never deals a bot a deck smaller than its fewest" $ do
+      let sizes = Map.fromList [(Text.pack "demo-a", 12), (Text.pack "sampler", 10), (Text.pack "starter", 22), (Text.pack "deck-a", 30), (Text.pack "theme", 40), (Text.pack "big", 60)]
+          deals yours = Lobby.dealt (fmap Just . Foldable.toList) (\name -> [Map.findWithDefault 0 name sizes >= Lobby.fewestDealt yours]) (Seq.fromList (Map.keys sizes))
+      Spec.assertEqWith s "against 40" (Set.fromList (deals 40)) (Set.fromList [Just (Text.pack "theme"), Just (Text.pack "big")])
+      Spec.assertEqWith s "against 60" (Set.fromList (deals 60)) (Set.fromList [Just (Text.pack "theme"), Just (Text.pack "big")])
+      Spec.assertEqWith s "against 30" (Set.fromList (deals 30)) (Set.fromList [Just (Text.pack "deck-a"), Just (Text.pack "theme"), Just (Text.pack "big")])
+      Spec.assertEqWith s "against 12" (Set.fromList (deals 12)) (Set.fromList (fmap Just [Text.pack "demo-a", Text.pack "starter", Text.pack "deck-a", Text.pack "theme", Text.pack "big"]))
+
+    Spec.it s "deals nothing once every deck is refused" $ do
+      Spec.assertEq s (Lobby.dealt (fmap Just . Foldable.toList) (const [False]) (Seq.fromList [a, b])) [Nothing, Nothing]
+
   Spec.describe s "flagged decks" $ do
     Spec.it s "badges a saved deck with problems Not legal" $ do
       let holding = Lobby.browsed (\b' -> b' {DeckBrowser.illegal = Map.singleton saved [Text.pack "43 cards in the deck, fewer than 60"], DeckBrowser.shelf = DeckBrowser.MkSaved}) (Lobby.withDecks (Seq.fromList [a, saved]) Map.empty Lobby.new)
