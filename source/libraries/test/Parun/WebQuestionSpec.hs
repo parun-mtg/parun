@@ -80,6 +80,7 @@ import qualified Parun.Types.ManaSpending as ManaSpending
 import qualified Parun.Types.ManaSymbol as ManaSymbol
 import qualified Parun.Types.ManaType as ManaType
 import qualified Parun.Types.MoveSpread as MoveSpread
+import qualified Parun.Types.MulliganOffer as MulliganOffer
 import qualified Parun.Types.Object as Object
 import qualified Parun.Types.ObjectId as ObjectId
 import qualified Parun.Types.ObjectView as ObjectView
@@ -126,7 +127,7 @@ spec :: (Monad m, Monad n) => Spec.Spec m n -> Registry.Registry m -> n ()
 spec s registry = Spec.describe s "WebQuestion" $ do
   Spec.it s "a priority offering a land shows the board and a button per action, and a tap answers by index" $ do
     mountain <- S.printingOf s registry "Mountain"
-    let (land, gs) = S.addObjectIn Zone.Hand mountain S.alice (Setup.emptyGame S.bothPlayers)
+    let (land, gs) = S.addObjectIn Zone.Hand mountain S.alice (inMain (Setup.emptyGame S.bothPlayers))
         request = requestFor gs (Prompt.ChooseAction (Decider.MkDecider S.alice) S.alice [Action.Pass, Action.Play land Nothing])
         view = Question.Web.view request Question.Web.blank
         page = Html.toText view
@@ -469,8 +470,26 @@ spec s registry = Spec.describe s "WebQuestion" $ do
     Spec.assertEqWith s "the menu's Concede passes" (fmap (\event -> Question.Web.step request Set.empty event Text.empty) (conceding asked)) (Just (Question.Web.MkReplied (R.Number 0)))
     Spec.assertEqWith s "no concession while watching" (conceding watched) Nothing
     Spec.assertEqWith s "the level is chosen in the turn bar" (level asked) (Just (Question.Web.MkLevel Question.Web.MkAutoPass))
-    Spec.assertBool s (maybe False (Text.isInfixOf (Text.pack "aria-pressed=\"false\" disabled=\"\">Auto</button>") . Html.toText) (bar watched)) "inert while watching"
+    Spec.assertEqWith s "and while watching" (level watched) (Just (Question.Web.MkLevel Question.Web.MkAutoPass))
+    Spec.assertBool s (maybe False (Text.isInfixOf (Text.pack "aria-pressed=\"false\">Auto</button>") . Html.toText) (bar watched)) "not disabled while watching"
     Spec.assertBool s (maybe False (\p -> not (any (`Text.isInfixOf` Html.content p) [Text.pack "Auto-pass", Text.pack "Concede"])) prompt) "the prompt carries neither"
+
+  Spec.it s "CR 117.1 the board watched says no one holds priority, not redrawn as it passes" $ do
+    let gs = inMain (Setup.emptyGame S.bothPlayers)
+        request = requestFor gs {GameState.turn = (GameState.turn gs) {TurnRegisters.priority = Just S.alice}} (Prompt.ChooseAction (Decider.MkDecider S.alice) S.alice [Action.Pass])
+        asked = Html.toText (Question.Web.view request Question.Web.blank)
+        watched = maybe Text.empty Html.toText (Question.Web.watching (Just S.alice) request Question.Web.blank)
+    Spec.assertBool s (Text.isInfixOf (Text.pack "You have priority") asked) "asked"
+    Spec.assertBool s (not (Text.isInfixOf (Text.pack "You have priority") watched)) "watching"
+
+  Spec.it s "CR 103.8 a mulligan is before the first turn: no one's turn, no step lit" $ do
+    let request = requestFor (Setup.emptyGame S.bothPlayers) (Prompt.DeclareMulligan (Decider.MkDecider S.alice) S.alice (MulliganOffer.MkMulliganOffer 0 1))
+        page = Html.toText (Question.Web.view request Question.Web.blank)
+        watched = maybe Text.empty Html.toText (Question.Web.watching (Just S.alice) request Question.Web.blank)
+    Spec.assertBool s (Text.isInfixOf (Text.pack "<p class=\"turn-label\"><strong>Before the first turn</strong></p>") page) ("the turn bar: " <> Text.unpack page)
+    Spec.assertBool s (Text.isInfixOf (Text.pack "<p class=\"eyebrow moment\">Before the first turn</p>") page) "above the prompt"
+    Spec.assertBool s (not (any (`Text.isInfixOf` page) [Text.pack "untap step", Text.pack "aria-current=\"step\"", Text.pack "Your turn"])) "no step, no turn"
+    Spec.assertBool s (Text.isInfixOf (Text.pack "Waiting for the game to begin") watched) "watching"
 
   Spec.it s "the turn bar's menu leaves the game while the seat is asked, and not while it watches" $ do
     let request = requestFor (Setup.emptyGame S.bothPlayers) (Prompt.ChooseAction (Decider.MkDecider S.alice) S.alice [Action.Pass])
@@ -808,6 +827,11 @@ amongTiles page = case Html.search (\html -> Text.pack "<div class=\"seen among\
 isCard :: Html.Html msg -> Bool
 isCard html = Text.pack "<button class=\"card " `Text.isPrefixOf` Html.toText html
 
+-- | CR 103.8: the game in the first turn's precombat main phase, past the
+-- untap step a fresh game waits at before it begins.
+inMain :: GameState.GameState -> GameState.GameState
+inMain gs = gs {GameState.turn = (GameState.turn gs) {TurnRegisters.phase = Phase.PrecombatMain}}
+
 -- | The request the line protocol sends for a prompt, with the deciding seat's view.
 requestFor :: GameState.GameState -> Prompt.Prompt r -> Request.Request
 requestFor gs prompt = case Protocol.questionOf gs prompt of
@@ -1067,7 +1091,7 @@ replaySpec s registry = Spec.describe s "WebQuestion" . Spec.describe s "replay"
 
   Spec.it s "CR 800.4a the other seats sit in turn order from the viewer's, a departed one dropped, each showing its turn, priority and monarchy" $ do
     let marks = Board.MkMarks (\o -> Card.MkCue [] (ObjectView.object o) Nothing) (const Nothing)
-        start = S.fourPlayerGame {GameState.monarch = Just S.bob}
+        start = (inMain S.fourPlayerGame) {GameState.monarch = Just S.bob}
         held = start {GameState.turn = (GameState.turn start) {TurnRegisters.priority = Just S.dave}}
         -- Each seat's section of carol's table, by its label, in page order.
         sections gs =

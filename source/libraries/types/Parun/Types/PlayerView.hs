@@ -22,6 +22,9 @@ data PlayerView = MkPlayerView
     -- (MatchScope.gameNumber), whose turns `turn` counts.
     game :: Natural.Natural,
     turn :: Natural.Natural,
+    -- | CR 103.8: whether the first turn has begun (not Parun.Engine.Turn.pregame),
+    -- False while the players mulligan.
+    begun :: Bool,
     phase :: Phase.Phase,
     -- | CR 500.1: the steps still scheduled this turn after `phase`, in
     -- order, as TurnRegisters.remaining.

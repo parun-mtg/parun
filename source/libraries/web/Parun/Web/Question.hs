@@ -307,7 +307,7 @@ blank = MkScreen Set.empty Nothing Seq.empty 0 Nothing MkStandard
 -- the card being read and the log.
 view :: Request.Request -> Screen -> Html.Html Event
 view request screen =
-  table request screen (autoPass (level screen) True) (barControls True (MkConcede <$ passIndex request)) (cues request (selected screen) (focus screen)) $
+  table request screen (autoPass (level screen)) (barControls True (MkConcede <$ passIndex request)) (cues request (selected screen) (focus screen)) $
     foldMap (pure . eyebrow) (Request.view request)
       <> [Element.el "p" ["problem"] [Element.attr "role" (Text.pack "alert")] (Mana.rich problem) | problem <- Maybe.maybeToList (Request.problem request)]
       <> [Element.el "p" ["controlling"] [Element.attr "role" (Text.pack "note")] [Html.text (Text.pack "You're deciding for " <> Wording.player p <> Text.pack ", whom you control.")] | p <- Maybe.maybeToList (Question.for (Request.question request))]
@@ -319,18 +319,23 @@ eyebrow :: PlayerView.PlayerView -> Html.Html msg
 eyebrow board = Element.el "p" (["eyebrow", "moment"] <> ["yours" | Board.yours board]) [] [Element.text (Board.moment board)]
 
 -- | The page while the game goes on without the seat: a request it was not
--- asked (Hotseat answers it), its board shown as it stands, and in place of
--- a question what the game is waiting on; nothing unless the screen faces
--- (the first) the seat asked, since the board shows that seat's hidden cards.
+-- asked (Hotseat answers it), its board shown as it stands, less whose
+-- priority it is, since the board is not redrawn as priority passes; in
+-- place of a question what the game is waiting on; and the auto-pass level,
+-- which Hotseat keeps for the seat's next request. Nothing unless the screen
+-- faces (the first) the seat asked, since the board shows that seat's
+-- hidden cards.
 watching :: Maybe PlayerId.PlayerId -> Request.Request -> Screen -> Maybe (Html.Html Event)
 watching facing request screen = do
   Monad.guard $ facing == Just (Question.seat (Request.question request))
   let status = case Request.view request of
         Just b
+          | not (PlayerView.begun b) -> "Waiting for the game to begin\x2026"
           | not (null (PlayerView.stack b)) -> "Resolving\x2026"
           | PlayerView.active b /= PlayerView.viewer b -> Text.unpack (Wording.player (PlayerView.active b)) <> " is taking their turn\x2026"
         _ -> "Moving on\x2026"
-  pure . table request screen (autoPass (level screen) False) (barControls False Nothing) (Board.MkMarks (\o -> Card.MkCue [] (MkRead (ObjectView.object o)) Nothing) (const Nothing)) $
+      shown = request {Request.view = fmap (\b -> b {PlayerView.priority = Nothing}) (Request.view request)}
+  pure . table shown screen (autoPass (level screen)) (barControls False Nothing) (Board.MkMarks (\o -> Card.MkCue [] (MkRead (ObjectView.object o)) Nothing) (const Nothing)) $
     foldMap (pure . eyebrow) (Request.view request) <> [Element.el "p" ["waiting"] [] [Icon.loading ["small"], Element.string status]]
 
 -- | A subgame's mark on the turn bar (CR 730.1a), and how deep it is.
@@ -341,10 +346,9 @@ subgameChip depth =
   ]
 
 -- | The auto-pass level, at the end of the turn bar's phases: chosen from
--- a disclosure, and inert unless the seat is asked (a tap made while it
--- watches is dropped).
-autoPass :: Level -> Bool -> Html.Html Event
-autoPass current asked =
+-- a disclosure.
+autoPass :: Level -> Html.Html Event
+autoPass current =
   Element.el
     "details"
     ["auto-pass"]
@@ -357,7 +361,7 @@ autoPass current asked =
         [ Element.el
             "button"
             ["on" | l == current]
-            ([Element.attr "type" (Text.pack "button"), Element.attr "data-level" (Text.pack (fst (levelName l))), Element.attr "aria-pressed" (Text.pack (if l == current then "true" else "false")), Element.on "click" (MkLevel l)] <> [Element.attr "disabled" Text.empty | not asked])
+            [Element.attr "type" (Text.pack "button"), Element.attr "data-level" (Text.pack (fst (levelName l))), Element.attr "aria-pressed" (Text.pack (if l == current then "true" else "false")), Element.on "click" (MkLevel l)]
             [Element.string (snd (levelName l))]
         | l <- [minBound .. maxBound]
         ]

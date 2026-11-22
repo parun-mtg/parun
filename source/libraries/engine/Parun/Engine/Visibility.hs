@@ -12,6 +12,7 @@ import qualified Parun.Engine.Game as Game
 import qualified Parun.Engine.PlayerEffect as PlayerEffect
 import qualified Parun.Engine.Projection as Projection
 import qualified Parun.Engine.Projection.View as View
+import qualified Parun.Engine.Turn as Turn
 import qualified Parun.Types.Audience as Audience
 import qualified Parun.Types.BeginningStep as BeginningStep
 import qualified Parun.Types.ChoseSecretly as ChoseSecretly
@@ -52,13 +53,10 @@ sees pid oid gs =
 -- windows is live.
 revealedNow :: ObjectId -> GameState.GameState -> Visibility.Visibility
 revealedNow oid gs =
-  let begun logged = case LoggedEvent.event logged of
-        GameEvent.StepBegan _ -> True
-        _ -> False
-      live window = case window of
+  let live window = case window of
         RevealWindow.WhileOnStack sid -> Game.zoneOf sid gs == Just Zone.Stack -- CR 701.20a
         RevealWindow.UntilPriority -> True -- CR 701.20a, until Engine.performSettle closes it
-        RevealWindow.UntilFirstTurn -> TurnRegisters.turnNumber (GameState.turn gs) == 1 && not (any begun (TurnRegisters.events (GameState.turn gs))) -- CR 103.6b
+        RevealWindow.UntilFirstTurn -> Turn.pregame gs -- CR 103.6b
         RevealWindow.DuringUpkeep turn -> TurnRegisters.turnNumber (GameState.turn gs) == turn && TurnRegisters.phase (GameState.turn gs) == Phase.Beginning BeginningStep.Upkeep -- CR 702.57b
    in visibleIf (any (any live . Object.revealed) (Game.lookupObject oid gs))
 
