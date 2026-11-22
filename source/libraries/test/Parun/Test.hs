@@ -797,6 +797,7 @@ import qualified Parun.Codec.RollEndSpec
 import qualified Parun.Codec.RollExtremeSpec
 import qualified Parun.Codec.RollKindSpec
 import qualified Parun.Codec.RollModifierSpec
+import qualified Parun.Codec.RollReadingSpec
 import qualified Parun.Codec.RollTotalsThisTurnSpec
 import qualified Parun.Codec.RollTriggerSpec
 import qualified Parun.Codec.RoomHalfSpec
@@ -1492,6 +1493,7 @@ spec s reference corpus = do
   Parun.Codec.CoinFlipTriggerSpec.spec s
   Parun.Codec.FlipOutcomeSpec.spec s
   Parun.Codec.RollKindSpec.spec s
+  Parun.Codec.RollReadingSpec.spec s
   Parun.Codec.RollTriggerSpec.spec s
   Parun.Codec.TransformTriggerSpec.spec s
   Parun.Codec.CrewingSpec.spec s

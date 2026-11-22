@@ -3339,6 +3339,26 @@ Entries are ordered by the first rule each cites.
   `farideh-devil-s-chosen-reads-a-reroll-s-own-result-not-a-later-reroll-s`.
 - **Issue**: none.
 
+## Whether a natural 20 rerolled away was rolled
+
+- **Question**: Critical Hit triggers "when you roll a natural 20". A d20 comes
+  up 20 and Wall of Fortune rerolls it to 4. Did its roller roll a natural 20?
+  And does a reroll to 20 trigger once or twice, the reroll being a roll of its
+  own (Pippa, Duchess of Dice's ruling)?
+- **Rules**: CR 706.2, 706.2b, 603.2; Critical Hit has no ruling; CR of
+  2026-11-06.
+- **Decision**: No, and once. Each die the roll keeps is read once, at its
+  natural result once its rerolls are done: CR 706.2b's reroll modifies the
+  natural result, and the die then displays the new number. "Whenever you roll
+  a 6" reads the same dice the same way.
+- **Rejected**: Reading every face a die showed, the 20 rerolled away
+  included: the reroll then counts its 20 as both its own roll and the die's,
+  or the die's natural result stops being the number it shows.
+- **Site**: `Parun.Engine.Resolve.Common.recordRoll`'s DieResultSettled,
+  proved by the scenarios `critical-hit-ignores-a-natural-20-rerolled-away`
+  and `critical-hit-returns-for-a-reroll-that-comes-up-20`.
+- **Issue**: none.
+
 ## Which ventures Keen-Eared Sentry counts
 
 - **Question**: "Each opponent can't venture into the dungeon more than once
