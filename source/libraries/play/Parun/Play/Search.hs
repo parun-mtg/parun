@@ -87,9 +87,10 @@ sample prior viewer gs =
     (Map.keys (GameState.players gs))
 
 -- | The search bot for its seat: each option of a decision it searches,
--- where they offer a choice ('searchable'), played out
--- `SearchBudget.samples` times, each in a fresh 'sample', the best total
--- taken, one of the best at random on a tie; every other prompt answered by the random bot
+-- where they offer a choice ('searchable'), played out in
+-- `SearchBudget.samples` fresh 'sample's, every option in each sample from
+-- the same world and random stream, the best total taken, one of the best
+-- at random on a tie; every other prompt answered by the random bot
 -- (Game.bot). It searches priority decisions ('options') and the first
 -- declaration of attackers ('attacks') and of blockers ('blocks'). It reads
 -- the whole game only through 'sample', which deals every card its seat
@@ -100,8 +101,12 @@ search :: forall m. (Monad m) => Registry.Registry m -> SearchBudget.SearchBudge
 search registry budget prior = Answerer.MkAnswerer $ \asked ->
   let best :: Game.Type.Game Result.Result -> PlayerId.PlayerId -> NonEmpty.NonEmpty a -> (a -> Pick) -> Game.Play m a
       best restart pid choices pick = do
-        scored <- traverse (\option -> fmap (\scores -> (sum scores, option)) (Monad.replicateM (Natural.toIntSaturating (SearchBudget.samples budget)) (sample prior pid (Asked.game asked) >>= rollout registry budget restart pid (pick option)))) choices
-        let top = maximum (fmap fst scored)
+        rounds <- Monad.replicateM (Natural.toIntSaturating (SearchBudget.samples budget)) $ do
+          world <- sample prior pid (Asked.game asked)
+          shared <- State.get
+          traverse (\option -> State.put shared >> rollout registry budget restart pid (pick option) world) choices
+        let scored = NonEmpty.zip (foldr (NonEmpty.zipWith (+)) (0 <$ choices) rounds) choices
+            top = maximum (fmap fst scored)
         maybe (pure (NonEmpty.head choices)) Generator.pick (NonEmpty.nonEmpty [option | (total, option) <- NonEmpty.toList scored, total == top])
    in case Asked.prompt asked of
         Prompt.ChooseAction decider pid menu
