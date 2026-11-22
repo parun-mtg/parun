@@ -15,6 +15,7 @@ codec =
       Arm.nullary "LastChosen" ExiledPile.LastChosen,
       Arm.nullary "AsItEntered" ExiledPile.AsItEntered,
       Arm.nullary "CraftMaterials" ExiledPile.CraftMaterials,
+      Arm.nullary "ForToken" ExiledPile.ForToken,
       Arm.payload "WithCardsNamed" CardName.codec ExiledPile.WithCardsNamed (\x -> case x of ExiledPile.WithCardsNamed y -> Just y; _ -> Nothing)
     ]
 
@@ -25,4 +26,5 @@ tagOf x = case x of
   ExiledPile.LastChosen -> "LastChosen"
   ExiledPile.AsItEntered -> "AsItEntered"
   ExiledPile.CraftMaterials -> "CraftMaterials"
+  ExiledPile.ForToken -> "ForToken"
   ExiledPile.WithCardsNamed {} -> "WithCardsNamed"

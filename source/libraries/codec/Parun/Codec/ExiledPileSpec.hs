@@ -20,6 +20,8 @@ spec s = Spec.describe s "Parun.Codec.ExiledPile" $ do
     Common.assertCodec s ExiledPile.codec ExiledPile.AsItEntered " {\"type\":\"AsItEntered\"} "
   Spec.it s "CraftMaterials" $
     Common.assertCodec s ExiledPile.codec ExiledPile.CraftMaterials " {\"type\":\"CraftMaterials\"} "
+  Spec.it s "ForToken" $
+    Common.assertCodec s ExiledPile.codec ExiledPile.ForToken " {\"type\":\"ForToken\"} "
   Spec.it s "WithCardsNamed" $
     Common.assertCodec s ExiledPile.codec (ExiledPile.WithCardsNamed (CardName.MkCardName (Text.pack "Arcane Savant"))) " {\"type\":\"WithCardsNamed\",\"value\":\"Arcane Savant\"} "
   Spec.it s "has a schema" $ Common.assertHasSchema s ExiledPile.codec

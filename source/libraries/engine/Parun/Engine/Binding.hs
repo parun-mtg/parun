@@ -583,6 +583,12 @@ craftLink = AbilityName.MkAbilityName (Text.pack "thoseCraftMaterials")
 entryExileLink :: AbilityName.AbilityName
 entryExileLink = AbilityName.MkAbilityName (Text.pack "exiledAsThisEntered")
 
+-- CR 607.1d: the ExileLink.ability of a token's view of the card the ability
+-- that created it exiled (linkAsSeenBy), so the token's other abilities,
+-- reading OwnAbilities, do not read that card. Reserved, as craftLink is.
+tokenLink :: AbilityName.AbilityName
+tokenLink = AbilityName.MkAbilityName (Text.pack "exiledForThisToken")
+
 -- CR 602.5c / 607.5 / 113.2c: the name an ability an object acquires from
 -- `oid` carries, drawn from that object's id and, for a named one, its own
 -- name: an exiled card lending its abilities (Modification.GainCardAbilities),
@@ -656,43 +662,50 @@ delayedAsRead reader declared = case pairOf reader of
 -- Only a link filed under the reader's own acquisition: a pair a copy effect
 -- brought is linked to no ability the object had before (CR 607.5).
 --
--- Or a token CR 607.1d links the card to (ExileLink.tokens), through its own
--- abilities' OwnAbilities pile.
+-- Or a token CR 607.1d links the card to (ExileLink.tokens), through the
+-- ForToken pile alone: the token's other abilities, copied or not, are linked
+-- to none of it, nor that pile to what they exiled (CR 607.1).
+-- data/scenarios/hofri-ghostforge-s-crab-spirit-keeps-the-crab-card-apart-from-the-exiled-land.json
+-- is the proof.
 --
 -- OwnAbilities is every exiling ability paired with the reader: a reader
 -- acquired from a lending card (isAcquired) is linked only to the
 -- abilities acquired from that card; every other reader -- printed, or
 -- "printed" by CR 607.1a's grant -- only to exiling abilities that were not
 -- acquired that way. OfAbility names one exiling ability as the reader means
--- it (nameAsRead), the other two the reserved ones under entryExileLink and
--- craftLink.
+-- it (nameAsRead); AsItEntered and CraftMaterials the reserved ones under
+-- entryExileLink and craftLink.
 isLinkedExile :: Maybe AbilityName.AbilityName -> Acquisition.Acquisition -> ExiledPile.ExiledPile -> ObjectId -> ExileLink.ExileLink -> Bool
 isLinkedExile reader acquisition pile src link =
   isTokenLinked
     || ExileLink.source link == src && ExileLink.acquisition link == acquisition && case pile of
-      ExiledPile.OwnAbilities -> pairOf (ExileLink.ability link) == pairOf reader
+      -- tokenLink marks a token's view (linkAsSeenBy), which ForToken alone
+      -- reads.
+      ExiledPile.OwnAbilities -> pairOf (ExileLink.ability link) == pairOf reader && ExileLink.ability link /= Just tokenLink
       -- CR 607.2d: the card of that pile Event.chooseQuality last marked.
       ExiledPile.LastChosen -> ExileLink.chosen link && pairOf (ExileLink.ability link) == pairOf reader
       ExiledPile.OfAbility name -> ExileLink.ability link == Just (nameAsRead reader name)
       ExiledPile.AsItEntered -> ExileLink.ability link == Just entryExileLink
       ExiledPile.CraftMaterials -> ExileLink.ability link == Just craftLink
+      -- isTokenLinked's alone, a token's view (linkAsSeenBy) included.
+      ExiledPile.ForToken -> False
       -- CR 607.2n links by name, not by object: Game.linkedPile reads that pile
       -- off GameState.exiledBeforeGame, and no ExileLink is filed for it.
       ExiledPile.WithCardsNamed _ -> False
   where
     -- CR 607.1d: a token the exiling ability created reads the card as "the
-    -- exiled card" through the abilities it entered with (CR 607.5), never
-    -- an acquired one's.
-    isTokenLinked = Set.member src (ExileLink.tokens link) && pile == ExiledPile.OwnAbilities && acquisition == Acquisition.Own && Maybe.isNothing (pairOf reader)
+    -- exiled card" through its ForToken pile, under the acquisition it
+    -- entered with (CR 607.5), never an acquired ability's.
+    isTokenLinked = Set.member src (ExileLink.tokens link) && pile == ExiledPile.ForToken && acquisition == Acquisition.Own && Maybe.isNothing (pairOf reader)
 
 -- | CR 607.2a / 607.1d: `link` as the abilities of `src` read it: as filed
--- for its source, and for a token it names (ExileLink.tokens) as though that
--- token's own unnamed ability had exiled the card; Nothing for any other
--- object. Parun.Engine.SourceContext's sourceExiled reads through it.
+-- for its source, and for a token it names (ExileLink.tokens) filed against
+-- that token under tokenLink, which only its ForToken pile reads; Nothing for
+-- any other object. Parun.Engine.SourceContext's sourceExiled reads through it.
 linkAsSeenBy :: ObjectId -> ExileLink.ExileLink -> Maybe ExileLink.ExileLink
 linkAsSeenBy src link
   | ExileLink.source link == src = Just link
-  | Set.member src (ExileLink.tokens link) = Just link {ExileLink.source = src, ExileLink.ability = Nothing, ExileLink.acquisition = Acquisition.Own, ExileLink.chosen = False}
+  | Set.member src (ExileLink.tokens link) = Just link {ExileLink.source = src, ExileLink.ability = Just tokenLink, ExileLink.acquisition = Acquisition.Own, ExileLink.chosen = False}
   | otherwise = Nothing
 
 -- The lending card a link's or a reader's ability name was acquired from, as
