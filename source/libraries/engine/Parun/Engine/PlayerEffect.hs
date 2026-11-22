@@ -2348,7 +2348,7 @@ activationCostAdjustmentsGiven effects pid targets stamp named kind loyalty srcI
       -- reduces by the mana cost it copied (CR 707.2); CR 107.3g's {X} is 0.
       -- Parun.ActivateSpec's "Power-up (CR 702.193)" group proves it.
       ruleReduction
-        | any Keyword.reducesByManaCostOnEntry stamp && matchesObjectFrom (liveSource (Just srcId)) (Filter.Type.EnteredThisTurn EnteredZone.MkEnteredZone {EnteredZone.to = Zone.Battlefield, EnteredZone.from = Set.empty, EnteredZone.window = EntryWindow.ThisTurn}) srcId gs =
+        | any Keyword.reducesByManaCostOnEntry stamp && matchesObjectFrom (liveSource (Just srcId)) (Filter.Type.EnteredThisTurn EnteredZone.MkEnteredZone {EnteredZone.to = Zone.Battlefield, EnteredZone.from = Set.empty, EnteredZone.window = EntryWindow.ThisTurn, EnteredZone.under = Nothing}) srcId gs =
             [ AppliedReduction.MkAppliedReduction (ManaCost.MkManaCost (filter (/= ManaSymbol.Variable) (ManaCost.unwrap manaCost))) 0 Nothing
             | manaCost <- Maybe.maybeToList (PC.manaCost (Projection.project srcId gs))
             ]

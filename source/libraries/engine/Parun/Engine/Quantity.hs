@@ -2058,9 +2058,7 @@ partySizeOf viewOf pid gs =
 -- else `current`, the controller it has or last had.
 controlGainedThisTurn :: GameState -> PlayerId.PlayerId -> ObjectId -> Maybe PlayerId.PlayerId -> Bool
 controlGainedThisTurn gs pid oid current =
-  let changes = Game.controlChangesThisTurn oid gs
-      enteredUnder = maybe current (Just . ControlChanged.before) (Maybe.listToMaybe changes)
-   in any ((== pid) . ControlChanged.after) changes || (Game.enteredThisTurn oid gs && enteredUnder == Just pid)
+  any ((== pid) . ControlChanged.after) (Game.controlChangesThisTurn oid gs) || Game.enteredUnderThisTurn oid current gs == Just pid
 
 -- | CR 608.2i: how many times this player did what the tally names this turn.
 -- Discards fold TurnRegisters.events, which the turn handoff clears
