@@ -7,6 +7,7 @@ import qualified Data.Maybe as Maybe
 import qualified Data.Sequence as Seq
 import qualified Data.Set as Set
 import qualified Data.Text as Text
+import Numeric.Natural (Natural)
 import qualified Parun.Spec as Spec
 import qualified Parun.Types.CardName as CardName
 import qualified Parun.Types.Color as Color
@@ -149,17 +150,17 @@ spec s = Spec.describe s "Parun.Web.Lobby" $ do
       Spec.assertEq s (fmap fst (Lobby.mainEntries (Text.pack "Format: commander\nCommander\n1 Sai\nDeck\n4 Island\n2 Shock\nSideboard\n3 Bolt\n"))) [4, 2]
 
   Spec.describe s "dealt" $ do
-    -- The list monad rolls every deck at each draw, so this is every deal.
     Spec.it s "never deals a bot a deck smaller than its fewest" $ do
-      let sizes = Map.fromList [(Text.pack "demo-a", 12), (Text.pack "sampler", 10), (Text.pack "starter", 22), (Text.pack "deck-a", 30), (Text.pack "theme", 40), (Text.pack "big", 60)]
-          deals yours = Lobby.dealt (fmap Just . Foldable.toList) (\name -> [Map.findWithDefault 0 name sizes >= Lobby.fewestDealt yours]) (Seq.fromList (Map.keys sizes))
+      let sizes :: Map.Map Text.Text Natural
+          sizes = Map.fromList [(Text.pack "demo-a", 12), (Text.pack "sampler", 10), (Text.pack "starter", 22), (Text.pack "deck-a", 30), (Text.pack "theme", 40), (Text.pack "big", 60)]
+          deals yours = Lobby.dealt everyRoll (\name -> [Map.findWithDefault 0 name sizes >= Lobby.fewestDealt yours]) (Seq.fromList (Map.keys sizes))
       Spec.assertEqWith s "against 40" (Set.fromList (deals 40)) (Set.fromList [Just (Text.pack "theme"), Just (Text.pack "big")])
       Spec.assertEqWith s "against 60" (Set.fromList (deals 60)) (Set.fromList [Just (Text.pack "theme"), Just (Text.pack "big")])
       Spec.assertEqWith s "against 30" (Set.fromList (deals 30)) (Set.fromList [Just (Text.pack "deck-a"), Just (Text.pack "theme"), Just (Text.pack "big")])
       Spec.assertEqWith s "against 12" (Set.fromList (deals 12)) (Set.fromList (fmap Just [Text.pack "demo-a", Text.pack "starter", Text.pack "deck-a", Text.pack "theme", Text.pack "big"]))
 
     Spec.it s "deals nothing once every deck is refused" $ do
-      Spec.assertEq s (Lobby.dealt (fmap Just . Foldable.toList) (const [False]) (Seq.fromList [a, b])) [Nothing, Nothing]
+      Spec.assertEq s (Lobby.dealt everyRoll (const [False]) (Seq.fromList [a, b])) [Nothing, Nothing]
 
   Spec.describe s "flagged decks" $ do
     Spec.it s "badges a saved deck with problems Not legal" $ do
@@ -412,3 +413,9 @@ rebuilds patch = case patch of
   _ -> []
   where
     fields html = [field | field <- [Text.pack "import-text", Text.pack "import-name", Text.pack "deck-search"], Text.isInfixOf (Text.pack "id=\"" <> field <> Text.pack "\"") (Html.toText html)]
+
+-- | Every deck a roll may pick among these, as the list monad's branches,
+-- so 'Lobby.dealt' over it is every deal; nothing among none, as the
+-- shell's roll.
+everyRoll :: Seq.Seq Text.Text -> [Maybe Text.Text]
+everyRoll among = if Seq.null among then [Nothing] else fmap Just (Foldable.toList among)

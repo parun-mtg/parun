@@ -683,7 +683,7 @@ randomOf among = do
 
 -- | Each bot's deck, a bot left to a random one dealt from its
 -- 'Lobby.opponents' holding at least 'Lobby.fewestDealt' cards against
--- yours (#9507).
+-- yours.
 dealtFor :: Shell -> Lobby.Lobby -> IO [Maybe Text.Text]
 dealtFor shell current = do
   yours <- maybe (pure 0) (deckSize shell) (Lobby.mine current)
