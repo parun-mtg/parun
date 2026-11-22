@@ -2811,19 +2811,30 @@ fillableModesGiven kind reader pools perspective seed source extra modal gs =
           else Nothing
    in Set.fromList (Maybe.mapMaybe (uncurry fillable) (zip [0 :: Natural ..] ms))
 
--- CR 700.2b / 601.2c: the selections a modal TRIGGER may announce, of those
--- `Modal.selections` lists over `legal`: each one's chosen modes' targets
--- together admit one legal announcement. Nothing where no mode's slot reads a
--- slot another mode declares, so fillableModes' one mode at a time already
--- answers it. Shadrix Silverquill's "each mode must target a different player"
--- is the reading; data/scenarios' shadrix-silverquill-asks-nothing-where-no-pair-can-target-different-players
--- proves it.
-announceableSelections :: StackObjectKind.StackObjectKind -> Maybe AbilityName.AbilityName -> PlayerId -> Map SlotName Binding.Type.Binding -> ObjectId -> Modal.Modal Card (GrantedAbility.GrantedAbility Card) -> Set ModeIndex -> ModeSelection.ModeSelection -> GameState -> Maybe [Seq.Seq ModeIndex]
-announceableSelections kind reader perspective seed source modal legal selection gs =
+-- CR 601.2c: does a mode's target slot read a slot only another mode
+-- declares? Shadrix Silverquill's "each mode must target a different player".
+crossModeReads :: Modal.Modal Card (GrantedAbility.GrantedAbility Card) -> Bool
+crossModeReads modal =
   let declared = Map.keysSet (Modal.Engine.allTargetSlots modal)
       crossReads m = not (Set.isSubsetOf (foldMap (siblingReads declared) (Mode.targetSlots m)) (Map.keysSet (Mode.targetSlots m)))
-      announceable chosen = slotsFillableGiven kind reader (wholePools gs) (Just perspective) seed source (Modal.Engine.modesTargetSlots chosen modal) gs
-   in if any crossReads (Modal.modes modal)
+   in any crossReads (Modal.modes modal)
+
+-- CR 700.2b / 601.2c: the selections a modal TRIGGER may announce, of those
+-- `Modal.selections` lists over `legal`: each one's chosen modes' targets
+-- together admit one legal announcement. Nothing where not crossModeReads, so
+-- fillableModes' one mode at a time already answers it. Shadrix Silverquill's
+-- "each mode must target a different player" is the reading;
+-- data/scenarios' shadrix-silverquill-asks-nothing-where-no-pair-can-target-different-players
+-- proves it.
+--
+-- Unprinted: a spell or activated ability whose modes exclude each other's
+-- targets, which the cast and activation roads would need this weeding for
+-- (CR 700.2a); Parun.AbilitySlotLintSpec's "no spell or activated ability
+-- reads a sibling mode's target slot" keeps it out of card data.
+announceableSelections :: StackObjectKind.StackObjectKind -> Maybe AbilityName.AbilityName -> PlayerId -> Map SlotName Binding.Type.Binding -> ObjectId -> Modal.Modal Card (GrantedAbility.GrantedAbility Card) -> Set ModeIndex -> ModeSelection.ModeSelection -> GameState -> Maybe [Seq.Seq ModeIndex]
+announceableSelections kind reader perspective seed source modal legal selection gs =
+  let announceable chosen = slotsFillableGiven kind reader (wholePools gs) (Just perspective) seed source (Modal.Engine.modesTargetSlots chosen modal) gs
+   in if crossModeReads modal
         then Just (filter announceable (Modal.Engine.selections legal selection))
         else Nothing
 

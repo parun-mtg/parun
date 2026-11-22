@@ -1656,7 +1656,8 @@ modalSlotsOffend armed abilityBound modal =
       -- one form Target.exclusions reads; any other read of a sibling's slot,
       -- an effect's included, still dangles. Parun.AbilitySlotLintSpec's
       -- "the lint itself catches a mode reading a sibling mode's slot outside
-      -- an exclusion" proves it.
+      -- an exclusion" proves it. Its "no spell or activated ability reads a
+      -- sibling mode's target slot" confines the exemption to triggers.
       withoutExclusions mode =
         let siblings = Set.difference declared (Map.keysSet (Mode.targetSlots mode))
             excludes f = case f of
