@@ -25,7 +25,6 @@ import qualified Parun.Extra.Int as Int
 import qualified Parun.Extra.Natural as Natural
 import qualified Parun.Interpreter as Interpreter
 import qualified Parun.Play.Command as Command
-import qualified Parun.Play.Opponent as Opponent
 import qualified Parun.Play.Protocol as Protocol
 import qualified Parun.Play.Wording as Wording
 import qualified Parun.Registry as Registry
@@ -35,7 +34,6 @@ import qualified Parun.Types.Difficulty as Difficulty
 import qualified Parun.Types.Key as Key.Type
 import qualified Parun.Types.LegalityTable as LegalityTable
 import qualified Parun.Types.Persona as Persona
-import qualified Parun.Types.PlayOptions as PlayOptions
 import qualified Parun.Types.PlayerId as PlayerId
 import qualified Parun.Types.PlayerView as PlayerView
 import qualified Parun.Types.Question as Question
@@ -48,6 +46,7 @@ import qualified Parun.Web.DeckBrowser as DeckBrowser
 import qualified Parun.Web.Element as Element
 import qualified Parun.Web.Ending as Ending
 import qualified Parun.Web.Html as Html
+import qualified Parun.Web.Lobby as Lobby
 import qualified Parun.Web.Log as Log
 import qualified Parun.Web.Question as Web.Question
 import qualified Parun.Web.Screen as Screen
@@ -70,9 +69,10 @@ instance Exception.Exception Abandoned
 -- player's first), on the page, shuffled by `seed`: every request line of the
 -- player's seat answered there (Parun.Web.Question) at the auto-pass level
 -- kept in `levelRef`, and left with the level last chosen there; each seat
--- in `remotes` answered by its own exchange (Parun.Web.Link.remote), and
--- every other by the search bot at the difficulty and persona `bots` names;
--- leaving for the home screen through
+-- in `remotes` answered by its own exchange (Parun.Web.Link.remote), each
+-- in `locals` on the page as the player's is, handed the screen first
+-- (Web.Question.handOff), and every other by the search bot at the
+-- difficulty and persona `bots` names; leaving for the home screen through
 -- `leave`. The game picks up after the replies in `stored`, each made again
 -- (Protocol.resumed) and each bot's given back to it (Game.remembered), and
 -- every reply made from there, a bot's too, is given to `kept`. Each bot
@@ -81,8 +81,8 @@ instance Exception.Exception Abandoned
 -- Once over, `tell` is given each seat's verdict, what is said of the game
 -- to each seat and its scenario file: how it came out, or why it could not
 -- start.
-game :: Browser.Page Screen.Event -> Registry.Registry Identity.Identity -> [Either Text.Text Card.Card] -> IO (Either Text.Text LegalityTable.LegalityTable) -> IORef.IORef Web.Question.Level -> (Difficulty.Difficulty, Persona.Persona) -> NonEmpty.NonEmpty (FilePath, Text.Text) -> Map.Map PlayerId.PlayerId (Protocol.Exchange IO) -> Key.Type.Key -> [R.Reply] -> (R.Reply -> IO ()) -> ((PlayerId.PlayerId -> Ending.Verdict) -> (PlayerId.PlayerId -> [Text.Text]) -> Text.Text -> IO ()) -> (Maybe PlayerView.PlayerView -> IO Leave) -> IO (Either [Text.Text] Ending.Played)
-game page registry cards table levelRef bots seats remotes seed stored kept tell leave = do
+game :: Browser.Page Screen.Event -> Registry.Registry Identity.Identity -> [Either Text.Text Card.Card] -> IO (Either Text.Text LegalityTable.LegalityTable) -> IORef.IORef Web.Question.Level -> (Difficulty.Difficulty, Persona.Persona) -> NonEmpty.NonEmpty (FilePath, Text.Text) -> Map.Map PlayerId.PlayerId (Protocol.Exchange IO) -> Set.Set PlayerId.PlayerId -> Key.Type.Key -> [R.Reply] -> (R.Reply -> IO ()) -> ((PlayerId.PlayerId -> Ending.Verdict) -> (PlayerId.PlayerId -> [Text.Text]) -> Text.Text -> IO ()) -> (Maybe PlayerView.PlayerView -> IO Leave) -> IO (Either [Text.Text] Ending.Played)
+game page registry cards table levelRef bots seats remotes locals seed stored kept tell leave = do
   seatRef <- IORef.newIORef . newSeat player =<< IORef.readIORef levelRef
   keepingLevel levelRef seatRef . Exception.handle (\MkAbandonedGame -> pure (Right Ending.MkAbandoned)) $ do
     let listed = fmap (uncurry (Command.loadText registry)) seats
@@ -99,7 +99,7 @@ game page registry cards table levelRef bots seats remotes seed stored kept tell
                 next = IORef.atomicModifyIORef' storedRef $ \left -> maybe ([], Nothing) (\(reply, rest) -> (rest, Just reply)) (List.uncons left)
                 -- What a seat this page plays sees as its reply is made again.
                 replayed request = Monad.when (Map.notMember (Question.seat (Request.question request)) remotes) . Monad.forM_ (Request.view request) $ IORef.modifyIORef' seatRef . witness
-            (outcome, recorded) <- Command.game (Protocol.resumed next replayed kept (Protocol.bySeat remotes here)) next kept (options bots (Natural.length seats) (Map.keysSet remotes)) pooled registry format (fmap DeckList.deck lists) seed
+            (outcome, recorded) <- Command.game (Protocol.resumed next replayed kept (Protocol.bySeat remotes here)) next kept (Lobby.playOptions bots (Natural.length seats) (Map.keysSet remotes <> locals)) pooled registry format (fmap DeckList.deck lists) seed
             -- What the player saw after their last decision: the killing blow, say.
             Monad.forM_ outcome $ IORef.modifyIORef' seatRef . witness . PlayerView.Engine.viewFor player . snd
             finished <- IORef.readIORef seatRef
@@ -126,18 +126,6 @@ verdictOf seat outcome = case outcome of
 player :: PlayerId.PlayerId
 player = PlayerId.MkPlayerId 0
 
--- | Of so many seats, the player's (seat 1) and each remote one speak the
--- line protocol; the search bot plays every other, at this difficulty and
--- persona (Parun.Play.Opponent).
-options :: (Difficulty.Difficulty, Persona.Persona) -> Natural -> Set.Set PlayerId.PlayerId -> PlayOptions.PlayOptions
-options (difficulty, persona) count remote =
-  PlayOptions.none
-    { PlayOptions.json = True,
-      PlayOptions.bots = Set.fromList [n | n <- [2 .. count], Set.notMember (Command.idOf n) remote],
-      PlayOptions.budget = Opponent.budgetAt difficulty (PlayOptions.budget PlayOptions.none),
-      PlayOptions.weights = Opponent.weightsOf persona
-    }
-
 -- | One request answered on the page, as values (Protocol.Exchange): a reply the seat is never asked
 -- for, or auto's next source once the seat chose auto for this payment, at
 -- once; else after a hand-off when the screen last faced another seat, the
@@ -149,13 +137,13 @@ exchange lookUp page seatRef leave request = do
   fmap (Just . Right) $ do
     Monad.forM_ (Request.view request) $ IORef.modifyIORef' seatRef . witness
     state <- IORef.readIORef seatRef
-    let auto = if paying state || level state == Web.Question.MkAutoPass then Web.Question.paying request else Nothing
+    let seat = Question.seat $ Request.question request
+        auto = if Set.member seat (paying state) || level state == Web.Question.MkAutoPass then Web.Question.paying request else Nothing
         kind = Question.kind $ Request.question request
         -- The seat's own stop (Web.Question.passesFor).
-        (skipped, kept) = maybe (Nothing, Nothing) (`Web.Question.passesFor` request) (skipping state)
-    IORef.writeIORef seatRef state {paying = Maybe.isJust auto, skipping = kept}
-    let seat = Question.seat $ Request.question request
-        -- The board as it stands, while the seat is not asked: redrawn only
+        (skipped, kept) = maybe (Nothing, Nothing) (`Web.Question.passesFor` request) (Map.lookup seat (skipping state))
+    IORef.writeIORef seatRef state {paying = (if Maybe.isJust auto then Set.insert else Set.delete) seat (paying state), skipping = Map.alter (const kept) seat (skipping state)}
+    let -- The board as it stands, while the seat is not asked: redrawn only
         -- when what it shows changed, not at every pass of priority, and
         -- only while the screen faces the seat, else what it last showed stays.
         watch reply = do
@@ -167,7 +155,7 @@ exchange lookUp page seatRef leave request = do
               IORef.writeIORef seatRef now {watched = Just seen}
               Browser.display page (fmap Screen.MkQuestion board)
           pure reply
-        conceded = if conceding state && kind == Text.pack "Concede" then Just (R.Text (Text.pack "Concedes")) else Nothing
+        conceded = if Set.member seat (conceding state) && kind == Text.pack "Concede" then Just (R.Text (Text.pack "Concedes")) else Nothing
     reply <- case (Monad.mplus conceded (Web.Question.automatic (level state) request), auto, skipped) of
       (Just reply, _, _) -> watch reply
       (_, Just reply, _) -> watch reply
@@ -223,11 +211,11 @@ exchange lookUp page seatRef leave request = do
             MkAbandon -> Exception.throwIO MkAbandonedGame
         Screen.MkQuestion e -> case Web.Question.step pending picked e value of
           Web.Question.MkReplied answered -> do
-            Monad.when (e == Web.Question.MkAuto) . IORef.modifyIORef' seatRef $ \s -> s {paying = True}
+            Monad.when (e == Web.Question.MkAuto) . IORef.modifyIORef' seatRef $ \s -> s {paying = Set.insert asked (paying s)}
             case e of
-              Web.Question.MkSkip stop -> IORef.modifyIORef' seatRef $ \s -> s {skipping = Just stop}
+              Web.Question.MkSkip stop -> IORef.modifyIORef' seatRef $ \s -> s {skipping = Map.insert asked stop (skipping s)}
               _ -> pure ()
-            Monad.when (e == Web.Question.MkConcede) . IORef.modifyIORef' seatRef $ \s -> s {conceding = True}
+            Monad.when (e == Web.Question.MkConcede) . IORef.modifyIORef' seatRef $ \s -> s {conceding = Set.insert asked (conceding s)}
             pure answered
           -- A pick made from the card's sheet leaves the sheet open.
           Web.Question.MkPicking now -> do
@@ -251,17 +239,17 @@ exchange lookUp page seatRef leave request = do
       _ -> False
 
 -- | What the page keeps between request lines: the seat the screen last
--- showed, whether the seat chose auto for the payment under way, what the
+-- showed, the seats that chose auto for the payment under way, what each
 -- seat has seen happen, and when it last answered.
 data Seat = MkSeat
   { facing :: Maybe PlayerId.PlayerId,
-    paying :: Bool,
-    -- | How much the page answers for the seat (Web.Question.Level).
+    paying :: Set.Set PlayerId.PlayerId,
+    -- | How much the page answers for every seat it plays (Web.Question.Level).
     level :: Web.Question.Level,
-    -- | How far the seat asked to pass (Web.Question.MkSkip).
-    skipping :: Maybe Web.Question.Until,
-    -- | Whether the seat conceded (Web.Question.MkConcede).
-    conceding :: Bool,
+    -- | How far each seat asked to pass (Web.Question.MkSkip).
+    skipping :: Map.Map PlayerId.PlayerId Web.Question.Until,
+    -- | The seats that conceded (Web.Question.MkConcede).
+    conceding :: Set.Set PlayerId.PlayerId,
     -- | Each seat's life whenever it or the turn changed (Ending.sampled).
     lives :: Seq.Seq (Natural, [(PlayerId.PlayerId, Integer)]),
     -- | The view last drawn while watching, less whose priority it was.
@@ -278,7 +266,7 @@ data Seat = MkSeat
 -- | The page's state before its first request line, facing the seat it
 -- plays, at that auto-pass level.
 newSeat :: PlayerId.PlayerId -> Web.Question.Level -> Seat
-newSeat seat initial = MkSeat (Just seat) False initial Nothing False Seq.empty Nothing Map.empty Map.empty Map.empty
+newSeat seat initial = MkSeat (Just seat) Set.empty initial Map.empty Set.empty Seq.empty Nothing Map.empty Map.empty Map.empty
 
 -- | The entries a seat has read so far, oldest first.
 loggedFor :: PlayerId.PlayerId -> Seat -> Seq.Seq Log.Entry
