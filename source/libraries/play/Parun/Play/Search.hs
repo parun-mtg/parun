@@ -30,8 +30,8 @@ import qualified Parun.Registry as Registry
 import qualified Parun.Types.Action as Action
 import qualified Parun.Types.Answerer as Answerer
 import qualified Parun.Types.Asked as Asked
-import qualified Parun.Types.CardType as CardType
 import qualified Parun.Types.CardIdentity as CardIdentity
+import qualified Parun.Types.CardType as CardType
 import qualified Parun.Types.Combat as Combat
 import qualified Parun.Types.Decider as Decider
 import qualified Parun.Types.Features as Features
@@ -245,8 +245,8 @@ dot weight count =
   sum [field weight * field count | field <- [Features.life, Features.hand, Features.power, Features.toughness, Features.lands, Features.permanents]]
 
 -- | `pid`'s generic features, from the board projected and the control
--- grants of `gs`: what every player may see (CR 400.2), and no effect's
--- identity.
+-- grants of `gs`: what every player may see or count (CR 400.2, 402.3), and
+-- no effect's identity.
 features :: Map.Map ObjectId.ObjectId ProjectedCharacteristics.ProjectedCharacteristics -> [Projection.View.ControlGrant] -> PlayerId.PlayerId -> GameState.GameState -> Features.Features
 features board grants pid gs =
   let controlled = [characteristics | (oid, characteristics) <- Map.toList board, Projection.View.controllerOfGiven grants oid gs == Just pid]
