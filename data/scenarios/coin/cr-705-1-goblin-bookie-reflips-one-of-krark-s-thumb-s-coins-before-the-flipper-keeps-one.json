@@ -57,8 +57,27 @@
     "step": "PrecombatMain"
   },
   "description": "CR 705.1 Goblin Bookie reflips one of Krark's Thumb's coins before the flipper keeps one",
-  "note": "The Thumb flips two coins, Tails and Heads. Bob declines over the first and reflips the second to Tails, so both coins show Tails, alice has nothing to choose (no ChooseCoinResult is scheduled) and loses the flip. Without the reflip she would keep the Heads.",
+  "note": "The Thumb flips both coins, Tails and Heads, before Bob's Bookie is offered over either, and each offer shows both. Bob declines over the first and reflips the second to Tails, so both coins show Tails, alice has nothing to choose (no ChooseCoinResult is scheduled) and loses the flip. Without the reflip she would keep the Heads.",
   "timeline": [
+    {
+      "do": {
+        "Cast": {
+          "mana": [
+            "$mountain"
+          ],
+          "object": "$sky"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": "Pass",
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
     {
       "do": {
         "Answer": {
@@ -93,32 +112,43 @@
       "turn": 1
     },
     {
-      "do": {
-        "Answer": {
-          "prompt": "FlipCoin",
-          "with": "Tails"
+      "check": {
+        "View": {
+          "is": {
+            "kind": "Rethrow",
+            "offer": {
+              "face": "Tails",
+              "results": [
+                "Tails",
+                "Heads"
+              ],
+              "place": 0,
+              "cost": {
+                "mana": [
+                  {
+                    "type": "OfType",
+                    "value": {
+                      "type": "Colored",
+                      "value": "Red"
+                    }
+                  }
+                ],
+                "components": [
+                  {
+                    "type": "TapThis"
+                  }
+                ]
+              },
+              "options": [
+                "Exercises",
+                "Declines"
+              ]
+            }
+          },
+          "of": "Prompt"
         }
       },
-      "player": "alice",
-      "step": "PrecombatMain",
-      "turn": 1
-    },
-    {
-      "do": {
-        "Cast": {
-          "mana": [
-            "$mountain"
-          ],
-          "object": "$sky"
-        }
-      },
-      "player": "alice",
-      "step": "PrecombatMain",
-      "turn": 1
-    },
-    {
-      "do": "Pass",
-      "player": "alice",
+      "player": "bob",
       "step": "PrecombatMain",
       "turn": 1
     },
@@ -127,6 +157,47 @@
         "Answer": {
           "prompt": "Rethrow",
           "with": "Declines"
+        }
+      },
+      "player": "bob",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "View": {
+          "is": {
+            "kind": "Rethrow",
+            "offer": {
+              "face": "Heads",
+              "results": [
+                "Tails",
+                "Heads"
+              ],
+              "place": 1,
+              "cost": {
+                "mana": [
+                  {
+                    "type": "OfType",
+                    "value": {
+                      "type": "Colored",
+                      "value": "Red"
+                    }
+                  }
+                ],
+                "components": [
+                  {
+                    "type": "TapThis"
+                  }
+                ]
+              },
+              "options": [
+                "Exercises",
+                "Declines"
+              ]
+            }
+          },
+          "of": "Prompt"
         }
       },
       "player": "bob",
@@ -152,6 +223,17 @@
         }
       },
       "player": "bob",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": {
+        "Answer": {
+          "prompt": "FlipCoin",
+          "with": "Tails"
+        }
+      },
+      "player": "alice",
       "step": "PrecombatMain",
       "turn": 1
     },

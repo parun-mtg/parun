@@ -1909,33 +1909,42 @@ windowAbilities opened =
     elem ActivationRestriction.Type.DuringThrow (ActivatedAbility.restrictions ability)
   ]
 
--- | CR 705.1's coin, just flipped and not yet read: the window Goblin Bookie's
--- "reflip any coin" is activated in, answering whether the coin is to be
--- flipped again (Parun.Engine.Event.settleCoins does it). The flipper's pick
--- among the standing activations, throwSettled's `offeringAll` without its static
--- offers, since no printing offers a reflip but this window's.
---
--- Not implemented: flipping every coin of a unit before any reflip is offered,
--- and showing the deciding seat the other coins (#9437).
-reflipWindow :: Game Result -> PlayerId -> CoinFace.CoinFace -> Game Bool
-reflipWindow runSubgame flipper face = do
-  let landed = ThrowResult.CoinCameUp face
+-- | CR 705.1's coins, every one flipped and none yet read: the window Goblin
+-- Bookie's "reflip any coin" is activated in, answering the place of the coin
+-- to be flipped again (Parun.Engine.Event.settleCoins does it), Nothing for
+-- none. The flipper picks which standing activation is offered next,
+-- throwSettled's `offeringAll` without its static offers, since no printing
+-- offers a reflip but this window's; its payer then picks the coin it reaches
+-- (CR 608.2d), asked over each of `places` in turn, each question showing
+-- every coin (Krark's Thumb's ruling: every simultaneous flip is known
+-- first). The scenario
+-- coin/cr-705-1-goblin-bookie-reflips-one-of-krark-s-thumb-s-coins-before-the-flipper-keeps-one
+-- proves it.
+reflipWindow :: Game Result -> PlayerId -> NonEmpty.NonEmpty CoinFace.CoinFace -> [Natural] -> Game (Maybe Natural)
+reflipWindow runSubgame flipper faces places = do
+  let shown = fmap ThrowResult.CoinCameUp faces
       offering offers = do
-        standing <- Common.withThrowing landed (State.gets (\gs -> filter (\(payer, _, (oid, ability)) -> Activatable.activatable payer oid ability gs) offers))
+        standing <- Common.withThrowing (NonEmpty.head shown) (State.gets (\gs -> filter (\(payer, _, (oid, ability)) -> Activatable.activatable payer oid ability gs) offers))
         picked <- Dice.pickModifier flipper (const Nothing) standing
         case picked of
-          Nothing -> pure False
+          Nothing -> pure Nothing
           Just ((payer, _, (oid, ability)), rest) -> do
-            gs <- State.get
-            answer <- Game.choose (Prompt.Rethrow (Decide.deciderFor payer gs) payer (landed NonEmpty.:| []) 0 (Just (ActivatedAbility.cost ability)))
-            case answer of
-              OptionalDecision.Declines -> offering rest
-              OptionalDecision.Exercises -> do
-                requested <- Common.withThrowing landed $ do
-                  activated <- activateWhileRolling runSubgame payer oid ability
-                  after <- State.get
-                  pure (activated && Scratch.rethrowRequested (GameState.scratch after))
-                if requested then pure True else offering rest
+            reflipped <- asking payer oid ability places
+            maybe (offering rest) (pure . Just) reflipped
+      asking payer oid ability remaining = case remaining of
+        [] -> pure Nothing
+        place : later -> do
+          gs <- State.get
+          answer <- Game.choose (Prompt.Rethrow (Decide.deciderFor payer gs) payer shown place (Just (ActivatedAbility.cost ability)))
+          case answer of
+            OptionalDecision.Declines -> asking payer oid ability later
+            OptionalDecision.Exercises -> do
+              let landed = Maybe.fromMaybe (NonEmpty.head shown) (Maybe.listToMaybe (List.genericDrop place (NonEmpty.toList shown)))
+              requested <- Common.withThrowing landed $ do
+                activated <- activateWhileRolling runSubgame payer oid ability
+                after <- State.get
+                pure (activated && Scratch.rethrowRequested (GameState.scratch after))
+              pure (if requested then Just place else Nothing)
   offers <- State.gets (fmap (\(pid, oid, ability) -> (pid, Just oid, (oid, ability))) . windowAbilities)
   offering offers
 

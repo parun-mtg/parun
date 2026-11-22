@@ -1,5 +1,6 @@
 module Parun.Types.Settle where
 
+import qualified Data.List.NonEmpty as NonEmpty
 import qualified Numeric.Natural as Natural
 import qualified Parun.Types.CoinFace as CoinFace
 import qualified Parun.Types.Game as Game
@@ -28,9 +29,10 @@ data Settle = MkSettle
     -- keeps Pokey's substitution out of the offer
     -- (Parun.Engine.Event.flipOneCoin).
     throwRecorded :: Maybe (Throw.Throw -> Game.Game [Natural.Natural]),
-    -- | CR 705.1: the window Goblin Bookie's reflip is activated in, over the
-    -- flipper's coin just flipped; answers whether it is flipped again.
-    reflipWindow :: PlayerId.PlayerId -> CoinFace.CoinFace -> Game.Game Bool
+    -- | CR 705.1: the window Goblin Bookie's reflip is activated in, over
+    -- every coin the flipper just flipped and the places of those told apart;
+    -- answers the place of the coin to flip again, Nothing for none.
+    reflipWindow :: PlayerId.PlayerId -> NonEmpty.NonEmpty CoinFace.CoinFace -> [Natural.Natural] -> Game.Game (Maybe Natural.Natural)
   }
 
 -- | A road that reaches no resolver: nothing queued runs, no roll is thrown and
@@ -41,5 +43,5 @@ none =
     { queued = pure (),
       entryEffects = pure (),
       throwRecorded = Nothing,
-      reflipWindow = \_ _ -> pure False
+      reflipWindow = \_ _ _ -> pure Nothing
     }
