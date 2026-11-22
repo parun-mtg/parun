@@ -58,7 +58,7 @@ spec s = Spec.describe s "Parun.Codec.Scenario" $ do
       Scenario.codec
       Scenario.Type.MkScenario
         { Scenario.Type.description = Text.pack "a game",
-          Scenario.Type.start = Start.Type.FromDecks Nothing (Entrant.Type.MkEntrant (Label.Type.MkLabel (Text.pack "alice")) [Text.pack "20 Forest"] GraveyardOrder.Type.Indifferent NonEmpty.:| []),
+          Scenario.Type.start = Start.Type.FromDecks Nothing (Entrant.Type.MkEntrant (Label.Type.MkLabel (Text.pack "alice")) [Text.pack "20 Forest"] GraveyardOrder.Type.Indifferent NonEmpty.:| []) Nothing,
           Scenario.Type.timeline = Seq.empty,
           Scenario.Type.final = Seq.empty
         }
@@ -69,11 +69,24 @@ spec s = Spec.describe s "Parun.Codec.Scenario" $ do
       Scenario.codec
       Scenario.Type.MkScenario
         { Scenario.Type.description = Text.pack "a game",
-          Scenario.Type.start = Start.Type.FromDecks (Just (Format.Type.MkFormat RuleFamily.Type.Constructed Nothing Set.empty)) (Entrant.Type.MkEntrant (Label.Type.MkLabel (Text.pack "alice")) [Text.pack "60 Forest"] GraveyardOrder.Type.Indifferent NonEmpty.:| []),
+          Scenario.Type.start = Start.Type.FromDecks (Just (Format.Type.MkFormat RuleFamily.Type.Constructed Nothing Set.empty)) (Entrant.Type.MkEntrant (Label.Type.MkLabel (Text.pack "alice")) [Text.pack "60 Forest"] GraveyardOrder.Type.Indifferent NonEmpty.:| []) Nothing,
           Scenario.Type.timeline = Seq.empty,
           Scenario.Type.final = Seq.empty
         }
       " {\"description\":\"a game\",\"game\":[{\"name\":\"alice\",\"deck\":[\"60 Forest\"]}],\"format\":{\"rules\":\"Constructed\"}} "
+  Spec.it s "CR 103.1: a new game names its starting player where not the first seat" $
+    Common.assertCodec
+      s
+      Scenario.codec
+      Scenario.Type.MkScenario
+        { Scenario.Type.description = Text.pack "a game",
+          Scenario.Type.start = Start.Type.FromDecks Nothing (Entrant.Type.MkEntrant (Label.Type.MkLabel (Text.pack "alice")) [Text.pack "20 Forest"] GraveyardOrder.Type.Indifferent NonEmpty.:| [Entrant.Type.MkEntrant (Label.Type.MkLabel (Text.pack "bob")) [Text.pack "20 Forest"] GraveyardOrder.Type.Indifferent]) (Just (Label.Type.MkLabel (Text.pack "bob"))),
+          Scenario.Type.timeline = Seq.empty,
+          Scenario.Type.final = Seq.empty
+        }
+      " {\"description\":\"a game\",\"game\":[{\"name\":\"alice\",\"deck\":[\"20 Forest\"]},{\"name\":\"bob\",\"deck\":[\"20 Forest\"]}],\"first\":\"bob\"} "
+  Spec.it s "a board with a starting player does not decode" $
+    Spec.assertBool s (Either.isLeft (Common.parse (Text.pack "{\"description\":\"x\",\"first\":\"a\",\"board\":{\"seats\":[{\"name\":\"a\"}],\"active\":\"a\",\"step\":\"PrecombatMain\"}}") >>= Codec.decode Scenario.codec)) "board and starting player"
   Spec.it s "a board with a format does not decode" $
     Spec.assertBool s (Either.isLeft (Common.parse (Text.pack "{\"description\":\"x\",\"format\":{\"rules\":\"Constructed\"},\"board\":{\"seats\":[{\"name\":\"a\"}],\"active\":\"a\",\"step\":\"PrecombatMain\"}}") >>= Codec.decode Scenario.codec)) "board and format"
   Spec.it s "a scenario with no start, or two, does not decode" $ do

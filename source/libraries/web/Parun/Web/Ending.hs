@@ -94,7 +94,8 @@ view ending =
                Element.el "h2" [] [] [Element.string "How it went"],
                summary (viewer ending) (trail ending),
                Element.el "h2" [] [] [Element.string "Game log"],
-               Element.el "ul" ["game-log"] [] (fmap (Log.item (viewer ending) Nothing False) (Log.headed id (Foldable.toList (witnessed ending))))
+               -- Newest first, as the log reads during play.
+               Element.el "ul" ["game-log"] [] (fmap (Log.item (viewer ending) Nothing False . snd) (Foldable.toList (Log.newestFirst (Seq.fromList (fmap ((,) ()) (Log.headed id (Foldable.toList (witnessed ending))))))))
              ]
 
 -- | Each seat's life through the game as a line chart, its scale and each

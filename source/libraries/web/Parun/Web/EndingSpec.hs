@@ -12,10 +12,10 @@ import qualified Parun.Web.Log as Log
 spec :: (Monad m, Monad n) => Spec.Spec m n -> n ()
 spec s = Spec.describe s "Parun.Web.Ending" $ do
   Spec.describe s "view" $ do
-    Spec.it s "says how the game ended, offers a rematch, a new game and the scenario, and lists the log" $ do
+    Spec.it s "says how the game ended, offers a rematch, a new game and the scenario, and lists the log newest first, as play does" $ do
       let page = Html.toText (Ending.view ending)
           has piece = Spec.assertBool s (Text.isInfixOf (Text.pack piece) page) piece
-      has "<section class=\"verdict won\"><h1>You win!</h1><p>Player 1 wins.</p><p>Player 2 conceded.</p></section>"
+      has "<section class=\"verdict won\"><h1>You win!</h1><p>You win.</p><p>Player 2 conceded.</p></section>"
       has ">Rematch</button>"
       Spec.assertBool s (not (Text.isInfixOf (Text.pack "?mine=") page)) "no rematch link"
       Spec.assertBool s (not (Text.isInfixOf (Text.pack "Share this shuffle") page)) "no share link"
@@ -25,7 +25,7 @@ spec s = Spec.describe s "Parun.Web.Ending" $ do
       Spec.assertEqWith s "new game" (tapping "New game") (Just Ending.MkNewGame)
       has ">New game</button>"
       has "<a href=\"data:application/json;charset=utf-8,%7b%7d\" download=\"parun-game.json\">Save as a scenario</a>"
-      has "<ul class=\"game-log\"><li class=\"turn\">Turn 1: your turn</li><li>You draw a card.</li><li class=\"minor\">Player 2 concedes.</li></ul>"
+      has "<ul class=\"game-log\"><li class=\"turn\">Turn 2: Player 2's turn</li><li class=\"minor\">Player 2 concedes.</li><li>Player 2 draws a card.</li><li class=\"turn\">Turn 1: your turn</li><li>You draw a card.</li></ul>"
       has "<div class=\"confetti\""
 
     Spec.it s "ends the chart on the turn the game ended in, though no life changed in it" $ do
@@ -75,9 +75,9 @@ ending :: Ending.Ending
 ending =
   Ending.MkEnding
     { Ending.verdict = Ending.MkWon,
-      Ending.said = [Text.pack "Player 1 wins.", Text.pack "Player 2 conceded."],
+      Ending.said = [Text.pack "You win.", Text.pack "Player 2 conceded."],
       Ending.scenario = Text.pack "{}",
-      Ending.witnessed = Seq.fromList [Log.MkTurn 1 you, Log.MkEvent Log.MkMajor (Text.pack "You draw a card."), Log.MkEvent Log.MkMinor (Text.pack "Player 2 concedes."), Log.MkTurn 2 you],
+      Ending.witnessed = Seq.fromList [Log.MkTurn 1 you, Log.MkEvent Log.MkMajor (Text.pack "You draw a card."), Log.MkTurn 2 bot, Log.MkEvent Log.MkMajor (Text.pack "Player 2 draws a card."), Log.MkEvent Log.MkMinor (Text.pack "Player 2 concedes."), Log.MkTurn 3 you],
       Ending.viewer = you,
       Ending.trail = [(1, [(you, 20), (bot, 20)]), (2, [(you, 20), (bot, 17)]), (3, [(you, 20), (bot, 0)])]
     }

@@ -173,7 +173,8 @@ mapMarks marks = Board.MkMarks (fmap mapCue (Board.object marks)) (fmap (fmap ma
   where
     mapCue cue = cue {Card.tap = MkTable (Card.tap cue), Card.peek = fmap (Bifunctor.bimap MkTable MkTable) (Card.peek cue)}
 
--- | The scenario, the scrubber and its steps, and the seats to view as.
+-- | The scenario, the scrubber and its steps, and the seats to view as,
+-- each by its name and, where the table names it otherwise, that name.
 controls :: Frame -> [Html.Html Event]
 controls frame =
   let at = position frame
@@ -215,8 +216,9 @@ controls frame =
           "div"
           ["segmented", "seats"]
           [Element.attr "role" (Text.pack "group"), Element.attr "aria-label" (Text.pack "View as")]
-          [ Element.el "button" ["on" | pid == viewer frame] [Element.attr "type" (Text.pack "button"), Element.attr "title" (label <> Text.pack ": " <> Wording.player pid <> Text.pack " on the table"), Element.attr "aria-pressed" (Text.pack (if pid == viewer frame then "true" else "false")), Element.on "click" (MkSeat pid)] [Element.text label]
-          | (pid, label) <- seats frame
+          [ Element.el "button" ["on" | pid == viewer frame] [Element.attr "type" (Text.pack "button"), Element.attr "aria-pressed" (Text.pack (if pid == viewer frame then "true" else "false")), Element.on "click" (MkSeat pid)] [Element.text (if label == table then label else label <> Text.pack " (" <> table <> Text.pack ")")]
+          | (pid, label) <- seats frame,
+            let table = tableName frame pid
           ]
       ]
 
@@ -234,6 +236,11 @@ stop frame asked =
       (_, Just r) -> fmap (fmap MkTable) (Web.Question.form r Set.empty)
       (Just r, Nothing) -> [Element.el "p" ["waiting"] [] [Element.text (Text.pack "Waiting on " <> seatName frame (Question.seat (Request.question r)) <> Text.pack ": " <> Question.kind (Request.question r) <> Text.pack ".")]]
       (Nothing, Nothing) -> []
+
+-- | A seat's name as the table shows it to the seat viewed as: "You" for
+-- that seat, else its number (Parun.Web.Board.name).
+tableName :: Frame -> PlayerId.PlayerId -> Text.Text
+tableName frame pid = if pid == viewer frame then Text.pack "You" else Board.name pid
 
 seatName :: Frame -> PlayerId.PlayerId -> Text.Text
 seatName frame pid = maybe (Wording.player pid) snd (List.find ((== pid) . fst) (seats frame))

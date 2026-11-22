@@ -79,8 +79,9 @@ instance Exception.Exception Abandoned
 -- deals what it cannot see from the game's format's pool among `cards`
 -- (Command.pooled), by the legality table `table` gives.
 -- Once over, `tell` is given each seat's verdict, what is said of the game
--- and its scenario file: how it came out, or why it could not start.
-game :: Browser.Page Screen.Event -> Registry.Registry Identity.Identity -> [Either Text.Text Card.Card] -> IO (Either Text.Text LegalityTable.LegalityTable) -> IORef.IORef Web.Question.Level -> (Difficulty.Difficulty, Persona.Persona) -> NonEmpty.NonEmpty (FilePath, Text.Text) -> Map.Map PlayerId.PlayerId (Protocol.Exchange IO) -> Key.Type.Key -> [R.Reply] -> (R.Reply -> IO ()) -> ((PlayerId.PlayerId -> Ending.Verdict) -> [Text.Text] -> Text.Text -> IO ()) -> (Maybe PlayerView.PlayerView -> IO Leave) -> IO (Either [Text.Text] Ending.Played)
+-- to each seat and its scenario file: how it came out, or why it could not
+-- start.
+game :: Browser.Page Screen.Event -> Registry.Registry Identity.Identity -> [Either Text.Text Card.Card] -> IO (Either Text.Text LegalityTable.LegalityTable) -> IORef.IORef Web.Question.Level -> (Difficulty.Difficulty, Persona.Persona) -> NonEmpty.NonEmpty (FilePath, Text.Text) -> Map.Map PlayerId.PlayerId (Protocol.Exchange IO) -> Key.Type.Key -> [R.Reply] -> (R.Reply -> IO ()) -> ((PlayerId.PlayerId -> Ending.Verdict) -> (PlayerId.PlayerId -> [Text.Text]) -> Text.Text -> IO ()) -> (Maybe PlayerView.PlayerView -> IO Leave) -> IO (Either [Text.Text] Ending.Played)
 game page registry cards table levelRef bots seats remotes seed stored kept tell leave = do
   seatRef <- IORef.newIORef . newSeat player =<< IORef.readIORef levelRef
   keepingLevel levelRef seatRef . Exception.handle (\MkAbandonedGame -> pure (Right Ending.MkAbandoned)) $ do
@@ -102,12 +103,12 @@ game page registry cards table levelRef bots seats remotes seed stored kept tell
             -- What the player saw after their last decision: the killing blow, say.
             Monad.forM_ outcome $ IORef.modifyIORef' seatRef . witness . PlayerView.Engine.viewFor player . snd
             finished <- IORef.readIORef seatRef
-            let said = either (\reason -> [Text.pack "The game stopped: " <> stopped reason <> Text.pack "."]) (\(result, gs) -> Wording.result result : Wording.departures gs) outcome
+            let said seat = either (\reason -> [Text.pack "The game stopped: " <> stopped reason <> Text.pack "."]) (\(result, gs) -> Wording.result (Just seat) result : Wording.departures (Just seat) gs) outcome
                 -- A remote seat's exchange ends only when its channel closes.
                 stopped reason = if not (Map.null remotes) && reason == Text.pack "end of input" then Text.pack "a player's connection closed" else reason
                 scenario = Command.rendered recorded
             tell (`verdictOf` outcome) said scenario
-            pure . Right . Ending.MkFinished $ Ending.MkEnding (verdictOf player outcome) said scenario (loggedFor player finished) player (Foldable.toList (lives finished))
+            pure . Right . Ending.MkFinished $ Ending.MkEnding (verdictOf player outcome) (said player) scenario (loggedFor player finished) player (Foldable.toList (lives finished))
 
 -- | Runs a game, then keeps the auto-pass level its seat ended on.
 keepingLevel :: IORef.IORef Web.Question.Level -> IORef.IORef Seat -> IO a -> IO a

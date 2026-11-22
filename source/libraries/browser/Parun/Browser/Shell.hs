@@ -797,8 +797,8 @@ play shell seats invited resuming = do
   -- The invited slots whose connection is down: every one of a game picked up.
   down <- IORef.newIORef (if Maybe.isJust resuming then invited else Set.empty)
   let channelOf i = tracked down i (Browser.channel (page shell) (build shell) i)
-      tellAll verdictFor said scenario = Monad.forM_ invited $ \i -> Link.send (channelOf i) (Link.MkEnd (verdictFor (seatOf i)) said scenario)
-      stopped said = tellAll (const Ending.MkStopped) said Text.empty >> mapM_ Browser.linkClose invited
+      tellAll verdictFor said scenario = Monad.forM_ invited $ \i -> Link.send (channelOf i) (Link.MkEnd (verdictFor (seatOf i)) (said (seatOf i)) scenario)
+      stopped said = tellAll (const Ending.MkStopped) (const said) Text.empty >> mapM_ Browser.linkClose invited
       keeping = not (Set.null invited)
   case built of
     Left problem -> stopped [problem] >> notice shell [problem]

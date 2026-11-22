@@ -229,7 +229,7 @@ play send options prior registry format decks = do
   (outcome, recorded) <- game send (pure Nothing) (const (pure ())) options prior registry format decks seed
   Monad.forM_ (PlayOptions.save options) (`save` recorded)
   case outcome of
-    Right (result, _) -> (if PlayOptions.json options then TextIO.hPutStrLn IO.stderr else TextIO.putStrLn) (Wording.result result)
+    Right (result, _) -> (if PlayOptions.json options then TextIO.hPutStrLn IO.stderr else TextIO.putStrLn) (Wording.result Nothing result)
     Left reason -> TextIO.hPutStrLn IO.stderr (Text.pack "Stopped: " <> reason <> Text.pack ".")
   TextIO.hPutStrLn IO.stderr (Text.pack "Seed " <> Key.toHex seed <> Text.pack ".")
 
@@ -344,7 +344,7 @@ labels count = Map.fromList [(idOf n, Label.MkLabel (Text.pack ("player" <> show
 -- its graveyard order in `orders` and its answers' entries recorded in
 -- `timeline`, replays as.
 saved :: PrintingTable.PrintingTable -> Text.Text -> Maybe Format.Format -> Map.Map PlayerId.PlayerId GraveyardOrder.GraveyardOrder -> NonEmpty.NonEmpty (PlayerId.PlayerId, Deck.Deck) -> Seq.Seq Timed.Timed -> Scenario.Scenario
-saved table description format orders matchup = Record.scenario table description format (fmap (\(pid, deck) -> (Record.labelOf (labels (Natural.length matchup)) pid, Map.findWithDefault GraveyardOrder.Indifferent pid orders, deck)) matchup)
+saved table description format orders matchup = Record.scenario table description format (fmap (\(pid, deck) -> (pid, Record.labelOf (labels (Natural.length matchup)) pid, Map.findWithDefault GraveyardOrder.Indifferent pid orders, deck)) matchup)
 
 -- | Writes a scenario to `path`.
 save :: FilePath -> Scenario.Scenario -> IO ()
