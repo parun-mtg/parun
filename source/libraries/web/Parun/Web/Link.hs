@@ -7,6 +7,7 @@ module Parun.Web.Link where
 
 import qualified Control.Monad as Monad
 import qualified Data.List.NonEmpty as NonEmpty
+import qualified Data.Map.Strict as Map
 import qualified Data.Text as Text
 import qualified Parun.Codec.Reply as Codec.Reply
 import qualified Parun.Codec.Request as Codec.Request
@@ -164,18 +165,28 @@ guest local message = case message of
 -- | A game with guests as the host's page keeps it, to pick it up after a
 -- reload (Protocol.resumed): its seed, each seat's deck as a label and its
 -- list's text (the host's first), the bots' slots players were invited to,
--- those played on the host's screen, how every other bot plays
+-- those played on the host's screen and how, how every other bot plays
 -- (Parun.Play.Opponent), and every reply so far.
 data Saved = MkSaved
   { seed :: Key.Type.Key,
     seats :: NonEmpty.NonEmpty (Text.Text, Text.Text),
     invited :: [Int],
-    locals :: [Int],
+    locals :: Map.Map Int Sitting,
     difficulty :: Difficulty.Difficulty,
     persona :: Persona.Persona,
     replies :: [R.Reply]
   }
   deriving (Eq, Show)
+
+-- | How a bot's slot played on the host's screen is played.
+data Sitting
+  = -- | By another player there, handed the screen before each of their
+    -- questions (Parun.Web.Question.handOff).
+    MkHandedOver
+  | -- | By the host too, with no hand-off between the host's seats: a
+    -- goldfish game, one person deciding for every seat.
+    MkYours
+  deriving (Eq, Ord, Show)
 
 -- | A saved game as the page keeps it, stamped with the build that played
 -- it: a line for the game, then one per reply (savedReply), so a reply is
@@ -183,13 +194,15 @@ data Saved = MkSaved
 saved :: Text.Text -> Saved -> Text.Text
 saved build game =
   let seat (name, contents) = Value.object [Value.pair "deck" (Value.text name), Value.pair "list" (Value.text contents)]
+      slots sitting = Value.array [Value.integer (toInteger i) | (i, how) <- Map.toList (locals game), how == sitting]
       header =
         Value.object
           [ Value.pair "build" (Value.text build),
             Value.pair "seed" (Value.text (Key.toHex (seed game))),
             Value.pair "seats" (Value.array (fmap seat (NonEmpty.toList (seats game)))),
             Value.pair "invited" (Value.array (fmap (Value.integer . toInteger) (invited game))),
-            Value.pair "locals" (Value.array (fmap (Value.integer . toInteger) (locals game))),
+            Value.pair "locals" (slots MkHandedOver),
+            Value.pair "yours" (slots MkYours),
             Value.pair "difficulty" (Value.string (fst (Opponent.difficultyName (difficulty game)))),
             Value.pair "persona" (Value.string (fst (Opponent.personaName (persona game))))
           ]
@@ -213,7 +226,9 @@ unsaved build kept = case Text.lines kept of
     decks <- maybe (Left (Text.pack "no seats")) Right (NonEmpty.nonEmpty listed)
     let slotsAt name = Common.field name pairs >>= Common.asArray >>= traverse (Common.asInteger Monad.>=> maybe (Left (Text.pack "not a slot")) Right . Integer.toInt)
     slots <- slotsAt "invited"
-    here <- slotsAt "locals"
+    handed <- slotsAt "locals"
+    yours <- slotsAt "yours"
+    let here = Map.fromList (fmap (\i -> (i, MkHandedOver)) handed <> fmap (\i -> (i, MkYours)) yours)
     level <- Common.field "difficulty" pairs >>= Common.asText >>= named "a difficulty" Opponent.difficultyName
     style <- Common.field "persona" pairs >>= Common.asText >>= named "a persona" Opponent.personaName
     answers <- traverse (Common.parse Monad.>=> Codec.Reply.fromValue) (filter (not . Text.null) rest)

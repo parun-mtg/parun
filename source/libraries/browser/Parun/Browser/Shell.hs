@@ -243,7 +243,7 @@ follow shell next =
     MkToReplay source at -> replay shell source at >>= follow shell
     MkToPlayOn source at -> playOnFrom shell source at >>= follow shell
     MkToJoin code -> joinGame shell code >>= follow shell
-    MkToRestore kept -> play shell (Link.seats kept) (Set.fromList (Link.invited kept)) (Set.fromList (Link.locals kept)) (Just kept) >>= follow shell
+    MkToRestore kept -> play shell (Link.seats kept) (Set.fromList (Link.invited kept)) (Link.locals kept) (Just kept) >>= follow shell
 
 -- | Where the home screen leads.
 afterHome :: Home.Outcome -> Next
@@ -785,7 +785,7 @@ loadingScreen shell = Browser.display (page shell) . Loading.view
 -- registry is built, shown while it builds, every bot playing as the lobby
 -- last left it (opponent), each bot's slot in `invited`
 -- played from another browser over its channel (Parun.Web.Link) and each
--- in `here` on this screen, or that
+-- in `here` on this screen as it sits there, or that
 -- game picked up where `resuming` stopped, its bots playing as it was
 -- kept; its ending, and the games its Rematch starts; then where it leads. A game with guests is kept until it
 -- is over (Link.saved), and a guest whose connection drops, or every guest
@@ -795,7 +795,7 @@ loadingScreen shell = Browser.display (page shell) . Loading.view
 -- with them goes back to the lobby on the match-up played (Lobby.rematch),
 -- their channels kept open and what they said meanwhile heard there, and a
 -- new game closes them.
-play :: Shell -> NonEmpty.NonEmpty (Text.Text, Text.Text) -> Set.Set Int -> Set.Set Int -> Maybe Link.Saved -> IO Next
+play :: Shell -> NonEmpty.NonEmpty (Text.Text, Text.Text) -> Set.Set Int -> Map.Map Int Link.Sitting -> Maybe Link.Saved -> IO Next
 play shell seats invited here resuming = do
   let starting = Browser.display (page shell) (if Maybe.isJust resuming then message ["Picking the game up where it stopped\x2026"] else Hotseat.starting seats)
   starting
@@ -817,7 +817,7 @@ play shell seats invited here resuming = do
       -- Rematch leads to offers that.
       Monad.forM_ resuming $ \game -> IORef.writeIORef (opponent shell) (Link.difficulty game, Link.persona game)
       bots@(difficulty, persona) <- IORef.readIORef (opponent shell)
-      Monad.when (keeping && Maybe.isNothing resuming) . Browser.keepGame $ Link.saved (build shell) (Link.MkSaved seed seats (Set.toList invited) (Set.toList here) difficulty persona [])
+      Monad.when (keeping && Maybe.isNothing resuming) . Browser.keepGame $ Link.saved (build shell) (Link.MkSaved seed seats (Set.toList invited) here difficulty persona [])
       let rejoinSlot i = do
             back <- rejoin shell i (Rejoin.host (Text.pack ("Player " <> show (i + 2))))
             Monad.when back (IORef.modifyIORef' down (Set.delete i))
@@ -826,7 +826,7 @@ play shell seats invited here resuming = do
           remotes = Map.fromList [(seatOf i, Link.remote (rejoinSlot i) (Lobby.placesFor i (Lobby.rematch seats invited here)) (channelOf i)) | i <- Set.toList invited]
           kept = if keeping then Browser.keepReply . Link.savedReply else const (pure ())
       parsed <- foldMap LazyMap.elems . cards <$> IORef.readIORef (loaded shell)
-      ended <- Hotseat.game (page shell) reg parsed (tableOf shell) (level shell) bots (fmap (Bifunctor.first Text.unpack) seats) remotes (Set.map seatOf here) seed (foldMap Link.replies resuming) kept tellAll (leaveFor shell chosen)
+      ended <- Hotseat.game (page shell) reg parsed (tableOf shell) (level shell) bots (fmap (Bifunctor.first Text.unpack) seats) remotes (Map.mapKeys seatOf here) seed (foldMap Link.replies resuming) kept tellAll (leaveFor shell chosen)
       Monad.when keeping Browser.forgetGame
       case ended of
         Left problems -> stopped problems >> notice shell problems
@@ -836,7 +836,7 @@ play shell seats invited here resuming = do
           let seatOf' (i, seat@(name, _))
                 | i == 0 = History.MkSeat History.MkYou (DeckBrowser.label (DeckBrowser.titleIn seat) name) (Just name) (Map.findWithDefault Set.empty name palette')
                 | Set.member (i - 1) invited = History.MkSeat History.MkPerson (DeckBrowser.label (DeckBrowser.titleIn seat) name) Nothing Set.empty
-                | Set.member (i - 1) here = History.MkSeat History.MkPerson (DeckBrowser.label (DeckBrowser.titleIn seat) name) (Just name) (Map.findWithDefault Set.empty name palette')
+                | Map.member (i - 1) here = History.MkSeat History.MkPerson (DeckBrowser.label (DeckBrowser.titleIn seat) name) (Just name) (Map.findWithDefault Set.empty name palette')
                 | otherwise = History.MkSeat History.MkBot (DeckBrowser.label (DeckBrowser.titleIn seat) name) (Just name) (Map.findWithDefault Set.empty name palette')
           remember shell (fmap seatOf' (zip [0 :: Int ..] (NonEmpty.toList seats))) played
           lost <- IORef.readIORef down

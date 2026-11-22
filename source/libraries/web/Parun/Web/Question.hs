@@ -312,13 +312,16 @@ data Screen = MkScreen
     focus :: Maybe Natural,
     level :: Level,
     -- | The Oracle text of each spell on the stack (Card.written).
-    written :: Map.Map ObjectId.ObjectId [Text.Text]
+    written :: Map.Map ObjectId.ObjectId [Text.Text],
+    -- | Whether the person at the screen plays several seats, so the prompt
+    -- names the one asked (handsOver).
+    naming :: Bool
   }
   deriving (Eq, Show)
 
 -- | A screen with nothing picked, read or logged.
 blank :: Screen
-blank = MkScreen Set.empty Nothing Seq.empty 0 Nothing MkStandard Map.empty
+blank = MkScreen Set.empty Nothing Seq.empty 0 Nothing MkStandard Map.empty False
 
 -- | The page for a request: the turn bar, the table with each tile marked
 -- for what tapping it does, and beside it the question with its answers,
@@ -328,6 +331,7 @@ view request screen =
   table request screen (autoPass (level screen)) (barControls True (MkConcede <$ passIndex request)) (cues request (selected screen) (focus screen)) $
     foldMap (pure . eyebrow) (Request.view request)
       <> [Element.el "p" ["problem"] [Element.attr "role" (Text.pack "alert")] (Mana.rich problem) | problem <- Maybe.maybeToList (Request.problem request)]
+      <> [Element.el "p" ["playing"] [Element.attr "role" (Text.pack "note")] [Html.text (Text.pack "You're playing " <> Wording.player (Question.seat (Request.question request)) <> Text.pack ".")] | naming screen]
       <> [Element.el "p" ["controlling"] [Element.attr "role" (Text.pack "note")] [Html.text (Text.pack "You're deciding for " <> Wording.player p <> Text.pack ", whom you control.")] | p <- Maybe.maybeToList (Question.for (Request.question request))]
       <> form request (selected screen)
 
@@ -555,6 +559,12 @@ handOff request =
     ]
   where
     seat = Question.seat (Request.question request)
+
+-- | Whether the screen is handed to the seat asked before its question
+-- (handOff): it last faced another seat, unless the one person at the
+-- screen plays both, and so hides neither's hand (`yours`).
+handsOver :: Set.Set PlayerId.PlayerId -> Maybe PlayerId.PlayerId -> PlayerId.PlayerId -> Bool
+handsOver yours facing seat = facing /= Just seat && not (Set.member seat yours && any (`Set.member` yours) facing)
 
 -- | What an event does, the options picked so far being `picked`.
 step :: Request.Request -> Set.Set (Natural, Natural) -> Event -> Text.Text -> Outcome

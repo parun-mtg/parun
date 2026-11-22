@@ -53,9 +53,9 @@ data Lobby = MkLobby
     -- | Each bot's slot switched to a player invited from another browser,
     -- by its place in 'theirs' (Parun.Web.Link).
     invites :: Map.Map Int Invite,
-    -- | Each bot's slot switched to a player on this screen, by its place in
-    -- 'theirs', which holds its deck.
-    locals :: Set.Set Int,
+    -- | Each bot's slot switched to a seat played on this screen, by its
+    -- place in 'theirs', which holds its deck, and how it is played there.
+    locals :: Map.Map Int Link.Sitting,
     -- | Whether you are ready to start a game with the players invited.
     ready :: Bool,
     -- | How strongly every bot plays (Parun.Play.Opponent).
@@ -99,8 +99,8 @@ data Occupant
     MkBot
   | -- | A player invited from another browser (Parun.Web.Link).
     MkInvited
-  | -- | A player on this screen, handed it before each of their questions.
-    MkHere
+  | -- | A seat played on this screen, as the sitting says.
+    MkHere Link.Sitting
   deriving (Eq, Show)
 
 -- | What a tap or a keystroke on the lobby does.
@@ -151,7 +151,7 @@ new =
       theirs = [Nothing],
       choosing = MkMine,
       invites = Map.empty,
-      locals = Set.empty,
+      locals = Map.empty,
       ready = False,
       difficulty = Difficulty.MkHard,
       persona = Persona.MkBalanced
@@ -329,16 +329,16 @@ updated event typed lobby = case event of
   MkDropBot
     | length (theirs lobby) > 1 ->
         let kept = take (length (theirs lobby) - 1) (theirs lobby)
-         in lobby {theirs = kept, choosing = if choosing lobby == MkTheirs (length kept) then MkMine else choosing lobby, invites = Map.delete (length kept) (invites lobby), locals = Set.delete (length kept) (locals lobby)}
+         in lobby {theirs = kept, choosing = if choosing lobby == MkTheirs (length kept) then MkMine else choosing lobby, invites = Map.delete (length kept) (invites lobby), locals = Map.delete (length kept) (locals lobby)}
     | otherwise -> lobby
   MkStart -> lobby
   MkOpenBuilder -> lobby
   MkEdit _ -> lobby
   MkOccupy occupant i
     | i >= 0 && i < length (theirs lobby) -> case occupant of
-        MkBot -> lobby {invites = Map.delete i (invites lobby), locals = Set.delete i (locals lobby)}
-        MkInvited -> lobby {invites = Map.insertWith (\_ old -> old) i newInvite (invites lobby), locals = Set.delete i (locals lobby), choosing = if choosing lobby == MkTheirs i then MkMine else choosing lobby}
-        MkHere -> lobby {invites = Map.delete i (invites lobby), locals = Set.insert i (locals lobby)}
+        MkBot -> lobby {invites = Map.delete i (invites lobby), locals = Map.delete i (locals lobby)}
+        MkInvited -> lobby {invites = Map.insertWith (\_ old -> old) i newInvite (invites lobby), locals = Map.delete i (locals lobby), choosing = if choosing lobby == MkTheirs i then MkMine else choosing lobby}
+        MkHere sitting -> lobby {invites = Map.delete i (invites lobby), locals = Map.insert i sitting (locals lobby)}
     | i == length (theirs lobby) && i < mostBots -> updated event typed lobby {theirs = theirs lobby <> [Nothing]}
     | otherwise -> lobby
   MkReplyCode i -> lobby {invites = Map.adjust (\invite -> invite {replyCode = typed}) i (invites lobby)}
@@ -377,14 +377,14 @@ unready lobby = lobby {ready = False, invites = fmap (\invite -> invite {guestRe
 -- | The lobby a Rematch of a game with players invited returns to: the
 -- decks played, your own first, each bot's slot in `invited` held by its
 -- player, still connected over the channel the game used, each in `here`
--- by a player on this screen, and nobody ready.
-rematch :: NonEmpty.NonEmpty (Text.Text, Text.Text) -> Set.Set Int -> Set.Set Int -> Lobby
+-- played on this screen as it was, and nobody ready.
+rematch :: NonEmpty.NonEmpty (Text.Text, Text.Text) -> Set.Set Int -> Map.Map Int Link.Sitting -> Lobby
 rematch (yours NonEmpty.:| rest) invited here =
   new
     { mine = Just (fst yours),
       theirs = [if Set.member i invited then Nothing else Just name | (i, (name, _)) <- zip [0 ..] rest],
       invites = Map.fromList [(i, newInvite {connected = True, guestDeck = Just seat}) | (i, seat) <- zip [0 ..] rest, Set.member i invited],
-      locals = Set.difference here invited,
+      locals = Map.withoutKeys here invited,
       -- Your deck's and each bot's name, as their lists give them, until
       -- the decks are read again.
       browser = (browser new) {DeckBrowser.titles = foldMap DeckBrowser.titleIn (yours : [seat | (i, seat) <- zip [0 ..] rest, Set.notMember i invited])}
@@ -431,24 +431,24 @@ offered lobby = if choosing lobby == MkMine then decks lobby else opponents lobb
 shown :: Lobby -> [Text.Text]
 shown lobby = DeckBrowser.shown (offered lobby) (browser lobby)
 
--- | The bot's slot Invite a player, or Add a player here, gives to a
--- player: the first bot's left to a random deck, else a new seat while
--- there is room.
+-- | The bot's slot Invite a player, Add a player here or Add a seat you
+-- play gives to its occupant: the first bot's left to a random deck, else
+-- a new seat while there is room.
 openSlot :: Lobby -> Maybe Int
 openSlot lobby =
-  case [i | (i, Nothing) <- zip [0 ..] (theirs lobby), Map.notMember i (invites lobby), Set.notMember i (locals lobby)] of
+  case [i | (i, Nothing) <- zip [0 ..] (theirs lobby), Map.notMember i (invites lobby), Map.notMember i (locals lobby)] of
     i : _ -> Just i
     []
       | length (theirs lobby) < mostBots -> Just (length (theirs lobby))
       | otherwise -> Nothing
 
 -- | A seat's name: "You", "Bot" alone or "Bot 2" among several, and
--- "Player 2" for one invited or on this screen.
+-- "Player 2" for one invited or played on this screen.
 seatName :: Lobby -> Slot -> String
 seatName lobby slot = case slot of
   MkMine -> "You"
   MkTheirs i
-    | Map.member i (invites lobby) || Set.member i (locals lobby) -> "Player " <> show (i + 2)
+    | Map.member i (invites lobby) || Map.member i (locals lobby) -> "Player " <> show (i + 2)
     | length (theirs lobby) == 1 -> "Bot"
     | otherwise -> "Bot " <> show (i + 1)
 
@@ -489,8 +489,9 @@ view lobby =
       (Text.pack "detail", detailView lobby)
     ]
 
--- | The seats: yours, each bot's, invited player's or player's here, the
--- ways to add one, and Start at the foot, saying what it waits on.
+-- | The seats: yours, each bot's, invited player's, player's here or one
+-- you play too, the ways to add one, and Start at the foot, saying what it
+-- waits on.
 seatsView :: Lobby -> Html.Html Event
 seatsView lobby =
   Element.el "section" ["seats"] [Element.attr "aria-label" (Text.pack "Seats")] $
@@ -502,9 +503,9 @@ seatsView lobby =
         [ Element.el "span" ["eyebrow", "versus"] [] [Element.string "versus"]
             : case Map.lookup i (invites lobby) of
               Just invite -> [inviteView i invite (remove i)]
-              Nothing
-                | Set.member i (locals lobby) -> [seat (MkTheirs i) (Element.string "P") held (Element.button ["quiet", "bot-slot"] (MkOccupy MkBot i) [Element.string "Play a bot instead"] : remove i)]
-                | otherwise -> [seat (MkTheirs i) (Icon.icon [] Icon.MkBot) held ([Element.button ["quiet", "invite-seat"] (MkOccupy MkInvited i) [Element.string "Invite a player instead"], Element.button ["quiet", "here-seat"] (MkOccupy MkHere i) [Element.string "A player here instead"]] <> remove i)]
+              Nothing -> case Map.lookup i (locals lobby) of
+                Just sitting -> [seat (MkTheirs i) (Element.string (if sitting == Link.MkYours then "Y" else "P")) held (Element.button ["quiet", "bot-slot"] (MkOccupy MkBot i) [Element.string "Play a bot instead"] : remove i)]
+                Nothing -> [seat (MkTheirs i) (Icon.icon [] Icon.MkBot) held ([Element.button ["quiet", "invite-seat"] (MkOccupy MkInvited i) [Element.string "Invite a player instead"], Element.button ["quiet", "here-seat"] (MkOccupy (MkHere Link.MkHandedOver) i) [Element.string "A player here instead"], Element.button ["quiet", "yours-seat"] (MkOccupy (MkHere Link.MkYours) i) [Element.string "Play it yourself instead"]] <> remove i)]
         | (i, held) <- zip [0 ..] bots
         ]
       <> [ Element.el
@@ -512,10 +513,10 @@ seatsView lobby =
              ["seat-tools"]
              []
              ( [Element.button ["add-bot"] MkAddBot [Element.string "Add a bot"] | length bots < mostBots]
-                 <> concat [[Element.button ["invite-slot"] (MkOccupy MkInvited i) [Element.string "Invite a player"], Element.button ["here-slot"] (MkOccupy MkHere i) [Element.string "Add a player here"]] | i <- Maybe.maybeToList (openSlot lobby)]
+                 <> concat [[Element.button ["invite-slot"] (MkOccupy MkInvited i) [Element.string "Invite a player"], Element.button ["here-slot"] (MkOccupy (MkHere Link.MkHandedOver) i) [Element.string "Add a player here"], Element.button ["yours-slot"] (MkOccupy (MkHere Link.MkYours) i) [Element.string "Add a seat you play"]] | i <- Maybe.maybeToList (openSlot lobby)]
              )
          ]
-      <> [botView lobby | length bots > Map.size (invites lobby) + Set.size (locals lobby)]
+      <> [botView lobby | length bots > Map.size (invites lobby) + Map.size (locals lobby)]
       <> [startView lobby]
   where
     bots = theirs lobby

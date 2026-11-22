@@ -92,17 +92,22 @@ spec s registry = Spec.describe s "RemoteSeat" $ do
     wholeGame s (matchup <> pure (S.carol, snd (NonEmpty.head matchup))) [S.bob, S.carol]
 
   Spec.it s "a whole game with a player on the host's screen: the lobby's options seat no bot there, and the screen is handed between the seats" $ do
-    matchup <- BotSpec.bears s registry
-    let options = Lobby.playOptions (Difficulty.MkEasy, Persona.MkBalanced) 2 (Set.singleton S.bob)
-        onScreen request = State.modify' (request :) >> pure (Just (Right (answer request)))
-    (outcome, requests) <- State.runStateT (Game.run (S.fixtureRegistry []) Nothing Limits.standard [] (Map.fromList [(Command.idOf n, Command.answerer (S.fixtureRegistry []) onScreen (pure Nothing) (const (pure ())) (pure Map.empty) Search.unkept options Search.known n) | n <- [1, 2]]) (S.seeded 1) Map.empty matchup) []
-    let inOrder = reverse requests
-        seats = fmap (Question.seat . Request.question) inOrder
-        handed = [Html.content (Question.Web.handOff request) | (before, request) <- zip seats (drop 1 inOrder), Question.seat (Request.question request) /= before]
+    (outcome, inOrder, options) <- onOneScreen s registry
+    let seats = fmap (Question.seat . Request.question) inOrder
+        handed = fmap (Html.content . Question.Web.handOff) (handedOver (Set.singleton S.alice) inOrder)
     Spec.assertBool s (case outcome of Right (Result.Won _, _) -> True; _ -> False) ("finished: " <> show (fmap fst outcome))
     Spec.assertEqWith s "both seats asked on the one page" (ListUtils.nubOrd seats) [S.alice, S.bob]
     Spec.assertBool s (elem (Text.pack "Pass the screen to Player 2.Ready") handed && elem (Text.pack "Pass the screen to Player 1.Ready") handed) "handed each way"
     Spec.assertEqWith s "no bot seated" (PlayOptions.bots options) Set.empty
+
+  Spec.it s "a whole goldfish game, both seats played by the one person at the screen: never handed over, each question naming its seat" $ do
+    (outcome, inOrder, _) <- onOneScreen s registry
+    let seats = fmap (Question.seat . Request.question) inOrder
+        named seat = [Html.content (Question.Web.view request Question.Web.blank {Question.Web.naming = True}) | request <- inOrder, Question.seat (Request.question request) == seat]
+    Spec.assertBool s (case outcome of Right (Result.Won _, _) -> True; _ -> False) ("finished: " <> show (fmap fst outcome))
+    Spec.assertEqWith s "both seats asked on the one page" (ListUtils.nubOrd seats) [S.alice, S.bob]
+    Spec.assertEqWith s "no hand-off" (length (handedOver (Set.fromList [S.alice, S.bob]) inOrder)) 0
+    Spec.assertBool s (all (Text.isInfixOf (Text.pack "You're playing Player 2.")) (named S.bob) && all (Text.isInfixOf (Text.pack "You're playing Player 1.")) (named S.alice)) "each question names its seat"
 
   Spec.it s "a guest whose connection drops mid-game rejoins, is sent the match-up, its seat and the request again, and the game finishes" $ do
     matchup <- BotSpec.bears s registry
@@ -114,7 +119,7 @@ spec s registry = Spec.describe s "RemoteSeat" $ do
   Spec.it s "the match-up a game's guests are told again names every seat and every bot's deck drawn" $ do
     let seat name = (Text.pack name, Text.pack "20 Forest\n")
         seats = seat "sets/a/one" NonEmpty.:| [(Text.pack "sets/a/two", Text.pack "Name: Kamahl's Temper\n20 Forest\n"), seat "sets/a/three"]
-        rematched = Lobby.rematch seats (Set.singleton 1) Set.empty
+        rematched = Lobby.rematch seats (Set.singleton 1) Map.empty
         told = Lobby.placesFor 1 rematched
     Spec.assertEqWith s "every seat named" (fmap Link.who told) [Text.pack "Host", Text.pack "Bot 1", Text.pack "You"]
     Spec.assertEqWith s "every deck named, the bot's among them" (fmap Link.deck told) [Text.pack "One (A)", Text.pack "Kamahl's Temper (A)", Text.pack "Three (A)"]
@@ -162,6 +167,21 @@ wholeGame s matchup guests = do
   Monad.forM_ guests $ \g -> do
     Spec.assertBool s (not (null (askedOf (Just g))) && all ((== g) . fst) (askedOf (Just g))) ("guest " <> show g <> "'s page answers only its own seat")
     Spec.assertEqWith s ("guest " <> show g <> " is sent only its own seat's view") (ListUtils.nubOrd (Maybe.mapMaybe snd (askedOf (Just g)))) [g]
+
+-- A whole game with both seats answered on one page, every request in
+-- the order asked, and the lobby's options for it.
+onOneScreen :: (Monad m) => Spec.Spec m n -> Registry.Registry m -> m (Either Text.Text (Result.Result, GameState.GameState), [Request.Request], PlayOptions.PlayOptions)
+onOneScreen s registry = do
+  matchup <- BotSpec.bears s registry
+  let options = Lobby.playOptions (Difficulty.MkEasy, Persona.MkBalanced) 2 (Set.singleton S.bob)
+      onScreen request = State.modify' (request :) >> pure (Just (Right (answer request)))
+  (outcome, requests) <- State.runStateT (Game.run (S.fixtureRegistry []) Nothing Limits.standard [] (Map.fromList [(Command.idOf n, Command.answerer (S.fixtureRegistry []) onScreen (pure Nothing) (const (pure ())) (pure Map.empty) Search.unkept options Search.known n) | n <- [1, 2]]) (S.seeded 1) Map.empty matchup) []
+  pure (outcome, reverse requests, options)
+
+-- The requests of these, in order, before which the screen is handed
+-- over, the person at it playing `yours` (Question.Web.handsOver).
+handedOver :: Set.Set PlayerId.PlayerId -> [Request.Request] -> [Request.Request]
+handedOver yours requests = [request | (before, request) <- zip (fmap (Question.seat . Request.question) requests) (drop 1 requests), Question.Web.handsOver yours (Just before) (Question.seat (Request.question request))]
 
 -- Every page and the channels between them: the lines the host has yet to
 -- read from each guest, the seat of each request each page (Nothing for the
