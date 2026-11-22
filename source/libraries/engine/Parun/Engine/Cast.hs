@@ -4089,13 +4089,13 @@ castProposed perform baseSpending pid oid sid printedFace castFrom preparedFor k
   -- Carried as the additional Cost itself rather than as a flag, so the two
   -- things it changes -- the mode count just below and the candidate costs
   -- further down -- read the same value.
-  entwined <- case entwineOffer spending pid sid candidates gs of
-    Nothing -> pure Nothing
-    Just extra -> do
-      decision <- Game.choose (Prompt.ChooseEntwine decider pid sid extra)
-      pure $ case decision of
-        EntwineDecision.Entwines -> Just extra
-        EntwineDecision.Declines -> Nothing
+  --
+  -- A withdrawal (CR 734.1) asks nothing further and rewinds the cast below.
+  entwineAnswer <- traverse (\extra -> (,) extra <$> Game.choose (Prompt.ChooseEntwine decider pid sid extra)) (entwineOffer spending pid sid candidates gs)
+  let entwined = case entwineAnswer of
+        Just (extra, EntwineDecision.Entwines) -> Just extra
+        _ -> Nothing
+      entwineWithdrawn = fmap snd entwineAnswer == Just EntwineDecision.Withdraws
   -- CR 700.2 normally, CR 702.42a's "all modes" when the entwine cost is being
   -- paid. The printed ModeSelection is untouched either way: entwine overrides
   -- the selection for this ONE cast, it does not reprint the card. It overrides
@@ -4128,13 +4128,14 @@ castProposed perform baseSpending pid oid sid printedFace castFrom preparedFor k
   -- carries no information: the player chooses WHICH modes, never in what order
   -- they resolve.
   chosenModes <- case Modal.forcedSelection legal selection of
+    _ | entwineWithdrawn -> pure Seq.empty
     Just forced -> pure forced
     -- CR 700.2e: asked of the chooser, who need not be the caster.
     Nothing -> fmap Seq.sort (Game.choose (Prompt.ChooseModes (Decide.deciderFor modeChooser gs) modeChooser sid legal selection))
   -- Reject-not-repair: an answer that does not satisfy the printed instruction --
   -- wrong size, an illegal mode, or a repeat the instruction does not permit (CR
   -- 700.2d) -- rewinds the whole cast, guarding every step below.
-  if Maybe.isNothing answeredChooser || not (Modal.selectionSatisfiedBy legal selection chosenModes)
+  if entwineWithdrawn || Maybe.isNothing answeredChooser || not (Modal.selectionSatisfiedBy legal selection chosenModes)
     then reject
     else do
       -- CR 700.17: the chooser faced a dilemma. A rejection below rewinds it
@@ -4228,15 +4229,13 @@ castProposed perform baseSpending pid oid sid printedFace castFrom preparedFor k
       -- reason: the candidate costs below and the CR 702.27a stamp read one value.
       let buybackAffordable extra =
             any (\(castFor, (reduced, narrowing, candidate)) -> payableCost (const id) (Just chosenModes) reduced spending narrowing pid sid (stampPaidCosts paid sid (proposedUnder held pid sid castFor gs)) (Cost.plus (withOptionalPayments paid candidate) extra)) keyedCandidates
-      boughtBack <- case Keyword.buybackCost keywords of
-        Nothing -> pure Nothing
-        Just extra
-          | buybackAffordable extra -> do
-              decision <- Game.choose (Prompt.ChooseBuyback decider pid sid extra)
-              pure $ case decision of
-                BuybackDecision.BuysBack -> Just extra
-                BuybackDecision.Declines -> Nothing
-          | otherwise -> pure Nothing
+      --
+      -- A withdrawal (CR 734.1) asks nothing further and rewinds the cast below.
+      buybackAnswer <- traverse (\extra -> (,) extra <$> Game.choose (Prompt.ChooseBuyback decider pid sid extra)) (Monad.mfilter buybackAffordable (Keyword.buybackCost keywords))
+      let boughtBack = case buybackAnswer of
+            Just (extra, BuybackDecision.BuysBack) -> Just extra
+            _ -> Nothing
+          buybackWithdrawn = fmap snd buybackAnswer == Just BuybackDecision.Withdraws
       -- CR 702.27a's second static ability reads the DECLARATION, as rule 702.33d's
       -- designation does, so the stamp lands here and not at CR 601.2h's payment. A
       -- cast that fails after this point rewinds to `before`, which takes the stamp
@@ -4254,7 +4253,7 @@ castProposed perform baseSpending pid oid sid printedFace castFrom preparedFor k
           spliceAffordable extra =
             any (\(castFor, (reduced, narrowing, candidate)) -> payableCost (const id) (Just chosenModes) reduced spending narrowing pid sid (stampPaidCosts paid sid (proposedUnder held pid sid castFor gs)) (Cost.plus (withBoughtBack (withOptionalPayments paid candidate)) extra)) keyedCandidates
           spliceOffers = filter (spliceAffordable . snd) (Maybe.mapMaybe (spliceOffer pid sid gs) (Game.zoneMembers Zone.Hand pid gs))
-      spliced <- if null spliceOffers then pure [] else Game.choose (Prompt.ChooseSplice decider pid sid spliceOffers)
+      spliced <- if null spliceOffers || buybackWithdrawn then pure [] else Game.choose (Prompt.ChooseSplice decider pid sid spliceOffers)
       -- CR 702.47b: "you can't splice any one card onto the same spell more than
       -- once". An answer naming a card twice, or one not offered, rejects the
       -- cast below rather than being repaired.
@@ -4329,7 +4328,7 @@ castProposed perform baseSpending pid oid sid printedFace castFrom preparedFor k
               settledFor candidate,
               any (payableUnder candidate) (wayCosts (permissions (CandidateCost.keyword candidate)))
             ]
-      if null payableCandidates || overKickerLimit || not spliceValid
+      if buybackWithdrawn || null payableCandidates || overKickerLimit || not spliceValid
         then reject
         else do
           -- CR 702.47a's reveal and CR 702.47c's gained text, stamped once the

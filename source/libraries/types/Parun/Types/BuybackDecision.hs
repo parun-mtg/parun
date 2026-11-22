@@ -16,6 +16,10 @@ module Parun.Types.BuybackDecision where
 -- answered AS THE SPELL RESOLVES. Rule 702.27a states one cost, payable once,
 -- announced while the spell is being CAST.
 data BuybackDecision
-  = Declines
-  | BuysBack
+  = -- | Pays no buyback cost.
+    Declines
+  | -- | Pays the buyback cost.
+    BuysBack
+  | -- | Takes the spell back: the cast rewinds (CR 734.1, 601.2e).
+    Withdraws
   deriving (Eq, Ord, Show)
