@@ -12,6 +12,10 @@ module Parun.Types.EntwineDecision where
 -- CR 603.5's printed "may" answered AS THE SPELL RESOLVES. This one is answered
 -- while the spell is being CAST (CR 601.2b).
 data EntwineDecision
-  = Declines
-  | Entwines
+  = -- | Pays no entwine cost, choosing modes as printed.
+    Declines
+  | -- | Pays the entwine cost, choosing all modes.
+    Entwines
+  | -- | Takes the spell back: the cast rewinds (CR 734.1, 601.2e).
+    Withdraws
   deriving (Eq, Ord, Show)

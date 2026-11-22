@@ -406,7 +406,7 @@ shapeOf prompt = case prompt of
   Prompt.Search {} -> list object
   Prompt.CastWhileSearching {} -> maybeOf (tripleOf object (viaCodec Codec.CardName.codec) (viaCodec Codec.Facing.codec))
   Prompt.ChooseX {} -> natural
-  Prompt.ChooseEntwine {} -> named [EntwineDecision.Declines, EntwineDecision.Entwines]
+  Prompt.ChooseEntwine {} -> named [EntwineDecision.Declines, EntwineDecision.Entwines, EntwineDecision.Withdraws]
   Prompt.ChooseMutateSide {} -> named [MutateSide.Over, MutateSide.Under]
   Prompt.ChooseForage {} -> named [ForageMode.ExileCards, ForageMode.SacrificeFood]
   Prompt.ChooseParity {} -> named [Parity.Odd, Parity.Even]
@@ -415,7 +415,7 @@ shapeOf prompt = case prompt of
   Prompt.ChooseTimeTravel {} -> mapOf object (named [TimeTravelChoice.Add, TimeTravelChoice.Remove])
   Prompt.ChooseClash {} -> viaCodec Codec.LibraryPosition.codec
   Prompt.ChooseKicker {} -> wrapped KickerDecision.MkKickerDecision KickerDecision.unwrap
-  Prompt.ChooseBuyback {} -> named [BuybackDecision.Declines, BuybackDecision.BuysBack]
+  Prompt.ChooseBuyback {} -> named [BuybackDecision.Declines, BuybackDecision.BuysBack, BuybackDecision.Withdraws]
   Prompt.ChooseSplice {} -> list object
   Prompt.ChooseAssistant {} -> maybeOf player
   Prompt.ChooseAssistAmount {} -> natural

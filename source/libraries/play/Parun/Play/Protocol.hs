@@ -36,7 +36,9 @@ import qualified Parun.Scenario.PromptOffer as PromptOffer
 import qualified Parun.Scenario.Reply as Reply
 import qualified Parun.Types.Answerer as Answerer
 import qualified Parun.Types.Asked as Asked
+import qualified Parun.Types.BuybackDecision as BuybackDecision
 import qualified Parun.Types.Decider as Decider
+import qualified Parun.Types.EntwineDecision as EntwineDecision
 import qualified Parun.Types.GameState as GameState
 import qualified Parun.Types.KickerDecision as KickerDecision
 import qualified Parun.Types.Label as Label
@@ -174,12 +176,14 @@ questionOf gs prompt =
 -- which CR 115.5 makes an illegal target; for CR 601.2b's modes, one past every
 -- legal mode (CR 700.2a); for a splice, the first card offered twice (CR
 -- 702.47b); for a cost payable a limited number of times, one past the limit
--- (CR 702.33a). Offered only to the announcing player's own choice: another
+-- (CR 702.33a); for entwine (CR 702.42a) and buyback (CR 702.27a), their
+-- typed withdrawal. Offered only to the announcing player's own choice: another
 -- chooser's (Parun.Types.TargetSlot's `chooser`, CR 700.2e's mode chooser) is
 -- not theirs to withdraw.
 --
 -- Not implemented: a withdrawal at the other prompts of an announcement, which
--- have no answer the engine provably refuses (#9571).
+-- have neither an answer the engine provably refuses nor a typed decline
+-- (#9591).
 withdrawalOf :: GameState.GameState -> Prompt.Prompt r -> Maybe r
 withdrawalOf gs prompt
   | Maybe.isNothing (Scratch.keptFaceDown (GameState.scratch gs)) = Nothing
@@ -195,6 +199,10 @@ withdrawalOf gs prompt
         | own caster oid -> Just [card, card]
       Prompt.ChooseKicker _ caster oid _ _ (Just limit)
         | own caster oid -> Just (KickerDecision.MkKickerDecision (limit + 1))
+      Prompt.ChooseEntwine _ caster oid _
+        | own caster oid -> Just EntwineDecision.Withdraws
+      Prompt.ChooseBuyback _ caster oid _
+        | own caster oid -> Just BuybackDecision.Withdraws
       _ -> Nothing
   where
     own pid oid = Projection.View.controllerOf oid gs == Just pid

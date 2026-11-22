@@ -691,6 +691,22 @@ spec s registry = Spec.describe s "Protocol" $ do
         (_, g2) = S.addHandCard ray S.alice g1
         (card, board) = S.addHandCard ritual S.alice g2
     assertWithdrawn s "ChooseSplice" card lands board
+  Spec.it s "CR 734.1 a seat withdraws a spell at its entwine" $ do
+    gs <- started s registry
+    grip <- S.printingOf s registry "Dream's Grip"
+    island <- S.printingOf s registry "Island"
+    let (lands, g1) = addPermanents [island, island] gs
+        (card, board) = S.addHandCard grip S.alice g1
+    assertWithdrawn s "ChooseEntwine" card lands board
+  Spec.it s "CR 734.1 a seat withdraws a spell at its buyback" $ do
+    gs <- started s registry
+    fury <- S.printingOf s registry "Elvish Fury"
+    forest <- S.printingOf s registry "Forest"
+    bears <- S.printingOf s registry "Grizzly Bears"
+    let (lands, g1) = addPermanents (replicate 5 forest) gs
+        (_, g2) = S.addPermanent bears S.bob g1
+        (card, board) = S.addHandCard fury S.alice g2
+    assertWithdrawn s "ChooseBuyback" card lands board
   Spec.it s "CR 734.1 no withdrawal is offered outside an announcement" $ do
     gs <- started s registry
     let slot = SlotName.MkSlotName (Text.pack "target")
@@ -924,7 +940,8 @@ assertWithdrawn s kind card lands board = do
 
 -- Casts `card` the first time it is offered and withdraws it at the first
 -- prompt offering a withdrawal and no later one, paying with the first source
--- should the cast go on regardless; then answers as `client` does.
+-- and choosing the first mode should the cast go on regardless; then answers
+-- as `client` does.
 withdrawsOnce :: ObjectId.ObjectId -> Text.Text -> State.State Log Text.Text
 withdrawsOnce card line = do
   offers <- State.gets (length . filter (List.isInfixOf "\"withdraw\":") . Either.rights)
@@ -940,6 +957,9 @@ withdrawsOnce card line = do
         Just object <- field "source" source ->
           pure (Common.render (Codec.Reply.toValue object))
       | Question.kind question == Text.pack "ChooseExtraManaSource" -> pure (Text.pack "null")
+      | Question.kind question == Text.pack "ChooseModes",
+        Just (mode : _) <- field "among" (Question.offer question) >>= arrayOf ->
+          pure (Common.render (Codec.Reply.toValue (R.Array [mode])))
       | Question.kind question == Text.pack "ChooseTargets",
         Just slots <- field "slots" (Question.offer question) >>= arrayOf ->
           pure (Common.render (Codec.Reply.toValue (R.Array [R.Array [slot, R.Array (take 1 recipients)] | R.Array [slot, R.Array [_, R.Array recipients]] <- slots])))
