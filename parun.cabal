@@ -74,7 +74,7 @@ common executable
       -threaded
       -with-rtsopts=-N
 
--- The benchmark suite. The `parun-benchmark` target is a thin wrapper around it.
+-- The benchmark suite, run by `parun bench`.
 library benchmark
   import: library
   build-depends:
@@ -4225,10 +4225,3 @@ executable parun-web
     buildable: False
   hs-source-dirs: source/web
   main-is: Exports.hs
-
-benchmark parun-benchmark
-  import: executable
-  build-depends: parun:benchmark
-  hs-source-dirs: source/benchmark
-  main-is: Main.hs
-  type: exitcode-stdio-1.0

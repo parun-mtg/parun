@@ -47,13 +47,13 @@ spec s = Spec.describe s "Parun.Web.Link" $ do
 
   Spec.describe s "saved" $ do
     Spec.it s "reads back a kept game, a reply added as a line" $ do
-      let game = Link.MkSaved key (NonEmpty.fromList [(Text.pack "sets/a/one", Text.pack "Format: constructed\n24 Forest\n"), (Text.pack "Bot", Text.pack "20 Island\n")]) [0] Difficulty.MkEasy Persona.MkAggro [R.Text (Text.pack "Keep")]
+      let game = Link.MkSaved key (NonEmpty.fromList [(Text.pack "sets/a/one", Text.pack "Format: constructed\n24 Forest\n"), (Text.pack "Bot", Text.pack "20 Island\n"), (Text.pack "Here", Text.pack "20 Swamp\n")]) [0] [1] Difficulty.MkEasy Persona.MkAggro [R.Text (Text.pack "Keep")]
           more = R.Object [(Text.pack "action", R.Text (Text.pack "Pass"))]
           build = Text.pack "b"
       Spec.assertEq s (Link.unsaved build (Link.saved build game <> Text.pack "\n" <> Link.savedReply more)) (Right game {Link.replies = Link.replies game <> [more]})
 
     Spec.it s "refuses a game another build played" $ do
-      let game = Link.MkSaved key (NonEmpty.fromList [(Text.pack "one", Text.pack "20 Forest\n")]) [] Difficulty.MkHard Persona.MkBalanced []
+      let game = Link.MkSaved key (NonEmpty.fromList [(Text.pack "one", Text.pack "20 Forest\n")]) [] [] Difficulty.MkHard Persona.MkBalanced []
       Spec.assertBool s (either (Text.isInfixOf (Text.pack "another build")) (const False) (Link.unsaved (Text.pack "new") (Link.saved (Text.pack "old") game))) "refused"
   where
     key = Key.Type.UnsafeKey (Seq.fromList [1, 2, 3, 4, 5, 6, 7, 0xdeadbeef])

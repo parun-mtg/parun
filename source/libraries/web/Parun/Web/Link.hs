@@ -164,11 +164,13 @@ guest local message = case message of
 -- | A game with guests as the host's page keeps it, to pick it up after a
 -- reload (Protocol.resumed): its seed, each seat's deck as a label and its
 -- list's text (the host's first), the bots' slots players were invited to,
--- how every other bot plays (Parun.Play.Opponent), and every reply so far.
+-- those played on the host's screen, how every other bot plays
+-- (Parun.Play.Opponent), and every reply so far.
 data Saved = MkSaved
   { seed :: Key.Type.Key,
     seats :: NonEmpty.NonEmpty (Text.Text, Text.Text),
     invited :: [Int],
+    locals :: [Int],
     difficulty :: Difficulty.Difficulty,
     persona :: Persona.Persona,
     replies :: [R.Reply]
@@ -187,6 +189,7 @@ saved build game =
             Value.pair "seed" (Value.text (Key.toHex (seed game))),
             Value.pair "seats" (Value.array (fmap seat (NonEmpty.toList (seats game)))),
             Value.pair "invited" (Value.array (fmap (Value.integer . toInteger) (invited game))),
+            Value.pair "locals" (Value.array (fmap (Value.integer . toInteger) (locals game))),
             Value.pair "difficulty" (Value.string (fst (Opponent.difficultyName (difficulty game)))),
             Value.pair "persona" (Value.string (fst (Opponent.personaName (persona game))))
           ]
@@ -208,11 +211,13 @@ unsaved build kept = case Text.lines kept of
     key <- Common.field "seed" pairs >>= Common.asText >>= maybe (Left (Text.pack "not a seed")) Right . Key.fromHex
     listed <- Common.field "seats" pairs >>= Common.asArray >>= traverse seat
     decks <- maybe (Left (Text.pack "no seats")) Right (NonEmpty.nonEmpty listed)
-    slots <- Common.field "invited" pairs >>= Common.asArray >>= traverse (Common.asInteger Monad.>=> maybe (Left (Text.pack "not a slot")) Right . Integer.toInt)
+    let slotsAt name = Common.field name pairs >>= Common.asArray >>= traverse (Common.asInteger Monad.>=> maybe (Left (Text.pack "not a slot")) Right . Integer.toInt)
+    slots <- slotsAt "invited"
+    here <- slotsAt "locals"
     level <- Common.field "difficulty" pairs >>= Common.asText >>= named "a difficulty" Opponent.difficultyName
     style <- Common.field "persona" pairs >>= Common.asText >>= named "a persona" Opponent.personaName
     answers <- traverse (Common.parse Monad.>=> Codec.Reply.fromValue) (filter (not . Text.null) rest)
-    pure (MkSaved key decks slots level style answers)
+    pure (MkSaved key decks slots here level style answers)
   where
     named :: (Bounded a, Enum a) => String -> (a -> (String, String)) -> Text.Text -> Either Text.Text a
     named what nameOf name = maybe (Left (Text.pack ("not " <> what <> ": ") <> name)) Right (Opponent.named nameOf (Text.unpack name))

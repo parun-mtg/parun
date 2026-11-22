@@ -43,7 +43,6 @@
         let
           pkgs = nixpkgs.legacyPackages.${system};
           parun = pkgs.lib.pipe (pkgs.haskellPackages.callCabal2nix "parun" source { }) [
-            pkgs.haskell.lib.compose.doBenchmark
             # Nothing in the tree uses Template Haskell, so the dynamic objects
             # GHC builds alongside the static ones are never loaded. cabal.project
             # says the same thing for local builds; this builder runs Setup
@@ -52,10 +51,6 @@
             pkgs.haskell.lib.compose.disableSharedLibraries
             (pkgs.haskell.lib.compose.enableCabalFlag "pedantic")
             (pkgs.haskell.lib.compose.overrideCabal (old: {
-              postInstall = (old.postInstall or "") + ''
-                install -D -m 755 dist/build/parun-benchmark/parun-benchmark "$out/bin/parun-benchmark"
-              '';
-
               testFlags = (old.testFlags or [ ]) ++ [
                 "--timeout"
                 "120s"
@@ -67,7 +62,7 @@
           default = parun;
           benchmark = pkgs.runCommand "parun-benchmark-results" { } ''
             mkdir -p "$out"
-            ${parun}/bin/parun-benchmark --json "$out/bench.json" +RTS -T
+            ${parun}/bin/parun bench --json "$out/bench.json" +RTS -T
           '';
         }
       );
