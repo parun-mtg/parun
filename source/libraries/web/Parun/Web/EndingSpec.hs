@@ -25,7 +25,7 @@ spec s = Spec.describe s "Parun.Web.Ending" $ do
       Spec.assertEqWith s "new game" (tapping "New game") (Just Ending.MkNewGame)
       has ">New game</button>"
       has "<a href=\"data:application/json;charset=utf-8,%7b%7d\" download=\"parun-game.json\">Save as a scenario</a>"
-      has "<ul class=\"game-log\"><li class=\"turn\">Turn 1: your turn</li><li>Player 1 draws a card.</li><li class=\"minor\">Player 2 concedes.</li></ul>"
+      has "<ul class=\"game-log\"><li class=\"turn\">Turn 1: your turn</li><li>You draw a card.</li><li class=\"minor\">Player 2 concedes.</li></ul>"
       has "<div class=\"confetti\""
 
     Spec.it s "ends the chart on the turn the game ended in, though no life changed in it" $ do
@@ -62,7 +62,7 @@ ending =
     { Ending.verdict = Ending.MkWon,
       Ending.said = [Text.pack "Player 1 wins.", Text.pack "Player 2 conceded."],
       Ending.scenario = Text.pack "{}",
-      Ending.witnessed = Seq.fromList [Log.MkTurn 1 you, Log.MkEvent Log.MkMajor (Text.pack "Player 1 draws a card."), Log.MkEvent Log.MkMinor (Text.pack "Player 2 concedes.")],
+      Ending.witnessed = Seq.fromList [Log.MkTurn 1 you, Log.MkEvent Log.MkMajor (Text.pack "You draw a card."), Log.MkEvent Log.MkMinor (Text.pack "Player 2 concedes.")],
       Ending.viewer = you,
       Ending.trail = [(1, [(you, 20), (bot, 20)]), (2, [(you, 20), (bot, 17)]), (3, [(you, 20), (bot, 0)])]
     }

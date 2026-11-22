@@ -38,6 +38,7 @@ import qualified Parun.Types.Asked as Asked
 import qualified Parun.Types.BecameAttached as BecameAttached
 import qualified Parun.Types.BecameUnattached as BecameUnattached
 import qualified Parun.Types.CardName as CardName
+import qualified Parun.Types.CoinFlipped as CoinFlipped
 import qualified Parun.Types.Convoking as Convoking
 import qualified Parun.Types.CountedAct as CountedAct
 import qualified Parun.Types.CounterKind as CounterKind
@@ -47,10 +48,12 @@ import qualified Parun.Types.Departure as Departure.Type
 import qualified Parun.Types.DieResult as DieResult
 import qualified Parun.Types.Drew as Drew
 import qualified Parun.Types.EventGroup as EventGroup
+import qualified Parun.Types.Expended as Expended
 import qualified Parun.Types.GameEvent as GameEvent
 import qualified Parun.Types.GameSettings as GameSettings
 import qualified Parun.Types.GameState as GameState
 import qualified Parun.Types.Generator as Generator
+import qualified Parun.Types.LifeChange as LifeChange
 import qualified Parun.Types.Limits as Limits
 import qualified Parun.Types.LoggedEvent as LoggedEvent
 import qualified Parun.Types.Moved as Moved
@@ -63,6 +66,7 @@ import qualified Parun.Types.Player as Player
 import qualified Parun.Types.PlayerActed as PlayerActed
 import qualified Parun.Types.PlayerAction as PlayerAction
 import qualified Parun.Types.PlayerCounterKind as PlayerCounterKind
+import qualified Parun.Types.PlayerCountersPlaced as PlayerCountersPlaced
 import qualified Parun.Types.PlayerId as PlayerId
 import qualified Parun.Types.PlayerView as PlayerView.Type
 import qualified Parun.Types.ProjectedCharacteristics as ProjectedCharacteristics
@@ -73,6 +77,7 @@ import qualified Parun.Types.RollReading as RollReading
 import qualified Parun.Types.TurnRegisters as TurnRegisters
 import qualified Parun.Types.Zone as Zone
 import qualified Parun.Types.ZoneChange as ZoneChange
+import qualified Parun.Web.Log as Log
 
 spec :: (Monad m, Monad n) => Spec.Spec m n -> Registry.Registry m -> n ()
 spec s registry = Spec.describe s "Play" $ do
@@ -105,6 +110,76 @@ spec s registry = Spec.describe s "Play" $ do
         Text.pack "Player 1's library is shuffled.",
         Text.pack "Player 1 draws 7 cards.",
         Text.pack "Player 1 keeps."
+      ]
+
+  Spec.it s "CR 103.5 the web client's log tells its own seat's mulligans to it as You" $ do
+    matchup <- BotSpec.bears s registry
+    let answer :: Prompt.Prompt r -> r
+        answer p = case p of
+          Prompt.DeclareMulligan _ pid offer | pid == S.alice && MulliganOffer.taken offer < 2 -> MulliganDecision.Mulligan
+          _ -> S.castAnswer p
+        gs = snd (Engine.runGamePure answer (Setup.gameWith GameSettings.plain (fmap fst matchup)) (Setup.newGame (Resolve.performHandAction Engine.playSubgame) matchup))
+    Spec.assertEqWith
+      s
+      "logged for Player 1"
+      (Log.events (Seq.fromList (snd (Log.unseen Map.empty (PlayerView.viewFor S.alice gs)))))
+      [ Text.pack "Your library is shuffled.",
+        Text.pack "Player 2's library is shuffled.",
+        Text.pack "You draw 7 cards.",
+        Text.pack "Player 2 draws 7 cards.",
+        Text.pack "You mulligan, bottoming 1 card.",
+        Text.pack "Player 2 keeps.",
+        Text.pack "Your library is shuffled.",
+        Text.pack "You draw 7 cards.",
+        Text.pack "You mulligan, bottoming 2 cards.",
+        Text.pack "Your library is shuffled.",
+        Text.pack "You draw 7 cards.",
+        Text.pack "You keep."
+      ]
+
+  Spec.it s "an entry told to its own seat names it you, in the second person" $ do
+    gs <- started s registry
+    let acted action pid = GameEvent.PlayerActed (PlayerActed.MkPlayerActed action pid)
+        poison putter pid n = GameEvent.PlayerCountersPut (PlayerCountersPlaced.MkPlayerCountersPlaced putter pid PlayerCounterKind.Poison 0 n)
+        logged =
+          [ acted PlayerAction.Scry S.alice,
+            acted PlayerAction.Scry S.bob,
+            acted PlayerAction.SearchLibrary S.alice,
+            acted PlayerAction.TemptedByRing S.alice,
+            GameEvent.Expended (Expended.MkExpended S.alice 0 3),
+            GameEvent.CoinFlipped (CoinFlipped.MkCoinFlipped S.alice (Just True)),
+            poison S.alice S.alice 1,
+            poison S.bob S.alice 2,
+            GameEvent.LifeLost (LifeChange.MkLifeChange S.alice 2 True)
+          ]
+        view = PlayerView.viewFor S.alice (witnessing (inOneGroup logged) gs)
+    Spec.assertEqWith
+      s
+      "told to Player 1"
+      (Wording.events (Just S.alice) view (PlayerView.Type.witnessed view))
+      [ Text.pack "You scry.",
+        Text.pack "Player 2 scries.",
+        Text.pack "You search your library.",
+        Text.pack "You are tempted by the Ring.",
+        Text.pack "You have spent 3 mana on spells this turn.",
+        Text.pack "You flip a coin and win the flip.",
+        Text.pack "You put 1 poison counter on yourself.",
+        Text.pack "Player 2 puts 2 poison counters on you.",
+        Text.pack "You lose 2 life."
+      ]
+    Spec.assertEqWith
+      s
+      "told to nobody, as the line protocol"
+      (Wording.events Nothing view (PlayerView.Type.witnessed view))
+      [ Text.pack "Player 1 scries.",
+        Text.pack "Player 2 scries.",
+        Text.pack "Player 1 searches their library.",
+        Text.pack "Player 1 is tempted by the Ring.",
+        Text.pack "Player 1 has spent 3 mana on spells this turn.",
+        Text.pack "Player 1 flips a coin and wins the flip.",
+        Text.pack "Player 1 puts 1 poison counter on Player 1.",
+        Text.pack "Player 2 puts 2 poison counters on Player 1.",
+        Text.pack "Player 1 loses 2 life."
       ]
 
   Spec.it s "CR 701.3a / 702.51a / 122.1 each logged entry is told with its subject, a token as created and a move to the stack as nothing" $ do
@@ -276,7 +351,7 @@ inOneGroup = fmap (LoggedEvent.MkLoggedEvent (EventGroup.MkEventGroup 0))
 
 -- Every entry the view says its seat witnessed, as sentences.
 told :: PlayerView.Type.PlayerView -> [Text.Text]
-told view = Wording.events view (Wording.witnessed view)
+told view = Wording.events Nothing view (Wording.witnessed view)
 
 otherSeat :: Natural -> Natural
 otherSeat n = if n == 1 then 2 else 1

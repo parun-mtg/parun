@@ -571,7 +571,7 @@ spec s registry = Spec.describe s "WebQuestion" $ do
     Spec.assertBool s (maybe False (not . Text.isInfixOf (Text.pack "log-") . Html.toText) (within "div class=\"turn-bar" (Question.Web.view asked busy))) "not from the turn bar"
     Spec.assertBool s (maybe False (not . Text.isInfixOf (Text.pack "log-") . Html.toText) (within "section class=\"prompt\"" (Question.Web.view asked busy))) "nor above the prompt"
     let shock = ObjectId.MkObjectId 5
-        linked = Log.item S.alice (Just (Map.fromList [(Text.pack "Shock", shock), (Text.pack "Shocking Grasp", ObjectId.MkObjectId 6)], Question.Web.MkRead)) False (event "Player 1 casts Shocking Grasp, then Shock.")
+        linked = Log.item S.alice (Just (Map.fromList [(Text.pack "Shock", shock), (Text.pack "Shocking Grasp", ObjectId.MkObjectId 6)], Question.Web.MkRead)) False (event "You cast Shocking Grasp, then Shock.")
         tapped label = Html.labelled (Text.pack "button") (Text.pack label) linked >>= \path -> Html.handler (Text.pack "click") path linked
     Spec.assertEqWith s "a named card opens its sheet" (tapped "Shock") (Just (Question.Web.MkRead shock))
     Spec.assertEqWith s "the longest name wins" (tapped "Shocking Grasp") (Just (Question.Web.MkRead (ObjectId.MkObjectId 6)))

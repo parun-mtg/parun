@@ -61,7 +61,7 @@ unseen seen view =
 told :: PlayerView.PlayerView -> [LoggedEvent.LoggedEvent] -> [Entry]
 told view logged =
   let tell run = case run of
-        first : _ -> fmap (MkEvent (minor first)) (Wording.events view run)
+        first : _ -> fmap (MkEvent (minor first)) (Wording.events (Just (PlayerView.viewer view)) view run)
         [] -> []
    in concatMap tell (List.groupBy (\a b -> minor a == minor b) logged)
 
