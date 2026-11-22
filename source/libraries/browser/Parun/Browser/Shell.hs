@@ -104,9 +104,9 @@ data Loaded = MkLoaded
     -- | The decks whose colours are still to read.
     unread :: [(Text.Text, FilePath)],
     registry :: Maybe (Registry.Registry Identity.Identity),
-    -- | The manifest's themes (or why it does not decode) and every
-    -- scenario's name, once listed.
-    scenarioList :: Maybe (Either Text.Text (Map.Map Text.Text [Text.Text]), [Text.Text]),
+    -- | The manifest's themes (or why it does not decode), the description
+    -- of each scenario it names, and every scenario's name, once listed.
+    scenarioList :: Maybe (Either Text.Text (Map.Map Text.Text [Text.Text]), Map.Map Text.Text Text.Text, [Text.Text]),
     -- | The deck builder's card index, once built, and whether the builder
     -- has asked for it.
     cardIndex :: Maybe (Seq.Seq CardIndex.Entry),
@@ -1046,7 +1046,7 @@ replays shell = do
         listed <- case scenarioList now of
           Just known -> pure (Just known)
           Nothing
-            | Just problem <- Loading.problemFor Loading.MkScenarios (loading now) -> pure (Just (Left problem, []))
+            | Just problem <- Loading.problemFor Loading.MkScenarios (loading now) -> pure (Just (Left problem, Map.empty, []))
             | Loading.ready Loading.MkScenarios (loading now) -> do
                 known <- Replay.listing
                 IORef.modifyIORef' (loaded shell) $ \l -> l {scenarioList = Just known}
@@ -1059,10 +1059,10 @@ replays shell = do
                 MkToReplays -> located next >> go shown
                 _ -> pure next
         case listed of
-          Just (Left problem, []) | Web.Replay.shelf shown == Web.Replay.MkScenarios -> notice shell [problem]
-          Just (Left problem, _) | Web.Replay.shelf shown == Web.Replay.MkScenarios -> notice shell [Text.pack "The scenario manifest does not decode:", problem]
+          Just (Left problem, _, []) | Web.Replay.shelf shown == Web.Replay.MkScenarios -> notice shell [problem]
+          Just (Left problem, _, _) | Web.Replay.shelf shown == Web.Replay.MkScenarios -> notice shell [Text.pack "The scenario manifest does not decode:", problem]
           _ -> do
-            Browser.display (page shell) . framed Bar.MkReplays . fmap Screen.MkReplay $ Web.Replay.picker shown (fmap (Bifunctor.first (Either.fromRight Map.empty)) listed)
+            Browser.display (page shell) . framed Bar.MkReplays . fmap Screen.MkReplay $ Web.Replay.picker shown (fmap (\(themes, described, names) -> (Either.fromRight Map.empty themes, described, names)) listed)
             woke <- await shell
             case woke of
               MkTapped (Screen.MkNav section) _
@@ -1113,9 +1113,10 @@ playOnFrom shell source at = opened shell source $ \reg _ played scenario -> do
 
 -- | The registry and the replay, its title, the game finished here it is,
 -- if it is one, and its scenario, handed on once loaded, a message shown
--- meanwhile; else why either did not load. A game finished here waits on no
--- scenarios, and is described by how it ended, after a note where another
--- build played it (History.drift).
+-- meanwhile; else why either did not load. A scenario is titled from its
+-- description and described by its rules citation (Web.Replay.titled); a
+-- game finished here waits on no scenarios, and is described by how it
+-- ended, after a note where another build played it (History.drift).
 opened :: Shell -> Web.Replay.Source -> (Registry.Registry Identity.Identity -> Text.Text -> Maybe History.Game -> Scenario.Type.Scenario -> IO Next) -> IO Next
 opened shell source continue = do
   Browser.display (page shell) (message ["Loading the cards\x2026"])
@@ -1128,7 +1129,7 @@ opened shell source continue = do
     Right reg -> case source of
       Web.Replay.MkScenario name -> do
         decoded <- Replay.decode name
-        either (\problem -> notice shell [Text.pack ("The scenario " <> Text.unpack name <> " does not decode:"), Text.pack problem]) (continue reg name Nothing) decoded
+        either (\problem -> notice shell [Text.pack ("The scenario " <> Text.unpack name <> " does not decode:"), Text.pack problem]) (\scenario -> let (title, rules) = Web.Replay.titled name (Scenario.Type.description scenario) in continue reg title Nothing scenario {Scenario.Type.description = rules}) decoded
       Web.Replay.MkPlayed k -> do
         game <- List.find ((== k) . History.key) <$> IORef.readIORef (finished shell)
         file <- Browser.playedScenario k
