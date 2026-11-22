@@ -34,6 +34,11 @@ without running it, `--seed KEY` replays the order a run's summary names,
 name, failure, site and nanoseconds, and `--help` lists the rest) and `cabal run parun -- bench` (`-p SUBSTRING` selects benchmarks and repeats, `--json
 FILE` writes the results).
 
+`parun completion SHELL` prints tab completion for `bash`, `zsh` or `fish`,
+answered by the binary itself: `eval "$(parun completion bash)"` in
+`~/.bashrc` (zsh likewise in `~/.zshrc`, after `compinit`), or `parun
+completion fish > ~/.config/fish/completions/parun.fish`.
+
 Prefer clarity over cleverness: code that is easy to read, debug, and modify.
 See the [style guide][3] for specifics.
 

@@ -13,6 +13,8 @@ import qualified Data.Text as Text
 import qualified Data.Text.IO as TextIO
 import Numeric.Natural (Natural)
 import qualified Parun.CommandLine as CommandLine
+import qualified Parun.CommandLine.Completion.Command as Completion.Command
+import qualified Parun.CommandLine.Completion.Value as Value
 import qualified Parun.DeckList as DeckList
 import qualified Parun.Exceptions.InvalidOption as InvalidOption
 import qualified Parun.Extra.Natural as Natural
@@ -68,6 +70,11 @@ flags = filter (\(GetOpt.Option _ long _ _) -> notElem "save" long) Flag.flags
 
 usage :: String
 usage = GetOpt.usageInfo "usage: parun meta [OPTION...] META DECK [DECK]" flags
+
+-- | `parun meta` as tab completion sees it: `parun match`'s values under
+-- 'flags'.
+command :: Completion.Command.Command
+command = (Completion.Command.new "meta" flags) {Completion.Command.values = Completion.Command.values Config.command, Completion.Command.positionals = [Value.MkFiles, Value.MkFiles, Value.MkFiles]}
 
 -- | Plays every version against every deck of the meta under `format`,
 -- saying how each game ended on standard error, then the report on standard

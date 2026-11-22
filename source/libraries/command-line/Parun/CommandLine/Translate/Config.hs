@@ -5,6 +5,8 @@ import qualified Control.Monad as Monad
 import qualified Control.Monad.Catch as Catch
 import qualified Data.Text as Text
 import qualified Parun.CommandLine as CommandLine
+import qualified Parun.CommandLine.Completion.Command as Command
+import qualified Parun.CommandLine.Completion.Value as Value
 import qualified Parun.CommandLine.Translate.Flag as Flag
 
 -- | The mtgish AST file and the candidates file (absent only when the usage
@@ -40,3 +42,8 @@ applyFlag config flag = case flag of
   Flag.Help b -> pure config {help = b}
   Flag.Out d -> pure config {out = Just d}
   Flag.Set c -> pure config {set = Just $ Text.pack c}
+
+-- | `parun translate` as tab completion sees it.
+command :: Command.Command
+command =
+  (Command.new "translate" Flag.flags) {Command.values = [("out", Value.MkFiles)], Command.positionals = [Value.MkFiles, Value.MkFiles], Command.rest = Just (Value.MkPrefixed "@" Value.MkFiles)}
