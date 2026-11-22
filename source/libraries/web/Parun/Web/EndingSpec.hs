@@ -25,7 +25,7 @@ spec s = Spec.describe s "Parun.Web.Ending" $ do
       Spec.assertEqWith s "new game" (tapping "New game") (Just Ending.MkNewGame)
       has ">New game</button>"
       has "<a href=\"data:application/json;charset=utf-8,%7b%7d\" download=\"parun-game.json\">Save as a scenario</a>"
-      has "<ul class=\"game-log\"><li class=\"turn\">Turn 2: Player 2&#39;s turn</li><li class=\"minor\">Player 2 concedes.</li><li>Player 2 draws a card.</li><li class=\"turn\">Turn 1: your turn</li><li>You draw a card.</li></ul>"
+      has "<ul class=\"game-log\"><li class=\"turn\">Turn 2: Player 2's turn</li><li class=\"minor\">Player 2 concedes.</li><li>Player 2 draws a card.</li><li class=\"turn\">Turn 1: your turn</li><li>You draw a card.</li></ul>"
       has "<div class=\"confetti\""
 
     Spec.it s "ends the chart on the turn the game ended in, though no life changed in it" $ do
