@@ -111,8 +111,8 @@
     ],
     "step": "PrecombatMain"
   },
-  "description": "CR 706.2b Monitor Monitor declined is offered again once a die changes",
-  "note": "Grave Endeavor's two d10 come up 2 and 3. Alice declines Monitor Monitor, picking no die, so the pick that follows holds only Wall of Fortune over each die. The Wall rerolls the 2 to a 4, and the Monitor is offered again over the dice as they now stand: alice rerolls the 3 to a 9. The Bears return with nine counters and bob loses 4. Keeping the Monitor declined for the rest of the roll would have left the 4 and the 3.",
+  "description": "CR 706.2b Monitor Monitor declined is offered again over a die thrown since",
+  "note": "Grave Endeavor's two d10 come up 2 and 3. Alice declines Monitor Monitor, picking no die, so the pick that follows holds only Wall of Fortune over each die. The Wall rerolls the 2 to a 4, a roll of its own, and the Monitor is offered again over that 4 alone, not the 3 it was declined over (Monitor Monitor's ruling): alice rerolls it to a 9. The Bears return with nine counters and bob loses 3. Keeping the Monitor declined for the rest of the roll would have left the 4; offering it over the 3 again would let alice wait on that die.",
   "timeline": [
     {
       "do": {
@@ -259,8 +259,7 @@
             "kind": "RerollDice",
             "offer": {
               "results": [
-                4,
-                3
+                4
               ],
               "cost": {
                 "mana": [
@@ -271,8 +270,7 @@
                 ]
               },
               "among": [
-                0,
-                1
+                0
               ]
             }
           }
@@ -287,7 +285,7 @@
         "Answer": {
           "prompt": "RerollDice",
           "with": [
-            1
+            0
           ]
         }
       }
@@ -321,7 +319,7 @@
       "do": {
         "Answer": {
           "prompt": "ChooseDieResult",
-          "with": 1
+          "with": 0
         }
       }
     },
@@ -345,7 +343,7 @@
       "turn": 1,
       "check": {
         "Life": {
-          "life": 16,
+          "life": 17,
           "player": "bob"
         }
       }

@@ -1289,26 +1289,24 @@ throwSettled runSubgame roll perDie = do
       -- cr-706-2b-the-roller-turns-to-another-die-after-monitor-monitor-s-reroll
       -- proves it.
       --
-      -- `next` is the `key` the next reroll of several dice takes, and
-      -- `passed` the offers over several dice declined since a die last
-      -- changed.
-      offeringAll next passed slots = do
+      -- `next` is the `key` the next reroll of several dice takes.
+      offeringAll next slots = do
         let dice = concatMap slotDice slots
             settle = fmap snd (settledSlots closed Map.empty slots)
         candidates <- fmap (unrepeated (ownDice slots) . concat) (traverse candidatesOver (zip [0 :: Natural ..] dice))
-        several <- severalOver passed dice
+        several <- severalOver dice
         let dieOf = either (const Nothing) (\reached -> case reached of [(index, natural, _)] -> Just (index, natural); _ -> Nothing)
         effect <- Dice.pickModifier controller dieOf (fmap (\(payer, stated, reached) -> (payer, stated, Right reached)) (effectsOf candidates) <> several)
         case effect of
-          Just ((payer, stated, Left (offer, reached)), _) -> rerollingDice next passed slots dice payer stated offer reached
+          Just ((payer, stated, Left (offer, reached)), _) -> rerollingDice next slots dice payer stated offer reached
           Just ((payer, stated, Right reached), _) -> do
             picked <- Dice.pickModifier payer (\(index, natural, _) -> Just (index, natural)) (fmap (\die -> (payer, stated, die)) reached)
             case (picked, picked >>= \((_, _, (index, _, _)), _) -> Maybe.listToMaybe (List.genericDrop index dice)) of
               (Just ((_, _, (index, natural, kind)), _), Just (Right (byNumber, thrower, _, declined, finish))) -> do
                 outcome <- takeOffer (shownDice natural dice) index thrower natural payer stated kind
                 case outcome of
-                  Nothing -> offeringAll next passed (replacingDie index (OpenDie (byNumber, thrower, natural, (payer, stated, kind) : declined, finish)) slots)
-                  Just rerolled -> offeringAll next [] (replacingDie index (finishingSlot finish rerolled) slots)
+                  Nothing -> offeringAll next (replacingDie index (OpenDie (byNumber, thrower, natural, (payer, stated, kind) : declined, finish)) slots)
+                  Just rerolled -> offeringAll next (replacingDie index (finishingSlot finish rerolled) slots)
               -- A candidate naming no open die is unreachable.
               _ -> settle
           Nothing -> settle
@@ -1612,16 +1610,21 @@ throwSettled runSubgame roll perDie = do
       -- the offers over each die (`offeringAll`). "Dice you rolled": the open
       -- dice whose natural result its payer threw, a reroll's included. Night
       -- Shift's budget (Dice.withinLimit) keeps a spent one out, so a second
-      -- Monitor Monitor sees the dice the first left. One declined is not
-      -- asked again until a die changes (`passed`). The scenario
-      -- cr-706-2b-monitor-monitor-declined-is-offered-again-once-a-die-changes
+      -- Monitor Monitor sees the dice the first left.
+      --
+      -- One declined is declined over every die it reached, which it is not
+      -- asked over again, but a die a later reroll throws is: Monitor
+      -- Monitor's ruling has its payer decide "right after you monitor the
+      -- result" and not "wait and use it to reroll that die later", and a
+      -- reroll is a roll (Pippa, Duchess of Dice's ruling). The scenario
+      -- cr-706-2b-monitor-monitor-declined-is-offered-again-over-a-die-thrown-since
       -- proves it.
-      severalOver passed dice = do
+      severalOver dice = do
         modifiers <- Dice.modifiersFor controller
         gs <- State.get
-        let reachable payer = [(index, natural) | (index, Right (_, thrower, natural, _, _)) <- zip [0 :: Natural ..] dice, thrower == payer]
-            standing (payer, stated, offer) = notElem (payer, stated, offer) passed && not (null (reachable payer)) && Dice.withinLimit gs payer stated offer && payable gs payer stated (ModifiedRoll.cost offer)
-        pure [(payer, stated, Left (offer, reachable payer)) | candidate@(payer, stated, offer) <- fmap (offerOf gs) (Dice.rerollOffers RerollReach.AnyOfTheDice sides Nothing modifiers), standing candidate]
+        let reachable (payer, stated, offer) = [(index, natural) | (index, Right (_, thrower, natural, declined, _)) <- zip [0 :: Natural ..] dice, thrower == payer, notElem (payer, stated, Left offer) declined]
+            standing candidate@(payer, stated, offer) = not (null (reachable candidate)) && Dice.withinLimit gs payer stated offer && payable gs payer stated (ModifiedRoll.cost offer)
+        pure [(payer, stated, Left (offer, reachable candidate)) | candidate@(payer, stated, offer) <- fmap (offerOf gs) (Dice.rerollOffers RerollReach.AnyOfTheDice sides Nothing modifiers), standing candidate]
       -- Its payer picks the dice (Prompt.RerollDice), and the picked dice are
       -- rerolled as one roll (`rethrow`) under one event (`recordRerolls`),
       -- the new dice taking the picked places in order, each open to the
@@ -1631,9 +1634,9 @@ throwSettled runSubgame roll perDie = do
       -- from it (TakenDie). The scenario
       -- cr-706-2b-a-reroll-of-dice-apart-under-barbarian-class-takes-their-places
       -- proves it.
-      rerollingDice next passed slots dice payer stated offer reached = case NonEmpty.nonEmpty reached of
+      rerollingDice next slots dice payer stated offer reached = case NonEmpty.nonEmpty reached of
         -- Unreachable: `severalOver` offers only a modifier with a die to reach.
-        Nothing -> offeringAll next ((payer, stated, offer) : passed) slots
+        Nothing -> offeringAll next slots
         Just shown -> do
           let mCost = ModifiedRoll.cost offer
           taken <- askPaying Set.empty payer payer stated mCost $ do
@@ -1643,7 +1646,7 @@ throwSettled runSubgame roll perDie = do
             let kept = Set.filter (< List.genericLength reached) chosen
             pure (if Set.null kept then Nothing else Just kept)
           case taken of
-            Nothing -> offeringAll next ((payer, stated, offer) : passed) slots
+            Nothing -> offeringAll next (foldr declining slots reached)
             Just chosen -> do
               State.modify' (Dice.spendLimit stated offer)
               let targets = fmap (fst . List.genericIndex reached) (Set.toAscList chosen)
@@ -1653,7 +1656,11 @@ throwSettled runSubgame roll perDie = do
                     ([RerolledDice inner keep], first : others@(_ : _)) -> (first, SharedDice next (RerolledDice inner (fmap (zipWith ($) finishes) . keep))) : fmap (\index -> (index, TakenDie next)) others
                     _ -> zip targets (zipWith finishingSlot finishes thrown)
               -- The last place first, so each place's index still holds.
-              offeringAll (next + 1) [] (foldr (uncurry replacingDie) slots placed)
+              offeringAll (next + 1) (foldr (uncurry replacingDie) slots placed)
+          where
+            declining (index, _) held = case List.genericDrop index dice of
+              Right (byNumber, thrower, natural, declined, finish) : _ -> replacingDie index (OpenDie (byNumber, thrower, natural, (payer, stated, Left offer) : declined, finish)) held
+              _ -> held
       -- The roll's units again, `flat` cut back to their sizes.
       regroup units flat = case units of
         [] -> []
@@ -1748,7 +1755,7 @@ throwSettled runSubgame roll perDie = do
           [place | (place, stamp) <- zip [1 ..] made, any (\(carried, _, _, _) -> carried == stamp) pending]
         )
   (thrownFaces, landed, dice) <- throwing roll
-  kept <- offeringAll (0 :: Natural) [] dice >>= settling True roll perDie thrownFaces landed
+  kept <- offeringAll (0 :: Natural) dice >>= settling True roll perDie thrownFaces landed
   recordRerolls (foldMap (\((_, _, _, pending), _) -> pending) kept)
   -- CR 706.6 before the second step: an ignored roll is one "no effects apply
   -- to", so it is not offered for an adjustment.
