@@ -1,5 +1,6 @@
 module Parun.Types.MatchOptions where
 
+import qualified Data.Map.Strict as Map
 import qualified Data.Set as Set
 import qualified Numeric.Natural as Natural
 import qualified Parun.Types.Key as Key
@@ -16,12 +17,19 @@ data MatchOptions = MkMatchOptions
     -- | The seats the search bot plays (Parun.Play.Search), the random bot
     -- playing the rest.
     searching :: Set.Set Natural.Natural,
-    -- | How hard the search bot looks.
-    budget :: SearchBudget.SearchBudget
+    -- | How hard the search bot looks in each seat it may play.
+    budgets :: Map.Map Natural.Natural SearchBudget.SearchBudget,
+    -- | The file of the search bot's weights in a seat, the shipped default
+    -- (Parun.Weights.defaultPath) in a seat absent.
+    weighing :: Map.Map Natural.Natural FilePath
   }
   deriving (Eq, Show)
 
 -- | A hundred games keyed from the operating system's entropy, none saved,
 -- the random bot in every seat.
 none :: MatchOptions
-none = MkMatchOptions {seed = Nothing, games = 100, save = Nothing, searching = Set.empty, budget = SearchBudget.MkSearchBudget {SearchBudget.samples = 2, SearchBudget.prompts = 300}}
+none = MkMatchOptions {seed = Nothing, games = 100, save = Nothing, searching = Set.empty, budgets = Map.fromList [(1, budget), (2, budget)], weighing = Map.empty}
+
+-- | The search bot's budget unless told otherwise.
+budget :: SearchBudget.SearchBudget
+budget = SearchBudget.MkSearchBudget {SearchBudget.samples = 2, SearchBudget.turns = 2, SearchBudget.prompts = 300}

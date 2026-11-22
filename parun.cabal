@@ -23,6 +23,7 @@ data-files:
   scenario-manifest.json
   scenarios/**/*.json
   sticker-sheets/*.json
+  weights/*.json
 
 extra-doc-files:
   CHANGELOG.md

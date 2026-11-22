@@ -26,6 +26,7 @@ import qualified Parun.Play.Search as Search
 import qualified Parun.Play.Wording as Wording
 import qualified Parun.Registry as Registry
 import qualified Parun.Trustworthy.Directory as Directory
+import qualified Parun.Weights as Weights
 import qualified Parun.Types.Deck as Deck
 import qualified Parun.Types.Format as Format
 import qualified Parun.Types.GameState as GameState
@@ -38,6 +39,7 @@ import qualified Parun.Types.Tally as Tally
 import qualified Parun.Types.TeamId as TeamId
 import qualified Parun.Types.Timed as Timed
 import qualified Parun.Types.TurnRegisters as TurnRegisters
+import qualified Parun.Types.Weights as Weights.Type
 import qualified System.Console.GetOpt as GetOpt
 import qualified System.Exit as Exit
 import qualified System.IO as IO
@@ -45,13 +47,14 @@ import qualified Text.Read as Read
 
 main :: [String] -> IO ()
 main arguments = case GetOpt.getOpt GetOpt.Permute flags arguments of
-  (updates, [one, two], []) -> case foldr (=<<) (Right MatchOptions.none) updates of
+  (updates, [one, two], []) -> case Monad.foldM (\options update -> update options) MatchOptions.none updates of
     Left problem -> usage [problem]
     Right options -> do
       registry <- Registry.defaultRoot >>= Registry.loadRoot >>= Registry.defaultRegistry
       lists <- (,) <$> Command.orExit (Command.load registry one) <*> Command.orExit (Command.load registry two)
       format <- Command.orExit (Command.settle Nothing [(one, fst lists), (two, snd lists)])
-      match options registry format (Bifunctor.bimap DeckList.deck DeckList.deck lists)
+      searchers <- Command.orExit (fmap (Bifunctor.first pure) (searchersOf options))
+      match options searchers registry format (Bifunctor.bimap DeckList.deck DeckList.deck lists)
   (_, _, problems) -> usage problems
 
 flags :: [GetOpt.OptDescr (MatchOptions.MatchOptions -> Either String MatchOptions.MatchOptions)]
@@ -60,9 +63,38 @@ flags =
     GetOpt.Option [] ["games"] (GetOpt.ReqArg (\s o -> maybe (Left ("not a number of games: " <> s)) (\n -> Right o {MatchOptions.games = n}) (Read.readMaybe s)) "N") "how many games to play; 100 when absent",
     GetOpt.Option [] ["save"] (GetOpt.ReqArg (\s o -> Right o {MatchOptions.save = Just s}) "DIR") "save each game in this directory as a scenario",
     GetOpt.Option [] ["search"] (GetOpt.ReqArg (\s o -> maybe (Left ("not a seat: " <> s)) (\n -> Right o {MatchOptions.searching = Set.insert n (MatchOptions.searching o)}) (Monad.mfilter (`elem` [1, 2]) (Read.readMaybe s))) "SEAT") "the search bot plays this seat, 1 or 2; the random bot plays every other",
-    GetOpt.Option [] ["samples"] (GetOpt.ReqArg (\s o -> maybe (Left ("not a number of samples: " <> s)) (\n -> Right o {MatchOptions.budget = (MatchOptions.budget o) {SearchBudget.samples = n}}) (Monad.mfilter (> 0) (Read.readMaybe s))) "N") "the search bot's playouts of each option; 2 when absent",
-    GetOpt.Option [] ["cutoff"] (GetOpt.ReqArg (\s o -> maybe (Left ("not a number of prompts: " <> s)) (\n -> Right o {MatchOptions.budget = (MatchOptions.budget o) {SearchBudget.prompts = n}}) (Read.readMaybe s)) "N") "the prompts a playout is answered before it is cut off and scored by life; 300 when absent"
+    GetOpt.Option [] ["samples"] (GetOpt.ReqArg (perSeat "a number of samples" (Monad.mfilter (> 0) . Read.readMaybe) (\n b -> b {SearchBudget.samples = n})) "[SEAT=]N") "the search bot's playouts of each option, in every seat or in SEAT alone; 2 when absent",
+    GetOpt.Option [] ["turns"] (GetOpt.ReqArg (perSeat "a number of turns" Read.readMaybe (\n b -> b {SearchBudget.turns = n})) "[SEAT=]N") "the turns a playout may begin after the decision's before it is cut off and its position scored, in every seat or in SEAT alone; 2 when absent",
+    GetOpt.Option [] ["cutoff"] (GetOpt.ReqArg (perSeat "a number of prompts" Read.readMaybe (\n b -> b {SearchBudget.prompts = n})) "[SEAT=]N") "the prompts a playout is answered before it is cut off and its position scored, in every seat or in SEAT alone; 300 when absent",
+    GetOpt.Option [] ["weights"] (GetOpt.ReqArg (\s o -> Right $ case seated s of Just (n, path) -> o {MatchOptions.weighing = Map.insert n path (MatchOptions.weighing o)}; Nothing -> o {MatchOptions.weighing = Map.fromList [(n, s) | n <- [1, 2]]}) "[SEAT=]FILE") "the file of the weights the search bot scores a cut-off playout's position by (Parun.Codec.Weights), in every seat or in SEAT alone; data/weights/default.json when absent"
   ]
+
+-- | A flag's value for each seat, or with a `SEAT=` prefix for that seat
+-- alone, set in its budget.
+perSeat :: String -> (String -> Maybe a) -> (a -> SearchBudget.SearchBudget -> SearchBudget.SearchBudget) -> String -> MatchOptions.MatchOptions -> Either String MatchOptions.MatchOptions
+perSeat what parse set s o = case seated s of
+  Just (n, value) | Just x <- parse value -> Right o {MatchOptions.budgets = Map.adjust (set x) n (MatchOptions.budgets o)}
+  _ | Just x <- parse s -> Right o {MatchOptions.budgets = Map.map (set x) (MatchOptions.budgets o)}
+  _ -> Left ("not " <> what <> ": " <> s)
+
+-- | A seat, 1 or 2, and the value it prefixes with `=`.
+seated :: String -> Maybe (Natural, String)
+seated s = case break (== '=') s of
+  (seat, '=' : value) | Just n <- Monad.mfilter (`elem` [1, 2]) (Read.readMaybe seat) -> Just (n, value)
+  _ -> Nothing
+
+-- | Each searching seat's budget and the weights its file holds (Parun.Weights).
+searchersOf :: MatchOptions.MatchOptions -> IO (Either Text.Text (Map.Map Natural (SearchBudget.SearchBudget, Weights.Type.Weights)))
+searchersOf options = do
+  fallback <- Weights.defaultPath
+  fmap sequence . sequence $
+    Map.fromSet
+      ( \n -> do
+          let path = Map.findWithDefault fallback n (MatchOptions.weighing options)
+          weights <- Weights.load path
+          pure ((,) (Map.findWithDefault MatchOptions.budget n (MatchOptions.budgets options)) <$> either (\problem -> Left (Text.pack path <> Text.pack ": " <> problem)) Right weights)
+      )
+      (MatchOptions.searching options)
 
 usage :: [String] -> IO a
 usage problems = do
@@ -72,13 +104,12 @@ usage problems = do
 
 -- | Plays the games one after another under `format`, saying how each ended
 -- on standard error, then the tally on standard output.
-match :: MatchOptions.MatchOptions -> Registry.Registry Identity.Identity -> Maybe Format.Format -> (Deck.Deck, Deck.Deck) -> IO ()
-match options registry format decks = do
+match :: MatchOptions.MatchOptions -> Map.Map Natural (SearchBudget.SearchBudget, Weights.Type.Weights) -> Registry.Registry Identity.Identity -> Maybe Format.Format -> (Deck.Deck, Deck.Deck) -> IO ()
+match options searchers registry format decks = do
   IO.hSetBuffering IO.stdout IO.LineBuffering
   seed <- maybe Key.fresh pure (MatchOptions.seed options)
   Monad.forM_ (MatchOptions.save options) (Directory.createDirectoryIfMissing True)
   let count = MatchOptions.games options
-      searchers = Map.fromSet (const (MatchOptions.budget options)) (MatchOptions.searching options)
   tally <-
     Monad.foldM
       ( \tally index -> do
@@ -95,14 +126,14 @@ match options registry format decks = do
 
 -- | Game `index`, from zero, of a match from `seed` under `format` among the
 -- decks, seat 1's first: seeded 'seedAt', seat 'firstAt' playing first, the
--- search bot in each seat of `searchers` at its budget (Search.search, over
--- the known lists) and the random bot in every other; with the entry each
+-- search bot in each seat of `searchers` at its budget and weights
+-- (Search.search, over the known lists) and the random bot in every other; with the entry each
 -- answer replays as (Record.recording). Without searchers it is the game
 -- `parun play --bot 1 --bot 2` plays at that seed and `--first`.
-game :: (Monad m) => Registry.Registry m -> Maybe Format.Format -> Map.Map Natural SearchBudget.SearchBudget -> Key.Type.Key -> Natural -> NonEmpty.NonEmpty Deck.Deck -> m (Either Text.Text (Result.Result, GameState.GameState), Seq.Seq Timed.Timed)
+game :: (Monad m) => Registry.Registry m -> Maybe Format.Format -> Map.Map Natural (SearchBudget.SearchBudget, Weights.Type.Weights) -> Key.Type.Key -> Natural -> NonEmpty.NonEmpty Deck.Deck -> m (Either Text.Text (Result.Result, GameState.GameState), Seq.Seq Timed.Timed)
 game registry format searchers seed index decks =
   let count = Natural.length decks
-      seat n = maybe (Game.bot (lifted registry)) (\budget -> Search.search (lifted registry) budget Search.known) (Map.lookup n searchers)
+      seat n = maybe (Game.bot (lifted registry)) (\(budget, weights) -> Search.search (lifted registry) budget weights Search.known) (Map.lookup n searchers)
    in State.runStateT (Game.run (lifted registry) format Limits.standard [Record.recording (Command.labels count) sink] (Map.fromList [(Command.idOf n, seat n) | n <- [1 .. count]]) (Generator.fromKey (seedAt seed index)) Map.empty (Command.seated (firstAt index) decks)) Seq.empty
 
 -- | A pair of decks, seat 1's first.
