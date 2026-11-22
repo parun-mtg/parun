@@ -2064,6 +2064,38 @@ library codec
     Parun.Codec.ZoneScopeSpec
     Parun.Codec.ZoneSpec
 
+-- A subcommand's command line: its options, positional arguments and usage,
+-- each checked before the command runs, and the refusal of a bad one.
+library command-line
+  import: library
+  build-depends:
+    exceptions ^>=0.10.9,
+    parun:exceptions,
+    parun:spec,
+    text ^>=2.1.3,
+
+  hs-source-dirs: source/libraries/command-line
+  -- cabal-gild: discover source/libraries/command-line
+  exposed-modules:
+    Parun.CommandLine
+    Parun.CommandLine.Bare.Config
+    Parun.CommandLine.Bare.ConfigSpec
+    Parun.CommandLine.Bare.Flag
+    Parun.CommandLine.Bare.FlagSpec
+    Parun.CommandLine.Deck.Config
+    Parun.CommandLine.Deck.ConfigSpec
+    Parun.CommandLine.Deck.Flag
+    Parun.CommandLine.Deck.FlagSpec
+    Parun.CommandLine.Scenario.Config
+    Parun.CommandLine.Scenario.ConfigSpec
+    Parun.CommandLine.Scenario.Flag
+    Parun.CommandLine.Scenario.FlagSpec
+    Parun.CommandLine.Translate.Config
+    Parun.CommandLine.Translate.ConfigSpec
+    Parun.CommandLine.Translate.Flag
+    Parun.CommandLine.Translate.FlagSpec
+    Parun.CommandLineSpec
+
 -- An arbitrary precision decimal number, in the spirit of the Decimal and
 -- scientific packages.
 library decimal
@@ -2290,6 +2322,7 @@ library exceptions
     Parun.Exceptions.EntropyUnavailable
     Parun.Exceptions.InvalidCorpus
     Parun.Exceptions.InvalidOption
+    Parun.Exceptions.MissingArgument
     Parun.Exceptions.MissingRoot
     Parun.Exceptions.ShowHelp
     Parun.Exceptions.UnexpectedArgument
@@ -2304,6 +2337,8 @@ library executable
     containers ^>={0.7, 0.8},
     parun:benchmark,
     parun:codec,
+    parun:command-line,
+    parun:exceptions,
     parun:json,
     parun:json-codec,
     parun:json-schema,
@@ -2685,6 +2720,7 @@ library test
     exceptions ^>=0.10.9,
     parun:benchmark,
     parun:codec,
+    parun:command-line,
     parun:decimal,
     parun:engine,
     parun:entropy,
