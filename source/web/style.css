@@ -930,11 +930,29 @@ main.lobby.new-game {
   align-items: stretch;
 }
 
+/* From two columns up the top bar stays put and the side columns stick
+   under it, each scrolling on its own, so Start stays in view while the
+   decks scroll the page. */
 @media (min-width: 760px) {
   main.lobby.new-game {
+    --bar-height: 64px;
     grid-template-columns: minmax(280px, 340px) minmax(0, 1fr);
-    grid-template-areas: "seats browser" "detail browser";
+    grid-template-areas: "seats browser" "seats detail";
     grid-template-rows: auto 1fr;
+  }
+
+  .framed:has(> main.lobby.new-game) > .topbar {
+    position: sticky;
+    top: 0;
+    z-index: 6;
+  }
+
+  .new-game .seats {
+    position: sticky;
+    top: var(--bar-height);
+    align-self: start;
+    height: calc(100dvh - var(--bar-height));
+    overflow-y: auto;
   }
 }
 
@@ -943,6 +961,14 @@ main.lobby.new-game {
     grid-template-columns: minmax(300px, 340px) minmax(0, 1fr) minmax(280px, 360px);
     grid-template-areas: "seats browser detail";
     grid-template-rows: auto;
+  }
+
+  .new-game .detail {
+    position: sticky;
+    top: var(--bar-height);
+    align-self: start;
+    max-height: calc(100dvh - var(--bar-height));
+    overflow-y: auto;
   }
 }
 
@@ -997,17 +1023,9 @@ main.lobby.new-game {
   border-top: 1px solid var(--line);
 }
 
-@media (min-width: 760px) {
-  .new-game .detail {
-    border-right: 1px solid var(--line);
-    background: var(--surface);
-  }
-}
-
 @media (min-width: 1200px) {
   .new-game .detail {
     border-top: 0;
-    border-right: 0;
     border-left: 1px solid var(--line);
     background: transparent;
   }
@@ -1212,6 +1230,18 @@ main.lobby.new-game {
   font-weight: 700;
 }
 
+/* On a phone the heading takes its own line, the two ways to add a deck
+   side by side under it. */
+@media (max-width: 759px) {
+  .browser-head h2 {
+    flex-basis: 100%;
+  }
+
+  .browser-head button {
+    flex: 1;
+  }
+}
+
 .shelves {
   display: flex;
   gap: 22px;
@@ -1275,8 +1305,28 @@ main.lobby.new-game {
   background: var(--raised);
 }
 
+/* The set menu drawn as the search box is, its arrow from the text's role. */
+#app select.set-filter {
+  appearance: none;
+  height: 44px;
+  padding: 0 2.4em 0 0.8em;
+  border: 1px solid var(--control);
+  border-radius: var(--radius);
+  background-color: var(--surface);
+  background-image: linear-gradient(45deg, transparent 50%, var(--text) 50%), linear-gradient(135deg, var(--text) 50%, transparent 50%);
+  background-position:
+    calc(100% - 18px) 50%,
+    calc(100% - 13px) 50%;
+  background-size: 5px 5px;
+  background-repeat: no-repeat;
+  color: var(--text);
+  font: inherit;
+  cursor: pointer;
+}
+
 .set-filter:disabled {
   opacity: 0.45;
+  cursor: not-allowed;
 }
 
 /* The decks, as tiles: the set as a badge, the colours, the name, the

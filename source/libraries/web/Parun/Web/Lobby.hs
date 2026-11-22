@@ -756,7 +756,7 @@ browserView lobby =
                    ["set-filter"]
                    ([Element.attr "id" (Text.pack "deck-set"), Element.on "change" MkSet] <> [Element.attr "disabled" Text.empty | shelf lobby == MkSaved])
                    (option Text.empty (Text.pack "All sets") : [option code code | code <- setsOf lobby]),
-                 Element.button ["quiet", "random"] MkRandom [Element.string "Surprise me"]
+                 Element.button ["random"] MkRandom [Element.string "Surprise me"]
                ]
            ),
            ( Text.pack "decks",
@@ -812,7 +812,7 @@ browserView lobby =
 detailView :: Lobby -> Html.Html Event
 detailView lobby =
   Element.el "aside" ["detail"] [Element.attr "aria-label" (Text.pack "Deck chosen")] $
-    Element.el "span" ["eyebrow"] [] [Element.string (seatName lobby (choosing lobby) <> "'s deck")]
+    Element.el "span" ["eyebrow"] [] [Element.string (if choosing lobby == MkMine then "Your deck" else seatName lobby (choosing lobby) <> "'s deck")]
       : case chosen lobby (choosing lobby) of
         Nothing ->
           [ Element.el "h2" [] [] [Element.string (if choosing lobby == MkMine then "No deck yet" else "Random deck")],
