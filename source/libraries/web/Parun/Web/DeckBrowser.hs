@@ -314,6 +314,16 @@ kinds = [("Creatures", MkCreature), ("Other spells", MkSpell), ("Lands", MkLand)
 colourName :: Color.Color -> String
 colourName = show
 
+-- | A colour's toggle, its mana symbol named by the colour, pressed when
+-- `on`, sending `msg`.
+colourToggle :: Bool -> msg -> Color.Color -> Html.Html msg
+colourToggle on msg c =
+  Element.el
+    "button"
+    (["toggle"] <> ["on" | on])
+    [Element.attr "type" (Text.pack "button"), Element.attr "aria-label" (Text.pack (colourName c)), Element.attr "aria-pressed" (Text.pack (if on then "true" else "false")), Element.on "click" msg]
+    [Mana.symbol (Text.pack (Web.Card.letterUpper c))]
+
 -- | Colours as a deck's detail names them.
 colourWords :: Set.Set Color.Color -> String
 colourWords colours
@@ -371,13 +381,7 @@ filtersView wrap extra browser =
       ]
       <> extra
   where
-    toggle c =
-      let on = Set.member c (colourFilter browser)
-       in Element.el
-            "button"
-            (["toggle"] <> ["on" | on])
-            [Element.attr "type" (Text.pack "button"), Element.attr "aria-label" (Text.pack (colourName c)), Element.attr "aria-pressed" (Text.pack (if on then "true" else "false")), Element.on "click" (MkColour c)]
-            [Mana.symbol (Text.pack (Web.Card.letterUpper c))]
+    toggle c = colourToggle (Set.member c (colourFilter browser)) (MkColour c) c
     option value' label' = Element.el "option" [] ([Element.attr "value" value'] <> [Element.attr "selected" Text.empty | setFilter browser == if Text.null value' then Nothing else Just value']) [Element.text label']
 
 -- | Those of the decks `offered` shown, as tiles, each sending `pick` with
