@@ -187,8 +187,8 @@
         "Answer": {
           "prompt": "RerollDice",
           "with": [
-            1,
-            2
+            2,
+            3
           ]
         }
       }
