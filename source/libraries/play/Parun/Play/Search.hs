@@ -17,11 +17,9 @@ import qualified Data.List as List
 import qualified Data.List.NonEmpty as NonEmpty
 import qualified Data.Map.Strict as Map
 import qualified Data.Maybe as Maybe
-import qualified Data.Ord as Ord
 import qualified Data.Set as Set
 import Numeric.Natural (Natural)
 import qualified Parun.Engine.Card as Engine.Card
-import qualified Parun.Engine.Combat as Engine.Combat
 import qualified Parun.Engine.Engine as Engine
 import qualified Parun.Engine.Game as Engine.Game
 import qualified Parun.Engine.Projection as Projection
@@ -53,7 +51,6 @@ import qualified Parun.Types.Prompt as Prompt
 import qualified Parun.Types.Result as Result
 import qualified Parun.Types.SearchBudget as SearchBudget
 import qualified Parun.Types.Source as Source
-import qualified Parun.Types.TapState as TapState
 import qualified Parun.Types.TurnRegisters as TurnRegisters
 import qualified Parun.Types.Visibility as Visibility.Type
 import qualified Parun.Types.Weights as Weights
@@ -273,19 +270,15 @@ features board grants pid gs =
 
 -- | The greedy playout policy, cheap enough to answer every prompt of every
 -- playout: a land played where one may be, else a permanent spell cast, else
--- another action or a pass ('greedyAction'); attacks that don't trade down ('greedyAttacks');
--- blocks that win, then blocks to survive ('greedyBlocks'). Every other prompt
--- is the random bot's (Game.bot). It reads only what every player may see
--- (CR 400.2): the battlefield's projected power and toughness, tap states,
--- life totals and its own menu.
+-- another action or a pass ('greedyAction'). Every other prompt is the random
+-- bot's (Game.bot). It reads only its own menu and the card types of the
+-- cards on it.
 --
 -- Not implemented: choosing targets, modes and payments by their effect's
 -- classification; the random bot answers them (#9442).
 greedy :: (Monad m) => Registry.Registry m -> Answerer.Answerer (Asked.Asked GameState.GameState) (Game.Play m)
 greedy registry = Answerer.MkAnswerer $ \asked -> case Asked.prompt asked of
   Prompt.ChooseAction _ _ menu -> greedyAction (Asked.game asked) menu
-  Prompt.DeclareAttackers _ pid offered -> pure (greedyAttacks pid offered (Asked.game asked))
-  Prompt.DeclareBlockers _ pid offered incoming -> pure (greedyBlocks pid offered incoming (Asked.game asked))
   _ -> Answerer.unwrap (Game.bot registry) asked
 
 -- | A priority decision: a land play (CR 305.1) at random where the menu
@@ -305,62 +298,3 @@ greedyAction gs menu =
         (Just some, _) -> Generator.pick some
         (_, Just some) -> Generator.pick some
         _ -> Generator.pick (Action.Pass NonEmpty.:| rest)
-
--- | A creature's power and toughness, as 'features' counts them (CR 208.1).
-type Body = (Integer, Integer)
-
--- | Every creature on the battlefield, its controller and its 'Body'.
-creatures :: GameState.GameState -> Map.Map ObjectId.ObjectId (PlayerId.PlayerId, Body)
-creatures gs =
-  let grants = Projection.View.controlGrants gs
-      stat field characteristics = max 0 (Maybe.fromMaybe 0 (field characteristics))
-   in Map.fromList
-        [ (oid, (controller, (stat ProjectedCharacteristics.power characteristics, stat ProjectedCharacteristics.toughness characteristics)))
-        | (oid, characteristics) <- Map.toList (Projection.projectAll gs),
-          Set.member CardType.Creature (ProjectedCharacteristics.cardTypes characteristics),
-          Just controller <- [Projection.View.controllerOfGiven grants oid gs]
-        ]
-
--- | A creature's 'Body', none where it is no creature.
-bodyIn :: Map.Map ObjectId.ObjectId (PlayerId.PlayerId, Body) -> ObjectId.ObjectId -> Body
-bodyIn board oid = maybe (0, 0) snd (Map.lookup oid board)
-
--- | `pid`'s attackers (CR 508.1a): each creature offered with power above 0
--- that no untapped creature of another player could block, kill and either
--- survive or be worth less than, a creature's worth its power plus its
--- toughness.
-greedyAttacks :: PlayerId.PlayerId -> [ObjectId.ObjectId] -> GameState.GameState -> [ObjectId.ObjectId]
-greedyAttacks pid offered gs =
-  let board = creatures gs
-      untapped oid = fmap Object.tapped (Engine.Game.lookupObject oid gs) == Just TapState.Untapped
-      defending = [body | (oid, (controller, body)) <- Map.toList board, controller /= pid, untapped oid]
-      punished (power, toughness) (blockPower, blockToughness) = blockPower >= toughness && (blockToughness > power || blockPower + blockToughness < power + toughness)
-      safe body = fst body > 0 && not (any (punished body) defending)
-   in filter (safe . bodyIn board) offered
-
--- | `pid`'s blocks (CR 509.1a), each blocker on one attacker, the strongest
--- attacker first: a blocker that kills its attacker and survives, else one
--- that survives; then, while the unblocked attackers' power is at least
--- `pid`'s life, a blocker that kills its attacker, else any, on the strongest
--- unblocked. The cheapest blocker that serves is used, a pair CR 509.1b
--- forbids never (Engine.Combat.forbiddenBlocks).
-greedyBlocks :: PlayerId.PlayerId -> [ObjectId.ObjectId] -> [ObjectId.ObjectId] -> GameState.GameState -> Map.Map ObjectId.ObjectId (Set.Set ObjectId.ObjectId)
-greedyBlocks pid offered incoming gs =
-  let board = creatures gs
-      body = bodyIn board
-      forbidden = Set.fromList (Engine.Combat.forbiddenBlocks pid (Map.fromList [(blocker, Set.fromList incoming) | blocker <- offered]) gs)
-      kills blocker attacker = fst (body blocker) >= snd (body attacker)
-      survives blocker attacker = snd (body blocker) > fst (body attacker)
-      assign tests (declared, free) attacker =
-        case Maybe.listToMaybe [blocker | test <- tests, blocker <- List.sortOn (uncurry (+) . body) free, Set.notMember (blocker, attacker) forbidden, test blocker attacker] of
-          Just blocker -> (Map.insert blocker (Set.singleton attacker) declared, List.delete blocker free)
-          Nothing -> (declared, free)
-      strongest = List.sortOn (Ord.Down . fst . body) incoming
-      blocked declared = Set.unions (Map.elems declared)
-      unblocked declared = filter (`Set.notMember` blocked declared) strongest
-      life = maybe 0 Player.life (Map.lookup pid (GameState.players gs))
-      winning = Foldable.foldl' (assign [\b a -> kills b a && survives b a, survives]) (Map.empty, offered) strongest
-      surviving chosen attacker
-        | sum (fmap (fst . body) (unblocked (fst chosen))) < life = chosen
-        | otherwise = assign [kills, \_ _ -> True] chosen attacker
-   in fst (Foldable.foldl' surviving winning (unblocked (fst winning)))

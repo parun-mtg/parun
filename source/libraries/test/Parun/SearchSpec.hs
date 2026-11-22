@@ -12,13 +12,14 @@ import qualified Control.Monad.Trans.Except as Except
 import qualified Control.Monad.Trans.State.Strict as State
 import qualified Data.Foldable as Foldable
 import qualified Data.List as List
+import qualified Data.List.NonEmpty as NonEmpty
 import qualified Data.Map.Strict as Map
 import qualified Data.Maybe as Maybe
 import qualified Data.Set as Set
 import qualified Data.Text as Text
 import qualified Data.Word as Word
-import qualified Numeric.Natural as Natural
 import qualified Parun.BotSpec as BotSpec
+import qualified Parun.Engine.Card as Card
 import qualified Parun.Engine.Engine as Engine
 import qualified Parun.Engine.Game as Engine.Game
 import qualified Parun.Engine.PlayerView as PlayerView
@@ -35,7 +36,7 @@ import qualified Parun.Types.Answerer as Answerer
 import qualified Parun.Types.Asked as Asked
 import qualified Parun.Types.CardType as CardType
 import qualified Parun.Types.Concession as Concession
-import qualified Parun.Types.CounterKind as CounterKind
+import qualified Parun.Types.Deck as Deck
 import qualified Parun.Types.Features as Features
 import qualified Parun.Types.GameState as GameState
 import qualified Parun.Types.Limits as Limits
@@ -145,7 +146,7 @@ spec s registry = Spec.describe s "Search" $ do
     declared <- traverse (searched s (Asked.MkAsked [] (atOneLife pid gs) (Prompt.DeclareBlockers decider pid blockers attackers))) [1 .. 4]
     Spec.assertBool s (all (\declaration -> all (\attacker -> any (Set.member attacker) (Map.elems declaration)) attackers) declared) "blocked in every seed"
 
-  Spec.it s "the greedy policy plays a land where it may, else casts a spell" $ do
+  Spec.it s "the greedy policy plays a land where it may, else casts a permanent spell" $ do
     let greedily asked seed = either (Spec.assertFailure s . Text.unpack) pure =<< Except.runExceptT (State.evalStateT (Answerer.unwrap (Search.greedy (S.fixtureRegistry [])) asked) (S.seeded seed))
     (_, landed) <- capturing s registry 3 "a menu offering a land play" $ \asked -> case Asked.prompt asked of
       Prompt.ChooseAction _ _ menu | any isPlay menu && any isCast menu -> Just (Asked.game asked, Asked.MkAsked [] (Asked.game asked) (Asked.prompt asked))
@@ -158,34 +159,28 @@ spec s registry = Spec.describe s "Search" $ do
     cast <- traverse (greedily casting) [1 .. 4]
     Spec.assertBool s (all isCast cast) ("a spell cast in every seed: " <> show cast)
 
-  Spec.it s "the greedy policy attacks unless an untapped creature could block, kill the attacker and survive" $ do
-    (gs, (pid, candidates)) <- capturing s registry 3 "a declaration of attackers facing a creature" $ \asked -> case Asked.prompt asked of
-      Prompt.DeclareAttackers decider pid candidates
-        | Search.searchable asked decider pid (Search.attacks candidates),
-          not (null (opposing pid (Asked.game asked))) ->
-            Just (Asked.game asked, (pid, candidates))
+  Spec.it s "the greedy policy leaves a spell with no permanent type to the random pick" $ do
+    bear <- S.printingOf s registry "Grizzly Bears"
+    growth <- S.printingOf s registry "Giant Growth"
+    forest <- S.printingOf s registry "Forest"
+    let deck = Deck.fromCards (Map.fromList [(bear, 6), (growth, 6), (forest, 8)])
+    (_, instant) <- capturingIn s (deck NonEmpty.:| [deck]) 3 "a menu offering only a cast with no permanent type" $ \asked -> case Asked.prompt asked of
+      Prompt.ChooseAction _ _ menu
+        | any isCast menu && not (any isPlay menu) && all (\action -> not (isCast action) || notPermanent (Asked.game asked) action) menu ->
+            Just (Asked.game asked, Asked.MkAsked [] (Asked.game asked) (Asked.prompt asked))
       _ -> Nothing
-    let blocker = take 1 (opposing pid gs)
-        tapped = Map.map (\o -> if Object.owner o /= pid && Object.zone o == Zone.Battlefield then o {Object.tapped = TapState.Tapped} else o) (GameState.objects gs)
-    Spec.assertEqWith s "against nothing untapped" (Search.greedyAttacks pid candidates gs {GameState.objects = tapped}) candidates
-    Spec.assertEqWith s "against an untapped creature of equal size" (Search.greedyAttacks pid candidates gs {GameState.objects = grown 0 blocker tapped}) candidates
-    Spec.assertEqWith s "against an untapped creature that kills and survives" (Search.greedyAttacks pid candidates gs {GameState.objects = grown 1 blocker tapped}) []
+    chosen <- traverse (\seed -> either (Spec.assertFailure s . Text.unpack) pure =<< Except.runExceptT (State.evalStateT (Answerer.unwrap (Search.greedy (S.fixtureRegistry [])) instant) (S.seeded seed))) [1 .. 8]
+    Spec.assertBool s (elem Action.Pass chosen) ("passed in some seed: " <> show chosen)
 
-  Spec.it s "the greedy policy blocks when the block wins, or to survive" $ do
-    (gs, (pid, blockers, attackers)) <- capturing s registry 3 "a declaration of blockers against one attacker" $ \asked -> case Asked.prompt asked of
-      Prompt.DeclareBlockers decider pid blockers attackers | length attackers == 1 && Search.firstBlocks pid (Asked.game asked) && Search.searchable asked decider pid (Search.blocks blockers attackers) -> Just (Asked.game asked, (pid, blockers, attackers))
+  Spec.it s "a greedy playout plays a land at the decision it restarts" $ do
+    (gs, pid) <- capturing s registry 3 "a menu offering a land play" $ \asked -> case Asked.prompt asked of
+      Prompt.ChooseAction decider pid menu | any isPlay menu && Search.searchable asked decider pid (Search.options menu) -> Just (Asked.game asked, pid)
       _ -> Nothing
-    let blocked world = Set.unions (Map.elems (Search.greedyBlocks pid blockers attackers world))
-    Spec.assertEqWith s "an even trade at 20 life" (blocked gs) Set.empty
-    Spec.assertEqWith s "an even trade at 1 life" (blocked (atOneLife pid gs)) (Set.fromList attackers)
-    Spec.assertEqWith s "a blocker that kills and survives" (blocked gs {GameState.objects = grown 1 (take 1 blockers) (GameState.objects gs)}) (Set.fromList attackers)
-
-  Spec.it s "a greedy playout attacks an opponent at 1 life who has nothing untapped, and wins" $ do
-    (pid, asked) <- openAttack s registry
-    let budget = SearchBudget.MkSearchBudget {SearchBudget.samples = 1, SearchBudget.turns = 0, SearchBudget.prompts = 400, SearchBudget.playout = Playout.Greedy}
-        unpicked = Search.MkPick (const Nothing)
-    scores <- traverse (\n -> either (Spec.assertFailure s . Text.unpack) pure =<< Except.runExceptT (State.evalStateT (Search.rollout (S.fixtureRegistry []) budget Weights.neutral Engine.resumeTurnBasedAction pid unpicked (Asked.game asked)) (S.seeded n))) [1 .. 8]
-    Spec.assertEqWith s "won in every seed" scores (Search.won <$ scores)
+    let budget = SearchBudget.MkSearchBudget {SearchBudget.samples = 1, SearchBudget.turns = 1000, SearchBudget.prompts = 3, SearchBudget.playout = Playout.Greedy}
+        lands = Weights.MkWeights {Weights.ours = zero {Features.lands = 1}, Weights.theirs = zero}
+        before = toInteger (length [oid | oid <- Set.toList (GameState.battlefield gs), Projection.View.controllerOf oid gs == Just pid, Set.member CardType.Land (ProjectedCharacteristics.cardTypes (Projection.project oid gs))])
+    scores <- traverse (\n -> either (Spec.assertFailure s . Text.unpack) pure =<< Except.runExceptT (State.evalStateT (Search.rollout (S.fixtureRegistry []) budget lands Engine.resumePriority pid (Search.MkPick (const Nothing)) gs) (S.seeded n))) [1 .. 8]
+    Spec.assertEqWith s "a land more in every seed" scores ((before + 1) <$ scores)
   where
     viewer = S.alice
 
@@ -203,6 +198,11 @@ decision s registry = capturing s registry 5 "a decision" $ \asked -> case Asked
 capturing :: forall m n x. (Monad m) => Spec.Spec m n -> Registry.Registry m -> Word.Word32 -> String -> (forall r. Asked.Asked GameState.GameState r -> Maybe (GameState.GameState, x)) -> m (GameState.GameState, x)
 capturing s registry seed what found = do
   decks <- fmap snd <$> BotSpec.bears s registry
+  capturingIn s decks seed what found
+
+-- 'capturing' in a game of these decks.
+capturingIn :: forall m n x. (Monad m) => Spec.Spec m n -> NonEmpty.NonEmpty Deck.Deck -> Word.Word32 -> String -> (forall r. Asked.Asked GameState.GameState r -> Maybe (GameState.GameState, x)) -> m (GameState.GameState, x)
+capturingIn s decks seed what found = do
   (_, taken) <- State.runStateT (Game.run lifted Nothing Limits.standard [] (Map.fromList [(Command.idOf 1, capture), (Command.idOf 2, capture)]) (S.seeded seed) Map.empty (Command.seated 1 decks)) Nothing
   maybe (Spec.assertFailure s ("no " <> what <> " from turn 3 on")) pure taken
   where
@@ -233,20 +233,16 @@ searched s asked seed =
   let budget = SearchBudget.MkSearchBudget {SearchBudget.samples = 2, SearchBudget.turns = 1000, SearchBudget.prompts = 40, SearchBudget.playout = Playout.Random}
    in either (Spec.assertFailure s . Text.unpack) pure =<< Except.runExceptT (State.evalStateT (Answerer.unwrap (Search.search (S.fixtureRegistry []) budget Weights.neutral Search.known) asked) (S.seeded seed))
 
--- The creatures on the battlefield another player than `pid` controls.
-opposing :: PlayerId.PlayerId -> GameState.GameState -> [ObjectId.ObjectId]
-opposing pid gs = [oid | oid <- Set.toList (GameState.battlefield gs), maybe False (/= pid) (Projection.View.controllerOf oid gs), Set.member CardType.Creature (ProjectedCharacteristics.cardTypes (Projection.project oid gs))]
-
--- The objects with each of `oids` untapped and given `n` +1/+1 counters.
-grown :: Natural.Natural -> [ObjectId.ObjectId] -> Map.Map ObjectId.ObjectId Object.Object -> Map.Map ObjectId.ObjectId Object.Object
-grown n oids objects =
-  let grow o = o {Object.tapped = TapState.Untapped, Object.counters = if n == 0 then Object.counters o else Map.insertWith (+) CounterKind.PlusOnePlusOne n (Object.counters o)}
-   in Foldable.foldl' (flip (Map.adjust grow)) objects oids
-
 -- Whether an action plays a land.
 isPlay :: Action.Action -> Bool
 isPlay action = case action of
   Action.Play {} -> True
+  _ -> False
+
+-- Whether an action casts a card with no permanent type (CR 110.4).
+notPermanent :: GameState.GameState -> Action.Action -> Bool
+notPermanent gs action = case action of
+  Action.Cast oid _ _ -> not (any Card.isPermanentType (ProjectedCharacteristics.cardTypes (Projection.project oid gs)))
   _ -> False
 
 -- Whether an action casts a spell.
