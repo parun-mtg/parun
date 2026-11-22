@@ -25,7 +25,7 @@ spec s = Spec.describe s "Parun.Web.Home" $ do
       Spec.assertEqWith s "lives" (has "<div class=\"seat-life\"><dt class=\"eyebrow\">Player 2</dt><dd>14</dd></div>" paused) True
 
     Spec.it s "leads from its tiles to a game, the builder and the replays" $ do
-      Spec.assertEqWith s "bots" (tapping "Play a bot" Home.new) (Just (Home.MkChoose Home.MkPlayBots))
+      Spec.assertEqWith s "bots" (tapping "Play a bot" Home.new) (Just (Home.MkChoose (Home.MkPlayBots Nothing)))
       Spec.assertEqWith s "friend" (tapping "Play a friend" Home.new) (Just (Home.MkChoose Home.MkPlayFriend))
       Spec.assertEqWith s "build" (tapping "Build a deck" Home.new) (Just (Home.MkChoose Home.MkBuildDeck))
       Spec.assertEqWith s "replays" (tapping "Replays" Home.new) (Just (Home.MkChoose Home.MkReplays))
@@ -34,11 +34,12 @@ spec s = Spec.describe s "Parun.Web.Home" $ do
       Spec.assertEqWith s "fresh" (has "<button class=\"tile lead\"" Home.new) True
       Spec.assertEqWith s "paused" (has "<button class=\"tile lead\"" paused) False
 
-    Spec.it s "lists the decks saved here, each to edit" $ do
+    Spec.it s "lists the decks saved here, each to open on the Decks screen or edit" $ do
       let saved = Home.new {Home.saved = [Home.MkDeck (Text.pack "saved/red-deck-wins") (Set.singleton Color.Red) (Just 60)]}
       Spec.assertEqWith s "none" (has "Your decks" Home.new) False
       Spec.assertEqWith s "named" (has "Red Deck Wins" saved && has "60 cards" saved) True
       Spec.assertEqWith s "edit" (tapping "Edit" saved) (Just (Home.MkChoose (Home.MkEditDeck (Text.pack "saved/red-deck-wins"))))
+      Spec.assertEqWith s "open" (tapping "Red Deck Wins" saved) (Just (Home.MkChoose (Home.MkBrowseDecks (Just (Text.pack "saved/red-deck-wins")))))
 
     Spec.it s "carries the Fan Content notice" $ do
       Spec.assertEq s (has "unofficial Fan Content" Home.new) True
@@ -48,14 +49,14 @@ spec s = Spec.describe s "Parun.Web.Home" $ do
 
   Spec.describe s "navigate" $ do
     Spec.it s "takes the top bar's sections where the tiles go, and Home to itself" $ do
-      Spec.assertEq s (fmap Home.navigate [minBound .. maxBound]) [Home.MkCancel, Home.MkChoose Home.MkPlayBots, Home.MkChoose Home.MkBuildDeck, Home.MkChoose Home.MkReplays]
+      Spec.assertEq s (fmap Home.navigate [minBound .. maxBound]) [Home.MkCancel, Home.MkChoose (Home.MkPlayBots Nothing), Home.MkChoose (Home.MkBrowseDecks Nothing), Home.MkChoose Home.MkReplays]
 
     Spec.it s "asks before Play concedes a paused game" $ do
-      Spec.assertEq s (Home.update (Home.navigate Bar.MkPlay) paused) (Home.MkStay paused {Home.confirming = Just Home.MkPlayBots})
+      Spec.assertEq s (Home.update (Home.navigate Bar.MkPlay) paused) (Home.MkStay paused {Home.confirming = Just (Home.MkPlayBots Nothing)})
 
   Spec.describe s "update" $ do
     Spec.it s "goes where chosen while no game is paused" $ do
-      Spec.assertEq s (Home.update (Home.MkChoose Home.MkPlayBots) Home.new) (Home.MkGo Home.MkPlayBots)
+      Spec.assertEq s (Home.update (Home.MkChoose (Home.MkPlayBots Nothing)) Home.new) (Home.MkGo (Home.MkPlayBots Nothing))
 
     Spec.it s "asks before conceding a paused game for a new one" $ do
       let asked = paused {Home.confirming = Just Home.MkPlayFriend}

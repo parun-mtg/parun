@@ -4,6 +4,7 @@ module Parun.Web.Screen where
 
 import qualified Parun.Web.Bar as Bar
 import qualified Parun.Web.Builder as Builder
+import qualified Parun.Web.Decks as Decks
 import qualified Parun.Web.Ending as Ending
 import qualified Parun.Web.Home as Home
 import qualified Parun.Web.Join as Join
@@ -19,6 +20,7 @@ data Event
   | MkReplay Web.Replay.Event
   | MkEnding Ending.Event
   | MkBuilder Builder.Event
+  | MkDecks Decks.Event
   | MkJoin Join.Event
   | MkRejoin Rejoin.Event
   | -- | A section tapped on the top bar (Parun.Web.Bar).

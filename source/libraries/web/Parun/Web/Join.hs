@@ -8,6 +8,7 @@ import qualified Data.List as List
 import qualified Data.Maybe as Maybe
 import qualified Data.Sequence as Seq
 import qualified Data.Text as Text
+import qualified Parun.Web.DeckBrowser as DeckBrowser
 import qualified Parun.Web.Element as Element
 import qualified Parun.Web.Html as Html
 import qualified Parun.Web.Link as Link
@@ -66,8 +67,8 @@ isReady screen = Maybe.fromMaybe False (List.find ((== Text.pack "You") . Link.w
 
 view :: Join -> Html.Html Event
 view screen =
-  let shown = filter (Lobby.matches (search screen)) (filter Lobby.playable (Foldable.toList (decks screen)))
-      deck name = (name, Element.button (["deck"] <> ["picked" | picked screen == Just name]) (MkPick name) [Element.el "span" ["deck-name"] [] [Element.text (Lobby.label name)]])
+  let shown = filter (DeckBrowser.matches (search screen)) (filter Lobby.playable (Foldable.toList (decks screen)))
+      deck name = (name, Element.button (["deck"] <> ["picked" | picked screen == Just name]) (MkPick name) [Element.el "span" ["deck-name"] [] [Element.text (DeckBrowser.label name)]])
       place p =
         Element.el
           "li"
@@ -116,7 +117,7 @@ view screen =
                        [ Element.el "label" ["sr-only"] [Element.attr "for" (Text.pack "deck-search")] [Element.string "Filter decks"],
                          Element.el "input" ["search"] [Element.attr "id" (Text.pack "deck-search"), Element.attr "type" (Text.pack "search"), Element.attr "placeholder" (Text.pack "Filter decks or sets"), Element.attr "autocomplete" (Text.pack "off"), Element.on "input" MkSearch] []
                        ],
-                     Element.el "p" ["choosing-for"] [] [Element.string (maybe "Choose your deck." (\name -> "Your deck: " <> Text.unpack (Lobby.label name) <> ".") (picked screen))],
+                     Element.el "p" ["choosing-for"] [] [Element.string (maybe "Choose your deck." (\name -> "Your deck: " <> Text.unpack (DeckBrowser.label name) <> ".") (picked screen))],
                      if null shown
                        then Element.el "p" ["empty"] [] [Element.string (if reading screen then "Reading the decks\x2026" else "No deck matches.")]
                        else Element.keyed "div" ["deck-list"] [] (fmap deck shown)
