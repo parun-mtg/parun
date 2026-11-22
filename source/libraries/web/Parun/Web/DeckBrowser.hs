@@ -206,9 +206,13 @@ titled = Text.unwords . fmap capital . Text.split (\c -> c == '-' || c == '_')
       Just (c, rest) -> Text.cons (Char.toUpper c) rest
       Nothing -> w
 
--- | The deck as the match-up names it: its own name and its set.
+-- | The deck as the match-up names it: its own name, and a precon's set.
 label :: Text.Text -> Text.Text
-label name = let (group, deck) = describe name in deck <> Text.pack " (" <> group <> Text.pack ")"
+label name
+  | isSaved name = deck
+  | otherwise = deck <> Text.pack " (" <> group <> Text.pack ")"
+  where
+    (group, deck) = describe name
 
 -- | Whether the deck matches what is typed, by its path or its name, any case.
 matches :: Text.Text -> Text.Text -> Bool
