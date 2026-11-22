@@ -335,8 +335,8 @@ data ProjectedCharacteristics = MkProjectedCharacteristics
     -- fold, so not copiable (CR 707.2).
     barredKeywords :: Set.Set (KeywordDesignator.KeywordDesignator Keyword.Keyword),
     -- | CR 702.1d: the keywords this object has through a lending card's
-    -- abilities and not in `keywords`. Written by the layer-6 fold, so not
-    -- copiable (CR 707.2).
+    -- abilities and not in `keywords`. Seeded from Face.lentKeywords, which is
+    -- copiable (CR 707.2), and added to by the layer-6 fold, which is not.
     lentKeywords :: [LentKeyword.LentKeyword],
     -- | CR 612.6 layer 3: did a full-text effect replace this object's text? When
     -- it did, the four lists no layer otherwise writes (staticAbilities,

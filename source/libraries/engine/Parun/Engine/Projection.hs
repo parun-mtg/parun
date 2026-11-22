@@ -311,6 +311,11 @@ applyWordSwaps swaps pc =
       pc2 =
         pc
           { PC.keywords = keywords,
+            -- Only the copiable ones (Face.lentKeywords) are here yet: layer 6
+            -- lends the rest after this layer (CR 612.3). The scenario
+            -- artificial-evolution-rewrites-the-book-of-vile-darkness-s-vecna-s-lent-champion
+            -- proves it.
+            PC.lentKeywords = fmap (\lent -> lent {LentKeyword.keyword = Filter.rewriteKeyword pairs (LentKeyword.keyword lent)}) (PC.lentKeywords pc),
             PC.activatedAbilities = fmap (rewriteActivatedAbility pairs) (PC.activatedAbilities pc),
             PC.triggeredAbilities = fmap (rewriteTriggeredAbility pairs) (PC.triggeredAbilities pc),
             PC.delayedAbilities = fmap (rewriteTriggeredAbility pairs) (PC.delayedAbilities pc),
@@ -1199,6 +1204,10 @@ exchangeTextBoxFrom :: ProjectedCharacteristics -> ProjectedCharacteristics -> P
 exchangeTextBoxFrom from pc =
   pc
     { PC.keywords = PC.keywords from,
+      -- The copiable ones, layer 6 lending the rest later. The scenario
+      -- exchange-of-words-moves-the-book-of-vile-darkness-s-vecna-s-lent-prowess-to-a-bear
+      -- proves it.
+      PC.lentKeywords = PC.lentKeywords from,
       PC.wordChanges = PC.wordChanges from,
       PC.activatedAbilities = PC.activatedAbilities from,
       PC.triggeredAbilities = PC.triggeredAbilities from,
@@ -1319,6 +1328,8 @@ setLandSubtypeTo types s pc
       pc
         { PC.subtypes = Set.insert s (Set.filter (not . Subtype.isLandType) (PC.subtypes pc)),
           PC.keywords = Map.empty,
+          -- Unproven: no board in the pool makes Vecna a land.
+          PC.lentKeywords = [],
           PC.characteristicPT = Nothing,
           PC.definesChosenColor = False,
           PC.activatedAbilities = [],
