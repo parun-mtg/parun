@@ -1,0 +1,78 @@
+{
+  "faces": [
+    {
+      "manaCost": [
+        {
+          "type": "Generic",
+          "value": 2
+        }
+      ],
+      "name": "Environmental Sciences",
+      "oracleText": "Search your library for a basic land card, reveal it, put it into your hand, then shuffle. You gain 2 life.",
+      "spell": {
+        "modes": [
+          {
+            "clauses": [
+              {
+                "effects": [
+                  {
+                    "type": "Search",
+                    "value": {
+                      "destination": "RevealThenHand",
+                      "filter": {
+                        "type": "And",
+                        "value": [
+                          {
+                            "type": "HasSupertype",
+                            "value": "Basic"
+                          },
+                          {
+                            "type": "HasCardType",
+                            "value": "Land"
+                          }
+                        ]
+                      },
+                      "owner": {
+                        "type": "Relative",
+                        "value": "You"
+                      },
+                      "quantity": {
+                        "type": "Literal",
+                        "value": 1
+                      },
+                      "searcher": {
+                        "type": "Relative",
+                        "value": "You"
+                      }
+                    }
+                  },
+                  {
+                    "type": "GainLife",
+                    "value": {
+                      "player": {
+                        "type": "Relative",
+                        "value": "You"
+                      },
+                      "quantity": {
+                        "type": "Literal",
+                        "value": 2
+                      }
+                    }
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "typeLine": {
+        "subtypes": [
+          "Lesson"
+        ],
+        "types": [
+          "Sorcery"
+        ]
+      }
+    }
+  ]
+}
