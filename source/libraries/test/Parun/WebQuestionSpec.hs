@@ -471,6 +471,7 @@ spec s registry = Spec.describe s "WebQuestion" $ do
     Spec.assertEqWith s "no concession while watching" (conceding watched) Nothing
     Spec.assertEqWith s "the level is chosen in the turn bar" (level asked) (Just (Question.Web.MkLevel Question.Web.MkAutoPass))
     Spec.assertEqWith s "and while watching" (level watched) (Just (Question.Web.MkLevel Question.Web.MkAutoPass))
+    Spec.assertBool s (maybe False (Text.isInfixOf (Text.pack "aria-pressed=\"false\">Auto</button>") . Html.toText) (bar watched)) "not disabled while watching"
     Spec.assertBool s (maybe False (\p -> not (any (`Text.isInfixOf` Html.content p) [Text.pack "Auto-pass", Text.pack "Concede"])) prompt) "the prompt carries neither"
 
   Spec.it s "CR 117.1 the board watched says no one holds priority, not redrawn as it passes" $ do
