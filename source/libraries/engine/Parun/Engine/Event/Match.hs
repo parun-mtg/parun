@@ -545,6 +545,12 @@ crewingsOf bearer gs =
 -- list holding two Effect.OfferCast would, and the DSL admits one. So the stop
 -- is a fence resting on the rule's ordering rather than a behaviour a test
 -- proves.
+--
+-- Unprinted: a pooled atom (Filter.Shares at AnyObject's Permanents or GraveyardCards)
+-- in a spell filter that also carries an ordinal. Each earlier cast is matched
+-- against the live pools rather than its own board (CR 603.2), so
+-- Parun.FilterPositionLintSpec's castTriggerCriteria admits the atom only in a
+-- cast trigger with no ordinal.
 castOrdinal :: Filter.Context -> Filter.Type.Filter Keyword.Type.Keyword -> Maybe Zone -> PlayerId -> ObjectId -> GameState -> Maybe Natural
 castOrdinal context predicate fromZone caster spell gs =
   let counted cast =
