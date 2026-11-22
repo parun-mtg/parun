@@ -306,13 +306,15 @@ data Screen = MkScreen
     fresh :: Natural,
     -- | The blocker an attacker's tile assigns to when tapped (MkFocus).
     focus :: Maybe Natural,
-    level :: Level
+    level :: Level,
+    -- | The Oracle text of each spell on the stack (Card.written).
+    written :: Map.Map ObjectId.ObjectId [Text.Text]
   }
   deriving (Eq, Show)
 
 -- | A screen with nothing picked, read or logged.
 blank :: Screen
-blank = MkScreen Set.empty Nothing Seq.empty 0 Nothing MkStandard
+blank = MkScreen Set.empty Nothing Seq.empty 0 Nothing MkStandard Map.empty
 
 -- | The page for a request: the turn bar, the table with each tile marked
 -- for what tapping it does, and beside it the question with its answers,
@@ -402,7 +404,7 @@ table request screen passing controls marks prompt =
   let board = Request.view request
    in Element.el "main" ["game"] [] $
         foldMap (\b -> [Board.turnBar [passing] (subgameChip (Request.depth request) <> controls) b]) board
-          <> [Element.el "div" ["play-area"] [] (foldMap (\b -> [Board.view marks b]) board)]
+          <> [Element.el "div" ["play-area"] [] (foldMap (\b -> [Board.view marks (written screen) b]) board)]
           <> foldMap (Board.hand marks) board
           <> [side (Text.pack "Your decision") prompt (do b <- board; r <- reading screen; sheetFor request b marks r) (logView board (viewerOf request) screen)]
 

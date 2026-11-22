@@ -163,7 +163,7 @@ exchange lookUp page seatRef leave request = do
           Monad.forM_ (Request.view request) $ \shown -> do
             now <- IORef.readIORef seatRef
             let seen = shown {PlayerView.priority = Nothing}
-            Monad.when (watched now /= Just seen) . Monad.forM_ (Web.Question.watching (facing now) request (Web.Question.blank {Web.Question.logged = loggedFor seat now, Web.Question.fresh = freshOf seat now, Web.Question.level = level now})) $ \board -> do
+            Monad.when (watched now /= Just seen) . Monad.forM_ (Web.Question.watching (facing now) request (Web.Question.blank {Web.Question.logged = loggedFor seat now, Web.Question.fresh = freshOf seat now, Web.Question.level = level now, Web.Question.written = Web.Card.written lookUp shown})) $ \board -> do
               IORef.writeIORef seatRef now {watched = Just seen}
               Browser.display page (fmap Screen.MkQuestion board)
           pure reply
@@ -197,7 +197,7 @@ exchange lookUp page seatRef leave request = do
     asking pending picked reading focus = do
       state <- IORef.readIORef seatRef
       let asked = Question.seat (Request.question pending)
-          screen = Web.Question.MkScreen picked reading (loggedFor asked state) (freshOf asked state) focus (level state)
+          screen = Web.Question.MkScreen picked reading (loggedFor asked state) (freshOf asked state) focus (level state) (foldMap (Web.Card.written lookUp) (Request.view pending))
       Browser.display page . fmap Screen.MkQuestion $ Web.Question.view pending screen
       (event, value) <- Browser.next page
       case event of

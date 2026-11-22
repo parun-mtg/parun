@@ -505,6 +505,34 @@ status view o =
     <> [Text.pack tip | (_, tip) <- marked o]
     <> [Text.pack "Keyword abilities: " <> Text.intercalate (Text.pack ", ") (keywords o) | not (null (keywords o))]
     <> [Text.pack "Attached to " <> Wording.recipientName view r | r <- Maybe.maybeToList (ObjectView.attachedTo o)]
-    <> [Text.pack "\"" <> t <> Text.pack "\"" | t <- Maybe.maybeToList (ObjectView.ability o >>= Wording.abilityText view)]
-    <> [Text.pack "Targeting " <> Wording.listing (fmap (Wording.recipientName view) (ObjectView.targets o)) | not (null (ObjectView.targets o))]
-    <> [Text.pack "Face down; you may look at it: " <> Text.intercalate (Text.pack " // ") (fmap CardName.unwrap (Set.toList (ProjectedCharacteristics.names f))) | f <- Maybe.maybeToList (ObjectView.face o)]
+    <> quoted view o
+    <> targeting view o
+    <> faceDown o
+
+-- | A stack entry's detail, alike for a spell and an ability: what it says
+-- (a spell's text as `texts` holds it, else what its abilities say; an
+-- ability's text), then what it targets, and the card behind a face-down
+-- spell.
+stackDetail :: Map.Map ObjectId.ObjectId [Text.Text] -> PlayerView.PlayerView -> ObjectView.ObjectView -> [Text.Text]
+stackDetail texts view o =
+  ( case ObjectView.ability o of
+      Just _ -> quoted view o
+      Nothing -> Map.findWithDefault (foldMap abilityLines (ObjectView.characteristics o)) (ObjectView.object o) texts
+  )
+    <> targeting view o
+    <> faceDown o
+
+-- | The Oracle text (oracle) of each spell on the stack that the card data
+-- can say, by its object, for its stack entry (stackDetail).
+written :: (CardName.CardName -> Either e (Maybe Card.Card)) -> PlayerView.PlayerView -> Map.Map ObjectId.ObjectId [Text.Text]
+written lookUp view = Map.fromList [(ObjectView.object o, t) | o <- PlayerView.stack view, Maybe.isNothing (ObjectView.ability o), Right t <- [oracle lookUp o], not (null t)]
+
+-- | An ability's text, quoted.
+quoted :: PlayerView.PlayerView -> ObjectView.ObjectView -> [Text.Text]
+quoted view o = [Text.pack "\"" <> t <> Text.pack "\"" | t <- Maybe.maybeToList (ObjectView.ability o >>= Wording.abilityText view)]
+
+targeting :: PlayerView.PlayerView -> ObjectView.ObjectView -> [Text.Text]
+targeting view o = [Text.pack "Targeting " <> Wording.listing (fmap (Wording.recipientName view) (ObjectView.targets o)) | not (null (ObjectView.targets o))]
+
+faceDown :: ObjectView.ObjectView -> [Text.Text]
+faceDown o = [Text.pack "Face down; you may look at it: " <> Text.intercalate (Text.pack " // ") (fmap CardName.unwrap (Set.toList (ProjectedCharacteristics.names f))) | f <- Maybe.maybeToList (ObjectView.face o)]

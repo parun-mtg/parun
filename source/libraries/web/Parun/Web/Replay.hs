@@ -23,6 +23,7 @@ import qualified Parun.Types.Answer as Answer
 import qualified Parun.Types.Entry as Entry
 import qualified Parun.Types.Label as Label
 import qualified Parun.Types.Move as Move
+import qualified Parun.Types.ObjectId as ObjectId
 import qualified Parun.Types.ObjectView as ObjectView
 import qualified Parun.Types.PlayerId as PlayerId
 import qualified Parun.Types.PlayerView as PlayerView
@@ -152,7 +153,9 @@ data Frame = MkFrame
     question :: Maybe Request.Request,
     -- | Why the run stopped short of this position.
     failure :: Maybe Text.Text,
-    reading :: Maybe Card.Reading
+    reading :: Maybe Card.Reading,
+    -- | The Oracle text of each spell on the stack (Card.written).
+    written :: Map.Map ObjectId.ObjectId [Text.Text]
   }
 
 -- | The page for a frame: the table, and beside it the replay's controls.
@@ -164,7 +167,7 @@ view frame =
       logged = foldMap (Seq.fromList . snd . Log.unseen Map.empty) (board frame)
    in Element.el "main" ["game", "replay"] [] $
         foldMap (\b -> [Board.turnBar [] (Web.Question.subgameChip (depth frame) <> [Bar.settingsButton Icon.MkMenu "Menu" Nothing Nothing]) b]) (board frame)
-          <> [Element.el "div" ["play-area"] [] (foldMap (\b -> [Board.view readOnly b]) (board frame))]
+          <> [Element.el "div" ["play-area"] [] (foldMap (\b -> [Board.view readOnly (written frame) b]) (board frame))]
           <> foldMap (Board.hand readOnly) (board frame)
           <> [Web.Question.side (Text.pack "Replay") (controls frame <> stop frame asked) (sheet frame) (fmap (fmap MkTable) (Web.Question.logView (board frame) (viewer frame) Web.Question.blank {Web.Question.logged = logged}))]
 
