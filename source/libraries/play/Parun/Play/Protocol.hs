@@ -13,6 +13,7 @@ import qualified Data.List as List
 import qualified Data.List.NonEmpty as NonEmpty
 import qualified Data.Map.Strict as Map
 import qualified Data.Maybe as Maybe
+import qualified Data.Set as Set
 import qualified Data.Text as Text
 import Numeric.Natural (Natural)
 import qualified Parun.Codec.Reference as Codec.Reference
@@ -22,6 +23,7 @@ import qualified Parun.Engine.Combat as Combat
 import qualified Parun.Engine.Decide as Decide
 import qualified Parun.Engine.Driver as Driver
 import qualified Parun.Engine.PlayerView as PlayerView
+import qualified Parun.Engine.Projection.View as Projection.View
 import qualified Parun.Extra.Integer as Integer
 import qualified Parun.Extra.Natural as Natural
 import qualified Parun.JsonCodec.Codec as Codec
@@ -40,9 +42,11 @@ import qualified Parun.Types.ObjectId as ObjectId
 import qualified Parun.Types.PlayerId as PlayerId
 import qualified Parun.Types.Prompt as Prompt
 import qualified Parun.Types.Question as Question
+import qualified Parun.Types.Recipient as Recipient
 import qualified Parun.Types.Reference as Reference
 import qualified Parun.Types.Reply as R
 import qualified Parun.Types.Request as Request
+import qualified Parun.Types.Scratch as Scratch
 import qualified Text.Read as Read
 
 -- | Answers each prompt a seat answers with the reply `send` gets for its
@@ -56,9 +60,13 @@ over judge send fallback = Answerer.MkAnswerer $ \asked -> case requestFor asked
   Just request ->
     let go pending = do
           sent <- send pending
+          -- A withdrawal is on no offer, by design (withdrawalOf).
+          let offered reply
+                | Just reply == Question.withdraw (Request.question request) = decodeAnswer (Asked.prompt asked) reply
+                | otherwise = decodeAnswer (Asked.prompt asked) reply >>= onOffer (Question.offer (Request.question request)) (Asked.prompt asked)
           judged <-
             either (pure . Left) (judge asked) $
-              sent >>= decodeAnswer (Asked.prompt asked) >>= onOffer (Question.offer (Request.question request)) (Asked.prompt asked) >>= lawful named (Asked.game asked) (Asked.prompt asked)
+              sent >>= offered >>= lawful named (Asked.game asked) (Asked.prompt asked)
           either (\problem -> go pending {Request.problem = Just problem}) pure judged
         named = maybe (const (Text.pack "a creature")) Wording.named (Request.view request)
      in go request
@@ -152,8 +160,24 @@ depthOf = Natural.length . Asked.enclosing
 questionOf :: GameState.GameState -> Prompt.Prompt r -> Maybe Question.Question
 questionOf gs prompt =
   fmap
-    (\seat -> Question.MkQuestion seat (Scenario.Prompt.kindOf prompt) (PromptOffer.offerOf namer gs prompt) (Monad.mfilter (\subject -> subject /= seat && Decide.deciderFor subject gs == Decider.MkDecider seat) (Driver.subjectOf prompt)))
+    (\seat -> Question.MkQuestion seat (Scenario.Prompt.kindOf prompt) (PromptOffer.offerOf namer gs prompt) (Monad.mfilter (\subject -> subject /= seat && Decide.deciderFor subject gs == Decider.MkDecider seat) (Driver.subjectOf prompt)) (fmap (encodeAnswer prompt) (withdrawalOf gs prompt)))
     (Driver.deciderOf prompt)
+
+-- | CR 734.1: the answer that takes back the spell being cast or the ability
+-- being activated (Parun.Engine.Event.announcing), at a prompt of its own
+-- announcement where one does. For CR 601.2c's targets it is the object
+-- itself, which CR 115.5 makes an illegal target, so CR 601.2e (602.2b) rewinds
+-- the announcement whatever the slots' counts. Offered only to the announcing
+-- player's own slots: another chooser's (Parun.Types.TargetSlot's `chooser`)
+-- is not theirs to withdraw.
+withdrawalOf :: GameState.GameState -> Prompt.Prompt r -> Maybe r
+withdrawalOf gs prompt = case prompt of
+  Prompt.ChooseTargets _ chooser oid slots
+    | Maybe.isJust (Scratch.keptFaceDown (GameState.scratch gs)),
+      Projection.View.controllerOf oid gs == Just chooser,
+      Just slot <- Set.lookupMin (Map.keysSet slots) ->
+        Just (Map.singleton slot (Set.singleton (Recipient.ToObject oid)))
+  _ -> Nothing
 
 decodeAnswer :: Prompt.Prompt r -> R.Reply -> Either Text.Text r
 decodeAnswer prompt = resolve . Reply.decode (Reply.shapeOf prompt)
@@ -195,7 +219,7 @@ playOrDraw send seat seats = go Nothing
       | length seats <= 2 = (Text.pack "PlayOrDraw", [(Text.pack "Play", seat), (Text.pack "Draw", next)], Text.pack "expected Play or Draw")
       | otherwise = (Text.pack "ChooseStarter", [(Text.pack (show (PlayerId.unwrap pid)), pid) | pid <- NonEmpty.toList seats], Text.pack "expected a seat's id")
     next = nextSeat seat seats
-    question = Question.MkQuestion seat kind (R.Array (fmap (R.Text . fst) choices)) Nothing
+    question = Question.MkQuestion seat kind (R.Array (fmap (R.Text . fst) choices)) Nothing Nothing
     go problem = do
       sent <- send (Request.MkRequest Nothing question problem 0)
       case fmap (>>= chosen) sent of

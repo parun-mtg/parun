@@ -18,7 +18,7 @@ spec :: (Monad m, Monad n) => Spec.Spec m n -> n ()
 spec s = Spec.describe s "Parun.Web.Link" $ do
   Spec.describe s "encode" $ do
     Spec.it s "reads back every message as it was sent" $ do
-      let request = Request.MkRequest Nothing (Question.MkQuestion (PlayerId.MkPlayerId 1) (Text.pack "PlayOrDraw") (R.Array [R.Text (Text.pack "Play"), R.Text (Text.pack "Draw")]) Nothing) (Just (Text.pack "expected Play or Draw")) 0
+      let request = Request.MkRequest Nothing (Question.MkQuestion (PlayerId.MkPlayerId 1) (Text.pack "PlayOrDraw") (R.Array [R.Text (Text.pack "Play"), R.Text (Text.pack "Draw")]) Nothing Nothing) (Just (Text.pack "expected Play or Draw")) 0
           messages =
             [ Link.MkHello (Text.pack "saved/elves") (Text.pack "Format: constructed\n24 Forest\n36 Llanowar Elves\n"),
               Link.MkMatchup [Link.MkPlace (Text.pack "Host") (Text.pack "Elves (Decks)") (Just True), Link.MkPlace (Text.pack "You") (Text.pack "Choosing a deck") (Just False), Link.MkPlace (Text.pack "Bot 2") (Text.pack "Random deck") Nothing],
