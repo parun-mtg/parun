@@ -1,0 +1,107 @@
+# Strixhaven: School of Mages census
+
+The Strixhaven: School of Mages (STX) cards not yet in the pool, and which
+wait on a capability. Derived 2026-11-22 from MTGJSON's set list (AllPrintings
+of 2026-11-19) against `data/cards/` at db2c0bfe (census #9484, tracker
+#9483). The set list is `data/decks/sets/stx/all.txt`, which the suite reads,
+so every card of the set stays in the pool.
+
+STX has 280 cards and 296 face names, from 351 `normal` and 64 `modal_dfc`
+printings; the set list holds the 280, each modal double-faced card by
+MTGJSON's joined name. The census counted 247 faces missing, 233 cards (14 of
+them modal double-faced); it missed a 234th, Secret Rendezvous (below).
+
+| Place | Cards |
+| --- | --- |
+| Translated (census PR) | 42 |
+| Batches #9493 through #9502 | 188 (14 modal double-faced, 2 with planeswalker faces, 1 other planeswalker) |
+| Capability issues #9490 through #9492 | 3 |
+
+- Trend: the first dry run translated 42 of the 233 missing; 3 cards (3
+  issues) needed a capability.
+- No STX card's whole text is keywords. Translate skips every `modal_dfc`
+  card and stopped at the planeswalker's loyalty field, so those were
+  hand-written.
+- No pool modal double-faced card had a planeswalker face: batch 6 (#9498,
+  Mila, Crafty Companion // Lukka, Wayward Bonder) wrote the shape first, and
+  batch 8 (#9500, Rowan, Scholar of Sparks // Will, Scholar of Frost) was
+  linked as blocked by it. No other shape new to the pool spanned two
+  batches.
+- The census diffed face names, so Secret Rendezvous matched the second face
+  of Joined Researchers // Secret Rendezvous (SOS) and was not counted. The
+  finish found it (`parun deck` resolved it to Joined Researchers) and filed
+  #9608, added by #9610; the finish PR changed step 2 of
+  `docs/agents/orchestrating.md` to diff whole names, faces joined by ` // `.
+
+## Decks
+
+None is committed: decks are optional, so `data/decks/sets/stx/` holds only
+the set list, 280 names.
+
+## How it went
+
+Finished 2026-11-22.
+
+| Route | Cards | PRs |
+| --- | --- | --- |
+| Translated (census) | 42 | #9503 |
+| Batches | 182 | #9523 (19), #9522 (19), #9520 (18), #9530 (19), #9531 (18), #9536 (18), #9543 (19), #9547 (16), #9542 (19), #9560 (17) |
+| Behind a capability | 9; none from other sets | below |
+| Missed by the census | 1 | #9610 (Secret Rendezvous, #9608) |
+
+- Census trend: the first dry run translated 42 of the 233 missing; 3 needed
+  a capability. Batches overturned six more verdicts: batch 5 sent Kasmina,
+  Enigma Sage to #9529, batch 6 Multiple Choice to #9528, batch 8 Shaile,
+  Dean of Radiance // Embrose, Dean of Shadow to #9544 and Silverquill
+  Silencer to #9546, batch 10 Wandering Archaic // Explore the Vastlands to
+  #9553 and Valentin, Dean of the Vein // Lisette, Dean of the Root to #9554.
+- Capability issues, hardest first: #9491 Strict Proctor (#9562), #9553
+  Wandering Archaic (#9564), #9490 Hofri Ghostforge (#9563), #9492 Shadrix
+  Silverquill (#9577), #9554 Valentin, Dean of the Vein (#9581, card data
+  only: a reflexive delayed rider already carries the pay gate), #9529
+  Kasmina, Enigma Sage (#9588), #9546 Silverquill Silencer (#9596), #9544
+  Shaile, Dean of Radiance (#9597), #9528 Multiple Choice (#9603).
+- Filed along the way: #9545 (Chaotic Transformation, DMU, off the tracker),
+  #9580 (folding `ZoneChangeR.whenYouDo` onto riders, off the tracker), #9608
+  (Secret Rendezvous, a card the census missed, filed by the finish; #9610).
+  Promise of Loyalty (not an STX card) had its putter fixed inside #9589
+  (#9594).
+- Fix issues: #9568 Strict Proctor's watch named every entering permanent for
+  interchangeability, an over-prompt (#9570); #9569 Hofri's Spirit token's
+  copied abilities shared Hofri's linked pile, CR 607.1 (#9572); #9589
+  Promise of Loyalty's putter, a too-wide lint exemption and an impossible
+  Shadrix mode pair offered (#9594); #9600 fencing an unprinted shape,
+  sibling-mode target exclusions outside triggered abilities (#9604).
+- Audits: 5 of 9 capability PRs, plus the fixes #9572 and #9594, by
+  subagent; 2 found rules defects. Reviewed inline: #9523, #9522, #9560,
+  #9570, #9588, #9596, #9603 and #9604, clean. Skipped the census, seven
+  batches and #9581 (card data and scenarios). Each is recorded on #9483.
+  - #9563: the Spirit's copied abilities shared Hofri's linked pile, filed
+    #9569; its fix #9572 audited clean.
+  - #9577: Promise of Loyalty's caster put every vow counter (CR 608.2c),
+    with a too-wide lint exemption and an impossible mode pair offered,
+    filed #9589; its fix #9594 had no rules defect, and an unfenced unprinted
+    shape became #9600.
+  - #9562: no rules defect; an over-prompt from naming entrants, filed
+    #9568.
+  - #9564, #9597: clean.
+- Cost: 441.7M cache read, 6.21M cache write, 2004k output and 3870 turns
+  over all 25 unit PRs, 625 session-minutes in all. The finish unit's is on
+  its own PR. Wall clock ~9.7h, from the tracker's opening (2026-11-22 13:11
+  UTC) to the last unit's merge (#9610, 2026-11-22 22:55 UTC), then the
+  finish.
+- `data/legalities.json`: regenerated by the finish's `parun ingest`, from
+  MTGJSON of 2026-11-19. It gained 232 rows and lost none, all STX names.
+  #9562 had already committed Strict Proctor's row, #9610 Secret
+  Rendezvous's, and 46 other STX names, reprints, already had rows; every STX
+  name now has one. It wrote no card and stamped no `oracleText`: Silverquill
+  Silencer's, which #9596 wrote without `parun ingest`, already agreed with
+  MTGJSON.
+- Owner review:
+  - `docs/decisions.md`: no STX PR added or changed an entry.
+  - Wire-format changes: #9577 (the `ChooseModes` prompt offer gains
+    `sizes`; `ModeSelection.ChooseOptionally`; `PutCounters.putter`), #9562
+    (`AbilityTriggered.attackers` became `causers`;
+    `WatchedAbility.CausedByEntry`), #9563 (`ExileLink.tokens`,
+    `CreateCopy.linkExiled`), #9572 (`ExiledPile.ForToken`), #9597
+    (`EnteredZone.under`).

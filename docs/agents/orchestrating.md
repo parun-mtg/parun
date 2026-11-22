@@ -56,10 +56,11 @@ one that is missing or too old; a missing file is a fetch, not a blocker.
 1. **Tracker.** Open `SETNAME (SET)` with a dated plain-language summary,
    make it a sub-issue of #6476, file the census issue under it ("Templates")
    and label the census issue.
-2. **Census unit.** Diff AllPrintings' `.data[SET].cards[].name` (split ` // `
-   names into faces) against every face `name` in `data/cards/` (`jq -r
-   '.faces[].name' data/cards/*.json`), never against names a card's text
-   mentions. Put each missing card in exactly one place:
+2. **Census unit.** Diff AllPrintings' `.data[SET].cards[].name` against
+   every pool card's whole name, its faces joined by ` // ` (`jq -r
+   '[.faces[].name] | join(" // ")' data/cards/*.json`), never against face
+   names (a one-faced card matches another card's face of the same name) or
+   names a card's text mentions. Put each missing card in exactly one place:
    - added in the census PR: what `parun translate` accepts;
    - a batch issue: what the DSL expresses but translate rejects, in name
      order, about 20 a batch, each card with the mtgish node translate stops
