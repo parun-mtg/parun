@@ -340,7 +340,7 @@ pickRun :: [Natural.Natural] -> [OptionalDecision.OptionalDecision] -> ObjectId.
 pickRun rolls decisions wanted spell board =
   let answering :: Prompt.Prompt r -> State.State ([Natural.Natural], [OptionalDecision.OptionalDecision]) r
       answering p = case p of
-        Prompt.ChooseRollModifier _ _ candidates -> pure (List.genericLength (NonEmpty.takeWhile (/= Just wanted) candidates))
+        Prompt.ChooseRollModifier _ _ candidates -> pure (List.genericLength (NonEmpty.takeWhile ((/= Just wanted) . fst) candidates))
         _ -> rerollAnswer 1 p
    in snd (State.evalState (Engine.runGame answering board (S.cast S.alice spell >> Stack.resolveTop)) (rolls, decisions))
 

@@ -105,20 +105,22 @@ adjustOffers sides modifiers =
 
 -- | CR 706.2b: which of the competing modifiers `roller` applies next, each
 -- tagged with its payer and the object that states it, and the rest. Every
--- candidate must already be applicable now; Nothing when none is.
+-- candidate must already be applicable now; Nothing when none is. `dieOf`
+-- names the natural result of the one die a candidate reaches, Nothing where
+-- it reaches the roll as a whole.
 --
 -- Asked whenever two or more stand, the roller's own included (Parun.DiceSpec's
 -- "CR 706.2b the roller picks among their own modifiers").
 --
 -- FILTERED, NOT TRUSTED: an index past the end takes the first.
-pickModifier :: PlayerId -> [(PlayerId, Maybe ObjectId, a)] -> Game (Maybe ((PlayerId, Maybe ObjectId, a), [(PlayerId, Maybe ObjectId, a)]))
-pickModifier roller candidates = case candidates of
+pickModifier :: PlayerId -> (a -> Maybe Natural.Natural) -> [(PlayerId, Maybe ObjectId, a)] -> Game (Maybe ((PlayerId, Maybe ObjectId, a), [(PlayerId, Maybe ObjectId, a)]))
+pickModifier roller dieOf candidates = case candidates of
   [] -> pure Nothing
   first : rest
     | null rest -> pure (Just (first, rest))
     | otherwise -> do
         gs <- State.get
-        index <- Game.choose (Prompt.ChooseRollModifier (Decide.deciderFor roller gs) roller (fmap (\(_, stated, _) -> stated) (first NonEmpty.:| rest)))
+        index <- Game.choose (Prompt.ChooseRollModifier (Decide.deciderFor roller gs) roller (fmap (\(_, stated, reached) -> (stated, dieOf reached)) (first NonEmpty.:| rest)))
         pure $ case List.genericSplitAt index candidates of
           (before, chosen : after) -> Just (chosen, before <> after)
           _ -> Just (first, rest)

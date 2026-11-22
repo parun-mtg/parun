@@ -242,8 +242,9 @@ data Prompt r where
   AdjustDieRoll :: Decider.Decider -> PlayerId.PlayerId -> NonEmpty.NonEmpty Integer -> Natural.Natural -> Maybe (Cost.Cost Keyword.Keyword) -> Prompt (Maybe (Natural.Natural, RollAdjustment.RollAdjustment))
   -- | CR 706.2b: which of two or more competing modifiers the player who
   -- rolled applies next, an index into the candidates, each named by the object
-  -- stating it; re-asked after each one applies or is declined.
-  ChooseRollModifier :: Decider.Decider -> PlayerId.PlayerId -> NonEmpty.NonEmpty (Maybe ObjectId.ObjectId) -> Prompt Natural.Natural
+  -- stating it and the natural result of the die it reaches (Nothing: the
+  -- whole roll); re-asked after each one applies or is declined.
+  ChooseRollModifier :: Decider.Decider -> PlayerId.PlayerId -> NonEmpty.NonEmpty (Maybe ObjectId.ObjectId, Maybe Natural.Natural) -> Prompt Natural.Natural
   -- | CR 705.1: which face a flipped coin came up, asked after CallCoin (CR
   -- 705.2). RandomObject's reasons for carrying neither Decider nor PlayerId.
   FlipCoin :: Prompt CoinFace.CoinFace

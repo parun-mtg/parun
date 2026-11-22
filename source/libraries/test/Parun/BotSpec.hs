@@ -577,7 +577,7 @@ spec s registry = Spec.describe s "Bot" $ do
     Spec.assertEqWith s "die results" (drawn (Prompt.ChooseDieResult decider S.alice Nothing (3 NonEmpty.:| [5, 5]))) (Set.fromList [0, 1, 2])
     Spec.assertEqWith s "entry options" (drawn (Prompt.ChooseEntryOption decider S.alice oid [shape 3, shape 2])) (Set.fromList [0, 1])
     Spec.assertEqWith s "replacements" (drawn (Prompt.ChooseReplacement decider S.alice [entry 8, entry 9, entry 10])) (Set.fromList [0, 1, 2])
-    Spec.assertEqWith s "roll modifiers" (drawn (Prompt.ChooseRollModifier decider S.alice (Just oid NonEmpty.:| [Nothing]))) (Set.fromList [0, 1])
+    Spec.assertEqWith s "roll modifiers" (drawn (Prompt.ChooseRollModifier decider S.alice ((Just oid, Nothing) NonEmpty.:| [(Nothing, Nothing)]))) (Set.fromList [0, 1])
     Spec.assertEqWith s "opening hands" (drawn (Prompt.KeepHand decider S.alice ([oid] NonEmpty.:| [[], [oid]]))) (Set.fromList [0, 1, 2])
     Spec.assertEqWith s "sticker keepers" (drawn (Prompt.ChooseStickerKeeper decider S.alice (PrintingId.MkPrintingId 3 NonEmpty.:| [PrintingId.MkPrintingId 4]))) (Set.fromList [0, 1])
     Spec.assertEqWith s "token kinds" (drawn (Prompt.ChooseTokenKind decider S.alice oid (CardName.MkCardName (Text.pack "Cat Token") NonEmpty.:| [CardName.MkCardName (Text.pack "Dog Token")]))) (Set.fromList [0, 1])
