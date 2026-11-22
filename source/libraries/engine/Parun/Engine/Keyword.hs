@@ -2271,7 +2271,6 @@ unearth cost =
                       False
                       Nothing
                       Seq.empty
-                      Seq.empty
                   )
             }
    in ActivatedAbility.MkActivatedAbility
@@ -4459,7 +4458,6 @@ castFromGraveyardExile =
         False
         Nothing
         Seq.empty
-        Seq.empty
     )
 
 -- | The replacement effects rule 702 mints for a card in a HAND, off the keyword
@@ -4556,7 +4554,6 @@ madnessDiscardExile =
         LibraryPosition.defaultValue
         False
         Nothing
-        Seq.empty
         Seq.empty
     )
 

@@ -16,8 +16,7 @@ import qualified Parun.Types.ZoneChangePattern as ZoneChangePattern
 -- LibraryPosition.defaultValue, `optional` to False, `counters` to Nothing and
 -- `riders` to empty the same way.
 --
--- Parametric in the EFFECT for `whenYouDo` and `riders`, Parun.Types.DamageR's
--- reason.
+-- Parametric in the EFFECT for `riders`, Parun.Types.DamageR's reason.
 data ZoneChangeR effect = MkZoneChangeR
   { matching :: ZoneChangePattern.ZoneChangePattern,
     destination :: Zone.Zone,
@@ -40,10 +39,6 @@ data ZoneChangeR effect = MkZoneChangeR
     -- Daydreamer's "exile that card with a dream counter on it instead".
     -- Dropped when a later row moves the destination again.
     counters :: Maybe WithCounters.WithCounters,
-    -- | CR 603.11: the linked ability "When you do, ..." triggers each time
-    -- the redirect applies (Head of the Hunt). Empty, and elided, for a
-    -- redirect linking none.
-    whenYouDo :: Seq.Seq effect,
     -- | CR 614.1a / 614.6: what the modified event does beside the move --
     -- Kalitas, Traitor of Ghet's "instead exile that card and create a 2/2
     -- black Zombie creature token". The moved object is bound under

@@ -3653,7 +3653,7 @@ installPermissionExile caster permission spell gs = case permission of
                   ZoneChangePattern.causedBy = Nothing,
                   ZoneChangePattern.duringResolution = False
                 }
-            exile = ZoneChangeR.MkZoneChangeR leaving Zone.Exile False False LibraryPosition.defaultValue False Nothing Seq.empty Seq.empty
+            exile = ZoneChangeR.MkZoneChangeR leaving Zone.Exile False False LibraryPosition.defaultValue False Nothing Seq.empty
          in snd (replacementRow src caster Binding.castSpell spell (ReplacementEffect.ZoneChangeR exile) gs)
   _ -> gs
 

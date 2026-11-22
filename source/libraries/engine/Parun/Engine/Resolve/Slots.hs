@@ -1738,7 +1738,7 @@ replacementRowReads re = case re of
   -- The rewrite is a Zone, a LibraryPosition and Bools (Parun.Types.ZoneChangeR),
   -- plus a linked trigger's effects replacementRowEffects answers for; only
   -- the arrival counters' amounts can name a slot beside the pattern.
-  ReplacementEffect.ZoneChangeR (ZoneChangeR.MkZoneChangeR pat _ _ _ _ _ counters _ _) -> ([ZoneChangePattern.whatObject pat], foldMap (Map.elems . WithCounters.counters) counters)
+  ReplacementEffect.ZoneChangeR (ZoneChangeR.MkZoneChangeR pat _ _ _ _ _ counters _) -> ([ZoneChangePattern.whatObject pat], foldMap (Map.elems . WithCounters.counters) counters)
   ReplacementEffect.EntryR (EntryR.MkEntryR pat rewrite) -> addFilter pat (entryRewriteReads rewrite)
   ReplacementEffect.DamageR (DamageR.MkDamageR pat rewrite _) ->
     let (filters, quantities) = damageRewriteReads rewrite

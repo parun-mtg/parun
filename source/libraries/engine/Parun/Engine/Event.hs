@@ -3477,7 +3477,7 @@ dealing de = if DamageEvent.amount de == 0 then Nothing else Just (ProposedEvent
 apply :: Settle.Settle -> Set ObjectId -> Set CandidateId -> Replacement.Tally -> ReplacementCandidate -> ProposedEvent -> Game (Maybe ProposedEvent)
 apply settle batch applied batchPrevented candidate event =
   case (ReplacementCandidate.effect candidate, event) of
-    (ReplacementEffect.ZoneChangeR (ZoneChangeR.MkZoneChangeR _ toDest revealing _ toPosition optional _ whenYouDo riders), ProposedEvent.WouldChangeZone zc discarded position resolving) -> do
+    (ReplacementEffect.ZoneChangeR (ZoneChangeR.MkZoneChangeR _ toDest revealing _ toPosition optional _ riders), ProposedEvent.WouldChangeZone zc discarded position resolving) -> do
       -- CR 614.1a's "you may ... instead" (Library of Leng): the row's
       -- controller is asked as it applies, DrawRewrite.Dredge's posture below.
       -- Declining leaves the event standing, and `applyChosen` still records the
@@ -3523,12 +3523,6 @@ apply settle batch applied batchPrevented candidate event =
             gs <- State.get
             Monad.forM_ (Game.lookupObject (ZoneChange.departed zc) gs) $ \obj ->
               reveal RevealCause.Ordinary (Object.owner obj) (ZoneChange.departed zc)
-          -- CR 603.11: the redirect applying is the "you do", so its linked
-          -- ability is armed here, once per application, as the source's and
-          -- its controller's (Replacement.linkedTrigger). No controller,
-          -- no "you" to do it.
-          Foldable.for_ ((,) <$> Replacement.linkedTrigger whenYouDo <*> ReplacementCandidate.controller candidate) $ \(linked, you) ->
-            State.modify' (\g -> armDelayed DelayedKind.Ordinary linked (Projection.delayedSnapshotOf (ReplacementCandidate.source candidate) g) (ReplacementCandidate.source candidate) (Game.acquisitionOf (ReplacementCandidate.source candidate) g) Nothing you Map.empty (Just TurnWindow.AnyTurn) Nothing g)
           -- CR 614.1a / 614.6: "instead exile it and ...", the riders part of
           -- the modified event. QUEUED for DamageRewrite.RunEffects' reason
           -- below, with the moving object bound under

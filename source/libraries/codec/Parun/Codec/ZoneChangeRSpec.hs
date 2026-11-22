@@ -41,7 +41,6 @@ spec s = Spec.describe s "Parun.Codec.ZoneChangeR" $ do
             ZoneChangeR.position = LibraryPosition.defaultValue,
             ZoneChangeR.optional = False,
             ZoneChangeR.counters = Nothing,
-            ZoneChangeR.whenYouDo = Seq.empty,
             ZoneChangeR.riders = Seq.empty
           }
       )
@@ -68,7 +67,6 @@ spec s = Spec.describe s "Parun.Codec.ZoneChangeR" $ do
             ZoneChangeR.position = LibraryPosition.defaultValue,
             ZoneChangeR.optional = False,
             ZoneChangeR.counters = Nothing,
-            ZoneChangeR.whenYouDo = Seq.empty,
             ZoneChangeR.riders = Seq.empty
           }
       )
@@ -95,38 +93,10 @@ spec s = Spec.describe s "Parun.Codec.ZoneChangeR" $ do
             ZoneChangeR.position = LibraryPosition.Top,
             ZoneChangeR.optional = True,
             ZoneChangeR.counters = Nothing,
-            ZoneChangeR.whenYouDo = Seq.empty,
             ZoneChangeR.riders = Seq.empty
           }
       )
       " {\"matching\":{\"whenDestination\":\"Graveyard\",\"whoseObject\":{\"type\":\"You\"},\"whenDiscarded\":\"ByEffect\"},\"destination\":\"Library\",\"position\":\"Top\",\"optional\":true} "
-  -- CR 603.11: Head of the Hunt's linked "when you do"; the effect codec is a
-  -- parameter, so text stands in for it.
-  Spec.it s "MkZoneChangeR with a linked trigger (Head of the Hunt)" $
-    Common.assertCodec
-      s
-      (ZoneChangeR.codec Common.text)
-      ( ZoneChangeR.MkZoneChangeR
-          { ZoneChangeR.matching =
-              ZoneChangePattern.MkZoneChangePattern
-                { ZoneChangePattern.whenDestination = Just Zone.Graveyard,
-                  ZoneChangePattern.whatObject = Filter.And [],
-                  ZoneChangePattern.whoseObject = ControllerRelation.Related PlayerRelation.AnyPlayer,
-                  ZoneChangePattern.whenDiscarded = Nothing,
-                  ZoneChangePattern.causedBy = Nothing,
-                  ZoneChangePattern.duringResolution = False
-                },
-            ZoneChangeR.destination = Zone.Exile,
-            ZoneChangeR.revealing = False,
-            ZoneChangeR.shuffling = False,
-            ZoneChangeR.position = LibraryPosition.defaultValue,
-            ZoneChangeR.optional = False,
-            ZoneChangeR.counters = Nothing,
-            ZoneChangeR.whenYouDo = Seq.singleton (Text.pack "wolf"),
-            ZoneChangeR.riders = Seq.empty
-          }
-      )
-      " {\"matching\":{\"whenDestination\":\"Graveyard\"},\"destination\":\"Exile\",\"whenYouDo\":[\"wolf\"]} "
   -- CR 614.1a / 614.6: Kalitas, Traitor of Ghet's "instead exile that card and
   -- create a 2/2 black Zombie creature token".
   Spec.it s "MkZoneChangeR with a rider (Kalitas, Traitor of Ghet)" $
@@ -149,7 +119,6 @@ spec s = Spec.describe s "Parun.Codec.ZoneChangeR" $ do
             ZoneChangeR.position = LibraryPosition.defaultValue,
             ZoneChangeR.optional = False,
             ZoneChangeR.counters = Nothing,
-            ZoneChangeR.whenYouDo = Seq.empty,
             ZoneChangeR.riders = Seq.singleton (Text.pack "zombie")
           }
       )
@@ -175,7 +144,6 @@ spec s = Spec.describe s "Parun.Codec.ZoneChangeR" $ do
             ZoneChangeR.position = LibraryPosition.defaultValue,
             ZoneChangeR.optional = False,
             ZoneChangeR.counters = Just (WithCounters.one (CounterKind.Named (CounterName.UnsafeMkCounterName (Text.pack "dream"))) (Quantity.Literal 1)),
-            ZoneChangeR.whenYouDo = Seq.empty,
             ZoneChangeR.riders = Seq.empty
           }
       )

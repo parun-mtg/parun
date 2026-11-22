@@ -6700,7 +6700,6 @@ finalityOf oid gs =
               False
               Nothing
               Seq.empty
-              Seq.empty
           )
       ]
 

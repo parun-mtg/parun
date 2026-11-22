@@ -39,7 +39,6 @@ effect =
         False
         Nothing
         Seq.empty
-        Seq.empty
     )
 
 spec :: (Monad m, Monad n) => Spec.Spec m n -> n ()
