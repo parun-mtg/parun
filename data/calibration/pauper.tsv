@@ -1,0 +1,13 @@
+# Real game win rates of Pauper matchups (script/calibrate.sh, #9346): MTGO
+# Challenge rounds as Kirblinxy recorded them from replays, collected by
+# pauperdata. Columns: deck, deck against, its archetype in the source, the
+# other's, the games between them, the first's game wins, the matches. Games
+# 2 and 3 were played after sideboarding, and parun match plays every game
+# from the main deck alone: a gap the comparison carries.
+# The lists are MTGGoldfish's archetype lists of 2026-11, main decks only.
+# repository: https://github.com/fnpavel/pauperdata.git
+# commit: d2f8684ef7eb295ae5d0e71996aa405ff6a65b4e
+# from: 2025-07-01
+pauper/mono-red-madness.txt	pauper/rakdos-madness.txt	Mono Red Madness	Rakdos Madness	421	171	169
+pauper/mono-red-madness.txt	pauper/jeskai-ephemerate.txt	Mono Red Madness	Jeskai Ephemerate	181	95	74
+pauper/rakdos-madness.txt	pauper/jeskai-ephemerate.txt	Rakdos Madness	Jeskai Ephemerate	42	27	17

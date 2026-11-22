@@ -1,0 +1,35 @@
+{
+  "faces": [
+    {
+      "name": "Volatile Fjord",
+      "oracleText": "({T}: Add {U} or {R}.)\nThis land enters tapped.",
+      "replacementEffects": [
+        {
+          "effect": {
+            "type": "EntryR",
+            "value": {
+              "matching": {
+                "type": "IsSource"
+              },
+              "rewrite": {
+                "type": "Tapped"
+              }
+            }
+          }
+        }
+      ],
+      "typeLine": {
+        "subtypes": [
+          "Island",
+          "Mountain"
+        ],
+        "supertypes": [
+          "Snow"
+        ],
+        "types": [
+          "Land"
+        ]
+      }
+    }
+  ]
+}
