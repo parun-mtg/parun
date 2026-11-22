@@ -2877,6 +2877,10 @@ details.pile[open] {
   gap: 4px 10px;
 }
 
+.amount-label {
+  font-size: 14px;
+}
+
 .segmented {
   display: inline-flex;
   flex-wrap: wrap;
@@ -3011,10 +3015,15 @@ details.log[open] .closed {
 }
 
 /* On a phone the sheet is the prompt: the log is its heading alone, a
-   button at the foot opening the whole of it. */
+   button at the foot opening the whole of it. The newest entries stay as a
+   screen reader's live region, unseen. */
 .log-recent {
-  display: none;
-  overflow-y: auto;
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
   font-size: 14px;
 }
 
@@ -3200,8 +3209,13 @@ details.log .unread {
   }
 
   .log-recent {
-    display: block;
+    position: static;
+    width: auto;
+    height: auto;
     flex: 1 1 auto;
+    overflow-y: auto;
+    clip-path: none;
+    white-space: normal;
   }
 
   /* The whole log over the table, beside the column. */

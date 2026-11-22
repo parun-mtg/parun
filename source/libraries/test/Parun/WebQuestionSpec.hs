@@ -625,6 +625,12 @@ spec s registry = Spec.describe s "WebQuestion" $ do
     Spec.assertEqWith s "too few" (Question.Web.step request Set.empty Question.Web.MkSubmit Text.empty) (Question.Web.MkRefused (Text.pack "Pick 1 first."))
     Spec.assertEqWith s "picked" (Question.Web.step request (after [Question.Web.MkToggle 0 1]) Question.Web.MkSubmit Text.empty) (Question.Web.MkReplied (R.Array [R.Text (Text.pack "$2")]))
     Spec.assertEqWith s "unpicked" (after [Question.Web.MkToggle 0 1, Question.Web.MkToggle 0 1]) Set.empty
+    -- Too many is refused as such, and a range by the bound missed.
+    Spec.assertEqWith s "too many" (Question.Web.step request (after [Question.Web.MkToggle 0 0, Question.Web.MkToggle 0 1]) Question.Web.MkSubmit Text.empty) (Question.Web.MkRefused (Text.pack "Pick only 1."))
+    let ranged = asking (Text.pack "ChooseFew") (R.Object [(Text.pack "among", R.Array [R.Text (Text.pack "$1"), R.Text (Text.pack "$2"), R.Text (Text.pack "$3")]), (Text.pack "least", R.Number 1), (Text.pack "most", R.Number 2)])
+        submitted toggles = Question.Web.step ranged (picking ranged toggles) Question.Web.MkSubmit Text.empty
+    Spec.assertEqWith s "too few of a range" (submitted []) (Question.Web.MkRefused (Text.pack "Pick at least 1 first."))
+    Spec.assertEqWith s "too many of a range" (submitted (fmap (Question.Web.MkToggle 0) [0, 1, 2])) (Question.Web.MkRefused (Text.pack "Pick at most 2."))
 
   Spec.it s "CR 508.1a attackers are any of those offered, none included" $ do
     let request = asking (Text.pack "DeclareAttackers") (R.Array [R.Text (Text.pack "$1"), R.Text (Text.pack "$2")])

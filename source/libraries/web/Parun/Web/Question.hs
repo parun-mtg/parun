@@ -55,7 +55,6 @@ import qualified Parun.Web.Html as Html
 import qualified Parun.Web.Icon as Icon
 import qualified Parun.Web.Log as Log
 import qualified Parun.Web.Mana as Mana
-import qualified Text.Read as Read
 
 -- | What a tap or a typed line does to the answer under way.
 data Event
@@ -398,10 +397,10 @@ side label prompt card entries =
     ]
       <> entries
 
--- | The log, under a heading opening the whole of it (L) and saying how
--- many entries are new: the newest few entries, and in the flyout all of them, each turn under its own heading,
--- newest first, the entries since the seat last decided lit; nothing while
--- it is empty.
+-- | The log: a heading saying how many entries are new and opening the
+-- whole log over the table (L), then the newest few entries. Each turn is
+-- under its own heading, newest first, the entries since the seat last
+-- decided lit; nothing while the log is empty.
 logView :: Maybe PlayerView.PlayerView -> PlayerId.PlayerId -> Screen -> [Html.Html Event]
 logView board viewer screen =
   let entries = Seq.mapWithIndex (,) (logged screen)
@@ -559,12 +558,12 @@ step request picked event typed = case event of
   MkSubmit -> case picker request of
     Just chooser ->
       let chosen = [[reply | (i, (reply, _)) <- zip [0 ..] (options group), Set.member (g, i) picked] | (g, group) <- zip [0 ..] (groups chooser)]
-          wrong = [group | (group, picks) <- zip (groups chooser) chosen, Natural.length picks < least group || Natural.length picks > most group]
+          wrong = [(group, Natural.length picks) | (group, picks) <- zip (groups chooser) chosen, Natural.length picks < least group || Natural.length picks > most group]
        in case wrong of
             -- The heading states the question; a lone group's refusal says
-            -- only what is missing.
-            group : _
-              | [_] <- groups chooser -> MkRefused . Text.pack $ "Pick " <> bounds group <> " first."
+            -- only what is wrong with the picks.
+            (group, count) : _
+              | [_] <- groups chooser -> MkRefused (Text.pack (misPicked group count))
               | otherwise -> MkRefused $ title group <> Text.pack (": pick " <> bounds group <> ".")
             [] -> either MkRefused MkReplied $ finish chooser chosen
     Nothing -> MkPicking picked
@@ -585,6 +584,14 @@ step request picked event typed = case event of
   MkConcede -> maybe (MkRefused $ Text.pack "Concede when you have priority.") (MkReplied . R.Number) $ passIndex request
   MkSkip _ -> maybe (MkRefused $ Text.pack "There is no pass to make.") (MkReplied . R.Number) $ passIndex request
   MkAuto -> maybe (MkRefused $ Text.pack "Auto can't pay the rest of this cost. Choose a source.") MkReplied $ auto request
+
+-- | What is wrong with a group's count of picks, outside its bounds: too
+-- few ("Pick 1 first.", "Pick at least 2 first.") or too many ("Pick only
+-- 1.", "Pick at most 2.").
+misPicked :: Group -> Natural -> String
+misPicked group count
+  | count < least group = "Pick " <> (if least group == most group then "" else "at least ") <> show (least group) <> " first."
+  | otherwise = "Pick " <> (if least group == most group then "only " else "at most ") <> show (most group) <> "."
 
 bounds :: Group -> String
 bounds group
@@ -661,7 +668,7 @@ picker request = do
       let players = fmap fst totals
       pure $
         MkPicker
-          [MkGroup (if seatOf p == Just (PlayerView.viewer shown) then Text.pack "You take the life total of" else Offer.playerName p <> Text.pack " takes the life total of") [(giver, asSeat shown (seatOf giver) (Offer.playerName giver) <> Text.pack (" (" <> show life <> ")")) | (giver, life) <- totals] 1 1 True | p <- players]
+          [MkGroup (if Offer.playerOf p == Just (PlayerView.viewer shown) then Text.pack "You take the life total of" else Offer.playerName p <> Text.pack " takes the life total of") [(giver, asSeat shown (Offer.playerOf giver) (Offer.playerName giver) <> Text.pack (" (" <> show life <> ")")) | (giver, life) <- totals] 1 1 True | p <- players]
           ( \chosen ->
               let givers = concat chosen
                in if length givers == length players && all (`elem` givers) players
@@ -947,7 +954,7 @@ form request picked = case Text.unpack (Question.kind question) of
             <> [Element.el "div" ["passes"] [] [primary (MkAnswer (R.Text (Text.pack (fst yes)))) (Text.pack (snd yes)), button (MkAnswer (R.Text (Text.pack (fst no)))) (Text.pack (snd no))]]
   kind
     | Just shown <- Request.view request,
-      Just (options', name) <- Monad.mplus (fmap (\o -> (o, Offer.optionName shown)) (Protocol.field "options" offer >>= Protocol.arrayOf)) (fmap (\o -> (o, \option -> asSeat shown (seatOf option) (Offer.playerName option))) (Protocol.field "players" offer >>= Protocol.arrayOf)) ->
+      Just (options', name) <- Monad.mplus (fmap (\o -> (o, Offer.optionName shown)) (Protocol.field "options" offer >>= Protocol.arrayOf)) (fmap (\o -> (o, \option -> asSeat shown (Offer.playerOf option) (Offer.playerName option))) (Protocol.field "players" offer >>= Protocol.arrayOf)) ->
         let entries = foldMap (fmap Just) (Protocol.field "entries" offer >>= Protocol.arrayOf) <> repeat Nothing
             -- CR 309.4: a room by its place in the dungeon, topmost first.
             label option entry
@@ -1149,12 +1156,6 @@ asSeat :: PlayerView.PlayerView -> Maybe PlayerId.PlayerId -> Text.Text -> Text.
 asSeat shown who label = case who of
   Just p | p == PlayerView.viewer shown, Just rest <- Text.stripPrefix (Wording.player p) label -> Text.pack "You" <> rest
   _ -> label
-
--- | The player an offer's bare player id names (Offer.playerName's).
-seatOf :: R.Reply -> Maybe PlayerId.PlayerId
-seatOf reply = case reply of
-  R.Text x -> PlayerId.MkPlayerId <$> Read.readMaybe (Text.unpack x)
-  _ -> Nothing
 
 -- | A word of information beside a question, which answers nothing.
 nudge :: Text.Text -> Html.Html msg

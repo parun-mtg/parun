@@ -260,6 +260,9 @@ function apply(json) {
   }
   holdDock(docked);
   syncSheet();
+  // A preview the view no longer shows previews again when its card is next
+  // focused.
+  if (root.querySelector(".sheet-backdrop.peek") === null) peeking = null;
   placePeek();
   syncSettings();
   floatChanges(before);
@@ -371,10 +374,11 @@ root.addEventListener("focusin", (event) => {
   if (inspecting.matches && card && card !== peeking && !card.closest(".sheet-backdrop") && card.matches(":focus-visible")) peek(card);
 });
 
-// Whether the open card sheet is a dialog over the table, as on a phone,
-// rather than the side column's inspector.
-function modal() {
-  return openSheet() !== null && !inspecting.matches;
+// The open card sheet where it is a dialog over the table, as on a phone,
+// rather than the side column's inspector; only then does it take the
+// keys from the prompt.
+function modalSheet() {
+  return inspecting.matches ? null : openSheet();
 }
 function syncSheet() {
   const backdrop = root.querySelector(".sheet-backdrop:not(.peek)");
@@ -382,7 +386,16 @@ function syncSheet() {
   if (inspecting.matches) backdrop.removeAttribute("aria-modal");
   else backdrop.setAttribute("aria-modal", "true");
 }
-inspecting.addEventListener("change", syncSheet);
+// A preview left in the inspector would float unplaced over the table once
+// the window narrows, so narrowing withdraws it.
+inspecting.addEventListener("change", () => {
+  syncSheet();
+  if (inspecting.matches || peeking === null) return;
+  const from = peeking.isConnected ? peeking : cards()[0];
+  peeking = null;
+  const path = from ? pathOf(from) : null;
+  if (path !== null) engine.postMessage({ type: "unpeek", path, value: "" });
+});
 
 // A preview sits beside the card it previews, as a tooltip would: to its
 // right where it fits, else to its left, level with it as far as the window
@@ -459,16 +472,17 @@ function unkey() {
   }
 }
 
-// Gives the main button Enter, then numbers 1 to 9 and 0 the buttons an
-// open card sheet offers, or else the prompt's: in the order shown, but the
-// main button, any with a key of the view's and the damage rows' amounts. A prompt's numbers follow its own buttons, so the same
-// kind of prompt numbers alike; a meaning that recurs has its letter.
+// Gives the main button Enter, then numbers 1 to 9 and 0 the buttons a
+// card sheet over the table offers, or else the prompt's: in the order
+// shown, but the main button, any with a key of the view's and the damage
+// rows' amounts. A prompt's numbers follow its own buttons, so the same kind
+// of prompt numbers alike; a meaning that recurs has its letter.
 function rekey() {
   const give = (button, key) => {
     button.setAttribute("aria-keyshortcuts", key);
     button.setAttribute(given, "");
   };
-  const sheet = openSheet();
+  const sheet = modalSheet();
   const main = sheet ? null : mainButton();
   if (main && !main.hasAttribute("aria-keyshortcuts")) give(main, "Enter");
   const candidates = sheet ? sheet.querySelectorAll(".sheet-actions button") : root.querySelectorAll(".prompt button");
@@ -513,7 +527,7 @@ document.addEventListener("keydown", (event) => {
   if (event.defaultPrevented || event.metaKey || event.ctrlKey) return;
   if (!settings.hidden || shortcuts.open) return;
   const key = pressed(event);
-  const sheet = openSheet();
+  const sheet = modalSheet();
   if (key === "Escape") {
     const levels = root.querySelector("details.auto-pass[open], details.log[open]");
     if (levels) {
@@ -523,7 +537,7 @@ document.addEventListener("keydown", (event) => {
     return;
   }
   // Tab stays within an open card sheet over the table, as within any dialog.
-  if (key === "Tab" && modal()) {
+  if (key === "Tab" && sheet) {
     const stops = Array.from(sheet.querySelectorAll("button"));
     const first = stops[0];
     const last = stops[stops.length - 1];
@@ -558,7 +572,7 @@ document.addEventListener("keydown", (event) => {
     shortcuts.showModal();
     return;
   }
-  if (!modal() && key in arrows) {
+  if (sheet === null && key in arrows) {
     const next = nearest(target, ...arrows[key]);
     if (next) {
       event.preventDefault();
@@ -566,7 +580,7 @@ document.addEventListener("keydown", (event) => {
     }
     return;
   }
-  if (!modal() && key.toUpperCase() === "L") {
+  if (sheet === null && key.toUpperCase() === "L") {
     const log = root.querySelector("details.log");
     if (log) log.open = !log.open;
     return;

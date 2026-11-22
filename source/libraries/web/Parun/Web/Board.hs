@@ -238,7 +238,7 @@ seatArea marks board own s =
       empty = [Element.el "p" ["empty"] [] [Element.string "No permanents"] | null permanents, null phased, null commanded]
    in Element.el
         "section"
-        ["seat", if own then "you" else "opponent", if PlayerView.active board == pid then "active" else ""]
+        ["seat", if own then "you" else "opponent"]
         [Element.attr "aria-label" (if own then Text.pack "Your side" else name pid)]
         (if own then empty <> [field, seatHead marks board own s] else [seatHead marks board own s, field] <> empty)
 
