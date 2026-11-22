@@ -378,10 +378,12 @@ resultsView pick picked none offered browser =
       | null listed -> [Element.el "p" ["empty"] [] [Element.string "No deck matches."]]
       | otherwise ->
           [ Element.keyed "div" ["deck-grid"] [] (fmap (\name -> (name, tile pick (picked name) browser name)) listed),
-            Element.el "p" ["deck-count", "muted"] [] [Element.string (if length listed == length (shelved offered browser) then show (length listed) <> " decks" else show (length listed) <> " of " <> show (length (shelved offered browser)) <> " decks")]
+            Element.el "p" ["deck-count", "muted"] [] [Element.string (if length listed == total then inWords total else show (length listed) <> " of " <> inWords total)]
           ]
   where
     listed = shown offered browser
+    total = length (shelved offered browser)
+    inWords n = show n <> if n == 1 then " deck" else " decks"
 
 -- | A deck as a tile: its set as a badge ("Saved" for a saved one), its colours, its name, its
 -- format, whether it is legal, and its curve once read; pressed where

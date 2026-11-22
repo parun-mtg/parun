@@ -22,6 +22,14 @@ spec s = Spec.describe s "Parun.Web.DeckBrowser" $ do
       Spec.assertEqWith s "precon" (badge "POR" a) True
       Spec.assertEqWith s "saved" (badge "Saved" saved) True
 
+  Spec.describe s "resultsView" $ do
+    Spec.it s "counts one deck in the singular and more in the plural" $ do
+      let count names =
+            let offered = Seq.fromList names
+             in Html.toText (DeckBrowser.resultsView id (const False) [] offered (DeckBrowser.withDecks offered Map.empty DeckBrowser.new))
+      Spec.assertBool s (Text.isInfixOf (Text.pack ">1 deck<") (count [a])) "one"
+      Spec.assertBool s (Text.isInfixOf (Text.pack ">2 decks<") (count [a, b])) "two"
+
   Spec.describe s "names" $ do
     Spec.it s "slugs a name as lowercase words joined by dashes" $ do
       Spec.assertEqWith s "words" (DeckBrowser.slugOf (Text.pack "  My  Deck!")) (Text.pack "my-deck")
@@ -38,3 +46,6 @@ a = Text.pack "sets/por/demo-a"
 
 saved :: Text.Text
 saved = Text.pack "saved/my-deck"
+
+b :: Text.Text
+b = Text.pack "sets/por/demo-b"

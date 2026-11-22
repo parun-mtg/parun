@@ -257,7 +257,7 @@ detailView screen =
               []
               [ Element.button ["play"] (MkPlay name) [Element.string "Play"],
                 Element.button ["edit"] (MkEdit name) [Element.string "Edit"],
-                Element.button ["rename"] MkRename [Element.string "Rename"],
+                Element.button ["rename-deck"] MkRename [Element.string "Rename"],
                 Element.button ["duplicate"] (MkDuplicate name) [Element.string "Duplicate"],
                 Element.button ["export-deck"] (MkBrowse (DeckBrowser.MkExport name)) [Element.string "Export"],
                 Element.button ["danger", "delete"] (MkAskDelete name) [Element.string "Delete"]
