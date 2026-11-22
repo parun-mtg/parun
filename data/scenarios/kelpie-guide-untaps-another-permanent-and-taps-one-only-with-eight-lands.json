@@ -1,0 +1,34 @@
+{
+  "description": "CR 602.5 whole card: Kelpie Guide's tap ability is activatable only once its controller controls eight or more lands, and its other ability untaps another target permanent alice controls",
+  "note": "Alice has seven Islands and two Kelpie Guides. The tap ability is refused at seven lands; after the eighth is played the second Guide taps bob's Hill Giant, and the first untaps the second.",
+  "board": {
+    "active": "alice",
+    "step": "PrecombatMain",
+    "seats": [
+      {
+        "name": "alice",
+        "battlefield": [{ "card": "Kelpie Guide", "label": "k1", "ready": true }, { "card": "Kelpie Guide", "label": "k2", "ready": true }, { "card": "Island" }, { "card": "Island" }, { "card": "Island" }, { "card": "Island" }, { "card": "Island" }, { "card": "Island" }, { "card": "Island" }],
+        "hand": [{ "card": "Island", "label": "eighth" }],
+        "library": [{ "card": "Island" }, { "card": "Island" }, { "card": "Island" }, { "card": "Island" }]
+      },
+      {
+        "name": "bob",
+        "battlefield": [{ "card": "Hill Giant", "label": "giant" }],
+        "library": [{ "card": "Island" }, { "card": "Island" }, { "card": "Island" }, { "card": "Island" }]
+      }
+    ]
+  },
+  "timeline": [
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "refuse": { "Activate": { "object": "$k2", "ability": 1, "targets": ["$giant"] } } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "do": { "PlayLand": "$eighth" } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "do": { "Activate": { "object": "$k2", "ability": 1, "targets": ["$giant"] } } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "do": "Pass" },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "check": { "Tapped": { "object": "$giant", "tapped": true } } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "check": { "Tapped": { "object": "$k2", "tapped": true } } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "do": { "Activate": { "object": "$k1", "ability": 0, "targets": ["$k2"] } } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "do": "Pass" },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "check": { "View": { "of": "Stack", "is": [] } } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "check": { "Tapped": { "object": "$k2", "tapped": false } } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "check": { "Tapped": { "object": "$k1", "tapped": true } } }
+  ]
+}

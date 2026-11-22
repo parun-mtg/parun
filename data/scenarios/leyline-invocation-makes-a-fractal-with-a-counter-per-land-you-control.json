@@ -1,0 +1,28 @@
+{
+  "description": "CR 608.2h whole card: Leyline Invocation makes a 0/0 Fractal with a +1/+1 counter for each land alice controls as it resolves, bob's lands not counted",
+  "note": "Alice controls seven Forests, six of them tapped to cast it; bob controls three Islands. The Fractal is 7/7.",
+  "board": {
+    "active": "alice",
+    "step": "PrecombatMain",
+    "seats": [
+      {
+        "name": "alice",
+        "battlefield": [{ "card": "Forest", "label": "f1" }, { "card": "Forest", "label": "f2" }, { "card": "Forest", "label": "f3" }, { "card": "Forest", "label": "f4" }, { "card": "Forest", "label": "f5" }, { "card": "Forest", "label": "f6" }, { "card": "Forest", "label": "f7" }],
+        "hand": [{ "card": "Leyline Invocation", "label": "inv" }],
+        "library": [{ "card": "Island" }, { "card": "Island" }, { "card": "Island" }, { "card": "Island" }]
+      },
+      {
+        "name": "bob",
+        "battlefield": [{ "card": "Island" }, { "card": "Island" }, { "card": "Island" }],
+        "library": [{ "card": "Island" }, { "card": "Island" }, { "card": "Island" }, { "card": "Island" }]
+      }
+    ]
+  },
+  "timeline": [
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "do": { "Cast": { "object": "$inv", "mana": ["$f1", "$f2", "$f3", "$f4", "$f5", "$f6", null] } } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "do": "Pass" },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "check": { "View": { "of": "Stack", "is": [] } } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "check": { "Counters": { "object": "Fractal Token", "kind": { "type": "PlusOnePlusOne" }, "count": 7 } } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "check": { "PowerToughness": { "object": "Fractal Token", "power": 7, "toughness": 7 } } }
+  ]
+}

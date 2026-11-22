@@ -1,0 +1,34 @@
+{
+  "description": "CR 601.2f whole card: Killian, Ink Duelist reduces a spell alice casts that targets a creature by {2}, which cannot touch its colored mana; the same spell targeting a player or a planeswalker costs full",
+  "note": "Alice has two Mountains. Lightning Blast ({3}{R}) aimed at bob or at his Gideon Jura, a noncreature permanent, is refused on that mana; aimed at bob's Hill Giant it costs {1}{R} and kills it. Two generic in the cost, so a {1} reduction is told apart.",
+  "board": {
+    "active": "alice",
+    "step": "PrecombatMain",
+    "seats": [
+      {
+        "name": "alice",
+        "battlefield": [{ "card": "Killian, Ink Duelist", "label": "killian" }, { "card": "Mountain", "label": "m1" }, { "card": "Mountain", "label": "m2" }],
+        "hand": [{ "card": "Lightning Blast", "label": "blast" }],
+        "library": [{ "card": "Island" }, { "card": "Island" }, { "card": "Island" }, { "card": "Island" }]
+      },
+      {
+        "name": "bob",
+        "battlefield": [{ "card": "Hill Giant", "label": "giant" }, { "card": "Gideon Jura", "label": "gideon", "counters": [{ "key": { "type": "Loyalty" }, "value": 6 }] }],
+        "library": [{ "card": "Island" }, { "card": "Island" }, { "card": "Island" }, { "card": "Island" }]
+      }
+    ]
+  },
+  "timeline": [
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "refuse": { "Cast": { "object": "$blast", "targets": ["$bob"], "mana": ["$m1", "$m2"] } } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "do": { "ChooseOptional": "Exercises" } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "do": { "ChooseOptional": "Exercises" } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "refuse": { "Cast": { "object": "$blast", "targets": ["$gideon"], "mana": ["$m1", "$m2"] } } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "do": { "ChooseOptional": "Exercises" } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "do": { "ChooseOptional": "Exercises" } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "do": { "Cast": { "object": "$blast", "targets": ["$giant"], "mana": ["$m1", "$m2"] } } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "do": "Pass" },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "check": { "View": { "of": "Stack", "is": [] } } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "check": { "Count": { "player": "bob", "zone": "Graveyard", "card": "Hill Giant", "count": 1 } } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "check": { "Life": { "player": "bob", "life": 20 } } }
+  ]
+}
