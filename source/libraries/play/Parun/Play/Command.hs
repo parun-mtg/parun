@@ -226,15 +226,16 @@ play :: Protocol.Exchange IO -> PlayOptions.PlayOptions -> Search.Prior -> Regis
 play send options prior registry format decks = do
   IO.hSetBuffering IO.stdout IO.LineBuffering
   seed <- maybe Key.fresh pure (PlayOptions.seed options)
-  (outcome, recorded) <- game send (pure Nothing) (const (pure ())) options prior registry format decks seed
+  (outcome, recorded) <- game (Text.pack "parun play") send (pure Nothing) (const (pure ())) options prior registry format decks seed
   Monad.forM_ (PlayOptions.save options) (`save` recorded)
   case outcome of
     Right (result, _) -> (if PlayOptions.json options then TextIO.hPutStrLn IO.stderr else TextIO.putStrLn) (Wording.result Nothing result)
     Left reason -> TextIO.hPutStrLn IO.stderr (Text.pack "Stopped: " <> reason <> Text.pack ".")
   TextIO.hPutStrLn IO.stderr (Text.pack "Seed " <> Key.toHex seed <> Text.pack ".")
 
--- | A game among the decks, seat 1's first, under `format`, the one 'settle'
--- names (CR 100.2), from the generator keyed by `seed`: its result and final state,
+-- | A game played with `client` among the decks, seat 1's first, under
+-- `format`, the one 'settle' names (CR 100.2), from the generator keyed by
+-- `seed`, its scenario's description naming both: its result and final state,
 -- or why it stopped first (Game.run), the end of input before a seat chose
 -- who plays first among them; and the scenario it replays as, up to where it
 -- stopped. With --json, each line protocol request goes out through
@@ -242,8 +243,8 @@ play send options prior registry format decks = do
 -- play` ('exchange'), as values in the web client. Each bot seat deals what
 -- it cannot see by `prior`, and its answer is taken from `stored` while it
 -- has one, and otherwise given to `kept` ('answerer').
-game :: Protocol.Exchange IO -> IO (Maybe R.Reply) -> (R.Reply -> IO ()) -> PlayOptions.PlayOptions -> Search.Prior -> Registry.Registry Identity.Identity -> Maybe Format.Format -> NonEmpty.NonEmpty Deck.Deck -> Key.Type.Key -> IO (Either Text.Text (Result.Result, GameState.GameState), Scenario.Scenario)
-game send stored kept options prior registry format decks seed = do
+game :: Text.Text -> Protocol.Exchange IO -> IO (Maybe R.Reply) -> (R.Reply -> IO ()) -> PlayOptions.PlayOptions -> Search.Prior -> Registry.Registry Identity.Identity -> Maybe Format.Format -> NonEmpty.NonEmpty Deck.Deck -> Key.Type.Key -> IO (Either Text.Text (Result.Result, GameState.GameState), Scenario.Scenario)
+game client send stored kept options prior registry format decks seed = do
   let reference :: Registry.Registry IO
       reference = Registry.hoist (pure . Identity.runIdentity) registry
   let count = Natural.length decks
@@ -251,7 +252,7 @@ game send stored kept options prior registry format decks seed = do
       ask chooser among = fmap (fmap ((+ 1) . PlayerId.unwrap)) (Protocol.playOrDraw send (idOf chooser) (fmap idOf among))
   (starter, generator) <- State.runStateT (Game.starter (TextIO.hPutStrLn IO.stderr) ask numbers options) (Generator.fromKey seed)
   let orders = Map.fromList [(idOf n, GraveyardOrder.Matters) | n <- Set.toList (PlayOptions.arrangesGraveyard options)]
-      record = saved (Registry.printings registry) (Text.pack "Played with parun play, seed " <> Key.toHex seed <> Text.pack ".") format orders
+      record = saved (Registry.printings registry) (Text.pack "Played with " <> client <> Text.pack ", seed " <> Key.toHex seed <> Text.pack ".") format orders
   case starter of
     -- No seat chose who plays first: the game never began.
     Nothing -> pure (Left (Text.pack "end of input"), record (seated 1 decks) Seq.empty)

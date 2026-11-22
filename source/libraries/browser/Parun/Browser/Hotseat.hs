@@ -99,7 +99,7 @@ game page registry cards table levelRef bots seats remotes seed stored kept tell
                 next = IORef.atomicModifyIORef' storedRef $ \left -> maybe ([], Nothing) (\(reply, rest) -> (rest, Just reply)) (List.uncons left)
                 -- What a seat this page plays sees as its reply is made again.
                 replayed request = Monad.when (Map.notMember (Question.seat (Request.question request)) remotes) . Monad.forM_ (Request.view request) $ IORef.modifyIORef' seatRef . witness
-            (outcome, recorded) <- Command.game (Protocol.resumed next replayed kept (Protocol.bySeat remotes here)) next kept (options bots (Natural.length seats) (Map.keysSet remotes)) pooled registry format (fmap DeckList.deck lists) seed
+            (outcome, recorded) <- Command.game (Text.pack "the web client") (Protocol.resumed next replayed kept (Protocol.bySeat remotes here)) next kept (options bots (Natural.length seats) (Map.keysSet remotes)) pooled registry format (fmap DeckList.deck lists) seed
             -- What the player saw after their last decision: the killing blow, say.
             Monad.forM_ outcome $ IORef.modifyIORef' seatRef . witness . PlayerView.Engine.viewFor player . snd
             finished <- IORef.readIORef seatRef
