@@ -1,0 +1,242 @@
+{
+  "10E": {
+    "name": "Tenth Edition",
+    "releaseDate": "2007-07-13"
+  },
+  "2ED": {
+    "name": "Unlimited Edition",
+    "releaseDate": "1993-12-01"
+  },
+  "3ED": {
+    "name": "Revised Edition",
+    "releaseDate": "1994-04-11"
+  },
+  "4ED": {
+    "name": "Fourth Edition",
+    "releaseDate": "1995-04-01"
+  },
+  "5ED": {
+    "name": "Fifth Edition",
+    "releaseDate": "1997-03-24"
+  },
+  "6ED": {
+    "name": "Classic Sixth Edition",
+    "releaseDate": "1999-04-21"
+  },
+  "7ED": {
+    "name": "Seventh Edition",
+    "releaseDate": "2001-04-11"
+  },
+  "8ED": {
+    "name": "Eighth Edition",
+    "releaseDate": "2003-07-28"
+  },
+  "9ED": {
+    "name": "Ninth Edition",
+    "releaseDate": "2005-07-29"
+  },
+  "AFR": {
+    "name": "Adventures in the Forgotten Realms",
+    "releaseDate": "2021-07-23"
+  },
+  "BIG": {
+    "name": "The Big Score",
+    "releaseDate": "2024-04-19"
+  },
+  "BLB": {
+    "name": "Bloomburrow",
+    "releaseDate": "2024-08-02"
+  },
+  "BRO": {
+    "name": "The Brothers' War",
+    "releaseDate": "2022-11-18"
+  },
+  "DFT": {
+    "name": "Aetherdrift",
+    "releaseDate": "2025-02-14"
+  },
+  "DMU": {
+    "name": "Dominaria United",
+    "releaseDate": "2022-09-09"
+  },
+  "DSK": {
+    "name": "Duskmourn: House of Horror",
+    "releaseDate": "2024-09-27"
+  },
+  "ECL": {
+    "name": "Lorwyn Eclipsed",
+    "releaseDate": "2026-01-23"
+  },
+  "EOE": {
+    "name": "Edge of Eternities",
+    "releaseDate": "2025-08-01"
+  },
+  "FDC": {
+    "name": "Foundations Commander",
+    "releaseDate": "2024-11-15"
+  },
+  "FDN": {
+    "name": "Foundations",
+    "releaseDate": "2024-11-15"
+  },
+  "FIN": {
+    "name": "Final Fantasy",
+    "releaseDate": "2025-06-13"
+  },
+  "FRA": {
+    "name": "Reality Fracture",
+    "releaseDate": "2026-10-02"
+  },
+  "FRC": {
+    "name": "Reality Fracture Commander",
+    "releaseDate": "2026-10-02"
+  },
+  "HOB": {
+    "name": "The Hobbit",
+    "releaseDate": "2026-08-14"
+  },
+  "ITP": {
+    "name": "Introductory Two-Player Set",
+    "releaseDate": "1996-12-31"
+  },
+  "LCI": {
+    "name": "The Lost Caverns of Ixalan",
+    "releaseDate": "2023-11-17"
+  },
+  "M10": {
+    "name": "Magic 2010",
+    "releaseDate": "2009-07-17"
+  },
+  "M11": {
+    "name": "Magic 2011",
+    "releaseDate": "2010-07-16"
+  },
+  "M12": {
+    "name": "Magic 2012",
+    "releaseDate": "2011-07-15"
+  },
+  "M13": {
+    "name": "Magic 2013",
+    "releaseDate": "2012-07-13"
+  },
+  "M14": {
+    "name": "Magic 2014",
+    "releaseDate": "2013-07-19"
+  },
+  "M15": {
+    "name": "Magic 2015",
+    "releaseDate": "2014-07-18"
+  },
+  "M19": {
+    "name": "Core Set 2019",
+    "releaseDate": "2018-07-13"
+  },
+  "M20": {
+    "name": "Core Set 2020",
+    "releaseDate": "2019-07-12"
+  },
+  "M21": {
+    "name": "Core Set 2021",
+    "releaseDate": "2020-07-03"
+  },
+  "MAT": {
+    "name": "March of the Machine: The Aftermath",
+    "releaseDate": "2023-05-12"
+  },
+  "MID": {
+    "name": "Innistrad: Midnight Hunt",
+    "releaseDate": "2021-09-24"
+  },
+  "MKM": {
+    "name": "Murders at Karlov Manor",
+    "releaseDate": "2024-02-09"
+  },
+  "MOM": {
+    "name": "March of the Machine",
+    "releaseDate": "2023-04-21"
+  },
+  "MSH": {
+    "name": "Marvel Super Heroes",
+    "releaseDate": "2026-06-26"
+  },
+  "NEO": {
+    "name": "Kamigawa: Neon Dynasty",
+    "releaseDate": "2022-02-18"
+  },
+  "ONE": {
+    "name": "Phyrexia: All Will Be One",
+    "releaseDate": "2023-02-10"
+  },
+  "ORI": {
+    "name": "Magic Origins",
+    "releaseDate": "2015-07-17"
+  },
+  "OTJ": {
+    "name": "Outlaws of Thunder Junction",
+    "releaseDate": "2024-04-19"
+  },
+  "P02": {
+    "name": "Portal Second Age",
+    "releaseDate": "1998-06-24"
+  },
+  "POR": {
+    "name": "Portal",
+    "releaseDate": "1997-05-01"
+  },
+  "PTK": {
+    "name": "Portal Three Kingdoms",
+    "releaseDate": "1999-05-01"
+  },
+  "S00": {
+    "name": "Starter 2000",
+    "releaseDate": "2000-04-01"
+  },
+  "S99": {
+    "name": "Starter 1999",
+    "releaseDate": "1999-07-01"
+  },
+  "SDS": {
+    "name": "Stardates",
+    "releaseDate": "2026-11-13"
+  },
+  "SNC": {
+    "name": "Streets of New Capenna",
+    "releaseDate": "2022-04-29"
+  },
+  "SOS": {
+    "name": "Secrets of Strixhaven",
+    "releaseDate": "2026-04-24"
+  },
+  "SPM": {
+    "name": "Marvel's Spider-Man",
+    "releaseDate": "2025-09-26"
+  },
+  "TDM": {
+    "name": "Tarkir: Dragonstorm",
+    "releaseDate": "2025-04-11"
+  },
+  "TLA": {
+    "name": "Avatar: The Last Airbender",
+    "releaseDate": "2025-11-21"
+  },
+  "TMT": {
+    "name": "Teenage Mutant Ninja Turtles",
+    "releaseDate": "2026-03-06"
+  },
+  "TRC": {
+    "name": "Star Trek Commander",
+    "releaseDate": "2026-11-13"
+  },
+  "TRK": {
+    "name": "Star Trek",
+    "releaseDate": "2026-11-13"
+  },
+  "VOW": {
+    "name": "Innistrad: Crimson Vow",
+    "releaseDate": "2021-11-19"
+  },
+  "WOE": {
+    "name": "Wilds of Eldraine",
+    "releaseDate": "2023-09-08"
+  }
+}

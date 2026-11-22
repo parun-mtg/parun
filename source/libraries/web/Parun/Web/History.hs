@@ -116,6 +116,11 @@ cap = 50
 adding :: Game -> [Game] -> ([Game], [Game])
 adding game games = splitAt cap (newestFirst (game : filter ((/= key game) . key) games))
 
+-- | When the player last played each deck this browser holds, by its name
+-- (deckName): when the newest game they played it in ended.
+lastPlayed :: [Game] -> Map.Map Text.Text Integer
+lastPlayed games = Map.fromListWith max [(name, ended game) | game <- games, MkSeat MkYou _ (Just name) _ <- seats game]
+
 newestFirst :: [Game] -> [Game]
 newestFirst = List.sortOn (Ord.Down . ended)
 

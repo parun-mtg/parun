@@ -1,7 +1,8 @@
 -- Covers Parun.Decks and data/decks: every shipped deck list and set list
 -- reads, a list whose header names a format is legal under it, the Portal
 -- and Starter sets' starter pairs each play the opening turns of a game that
--- replays, and two Commander lists start a Commander game.
+-- replays, two Commander lists start a Commander game, and
+-- data/decks/sets.json names and dates every set.
 module Parun.DecksSpec where
 
 import qualified Control.Exception as Exception
@@ -11,6 +12,8 @@ import qualified Data.Bifunctor as Bifunctor
 import qualified Data.Either as Either
 import qualified Data.List.NonEmpty as NonEmpty
 import qualified Data.Map.Strict as Map
+import qualified Data.Maybe as Maybe
+import qualified Data.Set as Set
 import qualified Data.Text as Text
 import qualified Parun.DeckList as DeckList
 import qualified Parun.Decks as Decks
@@ -23,6 +26,7 @@ import qualified Parun.Support as S
 import qualified Parun.Types.GameState as GameState
 import qualified Parun.Types.Player as Player
 import qualified Parun.Types.Zone as Zone
+import qualified Parun.Web.DeckBrowser as DeckBrowser
 
 spec :: (MonadIO.MonadIO n) => Spec.Spec IO n -> Registry.Registry IO -> n ()
 spec s registry = do
@@ -32,6 +36,12 @@ spec s registry = do
   Spec.describe s "Decks" $ do
     Spec.it s "the listing reaches a set's own directory" $
       Spec.assertEqWith s "sets/m15/all.txt listed" ((root <> "/sets/m15/all.txt") `elem` decks) True
+
+    -- The web client's deck browser names a precon's set from it.
+    Spec.it s "sets.json names and dates every set a directory holds decks for, and no other" $ do
+      table <- Decks.setsPath >>= Decks.loadFile
+      let held = Set.fromList (Maybe.mapMaybe (fst . DeckBrowser.describe Map.empty . Text.pack . drop (length root + 1)) decks)
+      Spec.assertEq s (fmap (Set.fromList . Map.keys) (table >>= DeckBrowser.releasesOf)) (Right held)
 
     Monad.forM_ decks $ \path -> Spec.it s (drop (length root + 1) path <> " reads") $ do
       contents <- Decks.loadFile path

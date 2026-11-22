@@ -126,7 +126,9 @@ data Loaded = MkLoaded
     deckSizes :: Map.Map Text.Text Natural,
     -- | Each deck's spells by mana value (DeckBrowser.curveOf), by name, as read
     -- so far.
-    deckCurves :: Map.Map Text.Text [Natural]
+    deckCurves :: Map.Map Text.Text [Natural],
+    -- | Each set's name and release, by its code, once the decks are read.
+    releases :: Map.Map Text.Text DeckBrowser.Release
   }
 
 -- | Where a screen leads when it ends.
@@ -169,7 +171,7 @@ start = do
   -- A summary that does not read, or a game past the cap, is forgotten.
   (games, gone) <- History.loaded <$> Browser.playedGames
   mapM_ Browser.forgetPlayed gone
-  shell <- MkShell <$> Browser.mount <*> IORef.newIORef (MkLoaded Loading.new Nothing Map.empty Map.empty Nothing Map.empty [] Nothing Nothing Nothing False Nothing Map.empty [] Nothing Map.empty Map.empty Map.empty) <*> IORef.newIORef chosen <*> pure built <*> IORef.newIORef games <*> IORef.newIORef (Lobby.difficulty Lobby.new, Lobby.persona Lobby.new)
+  shell <- MkShell <$> Browser.mount <*> IORef.newIORef (MkLoaded Loading.new Nothing Map.empty Map.empty Nothing Map.empty [] Nothing Nothing Nothing False Nothing Map.empty [] Nothing Map.empty Map.empty Map.empty Map.empty) <*> IORef.newIORef chosen <*> pure built <*> IORef.newIORef games <*> IORef.newIORef (Lobby.difficulty Lobby.new, Lobby.persona Lobby.new)
   Exception.catch (opening built >>= \next -> Browser.locate Browser.MkReplace (Route.render (routeOf next)) >> follow shell next) $ \problem ->
     Browser.display (page shell) $ message ["The page stopped on an error:", Exception.displayException (problem :: Exception.SomeException)]
 
@@ -502,6 +504,7 @@ refreshed shell shown = do
 catalogued :: Shell -> [Text.Text] -> DeckBrowser.DeckBrowser -> IO DeckBrowser.DeckBrowser
 catalogued shell wanted browsed = do
   now <- IORef.readIORef (loaded shell)
+  games <- IORef.readIORef (finished shell)
   read' <- case (cards now, deckFiles now) of
     (Just byFile, Just files) -> do
       root <- Registry.defaultRoot
@@ -516,7 +519,9 @@ catalogued shell wanted browsed = do
         DeckBrowser.illegal = illegal now,
         DeckBrowser.sizes = deckSizes now,
         DeckBrowser.curves = deckCurves now,
-        DeckBrowser.previews = Map.union (DeckBrowser.previews browsed) (Map.fromList read')
+        DeckBrowser.previews = Map.union (DeckBrowser.previews browsed) (Map.fromList read'),
+        DeckBrowser.releases = releases now,
+        DeckBrowser.played = History.lastPlayed games
       }
 
 -- | A card of a deck's list, as the lobby previews it.
@@ -1274,7 +1279,9 @@ work shell = do
       let files = Map.fromList [(name, path) | path <- paths, let name = Lobby.deckName deckRoot path, Lobby.playable name]
       texts <- traverse (fmap Encoding.decodeUtf8Lenient . ByteString.readFile) files
       let lists = Map.fromList [(code, path) | path <- paths, Just code <- [Text.stripPrefix (Text.pack "sets/") (Lobby.deckName deckRoot path) >>= Text.stripSuffix (Text.pack "/all")]]
-      IORef.modifyIORef' (loaded shell) $ \l -> l {deckFiles = Just files, formats = Map.mapMaybe DeckList.formatOf texts, titles = Map.mapMaybe DeckList.nameOf texts, unread = Map.toList files, unchecked = filter (DeckBrowser.isSaved . fst) (Map.toList files), setLists = lists}
+      sets <- DeckBrowser.releasesOf . Encoding.decodeUtf8Lenient <$> (Decks.setsPath >>= ByteString.readFile)
+      Monad.forM_ (Either.lefts [sets]) $ \problem -> Browser.logLine (Text.pack "The sets did not decode: " <> problem)
+      IORef.modifyIORef' (loaded shell) $ \l -> l {deckFiles = Just files, formats = Map.mapMaybe DeckList.formatOf texts, titles = Map.mapMaybe DeckList.nameOf texts, unread = Map.toList files, unchecked = filter (DeckBrowser.isSaved . fst) (Map.toList files), setLists = lists, releases = Either.fromRight Map.empty sets}
     readCards = do
       root <- Registry.defaultRoot
       bundles <- Registry.bundlePaths >>= traverse ByteString.readFile

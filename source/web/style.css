@@ -1460,8 +1460,9 @@ main.lobby.new-game {
   background: var(--raised);
 }
 
-/* The set menu drawn as the search box is, its arrow from the text's role. */
-#app select.set-filter {
+/* The format, order and set menus drawn as the search box is, each arrow
+   from the text's role. */
+#app select.deck-menu {
   appearance: none;
   height: 44px;
   padding: 0 2.4em 0 0.8em;
@@ -1479,12 +1480,7 @@ main.lobby.new-game {
   cursor: pointer;
 }
 
-.set-filter:disabled {
-  opacity: 0.45;
-  cursor: not-allowed;
-}
-
-/* The decks, as tiles: the set as a badge, the colours, the name, the
+/* The decks, as tiles: where each comes from as a badge, the colours, the name, the
    format, and the curve once read. */
 .deck-grid {
   display: grid;
@@ -1542,9 +1538,12 @@ main.lobby.new-game {
 }
 
 .set-badge {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
   font-size: 12px;
   font-weight: 700;
-  letter-spacing: 0.06em;
   padding: 2px 6px;
   border-radius: 6px;
   background: var(--raised);

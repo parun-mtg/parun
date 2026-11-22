@@ -16,6 +16,7 @@ data-files:
   cards/*.json
   comprehensive-rules.txt
   decks/**/*.txt
+  decks/sets.json
   formats/*.json
   legalities.json
   oracle-unrendered/*.txt

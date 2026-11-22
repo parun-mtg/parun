@@ -34,6 +34,10 @@ spec s = Spec.describe s "Parun.Web.History" $ do
       Spec.assertEqWith s "kept" kept [game]
       Spec.assertEqWith s "dropped" dropped []
 
+  Spec.describe s "lastPlayed" $ do
+    Spec.it s "dates each deck the player played by the newest game, a bot's deck not at all" $ do
+      Spec.assertEq s (History.lastPlayed [game, game {History.ended = 5}]) (Map.singleton (Text.pack "sets/m19/ajani") 1795266300000)
+
   Spec.describe s "loaded" $ do
     Spec.it s "reads the games kept newest first, forgetting a summary that does not read and any past the cap" $ do
       let kept = [(Text.pack "bad", Text.pack "{")] <> [(History.key g, History.encode g) | n <- [1 .. toInteger History.cap + 1], let g = game {History.ended = n}]

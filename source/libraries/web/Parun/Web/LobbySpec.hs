@@ -92,13 +92,13 @@ spec s = Spec.describe s "Parun.Web.Lobby" $ do
 
     Spec.it s "keeps a deck whose colours are still to read shown under a colour toggled on" $ do
       let unread = Lobby.browsed (\b' -> b' {DeckBrowser.palette = Map.delete c (DeckBrowser.palette b')}) (Lobby.update (Lobby.MkBrowse (DeckBrowser.MkColour Color.Red)) Text.empty coloured)
-      Spec.assertEq s (Lobby.shown unread) [a, b, c]
+      Spec.assertEq s (Lobby.shown unread) [c, a, b]
 
     Spec.it s "shows only the set chosen, and every set for none" $ do
       let m12 = Lobby.update (Lobby.MkBrowse DeckBrowser.MkSet) (Text.pack "M12") lobby
       Spec.assertEqWith s "one set" (Lobby.shown m12) [b]
-      Spec.assertEqWith s "every set" (Lobby.shown (Lobby.update (Lobby.MkBrowse DeckBrowser.MkSet) Text.empty m12)) [a, b, c, d]
-      Spec.assertEqWith s "the sets offered, by code" (DeckBrowser.setsOf (Lobby.browser lobby)) (fmap Text.pack ["FDC", "M12", "POR"])
+      Spec.assertEqWith s "every set" (Lobby.shown (Lobby.update (Lobby.MkBrowse DeckBrowser.MkSet) Text.empty m12)) [c, a, b, d]
+      Spec.assertEqWith s "the sets offered, undated, by code" (DeckBrowser.setsOf (Lobby.browser lobby)) (fmap Text.pack ["FDC", "M12", "POR"])
       Spec.assertBool s (Text.isInfixOf (Text.pack "<option value=\"M12\" selected=\"\">M12</option>") (Html.toText (Lobby.view m12))) "chosen in the menu"
 
     Spec.it s "offers each bot's seat to a player invited" $ do
