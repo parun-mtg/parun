@@ -4403,6 +4403,22 @@ body:has(main.game, #app [data-settings], #app .splash, #app main.loading) #sett
   font-weight: 600;
 }
 
+/* The question recorded at the position, shown and not answered. */
+.replay .recorded {
+  border: 1px dashed var(--control);
+  border-radius: 6px;
+  padding: 0.4em 0.55em;
+}
+
+#app .replay .recorded button:disabled {
+  cursor: default;
+}
+
+.replay .recorded-note {
+  color: var(--muted);
+  font-size: 0.85rem;
+}
+
 .replay .entry-details > summary {
   padding: 12px 0;
   line-height: 20px;

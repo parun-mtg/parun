@@ -49,14 +49,16 @@ import qualified Parun.Web.Replay as Web.Replay
 import qualified Parun.Web.Screen as Screen
 import qualified Text.Read as Read
 
--- | The scenarios' names, and the manifest's themes (or why it does not
--- decode), once the scenarios have arrived.
-listing :: IO (Either Text.Text (Map.Map Text.Text [Text.Text]), [Text.Text])
+-- | The scenarios' names, the manifest's themes (or why it does not
+-- decode), and the description of each scenario the manifest names, once
+-- the scenarios have arrived.
+listing :: IO (Either Text.Text (Map.Map Text.Text [Text.Text]), Map.Map Text.Text Text.Text, [Text.Text])
 listing = do
   root <- Load.defaultRoot
   paths <- Load.listRoot root
   themes <- Load.manifestPath >>= fmap Load.parseManifest . ByteString.readFile
-  pure (themes, fmap (nameOf root) paths)
+  described <- fmap (Map.fromList . Maybe.catMaybes) . traverse (\n -> fmap (fmap (\s -> (n, Scenario.Type.description s)) . either (const Nothing) Just) (decode n)) $ foldMap concat (either (const Nothing) (Just . Map.elems) themes)
+  pure (themes, described, fmap (nameOf root) paths)
 
 -- | A path's name beneath the root, less its extension.
 nameOf :: FilePath -> FilePath -> Text.Text
@@ -161,7 +163,7 @@ frameOf lookUp names name scenario seats count at stop seen reading =
           (shown (PlayerView.Engine.viewFor seen (Stop.state reached)))
             { Web.Replay.depth = Protocol.depthOf asked,
               Web.Replay.entry = Just (Scenario.renderWhen (Timed.when timed) <> Text.pack ": " <> Scenario.renderEntry (Timed.entry timed)),
-              Web.Replay.entryLine = Web.Replay.lineOf names timed,
+              Web.Replay.entryLine = Just (Web.Replay.lineOf names (Protocol.requestFor asked) timed),
               Web.Replay.question = Protocol.requestFor asked
             }
         Right reached@(Stop.MkEnded _) -> shown (PlayerView.Engine.viewFor seen (Stop.state reached))

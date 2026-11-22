@@ -5,7 +5,7 @@
 -- a game played on from a position ended.
 module Parun.Web.Replay where
 
-import qualified Data.Bifunctor as Bifunctor
+import qualified Control.Monad as Monad
 import qualified Data.Char as Char
 import qualified Data.List as List
 import qualified Data.Map.Strict as Map
@@ -16,6 +16,8 @@ import qualified Data.Text as Text
 import Numeric.Natural (Natural)
 import qualified Parun.Codec.Phase as Codec.Phase
 import qualified Parun.Extra.Natural as Natural
+import qualified Parun.Play.Offer as Offer
+import qualified Parun.Play.Protocol as Protocol
 import qualified Parun.Play.Wording as Wording
 import qualified Parun.Types.Answer as Answer
 import qualified Parun.Types.Entry as Entry
@@ -26,6 +28,7 @@ import qualified Parun.Types.ObjectView as ObjectView
 import qualified Parun.Types.PlayerId as PlayerId
 import qualified Parun.Types.PlayerView as PlayerView
 import qualified Parun.Types.Question as Question
+import qualified Parun.Types.Reply as Reply
 import qualified Parun.Types.Request as Request
 import qualified Parun.Types.Timed as Timed
 import qualified Parun.Types.When as When
@@ -126,7 +129,7 @@ forgot shown = case forgetting shown of
 
 -- | One position of a replay, as the page shows it.
 data Frame = MkFrame
-  { -- | The scenario's file name, less its extension.
+  { -- | The replay's title, a scenario's from its description (titled).
     name :: Text.Text,
     description :: Text.Text,
     -- | Each seat, and the name the scenario gives it.
@@ -144,7 +147,7 @@ data Frame = MkFrame
     -- | The entry the run takes next, as the scenario writes it, and its
     -- moment; Nothing at the end.
     entry :: Maybe Text.Text,
-    -- | That entry in a line (lineOf), where it answers or concedes.
+    -- | That entry in a line (lineOf).
     entryLine :: Maybe Text.Text,
     -- | The question the entry answers or is checked at, as its seat is sent it.
     question :: Maybe Request.Request,
@@ -156,25 +159,45 @@ data Frame = MkFrame
   }
 
 -- | The page for a frame: the table, and beside it the replay's controls.
+-- The table only opens sheets: the question recorded at the position is
+-- shown, not answered (stop).
 view :: Frame -> Html.Html Event
 view frame =
   let asked = question frame >>= \r -> if Question.seat (Request.question r) == viewer frame then Just r {Request.view = board frame} else Nothing
-      marks = maybe readOnly (\r -> mapMarks (Web.Question.cues r Set.empty Nothing)) asked
       logged = foldMap (Seq.fromList . snd . Log.unseen Map.empty) (board frame)
    in Element.el "main" ["game", "replay"] [] $
         foldMap (\b -> [Board.turnBar [] (Web.Question.subgameChip (depth frame) <> [Bar.settingsButton Icon.MkMenu "Menu" Nothing Nothing]) b]) (board frame)
-          <> [Element.el "div" ["play-area"] [] (foldMap (\b -> [Board.view marks (written frame) b]) (board frame))]
-          <> foldMap (Board.hand marks) (board frame)
+          <> [Element.el "div" ["play-area"] [] (foldMap (\b -> [Board.view readOnly (written frame) b]) (board frame))]
+          <> foldMap (Board.hand readOnly) (board frame)
           <> [Web.Question.side (Text.pack "Replay") (controls frame <> stop frame asked) (sheet frame) (fmap (fmap MkTable) (Web.Question.logView (board frame) (viewer frame) Web.Question.blank {Web.Question.logged = logged}))]
 
 -- | Every tile opens its sheet, and no seat may be tapped.
 readOnly :: Board.Marks Event
 readOnly = Board.MkMarks (\o -> Card.MkCue [] (MkTable (Web.Question.MkRead (ObjectView.object o))) Nothing) (const Nothing)
 
-mapMarks :: Board.Marks Web.Question.Event -> Board.Marks Event
-mapMarks marks = Board.MkMarks (fmap mapCue (Board.object marks)) (fmap (fmap mapCue) (Board.seat marks))
-  where
-    mapCue cue = cue {Card.tap = MkTable (Card.tap cue), Card.peek = fmap (Bifunctor.bimap MkTable MkTable) (Card.peek cue)}
+-- | A scenario's title, and what of its description is left beneath it:
+-- a leading rules citation ("CR 702.9b: flying blocks" as ("Flying
+-- blocks", "CR 702.9b")); with no description, its file name in words.
+titled :: Text.Text -> Text.Text -> (Text.Text, Text.Text)
+titled file said = case Text.breakOn (Text.pack ": ") said of
+  (rules, rest)
+    | Text.isPrefixOf (Text.pack "CR ") rules,
+      let after = Text.strip (Text.drop 2 rest),
+      not (Text.null after) ->
+        (capitalised after, rules)
+  _
+    | Text.null (Text.strip said) -> (worded file, Text.empty)
+    | otherwise -> (said, Text.empty)
+
+-- | A scenario's file name in words: "combat/goblin-piker-attacks" as
+-- "Goblin piker attacks".
+worded :: Text.Text -> Text.Text
+worded file =
+  let spaced' = Text.replace (Text.pack "-") (Text.pack " ") (snd (Text.breakOnEnd (Text.pack "/") file))
+   in maybe (capitalised spaced') (Text.append (Text.pack "CR ")) (Text.stripPrefix (Text.pack "cr ") spaced')
+
+capitalised :: Text.Text -> Text.Text
+capitalised t = maybe t (\(c, rest) -> Text.cons (Char.toUpper c) rest) (Text.uncons t)
 
 -- | The scenario, the scrubber and its steps, and the seats to view as,
 -- each by its name and, where the table names it otherwise, that name.
@@ -185,7 +208,7 @@ controls frame =
       -- Punctuation keys, since page.js takes L for the log.
       step label symbol key target enabled =
         Element.el "button" [] ([Element.attr "type" (Text.pack "button"), Element.attr "aria-label" (Text.pack label), Element.attr "aria-keyshortcuts" (Text.pack key), Element.on "click" (MkGo target)] <> [Element.attr "disabled" Text.empty | not enabled]) [Element.string symbol]
-   in [ Element.el "h2" ["replay-title"] [] [Element.text (name frame)],
+   in [ Element.el "h2" ["replay-title"] [] (Mana.rich (name frame)),
         Element.el "p" ["replay-description"] [] (Mana.rich (description frame)),
         Element.el
           "div"
@@ -225,19 +248,25 @@ controls frame =
           ]
       ]
 
--- | What the run does at the position: the entry it takes, the question it
--- answers there (its form, for the seat asked), or why it stopped.
+-- | What the run does at the position: the entry it takes, in a line and
+-- as written behind Details, then the question it answers there (drawn
+-- dead for the seat asked, since a replay only watches), or why it stopped.
 stop :: Frame -> Maybe Request.Request -> [Html.Html Event]
 stop frame asked =
   [Element.el "p" ["problem"] [Element.attr "role" (Text.pack "alert")] [Element.text problem] | problem <- Maybe.maybeToList (failure frame)]
     <> [Element.el "p" ["entry-line"] [] [Element.text l] | l <- Maybe.maybeToList (entryLine frame)]
-    <> [ if Maybe.isJust (entryLine frame) then Element.el "details" ["entry-details"] [] [Element.el "summary" [] [] [Element.string "Details"], raw] else raw
-       | e <- Maybe.maybeToList (entry frame),
-         let raw = Element.el "pre" ["entry"] [] [Element.text e]
+    <> [ Element.el "details" ["entry-details"] [] [Element.el "summary" [] [] [Element.string "Details"], Element.el "pre" ["entry"] [] [Element.text e]]
+       | e <- Maybe.maybeToList (entry frame)
        ]
     <> case (question frame, asked) of
-      (_, Just r) -> fmap (fmap MkTable) (Web.Question.form r Set.empty)
-      (Just r, Nothing) -> [Element.el "p" ["waiting"] [] [Element.text (Text.pack "Waiting on " <> seatName frame (Question.seat (Request.question r)) <> Text.pack ": " <> Question.kind (Request.question r) <> Text.pack ".")]]
+      (_, Just r) ->
+        [ Element.el
+            "section"
+            ["recorded"]
+            [Element.attr "inert" Text.empty, Element.attr "aria-label" (Text.pack "The question as asked")]
+            (Element.el "p" ["recorded-note"] [] [Element.string "The question as asked:"] : fmap Html.inert (Web.Question.form r Set.empty))
+        ]
+      (Just r, Nothing) -> [Element.el "p" ["waiting"] [] [Element.text (Text.pack "Waiting on " <> seatName frame (Question.seat (Request.question r)) <> Text.pack ".")]]
       (Nothing, Nothing) -> []
 
 -- | A seat's name as the table shows it to the seat viewed as: "You" for
@@ -248,23 +277,82 @@ tableName frame pid = if pid == viewer frame then Text.pack "You" else Board.nam
 seatName :: Frame -> PlayerId.PlayerId -> Text.Text
 seatName frame pid = maybe (Wording.player pid) snd (List.find ((== pid) . fst) (seats frame))
 
--- | A timeline entry in a line, each seat named as `names` names it by its
--- label, else by the label: "Turn 1 · Untap · You: shuffle". Only an answer
--- or a concession has one, the entries a played game records
--- (Parun.Play.Record.entryFor).
-lineOf :: Map.Map Text.Text Text.Text -> Timed.Timed -> Maybe Text.Text
-lineOf names timed =
+-- | A timeline entry in a line, its seat named as `names` names it by its
+-- label, else by the label, saying what the entry does as the question
+-- asked there (`asked`, Nothing for chance) words it:
+-- "Turn 2 · Declare attackers · alice declares attackers".
+lineOf :: Map.Map Text.Text Text.Text -> Maybe Request.Request -> Timed.Timed -> Text.Text
+lineOf names asked timed =
   let at = Timed.when timed
       label = Label.unwrap (When.player at)
-      what = case Timed.entry timed of
-        Entry.Do (Move.Answer answer) -> Just (spaced (Answer.prompt answer))
-        Entry.Do Move.Concede -> Just (Text.pack "concede")
-        _ -> Nothing
-   in fmap (\did -> Text.intercalate (Text.pack " \x00b7 ") [Text.pack ("Turn " <> show (When.turn at)), capitalised (spaced (Text.pack (Codec.Phase.flatName (When.phase at)))), Map.findWithDefault label label names <> Text.pack ": " <> did]) what
-  where
-    -- "ChooseAction" as "choose action".
-    spaced = Text.toLower . Text.strip . Text.concatMap (\c -> if Char.isUpper c then Text.pack [' ', c] else Text.singleton c)
-    capitalised t = maybe t (\(c, rest) -> Text.cons (Char.toUpper c) rest) (Text.uncons t)
+      seat = Map.findWithDefault label label names
+      -- The seat named "You" (History.seatNames) takes the verb as given.
+      by phrase = seat <> Text.pack " " <> (if seat == Text.pack "You" then phrase else thirdPerson phrase)
+      kind = fmap (Question.kind . Request.question) asked
+      asKind = by (maybe (Text.pack "decide") verbOf kind)
+      did = case Timed.entry timed of
+        Entry.Expect _ -> Text.pack "the scenario checks the game"
+        -- CR 734.1.
+        Entry.Refuse _ -> by (Text.pack "try a choice the game takes back")
+        Entry.Do move -> case move of
+          Move.Concede -> by (Text.pack "concede")
+          Move.Pass -> by (Text.pack "pass")
+          Move.Cast _ -> by (Text.pack "cast a spell")
+          Move.PlayLand _ -> by (Text.pack "play a land")
+          Move.Activate _ -> by (Text.pack "activate an ability")
+          Move.Answer answer -> case asked of
+            Nothing -> Text.pack "chance: " <> Wording.spaced (Answer.prompt answer)
+            Just r -> by (Maybe.fromMaybe (verbOf (Answer.prompt answer)) (actionOf r (Answer.with answer)))
+          Move.Attack _ -> asKind
+          Move.Block _ -> asKind
+          Move.AssignDamage _ -> asKind
+          Move.ChooseDefender _ -> asKind
+          Move.ChooseAttackTarget _ -> asKind
+          Move.OrderTimestamps _ -> asKind
+          Move.ChooseOptional _ -> asKind
+          Move.ChooseToPay _ -> asKind
+          Move.ChooseWordSwap _ -> asKind
+          Move.ChooseCopyTarget _ -> asKind
+          Move.ChooseTargets _ -> asKind
+          Move.OrderTriggers _ -> asKind
+          Move.Take _ -> asKind
+   in Text.intercalate (Text.pack " \x00b7 ") [Text.pack ("Turn " <> show (When.turn at)), Web.Question.capitalized (Text.pack (Codec.Phase.flatName (When.phase at))), did]
+
+-- | The action a ChooseAction answer takes, by its index into the offer:
+-- "pass", "cast Shock".
+actionOf :: Request.Request -> Reply.Reply -> Maybe Text.Text
+actionOf r reply = do
+  let q = Request.question r
+  Monad.guard (Question.kind q == Text.pack "ChooseAction")
+  i <- Protocol.naturalOf reply >>= Natural.toInt
+  option <- Protocol.arrayOf (Question.offer q) >>= Maybe.listToMaybe . drop i
+  if Web.Question.isPass option then pure (Text.pack "pass") else fmap (`Offer.actionPhrase` option) (Request.view r)
+
+-- | A question's kind as what its seat does: "ChooseTargets" as
+-- "choose targets".
+verbOf :: Text.Text -> Text.Text
+verbOf kind = case Text.unpack kind of
+  "ChooseAction" -> Text.pack "take an action"
+  "DeclareMulligan" -> Text.pack "decide whether to mulligan"
+  "MulliganAction" -> Text.pack "use a card before a mulligan"
+  "OpeningHandAction" -> Text.pack "use a card in the opening hand"
+  "OfferedCast" -> Text.pack "decide whether to cast"
+  "OfferedMiracleReveal" -> Text.pack "decide whether to reveal a miracle"
+  "OfferedExtra" -> Text.pack "decide whether to take an offer"
+  "Bottom" -> Text.pack "put cards on the bottom"
+  _ -> Wording.spaced kind
+
+-- | A phrase's leading verb in the third person: "cast Shock" as "casts Shock".
+thirdPerson :: Text.Text -> Text.Text
+thirdPerson phrase =
+  let (verb, rest) = Text.breakOn (Text.pack " ") phrase
+      ends suffix = Text.isSuffixOf (Text.pack suffix) verb
+      conjugated
+        | Text.null verb = verb
+        | any ends ["s", "sh", "ch", "x", "z"] = verb <> Text.pack "es"
+        | ends "y", not (any ends ["ay", "ey", "oy", "uy"]) = Text.dropEnd 1 verb <> Text.pack "ies"
+        | otherwise = verb <> Text.pack "s"
+   in conjugated <> rest
 
 -- | The sheet of the card being read.
 sheet :: Frame -> Maybe (Html.Html Event)
@@ -276,7 +364,7 @@ sheet frame = do
 
 -- | The replays screen: a switch between the games finished here and the
 -- scenarios, then the list shown.
-picker :: Listing -> Maybe (Map.Map Text.Text [Text.Text], [Text.Text]) -> Html.Html Event
+picker :: Listing -> Maybe (Map.Map Text.Text [Text.Text], Map.Map Text.Text Text.Text, [Text.Text]) -> Html.Html Event
 picker shown listedScenarios =
   Element.el "main" ["message", "scenarios"] [] $
     [ Element.el "h1" [] [] [Element.string "Replays"],
@@ -331,19 +419,21 @@ yourGames shown = case games shown of
           Element.el "div" ["choices"] [] [Element.button ["danger"] MkConfirmForget [Element.string confirm], Element.button [] MkCancelForget [Element.string "Cancel"]]
         ]
 
--- | The list of scenarios once fetched: a filter, then the names matching
--- it, those the manifest names first under their themes
--- (Parun.Scenario.Load.parseManifest), then every one, each a button that
--- opens it, the first `shown` of them.
-scenarioList :: Text.Text -> Maybe (Map.Map Text.Text [Text.Text], [Text.Text]) -> [Html.Html Event]
+-- | The list of scenarios once fetched: a filter, then the scenarios whose
+-- name or title holds it, those the manifest names first under their themes
+-- (Parun.Scenario.Load.parseManifest), then every one, each a button
+-- titled from its description where it was read (`described`), else from
+-- its name (titled), that opens it, the first `shown` of them.
+scenarioList :: Text.Text -> Maybe (Map.Map Text.Text [Text.Text], Map.Map Text.Text Text.Text, [Text.Text]) -> [Html.Html Event]
 scenarioList typed' listedScenarios =
-  let matches = Text.isInfixOf (Text.toLower typed') . Text.toLower
-      shown = 200 :: Int
-      links = Element.keyed "ul" ["scenario-list"] [] . fmap (\n -> (n, Element.el "li" [] [] [Element.button [] (MkOpen n) [Element.text n]]))
+  let shown = 200 :: Int
    in case listedScenarios of
         Nothing -> [Element.el "p" [] [] [Element.string "Fetching the scenarios\x2026"]]
-        Just (themes, names) ->
-          let matching = filter matches names
+        Just (themes, described, names) ->
+          let title n = fst (titled n (Map.findWithDefault Text.empty n described))
+              matches n = any (Text.isInfixOf (Text.toLower typed') . Text.toLower) [n, title n]
+              links = Element.keyed "ul" ["scenario-list"] [] . fmap (\n -> (n, Element.el "li" [] [] [Element.button [] (MkOpen n) [Element.text (title n)]]))
+              matching = filter matches names
               featured = [Element.el "section" ["theme"] [] [Element.el "h2" [] [] [Element.text theme], links named'] | (theme, named) <- Map.toList themes, let named' = filter matches named, not (null named')]
            in [Element.el "input" ["search"] [Element.attr "type" (Text.pack "search"), Element.attr "placeholder" (Text.pack "Filter scenarios"), Element.attr "autocomplete" (Text.pack "off"), Element.attr "aria-label" (Text.pack "Filter scenarios"), Element.on "input" MkSearch] []]
                 <> featured

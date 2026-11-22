@@ -2,6 +2,7 @@ module Parun.Web.ReplaySpec where
 
 import qualified Data.Map.Strict as Map
 import qualified Data.Text as Text
+import Numeric.Natural (Natural)
 import qualified Parun.Spec as Spec
 import qualified Parun.Types.Answer as Answer
 import qualified Parun.Types.BeginningStep as BeginningStep
@@ -11,7 +12,9 @@ import qualified Parun.Types.Label as Label
 import qualified Parun.Types.Move as Move
 import qualified Parun.Types.Phase as Phase
 import qualified Parun.Types.PlayerId as PlayerId
+import qualified Parun.Types.Question as Question
 import qualified Parun.Types.Reply as Reply
+import qualified Parun.Types.Request as Request
 import qualified Parun.Types.Timed as Timed
 import qualified Parun.Types.When as When
 import qualified Parun.Web.History as History
@@ -50,36 +53,69 @@ spec s = Spec.describe s "Parun.Web.Replay" $ do
       Spec.assertEqWith s "back" (tapped "All replays") (Just Replay.MkBack)
       Spec.assertBool s (not (Text.isInfixOf (Text.pack "&amp;branch") (Html.toText page))) "no branch link"
 
-    Spec.it s "says an answer in a line, the entry as written behind Details" $ do
-      let page = Html.toText . Replay.view $ frame {Replay.entry = Just (Text.pack "raw"), Replay.entryLine = Just (Text.pack "Turn 1 \x00b7 Untap \x00b7 You: shuffle")}
-      Spec.assertBool s (Text.isInfixOf (Text.pack "<p class=\"entry-line\">Turn 1 \x00b7 Untap \x00b7 You: shuffle</p><details class=\"entry-details\"><summary>Details</summary><pre class=\"entry\">raw</pre></details>") page) "line, then details"
-      Spec.assertBool s (Text.isInfixOf (Text.pack "<pre class=\"entry\">raw</pre>") (Html.toText (Replay.view frame {Replay.entry = Just (Text.pack "raw")}))) "raw alone without a line"
+    Spec.it s "says the entry in a line, the entry as written behind Details" $ do
+      let page = Html.toText . Replay.view $ frame {Replay.entry = Just (Text.pack "raw"), Replay.entryLine = Just (Text.pack "Turn 1 \x00b7 Untap \x00b7 chance: shuffle")}
+      Spec.assertBool s (Text.isInfixOf (Text.pack "<p class=\"entry-line\">Turn 1 \x00b7 Untap \x00b7 chance: shuffle</p><details class=\"entry-details\"><summary>Details</summary><pre class=\"entry\">raw</pre></details>") page) "line, then details"
+      Spec.assertBool s (Text.isInfixOf (Text.pack "<details class=\"entry-details\"><summary>Details</summary><pre class=\"entry\">raw</pre></details>") (Html.toText (Replay.view frame {Replay.entry = Just (Text.pack "raw")}))) "raw behind details without a line"
+
+    Spec.it s "names the seat asked elsewhere without the question's kind" $ do
+      let page = Html.toText (Replay.view frame {Replay.question = Just (request 1 "ChooseAction" (Reply.Array []))})
+      Spec.assertBool s (Text.isInfixOf (Text.pack ">Waiting on bob.</p>") page) "waiting"
+      Spec.assertBool s (not (Text.isInfixOf (Text.pack "ChooseAction") page)) "no kind"
+
+    Spec.it s "draws the question asked of the seat viewed as, and nothing in it answers" $ do
+      let shown = Replay.view frame {Replay.question = Just (request 0 "DeclareMulligan" (Reply.Object []))}
+          page = Html.toText shown
+          recorded = fst (Text.breakOn (Text.pack "</section>") (snd (Text.breakOn (Text.pack "<section class=\"recorded\"") page)))
+      Spec.assertBool s (Text.isInfixOf (Text.pack "Keep this hand, or mulligan?") recorded) "the question"
+      Spec.assertBool s (Text.isInfixOf (Text.pack "disabled=\"\">Keep</button>") recorded) "keep, disabled"
+      Spec.assertEqWith s "keep does nothing" (Html.labelled (Text.pack "button") (Text.pack "Keep") shown >>= \path -> Html.handler (Text.pack "click") path shown) Nothing
+      Spec.assertEqWith s "every button disabled" (Text.count (Text.pack "<button") recorded) (Text.count (Text.pack "disabled=\"\">") recorded)
+
+  Spec.describe s "titled" $ do
+    Spec.it s "titles a scenario by its description less a leading rules citation" $ do
+      Spec.assertEqWith s "cited" (Replay.titled (Text.pack "x") (Text.pack "CR 702.9b, 509.1: flying blocks")) (Text.pack "Flying blocks", Text.pack "CR 702.9b, 509.1")
+      Spec.assertEqWith s "uncited" (Replay.titled (Text.pack "x") (Text.pack "Grizzly Bears attacks: it hits")) (Text.pack "Grizzly Bears attacks: it hits", Text.empty)
+      Spec.assertEqWith s "undescribed" (Replay.titled (Text.pack "game/cr-305-2a-a-land-is-played") Text.empty) (Text.pack "CR 305 2a a land is played", Text.empty)
 
   Spec.describe s "lineOf" $ do
-    Spec.it s "names the turn, the step, the seat and what it answers" $ do
-      let at turn phase label = When.MkWhen turn phase (Label.MkLabel (Text.pack label)) 0
-          answering prompt = Entry.Do (Move.Answer (Answer.MkAnswer (Text.pack prompt) (Reply.Array []) False))
-          names = Map.fromList [(Text.pack "player1", Text.pack "You")]
-      Spec.assertEqWith s "an answer" (Replay.lineOf names (Timed.MkTimed (at 1 (Phase.Beginning BeginningStep.Untap) "player1") Nothing (answering "Shuffle"))) (Just (Text.pack "Turn 1 \x00b7 Untap \x00b7 You: shuffle"))
-      Spec.assertEqWith s "a concession, its seat unnamed" (Replay.lineOf names (Timed.MkTimed (at 3 Phase.PrecombatMain "player2") Nothing (Entry.Do Move.Concede))) (Just (Text.pack "Turn 3 \x00b7 Precombat main \x00b7 player2: concede"))
-      Spec.assertEqWith s "a multiword prompt" (Replay.lineOf Map.empty (Timed.MkTimed (at 2 (Phase.Combat CombatStep.DeclareAttackers) "player1") Nothing (answering "DeclareAttackers"))) (Just (Text.pack "Turn 2 \x00b7 Declare attackers \x00b7 player1: declare attackers"))
+    let at turn phase label = When.MkWhen turn phase (Label.MkLabel (Text.pack label)) 0
+        answering prompt with = Entry.Do (Move.Answer (Answer.MkAnswer (Text.pack prompt) with False))
+        names = Map.fromList [(Text.pack "player1", Text.pack "You"), (Text.pack "player2", Text.pack "Bot")]
+        line asked when entry = Replay.lineOf names asked (Timed.MkTimed when Nothing entry)
+    Spec.it s "names the turn, the step, the seat and what it does" $ do
+      Spec.assertEqWith s "chance" (line Nothing (at 1 (Phase.Beginning BeginningStep.Untap) "player1") (answering "Shuffle" (Reply.Array []))) (Text.pack "Turn 1 \x00b7 Untap \x00b7 chance: shuffle")
+      Spec.assertEqWith s "a concession" (line Nothing (at 3 Phase.PrecombatMain "player2") (Entry.Do Move.Concede)) (Text.pack "Turn 3 \x00b7 Precombat main \x00b7 Bot concedes")
+      Spec.assertEqWith s "a seat unnamed" (Replay.lineOf Map.empty Nothing (Timed.MkTimed (at 3 Phase.PrecombatMain "player2") Nothing (Entry.Do Move.Pass))) (Text.pack "Turn 3 \x00b7 Precombat main \x00b7 player2 passes")
+      Spec.assertEqWith s "you" (line Nothing (at 3 Phase.PrecombatMain "player1") (Entry.Do Move.Pass)) (Text.pack "Turn 3 \x00b7 Precombat main \x00b7 You pass")
+
+    Spec.it s "says an answer as the question asked there words it" $ do
+      let attacking = at 2 (Phase.Combat CombatStep.DeclareAttackers) "player2"
+      Spec.assertEqWith s "an answer" (line (Just (request 1 "DeclareAttackers" (Reply.Object []))) attacking (answering "DeclareAttackers" (Reply.Object []))) (Text.pack "Turn 2 \x00b7 Declare attackers \x00b7 Bot declares attackers")
+      Spec.assertEqWith s "a scenario's move" (line (Just (request 1 "DeclareAttackers" (Reply.Object []))) attacking (Entry.Do (Move.Attack mempty))) (Text.pack "Turn 2 \x00b7 Declare attackers \x00b7 Bot declares attackers")
+      Spec.assertEqWith s "an action, by its index" (line (Just (request 1 "ChooseAction" (Reply.Array [Reply.Object [(Text.pack "action", Reply.Text (Text.pack "Pass"))]]))) attacking (answering "ChooseAction" (Reply.Number 0))) (Text.pack "Turn 2 \x00b7 Declare attackers \x00b7 Bot passes")
 
   Spec.describe s "picker" $ do
     Spec.it s "lists the names holding what is typed, whatever its case" $ do
-      let view = Replay.picker (Replay.listing []) {Replay.typed = Text.pack "PIKER"} (Just (Map.empty, fmap Text.pack ["goblin-piker-attacks", "shock-kills", "a-piker-blocks"]))
+      let view = Replay.picker (Replay.listing []) {Replay.typed = Text.pack "PIKER"} (Just (Map.empty, Map.empty, fmap Text.pack ["goblin-piker-attacks", "shock-kills", "a-piker-blocks"]))
           page = Html.toText view
-      Spec.assertEqWith s "match" (Html.labelled (Text.pack "button") (Text.pack "goblin-piker-attacks") view >>= \path -> Html.handler (Text.pack "click") path view) (Just (Replay.MkOpen (Text.pack "goblin-piker-attacks")))
+      Spec.assertEqWith s "match" (Html.labelled (Text.pack "button") (Text.pack "Goblin piker attacks") view >>= \path -> Html.handler (Text.pack "click") path view) (Just (Replay.MkOpen (Text.pack "goblin-piker-attacks")))
       Spec.assertBool s (not (Text.isInfixOf (Text.pack "href=\"?scenario=") page)) "no link"
-      Spec.assertBool s (not (Text.isInfixOf (Text.pack "shock-kills") page)) "filtered out"
+      Spec.assertBool s (not (Text.isInfixOf (Text.pack "Shock kills") page)) "filtered out"
       Spec.assertBool s (Text.isInfixOf (Text.pack "2 of 3") page) "count"
 
     Spec.it s "lists the manifest's matching names under their themes ahead of every name" $ do
       let themes = Map.fromList [(Text.pack "Combat", fmap Text.pack ["a-piker-blocks", "shock-kills"]), (Text.pack "Burn", fmap Text.pack ["shock-kills"])]
-          page = Html.toText $ Replay.picker (Replay.listing []) {Replay.typed = Text.pack "piker"} (Just (themes, fmap Text.pack ["goblin-piker-attacks", "shock-kills", "a-piker-blocks"]))
+          page = Html.toText $ Replay.picker (Replay.listing []) {Replay.typed = Text.pack "piker"} (Just (themes, Map.empty, fmap Text.pack ["goblin-piker-attacks", "shock-kills", "a-piker-blocks"]))
           at needle = Text.length (fst (Text.breakOn (Text.pack needle) page))
       Spec.assertBool s (at ">Combat<" < at "Every scenario" && at "Every scenario" < at "goblin-piker-attacks") "the theme first"
       Spec.assertBool s (not (Text.isInfixOf (Text.pack ">Burn<") page)) "a theme with no match left out"
       Spec.assertBool s (at ">Combat<" < at ">a-piker-blocks<") "the theme's match"
+
+    Spec.it s "titles a scenario from its description where it was read, and matches the title" $ do
+      let described = Map.fromList [(Text.pack "shock-kills", Text.pack "CR 120.3: Shock deals 2 damage to a bear")]
+          view = Replay.picker (Replay.listing []) {Replay.typed = Text.pack "bear"} (Just (Map.empty, described, fmap Text.pack ["goblin-piker-attacks", "shock-kills"]))
+      Spec.assertEqWith s "titled" (Html.labelled (Text.pack "button") (Text.pack "Shock deals 2 damage to a bear") view >>= \path -> Html.handler (Text.pack "click") path view) (Just (Replay.MkOpen (Text.pack "shock-kills")))
 
     Spec.it s "says the scenarios are being fetched until they are" $ do
       Spec.assertBool s (Text.isInfixOf (Text.pack "Fetching the scenarios") (Html.toText (Replay.picker (Replay.listing []) Nothing))) "fetching"
@@ -122,6 +158,10 @@ spec s = Spec.describe s "Parun.Web.Replay" $ do
           tapped label = Html.labelled (Text.pack "button") (Text.pack label) view >>= \path -> Html.handler (Text.pack "click") path view
       Spec.assertEqWith s "back" (tapped "Back to the replay") (Just Replay.MkResumeReplay)
       Spec.assertEqWith s "again" (tapped "Play on again") (Just Replay.MkBranch)
+
+-- | A question of this seat's of this kind and offer.
+request :: Natural -> String -> Reply.Reply -> Request.Request
+request seat kind offer = Request.MkRequest Nothing (Question.MkQuestion (PlayerId.MkPlayerId seat) (Text.pack kind) offer Nothing Nothing) Nothing 0
 
 frame :: Replay.Frame
 frame =
