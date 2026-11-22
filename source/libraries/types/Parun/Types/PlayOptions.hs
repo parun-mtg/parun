@@ -7,6 +7,7 @@ import qualified Parun.Types.Key as Key
 import qualified Parun.Types.Limits as Limits
 import qualified Parun.Types.Playout as Playout
 import qualified Parun.Types.SearchBudget as SearchBudget
+import qualified Parun.Types.SearchMethod as SearchMethod
 import qualified Parun.Types.Weights as Weights
 
 -- | What `parun play` was asked for, seats numbered from one.
@@ -41,4 +42,4 @@ data PlayOptions = MkPlayOptions
 -- turn begins or after 40 prompts, a budget a browser turn stays responsive
 -- at, weighing the neutral weights, played out by the random bot.
 none :: PlayOptions
-none = MkPlayOptions {seed = Nothing, first = Nothing, bots = Set.empty, json = False, save = Nothing, arrangesGraveyard = Set.empty, format = Nothing, limits = Limits.standard, budget = SearchBudget.MkSearchBudget {SearchBudget.samples = 2, SearchBudget.turns = 0, SearchBudget.prompts = 40, SearchBudget.candidates = 0, SearchBudget.playout = Playout.Random}, weights = Weights.neutral}
+none = MkPlayOptions {seed = Nothing, first = Nothing, bots = Set.empty, json = False, save = Nothing, arrangesGraveyard = Set.empty, format = Nothing, limits = Limits.standard, budget = SearchBudget.MkSearchBudget {SearchBudget.samples = 2, SearchBudget.turns = 0, SearchBudget.prompts = 40, SearchBudget.candidates = 0, SearchBudget.playout = Playout.Random, SearchBudget.method = SearchMethod.Flat}, weights = Weights.neutral}

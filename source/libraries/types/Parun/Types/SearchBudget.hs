@@ -2,6 +2,7 @@ module Parun.Types.SearchBudget where
 
 import qualified Numeric.Natural as Natural
 import qualified Parun.Types.Playout as Playout
+import qualified Parun.Types.SearchMethod as SearchMethod
 
 -- | How hard the search bot (Parun.Play.Search) looks at a decision, and
 -- how it plays each playout out.
@@ -19,6 +20,8 @@ data SearchBudget = MkSearchBudget
     -- playout's world dealt fresh.
     candidates :: Natural.Natural,
     -- | Who answers every seat's prompts in a playout.
-    playout :: Playout.Playout
+    playout :: Playout.Playout,
+    -- | How the playouts are spent across the options.
+    method :: SearchMethod.SearchMethod
   }
   deriving (Eq, Show)
