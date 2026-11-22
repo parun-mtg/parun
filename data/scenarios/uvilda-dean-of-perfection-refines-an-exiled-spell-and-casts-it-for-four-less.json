@@ -16,8 +16,8 @@
         ],
         "hand": [
           {
-            "card": "Divination",
-            "label": "div"
+            "card": "Brilliant Plan",
+            "label": "plan"
           },
           {
             "card": "Grizzly Bears",
@@ -79,7 +79,7 @@
     "step": "PrecombatMain"
   },
   "description": "CR 602.2, 122.1, 603.4, 113.6b, 601.2f: Uvilda, Dean of Perfection exiles an instant or sorcery card from hand with three refine counters; the abilities it gains remove one each upkeep of its owner's and, when the last is removed, cast it for {4} less",
-  "note": "Grizzly Bears is not an instant or sorcery, so Divination is the one card offered. Its counters go 3, 2, 1 over alice's turns 3 and 5 and the last comes off on turn 7; {4} less leaves Divination's {2}{U} at {U}, paid by alice's one Island. Four Forests in hand: the draw steps of turns 3 and 5 and Divination's two, cast in turn 7's upkeep.",
+  "note": "Grizzly Bears is not an instant or sorcery, so Brilliant Plan is the one card offered. Its counters go 3, 2, 1 over alice's turns 3 and 5 and the last comes off on turn 7; {4} less leaves Brilliant Plan's {4}{U} at {U}, paid by alice's one Island, where {3} less would leave {1}{U} she cannot pay. Five Forests in hand: the draw steps of turns 3 and 5 and Brilliant Plan's three, cast in turn 7's upkeep.",
   "timeline": [
     {
       "do": {
@@ -109,7 +109,7 @@
     {
       "check": {
         "Count": {
-          "card": "Divination",
+          "card": "Brilliant Plan",
           "count": 1,
           "player": "alice",
           "zone": "Exile"
@@ -127,7 +127,7 @@
             "type": "Named",
             "value": "refine"
           },
-          "object": "Divination"
+          "object": "Brilliant Plan"
         }
       },
       "player": "alice",
@@ -148,7 +148,7 @@
             "type": "Named",
             "value": "refine"
           },
-          "object": "Divination"
+          "object": "Brilliant Plan"
         }
       },
       "player": "alice",
@@ -169,7 +169,7 @@
             "type": "Named",
             "value": "refine"
           },
-          "object": "Divination"
+          "object": "Brilliant Plan"
         }
       },
       "player": "alice",
@@ -214,7 +214,7 @@
       "check": {
         "View": {
           "is": [
-            "Divination"
+            "Brilliant Plan"
           ],
           "of": "Stack"
         }
@@ -243,7 +243,7 @@
     {
       "check": {
         "Count": {
-          "card": "Divination",
+          "card": "Brilliant Plan",
           "count": 1,
           "player": "alice",
           "zone": "Graveyard"
@@ -257,7 +257,7 @@
       "check": {
         "Count": {
           "card": "Forest",
-          "count": 4,
+          "count": 5,
           "player": "alice",
           "zone": "Hand"
         }
