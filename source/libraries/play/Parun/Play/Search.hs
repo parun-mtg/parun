@@ -347,8 +347,8 @@ flat registry budget weights restart pid deal choices pick = do
 -- `SearchBudget.samples` iterations for each of `viewer`'s choices, each in a
 -- world `deal` deals, descending one 'Node' tree shared by every world
 -- ('descend'), so a decision is valued over the worlds `viewer` cannot tell
--- apart rather than in each as if it could see it. Taken: the choice tried
--- most, then scoring best, one of those at random on a tie.
+-- apart rather than in each as if it could see it. Taken: the choice whose
+-- tries scored best on average, one of those at random on a tie.
 -- Parun.SearchSpec's attack into a pump spell is the proof.
 informationSet :: (Monad m) => Registry.Registry m -> SearchBudget.SearchBudget -> Weights.Weights -> Game.Type.Game Result.Result -> PlayerId.PlayerId -> GameState.GameState -> Game.Play m GameState.GameState -> NonEmpty.NonEmpty a -> (a -> Move) -> Game.Play m a
 informationSet registry budget weights restart viewer gs deal choices move = do
@@ -362,7 +362,7 @@ informationSet registry budget weights restart viewer gs deal choices move = do
       )
       (MkTree (MkNode Map.empty) Nothing)
       (replicate iterations ())
-  let tried option = maybe (0, 0) (\branch -> (visits branch, reward branch)) (Map.lookup (edgeOf viewer gs viewer (move option)) root)
+  let tried option = (\branch -> toRational (reward branch) / toRational (max 1 (visits branch))) <$> Map.lookup (edgeOf viewer gs viewer (move option)) root
       ranked = fmap (\option -> (tried option, option)) choices
       top = maximum (fmap fst ranked)
   maybe (pure (NonEmpty.head choices)) Generator.pick (NonEmpty.nonEmpty [option | (rank, option) <- NonEmpty.toList ranked, rank == top])
