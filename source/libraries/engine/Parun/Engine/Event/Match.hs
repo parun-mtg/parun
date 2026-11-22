@@ -2384,12 +2384,23 @@ armMatches bindings frozen board atEvent beforeEvent groupEvents gs bearer you c
   -- Which creatures a count or CR 508.3f's event leaves out is
   -- docs/decisions.md, "Which abilities a creature attacking causes to
   -- trigger".
+  --
+  -- CR 603.6a for WatchedAbility.CausedByEntry: the ability's firing event was
+  -- a permanent entering, whichever side of the move its condition names, and
+  -- not an event riding the entry (Engine.triggeredEvent's entrant; Strict
+  -- Proctor's ruling of 2021-04-16 on "enters with" effects). Proved by
+  -- data/scenarios's Strict Proctor scenarios.
   TriggerCondition.AbilityWatch (AbilityWatch.MkAbilityWatch watched relation) ->
     let ownAttack record = case AbilityTriggered.source record of
           TriggerSource.Sourceless -> False
           TriggerSource.OfObject srcId ->
             PlayerRelation.holds (Game.teams gs) relation you (AbilityTriggered.controller record)
-              && Set.member srcId (AbilityTriggered.attackers record)
+              && Set.member srcId (Map.findWithDefault Set.empty TriggeringMove.Attacking (AbilityTriggered.causers record))
+        -- Any controller's ability, sourceless or not: the watcher's relation
+        -- reads the controller.
+        byEntry record =
+          PlayerRelation.holds (Game.teams gs) relation you (AbilityTriggered.controller record)
+            && Map.member TriggeringMove.Entering (AbilityTriggered.causers record)
         finalChapter record = case AbilityTriggered.source record of
           -- A SOURCELESS inherent ability (CR 726.2, CR 702.179d) is never a
           -- chapter ability of a Saga, there being no Saga behind it to read lore
@@ -2404,6 +2415,7 @@ armMatches bindings frozen board atEvent beforeEvent groupEvents gs bearer you c
           (WatchedAbility.SagaFinalChapter ChapterMoment.Triggers, GameEvent.AbilityTriggered record) -> finalChapter record
           (WatchedAbility.SagaFinalChapter ChapterMoment.Resolves, GameEvent.TriggeredAbilityFinished record) -> finalChapter record
           (WatchedAbility.CausedByOwnAttack, GameEvent.AbilityTriggered record) -> ownAttack record
+          (WatchedAbility.CausedByEntry, GameEvent.AbilityTriggered record) -> byEntry record
           _ -> False
   -- CR 603.7: a Bound subject is "when you lose control of the creature" -- Ray
   -- of Command's third sentence. The slot is read out of CR 603.7c's captured environment, so the

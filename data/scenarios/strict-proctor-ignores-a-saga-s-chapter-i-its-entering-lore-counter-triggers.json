@@ -1,0 +1,98 @@
+{
+  "board": {
+    "active": "alice",
+    "seats": [
+      {
+        "battlefield": [
+          {
+            "card": "Strict Proctor",
+            "label": "proctor"
+          }
+        ],
+        "hand": [
+          {
+            "card": "History of Benalia",
+            "label": "history"
+          }
+        ],
+        "library": [
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          }
+        ],
+        "manaPool": "WWW",
+        "name": "alice"
+      },
+      {
+        "library": [
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          }
+        ],
+        "name": "bob"
+      }
+    ],
+    "step": "PrecombatMain"
+  },
+  "description": "CR 715.3a / 715.2b: History of Benalia's chapter I triggers on the lore counter it enters with, not on its entering, so Strict Proctor's ability doesn't trigger",
+  "final": [
+    {
+      "Count": {
+        "card": "Knight Token",
+        "count": 1,
+        "player": "alice",
+        "zone": "Battlefield"
+      }
+    }
+  ],
+  "note": "Strict Proctor's ruling of 2021-04-16: a permanent entering with counters is not a triggered ability; docs/decisions.md, \"An entry's own triggers are the zone change's\". The chapter ability resolves and makes its Knight.",
+  "timeline": [
+    {
+      "do": {
+        "Cast": {
+          "object": "$history"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": "Pass",
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "View": {
+          "is": [
+            "trigger of History of Benalia"
+          ],
+          "of": "Stack"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": "Pass",
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    }
+  ]
+}

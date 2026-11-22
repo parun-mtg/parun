@@ -1,0 +1,96 @@
+{
+  "faces": [
+    {
+      "keywords": [
+        {
+          "type": "Flying"
+        }
+      ],
+      "manaCost": [
+        {
+          "type": "Generic",
+          "value": 1
+        },
+        {
+          "type": "OfType",
+          "value": {
+            "type": "Colored",
+            "value": "White"
+          }
+        }
+      ],
+      "name": "Strict Proctor",
+      "oracleText": "Flying\nWhenever a permanent entering causes a triggered ability to trigger, counter that ability unless its controller pays {2}.",
+      "power": {
+        "type": "Literal",
+        "value": 1
+      },
+      "toughness": {
+        "type": "Literal",
+        "value": 3
+      },
+      "triggeredAbilities": [
+        {
+          "condition": {
+            "type": "AbilityWatch",
+            "value": {
+              "ability": {
+                "type": "CausedByEntry"
+              },
+              "controller": "AnyPlayer"
+            }
+          },
+          "modal": {
+            "modes": [
+              {
+                "clauses": [
+                  {
+                    "effects": [
+                      {
+                        "type": "Counter",
+                        "value": {
+                          "ref": {
+                            "type": "InSlot",
+                            "value": "thatAbility"
+                          }
+                        }
+                      }
+                    ],
+                    "payGate": {
+                      "branch": "IfNotPaid",
+                      "cost": {
+                        "mana": [
+                          {
+                            "type": "Generic",
+                            "value": 2
+                          }
+                        ]
+                      },
+                      "payer": {
+                        "type": "HolderOfBound",
+                        "value": {
+                          "holder": "Controller",
+                          "hop": "Itself",
+                          "slot": "thatAbility"
+                        }
+                      }
+                    }
+                  }
+                ]
+              }
+            ]
+          }
+        }
+      ],
+      "typeLine": {
+        "subtypes": [
+          "Spirit",
+          "Cleric"
+        ],
+        "types": [
+          "Creature"
+        ]
+      }
+    }
+  ]
+}

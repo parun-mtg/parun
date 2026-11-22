@@ -1,0 +1,118 @@
+{
+  "board": {
+    "active": "alice",
+    "seats": [
+      {
+        "battlefield": [
+          {
+            "card": "Strict Proctor",
+            "label": "proctor"
+          }
+        ],
+        "hand": [
+          {
+            "card": "Venerable Monk",
+            "label": "monk"
+          }
+        ],
+        "library": [
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          }
+        ],
+        "manaPool": "WWWWW",
+        "name": "alice"
+      },
+      {
+        "library": [
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          }
+        ],
+        "name": "bob"
+      }
+    ],
+    "step": "PrecombatMain"
+  },
+  "description": "CR 603.6a / 118.12a: Venerable Monk entering causes its own ability to trigger, so Strict Proctor's ability goes on top and counters it when alice declines to pay {2}",
+  "final": [
+    {
+      "Life": {
+        "life": 20,
+        "player": "alice"
+      }
+    }
+  ],
+  "note": "Proctor's trigger is placed after the Monk's (CR 603.3b) and resolves first; declined, the Monk's ability leaves the stack and alice gains no life.",
+  "timeline": [
+    {
+      "do": {
+        "Cast": {
+          "object": "$monk"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": "Pass",
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "View": {
+          "is": [
+            "trigger of $proctor",
+            "trigger of Venerable Monk"
+          ],
+          "of": "Stack"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": "Pass",
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": {
+        "ChooseToPay": {
+          "decision": "Declines"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "View": {
+          "is": [],
+          "of": "Stack"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    }
+  ]
+}

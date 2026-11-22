@@ -14082,7 +14082,7 @@ instructionRecord controller src =
                   AbilityTriggered.controller = controller,
                   AbilityTriggered.ability = ability,
                   AbilityTriggered.stackObject = Nothing,
-                  AbilityTriggered.attackers = Set.empty
+                  AbilityTriggered.causers = Map.empty
                 }
             )
         TriggerLimit.OncePerTurn SpentOn.Triggering -> Nothing

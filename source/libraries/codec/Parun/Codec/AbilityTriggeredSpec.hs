@@ -1,5 +1,6 @@
 module Parun.Codec.AbilityTriggeredSpec where
 
+import qualified Data.Map.Strict as Map
 import qualified Data.Set as Set
 import qualified Parun.Codec.AbilityTriggered as AbilityTriggered
 import qualified Parun.Codec.TriggeredAbilitySourceSpec as TriggeredAbilitySourceSpec
@@ -9,6 +10,7 @@ import qualified Parun.Types.AbilityTriggered as AbilityTriggered
 import qualified Parun.Types.ObjectId as ObjectId
 import qualified Parun.Types.PlayerId as PlayerId
 import qualified Parun.Types.TriggerSource as TriggerSource
+import qualified Parun.Types.TriggeringMove as TriggeringMove
 
 spec :: (Monad m, Monad n) => Spec.Spec m n -> n ()
 spec s = Spec.describe s "Parun.Codec.AbilityTriggered" $ do
@@ -22,10 +24,10 @@ spec s = Spec.describe s "Parun.Codec.AbilityTriggered" $ do
             AbilityTriggered.controller = PlayerId.MkPlayerId 0,
             AbilityTriggered.ability = TriggeredAbilitySourceSpec.ability,
             AbilityTriggered.stackObject = Just (ObjectId.MkObjectId 4),
-            AbilityTriggered.attackers = Set.singleton (ObjectId.MkObjectId 1)
+            AbilityTriggered.causers = Map.singleton TriggeringMove.Entering (Set.singleton (ObjectId.MkObjectId 1))
           }
       )
-      " {\"source\":{\"type\":\"OfObject\",\"value\":1},\"controller\":0,\"ability\":{\"condition\":{\"type\":\"Enters\",\"value\":{}},\"modal\":{\"modes\":[{}]}},\"stackObject\":4,\"attackers\":[1]} "
+      " {\"source\":{\"type\":\"OfObject\",\"value\":1},\"controller\":0,\"ability\":{\"condition\":{\"type\":\"Enters\",\"value\":{}},\"modal\":{\"modes\":[{}]}},\"stackObject\":4,\"causers\":[{\"key\":\"Entering\",\"value\":[1]}]} "
   -- CR 726.2 / CR 702.179d: the same record for an inherent ability with no
   -- object behind it, where the controller is what tells two players' instances
   -- of the one ability apart.
@@ -38,7 +40,7 @@ spec s = Spec.describe s "Parun.Codec.AbilityTriggered" $ do
             AbilityTriggered.controller = PlayerId.MkPlayerId 1,
             AbilityTriggered.ability = TriggeredAbilitySourceSpec.ability,
             AbilityTriggered.stackObject = Nothing,
-            AbilityTriggered.attackers = Set.empty
+            AbilityTriggered.causers = Map.empty
           }
       )
       " {\"source\":{\"type\":\"Sourceless\"},\"controller\":1,\"ability\":{\"condition\":{\"type\":\"Enters\",\"value\":{}},\"modal\":{\"modes\":[{}]}}} "
