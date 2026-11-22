@@ -40,6 +40,7 @@
   --on-good: #ffffff;
   --shadow: 0 1px 2px rgb(0 0 0 / 0.08), 0 2px 8px rgb(0 0 0 / 0.06);
   --sheet-shadow: 0 -8px 32px rgb(0 0 0 / 0.18);
+  --scrim: rgb(0 0 0 / 0.42);
 
   /* A card's tint by its colours: its fill, its edge (3:1 against every
      ground it sits on) and the band across its top. */
@@ -719,6 +720,7 @@ body.busy #settings-button > svg {
 }
 
 #app .topbar .settings-button {
+  margin-left: auto;
   width: 44px;
   padding: 0;
   border-color: transparent;
@@ -731,6 +733,15 @@ body.busy #settings-button > svg {
 .topbar .settings-button > svg {
   width: 22px;
   height: 22px;
+}
+
+/* On a narrow screen the sections take a row of their own, under the name
+   and the settings. */
+@media (max-width: 560px) {
+  .sections {
+    order: 1;
+    flex-basis: 100%;
+  }
 }
 
 /* ---------- Home ---------- */
@@ -1935,7 +1946,7 @@ details.pile[open] {
 .hand {
   grid-area: hand;
   padding: 0.3em 0.5em 0;
-  background: var(--bg);
+  background: var(--sunken);
   border-top: 1px solid var(--line);
 }
 
@@ -2550,7 +2561,7 @@ details.log[open] > summary {
   inset: 0;
   border: 0;
   padding: 0;
-  background: rgb(0 0 0 / 0.42);
+  background: var(--scrim);
   cursor: default;
   animation: fade 0.18s ease-out;
 }
@@ -2946,8 +2957,9 @@ kbd {
   box-shadow: var(--sheet-shadow);
 }
 
+/* A backdrop inherits the page's roles only in newer browsers. */
 #keys::backdrop {
-  background: rgb(0 0 0 / 0.35);
+  background: var(--scrim, rgb(0 0 0 / 0.42));
 }
 
 #keys h2 {
