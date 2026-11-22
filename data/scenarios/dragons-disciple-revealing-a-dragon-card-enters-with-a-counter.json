@@ -78,7 +78,7 @@
     "step": "PrecombatMain"
   },
   "description": "CR 614.1c, 701.20a Dragon's Disciple revealing a Dragon card enters with a +1/+1 counter",
-  "note": "Dragon's Disciple: \"As this creature enters, you may reveal a Dragon card from your hand. If you do or if you control a Dragon, this creature enters with a +1/+1 counter on it. Dragons you control have ward {1}.\" alice controls no Dragon and holds Alabaster Dragon and Grizzly Bears. The reveal refuses the Bears, which is no Dragon card; revealing the Dragon puts the counter on, and bob sees the shown card.",
+  "note": "Dragon's Disciple: \"As this creature enters, you may reveal a Dragon card from your hand. If you do or if you control a Dragon, this creature enters with a +1/+1 counter on it. Dragons you control have ward {1}.\" alice controls no Dragon and holds Alabaster Dragon and Grizzly Bears. The reveal refuses the Bears, which is no Dragon card; revealing the Dragon puts the counter on, and bob witnesses the shown card.",
   "timeline": [
     {
       "do": {
@@ -142,6 +142,20 @@
           "object": "Dragon's Disciple",
           "power": 2,
           "toughness": 4
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "View": {
+          "is": [
+            "Alabaster Dragon"
+          ],
+          "of": "Witnessed",
+          "player": "bob"
         }
       },
       "player": "alice",

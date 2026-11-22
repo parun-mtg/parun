@@ -1,4 +1,4 @@
--- | `parun play`: a game whose seats are each the random bot or, with --json,
+-- | `parun play`: a game whose seats are each the search bot or, with --json,
 -- a program speaking the line protocol on standard input and output.
 module Parun.Play.Command where
 
@@ -31,8 +31,11 @@ import qualified Parun.Play.Generator as Generator
 import qualified Parun.Play.Key as Key
 import qualified Parun.Play.Protocol as Protocol
 import qualified Parun.Play.Record as Record
+import qualified Parun.Play.Search as Search
 import qualified Parun.Play.Wording as Wording
 import qualified Parun.Registry as Registry
+import qualified Parun.Types.Answerer as Answerer
+import qualified Parun.Types.Asked as Asked
 import qualified Parun.Types.Deck as Deck
 import qualified Parun.Types.Format as Format
 import qualified Parun.Types.GameSettings as GameSettings
@@ -70,7 +73,7 @@ flags :: [GetOpt.OptDescr (PlayOptions.PlayOptions -> Either String PlayOptions.
 flags =
   [ GetOpt.Option [] ["seed"] (GetOpt.ReqArg (\s o -> maybe (Left ("not a seed: " <> s)) (\k -> Right o {PlayOptions.seed = Just k}) (Key.fromHex (Text.pack s))) "KEY") "the generator's key, 64 hexadecimal digits, said when the game ends; drawn from the operating system when absent",
     GetOpt.Option [] ["first"] (GetOpt.ReqArg (\s o -> fmap (\n -> o {PlayOptions.first = Just n}) (seat s)) "SEAT") "which seat plays first; a seat picked at random chooses when absent",
-    GetOpt.Option [] ["bot"] (GetOpt.ReqArg (\s o -> fmap (\n -> o {PlayOptions.bots = Set.insert n (PlayOptions.bots o)}) (seat s)) "SEAT") "a seat the random bot plays",
+    GetOpt.Option [] ["bot"] (GetOpt.ReqArg (\s o -> fmap (\n -> o {PlayOptions.bots = Set.insert n (PlayOptions.bots o)}) (seat s)) "SEAT") "a seat the search bot plays",
     GetOpt.Option [] ["json"] (GetOpt.NoArg (\o -> Right o {PlayOptions.json = True})) "speak the line protocol on standard input and output",
     GetOpt.Option [] ["save"] (GetOpt.ReqArg (\s o -> Right o {PlayOptions.save = Just s}) "FILE") "save the game as a scenario, even one cut short",
     GetOpt.Option [] ["arrange-graveyard"] (GetOpt.ReqArg (\s o -> fmap (\n -> o {PlayOptions.arrangesGraveyard = Set.insert n (PlayOptions.arrangesGraveyard o)}) (seat s)) "SEAT") "a seat asked to order cards put into its graveyard at the same time",
@@ -193,10 +196,7 @@ game send options registry format decks seed = do
     Nothing -> pure (Left (Text.pack "end of input"), record (seated 1 decks) Seq.empty)
     Just first -> do
       let matchup = seated first decks
-          answerer n
-            | Set.member n (PlayOptions.bots options) = Game.bot reference
-            | otherwise = Game.wired reference send
-          seats = Map.fromList [(idOf n, answerer n) | n <- NonEmpty.toList numbers]
+          seats = Map.fromList [(idOf n, answerer reference send options n) | n <- NonEmpty.toList numbers]
       entries <- IORef.newIORef Seq.empty
       let observers = [Record.recording (labels count) (Game.underneath . IORef.modifyIORef' entries . flip (Seq.|>))]
           interrupted e = case e of
@@ -205,6 +205,13 @@ game send options registry format decks seed = do
       outcome <- Exception.catch (Game.run reference format (PlayOptions.limits options) observers seats generator orders matchup) interrupted
       timeline <- IORef.readIORef entries
       pure (outcome, record matchup timeline)
+
+-- | Who answers seat `n`: the search bot at the options' budget and weights, over the
+-- known lists, if it is a bot's; otherwise `send`.
+answerer :: (Monad m) => Registry.Registry m -> Protocol.Exchange m -> PlayOptions.PlayOptions -> Natural -> Answerer.Answerer (Asked.Asked GameState.GameState) (Game.Play m)
+answerer registry send options n
+  | Set.member n (PlayOptions.bots options) = Search.search registry (PlayOptions.budget options) (PlayOptions.weights options) Search.known
+  | otherwise = Game.wired registry send
 
 idOf :: Natural -> PlayerId.PlayerId
 idOf n = PlayerId.MkPlayerId (n - 1)

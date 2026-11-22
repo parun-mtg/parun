@@ -384,8 +384,9 @@ offerOf namer gs prompt = case prompt of
   Prompt.ChooseEntryOption _ _ source options -> indexing namer prompt (Just source) [] (fmap (Reply.encode (Reply.viaCodec Codec.EntryOption.codec) namer) options)
   -- CR 603.7b: each event, or null for one the seat did not witness.
   Prompt.ChooseDelayedTriggerEvent _ _ source events -> indexing namer prompt (Just source) [] (fmap (delayedEvent namer (Driver.deciderOf prompt)) (NonEmpty.toList events))
-  -- CR 706.2b: each modifier by the object stating it, null for none.
-  Prompt.ChooseRollModifier _ _ modifiers -> indexing namer prompt Nothing [] (fmap (\stated -> fields [("source", maybe R.Null (object namer) stated)]) (NonEmpty.toList modifiers))
+  -- CR 706.2b: each modifier by the object stating it and the die it
+  -- reaches, null for none and for the whole roll.
+  Prompt.ChooseRollModifier _ _ modifiers -> indexing namer prompt Nothing [] (fmap (\(stated, die) -> fields [("source", maybe R.Null (object namer) stated), ("die", maybe R.Null natural die)]) (NonEmpty.toList modifiers))
   -- CR 123.5c: each object by its card's name.
   Prompt.KeepHand _ _ hands -> indexing namer prompt Nothing [] (fmap (objects namer) (NonEmpty.toList hands))
   Prompt.ChooseStickerKeeper _ _ printings -> indexing namer prompt Nothing [] (fmap (R.Text . printingName gs) (NonEmpty.toList printings))

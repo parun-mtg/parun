@@ -69,6 +69,7 @@ import qualified Parun.Types.ProjectedCharacteristics as ProjectedCharacteristic
 import qualified Parun.Types.Prompt as Prompt
 import qualified Parun.Types.Recipient as Recipient
 import qualified Parun.Types.Result as Result
+import qualified Parun.Types.RollReading as RollReading
 import qualified Parun.Types.TurnRegisters as TurnRegisters
 import qualified Parun.Types.Zone as Zone
 import qualified Parun.Types.ZoneChange as ZoneChange
@@ -149,7 +150,8 @@ spec s registry = Spec.describe s "Play" $ do
           [ GameEvent.PlayerActed (PlayerActed.MkPlayerActed PlayerAction.Scry S.alice),
             GameEvent.PlayerActed (PlayerActed.MkPlayerActed PlayerAction.Surveil S.bob),
             GameEvent.CountedAct (CountedAct.MkCountedAct PlayerAction.RollDice S.alice 4),
-            GameEvent.DieResultSettled DieResult.MkDieResult {DieResult.roller = S.alice, DieResult.result = 4, DieResult.natural = Just 4}
+            GameEvent.DieResultSettled DieResult.MkDieResult {DieResult.roller = S.alice, DieResult.result = 4, DieResult.reading = RollReading.FinalResult},
+            GameEvent.DieResultSettled DieResult.MkDieResult {DieResult.roller = S.alice, DieResult.result = 4, DieResult.reading = RollReading.NaturalResult}
           ]
     Spec.assertEqWith s "told" (told (PlayerView.viewFor S.bob (witnessing (inOneGroup logged) gs))) [Text.pack "Player 1 scries.", Text.pack "Player 2 surveils.", Text.pack "Player 1 rolls 4."]
 

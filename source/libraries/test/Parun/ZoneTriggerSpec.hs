@@ -2125,15 +2125,14 @@ representativeEvents cond =
         -- CR 700.14's own event, crossing the amount the condition states.
         TriggerCondition.PlayerExpends e -> one (GameEvent.Expended Expended.MkExpended {Expended.player = S.bob, Expended.before = 0, Expended.after = PlayerExpends.amount e})
         -- CR 706.2's per-die event, or CR 701.52a's for a roll to visit,
-        -- carrying the number the condition states as both its result and
-        -- its natural result.
+        -- carrying the number the condition states, read as it reads it.
         TriggerCondition.PlayerRollsResult watched ->
-          let rolled = DieResult.MkDieResult {DieResult.roller = S.bob, DieResult.result = RollTrigger.result watched, DieResult.natural = Just (RollTrigger.result watched)}
+          let rolled = DieResult.MkDieResult {DieResult.roller = S.bob, DieResult.result = RollTrigger.result watched, DieResult.reading = RollTrigger.reading watched}
            in case RollTrigger.roll watched of
                 RollKind.AnyRoll -> one (GameEvent.DieResultSettled rolled)
                 RollKind.ToVisit -> one (GameEvent.RolledToVisit rolled)
         -- CR 701.52a's own event, and the only one this condition admits.
-        TriggerCondition.Visit -> one (GameEvent.RolledToVisit DieResult.MkDieResult {DieResult.roller = S.bob, DieResult.result = 3, DieResult.natural = Just 3})
+        TriggerCondition.Visit -> one (GameEvent.RolledToVisit DieResult.MkDieResult {DieResult.roller = S.bob, DieResult.result = 3, DieResult.reading = RollReading.FinalResult})
         -- CR 311.7's own event, chaos ensuing.
         TriggerCondition.ChaosEnsues -> one (GameEvent.ChaosEnsued Nothing)
         -- CR 732.1a's own event, day becoming night.

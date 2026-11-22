@@ -19,8 +19,8 @@ data MatchOptions = MkMatchOptions
     searching :: Set.Set Natural.Natural,
     -- | How hard the search bot looks in each seat it may play.
     budgets :: Map.Map Natural.Natural SearchBudget.SearchBudget,
-    -- | The file of the search bot's weights in a seat, the shipped default
-    -- (Parun.Weights.defaultPath) in a seat absent.
+    -- | The file of the search bot's weights in a seat (Parun.Weights),
+    -- Weights.neutral in a seat absent.
     weighing :: Map.Map Natural.Natural FilePath
   }
   deriving (Eq, Show)

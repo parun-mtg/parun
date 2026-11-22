@@ -1,5 +1,5 @@
--- | The search bot's evaluation weights parun ships, each a file of
--- Parun.Codec.Weights in data/weights.
+-- | The search bot's evaluation weights read from a file of
+-- Parun.Codec.Weights, for a persona or a tuning run without a rebuild.
 module Parun.Weights where
 
 import qualified Data.ByteString as ByteString
@@ -9,11 +9,6 @@ import qualified Parun.Codec.Weights as Weights.Codec
 import qualified Parun.JsonCodec.Codec as Codec
 import qualified Parun.JsonCodec.Common as Common
 import qualified Parun.Types.Weights as Weights
-import qualified Paths_parun as Paths
-
--- | The weights the search bot plays with unless told otherwise.
-defaultPath :: IO FilePath
-defaultPath = Paths.getDataFileName "weights/default.json"
 
 -- | The weights a file holds, or why it holds none.
 load :: FilePath -> IO (Either Text.Text Weights.Weights)

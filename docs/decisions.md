@@ -3347,16 +3347,21 @@ Entries are ordered by the first rule each cites.
   own (Pippa, Duchess of Dice's ruling)?
 - **Rules**: CR 706.2, 706.2b, 603.2; Critical Hit has no ruling; CR of
   2026-11-06.
-- **Decision**: No, and once. Each die the roll keeps is read once, at its
-  natural result once its rerolls are done: CR 706.2b's reroll modifies the
-  natural result, and the die then displays the new number. "Whenever you roll
-  a 6" reads the same dice the same way.
-- **Rejected**: Reading every face a die showed, the 20 rerolled away
-  included: the reroll then counts its 20 as both its own roll and the die's,
-  or the die's natural result stops being the number it shows.
-- **Site**: `Parun.Engine.Resolve.Common.recordRoll`'s DieResultSettled,
-  proved by the scenarios `critical-hit-ignores-a-natural-20-rerolled-away`
-  and `critical-hit-returns-for-a-reroll-that-comes-up-20`.
+- **Decision**: Yes, and once. Each roll, the original and each reroll, is
+  read once at the face it came up: CR 706.2's natural result is the face
+  "before any modifiers", CR 706.2b files a reroll among the modifiers, and the
+  reminder text reads "a roll that displays 20". So 20 rerolled to 4, 4
+  rerolled to 20 and 7 rerolled to 20 then 4 each trigger once, and 20
+  rerolled to 20 twice. A reroll is what "Which result a reroll's trigger
+  reads" says: a roll of its own that modifies the original roll.
+- **Rejected**: Reading each die once, at its face after its last reroll: it
+  takes the natural result after a modifier, against CR 706.2, and drops a
+  roll that displayed 20.
+- **Site**: `Parun.Engine.Resolve.Effect.throwSettled`'s `rerollingWith` and
+  `Parun.Engine.Resolve.Common.recordRoll`, proved by the scenarios
+  `critical-hit-returns-for-a-natural-20-rerolled-away`,
+  `critical-hit-returns-once-for-a-20-rerolled-between-two-rerolls` and
+  `critical-hit-triggers-twice-for-a-20-rerolled-to-20`.
 - **Issue**: none.
 
 ## Which board a roll's trigger is checked against
