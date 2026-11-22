@@ -37,8 +37,10 @@ import qualified Parun.Oracle.Keyword as Oracle.Keyword
 import qualified Parun.Play.Protocol as Protocol
 import qualified Parun.Play.Wording as Wording
 import qualified Parun.Scenario.PromptOffer as PromptOffer
+import qualified Parun.Types.DieResult as DieResult
 import qualified Parun.Types.EntryOption as EntryOption
 import qualified Parun.Types.EventGroup as EventGroup
+import qualified Parun.Types.GameEvent as GameEvent
 import qualified Parun.Types.LoggedEvent as LoggedEvent
 import qualified Parun.Types.Mana as Mana
 import qualified Parun.Types.ManaCost as ManaCost
@@ -53,6 +55,7 @@ import qualified Parun.Types.PlayerView as PlayerView
 import qualified Parun.Types.ProductionTag as ProductionTag
 import qualified Parun.Types.Question as Question
 import qualified Parun.Types.Reply as R
+import qualified Parun.Types.RollReading as RollReading
 import qualified Parun.Types.SeatView as SeatView
 import qualified Parun.Types.StoredResult as StoredResult
 import qualified Parun.Types.TextWord as TextWord
@@ -416,11 +419,12 @@ orderNote kind offer = case Text.unpack kind of
 -- (Parun.Scenario.Promptindexing): a cast as actionName names it, an entering
 -- shape (Parun.Types.EntryOption) by its power and toughness, keywords and
 -- subtypes, an event as the log tells it, an object stating something as
--- sourcedName names it, an unwitnessed event (null) as unseen, and anything
--- else as an option is named.
+-- sourcedName names it, a roll modifier as modifierName does, an unwitnessed
+-- event (null) as unseen, and anything else as an option is named.
 entryName :: PlayerView.PlayerView -> R.Reply -> Text.Text
 entryName view entry
   | Maybe.isJust (Protocol.field "action" entry) = actionName view entry
+  | Just place <- Protocol.field "place" entry = modifierName view entry place
   | Just shape <- decoded Codec.EntryOption.codec entry =
       Text.intercalate (Text.pack ", ") (Text.pack (show (EntryOption.power shape) <> "/" <> show (EntryOption.toughness shape)) : concatMap (take 1 . Oracle.Keyword.keywordWord Text.empty) (Set.toList (EntryOption.keywords shape)) <> fmap (Text.pack . show) (Set.toList (EntryOption.subtypes shape)))
   | Just event <- decoded Codec.GameEvent.codec entry =
@@ -428,6 +432,49 @@ entryName view entry
   | Maybe.isJust (Protocol.field "source" entry) = sourcedName Text.empty view entry
   | entry == R.Null = Text.pack "Something you did not see"
   | otherwise = optionName view entry
+
+-- | CR 706.2b: a roll modifier (Prompt.ChooseRollModifier's entry) by the
+-- object stating it, told apart from others of its name, and the die it
+-- reaches by its place in the roll, counted from 1, and its natural result;
+-- the whole roll where it names no die.
+modifierName :: PlayerView.PlayerView -> R.Reply -> R.Reply -> Text.Text
+modifierName view entry place =
+  let source = maybe (Text.pack "A rule") (listedName view) (Monad.mfilter (/= R.Null) (Protocol.field "source" entry))
+      reach = case (Protocol.naturalOf place, Protocol.field "result" entry >>= Protocol.naturalOf) of
+        (Just at, Just result) -> Text.pack ("die " <> show (at + 1) <> ", showing " <> show result)
+        _ -> Text.pack "the whole roll"
+   in source <> Text.pack ": " <> reach
+
+-- | CR 706.2a: a reroll's question (Prompt.Rethrow's offer): the die by its
+-- place in the roll, counted from 1, and what it shows, the roll's every
+-- result where it has more than one, and the cost where there is one.
+rerollQuestion :: Text.Text -> R.Reply -> Maybe Text.Text
+rerollQuestion self offer = do
+  shown <- Monad.mplus (fmap (Text.pack . show) (Protocol.field "result" offer >>= Protocol.naturalOf)) (fmap Text.toLower (Protocol.field "face" offer >>= textOf))
+  results <- Protocol.field "results" offer >>= Protocol.arrayOf
+  place <- Protocol.field "place" offer >>= Protocol.naturalOf
+  let named result = maybe (plainName result) (Text.pack . show) (Protocol.naturalOf result)
+      which
+        | length results > 1 = Text.pack ("Reroll die " <> show (place + 1) <> " of " <> show (length results) <> ", showing ") <> shown <> Text.pack "? The roll: " <> Text.intercalate (Text.pack ", ") (fmap named results) <> Text.pack "."
+        | otherwise = Text.pack "Reroll the die showing " <> shown <> Text.pack "?"
+  pure (which <> foldMap (\cost -> Text.pack " Cost: " <> candidateName self cost <> Text.pack ".") (Protocol.field "cost" offer))
+
+-- | CR 706.4: a result Prompt.ChooseDieResult offers, beside what its
+-- `carries` entry tells: who threw it, where another player did, and each
+-- natural result and event it carries, an unwitnessed one as unseen.
+resultName :: PlayerView.PlayerView -> R.Reply -> R.Reply -> Text.Text
+resultName view result carry =
+  let seat = fmap PlayerId.MkPlayerId (Protocol.field "thrower" carry >>= textOf >>= Read.readMaybe . Text.unpack)
+      thrower = [Text.pack "thrown by " <> Wording.player pid | Just pid <- [seat], pid /= PlayerView.viewer view]
+      who pid = if pid == PlayerView.viewer view then Text.pack "you" else Wording.player pid
+      event reply
+        | reply == R.Null = Text.pack "something you did not see"
+        | Just (GameEvent.DieResultSettled r) <- decoded Codec.GameEvent.codec reply,
+          DieResult.reading r == RollReading.NaturalResult =
+            who (DieResult.roller r) <> Text.pack (" rolled " <> show (DieResult.result r))
+        | otherwise = entryName view reply
+      notes = thrower <> foldMap (fmap event) (Protocol.field "events" carry >>= Protocol.arrayOf)
+   in optionName view result <> (if null notes then Text.empty else Text.pack " (" <> Text.intercalate (Text.pack "; ") notes <> Text.pack ")")
 
 -- | An amount-per-item offer's shape with these amounts in amountLeaves'
 -- order, a map leaving out each key that takes none.

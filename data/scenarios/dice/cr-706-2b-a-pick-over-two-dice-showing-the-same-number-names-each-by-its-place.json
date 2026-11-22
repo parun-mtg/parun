@@ -1,0 +1,449 @@
+{
+  "board": {
+    "active": "alice",
+    "seats": [
+      {
+        "battlefield": [
+          {
+            "card": "Wall of Fortune",
+            "label": "w1"
+          },
+          {
+            "card": "Wall of Fortune",
+            "label": "w2"
+          },
+          {
+            "card": "Swamp",
+            "label": "s1"
+          },
+          {
+            "card": "Swamp",
+            "label": "s2"
+          },
+          {
+            "card": "Swamp",
+            "label": "s3"
+          },
+          {
+            "card": "Swamp",
+            "label": "s4"
+          },
+          {
+            "card": "Swamp",
+            "label": "s5"
+          },
+          {
+            "card": "Swamp",
+            "label": "s6"
+          },
+          {
+            "card": "Swamp",
+            "label": "s7"
+          }
+        ],
+        "graveyard": [
+          {
+            "card": "Grizzly Bears",
+            "label": "bears"
+          }
+        ],
+        "hand": [
+          {
+            "card": "Grave Endeavor",
+            "label": "ge"
+          }
+        ],
+        "name": "alice"
+      },
+      {
+        "name": "bob"
+      }
+    ],
+    "step": "PrecombatMain"
+  },
+  "description": "CR 706.2b a pick over two dice showing the same number names each by its place",
+  "note": "Grave Endeavor's two d10 come up 3 and 5 under two Walls of Fortune. Alice rerolls the 5 to a 3: the two 3s differ in what they came up, so the next pick offers each Wall over each, the same number at two places. She rerolls the second 3 again, to an 8, with the last untapped Wall. The Bears return with eight counters and bob loses 3.",
+  "timeline": [
+    {
+      "do": {
+        "Cast": {
+          "mana": [
+            "$s1",
+            "$s2",
+            "$s3",
+            "$s4",
+            "$s5",
+            "$s6",
+            "$s7"
+          ],
+          "object": "$ge"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": "Pass",
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": {
+        "Answer": {
+          "prompt": "RollDie",
+          "with": 3
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": {
+        "Answer": {
+          "prompt": "RollDie",
+          "with": 5
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "View": {
+          "of": "Prompt",
+          "is": {
+            "kind": "ChooseRollModifier",
+            "offer": {
+              "entries": [
+                {
+                  "source": "$w1",
+                  "result": 3,
+                  "place": 0
+                },
+                {
+                  "source": "$w2",
+                  "result": 3,
+                  "place": 0
+                },
+                {
+                  "source": "$w1",
+                  "result": 5,
+                  "place": 1
+                },
+                {
+                  "source": "$w2",
+                  "result": 5,
+                  "place": 1
+                }
+              ],
+              "options": [
+                0,
+                1,
+                2,
+                3
+              ]
+            }
+          }
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": {
+        "Answer": {
+          "prompt": "ChooseRollModifier",
+          "with": 2
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "View": {
+          "of": "Prompt",
+          "is": {
+            "kind": "Rethrow",
+            "offer": {
+              "result": 5,
+              "results": [
+                3,
+                5
+              ],
+              "place": 1,
+              "cost": {
+                "mana": [],
+                "components": [
+                  {
+                    "type": "TapPermanents",
+                    "value": {
+                      "count": {
+                        "type": "Fixed",
+                        "value": 1
+                      },
+                      "whichPermanents": {
+                        "type": "And",
+                        "value": [
+                          {
+                            "type": "HasSubtype",
+                            "value": "Wall"
+                          },
+                          {
+                            "type": "HeldBy",
+                            "value": {
+                              "holder": "Controller",
+                              "relation": "You"
+                            }
+                          },
+                          {
+                            "type": "Not",
+                            "value": {
+                              "type": "IsTapped"
+                            }
+                          }
+                        ]
+                      }
+                    }
+                  }
+                ]
+              },
+              "options": [
+                "Exercises",
+                "Declines"
+              ]
+            }
+          }
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": {
+        "Answer": {
+          "prompt": "Rethrow",
+          "with": "Exercises"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": {
+        "Answer": {
+          "prompt": "ChooseTaps",
+          "with": [
+            "$w1"
+          ]
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": {
+        "Answer": {
+          "prompt": "RollDie",
+          "with": 3
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "View": {
+          "of": "Prompt",
+          "is": {
+            "kind": "ChooseRollModifier",
+            "offer": {
+              "entries": [
+                {
+                  "source": "$w1",
+                  "result": 3,
+                  "place": 0
+                },
+                {
+                  "source": "$w2",
+                  "result": 3,
+                  "place": 0
+                },
+                {
+                  "source": "$w1",
+                  "result": 3,
+                  "place": 1
+                },
+                {
+                  "source": "$w2",
+                  "result": 3,
+                  "place": 1
+                }
+              ],
+              "options": [
+                0,
+                1,
+                2,
+                3
+              ]
+            }
+          }
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": {
+        "Answer": {
+          "prompt": "ChooseRollModifier",
+          "with": 2
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "View": {
+          "of": "Prompt",
+          "is": {
+            "kind": "Rethrow",
+            "offer": {
+              "result": 3,
+              "results": [
+                3,
+                3
+              ],
+              "place": 1,
+              "cost": {
+                "mana": [],
+                "components": [
+                  {
+                    "type": "TapPermanents",
+                    "value": {
+                      "count": {
+                        "type": "Fixed",
+                        "value": 1
+                      },
+                      "whichPermanents": {
+                        "type": "And",
+                        "value": [
+                          {
+                            "type": "HasSubtype",
+                            "value": "Wall"
+                          },
+                          {
+                            "type": "HeldBy",
+                            "value": {
+                              "holder": "Controller",
+                              "relation": "You"
+                            }
+                          },
+                          {
+                            "type": "Not",
+                            "value": {
+                              "type": "IsTapped"
+                            }
+                          }
+                        ]
+                      }
+                    }
+                  }
+                ]
+              },
+              "options": [
+                "Exercises",
+                "Declines"
+              ]
+            }
+          }
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": {
+        "Answer": {
+          "prompt": "Rethrow",
+          "with": "Exercises"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": {
+        "Answer": {
+          "prompt": "RollDie",
+          "with": 8
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": {
+        "Answer": {
+          "prompt": "ChooseDieResult",
+          "with": 1
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Counters": {
+          "count": 8,
+          "kind": {
+            "type": "PlusOnePlusOne"
+          },
+          "object": "Grizzly Bears"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Life": {
+          "life": 17,
+          "player": "bob"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Tapped": {
+          "object": "$w2",
+          "tapped": true
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    }
+  ]
+}

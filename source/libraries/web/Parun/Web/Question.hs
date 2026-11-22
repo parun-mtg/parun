@@ -919,12 +919,15 @@ form request picked = case Text.unpack (Question.kind question) of
     | Just shown <- Request.view request,
       Just (options', name) <- Monad.mplus (fmap (\o -> (o, Offer.optionName shown)) (Protocol.field "options" offer >>= Protocol.arrayOf)) (fmap (\o -> (o, Offer.playerName)) (Protocol.field "players" offer >>= Protocol.arrayOf)) ->
         let entries = foldMap (fmap Just) (Protocol.field "entries" offer >>= Protocol.arrayOf) <> repeat Nothing
+            -- CR 706.4: what each result carries, in the options' order.
+            carries = foldMap (fmap Just) (Protocol.field "carries" offer >>= Protocol.arrayOf) <> repeat Nothing
             -- CR 309.4: a room by its place in the dungeon, topmost first.
-            label option entry
+            label option (entry, carry)
               | kind == "ChooseRoom", Just n <- Protocol.naturalOf option = Text.pack ("Room " <> show (n + 1))
+              | Just carried <- carry = Offer.resultName shown (Maybe.fromMaybe option entry) carried
               | otherwise = maybe (name option) (Offer.entryName shown) entry
          in Html.element (Text.pack "h2") [] (Mana.rich $ Maybe.fromMaybe (capitalized (Question.kind question) <> foldMap (\source -> Text.pack " for " <> Offer.objectName shown source) (Protocol.field "source" offer) <> Text.pack ".") (headingOf shown request))
-              : [button (MkAnswer option) (label option entry) | (option, entry) <- zip options' entries]
+              : [button (MkAnswer option) (label option entry) | (option, entry) <- zip options' (zip entries carries)]
   "DeclareAttackers"
     | Just attackers <- Protocol.arrayOf offer,
       Just shown <- Request.view request ->
@@ -1045,6 +1048,7 @@ yesOrNo shown request = case Text.unpack (Question.kind (Request.question reques
     Just (self <> wording, ("Exercises", "Yes"), ("Declines", "No"))
   "ChooseGuess" -> Just (self <> Text.pack ": guess whether the hidden card is as its text says.", ("Holds", "It is"), ("DoesNotHold", "It isn't"))
   "ReturnCommander" -> Just (Text.pack "Put " <> self <> Text.pack " into the command zone?", ("Returns", "Command zone"), ("Leaves", "Don't"))
+  "Rethrow" -> fmap (\asked -> (asked, ("Exercises", "Reroll"), ("Declines", "Keep it"))) (Offer.rerollQuestion self offer)
   _ -> Nothing
   where
     offer = Question.offer (Request.question request)
@@ -1062,6 +1066,10 @@ headingOf shown request = case Text.unpack (Question.kind question) of
   "ChooseModes" -> Just (Text.pack "Choose modes for " <> self)
   "ChooseVote" -> Just (Text.pack "Vote for " <> self <> Text.pack ".")
   "ChooseReplacement" -> Just (Text.pack "Choose the replacement effect that applies first.")
+  -- CR 706.2b.
+  "ChooseRollModifier" -> Just (Text.pack "Choose the modifier to apply to the roll next.")
+  -- CR 706.4.
+  "ChooseDieResult" -> Just (Text.pack "Choose the result to use.")
   "ChooseHalf" -> Just (Text.pack "Choose a door of " <> self <> Text.pack ".")
   "ChooseProliferate" -> Just (Text.pack "Proliferate: choose permanents and players to get another counter of each kind they have")
   "DeclareBands" -> Just (Text.pack "Choose attacking creatures to band together")

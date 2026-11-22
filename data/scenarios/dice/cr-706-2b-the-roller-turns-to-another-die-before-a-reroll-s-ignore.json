@@ -139,47 +139,47 @@
               "entries": [
                 {
                   "source": "$w1",
-                  "die": 2,
+                  "result": 2,
                   "place": 0
                 },
                 {
                   "source": "$w2",
-                  "die": 2,
+                  "result": 2,
                   "place": 0
                 },
                 {
                   "source": "$w3",
-                  "die": 2,
+                  "result": 2,
                   "place": 0
                 },
                 {
                   "source": "$w1",
-                  "die": 3,
+                  "result": 3,
                   "place": 1
                 },
                 {
                   "source": "$w2",
-                  "die": 3,
+                  "result": 3,
                   "place": 1
                 },
                 {
                   "source": "$w3",
-                  "die": 3,
+                  "result": 3,
                   "place": 1
                 },
                 {
                   "source": "$w1",
-                  "die": 4,
+                  "result": 4,
                   "place": 2
                 },
                 {
                   "source": "$w2",
-                  "die": 4,
+                  "result": 4,
                   "place": 2
                 },
                 {
                   "source": "$w3",
-                  "die": 4,
+                  "result": 4,
                   "place": 2
                 }
               ],
@@ -269,62 +269,62 @@
               "entries": [
                 {
                   "source": "$w1",
-                  "die": 1,
+                  "result": 1,
                   "place": 0
                 },
                 {
                   "source": "$w2",
-                  "die": 1,
+                  "result": 1,
                   "place": 0
                 },
                 {
                   "source": "$w3",
-                  "die": 1,
+                  "result": 1,
                   "place": 0
                 },
                 {
                   "source": "$w1",
-                  "die": 5,
+                  "result": 5,
                   "place": 1
                 },
                 {
                   "source": "$w2",
-                  "die": 5,
+                  "result": 5,
                   "place": 1
                 },
                 {
                   "source": "$w3",
-                  "die": 5,
+                  "result": 5,
                   "place": 1
                 },
                 {
                   "source": "$w1",
-                  "die": 3,
+                  "result": 3,
                   "place": 2
                 },
                 {
                   "source": "$w2",
-                  "die": 3,
+                  "result": 3,
                   "place": 2
                 },
                 {
                   "source": "$w3",
-                  "die": 3,
+                  "result": 3,
                   "place": 2
                 },
                 {
                   "source": "$w1",
-                  "die": 4,
+                  "result": 4,
                   "place": 3
                 },
                 {
                   "source": "$w2",
-                  "die": 4,
+                  "result": 4,
                   "place": 3
                 },
                 {
                   "source": "$w3",
-                  "die": 4,
+                  "result": 4,
                   "place": 3
                 }
               ],
@@ -417,77 +417,77 @@
               "entries": [
                 {
                   "source": "$w1",
-                  "die": 1,
+                  "result": 1,
                   "place": 0
                 },
                 {
                   "source": "$w2",
-                  "die": 1,
+                  "result": 1,
                   "place": 0
                 },
                 {
                   "source": "$w3",
-                  "die": 1,
+                  "result": 1,
                   "place": 0
                 },
                 {
                   "source": "$w1",
-                  "die": 5,
+                  "result": 5,
                   "place": 1
                 },
                 {
                   "source": "$w2",
-                  "die": 5,
+                  "result": 5,
                   "place": 1
                 },
                 {
                   "source": "$w3",
-                  "die": 5,
+                  "result": 5,
                   "place": 1
                 },
                 {
                   "source": "$w1",
-                  "die": 9,
+                  "result": 9,
                   "place": 2
                 },
                 {
                   "source": "$w2",
-                  "die": 9,
+                  "result": 9,
                   "place": 2
                 },
                 {
                   "source": "$w3",
-                  "die": 9,
+                  "result": 9,
                   "place": 2
                 },
                 {
                   "source": "$w1",
-                  "die": 6,
+                  "result": 6,
                   "place": 3
                 },
                 {
                   "source": "$w2",
-                  "die": 6,
+                  "result": 6,
                   "place": 3
                 },
                 {
                   "source": "$w3",
-                  "die": 6,
+                  "result": 6,
                   "place": 3
                 },
                 {
                   "source": "$w1",
-                  "die": 4,
+                  "result": 4,
                   "place": 4
                 },
                 {
                   "source": "$w2",
-                  "die": 4,
+                  "result": 4,
                   "place": 4
                 },
                 {
                   "source": "$w3",
-                  "die": 4,
+                  "result": 4,
                   "place": 4
                 }
               ],
