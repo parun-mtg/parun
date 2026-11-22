@@ -1,5 +1,6 @@
 -- Covers Parun.Play.Record and Parun.Scenario's game start: a played game saved
--- as a scenario, and that scenario replayed.
+-- as a scenario, and that scenario replayed, as the web client keeps it
+-- (Parun.Web.History) too.
 module Parun.RecordSpec where
 
 import qualified Control.Monad as Monad
@@ -19,6 +20,7 @@ import qualified Parun.CompanionSpec as CompanionSpec
 import qualified Parun.Engine.Event as Event
 import qualified Parun.Engine.Setup as Setup
 import qualified Parun.JsonCodec.Codec as Codec
+import qualified Parun.Play.Command as Command
 import qualified Parun.Play.Game as Game
 import qualified Parun.Play.Record as Record
 import qualified Parun.Registry as Registry
@@ -51,6 +53,8 @@ import qualified Parun.Types.Scenario as Scenario.Type
 import qualified Parun.Types.Settle as Settle
 import qualified Parun.Types.Timed as Timed
 import qualified Parun.Types.TurnRegisters as TurnRegisters
+import qualified Parun.Web.Ending as Ending
+import qualified Parun.Web.History as History
 
 spec :: (Monad m, Monad n) => Spec.Spec m n -> Registry.Registry m -> n ()
 spec s registry = Spec.describe s "Record" $ do
@@ -62,6 +66,19 @@ spec s registry = Spec.describe s "Record" $ do
       (Right (result, _), Right final) -> Spec.assertEqWith s "same result" (GameState.result final) (Just result)
       (_, Left failure) -> Spec.assertFailure s (Text.unpack (Scenario.render failure))
       (Left reason, _) -> Spec.assertFailure s (Text.unpack reason)
+
+  Spec.it s "a game the web client keeps replays to the state it ended in" $ do
+    matchup <- BotSpec.sevens s registry
+    let (outcome, timeline) = recorded bots matchup
+        file = Command.rendered (Record.scenario PrintingTable.empty Text.empty Nothing (fmap (\(pid, deck) -> (Record.labelOf labels pid, GraveyardOrder.Indifferent, deck)) matchup) timeline)
+        kept = History.recordOf 0 0 (Text.pack "build") [] (Ending.MkFinished (Ending.MkEnding Ending.MkWon [] file Seq.empty S.alice []))
+    case (outcome, kept) of
+      (Right (_, final), Just (game, stored)) -> do
+        Spec.assertEqWith s "the summary reads back" (History.decode (History.encode game)) (Right game)
+        replayed <- either (Spec.assertFailure s . Text.unpack) (Scenario.run registry) (History.scenarioOf stored)
+        either (Spec.assertFailure s . Text.unpack . Scenario.render) (\gs -> Spec.assertBool s (gs == final) "the state it ended in") replayed
+      (Left reason, _) -> Spec.assertFailure s (Text.unpack reason)
+      (_, Nothing) -> Spec.assertFailure s "not kept"
 
   Spec.it s "a game cut short replays to where it stopped" $ do
     matchup <- BotSpec.bears s registry

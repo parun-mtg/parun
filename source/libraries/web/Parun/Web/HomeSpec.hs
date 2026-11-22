@@ -5,8 +5,11 @@ import qualified Data.Text as Text
 import qualified Parun.Spec as Spec
 import qualified Parun.Types.Color as Color
 import qualified Parun.Web.Bar as Bar
+import qualified Parun.Web.History as History
+import qualified Parun.Web.HistorySpec as HistorySpec
 import qualified Parun.Web.Home as Home
 import qualified Parun.Web.Html as Html
+import qualified Parun.Web.Replay as Replay
 
 spec :: (Monad m, Monad n) => Spec.Spec m n -> n ()
 spec s = Spec.describe s "Parun.Web.Home" $ do
@@ -41,6 +44,15 @@ spec s = Spec.describe s "Parun.Web.Home" $ do
       Spec.assertEqWith s "edit" (tapping "Edit" saved) (Just (Home.MkChoose (Home.MkEditDeck (Text.pack "saved/red-deck-wins"))))
       Spec.assertEqWith s "open" (tapping "Red Deck Wins" saved) (Just (Home.MkChoose (Home.MkBrowseDecks (Just (Text.pack "saved/red-deck-wins")))))
 
+    Spec.it s "lists the last games finished here, each to watch, and the way to all of them" $ do
+      let games = [HistorySpec.game {History.ended = n} | n <- [10, 9 .. 1]]
+          recent = Home.new {Home.finished = games}
+          rows = length (Text.breakOnAll (Text.pack "class=\"game-row\"") (Html.toText (Home.view recent)))
+      Spec.assertEqWith s "none" (has "Recent games" Home.new) False
+      Spec.assertEqWith s "the last five" (has "Recent games" recent, rows) (True, Home.recentCount)
+      Spec.assertEqWith s "watch" (tapping "Watch" recent) (Just (Home.MkChoose (Home.MkWatch (Replay.MkPlayed (Text.pack "10")))))
+      Spec.assertEqWith s "all" (tapping "All games" recent) (Just (Home.MkChoose Home.MkReplays))
+
     Spec.it s "carries the Fan Content notice" $ do
       Spec.assertEq s (has "unofficial Fan Content" Home.new) True
 
@@ -66,9 +78,9 @@ spec s = Spec.describe s "Parun.Web.Home" $ do
       Spec.assertEqWith s "cancelled" (Home.update Home.MkCancel asked) (Home.MkStay paused)
 
     Spec.it s "asks before conceding a paused game to play on from a replay" $ do
-      let asked = paused {Home.confirming = Just (Home.MkPlayOn (Text.pack "a-scenario") 3)}
+      let asked = paused {Home.confirming = Just (Home.MkPlayOn (Replay.MkScenario (Text.pack "a-scenario")) 3)}
       Spec.assertEqWith s "the question shows" (has "Concede and play on" asked) True
-      Spec.assertEqWith s "confirmed" (Home.update Home.MkConfirm asked) (Home.MkGo (Home.MkPlayOn (Text.pack "a-scenario") 3))
+      Spec.assertEqWith s "confirmed" (Home.update Home.MkConfirm asked) (Home.MkGo (Home.MkPlayOn (Replay.MkScenario (Text.pack "a-scenario")) 3))
 
     Spec.it s "opens replays and the builder from a paused game without asking" $ do
       Spec.assertEqWith s "replays" (Home.update (Home.MkChoose Home.MkReplays) paused) (Home.MkGo Home.MkReplays)

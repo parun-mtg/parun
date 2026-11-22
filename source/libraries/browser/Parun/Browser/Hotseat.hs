@@ -56,13 +56,6 @@ data Leave
     MkAbandon
   deriving (Eq, Show)
 
--- | How a game the page played came out.
-data Played
-  = MkFinished Ending.Ending
-  | -- | Given up from the home screen for another game, so no ending shows.
-    MkAbandoned
-  deriving (Eq, Show)
-
 -- | Unwinds a game given up from the home screen.
 data Abandoned = MkAbandonedGame
   deriving (Show)
@@ -80,10 +73,10 @@ instance Exception.Exception Abandoned
 -- every reply made from there, a bot's too, is given to `kept`.
 -- Once over, `tell` is given each seat's verdict, what is said of the game
 -- and its scenario file: how it came out, or why it could not start.
-game :: Browser.Page Screen.Event -> Registry.Registry Identity.Identity -> IORef.IORef Web.Question.Level -> NonEmpty.NonEmpty (FilePath, Text.Text) -> Map.Map PlayerId.PlayerId (Protocol.Exchange IO) -> Key.Type.Key -> [R.Reply] -> (R.Reply -> IO ()) -> ((PlayerId.PlayerId -> Ending.Verdict) -> [Text.Text] -> Text.Text -> IO ()) -> (Maybe PlayerView.PlayerView -> IO Leave) -> IO (Either [Text.Text] Played)
+game :: Browser.Page Screen.Event -> Registry.Registry Identity.Identity -> IORef.IORef Web.Question.Level -> NonEmpty.NonEmpty (FilePath, Text.Text) -> Map.Map PlayerId.PlayerId (Protocol.Exchange IO) -> Key.Type.Key -> [R.Reply] -> (R.Reply -> IO ()) -> ((PlayerId.PlayerId -> Ending.Verdict) -> [Text.Text] -> Text.Text -> IO ()) -> (Maybe PlayerView.PlayerView -> IO Leave) -> IO (Either [Text.Text] Ending.Played)
 game page registry levelRef seats remotes seed stored kept tell leave = do
   seatRef <- IORef.newIORef . newSeat player =<< IORef.readIORef levelRef
-  keepingLevel levelRef seatRef . Exception.handle (\MkAbandonedGame -> pure (Right MkAbandoned)) $ do
+  keepingLevel levelRef seatRef . Exception.handle (\MkAbandonedGame -> pure (Right Ending.MkAbandoned)) $ do
     let listed = fmap (uncurry (Command.loadText registry)) seats
     case sequenceA listed of
       Left _ -> pure (Left (foldMap (Either.fromLeft []) listed))
@@ -106,7 +99,7 @@ game page registry levelRef seats remotes seed stored kept tell leave = do
                 stopped reason = if not (Map.null remotes) && reason == Text.pack "end of input" then Text.pack "a player's connection closed" else reason
                 scenario = Command.rendered recorded
             tell (`verdictOf` outcome) said scenario
-            pure . Right . MkFinished $ Ending.MkEnding (verdictOf player outcome) said scenario (loggedFor player finished) player (Foldable.toList (lives finished))
+            pure . Right . Ending.MkFinished $ Ending.MkEnding (verdictOf player outcome) said scenario (loggedFor player finished) player (Foldable.toList (lives finished))
 
 -- | Runs a game, then keeps the auto-pass level its seat ended on.
 keepingLevel :: IORef.IORef Web.Question.Level -> IORef.IORef Seat -> IO a -> IO a
@@ -245,7 +238,7 @@ data Seat = MkSeat
     skipping :: Maybe Web.Question.Until,
     -- | Whether the seat conceded (Web.Question.MkConcede).
     conceding :: Bool,
-    -- | Each seat's life whenever it changed, beside the turn (Ending.trail).
+    -- | Each seat's life whenever it or the turn changed (Ending.sampled).
     lives :: Seq.Seq (Natural, [(PlayerId.PlayerId, Integer)]),
     -- | The view last drawn while watching, less whose priority it was.
     watched :: Maybe PlayerView.PlayerView,
@@ -277,8 +270,7 @@ witness :: PlayerView.PlayerView -> Seat -> Seat
 witness view state =
   let (moved, unread) = Log.unseen (marks state) view
       now = [(SeatView.player seat, SeatView.life seat) | seat <- PlayerView.seats view]
-      changed = fmap snd (Seq.lookup (Seq.length (lives state) - 1) (lives state)) /= Just now
-   in state {marks = moved, logged = Map.insertWith (flip (<>)) (PlayerView.viewer view) (Seq.fromList unread) (logged state), lives = if changed then lives state Seq.|> (PlayerView.turn view, now) else lives state}
+   in state {marks = moved, logged = Map.insertWith (flip (<>)) (PlayerView.viewer view) (Seq.fromList unread) (logged state), lives = Ending.sampled (PlayerView.turn view) now (lives state)}
 
 message :: [Text.Text] -> Html.Html msg
 message said = Element.el "main" ["message"] [] [Element.el "p" [] [] [Html.text t] | t <- said]

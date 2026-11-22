@@ -16,6 +16,11 @@ spec s = Spec.describe s "Parun.Web.DeckBrowser" $ do
     Spec.it s "describes a saved deck as saved" $ do
       Spec.assertEq s (DeckBrowser.describe saved) (Text.pack "SAVED", Text.pack "My Deck")
 
+  Spec.describe s "label" $ do
+    Spec.it s "names a precon with its set and a saved deck alone" $ do
+      Spec.assertEqWith s "precon" (DeckBrowser.label a) (Text.pack "Demo A (POR)")
+      Spec.assertEqWith s "saved" (DeckBrowser.label saved) (Text.pack "My Deck")
+
   Spec.describe s "tile" $ do
     Spec.it s "badges a precon with its set and a saved deck Saved" $ do
       let badge name = Text.isInfixOf (Text.pack ("<span class=\"set-badge\">" <> name <> "</span>")) . Html.toText . DeckBrowser.tile id False DeckBrowser.new

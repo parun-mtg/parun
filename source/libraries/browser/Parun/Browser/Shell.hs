@@ -11,6 +11,7 @@ import qualified Data.Char as Char
 import qualified Data.Either as Either
 import qualified Data.Functor.Identity as Identity
 import qualified Data.IORef as IORef
+import qualified Data.List as List
 import qualified Data.List.NonEmpty as NonEmpty
 import qualified Data.Map.Lazy as LazyMap
 import qualified Data.Map.Strict as Map
@@ -54,6 +55,7 @@ import qualified Parun.Web.DeckBrowser as DeckBrowser
 import qualified Parun.Web.Decks as Web.Decks
 import qualified Parun.Web.Element as Element
 import qualified Parun.Web.Ending as Ending
+import qualified Parun.Web.History as History
 import qualified Parun.Web.Home as Home
 import qualified Parun.Web.Html as Html
 import qualified Parun.Web.Join as Join
@@ -75,7 +77,9 @@ data Shell = MkShell
     level :: IORef.IORef Web.Question.Level,
     -- | The build the page runs, which a page it links to must share
     -- (Parun.Web.Link).
-    build :: Text.Text
+    build :: Text.Text,
+    -- | The games finished in this browser, newest first (Parun.Web.History).
+    finished :: IORef.IORef [History.Game]
   }
 
 -- | The data so far: which chunks arrived, and what has been built from
@@ -125,15 +129,17 @@ data Next
     MkToLobby (Maybe Text.Text)
   | -- | The Decks screen, this deck selected if any.
     MkToDecks (Maybe Text.Text)
+  | -- | The lobby on these decks: yours, then each bot's.
+    MkToMatchup (NonEmpty.NonEmpty Text.Text)
   | -- | The lobby, a bot's seat given to a player invited by link.
     MkToInvite
   | -- | The builder, on this deck if any, its Back leading here.
     MkToBuilder (Maybe Text.Text) Next
   | MkToReplays
-  | -- | This scenario's replay, at this position.
-    MkToReplay Text.Text Natural
-  | -- | A game played on from this position of this scenario.
-    MkToPlayOn Text.Text Natural
+  | -- | This replay, at this position.
+    MkToReplay Web.Replay.Source Natural
+  | -- | A game played on from this position of this replay.
+    MkToPlayOn Web.Replay.Source Natural
   | -- | Another browser's game, joined with this code from its link.
     MkToJoin Text.Text
   | -- | The game with guests the page kept, picked up where it stopped.
@@ -153,7 +159,10 @@ start :: IO ()
 start = do
   chosen <- maybe Web.Question.MkStandard (Maybe.fromMaybe Web.Question.MkStandard . Web.Question.levelNamed) <$> Environment.lookupEnv "parun_level"
   built <- maybe (Text.pack "unknown") Text.pack <$> Environment.lookupEnv "parun_build"
-  shell <- MkShell <$> Browser.mount <*> IORef.newIORef (MkLoaded Loading.new Nothing Map.empty Nothing Map.empty [] Nothing Nothing Nothing False Nothing Map.empty [] Nothing Map.empty Map.empty Map.empty) <*> IORef.newIORef chosen <*> pure built
+  -- A summary that does not read, or a game past the cap, is forgotten.
+  (games, gone) <- History.loaded <$> Browser.playedGames
+  mapM_ Browser.forgetPlayed gone
+  shell <- MkShell <$> Browser.mount <*> IORef.newIORef (MkLoaded Loading.new Nothing Map.empty Nothing Map.empty [] Nothing Nothing Nothing False Nothing Map.empty [] Nothing Map.empty Map.empty Map.empty) <*> IORef.newIORef chosen <*> pure built <*> IORef.newIORef games
   Exception.catch (opening built >>= follow shell) $ \problem ->
     Browser.display (page shell) $ message ["The page stopped on an error:", Exception.displayException (problem :: Exception.SomeException)]
 
@@ -173,7 +182,7 @@ opening build' = do
   case (offered, named) of
     (Just code, _) | not (null code) -> pure (MkToJoin (Text.pack code))
     (_, Just "") -> pure MkToReplays
-    (_, Just name) -> pure ((if branching then MkToPlayOn else MkToReplay) (Text.pack name) at)
+    (_, Just name) -> pure ((if branching then MkToPlayOn else MkToReplay) (Web.Replay.MkScenario (Text.pack name)) at)
     _
       | Text.null kept -> pure MkToHome
       | otherwise -> either (\problem -> Browser.logLine (Text.pack "The game kept does not read: " <> problem) >> Browser.forgetGame >> pure MkToHome) (pure . MkToRestore) (Link.unsaved build' kept)
@@ -184,11 +193,13 @@ follow shell next = case next of
   MkToHome -> home shell Home.new >>= follow shell . afterHome
   MkToLobby deck -> lobby shell (maybe Lobby.new Lobby.holding deck) [] >>= follow shell
   MkToDecks deck -> decksScreen shell deck >>= follow shell
+  -- Only an invited slot reads its deck's list (Lobby.rematch), and none is.
+  MkToMatchup decks -> lobby shell (Lobby.rematch (fmap (\name -> (name, Text.empty)) decks) Set.empty) [] >>= follow shell
   MkToInvite -> Browser.linkHost 0 >> lobby shell (Lobby.update (Lobby.MkInviteSlot 0) Text.empty Lobby.new) [] >>= follow shell
   MkToBuilder deck back -> builder shell deck back >>= follow shell
   MkToReplays -> replays shell >>= follow shell
-  MkToReplay name at -> replay shell name at >>= follow shell
-  MkToPlayOn name at -> playOnFrom shell name at >>= follow shell
+  MkToReplay source at -> replay shell source at >>= follow shell
+  MkToPlayOn source at -> playOnFrom shell source at >>= follow shell
   MkToJoin code -> joinGame shell code >>= follow shell
   MkToRestore kept -> play shell (Link.seats kept) (Set.fromList (Link.invited kept)) (Just kept) >>= follow shell
 
@@ -201,7 +212,9 @@ afterHome outcome = case outcome of
   Home.MkGo (Home.MkEditDeck name) -> MkToBuilder (Just name) MkToHome
   Home.MkGo (Home.MkBrowseDecks deck) -> MkToDecks deck
   Home.MkGo Home.MkReplays -> MkToReplays
-  Home.MkGo (Home.MkPlayOn name at) -> MkToPlayOn name at
+  Home.MkGo (Home.MkWatch source) -> MkToReplay source 0
+  Home.MkGo (Home.MkPlayOn source at) -> MkToPlayOn source at
+  Home.MkGo (Home.MkPlayAgain decks) -> MkToMatchup decks
   _ -> MkToHome
 
 -- | Where a section of the top bar leads.
@@ -223,9 +236,11 @@ home shell = go
   where
     go shown = do
       now <- IORef.readIORef (loaded shell)
+      games <- IORef.readIORef (finished shell)
       let current =
             shown
               { Home.problem = Loading.problem (loading now),
+                Home.finished = games,
                 Home.saved = [Home.MkDeck name (Map.findWithDefault Set.empty name (palette now)) (Map.lookup name (deckSizes now)) | name <- foldMap Map.keys (deckFiles now), DeckBrowser.isSaved name]
               }
       Browser.display (page shell) (framed Bar.MkHome (fmap Screen.MkHome (Home.view current)))
@@ -328,7 +343,11 @@ lobby shell initial said = do
       seated <- traverse slot (zip [0 ..] others)
       case (,) <$> Lobby.mine current <*> Monad.join mineFile of
         Just mine | Just rest <- sequence seated -> do
-          Monad.forM_ (Map.keys invited) $ \i -> Link.send (Browser.channel (page shell) (build shell) i) (Link.MkStart (seatOf i))
+          -- Each player told the match-up again with every bot's deck drawn,
+          -- which the history of their game names (Join.places), then their seat.
+          Monad.forM_ (Map.keys invited) $ \i -> do
+            Link.send (Browser.channel (page shell) (build shell) i) (Link.MkMatchup (Lobby.placesFor i current {Lobby.theirs = others}))
+            Link.send (Browser.channel (page shell) (build shell) i) (Link.MkStart (seatOf i))
           play shell (mine NonEmpty.:| rest) (Map.keysSet invited) Nothing
         -- A bot with no deck to play keeps the lobby up.
         _ -> go' current {Lobby.ready = False} told
@@ -724,13 +743,20 @@ play shell seats invited resuming = do
       Monad.when keeping Browser.forgetGame
       case ended of
         Left problems -> stopped problems >> notice shell problems
-        Right Hotseat.MkAbandoned -> stopped [Text.pack "The host gave the game up."] >> IORef.readIORef chosen
-        Right (Hotseat.MkFinished ending) -> do
+        Right Ending.MkAbandoned -> stopped [Text.pack "The host gave the game up."] >> IORef.readIORef chosen
+        Right played@(Ending.MkFinished ending) -> do
+          palette' <- palette <$> IORef.readIORef (loaded shell)
+          let seatOf' (i, (name, _))
+                | i == 0 = History.MkSeat History.MkYou (DeckBrowser.label name) (Just name) (Map.findWithDefault Set.empty name palette')
+                | Set.member (i - 1) invited = History.MkSeat History.MkPerson (DeckBrowser.label name) Nothing Set.empty
+                | otherwise = History.MkSeat History.MkBot (DeckBrowser.label name) (Just name) (Map.findWithDefault Set.empty name palette')
+          remember shell (fmap seatOf' (zip [0 :: Int ..] (NonEmpty.toList seats))) played
           lost <- IORef.readIORef down
           let go said = do
-                Browser.display (page shell) (fmap Screen.MkEnding (Ending.view ending))
+                Browser.display (page shell) (endingScreen ending)
                 woke <- await shell
                 case woke of
+                  MkTapped (Screen.MkNav section) _ -> mapM_ Browser.linkClose invited >> pure (sectionNext section)
                   MkTapped (Screen.MkEnding Ending.MkRematch) _
                     | Set.null invited -> play shell seats invited Nothing
                     | otherwise -> do
@@ -741,6 +767,21 @@ play shell seats invited resuming = do
                   MkHeard heard' -> go (heard' : said)
                   _ -> go said
           go []
+
+-- | How a game ended, under the top bar with no section current.
+endingScreen :: Ending.Ending -> Html.Html Screen.Event
+endingScreen = Bar.framed Screen.MkNav Nothing . fmap Screen.MkEnding . Ending.view
+
+-- | Keeps a game this page played among these seats, once it is over with
+-- a result (History.recordOf), dropping the oldest kept past the cap.
+remember :: Shell -> [History.Seat] -> Ending.Played -> IO ()
+remember shell seats played = do
+  (at, ahead) <- Browser.clock
+  Monad.forM_ (History.recordOf at ahead (build shell) seats played) $ \(game, scenario) -> do
+    (kept, dropped) <- History.adding game <$> IORef.readIORef (finished shell)
+    Browser.keepPlayed (History.key game) (History.encode game) scenario
+    mapM_ (Browser.forgetPlayed . History.key) dropped
+    IORef.writeIORef (finished shell) kept
 
 -- | Invited slot `i`'s channel, closed at once while `down` holds the slot,
 -- and held there once it closes.
@@ -860,13 +901,20 @@ joinGame shell offer = do
           chosen <- IORef.newIORef MkToHome
           played <- Guest.play (page shell) (Identity.runIdentity . Interpreter.chosenCard reg) (level shell) hostChannel (rejoin shell n Rejoin.guest) seat (leaveFor shell chosen)
           case played of
-            Hotseat.MkAbandoned -> Browser.linkClose n >> IORef.readIORef chosen
-            Hotseat.MkFinished ending -> do
+            Ending.MkAbandoned -> Browser.linkClose n >> IORef.readIORef chosen
+            Ending.MkFinished ending -> do
+              palette' <- palette <$> IORef.readIORef (loaded shell)
+              let placed place
+                    | Link.who place == Text.pack "You" = History.MkSeat History.MkYou (Link.deck place) (Join.picked current) (maybe Set.empty (\name -> Map.findWithDefault Set.empty name palette') (Join.picked current))
+                    | Text.isPrefixOf (Text.pack "Bot") (Link.who place) = History.MkSeat History.MkBot (Link.deck place) Nothing Set.empty
+                    | otherwise = History.MkSeat History.MkPerson (Link.deck place) Nothing Set.empty
+              remember shell (fmap placed (Join.places current)) played
               let back = Join.rematched current
                   ended closed = do
-                    Browser.display (page shell) (fmap Screen.MkEnding (Ending.view ending))
+                    Browser.display (page shell) (endingScreen ending)
                     woke <- await shell
                     case woke of
+                      MkTapped (Screen.MkNav section) _ -> Browser.linkClose n >> pure (sectionNext section)
                       MkHeard heard' | Browser.link heard' == n -> case Text.unpack (Browser.kind heard') of
                         "message" | Right (Link.MkMatchup places) <- Link.decode (build shell) (Browser.said heard') -> go back {Join.places = places}
                         "closed" -> ended True
@@ -896,19 +944,22 @@ leaveFor shell chosen board = go paused
         _ -> pure Hotseat.MkResume
     visit next = case next of
       MkToReplays -> replays shell >>= visit
+      MkToReplay source at -> replay shell source at >>= visit
+      MkToMatchup decks -> go paused {Home.confirming = Just (Home.MkPlayAgain decks)}
       MkToBuilder deck back -> builder shell deck back >>= visit
-      MkToPlayOn name at -> go paused {Home.confirming = Just (Home.MkPlayOn name at)}
+      MkToPlayOn source at -> go paused {Home.confirming = Just (Home.MkPlayOn source at)}
       MkToDecks deck -> decksScreen shell deck >>= visit
       MkToLobby deck -> go paused {Home.confirming = Just (Home.MkPlayBots deck)}
       MkToInvite -> go paused {Home.confirming = Just Home.MkPlayFriend}
       _ -> go paused
 
--- | The list of scenarios, fetched first, until one is opened and left for
--- a game or the home screen.
+-- | The replays screen, the scenarios fetched first, until a replay is
+-- opened and left for a game or the home screen: the games finished here,
+-- each to watch, play again or delete, deleting asked about first.
 replays :: Shell -> IO Next
 replays shell = do
   need shell Loading.MkScenarios
-  let go typed = do
+  let go shown = do
         now <- IORef.readIORef (loaded shell)
         listed <- case scenarioList now of
           Just known -> pure (Just known)
@@ -919,65 +970,88 @@ replays shell = do
                 IORef.modifyIORef' (loaded shell) $ \l -> l {scenarioList = Just known}
                 pure (Just known)
             | otherwise -> pure Nothing
+        let watching source = do
+              next <- replay shell source 0
+              case next of
+                MkToReplays -> go shown
+                _ -> pure next
         case listed of
-          Just (Left problem, []) -> notice shell [problem]
-          Just (Left problem, _) -> notice shell [Text.pack "The scenario manifest does not decode:", problem]
+          Just (Left problem, []) | Web.Replay.shelf shown == Web.Replay.MkScenarios -> notice shell [problem]
+          Just (Left problem, _) | Web.Replay.shelf shown == Web.Replay.MkScenarios -> notice shell [Text.pack "The scenario manifest does not decode:", problem]
           _ -> do
-            Browser.display (page shell) . framed Bar.MkReplays . fmap Screen.MkReplay $ Web.Replay.picker typed (fmap (Bifunctor.first (Either.fromRight Map.empty)) listed)
+            Browser.display (page shell) . framed Bar.MkReplays . fmap Screen.MkReplay $ Web.Replay.picker shown (fmap (Bifunctor.first (Either.fromRight Map.empty)) listed)
             woke <- await shell
             case woke of
               MkTapped (Screen.MkNav section) _
                 | section /= Bar.MkReplays -> pure (sectionNext section)
-              MkTapped (Screen.MkReplay Web.Replay.MkSearch) value -> go value
-              MkTapped (Screen.MkReplay (Web.Replay.MkOpen name)) _ -> do
-                next <- replay shell name 0
-                case next of
-                  MkToReplays -> go typed
-                  _ -> pure next
-              _ -> go typed
-  go Text.empty
+              MkTapped (Screen.MkReplay (Web.Replay.MkOpen name)) _ -> watching (Web.Replay.MkScenario name)
+              MkTapped (Screen.MkReplay (Web.Replay.MkWatch k)) _ -> watching (Web.Replay.MkPlayed k)
+              MkTapped (Screen.MkReplay (Web.Replay.MkPlayAgain k)) _
+                | Just decks <- List.find ((== k) . History.key) (Web.Replay.games shown) >>= traverse History.deckName . History.seats >>= NonEmpty.nonEmpty -> pure (MkToMatchup decks)
+              MkTapped (Screen.MkReplay Web.Replay.MkConfirmForget) _ -> do
+                case Web.Replay.forgetting shown of
+                  Just (Web.Replay.MkForgetGame k) -> Browser.forgetPlayed k >> IORef.modifyIORef' (finished shell) (filter ((/= k) . History.key))
+                  Just Web.Replay.MkForgetAll -> Browser.clearPlayed >> IORef.writeIORef (finished shell) []
+                  Nothing -> pure ()
+                go (Web.Replay.forgot shown)
+              MkTapped (Screen.MkReplay event) value -> go (Web.Replay.listed event value shown)
+              _ -> go shown
+  go . Web.Replay.listing =<< IORef.readIORef (finished shell)
 
--- | The scenario, once it and the cards have loaded, replayed from this
--- position until the page leaves it.
-replay :: Shell -> Text.Text -> Natural -> IO Next
-replay shell name at = opened shell name $ \reg scenario -> do
-  exit <- Replay.viewer (page shell) reg name scenario at
+-- | The replay, once it and the cards have loaded, from this position until
+-- the page leaves it.
+replay :: Shell -> Web.Replay.Source -> Natural -> IO Next
+replay shell source at = opened shell source $ \reg title seen scenario -> do
+  exit <- Replay.viewer (page shell) reg title seen scenario at
   pure $ case exit of
     Replay.MkToList -> MkToReplays
-    Replay.MkPlayOn from -> MkToPlayOn name from
+    Replay.MkPlayOn from -> MkToPlayOn source from
 
--- | A game played on from a position of the scenario, then how it ended,
+-- | A game played on from a position of the replay, then how it ended,
 -- with the way back to the position and to play on again; given up from
 -- the home screen for another game, that one.
-playOnFrom :: Shell -> Text.Text -> Natural -> IO Next
-playOnFrom shell name at = opened shell name $ \reg scenario -> do
+playOnFrom :: Shell -> Web.Replay.Source -> Natural -> IO Next
+playOnFrom shell source at = opened shell source $ \reg _ played scenario -> do
   chosen <- IORef.newIORef MkToHome
   ended <- Replay.playOn (page shell) reg (level shell) scenario at (leaveFor shell chosen)
   case ended of
     Nothing -> IORef.readIORef chosen
-    Just said -> do
+    Just said' -> do
+      let said = foldMap (Maybe.maybeToList . History.drift (build shell)) played <> said'
       let go = do
             Browser.display (page shell) . fmap Screen.MkReplay $ Web.Replay.ended said
             woke <- await shell
             case woke of
-              MkTapped (Screen.MkReplay Web.Replay.MkResumeReplay) _ -> pure (MkToReplay name at)
-              MkTapped (Screen.MkReplay Web.Replay.MkBranch) _ -> pure (MkToPlayOn name at)
+              MkTapped (Screen.MkReplay Web.Replay.MkResumeReplay) _ -> pure (MkToReplay source at)
+              MkTapped (Screen.MkReplay Web.Replay.MkBranch) _ -> pure (MkToPlayOn source at)
               _ -> go
       go
 
--- | The registry and the scenario named, handed on once loaded, a message
--- shown meanwhile; else why either did not load.
-opened :: Shell -> Text.Text -> (Registry.Registry Identity.Identity -> Scenario.Type.Scenario -> IO Next) -> IO Next
-opened shell name continue = do
+-- | The registry and the replay, its title, the game finished here it is,
+-- if it is one, and its scenario, handed on once loaded, a message shown
+-- meanwhile; else why either did not load. A game finished here waits on no
+-- scenarios, and is described by how it ended, after a note where another
+-- build played it (History.drift).
+opened :: Shell -> Web.Replay.Source -> (Registry.Registry Identity.Identity -> Text.Text -> Maybe History.Game -> Scenario.Type.Scenario -> IO Next) -> IO Next
+opened shell source continue = do
   Browser.display (page shell) (message ["Loading the cards\x2026"])
-  built <- untilBuilt shell (loadingScreen shell) [Loading.MkCards, Loading.MkRules, Loading.MkScenarios] $ do
+  let needs = [Loading.MkCards, Loading.MkRules] <> [Loading.MkScenarios | Web.Replay.MkScenario _ <- [source]]
+  built <- untilBuilt shell (loadingScreen shell) needs $ do
     now <- IORef.readIORef (loaded shell)
-    pure (if Loading.ready Loading.MkScenarios (loading now) then registry now else Nothing)
+    pure (if all (`Loading.ready` loading now) needs then registry now else Nothing)
   case built of
     Left problem -> notice shell [problem]
-    Right reg -> do
-      decoded <- Replay.decode name
-      either (\problem -> notice shell [Text.pack ("The scenario " <> Text.unpack name <> " does not decode:"), Text.pack problem]) (continue reg) decoded
+    Right reg -> case source of
+      Web.Replay.MkScenario name -> do
+        decoded <- Replay.decode name
+        either (\problem -> notice shell [Text.pack ("The scenario " <> Text.unpack name <> " does not decode:"), Text.pack problem]) (continue reg name Nothing) decoded
+      Web.Replay.MkPlayed k -> do
+        game <- List.find ((== k) . History.key) <$> IORef.readIORef (finished shell)
+        file <- Browser.playedScenario k
+        case (game, History.scenarioOf file) of
+          (Nothing, _) -> notice shell [Text.pack "That game is no longer kept here."]
+          (_, Left problem) -> notice shell [Text.pack "The game kept does not decode:", problem]
+          (Just g, Right scenario) -> continue reg (History.matchup g) (Just g) scenario {Scenario.Type.description = Text.unwords (Maybe.maybeToList (History.drift (build shell) g) <> History.said g)}
 
 -- | Why a game could not be played, until the player goes home.
 notice :: Shell -> [Text.Text] -> IO Next

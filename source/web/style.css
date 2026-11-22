@@ -885,6 +885,136 @@ main.home .your-decks {
   font-weight: 600;
 }
 
+/* The games finished here (Parun.Web.History): on the home screen the
+   last few, on the replays screen every one kept. A row reads how it
+   ended, the decks and who played them, then its actions; on a phone the
+   actions wrap under the text. */
+main.home .recent-games,
+.your-games {
+  padding: 20px 24px;
+}
+
+.panel-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 8px;
+}
+
+.panel-head h2 {
+  font-size: 17px;
+  font-weight: 700;
+}
+
+.game-rows {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.game-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 12px;
+  padding: 12px 4px;
+  border-top: 1px solid var(--line);
+}
+
+.game-row:first-child {
+  border-top: 0;
+}
+
+/* The result as a word in its tone, edged in it, on the panel's surface:
+   every tone keeps AAA there in both themes. */
+.game-row .result {
+  flex: none;
+  min-width: 56px;
+  padding: 2px 10px;
+  border: 1px solid currentColor;
+  border-radius: 999px;
+  font-size: 13px;
+  font-weight: 600;
+  text-align: center;
+}
+
+.game-row .result.won {
+  color: var(--good);
+}
+
+.game-row .result.lost {
+  color: var(--danger);
+}
+
+.game-row .result.drawn {
+  color: var(--muted);
+}
+
+.game-row-text {
+  flex: 1 1 240px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.game-row-matchup {
+  font-weight: 600;
+  overflow-wrap: anywhere;
+}
+
+.game-row-matchup .versus {
+  color: var(--muted);
+  font-weight: 400;
+}
+
+.game-row-deck .pips {
+  margin-right: 4px;
+}
+
+.game-row-meta {
+  font-size: 13px;
+}
+
+.game-row-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.game-row-actions .confirm-delete {
+  flex-basis: 100%;
+}
+
+.confirm-delete .choices,
+.history-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.history-actions {
+  justify-content: flex-end;
+  padding-top: 12px;
+  border-top: 1px solid var(--line);
+}
+
+main.scenarios .shelves {
+  align-self: flex-start;
+}
+
+@media (max-width: 560px) {
+  main.home .recent-games,
+  .your-games {
+    padding: 16px;
+  }
+
+  .game-row-actions {
+    flex-basis: 100%;
+  }
+}
+
 main.home .confirm {
   padding: 24px;
   display: flex;
@@ -900,8 +1030,9 @@ main.home .confirm .choices {
   gap: 8px;
 }
 
-/* The Fan Content Policy's notice, at the foot of the home screen. */
-.legal {
+/* The Fan Content Policy's notice, at the foot of the home screen; the
+   settings menu's copy is one paragraph, its link inline. */
+footer.legal {
   margin-top: auto;
   display: flex;
   flex-direction: column;
@@ -3042,6 +3173,8 @@ details.pile[open] {
 .segmented {
   display: inline-flex;
   flex-wrap: wrap;
+  gap: 0;
+  background: var(--surface);
   border: 1px solid var(--control);
   border-radius: var(--radius);
   overflow: hidden;
@@ -3063,6 +3196,7 @@ details.pile[open] {
 
 #app .segmented button.on {
   background: var(--act);
+  border-color: var(--act);
   color: var(--on-act);
   font-weight: 700;
 }
@@ -3887,6 +4021,7 @@ body:has(main.game, #app [data-settings], #app .splash, #app main.loading) #sett
 }
 
 #settings .legal {
+  display: block;
   margin: 0;
   font-size: 12px;
   color: var(--muted);
@@ -4106,6 +4241,52 @@ body:has(main.game, #app [data-settings], #app .splash, #app main.loading) #sett
   min-width: 0;
 }
 
+/* The scrubber drawn from the roles, not the browser's blue: a control-grey
+   track (3:1 on the surface in both themes) and an act thumb, ringed in the
+   surface so it reads on the track. */
+#app input[type="range"] {
+  appearance: none;
+  -webkit-appearance: none;
+  height: 44px;
+  margin: 0;
+  background: transparent;
+  accent-color: var(--act);
+  cursor: pointer;
+}
+
+#app input[type="range"]::-webkit-slider-runnable-track {
+  height: 6px;
+  border-radius: 999px;
+  background: var(--control);
+}
+
+#app input[type="range"]::-moz-range-track {
+  height: 6px;
+  border-radius: 999px;
+  background: var(--control);
+}
+
+#app input[type="range"]::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 22px;
+  height: 22px;
+  margin-top: -8px;
+  border: 3px solid var(--surface);
+  border-radius: 50%;
+  background: var(--act);
+  box-shadow: 0 0 0 1px var(--act);
+}
+
+#app input[type="range"]::-moz-range-thumb {
+  width: 16px;
+  height: 16px;
+  border: 3px solid var(--surface);
+  border-radius: 50%;
+  background: var(--act);
+  box-shadow: 0 0 0 1px var(--act);
+}
+
 .replay-description,
 .replay .position {
   color: var(--muted);
@@ -4119,6 +4300,20 @@ body:has(main.game, #app [data-settings], #app .splash, #app main.loading) #sett
   background: var(--raised);
   border-radius: 6px;
   padding: 0.4em 0.55em;
+}
+
+/* The entry in a line, the entry as written behind Details. */
+.replay .entry-line {
+  font-weight: 600;
+}
+
+.replay .entry-details > summary {
+  padding: 12px 0;
+  line-height: 20px;
+  color: var(--act-text);
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
 }
 
 main.scenarios {

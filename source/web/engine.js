@@ -49,6 +49,66 @@ globalThis.parunLink = (op) => postMessage({ link: op });
 // after a reload, as parunKeptGame.
 globalThis.parunKeepGame = (op) => postMessage({ game: op });
 
+// The games this browser finished (Parun.Browser.keepPlayed), each a
+// summary line and its scenario file by its key, in IndexedDB rather than
+// localStorage: a scenario runs to tens of kilobytes, and the saved decks
+// share localStorage's few megabytes. All are read once, before the engine
+// starts, and held here.
+const playedStore = "played";
+const playedDb = new Promise((resolve, reject) => {
+  const opening = indexedDB.open("parun", 1);
+  opening.onupgradeneeded = () => opening.result.createObjectStore(playedStore);
+  opening.onsuccess = () => resolve(opening.result);
+  opening.onerror = () => reject(opening.error);
+});
+const playedRead = playedDb
+  .then(
+    (db) =>
+      new Promise((resolve, reject) => {
+        const kept = new Map();
+        const walk = db.transaction(playedStore).objectStore(playedStore).openCursor();
+        walk.onsuccess = () => {
+          const at = walk.result;
+          if (!at) resolve(kept);
+          else {
+            kept.set(at.key, at.value);
+            at.continue();
+          }
+        };
+        walk.onerror = () => reject(walk.error);
+      }),
+  )
+  .catch((problem) => {
+    console.warn(problem);
+    return new Map();
+  });
+function changePlayed(change) {
+  playedDb
+    .then((db) => {
+      const writing = db.transaction(playedStore, "readwrite");
+      writing.onerror = () => console.warn(writing.error);
+      change(writing.objectStore(playedStore));
+    })
+    .catch((problem) => console.warn(problem));
+}
+let played = new Map();
+// Each game's key and summary, a tab between them, a line each.
+globalThis.parunPlayed = () => Array.from(played, ([key, game]) => `${key}\t${game.summary}`).join("\n");
+globalThis.parunPlayedScenario = (key) => played.get(key)?.scenario ?? "";
+globalThis.parunKeepPlayed = (key, summary, scenario) => {
+  played.set(key, { summary, scenario });
+  changePlayed((store) => store.put({ summary, scenario }, key));
+};
+globalThis.parunForgetPlayed = (key) => {
+  played.delete(key);
+  changePlayed((store) => store.delete(key));
+};
+// Every game, those another tab kept since this one loaded too.
+globalThis.parunClearPlayed = () => {
+  played.clear();
+  changePlayed((store) => store.clear());
+};
+
 // Each load phase's time goes to the page.
 let started = false;
 let mark = performance.now();
@@ -219,6 +279,7 @@ Object.assign(exports, instance.exports);
 phase("compiled");
 wasi.initialize(instance);
 globalThis.parunKeptGame = (await savedArrived).game ?? "";
+played = await playedRead;
 // The game runs inside start, waiting on the page between answers.
 // An exception Haskell does not catch rejects start's promise; the page says so.
 instance.exports.start().catch((error) => postMessage({ phase: `engine failed: ${error.message}` }));

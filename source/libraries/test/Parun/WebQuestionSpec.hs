@@ -1084,6 +1084,7 @@ frameAt stop =
         Stop.MkBefore _ _ asked -> Protocol.depthOf asked
         Stop.MkEnded _ -> 0,
       Replay.entry = Nothing,
+      Replay.entryLine = Nothing,
       Replay.question = Nothing,
       Replay.failure = Nothing,
       Replay.reading = Nothing
