@@ -4,8 +4,8 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
     <meta name="color-scheme" content="light dark">
-    <meta name="theme-color" content="#f4f1ea" media="(prefers-color-scheme: light)">
-    <meta name="theme-color" content="#15171c" media="(prefers-color-scheme: dark)">
+    <meta name="theme-color" content="#ffffff" media="(prefers-color-scheme: light)">
+    <meta name="theme-color" content="#1a1c23" media="(prefers-color-scheme: dark)">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="default">
@@ -74,7 +74,21 @@
       </defs>
     </svg>
     <p id="insecure" hidden>This page is not a secure context, so Safari runs the engine many times slower. Load it over https or from localhost (script/serve-web.sh).</p>
-    <div id="app"><div class="splash"><img class="logo" src="./icon.svg" alt="" width="88" height="88"><h1>Parun</h1><p class="phase"><svg class="icon spinner small" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><circle class="track" cx="12" cy="12" r="9"/><path class="arc" d="M12 3a9 9 0 0 1 9 9"/></svg><span id="phase">Loading the engine…</span></p></div></div>
+    <!-- Until the engine draws its first screen: the logo in a turning ring,
+         and each step of loading as page.js hears of it. The engine and the
+         cards download at once, so they are one step, with a percentage
+         only for the cards, whose chunks page.js counts (Parun.Web.Loading
+         draws the same once the engine runs). -->
+    <div id="app"><div class="splash">
+      <div class="loading-ring"><svg viewBox="0 0 168 168" aria-hidden="true" focusable="false"><circle class="track" cx="84" cy="84" r="78"/><circle class="arc" cx="84" cy="84" r="78"/></svg><img class="logo" src="./icon.svg" alt="" width="104" height="104"></div>
+      <div class="heading"><h1>Parun</h1><p class="tagline">A Magic rules engine, running in your browser.</p></div>
+      <ol class="steps panel" aria-label="Loading progress">
+        <li class="now" data-step="fetch"><span class="dot" aria-hidden="true"></span><span class="label">Fetching the engine and the cards</span><span class="state">Cards 0%</span></li>
+        <li class="waiting" data-step="table"><span class="dot" aria-hidden="true"></span><span class="label">Setting the table</span><span class="state"></span></li>
+      </ol>
+      <p class="phase" id="phase" role="alert"></p>
+      <p class="hint">Once fetched, the engine is kept, so later visits start sooner.</p>
+    </div></div>
     <div class="chrome">
       <button type="button" id="settings-button" aria-label="Settings" aria-haspopup="true" aria-expanded="false" aria-controls="settings"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><use href="#ui-gear"/></svg></button>
       <div id="settings" role="dialog" aria-label="Settings" hidden>

@@ -42,8 +42,6 @@ data Event
     MkMakeReply
   | -- | Toggles whether you are ready; the shell tells the host.
     MkReady
-  | -- | Leaves for the home screen, closing the connection.
-    MkHome
   deriving (Eq, Show)
 
 -- | A join screen whose decks are still to read.
@@ -88,7 +86,7 @@ view screen =
         "main"
         ["lobby", "join"]
         []
-        $ [ (Text.pack "top", Element.el "div" ["lobby-top"] [] [Element.button ["home-button"] MkHome [Element.string "Home"], Element.el "h1" [] [] [Element.string "Join a game"]]),
+        $ [ (Text.pack "top", Element.el "div" ["lobby-top"] [] [Element.el "h1" [] [] [Element.string "Join a game"]]),
             ( Text.pack "status",
               Element.el "section" ["join-status"] [Element.attr "aria-label" (Text.pack "Connection")] $
                 if connected screen

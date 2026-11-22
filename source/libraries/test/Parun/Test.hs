@@ -1144,6 +1144,7 @@ import qualified Parun.VariableEffectSpec
 import qualified Parun.VisibilitySpec
 import qualified Parun.VoteSpec
 import qualified Parun.Web.AppSpec
+import qualified Parun.Web.BarSpec
 import qualified Parun.Web.BuilderSpec
 import qualified Parun.Web.CardIndexSpec
 import qualified Parun.Web.DiffSpec
@@ -2337,6 +2338,7 @@ spec s reference corpus = do
   Parun.VisibilitySpec.spec s registry
   Parun.VoteSpec.spec s registry
   Parun.Web.AppSpec.spec s
+  Parun.Web.BarSpec.spec s
   Parun.Web.DiffSpec.spec s
   Parun.Web.EndingSpec.spec s
   Parun.Web.HtmlSpec.spec s

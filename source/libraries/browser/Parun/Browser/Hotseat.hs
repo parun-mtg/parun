@@ -79,7 +79,7 @@ instance Exception.Exception Abandoned
 -- (Protocol.resumed), and every reply made from there is given to `kept`.
 -- Once over, `tell` is given each seat's verdict, what is said of the game
 -- and its scenario file: how it came out, or why it could not start.
-game :: Browser.Page Screen.Event -> Registry.Registry Identity.Identity -> IORef.IORef Web.Question.Level -> NonEmpty.NonEmpty (FilePath, Text.Text) -> Map.Map PlayerId.PlayerId (Protocol.Exchange IO) -> Key.Type.Key -> [R.Reply] -> (R.Reply -> IO ()) -> ((PlayerId.PlayerId -> Ending.Verdict) -> [Text.Text] -> Text.Text -> IO ()) -> IO Leave -> IO (Either [Text.Text] Played)
+game :: Browser.Page Screen.Event -> Registry.Registry Identity.Identity -> IORef.IORef Web.Question.Level -> NonEmpty.NonEmpty (FilePath, Text.Text) -> Map.Map PlayerId.PlayerId (Protocol.Exchange IO) -> Key.Type.Key -> [R.Reply] -> (R.Reply -> IO ()) -> ((PlayerId.PlayerId -> Ending.Verdict) -> [Text.Text] -> Text.Text -> IO ()) -> (Maybe PlayerView.PlayerView -> IO Leave) -> IO (Either [Text.Text] Played)
 game page registry levelRef seats remotes seed stored kept tell leave = do
   seatRef <- IORef.newIORef . newSeat player =<< IORef.readIORef levelRef
   keepingLevel levelRef seatRef . Exception.handle (\MkAbandonedGame -> pure (Right MkAbandoned)) $ do
@@ -133,8 +133,8 @@ options count remote = PlayOptions.none {PlayOptions.json = True, PlayOptions.bo
 -- once; else after a hand-off when the screen last faced another seat, the
 -- question's form until it answers, a card tapped showing its text from the
 -- card data through `lookUp`, and the home screen through `leave` while
--- the seat is asked.
-exchange :: (CardName.CardName -> Either InvalidCorpus.InvalidCorpus (Maybe Card.Card)) -> Browser.Page Screen.Event -> IORef.IORef Seat -> IO Leave -> Protocol.Exchange IO
+-- the seat is asked, given the board the question shows.
+exchange :: (CardName.CardName -> Either InvalidCorpus.InvalidCorpus (Maybe Card.Card)) -> Browser.Page Screen.Event -> IORef.IORef Seat -> (Maybe PlayerView.PlayerView -> IO Leave) -> Protocol.Exchange IO
 exchange lookUp page seatRef leave request = do
   fmap (Just . Right) $ do
     Monad.forM_ (Request.view request) $ IORef.modifyIORef' seatRef . witness
@@ -199,7 +199,7 @@ exchange lookUp page seatRef leave request = do
         -- The home screen runs here, the question waiting; giving the game
         -- up unwinds it (game).
         Screen.MkQuestion Web.Question.MkHome -> do
-          left <- leave
+          left <- leave (Request.view pending)
           case left of
             MkResume -> asking pending picked reading focus
             MkAbandon -> Exception.throwIO MkAbandonedGame

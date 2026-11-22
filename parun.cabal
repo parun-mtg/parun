@@ -4099,6 +4099,8 @@ library web
     Parun.Web.App
     Parun.Web.AppSpec
     Parun.Web.Attribute
+    Parun.Web.Bar
+    Parun.Web.BarSpec
     Parun.Web.Board
     Parun.Web.Builder
     Parun.Web.BuilderSpec

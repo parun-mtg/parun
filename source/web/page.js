@@ -29,16 +29,36 @@ if (!isSecureContext) document.getElementById("insecure").hidden = false;
 // Once fetched, the engine is kept for later visits (sw.js).
 if ("serviceWorker" in navigator && isSecureContext) navigator.serviceWorker.register("./sw.js").catch((problem) => console.warn(problem));
 
-// The engine's load phases go to the console, and the loading screen says
-// what comes after each (engine.js); a failure is said as it is.
-const nextPhase = { compiled: "Fetching the cards", decks: "Fetching the cards", "cards-0": "Fetching the cards", "cards-1": "Fetching the cards", "cards-2": "Fetching the cards", "cards-3": "Fetching the rules", rules: "Reading the cards" };
+// The engine's load phases go to the console, and the loading screen marks
+// each step as it is heard of (engine.js). The engine compiles while the
+// cards download, so the two are one step, done once both are, saying how
+// many of the cards' chunks have arrived; the table is set once the engine
+// is compiled. A failure is said as it is, and stops the ring.
+const cardsFetched = new Set();
+let compiled = false;
+// How many chunks the cards come in, as engine.js says before fetching any.
+let cardChunks = Infinity;
+function step(name, state, said = "") {
+  const item = document.querySelector(`.splash [data-step="${name}"]`);
+  if (!item) return;
+  item.className = state;
+  item.querySelector(".state").textContent = said;
+}
 function note(line) {
   console.log(line);
-  const phase = document.getElementById("phase");
-  const next = nextPhase[line.split(" ")[0]];
-  if (phase) phase.textContent = next ? `${next}\u2026` : line;
-  // A failure stops the spinner.
-  if (phase && !next) phase.parentElement.querySelector(".spinner")?.remove();
+  const name = line.split(" ")[0];
+  if (name === "compiled" || name.startsWith("cards-")) {
+    if (name === "compiled") compiled = true;
+    else cardsFetched.add(name);
+    const cardsDone = cardsFetched.size === cardChunks;
+    if (cardsDone && compiled) step("fetch", "done", "Done");
+    else step("fetch", "now", cardsDone ? "Cards done" : `Cards ${Math.round((100 * cardsFetched.size) / cardChunks)}%`);
+    if (compiled) step("table", "now");
+  } else if (!["decks", "rules", "scenarios", "started"].includes(name)) {
+    const phase = document.getElementById("phase");
+    if (phase) phase.textContent = line;
+    document.querySelector(".splash .loading-ring")?.classList.add("stopped");
+  }
 }
 
 // The settings menu: theme (the system's unless one is picked), card size
@@ -540,6 +560,7 @@ document.addEventListener("keydown", (event) => {
 engine.onmessage = ({ data }) => {
   if ("patches" in data) apply(data.patches);
   else if ("phase" in data) note(data.phase);
+  else if ("cardChunks" in data) cardChunks = data.cardChunks;
   else if ("save" in data) localStorage.setItem(deckKey + data.save.slug, data.save.text);
   else if ("forget" in data) localStorage.removeItem(deckKey + data.forget);
   else if ("link" in data) linkStep(data.link);
