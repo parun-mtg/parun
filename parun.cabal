@@ -4113,6 +4113,10 @@ library web
     Parun.Web.Card
     Parun.Web.CardIndex
     Parun.Web.CardIndexSpec
+    Parun.Web.DeckBrowser
+    Parun.Web.DeckBrowserSpec
+    Parun.Web.Decks
+    Parun.Web.DecksSpec
     Parun.Web.Diff
     Parun.Web.DiffSpec
     Parun.Web.Element

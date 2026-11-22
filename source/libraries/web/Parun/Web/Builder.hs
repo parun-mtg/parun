@@ -17,9 +17,9 @@ import qualified Parun.Types.CardType as CardType
 import qualified Parun.Types.Color as Color
 import qualified Parun.Web.Card as Web.Card
 import qualified Parun.Web.CardIndex as CardIndex
+import qualified Parun.Web.DeckBrowser as DeckBrowser
 import qualified Parun.Web.Element as Element
 import qualified Parun.Web.Html as Html
-import qualified Parun.Web.Lobby as Lobby
 import qualified Parun.Web.Mana as Mana
 import qualified Text.Read as Read
 
@@ -343,27 +343,27 @@ dirty builder = snapshot builder /= baseline builder
 
 -- | The saved deck a save writes, given the saved decks' names: the one
 -- this deck was saved as, or else the one the typed name makes, unless it
--- may not be used (Lobby.nameProblems); none for a deck with no cards.
+-- may not be used (DeckBrowser.nameProblems); none for a deck with no cards.
 saveTarget :: Seq.Seq Text.Text -> Builder -> Either [Text.Text] Text.Text
 saveTarget decks builder
   | all (Map.null . (`zoneOf` builder)) zones, not (pooledSide builder && not (null (unused builder))) = Left [Text.pack "Add some cards before saving."]
   | otherwise = case savedAs builder of
       Just name -> Right name
-      Nothing -> case Lobby.nameProblems decks (saveName builder) of
-        [] -> Right (Lobby.savedPrefix <> Lobby.slugOf (saveName builder))
+      Nothing -> case DeckBrowser.nameProblems decks (saveName builder) of
+        [] -> Right (DeckBrowser.savedPrefix <> DeckBrowser.slugOf (saveName builder))
         problems' -> Left problems'
 
 -- | The deck as the lobby's preview lines, each card's cost, mana value and
 -- kind from the index.
-linesOf :: Builder -> [Lobby.Line]
+linesOf :: Builder -> [DeckBrowser.Line]
 linesOf builder =
   let line (card, n) = case Map.lookup (canonical builder card) (byName builder) of
-        Just e -> Lobby.MkLine n card (CardIndex.cost e) (CardIndex.value e) (kindOf (CardIndex.types e))
-        Nothing -> Lobby.MkLine n card Nothing 0 Lobby.MkSpell
+        Just e -> DeckBrowser.MkLine n card (CardIndex.cost e) (CardIndex.value e) (kindOf (CardIndex.types e))
+        Nothing -> DeckBrowser.MkLine n card Nothing 0 DeckBrowser.MkSpell
       kindOf types'
-        | Set.member CardType.Land types' = Lobby.MkLand
-        | Set.member CardType.Creature types' = Lobby.MkCreature
-        | otherwise = Lobby.MkSpell
+        | Set.member CardType.Land types' = DeckBrowser.MkLand
+        | Set.member CardType.Creature types' = DeckBrowser.MkCreature
+        | otherwise = DeckBrowser.MkSpell
    in fmap line (Map.toList (deck builder))
 
 -- | The colours of the deck's cards and its commander's, its sideboard's
@@ -382,7 +382,7 @@ searchKinds = [CardType.Creature, CardType.Instant, CardType.Sorcery, CardType.A
 view :: Builder -> Html.Html Event
 view builder =
   let lines' = linesOf builder
-      total = sum (fmap Lobby.copies lines')
+      total = sum (fmap DeckBrowser.copies lines')
       named = CardName.unwrap
       atCap section card = section == DeckList.Main && maybe False (<= Map.findWithDefault 0 card (deck builder)) (capOf builder card)
       adding section card = Element.el "button" ["add"] ([Element.attr "type" (Text.pack "button"), Element.on "click" (MkAdd section card)] <> [Element.attr "disabled" Text.empty | atCap section card]) [Element.el "span" ["sr-only"] [] [Element.text (Text.pack "Add " <> named card)]]
@@ -447,10 +447,10 @@ view builder =
                 <> [Element.el "p" ["shown-count"] [] [Element.string ("Showing " <> show (Seq.length shown) <> " of " <> show count)] | count > Seq.length shown]
                 <> [Element.el "div" ["results"] [] (fmap row (Foldable.toList shown))]
       kindBlock title k =
-        let these = List.sortOn (\l -> (Lobby.value l, named (Lobby.card l))) [l | l <- lines', Lobby.kind l == k]
+        let these = List.sortOn (\l -> (DeckBrowser.value l, named (DeckBrowser.card l))) [l | l <- lines', DeckBrowser.kind l == k]
          in [ Element.el "div" ["deck-section"] [] $
-                Element.el "h3" [] [] [Element.string (title <> " \x00b7 " <> show (sum (fmap Lobby.copies these)))]
-                  : [deckLine DeckList.Main (Lobby.card l) (Lobby.copies l) (Lobby.cost l) | l <- these]
+                Element.el "h3" [] [] [Element.string (title <> " \x00b7 " <> show (sum (fmap DeckBrowser.copies these)))]
+                  : [deckLine DeckList.Main (DeckBrowser.card l) (DeckBrowser.copies l) (DeckBrowser.cost l) | l <- these]
             | not (null these)
             ]
       -- CR 903.5a / 903.12d: a commander counts toward the size of a deck whose
@@ -512,7 +512,7 @@ view builder =
             Element.el "div" ["builder-top"] [] $
               [ Element.button ["home-button"] MkBack [Element.string "Back"],
                 Element.el "label" ["sr-only"] [Element.attr "for" (Text.pack "builder-format")] [Element.string "Format"],
-                Element.el "select" ["format"] [Element.attr "id" (Text.pack "builder-format"), Element.on "change" MkFormat] (option (format builder) (Text.empty, Text.pack "Casual (no format)") : [option (format builder) (f, Lobby.titled f) | f <- formats builder]),
+                Element.el "select" ["format"] [Element.attr "id" (Text.pack "builder-format"), Element.on "change" MkFormat] (option (format builder) (Text.empty, Text.pack "Casual (no format)") : [option (format builder) (f, DeckBrowser.titled f) | f <- formats builder]),
                 Element.el "label" ["sr-only"] [Element.attr "for" (Text.pack "builder-pool")] [Element.string "Card pool"],
                 Element.el "select" ["pool"] [Element.attr "id" (Text.pack "builder-pool"), Element.on "change" MkPoolChoice] $
                   [option poolValue (Text.empty, Text.pack "Every card")]
@@ -547,16 +547,16 @@ view builder =
                     <> results,
                 Element.el "section" ["builder-deck"] [Element.attr "aria-label" (Text.pack "Deck")] $
                   [ Element.el "div" ["deck-head"] [] [Element.el "h2" [] [] [Element.string counted], Element.el "span" ["pips"] [Element.attr "aria-label" (Text.pack "Colours")] [Mana.symbol (Text.pack (Web.Card.letterUpper c)) | c <- Set.toList (deckColours builder)]],
-                    Lobby.curve [] (Lobby.curveOf lines')
+                    DeckBrowser.curve [] (DeckBrowser.curveOf lines')
                   ]
                     <> [Element.el "p" ["problem"] [Element.attr "role" (Text.pack "alert")] [Element.text p] | p <- Maybe.maybeToList (loadProblem builder)]
                     <> [Element.el "ul" ["notices"] [] [Element.el "li" [] [] [Element.text n] | n <- notices builder] | not (null (notices builder))]
                     <> keptNote
                     <> [Element.el "ul" ["problems"] [Element.attr "role" (Text.pack "alert")] [Element.el "li" [] [] [Element.text p] | p <- problems builder] | not (null (problems builder))]
                     <> zoneBlock DeckList.Commander "Commander"
-                    <> kindBlock "Creatures" Lobby.MkCreature
-                    <> kindBlock "Spells" Lobby.MkSpell
-                    <> kindBlock "Lands" Lobby.MkLand
+                    <> kindBlock "Creatures" DeckBrowser.MkCreature
+                    <> kindBlock "Spells" DeckBrowser.MkSpell
+                    <> kindBlock "Lands" DeckBrowser.MkLand
                     <> (if pooledSide builder then [] else zoneBlock DeckList.Side "Sideboard")
                     <> pooledBlock
                     <> [Element.el "p" ["empty"] [] [Element.string "Add cards from the search."] | null lines', Map.null (command builder), Map.null (side builder)]

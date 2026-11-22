@@ -14,9 +14,9 @@ import qualified Parun.Types.PlayerView as PlayerView
 import qualified Parun.Types.SeatView as SeatView
 import qualified Parun.Web.Bar as Bar
 import qualified Parun.Web.Card as Card
+import qualified Parun.Web.DeckBrowser as DeckBrowser
 import qualified Parun.Web.Element as Element
 import qualified Parun.Web.Html as Html
-import qualified Parun.Web.Lobby as Lobby
 import qualified Parun.Web.Mana as Mana
 
 data Home = MkHome
@@ -54,13 +54,16 @@ data Deck = MkDeck
 
 -- | Where the home screen leads.
 data Choice
-  = MkPlayBots
+  = -- | The lobby, with this deck yours if any.
+    MkPlayBots (Maybe Text.Text)
   | -- | The lobby, with a bot's seat given to a player invited by link.
     MkPlayFriend
   | -- | The deck builder, on a new deck.
     MkBuildDeck
   | -- | The deck builder, on this saved deck.
     MkEditDeck Text.Text
+  | -- | The Decks screen, with this deck selected if any.
+    MkBrowseDecks (Maybe Text.Text)
   | MkReplays
   | -- | Plays on by hand from this position of this scenario.
     MkPlayOn Text.Text Natural
@@ -98,10 +101,11 @@ pausedOn board = case board of
 -- | Whether a choice starts a game, and so concedes a paused one.
 starts :: Choice -> Bool
 starts choice = case choice of
-  MkPlayBots -> True
+  MkPlayBots _ -> True
   MkPlayFriend -> True
   MkBuildDeck -> False
   MkEditDeck _ -> False
+  MkBrowseDecks _ -> False
   MkReplays -> False
   MkPlayOn _ _ -> True
 
@@ -109,8 +113,8 @@ starts choice = case choice of
 navigate :: Bar.Section -> Event
 navigate section = case section of
   Bar.MkHome -> MkCancel
-  Bar.MkPlay -> MkChoose MkPlayBots
-  Bar.MkDecks -> MkChoose MkBuildDeck
+  Bar.MkPlay -> MkChoose (MkPlayBots Nothing)
+  Bar.MkDecks -> MkChoose (MkBrowseDecks Nothing)
   Bar.MkReplays -> MkChoose MkReplays
 
 update :: Event -> Home -> Outcome
@@ -148,7 +152,7 @@ view home =
                    "nav"
                    ["tiles"]
                    [Element.attr "aria-label" (Text.pack "What to do")]
-                   [ tile ["lead" | Maybe.isNothing (paused home)] MkPlayBots "Play a bot" "Pick a deck for each seat and start.",
+                   [ tile ["lead" | Maybe.isNothing (paused home)] (MkPlayBots Nothing) "Play a bot" "Pick a deck for each seat and start.",
                      tile [] MkPlayFriend "Play a friend" "Invite someone in another browser with a link.",
                      tile [] MkBuildDeck "Build a deck" "Start from a blank list, then save it to play.",
                      tile [] MkReplays "Replays" "Step through the scenarios the rules are tested on."
@@ -189,7 +193,8 @@ pausedView game =
       Element.button ["primary", "resume"] MkResume [Element.string "Resume"]
     ]
 
--- | The decks saved in this browser, each with the way to edit it.
+-- | The decks saved in this browser, each opening the Decks screen on it,
+-- and each with the way to edit it.
 decksView :: [Deck] -> Html.Html Event
 decksView decks =
   Element.el
@@ -206,7 +211,7 @@ decksView decks =
         []
         []
         [ Element.el "span" ["pips"] [] [Mana.symbol (Text.pack (Card.letterUpper c)) | c <- Set.toList (colours deck)],
-          Element.el "span" ["deck-row-name"] [] [Element.text (snd (Lobby.describe (name deck)))],
+          Element.button ["quiet", "deck-row-name"] (MkChoose (MkBrowseDecks (Just (name deck)))) [Element.text (snd (DeckBrowser.describe (name deck)))],
           Element.el "span" ["muted"] [] [Element.string (maybe "" (\n -> show n <> " cards") (size deck))],
           Element.button ["quiet"] (MkChoose (MkEditDeck (name deck))) [Element.string "Edit"]
         ]

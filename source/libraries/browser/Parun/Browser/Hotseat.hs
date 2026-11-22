@@ -40,10 +40,10 @@ import qualified Parun.Types.Request as Request
 import qualified Parun.Types.Result as Result
 import qualified Parun.Types.SeatView as SeatView
 import qualified Parun.Web.Card as Web.Card
+import qualified Parun.Web.DeckBrowser as DeckBrowser
 import qualified Parun.Web.Element as Element
 import qualified Parun.Web.Ending as Ending
 import qualified Parun.Web.Html as Html
-import qualified Parun.Web.Lobby as Lobby
 import qualified Parun.Web.Log as Log
 import qualified Parun.Web.Question as Web.Question
 import qualified Parun.Web.Screen as Screen
@@ -292,5 +292,5 @@ starting decks =
     []
     [ Element.el "div" ["spinner"] [Element.attr "aria-hidden" (Text.pack "true")] [],
       Element.el "p" [] [] [Element.string "Shuffling up\x2026"],
-      Element.el "p" ["matchup-line"] [] (List.intersperse (Element.el "span" ["versus"] [] [Element.string " vs "]) (fmap (Html.text . Lobby.label) (NonEmpty.toList decks)))
+      Element.el "p" ["matchup-line"] [] (List.intersperse (Element.el "span" ["versus"] [] [Element.string " vs "]) (fmap (Html.text . DeckBrowser.label) (NonEmpty.toList decks)))
     ]

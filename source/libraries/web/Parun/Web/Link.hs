@@ -47,7 +47,7 @@ data Message
 data Place = MkPlace
   { -- | Who plays it: "Host", "You", "Bot 2".
     who :: Text.Text,
-    -- | Its deck as the match-up names it (Lobby.label), or what stands for
+    -- | Its deck as the match-up names it (DeckBrowser.label), or what stands for
     -- one not chosen yet.
     deck :: Text.Text,
     -- | Whether the person playing it is ready; Nothing for a bot.
