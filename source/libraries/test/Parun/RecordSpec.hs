@@ -52,6 +52,7 @@ import qualified Parun.Types.RuleFamily as RuleFamily
 import qualified Parun.Types.Scenario as Scenario.Type
 import qualified Parun.Types.Settle as Settle
 import qualified Parun.Types.Start as Start
+import qualified Parun.Types.Stop as Stop
 import qualified Parun.Types.Timed as Timed
 import qualified Parun.Types.TurnRegisters as TurnRegisters
 import qualified Parun.Web.Ending as Ending
@@ -109,6 +110,15 @@ spec s registry = Spec.describe s "Record" $ do
     Spec.assertEqWith s "cut" (fmap fst outcome) (Left (Text.pack "curfew"))
     case replayed of
       Right final -> Spec.assertBool s (Just final == cut) "stopped where it was cut"
+      Left failure -> Spec.assertFailure s (Text.unpack (Scenario.render failure))
+
+  -- The web client's replay starts at position 0 (Parun.Browser.Replay).
+  Spec.it s "CR 103.2a a recorded game's first position holds every seat's deck in its library" $ do
+    matchup <- BotSpec.sevens s registry
+    let (_, timeline) = recorded bots matchup
+    stop <- Scenario.replay registry (Just 0) (saved matchup timeline)
+    case stop of
+      Right reached -> Spec.assertEqWith s "each library's size" (fmap length (GameState.library (Stop.state reached))) (Map.fromList [(S.alice, 7), (S.bob, 7)])
       Left failure -> Spec.assertFailure s (Text.unpack (Scenario.render failure))
 
   Spec.it s "CR 404.3: a seat arranging its graveyard is asked again on replay" $ do
