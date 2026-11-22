@@ -116,6 +116,17 @@
       "turn": 1
     },
     {
+      "turn": 1,
+      "step": "PrecombatMain",
+      "player": "alice",
+      "do": {
+        "Answer": {
+          "prompt": "ChooseRollModifier",
+          "with": 0
+        }
+      }
+    },
+    {
       "do": {
         "Answer": {
           "prompt": "Rethrow",

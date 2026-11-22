@@ -1343,7 +1343,7 @@ combatReplaySpec s =
           Spec.assertEqWith s "a short transcript declines" (Replay.defaultAnswer p) Set.empty
         -- CR 706.2b: which modifier the roller applied next is a decision.
         Spec.it s "ChooseRollModifier round-trips through the transcript" $ do
-          let p = Prompt.ChooseRollModifier decider S.alice (Just (ObjectId.MkObjectId 7) NonEmpty.:| [Just (ObjectId.MkObjectId 9)])
+          let p = Prompt.ChooseRollModifier decider S.alice ((Just (ObjectId.MkObjectId 7), Just 2) NonEmpty.:| [(Just (ObjectId.MkObjectId 9), Nothing)])
           Spec.assertEqWith s "picking the second round trips" (Replay.decode p (Replay.encode p 1)) (Just 1)
           Spec.assertEqWith s "a replacement choice does not decode as one" (Replay.decode p (Response.ChoseReplacement 1)) Nothing
         Spec.it s "an explore choice does not decode as a riot choice" $ do

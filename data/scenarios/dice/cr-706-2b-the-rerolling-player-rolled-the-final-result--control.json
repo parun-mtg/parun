@@ -106,6 +106,17 @@
     {
       "turn": 1,
       "step": "PrecombatMain",
+      "player": "alice",
+      "do": {
+        "Answer": {
+          "prompt": "ChooseRollModifier",
+          "with": 0
+        }
+      }
+    },
+    {
+      "turn": 1,
+      "step": "PrecombatMain",
       "player": "bob",
       "do": {
         "Answer": {
