@@ -233,6 +233,10 @@ shown offered browser =
 anySaved :: DeckBrowser -> Bool
 anySaved = any isSaved . decks
 
+-- | The shelf a deck is on.
+shelfOf :: Text.Text -> Shelf
+shelfOf name = if isSaved name then MkSaved else MkPrecons
+
 -- | The sets the shipped decks come from, by code, in order.
 setsOf :: DeckBrowser -> [Text.Text]
 setsOf browser = Set.toList (Set.fromList [fst (describe name) | name <- Foldable.toList (decks browser), not (isSaved name)])
@@ -379,7 +383,7 @@ resultsView pick picked none offered browser =
   where
     listed = shown offered browser
 
--- | A deck as a tile: its set as a badge, its colours, its name, its
+-- | A deck as a tile: its set as a badge ("Saved" for a saved one), its colours, its name, its
 -- format, whether it is legal, and its curve once read; pressed where
 -- `picked`.
 tile :: (Text.Text -> msg) -> Bool -> DeckBrowser -> Text.Text -> Html.Html msg
@@ -390,7 +394,7 @@ tile pick picked browser name =
         "button"
         (["deck"] <> ["picked" | picked])
         [Element.attr "type" (Text.pack "button"), Element.on "click" (pick name), Element.attr "aria-pressed" (Text.pack (if picked then "true" else "false"))]
-        ( [ Element.el "span" ["deck-top"] [] ([Element.el "span" ["set-badge"] [] [Element.text code] | not (isSaved name)] <> [pips (Map.findWithDefault Set.empty name (palette browser))]),
+        ( [ Element.el "span" ["deck-top"] [] [Element.el "span" ["set-badge"] [] [Element.text (if isSaved name then Text.pack "Saved" else code)], pips (Map.findWithDefault Set.empty name (palette browser))],
             Element.el "span" ["deck-name"] [] [Element.text own]
           ]
             <> [Element.el "span" ["deck-badges"] [] format | not (null format)]

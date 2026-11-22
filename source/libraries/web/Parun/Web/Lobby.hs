@@ -130,7 +130,7 @@ new =
 
 -- | A new lobby with this deck yours, on the shelf it is on.
 holding :: Text.Text -> Lobby
-holding name = browsed (\b -> b {DeckBrowser.shelf = if DeckBrowser.isSaved name then DeckBrowser.MkSaved else DeckBrowser.MkPrecons}) new {mine = Just name}
+holding name = browsed (\b -> b {DeckBrowser.shelf = DeckBrowser.shelfOf name}) new {mine = Just name}
 
 -- | The lobby with its deck browser changed.
 browsed :: (DeckBrowser.DeckBrowser -> DeckBrowser.DeckBrowser) -> Lobby -> Lobby
@@ -542,7 +542,7 @@ detailView lobby =
           DeckBrowser.detailBody (browser lobby) name
             <> [ Element.el "div" ["saved-tools"] [] $
                    if DeckBrowser.isSaved name
-                     then [Element.button ["edit"] (MkEdit name) [Element.string "Edit"], Element.button ["export"] (MkBrowse (DeckBrowser.MkExport name)) [Element.string "Export"], Element.button ["delete"] (MkBrowse (DeckBrowser.MkDelete name)) [Element.string "Delete"]]
+                     then [Element.button ["edit"] (MkEdit name) [Element.string "Edit"], Element.button ["export-deck"] (MkBrowse (DeckBrowser.MkExport name)) [Element.string "Export"], Element.button ["delete"] (MkBrowse (DeckBrowser.MkDelete name)) [Element.string "Delete"]]
                      else [Element.button ["edit"] (MkEdit name) [Element.string "Edit a copy"]]
                ]
             <> fmap (fmap MkBrowse) (DeckBrowser.exportedView (browser lobby) name)

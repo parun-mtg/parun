@@ -402,6 +402,7 @@ rememberSaved shell name contents = do
         formats = Map.alter (const (DeckList.formatOf contents)) name (formats l),
         palette = Map.delete name (palette l),
         deckCurves = Map.delete name (deckCurves l),
+        deckSizes = Map.delete name (deckSizes l),
         unread = (name, path) : filter ((/= name) . fst) (unread l),
         illegal = Map.delete name (illegal l),
         unchecked = (name, path) : filter ((/= name) . fst) (unchecked l)
@@ -440,7 +441,7 @@ catalogued shell wanted browsed = do
   read' <- case (cards now, deckFiles now) of
     (Just byFile, Just files) -> do
       root <- Registry.defaultRoot
-      Monad.forM [name | name <- wanted, Map.notMember name (DeckBrowser.previews browsed), Map.member name files] $ \name -> do
+      Monad.forM [name | name <- wanted, Map.notMember name (DeckBrowser.previews browsed)] $ \name -> do
         contents <- maybe (pure Text.empty) (fmap Encoding.decodeUtf8Lenient . ByteString.readFile) (Map.lookup name files)
         pure (name, [lineOf root byFile n card | (n, card) <- Lobby.entries contents])
     _ -> pure []
@@ -483,6 +484,8 @@ decksScreen shell chosen = do
       current <- refreshedDecks shown
       display current
       woke <- await shell
+      now' <- IORef.readIORef (loaded shell)
+      let unread' = Text.pack "The decks did not load: reload to try again."
       case woke of
         MkTapped (Screen.MkNav section) _
           | section /= Bar.MkDecks -> pure (sectionNext section)
@@ -492,6 +495,7 @@ decksScreen shell chosen = do
           Web.Decks.MkPlay name -> pure (MkToLobby (Just name))
           Web.Decks.MkSubmitRename -> case Web.Decks.renameTarget current of
             Left problems -> go (Web.Decks.refused problems current)
+            Right _ | Maybe.isNothing (deckFiles now') -> go (Web.Decks.refused [unread'] current)
             Right (old, renamed)
               | old == renamed -> go (Web.Decks.update Web.Decks.MkCancelRename Text.empty current)
               | otherwise -> do
@@ -502,15 +506,16 @@ decksScreen shell chosen = do
                       rememberSaved shell renamed contents
                       forgetSaved shell old
                       go (Web.Decks.savedAs renamed (Web.Decks.deleted old current))
-          Web.Decks.MkDuplicate name -> do
-            read' <- deckText shell name
-            case read' of
-              Nothing -> go current
-              Just contents -> do
-                held <- maybe Seq.empty (Seq.fromList . Map.keys) . deckFiles <$> IORef.readIORef (loaded shell)
-                let copy = Web.Decks.copyName held name
-                rememberSaved shell copy contents
-                go (Web.Decks.savedAs copy current)
+          Web.Decks.MkDuplicate name
+            | DeckBrowser.isSaved name,
+              Just files <- deckFiles now' -> do
+                read' <- deckText shell name
+                case read' of
+                  Nothing -> go current
+                  Just contents -> do
+                    let copy = Web.Decks.copyName (Seq.fromList (Map.keys files)) name
+                    rememberSaved shell copy contents
+                    go (Web.Decks.savedAs copy current)
           Web.Decks.MkBrowse DeckBrowser.MkSubmitImport -> do
             (browsed, done) <- importDeck shell (\shown' -> display current {Web.Decks.browser = shown'}) (Web.Decks.browser current)
             go (maybe id Web.Decks.savedAs done current {Web.Decks.browser = browsed})
@@ -573,12 +578,14 @@ builder shell deck back = do
           -- Leaves for `next`, asking first while changes are unsaved.
           leave next
             | Builder.dirty shownNow = go (Builder.update Builder.MkBack Text.empty shownNow) (snd current) next
-            | otherwise = pure next
+            | otherwise = pure (returnTo shownNow next)
       case woke of
-        MkTapped (Screen.MkNav section) _ -> leave (returnTo shownNow (sectionNext section))
+        MkTapped (Screen.MkNav section) _ -> leave (sectionNext section)
         MkTapped (Screen.MkBuilder event) value -> case event of
-          Builder.MkBack -> leave (returnTo shownNow back)
-          Builder.MkLeave -> pure leaving
+          Builder.MkBack -> leave back
+          -- Where it leads as the builder now stands: a save since the
+          -- question was asked selects the deck saved.
+          Builder.MkLeave -> pure (returnTo shownNow leaving)
           Builder.MkSave -> do
             saved' <- saveBuilt shell shownNow
             go saved' (snd current) leaving

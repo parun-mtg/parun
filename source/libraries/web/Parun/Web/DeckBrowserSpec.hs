@@ -5,6 +5,7 @@ import qualified Data.Sequence as Seq
 import qualified Data.Text as Text
 import qualified Parun.Spec as Spec
 import qualified Parun.Web.DeckBrowser as DeckBrowser
+import qualified Parun.Web.Html as Html
 
 spec :: (Monad m, Monad n) => Spec.Spec m n -> n ()
 spec s = Spec.describe s "Parun.Web.DeckBrowser" $ do
@@ -14,6 +15,12 @@ spec s = Spec.describe s "Parun.Web.DeckBrowser" $ do
 
     Spec.it s "describes a saved deck as saved" $ do
       Spec.assertEq s (DeckBrowser.describe saved) (Text.pack "SAVED", Text.pack "My Deck")
+
+  Spec.describe s "tile" $ do
+    Spec.it s "badges a precon with its set and a saved deck Saved" $ do
+      let badge name = Text.isInfixOf (Text.pack ("<span class=\"set-badge\">" <> name <> "</span>")) . Html.toText . DeckBrowser.tile id False DeckBrowser.new
+      Spec.assertEqWith s "precon" (badge "POR" a) True
+      Spec.assertEqWith s "saved" (badge "Saved" saved) True
 
   Spec.describe s "names" $ do
     Spec.it s "slugs a name as lowercase words joined by dashes" $ do

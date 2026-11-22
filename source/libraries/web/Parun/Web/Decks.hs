@@ -77,22 +77,18 @@ browsed f screen = screen {browser = f (browser screen)}
 withDecks :: Seq.Seq Text.Text -> Map.Map Text.Text Text.Text -> Decks -> Decks
 withDecks names named screen =
   let held = Monad.mfilter (`Foldable.elem` names) (selected screen)
-      shelf
-        | not (DeckBrowser.reading (browser screen)) = DeckBrowser.shelf (browser screen)
-        | Just name <- held = shelfOf name
-        | any DeckBrowser.isSaved names = DeckBrowser.MkSaved
+      shelf read'
+        | not (DeckBrowser.reading (browser screen)) = DeckBrowser.shelf read'
+        | Just name <- held = DeckBrowser.shelfOf name
+        | DeckBrowser.anySaved read' = DeckBrowser.MkSaved
         | otherwise = DeckBrowser.MkPrecons
    in browsed
-        (\b -> (DeckBrowser.withDecks names named b) {DeckBrowser.shelf = shelf})
+        (\b -> let read' = DeckBrowser.withDecks names named b in read' {DeckBrowser.shelf = shelf read'})
         screen
           { selected = held,
             renaming = if Maybe.isJust held then renaming screen else Nothing,
             deleting = Monad.mfilter ((== held) . Just) (deleting screen)
           }
-
--- | The shelf a deck is on.
-shelfOf :: Text.Text -> DeckBrowser.Shelf
-shelfOf name = if DeckBrowser.isSaved name then DeckBrowser.MkSaved else DeckBrowser.MkPrecons
 
 update :: Event -> Text.Text -> Decks -> Decks
 update event typed screen = case event of
@@ -263,7 +259,7 @@ detailView screen =
                 Element.button ["edit"] (MkEdit name) [Element.string "Edit"],
                 Element.button ["rename"] MkRename [Element.string "Rename"],
                 Element.button ["duplicate"] (MkDuplicate name) [Element.string "Duplicate"],
-                Element.button ["export"] (MkBrowse (DeckBrowser.MkExport name)) [Element.string "Export"],
+                Element.button ["export-deck"] (MkBrowse (DeckBrowser.MkExport name)) [Element.string "Export"],
                 Element.button ["danger", "delete"] (MkAskDelete name) [Element.string "Delete"]
               ]
           ]
@@ -274,6 +270,6 @@ detailView screen =
               []
               [ Element.button ["play"] (MkPlay name) [Element.string "Play"],
                 Element.button ["edit"] (MkEdit name) [Element.string "Edit a copy"],
-                Element.button ["export"] (MkBrowse (DeckBrowser.MkExport name)) [Element.string "Export"]
+                Element.button ["export-deck"] (MkBrowse (DeckBrowser.MkExport name)) [Element.string "Export"]
               ]
           ]
