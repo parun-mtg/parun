@@ -629,6 +629,27 @@ spec s registry = Spec.describe s "WebQuestion" $ do
     Spec.assertEqWith s "play first" (Question.Web.automatic Question.Web.MkStandard (bare (Text.pack "PlayOrDraw") (R.Array [R.Text (Text.pack "Play"), R.Text (Text.pack "Draw")]))) (Just (R.Text (Text.pack "Play")))
     Spec.assertEqWith s "CR 103.1 among three seats, its own seat first" (Question.Web.automatic Question.Web.MkStandard (bare (Text.pack "ChooseStarter") starters)) (Just (R.Text (Text.pack "0")))
 
+  Spec.it s "CR 509 standard stops at the declare blockers step to show a block on the seat's side" $ do
+    bears <- S.printingOf s registry "Grizzly Bears"
+    let (attacker, b1) = S.addPermanent bears S.alice (Setup.emptyGame S.bothPlayers)
+        (blocker, b2) = S.addPermanent bears S.bob b1
+        fought phase blocks =
+          b2
+            { GameState.turn =
+                (GameState.turn b2)
+                  { TurnRegisters.phase = phase,
+                    TurnRegisters.combat = (TurnRegisters.combat (GameState.turn b2)) {Combat.attackers = Map.singleton attacker (AttackTarget.OfPlayer S.bob), Combat.blockers = blocks}
+                  }
+            }
+        blocked = Map.singleton attacker (Set.singleton blocker)
+        priority seat gs = requestFor gs (Prompt.ChooseAction (Decider.MkDecider seat) seat [Action.Pass])
+        blocking = fought (Phase.Combat CombatStep.DeclareBlockers) blocked
+    Spec.assertEqWith s "the attacker sees its block" (Question.Web.automatic Question.Web.MkStandard (priority S.alice blocking)) Nothing
+    Spec.assertEqWith s "the blocker's controller sees it too" (Question.Web.automatic Question.Web.MkStandard (priority S.bob blocking)) Nothing
+    Spec.assertEqWith s "no block passes" (Question.Web.automatic Question.Web.MkStandard (priority S.alice (fought (Phase.Combat CombatStep.DeclareBlockers) Map.empty))) (Just (R.Number 0))
+    Spec.assertEqWith s "nor any other step" (Question.Web.automatic Question.Web.MkStandard (priority S.alice (fought (Phase.Combat CombatStep.CombatDamage) blocked))) (Just (R.Number 0))
+    Spec.assertEqWith s "auto passes it" (Question.Web.automatic Question.Web.MkAutoPass (priority S.alice blocking)) (Just (R.Number 0))
+
   Spec.it s "CR 103.1 full control asks who of three seats takes the first turn, each seat a button" $ do
     let asked = bare (Text.pack "ChooseStarter") starters
         page = Question.Web.view asked Question.Web.blank {Question.Web.level = Question.Web.MkFull}

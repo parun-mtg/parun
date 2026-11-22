@@ -128,7 +128,8 @@ data Group = MkGroup
 
 -- | How much the seat lets the page answer for it, its own setting: full
 -- control asks everything but the indistinguishable; standard passes a
--- priority offering nothing but a pass and mana abilities; auto also passes
+-- priority offering nothing but a pass and mana abilities, but for one
+-- showing a block on the seat's side (blocksShown); auto passes those and
 -- an empty stack outside the seat's main phases and pays mana automatically.
 data Level
   = MkFull
@@ -193,7 +194,7 @@ paying request = case Text.unpack (Question.kind (Request.question request)) of
 
 -- | A reply the seat is never asked for: the hotseat never concedes unasked
 -- (CR 104.3a), the seat plays first when it chooses, a priority offering nothing but a pass and mana abilities is
--- passed (Offer.onlyPass), and a choice between indistinguishable options is
+-- passed (Offer.onlyPass) but where standard shows a block (blocksShown), and a choice between indistinguishable options is
 -- made: identical mana to spend, and all of a creature's combat damage to
 -- its one recipient (CR 510.1c).
 automatic :: Level -> Request.Request -> Maybe R.Reply
@@ -205,7 +206,8 @@ automatic setting request = case Text.unpack (Question.kind question) of
   "ChooseStarter" | setting /= MkFull -> Just . R.Text . Text.pack . show . PlayerId.unwrap $ Question.seat question
   "ChooseAction"
     | setting /= MkFull,
-      Just i <- Offer.onlyPass (Question.offer question) ->
+      Just i <- Offer.onlyPass (Question.offer question),
+      not (setting == MkStandard && maybe False blocksShown (Request.view request)) ->
         Just (R.Number i)
     -- Auto passes an empty stack outside the seat's own main phases.
     | setting == MkAutoPass,
@@ -262,6 +264,16 @@ damageOf request = do
   lethal <- Protocol.field "lethal" offer >>= Protocol.arrayOf >>= mapM Protocol.entryOf
   total <- Protocol.field "total" offer >>= Protocol.naturalOf
   pure (lethal, total)
+
+-- | Whether the seat is in the declare blockers step (CR 509) with a block
+-- on its side of a combat: a creature of its blocking or blocked, which
+-- standard stops at so the seat sees the blocks before damage.
+blocksShown :: PlayerView.PlayerView -> Bool
+blocksShown shown =
+  PlayerView.phase shown == Phase.Combat CombatStep.DeclareBlockers
+    && or [ours attacker || any ours blocking | (attacker, blocking) <- Map.toList (PlayerView.blockers shown)]
+  where
+    ours o = any (\v -> ObjectView.object v == o && ObjectView.controller v == Just (PlayerView.viewer shown)) (PlayerView.battlefield shown)
 
 -- | Where a ChooseAction offer's pass sits.
 passIndex :: Request.Request -> Maybe Integer
