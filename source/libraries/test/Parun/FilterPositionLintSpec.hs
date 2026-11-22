@@ -2263,6 +2263,7 @@ filterPositionLintSpec s registry corpus = Spec.describe s "Lint" $ do
         ("The Apprentice's Folly", 2), -- its chapters' target slots, negated, at AnyPermanent
         ("Yenna, Redtooth Regent", 1), -- its ability's target slot, negated, at AnyPermanent excluding the candidate
         ("The End", 1), -- its search's filter, against its exiled target
+        ("Test of Talents", 1), -- its search's filter, against its countered target
         ("Light-Paws, Emperor's Voice", 1), -- its search's filter, negated, at AnyPermanent
         ("Volo, Guide to Monsters", 2) -- its cast trigger's spell filter, negated, at AnyPermanent and AnyGraveyardCard
       ]
