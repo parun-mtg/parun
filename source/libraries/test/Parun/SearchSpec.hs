@@ -85,13 +85,12 @@ spec s registry = Spec.describe s "Search" $ do
     Spec.assertBool s (all (\score -> abs score < Search.won) scores) ("every playout scored short of a result: " <> show scores)
 
   Spec.it s "a cut-off playout scores its position by the weights, each side's features weighted" $ do
-    (gs, menu) <- decision s registry
-    action <- case Search.options menu of
-      action : _ -> pure action
-      [] -> Spec.assertFailure s "a decision offers an option"
+    (gs, attacker) <- capturing s registry 3 "a declaration of attackers" $ \asked -> case Asked.prompt asked of
+      Prompt.DeclareAttackers decider pid candidates | Search.searchable asked decider pid (Search.attacks candidates) -> Just (Asked.game asked, pid)
+      _ -> Nothing
     let budget = SearchBudget.MkSearchBudget {SearchBudget.samples = 1, SearchBudget.turns = 1000, SearchBudget.prompts = 0}
         only side feature = Weights.MkWeights {Weights.ours = if side then feature else zero, Weights.theirs = if side then zero else feature}
-        scored weights = either (Spec.assertFailure s . Text.unpack) pure =<< Except.runExceptT (State.evalStateT (Search.rollout (S.fixtureRegistry []) budget weights Engine.resumePriority viewer (Search.acting viewer action) gs) (S.seeded 1))
+        scored weights = either (Spec.assertFailure s . Text.unpack) pure =<< Except.runExceptT (State.evalStateT (Search.rollout (S.fixtureRegistry []) budget weights Engine.resumeTurnBasedAction attacker (Search.attacking attacker []) gs) (S.seeded 1))
         controlled pid = [oid | oid <- Set.toList (GameState.battlefield gs), Projection.View.controllerOf oid gs == Just pid]
         creatures pid = [oid | oid <- controlled pid, Set.member CardType.Creature (ProjectedCharacteristics.cardTypes (Projection.project oid gs))]
         counts pid =
@@ -102,11 +101,11 @@ spec s registry = Spec.describe s "Search" $ do
             ("lands", zero {Features.lands = 1}, toInteger (length [oid | oid <- controlled pid, Set.member CardType.Land (ProjectedCharacteristics.cardTypes (Projection.project oid gs))])),
             ("permanents", zero {Features.permanents = 1}, toInteger (length (controlled pid)))
           ]
-    Spec.assertBool s (not (null (creatures viewer))) "the viewer controls a creature"
-    Foldable.for_ (counts viewer) $ \(name, feature, count) -> do
+    Spec.assertBool s (not (null (creatures attacker))) "the attacker controls a creature"
+    Foldable.for_ (counts attacker) $ \(name, feature, count) -> do
       got <- scored (only True feature)
       Spec.assertEqWith s ("our " <> name) got count
-    Foldable.for_ (counts S.bob) $ \(name, feature, count) -> do
+    Foldable.for_ (foldMap counts (filter (/= attacker) (Map.keys (GameState.players gs)))) $ \(name, feature, count) -> do
       got <- scored (only False feature)
       Spec.assertEqWith s ("their " <> name) got (negate count)
 
