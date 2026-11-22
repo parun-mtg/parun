@@ -39,6 +39,6 @@ data PlayOptions = MkPlayOptions
 -- none over the line protocol, the seat to play first asked for, under the
 -- standard limits, the search bot looking at 2 samples cut off as the next
 -- turn begins or after 40 prompts, a budget a browser turn stays responsive
--- at, weighing the neutral weights, played out by the greedy policy.
+-- at, weighing the neutral weights, played out by the random bot.
 none :: PlayOptions
-none = MkPlayOptions {seed = Nothing, first = Nothing, bots = Set.empty, json = False, save = Nothing, arrangesGraveyard = Set.empty, format = Nothing, limits = Limits.standard, budget = SearchBudget.MkSearchBudget {SearchBudget.samples = 2, SearchBudget.turns = 0, SearchBudget.prompts = 40, SearchBudget.playout = Playout.Greedy}, weights = Weights.neutral}
+none = MkPlayOptions {seed = Nothing, first = Nothing, bots = Set.empty, json = False, save = Nothing, arrangesGraveyard = Set.empty, format = Nothing, limits = Limits.standard, budget = SearchBudget.MkSearchBudget {SearchBudget.samples = 2, SearchBudget.turns = 0, SearchBudget.prompts = 40, SearchBudget.playout = Playout.Random}, weights = Weights.neutral}
