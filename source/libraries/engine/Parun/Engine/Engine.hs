@@ -1179,23 +1179,31 @@ placeBorne srcId pending = do
   -- CR 700.2b: forced when there is nothing to choose, prompted otherwise.
   -- Sorted on the way in, for Cast.castProposed's reason (CR 608.2c, 700.2d).
   --
+  -- Where a mode's targets read another mode's, a selection whose modes'
+  -- targets admit no announcement together "can't be chosen" either
+  -- (Target.announceableSelections): Shadrix Silverquill's pairs when every
+  -- mode can target only one player. It is asked of the selections, so one
+  -- left forces it and none removes the ability.
+  --
   -- An answer Modal.selectionSatisfiedBy refuses is RE-ASKED, for the reason
   -- the target announcement below gives: a trigger has no `before` for CR
   -- 601.2e's rewind. Bounded the same way, keyed on the answer narrowed to
   -- `legal` and cut one past the most the instruction allows, a finite set.
-  let askModes rejected = do
+  let announceable = Target.announceableSelections StackObjectKind.TriggeredAbility (TriggeredAbility.name ability) controller seed srcId modal legal selection gs
+      askModes rejected = do
         answer <- fmap Seq.sort (Game.choose (Prompt.ChooseModes decider controller abilId legal selection))
-        if Modal.selectionSatisfiedBy legal selection answer
+        if Modal.selectionSatisfiedBy legal selection answer && all (elem answer) announceable
           then pure (Just answer)
           else
             let key = Seq.take (Natural.toIntSaturating (Maybe.fromMaybe (Natural.length legal) (Modal.mostOf selection) + 1)) (Seq.filter (`Set.member` legal) answer)
              in if Set.member key rejected
                   then pure Nothing
                   else askModes (Set.insert key rejected)
-  answeredModes <-
-    if not (Modal.selectionPossible legal selection)
-      then pure Nothing
-      else maybe (askModes Set.empty) (pure . Just) (Modal.forcedSelection legal selection)
+  answeredModes <- case announceable of
+    _ | not (Modal.selectionPossible legal selection) -> pure Nothing
+    Just [] -> pure Nothing
+    Just [only] -> pure (Just only)
+    _ -> maybe (askModes Set.empty) (pure . Just) (Modal.forcedSelection legal selection)
   case answeredModes of
     -- CR 603.3c: no selection satisfies the instruction, or none was made.
     Nothing -> State.modify' (Game.cease abilId)

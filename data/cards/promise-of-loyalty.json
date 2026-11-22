@@ -53,6 +53,27 @@
                             },
                             "slot": "vowed"
                           }
+                        },
+                        {
+                          "type": "PutCounters",
+                          "value": {
+                            "kind": {
+                              "type": "Named",
+                              "value": "vow"
+                            },
+                            "putter": {
+                              "type": "InSlot",
+                              "value": "player"
+                            },
+                            "quantity": {
+                              "type": "Literal",
+                              "value": 1
+                            },
+                            "ref": {
+                              "type": "InSlot",
+                              "value": "vowed"
+                            }
+                          }
                         }
                       ],
                       "ref": {
@@ -65,26 +86,6 @@
                         }
                       },
                       "slot": "player"
-                    }
-                  },
-                  {
-                    "type": "PutCounters",
-                    "value": {
-                      "kind": {
-                        "type": "Named",
-                        "value": "vow"
-                      },
-                      "quantity": {
-                        "type": "Literal",
-                        "value": 1
-                      },
-                      "ref": {
-                        "type": "EachMatching",
-                        "value": {
-                          "type": "IsBound",
-                          "value": "vowed"
-                        }
-                      }
                     }
                   },
                   {

@@ -305,18 +305,18 @@ putCounters resolving source controller legal chosen (PutCounters.MkPutCounters 
   -- taken no action for CR 608.2f to be read over.
   --
   -- The cause is Event.resolvingCounterCause's: Sphinx-Bone Wand's "you may put
-  -- a charge counter" is CR 118.12's cost, and no effect. Its player is each
-  -- one PutCounters.putter names (CR 608.2c), in APNAP order (CR 101.4):
-  -- Shadrix Silverquill's "target player puts". A putter naming nobody puts
-  -- nothing (CR 101.3).
-  let putters = maybe [controller] (\who -> filter (`elem` playerRefPlayers legal resolving source controller gs who) (Game.apnapOrder gs)) mPutter
-  causes <- traverse (State.gets . Event.resolvingCounterCause) putters
-  placed <-
-    if null placements || null causes
-      then pure []
-      else Event.simultaneously . fmap concat . Monad.forM ((,) <$> causes <*> placements) $ \(cause, (target, placedKind, n)) -> do
-        settled <- Event.putCountersWithin totalAtMost cause target placedKind n
-        pure [(target, settled) | settled > 0]
+  -- a charge counter" is CR 118.12's cost, and no effect. Its player is the
+  -- one PutCounters.putter names (CR 608.2c): Shadrix Silverquill's "target
+  -- player puts", and Promise of Loyalty's "each player puts", one placement
+  -- per iteration. A putter naming nobody, or several where no printing
+  -- writes one, puts nothing (Common.oneSeat).
+  mCause <- traverse (State.gets . Event.resolvingCounterCause) (maybe (Just controller) (Common.oneSeat legal resolving source controller gs) mPutter)
+  placed <- case mCause of
+    Just cause
+      | not (null placements) -> Event.simultaneously . fmap concat . Monad.forM placements $ \(target, placedKind, n) -> do
+          settled <- Event.putCountersWithin totalAtMost cause target placedKind n
+          pure [(target, settled) | settled > 0]
+    _ -> pure []
   -- PutCounters.slot: the recipients the funnel settled at least one counter
   -- on, so a placement CR 614 or CR 101.2 brought to none is not among them,
   -- and beside them the counters it settled in all, the Counter arm's shape:

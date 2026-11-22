@@ -1647,16 +1647,26 @@ modalSlotsOffend armed abilityBound modal =
             -- "unless [a player] pays" names its payer by slot too. Plus what a
             -- delayed ability the mode arms reads of the objects it refers to
             -- (armedReads).
-            wanted = Set.union (Map.keysSet (Resolve.modeSlots mode)) (armed mode)
-         in Set.difference (Set.difference (Set.difference wanted defined) abilityBound) (siblingExclusions mode)
+            wanted = Set.union (Map.keysSet (Resolve.modeSlots (withoutExclusions mode))) (armed mode)
+         in Set.difference (Set.difference wanted defined) abilityBound
       -- CR 601.2c: the chosen modes' targets are one announcement, so a target
-      -- slot's filter may read a SIBLING mode's declared slot, unbound where
+      -- slot's filter may exclude a SIBLING mode's declared slot, unbound where
       -- that mode is not chosen: Shadrix Silverquill's "each mode must target a
-      -- different player".
-      siblingExclusions mode =
-        Set.intersection
-          (Set.difference declared (Map.keysSet (Mode.targetSlots mode)))
-          (foldMap (foldMap Filter.boundSlots . TargetSlot.filter) (Mode.targetSlots mode))
+      -- different player". Only as a top-level Not (IsBound _) conjunct, the
+      -- one form Target.exclusions reads; any other read of a sibling's slot,
+      -- an effect's included, still dangles. Parun.AbilitySlotLintSpec's
+      -- "the lint itself catches a mode reading a sibling mode's slot outside
+      -- an exclusion" proves it.
+      withoutExclusions mode =
+        let siblings = Set.difference declared (Map.keysSet (Mode.targetSlots mode))
+            excludes f = case f of
+              Filter.Type.Not (Filter.Type.IsBound name) -> Set.member name siblings
+              _ -> False
+            strip f = case f of
+              Filter.Type.And fs -> Just (Filter.Type.And (filter (not . excludes) fs))
+              _ | excludes f -> Nothing
+              _ -> Just f
+         in mode {Mode.targetSlots = fmap (\slot -> slot {TargetSlot.filter = TargetSlot.filter slot >>= strip}) (Mode.targetSlots mode)}
       -- CR 608.2c: the shared clauses read every mode's slots, so a mode's slot
       -- they read is read, and they may read no other.
       sharedReads = unboundReads (Modal.sharedMode modal)
