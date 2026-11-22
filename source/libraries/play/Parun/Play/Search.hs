@@ -344,25 +344,29 @@ flat registry budget weights restart pid deal choices pick = do
 
 -- | Single-observer information-set Monte Carlo tree search (Cowling, Powley
 -- & Whitehouse 2012, "Information Set Monte Carlo Tree Search", SO-ISMCTS):
--- `SearchBudget.samples` iterations for each of `viewer`'s choices, each in a
--- world `deal` deals, descending one 'Node' tree shared by every world
--- ('descend'), so a decision is valued over the worlds `viewer` cannot tell
--- apart rather than in each as if it could see it. Taken: the choice whose
--- tries scored best on average, one of those at random on a tie.
+-- in each of `SearchBudget.samples` worlds `deal` deals, an iteration for
+-- each of `viewer`'s choices, all from the same random stream as 'flat'
+-- plays its options, each descending one 'Node' tree shared by every world
+-- ('descend'), so a later decision is valued over the worlds `viewer` cannot
+-- tell apart rather than in each as if it could see it. Taken: the choice
+-- whose tries scored best on average, one of those at random on a tie.
 -- Parun.SearchSpec's attack into a pump spell is the proof.
 informationSet :: (Monad m) => Registry.Registry m -> SearchBudget.SearchBudget -> Weights.Weights -> Game.Type.Game Result.Result -> PlayerId.PlayerId -> GameState.GameState -> Game.Play m GameState.GameState -> NonEmpty.NonEmpty a -> (a -> Move) -> Game.Play m a
 informationSet registry budget weights restart viewer gs deal choices move = do
-  let iterations = Natural.toIntSaturating (SearchBudget.samples budget) * length choices
-  MkTree (MkNode root) _ <-
-    Monad.foldM
-      ( \tree _ -> do
-          world <- deal
-          (path, value) <- descend registry budget weights restart viewer tree world
-          pure (backup value path tree)
-      )
-      (MkTree (MkNode Map.empty) Nothing)
-      (replicate iterations ())
-  let tried option = (\branch -> toRational (reward branch) / toRational (max 1 (visits branch))) <$> Map.lookup (edgeOf viewer gs viewer (move option)) root
+  let edgeFor option = edgeOf viewer gs viewer (move option)
+      once tree = do
+        world <- deal
+        shared <- State.get
+        Monad.foldM
+          ( \grown option -> do
+              State.put shared
+              (path, value) <- descend registry budget weights restart viewer (Just (edgeFor option)) grown world
+              pure (backup value path grown)
+          )
+          tree
+          choices
+  MkTree (MkNode root) _ <- Monad.foldM (const . once) (MkTree (MkNode Map.empty) Nothing) (replicate (Natural.toIntSaturating (SearchBudget.samples budget)) ())
+  let tried option = (\branch -> toRational (reward branch) / toRational (max 1 (visits branch))) <$> Map.lookup (edgeFor option) root
       ranked = fmap (\option -> (tried option, option)) choices
       top = maximum (fmap fst ranked)
   maybe (pure (NonEmpty.head choices)) Generator.pick (NonEmpty.nonEmpty [option | (rank, option) <- NonEmpty.toList ranked, rank == top])
@@ -445,15 +449,16 @@ data Branch = MkBranch
   }
 
 -- | One iteration of `viewer`'s tree from a world at its decision, `restart`
--- asking it again: each decision the tree holds ('decisionOf') answered by
+-- asking it again, the first decision answered by the `forced` edge where it
+-- is legal: each decision the tree holds ('decisionOf') answered by
 -- 'select' while its every legal edge has been tried, a decision with an
 -- untried one answered by one of those at random, which ends the descent;
 -- every other prompt, and every one after, answered as a 'rollout' answers
 -- it and cut off as one is. The edges walked, each beside the edges legal at
 -- its node, and the reward for each player: 'score' at a result, else
 -- 'evaluate' short of a win or a loss.
-descend :: forall m. (Monad m) => Registry.Registry m -> SearchBudget.SearchBudget -> Weights.Weights -> Game.Type.Game Result.Result -> PlayerId.PlayerId -> Tree -> GameState.GameState -> Game.Play m ([([Edge], Edge)], PlayerId.PlayerId -> Integer)
-descend registry budget weights restart viewer (MkTree root range) world =
+descend :: forall m. (Monad m) => Registry.Registry m -> SearchBudget.SearchBudget -> Weights.Weights -> Game.Type.Game Result.Result -> PlayerId.PlayerId -> Maybe Edge -> Tree -> GameState.GameState -> Game.Play m ([([Edge], Edge)], PlayerId.PlayerId -> Integer)
+descend registry budget weights restart viewer forced (MkTree root range) world =
   let scale = maybe 1 (\(lowest, highest) -> max 1 (highest - lowest)) range
       seats = Game.consulting registry (Map.fromList [(seat, policyOf registry budget) | seat <- Map.keys (GameState.players world)])
       final = TurnRegisters.turnNumber (GameState.turn world) + SearchBudget.turns budget
@@ -466,11 +471,12 @@ descend registry budget weights restart viewer (MkTree root range) world =
             Just (mover, choices) <- decisionOf asked -> do
               let keyed = ListUtils.nubOrdOn fst [(edgeOf viewer (Asked.game asked) mover move, answer) | (move, answer) <- NonEmpty.toList choices]
                   legal = fmap fst keyed
-              case NonEmpty.nonEmpty [choice | choice@(edge, _) <- keyed, Map.notMember edge branches] of
-                Just untried -> do
+              case (null path, [choice | choice@(edge, _) <- keyed, Just edge == forced], NonEmpty.nonEmpty [choice | choice@(edge, _) <- keyed, Map.notMember edge branches]) of
+                (True, (edge, answer) : _, _) -> go (left - 1) (fmap child (Map.lookup edge branches)) ((legal, edge) : path) (k answer)
+                (_, _, Just untried) -> do
                   (edge, answer) <- Generator.pick untried
                   go (left - 1) Nothing ((legal, edge) : path) (k answer)
-                Nothing -> do
+                _ -> do
                   let (edge, answer) = select scale branches keyed
                   go (left - 1) (fmap child (Map.lookup edge branches)) ((legal, edge) : path) (k answer)
           | otherwise -> Answerer.unwrap seats asked >>= go (left - 1) at path . k
