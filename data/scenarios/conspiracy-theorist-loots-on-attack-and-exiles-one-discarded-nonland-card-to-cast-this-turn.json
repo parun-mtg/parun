@@ -1,0 +1,60 @@
+{
+  "description": "CR 603.2c / 608.2d / 601.3: Conspiracy Theorist's discard trigger fires once for a batch, offers one of the discarded nonland cards, and lets it be cast from exile this turn at its cost; its attack trigger pays {1} and discards to draw",
+  "note": "Tolarian Winds discards Shock, Opt and a Forest in one batch: one trigger, choosing between Shock and Opt only. Shock is exiled and cast for {R}; Opt and the Forest stay in the graveyard. Attacking, alice pays {1} and discards a Plains, drawing a Swamp: a land discard does not trigger. Bob takes Shock's 2 and Theorist's 2.",
+  "board": {
+    "active": "alice",
+    "seats": [
+      {
+        "battlefield": [
+          {"card": "Conspiracy Theorist", "label": "theorist", "ready": true},
+          {"card": "Island", "label": "i1"},
+          {"card": "Island", "label": "i2"},
+          {"card": "Mountain", "label": "m1"},
+          {"card": "Mountain", "label": "m2"},
+          {"card": "Mountain", "label": "m3"}
+        ],
+        "hand": [
+          {"card": "Tolarian Winds", "label": "winds"},
+          {"card": "Shock", "label": "shock"},
+          {"card": "Opt", "label": "opt"},
+          {"card": "Forest", "label": "forest"}
+        ],
+        "library": [
+          {"card": "Lightning Bolt"},
+          {"card": "Plains"},
+          {"card": "Plains"},
+          {"card": "Swamp"},
+          {"card": "Swamp"}
+        ],
+        "name": "alice"
+      },
+      {
+        "library": [{"card": "Island"}, {"card": "Island"}],
+        "name": "bob"
+      }
+    ],
+    "step": "PrecombatMain"
+  },
+  "timeline": [
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": {"Cast": {"object": "$winds", "mana": ["$i1", "$i2", null]}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": "Pass"},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"View": {"of": "Stack", "is": ["trigger of $theorist"]}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": "Pass"},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": {"ChooseOptional": "Exercises"}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"View": {"of": "Prompt", "is": {"kind": "ChooseCardFromAmong", "offer": {"source": "$theorist", "options": ["Shock", "Opt"]}}}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": {"Answer": {"prompt": "ChooseCardFromAmong", "with": "Shock"}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"View": {"of": "Zone", "player": "alice", "zone": "Exile", "is": ["Shock"]}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"View": {"of": "Zone", "player": "alice", "zone": "Graveyard", "is": ["Opt", "Forest", "Tolarian Winds"]}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": {"Cast": {"object": "Shock", "targets": ["$bob"], "mana": ["$m1", null]}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": "Pass"},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"Life": {"player": "bob", "life": 18}}},
+    {"turn": 1, "step": "DeclareAttackers", "player": "alice", "do": {"Attack": ["$theorist"]}},
+    {"turn": 1, "step": "DeclareAttackers", "player": "alice", "do": "Pass"},
+    {"turn": 1, "step": "DeclareAttackers", "player": "alice", "do": {"ChooseToPay": {"decision": "Pays", "mana": ["$m2", null]}}},
+    {"turn": 1, "step": "DeclareAttackers", "player": "alice", "do": {"Answer": {"prompt": "ChooseDiscard", "with": ["Plains"]}}},
+    {"turn": 1, "step": "DeclareAttackers", "player": "alice", "check": {"View": {"of": "Stack", "is": []}}},
+    {"turn": 1, "step": "DeclareAttackers", "player": "alice", "check": {"View": {"of": "Zone", "player": "alice", "zone": "Hand", "is": ["Lightning Bolt", "Plains", "Swamp#2"]}}},
+    {"turn": 1, "step": "DeclareAttackers", "player": "alice", "check": {"Count": {"player": "alice", "zone": "Graveyard", "card": "Plains", "count": 1}}},
+    {"turn": 1, "step": "EndOfCombat", "player": "alice", "check": {"Life": {"player": "bob", "life": 16}}}
+  ]
+}

@@ -1,0 +1,57 @@
+{
+  "description": "CR 605.1a / 603.7a / 603.7b / 601.3: Codie's mana ability arms a delayed trigger without using the stack; the next spell cast exiles to an instant or sorcery of lesser mana value, castable free until end of turn, the rest going to the bottom; Codie forbids permanent spells",
+  "note": "Divination (MV 3) is the next spell. The exiling passes the Forest, Cancel (an instant, but MV 3, not lesser) and Llanowar Elves (MV 1, not an instant or sorcery), and stops at Lightning Bolt. Bolt is cast in the beginning of combat step, after the pool empties, with every land tapped: no mana pays it. Bolt is the second spell of the turn and triggers nothing. Grizzly Bears is not offered while WUBRG floats.",
+  "board": {
+    "active": "alice",
+    "seats": [
+      {
+        "battlefield": [
+          {"card": "Codie, Vociferous Codex", "label": "codie", "ready": true},
+          {"card": "Wastes", "label": "w1"},
+          {"card": "Wastes", "label": "w2"},
+          {"card": "Wastes", "label": "w3"},
+          {"card": "Wastes", "label": "w4"}
+        ],
+        "hand": [
+          {"card": "Divination", "label": "div"},
+          {"card": "Grizzly Bears", "label": "bears"}
+        ],
+        "library": [
+          {"card": "Forest", "label": "forest"},
+          {"card": "Cancel", "label": "cancel"},
+          {"card": "Llanowar Elves", "label": "elves"},
+          {"card": "Lightning Bolt", "label": "bolt"},
+          {"card": "Island", "label": "i1"},
+          {"card": "Island", "label": "i2"},
+          {"card": "Island", "label": "i3"}
+        ],
+        "name": "alice"
+      },
+      {
+        "library": [{"card": "Island"}, {"card": "Island"}],
+        "name": "bob"
+      }
+    ],
+    "step": "PrecombatMain"
+  },
+  "timeline": [
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": {"Take": {"action": "ActivateManaAbility $codie", "mana": ["$w1", "$w2", "$w3", "$w4"]}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"View": {"of": "Stack", "is": []}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"View": {"of": "Offered", "player": "alice", "is": ["Pass", "Cast $div"]}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": {"Cast": {"object": "$div", "mana": []}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": {"Answer": {"prompt": "ChooseManaToSpend", "with": {"manaType": {"type": "Colored", "value": "White"}, "restriction": null, "retention": "Ordinary", "rider": null, "sourceChoices": null, "tags": [{"CardType": "Artifact"}, {"CardType": "Creature"}]}}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": {"Answer": {"prompt": "ChooseManaToSpend", "with": {"manaType": {"type": "Colored", "value": "Black"}, "restriction": null, "retention": "Ordinary", "rider": null, "sourceChoices": null, "tags": [{"CardType": "Artifact"}, {"CardType": "Creature"}]}}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"View": {"of": "Stack", "is": ["trigger of $codie", "Divination"]}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": "Pass"},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": {"Answer": {"prompt": "Shuffle", "with": ["Cancel", "Forest", "Llanowar Elves"]}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"View": {"of": "Zone", "player": "alice", "zone": "Exile", "is": ["Lightning Bolt"]}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"View": {"of": "Stack", "is": ["Divination"]}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": "Pass"},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"Count": {"player": "alice", "zone": "Hand", "card": "Island", "count": 2}}},
+    {"turn": 1, "step": "BeginningOfCombat", "player": "alice", "do": {"Cast": {"object": "Lightning Bolt", "targets": ["$bob"], "mana": []}}},
+    {"turn": 1, "step": "BeginningOfCombat", "player": "alice", "check": {"View": {"of": "Stack", "is": ["Lightning Bolt"]}}},
+    {"turn": 1, "step": "BeginningOfCombat", "player": "alice", "do": "Pass"},
+    {"turn": 1, "step": "BeginningOfCombat", "player": "alice", "check": {"Life": {"player": "bob", "life": 17}}},
+    {"turn": 1, "step": "BeginningOfCombat", "player": "alice", "check": {"View": {"of": "Zone", "player": "alice", "zone": "Library", "is": ["$i3", "Llanowar Elves", "Forest", "Cancel"]}}}
+  ]
+}
