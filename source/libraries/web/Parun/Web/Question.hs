@@ -419,9 +419,9 @@ logView board viewer screen =
               [ Element.el
                   "summary"
                   []
-                  [Element.attr "title" (Text.pack "The whole log (L)")]
+                  [Element.attr "title" (Text.pack "The whole log (L)"), Element.attr "aria-keyshortcuts" (Text.pack "L")]
                   [ Element.el "span" ["eyebrow"] [] [Element.string "Log"],
-                    Element.el "span" ["expand"] [] [Element.el "span" ["closed"] [] [Element.string "Expand"], Element.el "span" ["opened"] [] [Element.string "Close"], Element.el "kbd" ["keys-only"] [] [Element.string "L"]]
+                    Element.el "span" ["expand"] [] [Element.el "span" ["closed"] [] [Element.string "Expand"], Element.el "span" ["opened"] [] [Element.string "Close"], Element.el "kbd" ["keys-only"] [Element.attr "aria-hidden" (Text.pack "true")] [Element.string "L"]]
                   ],
                 Element.el "div" ["log-panel"] [Element.attr "role" (Text.pack "region"), Element.attr "aria-label" (Text.pack "The whole log")] [listed 300]
               ],

@@ -1943,10 +1943,6 @@ main.game {
     background: var(--act);
     box-shadow: none;
   }
-
-  .auto-pass > summary .k {
-    display: none;
-  }
 }
 
 /* The seat's designations: the monarch, the initiative, the Ring, speed. */
@@ -2203,6 +2199,8 @@ details.pile > summary::-webkit-details-marker {
 
 details.pile[open] {
   flex-basis: 100%;
+  flex-wrap: wrap;
+  padding: 6px;
   border-radius: var(--radius);
 }
 
@@ -2235,14 +2233,13 @@ details.pile[open] {
 .battlefield > .back {
   display: flex;
   flex-wrap: wrap;
-  align-items: flex-end;
+  align-items: flex-start;
   gap: var(--gap) 28px;
 }
 
 .row {
   display: flex;
   flex-wrap: wrap;
-  align-items: flex-end;
   gap: var(--gap);
   min-height: 0;
   /* Room for a tapped tile's turned corners. */
@@ -3010,10 +3007,16 @@ details.log[open] .closed {
   display: none;
 }
 
+/* On a phone, of the newest only those since your last decision. */
 .log-recent {
   overflow-y: auto;
   max-height: 4.6em;
   font-size: 14px;
+}
+
+.log-recent .log-turn-heading,
+.log-recent .log-list li:not(.fresh) {
+  display: none;
 }
 
 /* The whole log, over the table. */
@@ -3188,6 +3191,11 @@ details.log[open] .closed {
   .log-recent {
     flex: 1 1 auto;
     max-height: none;
+  }
+
+  .log-recent .log-turn-heading,
+  .log-recent .log-list li:not(.fresh) {
+    display: revert;
   }
 
   /* The whole log over the table, beside the column. */
@@ -3909,8 +3917,9 @@ body:has(main.game, #app [data-settings], #app .splash, #app main.loading) #sett
   gap: 0.4em;
 }
 
-.replay .scrubber button {
+#app .replay .scrubber button {
   flex: 1;
+  min-height: 44px;
 }
 
 .replay .scrubber input[type="range"] {
