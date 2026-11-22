@@ -8113,10 +8113,11 @@ flipOneCoin settle mFlipper called stated = case mFlipper of
       -- out; were it reached, its units would be flipped as coins.
       _ -> do
         faces <- settleCoins (Settle.reflipWindow settle) pid settled called stated
+        Foldable.for_ faces (\(_, _, flipped) -> State.modify' (recordEvent flipped))
         -- Exactly one face: a flip names one coin, and every unit a row adds
         -- comes with an ignore (Parun.Types.Throw).
         pure $ case faces of
-          [(face, wins)] -> (Just face, wins)
+          [(face, wins, _)] -> (Just face, wins)
           _ -> (Nothing, False)
 
 -- Pokey, the Scallywagg's "1-10 is tails and 11-20 is heads", read off the one
@@ -8223,8 +8224,10 @@ substitutes candidate = case ReplacementCandidate.controller candidate of
 -- one kept per unit (Krark's Thumb's "ignore one"), CR 705.3's statements
 -- applied, and CR 706.6's lowest units dropped where the coins stand for dice
 -- (Pixie Guide's ignore, carried across by Pokey), a coin being low on tails.
--- Records CR 705.1's event for each coin kept, and answers its face and whether
--- a statement wins it.
+-- Answers each coin kept: its face, whether a statement wins it, and CR 705.1's
+-- event, which the caller records -- at once, or with the die a coin stood in
+-- for a reroll of, since CR 706.6 may yet ignore that die
+-- (Parun.Engine.Resolve.Effect.throwSettled's `recordRerolls`).
 --
 -- The FACE of each coin goes through Game.ask and never Game.choose: nobody
 -- decides how a coin lands. WHICH coin is kept goes through Game.choose, because
@@ -8251,7 +8254,7 @@ substitutes candidate = case ReplacementCandidate.controller candidate of
 -- again, its first face discarded, before Krark's Thumb's ignore is chosen.
 -- docs/decisions.md, "What Goblin Bookie's reflip is", says why it is neither a
 -- new flip nor called again.
-settleCoins :: (PlayerId -> CoinFace.CoinFace -> Game Bool) -> PlayerId -> Throw.Throw -> Maybe CoinFace.CoinFace -> [StatedFlip.StatedFlip] -> Game [(CoinFace.CoinFace, Bool)]
+settleCoins :: (PlayerId -> CoinFace.CoinFace -> Game Bool) -> PlayerId -> Throw.Throw -> Maybe CoinFace.CoinFace -> [StatedFlip.StatedFlip] -> Game [(CoinFace.CoinFace, Bool, GameEvent)]
 settleCoins reflip flipper settled called stated = do
   let flipReflipped = do
         face <- Game.ask Prompt.FlipCoin
@@ -8277,9 +8280,7 @@ settleCoins reflip flipper settled called stated = do
   -- Two coins tied for the lowest can be a won flip and a lost one, so CR
   -- 706.6's "the player chooses" is asked of them (Dice.ignoreLowest).
   survivors <- Dice.ignoreLowest flipper (toInteger . resultOfFace . fst) snd (Throw.ignored settled) outcomes
-  Monad.forM survivors $ \(face, won) -> do
-    State.modify' (recordEvent (GameEvent.CoinFlipped CoinFlipped.MkCoinFlipped {CoinFlipped.flipper = flipper, CoinFlipped.won = won}))
-    pure (face, wins)
+  pure [(face, wins, GameEvent.CoinFlipped CoinFlipped.MkCoinFlipped {CoinFlipped.flipper = flipper, CoinFlipped.won = won}) | (face, won) <- survivors]
 
 -- The face kept of one unit's coins (Krark's Thumb's "ignore one").
 keepCoin :: PlayerId -> [CoinFace.CoinFace] -> Game CoinFace.CoinFace
@@ -8322,13 +8323,13 @@ keepCoin flipper faces =
 --
 -- Answers Left where CR 614.6 replaced the roll with a coin flip (Pokey, the
 -- Scallywagg): the coins are flipped HERE, through `settleCoins`, and the numbers
--- they stand for are the answer. No die was thrown, so the caller records no
--- roll.
+-- they stand for are the answer, each beside its coin's CR 705.1 event for the
+-- caller to record. No die was thrown, so the caller records no roll.
 --
 -- A cancelled event is unreachable -- no arm of Parun.Types.DieRollRewrite replaces
 -- the roll with nothing -- so the fallback is defensive, and in the direction rule
 -- 706.1 leaves standing: the instruction's own dice, none of them ignored.
-proposeDiceRoll :: (PlayerId -> CoinFace.CoinFace -> Game Bool) -> PlayerId -> Natural -> Natural -> Natural -> Game (Either [Natural] Throw.Throw)
+proposeDiceRoll :: (PlayerId -> CoinFace.CoinFace -> Game Bool) -> PlayerId -> Natural -> Natural -> Natural -> Game (Either [(Natural, GameEvent)] Throw.Throw)
 proposeDiceRoll reflip pid sides named ignore = do
   let proposed = Throw.MkThrow {Throw.thrower = pid, Throw.kind = ThrowKind.Dice sides, Throw.units = Seq.replicate (Natural.toIntSaturating named) 1, Throw.ignored = ignore, Throw.instead = False}
   if named == 0
@@ -8343,7 +8344,7 @@ proposeDiceRoll reflip pid sides named ignore = do
         ThrowKind.Coins -> do
           statements <- Coin.statementsFor (Just (Throw.thrower settled))
           faces <- settleCoins reflip (Throw.thrower settled) settled Nothing statements
-          pure (Left (fmap (resultOfFace . fst) faces))
+          pure (Left [(resultOfFace face, flipped) | (face, _, flipped) <- faces])
 
 -- CR 705.2's win/lose flip, whole: the call, the flip and the comparison, with
 -- `flipOneCoin` recording CR 705.1's event. The ONE road for the kind of flip a
