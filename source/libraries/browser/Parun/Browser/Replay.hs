@@ -75,10 +75,11 @@ data Exit
   | -- | Plays on by hand from this position.
     MkPlayOn Natural
 
--- | The scenario at a position as a seat sees it (the first), replayed
--- afresh at each position the page goes to, until the page leaves it.
-viewer :: Browser.Page Screen.Event -> Registry.Registry Identity.Identity -> Text.Text -> Scenario.Type.Scenario -> Natural -> IO Exit
-viewer page registry name scenario given = do
+-- | The scenario at a position as a seat sees it (the one named `seen`,
+-- else the first), replayed afresh at each position the page goes to,
+-- until the page leaves it.
+viewer :: Browser.Page Screen.Event -> Registry.Registry Identity.Identity -> Text.Text -> Maybe Text.Text -> Scenario.Type.Scenario -> Natural -> IO Exit
+viewer page registry name seen scenario given = do
   let count = Natural.length (Scenario.Type.timeline scenario)
       seats = seatsOf scenario
       lookUp = Identity.runIdentity . Interpreter.chosenCard registry
@@ -109,7 +110,7 @@ viewer page registry name scenario given = do
           _ -> go at stop viewing reading
       first = min count given
   stop <- reach first
-  go first stop (maybe (PlayerId.MkPlayerId 0) fst (Maybe.listToMaybe seats)) Nothing
+  go first stop (maybe (PlayerId.MkPlayerId 0) fst (Maybe.listToMaybe (filter ((`elem` seen) . snd) seats <> seats))) Nothing
 
 -- | Plays on by hand from a position of the scenario: the run takes the
 -- timeline to that stop (Scenario.branch), then every seat is answered on

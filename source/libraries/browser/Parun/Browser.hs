@@ -136,6 +136,29 @@ forgetGame = forgetGameJs
 keptGame :: IO Text.Text
 keptGame = fmap (Text.pack . Prim.fromJSString) keptGameJs
 
+-- | The summaries of the games this browser finished (Parun.Web.History),
+-- one a line, as the worker read them when the page loaded and kept since.
+playedGames :: IO [Text.Text]
+playedGames = fmap (filter (not . Text.null) . Text.lines . Text.pack . Prim.fromJSString) playedJs
+
+-- | The scenario file of the finished game of this key, empty if none.
+playedScenario :: Text.Text -> IO Text.Text
+playedScenario = fmap (Text.pack . Prim.fromJSString) . playedScenarioJs . Prim.toJSString . Text.unpack
+
+-- | Keeps a finished game under its key: its summary line and its scenario
+-- file, which the worker keeps for later visits (engine.js).
+keepPlayed :: Text.Text -> Text.Text -> Text.Text -> IO ()
+keepPlayed k summary scenario = keepPlayedJs (Prim.toJSString (Text.unpack k)) (Prim.toJSString (Text.unpack summary)) (Prim.toJSString (Text.unpack scenario))
+
+-- | Forgets the finished game of this key.
+forgetPlayed :: Text.Text -> IO ()
+forgetPlayed = forgetPlayedJs . Prim.toJSString . Text.unpack
+
+-- | The page's clock: milliseconds since the Unix epoch, and how many
+-- minutes it runs ahead of UTC.
+clock :: IO (Integer, Integer)
+clock = (,) <$> fmap (round :: Double -> Integer) nowJs <*> fmap toInteger aheadJs
+
 -- | Moves the chunks the worker named since last asked onto the page's own
 -- queue.
 collect :: Page msg -> IO ()
@@ -295,3 +318,21 @@ foreign import javascript unsafe "globalThis.parunKeepGame({})"
 
 foreign import javascript unsafe "globalThis.parunKeptGame"
   keptGameJs :: IO Prim.JSString
+
+foreign import javascript unsafe "globalThis.parunPlayed()"
+  playedJs :: IO Prim.JSString
+
+foreign import javascript unsafe "globalThis.parunPlayedScenario($1)"
+  playedScenarioJs :: Prim.JSString -> IO Prim.JSString
+
+foreign import javascript unsafe "globalThis.parunKeepPlayed($1, $2, $3)"
+  keepPlayedJs :: Prim.JSString -> Prim.JSString -> Prim.JSString -> IO ()
+
+foreign import javascript unsafe "globalThis.parunForgetPlayed($1)"
+  forgetPlayedJs :: Prim.JSString -> IO ()
+
+foreign import javascript unsafe "Date.now()"
+  nowJs :: IO Double
+
+foreign import javascript unsafe "-new Date().getTimezoneOffset()"
+  aheadJs :: IO Int

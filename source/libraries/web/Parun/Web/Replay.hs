@@ -1,7 +1,8 @@
 -- | A scenario replayed on the page (#8821): the table at one position of
 -- its timeline as a chosen seat sees it, a scrubber over the positions, the
--- entry the run takes next and the question it answers, the list of
--- scenarios to open, and how a game played on from a position ended.
+-- entry the run takes next and the question it answers, the lists of
+-- games finished here (Parun.Web.History) and of scenarios to open, and how
+-- a game played on from a position ended.
 module Parun.Web.Replay where
 
 import qualified Data.Bifunctor as Bifunctor
@@ -23,6 +24,7 @@ import qualified Parun.Web.Bar as Bar
 import qualified Parun.Web.Board as Board
 import qualified Parun.Web.Card as Card
 import qualified Parun.Web.Element as Element
+import qualified Parun.Web.History as History
 import qualified Parun.Web.Html as Html
 import qualified Parun.Web.Icon as Icon
 import qualified Parun.Web.Log as Log
@@ -49,7 +51,69 @@ data Event
     MkBack
   | -- | Back from a game played on to the replay where it began.
     MkResumeReplay
+  | -- | Shows this list.
+    MkShow Shelf
+  | -- | Opens this game finished here, by its key (History.key).
+    MkWatch Text.Text
+  | -- | The lobby, on this game's decks.
+    MkPlayAgain Text.Text
+  | -- | Asks before deleting.
+    MkForget Forgetting
+  | MkConfirmForget
+  | MkCancelForget
   deriving (Eq, Show)
+
+-- | What a replay replays.
+data Source
+  = -- | A scenario, by its name beneath data/scenarios, less its extension.
+    MkScenario Text.Text
+  | -- | A game finished here, by its key (History.key).
+    MkPlayed Text.Text
+  deriving (Eq, Show)
+
+-- | Which list the replays screen shows.
+data Shelf
+  = MkYourGames
+  | MkScenarios
+  deriving (Bounded, Enum, Eq, Show)
+
+-- | What deleting deletes.
+data Forgetting
+  = -- | The game of this key.
+    MkForgetGame Text.Text
+  | MkForgetAll
+  deriving (Eq, Show)
+
+-- | The replays screen: the list shown, the games finished here, newest
+-- first, the deletion asked about, and the filter typed over the scenarios.
+data Listing = MkListing
+  { shelf :: Shelf,
+    games :: [History.Game],
+    forgetting :: Maybe Forgetting,
+    typed :: Text.Text
+  }
+  deriving (Eq, Show)
+
+-- | The replays screen over these games, newest first: theirs shown first,
+-- if any.
+listing :: [History.Game] -> Listing
+listing played = MkListing (if null played then MkScenarios else MkYourGames) (History.newestFirst played) Nothing Text.empty
+
+-- | The replays screen after a tap that changes only what it shows.
+listed :: Event -> Text.Text -> Listing -> Listing
+listed event value shown = case event of
+  MkShow chosen -> shown {shelf = chosen, forgetting = Nothing, typed = Text.empty}
+  MkSearch -> shown {typed = value}
+  MkForget what -> shown {forgetting = Just what}
+  MkCancelForget -> shown {forgetting = Nothing}
+  _ -> shown
+
+-- | The replays screen once the deletion asked about is done.
+forgot :: Listing -> Listing
+forgot shown = case forgetting shown of
+  Just (MkForgetGame k) -> shown {games = filter ((/= k) . History.key) (games shown), forgetting = Nothing}
+  Just MkForgetAll -> shown {games = [], forgetting = Nothing}
+  Nothing -> shown
 
 -- | One position of a replay, as the page shows it.
 data Frame = MkFrame
@@ -135,7 +199,7 @@ controls frame =
           ["replay-actions"]
           []
           [ Element.button ["branch"] MkBranch [Element.string "Play on from here"],
-            Element.button ["back"] MkBack [Element.string "All scenarios"]
+            Element.button ["back"] MkBack [Element.string "All replays"]
           ],
         Element.el
           "div"
@@ -168,23 +232,78 @@ sheet frame = do
   o <- Wording.recalled b (Card.object r)
   pure (Card.sheet b o r [] (MkTable Web.Question.MkClose))
 
+-- | The replays screen: a switch between the games finished here and the
+-- scenarios, then the list shown.
+picker :: Listing -> Maybe (Map.Map Text.Text [Text.Text], [Text.Text]) -> Html.Html Event
+picker shown listedScenarios =
+  Element.el "main" ["message", "scenarios"] [] $
+    [ Element.el "h1" [] [] [Element.string "Replays"],
+      Element.el
+        "div"
+        ["segmented", "shelves"]
+        [Element.attr "role" (Text.pack "group"), Element.attr "aria-label" (Text.pack "Replays to list")]
+        [ Element.el "button" ["on" | on] [Element.attr "type" (Text.pack "button"), Element.attr "aria-pressed" (Text.pack (if on then "true" else "false")), Element.on "click" (MkShow which)] [Element.string label]
+        | (which, label) <- [(MkYourGames, "Your games"), (MkScenarios, "Scenarios")],
+          let on = which == shelf shown
+        ]
+    ]
+      <> case shelf shown of
+        MkYourGames -> yourGames shown
+        MkScenarios -> scenarioList (typed shown) listedScenarios
+
+-- | The games finished here, newest first, each to watch, play again or
+-- delete, and the way to delete them all, each deletion asked about first.
+yourGames :: Listing -> [Html.Html Event]
+yourGames shown = case games shown of
+  [] -> [Element.el "p" ["muted"] [] [Element.string "The games you finish in this browser show here, to watch again."]]
+  played ->
+    [ Element.el "p" ["count"] [] [Element.string ("Kept in this browser: the last " <> show History.cap <> ".")],
+      Element.el
+        "section"
+        ["panel", "your-games"]
+        []
+        [ Element.el "ul" ["game-rows"] [] (fmap gameRow played),
+          case forgetting shown of
+            Just MkForgetAll -> asking "Delete every game kept here? This cannot be undone." "Delete all"
+            _ -> Element.el "div" ["history-actions"] [] [Element.button ["danger"] (MkForget MkForgetAll) [Element.string "Clear history"]]
+        ]
+    ]
+  where
+    gameRow game =
+      let k = History.key game
+       in case forgetting shown of
+            Just (MkForgetGame asked) | asked == k -> History.row game [asking "Delete this game? This cannot be undone." "Delete"]
+            _ ->
+              History.row
+                game
+                ( [Element.button [] (MkWatch k) [Element.string "Watch"]]
+                    <> [Element.button [] (MkPlayAgain k) [Element.string "Play again"] | all (Maybe.isJust . History.deckName) (History.seats game)]
+                    <> [Element.button ["danger"] (MkForget (MkForgetGame k)) [Element.string "Delete"]]
+                )
+    asking asked confirm =
+      Element.el
+        "div"
+        ["confirm-delete"]
+        [Element.attr "role" (Text.pack "alertdialog"), Element.attr "aria-label" (Text.pack asked)]
+        [ Element.el "p" [] [] [Element.string asked],
+          Element.el "div" ["choices"] [] [Element.button ["danger"] MkConfirmForget [Element.string confirm], Element.button [] MkCancelForget [Element.string "Cancel"]]
+        ]
+
 -- | The list of scenarios once fetched: a filter, then the names matching
 -- it, those the manifest names first under their themes
 -- (Parun.Scenario.Load.parseManifest), then every one, each a button that
 -- opens it, the first `shown` of them.
-picker :: Text.Text -> Maybe (Map.Map Text.Text [Text.Text], [Text.Text]) -> Html.Html Event
-picker typed listed =
-  let matches = Text.isInfixOf (Text.toLower typed) . Text.toLower
+scenarioList :: Text.Text -> Maybe (Map.Map Text.Text [Text.Text], [Text.Text]) -> [Html.Html Event]
+scenarioList typed' listedScenarios =
+  let matches = Text.isInfixOf (Text.toLower typed') . Text.toLower
       shown = 200 :: Int
       links = Element.keyed "ul" ["scenario-list"] [] . fmap (\n -> (n, Element.el "li" [] [] [Element.button [] (MkOpen n) [Element.text n]]))
-      top = [Element.el "h1" [] [] [Element.string "Scenarios"]]
-   in Element.el "main" ["message", "scenarios"] [] $ case listed of
-        Nothing -> top <> [Element.el "p" [] [] [Element.string "Fetching the scenarios\x2026"]]
+   in case listedScenarios of
+        Nothing -> [Element.el "p" [] [] [Element.string "Fetching the scenarios\x2026"]]
         Just (themes, names) ->
           let matching = filter matches names
               featured = [Element.el "section" ["theme"] [] [Element.el "h2" [] [] [Element.text theme], links named'] | (theme, named) <- Map.toList themes, let named' = filter matches named, not (null named')]
-           in top
-                <> [Element.el "input" ["search"] [Element.attr "type" (Text.pack "search"), Element.attr "placeholder" (Text.pack "Filter scenarios"), Element.attr "autocomplete" (Text.pack "off"), Element.attr "aria-label" (Text.pack "Filter scenarios"), Element.on "input" MkSearch] []]
+           in [Element.el "input" ["search"] [Element.attr "type" (Text.pack "search"), Element.attr "placeholder" (Text.pack "Filter scenarios"), Element.attr "autocomplete" (Text.pack "off"), Element.attr "aria-label" (Text.pack "Filter scenarios"), Element.on "input" MkSearch] []]
                 <> featured
                 <> [Element.el "h2" [] [] [Element.string "Every scenario"] | not (null featured)]
                 <> [ Element.el "p" ["count"] [] [Element.string (show (length matching) <> " of " <> show (length names) <> (if length matching > shown then ", the first " <> show shown <> " shown" else ""))],

@@ -4,6 +4,8 @@ import qualified Data.Map.Strict as Map
 import qualified Data.Text as Text
 import qualified Parun.Spec as Spec
 import qualified Parun.Types.PlayerId as PlayerId
+import qualified Parun.Web.History as History
+import qualified Parun.Web.HistorySpec as HistorySpec
 import qualified Parun.Web.Html as Html
 import qualified Parun.Web.Replay as Replay
 
@@ -29,12 +31,12 @@ spec s = Spec.describe s "Parun.Web.Replay" $ do
       let page = Replay.view frame {Replay.position = 1}
           tapped label = Html.labelled (Text.pack "button") (Text.pack label) page >>= \path -> Html.handler (Text.pack "click") path page
       Spec.assertEqWith s "play on" (tapped "Play on from here") (Just Replay.MkBranch)
-      Spec.assertEqWith s "back" (tapped "All scenarios") (Just Replay.MkBack)
+      Spec.assertEqWith s "back" (tapped "All replays") (Just Replay.MkBack)
       Spec.assertBool s (not (Text.isInfixOf (Text.pack "&amp;branch") (Html.toText page))) "no branch link"
 
   Spec.describe s "picker" $ do
     Spec.it s "lists the names holding what is typed, whatever its case" $ do
-      let view = Replay.picker (Text.pack "PIKER") (Just (Map.empty, fmap Text.pack ["goblin-piker-attacks", "shock-kills", "a-piker-blocks"]))
+      let view = Replay.picker (Replay.listing []) {Replay.typed = Text.pack "PIKER"} (Just (Map.empty, fmap Text.pack ["goblin-piker-attacks", "shock-kills", "a-piker-blocks"]))
           page = Html.toText view
       Spec.assertEqWith s "match" (Html.labelled (Text.pack "button") (Text.pack "goblin-piker-attacks") view >>= \path -> Html.handler (Text.pack "click") path view) (Just (Replay.MkOpen (Text.pack "goblin-piker-attacks")))
       Spec.assertBool s (not (Text.isInfixOf (Text.pack "href=\"?scenario=") page)) "no link"
@@ -43,14 +45,46 @@ spec s = Spec.describe s "Parun.Web.Replay" $ do
 
     Spec.it s "lists the manifest's matching names under their themes ahead of every name" $ do
       let themes = Map.fromList [(Text.pack "Combat", fmap Text.pack ["a-piker-blocks", "shock-kills"]), (Text.pack "Burn", fmap Text.pack ["shock-kills"])]
-          page = Html.toText $ Replay.picker (Text.pack "piker") (Just (themes, fmap Text.pack ["goblin-piker-attacks", "shock-kills", "a-piker-blocks"]))
+          page = Html.toText $ Replay.picker (Replay.listing []) {Replay.typed = Text.pack "piker"} (Just (themes, fmap Text.pack ["goblin-piker-attacks", "shock-kills", "a-piker-blocks"]))
           at needle = Text.length (fst (Text.breakOn (Text.pack needle) page))
       Spec.assertBool s (at ">Combat<" < at "Every scenario" && at "Every scenario" < at "goblin-piker-attacks") "the theme first"
       Spec.assertBool s (not (Text.isInfixOf (Text.pack ">Burn<") page)) "a theme with no match left out"
       Spec.assertBool s (at ">Combat<" < at ">a-piker-blocks<") "the theme's match"
 
     Spec.it s "says the scenarios are being fetched until they are" $ do
-      Spec.assertBool s (Text.isInfixOf (Text.pack "Fetching the scenarios") (Html.toText (Replay.picker Text.empty Nothing))) "fetching"
+      Spec.assertBool s (Text.isInfixOf (Text.pack "Fetching the scenarios") (Html.toText (Replay.picker (Replay.listing []) Nothing))) "fetching"
+
+  Spec.describe s "your games" $ do
+    let games = [HistorySpec.game {History.ended = n} | n <- [1, 3, 2]]
+        shown = Replay.listing games
+        page listing = Html.toText (Replay.picker listing Nothing)
+        tapping label listing = let view = Replay.picker listing Nothing in Html.labelled (Text.pack "button") (Text.pack label) view >>= \path -> Html.handler (Text.pack "click") path view
+    Spec.it s "shows the games finished here first, newest first" $ do
+      Spec.assertEqWith s "the shelf" (Replay.shelf shown, Replay.shelf (Replay.listing [])) (Replay.MkYourGames, Replay.MkScenarios)
+      Spec.assertEqWith s "newest first" (fmap History.ended (Replay.games shown)) [3, 2, 1]
+      Spec.assertEqWith s "watch" (tapping "Watch" shown) (Just (Replay.MkWatch (Text.pack "3")))
+      Spec.assertEqWith s "play again" (tapping "Play again" shown) (Just (Replay.MkPlayAgain (Text.pack "3")))
+      Spec.assertEqWith s "to the scenarios" (tapping "Scenarios" shown) (Just (Replay.MkShow Replay.MkScenarios))
+
+    Spec.it s "asks before deleting a game, and deletes only it once confirmed" $ do
+      let asking = Replay.listed (Replay.MkForget (Replay.MkForgetGame (Text.pack "3"))) Text.empty shown
+      Spec.assertEqWith s "delete" (tapping "Delete" shown) (Just (Replay.MkForget (Replay.MkForgetGame (Text.pack "3"))))
+      Spec.assertBool s (Text.isInfixOf (Text.pack "Delete this game?") (page asking)) "asked"
+      Spec.assertBool s (not (Text.isInfixOf (Text.pack "Delete this game?") (page shown))) "not before"
+      Spec.assertEqWith s "confirm" (tapping "Delete" asking) (Just Replay.MkConfirmForget)
+      Spec.assertEqWith s "cancel" (Replay.listed Replay.MkCancelForget Text.empty asking) shown
+      Spec.assertEqWith s "deleted" (fmap History.ended (Replay.games (Replay.forgot asking))) [2, 1]
+
+    Spec.it s "asks before clearing every game" $ do
+      let asking = Replay.listed (Replay.MkForget Replay.MkForgetAll) Text.empty shown
+      Spec.assertEqWith s "clear" (tapping "Clear history" shown) (Just (Replay.MkForget Replay.MkForgetAll))
+      Spec.assertBool s (Text.isInfixOf (Text.pack "Delete every game kept here?") (page asking)) "asked"
+      Spec.assertEqWith s "confirm" (tapping "Delete all" asking) (Just Replay.MkConfirmForget)
+      Spec.assertEqWith s "cleared" (Replay.games (Replay.forgot asking)) []
+
+    Spec.it s "offers Play again only where this browser held every deck" $ do
+      let invited = HistorySpec.game {History.seats = fmap (\seat -> seat {History.deckName = Nothing}) (History.seats HistorySpec.game)}
+      Spec.assertEqWith s "invited" (tapping "Play again" (Replay.listing [invited])) Nothing
 
   Spec.describe s "ended" $ do
     Spec.it s "goes back to the position and plays on from it again" $ do

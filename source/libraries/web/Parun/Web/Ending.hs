@@ -36,6 +36,13 @@ data Verdict
   | MkDrawn
   | -- | Play stopped before the game ended.
     MkStopped
+  deriving (Bounded, Enum, Eq, Show)
+
+-- | How a game the page played came out.
+data Played
+  = MkFinished Ending
+  | -- | Given up from the home screen for another game, so no ending shows.
+    MkAbandoned
   deriving (Eq, Show)
 
 data Ending = MkEnding

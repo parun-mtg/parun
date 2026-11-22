@@ -4125,6 +4125,8 @@ library web
     Parun.Web.Element
     Parun.Web.Ending
     Parun.Web.EndingSpec
+    Parun.Web.History
+    Parun.Web.HistorySpec
     Parun.Web.Home
     Parun.Web.HomeSpec
     Parun.Web.Html
