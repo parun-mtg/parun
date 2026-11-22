@@ -61,7 +61,6 @@ jobs:
       - run: |
           nix develop .#wasm --command wasm32-wasi-cabal build all \
             --builddir=dist-wasm \
-            --enable-benchmarks \
             --enable-tests \
             --flags=pedantic \
             --project-file=cabal.wasm.project

@@ -91,7 +91,7 @@ parseOptions arguments = case arguments of
   argument : _ -> Left $ "unexpected argument: " <> argument
 
 usage :: String
-usage = "usage: parun-benchmark [-p SUBSTRING] [--json FILE]"
+usage = "usage: parun bench [-p SUBSTRING] [--json FILE]"
 
 selected :: Options -> Benchmark -> Bool
 selected options benchmark = case substring options of

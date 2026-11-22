@@ -5,7 +5,6 @@ To set up the local development environment, use [Nix][1] (`nix develop`) or
 
 ``` sh
 cabal configure \
-  --enable-benchmarks \
   --enable-tests \
   --flags=pedantic \
   --jobs \
