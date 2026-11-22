@@ -3284,8 +3284,10 @@ details.pile[open] {
   margin-top: 4px;
 }
 
-/* CR 724: a choice the seat makes for a player it controls. */
-.controlling {
+/* CR 724: a choice the seat makes for a player it controls; and, when one
+   person plays several seats, the seat asked. */
+.controlling,
+.playing {
   margin: 0;
   padding: 8px 12px;
   border-radius: var(--radius);
