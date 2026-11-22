@@ -50,7 +50,6 @@
                           }
                         ]
                       },
-                      "slot": "exiled",
                       "zone": "Exile"
                     }
                   },
@@ -139,8 +138,29 @@
                         }
                       ],
                       "ref": {
-                        "type": "InSlot",
-                        "value": "exiled"
+                        "type": "AllOf",
+                        "value": [
+                          {
+                            "type": "InSlot",
+                            "value": "artifact"
+                          },
+                          {
+                            "type": "InSlot",
+                            "value": "creature"
+                          },
+                          {
+                            "type": "InSlot",
+                            "value": "enchantment"
+                          },
+                          {
+                            "type": "InSlot",
+                            "value": "planeswalker"
+                          },
+                          {
+                            "type": "InSlot",
+                            "value": "land"
+                          }
+                        ]
                       },
                       "slot": "victim"
                     }
