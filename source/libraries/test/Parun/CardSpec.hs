@@ -842,7 +842,7 @@ objectRefPositions =
         ("connive", Effect.Connive (Connive.MkConnive (Quantity.Type.Literal 1) (plantedRef "cn")), [plantedRef "cn"]),
         ("set-x", Effect.SetX (SetX.MkSetX (NewX.Becomes (Quantity.Type.Literal 5)) (plantedRef "sx")), [plantedRef "sx"]),
         ("discard-these", Effect.Discard (Discard.These (TheseDiscard.MkTheseDiscard (plantedRef "di") Nothing)), [plantedRef "di"]),
-        ("create-copy", Effect.CreateCopy (CreateCopy.MkCreateCopy (Quantity.Type.Literal 1) (plantedRef "cc") plainRiders Nothing [] (PlayerRef.Relative PlayerRelation.You) False), [plantedRef "cc"]),
+        ("create-copy", Effect.CreateCopy (CreateCopy.MkCreateCopy (Quantity.Type.Literal 1) (plantedRef "cc") plainRiders Nothing [] (PlayerRef.Relative PlayerRelation.You) False Nothing), [plantedRef "cc"]),
         ("become-copy", Effect.BecomeCopy (BecomeCopy.MkBecomeCopy (CopyOriginal.OfObject (plantedRef "bc-original")) (plantedRef "bc-subject") Nothing [] False), [plantedRef "bc-original", plantedRef "bc-subject"]),
         ("copy-spell", Effect.CopyStackObject (CopyStackObject.MkCopyStackObject (plantedRef "cs") CopyTargets.Copied CopyStackObject.defaultQuantity CopyStackObject.defaultCopier [] Nothing), [plantedRef "cs"]),
         -- CR 707.10d names a SECOND ref, the candidates', which the sweep must
@@ -947,7 +947,7 @@ playerRefPositions =
         ("increase-speed", Effect.IncreaseSpeed (playerQuantity "is"), [plantedPlayer "is"]),
         ("decrease-speed", Effect.DecreaseSpeed (SpeedDecrease.MkSpeedDecrease (plantedPlayer "ds") one 0), [plantedPlayer "ds"]),
         ("create", Effect.Create (Create.MkCreate one () EntryRiders.defaultValue Nothing (plantedPlayer "cr") False Nothing Nothing), [plantedPlayer "cr"]),
-        ("create-copy", Effect.CreateCopy (CreateCopy.MkCreateCopy one (plantedRef "cp") EntryRiders.defaultValue Nothing [] (plantedPlayer "ccp") False), [plantedPlayer "ccp"]),
+        ("create-copy", Effect.CreateCopy (CreateCopy.MkCreateCopy one (plantedRef "cp") EntryRiders.defaultValue Nothing [] (plantedPlayer "ccp") False Nothing), [plantedPlayer "ccp"]),
         ("conjure", Effect.Conjure (Conjure.MkConjure one (ConjureCards.Written (NonEmpty.singleton ())) Conjure.defaultSelection False ConjureDestination.Hand Nothing (plantedPlayer "cj")), [plantedPlayer "cj"]),
         ("create-emblem", Effect.CreateEmblem (CreateEmblem.MkCreateEmblem () (plantedPlayer "ce")), [plantedPlayer "ce"]),
         ("skip-phase", Effect.SkipPhase SkipPhase.MkSkipPhase {SkipPhase.player = plantedPlayer "sn", SkipPhase.selector = SkipWindow.PartOfTurn PhaseSelector.CombatPhase, SkipPhase.uses = Uses.Once, SkipPhase.duration = Duration.Indefinite, SkipPhase.count = SkipPhase.defaultCount}, [plantedPlayer "sn"]),
@@ -5625,7 +5625,7 @@ effectFilters effect = case effect of
   -- An EachMatching ref's Filter is card text like RequireBlock's below, and the
   -- count's and the riders' Filters are as much card text as Create's. The
   -- exceptions frame themselves, BecomeCopy's arm below.
-  Effect.CreateCopy (CreateCopy.MkCreateCopy quantity ref riders _ exceptions _ _) -> frame Unframed (quantityFilters quantity <> riderFilters riders) <> frame SourceHostFramed (objectRefFilters ref) <> concatMap copyExceptionFilters exceptions
+  Effect.CreateCopy (CreateCopy.MkCreateCopy quantity ref riders _ exceptions _ _ _) -> frame Unframed (quantityFilters quantity <> riderFilters riders) <> frame SourceHostFramed (objectRefFilters ref) <> concatMap copyExceptionFilters exceptions
   -- BOTH refs, RequireBlock's arm below: each EachMatching Filter is card text.
   -- The exceptions beside them carry Filters through a KEYWORD, and frame them
   -- themselves (copyExceptionFilters) -- EntryRewrite's AsCopy arm takes the same

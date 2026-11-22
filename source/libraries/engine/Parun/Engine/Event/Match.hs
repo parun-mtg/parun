@@ -2801,6 +2801,6 @@ causeAdmitted gs bearer you narrowed cause =
 -- "a card exiled with this creature"). The scenarios named for Voltaic
 -- Visionary prove it.
 leftPile :: ObjectId -> Maybe ExileLink.ExileLink -> ObjectId -> Filter.Context -> Filter.Context
-leftPile bearer link arrived context = case link of
-  Just l | ExileLink.source l == bearer -> context {Filter.sourceExiled = Map.insert arrived l (Filter.sourceExiled context)}
-  _ -> context
+leftPile bearer link arrived context = case Binding.linkAsSeenBy bearer =<< link of
+  Just l -> context {Filter.sourceExiled = Map.insert arrived l (Filter.sourceExiled context)}
+  Nothing -> context

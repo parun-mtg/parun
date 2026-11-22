@@ -1,5 +1,6 @@
 module Parun.Codec.ExileLinkSpec where
 
+import qualified Data.Set as Set
 import qualified Data.Text as Text
 import qualified Parun.Codec.ExileLink as ExileLink
 import qualified Parun.JsonCodec.Common as Common
@@ -17,36 +18,43 @@ spec s = Spec.describe s "Parun.Codec.ExileLink" $ do
     Common.assertCodec
       s
       ExileLink.codec
-      (ExileLink.MkExileLink {ExileLink.source = ObjectId.MkObjectId 7, ExileLink.ability = Nothing, ExileLink.acquisition = Acquisition.Own, ExileLink.chosen = False, ExileLink.controller = Nothing})
+      (ExileLink.MkExileLink {ExileLink.source = ObjectId.MkObjectId 7, ExileLink.ability = Nothing, ExileLink.acquisition = Acquisition.Own, ExileLink.chosen = False, ExileLink.controller = Nothing, ExileLink.tokens = Set.empty})
       " {\"source\":7} "
 
   Spec.it s "MkExileLink, a named ability" $
     Common.assertCodec
       s
       ExileLink.codec
-      (ExileLink.MkExileLink {ExileLink.source = ObjectId.MkObjectId 7, ExileLink.ability = Just (AbilityName.MkAbilityName (Text.pack "warden")), ExileLink.acquisition = Acquisition.Own, ExileLink.chosen = False, ExileLink.controller = Nothing})
+      (ExileLink.MkExileLink {ExileLink.source = ObjectId.MkObjectId 7, ExileLink.ability = Just (AbilityName.MkAbilityName (Text.pack "warden")), ExileLink.acquisition = Acquisition.Own, ExileLink.chosen = False, ExileLink.controller = Nothing, ExileLink.tokens = Set.empty})
       " {\"source\":7,\"ability\":\"warden\"} "
 
   Spec.it s "MkExileLink, an ability a copy effect gave it" $
     Common.assertCodec
       s
       ExileLink.codec
-      (ExileLink.MkExileLink {ExileLink.source = ObjectId.MkObjectId 7, ExileLink.ability = Nothing, ExileLink.acquisition = Acquisition.Copied (Timestamp.MkTimestamp 3), ExileLink.chosen = False, ExileLink.controller = Nothing})
+      (ExileLink.MkExileLink {ExileLink.source = ObjectId.MkObjectId 7, ExileLink.ability = Nothing, ExileLink.acquisition = Acquisition.Copied (Timestamp.MkTimestamp 3), ExileLink.chosen = False, ExileLink.controller = Nothing, ExileLink.tokens = Set.empty})
       " {\"source\":7,\"acquisition\":{\"type\":\"Copied\",\"value\":3}} "
 
   Spec.it s "MkExileLink, the last chosen card" $
     Common.assertCodec
       s
       ExileLink.codec
-      (ExileLink.MkExileLink {ExileLink.source = ObjectId.MkObjectId 7, ExileLink.ability = Nothing, ExileLink.acquisition = Acquisition.Own, ExileLink.chosen = True, ExileLink.controller = Nothing})
+      (ExileLink.MkExileLink {ExileLink.source = ObjectId.MkObjectId 7, ExileLink.ability = Nothing, ExileLink.acquisition = Acquisition.Own, ExileLink.chosen = True, ExileLink.controller = Nothing, ExileLink.tokens = Set.empty})
       " {\"source\":7,\"chosen\":true} "
 
   Spec.it s "MkExileLink, its exiling ability's controller" $
     Common.assertCodec
       s
       ExileLink.codec
-      (ExileLink.MkExileLink {ExileLink.source = ObjectId.MkObjectId 7, ExileLink.ability = Nothing, ExileLink.acquisition = Acquisition.Own, ExileLink.chosen = False, ExileLink.controller = Just (PlayerId.MkPlayerId 1)})
+      (ExileLink.MkExileLink {ExileLink.source = ObjectId.MkObjectId 7, ExileLink.ability = Nothing, ExileLink.acquisition = Acquisition.Own, ExileLink.chosen = False, ExileLink.controller = Just (PlayerId.MkPlayerId 1), ExileLink.tokens = Set.empty})
       " {\"source\":7,\"controller\":1} "
+
+  Spec.it s "MkExileLink, the tokens linked to it" $
+    Common.assertCodec
+      s
+      ExileLink.codec
+      (ExileLink.MkExileLink {ExileLink.source = ObjectId.MkObjectId 7, ExileLink.ability = Nothing, ExileLink.acquisition = Acquisition.Own, ExileLink.chosen = False, ExileLink.controller = Nothing, ExileLink.tokens = Set.fromList [ObjectId.MkObjectId 8, ObjectId.MkObjectId 9]})
+      " {\"source\":7,\"tokens\":[8,9]} "
 
   Spec.it s "has a schema" $
     Common.assertHasSchema s ExileLink.codec

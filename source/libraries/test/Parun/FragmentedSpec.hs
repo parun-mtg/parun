@@ -220,7 +220,7 @@ spec s registry = Spec.describe s "a fragmented loop (CR 733.3)" $ do
         (islandId, here) = S.addPermanent island S.alice gs1
         gone = S.runPure S.identityAnswer here (Event.changeZone Settle.none islandId Zone.Graveyard)
         counterLink = CounterLink.MkCounterLink {CounterLink.source = tombId, CounterLink.acquisition = Acquisition.Own, CounterLink.moved = CounterLinked.PutWith CounterKind.PlusOnePlusOne}
-        exileLink = ExileLink.MkExileLink {ExileLink.source = tombId, ExileLink.ability = Nothing, ExileLink.acquisition = Acquisition.Own, ExileLink.chosen = False, ExileLink.controller = Nothing}
+        exileLink = ExileLink.MkExileLink {ExileLink.source = tombId, ExileLink.ability = Nothing, ExileLink.acquisition = Acquisition.Own, ExileLink.chosen = False, ExileLink.controller = Nothing, ExileLink.tokens = Set.empty}
         countered gs = Fragmented.digest gs {GameState.counteredWith = Map.singleton islandId (Set.singleton counterLink)} == Fragmented.digest gs
         exiled gs = Fragmented.digest gs {GameState.exiledWith = Map.singleton islandId exileLink} == Fragmented.digest gs
         watch = ReturnWatch.MkReturnWatch {ReturnWatch.ending = ReturnEnding.SourceLeaves tombId, ReturnWatch.zone = Zone.Battlefield, ReturnWatch.link = EntryLink.MkEntryLink {EntryLink.source = tombId, EntryLink.acquisition = Acquisition.Own, EntryLink.resolution = tombId}}

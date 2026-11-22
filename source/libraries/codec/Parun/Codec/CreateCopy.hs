@@ -39,6 +39,7 @@ codec abilityCodec = Fields.object $ do
   exceptions <- Fields.defaulted "exceptions" [] (Common.list (CopyException.codec abilityCodec)) CreateCopy.exceptions
   creator <- Fields.defaulted "creator" (PlayerRef.Relative PlayerRelation.You) PlayerRef.codec CreateCopy.creator
   linked <- Fields.defaulted "linked" False Common.boolean CreateCopy.linked
+  linkExiled <- Fields.defaulted "linkExiled" Nothing (Common.maybe SlotName.codec) CreateCopy.linkExiled
   pure
     CreateCopy.MkCreateCopy
       { CreateCopy.quantity = quantity,
@@ -47,5 +48,6 @@ codec abilityCodec = Fields.object $ do
         CreateCopy.slot = slot,
         CreateCopy.exceptions = exceptions,
         CreateCopy.creator = creator,
-        CreateCopy.linked = linked
+        CreateCopy.linked = linked,
+        CreateCopy.linkExiled = linkExiled
       }

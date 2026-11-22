@@ -17,6 +17,7 @@ import qualified Data.Map.Strict as Map
 import qualified Data.Maybe as Maybe
 import qualified Data.Sequence as Seq
 import qualified Data.Set as Set
+import qualified Parun.Engine.Binding as Binding
 import qualified Parun.Engine.Count as Count
 import qualified Parun.Engine.Defender as Defender
 import qualified Parun.Engine.Filter as Filter
@@ -25,7 +26,6 @@ import qualified Parun.Types.Acquisition as Acquisition
 import qualified Parun.Types.Chosen as Chosen
 import qualified Parun.Types.CounterLink as CounterLink
 import qualified Parun.Types.EntryLink as EntryLink
-import qualified Parun.Types.ExileLink as ExileLink
 import qualified Parun.Types.GameState as GameState
 import qualified Parun.Types.Object as Object
 import qualified Parun.Types.ObjectId as ObjectId
@@ -69,8 +69,9 @@ framedWith viewOf choices source gs context =
       Filter.sourceEntrants = Map.keysSet (Map.filter (any (readsEntrant choices source)) (GameState.enteredWith gs)),
       -- CR 607.5: the same acquisition's counter links.
       Filter.sourceCountered = Map.filter (not . Set.null) (fmap (Set.map CounterLink.moved . Set.filter (\link -> CounterLink.source link == source && CounterLink.acquisition link == SourceChoices.acquisition choices)) (GameState.counteredWith gs)),
-      -- CR 607.2a: the cards in exile now (CR 400.7) linked to the source.
-      Filter.sourceExiled = Map.filter ((== source) . ExileLink.source) (Map.restrictKeys (GameState.exiledWith gs) (GameState.exile gs)),
+      -- CR 607.2a / 607.1d: the cards in exile now (CR 400.7) linked to the
+      -- source.
+      Filter.sourceExiled = Map.mapMaybe (Binding.linkAsSeenBy source) (Map.restrictKeys (GameState.exiledWith gs) (GameState.exile gs)),
       -- CR 406.1: every card in exile, for a group anchor over that pool,
       -- whose nest reads sourceExiled above.
       Filter.exiledViews = Seq.fromList (Maybe.mapMaybe viewOf (Foldable.toList (GameState.exile gs))),
