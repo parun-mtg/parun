@@ -85,6 +85,15 @@ next = do
           }
       next
 
+-- | `draws` on a generator of its own, keyed from this one's next draw
+-- ('derive'), so this one moves on by that one draw however many `draws`
+-- makes.
+apart :: (Monad m) => State.StateT Generator.Generator m a -> State.StateT Generator.Generator m a
+apart draws = do
+  index <- next
+  key <- State.gets Generator.key
+  State.lift (State.evalStateT draws (fromKey (derive key index)))
+
 -- | Uniform from least to greatest, both included; least when they cross. A
 -- range wider than 2^64 is drawn from its first 2^64 values.
 between :: (Monad m) => Natural -> Natural -> State.StateT Generator.Generator m Natural

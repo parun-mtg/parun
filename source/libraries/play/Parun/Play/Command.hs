@@ -47,6 +47,7 @@ import qualified Parun.Types.Limits as Limits
 import qualified Parun.Types.PlayOptions as PlayOptions
 import qualified Parun.Types.PlayerId as PlayerId
 import qualified Parun.Types.PrintingTable as PrintingTable
+import qualified Parun.Types.Reply as R
 import qualified Parun.Types.Result as Result
 import qualified Parun.Types.Scenario as Scenario
 import qualified Parun.Types.Timed as Timed
@@ -167,7 +168,7 @@ play :: Protocol.Exchange IO -> PlayOptions.PlayOptions -> Registry.Registry Ide
 play send options registry format decks = do
   IO.hSetBuffering IO.stdout IO.LineBuffering
   seed <- maybe Key.fresh pure (PlayOptions.seed options)
-  (outcome, recorded) <- game send options registry format decks seed
+  (outcome, recorded) <- game send (pure Nothing) (const (pure ())) options registry format decks seed
   Monad.forM_ (PlayOptions.save options) (`save` recorded)
   case outcome of
     Right (result, _) -> (if PlayOptions.json options then TextIO.hPutStrLn IO.stderr else TextIO.putStrLn) (Wording.result result)
@@ -180,9 +181,11 @@ play send options registry format decks = do
 -- who plays first among them; and the scenario it replays as, up to where it
 -- stopped. With --json, each line protocol request goes out through
 -- `send` and its reply comes back: over standard input and output in `parun
--- play` ('exchange'), as values in the web client.
-game :: Protocol.Exchange IO -> PlayOptions.PlayOptions -> Registry.Registry Identity.Identity -> Maybe Format.Format -> NonEmpty.NonEmpty Deck.Deck -> Key.Type.Key -> IO (Either Text.Text (Result.Result, GameState.GameState), Scenario.Scenario)
-game send options registry format decks seed = do
+-- play` ('exchange'), as values in the web client. Each bot seat's answer is
+-- taken from `stored` while it has one, and otherwise given to `kept`
+-- ('answerer').
+game :: Protocol.Exchange IO -> IO (Maybe R.Reply) -> (R.Reply -> IO ()) -> PlayOptions.PlayOptions -> Registry.Registry Identity.Identity -> Maybe Format.Format -> NonEmpty.NonEmpty Deck.Deck -> Key.Type.Key -> IO (Either Text.Text (Result.Result, GameState.GameState), Scenario.Scenario)
+game send stored kept options registry format decks seed = do
   let reference :: Registry.Registry IO
       reference = Registry.hoist (pure . Identity.runIdentity) registry
   let count = Natural.length decks
@@ -196,7 +199,7 @@ game send options registry format decks seed = do
     Nothing -> pure (Left (Text.pack "end of input"), record (seated 1 decks) Seq.empty)
     Just first -> do
       let matchup = seated first decks
-          seats = Map.fromList [(idOf n, answerer reference send options n) | n <- NonEmpty.toList numbers]
+          seats = Map.fromList [(idOf n, answerer reference send stored kept options n) | n <- NonEmpty.toList numbers]
       entries <- IORef.newIORef Seq.empty
       let observers = [Record.recording (labels count) (Game.underneath . IORef.modifyIORef' entries . flip (Seq.|>))]
           interrupted e = case e of
@@ -207,10 +210,11 @@ game send options registry format decks seed = do
       pure (outcome, record matchup timeline)
 
 -- | Who answers seat `n`: the search bot at the options' budget, over the
--- known lists, if it is a bot's; otherwise `send`.
-answerer :: (Monad m) => Registry.Registry m -> Protocol.Exchange m -> PlayOptions.PlayOptions -> Natural -> Answerer.Answerer (Asked.Asked GameState.GameState) (Game.Play m)
-answerer registry send options n
-  | Set.member n (PlayOptions.bots options) = Search.search registry (PlayOptions.budget options) Search.known
+-- known lists, if it is a bot's, its answers taken from `stored` and given to
+-- `kept` (Game.remembered); otherwise `send`.
+answerer :: (Monad m) => Registry.Registry m -> Protocol.Exchange m -> m (Maybe R.Reply) -> (R.Reply -> m ()) -> PlayOptions.PlayOptions -> Natural -> Answerer.Answerer (Asked.Asked GameState.GameState) (Game.Play m)
+answerer registry send stored kept options n
+  | Set.member n (PlayOptions.bots options) = Game.remembered stored kept (Search.search registry (PlayOptions.budget options) Search.known)
   | otherwise = Game.wired registry send
 
 idOf :: Natural -> PlayerId.PlayerId

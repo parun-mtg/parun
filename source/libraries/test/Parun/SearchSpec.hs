@@ -93,7 +93,7 @@ spec s registry = Spec.describe s "Search" $ do
     (pid, asked) <- openAttack s registry
     let seat = PlayerId.unwrap pid + 1
         options = PlayOptions.none {PlayOptions.bots = Set.singleton seat}
-        answered seed = either (Spec.assertFailure s . Text.unpack) pure =<< Except.runExceptT (State.evalStateT (Answerer.unwrap (Command.answerer (S.fixtureRegistry []) (const (pure Nothing)) options seat) asked) (S.seeded seed))
+        answered seed = either (Spec.assertFailure s . Text.unpack) pure =<< Except.runExceptT (State.evalStateT (Answerer.unwrap (Command.answerer (S.fixtureRegistry []) (const (pure Nothing)) (pure Nothing) (const (pure ())) options seat) asked) (S.seeded seed))
     declared <- traverse answered [1 .. 8]
     Spec.assertBool s (not (any null declared)) "attacked in every seed"
 
