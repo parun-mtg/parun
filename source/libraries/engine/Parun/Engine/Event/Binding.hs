@@ -833,9 +833,13 @@ eventBindingsOver board gs bearerBecame becameInGraveyard bearer you cond event 
   --
   -- Both unconditional given a match, which is what eventBindingSlots'
   -- per-condition promise needs: matchesTrigger's arm rejects
-  -- TriggerSource.Sourceless outright -- CR 726.2's and CR 702.179d's abilities
-  -- hang on no Saga -- so every record it accepts carries an ObjectId, and every
-  -- record carries a controller.
+  -- TriggerSource.Sourceless outright for a Saga's chapter and an attack --
+  -- CR 726.2's and CR 702.179d's abilities hang on no Saga -- so every record
+  -- it accepts carries an ObjectId, and every record carries a controller.
+  -- WatchedAbility.CausedByEntry accepts a sourceless record, Strict Proctor
+  -- countering "a triggered ability", and binds nothing off it; no sourceless
+  -- ability the rules state (CR 702.179d, CR 726.2, CR 727.2, CR 729.1, CR
+  -- 901.8) triggers on an entry, so no record reaches that.
   --
   -- ChapterMoment.Resolves's event carries the same record, read the same way:
   -- Narci, Fable Singer's "that Saga's mana value" is the slot's reader.
@@ -1965,6 +1969,8 @@ eventBindingSlots cond = case cond of
   -- TriggerSource.Sourceless, so the record it accepts always carries an
   -- ObjectId, and every record carries a controller. Claimed for the CONDITION
   -- rather than for the printing, which is what a per-condition set means.
+  -- CausedByEntry's arm accepts a sourceless record, which binds none of the
+  -- three, but no sourceless ability triggers on an entry (eventBindings' arm).
   --
   -- And the ability itself for a watcher of its TRIGGERING, the record
   -- Engine.reactions mints always naming its stack object; CR 608.2n's record

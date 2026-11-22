@@ -101,6 +101,7 @@ import qualified Parun.Types.Timestamp as Timestamp
 import qualified Parun.Types.TriggerSource as TriggerSource
 import qualified Parun.Types.TriggeredAbility as TriggeredAbility
 import qualified Parun.Types.TriggeredAbilitySource as TriggeredAbilitySource
+import qualified Parun.Types.TriggeringMove as TriggeringMove
 import qualified Parun.Types.TurnRegisters as TurnRegisters
 
 -- | Whether choosing between these two objects is choosing between options the
@@ -777,9 +778,21 @@ pileNames stamp = case stamp of
 triggeredNames :: ObjectId -> AbilityTriggered.AbilityTriggered -> Bool
 triggeredNames oid entry = case entry of
   AbilityTriggered.MkAbilityTriggered source _controller ability stackObject causers ->
-    any (Binding.isAcquiredFrom oid) (TriggeredAbility.name ability) || stackObject == Just oid || any (Set.member oid) causers || case source of
+    any (Binding.isAcquiredFrom oid) (TriggeredAbility.name ability) || stackObject == Just oid || or (Map.mapWithKey (\move causer -> causerNames move && Set.member oid causer) causers) || case source of
       TriggerSource.OfObject object -> object == oid
       TriggerSource.Sourceless -> False
+
+-- Whether a causer recorded under this move names it: an attacker does, read
+-- by id by WatchedAbility.CausedByOwnAttack (CR 508.3), while CR 603.6a's
+-- entrant does not, WatchedAbility.CausedByEntry reading only that the key is
+-- there; proved by
+-- data/scenarios/mana/cr-601-2g-two-plains-whose-entry-triggered-landfall-are-one-mana-source.json.
+causerNames :: TriggeringMove.TriggeringMove -> Bool
+causerNames move = case move of
+  TriggeringMove.Attacking -> True
+  TriggeringMove.Entering -> False
+  TriggeringMove.Dying -> False
+  TriggeringMove.GainingLife -> False
 
 -- Whether a counted activation (CR 602.5b) spent an ability named for this
 -- object as its granter (Binding.acquiredFrom).
