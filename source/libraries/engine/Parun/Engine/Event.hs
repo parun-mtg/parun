@@ -13396,7 +13396,7 @@ look :: PlayerId -> ObjectId -> Game ()
 look pid oid = do
   gs <- State.get
   Monad.forM_ (Game.lookupObject oid gs) $ \_ ->
-    State.modify' (recordEvent (GameEvent.Looked (Looked.MkLooked oid (Projection.projectShown oid gs) (Decide.privyTo pid gs))))
+    State.modify' (recordEvent (GameEvent.Looked (Looked.MkLooked pid oid (Projection.projectShown oid gs) (Decide.privyTo pid gs))))
 
 -- Write a whole new order back to a player's library: CR 701.22a's scry, CR
 -- 701.25a's surveil and CR 701.29a's fateseal, CR 401.4's arrangement and CR

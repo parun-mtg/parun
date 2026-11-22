@@ -232,8 +232,8 @@ spec s = Spec.describe s "Parun.Codec.GameEvent" $ do
     Common.assertCodec
       s
       GameEvent.codec
-      (GameEvent.Looked (Looked.MkLooked (ObjectId.MkObjectId 7) ProjectedCharacteristicsSpec.testCharacteristics (Set.fromList [PlayerId.MkPlayerId 0, PlayerId.MkPlayerId 2])))
-      ("{\"type\":\"Looked\",\"value\":{\"card\":7,\"characteristics\":" <> ProjectedCharacteristicsSpec.testCharacteristicsJson <> ",\"audience\":[0,2]}}")
+      (GameEvent.Looked (Looked.MkLooked (PlayerId.MkPlayerId 0) (ObjectId.MkObjectId 7) ProjectedCharacteristicsSpec.testCharacteristics (Set.fromList [PlayerId.MkPlayerId 0, PlayerId.MkPlayerId 2])))
+      ("{\"type\":\"Looked\",\"value\":{\"player\":0,\"card\":7,\"characteristics\":" <> ProjectedCharacteristicsSpec.testCharacteristicsJson <> ",\"audience\":[0,2]}}")
   Spec.it s "Voted" $
     Common.assertCodec
       s

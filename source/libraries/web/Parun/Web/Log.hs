@@ -66,11 +66,10 @@ told view logged =
    in concatMap tell (List.groupBy (\a b -> minor a == minor b) logged)
 
 -- | Minor: a resolving spell's move off the stack, which the board shows as
--- it lands, and the mana spent on spells this turn (CR 700.14).
+-- it lands.
 minor :: LoggedEvent.LoggedEvent -> Weight
 minor logged = case LoggedEvent.event logged of
   GameEvent.Moved m | ZoneChange.from (Moved.change m) == Zone.Stack -> MkMinor
-  GameEvent.Expended _ -> MkMinor
   _ -> MkMajor
 
 -- | The entries' sentences, for the end of the game and the newest-first
@@ -79,6 +78,11 @@ sentence :: PlayerId.PlayerId -> Entry -> Text.Text
 sentence viewer entry = case entry of
   MkTurn n active -> Text.pack ("Turn " <> show n <> ": ") <> (if active == viewer then Text.pack "your turn" else Wording.player active <> Text.pack "'s turn")
   MkEvent _ t -> t
+
+-- | The entries less each heading with no event under it: a turn nothing
+-- has happened in yet, or one whose events a cut left out.
+headed :: (x -> Entry) -> [x] -> [x]
+headed entry xs = [x | (x, next) <- zip xs (fmap Just (drop 1 xs) <> [Nothing]), not (isTurn (entry x)) || maybe False (not . isTurn . entry) next]
 
 -- | Whether an entry is a heading.
 isTurn :: Entry -> Bool
@@ -95,12 +99,13 @@ item viewer linked fresh entry = case entry of
   MkEvent w t -> Element.el "li" (["fresh" | fresh] <> ["minor" | w == MkMinor]) [] (maybe (Mana.rich t) (\(known, reading) -> linking known reading t) linked)
 
 -- | Entries in the order given, each beside its place in the log, as a list
--- per turn under that turn's heading ("Turn 5 · You"); `linked` says by an
+-- per turn under that turn's heading ("Turn 5 · You"), a turn with no
+-- entries left out (headed); `linked` says by an
 -- entry's position here what its names link to (item), `lit` by its place
 -- whether it is fresh.
 grouped :: PlayerId.PlayerId -> (Int -> Maybe (Map.Map Text.Text ObjectId.ObjectId, ObjectId.ObjectId -> msg)) -> (Int -> Bool) -> Seq.Seq (Int, Entry) -> Html.Html msg
 grouped viewer linked lit entries =
-  let numbered = Foldable.toList (Seq.mapWithIndex (\j (i, e) -> (j, i, e)) entries)
+  let numbered = headed (\(_, _, e) -> e) (Foldable.toList (Seq.mapWithIndex (\j (i, e) -> (j, i, e)) entries))
       -- Runs each starting at a heading, the first perhaps without one.
       runs = List.groupBy (\_ (_, _, e) -> not (isTurn e)) numbered
       heading e = case e of
@@ -111,7 +116,7 @@ grouped viewer linked lit entries =
           [ ( Text.pack (show i),
               Element.el "section" ["log-turn"] [] $
                 heading first
-                  <> [Element.keyed "ul" ["log-list"] [] [(Text.pack (show i'), item viewer (linked j) (lit i') e) | (j, i', e) <- items, not (isTurn e)] | any (\(_, _, e) -> not (isTurn e)) items]
+                  <> [Element.keyed "ul" ["log-list"] [] [(Text.pack (show i'), item viewer (linked j) (lit i') e) | (j, i', e) <- items, not (isTurn e)]]
             )
           ]
         [] -> []

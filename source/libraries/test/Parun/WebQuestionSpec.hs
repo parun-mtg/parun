@@ -244,7 +244,7 @@ spec s registry = Spec.describe s "WebQuestion" $ do
         (a, g3) = S.addObjectIn Zone.Library bears S.alice g2
         (b, g4) = S.addObjectIn Zone.Library bears S.alice g3
         (c, gs) = S.addObjectIn Zone.Library giant S.alice g4
-        looked = Foldable.foldl' (\g oid -> Event.recordEvent (GameEvent.Looked (Looked.MkLooked oid (Projection.project oid gs) (Set.singleton S.alice))) g) gs [top, a, b, c]
+        looked = Foldable.foldl' (\g oid -> Event.recordEvent (GameEvent.Looked (Looked.MkLooked S.alice oid (Projection.project oid gs) (Set.singleton S.alice))) g) gs [top, a, b, c]
         request = requestFor looked (Prompt.ChooseCardFromAmong (Decider.MkDecider S.alice) S.alice source (NonEmpty.fromList [a, b, c]))
         view = Question.Web.view request Question.Web.blank
         tap label = Html.labelled (Text.pack "button") (Text.pack label) view >>= \path -> Html.handler (Text.pack "click") path view
@@ -596,7 +596,7 @@ spec s registry = Spec.describe s "WebQuestion" $ do
     let busy = Question.Web.blank {Question.Web.logged = Seq.fromList (fmap (event . show) [1 :: Int .. 6]), Question.Web.fresh = 6}
         asked = requestFor (Setup.emptyGame S.bothPlayers) (Prompt.ChooseAction (Decider.MkDecider S.alice) S.alice [Action.Pass])
     -- In the side column, each turn under its own heading, newest first.
-    let turns = Question.Web.blank {Question.Web.logged = Seq.fromList [turn 1, event "a", event "b", Log.MkTurn 2 S.bob, event "c"], Question.Web.fresh = 1}
+    let turns = Question.Web.blank {Question.Web.logged = Seq.fromList [turn 1, event "a", event "b", Log.MkTurn 2 S.bob, event "c", turn 3], Question.Web.fresh = 2}
         within cls html = Html.search (\node -> Text.pack ("<" <> cls) `Text.isPrefixOf` Html.toText node) html >>= \path -> Html.at path html
         recent = within "div class=\"log-recent\"" (Question.Web.view asked turns)
     Spec.assertEqWith
@@ -609,6 +609,9 @@ spec s registry = Spec.describe s "WebQuestion" $ do
             Text.pack "<h3 class=\"log-turn-heading\">Turn 1 \x00b7 You</h3><ul class=\"log-list\"><li>b</li><li>a</li></ul></section></div></div>"
           ]
       )
+    -- Turn 1's heading is the twelfth newest entry, its event cut.
+    let cut = Question.Web.blank {Question.Web.logged = Seq.fromList ([turn 1, event "old", turn 2] <> fmap (event . show) [1 :: Int .. 10])}
+    Spec.assertBool s (maybe False (not . Text.isInfixOf (Text.pack "Turn 1") . Html.toText) (within "div class=\"log-recent\"" (Question.Web.view asked cut))) "no heading whose events the cut left out"
     Spec.assertBool s (maybe False (Text.isInfixOf (Text.pack "<div class=\"log-panel\"") . Html.toText) (within "section class=\"log-pane\"" (Question.Web.view asked busy))) "the whole log opens from the log's heading"
     Spec.assertBool s (maybe False (not . Text.isInfixOf (Text.pack "log-") . Html.toText) (within "div class=\"turn-bar" (Question.Web.view asked busy))) "not from the turn bar"
     Spec.assertBool s (maybe False (not . Text.isInfixOf (Text.pack "log-") . Html.toText) (within "section class=\"prompt\"" (Question.Web.view asked busy))) "nor above the prompt"
@@ -797,7 +800,7 @@ spec s registry = Spec.describe s "WebQuestion" $ do
     mountain <- S.printingOf s registry "Mountain"
     let (one, g1) = S.addObjectIn Zone.Library bears S.alice (Setup.emptyGame S.bothPlayers)
         (two, g2) = S.addObjectIn Zone.Library mountain S.alice g1
-        look oid = Event.recordEvent (GameEvent.Looked (Looked.MkLooked oid (Projection.project oid g2) (Set.singleton S.alice)))
+        look oid = Event.recordEvent (GameEvent.Looked (Looked.MkLooked S.alice oid (Projection.project oid g2) (Set.singleton S.alice)))
         request = requestFor (look two (look one g2)) (Prompt.ArrangeLibraryCards (Decider.MkDecider S.alice) S.alice [one, two])
         tap picked label = let view = Question.Web.view request Question.Web.blank {Question.Web.selected = picked} in Html.labelled (Text.pack "button") (Text.pack label) view >>= \path -> Html.handler (Text.pack "click") path view
         reading = Question.Web.view request Question.Web.blank {Question.Web.reading = Just (Card.MkReading one [] True)}

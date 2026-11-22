@@ -56,6 +56,7 @@ import qualified Parun.Types.Generator as Generator
 import qualified Parun.Types.LifeChange as LifeChange
 import qualified Parun.Types.Limits as Limits
 import qualified Parun.Types.LoggedEvent as LoggedEvent
+import qualified Parun.Types.Looked as Looked
 import qualified Parun.Types.Moved as Moved
 import qualified Parun.Types.MulliganDecision as MulliganDecision
 import qualified Parun.Types.MulliganOffer as MulliganOffer
@@ -141,11 +142,14 @@ spec s registry = Spec.describe s "Play" $ do
     gs <- started s registry
     let acted action pid = GameEvent.PlayerActed (PlayerActed.MkPlayerActed action pid)
         poison putter pid n = GameEvent.PlayerCountersPut (PlayerCountersPlaced.MkPlayerCountersPlaced putter pid PlayerCounterKind.Poison 0 n)
+        look oid name = GameEvent.Looked (Looked.MkLooked S.alice (ObjectId.MkObjectId oid) S.emptyCharacteristics {ProjectedCharacteristics.names = Set.singleton (CardName.MkCardName (Text.pack name))} (Set.singleton S.alice))
         logged =
           [ acted PlayerAction.Scry S.alice,
             acted PlayerAction.Scry S.bob,
             acted PlayerAction.SearchLibrary S.alice,
             acted PlayerAction.TemptedByRing S.alice,
+            look 90 "Forest",
+            look 91 "Island",
             GameEvent.Expended (Expended.MkExpended S.alice 0 3),
             GameEvent.CoinFlipped (CoinFlipped.MkCoinFlipped S.alice (Just True)),
             poison S.alice S.alice 1,
@@ -161,7 +165,7 @@ spec s registry = Spec.describe s "Play" $ do
         Text.pack "Player 2 scries.",
         Text.pack "You search your library.",
         Text.pack "You are tempted by the Ring.",
-        Text.pack "You have spent 3 mana on spells this turn.",
+        Text.pack "You look at Forest and Island.",
         Text.pack "You flip a coin and win the flip.",
         Text.pack "You put 1 poison counter on yourself.",
         Text.pack "Player 2 puts 2 poison counters on you.",
@@ -175,7 +179,7 @@ spec s registry = Spec.describe s "Play" $ do
         Text.pack "Player 2 scries.",
         Text.pack "Player 1 searches their library.",
         Text.pack "Player 1 is tempted by the Ring.",
-        Text.pack "Player 1 has spent 3 mana on spells this turn.",
+        Text.pack "Player 1 looks at Forest and Island.",
         Text.pack "Player 1 flips a coin and wins the flip.",
         Text.pack "Player 1 puts 1 poison counter on Player 1.",
         Text.pack "Player 2 puts 2 poison counters on Player 1.",

@@ -77,7 +77,7 @@ ending =
     { Ending.verdict = Ending.MkWon,
       Ending.said = [Text.pack "Player 1 wins.", Text.pack "Player 2 conceded."],
       Ending.scenario = Text.pack "{}",
-      Ending.witnessed = Seq.fromList [Log.MkTurn 1 you, Log.MkEvent Log.MkMajor (Text.pack "You draw a card."), Log.MkEvent Log.MkMinor (Text.pack "Player 2 concedes.")],
+      Ending.witnessed = Seq.fromList [Log.MkTurn 1 you, Log.MkEvent Log.MkMajor (Text.pack "You draw a card."), Log.MkEvent Log.MkMinor (Text.pack "Player 2 concedes."), Log.MkTurn 2 you],
       Ending.viewer = you,
       Ending.trail = [(1, [(you, 20), (bot, 20)]), (2, [(you, 20), (bot, 17)]), (3, [(you, 20), (bot, 0)])]
     }

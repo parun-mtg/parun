@@ -86,6 +86,7 @@ import qualified Parun.Types.Object as Object
 import qualified Parun.Types.ObjectId as ObjectId
 import qualified Parun.Types.ObjectView as ObjectView
 import qualified Parun.Types.Observer as Observer
+import qualified Parun.Types.OptionalDecision as OptionalDecision
 import qualified Parun.Types.Phase as Phase
 import qualified Parun.Types.PhasedOut as PhasedOut
 import qualified Parun.Types.Player as Player
@@ -503,7 +504,8 @@ spec s registry = Spec.describe s "PlayerView" $ do
               LoggedEvent.event =
                 GameEvent.Looked
                   Looked.MkLooked
-                    { Looked.card = oid,
+                    { Looked.player = S.alice,
+                      Looked.card = oid,
                       Looked.characteristics = Projection.project oid placed,
                       Looked.audience = Set.singleton S.alice
                     }
@@ -520,7 +522,7 @@ spec s registry = Spec.describe s "PlayerView" $ do
     let lastTurn = S.withLastTurn (Seq.singleton look) placed
     Spec.assertEqWith s "bob did not, read a turn later" (length (PlayerView.Type.witnessedLastTurn (PlayerView.viewFor S.bob lastTurn))) 0
     Spec.assertEqWith s "alice witnessed it, read a turn later" (length (PlayerView.Type.witnessedLastTurn (PlayerView.viewFor S.alice lastTurn))) 1
-    Spec.assertEqWith s "alice's drawing" (drawnFor S.alice gs) [Text.pack "Looked at Goblin Piker."]
+    Spec.assertEqWith s "alice's drawing" (drawnFor S.alice gs) [Text.pack "Player 1 looks at Goblin Piker."]
   Spec.it s "CR 601.2a / 701.9a / 119.3 a spell cast, its discards, its damage and a life change are witnessed by both seats, by name" $ do
     let lands = [("s1", "Swamp"), ("s2", "Swamp"), ("s3", "Swamp"), ("m1", "Mountain"), ("m2", "Mountain"), ("p1", "Plains"), ("p2", "Plains")]
         mine =
@@ -565,6 +567,7 @@ spec s registry = Spec.describe s "PlayerView" $ do
       Spec.assertEqWith s (seat <> "CR 120.3a the damage") [(DamageEvent.amount d, DamageEvent.target d) | GameEvent.DamageDealt d <- seen] [(3, Recipient.ToPlayer S.bob)]
       Spec.assertEqWith s (seat <> "CR 119.3 the life lost and gained") ([LifeChange.amount l | GameEvent.LifeLost l <- seen], [LifeChange.amount l | GameEvent.LifeGained l <- seen]) ([3], [4])
       Spec.assertEqWith s (seat <> "drawn") (List.sort (filter (`elem` sentences) (drawnFor pid gs))) (List.sort sentences)
+    Spec.assertEqWith s "CR 120.3a / 700.13 / 700.14 logged, life lost to damage told by the damage, the crime and the mana spent not told" (loggedFor S.alice gs) (fmap Text.pack ["You cast Mind Rot.", "Player 2 discards Hill Giant.", "Player 2 discards Grizzly Bears.", "Mind Rot is put into your graveyard from the stack.", "You cast Volcanic Hammer.", "Volcanic Hammer deals 3 damage to Player 2.", "Volcanic Hammer is put into your graveyard from the stack.", "You cast Sacred Nectar.", "You gain 4 life.", "Sacred Nectar is put into your graveyard from the stack.", "You play Forest."])
   Spec.it s "CR 508.1 / 509.1 / 510.2 attackers, blockers, combat damage and the creatures that died are witnessed by both seats, by name" $ do
     let setup = S.duel S.declareAttackers [S.settled "bear" "Grizzly Bears", S.settled "giant" "Hill Giant"] [S.settled "lizard" "Lizard Warrior"]
         script =
@@ -609,6 +612,27 @@ spec s registry = Spec.describe s "PlayerView" $ do
       let seat = Text.unpack (Wording.player pid) <> ": "
       Spec.assertEqWith s (seat <> "CR 603.10a the giant, seen leaving") [ProjectedCharacteristics.names (Moved.characteristics m) | GameEvent.Moved m <- witnessedBy pid gs, ZoneChange.to (Moved.change m) == Zone.Library] [Set.singleton (CardName.MkCardName (Text.pack "Hill Giant"))]
       Spec.assertBool s (Text.pack "Hill Giant moves from the battlefield to Player 2's library." `elem` drawnFor pid gs) (seat <> "drawn")
+  Spec.it s "CR 701.23a a search is logged as one line, not a line per card looked at" $ do
+    let mine =
+          (S.battlefield S.alice (fmap (uncurry S.settled) [("f1", "Forest"), ("f2", "Forest"), ("f3", "Forest")]))
+            { Seat.hand = Seq.singleton (S.aliased "wayfinder" (S.cardSetup "Civic Wayfinder")),
+              Seat.library = Seq.fromList (S.aliased "found" (S.cardSetup "Forest") : fmap (\n -> S.aliased ("bears" <> show n) (S.cardSetup "Grizzly Bears")) [1 :: Int .. 29])
+            }
+        setup = S.board (mine NonEmpty.:| [S.playerSetup S.bob]) S.alice S.precombatMain
+        choices = Choices.none {Choices.manaSources = Seq.fromList (fmap (Just . S.aliasRef) ["f1", "f2", "f3"])}
+        answering prompt labels = Move.Answer (Answer.MkAnswer (Text.pack prompt) (Reply.Array (fmap (Reply.Text . Text.pack) labels)) False)
+        script =
+          S.turn
+            1
+            [ S.on S.precombatMain S.alice (S.castAction (S.aliasRef "wayfinder") choices),
+              S.on S.precombatMain S.alice Move.Pass,
+              S.on S.precombatMain S.alice Move.Pass,
+              S.on S.precombatMain S.alice (Move.ChooseOptional OptionalDecision.Exercises),
+              S.on S.precombatMain S.alice (answering "Search" ["$found"]),
+              S.on S.precombatMain S.alice (answering "Shuffle" (fmap (\n -> "$bears" <> show n) [1 :: Int .. 29]))
+            ]
+    gs <- S.play s registry setup script S.priorityGame
+    Spec.assertEqWith s "alice's log" (loggedFor S.alice gs) (fmap Text.pack ["You cast Civic Wayfinder.", "Civic Wayfinder moves from the stack to the battlefield.", "You search your library.", "You reveal Forest.", "Forest moves from your library to your hand.", "Your library is shuffled."])
   Spec.it s "CR 400.2 / 701.23a a land searched out onto the battlefield is witnessed by both seats as it arrives, the rest of the library by neither" $ do
     let mine =
           (S.battlefield S.alice (fmap (uncurry S.settled) [("f1", "Forest"), ("f2", "Forest"), ("f3", "Forest")]))
@@ -828,6 +852,12 @@ drawnFor :: PlayerId.PlayerId -> GameState.GameState -> [Text.Text]
 drawnFor pid gs =
   let view = PlayerView.viewFor pid gs
    in Maybe.mapMaybe (Wording.event Nothing view) (PlayerView.Type.witnessed view)
+
+-- Wording.events's sentences for the seat, as its log tells them.
+loggedFor :: PlayerId.PlayerId -> GameState.GameState -> [Text.Text]
+loggedFor pid gs =
+  let view = PlayerView.viewFor pid gs
+   in Wording.events (Just pid) view (PlayerView.Type.witnessed view)
 
 -- A seat's view as its client receives it.
 encodedFor :: PlayerId.PlayerId -> GameState.GameState -> String

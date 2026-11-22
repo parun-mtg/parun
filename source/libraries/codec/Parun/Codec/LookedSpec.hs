@@ -17,12 +17,13 @@ spec s = Spec.describe s "Parun.Codec.Looked" $ do
       s
       Looked.codec
       ( Looked.MkLooked
-          { Looked.card = ObjectId.MkObjectId 7,
+          { Looked.player = PlayerId.MkPlayerId 1,
+            Looked.card = ObjectId.MkObjectId 7,
             Looked.characteristics = ProjectedCharacteristicsSpec.testCharacteristics,
             Looked.audience = Set.fromList [PlayerId.MkPlayerId 0, PlayerId.MkPlayerId 1]
           }
       )
-      ( "{\"card\":7,\"characteristics\":"
+      ( "{\"player\":1,\"card\":7,\"characteristics\":"
           <> ProjectedCharacteristicsSpec.testCharacteristicsJson
           <> ",\"audience\":[0,1]}"
       )

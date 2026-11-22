@@ -5,11 +5,12 @@ import qualified Parun.Types.ObjectId as ObjectId
 import qualified Parun.Types.PlayerId as PlayerId
 import qualified Parun.Types.ProjectedCharacteristics as ProjectedCharacteristics
 
--- | CR 701.20e: a card was looked at, the card's characteristics as of the
--- look, and the players it was shown to -- the looker and, per CR 724.4, the
--- player controlling the looker.
+-- | CR 701.20e: a player looked at a card, the card's characteristics as of
+-- the look, and the players it was shown to -- the looker and, per CR 724.4,
+-- the player controlling the looker.
 data Looked = MkLooked
-  { card :: ObjectId.ObjectId,
+  { player :: PlayerId.PlayerId,
+    card :: ObjectId.ObjectId,
     characteristics :: ProjectedCharacteristics.ProjectedCharacteristics,
     audience :: Set PlayerId.PlayerId
   }
