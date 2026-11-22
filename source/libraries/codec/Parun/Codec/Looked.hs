@@ -14,12 +14,14 @@ import qualified Parun.Types.Looked as Looked
 -- Parun.Codec.Revealed is.
 codec :: Codec.Codec Looked.Looked
 codec = Fields.object $ do
+  player <- Fields.required "player" PlayerId.codec Looked.player
   card <- Fields.required "card" ObjectId.codec Looked.card
   characteristics <- Fields.required "characteristics" ProjectedCharacteristics.codec Looked.characteristics
   audience <- Fields.required "audience" (Common.set PlayerId.codec) Looked.audience
   pure
     Looked.MkLooked
-      { Looked.card = card,
+      { Looked.player = player,
+        Looked.card = card,
         Looked.characteristics = characteristics,
         Looked.audience = audience
       }

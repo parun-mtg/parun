@@ -452,17 +452,48 @@ snapshots view =
 witnessed :: PlayerView.PlayerView -> [LoggedEvent.LoggedEvent]
 witnessed view = PlayerView.witnessedLastTurn view <> PlayerView.witnessed view
 
--- | Witnessed entries as sentences to a reader (objective), a run of one
--- player's draws told as one.
+-- | Witnessed entries as sentences to a reader (objective), as `kept` keeps
+-- them, a run of one player's draws or looks told as one.
 events :: Maybe PlayerId.PlayerId -> PlayerView.PlayerView -> [LoggedEvent.LoggedEvent] -> [Text.Text]
-events reader view = concatMap sentences . List.groupBy (\a b -> Maybe.isJust (drawer a) && drawer a == drawer b) . filter (Maybe.isJust . event reader view)
+events reader view = concatMap sentences . List.groupBy (\a b -> Maybe.isJust (runner a) && runner a == runner b) . kept . filter (Maybe.isJust . event reader view)
   where
-    drawer logged = case LoggedEvent.event logged of
-      GameEvent.Drew d -> Just (Drew.player d)
+    runner logged = case LoggedEvent.event logged of
+      GameEvent.Drew d -> Just (Left (Drew.player d))
+      GameEvent.Looked l -> Just (Right (Looked.player l))
       _ -> Nothing
     sentences run = case run of
-      first : _ : _ | Just pid <- drawer first -> [acts reader pid "draws" <> Text.pack " " <> count (List.genericLength run) "card" <> Text.pack "."]
+      first : _ : _ -> case runner first of
+        Just (Left pid) -> [acts reader pid "draws" <> Text.pack " " <> count (List.genericLength run) "card" <> Text.pack "."]
+        Just (Right pid) -> [acts reader pid "looks at" <> Text.pack " " <> listing [PromptOffer.snapshotName (Looked.characteristics l) | GameEvent.Looked l <- fmap LoggedEvent.event run] <> Text.pack "."]
+        Nothing -> Maybe.mapMaybe (event reader view) run
       _ -> Maybe.mapMaybe (event reader view) run
+
+-- | The entries a log tells, less those another entry beside them already
+-- tells or no seat acts on: a search's looks at the cards it searches (CR
+-- 701.23a), told by the search; the life a player loses to damage just
+-- dealt them (CR 120.3a), told by the damage; and the crime committed (CR
+-- 700.13) and mana spent on spells (CR 700.14), which only an ability
+-- reading them asks after.
+kept :: [LoggedEvent.LoggedEvent] -> [LoggedEvent.LoggedEvent]
+kept = go Nothing Map.empty
+  where
+    -- The player whose search the looks that follow are part of, and the
+    -- damage each player was just dealt that no life lost has told yet.
+    go searcher dealt entries = case entries of
+      [] -> []
+      logged : rest -> case LoggedEvent.event logged of
+        GameEvent.Expended _ -> go searcher dealt rest
+        GameEvent.CommittedCrime _ -> go searcher dealt rest
+        GameEvent.Looked l | searcher == Just (Looked.player l) -> go searcher dealt rest
+        GameEvent.LifeLost l
+          | Just n <- Map.lookup (LifeChange.player l) dealt,
+            n >= LifeChange.amount l ->
+              go Nothing (Map.insert (LifeChange.player l) (n - LifeChange.amount l) dealt) rest
+        GameEvent.DamageDealt d
+          | Recipient.ToPlayer pid <- DamageEvent.target d -> logged : go Nothing (Map.insertWith (+) pid (DamageEvent.amount d) dealt) rest
+          | otherwise -> logged : go Nothing dealt rest
+        GameEvent.PlayerActed a | PlayerActed.action a == PlayerAction.SearchLibrary -> logged : go (Just (PlayerActed.player a)) Map.empty rest
+        _ -> logged : go Nothing Map.empty rest
 
 -- | A witnessed entry as a sentence naming its cards, players and amounts, or
 -- nothing for the bookkeeping a seat can read off the board (a step, a tap,
@@ -501,7 +532,7 @@ event reader view logged = case LoggedEvent.event logged of
   GameEvent.Milled m -> said [acts reader (Milled.player m) "mills", Text.intercalate (Text.pack ", ") (fmap name (Foldable.toList (Milled.cards m)))]
   GameEvent.Drew d -> said [acts reader (Drew.player d) "draws a card"]
   GameEvent.Revealed r -> said [acts reader (Revealed.player r) "reveals", PromptOffer.snapshotName (Revealed.characteristics r)]
-  GameEvent.Looked l -> said [Text.pack "Looked at", PromptOffer.snapshotName (Looked.characteristics l)]
+  GameEvent.Looked l -> said [acts reader (Looked.player l) "looks at", PromptOffer.snapshotName (Looked.characteristics l)]
   GameEvent.SpellCountered c -> said [name (Countering.countered c), Text.pack "is countered"]
   GameEvent.MulliganDeclared d -> case MulliganDeclared.decision d of
     MulliganDecision.Keep -> said [acts reader (MulliganDeclared.player d) "keeps"]
