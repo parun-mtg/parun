@@ -5,7 +5,9 @@
 const root = document.getElementById("app");
 const events = ["click", "input", "change"];
 const engineUrl = new URL("./engine.js", import.meta.url);
-engineUrl.search = location.search;
+// The query names the screen to open (Parun.Web.Route), which the engine
+// reads once as its query's "query".
+if (location.search) engineUrl.searchParams.set("query", location.search);
 // A host's link (Parun.Web.Link) carries its code after #offer=, which the
 // engine reads once as its query's "offer".
 const offered = new URLSearchParams(location.hash.slice(1)).get("offer");
@@ -20,9 +22,9 @@ const engine = new Worker(engineUrl, { type: "module" });
 const deckKey = "parun-deck:";
 const gameKey = "parun-game";
 engine.postMessage({ saved: Object.fromEntries(Object.keys(localStorage).filter((key) => key.startsWith(deckKey)).map((key) => [key.slice(deckKey.length), localStorage.getItem(key)])), game: offered ? "" : (localStorage.getItem(gameKey) ?? "") });
-// The query is read once, by the engine at its start (Parun.Browser.Shell's
-// opening); the page moves on without it.
-if (location.search || offered) history.replaceState(null, "", location.pathname);
+// The host's code is read once, by the engine at its start
+// (Parun.Browser.Shell's opening); the page moves on without it.
+if (offered) history.replaceState(null, "", location.pathname + location.search);
 // Safari runs WebAssembly far slower outside a secure context (#8419), and
 // plain http from a network address is not one.
 if (!isSecureContext) document.getElementById("insecure").hidden = false;
@@ -604,7 +606,23 @@ engine.onmessage = ({ data }) => {
   else if ("forget" in data) localStorage.removeItem(deckKey + data.forget);
   else if ("link" in data) linkStep(data.link);
   else if ("game" in data) keepGame(data.game);
+  else if ("locate" in data) locate(data.locate);
 };
+// The engine names each screen it shows by a query (Parun.Web.Route), which
+// the address bar shows; back and forward load the page afresh at the query
+// they reach, since the engine opens a screen only from its start. A move
+// within the page that keeps the query (a fragment's) is left alone.
+let located = location.search;
+function locate({ search, push }) {
+  located = search;
+  if (search === location.search) return;
+  const url = location.pathname + search;
+  if (push) history.pushState(null, "", url);
+  else history.replaceState(null, "", url);
+}
+addEventListener("popstate", () => {
+  if (location.search !== located) location.reload();
+});
 // The game with guests: its first line once it starts, each reply's line
 // added as it is made, and all of it forgotten once it is over. A reply
 // with no game kept to add to is dropped.

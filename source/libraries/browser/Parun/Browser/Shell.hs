@@ -67,9 +67,9 @@ import qualified Parun.Web.Lobby as Lobby
 import qualified Parun.Web.Question as Web.Question
 import qualified Parun.Web.Rejoin as Rejoin
 import qualified Parun.Web.Replay as Web.Replay
+import qualified Parun.Web.Route as Route
 import qualified Parun.Web.Screen as Screen
 import qualified System.Environment as Environment
-import qualified Text.Read as Read
 
 data Shell = MkShell
   { page :: Browser.Page Screen.Event,
@@ -170,45 +170,78 @@ start = do
   (games, gone) <- History.loaded <$> Browser.playedGames
   mapM_ Browser.forgetPlayed gone
   shell <- MkShell <$> Browser.mount <*> IORef.newIORef (MkLoaded Loading.new Nothing Map.empty Map.empty Nothing Map.empty [] Nothing Nothing Nothing False Nothing Map.empty [] Nothing Map.empty Map.empty Map.empty) <*> IORef.newIORef chosen <*> pure built <*> IORef.newIORef games <*> IORef.newIORef (Lobby.difficulty Lobby.new, Lobby.persona Lobby.new)
-  Exception.catch (opening built >>= follow shell) $ \problem ->
+  Exception.catch (opening built >>= \next -> Browser.locate Browser.MkReplace (Route.render (routeOf next)) >> follow shell next) $ \problem ->
     Browser.display (page shell) $ message ["The page stopped on an error:", Exception.displayException (problem :: Exception.SomeException)]
 
 -- | Where the page's link leads, read once (engine.js passes its query on):
 -- another browser's game to join (parun_offer, from the link's #offer=); a
--- scenario's replay (parun_scenario, parun_at), played on from there
--- (parun_branch), or the list of them for the empty name; else the game
--- with guests the page kept, played on this build; else the home screen.
--- A kept game that does not read is forgotten.
+-- replay or the list of them, as the page's query names (parun_query,
+-- Parun.Web.Route); else the game with guests the page kept, played on this
+-- build; else the screen the query names. A kept game that does not read is
+-- forgotten.
 opening :: Text.Text -> IO Next
 opening build' = do
   offered <- Environment.lookupEnv "parun_offer"
-  named <- Environment.lookupEnv "parun_scenario"
-  at <- Maybe.fromMaybe 0 . (>>= Read.readMaybe) <$> Environment.lookupEnv "parun_at"
-  branching <- Maybe.isJust <$> Environment.lookupEnv "parun_branch"
+  route <- maybe Route.MkHome (Route.parse . Text.pack) <$> Environment.lookupEnv "parun_query"
   kept <- Browser.keptGame
-  case (offered, named) of
+  case (offered, route) of
     (Just code, _) | not (null code) -> pure (MkToJoin (Text.pack code))
-    (_, Just "") -> pure MkToReplays
-    (_, Just name) -> pure ((if branching then MkToPlayOn else MkToReplay) (Web.Replay.MkScenario (Text.pack name)) at)
+    (_, Route.MkReplays) -> pure MkToReplays
+    (_, Route.MkReplay Route.MkWatching source at) -> pure (MkToReplay source at)
+    (_, Route.MkReplay Route.MkPlayingOn source at) -> pure (MkToPlayOn source at)
     _
-      | Text.null kept -> pure MkToHome
-      | otherwise -> either (\problem -> Browser.logLine (Text.pack "The game kept does not read: " <> problem) >> Browser.forgetGame >> pure MkToHome) (pure . MkToRestore) (Link.unsaved build' kept)
+      | Text.null kept -> pure (nextOf route)
+      | otherwise -> either (\problem -> Browser.logLine (Text.pack "The game kept does not read: " <> problem) >> Browser.forgetGame >> pure (nextOf route)) (pure . MkToRestore) (Link.unsaved build' kept)
+
+-- | Where a route leads.
+nextOf :: Route.Route -> Next
+nextOf route = case route of
+  Route.MkHome -> MkToHome
+  Route.MkPlay -> MkToLobby Nothing
+  Route.MkDecks deck -> MkToDecks deck
+  Route.MkBuild deck -> MkToBuilder deck MkToHome
+  Route.MkReplays -> MkToReplays
+  Route.MkReplay Route.MkWatching source at -> MkToReplay source at
+  Route.MkReplay Route.MkPlayingOn source at -> MkToPlayOn source at
+
+-- | The route naming where a screen leads: a game's, the screen it is
+-- reloaded into (the lobby, else the home screen, which picks up a game
+-- with guests the page kept).
+routeOf :: Next -> Route.Route
+routeOf next = case next of
+  MkToHome -> Route.MkHome
+  MkToLobby _ -> Route.MkPlay
+  MkToDecks deck -> Route.MkDecks deck
+  MkToMatchup _ -> Route.MkPlay
+  MkToInvite -> Route.MkPlay
+  MkToBuilder deck _ -> Route.MkBuild deck
+  MkToReplays -> Route.MkReplays
+  MkToReplay source at -> Route.MkReplay Route.MkWatching source at
+  MkToPlayOn source at -> Route.MkReplay Route.MkPlayingOn source at
+  MkToJoin _ -> Route.MkHome
+  MkToRestore _ -> Route.MkHome
+
+-- | Puts where a screen leads in the address bar, a new entry of the
+-- browser's history.
+located :: Next -> IO ()
+located = Browser.locate Browser.MkPush . Route.render . routeOf
 
 -- | Goes where a screen led, and on from there.
 follow :: Shell -> Next -> IO ()
-follow shell next = case next of
-  MkToHome -> home shell Home.new >>= follow shell . afterHome
-  MkToLobby deck -> lobby shell (maybe Lobby.new Lobby.holding deck) [] >>= follow shell
-  MkToDecks deck -> decksScreen shell deck >>= follow shell
-  -- Only an invited slot reads its deck's list (Lobby.rematch), and none is.
-  MkToMatchup decks -> lobby shell (Lobby.rematch (fmap (\name -> (name, Text.empty)) decks) Set.empty) [] >>= follow shell
-  MkToInvite -> Browser.linkHost 0 >> lobby shell (Lobby.update (Lobby.MkInviteSlot 0) Text.empty Lobby.new) [] >>= follow shell
-  MkToBuilder deck back -> builder shell deck back >>= follow shell
-  MkToReplays -> replays shell >>= follow shell
-  MkToReplay source at -> replay shell source at >>= follow shell
-  MkToPlayOn source at -> playOnFrom shell source at >>= follow shell
-  MkToJoin code -> joinGame shell code >>= follow shell
-  MkToRestore kept -> play shell (Link.seats kept) (Set.fromList (Link.invited kept)) (Just kept) >>= follow shell
+follow shell next =
+  located next >> case next of
+    MkToHome -> home shell Home.new >>= follow shell . afterHome
+    MkToLobby deck -> lobby shell (maybe Lobby.new Lobby.holding deck) [] >>= follow shell
+    MkToDecks deck -> decksScreen shell deck >>= follow shell
+    -- Only an invited slot reads its deck's list (Lobby.rematch), and none is.
+    MkToMatchup decks -> lobby shell (Lobby.rematch (fmap (\name -> (name, Text.empty)) decks) Set.empty) [] >>= follow shell
+    MkToInvite -> Browser.linkHost 0 >> lobby shell (Lobby.update (Lobby.MkInviteSlot 0) Text.empty Lobby.new) [] >>= follow shell
+    MkToBuilder deck back -> builder shell deck back >>= follow shell
+    MkToReplays -> replays shell >>= follow shell
+    MkToReplay source at -> replay shell source at >>= follow shell
+    MkToPlayOn source at -> playOnFrom shell source at >>= follow shell
+    MkToJoin code -> joinGame shell code >>= follow shell
+    MkToRestore kept -> play shell (Link.seats kept) (Set.fromList (Link.invited kept)) (Just kept) >>= follow shell
 
 -- | Where the home screen leads.
 afterHome :: Home.Outcome -> Next
@@ -984,6 +1017,7 @@ leaveFor shell chosen board = go paused
   where
     paused = Home.new {Home.paused = Just (Home.pausedOn board)}
     go shown = do
+      located MkToHome
       outcome <- home shell shown
       case outcome of
         Home.MkGo choice
@@ -991,12 +1025,12 @@ leaveFor shell chosen board = go paused
           | otherwise -> visit (afterHome outcome)
         _ -> pure Hotseat.MkResume
     visit next = case next of
-      MkToReplays -> replays shell >>= visit
-      MkToReplay source at -> replay shell source at >>= visit
+      MkToReplays -> located next >> replays shell >>= visit
+      MkToReplay source at -> located next >> replay shell source at >>= visit
       MkToMatchup decks -> go paused {Home.confirming = Just (Home.MkPlayAgain decks)}
-      MkToBuilder deck back -> builder shell deck back >>= visit
+      MkToBuilder deck back -> located next >> builder shell deck back >>= visit
       MkToPlayOn source at -> go paused {Home.confirming = Just (Home.MkPlayOn source at)}
-      MkToDecks deck -> decksScreen shell deck >>= visit
+      MkToDecks deck -> located next >> decksScreen shell deck >>= visit
       MkToLobby deck -> go paused {Home.confirming = Just (Home.MkPlayBots deck)}
       MkToInvite -> go paused {Home.confirming = Just Home.MkPlayFriend}
       _ -> go paused
@@ -1019,9 +1053,10 @@ replays shell = do
                 pure (Just known)
             | otherwise -> pure Nothing
         let watching source = do
+              located (MkToReplay source 0)
               next <- replay shell source 0
               case next of
-                MkToReplays -> go shown
+                MkToReplays -> located next >> go shown
                 _ -> pure next
         case listed of
           Just (Left problem, []) | Web.Replay.shelf shown == Web.Replay.MkScenarios -> notice shell [problem]
@@ -1050,7 +1085,8 @@ replays shell = do
 -- the page leaves it.
 replay :: Shell -> Web.Replay.Source -> Natural -> IO Next
 replay shell source at = opened shell source $ \reg title seen scenario -> do
-  exit <- Replay.viewer (page shell) reg title seen scenario at
+  let moved = Browser.locate Browser.MkReplace . Route.render . routeOf . MkToReplay source
+  exit <- Replay.viewer (page shell) moved reg title seen scenario at
   pure $ case exit of
     Replay.MkToList -> MkToReplays
     Replay.MkPlayOn from -> MkToPlayOn source from

@@ -78,10 +78,11 @@ data Exit
 
 -- | The scenario at a position as a seat sees it (the player's of a game
 -- finished here, `played`, else the first), replayed afresh at each
--- position the page goes to, until the page leaves it; a game finished here
--- names each seat by who played it (History.seatNames).
-viewer :: Browser.Page Screen.Event -> Registry.Registry Identity.Identity -> Text.Text -> Maybe History.Game -> Scenario.Type.Scenario -> Natural -> IO Exit
-viewer page registry name played scenario given = do
+-- position the page goes to, each told to `moved`, until the page leaves
+-- it; a game finished here names each seat by who played it
+-- (History.seatNames).
+viewer :: Browser.Page Screen.Event -> (Natural -> IO ()) -> Registry.Registry Identity.Identity -> Text.Text -> Maybe History.Game -> Scenario.Type.Scenario -> Natural -> IO Exit
+viewer page moved registry name played scenario given = do
   let count = Natural.length (Scenario.Type.timeline scenario)
       labelled = seatsOf scenario
       names = foldMap History.seatNames played
@@ -89,7 +90,7 @@ viewer page registry name played scenario given = do
       seen = played >>= History.viewerLabel
       lookUp = Identity.runIdentity . Interpreter.chosenCard registry
       -- The run to a position.
-      reach at = Exception.evaluate . Identity.runIdentity $ Scenario.replay registry (Just at) scenario
+      reach at = moved at >> Exception.evaluate (Identity.runIdentity $ Scenario.replay registry (Just at) scenario)
       go at stop viewing reading = do
         let frame = frameOf names name scenario seats count at stop viewing reading
         Browser.display page . fmap Screen.MkReplay $ Web.Replay.view frame

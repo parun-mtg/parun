@@ -132,6 +132,20 @@ keepReply = keepReplyJs . Prim.toJSString . Text.unpack
 forgetGame :: IO ()
 forgetGame = forgetGameJs
 
+-- | How the address bar moves to a screen's query (Parun.Web.Route).
+data Moving
+  = -- | A new entry of the browser's history, which back leaves.
+    MkPush
+  | -- | In place of the entry shown.
+    MkReplace
+  deriving (Eq, Show)
+
+-- | Puts this query in the address bar, unless it is there already.
+locate :: Moving -> Text.Text -> IO ()
+locate moving query = case moving of
+  MkPush -> pushJs (Prim.toJSString (Text.unpack query))
+  MkReplace -> replaceJs (Prim.toJSString (Text.unpack query))
+
 -- | The game the page kept when it loaded, empty if none.
 keptGame :: IO Text.Text
 keptGame = fmap (Text.pack . Prim.fromJSString) keptGameJs
@@ -319,6 +333,12 @@ foreign import javascript unsafe "globalThis.parunKeepGame({ reply: $1 })"
 
 foreign import javascript unsafe "globalThis.parunKeepGame({})"
   forgetGameJs :: IO ()
+
+foreign import javascript unsafe "globalThis.parunLocate($1, true)"
+  pushJs :: Prim.JSString -> IO ()
+
+foreign import javascript unsafe "globalThis.parunLocate($1, false)"
+  replaceJs :: Prim.JSString -> IO ()
 
 foreign import javascript unsafe "globalThis.parunKeptGame"
   keptGameJs :: IO Prim.JSString

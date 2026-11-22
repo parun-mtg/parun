@@ -49,6 +49,10 @@ globalThis.parunLink = (op) => postMessage({ link: op });
 // after a reload, as parunKeptGame.
 globalThis.parunKeepGame = (op) => postMessage({ game: op });
 
+// The screen shown, as its query (Parun.Browser.locate), goes to the page's
+// address bar, a new entry of its history if pushed.
+globalThis.parunLocate = (search, push) => postMessage({ locate: { search, push } });
+
 // The games this browser finished (Parun.Browser.keepPlayed), each a
 // summary line and its scenario file by its key, in IndexedDB rather than
 // localStorage: a scenario runs to tens of kilobytes, and the saved decks
@@ -257,13 +261,12 @@ async function fetchAll() {
 }
 fetchAll();
 
-// A replay names its scenario, the empty name for the list of them, and may
-// name a position (&at=…) and play on from it (&branch).
-// The auto-pass level the page kept (page.js) goes in as parun_level, and a
-// host's code from a link to join its game as parun_offer. The engine's
+// The page's own query, naming its screen (Parun.Web.Route), goes in as
+// parun_query, the auto-pass level the page kept (page.js) as parun_level,
+// and a host's code from a link to join its game as parun_offer. The engine's
 // file, which script/build-web.sh names by its hash, is the build another
 // page must share to play with this one (Parun.Web.Link).
-const passed = ["level", "scenario", "at", "branch", "offer"].filter((key) => query.has(key)).map((key) => `parun_${key}=${query.get(key)}`);
+const passed = ["level", "query", "offer"].filter((key) => query.has(key)).map((key) => `parun_${key}=${query.get(key)}`);
 const wasi = new WASI([], ["parun_datadir=/data", `parun_build=${engineFile.slice(2)}`, ...passed], [
   new OpenFile(new File([])),
   ConsoleStdout.lineBuffered((line) => console.log(line)),

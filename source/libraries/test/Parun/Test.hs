@@ -1141,6 +1141,8 @@ import qualified Parun.TurnSpec
 import qualified Parun.Types.Card as Card
 import qualified Parun.UntapRestrictionSpec
 import qualified Parun.Uri.FragmentSpec
+import qualified Parun.Uri.PercentSpec
+import qualified Parun.Uri.QuerySpec
 import qualified Parun.VanguardSpec
 import qualified Parun.VariableEffectSpec
 import qualified Parun.VisibilitySpec
@@ -1164,6 +1166,7 @@ import qualified Parun.Web.LobbySpec
 import qualified Parun.Web.ManaSpec
 import qualified Parun.Web.RejoinSpec
 import qualified Parun.Web.ReplaySpec
+import qualified Parun.Web.RouteSpec
 import qualified Parun.Web.WireSpec
 import qualified Parun.WebQuestionSpec
 import qualified Parun.ZeptoSpec
@@ -2341,6 +2344,8 @@ spec s reference corpus = do
   Parun.TurnSpec.spec s registry
   Parun.UntapRestrictionSpec.spec s registry
   Parun.Uri.FragmentSpec.spec s
+  Parun.Uri.PercentSpec.spec s
+  Parun.Uri.QuerySpec.spec s
   Parun.VanguardSpec.spec s registry
   Parun.VariableEffectSpec.spec s registry
   Parun.VisibilitySpec.spec s registry
@@ -2364,6 +2369,7 @@ spec s reference corpus = do
   Parun.Web.ManaSpec.spec s
   Parun.Web.RejoinSpec.spec s
   Parun.Web.ReplaySpec.spec s
+  Parun.Web.RouteSpec.spec s
   Parun.Web.WireSpec.spec s
   Parun.WebQuestionSpec.spec s registry
   Parun.WebQuestionSpec.corpusSpec s registry
