@@ -101,6 +101,7 @@ import qualified Parun.Types.DestructionR as DestructionR
 import qualified Parun.Types.DestructionRewrite as DestructionRewrite
 import qualified Parun.Types.DistinctOf as DistinctOf
 import qualified Parun.Types.Effect as Effect
+import qualified Parun.Types.EnteredZone as EnteredZone
 import qualified Parun.Types.EntryR as EntryR
 import qualified Parun.Types.EntryRewrite as EntryRewrite
 import qualified Parun.Types.Face as Face
@@ -4712,7 +4713,10 @@ filterReads f = case f of
   Filter.Type.DealtDamageTo asked -> case DealtDamageTo.party asked of
     DamagedParty.HolderOfCandidate holder -> holderReads holder
     _ -> Set.empty
-  Filter.Type.EnteredThisTurn _ -> Set.empty
+  -- CR 110.2: the player it entered under falls back to its controller now.
+  Filter.Type.EnteredThisTurn entered
+    | Maybe.isJust (EnteredZone.under entered) -> Set.singleton Controller
+    | otherwise -> Set.empty
   Filter.Type.CountersMovedThisTurn _ _ -> Set.empty
   Filter.Type.CrewedThisTurn _ -> Set.empty
   Filter.Type.ConvokedSourceThisTurn -> Set.empty

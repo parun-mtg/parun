@@ -193,7 +193,8 @@ objects pcs gs a b =
           Filter.Engine.lostLifeThisTurn view,
           Filter.Engine.activatedThisTurn view,
           Filter.Engine.actedThisTurn view,
-          Filter.Engine.arrivalThisTurn view,
+          -- Paired: the tuple is at its Eq instance's width.
+          (Filter.Engine.arrivalThisTurn view, Filter.Engine.enteredUnderThisTurn view),
           Filter.Engine.arrivalSinceOwnLastTurn view,
           Filter.Engine.crewedThisTurn view,
           Filter.Engine.convokedThisTurn view,

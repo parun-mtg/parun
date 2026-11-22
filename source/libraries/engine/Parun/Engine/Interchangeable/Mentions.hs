@@ -328,7 +328,7 @@ filterNames asking criterion = case criterion of
   Filter.ActivatedThisTurn -> keyed asking <> history asking HistoryRead.Activations
   Filter.ActedThisTurn action -> keyed asking <> history asking (HistoryRead.PermanentActs action)
   Filter.DealtDamageTo _ -> keyed asking <> history asking HistoryRead.Damage
-  Filter.EnteredThisTurn (EnteredZone.MkEnteredZone to _from _window) -> keyed asking <> history asking (if to == Zone.Battlefield then HistoryRead.Entries else HistoryRead.Moves)
+  Filter.EnteredThisTurn (EnteredZone.MkEnteredZone to _from _window _under) -> keyed asking <> history asking (if to == Zone.Battlefield then HistoryRead.Entries else HistoryRead.Moves)
   Filter.BeforeMove nested -> keyed asking <> history asking HistoryRead.Moves <> filterNames asking nested
   Filter.TappedForManaThisTurn nested -> keyed asking <> history asking HistoryRead.TapsForMana <> filterNames asking nested
   Filter.CountersMovedThisTurn _ _ -> keyed asking <> history asking HistoryRead.CounterMoves
