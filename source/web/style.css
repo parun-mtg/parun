@@ -4389,6 +4389,38 @@ body:has(main.game, #app [data-settings], #app .splash, #app main.loading) #sett
   font-size: 0.85rem;
 }
 
+/* The scenario's title at a card's heading size, so the recorded question
+   beneath stays the biggest line. */
+#app .replay .replay-title {
+  font-size: 17px;
+}
+
+.replay-description:empty {
+  display: none;
+}
+
+/* The seats in one row, each a share of it. */
+.replay .seats {
+  display: flex;
+  flex-wrap: nowrap;
+}
+
+#app .replay .seats button {
+  flex: 1 1 0;
+  min-width: 0;
+  padding-inline: 6px;
+  font-size: 14px;
+}
+
+/* Beside the table, the log yields to the controls and the recorded
+   question, down to its heading and a few lines. */
+@media (min-width: 900px) {
+  .replay .log-pane {
+    flex: 1 1 0;
+    min-height: 120px;
+  }
+}
+
 .replay pre.entry {
   white-space: pre-wrap;
   overflow-wrap: anywhere;
