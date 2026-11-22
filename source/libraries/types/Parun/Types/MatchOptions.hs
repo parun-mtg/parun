@@ -32,4 +32,4 @@ none = MkMatchOptions {seed = Nothing, games = 100, save = Nothing, searching = 
 
 -- | The search bot's budget unless told otherwise.
 budget :: SearchBudget.SearchBudget
-budget = SearchBudget.MkSearchBudget {SearchBudget.samples = 2, SearchBudget.turns = 2, SearchBudget.prompts = 300}
+budget = SearchBudget.MkSearchBudget {SearchBudget.samples = 2, SearchBudget.turns = 0, SearchBudget.prompts = 300}
