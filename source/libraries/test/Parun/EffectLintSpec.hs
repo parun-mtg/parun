@@ -1445,7 +1445,8 @@ storedPlayerScope effect = case effect of
 -- Parun.Engine.Resolve.Common.askingObjects asks, and exactly the ones
 -- Parun.Engine.Resolve.Slots.objectRefObjects answers [] for. ChosenPermanents
 -- splits on its count, since Effect.Pair takes one partner (CR 702.95a), and an
--- exact count other than one is allowed nowhere: no gameplay test reaches it.
+-- exact count other than one is allowed only in a move, where Split the Party's
+-- test reaches it.
 -- A choice out of another zone is its own question, whatever its count, and so
 -- is one reaching into the chooser's own zones, which only a move's test (Lich's
 -- Mastery) reaches.
@@ -1540,16 +1541,18 @@ chooserRef = Maybe.isJust . questionOf
 -- reached, so this is the fence that keeps a card from loading a combination no
 -- test reaches. A position read through the pure objectRefObjects allows none.
 --
--- A move's: every question but SeveralPermanents and ChosenAmong. The scenario
+-- A move's: every question but ChosenAmong. The scenario
 -- ransack-sends-the-chosen-to-the-bottom-and-orders-the-rest reaches
--- AnyCardsFromAmong, and
+-- AnyCardsFromAmong,
+-- split-the-party-returns-half-a-target-player-s-creatures-rounded-up
+-- SeveralPermanents, and
 -- cr-601-2f-gorex-exiles-any-number-of-creature-cards-and-returns-them-at-random
 -- RandomAmong, and the Lich's Mastery scenarios AcrossOwnZones.
 -- OffBattlefield's ask is Parun.Engine.Resolve.Effect's chosenPermanents,
 -- which Mirror of Fate's scenario reaches through Effect.ChoosePermanents; no
 -- permanent opcode's test reaches it.
 movedQuestions :: [Question]
-movedQuestions = filter (`notElem` [SeveralPermanents, ChosenAmong]) [minBound .. maxBound]
+movedQuestions = filter (/= ChosenAmong) [minBound .. maxBound]
 
 -- A cloak's: Vannifar, Evolved Enigma's scenario reaches CardInHand and Hide in
 -- Plain Sight's CardFromAmong.
@@ -2831,9 +2834,9 @@ effectLintSpec s registry corpus = Spec.describe s "Lint" $ do
     -- Twilight Diviner's "a copy of one of them" is the one question a copy asks.
     let tokenCopies ref = Effect.CreateCopy (CreateCopy.MkCreateCopy (Quantity.Type.Literal 1) ref EntryRiders.defaultValue Nothing [] (PlayerRef.Relative PlayerRelation.You) False)
     Spec.assertEqWith s "a copy allows one card from among them and no other chosen arm" (inert (fmap tokenCopies [inGraveyard, inHand, fromAmong, atRandom, anyFromAmong])) [True, True, False, True, True]
-    -- An exact count other than one has no gameplay test, so no site allows it.
+    -- An exact count other than one: only a move's test (Split the Party) reaches it.
     let exactlyTwo = ObjectRef.ChosenPermanents (ChosenPermanents.MkChosenPermanents anyCard (PlayerRef.Relative PlayerRelation.You) (HowMany.Exactly (Quantity.Type.Literal 2)) Nothing Zone.Battlefield Set.empty)
-    Spec.assertEqWith s "two exactly chosen permanents are allowed nowhere" (inert [moves exactlyTwo, Effect.Transform exactlyTwo, Effect.Untap exactlyTwo]) [True, True, True]
+    Spec.assertEqWith s "two exactly chosen permanents are allowed by a move alone" (inert [moves exactlyTwo, Effect.Transform exactlyTwo, Effect.Untap exactlyTwo]) [False, True, True]
     -- A choice out of exile is not a battlefield question at any count, so the
     -- permanent opcodes refuse it and a move alone allows it.
     let exiled count = ObjectRef.ChosenPermanents (ChosenPermanents.MkChosenPermanents anyCard (PlayerRef.Relative PlayerRelation.You) count Nothing Zone.Exile Set.empty)
