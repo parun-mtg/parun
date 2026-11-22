@@ -7,6 +7,7 @@ import qualified Data.ByteString.Builder as Builder
 import qualified Data.ByteString.Lazy as LazyByteString
 import qualified Data.Containers.ListUtils as ListUtils
 import qualified Data.Foldable as Foldable
+import qualified Data.List as List
 import qualified Data.List.NonEmpty as NonEmpty
 import qualified Data.Maybe as Maybe
 import qualified Data.Sequence as Seq
@@ -96,9 +97,9 @@ view ending =
                Element.el "ul" ["game-log"] [] (fmap (Log.item (viewer ending) Nothing False) (Foldable.toList (witnessed ending)))
              ]
 
--- | Each seat's life through the game as a line chart, and the numbers it
--- tells: turns played, and each seat's final and lowest life and biggest
--- single loss.
+-- | Each seat's life through the game as a line chart, its scale and each
+-- seat's final life written on it, and the numbers it tells: turns played,
+-- and each seat's final and lowest life and biggest single loss.
 summary :: PlayerId.PlayerId -> [(Natural, [(PlayerId.PlayerId, Integer)])] -> Html.Html msg
 summary me samples =
   let seats = ListUtils.nubOrd (concatMap (fmap fst . snd) samples)
@@ -108,6 +109,9 @@ summary me samples =
       hi = maximum (20 : lives)
       width = 320 :: Integer
       height = 120 :: Integer
+      -- Room around the plot for the labels: the scale on the left, the
+      -- final lives on the right, the turns below.
+      margin = 28 :: Integer
       count = length samples
       x i = if count <= 1 then 0 else div (toInteger i * width) (toInteger (count - 1))
       y life = height - div ((life - lo) * height) (max 1 (hi - lo))
@@ -120,7 +124,20 @@ summary me samples =
           ("life-line" : hue pid)
           [Element.attr "points" (Text.unwords [Text.pack (show (x i) <> "," <> show (y (lifeOf pid sample))) | (i, sample) <- zip [0 :: Int ..] samples]), Element.attr "fill" (Text.pack "none")]
           []
-      turns = maybe 0 fst (Maybe.listToMaybe (reverse samples))
+      final = Maybe.listToMaybe (reverse samples)
+      turns = maybe 0 fst final
+      label :: [String] -> (Integer, Integer) -> String -> String -> Html.Html msg
+      label cls (lx, ly) anchor said' = Element.el "text" cls [Element.attr "x" (Text.pack (show lx)), Element.attr "y" (Text.pack (show ly)), Element.attr "text-anchor" (Text.pack anchor), Element.attr "dominant-baseline" (Text.pack "middle")] [Element.string said']
+      -- The scale: the top, the baseline at 0 life, and the floor where life
+      -- went below 0 and its label clears the baseline's.
+      scale = [label ["scale"] (-6, y life) "end" (show life) | life <- ListUtils.nubOrd ([hi, 0] <> [lo | y lo - y 0 >= 12])]
+      -- Each seat's final life at its line's end, seats ending alike sharing
+      -- one, each kept clear of the one above it.
+      ends = List.sortOn (y . fst) [(life, [pid | pid <- seats, maybe 0 (lifeOf pid) final == life]) | life <- ListUtils.nubOrd [maybe 0 (lifeOf pid) final | pid <- seats]]
+      spread _ [] = []
+      spread at ((life, whose) : rest) = let here = max at (y life) in (here, life, whose) : spread (here + 12) rest
+      endLabel (ly, life, whose) = label ("value" : case whose of [pid] -> hue pid; _ -> []) (width + 6, ly) "start" (show life)
+      turnAxis = [label ["axis"] (0, height + 16) "start" "Start", label ["axis"] (width, height + 16) "end" ("Turn " <> show turns)]
       drops pid = [lifeOf pid a - lifeOf pid b | (a, b) <- zip samples (drop 1 samples)]
       stat pid =
         Element.el
@@ -128,7 +145,7 @@ summary me samples =
           (hue pid)
           []
           [ Element.el "strong" [] [] [Element.text (name pid)],
-            Element.text (Text.pack (": ended on " <> show (maybe 0 (lifeOf pid) (Maybe.listToMaybe (reverse samples))) <> " life, lowest " <> show (maybe 0 minimum (NonEmpty.nonEmpty (fmap (lifeOf pid) samples))) <> ", biggest hit " <> show (maximum (0 : drops pid))))
+            Element.text (Text.pack (": ended on " <> show (maybe 0 (lifeOf pid) final) <> " life, lowest " <> show (maybe 0 minimum (NonEmpty.nonEmpty (fmap (lifeOf pid) samples))) <> ", biggest hit " <> show (maximum (0 : drops pid))))
           ]
    in Element.el
         "section"
@@ -137,9 +154,13 @@ summary me samples =
         [ Element.el
             "svg"
             ["life-chart"]
-            [Element.attr "viewBox" (Text.pack ("-4 -4 " <> show (width + 8) <> " " <> show (height + 8))), Element.attr "role" (Text.pack "img"), Element.attr "aria-label" (Text.pack "Life totals over the game")]
-            (Element.el "line" ["zero"] [Element.attr "x1" (Text.pack "0"), Element.attr "x2" (Text.pack (show width)), Element.attr "y1" (Text.pack (show (y 0))), Element.attr "y2" (Text.pack (show (y 0)))] [] : fmap line seats),
-          Element.el "p" ["chart-axis"] [] [Element.el "span" [] [] [Element.string "Start"], Element.el "span" [] [] [Element.string ("Turn " <> show turns)]],
+            [Element.attr "viewBox" (Text.pack (show (-margin) <> " -8 " <> show (width + 2 * margin) <> " " <> show (height + 34))), Element.attr "role" (Text.pack "img"), Element.attr "aria-label" (Text.pack "Life totals over the game")]
+            ( Element.el "line" ["zero"] [Element.attr "x1" (Text.pack "0"), Element.attr "x2" (Text.pack (show width)), Element.attr "y1" (Text.pack (show (y 0))), Element.attr "y2" (Text.pack (show (y 0)))] []
+                : fmap line seats
+                  <> scale
+                  <> fmap endLabel (spread 0 ends)
+                  <> turnAxis
+            ),
           Element.el "ul" ["stats"] [] (fmap stat seats)
         ]
 
