@@ -147,6 +147,19 @@ spec s registry = Spec.describe s "WebQuestion" $ do
           path <- Html.labelled (Text.pack "button") (Text.pack "Play Mountain") inner
           Html.handler (Text.pack "click") (at <> path) reading
     Spec.assertEqWith s "sheet action" action (Just (Question.Web.MkAnswer (R.Number 1)))
+    -- The card read is the side column's inspector, after the prompt, as is
+    -- one previewed; with none, the inspector is empty.
+    let inspector html = Html.search (\node -> Text.pack "<section class=\"inspector" `Text.isPrefixOf` Html.toText node) html >>= \path -> Html.at path html
+        previewed = Question.Web.view request Question.Web.blank {Question.Web.reading = Just (Card.MkReading land [] False)}
+        inspected html = maybe False (\i -> Text.pack "<section class=\"sheet c-land\"><header><h2>Mountain</h2>" `Text.isInfixOf` Html.toText i) (inspector html)
+    Spec.assertBool s (inspected reading) "the card tapped, in the inspector"
+    Spec.assertBool s (inspected previewed) "the card previewed, in the inspector"
+    Spec.assertBool s (Text.pack "<section class=\"prompt\"" `Text.isInfixOf` fst (Text.breakOn (Text.pack "<section class=\"inspector") (Html.toText reading))) "under the prompt"
+    Spec.assertBool s (maybe False (Text.isPrefixOf (Text.pack "<section class=\"inspector empty\"") . Html.toText) (inspector view)) "empty while none is read"
+    -- The seat's zones are chips in words, its turn too.
+    Spec.assertBool s (Text.pack "title=\"Cards in hand\"><span class=\"k\">Hand</span>1</span>" `Text.isInfixOf` page) "Hand 1"
+    Spec.assertBool s (Text.pack "title=\"Cards in library\"><span class=\"k\">Library</span>0</span>" `Text.isInfixOf` page) "Library 0"
+    Spec.assertBool s (Text.pack "<span class=\"k\">Your turn</span>" `Text.isInfixOf` page) "your turn"
 
   Spec.it s "CR 702.21a a permanent's sheet lists a keyword too long for its tile" $ do
     dragon <- S.printingOf s registry "Archive Dragon"
@@ -510,9 +523,23 @@ spec s registry = Spec.describe s "WebQuestion" $ do
         turn n = Log.MkTurn n S.alice
     let busy = Question.Web.blank {Question.Web.logged = Seq.fromList (fmap (event . show) [1 :: Int .. 6]), Question.Web.fresh = 6}
         asked = requestFor (Setup.emptyGame S.bothPlayers) (Prompt.ChooseAction (Decider.MkDecider S.alice) S.alice [Action.Pass])
-    Spec.assertBool s (Text.pack "\x2026\&and 2 more in the log" `Text.isInfixOf` Html.content (Question.Web.view asked busy)) "news says how many more"
-    let flyout = Html.search (\node -> Text.pack "<summary class=\"turn-label\"" `Text.isPrefixOf` Html.toText node) (Question.Web.view asked busy)
-    Spec.assertBool s (Maybe.isJust flyout) "the log opens from the turn label"
+    -- In the side column, each turn under its own heading, newest first.
+    let turns = Question.Web.blank {Question.Web.logged = Seq.fromList [turn 1, event "a", event "b", Log.MkTurn 2 S.bob, event "c"], Question.Web.fresh = 1}
+        within cls html = Html.search (\node -> Text.pack ("<" <> cls) `Text.isPrefixOf` Html.toText node) html >>= \path -> Html.at path html
+        recent = within "div class=\"log-recent\"" (Question.Web.view asked turns)
+    Spec.assertEqWith
+      s
+      "grouped by turn"
+      (fmap (Text.splitOn (Text.pack "<section class=\"log-turn\">") . Html.toText) recent)
+      ( Just
+          [ Text.pack "<div class=\"log-recent\" aria-live=\"polite\"><div class=\"log-turns\">",
+            Text.pack "<h3 class=\"log-turn-heading\">Turn 2 \x00b7 Player 2</h3><ul class=\"log-list\"><li class=\"fresh\">c</li></ul></section>",
+            Text.pack "<h3 class=\"log-turn-heading\">Turn 1 \x00b7 You</h3><ul class=\"log-list\"><li>b</li><li>a</li></ul></section></div></div>"
+          ]
+      )
+    Spec.assertBool s (maybe False (Text.isInfixOf (Text.pack "<div class=\"log-panel\"") . Html.toText) (within "section class=\"log-pane\"" (Question.Web.view asked busy))) "the whole log opens from the log's heading"
+    Spec.assertBool s (maybe False (not . Text.isInfixOf (Text.pack "log-") . Html.toText) (within "div class=\"turn-bar" (Question.Web.view asked busy))) "not from the turn bar"
+    Spec.assertBool s (maybe False (not . Text.isInfixOf (Text.pack "log-") . Html.toText) (within "section class=\"prompt\"" (Question.Web.view asked busy))) "nor above the prompt"
     let shock = ObjectId.MkObjectId 5
         linked = Log.item S.alice (Just (Map.fromList [(Text.pack "Shock", shock), (Text.pack "Shocking Grasp", ObjectId.MkObjectId 6)], Question.Web.MkRead)) False (event "Player 1 casts Shocking Grasp, then Shock.")
         tapped label = Html.labelled (Text.pack "button") (Text.pack label) linked >>= \path -> Html.handler (Text.pack "click") path linked
@@ -595,7 +622,7 @@ spec s registry = Spec.describe s "WebQuestion" $ do
   Spec.it s "a bottom pick toggles cards and answers with exactly the count picked" $ do
     let request = asking (Text.pack "Bottom") (R.Object [(Text.pack "from", R.Array [R.Text (Text.pack "$1"), R.Text (Text.pack "$2")]), (Text.pack "count", R.Number 1)])
         after = picking request
-    Spec.assertEqWith s "too few" (Question.Web.step request Set.empty Question.Web.MkSubmit Text.empty) (Question.Web.MkRefused (Text.pack "Choose 1 card to put on the bottom of your library: pick 1."))
+    Spec.assertEqWith s "too few" (Question.Web.step request Set.empty Question.Web.MkSubmit Text.empty) (Question.Web.MkRefused (Text.pack "Pick 1 first."))
     Spec.assertEqWith s "picked" (Question.Web.step request (after [Question.Web.MkToggle 0 1]) Question.Web.MkSubmit Text.empty) (Question.Web.MkReplied (R.Array [R.Text (Text.pack "$2")]))
     Spec.assertEqWith s "unpicked" (after [Question.Web.MkToggle 0 1, Question.Web.MkToggle 0 1]) Set.empty
 
@@ -614,7 +641,13 @@ spec s registry = Spec.describe s "WebQuestion" $ do
   Spec.it s "CR 601.2c targets are exactly each slot's count, sent by slot" $ do
     let slot = R.Text (Text.pack "target")
         request = asking (Text.pack "ChooseTargets") (R.Object [(Text.pack "source", R.Text (Text.pack "$9")), (Text.pack "slots", R.Array [R.Array [slot, R.Array [R.Number 1, R.Array [R.Text (Text.pack "$1"), R.Text (Text.pack "$2")]]]])])
-    Spec.assertEqWith s "too few" (Question.Web.step request Set.empty Question.Web.MkSubmit Text.empty) (Question.Web.MkRefused (Text.pack "Choose 1 target for object 9 (target): pick 1."))
+    Spec.assertEqWith s "too few" (Question.Web.step request Set.empty Question.Web.MkSubmit Text.empty) (Question.Web.MkRefused (Text.pack "Pick 1 first."))
+    -- Refused, the page states the question once, the banner saying only
+    -- what is missing; a slot named "target" adds nothing to it.
+    let refused = Html.toText (Question.Web.view request {Request.problem = Just (Text.pack "Pick 1 first.")} Question.Web.blank)
+    Spec.assertEqWith s "stated once" (Text.count (Text.pack "Choose 1 target for object 9") refused) 1
+    Spec.assertBool s (Text.pack "<h2>Choose 1 target for object 9</h2>" `Text.isInfixOf` refused) ("its heading: " <> Text.unpack refused)
+    Spec.assertBool s (Text.pack "role=\"alert\">Pick 1 first.</p>" `Text.isInfixOf` refused) "the banner"
     Spec.assertEqWith s "one" (Question.Web.step request (picking request [Question.Web.MkToggle 0 0]) Question.Web.MkSubmit Text.empty) (Question.Web.MkReplied (R.Array [R.Array [slot, R.Array [R.Text (Text.pack "$1")]]]))
 
   Spec.it s "a player offered as a target is labelled with their life total" $ do
@@ -792,10 +825,10 @@ replaySpec s registry = Spec.describe s "WebQuestion" . Spec.describe s "replay"
     -- and postcombat main phase are still to come.
     stop <- replayed s registry "sphinx-of-the-second-sun-adds-a-beginning-phase-that-neither-settles-nor-grants-a-land" 10
     let bar = turnBarOf stop
-        ahead = ["<li title=\"Combat phase\">", "<li class=\"second\" title=\"Postcombat main phase\">", "<li title=\"Ending phase\">"]
+        ahead = ["<li title=\"Combat phase\">Combat</li>", "<li title=\"Postcombat main phase\">Main 2</li>", "<li title=\"Ending phase\">End</li>"]
     Spec.assertEqWith s "the step" (PlayerView.Type.phase (boardOf stop)) (Phase.Beginning BeginningStep.Upkeep)
-    Spec.assertBool s (Text.isInfixOf (Text.pack "<li class=\"now extra\"") bar) ("lit as extra: " <> Text.unpack bar)
-    Spec.assertBool s (Text.isInfixOf (Text.pack "<li class=\"past\" title=\"Precombat main phase\">") bar) "the precombat main phase passed"
+    Spec.assertBool s (Text.isInfixOf (Text.pack "<li class=\"now extra\" title=\"An extra phase or step this turn (CR 500.8, 500.9, 514.3a)\" aria-current=\"step\">Beginning</li>") bar) ("lit as extra: " <> Text.unpack bar)
+    Spec.assertBool s (Text.isInfixOf (Text.pack "<li class=\"past\" title=\"Precombat main phase\">Main</li>") bar) "the precombat main phase passed"
     Spec.assertEqWith s "still to come" [li | li <- ahead, Text.isInfixOf (Text.pack li) bar] ahead
     Spec.assertBool s (Text.isInfixOf (Text.pack "<span class=\"extra\"") bar) "said beside the turn"
 
@@ -805,7 +838,7 @@ replaySpec s registry = Spec.describe s "WebQuestion" . Spec.describe s "replay"
     let bar = turnBarOf stop
     Spec.assertEqWith s "the step" (PlayerView.Type.phase (boardOf stop)) Phase.PostcombatMain
     Spec.assertBool s (Text.isInfixOf (Text.pack "<li class=\"past\" title=\"Combat phase\">") bar) ("combat passed: " <> Text.unpack bar)
-    Spec.assertBool s (Text.isInfixOf (Text.pack "<li class=\"now second\" title=\"Postcombat main phase\">") bar) "the main phase lit"
+    Spec.assertBool s (Text.isInfixOf (Text.pack "<li class=\"now\" title=\"Postcombat main phase\" aria-current=\"step\">Main 2</li>") bar) "the main phase lit"
     Spec.assertBool s (not (Text.isInfixOf (Text.pack "extra") bar)) "nothing extra"
 
   Spec.it s "CR 205.3a a tile and sheet list subtypes as printed, a gained one after" $ do
@@ -958,6 +991,9 @@ replaySpec s registry = Spec.describe s "WebQuestion" . Spec.describe s "replay"
     Spec.assertEqWith s "alice's turn" (fmap (has "turn" held) S.fourPlayers) (True NonEmpty.:| [False, False, False])
     Spec.assertEqWith s "dave's priority" (fmap (has "priority" held) S.fourPlayers) (False NonEmpty.:| [False, False, True])
     Spec.assertEqWith s "bob the monarch" (fmap (has "monarch" held) S.fourPlayers) (False NonEmpty.:| [True, False, False])
+    let said pid words' = maybe False (Text.isInfixOf (Text.pack words')) (lookup (labelled pid) (sections held))
+    Spec.assertBool s (said S.alice "<span class=\"k\">Their turn</span>") "their turn, in words"
+    Spec.assertBool s (said S.dave "<span class=\"k\">Has priority</span>") "their priority, in words"
 
 -- | The sheet's Oracle text (Card.oracle) of the one battlefield object named,
 -- as the stop's active player reads it.
@@ -1021,11 +1057,7 @@ frameAt stop =
 
 -- | The turn bar of the replay page at the stop.
 turnBarOf :: Stop.Stop -> Text.Text
-turnBarOf stop =
-  let bar = fst (Text.breakOn (Text.pack "<div class=\"play-area\"") (Html.toText (Replay.view (frameAt stop))))
-      -- Less the log its label opens, whose entries are not the bar's.
-      (label, logged) = Text.breakOn (Text.pack "<div class=\"log-panel\"") bar
-   in label <> snd (Text.breakOn (Text.pack "</details>") logged)
+turnBarOf stop = fst (Text.breakOn (Text.pack "<div class=\"play-area\"") (Html.toText (Replay.view (frameAt stop))))
 
 -- | The prompt kinds a scenario's text names in its answers.
 kindsIn :: Text.Text -> [Text.Text]
