@@ -2858,14 +2858,16 @@ anyCastFromRow gs =
 castPermissionsFrom :: PlayerId -> CastOrigin.CastOrigin -> ObjectId -> GameState -> [(Maybe ObjectId, CastFromZone.CastFromZone)]
 castPermissionsFrom pid origin oid gs =
   let opens grant = case origin of
-        CastOrigin.FromZone zone -> opensZoneOf pid zone oid (CastFromZone.from grant) gs
+        CastOrigin.FromZone zone -> any (\inZone -> opensZoneOf pid zone oid inZone gs) (CastFromZone.from grant)
         -- CR 400.11: a card outside the game is offered as the object
         -- Parun.Engine.Event.offerOutside stands in for it, owned by `from`'s
-        -- player.
+        -- player, or by the holder where it names no zone (CR 400.11a: Wish's
+        -- "a card you own").
         CastOrigin.OutsideTheGame ->
           CastFromZone.outsideTheGame grant
             && Map.member oid (GameState.outsideFinds gs)
-            && maybe False (\obj -> elem (Object.owner obj) (zoneOwners pid (InZone.player (CastFromZone.from grant)) gs)) (Game.lookupObject oid gs)
+            && maybe False (\obj -> elem (Object.owner obj) (outsideOwners (CastFromZone.from grant))) (Game.lookupObject oid gs)
+      outsideOwners = maybe [pid] (\inZone -> zoneOwners pid (InZone.player inZone) gs)
       allows (source, grant) =
         opens grant
           && inPool source (CastFromZone.pool grant)
@@ -3049,7 +3051,7 @@ playPermissionPiles pid gs =
   [ (InZone.zone inZone, owner)
   | (_, PlayerEffect.CastFrom grant) <- applying pid gs,
     CastFromZone.verb grant == PermissionVerb.Play,
-    let inZone = CastFromZone.from grant,
+    Just inZone <- [CastFromZone.from grant],
     owner <- zoneOwners pid (InZone.player inZone) gs
   ]
 
@@ -5735,7 +5737,7 @@ overPlayerRefs f effect = case effect of
   PlayerEffect.CastOnlyAtSorcerySpeed -> pure effect
   PlayerEffect.CantPlayLands _ -> pure effect
   PlayerEffect.CastFrom grant ->
-    fmap (\ref -> PlayerEffect.CastFrom grant {CastFromZone.from = (CastFromZone.from grant) {InZone.player = ref}}) (f (InZone.player (CastFromZone.from grant)))
+    fmap (\from -> PlayerEffect.CastFrom grant {CastFromZone.from = from}) (traverse (\inZone -> fmap (\ref -> inZone {InZone.player = ref}) (f (InZone.player inZone))) (CastFromZone.from grant))
   PlayerEffect.PlayLandsFrom inZone ->
     fmap (\ref -> PlayerEffect.PlayLandsFrom inZone {InZone.player = ref}) (f (InZone.player inZone))
   PlayerEffect.PlotFrom grant ->

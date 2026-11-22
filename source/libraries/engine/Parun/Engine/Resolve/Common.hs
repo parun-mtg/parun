@@ -4448,13 +4448,18 @@ recordRoll controller throwers results = do
   -- roll (CR 706.6). Recorded under the player who threw the die's final
   -- natural result: Pippa, Duchess of Dice's ruling gives a reroll of another
   -- player's die to the rerolling player's "whenever you roll" triggers.
-  -- Beside it the natural result of each roll the die took, under the player
-  -- who threw it, for "whenever you roll a natural 20" (docs/decisions.md,
-  -- "Whether a natural 20 rerolled away was rolled").
+  -- Beside it the natural result of the die's first roll, under the player
+  -- who threw it, for "whenever you roll a natural 20"; a reroll's is
+  -- recorded with the reroll (docs/decisions.md, "Whether a natural 20
+  -- rerolled away was rolled").
   Foldable.for_ (zip throwers results) $ \((thrower, naturals), result) -> do
     State.modify' (Event.recordEvent (GameEvent.DieResultSettled DieResult.MkDieResult {DieResult.roller = thrower, DieResult.result = result, DieResult.reading = RollReading.FinalResult}))
-    Foldable.for_ naturals $ \(by, face) ->
-      State.modify' (Event.recordEvent (GameEvent.DieResultSettled DieResult.MkDieResult {DieResult.roller = by, DieResult.result = face, DieResult.reading = RollReading.NaturalResult}))
+    Foldable.for_ naturals (State.modify' . Event.recordEvent . uncurry naturalResult)
+
+-- | CR 706.2: the natural result one roll by `by` came up, the event "a
+-- natural 20" reads.
+naturalResult :: PlayerId -> Natural -> GameEvent.GameEvent
+naturalResult by face = GameEvent.DieResultSettled DieResult.MkDieResult {DieResult.roller = by, DieResult.result = face, DieResult.reading = RollReading.NaturalResult}
 
 -- | CR 614.12a: `act` run with every materialized-but-not-entered permanent
 -- (Scratch.enteringSubjects, Scratch.enteringBeside) out of the battlefield

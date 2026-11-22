@@ -994,7 +994,7 @@ playerRefPositions =
         -- zone (Sen Triplets). All three are planted, since Parun.Engine.PlayerEffect's
         -- traversal is what the AffectPlayers arm delegates to and a missing arm
         -- there answers [] rather than failing to compile.
-        ("affect-players-cast-from", affecting (PlayerEffect.CastFrom (CastFromZone.MkCastFromZone (InZone.MkInZone Zone.Hand (plantedPlayer "ap-cast")) (Filter.Type.And []) PermissionLimit.Unlimited PermissionVerb.Cast PermissionPool.EveryCard [] 0 ManaSpending.AsProduced Nothing Nothing False Nothing Set.empty False)), [plantedPlayer "ap-cast"]),
+        ("affect-players-cast-from", affecting (PlayerEffect.CastFrom (CastFromZone.MkCastFromZone (Just (InZone.MkInZone Zone.Hand (plantedPlayer "ap-cast"))) (Filter.Type.And []) PermissionLimit.Unlimited PermissionVerb.Cast PermissionPool.EveryCard [] 0 ManaSpending.AsProduced Nothing Nothing False Nothing Set.empty False)), [plantedPlayer "ap-cast"]),
         ("affect-players-play-lands-from", affecting (PlayerEffect.PlayLandsFrom (InZone.MkInZone Zone.Graveyard (plantedPlayer "ap-land"))), [plantedPlayer "ap-land"]),
         ("affect-players-plot-from", affecting (PlayerEffect.PlotFrom (PlotFromZone.MkPlotFromZone (InZone.MkInZone Zone.Library (plantedPlayer "ap-plot")) (Filter.Type.And []))), [plantedPlayer "ap-plot"]),
         -- And an arm carrying none, so the traversal is shown answering nothing where
@@ -4502,7 +4502,7 @@ entryRewriteFilters entryRewrite = case entryRewrite of
   EntryRewrite.ChooseCardName f -> unframed [f]
   -- The price's criterion over a card in hand or a beheld object, unframed, and
   -- the waiver's Condition (Fortified Beachhead's "you control a Soldier").
-  EntryRewrite.OrTapped (OrTapped.MkOrTapped price unless_) -> entryPriceFilters price <> foldMap conditionFilters unless_
+  EntryRewrite.OrTapped (OrTapped.MkOrTapped price unless_ counters) -> entryPriceFilters price <> foldMap conditionFilters unless_ <> foldMap withCountersFilters counters
   -- CR 614.1c's as-enters exile carries a criterion over a CARD IN A GRAVEYARD
   -- (Living Lore's "an instant or sorcery card"), the reveal's axis one zone over
   -- and unframed with it.
@@ -7341,6 +7341,7 @@ lintSpec s registry corpus = Spec.describe s "Lint" $ do
               -- funnel (Parun.Engine.Event's placeEntryCounters), so an X in it is
               -- read at the entry too.
               EntryRewrite.EntersWith e -> Maybe.maybeToList (EntersWith.counters e)
+              EntryRewrite.OrTapped o -> Maybe.maybeToList (OrTapped.counters o)
               EntryRewrite.AsCopy asCopy -> Maybe.mapMaybe CopyClause.counters (AsCopy.clauses asCopy)
               _ -> []
             q <- Map.elems (WithCounters.counters wc)

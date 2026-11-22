@@ -1852,8 +1852,8 @@ entryRewriteReads rewrite = case rewrite of
   EntryRewrite.EntersAttacking -> ([], [])
   -- The price's Filter, and the waiver's Quantities, asked at the entry as the
   -- WithCounters arm's are.
-  EntryRewrite.OrTapped (OrTapped.MkOrTapped price unless_) ->
-    let waived = foldMap conditionQuantities unless_
+  EntryRewrite.OrTapped (OrTapped.MkOrTapped price unless_ counters) ->
+    let waived = foldMap conditionQuantities unless_ <> foldMap (Map.elems . WithCounters.counters) counters
      in case price of
           EntryPrice.PayLife _ -> ([], waived)
           EntryPrice.Reveal filter_ -> ([filter_], waived)

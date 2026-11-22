@@ -47,7 +47,7 @@ spec s = Spec.describe s "Parun.Codec.CastFromZone" $ do
       s
       CastFromZone.codec
       ( CastFromZone.MkCastFromZone
-          { CastFromZone.from = InZone.MkInZone {InZone.zone = Zone.Graveyard, InZone.player = PlayerRef.Relative PlayerRelation.You},
+          { CastFromZone.from = Just (InZone.MkInZone {InZone.zone = Zone.Graveyard, InZone.player = PlayerRef.Relative PlayerRelation.You}),
             CastFromZone.matching = Filter.And [],
             CastFromZone.limit = PermissionLimit.Unlimited,
             CastFromZone.verb = PermissionVerb.Cast,
@@ -70,7 +70,7 @@ spec s = Spec.describe s "Parun.Codec.CastFromZone" $ do
       s
       CastFromZone.codec
       ( CastFromZone.MkCastFromZone
-          { CastFromZone.from = InZone.MkInZone {InZone.zone = Zone.Hand, InZone.player = PlayerRef.InSlot (SlotName.MkSlotName (Text.pack "opponent"))},
+          { CastFromZone.from = Just (InZone.MkInZone {InZone.zone = Zone.Hand, InZone.player = PlayerRef.InSlot (SlotName.MkSlotName (Text.pack "opponent"))}),
             CastFromZone.matching = Filter.HasCardType CardType.Creature,
             CastFromZone.limit = PermissionLimit.Unlimited,
             CastFromZone.verb = PermissionVerb.Cast,
@@ -95,7 +95,7 @@ spec s = Spec.describe s "Parun.Codec.CastFromZone" $ do
       s
       CastFromZone.codec
       ( CastFromZone.MkCastFromZone
-          { CastFromZone.from = InZone.MkInZone {InZone.zone = Zone.Library, InZone.player = PlayerRef.Relative PlayerRelation.You},
+          { CastFromZone.from = Just (InZone.MkInZone {InZone.zone = Zone.Library, InZone.player = PlayerRef.Relative PlayerRelation.You}),
             CastFromZone.matching = Filter.And [],
             CastFromZone.limit = PermissionLimit.OnceEachTurn,
             CastFromZone.verb = PermissionVerb.Cast,
@@ -119,7 +119,7 @@ spec s = Spec.describe s "Parun.Codec.CastFromZone" $ do
       s
       CastFromZone.codec
       ( CastFromZone.MkCastFromZone
-          { CastFromZone.from = InZone.MkInZone {InZone.zone = Zone.Graveyard, InZone.player = PlayerRef.Relative PlayerRelation.You},
+          { CastFromZone.from = Just (InZone.MkInZone {InZone.zone = Zone.Graveyard, InZone.player = PlayerRef.Relative PlayerRelation.You}),
             CastFromZone.matching = Filter.And [],
             CastFromZone.limit = PermissionLimit.OnceEachOfYourTurns,
             CastFromZone.verb = PermissionVerb.Play,
@@ -142,7 +142,7 @@ spec s = Spec.describe s "Parun.Codec.CastFromZone" $ do
       s
       CastFromZone.codec
       ( CastFromZone.MkCastFromZone
-          { CastFromZone.from = InZone.MkInZone {InZone.zone = Zone.Exile, InZone.player = PlayerRef.Relative PlayerRelation.AnyPlayer},
+          { CastFromZone.from = Just (InZone.MkInZone {InZone.zone = Zone.Exile, InZone.player = PlayerRef.Relative PlayerRelation.AnyPlayer}),
             CastFromZone.matching = Filter.And [],
             CastFromZone.limit = PermissionLimit.Unlimited,
             CastFromZone.verb = PermissionVerb.Cast,
@@ -166,7 +166,7 @@ spec s = Spec.describe s "Parun.Codec.CastFromZone" $ do
       s
       CastFromZone.codec
       ( CastFromZone.MkCastFromZone
-          { CastFromZone.from = InZone.MkInZone {InZone.zone = Zone.Exile, InZone.player = PlayerRef.Relative PlayerRelation.AnyPlayer},
+          { CastFromZone.from = Just (InZone.MkInZone {InZone.zone = Zone.Exile, InZone.player = PlayerRef.Relative PlayerRelation.AnyPlayer}),
             CastFromZone.matching = Filter.HasCardType CardType.Creature,
             CastFromZone.limit = PermissionLimit.Unlimited,
             CastFromZone.verb = PermissionVerb.Cast,
@@ -190,7 +190,7 @@ spec s = Spec.describe s "Parun.Codec.CastFromZone" $ do
       s
       CastFromZone.codec
       ( CastFromZone.MkCastFromZone
-          { CastFromZone.from = InZone.MkInZone {InZone.zone = Zone.Exile, InZone.player = PlayerRef.Relative PlayerRelation.AnyPlayer},
+          { CastFromZone.from = Just (InZone.MkInZone {InZone.zone = Zone.Exile, InZone.player = PlayerRef.Relative PlayerRelation.AnyPlayer}),
             CastFromZone.matching = Filter.And [],
             CastFromZone.limit = PermissionLimit.Unlimited,
             CastFromZone.verb = PermissionVerb.Play,
@@ -214,7 +214,7 @@ spec s = Spec.describe s "Parun.Codec.CastFromZone" $ do
       s
       CastFromZone.codec
       ( CastFromZone.MkCastFromZone
-          { CastFromZone.from = InZone.MkInZone {InZone.zone = Zone.Hand, InZone.player = PlayerRef.Relative PlayerRelation.You},
+          { CastFromZone.from = Just (InZone.MkInZone {InZone.zone = Zone.Hand, InZone.player = PlayerRef.Relative PlayerRelation.You}),
             CastFromZone.matching = Filter.Or [Filter.HasCardType CardType.Instant, Filter.HasCardType CardType.Sorcery],
             CastFromZone.limit = PermissionLimit.OnceEachOfYourTurns,
             CastFromZone.verb = PermissionVerb.Cast,
@@ -238,7 +238,7 @@ spec s = Spec.describe s "Parun.Codec.CastFromZone" $ do
       s
       CastFromZone.codec
       ( CastFromZone.MkCastFromZone
-          { CastFromZone.from = InZone.MkInZone {InZone.zone = Zone.Graveyard, InZone.player = PlayerRef.Relative PlayerRelation.You},
+          { CastFromZone.from = Just (InZone.MkInZone {InZone.zone = Zone.Graveyard, InZone.player = PlayerRef.Relative PlayerRelation.You}),
             CastFromZone.matching = Filter.And [],
             CastFromZone.limit = PermissionLimit.Unlimited,
             CastFromZone.verb = PermissionVerb.Cast,
@@ -262,7 +262,7 @@ spec s = Spec.describe s "Parun.Codec.CastFromZone" $ do
       s
       CastFromZone.codec
       ( CastFromZone.MkCastFromZone
-          { CastFromZone.from = InZone.MkInZone {InZone.zone = Zone.Graveyard, InZone.player = PlayerRef.Relative PlayerRelation.You},
+          { CastFromZone.from = Just (InZone.MkInZone {InZone.zone = Zone.Graveyard, InZone.player = PlayerRef.Relative PlayerRelation.You}),
             CastFromZone.matching = Filter.HasCardType CardType.Creature,
             CastFromZone.limit = PermissionLimit.OncePerEffect,
             CastFromZone.verb = PermissionVerb.Cast,
@@ -286,7 +286,7 @@ spec s = Spec.describe s "Parun.Codec.CastFromZone" $ do
       s
       CastFromZone.codec
       ( CastFromZone.MkCastFromZone
-          { CastFromZone.from = InZone.MkInZone {InZone.zone = Zone.Exile, InZone.player = PlayerRef.Relative PlayerRelation.AnyPlayer},
+          { CastFromZone.from = Just (InZone.MkInZone {InZone.zone = Zone.Exile, InZone.player = PlayerRef.Relative PlayerRelation.AnyPlayer}),
             CastFromZone.matching = Filter.Measures (Measures.MkMeasures Measure.ManaValue Comparison.AtMost Operand.EnclosingAmount),
             CastFromZone.limit = PermissionLimit.OnceEachTurn,
             CastFromZone.verb = PermissionVerb.Cast,
@@ -310,7 +310,7 @@ spec s = Spec.describe s "Parun.Codec.CastFromZone" $ do
       s
       CastFromZone.codec
       ( CastFromZone.MkCastFromZone
-          { CastFromZone.from = InZone.MkInZone {InZone.zone = Zone.Graveyard, InZone.player = PlayerRef.Relative PlayerRelation.AnyPlayer},
+          { CastFromZone.from = Just (InZone.MkInZone {InZone.zone = Zone.Graveyard, InZone.player = PlayerRef.Relative PlayerRelation.AnyPlayer}),
             CastFromZone.matching = Filter.Or [Filter.HasCardType CardType.Instant, Filter.HasCardType CardType.Sorcery],
             CastFromZone.limit = PermissionLimit.Unlimited,
             CastFromZone.verb = PermissionVerb.Cast,
@@ -334,7 +334,7 @@ spec s = Spec.describe s "Parun.Codec.CastFromZone" $ do
       s
       CastFromZone.codec
       ( CastFromZone.MkCastFromZone
-          { CastFromZone.from = InZone.MkInZone {InZone.zone = Zone.Graveyard, InZone.player = PlayerRef.Relative PlayerRelation.You},
+          { CastFromZone.from = Just (InZone.MkInZone {InZone.zone = Zone.Graveyard, InZone.player = PlayerRef.Relative PlayerRelation.You}),
             CastFromZone.matching = Filter.HasCardType CardType.Land,
             CastFromZone.limit = PermissionLimit.OnceEachOfYourTurns,
             CastFromZone.verb = PermissionVerb.Play,
@@ -351,6 +351,34 @@ spec s = Spec.describe s "Parun.Codec.CastFromZone" $ do
           }
       )
       " {\"from\":{\"zone\":\"Graveyard\",\"player\":{\"type\":\"Relative\",\"value\":\"You\"}},\"matching\":{\"type\":\"HasCardType\",\"value\":\"Land\"},\"limit\":\"OnceEachOfYourTurns\",\"verb\":\"Play\",\"outsideTheGame\":true} "
+  -- Wish: a card you own from outside the game, opening no zone (CR 400.11).
+  Spec.it s "outside the game alone" $
+    Common.assertCodec
+      s
+      CastFromZone.codec
+      ( CastFromZone.MkCastFromZone
+          { CastFromZone.from = Nothing,
+            CastFromZone.matching = Filter.And [],
+            CastFromZone.limit = PermissionLimit.OncePerEffect,
+            CastFromZone.verb = PermissionVerb.Play,
+            CastFromZone.pool = PermissionPool.EveryCard,
+            CastFromZone.additionalCosts = [],
+            CastFromZone.reduction = 0,
+            CastFromZone.spending = ManaSpending.AsProduced,
+            CastFromZone.alternativeCost = Nothing,
+            CastFromZone.entersWith = Nothing,
+            CastFromZone.exiledInstead = False,
+            CastFromZone.amount = Nothing,
+            CastFromZone.creatureTypes = Set.empty,
+            CastFromZone.outsideTheGame = True
+          }
+      )
+      " {\"matching\":{\"type\":\"And\",\"value\":[]},\"limit\":\"OncePerEffect\",\"verb\":\"Play\",\"outsideTheGame\":true} "
+  Spec.it s "rejects a permission opening nothing" $
+    Spec.assertBool
+      s
+      (Either.isLeft (Codec.decode CastFromZone.codec =<< Common.parse (Text.pack "{\"matching\":{\"type\":\"And\",\"value\":[]}}")))
+      "expected a decode failure"
   -- Unprinted: a permission to cast cards as an Adventure, so refused.
   Spec.it s "rejects casting as an Adventure" $
     Spec.assertBool

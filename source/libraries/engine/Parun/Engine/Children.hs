@@ -2359,7 +2359,7 @@ playerEffectChildren c effect = case effect of
   PlayerEffect.CastOnlyAtSorcerySpeed -> pure effect
   PlayerEffect.CantPlayLands filter_ -> PlayerEffect.CantPlayLands <$> playerFilter c filter_
   PlayerEffect.CastFrom (CastFromZone.MkCastFromZone from matching limit verb pool additionalCosts reduction spending alternativeCost entersWith exiledInstead amount creatureTypes outsideTheGame) ->
-    fmap PlayerEffect.CastFrom (CastFromZone.MkCastFromZone <$> playerZone c from <*> playerFilter c matching <*> pure limit <*> pure verb <*> pure pool <*> traverse (playerCostComponent c) additionalCosts <*> pure reduction <*> pure spending <*> pure alternativeCost <*> traverse (\(WithCounters.MkWithCounters counters) -> WithCounters.MkWithCounters <$> traverse (playerQuantity c) counters) entersWith <*> pure exiledInstead <*> traverse (playerQuantity c) amount <*> traverseSet (playerCreatureSubtype c) creatureTypes <*> pure outsideTheGame)
+    fmap PlayerEffect.CastFrom (CastFromZone.MkCastFromZone <$> traverse (playerZone c) from <*> playerFilter c matching <*> pure limit <*> pure verb <*> pure pool <*> traverse (playerCostComponent c) additionalCosts <*> pure reduction <*> pure spending <*> pure alternativeCost <*> traverse (\(WithCounters.MkWithCounters counters) -> WithCounters.MkWithCounters <$> traverse (playerQuantity c) counters) entersWith <*> pure exiledInstead <*> traverse (playerQuantity c) amount <*> traverseSet (playerCreatureSubtype c) creatureTypes <*> pure outsideTheGame)
   PlayerEffect.PlayLandsFrom from -> PlayerEffect.PlayLandsFrom <$> playerZone c from
   PlayerEffect.PlotFrom (PlotFromZone.MkPlotFromZone from matching) ->
     fmap PlayerEffect.PlotFrom (PlotFromZone.MkPlotFromZone <$> playerZone c from <*> playerFilter c matching)
@@ -2572,7 +2572,7 @@ entryRewriteChildren c rewrite = case rewrite of
   EntryRewrite.EntersTapState _ -> pure rewrite
   EntryRewrite.Prepared -> pure rewrite
   EntryRewrite.EntersAttacking -> pure rewrite
-  EntryRewrite.OrTapped (OrTapped.MkOrTapped price unless_) -> fmap EntryRewrite.OrTapped (OrTapped.MkOrTapped <$> entryPriceChildren c price <*> traverse (replacementCondition c) unless_)
+  EntryRewrite.OrTapped (OrTapped.MkOrTapped price unless_ counters) -> fmap EntryRewrite.OrTapped (OrTapped.MkOrTapped <$> entryPriceChildren c price <*> traverse (replacementCondition c) unless_ <*> traverse (replacementCounters c) counters)
   EntryRewrite.PayAnyLife cap -> EntryRewrite.PayAnyLife <$> traverse (replacementQuantity c) cap
   EntryRewrite.EntersTransformed -> pure rewrite
   EntryRewrite.RunEffects effects -> EntryRewrite.RunEffects <$> traverse (replacementEffect c) effects

@@ -3334,7 +3334,7 @@ Entries are ordered by the first rule each cites.
   (two Walls of Fortune): either gives the reroll's event a number from a
   modifier applied after that event, to a roll it is not part of.
 - **Site**: `Parun.Engine.Resolve.Effect.throwSettled`'s `rethrow` and
-  `recordReroll`, proved by
+  `recordRerolls`, proved by
   the scenario
   `farideh-devil-s-chosen-reads-a-reroll-s-own-result-not-a-later-reroll-s`.
 - **Issue**: none.
@@ -3362,6 +3362,49 @@ Entries are ordered by the first rule each cites.
   `critical-hit-returns-for-a-natural-20-rerolled-away`,
   `critical-hit-returns-once-for-a-20-rerolled-between-two-rerolls` and
   `critical-hit-triggers-twice-for-a-20-rerolled-to-20`.
+- **Issue**: none.
+
+## Which board a roll's trigger is checked against
+
+- **Question**: Grave Endeavor's d10s come up 2 and 5; Wall of Fortune
+  rerolls the 2, then Brazen Dwarf is sacrificed to Ashnod's Altar to pay for
+  Monitor Monitor's reroll of the 5. Against which board is each roll's
+  "whenever you roll one or more dice" checked (CR 603.10)?
+- **Rules**: CR 603.2, 603.10, 706.2, 706.2b; Pippa, Duchess of Dice's ruling
+  (a reroll is a roll); CR of 2026-11-06.
+- **Decision**: Each event at the moment its number is fixed. A reroll's is
+  the board its dice came up on, so the Wall's reroll triggers the Dwarf. The
+  roll's own reads its final result, after every modifier ("Which result a
+  reroll's trigger reads"), so it is checked once they have applied, and
+  neither it nor the Monitor's reroll triggers the Dwarf.
+- **Rejected**: Checking the roll against the board its dice came up on: its
+  event carries a result that board never saw, and would split one event
+  across two moments.
+- **Site**: `Parun.Engine.Resolve.Effect.throwSettled`'s `recordRerolls` and
+  `Parun.Engine.Resolve.Arms.Damage`'s RollDie arm, proved by the scenarios
+  `cr-603-10-a-reroll-triggers-a-brazen-dwarf-sacrificed-for-a-later-reroll`
+  and
+  `cr-603-10-ricochet-s-first-roll-triggers-a-brazen-dwarf-sacrificed-for-its-tie-reroll`.
+- **Issue**: none.
+
+## Whether a coin flipped for an ignored die's reroll was flipped
+
+- **Question**: Under Pixie Guide a d20 comes up 20 and 5; Wall of Fortune
+  rerolls the 5, and Pokey, the Scallywagg flips a coin instead and wins, so
+  that die reads 20. If CR 706.6 then ignores that die, was the coin flipped,
+  for Tavern Scoundrel's "whenever you win a coin flip"?
+- **Rules**: CR 614.6, 705.1, 706.6; Pokey's reminder text ("it counts as
+  flipping a coin, not rolling a die"); CR of 2026-11-06.
+- **Decision**: No. The flip happened instead of the reroll, and an ignored
+  die never happened, its rerolls included ("Whether a reroll reaches a die
+  before the lowest roll is ignored"); a coin Pokey flips for a d20 that
+  Pixie Guide's ignore drops is likewise never flipped. The two 20s then
+  differ, so which is ignored is asked.
+- **Rejected**: Letting the flip stand, as a coin and not a roll CR 706.6
+  cannot reach: the reroll it replaced would not have stood.
+- **Site**: `Parun.Engine.Resolve.Effect.throwSettled`'s `rethrow`, proved by
+  the scenario
+  `cr-706-6-a-coin-flipped-for-an-ignored-die-s-reroll-was-never-flipped`.
 - **Issue**: none.
 
 ## Which ventures Keen-Eared Sentry counts

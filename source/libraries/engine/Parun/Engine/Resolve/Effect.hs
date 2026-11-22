@@ -1040,8 +1040,8 @@ rollToVisit runSubgame pid = do
 -- through every modification rule 706 names -- CR 614.1a's replacements, CR
 -- 706.2b's rerolls and adjustments, CR 706.6's ignored rolls -- and answer each
 -- kept die's final result beside the player who threw its final natural result
--- and the natural result of each roll the die took, with its thrower, none
--- where a coin gave it.
+-- and the natural result of the die's first roll, with its thrower, none where
+-- a coin gave it; each reroll's is recorded with the reroll (`throwSettled`).
 -- `ignore` is the instruction's own CR 706.6 ignore (Parun.Types.RollDie's), and
 -- `perDie` its own modifier (CR 706.2). Shared by
 -- Effect.RollDie's arm and CR 701.52a's roll to visit, which records nothing
@@ -1057,7 +1057,9 @@ throwDice :: Game Result -> PlayerId -> Natural -> Natural -> Natural -> Game In
 throwDice runSubgame controller sides named ignore perDie = do
   settled <- Event.proposeDiceRoll (reflipWindow runSubgame) controller sides named ignore
   case settled of
-    Left results -> pure (results, fmap (const (controller, [])) results, [])
+    Left flipped -> do
+      Foldable.for_ flipped (State.modify' . Event.recordEvent . snd)
+      pure (fmap fst flipped, fmap (const (controller, [])) flipped, [])
     Right roll -> do
       -- A roll standing for Pokey's flip throws with no modifier of the
       -- instruction's own, throwRecorded's reason: the flip named none, and
@@ -1122,12 +1124,14 @@ throwSettled runSubgame roll perDie = do
       -- player who throws it -- Pippa, Duchess of Dice's ruling, which has a
       -- reroll trigger "whenever you roll a die". The discarded number is not
       -- CR 706.6's ignored roll: it happened, and its event stands -- unless
-      -- the die it belongs to is ignored later (`recordRerolls`).
+      -- the die it belongs to is ignored later (`recordRerolls`), which is
+      -- why it is recorded late, over the board it came up on.
       --
       -- Answers the natural result with the player who THREW it: the roller,
       -- or whoever activated a reroll in the window below (`windowCandidates`),
-      -- each roll's face with its thrower, this one's first and none where a
-      -- coin gave it, and the die's rerolls not yet recorded (`rethrow`).
+      -- the face of the die's first roll with its thrower, none where a coin
+      -- gave it, and the die's rerolls not yet recorded, each with its own
+      -- natural result (`rethrow`).
       -- Each roll is read at the face it came up: CR 706.2's natural result
       -- is "before any modifiers", and a reroll is a modifier (CR 706.2b)
       -- and a roll of its own (docs/decisions.md, "Whether a natural 20
@@ -1243,7 +1247,19 @@ throwSettled runSubgame roll perDie = do
             then Event.proposeDiceRoll (reflipWindow runSubgame) by sides count 0
             else pure (Right roll {Throw.thrower = by, Throw.units = Seq.replicate (Natural.toIntSaturating count) 1, Throw.ignored = 0})
         case settled of
-          Left results -> traverse (rerollingWith False by) (padded 1 results)
+          -- Each coin's event rides with the die it stood in for, ahead of
+          -- that die's later rerolls: a die CR 706.6 ignores never happened,
+          -- its rerolls included, so neither did the flip standing in for one
+          -- (docs/decisions.md, "Whether a coin flipped for an ignored die's
+          -- reroll was flipped").
+          Left flipped -> do
+            landed <- State.gets Trigger.battlefieldCandidates
+            traverse
+              ( \(result, event) -> do
+                  (thrower, natural, rolls, pending) <- rerollingWith False by result
+                  pure (thrower, natural, rolls, foldMap (\e -> [(Nothing, Left e, landed)]) event <> pending)
+              )
+              (padded (1, Nothing) (fmap (fmap Just) flipped))
           Right again -> do
             kept <- naturals False again (pure 0)
             -- `count` kept: every die a row adds comes with an ignore. A d20
@@ -1255,7 +1271,10 @@ throwSettled runSubgame roll perDie = do
             -- (docs/decisions.md, "Which result a reroll's trigger reads").
             -- A d20 rolled for that coin keeps its own face, the one "a
             -- natural 20" reads (Pokey, the Scallywagg's rulings).
-            pure (padded (by, 1, [], []) (fmap (\((total, thrower, faces, pending), face) -> (thrower, readBack again (Integer.toNaturalSaturating total), faces, pending <> foldMap (\came -> [(key, by, came)]) face)) kept))
+            --
+            -- The reroll's natural result rides beside its event, over the
+            -- board it came up on, rather than with the die's first roll.
+            pure (padded (by, 1, [], []) (fmap (\((total, thrower, faces, pending), face) -> (thrower, readBack again (Integer.toNaturalSaturating total), [], pending <> foldMap (\(came, landed) -> (key, Right (by, came), landed) : fmap (\(who, shown) -> (Nothing, Left (Common.naturalResult who shown), landed)) faces) face)) kept))
         where
           -- Defensive: a short answer is filled with a die of 1.
           padded filler xs = take (Natural.toIntSaturating count) (xs <> repeat filler)
@@ -1270,18 +1289,30 @@ throwSettled runSubgame roll perDie = do
       -- the highest among the kept dice carrying it, as recordRoll's is. Under
       -- the rerolling player (Pippa, Duchess of Dice's ruling). The planar
       -- die's has no number (CR 901.9d).
-      recordRerolls pending = Foldable.for_ (groups Set.empty pending) $ \(by, number) ->
-        State.modify' . Event.recordEvent $
-          if numbered
-            then GameEvent.CountedAct (CountedAct.MkCountedAct PlayerAction.RollDice by number)
-            else GameEvent.PlayerActed (PlayerActed.MkPlayerActed PlayerAction.RollDice by)
+      --
+      -- Checked against the board the reroll came up on (CR 603.10), which
+      -- every die it threw carries (`naturals`), not the board a later
+      -- payment left: a Brazen Dwarf sacrificed to pay for a later reroll
+      -- still triggers for this one. The scenario
+      -- cr-603-10-a-reroll-triggers-a-brazen-dwarf-sacrificed-for-a-later-reroll
+      -- proves it.
+      --
+      -- A coin flipped instead of a reroll (Left) is that coin's own event, and
+      -- a reroll's natural result (Left) is its own per die, uncounted.
+      recordRerolls pending = Foldable.for_ (groups Set.empty pending) $ \(event, landed) ->
+        State.modify' (Event.recordEventOver landed event)
         where
+          rolled by number =
+            if numbered
+              then GameEvent.CountedAct (CountedAct.MkCountedAct PlayerAction.RollDice by number)
+              else GameEvent.PlayerActed (PlayerActed.MkPlayerActed PlayerAction.RollDice by)
           groups seen entries = case entries of
             [] -> []
-            (Nothing, by, face) : rest -> (by, face) : groups seen rest
-            (Just key, by, face) : rest
+            (_, Left event, landed) : rest -> (event, landed) : groups seen rest
+            (Nothing, Right (by, face), landed) : rest -> (rolled by face, landed) : groups seen rest
+            (Just key, Right (by, face), landed) : rest
               | Set.member key seen -> groups seen rest
-              | otherwise -> (by, Foldable.foldl' max face [other | (Just k, _, other) <- rest, k == key]) : groups (Set.insert key seen) rest
+              | otherwise -> (rolled by (Foldable.foldl' max face [other | (Just k, Right (_, other), _) <- rest, k == key]), landed) : groups (Set.insert key seen) rest
       rethrowOne by = do
         dice <- rethrow by Nothing (1 :: Natural)
         pure (Maybe.fromMaybe (by, 1, [], []) (Maybe.listToMaybe dice))
@@ -1466,10 +1497,13 @@ throwSettled runSubgame roll perDie = do
       -- several dice (rerollingDice), or a die `rethrow` rerolls.
       --
       -- Answers, beside each die kept, the face it was thrown with before any
-      -- reroll of it, for a reroll's event (`rethrow`); Nothing at the top,
-      -- which reads none. Carried through the choice and the ignore with the
-      -- die's rerolls not yet recorded, so neither is read for a die not kept
-      -- (CR 706.6), and two dice differing in either are told apart there.
+      -- reroll of it and the board once every face was up, for a reroll's
+      -- event (`rethrow`); Nothing at the top, whose event is the roll's
+      -- once every modifier has applied (docs/decisions.md, "Which board a
+      -- roll's trigger is checked against"). Carried through the choice and
+      -- the ignore with the die's rerolls not yet recorded, so none is read
+      -- for a die not kept (CR 706.6), and two dice differing in any are told
+      -- apart there.
       --
       -- Every die's face is asked for before any die is offered a reroll:
       -- the dice are thrown at once, and Night Shift of the Living Dead's
@@ -1481,9 +1515,10 @@ throwSettled runSubgame roll perDie = do
       -- options reading the same number (#9394).
       naturals atTop settled modifierOf = do
         thrownFaces <- traverse (\n -> traverse (const (fmap faceOf (Game.ask (Prompt.RollDie sides)))) [1 .. n]) (Foldable.toList (Throw.units settled))
+        landed <- State.gets Trigger.battlefieldCandidates
         rolledWithFaces <- traverse (traverse (offeredOne (Throw.thrower settled))) thrownFaces
         let thrown = fmap (fmap snd) rolledWithFaces
-            faces = fmap (fmap (\(face, _) -> if atTop then Nothing else Just face)) rolledWithFaces
+            faces = fmap (fmap (\(face, _) -> if atTop then Nothing else Just (face, landed))) rolledWithFaces
         rerolled <- if atTop then fmap (regroup thrown) (rerollingDice (0 :: Natural) (concat thrown)) else pure thrown
         -- After the rerolls above, which is CR 706.2b's order: rerolls are
         -- considered first, and what they leave is the natural result the
