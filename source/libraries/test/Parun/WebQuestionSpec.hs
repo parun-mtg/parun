@@ -775,6 +775,14 @@ spec s registry = Spec.describe s "WebQuestion" $ do
     Spec.assertEqWith s "Cancel withdraws" cancel (Just (Question.Web.MkAnswer withdrawal))
     Spec.assertBool s (not (Text.pack ">Cancel</button>" `Text.isInfixOf` Html.toText (Question.Web.view request Question.Web.blank))) "no Cancel without a withdrawal"
 
+  Spec.it s "CR 734.1 a number the seat announces offers a Cancel where the question carries a withdrawal" $ do
+    let request = asking (Text.pack "ChooseKicker") (R.Object [(Text.pack "source", R.Text (Text.pack "$9")), (Text.pack "least", R.Number 0), (Text.pack "greatest", R.Number 1)])
+        withdrawal = R.Number 2
+        withdrawing = request {Request.question = (Request.question request) {Question.withdraw = Just withdrawal}}
+        cancel = let view = Question.Web.view withdrawing Question.Web.blank in Html.labelled (Text.pack "button") (Text.pack "Cancel") view >>= \path -> Html.handler (Text.pack "click") path view
+    Spec.assertEqWith s "Cancel withdraws" cancel (Just (Question.Web.MkAnswer withdrawal))
+    Spec.assertBool s (not (Text.pack ">Cancel</button>" `Text.isInfixOf` Html.toText (Question.Web.view request Question.Web.blank))) "no Cancel without a withdrawal"
+
   Spec.it s "a player offered as a target is labelled with their life total" $ do
     let bob = R.Array [R.Text (Text.pack "Player"), R.Text (Text.pack "1")]
         request = asking (Text.pack "ChooseTargets") (R.Object [(Text.pack "source", R.Text (Text.pack "$9")), (Text.pack "slots", R.Array [R.Array [R.Text (Text.pack "target"), R.Array [R.Number 1, R.Array [bob]]]])])

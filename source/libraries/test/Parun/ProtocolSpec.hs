@@ -117,6 +117,7 @@ import qualified Parun.Types.PayerAnswer as PayerAnswer
 import qualified Parun.Types.PermissionLimit as PermissionLimit
 import qualified Parun.Types.PlayerId as PlayerId
 import qualified Parun.Types.PlayerView as PlayerView
+import qualified Parun.Types.Printing as Printing
 import qualified Parun.Types.Prompt as Prompt
 import qualified Parun.Types.Question as Question
 import qualified Parun.Types.Recipient as Recipient
@@ -663,17 +664,33 @@ spec s registry = Spec.describe s "Protocol" $ do
     mountain <- S.printingOf s registry "Mountain"
     let (land, g1) = S.addPermanent mountain S.alice gs
         (card, board) = S.addHandCard shock S.alice g1
-        logged = State.execState (Driver.drive [observer] (Protocol.over trusting (Protocol.viaLines (exchanging (withdrawsOnce card))) chance) 10000 (pure . (>= 2) . (TurnRegisters.turnNumber . GameState.turn)) board) []
-        sent = linesWithState logged
-        targeting = [request | (_, line) <- sent, Just request <- [requestOf line], Question.kind (Request.question request) == Text.pack "ChooseTargets"]
-        after = [gs' | (gs', line) <- drop 1 (dropWhile (not . List.isInfixOf "\"kind\":\"ChooseTargets\"" . snd) sent), Just request <- [requestOf line], Question.seat (Request.question request) == S.alice, Question.kind (Request.question request) == Text.pack "ChooseAction"]
-    case (targeting, after) of
-      ([request], next : _) -> do
-        Spec.assertBool s (Maybe.isJust (Question.withdraw (Request.question request))) "the targets offer a withdrawal"
-        Spec.assertEqWith s "Shock is back in alice's hand" (Game.zoneMembers Zone.Hand S.alice next `List.intersect` [card]) [card]
-        Spec.assertEqWith s "and nothing is on the stack" (Game.zoneMembers Zone.Stack S.alice next) []
-        Spec.assertBool s (not (Game.isTapped land next)) "the Mountain stays untapped"
-      _ -> Spec.assertFailure s "alice was asked for Shock's targets once and then for an action"
+    assertWithdrawn s "ChooseTargets" card [land] board
+  Spec.it s "CR 734.1 a seat withdraws a modal spell at its modes" $ do
+    gs <- started s registry
+    abrade <- S.printingOf s registry "Abrade"
+    mountain <- S.printingOf s registry "Mountain"
+    -- An artifact creature, so both of Abrade's modes are legal and asked.
+    ornithopter <- S.printingOf s registry "Ornithopter"
+    let (lands, g1) = addPermanents [mountain, mountain] gs
+        (_, g2) = S.addPermanent ornithopter S.bob g1
+        (card, board) = S.addHandCard abrade S.alice g2
+    assertWithdrawn s "ChooseModes" card lands board
+  Spec.it s "CR 734.1 a seat withdraws a spell at its kicker" $ do
+    gs <- started s registry
+    burst <- S.printingOf s registry "Burst Lightning"
+    mountain <- S.printingOf s registry "Mountain"
+    let (lands, g1) = addPermanents (replicate 5 mountain) gs
+        (card, board) = S.addHandCard burst S.alice g1
+    assertWithdrawn s "ChooseKicker" card lands board
+  Spec.it s "CR 734.1 a seat withdraws a spell at its splice" $ do
+    gs <- started s registry
+    ritual <- S.printingOf s registry "Desperate Ritual"
+    ray <- S.printingOf s registry "Glacial Ray"
+    mountain <- S.printingOf s registry "Mountain"
+    let (lands, g1) = addPermanents (replicate 4 mountain) gs
+        (_, g2) = S.addHandCard ray S.alice g1
+        (card, board) = S.addHandCard ritual S.alice g2
+    assertWithdrawn s "ChooseSplice" card lands board
   Spec.it s "CR 734.1 no withdrawal is offered outside an announcement" $ do
     gs <- started s registry
     let slot = SlotName.MkSlotName (Text.pack "target")
@@ -884,15 +901,38 @@ stopsOnce line = do
           pure (Text.pack (show i))
     _ -> client line
 
--- Casts `card` the first time it is offered and withdraws it at its targets,
--- paying with the first source should the cast go on regardless; then answers
--- as `client` does.
+-- Each of `printings` onto alice's battlefield.
+addPermanents :: [Printing.Printing] -> GameState.GameState -> ([ObjectId.ObjectId], GameState.GameState)
+addPermanents printings gs = foldr (\printing (oids, g) -> let (oid, g') = S.addPermanent printing S.alice g in (oid : oids, g')) ([], gs) printings
+
+-- Alice casts `card` on `board` and withdraws it at the first prompt offering
+-- a withdrawal, which is a `kind`: it is back in her hand, the stack is empty
+-- and none of `lands` is tapped.
+assertWithdrawn :: (Monad m) => Spec.Spec m n -> String -> ObjectId.ObjectId -> [ObjectId.ObjectId] -> GameState.GameState -> m ()
+assertWithdrawn s kind card lands board = do
+  let logged = State.execState (Driver.drive [observer] (Protocol.over trusting (Protocol.viaLines (exchanging (withdrawsOnce card))) chance) 10000 (pure . (>= 2) . (TurnRegisters.turnNumber . GameState.turn)) board) []
+      sent = linesWithState logged
+      offering = [request | (_, line) <- sent, Just request <- [requestOf line], Maybe.isJust (Question.withdraw (Request.question request))]
+      after = [gs' | (gs', line) <- drop 1 (dropWhile (not . List.isInfixOf "\"withdraw\":" . snd) sent), Just request <- [requestOf line], Question.seat (Request.question request) == S.alice, Question.kind (Request.question request) == Text.pack "ChooseAction"]
+  case (offering, after) of
+    (request : _, next : _) -> do
+      Spec.assertEqWith s "the card is back in alice's hand" (Game.zoneMembers Zone.Hand S.alice next `List.intersect` [card]) [card]
+      Spec.assertEqWith s "and nothing is on the stack" (Game.zoneMembers Zone.Stack S.alice next) []
+      Spec.assertEqWith s "and no land is tapped" (filter (`Game.isTapped` next) lands) []
+      Spec.assertEqWith s "the withdrawal is offered at" (Question.kind (Request.question request)) (Text.pack kind)
+    _ -> Spec.assertFailure s ("alice was offered a withdrawal, at " <> kind <> ", and then an action")
+
+-- Casts `card` the first time it is offered and withdraws it at the first
+-- prompt offering a withdrawal and no later one, paying with the first source
+-- should the cast go on regardless; then answers as `client` does.
 withdrawsOnce :: ObjectId.ObjectId -> Text.Text -> State.State Log Text.Text
 withdrawsOnce card line = do
-  withdrawn <- State.gets (any (List.isInfixOf "\"kind\":\"ChooseTargets\"") . Either.rights)
+  offers <- State.gets (length . filter (List.isInfixOf "\"withdraw\":") . Either.rights)
+  let withdrawn = offers > 0
   case requestOf (Text.unpack line) of
     Just request
       | Just withdrawal <- Question.withdraw question,
+        offers == 1,
         Maybe.isNothing (Request.problem request) ->
           pure (Common.render (Codec.Reply.toValue withdrawal))
       | Question.kind question == Text.pack "ChooseManaSource",
@@ -900,6 +940,9 @@ withdrawsOnce card line = do
         Just object <- field "source" source ->
           pure (Common.render (Codec.Reply.toValue object))
       | Question.kind question == Text.pack "ChooseExtraManaSource" -> pure (Text.pack "null")
+      | Question.kind question == Text.pack "ChooseTargets",
+        Just slots <- field "slots" (Question.offer question) >>= arrayOf ->
+          pure (Common.render (Codec.Reply.toValue (R.Array [R.Array [slot, R.Array (take 1 recipients)] | R.Array [slot, R.Array [_, R.Array recipients]] <- slots])))
       | Question.kind question == Text.pack "ChooseAction",
         not withdrawn,
         R.Array actions <- Question.offer question,

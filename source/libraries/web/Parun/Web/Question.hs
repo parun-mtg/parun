@@ -950,9 +950,11 @@ form request picked = case Text.unpack (Question.kind question) of
             -- With no greatest, the first few numbers, and any other typed.
             shownTo = Maybe.fromMaybe (least' + 9) greatest
          in heading (Text.unpack what <> range)
-              : if shownTo - least' <= 20
-                then [Element.el "div" ["actions", "numbers"] [] [button (MkAnswer . R.Number $ toInteger n) (Text.pack $ show n) | n <- [least' .. shownTo]]] <> [numberInput | Maybe.isNothing greatest]
-                else [numberInput]
+              : ( if shownTo - least' <= 20
+                    then [Element.el "div" ["actions", "numbers"] [] [button (MkAnswer . R.Number $ toInteger n) (Text.pack $ show n) | n <- [least' .. shownTo]]] <> [numberInput | Maybe.isNothing greatest]
+                    else [numberInput]
+                )
+                <> [Element.el "div" ["passes"] [] [cancel withdrawal] | Just withdrawal <- [Question.withdraw question]]
   _
     | Just (title', items) <- ordering request ->
         Html.element (Text.pack "h2") [] (Mana.rich title')
@@ -1079,12 +1081,14 @@ form request picked = case Text.unpack (Question.kind question) of
           <> [ Element.el "div" ["passes"] [] $
                  Element.el "button" ["primary"] ([Element.attr "type" (Text.pack "button"), Element.on "click" MkSubmit] <> [Element.attr "disabled" Text.empty | not (all fits (zip [0 ..] (groups chooser)))]) (Mana.rich (send chooser))
                    : [button MkClear (Text.pack "Start over") | not (Set.null picked)]
-                     <> [button (MkAnswer withdrawal) (Text.pack "Cancel") | Just withdrawal <- [Question.withdraw question]]
+                     <> [cancel withdrawal | Just withdrawal <- [Question.withdraw question]]
              ]
   _ -> typedReply request
   where
     question = Request.question request
     offer = Question.offer question
+    -- CR 734.1: takes back the spell or ability being announced.
+    cancel withdrawal = button (MkAnswer withdrawal) (Text.pack "Cancel")
     toggle g i label = button (MkToggle g i) $ (if Set.member (g, i) picked then Text.pack "\x2713 " else Text.empty) <> label
     -- Options the seat can't tell apart share a button: a tap picks the
     -- first unpicked while the group has room, else drops the last picked.
