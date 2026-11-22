@@ -2572,7 +2572,7 @@ entryRewriteChildren c rewrite = case rewrite of
   EntryRewrite.EntersTapState _ -> pure rewrite
   EntryRewrite.Prepared -> pure rewrite
   EntryRewrite.EntersAttacking -> pure rewrite
-  EntryRewrite.OrTapped (OrTapped.MkOrTapped price unless_) -> fmap EntryRewrite.OrTapped (OrTapped.MkOrTapped <$> entryPriceChildren c price <*> traverse (replacementCondition c) unless_)
+  EntryRewrite.OrTapped (OrTapped.MkOrTapped price unless_ counters) -> fmap EntryRewrite.OrTapped (OrTapped.MkOrTapped <$> entryPriceChildren c price <*> traverse (replacementCondition c) unless_ <*> traverse (replacementCounters c) counters)
   EntryRewrite.PayAnyLife cap -> EntryRewrite.PayAnyLife <$> traverse (replacementQuantity c) cap
   EntryRewrite.EntersTransformed -> pure rewrite
   EntryRewrite.RunEffects effects -> EntryRewrite.RunEffects <$> traverse (replacementEffect c) effects

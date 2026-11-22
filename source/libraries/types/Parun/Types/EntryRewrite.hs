@@ -175,7 +175,7 @@ data EntryRewrite ability effect
     EntersAttacking
   | -- | CR 614.1c / Razorgrass Field, Rustic Clachan: "you may [price]. If you
     -- don't, it enters tapped" -- the arm above's rewrite with a price on
-    -- avoiding it.
+    -- avoiding it, or on counters it buys (Dragon's Disciple).
     OrTapped OrTapped.OrTapped
   | -- | CR 614.1c / 119.4 / 607.2g / Phyrexian Processor: pay any amount of
     -- life as this enters, at most the Quantity (Nameless Race), written to

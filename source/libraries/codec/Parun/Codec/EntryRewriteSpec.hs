@@ -300,7 +300,7 @@ spec s = Spec.describe s "Parun.Codec.EntryRewrite" $ do
     Common.assertCodec
       s
       (EntryRewrite.codec (GrantedAbility.codec Card.codec) (Effect.codec Card.codec (GrantedAbility.codec Card.codec)))
-      (EntryRewrite.OrTapped (OrTapped.MkOrTapped (EntryPrice.PayLife 3) Nothing))
+      (EntryRewrite.OrTapped (OrTapped.MkOrTapped (EntryPrice.PayLife 3) Nothing Nothing))
       " {\"type\":\"OrTapped\",\"value\":{\"price\":{\"type\":\"PayLife\",\"value\":3}}} "
   -- CR 616.1b: a control rewrite, carrying the recipient's relation to the
   -- source's controller.
@@ -376,6 +376,6 @@ spec s = Spec.describe s "Parun.Codec.EntryRewrite" $ do
     Common.assertCodec
       s
       (EntryRewrite.codec (GrantedAbility.codec Card.codec) (Effect.codec Card.codec (GrantedAbility.codec Card.codec)))
-      (EntryRewrite.InOrder (EntryRewrite.ChooseQuality (ChosenQuality.Subtype ChoiceOrdinal.First ChoiceDistinct.MayRepeat SubtypeFamily.BasicLandType Nothing) NonEmpty.:| [EntryRewrite.OrTapped (OrTapped.MkOrTapped (EntryPrice.PayLife 2) Nothing)]))
+      (EntryRewrite.InOrder (EntryRewrite.ChooseQuality (ChosenQuality.Subtype ChoiceOrdinal.First ChoiceDistinct.MayRepeat SubtypeFamily.BasicLandType Nothing) NonEmpty.:| [EntryRewrite.OrTapped (OrTapped.MkOrTapped (EntryPrice.PayLife 2) Nothing Nothing)]))
       " {\"type\":\"InOrder\",\"value\":[{\"type\":\"ChooseQuality\",\"value\":{\"type\":\"Subtype\",\"value\":{\"family\":\"BasicLandType\"}}},{\"type\":\"OrTapped\",\"value\":{\"price\":{\"type\":\"PayLife\",\"value\":2}}}]} "
   Spec.it s "has a schema" $ Common.assertHasSchema s (EntryRewrite.codec (GrantedAbility.codec Card.codec) (Effect.codec Card.codec (GrantedAbility.codec Card.codec)))

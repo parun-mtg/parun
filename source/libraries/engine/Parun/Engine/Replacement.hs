@@ -3241,7 +3241,7 @@ entryAccess gs seat oid = row asEntering
               EntryPrice.PayLife _ -> spending [LifeTotals] []
               EntryPrice.Reveal _ -> reading [InHands]
               EntryPrice.Behold _ -> reading [OnBattlefield, InHands]
-         in paid <> foldMap conditionAccess (OrTapped.unless orTapped)
+         in paid <> foldMap conditionAccess (OrTapped.unless orTapped) <> countsFrom (OrTapped.counters orTapped)
       EntryRewrite.PayAnyLife _ -> spending [LifeTotals] []
       EntryRewrite.EntersTransformed -> mempty
       EntryRewrite.RunEffects _ -> touchesEverything
