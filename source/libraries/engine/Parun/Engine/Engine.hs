@@ -2915,11 +2915,28 @@ endPhase ending = do
 -- 614.1b check reads as a guard rather than as a nesting level: the step's
 -- start, its priority window if it grants one, then its end.
 runStepThatBegan :: Phase.Phase -> Game ()
-runStepThatBegan phase = do
-  started <- startStep phase
-  Foldable.for_ started $ \grants -> do
-    Monad.when grants priorityLoop
-    endStep phase
+runStepThatBegan phase = startStep phase >>= finishBegunStep phase
+
+-- A begun step's priority window, if it grants one, then its end: nothing if
+-- the game ended as it began (startStep's Nothing).
+finishBegunStep :: Phase.Phase -> Maybe Bool -> Game ()
+finishBegunStep phase started = Foldable.for_ started $ \grants -> do
+  Monad.when grants priorityLoop
+  endStep phase
+
+-- | The rest of the game from a combat declaration: the step's turn-based
+-- action run again, the step finished, and play on to a result. A search bot
+-- restarts a sampled world here (Parun.Play.Search). Only the first
+-- declaration of a declare attackers or declare blockers step (CR 508.1,
+-- 509.1) resumes right: Combat.declareAttackers and Combat.declareBlockers
+-- change nothing before asking it but what they set again. Not one inside a
+-- subgame or a turn marker's unit, and not a later defending player's.
+resumeTurnBasedAction :: Game Result
+resumeTurnBasedAction = do
+  phase <- State.gets (TurnRegisters.phase . GameState.turn)
+  runTurnBasedActions phase
+  afterTurnBasedActions phase >>= finishBegunStep phase
+  playGame
 
 -- Everything a step does before its priority window: Nothing if the game ended
 -- first, else whether the step grants priority (CR 117.3a).
@@ -2957,6 +2974,12 @@ startStep phase = do
   -- 500.11) never begins, so the duration runs on to the next one that does.
   State.gets Turn.activePlayers >>= Monad.mapM_ (State.modify' . Expiry.sweep . Expiry.StepOf . StepBegan.MkStepBegan phase)
   runTurnBasedActions phase
+  afterTurnBasedActions phase
+
+-- Everything a step does between its turn-based actions and its priority
+-- window: startStep's answer.
+afterTurnBasedActions :: Phase.Phase -> Game (Maybe Bool)
+afterTurnBasedActions phase = do
   -- Asked BEFORE the CR 704.3 check below. For every step but one the order is
   -- free -- this line is pure there -- and for the cleanup step it is forced: CR
   -- 704.3's last sentence keys that step's outcome to the step's FIRST check, so
