@@ -4714,7 +4714,9 @@ apply settle batch applied batchPrevented candidate event =
       -- still made beside a Dragon, per the card's ruling that revealing while
       -- controlling one still gives a single counter:
       -- data/scenarios/dragons-disciple-declining-the-reveal-beside-a-dragon-still-enters-with-a-counter.json
-      -- proves it.
+      -- proves the offer, and
+      -- data/scenarios/dragons-disciple-revealing-a-dragon-card-beside-a-dragon-enters-with-one-counter.json
+      -- the single counter.
       EntryRewrite.OrTapped (OrTapped.MkOrTapped price unless_ counters) -> do
         Replacement.consume (ReplacementCandidate.identity candidate)
         gs <- State.get

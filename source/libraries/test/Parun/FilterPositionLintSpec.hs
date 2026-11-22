@@ -1339,7 +1339,9 @@ pooledAtom atom = case atom of
 -- Parun.Engine.Event.Match reads through framedByBindings off the game the
 -- cast left (`atEvent`).
 -- A Bound name there reads the trigger's bindings, empty for a printed
--- trigger, so it stays an offence.
+-- trigger, so it stays an offence. So does a pooled atom in a trigger that
+-- also counts casts: Match.castOrdinal matches the earlier casts against the
+-- live pools, not `atEvent`'s.
 framedNameCounts :: Surveyed -> (Int, Int)
 framedNameCounts card =
   let total wanted = sum (fmap (\(_, f) -> framedNameAtoms (atomJson f)) (filter (\(framing, _) -> elem framing [InTargetSlot, SearchFramed, HandSweepFramed, ResolutionAmountFramed, SourceHostFramed, InterveningFramed, ClauseGateFramed] == wanted) (surveyedFilters card)))
@@ -1348,8 +1350,9 @@ framedNameCounts card =
           + sum (fmap (pooledAtoms . atomJson) (castTriggerCriteria (surveyedFace card)))
    in (total True + inside, total False - inside)
 
--- The spell filters of this face's printed CR 601.2i cast triggers, each among
--- cardFilters' TriggerConditionFramed positions.
+-- The spell filters of this face's printed CR 601.2i cast triggers that count
+-- no casts (no SpellCast.ordinal), each among cardFilters'
+-- TriggerConditionFramed positions.
 castTriggerCriteria :: Face.Face Card.Type.Card -> [Filter.Type.Filter Keyword.Keyword]
 castTriggerCriteria card =
   let casts condition = case condition of
@@ -1359,6 +1362,7 @@ castTriggerCriteria card =
    in [ f
       | ability <- Face.triggeredAbilities card,
         cast <- casts (TriggeredAbility.condition ability),
+        Maybe.isNothing (SpellCast.ordinal cast),
         ActingPermanent.Matching f <- [SpellCast.spell cast]
       ]
 
@@ -2211,9 +2215,9 @@ filterPositionLintSpec s registry corpus = Spec.describe s "Lint" $ do
   -- their arms take their context from the resolution (Parun.ResolveSpec's
   -- Bifurcate, Hour of Glory and Grim Reminder cases; Legion's End's scenario),
   -- an activated ability's discard cost criterion (framedNameCounts; Key to
-  -- the Side-Door's scenario), and, for the pooled atoms alone, a cast
-  -- trigger's spell filter (castTriggerCriteria; Volo, Guide to Monsters's
-  -- scenarios). That set
+  -- the Side-Door's scenario), and, for the pooled atoms alone, the spell
+  -- filter of a cast trigger with no ordinal (castTriggerCriteria; Volo, Guide
+  -- to Monsters's scenarios). That set
   -- is narrower than the set that would answer -- framedNameCounts says why
   -- -- so this rejects in the safe direction only. See framedNameOffends
   -- for the two offences and Framing for why CR 303.4a's enchant slot is not one
@@ -2271,6 +2275,13 @@ filterPositionLintSpec s registry corpus = Spec.describe s "Lint" $ do
           other -> other
         rebound = voloFace {Face.triggeredAbilities = fmap (\ability -> ability {TriggeredAbility.condition = rebind (TriggeredAbility.condition ability)}) (Face.triggeredAbilities voloFace)}
     Spec.assertEqWith s "a Bound name in Volo's cast trigger is an offence" (framedNameCounts (survey rebound)) (0, 1)
+    -- And so are its own pooled atoms once the trigger counts casts: the
+    -- ordinal reads the earlier casts' pools live (Match.castOrdinal).
+    let countCasts condition = case condition of
+          TriggerCondition.SpellCast cast -> TriggerCondition.SpellCast cast {SpellCast.ordinal = Just 2}
+          other -> other
+        counting = voloFace {Face.triggeredAbilities = fmap (\ability -> ability {TriggeredAbility.condition = countCasts (TriggeredAbility.condition ability)}) (Face.triggeredAbilities voloFace)}
+    Spec.assertEqWith s "Volo's pooled atoms in a cast trigger with an ordinal are an offence" (framedNameCounts (survey counting)) (0, 2)
     -- Both sides of the split, with room to spare under the pool's real figures:
     -- a traversal that had stopped walking, or a Framing that had stopped marking
     -- target slots, would fail here rather than pass the sweep above by iterating
