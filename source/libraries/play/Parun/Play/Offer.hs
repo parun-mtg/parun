@@ -466,8 +466,9 @@ rerollQuestion self offer = do
   pure (which <> foldMap (\cost -> Text.pack " Cost: " <> candidateName self cost <> Text.pack ".") (Protocol.field "cost" offer))
 
 -- | CR 706.4: a result Prompt.ChooseDieResult offers, beside what its
--- `carries` entry tells: who threw it, where another player did, and each
--- natural result and event it carries, an unwitnessed one as unseen.
+-- `carries` entry tells: who threw it, where another player did, each
+-- natural result and event it carries, an unwitnessed one as unseen, and the
+-- places of the roll's rerolls it carries.
 resultName :: PlayerView.PlayerView -> R.Reply -> R.Reply -> Text.Text
 resultName view result carry =
   let seat = fmap PlayerId.MkPlayerId (Protocol.field "thrower" carry >>= textOf >>= Read.readMaybe . Text.unpack)
@@ -479,7 +480,8 @@ resultName view result carry =
           DieResult.reading r == RollReading.NaturalResult =
             who (DieResult.roller r) <> Text.pack (" rolled " <> show (DieResult.result r))
         | otherwise = entryName view reply
-      notes = thrower <> foldMap (fmap event) (Protocol.field "events" carry >>= Protocol.arrayOf)
+      rerolls = [Text.pack ("from the roll's reroll " <> show place) | Just places <- [Protocol.field "rerolls" carry >>= Protocol.arrayOf], Just place <- fmap Protocol.naturalOf places]
+      notes = thrower <> foldMap (fmap event) (Protocol.field "events" carry >>= Protocol.arrayOf) <> rerolls
    in optionName view result <> (if null notes then Text.empty else Text.pack " (" <> Text.intercalate (Text.pack "; ") notes <> Text.pack ")")
 
 -- | An amount-per-item offer's shape with these amounts in amountLeaves'

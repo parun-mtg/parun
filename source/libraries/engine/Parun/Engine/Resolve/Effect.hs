@@ -1374,6 +1374,9 @@ throwSettled runSubgame roll perDie = do
       -- scenario cr-706-2b-the-roller-turns-to-another-die-before-a-reroll-s-ignore
       -- proves it.
       rethrow by key count = do
+        -- What tells this reroll apart from the roll's others where a CR 706.6
+        -- tie asks between dice carrying them: when it was made (`asOption`).
+        stamp <- State.state Game.freshTimestamp
         -- The planar die past CR 614.1a's loop: every printed row reads a
         -- number (Parun.Engine.Replacement's DieRollR arm).
         settled <-
@@ -1388,14 +1391,14 @@ throwSettled runSubgame roll perDie = do
           -- reroll was flipped").
           Left flipped -> do
             landed <- State.gets Trigger.battlefieldCandidates
-            pure (fmap (\(result, event) -> opened False by result (\(thrower, natural, rolls, pending) -> (thrower, natural, rolls, foldMap (\e -> [(Nothing, Left e, landed)]) event <> pending))) (padded (1, Nothing) (fmap (fmap Just) flipped)))
+            pure (fmap (\(result, event) -> opened False by result (\(thrower, natural, rolls, pending) -> (thrower, natural, rolls, foldMap (\e -> [(stamp, Nothing, Left e, landed)]) event <> pending))) (padded (1, Nothing) (fmap (fmap Just) flipped)))
           Right again
             -- One die per unit and none ignored: nothing the reroll decides
             -- waits on its dice's offers, so they join the roll's.
             | all (== 1) (Throw.units again) && Throw.ignored again == 0 && not (Throw.instead again) -> do
                 faces <- traverse (const (fmap faceOf (Game.ask (Prompt.RollDie sides)))) (Foldable.toList (Throw.units again))
                 landed <- State.gets Trigger.battlefieldCandidates
-                pure (padded (DoneDie (by, 1, [], [])) (fmap (\face -> opened numbered (Throw.thrower again) face (rerolled again (Just (face, landed)))) faces))
+                pure (padded (DoneDie (by, 1, [], [])) (fmap (\face -> opened numbered (Throw.thrower again) face (rerolled stamp again (Just (face, landed)))) faces))
           Right again -> do
             (thrownFaces, landed, dice) <- throwing again
             -- `count` kept: every die a row adds comes with an ignore. A d20
@@ -1412,12 +1415,12 @@ throwSettled runSubgame roll perDie = do
             -- board it came up on, rather than with the die's first roll.
             let keeping done = do
                   kept <- settling False again (pure 0) thrownFaces landed done
-                  pure (padded (by, 1, [], []) (fmap (\((total, thrower, faces, pending), face) -> rerolled again face (thrower, Integer.toNaturalSaturating total, faces, pending)) kept))
+                  pure (padded (by, 1, [], []) (fmap (\((total, thrower, faces, pending), face) -> rerolled stamp again face (thrower, Integer.toNaturalSaturating total, faces, pending)) kept))
             pure [RerolledDice dice keeping]
         where
           -- Defensive: a short answer is filled with a die of 1.
           padded filler xs = take (Natural.toIntSaturating count) (xs <> repeat filler)
-          rerolled again face (thrower, natural, faces, pending) = (thrower, readBack again natural, [], pending <> foldMap (\(came, landed) -> (key, Right (by, came), landed) : fmap (\(who, shown) -> (Nothing, Left (Common.settledResult RollReading.NaturalResult who shown), landed)) faces) face)
+          rerolled stamp again face (thrower, natural, faces, pending) = (thrower, readBack again natural, [], pending <> foldMap (\(came, landed) -> (stamp, key, Right (by, came), landed) : fmap (\(who, shown) -> (stamp, Nothing, Left (Common.settledResult RollReading.NaturalResult who shown), landed)) faces) face)
       -- CR 706.1's event for each reroll a kept die carries, once the roll's
       -- own CR 706.6 ignore is done: a die it ignores "never happened", so
       -- neither did its rerolls, and "no abilities trigger because of the
@@ -1455,11 +1458,11 @@ throwSettled runSubgame roll perDie = do
           settled by face landed = [(Common.settledResult RollReading.FinalResult by face, landed) | numbered]
           groups seen entries = case entries of
             [] -> []
-            (_, Left event, landed) : rest -> (event, landed) : groups seen rest
-            (Nothing, Right (by, face), landed) : rest -> (rolled by face, landed) : settled by face landed <> groups seen rest
-            (Just key, Right (by, face), landed) : rest
+            (_, _, Left event, landed) : rest -> (event, landed) : groups seen rest
+            (_, Nothing, Right (by, face), landed) : rest -> (rolled by face, landed) : settled by face landed <> groups seen rest
+            (_, Just key, Right (by, face), landed) : rest
               | Set.member key seen -> settled by face landed <> groups seen rest
-              | otherwise -> (rolled by (Foldable.foldl' max face [other | (Just k, Right (_, other), _) <- rest, k == key]), landed) : settled by face landed <> groups (Set.insert key seen) rest
+              | otherwise -> (rolled by (Foldable.foldl' max face [other | (_, Just k, Right (_, other), _) <- rest, k == key]), landed) : settled by face landed <> groups (Set.insert key seen) rest
       rethrowOne by = fmap (Maybe.fromMaybe (DoneDie (by, 1, [], [])) . Maybe.listToMaybe) (rethrow by Nothing (1 :: Natural))
       readBack again natural = if Throw.instead again then maybe natural Event.resultOfFace (Event.faceOfResult natural) else natural
       -- Whether an offer can still go through: a static offer's budget admits
@@ -1632,9 +1635,10 @@ throwSettled runSubgame roll perDie = do
       -- ignore". Through Prompt.ChooseDieResult, CR 706.4's question of which
       -- result to use; elided where they agree, since no board can tell the
       -- answers apart: the same number thrown by the same player with the same
-      -- face. Each option is shown with its thrower and the natural results
-      -- and coins it carries (`asOption`), which is what tells apart options
-      -- reading the same number, Dice.ignoreLowest's posture.
+      -- face. Each option is shown with its thrower, the natural results and
+      -- coins it carries, and when each reroll it carries was made
+      -- (`asOption`), which is what tells apart options reading the same
+      -- number, Dice.ignoreLowest's posture.
       -- FILTERED, NOT TRUSTED: an index past the end keeps the first die.
       --
       -- Each die keeps the player who threw its final natural result, which a
@@ -1682,21 +1686,32 @@ throwSettled runSubgame roll perDie = do
           -- cannot reach zero resizes it. Defensive: a die of 1.
           Nothing -> pure ((1, Throw.thrower settled, [], []), Nothing)
           Just offered
-            | all (== NonEmpty.head offered) (NonEmpty.tail offered) -> pure (NonEmpty.head offered)
+            | all ((== unstamped (NonEmpty.head offered)) . unstamped) (NonEmpty.tail offered) -> pure (NonEmpty.head offered)
             | otherwise -> do
                 gs <- State.get
-                answer <- Game.choose (Prompt.ChooseDieResult (Decide.deciderFor (Throw.thrower settled) gs) (Throw.thrower settled) Nothing (fmap (asOption (Throw.thrower settled)) offered))
+                answer <- Game.choose (Prompt.ChooseDieResult (Decide.deciderFor (Throw.thrower settled) gs) (Throw.thrower settled) Nothing (fmap (asOption (Throw.thrower settled) (rerollsOf dice)) offered))
                 pure (Replacement.at dice answer (NonEmpty.head offered))
-        Dice.ignoreLowest (Throw.thrower settled) (\((total, _, _, _), _) -> total) (\((_, thrower, rolls, pending), face) -> (thrower, rolls, pending, face)) (asOption (Throw.thrower settled)) (Throw.ignored settled) picked
+        Dice.ignoreLowest (Throw.thrower settled) (\((total, _, _, _), _) -> total) (\die -> let ((_, thrower, rolls, pending), face) = unstamped die in (thrower, rolls, pending, face)) (asOption (Throw.thrower settled) (rerollsOf picked)) (Throw.ignored settled) picked
+      -- A die without when its rerolls were made, which only `asOption`
+      -- reads: the board each came up on and the group it records under are
+      -- what a card can tell, and two rerolls alike in both record alike.
+      unstamped ((total, thrower, rolls, pending), face) = ((total, thrower, rolls, fmap (\(_, key, entry, landed) -> (key, entry, landed)) pending), face)
+      -- The rerolls the dice carry, in the order they were made.
+      rerollsOf dice = Set.toAscList (Set.fromList [stamp | ((_, _, _, pending), _) <- dice, (stamp, _, _, _) <- pending])
       -- One die as Prompt.ChooseDieResult shows it: its number, its thrower,
-      -- and as natural-result events the face it was thrown with by `by`, the
-      -- results it came up and the rerolls it carries, beside a coin's event.
-      asOption by ((total, thrower, rolls, pending), face) =
+      -- as natural-result events the face it was thrown with by `by`, the
+      -- results it came up and the rerolls it carries, beside a coin's event,
+      -- and each reroll it carries as its place among `made`, the rerolls of
+      -- the dice offered beside it. Rerolls differing in board or group are
+      -- different rerolls, so the places tell apart dice Dice.ignoreLowest's
+      -- key does.
+      asOption by made ((total, thrower, rolls, pending), face) =
         ( Integer.toNaturalSaturating total,
           thrower,
           foldMap (\(came, _) -> [Common.settledResult RollReading.NaturalResult by came]) face
             <> fmap (uncurry (Common.settledResult RollReading.NaturalResult)) rolls
-            <> fmap (\(_, entry, _) -> either id (uncurry (Common.settledResult RollReading.NaturalResult)) entry) pending
+            <> fmap (\(_, _, entry, _) -> either id (uncurry (Common.settledResult RollReading.NaturalResult)) entry) pending,
+          [place | (place, stamp) <- zip [1 ..] made, any (\(carried, _, _, _) -> carried == stamp) pending]
         )
   (thrownFaces, landed, dice) <- throwing roll
   kept <- offeringAll dice >>= settling True roll perDie thrownFaces landed
