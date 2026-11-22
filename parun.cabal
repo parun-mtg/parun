@@ -3281,6 +3281,7 @@ library types
     Parun.Types.CostPortion
     Parun.Types.CostReduction
     Parun.Types.CostScale
+    Parun.Types.CostStep
     Parun.Types.CostSubject
     Parun.Types.CouldProduce
     Parun.Types.Count

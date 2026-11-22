@@ -2520,7 +2520,7 @@ perforatingSpec s registry =
       -- her ChooseCost told her and picks the option it says bob paid with.
       copying :: Bool -> Prompt.Prompt r -> State.State [[(PlayerId.PlayerId, PayerAnswer.PayerAnswer)]] r
       copying bobSacrifices p = case p of
-        Prompt.ChooseCost (Decider.MkDecider d) player _ candidates earlier | d == player -> do
+        Prompt.ChooseCost (Decider.MkDecider d) player _ candidates earlier _ | d == player -> do
           Monad.when (player == S.carol) (State.modify' (<> [Foldable.toList earlier]))
           let wanted
                 | player == S.bob = bobSacrifices
@@ -2554,7 +2554,7 @@ perforatingSpec s registry =
           let (islandId, held) = S.addHandCard island S.carol onStack
               discarding :: Prompt.Prompt r -> State.State [[(PlayerId.PlayerId, Set.Set ObjectId.ObjectId)]] r
               discarding p = case p of
-                Prompt.ChooseCost (Decider.MkDecider d) player _ candidates _ | d == player -> pure (Maybe.fromMaybe (S.identityAnswer p) (List.find ((== (player == S.bob)) . sacrifices . CandidateCost.cost) candidates))
+                Prompt.ChooseCost (Decider.MkDecider d) player _ candidates _ _ | d == player -> pure (Maybe.fromMaybe (S.identityAnswer p) (List.find ((== (player == S.bob)) . sacrifices . CandidateCost.cost) candidates))
                 Prompt.ChooseToPay (Decider.MkDecider d) player _ _ _ _ | d == player -> pure PaymentDecision.Pays
                 Prompt.ChooseDiscard (Decider.MkDecider d) player cards _ earlier | d == player && player == S.carol -> do
                   State.modify' (<> [Foldable.toList earlier])
@@ -2645,7 +2645,7 @@ tormentSpec s registry =
         pure (other, S.runPure aim gs (S.cast S.alice tormentId))
       logging :: Int -> PaymentDecision.PaymentDecision -> Prompt.Prompt r -> State.State [Either Int (Cost.Type.Cost Keyword.Keyword)] r
       logging pick decision p = case p of
-        Prompt.ChooseCost (Decider.MkDecider d) player _ candidates _ | d == player && player == S.bob -> do
+        Prompt.ChooseCost (Decider.MkDecider d) player _ candidates _ _ | d == player && player == S.bob -> do
           State.modify' (<> [Left (length candidates)])
           pure
             ( case drop pick candidates of

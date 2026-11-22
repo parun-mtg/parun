@@ -49,6 +49,7 @@ import qualified Parun.Types.AnyNumberOf as AnyNumberOf
 import qualified Parun.Types.Asked as Asked
 import qualified Parun.Types.AttackTarget as AttackTarget
 import qualified Parun.Types.BeginningStep as BeginningStep
+import qualified Parun.Types.CandidateCost as CandidateCost
 import qualified Parun.Types.Card as Card.Type
 import qualified Parun.Types.CardName as CardName
 import qualified Parun.Types.CastFromZone as CastFromZone
@@ -58,6 +59,7 @@ import qualified Parun.Types.Combat as Combat
 import qualified Parun.Types.CombatStep as CombatStep
 import qualified Parun.Types.CommandZoneDecision as CommandZoneDecision
 import qualified Parun.Types.Cost as Cost
+import qualified Parun.Types.CostStep as CostStep
 import qualified Parun.Types.CounterKind as CounterKind
 import qualified Parun.Types.CounterKindFor as CounterKindFor
 import qualified Parun.Types.Daytime as Daytime
@@ -107,6 +109,7 @@ import qualified Parun.Types.Reply as R
 import qualified Parun.Types.Request as Request
 import qualified Parun.Types.RollReading as RollReading
 import qualified Parun.Types.RoomHalf as RoomHalf
+import qualified Parun.Types.Scratch as Scratch
 import qualified Parun.Types.SeatView as SeatView
 import qualified Parun.Types.Settle as Settle
 import qualified Parun.Types.SlotName as SlotName
@@ -196,6 +199,17 @@ spec s registry = Spec.describe s "WebQuestion" $ do
         cancel = let view = Question.Web.view withdrawing Question.Web.blank in Html.labelled (Text.pack "button") (Text.pack "Cancel") view >>= \path -> Html.handler (Text.pack "click") path view
     Spec.assertEqWith s "Cancel withdraws" cancel (Just (Question.Web.MkAnswer withdrawal))
     Spec.assertBool s (not (Text.pack ">Cancel</button>" `Text.isInfixOf` Html.toText (Question.Web.view request Question.Web.blank))) "no Cancel without a withdrawal"
+
+  Spec.it s "CR 734.1 a choice of cost at CR 601.2b offers a Cancel answering one past the costs" $ do
+    mastery <- S.printingOf s registry "Baleful Mastery"
+    let (card, g1) = S.addHandCard mastery S.alice (Setup.emptyGame S.bothPlayers)
+        announcing = g1 {GameState.scratch = (GameState.scratch g1) {Scratch.keptFaceDown = Just Map.empty}}
+        costOf symbols = CandidateCost.plain Nothing (Cost.MkCost (Just (ManaCost.MkManaCost symbols)) [])
+        prompt = Prompt.ChooseCost (Decider.MkDecider S.alice) S.alice card [costOf [ManaSymbol.Generic 4], costOf [ManaSymbol.Generic 2]] Seq.empty CostStep.Announcement
+        cancel request = let view = Question.Web.view request Question.Web.blank in Html.labelled (Text.pack "button") (Text.pack "Cancel") view >>= \path -> Html.handler (Text.pack "click") path view
+    Spec.assertEqWith s "Cancel withdraws" (cancel (requestFor announcing prompt)) (Just (Question.Web.MkAnswer (R.Number 2)))
+    Spec.assertEqWith s "and reads as the unpayable cost" (Protocol.decodeAnswer prompt (R.Number 2)) (Right CandidateCost.unpayable)
+    Spec.assertEqWith s "no Cancel outside an announcement" (cancel (requestFor g1 prompt)) Nothing
 
   Spec.it s "CR 122.1 an amount per permanent within the offer's total, refused outside it" $ do
     bears <- S.printingOf s registry "Grizzly Bears"

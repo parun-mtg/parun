@@ -38,6 +38,7 @@ import qualified Parun.Types.Concession as Concession
 import qualified Parun.Types.Cost as Cost.Type
 import qualified Parun.Types.CostAmount as CostAmount
 import qualified Parun.Types.CostComponent as CostComponent
+import qualified Parun.Types.CostStep as CostStep
 import qualified Parun.Types.CounterKind as CounterKind
 import qualified Parun.Types.CounterKindFor as CounterKindFor
 import qualified Parun.Types.CounterSpread as CounterSpread
@@ -927,7 +928,7 @@ combatReplaySpec s =
         Spec.it s "ChooseCost records and replays a Cost" $ do
           let printed = CandidateCost.plain Nothing (Cost.Type.MkCost (Just (ManaCost.MkManaCost [ManaSymbol.Generic 4])) [])
               alternative = CandidateCost.plain Nothing (Cost.Type.MkCost (Just (ManaCost.MkManaCost [])) [CostComponent.SacrificeThis])
-              p = Prompt.ChooseCost decider S.alice oid [printed, alternative] Seq.empty
+              p = Prompt.ChooseCost decider S.alice oid [printed, alternative] Seq.empty CostStep.Announcement
           Spec.assertEqWith s "round trip" (Replay.decode p (Replay.encode p alternative)) (Just alternative)
         Spec.it s "defaultAnswer takes the first offered cost (the printed one)" $ do
           let printed = CandidateCost.plain Nothing (Cost.Type.MkCost (Just (ManaCost.MkManaCost [ManaSymbol.Generic 4])) [])
@@ -935,7 +936,7 @@ combatReplaySpec s =
           Spec.assertEqWith
             s
             "the printed one"
-            (Replay.defaultAnswer (Prompt.ChooseCost decider S.alice oid [printed, alternative] Seq.empty))
+            (Replay.defaultAnswer (Prompt.ChooseCost decider S.alice oid [printed, alternative] Seq.empty CostStep.Announcement))
             printed
         -- #136 / CR 730.2: "Randomly determine which player goes first." The
         -- determination is randomness, not a choice, so the prompt carries NO

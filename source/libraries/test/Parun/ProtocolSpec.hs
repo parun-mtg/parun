@@ -68,6 +68,7 @@ import qualified Parun.Types.Combat as Combat.Type
 import qualified Parun.Types.Comparison as Comparison
 import qualified Parun.Types.Cost as Cost.Type
 import qualified Parun.Types.CostComponent as CostComponent
+import qualified Parun.Types.CostStep as CostStep
 import qualified Parun.Types.CounterKind as CounterKind
 import qualified Parun.Types.CounterSpread as CounterSpread
 import qualified Parun.Types.DamageEvent as DamageEvent
@@ -241,7 +242,7 @@ spec s registry = Spec.describe s "Protocol" $ do
         cost = Cost.Type.MkCost (Just (ManaCost.MkManaCost [ManaSymbol.Generic 2])) []
         blitz = Keyword.Blitz cost
         earlier = Seq.fromList [(S.bob, PayerAnswer.Paid cost (Set.singleton taken)), (S.alice, PayerAnswer.Declined)]
-        choosing = PromptOffer.offerOf Protocol.namer gs (Prompt.ChooseCost (Decider.MkDecider S.alice) S.alice oid [CandidateCost.plain Nothing cost, CandidateCost.plain (Just blitz) cost] earlier)
+        choosing = PromptOffer.offerOf Protocol.namer gs (Prompt.ChooseCost (Decider.MkDecider S.alice) S.alice oid [CandidateCost.plain Nothing cost, CandidateCost.plain (Just blitz) cost] earlier CostStep.Elsewhere)
         paying = PromptOffer.offerOf Protocol.namer gs (Prompt.ChooseToPay (Decider.MkDecider S.alice) S.alice oid PayOffer.InsteadOfDraw cost earlier)
         player p = R.Text (Text.pack (show (PlayerId.unwrap p)))
         told = R.Array [R.Array [player S.bob, R.Array [PromptOffer.payment Protocol.namer cost, R.Array [PromptOffer.object Protocol.namer taken]]], R.Array [player S.alice, R.Null]]
@@ -251,13 +252,13 @@ spec s registry = Spec.describe s "Protocol" $ do
     Spec.assertEqWith s "CR 101.4b earlier payers of an offer to pay" (field "earlier" paying) (Just told)
     -- CR 603.7g: the delayed ability a candidate creates, only where one does.
     let named = AbilityName.MkAbilityName (Text.pack "sacrifice it")
-        arming = PromptOffer.offerOf Protocol.namer gs (Prompt.ChooseCost (Decider.MkDecider S.alice) S.alice oid [CandidateCost.plain Nothing cost, (CandidateCost.plain Nothing cost) {CandidateCost.arms = Just named}] Seq.empty)
+        arming = PromptOffer.offerOf Protocol.namer gs (Prompt.ChooseCost (Decider.MkDecider S.alice) S.alice oid [CandidateCost.plain Nothing cost, (CandidateCost.plain Nothing cost) {CandidateCost.arms = Just named}] Seq.empty CostStep.Elsewhere)
     Spec.assertEqWith s "CR 603.7g the delayed abilities" (field "arming" arming) (Just (R.Array [R.Null, R.Text (Text.pack "sacrifice it")]))
     Spec.assertEqWith s "and none where no candidate creates one" (field "arming" choosing) Nothing
     -- CR 118.9: the object whose budgeted grant a candidate spends, only where one does.
     let space = ObjectId.MkObjectId 8
         grant = FreeCast.MkFreeCast (Filter.Type.IsInZone Zone.Exile) (ManaCost.MkManaCost []) [] Nothing Nothing Nothing PermissionLimit.OnceEachTurn
-        spending = PromptOffer.offerOf Protocol.namer gs (Prompt.ChooseCost (Decider.MkDecider S.alice) S.alice oid [CandidateCost.plain Nothing cost, (CandidateCost.plain Nothing cost) {CandidateCost.granted = Just (Just (space, grant))}] Seq.empty)
+        spending = PromptOffer.offerOf Protocol.namer gs (Prompt.ChooseCost (Decider.MkDecider S.alice) S.alice oid [CandidateCost.plain Nothing cost, (CandidateCost.plain Nothing cost) {CandidateCost.granted = Just (Just (space, grant))}] Seq.empty CostStep.Elsewhere)
     Spec.assertEqWith s "CR 118.9 the budgets spent" (field "spending" spending) (Just (R.Array [R.Null, Reply.encode Reply.object Protocol.namer space]))
     Spec.assertEqWith s "and none where no candidate spends one" (field "spending" choosing) Nothing
 
@@ -715,6 +716,15 @@ spec s registry = Spec.describe s "Protocol" $ do
     let (lands, g1) = addPermanents [mountain, mountain] gs
         (card, board) = S.addHandCard chalice S.alice g1
     assertWithdrawn s "ChooseKicker" card lands board
+  Spec.it s "CR 734.1 a seat withdraws a spell at its cost" $ do
+    gs <- started s registry
+    mastery <- S.printingOf s registry "Baleful Mastery"
+    swamp <- S.printingOf s registry "Swamp"
+    bears <- S.printingOf s registry "Grizzly Bears"
+    let (lands, g1) = addPermanents (replicate 4 swamp) gs
+        (_, g2) = S.addPermanent bears S.bob g1
+        (card, board) = S.addHandCard mastery S.alice g2
+    assertWithdrawn s "ChooseCost" card lands board
   Spec.it s "CR 734.1 a seat withdraws a spell at its X" $ do
     gs <- started s registry
     fireball <- S.printingOf s registry "Fireball"
@@ -759,6 +769,15 @@ spec s registry = Spec.describe s "Protocol" $ do
         announcing = g1 {GameState.scratch = (GameState.scratch g1) {Scratch.keptFaceDown = Just Map.empty}}
         prompt = Prompt.ChooseX (Decider.MkDecider S.alice) S.alice oid Binding.variableX 0 0
     Spec.assertEqWith s "a battlefield object's X" (fmap Question.withdraw (Protocol.questionOf announcing prompt)) (Just Nothing)
+  Spec.it s "CR 734.1 no withdrawal is offered at a substitute its payment asks" $ do
+    gs <- started s registry
+    wurm <- S.printingOf s registry "Siege Wurm"
+    let (card, g1) = S.addHandCard wurm S.alice gs
+        announcing = g1 {GameState.scratch = (GameState.scratch g1) {Scratch.keptFaceDown = Just Map.empty}}
+        costOf n = CandidateCost.plain Nothing (Cost.Type.MkCost (Just (ManaCost.MkManaCost [ManaSymbol.Generic n])) [])
+        asked step = fmap Question.withdraw (Protocol.questionOf announcing (Prompt.ChooseCost (Decider.MkDecider S.alice) S.alice card [costOf 7, costOf 6] Seq.empty step))
+    Spec.assertEqWith s "a convoke's choice" (asked CostStep.Elsewhere) (Just Nothing)
+    Spec.assertEqWith s "where the announcement's is offered one" (asked CostStep.Announcement) (Just (Just (R.Number 2)))
   Spec.it s "CR 734.1 no withdrawal is offered outside an announcement" $ do
     gs <- started s registry
     let slot = SlotName.MkSlotName (Text.pack "target")

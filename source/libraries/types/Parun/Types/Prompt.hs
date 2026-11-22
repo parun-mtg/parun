@@ -28,6 +28,7 @@ import qualified Parun.Types.Comparison as Comparison
 import qualified Parun.Types.Concession as Concession
 import qualified Parun.Types.Cost as Cost
 import qualified Parun.Types.CostComponent as CostComponent
+import qualified Parun.Types.CostStep as CostStep
 import qualified Parun.Types.CounterKind as CounterKind
 import qualified Parun.Types.CounterKindFor as CounterKindFor
 import qualified Parun.Types.CounterSpread as CounterSpread
@@ -969,8 +970,9 @@ data Prompt r where
   -- payability at the first four, and an answer outside them is rejected.
   -- Each carries the keyword ability that offered it, so two equal costs
   -- offered by different abilities are two answers (CR 601.2b, 702.152a).
-  -- The Seq is ChooseToPay's, empty at every moment but the first.
-  ChooseCost :: Decider.Decider -> PlayerId.PlayerId -> ObjectId.ObjectId -> [CandidateCost.CandidateCost] -> Seq.Seq (PlayerId.PlayerId, PayerAnswer.PayerAnswer) -> Prompt CandidateCost.CandidateCost
+  -- The Seq is ChooseToPay's, empty at every moment but the first; the
+  -- CostStep says whether this is CR 601.2b's moment.
+  ChooseCost :: Decider.Decider -> PlayerId.PlayerId -> ObjectId.ObjectId -> [CandidateCost.CandidateCost] -> Seq.Seq (PlayerId.PlayerId, PayerAnswer.PayerAnswer) -> CostStep.CostStep -> Prompt CandidateCost.CandidateCost
   -- | CR 601.3 / 305.1: which of the permissions admitting a play of the
   -- ObjectId it is made under (Nothing = none of them); asked only where two
   -- would differ in the budget spent or the rider given (CR 400.7h, 400.7i).

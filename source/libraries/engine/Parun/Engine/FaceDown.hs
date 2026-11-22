@@ -52,6 +52,7 @@ import qualified Parun.Types.CardType as CardType
 import Parun.Types.Cost (Cost)
 import qualified Parun.Types.Cost as Cost.Type
 import Parun.Types.CostAdjustments (CostAdjustments)
+import qualified Parun.Types.CostStep as CostStep
 import qualified Parun.Types.CostedSpecialAction as CostedSpecialAction
 import qualified Parun.Types.Face as Face
 import qualified Parun.Types.FaceDownReason as FaceDownReason
@@ -289,7 +290,7 @@ turnFaceUp perform pid procedure oid = do
         [] -> pure Nothing
         [only] -> pure (Just only)
         offered -> do
-          answer <- Game.choose (Prompt.ChooseCost (Decide.deciderFor pid before) pid oid (fmap Cost.untagged offered) Seq.empty)
+          answer <- Game.choose (Prompt.ChooseCost (Decide.deciderFor pid before) pid oid (fmap Cost.untagged offered) Seq.empty CostStep.Elsewhere)
           pure (List.find ((== answer) . Cost.untagged) offered)
       Monad.forM_ chosen $ \cost -> do
         let (adjustments, adjusted) = turnUpCost procedure pid oid cost before

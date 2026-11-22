@@ -56,6 +56,7 @@ import qualified Parun.Types.CommandZoneDecision as CommandZoneDecision
 import qualified Parun.Types.Comparison as Comparison
 import qualified Parun.Types.Cost as Cost
 import qualified Parun.Types.CostComponent as CostComponent
+import qualified Parun.Types.CostStep as CostStep
 import qualified Parun.Types.CounterKind as CounterKind
 import qualified Parun.Types.CounterKindFor as CounterKindFor
 import qualified Parun.Types.CounterSpread as CounterSpread
@@ -474,7 +475,7 @@ spec s registry = Spec.describe s "Bot" $ do
     Spec.assertEqWith s "sources" (drawn (Prompt.ChooseDamageSource decider S.alice oid candidates)) (Set.fromList (NonEmpty.toList candidates))
     Spec.assertEqWith s "hand" (drawn (Prompt.ChooseCardInHand decider S.alice oid candidates)) (Set.fromList (NonEmpty.toList candidates))
     Spec.assertEqWith s "colors" (drawn (Prompt.ChooseColor decider S.alice oid (Color.Red NonEmpty.:| [Color.Green]))) (Set.fromList [Color.Red, Color.Green])
-    Spec.assertEqWith s "costs" (drawn (Prompt.ChooseCost decider S.alice oid costs Seq.empty)) (Set.fromList costs)
+    Spec.assertEqWith s "costs" (drawn (Prompt.ChooseCost decider S.alice oid costs Seq.empty CostStep.Announcement)) (Set.fromList costs)
     Spec.assertEqWith s "spells" (drawn (Prompt.ChooseOfferedCastSpell decider S.alice casts)) (Set.fromList (NonEmpty.toList casts))
     Spec.assertEqWith s "attacks" (drawn (Prompt.ChooseAttackTarget decider S.alice oid (AttackTarget.OfPlayer S.bob NonEmpty.:| [AttackTarget.OfPlaneswalker (ObjectId.MkObjectId 8)]))) (Set.fromList [AttackTarget.OfPlayer S.bob, AttackTarget.OfPlaneswalker (ObjectId.MkObjectId 8)])
 

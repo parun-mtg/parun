@@ -78,6 +78,7 @@ import Parun.Types.Cost (Cost)
 import qualified Parun.Types.Cost as Cost.Type
 import qualified Parun.Types.CostComponent as CostComponent
 import qualified Parun.Types.CostReduction as CostReduction
+import qualified Parun.Types.CostStep as CostStep
 import qualified Parun.Types.CounterCause as CounterCause
 import qualified Parun.Types.DelayedKind as DelayedKind
 import qualified Parun.Types.DelayedTrigger as DelayedTrigger
@@ -4356,7 +4357,7 @@ castProposed perform baseSpending pid oid sid printedFace castFrom preparedFor k
           -- group proves it.
           chosenCandidate <- case payableCandidates of
             [only] -> pure only
-            _ -> Game.choose (Prompt.ChooseCost decider pid sid payableCandidates Seq.empty)
+            _ -> Game.choose (Prompt.ChooseCost decider pid sid payableCandidates Seq.empty CostStep.Announcement)
           if notElem chosenCandidate payableCandidates
             then reject
             else do
