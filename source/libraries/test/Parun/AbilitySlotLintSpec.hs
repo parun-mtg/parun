@@ -851,6 +851,15 @@ siblingBoundCardOffends :: Face.Face Card.Type.Card -> Bool
 siblingBoundCardOffends face =
   any (any siblingBoundOffends . Modal.modes) (faceModals face <> fmap ActivatedAbility.modal (grantedActivatedAbilities face) <> fmap TriggeredAbility.modal (grantedTriggeredAbilities face))
 
+-- Does a spell or activated ability of this face, printed or granted, have a
+-- mode reading a sibling mode's target slot (Target.crossModeReads)? Only a
+-- trigger's placement weeds the selections no announcement completes
+-- (Target.announceableSelections), and no printed spell or activation writes
+-- one: "each mode must target a different player" is printed on triggers only.
+crossModeCardOffends :: Face.Face Card.Type.Card -> Bool
+crossModeCardOffends face =
+  any Target.crossModeReads (Face.spell face : fmap ActivatedAbility.modal (Face.activatedAbilities face <> grantedActivatedAbilities face))
+
 -- Does this mode write an apart or crowded joint check
 -- Parun.Engine.Cast.castAimable prices only up to Target.subsetBudget
 -- (Target.cappedWalk), or a wide Differing slot beside another slot, which
@@ -1439,6 +1448,23 @@ abilitySlotLintSpec s registry corpus = Spec.describe s "Lint" $ do
     Spec.assertBool s (not (any triggeredAbilityOffends triggers)) "the real card's exclusions are accepted"
     Spec.assertBool s (any (triggeredAbilityOffends . doctored creatorDraws) triggers) "an effect reading the sibling's slot is rejected"
     Spec.assertBool s (any (triggeredAbilityOffends . doctored sameAsCreator) triggers) "and so is a filter reading it other than as an exclusion"
+  -- CR 700.2a: a modal spell or activated ability whose modes exclude each
+  -- other's targets would be offered with selections no announcement
+  -- completes, Target.announceableSelections running for triggers alone.
+  Spec.it s "no spell or activated ability reads a sibling mode's target slot" $ do
+    ps <- S.allPrintings s corpus
+    let offenders = filter (anyFaceOrMinted crossModeCardOffends . Printing.card) ps
+    Spec.assertEqWith s "no spell or activation excludes a sibling mode's target" (fmap (S.nameOf . Printing.card) offenders) []
+  -- The lint itself, on Shadrix Silverquill's modes moved onto its spell and
+  -- onto an activated ability: the trigger is accepted, the moved modes not.
+  Spec.it s "the lint itself catches a spell or activated ability reading a sibling mode's target slot" $ do
+    shadrix <- S.printingOf s registry "Shadrix Silverquill"
+    let face = S.combinedFace shadrix
+        modals = fmap TriggeredAbility.modal (Face.triggeredAbilities face)
+        activated modal = (modalActivated []) {ActivatedAbility.modal = modal}
+    Spec.assertBool s (not (crossModeCardOffends face)) "the real card's trigger is accepted"
+    Spec.assertBool s (any (\modal -> crossModeCardOffends face {Face.spell = modal}) modals) "its modes as a spell are rejected"
+    Spec.assertBool s (any (\modal -> crossModeCardOffends face {Face.activatedAbilities = [activated modal]}) modals) "and as an activated ability"
   -- The same equality on the slot's THIRD read, beside its pool's and its
   -- filter's: CR 202.3's computed bound (Resolve.targetSlotSlots). A bound may
   -- name CR 603.2's "that player" through a PlayerRef buried INSIDE the number --
