@@ -946,6 +946,31 @@ replaySpec s registry = Spec.describe s "WebQuestion" . Spec.describe s "replay"
     Spec.assertBool s (not (marked before)) "the main game is not"
     Spec.assertBool s (marked inside) "the subgame is"
 
+  Spec.it s "CR 405.1 every stack entry says its rules text, then its targets, a spell's keywords among it" $ do
+    -- Entry 3 has Civic Wayfinder's trigger on the stack.
+    stop <- replayed s registry "civic-wayfinder-may-fetch-a-basic-land-card" 2
+    commune <- S.printingOf s registry "Commune with Nature"
+    spider <- S.printingOf s registry "Canopy Spider"
+    let gs = snd (S.spellOnStack spider S.alice (snd (S.spellOnStack commune S.alice (Stop.state stop))))
+        board = PlayerView.viewFor S.alice gs
+        cards = fmap Printing.card [commune, spider]
+        lookUp n = Right (List.find (any ((== n) . Face.name) . Card.Type.faces) cards) :: Either () (Maybe Card.Type.Card)
+        texts = Card.written lookUp board
+        printedOf = foldMap Text.lines . Face.oracleText . NonEmpty.head . Card.Type.faces . Printing.card
+        marks = Board.MkMarks (\o -> Card.MkCue [] (ObjectView.object o) Nothing) (const Nothing)
+        table = Board.view marks texts board
+        lane = maybe Text.empty Html.toText (Html.search (\html -> Text.pack "<div class=\"stack-lane\"" `Text.isPrefixOf` Html.toText html) table >>= (`Html.at` table))
+        detail = [(Wording.nameOf board o, Card.stackDetail texts board o) | o <- PlayerView.Type.stack board]
+    Spec.assertEqWith s "the entries" (fmap fst detail) (fmap Text.pack ["Canopy Spider", "Commune with Nature", "Civic Wayfinder's ability"])
+    case fmap snd detail of
+      [spiderSays, communeSays, trigger] -> do
+        Spec.assertEqWith s "the creature spell's rules text" spiderSays (printedOf spider)
+        Spec.assertEqWith s "the sorcery's rules text" communeSays (printedOf commune)
+        Spec.assertBool s (any (Text.isInfixOf (Text.pack "search your library for a basic land card")) trigger) ("the trigger's: " <> show trigger)
+      other -> Spec.assertFailure s ("expected three entries: " <> show other)
+    Spec.assertBool s (all (\(_, says) -> all ((`Text.isInfixOf` lane) . Text.takeWhile (/= '(')) says) (take 2 detail)) ("the lane shows the spells' text: " <> Text.unpack lane)
+    Spec.assertBool s (not (Text.isInfixOf (Text.pack "Keyword abilities:") lane)) "and no keyword line"
+
   Spec.it s "CR 701.20e Commune with Nature's choices show the five cards looked at" $ do
     let named = "commune-with-nature-takes-a-creature-from-the-top-five"
         asked stop = case stop of
@@ -1019,9 +1044,9 @@ replaySpec s registry = Spec.describe s "WebQuestion" . Spec.describe s "replay"
         said = Text.isInfixOf (Text.pack "On an adventure")
     case (exiled "Cruel Somnophage" after, exiled "Flaxen Intruder" placed) of
       ([(o, b)], [(other, b')]) -> do
-        Spec.assertBool s (said (Html.toText (Board.view marks b))) "its tile"
+        Spec.assertBool s (said (Html.toText (Board.view marks Map.empty b))) "its tile"
         Spec.assertBool s (said (Html.toText (Card.sheet b o (Card.MkReading (ObjectView.object o) [] True) [] (ObjectView.object o)))) "its sheet"
-        Spec.assertBool s (not (said (Html.toText (Board.view marks b')) || ObjectView.onAdventure other)) "not a card merely exiled"
+        Spec.assertBool s (not (said (Html.toText (Board.view marks Map.empty b')) || ObjectView.onAdventure other)) "not a card merely exiled"
       (one, two) -> Spec.assertFailure s ("expected one exiled card in each: " <> show (length one, length two))
 
   Spec.it s "CR 612.2 a Sleight of Mind's swap shows on the Paladin's sheet, and the Clone of it reads as printed" $ do
@@ -1099,7 +1124,7 @@ replaySpec s registry = Spec.describe s "WebQuestion" . Spec.describe s "replay"
     let dealt seat = fmap SeatView.commanderDamage (List.find ((== S.bob) . SeatView.player) (PlayerView.Type.seats (PlayerView.viewFor seat (Stop.state stop))))
         tally = Map.singleton S.alice (Map.singleton (CardName.MkCardName (Text.pack "Kalakscion, Hunger Tyrant")) (14 :: Natural))
         marks = Board.MkMarks (\o -> Card.MkCue [] (ObjectView.object o) Nothing) (const Nothing)
-        page = Html.toText (Board.view marks (boardOf stop))
+        page = Html.toText (Board.view marks Map.empty (boardOf stop))
     Spec.assertEqWith s "bob's seat, as each seat sees it" (dealt S.alice, dealt S.bob) (Just tally, Just tally)
     Spec.assertBool s (Text.isInfixOf (Text.pack "<span class=\"k\">Kalakscion:</span>14 commander damage</span>") page) ("drawn: " <> Text.unpack page)
 
@@ -1109,7 +1134,7 @@ replaySpec s registry = Spec.describe s "WebQuestion" . Spec.describe s "replay"
     stops <- traverse (replayed s registry "commander/cr-903-8-the-second-cast-from-the-command-zone-costs-2-more") [0, 4, 11]
     let taxes seat stop = fmap ObjectView.commanderTax (PlayerView.Type.command (PlayerView.viewFor seat (Stop.state stop)))
         marks = Board.MkMarks (\o -> Card.MkCue [] (ObjectView.object o) Nothing) (const Nothing)
-        drawn stop = Text.isInfixOf (Text.pack ">Tax +4<") (Html.toText (Board.view marks (boardOf stop)))
+        drawn stop = Text.isInfixOf (Text.pack ">Tax +4<") (Html.toText (Board.view marks Map.empty (boardOf stop)))
     Spec.assertEqWith s "alice's" (fmap (taxes S.alice) stops) [[0], [2], [4]]
     Spec.assertEqWith s "bob's" (fmap (taxes S.bob) stops) [[0], [2], [4]]
     Spec.assertEqWith s "drawn on its tile" (fmap drawn stops) [False, False, True]
@@ -1121,7 +1146,7 @@ replaySpec s registry = Spec.describe s "WebQuestion" . Spec.describe s "replay"
         -- Each seat's section of carol's table, by its label, in page order.
         sections gs =
           [ (Text.takeWhile (/= '"') (Text.drop (Text.length label) (snd (Text.breakOn label section))), section)
-          | section <- drop 1 (Text.splitOn (Text.pack "<section class=\"seat ") (Html.toText (Board.view marks (PlayerView.viewFor S.carol gs))))
+          | section <- drop 1 (Text.splitOn (Text.pack "<section class=\"seat ") (Html.toText (Board.view marks Map.empty (PlayerView.viewFor S.carol gs))))
           ]
         label = Text.pack "aria-label=\""
         order gs = fmap fst (sections gs)
@@ -1197,7 +1222,8 @@ frameAt stop =
       Replay.entryLine = Nothing,
       Replay.question = Nothing,
       Replay.failure = Nothing,
-      Replay.reading = Nothing
+      Replay.reading = Nothing,
+      Replay.written = Map.empty
     }
 
 -- | The turn bar of the replay page at the stop.

@@ -138,5 +138,6 @@ frame =
       Replay.entryLine = Nothing,
       Replay.question = Nothing,
       Replay.failure = Nothing,
-      Replay.reading = Nothing
+      Replay.reading = Nothing,
+      Replay.written = Map.empty
     }

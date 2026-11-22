@@ -143,9 +143,10 @@ phaseIndex p = case p of
 
 -- | The table: other seats, the stack, and the seat's own. The others go in
 -- turn order from the seat's, those still in the game only (CR 800.4a), side
--- by side where the screen allows.
-view :: Marks msg -> PlayerView.PlayerView -> Html.Html msg
-view marks board =
+-- by side where the screen allows; each spell on the stack says its text
+-- as `texts` holds it (Card.written).
+view :: Marks msg -> Map.Map ObjectId.ObjectId [Text.Text] -> PlayerView.PlayerView -> Html.Html msg
+view marks texts board =
   let (mine, others) = List.partition ((== PlayerView.viewer board) . SeatView.player) (fromViewer board)
       present = filter ((== Status.Playing) . SeatView.status) others
       across =
@@ -158,7 +159,7 @@ view marks board =
         ]
    in Element.el "div" ["table"] [] $
         across
-          <> stackArea marks board
+          <> stackArea marks texts board
           <> fmap (seatArea marks board True) mine
 
 -- | The seats in turn order (CR 103.1), starting from the viewer's.
@@ -169,8 +170,8 @@ fromViewer board =
 
 -- | The stack, a lane between the seats taking the room they leave; said
 -- empty while it is.
-stackArea :: Marks msg -> PlayerView.PlayerView -> [Html.Html msg]
-stackArea marks board =
+stackArea :: Marks msg -> Map.Map ObjectId.ObjectId [Text.Text] -> PlayerView.PlayerView -> [Html.Html msg]
+stackArea marks texts board =
   [ Element.el "div" ["stack-lane"] [] $ case PlayerView.stack board of
       [] -> [Element.el "p" ["stack-empty", "eyebrow"] [] [Element.string "Stack empty"]]
       items ->
@@ -179,13 +180,13 @@ stackArea marks board =
             ["stack"]
             [Element.attr "aria-label" (Text.pack "Stack")]
             [ Element.el "h3" ["zone-title"] [] [Element.string "Stack", Element.el "span" ["hint"] [] [Element.string " top resolves first"]],
-              Element.keyed "div" ["stack-items"] [] [(key o, stackItem marks board o) | o <- items]
+              Element.keyed "div" ["stack-items"] [] [(key o, stackItem marks texts board o) | o <- items]
             ]
         ]
   ]
 
-stackItem :: Marks msg -> PlayerView.PlayerView -> ObjectView.ObjectView -> Html.Html msg
-stackItem marks board o =
+stackItem :: Marks msg -> Map.Map ObjectId.ObjectId [Text.Text] -> PlayerView.PlayerView -> ObjectView.ObjectView -> Html.Html msg
+stackItem marks texts board o =
   let cue = object marks o
       whose = foldMap (\p -> if p == PlayerView.viewer board then Text.pack "You" else name p) (ObjectView.controller o)
    in Element.el
@@ -195,7 +196,7 @@ stackItem marks board o =
         ( [ Element.el "span" ["who"] [] [Element.text whose],
             Element.el "span" ["name"] [] [Element.text (Wording.nameOf board o)]
           ]
-            <> [Element.el "span" ["detail"] [] (Web.Mana.rich line) | line <- Card.status board o]
+            <> [Element.el "span" ["detail"] [] (Web.Mana.rich line) | line <- Card.stackDetail texts board o]
         )
 
 seatArea :: Marks msg -> PlayerView.PlayerView -> Bool -> SeatView.SeatView -> Html.Html msg
