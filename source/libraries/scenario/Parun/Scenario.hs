@@ -1874,10 +1874,11 @@ observe gs asked check = case check of
   Check.View viewIs -> do
     actual <- renderView gs asked viewIs
     pure (if actual == ViewIs.is viewIs then Nothing else Just (Common.render (Codec.Reply.toValue actual)))
-  -- The projected keywords (CR 613.1f), counted by instance.
+  -- The projected keywords (CR 613.1f), counted by instance, a lent one's
+  -- among them as a Filter counts it (CR 702.1d, Keyword.heldBy).
   Check.Keywords (KeywordsAre.MkKeywordsAre ref keyword count) -> do
     oid <- resolveObject ref gs
-    let actual = Map.findWithDefault 0 keyword (Projection.keywordsOf oid gs)
+    let actual = Map.findWithDefault 0 keyword (Keyword.heldBy (Projection.project oid gs))
     pure (if actual == count then Nothing else Just (Text.pack (show actual)))
   -- The projected mana value (CR 202.3), never the printed card's.
   Check.ManaValue (ManaValueIs.MkManaValueIs ref value) -> do

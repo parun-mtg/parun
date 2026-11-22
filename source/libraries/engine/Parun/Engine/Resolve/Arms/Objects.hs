@@ -285,10 +285,12 @@ create settle resolving source controller legal chosen (Create.MkCreate quantity
 -- it for a filter's "with [keyword]" (Keyword.heldBy) and the projection mints
 -- its triggered abilities from the record, as Koh, the Face Stealer's are. No
 -- CR 702 keyword states both a triggered and an activated ability
--- (Keyword.expansionOf), so the record lends nothing else. The scenario
+-- (Keyword.expansionOf), so the record lends nothing else. The record is the
+-- token's text, so a merge, a text box exchange and a text change carry it
+-- (Projection.withMergedAbilities, exchangeTextBoxFrom, applyWordSwaps). The scenario
 -- the-book-of-vile-darkness-s-vecna-has-modular-from-an-arcbound-worker-exiled-as-an-eye
--- proves it, per docs/decisions.md's "Whether Vecna has a keyword whose
--- triggered abilities it has".
+-- proves it: CR 702.1d asks for "a [keyword] ability", which modular's
+-- triggered one is (CR 702.43a).
 withLentTriggers :: GameState.GameState -> [ObjectId] -> Card.Type.Card -> Card.Type.Card
 withLentTriggers gs lenders card =
   let lent lender =

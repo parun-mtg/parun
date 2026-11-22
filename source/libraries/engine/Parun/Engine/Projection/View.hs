@@ -2519,6 +2519,10 @@ withMergedAbilities donor base =
       -- second instance (each keyword rule's own redundancy clause, such as CR
       -- 702.2f, is then the layer fold's).
       PC.keywords = Map.unionWith (+) (PC.keywords base) (PC.keywords donor),
+      -- The scenario
+      -- cubwarden-mutated-over-the-book-of-vile-darkness-s-vecna-has-its-lent-prowess
+      -- proves it.
+      PC.lentKeywords = PC.lentKeywords base <> PC.lentKeywords donor,
       PC.staticAbilities = PC.staticAbilities base <> PC.staticAbilities donor,
       PC.playerAbilities = PC.playerAbilities base <> PC.playerAbilities donor,
       PC.specialActions = PC.specialActions base <> PC.specialActions donor,

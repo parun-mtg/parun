@@ -110,7 +110,7 @@
     "turn": 1
   },
   "description": "CR 702.1d / 702.43a: an Arcbound Worker True Polymorph made a copy of Eye of Vecna, exiled by The Book of Vile Darkness, gives Vecna modular's triggered ability, so Vecna is a creature with modular and Arcbound Overseer's upkeep trigger puts a +1/+1 counter on it",
-  "note": "The legend rule keeps the Worker over the Eye, so the Book exiles it as the Eye. Vecna lacks modular's static ability, so it enters with no counter. Per docs/decisions.md, \"Whether Vecna has a keyword whose triggered abilities it has\".",
+  "note": "The legend rule keeps the Worker over the Eye, so the Book exiles it as the Eye. Vecna lacks modular's static ability, so it enters with no counter. CR 702.1d asks only for a modular ability, which its triggered one is (CR 702.43a).",
   "timeline": [
     {
       "do": {
