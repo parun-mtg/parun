@@ -1,0 +1,32 @@
+{
+  "description": "CR 701.20a / 603.2: Quandrix Apprentice's magecraft looks at alice's top three when she casts Shock, takes the land among them and puts the rest on the bottom",
+  "note": "The top three are Hill Giant, Forest and Plains; choosing the Hill Giant is refused, the Forest goes to hand, and the other two go under Giant Growth.",
+  "board": {
+    "active": "alice",
+    "step": "PrecombatMain",
+    "seats": [
+      {
+        "name": "alice",
+        "battlefield": [{ "card": "Mountain", "label": "m" }, { "card": "Quandrix Apprentice", "label": "apprentice" }],
+        "hand": [{ "card": "Shock", "label": "shock" }],
+        "library": [{ "card": "Hill Giant", "label": "giant" }, { "card": "Forest", "label": "forest" }, { "card": "Plains", "label": "plains" }, { "card": "Giant Growth", "label": "growth" }]
+      },
+      {
+        "name": "bob",
+        "library": [{ "card": "Island" }, { "card": "Island" }, { "card": "Island" }, { "card": "Island" }]
+      }
+    ]
+  },
+  "timeline": [
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "do": { "Cast": { "object": "$shock", "targets": ["$bob"], "mana": ["$m"] } } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "do": "Pass" },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "do": { "ChooseOptional": "Exercises" } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "refuse": { "Answer": { "prompt": "ChooseCardFromAmong", "with": "$giant" } } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "do": { "Answer": { "prompt": "ChooseCardFromAmong", "with": "$forest" } } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "do": { "Answer": { "prompt": "ArrangeLibraryArrivals", "with": [1, 0] } } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "check": { "Count": { "player": "alice", "zone": "Hand", "card": "Forest", "count": 1 } } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "check": { "View": { "of": "Zone", "player": "alice", "zone": "Library", "is": ["$growth", "Hill Giant", "Plains"] } } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "do": "Pass" },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "check": { "Life": { "player": "bob", "life": 18 } } }
+  ]
+}

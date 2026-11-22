@@ -1,0 +1,33 @@
+{
+  "description": "CR 118.12a / 701.9a: Practical Research draws four, then alice discards a sorcery in place of two cards, and a creature card is no instant or sorcery",
+  "note": "The draws bring Divination (a sorcery), Shock (an instant), Hill Giant and an Island; Grizzly Bears was already in hand. Discarding the Bears is refused, the Divination is taken, and everything else stays in hand.",
+  "board": {
+    "active": "alice",
+    "step": "PrecombatMain",
+    "seats": [
+      {
+        "name": "alice",
+        "battlefield": [{ "card": "Island", "label": "i1" }, { "card": "Island", "label": "i2" }, { "card": "Island", "label": "i3" }, { "card": "Island", "label": "i4" }, { "card": "Mountain", "label": "m" }],
+        "hand": [{ "card": "Practical Research", "label": "research" }, { "card": "Grizzly Bears", "label": "bears" }],
+        "library": [{ "card": "Divination" }, { "card": "Shock" }, { "card": "Hill Giant" }, { "card": "Island" }, { "card": "Island" }, { "card": "Island" }]
+      },
+      {
+        "name": "bob",
+        "library": [{ "card": "Island" }, { "card": "Island" }, { "card": "Island" }, { "card": "Island" }]
+      }
+    ]
+  },
+  "timeline": [
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "do": { "Cast": { "object": "$research", "mana": ["$i1", "$i2", "$i3", "$i4", "$m"] } } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "do": "Pass" },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "do": { "ChooseToPay": { "decision": "Pays" } } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "refuse": { "Answer": { "prompt": "ChooseDiscard", "with": ["$bears"] } } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "do": { "Answer": { "prompt": "ChooseDiscard", "with": ["Divination"] } } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "check": { "Count": { "player": "alice", "zone": "Graveyard", "card": "Divination", "count": 1 } } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "check": { "Count": { "player": "alice", "zone": "Hand", "card": "Grizzly Bears", "count": 1 } } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "check": { "Count": { "player": "alice", "zone": "Hand", "card": "Hill Giant", "count": 1 } } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "check": { "Count": { "player": "alice", "zone": "Hand", "card": "Island", "count": 1 } } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "check": { "Count": { "player": "alice", "zone": "Hand", "card": "Shock", "count": 1 } } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "check": { "Count": { "player": "alice", "zone": "Library", "card": "Island", "count": 2 } } }
+  ]
+}

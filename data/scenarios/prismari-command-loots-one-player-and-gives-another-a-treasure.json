@@ -1,0 +1,37 @@
+{
+  "description": "CR 700.2 / 701.9a: Prismari Command's chosen modes make one target player draw two then discard two and give another target player a Treasure; a second Command deals 2 damage to a creature and destroys an artifact",
+  "note": "The first cast loots alice (she draws Lava Axe and a Forest and discards Hill Giant and the Lava Axe) and gives bob the Treasure, so alice has none. The second kills bob's Grizzly Bears and his Ornithopter.",
+  "board": {
+    "active": "alice",
+    "step": "PrecombatMain",
+    "seats": [
+      {
+        "name": "alice",
+        "battlefield": [{ "card": "Island", "label": "i1" }, { "card": "Island", "label": "i2" }, { "card": "Mountain", "label": "m1" }, { "card": "Mountain", "label": "m2" }, { "card": "Island", "label": "i3" }, { "card": "Mountain", "label": "m3" }],
+        "hand": [{ "card": "Prismari Command", "label": "c1" }, { "card": "Prismari Command", "label": "c2" }, { "card": "Hill Giant", "label": "giant" }],
+        "library": [{ "card": "Lava Axe" }, { "card": "Forest" }, { "card": "Island" }, { "card": "Island" }]
+      },
+      {
+        "name": "bob",
+        "battlefield": [{ "card": "Grizzly Bears", "label": "bears" }, { "card": "Ornithopter", "label": "thopter" }],
+        "library": [{ "card": "Island" }, { "card": "Island" }, { "card": "Island" }, { "card": "Island" }]
+      }
+    ]
+  },
+  "timeline": [
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "do": { "Cast": { "object": "$c1", "modes": [1, 2], "targetsBySlot": { "looter": ["$alice"], "enriched": ["$bob"] }, "mana": ["$i1", "$i2", "$m1", null] } } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "do": "Pass" },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "do": { "Answer": { "prompt": "ChooseDiscard", "with": ["$giant", "Lava Axe"] } } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "check": { "Count": { "player": "alice", "zone": "Graveyard", "card": "Hill Giant", "count": 1 } } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "check": { "Count": { "player": "alice", "zone": "Graveyard", "card": "Lava Axe", "count": 1 } } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "check": { "Count": { "player": "alice", "zone": "Hand", "card": "Forest", "count": 1 } } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "check": { "Count": { "player": "bob", "zone": "Battlefield", "card": "Treasure Token", "count": 1 } } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "check": { "Count": { "player": "alice", "zone": "Battlefield", "card": "Treasure Token", "count": 0 } } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "do": { "Cast": { "object": "$c2", "modes": [0, 3], "targetsBySlot": { "burned": ["$bears"], "artifact": ["$thopter"] }, "mana": ["$i3", "$m2", "$m3"] } } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "do": "Pass" },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "check": { "View": { "of": "Stack", "is": [] } } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "check": { "Count": { "player": "bob", "zone": "Graveyard", "card": "Grizzly Bears", "count": 1 } } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "check": { "Count": { "player": "bob", "zone": "Graveyard", "card": "Ornithopter", "count": 1 } } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "check": { "Count": { "player": "bob", "zone": "Battlefield", "card": "Treasure Token", "count": 1 } } }
+  ]
+}

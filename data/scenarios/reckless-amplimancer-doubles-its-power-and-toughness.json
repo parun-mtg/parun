@@ -1,0 +1,27 @@
+{
+  "description": "CR 701.10b / 613.4c: Reckless Amplimancer's {4}{G} doubles its power and toughness until end of turn, each from its current value",
+  "note": "Rancor makes it a 4/2, so doubling gives +4/+2: an 8/4, not 8/8 or 4/4. The effect ends with the turn.",
+  "board": {
+    "active": "alice",
+    "step": "PrecombatMain",
+    "seats": [
+      {
+        "name": "alice",
+        "battlefield": [{ "card": "Forest", "label": "f1" }, { "card": "Forest", "label": "f2" }, { "card": "Forest", "label": "f3" }, { "card": "Forest", "label": "f4" }, { "card": "Forest", "label": "f5" }, { "card": "Reckless Amplimancer", "label": "amp" }, { "card": "Rancor", "label": "rancor", "attached": "amp" }],
+        "library": [{ "card": "Island" }, { "card": "Island" }, { "card": "Island" }, { "card": "Island" }]
+      },
+      {
+        "name": "bob",
+        "library": [{ "card": "Island" }, { "card": "Island" }, { "card": "Island" }, { "card": "Island" }]
+      }
+    ]
+  },
+  "timeline": [
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "check": { "PowerToughness": { "object": "$amp", "power": 4, "toughness": 2 } } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "do": { "Activate": { "object": "$amp", "ability": 0, "mana": ["$f1", "$f2", "$f3", "$f4", "$f5"] } } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "do": "Pass" },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "check": { "View": { "of": "Stack", "is": [] } } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "check": { "PowerToughness": { "object": "$amp", "power": 8, "toughness": 4 } } },
+    { "turn": 2, "step": "Upkeep", "player": "bob", "check": { "PowerToughness": { "object": "$amp", "power": 4, "toughness": 2 } } }
+  ]
+}

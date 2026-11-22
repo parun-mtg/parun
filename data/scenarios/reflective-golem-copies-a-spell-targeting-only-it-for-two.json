@@ -1,0 +1,36 @@
+{
+  "description": "CR 118.12a / 707.10c: Reflective Golem lets alice pay {2} to copy an instant that targets only it, and a spell targeting another creature does not trigger it",
+  "note": "Giant Growth on Grizzly Bears triggers nothing. Giant Growth on the Golem triggers it; alice pays {2} and keeps the copy's target, so the 2/3 Golem gets +6/+6, an 8/9.",
+  "board": {
+    "active": "alice",
+    "step": "PrecombatMain",
+    "seats": [
+      {
+        "name": "alice",
+        "battlefield": [{ "card": "Forest", "label": "f1" }, { "card": "Forest", "label": "f2" }, { "card": "Forest", "label": "f3" }, { "card": "Forest", "label": "f4" }, { "card": "Reflective Golem", "label": "golem" }, { "card": "Grizzly Bears", "label": "bears" }],
+        "hand": [{ "card": "Giant Growth", "label": "g1" }, { "card": "Giant Growth", "label": "g2" }],
+        "library": [{ "card": "Island" }, { "card": "Island" }, { "card": "Island" }, { "card": "Island" }]
+      },
+      {
+        "name": "bob",
+        "library": [{ "card": "Island" }, { "card": "Island" }, { "card": "Island" }, { "card": "Island" }]
+      }
+    ]
+  },
+  "timeline": [
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "do": { "Cast": { "object": "$g1", "targets": ["$bears"], "mana": ["$f1", null] } } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "check": { "View": { "of": "Stack", "is": ["Giant Growth#2"] } } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "do": "Pass" },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "check": { "PowerToughness": { "object": "$bears", "power": 5, "toughness": 5 } } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "do": { "Cast": { "object": "$g2", "targets": ["$golem"], "mana": ["$f2", null] } } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "check": { "View": { "of": "Stack", "is": ["trigger of $golem", "Giant Growth#2"] } } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "do": "Pass" },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "do": { "ChooseToPay": { "decision": "Pays", "mana": ["$f3", "$f4"] } } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "do": { "ChooseTargets": { "target": ["$golem"] } } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "do": "Pass" },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "do": "Pass" },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "check": { "View": { "of": "Stack", "is": [] } } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "check": { "PowerToughness": { "object": "$golem", "power": 8, "toughness": 9 } } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "check": { "PowerToughness": { "object": "$bears", "power": 5, "toughness": 5 } } }
+  ]
+}
