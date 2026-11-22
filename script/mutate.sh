@@ -57,7 +57,7 @@ first failing assertion, and restores FILE.
              refuses on the command line (parentheses, pipes, quotes, `;`)
   PATTERN    a substring of the test path, passed as -p; required, and keep
              it narrow
-  CABAL_ARG  extra arguments for `cabal test`; `--no-semaphore -j4` when the
+  CABAL_ARG  extra arguments for `cabal run`, ahead of `--`; `--no-semaphore -j4` when the
              shared GHC semaphore is corrupt and cabal hangs on it instead of
              failing, which the built-in retry cannot reach
 
@@ -76,7 +76,7 @@ Exit status is the outcome, not the test run's:
   3  the mutated source did not build, or the run produced no summary
   4  PATTERN matched no tests at all
 
-Run it from the repository root; it builds the `parun-test-suite` target in
+Run it from the repository root; it builds the `parun` target in
 `dist-newstyle/` like any other build, so it needs cabal.project.local in place
 for +pedantic, and it is slow wherever that file turns the optimizer on.
 EOF
@@ -134,17 +134,9 @@ fi
 
 log=$work/output
 
-# --test-option, singular, passes one argument verbatim; the plural
-# --test-options takes a string that cabal splits on whitespace, so a pattern
-# naming a test case by its own words arrives as several arguments and the
-# runner rejects the second one.
 run() {
-  cabal test parun-test-suite \
-    --test-show-details=direct \
-    --test-option=-p \
-    --test-option="$pattern" \
-    --test-option=+RTS --test-option=-M8G --test-option=-RTS \
-    ${1:+"$@"} >"$log" 2>&1 || true
+  cabal run -v0 ${1:+"$@"} parun -- test -p "$pattern" +RTS -M8G -RTS \
+    >"$log" 2>&1 || true
 }
 
 run "$@"

@@ -73,7 +73,7 @@ Run `cabal` in the foreground with a generous timeout and split long runs by
 pattern; a run at 0% CPU for ten minutes is wedged.
 
 The timeout catches infinite loops, not slowness: use the one budget in
-`flake.nix`'s `testFlags` and `.github/workflows/ci.yml`, which must agree. A
+`flake.nix`'s `checkPhase` and `.github/workflows/ci.yml`, which must agree. A
 lone TIMEOUT on a shared machine is noise until it repeats unloaded.
 
 ### Reading code

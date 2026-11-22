@@ -2675,7 +2675,7 @@ library spec
   exposed-modules:
     Parun.Spec
 
--- The test suite. The `parun-test-suite` target is a thin wrapper around it.
+-- The test suite, run by `parun test`.
 library test
   import: library
   ghc-options: -O0
@@ -4204,13 +4204,6 @@ executable parun
   build-depends: parun:executable
   hs-source-dirs: source/executable
   main-is: Main.hs
-
-test-suite parun-test-suite
-  import: executable
-  build-depends: parun:test
-  hs-source-dirs: source/test-suite
-  main-is: Main.hs
-  type: exitcode-stdio-1.0
 
 -- A reactor module: no Haskell main, only the exports the page calls.
 executable parun-web
