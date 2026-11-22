@@ -3,14 +3,14 @@
 # invocation runs at a time across every worktree. The GHC job semaphore only
 # shares compile slots; it does not stop three worktrees building at once,
 # which on an 8 GB machine is unusable. Usage:
-#   script/with-build-lock.sh cabal test ...
+#   script/with-build-lock.sh cabal run parun -- test ...
 # The lock is a hard link created with ln, which is atomic and fails when the
 # target exists; it holds the owner's PID. Taking over a lock whose owner has
 # died is an atomic rename, so of several waiters exactly one wins. The path
 # is fixed rather than TMPDIR-relative so every shell locks the same file.
 # PARUN_BUILD_SLOTS builds may run at once (one lock file per slot; slot 0 is
 # the base path, so an older copy of this script still shares it). Measured
-# 2026-09-02: one `cabal test` peaks at about 1.8 GB resident, so two fit an
+# 2026-09-02: one `cabal run parun -- test` peaks at about 1.8 GB resident, so two fit an
 # 8 GB machine and three did not.
 set -euo pipefail
 base="${PARUN_BUILD_LOCK:-/tmp/parun-build.lock}"

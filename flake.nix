@@ -51,10 +51,15 @@
             pkgs.haskell.lib.compose.disableSharedLibraries
             (pkgs.haskell.lib.compose.enableCabalFlag "pedantic")
             (pkgs.haskell.lib.compose.overrideCabal (old: {
-              testFlags = (old.testFlags or [ ]) ++ [
-                "--timeout"
-                "120s"
-              ];
+              # Setup test runs only test-suite stanzas, and there are none:
+              # run the suite through the binary the build already linked.
+              # Setup test would set parun_datadir; without it Paths_parun
+              # points at the not-yet-installed store path.
+              checkPhase = ''
+                runHook preCheck
+                parun_datadir="$PWD/data" dist/build/parun/parun test --timeout 120s
+                runHook postCheck
+              '';
             }))
           ];
         in
