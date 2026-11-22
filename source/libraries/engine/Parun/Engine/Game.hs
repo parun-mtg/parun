@@ -323,6 +323,19 @@ freshObjectId gs =
   let ObjectId.MkObjectId n = Bookkeeping.nextObjectId (GameState.bookkeeping gs)
    in (ObjectId.MkObjectId n, gs {GameState.bookkeeping = (GameState.bookkeeping gs) {Bookkeeping.nextObjectId = ObjectId.MkObjectId (n + 1)}})
 
+-- An id for an object only one seat is shown, drawn above every id
+-- `freshObjectId` will mint and past the highest such id live, so how many
+-- there are moves no id another seat sees. The state is unchanged.
+freshHiddenId :: GameState -> (ObjectId, GameState)
+freshHiddenId gs = case Map.lookupMax (GameState.objects gs) of
+  Just (ObjectId.MkObjectId n, _) | n >= hiddenIdFloor -> (ObjectId.MkObjectId (n + 1), gs)
+  _ -> (ObjectId.MkObjectId hiddenIdFloor, gs)
+
+-- `freshHiddenId`'s least id: 2^52, under 2^53 so a client reading ids as
+-- doubles still tells them apart.
+hiddenIdFloor :: Natural
+hiddenIdFloor = 2 ^ (52 :: Int)
+
 freshTimestamp :: GameState -> (Timestamp.Timestamp, GameState)
 freshTimestamp gs =
   let Timestamp.MkTimestamp n = Bookkeeping.nextTimestamp (GameState.bookkeeping gs)

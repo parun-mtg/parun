@@ -50,6 +50,7 @@ import qualified Parun.Types.AttackTarget as AttackTarget
 import qualified Parun.Types.BeginningStep as BeginningStep
 import qualified Parun.Types.Card as Card.Type
 import qualified Parun.Types.CardName as CardName
+import qualified Parun.Types.CastFromZone as CastFromZone
 import qualified Parun.Types.Color as Color
 import qualified Parun.Types.Combat as Combat
 import qualified Parun.Types.CombatStep as CombatStep
@@ -64,13 +65,16 @@ import qualified Parun.Types.Designation as Designation
 import qualified Parun.Types.Dividing as Dividing
 import qualified Parun.Types.EndingStep as EndingStep
 import qualified Parun.Types.Face as Face
+import qualified Parun.Types.Filter as Filter.Type
 import qualified Parun.Types.GameEvent as GameEvent
 import qualified Parun.Types.GameState as GameState
 import qualified Parun.Types.GraveyardArrangement as GraveyardArrangement
 import qualified Parun.Types.HandActionIndex as HandActionIndex
+import qualified Parun.Types.InZone as InZone
 import qualified Parun.Types.Keyword as Keyword
 import qualified Parun.Types.Looked as Looked
 import qualified Parun.Types.ManaCost as ManaCost
+import qualified Parun.Types.ManaSpending as ManaSpending
 import qualified Parun.Types.ManaSymbol as ManaSymbol
 import qualified Parun.Types.ManaType as ManaType
 import qualified Parun.Types.MoveSpread as MoveSpread
@@ -80,9 +84,14 @@ import qualified Parun.Types.ObjectView as ObjectView
 import qualified Parun.Types.OutsideCard as OutsideCard
 import qualified Parun.Types.PayOffer as PayOffer
 import qualified Parun.Types.PaymentDecision as PaymentDecision
+import qualified Parun.Types.PermissionLimit as PermissionLimit
+import qualified Parun.Types.PermissionPool as PermissionPool
+import qualified Parun.Types.PermissionVerb as PermissionVerb
 import qualified Parun.Types.Phase as Phase
 import qualified Parun.Types.Player as Player
 import qualified Parun.Types.PlayerCounterKind as PlayerCounterKind
+import qualified Parun.Types.PlayerRef as PlayerRef
+import qualified Parun.Types.PlayerRelation as PlayerRelation
 import qualified Parun.Types.PlayerView as PlayerView.Type
 import qualified Parun.Types.Printing as Printing
 import qualified Parun.Types.ProjectedCharacteristics as ProjectedCharacteristics
@@ -450,6 +459,22 @@ spec s registry = Spec.describe s "WebQuestion" $ do
     Spec.assertBool s (Text.pack ": Prodigal Sorcerer deals 1 damage to any target." `Text.isInfixOf` Html.content (Question.Web.view request Question.Web.blank)) "labelled"
     -- The end-of-turn reminder names the activation by its source, as a phrase.
     Spec.assertBool s (Text.pack "Before you pass: you can still activate Prodigal Sorcerer." `Text.isInfixOf` Html.content (Question.Web.view request Question.Web.blank)) "reminded"
+
+  -- CR 601.3: The Holodeck's and Wish's permissions both reach a card outside
+  -- the game, and each option says where its permission opens.
+  Spec.it s "CR 400.11 a permission to play from outside the game is labelled by where it opens" $ do
+    holodeck <- S.printingOf s registry "The Holodeck"
+    wish <- S.printingOf s registry "Wish"
+    bears <- S.printingOf s registry "Grizzly Bears"
+    let (holodeckId, g1) = S.addPermanent holodeck S.alice (Setup.emptyGame S.bothPlayers)
+        (wishId, g2) = S.addGraveyardCard wish S.alice g1
+        (bearsId, gs) = S.addHandCard bears S.alice g2
+        grant from = CastFromZone.MkCastFromZone from (Filter.Type.And []) PermissionLimit.OncePerEffect PermissionVerb.Play PermissionPool.EveryCard [] 0 ManaSpending.AsProduced Nothing Nothing False Nothing Set.empty True
+        graveyard = Just (InZone.MkInZone Zone.Graveyard (PlayerRef.Relative PlayerRelation.You))
+        request = requestFor gs (Prompt.ChoosePlayPermission (Decider.MkDecider S.alice) S.alice bearsId (Just (holodeckId, grant graveyard) NonEmpty.:| [Just (wishId, grant Nothing)]))
+        content = Html.content (Question.Web.view request Question.Web.blank)
+    Spec.assertBool s (Text.pack "The Holodeck, from outside the game or the graveyard" `Text.isInfixOf` content) "The Holodeck's, by both places"
+    Spec.assertBool s (Text.pack "Your Wish, in a graveyard, from outside the game" `Text.isInfixOf` content) "Wish's, by outside the game"
 
   Spec.it s "options the seat can't tell apart share one button, which picks the next" $ do
     bears <- S.printingOf s registry "Grizzly Bears"
