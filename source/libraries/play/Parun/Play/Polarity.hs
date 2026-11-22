@@ -1,5 +1,5 @@
 -- | Which way an effect bears on what a target slot holds: the
--- classification the aimed playout policy (Parun.Play.Search.aimed) chooses
+-- classification the polar playout policy (Parun.Play.Search.polar) chooses
 -- targets by. A heuristic, not a rule: nothing in the rules core reads it.
 module Parun.Play.Polarity where
 

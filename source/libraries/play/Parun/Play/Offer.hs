@@ -434,7 +434,7 @@ entryName view entry
   | Just shape <- decoded Codec.EntryOption.codec entry =
       Text.intercalate (Text.pack ", ") (Text.pack (show (EntryOption.power shape) <> "/" <> show (EntryOption.toughness shape)) : concatMap (take 1 . Oracle.Keyword.keywordWord Text.empty) (Set.toList (EntryOption.keywords shape)) <> fmap (Text.pack . show) (Set.toList (EntryOption.subtypes shape)))
   | Just event <- decoded Codec.GameEvent.codec entry =
-      Maybe.fromMaybe (Common.render (Codec.Reply.toValue entry)) (Wording.event view (LoggedEvent.MkLoggedEvent (EventGroup.MkEventGroup 0) event))
+      Maybe.fromMaybe (Common.render (Codec.Reply.toValue entry)) (Wording.event Nothing view (LoggedEvent.MkLoggedEvent (EventGroup.MkEventGroup 0) event))
   | Maybe.isJust (Protocol.field "source" entry) = sourcedName Text.empty view entry
   | entry == R.Null = Text.pack "Something you did not see"
   | otherwise = optionName view entry
