@@ -295,7 +295,7 @@ lobby shell initial said = do
               Lobby.MkStart
                 | Map.null (Lobby.invites current),
                   Right mine <- Lobby.startable current -> do
-                    others <- traverse (maybe (randomOf (Lobby.opponents current)) (pure . Just)) (Lobby.theirs current)
+                    others <- dealtFor shell current
                     files <- Maybe.fromMaybe Map.empty <$> decksRead shell
                     -- A bot with no deck to play keeps the lobby up.
                     case sequence others >>= traverse (\name -> (,) name <$> Map.lookup name files) . (mine NonEmpty.:|) of
@@ -340,7 +340,7 @@ lobby shell initial said = do
     -- Every player is ready: the game starts, each player invited told
     -- their seat, each bot without a deck given one at random.
     startWith current told = do
-      others <- traverse (maybe (randomOf (Lobby.opponents current)) (pure . Just)) (Lobby.theirs current)
+      others <- dealtFor shell current
       files <- Maybe.fromMaybe Map.empty <$> decksRead shell
       let invited = Lobby.invites current
           slot (i, name) = case Map.lookup i invited >>= Lobby.guestDeck of
@@ -680,6 +680,24 @@ randomOf among = do
   key <- Key.fresh
   let roll = foldr (\w acc -> acc * 4294967296 + toInteger w) 0 (Key.unwrap key)
   pure (Integer.toInt (mod roll (toInteger (max 1 (Seq.length among)))) >>= (`Seq.lookup` among))
+
+-- | Each bot's deck, a bot left to a random one dealt from its
+-- 'Lobby.opponents' holding at least 'Lobby.fewestDealt' cards against
+-- yours.
+dealtFor :: Shell -> Lobby.Lobby -> IO [Maybe Text.Text]
+dealtFor shell current = do
+  yours <- maybe (pure 0) (deckSize shell) (Lobby.mine current)
+  let keeps name = (>= Lobby.fewestDealt yours) <$> deckSize shell name
+  traverse (maybe (Lobby.dealt randomOf keeps (Lobby.opponents current)) (pure . Just)) (Lobby.theirs current)
+
+-- | How many cards a deck's main deck holds: as read so far, else read now;
+-- none for a deck with no file.
+deckSize :: Shell -> Text.Text -> IO Natural
+deckSize shell name = do
+  known <- Map.lookup name . deckSizes <$> IORef.readIORef (loaded shell)
+  case known of
+    Just size -> pure size
+    Nothing -> maybe 0 Lobby.mainCount <$> deckText shell name
 
 -- | The deck files, once read; nothing if the decks failed to load.
 decksRead :: Shell -> IO (Maybe (Map.Map Text.Text FilePath))

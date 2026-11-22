@@ -203,6 +203,19 @@ together lobby one two = case (Map.lookup one (DeckBrowser.formats (browser lobb
 opponents :: Lobby -> Seq.Seq Text.Text
 opponents lobby = maybe (decks lobby) (\one -> Seq.filter (together lobby one) (decks lobby)) (mine lobby)
 
+-- | The fewest cards a bot's random deck holds against your deck of this
+-- many: as many, up to Limited's minimum, so a demo deck meets only its like.
+fewestDealt :: Natural -> Natural
+fewestDealt yours = min yours (RuleFamily.Engine.minimumDeckSize RuleFamily.Limited)
+
+-- | A bot's deck dealt at random from these, `roll` picking one: one that
+-- `keeps` refuses is dropped and the rest rolled again; nothing once none
+-- is left.
+dealt :: (Monad m) => (Seq.Seq Text.Text -> m (Maybe Text.Text)) -> (Text.Text -> m Bool) -> Seq.Seq Text.Text -> m (Maybe Text.Text)
+dealt roll keeps among =
+  let next name = keeps name >>= \kept -> if kept then pure (Just name) else dealt roll keeps (Seq.filter (/= name) among)
+   in roll among >>= maybe (pure Nothing) next
+
 -- | A card's colours as a deck shows them: those of the mana symbols in
 -- its faces' costs.
 cardColours :: Card.Card -> Set.Set Color.Color
