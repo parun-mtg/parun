@@ -236,7 +236,7 @@ follow shell next =
     MkToLobby deck -> lobby shell (maybe Lobby.new Lobby.holding deck) [] >>= follow shell
     MkToDecks deck -> decksScreen shell deck >>= follow shell
     -- Only an invited slot reads its deck's list (Lobby.rematch), and none is.
-    MkToMatchup decks -> lobby shell (Lobby.rematch (fmap (\name -> (name, Text.empty)) decks) Set.empty Set.empty) [] >>= follow shell
+    MkToMatchup decks -> lobby shell (Lobby.rematch (fmap (\name -> (name, Text.empty)) decks) Set.empty Map.empty) [] >>= follow shell
     MkToInvite -> Browser.linkHost 0 >> lobby shell (Lobby.update (Lobby.MkOccupy Lobby.MkInvited 0) Text.empty Lobby.new) [] >>= follow shell
     MkToBuilder deck back -> builder shell deck back >>= follow shell
     MkToReplays -> replays shell >>= follow shell
