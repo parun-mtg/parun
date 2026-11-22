@@ -7,11 +7,11 @@ import qualified Parun.Types.Result as Result
 -- | What `parun match` has counted over the games played so far.
 data Tally = MkTally
   { -- | How many games ended in each result.
-    results :: Map.Map Result.Result Natural.Natural,
+    results :: !(Map.Map Result.Result Natural.Natural),
     -- | How many games stopped before a result.
-    stopped :: Natural.Natural,
+    stopped :: !Natural.Natural,
     -- | The turns the games with a result took, summed.
-    turns :: Natural.Natural
+    turns :: !Natural.Natural
   }
   deriving (Eq, Show)
 
