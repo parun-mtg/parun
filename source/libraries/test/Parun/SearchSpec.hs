@@ -333,19 +333,6 @@ spec s registry = Spec.describe s "Search" $ do
   Spec.it s "the aimed policy aims a helpful spell's targets at the chooser's own side" $
     aiming s registry "Giant Growth" (==)
 
-  Spec.it s "the aimed policy casts a spell with no permanent type where the menu offers one" $ do
-    bear <- S.printingOf s registry "Grizzly Bears"
-    growth <- S.printingOf s registry "Giant Growth"
-    forest <- S.printingOf s registry "Forest"
-    let deck = Deck.fromCards (Map.fromList [(bear, 6), (growth, 6), (forest, 8)])
-    (_, instant) <- capturingIn s (deck NonEmpty.:| [deck]) 3 "a menu offering only a cast with no permanent type" $ \asked -> case Asked.prompt asked of
-      Prompt.ChooseAction _ _ menu
-        | any isCast menu && not (any isPlay menu) && all (\action -> not (isCast action) || notPermanent (Asked.game asked) action) menu ->
-            Just (Asked.game asked, Asked.MkAsked [] (Asked.game asked) (Asked.prompt asked))
-      _ -> Nothing
-    chosen <- traverse (\seed -> either (Spec.assertFailure s . Text.unpack) pure =<< Except.runExceptT (State.evalStateT (Answerer.unwrap (Search.aimed (S.fixtureRegistry [])) instant) (S.seeded seed))) [1 .. 8]
-    Spec.assertBool s (all isCast chosen) ("cast in every seed: " <> show chosen)
-
   Spec.it s "a greedy playout plays a land at the decision it restarts" $ do
     (gs, pid) <- capturing s registry 3 "a menu offering a land play" $ \asked -> case Asked.prompt asked of
       Prompt.ChooseAction decider pid menu | any isPlay menu && Search.searchable asked decider pid (Search.options menu) -> Just (Asked.game asked, pid)

@@ -631,41 +631,37 @@ features board grants pid gs =
 -- types of the cards on it.
 greedy :: (Monad m) => Registry.Registry m -> Answerer.Answerer (Asked.Asked GameState.GameState) (Game.Play m)
 greedy registry = Answerer.MkAnswerer $ \asked -> case Asked.prompt asked of
-  Prompt.ChooseAction _ _ menu -> greedyAction False (Asked.game asked) menu
+  Prompt.ChooseAction _ _ menu -> greedyAction (Asked.game asked) menu
   _ -> Answerer.unwrap (Game.bot registry) asked
 
 -- | The greedy policy aiming its targets: each slot's targets chosen by the
--- polarity of the effects naming it ('aimedTargets'), so any spell is cast
--- where the menu offers it, after a land and a permanent spell
--- ('greedyAction'). It reads effects' classification (Parun.Play.Polarity),
--- never their identity.
+-- polarity of the effects naming it ('aimedTargets'), its priority decisions
+-- the greedy policy's ('greedyAction'). It reads effects' classification
+-- (Parun.Play.Polarity), never their identity.
 --
 -- Not implemented: choosing modes and payments by their effect's
 -- classification; the random bot answers them (gap #9476).
 aimed :: (Monad m) => Registry.Registry m -> Answerer.Answerer (Asked.Asked GameState.GameState) (Game.Play m)
 aimed registry = Answerer.MkAnswerer $ \asked -> case Asked.prompt asked of
-  Prompt.ChooseAction _ _ menu -> greedyAction False (Asked.game asked) menu
+  Prompt.ChooseAction _ _ menu -> greedyAction (Asked.game asked) menu
   Prompt.ChooseTargets _ chooser oid slots -> aimedTargets chooser oid (Asked.game asked) slots
   _ -> Answerer.unwrap (Game.bot registry) asked
 
 -- | A priority decision: a land play (CR 305.1) at random where the menu
 -- offers one, else a cast (CR 601) of a card with a permanent type (CR
--- 110.4), else, where `castAll`, a cast of any other spell, else one of the
--- other 'options' or a pass, each equally likely. The menu offers only what
--- may be afforded (Engine.Cast.castableSpells). Without `castAll` another
--- spell waits for the random pick, since the random bot chooses its targets
--- and casting it at the first chance would hit either side alike.
-greedyAction :: (Monad m) => Bool -> GameState.GameState -> [Action.Action] -> State.StateT Generator.Type.Generator m Action.Action
-greedyAction castAll gs menu =
+-- 110.4), else one of the other 'options' or a pass, each equally likely.
+-- The menu offers only what may be afforded (Engine.Cast.castableSpells).
+-- Another spell waits for the random pick, cast at its first chance being
+-- worse aimed (Playout.Aimed) as well as at random.
+greedyAction :: (Monad m) => GameState.GameState -> [Action.Action] -> State.StateT Generator.Type.Generator m Action.Action
+greedyAction gs menu =
   let plays = [action | action@Action.Play {} <- menu]
       permanent oid = any Engine.Card.isPermanentType (ProjectedCharacteristics.cardTypes (Projection.project oid gs))
       casts = [action | action@(Action.Cast oid _ _) <- menu, permanent oid]
-      others = [action | castAll, action@Action.Cast {} <- menu, notElem action casts]
-      rest = [action | action <- options menu, notElem action (Action.Pass : plays <> casts <> others)]
-   in case (NonEmpty.nonEmpty plays, NonEmpty.nonEmpty casts, NonEmpty.nonEmpty others) of
-        (Just some, _, _) -> Generator.pick some
-        (_, Just some, _) -> Generator.pick some
-        (_, _, Just some) -> Generator.pick some
+      rest = [action | action <- options menu, notElem action (Action.Pass : plays <> casts)]
+   in case (NonEmpty.nonEmpty plays, NonEmpty.nonEmpty casts) of
+        (Just some, _) -> Generator.pick some
+        (_, Just some) -> Generator.pick some
         _ -> Generator.pick (Action.Pass NonEmpty.:| rest)
 
 -- | CR 601.2c's targets for `chooser`, each slot's drawn first from the
