@@ -204,7 +204,7 @@ button {
 /* A button: a control's edge on the surface, 15/600. Primary (act) is the
    one thing to do; End turn (turn) is in the turn's amber; quiet has no
    edge until hovered; danger gives something up. */
-#app button:where(:not(.card, .stack-item, .scrim, .who, .slot, .deck, .log-card, .tile)),
+#app button:where(:not(.card, .stack-item, .scrim, .who, .seat-pick, .deck, .log-card, .tile)),
 .chrome button,
 #keys button {
   appearance: none;
@@ -228,7 +228,7 @@ button {
 }
 
 @media (hover: hover) {
-  #app button:where(:not(.card, .stack-item, .scrim, .who, .slot, .deck, .log-card, .tile, .primary, .turn, .danger, .quiet, :disabled)):hover {
+  #app button:where(:not(.card, .stack-item, .scrim, .who, .seat-pick, .deck, .tile, .log-card, .primary, .turn, .danger, .quiet, :disabled)):hover {
     background: var(--raised);
   }
 
@@ -910,206 +910,543 @@ main.home .confirm .choices {
   color: var(--muted);
 }
 
-/* ---------- Lobby ---------- */
+/* ---------- Lobby (Parun.Web.Lobby) and joining (Parun.Web.Join) ---------- */
 
+/* The screen a host's link opens keeps the narrow column. */
 main.lobby {
   max-width: 980px;
   margin: 0 auto;
   padding: max(1em, env(safe-area-inset-top)) 1em calc(2em + env(safe-area-inset-bottom));
 }
 
-.lobby-top {
-  display: flex;
-  align-items: center;
-  gap: 1em;
-  margin-bottom: 1em;
-}
-
-#app button.home-button {
-  flex: none;
-}
-
-.logo {
-  border-radius: 22%;
-  flex: none;
-}
-
-.matchup {
-  position: sticky;
-  top: 0;
-  z-index: 5;
+/* A new game: the seats, then the decks, then the deck chosen, as columns
+   where they fit and stacked on a phone, Start kept in reach at the foot. */
+main.lobby.new-game {
+  max-width: none;
+  padding: 0;
   display: grid;
-  grid-template-columns: 1fr auto 1fr;
-  gap: 0.5em;
+  grid-template-columns: minmax(0, 1fr);
+  grid-template-areas: "seats" "browser" "detail";
   align-items: stretch;
-  padding: 0.75em;
-  margin: 0 -0.25em 1em;
-  background: color-mix(in srgb, var(--bg) 88%, transparent);
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
-  border-radius: calc(var(--radius) + 4px);
 }
 
-.matchup .start {
-  grid-column: 1 / -1;
-  font-size: 1.05rem;
+/* From two columns up the top bar stays put and the side columns stick
+   under it, each scrolling on its own, so Start stays in view while the
+   decks scroll the page. */
+@media (min-width: 760px) {
+  main.lobby.new-game {
+    --bar-height: 64px;
+    grid-template-columns: minmax(280px, 340px) minmax(0, 1fr);
+    grid-template-areas: "seats browser" "seats detail";
+    grid-template-rows: auto 1fr;
+  }
+
+  .framed:has(> main.lobby.new-game) > .topbar {
+    position: sticky;
+    top: 0;
+    z-index: 6;
+  }
+
+  .new-game .seats {
+    position: sticky;
+    top: var(--bar-height);
+    align-self: start;
+    height: calc(100dvh - var(--bar-height));
+    overflow-y: auto;
+  }
 }
 
-.versus {
-  align-self: center;
-  color: var(--muted);
-  font-weight: 600;
-  font-size: 0.85rem;
-  text-transform: uppercase;
+@media (min-width: 1200px) {
+  main.lobby.new-game {
+    grid-template-columns: minmax(300px, 340px) minmax(0, 1fr) minmax(280px, 360px);
+    grid-template-areas: "seats browser detail";
+    grid-template-rows: auto;
+  }
+
+  .new-game .detail {
+    position: sticky;
+    top: var(--bar-height);
+    align-self: start;
+    max-height: calc(100dvh - var(--bar-height));
+    overflow-y: auto;
+  }
 }
 
-/* One slot per bot, stacked, with the buttons seating or unseating one. */
-.bots {
+.new-game .seats {
+  grid-area: seats;
   display: flex;
   flex-direction: column;
-  gap: 0.5em;
+  gap: 12px;
+  padding: 24px max(16px, env(safe-area-inset-left));
+  background: var(--surface);
+  border-bottom: 1px solid var(--line);
 }
 
-.bot-count {
+@media (min-width: 760px) {
+  .new-game .seats {
+    border-bottom: 0;
+    border-right: 1px solid var(--line);
+  }
+}
+
+.new-game .seats h1 {
+  font-size: 30px;
+  font-weight: 700;
+  line-height: 1.15;
+}
+
+.new-game .versus {
+  align-self: center;
+}
+
+.new-game .browser {
+  grid-area: browser;
+  min-width: 0;
   display: flex;
-  gap: 0.5em;
+  flex-direction: column;
+  gap: 16px;
+  padding: 24px max(16px, env(safe-area-inset-right)) 24px max(16px, env(safe-area-inset-left));
 }
 
-.bot-count button {
-  flex: 1;
-  font-size: 0.85rem;
+@media (min-width: 760px) {
+  .new-game .browser {
+    padding: 24px 28px;
+  }
 }
 
-#app button.slot {
+.new-game .detail {
+  grid-area: detail;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  padding: 24px max(16px, env(safe-area-inset-right)) 24px max(16px, env(safe-area-inset-left));
+  border-top: 1px solid var(--line);
+}
+
+@media (min-width: 1200px) {
+  .new-game .detail {
+    border-top: 0;
+    border-left: 1px solid var(--line);
+    background: transparent;
+  }
+}
+
+/* A seat: a card that is itself the button choosing it; the one chosen for
+   ringed in the act's colour, tinted, and chipped "Choosing a deck". */
+.lobby-seat {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 0;
+  border: 1px solid var(--control);
+  border-radius: 16px;
+  background: var(--surface);
+}
+
+.lobby-seat.on {
+  border-color: var(--act);
+  box-shadow: 0 0 0 2px var(--act);
+  background: var(--act-soft);
+}
+
+#app .lobby-seat > button.seat-pick,
+.lobby-seat > .seat-pick {
   appearance: none;
   display: flex;
   flex-direction: column;
-  gap: 0.15em;
-  min-height: 64px;
-  padding: 0.6em 0.8em;
-  border: 2px solid var(--control);
-  border-radius: var(--radius);
-  background: var(--surface);
+  align-items: stretch;
+  gap: 6px;
+  width: 100%;
+  min-height: 44px;
+  padding: 14px 16px;
+  border: 0;
+  border-radius: 16px;
+  background: transparent;
+  color: var(--text);
+  font: inherit;
   text-align: left;
   cursor: pointer;
-  box-shadow: var(--shadow);
 }
 
-#app button.slot.choosing {
-  border-color: var(--act);
-  box-shadow: 0 0 0 3px var(--act-soft);
+.lobby-seat > .seat-pick.invited {
+  cursor: default;
 }
 
-.slot-title {
-  font-size: 0.72rem;
-  text-transform: uppercase;
-  letter-spacing: 0.06em;
-  color: var(--muted);
+/* A seat's ways to change it, under the card's button. */
+.seat-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  margin: -6px 12px 12px;
+}
+
+#app .seat-actions button {
+  min-height: 36px;
+  padding: 4px 10px;
+  font-size: 13px;
+}
+
+.seat-head {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.avatar {
+  flex: none;
+  display: inline-grid;
+  place-items: center;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: var(--raised);
+  color: var(--text);
+  font-weight: 700;
+}
+
+.avatar .icon {
+  width: 18px;
+  height: 18px;
+}
+
+.seat-name {
+  flex-grow: 1;
+}
+
+.chip {
+  display: inline-block;
+  padding: 2px 10px;
+  border-radius: 999px;
+  background: var(--raised);
+  color: var(--text);
+  font-size: 13px;
   font-weight: 600;
+  white-space: nowrap;
 }
 
-.slot-deck {
-  font-weight: 600;
+.chip.choosing {
+  background: var(--act);
+  color: var(--on-act);
 }
 
-/* A bot's slot with the button switching it to a player invited from
-   another browser, and an invited slot: its link, the box for the reply
-   code, and whether the player is ready (Parun.Web.Lobby.inviteView). */
-.seat {
+.seat-deck {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 17px;
+  font-weight: 700;
+}
+
+.seat-note {
+  font-size: 13px;
+}
+
+.seat-tools {
+  display: flex;
+  gap: 8px;
+}
+
+.seat-tools button {
+  flex: 1;
+}
+
+/* An invited player's seat: the link to send, the box their code goes in. */
+.lobby-seat.invite {
+  border-style: dashed;
+}
+
+.lobby-seat.invite > :not(.seat-pick, .seat-actions) {
+  margin: 0 16px;
+}
+
+.lobby-seat.invite > :last-child {
+  margin-bottom: 14px;
+}
+
+/* Start at the seats' foot; on a phone, fixed to the screen's. */
+.lobby-start {
+  margin-top: auto;
   display: flex;
   flex-direction: column;
-  gap: 0.35em;
+  gap: 8px;
+  padding-top: 12px;
 }
 
-#app button.invite-slot,
-#app button.bot-slot {
-  font-size: 0.8rem;
-  align-self: flex-start;
-}
-
-.invite {
-  padding: 0.6em 0.8em;
-  border: 2px dashed var(--control);
-  border-radius: var(--radius);
-  background: var(--surface);
-}
-
-.slot.invited {
+#app .lobby-start button.start {
+  min-height: 56px;
+  font-size: 17px;
   display: flex;
-  flex-direction: column;
-  gap: 0.15em;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
 }
 
-.slot-ready {
-  font-size: 0.8rem;
-  color: var(--muted);
-}
-
-.invite input,
-.join-status input {
-  width: 100%;
-  min-width: 0;
-  font-family: ui-monospace, monospace;
-  font-size: 0.8rem;
-}
-
-.invite-warning {
-  margin: 0;
-  font-size: 0.8rem;
-  color: var(--muted);
-}
-
-.matchup .start.is-ready {
-  background: var(--act-soft);
+.lobby-start .start kbd {
+  background: transparent;
+  border-color: currentColor;
   color: inherit;
 }
 
-/* The screen a host's link opens (Parun.Web.Join). */
-.join-status {
-  display: flex;
-  flex-direction: column;
-  gap: 0.5em;
-  margin-bottom: 1em;
+.lobby-start .start-note {
+  font-size: 13px;
+  text-align: center;
 }
 
-.places {
-  list-style: none;
+.lobby-start .problems {
   margin: 0;
-  padding: 0;
-  display: flex;
-  flex-direction: column;
-  gap: 0.35em;
+  padding-left: 1.2em;
+  color: var(--danger);
+  font-size: 13px;
 }
 
-.place {
+@media (max-width: 759px) {
+  main.lobby.new-game {
+    padding-bottom: calc(120px + env(safe-area-inset-bottom));
+  }
+
+  .lobby-start {
+    position: fixed;
+    z-index: 5;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    padding: 12px max(16px, env(safe-area-inset-right)) calc(12px + env(safe-area-inset-bottom)) max(16px, env(safe-area-inset-left));
+    background: var(--surface);
+    border-top: 1px solid var(--line);
+    box-shadow: var(--sheet-shadow);
+  }
+}
+
+#app button.start.is-ready {
+  background: var(--act-soft);
+  color: var(--text);
+}
+
+/* The decks browser: its heading and ways to add a deck, the shelves as
+   tabs (the one shown underlined), then the filters. */
+.browser-head {
   display: flex;
   flex-wrap: wrap;
-  gap: 0.5em;
-  align-items: baseline;
+  align-items: center;
+  gap: 12px;
 }
 
-/* A chosen deck's list: its curve in the summary, its cards on opening. */
-.deck-preview {
-  margin: -0.4em 0 1em;
-  padding: 0.5em 0.75em;
-  border: 1px solid var(--line);
+.browser-head h2 {
+  flex-grow: 1;
+  font-size: 22px;
+  font-weight: 700;
+}
+
+/* On a phone the heading takes its own line, the two ways to add a deck
+   side by side under it. */
+@media (max-width: 759px) {
+  .browser-head h2 {
+    flex-basis: 100%;
+  }
+
+  .browser-head button {
+    flex: 1;
+  }
+}
+
+.shelves {
+  display: flex;
+  gap: 22px;
+  border-bottom: 1px solid var(--line);
+}
+
+#app .shelves button.tab {
+  padding: 10px 2px;
+  border: 0;
+  border-bottom: 3px solid transparent;
+  border-radius: 0;
+  background: transparent;
+  color: var(--muted);
+}
+
+#app .shelves button.tab.on {
+  color: var(--text);
+  border-bottom-color: var(--act);
+}
+
+.deck-tools {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 0.6em;
+}
+
+.new-game .deck-tools {
+  margin-bottom: 0;
+}
+
+.deck-tools input {
+  flex: 1 1 240px;
+  width: auto;
+  min-width: 0;
+}
+
+.deck-tools .random,
+.deck-tools .open-import {
+  flex: none;
+}
+
+/* The colour toggles: pressed ones take a heavier, text-coloured edge. */
+.colour-toggles {
+  display: flex;
+  gap: 6px;
+}
+
+#app .colour-toggles button.toggle {
+  width: 44px;
+  height: 44px;
+  padding: 0;
+  border-radius: 50%;
+  display: inline-grid;
+  place-items: center;
+}
+
+#app .colour-toggles button.toggle.on {
+  border: 3px solid var(--text);
+  background: var(--raised);
+}
+
+/* The set menu drawn as the search box is, its arrow from the text's role. */
+#app select.set-filter {
+  appearance: none;
+  height: 44px;
+  padding: 0 2.4em 0 0.8em;
+  border: 1px solid var(--control);
+  border-radius: var(--radius);
+  background-color: var(--surface);
+  background-image: linear-gradient(45deg, transparent 50%, var(--text) 50%), linear-gradient(135deg, var(--text) 50%, transparent 50%);
+  background-position:
+    calc(100% - 18px) 50%,
+    calc(100% - 13px) 50%;
+  background-size: 5px 5px;
+  background-repeat: no-repeat;
+  color: var(--text);
+  font: inherit;
+  cursor: pointer;
+}
+
+.set-filter:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+/* The decks, as tiles: the set as a badge, the colours, the name, the
+   format, and the curve once read. */
+.deck-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(190px, 1fr));
+  gap: 12px;
+}
+
+.deck-list {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+  gap: 0.4em;
+}
+
+#app button.deck {
+  appearance: none;
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 6px;
+  min-height: 44px;
+  padding: 12px 14px;
+  border: 1px solid var(--control);
   border-radius: var(--radius);
   background: var(--surface);
+  color: var(--text);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
 }
 
-.deck-preview > summary {
+.deck-grid button.deck {
+  min-height: 112px;
+}
+
+#app button.deck.picked {
+  border-color: var(--act);
+  box-shadow: 0 0 0 2px var(--act);
+  background: var(--act-soft);
+}
+
+@media (hover: hover) {
+  #app button.deck:not(.picked):hover {
+    border-color: var(--act);
+  }
+}
+
+.deck-top {
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  gap: 1em;
-  cursor: pointer;
+  gap: 6px;
+}
+
+.deck-top .pips {
+  margin-left: auto;
+}
+
+.set-badge {
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  padding: 2px 6px;
+  border-radius: 6px;
+  background: var(--raised);
+  color: var(--text);
+}
+
+.deck-name {
+  font-weight: 700;
+  line-height: 1.25;
+}
+
+.deck-badges {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.pips {
+  flex: none;
   font-size: 0.9rem;
 }
 
-.preview-title {
+.deck-format,
+.not-legal {
+  font-size: 12px;
+  color: var(--muted);
+}
+
+.not-legal {
+  color: var(--danger);
   font-weight: 600;
 }
 
+.deck-count {
+  font-size: 13px;
+}
+
+.empty {
+  color: var(--muted);
+  font-style: italic;
+  padding: 0.5em 0;
+}
+
+.choosing-for {
+  color: var(--muted);
+  font-size: 0.85rem;
+  margin: 0 0 0.6em;
+}
+
+/* A curve: a bar per mana value, labelled; "spark" small and unlabelled. */
 .curve {
   display: inline-flex;
   align-items: flex-end;
@@ -1134,20 +1471,109 @@ main.lobby {
 }
 
 .curve .mv {
-  font-size: 0.6rem;
+  font-size: 12px;
   color: var(--muted);
   line-height: 1.1;
 }
 
+.curve.spark {
+  margin-top: auto;
+  height: 22px;
+}
+
+.curve.spark .bar {
+  width: 7px;
+}
+
+.curve.spark .mv {
+  display: none;
+}
+
+.curve.spark .fill {
+  background: var(--control);
+}
+
+.picked .curve.spark .fill {
+  background: var(--act);
+}
+
+/* The deck chosen: its name, its curve at size, its kinds of card. */
+.detail h2 {
+  font-size: 22px;
+  font-weight: 700;
+}
+
+.detail-name {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.detail-curve {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 16px;
+}
+
+.detail-curve .curve {
+  display: flex;
+  gap: 8px;
+  height: 90px;
+}
+
+.detail-curve .curve .bar {
+  flex: 1;
+  width: auto;
+  gap: 4px;
+}
+
+.kinds {
+  margin: 0;
+  padding: 4px 16px;
+}
+
+.kinds > div {
+  display: flex;
+  justify-content: space-between;
+  padding: 8px 0;
+  border-bottom: 1px solid var(--line);
+}
+
+.kinds > div:last-child {
+  border-bottom: 0;
+}
+
+.kinds dd {
+  margin: 0;
+  font-variant-numeric: tabular-nums;
+}
+
+/* A deck's whole list, on opening. */
+.deck-preview {
+  padding: 0.5em 0.75em;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: var(--surface);
+}
+
+.deck-preview > summary {
+  cursor: pointer;
+  font-weight: 600;
+  min-height: 32px;
+  display: flex;
+  align-items: center;
+}
+
 .deck-sections {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
   gap: 0.6em 1.2em;
   padding-top: 0.6em;
 }
 
 .deck-section h3 {
-  font-size: 0.75rem;
+  font-size: 12px;
   text-transform: uppercase;
   letter-spacing: 0.06em;
   color: var(--muted);
@@ -1173,22 +1599,11 @@ main.lobby {
   flex: 1;
 }
 
-.deck-tools {
-  display: flex;
-  gap: 0.5em;
-  margin-bottom: 0.6em;
-}
-
-.deck-tools .random,
-.deck-tools .open-import {
-  flex: none;
-}
-
-/* A saved deck's list with the ways to copy it out and delete it. */
+/* The ways to edit a deck, and a saved one's to copy it out and delete it. */
 .saved-tools {
   display: flex;
-  gap: 0.5em;
-  margin: -0.4em 0 1em;
+  flex-wrap: wrap;
+  gap: 8px;
 }
 
 /* The panel a deck list is pasted into, and a saved deck's list to copy. */
@@ -1196,7 +1611,6 @@ main.lobby {
 .export {
   display: grid;
   gap: 0.4em;
-  margin: 0 0 1em;
   padding: 0.75em;
   border: 1px solid var(--line);
   border-radius: var(--radius);
@@ -1227,76 +1641,78 @@ main.lobby {
   gap: 0.5em;
 }
 
-.deck-tools input {
-  flex: 1;
-  width: auto;
+.invite input,
+.join-status input {
+  width: 100%;
   min-width: 0;
+  font-family: ui-monospace, monospace;
+  font-size: 0.8rem;
 }
 
-.choosing-for {
+.invite-warning {
+  margin: 0;
+  font-size: 13px;
   color: var(--muted);
-  font-size: 0.85rem;
-  margin: 0 0 0.6em;
 }
 
-.sets {
-  display: grid;
-  gap: 1em;
-}
-
-.set h2 {
-  text-transform: uppercase;
-  font-size: 0.78rem;
-  letter-spacing: 0.08em;
-  color: var(--muted);
-  margin: 0 0 0.4em;
-}
-
-.deck-list {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
-  gap: 0.4em;
-}
-
-#app button.deck {
-  appearance: none;
-  min-height: 44px;
-  padding: 0.5em 0.75em;
-  border: 1px solid var(--control);
-  border-radius: var(--radius);
-  background: var(--surface);
-  text-align: left;
-  cursor: pointer;
-}
-
-#app button.deck {
+/* The screen a host's link opens (Parun.Web.Join). */
+.lobby-top {
   display: flex;
-  justify-content: space-between;
   align-items: center;
-  gap: 0.4em;
+  gap: 1em;
+  margin-bottom: 1em;
 }
 
-.pips {
+.logo {
+  border-radius: 22%;
   flex: none;
-  font-size: 0.9rem;
 }
 
-.deck-format {
-  display: block;
-  font-size: 0.75rem;
+.versus {
   color: var(--muted);
+  font-weight: 600;
+  font-size: 0.85rem;
+  text-transform: uppercase;
 }
 
-#app button.deck.picked {
-  border-color: var(--act);
-  background: var(--act-soft);
+.join-status {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5em;
+  margin-bottom: 1em;
+}
+
+.places {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.35em;
+}
+
+.place {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5em;
+  align-items: baseline;
+}
+
+.slot-title {
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--muted);
+  font-weight: 700;
+}
+
+.slot-deck {
   font-weight: 600;
 }
 
-.empty {
+.slot-ready {
+  font-size: 0.8rem;
   color: var(--muted);
-  font-style: italic;
-  padding: 0.5em 0;
 }
 
 /* ---------- The game screen ---------- */
@@ -1577,6 +1993,9 @@ main.game {
 }
 
 .seat {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35em;
   border-radius: calc(var(--radius) + 2px);
   padding: 0.5em;
   background: color-mix(in srgb, var(--surface) 55%, transparent);
@@ -3316,6 +3735,10 @@ main.scenarios h2 {
 }
 
 /* ---------- Deck builder ---------- */
+
+#app button.home-button {
+  flex: none;
+}
 
 main.builder {
   max-width: 1200px;
