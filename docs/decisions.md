@@ -3354,9 +3354,9 @@ Entries are ordered by the first rule each cites.
   rerolled to 20 and 7 rerolled to 20 then 4 each trigger once, and 20
   rerolled to 20 twice. A reroll is what "Which result a reroll's trigger
   reads" says: a roll of its own that modifies the original roll.
-- **Rejected**: Reading each die once, at its face after its last reroll: it
-  takes the natural result after a modifier, against CR 706.2, and drops a
-  roll that displayed 20.
+- **Rejected**: Reading each die once, at its face after its last reroll. CR
+  706.2b has a reroll modify "the natural result", which leaves that reading
+  open, but it drops a roll that displayed 20, the reminder text's own test.
 - **Site**: `Parun.Engine.Resolve.Effect.throwSettled`'s `rerollingWith` and
   `Parun.Engine.Resolve.Common.recordRoll`, proved by the scenarios
   `critical-hit-returns-for-a-natural-20-rerolled-away`,

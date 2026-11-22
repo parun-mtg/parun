@@ -17,8 +17,10 @@ import qualified Parun.Types.RerollReach as RerollReach
 -- buckets must ask which bucket a modifier is in, never which card printed it.
 data RollModifier
   = -- | CR 706.2b's FIRST step: throw the same die again and take the new number
-    -- as the natural result, the old one simply ceasing to be it (Clam-I-Am's
-    -- "you may reroll that die"), on as many of the roll's dice as it reaches.
+    -- as the natural result, the old one still a roll that came up
+    -- (docs/decisions.md, "Whether a natural 20 rerolled away was rolled";
+    -- Clam-I-Am's "you may reroll that die"), on as many of the roll's dice as
+    -- it reaches.
     --
     -- The discarded number is NOT CR 706.6's ignored roll: that rule treats a
     -- roll as never having happened, while a rerolled die's first result

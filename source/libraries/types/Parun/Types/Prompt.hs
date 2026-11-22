@@ -190,7 +190,14 @@ data Prompt r where
   -- rolls tied for the lowest CR 706.6 ignores where they differ in thrower,
   -- call or, inside a reroll, face (Parun.Engine.Dice.ignoreLowest), where no
   -- resolving object is at hand.
-  ChooseDieResult :: Decider.Decider -> PlayerId.PlayerId -> Maybe ObjectId.ObjectId -> NonEmpty.NonEmpty Natural.Natural -> Prompt Natural.Natural
+  --
+  -- Each result is its number, the player who threw it, and the events the
+  -- die carries (the natural results it came up, a coin flipped for it), which
+  -- tell apart results reading the same number.
+  --
+  -- Not implemented: telling apart results differing only in the board a
+  -- reroll they carry came up on (#9436).
+  ChooseDieResult :: Decider.Decider -> PlayerId.PlayerId -> Maybe ObjectId.ObjectId -> NonEmpty.NonEmpty (Natural.Natural, PlayerId.PlayerId, [GameEvent.GameEvent]) -> Prompt Natural.Natural
   -- | CR 706.8b: how many of each stored result on the object the seat
   -- rerolls (Centaur of Attention's "reroll any number of this creature's
   -- stored results"); the Map is what the object has, the answer clamped to
@@ -207,11 +214,13 @@ data Prompt r where
   -- of Fortune reaches every player's roll and puts the "may" -- and the cost --
   -- on the Wall's controller.
   --
-  -- The ThrowResult is the NATURAL result the die came up, which is what rule
-  -- 706.2b hands the offer and the only thing separating this question from the
-  -- next die's, or the face the coin landed on. The die's SIZE is not here:
-  -- every offer in force has already been matched against it, so it narrows
-  -- nothing the seat is deciding.
+  -- The ThrowResults are what every die of the roll came up, in roll order,
+  -- the NATURAL result each shows now, and the Natural indexes the one the
+  -- offer rerolls: rule 706.2b hands the offer that die's result, and Night
+  -- Shift of the Living Dead's ruling lets the seat see all of them before
+  -- deciding. A coin is the face it landed on, alone. The die's SIZE is not
+  -- here: every offer in force has already been matched against it, so it
+  -- narrows nothing the seat is deciding.
   --
   -- The Cost is CR 706.2a's "associated cost", Nothing where the modifier states
   -- none -- or the activation cost of an ability activated inside the roll
@@ -220,7 +229,7 @@ data Prompt r where
   --
   -- Never elided. CR 706.2a's "may" makes one offer a real fork, and the two
   -- answers are two different numbers on the board.
-  Rethrow :: Decider.Decider -> PlayerId.PlayerId -> ThrowResult.ThrowResult -> Maybe (Cost.Cost Keyword.Keyword) -> Prompt OptionalDecision.OptionalDecision
+  Rethrow :: Decider.Decider -> PlayerId.PlayerId -> NonEmpty.NonEmpty ThrowResult.ThrowResult -> Natural.Natural -> Maybe (Cost.Cost Keyword.Keyword) -> Prompt OptionalDecision.OptionalDecision
   -- | CR 706.2b's first step over several dice: which of the natural results
   -- the payer rolled at the same time a reroll modifier reaching any number of
   -- them rerolls, for its one cost (Monitor Monitor's "reroll one or more dice
@@ -242,9 +251,10 @@ data Prompt r where
   AdjustDieRoll :: Decider.Decider -> PlayerId.PlayerId -> NonEmpty.NonEmpty Integer -> Natural.Natural -> Maybe (Cost.Cost Keyword.Keyword) -> Prompt (Maybe (Natural.Natural, RollAdjustment.RollAdjustment))
   -- | CR 706.2b: which of two or more competing modifiers the player who
   -- rolled applies next, an index into the candidates, each named by the object
-  -- stating it and the natural result of the die it reaches (Nothing: the
+  -- stating it and the die it reaches, by its place in the roll and its natural
+  -- result, which tells apart two dice showing the same number (Nothing: the
   -- whole roll); re-asked after each one applies or is declined.
-  ChooseRollModifier :: Decider.Decider -> PlayerId.PlayerId -> NonEmpty.NonEmpty (Maybe ObjectId.ObjectId, Maybe Natural.Natural) -> Prompt Natural.Natural
+  ChooseRollModifier :: Decider.Decider -> PlayerId.PlayerId -> NonEmpty.NonEmpty (Maybe ObjectId.ObjectId, Maybe (Natural.Natural, Natural.Natural)) -> Prompt Natural.Natural
   -- | CR 705.1: which face a flipped coin came up, asked after CallCoin (CR
   -- 705.2). RandomObject's reasons for carrying neither Decider nor PlayerId.
   FlipCoin :: Prompt CoinFace.CoinFace

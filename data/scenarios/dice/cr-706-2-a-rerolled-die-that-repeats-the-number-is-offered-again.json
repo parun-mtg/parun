@@ -116,6 +116,11 @@
             "kind": "Rethrow",
             "offer": {
               "result": 3,
+              "results": [
+                3,
+                2
+              ],
+              "die": 0,
               "options": [
                 "Exercises",
                 "Declines"
@@ -158,6 +163,11 @@
             "kind": "Rethrow",
             "offer": {
               "result": 3,
+              "results": [
+                3,
+                2
+              ],
+              "die": 0,
               "options": [
                 "Exercises",
                 "Declines"

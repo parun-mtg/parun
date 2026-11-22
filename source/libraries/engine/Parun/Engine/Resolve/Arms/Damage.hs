@@ -1657,7 +1657,7 @@ rollDieArm throwDice runSubgame resolving source controller legal rollDie = do
               if all (== NonEmpty.head offered) (NonEmpty.tail offered)
                 then pure 0
                 else do
-                  answer <- Game.choose (Prompt.ChooseDieResult (Decide.deciderFor roller gs) roller (Just resolving) offered)
+                  answer <- Game.choose (Prompt.ChooseDieResult (Decide.deciderFor roller gs) roller (Just resolving) (fmap (\n -> (n, roller, [])) offered))
                   pure (if answer < List.genericLength results then answer else 0)
             -- CR 706.4's "the other result", off the same throw rather than
             -- re-derived from the count, FlipCoin's `misses` below and for its

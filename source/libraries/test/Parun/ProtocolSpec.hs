@@ -74,6 +74,7 @@ import qualified Parun.Types.DamageEvent as DamageEvent
 import qualified Parun.Types.DamageKind as DamageKind
 import qualified Parun.Types.Decider as Decider
 import qualified Parun.Types.Deck as Deck
+import qualified Parun.Types.DieResult as DieResult
 import qualified Parun.Types.EntryOption as EntryOption
 import qualified Parun.Types.EntryR as EntryR
 import qualified Parun.Types.EntryRewrite as EntryRewrite
@@ -125,6 +126,7 @@ import qualified Parun.Types.ReplacementEntry as ReplacementEntry
 import qualified Parun.Types.Reply as R
 import qualified Parun.Types.Request as Request
 import qualified Parun.Types.RollAdjustment as RollAdjustment
+import qualified Parun.Types.RollReading as RollReading
 import qualified Parun.Types.SearchPlace as SearchPlace
 import qualified Parun.Types.Settle as Settle
 import qualified Parun.Types.SlotName as SlotName
@@ -411,7 +413,7 @@ spec s registry = Spec.describe s "Protocol" $ do
     Spec.assertEqWith s "a land, a nonland, or neither" (options (Prompt.ChooseLandOrNonland alice S.alice o7)) (Right [Just LandOrNonland.Land, Just LandOrNonland.Nonland, Nothing])
     Spec.assertEqWith s "a mutate's sides" (options (Prompt.ChooseMutateSide alice S.alice o7 o9)) (Right [MutateSide.Over, MutateSide.Under])
     Spec.assertEqWith s "a library's ends" (options (Prompt.ChooseLibraryEnd alice S.alice o7 0)) (Right [LibraryPosition.Top, LibraryPosition.Bottom])
-    Spec.assertEqWith s "a die reroll, with no source" (fmap (\key -> field key (PromptOffer.offerOf Protocol.namer gs (Prompt.Rethrow alice S.alice (ThrowResult.DieCameUp 4) Nothing))) ["source", "result", "cost"]) [Nothing, Just (R.Number 4), Nothing]
+    Spec.assertEqWith s "a die reroll, with no source, beside every die of the roll" (fmap (\key -> field key (PromptOffer.offerOf Protocol.namer gs (Prompt.Rethrow alice S.alice (ThrowResult.DieCameUp 4 NonEmpty.:| [ThrowResult.DieCameUp 2]) 1 Nothing))) ["source", "result", "results", "die", "cost"]) [Nothing, Just (R.Number 2), Just (R.Array [R.Number 4, R.Number 2]), Just (R.Number 1), Nothing]
     Spec.assertBool s (all (Scenario.withinOffer dredge) [OptionalDecision.Exercises, OptionalDecision.Declines]) "every option within the offer"
 
   Spec.it s "a prompt answered by a set offers each candidate as an element of the answer, within its bounds" $ do
@@ -451,6 +453,8 @@ spec s registry = Spec.describe s "Protocol" $ do
           answers <- traverse (Protocol.decodeAnswer prompt) options
           if all (Scenario.withinOffer prompt) answers then Right (answers, field "entries" offer) else Left (Text.pack "an option outside the offer")
         entries = Just . R.Array
+        came who face = GameEvent.DieResultSettled DieResult.MkDieResult {DieResult.roller = who, DieResult.result = face, DieResult.reading = RollReading.NaturalResult}
+        carried who face = R.Object [(Text.pack "thrower", Reply.encode Reply.player Protocol.namer who), (Text.pack "events", R.Array [Reply.encode (Reply.viaCodec Codec.GameEvent.codec) Protocol.namer (came who face)])]
         ballot = BallotChoice.ForWord . SlotName.MkSlotName . Text.pack
         tapped = ReplacementEntry.MkReplacementEntry looked (ReplacementEffect.EntryR (EntryR.MkEntryR Filter.Type.IsSource (EntryRewrite.EntersTapState TapState.Tapped)))
         hit = DamageEvent.MkDamageEvent o7 (Recipient.ToPlayer S.bob) 2 0 False False False 0 Nothing Nothing mempty False mempty mempty mempty mempty Nothing mempty mempty Nothing DamageKind.Noncombat
@@ -462,10 +466,12 @@ spec s registry = Spec.describe s "Protocol" $ do
     Spec.assertEqWith s "CR 616.1 a replacement by its source and Oracle text" (offered (Prompt.ChooseReplacement alice S.alice [tapped, tapped])) (Right ([0, 1], entries (replicate 2 (R.Object [(Text.pack "source", PromptOffer.object Protocol.namer looked), (Text.pack "text", R.Text (Text.pack "Hill Giant enters tapped."))]))))
     Spec.assertEqWith s "CR 614.1c an entry option as its shape" (fmap (fmap (fmap (fmap (Codec.decode Codec.EntryOption.codec . Codec.Reply.toValue)) . (>>= arrayOf))) (offered (Prompt.ChooseEntryOption alice S.alice o7 [shape]))) (Right ([0], Just [Right shape]))
     Spec.assertEqWith s "CR 603.7b an event the seat saw, and null for one it did not" (offered (Prompt.ChooseDelayedTriggerEvent alice S.alice o7 (GameEvent.DamageDealt hit NonEmpty.:| [hidden]))) (Right ([0, 1], entries [Reply.encode (Reply.viaCodec Codec.GameEvent.codec) Protocol.namer (GameEvent.DamageDealt hit), R.Null]))
-    Spec.assertEqWith s "CR 706.2b a modifier by its object, null for none" (offered (Prompt.ChooseRollModifier alice S.alice ((Just o7, Just 3) NonEmpty.:| [(Nothing, Nothing)]))) (Right ([0, 1], entries [R.Object [(Text.pack "source", PromptOffer.object Protocol.namer o7), (Text.pack "die", R.Number 3)], R.Object [(Text.pack "source", R.Null), (Text.pack "die", R.Null)]]))
+    Spec.assertEqWith s "CR 706.2b a modifier by its object and its die's result and place, null for none" (offered (Prompt.ChooseRollModifier alice S.alice ((Just o7, Just (1, 3)) NonEmpty.:| [(Nothing, Nothing)]))) (Right ([0, 1], entries [R.Object [(Text.pack "source", PromptOffer.object Protocol.namer o7), (Text.pack "die", R.Number 3), (Text.pack "place", R.Number 1)], R.Object [(Text.pack "source", R.Null), (Text.pack "die", R.Null), (Text.pack "place", R.Null)]]))
     Spec.assertEqWith s "CR 123.5c a keeper by its card's name" (offered (Prompt.ChooseStickerKeeper alice S.alice (printing NonEmpty.:| [printing]))) (Right ([0, 1], entries (replicate 2 (R.Text (Text.pack "Hill Giant")))))
     Spec.assertEqWith s "CR 315.5a a hand as its cards" (offered (Prompt.KeepHand alice S.alice ([o7] NonEmpty.:| [[]]))) (Right ([0, 1], entries [R.Array [PromptOffer.object Protocol.namer o7], R.Array []]))
-    Spec.assertEqWith s "CR 706.4 a result as its number" (offered (Prompt.ChooseDieResult alice S.alice (Just o7) (4 NonEmpty.:| [4]))) (Right ([0, 1], entries [R.Number 4, R.Number 4]))
+    Spec.assertEqWith s "CR 706.4 a result as its number" (offered (Prompt.ChooseDieResult alice S.alice (Just o7) ((4, S.alice, []) NonEmpty.:| [(4, S.alice, [])]))) (Right ([0, 1], entries [R.Number 4, R.Number 4]))
+    Spec.assertEqWith s "CR 706.4 nothing else told where every result is the roller's and carries nothing" (field "carries" (PromptOffer.offerOf Protocol.namer gs (Prompt.ChooseDieResult alice S.alice (Just o7) ((4, S.alice, []) NonEmpty.:| [(4, S.alice, [])])))) Nothing
+    Spec.assertEqWith s "CR 706.6 results reading the same number told apart by their throwers and events" (field "carries" (PromptOffer.offerOf Protocol.namer gs (Prompt.ChooseDieResult alice S.alice Nothing ((5, S.alice, [came S.alice 12]) NonEmpty.:| [(5, S.bob, [came S.bob 7])])))) (Just (R.Array [carried S.alice 12, carried S.bob 7]))
     Spec.assertEqWith s "CR 701.48a a branch, then neither" (offered (Prompt.ChooseLearn alice S.alice o7 (LearnMode.TakeLesson NonEmpty.:| []))) (Right ([Just LearnMode.TakeLesson, Nothing], entries [R.Text (Text.pack "TakeLesson")]))
     Spec.assertEqWith s "CR 701.38a a vote's choices, then no ballot where it is offered" (fmap (fmap fst . offered . Prompt.ChooseVote alice S.alice o7 (ballot "time" NonEmpty.:| [ballot "knowledge"])) [True, False]) [Right [Just (ballot "time"), Just (ballot "knowledge"), Nothing], Right [Just (ballot "time"), Just (ballot "knowledge")]]
     Spec.assertEqWith s "CR 608.2d a clause, as its index where no object resolves, then neither where it is offered" (offered (Prompt.ChooseClause alice S.alice o7 (ModeIndex.MkModeIndex 0) (clause 1 NonEmpty.:| [clause 2]) True Seq.empty)) (Right ([Just (clause 1), Just (clause 2), Nothing], entries [R.Number 1, R.Number 2]))
