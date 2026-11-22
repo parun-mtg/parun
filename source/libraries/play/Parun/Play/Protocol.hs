@@ -23,6 +23,7 @@ import qualified Parun.Codec.Request as Codec.Request
 import qualified Parun.Engine.Combat as Combat
 import qualified Parun.Engine.Decide as Decide
 import qualified Parun.Engine.Driver as Driver
+import qualified Parun.Engine.Game as Game
 import qualified Parun.Engine.PlayerView as PlayerView
 import qualified Parun.Engine.Projection.View as Projection.View
 import qualified Parun.Extra.Integer as Integer
@@ -52,6 +53,8 @@ import qualified Parun.Types.Reference as Reference
 import qualified Parun.Types.Reply as R
 import qualified Parun.Types.Request as Request
 import qualified Parun.Types.Scratch as Scratch
+import qualified Parun.Types.XDecision as XDecision
+import qualified Parun.Types.Zone as Zone
 import qualified Text.Read as Read
 
 -- | Answers each prompt a seat answers with the reply `send` gets for its
@@ -175,15 +178,17 @@ questionOf gs prompt =
 -- rewinds the announcement. For CR 601.2c's targets it is the object itself,
 -- which CR 115.5 makes an illegal target; for CR 601.2b's modes, one past every
 -- legal mode (CR 700.2a); for a splice, the first card offered twice (CR
--- 702.47b); for a cost payable a limited number of times, one past the limit
--- (CR 702.33a); for entwine (CR 702.42a) and buyback (CR 702.27a), their
--- typed withdrawal. Offered only to the announcing player's own choice: another
+-- 702.47b); for entwine (CR 702.42a), buyback (CR 702.27a), an optional cost's
+-- count (CR 702.33a, 702.33c) and a variable's value (CR 107.3a), their typed
+-- withdrawal. Offered only to the announcing player's own choice: another
 -- chooser's (Parun.Types.TargetSlot's `chooser`, CR 700.2e's mode chooser) is
--- not theirs to withdraw.
+-- not theirs to withdraw; and for a variable, only to the spell's or ability's
+-- own, on the stack, and not to a mana ability's or a special action's X its
+-- payment asks.
 --
 -- Not implemented: a withdrawal at the other prompts of an announcement, which
 -- have neither an answer the engine provably refuses nor a typed decline
--- (#9591).
+-- (#9599).
 withdrawalOf :: GameState.GameState -> Prompt.Prompt r -> Maybe r
 withdrawalOf gs prompt
   | Maybe.isNothing (Scratch.keptFaceDown (GameState.scratch gs)) = Nothing
@@ -197,8 +202,10 @@ withdrawalOf gs prompt
             Just (Seq.singleton (ModeIndex.MkModeIndex (maybe 0 ((+ 1) . ModeIndex.unwrap) (Set.lookupMax legal))))
       Prompt.ChooseSplice _ caster oid ((card, _) : _)
         | own caster oid -> Just [card, card]
-      Prompt.ChooseKicker _ caster oid _ _ (Just limit)
-        | own caster oid -> Just (KickerDecision.MkKickerDecision (limit + 1))
+      Prompt.ChooseKicker _ caster oid _ _ _
+        | own caster oid -> Just KickerDecision.Withdraws
+      Prompt.ChooseX _ caster oid _ _ _
+        | own caster oid && Game.zoneOf oid gs == Just Zone.Stack -> Just XDecision.Withdraws
       Prompt.ChooseEntwine _ caster oid _
         | own caster oid -> Just EntwineDecision.Withdraws
       Prompt.ChooseBuyback _ caster oid _

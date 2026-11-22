@@ -87,6 +87,7 @@ import qualified Parun.Types.Subtype as Subtype
 import qualified Parun.Types.TapState as TapState
 import qualified Parun.Types.TextWord as TextWord
 import qualified Parun.Types.TurnRegisters as TurnRegisters
+import qualified Parun.Types.XDecision as XDecision
 import qualified Parun.Types.Zone as Zone
 
 declaredAttackers :: GameState.GameState -> [ObjectId.ObjectId]
@@ -468,7 +469,7 @@ barricadeCombat plains barricade kicks =
 -- CR 702.33a's answer, and S.identityAnswer's to everything else.
 kickWith :: Natural.Natural -> Prompt.Prompt r -> r
 kickWith kicks p = case p of
-  Prompt.ChooseKicker {} -> KickerDecision.MkKickerDecision kicks
+  Prompt.ChooseKicker {} -> KickerDecision.Pays kicks
   _ -> S.identityAnswer p
 
 evasionSpec :: (Monad m, Monad n) => Spec.Spec m n -> Registry.Registry m -> n ()
@@ -2159,7 +2160,7 @@ renewBoard rakshasa swamp piker =
 -- the announced count itself observable on the board.
 renewing :: Natural.Natural -> [ObjectId.ObjectId] -> Prompt.Prompt r -> r
 renewing x oids p = case p of
-  Prompt.ChooseX {} -> x
+  Prompt.ChooseX {} -> XDecision.Announces x
   Prompt.ChooseTargets _ _ _ sets -> fmap (\(count, legal) -> Set.take (Natural.toIntSaturating count) (Set.filter (maybe False (`elem` oids) . Recipient.objectOf) legal)) sets
   _ -> S.identityAnswer p
 

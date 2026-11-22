@@ -105,6 +105,7 @@ import qualified Parun.Types.TriggeredAbilitySource as TriggeredAbilitySource
 import qualified Parun.Types.TurnRegisters as TurnRegisters
 import qualified Parun.Types.Visibility as Visibility.Type
 import qualified Parun.Types.Weights as Weights
+import qualified Parun.Types.XDecision as XDecision
 import qualified Parun.Types.Zone as Zone
 import qualified Parun.Types.ZoneChange as ZoneChange
 
@@ -514,12 +515,12 @@ lined prompt = case prompt of
     let picks = Engine.Modal.selections legal selection
      in Just (decider, chooser, MkLined [(Moded modes, modes) | modes <- picks] (\step -> case step of Moded modes | elem modes picks -> Just modes; _ -> Nothing) False)
   Prompt.ChooseKicker decider chooser _ keyword which limit ->
-    let paid = fmap KickerDecision.MkKickerDecision [0 .. Maybe.fromMaybe 1 limit]
-     in Just (decider, chooser, MkLined [(Kicked keyword which times, times) | times <- paid] (\step -> case step of Kicked k i times | k == keyword && i == which && maybe True (KickerDecision.unwrap times <=) limit -> Just times; _ -> Nothing) False)
+    let paid = fmap KickerDecision.Pays [0 .. Maybe.fromMaybe 1 limit]
+     in Just (decider, chooser, MkLined [(Kicked keyword which times, times) | times <- paid] (\step -> case step of Kicked k i (KickerDecision.Pays times) | k == keyword && i == which && maybe True (times <=) limit -> Just (KickerDecision.Pays times); _ -> Nothing) False)
   Prompt.ChooseCost decider chooser _ candidates _ ->
     Just (decider, chooser, MkLined [(Costed candidate, candidate) | candidate <- candidates] (\step -> case step of Costed candidate | elem candidate candidates -> Just candidate; _ -> Nothing) False)
   Prompt.ChooseX decider chooser _ slot least greatest ->
-    Just (decider, chooser, MkLined [(Valued slot value, value) | value <- [least .. greatest]] (\step -> case step of Valued named value | named == slot && least <= value && value <= greatest -> Just value; _ -> Nothing) False)
+    Just (decider, chooser, MkLined [(Valued slot value, XDecision.Announces value) | value <- [least .. greatest]] (\step -> case step of Valued named value | named == slot && least <= value && value <= greatest -> Just (XDecision.Announces value); _ -> Nothing) False)
   Prompt.AnnounceTargets decider chooser _ offers ->
     Just (decider, chooser, MkLined [(Announced counts, counts) | counts <- announcements offers] (\step -> case step of Announced counts | announcing offers counts -> Just counts; _ -> Nothing) False)
   Prompt.ChooseTargets decider chooser _ offered ->

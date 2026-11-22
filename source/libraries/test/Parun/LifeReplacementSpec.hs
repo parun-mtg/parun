@@ -35,6 +35,7 @@ import qualified Parun.Types.Recipient as Recipient
 import qualified Parun.Types.Regenerability as Regenerability
 import qualified Parun.Types.Settle as Settle
 import qualified Parun.Types.TurnRegisters as TurnRegisters
+import qualified Parun.Types.XDecision as XDecision
 import qualified Parun.Types.Zone as Zone
 
 -- CR 614.1a / 120.4c: Worship ({3}{W} Enchantment, "If you control a creature,
@@ -524,7 +525,7 @@ ashiokSpec s registry = Spec.describe s "Ashiok, Wicked Manipulator (CR 119.4 / 
 -- excludes leaves the slot empty instead of quietly becoming a legal one.
 castDeflection :: Natural.Natural -> PlayerId.PlayerId -> Prompt.Prompt r -> r
 castDeflection x pid p = case p of
-  Prompt.ChooseX {} -> x
+  Prompt.ChooseX {} -> XDecision.Announces x
   Prompt.ChooseTargets _ _ _ sets -> fmap (Set.filter (== Recipient.ToPlayer pid) . snd) sets
   _ -> S.identityAnswer p
 

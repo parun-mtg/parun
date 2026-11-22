@@ -113,6 +113,7 @@ import qualified Parun.Types.Staged as Staged
 import qualified Parun.Types.Subtype as Subtype
 import qualified Parun.Types.Supertype as Supertype
 import qualified Parun.Types.TurnRegisters as TurnRegisters
+import qualified Parun.Types.XDecision as XDecision
 import qualified Parun.Types.Zone as Zone
 
 -- Jace Beleren's abilities in printed order: +2, -1, -10. Indexed rather than
@@ -206,7 +207,7 @@ theNissa gs =
 -- is which number the engine itself reached.
 announcingX :: Natural -> Prompt.Prompt r -> r
 announcingX x p = case p of
-  Prompt.ChooseX {} -> x
+  Prompt.ChooseX {} -> XDecision.Announces x
   Prompt.ChooseOptional {} -> OptionalDecision.Exercises
   _ -> S.identityAnswer p
 
@@ -697,7 +698,7 @@ tamiyoMinusXBoard s registry = do
 -- set, so CR 608.2b's re-read keeps the recipient.
 answerXAt :: Natural -> ObjectId.ObjectId -> Prompt.Prompt r -> r
 answerXAt x wanted p = case p of
-  Prompt.ChooseX {} -> x
+  Prompt.ChooseX {} -> XDecision.Announces x
   Prompt.ChooseTargets _ _ _ sets -> fmap (Set.filter ((== Just wanted) . Recipient.objectOf) . snd) sets
   _ -> S.identityAnswer p
 
@@ -706,7 +707,7 @@ answerAtBoundX :: Prompt.Prompt r -> State.State [Natural] r
 answerAtBoundX p = case p of
   Prompt.ChooseX _ _ _ _ _ bound -> do
     State.modify' (<> [bound])
-    pure bound
+    pure (XDecision.Announces bound)
   _ -> pure (S.identityAnswer p)
 
 tamiyoMinusXSpec :: (Monad m, Monad n) => Spec.Spec m n -> Registry.Registry m -> n ()

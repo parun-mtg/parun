@@ -1220,8 +1220,8 @@ replicateSpec s registry = Spec.describe s "Replicate" $ do
           Prompt.ChooseKicker {} -> do
             answers <- State.get
             case answers of
-              next : rest -> KickerDecision.MkKickerDecision next <$ State.put rest
-              [] -> pure (KickerDecision.MkKickerDecision 0)
+              next : rest -> KickerDecision.Pays next <$ State.put rest
+              [] -> pure (KickerDecision.Pays 0)
           Prompt.ChooseTargets _ _ _ asked -> pure (fmap (\(_, offered) -> Set.filter ((== Just (Maybe.fromMaybe myrId stifled)) . Recipient.objectOf) offered) asked)
           _ -> pure (S.identityAnswer p)
         run stifled answers gs action = fst (State.runState (fmap snd (Engine.runGame (answering stifled) gs (action >> Engine.settleForPriority))) answers)
@@ -1327,7 +1327,7 @@ casualtySpec s registry = Spec.describe s "Casualty" $ do
             }
         answer :: Natural.Natural -> Prompt.Prompt r -> r
         answer times p = case p of
-          Prompt.ChooseKicker {} -> KickerDecision.MkKickerDecision times
+          Prompt.ChooseKicker {} -> KickerDecision.Pays times
           Prompt.ChooseSacrifices _ _ _ candidates n _ -> Set.fromList (List.genericTake n (filter (`elem` [jeditId, giantId]) candidates))
           _ -> S.identityAnswer p
         step times gs action = snd (Engine.runGamePure (answer times) gs (action >> Engine.settleForPriority))
@@ -1364,7 +1364,7 @@ offspringSpec s registry = Spec.describe s "Offspring" $ do
             }
         answer :: Natural.Natural -> Prompt.Prompt r -> r
         answer times p = case p of
-          Prompt.ChooseKicker {} -> KickerDecision.MkKickerDecision times
+          Prompt.ChooseKicker {} -> KickerDecision.Pays times
           _ -> S.identityAnswer p
         step times gs action = snd (Engine.runGamePure (answer times) gs (action >> Engine.settleForPriority))
         resolveAll times gs = if null (TurnRegisters.stack (GameState.turn gs)) then gs else resolveAll times (step times gs Stack.resolveTop)
@@ -1434,7 +1434,7 @@ conspireSpec s _ = Spec.describe s "Conspire" $ do
 -- below.
 paidTimesAt :: Natural.Natural -> Recipient.Recipient -> Prompt.Prompt r -> r
 paidTimesAt times recipient p = case p of
-  Prompt.ChooseKicker {} -> KickerDecision.MkKickerDecision times
+  Prompt.ChooseKicker {} -> KickerDecision.Pays times
   _ -> pinTarget recipient p
 
 -- Answer a ChooseTargets by FILTERING the offered set down to one recipient

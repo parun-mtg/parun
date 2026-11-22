@@ -105,6 +105,7 @@ import qualified Parun.Types.TapState as TapState
 import qualified Parun.Types.TriggeredAbility as TriggeredAbility
 import qualified Parun.Types.TriggeredAbilitySource as TriggeredAbilitySource
 import qualified Parun.Types.TurnRegisters as TurnRegisters
+import qualified Parun.Types.XDecision as XDecision
 import qualified Parun.Types.Zone as Zone
 
 -- bob's turn with a spell on the stack, alice holding the Vultures, a Doomed
@@ -645,7 +646,7 @@ plottingFromLibrary s registry = Spec.describe s "CR 702.170f Fblthp, Lost on th
         geyserCost = Cost.MkCost (Just (ManaCost.MkManaCost [ManaSymbol.Variable, ManaSymbol.OfType (ManaType.Colored Color.Blue), ManaSymbol.OfType (ManaType.Colored Color.Blue)])) []
         naming :: Natural.Natural -> Prompt.Prompt r -> r
         naming x p = case p of
-          Prompt.ChooseX {} -> x
+          Prompt.ChooseX {} -> XDecision.Announces x
           _ -> S.identityAnswer p
         plottedWith x = S.runPure (naming x) gs (Plot.plot S.manaPerformer S.alice topId geyserCost)
     Spec.assertEqWith s "X = 1 taps three Islands" (S.tappedCount S.alice (plottedWith 1)) 3
@@ -1412,7 +1413,7 @@ suspendForX :: Natural.Natural -> ObjectId.ObjectId -> Prompt.Prompt r -> r
 suspendForX x oid p = case p of
   Prompt.ChooseAction _ _ actions ->
     if List.elem (Action.Type.Suspend oid) actions then Action.Type.Suspend oid else Action.Type.Pass
-  Prompt.ChooseX {} -> x
+  Prompt.ChooseX {} -> XDecision.Announces x
   _ -> S.identityAnswer p
 
 suspendingForX :: (Monad m, Monad n) => Spec.Spec m n -> Registry.Registry m -> n ()

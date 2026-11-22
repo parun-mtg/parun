@@ -84,6 +84,7 @@ import qualified Parun.Types.Staged as Staged
 import qualified Parun.Types.TapState as TapState
 import qualified Parun.Types.TurnRegisters as TurnRegisters
 import qualified Parun.Types.Weights as Weights
+import qualified Parun.Types.XDecision as XDecision
 import qualified Parun.Types.Zone as Zone
 
 spec :: forall m n. (Monad m, Monad n) => Spec.Spec m n -> Registry.Registry m -> n ()
@@ -303,7 +304,7 @@ spec s registry = Spec.describe s "Search" $ do
     gs <- burnAtLife s registry "Burst Lightning" 5 4
     let budget method = SearchBudget.MkSearchBudget {SearchBudget.samples = 2, SearchBudget.turns = 1000, SearchBudget.prompts = 40, SearchBudget.candidates = 0, SearchBudget.playout = Playout.Random, SearchBudget.mistakes = 0, SearchBudget.method = method}
         expected = Just ([1 :: Natural], Set.singleton (Recipient.ToPlayer S.bob))
-        kicked line = ([KickerDecision.unwrap times | Search.Kicked _ _ times <- line], recipientsOf line)
+        kicked line = ([times | Search.Kicked _ _ (KickerDecision.Pays times) <- line], recipientsOf line)
     flatly <- traverse (fmap (fmap kicked) . linedIn s (budget SearchMethod.Flat) gs) [1 .. 4]
     Spec.assertEqWith s "kicked once, at Bob, in every seed, flat" flatly (expected <$ flatly)
     treed <- traverse (fmap (fmap kicked) . linedIn s (budget SearchMethod.InformationSet) gs) [1 .. 4]
@@ -742,7 +743,7 @@ linedIn s budget gs seed = either (Spec.assertFailure s . Text.unpack) pure =<< 
             Prompt.AnnounceTargets _ chooser _ _ | chooser == S.alice -> Answerer.unwrap seats asked >>= \counts -> go (left - 1) (Search.Announced counts : taken) (k counts)
             Prompt.ChooseCost _ chooser _ _ _ | chooser == S.alice -> Answerer.unwrap seats asked >>= \candidate -> go (left - 1) (Search.Costed candidate : taken) (k candidate)
             Prompt.ChooseKicker _ chooser _ keyword which _ | chooser == S.alice -> Answerer.unwrap seats asked >>= \times -> go (left - 1) (Search.Kicked keyword which times : taken) (k times)
-            Prompt.ChooseX _ chooser _ slot _ _ | chooser == S.alice -> Answerer.unwrap seats asked >>= \value -> go (left - 1) (Search.Valued slot value : taken) (k value)
+            Prompt.ChooseX _ chooser _ slot _ _ | chooser == S.alice -> Answerer.unwrap seats asked >>= \value -> go (left - 1) ([Search.Valued slot n | XDecision.Announces n <- [value]] <> taken) (k value)
             _ -> Answerer.unwrap seats asked >>= go (left - 1) taken . k
       _ -> pure Nothing
 

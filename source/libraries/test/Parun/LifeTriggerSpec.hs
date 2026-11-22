@@ -57,6 +57,7 @@ import qualified Parun.Types.TriggerCondition as TriggerCondition
 import qualified Parun.Types.TriggerFrequency as TriggerFrequency
 import qualified Parun.Types.TurnRegisters as TurnRegisters
 import qualified Parun.Types.TurnScope as TurnScope
+import qualified Parun.Types.XDecision as XDecision
 import qualified Parun.Types.Zone as Zone
 import qualified Parun.Types.ZoneChange as ZoneChange
 
@@ -462,7 +463,7 @@ forthEorlingasSpec s registry =
       -- tokens rather than none.
       choosingX :: Natural -> Prompt.Prompt r -> r
       choosingX x p = case p of
-        Prompt.ChooseX {} -> x
+        Prompt.ChooseX {} -> XDecision.Announces x
         _ -> S.identityAnswer p
       knights gs = filter (\oid -> Set.member Subtype.Knight (Projection.subtypesOf oid gs)) (Set.toList (GameState.battlefield gs))
       -- The distinct EventGroups the log's combat damage carries.

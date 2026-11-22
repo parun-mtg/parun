@@ -68,6 +68,7 @@ import qualified Parun.Types.Status as Status
 import qualified Parun.Types.TapState as TapState
 import qualified Parun.Types.TriggeredAbility as TriggeredAbility
 import qualified Parun.Types.TurnRegisters as TurnRegisters
+import qualified Parun.Types.XDecision as XDecision
 import qualified Parun.Types.Zone as Zone
 
 -- The names of the cards in one player's copy of a zone, in that zone's order.
@@ -1012,7 +1013,7 @@ openTheWaySpec s registry =
       -- Announces this X, and rotates whatever batch the bottoming offers.
       answering :: Natural -> Prompt.Prompt r -> r
       answering x p = case p of
-        Prompt.ChooseX {} -> x
+        Prompt.ChooseX {} -> XDecision.Announces x
         Prompt.Shuffle batch -> case batch of
           a : rest -> rest <> [a]
           [] -> []

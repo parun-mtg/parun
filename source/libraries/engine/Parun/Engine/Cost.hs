@@ -234,6 +234,7 @@ import qualified Parun.Types.TypeLine as TypeLine
 import qualified Parun.Types.Undoing as Undoing
 import qualified Parun.Types.VariableChoice as VariableChoice
 import qualified Parun.Types.WhichCounters as WhichCounters
+import qualified Parun.Types.XDecision as XDecision
 import qualified Parun.Types.Zone as Zone
 
 -- CR 118.6: the cost of an object with no mana cost. Also the ChooseCost
@@ -5980,18 +5981,20 @@ payAction :: ManaAbilityPerformer.ManaAbilityPerformer -> GameState -> PaymentSu
 payAction perform before subject leastX pid oid printed
   | not (payableAt leastX) = pure Nothing
   | otherwise = do
-      named <-
+      answered <-
         if hasVariable printed
           then Game.choose (Prompt.ChooseX (Decide.deciderFor pid before) pid oid Binding.variableX leastX (greatestPayableX Nothing payableAt printed))
-          else pure 0
-      if (hasVariable printed && named < leastX) || not (payableAt named)
-        then pure Nothing
-        else do
-          (announced, _) <- announce subject ManaSpending.AsProduced pid oid pure (substituteX named printed)
-          payment <- pay perform before PaymentMoment.OutsideResolution subject Nothing ManaSpending.AsProduced pid oid announced
-          pure $ case payment of
-            Payment.Unpaid -> Nothing
-            Payment.Paid _ -> Just named
+          else pure (XDecision.Announces 0)
+      case answered of
+        XDecision.Announces named
+          | not (hasVariable printed && named < leastX) && payableAt named -> do
+              (announced, _) <- announce subject ManaSpending.AsProduced pid oid pure (substituteX named printed)
+              payment <- pay perform before PaymentMoment.OutsideResolution subject Nothing ManaSpending.AsProduced pid oid announced
+              pure $ case payment of
+                Payment.Unpaid -> Nothing
+                Payment.Paid _ -> Just named
+        -- A withdrawal takes the action away as a refused X does.
+        _ -> pure Nothing
   where
     payableAt x = actionPayableAt subject x pid oid printed before
 
@@ -7391,239 +7394,243 @@ tapForManaWith perform window inFlight refused activator oid = do
           -- (data/scenarios/mana/cr-106-1a-601-2b-wizard-s-rockets-adds-x-mana-in-any-combination-of-colors.json).
           -- An X the board cannot pay loses the activation at the payment,
           -- Activate.activateAbility's posture.
-          x <- if printedX then Game.choose (Prompt.ChooseX (Decide.deciderFor controller gs) controller oid Binding.variableX 0 (greatestPayableX Nothing payableAt (ManaOption.cost chosen))) else pure 0
-          let withComponents = plusComponents gathered (substituteX x (ManaOption.cost chosen))
-          -- CR 118.13a: a mana ability is an activated ability (CR 605.1a) and
-          -- CR 602.2b sends its activation cost through CR 601.2b, so a symbol
-          -- payable in several ways is announced as the ability is activated
-          -- rather than left to the payment. BEFORE announceReductions, which is
-          -- CR 601.2f -- Cast.castSpell's and Activate.activateAbility's order,
-          -- and rule 601.2b's own. Mystic Gate's "{W/U}, {T}" is what observes it
-          -- (Parun.ManaSpec's Mystic Gate group).
-          --
-          -- The Phyrexian life record is DISCARDED, Activate's reason: rule
-          -- 702.150a reads what the player who CAST a spell announced.
-          (announcedCost, _) <- announce (PaymentSubject.Activating oid AbilityKind.ManaAbility (ActivatedAbility.name =<< ManaOption.ability chosen) Nothing ManaNarrowing.none) ManaSpending.AsProduced controller oid (totalManas gathered) withComponents
-          -- CR 118.7e's half of each hybrid symbol in a reduction, and CR
-          -- 601.2f's order of several reductions -- both the payer's, and both
-          -- elided by announceReductions wherever the answers cannot differ,
-          -- which is every board `data/cards/` can build today.
-          announced <- announceReductions controller oid gs announcedCost gathered
-          (outcome, nested, nestedSpent) <- payActivation perform (Set.insert (oid, ManaOption.ability chosen) inFlight) controller oid (ActivatedAbility.name =<< ManaOption.ability chosen) (totalWith announced announcedCost)
-          case outcome of
-            Payment.Unpaid -> pure (False, nested, [], Set.singleton (oid, ManaOption.ability chosen))
-            Payment.Paid paidSlots -> do
-              -- CR 601.2h / 608.2h: the yield is priced again with the slots
-              -- the payment bound, since an offer cannot know which artifact
-              -- Priest of Yawgmoth's cost will sacrifice (Parun.ManaSpec's Priest
-              -- of Yawgmoth group). Every pair whose offer the activator picked
-              -- among is a candidate, so a colour choice the offer collapsed is
-              -- asked now -- Food Chain's colour (Parun.ManaSpec's Food Chain
-              -- group) -- and a yield the slots leave unchanged asks nothing.
-              -- Its pools are read off gsPaid, the pool the payment LEFT, which
-              -- is what CR 701.10f's doubling reads: Doubling Cube's {3} paid
-              -- from the pool shrinks what it doubles. Their amounts reach CR
-              -- 405.6c's other effects through the clause fold below.
+          -- A withdrawal loses the activation as an unpaid cost does.
+          xAnswer <- if printedX then Game.choose (Prompt.ChooseX (Decide.deciderFor controller gs) controller oid Binding.variableX 0 (greatestPayableX Nothing payableAt (ManaOption.cost chosen))) else pure (XDecision.Announces 0)
+          case xAnswer of
+            XDecision.Withdraws -> pure (False, noActivations, [], Set.singleton (oid, ManaOption.ability chosen))
+            XDecision.Announces x -> do
+              let withComponents = plusComponents gathered (substituteX x (ManaOption.cost chosen))
+              -- CR 118.13a: a mana ability is an activated ability (CR 605.1a) and
+              -- CR 602.2b sends its activation cost through CR 601.2b, so a symbol
+              -- payable in several ways is announced as the ability is activated
+              -- rather than left to the payment. BEFORE announceReductions, which is
+              -- CR 601.2f -- Cast.castSpell's and Activate.activateAbility's order,
+              -- and rule 601.2b's own. Mystic Gate's "{W/U}, {T}" is what observes it
+              -- (Parun.ManaSpec's Mystic Gate group).
               --
-              -- Unprinted: the objects they name reaching those effects, which
-              -- run with none of them. Parun.AbilitySlotLintSpec's "CR 405.6c no
-              -- card writes a mana ability whose other effects read an object
-              -- its cost paid" keeps that read out of card data.
-              gsPaid <- State.get
-              let paid = if printedX then Map.insert Binding.variableX (Binding.toAmount x) paidSlots else paidSlots
-                  pricedAlike = [priced | (offered, priced) <- Mana.manaRepricingsGiven paid gsPaid Map.empty oid gs, List.elem offered alike]
-              pricedChosen <- case ListUtils.nubOrdOn ownPart pricedAlike of
-                route : routes -> chooseManaYield controller oid (route NonEmpty.:| routes) gsPaid
-                [] -> pure chosen
-              let pricedShares = filter (\option -> ownPart option == ownPart pricedChosen) pricedAlike
-              -- CR 608.2c: the clauses in printed order, each decided as it is
-              -- reached, on the board the cost and the earlier clauses left --
-              -- Hickory Woodlot's "if there are no depletion counters" reads the
-              -- counter its own cost removed (Parun.ManaSpec's Hickory Woodlot
-              -- group). The source stands in for the ability object CR 605.3b
-              -- leaves uncreated, and CR 608.2h's last-known information answers
-              -- for a source the cost sacrificed.
-              --
-              -- A clause that happens adds its share of the yield, then runs the
-              -- other effects printed after it -- CR 405.6c's "the mana is
-              -- produced and the other effect happens immediately", HERE, inside
-              -- the window this activation was made in. Ancient Tomb's 2 damage
-              -- is charged before the rest of the payment can spend the mana it
-              -- just made (Parun.ManaSpec's Ancient Tomb group). The performer runs them;
-              -- Parun.Engine.Resolve.Effect.performManaAbility is where the source
-              -- stands in for the ability object.
-              --
-              -- CR 106.4: each share goes to the players its own reference
-              -- names, resolved through Mana.recipientsOf -- the same function
-              -- Mana.manaSuppliesGiven keeps the payer's share by, so the offer
-              -- and the payment cannot disagree about whose pool a route fills.
-              -- Yurlok of Scorch Thrash is the printing that observes it, and
-              -- Parun.ManaSpec's Yurlok group is what proves it. ORDER across
-              -- recipients is unobservable: a pool is a multiset
-              -- (Parun.Types.Mana) and CR 101.4's ordering rule is about CHOICES,
-              -- of which the addition itself makes none.
-              --
-              -- A clause offers mana only where its "if" held at the OFFER, so one
-              -- whose "if" only the cost makes true adds none. MTGJSON's dump of
-              -- 2026-08-23 prints no such clause (mana-ability lines matching
-              -- "Add ... . If ... add", every hit an "instead" whose "if" no cost
-              -- of its own touches); a land whose cost removes the counter its
-              -- "instead" reads would refute this.
-              --
-              -- CR 118.12 after the "if", Parun.Types.Clause's printed order:
-              -- Rhystic Cave's "unless any player pays {1}" is offered to the
-              -- table by the performer, the source standing in for the ability
-              -- object here too, and a clause whose gate says no adds no mana.
-              --
-              -- CR 608.2c / 608.2d inside a clause: the effects printed BEFORE its
-              -- first addition run first, and the slots they bind are what the
-              -- addition's recipient reads -- Valleymaker's "Choose a player.
-              -- That player adds {G}{G}{G}" (Parun.ManaSpec's Valleymaker group).
-              -- The slots are threaded through the performer, CR 605.3b leaving
-              -- no ability object to hold them. A share under any reference but
-              -- @Relative You@ is then picked by each RECIPIENT among the routes
-              -- alike in the activator's own part: Spectral Searchlight's "any
-              -- color they choose" (Parun.ManaSpec's Spectral Searchlight group).
-              let shareAt i ref option = Map.lookup ref . snd =<< Maybe.listToMaybe (drop i (ManaOption.steps option))
-                  pickShare i ref recipient mana = case ListUtils.nubOrdOn (shareAt i ref) pricedShares of
-                    representative : more@(_ : _) | ref /= you -> do
-                      gsNow <- State.get
-                      picked <- chooseManaYield recipient oid (representative NonEmpty.:| more) gsNow
-                      pure (maybe (Mana.unitsOf mana) Mana.unitsOf (shareAt i ref picked))
-                    _ -> pure (Mana.unitsOf mana)
-                  happens clause = do
-                    gsNow <- State.get
-                    let context = Projection.sourceContext gsNow (Just controller) oid
-                    pure (maybe True (Condition.holds (Projection.viewWithLastKnownAnywhere gsNow) context gsNow oid) (Clause.condition clause))
-                  gated cIdx answers clause = case Clause.payGate clause of
-                    Nothing -> pure (True, answers)
-                    Just gate -> ManaAbilityPerformer.payGate perform oid controller cIdx gate answers
-                  -- CR 613.1f: the ability's name, which is how its effects
-                  -- read the card it was acquired from (CR 605.3b leaves no
-                  -- ability object to carry it).
-                  reader = ActivatedAbility.name =<< ManaOption.ability chosen
-                  step (answers, bound, filled, made) (cIdx, (i, (clause, share))) = do
-                    holds <- happens clause
-                    (admitted, answers2) <- if holds then gated cIdx answers clause else pure (False, answers)
-                    if not admitted
-                      then pure (answers2, bound, filled, made)
-                      else do
-                        let (leading, trailing) = List.break (Maybe.isJust . ManaAbility.manaProduced) (Foldable.toList (Clause.effects clause))
-                        bound1 <- ManaAbilityPerformer.effects perform oid reader controller bound leading
-                        gsNow <- State.get
-                        let chosenPlayers = Map.filter (not . Set.null) (fmap (Set.fromList . Maybe.mapMaybe Recipient.playerOf . Set.toList) bound1)
-                        parts <- traverse (\(ref, mana) -> traverse (\recipient -> fmap ((,) recipient) (pickShare i ref recipient mana)) (Mana.recipientsOf controller chosenPlayers gsNow ref)) (Map.toList share)
-                        let shares = concat parts
-                            -- CR 106.12a's "produced", once per addition whoever's
-                            -- pool it reached: the first recipient's pick, or the
-                            -- offered share where it reached nobody.
-                            produced = concat (zipWith (\(_, mana) part -> maybe (Mana.unitsOf mana) snd (Maybe.listToMaybe part)) (Map.toList share) parts)
-                        -- CR 603.7e: a spend trigger is the ACTIVATOR's, which
-                        -- Mana.manaOptionsOfGiven could only guess as the
-                        -- permanent's controller. A fence: no "any player may
-                        -- activate" route in data/cards/ prints one.
-                        --
-                        -- CR 106.6: mana made under a grant (Piracy) carries the
-                        -- grant's restriction, whoever's pool it reaches, as
-                        -- Mana.manaSuppliesGiven counted it.
-                        let activated = fmap (fmap (fmap (\u -> maybe id Mana.restrictUnit (Monad.join (access chosen)) u {ManaUnit.spendTrigger = fmap (\t -> t {SpendTrigger.controller = controller}) (ManaUnit.spendTrigger u)}))) shares
-                        State.modify' (\g -> List.foldl' (\acc (recipient, units) -> Mana.addMana recipient units acc) g activated)
-                        -- CR 608.2c: the "that color" the trailing effects read,
-                        -- Resolve.Arms.Damage.addMana's write. A clause's shares
-                        -- are added as one, so its additions are not told apart:
-                        -- Parun.CardSpec keeps a choosing addition alone in its clause.
-                        --
-                        -- The write ends with the clause, the source's choice put
-                        -- back as it stood: "that color" is this ability's own, no
-                        -- CR 607.2d choice another ability or a later unit of
-                        -- mana (Mana.sourceChoicesOf) may read. Proved by
-                        -- data/scenarios/mana-source's two Foraging Wickermaw
-                        -- scenarios.
-                        let choosing = any ManaAddition.choosesColor (Maybe.mapMaybe ManaAbility.manaProduced (Foldable.toList (Clause.effects clause)))
-                            acquisition = Game.readingAcquisition oid oid gsNow oid
-                            standing = Game.choiceWithLastKnown Chosen.Colors acquisition oid gsNow
-                        Monad.when choosing $
-                          State.modify' (Game.recordChoice Chosen.Colors acquisition (const (Just (Mana.colorsAmong (fmap ManaUnit.manaType (concatMap snd shares))))) oid)
-                        bound2 <- ManaAbilityPerformer.effects perform oid reader controller bound1 (filter (Maybe.isNothing . ManaAbility.manaProduced) trailing)
-                        Monad.when choosing $
-                          State.modify' (Game.recordChoice Chosen.Colors acquisition (const standing) oid)
-                        pure (answers2, bound2, filled <> shares, made <> produced)
-              -- CR 602.2's history, off `gs`, the board the activation began on:
-              -- a Treasure its own cost sacrificed is still logged as what it was.
-              -- The intrinsic route is logged too; CR 305.6 makes it an activated
-              -- ability all the same. Ahead of the clauses, which resolve after it is
-              -- activated (CR 605.3b): Initiates of the Ebon Hand's
-              -- "has been activated four or more times" counts this one.
-              State.modify' (ActivationRestriction.logActivation gs controller oid (ManaOption.ability chosen) AbilityKind.ManaAbility Set.empty)
-              -- CR 602.2b / 605.3b: the activation, at the same moment and for
-              -- the same reason, with no stack object to name.
-              State.modify' (Event.recordEvent (GameEvent.AbilityActivated AbilityWasActivated.MkAbilityWasActivated {AbilityWasActivated.player = controller, AbilityWasActivated.ability = Nothing, AbilityWasActivated.source = oid, AbilityWasActivated.facts = Game.abilityFacts AbilityKind.ManaAbility (ManaOption.ability chosen), AbilityWasActivated.activationCost = Cost.mana . ActivatedAbility.cost =<< ManaOption.ability chosen}))
-              -- CR 107.3a / 608.2h: the other effects read the amounts the cost
-              -- paid, as the yield does -- Springjack Pasture's "You gain X
-              -- life" (data/scenarios/mana/cr-107-3a-405-6c-springjack-pasture-*).
-              -- CR 605.3b leaves no ability object to bind them on, so they are
-              -- published on Scratch.ambientAmounts for the fold's span and
-              -- restored after it, Resolve.runPreventionRider's posture.
-              ambientBefore <- State.gets (Scratch.ambientAmounts . GameState.scratch)
-              let setAmbient amounts = State.modify' (\g -> g {GameState.scratch = (GameState.scratch g) {Scratch.ambientAmounts = amounts}})
-              setAmbient (Map.union (Map.mapMaybe Binding.Type.amount paid) ambientBefore)
-              (_, _, shares, producedUnits) <- Monad.foldM step (Map.empty, Map.empty, [], []) (zip (fmap ClauseIndex.MkClauseIndex [0 ..]) (zip [0 :: Int ..] (ManaOption.steps pricedChosen)))
-              setAmbient ambientBefore
-              -- CR 605.1b's "mana being added to a player's mana pool", one event
-              -- per player whose pool this activation filled, and CR 106.12a's
-              -- "produced": what the clauses that happened added, whoever's pool.
-              let added = Map.fromListWith Set.union [(recipient, Set.fromList (fmap ManaUnit.manaType units)) | (recipient, units) <- shares, not (null units)]
-              -- CR 602.5b: record that THIS ability of this permanent has now
-              -- been activated, which is the whole of both counted riders'
-              -- storage (`capacity` above is where they are read on this path).
-              -- CR 605.3b leaves a mana ability no stack object, so this is the
-              -- activation and Activate.activateAbility never sees it -- and
-              -- ActivationRestriction.recordActivation is the writer the two
-              -- roads share, so they cannot disagree about what was spent.
-              --
-              -- Only after Payment.Paid, so a route refused mid-payment leaves no
-              -- record. CR 305.6's intrinsic route has no ability and prints no
-              -- rider, so it can never reach this.
-              case ManaOption.ability chosen of
-                Just spent -> State.modify' (ActivationRestriction.recordActivation oid spent)
-                Nothing -> pure ()
-              -- CR 106.12: this activation "tapped [the permanent] for mana"
-              -- exactly when {T} was in its cost and it produced mana, which is
-              -- what CR 106.12a's condition watches. Recorded LAST, after CR
-              -- 405.6c's other effects, because CR 605.4a puts what it triggers
-              -- immediately after the whole mana ability.
-              --
-              -- The events, not the board: a permanent tapped by {T} is also
-              -- tapped by Icy Manipulator, and Parun.Engine.Event.tap has already
-              -- written GameEvent.BecameTapped for both.
-              -- Every unit produced and not the payer's share: CR 106.12a asks
-              -- whether the activation PRODUCED mana, which it did whoever's
-              -- pool it went to.
-              --
-              -- The snapshot is off `gs`, the board the activation began on, for
-              -- the history's reason above: a land its own cost sacrificed
-              -- (Crystal Vein) was still a land tapped for mana.
-              let tappedForMana =
-                    [ GameEvent.TappedForMana (TappedForMana.MkTappedForMana {TappedForMana.permanent = oid, TappedForMana.mana = Set.fromList (fmap ManaUnit.manaType producedUnits), TappedForMana.player = controller, TappedForMana.snapshot = snapshot})
-                    | List.elem CostComponent.TapThis (Cost.components (ManaOption.cost chosen)) && not (null producedUnits),
-                      snapshot <- Maybe.maybeToList (Projection.objectSnapshot oid gs)
-                    ]
-                  -- CR 605.1b's other event, whether or not {T} was paid, and
-                  -- recorded at the same moment for the same CR 605.4a reason.
-                  manaAdded = fmap (\(recipient, types) -> GameEvent.ManaAdded (ManaAdded.MkManaAdded {ManaAdded.player = recipient, ManaAdded.source = oid, ManaAdded.mana = types, ManaAdded.cause = ManaAddedCause.ManaAbility})) (Map.toList added)
-                  -- CR 605.3b's own moment: the ability "resolves immediately
-                  -- after it is activated", and this line is where that has just
-                  -- finished happening. UNCONDITIONAL where the tap event is
-                  -- gated on {T} and on a yield -- CR 605.2 keeps an ability that
-                  -- produced nothing a mana ability, and it resolved either way.
+              -- The Phyrexian life record is DISCARDED, Activate's reason: rule
+              -- 702.150a reads what the player who CAST a spell announced.
+              (announcedCost, _) <- announce (PaymentSubject.Activating oid AbilityKind.ManaAbility (ActivatedAbility.name =<< ManaOption.ability chosen) Nothing ManaNarrowing.none) ManaSpending.AsProduced controller oid (totalManas gathered) withComponents
+              -- CR 118.7e's half of each hybrid symbol in a reduction, and CR
+              -- 601.2f's order of several reductions -- both the payer's, and both
+              -- elided by announceReductions wherever the answers cannot differ,
+              -- which is every board `data/cards/` can build today.
+              announced <- announceReductions controller oid gs announcedCost gathered
+              (outcome, nested, nestedSpent) <- payActivation perform (Set.insert (oid, ManaOption.ability chosen) inFlight) controller oid (ActivatedAbility.name =<< ManaOption.ability chosen) (totalWith announced announcedCost)
+              case outcome of
+                Payment.Unpaid -> pure (False, nested, [], Set.singleton (oid, ManaOption.ability chosen))
+                Payment.Paid paidSlots -> do
+                  -- CR 601.2h / 608.2h: the yield is priced again with the slots
+                  -- the payment bound, since an offer cannot know which artifact
+                  -- Priest of Yawgmoth's cost will sacrifice (Parun.ManaSpec's Priest
+                  -- of Yawgmoth group). Every pair whose offer the activator picked
+                  -- among is a candidate, so a colour choice the offer collapsed is
+                  -- asked now -- Food Chain's colour (Parun.ManaSpec's Food Chain
+                  -- group) -- and a yield the slots leave unchanged asks nothing.
+                  -- Its pools are read off gsPaid, the pool the payment LEFT, which
+                  -- is what CR 701.10f's doubling reads: Doubling Cube's {3} paid
+                  -- from the pool shrinks what it doubles. Their amounts reach CR
+                  -- 405.6c's other effects through the clause fold below.
                   --
-                  -- Every unit produced and not the payer's share, TappedForMana's
-                  -- reason: "the amount of mana this creature produced" (Tyvar
-                  -- the Bellicose) asks what the permanent made, whoever's pool
-                  -- CR 106.4 sent it to.
-                  manaAbilityResolved = GameEvent.ManaAbilityResolved (ManaAbilityResolved.MkManaAbilityResolved {ManaAbilityResolved.permanent = oid, ManaAbilityResolved.amount = Natural.length producedUnits})
-              applyManaTriggers perform (tappedForMana <> manaAdded <> [manaAbilityResolved])
-              pure (True, nested, nestedSpent, Set.empty)
+                  -- Unprinted: the objects they name reaching those effects, which
+                  -- run with none of them. Parun.AbilitySlotLintSpec's "CR 405.6c no
+                  -- card writes a mana ability whose other effects read an object
+                  -- its cost paid" keeps that read out of card data.
+                  gsPaid <- State.get
+                  let paid = if printedX then Map.insert Binding.variableX (Binding.toAmount x) paidSlots else paidSlots
+                      pricedAlike = [priced | (offered, priced) <- Mana.manaRepricingsGiven paid gsPaid Map.empty oid gs, List.elem offered alike]
+                  pricedChosen <- case ListUtils.nubOrdOn ownPart pricedAlike of
+                    route : routes -> chooseManaYield controller oid (route NonEmpty.:| routes) gsPaid
+                    [] -> pure chosen
+                  let pricedShares = filter (\option -> ownPart option == ownPart pricedChosen) pricedAlike
+                  -- CR 608.2c: the clauses in printed order, each decided as it is
+                  -- reached, on the board the cost and the earlier clauses left --
+                  -- Hickory Woodlot's "if there are no depletion counters" reads the
+                  -- counter its own cost removed (Parun.ManaSpec's Hickory Woodlot
+                  -- group). The source stands in for the ability object CR 605.3b
+                  -- leaves uncreated, and CR 608.2h's last-known information answers
+                  -- for a source the cost sacrificed.
+                  --
+                  -- A clause that happens adds its share of the yield, then runs the
+                  -- other effects printed after it -- CR 405.6c's "the mana is
+                  -- produced and the other effect happens immediately", HERE, inside
+                  -- the window this activation was made in. Ancient Tomb's 2 damage
+                  -- is charged before the rest of the payment can spend the mana it
+                  -- just made (Parun.ManaSpec's Ancient Tomb group). The performer runs them;
+                  -- Parun.Engine.Resolve.Effect.performManaAbility is where the source
+                  -- stands in for the ability object.
+                  --
+                  -- CR 106.4: each share goes to the players its own reference
+                  -- names, resolved through Mana.recipientsOf -- the same function
+                  -- Mana.manaSuppliesGiven keeps the payer's share by, so the offer
+                  -- and the payment cannot disagree about whose pool a route fills.
+                  -- Yurlok of Scorch Thrash is the printing that observes it, and
+                  -- Parun.ManaSpec's Yurlok group is what proves it. ORDER across
+                  -- recipients is unobservable: a pool is a multiset
+                  -- (Parun.Types.Mana) and CR 101.4's ordering rule is about CHOICES,
+                  -- of which the addition itself makes none.
+                  --
+                  -- A clause offers mana only where its "if" held at the OFFER, so one
+                  -- whose "if" only the cost makes true adds none. MTGJSON's dump of
+                  -- 2026-08-23 prints no such clause (mana-ability lines matching
+                  -- "Add ... . If ... add", every hit an "instead" whose "if" no cost
+                  -- of its own touches); a land whose cost removes the counter its
+                  -- "instead" reads would refute this.
+                  --
+                  -- CR 118.12 after the "if", Parun.Types.Clause's printed order:
+                  -- Rhystic Cave's "unless any player pays {1}" is offered to the
+                  -- table by the performer, the source standing in for the ability
+                  -- object here too, and a clause whose gate says no adds no mana.
+                  --
+                  -- CR 608.2c / 608.2d inside a clause: the effects printed BEFORE its
+                  -- first addition run first, and the slots they bind are what the
+                  -- addition's recipient reads -- Valleymaker's "Choose a player.
+                  -- That player adds {G}{G}{G}" (Parun.ManaSpec's Valleymaker group).
+                  -- The slots are threaded through the performer, CR 605.3b leaving
+                  -- no ability object to hold them. A share under any reference but
+                  -- @Relative You@ is then picked by each RECIPIENT among the routes
+                  -- alike in the activator's own part: Spectral Searchlight's "any
+                  -- color they choose" (Parun.ManaSpec's Spectral Searchlight group).
+                  let shareAt i ref option = Map.lookup ref . snd =<< Maybe.listToMaybe (drop i (ManaOption.steps option))
+                      pickShare i ref recipient mana = case ListUtils.nubOrdOn (shareAt i ref) pricedShares of
+                        representative : more@(_ : _) | ref /= you -> do
+                          gsNow <- State.get
+                          picked <- chooseManaYield recipient oid (representative NonEmpty.:| more) gsNow
+                          pure (maybe (Mana.unitsOf mana) Mana.unitsOf (shareAt i ref picked))
+                        _ -> pure (Mana.unitsOf mana)
+                      happens clause = do
+                        gsNow <- State.get
+                        let context = Projection.sourceContext gsNow (Just controller) oid
+                        pure (maybe True (Condition.holds (Projection.viewWithLastKnownAnywhere gsNow) context gsNow oid) (Clause.condition clause))
+                      gated cIdx answers clause = case Clause.payGate clause of
+                        Nothing -> pure (True, answers)
+                        Just gate -> ManaAbilityPerformer.payGate perform oid controller cIdx gate answers
+                      -- CR 613.1f: the ability's name, which is how its effects
+                      -- read the card it was acquired from (CR 605.3b leaves no
+                      -- ability object to carry it).
+                      reader = ActivatedAbility.name =<< ManaOption.ability chosen
+                      step (answers, bound, filled, made) (cIdx, (i, (clause, share))) = do
+                        holds <- happens clause
+                        (admitted, answers2) <- if holds then gated cIdx answers clause else pure (False, answers)
+                        if not admitted
+                          then pure (answers2, bound, filled, made)
+                          else do
+                            let (leading, trailing) = List.break (Maybe.isJust . ManaAbility.manaProduced) (Foldable.toList (Clause.effects clause))
+                            bound1 <- ManaAbilityPerformer.effects perform oid reader controller bound leading
+                            gsNow <- State.get
+                            let chosenPlayers = Map.filter (not . Set.null) (fmap (Set.fromList . Maybe.mapMaybe Recipient.playerOf . Set.toList) bound1)
+                            parts <- traverse (\(ref, mana) -> traverse (\recipient -> fmap ((,) recipient) (pickShare i ref recipient mana)) (Mana.recipientsOf controller chosenPlayers gsNow ref)) (Map.toList share)
+                            let shares = concat parts
+                                -- CR 106.12a's "produced", once per addition whoever's
+                                -- pool it reached: the first recipient's pick, or the
+                                -- offered share where it reached nobody.
+                                produced = concat (zipWith (\(_, mana) part -> maybe (Mana.unitsOf mana) snd (Maybe.listToMaybe part)) (Map.toList share) parts)
+                            -- CR 603.7e: a spend trigger is the ACTIVATOR's, which
+                            -- Mana.manaOptionsOfGiven could only guess as the
+                            -- permanent's controller. A fence: no "any player may
+                            -- activate" route in data/cards/ prints one.
+                            --
+                            -- CR 106.6: mana made under a grant (Piracy) carries the
+                            -- grant's restriction, whoever's pool it reaches, as
+                            -- Mana.manaSuppliesGiven counted it.
+                            let activated = fmap (fmap (fmap (\u -> maybe id Mana.restrictUnit (Monad.join (access chosen)) u {ManaUnit.spendTrigger = fmap (\t -> t {SpendTrigger.controller = controller}) (ManaUnit.spendTrigger u)}))) shares
+                            State.modify' (\g -> List.foldl' (\acc (recipient, units) -> Mana.addMana recipient units acc) g activated)
+                            -- CR 608.2c: the "that color" the trailing effects read,
+                            -- Resolve.Arms.Damage.addMana's write. A clause's shares
+                            -- are added as one, so its additions are not told apart:
+                            -- Parun.CardSpec keeps a choosing addition alone in its clause.
+                            --
+                            -- The write ends with the clause, the source's choice put
+                            -- back as it stood: "that color" is this ability's own, no
+                            -- CR 607.2d choice another ability or a later unit of
+                            -- mana (Mana.sourceChoicesOf) may read. Proved by
+                            -- data/scenarios/mana-source's two Foraging Wickermaw
+                            -- scenarios.
+                            let choosing = any ManaAddition.choosesColor (Maybe.mapMaybe ManaAbility.manaProduced (Foldable.toList (Clause.effects clause)))
+                                acquisition = Game.readingAcquisition oid oid gsNow oid
+                                standing = Game.choiceWithLastKnown Chosen.Colors acquisition oid gsNow
+                            Monad.when choosing $
+                              State.modify' (Game.recordChoice Chosen.Colors acquisition (const (Just (Mana.colorsAmong (fmap ManaUnit.manaType (concatMap snd shares))))) oid)
+                            bound2 <- ManaAbilityPerformer.effects perform oid reader controller bound1 (filter (Maybe.isNothing . ManaAbility.manaProduced) trailing)
+                            Monad.when choosing $
+                              State.modify' (Game.recordChoice Chosen.Colors acquisition (const standing) oid)
+                            pure (answers2, bound2, filled <> shares, made <> produced)
+                  -- CR 602.2's history, off `gs`, the board the activation began on:
+                  -- a Treasure its own cost sacrificed is still logged as what it was.
+                  -- The intrinsic route is logged too; CR 305.6 makes it an activated
+                  -- ability all the same. Ahead of the clauses, which resolve after it is
+                  -- activated (CR 605.3b): Initiates of the Ebon Hand's
+                  -- "has been activated four or more times" counts this one.
+                  State.modify' (ActivationRestriction.logActivation gs controller oid (ManaOption.ability chosen) AbilityKind.ManaAbility Set.empty)
+                  -- CR 602.2b / 605.3b: the activation, at the same moment and for
+                  -- the same reason, with no stack object to name.
+                  State.modify' (Event.recordEvent (GameEvent.AbilityActivated AbilityWasActivated.MkAbilityWasActivated {AbilityWasActivated.player = controller, AbilityWasActivated.ability = Nothing, AbilityWasActivated.source = oid, AbilityWasActivated.facts = Game.abilityFacts AbilityKind.ManaAbility (ManaOption.ability chosen), AbilityWasActivated.activationCost = Cost.mana . ActivatedAbility.cost =<< ManaOption.ability chosen}))
+                  -- CR 107.3a / 608.2h: the other effects read the amounts the cost
+                  -- paid, as the yield does -- Springjack Pasture's "You gain X
+                  -- life" (data/scenarios/mana/cr-107-3a-405-6c-springjack-pasture-*).
+                  -- CR 605.3b leaves no ability object to bind them on, so they are
+                  -- published on Scratch.ambientAmounts for the fold's span and
+                  -- restored after it, Resolve.runPreventionRider's posture.
+                  ambientBefore <- State.gets (Scratch.ambientAmounts . GameState.scratch)
+                  let setAmbient amounts = State.modify' (\g -> g {GameState.scratch = (GameState.scratch g) {Scratch.ambientAmounts = amounts}})
+                  setAmbient (Map.union (Map.mapMaybe Binding.Type.amount paid) ambientBefore)
+                  (_, _, shares, producedUnits) <- Monad.foldM step (Map.empty, Map.empty, [], []) (zip (fmap ClauseIndex.MkClauseIndex [0 ..]) (zip [0 :: Int ..] (ManaOption.steps pricedChosen)))
+                  setAmbient ambientBefore
+                  -- CR 605.1b's "mana being added to a player's mana pool", one event
+                  -- per player whose pool this activation filled, and CR 106.12a's
+                  -- "produced": what the clauses that happened added, whoever's pool.
+                  let added = Map.fromListWith Set.union [(recipient, Set.fromList (fmap ManaUnit.manaType units)) | (recipient, units) <- shares, not (null units)]
+                  -- CR 602.5b: record that THIS ability of this permanent has now
+                  -- been activated, which is the whole of both counted riders'
+                  -- storage (`capacity` above is where they are read on this path).
+                  -- CR 605.3b leaves a mana ability no stack object, so this is the
+                  -- activation and Activate.activateAbility never sees it -- and
+                  -- ActivationRestriction.recordActivation is the writer the two
+                  -- roads share, so they cannot disagree about what was spent.
+                  --
+                  -- Only after Payment.Paid, so a route refused mid-payment leaves no
+                  -- record. CR 305.6's intrinsic route has no ability and prints no
+                  -- rider, so it can never reach this.
+                  case ManaOption.ability chosen of
+                    Just spent -> State.modify' (ActivationRestriction.recordActivation oid spent)
+                    Nothing -> pure ()
+                  -- CR 106.12: this activation "tapped [the permanent] for mana"
+                  -- exactly when {T} was in its cost and it produced mana, which is
+                  -- what CR 106.12a's condition watches. Recorded LAST, after CR
+                  -- 405.6c's other effects, because CR 605.4a puts what it triggers
+                  -- immediately after the whole mana ability.
+                  --
+                  -- The events, not the board: a permanent tapped by {T} is also
+                  -- tapped by Icy Manipulator, and Parun.Engine.Event.tap has already
+                  -- written GameEvent.BecameTapped for both.
+                  -- Every unit produced and not the payer's share: CR 106.12a asks
+                  -- whether the activation PRODUCED mana, which it did whoever's
+                  -- pool it went to.
+                  --
+                  -- The snapshot is off `gs`, the board the activation began on, for
+                  -- the history's reason above: a land its own cost sacrificed
+                  -- (Crystal Vein) was still a land tapped for mana.
+                  let tappedForMana =
+                        [ GameEvent.TappedForMana (TappedForMana.MkTappedForMana {TappedForMana.permanent = oid, TappedForMana.mana = Set.fromList (fmap ManaUnit.manaType producedUnits), TappedForMana.player = controller, TappedForMana.snapshot = snapshot})
+                        | List.elem CostComponent.TapThis (Cost.components (ManaOption.cost chosen)) && not (null producedUnits),
+                          snapshot <- Maybe.maybeToList (Projection.objectSnapshot oid gs)
+                        ]
+                      -- CR 605.1b's other event, whether or not {T} was paid, and
+                      -- recorded at the same moment for the same CR 605.4a reason.
+                      manaAdded = fmap (\(recipient, types) -> GameEvent.ManaAdded (ManaAdded.MkManaAdded {ManaAdded.player = recipient, ManaAdded.source = oid, ManaAdded.mana = types, ManaAdded.cause = ManaAddedCause.ManaAbility})) (Map.toList added)
+                      -- CR 605.3b's own moment: the ability "resolves immediately
+                      -- after it is activated", and this line is where that has just
+                      -- finished happening. UNCONDITIONAL where the tap event is
+                      -- gated on {T} and on a yield -- CR 605.2 keeps an ability that
+                      -- produced nothing a mana ability, and it resolved either way.
+                      --
+                      -- Every unit produced and not the payer's share, TappedForMana's
+                      -- reason: "the amount of mana this creature produced" (Tyvar
+                      -- the Bellicose) asks what the permanent made, whoever's pool
+                      -- CR 106.4 sent it to.
+                      manaAbilityResolved = GameEvent.ManaAbilityResolved (ManaAbilityResolved.MkManaAbilityResolved {ManaAbilityResolved.permanent = oid, ManaAbilityResolved.amount = Natural.length producedUnits})
+                  applyManaTriggers perform (tappedForMana <> manaAdded <> [manaAbilityResolved])
+                  pure (True, nested, nestedSpent, Set.empty)
 
 -- CR 605.4a: record the events one activated mana ability wrote -- CR 106.12a's
 -- tap for mana, CR 605.1b's mana being added and CR 605.3b's own resolution --

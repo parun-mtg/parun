@@ -78,6 +78,7 @@ import qualified Parun.Types.Subtype as Subtype
 import qualified Parun.Types.TapState as TapState
 import qualified Parun.Types.TurnRegisters as TurnRegisters
 import qualified Parun.Types.VariableChoice as VariableChoice
+import qualified Parun.Types.XDecision as XDecision
 import qualified Parun.Types.Zone as Zone
 import qualified Parun.Types.ZoneChange as ZoneChange
 
@@ -370,7 +371,7 @@ searchIsUntimedSpec s registry =
           taken <- State.get
           State.put True
           pure (if taken then Nothing else Maybe.listToMaybe options)
-        Prompt.ChooseX {} -> pure x
+        Prompt.ChooseX {} -> pure (XDecision.Announces x)
         _ -> pure (S.identityAnswer p)
       castThere x gs = snd (State.evalState (Engine.runGame (searchCasting x) gs (Cast.castWhileSearching Nothing S.manaPerformer S.alice)) False)
    in Spec.describe s "SearchIsUntimed" $ do

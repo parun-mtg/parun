@@ -60,6 +60,7 @@ import qualified Parun.Types.SubtypeFamily as SubtypeFamily
 import qualified Parun.Types.TargetCount as TargetCount
 import qualified Parun.Types.TextWord as TextWord.Type
 import qualified Parun.Types.WordFamily as WordFamily
+import qualified Parun.Types.XDecision as XDecision
 
 -- | Run `game`, also handing back every answer it was given, in the order it
 -- asked. What lets a caller tell an identical repeated answer from a different
@@ -1178,7 +1179,7 @@ defaultAnswer p = case p of
   Prompt.CastWhileSearching {} -> Nothing
   -- CR 601.2b: the least X the card permits, which the gate that offered the
   -- action measured payable (CR 101.1).
-  Prompt.ChooseX _ _ _ _ least _ -> least
+  Prompt.ChooseX _ _ _ _ least _ -> XDecision.Announces least
   -- CR 107.14's payment is "any amount", zero included, and paying nothing is
   -- how a transcript that ran out declines it.
   Prompt.ChoosePaidEnergy {} -> 0
@@ -1487,7 +1488,7 @@ defaultAnswer p = case p of
   -- CR 702.33a: kicker is a "may", so declining is always legal, and declining
   -- costs no mana -- entwine's reason above, word for word. Zero is the decline,
   -- and it is CR 702.33c's multikicker answer too.
-  Prompt.ChooseKicker {} -> KickerDecision.MkKickerDecision 0
+  Prompt.ChooseKicker {} -> KickerDecision.Pays 0
   -- CR 702.27a: buyback is a "may" too, so declining is always legal and costs no
   -- mana -- entwine's reason above.
   Prompt.ChooseBuyback {} -> BuybackDecision.Declines

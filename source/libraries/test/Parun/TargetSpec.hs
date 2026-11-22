@@ -150,6 +150,7 @@ import qualified Parun.Types.TargetSlot as TargetSlot
 import qualified Parun.Types.Trait as Trait
 import qualified Parun.Types.TriggeredAbility as TriggeredAbility
 import qualified Parun.Types.TurnRegisters as TurnRegisters
+import qualified Parun.Types.XDecision as XDecision
 import qualified Parun.Types.Zone as Zone
 
 -- The one target slot a single-slot card or ability declares, read out of the
@@ -268,7 +269,7 @@ castVerdict :: Natural.Type.Natural -> [ObjectId.ObjectId] -> ObjectId.ObjectId 
 castVerdict x gauges victim board verdictId =
   let answer :: Prompt.Prompt r -> r
       answer p = case p of
-        Prompt.ChooseX {} -> x
+        Prompt.ChooseX {} -> XDecision.Announces x
         Prompt.AnnounceTargets _ _ _ asked -> Map.mapWithKey (\slot (count, _) -> if slot == SlotName.MkSlotName (Text.pack "gauge") then Natural.length gauges else TargetCount.least count) asked
         Prompt.ChooseTargets _ _ _ asked ->
           Map.mapWithKey
@@ -2465,7 +2466,7 @@ borrowedExhumationSpec s registry = Spec.describe s "EnclosingAmount (CR 202.3)"
 -- fail on its count instead -- passing for a reason the case is not about.
 aimingExhumation :: Natural.Type.Natural -> ObjectId.ObjectId -> Prompt.Prompt r -> r
 aimingExhumation x oid p = case p of
-  Prompt.ChooseX {} -> x
+  Prompt.ChooseX {} -> XDecision.Announces x
   Prompt.AnnounceTargets _ _ _ offers -> fmap (const 1) offers
   Prompt.ChooseTargets _ _ _ asked ->
     Map.mapWithKey

@@ -62,6 +62,7 @@ import qualified Parun.Types.StoredResult as StoredResult
 import qualified Parun.Types.Subtype as Subtype
 import qualified Parun.Types.TextWord as TextWord
 import qualified Parun.Types.TimeTravelChoice as TimeTravelChoice
+import qualified Parun.Types.XDecision as XDecision
 
 -- | One answer to a prompt, recorded so Parun.Engine.Replay can give the same
 -- answer to the same prompt again.
@@ -485,7 +486,7 @@ data Response
     -- only the card would replay a split card's other half.
     CastWhileSearched (Maybe (ObjectId.ObjectId, CardName.CardName, Facing.Facing))
   | -- | CR 601.2b: the value of X a caster chose.
-    ChoseX Natural.Natural
+    ChoseX XDecision.XDecision
   | -- | CR 601.2b: the mode(s) a caster chose for a modal spell. A Seq, since CR
     -- 700.2d's "You may choose the same mode more than once" makes one index
     -- appear several times.

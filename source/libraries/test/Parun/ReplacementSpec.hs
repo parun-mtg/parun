@@ -519,7 +519,7 @@ spec s registry = Spec.describe s "Parun.Engine.Replacement" $ do
 -- another legal target.
 riteAt :: ObjectId.ObjectId -> Prompt.Prompt r -> r
 riteAt victim p = case p of
-  Prompt.ChooseKicker {} -> KickerDecision.MkKickerDecision 0
+  Prompt.ChooseKicker {} -> KickerDecision.Pays 0
   Prompt.ChooseTargets _ _ _ sets -> Map.map (const (Set.singleton (Recipient.ToCreature victim))) sets
   _ -> S.identityAnswer p
 
@@ -546,7 +546,7 @@ degavolversOut gs = filter (\o -> Projection.hasName (CardName.MkCardName (Text.
 -- the prompt carries.
 kicksOnly :: Cost.Type.Cost Keyword.Keyword -> Prompt.Prompt r -> r
 kicksOnly wanted p = case p of
-  Prompt.ChooseKicker _ _ _ keyword _ _ -> KickerDecision.MkKickerDecision (if keyword == Keyword.Kicker wanted then 1 else 0)
+  Prompt.ChooseKicker _ _ _ keyword _ _ -> KickerDecision.Pays (if keyword == Keyword.Kicker wanted then 1 else 0)
   _ -> S.identityAnswer p
 
 blackKicker :: Cost.Type.Cost Keyword.Keyword

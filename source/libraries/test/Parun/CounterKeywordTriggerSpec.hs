@@ -81,6 +81,7 @@ import qualified Parun.Types.TurnRegisters as TurnRegisters
 import qualified Parun.Types.TurnScope as TurnScope
 import qualified Parun.Types.WhichCounters as WhichCounters
 import qualified Parun.Types.WithCounters as WithCounters
+import qualified Parun.Types.XDecision as XDecision
 import qualified Parun.Types.Zone as Zone
 
 renownSpec :: (Monad m, Monad n) => Spec.Spec m n -> Registry.Registry m -> n ()
@@ -230,7 +231,7 @@ hydraBroodmasterSpec s registry =
       -- CR 601.2b's announcement is the one question the activation asks.
       announcing :: Natural -> Prompt.Prompt r -> r
       announcing x p = case p of
-        Prompt.ChooseX {} -> x
+        Prompt.ChooseX {} -> XDecision.Announces x
         _ -> S.identityAnswer p
       -- One activation announcing `x`, its trigger settled onto the stack and
       -- resolved -- Arbor Colossus' `monstrosity` above with a value to announce.
