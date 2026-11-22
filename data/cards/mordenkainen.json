@@ -1,0 +1,297 @@
+{
+  "faces": [
+    {
+      "activatedAbilities": [
+        {
+          "cost": {
+            "components": [
+              {
+                "type": "AddLoyaltyToThis",
+                "value": 2
+              }
+            ],
+            "mana": []
+          },
+          "modal": {
+            "modes": [
+              {
+                "clauses": [
+                  {
+                    "effects": [
+                      {
+                        "type": "Draw",
+                        "value": {
+                          "player": {
+                            "type": "Relative",
+                            "value": "You"
+                          },
+                          "quantity": {
+                            "type": "Literal",
+                            "value": 2
+                          }
+                        }
+                      },
+                      {
+                        "type": "MoveToZone",
+                        "value": {
+                          "ref": {
+                            "type": "ChosenCardInHand",
+                            "value": {
+                              "filter": {
+                                "type": "And",
+                                "value": []
+                              },
+                              "player": {
+                                "type": "Relative",
+                                "value": "You"
+                              }
+                            }
+                          },
+                          "zone": "Library"
+                        }
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "cost": {
+            "components": [
+              {
+                "type": "RemoveLoyaltyFromThis",
+                "value": {
+                  "type": "Fixed",
+                  "value": 2
+                }
+              }
+            ],
+            "mana": []
+          },
+          "modal": {
+            "modes": [
+              {
+                "clauses": [
+                  {
+                    "effects": [
+                      {
+                        "type": "Create",
+                        "value": {
+                          "card": {
+                            "faces": [
+                              {
+                                "characteristicPT": {
+                                  "power": {
+                                    "type": "Times",
+                                    "value": {
+                                      "factor": {
+                                        "type": "Literal",
+                                        "value": 2
+                                      },
+                                      "quantity": {
+                                        "type": "Count",
+                                        "value": {
+                                          "aggregation": {
+                                            "type": "Members"
+                                          },
+                                          "filter": {
+                                            "type": "And",
+                                            "value": []
+                                          },
+                                          "scope": {
+                                            "type": "InZone",
+                                            "value": {
+                                              "player": {
+                                                "type": "Relative",
+                                                "value": "You"
+                                              },
+                                              "zone": "Hand"
+                                            }
+                                          }
+                                        }
+                                      }
+                                    }
+                                  },
+                                  "toughness": {
+                                    "type": "Times",
+                                    "value": {
+                                      "factor": {
+                                        "type": "Literal",
+                                        "value": 2
+                                      },
+                                      "quantity": {
+                                        "type": "Count",
+                                        "value": {
+                                          "aggregation": {
+                                            "type": "Members"
+                                          },
+                                          "filter": {
+                                            "type": "And",
+                                            "value": []
+                                          },
+                                          "scope": {
+                                            "type": "InZone",
+                                            "value": {
+                                              "player": {
+                                                "type": "Relative",
+                                                "value": "You"
+                                              },
+                                              "zone": "Hand"
+                                            }
+                                          }
+                                        }
+                                      }
+                                    }
+                                  }
+                                },
+                                "colorIndicator": [
+                                  "Blue"
+                                ],
+                                "name": "Dog Illusion Token",
+                                "power": {
+                                  "type": "Star"
+                                },
+                                "toughness": {
+                                  "type": "Star"
+                                },
+                                "typeLine": {
+                                  "subtypes": [
+                                    "Dog",
+                                    "Illusion"
+                                  ],
+                                  "types": [
+                                    "Creature"
+                                  ]
+                                }
+                              }
+                            ]
+                          },
+                          "quantity": {
+                            "type": "Literal",
+                            "value": 1
+                          }
+                        }
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "cost": {
+            "components": [
+              {
+                "type": "RemoveLoyaltyFromThis",
+                "value": {
+                  "type": "Fixed",
+                  "value": 10
+                }
+              }
+            ],
+            "mana": []
+          },
+          "modal": {
+            "modes": [
+              {
+                "clauses": [
+                  {
+                    "effects": [
+                      {
+                        "type": "ExchangeZones",
+                        "value": {
+                          "player": {
+                            "type": "Relative",
+                            "value": "You"
+                          },
+                          "zones": "HandAndLibrary"
+                        }
+                      }
+                    ]
+                  },
+                  {
+                    "effects": [
+                      {
+                        "type": "Shuffle",
+                        "value": {
+                          "type": "Relative",
+                          "value": "You"
+                        }
+                      }
+                    ]
+                  },
+                  {
+                    "effects": [
+                      {
+                        "type": "CreateEmblem",
+                        "value": {
+                          "card": {
+                            "faces": [
+                              {
+                                "name": "Mordenkainen Emblem",
+                                "playerAbilities": [
+                                  {
+                                    "effect": {
+                                      "type": "NoMaximumHandSize"
+                                    },
+                                    "scope": {
+                                      "type": "You"
+                                    }
+                                  }
+                                ]
+                              }
+                            ]
+                          }
+                        }
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          }
+        }
+      ],
+      "loyalty": {
+        "type": "Literal",
+        "value": 5
+      },
+      "manaCost": [
+        {
+          "type": "Generic",
+          "value": 4
+        },
+        {
+          "type": "OfType",
+          "value": {
+            "type": "Colored",
+            "value": "Blue"
+          }
+        },
+        {
+          "type": "OfType",
+          "value": {
+            "type": "Colored",
+            "value": "Blue"
+          }
+        }
+      ],
+      "name": "Mordenkainen",
+      "oracleText": "[+2]: Draw two cards, then put a card from your hand on the bottom of your library.\n[−2]: Create a blue Dog Illusion creature token with \"This token's power and toughness are each equal to twice the number of cards in your hand.\"\n[−10]: Exchange your hand and library, then shuffle. You get an emblem with \"You have no maximum hand size.\"",
+      "typeLine": {
+        "subtypes": [
+          "Mordenkainen"
+        ],
+        "supertypes": [
+          "Legendary"
+        ],
+        "types": [
+          "Planeswalker"
+        ]
+      }
+    }
+  ]
+}
