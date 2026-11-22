@@ -20,6 +20,7 @@ import qualified Data.Maybe as Maybe
 import qualified Data.Ord as Ord
 import qualified Data.Set as Set
 import Numeric.Natural (Natural)
+import qualified Parun.Engine.Card as Engine.Card
 import qualified Parun.Engine.Combat as Engine.Combat
 import qualified Parun.Engine.Engine as Engine
 import qualified Parun.Engine.Game as Engine.Game
@@ -271,8 +272,8 @@ features board grants pid gs =
         }
 
 -- | The greedy playout policy, cheap enough to answer every prompt of every
--- playout: a land played where one may be, else a spell cast, else another
--- action or a pass ('greedyAction'); attacks that don't trade down ('greedyAttacks');
+-- playout: a land played where one may be, else a permanent spell cast, else
+-- another action or a pass ('greedyAction'); attacks that don't trade down ('greedyAttacks');
 -- blocks that win, then blocks to survive ('greedyBlocks'). Every other prompt
 -- is the random bot's (Game.bot). It reads only what every player may see
 -- (CR 400.2): the battlefield's projected power and toughness, tap states,
@@ -282,19 +283,23 @@ features board grants pid gs =
 -- classification; the random bot answers them (#9442).
 greedy :: (Monad m) => Registry.Registry m -> Answerer.Answerer (Asked.Asked GameState.GameState) (Game.Play m)
 greedy registry = Answerer.MkAnswerer $ \asked -> case Asked.prompt asked of
-  Prompt.ChooseAction _ _ menu -> greedyAction menu
+  Prompt.ChooseAction _ _ menu -> greedyAction (Asked.game asked) menu
   Prompt.DeclareAttackers _ pid offered -> pure (greedyAttacks pid offered (Asked.game asked))
   Prompt.DeclareBlockers _ pid offered incoming -> pure (greedyBlocks pid offered incoming (Asked.game asked))
   _ -> Answerer.unwrap (Game.bot registry) asked
 
 -- | A priority decision: a land play (CR 305.1) at random where the menu
--- offers one, else a cast (CR 601), else one of the other 'options' or a
--- pass, each equally likely. The menu offers only what may be afforded
--- (Engine.Cast.castableSpells).
-greedyAction :: (Monad m) => [Action.Action] -> State.StateT Generator.Type.Generator m Action.Action
-greedyAction menu =
+-- offers one, else a cast (CR 601) of a card with a permanent type (CR
+-- 110.4), else one of the other 'options' or a pass, each equally likely.
+-- The menu offers only what may be afforded (Engine.Cast.castableSpells).
+-- Another spell waits for the random pick, since the random bot chooses its
+-- targets (#9442) and casting it at the first chance would hit either side
+-- alike.
+greedyAction :: (Monad m) => GameState.GameState -> [Action.Action] -> State.StateT Generator.Type.Generator m Action.Action
+greedyAction gs menu =
   let plays = [action | action@Action.Play {} <- menu]
-      casts = [action | action@Action.Cast {} <- menu]
+      permanent oid = any Engine.Card.isPermanentType (ProjectedCharacteristics.cardTypes (Projection.project oid gs))
+      casts = [action | action@(Action.Cast oid _ _) <- menu, permanent oid]
       rest = [action | action <- options menu, notElem action (Action.Pass : plays <> casts)]
    in case (NonEmpty.nonEmpty plays, NonEmpty.nonEmpty casts) of
         (Just some, _) -> Generator.pick some
