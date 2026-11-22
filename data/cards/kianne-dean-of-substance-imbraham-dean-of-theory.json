@@ -166,7 +166,6 @@
         },
         {
           "cost": {
-            "components": [],
             "mana": [
               {
                 "type": "Generic",
