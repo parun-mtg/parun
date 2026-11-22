@@ -136,12 +136,22 @@ optionName view reply = case reply of
     -- A counter's kind, a mana type, or another tagged value by its tag.
     | Just kind <- decoded (Codec.CounterKind.codec Codec.Keyword.codec) reply -> Wording.counterName kind <> Text.pack " counter"
     | Just mana <- decoded Codec.ManaType.codec reply -> Text.pack "{" <> Wording.manaType mana <> Text.pack "}"
-    -- A permission to cast from a zone (Parun.Codec.CastFromZone) by the zone.
-    | Just zone <- Protocol.field "from" reply >>= Protocol.field "zone" >>= textOf -> Text.pack "from the " <> Text.toLower zone
+    -- A permission to cast (Parun.Codec.CastFromZone) by where it opens: CR
+    -- 400.11's outside the game, a zone, or both.
+    | Just places <- permissionPlaces reply -> Text.pack "from " <> Text.intercalate (Text.pack " or ") places
     | Just tag <- Protocol.field "type" reply >>= textOf -> tagName tag <> foldMap (\value -> Text.pack " " <> optionName view value) (Protocol.field "value" reply)
     -- A cost, as Oracle text prints it.
     | Maybe.isJust (Protocol.field "components" reply) -> candidateName Text.empty reply
   _ -> plainName reply
+
+-- | Where a permission to cast opens, outside the game first, as The
+-- Holodeck's Oracle text orders them; Nothing for an offer that is no such
+-- permission.
+permissionPlaces :: R.Reply -> Maybe [Text.Text]
+permissionPlaces reply =
+  let outside = [Text.pack "outside the game" | Protocol.field "outsideTheGame" reply == Just (R.Boolean True)]
+      zone = [Text.pack "the " <> Text.toLower z | Just z <- [Protocol.field "from" reply >>= Protocol.field "zone" >>= textOf]]
+   in if null (outside <> zone) then Nothing else Just (outside <> zone)
 
 -- | A ChooseCost candidate's cost as Oracle text prints it (Oracle.Cost.cost),
 -- or the offer itself where it does not print.

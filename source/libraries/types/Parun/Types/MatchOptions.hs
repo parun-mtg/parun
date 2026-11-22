@@ -1,5 +1,6 @@
 module Parun.Types.MatchOptions where
 
+import qualified Data.Map.Strict as Map
 import qualified Data.Set as Set
 import qualified Numeric.Natural as Natural
 import qualified Parun.Types.Key as Key
@@ -16,8 +17,11 @@ data MatchOptions = MkMatchOptions
     -- | The seats the search bot plays (Parun.Play.Search), the random bot
     -- playing the rest.
     searching :: Set.Set Natural.Natural,
-    -- | How hard the search bot looks.
-    budget :: SearchBudget.SearchBudget,
+    -- | How hard the search bot looks in each seat it may play.
+    budgets :: Map.Map Natural.Natural SearchBudget.SearchBudget,
+    -- | The file of the search bot's weights in a seat (Parun.Weights),
+    -- Weights.neutral in a seat absent.
+    weighing :: Map.Map Natural.Natural FilePath,
     -- | The meta file whose decks the search bot infers an opponent's unseen
     -- cards from, the lists not being known; each list known when absent.
     meta :: Maybe FilePath
@@ -27,4 +31,8 @@ data MatchOptions = MkMatchOptions
 -- | A hundred games keyed from the operating system's entropy, none saved,
 -- the random bot in every seat, every list known.
 none :: MatchOptions
-none = MkMatchOptions {seed = Nothing, games = 100, save = Nothing, searching = Set.empty, budget = SearchBudget.MkSearchBudget {SearchBudget.samples = 2, SearchBudget.prompts = 300}, meta = Nothing}
+none = MkMatchOptions {seed = Nothing, games = 100, save = Nothing, searching = Set.empty, budgets = Map.fromList [(1, budget), (2, budget)], weighing = Map.empty, meta = Nothing}
+
+-- | The search bot's budget unless told otherwise.
+budget :: SearchBudget.SearchBudget
+budget = SearchBudget.MkSearchBudget {SearchBudget.samples = 2, SearchBudget.turns = 0, SearchBudget.prompts = 300}

@@ -58,6 +58,7 @@ import qualified Parun.Engine.Engine as Engine
 import qualified Parun.Engine.Event as Event
 import qualified Parun.Engine.Game as Game
 import qualified Parun.Engine.Phasing as Phasing
+import qualified Parun.Engine.PlayerView as PlayerView
 import qualified Parun.Engine.Projection as Projection
 import qualified Parun.Engine.Setup as Setup
 import qualified Parun.Engine.Stack as Stack
@@ -66,6 +67,7 @@ import Parun.PreventionSpec (answersFor, wasAskedToReplace)
 import qualified Parun.Registry as Registry
 import qualified Parun.Spec as Spec
 import qualified Parun.Support as S
+import qualified Parun.Types.Action as Action
 import qualified Parun.Types.ActiveReplacement as ActiveReplacement
 import qualified Parun.Types.Anchor as Anchor
 import qualified Parun.Types.CardIdentity as CardIdentity
@@ -87,10 +89,12 @@ import qualified Parun.Types.GameSettings as GameSettings
 import qualified Parun.Types.GameState as GameState
 import qualified Parun.Types.LeftTheGame as LeftTheGame
 import qualified Parun.Types.LoggedEvent as LoggedEvent
+import qualified Parun.Types.LoopTrail as LoopTrail
 import qualified Parun.Types.MatchScope as MatchScope
 import qualified Parun.Types.MergeComponent as MergeComponent
 import qualified Parun.Types.Object as Object
 import qualified Parun.Types.ObjectId as ObjectId
+import qualified Parun.Types.ObjectView as ObjectView
 import qualified Parun.Types.OptionalDecision as OptionalDecision
 import qualified Parun.Types.OutsideCard as OutsideCard
 import qualified Parun.Types.OutsideDestination as OutsideDestination
@@ -100,6 +104,7 @@ import qualified Parun.Types.Phase as Phase
 import qualified Parun.Types.PhasedOut as PhasedOut
 import qualified Parun.Types.Player as Player
 import qualified Parun.Types.PlayerId as PlayerId
+import qualified Parun.Types.PlayerView as PlayerView.Type
 import qualified Parun.Types.Printing as Printing
 import qualified Parun.Types.PrintingId as PrintingId
 import qualified Parun.Types.Prompt as Prompt
@@ -246,6 +251,42 @@ extrapolating named chooser p = case p of
 spec :: (Monad m, Monad n) => Spec.Spec m n -> Registry.Registry m -> n ()
 spec s registry = Spec.describe s "Parun.Engine.Event (CR 400.11)" $ do
   -- CR 606.3 / 400.11b: the wish as a loyalty ability, its filter a creature.
+  -- CR 400.11a: Wish opens alice's sideboard, so each priority she is asked at
+  -- stands its printings in as objects. A PAIR differing in how many printings
+  -- it holds, one or three: she plays a Plains from her hand, and the id bob
+  -- sees it by is the same in both.
+  Spec.it s "CR 400.11a gameplay: the id bob sees a land alice plays after Wish by does not count her sideboard's printings" $ do
+    mountain <- S.printingOf s registry "Mountain"
+    plains <- S.printingOf s registry "Plains"
+    wish <- S.printingOf s registry "Wish"
+    island <- S.printingOf s registry "Island"
+    forest <- S.printingOf s registry "Forest"
+    swamp <- S.printingOf s registry "Swamp"
+    let playing sideboard =
+          let (board, wishId) = wishBoard mountain wish sideboard
+              (plainsId, withPlains) = S.addHandCard plains S.alice board
+              before =
+                withPlains
+                  { GameState.turn =
+                      (GameState.turn withPlains)
+                        { TurnRegisters.activePlayer = S.alice,
+                          TurnRegisters.phase = Phase.PrecombatMain,
+                          TurnRegisters.priority = Just S.alice
+                        }
+                  }
+              wished = resolveWish exercising wishId before
+              answer :: Prompt.Prompt r -> State.State [Action.Action] r
+              answer p = case p of
+                Prompt.ChooseAction _ _ actions -> Action.Play plainsId Nothing <$ State.put actions
+                _ -> pure (S.identityAnswer p)
+              ((_, played), offered) = State.runState (Engine.runGame answer wished (Engine.priorityDecision LoopTrail.empty)) []
+           in (fmap ObjectView.object (PlayerView.Type.battlefield (PlayerView.viewFor S.bob played)), length [() | Action.Play {} <- offered])
+        (one, offeredOne) = playing [(island, 1)]
+        (three, offeredThree) = playing [(island, 1), (forest, 1), (swamp, 1)]
+    Spec.assertEqWith s "CR 400.11a: bob sees the same ids on either board" one three
+    Spec.assertEqWith s "the Plains entered" (length one) 5
+    Spec.assertEqWith s "her Plains and each sideboard land were offered" (offeredOne, offeredThree) (2, 4)
+
   Spec.it s "CR 400.11b Vivien, Arkbow Ranger's -5 puts a creature card from outside the game into her hand" $ do
     mountain <- S.printingOf s registry "Mountain"
     vivien <- S.printingOf s registry "Vivien, Arkbow Ranger"

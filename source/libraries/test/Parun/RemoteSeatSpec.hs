@@ -31,6 +31,7 @@ import qualified Parun.Types.Reply as R
 import qualified Parun.Types.Request as Request
 import qualified Parun.Types.Result as Result
 import qualified Parun.Types.SearchBudget as SearchBudget
+import qualified Parun.Types.Weights as Weights
 import qualified Parun.Web.Ending as Ending
 import qualified Parun.Web.Html as Html
 import qualified Parun.Web.Link as Link
@@ -188,9 +189,9 @@ againstSearch matchup =
 searching :: (Monad m) => Answerer.Answerer (Asked.Asked GameState.GameState) (Game.Play (State.StateT Resumed m))
 searching = Answerer.MkAnswerer $ \prompted -> do
   Monad.when (Maybe.isJust (Protocol.requestFor prompted)) $ Game.underneath (State.modify' (\r -> r {searches = length (kept r) : searches r}))
-  Answerer.unwrap (Search.search (S.fixtureRegistry []) budget Search.known) prompted
+  Answerer.unwrap (Search.search (S.fixtureRegistry []) budget Weights.neutral Search.known) prompted
   where
-    budget = SearchBudget.MkSearchBudget {SearchBudget.samples = 2, SearchBudget.prompts = 40}
+    budget = SearchBudget.MkSearchBudget {SearchBudget.samples = 2, SearchBudget.turns = 1000, SearchBudget.prompts = 40}
 
 -- Each request answered from the replies stored, then by a page that passes.
 resuming :: (Monad m) => Protocol.Exchange (State.StateT Resumed m)

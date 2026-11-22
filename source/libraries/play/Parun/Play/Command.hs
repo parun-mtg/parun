@@ -209,12 +209,12 @@ game send stored kept options registry format decks seed = do
       timeline <- IORef.readIORef entries
       pure (outcome, record matchup timeline)
 
--- | Who answers seat `n`: the search bot at the options' budget, over the
--- known lists, if it is a bot's, its answers taken from `stored` and given to
--- `kept` (Game.remembered); otherwise `send`.
+-- | Who answers seat `n`: the search bot at the options' budget and weights,
+-- over the known lists, if it is a bot's, its answers taken from `stored` and
+-- given to `kept` (Game.remembered); otherwise `send`.
 answerer :: (Monad m) => Registry.Registry m -> Protocol.Exchange m -> m (Maybe R.Reply) -> (R.Reply -> m ()) -> PlayOptions.PlayOptions -> Natural -> Answerer.Answerer (Asked.Asked GameState.GameState) (Game.Play m)
 answerer registry send stored kept options n
-  | Set.member n (PlayOptions.bots options) = Game.remembered stored kept (Search.search registry (PlayOptions.budget options) Search.known)
+  | Set.member n (PlayOptions.bots options) = Game.remembered stored kept (Search.search registry (PlayOptions.budget options) (PlayOptions.weights options) Search.known)
   | otherwise = Game.wired registry send
 
 idOf :: Natural -> PlayerId.PlayerId

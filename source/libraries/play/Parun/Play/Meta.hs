@@ -25,13 +25,14 @@ import qualified Parun.Types.Key as Key.Type
 import qualified Parun.Types.MatchOptions as MatchOptions
 import qualified Parun.Types.Result as Result
 import qualified Parun.Types.SearchBudget as SearchBudget
+import qualified Parun.Types.Weights as Weights
 import qualified System.Console.GetOpt as GetOpt
 import qualified System.Exit as Exit
 import qualified System.IO as IO
 
 main :: [String] -> IO ()
 main arguments = case GetOpt.getOpt GetOpt.Permute flags arguments of
-  (updates, metaPath : one : rest, []) | length rest <= 1 -> case foldr (=<<) (Right MatchOptions.none) updates of
+  (updates, metaPath : one : rest, []) | length rest <= 1 -> case Monad.foldM (\options update -> update options) MatchOptions.none updates of
     Left problem -> usage [problem]
     Right options
       | MatchOptions.games options == 0 -> usage ["no games to play\n"]
@@ -41,7 +42,8 @@ main arguments = case GetOpt.getOpt GetOpt.Permute flags arguments of
           opponents <- Command.loadMeta registry metaPath
           prior <- Match.priorOf registry options
           format <- Command.orExit (Command.settle Nothing (NonEmpty.toList versions <> NonEmpty.toList (fmap (\(_, (name, list)) -> (Text.unpack name, list)) opponents)))
-          run options registry format prior (fmap (Bifunctor.bimap Text.pack DeckList.deck) versions) (fmap (\(share, (name, list)) -> (share, (name, DeckList.deck list))) opponents)
+          searchers <- Command.orExit (fmap (Bifunctor.first pure) (Match.searchersOf options))
+          run options searchers prior registry format (fmap (Bifunctor.bimap Text.pack DeckList.deck) versions) (fmap (\(share, (name, list)) -> (share, (name, DeckList.deck list))) opponents)
   (_, _, problems) -> usage problems
 
 -- | `parun match`'s options but `--save`, seat 1 being the deck tried and
@@ -58,11 +60,10 @@ usage problems = do
 -- | Plays every version against every deck of the meta under `format`,
 -- saying how each game ended on standard error, then the report on standard
 -- output.
-run :: MatchOptions.MatchOptions -> Registry.Registry Identity.Identity -> Maybe Format.Format -> Search.Prior -> NonEmpty.NonEmpty (Text.Text, Deck.Deck) -> NonEmpty.NonEmpty (Natural, (Text.Text, Deck.Deck)) -> IO ()
-run options registry format prior versions meta = do
+run :: MatchOptions.MatchOptions -> Map.Map Natural (SearchBudget.SearchBudget, Weights.Weights) -> Search.Prior -> Registry.Registry Identity.Identity -> Maybe Format.Format -> NonEmpty.NonEmpty (Text.Text, Deck.Deck) -> NonEmpty.NonEmpty (Natural, (Text.Text, Deck.Deck)) -> IO ()
+run options searchers prior registry format versions meta = do
   IO.hSetBuffering IO.stdout IO.LineBuffering
   seed <- maybe Key.fresh pure (MatchOptions.seed options)
-  let searchers = Map.fromSet (const (MatchOptions.budget options)) (MatchOptions.searching options)
   played <-
     Monad.forM (NonEmpty.zip (0 NonEmpty.:| [1 ..]) meta) $ \(index, (share, (name, opponent))) -> do
       wins <-
@@ -79,7 +80,7 @@ run options registry format prior versions meta = do
 -- `index`th deck of a meta from `seed`, as `parun match` plays them from that
 -- deck's key (Match.seedAt): every version meets a deck over the same seeds,
 -- so a difference between versions is not a difference between draws.
-matchup :: (Monad m) => Registry.Registry m -> Maybe Format.Format -> Map.Map Natural SearchBudget.SearchBudget -> Search.Prior -> Key.Type.Key -> Natural -> Natural -> Deck.Deck -> Deck.Deck -> m [Either Text.Text (Result.Result, GameState.GameState)]
+matchup :: (Monad m) => Registry.Registry m -> Maybe Format.Format -> Map.Map Natural (SearchBudget.SearchBudget, Weights.Weights) -> Search.Prior -> Key.Type.Key -> Natural -> Natural -> Deck.Deck -> Deck.Deck -> m [Either Text.Text (Result.Result, GameState.GameState)]
 matchup registry format searchers prior seed games index deck opponent =
   traverse (\n -> fst <$> Match.game registry format searchers prior (Match.seedAt seed index) n (Match.both (deck, opponent))) (takeWhile (< games) [0 ..])
 

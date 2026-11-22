@@ -2298,14 +2298,14 @@ holdFound pid card = do
   let printed = case card of
         OutsideCard.InPool printingId -> Just printingId
         OutsideCard.InAnotherGame outerId -> OutsideObject.printing <$> Map.lookup outerId (GameState.outsideObjects gs)
-  Monad.forM printed $ \printingId -> State.state (standIn pid printingId card)
+  Monad.forM printed $ \printingId -> State.state (standIn Game.freshObjectId pid printingId card)
 
--- `holdFound`'s object for one card outside the game, of this printing: in
--- `objects`, GameState.outsideCopies and GameState.outsideFinds, in no zone's
--- membership, Object.zone holding `mintOutside`'s placeholder.
-standIn :: PlayerId -> PrintingId.PrintingId -> OutsideCard.OutsideCard -> GameState.GameState -> (ObjectId, GameState.GameState)
-standIn pid printingId card gs =
-  let (oid, gs1) = Game.freshObjectId gs
+-- `holdFound`'s object for one card outside the game, of this printing, its id
+-- from `mint`: in `objects`, GameState.outsideCopies and GameState.outsideFinds,
+-- in no zone's membership, Object.zone holding `mintOutside`'s placeholder.
+standIn :: (GameState.GameState -> (ObjectId, GameState.GameState)) -> PlayerId -> PrintingId.PrintingId -> OutsideCard.OutsideCard -> GameState.GameState -> (ObjectId, GameState.GameState)
+standIn mint pid printingId card gs =
+  let (oid, gs1) = mint gs
       (ts, gs2) = Game.freshTimestamp gs1
       obj = Object.new pid (Source.OfCard printingId) Zone.Graveyard ts
    in ( oid,
@@ -2323,6 +2323,11 @@ standIn pid printingId card gs =
 -- the copies of one printing are indistinguishable, so one stands for all. Any
 -- stand-in left from before is discarded first. `eligible` admits the cards,
 -- so a Commander game offers none (CR 903.11).
+--
+-- Only `pid` is shown them, so their ids are Game.freshHiddenId's: the next
+-- object every seat sees takes the id it would have, however many printings
+-- their sideboard holds (CR 400.11a). Parun.OutsideTheGameSpec's "CR 400.11a
+-- gameplay" case proves it.
 --
 -- A main-game card's stand-in is its printed card face up, whatever its facing
 -- out there: it is played face up, and CR 601.3 asks whether that spell may be
@@ -2366,7 +2371,7 @@ offerOwned pid gs0 =
       offer g card = case standing card of
         Nothing -> g
         Just (printingId, kept) ->
-          let (oid, g1) = standIn pid printingId card g
+          let (oid, g1) = standIn Game.freshHiddenId pid printingId card g
            in g1 {GameState.objects = Map.adjust (\obj -> maybe obj (\one -> Game.representComponent (MergeComponent.OfCard one) obj) kept) oid (GameState.objects g1)}
    in case PlayerEffect.outsideGrants pid gs of
         [] -> gs

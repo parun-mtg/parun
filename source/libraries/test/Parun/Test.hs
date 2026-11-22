@@ -949,6 +949,7 @@ import qualified Parun.Codec.VoteSpec
 import qualified Parun.Codec.VotedSpec
 import qualified Parun.Codec.WardSpec
 import qualified Parun.Codec.WatchedAbilitySpec
+import qualified Parun.Codec.WeightsSpec
 import qualified Parun.Codec.WhenSpec
 import qualified Parun.Codec.WhenSpentSpec
 import qualified Parun.Codec.WhichCountersSpec
@@ -2096,6 +2097,7 @@ spec s reference corpus = do
   Parun.Codec.ModeMemorySpec.spec s
   Parun.Codec.AbilityWatchSpec.spec s
   Parun.Codec.WatchedAbilitySpec.spec s
+  Parun.Codec.WeightsSpec.spec s
   Parun.Codec.TriggerSourceSpec.spec s
   Parun.Codec.TurnedFaceUpSpec.spec s
   Parun.Codec.TurnedFaceUpTriggerSpec.spec s
