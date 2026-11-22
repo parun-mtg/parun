@@ -1296,40 +1296,43 @@ placeBorne srcId pending = do
         Nothing -> State.modify' (Game.cease abilId)
         Just (chosen, seats) -> do
           -- CR 603.3d / 601.2d: the division among the targets just fixed.
-          divisions <- Target.announceDivision (TriggeredAbility.name ability) controller abilId srcId bound slots seats chosen
-          -- CR 113.7: the ability's SOURCE is bound under the reserved slot as it
-          -- is placed, so "this creature" resolves as an ordinary slot read even
-          -- after the source has left. CR 603.7c: a delayed ability's CAPTURED
-          -- environment (its "it") rides alongside the choices made now, and the
-          -- two DO collide, the captured environment carrying the arming spell's
-          -- OWN reserved slots. Binding.mergeBinding is left-biased per FIELD, so
-          -- placement-time bindings must be the LEFT argument; backwards, the
-          -- arming spell's mode or X wins. unionWith, not Map.union, which would
-          -- drop the whole captured entry.
-          --
-          -- CR 702.165d: the source's copiable values are stamped too, since what
-          -- a backup ability grants is determined as the ability is put on the
-          -- stack. Off its last known information when the source is already
-          -- gone (CR 113.7a).
-          --
-          -- CR 603.3's object is stamped too, under the thisAbility slot
-          -- Parun.Engine.Activate fills for CR 602.2a's, so "if this is the second
-          -- time this ability has resolved this turn" reads this object's Source.
-          -- Inserted over the captured environment, whose thisAbility names the
-          -- ability that armed a delayed trigger rather than the trigger itself.
-          --
-          -- CR 201.5a / 608.2h: a granted ability's granter too, as
-          -- Activate.activateAbility binds it (Binding.setGranter).
-          let placedSource = maybe (Projection.copiableCharacteristics srcId gs) LastKnown.copiable (Game.lastKnownOf srcId gs)
-          State.modify' (\g -> g {GameState.objects = Map.adjust (\o -> o {Object.bindings = Binding.setGranter (TriggeredAbility.name (PendingTrigger.ability pending)) (Binding.setThisAbility abilId (Binding.setPlacedSourceCopy placedSource (Binding.setYou controller (Binding.setTriggerSource srcId (Map.unionWith Binding.mergeBinding (Target.stampDefendingPlayers srcId slots chosen g (Binding.setDivisions divisions (Binding.fromChoices chosen enteredX chosenModes))) (PendingTrigger.bindings pending))))))}) abilId (GameState.objects g)})
-          -- CR 601.2c through CR 603.3d: each chosen object became a target, which
-          -- is what CR 702.21a's ward watches. Raised only on an announcement the
-          -- joint check accepted, so a re-asked answer never made anything a
-          -- target.
-          announced <- State.get
-          Event.becameTarget announced abilId StackObjectKind.TriggeredAbility controller chosen
-          -- CR 700.13: and putting it on the stack may be a crime.
-          Event.committedCrime announced abilId controller chosen
+          announcedDivisions <- Target.announceDivision (TriggeredAbility.name ability) controller abilId srcId bound slots seats chosen
+          case announcedDivisions of
+            Nothing -> State.modify' (Game.cease abilId)
+            Just divisions -> do
+              -- CR 113.7: the ability's SOURCE is bound under the reserved slot as it
+              -- is placed, so "this creature" resolves as an ordinary slot read even
+              -- after the source has left. CR 603.7c: a delayed ability's CAPTURED
+              -- environment (its "it") rides alongside the choices made now, and the
+              -- two DO collide, the captured environment carrying the arming spell's
+              -- OWN reserved slots. Binding.mergeBinding is left-biased per FIELD, so
+              -- placement-time bindings must be the LEFT argument; backwards, the
+              -- arming spell's mode or X wins. unionWith, not Map.union, which would
+              -- drop the whole captured entry.
+              --
+              -- CR 702.165d: the source's copiable values are stamped too, since what
+              -- a backup ability grants is determined as the ability is put on the
+              -- stack. Off its last known information when the source is already
+              -- gone (CR 113.7a).
+              --
+              -- CR 603.3's object is stamped too, under the thisAbility slot
+              -- Parun.Engine.Activate fills for CR 602.2a's, so "if this is the second
+              -- time this ability has resolved this turn" reads this object's Source.
+              -- Inserted over the captured environment, whose thisAbility names the
+              -- ability that armed a delayed trigger rather than the trigger itself.
+              --
+              -- CR 201.5a / 608.2h: a granted ability's granter too, as
+              -- Activate.activateAbility binds it (Binding.setGranter).
+              let placedSource = maybe (Projection.copiableCharacteristics srcId gs) LastKnown.copiable (Game.lastKnownOf srcId gs)
+              State.modify' (\g -> g {GameState.objects = Map.adjust (\o -> o {Object.bindings = Binding.setGranter (TriggeredAbility.name (PendingTrigger.ability pending)) (Binding.setThisAbility abilId (Binding.setPlacedSourceCopy placedSource (Binding.setYou controller (Binding.setTriggerSource srcId (Map.unionWith Binding.mergeBinding (Target.stampDefendingPlayers srcId slots chosen g (Binding.setDivisions divisions (Binding.fromChoices chosen enteredX chosenModes))) (PendingTrigger.bindings pending))))))}) abilId (GameState.objects g)})
+              -- CR 601.2c through CR 603.3d: each chosen object became a target, which
+              -- is what CR 702.21a's ward watches. Raised only on an announcement the
+              -- joint check accepted, so a re-asked answer never made anything a
+              -- target.
+              announced <- State.get
+              Event.becameTarget announced abilId StackObjectKind.TriggeredAbility controller chosen
+              -- CR 700.13: and putting it on the stack may be a crime.
+              Event.committedCrime announced abilId controller chosen
 
 -- CR 101.4 / 603.3b: the players who control a pending trigger, active player
 -- first and then the rest in turn order, grouped by controller because the

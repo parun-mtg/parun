@@ -4683,373 +4683,376 @@ castProposed perform baseSpending pid oid sid printedFace castFrom preparedFor k
                     then reject
                     else do
                       -- CR 601.2d: the division among the targets just fixed.
-                      divisions <- Target.announceDivision Nothing pid sid sid seed slots seats chosen
-                      -- CR 601.2c's RECORD, stamped on `sid` itself -- the
-                      -- incarnation CR 601.2a put on the stack, rather than
-                      -- whatever is on top of it now -- and written before CR
-                      -- 601.2f prices the spell, not after CR 601.2h pays for
-                      -- it. Two readers need it that early: a cost's criterion
-                      -- may name a target ("a creature other than the target",
-                      -- Synthetic Spiteful Rite), which Cost.announcedSlots
-                      -- reads off this object, and a cost adjustment may read
-                      -- what the spell targets (Filter.TargetsSource, Terror of
-                      -- the Peaks). Activate.activateAbility stamps at the same
-                      -- step. Nothing is lost by stamping early: `reject`
-                      -- rewinds this write with everything else, back to
-                      -- `before`, which never held them.
-                      --
-                      -- CR 109.5: "The words 'you' and 'your' on an object
-                      -- refer to the object's controller, its would-be
-                      -- controller (if a player is attempting to play, cast,
-                      -- or activate it)". `pid` is both here -- the caster is
-                      -- the spell's controller -- so the slot is stamped
-                      -- alongside the chosen targets, as
-                      -- Activate.activateAbility does for CR 109.5's
-                      -- activated-ability sentence and Engine.placeBorne for
-                      -- its triggered-ability one. Char's "and 2 damage to
-                      -- you" is what reads it (Parun.CastSpec's Char case).
-                      --
-                      -- CR 201.5 alongside it: "text that refers to the object
-                      -- it's on by name means just that particular object", and
-                      -- CR 608.2 resolves a spell's instructions against the
-                      -- object on the stack -- so Chronomantic Escape's "exile
-                      -- Chronomantic Escape with three time counters on it" is a
-                      -- read of the same reserved slot CR 113.7a gives an
-                      -- ability. `sid` is CR 601.2a's incarnation, which is what
-                      -- resolves, so the slot names the spell itself rather than
-                      -- the card it was cast from (CR 400.7 having deleted that
-                      -- id). Stamped for EVERY spell, as `you` is: rule 201.5
-                      -- attaches no condition, and CardSpec's dataflow lint
-                      -- subtracts the reserved name rather than having a card
-                      -- declare it. The copy stamp carryCopyIntoSpell laid on
-                      -- is kept.
-                      State.modify'
-                        ( \g ->
-                            g
-                              { GameState.objects =
-                                  Map.adjust
-                                    (\o -> o {Object.bindings = Map.union (Binding.copyStamps (Object.bindings o)) (stampChooser (Binding.setAnnouncedTargets chosen (Binding.setYou pid (Binding.setTriggerSource sid (Target.stampDefendingPlayers sid slots chosen g (Map.unions [paidAlternative, Binding.fromAnnounced counts, Binding.setDivisions divisions (Binding.fromChoices chosen boundX chosenModes)]))))))})
-                                    sid
-                                    (GameState.objects g)
-                              }
-                        )
-                      -- CR 601.2b then 601.2f: X substituted and the Phyrexian
-                      -- symbols announced above, then the total cost. A criterion
-                      -- is read against the spell's STACK incarnation, the
-                      -- projection CR 601.2f's total is owed. Not the same
-                      -- projection castable measured -- that one read `oid` in a
-                      -- hand, this reads `sid` on the stack -- but provably the
-                      -- same HALF, since asProposed stamped both.
-                      --
-                      -- CR 118.7e: a reduction written with a hybrid mana
-                      -- symbol has its half chosen "at the time the cost
-                      -- reduction is applied", which is this step and not CR
-                      -- 601.2b's announcement above. The answers arrive as the
-                      -- adjustments themselves, so `totalWith` applies exactly
-                      -- what was chosen; `payableCost` gated the cast on some
-                      -- resolution paying, so the answer given here can be a
-                      -- worse one -- CR 118.7e attaches no condition to the
-                      -- choice, and CR 601.2h's failed payment is what `reject`
-                      -- below answers with.
-                      --
-                      -- CR 601.2f's ORDER of the reductions is asked at the same
-                      -- seam. A SPELL can observe it: no spell reduction in the
-                      -- pool states a floor, but two can still disagree about CR
-                      -- 101.1's coloured-mana confinement, and Edgewalker beside
-                      -- an unconfined typed reducer reaches two totals on one
-                      -- Cleric spell (Parun.PlayerEffectSpec's
-                      -- MixedConfinementReductions). `announcedCost` goes in
-                      -- because the order is chosen against the cost it will be
-                      -- applied to.
-                      --
-                      -- CR 601.2f's LOCK: `paidCost` is determined here, once,
-                      -- and handed to Cost.pay as a VALUE -- so an effect that
-                      -- would change the total after this line, including the
-                      -- cost's own additional cost eating the reducer that
-                      -- produced it, does nothing. data/scenarios/cost's Altar's
-                      -- Reap cases are the proof (Baral pays the sacrifice, and
-                      -- the Reap still costs {B}).
-                      pricedGs <- State.get
-                      -- CR 601.2c's targets are fixed by now, so an adjustment
-                      -- reading them (Bury in Books, Hinata) is asked here.
-                      adjustments <- Cost.announceReductions pid sid pricedGs announcedCost (CostAdjustments.Engine.plusReductions chosenReductions (Cost.spellAdjustments (Cost.announcedRecords announcedCost) chosen pid sid pricedGs))
-                      -- CR 601.2f's "plus all additional costs", gathered NOW
-                      -- that the targets are fixed, where `gathered` at CR
-                      -- 601.2b above could not see them: a component read off
-                      -- the targets (Terror of the Peaks' "spells ... that
-                      -- target this creature cost an additional 3 life") is
-                      -- this step's. `announcedCost`'s components are
-                      -- `announcedAtX`'s plus the early gather's plus CR
-                      -- 107.4f's life for the Phyrexian symbols Cost.announce
-                      -- settled; the middle term is swapped for the target-fixed
-                      -- gather and the announcement's own suffix kept, so a
-                      -- component that stopped matching once the targets were
-                      -- fixed is dropped as well as one that started. The MANA
-                      -- is `announcedCost`'s throughout: CR 118.13a made those
-                      -- choices at 601.2b and nothing here reopens them.
-                      let lateCost = Cost.plusComponents adjustments announcedAtX
-                          announcedSuffix = Cost.Type.components announcedCost List.\\ Cost.Type.components (Cost.plusComponents gathered announcedAtX)
-                          -- CR 601.2f: a computed amount (Urgent Necropsy's
-                          -- evidence) is read off the targets just chosen and
-                          -- locked in here, before any of it is paid, per its
-                          -- ruling. A fence: the payment reads the same slots,
-                          -- and no board changes a target's mana value mid-payment.
-                          totalledPaid = Cost.totalWith adjustments announcedCost {Cost.Type.components = Cost.Type.components lateCost <> announcedSuffix}
-                          -- CR 601.2h's "Spend only black mana on X", on the
-                          -- total just locked in (Cost.confineX).
-                          confinedPaid = totalledPaid {Cost.Type.mana = Cost.confineX confinement (Maybe.fromMaybe 0 mAmount) adjustments <$> Cost.Type.mana announcedCost <*> Cost.Type.mana totalledPaid}
-                          paidCost = Cost.fixComputedIn chosen pricedGs confinedPaid
-                      -- CR 702.51b / 702.66b / 702.126b: convoke, delve and
-                      -- improvise apply once the total cost is determined, so the
-                      -- offer is handed to the payment rather than made here --
-                      -- CR 601.2g's mana window opens first, and the payer is
-                      -- asked once it closes (Cost.paySubstituting). The list is
-                      -- the same one the gate above measured.
-                      -- CR 702.132a: assist. The caster chooses another player
-                      -- and that player's mana window runs HERE, before CR
-                      -- 601.2g's own window below -- which is the order rule
-                      -- 702.132a states -- and their payment rides the
-                      -- substitution hook, which `payManaWindow` runs once both
-                      -- windows have shut and before a symbol is spent. That
-                      -- seam is rule 702.132a's "before you begin to pay the
-                      -- total cost" word for word.
-                      --
-                      -- AHEAD of CR 702.51b's substitution in the composition:
-                      -- both reduce the same total, and no printing states
-                      -- assist beside convoke, delve or improvise (Scryfall
-                      -- keyword:assist, 2026-09-20, sixteen cards, none of them
-                      -- also stating one of the three), so no card can tell the
-                      -- two orders apart.
-                      assist <- Cost.offerAssist perform (PaymentSubject.Casting sid chosenNarrowing) pid sid paidCost
-                      let assisting c = do
-                            assisted <- maybe (pure c) (\(h, _) -> Cost.payAssist h (PaymentSubject.Casting sid chosenNarrowing) sid c) assist
-                            Cost.announceSubstitutions Cost.manaSubstitutions pid sid assisted
-                      (payment, substitutedBindings) <- Cost.paySubstituting (const False) perform before (foldMap (pure . snd) assist) PaymentMoment.OutsideResolution (PaymentSubject.Casting sid chosenNarrowing) (Just sid) chosenSpending pid sid assisting paidCost
-                      case payment of
-                        -- CR 601.2h: the payment failed, so the cast is illegal
-                        -- and CR 734.1 reverses it -- which is what takes the
-                        -- spell back off the stack. The payment did that back to
-                        -- `before`, keeping what each payer chose to keep of
-                        -- their mana window, so there is nothing left to undo
-                        -- here.
-                        Payment.Unpaid -> Game.noteUndoing pid Undoing.UnpaidCost
-                        -- WHICH of the candidate costs was paid is `castFor`
-                        -- above, stamped on the spell as Object.castUsing. CR
-                        -- 702.34a asks as the cast completes, and
-                        -- armCastFromGraveyard turns the answer into a
-                        -- replacement effect that outlives it. CR 702.33d's
-                        -- kicker designation is a different record -- it says an
-                        -- additional cost was announced, never which candidate
-                        -- carried it.
-                        Payment.Paid bound -> do
-                          -- CR 601.2h: the slots the PAYMENT bound -- the card
-                          -- a RevealCardsFromHand component showed -- folded
-                          -- onto the spell, so "the revealed card's mana value"
-                          -- has a name to read at resolution (Living Destiny).
-                          -- After the payment because that is when the payment
-                          -- knows them, and onto the SPELL because that is the
-                          -- object whose effects read it,
-                          -- Parun.Engine.Activate's route one carrier over. CR
-                          -- 118.12's payment during a resolution is folded the
-                          -- same way (Parun.Engine.Resolve.Common.foldPaid).
-                          State.modify' (\g -> g {GameState.objects = Map.adjust (\o -> o {Object.bindings = Binding.setPaid bound (Object.bindings o)}) sid (GameState.objects g)})
-                          -- CR 107.3 / 601.2h: which of the spent mana paid X
-                          -- (Object.manaSpentOnX), split off the total as
-                          -- confineX split it.
-                          Cost.recordXShares (PaymentSubject.Casting sid chosenNarrowing) pid sid (Slots.hasRead StaticRead.ReadsManaSpentOnX (Card.allEffects face)) (Cost.splitX confinement <$> mAmount <*> pure adjustments <*> Cost.Type.mana announcedCost <*> Cost.Type.mana totalledPaid)
-                          -- CR 702.51c: the creatures tapped to pay for mana in
-                          -- this spell's total cost convoked it, so the relation
-                          -- is recorded at the payment and a spell that is
-                          -- countered still leaves it behind -- Activate's
-                          -- GameEvent.Crewed and for its reason. A case on the
-                          -- rule-702 substitute (Cost.convokes), never on an
-                          -- effect.
+                      announcedDivisions <- Target.announceDivision Nothing pid sid sid seed slots seats chosen
+                      case announcedDivisions of
+                        Nothing -> reject
+                        Just divisions -> do
+                          -- CR 601.2c's RECORD, stamped on `sid` itself -- the
+                          -- incarnation CR 601.2a put on the stack, rather than
+                          -- whatever is on top of it now -- and written before CR
+                          -- 601.2f prices the spell, not after CR 601.2h pays for
+                          -- it. Two readers need it that early: a cost's criterion
+                          -- may name a target ("a creature other than the target",
+                          -- Synthetic Spiteful Rite), which Cost.announcedSlots
+                          -- reads off this object, and a cost adjustment may read
+                          -- what the spell targets (Filter.TargetsSource, Terror of
+                          -- the Peaks). Activate.activateAbility stamps at the same
+                          -- step. Nothing is lost by stamping early: `reject`
+                          -- rewinds this write with everything else, back to
+                          -- `before`, which never held them.
                           --
-                          -- Off the CONVOKING substitutes' own bindings
-                          -- (Cost.paySubstituting) rather than the whole
-                          -- payment's, which Binding.tappedPermanent would have
-                          -- shared with a tap the printed cost demanded, or with
-                          -- an artifact tapped for improvise.
-                          let convokers = Set.fromList (Maybe.mapMaybe Recipient.objectOf (foldMap Set.toList (Map.lookup Binding.tappedPermanent (Binding.targetsOf substitutedBindings))))
-                          Monad.unless
-                            (Set.null convokers)
-                            ( State.modify'
-                                ( Event.recordEvent
-                                    ( GameEvent.Convoked
-                                        Convoking.MkConvoking
-                                          { Convoking.spell = sid,
-                                            Convoking.convokedBy = convokers
-                                          }
+                          -- CR 109.5: "The words 'you' and 'your' on an object
+                          -- refer to the object's controller, its would-be
+                          -- controller (if a player is attempting to play, cast,
+                          -- or activate it)". `pid` is both here -- the caster is
+                          -- the spell's controller -- so the slot is stamped
+                          -- alongside the chosen targets, as
+                          -- Activate.activateAbility does for CR 109.5's
+                          -- activated-ability sentence and Engine.placeBorne for
+                          -- its triggered-ability one. Char's "and 2 damage to
+                          -- you" is what reads it (Parun.CastSpec's Char case).
+                          --
+                          -- CR 201.5 alongside it: "text that refers to the object
+                          -- it's on by name means just that particular object", and
+                          -- CR 608.2 resolves a spell's instructions against the
+                          -- object on the stack -- so Chronomantic Escape's "exile
+                          -- Chronomantic Escape with three time counters on it" is a
+                          -- read of the same reserved slot CR 113.7a gives an
+                          -- ability. `sid` is CR 601.2a's incarnation, which is what
+                          -- resolves, so the slot names the spell itself rather than
+                          -- the card it was cast from (CR 400.7 having deleted that
+                          -- id). Stamped for EVERY spell, as `you` is: rule 201.5
+                          -- attaches no condition, and CardSpec's dataflow lint
+                          -- subtracts the reserved name rather than having a card
+                          -- declare it. The copy stamp carryCopyIntoSpell laid on
+                          -- is kept.
+                          State.modify'
+                            ( \g ->
+                                g
+                                  { GameState.objects =
+                                      Map.adjust
+                                        (\o -> o {Object.bindings = Map.union (Binding.copyStamps (Object.bindings o)) (stampChooser (Binding.setAnnouncedTargets chosen (Binding.setYou pid (Binding.setTriggerSource sid (Target.stampDefendingPlayers sid slots chosen g (Map.unions [paidAlternative, Binding.fromAnnounced counts, Binding.setDivisions divisions (Binding.fromChoices chosen boundX chosenModes)]))))))})
+                                        sid
+                                        (GameState.objects g)
+                                  }
+                            )
+                          -- CR 601.2b then 601.2f: X substituted and the Phyrexian
+                          -- symbols announced above, then the total cost. A criterion
+                          -- is read against the spell's STACK incarnation, the
+                          -- projection CR 601.2f's total is owed. Not the same
+                          -- projection castable measured -- that one read `oid` in a
+                          -- hand, this reads `sid` on the stack -- but provably the
+                          -- same HALF, since asProposed stamped both.
+                          --
+                          -- CR 118.7e: a reduction written with a hybrid mana
+                          -- symbol has its half chosen "at the time the cost
+                          -- reduction is applied", which is this step and not CR
+                          -- 601.2b's announcement above. The answers arrive as the
+                          -- adjustments themselves, so `totalWith` applies exactly
+                          -- what was chosen; `payableCost` gated the cast on some
+                          -- resolution paying, so the answer given here can be a
+                          -- worse one -- CR 118.7e attaches no condition to the
+                          -- choice, and CR 601.2h's failed payment is what `reject`
+                          -- below answers with.
+                          --
+                          -- CR 601.2f's ORDER of the reductions is asked at the same
+                          -- seam. A SPELL can observe it: no spell reduction in the
+                          -- pool states a floor, but two can still disagree about CR
+                          -- 101.1's coloured-mana confinement, and Edgewalker beside
+                          -- an unconfined typed reducer reaches two totals on one
+                          -- Cleric spell (Parun.PlayerEffectSpec's
+                          -- MixedConfinementReductions). `announcedCost` goes in
+                          -- because the order is chosen against the cost it will be
+                          -- applied to.
+                          --
+                          -- CR 601.2f's LOCK: `paidCost` is determined here, once,
+                          -- and handed to Cost.pay as a VALUE -- so an effect that
+                          -- would change the total after this line, including the
+                          -- cost's own additional cost eating the reducer that
+                          -- produced it, does nothing. data/scenarios/cost's Altar's
+                          -- Reap cases are the proof (Baral pays the sacrifice, and
+                          -- the Reap still costs {B}).
+                          pricedGs <- State.get
+                          -- CR 601.2c's targets are fixed by now, so an adjustment
+                          -- reading them (Bury in Books, Hinata) is asked here.
+                          adjustments <- Cost.announceReductions pid sid pricedGs announcedCost (CostAdjustments.Engine.plusReductions chosenReductions (Cost.spellAdjustments (Cost.announcedRecords announcedCost) chosen pid sid pricedGs))
+                          -- CR 601.2f's "plus all additional costs", gathered NOW
+                          -- that the targets are fixed, where `gathered` at CR
+                          -- 601.2b above could not see them: a component read off
+                          -- the targets (Terror of the Peaks' "spells ... that
+                          -- target this creature cost an additional 3 life") is
+                          -- this step's. `announcedCost`'s components are
+                          -- `announcedAtX`'s plus the early gather's plus CR
+                          -- 107.4f's life for the Phyrexian symbols Cost.announce
+                          -- settled; the middle term is swapped for the target-fixed
+                          -- gather and the announcement's own suffix kept, so a
+                          -- component that stopped matching once the targets were
+                          -- fixed is dropped as well as one that started. The MANA
+                          -- is `announcedCost`'s throughout: CR 118.13a made those
+                          -- choices at 601.2b and nothing here reopens them.
+                          let lateCost = Cost.plusComponents adjustments announcedAtX
+                              announcedSuffix = Cost.Type.components announcedCost List.\\ Cost.Type.components (Cost.plusComponents gathered announcedAtX)
+                              -- CR 601.2f: a computed amount (Urgent Necropsy's
+                              -- evidence) is read off the targets just chosen and
+                              -- locked in here, before any of it is paid, per its
+                              -- ruling. A fence: the payment reads the same slots,
+                              -- and no board changes a target's mana value mid-payment.
+                              totalledPaid = Cost.totalWith adjustments announcedCost {Cost.Type.components = Cost.Type.components lateCost <> announcedSuffix}
+                              -- CR 601.2h's "Spend only black mana on X", on the
+                              -- total just locked in (Cost.confineX).
+                              confinedPaid = totalledPaid {Cost.Type.mana = Cost.confineX confinement (Maybe.fromMaybe 0 mAmount) adjustments <$> Cost.Type.mana announcedCost <*> Cost.Type.mana totalledPaid}
+                              paidCost = Cost.fixComputedIn chosen pricedGs confinedPaid
+                          -- CR 702.51b / 702.66b / 702.126b: convoke, delve and
+                          -- improvise apply once the total cost is determined, so the
+                          -- offer is handed to the payment rather than made here --
+                          -- CR 601.2g's mana window opens first, and the payer is
+                          -- asked once it closes (Cost.paySubstituting). The list is
+                          -- the same one the gate above measured.
+                          -- CR 702.132a: assist. The caster chooses another player
+                          -- and that player's mana window runs HERE, before CR
+                          -- 601.2g's own window below -- which is the order rule
+                          -- 702.132a states -- and their payment rides the
+                          -- substitution hook, which `payManaWindow` runs once both
+                          -- windows have shut and before a symbol is spent. That
+                          -- seam is rule 702.132a's "before you begin to pay the
+                          -- total cost" word for word.
+                          --
+                          -- AHEAD of CR 702.51b's substitution in the composition:
+                          -- both reduce the same total, and no printing states
+                          -- assist beside convoke, delve or improvise (Scryfall
+                          -- keyword:assist, 2026-09-20, sixteen cards, none of them
+                          -- also stating one of the three), so no card can tell the
+                          -- two orders apart.
+                          assist <- Cost.offerAssist perform (PaymentSubject.Casting sid chosenNarrowing) pid sid paidCost
+                          let assisting c = do
+                                assisted <- maybe (pure c) (\(h, _) -> Cost.payAssist h (PaymentSubject.Casting sid chosenNarrowing) sid c) assist
+                                Cost.announceSubstitutions Cost.manaSubstitutions pid sid assisted
+                          (payment, substitutedBindings) <- Cost.paySubstituting (const False) perform before (foldMap (pure . snd) assist) PaymentMoment.OutsideResolution (PaymentSubject.Casting sid chosenNarrowing) (Just sid) chosenSpending pid sid assisting paidCost
+                          case payment of
+                            -- CR 601.2h: the payment failed, so the cast is illegal
+                            -- and CR 734.1 reverses it -- which is what takes the
+                            -- spell back off the stack. The payment did that back to
+                            -- `before`, keeping what each payer chose to keep of
+                            -- their mana window, so there is nothing left to undo
+                            -- here.
+                            Payment.Unpaid -> Game.noteUndoing pid Undoing.UnpaidCost
+                            -- WHICH of the candidate costs was paid is `castFor`
+                            -- above, stamped on the spell as Object.castUsing. CR
+                            -- 702.34a asks as the cast completes, and
+                            -- armCastFromGraveyard turns the answer into a
+                            -- replacement effect that outlives it. CR 702.33d's
+                            -- kicker designation is a different record -- it says an
+                            -- additional cost was announced, never which candidate
+                            -- carried it.
+                            Payment.Paid bound -> do
+                              -- CR 601.2h: the slots the PAYMENT bound -- the card
+                              -- a RevealCardsFromHand component showed -- folded
+                              -- onto the spell, so "the revealed card's mana value"
+                              -- has a name to read at resolution (Living Destiny).
+                              -- After the payment because that is when the payment
+                              -- knows them, and onto the SPELL because that is the
+                              -- object whose effects read it,
+                              -- Parun.Engine.Activate's route one carrier over. CR
+                              -- 118.12's payment during a resolution is folded the
+                              -- same way (Parun.Engine.Resolve.Common.foldPaid).
+                              State.modify' (\g -> g {GameState.objects = Map.adjust (\o -> o {Object.bindings = Binding.setPaid bound (Object.bindings o)}) sid (GameState.objects g)})
+                              -- CR 107.3 / 601.2h: which of the spent mana paid X
+                              -- (Object.manaSpentOnX), split off the total as
+                              -- confineX split it.
+                              Cost.recordXShares (PaymentSubject.Casting sid chosenNarrowing) pid sid (Slots.hasRead StaticRead.ReadsManaSpentOnX (Card.allEffects face)) (Cost.splitX confinement <$> mAmount <*> pure adjustments <*> Cost.Type.mana announcedCost <*> Cost.Type.mana totalledPaid)
+                              -- CR 702.51c: the creatures tapped to pay for mana in
+                              -- this spell's total cost convoked it, so the relation
+                              -- is recorded at the payment and a spell that is
+                              -- countered still leaves it behind -- Activate's
+                              -- GameEvent.Crewed and for its reason. A case on the
+                              -- rule-702 substitute (Cost.convokes), never on an
+                              -- effect.
+                              --
+                              -- Off the CONVOKING substitutes' own bindings
+                              -- (Cost.paySubstituting) rather than the whole
+                              -- payment's, which Binding.tappedPermanent would have
+                              -- shared with a tap the printed cost demanded, or with
+                              -- an artifact tapped for improvise.
+                              let convokers = Set.fromList (Maybe.mapMaybe Recipient.objectOf (foldMap Set.toList (Map.lookup Binding.tappedPermanent (Binding.targetsOf substitutedBindings))))
+                              Monad.unless
+                                (Set.null convokers)
+                                ( State.modify'
+                                    ( Event.recordEvent
+                                        ( GameEvent.Convoked
+                                            Convoking.MkConvoking
+                                              { Convoking.spell = sid,
+                                                Convoking.convokedBy = convokers
+                                              }
+                                        )
                                     )
                                 )
-                            )
-                          -- CR 601.2h: each permanent a keyword's optional
-                          -- cost tapped became tapped to pay that cost (Agent
-                          -- Maria Hill's teamwork), recorded at the payment for
-                          -- the convoke record's reason. A case on the rule-702
-                          -- keyword's minted cost, never on an effect; teamwork is
-                          -- the one optional cost carrying TapForTotalPower, so
-                          -- that slot's set is its tappers alone.
-                          paidKeywords <- State.gets (maybe Map.empty Object.paidCosts . Game.lookupObject sid)
-                          let tapsForTotalPower component = case component of
-                                CostComponent.TapForTotalPower {} -> True
-                                _ -> False
-                              tappingFamilies =
-                                Set.fromList
-                                  [ family
-                                  | (keyword, perInstance) <- Map.toList paidKeywords,
-                                    sum perInstance > 0,
-                                    Just (optional, _) <- [Keyword.optionalCost keyword],
-                                    any tapsForTotalPower (Cost.Type.components optional),
-                                    Just family <- [Keyword.familyOf keyword]
-                                  ]
-                              tappedToPay = Set.fromList (Maybe.mapMaybe Recipient.objectOf (foldMap Set.toList (Map.lookup Binding.tappedForTotalPower (Binding.targetsOf bound))))
-                              paidTaps = [GameEvent.TappedToPay TappedToPay.MkTappedToPay {TappedToPay.permanent = tapped, TappedToPay.keyword = family} | family <- Set.toAscList tappingFamilies, tapped <- Set.toAscList tappedToPay]
-                          Monad.unless (null paidTaps) (Event.simultaneously (Monad.mapM_ (State.modify' . Event.recordEvent) paidTaps))
-                          -- CR 601.2i / 611.3d: the permission's rider is an
-                          -- effect that modifies the spell as it is cast, so it
-                          -- is stored before the event below snapshots the spell.
-                          -- Nothing past the convoke record rejects.
-                          State.modify' (\g -> g {GameState.stored = (GameState.stored g) {StoredEffects.continuousEffects = ridersUsed <> StoredEffects.continuousEffects (GameState.stored g)}})
-                          -- CR 614.1d: so is its entry rider, as a row naming the
-                          -- spell.
-                          State.modify' (installPermissionEntry pid permissionUsed sid)
-                          -- CR 614.1a: and its exile rider, likewise.
-                          State.modify' (installPermissionExile pid permissionUsed sid)
-                          -- CR 205.1b: and its added creature types, as effects
-                          -- naming the spell.
-                          State.modify' (installPermissionTypes permissionUsed sid)
-                          -- CR 400.7h: and, made under the card's own
-                          -- permission, that permission's.
-                          Monad.when (not ownPermission && Maybe.isNothing permissionUsed) (State.modify' (installSpellEntry pid ownHeld sid))
-                          -- CR 702.33h: for each sticker kicker paid, the caster
-                          -- gets {TK}, then may put a sticker on the spell, which
-                          -- CR 123.3b allows only on a spell they own (Sticker.place).
-                          -- Before CR 601.2i's event, so a cast trigger sees it
-                          -- (Wicker Picker's ruling).
-                          stickerKicks <- State.gets (maybe 0 (\o -> sum [sum n | (Keyword.Type.StickerKicker {}, n) <- Map.toList (Object.paidCosts o)]) . Game.lookupObject sid)
-                          Monad.forM_ [1 .. stickerKicks] $ \_ -> do
-                            Monad.void (Event.putPlayerCounters [(CounterCause.ByPayment pid, pid, PlayerCounterKind.Ticket, 1)])
-                            Monad.void (Sticker.place True pid sid (Set.fromList [minBound .. maxBound]) Nothing False)
-                          -- CR 700.14: the mana this payment spent, against the
-                          -- caster's running total, recorded at the payment as
-                          -- the convoke record is.
-                          spentNow <- State.gets (maybe 0 (Natural.length . Mana.Type.unwrap . Object.manaSpent) . Game.lookupObject sid)
-                          Monad.when (spentNow > 0) $ do
-                            priorTotal <- State.gets (`Game.manaExpendedThisTurn` pid)
-                            State.modify' (Event.recordEvent (GameEvent.Expended Expended.MkExpended {Expended.player = pid, Expended.before = priorTotal, Expended.after = priorTotal + spentNow}))
-                          -- CR 601.2i: the spell has been cast. Emitted AFTER the
-                          -- last step that can fail, so a rejected announcement
-                          -- records nothing.
-                          --
-                          -- `sid` is the spell -- the incarnation CR 601.2a put
-                          -- on the stack, which is what a "whenever you cast a
-                          -- [type] spell" trigger reads its characteristics off
-                          -- (TriggerCondition.SpellCast).
-                          --
-                          -- The snapshot is projected off the SAME state the
-                          -- event is appended to, and taken here rather than
-                          -- left to a reader for GameEvent.Moved's reason: by
-                          -- the time a look-back count folds the log, `sid` has
-                          -- resolved or been countered and the projection would
-                          -- have nothing to read. CR 601.2i has already applied
-                          -- the effects that modify the spell as it is cast, so
-                          -- this records what became cast.
-                          --
-                          -- `castFrom` is the zone CR 601.2a moved the card out
-                          -- of, captured before the move for the reason its own
-                          -- binding above gives; a "whenever you cast ... from
-                          -- your hand" trigger reads it off the event, since CR
-                          -- 400.7 left `sid` no memory of it.
-                          -- CR 601.2i: the board the spell's "as you cast
-                          -- this spell" quantities read, once the cast is
-                          -- finished.
-                          State.modify' (fileCastBoard sid)
-                          State.modify' (\g -> let pc = Projection.project sid g in Event.recordEvent (GameEvent.SpellCast (SpellWasCast.MkSpellWasCast pid sid pc castFrom (Object.castUsing =<< Game.lookupObject sid g) (Projection.lapsedGrantsOf (Projection.fullView g) pc sid g) (exileLinkLeaving oid before))) g)
-                          -- CR 611.2a: the durations this cast ends (Soul
-                          -- Sculptor's), off the spell as it became cast.
-                          State.modify' (Expiry.sweep (Expiry.Cast oid sid))
-                          -- CR 601.2a / 400.7h: the card was played, under the
-                          -- id it had before the move and the spell's.
-                          State.modify' (\g -> g {GameState.cardsPlayed = Map.insert sid pid (Map.insert oid pid (GameState.cardsPlayed g))})
-                          -- CR 723.3c's last sentence: "that permanent loses the
-                          -- prepared designation AT THE TIME THE SPELL BECOMES
-                          -- CAST (see rule 601.2i)". So it is here, beside rule
-                          -- 601.2i's own event and after the last step that can
-                          -- reject -- a proposal the game returned from was never
-                          -- a cast and must not unprepare anything. The copy is
-                          -- already off in the stack by now, which is why the id
-                          -- comes from `preparedFor` above rather than from `sid`.
-                          Monad.mapM_ Prepare.unprepare preparedFor
-                          -- CR 611.2a: the rows this cast spends, for the
-                          -- event's own reason -- nothing past this line rejects.
-                          State.modify' (PlayerEffect.consume (spent castFor))
-                          -- CR 603.7g: the delayed ability the permission this
-                          -- cast used creates, there for the same reason.
-                          Monad.mapM_ (State.modify' . armCastUnder pid sid) (CandidateCost.arms chosenCandidate)
-                          -- CR 611.2c: and the spell that used them is "that
-                          -- spell" to the rows their sources installed beside
-                          -- them (Savage Summoning), for the same reason.
-                          State.modify' (bindUser (spent castFor) sid)
-                          -- CR 601.3: the budgeted permission this cast
-                          -- spends, for the line above's reason -- nothing past
-                          -- here rejects, and CR 734.1's reversal restores the
-                          -- whole field (Parun.Engine.Reversal).
-                          State.modify' (PlayerEffect.spendCastPermission pid (PlayerEffect.permissionSpent permissionUsed))
-                          -- CR 118.9: and the budgeted grant whose cost it
-                          -- paid, for the same reason.
-                          State.modify' (PlayerEffect.spendFreeCast (CandidateCost.spends chosenCandidate))
-                          -- CR 601.3: and a cast made under the card's own exile
-                          -- permission spends that permission's budget, for the
-                          -- same reason.
-                          Monad.when (not ownPermission && Maybe.isNothing permissionUsed) (spendPlayBudget pid sid exilePermission)
-                          -- CR 601.2c: each chosen object became a target of this
-                          -- spell, which is what CR 702.21a's ward watches. Here
-                          -- rather than beside `chosen` above for CR 601.2i's
-                          -- reason one line up -- everything between the two can
-                          -- still reject the cast and rewind, and rule 601.2c
-                          -- holds the trigger off the stack "until the spell has
-                          -- finished being cast" anyway. The board it samples
-                          -- is `pricedGs`, taken before CR 601.2g/h's payment.
-                          Event.becameTarget pricedGs sid StackObjectKind.Spell pid chosen
-                          -- CR 700.13: and casting it may be a crime.
-                          Event.committedCrime pricedGs sid pid chosen
-                          -- CR 406.4: a target drawn out of a face-down pile is
-                          -- revealed only now the cost is paid
-                          -- (docs/synthetic-readings.md, "Whether a target drawn
-                          -- out of a face-down pile is revealed"), for CR
-                          -- 701.20a's brief time: none of its extensions
-                          -- covers a target.
-                          Monad.mapM_ (Event.reveal RevealCause.Ordinary pid) drawn
-                          Monad.when (castFrom == Just Zone.Graveyard) (armCastFromGraveyard pid keywordsBefore castFor sid)
-                          -- CR 903.8: the cast is now announced, so this is a
-                          -- previous cast of it from the command zone
-                          -- for every later one. Here rather than at CR 601.2a's
-                          -- move, because everything above this line can still
-                          -- reject the cast and rewind to `before` -- a proposal
-                          -- the game returned from was never a cast (CR 601.2),
-                          -- and must not make the next one dearer.
-                          --
-                          -- Counted for the CASTER, who by
-                          -- Commander.canCastFromCommandZone is also the owner:
-                          -- rule 903.8 lets nobody else cast it from there.
-                          --
-                          -- Counted against `sid`, the spell CR 601.2a moved to
-                          -- the stack: rule 903.8's count of previous casts of
-                          -- IT is per commander (CR 702.124d), and the printing
-                          -- the designation names rides Source.OfCard across CR
-                          -- 400.7's fresh id.
-                          Monad.when (castFrom == Just Zone.Command) (State.modify' (Commander.recordCast pid sid))
-                          -- CR 121.8: the spell has become cast, so a card drawn
-                          -- while it was being cast turns face up and its reveal
-                          -- is offered -- last, past everything that can reject.
-                          Event.turnUpKeptDraws
-                          -- CR 603.10: the cast is over, so its board is filed
-                          -- now rather than when the instruction allowing it
-                          -- finishes, which may cast another first (Etali).
-                          -- data/scenarios/curse-of-shaken-faith's two free
-                          -- casts scenario proves it.
-                          State.modify' Trigger.fileBoards
+                              -- CR 601.2h: each permanent a keyword's optional
+                              -- cost tapped became tapped to pay that cost (Agent
+                              -- Maria Hill's teamwork), recorded at the payment for
+                              -- the convoke record's reason. A case on the rule-702
+                              -- keyword's minted cost, never on an effect; teamwork is
+                              -- the one optional cost carrying TapForTotalPower, so
+                              -- that slot's set is its tappers alone.
+                              paidKeywords <- State.gets (maybe Map.empty Object.paidCosts . Game.lookupObject sid)
+                              let tapsForTotalPower component = case component of
+                                    CostComponent.TapForTotalPower {} -> True
+                                    _ -> False
+                                  tappingFamilies =
+                                    Set.fromList
+                                      [ family
+                                      | (keyword, perInstance) <- Map.toList paidKeywords,
+                                        sum perInstance > 0,
+                                        Just (optional, _) <- [Keyword.optionalCost keyword],
+                                        any tapsForTotalPower (Cost.Type.components optional),
+                                        Just family <- [Keyword.familyOf keyword]
+                                      ]
+                                  tappedToPay = Set.fromList (Maybe.mapMaybe Recipient.objectOf (foldMap Set.toList (Map.lookup Binding.tappedForTotalPower (Binding.targetsOf bound))))
+                                  paidTaps = [GameEvent.TappedToPay TappedToPay.MkTappedToPay {TappedToPay.permanent = tapped, TappedToPay.keyword = family} | family <- Set.toAscList tappingFamilies, tapped <- Set.toAscList tappedToPay]
+                              Monad.unless (null paidTaps) (Event.simultaneously (Monad.mapM_ (State.modify' . Event.recordEvent) paidTaps))
+                              -- CR 601.2i / 611.3d: the permission's rider is an
+                              -- effect that modifies the spell as it is cast, so it
+                              -- is stored before the event below snapshots the spell.
+                              -- Nothing past the convoke record rejects.
+                              State.modify' (\g -> g {GameState.stored = (GameState.stored g) {StoredEffects.continuousEffects = ridersUsed <> StoredEffects.continuousEffects (GameState.stored g)}})
+                              -- CR 614.1d: so is its entry rider, as a row naming the
+                              -- spell.
+                              State.modify' (installPermissionEntry pid permissionUsed sid)
+                              -- CR 614.1a: and its exile rider, likewise.
+                              State.modify' (installPermissionExile pid permissionUsed sid)
+                              -- CR 205.1b: and its added creature types, as effects
+                              -- naming the spell.
+                              State.modify' (installPermissionTypes permissionUsed sid)
+                              -- CR 400.7h: and, made under the card's own
+                              -- permission, that permission's.
+                              Monad.when (not ownPermission && Maybe.isNothing permissionUsed) (State.modify' (installSpellEntry pid ownHeld sid))
+                              -- CR 702.33h: for each sticker kicker paid, the caster
+                              -- gets {TK}, then may put a sticker on the spell, which
+                              -- CR 123.3b allows only on a spell they own (Sticker.place).
+                              -- Before CR 601.2i's event, so a cast trigger sees it
+                              -- (Wicker Picker's ruling).
+                              stickerKicks <- State.gets (maybe 0 (\o -> sum [sum n | (Keyword.Type.StickerKicker {}, n) <- Map.toList (Object.paidCosts o)]) . Game.lookupObject sid)
+                              Monad.forM_ [1 .. stickerKicks] $ \_ -> do
+                                Monad.void (Event.putPlayerCounters [(CounterCause.ByPayment pid, pid, PlayerCounterKind.Ticket, 1)])
+                                Monad.void (Sticker.place True pid sid (Set.fromList [minBound .. maxBound]) Nothing False)
+                              -- CR 700.14: the mana this payment spent, against the
+                              -- caster's running total, recorded at the payment as
+                              -- the convoke record is.
+                              spentNow <- State.gets (maybe 0 (Natural.length . Mana.Type.unwrap . Object.manaSpent) . Game.lookupObject sid)
+                              Monad.when (spentNow > 0) $ do
+                                priorTotal <- State.gets (`Game.manaExpendedThisTurn` pid)
+                                State.modify' (Event.recordEvent (GameEvent.Expended Expended.MkExpended {Expended.player = pid, Expended.before = priorTotal, Expended.after = priorTotal + spentNow}))
+                              -- CR 601.2i: the spell has been cast. Emitted AFTER the
+                              -- last step that can fail, so a rejected announcement
+                              -- records nothing.
+                              --
+                              -- `sid` is the spell -- the incarnation CR 601.2a put
+                              -- on the stack, which is what a "whenever you cast a
+                              -- [type] spell" trigger reads its characteristics off
+                              -- (TriggerCondition.SpellCast).
+                              --
+                              -- The snapshot is projected off the SAME state the
+                              -- event is appended to, and taken here rather than
+                              -- left to a reader for GameEvent.Moved's reason: by
+                              -- the time a look-back count folds the log, `sid` has
+                              -- resolved or been countered and the projection would
+                              -- have nothing to read. CR 601.2i has already applied
+                              -- the effects that modify the spell as it is cast, so
+                              -- this records what became cast.
+                              --
+                              -- `castFrom` is the zone CR 601.2a moved the card out
+                              -- of, captured before the move for the reason its own
+                              -- binding above gives; a "whenever you cast ... from
+                              -- your hand" trigger reads it off the event, since CR
+                              -- 400.7 left `sid` no memory of it.
+                              -- CR 601.2i: the board the spell's "as you cast
+                              -- this spell" quantities read, once the cast is
+                              -- finished.
+                              State.modify' (fileCastBoard sid)
+                              State.modify' (\g -> let pc = Projection.project sid g in Event.recordEvent (GameEvent.SpellCast (SpellWasCast.MkSpellWasCast pid sid pc castFrom (Object.castUsing =<< Game.lookupObject sid g) (Projection.lapsedGrantsOf (Projection.fullView g) pc sid g) (exileLinkLeaving oid before))) g)
+                              -- CR 611.2a: the durations this cast ends (Soul
+                              -- Sculptor's), off the spell as it became cast.
+                              State.modify' (Expiry.sweep (Expiry.Cast oid sid))
+                              -- CR 601.2a / 400.7h: the card was played, under the
+                              -- id it had before the move and the spell's.
+                              State.modify' (\g -> g {GameState.cardsPlayed = Map.insert sid pid (Map.insert oid pid (GameState.cardsPlayed g))})
+                              -- CR 723.3c's last sentence: "that permanent loses the
+                              -- prepared designation AT THE TIME THE SPELL BECOMES
+                              -- CAST (see rule 601.2i)". So it is here, beside rule
+                              -- 601.2i's own event and after the last step that can
+                              -- reject -- a proposal the game returned from was never
+                              -- a cast and must not unprepare anything. The copy is
+                              -- already off in the stack by now, which is why the id
+                              -- comes from `preparedFor` above rather than from `sid`.
+                              Monad.mapM_ Prepare.unprepare preparedFor
+                              -- CR 611.2a: the rows this cast spends, for the
+                              -- event's own reason -- nothing past this line rejects.
+                              State.modify' (PlayerEffect.consume (spent castFor))
+                              -- CR 603.7g: the delayed ability the permission this
+                              -- cast used creates, there for the same reason.
+                              Monad.mapM_ (State.modify' . armCastUnder pid sid) (CandidateCost.arms chosenCandidate)
+                              -- CR 611.2c: and the spell that used them is "that
+                              -- spell" to the rows their sources installed beside
+                              -- them (Savage Summoning), for the same reason.
+                              State.modify' (bindUser (spent castFor) sid)
+                              -- CR 601.3: the budgeted permission this cast
+                              -- spends, for the line above's reason -- nothing past
+                              -- here rejects, and CR 734.1's reversal restores the
+                              -- whole field (Parun.Engine.Reversal).
+                              State.modify' (PlayerEffect.spendCastPermission pid (PlayerEffect.permissionSpent permissionUsed))
+                              -- CR 118.9: and the budgeted grant whose cost it
+                              -- paid, for the same reason.
+                              State.modify' (PlayerEffect.spendFreeCast (CandidateCost.spends chosenCandidate))
+                              -- CR 601.3: and a cast made under the card's own exile
+                              -- permission spends that permission's budget, for the
+                              -- same reason.
+                              Monad.when (not ownPermission && Maybe.isNothing permissionUsed) (spendPlayBudget pid sid exilePermission)
+                              -- CR 601.2c: each chosen object became a target of this
+                              -- spell, which is what CR 702.21a's ward watches. Here
+                              -- rather than beside `chosen` above for CR 601.2i's
+                              -- reason one line up -- everything between the two can
+                              -- still reject the cast and rewind, and rule 601.2c
+                              -- holds the trigger off the stack "until the spell has
+                              -- finished being cast" anyway. The board it samples
+                              -- is `pricedGs`, taken before CR 601.2g/h's payment.
+                              Event.becameTarget pricedGs sid StackObjectKind.Spell pid chosen
+                              -- CR 700.13: and casting it may be a crime.
+                              Event.committedCrime pricedGs sid pid chosen
+                              -- CR 406.4: a target drawn out of a face-down pile is
+                              -- revealed only now the cost is paid
+                              -- (docs/synthetic-readings.md, "Whether a target drawn
+                              -- out of a face-down pile is revealed"), for CR
+                              -- 701.20a's brief time: none of its extensions
+                              -- covers a target.
+                              Monad.mapM_ (Event.reveal RevealCause.Ordinary pid) drawn
+                              Monad.when (castFrom == Just Zone.Graveyard) (armCastFromGraveyard pid keywordsBefore castFor sid)
+                              -- CR 903.8: the cast is now announced, so this is a
+                              -- previous cast of it from the command zone
+                              -- for every later one. Here rather than at CR 601.2a's
+                              -- move, because everything above this line can still
+                              -- reject the cast and rewind to `before` -- a proposal
+                              -- the game returned from was never a cast (CR 601.2),
+                              -- and must not make the next one dearer.
+                              --
+                              -- Counted for the CASTER, who by
+                              -- Commander.canCastFromCommandZone is also the owner:
+                              -- rule 903.8 lets nobody else cast it from there.
+                              --
+                              -- Counted against `sid`, the spell CR 601.2a moved to
+                              -- the stack: rule 903.8's count of previous casts of
+                              -- IT is per commander (CR 702.124d), and the printing
+                              -- the designation names rides Source.OfCard across CR
+                              -- 400.7's fresh id.
+                              Monad.when (castFrom == Just Zone.Command) (State.modify' (Commander.recordCast pid sid))
+                              -- CR 121.8: the spell has become cast, so a card drawn
+                              -- while it was being cast turns face up and its reveal
+                              -- is offered -- last, past everything that can reject.
+                              Event.turnUpKeptDraws
+                              -- CR 603.10: the cast is over, so its board is filed
+                              -- now rather than when the instruction allowing it
+                              -- finishes, which may cast another first (Etali).
+                              -- data/scenarios/curse-of-shaken-faith's two free
+                              -- casts scenario proves it.
+                              State.modify' Trigger.fileBoards
 
 -- CR 702.34a's SECOND static ability -- exile this card instead of putting it
 -- anywhere else any time it would leave the stack -- installed onto the spell's

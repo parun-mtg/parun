@@ -452,176 +452,179 @@ activateAbilityWith refused runSubgame pid srcId ability = Event.announcing . Ev
             then reject -- the whole activation is a no-op
             else do
               -- CR 602.2b / 601.2d: the division among the targets just fixed.
-              divisions <- Target.announceDivision (ActivatedAbility.name ability) pid abilId srcId seed slots seats chosen
-              -- CR 113.7: bind the source permanent under the reserved self slot, so
-              -- an activated ability that refers to "this creature" (Longtusk Cub)
-              -- resolves the reference as a slot read -- exactly as
-              -- Engine.placeBorne does for a TRIGGERED ability's source.
-              --
-              -- CR 109.5 binds the controller under the reserved you slot in the
-              -- same breath: "The words 'you' and 'your' on an object refer to the
-              -- object's controller ... For an activated ability, this is the
-              -- player who activated the ability." That player is `pid`, the one
-              -- CR 602.2 lets activate this ability at all -- so Brothers of Fire's
-              -- "and 1 damage to you" reaches a player, exactly as
-              -- Engine.placeBorne does for a TRIGGERED ability's controller.
-              --
-              -- CR 601.2b's announced X is stamped alongside, onto the ABILITY object
-              -- and not the source permanent -- Cinder Elemental sacrifices that
-              -- permanent to pay, so the ability is the only holder still there to
-              -- read at resolution (Quantity.evaluateFor). CR 113.7a is why the
-              -- ability keeps all three once its source is gone: "Once activated or
-              -- triggered, an ability exists on the stack independently of its
-              -- source."
-              --
-              -- CR 201.5a: a granted ability named for its granter binds it too
-              -- (Binding.setGranter), so CR 608.2h reads a granter that has left
-              -- off its last known information.
-              State.modify' (\g -> g {GameState.objects = Map.adjust (\o -> o {Object.bindings = Binding.setGranter (ActivatedAbility.name ability) (Binding.setAnnouncedTargets chosen (Binding.setThisAbility abilId (Binding.setYou pid (Binding.setTriggerSource srcId (Target.stampDefendingPlayers srcId slots chosen g (Binding.setDivisions divisions (Binding.setPaid (maybe Map.empty (Binding.paidObjects Binding.definingCard . Set.singleton . Recipient.ToObject) mDefining) (Map.union chosenSeed (Binding.fromChoices chosen mAmount chosenModes)))))))))}) abilId (GameState.objects g)})
-              -- CR 601.2c's board, before CR 601.2g/h's window and payment can
-              -- change it: what Event.becameTarget samples below.
-              announced <- State.get
-              -- CR 601.2f, at the position CR 602.2b gives it and in Cast.castSpell's
-              -- own order: the reductions that apply to this activation are announced
-              -- (CR 118.7e's choice of half) and then applied to the announced cost.
-              -- The record announced is the record applied, so the cost paid is the
-              -- cost the gates measured -- one reduction cannot be gathered twice
-              -- from two states.
-              --
-              -- CR 118.7e asks only of a reduction written with a hybrid symbol.
-              -- Heartstone's {1} is generic, and power-up's (CR 702.193b) is the
-              -- permanent's mana cost, colored mana included. The seam is here
-              -- rather than skipped so that a hybrid reduction cannot arrive at a
-              -- path that never asks.
-              --
-              -- CR 601.2f's ORDER is asked at the same seam and does reach a board:
-              -- Heartstone's floor beside Blossoming Tortoise's absence of one on an
-              -- animated Mishra's Foundry is two orders at two prices. The ANNOUNCED
-              -- cost goes in because the order is chosen against the cost it will be
-              -- applied to.
-              -- CR 601.2c's announced targets, gathered a SECOND time now that
-              -- they exist: Dwarven Mauler's "equip abilities you activate that
-              -- target this creature" is a reduction the pre-target gather above
-              -- cannot see, and CR 601.2f's position after 601.2c is what makes
-              -- reading them here the rule's own order rather than a shortcut.
-              -- The increases and reductions can differ between the two records
-              -- (Kopala, Warden of Waves; Dwarven Mauler), and `totalWith` charges
-              -- this one's; the CR 601.2f components cannot, since
-              -- Parun.Codec.CostModifier refuses a target criterion on an addition
-              -- to an activation, so the ones the announcement above measured are
-              -- the ones charged below.
-              let aimedAt = Set.unions (fmap Activatable.recipientObjects (Map.elems chosen))
-                  targeted = Cost.activationAdjustments aimedAt stamp (ActivatedAbility.name ability) AbilityKind.NonManaAbility (Loyalty.loyaltyKindOf (ActivatedAbility.cost ability)) pid srcId gs
-              adjustments <- Cost.announceReductions pid srcId gs announcedCost targeted
-              -- Cast.castProposed's lock of a computed amount, one road over.
-              boundGs <- State.get
-              let paidCost = Cost.fixComputedIn chosen boundGs (Cost.totalWith adjustments announcedCost)
-              -- CR 733.3: the announcement and the payment as the game choice
-              -- they complete, refused where a fragmented loop has already made
-              -- it here (Parun.Engine.Fragmented.forbidden). Asked of the state
-              -- the payment leaves, and refused as an unpaid cost is.
-              let announcement =
-                    Announcement.MkAnnouncement
-                      { Announcement.modes = chosenModes,
-                        Announcement.amount = mAmount,
-                        Announcement.cost = paidCost,
-                        Announcement.targets = chosen
-                      }
-                  completedBy g = Completion.MkCompletion {Completion.announcement = Just announcement, Completion.paid = Fragmented.paid (Just abilId) g}
-              -- CR 602.2: log the activation as BEGUN, before its payment, so a
-              -- mana ability activated to pay it is logged after it (Tezzeret,
-              -- Betrayer of Flesh's ruling) -- and off `announced`, CR 601.2c's
-              -- board, before a cost can sacrifice the source. A payment that
-              -- reverses restores `before`, and CR 734.1's partial reversal
-              -- drops the announcement's segment (Parun.Engine.Reversal).
-              State.modify' (ActivationRestriction.logActivation announced pid srcId (Just ability) AbilityKind.NonManaAbility aimedAt)
-              -- CR 601.2g/h via Parun.Engine.Cost.pay: the mana window, then the
-              -- components. The gates above prove SOME sequence of choices pays for
-              -- this ability -- but Unpaid is reachable all the same, because the
-              -- mana window then asks the player to make those choices and a
-              -- mis-tapped colour is a choice the engine must honour (Cost.payMana).
-              -- An unpaid cost reverses the whole activation (CR 734.1),
-              -- including the ability object this function put on the stack.
-              -- CR 701.67a's offer is handed to the PAYMENT rather than made
-              -- here, Cast.castSpellWith's posture and for its reason: CR
-              -- 601.2g's mana window opens first, and the payer says how much of
-              -- the waterbend cost they tap for once it closes
-              -- (Cost.paySubstituting). The bindings the substitution makes are
-              -- dropped -- no printing reads back which permanents a waterbend
-              -- cost tapped, where CR 702.51c's convoke does.
-              (payment, _) <- Cost.paySubstituting (refused . completedBy) (Resolve.performManaAbility runSubgame) before [] PaymentMoment.OutsideResolution (PaymentSubject.Activating srcId AbilityKind.NonManaAbility (ActivatedAbility.name ability) stamp spendable) (Just abilId) ManaSpending.AsProduced pid srcId (Cost.announceSubstitutions Cost.statedSubstitutions pid srcId) paidCost
-              completed <- State.gets completedBy
-              case payment of
-                -- CR 602.2b / 601.2i: record that the ability has become
-                -- activated, what "whenever you activate" watches (Kurkesh,
-                -- Onakke Ancient) and the whole of CR 606.3's once-per-turn
-                -- limit's storage (Activatable.loyaltyActivatedThisTurn).
-                -- Every path that rejects the activation restores `before`,
-                -- and the log lives in that state, so no rejected activation
-                -- can leave a record behind.
-                Payment.Paid bound -> do
-                  State.modify' (Event.recordEvent (GameEvent.AbilityActivated activation))
-                  -- CR 608.2h: the slots the PAYMENT bound -- the permanent a
-                  -- Sacrifice component put in a graveyard -- folded onto the
-                  -- ability object, so "the sacrificed creature's power" has a
-                  -- name to read at resolution (Jarad, Golgari Lich Lord). After
-                  -- the payment because that is when the payment knows them, and
-                  -- onto the ABILITY for the reason CR 113.7a gives above: the
-                  -- source may itself be what was sacrificed.
-                  State.modify' (\g -> g {GameState.objects = Map.adjust (\o -> o {Object.bindings = Binding.setPaid bound (Object.bindings o)}) abilId (GameState.objects g)})
-                  -- CR 602.2b: which of the spent mana paid the ability's {X}
-                  -- (Object.manaSpentOnX), split off CR 601.2f's total the mana
-                  -- was spent against, an increase's included.
-                  xNow <- State.gets (Game.lookupObject abilId Monad.>=> (Binding.amountOf Binding.variableX . Object.bindings))
-                  Cost.recordXShares (PaymentSubject.Activating srcId AbilityKind.NonManaAbility (ActivatedAbility.name ability) stamp spendable) pid abilId (Slots.hasRead StaticRead.ReadsManaSpentOnX (Modal.allEffects (ActivatedAbility.modal ability))) ((\x paid -> Cost.splitX Nothing x CostAdjustments.Engine.noAdjustments paid paid) <$> xNow <*> Cost.Type.mana paidCost)
-                  -- CR 602.5b: record that THIS ability of this permanent has now
-                  -- been activated, which is the whole of both counted riders'
-                  -- storage -- see ActivationRestriction.recordActivation, the
-                  -- one writer this and CR 605.3b's mana road share. Beside the
-                  -- loyalty record above and for its reason: every rejecting path
-                  -- restores `before`, so no refused activation leaves one behind.
-                  State.modify' (ActivationRestriction.recordActivation srcId ability)
-                  -- CR 702.122b / 702.171c: the creatures this crew or saddle
-                  -- cost tapped crewed the Vehicle or saddled the Mount as they
-                  -- were tapped, so the relation is recorded at the payment and
-                  -- an ability that never resolves still leaves it
-                  -- (data/scenarios/crew). A case on the rule-702 keyword
-                  -- stamp, never on an effect.
-                  let tappers = Set.fromList (Maybe.mapMaybe Recipient.objectOf (foldMap Set.toList (Map.lookup Binding.tappedForTotalPower (Binding.targetsOf bound))))
-                  case Keyword.familyOf =<< stamp of
-                    Just KeywordFamily.Crew ->
-                      State.modify' (Event.recordEvent (GameEvent.Crewed Crewing.MkCrewing {Crewing.vehicle = srcId, Crewing.crewedBy = tappers}))
-                    Just KeywordFamily.Saddle ->
-                      State.modify' (Event.recordEvent (GameEvent.Saddled Saddling.MkSaddling {Saddling.mount = srcId, Saddling.saddledBy = tappers}))
-                    _ -> pure ()
-                  -- CR 601.2c through CR 602.2b: each chosen object became a
-                  -- target of this ability, which is what CR 702.21a's ward
-                  -- watches -- and an activated ability is the half
-                  -- GameEvent.SpellCast could never carry.
+              announcedDivisions <- Target.announceDivision (ActivatedAbility.name ability) pid abilId srcId seed slots seats chosen
+              case announcedDivisions of
+                Nothing -> reject
+                Just divisions -> do
+                  -- CR 113.7: bind the source permanent under the reserved self slot, so
+                  -- an activated ability that refers to "this creature" (Longtusk Cub)
+                  -- resolves the reference as a slot read -- exactly as
+                  -- Engine.placeBorne does for a TRIGGERED ability's source.
                   --
-                  -- The ABILITY object and not its source permanent: rule 702.21a
-                  -- counters "that spell or ability", and CR 113.7a makes the
-                  -- ability the thing on the stack. Its controller is `pid` (CR
-                  -- 113.8), the player rule 702.21a offers the cost to.
+                  -- CR 109.5 binds the controller under the reserved you slot in the
+                  -- same breath: "The words 'you' and 'your' on an object refer to the
+                  -- object's controller ... For an activated ability, this is the
+                  -- player who activated the ability." That player is `pid`, the one
+                  -- CR 602.2 lets activate this ability at all -- so Brothers of Fire's
+                  -- "and 1 damage to you" reaches a player, exactly as
+                  -- Engine.placeBorne does for a TRIGGERED ability's controller.
                   --
-                  -- After the payment for Cast.castSpell's reason: everything
-                  -- above can still restore `before` and unwind the activation.
-                  Event.becameTarget announced abilId StackObjectKind.ActivatedAbility pid chosen
-                  -- CR 700.13: and activating it may be a crime.
-                  Event.committedCrime announced abilId pid chosen
-                  -- CR 406.4 through CR 602.2b: Cast.castProposed's reveal of a
-                  -- target drawn out of a face-down pile, as briefly.
-                  Monad.mapM_ (Event.reveal RevealCause.Ordinary pid) drawn
-                  -- CR 121.8: the ability has become activated (CR 602.2b), so
-                  -- a card drawn while paying for it turns face up and its
-                  -- reveal is offered.
-                  Event.turnUpKeptDraws
-                  pure (Just completed)
-                -- CR 734.1: the payment reversed the activation back to
-                -- `before` itself, keeping what the payer chose to keep of the
-                -- mana window. A CR 733.3 refusal has noted itself there, and
-                -- the priority loop cleared any older note before this action.
-                Payment.Unpaid -> do
-                  noted <- State.gets (Map.lookup pid . (Bookkeeping.undone . GameState.bookkeeping))
-                  Monad.unless (noted == Just Undoing.RepeatedLoop) (Game.noteUndoing pid Undoing.UnpaidCost)
-                  pure Nothing
+                  -- CR 601.2b's announced X is stamped alongside, onto the ABILITY object
+                  -- and not the source permanent -- Cinder Elemental sacrifices that
+                  -- permanent to pay, so the ability is the only holder still there to
+                  -- read at resolution (Quantity.evaluateFor). CR 113.7a is why the
+                  -- ability keeps all three once its source is gone: "Once activated or
+                  -- triggered, an ability exists on the stack independently of its
+                  -- source."
+                  --
+                  -- CR 201.5a: a granted ability named for its granter binds it too
+                  -- (Binding.setGranter), so CR 608.2h reads a granter that has left
+                  -- off its last known information.
+                  State.modify' (\g -> g {GameState.objects = Map.adjust (\o -> o {Object.bindings = Binding.setGranter (ActivatedAbility.name ability) (Binding.setAnnouncedTargets chosen (Binding.setThisAbility abilId (Binding.setYou pid (Binding.setTriggerSource srcId (Target.stampDefendingPlayers srcId slots chosen g (Binding.setDivisions divisions (Binding.setPaid (maybe Map.empty (Binding.paidObjects Binding.definingCard . Set.singleton . Recipient.ToObject) mDefining) (Map.union chosenSeed (Binding.fromChoices chosen mAmount chosenModes)))))))))}) abilId (GameState.objects g)})
+                  -- CR 601.2c's board, before CR 601.2g/h's window and payment can
+                  -- change it: what Event.becameTarget samples below.
+                  announced <- State.get
+                  -- CR 601.2f, at the position CR 602.2b gives it and in Cast.castSpell's
+                  -- own order: the reductions that apply to this activation are announced
+                  -- (CR 118.7e's choice of half) and then applied to the announced cost.
+                  -- The record announced is the record applied, so the cost paid is the
+                  -- cost the gates measured -- one reduction cannot be gathered twice
+                  -- from two states.
+                  --
+                  -- CR 118.7e asks only of a reduction written with a hybrid symbol.
+                  -- Heartstone's {1} is generic, and power-up's (CR 702.193b) is the
+                  -- permanent's mana cost, colored mana included. The seam is here
+                  -- rather than skipped so that a hybrid reduction cannot arrive at a
+                  -- path that never asks.
+                  --
+                  -- CR 601.2f's ORDER is asked at the same seam and does reach a board:
+                  -- Heartstone's floor beside Blossoming Tortoise's absence of one on an
+                  -- animated Mishra's Foundry is two orders at two prices. The ANNOUNCED
+                  -- cost goes in because the order is chosen against the cost it will be
+                  -- applied to.
+                  -- CR 601.2c's announced targets, gathered a SECOND time now that
+                  -- they exist: Dwarven Mauler's "equip abilities you activate that
+                  -- target this creature" is a reduction the pre-target gather above
+                  -- cannot see, and CR 601.2f's position after 601.2c is what makes
+                  -- reading them here the rule's own order rather than a shortcut.
+                  -- The increases and reductions can differ between the two records
+                  -- (Kopala, Warden of Waves; Dwarven Mauler), and `totalWith` charges
+                  -- this one's; the CR 601.2f components cannot, since
+                  -- Parun.Codec.CostModifier refuses a target criterion on an addition
+                  -- to an activation, so the ones the announcement above measured are
+                  -- the ones charged below.
+                  let aimedAt = Set.unions (fmap Activatable.recipientObjects (Map.elems chosen))
+                      targeted = Cost.activationAdjustments aimedAt stamp (ActivatedAbility.name ability) AbilityKind.NonManaAbility (Loyalty.loyaltyKindOf (ActivatedAbility.cost ability)) pid srcId gs
+                  adjustments <- Cost.announceReductions pid srcId gs announcedCost targeted
+                  -- Cast.castProposed's lock of a computed amount, one road over.
+                  boundGs <- State.get
+                  let paidCost = Cost.fixComputedIn chosen boundGs (Cost.totalWith adjustments announcedCost)
+                  -- CR 733.3: the announcement and the payment as the game choice
+                  -- they complete, refused where a fragmented loop has already made
+                  -- it here (Parun.Engine.Fragmented.forbidden). Asked of the state
+                  -- the payment leaves, and refused as an unpaid cost is.
+                  let announcement =
+                        Announcement.MkAnnouncement
+                          { Announcement.modes = chosenModes,
+                            Announcement.amount = mAmount,
+                            Announcement.cost = paidCost,
+                            Announcement.targets = chosen
+                          }
+                      completedBy g = Completion.MkCompletion {Completion.announcement = Just announcement, Completion.paid = Fragmented.paid (Just abilId) g}
+                  -- CR 602.2: log the activation as BEGUN, before its payment, so a
+                  -- mana ability activated to pay it is logged after it (Tezzeret,
+                  -- Betrayer of Flesh's ruling) -- and off `announced`, CR 601.2c's
+                  -- board, before a cost can sacrifice the source. A payment that
+                  -- reverses restores `before`, and CR 734.1's partial reversal
+                  -- drops the announcement's segment (Parun.Engine.Reversal).
+                  State.modify' (ActivationRestriction.logActivation announced pid srcId (Just ability) AbilityKind.NonManaAbility aimedAt)
+                  -- CR 601.2g/h via Parun.Engine.Cost.pay: the mana window, then the
+                  -- components. The gates above prove SOME sequence of choices pays for
+                  -- this ability -- but Unpaid is reachable all the same, because the
+                  -- mana window then asks the player to make those choices and a
+                  -- mis-tapped colour is a choice the engine must honour (Cost.payMana).
+                  -- An unpaid cost reverses the whole activation (CR 734.1),
+                  -- including the ability object this function put on the stack.
+                  -- CR 701.67a's offer is handed to the PAYMENT rather than made
+                  -- here, Cast.castSpellWith's posture and for its reason: CR
+                  -- 601.2g's mana window opens first, and the payer says how much of
+                  -- the waterbend cost they tap for once it closes
+                  -- (Cost.paySubstituting). The bindings the substitution makes are
+                  -- dropped -- no printing reads back which permanents a waterbend
+                  -- cost tapped, where CR 702.51c's convoke does.
+                  (payment, _) <- Cost.paySubstituting (refused . completedBy) (Resolve.performManaAbility runSubgame) before [] PaymentMoment.OutsideResolution (PaymentSubject.Activating srcId AbilityKind.NonManaAbility (ActivatedAbility.name ability) stamp spendable) (Just abilId) ManaSpending.AsProduced pid srcId (Cost.announceSubstitutions Cost.statedSubstitutions pid srcId) paidCost
+                  completed <- State.gets completedBy
+                  case payment of
+                    -- CR 602.2b / 601.2i: record that the ability has become
+                    -- activated, what "whenever you activate" watches (Kurkesh,
+                    -- Onakke Ancient) and the whole of CR 606.3's once-per-turn
+                    -- limit's storage (Activatable.loyaltyActivatedThisTurn).
+                    -- Every path that rejects the activation restores `before`,
+                    -- and the log lives in that state, so no rejected activation
+                    -- can leave a record behind.
+                    Payment.Paid bound -> do
+                      State.modify' (Event.recordEvent (GameEvent.AbilityActivated activation))
+                      -- CR 608.2h: the slots the PAYMENT bound -- the permanent a
+                      -- Sacrifice component put in a graveyard -- folded onto the
+                      -- ability object, so "the sacrificed creature's power" has a
+                      -- name to read at resolution (Jarad, Golgari Lich Lord). After
+                      -- the payment because that is when the payment knows them, and
+                      -- onto the ABILITY for the reason CR 113.7a gives above: the
+                      -- source may itself be what was sacrificed.
+                      State.modify' (\g -> g {GameState.objects = Map.adjust (\o -> o {Object.bindings = Binding.setPaid bound (Object.bindings o)}) abilId (GameState.objects g)})
+                      -- CR 602.2b: which of the spent mana paid the ability's {X}
+                      -- (Object.manaSpentOnX), split off CR 601.2f's total the mana
+                      -- was spent against, an increase's included.
+                      xNow <- State.gets (Game.lookupObject abilId Monad.>=> (Binding.amountOf Binding.variableX . Object.bindings))
+                      Cost.recordXShares (PaymentSubject.Activating srcId AbilityKind.NonManaAbility (ActivatedAbility.name ability) stamp spendable) pid abilId (Slots.hasRead StaticRead.ReadsManaSpentOnX (Modal.allEffects (ActivatedAbility.modal ability))) ((\x paid -> Cost.splitX Nothing x CostAdjustments.Engine.noAdjustments paid paid) <$> xNow <*> Cost.Type.mana paidCost)
+                      -- CR 602.5b: record that THIS ability of this permanent has now
+                      -- been activated, which is the whole of both counted riders'
+                      -- storage -- see ActivationRestriction.recordActivation, the
+                      -- one writer this and CR 605.3b's mana road share. Beside the
+                      -- loyalty record above and for its reason: every rejecting path
+                      -- restores `before`, so no refused activation leaves one behind.
+                      State.modify' (ActivationRestriction.recordActivation srcId ability)
+                      -- CR 702.122b / 702.171c: the creatures this crew or saddle
+                      -- cost tapped crewed the Vehicle or saddled the Mount as they
+                      -- were tapped, so the relation is recorded at the payment and
+                      -- an ability that never resolves still leaves it
+                      -- (data/scenarios/crew). A case on the rule-702 keyword
+                      -- stamp, never on an effect.
+                      let tappers = Set.fromList (Maybe.mapMaybe Recipient.objectOf (foldMap Set.toList (Map.lookup Binding.tappedForTotalPower (Binding.targetsOf bound))))
+                      case Keyword.familyOf =<< stamp of
+                        Just KeywordFamily.Crew ->
+                          State.modify' (Event.recordEvent (GameEvent.Crewed Crewing.MkCrewing {Crewing.vehicle = srcId, Crewing.crewedBy = tappers}))
+                        Just KeywordFamily.Saddle ->
+                          State.modify' (Event.recordEvent (GameEvent.Saddled Saddling.MkSaddling {Saddling.mount = srcId, Saddling.saddledBy = tappers}))
+                        _ -> pure ()
+                      -- CR 601.2c through CR 602.2b: each chosen object became a
+                      -- target of this ability, which is what CR 702.21a's ward
+                      -- watches -- and an activated ability is the half
+                      -- GameEvent.SpellCast could never carry.
+                      --
+                      -- The ABILITY object and not its source permanent: rule 702.21a
+                      -- counters "that spell or ability", and CR 113.7a makes the
+                      -- ability the thing on the stack. Its controller is `pid` (CR
+                      -- 113.8), the player rule 702.21a offers the cost to.
+                      --
+                      -- After the payment for Cast.castSpell's reason: everything
+                      -- above can still restore `before` and unwind the activation.
+                      Event.becameTarget announced abilId StackObjectKind.ActivatedAbility pid chosen
+                      -- CR 700.13: and activating it may be a crime.
+                      Event.committedCrime announced abilId pid chosen
+                      -- CR 406.4 through CR 602.2b: Cast.castProposed's reveal of a
+                      -- target drawn out of a face-down pile, as briefly.
+                      Monad.mapM_ (Event.reveal RevealCause.Ordinary pid) drawn
+                      -- CR 121.8: the ability has become activated (CR 602.2b), so
+                      -- a card drawn while paying for it turns face up and its
+                      -- reveal is offered.
+                      Event.turnUpKeptDraws
+                      pure (Just completed)
+                    -- CR 734.1: the payment reversed the activation back to
+                    -- `before` itself, keeping what the payer chose to keep of the
+                    -- mana window. A CR 733.3 refusal has noted itself there, and
+                    -- the priority loop cleared any older note before this action.
+                    Payment.Unpaid -> do
+                      noted <- State.gets (Map.lookup pid . (Bookkeeping.undone . GameState.bookkeeping))
+                      Monad.unless (noted == Just Undoing.RepeatedLoop) (Game.noteUndoing pid Undoing.UnpaidCost)
+                      pure Nothing

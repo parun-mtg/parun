@@ -2203,8 +2203,15 @@ chooserOf controller oid source seed chooser = do
 -- order: how many targets each variable slot gets, then the targets themselves.
 --
 -- A slot whose count the card or the board already fixes is not offered at the
--- first prompt, there being one legal answer; a count outside the offered range
--- is clamped back into it, which is the same game as answering its nearest end.
+-- first prompt, there being one legal answer. A count the prompt does not offer
+-- -- below the slot's floor or past its ceiling on the recipients offered -- is
+-- an illegal announcement (CR 601.2c): it binds the slot to the object itself,
+-- which CR 115.5 makes an illegal target, so the callers' selectionLegal refuses
+-- it and CR 601.2e (602.2b) rewinds the announcement, a trigger asking again
+-- (CR 603.3d). That is the web client's withdrawal
+-- (Parun.Play.Protocol.withdrawalOf). A count the prompt offers but the board's
+-- coherent range (slotCapacities) does not is clamped back into it, the same
+-- game as answering its nearest end.
 -- Neither prompt is raised when it has nothing to ask: the second not when
 -- every slot's count is the number of recipients it is offered.
 --
@@ -2238,7 +2245,8 @@ askChooser reader controller chooser oid source seed x slots sets mine = do
     if Map.null offers
       then pure Map.empty
       else Game.choose (Prompt.AnnounceTargets decider chooser oid offers)
-  let counts =
+  let unoffered = Map.keys (Map.filter id (Map.intersectionWith (\(count, legal) n -> n < TargetCount.least count || n > TargetCount.ceilingOn (Natural.length legal) count) offers announced))
+      counts =
         Map.filter (> 0) $
           Map.mapWithKey
             (\slot (lo, hi) -> max lo (min hi (Map.findWithDefault lo slot announced)))
@@ -2247,15 +2255,17 @@ askChooser reader controller chooser oid source seed x slots sets mine = do
       -- Every slot taking all it is offered admits one answer, so it is bound
       -- unasked. Should that answer fail the joint check, no other passes either.
       forced = all (\(n, legal) -> Natural.length legal == n) asked
-  if Map.null asked
-    then pure (Map.empty, Set.empty)
-    else do
-      answer <- if forced then pure (fmap snd asked) else Game.choose (Prompt.ChooseTargets decider chooser oid asked)
-      -- CR 406.4's draw, taken before selectionLegal judges the announcement:
-      -- the drawn card can be one the slot's Filter refuses, and CR 601.2e is
-      -- what then reverses the casting.
-      drawn <- traverse (drawFromPiles (Just chooser)) answer
-      pure (fmap fst drawn, foldMap snd drawn)
+  case unoffered of
+    slot : _ -> pure (Map.singleton slot (Set.singleton (Recipient.ToObject oid)), Set.empty)
+    []
+      | Map.null asked -> pure (Map.empty, Set.empty)
+      | otherwise -> do
+          answer <- if forced then pure (fmap snd asked) else Game.choose (Prompt.ChooseTargets decider chooser oid asked)
+          -- CR 406.4's draw, taken before selectionLegal judges the announcement:
+          -- the drawn card can be one the slot's Filter refuses, and CR 601.2e is
+          -- what then reverses the casting.
+          drawn <- traverse (drawFromPiles (Just chooser)) answer
+          pure (fmap fst drawn, foldMap snd drawn)
 
 -- CR 601.2d: each divided slot's announced division, asked once CR 601.2c's
 -- targets are fixed, every target getting at least one. Asked of the seat that
@@ -2266,26 +2276,30 @@ askChooser reader controller chooser oid source seed x slots sets mine = do
 -- raised where only one division exists -- one target, or a total equal to the
 -- targets -- the options being indistinguishable.
 --
--- An answer that does not divide the total among exactly those targets takes
--- the replay default rather than a repair. A regression fence, not a proved
--- behaviour: the scenario runner refuses such an answer before it reaches here.
-announceDivision :: Maybe AbilityName.AbilityName -> PlayerId -> ObjectId -> ObjectId -> Map SlotName Binding.Type.Binding -> Map SlotName TargetSlot -> Map SlotName PlayerId -> Map SlotName (Set Recipient) -> Game (Map SlotName (Map Recipient Natural))
+-- Nothing where an answer does not divide the total among exactly those
+-- targets: an illegal announcement, which the cast and activation roads reverse
+-- (CR 601.2e, 602.2b) and a trigger's placement removes (CR 603.3d) rather than
+-- repairing. The web client's withdrawal (Parun.Play.Protocol.withdrawalOf) is
+-- such an answer; Parun.ProtocolSpec's "CR 734.1 a seat withdraws a spell at
+-- its division" proves the cast's reversal.
+announceDivision :: Maybe AbilityName.AbilityName -> PlayerId -> ObjectId -> ObjectId -> Map SlotName Binding.Type.Binding -> Map SlotName TargetSlot -> Map SlotName PlayerId -> Map SlotName (Set Recipient) -> Game (Maybe (Map SlotName (Map Recipient Natural)))
 announceDivision reader pid oid source seed slots seats chosen = do
   gs <- State.get
   let counting = countingBy reader (Just pid) seed source gs
       divide divider total targets
-        | Natural.length (NonEmpty.tail targets) + 1 == total = pure (Map.fromList (fmap (\r -> (r, 1)) (NonEmpty.toList targets)))
-        | null (NonEmpty.tail targets) = pure (Map.singleton (NonEmpty.head targets) total)
+        | Natural.length (NonEmpty.tail targets) + 1 == total = pure (Just (Map.fromList (fmap (\r -> (r, 1)) (NonEmpty.toList targets))))
+        | null (NonEmpty.tail targets) = pure (Just (Map.singleton (NonEmpty.head targets) total))
         | otherwise = do
             let dividing = Dividing.Total total
             answer <- Game.choose (Prompt.ChooseDivision (Decide.deciderFor divider gs) divider oid dividing targets)
-            pure (if divides dividing targets answer then answer else defaultDivision dividing targets)
-  Map.traverseMaybeWithKey
-    ( \slot quantity -> case NonEmpty.nonEmpty (Set.toList (Map.findWithDefault Set.empty slot chosen)) of
-        Nothing -> pure Nothing
-        Just targets -> fmap Just (divide (Map.findWithDefault pid slot seats) (counting quantity) targets)
-    )
-    (Map.mapMaybe TargetSlot.divided slots)
+            pure (Monad.mfilter (divides dividing targets) (Just answer))
+  fmap sequence $
+    Map.traverseMaybeWithKey
+      ( \slot quantity -> case NonEmpty.nonEmpty (Set.toList (Map.findWithDefault Set.empty slot chosen)) of
+          Nothing -> pure Nothing
+          Just targets -> fmap Just (divide (Map.findWithDefault pid slot seats) (counting quantity) targets)
+      )
+      (Map.mapMaybe TargetSlot.divided slots)
 
 -- CR 601.2d / 115.7f: does this answer hand out the Dividing among exactly
 -- these targets, each at least one?
