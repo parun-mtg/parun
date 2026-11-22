@@ -187,7 +187,7 @@
       "do": {
         "Answer": {
           "prompt": "ChooseRollModifier",
-          "with": 1
+          "with": 0
         }
       },
       "player": "alice",

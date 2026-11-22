@@ -66,7 +66,7 @@
     "step": "PrecombatMain"
   },
   "description": "CR 706.2b the roller rerolls a later die first",
-  "note": "Grave Endeavor's two d10 come up 2 and 3, and each Wall offers a reroll of either die. Alice rerolls the 3, the later die, first, to a 9; then, with the 9 still open to the offers, the 2, to a 1; then the 9 again, to a 10. The Bears return with ten counters and bob loses 1. Each Rethrow shows both dice and which it reaches, and the first pick names each die by its place.",
+  "note": "Grave Endeavor's two d10 come up 2 and 3, and the Walls offer a reroll of either die. Alice rerolls the 3, the later die, first, to a 9; then, with the 9 still open to the offers, the 2, to a 1; then the 9 again, to a 10. The Bears return with ten counters and bob loses 1. Each Rethrow shows both dice and which it reaches, and the first pick names each die by its place.",
   "timeline": [
     {
       "do": {
@@ -129,38 +129,14 @@
                   "place": 0
                 },
                 {
-                  "source": "$w2",
-                  "result": 2,
-                  "place": 0
-                },
-                {
-                  "source": "$w3",
-                  "result": 2,
-                  "place": 0
-                },
-                {
                   "source": "$w1",
-                  "result": 3,
-                  "place": 1
-                },
-                {
-                  "source": "$w2",
-                  "result": 3,
-                  "place": 1
-                },
-                {
-                  "source": "$w3",
                   "result": 3,
                   "place": 1
                 }
               ],
               "options": [
                 0,
-                1,
-                2,
-                3,
-                4,
-                5
+                1
               ]
             }
           }
@@ -174,7 +150,7 @@
       "do": {
         "Answer": {
           "prompt": "ChooseRollModifier",
-          "with": 3
+          "with": 1
         }
       },
       "player": "alice",
@@ -388,7 +364,7 @@
       "do": {
         "Answer": {
           "prompt": "ChooseRollModifier",
-          "with": 3
+          "with": 1
         }
       },
       "player": "alice",
