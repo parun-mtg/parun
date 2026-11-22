@@ -1,0 +1,31 @@
+{
+  "description": "CR 701.21a / 608.2h / 611.2a: Dina, Soul Steeper's {1}, sacrifice another creature gets her +X/+0 until end of turn, X the sacrificed creature's power",
+  "note": "She cannot sacrifice herself ('another'). Sacrificing Goblin Piker (2/1) over Hill Giant (3/3) makes the 1/3 a 3/3, not 2/3 (its toughness) or 4/3 (the Giant), and she is 1/3 again on bob's turn.",
+  "board": {
+    "active": "alice",
+    "step": "PrecombatMain",
+    "seats": [
+      {
+        "name": "alice",
+        "manaPool": "B",
+        "battlefield": [{ "card": "Dina, Soul Steeper", "label": "dina" }, { "card": "Goblin Piker", "label": "piker" }, { "card": "Hill Giant", "label": "giant" }],
+        "library": [{ "card": "Island" }, { "card": "Island" }, { "card": "Island" }]
+      },
+      {
+        "name": "bob",
+        "library": [{ "card": "Island" }, { "card": "Island" }, { "card": "Island" }]
+      }
+    ]
+  },
+  "timeline": [
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "refuse": { "Answer": { "prompt": "ChooseSacrifices", "with": ["$dina"] } } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "do": { "Answer": { "prompt": "ChooseSacrifices", "with": ["$piker"] } } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "do": { "Activate": { "object": "$dina", "ability": 0 } } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "do": "Pass" },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "check": { "View": { "of": "Stack", "is": [] } } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "check": { "PowerToughness": { "object": "$dina", "power": 3, "toughness": 3 } } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "check": { "Count": { "player": "alice", "zone": "Graveyard", "card": "Goblin Piker", "count": 1 } } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "check": { "PowerToughness": { "object": "$giant", "power": 3, "toughness": 3 } } },
+    { "turn": 2, "step": "Upkeep", "player": "bob", "check": { "PowerToughness": { "object": "$dina", "power": 1, "toughness": 3 } } }
+  ]
+}
