@@ -115,6 +115,7 @@ import qualified Parun.Types.TapState as TapState
 import qualified Parun.Types.TargetSlot as TargetSlot
 import qualified Parun.Types.TextWord as TextWord
 import qualified Parun.Types.TurnRegisters as TurnRegisters
+import qualified Parun.Types.XDecision as XDecision
 import qualified Parun.Types.Zone as Zone
 import qualified Parun.Types.ZoneChange as ZoneChange
 
@@ -2058,8 +2059,14 @@ answerXMakingBlue x who p = case p of
 -- Announces X and aims every target slot at `who`.
 answerXAt :: Natural -> PlayerId.PlayerId -> Prompt.Prompt r -> r
 answerXAt x who p = case p of
-  Prompt.ChooseX {} -> x
+  Prompt.ChooseX {} -> XDecision.Announces x
   _ -> aimAt who p
+
+-- Withdraws at X, aiming every target slot at bob.
+withdrawsAtX :: Prompt.Prompt r -> r
+withdrawsAtX p = case p of
+  Prompt.ChooseX {} -> XDecision.Withdraws
+  _ -> aimAt S.bob p
 
 -- Answers Prompt.ChooseX with the affordability bound the prompt carries, and
 -- records that bound in the State -- the CastSpec answerer, aimed at a player.
@@ -2069,14 +2076,14 @@ answerAtBound :: PlayerId.PlayerId -> Prompt.Prompt r -> State.State [Natural] r
 answerAtBound who p = case p of
   Prompt.ChooseX _ _ _ _ _ bound -> do
     State.modify' (\seen -> seen <> [bound])
-    pure bound
+    pure (XDecision.Announces bound)
   _ -> pure (aimAt who p)
 
 -- Announces ONE MORE than the bound -- legal under CR 601.2b and unaffordable by
 -- construction, whatever the board is.
 answerAboveBound :: PlayerId.PlayerId -> Prompt.Prompt r -> r
 answerAboveBound who p = case p of
-  Prompt.ChooseX _ _ _ _ _ bound -> bound + 1
+  Prompt.ChooseX _ _ _ _ _ bound -> XDecision.Announces (bound + 1)
   _ -> aimAt who p
 
 -- answerAtBound and answerAboveBound in one, COUNTING the CR 601.2c target
@@ -2086,7 +2093,7 @@ answerAboveBound who p = case p of
 -- one reversed earlier.
 answerAtBoundOffsetCounting :: Natural -> PlayerId.PlayerId -> Prompt.Prompt r -> State.State Int r
 answerAtBoundOffsetCounting offset who p = case p of
-  Prompt.ChooseX _ _ _ _ _ bound -> pure (bound + offset)
+  Prompt.ChooseX _ _ _ _ _ bound -> pure (XDecision.Announces (bound + offset))
   Prompt.ChooseTargets {} -> do
     State.modify' (+ 1)
     pure (aimAt who p)
@@ -2148,6 +2155,13 @@ variableActivationCostSpec s registry = Spec.describe s "VariableActivationCost"
       top : _ -> case Game.lookupObject top after of
         Nothing -> Spec.assertFailure s "stack id should resolve"
         Just obj -> Spec.assertEqWith s "amount bound" (Binding.amountOf Binding.variableX (Object.bindings obj)) (Just 3)
+
+  Spec.it s "CR 734.1 a withdrawal at the ability's X rewinds the activation, its source unsacrificed and nothing tapped" $ do
+    (cinder, srcId, g1) <- cinderBoard s registry 4
+    let after = snd (Engine.runGamePure withdrawsAtX g1 (Activate.activateAbility S.alice srcId (theAbility cinder)))
+    Spec.assertBool s (Set.member srcId (GameState.battlefield after)) "the source is still on the battlefield"
+    Spec.assertEqWith s "no Mountain tapped" (S.tappedCount S.alice after) 0
+    Spec.assertEqWith s "nothing on the stack" (TurnRegisters.stack (GameState.turn after)) []
 
   -- The bound is what the BOARD can pay, so it moves with the board: {X}{R} off
   -- four Mountains admits X=3, off six admits X=5, and off the one Mountain that
@@ -4450,7 +4464,7 @@ graveyardNames pid gs = Maybe.mapMaybe (\oid -> fmap S.nameOf (Game.cardOf oid g
 -- flavour is dropped by CR 608.2b's re-read.
 answerBlightXTargeting :: Natural -> ObjectId.ObjectId -> ObjectId.ObjectId -> Prompt.Prompt r -> r
 answerBlightXTargeting x blighted wanted p = case p of
-  Prompt.ChooseX {} -> x
+  Prompt.ChooseX {} -> XDecision.Announces x
   Prompt.ChooseBlight {} -> blighted
   Prompt.ChooseTargets _ _ _ sets -> fmap (Set.filter ((== Just wanted) . Recipient.objectOf) . snd) sets
   _ -> S.identityAnswer p

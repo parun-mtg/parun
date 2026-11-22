@@ -96,6 +96,7 @@ import qualified Parun.Types.ThrowResult as ThrowResult
 import qualified Parun.Types.TimeTravelChoice as TimeTravelChoice
 import qualified Parun.Types.TriggerEntry as TriggerEntry
 import qualified Parun.Types.WordFamily as WordFamily
+import qualified Parun.Types.XDecision as XDecision
 import qualified Parun.Types.Zone as Zone
 
 -- | A question the engine puts to a player. The resolution-time choices share
@@ -562,7 +563,7 @@ data Prompt r where
   -- player can pay is answered by CR 734.1's reversal of a failed CR 601.2h
   -- payment (#741); outside what the card permits, by the caller's own gate (CR
   -- 101.1, CR 101.2).
-  ChooseX :: Decider.Decider -> PlayerId.PlayerId -> ObjectId.ObjectId -> SlotName.SlotName -> Natural.Natural -> Natural.Natural -> Prompt Natural.Natural
+  ChooseX :: Decider.Decider -> PlayerId.PlayerId -> ObjectId.ObjectId -> SlotName.SlotName -> Natural.Natural -> Natural.Natural -> Prompt XDecision.XDecision
   -- | CR 702.42a: whether the modal spell is entwined, before ChooseModes; the
   -- Cost is what entwining adds (CR 601.2f).
   ChooseEntwine :: Decider.Decider -> PlayerId.PlayerId -> ObjectId.ObjectId -> Cost.Cost Keyword.Keyword -> Prompt EntwineDecision.EntwineDecision

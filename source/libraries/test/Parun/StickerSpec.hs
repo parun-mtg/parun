@@ -118,6 +118,7 @@ import qualified Parun.Types.StoredEffects as StoredEffects
 import qualified Parun.Types.TapState as TapState
 import qualified Parun.Types.Timestamp as Timestamp
 import qualified Parun.Types.TurnRegisters as TurnRegisters
+import qualified Parun.Types.XDecision as XDecision
 import qualified Parun.Types.Zone as Zone
 
 -- Alice active with priority in her precombat main phase.
@@ -305,7 +306,7 @@ placing onto p = case p of
 -- is offered, the first offered otherwise.
 placingRef :: Natural -> Maybe ObjectId.ObjectId -> StickerRef.StickerRef -> Prompt.Prompt r -> State.State Offers r
 placingRef x onto ref p = case p of
-  Prompt.ChooseX {} -> pure x
+  Prompt.ChooseX {} -> pure (XDecision.Announces x)
   Prompt.ChooseSticker _ _ _ offered -> do
     State.modify' (\o -> o {stickers = NonEmpty.toList offered : stickers o})
     pure (if List.elem ref offered then ref else NonEmpty.head offered)
@@ -408,7 +409,7 @@ stickeringCard card ref p = case p of
 -- counting the ChooseStickerOrNone asks.
 kicking :: (Keyword.Keyword -> Natural) -> Maybe StickerRef.StickerRef -> Prompt.Prompt r -> State.State Int r
 kicking kicks ref p = case p of
-  Prompt.ChooseKicker _ _ _ keyword _ _ -> pure (KickerDecision.MkKickerDecision (kicks keyword))
+  Prompt.ChooseKicker _ _ _ keyword _ _ -> pure (KickerDecision.Pays (kicks keyword))
   Prompt.ChooseStickerOrNone _ _ _ offered -> do
     State.modify' (+ 1)
     pure
@@ -2127,7 +2128,7 @@ spec s registry = Spec.describe s "Sticker" $ do
         (bearsId, board) = S.addPermanent bears S.alice g1
         answer :: Prompt.Prompt r -> r
         answer p = case p of
-          Prompt.ChooseKicker _ _ _ keyword _ _ -> KickerDecision.MkKickerDecision (stickerKick keyword)
+          Prompt.ChooseKicker _ _ _ keyword _ _ -> KickerDecision.Pays (stickerKick keyword)
           Prompt.ChooseStickerOrNone _ _ _ offered -> if List.elem otterFiveOne offered then Just otterFiveOne else Nothing
           Prompt.ChooseCost _ _ _ candidates _ -> mutateKicked candidates
           _ -> MutateSpec.mutatingAt MutateSide.Over bearsId p
@@ -2146,7 +2147,7 @@ spec s registry = Spec.describe s "Sticker" $ do
         (bearsId, board) = S.addPermanent bears S.alice g1
         answer :: Prompt.Prompt r -> r
         answer p = case p of
-          Prompt.ChooseKicker _ _ _ keyword _ _ -> KickerDecision.MkKickerDecision (stickerKick keyword)
+          Prompt.ChooseKicker _ _ _ keyword _ _ -> KickerDecision.Pays (stickerKick keyword)
           Prompt.ChooseStickerOrNone _ _ _ offered -> if List.elem otterFiveOne offered then Just otterFiveOne else Nothing
           Prompt.ChooseCost _ _ _ candidates _ -> mutateKicked candidates
           _ -> MutateSpec.mutatingAt MutateSide.Over bearsId p
@@ -2230,7 +2231,7 @@ spec s registry = Spec.describe s "Sticker" $ do
         (bearsId, board) = S.addPermanent bears S.alice g1
         answer :: Prompt.Prompt r -> r
         answer p = case p of
-          Prompt.ChooseKicker _ _ _ keyword _ _ -> KickerDecision.MkKickerDecision (stickerKick keyword)
+          Prompt.ChooseKicker _ _ _ keyword _ _ -> KickerDecision.Pays (stickerKick keyword)
           Prompt.ChooseStickerOrNone _ _ _ offered -> if List.elem otterFiveOne offered then Just otterFiveOne else Nothing
           Prompt.ChooseCost _ _ _ candidates _ -> mutateKicked candidates
           _ -> MutateSpec.mutatingAt MutateSide.Over bearsId p

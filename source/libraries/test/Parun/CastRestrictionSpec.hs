@@ -71,6 +71,7 @@ import qualified Parun.Types.StepBegan as StepBegan
 import qualified Parun.Types.StoredEffects as StoredEffects
 import qualified Parun.Types.TapState as TapState
 import qualified Parun.Types.TurnRegisters as TurnRegisters
+import qualified Parun.Types.XDecision as XDecision
 import qualified Parun.Types.Zone as Zone
 
 printedCastingRestrictionSpec :: (Monad m, Monad n) => Spec.Spec m n -> Registry.Registry m -> n ()
@@ -904,7 +905,7 @@ boundedBoard mountain plains piker sphere blaze artifacts =
 -- Announces this X and answers everything else the ordinary way.
 answerBoundedX :: Natural -> Prompt.Prompt r -> r
 answerBoundedX n p = case p of
-  Prompt.ChooseX {} -> n
+  Prompt.ChooseX {} -> XDecision.Announces n
   _ -> S.identityAnswer p
 
 boundedFuseXSpec :: (Monad m, Monad n) => Spec.Spec m n -> Registry.Registry m -> n ()
@@ -1748,7 +1749,7 @@ soulImmolationBoard mountain piker guard wolves immolation =
 -- the counters off the creature the ceiling is read from being an accident.
 answerSoulImmolation :: ObjectId.ObjectId -> Natural -> Prompt.Prompt r -> r
 answerSoulImmolation guardId n p = case p of
-  Prompt.ChooseX {} -> n
+  Prompt.ChooseX {} -> XDecision.Announces n
   Prompt.ChooseBlight {} -> guardId
   _ -> S.identityAnswer p
 

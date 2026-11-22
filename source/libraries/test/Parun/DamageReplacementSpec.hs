@@ -66,6 +66,7 @@ import qualified Parun.Types.SlotName as SlotName
 import qualified Parun.Types.StoredEffects as StoredEffects
 import qualified Parun.Types.TapState as TapState
 import qualified Parun.Types.TurnRegisters as TurnRegisters
+import qualified Parun.Types.XDecision as XDecision
 import qualified Parun.Types.Zone as Zone
 
 -- CR 615.7's shield over SEVERAL recipients at once, whose producer is Divine
@@ -2135,7 +2136,7 @@ captainsManeuverSpec s registry = Spec.describe s "Captain's Maneuver (CR 614.9,
 -- out of its offered set rather than built.
 aimAliceToBobAtTwo :: Prompt.Prompt r -> r
 aimAliceToBobAtTwo p = case p of
-  Prompt.ChooseX {} -> 2
+  Prompt.ChooseX {} -> XDecision.Announces 2
   Prompt.ChooseTargets _ _ _ sets ->
     Map.mapWithKey (\slot (_, legal) -> Set.filter (== Recipient.ToPlayer (if slot == SlotName.MkSlotName (Text.pack "from") then S.alice else S.bob)) legal) sets
   _ -> S.identityAnswer p
@@ -2382,7 +2383,7 @@ pariahSpec s registry = Spec.describe s "Pariah (CR 614.9)" $ do
 -- engine rather than a hand-made Recipient that CR 608.2b would drop.
 aimObjectWithX :: Natural.Natural -> ObjectId.ObjectId -> Prompt.Prompt r -> r
 aimObjectWithX n oid p = case p of
-  Prompt.ChooseX {} -> n
+  Prompt.ChooseX {} -> XDecision.Announces n
   Prompt.ChooseTargets _ _ _ sets -> fmap (Set.filter ((== Just oid) . Recipient.objectOf) . snd) sets
   _ -> S.identityAnswer p
 

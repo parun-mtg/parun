@@ -665,8 +665,8 @@ spec s registry = Spec.describe s "Bot" $ do
     Spec.assertEqWith s "clashes" (drawn (Prompt.ChooseClash decider S.alice oid (ObjectId.MkObjectId 8) ((S.alice, ObjectId.MkObjectId 8) NonEmpty.:| []) Seq.empty)) ends
     Spec.assertEqWith s "commanders" (drawn (Prompt.ReturnCommander decider S.alice oid)) (Set.fromList [CommandZoneDecision.Leaves, CommandZoneDecision.Returns])
     Spec.assertEqWith s "land or nonland" (drawn (Prompt.ChooseLandOrNonland decider S.alice oid)) (Set.fromList [Nothing, Just LandOrNonland.Land, Just LandOrNonland.Nonland])
-    Spec.assertEqWith s "limited kicks" (kicks (Just 3)) (Set.fromList (fmap KickerDecision.MkKickerDecision [0 .. 3]))
-    Spec.assertEqWith s "unlimited kicks" (kicks Nothing) (Set.fromList (fmap KickerDecision.MkKickerDecision [0, 1]))
+    Spec.assertEqWith s "limited kicks" (kicks (Just 3)) (Set.fromList (fmap KickerDecision.Pays [0 .. 3]))
+    Spec.assertEqWith s "unlimited kicks" (kicks Nothing) (Set.fromList (fmap KickerDecision.Pays [0, 1]))
     Spec.assertEqWith s "assist amounts" (drawn (Prompt.ChooseAssistAmount decider S.alice oid 3)) (Set.fromList [0 .. 3])
     Spec.assertEqWith s "paid energy" (drawn (Prompt.ChoosePaidEnergy decider S.alice oid 3)) (Set.fromList [0 .. 3])
     Spec.assertEqWith s "chapters" (drawn (Prompt.ChooseReadAheadChapter decider S.alice oid 3)) (Set.fromList [1 .. 3])

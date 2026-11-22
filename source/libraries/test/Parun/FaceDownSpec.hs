@@ -216,6 +216,7 @@ import qualified Parun.Types.TurnUpR as TurnUpR
 import qualified Parun.Types.TurnUpRewrite as TurnUpRewrite
 import qualified Parun.Types.TypeLine as TypeLine
 import qualified Parun.Types.Ward as Ward
+import qualified Parun.Types.XDecision as XDecision
 import qualified Parun.Types.Zone as Zone
 
 spec :: (Monad m, Monad n) => Spec.Spec m n -> Registry.Registry m -> n ()
@@ -2708,7 +2709,7 @@ turnedUpXSpec s registry =
 -- the count the ENGINE's: a wrong X changes the offer, and the answer follows it.
 choosingX :: Natural -> Prompt.Prompt r -> r
 choosingX x p = case p of
-  Prompt.ChooseX {} -> x
+  Prompt.ChooseX {} -> XDecision.Announces x
   Prompt.AnnounceTargets _ _ _ offers -> fmap (\(count, legal) -> maybe (Natural.length legal) (min (Natural.length legal)) (TargetCount.most count)) offers
   Prompt.ChooseTargets _ _ _ sets -> fmap (\(n, legal) -> Set.fromList (take (Natural.toIntSaturating n) (Set.toAscList legal))) sets
   _ -> S.identityAnswer p

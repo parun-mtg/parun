@@ -111,6 +111,7 @@ import qualified Parun.Types.StoredEffects as StoredEffects
 import qualified Parun.Types.Subtype as Subtype
 import qualified Parun.Types.TapState as TapState
 import qualified Parun.Types.TurnRegisters as TurnRegisters
+import qualified Parun.Types.XDecision as XDecision
 import qualified Parun.Types.Zone as Zone
 
 sicknessOf :: ObjectId.ObjectId -> GameState.GameState -> Maybe Sickness.Sickness
@@ -459,7 +460,7 @@ castSpec s registry = Spec.describe s "Cast" $ do
 -- is the liar pattern from the illegal-target test.
 answerXOf :: Natural -> Prompt.Prompt r -> r
 answerXOf n p = case p of
-  Prompt.ChooseX {} -> n
+  Prompt.ChooseX {} -> XDecision.Announces n
   Prompt.ChooseTargets _ _ _ sets -> fmap (const (Set.singleton (Recipient.ToPlayer S.bob))) sets
   _ -> S.identityAnswer p
 
@@ -551,7 +552,7 @@ answerAtBound :: Prompt.Prompt r -> State.State [Natural] r
 answerAtBound p = case p of
   Prompt.ChooseX _ _ _ _ _ bound -> do
     State.modify' (\seen -> seen <> [bound])
-    pure bound
+    pure (XDecision.Announces bound)
   Prompt.ChooseTargets _ _ _ sets -> pure (fmap (const (Set.singleton (Recipient.ToPlayer S.bob))) sets)
   _ -> pure (S.identityAnswer p)
 
@@ -559,7 +560,7 @@ answerAtBound p = case p of
 -- construction, whatever the board is.
 answerAboveBound :: Prompt.Prompt r -> r
 answerAboveBound p = case p of
-  Prompt.ChooseX _ _ _ _ _ bound -> bound + 1
+  Prompt.ChooseX _ _ _ _ _ bound -> XDecision.Announces (bound + 1)
   Prompt.ChooseTargets _ _ _ sets -> fmap (const (Set.singleton (Recipient.ToPlayer S.bob))) sets
   _ -> S.identityAnswer p
 
@@ -570,7 +571,7 @@ answerAboveBound p = case p of
 -- reversed earlier.
 answerAtBoundOffsetCounting :: Natural -> Prompt.Prompt r -> State.State Int r
 answerAtBoundOffsetCounting offset p = case p of
-  Prompt.ChooseX _ _ _ _ _ bound -> pure (bound + offset)
+  Prompt.ChooseX _ _ _ _ _ bound -> pure (XDecision.Announces (bound + offset))
   Prompt.ChooseTargets _ _ _ sets -> do
     State.modify' (+ 1)
     pure (fmap (const (Set.singleton (Recipient.ToPlayer S.bob))) sets)
@@ -1020,7 +1021,7 @@ floodMawBoard s registry bears = do
 -- offer, so carol's card is the answer the fallback would not give.
 promisesByGift :: Prompt.Prompt r -> r
 promisesByGift p = case p of
-  Prompt.ChooseKicker {} -> KickerDecision.MkKickerDecision 1
+  Prompt.ChooseKicker {} -> KickerDecision.Pays 1
   Prompt.ChooseOpponent _ _ _ (Just (PlayerChoice.Promised gift _)) offered ->
     let wanted = if gift == Gift.Food then S.bob else S.carol
      in Maybe.fromMaybe (NonEmpty.head offered) (List.find (== wanted) (NonEmpty.toList offered))
@@ -1030,7 +1031,7 @@ promisesByGift p = case p of
 -- of the offered set, since a Sol Ring is offered as a ToObject.
 floodMaws :: Natural -> ObjectId.ObjectId -> Prompt.Prompt r -> r
 floodMaws times victim p = case p of
-  Prompt.ChooseKicker {} -> KickerDecision.MkKickerDecision times
+  Prompt.ChooseKicker {} -> KickerDecision.Pays times
   Prompt.ChooseTargets _ _ _ sets -> Map.map (Set.filter (`elem` [Recipient.ToCreature victim, Recipient.ToObject victim]) . snd) sets
   _ -> S.identityAnswer p
 
@@ -1053,7 +1054,7 @@ jiltKopalaBoard s registry mountains = do
 -- "other" at `damaged`.
 jilts :: Natural -> ObjectId.ObjectId -> ObjectId.ObjectId -> Prompt.Prompt r -> r
 jilts times bounced damaged p = case p of
-  Prompt.ChooseKicker {} -> KickerDecision.MkKickerDecision times
+  Prompt.ChooseKicker {} -> KickerDecision.Pays times
   Prompt.ChooseTargets _ _ _ sets -> Map.mapWithKey (\slot _ -> Set.singleton (Recipient.ToCreature (if slot == SlotName.MkSlotName (Text.pack "target") then bounced else damaged))) sets
   _ -> S.identityAnswer p
 
@@ -1080,7 +1081,7 @@ kickerAnnouncements = Maybe.mapMaybe (\response -> case response of Response.Ann
 -- gift promise among them. Everything else defers to S.identityAnswer.
 kicksTimes :: Natural -> Prompt.Prompt r -> r
 kicksTimes times p = case p of
-  Prompt.ChooseKicker {} -> KickerDecision.MkKickerDecision times
+  Prompt.ChooseKicker {} -> KickerDecision.Pays times
   _ -> S.identityAnswer p
 
 -- CR 702.33b's board: alice has three Plains, two Forests and three Islands --
@@ -1128,7 +1129,7 @@ kicksBlue = kicksMatching blueKicker
 kicksMatching :: Cost.Type.Cost Keyword.Keyword -> Prompt.Prompt r -> r
 kicksMatching wanted p = case p of
   Prompt.ChooseKicker _ _ _ keyword _ _ ->
-    KickerDecision.MkKickerDecision (if keyword == Keyword.Kicker wanted then 1 else 0)
+    KickerDecision.Pays (if keyword == Keyword.Kicker wanted then 1 else 0)
   -- One legal target per slot, FILTERED out of the offered set rather than built
   -- by hand, so CR 608.2b sees the recipient the prompt offered.
   Prompt.ChooseTargets _ _ _ sets -> Map.map (Set.take 1 . snd) sets
@@ -1392,9 +1393,9 @@ kickerSpec s registry = Spec.describe s "Kicker" $ do
     burstLightning <- S.printingOf s registry "Burst Lightning"
     hillGiant <- S.printingOf s registry "Hill Giant"
     let (gs, spellId, giantId) = kickerBoard mountain burstLightning hillGiant 5
-        (asked, after) = castAndResolve (bursts (KickerDecision.MkKickerDecision 0) giantId) gs spellId
+        (asked, after) = castAndResolve (bursts (KickerDecision.Pays 0) giantId) gs spellId
         settled = S.settleSba after
-    Spec.assertEqWith s "the player was asked, and declined" (kickerAnnouncements asked) [KickerDecision.MkKickerDecision 0]
+    Spec.assertEqWith s "the player was asked, and declined" (kickerAnnouncements asked) [KickerDecision.Pays 0]
     Spec.assertEqWith s "2 damage is marked on the Giant" (S.damageOf giantId settled) (Just 2)
     Spec.assertEqWith s "which is not lethal, so it is still on the battlefield" (S.countOnBattlefieldByName (S.printingName hillGiant) S.bob settled) 1
     Spec.assertEqWith s "only {R} was paid, so one Mountain is tapped" (S.tappedCount S.alice settled) 1
@@ -1405,9 +1406,9 @@ kickerSpec s registry = Spec.describe s "Kicker" $ do
     burstLightning <- S.printingOf s registry "Burst Lightning"
     hillGiant <- S.printingOf s registry "Hill Giant"
     let (gs, spellId, giantId) = kickerBoard mountain burstLightning hillGiant 5
-        (asked, after) = castAndResolve (bursts (KickerDecision.MkKickerDecision 1) giantId) gs spellId
+        (asked, after) = castAndResolve (bursts (KickerDecision.Pays 1) giantId) gs spellId
         settled = S.settleSba after
-    Spec.assertEqWith s "the player was asked, and kicked" (kickerAnnouncements asked) [KickerDecision.MkKickerDecision 1]
+    Spec.assertEqWith s "the player was asked, and kicked" (kickerAnnouncements asked) [KickerDecision.Pays 1]
     Spec.assertEqWith s "4 damage is lethal, so CR 704.5g destroyed the Giant" (S.countOnBattlefieldByName (S.printingName hillGiant) S.bob settled) 0
     Spec.assertEqWith s "and it is gone, so nothing carries its damage" (S.damageOf giantId settled) Nothing
     Spec.assertEqWith s "{R} plus the kicker {4}: all five Mountains are tapped" (S.tappedCount S.alice settled) 5
@@ -1421,7 +1422,7 @@ kickerSpec s registry = Spec.describe s "Kicker" $ do
     let (gs, spellId, giantId) = kickerBoard mountain burstLightning hillGiant 4
         -- An interpreter that WOULD kick: it never gets the chance, which is what
         -- makes this discriminating rather than a restatement of the answerer.
-        (asked, after) = castAndResolve (bursts (KickerDecision.MkKickerDecision 1) giantId) gs spellId
+        (asked, after) = castAndResolve (bursts (KickerDecision.Pays 1) giantId) gs spellId
         settled = S.settleSba after
     Spec.assertBool s (S.castable S.alice spellId gs) "the spell is still castable"
     Spec.assertEqWith s "no kicker question was put" (kickerAnnouncements asked) []
@@ -1446,7 +1447,7 @@ kickerSpec s registry = Spec.describe s "Kicker" $ do
     lightningBolt <- S.printingOf s registry "Lightning Bolt"
     hillGiant <- S.printingOf s registry "Hill Giant"
     let (gs, spellId, giantId) = kickerBoard mountain lightningBolt hillGiant 5
-        (asked, _) = castAndResolve (bursts (KickerDecision.MkKickerDecision 1) giantId) gs spellId
+        (asked, _) = castAndResolve (bursts (KickerDecision.Pays 1) giantId) gs spellId
     Spec.assertEqWith s "no kicker cost to offer" (fmap (Keyword.Engine.optionalCosts . Face.keywordSet) (Game.faceOf spellId gs)) (Just [])
     Spec.assertEqWith s "so no kicker question was put, on a board that could pay one" (kickerAnnouncements asked) []
   -- CR 702.33g: Jilt's "another target creature" belongs to its kicked clause, so
@@ -1457,7 +1458,7 @@ kickerSpec s registry = Spec.describe s "Kicker" $ do
     let (asked, after) = castAndResolve (jilts 0 giantId giantId) gs spellId
         settled = S.settleSba after
     Spec.assertEqWith s "the Giant is in bob's hand" (handSize S.bob settled) 1
-    Spec.assertEqWith s "the player was asked, and declined" (kickerAnnouncements asked) [KickerDecision.MkKickerDecision 0]
+    Spec.assertEqWith s "the player was asked, and declined" (kickerAnnouncements asked) [KickerDecision.Pays 0]
     Spec.assertEqWith s "only {1}{U} was paid" (S.tappedCount S.alice settled) 2
   -- The kicked half on a board with two creatures: the second target is chosen,
   -- and takes the 2 damage.
@@ -1559,7 +1560,7 @@ kickerSpec s registry = Spec.describe s "Kicker" $ do
           KeywordInstance.Own _ -> False
         answer :: Prompt.Prompt r -> r
         answer p = case p of
-          Prompt.ChooseKicker _ _ _ _ which _ -> KickerDecision.MkKickerDecision (if any grantedBySecond which then 1 else 0)
+          Prompt.ChooseKicker _ _ _ _ which _ -> KickerDecision.Pays (if any grantedBySecond which then 1 else 0)
           Prompt.ChooseOpponent _ _ _ (Just (PlayerChoice.Promised _ which)) offered ->
             let wanted = if grantedBySecond which then S.carol else S.bob
              in Maybe.fromMaybe (NonEmpty.head offered) (List.find (== wanted) (NonEmpty.toList offered))
@@ -1608,7 +1609,7 @@ kickerSpec s registry = Spec.describe s "Kicker" $ do
     burstLightning <- S.printingOf s registry "Burst Lightning"
     hillGiant <- S.printingOf s registry "Hill Giant"
     let (gs, spellId, giantId) = kickerBoard mountain burstLightning hillGiant 9
-        (_, after) = castAndResolve (bursts (KickerDecision.MkKickerDecision 2) giantId) gs spellId
+        (_, after) = castAndResolve (bursts (KickerDecision.Pays 2) giantId) gs spellId
         settled = S.settleSba after
     Spec.assertEqWith s "no damage was dealt, so the spell never resolved" (S.damageOf giantId settled) (Just 0)
     Spec.assertEqWith s "CR 601.2e rewound the cast, so no Mountain is tapped" (S.tappedCount S.alice settled) 0
@@ -1625,7 +1626,7 @@ kickerSpec s registry = Spec.describe s "Kicker" $ do
         (asked, after) = castAndResolve (kicksTimes 2) gs spellId
         settled = S.settleSba after
     Spec.assertEqWith s "two counters, so the 2/2 is a 4/4" (S.powerToughnessOf (S.creatureId settled) settled) (Just (4, 4))
-    Spec.assertEqWith s "the player was asked once and answered twice-kicked" (kickerAnnouncements asked) [KickerDecision.MkKickerDecision 2]
+    Spec.assertEqWith s "the player was asked once and answered twice-kicked" (kickerAnnouncements asked) [KickerDecision.Pays 2]
     Spec.assertEqWith s "{1}{G} plus the kicker twice: all six Forests are tapped" (S.tappedCount S.alice settled) 6
   -- The same board and the same answerer but for the count, which is what makes
   -- the case above about the NUMBER rather than about kicking at all.
@@ -1636,7 +1637,7 @@ kickerSpec s registry = Spec.describe s "Kicker" $ do
         (asked, after) = castAndResolve (kicksTimes 0) gs spellId
         settled = S.settleSba after
     Spec.assertEqWith s "no counters, so it is the printed 2/2" (S.powerToughnessOf (S.creatureId settled) settled) (Just (2, 2))
-    Spec.assertEqWith s "the player was asked, and declined" (kickerAnnouncements asked) [KickerDecision.MkKickerDecision 0]
+    Spec.assertEqWith s "the player was asked, and declined" (kickerAnnouncements asked) [KickerDecision.Pays 0]
     Spec.assertEqWith s "only {1}{G} was paid" (S.tappedCount S.alice settled) 2
   -- CR 702.33b: two kicker costs on one spell, each with its own CR 702.33f payoff.
   -- Sunscape Battlemage {2}{W} Creature -- Human Wizard 2/2, "Kicker {1}{G} and/or
@@ -1648,13 +1649,13 @@ kickerSpec s registry = Spec.describe s "Kicker" $ do
     let (asked, settled) = castBattlemage kicksGreen board
     Spec.assertEqWith s "the {1}{G} trigger destroyed bob's Bird Maiden" (S.countOnBattlefieldByName (birdMaidenName board) S.bob settled) 0
     Spec.assertEqWith s "and the {2}{U} trigger did not run, so alice's hand is empty" (handSize S.alice settled) 0
-    Spec.assertEqWith s "both questions were put, and only the green one kicked" (kickerAnnouncements asked) [KickerDecision.MkKickerDecision 1, KickerDecision.MkKickerDecision 0]
+    Spec.assertEqWith s "both questions were put, and only the green one kicked" (kickerAnnouncements asked) [KickerDecision.Pays 1, KickerDecision.Pays 0]
   Spec.it s "CR 702.33f kicked with its {2}{U} kicker only: two cards are drawn and the flier lives" $ do
     board <- battlemageBoard s registry
     let (asked, settled) = castBattlemage kicksBlue board
     Spec.assertEqWith s "the {2}{U} trigger drew two cards" (handSize S.alice settled) 2
     Spec.assertEqWith s "and the {1}{G} trigger did not run, so bob's Bird Maiden lives" (S.countOnBattlefieldByName (birdMaidenName board) S.bob settled) 1
-    Spec.assertEqWith s "both questions were put, and only the blue one kicked" (kickerAnnouncements asked) [KickerDecision.MkKickerDecision 0, KickerDecision.MkKickerDecision 1]
+    Spec.assertEqWith s "both questions were put, and only the blue one kicked" (kickerAnnouncements asked) [KickerDecision.Pays 0, KickerDecision.Pays 1]
 
 -- CR 702.47: splice. Desperate Ritual ({1}{R} Instant -- Arcane, "Add {R}{R}{R}.
 -- / Splice onto Arcane {1}{R}") and Glacial Ray ({1}{R} Instant -- Arcane,
@@ -3428,7 +3429,7 @@ slotOffer slot oids = Map.singleton (SlotName.MkSlotName (Text.pack slot)) (Set.
 cleaving :: [ManaSymbol.ManaSymbol] -> (Recipient.Recipient -> Bool) -> String -> Natural -> GameState.GameState -> Prompt.Prompt r -> r
 cleaving cost aim wanted x gs p = case p of
   Prompt.ChooseTargets _ _ _ sets -> Map.map (Set.filter aim . snd) sets
-  Prompt.ChooseX {} -> x
+  Prompt.ChooseX {} -> XDecision.Announces x
   Prompt.ChooseCardFromAmong _ _ _ offered -> Maybe.fromMaybe (NonEmpty.head offered) (List.find isWanted (NonEmpty.toList offered))
   Prompt.Search _ _ offered _ -> take 1 (filter isWanted offered <> offered)
   _ -> payingFor cost p

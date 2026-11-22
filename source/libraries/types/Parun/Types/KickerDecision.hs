@@ -25,7 +25,9 @@ import qualified Numeric.Natural as Natural
 -- bundles a MODE choice into the same sentence, or of OptionalDecision, which is
 -- scoped to CR 603.5's printed "may" answered AS THE SPELL RESOLVES. This one is
 -- answered while the spell is being CAST (CR 601.2b) and widens nothing.
-newtype KickerDecision = MkKickerDecision
-  { unwrap :: Natural.Natural
-  }
+data KickerDecision
+  = -- | Declares paying the cost this many times.
+    Pays Natural.Natural
+  | -- | Takes the spell back: the cast rewinds (CR 734.1, 601.2e).
+    Withdraws
   deriving (Eq, Ord, Show)

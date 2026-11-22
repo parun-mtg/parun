@@ -4,11 +4,14 @@ module Parun.Play.Match.Config where
 
 import qualified Control.Monad as Monad
 import qualified Control.Monad.Catch as Catch
+import qualified Data.List as List
 import qualified Data.Map.Strict as Map
 import qualified Data.Set as Set
 import qualified Data.Text as Text
 import Numeric.Natural (Natural)
 import qualified Parun.CommandLine as CommandLine
+import qualified Parun.CommandLine.Completion.Command as Command
+import qualified Parun.CommandLine.Completion.Value as Value
 import qualified Parun.Play.Key as Key
 import qualified Parun.Play.Match.Flag as Flag
 import qualified Parun.Play.Opponent as Opponent
@@ -58,7 +61,7 @@ applyFlag config flag = case flag of
   Flag.Pool s -> set o {MatchOptions.pool = Just (Text.pack s)}
   Flag.Samples s -> perSeat "a number of samples" (Monad.mfilter (> 0) . Read.readMaybe) (\n b -> b {SearchBudget.samples = n}) s
   Flag.Save s -> set o {MatchOptions.save = Just s}
-  Flag.Search s -> CommandLine.orInvalid ("not a seat: " <> s) (Monad.mfilter (`elem` [1, 2]) (Read.readMaybe s)) >>= \n -> set o {MatchOptions.searching = Set.insert n (MatchOptions.searching o)}
+  Flag.Search s -> CommandLine.orInvalid ("not a seat: " <> s) (Monad.mfilter (`elem` seats) (Read.readMaybe s)) >>= \n -> set o {MatchOptions.searching = Set.insert n (MatchOptions.searching o)}
   Flag.Seed s -> CommandLine.orInvalid ("not a seed: " <> s) (Key.fromHex (Text.pack s)) >>= \k -> set o {MatchOptions.seed = Just k}
   Flag.Turns s -> perSeat "a number of turns" Read.readMaybe (\n b -> b {SearchBudget.turns = n}) s
   Flag.Weights s -> weighed (Just . Right) s
@@ -84,18 +87,56 @@ perSeatOf parse update s budgets = case seated s of
 weighedOf :: (String -> Maybe (Either Persona.Persona FilePath)) -> String -> Map.Map Natural (Either Persona.Persona FilePath) -> Maybe (Map.Map Natural (Either Persona.Persona FilePath))
 weighedOf parse s weighing = case seated s of
   Just (n, value) | Just x <- parse value -> Just (Map.insert n x weighing)
-  _ -> fmap (\x -> Map.fromList [(n, x) | n <- [1, 2]]) (parse s)
+  _ -> fmap (\x -> Map.fromList [(n, x) | n <- seats]) (parse s)
 
 -- | The playout policy a `--playout` value names.
 playoutNamed :: String -> Maybe Playout.Playout
-playoutNamed s = lookup s [("random", Playout.Random), ("greedy", Playout.Greedy), ("polar", Playout.Polar), ("classified", Playout.Classified)]
+playoutNamed s = List.find ((== s) . playoutName) [minBound .. maxBound]
+
+-- | The `--playout` value naming a playout policy.
+playoutName :: Playout.Playout -> String
+playoutName playout = case playout of
+  Playout.Random -> "random"
+  Playout.Greedy -> "greedy"
+  Playout.Polar -> "polar"
+  Playout.Classified -> "classified"
 
 -- | The search method a `--method` value names.
 methodNamed :: String -> Maybe SearchMethod.SearchMethod
-methodNamed s = lookup s [("flat", SearchMethod.Flat), ("tree", SearchMethod.InformationSet)]
+methodNamed s = List.find ((== s) . methodName) [minBound .. maxBound]
+
+-- | The `--method` value naming a search method.
+methodName :: SearchMethod.SearchMethod -> String
+methodName method = case method of
+  SearchMethod.Flat -> "flat"
+  SearchMethod.InformationSet -> "tree"
+
+-- | The seats a match has.
+seats :: [Natural]
+seats = [1, 2]
 
 -- | A seat, 1 or 2, and the value it prefixes with `=`.
 seated :: String -> Maybe (Natural, String)
 seated s = case break (== '=') s of
-  (seat, '=' : value) | Just n <- Monad.mfilter (`elem` [1, 2]) (Read.readMaybe seat) -> Just (n, value)
+  (seat, '=' : value) | Just n <- Monad.mfilter (`elem` seats) (Read.readMaybe seat) -> Just (n, value)
   _ -> Nothing
+
+-- | `parun match` as tab completion sees it.
+command :: Command.Command
+command =
+  (Command.new "match" Flag.flags)
+    { Command.values =
+        [ ("save", Value.MkFiles),
+          ("search", Value.MkChoices (fmap show seats)),
+          ("playout", perSeat (fmap playoutName [minBound .. maxBound])),
+          ("method", perSeat (fmap methodName [minBound .. maxBound])),
+          ("level", perSeat (Opponent.names Opponent.difficultyName)),
+          ("weights", Value.MkSeated (fmap show seats) Value.MkFiles),
+          ("persona", perSeat (Opponent.names Opponent.personaName)),
+          ("meta", Value.MkFiles),
+          ("pool", Value.MkFormats)
+        ],
+      Command.positionals = [Value.MkFiles, Value.MkFiles]
+    }
+  where
+    perSeat = Value.MkSeated (fmap show seats) . Value.MkChoices

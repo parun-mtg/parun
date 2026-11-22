@@ -2088,6 +2088,12 @@ library command-line
     Parun.CommandLine.Bare.ConfigSpec
     Parun.CommandLine.Bare.Flag
     Parun.CommandLine.Bare.FlagSpec
+    Parun.CommandLine.Completion
+    Parun.CommandLine.Completion.Command
+    Parun.CommandLine.Completion.Reply
+    Parun.CommandLine.Completion.Shim
+    Parun.CommandLine.Completion.Value
+    Parun.CommandLine.CompletionSpec
     Parun.CommandLine.Deck.Config
     Parun.CommandLine.Deck.ConfigSpec
     Parun.CommandLine.Deck.Flag
@@ -4119,6 +4125,7 @@ library types
     Parun.Types.While
     Parun.Types.WithCounters
     Parun.Types.WordFamily
+    Parun.Types.XDecision
     Parun.Types.Zone
     Parun.Types.ZoneChange
     Parun.Types.ZoneChangePattern

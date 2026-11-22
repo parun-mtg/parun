@@ -6,6 +6,8 @@ import qualified Control.Monad.Catch as Catch
 import qualified Data.Char as Char
 import qualified Data.Text as Text
 import Numeric.Natural (Natural)
+import qualified Parun.CommandLine.Completion.Command as Command
+import qualified Parun.CommandLine.Completion.Value as Value
 import qualified Parun.Exceptions.InvalidOption as InvalidOption
 import qualified Parun.Play.Key as Key
 import qualified Parun.Test.Flag as Flag
@@ -62,3 +64,8 @@ duration s = do
     "h" -> Just 3600000000
     _ -> Nothing
   pure $ n * scale
+
+-- | `parun test` as tab completion sees it.
+command :: Command.Command
+command =
+  (Command.new "test" Flag.flags) {Command.values = [("json", Value.MkFiles)]}

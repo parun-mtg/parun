@@ -15,12 +15,18 @@ import qualified Data.Text.Encoding as Encoding
 import qualified Data.Text.IO as TextIO
 import Numeric.Natural (Natural)
 import qualified Parun.Benchmark
+import qualified Parun.Benchmark.Config
 import qualified Parun.Codec.Card as Card
 import qualified Parun.Codec.Scenario as Codec.Scenario
 import qualified Parun.Codec.StickerSheet as StickerSheet
 import qualified Parun.CommandLine as CommandLine
 import qualified Parun.CommandLine.Bare.Config as Bare.Config
 import qualified Parun.CommandLine.Bare.Flag as Bare.Flag
+import qualified Parun.CommandLine.Completion as Completion
+import qualified Parun.CommandLine.Completion.Command as Command
+import qualified Parun.CommandLine.Completion.Reply as Reply
+import qualified Parun.CommandLine.Completion.Shim as Shim
+import qualified Parun.CommandLine.Completion.Value as Completion.Value
 import qualified Parun.CommandLine.Deck.Config as Deck.Config
 import qualified Parun.CommandLine.Deck.Flag as Deck.Flag
 import qualified Parun.CommandLine.Scenario.Config as Scenario.Config
@@ -28,6 +34,7 @@ import qualified Parun.CommandLine.Scenario.Flag as Scenario.Flag
 import qualified Parun.CommandLine.Translate.Config as Translate.Config
 import qualified Parun.CommandLine.Translate.Flag as Translate.Flag
 import qualified Parun.DeckList as DeckList
+import qualified Parun.Exceptions.InvalidOption as InvalidOption
 import qualified Parun.Exceptions.UnexpectedArgument as UnexpectedArgument
 import qualified Parun.Ingest as Ingest
 import qualified Parun.Json.Value as Value
@@ -39,7 +46,9 @@ import qualified Parun.Mtgish as Mtgish
 import qualified Parun.Oracle as Oracle
 import qualified Parun.Oracle.Normalise as Normalise
 import qualified Parun.Play.Command
+import qualified Parun.Play.Command.Config
 import qualified Parun.Play.Match
+import qualified Parun.Play.Match.Config
 import qualified Parun.Play.Meta
 import qualified Parun.Registry as Registry
 import qualified Parun.Scenario as Scenario
@@ -48,6 +57,7 @@ import qualified Parun.Scenario.Perturb as Perturb
 import qualified Parun.Slug as Slug
 import qualified Parun.StickerSheets as StickerSheets
 import qualified Parun.Test
+import qualified Parun.Test.Config
 import qualified Parun.Trustworthy.Directory as Directory
 import qualified Parun.Types.Card as Card.Type
 import qualified Parun.Types.CardName as CardName
@@ -59,34 +69,53 @@ import qualified Parun.Types.StickerSheet as StickerSheet.Type
 import qualified System.Environment as Environment
 import qualified System.Exit as Exit
 import qualified System.IO as IO
+import qualified Text.Read as Read
 
--- | Every entry point the package has, behind one dispatch. The `parun`
--- executable, the test suite and the benchmark are all thin `Main.hs` wrappers
--- around this module and the two it delegates to, so importing this and
--- calling 'main' is exactly the installed binary.
+-- | Every entry point the package has, behind one dispatch through
+-- 'subcommands'. The `parun` executable, the test suite and the benchmark are
+-- all thin `Main.hs` wrappers around this module and the two it delegates to,
+-- so importing this and calling 'main' is exactly the installed binary.
 --
 -- Both delegates parse their own arguments (the test runner and the benchmark harness each read
 -- 'Environment.getArgs' themselves), so the subcommand is stripped with
 -- 'Environment.withArgs' rather than passed along.
+--
+-- `__complete` is the hidden one, answering a shell's tab completion
+-- (Parun.CommandLine.Completion); the shims `parun completion` prints call it.
 main :: IO ()
 main = do
   arguments <- Environment.getArgs
   case arguments of
-    "schema" : rest -> schemaCommand rest
-    "deck" : rest -> deckCommand rest
-    "ingest" : rest -> ingestCommand rest
-    "oracle" : rest -> oracleCommand rest
-    "translate" : rest -> translateCommand rest
-    "scenario" : rest -> scenarioCommand rest
-    "play" : rest -> Parun.Play.Command.main rest
-    "match" : rest -> Parun.Play.Match.main rest
-    "meta" : rest -> Parun.Play.Meta.main rest
-    "bench" : rest -> Environment.withArgs rest Parun.Benchmark.main
-    "test" : rest -> Environment.withArgs rest Parun.Test.main
+    "__complete" : index : typed -> completeCommand index typed
+    named : rest | Just subcommand <- List.find ((== named) . Command.name . command) subcommands -> run subcommand rest
     [help] | elem help ["-h", "--help"] -> Environment.getProgName >>= putStr . overview
     _ -> do
       Environment.getProgName >>= IO.hPutStr IO.stderr . overview
       Exit.exitFailure
+
+-- | A subcommand: what tab completion sees of it, its name included, and
+-- what it does with the arguments after its name.
+data Subcommand = MkSubcommand
+  { command :: Command.Command,
+    run :: [String] -> IO ()
+  }
+
+-- | Every subcommand, in the order the usage lists them.
+subcommands :: [Subcommand]
+subcommands =
+  [ MkSubcommand ((Command.new "schema" Bare.Flag.flags) {Command.positionals = [Completion.Value.MkChoices schemaArguments]}) schemaCommand,
+    MkSubcommand Deck.Config.command deckCommand,
+    MkSubcommand ((Command.new "ingest" Bare.Flag.flags) {Command.positionals = [Completion.Value.MkFiles]}) ingestCommand,
+    MkSubcommand (Command.new "oracle" Bare.Flag.flags) oracleCommand,
+    MkSubcommand Translate.Config.command translateCommand,
+    MkSubcommand Scenario.Config.command scenarioCommand,
+    MkSubcommand Parun.Play.Command.Config.command Parun.Play.Command.main,
+    MkSubcommand Parun.Play.Match.Config.command Parun.Play.Match.main,
+    MkSubcommand Parun.Play.Meta.command Parun.Play.Meta.main,
+    MkSubcommand Parun.Benchmark.Config.command (`Environment.withArgs` Parun.Benchmark.main),
+    MkSubcommand Parun.Test.Config.command (`Environment.withArgs` Parun.Test.main),
+    MkSubcommand ((Command.new "completion" Bare.Flag.flags) {Command.positionals = [Completion.Value.MkChoices (fmap fst Shim.shells)]}) completionCommand
+  ]
 
 -- | The commands the executable named `name` dispatches to, each with its own
 -- usage behind `--help`.
@@ -95,10 +124,30 @@ overview name =
   unlines
     [ "usage: " <> name <> " COMMAND [ARGUMENT...]",
       "",
-      "commands: schema, deck, ingest, oracle, translate, scenario, play, match, meta, bench, test",
+      "commands: " <> List.intercalate ", " (fmap (Command.name . command) subcommands),
       "",
       "Run `" <> name <> " COMMAND --help` for a command's usage."
     ]
+
+-- | `parun completion`: its command line read (Parun.CommandLine.Bare.Config),
+-- then the shim of the shell it names (Parun.CommandLine.Completion.Shim).
+completionCommand :: [String] -> IO ()
+completionCommand arguments = do
+  config <- CommandLine.configured Shim.usage Bare.Config.help $ do
+    config <- Bare.Flag.fromArguments arguments >>= uncurry (Bare.Config.fromFlags ["SHELL"] (Just 1))
+    Monad.unless (Bare.Config.help config) . mapM_ (Exception.throwIO . InvalidOption.MkInvalidOption . ("not a shell, bash, zsh or fish: " <>)) $ filter (`notElem` fmap fst Shim.shells) (Bare.Config.arguments config)
+    pure config
+  mapM_ putStr (Maybe.listToMaybe (Bare.Config.arguments config) >>= (`lookup` Shim.shells))
+
+-- | `parun __complete INDEX WORD...`: the reply for the word at INDEX
+-- (Parun.CommandLine.Completion), or a failed exit for an INDEX that is not
+-- a number.
+completeCommand :: String -> [String] -> IO ()
+completeCommand index typed = case Read.readMaybe index of
+  Nothing -> Exit.exitFailure
+  Just at -> do
+    formats <- Legality.shippedFormats
+    putStr . Reply.render $ Completion.complete (fmap Text.unpack formats) (fmap command subcommands) at typed
 
 -- | `parun deck`: its command line read (Parun.CommandLine.Deck.Config), then
 -- 'deck'.
@@ -429,9 +478,13 @@ schemaCommand arguments = do
   let usage = Bare.Flag.usage "schema" "[scenario]"
   config <- CommandLine.configured usage Bare.Config.help $ do
     config <- Bare.Flag.fromArguments arguments >>= uncurry (Bare.Config.fromFlags [] (Just 1))
-    Monad.unless (Bare.Config.help config) $ mapM_ (Exception.throwIO . UnexpectedArgument.MkUnexpectedArgument) (filter (/= "scenario") (Bare.Config.arguments config))
+    Monad.unless (Bare.Config.help config) $ mapM_ (Exception.throwIO . UnexpectedArgument.MkUnexpectedArgument) (filter (`notElem` schemaArguments) (Bare.Config.arguments config))
     pure config
   if null (Bare.Config.arguments config) then schema else scenarioSchema
+
+-- | The arguments `parun schema` takes.
+schemaArguments :: [String]
+schemaArguments = ["scenario"]
 
 -- | Emits the card format's JSON Schema, which is otherwise reachable only
 -- from a REPL. Card rather than Printing because Parun.Registry.parseCard is what reads

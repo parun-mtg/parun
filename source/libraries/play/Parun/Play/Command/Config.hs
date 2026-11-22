@@ -9,6 +9,8 @@ import qualified Data.Set as Set
 import qualified Data.Text as Text
 import Numeric.Natural (Natural)
 import qualified Parun.CommandLine as CommandLine
+import qualified Parun.CommandLine.Completion.Command as Command
+import qualified Parun.CommandLine.Completion.Value as Value
 import qualified Parun.Exceptions.InvalidOption as InvalidOption
 import qualified Parun.Play.Command.Flag as Flag
 import qualified Parun.Play.Key as Key
@@ -74,3 +76,18 @@ unplayed :: PlayOptions.PlayOptions -> Natural -> Maybe Natural
 unplayed o count
   | PlayOptions.json o = Nothing
   | otherwise = List.find (`Set.notMember` PlayOptions.bots o) [1 .. count]
+
+-- | `parun play` as tab completion sees it.
+command :: Command.Command
+command =
+  (Command.new "play" Flag.flags)
+    { Command.values =
+        [ ("save", Value.MkFiles),
+          ("format", Value.MkFormats),
+          ("level", Value.MkChoices (Opponent.names Opponent.difficultyName)),
+          ("persona", Value.MkChoices (Opponent.names Opponent.personaName)),
+          ("meta", Value.MkFiles),
+          ("pool", Value.MkFormats)
+        ],
+      Command.rest = Just Value.MkFiles
+    }

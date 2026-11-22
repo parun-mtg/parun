@@ -4,6 +4,8 @@ module Parun.CommandLine.Scenario.Config where
 import qualified Control.Monad as Monad
 import qualified Control.Monad.Catch as Catch
 import qualified Parun.CommandLine as CommandLine
+import qualified Parun.CommandLine.Completion.Command as Command
+import qualified Parun.CommandLine.Completion.Value as Value
 import qualified Parun.CommandLine.Scenario.Flag as Flag
 
 -- | Whether to perturb each scenario that runs clean, the scenario files, in
@@ -32,3 +34,8 @@ applyFlag :: (Catch.MonadThrow m) => Config -> Flag.Flag -> m Config
 applyFlag config flag = case flag of
   Flag.Help b -> pure config {help = b}
   Flag.Perturb b -> pure config {perturb = b}
+
+-- | `parun scenario` as tab completion sees it.
+command :: Command.Command
+command =
+  (Command.new "scenario" Flag.flags) {Command.rest = Just Value.MkFiles}

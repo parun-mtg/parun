@@ -192,6 +192,7 @@ import qualified Parun.Types.ViewIs as ViewIs
 import qualified Parun.Types.Visibility as Visibility.Type
 import qualified Parun.Types.Voted as Voted
 import qualified Parun.Types.When as When
+import qualified Parun.Types.XDecision as XDecision
 import qualified Parun.Types.Zone as Zone
 import qualified Parun.Types.ZoneChange as ZoneChange
 
@@ -1265,7 +1266,9 @@ withinOffer prompt chosen = case prompt of
   Prompt.Type.ChooseEncode _ _ _ objects -> all (`elem` objects) chosen
   Prompt.Type.ChooseRerolledDie _ _ _ objects -> all (`elem` objects) chosen
   Prompt.Type.ChooseSearchZones _ _ places -> all (`Set.member` places) chosen
-  Prompt.Type.ChooseX _ _ _ _ least greatest -> least <= chosen && chosen <= greatest
+  Prompt.Type.ChooseX _ _ _ _ least greatest -> case chosen of
+    XDecision.Announces x -> least <= x && x <= greatest
+    XDecision.Withdraws -> True
   Prompt.Type.ChooseLearn _ _ _ modes -> all (`elem` modes) chosen
   Prompt.Type.ChooseSplice _ _ _ offers -> all (`elem` fmap fst offers) chosen
   Prompt.Type.ChooseAssistant _ _ _ players -> all (`elem` players) chosen
@@ -1671,7 +1674,7 @@ answerActionChoice key verb choices asked =
               -- CR 101.1 gate and CR 601.2 reversal are what reverse it.
               | (minimumX <= x && x <= maximumX) || Maybe.isJust undoing -> do
                   updateChoices (\current -> current {Choices.x = Nothing})
-                  pure x
+                  pure (XDecision.Announces x)
             _ -> unexpected
         -- Candidates sharing their mana and their offer (an activation cost's
         -- choice, CR 602.2b) are told apart only by index: a move naming

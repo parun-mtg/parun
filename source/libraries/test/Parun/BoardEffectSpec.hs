@@ -94,6 +94,7 @@ import qualified Parun.Types.TapState as TapState
 import qualified Parun.Types.TopOfLibrary as TopOfLibrary
 import qualified Parun.Types.TurnRegisters as TurnRegisters
 import qualified Parun.Types.Visibility as Visibility.Type
+import qualified Parun.Types.XDecision as XDecision
 import qualified Parun.Types.Zone as Zone
 
 -- The same arm with a CHOOSER other than the resolving controller:
@@ -1133,7 +1134,7 @@ relayBoard s registry name = do
       -- literal one.
       announcing :: Prompt.Prompt r -> r
       announcing p = case p of
-        Prompt.ChooseX {} -> 1
+        Prompt.ChooseX {} -> XDecision.Announces 1
         _ -> S.identityAnswer p
       step gs game = S.runPure announcing gs (game >> Engine.settleForPriority)
       resolveAll gs = if null (TurnRegisters.stack (GameState.turn gs)) then gs else resolveAll (step gs Stack.resolveTop)
@@ -1182,7 +1183,7 @@ communeWithLavaSpec s registry =
             announced = x :: Natural
             announcing :: Prompt.Prompt r -> r
             announcing p = case p of
-              Prompt.ChooseX {} -> announced
+              Prompt.ChooseX {} -> XDecision.Announces announced
               _ -> S.identityAnswer p
             afterCast = S.runPure announcing withSpell (S.cast S.alice spell)
         pure (S.runPure announcing afterCast Engine.priorityLoop)

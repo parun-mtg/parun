@@ -80,6 +80,7 @@ import qualified Parun.Types.SearchPlace as SearchPlace
 import qualified Parun.Types.Subtype as Subtype
 import qualified Parun.Types.TextWord as TextWord
 import qualified Parun.Types.TimeTravelChoice as TimeTravelChoice
+import qualified Parun.Types.XDecision as XDecision
 
 -- | An answer still waiting on the run to name its objects and players.
 data Needs a
@@ -161,6 +162,15 @@ named options =
           [] -> Failed (Text.pack ("expected one of " <> show (fmap show options)))
     )
     (\namer -> encode text namer . Text.pack . show)
+
+-- | A count, or the one nullary answer `other` spelled by its constructor's
+-- name: a variable's announcement or a kicker count beside its withdrawal (CR
+-- 734.1).
+countOr :: (Show a) => (Natural -> a) -> (a -> Maybe Natural) -> a -> Shape a
+countOr into outOf other =
+  MkShape
+    (\v -> case v of R.Text _ -> decode (named [other]) v; _ -> fmap into (decode natural v))
+    (\namer x -> maybe (encode (named [other]) namer x) (encode natural namer) (outOf x))
 
 -- | One of an offer that has no wire name of its own, spelled by its 0-based
 -- position in the offer.
@@ -405,7 +415,7 @@ shapeOf prompt = case prompt of
   Prompt.ChooseSearchZones {} -> setOf searchPlace
   Prompt.Search {} -> list object
   Prompt.CastWhileSearching {} -> maybeOf (tripleOf object (viaCodec Codec.CardName.codec) (viaCodec Codec.Facing.codec))
-  Prompt.ChooseX {} -> natural
+  Prompt.ChooseX {} -> countOr XDecision.Announces (\x -> case x of XDecision.Announces n -> Just n; XDecision.Withdraws -> Nothing) XDecision.Withdraws
   Prompt.ChooseEntwine {} -> named [EntwineDecision.Declines, EntwineDecision.Entwines, EntwineDecision.Withdraws]
   Prompt.ChooseMutateSide {} -> named [MutateSide.Over, MutateSide.Under]
   Prompt.ChooseForage {} -> named [ForageMode.ExileCards, ForageMode.SacrificeFood]
@@ -414,7 +424,7 @@ shapeOf prompt = case prompt of
   Prompt.ChooseLearn _ _ _ offered -> maybeOf (indexed (NonEmpty.toList offered))
   Prompt.ChooseTimeTravel {} -> mapOf object (named [TimeTravelChoice.Add, TimeTravelChoice.Remove])
   Prompt.ChooseClash {} -> viaCodec Codec.LibraryPosition.codec
-  Prompt.ChooseKicker {} -> wrapped KickerDecision.MkKickerDecision KickerDecision.unwrap
+  Prompt.ChooseKicker {} -> countOr KickerDecision.Pays (\x -> case x of KickerDecision.Pays n -> Just n; KickerDecision.Withdraws -> Nothing) KickerDecision.Withdraws
   Prompt.ChooseBuyback {} -> named [BuybackDecision.Declines, BuybackDecision.BuysBack, BuybackDecision.Withdraws]
   Prompt.ChooseSplice {} -> list object
   Prompt.ChooseAssistant {} -> maybeOf player

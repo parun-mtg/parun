@@ -49,3 +49,7 @@ personaName persona = case persona of
 -- | The value whose first name, by `nameOf`, is this.
 named :: (Bounded a, Enum a) => (a -> (String, String)) -> String -> Maybe a
 named nameOf name = List.find ((== name) . fst . nameOf) [minBound .. maxBound]
+
+-- | Every value's first name, by `nameOf`, in order.
+names :: (Bounded a, Enum a) => (a -> (String, String)) -> [String]
+names nameOf = fmap (fst . nameOf) [minBound .. maxBound]

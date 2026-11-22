@@ -52,6 +52,7 @@ import qualified Parun.Types.StepBegan as StepBegan
 import qualified Parun.Types.Subtype as Subtype
 import qualified Parun.Types.TapState as TapState
 import qualified Parun.Types.TurnRegisters as TurnRegisters
+import qualified Parun.Types.XDecision as XDecision
 import qualified Parun.Types.Zone as Zone
 
 -- Pays what a resolving spell or ability offers `who`, and declines elsewhere,
@@ -1139,7 +1140,7 @@ mazeTrigger :: Natural -> [ObjectId.ObjectId] -> GameState.GameState -> ObjectId
 mazeTrigger x wanted gs spellId =
   let answer :: Prompt.Prompt r -> r
       answer p = case p of
-        Prompt.ChooseX {} -> x
+        Prompt.ChooseX {} -> XDecision.Announces x
         _ -> takingTargets x wanted p
       cast = snd (Engine.runGamePure answer gs (S.cast S.alice spellId))
       entered = snd (Engine.runGamePure answer cast Stack.resolveTop)

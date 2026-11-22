@@ -68,6 +68,7 @@ import qualified Parun.Types.StackedAbility as StackedAbility
 import qualified Parun.Types.StaticRead as StaticRead
 import qualified Parun.Types.TurnRegisters as TurnRegisters
 import qualified Parun.Types.Undoing as Undoing
+import qualified Parun.Types.XDecision as XDecision
 import qualified Parun.Types.Zone as Zone
 
 -- CR 602.2a: an ability activated from a hidden zone reveals the card that has
@@ -327,11 +328,16 @@ activateAbilityWith refused runSubgame pid srcId ability = Event.announcing . Ev
           -- outside the offer is rejected. A fence: Activatable's gate and the
           -- offer keep both out of reach, so no test observes it.
           undefinedX = Cost.undefinedX pid srcId ability gs || maybe False (\offered -> maybe True (`notElem` offered) mDefining) definingCandidates
-      mAmount <-
+      -- A withdrawal (CR 734.1) rewinds the activation at the gate below.
+      xAnswer <-
         if Cost.hasVariable printedCost
-          then maybe (fmap Just (Game.choose (Prompt.ChooseX decider pid abilId Binding.variableX floorX (Activatable.affordableX mCeiling aimableUnannounced stamp (ActivatedAbility.name ability) spendable pid srcId gs printedCost)))) (pure . Just) defined
+          then maybe (fmap Just (Game.choose (Prompt.ChooseX decider pid abilId Binding.variableX floorX (Activatable.affordableX mCeiling aimableUnannounced stamp (ActivatedAbility.name ability) spendable pid srcId gs printedCost)))) (pure . Just . XDecision.Announces) defined
           else pure Nothing
-      let announcedAtX = maybe printedCost (\x -> Cost.substituteX x printedCost) mAmount
+      let mAmount = case xAnswer of
+            Just (XDecision.Announces x) -> Just x
+            _ -> Nothing
+          xWithdrawn = xAnswer == Just XDecision.Withdraws
+          announcedAtX = maybe printedCost (\x -> Cost.substituteX x printedCost) mAmount
           -- CR 101.1, and CR 101.2 for its direction, exactly as Cast.castProposed
           -- reads a face's: the ability's printed sentence overrides the rule that
           -- would otherwise leave X free, and a "can't" beats the permission.
@@ -396,7 +402,7 @@ activateAbilityWith refused runSubgame pid srcId ability = Event.announcing . Ev
       -- one predicate over one cost instead of two spellings of when the gate
       -- applies.
       -- An answer outside the offered costs is rejected, ChooseCost's contract.
-      if unchosen || undefinedX || overCeiling || underFloor || not (Modal.selectionSatisfiedBy legal settledSelection chosenModes) || (length offeredCosts > 1 && notElem printedCost offeredCosts) || not (Activatable.payableCost aimable stamp (ActivatedAbility.name ability) spendable pid srcId gs announcedAtX)
+      if xWithdrawn || unchosen || undefinedX || overCeiling || underFloor || not (Modal.selectionSatisfiedBy legal settledSelection chosenModes) || (length offeredCosts > 1 && notElem printedCost offeredCosts) || not (Activatable.payableCost aimable stamp (ActivatedAbility.name ability) spendable pid srcId gs announcedAtX)
         then reject -- the whole activation is a no-op
         else do
           -- CR 118.13a's announcement, which names an activated ability's

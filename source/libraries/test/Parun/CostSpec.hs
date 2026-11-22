@@ -144,6 +144,7 @@ import qualified Parun.Types.TapState as TapState
 import qualified Parun.Types.TurnRegisters as TurnRegisters
 import qualified Parun.Types.TurnUpProcedure as TurnUpProcedure
 import qualified Parun.Types.Undoing as Undoing
+import qualified Parun.Types.XDecision as XDecision
 import qualified Parun.Types.Zone as Zone
 
 -- The single activated ability of a printing. Total: the fallback is unreachable
@@ -1569,7 +1570,7 @@ jaradDrainSpec s registry =
 -- aims Hatred's one target slot at the only creature on the board.
 answerHatredXOf :: Natural.Natural -> Prompt.Prompt r -> r
 answerHatredXOf n p = case p of
-  Prompt.ChooseX {} -> n
+  Prompt.ChooseX {} -> XDecision.Announces n
   _ -> S.identityAnswer p
 
 -- Answers Prompt.ChooseX with the bound the prompt carries and RECORDS it. An
@@ -1579,7 +1580,7 @@ answerHatredAtBound :: Prompt.Prompt r -> State.State [Natural.Natural] r
 answerHatredAtBound p = case p of
   Prompt.ChooseX _ _ _ _ _ bound -> do
     State.modify' (\seen -> seen <> [bound])
-    pure bound
+    pure (XDecision.Announces bound)
   _ -> pure (S.identityAnswer p)
 
 -- alice controls five untapped Swamps -- exactly {3}{B}{B} -- and a Goblin Piker
@@ -1717,7 +1718,7 @@ hatredSpec s registry =
           answer p = case p of
             Prompt.ChooseX _ _ _ variable _ bound -> do
               State.modify' (<> [(variable, bound)])
-              pure (if variable == exiled then 2 else bound)
+              pure (XDecision.Announces (if variable == exiled then 2 else bound))
             _ -> pure (S.identityAnswer p)
       Spec.assertEqWith s "the count is asked first, bounded by the two black cards, then X, bounded at 4" (State.execState (Engine.runGame answer gs (S.cast S.alice marchId)) []) [(exiled, 2), (Binding.variableX, 4)]
     -- CR 601.2b: a count of 0 exiles nothing, so CR 601.2h has nothing to ask,
@@ -1732,7 +1733,7 @@ hatredSpec s registry =
           (wraithId, gs) = S.addHandCard wraith S.alice withMarch
           answer :: Prompt.Prompt r -> State.State [String] r
           answer p = case p of
-            Prompt.ChooseX _ _ _ variable _ _ -> pure (if variable == Binding.variableX then 1 else 0)
+            Prompt.ChooseX _ _ _ variable _ _ -> pure (XDecision.Announces (if variable == Binding.variableX then 1 else 0))
             Prompt.ChooseExiles {} -> do
               State.modify' (<> ["ChooseExiles"])
               pure (S.identityAnswer p)
@@ -3107,7 +3108,7 @@ omniscienceSpec s registry =
           paying wanted p = case p of
             Prompt.ChooseCost _ _ _ candidates _ ->
               Maybe.fromMaybe (Cost.firstOffered candidates) (List.find ((== Just (ManaCost.MkManaCost wanted)) . Cost.Type.mana . CandidateCost.cost) candidates)
-            Prompt.ChooseX {} -> 1
+            Prompt.ChooseX {} -> XDecision.Announces 1
             _ -> S.identityAnswer p
           red = ManaSymbol.OfType (ManaType.Colored Color.Red)
           payingPrinted, payingGrant :: Prompt.Prompt r -> r
@@ -4428,7 +4429,7 @@ chatterfangSacrificeSpec s registry =
           sacrificed = Set.fromList [firstId, thirdId]
           answer :: Prompt.Prompt r -> State.State [(Natural.Natural, [ObjectId.ObjectId])] r
           answer p = case p of
-            Prompt.ChooseX {} -> pure 2
+            Prompt.ChooseX {} -> pure (XDecision.Announces 2)
             Prompt.ChooseTargets _ _ _ sets -> pure (fmap (Set.filter ((== Just giantId) . Recipient.objectOf) . snd) sets)
             Prompt.ChooseSacrifices _ _ _ offered n _ -> do
               State.modify' (<> [(n, offered)])
@@ -5560,8 +5561,8 @@ mindGrindSpec s registry = Spec.describe s "Mind Grind" $ do
     (spell, gs) <- mindGrindBoard s registry 2
     let castAt :: (forall r. Prompt.Prompt r -> r) -> GameState.GameState
         castAt answer = S.runPure answer gs (do Cast.castSpell S.manaPerformer S.alice spell (S.soleFaceName spell gs) Facing.FaceUp; Stack.resolveTop)
-        zero = castAt (\p -> case p of Prompt.ChooseX {} -> 0; _ -> S.identityAnswer p)
-        least = castAt (\p -> case p of Prompt.ChooseX _ _ _ _ floorX _ -> floorX; _ -> S.identityAnswer p)
+        zero = castAt (\p -> case p of Prompt.ChooseX {} -> XDecision.Announces 0; _ -> S.identityAnswer p)
+        least = castAt (\p -> case p of Prompt.ChooseX _ _ _ _ floorX _ -> XDecision.Announces floorX; _ -> S.identityAnswer p)
         graveyard pid = length . Game.zoneMembers Zone.Graveyard pid
     Spec.assertEqWith s "CR 101.1 at X=0 Mind Grind is still in alice's hand" (S.handSize S.alice zero) 1
     Spec.assertEqWith s "and bob milled nothing" (graveyard S.bob zero) 0
@@ -5700,7 +5701,7 @@ lightUpCast x target spell gs =
   let aimed = maybe (Recipient.ToPlayer S.bob ==) (\oid -> (== Just oid) . Recipient.objectOf) target
       answer :: Prompt.Prompt r -> r
       answer p = case p of
-        Prompt.ChooseX _ _ _ _ floorX _ -> x floorX
+        Prompt.ChooseX _ _ _ _ floorX _ -> XDecision.Announces (x floorX)
         Prompt.ChooseTargets _ _ _ sets -> fmap (Set.filter aimed . snd) sets
         _ -> S.identityAnswer p
    in S.runPure answer gs (do S.cast S.alice spell; Stack.resolveTop)
@@ -5743,7 +5744,7 @@ resolvingKatara s answer kataraId gs = case Projection.abilitiesOf kataraId gs o
 -- would repair a mutation that moved it.
 waterbendingX :: Natural.Natural -> ManaCost.ManaCost -> [ObjectId.ObjectId] -> Prompt.Prompt r -> r
 waterbendingX x wanted tapped p = case p of
-  Prompt.ChooseX {} -> x
+  Prompt.ChooseX {} -> XDecision.Announces x
   _ -> waterbending wanted tapped p
 
 -- The same announcement in front of `waterbendingGreedily`, and what the negative
@@ -5751,7 +5752,7 @@ waterbendingX x wanted tapped p = case p of
 -- offers, so the case fails only where no offer pays.
 waterbendingXGreedily :: Natural.Natural -> Prompt.Prompt r -> r
 waterbendingXGreedily x p = case p of
-  Prompt.ChooseX {} -> x
+  Prompt.ChooseX {} -> XDecision.Announces x
   _ -> waterbendingGreedily p
 
 -- alice controls Katara, a Goblin Piker and one permanent per printing in
