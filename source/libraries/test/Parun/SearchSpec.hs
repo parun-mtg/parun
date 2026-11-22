@@ -319,6 +319,14 @@ spec s registry = Spec.describe s "Search" $ do
     treed <- traverse (fmap (fmap valued) . linedIn s (budget SearchMethod.InformationSet) gs) [1 .. 4]
     Spec.assertEqWith s "X = 3, at Bob, in every seed, by the tree" treed (expected <$ treed)
 
+  Spec.it s "CR 601.2g the search bot with a Plains, an Island and a Forest casts Volunteer Militia tapping the Plains alone, and taps nothing for mana at priority, flat or by an information-set tree" $ do
+    gs <- militiaOnThreeLands s registry
+    let budget method = SearchBudget.MkSearchBudget {SearchBudget.samples = 2, SearchBudget.turns = 1000, SearchBudget.prompts = 40, SearchBudget.candidates = 0, SearchBudget.playout = Playout.Random, SearchBudget.mistakes = 0, SearchBudget.method = method}
+    flatly <- traverse (alicesTurn s (budget SearchMethod.Flat) gs) [1 .. 4]
+    Spec.assertEqWith s "the Militia cast, one land tapped at most, in every seed, flat" flatly (Just (True, 1) <$ flatly)
+    treed <- traverse (alicesTurn s (budget SearchMethod.InformationSet) gs) [1 .. 4]
+    Spec.assertEqWith s "the Militia cast, one land tapped at most, in every seed, by the tree" treed (Just (True, 1) <$ treed)
+
   Spec.it s "the search bot making a mistake at every decision takes the option scored next below the best: no attack on an opponent at 1 life who has nothing untapped" $ do
     (_, asked) <- openAttack s registry
     declared <- traverse (searchedMaking s 100 asked) [1 .. 4]
@@ -673,6 +681,37 @@ burnAtLife s registry spell mountains life = do
       bob = (S.battlefield S.bob [S.settled "his" "Grizzly Bears"]) {Seat.life = life, Seat.library = Seq.fromList (cards (replicate 5 "Forest"))}
   gs <- Staged.state <$> S.buildBoardOrFail s registry (S.board (alice NonEmpty.:| [bob]) S.alice S.precombatMain)
   pure gs {GameState.turn = (GameState.turn gs) {TurnRegisters.priority = Just S.alice}}
+
+-- Alice's board for Volunteer Militia: a Plains, an Island and a Forest
+-- and the Militia in hand, Bob with no permanents, Alice holding priority.
+militiaOnThreeLands :: (Monad m) => Spec.Spec m n -> Registry.Registry m -> m GameState.GameState
+militiaOnThreeLands s registry = do
+  let cards :: [String] -> [Placement.Placement]
+      cards = fmap S.cardSetup
+      alice = (S.battlefield S.alice (cards ["Plains", "Island", "Forest"])) {Seat.hand = Seq.fromList (cards ["Volunteer Militia"]), Seat.library = Seq.fromList (cards (replicate 5 "Plains"))}
+      bob = (S.battlefield S.bob []) {Seat.library = Seq.fromList (cards (replicate 5 "Forest"))}
+  gs <- Staged.state <$> S.buildBoardOrFail s registry (S.board (alice NonEmpty.:| [bob]) S.alice S.precombatMain)
+  pure gs {GameState.turn = (GameState.turn gs) {TurnRegisters.priority = Just S.alice}}
+
+-- The rest of Alice's turn played on from `gs`'s priority decision
+-- (Engine.resumePriority), Alice the search bot at `budget`, Bob the random
+-- bot, from `seed`: whether a Volunteer Militia is on the battlefield at
+-- the first prompt of the next turn, and the most of Alice's lands tapped at
+-- any prompt through it; Nothing past 400 prompts.
+alicesTurn :: forall m n. (Monad m) => Spec.Spec m n -> SearchBudget.SearchBudget -> GameState.GameState -> Word.Word32 -> m (Maybe (Bool, Int))
+alicesTurn s budget gs seed = either (Spec.assertFailure s . Text.unpack) pure =<< Except.runExceptT (State.evalStateT (go (400 :: Int) 0 (State.runStateT Engine.resumePriority gs)) (S.seeded seed))
+  where
+    registry :: Registry.Registry m
+    registry = S.fixtureRegistry []
+    seats = Game.consulting registry (Map.fromList [(S.alice, Search.search registry budget Weights.neutral Search.known (pure []) (pure Search.blank) Search.unkept), (S.bob, Game.bot registry)])
+    tapped g = length [oid | oid <- Set.toList (GameState.battlefield g), Projection.View.controllerOf oid g == Just S.alice, Set.member CardType.Land (ProjectedCharacteristics.cardTypes (Projection.project oid g)), fmap Object.tapped (Engine.Game.lookupObject oid g) == Just TapState.Tapped]
+    militia g = any (Set.member (CardName.MkCardName (Text.pack "Volunteer Militia")) . ProjectedCharacteristics.names . (`Projection.project` g)) (Set.toList (GameState.battlefield g))
+    go :: Int -> Int -> Program.Program (Asked.Asked GameState.GameState) a -> Game.Play m (Maybe (Bool, Int))
+    go left most program = case program of
+      Program.Then asked k
+        | TurnRegisters.activePlayer (GameState.turn (Asked.game asked)) /= S.alice -> pure (Just (militia (Asked.game asked), max most (tapped (Asked.game asked))))
+        | left > 0 -> Answerer.unwrap seats asked >>= go (left - 1) (max most (tapped (Asked.game asked))) . k
+      _ -> pure Nothing
 
 -- Every recipient a line's targets name.
 recipientsOf :: [Search.Step] -> Set.Set Recipient.Recipient
