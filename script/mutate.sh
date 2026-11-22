@@ -57,9 +57,10 @@ first failing assertion, and restores FILE.
              refuses on the command line (parentheses, pipes, quotes, `;`)
   PATTERN    a substring of the test path, passed as -p; required, and keep
              it narrow
-  CABAL_ARG  extra arguments for `cabal run`, ahead of `--`; `--no-semaphore -j4` when the
-             shared GHC semaphore is corrupt and cabal hangs on it instead of
-             failing, which the built-in retry cannot reach
+  CABAL_ARG  extra arguments for `cabal run`, ahead of `--`;
+             `--no-semaphore -j4` when the shared GHC semaphore is corrupt and
+             cabal hangs on it instead of failing, which the built-in retry
+             cannot reach
 
 This reports WHICH assertion went red. It does NOT judge whether that assertion
 is the gameplay-level one. A cheap proxy ordered ahead of the behavioural
