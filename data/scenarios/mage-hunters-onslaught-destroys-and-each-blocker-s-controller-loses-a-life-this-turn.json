@@ -1,0 +1,36 @@
+{
+  "description": "CR 603.7b / 509.1: Mage Hunters' Onslaught destroys a creature or planeswalker and, for the rest of the turn, makes a blocking creature's controller lose 1 life per block",
+  "note": "It destroys bob's Hill Giant. Two of bob's creatures block on turn 1, so bob loses 2 (18) and carol none; on turn 2 alice's Wall of Wood blocking bob's Craw Wurm costs her nothing, the delayed trigger having ended with turn 1.",
+  "board": {
+    "active": "alice",
+    "step": "PrecombatMain",
+    "seats": [
+      {
+        "name": "alice",
+        "battlefield": [{ "card": "Swamp", "label": "s1" }, { "card": "Swamp", "label": "s2" }, { "card": "Swamp", "label": "s3" }, { "card": "Swamp", "label": "s4" }, { "card": "Grizzly Bears", "label": "bears", "ready": true }, { "card": "Savannah Lions", "label": "lions", "ready": true }, { "card": "Wall of Wood", "label": "wall" }],
+        "hand": [{ "card": "Mage Hunters' Onslaught", "label": "onslaught" }],
+        "library": [{ "card": "Island" }, { "card": "Island" }, { "card": "Island" }, { "card": "Island" }]
+      },
+      { "name": "bob", "battlefield": [{ "card": "Hill Giant", "label": "giant" }, { "card": "Gray Ogre", "label": "ogre" }, { "card": "Llanowar Elves", "label": "elves" }, { "card": "Craw Wurm", "label": "wurm" }], "library": [{ "card": "Island" }, { "card": "Island" }, { "card": "Island" }, { "card": "Island" }] },
+      { "name": "carol", "library": [{ "card": "Island" }, { "card": "Island" }, { "card": "Island" }, { "card": "Island" }] }
+    ]
+  },
+  "timeline": [
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "do": { "Cast": { "object": "$onslaught", "targets": ["$giant"], "mana": ["$s1", "$s2", "$s3", "$s4"] } } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "do": "Pass" },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "check": { "Count": { "player": "bob", "zone": "Graveyard", "card": "Hill Giant", "count": 1 } } },
+    { "turn": 1, "step": "DeclareAttackers", "player": "alice", "do": { "Attack": ["$bears", "$lions"] } },
+    { "turn": 1, "step": "DeclareAttackers", "player": "alice", "do": { "Answer": { "prompt": "ChooseAttackTarget", "with": ["Player", "bob"] } } },
+    { "turn": 1, "step": "DeclareAttackers", "player": "alice", "do": { "Answer": { "prompt": "ChooseAttackTarget", "with": ["Player", "bob"] } } },
+    { "turn": 1, "step": "DeclareBlockers", "player": "bob", "do": { "Block": { "$ogre": ["$bears"], "$elves": ["$lions"] } } },
+    { "turn": 1, "step": "DeclareBlockers", "player": "alice", "do": { "OrderTriggers": ["spell of $onslaught", "spell of $onslaught"] } },
+    { "turn": 1, "step": "PostcombatMain", "player": "alice", "check": { "Life": { "player": "bob", "life": 18 } } },
+    { "turn": 1, "step": "PostcombatMain", "player": "alice", "check": { "Life": { "player": "carol", "life": 20 } } },
+    { "turn": 1, "step": "PostcombatMain", "player": "alice", "check": { "Life": { "player": "alice", "life": 20 } } },
+    { "turn": 2, "step": "DeclareAttackers", "player": "bob", "do": { "Attack": ["$wurm"] } },
+    { "turn": 2, "step": "DeclareAttackers", "player": "bob", "do": { "Answer": { "prompt": "ChooseAttackTarget", "with": ["Player", "alice"] } } },
+    { "turn": 2, "step": "DeclareBlockers", "player": "alice", "do": { "Block": { "$wall": ["$wurm"] } } },
+    { "turn": 2, "step": "PostcombatMain", "player": "bob", "check": { "Life": { "player": "alice", "life": 20 } } },
+    { "turn": 2, "step": "PostcombatMain", "player": "bob", "check": { "Life": { "player": "bob", "life": 18 } } }
+  ]
+}

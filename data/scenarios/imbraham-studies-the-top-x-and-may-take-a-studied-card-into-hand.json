@@ -1,0 +1,38 @@
+{
+  "description": "CR 107.3a / 122.1: Imbraham's {X}{U}{U}, {T} exiles alice's top X cards with a study counter on each, then she may put a card she owns in exile with a study counter on it into her hand",
+  "note": "X is 2: Hill Giant and Shock go to exile studied, Grizzly Bears stays on top. Her studied Divination, exiled before, is what she takes back; her unstudied Lava Axe and bob's studied Counterspell are not offered.",
+  "board": {
+    "active": "alice",
+    "step": "PrecombatMain",
+    "seats": [
+      {
+        "name": "alice",
+        "battlefield": [{ "card": "Kianne, Dean of Substance", "face": "Imbraham, Dean of Theory", "label": "imbraham", "ready": true }, { "card": "Island", "label": "i1" }, { "card": "Island", "label": "i2" }, { "card": "Island", "label": "i3" }, { "card": "Island", "label": "i4" }],
+        "library": [{ "card": "Hill Giant", "label": "giant" }, { "card": "Shock", "label": "shock" }, { "card": "Grizzly Bears", "label": "bears" }, { "card": "Island" }],
+        "exile": [
+          { "card": "Divination", "label": "div", "counters": [{ "key": { "type": "Named", "value": "study" }, "value": 1 }] },
+          { "card": "Lava Axe", "label": "axe" }
+        ]
+      },
+      {
+        "name": "bob",
+        "library": [{ "card": "Island" }, { "card": "Island" }, { "card": "Island" }, { "card": "Island" }],
+        "exile": [{ "card": "Counterspell", "label": "cs", "counters": [{ "key": { "type": "Named", "value": "study" }, "value": 1 }] }]
+      }
+    ]
+  },
+  "timeline": [
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "do": { "Activate": { "object": "$imbraham", "ability": 0, "x": 2, "mana": ["$i1", "$i2", "$i3", "$i4"] } } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "do": "Pass" },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "do": { "ChooseOptional": "Exercises" } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "refuse": { "Answer": { "prompt": "Search", "with": ["$cs"] } } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "refuse": { "Answer": { "prompt": "Search", "with": ["$axe"] } } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "do": { "Answer": { "prompt": "Search", "with": ["$div"] } } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "check": { "View": { "of": "Stack", "is": [] } } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "check": { "Count": { "player": "alice", "zone": "Hand", "card": "Divination", "count": 1 } } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "check": { "Counters": { "object": "Hill Giant", "kind": { "type": "Named", "value": "study" }, "count": 1 } } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "check": { "Counters": { "object": "Shock", "kind": { "type": "Named", "value": "study" }, "count": 1 } } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "check": { "Count": { "player": "alice", "zone": "Library", "card": "Grizzly Bears", "count": 1 } } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "check": { "Count": { "player": "bob", "zone": "Exile", "card": "Counterspell", "count": 1 } } }
+  ]
+}

@@ -1,0 +1,41 @@
+{
+  "description": "CR 122.1 / 111.1: Kianne exiles alice's top card, putting a land into her hand and a study counter on a nonland card; {4}{G} makes a 0/0 Fractal with a +1/+1 counter for each different mana value among nonland cards she owns in exile with study counters",
+  "note": "Turn 1 exiles a Forest, which goes to her hand. Turn 3 exiles Hill Giant (mana value 4) with a study counter. Already in exile: her studied Shock and Lightning Bolt (both 1), her unstudied Divination (3), her studied Mountain (a land), and bob's studied Lava Axe (5). Mana values 1 and 4 count: a 2/2, where Members would give 3, and each dropped clause of the filter 3.",
+  "board": {
+    "active": "alice",
+    "step": "PrecombatMain",
+    "seats": [
+      {
+        "name": "alice",
+        "battlefield": [{ "card": "Kianne, Dean of Substance", "label": "kianne", "ready": true }, { "card": "Forest", "label": "f1" }, { "card": "Forest", "label": "f2" }, { "card": "Forest", "label": "f3" }, { "card": "Forest", "label": "f4" }, { "card": "Forest", "label": "f5" }],
+        "library": [{ "card": "Forest", "label": "top" }, { "card": "Island" }, { "card": "Hill Giant", "label": "giant" }, { "card": "Island" }, { "card": "Island" }],
+        "exile": [
+          { "card": "Shock", "counters": [{ "key": { "type": "Named", "value": "study" }, "value": 1 }] },
+          { "card": "Lightning Bolt", "counters": [{ "key": { "type": "Named", "value": "study" }, "value": 1 }] },
+          { "card": "Divination" },
+          { "card": "Mountain", "counters": [{ "key": { "type": "Named", "value": "study" }, "value": 1 }] }
+        ]
+      },
+      {
+        "name": "bob",
+        "library": [{ "card": "Island" }, { "card": "Island" }, { "card": "Island" }, { "card": "Island" }],
+        "exile": [{ "card": "Lava Axe", "counters": [{ "key": { "type": "Named", "value": "study" }, "value": 1 }] }]
+      }
+    ]
+  },
+  "timeline": [
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "do": { "Activate": { "object": "$kianne", "ability": 0 } } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "do": "Pass" },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "check": { "View": { "of": "Stack", "is": [] } } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "check": { "Count": { "player": "alice", "zone": "Hand", "card": "Forest", "count": 1 } } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "check": { "Count": { "player": "alice", "zone": "Exile", "card": "Forest", "count": 0 } } },
+    { "turn": 3, "step": "PrecombatMain", "player": "alice", "do": { "Activate": { "object": "$kianne", "ability": 0 } } },
+    { "turn": 3, "step": "PrecombatMain", "player": "alice", "do": "Pass" },
+    { "turn": 3, "step": "PrecombatMain", "player": "alice", "check": { "Count": { "player": "alice", "zone": "Exile", "card": "Hill Giant", "count": 1 } } },
+    { "turn": 3, "step": "PrecombatMain", "player": "alice", "check": { "Counters": { "object": "Hill Giant", "kind": { "type": "Named", "value": "study" }, "count": 1 } } },
+    { "turn": 3, "step": "PrecombatMain", "player": "alice", "do": { "Activate": { "object": "$kianne", "ability": 1, "mana": ["$f1", "$f2", "$f3", "$f4", "$f5"] } } },
+    { "turn": 3, "step": "PrecombatMain", "player": "alice", "do": "Pass" },
+    { "turn": 3, "step": "PrecombatMain", "player": "alice", "check": { "View": { "of": "Stack", "is": [] } } },
+    { "turn": 3, "step": "PrecombatMain", "player": "alice", "check": { "PowerToughness": { "object": "Fractal Token", "power": 2, "toughness": 2 } } }
+  ]
+}

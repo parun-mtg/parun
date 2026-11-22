@@ -1,0 +1,30 @@
+{
+  "description": "CR 601.2f / 608.2h: Maelstrom Muse's attack trigger makes the next instant or sorcery spell alice casts this turn cost {X} less, X its power as the ability resolves; a creature spell cast first doesn't use it up",
+  "note": "The Muse has a +1/+1 counter, so X is 3, not its printed 2. Grizzly Bears takes both Forests at full price. Inspiration ({3}{U}) is then paid with one Island; at X 2 it would need a second land alice doesn't have.",
+  "board": {
+    "active": "alice",
+    "step": "PrecombatMain",
+    "seats": [
+      {
+        "name": "alice",
+        "battlefield": [{ "card": "Maelstrom Muse", "label": "muse", "ready": true, "counters": [{ "key": { "type": "PlusOnePlusOne" }, "value": 1 }] }, { "card": "Forest", "label": "f1" }, { "card": "Forest", "label": "f2" }, { "card": "Island", "label": "i1" }],
+        "hand": [{ "card": "Grizzly Bears", "label": "bears" }, { "card": "Inspiration", "label": "insp" }],
+        "library": [{ "card": "Swamp" }, { "card": "Swamp" }, { "card": "Swamp" }, { "card": "Swamp" }]
+      },
+      { "name": "bob", "library": [{ "card": "Island" }, { "card": "Island" }, { "card": "Island" }, { "card": "Island" }] },
+      { "name": "carol", "library": [{ "card": "Island" }, { "card": "Island" }, { "card": "Island" }, { "card": "Island" }] }
+    ]
+  },
+  "timeline": [
+    { "turn": 1, "step": "DeclareAttackers", "player": "alice", "do": { "Attack": ["$muse"] } },
+    { "turn": 1, "step": "DeclareAttackers", "player": "alice", "do": { "Answer": { "prompt": "ChooseAttackTarget", "with": ["Player", "bob"] } } },
+    { "turn": 1, "step": "PostcombatMain", "player": "alice", "check": { "Life": { "player": "bob", "life": 17 } } },
+    { "turn": 1, "step": "PostcombatMain", "player": "alice", "do": { "Cast": { "object": "$bears", "mana": ["$f1", "$f2", null] } } },
+    { "turn": 1, "step": "PostcombatMain", "player": "alice", "do": "Pass" },
+    { "turn": 1, "step": "PostcombatMain", "player": "alice", "check": { "Count": { "player": "alice", "zone": "Battlefield", "card": "Grizzly Bears", "count": 1 } } },
+    { "turn": 1, "step": "PostcombatMain", "player": "alice", "do": { "Cast": { "object": "$insp", "targets": ["$alice"], "mana": ["$i1"] } } },
+    { "turn": 1, "step": "PostcombatMain", "player": "alice", "do": "Pass" },
+    { "turn": 1, "step": "PostcombatMain", "player": "alice", "check": { "View": { "of": "Stack", "is": [] } } },
+    { "turn": 1, "step": "PostcombatMain", "player": "alice", "check": { "Count": { "player": "alice", "zone": "Hand", "card": "Swamp", "count": 2 } } }
+  ]
+}

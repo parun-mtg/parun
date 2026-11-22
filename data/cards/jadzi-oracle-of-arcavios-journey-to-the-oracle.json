@@ -1,0 +1,445 @@
+{
+  "faces": [
+    {
+      "activatedAbilities": [
+        {
+          "cost": {
+            "components": [
+              {
+                "type": "DiscardCards",
+                "value": {
+                  "count": {
+                    "type": "Fixed",
+                    "value": 1
+                  },
+                  "whichCards": {
+                    "type": "And",
+                    "value": []
+                  }
+                }
+              }
+            ],
+            "mana": []
+          },
+          "modal": {
+            "modes": [
+              {
+                "clauses": [
+                  {
+                    "effects": [
+                      {
+                        "type": "MoveToZone",
+                        "value": {
+                          "ref": {
+                            "type": "InSlot",
+                            "value": "self"
+                          },
+                          "zone": "Hand"
+                        }
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          }
+        }
+      ],
+      "manaCost": [
+        {
+          "type": "Generic",
+          "value": 6
+        },
+        {
+          "type": "OfType",
+          "value": {
+            "type": "Colored",
+            "value": "Blue"
+          }
+        },
+        {
+          "type": "OfType",
+          "value": {
+            "type": "Colored",
+            "value": "Blue"
+          }
+        }
+      ],
+      "name": "Jadzi, Oracle of Arcavios",
+      "oracleText": "Discard a card: Return Jadzi to its owner's hand.\nMagecraft — Whenever you cast or copy an instant or sorcery spell, reveal the top card of your library. If it's a nonland card, you may cast it by paying {1} rather than paying its mana cost. If it's a land card, put it onto the battlefield.",
+      "power": {
+        "type": "Literal",
+        "value": 5
+      },
+      "toughness": {
+        "type": "Literal",
+        "value": 5
+      },
+      "triggeredAbilities": [
+        {
+          "condition": {
+            "type": "SpellCast",
+            "value": {
+              "copies": "AlsoCopies",
+              "scope": {
+                "type": "PlayersTurn",
+                "value": {
+                  "type": "Relative",
+                  "value": "AnyPlayer"
+                }
+              },
+              "spell": {
+                "type": "Matching",
+                "value": {
+                  "type": "And",
+                  "value": [
+                    {
+                      "type": "HeldBy",
+                      "value": {
+                        "holder": "Controller",
+                        "relation": "You"
+                      }
+                    },
+                    {
+                      "type": "Or",
+                      "value": [
+                        {
+                          "type": "HasCardType",
+                          "value": "Instant"
+                        },
+                        {
+                          "type": "HasCardType",
+                          "value": "Sorcery"
+                        }
+                      ]
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "modal": {
+            "modes": [
+              {
+                "clauses": [
+                  {
+                    "effects": [
+                      {
+                        "type": "Reveal",
+                        "value": {
+                          "ref": {
+                            "type": "TopOfLibrary",
+                            "value": {
+                              "count": {
+                                "type": "Literal",
+                                "value": 1
+                              },
+                              "player": {
+                                "type": "Relative",
+                                "value": "You"
+                              }
+                            }
+                          },
+                          "slot": "revealed"
+                        }
+                      }
+                    ]
+                  },
+                  {
+                    "condition": {
+                      "type": "Compares",
+                      "value": {
+                        "comparison": "AtLeast",
+                        "measured": {
+                          "type": "Count",
+                          "value": {
+                            "aggregation": {
+                              "type": "Members"
+                            },
+                            "filter": {
+                              "type": "And",
+                              "value": [
+                                {
+                                  "type": "IsBound",
+                                  "value": "revealed"
+                                },
+                                {
+                                  "type": "Not",
+                                  "value": {
+                                    "type": "HasCardType",
+                                    "value": "Land"
+                                  }
+                                }
+                              ]
+                            },
+                            "scope": {
+                              "type": "InZone",
+                              "value": {
+                                "player": {
+                                  "type": "Relative",
+                                  "value": "You"
+                                },
+                                "zone": "Library"
+                              }
+                            }
+                          }
+                        },
+                        "threshold": {
+                          "type": "Literal",
+                          "value": 1
+                        }
+                      }
+                    },
+                    "effects": [
+                      {
+                        "type": "OfferCast",
+                        "value": {
+                          "offer": {
+                            "payingInstead": {
+                              "mana": [
+                                {
+                                  "type": "Generic",
+                                  "value": 1
+                                }
+                              ]
+                            }
+                          },
+                          "ref": {
+                            "type": "InSlot",
+                            "value": "revealed"
+                          }
+                        }
+                      }
+                    ]
+                  },
+                  {
+                    "condition": {
+                      "type": "Compares",
+                      "value": {
+                        "comparison": "AtLeast",
+                        "measured": {
+                          "type": "Count",
+                          "value": {
+                            "aggregation": {
+                              "type": "Members"
+                            },
+                            "filter": {
+                              "type": "And",
+                              "value": [
+                                {
+                                  "type": "IsBound",
+                                  "value": "revealed"
+                                },
+                                {
+                                  "type": "HasCardType",
+                                  "value": "Land"
+                                }
+                              ]
+                            },
+                            "scope": {
+                              "type": "InZone",
+                              "value": {
+                                "player": {
+                                  "type": "Relative",
+                                  "value": "You"
+                                },
+                                "zone": "Library"
+                              }
+                            }
+                          }
+                        },
+                        "threshold": {
+                          "type": "Literal",
+                          "value": 1
+                        }
+                      }
+                    },
+                    "effects": [
+                      {
+                        "type": "MoveToZone",
+                        "value": {
+                          "ref": {
+                            "type": "InSlot",
+                            "value": "revealed"
+                          },
+                          "zone": "Battlefield"
+                        }
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          }
+        }
+      ],
+      "typeLine": {
+        "subtypes": [
+          "Human",
+          "Wizard"
+        ],
+        "supertypes": [
+          "Legendary"
+        ],
+        "types": [
+          "Creature"
+        ]
+      }
+    },
+    {
+      "manaCost": [
+        {
+          "type": "Generic",
+          "value": 2
+        },
+        {
+          "type": "OfType",
+          "value": {
+            "type": "Colored",
+            "value": "Green"
+          }
+        },
+        {
+          "type": "OfType",
+          "value": {
+            "type": "Colored",
+            "value": "Green"
+          }
+        }
+      ],
+      "name": "Journey to the Oracle",
+      "oracleText": "You may put any number of land cards from your hand onto the battlefield. Then if you control eight or more lands, you may discard a card. If you do, return Journey to the Oracle to its owner's hand.",
+      "spell": {
+        "modes": [
+          {
+            "clauses": [
+              {
+                "effects": [
+                  {
+                    "type": "MoveToZone",
+                    "value": {
+                      "ref": {
+                        "type": "ChosenCardInHand",
+                        "value": {
+                          "count": {
+                            "type": "UpTo"
+                          },
+                          "filter": {
+                            "type": "HasCardType",
+                            "value": "Land"
+                          },
+                          "player": {
+                            "type": "Relative",
+                            "value": "You"
+                          }
+                        }
+                      },
+                      "zone": "Battlefield"
+                    }
+                  }
+                ]
+              },
+              {
+                "condition": {
+                  "type": "Compares",
+                  "value": {
+                    "comparison": "AtLeast",
+                    "measured": {
+                      "type": "Count",
+                      "value": {
+                        "aggregation": {
+                          "type": "Members"
+                        },
+                        "filter": {
+                          "type": "And",
+                          "value": [
+                            {
+                              "type": "HasCardType",
+                              "value": "Land"
+                            },
+                            {
+                              "type": "HeldBy",
+                              "value": {
+                                "holder": "Controller",
+                                "relation": "You"
+                              }
+                            }
+                          ]
+                        },
+                        "scope": {
+                          "type": "InZone",
+                          "value": {
+                            "player": {
+                              "type": "Relative",
+                              "value": "AnyPlayer"
+                            },
+                            "zone": "Battlefield"
+                          }
+                        }
+                      }
+                    },
+                    "threshold": {
+                      "type": "Literal",
+                      "value": 8
+                    }
+                  }
+                },
+                "effects": [
+                  {
+                    "type": "Discard",
+                    "value": {
+                      "type": "Counted",
+                      "value": {
+                        "player": {
+                          "type": "Relative",
+                          "value": "You"
+                        },
+                        "quantity": {
+                          "type": "Literal",
+                          "value": 1
+                        }
+                      }
+                    }
+                  }
+                ],
+                "optionality": {
+                  "type": "Optional"
+                }
+              },
+              {
+                "effects": [
+                  {
+                    "type": "MoveToZone",
+                    "value": {
+                      "ref": {
+                        "type": "EachSpell",
+                        "value": {
+                          "type": "IsSource"
+                        }
+                      },
+                      "zone": "Hand"
+                    }
+                  }
+                ],
+                "ifTaken": {
+                  "type": "AnyTaken",
+                  "value": [
+                    1
+                  ]
+                }
+              }
+            ]
+          }
+        ]
+      },
+      "typeLine": {
+        "types": [
+          "Sorcery"
+        ]
+      }
+    }
+  ],
+  "layout": {
+    "type": "ModalDoubleFaced"
+  }
+}

@@ -1,0 +1,33 @@
+{
+  "description": "CR 601.2f / 701.14a: Mage Duel costs {2} less once alice has cast another instant or sorcery spell this turn (a creature spell doesn't count), and its +1/+2 lands before the fight",
+  "note": "After Memnite, Mage Duel can't be cast off one Forest; after Shock it can. Grizzly Bears, 3/4 with the pump, kills Hill Giant and survives its 3 damage, which a 2/2 would not.",
+  "board": {
+    "active": "alice",
+    "step": "PrecombatMain",
+    "seats": [
+      {
+        "name": "alice",
+        "battlefield": [{ "card": "Grizzly Bears", "label": "bears" }, { "card": "Mountain", "label": "m1" }, { "card": "Forest", "label": "f1" }],
+        "hand": [{ "card": "Memnite", "label": "memnite" }, { "card": "Shock", "label": "shock" }, { "card": "Mage Duel", "label": "duel" }],
+        "library": [{ "card": "Island" }, { "card": "Island" }, { "card": "Island" }, { "card": "Island" }]
+      },
+      { "name": "bob", "battlefield": [{ "card": "Hill Giant", "label": "giant" }], "library": [{ "card": "Island" }, { "card": "Island" }, { "card": "Island" }, { "card": "Island" }] },
+      { "name": "carol", "library": [{ "card": "Island" }, { "card": "Island" }, { "card": "Island" }, { "card": "Island" }] }
+    ]
+  },
+  "timeline": [
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "do": { "Cast": { "object": "$memnite", "mana": [] } } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "do": "Pass" },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "check": { "Count": { "player": "alice", "zone": "Battlefield", "card": "Memnite", "count": 1 } } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "refuse": { "Cast": { "object": "$duel", "targetsBySlot": { "mine": ["$bears"], "theirs": ["$giant"] }, "mana": ["$f1"] } } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "do": { "Cast": { "object": "$shock", "targets": ["$carol"], "mana": ["$m1", null] } } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "do": "Pass" },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "check": { "Life": { "player": "carol", "life": 18 } } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "do": { "Cast": { "object": "$duel", "targetsBySlot": { "mine": ["$bears"], "theirs": ["$giant"] }, "mana": ["$f1"] } } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "do": "Pass" },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "check": { "View": { "of": "Stack", "is": [] } } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "check": { "Count": { "player": "bob", "zone": "Graveyard", "card": "Hill Giant", "count": 1 } } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "check": { "PowerToughness": { "object": "$bears", "power": 3, "toughness": 4 } } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "check": { "Damage": { "object": "$bears", "damage": 3 } } }
+  ]
+}

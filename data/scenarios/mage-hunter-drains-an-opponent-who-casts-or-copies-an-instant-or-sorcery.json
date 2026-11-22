@@ -1,0 +1,48 @@
+{
+  "description": "CR 207.2c / 707.10: Mage Hunter makes an opponent who casts or copies an instant or sorcery spell lose 1 life; its controller's own instant and an opponent's creature spell don't trigger it",
+  "note": "alice's Shock at carol costs alice nothing. bob's Grizzly Bears costs him nothing; his Lightning Bolt, his Twincast and Twincast's copy of the Bolt cost him 1 each (19 once Twincast's trigger resolves, 17 at the end), and carol takes 2 + 3 + 3 (12), the non-caster opponent never losing life to the Hunter.",
+  "board": {
+    "active": "alice",
+    "step": "PrecombatMain",
+    "seats": [
+      {
+        "name": "alice",
+        "battlefield": [{ "card": "Mage Hunter", "label": "hunter" }, { "card": "Mountain", "label": "am" }],
+        "hand": [{ "card": "Shock", "label": "shock" }],
+        "library": [{ "card": "Island" }, { "card": "Island" }, { "card": "Island" }, { "card": "Island" }]
+      },
+      {
+        "name": "bob",
+        "battlefield": [{ "card": "Mountain", "label": "b1" }, { "card": "Island", "label": "i1" }, { "card": "Island", "label": "i2" }, { "card": "Forest", "label": "f1" }, { "card": "Forest", "label": "f2" }],
+        "hand": [{ "card": "Lightning Bolt", "label": "bolt" }, { "card": "Twincast", "label": "tw" }, { "card": "Grizzly Bears", "label": "bears" }],
+        "library": [{ "card": "Island" }, { "card": "Island" }, { "card": "Island" }, { "card": "Island" }]
+      },
+      { "name": "carol", "library": [{ "card": "Island" }, { "card": "Island" }, { "card": "Island" }, { "card": "Island" }] }
+    ]
+  },
+  "timeline": [
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "do": { "Cast": { "object": "$shock", "targets": ["$carol"], "mana": ["$am"] } } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "do": "Pass" },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "check": { "View": { "of": "Stack", "is": [] } } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "check": { "Life": { "player": "alice", "life": 20 } } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "check": { "Life": { "player": "carol", "life": 18 } } },
+    { "turn": 2, "step": "PrecombatMain", "player": "bob", "do": { "Cast": { "object": "$bears", "mana": ["$f1", "$f2", null] } } },
+    { "turn": 2, "step": "PrecombatMain", "player": "bob", "do": "Pass" },
+    { "turn": 2, "step": "PrecombatMain", "player": "bob", "check": { "View": { "of": "Stack", "is": [] } } },
+    { "turn": 2, "step": "PrecombatMain", "player": "bob", "check": { "Life": { "player": "bob", "life": 20 } } },
+    { "turn": 2, "step": "PrecombatMain", "player": "bob", "do": { "Cast": { "object": "$bolt", "targets": ["$carol"], "mana": ["$b1", null] } } },
+    { "turn": 2, "step": "PrecombatMain", "player": "bob", "do": { "Cast": { "object": "$tw", "mana": ["$i1", "$i2"] } } },
+    { "turn": 2, "step": "PrecombatMain", "player": "bob", "do": "Pass" },
+    { "turn": 2, "step": "PrecombatMain", "player": "bob", "check": { "Life": { "player": "bob", "life": 19 } } },
+    { "turn": 2, "step": "PrecombatMain", "player": "bob", "do": "Pass" },
+    { "turn": 2, "step": "PrecombatMain", "player": "bob", "do": { "ChooseTargets": { "target": ["$carol"] } } },
+    { "turn": 2, "step": "PrecombatMain", "player": "bob", "do": "Pass" },
+    { "turn": 2, "step": "PrecombatMain", "player": "bob", "do": "Pass" },
+    { "turn": 2, "step": "PrecombatMain", "player": "bob", "do": "Pass" },
+    { "turn": 2, "step": "PrecombatMain", "player": "bob", "do": "Pass" },
+    { "turn": 2, "step": "PrecombatMain", "player": "bob", "check": { "View": { "of": "Stack", "is": [] } } },
+    { "turn": 2, "step": "PrecombatMain", "player": "bob", "check": { "Life": { "player": "bob", "life": 17 } } },
+    { "turn": 2, "step": "PrecombatMain", "player": "bob", "check": { "Life": { "player": "carol", "life": 12 } } },
+    { "turn": 2, "step": "PrecombatMain", "player": "bob", "check": { "Life": { "player": "alice", "life": 20 } } }
+  ]
+}

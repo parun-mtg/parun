@@ -1,0 +1,31 @@
+{
+  "description": "CR 601.2d / 608.2c: Magma Opus divides 4 damage among its targets, taps its two target permanents, makes a 4/4 Elemental and draws two",
+  "note": "3 to Hill Giant (dies) and 1 to bob (19). It taps bob's Grizzly Bears and carol's Forest, permanents of two players.",
+  "board": {
+    "active": "alice",
+    "step": "PrecombatMain",
+    "seats": [
+      {
+        "name": "alice",
+        "battlefield": [{ "card": "Island", "label": "i1" }, { "card": "Island", "label": "i2" }, { "card": "Island", "label": "i3" }, { "card": "Island", "label": "i4" }, { "card": "Mountain", "label": "m1" }, { "card": "Mountain", "label": "m2" }, { "card": "Mountain", "label": "m3" }, { "card": "Mountain", "label": "m4" }],
+        "hand": [{ "card": "Magma Opus", "label": "opus" }],
+        "library": [{ "card": "Swamp" }, { "card": "Swamp" }, { "card": "Swamp" }, { "card": "Swamp" }]
+      },
+      { "name": "bob", "battlefield": [{ "card": "Hill Giant", "label": "giant" }, { "card": "Grizzly Bears", "label": "bears" }], "library": [{ "card": "Island" }, { "card": "Island" }, { "card": "Island" }, { "card": "Island" }] },
+      { "name": "carol", "battlefield": [{ "card": "Forest", "label": "cf" }], "library": [{ "card": "Island" }, { "card": "Island" }, { "card": "Island" }, { "card": "Island" }] }
+    ]
+  },
+  "timeline": [
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "do": { "Cast": { "object": "$opus", "targetsBySlot": { "targets": ["$giant", "$bob"], "tapped": ["$bears", "$cf"] }, "mana": ["$i1", "$i2", "$i3", "$m1", "$m2", "$m3", "$i4", "$m4"] } } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "do": { "Answer": { "prompt": "ChooseDivision", "with": [[["Creature", "$giant"], 3], [["Player", "bob"], 1]] } } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "do": "Pass" },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "check": { "View": { "of": "Stack", "is": [] } } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "check": { "Count": { "player": "bob", "zone": "Graveyard", "card": "Hill Giant", "count": 1 } } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "check": { "Life": { "player": "bob", "life": 19 } } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "check": { "Tapped": { "object": "$bears", "tapped": true } } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "check": { "Tapped": { "object": "$cf", "tapped": true } } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "check": { "PowerToughness": { "object": "Elemental Token", "power": 4, "toughness": 4 } } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "check": { "Count": { "player": "alice", "zone": "Battlefield", "card": "Elemental Token", "count": 1 } } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "check": { "Count": { "player": "alice", "zone": "Hand", "card": "Swamp", "count": 2 } } }
+  ]
+}

@@ -1,0 +1,127 @@
+{
+  "faces": [
+    {
+      "delayedAbilities": {
+        "its controller loses 1 life": {
+          "condition": {
+            "type": "Blocks",
+            "value": {
+              "creature": {
+                "type": "HasCardType",
+                "value": "Creature"
+              },
+              "role": "Blocker"
+            }
+          },
+          "modal": {
+            "modes": [
+              {
+                "clauses": [
+                  {
+                    "effects": [
+                      {
+                        "type": "LoseLife",
+                        "value": {
+                          "player": {
+                            "type": "HolderOfBound",
+                            "value": {
+                              "holder": "Controller",
+                              "hop": "Itself",
+                              "slot": "thatBlocker"
+                            }
+                          },
+                          "quantity": {
+                            "type": "Literal",
+                            "value": 1
+                          }
+                        }
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          }
+        }
+      },
+      "manaCost": [
+        {
+          "type": "Generic",
+          "value": 2
+        },
+        {
+          "type": "OfType",
+          "value": {
+            "type": "Colored",
+            "value": "Black"
+          }
+        },
+        {
+          "type": "OfType",
+          "value": {
+            "type": "Colored",
+            "value": "Black"
+          }
+        }
+      ],
+      "name": "Mage Hunters' Onslaught",
+      "oracleText": "Destroy target creature or planeswalker.\nWhenever a creature blocks this turn, its controller loses 1 life.",
+      "spell": {
+        "modes": [
+          {
+            "clauses": [
+              {
+                "effects": [
+                  {
+                    "type": "Destroy",
+                    "value": {
+                      "ref": {
+                        "type": "InSlot",
+                        "value": "target"
+                      },
+                      "regenerability": "Regenerable"
+                    }
+                  },
+                  {
+                    "type": "ArmDelayedTrigger",
+                    "value": {
+                      "duration": {
+                        "type": "UntilEndOfTurn"
+                      },
+                      "name": "its controller loses 1 life"
+                    }
+                  }
+                ]
+              }
+            ],
+            "targetSlots": {
+              "target": {
+                "filter": {
+                  "type": "Or",
+                  "value": [
+                    {
+                      "type": "HasCardType",
+                      "value": "Creature"
+                    },
+                    {
+                      "type": "HasCardType",
+                      "value": "Planeswalker"
+                    }
+                  ]
+                },
+                "pool": {
+                  "type": "Permanents"
+                }
+              }
+            }
+          }
+        ]
+      },
+      "typeLine": {
+        "types": [
+          "Sorcery"
+        ]
+      }
+    }
+  ]
+}
