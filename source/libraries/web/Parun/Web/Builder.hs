@@ -547,7 +547,7 @@ view builder =
                     <> results,
                 Element.el "section" ["builder-deck"] [Element.attr "aria-label" (Text.pack "Deck")] $
                   [ Element.el "div" ["deck-head"] [] [Element.el "h2" [] [] [Element.string counted], Element.el "span" ["pips"] [Element.attr "aria-label" (Text.pack "Colours")] [Mana.symbol (Text.pack (Web.Card.letterUpper c)) | c <- Set.toList (deckColours builder)]],
-                    Lobby.curve lines'
+                    Lobby.curve [] (Lobby.curveOf lines')
                   ]
                     <> [Element.el "p" ["problem"] [Element.attr "role" (Text.pack "alert")] [Element.text p] | p <- Maybe.maybeToList (loadProblem builder)]
                     <> [Element.el "ul" ["notices"] [] [Element.el "li" [] [] [Element.text n] | n <- notices builder] | not (null (notices builder))]

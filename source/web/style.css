@@ -204,7 +204,7 @@ button {
 /* A button: a control's edge on the surface, 15/600. Primary (act) is the
    one thing to do; End turn (turn) is in the turn's amber; quiet has no
    edge until hovered; danger gives something up. */
-#app button:where(:not(.card, .stack-item, .scrim, .who, .slot, .deck, .log-card, .tile)),
+#app button:where(:not(.card, .stack-item, .scrim, .who, .seat-pick, .deck, .log-card, .tile)),
 .chrome button,
 #keys button {
   appearance: none;
@@ -228,7 +228,7 @@ button {
 }
 
 @media (hover: hover) {
-  #app button:where(:not(.card, .stack-item, .scrim, .who, .slot, .deck, .log-card, .tile, .primary, .turn, .danger, .quiet, :disabled)):hover {
+  #app button:where(:not(.card, .stack-item, .scrim, .who, .seat-pick, .deck, .tile, .log-card, .primary, .turn, .danger, .quiet, :disabled)):hover {
     background: var(--raised);
   }
 
@@ -910,206 +910,543 @@ main.home .confirm .choices {
   color: var(--muted);
 }
 
-/* ---------- Lobby ---------- */
+/* ---------- Lobby (Parun.Web.Lobby) and joining (Parun.Web.Join) ---------- */
 
+/* The screen a host's link opens keeps the narrow column. */
 main.lobby {
   max-width: 980px;
   margin: 0 auto;
   padding: max(1em, env(safe-area-inset-top)) 1em calc(2em + env(safe-area-inset-bottom));
 }
 
-.lobby-top {
-  display: flex;
-  align-items: center;
-  gap: 1em;
-  margin-bottom: 1em;
-}
-
-#app button.home-button {
-  flex: none;
-}
-
-.logo {
-  border-radius: 22%;
-  flex: none;
-}
-
-.matchup {
-  position: sticky;
-  top: 0;
-  z-index: 5;
+/* A new game: the seats, then the decks, then the deck chosen, as columns
+   where they fit and stacked on a phone, Start kept in reach at the foot. */
+main.lobby.new-game {
+  max-width: none;
+  padding: 0;
   display: grid;
-  grid-template-columns: 1fr auto 1fr;
-  gap: 0.5em;
+  grid-template-columns: minmax(0, 1fr);
+  grid-template-areas: "seats" "browser" "detail";
   align-items: stretch;
-  padding: 0.75em;
-  margin: 0 -0.25em 1em;
-  background: color-mix(in srgb, var(--bg) 88%, transparent);
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
-  border-radius: calc(var(--radius) + 4px);
 }
 
-.matchup .start {
-  grid-column: 1 / -1;
-  font-size: 1.05rem;
+/* From two columns up the top bar stays put and the side columns stick
+   under it, each scrolling on its own, so Start stays in view while the
+   decks scroll the page. */
+@media (min-width: 760px) {
+  main.lobby.new-game {
+    --bar-height: 64px;
+    grid-template-columns: minmax(280px, 340px) minmax(0, 1fr);
+    grid-template-areas: "seats browser" "seats detail";
+    grid-template-rows: auto 1fr;
+  }
+
+  .framed:has(> main.lobby.new-game) > .topbar {
+    position: sticky;
+    top: 0;
+    z-index: 6;
+  }
+
+  .new-game .seats {
+    position: sticky;
+    top: var(--bar-height);
+    align-self: start;
+    height: calc(100dvh - var(--bar-height));
+    overflow-y: auto;
+  }
 }
 
-.versus {
-  align-self: center;
-  color: var(--muted);
-  font-weight: 600;
-  font-size: 0.85rem;
-  text-transform: uppercase;
+@media (min-width: 1200px) {
+  main.lobby.new-game {
+    grid-template-columns: minmax(300px, 340px) minmax(0, 1fr) minmax(280px, 360px);
+    grid-template-areas: "seats browser detail";
+    grid-template-rows: auto;
+  }
+
+  .new-game .detail {
+    position: sticky;
+    top: var(--bar-height);
+    align-self: start;
+    max-height: calc(100dvh - var(--bar-height));
+    overflow-y: auto;
+  }
 }
 
-/* One slot per bot, stacked, with the buttons seating or unseating one. */
-.bots {
+.new-game .seats {
+  grid-area: seats;
   display: flex;
   flex-direction: column;
-  gap: 0.5em;
+  gap: 12px;
+  padding: 24px max(16px, env(safe-area-inset-left));
+  background: var(--surface);
+  border-bottom: 1px solid var(--line);
 }
 
-.bot-count {
+@media (min-width: 760px) {
+  .new-game .seats {
+    border-bottom: 0;
+    border-right: 1px solid var(--line);
+  }
+}
+
+.new-game .seats h1 {
+  font-size: 30px;
+  font-weight: 700;
+  line-height: 1.15;
+}
+
+.new-game .versus {
+  align-self: center;
+}
+
+.new-game .browser {
+  grid-area: browser;
+  min-width: 0;
   display: flex;
-  gap: 0.5em;
+  flex-direction: column;
+  gap: 16px;
+  padding: 24px max(16px, env(safe-area-inset-right)) 24px max(16px, env(safe-area-inset-left));
 }
 
-.bot-count button {
-  flex: 1;
-  font-size: 0.85rem;
+@media (min-width: 760px) {
+  .new-game .browser {
+    padding: 24px 28px;
+  }
 }
 
-#app button.slot {
+.new-game .detail {
+  grid-area: detail;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  padding: 24px max(16px, env(safe-area-inset-right)) 24px max(16px, env(safe-area-inset-left));
+  border-top: 1px solid var(--line);
+}
+
+@media (min-width: 1200px) {
+  .new-game .detail {
+    border-top: 0;
+    border-left: 1px solid var(--line);
+    background: transparent;
+  }
+}
+
+/* A seat: a card that is itself the button choosing it; the one chosen for
+   ringed in the act's colour, tinted, and chipped "Choosing a deck". */
+.lobby-seat {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 0;
+  border: 1px solid var(--control);
+  border-radius: 16px;
+  background: var(--surface);
+}
+
+.lobby-seat.on {
+  border-color: var(--act);
+  box-shadow: 0 0 0 2px var(--act);
+  background: var(--act-soft);
+}
+
+#app .lobby-seat > button.seat-pick,
+.lobby-seat > .seat-pick {
   appearance: none;
   display: flex;
   flex-direction: column;
-  gap: 0.15em;
-  min-height: 64px;
-  padding: 0.6em 0.8em;
-  border: 2px solid var(--control);
-  border-radius: var(--radius);
-  background: var(--surface);
+  align-items: stretch;
+  gap: 6px;
+  width: 100%;
+  min-height: 44px;
+  padding: 14px 16px;
+  border: 0;
+  border-radius: 16px;
+  background: transparent;
+  color: var(--text);
+  font: inherit;
   text-align: left;
   cursor: pointer;
-  box-shadow: var(--shadow);
 }
 
-#app button.slot.choosing {
-  border-color: var(--act);
-  box-shadow: 0 0 0 3px var(--act-soft);
+.lobby-seat > .seat-pick.invited {
+  cursor: default;
 }
 
-.slot-title {
-  font-size: 0.72rem;
-  text-transform: uppercase;
-  letter-spacing: 0.06em;
-  color: var(--muted);
+/* A seat's ways to change it, under the card's button. */
+.seat-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  margin: -6px 12px 12px;
+}
+
+#app .seat-actions button {
+  min-height: 36px;
+  padding: 4px 10px;
+  font-size: 13px;
+}
+
+.seat-head {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.avatar {
+  flex: none;
+  display: inline-grid;
+  place-items: center;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: var(--raised);
+  color: var(--text);
+  font-weight: 700;
+}
+
+.avatar .icon {
+  width: 18px;
+  height: 18px;
+}
+
+.seat-name {
+  flex-grow: 1;
+}
+
+.chip {
+  display: inline-block;
+  padding: 2px 10px;
+  border-radius: 999px;
+  background: var(--raised);
+  color: var(--text);
+  font-size: 13px;
   font-weight: 600;
+  white-space: nowrap;
 }
 
-.slot-deck {
-  font-weight: 600;
+.chip.choosing {
+  background: var(--act);
+  color: var(--on-act);
 }
 
-/* A bot's slot with the button switching it to a player invited from
-   another browser, and an invited slot: its link, the box for the reply
-   code, and whether the player is ready (Parun.Web.Lobby.inviteView). */
-.seat {
+.seat-deck {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 17px;
+  font-weight: 700;
+}
+
+.seat-note {
+  font-size: 13px;
+}
+
+.seat-tools {
+  display: flex;
+  gap: 8px;
+}
+
+.seat-tools button {
+  flex: 1;
+}
+
+/* An invited player's seat: the link to send, the box their code goes in. */
+.lobby-seat.invite {
+  border-style: dashed;
+}
+
+.lobby-seat.invite > :not(.seat-pick, .seat-actions) {
+  margin: 0 16px;
+}
+
+.lobby-seat.invite > :last-child {
+  margin-bottom: 14px;
+}
+
+/* Start at the seats' foot; on a phone, fixed to the screen's. */
+.lobby-start {
+  margin-top: auto;
   display: flex;
   flex-direction: column;
-  gap: 0.35em;
+  gap: 8px;
+  padding-top: 12px;
 }
 
-#app button.invite-slot,
-#app button.bot-slot {
-  font-size: 0.8rem;
-  align-self: flex-start;
-}
-
-.invite {
-  padding: 0.6em 0.8em;
-  border: 2px dashed var(--control);
-  border-radius: var(--radius);
-  background: var(--surface);
-}
-
-.slot.invited {
+#app .lobby-start button.start {
+  min-height: 56px;
+  font-size: 17px;
   display: flex;
-  flex-direction: column;
-  gap: 0.15em;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
 }
 
-.slot-ready {
-  font-size: 0.8rem;
-  color: var(--muted);
-}
-
-.invite input,
-.join-status input {
-  width: 100%;
-  min-width: 0;
-  font-family: ui-monospace, monospace;
-  font-size: 0.8rem;
-}
-
-.invite-warning {
-  margin: 0;
-  font-size: 0.8rem;
-  color: var(--muted);
-}
-
-.matchup .start.is-ready {
-  background: var(--act-soft);
+.lobby-start .start kbd {
+  background: transparent;
+  border-color: currentColor;
   color: inherit;
 }
 
-/* The screen a host's link opens (Parun.Web.Join). */
-.join-status {
-  display: flex;
-  flex-direction: column;
-  gap: 0.5em;
-  margin-bottom: 1em;
+.lobby-start .start-note {
+  font-size: 13px;
+  text-align: center;
 }
 
-.places {
-  list-style: none;
+.lobby-start .problems {
   margin: 0;
-  padding: 0;
-  display: flex;
-  flex-direction: column;
-  gap: 0.35em;
+  padding-left: 1.2em;
+  color: var(--danger);
+  font-size: 13px;
 }
 
-.place {
+@media (max-width: 759px) {
+  main.lobby.new-game {
+    padding-bottom: calc(120px + env(safe-area-inset-bottom));
+  }
+
+  .lobby-start {
+    position: fixed;
+    z-index: 5;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    padding: 12px max(16px, env(safe-area-inset-right)) calc(12px + env(safe-area-inset-bottom)) max(16px, env(safe-area-inset-left));
+    background: var(--surface);
+    border-top: 1px solid var(--line);
+    box-shadow: var(--sheet-shadow);
+  }
+}
+
+#app button.start.is-ready {
+  background: var(--act-soft);
+  color: var(--text);
+}
+
+/* The decks browser: its heading and ways to add a deck, the shelves as
+   tabs (the one shown underlined), then the filters. */
+.browser-head {
   display: flex;
   flex-wrap: wrap;
-  gap: 0.5em;
-  align-items: baseline;
+  align-items: center;
+  gap: 12px;
 }
 
-/* A chosen deck's list: its curve in the summary, its cards on opening. */
-.deck-preview {
-  margin: -0.4em 0 1em;
-  padding: 0.5em 0.75em;
-  border: 1px solid var(--line);
+.browser-head h2 {
+  flex-grow: 1;
+  font-size: 22px;
+  font-weight: 700;
+}
+
+/* On a phone the heading takes its own line, the two ways to add a deck
+   side by side under it. */
+@media (max-width: 759px) {
+  .browser-head h2 {
+    flex-basis: 100%;
+  }
+
+  .browser-head button {
+    flex: 1;
+  }
+}
+
+.shelves {
+  display: flex;
+  gap: 22px;
+  border-bottom: 1px solid var(--line);
+}
+
+#app .shelves button.tab {
+  padding: 10px 2px;
+  border: 0;
+  border-bottom: 3px solid transparent;
+  border-radius: 0;
+  background: transparent;
+  color: var(--muted);
+}
+
+#app .shelves button.tab.on {
+  color: var(--text);
+  border-bottom-color: var(--act);
+}
+
+.deck-tools {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 0.6em;
+}
+
+.new-game .deck-tools {
+  margin-bottom: 0;
+}
+
+.deck-tools input {
+  flex: 1 1 240px;
+  width: auto;
+  min-width: 0;
+}
+
+.deck-tools .random,
+.deck-tools .open-import {
+  flex: none;
+}
+
+/* The colour toggles: pressed ones take a heavier, text-coloured edge. */
+.colour-toggles {
+  display: flex;
+  gap: 6px;
+}
+
+#app .colour-toggles button.toggle {
+  width: 44px;
+  height: 44px;
+  padding: 0;
+  border-radius: 50%;
+  display: inline-grid;
+  place-items: center;
+}
+
+#app .colour-toggles button.toggle.on {
+  border: 3px solid var(--text);
+  background: var(--raised);
+}
+
+/* The set menu drawn as the search box is, its arrow from the text's role. */
+#app select.set-filter {
+  appearance: none;
+  height: 44px;
+  padding: 0 2.4em 0 0.8em;
+  border: 1px solid var(--control);
+  border-radius: var(--radius);
+  background-color: var(--surface);
+  background-image: linear-gradient(45deg, transparent 50%, var(--text) 50%), linear-gradient(135deg, var(--text) 50%, transparent 50%);
+  background-position:
+    calc(100% - 18px) 50%,
+    calc(100% - 13px) 50%;
+  background-size: 5px 5px;
+  background-repeat: no-repeat;
+  color: var(--text);
+  font: inherit;
+  cursor: pointer;
+}
+
+.set-filter:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+/* The decks, as tiles: the set as a badge, the colours, the name, the
+   format, and the curve once read. */
+.deck-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(190px, 1fr));
+  gap: 12px;
+}
+
+.deck-list {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+  gap: 0.4em;
+}
+
+#app button.deck {
+  appearance: none;
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 6px;
+  min-height: 44px;
+  padding: 12px 14px;
+  border: 1px solid var(--control);
   border-radius: var(--radius);
   background: var(--surface);
+  color: var(--text);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
 }
 
-.deck-preview > summary {
+.deck-grid button.deck {
+  min-height: 112px;
+}
+
+#app button.deck.picked {
+  border-color: var(--act);
+  box-shadow: 0 0 0 2px var(--act);
+  background: var(--act-soft);
+}
+
+@media (hover: hover) {
+  #app button.deck:not(.picked):hover {
+    border-color: var(--act);
+  }
+}
+
+.deck-top {
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  gap: 1em;
-  cursor: pointer;
+  gap: 6px;
+}
+
+.deck-top .pips {
+  margin-left: auto;
+}
+
+.set-badge {
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  padding: 2px 6px;
+  border-radius: 6px;
+  background: var(--raised);
+  color: var(--text);
+}
+
+.deck-name {
+  font-weight: 700;
+  line-height: 1.25;
+}
+
+.deck-badges {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.pips {
+  flex: none;
   font-size: 0.9rem;
 }
 
-.preview-title {
+.deck-format,
+.not-legal {
+  font-size: 12px;
+  color: var(--muted);
+}
+
+.not-legal {
+  color: var(--danger);
   font-weight: 600;
 }
 
+.deck-count {
+  font-size: 13px;
+}
+
+.empty {
+  color: var(--muted);
+  font-style: italic;
+  padding: 0.5em 0;
+}
+
+.choosing-for {
+  color: var(--muted);
+  font-size: 0.85rem;
+  margin: 0 0 0.6em;
+}
+
+/* A curve: a bar per mana value, labelled; "spark" small and unlabelled. */
 .curve {
   display: inline-flex;
   align-items: flex-end;
@@ -1134,20 +1471,109 @@ main.lobby {
 }
 
 .curve .mv {
-  font-size: 0.6rem;
+  font-size: 12px;
   color: var(--muted);
   line-height: 1.1;
 }
 
+.curve.spark {
+  margin-top: auto;
+  height: 22px;
+}
+
+.curve.spark .bar {
+  width: 7px;
+}
+
+.curve.spark .mv {
+  display: none;
+}
+
+.curve.spark .fill {
+  background: var(--control);
+}
+
+.picked .curve.spark .fill {
+  background: var(--act);
+}
+
+/* The deck chosen: its name, its curve at size, its kinds of card. */
+.detail h2 {
+  font-size: 22px;
+  font-weight: 700;
+}
+
+.detail-name {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.detail-curve {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 16px;
+}
+
+.detail-curve .curve {
+  display: flex;
+  gap: 8px;
+  height: 90px;
+}
+
+.detail-curve .curve .bar {
+  flex: 1;
+  width: auto;
+  gap: 4px;
+}
+
+.kinds {
+  margin: 0;
+  padding: 4px 16px;
+}
+
+.kinds > div {
+  display: flex;
+  justify-content: space-between;
+  padding: 8px 0;
+  border-bottom: 1px solid var(--line);
+}
+
+.kinds > div:last-child {
+  border-bottom: 0;
+}
+
+.kinds dd {
+  margin: 0;
+  font-variant-numeric: tabular-nums;
+}
+
+/* A deck's whole list, on opening. */
+.deck-preview {
+  padding: 0.5em 0.75em;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: var(--surface);
+}
+
+.deck-preview > summary {
+  cursor: pointer;
+  font-weight: 600;
+  min-height: 32px;
+  display: flex;
+  align-items: center;
+}
+
 .deck-sections {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
   gap: 0.6em 1.2em;
   padding-top: 0.6em;
 }
 
 .deck-section h3 {
-  font-size: 0.75rem;
+  font-size: 12px;
   text-transform: uppercase;
   letter-spacing: 0.06em;
   color: var(--muted);
@@ -1173,22 +1599,11 @@ main.lobby {
   flex: 1;
 }
 
-.deck-tools {
-  display: flex;
-  gap: 0.5em;
-  margin-bottom: 0.6em;
-}
-
-.deck-tools .random,
-.deck-tools .open-import {
-  flex: none;
-}
-
-/* A saved deck's list with the ways to copy it out and delete it. */
+/* The ways to edit a deck, and a saved one's to copy it out and delete it. */
 .saved-tools {
   display: flex;
-  gap: 0.5em;
-  margin: -0.4em 0 1em;
+  flex-wrap: wrap;
+  gap: 8px;
 }
 
 /* The panel a deck list is pasted into, and a saved deck's list to copy. */
@@ -1196,7 +1611,6 @@ main.lobby {
 .export {
   display: grid;
   gap: 0.4em;
-  margin: 0 0 1em;
   padding: 0.75em;
   border: 1px solid var(--line);
   border-radius: var(--radius);
@@ -1227,85 +1641,91 @@ main.lobby {
   gap: 0.5em;
 }
 
-.deck-tools input {
-  flex: 1;
-  width: auto;
+.invite input,
+.join-status input {
+  width: 100%;
   min-width: 0;
+  font-family: ui-monospace, monospace;
+  font-size: 0.8rem;
 }
 
-.choosing-for {
+.invite-warning {
+  margin: 0;
+  font-size: 13px;
   color: var(--muted);
-  font-size: 0.85rem;
-  margin: 0 0 0.6em;
 }
 
-.sets {
-  display: grid;
-  gap: 1em;
-}
-
-.set h2 {
-  text-transform: uppercase;
-  font-size: 0.78rem;
-  letter-spacing: 0.08em;
-  color: var(--muted);
-  margin: 0 0 0.4em;
-}
-
-.deck-list {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
-  gap: 0.4em;
-}
-
-#app button.deck {
-  appearance: none;
-  min-height: 44px;
-  padding: 0.5em 0.75em;
-  border: 1px solid var(--control);
-  border-radius: var(--radius);
-  background: var(--surface);
-  text-align: left;
-  cursor: pointer;
-}
-
-#app button.deck {
+/* The screen a host's link opens (Parun.Web.Join). */
+.lobby-top {
   display: flex;
-  justify-content: space-between;
   align-items: center;
-  gap: 0.4em;
+  gap: 1em;
+  margin-bottom: 1em;
 }
 
-.pips {
+.logo {
+  border-radius: 22%;
   flex: none;
-  font-size: 0.9rem;
 }
 
-.deck-format {
-  display: block;
-  font-size: 0.75rem;
+.versus {
   color: var(--muted);
+  font-weight: 600;
+  font-size: 0.85rem;
+  text-transform: uppercase;
 }
 
-#app button.deck.picked {
-  border-color: var(--act);
-  background: var(--act-soft);
+.join-status {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5em;
+  margin-bottom: 1em;
+}
+
+.places {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.35em;
+}
+
+.place {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5em;
+  align-items: baseline;
+}
+
+.slot-title {
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--muted);
+  font-weight: 700;
+}
+
+.slot-deck {
   font-weight: 600;
 }
 
-.empty {
+.slot-ready {
+  font-size: 0.8rem;
   color: var(--muted);
-  font-style: italic;
-  padding: 0.5em 0;
 }
 
 /* ---------- The game screen ---------- */
 
+/* A phone stacks the turn bar, the table, the hand and the prompt as a
+   sheet at the foot; from 900px the side column (prompt, card, log) stands
+   beside the table and the hand. */
 body:has(main.game) {
   overflow: hidden;
 }
 
 main.game {
+  --side-w: clamp(320px, 30vw, 400px);
   height: 100dvh;
   display: grid;
   grid-template-columns: minmax(0, 1fr);
@@ -1328,122 +1748,103 @@ main.game {
   z-index: 40;
   grid-area: bar;
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
-  justify-content: space-between;
-  gap: 0.6em;
-  padding: calc(0.4em + env(safe-area-inset-top)) 0.75em 0.4em;
+  gap: 8px 16px;
+  min-height: 60px;
+  padding: calc(8px + env(safe-area-inset-top)) max(16px, env(safe-area-inset-right)) 8px max(16px, env(safe-area-inset-left));
   background: var(--surface);
   border-bottom: 1px solid var(--line);
-  font-size: 0.85rem;
 }
 
+/* Your turn: an amber rule under the bar, and "Your" in its label. */
 .turn-bar.yours {
   box-shadow: inset 0 -3px 0 var(--turn);
 }
 
 .turn-label {
-  flex: 1 1 auto;
   min-width: 0;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
 }
 
-/* The phases and the auto-pass level, one strip: the phases its segments,
-   the current one lit. */
-.strip {
-  display: flex;
-  align-items: stretch;
-  flex: none;
-  height: 28px;
-  border: 1px solid var(--control);
-  border-radius: 8px;
-  background: var(--raised);
-}
-
-.phases {
-  display: flex;
-  margin: 0;
-  padding: 0;
-  list-style: none;
-}
-
-.phases li {
-  position: relative;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 30px;
-  color: var(--muted);
-  transition: background-color 0.25s, color 0.25s;
-}
-
-.phases li:first-child {
-  border-radius: 7px 0 0 7px;
-}
-
-.phases li + li {
-  border-left: 1px solid var(--line);
-}
-
-.phases li .icon {
-  width: 16px;
-  height: 16px;
-}
-
-/* The second main phase's card, marked so the two read apart. */
-.phases li.second::after {
-  content: "2";
-  position: absolute;
-  right: 4px;
-  bottom: 2px;
-  font-size: 0.55rem;
-  font-weight: 800;
-}
-
-.phases li.past {
-  opacity: 0.45;
-}
-
-.phases li.now {
-  background: var(--act);
-  color: var(--on-act);
-}
-
-/* An extra phase or step (CR 500.8, 500.9): the lit phase ringed, and a chip
-   beside the turn (Parun.Web.Board's turnBar). */
-.phases li.now.extra {
-  box-shadow: inset 0 0 0 2px var(--on-act);
-}
-
-.turn-label .extra {
-  margin-left: 0.4em;
-  padding: 0.05em 0.5em;
-  border-radius: 999px;
-  border: 1px solid var(--act);
-  font-size: 0.85em;
+.turn-label strong {
+  font-size: 17px;
   font-weight: 700;
 }
 
-/* The auto-pass level, the strip's last segment, a menu (Parun.Web.Question's
-   autoPass). */
+.turn-label .step {
+  color: var(--muted);
+}
+
+/* The phases, labelled, as one track: the current one in the act's tint
+   and ringed. */
+.phases {
+  display: flex;
+  gap: 2px;
+  margin: 0 auto 0 0;
+  padding: 3px;
+  list-style: none;
+  border-radius: var(--radius);
+  background: var(--raised);
+}
+
+.phases li {
+  display: flex;
+  align-items: center;
+  height: 32px;
+  padding: 0 12px;
+  border-radius: 8px;
+  color: var(--muted);
+  font-size: 13px;
+  font-weight: 600;
+  white-space: nowrap;
+  transition: background-color 0.25s, color 0.25s;
+}
+
+.phases li.now {
+  background: var(--act-soft);
+  color: var(--act-text);
+  box-shadow: inset 0 0 0 1px var(--act-line);
+}
+
+/* An extra phase or step (CR 500.8, 500.9): the lit phase's ring doubled,
+   and a chip beside the turn (Parun.Web.Board's turnBar). */
+.phases li.now.extra {
+  box-shadow: inset 0 0 0 2px var(--act);
+}
+
+.turn-label .extra {
+  margin-left: 8px;
+  padding: 0 8px;
+  border-radius: 999px;
+  border: 1px solid var(--act);
+  font-size: 13px;
+  font-weight: 700;
+}
+
+/* The auto-pass level, a menu at the bar's far end (Parun.Web.Question's
+   autoPass), labelled as the stops it sets. */
 .auto-pass {
   position: relative;
   display: flex;
-  border-left: 1px solid var(--line);
 }
 
 .auto-pass > summary {
   display: inline-flex;
   align-items: center;
-  gap: 0.25em;
-  padding: 0 0.55em;
-  border-radius: 0 7px 7px 0;
+  gap: 4px;
+  min-height: 44px;
+  padding: 0 12px;
+  border: 1px solid var(--control);
+  border-radius: var(--radius);
+  background: var(--surface);
   cursor: pointer;
   list-style: none;
   white-space: nowrap;
-  font-size: 0.75rem;
-  color: var(--muted);
+  font-size: 13px;
+  font-weight: 600;
 }
 
 .auto-pass > summary::-webkit-details-marker {
@@ -1452,70 +1853,17 @@ main.game {
 
 .auto-pass > summary::after {
   content: "\25BE";
+  color: var(--muted);
 }
 
 .auto-pass[open] > summary {
-  background: var(--surface);
-  color: var(--text);
-}
-
-/* The seat's designations: the monarch, the initiative, the Ring, speed. */
-.count.monarch,
-.count.initiative {
-  background: color-mix(in srgb, var(--band-multi) 22%, var(--raised));
-  font-weight: 600;
-}
-
-.count.monarch .k,
-.count.initiative .k {
-  color: var(--text);
-}
-
-.count.ring,
-.count.speed,
-.count.blessing,
-.count.dungeons,
-.count.player-counter,
-.count.commander-damage {
-  box-shadow: inset 0 0 0 1px var(--control);
-}
-
-/* A subgame (CR 730), on the turn bar. */
-.subgame {
-  flex: none;
-  padding: 0.1em 0.6em;
-  border-radius: 999px;
-  background: var(--danger);
-  color: var(--on-danger);
-  font-weight: 700;
-  font-size: 0.85em;
-}
-
-/* Day or night (CR 732), beside the turn. */
-.daytime {
-  margin-left: 0.5em;
-  padding: 0.05em 0.5em;
-  border-radius: 999px;
-  font-size: 0.85em;
-  font-weight: 600;
-}
-
-.daytime.day {
-  background: color-mix(in srgb, var(--band-w) 20%, var(--surface));
-}
-
-.daytime.night {
-  background: color-mix(in srgb, var(--band-b) 30%, var(--surface));
-}
-
-.k {
-  color: var(--muted);
+  background: var(--raised);
 }
 
 .auto-pass > .segmented {
   position: absolute;
   z-index: 55;
-  top: calc(100% + 0.4em);
+  top: calc(100% + 6px);
   right: 0;
   flex-direction: column;
   flex-wrap: nowrap;
@@ -1536,11 +1884,11 @@ main.game {
 
 #app .turn-bar .settings-button {
   flex: none;
-  width: 34px;
-  height: 34px;
-  min-height: 34px;
+  width: 44px;
+  height: 44px;
   padding: 0;
-  border-radius: 50%;
+  border-color: transparent;
+  background: transparent;
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -1551,14 +1899,93 @@ main.game {
   height: 22px;
 }
 
-@media (max-width: 420px) {
-  .phases li:not(.now) {
-    width: 12px;
+/* On a phone the track takes its own row as segments, the current phase
+   named in the turn's label. */
+@media (max-width: 599px) {
+  .turn-bar {
+    gap: 6px 8px;
+    min-height: 0;
   }
-  .phases li:not(.now) > *,
-  .phases li:not(.now)::after {
-    display: none;
+
+  .turn-label {
+    flex: 1 1 0;
   }
+
+  .phases {
+    order: 1;
+    flex-basis: 100%;
+    gap: 3px;
+    margin: 0;
+    padding: 0;
+    background: none;
+  }
+
+  .phases li {
+    flex: 1;
+    height: 5px;
+    padding: 0;
+    border-radius: 3px;
+    background: var(--line);
+    font-size: 0;
+  }
+
+  .phases li.past {
+    background: var(--control);
+  }
+
+  .phases li.now,
+  .phases li.now.extra {
+    background: var(--act);
+    box-shadow: none;
+  }
+}
+
+/* The seat's designations: the monarch, the initiative, the Ring, speed. */
+.count.monarch,
+.count.initiative {
+  background: color-mix(in srgb, var(--band-multi) 22%, var(--raised));
+}
+
+.count.monarch .k,
+.count.initiative .k {
+  color: var(--text);
+}
+
+.count.ring,
+.count.speed,
+.count.blessing,
+.count.dungeons,
+.count.player-counter,
+.count.commander-damage {
+  box-shadow: inset 0 0 0 1px var(--control);
+}
+
+/* A subgame (CR 730), on the turn bar. */
+.subgame {
+  flex: none;
+  padding: 2px 10px;
+  border-radius: 999px;
+  background: var(--danger);
+  color: var(--on-danger);
+  font-weight: 700;
+  font-size: 13px;
+}
+
+/* Day or night (CR 732), beside the turn. */
+.daytime {
+  margin-left: 8px;
+  padding: 0 8px;
+  border-radius: 999px;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.daytime.day {
+  background: color-mix(in srgb, var(--band-w) 20%, var(--surface));
+}
+
+.daytime.night {
+  background: color-mix(in srgb, var(--band-b) 30%, var(--surface));
 }
 
 .play-area {
@@ -1568,19 +1995,19 @@ main.game {
   -webkit-overflow-scrolling: touch;
 }
 
+/* The other seats at the top, yours at the foot, and the stack between
+   taking the room they leave. */
 .table {
   display: flex;
   flex-direction: column;
-  gap: 0.5em;
-  padding: 0.5em;
   min-height: 100%;
 }
 
 .seat {
-  border-radius: calc(var(--radius) + 2px);
-  padding: 0.5em;
-  background: color-mix(in srgb, var(--surface) 55%, transparent);
-  border: 2px solid transparent;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 12px;
 }
 
 .seat.opponent {
@@ -1588,7 +2015,8 @@ main.game {
 }
 
 .seat.you {
-  margin-top: auto;
+  background: var(--surface);
+  border-top: 1px solid var(--line);
 }
 
 /* The other seats, in turn order from yours: side by side where they fit,
@@ -1596,8 +2024,7 @@ main.game {
 .opponents {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(min(100%, 22rem), 1fr));
-  gap: 0.5em;
-  align-items: start;
+  border-bottom: 1px solid var(--line);
 }
 
 .opponents.several .seat .battlefield {
@@ -1610,58 +2037,69 @@ main.game {
   position: static;
 }
 
-.seat.active {
-  border-color: color-mix(in srgb, var(--act) 45%, transparent);
-}
-
 .seat-head {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
-  gap: 0.4em 0.75em;
+  gap: 8px 12px;
 }
 
 /* Each seat's totals stay in view while the table scrolls under them. */
 .seat .seat-head {
   position: sticky;
   z-index: 3;
-  padding: 0.3em 0.2em;
-  background: color-mix(in srgb, var(--bg) 92%, transparent);
-  backdrop-filter: blur(8px);
-  -webkit-backdrop-filter: blur(8px);
-  border-radius: var(--radius);
+  padding: 4px 0;
+  background: var(--bg);
+}
+
+.seat.you .seat-head {
+  background: var(--surface);
 }
 
 .seat.opponent .seat-head {
   top: 0;
-  margin-bottom: 0.4em;
 }
 
 .seat.you .seat-head {
   bottom: 0;
-  margin-top: 0.4em;
 }
 
+/* The seat's name and its life, a large number. */
 .who {
   display: inline-flex;
   align-items: center;
-  gap: 0.5em;
-  font-weight: 600;
+  gap: 12px;
 }
 
+.seat-name {
+  font-size: 17px;
+  font-weight: 700;
+}
+
+/* A seat that may be chosen (a target, say): ringed dashed as a tile is,
+   solid once chosen. */
 #app button.who {
   appearance: none;
-  padding: 0.25em 0.5em;
-  border: 2px dashed var(--act);
+  min-height: 44px;
+  padding: 2px 12px;
+  border: 0;
   border-radius: 999px;
-  background: var(--act-soft);
+  background: transparent;
+  outline: 2px dashed var(--act);
+  outline-offset: 0;
   cursor: pointer;
 }
 
 #app button.who.chosen {
-  border-style: solid;
-  background: var(--act);
-  color: var(--on-act);
+  outline-style: solid;
+  outline-width: 3px;
+  background: var(--act-soft);
+}
+
+#app button.who.chosen::after {
+  content: "\2713";
+  font-weight: 800;
+  color: var(--act-text);
 }
 
 .life {
@@ -1670,14 +2108,9 @@ main.game {
 
 .life .value {
   display: inline-block;
-  min-width: 2.2em;
-  padding: 0.1em 0.5em;
-  border-radius: 999px;
-  background: var(--text);
-  color: var(--bg);
-  font-size: 1.15rem;
-  font-weight: 800;
-  text-align: center;
+  font-size: 32px;
+  font-weight: 700;
+  line-height: 1;
   font-variant-numeric: tabular-nums;
   animation: pop 0.45s ease-out;
 }
@@ -1690,18 +2123,23 @@ main.game {
 .counts {
   display: flex;
   flex-wrap: wrap;
-  gap: 0.3em;
-  font-size: 0.8rem;
+  align-items: center;
+  gap: 6px;
 }
 
+/* A chip: a zone and its count in words, whose turn, who has priority. */
 .count {
   display: inline-flex;
   align-items: center;
-  gap: 0.35em;
-  padding: 0.15em 0.55em;
+  gap: 6px;
+  min-height: 28px;
+  padding: 0 10px;
   border-radius: 999px;
   background: var(--raised);
+  font-size: 13px;
+  font-weight: 600;
   font-variant-numeric: tabular-nums;
+  white-space: nowrap;
 }
 
 .count.turn {
@@ -1711,9 +2149,9 @@ main.game {
 }
 
 .count.priority {
-  background: var(--act);
-  color: var(--on-act);
-  font-weight: 600;
+  background: var(--act-soft);
+  color: var(--act-text);
+  box-shadow: inset 0 0 0 1px var(--act-line);
 }
 
 .count.turn .k,
@@ -1731,29 +2169,23 @@ main.game {
 
 .k {
   color: var(--muted);
-  font-size: 0.85em;
-}
-
-/* A zone's icon in place of its name. */
-.k.zone {
-  display: inline-flex;
-}
-
-.k.zone .icon {
-  width: 15px;
-  height: 15px;
 }
 
 details.pile {
   position: relative;
+  padding: 0;
 }
 
 details.pile > summary {
   list-style: none;
   cursor: pointer;
   display: inline-flex;
-  gap: 0.35em;
+  gap: 6px;
   align-items: center;
+  min-height: 28px;
+  padding: 0 10px;
+  border-radius: 999px;
+  box-shadow: inset 0 0 0 1px var(--control);
 }
 
 details.pile > summary::-webkit-details-marker {
@@ -1762,6 +2194,8 @@ details.pile > summary::-webkit-details-marker {
 
 details.pile[open] {
   flex-basis: 100%;
+  flex-wrap: wrap;
+  padding: 6px;
   border-radius: var(--radius);
 }
 
@@ -1770,7 +2204,7 @@ details.pile[open] {
   display: flex;
   flex-wrap: wrap;
   gap: var(--gap);
-  padding: 0.4em 0 0.2em;
+  padding: 6px 0 4px;
 }
 
 .seen {
@@ -1781,8 +2215,7 @@ details.pile[open] {
 .pool {
   display: flex;
   align-items: center;
-  gap: 0.2em;
-  font-size: 0.95rem;
+  gap: 4px;
 }
 
 .battlefield {
@@ -1791,13 +2224,21 @@ details.pile[open] {
   gap: var(--gap);
 }
 
+/* The other permanents and the lands, two groups side by side. */
+.battlefield > .back {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  gap: var(--gap) 28px;
+}
+
 .row {
   display: flex;
   flex-wrap: wrap;
   gap: var(--gap);
   min-height: 0;
   /* Room for a tapped tile's turned corners. */
-  padding-block: 6px;
+  padding-block: 8px;
 }
 
 .group {
@@ -1811,27 +2252,30 @@ details.pile[open] {
 .row.command {
   position: relative;
   align-items: center;
-  margin-top: 0.5rem;
-  padding: 0.7rem 6px 6px;
+  margin-top: 8px;
+  padding: 12px 6px 6px;
   border: 1px solid var(--line);
   border-radius: var(--radius);
 }
 
 .row-label {
   position: absolute;
-  top: -0.6em;
+  top: -0.7em;
   left: 8px;
-  padding: 0 0.35em;
-  background: var(--surface);
+  padding: 0 6px;
+  background: var(--bg);
   color: var(--muted);
-  font-size: 0.75rem;
-  font-weight: 600;
+  font-size: 12px;
+  font-weight: 700;
   text-transform: uppercase;
-  letter-spacing: 0.03em;
+  letter-spacing: 0.06em;
+}
+
+.seat.you .row-label {
+  background: var(--surface);
 }
 
 .row.phased .card {
-  opacity: 0.55;
   filter: grayscale(0.6);
 }
 
@@ -1846,12 +2290,12 @@ details.pile[open] {
   right: -9px;
   min-width: 22px;
   height: 20px;
-  padding: 0 0.4em;
+  padding: 0 6px;
   border-radius: 999px;
   background: var(--text);
   color: var(--bg);
-  font-size: 0.75rem;
-  font-weight: 800;
+  font-size: 12px;
+  font-weight: 700;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -1889,20 +2333,46 @@ details.pile[open] {
   display: none;
 }
 
+/* The stack: a lane between the seats, a quiet rule while it is empty. */
+.stack-lane {
+  flex: 1 0 auto;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  min-height: 44px;
+  padding: 8px 12px;
+}
+
+.stack-empty {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.stack-empty::before,
+.stack-empty::after {
+  content: "";
+  flex: 1;
+  border-top: 1px dashed var(--control);
+}
+
 .stack {
-  padding: 0.5em;
-  border-radius: calc(var(--radius) + 2px);
+  align-self: center;
+  width: min(100%, 560px);
+  padding: 12px;
+  border-radius: 16px;
   background: var(--act-soft);
-  border: 1px solid color-mix(in srgb, var(--act) 45%, transparent);
+  border: 1px solid var(--act-line);
   animation: enter 0.2s ease-out;
 }
 
 .zone-title {
-  font-size: 0.75rem;
+  font-size: 12px;
+  font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.06em;
   color: var(--muted);
-  margin-bottom: 0.35em;
+  margin-bottom: 6px;
 }
 
 .hint {
@@ -1921,9 +2391,9 @@ details.pile[open] {
   appearance: none;
   display: grid;
   grid-template-columns: auto 1fr;
-  gap: 0.1em 0.6em;
+  gap: 2px 10px;
   align-items: baseline;
-  padding: 0.5em 0.7em;
+  padding: 8px 12px;
   text-align: left;
   border: 1px solid var(--cline);
   border-left: 5px solid var(--c);
@@ -1935,10 +2405,10 @@ details.pile[open] {
 }
 
 .stack-item .who {
-  font-size: 0.72rem;
+  font-size: 12px;
   text-transform: uppercase;
   color: var(--muted);
-  font-weight: 600;
+  font-weight: 700;
 }
 
 .stack-item .name {
@@ -1947,13 +2417,17 @@ details.pile[open] {
 
 .stack-item .detail {
   grid-column: 2;
-  font-size: 0.82rem;
+  font-size: 13px;
   color: var(--muted);
 }
 
+/* The hand: one row, its tiles narrowed or overlapped by as much as fits
+   them all (--n, their count, set by Parun.Web.Board's hand), the one
+   under the pointer or the keyboard raised; those you can play now lifted
+   and ringed. */
 .hand {
   grid-area: hand;
-  padding: 0.3em 0.5em 0;
+  padding: 4px 12px 0;
   background: var(--sunken);
   border-top: 1px solid var(--line);
 }
@@ -1963,18 +2437,66 @@ details.pile[open] {
 }
 
 .hand-cards {
-  scrollbar-width: thin;
   display: flex;
-  gap: var(--gap);
+  align-items: flex-end;
   overflow-x: auto;
-  padding: 0.3em 0.1em 0.5em;
-  scroll-snap-type: x proximity;
+  scrollbar-width: thin;
+  padding: 18px 4px 10px;
   -webkit-overflow-scrolling: touch;
 }
 
 .hand-cards > .card {
   flex: none;
-  scroll-snap-align: start;
+}
+
+/* A row too long for the hand narrows its tiles first, down to 85% of
+   their width (so a hand of nine fits a wide window), and only then
+   overlaps them, by just what fits, leaving 32px of each showing at least.
+   Each tile is covered from its right, where its cost and power sit, so the
+   narrowing comes first; the one under the pointer or the keyboard rises
+   whole. --room is the space each gap would get with no overlap. */
+#app .hand-cards > .card {
+  --tile: max(calc(var(--card-w-size) * 0.85), min(var(--card-w-size), calc((100% - (var(--n) - 1) * var(--gap)) / var(--n))));
+  width: var(--tile);
+}
+
+#app .hand-cards > .card + .card {
+  --room: calc((100% - var(--n) * var(--tile)) / max(var(--n) - 1, 1));
+  margin-left: max(calc(32px - var(--tile)), min(var(--gap), var(--room)));
+}
+
+#app .hand-cards > .card.playable {
+  translate: 0 -12px;
+}
+
+#app .hand-cards > .card:hover,
+#app .hand-cards > .card:focus-visible {
+  z-index: 5;
+  translate: 0 -8px;
+}
+
+#app .hand-cards > .card.playable:hover,
+#app .hand-cards > .card.playable:focus-visible {
+  translate: 0 -20px;
+}
+
+/* On a phone the seats and their chips tighten. */
+@media (max-width: 599px) {
+  .seat {
+    gap: 8px;
+    padding: 8px 10px;
+  }
+
+  .life .value {
+    font-size: 24px;
+  }
+
+  .count,
+  details.pile > summary {
+    min-height: 26px;
+    padding: 0 8px;
+    font-size: 12px;
+  }
 }
 
 /* ---------- Card tiles ---------- */
@@ -2176,11 +2698,11 @@ details.pile[open] {
   min-height: calc(var(--card-w-size) * 0.5);
 }
 
+/* Tapped: turned a quarter of the way, its colours and text as they were,
+   room made beside it for its corners. */
 #app button.card.tapped {
-  /* Tapped: turned and greyed, its text kept at full contrast. */
-  transform: rotate(7deg) translateY(2px);
-  background: repeating-linear-gradient(135deg, var(--cbg), var(--cbg) 6px, var(--raised) 6px, var(--raised) 7px);
-  border-top-color: var(--control);
+  rotate: 14deg;
+  margin-inline: 10px;
 }
 
 /* The tap symbol ({T}, index.html's ms-tap), at the right edge. */
@@ -2257,31 +2779,55 @@ details.pile[open] {
   outline-offset: 2px;
 }
 
-/* ---------- The side panel: prompt and log ---------- */
+/* ---------- The side column: prompt, card, log ---------- */
 
+/* On a phone, a sheet at the foot of the screen: the prompt, then the
+   newest of the log. The card being read opens over the table. */
 .side {
   grid-area: side;
   display: flex;
   flex-direction: column;
-  max-height: 40dvh;
+  max-height: 44dvh;
   background: var(--surface);
-  border-top: 1px solid var(--line);
+  border-top: 1px solid var(--control);
+  border-radius: 18px 18px 0 0;
   box-shadow: var(--sheet-shadow);
   padding-bottom: env(safe-area-inset-bottom);
 }
 
+.side::before {
+  content: "";
+  flex: none;
+  align-self: center;
+  width: 36px;
+  height: 4px;
+  margin-top: 8px;
+  border-radius: 2px;
+  background: var(--control);
+}
+
+/* The question: when it is, one heading, then its answers, each 52px. */
 .prompt {
   display: flex;
   flex-direction: column;
-  gap: 0.5em;
-  padding: 0.7em 0.75em;
+  gap: 10px;
+  padding: 10px 12px 12px;
   overflow-y: auto;
   min-height: 0;
 }
 
 .prompt h2 {
-  font-size: 0.98rem;
-  font-weight: 600;
+  font-size: 17px;
+  font-weight: 700;
+  line-height: 1.25;
+}
+
+.moment.yours {
+  color: var(--turn);
+}
+
+#app .prompt button {
+  min-height: 48px;
 }
 
 .prompt > button,
@@ -2294,43 +2840,38 @@ details.pile[open] {
 .actions {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(170px, 1fr));
-  gap: 0.4em;
+  gap: 8px;
+}
+
+/* A card's action: the act's tint, as the card you can play is ringed. */
+#app .prompt .actions > button {
+  background: var(--act-soft);
+  border-color: var(--act-line);
 }
 
 .passes {
   display: grid;
   grid-template-columns: 2fr 1fr;
-  gap: 0.4em;
+  gap: 8px;
 }
 
 .passes > :only-child {
   grid-column: 1 / -1;
 }
 
-/* How far to pass (Question.Until): quieter than the passes above. */
+/* How far to pass (Question.Until): quiet, after the passes. */
 .until {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
-  gap: 0.4em;
-  font-size: 0.85rem;
-}
-
-.news {
-  margin: 0;
-  padding: 0.45em 0.7em 0.45em 1.6em;
-  border-radius: var(--radius);
-  background: var(--raised);
-  font-size: 0.85rem;
   display: flex;
-  flex-direction: column;
-  gap: 0.1em;
+  flex-wrap: wrap;
+  gap: 4px;
 }
 
-.news .more {
-  list-style: none;
-  margin-left: -0.9em;
-  color: var(--muted);
-  font-size: 0.9em;
+#app .prompt .until > button {
+  width: auto;
+  min-height: 44px;
+  padding: 0 10px;
+  font-size: 14px;
+  font-weight: 500;
 }
 
 .amount-row {
@@ -2338,11 +2879,11 @@ details.pile[open] {
   flex-wrap: wrap;
   align-items: center;
   justify-content: space-between;
-  gap: 0.3em 0.6em;
+  gap: 4px 10px;
 }
 
 .amount-label {
-  font-size: 0.9rem;
+  font-size: 14px;
 }
 
 .segmented {
@@ -2374,29 +2915,28 @@ details.pile[open] {
 }
 
 .subhead {
-  font-size: 0.8rem;
+  font-size: 13px;
   color: var(--muted);
   font-weight: 600;
-  margin-top: 0.3em;
+  margin-top: 4px;
 }
 
 /* CR 724: a choice the seat makes for a player it controls. */
 .controlling {
   margin: 0;
-  padding: 0.45em 0.7em;
+  padding: 8px 12px;
   border-radius: var(--radius);
   background: color-mix(in srgb, var(--band-b) 30%, var(--surface));
   font-weight: 600;
-  font-size: 0.9rem;
 }
 
 .nudge {
   margin: 0;
-  padding: 0.4em 0.7em;
+  padding: 8px 12px;
   border-left: 4px solid var(--act);
   border-radius: 0 var(--radius) var(--radius) 0;
   background: var(--act-soft);
-  font-size: 0.88rem;
+  font-size: 14px;
 }
 
 /* The source "Pay automatically" taps next. */
@@ -2410,77 +2950,139 @@ details.pile[open] {
   position: absolute;
   top: -10px;
   right: -6px;
-  padding: 0 0.4em;
+  padding: 0 6px;
   border-radius: 999px;
   background: var(--good);
   color: var(--on-good);
-  font-size: 0.7rem;
+  font-size: 11px;
   font-weight: 800;
 }
 
+/* A refused answer: the one banner the prompt has, and only then. */
 .problem {
-  padding: 0.5em 0.7em;
+  padding: 8px 12px;
   border-radius: var(--radius);
-  background: color-mix(in srgb, var(--danger) 15%, var(--surface));
-  border: 1px solid color-mix(in srgb, var(--danger) 50%, transparent);
-  font-size: 0.9rem;
+  background: color-mix(in srgb, var(--danger) 14%, var(--surface));
+  border: 1px solid var(--danger);
 }
 
-/* The log, a flyout from the turn label (Parun.Web.Board's turnBar). */
-details.log {
-  flex: 1 1 auto;
-  min-width: 0;
+/* The card being read: an empty inspector shows only on a wide screen. */
+.inspector.empty {
+  display: none;
+}
+
+.inspector-hint {
+  color: var(--muted);
+  font-size: 14px;
+}
+
+/* The log: a heading opening the whole of it, then the newest few. */
+.log-pane {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  padding: 0 12px;
+  border-top: 1px solid var(--line);
 }
 
 details.log > summary {
-  display: inline-block;
-  max-width: 100%;
-  vertical-align: middle;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  min-height: 44px;
   cursor: pointer;
   list-style: none;
-  border-radius: 6px;
-  padding: 0.15em 0.4em;
-  margin-left: -0.4em;
 }
 
 details.log > summary::-webkit-details-marker {
   display: none;
 }
 
-details.log > summary::after {
-  content: " \25BE";
-  color: var(--muted);
+details.log .expand {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 8px;
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 600;
 }
 
-details.log > summary:hover,
-details.log[open] > summary {
+details.log > summary:hover .expand,
+details.log[open] .expand {
   background: var(--raised);
 }
 
-.log-panel {
+details.log:not([open]) .opened,
+details.log[open] .closed {
+  display: none;
+}
+
+/* On a phone the sheet is the prompt: the log is its heading alone, a
+   button at the foot opening the whole of it. The newest entries stay as a
+   screen reader's live region, unseen. */
+.log-recent {
   position: absolute;
-  z-index: 55;
-  top: calc(100% + 4px);
-  left: 0.5em;
-  width: min(440px, calc(100vw - 1em));
-  max-height: min(60dvh, 520px);
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+  font-size: 14px;
+}
+
+details.log .unread {
+  margin-right: auto;
+  padding: 0 8px;
+  border-radius: 999px;
+  background: var(--act-soft);
+  color: var(--act-text);
+  box-shadow: inset 0 0 0 1px var(--act-line);
+  font-size: 12px;
+  font-weight: 700;
+}
+
+/* The whole log, over the table. */
+.log-panel {
+  position: fixed;
+  z-index: 45;
+  top: 0;
+  left: 0;
+  right: 0;
+  max-height: 60dvh;
   overflow-y: auto;
-  border: 1px solid var(--line);
-  border-radius: var(--radius);
+  padding: calc(12px + env(safe-area-inset-top)) 16px 16px;
   background: var(--surface);
+  border-bottom: 1px solid var(--control);
   box-shadow: var(--sheet-shadow);
-  font-size: 0.88rem;
-  white-space: normal;
+  font-size: 14px;
+}
+
+/* Each turn under its own heading. */
+.log-turn + .log-turn {
+  margin-top: 8px;
+}
+
+.log-turn-heading {
+  padding-top: 4px;
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--muted);
+  letter-spacing: 0.02em;
 }
 
 .log-list {
   margin: 0;
-  padding: 0.4em 0.75em 0.6em 2em;
-  color: var(--muted);
+  padding: 0 0 0 18px;
 }
 
 .log-list li {
-  padding: 0.12em 0;
+  padding: 2px 0;
+}
+
+.log-list li::marker {
+  color: var(--muted);
 }
 
 /* A card named in the log, which opens its sheet. */
@@ -2500,9 +3102,7 @@ details.log[open] > summary {
   cursor: pointer;
 }
 
-.log-list li.turn,
-.game-log li.turn,
-.news li.turn {
+.game-log li.turn {
   list-style: none;
   margin: 0.5em 0 0.15em -1.2em;
   font-weight: 700;
@@ -2511,23 +3111,26 @@ details.log[open] > summary {
 }
 
 .log-list li.minor,
-.game-log li.minor,
-.news li.minor {
+.game-log li.minor {
   font-style: italic;
+  color: var(--muted);
 }
 
+/* An entry since your last decision: a heavier weight and an act marker. */
 .log-list li.fresh {
-  color: var(--text);
-  font-weight: 500;
+  font-weight: 600;
 }
 
 .log-list li.fresh::marker {
   color: var(--act);
 }
 
+/* From 900px: the side column beside the table and the hand, the prompt
+   first, then the card read (in place of a sheet over the table), then the
+   log taking the rest. */
 @media (min-width: 900px) {
   main.game {
-    grid-template-columns: minmax(0, 1fr) clamp(300px, 30vw, 400px);
+    grid-template-columns: minmax(0, 1fr) var(--side-w);
     grid-template-rows: auto minmax(0, 1fr) auto;
     grid-template-areas:
       "bar bar"
@@ -2540,16 +3143,95 @@ details.log[open] > summary {
     min-height: 0;
     border-top: 0;
     border-left: 1px solid var(--line);
+    border-radius: 0;
     box-shadow: none;
   }
 
-  .prompt {
-    flex: 1;
+  .side::before {
+    content: none;
   }
 
-  .table {
-    padding: 0.75em 1em;
-    gap: 0.75em;
+  .prompt {
+    flex: 0 1 auto;
+    gap: 12px;
+    padding: 20px;
+    border-bottom: 1px solid var(--line);
+  }
+
+  .prompt h2 {
+    font-size: 22px;
+  }
+
+  #app .prompt button {
+    min-height: 52px;
+  }
+
+  .inspector {
+    flex: 0 1 auto;
+    min-height: 0;
+    max-height: 45%;
+    overflow-y: auto;
+    border-bottom: 1px solid var(--line);
+  }
+
+  .inspector.empty {
+    display: block;
+    padding: 16px 20px;
+  }
+
+  /* The sheet, as the column's section rather than a dialog over the table. */
+  .inspector .sheet-backdrop,
+  .inspector .sheet-backdrop.peek {
+    position: static;
+    display: block;
+    padding: 0;
+  }
+
+  #app .inspector button.scrim {
+    display: none;
+  }
+
+  .inspector .sheet,
+  .inspector .sheet-backdrop.peek .sheet {
+    max-width: none;
+    max-height: none;
+    overflow: visible;
+    padding: 16px 20px;
+    border-radius: 0;
+    border-top: 4px solid var(--c);
+    box-shadow: none;
+    animation: none;
+  }
+
+  .inspector .sheet h2 {
+    font-size: 17px;
+  }
+
+  .log-pane {
+    flex: 1 1 140px;
+    padding: 8px 20px 12px;
+    border-top: 0;
+  }
+
+  .log-recent {
+    position: static;
+    width: auto;
+    height: auto;
+    flex: 1 1 auto;
+    overflow-y: auto;
+    clip-path: none;
+    white-space: normal;
+  }
+
+  /* The whole log over the table, beside the column. */
+  .log-panel {
+    top: 0;
+    bottom: 0;
+    right: var(--side-w);
+    max-height: none;
+    padding: 20px 24px;
+    border-bottom: 0;
+    border-right: 1px solid var(--control);
   }
 }
 
@@ -2914,6 +3596,9 @@ main.ending h2 {
 /* A button's key, as a keycap after its label, while Alt is held (page.js)
    where there is a keyboard to press it with. */
 @media (hover: hover) and (pointer: fine) {
+  /* The prompt's main button and those the view gave a key show it always. */
+  .prompt button.primary[aria-keyshortcuts]::after,
+  .prompt button[aria-keyshortcuts]:not([data-key-given])::after,
   :root.show-keys .prompt button[aria-keyshortcuts]::after,
   :root.show-keys .sheet-actions button[aria-keyshortcuts]::after {
     content: attr(aria-keyshortcuts);
@@ -2930,6 +3615,7 @@ main.ending h2 {
     opacity: 0.75;
   }
 
+  .prompt button.primary[aria-keyshortcuts="Enter"]::after,
   :root.show-keys .prompt button[aria-keyshortcuts="Enter"]::after,
   :root.show-keys .sheet-actions button[aria-keyshortcuts="Enter"]::after {
     content: "\21B5";
@@ -3256,8 +3942,9 @@ body:has(main.game, #app [data-settings], #app .splash, #app main.loading) #sett
   gap: 0.4em;
 }
 
-.replay .scrubber button {
+#app .replay .scrubber button {
   flex: 1;
+  min-height: 44px;
 }
 
 .replay .scrubber input[type="range"] {
@@ -3316,6 +4003,10 @@ main.scenarios h2 {
 }
 
 /* ---------- Deck builder ---------- */
+
+#app button.home-button {
+  flex: none;
+}
 
 main.builder {
   max-width: 1200px;

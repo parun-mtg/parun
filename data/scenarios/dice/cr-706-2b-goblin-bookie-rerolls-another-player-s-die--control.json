@@ -106,7 +106,7 @@
     {
       "turn": 1,
       "step": "PrecombatMain",
-      "player": "alice",
+      "player": "bob",
       "do": {
         "Answer": {
           "prompt": "ChooseRollModifier",

@@ -33,7 +33,6 @@ import qualified Parun.Types.Status as Status
 import qualified Parun.Web.Card as Card
 import qualified Parun.Web.Element as Element
 import qualified Parun.Web.Html as Html
-import qualified Parun.Web.Icon as Icon
 import qualified Parun.Web.Mana as Web.Mana
 
 -- | How each tile and each seat looks and what tapping it sends.
@@ -43,61 +42,60 @@ data Marks msg = MkMarks
     seat :: PlayerId.PlayerId -> Maybe (Card.Cue msg)
   }
 
--- | The turn bar: whose turn and which step, opening the log given (none
--- while it is empty) as a flyout; the phases as one strip with the current
--- one lit (marked where it is an extra one, CR 500.8) and those with no step
--- still scheduled passed, the strip ending in what is given for its end; and
--- the controls given after them.
-turnBar :: [Html.Html msg] -> [Html.Html msg] -> [Html.Html msg] -> PlayerView.PlayerView -> Html.Html msg
-turnBar logged stripEnd controls board =
-  let yours = PlayerView.active board == PlayerView.viewer board
-      current = phaseIndex (PlayerView.phase board)
+-- | The turn bar: the turn and its step; the phases as a labelled track,
+-- the current one marked (and marked as an extra one, CR 500.8) and those
+-- with no step still scheduled passed; then what is given for after them
+-- and the controls given.
+turnBar :: [Html.Html msg] -> [Html.Html msg] -> PlayerView.PlayerView -> Html.Html msg
+turnBar after controls board =
+  let current = phaseIndex (PlayerView.phase board)
       ahead = Set.fromList (fmap phaseIndex (Foldable.toList (PlayerView.remaining board)))
       extra = PlayerView.extra board
-      extraTip = Text.pack "An extra phase or step this turn (CR 500.8, 500.9, 514.3a)"
       shown i
         | i == current = ["now"] <> ["extra" | extra]
         | Set.member i ahead = []
         | otherwise = ["past"]
       label =
         [ Element.el "strong" [] [] [Element.string ("Turn " <> show (PlayerView.turn board))],
-          Element.text (Text.pack " \x00b7 " <> (if yours then Text.pack "Your " else possessive (PlayerView.active board)) <> Wording.phase (PlayerView.phase board))
+          Element.el "span" ["step"] [] [Element.text (Text.pack " \x00b7 " <> moment board)]
         ]
           <> [Element.el "span" ["extra"] [Element.attr "title" extraTip] [Element.string "Extra"] | extra]
           <> foldMap (pure . daytime) (PlayerView.daytime board)
-      heading
-        | null logged = Element.el "p" ["turn-label"] [] label
-        | otherwise =
-            Element.el
-              "details"
-              ["log"]
-              []
-              [ Element.el "summary" ["turn-label"] [Element.attr "title" (Text.pack "The game log (L)")] label,
-                Element.el "div" ["log-panel"] [Element.attr "role" (Text.pack "region"), Element.attr "aria-label" (Text.pack "Log")] logged
-              ]
    in Element.el
         "div"
-        ["turn-bar", if yours then "yours" else "theirs"]
+        ["turn-bar", if yours board then "yours" else "theirs"]
         []
-        $ [ heading,
+        $ [ Element.el "p" ["turn-label"] [] label,
             Element.el
-              "div"
-              ["strip"]
-              []
-              ( Element.el "ol" ["phases"] [Element.attr "aria-hidden" (Text.pack "true")] [Element.el "li" (shown i <> cls) [Element.attr "title" (if i == current && extra then extraTip else Text.pack tip)] [Icon.icon [] glyph] | (i, (glyph, cls, tip)) <- zip [0 :: Integer ..] phaseIcons]
-                  : stripEnd
-              )
+              "ol"
+              ["phases"]
+              [Element.attr "aria-label" (Text.pack "Phases")]
+              [ Element.el "li" (shown i) ([Element.attr "title" (if i == current && extra then extraTip else Text.pack tip)] <> [Element.attr "aria-current" (Text.pack "step") | i == current]) [Element.string name']
+              | (i, (name', tip)) <- zip [0 :: Integer ..] phaseNames
+              ]
           ]
+          <> after
           <> controls
 
--- | Each phase's icon on the strip, its classes and its name (CR 500.1).
-phaseIcons :: [(Icon.Icon, [String], String)]
-phaseIcons =
-  [ (Icon.MkBeginning, [], "Beginning phase"),
-    (Icon.MkMain, [], "Precombat main phase"),
-    (Icon.MkCombat, [], "Combat phase"),
-    (Icon.MkMain, ["second"], "Postcombat main phase"),
-    (Icon.MkEnding, [], "Ending phase")
+extraTip :: Text.Text
+extraTip = Text.pack "An extra phase or step this turn (CR 500.8, 500.9, 514.3a)"
+
+-- | Whether the turn is the viewer's.
+yours :: PlayerView.PlayerView -> Bool
+yours board = PlayerView.active board == PlayerView.viewer board
+
+-- | Whose turn it is and its step: "Your upkeep", "Player 2's end step".
+moment :: PlayerView.PlayerView -> Text.Text
+moment board = (if yours board then Text.pack "Your " else possessive (PlayerView.active board)) <> Wording.phase (PlayerView.phase board)
+
+-- | Each phase's name on the track, and in full (CR 500.1).
+phaseNames :: [(String, String)]
+phaseNames =
+  [ ("Beginning", "Beginning phase"),
+    ("Main", "Precombat main phase"),
+    ("Combat", "Combat phase"),
+    ("Main 2", "Postcombat main phase"),
+    ("End", "Ending phase")
   ]
 
 -- | Day or night (CR 732.1), beside the turn.
@@ -159,18 +157,22 @@ fromViewer board =
   let (before, from) = break ((== PlayerView.viewer board) . SeatView.player) (PlayerView.seats board)
    in from <> before
 
+-- | The stack, a lane between the seats taking the room they leave; said
+-- empty while it is.
 stackArea :: Marks msg -> PlayerView.PlayerView -> [Html.Html msg]
-stackArea marks board = case PlayerView.stack board of
-  [] -> []
-  items ->
-    [ Element.el
-        "section"
-        ["stack"]
-        [Element.attr "aria-label" (Text.pack "Stack")]
-        [ Element.el "h3" ["zone-title"] [] [Element.string "Stack", Element.el "span" ["hint"] [] [Element.string " top resolves first"]],
-          Element.keyed "div" ["stack-items"] [] [(key o, stackItem marks board o) | o <- items]
+stackArea marks board =
+  [ Element.el "div" ["stack-lane"] [] $ case PlayerView.stack board of
+      [] -> [Element.el "p" ["stack-empty", "eyebrow"] [] [Element.string "Stack empty"]]
+      items ->
+        [ Element.el
+            "section"
+            ["stack"]
+            [Element.attr "aria-label" (Text.pack "Stack")]
+            [ Element.el "h3" ["zone-title"] [] [Element.string "Stack", Element.el "span" ["hint"] [] [Element.string " top resolves first"]],
+              Element.keyed "div" ["stack-items"] [] [(key o, stackItem marks board o) | o <- items]
+            ]
         ]
-    ]
+  ]
 
 stackItem :: Marks msg -> PlayerView.PlayerView -> ObjectView.ObjectView -> Html.Html msg
 stackItem marks board o =
@@ -228,14 +230,15 @@ seatArea marks board own s =
           ]
       row cls objects = [Element.keyed "div" ["row", cls] [] (concatMap group (List.groupBy alike (Wording.ordered board objects))) | not (null objects)]
       front = row "front" creatures
-      back = row "back" (others <> lands)
+      -- The other permanents and the lands, two groups side by side.
+      back = [Element.el "div" ["back"] [] (row "others" others <> row "lands" lands) | not (null others && null lands)]
       labelled cls title objects = [Element.el "div" ["row", cls] [Element.attr "aria-label" (Text.pack title)] (Element.el "span" ["row-label"] [] [Element.string title] : fmap tileOf objects) | not (null objects)]
       extra = labelled "phased" "Phased out" phased <> labelled "command" "Command zone" commanded
       field = Element.el "div" ["battlefield"] [] (if own then front <> back <> extra else extra <> back <> front)
       empty = [Element.el "p" ["empty"] [] [Element.string "No permanents"] | null permanents, null phased, null commanded]
    in Element.el
         "section"
-        ["seat", if own then "you" else "opponent", if PlayerView.active board == pid then "active" else ""]
+        ["seat", if own then "you" else "opponent"]
         [Element.attr "aria-label" (if own then Text.pack "Your side" else name pid)]
         (if own then empty <> [field, seatHead marks board own s] else [seatHead marks board own s, field] <> empty)
 
@@ -244,9 +247,10 @@ seatHead marks board own s =
   let pid = SeatView.player s
       label = if own then Text.pack "You" else name pid
       lifeBox = Element.keyed "span" ["life"] [Element.attr "title" (Text.pack "Life"), Element.attr "data-seat-life" (Text.pack (show (PlayerId.unwrap pid)))] [(Text.pack (show (SeatView.life s)), Element.el "span" ["value"] [] [Element.string (show (SeatView.life s))])]
+      -- A seat that may be chosen is a button, ringed as a tile is.
       identity = case seat marks pid of
-        Just cue -> Element.button (["who"] <> Card.marks cue) (Card.tap cue) [Element.text label, lifeBox]
-        Nothing -> Element.el "div" ["who"] [] [Element.text label, lifeBox]
+        Just cue -> Element.button (["who"] <> Card.marks cue) (Card.tap cue) [Element.el "span" ["seat-name"] [] [Element.text label], lifeBox]
+        Nothing -> Element.el "div" ["who"] [] [Element.el "span" ["seat-name"] [] [Element.text label], lifeBox]
       chip cls k v tip = Element.el "span" ["count", cls] [Element.attr "title" (Text.pack tip)] ([Element.el "span" ["k"] [] [Element.string k]] <> [Element.string v | not (null v)])
       counterWord kind = Text.unpack (Wording.spaced (Text.pack (show kind)))
       -- CR 903.10a: the combat damage each commander has dealt the seat, by
@@ -269,8 +273,8 @@ seatHead marks board own s =
           <> [chip (if kind == PlayerCounterKind.Poison then "poison" else "player-counter") (capitalized (counterWord kind)) (show n) (counterWord kind <> " counters") | (kind, n) <- Map.toList (SeatView.counters s), n > 0]
       -- CR 102.1 / 117.1: whose turn it is and who holds priority.
       holding =
-        [chip "turn" "Turn" "" "Whose turn it is: the active player (CR 102.1)" | PlayerView.active board == pid]
-          <> [chip "priority" "Priority" "" "Holds priority (CR 117.1)" | PlayerView.priority board == Just pid]
+        [chip "turn" (if own then "Your turn" else "Their turn") "" "Whose turn it is: the active player (CR 102.1)" | PlayerView.active board == pid]
+          <> [chip "priority" (if own then "You have priority" else "Has priority") "" "Holds priority (CR 117.1)" | PlayerView.priority board == Just pid]
       pool = Mana.unwrap (SeatView.manaPool s)
       aimed = Card.targetingPlayer board pid
    in Element.el "div" (["seat-head"] <> ["targeted" | not (null aimed)]) [Element.attr "title" (Text.pack "Targeted by " <> Wording.listing aimed) | not (null aimed)] $
@@ -281,12 +285,12 @@ seatHead marks board own s =
             []
             ( holding
                 <> commanderDamage
-                <> [ Element.el "span" ["count"] [Element.attr "title" (Text.pack "Cards in hand")] [zone Icon.MkHand "Hand", Element.string (show (SeatView.handSize s))],
-                     Element.el "span" ["count"] [Element.attr "title" (Text.pack "Cards in library")] [zone Icon.MkLibrary "Library", Element.string (show (SeatView.librarySize s))]
+                <> [ chip "zone" "Hand" (show (SeatView.handSize s)) "Cards in hand",
+                     chip "zone" "Library" (show (SeatView.librarySize s)) "Cards in library"
                    ]
+                <> pile marks board "Graveyard" (SeatView.graveyard s)
+                <> pile marks board "Exile" (SeatView.exile s)
                 <> designations
-                <> pile marks board Icon.MkGraveyard "Graveyard" (SeatView.graveyard s)
-                <> pile marks board Icon.MkExile "Exile" (SeatView.exile s)
             )
         ]
           <> [Element.el "div" ["pool"] [Element.attr "title" (Text.pack "Mana pool")] (Element.el "span" ["k"] [] [Element.string "Pool"] : concatMap (Web.Mana.rich . unit) pool) | not (null pool)]
@@ -310,23 +314,20 @@ capitalized word = case word of
   c : rest -> Char.toUpper c : rest
   [] -> []
 
--- | A public pile, a chip opening to its cards; nothing while it is empty.
-pile :: Marks msg -> PlayerView.PlayerView -> Icon.Icon -> String -> [ObjectView.ObjectView] -> [Html.Html msg]
-pile marks board glyph title objects = case objects of
+-- | A public pile, a chip by its name and count opening to its cards;
+-- nothing while it is empty.
+pile :: Marks msg -> PlayerView.PlayerView -> String -> [ObjectView.ObjectView] -> [Html.Html msg]
+pile marks board title objects = case objects of
   [] -> []
   _ ->
     [ Element.el
         "details"
-        ["count", "pile"]
+        ["count", "zone", "pile"]
         []
-        [ Element.el "summary" [] [Element.attr "title" (Text.pack title)] [zone glyph title, Element.string (show (length objects))],
+        [ Element.el "summary" [] [Element.attr "title" (Text.pack title)] [Element.el "span" ["k"] [] [Element.string title], Element.string (show (length objects))],
           Element.keyed "div" ["pile-cards"] [] [(key o, Card.tile board (object marks o) o) | o <- reverse objects]
         ]
     ]
-
--- | A zone's icon, its name for a screen reader.
-zone :: Icon.Icon -> String -> Html.Html msg
-zone glyph title = Element.el "span" ["k", "zone"] [] [Icon.icon [] glyph, Element.el "span" ["sr-only"] [] [Element.string title]]
 
 -- | The seat's hand, apart from the table so it is always in reach.
 hand :: Marks msg -> PlayerView.PlayerView -> [Html.Html msg]
@@ -339,7 +340,9 @@ handArea marks board s =
     ["hand"]
     [Element.attr "aria-label" (Text.pack "Your hand")]
     [ Element.el "h3" ["zone-title"] [] [Element.string ("Hand \x00b7 " <> show (length (SeatView.hand s)))],
-      Element.keyed "div" ["hand-cards"] [] [(key o, Card.tile board (object marks o) o) | o <- Wording.handOrder board (SeatView.hand s)]
+      -- The tiles narrow, then overlap, by as much as fits them all in one
+      -- row (style.css reads the count).
+      Element.keyed "div" ["hand-cards"] [Element.attr "style" (Text.pack ("--n: " <> show (length (SeatView.hand s))))] [(key o, Card.tile board (object marks o) o) | o <- Wording.handOrder board (SeatView.hand s)]
     ]
 
 key :: ObjectView.ObjectView -> Text.Text

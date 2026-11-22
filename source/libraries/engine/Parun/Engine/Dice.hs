@@ -19,6 +19,7 @@ import qualified Parun.Engine.PlayerEffect as PlayerEffect
 import qualified Parun.Engine.Turn as Turn
 import qualified Parun.Extra.Integer as Integer
 import Parun.Types.Game (Game)
+import Parun.Types.GameEvent (GameEvent)
 import Parun.Types.GameState (GameState)
 import qualified Parun.Types.GameState as GameState
 import qualified Parun.Types.ModifiedRoll as ModifiedRoll
@@ -106,14 +107,16 @@ adjustOffers sides modifiers =
 -- | CR 706.2b: which of the competing modifiers `roller` applies next, each
 -- tagged with its payer and the object that states it, and the rest. Every
 -- candidate must already be applicable now; Nothing when none is. `dieOf`
--- names the natural result of the one die a candidate reaches, Nothing where
--- it reaches the roll as a whole.
+-- names the one die a candidate reaches, by its place in the roll and its
+-- natural result, Nothing where it reaches the roll as a whole. Also which
+-- die one player's own effect reaches, `roller` being that player (CR 608.2d,
+-- throwSettled's `offeringAll`).
 --
 -- Asked whenever two or more stand, the roller's own included (Parun.DiceSpec's
 -- "CR 706.2b the roller picks among their own modifiers").
 --
 -- FILTERED, NOT TRUSTED: an index past the end takes the first.
-pickModifier :: PlayerId -> (a -> Maybe Natural.Natural) -> [(PlayerId, Maybe ObjectId, a)] -> Game (Maybe ((PlayerId, Maybe ObjectId, a), [(PlayerId, Maybe ObjectId, a)]))
+pickModifier :: PlayerId -> (a -> Maybe (Natural.Natural, Natural.Natural)) -> [(PlayerId, Maybe ObjectId, a)] -> Game (Maybe ((PlayerId, Maybe ObjectId, a), [(PlayerId, Maybe ObjectId, a)]))
 pickModifier roller dieOf candidates = case candidates of
   [] -> pure Nothing
   first : rest
@@ -181,17 +184,17 @@ spendLimit stated modifier gs = case stated of
 -- against, or inside a reroll the face it was thrown with before a reroll of
 -- it, which the reroll's own event reads. Where the tied rolls differ in it,
 -- the roller chooses which is ignored, through Prompt.ChooseDieResult, offered
--- one roll per distinct key, earliest first. The options show the tied number
--- alone: they are the rolls in the order thrown, whose faces and throwers the
--- RollDie prompts already showed. FILTERED, NOT TRUSTED: an index past the end
--- ignores the first.
+-- one roll per distinct key, earliest first, each as `shownOf` shows it: the
+-- tied number, its thrower and the events it carries, which is what tells the
+-- options apart. FILTERED, NOT TRUSTED: an index past the end ignores the
+-- first.
 --
 -- Ignoring more rolls than were made leaves none rather than failing; the
 -- instruction then binds nothing and reads an unbound slot. Unreachable from card
 -- data -- every ignore comes from a row that added the die it ignores -- and so
 -- defensive.
-ignoreLowest :: (Ord k) => PlayerId -> (a -> Integer) -> (a -> k) -> Natural.Natural -> [a] -> Game [a]
-ignoreLowest roller valueOf keyOf n rolls = case NonEmpty.nonEmpty rolls of
+ignoreLowest :: (Ord k) => PlayerId -> (a -> Integer) -> (a -> k) -> (a -> (Natural.Natural, PlayerId, [GameEvent])) -> Natural.Natural -> [a] -> Game [a]
+ignoreLowest roller valueOf keyOf shownOf n rolls = case NonEmpty.nonEmpty rolls of
   Just held | n > 0 -> do
     let low = minimum (fmap valueOf held)
         tied = [i | (i, roll) <- zip [0 :: Int ..] rolls, valueOf roll == low]
@@ -205,11 +208,11 @@ ignoreLowest roller valueOf keyOf n rolls = case NonEmpty.nonEmpty rolls of
     dropped <- case firstOfEach Set.empty tied of
       first : rest@(_ : _) -> do
         gs <- State.get
-        answer <- Game.choose (Prompt.ChooseDieResult (Decide.deciderFor roller gs) roller Nothing (fmap (const (Integer.toNaturalSaturating low)) (first NonEmpty.:| rest)))
+        answer <- Game.choose (Prompt.ChooseDieResult (Decide.deciderFor roller gs) roller Nothing (fmap (\i -> maybe (Integer.toNaturalSaturating low, roller, []) shownOf (Maybe.listToMaybe (drop i rolls))) (first NonEmpty.:| rest)))
         pure (Maybe.fromMaybe first (Maybe.listToMaybe (List.genericDrop answer (first : rest))))
       first : _ -> pure first
       -- Unreachable: the minimum of a non-empty list is one of its members.
       [] -> pure 0
     let (before, after) = splitAt dropped rolls
-    ignoreLowest roller valueOf keyOf (n - 1) (before <> drop 1 after)
+    ignoreLowest roller valueOf keyOf shownOf (n - 1) (before <> drop 1 after)
   _ -> pure rolls

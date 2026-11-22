@@ -110,7 +110,10 @@ data Loaded = MkLoaded
     -- | Each set's whole card list, by the set's code, once the decks are read.
     setLists :: Map.Map Text.Text FilePath,
     -- | How many cards each deck's main deck holds, by name, as read so far.
-    deckSizes :: Map.Map Text.Text Natural
+    deckSizes :: Map.Map Text.Text Natural,
+    -- | Each deck's spells by mana value (Lobby.curveOf), by name, as read
+    -- so far.
+    deckCurves :: Map.Map Text.Text [Natural]
   }
 
 -- | Where a screen leads when it ends.
@@ -145,7 +148,7 @@ start :: IO ()
 start = do
   chosen <- maybe Web.Question.MkStandard (Maybe.fromMaybe Web.Question.MkStandard . Web.Question.levelNamed) <$> Environment.lookupEnv "parun_level"
   built <- maybe (Text.pack "unknown") Text.pack <$> Environment.lookupEnv "parun_build"
-  shell <- MkShell <$> Browser.mount <*> IORef.newIORef (MkLoaded Loading.new Nothing Map.empty Nothing Map.empty [] Nothing Nothing Nothing False Nothing Map.empty [] Nothing Map.empty Map.empty) <*> IORef.newIORef chosen <*> pure built
+  shell <- MkShell <$> Browser.mount <*> IORef.newIORef (MkLoaded Loading.new Nothing Map.empty Nothing Map.empty [] Nothing Nothing Nothing False Nothing Map.empty [] Nothing Map.empty Map.empty Map.empty) <*> IORef.newIORef chosen <*> pure built
   Exception.catch (opening built >>= follow shell) $ \problem ->
     Browser.display (page shell) $ message ["The page stopped on an error:", Exception.displayException (problem :: Exception.SomeException)]
 
@@ -276,14 +279,14 @@ lobby shell initial said = do
               Lobby.MkSubmitImport | Just panel <- Lobby.importing current -> importDeck shell current panel >>= go
               Lobby.MkDelete name | Lobby.isSaved name -> do
                 Browser.forgetDeck (Text.drop (Text.length Lobby.savedPrefix) name)
-                IORef.modifyIORef' (loaded shell) $ \l -> l {deckFiles = fmap (Map.delete name) (deckFiles l), formats = Map.delete name (formats l), palette = Map.delete name (palette l), unread = filter ((/= name) . fst) (unread l), illegal = Map.delete name (illegal l), unchecked = filter ((/= name) . fst) (unchecked l)}
+                IORef.modifyIORef' (loaded shell) $ \l -> l {deckFiles = fmap (Map.delete name) (deckFiles l), formats = Map.delete name (formats l), palette = Map.delete name (palette l), deckCurves = Map.delete name (deckCurves l), unread = filter ((/= name) . fst) (unread l), illegal = Map.delete name (illegal l), unchecked = filter ((/= name) . fst) (unchecked l)}
                 go (Lobby.deleted name current)
               Lobby.MkExport name -> do
                 files <- Maybe.fromMaybe Map.empty . deckFiles <$> IORef.readIORef (loaded shell)
                 contents <- maybe (pure Text.empty) (fmap Encoding.decodeUtf8Lenient . ByteString.readFile) (Map.lookup name files)
                 go current {Lobby.exporting = Just (name, contents)}
               Lobby.MkRandom -> do
-                picked <- randomOf (if Lobby.choosing current == Lobby.MkMine then Lobby.decks current else Lobby.opponents current)
+                picked <- randomOf (Seq.fromList (Lobby.shown current))
                 go (maybe current (\name -> Lobby.update (Lobby.MkPick name) Text.empty current) picked)
               _ -> go (Lobby.update event value current)
             _ -> go current
@@ -406,6 +409,7 @@ refreshed shell shown = do
         Lobby.palette = palette now,
         Lobby.illegal = illegal now,
         Lobby.sizes = deckSizes now,
+        Lobby.curves = deckCurves now,
         Lobby.previews = Map.union (Lobby.previews withDecks) (Map.fromList read')
       }
 
@@ -513,6 +517,7 @@ saveBuilt shell built = do
           { deckFiles = fmap (Map.insert name path) (deckFiles l),
             formats = Map.alter (const (DeckList.formatOf contents)) name (formats l),
             palette = Map.delete name (palette l),
+            deckCurves = Map.delete name (deckCurves l),
             unread = (name, path) : filter ((/= name) . fst) (unread l),
             illegal = Map.delete name (illegal l),
             unchecked = (name, path) : filter ((/= name) . fst) (unchecked l)
@@ -960,8 +965,10 @@ work shell = do
           read' <- Monad.forM batch $ \(name, path) -> do
             contents <- Encoding.decodeUtf8Lenient <$> ByteString.readFile path
             size <- Exception.evaluate (Lobby.mainCount contents)
-            Exception.evaluate . (,) name . (,) size $! Lobby.deckColours colours contents
-          IORef.modifyIORef' (loaded shell) $ \l -> l {palette = Map.union (Map.fromList [(name, colours') | (name, (_, colours')) <- read']) (palette l), deckSizes = Map.union (Map.fromList [(name, size) | (name, (size, _)) <- read']) (deckSizes l), unread = rest}
+            shape <- Exception.evaluate (Lobby.curveOf [lineOf root byFile n card | (n, card) <- Lobby.mainEntries contents])
+            _ <- Exception.evaluate (sum shape)
+            Exception.evaluate . (,) name . (,,) size shape $! Lobby.deckColours colours contents
+          IORef.modifyIORef' (loaded shell) $ \l -> l {palette = Map.union (Map.fromList [(name, colours') | (name, (_, _, colours')) <- read']) (palette l), deckSizes = Map.union (Map.fromList [(name, size) | (name, (size, _, _)) <- read']) (deckSizes l), deckCurves = Map.union (Map.fromList [(name, shape) | (name, (_, shape, _)) <- read']) (deckCurves l), unread = rest}
         _ -> Nothing
       -- The builder's index, 500 cards a batch, timed to the console.
       buildIndex = case (cards now, indexing now) of

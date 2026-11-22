@@ -5,15 +5,10 @@ module Parun.Play.Meta where
 
 import qualified Control.Monad as Monad
 import qualified Data.Bifunctor as Bifunctor
-import qualified Data.ByteString as ByteString
-import qualified Data.Either as Either
 import qualified Data.Functor.Identity as Identity
-import qualified Data.List as List
 import qualified Data.List.NonEmpty as NonEmpty
 import qualified Data.Map.Strict as Map
-import qualified Data.Maybe as Maybe
 import qualified Data.Text as Text
-import qualified Data.Text.Encoding as Encoding
 import qualified Data.Text.IO as TextIO
 import Numeric.Natural (Natural)
 import qualified Parun.DeckList as DeckList
@@ -21,6 +16,7 @@ import qualified Parun.Extra.Natural as Natural
 import qualified Parun.Play.Command as Command
 import qualified Parun.Play.Key as Key
 import qualified Parun.Play.Match as Match
+import qualified Parun.Play.Search as Search
 import qualified Parun.Registry as Registry
 import qualified Parun.Types.Deck as Deck
 import qualified Parun.Types.Format as Format
@@ -33,7 +29,6 @@ import qualified Parun.Types.Weights as Weights
 import qualified System.Console.GetOpt as GetOpt
 import qualified System.Exit as Exit
 import qualified System.IO as IO
-import qualified Text.Read as Read
 
 main :: [String] -> IO ()
 main arguments = case GetOpt.getOpt GetOpt.Permute flags arguments of
@@ -43,12 +38,12 @@ main arguments = case GetOpt.getOpt GetOpt.Permute flags arguments of
       | MatchOptions.games options == 0 -> usage ["no games to play\n"]
       | otherwise -> do
           registry <- Registry.defaultRoot >>= Registry.loadRoot >>= Registry.defaultRegistry
-          meta <- Command.orExit (readMeta metaPath)
           versions <- traverse (\path -> (,) path <$> Command.orExit (Command.load registry path)) (one NonEmpty.:| rest)
-          opponents <- traverse (\(share, name) -> (,) share . (,) name <$> Command.orExit (Command.load registry (relativeTo metaPath (Text.unpack name)))) meta
+          opponents <- Command.loadMeta registry metaPath
+          prior <- Match.priorOf registry options
           format <- Command.orExit (Command.settle Nothing (NonEmpty.toList versions <> NonEmpty.toList (fmap (\(_, (name, list)) -> (Text.unpack name, list)) opponents)))
           searchers <- Command.orExit (fmap (Bifunctor.first pure) (Match.searchersOf options))
-          run options searchers registry format (fmap (Bifunctor.bimap Text.pack DeckList.deck) versions) (fmap (\(share, (name, list)) -> (share, (name, DeckList.deck list))) opponents)
+          run options searchers prior registry format (fmap (Bifunctor.bimap Text.pack DeckList.deck) versions) (fmap (\(share, (name, list)) -> (share, (name, DeckList.deck list))) opponents)
   (_, _, problems) -> usage problems
 
 -- | `parun match`'s options but `--save`, seat 1 being the deck tried and
@@ -62,57 +57,18 @@ usage problems = do
   IO.hPutStr IO.stderr (GetOpt.usageInfo "usage: parun meta [OPTION...] META DECK [DECK]" flags)
   Exit.exitFailure
 
--- | The meta file at `path`, or why it holds none.
-readMeta :: FilePath -> IO (Either [Text.Text] (NonEmpty.NonEmpty (Natural, Text.Text)))
-readMeta path = do
-  bytes <- ByteString.readFile path
-  pure $ case Encoding.decodeUtf8' bytes of
-    Left err -> Left [Text.pack (path <> ": not valid UTF-8: " <> show err)]
-    Right contents -> case parseMeta contents of
-      Left problems -> Left (fmap (Text.pack (path <> ": ") <>) problems)
-      Right meta -> Right meta
-
--- | A meta file's decks, each with its share: one deck list's path a line,
--- after a share (a positive whole number) and a space, or alone for a share
--- of 1. A blank line and one starting `#` say nothing. Or every bad line.
-parseMeta :: Text.Text -> Either [Text.Text] (NonEmpty.NonEmpty (Natural, Text.Text))
-parseMeta contents =
-  let entry :: (Natural, Text.Text) -> Either Text.Text (Maybe (Natural, Text.Text))
-      entry (number, line) =
-        let stripped = Text.strip line
-            (first, rest) = Text.break (== ' ') stripped
-            path = Text.strip rest
-         in case Read.readMaybe (Text.unpack first) of
-              _ | Text.null stripped || Text.isPrefixOf (Text.pack "#") stripped -> Right Nothing
-              Just 0 | not (Text.null path) -> Left (Text.pack ("line " <> show number <> ": a share of 0"))
-              Just share | not (Text.null path) -> Right (Just (share, path))
-              _ -> Right (Just (1, stripped))
-      parsed :: ([Text.Text], [Maybe (Natural, Text.Text)])
-      parsed = Either.partitionEithers (fmap entry (zip [1 ..] (Text.lines contents)))
-      (problems, entries) = parsed
-   in case (problems, NonEmpty.nonEmpty (Maybe.catMaybes entries)) of
-        ([], Just meta) -> Right meta
-        ([], Nothing) -> Left [Text.pack "no deck"]
-        _ -> Left problems
-
--- | `path` read from the directory holding `meta`, unless it is absolute.
-relativeTo :: FilePath -> FilePath -> FilePath
-relativeTo meta path = case (path, List.dropWhileEnd (/= '/') meta) of
-  ('/' : _, _) -> path
-  (_, directory) -> directory <> path
-
 -- | Plays every version against every deck of the meta under `format`,
 -- saying how each game ended on standard error, then the report on standard
 -- output.
-run :: MatchOptions.MatchOptions -> Map.Map Natural (SearchBudget.SearchBudget, Weights.Weights) -> Registry.Registry Identity.Identity -> Maybe Format.Format -> NonEmpty.NonEmpty (Text.Text, Deck.Deck) -> NonEmpty.NonEmpty (Natural, (Text.Text, Deck.Deck)) -> IO ()
-run options searchers registry format versions meta = do
+run :: MatchOptions.MatchOptions -> Map.Map Natural (SearchBudget.SearchBudget, Weights.Weights) -> Search.Prior -> Registry.Registry Identity.Identity -> Maybe Format.Format -> NonEmpty.NonEmpty (Text.Text, Deck.Deck) -> NonEmpty.NonEmpty (Natural, (Text.Text, Deck.Deck)) -> IO ()
+run options searchers prior registry format versions meta = do
   IO.hSetBuffering IO.stdout IO.LineBuffering
   seed <- maybe Key.fresh pure (MatchOptions.seed options)
   played <-
     Monad.forM (NonEmpty.zip (0 NonEmpty.:| [1 ..]) meta) $ \(index, (share, (name, opponent))) -> do
       wins <-
         Monad.forM versions $ \(version, deck) -> do
-          let outcomes = Identity.runIdentity (matchup registry format searchers seed (MatchOptions.games options) index deck opponent)
+          let outcomes = Identity.runIdentity (matchup registry format searchers prior seed (MatchOptions.games options) index deck opponent)
           Monad.forM_ (zip [1 :: Natural ..] outcomes) $ \(n, outcome) ->
             TextIO.hPutStrLn IO.stderr (version <> Text.pack " against " <> name <> Text.pack (", game " <> show n <> ": ") <> Match.ended outcome)
           pure (fmap won outcomes)
@@ -124,9 +80,9 @@ run options searchers registry format versions meta = do
 -- `index`th deck of a meta from `seed`, as `parun match` plays them from that
 -- deck's key (Match.seedAt): every version meets a deck over the same seeds,
 -- so a difference between versions is not a difference between draws.
-matchup :: (Monad m) => Registry.Registry m -> Maybe Format.Format -> Map.Map Natural (SearchBudget.SearchBudget, Weights.Weights) -> Key.Type.Key -> Natural -> Natural -> Deck.Deck -> Deck.Deck -> m [Either Text.Text (Result.Result, GameState.GameState)]
-matchup registry format searchers seed games index deck opponent =
-  traverse (\n -> fst <$> Match.game registry format searchers (Match.seedAt seed index) n (Match.both (deck, opponent))) (takeWhile (< games) [0 ..])
+matchup :: (Monad m) => Registry.Registry m -> Maybe Format.Format -> Map.Map Natural (SearchBudget.SearchBudget, Weights.Weights) -> Search.Prior -> Key.Type.Key -> Natural -> Natural -> Deck.Deck -> Deck.Deck -> m [Either Text.Text (Result.Result, GameState.GameState)]
+matchup registry format searchers prior seed games index deck opponent =
+  traverse (\n -> fst <$> Match.game registry format searchers prior (Match.seedAt seed index) n (Match.both (deck, opponent))) (takeWhile (< games) [0 ..])
 
 -- | Whether seat 1 won; a draw or a stop is not a win.
 won :: Either Text.Text (Result.Result, GameState.GameState) -> Bool

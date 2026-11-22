@@ -298,16 +298,21 @@ data Screen = MkScreen
 blank :: Screen
 blank = MkScreen Set.empty Nothing Seq.empty 0 Nothing MkStandard
 
--- | The page for a request: the turn bar and the log it opens, the table
--- with each tile marked for what tapping it does, the question docked with
--- its answers, and the sheet of the card being read.
+-- | The page for a request: the turn bar, the table with each tile marked
+-- for what tapping it does, and beside it the question with its answers,
+-- the card being read and the log.
 view :: Request.Request -> Screen -> Html.Html Event
 view request screen =
   table request screen (autoPass (level screen) True) (barControls True (MkConcede <$ passIndex request)) (cues request (selected screen) (focus screen)) $
-    [Element.el "p" ["problem"] [Element.attr "role" (Text.pack "alert")] (Mana.rich problem) | problem <- Maybe.maybeToList (Request.problem request)]
+    foldMap (pure . eyebrow) (Request.view request)
+      <> [Element.el "p" ["problem"] [Element.attr "role" (Text.pack "alert")] (Mana.rich problem) | problem <- Maybe.maybeToList (Request.problem request)]
       <> [Element.el "p" ["controlling"] [Element.attr "role" (Text.pack "note")] [Html.text (Text.pack "You're deciding for " <> Wording.player p <> Text.pack ", whom you control.")] | p <- Maybe.maybeToList (Question.for (Request.question request))]
-      <> news (Request.view request) (viewerOf request) screen
       <> form request (selected screen)
+
+-- | Above a prompt, whose turn it is and its step, in the turn's colour
+-- while it is the seat's.
+eyebrow :: PlayerView.PlayerView -> Html.Html msg
+eyebrow board = Element.el "p" (["eyebrow", "moment"] <> ["yours" | Board.yours board]) [] [Element.text (Board.moment board)]
 
 -- | The page while the game goes on without the seat: a request it was not
 -- asked (Hotseat answers it), its board shown as it stands, and in place of
@@ -322,7 +327,7 @@ watching facing request screen = do
           | PlayerView.active b /= PlayerView.viewer b -> Text.unpack (Wording.player (PlayerView.active b)) <> " is taking their turn\x2026"
         _ -> "Moving on\x2026"
   pure . table request screen (autoPass (level screen) False) (barControls False Nothing) (Board.MkMarks (\o -> Card.MkCue [] (MkRead (ObjectView.object o)) Nothing) (const Nothing)) $
-    news (Request.view request) (viewerOf request) screen <> [Element.el "p" ["waiting"] [] [Icon.loading ["small"], Element.string status]]
+    foldMap (pure . eyebrow) (Request.view request) <> [Element.el "p" ["waiting"] [] [Icon.loading ["small"], Element.string status]]
 
 -- | A subgame's mark on the turn bar (CR 730.1a), and how deep it is.
 subgameChip :: Natural -> [Html.Html msg]
@@ -340,7 +345,7 @@ autoPass current asked =
     "details"
     ["auto-pass"]
     []
-    [ Element.el "summary" [] [Element.attr "title" (Text.pack "Automatic passing"), Element.attr "aria-label" (Text.pack ("Automatic passing: " <> snd (levelName current)))] [Element.string (snd (levelName current))],
+    [ Element.el "summary" [] [Element.attr "title" (Text.pack "Automatic passing"), Element.attr "aria-label" (Text.pack ("Automatic passing: " <> snd (levelName current)))] [Element.el "span" ["k"] [] [Element.string "Stops: "], Element.string (snd (levelName current))],
       Element.el
         "div"
         ["segmented"]
@@ -369,41 +374,61 @@ linksOf = fmap (\b -> (Log.linkable b, MkRead))
 viewerOf :: Request.Request -> PlayerId.PlayerId
 viewerOf request = maybe (Question.seat (Request.question request)) PlayerView.viewer (Request.view request)
 
--- | The game screen around a prompt's contents, the turn bar carrying the
--- log, the auto-pass control and the controls given.
+-- | The game screen around a prompt's contents: the turn bar carrying the
+-- auto-pass control and the controls given, the table, the hand, and the
+-- side column (side).
 table :: Request.Request -> Screen -> Html.Html Event -> [Html.Html Event] -> Board.Marks Event -> [Html.Html Event] -> Html.Html Event
 table request screen passing controls marks prompt =
   let board = Request.view request
    in Element.el "main" ["game"] [] $
-        foldMap (\b -> [Board.turnBar (logView (Request.view request) (viewerOf request) screen) [passing] (subgameChip (Request.depth request) <> controls) b]) board
+        foldMap (\b -> [Board.turnBar [passing] (subgameChip (Request.depth request) <> controls) b]) board
           <> [Element.el "div" ["play-area"] [] (foldMap (\b -> [Board.view marks b]) board)]
           <> foldMap (Board.hand marks) board
-          <> [ Element.el "aside" ["side"] [] [Element.el "section" ["prompt"] [Element.attr "aria-label" (Text.pack "Your decision")] prompt]
-             ]
-          <> Maybe.maybeToList (do b <- board; r <- reading screen; sheetFor request b marks r)
+          <> [side (Text.pack "Your decision") prompt (do b <- board; r <- reading screen; sheetFor request b marks r) (logView board (viewerOf request) screen)]
 
--- | What happened since the seat last decided, the latest few, oldest
--- first; the log holds the rest.
-news :: Maybe PlayerView.PlayerView -> PlayerId.PlayerId -> Screen -> [Html.Html Event]
-news board viewer screen =
-  let count = Natural.toIntSaturating (fresh screen)
-      shown = min 4 count
-      latest = Seq.drop (Seq.length (logged screen) - shown) (logged screen)
-   in [ Element.el "ul" ["news"] [Element.attr "aria-label" (Text.pack "Since your last decision"), Element.attr "aria-live" (Text.pack "polite")] $
-          [Element.el "li" ["more"] [] [Element.string ("\x2026\&and " <> show (count - shown) <> " more in the log")] | count > shown]
-            <> fmap (Log.item viewer (linksOf board) False) (Foldable.toList latest)
-      | shown > 0
-      ]
+-- | The side column, top to bottom: the prompt, labelled; the card being
+-- read, which on a phone opens over the table instead (style.css); and the
+-- log.
+side :: Text.Text -> [Html.Html msg] -> Maybe (Html.Html msg) -> [Html.Html msg] -> Html.Html msg
+side label prompt card entries =
+  Element.el "aside" ["side"] [] $
+    [ Element.el "section" ["prompt"] [Element.attr "aria-label" label] prompt,
+      Element.el "section" (["inspector"] <> ["empty" | Maybe.isNothing card]) [Element.attr "aria-label" (Text.pack "Card")] [Maybe.fromMaybe (Element.el "p" ["inspector-hint"] [] [Element.string "Tap a card, or rest on it, to read it here."]) card]
+    ]
+      <> entries
 
--- | The log, newest first, the entries since the seat last decided lit;
--- nothing while it is empty.
+-- | The log: a heading saying how many entries are new and opening the
+-- whole log over the table (L), then the newest few entries. Each turn is
+-- under its own heading, newest first, the entries since the seat last
+-- decided lit; nothing while the log is empty.
 logView :: Maybe PlayerView.PlayerView -> PlayerId.PlayerId -> Screen -> [Html.Html Event]
 logView board viewer screen =
-  let entries = Log.newestFirst (Seq.mapWithIndex (,) (logged screen))
+  let entries = Seq.mapWithIndex (,) (logged screen)
       newest = Natural.toIntSaturating (fresh screen)
       total = Seq.length (logged screen)
-   in -- The newest entries link their cards; older ones stay plain text.
-      [ Element.keyed "ul" ["log-list"] [] (Foldable.toList (Seq.mapWithIndex (\j (i, e) -> (Text.pack (show i), Log.item viewer (if j < 60 then linksOf board else Nothing) (i >= total - newest) e)) (Seq.take 300 entries)))
+      unread = Seq.length (Seq.filter (not . Log.isTurn) (Seq.drop (total - newest) (logged screen)))
+      -- The newest entries link their cards; older ones stay plain text.
+      listed limit = Log.grouped viewer (\j -> if j < 60 then linksOf board else Nothing) (>= total - newest) (Seq.take limit (Log.newestFirst entries))
+   in [ Element.el
+          "section"
+          ["log-pane"]
+          [Element.attr "aria-label" (Text.pack "Log")]
+          [ Element.el
+              "details"
+              ["log"]
+              []
+              [ Element.el
+                  "summary"
+                  []
+                  [Element.attr "title" (Text.pack "The whole log (L)"), Element.attr "aria-keyshortcuts" (Text.pack "L")]
+                  ( [Element.el "span" ["eyebrow"] [] [Element.string "Log"]]
+                      <> [Element.el "span" ["unread"] [] [Element.string (show unread <> " new")] | unread > 0]
+                      <> [Element.el "span" ["expand"] [] [Element.el "span" ["closed"] [] [Element.string "Expand"], Element.el "span" ["opened"] [] [Element.string "Close"], Element.el "kbd" ["keys-only"] [Element.attr "aria-hidden" (Text.pack "true")] [Element.string "L"]]]
+                  ),
+                Element.el "div" ["log-panel"] [Element.attr "role" (Text.pack "region"), Element.attr "aria-label" (Text.pack "The whole log")] [listed 300]
+              ],
+            Element.el "div" ["log-recent"] [Element.attr "aria-live" (Text.pack "polite")] [listed 12]
+          ]
       | total > 0
       ]
 
@@ -533,9 +558,13 @@ step request picked event typed = case event of
   MkSubmit -> case picker request of
     Just chooser ->
       let chosen = [[reply | (i, (reply, _)) <- zip [0 ..] (options group), Set.member (g, i) picked] | (g, group) <- zip [0 ..] (groups chooser)]
-          wrong = [group | (group, picks) <- zip (groups chooser) chosen, Natural.length picks < least group || Natural.length picks > most group]
+          wrong = [(group, Natural.length picks) | (group, picks) <- zip (groups chooser) chosen, Natural.length picks < least group || Natural.length picks > most group]
        in case wrong of
-            group : _ -> MkRefused $ title group <> Text.pack (": pick " <> bounds group <> ".")
+            -- The heading states the question; a lone group's refusal says
+            -- only what is wrong with the picks.
+            (group, count) : _
+              | [_] <- groups chooser -> MkRefused (Text.pack (misPicked group count))
+              | otherwise -> MkRefused $ title group <> Text.pack (": pick " <> bounds group <> ".")
             [] -> either MkRefused MkReplied $ finish chooser chosen
     Nothing -> MkPicking picked
   MkTyped
@@ -555,6 +584,14 @@ step request picked event typed = case event of
   MkConcede -> maybe (MkRefused $ Text.pack "Concede when you have priority.") (MkReplied . R.Number) $ passIndex request
   MkSkip _ -> maybe (MkRefused $ Text.pack "There is no pass to make.") (MkReplied . R.Number) $ passIndex request
   MkAuto -> maybe (MkRefused $ Text.pack "Auto can't pay the rest of this cost. Choose a source.") MkReplied $ auto request
+
+-- | What is wrong with a group's count of picks, outside its bounds: too
+-- few ("Pick 1 first.", "Pick at least 2 first.") or too many ("Pick only
+-- 1.", "Pick at most 2.").
+misPicked :: Group -> Natural -> String
+misPicked group count
+  | count < least group = "Pick " <> (if least group == most group then "" else "at least ") <> show (least group) <> " first."
+  | otherwise = "Pick " <> (if least group == most group then "only " else "at most ") <> show (most group) <> "."
 
 bounds :: Group -> String
 bounds group
@@ -598,7 +635,7 @@ picker request = do
         MkPicker
           [ let legal = Offer.bySeat shown offered
                 n = min wanted (Natural.length legal)
-             in MkGroup (Text.pack "Choose " <> Wording.count n "target" <> Text.pack " for " <> Offer.objectName shown source <> foldMap (\t -> Text.pack " (" <> Wording.spaced t <> Text.pack ")") (Offer.textOf slot)) [(option, Offer.targetName shown legal option) | option <- legal] n n False
+             in MkGroup (Text.pack "Choose " <> Wording.count n "target" <> Text.pack " for " <> Offer.objectName shown source <> foldMap (\t -> Text.pack " (" <> Wording.spaced t <> Text.pack ")") (Monad.mfilter (/= Text.pack "target") (Offer.textOf slot))) [(option, asSeat shown (Offer.recipientPlayer option) (Offer.targetName shown legal option)) | option <- legal] n n False
           | (slot, wanted, offered) <- slots
           ]
           (\chosen -> Right $ R.Array [R.Array [slot, R.Array picks] | ((slot, _, _), picks) <- zip slots chosen])
@@ -617,7 +654,7 @@ picker request = do
       let self = foldMap (Offer.objectName shown) (Protocol.field "source" offer)
       pure $
         MkPicker
-          [MkGroup (Offer.recipientName shown target) [(R.Number (toInteger n), Text.pack (show n)) | n <- [1 .. total]] 1 1 True | target <- targets]
+          [MkGroup (asSeat shown (Offer.recipientPlayer target) (Offer.recipientName shown target)) [(R.Number (toInteger n), Text.pack (show n)) | n <- [1 .. total]] 1 1 True | target <- targets]
           ( \chosen ->
               let given = [n | [R.Number n] <- chosen]
                in if sum given == toInteger total && all (\ps -> List.sort given == List.sort (fmap toInteger ps)) parts
@@ -631,7 +668,7 @@ picker request = do
       let players = fmap fst totals
       pure $
         MkPicker
-          [MkGroup (Offer.playerName p <> Text.pack " takes the life total of") [(giver, Offer.playerName giver <> Text.pack (" (" <> show life <> ")")) | (giver, life) <- totals] 1 1 True | p <- players]
+          [MkGroup (if Offer.playerOf p == Just (PlayerView.viewer shown) then Text.pack "You take the life total of" else Offer.playerName p <> Text.pack " takes the life total of") [(giver, asSeat shown (Offer.playerOf giver) (Offer.playerName giver) <> Text.pack (" (" <> show life <> ")")) | (giver, life) <- totals] 1 1 True | p <- players]
           ( \chosen ->
               let givers = concat chosen
                in if length givers == length players && all (`elem` givers) players
@@ -697,7 +734,7 @@ picker request = do
       let amounts = [(R.Number $ toInteger n, Text.pack $ show n) | n <- [0 .. total]]
       pure $
         MkPicker
-          [MkGroup (Offer.recipientName shown recipient <> (if threshold > 0 then Text.pack (" (lethal " <> show threshold <> ")") else Text.empty)) amounts 1 1 True | (recipient, threshold) <- lethal]
+          [MkGroup (asSeat shown (Offer.recipientPlayer recipient) (Offer.recipientName shown recipient) <> (if threshold > 0 then Text.pack (" (lethal " <> show threshold <> ")") else Text.empty)) amounts 1 1 True | (recipient, threshold) <- lethal]
           ( \chosen ->
               let given = [n | [R.Number n] <- chosen]
                in if sum given == toInteger total
@@ -841,8 +878,8 @@ form request picked = case Text.unpack (Question.kind question) of
                          <> [shortcut ["turn"] "E" (MkSkip (MkTurnEnds turn)) (Text.pack (if yours then "End turn" else "Pass to my turn")) | settled, not (null passes)]
                    ]
                 <> [ Element.el "div" ["until"] [] $
-                       [button (MkSkip (MkStep turn target)) (Text.pack label) | (target, label) <- steps, PlayerView.phase shown < target]
-                         <> [button (MkSkip MkStacked) (Text.pack "Pass until a spell or ability")]
+                       [Element.button ["quiet"] (MkSkip (MkStep turn target)) [Element.string label] | (target, label) <- steps, PlayerView.phase shown < target]
+                         <> [Element.button ["quiet"] (MkSkip MkStacked) [Element.string "Pass until a spell or ability"]]
                    | settled,
                      not (null passes)
                    ]
@@ -917,7 +954,7 @@ form request picked = case Text.unpack (Question.kind question) of
             <> [Element.el "div" ["passes"] [] [primary (MkAnswer (R.Text (Text.pack (fst yes)))) (Text.pack (snd yes)), button (MkAnswer (R.Text (Text.pack (fst no)))) (Text.pack (snd no))]]
   kind
     | Just shown <- Request.view request,
-      Just (options', name) <- Monad.mplus (fmap (\o -> (o, Offer.optionName shown)) (Protocol.field "options" offer >>= Protocol.arrayOf)) (fmap (\o -> (o, Offer.playerName)) (Protocol.field "players" offer >>= Protocol.arrayOf)) ->
+      Just (options', name) <- Monad.mplus (fmap (\o -> (o, Offer.optionName shown)) (Protocol.field "options" offer >>= Protocol.arrayOf)) (fmap (\o -> (o, \option -> asSeat shown (Offer.playerOf option) (Offer.playerName option))) (Protocol.field "players" offer >>= Protocol.arrayOf)) ->
         let entries = foldMap (fmap Just) (Protocol.field "entries" offer >>= Protocol.arrayOf) <> repeat Nothing
             -- CR 309.4: a room by its place in the dungeon, topmost first.
             label option entry
@@ -1112,6 +1149,13 @@ collapsed :: [(a, Text.Text)] -> [([a], Text.Text, Int)]
 collapsed labelled =
   let order = ListUtils.nubOrd (fmap snd labelled)
    in [(xs, label, length xs) | label <- order, let xs = [x | (x, l) <- labelled, l == label]]
+
+-- | A label naming a player, the seat itself named as its table names it
+-- (Parun.Web.Board's seats): "You (20 life)", not "Player 1 (20 life)".
+asSeat :: PlayerView.PlayerView -> Maybe PlayerId.PlayerId -> Text.Text -> Text.Text
+asSeat shown who label = case who of
+  Just p | p == PlayerView.viewer shown, Just rest <- Text.stripPrefix (Wording.player p) label -> Text.pack "You" <> rest
+  _ -> label
 
 -- | A word of information beside a question, which answers nothing.
 nudge :: Text.Text -> Html.Html msg

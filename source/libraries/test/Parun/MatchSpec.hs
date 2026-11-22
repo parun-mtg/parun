@@ -16,6 +16,7 @@ import qualified Parun.Extra.Natural as Natural
 import qualified Parun.JsonCodec.Codec as Codec
 import qualified Parun.Play.Command as Command
 import qualified Parun.Play.Match as Match
+import qualified Parun.Play.Search as Search
 import qualified Parun.Registry as Registry
 import qualified Parun.Scenario as Scenario
 import qualified Parun.Spec as Spec
@@ -39,13 +40,13 @@ spec :: (Monad m, Monad n) => Spec.Spec m n -> Registry.Registry m -> n ()
 spec s registry = Spec.describe s "Match" $ do
   Spec.it s "the decks take turns playing first, game by game" $ do
     decks <- pair <$> BotSpec.sevens s registry
-    starts <- mapM (\index -> firstToAct . snd <$> Match.game (S.fixtureRegistry []) Nothing Map.empty (key 7) index (Match.both decks)) [0, 1, 2, 3]
+    starts <- mapM (\index -> firstToAct . snd <$> Match.game (S.fixtureRegistry []) Nothing Map.empty Search.known (key 7) index (Match.both decks)) [0, 1, 2, 3]
     Spec.assertEqWith s "first to act on turn 1" starts (fmap (Just . Label.MkLabel . Text.pack) ["player1", "player2", "player1", "player2"])
 
   Spec.it s "each game of a match replays clean to its result" $ do
     decks <- pair <$> BotSpec.sevens s registry
     Foldable.for_ [0, 1, 2, 3] $ \index -> do
-      (outcome, timeline) <- Match.game (S.fixtureRegistry []) Nothing Map.empty (key 7) index (Match.both decks)
+      (outcome, timeline) <- Match.game (S.fixtureRegistry []) Nothing Map.empty Search.known (key 7) index (Match.both decks)
       let matchup = Command.seated (Match.firstAt index) (Match.both decks)
       replayed <- Scenario.run registry (saved matchup timeline)
       case (outcome, replayed) of
@@ -58,7 +59,7 @@ spec s registry = Spec.describe s "Match" $ do
     let decks = one NonEmpty.:| [one, one]
         matchup = Command.seated 2 decks
     Spec.assertEqWith s "turn order" (fmap fst matchup) (fmap PlayerId.MkPlayerId (1 NonEmpty.:| [2, 0]))
-    (outcome, timeline) <- Match.game (S.fixtureRegistry []) Nothing Map.empty (key 7) 1 decks
+    (outcome, timeline) <- Match.game (S.fixtureRegistry []) Nothing Map.empty Search.known (key 7) 1 decks
     Spec.assertEqWith s "every seat answers" (Set.fromList (Foldable.toList (fmap (When.player . Timed.when) timeline))) (Set.fromList (fmap (Label.MkLabel . Text.pack) ["player1", "player2", "player3"]))
     replayed <- Scenario.run registry (saved matchup timeline)
     case (outcome, replayed) of
@@ -68,10 +69,10 @@ spec s registry = Spec.describe s "Match" $ do
 
   Spec.it s "a game's key is derived from the match's and its index" $ do
     decks <- pair <$> BotSpec.sevens s registry
-    once <- Match.game (S.fixtureRegistry []) Nothing Map.empty (key 7) 2 (Match.both decks)
-    again <- Match.game (S.fixtureRegistry []) Nothing Map.empty (key 7) 2 (Match.both decks)
-    early <- Match.game (S.fixtureRegistry []) Nothing Map.empty (key 7) 0 (Match.both decks)
-    other <- Match.game (S.fixtureRegistry []) Nothing Map.empty (key 9) 2 (Match.both decks)
+    once <- Match.game (S.fixtureRegistry []) Nothing Map.empty Search.known (key 7) 2 (Match.both decks)
+    again <- Match.game (S.fixtureRegistry []) Nothing Map.empty Search.known (key 7) 2 (Match.both decks)
+    early <- Match.game (S.fixtureRegistry []) Nothing Map.empty Search.known (key 7) 0 (Match.both decks)
+    other <- Match.game (S.fixtureRegistry []) Nothing Map.empty Search.known (key 9) 2 (Match.both decks)
     Spec.assertEqWith s "the same game again" (snd once) (snd again)
     Spec.assertBool s (snd once /= snd early) "another index, another game"
     Spec.assertBool s (snd once /= snd other) "another match, another game"

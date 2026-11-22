@@ -376,8 +376,11 @@ offerOf namer gs prompt = case prompt of
   -- CR 706.2b: the results in roll order, each spelled as its index, and the
   -- one cost; none picked declines.
   Prompt.RerollDice _ _ results cost -> subset namer Nothing ([("results", R.Array (fmap natural (NonEmpty.toList results)))] <> [("cost", payment namer c) | Just c <- [cost]]) (Nothing, Nothing) (zipWith (\index _ -> natural index) [0 ..] (NonEmpty.toList results))
-  -- CR 706.2a: the result rerolled, and what rerolling costs where it costs.
-  Prompt.Rethrow _ _ landed cost -> choosing namer prompt "options" Nothing ([thrown landed] <> [("cost", payment namer c) | Just c <- [cost]]) yesOrNo
+  -- CR 706.2a: the result rerolled, every die of the roll in roll order and
+  -- which of them it is, and what rerolling costs where it costs.
+  Prompt.Rethrow _ _ dice index cost ->
+    let landed = Maybe.fromMaybe (NonEmpty.head dice) (Maybe.listToMaybe (List.genericDrop index (NonEmpty.toList dice)))
+     in choosing namer prompt "options" Nothing ([thrown landed, ("results", R.Array (fmap (snd . thrown) (NonEmpty.toList dice))), ("die", natural index)] <> [("cost", payment namer c) | Just c <- [cost]]) yesOrNo
   -- CR 616.1: each entry as its source and, where it renders, its Oracle text.
   Prompt.ChooseReplacement _ _ entries -> indexing namer prompt Nothing [] (fmap (replacementEntry namer gs) entries)
   -- CR 208.2b / 614.1c: each shape's power, toughness, keywords and subtypes.
@@ -385,17 +388,20 @@ offerOf namer gs prompt = case prompt of
   -- CR 603.7b: each event, or null for one the seat did not witness.
   Prompt.ChooseDelayedTriggerEvent _ _ source events -> indexing namer prompt (Just source) [] (fmap (delayedEvent namer (Driver.deciderOf prompt)) (NonEmpty.toList events))
   -- CR 706.2b: each modifier by the object stating it and the die it
-  -- reaches, null for none and for the whole roll.
-  Prompt.ChooseRollModifier _ _ modifiers -> indexing namer prompt Nothing [] (fmap (\(stated, die) -> fields [("source", maybe R.Null (object namer) stated), ("die", maybe R.Null natural die)]) (NonEmpty.toList modifiers))
+  -- reaches, its natural result and its place in the roll, null for none and
+  -- for the whole roll.
+  Prompt.ChooseRollModifier _ _ modifiers -> indexing namer prompt Nothing [] (fmap (\(stated, die) -> fields [("source", maybe R.Null (object namer) stated), ("die", maybe R.Null (natural . snd) die), ("place", maybe R.Null (natural . fst) die)]) (NonEmpty.toList modifiers))
   -- CR 123.5c: each object by its card's name.
   Prompt.KeepHand _ _ hands -> indexing namer prompt Nothing [] (fmap (objects namer) (NonEmpty.toList hands))
   Prompt.ChooseStickerKeeper _ _ printings -> indexing namer prompt Nothing [] (fmap (R.Text . printingName gs) (NonEmpty.toList printings))
   -- CR 614.1a: each token kind by its card's name.
   Prompt.ChooseTokenKind _ _ source kinds -> indexing namer prompt (Just source) [] (fmap (R.Text . CardName.unwrap) (NonEmpty.toList kinds))
-  -- CR 706.4: each result as its number.
   -- CR 706.1a: the die by its sides.
   Prompt.RollDie sides -> fields [("sides", natural sides)]
-  Prompt.ChooseDieResult _ _ source results -> indexing namer prompt source [] (fmap natural (NonEmpty.toList results))
+  -- CR 706.4: each result as its number and, where any was thrown by another
+  -- player or carries events, each one's thrower and events under "carries",
+  -- in the same order.
+  Prompt.ChooseDieResult _ roller source results -> indexing namer prompt source [("carries", R.Array [fields [("thrower", Reply.encode Reply.player namer thrower), ("events", R.Array (fmap (delayedEvent namer (Driver.deciderOf prompt)) events))] | (_, thrower, events) <- NonEmpty.toList results]) | any (\(_, thrower, events) -> not (null events) || thrower /= roller) results] (fmap (\(n, _, _) -> natural n) (NonEmpty.toList results))
   -- CR 701.48a: each branch, then neither.
   Prompt.ChooseLearn _ _ source modes -> choosing namer prompt "options" (Just source) [("entries", R.Array (fmap (R.Text . Text.pack . show) (NonEmpty.toList modes)))] (orNone modes)
   -- CR 608.2d / 701.55a: each branch by its Oracle text, then neither where it

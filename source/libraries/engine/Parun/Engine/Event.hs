@@ -8285,9 +8285,11 @@ settleCoins reflip flipper settled called stated = do
       -- sentence, no outcome, save CR 705.3's stated win.
       outcomes = [(face, won) | (call, face) <- kept, let won = maybe (if wins then Just True else Nothing) (\face' -> Just (wins || face == face')) call]
   -- Two coins tied for the lowest can be a won flip and a lost one, so CR
-  -- 706.6's "the player chooses" is asked of them (Dice.ignoreLowest).
-  survivors <- Dice.ignoreLowest flipper (toInteger . resultOfFace . fst) snd (Throw.ignored settled) outcomes
-  pure [(face, wins, GameEvent.CoinFlipped CoinFlipped.MkCoinFlipped {CoinFlipped.flipper = flipper, CoinFlipped.won = won}) | (face, won) <- survivors]
+  -- 706.6's "the player chooses" is asked of them (Dice.ignoreLowest), each
+  -- shown with its flip's event.
+  let flipped won = GameEvent.CoinFlipped CoinFlipped.MkCoinFlipped {CoinFlipped.flipper = flipper, CoinFlipped.won = won}
+  survivors <- Dice.ignoreLowest flipper (toInteger . resultOfFace . fst) snd (\(face, won) -> (resultOfFace face, flipper, [flipped won])) (Throw.ignored settled) outcomes
+  pure [(face, wins, flipped won) | (face, won) <- survivors]
 
 -- The face kept of one unit's coins (Krark's Thumb's "ignore one").
 keepCoin :: PlayerId -> [CoinFace.CoinFace] -> Game CoinFace.CoinFace

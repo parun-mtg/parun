@@ -118,6 +118,16 @@ pick options = do
   i <- between 0 (Natural.length options - 1)
   pure (Maybe.fromMaybe (NonEmpty.head options) (Maybe.listToMaybe (List.genericDrop i (NonEmpty.toList options))))
 
+-- | One of the options, each as likely as its share of the weights to within
+-- 2^-64; the first when no weight is positive.
+weighted :: (Monad m) => NonEmpty.NonEmpty (Rational, a) -> State.StateT Generator.Generator m a
+weighted options = do
+  x <- next
+  let positive = NonEmpty.filter ((> 0) . fst) options
+      point = toRational x / 2 ^ (64 :: Int) * sum (fmap fst positive)
+      chosen = List.find ((> point) . fst) (zip (drop 1 (scanl (+) 0 (fmap fst positive))) (fmap snd positive))
+  pure (maybe (snd (NonEmpty.head options)) snd chosen)
+
 -- | Every order equally likely: Fisher and Yates, swapping each position from
 -- the last down with one at or below it.
 shuffle :: (Monad m) => [a] -> State.StateT Generator.Generator m [a]
