@@ -401,7 +401,7 @@ pickedIn :: Heard -> [Natural]
 pickedIn heard = [n | n <- [1, 2, 3], Text.pack ("Seat " <> show n <> " was picked at random to choose who plays first.") `elem` said heard]
 
 -- | Command.game, which runs in IO.
-gameSpec :: (Monad n) => Spec.Spec IO n -> n ()
+gameSpec :: Spec.Spec IO n -> n ()
 gameSpec s = Spec.describe s "Play.Command" $ do
   Spec.it s "a game's saved scenario names what it was played with" $ do
     let seed = Generator.key (S.seeded 7)
