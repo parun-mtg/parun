@@ -719,11 +719,11 @@ chooseOneOrBothSpec s registry = Spec.describe s "ChooseOneOrBoth (CR 700.2)" $ 
     Spec.assertBool s (Modal.selectionSatisfiedBy vandalizeModes (ModeSelection.ChooseBetween (ChooseBetween.MkChooseBetween 1 2)) both) "both modes satisfy one-or-both"
     Spec.assertBool s (not (Modal.selectionSatisfiedBy vandalizeModes (ModeSelection.ChooseBetween (ChooseBetween.MkChooseBetween 0 1)) both)) "two modes do not satisfy a zero-to-one range"
 
-  -- "You may choose two" (Shadrix Silverquill) read directly, because no board
-  -- of that card leaves a mode unfillable: its controller is always a legal
-  -- target. Zero or two, never one (its ruling); and where fewer than two modes
-  -- are legal, choosing none is the only answer, so it is forced and CR 603.3c
-  -- removes the ability unasked.
+  -- "You may choose two" (Shadrix Silverquill) read directly. Zero or two,
+  -- never one (its ruling); and where fewer than two modes are legal, choosing
+  -- none is the only answer, so it is forced and CR 603.3c removes the ability
+  -- unasked: data/scenarios' shadrix-silverquill-asks-nothing-where-no-player-can-be-targeted
+  -- on a board.
   Spec.it s "CR 700.2 'you may choose two' admits none or two, and forces none below two legal modes" $ do
     let optional = ModeSelection.ChooseOptionally (ModeSelection.ChooseExactly 2)
         modes = Seq.fromList . fmap ModeIndex.MkModeIndex

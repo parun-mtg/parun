@@ -1421,6 +1421,24 @@ abilitySlotLintSpec s registry corpus = Spec.describe s "Lint" $ do
       s
       (not (any triggeredAbilityOffends (Face.triggeredAbilities (S.combinedFace trygon))))
       "the real card's own trigger is accepted"
+  -- CR 601.2c's exemption for a sibling MODE's slot (modalSlotsOffend's
+  -- withoutExclusions) is a target filter's Not (IsBound _) conjunct and no
+  -- other read: an effect or another filter shape reading that slot reads
+  -- nothing where the sibling mode is not chosen.
+  Spec.it s "the lint itself catches a mode reading a sibling mode's slot outside an exclusion" $ do
+    shadrix <- S.printingOf s registry "Shadrix Silverquill"
+    let creator = SlotName.MkSlotName (Text.pack "creator")
+        drawer = SlotName.MkSlotName (Text.pack "drawer")
+        -- The drawing mode, its "different player" exclusion kept.
+        doctored f ability =
+          let modal = TriggeredAbility.modal ability
+           in ability {TriggeredAbility.modal = modal {Modal.modes = Seq.adjust' f 1 (Modal.modes modal)}}
+        creatorDraws mode = mode {Mode.clauses = Mode.clauses mode Seq.|> Mint.mandatory (Seq.singleton (Effect.Draw (Draw.MkDraw (PlayerRef.InSlot creator) (Quantity.Type.Literal 1) Nothing Nothing)))}
+        sameAsCreator mode = mode {Mode.targetSlots = Map.adjust (\slot -> slot {TargetSlot.filter = Just (Filter.Type.IsBound creator)}) drawer (Mode.targetSlots mode)}
+        triggers = Face.triggeredAbilities (S.combinedFace shadrix)
+    Spec.assertBool s (not (any triggeredAbilityOffends triggers)) "the real card's exclusions are accepted"
+    Spec.assertBool s (any (triggeredAbilityOffends . doctored creatorDraws) triggers) "an effect reading the sibling's slot is rejected"
+    Spec.assertBool s (any (triggeredAbilityOffends . doctored sameAsCreator) triggers) "and so is a filter reading it other than as an exclusion"
   -- The same equality on the slot's THIRD read, beside its pool's and its
   -- filter's: CR 202.3's computed bound (Resolve.targetSlotSlots). A bound may
   -- name CR 603.2's "that player" through a PlayerRef buried INSIDE the number --

@@ -61,6 +61,7 @@ import qualified Parun.Types.Mode as Mode
 import Parun.Types.ModeIndex (ModeIndex)
 import qualified Parun.Types.ModeIndex as ModeIndex
 import qualified Parun.Types.ModeMemory as ModeMemory
+import qualified Parun.Types.ModeSelection as ModeSelection
 import qualified Parun.Types.Object as Object
 import Parun.Types.ObjectId (ObjectId)
 import qualified Parun.Types.Pile as Pile
@@ -2803,64 +2804,89 @@ fillableModes kind reader perspective seed source extra modal gs =
 -- apiece to answer it (#716).
 fillableModesGiven :: StackObjectKind.StackObjectKind -> Maybe AbilityName.AbilityName -> Pools -> Maybe PlayerId -> Map SlotName Binding.Type.Binding -> ObjectId -> Map SlotName TargetSlot -> Modal.Modal Card (GrantedAbility.GrantedAbility Card) -> GameState -> Set ModeIndex
 fillableModesGiven kind reader pools perspective seed source extra modal gs =
+  let ms = Foldable.toList (Modal.modes modal)
+      fillable i m =
+        if slotsFillableGiven kind reader pools perspective seed source (Map.union extra (Mode.targetSlots m)) gs
+          then Just (ModeIndex.MkModeIndex i)
+          else Nothing
+   in Set.fromList (Maybe.mapMaybe (uncurry fillable) (zip [0 :: Natural ..] ms))
+
+-- CR 700.2b / 601.2c: the selections a modal TRIGGER may announce, of those
+-- `Modal.selections` lists over `legal`: each one's chosen modes' targets
+-- together admit one legal announcement. Nothing where no mode's slot reads a
+-- slot another mode declares, so fillableModes' one mode at a time already
+-- answers it. Shadrix Silverquill's "each mode must target a different player"
+-- is the reading; data/scenarios' shadrix-silverquill-asks-nothing-where-no-pair-can-target-different-players
+-- proves it.
+announceableSelections :: StackObjectKind.StackObjectKind -> Maybe AbilityName.AbilityName -> PlayerId -> Map SlotName Binding.Type.Binding -> ObjectId -> Modal.Modal Card (GrantedAbility.GrantedAbility Card) -> Set ModeIndex -> ModeSelection.ModeSelection -> GameState -> Maybe [Seq.Seq ModeIndex]
+announceableSelections kind reader perspective seed source modal legal selection gs =
+  let declared = Map.keysSet (Modal.Engine.allTargetSlots modal)
+      crossReads m = not (Set.isSubsetOf (foldMap (siblingReads declared) (Mode.targetSlots m)) (Map.keysSet (Mode.targetSlots m)))
+      announceable chosen = slotsFillableGiven kind reader (wholePools gs) (Just perspective) seed source (Modal.Engine.modesTargetSlots chosen modal) gs
+   in if any crossReads (Modal.modes modal)
+        then Just (filter announceable (Modal.Engine.selections legal selection))
+        else Nothing
+
+-- CR 115.6 / 601.2c: can these target slots be filled by one legal
+-- announcement? fillableModesGiven's question of one mode, and
+-- announceableSelections' of several.
+slotsFillableGiven :: StackObjectKind.StackObjectKind -> Maybe AbilityName.AbilityName -> Pools -> Maybe PlayerId -> Map SlotName Binding.Type.Binding -> ObjectId -> Map SlotName TargetSlot -> GameState -> Bool
+slotsFillableGiven kind reader pools perspective seed source unannounced gs =
   let counting = countingBy reader perspective seed source gs
       announced = Binding.amountOf Binding.variableX seed
-      ms = Foldable.toList (Modal.modes modal)
-      fillable i m =
-        let slots = maybe id (\p -> announcedSlots p source gs) perspective (Map.union extra (Mode.targetSlots m))
-            -- CR 601.2b's other FLOOR, the one `short` below cannot spell: a
-            -- slot's CR 202.3 computed bound that reads a number the seed cannot
-            -- supply states no bound at all rather than an unmeetable one (see
-            -- Filter.boundUnannounced). Permissive is the floor's direction for a
-            -- bound as X=0 is for a count, and both are the same question -- is
-            -- there SOME value of the announcement under which this mode is
-            -- fillable -- so Stir the Grave's mode is refused for an empty
-            -- graveyard and for nothing else. A bound the seed DOES answer narrows
-            -- here as it always did.
-            --
-            -- FIVE of the six callers ask before that announcement exists: CR
-            -- 601.2b names the modes before the X, so Cast's three (castable's
-            -- targetable, entwineOffer, castProposed's mode gate) and Activate's
-            -- two (activatableGiven, activateAbility's mode gate) all run first.
-            -- The sixth, Parun.Engine.Engine.placeBorne, hands in CR 603.2's
-            -- bindings, which ARE the announcement -- so for it this is not a
-            -- floor but a widening: a trigger's bound its own event bindings
-            -- cannot answer is judged fillable here and then admits nothing at CR
-            -- 603.3d.
-            --
-            -- No card can write one, and the pairing rather than the constructor
-            -- is why: Parun.CardSpec's "every slot a triggered ability reads is
-            -- bound for its condition" subtracts Event.eventBindingSlots from the
-            -- read side, and Resolve.modeSlots reports a slot's `amount` reads into
-            -- it -- the ones a PlayerRef buried in the number names included -- so
-            -- a bound naming a slot the condition does not supply fails "no
-            -- dangling triggered-ability slot" before it can reach a board.
-            -- Venerable Warsinger is the pool's one such bound, and its condition's
-            -- arm supplies Binding.eventAmount unconditionally.
-            sets = legalSetsGiven kind reader pools perspective True seed source slots gs
-            declared = Map.keysSet slots
-            -- A slot judged against no sibling (jointlyJudged) is answered by its
-            -- own legal set alone, whose size is then its capacity, and that size
-            -- is asked only up to the floor: the first `floorOf slot` legal
-            -- recipients are enough, and the rest are never judged (#1448).
-            enough slot =
-              let demand = floorOf slot
-               in demand == 0
-                    || not (null (List.genericDrop (demand - 1) (legalRecipientListGiven kind reader pools perspective True seed (Game.acquisitionFor reader source gs) source slot gs)))
-            -- CR 115.6 / 601.2c: a slot is unfillable when the board cannot supply
-            -- the MINIMUM its count demands. An "up to one" slot with no legal
-            -- recipient demands none, and is answered with zero targets.
-            --
-            -- A mode whose every floor is zero is filled by announcing no
-            -- target at all, which no sibling's filter or bound can refuse, so
-            -- its slots are not judged even jointly (#6472).
-            filled
-              | all ((== 0) . floorOf) slots = True
-              | not (any (jointlyJudged declared) slots) = all enough slots
-              | otherwise =
-                  not (or (Map.elems (Map.intersectionWith short slots (slotCapacities counting announced slots sets gs))))
-                    && jointlyFillableGiven kind reader pools perspective seed source slots sets gs
-         in if filled then Just (ModeIndex.MkModeIndex i) else Nothing
+      slots = maybe id (\p -> announcedSlots p source gs) perspective unannounced
+      -- CR 601.2b's other FLOOR, the one `short` below cannot spell: a
+      -- slot's CR 202.3 computed bound that reads a number the seed cannot
+      -- supply states no bound at all rather than an unmeetable one (see
+      -- Filter.boundUnannounced). Permissive is the floor's direction for a
+      -- bound as X=0 is for a count, and both are the same question -- is
+      -- there SOME value of the announcement under which this mode is
+      -- fillable -- so Stir the Grave's mode is refused for an empty
+      -- graveyard and for nothing else. A bound the seed DOES answer narrows
+      -- here as it always did.
+      --
+      -- FIVE of the six callers ask before that announcement exists: CR
+      -- 601.2b names the modes before the X, so Cast's three (castable's
+      -- targetable, entwineOffer, castProposed's mode gate) and Activate's
+      -- two (activatableGiven, activateAbility's mode gate) all run first.
+      -- The sixth, Parun.Engine.Engine.placeBorne, hands in CR 603.2's
+      -- bindings, which ARE the announcement -- so for it this is not a
+      -- floor but a widening: a trigger's bound its own event bindings
+      -- cannot answer is judged fillable here and then admits nothing at CR
+      -- 603.3d.
+      --
+      -- No card can write one, and the pairing rather than the constructor
+      -- is why: Parun.CardSpec's "every slot a triggered ability reads is
+      -- bound for its condition" subtracts Event.eventBindingSlots from the
+      -- read side, and Resolve.modeSlots reports a slot's `amount` reads into
+      -- it -- the ones a PlayerRef buried in the number names included -- so
+      -- a bound naming a slot the condition does not supply fails "no
+      -- dangling triggered-ability slot" before it can reach a board.
+      -- Venerable Warsinger is the pool's one such bound, and its condition's
+      -- arm supplies Binding.eventAmount unconditionally.
+      sets = legalSetsGiven kind reader pools perspective True seed source slots gs
+      declared = Map.keysSet slots
+      -- A slot judged against no sibling (jointlyJudged) is answered by its
+      -- own legal set alone, whose size is then its capacity, and that size
+      -- is asked only up to the floor: the first `floorOf slot` legal
+      -- recipients are enough, and the rest are never judged (#1448).
+      enough slot =
+        let demand = floorOf slot
+         in demand == 0
+              || not (null (List.genericDrop (demand - 1) (legalRecipientListGiven kind reader pools perspective True seed (Game.acquisitionFor reader source gs) source slot gs)))
+      -- CR 115.6 / 601.2c: a slot is unfillable when the board cannot supply
+      -- the MINIMUM its count demands. An "up to one" slot with no legal
+      -- recipient demands none, and is answered with zero targets.
+      --
+      -- A mode whose every floor is zero is filled by announcing no
+      -- target at all, which no sibling's filter or bound can refuse, so
+      -- its slots are not judged even jointly (#6472).
+      filled
+        | all ((== 0) . floorOf) slots = True
+        | not (any (jointlyJudged declared) slots) = all enough slots
+        | otherwise =
+            not (or (Map.elems (Map.intersectionWith short slots (slotCapacities counting announced slots sets gs))))
+              && jointlyFillableGiven kind reader pools perspective seed source slots sets gs
       -- CR 601.2b: a slot counting the announced X demands no target until that
       -- announcement exists (countAt), and a seed's X where it holds one (CR
       -- 702.37f's turned-face-up trigger). A printed floor (Face.minimumX,
@@ -2873,7 +2899,7 @@ fillableModesGiven kind reader pools perspective seed source extra modal gs =
       -- is a mode with no legal announcement rather than a fillable one.
       short slot capacity = capacity < floorOf slot
       floorOf slot = TargetCount.least (countAt counting announced (TargetSlot.count slot))
-   in Set.fromList (Maybe.mapMaybe (uncurry fillable) (zip [0 :: Natural ..] ms))
+   in filled
 
 -- CR 603.2: every target slot with its "that player" atoms baked against this
 -- binding environment (Parun.Engine.Filter.bakeBound). The whole of what makes
