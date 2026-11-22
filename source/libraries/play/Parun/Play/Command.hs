@@ -271,7 +271,7 @@ game send stored kept options prior registry format decks seed = do
 
 -- | Who answers seat `n`: the search bot at the options' budget and weights,
 -- dealing what it cannot see by `prior`, remembering what its seat's memory
--- in `memories` holds (Search.remembering), keeping its targets in `aim`, if
+-- in `memories` holds (Search.remembering), keeping its line in `aim`, if
 -- it is a bot's, its answers taken from `stored` and given to `kept`
 -- (Game.remembered); otherwise `send`.
 answerer :: (Monad m) => Registry.Registry m -> Protocol.Exchange m -> m (Maybe R.Reply) -> (R.Reply -> m ()) -> m (Map.Map PlayerId.PlayerId Search.Memory) -> Search.Aim m -> PlayOptions.PlayOptions -> Search.Prior -> Natural -> Answerer.Answerer (Asked.Asked GameState.GameState) (Game.Play m)

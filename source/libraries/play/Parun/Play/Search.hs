@@ -57,6 +57,7 @@ import qualified Parun.Types.GrantedAbility as GrantedAbility
 import qualified Parun.Types.History as History
 import qualified Parun.Types.InherentTriggerSource as InherentTriggerSource
 import qualified Parun.Types.LoggedEvent as LoggedEvent
+import qualified Parun.Types.ModeIndex as ModeIndex
 import qualified Parun.Types.Moved as Moved
 import qualified Parun.Types.Object as Object
 import qualified Parun.Types.ObjectId as ObjectId
@@ -78,6 +79,7 @@ import qualified Parun.Types.SearchBudget as SearchBudget
 import qualified Parun.Types.SearchMethod as SearchMethod
 import qualified Parun.Types.SlotName as SlotName
 import qualified Parun.Types.Source as Source
+import qualified Parun.Types.TargetCount as TargetCount
 import qualified Parun.Types.TriggeredAbility as TriggeredAbility
 import qualified Parun.Types.TriggeredAbilitySource as TriggeredAbilitySource
 import qualified Parun.Types.TurnRegisters as TurnRegisters
@@ -339,19 +341,20 @@ sample (MkPrior prior) memory viewer gs =
 -- ('flat' or 'informationSet') over worlds dealt by 'worlds', at a
 -- 'mistaken' decision the best below the best taken, where one is; every other
 -- prompt answered by the random bot (Game.bot). It searches priority
--- decisions ('options'), each action beside the targets the first choice of
--- targets it leads to may take ('aimed'), and the first declaration of
--- attackers ('attacks') and of blockers ('blocks'). The targets of the action
--- taken are kept in `aim` and answer that choice where they still may
--- ('fitting'). It reads the whole game only through 'sample', which deals
+-- decisions ('options'), each action beside each 'Line' of answers to the
+-- modes, announced numbers of targets and first choice of targets it leads to
+-- ('aimed'), and the first declaration of attackers ('attacks') and of
+-- blockers ('blocks'). The line of the action taken is kept in `aim` and
+-- answers those prompts where it still may, past each step that lapses
+-- ('stepping'). It reads the whole game only through 'sample', which deals
 -- every card its seat cannot see now and does not remember by the memory
 -- `recalled` gives ('remembering'), and the opponents' passes `watched` gives
 -- ('watching') only through 'plausibility'.
 --
--- Not implemented: searching targets asked after another choice of the same
--- action's (CR 601.2b), more than 'widest' choices of them, or any choice of
--- targets but the first an action leads to; the random bot answers them
--- (#9477).
+-- Not implemented: searching a line past another CR 601.2b announcement (an
+-- alternative or additional cost, X), more than 'widest' lines, or any choice
+-- of targets but the first an action leads to; the random bot answers them
+-- (#9481).
 search :: forall m. (Monad m) => Registry.Registry m -> SearchBudget.SearchBudget -> Weights.Weights -> Prior -> Game.Play m [Passed] -> Game.Play m Memory -> Aim m -> Answerer.Answerer (Asked.Asked GameState.GameState) (Game.Play m)
 search registry budget weights prior watched recalled aim = Answerer.MkAnswerer $ \asked ->
   let dealing pid = do
@@ -363,22 +366,28 @@ search registry budget weights prior watched recalled aim = Answerer.MkAnswerer 
         SearchMethod.Flat -> flat registry budget weights restart pid deal choices (picking pid . move)
         SearchMethod.InformationSet -> informationSet registry budget weights restart pid (Asked.game asked) deal choices move
       unaimed = hold aim Nothing >> Answerer.unwrap (Game.bot registry) asked
+      kept pid = do
+        line <- held aim
+        let fit steps = case steps of
+              step : rest | MkPick pick <- stepping pid step -> case pick (Asked.prompt asked) of
+                Fits answer -> Just (answer, rest)
+                _ -> fit rest
+              [] -> Nothing
+        case fit (foldMap NonEmpty.toList line) of
+          Just (answer, rest) -> answer <$ hold aim (NonEmpty.nonEmpty rest)
+          Nothing -> unaimed
    in case Asked.prompt asked of
         Prompt.ChooseAction decider pid menu
           | searchable asked decider pid (options menu),
             Just actions <- NonEmpty.nonEmpty (options menu) -> do
               deal <- dealing pid
               probe <- deal
-              (action, targets) <- best Engine.resumePriority pid deal (actions >>= aimed pid probe) (\(a, t) -> maybe (Acted a) (Aimed a) t)
-              action <$ hold aim targets
+              (action, line) <- best Engine.resumePriority pid deal (actions >>= aimed pid probe) (\(a, l) -> maybe (Acted a) (Aimed a) l)
+              action <$ hold aim line
           | otherwise -> unaimed
-        Prompt.ChooseTargets decider pid _ offered
-          | Decider.unwrap decider == pid -> do
-              targets <- held aim
-              hold aim Nothing
-              case targets of
-                Just chosen | fitting offered chosen -> pure chosen
-                _ -> Answerer.unwrap (Game.bot registry) asked
+        Prompt.ChooseModes decider pid _ _ _ | Decider.unwrap decider == pid -> kept pid
+        Prompt.AnnounceTargets decider pid _ _ | Decider.unwrap decider == pid -> kept pid
+        Prompt.ChooseTargets decider pid _ _ | Decider.unwrap decider == pid -> kept pid
         Prompt.DeclareAttackers decider pid offered
           | searchable asked decider pid (attacks offered),
             Just choices <- NonEmpty.nonEmpty (attacks offered) -> do
@@ -394,48 +403,86 @@ search registry budget weights prior watched recalled aim = Answerer.MkAnswerer 
 -- | What a choice of targets takes: each slot's targets (CR 601.2c).
 type Targets = Map.Map SlotName.SlotName (Set.Set Recipient.Recipient)
 
--- | Where the search bot keeps the targets it chose beside its last priority
--- action, for the choice of targets that action leads to.
+-- | An answer the search bot keeps for a prompt its priority action leads to.
+data Step
+  = -- | The modes chosen (CR 601.2b, 700.2).
+    Moded (Seq.Seq ModeIndex.ModeIndex)
+  | -- | Each slot's announced number of targets (CR 601.2c).
+    Announced (Map.Map SlotName.SlotName Natural)
+  | -- | The targets chosen (CR 601.2c).
+    Targeted Targets
+  deriving (Eq, Ord, Show)
+
+-- | The answers kept for the prompts a priority action leads to, in order.
+type Line = NonEmpty.NonEmpty Step
+
+-- | Where the search bot keeps the line it chose beside its last priority
+-- action, for the prompts that action leads to.
 data Aim m = MkAim
-  { -- | The targets kept, if any.
-    held :: Game.Play m (Maybe Targets),
-    -- | Keeps these targets, or none.
-    hold :: Maybe Targets -> Game.Play m ()
+  { -- | The line kept, if any.
+    held :: Game.Play m (Maybe Line),
+    -- | Keeps this line, or none.
+    hold :: Maybe Line -> Game.Play m ()
   }
 
--- | Keeping nothing: every choice of targets the random bot's.
+-- | Keeping nothing: every prompt a line answers the random bot's.
 unkept :: (Monad m) => Aim m
 unkept = MkAim {held = pure Nothing, hold = const (pure ())}
 
--- | `pid`'s targets kept among every seat's, read by `kept` and changed
--- through `keep`.
-keptBy :: (Monad m) => m (Map.Map PlayerId.PlayerId Targets) -> ((Map.Map PlayerId.PlayerId Targets -> Map.Map PlayerId.PlayerId Targets) -> m ()) -> PlayerId.PlayerId -> Aim m
+-- | `pid`'s line kept among every seat's, read by `kept` and changed through
+-- `keep`.
+keptBy :: (Monad m) => m (Map.Map PlayerId.PlayerId Line) -> ((Map.Map PlayerId.PlayerId Line -> Map.Map PlayerId.PlayerId Line) -> m ()) -> PlayerId.PlayerId -> Aim m
 keptBy kept keep pid = MkAim {held = Game.underneath (fmap (Map.lookup pid) kept), hold = Game.underneath . keep . (`Map.alter` pid) . const}
 
--- | `pid`'s priority action searched: beside each choice of targets 'aims'
--- offers for the first choice of targets it leads to in `world`
--- ('targetsAfter'), where there are two or more, else alone.
-aimed :: PlayerId.PlayerId -> GameState.GameState -> Action.Action -> NonEmpty.NonEmpty (Action.Action, Maybe Targets)
-aimed pid world action = case foldMap aims (targetsAfter pid action world) of
-  first : second : rest -> fmap ((,) action . Just) (first NonEmpty.:| second : rest)
+-- | `pid`'s priority action searched: beside each 'Line' it leads to in
+-- `world` ('linesAfter'), where there are two to 'widest', else alone.
+aimed :: PlayerId.PlayerId -> GameState.GameState -> Action.Action -> NonEmpty.NonEmpty (Action.Action, Maybe Line)
+aimed pid world action = case Maybe.mapMaybe NonEmpty.nonEmpty (take (widest + 1) (linesAfter pid action world)) of
+  first : second : rest | length rest + 2 <= widest -> fmap ((,) action . Just) (first NonEmpty.:| second : rest)
   _ -> pure (action, Nothing)
 
--- | The slots of the first choice of targets `pid` is asked once taking
--- `action` at the priority decision restarted in `world`
--- (Engine.resumePriority), a spell's (CR 601.2c) or an ability's (CR 602.2b,
--- 603.3d), every concession prompt answered Continues; Nothing if another
--- prompt is asked first or play ends.
-targetsAfter :: PlayerId.PlayerId -> Action.Action -> GameState.GameState -> Maybe (Map.Map SlotName.SlotName (Natural, Set.Set Recipient.Recipient))
-targetsAfter pid action world =
-  let go :: Bool -> Program.Program (Asked.Asked GameState.GameState) a -> Maybe (Map.Map SlotName.SlotName (Natural, Set.Set Recipient.Recipient))
-      go acted program = case program of
+-- | Every line of answers `pid` gives once taking `action` at the priority
+-- decision restarted in `world` (Engine.resumePriority), a spell's or an
+-- ability's (CR 601.2b, 601.2c, 602.2b, 603.3d): each choice of modes
+-- (Engine.Modal.selections), announced number of targets ('announcements')
+-- and first choice of targets ('aims') `pid` makes for themselves, every
+-- concession prompt answered Continues, a line ending at its first choice of
+-- targets or at any other prompt, a prompt offering none ending it there.
+linesAfter :: PlayerId.PlayerId -> Action.Action -> GameState.GameState -> [[Step]]
+linesAfter pid action world =
+  let go :: Bool -> [Step] -> Program.Program (Asked.Asked GameState.GameState) a -> [[Step]]
+      go acted taken program = case program of
         Program.Then asked k -> case Asked.prompt asked of
-          Prompt.Concede _ -> go acted (k Concession.Continues)
-          Prompt.ChooseAction _ holder _ | holder == pid && not acted -> go True (k action)
-          Prompt.ChooseTargets decider chooser _ offered | acted && chooser == pid && Decider.unwrap decider == pid -> Just offered
-          _ -> Nothing
-        Program.Return _ -> Nothing
-   in go False (State.runStateT Engine.resumePriority world)
+          Prompt.Concede _ -> go acted taken (k Concession.Continues)
+          Prompt.ChooseAction _ holder _ | holder == pid && not acted -> go True taken (k action)
+          Prompt.ChooseModes decider chooser _ legal selection
+            | acted && chooser == pid && Decider.unwrap decider == pid,
+              picks@(_ : _) <- Engine.Modal.selections legal selection ->
+                foldMap (\modes -> go acted (Moded modes : taken) (k modes)) picks
+          Prompt.AnnounceTargets decider chooser _ offers
+            | acted && chooser == pid && Decider.unwrap decider == pid,
+              counts@(_ : _) <- announcements offers ->
+                foldMap (\count -> go acted (Announced count : taken) (k count)) counts
+          Prompt.ChooseTargets decider chooser _ offered
+            | acted && chooser == pid && Decider.unwrap decider == pid,
+              choices@(_ : _) <- aims offered ->
+                [reverse (Targeted targets : taken) | targets <- choices]
+          _ -> [reverse taken]
+        Program.Return _ -> [reverse taken]
+   in go False [] (State.runStateT Engine.resumePriority world)
+
+-- | Every announcement of these slots' numbers of targets, each slot's from
+-- its least through what its legal recipients allow (TargetCount.ceilingOn),
+-- as the random bot announces them (Bot.bot).
+announcements :: Map.Map SlotName.SlotName (TargetCount.TargetCount, Set.Set Recipient.Recipient) -> [Map.Map SlotName.SlotName Natural]
+announcements = traverse (\(count, legal) -> [TargetCount.least count .. TargetCount.ceilingOn (Natural.length legal) count])
+
+-- | Whether a kept announcement may answer an announcement of numbers of
+-- targets: each slot it offers given a number in its range, and no other.
+announcing :: Map.Map SlotName.SlotName (TargetCount.TargetCount, Set.Set Recipient.Recipient) -> Map.Map SlotName.SlotName Natural -> Bool
+announcing offers counts =
+  Map.keysSet offers == Map.keysSet counts
+    && and (Map.intersectionWith (\(count, legal) n -> TargetCount.least count <= n && n <= TargetCount.ceilingOn (Natural.length legal) count) offers counts)
 
 -- | Every choice of targets for these slots, each slot its count of its legal
 -- recipients or all of them where it is offered fewer, as the random bot
@@ -444,7 +491,7 @@ targetsAfter pid action world =
 aims :: Map.Map SlotName.SlotName (Natural, Set.Set Recipient.Recipient) -> [Targets]
 aims offered =
   let each = fmap (\(count, legal) -> fmap Set.fromList (combinations count (Set.toList legal))) offered
-   in if product (fmap length each) <= widest then sequenceA each else []
+   in if all (\choices -> length (take (widest + 1) choices) <= widest) each && product (fmap length each) <= widest then sequenceA each else []
 
 -- | Every choice of `count` of the items in order, or of all of them where
 -- there are fewer.
@@ -511,9 +558,9 @@ data Move
     Attacked [ObjectId.ObjectId]
   | -- | A declaration of blockers (CR 509.1).
     Blocked (Map.Map ObjectId.ObjectId (Set.Set ObjectId.ObjectId))
-  | -- | A priority decision's action and the targets of the first choice of
-    -- targets it leads to (CR 601.2c, 602.2b, 603.3d).
-    Aimed Action.Action Targets
+  | -- | A priority decision's action and the line of answers it leads to
+    -- (CR 601.2b, 601.2c, 602.2b, 603.3d).
+    Aimed Action.Action Line
   deriving (Eq, Ord, Show)
 
 -- | The move of the decision a move begins at, as the tree holds it
@@ -524,13 +571,13 @@ opening move = case move of
   _ -> move
 
 -- | `pid`'s picks making a move, in order: the decision it begins at
--- answered, then an 'Aimed' action's targets.
+-- answered, then each step of an 'Aimed' action's line.
 picking :: PlayerId.PlayerId -> Move -> [Pick]
 picking pid move = case move of
   Acted action -> [acting pid action]
   Attacked declared -> [attacking pid declared]
   Blocked declared -> [blocking pid declared]
-  Aimed action targets -> [acting pid action, targeting pid targets]
+  Aimed action line -> acting pid action : fmap (stepping pid) (NonEmpty.toList line)
 
 -- | The first decision of a descent answered: its edge in the tree, the edge
 -- among the decision's legal ones that answers it, and the picks after.
@@ -550,9 +597,9 @@ edgeOf viewer gs mover move = case move of
   Acted action ->
     let (named, shown) = objectsIn hide action
      in MkEdge mover (Acted shown) named
-  Aimed action targets ->
+  Aimed action line ->
     let (named, shown) = objectsIn hide action
-     in MkEdge mover (Aimed shown targets) named
+     in MkEdge mover (Aimed shown line) named
   _ -> MkEdge mover move []
   where
     hide oid = case Engine.Game.lookupObject oid gs >>= (`printingOf` gs) of
@@ -814,26 +861,25 @@ data Fit r
     Fits r
   | -- | It waits for a later prompt.
     Waits
-  | -- | It answers no prompt now: this one is answered as if it were not.
+  | -- | It answers no prompt now: this one is answered as if it were not
+    -- there.
     Lapses
 
--- | The prompt answered by the first of the picks where it 'Fits', by
--- `seats` otherwise; the picks left, less that one where it does not 'Waits'.
+-- | The prompt answered by the first of the picks, past each that 'Lapses'
+-- there, where it 'Fits', by `seats` otherwise; the picks left, less those
+-- that lapsed and that one where it does not 'Waits'.
 answering :: (Monad m) => Answerer.Answerer (Asked.Asked GameState.GameState) (Game.Play m) -> [Pick] -> Asked.Asked GameState.GameState r -> Game.Play m (r, [Pick])
 answering seats picks asked = case picks of
   MkPick pick : rest -> case pick (Asked.prompt asked) of
     Fits answer -> pure (answer, rest)
     Waits -> fmap (\answer -> (answer, picks)) (Answerer.unwrap seats asked)
-    Lapses -> fmap (\answer -> (answer, rest)) (Answerer.unwrap seats asked)
+    Lapses -> answering seats rest asked
   [] -> fmap (\answer -> (answer, [])) (Answerer.unwrap seats asked)
 
--- | The picks left once a prompt the tree holds is answered: less the first
--- where it does not 'Waits'.
+-- | The picks left once a prompt the tree holds is answered: less each one
+-- before the first that 'Waits' there.
 lapsing :: [Pick] -> Prompt.Prompt r -> [Pick]
-lapsing picks prompt = case picks of
-  MkPick pick : _ | Waits <- pick prompt -> picks
-  _ : rest -> rest
-  [] -> []
+lapsing picks prompt = dropWhile (\(MkPick pick) -> case pick prompt of Waits -> False; _ -> True) picks
 
 -- | `pid`'s priority decision answered `action`.
 acting :: PlayerId.PlayerId -> Action.Action -> Pick
@@ -853,13 +899,22 @@ blocking pid declared = MkPick $ \prompt -> case prompt of
   Prompt.DeclareBlockers _ declarer _ _ | declarer == pid -> Fits declared
   _ -> Waits
 
--- | `pid`'s first choice of targets answered `targets` where they are
--- 'fitting', lapsing there otherwise or at `pid`'s next priority decision.
-targeting :: PlayerId.PlayerId -> Targets -> Pick
-targeting pid targets = MkPick $ \prompt -> case prompt of
-  Prompt.ChooseTargets _ chooser _ offered
+-- | `pid`'s next prompt of a step's kind answered by the step where it may
+-- (Engine.Modal.selections, 'announcing', 'fitting'), lapsing there
+-- otherwise, at a prompt of another step's kind of `pid`'s, or at `pid`'s
+-- next priority decision.
+stepping :: PlayerId.PlayerId -> Step -> Pick
+stepping pid step = MkPick $ \prompt -> case (prompt, step) of
+  (Prompt.ChooseModes _ chooser _ legal selection, Moded modes)
+    | chooser == pid -> if elem modes (Engine.Modal.selections legal selection) then Fits modes else Lapses
+  (Prompt.AnnounceTargets _ chooser _ offers, Announced counts)
+    | chooser == pid -> if announcing offers counts then Fits counts else Lapses
+  (Prompt.ChooseTargets _ chooser _ offered, Targeted targets)
     | chooser == pid -> if fitting offered targets then Fits targets else Lapses
-  Prompt.ChooseAction _ holder _ | holder == pid -> Lapses
+  (Prompt.ChooseModes _ chooser _ _ _, _) | chooser == pid -> Lapses
+  (Prompt.AnnounceTargets _ chooser _ _, _) | chooser == pid -> Lapses
+  (Prompt.ChooseTargets _ chooser _ _, _) | chooser == pid -> Lapses
+  (Prompt.ChooseAction _ holder _, _) | holder == pid -> Lapses
   _ -> Waits
 
 -- | The actions of a priority menu worth searching: all but CR 605.3a's mana
@@ -889,7 +944,7 @@ blocks candidates attacked
   | otherwise = Map.empty : [Map.singleton blocker (Set.singleton attacker) | blocker <- candidates, attacker <- attacked]
 
 -- | The most declarations 'attacks' and 'blocks' search exhaustively, and
--- the most choices of targets 'aims' offers.
+-- the most choices of targets 'aims' offers and lines 'aimed' searches.
 widest :: Int
 widest = 16
 
