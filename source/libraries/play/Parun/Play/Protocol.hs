@@ -176,8 +176,10 @@ questionOf gs prompt =
 -- announcement where one does: one the cast's (Parun.Engine.Cast) or
 -- activation's (Parun.Engine.Activate) own gate refuses, so CR 601.2e (602.2b)
 -- rewinds the announcement. For CR 601.2c's targets it is the object itself,
--- which CR 115.5 makes an illegal target; for CR 601.2b's modes, one past every
--- legal mode (CR 700.2a); for a splice, the first card offered twice (CR
+-- which CR 115.5 makes an illegal target, and for their count one past every
+-- recipient offered (Parun.Engine.Target.askChooser); for CR 601.2d's
+-- division, none (Parun.Engine.Target.announceDivision); for CR 601.2b's modes,
+-- one past every legal mode (CR 700.2a); for a splice, the first card offered twice (CR
 -- 702.47b); for entwine (CR 702.42a), buyback (CR 702.27a), an optional cost's
 -- count (CR 702.33a, 702.33c) and a variable's value (CR 107.3a), their typed
 -- withdrawal. Offered only to the announcing player's own choice: another
@@ -186,9 +188,9 @@ questionOf gs prompt =
 -- own, on the stack, and not to a mana ability's or a special action's X its
 -- payment asks.
 --
--- Not implemented: a withdrawal at the other prompts of an announcement, which
--- have neither an answer the engine provably refuses nor a typed decline
--- (#9599).
+-- Not implemented: a withdrawal at CR 601.2b's cost choice and CR 601.2h's
+-- payment, which have neither an answer the engine provably refuses nor a
+-- typed decline (#9611).
 withdrawalOf :: GameState.GameState -> Prompt.Prompt r -> Maybe r
 withdrawalOf gs prompt
   | Maybe.isNothing (Scratch.keptFaceDown (GameState.scratch gs)) = Nothing
@@ -197,6 +199,12 @@ withdrawalOf gs prompt
         | own chooser oid,
           Just slot <- Set.lookupMin (Map.keysSet slots) ->
             Just (Map.singleton slot (Set.singleton (Recipient.ToObject oid)))
+      Prompt.AnnounceTargets _ chooser oid offers
+        | own chooser oid,
+          Just (slot, (_, legal)) <- Map.lookupMin offers ->
+            Just (Map.singleton slot (Natural.length legal + 1))
+      Prompt.ChooseDivision _ divider oid _ _
+        | own divider oid -> Just Map.empty
       Prompt.ChooseModes _ chooser oid legal _
         | own chooser oid ->
             Just (Seq.singleton (ModeIndex.MkModeIndex (maybe 0 ((+ 1) . ModeIndex.unwrap) (Set.lookupMax legal))))

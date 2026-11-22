@@ -1065,6 +1065,7 @@ form request picked = case Text.unpack (Question.kind question) of
               : fmap nudge context
                 <> rows
                 <> [primary MkSubmit (send chooser)]
+                <> [cancel withdrawal | Just withdrawal <- [Question.withdraw question]]
   -- One of several yields, shares or costs, answered by its index.
   kind
     | Just shown <- Request.view request,

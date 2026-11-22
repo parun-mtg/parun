@@ -1013,7 +1013,7 @@ paysBlighting oid p = case p of
 -- real choice rather than a prompt short-circuited by having exactly as many
 -- candidates as it needs.
 --
--- The answerer announces SIX and is clamped back, which is what makes the
+-- The answerer announces the most the prompt offers, which is what makes the
 -- ceiling the devotion's rather than the board's.
 --
 -- The two boards differ in the mana costs of alice's two other creatures --
@@ -1062,7 +1062,9 @@ marauderBoard s registry black = do
 marauderTrigger :: [ObjectId.ObjectId] -> GameState.GameState -> GameState.GameState
 marauderTrigger wanted gs =
   let answer :: Prompt.Prompt r -> r
-      answer = takingTargets 6 wanted
+      answer p = case p of
+        Prompt.AnnounceTargets {} -> Replay.defaultAnswer p
+        _ -> takingTargets 6 wanted p
       entered = S.runPure answer (S.runPure answer gs Stack.resolveTop) Engine.settleForPriority
    in S.runPure answer entered Stack.resolveTop
 

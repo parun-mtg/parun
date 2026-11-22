@@ -189,6 +189,13 @@ spec s registry = Spec.describe s "WebQuestion" $ do
     Spec.assertEqWith s "one each, the rest first" (Question.Web.initial request) (Set.fromList [(0, 1), (1, 0)])
     Spec.assertEqWith s "the reply" (answered prompt request (Question.Web.initial request)) (Right (Map.fromList [(Recipient.ToCreature a, 2), (Recipient.ToCreature b, 1)]))
     Spec.assertBool s (Text.isInfixOf (Text.pack "class=\"amount-row\"") (Html.toText (Question.Web.view request Question.Web.blank))) "a row per target"
+    -- A withdrawal, where the question carries one, is a Cancel answering it
+    -- (CR 734.1).
+    let withdrawal = R.Array []
+        withdrawing = request {Request.question = (Request.question request) {Question.withdraw = Just withdrawal}}
+        cancel = let view = Question.Web.view withdrawing Question.Web.blank in Html.labelled (Text.pack "button") (Text.pack "Cancel") view >>= \path -> Html.handler (Text.pack "click") path view
+    Spec.assertEqWith s "Cancel withdraws" cancel (Just (Question.Web.MkAnswer withdrawal))
+    Spec.assertBool s (not (Text.pack ">Cancel</button>" `Text.isInfixOf` Html.toText (Question.Web.view request Question.Web.blank))) "no Cancel without a withdrawal"
 
   Spec.it s "CR 122.1 an amount per permanent within the offer's total, refused outside it" $ do
     bears <- S.printingOf s registry "Grizzly Bears"
