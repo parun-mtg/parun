@@ -89,7 +89,7 @@ spec s registry = Spec.describe s "Search" $ do
       _ -> Nothing
     let world = othersAtOneLife pid gs {GameState.objects = Map.map (\o -> if Object.owner o /= pid && Object.zone o == Zone.Battlefield then o {Object.tapped = TapState.Tapped} else o) (GameState.objects gs)}
     declared <- traverse (searched s (Asked.MkAsked [] world (Prompt.DeclareAttackers decider pid candidates))) [1 .. 4]
-    Spec.assertBool s (all (not . null) declared) "attacked in every seed"
+    Spec.assertBool s (not (any null declared)) "attacked in every seed"
 
   Spec.it s "the search bot blocks a lone attacker at 1 life" $ do
     (gs, (decider, pid, blockers, attackers)) <- capturing s registry 3 "a declaration of blockers against one attacker" $ \asked -> case Asked.prompt asked of

@@ -10,6 +10,7 @@ module Parun.Play.Search where
 
 import qualified Control.Monad as Monad
 import qualified Control.Monad.Trans.State.Strict as State
+import qualified Data.Containers.ListUtils as ListUtils
 import qualified Data.Foldable as Foldable
 import qualified Data.List as List
 import qualified Data.List.NonEmpty as NonEmpty
@@ -20,7 +21,6 @@ import Numeric.Natural (Natural)
 import qualified Parun.Engine.Engine as Engine
 import qualified Parun.Engine.Game as Engine.Game
 import qualified Parun.Engine.Visibility as Visibility
-import qualified Data.Containers.ListUtils as ListUtils
 import qualified Parun.Extra.Natural as Natural
 import qualified Parun.Play.Game as Game
 import qualified Parun.Play.Generator as Generator
@@ -31,8 +31,8 @@ import qualified Parun.Types.Asked as Asked
 import qualified Parun.Types.CardIdentity as CardIdentity
 import qualified Parun.Types.Combat as Combat
 import qualified Parun.Types.Decider as Decider
-import qualified Parun.Types.GameState as GameState
 import qualified Parun.Types.Game as Game.Type
+import qualified Parun.Types.GameState as GameState
 import qualified Parun.Types.Generator as Generator.Type
 import qualified Parun.Types.Object as Object
 import qualified Parun.Types.ObjectId as ObjectId
