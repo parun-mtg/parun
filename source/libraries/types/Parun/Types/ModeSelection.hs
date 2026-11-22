@@ -37,6 +37,11 @@ import qualified Parun.Types.Quantity as Quantity
 -- 'ChooseBetween' where 'ChooseInstead' is. Until then Parun.Engine.Modal reads it
 -- as having no ceiling of its own.
 --
+-- 'ChooseOptionally' is next: "you may choose two", either no mode at all or a
+-- selection the wrapped instruction allows, never anything between (Shadrix
+-- Silverquill's ruling: zero or two, never one). A wrapper rather than a range,
+-- which would admit the sizes between.
+--
 -- 'ChoosePawprintsWithRepeats' is the last: CR 700.2i bounds a WEIGHTED total
 -- rather than a number of modes (Parun.Types.ChoosePawprints), under CR
 -- 700.2d's exception, which every pawprint printing carries.
@@ -61,5 +66,6 @@ data ModeSelection
   | ChooseBetweenWithRepeats ChooseBetween.ChooseBetween
   | ChooseInstead (ChooseInstead.ChooseInstead ModeSelection)
   | ChooseUpTo Quantity.Quantity
+  | ChooseOptionally ModeSelection
   | ChoosePawprintsWithRepeats ChoosePawprints.ChoosePawprints
   deriving (Eq, Ord, Show)

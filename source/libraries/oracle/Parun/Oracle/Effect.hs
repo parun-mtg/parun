@@ -578,6 +578,7 @@ instructions context es = case es of
   -- target creature" (Qarsi Revenant). Free: the first apart, below.
   e@(Effect.PutCounters p) : rest
     | Maybe.isNothing (PutCounters.totalAtMost p),
+      Maybe.isNothing (PutCounters.putter p),
       null (PutCounters.alternatives p),
       (run, others) <- span (placedOn p) rest,
       not (null run) ->
@@ -600,6 +601,8 @@ instructions context es = case es of
   e@(Effect.PutCounters p) : f@(Effect.PutCounters q) : others
     | Maybe.isNothing (PutCounters.totalAtMost p),
       Maybe.isNothing (PutCounters.totalAtMost q),
+      Maybe.isNothing (PutCounters.putter p),
+      Maybe.isNothing (PutCounters.putter q),
       null (PutCounters.alternatives p),
       null (PutCounters.alternatives q),
       not (placedOn p f) ->
@@ -734,7 +737,7 @@ returned context objects = do
 -- object this placement puts them on.
 placedOn :: PutCounters.PutCounters -> Effect.Effect card ability -> Bool
 placedOn p e = case e of
-  Effect.PutCounters q -> PutCounters.ref q == PutCounters.ref p && Maybe.isNothing (PutCounters.totalAtMost q) && null (PutCounters.alternatives q)
+  Effect.PutCounters q -> PutCounters.ref q == PutCounters.ref p && Maybe.isNothing (PutCounters.totalAtMost q) && Maybe.isNothing (PutCounters.putter q) && null (PutCounters.alternatives q)
   _ -> False
 
 putCounters :: Effect.Effect card ability -> Maybe PutCounters.PutCounters
@@ -1122,10 +1125,11 @@ effect context e = case e of
                 Target.Third -> []
                 Target.ThirdPlural -> []
         naming (Target.names a) (imperative context (Create.creator c) create creates <> leading <> spoken)
-  -- A limit on the total and a choice of kinds have no wording yet, so either
-  -- renders nothing.
+  -- A limit on the total, a choice of kinds and a named putter have no wording
+  -- yet, so each renders nothing.
   Effect.PutCounters p
     | Maybe.isNothing (PutCounters.totalAtMost p),
+      Maybe.isNothing (PutCounters.putter p),
       null (PutCounters.alternatives p) -> do
         ref <- Target.object context Target.Each (PutCounters.ref p)
         a <- Target.amounts context (PutCounters.quantity p)

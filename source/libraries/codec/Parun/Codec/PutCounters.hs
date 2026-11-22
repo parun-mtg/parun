@@ -5,6 +5,7 @@ module Parun.Codec.PutCounters where
 import qualified Parun.Codec.CounterKind as CounterKind
 import qualified Parun.Codec.Keyword as Keyword
 import qualified Parun.Codec.ObjectRef as ObjectRef
+import qualified Parun.Codec.PlayerRef as PlayerRef
 import qualified Parun.Codec.Quantity as Quantity
 import qualified Parun.Codec.SlotName as SlotName
 import qualified Parun.JsonCodec.Codec as Codec
@@ -13,7 +14,7 @@ import qualified Parun.JsonCodec.Fields as Fields
 import qualified Parun.Types.PutCounters as PutCounters
 
 -- | A bare object keyed by the record's field names, the alternatives, the
--- limit and the slot elided when absent. The tag that picks it is written by Parun.Codec.Effect's PutCounters
+-- limit, the slot and the putter elided when absent. The tag that picks it is written by Parun.Codec.Effect's PutCounters
 -- arm.
 codec :: Codec.Codec PutCounters.PutCounters
 codec = Fields.object $ do
@@ -23,6 +24,7 @@ codec = Fields.object $ do
   ref <- Fields.required "ref" ObjectRef.codec PutCounters.ref
   totalAtMost <- Fields.defaulted "totalAtMost" Nothing (Common.maybe Common.natural) PutCounters.totalAtMost
   slot <- Fields.defaulted "slot" Nothing (Common.maybe SlotName.codec) PutCounters.slot
+  putter <- Fields.defaulted "putter" Nothing (Common.maybe PlayerRef.codec) PutCounters.putter
   pure
     PutCounters.MkPutCounters
       { PutCounters.kind = kind,
@@ -30,5 +32,6 @@ codec = Fields.object $ do
         PutCounters.quantity = quantity,
         PutCounters.ref = ref,
         PutCounters.totalAtMost = totalAtMost,
-        PutCounters.slot = slot
+        PutCounters.slot = slot,
+        PutCounters.putter = putter
       }

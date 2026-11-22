@@ -934,7 +934,7 @@ effectPlayerRefs effect = case effect of
   Effect.NextDamageInstance x -> durationPlayerRefs (NextDamageInstance.duration x)
   Effect.RedirectDamage x -> durationPlayerRefs (RedirectDamage.duration x)
   Effect.Counter {} -> []
-  Effect.PutCounters {} -> []
+  Effect.PutCounters x -> Maybe.maybeToList (PutCounters.putter x)
   Effect.Divide divide -> [Divide.chooser divide]
   Effect.RemoveCounters {} -> []
   Effect.RemoveCountersAmong {} -> []
@@ -1440,7 +1440,7 @@ slotsOf effect = joinTwo (joinTwo (joinSlots (fmap objectRefSlots (effectObjectR
       ]
   -- The bound slot is a DEFINITION, not a read: see boundSlots below.
   Effect.Counter {} -> Map.empty
-  Effect.PutCounters (PutCounters.MkPutCounters _ _ quantity _ _ _) -> quantitySlots quantity
+  Effect.PutCounters (PutCounters.MkPutCounters _ _ quantity _ _ _ _) -> quantitySlots quantity
   Effect.Divide divide -> quantitySlots (Divide.quantity divide)
   -- CR 122.8 reads its tally off ONE object, so `from` is read singly, where the
   -- destination is an ObjectRef and may sweep.
@@ -2356,7 +2356,7 @@ ownSlotsAreExhaustive effect = case effect of
     durationSlotsAreExhaustive duration && all slotsAreExhaustive rider
   Effect.RedirectDamage (RedirectDamage.MkRedirectDamage duration _ amount _ _ _ _ _ _ _) -> durationSlotsAreExhaustive duration && all Quantity.slotsAreExhaustive amount
   Effect.Counter {} -> True
-  Effect.PutCounters (PutCounters.MkPutCounters _ _ quantity _ _ _) -> Quantity.slotsAreExhaustive quantity
+  Effect.PutCounters (PutCounters.MkPutCounters _ _ quantity _ _ _ _) -> Quantity.slotsAreExhaustive quantity
   Effect.Divide divide -> Quantity.slotsAreExhaustive (Divide.quantity divide)
   -- No Quantity at all: CR 122.8 names neither a kind nor a count.
   Effect.PutCountersFrom {} -> True
@@ -2661,7 +2661,7 @@ hasRead wanted =
         Effect.NextDamageInstance (NextDamageInstance.MkNextDamageInstance _ _ _ _ _ _ _ _ rider _) -> hasRead wanted (Foldable.toList rider)
         Effect.RedirectDamage (RedirectDamage.MkRedirectDamage _ _ amount _ _ _ _ _ _ _) -> any (Quantity.hasRead wanted) amount
         Effect.Counter {} -> False
-        Effect.PutCounters (PutCounters.MkPutCounters _ _ quantity _ _ _) -> Quantity.hasRead wanted quantity
+        Effect.PutCounters (PutCounters.MkPutCounters _ _ quantity _ _ _ _) -> Quantity.hasRead wanted quantity
         Effect.Divide divide -> Quantity.hasRead wanted (Divide.quantity divide)
         Effect.PutCountersFrom {} -> False
         Effect.PutCounterOfEachKind {} -> False

@@ -258,7 +258,7 @@ counter settle resolving source controller legal (Counter.MkCounter ref mSlot mS
     Monad.unless (null permanents) (State.modify' (Common.bindObjectsSlot resolving slot (Seq.fromList permanents)))
 
 putCounters :: ObjectId -> ObjectId -> PlayerId -> Map.Map SlotName (Set Recipient) -> Map.Map SlotName (Set Recipient) -> PutCounters.PutCounters -> Game ()
-putCounters resolving source controller legal chosen (PutCounters.MkPutCounters kind alternatives quantity ref totalAtMost mSlot) = do
+putCounters resolving source controller legal chosen (PutCounters.MkPutCounters kind alternatives quantity ref totalAtMost mSlot mPutter) = do
   -- CR 608.2c: the set is swept as this instruction is reached, and an
   -- illegal slot (CR 608.2b) or a player recipient answers with nobody. A
   -- CR 608.2d choice is asked through askingObjects, ModifyTarget's reason:
@@ -305,12 +305,16 @@ putCounters resolving source controller legal chosen (PutCounters.MkPutCounters 
   -- taken no action for CR 608.2f to be read over.
   --
   -- The cause is Event.resolvingCounterCause's: Sphinx-Bone Wand's "you may put
-  -- a charge counter" is CR 118.12's cost, and no effect.
-  cause <- State.gets (Event.resolvingCounterCause controller)
+  -- a charge counter" is CR 118.12's cost, and no effect. Its player is each
+  -- one PutCounters.putter names (CR 608.2c), in APNAP order (CR 101.4):
+  -- Shadrix Silverquill's "target player puts". A putter naming nobody puts
+  -- nothing (CR 101.3).
+  let putters = maybe [controller] (\who -> filter (`elem` playerRefPlayers legal resolving source controller gs who) (Game.apnapOrder gs)) mPutter
+  causes <- traverse (State.gets . Event.resolvingCounterCause) putters
   placed <-
-    if null placements
+    if null placements || null causes
       then pure []
-      else Event.simultaneously . fmap concat . Monad.forM placements $ \(target, placedKind, n) -> do
+      else Event.simultaneously . fmap concat . Monad.forM ((,) <$> causes <*> placements) $ \(cause, (target, placedKind, n)) -> do
         settled <- Event.putCountersWithin totalAtMost cause target placedKind n
         pure [(target, settled) | settled > 0]
   -- PutCounters.slot: the recipients the funnel settled at least one counter

@@ -450,10 +450,12 @@ offerOf namer gs prompt = case prompt of
   -- CR 608.2d.
   Prompt.ChooseLoopMembers _ _ source howMany members -> subset namer (Just source) [] (case howMany of LoopMembers.One -> exactly 1 members; _ -> (Just 0, Nothing)) (fmap (Reply.encode Reply.recipient namer) members)
   -- CR 700.2a: the legal modes by index, each named, as many as the selection
-  -- takes, (CR 700.2d) whether one may be chosen again, and (CR 700.2i) each
-  -- one's pawprints, the selection's `most` being their budget.
+  -- takes, under @"sizes"@ the sizes it allows where they leave a gap ("you
+  -- may choose two": zero or two), (CR 700.2d) whether one may be chosen
+  -- again, and (CR 700.2i) each one's pawprints, the selection's `most` being
+  -- their budget.
   Prompt.ChooseModes _ _ source legal selection ->
-    subset namer (Just source) (("names", R.Array (fmap (modeName gs source) (Set.toList legal))) : [("repeats", R.Boolean True) | Modal.allowsRepeatsIn selection] <> [("pawprints", R.Array (fmap natural weights)) | Just weights <- [traverse (Modal.pawprintsOf selection) (Set.toList legal)]]) (Just (Modal.leastOf selection), Modal.mostOf selection) (fmap (natural . ModeIndex.unwrap) (Set.toList legal))
+    subset namer (Just source) (("names", R.Array (fmap (modeName gs source) (Set.toList legal))) : [("sizes", R.Array (fmap natural sizes)) | Just most <- [Modal.mostOf selection], let { sizes = Modal.selectionSizes most selection }, sizes /= [Modal.leastOf selection .. most]] <> [("repeats", R.Boolean True) | Modal.allowsRepeatsIn selection] <> [("pawprints", R.Array (fmap natural weights)) | Just weights <- [traverse (Modal.pawprintsOf selection) (Set.toList legal)]]) (Just (Modal.leastOf selection), Modal.mostOf selection) (fmap (natural . ModeIndex.unwrap) (Set.toList legal))
   -- CR 702.47b: the cards in the order the answer names them, the first
   -- happening first, and under @"costs"@ the splice cost each adds.
   Prompt.ChooseSplice _ _ source offers -> subset namer (Just source) [("costs", R.Array (fmap (payment namer . snd) offers))] (Just 0, Nothing) (fmap (object namer . fst) offers)

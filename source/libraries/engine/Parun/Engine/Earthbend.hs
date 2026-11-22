@@ -95,7 +95,8 @@ instructions earthbend =
               PutCounters.quantity = Earthbend.quantity earthbend,
               PutCounters.ref = ref,
               PutCounters.totalAtMost = Nothing,
-              PutCounters.slot = Nothing
+              PutCounters.slot = Nothing,
+              PutCounters.putter = Nothing
             }
       ]
 
