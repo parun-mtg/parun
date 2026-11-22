@@ -120,6 +120,7 @@ import qualified Parun.Types.TriggerSource as TriggerSource
 import qualified Parun.Types.TriggeredAbility as TriggeredAbility
 import qualified Parun.Types.TurnRegisters as TurnRegisters
 import qualified Parun.Types.WordFamily as WordFamily
+import qualified Parun.Types.XDecision as XDecision
 import qualified Parun.Types.Zone as Zone
 
 -- One way of tapping a single-colour source: CR 305.6's intrinsic "{T}" cost and
@@ -188,7 +189,7 @@ combatReplaySpec s =
         -- would replay a different game (#417).
         Spec.it s "ChooseX records and replays a Natural" $ do
           let p = Prompt.ChooseX decider S.alice oid Binding.variableX 0 2
-          Spec.assertEqWith s "round trip" (Replay.decode p (Replay.encode p 4)) (Just (4 :: Natural.Natural))
+          Spec.assertEqWith s "round trip" (Replay.decode p (Replay.encode p (XDecision.Announces 4))) (Just (XDecision.Announces 4))
         -- CR 601.2b / 700.2a: a modal choice (Response.ChoseModes, a Seq
         -- ModeIndex) round-trips through Replay exactly like every
         -- other response -- no JSON codec is involved: Response has never had
@@ -272,20 +273,20 @@ combatReplaySpec s =
           Spec.assertEqWith
             s
             "kicking round trips"
-            (Replay.decode p (Replay.encode p (KickerDecision.MkKickerDecision 1)))
-            (Just (KickerDecision.MkKickerDecision 1))
+            (Replay.decode p (Replay.encode p (KickerDecision.Pays 1)))
+            (Just (KickerDecision.Pays 1))
           -- CR 702.33c: the COUNT is what the transcript carries, so a multikicker
           -- answer past one has to survive the round trip as itself.
           Spec.assertEqWith
             s
             "a multikicker count round trips as that count"
-            (Replay.decode p (Replay.encode p (KickerDecision.MkKickerDecision 3)))
-            (Just (KickerDecision.MkKickerDecision 3))
+            (Replay.decode p (Replay.encode p (KickerDecision.Pays 3)))
+            (Just (KickerDecision.Pays 3))
           Spec.assertEqWith
             s
             "declining round trips"
-            (Replay.decode p (Replay.encode p (KickerDecision.MkKickerDecision 0)))
-            (Just (KickerDecision.MkKickerDecision 0))
+            (Replay.decode p (Replay.encode p (KickerDecision.Pays 0)))
+            (Just (KickerDecision.Pays 0))
           -- Discriminating: fails if ChooseKicker reuses the entwine
           -- announcement rather than getting its own constructor.
           Spec.assertEqWith
@@ -314,7 +315,7 @@ combatReplaySpec s =
                     (Just 1)
                 )
             )
-            (KickerDecision.MkKickerDecision 0)
+            (KickerDecision.Pays 0)
         Spec.it s "ChooseCopyTarget records and replays a Maybe ObjectId" $ do
           let p = Prompt.ChooseCopyTarget decider S.alice oid [ObjectId.MkObjectId 7]
               answer = Just (ObjectId.MkObjectId 7)
@@ -1080,7 +1081,7 @@ combatReplaySpec s =
         -- would not object, and a player's ANNOUNCED X replaying as a die roll
         -- is what Parun.Types.Response's own rule forbids (CR 701.9b).
         Spec.it s "an announced X does not decode as a die roll" $
-          Spec.assertEqWith s "mismatch" (Replay.decode (Prompt.RollDie 20) (Response.ChoseX 13)) Nothing
+          Spec.assertEqWith s "mismatch" (Replay.decode (Prompt.RollDie 20) (Response.ChoseX (XDecision.Announces 13))) Nothing
         -- CR 705.1's coin: RollDie's posture with no payload at all, the two
         -- faces being the whole offer.
         Spec.it s "FlipCoin round-trips through the transcript" $ do
@@ -2021,7 +2022,7 @@ combatReplaySpec s =
           -- while CASTING and CR 107.14's amount is named mid-resolution, so a
           -- transcript of one replaying as the other is a silent wrong answer.
           let p = Prompt.ChoosePaidEnergy decider S.alice oid 5
-          Spec.assertEqWith s "mismatch" (Replay.decode p (Response.ChoseX 4)) Nothing
+          Spec.assertEqWith s "mismatch" (Replay.decode p (Response.ChoseX (XDecision.Announces 4))) Nothing
         Spec.it s "a short paid-energy transcript pays nothing" $
           -- Paying nothing is legal on any board, whatever the payer holds.
           Spec.assertEqWith s "zero" (Replay.defaultAnswer (Prompt.ChoosePaidEnergy decider S.alice oid 5)) 0
@@ -2473,7 +2474,7 @@ replaySpec s registry =
       -- A response of the wrong SHAPE for the first prompt, which is the
       -- opening Prompt.Shuffle: Response.ChoseX answers Prompt.ChooseX and
       -- nothing else, so decode rejects it.
-      let bogus = Response.ChoseX 0
+      let bogus = Response.ChoseX (XDecision.Announces 0)
           ((_, replayed), desync) = Replay.replay (bogus : transcript) start game
       Spec.assertEqWith s "reported at index 0, carrying the offending entry" desync (Just (Desync.Mismatched 0 bogus))
       Spec.assertBool s (recorded /= replayed) "and the replay is not the recorded game"
@@ -2491,10 +2492,10 @@ replaySpec s registry =
           -- One spurious entry ahead of the log is enough: decode rejects it,
           -- replay does not consume it, and every later prompt meets the same
           -- entry -- so the whole transcript is stranded behind it.
-          ((_, drifted), desync) = Replay.replay (Response.ChoseX 0 : transcript) base Engine.runStep
+          ((_, drifted), desync) = Replay.replay (Response.ChoseX (XDecision.Announces 0) : transcript) base Engine.runStep
       Spec.assertEqWith s "recorded: alice conceded, bob wins" (GameState.result conceded) (Just (Result.Won S.bob))
       Spec.assertEqWith s "replayed: the concession is gone" (GameState.result drifted) Nothing
-      Spec.assertEqWith s "and the report says so" desync (Just (Desync.Mismatched 0 (Response.ChoseX 0)))
+      Spec.assertEqWith s "and the report says so" desync (Just (Desync.Mismatched 0 (Response.ChoseX (XDecision.Announces 0))))
     Spec.it s "a ChooseTargets answer round-trips through the transcript" $ do
       let sets = Map.singleton (SlotName.MkSlotName (Text.pack "target")) (1 :: Natural.Natural, Set.singleton (Recipient.ToPlayer S.bob))
           p = Prompt.ChooseTargets (Decider.MkDecider S.alice) S.alice (ObjectId.MkObjectId 0) sets

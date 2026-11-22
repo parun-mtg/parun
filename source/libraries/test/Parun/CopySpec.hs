@@ -978,7 +978,7 @@ pinTarget recipient p = case p of
 -- is the answer the fallback would not give.
 promisesCarol :: Prompt.Prompt r -> r
 promisesCarol p = case p of
-  Prompt.ChooseKicker {} -> KickerDecision.MkKickerDecision 1
+  Prompt.ChooseKicker {} -> KickerDecision.Pays 1
   Prompt.ChooseOpponent _ _ _ (Just PlayerChoice.Promised {}) offered -> Maybe.fromMaybe (NonEmpty.head offered) (List.find (== S.carol) (NonEmpty.toList offered))
   _ -> S.identityAnswer p
 

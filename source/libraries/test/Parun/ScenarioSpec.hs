@@ -85,6 +85,7 @@ import qualified Parun.Types.TeamId as TeamId
 import qualified Parun.Types.Timed as Timed
 import qualified Parun.Types.TurnRegisters as TurnRegisters
 import qualified Parun.Types.When as When
+import qualified Parun.Types.XDecision as XDecision
 
 spec :: (Monad m, Monad n) => Spec.Spec m n -> Registry.Registry m -> n ()
 spec s registry = Spec.describe s "Scenario" $ do
@@ -345,7 +346,7 @@ spec s registry = Spec.describe s "Scenario" $ do
           Right ((chosen, modes, x, chosenCost, targets), _) -> do
             Spec.assertEqWith s "the priority action" chosen action
             Spec.assertEqWith s "the action's modes" modes (Seq.singleton mode)
-            Spec.assertEqWith s "the action's X" x 3
+            Spec.assertEqWith s "the action's X" x (XDecision.Announces 3)
             Spec.assertEqWith s "the action's cost" chosenCost (CandidateCost.plain Nothing cost)
             Spec.assertEqWith s "the action's target" targets (Map.singleton slot (Set.singleton (Recipient.ToCreature targetId)))
       _ -> Spec.assertFailure s "the board omitted an action alias"

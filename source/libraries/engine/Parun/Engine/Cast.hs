@@ -170,6 +170,7 @@ import qualified Parun.Types.TypeLine as TypeLine
 import qualified Parun.Types.Undoing as Undoing
 import qualified Parun.Types.Uses as Uses
 import qualified Parun.Types.VariableChoice as VariableChoice
+import qualified Parun.Types.XDecision as XDecision
 import qualified Parun.Types.Zone as Zone
 import qualified Parun.Types.ZoneChangePattern as ZoneChangePattern
 import qualified Parun.Types.ZoneChangeR as ZoneChangeR
@@ -1091,7 +1092,9 @@ withOptionalPayments paid candidate =
 -- together are payable. How high a multikicker count may go is not gated here at
 -- all -- the answer is honoured and then measured, which is Prompt.ChooseX's
 -- posture, and castProposed rejects a cast whose announced total nothing can pay.
-announceOptionalCosts :: [Keyword] -> Seq.Seq ModeIndex.ModeIndex -> ManaSpending -> PlayerId -> ObjectId -> [(Maybe Keyword, ([AppliedReduction.AppliedReduction], ManaNarrowing.ManaNarrowing, Cost Keyword))] -> [(Keyword, Natural)] -> GameState -> Game (Map.Map Keyword (Map.Map KeywordInstance.KeywordInstance Natural))
+--
+-- Nothing is a withdrawal (CR 734.1), after which nothing further is asked.
+announceOptionalCosts :: [Keyword] -> Seq.Seq ModeIndex.ModeIndex -> ManaSpending -> PlayerId -> ObjectId -> [(Maybe Keyword, ([AppliedReduction.AppliedReduction], ManaNarrowing.ManaNarrowing, Cost Keyword))] -> [(Keyword, Natural)] -> GameState -> Game (Maybe (Map.Map Keyword (Map.Map KeywordInstance.KeywordInstance Natural)))
 announceOptionalCosts held modes spending pid sid candidates offers gs =
   let -- Priced on the board this one more declaration and the candidate would
       -- make (CR 601.2c's slots, castAimable).
@@ -1099,29 +1102,34 @@ announceOptionalCosts held modes spending pid sid candidates offers gs =
       -- asked once, the next of the object's own.
       declared keyword which paid = Map.insertWith Map.union keyword (Map.singleton (Maybe.fromMaybe (KeywordInstance.Own (Natural.length (Map.findWithDefault Map.empty keyword paid) + 1)) which) 1) paid
       payable keyword which paid cost = any (\(castFor, (extra, narrowing, candidate)) -> payableCost (const id) (Just modes) extra spending narrowing pid sid (stampPaidCosts (declared keyword which paid) sid (proposedUnder held pid sid castFor gs)) (Cost.plus (withOptionalPayments paid candidate) cost)) candidates
-      choose keyword which limit = KickerDecision.unwrap <$> Game.choose (Prompt.ChooseKicker (Decide.deciderFor pid gs) pid sid keyword which limit)
+      choose keyword which limit = Game.choose (Prompt.ChooseKicker (Decide.deciderFor pid gs) pid sid keyword which limit)
       -- An instance asked nothing, its cost unpayable, still holds its place.
-      answer keyword which limit cost paid = if payable keyword (Just which) paid cost then choose keyword (Just which) limit else pure 0
+      answer keyword which limit cost paid = if payable keyword (Just which) paid cost then choose keyword (Just which) limit else pure (KickerDecision.Pays 0)
       perInstance keyword which limit cost paid = do
-        times <- answer keyword which limit cost paid
-        pure (Map.insertWith Map.union keyword (Map.singleton which times) paid)
+        decision <- answer keyword which limit cost paid
+        pure $ case decision of
+          KickerDecision.Pays times -> Just (Map.insertWith Map.union keyword (Map.singleton which times) paid)
+          KickerDecision.Withdraws -> Nothing
       -- A once-each cost's count is that many of the object's own instances
       -- paid once; an unlimited one asked together is one combined count.
       recorded limit times = case limit of
         Just _ -> Map.fromList [(KeywordInstance.Own i, 1) | i <- [1 .. times]]
         Nothing -> Map.singleton (KeywordInstance.Own 1) times
-      ask paid (keyword, instances) = case Keyword.optionalCost keyword of
+      ask announced (keyword, instances) = case (announced, Keyword.optionalCost keyword) of
+        (Nothing, _) -> pure Nothing
         -- Each of Projection.keywordInstances' instances asked in turn, its
         -- entry keyed by it, which Cost.nextPromise reads back for a gift; the
         -- limit is the instance's own.
-        Just (cost, limit)
-          | Keyword.paidPerInstance keyword -> Monad.foldM (\acc which -> perInstance keyword which limit cost acc) paid (Projection.keywordInstances keyword sid (Cost.asSpell pid sid gs))
-        Just (cost, limit)
+        (Just paid, Just (cost, limit))
+          | Keyword.paidPerInstance keyword -> Monad.foldM (\acc which -> maybe (pure Nothing) (perInstance keyword which limit cost) acc) (Just paid) (Projection.keywordInstances keyword sid (Cost.asSpell pid sid gs))
+        (Just paid, Just (cost, limit))
           | payable keyword Nothing paid cost -> do
-              times <- choose keyword Nothing (Keyword.paymentLimit instances keyword)
-              pure (Map.insert keyword (recorded limit times) paid)
-        _ -> pure paid
-   in Map.filter (any (> 0)) <$> Monad.foldM ask Map.empty offers
+              decision <- choose keyword Nothing (Keyword.paymentLimit instances keyword)
+              pure $ case decision of
+                KickerDecision.Pays times -> Just (Map.insert keyword (recorded limit times) paid)
+                KickerDecision.Withdraws -> Nothing
+        _ -> pure announced
+   in fmap (Map.filter (any (> 0))) <$> Monad.foldM ask (Just Map.empty) offers
 
 -- The optional-cost declarations castability is asked under, paidReadings'
 -- shape for the mana total: none, or one of the spell's optional additional
@@ -4202,7 +4210,11 @@ castProposed perform baseSpending pid oid sid printedFace castFrom preparedFor k
       --
       -- Carried as the counts per cost rather than as a flag, for entwine's
       -- reason: the candidate costs below and the CR 702.33d stamp read one value.
-      paid <- announceOptionalCosts held chosenModes spending pid sid keyedCandidates optionalOffers gs
+      --
+      -- A withdrawal (CR 734.1) asks nothing further and rewinds the cast below.
+      announcedOptional <- announceOptionalCosts held chosenModes spending pid sid keyedCandidates optionalOffers gs
+      let paid = Maybe.fromMaybe Map.empty announcedOptional
+          kickerWithdrawn = Maybe.isNothing announcedOptional
       --
       -- CR 702.33d: "if a spell's controller declares the intention to pay any of
       -- that spell's kicker costs, that spell has been kicked" -- the DECLARATION
@@ -4231,11 +4243,12 @@ castProposed perform baseSpending pid oid sid printedFace castFrom preparedFor k
             any (\(castFor, (reduced, narrowing, candidate)) -> payableCost (const id) (Just chosenModes) reduced spending narrowing pid sid (stampPaidCosts paid sid (proposedUnder held pid sid castFor gs)) (Cost.plus (withOptionalPayments paid candidate) extra)) keyedCandidates
       --
       -- A withdrawal (CR 734.1) asks nothing further and rewinds the cast below.
-      buybackAnswer <- traverse (\extra -> (,) extra <$> Game.choose (Prompt.ChooseBuyback decider pid sid extra)) (Monad.mfilter buybackAffordable (Keyword.buybackCost keywords))
+      buybackAnswer <- traverse (\extra -> (,) extra <$> Game.choose (Prompt.ChooseBuyback decider pid sid extra)) (Monad.mfilter (\extra -> not kickerWithdrawn && buybackAffordable extra) (Keyword.buybackCost keywords))
       let boughtBack = case buybackAnswer of
             Just (extra, BuybackDecision.BuysBack) -> Just extra
             _ -> Nothing
           buybackWithdrawn = fmap snd buybackAnswer == Just BuybackDecision.Withdraws
+          withdrawn = kickerWithdrawn || buybackWithdrawn
       -- CR 702.27a's second static ability reads the DECLARATION, as rule 702.33d's
       -- designation does, so the stamp lands here and not at CR 601.2h's payment. A
       -- cast that fails after this point rewinds to `before`, which takes the stamp
@@ -4253,7 +4266,7 @@ castProposed perform baseSpending pid oid sid printedFace castFrom preparedFor k
           spliceAffordable extra =
             any (\(castFor, (reduced, narrowing, candidate)) -> payableCost (const id) (Just chosenModes) reduced spending narrowing pid sid (stampPaidCosts paid sid (proposedUnder held pid sid castFor gs)) (Cost.plus (withBoughtBack (withOptionalPayments paid candidate)) extra)) keyedCandidates
           spliceOffers = filter (spliceAffordable . snd) (Maybe.mapMaybe (spliceOffer pid sid gs) (Game.zoneMembers Zone.Hand pid gs))
-      spliced <- if null spliceOffers || buybackWithdrawn then pure [] else Game.choose (Prompt.ChooseSplice decider pid sid spliceOffers)
+      spliced <- if null spliceOffers || withdrawn then pure [] else Game.choose (Prompt.ChooseSplice decider pid sid spliceOffers)
       -- CR 702.47b: "you can't splice any one card onto the same spell more than
       -- once". An answer naming a card twice, or one not offered, rejects the
       -- cast below rather than being repaired.
@@ -4328,7 +4341,7 @@ castProposed perform baseSpending pid oid sid printedFace castFrom preparedFor k
               settledFor candidate,
               any (payableUnder candidate) (wayCosts (permissions (CandidateCost.keyword candidate)))
             ]
-      if buybackWithdrawn || null payableCandidates || overKickerLimit || not spliceValid
+      if withdrawn || null payableCandidates || overKickerLimit || not spliceValid
         then reject
         else do
           -- CR 702.47a's reveal and CR 702.47c's gained text, stamped once the
@@ -4432,9 +4445,19 @@ castProposed perform baseSpending pid oid sid printedFace castFrom preparedFor k
               -- gate below measures the cost it fixes. The bound is advisory,
               -- Prompt.ChooseX's posture: a count the components cannot pay
               -- reverses the cast at the gate below rather than being clamped.
+              -- A withdrawal (CR 734.1) asks nothing further and rewinds the
+              -- cast at that gate.
               gsCounting <- State.get
-              let announceCount slot = fmap ((,) slot) (Game.choose (Prompt.ChooseX decider pid sid slot 0 (maximum (0 : countValues pid sid gsCounting (leastX (Just face) unannouncedCost) unannouncedCost slot))))
-              counts <- fmap Map.fromList (traverse announceCount (Cost.announcedCounts unannouncedCost))
+              let announceCount announced slot = case announced of
+                    Nothing -> pure Nothing
+                    Just named -> do
+                      decision <- Game.choose (Prompt.ChooseX decider pid sid slot 0 (maximum (0 : countValues pid sid gsCounting (leastX (Just face) unannouncedCost) unannouncedCost slot)))
+                      pure $ case decision of
+                        XDecision.Announces n -> Just (Map.insert slot n named)
+                        XDecision.Withdraws -> Nothing
+              announcedCounts <- Monad.foldM announceCount (Just Map.empty) (Cost.announcedCounts unannouncedCost)
+              let counts = Maybe.fromMaybe Map.empty announcedCounts
+                  countWithdrawn = Maybe.isNothing announcedCounts
               State.modify' (bindAnnounced counts sid)
               let chargedCost = Cost.substituteCounts counts unannouncedCost
               -- Re-read, because `gs` above predates the stamp and both CR 601.2c
@@ -4482,10 +4505,16 @@ castProposed perform baseSpending pid oid sid printedFace castFrom preparedFor k
               -- CHOSEN cost, and nothing filters the answer against it: an
               -- unaffordable announcement still reverses the whole cast (#417).
               -- Its least value is CR 101.1's printed floor (leastX).
-              mAmount <-
-                if Cost.hasVariable chargedCost
+              --
+              -- A withdrawal (CR 734.1) rewinds the cast at the gate below.
+              xAnswer <-
+                if Cost.hasVariable chargedCost && not countWithdrawn
                   then fmap Just (Game.choose (Prompt.ChooseX decider pid sid Binding.variableX (leastX (Just face) chargedCost) (affordableX chosenModes mCeiling chosenReductions chosenSpending chosenNarrowing pid sid bestowedGs chargedCost)))
                   else pure Nothing
+              let mAmount = case xAnswer of
+                    Just (XDecision.Announces x) -> Just x
+                    _ -> Nothing
+                  xWithdrawn = countWithdrawn || xAnswer == Just XDecision.Withdraws
               -- CR 101.1, and CR 101.2 for its direction: the card's sentence
               -- overrides the rule that would otherwise leave X free, and a
               -- "can't" beats the permission. REJECT rather than clamp, which is
@@ -4551,7 +4580,7 @@ castProposed perform baseSpending pid oid sid printedFace castFrom preparedFor k
                   -- asked it of as the cast began, the card now on the stack.
                   lapsed = maybe False (not . ActivationRestriction.onlyIfHolds pid sid announcedBoard) (CandidateCost.windowIf chosenCandidate)
                   refused = Maybe.isJust mAmount && maybe False (refusedAt chosenCandidate permissionUsed lapsed) (Filter.manaValue (Projection.viewOfObject sid announcedBoard))
-              if overCeiling || underFloor || refused || not (payableCost (const id) (Just chosenModes) chosenReductions chosenSpending chosenNarrowing pid sid announcedBoard announcedAtX)
+              if xWithdrawn || overCeiling || underFloor || refused || not (payableCost (const id) (Just chosenModes) chosenReductions chosenSpending chosenNarrowing pid sid announcedBoard announcedAtX)
                 then reject
                 else do
                   -- CR 601.2b's own order puts the hybrid and Phyrexian

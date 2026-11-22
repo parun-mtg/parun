@@ -809,7 +809,7 @@ floodMawChain s registry swap = do
       (evolutionId, g3) = S.addHandCard artificialEvolution S.alice g2
       promising :: Prompt.Prompt r -> r
       promising p = case p of
-        Prompt.ChooseKicker {} -> KickerDecision.MkKickerDecision 1
+        Prompt.ChooseKicker {} -> KickerDecision.Pays 1
         Prompt.ChooseTargets _ _ _ sets -> Map.map (Set.filter (`elem` [Recipient.ToCreature ringId, Recipient.ToObject ringId]) . snd) sets
         _ -> S.identityAnswer p
       onStack = S.runPure promising g3 (S.cast S.alice mawId)

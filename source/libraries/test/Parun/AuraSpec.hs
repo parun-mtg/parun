@@ -109,6 +109,7 @@ import qualified Parun.Types.TargetSlot as TargetSlot
 import qualified Parun.Types.TextWord as TextWord
 import qualified Parun.Types.Timestamp as Timestamp
 import qualified Parun.Types.TurnRegisters as TurnRegisters
+import qualified Parun.Types.XDecision as XDecision
 import qualified Parun.Types.Zone as Zone
 
 -- Answers every CR 601.2c target offer with the named object when it is offered
@@ -1112,7 +1113,7 @@ crimeSpec s registry =
               (gs, spell) = S.handOne card withMammoth
               answer :: Prompt.Prompt r -> r
               answer p = case p of
-                Prompt.ChooseX {} -> 2
+                Prompt.ChooseX {} -> XDecision.Announces 2
                 _ -> S.castAnswer p
               after = run answer punishment spell gs
           Spec.assertBool s (not (Set.member bearsId (GameState.battlefield after))) "Grizzly Bears is destroyed"

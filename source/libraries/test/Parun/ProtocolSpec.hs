@@ -128,6 +128,7 @@ import qualified Parun.Types.Reply as R
 import qualified Parun.Types.Request as Request
 import qualified Parun.Types.RollAdjustment as RollAdjustment
 import qualified Parun.Types.RollReading as RollReading
+import qualified Parun.Types.Scratch as Scratch
 import qualified Parun.Types.SearchPlace as SearchPlace
 import qualified Parun.Types.Settle as Settle
 import qualified Parun.Types.SlotName as SlotName
@@ -498,7 +499,7 @@ spec s registry = Spec.describe s "Protocol" $ do
     Spec.assertEqWith s "CR 601.2b a kicker from none to its limit" (bounds (Prompt.ChooseKicker alice S.alice o7 kicker Nothing (Just 1))) [Just (PromptOffer.object Protocol.namer o7), Just (R.Number 0), Just (R.Number 1)]
     Spec.assertEqWith s "CR 702.33c and with no greatest for any number of times" (bounds (Prompt.ChooseKicker alice S.alice o7 kicker Nothing Nothing)) [Just (PromptOffer.object Protocol.namer o7), Just (R.Number 0), Nothing]
     Spec.assertEqWith s "beside the keyword paid" (field "keyword" (PromptOffer.offerOf Protocol.namer gs (Prompt.ChooseKicker alice S.alice o7 kicker Nothing Nothing))) (Just (Reply.encode (Reply.viaCodec Codec.Keyword.codec) Protocol.namer kicker))
-    Spec.assertEqWith s "and a count reads back as the decision" (Protocol.decodeAnswer (Prompt.ChooseKicker alice S.alice o7 kicker Nothing Nothing) (R.Number 3)) (Right (KickerDecision.MkKickerDecision 3))
+    Spec.assertEqWith s "and a count reads back as the decision" (Protocol.decodeAnswer (Prompt.ChooseKicker alice S.alice o7 kicker Nothing Nothing) (R.Number 3)) (Right (KickerDecision.Pays 3))
     Spec.assertEqWith s "CR 702.132a an assist from none to the pool's most" (bounds (Prompt.ChooseAssistAmount alice S.alice o7 3)) [Just (PromptOffer.object Protocol.namer o7), Just (R.Number 0), Just (R.Number 3)]
     Spec.assertEqWith s "CR 107.14 energy from none to the player's" (bounds (Prompt.ChoosePaidEnergy alice S.alice o7 5)) [Just (PromptOffer.object Protocol.namer o7), Just (R.Number 0), Just (R.Number 5)]
     Spec.assertEqWith s "CR 715.3b a chapter from one to the final" (bounds (Prompt.ChooseReadAheadChapter alice S.alice o7 3)) [Just (PromptOffer.object Protocol.namer o7), Just (R.Number 1), Just (R.Number 3)]
@@ -707,6 +708,43 @@ spec s registry = Spec.describe s "Protocol" $ do
         (_, g2) = S.addPermanent bears S.bob g1
         (card, board) = S.addHandCard fury S.alice g2
     assertWithdrawn s "ChooseBuyback" card lands board
+  Spec.it s "CR 734.1 a seat withdraws a spell at its multikicker" $ do
+    gs <- started s registry
+    chalice <- S.printingOf s registry "Everflowing Chalice"
+    mountain <- S.printingOf s registry "Mountain"
+    let (lands, g1) = addPermanents [mountain, mountain] gs
+        (card, board) = S.addHandCard chalice S.alice g1
+    assertWithdrawn s "ChooseKicker" card lands board
+  Spec.it s "CR 734.1 a seat withdraws a spell at its X" $ do
+    gs <- started s registry
+    fireball <- S.printingOf s registry "Fireball"
+    mountain <- S.printingOf s registry "Mountain"
+    let (lands, g1) = addPermanents [mountain, mountain] gs
+        (card, board) = S.addHandCard fireball S.alice g1
+    assertWithdrawn s "ChooseX" card lands board
+  Spec.it s "CR 734.1 a seat withdraws a spell at a count its cost announces beside X" $ do
+    gs <- started s registry
+    march <- S.printingOf s registry "March of Wretched Sorrow"
+    ritual <- S.printingOf s registry "Dark Ritual"
+    swamp <- S.printingOf s registry "Swamp"
+    bears <- S.printingOf s registry "Grizzly Bears"
+    let (lands, g1) = addPermanents [swamp, swamp] gs
+        (_, g2) = S.addPermanent bears S.bob g1
+        (exilable, g3) = S.addHandCard ritual S.alice g2
+        (card, board) = S.addHandCard march S.alice g3
+    assertWithdrawn s "ChooseX" card lands board
+    -- The count is asked first (CR 601.2b), and a withdrawal there exiles nothing.
+    let logged = State.execState (Driver.drive [observer] (Protocol.over trusting (Protocol.viaLines (exchanging (withdrawsOnce card))) chance) 10000 (pure . (>= 2) . (TurnRegisters.turnNumber . GameState.turn)) board) []
+        withdrawnAt = [Question.offer (Request.question request) | (_, line) <- linesWithState logged, Just request <- [requestOf line], Maybe.isJust (Question.withdraw (Request.question request))]
+    Spec.assertEqWith s "the withdrawal is offered at the count" (take 1 withdrawnAt >>= Maybe.maybeToList . field "variable") [R.Text (Text.pack "exiledCount")]
+    Spec.assertEqWith s "and the black card stays in hand" (Game.zoneMembers Zone.Hand S.alice (fst (last (linesWithState logged))) `List.intersect` [exilable]) [exilable]
+  Spec.it s "CR 734.1 no withdrawal is offered at a mana ability's X its payment asks" $ do
+    gs <- started s registry
+    rockets <- S.printingOf s registry "Wizard's Rockets"
+    let (oid, g1) = S.addPermanent rockets S.alice gs
+        announcing = g1 {GameState.scratch = (GameState.scratch g1) {Scratch.keptFaceDown = Just Map.empty}}
+        prompt = Prompt.ChooseX (Decider.MkDecider S.alice) S.alice oid Binding.variableX 0 0
+    Spec.assertEqWith s "a battlefield object's X" (fmap Question.withdraw (Protocol.questionOf announcing prompt)) (Just Nothing)
   Spec.it s "CR 734.1 no withdrawal is offered outside an announcement" $ do
     gs <- started s registry
     let slot = SlotName.MkSlotName (Text.pack "target")

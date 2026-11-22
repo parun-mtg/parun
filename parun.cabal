@@ -4103,6 +4103,7 @@ library types
     Parun.Types.While
     Parun.Types.WithCounters
     Parun.Types.WordFamily
+    Parun.Types.XDecision
     Parun.Types.Zone
     Parun.Types.ZoneChange
     Parun.Types.ZoneChangePattern

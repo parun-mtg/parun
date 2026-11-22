@@ -54,6 +54,7 @@ import qualified Parun.Types.Prompt as Prompt
 import qualified Parun.Types.RollAdjustment as RollAdjustment
 import qualified Parun.Types.TargetCount as TargetCount
 import qualified Parun.Types.TimeTravelChoice as TimeTravelChoice
+import qualified Parun.Types.XDecision as XDecision
 
 -- | Each prompt a bot game over the decks in data/decks reaches, plus
 -- ChooseGuess, ChooseNumber, every prompt offering one of a list or a fixed
@@ -81,7 +82,7 @@ bot names = Answerer.MkAnswerer $ \asked -> case Asked.prompt asked of
   Prompt.ChooseExtraManaSource _ _ sources -> Generator.pick (Nothing NonEmpty.<| fmap Just sources)
   Prompt.ChooseManaToSpend _ _ units -> Generator.pick units
   Prompt.ChooseManaSpentOnX _ _ _ shares -> Generator.pick shares
-  Prompt.ChooseX _ _ _ _ least greatest -> Generator.between least greatest
+  Prompt.ChooseX _ _ _ _ least greatest -> fmap XDecision.Announces (Generator.between least greatest)
   Prompt.ChooseOptional {} -> exercisesOrDeclines
   Prompt.PayLifeForMana {} -> exercisesOrDeclines
   Prompt.ChooseManaYield _ _ _ options -> Generator.pick options
@@ -306,7 +307,7 @@ bot names = Answerer.MkAnswerer $ \asked -> case Asked.prompt asked of
   Prompt.ChooseLandOrNonland {} -> orNone [LandOrNonland.Land, LandOrNonland.Nonland]
   -- CR 601.2b / 702.33c: any count up to the limit, "any number of times"
   -- capped one past declining; one more is payable wherever it is asked.
-  Prompt.ChooseKicker _ _ _ _ _ limit -> fmap KickerDecision.MkKickerDecision (Generator.between 0 (Maybe.fromMaybe 1 limit))
+  Prompt.ChooseKicker _ _ _ _ _ limit -> fmap KickerDecision.Pays (Generator.between 0 (Maybe.fromMaybe 1 limit))
   -- A number up to the bound, from zero (CR 118.3's payment) or the first
   -- chapter (CR 702.155b).
   Prompt.ChooseAssistAmount _ _ _ most -> Generator.between 0 most
