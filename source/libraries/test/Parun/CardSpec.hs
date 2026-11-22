@@ -7426,6 +7426,11 @@ lintSpec s registry corpus = Spec.describe s "Lint" $ do
             || turnedUpReadsX c
             || selfReductionReadsX c
             || filterReadsX c
+            || clauseGateReadsX c
+        -- A clause's own "if" reading X (Clause.condition), which Modal.allEffects
+        -- drops: Multiple Choice's "If X is 1". The spell's own clauses only,
+        -- filterReadsX's reason.
+        clauseGateReadsX c = any (Resolve.conditionHasRead StaticRead.ReadsX) (modalClauseConditions (Face.spell c))
         -- A Filter comparing against X itself (Operand.AmountInSlot), which no
         -- Quantity holds: Punishment's "with mana value X". The spell's own
         -- filters only: an activated ability's X is its own cost's (Citanul
