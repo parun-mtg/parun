@@ -3,9 +3,12 @@ module Parun.Play.Match.ConfigSpec where
 import qualified Control.Exception as Exception
 import qualified Data.Bifunctor as Bifunctor
 import qualified Data.Either as Either
+import qualified Data.List as List
 import qualified Data.Map.Strict as Map
 import qualified Data.Set as Set
 import qualified Data.Text as Text
+import qualified Parun.CommandLine.Completion as Completion
+import qualified Parun.CommandLine.Completion.Reply as Reply
 import qualified Parun.Play.Key as Key
 import qualified Parun.Play.Match.Config as Config
 import qualified Parun.Play.Match.Flag as Flag
@@ -20,6 +23,21 @@ import qualified Parun.Types.SearchMethod as SearchMethod
 
 spec :: (Monad n) => Spec.Spec IO n -> n ()
 spec s = Spec.describe s "Parun.Play.Match.Config" $ do
+  Spec.describe s "command" $ do
+    Spec.it s "completes a value to every name its flag reads, in every seat and in one" $
+      Spec.assertEq
+        s
+        (fmap (\(flag, word) -> completed ["match", flag, word]) [("--method", ""), ("--playout", "2="), ("--level", "1=m"), ("--persona", ""), ("--search", "")])
+        [ Reply.MkCandidates ["flat", "tree"],
+          Reply.MkCandidates ["2=random", "2=greedy", "2=polar", "2=classified"],
+          Reply.MkCandidates ["1=medium"],
+          Reply.MkCandidates ["balanced", "aggro", "control"],
+          Reply.MkCandidates ["1", "2"]
+        ]
+    Spec.it s "reads every name it completes" $
+      Spec.assertEq s (fmap Config.methodNamed ["flat", "tree"], fmap Config.playoutNamed ["random", "greedy", "polar", "classified"]) (fmap Just [minBound .. maxBound], fmap Just [minBound .. maxBound])
+    Spec.it s "completes a deck, a format and a weights file" $
+      Spec.assertEq s (fmap completed [["match", ""], ["match", "--pool", "p"], ["match", "--weights", "1=w"]]) [Reply.MkFiles "", Reply.MkCandidates ["pauper"], Reply.MkFiles "1="]
   Spec.describe s "fromFlags" $ do
     Spec.it s "reads the decks alone" $
       Spec.assertEq s (configured [] ["a.txt", "b.txt"]) (Right Config.MkConfig {Config.options = MatchOptions.none, Config.files = ["a.txt", "b.txt"], Config.help = False})
@@ -70,3 +88,4 @@ spec s = Spec.describe s "Parun.Play.Match.Config" $ do
     configured fs = Bifunctor.first (\(Exception.SomeException e) -> Exception.displayException e) . Config.fromFlags ["DECK", "DECK"] (Just 2) fs
     options fs = fmap Config.options $ configured fs ["a.txt", "b.txt"]
     key = replicate 63 '0' <> "7"
+    completed typed = Completion.complete ["pauper", "vintage"] [Config.command] (List.genericLength typed - 1) typed

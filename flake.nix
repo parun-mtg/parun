@@ -55,6 +55,14 @@
                 "--timeout"
                 "120s"
               ];
+              # Each shell's tab completion, printed by the binary just built.
+              buildTools = (old.buildTools or [ ]) ++ [ pkgs.installShellFiles ];
+              postInstall = (old.postInstall or "") + ''
+                installShellCompletion --cmd parun \
+                  --bash <("$out/bin/parun" completion bash) \
+                  --fish <("$out/bin/parun" completion fish) \
+                  --zsh <("$out/bin/parun" completion zsh)
+              '';
             }))
           ];
         in

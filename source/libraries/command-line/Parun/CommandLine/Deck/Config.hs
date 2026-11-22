@@ -6,6 +6,8 @@ import qualified Control.Monad.Catch as Catch
 import qualified Data.Maybe as Maybe
 import qualified Data.Text as Text
 import qualified Parun.CommandLine as CommandLine
+import qualified Parun.CommandLine.Completion.Command as Command
+import qualified Parun.CommandLine.Completion.Value as Value
 import qualified Parun.CommandLine.Deck.Flag as Flag
 
 -- | The format to check the deck against, the file holding its card pool,
@@ -37,3 +39,8 @@ applyFlag config flag = case flag of
   Flag.Format f -> pure config {format = Just $ Text.pack f}
   Flag.Help b -> pure config {help = b}
   Flag.Pool p -> pure config {pool = Just p}
+
+-- | `parun deck` as tab completion sees it.
+command :: Command.Command
+command =
+  (Command.new "deck" Flag.flags) {Command.values = [("format", Value.MkFormats), ("pool", Value.MkFiles)], Command.positionals = [Value.MkFiles]}

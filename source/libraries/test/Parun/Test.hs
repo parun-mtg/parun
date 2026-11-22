@@ -973,6 +973,7 @@ import qualified Parun.CombatEffectSpec
 import qualified Parun.CombatSpec
 import qualified Parun.CommandLine.Bare.ConfigSpec
 import qualified Parun.CommandLine.Bare.FlagSpec
+import qualified Parun.CommandLine.CompletionSpec
 import qualified Parun.CommandLine.Deck.ConfigSpec
 import qualified Parun.CommandLine.Deck.FlagSpec
 import qualified Parun.CommandLine.Scenario.ConfigSpec
@@ -2174,6 +2175,7 @@ spec s reference corpus = do
   Parun.CombatSpec.spec s registry
   Parun.CommandLine.Bare.ConfigSpec.spec s
   Parun.CommandLine.Bare.FlagSpec.spec s
+  Parun.CommandLine.CompletionSpec.spec s
   Parun.CommandLine.Deck.ConfigSpec.spec s
   Parun.CommandLine.Deck.FlagSpec.spec s
   Parun.CommandLine.Scenario.ConfigSpec.spec s
