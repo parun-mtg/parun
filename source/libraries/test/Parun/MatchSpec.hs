@@ -13,7 +13,6 @@ import qualified Data.Text as Text
 import qualified Data.Word as Word
 import qualified Parun.BotSpec as BotSpec
 import qualified Parun.Codec.Scenario as Codec.Scenario
-import qualified Parun.Extra.Natural as Natural
 import qualified Parun.JsonCodec.Codec as Codec
 import qualified Parun.Play.Command as Command
 import qualified Parun.Play.Match as Match
@@ -66,7 +65,7 @@ spec s registry = Spec.describe s "Match" $ do
       let matchup = Command.seated (Match.firstAt index) (Match.both decks)
       replayed <- Scenario.run registry (saved matchup timeline)
       case (outcome, replayed) of
-        (Right (result, _), Right final) -> Spec.assertEqWith s ("game " <> show index) (fmap (renumbered matchup) (GameState.result final)) (Just result)
+        (Right (result, _), Right final) -> Spec.assertEqWith s ("game " <> show index) (GameState.result final) (Just result)
         (_, Left failure) -> Spec.assertFailure s (Text.unpack (Scenario.render failure))
         (Left reason, _) -> Spec.assertFailure s (Text.unpack reason)
 
@@ -79,7 +78,7 @@ spec s registry = Spec.describe s "Match" $ do
     Spec.assertEqWith s "every seat answers" (Set.fromList (Foldable.toList (fmap (When.player . Timed.when) timeline))) (Set.fromList (fmap (Label.MkLabel . Text.pack) ["player1", "player2", "player3"]))
     replayed <- Scenario.run registry (saved matchup timeline)
     case (outcome, replayed) of
-      (Right (result, _), Right final) -> Spec.assertEqWith s "result" (fmap (renumbered matchup) (GameState.result final)) (Just result)
+      (Right (result, _), Right final) -> Spec.assertEqWith s "result" (GameState.result final) (Just result)
       (_, Left failure) -> Spec.assertFailure s (Text.unpack (Scenario.render failure))
       (Left reason, _) -> Spec.assertFailure s (Text.unpack reason)
 
@@ -134,13 +133,6 @@ pair matchup = case NonEmpty.toList matchup of
 -- The seat of the first entry on turn 1.
 firstToAct :: Seq.Seq Timed.Timed -> Maybe Label.Label
 firstToAct = fmap (When.player . Timed.when) . Foldable.find ((== 1) . When.turn . Timed.when)
-
--- A replayed game's result in the played game's seats: the replay numbers
--- its players in the matchup's order (Scenario.enter).
-renumbered :: NonEmpty.NonEmpty (PlayerId.PlayerId, Deck.Deck) -> Result.Result -> Result.Result
-renumbered matchup result = case result of
-  Result.Won pid -> Result.Won (fst (matchup NonEmpty.!! Natural.toIntSaturating (PlayerId.unwrap pid)))
-  _ -> result
 
 -- The scenario a match game saves as, read back.
 saved :: NonEmpty.NonEmpty (PlayerId.PlayerId, Deck.Deck) -> Seq.Seq Timed.Timed -> Scenario.Type.Scenario
