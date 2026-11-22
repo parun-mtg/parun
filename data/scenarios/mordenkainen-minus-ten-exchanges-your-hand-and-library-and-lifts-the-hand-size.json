@@ -64,13 +64,13 @@
         ],
         "library": [
           {
-            "card": "Island"
+            "card": "Counterspell"
           },
           {
-            "card": "Island"
+            "card": "Counterspell"
           },
           {
-            "card": "Island"
+            "card": "Counterspell"
           }
         ],
         "name": "bob"
@@ -78,7 +78,7 @@
     ],
     "step": "PrecombatMain"
   },
-  "description": "CR 606.4 / 701.12f / 701.24a / 114.4 / 402.2 Mordenkainen's -10 exchanges alice's hand and library, shuffles her library, and gives her an emblem with no maximum hand size",
+  "description": "CR 606.4 / 701.12d / 701.24a / 114.4 / 402.2 Mordenkainen's -10 exchanges alice's hand and library, shuffles her library, and gives her an emblem with no maximum hand size",
   "note": "Alice's two hand cards go to her library and her nine library cards to her hand; bob's hand and library stay put. The cost removes all ten counters, so Mordenkainen is in the graveyard before the ability resolves. Alice ends her turn holding nine cards and discards nothing: an unscheduled discard prompt would fail the run.",
   "timeline": [
     {
@@ -182,7 +182,7 @@
     {
       "check": {
         "Count": {
-          "card": "Island",
+          "card": "Counterspell",
           "count": 3,
           "player": "bob",
           "zone": "Library"
