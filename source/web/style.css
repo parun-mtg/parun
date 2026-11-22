@@ -2421,10 +2421,10 @@ details.pile[open] {
   color: var(--muted);
 }
 
-/* The hand: one row, its tiles overlapping by as much as fits them all
-   (--n, their count, set by Parun.Web.Board's hand), the one under the
-   pointer or the keyboard raised; those you can play now lifted and
-   ringed. */
+/* The hand: one row, its tiles narrowed or overlapped by as much as fits
+   them all (--n, their count, set by Parun.Web.Board's hand), the one
+   under the pointer or the keyboard raised; those you can play now lifted
+   and ringed. */
 .hand {
   grid-area: hand;
   padding: 4px 12px 0;
@@ -2449,15 +2449,20 @@ details.pile[open] {
   flex: none;
 }
 
-/* --room: the space each gap between tiles gets with no overlap, negative
-   once the row overflows. While it holds --gap the tiles stand apart; past
-   that they overlap by what fits them, 18px at least, leaving 32px of each
-   showing at most. (--room - --gap) * 1000 + --gap is huge while the row
-   fits and very negative once it does not, so max() and min() pick the
-   case. */
+/* A row too long for the hand narrows its tiles first, down to 85% of
+   their width (so a hand of nine fits a wide window), and only then
+   overlaps them, by just what fits, leaving 32px of each showing at least.
+   Each tile is covered from its right, where its cost and power sit, so the
+   narrowing comes first; the one under the pointer or the keyboard rises
+   whole. --room is the space each gap would get with no overlap. */
+#app .hand-cards > .card {
+  --tile: max(calc(var(--card-w-size) * 0.85), min(var(--card-w-size), calc((100% - (var(--n) - 1) * var(--gap)) / var(--n))));
+  width: var(--tile);
+}
+
 #app .hand-cards > .card + .card {
-  --room: calc((100% - var(--n) * var(--card-w-size)) / max(var(--n) - 1, 1));
-  margin-left: max(calc(32px - var(--card-w-size)), min(var(--gap), max(min(var(--room), -18px), calc((var(--room) - var(--gap)) * 1000 + var(--gap)))));
+  --room: calc((100% - var(--n) * var(--tile)) / max(var(--n) - 1, 1));
+  margin-left: max(calc(32px - var(--tile)), min(var(--gap), var(--room)));
 }
 
 #app .hand-cards > .card.playable {

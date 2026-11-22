@@ -340,8 +340,8 @@ handArea marks board s =
     ["hand"]
     [Element.attr "aria-label" (Text.pack "Your hand")]
     [ Element.el "h3" ["zone-title"] [] [Element.string ("Hand \x00b7 " <> show (length (SeatView.hand s)))],
-      -- The tiles overlap by as much as fits them all in one row (style.css
-      -- reads the count).
+      -- The tiles narrow, then overlap, by as much as fits them all in one
+      -- row (style.css reads the count).
       Element.keyed "div" ["hand-cards"] [Element.attr "style" (Text.pack ("--n: " <> show (length (SeatView.hand s))))] [(key o, Card.tile board (object marks o) o) | o <- Wording.handOrder board (SeatView.hand s)]
     ]
 
