@@ -2572,6 +2572,7 @@ library play
     Parun.Play.Key
     Parun.Play.KeySpec
     Parun.Play.Match
+    Parun.Play.Meta
     Parun.Play.Offer
     Parun.Play.Protocol
     Parun.Play.Record
@@ -2799,6 +2800,7 @@ library test
     Parun.MassEffectSpec
     Parun.MatchSpec
     Parun.MeldSpec
+    Parun.MetaSpec
     Parun.ModalDoubleFacedSpec
     Parun.ModalSpec
     Parun.MoveCounterSpec

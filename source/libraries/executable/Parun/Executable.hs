@@ -29,6 +29,7 @@ import qualified Parun.Oracle as Oracle
 import qualified Parun.Oracle.Normalise as Normalise
 import qualified Parun.Play.Command
 import qualified Parun.Play.Match
+import qualified Parun.Play.Meta
 import qualified Parun.Registry as Registry
 import qualified Parun.Scenario as Scenario
 import qualified Parun.Scenario.Load as Load
@@ -73,11 +74,12 @@ main = do
     "scenario" : paths@(_ : _) -> scenario plainly paths
     "play" : rest -> Parun.Play.Command.main rest
     "match" : rest -> Parun.Play.Match.main rest
+    "meta" : rest -> Parun.Play.Meta.main rest
     "bench" : rest -> Environment.withArgs rest Parun.Benchmark.main
     "test" : rest -> Environment.withArgs rest Parun.Test.main
     _ -> do
       name <- Environment.getProgName
-      IO.hPutStrLn IO.stderr $ "usage: " <> name <> " (schema [scenario] | deck [--format FORMAT] [--pool FILE] FILE | ingest FILE | oracle | translate MTGISH CANDIDATES [--out DIR] [--set CODE] [NAME | @FILE...] | scenario [--perturb] FILE... | play [OPTION...] DECK DECK | match [OPTION...] DECK DECK | bench | test)"
+      IO.hPutStrLn IO.stderr $ "usage: " <> name <> " (schema [scenario] | deck [--format FORMAT] [--pool FILE] FILE | ingest FILE | oracle | translate MTGISH CANDIDATES [--out DIR] [--set CODE] [NAME | @FILE...] | scenario [--perturb] FILE... | play [OPTION...] DECK DECK | match [OPTION...] DECK DECK | meta [OPTION...] META DECK [DECK] | bench | test)"
       Exit.exitFailure
 
 -- | Reads a deck list and writes back the deck it means, which is what makes a

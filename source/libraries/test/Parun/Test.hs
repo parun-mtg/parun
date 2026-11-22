@@ -1064,6 +1064,7 @@ import qualified Parun.ManaSymbolSpec
 import qualified Parun.MassEffectSpec
 import qualified Parun.MatchSpec
 import qualified Parun.MeldSpec
+import qualified Parun.MetaSpec
 import qualified Parun.ModalDoubleFacedSpec
 import qualified Parun.ModalSpec
 import qualified Parun.MoveCounterSpec
@@ -2298,6 +2299,7 @@ spec s reference corpus = do
   Parun.PlaySpec.spec s registry
   Parun.RecordSpec.spec s registry
   Parun.MatchSpec.spec s registry
+  Parun.MetaSpec.spec s registry
   Parun.DecksSpec.spec s registry
   Parun.LegalitySpec.spec s registry reference
   Parun.ReplySpec.spec s registry
