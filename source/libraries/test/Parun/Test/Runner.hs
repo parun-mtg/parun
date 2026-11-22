@@ -26,11 +26,8 @@ import qualified Data.Word as Word
 import qualified GHC.Clock as Clock
 import qualified GHC.Stack as Stack
 import Numeric.Natural (Natural)
+import qualified Parun.CommandLine as CommandLine
 import qualified Parun.Exceptions.AssertionFailed as AssertionFailed
-import qualified Parun.Exceptions.InvalidOption as InvalidOption
-import qualified Parun.Exceptions.ShowHelp as ShowHelp
-import qualified Parun.Exceptions.UnexpectedArgument as UnexpectedArgument
-import qualified Parun.Exceptions.UnknownOption as UnknownOption
 import qualified Parun.Extra.Int as Int
 import qualified Parun.Extra.Natural as Natural
 import qualified Parun.Extra.Word64 as Word64
@@ -140,7 +137,7 @@ runner =
 main :: IO (Seq.Seq Case) -> IO ()
 main collect = do
   arguments <- Environment.getArgs
-  context <- Exception.catches (Flag.fromArguments arguments >>= Config.fromFlags >>= Context.fromConfig) refusals
+  context <- Exception.catches (Flag.fromArguments arguments >>= Config.fromFlags >>= Context.fromConfig) (CommandLine.refusals Flag.usage)
   IO.hSetBuffering IO.stdout IO.LineBuffering
   let options = Context.config context
       s = Context.key context
@@ -161,23 +158,6 @@ main collect = do
   Foldable.for_ (rerunLine ran) TextIO.putStrLn
   TextIO.putStrLn $ summaryLine s summary
   Monad.unless (succeeded summary) Exit.exitFailure
-
--- | What a command line that asks for no run comes to: the usage on standard
--- output for 'ShowHelp.ShowHelp', and otherwise the problem and the usage on
--- standard error and a failed exit.
-refusals :: [Exception.Handler a]
-refusals =
-  [ Exception.Handler $ \ShowHelp.MkShowHelp -> putStr Flag.usage >> Exit.exitSuccess,
-    Exception.Handler $ \e -> refuse (e :: UnexpectedArgument.UnexpectedArgument),
-    Exception.Handler $ \e -> refuse (e :: UnknownOption.UnknownOption),
-    Exception.Handler $ \e -> refuse (e :: InvalidOption.InvalidOption)
-  ]
-  where
-    refuse :: (Exception.Exception e) => e -> IO a
-    refuse e = do
-      IO.hPutStrLn IO.stderr $ Exception.displayException e
-      IO.hPutStr IO.stderr Flag.usage
-      Exit.exitFailure
 
 -- | A case's path as a pattern sees it: its names joined by dots.
 name :: Case -> Text.Text
