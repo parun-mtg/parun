@@ -1,0 +1,35 @@
+{
+  "description": "CR 701.17a / 603.2: Lorehold Excavation's end step mill gains alice 1 life when the milled card is a land and otherwise deals 1 damage to each opponent; {5}, exiling a creature card from her graveyard, makes a tapped 3/2 Spirit",
+  "note": "Turn 1's end step mills a Forest (alice 21, both opponents 20); turn 4's mills Grizzly Bears (alice 21, bob and carol 19). The Island between them is turn 4's draw.",
+  "board": {
+    "active": "alice",
+    "step": "PrecombatMain",
+    "seats": [
+      {
+        "name": "alice",
+        "battlefield": [{ "card": "Lorehold Excavation", "label": "dig" }, { "card": "Mountain", "label": "m1" }, { "card": "Mountain", "label": "m2" }, { "card": "Mountain", "label": "m3" }, { "card": "Mountain", "label": "m4" }, { "card": "Mountain", "label": "m5" }],
+        "graveyard": [{ "card": "Hill Giant", "label": "giant" }],
+        "library": [{ "card": "Forest" }, { "card": "Island" }, { "card": "Grizzly Bears" }, { "card": "Island" }, { "card": "Island" }]
+      },
+      { "name": "bob", "library": [{ "card": "Island" }, { "card": "Island" }, { "card": "Island" }, { "card": "Island" }] },
+      { "name": "carol", "library": [{ "card": "Island" }, { "card": "Island" }, { "card": "Island" }, { "card": "Island" }] }
+    ]
+  },
+  "timeline": [
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "do": { "Activate": { "object": "$dig", "ability": 0, "mana": ["$m1", "$m2", "$m3", "$m4", "$m5"] } } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "do": "Pass" },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "check": { "View": { "of": "Stack", "is": [] } } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "check": { "Count": { "player": "alice", "zone": "Exile", "card": "Hill Giant", "count": 1 } } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "check": { "Tapped": { "object": "Spirit Token", "tapped": true } } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "check": { "PowerToughness": { "object": "Spirit Token", "power": 3, "toughness": 2 } } },
+    { "turn": 2, "step": "Upkeep", "player": "bob", "check": { "Count": { "player": "alice", "zone": "Graveyard", "card": "Forest", "count": 1 } } },
+    { "turn": 2, "step": "Upkeep", "player": "bob", "check": { "Life": { "player": "alice", "life": 21 } } },
+    { "turn": 2, "step": "Upkeep", "player": "bob", "check": { "Life": { "player": "bob", "life": 20 } } },
+    { "turn": 2, "step": "Upkeep", "player": "bob", "check": { "Life": { "player": "carol", "life": 20 } } },
+    { "turn": 4, "step": "DeclareAttackers", "player": "alice", "do": { "Attack": [] } },
+    { "turn": 5, "step": "Upkeep", "player": "bob", "check": { "Count": { "player": "alice", "zone": "Graveyard", "card": "Grizzly Bears", "count": 1 } } },
+    { "turn": 5, "step": "Upkeep", "player": "bob", "check": { "Life": { "player": "alice", "life": 21 } } },
+    { "turn": 5, "step": "Upkeep", "player": "bob", "check": { "Life": { "player": "bob", "life": 19 } } },
+    { "turn": 5, "step": "Upkeep", "player": "bob", "check": { "Life": { "player": "carol", "life": 19 } } }
+  ]
+}

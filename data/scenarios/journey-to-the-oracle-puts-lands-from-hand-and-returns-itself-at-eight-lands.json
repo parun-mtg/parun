@@ -1,0 +1,41 @@
+{
+  "description": "CR 608.2c / 608.2n: Journey to the Oracle puts any number of land cards from alice's hand onto the battlefield; then, only if she controls eight or more lands, she may discard a card, and if she does Journey returns to her hand",
+  "note": "Five lands to start. Turn 1 puts a Forest and the Mountain (seven lands): no discard is offered and the card goes to the graveyard. Turn 3 puts the other Forest (eight): she discards Grizzly Bears, keeping the Swamp, and the second copy returns to her hand.",
+  "board": {
+    "active": "alice",
+    "step": "PrecombatMain",
+    "seats": [
+      {
+        "name": "alice",
+        "battlefield": [{ "card": "Forest", "label": "f1" }, { "card": "Forest", "label": "f2" }, { "card": "Forest", "label": "f3" }, { "card": "Forest", "label": "f4" }, { "card": "Plains", "label": "p1" }],
+        "hand": [{ "card": "Jadzi, Oracle of Arcavios", "label": "j1" }, { "card": "Jadzi, Oracle of Arcavios", "label": "j2" }, { "card": "Forest", "label": "hf1" }, { "card": "Forest", "label": "hf2" }, { "card": "Mountain", "label": "hm" }, { "card": "Grizzly Bears", "label": "bears" }, { "card": "Swamp", "label": "keep" }],
+        "library": [{ "card": "Island" }, { "card": "Island" }, { "card": "Island" }, { "card": "Island" }]
+      },
+      {
+        "name": "bob",
+        "library": [{ "card": "Island" }, { "card": "Island" }, { "card": "Island" }, { "card": "Island" }]
+      }
+    ]
+  },
+  "timeline": [
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "do": { "Cast": { "object": "$j1", "face": "Journey to the Oracle", "mana": ["$f1", "$f2", "$f3", "$f4", null] } } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "do": "Pass" },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "do": { "Answer": { "prompt": "ChooseCardsInHand", "with": ["$hf1", "$hm"] } } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "do": { "OrderTimestamps": ["Forest#6", "Mountain"] } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "check": { "View": { "of": "Stack", "is": [] } } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "check": { "Count": { "player": "alice", "zone": "Battlefield", "card": "Forest", "count": 5 } } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "check": { "Count": { "player": "alice", "zone": "Graveyard", "card": "Jadzi, Oracle of Arcavios", "count": 1 } } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "check": { "Count": { "player": "alice", "zone": "Hand", "card": "Grizzly Bears", "count": 1 } } },
+    { "turn": 3, "step": "PrecombatMain", "player": "alice", "do": { "Cast": { "object": "$j2", "face": "Journey to the Oracle", "mana": ["$f1", "$f2", "$f3", "$f4", null] } } },
+    { "turn": 3, "step": "PrecombatMain", "player": "alice", "do": "Pass" },
+    { "turn": 3, "step": "PrecombatMain", "player": "alice", "do": { "Answer": { "prompt": "ChooseCardsInHand", "with": ["$hf2"] } } },
+    { "turn": 3, "step": "PrecombatMain", "player": "alice", "do": { "ChooseOptional": "Exercises" } },
+    { "turn": 3, "step": "PrecombatMain", "player": "alice", "do": { "Answer": { "prompt": "ChooseDiscard", "with": ["$bears"] } } },
+    { "turn": 3, "step": "PrecombatMain", "player": "alice", "check": { "View": { "of": "Stack", "is": [] } } },
+    { "turn": 3, "step": "PrecombatMain", "player": "alice", "check": { "Count": { "player": "alice", "zone": "Battlefield", "card": "Forest", "count": 6 } } },
+    { "turn": 3, "step": "PrecombatMain", "player": "alice", "check": { "Count": { "player": "alice", "zone": "Hand", "card": "Jadzi, Oracle of Arcavios", "count": 1 } } },
+    { "turn": 3, "step": "PrecombatMain", "player": "alice", "check": { "Count": { "player": "alice", "zone": "Graveyard", "card": "Jadzi, Oracle of Arcavios", "count": 1 } } },
+    { "turn": 3, "step": "PrecombatMain", "player": "alice", "check": { "Count": { "player": "alice", "zone": "Graveyard", "card": "Grizzly Bears", "count": 1 } } },
+    { "turn": 3, "step": "PrecombatMain", "player": "alice", "check": { "Count": { "player": "alice", "zone": "Hand", "card": "Swamp", "count": 1 } } }
+  ]
+}
