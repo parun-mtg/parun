@@ -1,3 +1,5 @@
+Name: Deck A
+
 1 City of Brass
 3 Forest
 5 Mountain

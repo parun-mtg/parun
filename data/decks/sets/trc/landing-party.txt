@@ -1,3 +1,4 @@
+Name: Landing Party
 Format: commander
 
 Commander

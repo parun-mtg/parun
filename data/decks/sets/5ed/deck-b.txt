@@ -1,3 +1,5 @@
+Name: Deck B
+
 6 Island
 6 Swamp
 1 Bog Imp

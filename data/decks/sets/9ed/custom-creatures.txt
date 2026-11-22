@@ -1,3 +1,5 @@
+Name: Custom Creatures
+
 16 Forest
 2 Blanchwood Armor
 1 Bottle Gnomes

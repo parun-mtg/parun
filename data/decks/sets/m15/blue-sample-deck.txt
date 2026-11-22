@@ -1,3 +1,5 @@
+Name: Blue Sample Deck
+
 13 Island
 1 Cancel
 1 Chronostutter

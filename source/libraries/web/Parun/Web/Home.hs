@@ -16,7 +16,6 @@ import qualified Parun.Types.PlayerView as PlayerView
 import qualified Parun.Types.SeatView as SeatView
 import qualified Parun.Web.Bar as Bar
 import qualified Parun.Web.Card as Card
-import qualified Parun.Web.DeckBrowser as DeckBrowser
 import qualified Parun.Web.Element as Element
 import qualified Parun.Web.History as History
 import qualified Parun.Web.Html as Html
@@ -51,6 +50,8 @@ data Paused = MkPaused
 data Deck = MkDeck
   { -- | Its name (Lobby.deckName).
     name :: Text.Text,
+    -- | Its name as shown (DeckBrowser.describe).
+    shownAs :: Text.Text,
     -- | Its colours, empty until read.
     colours :: Set.Set Color.Color,
     -- | How many cards its main deck holds, once read.
@@ -239,7 +240,7 @@ decksView decks =
         []
         []
         [ Element.el "span" ["pips"] [] [Mana.symbol (Text.pack (Card.letterUpper c)) | c <- Set.toList (colours deck)],
-          Element.button ["quiet", "deck-row-name"] (MkChoose (MkBrowseDecks (Just (name deck)))) [Element.text (snd (DeckBrowser.describe (name deck)))],
+          Element.button ["quiet", "deck-row-name"] (MkChoose (MkBrowseDecks (Just (name deck)))) [Element.text (shownAs deck)],
           Element.el "span" ["muted"] [] [Element.string (maybe "" (\n -> show n <> " cards") (size deck))],
           Element.button ["quiet"] (MkChoose (MkEditDeck (name deck))) [Element.string "Edit"]
         ]

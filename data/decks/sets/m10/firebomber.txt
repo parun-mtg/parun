@@ -1,3 +1,5 @@
+Name: Firebomber
+
 5 Island
 12 Mountain
 1 Terramorphic Expanse

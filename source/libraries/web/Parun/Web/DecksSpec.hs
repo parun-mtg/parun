@@ -19,12 +19,12 @@ spec s = Spec.describe s "Parun.Web.Decks" $ do
   Spec.describe s "tabs" $ do
     Spec.it s "opens on My decks while any is saved, else on the precons" $ do
       Spec.assertEqWith s "saved" (shelf (screen Nothing)) DeckBrowser.MkSaved
-      Spec.assertEqWith s "none saved" (shelf (Decks.withDecks (Seq.fromList [webs, angels]) Map.empty (Decks.new Nothing))) DeckBrowser.MkPrecons
+      Spec.assertEqWith s "none saved" (shelf (Decks.withDecks (Seq.fromList [webs, angels]) Map.empty Map.empty (Decks.new Nothing))) DeckBrowser.MkPrecons
       Spec.assertEqWith s "a precon selected" (shelf (screen (Just webs))) DeckBrowser.MkPrecons
 
     Spec.it s "keeps the tab chosen when the decks are read again" $ do
       let precons = Decks.update (Decks.MkBrowse (DeckBrowser.MkShelf DeckBrowser.MkPrecons)) Text.empty (screen Nothing)
-      Spec.assertEq s (shelf (Decks.withDecks (Seq.fromList [webs, angels, mine, other]) Map.empty precons)) DeckBrowser.MkPrecons
+      Spec.assertEq s (shelf (Decks.withDecks (Seq.fromList [webs, angels, mine, other]) Map.empty Map.empty precons)) DeckBrowser.MkPrecons
 
     Spec.it s "puts My decks first and switches tab on a tap" $ do
       let page = Decks.view (screen Nothing)
@@ -55,7 +55,7 @@ spec s = Spec.describe s "Parun.Web.Decks" $ do
       Spec.assertEq s (Decks.selected (Decks.update Decks.MkClose Text.empty (screen (Just mine)))) Nothing
 
     Spec.it s "drops a selected deck no longer held" $ do
-      Spec.assertEq s (Decks.selected (Decks.withDecks (Seq.fromList [webs]) Map.empty (screen (Just mine)))) Nothing
+      Spec.assertEq s (Decks.selected (Decks.withDecks (Seq.fromList [webs]) Map.empty Map.empty (screen (Just mine)))) Nothing
 
   Spec.describe s "actions" $ do
     Spec.it s "offers a saved deck's Play, Edit, Rename, Duplicate, Export and Delete" $ do
@@ -90,7 +90,7 @@ spec s = Spec.describe s "Parun.Web.Decks" $ do
 
   Spec.describe s "empty" $ do
     Spec.it s "says no deck is saved yet, with New deck and Import a deck" $ do
-      let none = Decks.update (Decks.MkBrowse (DeckBrowser.MkShelf DeckBrowser.MkSaved)) Text.empty (Decks.withDecks (Seq.fromList [webs]) Map.empty (Decks.new Nothing))
+      let none = Decks.update (Decks.MkBrowse (DeckBrowser.MkShelf DeckBrowser.MkSaved)) Text.empty (Decks.withDecks (Seq.fromList [webs]) Map.empty Map.empty (Decks.new Nothing))
           shelfPage = Maybe.fromMaybe (Html.text Text.empty) (Html.search (Text.isPrefixOf (Text.pack "<div class=\"empty-shelf\"") . Html.toText) (Decks.view none) >>= (`Html.at` Decks.view none))
       Spec.assertEqWith s "the line" (has "No decks saved in this browser yet." none) True
       Spec.assertEqWith s "its buttons" (fmap (\label -> Html.labelled (Text.pack "button") (Text.pack label) shelfPage >>= \path -> Html.handler (Text.pack "click") path shelfPage) ["New deck", "Import a deck"]) [Just Decks.MkNewDeck, Just (Decks.MkBrowse DeckBrowser.MkOpenImport)]
@@ -122,6 +122,11 @@ spec s = Spec.describe s "Parun.Web.Decks" $ do
       let held = Seq.fromList [mine, Text.pack "saved/my-deck-copy"]
       Spec.assertEqWith s "first" (Decks.copyName (Seq.singleton mine) mine) (Text.pack "saved/my-deck-copy")
       Spec.assertEqWith s "second" (Decks.copyName held mine) (Text.pack "saved/my-deck-copy-2")
+
+    Spec.it s "names a copy as its deck is named, then what its file adds" $ do
+      let named = Map.singleton mine (Text.pack "Tiny <b>Bolt</b>")
+      Spec.assertEqWith s "headed" (Decks.copyTitle named mine (Text.pack "saved/my-deck-copy-2")) (Text.pack "Tiny <b>Bolt</b> Copy 2")
+      Spec.assertEqWith s "bare" (Decks.copyTitle Map.empty mine (Text.pack "saved/my-deck-copy")) (Text.pack "My Deck Copy")
 
   Spec.describe s "returning" $ do
     Spec.it s "selects the deck the builder saved on coming back, else the one it opened" $ do
@@ -155,7 +160,7 @@ other = Text.pack "saved/other"
 screen :: Maybe Text.Text -> Decks.Decks
 screen chosen =
   Decks.browsed (\b -> b {DeckBrowser.palette = Map.fromList [(webs, Set.fromList [Color.Red, Color.Green]), (angels, Set.singleton Color.White)]}) $
-    Decks.withDecks (Seq.fromList [webs, angels, mine, other]) Map.empty (Decks.new chosen)
+    Decks.withDecks (Seq.fromList [webs, angels, mine, other]) Map.empty Map.empty (Decks.new chosen)
 
 -- | The shelf shown.
 shelf :: Decks.Decks -> DeckBrowser.Shelf

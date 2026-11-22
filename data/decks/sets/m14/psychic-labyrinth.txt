@@ -1,3 +1,5 @@
+Name: Psychic Labyrinth
+
 16 Island
 9 Plains
 2 Air Servant

@@ -1,3 +1,5 @@
+Name: Red Deck
+
 13 Mountain
 1 Electrify
 1 Fiery Finish

@@ -1,3 +1,5 @@
+Name: Ajani
+
 25 Plains
 2 Ajani's Influence
 2 Ajani's Pridemate

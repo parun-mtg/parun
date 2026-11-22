@@ -1,3 +1,5 @@
+Name: Ajani, Inspiring Leader
+
 25 Plains
 1 Ajani, Inspiring Leader
 3 Angel of Vitality

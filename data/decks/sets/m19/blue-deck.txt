@@ -1,3 +1,5 @@
+Name: Blue Deck
+
 13 Island
 1 Air Elemental
 1 Aven Wind Mage

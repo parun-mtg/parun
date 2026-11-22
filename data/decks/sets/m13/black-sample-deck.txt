@@ -1,3 +1,5 @@
+Name: Black Sample Deck
+
 13 Swamp
 1 Bloodhunter Bat
 1 Cower in Fear

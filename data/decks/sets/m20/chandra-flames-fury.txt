@@ -1,3 +1,5 @@
+Name: Chandra, Flame's Fury
+
 25 Mountain
 2 Chandra's Flame Wave
 3 Chandra's Outrage

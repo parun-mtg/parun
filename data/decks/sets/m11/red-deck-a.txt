@@ -1,3 +1,5 @@
+Name: Red Deck A
+
 13 Mountain
 1 Act of Treason
 2 Arc Runner

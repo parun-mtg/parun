@@ -95,6 +95,8 @@ data Loaded = MkLoaded
     deckFiles :: Maybe (Map.Map Text.Text FilePath),
     -- | The format each deck's header names, by name.
     formats :: Map.Map Text.Text Text.Text,
+    -- | The name each deck's header gives it (DeckList.nameOf), by name.
+    titles :: Map.Map Text.Text Text.Text,
     -- | Every card file, parsed only when looked up.
     cards :: Maybe (LazyMap.Map FilePath (Either Text.Text Card.Card)),
     -- | Each deck's colours, by name, as read so far.
@@ -167,7 +169,7 @@ start = do
   -- A summary that does not read, or a game past the cap, is forgotten.
   (games, gone) <- History.loaded <$> Browser.playedGames
   mapM_ Browser.forgetPlayed gone
-  shell <- MkShell <$> Browser.mount <*> IORef.newIORef (MkLoaded Loading.new Nothing Map.empty Nothing Map.empty [] Nothing Nothing Nothing False Nothing Map.empty [] Nothing Map.empty Map.empty Map.empty) <*> IORef.newIORef chosen <*> pure built <*> IORef.newIORef games <*> IORef.newIORef (Lobby.difficulty Lobby.new, Lobby.persona Lobby.new)
+  shell <- MkShell <$> Browser.mount <*> IORef.newIORef (MkLoaded Loading.new Nothing Map.empty Map.empty Nothing Map.empty [] Nothing Nothing Nothing False Nothing Map.empty [] Nothing Map.empty Map.empty Map.empty) <*> IORef.newIORef chosen <*> pure built <*> IORef.newIORef games <*> IORef.newIORef (Lobby.difficulty Lobby.new, Lobby.persona Lobby.new)
   Exception.catch (opening built >>= follow shell) $ \problem ->
     Browser.display (page shell) $ message ["The page stopped on an error:", Exception.displayException (problem :: Exception.SomeException)]
 
@@ -246,7 +248,7 @@ home shell = go
             shown
               { Home.problem = Loading.problem (loading now),
                 Home.finished = games,
-                Home.saved = [Home.MkDeck name (Map.findWithDefault Set.empty name (palette now)) (Map.lookup name (deckSizes now)) | name <- foldMap Map.keys (deckFiles now), DeckBrowser.isSaved name]
+                Home.saved = [Home.MkDeck name (snd (DeckBrowser.describe (titles now) name)) (Map.findWithDefault Set.empty name (palette now)) (Map.lookup name (deckSizes now)) | name <- foldMap Map.keys (deckFiles now), DeckBrowser.isSaved name]
               }
       Browser.display (page shell) (framed Bar.MkHome (fmap Screen.MkHome (Home.view current)))
       woke <- await shell
@@ -410,15 +412,17 @@ importDeck shell showing current = case DeckBrowser.importing current of
               _ : _ -> pure (refuse problems)
               [] -> do
                 let name = DeckBrowser.savedPrefix <> DeckBrowser.slugOf (DeckBrowser.importName panel)
-                rememberSaved shell name contents
+                rememberSaved shell name (DeckBrowser.importName panel) contents
                 now <- IORef.readIORef (loaded shell)
-                pure (DeckBrowser.withDecks (Seq.fromList (foldMap Map.keys (deckFiles now))) (formats now) current, Just name)
+                pure (DeckBrowser.withDecks (Seq.fromList (foldMap Map.keys (deckFiles now))) (formats now) (titles now) current, Just name)
 
--- | Saves a deck list as this saved deck, over any of that name: written to
--- the deck root and the page (Browser.saveDeck), listed under the format it
--- names, and queued to be read and checked afresh.
-rememberSaved :: Shell -> Text.Text -> Text.Text -> IO ()
-rememberSaved shell name contents = do
+-- | Saves a deck list as this saved deck, over any of that name, headed by
+-- the name typed for it (DeckList.withName): written to the deck root and the
+-- page (Browser.saveDeck), listed under the format and name it gives, and
+-- queued to be read and checked afresh.
+rememberSaved :: Shell -> Text.Text -> Text.Text -> Text.Text -> IO ()
+rememberSaved shell name typed listed = do
+  let contents = DeckList.withName typed listed
   deckRoot <- Decks.defaultRoot
   let path = deckRoot <> "/" <> Text.unpack name <> ".txt"
   Browser.saveDeck (Text.drop (Text.length DeckBrowser.savedPrefix) name) contents
@@ -426,6 +430,7 @@ rememberSaved shell name contents = do
     l
       { deckFiles = fmap (Map.insert name path) (deckFiles l),
         formats = Map.alter (const (DeckList.formatOf contents)) name (formats l),
+        titles = Map.alter (const (DeckList.nameOf contents)) name (titles l),
         palette = Map.delete name (palette l),
         deckCurves = Map.delete name (deckCurves l),
         deckSizes = Map.delete name (deckSizes l),
@@ -439,7 +444,7 @@ rememberSaved shell name contents = do
 forgetSaved :: Shell -> Text.Text -> IO ()
 forgetSaved shell name = do
   Browser.forgetDeck (Text.drop (Text.length DeckBrowser.savedPrefix) name)
-  IORef.modifyIORef' (loaded shell) $ \l -> l {deckFiles = fmap (Map.delete name) (deckFiles l), formats = Map.delete name (formats l), palette = Map.delete name (palette l), deckCurves = Map.delete name (deckCurves l), deckSizes = Map.delete name (deckSizes l), unread = filter ((/= name) . fst) (unread l), illegal = Map.delete name (illegal l), unchecked = filter ((/= name) . fst) (unchecked l)}
+  IORef.modifyIORef' (loaded shell) $ \l -> l {deckFiles = fmap (Map.delete name) (deckFiles l), formats = Map.delete name (formats l), titles = Map.delete name (titles l), palette = Map.delete name (palette l), deckCurves = Map.delete name (deckCurves l), deckSizes = Map.delete name (deckSizes l), unread = filter ((/= name) . fst) (unread l), illegal = Map.delete name (illegal l), unchecked = filter ((/= name) . fst) (unchecked l)}
 
 -- | A deck's list, as its file holds it, if the deck is held.
 deckText :: Shell -> Text.Text -> IO (Maybe Text.Text)
@@ -453,7 +458,7 @@ refreshed :: Shell -> Lobby.Lobby -> IO Lobby.Lobby
 refreshed shell shown = do
   now <- IORef.readIORef (loaded shell)
   let withDecks = case deckFiles now of
-        Just files | DeckBrowser.reading (Lobby.browser shown) -> Lobby.withDecks (Seq.fromList (Map.keys files)) (formats now) shown
+        Just files | DeckBrowser.reading (Lobby.browser shown) -> Lobby.withDecks (Seq.fromList (Map.keys files)) (formats now) (titles now) shown
         _ -> shown
   browsed <- catalogued shell (Maybe.catMaybes (Lobby.mine withDecks : Lobby.theirs withDecks)) (Lobby.browser withDecks)
   pure withDecks {Lobby.browser = browsed}
@@ -522,14 +527,18 @@ decksScreen shell chosen = do
           Web.Decks.MkSubmitRename -> case Web.Decks.renameTarget current of
             Left problems -> go (Web.Decks.refused problems current)
             Right _ | Maybe.isNothing (deckFiles now') -> go (Web.Decks.refused [unread'] current)
-            Right (old, renamed)
-              | old == renamed -> go (Web.Decks.update Web.Decks.MkCancelRename Text.empty current)
-              | otherwise -> do
-                  read' <- deckText shell old
-                  case read' of
-                    Nothing -> go (Web.Decks.refused [Text.pack "That deck could not be read."] current)
-                    Just contents -> do
-                      rememberSaved shell renamed contents
+            Right (old, renamed) -> do
+              let typed = maybe Text.empty fst (Web.Decks.renaming current)
+              read' <- deckText shell old
+              case read' of
+                Nothing -> go (Web.Decks.refused [Text.pack "That deck could not be read."] current)
+                -- The same file, its name as typed.
+                Just contents
+                  | old == renamed -> do
+                      rememberSaved shell old typed contents
+                      go (Web.Decks.update Web.Decks.MkCancelRename Text.empty current)
+                  | otherwise -> do
+                      rememberSaved shell renamed typed contents
                       forgetSaved shell old
                       go (Web.Decks.savedAs renamed (Web.Decks.deleted old current))
           Web.Decks.MkDuplicate name
@@ -540,7 +549,7 @@ decksScreen shell chosen = do
                   Nothing -> go current
                   Just contents -> do
                     let copy = Web.Decks.copyName (Seq.fromList (Map.keys files)) name
-                    rememberSaved shell copy contents
+                    rememberSaved shell copy (Web.Decks.copyTitle (DeckBrowser.titles (Web.Decks.browser current)) name copy) contents
                     go (Web.Decks.savedAs copy current)
           Web.Decks.MkBrowse DeckBrowser.MkSubmitImport -> do
             (browsed, done) <- importDeck shell (\shown' -> display current {Web.Decks.browser = shown'}) (Web.Decks.browser current)
@@ -556,7 +565,7 @@ decksScreen shell chosen = do
     -- The decks as read so far, and what is read of them.
     refreshedDecks shown = do
       now <- IORef.readIORef (loaded shell)
-      let withDecks = maybe shown (\files -> Web.Decks.withDecks (Seq.fromList (Map.keys files)) (formats now) shown) (deckFiles now)
+      let withDecks = maybe shown (\files -> Web.Decks.withDecks (Seq.fromList (Map.keys files)) (formats now) (titles now) shown) (deckFiles now)
       browsed <- catalogued shell (Maybe.maybeToList (Web.Decks.selected withDecks)) (Web.Decks.browser withDecks)
       pure withDecks {Web.Decks.browser = browsed}
 
@@ -571,10 +580,11 @@ builder shell deck back = do
   need shell Loading.MkCards
   IORef.modifyIORef' (loaded shell) $ \l -> l {indexWanted = True}
   files <- Maybe.fromMaybe Map.empty <$> decksRead shell
+  listed <- IORef.readIORef (loaded shell)
   initial <- case deck >>= \name -> (,) name <$> Map.lookup name files of
     Just (name, path) -> do
       contents <- Encoding.decodeUtf8Lenient <$> ByteString.readFile path
-      pure (Builder.open (if DeckBrowser.isSaved name then Just name else Nothing) (snd (DeckBrowser.describe name)) contents (Builder.new []))
+      pure (Builder.open (if DeckBrowser.isSaved name then Just name else Nothing) (snd (DeckBrowser.describe (titles listed) name)) contents (Builder.new []))
     Nothing -> pure (Builder.new []) {Builder.notices = [Text.pack "That deck could not be opened, so this is a new one." | Maybe.isJust deck]}
   go initial Nothing back
   where
@@ -647,7 +657,9 @@ saveBuilt shell built = do
   case maybe (Left [Text.pack "The decks did not load: reload to try again."]) (\files -> Builder.saveTarget (Seq.fromList (Map.keys files)) built) (deckFiles listed) of
     Left problems -> pure built {Builder.saveProblems = problems}
     Right name -> do
-      rememberSaved shell name (Builder.listText built)
+      -- A name left blank keeps the one the deck had.
+      let typed = if Text.null (Text.strip (Builder.saveName built)) then snd (DeckBrowser.describe (titles listed) name) else Builder.saveName built
+      rememberSaved shell name typed (Builder.listText built)
       pure (Builder.saved name built)
 
 -- | Why a deck list breaks the format its header names, as lines, and the
@@ -746,7 +758,7 @@ loadingScreen shell = Browser.display (page shell) . Loading.view
 -- new game closes them.
 play :: Shell -> NonEmpty.NonEmpty (Text.Text, Text.Text) -> Set.Set Int -> Maybe Link.Saved -> IO Next
 play shell seats invited resuming = do
-  let starting = Browser.display (page shell) (if Maybe.isJust resuming then message ["Picking the game up where it stopped\x2026"] else Hotseat.starting (fmap fst seats))
+  let starting = Browser.display (page shell) (if Maybe.isJust resuming then message ["Picking the game up where it stopped\x2026"] else Hotseat.starting seats)
   starting
   built <- untilBuilt shell (loadingScreen shell) [Loading.MkCards, Loading.MkRules] (registry <$> IORef.readIORef (loaded shell))
   -- The invited slots whose connection is down: every one of a game picked up.
@@ -782,10 +794,10 @@ play shell seats invited resuming = do
         Right Ending.MkAbandoned -> stopped [Text.pack "The host gave the game up."] >> IORef.readIORef chosen
         Right played@(Ending.MkFinished ending) -> do
           palette' <- palette <$> IORef.readIORef (loaded shell)
-          let seatOf' (i, (name, _))
-                | i == 0 = History.MkSeat History.MkYou (DeckBrowser.label name) (Just name) (Map.findWithDefault Set.empty name palette')
-                | Set.member (i - 1) invited = History.MkSeat History.MkPerson (DeckBrowser.label name) Nothing Set.empty
-                | otherwise = History.MkSeat History.MkBot (DeckBrowser.label name) (Just name) (Map.findWithDefault Set.empty name palette')
+          let seatOf' (i, seat@(name, _))
+                | i == 0 = History.MkSeat History.MkYou (DeckBrowser.label (DeckBrowser.titleIn seat) name) (Just name) (Map.findWithDefault Set.empty name palette')
+                | Set.member (i - 1) invited = History.MkSeat History.MkPerson (DeckBrowser.label (DeckBrowser.titleIn seat) name) Nothing Set.empty
+                | otherwise = History.MkSeat History.MkBot (DeckBrowser.label (DeckBrowser.titleIn seat) name) (Just name) (Map.findWithDefault Set.empty name palette')
           remember shell (fmap seatOf' (zip [0 :: Int ..] (NonEmpty.toList seats))) played
           lost <- IORef.readIORef down
           let go said = do
@@ -889,9 +901,9 @@ joinGame shell offer = do
     n = 0
     hostChannel = Browser.channel (page shell) (build shell) n
     go shown = do
-      files <- deckFiles <$> IORef.readIORef (loaded shell)
-      let current = case files of
-            Just named | Join.reading shown -> shown {Join.reading = False, Join.decks = Seq.fromList (Map.keys named)}
+      loaded' <- IORef.readIORef (loaded shell)
+      let current = case deckFiles loaded' of
+            Just named | Join.reading shown -> shown {Join.reading = False, Join.decks = Seq.fromList (Map.keys named), Join.titles = titles loaded'}
             _ -> shown
       Browser.display (page shell) (framed Bar.MkPlay (fmap Screen.MkJoin (Join.view current)))
       woke <- await shell
@@ -1223,9 +1235,9 @@ work shell = do
       deckRoot <- Decks.defaultRoot
       paths <- Decks.listRoot deckRoot
       let files = Map.fromList [(name, path) | path <- paths, let name = Lobby.deckName deckRoot path, Lobby.playable name]
-      named <- fmap (Map.mapMaybe id) . traverse (fmap (DeckList.formatOf . Encoding.decodeUtf8Lenient) . ByteString.readFile) $ files
+      texts <- traverse (fmap Encoding.decodeUtf8Lenient . ByteString.readFile) files
       let lists = Map.fromList [(code, path) | path <- paths, Just code <- [Text.stripPrefix (Text.pack "sets/") (Lobby.deckName deckRoot path) >>= Text.stripSuffix (Text.pack "/all")]]
-      IORef.modifyIORef' (loaded shell) $ \l -> l {deckFiles = Just files, formats = named, unread = Map.toList files, unchecked = filter (DeckBrowser.isSaved . fst) (Map.toList files), setLists = lists}
+      IORef.modifyIORef' (loaded shell) $ \l -> l {deckFiles = Just files, formats = Map.mapMaybe DeckList.formatOf texts, titles = Map.mapMaybe DeckList.nameOf texts, unread = Map.toList files, unchecked = filter (DeckBrowser.isSaved . fst) (Map.toList files), setLists = lists}
     readCards = do
       root <- Registry.defaultRoot
       bundles <- Registry.bundlePaths >>= traverse ByteString.readFile

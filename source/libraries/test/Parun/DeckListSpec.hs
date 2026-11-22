@@ -275,6 +275,21 @@ spec s = Spec.describe s "Parun.DeckList" $ do
       Spec.assertEqWith s "as parsing reads it" (DeckList.formatOf (Text.pack text)) (fmap snd (DeckList.format listed))
       Spec.assertEqWith s "none without a header" (DeckList.formatOf (Text.pack "4 Goblin Piker\n")) Nothing
 
+  -- The web client names a deck by its header, not its file (#9506).
+  Spec.it s "a list's name header names its deck as written, and is no card"
+    . withPool "name-header"
+    $ \registry -> do
+      let text = "Name: Kamahl's Temper\nFormat: modern\n4 Goblin Piker\n"
+      listed <- listedOf s registry text
+      Spec.assertEqWith s "no problem" (DeckList.problems listed) []
+      Spec.assertEqWith s "the format still read" (DeckList.format listed) (Just (2, Text.pack "modern"))
+      Spec.assertEqWith s "the name as written" (DeckList.nameOf (Text.pack text)) (Just (Text.pack "Kamahl's Temper"))
+      Spec.assertEqWith s "none without a header" (DeckList.nameOf (Text.pack "4 Goblin Piker\n")) Nothing
+      let renamed = DeckList.withName (Text.pack "Tiny <b>Bolt</b>\nagain") (Text.pack text)
+      Spec.assertEqWith s "renamed, one line" (DeckList.nameOf renamed) (Just (Text.pack "Tiny <b>Bolt</b> again"))
+      Spec.assertEqWith s "the old name dropped" (length (filter (Text.isPrefixOf (Text.pack "Name:")) (Text.lines renamed))) 1
+      Spec.assertEqWith s "blank keeps the list" (DeckList.withName (Text.pack "  ") (Text.pack text)) (Text.pack text)
+
   -- The format asked for is checked, but a header naming another is reported
   -- rather than silently overruled.
   Spec.it s "a format asked for that the header contradicts is a problem"

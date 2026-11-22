@@ -1,3 +1,5 @@
+Name: Stampede of Beasts
+
 16 Forest
 8 Mountain
 1 Act of Treason

@@ -1,3 +1,5 @@
+Name: Lightforce
+
 9 Forest
 16 Plains
 1 Ajani's Chosen

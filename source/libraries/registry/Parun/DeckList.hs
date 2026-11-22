@@ -310,18 +310,21 @@ formatFor asked listed = case (asked, format listed) of
   (Just _, _) -> (asked, [])
   (Nothing, header) -> (fmap snd header, [])
 
--- What one line, read in a section, means: nothing (blank), the section the
--- lines after it belong to, the format the list is for, or a count and the
--- printing -- or, in the Stickers section, the sticker sheet -- it names, or,
+-- What one line, read in a section, means: nothing (blank, or the deck's
+-- name), the section the lines after it belong to, the format the list is
+-- for, or a count and the printing -- or, in the Stickers section, the sticker sheet -- it names, or,
 -- in the Draft Notes section, a card's draft notes (`noteOf`).
 lineOf :: (Monad m) => Registry.Registry m -> Map.Map Text.Text PrintingEntry.PrintingEntry -> (Natural.Natural, Section, Text.Text) -> m (Either InvalidCorpus.InvalidCorpus (Natural.Natural, Either Problem Line))
 lineOf registry first (number, within, raw) =
   let trimmed = Text.strip raw
    in if Text.null trimmed
         then pure (Right (number, Right Blank))
-        else case (sectionNamed trimmed, formatNamed trimmed) of
-          (Just section, _) -> pure (Right (number, Right (Header section)))
-          (_, Just named) -> pure (Right (number, maybe (Left (Unreadable number trimmed)) (Right . Named) named))
+        else case (sectionNamed trimmed, formatNamed trimmed, headerNamed (Text.pack "name") trimmed) of
+          (Just section, _, _) -> pure (Right (number, Right (Header section)))
+          (_, Just named, _) -> pure (Right (number, maybe (Left (Unreadable number trimmed)) (Right . Named) named))
+          -- The deck's own name (nameOf), which the deck it describes does
+          -- not depend on.
+          (_, _, Just (Just _)) -> pure (Right (number, Right Blank))
           _ | within == Stickers -> pure (Right (number, sheetOf (Registry.stickerSheets registry) number trimmed))
           _ | within == DraftNotes -> fmap (fmap ((,) number)) (noteOf registry number trimmed)
           _ -> case entryOf trimmed of
@@ -388,14 +391,39 @@ formatOf :: Text.Text -> Maybe Text.Text
 formatOf text = Maybe.listToMaybe [named | line <- Text.lines text, Just (Just named) <- [formatNamed (Text.strip line)]]
 
 -- The format a "Format:" header names, lowercased as data/formats files are
--- named; Just Nothing for a header naming none. No card's name begins
--- "Format:", so a header never hides a card.
+-- named; Just Nothing for a header naming none.
 formatNamed :: Text.Text -> Maybe (Maybe Text.Text)
-formatNamed text =
-  let (key, rest) = Text.breakOn (Text.singleton ':') text
-      named = Text.toLower (Text.strip (Text.drop 1 rest))
-   in if Text.toLower (Text.strip key) == Text.pack "format" && not (Text.null rest)
-        then Just (if Text.null named then Nothing else Just named)
+formatNamed = fmap (fmap Text.toLower) . headerNamed (Text.pack "format")
+
+-- | The name a list's "Name:" header gives its deck, as written: the first
+-- naming one. Read without resolving a card, as `formatOf` is.
+nameOf :: Text.Text -> Maybe Text.Text
+nameOf text = Maybe.listToMaybe [named | line <- Text.lines text, Just (Just named) <- [headerNamed (Text.pack "name") (Text.strip line)]]
+
+-- | The list headed by a "Name:" header giving its deck this name, in place
+-- of any it had; a line break in the name is a space, so the header stays
+-- one line, and a blank name leaves the list as it was.
+withName :: Text.Text -> Text.Text -> Text.Text
+withName named text
+  | Text.null one = text
+  | otherwise = Text.unlines (Text.pack "Name: " <> one : kept)
+  where
+    one = Text.strip (Text.map (\c -> if c == '\n' || c == '\r' then ' ' else c) named)
+    kept = [line | line <- Text.lines text, not (isNameHeader (Text.strip line))]
+
+-- | Whether a line is a "Name:" header (nameOf), which names no card.
+isNameHeader :: Text.Text -> Bool
+isNameHeader = Maybe.isJust . headerNamed (Text.pack "name")
+
+-- What a header line keyed `key`, any case, says: Just its value, Just
+-- Nothing for one saying none, Nothing for a line that is no such header. No
+-- card's name begins "Format:" or "Name:", so a header never hides a card.
+headerNamed :: Text.Text -> Text.Text -> Maybe (Maybe Text.Text)
+headerNamed key text =
+  let (before, rest) = Text.breakOn (Text.singleton ':') text
+      value = Text.strip (Text.drop 1 rest)
+   in if Text.toLower (Text.strip before) == key && not (Text.null rest)
+        then Just (if Text.null value then Nothing else Just value)
         else Nothing
 
 -- The section a header line names, if it is one: a section's `heading`, or
