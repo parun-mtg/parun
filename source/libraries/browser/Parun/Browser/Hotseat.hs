@@ -6,7 +6,6 @@ module Parun.Browser.Hotseat where
 import qualified Control.Exception as Exception
 import qualified Control.Monad as Monad
 import qualified Data.Either as Either
-import qualified Data.Foldable as Foldable
 import qualified Data.Functor.Identity as Identity
 import qualified Data.IORef as IORef
 import qualified Data.List as List
@@ -40,7 +39,6 @@ import qualified Parun.Types.Question as Question
 import qualified Parun.Types.Reply as R
 import qualified Parun.Types.Request as Request
 import qualified Parun.Types.Result as Result
-import qualified Parun.Types.SeatView as SeatView
 import qualified Parun.Web.Card as Web.Card
 import qualified Parun.Web.DeckBrowser as DeckBrowser
 import qualified Parun.Web.Element as Element
@@ -82,10 +80,10 @@ instance Exception.Exception Abandoned
 -- each prompt asks, a bot's too, is given to `decides` first. Each bot
 -- deals what it cannot see from the game's format's pool among `cards`
 -- (Command.pooled), by the legality table `table` gives.
--- Once over, `tell` is given each seat's verdict, what is said of the game
--- to each seat, each seat's view of its end (Link.endView) and its scenario
--- file: how it came out, or why it could not start.
-game :: Browser.Page Screen.Event -> Registry.Registry Identity.Identity -> [Either Text.Text Card.Card] -> IO (Either Text.Text LegalityTable.LegalityTable) -> IORef.IORef Web.Question.Level -> (Difficulty.Difficulty, Persona.Persona) -> NonEmpty.NonEmpty (FilePath, Text.Text) -> Map.Map PlayerId.PlayerId (Protocol.Exchange IO) -> Map.Map PlayerId.PlayerId Link.Sitting -> Key.Type.Key -> [R.Reply] -> (R.Reply -> IO ()) -> (PlayerId.PlayerId -> IO ()) -> ((PlayerId.PlayerId -> Ending.Verdict) -> (PlayerId.PlayerId -> [Text.Text]) -> (PlayerId.PlayerId -> Maybe PlayerView.PlayerView) -> Text.Text -> IO ()) -> (Maybe PlayerView.PlayerView -> IO Leave) -> IO (Either [Text.Text] Ending.Played)
+-- Once over, `tell` is given each seat's ending, a guest's log and life
+-- trail built from what its seat was sent (Link.seeing), which its page
+-- loses to a reload: how it came out, or why it could not start.
+game :: Browser.Page Screen.Event -> Registry.Registry Identity.Identity -> [Either Text.Text Card.Card] -> IO (Either Text.Text LegalityTable.LegalityTable) -> IORef.IORef Web.Question.Level -> (Difficulty.Difficulty, Persona.Persona) -> NonEmpty.NonEmpty (FilePath, Text.Text) -> Map.Map PlayerId.PlayerId (Protocol.Exchange IO) -> Map.Map PlayerId.PlayerId Link.Sitting -> Key.Type.Key -> [R.Reply] -> (R.Reply -> IO ()) -> (PlayerId.PlayerId -> IO ()) -> ((PlayerId.PlayerId -> Ending.Ending) -> IO ()) -> (Maybe PlayerView.PlayerView -> IO Leave) -> IO (Either [Text.Text] Ending.Played)
 game page registry cards table levelRef bots seats remotes locals seed stored kept decides tell leave = do
   seatRef <- IORef.newIORef . (\s -> s {yours = Set.insert player (Map.keysSet (Map.filter (== Link.MkYours) locals))}) . newSeat player =<< IORef.readIORef levelRef
   keepingLevel levelRef seatRef . Exception.handle (\MkAbandonedGame -> pure (Right Ending.MkAbandoned)) $ do
@@ -99,26 +97,31 @@ game page registry cards table levelRef bots seats remotes locals seed stored ke
           Left problems -> pure (Left problems)
           Right (format, pooled) -> do
             storedRef <- IORef.newIORef stored
+            -- What each guest's seat was sent.
+            guestsRef <- IORef.newIORef (Ending.unseen <$ remotes)
             let lookUp = Identity.runIdentity . Interpreter.chosenCard registry
                 here = exchange lookUp page seatRef leave
                 -- The page stays live while another browser's seat decides.
-                elsewhere = Map.mapWithKey (\seat ask -> awaiting lookUp page seatRef leave (const [seat]) . ask) remotes
+                elsewhere = Map.mapWithKey (\seat ask -> awaiting lookUp page seatRef leave (const [seat]) . Link.seeing (sentTo seat) ask) remotes
+                sentTo seat shown = IORef.modifyIORef' guestsRef (Map.adjust (Ending.see shown) seat)
                 next = IORef.atomicModifyIORef' storedRef $ \left -> maybe ([], Nothing) (\(reply, rest) -> (rest, Just reply)) (List.uncons left)
-                -- What a seat this page plays sees as its reply is made again,
-                -- and what it was asked.
-                replayed request = Monad.when (Map.notMember (Question.seat (Request.question request)) remotes) $ do
-                  Monad.forM_ (Request.view request) $ IORef.modifyIORef' seatRef . witness
-                  IORef.modifyIORef' seatRef (keepAsked request)
+                -- What a seat sees as its reply is made again, and what a
+                -- seat this page plays was asked.
+                replayed request
+                  | Map.member (Question.seat (Request.question request)) remotes = Monad.forM_ (Request.view request) (sentTo (Question.seat (Request.question request)))
+                  | otherwise = do
+                      Monad.forM_ (Request.view request) $ IORef.modifyIORef' seatRef . witness
+                      IORef.modifyIORef' seatRef (keepAsked request)
             (outcome, recorded) <- Command.game (Text.pack "the web client") (Protocol.resumed next replayed kept (Protocol.bySeat elsewhere here)) next kept [Link.deciding decides] (Lobby.playOptions bots (Natural.length seats) (Map.keysSet remotes <> Map.keysSet locals)) pooled registry format (fmap DeckList.deck lists) seed
-            -- What the player saw after their last decision: the killing blow, say.
-            Monad.forM_ (Link.endView player outcome) $ IORef.modifyIORef' seatRef . witness
             finished <- IORef.readIORef seatRef
+            sent <- IORef.readIORef guestsRef
             let said seat = either (\reason -> [Text.pack "The game stopped: " <> stopped reason <> Text.pack "."]) (\(result, gs) -> Wording.result (Just seat) result : Wording.departures (Just seat) gs) outcome
                 -- A remote seat's exchange ends only when its channel closes.
                 stopped reason = if not (Map.null remotes) && reason == Text.pack "end of input" then Text.pack "a player's connection closed" else reason
                 scenario = Command.rendered recorded
-            tell (`verdictOf` outcome) said (`Link.endView` outcome) scenario
-            pure . Right . Ending.MkFinished $ Ending.MkEnding (verdictOf player outcome) (said player) scenario (loggedFor player finished) player (Foldable.toList (lives finished))
+                endingFor seat = Link.ending (verdictOf seat outcome) (said seat) scenario seat outcome (Map.findWithDefault (sighted finished) seat sent)
+            tell endingFor
+            pure . Right . Ending.MkFinished $ endingFor player
 
 -- | Runs a game, then keeps the auto-pass level its seat ended on.
 keepingLevel :: IORef.IORef Web.Question.Level -> IORef.IORef Seat -> IO a -> IO a
@@ -327,15 +330,11 @@ data Seat = MkSeat
     skipping :: Map.Map PlayerId.PlayerId Web.Question.Until,
     -- | The seats that conceded (Web.Question.MkConcede).
     conceding :: Set.Set PlayerId.PlayerId,
-    -- | Each seat's life whenever it or the turn changed (Ending.sampled).
-    lives :: Seq.Seq (Natural, [(PlayerId.PlayerId, Integer)]),
     -- | The view last drawn while watching, less whose priority it was.
     watched :: Maybe PlayerView.PlayerView,
-    -- | How far the seat has read each game's log (Log.unseen).
-    marks :: Map.Map (PlayerId.PlayerId, Natural) (Natural, Natural),
-    -- | The entries each seat has read so far, oldest first: the seat the
-    -- page plays's is the game log the end shows.
-    logged :: Map.Map PlayerId.PlayerId (Seq.Seq Log.Entry),
+    -- | What its seats have seen: the seat the page plays's log is the one
+    -- the end shows.
+    sighted :: Ending.Seen,
     -- | How many entries each seat had logged when it last answered itself.
     decided :: Map.Map PlayerId.PlayerId Int,
     -- | The request each seat the page plays was last asked.
@@ -345,23 +344,20 @@ data Seat = MkSeat
 -- | The page's state before its first request line, facing the seat it
 -- plays and playing only that one, at that auto-pass level.
 newSeat :: PlayerId.PlayerId -> Web.Question.Level -> Seat
-newSeat seat initial = MkSeat (Just seat) (Set.singleton seat) Set.empty initial Map.empty Set.empty Seq.empty Nothing Map.empty Map.empty Map.empty Map.empty
+newSeat seat initial = MkSeat (Just seat) (Set.singleton seat) Set.empty initial Map.empty Set.empty Nothing Ending.unseen Map.empty Map.empty
 
 -- | The entries a seat has read so far, oldest first.
 loggedFor :: PlayerId.PlayerId -> Seat -> Seq.Seq Log.Entry
-loggedFor seat state = Map.findWithDefault Seq.empty seat (logged state)
+loggedFor seat = Ending.loggedFor seat . sighted
 
--- | How many entries a seat has logged since it last answered.
+-- | How many entries a seat has logged since it last answered itself.
 freshOf :: PlayerId.PlayerId -> Seat -> Natural
 freshOf seat state = Int.toNaturalSaturating (Seq.length (loggedFor seat state) - Map.findWithDefault 0 seat (decided state))
 
 -- | The page's state with the entries of the view its seat has not read yet
 -- logged for that seat.
 witness :: PlayerView.PlayerView -> Seat -> Seat
-witness view state =
-  let (moved, unread) = Log.unseen (marks state) view
-      now = [(SeatView.player seat, SeatView.life seat) | seat <- PlayerView.seats view]
-   in state {marks = moved, logged = Map.insertWith (flip (<>)) (PlayerView.viewer view) (Seq.fromList unread) (logged state), lives = Ending.sampled (PlayerView.turn view) now (lives state)}
+witness view state = state {sighted = Ending.see view (sighted state)}
 
 message :: [Text.Text] -> Html.Html msg
 message said = Element.el "main" ["message"] [] [Element.el "p" [] [] [Html.text t] | t <- said]
