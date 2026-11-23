@@ -73,8 +73,9 @@
   --band-none: #7d8794;
 
   /* The mana symbols' fills and glyphs, the same in both themes but the
-     rim, which in light mode is a control's edge. */
-  --ms-w: #f8f2cc;
+     rim, which in light mode is a control's edge. White's fill is deep
+     enough to stand off a white card's cream face. */
+  --ms-w: #eedc93;
   --ms-w-text: #3b3410;
   --ms-u: #aed2ef;
   --ms-u-text: #0d2c48;
@@ -632,10 +633,11 @@ body.busy #app {
   pointer-events: none;
 }
 
-/* The settings button, the page's, the top bar's or the turn bar's, turns
+/* The settings button, the page's, a bar's or the hand-off's, turns
    while the engine works, once it takes a moment. */
 body.busy #settings-button > svg,
 body.busy .topbar .settings-button > svg,
+body.busy .handoff-bar .settings-button > svg,
 body.busy .turn-bar .settings-button > svg {
   animation: spin 1.2s 0.15s linear infinite;
 }
@@ -729,7 +731,8 @@ body.busy .turn-bar .settings-button > svg {
   background: var(--raised);
 }
 
-#app .topbar .settings-button {
+#app .topbar .settings-button,
+#app .handoff-bar .settings-button {
   margin-left: auto;
   width: 44px;
   padding: 0;
@@ -740,7 +743,8 @@ body.busy .turn-bar .settings-button > svg {
   justify-content: center;
 }
 
-.topbar .settings-button > svg {
+.topbar .settings-button > svg,
+.handoff-bar .settings-button > svg {
   width: 22px;
   height: 22px;
 }
@@ -2417,10 +2421,27 @@ main.game {
   flex-direction: column-reverse;
 }
 
+/* Several seats' boxes open at their foot too: column-reverse starts a
+   scroll box at its end, and the orders put the lines back as the markup
+   has them, the creatures lowest. */
 .opponents.several .seat .battlefield {
   max-height: 28vh;
   overflow-y: auto;
   overscroll-behavior: contain;
+  flex-direction: column-reverse;
+}
+
+.opponents.several .seat .battlefield > .row.front {
+  order: 1;
+}
+
+.opponents.several .seat .battlefield > .back {
+  order: 2;
+}
+
+.opponents.several .seat .battlefield > .row.phased,
+.opponents.several .seat .battlefield > .row.command {
+  order: 3;
 }
 
 .opponents.several .seat .seat-head {
@@ -3169,6 +3190,24 @@ details.pile[open] {
   margin-inline: 10px;
 }
 
+/* A tapped pile turns as one, its count with it (a counted pile has no
+   attachments, Parun.Web.Board.seatArea). Attachments stay upright under
+   a turned host, however many there are, the first lowered clear of its
+   turned corner. */
+#app .group:has(> .many):has(> .card.tapped:first-child) {
+  rotate: 14deg;
+  margin-inline: 10px;
+}
+
+#app .group:has(> .many) > .card.tapped:first-child {
+  rotate: none;
+  margin-inline: 0;
+}
+
+#app .group > .card.tapped:first-child + .card {
+  margin-top: 6px;
+}
+
 /* The tap symbol ({T}, index.html's ms-tap), at the right edge. */
 #app button.card.tapped::after {
   content: "";
@@ -3891,6 +3930,14 @@ main.handoff {
   justify-content: center;
   gap: 1em;
   font-size: 1.2rem;
+}
+
+/* The settings where the top bar has them (.topbar's padding, its
+   64px line). */
+.handoff-bar {
+  position: fixed;
+  top: calc(10px + env(safe-area-inset-top));
+  right: max(16px, env(safe-area-inset-right));
 }
 
 main.ending {

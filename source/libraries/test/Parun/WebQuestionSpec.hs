@@ -112,6 +112,7 @@ import qualified Parun.Types.RoomHalf as RoomHalf
 import qualified Parun.Types.Scratch as Scratch
 import qualified Parun.Types.SeatView as SeatView
 import qualified Parun.Types.Settle as Settle
+import qualified Parun.Types.Sickness as Sickness
 import qualified Parun.Types.SlotName as SlotName
 import qualified Parun.Types.Stop as Stop
 import qualified Parun.Types.Subtype as Subtype
@@ -332,6 +333,7 @@ spec s registry = Spec.describe s "WebQuestion" $ do
     Spec.assertBool s (Text.isInfixOf (Text.pack "You're deciding for Player 2, whom you control.") page) "banner"
     Spec.assertBool s (Text.isInfixOf (Text.pack "Player 2's turn, which you control.") page) "the turn is the seat's to play"
     Spec.assertBool s (Text.isInfixOf (Text.pack "Pass the screen to Player 1, deciding for Player 2.") (Html.content (Question.Web.handOff request))) "the hand-off says so"
+    Spec.assertBool s (Text.pack "<main class=\"handoff\"><div class=\"handoff-bar\"><button class=\"settings-button\"" `Text.isPrefixOf` Html.toText (Question.Web.handOff request)) "the hand-off's settings head it, as a bar's do"
     -- Odric, Master Tactician's chooser decides blocks for a player it does
     -- not control.
     Spec.assertEqWith s "chosen for, not controlled" (Question.for (Request.question (requestFor gs0 (Prompt.DeclareBlockers (Decider.MkDecider S.alice) S.bob [] [])))) Nothing
@@ -711,6 +713,20 @@ spec s registry = Spec.describe s "WebQuestion" $ do
     Spec.assertEqWith s "no block passes" (Question.Web.automatic Question.Web.MkStandard (priority S.alice (fought (Phase.Combat CombatStep.DeclareBlockers) Map.empty))) (Just (R.Number 0))
     Spec.assertEqWith s "nor any other step" (Question.Web.automatic Question.Web.MkStandard (priority S.alice (fought (Phase.Combat CombatStep.CombatDamage) blocked))) (Just (R.Number 0))
     Spec.assertEqWith s "auto passes it" (Question.Web.automatic Question.Web.MkAutoPass (priority S.alice blocking)) (Just (R.Number 0))
+
+  Spec.it s "CR 302.6 a tile says summoning sick where it can matter: its controller's turn, or a {T} ability" $ do
+    bears <- S.printingOf s registry "Grizzly Bears"
+    elves <- S.printingOf s registry "Llanowar Elves"
+    let (mine, b1) = S.addPermanent bears S.alice (Setup.emptyGame S.bothPlayers)
+        (theirs, b2) = S.addPermanent bears S.bob b1
+        (elf, b3) = S.addPermanent elves S.bob b2
+        -- Each new this turn (S.addPermanent settles them).
+        view = PlayerView.viewFor S.alice b3 {GameState.objects = fmap (\o -> o {Object.sickness = Sickness.Sick}) (GameState.objects b3)}
+        sick oid = maybe False (Text.isInfixOf (Text.pack "badge state sick") . Html.toText . Card.tile view (Card.MkCue [] () Nothing)) (List.find ((== oid) . ObjectView.object) (PlayerView.Type.battlefield view))
+    Spec.assertEqWith s "the active player" (PlayerView.Type.active view) S.alice
+    Spec.assertBool s (sick mine) "on its controller's turn"
+    Spec.assertBool s (not (sick theirs)) "not on another's, where it can't attack"
+    Spec.assertBool s (sick elf) "but where it can't use {T} abilities"
 
   Spec.it s "CR 509.1h once blocks are declared, the prompt pairs each attacker with its blockers" $ do
     bears <- S.printingOf s registry "Grizzly Bears"
