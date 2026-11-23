@@ -68,7 +68,8 @@ instance Exception.Exception Abandoned
 -- player's first), on the page, shuffled by `seed`: every request line of the
 -- player's seat answered there (Parun.Web.Question) at the auto-pass level
 -- kept in `levelRef`, and left with the level last chosen there; each seat
--- in `remotes` answered by its own exchange (Parun.Web.Link.remote), each
+-- in `remotes` answered by its own exchange (Parun.Web.Link.remote), given
+-- what the host sent that seat before the request pending, each
 -- in `locals` on the page as the player's is, handed the screen first
 -- (Web.Question.handOff) unless the player plays it too (Link.MkYours),
 -- and every other by the search bot at the difficulty and persona `bots`
@@ -83,9 +84,9 @@ instance Exception.Exception Abandoned
 -- Once over, `tell` is given each seat's ending, a guest's log and life
 -- trail built from what its seat was sent (Link.seeing), which its page
 -- loses to a reload: how it came out, or why it could not start.
-game :: Browser.Page Screen.Event -> Registry.Registry Identity.Identity -> [Either Text.Text Card.Card] -> IO (Either Text.Text LegalityTable.LegalityTable) -> IORef.IORef Web.Question.Level -> (Difficulty.Difficulty, Persona.Persona) -> NonEmpty.NonEmpty (FilePath, Text.Text) -> Map.Map PlayerId.PlayerId (Protocol.Exchange IO) -> Map.Map PlayerId.PlayerId Link.Sitting -> Key.Type.Key -> [R.Reply] -> (R.Reply -> IO ()) -> (PlayerId.PlayerId -> IO ()) -> ((PlayerId.PlayerId -> Ending.Ending) -> IO ()) -> (Maybe PlayerView.PlayerView -> IO Leave) -> IO (Either [Text.Text] Ending.Played)
+game :: Browser.Page Screen.Event -> Registry.Registry Identity.Identity -> [Either Text.Text Card.Card] -> IO (Either Text.Text LegalityTable.LegalityTable) -> IORef.IORef Web.Question.Level -> (Difficulty.Difficulty, Persona.Persona) -> NonEmpty.NonEmpty (FilePath, Text.Text) -> Map.Map PlayerId.PlayerId (IO Ending.Seen -> Protocol.Exchange IO) -> Map.Map PlayerId.PlayerId Link.Sitting -> Key.Type.Key -> [R.Reply] -> (R.Reply -> IO ()) -> (PlayerId.PlayerId -> IO ()) -> ((PlayerId.PlayerId -> Ending.Ending) -> IO ()) -> (Maybe PlayerView.PlayerView -> IO Leave) -> IO (Either [Text.Text] Ending.Played)
 game page registry cards table levelRef bots seats remotes locals seed stored kept decides tell leave = do
-  seatRef <- IORef.newIORef . (\s -> s {yours = Set.insert player (Map.keysSet (Map.filter (== Link.MkYours) locals))}) . newSeat player =<< IORef.readIORef levelRef
+  seatRef <- IORef.newIORef . (\s -> s {yours = Set.insert player (Map.keysSet (Map.filter (== Link.MkYours) locals))}) . newSeat player Ending.unseen =<< IORef.readIORef levelRef
   keepingLevel levelRef seatRef . Exception.handle (\MkAbandonedGame -> pure (Right Ending.MkAbandoned)) $ do
     let listed = fmap (uncurry (Command.loadText registry)) seats
     case sequenceA listed of
@@ -102,7 +103,7 @@ game page registry cards table levelRef bots seats remotes locals seed stored ke
             let lookUp = Identity.runIdentity . Interpreter.chosenCard registry
                 here = exchange lookUp page seatRef leave
                 -- The page stays live while another browser's seat decides.
-                elsewhere = Map.mapWithKey (\seat ask -> awaiting lookUp page seatRef leave (const [seat]) . Link.seeing (sentTo seat) ask) remotes
+                elsewhere = Map.mapWithKey (\seat ask -> awaiting lookUp page seatRef leave (const [seat]) . Link.seeing (sentTo seat) (ask (Map.findWithDefault Ending.unseen seat <$> IORef.readIORef guestsRef))) remotes
                 sentTo seat shown = IORef.modifyIORef' guestsRef (Map.adjust (Ending.see shown) seat)
                 next = IORef.atomicModifyIORef' storedRef $ \left -> maybe ([], Nothing) (\(reply, rest) -> (rest, Just reply)) (List.uncons left)
                 -- What a seat sees as its reply is made again, and what a
@@ -342,9 +343,11 @@ data Seat = MkSeat
   }
 
 -- | The page's state before its first request line, facing the seat it
--- plays and playing only that one, at that auto-pass level.
-newSeat :: PlayerId.PlayerId -> Web.Question.Level -> Seat
-newSeat seat initial = MkSeat (Just seat) (Set.singleton seat) Set.empty initial Map.empty Set.empty Nothing Ending.unseen Map.empty Map.empty
+-- plays and playing only that one, at that auto-pass level, the seat having
+-- read what was `seen` already: a rejoining guest's game before its page
+-- reloaded (Link.MkStart).
+newSeat :: PlayerId.PlayerId -> Ending.Seen -> Web.Question.Level -> Seat
+newSeat seat seen initial = MkSeat (Just seat) (Set.singleton seat) Set.empty initial Map.empty Set.empty Nothing seen (Map.singleton seat (Seq.length (Ending.loggedFor seat seen))) Map.empty
 
 -- | The entries a seat has read so far, oldest first.
 loggedFor :: PlayerId.PlayerId -> Seat -> Seq.Seq Log.Entry
