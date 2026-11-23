@@ -848,7 +848,7 @@ play shell seats invited here resuming = do
       channelOf i = tracked down i (Browser.channel (page shell) (build shell) (linkOf i))
       tellAll endingFor = Monad.forM_ (Map.keys invited) $ \i -> Link.send (channelOf i) (Link.MkEnd (endingFor (seatOf i)))
       closeAll = mapM_ Browser.linkClose invited
-      stopped said = tellAll (\seat -> Ending.endingOf Ending.MkStopped said Text.empty seat Ending.unseen) >> closeAll
+      stopped said = tellAll (\seat -> Ending.endingOf Ending.MkStopped said Text.empty seat False Ending.unseen) >> closeAll
       keeping = not (Map.null invited)
   case built of
     Left problem -> stopped [problem] >> notice shell [problem]
@@ -903,9 +903,10 @@ play shell seats invited here resuming = do
                   _ -> go said
           go []
 
--- | How a game ended, under the top bar with no section current.
+-- | How a game ended, under the top bar with Play, where games start,
+-- current.
 endingScreen :: Ending.Ending -> Html.Html Screen.Event
-endingScreen = Bar.framed Screen.MkNav Nothing . fmap Screen.MkEnding . Ending.view
+endingScreen = Bar.framed Screen.MkNav (Just Bar.MkPlay) . fmap Screen.MkEnding . Ending.view
 
 -- | Keeps a game this page played among these seats, once it is over with
 -- a result (History.recordOf), dropping the oldest kept past the cap.

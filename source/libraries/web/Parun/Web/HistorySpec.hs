@@ -19,6 +19,12 @@ spec s = Spec.describe s "Parun.Web.History" $ do
       Spec.assertEqWith s "one line" (length (Text.lines line)) 1
       Spec.assertEqWith s "round trip" (History.decode line) (Right game)
 
+    Spec.it s "reads back each verdict, a shared screen's winner too, writing the others as bare tags" $ do
+      let verdicts = [Ending.MkWon, Ending.MkLost, Ending.MkDrawn, Ending.MkWonBy (PlayerId.MkPlayerId 1), Ending.MkStopped]
+      Spec.assertEqWith s "round trip" (fmap (\v -> fmap History.verdict (History.decode (History.encode game {History.verdict = v}))) verdicts) (fmap Right verdicts)
+      -- As summaries kept before the shared screen's verdict hold them.
+      Spec.assertBool s (Text.isInfixOf (Text.pack "\"verdict\":\"MkLost\"") (History.encode game)) "a bare tag"
+
     Spec.it s "refuses a summary missing its verdict" $ do
       Spec.assertBool s (either (const True) (const False) (History.decode (Text.pack "{\"ended\":1}"))) "refused"
 
@@ -51,7 +57,7 @@ spec s = Spec.describe s "Parun.Web.History" $ do
       Spec.assertEqWith s "another" (History.drift (Text.pack "newer") game) (Just (Text.pack "Recorded on an older version; it may not replay exactly."))
 
   Spec.describe s "recordOf" $ do
-    let finished verdict = Ending.MkFinished (Ending.MkEnding verdict [Text.pack "Player 1 wins."] scenario Seq.empty (PlayerId.MkPlayerId 0) [(1, []), (6, []), (7, [])])
+    let finished verdict = Ending.MkFinished (Ending.MkEnding verdict [Text.pack "Player 1 wins."] scenario Seq.empty (PlayerId.MkPlayerId 0) False [(1, []), (6, []), (7, [])])
         recorded = History.recordOf 1795266300000 60 (Text.pack "build") (History.seats game)
     Spec.it s "keeps a game that ended with a result, in the turn its trail last sampled" $ do
       Spec.assertEqWith s "won" (fmap fst (recorded (finished Ending.MkWon))) (Just game {History.verdict = Ending.MkWon, History.turns = 7})
@@ -88,6 +94,10 @@ spec s = Spec.describe s "Parun.Web.History" $ do
       has "Ajani (M19)"
       has "Liliana (M19)"
       has "You vs Bot \x00b7 Turn 9 \x00b7 21 Nov 2026, 14:05"
+
+    Spec.it s "names a shared screen's winner without taking a seat's side" $ do
+      let page = Html.toText (History.row game {History.verdict = Ending.MkWonBy (PlayerId.MkPlayerId 1)} [])
+      Spec.assertBool s (Text.isInfixOf (Text.pack "<span class=\"result drawn\">Player 2 won</span>") page) (Text.unpack page)
 
 game :: History.Game
 game =

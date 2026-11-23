@@ -127,7 +127,7 @@ spec s registry = Spec.describe s "RemoteSeat" $ do
         Spec.assertBool s (fmap fst (Seq.lookup (Seq.length (Ending.sampledLives before) - 1) (Ending.sampledLives before)) > Just 1) "setup: the guest rejoins past turn 1"
       other -> Spec.assertBool s False ("the guest is sent again: " <> show other)
     -- The host's ending holds the game from its start (#9663).
-    told <- State.execStateT (Link.send (channel S.bob) (Link.MkEnd (Link.ending Ending.MkLost [] Text.empty S.bob outcome (Map.findWithDefault Ending.unseen S.bob (hostSeen wire))))) wire
+    told <- State.execStateT (Link.send (channel S.bob) (Link.MkEnd (Link.ending Ending.MkLost [] Text.empty S.bob False outcome (Map.findWithDefault Ending.unseen S.bob (hostSeen wire))))) wire
     case Map.lookup S.bob (ended told) of
       Just (Link.MkEnded ending) -> do
         Spec.assertEqWith s "the guest's life chart starts on turn 1" (firstTurn (Ending.trail ending)) (Just 1)
@@ -177,7 +177,7 @@ wholeGame s matchup guests = do
   (outcome, wire) <- State.runStateT (hosted guests matchup) (MkWire Map.empty Map.empty Map.empty Map.empty 0 [] Map.empty Map.empty [] Map.empty Map.empty)
   case outcome of
     Right (Result.Won _, _) -> do
-      let endingOf g = Link.ending Ending.MkStopped [Text.pack "over"] Text.empty g outcome (Map.findWithDefault Ending.unseen g (hostSeen wire))
+      let endingOf g = Link.ending Ending.MkStopped [Text.pack "over"] Text.empty g False outcome (Map.findWithDefault Ending.unseen g (hostSeen wire))
       told <- State.execStateT (Monad.forM_ guests $ \g -> Link.send (channel g) (Link.MkEnd (endingOf g))) wire
       Spec.assertEqWith s "each guest is told how it ended" (ended told) (Map.fromList [(g, Link.MkEnded (endingOf g)) | g <- guests])
       -- The game ends on something no request follows: a guest's ending

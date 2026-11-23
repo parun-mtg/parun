@@ -12,10 +12,10 @@ import qualified Parun.Web.Log as Log
 spec :: (Monad m, Monad n) => Spec.Spec m n -> n ()
 spec s = Spec.describe s "Parun.Web.Ending" $ do
   Spec.describe s "view" $ do
-    Spec.it s "says how the game ended, offers a rematch, a new game and the scenario, and lists the log newest first, as play does" $ do
+    Spec.it s "says how the game ended once, offers a rematch, a new game and the scenario, and lists the log newest first, as play does" $ do
       let page = Html.toText (Ending.view ending)
           has piece = Spec.assertBool s (Text.isInfixOf (Text.pack piece) page) piece
-      has "<section class=\"verdict won\"><h1>You win!</h1><p>You win.</p><p>Player 2 conceded.</p></section>"
+      has "<section class=\"verdict won\"><h1>You win!</h1><p>Player 2 conceded.</p></section>"
       has ">Rematch</button>"
       Spec.assertBool s (not (Text.isInfixOf (Text.pack "?mine=") page)) "no rematch link"
       Spec.assertBool s (not (Text.isInfixOf (Text.pack "Share this shuffle") page)) "no share link"
@@ -25,8 +25,35 @@ spec s = Spec.describe s "Parun.Web.Ending" $ do
       Spec.assertEqWith s "new game" (tapping "New game") (Just Ending.MkNewGame)
       has ">New game</button>"
       has "<a href=\"data:application/json;charset=utf-8,%7b%7d\" download=\"parun-game.json\">Save as a scenario</a>"
-      has "<ul class=\"game-log\"><li class=\"turn\">Turn 2: Player 2's turn</li><li class=\"minor\">Player 2 concedes.</li><li>Player 2 draws a card.</li><li class=\"turn\">Turn 1: your turn</li><li>You draw a card.</li></ul>"
+      has "<h2>Game log</h2>"
+      has "<h3 class=\"log-turn-heading\">Turn 2 \x00b7 Player 2</h3><ul class=\"log-list\"><li class=\"minor\">Player 2 concedes.</li><li>Player 2 draws a card.</li></ul>"
+      has "<h3 class=\"log-turn-heading\">Turn 1 \x00b7 You</h3><ul class=\"log-list\"><li>You draw a card.</li></ul>"
+      Spec.assertBool s (not (Text.isInfixOf (Text.pack "Turn 3 \x00b7") page)) "no heading for a turn with nothing in it"
       has "<div class=\"confetti\""
+
+    Spec.it s "keeps why play stopped under its headline" $ do
+      let page = Html.toText (Ending.view ending {Ending.verdict = Ending.MkStopped, Ending.said = [Text.pack "The game stopped: end of input."]})
+      Spec.assertBool s (Text.isInfixOf (Text.pack "<section class=\"verdict stopped\"><h1>Game over</h1><p>The game stopped: end of input.</p></section>") page) (Text.unpack page)
+
+    Spec.it s "names a shared screen's winner and every seat, taking no seat's side, and says whose log it shows" $ do
+      let page = Html.toText (Ending.view ending {Ending.verdict = Ending.MkWonBy bot, Ending.said = [Text.pack "Player 2 wins.", Text.pack "Player 1 conceded."], Ending.shared = True})
+          has piece = Spec.assertBool s (Text.isInfixOf (Text.pack piece) page) piece
+          hasNot piece = Spec.assertBool s (not (Text.isInfixOf (Text.pack piece) page)) piece
+          bot = PlayerId.MkPlayerId 1
+      has "<section class=\"verdict won\"><h1>Player 2 wins!</h1><p>Player 1 conceded.</p></section>"
+      has "<div class=\"confetti\""
+      has "Player 1</strong>: ended on 20 life"
+      hasNot "You</strong>"
+      hasNot "life-line seat-0 you"
+      has "<h2>Game log, as Player 1 saw it</h2>"
+
+    Spec.it s "labels the turns between the start and the end at a round step" $ do
+      let lives = [(PlayerId.MkPlayerId 0, 20 :: Integer), (PlayerId.MkPlayerId 1, 20)]
+          page = Html.toText (Ending.view ending {Ending.trail = [(turn, lives) | turn <- [1 .. 15]]})
+          axis x said' = Text.pack ("<text class=\"axis\" x=\"" <> show (x :: Integer) <> "\" y=\"136\" text-anchor=\"middle\" dominant-baseline=\"middle\">" <> said' <> "</text>")
+      -- Fifteen samples over 320: turn 5's is the fifth, turn 10's the tenth.
+      Spec.assertBool s (Text.isInfixOf (axis 91 "5" <> axis 205 "10" <> Text.pack "<text class=\"axis\" x=\"320\"") page) "turns 5 and 10"
+      Spec.assertBool s (not (Text.isInfixOf (Text.pack ">15</text>") page)) "the last turn labelled once"
 
     Spec.it s "ends the chart on the turn the game ended in, though no life changed in it" $ do
       let lives = [(PlayerId.MkPlayerId 0, 20 :: Integer), (PlayerId.MkPlayerId 1, 20)]
@@ -79,6 +106,7 @@ ending =
       Ending.scenario = Text.pack "{}",
       Ending.witnessed = Seq.fromList [Log.MkTurn 1 you, Log.MkEvent Log.MkMajor (Text.pack "You draw a card."), Log.MkTurn 2 bot, Log.MkEvent Log.MkMajor (Text.pack "Player 2 draws a card."), Log.MkEvent Log.MkMinor (Text.pack "Player 2 concedes."), Log.MkTurn 3 you],
       Ending.viewer = you,
+      Ending.shared = False,
       Ending.trail = [(1, [(you, 20), (bot, 20)]), (2, [(you, 20), (bot, 17)]), (3, [(you, 20), (bot, 0)])]
     }
   where

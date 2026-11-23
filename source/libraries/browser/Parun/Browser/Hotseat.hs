@@ -83,7 +83,9 @@ instance Exception.Exception Abandoned
 -- (Command.pooled), by the legality table `table` gives.
 -- Once over, `tell` is given each seat's ending, a guest's log and life
 -- trail built from what its seat was sent (Link.seeing), which its page
--- loses to a reload: how it came out, or why it could not start.
+-- loses to a reload: how it came out, or why it could not start, taking
+-- no seat's side where another person plays at this screen
+-- (Link.MkHandedOver).
 game :: Browser.Page Screen.Event -> Registry.Registry Identity.Identity -> [Either Text.Text Card.Card] -> IO (Either Text.Text LegalityTable.LegalityTable) -> IORef.IORef Web.Question.Level -> Map.Map Int (Difficulty.Difficulty, Persona.Persona) -> NonEmpty.NonEmpty (FilePath, Text.Text) -> Map.Map PlayerId.PlayerId (IO Ending.Seen -> Protocol.Exchange IO) -> Map.Map PlayerId.PlayerId Link.Sitting -> Key.Type.Key -> [R.Reply] -> (R.Reply -> IO ()) -> (PlayerId.PlayerId -> IO ()) -> ((PlayerId.PlayerId -> Ending.Ending) -> IO ()) -> (Maybe PlayerView.PlayerView -> IO Leave) -> IO (Either [Text.Text] Ending.Played)
 game page registry cards table levelRef bots seats remotes locals seed stored kept decides tell leave = do
   seatRef <- IORef.newIORef . (\s -> s {yours = Set.insert player (Map.keysSet (Map.filter (== Link.MkYours) locals))}) . newSeat player Ending.unseen =<< IORef.readIORef levelRef
@@ -116,23 +118,28 @@ game page registry cards table levelRef bots seats remotes locals seed stored ke
             (outcome, recorded) <- Command.game (Text.pack "the web client") (Protocol.resumed next replayed kept (Protocol.bySeat elsewhere here)) next kept [Link.deciding decides] (Lobby.playOptions bots (Natural.length seats) (Map.keysSet remotes <> Map.keysSet locals)) pooled registry format (fmap DeckList.deck lists) seed
             finished <- IORef.readIORef seatRef
             sent <- IORef.readIORef guestsRef
-            let said seat = either (\reason -> [Text.pack "The game stopped: " <> stopped reason <> Text.pack "."]) (\(result, gs) -> Wording.result (Just seat) result : Wording.departures (Just seat) gs) outcome
+            let said reader = either (\reason -> [Text.pack "The game stopped: " <> stopped reason <> Text.pack "."]) (\(result, gs) -> Wording.result reader result : Wording.departures reader gs) outcome
                 -- A remote seat's exchange ends only when its channel closes.
                 stopped reason = if not (Map.null remotes) && reason == Text.pack "end of input" then Text.pack "a player's connection closed" else reason
                 scenario = Command.rendered recorded
-                endingFor seat = Link.ending (verdictOf seat outcome) (said seat) scenario seat outcome (Map.findWithDefault (sighted finished) seat sent)
+                -- Told to `reader`, or to no seat in particular.
+                endingAs reader seat = Link.ending (verdictOf reader outcome) (said reader) scenario seat (Maybe.isNothing reader) outcome (Map.findWithDefault (sighted finished) seat sent)
+                endingFor seat = endingAs (Just seat) seat
+                -- Another person plays at this screen, so its ending takes
+                -- no seat's side.
+                shared = Link.MkHandedOver `elem` locals
             tell endingFor
-            pure . Right . Ending.MkFinished $ endingFor player
+            pure . Right . Ending.MkFinished $ endingAs (if shared then Nothing else Just player) player
 
 -- | Runs a game, then keeps the auto-pass level its seat ended on.
 keepingLevel :: IORef.IORef Web.Question.Level -> IORef.IORef Seat -> IO a -> IO a
 keepingLevel levelRef seatRef run = run `Exception.finally` (IORef.readIORef seatRef >>= IORef.writeIORef levelRef . level)
 
--- | How the game ended for this seat.
-verdictOf :: PlayerId.PlayerId -> Either a (Result.Result, b) -> Ending.Verdict
-verdictOf seat outcome = case outcome of
+-- | How the game ended for this seat, or for no seat in particular.
+verdictOf :: Maybe PlayerId.PlayerId -> Either a (Result.Result, b) -> Ending.Verdict
+verdictOf reader outcome = case outcome of
   Left _ -> Ending.MkStopped
-  Right (Result.Won pid, _) -> if pid == seat then Ending.MkWon else Ending.MkLost
+  Right (Result.Won pid, _) -> maybe (Ending.MkWonBy pid) (\seat -> if pid == seat then Ending.MkWon else Ending.MkLost) reader
   Right (Result.TeamWon _, _) -> Ending.MkStopped
   Right (Result.Drawn, _) -> Ending.MkDrawn
 

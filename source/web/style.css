@@ -3664,16 +3664,7 @@ details.log[open] + .log-recent {
   cursor: pointer;
 }
 
-.game-log li.turn {
-  list-style: none;
-  margin: 0.5em 0 0.15em -1.2em;
-  font-weight: 700;
-  color: var(--text);
-  border-bottom: 1px solid var(--line);
-}
-
-.log-list li.minor,
-.game-log li.minor {
+.log-list li.minor {
   font-style: italic;
   color: var(--muted);
 }
@@ -4192,18 +4183,12 @@ main.ending h2 {
   }
 }
 
+/* The whole log in the page's flow, which scrolls it (Parun.Web.Ending). */
 .game-log {
-  margin: 0;
-  padding: 0.8em 0.8em 0.8em 2.2em;
+  padding: 0.8em;
   border-radius: var(--radius);
   background: var(--surface);
   font-size: 0.88rem;
-  max-height: 60dvh;
-  overflow-y: auto;
-}
-
-.game-log li {
-  padding: 0.1em 0;
 }
 
 /* ---------- Keyboard shortcuts (page.js) ---------- */
