@@ -29,10 +29,10 @@ spec s = Spec.describe s "Parun.Web.Link" $ do
               Link.MkAsk request,
               Link.MkDeciding (PlayerId.MkPlayerId 2),
               Link.MkAnswer (R.Object [(Text.pack "action", R.Text (Text.pack "Pass"))]),
-              Link.MkEnd Ending.MkLost [Text.pack "Player 1 wins."] (Text.pack "{}\n"),
-              Link.MkEnd Ending.MkWon [] Text.empty,
-              Link.MkEnd Ending.MkDrawn [] Text.empty,
-              Link.MkEnd Ending.MkStopped [Text.pack "The game stopped: a player's connection closed."] Text.empty
+              Link.MkEnd Ending.MkLost [Text.pack "Player 1 wins."] Nothing (Text.pack "{}\n"),
+              Link.MkEnd Ending.MkWon [] Nothing Text.empty,
+              Link.MkEnd Ending.MkDrawn [] Nothing Text.empty,
+              Link.MkEnd Ending.MkStopped [Text.pack "The game stopped: a player's connection closed."] Nothing Text.empty
             ]
           build = Text.pack "parun-0123456789abcdef.wasm"
       Spec.assertEq s (fmap (Link.decode build . Link.encode build) messages) (fmap Right messages)
