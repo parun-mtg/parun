@@ -622,15 +622,21 @@ main.message {
   font-size: 0.85rem;
 }
 
-/* The engine is thinking: the page held still so a second tap cannot land. */
+/* The engine is thinking: the page held still so a second tap cannot land,
+   the pointer saying so. */
+body.busy {
+  cursor: progress;
+}
+
 body.busy #app {
   pointer-events: none;
 }
 
-/* The settings gear, the page's or the top bar's, turns while the engine
-   works, once it takes a moment. */
+/* The settings button, the page's, the top bar's or the turn bar's, turns
+   while the engine works, once it takes a moment. */
 body.busy #settings-button > svg,
-body.busy .topbar .settings-button > svg {
+body.busy .topbar .settings-button > svg,
+body.busy .turn-bar .settings-button > svg {
   animation: spin 1.2s 0.15s linear infinite;
 }
 

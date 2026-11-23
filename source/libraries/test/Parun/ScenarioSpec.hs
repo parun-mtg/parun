@@ -846,7 +846,7 @@ spec s registry = Spec.describe s "Scenario" $ do
     scenario <- either (Spec.assertFailure s . Text.unpack) pure pikerReplay
     let entry k = Foldable.toList (Seq.lookup k (Scenario.Type.timeline scenario))
         priority = Text.pack "ChooseAction"
-    stops <- traverse (\k -> Scenario.replay registry k scenario) [Just 0, Just 1, Just 2, Just 3, Nothing]
+    stops <- traverse (\k -> snd <$> Scenario.replay registry Scenario.unkept k scenario) [Just 0, Just 1, Just 2, Just 3, Nothing]
     Spec.assertEqWith
       s
       "each stop's entry, its question, and the Piker on the battlefield"
@@ -871,7 +871,7 @@ spec s registry = Spec.describe s "Scenario" $ do
             Seq.empty
         handed (outcome, asked) = (fmap GameState.result outcome, Seq.lookup 0 asked)
         described gs = (TurnRegisters.phase (GameState.turn gs), S.countOnBattlefieldByName piker S.alice gs)
-    stop <- Scenario.replay registry (Just 1) scenario
+    (_, stop) <- Scenario.replay registry Scenario.unkept (Just 1) scenario
     (atOne, atEnd) <- (,) <$> fmap handed (played 1) <*> fmap handed (played 3)
     Spec.assertEqWith s "the first question the hand answers is the stop's" (snd atOne) (either (const Nothing) (Just . Stop.state) stop)
     Spec.assertEqWith s "past the last entry, the hand starts in the next step" (fmap described (snd atEnd)) (Just (Phase.Combat CombatStep.BeginningOfCombat, 1))
