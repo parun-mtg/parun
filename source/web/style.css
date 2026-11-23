@@ -1527,12 +1527,6 @@ main.lobby.new-game {
   gap: 12px;
 }
 
-.deck-list {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
-  gap: 0.4em;
-}
-
 #app button.deck {
   appearance: none;
   display: flex;
@@ -1627,10 +1621,14 @@ main.lobby.new-game {
   padding: 0.5em 0;
 }
 
-.choosing-for {
-  color: var(--muted);
-  font-size: 0.85rem;
-  margin: 0 0 0.6em;
+/* The join screen's decks, as the lobby's browser shows them, then the deck
+   chosen, stacked in its column. */
+.join .browser,
+.join .detail {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  margin-top: 1.5em;
 }
 
 /* A curve: a bar per mana value, labelled; "spark" small and unlabelled. */
@@ -1854,12 +1852,19 @@ main.lobby.new-game {
 /* A link or code to send, with its Copy button beside it (Parun.Web.Element). */
 .copyable {
   display: flex;
+  align-items: flex-start;
   gap: 0.5em;
   min-width: 0;
 }
 
-.copyable input {
+/* The box wraps the whole code onto its lines, however narrow the column. */
+.copyable textarea {
   flex: 1;
+  min-width: 0;
+  resize: none;
+  font-family: ui-monospace, monospace;
+  font-size: 0.8rem;
+  word-break: break-all;
 }
 
 .copyable .copy {

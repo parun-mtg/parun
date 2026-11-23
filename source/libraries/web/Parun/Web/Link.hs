@@ -80,6 +80,10 @@ data Place = MkPlace
   }
   deriving (Eq, Show)
 
+-- | What a place's deck says while its player is still to choose one.
+unchosen :: Text.Text
+unchosen = Text.pack "Choosing a deck"
+
 -- | A message as a line, stamped with the build that sends it.
 encode :: Text.Text -> Message -> Text.Text
 encode build message =

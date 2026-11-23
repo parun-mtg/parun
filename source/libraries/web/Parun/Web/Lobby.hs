@@ -480,14 +480,19 @@ starts lobby =
   not (Map.null (invites lobby))
     && ready lobby
     && Maybe.isJust (mine lobby)
-    && all (\invite -> connected invite && Maybe.isJust (guestDeck invite) && guestReady invite) (invites lobby)
+    && guestsReady lobby
+
+-- | Whether every player invited is connected, with a deck, and ready, so
+-- that you being ready starts the game.
+guestsReady :: Lobby -> Bool
+guestsReady = all (\invite -> connected invite && Maybe.isJust (guestDeck invite) && guestReady invite) . invites
 
 -- | The match-up as the player invited to this slot is shown it.
 placesFor :: Int -> Lobby -> [Link.Place]
 placesFor i lobby =
-  Link.MkPlace (Text.pack "Player 1") (maybe (Text.pack "Choosing a deck") (DeckBrowser.label (DeckBrowser.titles (browser lobby))) (mine lobby)) (Just (ready lobby)) False
+  Link.MkPlace (Text.pack "Player 1") (maybe Link.unchosen (DeckBrowser.label (DeckBrowser.titles (browser lobby))) (mine lobby)) (Just (ready lobby)) False
     : [ case Map.lookup j (invites lobby) of
-          Just invite -> Link.MkPlace (if j == i then Text.pack "You" else Text.pack (seatName (MkTheirs j))) (maybe (Text.pack "Choosing a deck") (\deck -> DeckBrowser.label (DeckBrowser.titleIn deck) (fst deck)) (guestDeck invite)) (Just (guestReady invite)) False
+          Just invite -> Link.MkPlace (if j == i then Text.pack "You" else Text.pack (seatName (MkTheirs j))) (maybe Link.unchosen (\deck -> DeckBrowser.label (DeckBrowser.titleIn deck) (fst deck)) (guestDeck invite)) (Just (guestReady invite)) False
           Nothing -> Link.MkPlace (Text.pack (seatName (MkTheirs j))) (maybe (Text.pack "Random deck") (DeckBrowser.label (DeckBrowser.titles (browser lobby))) held) Nothing (Map.notMember j (locals lobby))
       | (j, held) <- zip [0 ..] (theirs lobby)
       ]
@@ -690,7 +695,7 @@ starting lobby =
             "button"
             (["primary", "start", "ready"] <> ["is-ready" | ready lobby])
             ([Element.attr "type" (Text.pack "button"), Element.attr "aria-pressed" (Text.pack (if ready lobby then "true" else "false")), Element.on "click" MkReady, Element.attr "aria-describedby" (Text.pack "start-note")] <> [Element.attr "disabled" Text.empty | not (pressable lobby)])
-            [Element.string (if ready lobby then "Ready \x2713 \x00b7 waiting for every player" else "Ready")],
+            [Element.string (if ready lobby then "Ready \x2713 \x00b7 waiting for every player" else if guestsReady lobby then "Start game" else "Ready")],
       Element.el "p" ["start-note", "muted"] [Element.attr "id" (Text.pack "start-note"), Element.attr "aria-live" (Text.pack "polite")] [Element.string (Maybe.fromMaybe (if null (theirs lobby) then "Just you: a goldfish game. Ready to start." else "Every seat has a deck. Ready to start.") (waiting lobby))]
     ]
       <> [Element.el "ul" ["problems", "refusal"] [] [Element.el "li" [] [] [Element.text p] | p <- problems] | Left problems@(_ : _) <- [startable lobby]]
