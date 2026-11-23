@@ -76,7 +76,7 @@ spec s registry = Spec.describe s "RemoteSeat" $ do
         hostReady = Lobby.update Lobby.MkReady Text.empty chosen
         firstReady = Lobby.heard 0 (Link.MkReady True) hostReady
         allReady = Lobby.heard 1 (Link.MkReady True) firstReady
-        dropped = Lobby.linked 1 (const Lobby.newInvite) allReady
+        dropped = Lobby.linked 1 (const (Lobby.newInvite 1)) allReady
         offered = foldr (\i -> Lobby.linked i (\invite -> invite {Lobby.link = Just (Text.pack ("https://example.test/#offer=" <> show i))})) invited [0, 1]
         shown = Html.toText (Lobby.view offered)
     Spec.assertBool s (all (\i -> Text.isInfixOf (Text.pack ("id=\"invite-reply-" <> show i <> "\"")) shown && Text.isInfixOf (Text.pack ("#offer=" <> show i)) shown) [0 :: Int, 1]) "each invited seat has its own link and its own reply box"
@@ -137,7 +137,7 @@ spec s registry = Spec.describe s "RemoteSeat" $ do
   Spec.it s "the match-up a game's guests are told again names every seat and every bot's deck drawn" $ do
     let seat name = (Text.pack name, Text.pack "20 Forest\n")
         seats = seat "sets/a/one" NonEmpty.:| [(Text.pack "sets/a/two", Text.pack "Name: Kamahl's Temper\n20 Forest\n"), seat "sets/a/three"]
-        rematched = Lobby.rematch seats (Set.singleton 1) Map.empty
+        rematched = Lobby.rematch seats (Map.singleton 1 1) Map.empty
         told = Lobby.placesFor 1 rematched
     Spec.assertEqWith s "every seat named" (fmap Link.who told) [Text.pack "Host", Text.pack "Bot 1", Text.pack "You"]
     Spec.assertEqWith s "every deck named, the bot's among them" (fmap Link.deck told) [Text.pack "One (A)", Text.pack "Kamahl's Temper (A)", Text.pack "Three (A)"]

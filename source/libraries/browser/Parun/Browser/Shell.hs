@@ -239,13 +239,14 @@ follow shell next =
       lobby shell (maybe Lobby.new Lobby.holding (deck <|> last')) [] >>= follow shell
     MkToDecks deck -> decksScreen shell deck >>= follow shell
     -- Only an invited slot reads its deck's list (Lobby.rematch), and none is.
-    MkToMatchup decks -> lobby shell (Lobby.rematch (fmap (\name -> (name, Text.empty)) decks) Set.empty Map.empty) [] >>= follow shell
+    MkToMatchup decks -> lobby shell (Lobby.rematch (fmap (\name -> (name, Text.empty)) decks) Map.empty Map.empty) [] >>= follow shell
     MkToBuilder deck back -> builder shell deck back >>= follow shell
     MkToReplays -> replays shell >>= follow shell
     MkToReplay source at -> replay shell source at >>= follow shell
     MkToPlayOn source at -> playOnFrom shell source at >>= follow shell
     MkToJoin code -> joinGame shell code >>= follow shell
-    MkToRestore kept -> play shell (Link.seats kept) (Set.fromList (Link.invited kept)) (Link.locals kept) (Just kept) >>= follow shell
+    -- Every link of a game picked up is down, so any number serves.
+    MkToRestore kept -> play shell (Link.seats kept) (Map.fromList [(i, i) | i <- Link.invited kept]) (Link.locals kept) (Just kept) >>= follow shell
 
 -- | Where the home screen leads.
 afterHome :: Home.Outcome -> Next
@@ -320,10 +321,11 @@ lobby shell initial said = do
           Browser.display (page shell) (framed Bar.MkPlay (fmap Screen.MkLobby (Lobby.view current)))
           woke <- await shell
           -- Every invite the lobby drops has its channel closed.
-          let go next = do
-                mapM_ Browser.linkClose (Map.keys (Map.difference (Lobby.invites current) (Lobby.invites next)))
-                go' next (Map.restrictKeys told' (Map.keysSet (Lobby.invites next)))
-              leaving next = mapM_ Browser.linkClose (Map.keys (Lobby.invites current)) >> pure next
+          let linksOf = Set.fromList . fmap Lobby.linkNumber . Map.elems . Lobby.invites
+              go next = do
+                mapM_ Browser.linkClose (Set.difference (linksOf current) (linksOf next))
+                go' next (Map.restrictKeys told' (linksOf next))
+              leaving next = mapM_ Browser.linkClose (linksOf current) >> pure next
           case woke of
             MkHeard heard' -> heardBy current heard' >>= go
             MkTapped (Screen.MkNav section) _
@@ -338,11 +340,11 @@ lobby shell initial said = do
                     files <- Maybe.fromMaybe Map.empty <$> decksRead shell
                     -- A bot with no deck to play keeps the lobby up.
                     case sequence others >>= traverse (\name -> (,) name <$> Map.lookup name files) . (mine NonEmpty.:|) of
-                      Just seats -> listsOf seats >>= \lists -> play shell lists Set.empty (Lobby.locals current) Nothing
+                      Just seats -> listsOf seats >>= \lists -> play shell lists Map.empty (Lobby.locals current) Nothing
                       Nothing -> go current
-              Lobby.MkAdd Lobby.MkInvited | length (Lobby.theirs current) < Lobby.mostOthers -> Browser.linkHost (length (Lobby.theirs current)) >> go (Lobby.update event value current)
+              Lobby.MkAdd Lobby.MkInvited | length (Lobby.theirs current) < Lobby.mostOthers -> Browser.linkHost (Lobby.nextLink current) >> go (Lobby.update event value current)
               Lobby.MkConnect i | Just invite <- Map.lookup i (Lobby.invites current) -> do
-                Browser.linkAccept i (Text.strip (Lobby.replyCode invite))
+                Browser.linkAccept (Lobby.linkNumber invite) (Text.strip (Lobby.replyCode invite))
                 go current
               Lobby.MkBrowse DeckBrowser.MkSubmitImport -> do
                 (browsed, done) <- importDeck shell (\shown' -> Browser.display (page shell) . framed Bar.MkPlay . fmap Screen.MkLobby $ Lobby.view current {Lobby.browser = shown'}) (Lobby.browser current)
@@ -360,22 +362,22 @@ lobby shell initial said = do
             _ -> go current
     -- What an invited slot's channel said: its link, its opening, a
     -- message, or its closing, which makes a new link to send.
-    heardBy current heard' =
-      let i = Browser.link heard'
-       in case Text.unpack (Browser.kind heard') of
-            _ | Map.notMember i (Lobby.invites current) -> pure current
-            "offer" -> pure (Lobby.linked i (\invite -> invite {Lobby.link = Just (Browser.said heard')}) current)
-            "open" -> pure (Lobby.linked i (\invite -> invite {Lobby.connected = True, Lobby.inviteProblem = Nothing}) current)
-            "message" -> case Link.decode (build shell) (Browser.said heard') of
-              Right told -> pure (Lobby.heard i told current)
-              Left problem -> reinvite i (capitalised problem <> Text.pack ".") current
-            "closed" -> reinvite i connectionClosed current
-            _ -> pure current
-    -- Each connected player told the match-up where it changed since.
+    heardBy current heard' = case Lobby.seatOfLink (Browser.link heard') current of
+      Nothing -> pure current
+      Just i -> case Text.unpack (Browser.kind heard') of
+        "offer" -> pure (Lobby.linked i (\invite -> invite {Lobby.link = Just (Browser.said heard')}) current)
+        "open" -> pure (Lobby.linked i (\invite -> invite {Lobby.connected = True, Lobby.inviteProblem = Nothing}) current)
+        "message" -> case Link.decode (build shell) (Browser.said heard') of
+          Right told -> pure (Lobby.heard i told current)
+          Left problem -> reinvite i (capitalised problem <> Text.pack ".") current
+        "closed" -> reinvite i connectionClosed current
+        _ -> pure current
+    -- Each connected player told the match-up where it changed since, by
+    -- link number.
     tellPlaces current told =
-      fmap Map.fromList . Monad.forM [(i, Lobby.placesFor i current) | (i, invite) <- Map.toList (Lobby.invites current), Lobby.connected invite] $ \(i, places) -> do
-        Monad.when (Map.lookup i told /= Just places) $ Link.send (Browser.channel (page shell) (build shell) i) (Link.MkMatchup places)
-        pure (i, places)
+      fmap Map.fromList . Monad.forM [(Lobby.linkNumber invite, Lobby.placesFor i current) | (i, invite) <- Map.toList (Lobby.invites current), Lobby.connected invite] $ \(n, places) -> do
+        Monad.when (Map.lookup n told /= Just places) $ Link.send (Browser.channel (page shell) (build shell) n) (Link.MkMatchup places)
+        pure (n, places)
     -- Every player is ready: the game starts, each player invited told
     -- their seat, each bot without a deck given one at random.
     startWith current told = do
@@ -391,19 +393,22 @@ lobby shell initial said = do
         Just mine | Just rest <- sequence seated -> do
           -- Each player told the match-up again with every bot's deck drawn,
           -- which the history of their game names (Join.places), then their seat.
-          Monad.forM_ (Map.keys invited) $ \i -> do
-            Link.send (Browser.channel (page shell) (build shell) i) (Link.MkMatchup (Lobby.placesFor i current {Lobby.theirs = others}))
-            Link.send (Browser.channel (page shell) (build shell) i) (Link.MkStart (seatOf i) Ending.unseen)
-          play shell (mine NonEmpty.:| rest) (Map.keysSet invited) (Lobby.locals current) Nothing
+          Monad.forM_ (Map.toList invited) $ \(i, invite) -> do
+            let channel = Browser.channel (page shell) (build shell) (Lobby.linkNumber invite)
+            Link.send channel (Link.MkMatchup (Lobby.placesFor i current {Lobby.theirs = others}))
+            Link.send channel (Link.MkStart (seatOf i) Ending.unseen)
+          play shell (mine NonEmpty.:| rest) (fmap Lobby.linkNumber invited) (Lobby.locals current) Nothing
         -- A bot with no deck to play keeps the lobby up.
         _ -> go' current {Lobby.ready = False} told
 
--- | The lobby with invited slot `i` made afresh, a new link made for it,
--- saying why.
+-- | The lobby with invited slot `i` made afresh, a new link made for it
+-- under its number, saying why.
 reinvite :: Int -> Text.Text -> Lobby.Lobby -> IO Lobby.Lobby
-reinvite i problem current = do
-  Browser.linkHost i
-  pure (Lobby.linked i (const Lobby.newInvite {Lobby.inviteProblem = Just problem}) current)
+reinvite i problem current = case Map.lookup i (Lobby.invites current) of
+  Nothing -> pure current
+  Just invite -> do
+    Browser.linkHost (Lobby.linkNumber invite)
+    pure (Lobby.linked i (const (Lobby.newInvite (Lobby.linkNumber invite)) {Lobby.inviteProblem = Just problem}) current)
 
 -- | Why an invited slot was made afresh once its channel closed.
 connectionClosed :: Text.Text
@@ -787,7 +792,8 @@ loadingScreen shell = Browser.display (page shell) . Loading.view
 -- | A game between these decks, each a name and its list's text, once the
 -- registry is built, shown while it builds, every bot playing as the lobby
 -- last left it (opponent), each bot's slot in `invited`
--- played from another browser over its channel (Parun.Web.Link) and each
+-- played from another browser over the link of its number there
+-- (Parun.Web.Link) and each
 -- in `here` on this screen as it sits there, or that
 -- game picked up where `resuming` stopped, its bots playing as it was
 -- kept; its ending, and the games its Rematch starts; then where it leads. A game with guests is kept until it
@@ -798,17 +804,19 @@ loadingScreen shell = Browser.display (page shell) . Loading.view
 -- with them goes back to the lobby on the match-up played (Lobby.rematch),
 -- their channels kept open and what they said meanwhile heard there, and a
 -- new game closes them.
-play :: Shell -> NonEmpty.NonEmpty (Text.Text, Text.Text) -> Set.Set Int -> Map.Map Int Link.Sitting -> Maybe Link.Saved -> IO Next
+play :: Shell -> NonEmpty.NonEmpty (Text.Text, Text.Text) -> Map.Map Int Int -> Map.Map Int Link.Sitting -> Maybe Link.Saved -> IO Next
 play shell seats invited here resuming = do
   let starting = Browser.display (page shell) (if Maybe.isJust resuming then message ["Picking the game up where it stopped\x2026"] else Hotseat.starting seats)
   starting
   built <- untilBuilt shell (loadingScreen shell) [Loading.MkCards, Loading.MkRules] (registry <$> IORef.readIORef (loaded shell))
   -- The invited slots whose connection is down: every one of a game picked up.
-  down <- IORef.newIORef (if Maybe.isJust resuming then invited else Set.empty)
-  let channelOf i = tracked down i (Browser.channel (page shell) (build shell) i)
-      tellAll endingFor = Monad.forM_ invited $ \i -> Link.send (channelOf i) (Link.MkEnd (endingFor (seatOf i)))
-      stopped said = tellAll (\seat -> Ending.endingOf Ending.MkStopped said Text.empty seat Ending.unseen) >> mapM_ Browser.linkClose invited
-      keeping = not (Set.null invited)
+  down <- IORef.newIORef (if Maybe.isJust resuming then Map.keysSet invited else Set.empty)
+  let linkOf i = Map.findWithDefault i i invited
+      channelOf i = tracked down i (Browser.channel (page shell) (build shell) (linkOf i))
+      tellAll endingFor = Monad.forM_ (Map.keys invited) $ \i -> Link.send (channelOf i) (Link.MkEnd (endingFor (seatOf i)))
+      closeAll = mapM_ Browser.linkClose invited
+      stopped said = tellAll (\seat -> Ending.endingOf Ending.MkStopped said Text.empty seat Ending.unseen) >> closeAll
+      keeping = not (Map.null invited)
   case built of
     Left problem -> stopped [problem] >> notice shell [problem]
     Right reg -> do
@@ -820,17 +828,17 @@ play shell seats invited here resuming = do
       -- Rematch leads to offers that.
       Monad.forM_ resuming $ \game -> IORef.writeIORef (opponent shell) (Link.difficulty game, Link.persona game)
       bots@(difficulty, persona) <- IORef.readIORef (opponent shell)
-      Monad.when (keeping && Maybe.isNothing resuming) . Browser.keepGame $ Link.saved (build shell) (Link.MkSaved seed seats (Set.toList invited) here difficulty persona [])
+      Monad.when (keeping && Maybe.isNothing resuming) . Browser.keepGame $ Link.saved (build shell) (Link.MkSaved seed seats (Map.keys invited) here difficulty persona [])
       let rejoinSlot i = do
-            back <- rejoin shell i (Rejoin.host (Text.pack ("Player " <> show (i + 2))))
+            back <- rejoin shell (linkOf i) (Rejoin.host (Text.pack ("Player " <> show (i + 2))))
             Monad.when back (IORef.modifyIORef' down (Set.delete i))
             pure back
           -- A rejoining guest is told the match-up played, every bot's deck drawn.
-          remotes = Map.fromList [(seatOf i, \seen -> Link.remote (rejoinSlot i) (Lobby.placesFor i (Lobby.rematch seats invited here)) seen (channelOf i)) | i <- Set.toList invited]
+          remotes = Map.fromList [(seatOf i, \seen -> Link.remote (rejoinSlot i) (Lobby.placesFor i (Lobby.rematch seats invited here)) seen (channelOf i)) | i <- Map.keys invited]
           kept = if keeping then Browser.keepReply . Link.savedReply else const (pure ())
       -- Each guest is told whose decision the game waits on (Link.telling).
       told <- IORef.newIORef Map.empty
-      let decides seat = IORef.readIORef told >>= Link.telling (Map.fromList [(seatOf i, channelOf i) | i <- Set.toList invited]) seat >>= IORef.writeIORef told
+      let decides seat = IORef.readIORef told >>= Link.telling (Map.fromList [(seatOf i, channelOf i) | i <- Map.keys invited]) seat >>= IORef.writeIORef told
       parsed <- foldMap LazyMap.elems . cards <$> IORef.readIORef (loaded shell)
       ended <- Hotseat.game (page shell) reg parsed (tableOf shell) (level shell) bots (fmap (Bifunctor.first Text.unpack) seats) remotes (Map.mapKeys seatOf here) seed (foldMap Link.replies resuming) kept decides tellAll (leaveFor shell chosen)
       Monad.when keeping Browser.forgetGame
@@ -841,7 +849,7 @@ play shell seats invited here resuming = do
           palette' <- palette <$> IORef.readIORef (loaded shell)
           let seatOf' (i, seat@(name, _))
                 | i == 0 = History.MkSeat History.MkYou (DeckBrowser.label (DeckBrowser.titleIn seat) name) (Just name) (Map.findWithDefault Set.empty name palette')
-                | Set.member (i - 1) invited = History.MkSeat History.MkPerson (DeckBrowser.label (DeckBrowser.titleIn seat) name) Nothing Set.empty
+                | Map.member (i - 1) invited = History.MkSeat History.MkPerson (DeckBrowser.label (DeckBrowser.titleIn seat) name) Nothing Set.empty
                 | Map.member (i - 1) here = History.MkSeat History.MkPerson (DeckBrowser.label (DeckBrowser.titleIn seat) name) (Just name) (Map.findWithDefault Set.empty name palette')
                 | otherwise = History.MkSeat History.MkBot (DeckBrowser.label (DeckBrowser.titleIn seat) name) (Just name) (Map.findWithDefault Set.empty name palette')
           remember shell (fmap seatOf' (zip [0 :: Int ..] (NonEmpty.toList seats))) played
@@ -850,14 +858,14 @@ play shell seats invited here resuming = do
                 Browser.display (page shell) (endingScreen ending)
                 woke <- await shell
                 case woke of
-                  MkTapped (Screen.MkNav section) _ -> mapM_ Browser.linkClose invited >> pure (sectionNext section)
+                  MkTapped (Screen.MkNav section) _ -> closeAll >> pure (sectionNext section)
                   MkTapped (Screen.MkEnding Ending.MkRematch) _
-                    | Set.null invited -> play shell seats invited here Nothing
+                    | Map.null invited -> play shell seats invited here Nothing
                     | otherwise -> do
                         -- A slot whose channel closed in the game is invited afresh.
                         back <- Monad.foldM (\l i -> reinvite i connectionClosed l) (Lobby.rematch seats invited here) (Set.toList lost)
                         lobby shell back (reverse said)
-                  MkTapped (Screen.MkEnding Ending.MkNewGame) _ -> mapM_ Browser.linkClose invited >> pure MkToHome
+                  MkTapped (Screen.MkEnding Ending.MkNewGame) _ -> closeAll >> pure MkToHome
                   MkHeard heard' -> go (heard' : said)
                   _ -> go said
           go []
