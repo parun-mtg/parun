@@ -49,6 +49,8 @@ data Event
     MkGo Natural
   | -- | Goes to the position the scrubber's value names.
     MkScrub
+  | -- | Lets the replay step on by itself (True), or pauses it.
+    MkPlay Bool
   | -- | Shows the table as this seat sees it.
     MkSeat PlayerId.PlayerId
   | -- | A tap on the table or the question's form.
@@ -141,6 +143,9 @@ data Frame = MkFrame
     positions :: Natural,
     -- | The positions at which a turn begins (turnStarts), ascending.
     turns :: [Natural],
+    -- | Whether the replay steps on by itself: page.js presses the next
+    -- step while the page is marked so (`view`).
+    playing :: Bool,
     -- | The table as the viewer sees it; Nothing where the run failed first.
     board :: Maybe PlayerView.PlayerView,
     -- | CR 730.1a: how many games the board's game is nested inside, as
@@ -167,7 +172,7 @@ view :: Frame -> Html.Html Event
 view frame =
   let asked = question frame >>= \r -> if Question.seat (Request.question r) == viewer frame then Just r {Request.view = board frame} else Nothing
       logged = foldMap (Seq.fromList . snd . Log.unseen Map.empty) (board frame)
-   in Element.el "main" ["game", "replay"] [] $
+   in Element.el "main" (["game", "replay"] <> ["playing" | playing frame && position frame < positions frame]) [] $
         foldMap (\b -> [Board.turnBar [] (Web.Question.subgameChip (depth frame) <> [Bar.settingsButton Icon.MkMenu "Menu" Nothing Nothing]) b]) (board frame)
           <> [Element.el "div" ["play-area"] [] (foldMap (\b -> [Board.view readOnly (written frame) b]) (board frame))]
           <> foldMap (Board.hand readOnly) (board frame)
@@ -202,9 +207,10 @@ capitalised :: Text.Text -> Text.Text
 capitalised t = maybe t (\(c, rest) -> Text.cons (Char.toUpper c) rest) (Text.uncons t)
 
 -- | The scenario; where the run stands, the scrubber and its steps, each an
--- icon over a word saying how far it goes, its tooltip where to; the ways
--- to play on and to leave; and the seats to view as, each by its name and,
--- where the table names it otherwise, that name.
+-- icon over a word saying how far it goes, its tooltip where to, and the
+-- way to let it play itself, or pause it; the ways to play on and to
+-- leave; and the seats to view as, each by its name and, where the table
+-- names it otherwise, that name.
 controls :: Frame -> [Html.Html Event]
 controls frame =
   let at = position frame
@@ -259,7 +265,20 @@ controls frame =
                 step "Next position" "Step" Icon.MkStep False "On one entry" "." (min count (at + 1)) (at < count),
                 step "Next turn" "Turn" Icon.MkTurn False (if Maybe.isJust later then "To the start of the next turn" else "To the end: no turn begins after this one") "]" (Maybe.fromMaybe count later) (at < count),
                 step "Last position" "End" Icon.MkSkip False "To the end of the replay" ">" count (at < count)
-              ]
+              ],
+            let on = playing frame && at < count
+             in Element.el
+                  "button"
+                  ["play"]
+                  ( [ Element.attr "type" (Text.pack "button"),
+                      Element.attr "aria-label" (Text.pack (if on then "Pause" else "Play")),
+                      Element.attr "aria-keyshortcuts" (Text.pack "P"),
+                      Element.attr "title" (Text.pack (if on then "Stop playing (P)" else "Step on by itself, an entry a second (P)")),
+                      Element.on "click" (MkPlay (not on))
+                    ]
+                      <> [Element.attr "disabled" Text.empty | not on, at >= count]
+                  )
+                  [Icon.icon [] (if on then Icon.MkPause else Icon.MkStep), Element.el "span" [] [] [Element.string (if on then "Pause" else "Play")]]
           ],
         Element.el
           "div"

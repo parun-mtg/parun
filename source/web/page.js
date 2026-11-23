@@ -298,6 +298,7 @@ function apply(json) {
   floatChanges(before);
   announce();
   rekey();
+  playOn();
   // A sheet that just opened takes the focus, on its first action; closed,
   // it gives the focus back to the card that had it.
   const sheet = openSheet();
@@ -308,6 +309,22 @@ function apply(json) {
     if (returnTo?.isConnected) returnTo.focus({ preventScroll: true });
     returnTo = null;
   }
+}
+
+// A replay playing by itself (Parun.Web.Replay's "playing") presses its
+// next step a second after each position shows, holding while a card is
+// open over the table; the engine stops it at the end.
+const playInterval = 1000;
+let playTimer = null;
+function playOn() {
+  clearTimeout(playTimer);
+  playTimer = null;
+  if (root.querySelector("main.replay.playing") === null) return;
+  playTimer = setTimeout(() => {
+    playTimer = null;
+    if (openSheet()) return;
+    root.querySelector('main.replay.playing .step-buttons button[aria-label="Next position"]:not(:disabled)')?.click();
+  }, playInterval);
 }
 
 // While the game goes on without the seat (Parun.Web.Question.watching), the

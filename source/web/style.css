@@ -4430,6 +4430,20 @@ body:has(main.game, #app [data-settings], #app .splash, #app main.loading) #sett
   height: 20px;
 }
 
+/* Play or pause, beneath the steps, an icon beside its word. */
+#app .replay .scrubber button.play {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  margin-top: 6px;
+}
+
+.replay .scrubber button.play .icon {
+  width: 20px;
+  height: 20px;
+}
+
 /* A step's key, under its word rather than beside it. */
 .replay .step-buttons button::after {
   margin-left: 0;

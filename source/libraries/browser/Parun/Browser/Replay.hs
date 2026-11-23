@@ -84,8 +84,8 @@ data Exit
 -- | The scenario at a position as a seat sees it (the player's of a game
 -- finished here, `played`, else the first), replayed afresh at each
 -- position the page goes to, each told to `moved`, until the page leaves
--- it; a game finished here names each seat by who played it
--- (History.seatNames).
+-- it, stepping on by itself while played, until the end; a game finished
+-- here names each seat by who played it (History.seatNames).
 viewer :: Browser.Page Screen.Event -> (Natural -> IO ()) -> Registry.Registry Identity.Identity -> Text.Text -> Maybe History.Game -> Scenario.Type.Scenario -> Natural -> IO Exit
 viewer page moved registry name played scenario given = do
   let count = Natural.length (Scenario.Type.timeline scenario)
@@ -96,11 +96,11 @@ viewer page moved registry name played scenario given = do
       lookUp = Identity.runIdentity . Interpreter.chosenCard registry
       -- The run to a position.
       reach at = moved at >> Exception.evaluate (Identity.runIdentity $ Scenario.replay registry (Just at) scenario)
-      go at stop viewing reading = do
-        let frame = frameOf lookUp names name scenario seats count at stop viewing reading
+      go playing at stop viewing reading = do
+        let frame = frameOf lookUp names name scenario seats count playing at stop viewing reading
         Browser.display page . fmap Screen.MkReplay $ Web.Replay.view frame
         (tapped, value) <- Browser.next page
-        let moveTo target = if target == at then go at stop viewing Nothing else reach target >>= \next -> go target next viewing Nothing
+        let moveTo target = if target == at then go playing at stop viewing Nothing else reach target >>= \next -> go (playing && target < count) target next viewing Nothing
             readingOf object pinned = do
               board <- Web.Replay.board frame
               o <- Wording.recalled board object
@@ -109,19 +109,20 @@ viewer page moved registry name played scenario given = do
         case tapped of
           Screen.MkReplay event -> case event of
             Web.Replay.MkGo target -> moveTo (min count target)
-            Web.Replay.MkScrub -> maybe (go at stop viewing reading) (moveTo . min count) (Read.readMaybe (Text.unpack value))
-            Web.Replay.MkSeat pid -> go at stop pid reading
-            Web.Replay.MkTable (Web.Question.MkRead object) -> go at stop viewing (readingOf object True <|> reading)
-            Web.Replay.MkTable (Web.Question.MkPeek object) | not held -> go at stop viewing (readingOf object False <|> reading)
-            Web.Replay.MkTable Web.Question.MkUnpeek | not held -> go at stop viewing Nothing
-            Web.Replay.MkTable Web.Question.MkClose -> go at stop viewing Nothing
+            Web.Replay.MkScrub -> maybe (go playing at stop viewing reading) (moveTo . min count) (Read.readMaybe (Text.unpack value))
+            Web.Replay.MkPlay on -> go (on && at < count) at stop viewing reading
+            Web.Replay.MkSeat pid -> go playing at stop pid reading
+            Web.Replay.MkTable (Web.Question.MkRead object) -> go playing at stop viewing (readingOf object True <|> reading)
+            Web.Replay.MkTable (Web.Question.MkPeek object) | not held -> go playing at stop viewing (readingOf object False <|> reading)
+            Web.Replay.MkTable Web.Question.MkUnpeek | not held -> go playing at stop viewing Nothing
+            Web.Replay.MkTable Web.Question.MkClose -> go playing at stop viewing Nothing
             Web.Replay.MkBranch -> pure (MkPlayOn at)
             Web.Replay.MkBack -> pure MkToList
-            _ -> go at stop viewing reading
-          _ -> go at stop viewing reading
+            _ -> go playing at stop viewing reading
+          _ -> go playing at stop viewing reading
       first = min count given
   stop <- reach first
-  go first stop (maybe (PlayerId.MkPlayerId 0) fst (Maybe.listToMaybe (filter ((`elem` seen) . snd) labelled <> labelled))) Nothing
+  go False first stop (maybe (PlayerId.MkPlayerId 0) fst (Maybe.listToMaybe (filter ((`elem` seen) . snd) labelled <> labelled))) Nothing
 
 -- | Plays on by hand from a position of the scenario: the run takes the
 -- timeline to that stop (Scenario.branch), then every seat is answered on
@@ -153,10 +154,10 @@ seatsOf scenario =
    in zip (fmap PlayerId.MkPlayerId [0 ..]) (fmap Label.unwrap labels)
 
 -- | What the page shows of a stop, each seat named in its entry's line as
--- `names` names it by its label.
-frameOf :: (CardName.CardName -> Either e (Maybe Card.Card)) -> Map.Map Text.Text Text.Text -> Text.Text -> Scenario.Type.Scenario -> [(PlayerId.PlayerId, Text.Text)] -> Natural -> Natural -> Either ScenarioFailure.ScenarioFailure Stop.Stop -> PlayerId.PlayerId -> Maybe Web.Card.Reading -> Web.Replay.Frame
-frameOf lookUp names name scenario seats count at stop seen reading =
-  let base = Web.Replay.MkFrame name (Scenario.Type.description scenario) seats seen at count (Web.Replay.turnStarts (Foldable.toList (Scenario.Type.timeline scenario))) Nothing 0 Nothing Nothing Nothing Nothing reading Map.empty
+-- `names` names it by its label, stepping on by itself where `playing`.
+frameOf :: (CardName.CardName -> Either e (Maybe Card.Card)) -> Map.Map Text.Text Text.Text -> Text.Text -> Scenario.Type.Scenario -> [(PlayerId.PlayerId, Text.Text)] -> Natural -> Bool -> Natural -> Either ScenarioFailure.ScenarioFailure Stop.Stop -> PlayerId.PlayerId -> Maybe Web.Card.Reading -> Web.Replay.Frame
+frameOf lookUp names name scenario seats count playing at stop seen reading =
+  let base = Web.Replay.MkFrame name (Scenario.Type.description scenario) seats seen at count (Web.Replay.turnStarts (Foldable.toList (Scenario.Type.timeline scenario))) playing Nothing 0 Nothing Nothing Nothing Nothing reading Map.empty
       shown board = base {Web.Replay.board = Just board, Web.Replay.written = Web.Card.written lookUp board}
    in case stop of
         Left failure -> base {Web.Replay.failure = Just (Scenario.render failure)}

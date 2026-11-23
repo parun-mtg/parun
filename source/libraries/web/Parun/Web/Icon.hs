@@ -27,8 +27,11 @@ data Icon
     MkSkip
   | -- | A replay's next turn, mirrored its previous: two triangles.
     MkTurn
-  | -- | A replay's next entry, mirrored its previous: a triangle.
+  | -- | A replay's next entry, mirrored its previous, and playing it: a
+    -- triangle.
     MkStep
+  | -- | Pausing a replay: two bars.
+    MkPause
   deriving (Bounded, Enum, Eq, Ord, Show)
 
 -- | The id of an icon's @<symbol>@ in the sprite.
@@ -44,6 +47,7 @@ iconId i = Text.pack . ("ui-" <>) $ case i of
   MkSkip -> "skip"
   MkTurn -> "turn"
   MkStep -> "step"
+  MkPause -> "pause"
 
 -- | An icon, hidden from assistive technology: what it means is said by
 -- the element holding it.
