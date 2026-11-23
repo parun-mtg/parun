@@ -883,7 +883,7 @@ play shell seats invited here resuming = do
           let seatOf' (i, seat@(name, _))
                 | i == 0 = History.MkSeat History.MkYou (DeckBrowser.label (DeckBrowser.titleIn seat) name) (Just name) (Map.findWithDefault Set.empty name palette')
                 | Map.member (i - 1) invited = History.MkSeat History.MkPerson (DeckBrowser.label (DeckBrowser.titleIn seat) name) Nothing Set.empty
-                | Map.member (i - 1) here = History.MkSeat History.MkPerson (DeckBrowser.label (DeckBrowser.titleIn seat) name) (Just name) (Map.findWithDefault Set.empty name palette')
+                | Just sitting <- Map.lookup (i - 1) here = History.MkSeat (if sitting == Link.MkHandedOver then History.MkHere else History.MkPerson) (DeckBrowser.label (DeckBrowser.titleIn seat) name) (Just name) (Map.findWithDefault Set.empty name palette')
                 | otherwise = History.MkSeat History.MkBot (DeckBrowser.label (DeckBrowser.titleIn seat) name) (Just name) (Map.findWithDefault Set.empty name palette')
           remember shell (fmap seatOf' (zip [0 :: Int ..] (NonEmpty.toList seats))) played
           lost <- IORef.readIORef down

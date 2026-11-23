@@ -98,7 +98,7 @@ spec s registry = Spec.describe s "RemoteSeat" $ do
         handed = fmap (Html.content . Question.Web.handOff) (handedOver (Set.singleton S.alice) inOrder)
     Spec.assertBool s (case outcome of Right (Result.Won _, _) -> True; _ -> False) ("finished: " <> show (fmap fst outcome))
     Spec.assertEqWith s "both seats asked on the one page" (ListUtils.nubOrd seats) [S.alice, S.bob]
-    Spec.assertBool s (elem (Text.pack "Pass the screen to Player 2.Ready") handed && elem (Text.pack "Pass the screen to Player 1.Ready") handed) "handed each way"
+    Spec.assertBool s (any (Text.isPrefixOf (Text.pack "Pass the screen to Player 2 to ")) handed && any (Text.isPrefixOf (Text.pack "Pass the screen to Player 1 to ")) handed) "handed each way, saying what is waiting"
     Spec.assertEqWith s "no bot seated" (PlayOptions.bots options) Map.empty
 
   Spec.it s "a whole goldfish game, both seats played by the one person at the screen: never handed over, each question naming its seat" $ do

@@ -312,8 +312,9 @@ data Screen = MkScreen
     level :: Level,
     -- | The Oracle text of each object the seat sees (Card.written).
     written :: Map.Map ObjectId.ObjectId [Text.Text],
-    -- | Whether the person at the screen plays several seats, so the prompt
-    -- names the one asked (handsOver).
+    -- | Whether the screen names the seat it shows, on the turn bar and
+    -- in the prompt: the person at it plays several seats, or it is handed
+    -- between people (handsOver).
     naming :: Bool
   }
   deriving (Eq, Show)
@@ -401,6 +402,13 @@ waitingOn deciding = case deciding of
   [] -> "Waiting for the other players\x2026"
   _ -> "Waiting for " <> List.intercalate " or " (fmap (Text.unpack . Wording.player) deciding) <> " to decide\x2026"
 
+-- | The seat the board shows, on the turn bar, where the screen names it.
+seatChip :: Bool -> PlayerView.PlayerView -> [Html.Html msg]
+seatChip named board =
+  [ Element.el "span" ["seat-chip", "seat-" <> show (mod (PlayerId.unwrap (PlayerView.viewer board)) 6)] [Element.attr "title" (Text.pack "The seat this screen shows")] [Html.text (Wording.player (PlayerView.viewer board))]
+  | named
+  ]
+
 -- | A subgame's mark on the turn bar (CR 730.1a), and how deep it is.
 subgameChip :: Natural -> [Html.Html msg]
 subgameChip depth =
@@ -448,7 +456,7 @@ table :: Request.Request -> Screen -> Html.Html Event -> [Html.Html Event] -> Bo
 table request screen passing controls marks prompt =
   let board = Request.view request
    in Element.el "main" ["game"] [] $
-        foldMap (\b -> [Board.turnBar [passing] (subgameChip (Request.depth request) <> controls) b]) board
+        foldMap (\b -> [Board.turnBar [passing] (seatChip (naming screen) b <> subgameChip (Request.depth request) <> controls) b]) board
           <> [Element.el "div" ["play-area"] [] (foldMap (\b -> [Board.view marks (written screen) b]) board)]
           <> foldMap (Board.hand marks) board
           <> side (Text.pack "Your decision") prompt (reading screen) (\r -> board >>= \b -> sheetFor request (written screen) b marks r) (logView board (viewerOf request) screen)
@@ -598,8 +606,9 @@ blocks request = do
   pure (blockers, attackers)
 
 -- | Before a seat's question when the screen last showed another seat's,
--- saying whom the seat decides for while it controls them (CR 724.1); the
--- settings at the top right, as every other screen has them.
+-- saying what the seat is asked (asking) and whom it decides for while it
+-- controls them (CR 724.1); the settings at the top right, as every other
+-- screen has them.
 handOff :: Request.Request -> Html.Html Event
 handOff request =
   Element.el
@@ -607,11 +616,35 @@ handOff request =
     ["handoff"]
     []
     [ Element.el "div" ["handoff-bar"] [] [Bar.settingsButton Icon.MkGear "Settings" Nothing Nothing],
-      Element.el "p" [] [] [Html.text $ Text.pack "Pass the screen to " <> Wording.player seat <> foldMap (\p -> Text.pack ", deciding for " <> Wording.player p) (Question.for (Request.question request)) <> Text.pack "."],
+      Element.el "p" [] [] [Html.text $ Text.pack "Pass the screen to " <> Wording.player seat <> Text.pack " to " <> asking (Question.kind (Request.question request)) <> foldMap (\p -> Text.pack ", deciding for " <> Wording.player p) (Question.for (Request.question request)) <> Text.pack "."],
       primary MkReady $ Text.pack "Ready"
     ]
   where
     seat = Question.seat (Request.question request)
+
+-- | What a seat is asked, as a verb phrase, said where every player sees
+-- it (handOff): "decide" for a question asked only of a hidden card, which
+-- its asking alone would reveal.
+asking :: Text.Text -> Text.Text
+asking kind
+  | Text.unpack kind `elem` ["ChooseCompanion", "MulliganAction", "OpeningHandAction", "OfferedMiracleReveal"] = Text.pack "decide"
+  | otherwise = verbOf kind
+
+-- | A question's kind as what its seat does: "ChooseTargets" as
+-- "choose targets".
+verbOf :: Text.Text -> Text.Text
+verbOf kind = case Text.unpack kind of
+  "ChooseAction" -> Text.pack "take an action"
+  "DeclareMulligan" -> Text.pack "decide whether to mulligan"
+  "MulliganAction" -> Text.pack "use a card before a mulligan"
+  "OpeningHandAction" -> Text.pack "use a card in the opening hand"
+  "OfferedCast" -> Text.pack "decide whether to cast"
+  "OfferedMiracleReveal" -> Text.pack "decide whether to reveal a miracle"
+  "OfferedExtra" -> Text.pack "decide whether to take an offer"
+  "ChooseToPay" -> Text.pack "decide whether to pay"
+  "ChooseVote" -> Text.pack "vote"
+  "Bottom" -> Text.pack "put cards on the bottom"
+  _ -> Wording.spaced kind
 
 -- | Whether the screen is handed to the seat asked before its question
 -- (handOff): it last faced another seat, unless the one person at the

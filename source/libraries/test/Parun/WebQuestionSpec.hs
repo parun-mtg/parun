@@ -334,12 +334,22 @@ spec s registry = Spec.describe s "WebQuestion" $ do
     Spec.assertEqWith s "for" (Question.for (Request.question request)) (Just S.bob)
     Spec.assertBool s (Text.isInfixOf (Text.pack "You're deciding for Player 2, whom you control.") page) "banner"
     Spec.assertBool s (Text.isInfixOf (Text.pack "Player 2's turn, which you control.") page) "the turn is the seat's to play"
-    Spec.assertBool s (Text.isInfixOf (Text.pack "Pass the screen to Player 1, deciding for Player 2.") (Html.content (Question.Web.handOff request))) "the hand-off says so"
+    Spec.assertBool s (Text.isInfixOf (Text.pack "Pass the screen to Player 1 to take an action, deciding for Player 2.") (Html.content (Question.Web.handOff request))) "the hand-off says so"
     Spec.assertBool s (Text.pack "<main class=\"handoff\"><div class=\"handoff-bar\"><button class=\"settings-button\"" `Text.isPrefixOf` Html.toText (Question.Web.handOff request)) "the hand-off's settings head it, as a bar's do"
     -- Odric, Master Tactician's chooser decides blocks for a player it does
     -- not control.
     Spec.assertEqWith s "chosen for, not controlled" (Question.for (Request.question (requestFor gs0 (Prompt.DeclareBlockers (Decider.MkDecider S.alice) S.bob [] [])))) Nothing
     Spec.assertEqWith s "the seat's own" (Question.for (Request.question (requestFor gs (Prompt.ChooseAction (Decider.MkDecider S.alice) S.alice [Action.Pass])))) Nothing
+
+  Spec.it s "a hand-off says what the seat is asked, but not a question only a hidden card asks" $ do
+    let request = requestFor (Setup.emptyGame S.bothPlayers) (Prompt.DeclareBlockers (Decider.MkDecider S.bob) S.bob [] [])
+    Spec.assertEqWith s "blockers" (Html.content (Question.Web.handOff request)) (Text.pack "Pass the screen to Player 2 to declare blockers.Ready")
+    Spec.assertEqWith s "hidden" (fmap (Question.Web.asking . Text.pack) ["ChooseCompanion", "OfferedMiracleReveal", "OpeningHandAction", "MulliganAction"]) (replicate 4 (Text.pack "decide"))
+
+  Spec.it s "a screen that names its seat says it on the turn bar" $ do
+    let request = requestFor (Setup.emptyGame S.bothPlayers) (Prompt.ChooseAction (Decider.MkDecider S.bob) S.bob [Action.Pass])
+        bar screen = Text.isInfixOf (Text.pack "<span class=\"seat-chip seat-1\" title=\"The seat this screen shows\">Player 2</span>") (Html.toText (Question.Web.view request screen))
+    Spec.assertEqWith s "named, not" (bar Question.Web.blank {Question.Web.naming = True}, bar Question.Web.blank) (True, False)
 
   Spec.it s "CR 726.1 / 732.1 / 306.5c the table shows the game's designations, player counters, and a walker's loyalty counters" $ do
     liliana <- S.printingOf s registry "Liliana of the Veil"
@@ -1555,7 +1565,7 @@ multiplayerSpec s registry = Spec.describe s "WebQuestion" . Spec.describe s "mu
     (asked, gs) <- playedThrough s registry "vote/cr-701-38b-player-vote-mob-verdict-damages-each-opponent-by-their-own-votes" 1 "ChooseVote" [["Player 2"], ["Player 3"], ["Player 2"]]
     Spec.assertEqWith s "each seat asked" (fmap (Question.seat . Request.question) asked) [S.alice, S.bob, S.carol]
     Spec.assertEqWith s "the others offered" (fmap (\request -> filter (\label -> Maybe.isJust (Html.labelled (Text.pack "button") (Text.pack label) (Question.Web.view request Question.Web.blank))) ["Player 1", "Player 2", "Player 3"]) asked) [["Player 2", "Player 3"], ["Player 1", "Player 3"], ["Player 1", "Player 2"]]
-    Spec.assertEqWith s "handed" (fmap (Html.content . Question.Web.handOff) asked) (fmap (\n -> Text.pack ("Pass the screen to Player " <> show (n :: Int) <> ".Ready")) [1, 2, 3])
+    Spec.assertEqWith s "handed" (fmap (Html.content . Question.Web.handOff) asked) (fmap (\n -> Text.pack ("Pass the screen to Player " <> show (n :: Int) <> " to vote.Ready")) [1, 2, 3])
     -- Two votes for bob, one for carol, at 2 damage each.
     Spec.assertEqWith s "life" (fmap Player.life (Map.elems (GameState.players gs))) [20, 16, 18]
 
@@ -1563,7 +1573,7 @@ multiplayerSpec s registry = Spec.describe s "WebQuestion" . Spec.describe s "mu
     -- Acererak the Archlich: for each opponent, a Zombie unless that player sacrifices a creature.
     (asked, gs) <- playedThrough s registry "acererak-the-archlich-makes-a-zombie-for-each-of-two-opponents-who-do-not-sacrifice" 2 "ChooseToPay" [["Don't pay"], ["Don't pay"]]
     Spec.assertEqWith s "each opponent asked" (fmap (Question.seat . Request.question) asked) [S.bob, S.carol]
-    Spec.assertEqWith s "handed" (fmap (Html.content . Question.Web.handOff) asked) [Text.pack "Pass the screen to Player 2.Ready", Text.pack "Pass the screen to Player 3.Ready"]
+    Spec.assertEqWith s "handed" (fmap (Html.content . Question.Web.handOff) asked) [Text.pack "Pass the screen to Player 2 to decide whether to pay.Ready", Text.pack "Pass the screen to Player 3 to decide whether to pay.Ready"]
     Spec.assertBool s (all (Text.isInfixOf (Text.pack "Acererak the Archlich's ability: pay Sacrifice a creature?") . Html.content . (`Question.Web.view` Question.Web.blank)) asked) "the cost, on each form"
     Spec.assertEqWith s "a Zombie each" (S.countOnBattlefieldByName (CardName.MkCardName (Text.pack "Zombie Token")) S.alice gs) 2
 
@@ -1572,7 +1582,7 @@ multiplayerSpec s registry = Spec.describe s "WebQuestion" . Spec.describe s "mu
     -- carol, the seat asked, is "You" among the candidates as at the table.
     (asked, gs) <- playedThrough s registry "combat/cr-724-1-a-controlled-active-player-s-choice-of-defender-routes-to-their-controller" 6 "ChooseDefender" [["Player 1"]]
     Spec.assertEqWith s "for" (fmap (Question.for . Request.question) asked) [Just S.carol]
-    Spec.assertEqWith s "handed" (fmap (Html.content . Question.Web.handOff) asked) [Text.pack "Pass the screen to Player 2, deciding for Player 3.Ready"]
+    Spec.assertEqWith s "handed" (fmap (Html.content . Question.Web.handOff) asked) [Text.pack "Pass the screen to Player 2 to choose defender, deciding for Player 3.Ready"]
     Spec.assertBool s (all (Text.isInfixOf (Text.pack "You're deciding for Player 3, whom you control.Choose defender.Player 1You") . Html.content . (`Question.Web.view` Question.Web.blank)) asked) "the banner and both candidates"
     Spec.assertEqWith s "defender" (Combat.defenders (TurnRegisters.combat (GameState.turn gs))) [S.alice]
 
