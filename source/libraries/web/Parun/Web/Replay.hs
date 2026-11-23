@@ -529,8 +529,9 @@ yourGames shown = case games shown of
 -- | The list of scenarios once fetched: a filter, then the scenarios whose
 -- name or title holds it, those the manifest names first under their themes
 -- (Parun.Scenario.Load.parseManifest), then every one, each a button
--- titled from its description where it was read (`described`), else from
--- its name (titled), that opens it, the first `shown` of them.
+-- titled from its description where the titles hold it (`described`,
+-- Parun.Scenario.Load.parseTitles), else from its name (titled), that
+-- opens it, the first `shown` of them.
 scenarioList :: Text.Text -> Maybe (Map.Map Text.Text [Text.Text], Map.Map Text.Text Text.Text, [Text.Text]) -> [Html.Html Event]
 scenarioList typed' listedScenarios =
   let shown = 200 :: Int

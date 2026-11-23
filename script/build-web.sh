@@ -32,7 +32,8 @@ sed -i "s|@VERSION@|$version|; s|@COMMIT@|$commit|" "$out/index.html"
 # The data directory the engine mounts, reproducibly packed in chunks, each
 # merged into /data as it arrives (engine.js): the decks and formats; the
 # cards as four bundles (Parun.Registry.bundlePaths) of equal count, in path
-# order; the rules data; and the scenarios, fetched only for a replay.
+# order; the rules data; and the scenarios with their titles, fetched only
+# for a replay.
 staging=$(mktemp -d)
 trap 'rm -rf "$staging"' EXIT
 pack() {
@@ -54,7 +55,16 @@ for k in 0 1 2 3; do
 done
 pack decks -C "$PWD/data" decks formats
 pack rules -C "$PWD/data" legalities.json printings.json sticker-sheets
-pack scenarios -C "$PWD/data" --exclude=README.md scenario-manifest.json scenarios
+# Each scenario's description by its name (Parun.Scenario.Load.titlesPath),
+# so the replay lists every scenario by its title without decoding each.
+node -e '
+const fs = require("fs");
+const root = "data/scenarios";
+const names = fs.readdirSync(root, { recursive: true }).filter((f) => f.endsWith(".json")).sort();
+const titles = Object.fromEntries(names.map((f) => [f.slice(0, -5), JSON.parse(fs.readFileSync(root + "/" + f, "utf8")).description]));
+fs.writeFileSync(process.argv[1], JSON.stringify(titles));
+' "$staging/scenario-titles.json"
+pack scenarios -C "$PWD/data" --exclude=README.md scenario-manifest.json scenarios -C "$staging" scenario-titles.json
 
 # Content addressing, leaves first: a file's hash covers the names it refers
 # to, so a change anywhere renames every file that leads to it.
