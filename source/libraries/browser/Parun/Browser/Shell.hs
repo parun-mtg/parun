@@ -404,8 +404,9 @@ lobby shell initial said pending = do
         _ -> pure current
     -- Each connected player told the match-up where it changed since, by
     -- link number.
-    tellPlaces current told =
-      fmap Map.fromList . Monad.forM [(Lobby.linkNumber invite, Lobby.placesFor i current) | (i, invite) <- Map.toList (Lobby.invites current), Lobby.connected invite] $ \(n, places) -> do
+    tellPlaces current told = do
+      (named, listed) <- deckColouring shell
+      fmap Map.fromList . Monad.forM [(Lobby.linkNumber invite, Lobby.placesFor named listed i current) | (i, invite) <- Map.toList (Lobby.invites current), Lobby.connected invite] $ \(n, places) -> do
         Monad.when (Map.lookup n told /= Just places) $ Link.send (Browser.channel (page shell) (build shell) n) (Link.MkMatchup places)
         pure (n, places)
     -- Every player is ready: the game starts, each player invited told
@@ -423,9 +424,10 @@ lobby shell initial said pending = do
         Just mine | Just rest <- sequence seated -> do
           -- Each player told the match-up again with every bot's deck drawn,
           -- which the history of their game names (Join.places), then their seat.
+          (named, listed) <- deckColouring shell
           Monad.forM_ (Map.toList invited) $ \(i, invite) -> do
             let channel = Browser.channel (page shell) (build shell) (Lobby.linkNumber invite)
-            Link.send channel (Link.MkMatchup (Lobby.placesFor i current {Lobby.theirs = others}))
+            Link.send channel (Link.MkMatchup (Lobby.placesFor named listed i current {Lobby.theirs = others}))
             Link.send channel (Link.MkStart (seatOf i) Ending.unseen)
           play shell (mine NonEmpty.:| rest) (fmap Lobby.linkNumber invited) (Lobby.locals current) Nothing
         -- A bot with no deck to play keeps the lobby up.
@@ -574,6 +576,14 @@ listColours shell = do
   now <- IORef.readIORef (loaded shell)
   root <- Registry.defaultRoot
   pure (maybe (const Set.empty) (Lobby.deckColours . colourIn root) (cards now))
+
+-- | A deck's colours by its name in this browser, and a deck list's own
+-- (listColours).
+deckColouring :: Shell -> IO (Text.Text -> Set.Set Color.Color, Text.Text -> Set.Set Color.Color)
+deckColouring shell = do
+  palette' <- palette <$> IORef.readIORef (loaded shell)
+  listed <- listColours shell
+  pure (\name -> Map.findWithDefault Set.empty name palette', listed)
 
 -- | A card of a deck's list, as the lobby previews it.
 lineOf :: FilePath -> LazyMap.Map FilePath (Either Text.Text Card.Card) -> Natural -> CardName.CardName -> DeckBrowser.Line
@@ -881,12 +891,13 @@ play shell seats invited here resuming = do
       Monad.forM_ resuming $ \game -> IORef.writeIORef (opponent shell) (Link.bots game)
       bots <- IORef.readIORef (opponent shell)
       Monad.when (keeping && Maybe.isNothing resuming) . Browser.keepGame $ Link.saved (build shell) (Link.MkSaved seed seats (Map.keys invited) here bots [])
+      (named, listed) <- deckColouring shell
       let rejoinSlot i = do
             back <- rejoin shell (linkOf i) (Rejoin.host (Text.pack ("Player " <> show (i + 2))))
             Monad.when back (IORef.modifyIORef' down (Set.delete i))
             pure back
           -- A rejoining guest is told the match-up played, every bot's deck drawn.
-          remotes = Map.fromList [(seatOf i, \seen -> Link.remote (rejoinSlot i) (Lobby.placesFor i (Lobby.rematch seats invited here)) seen (channelOf i)) | i <- Map.keys invited]
+          remotes = Map.fromList [(seatOf i, \seen -> Link.remote (rejoinSlot i) (Lobby.placesFor named listed i (Lobby.rematch seats invited here)) seen (channelOf i)) | i <- Map.keys invited]
           kept = if keeping then Browser.keepReply . Link.savedReply else const (pure ())
       -- Each guest is told whose decision the game waits on (Link.telling).
       told <- IORef.newIORef Map.empty
@@ -898,15 +909,14 @@ play shell seats invited here resuming = do
         Left problems -> stopped problems >> notice shell problems
         Right Ending.MkAbandoned -> stopped [Text.pack "The host gave the game up."] >> IORef.readIORef chosen
         Right played@(Ending.MkFinished ending) -> do
-          palette' <- palette <$> IORef.readIORef (loaded shell)
-          colouring <- listColours shell
+          (named', listed') <- deckColouring shell
           let seatOf' (i, seat@(name, contents))
-                | i == 0 = History.MkSeat History.MkYou (DeckBrowser.label (DeckBrowser.titleIn seat) name) (Just name) (Map.findWithDefault Set.empty name palette')
+                | i == 0 = History.MkSeat History.MkYou (DeckBrowser.label (DeckBrowser.titleIn seat) name) (Just name) (named' name)
                 -- A guest's deck, which may share a name with another of
                 -- this browser's, is coloured by its own list.
-                | Map.member (i - 1) invited = History.MkSeat History.MkPerson (DeckBrowser.label (DeckBrowser.titleIn seat) name) Nothing (colouring contents)
-                | Just sitting <- Map.lookup (i - 1) here = History.MkSeat (if sitting == Link.MkHandedOver then History.MkHere else History.MkPerson) (DeckBrowser.label (DeckBrowser.titleIn seat) name) (Just name) (Map.findWithDefault Set.empty name palette')
-                | otherwise = History.MkSeat History.MkBot (DeckBrowser.label (DeckBrowser.titleIn seat) name) (Just name) (Map.findWithDefault Set.empty name palette')
+                | Map.member (i - 1) invited = History.MkSeat History.MkPerson (DeckBrowser.label (DeckBrowser.titleIn seat) name) Nothing (listed' contents)
+                | Just sitting <- Map.lookup (i - 1) here = History.MkSeat (if sitting == Link.MkHandedOver then History.MkHere else History.MkPerson) (DeckBrowser.label (DeckBrowser.titleIn seat) name) (Just name) (named' name)
+                | otherwise = History.MkSeat History.MkBot (DeckBrowser.label (DeckBrowser.titleIn seat) name) (Just name) (named' name)
           remember shell (fmap seatOf' (zip [0 :: Int ..] (NonEmpty.toList seats))) played
           lost <- IORef.readIORef down
           let go said = do
@@ -1069,8 +1079,8 @@ joinGame shell stage offer = do
               palette' <- palette <$> IORef.readIORef (loaded shell)
               let placed place
                     | Link.who place == Text.pack "You" = History.MkSeat History.MkYou (Link.deck place) (Join.picked current) (maybe Set.empty (\name -> Map.findWithDefault Set.empty name palette') (Join.picked current))
-                    | Link.bot place = History.MkSeat History.MkBot (Link.deck place) Nothing Set.empty
-                    | otherwise = History.MkSeat History.MkPerson (Link.deck place) Nothing Set.empty
+                    | Link.bot place = History.MkSeat History.MkBot (Link.deck place) Nothing (Link.colours place)
+                    | otherwise = History.MkSeat History.MkPerson (Link.deck place) Nothing (Link.colours place)
               remember shell (fmap placed (Join.places current)) played
               let back = Join.rematched current
                   ended closed = do

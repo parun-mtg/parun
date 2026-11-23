@@ -487,13 +487,14 @@ starts lobby =
 guestsReady :: Lobby -> Bool
 guestsReady = all (\invite -> connected invite && Maybe.isJust (guestDeck invite) && guestReady invite) . invites
 
--- | The match-up as the player invited to this slot is shown it.
-placesFor :: Int -> Lobby -> [Link.Place]
-placesFor i lobby =
-  Link.MkPlace (Text.pack "Player 1") (maybe Link.unchosen (DeckBrowser.label (DeckBrowser.titles (browser lobby))) (mine lobby)) (Just (ready lobby)) False
+-- | The match-up as the player invited to this slot is shown it, each
+-- deck coloured by its name (`named`) or, a guest's, by its list (`listed`).
+placesFor :: (Text.Text -> Set.Set Color.Color) -> (Text.Text -> Set.Set Color.Color) -> Int -> Lobby -> [Link.Place]
+placesFor named listed i lobby =
+  Link.MkPlace (Text.pack "Player 1") (maybe Link.unchosen (DeckBrowser.label (DeckBrowser.titles (browser lobby))) (mine lobby)) (Just (ready lobby)) False (foldMap named (mine lobby))
     : [ case Map.lookup j (invites lobby) of
-          Just invite -> Link.MkPlace (if j == i then Text.pack "You" else Text.pack (seatName (MkTheirs j))) (maybe Link.unchosen (\deck -> DeckBrowser.label (DeckBrowser.titleIn deck) (fst deck)) (guestDeck invite)) (Just (guestReady invite)) False
-          Nothing -> Link.MkPlace (Text.pack (seatName (MkTheirs j))) (maybe (Text.pack "Random deck") (DeckBrowser.label (DeckBrowser.titles (browser lobby))) held) Nothing (Map.notMember j (locals lobby))
+          Just invite -> Link.MkPlace (if j == i then Text.pack "You" else Text.pack (seatName (MkTheirs j))) (maybe Link.unchosen (\deck -> DeckBrowser.label (DeckBrowser.titleIn deck) (fst deck)) (guestDeck invite)) (Just (guestReady invite)) False (foldMap (listed . snd) (guestDeck invite))
+          Nothing -> Link.MkPlace (Text.pack (seatName (MkTheirs j))) (maybe (Text.pack "Random deck") (DeckBrowser.label (DeckBrowser.titles (browser lobby))) held) Nothing (Map.notMember j (locals lobby)) (foldMap named held)
       | (j, held) <- zip [0 ..] (theirs lobby)
       ]
 

@@ -3,9 +3,11 @@ module Parun.Web.LinkSpec where
 import qualified Data.List.NonEmpty as NonEmpty
 import qualified Data.Map.Strict as Map
 import qualified Data.Sequence as Seq
+import qualified Data.Set as Set
 import qualified Data.Text as Text
 import qualified Parun.Codec.PlayerViewSpec as PlayerViewSpec
 import qualified Parun.Spec as Spec
+import qualified Parun.Types.Color as Color
 import qualified Parun.Types.Difficulty as Difficulty
 import qualified Parun.Types.Key as Key.Type
 import qualified Parun.Types.Persona as Persona
@@ -24,7 +26,7 @@ spec s = Spec.describe s "Parun.Web.Link" $ do
       let request = Request.MkRequest Nothing (Question.MkQuestion (PlayerId.MkPlayerId 1) (Text.pack "PlayOrDraw") (R.Array [R.Text (Text.pack "Play"), R.Text (Text.pack "Draw")]) Nothing Nothing) (Just (Text.pack "expected Play or Draw")) 0
           messages =
             [ Link.MkHello (Text.pack "saved/elves") (Text.pack "Format: constructed\n24 Forest\n36 Llanowar Elves\n"),
-              Link.MkMatchup [Link.MkPlace (Text.pack "Player 1") (Text.pack "Elves (Decks)") (Just True) False, Link.MkPlace (Text.pack "You") (Text.pack "Choosing a deck") (Just False) False, Link.MkPlace (Text.pack "Player 3") (Text.pack "Random deck") Nothing True, Link.MkPlace (Text.pack "Player 4") (Text.pack "Random deck") Nothing False],
+              Link.MkMatchup [Link.MkPlace (Text.pack "Player 1") (Text.pack "Elves (Decks)") (Just True) False (Set.fromList [Color.Green, Color.White]), Link.MkPlace (Text.pack "You") (Text.pack "Choosing a deck") (Just False) False Set.empty, Link.MkPlace (Text.pack "Player 3") (Text.pack "Random deck") Nothing True Set.empty, Link.MkPlace (Text.pack "Player 4") (Text.pack "Random deck") Nothing False Set.empty],
               Link.MkReady True,
               Link.MkReady False,
               Link.MkStart (PlayerId.MkPlayerId 2) Ending.unseen,
