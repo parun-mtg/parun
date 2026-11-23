@@ -189,7 +189,7 @@ data Frame = MkFrame
     -- | Why the run stopped short of this position.
     failure :: Maybe Text.Text,
     reading :: Maybe Card.Reading,
-    -- | The Oracle text of each spell on the stack (Card.written).
+    -- | The Oracle text of each object the seat sees (Card.written).
     written :: Map.Map ObjectId.ObjectId [Text.Text]
   }
 
@@ -349,7 +349,7 @@ stop frame asked =
             "section"
             ["recorded"]
             [Element.attr "inert" Text.empty, Element.attr "aria-label" (Text.pack "The question as asked")]
-            (Element.el "p" ["recorded-note"] [] [Element.string "The question as asked:"] : fmap Html.inert (Web.Question.form r Set.empty Nothing))
+            (Element.el "p" ["recorded-note"] [] [Element.string "The question as asked:"] : fmap Html.inert (Web.Question.form r (written frame) Set.empty Nothing))
         ]
       (Just r, Nothing) -> [Element.el "p" ["waiting"] [] [Element.text (Text.pack "Waiting on " <> seatName frame (Question.seat (Request.question r)) <> Text.pack ".")]]
       (Nothing, Nothing) -> []
@@ -463,7 +463,7 @@ sheet :: Frame -> Card.Reading -> Maybe (Html.Html Event)
 sheet frame r = do
   b <- board frame
   o <- Wording.recalled b (Card.object r)
-  pure (Card.sheet b o r [] (MkTable Web.Question.MkClose))
+  pure (Card.sheet (written frame) b o r [] (MkTable Web.Question.MkClose))
 
 -- | The replays screen, laid out as the Decks screen is: its heading, the
 -- games finished here and the scenarios as tabs, then the list shown.
