@@ -9,11 +9,13 @@ import qualified Data.Set as Set
 import qualified Data.Text as Text
 import Numeric.Natural (Natural)
 import qualified Parun.DeckList as DeckList
+import qualified Parun.Play.Opponent as Opponent
 import qualified Parun.Spec as Spec
 import qualified Parun.Types.CardName as CardName
 import qualified Parun.Types.Color as Color
 import qualified Parun.Types.Difficulty as Difficulty
 import qualified Parun.Types.Persona as Persona
+import qualified Parun.Types.PlayOptions as PlayOptions
 import qualified Parun.Web.Attribute as Attribute
 import qualified Parun.Web.DeckBrowser as DeckBrowser
 import qualified Parun.Web.Diff as Diff
@@ -134,14 +136,25 @@ spec s = Spec.describe s "Parun.Web.Lobby" $ do
       Spec.assertBool s (not (Text.isInfixOf (Text.pack "seat-tools") (Html.toText (Lobby.view full)))) "nothing to add once full"
       Spec.assertBool s (not (any (Text.isInfixOf (Text.pack "instead") . Html.toText . Lobby.view) [lobby, full])) "no seat switched in place"
 
-    Spec.it s "sets every bot's level and style by the name chosen, ignoring one it does not know" $ do
+    Spec.it s "sets each bot's level and style on its own seat by the name chosen, ignoring one it does not know" $ do
       let set event value = Lobby.update event (Text.pack value)
-          easy = set Lobby.MkPersona "control" (set Lobby.MkDifficulty "easy" lobby)
-      Spec.assertEqWith s "unless told otherwise" (Lobby.difficulty lobby, Lobby.persona lobby) (Difficulty.MkHard, Persona.MkBalanced)
-      Spec.assertEqWith s "chosen" (Lobby.difficulty easy, Lobby.persona easy) (Difficulty.MkEasy, Persona.MkControl)
-      Spec.assertEqWith s "unknown" (set Lobby.MkDifficulty "impossible" easy) easy
-      Spec.assertBool s (Text.isInfixOf (Text.pack "<option value=\"easy\" selected=\"\">Easy</option>") (Html.toText (Lobby.view easy))) "the level chosen in its menu"
-      Spec.assertBool s (Text.isInfixOf (Text.pack "<option value=\"control\" selected=\"\">Control</option>") (Html.toText (Lobby.view easy))) "the style chosen in its menu"
+          two = Lobby.update (Lobby.MkChoose Lobby.MkMine) Text.empty (Lobby.update (Lobby.MkAdd Lobby.MkBot) Text.empty lobby)
+          styled = set (Lobby.MkPersona 1) "control" (set (Lobby.MkDifficulty 0) "easy" (set (Lobby.MkPersona 0) "aggro" two))
+          page = Lobby.view styled
+          changed field = Html.search (Text.isPrefixOf (Text.pack ("<select class=\"" <> field)) . Html.toText) page >>= \path -> Html.handler (Text.pack "change") path page
+      Spec.assertEqWith s "unless told otherwise" (Lobby.botAt 0 (Lobby.bots two), Lobby.botAt 1 (Lobby.bots two)) (Lobby.defaultBot, Lobby.defaultBot)
+      Spec.assertEqWith s "each its own" (Lobby.botAt 0 (Lobby.bots styled), Lobby.botAt 1 (Lobby.bots styled)) ((Difficulty.MkEasy, Persona.MkAggro), (Difficulty.MkHard, Persona.MkControl))
+      Spec.assertEqWith s "unknown" (set (Lobby.MkDifficulty 0) "impossible" styled) styled
+      Spec.assertEqWith s "no such seat" (set (Lobby.MkDifficulty 2) "easy" styled) styled
+      Spec.assertEqWith s "each seat's menus" (fmap changed ["bot-difficulty", "bot-persona"]) [Just (Lobby.MkDifficulty 0), Just (Lobby.MkPersona 0)]
+      Spec.assertBool s (Text.isInfixOf (Text.pack "<option value=\"easy\" selected=\"\">Easy</option>") (Html.toText page)) "the level chosen in its menu"
+      Spec.assertBool s (Text.isInfixOf (Text.pack "<option value=\"control\" selected=\"\">Control</option>") (Html.toText page)) "the style chosen in its menu"
+      Spec.assertEqWith s "the second's settings move up when the first is unseated" (Lobby.botAt 0 (Lobby.bots (Lobby.update (Lobby.MkDrop 0) Text.empty styled))) (Difficulty.MkHard, Persona.MkControl)
+      Spec.assertEqWith
+        s
+        "a three-seat game plays each bot at its own"
+        (PlayOptions.bots (Lobby.playOptions (Lobby.bots styled) 3 Set.empty))
+        (Map.fromList [(2, (Opponent.budgetAt Difficulty.MkEasy PlayOptions.budget, Opponent.weightsOf Persona.MkAggro)), (3, (PlayOptions.budget, Opponent.weightsOf Persona.MkControl))])
 
     Spec.it s "offers the bots' level and style only while a bot is seated" $ do
       let invited = Lobby.update (Lobby.MkAdd Lobby.MkInvited) Text.empty alone

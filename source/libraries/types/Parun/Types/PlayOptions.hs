@@ -1,5 +1,6 @@
 module Parun.Types.PlayOptions where
 
+import qualified Data.Map.Strict as Map
 import qualified Data.Set as Set
 import qualified Data.Text as Text
 import qualified Numeric.Natural as Natural
@@ -15,8 +16,10 @@ data PlayOptions = MkPlayOptions
   { -- | The generator's key; drawn from the operating system when absent.
     seed :: Maybe Key.Key,
     first :: Maybe Natural.Natural,
-    -- | The seats the search bot plays (Parun.Play.Search).
-    bots :: Set.Set Natural.Natural,
+    -- | The seats the search bot plays (Parun.Play.Search), each with how
+    -- hard it looks there and what it values in a position it cuts a
+    -- playout off at.
+    bots :: Map.Map Natural.Natural (SearchBudget.SearchBudget, Weights.Weights),
     -- | Whether every seat not the bot's speaks the line protocol.
     json :: Bool,
     -- | Where to save the game as a scenario.
@@ -29,10 +32,6 @@ data PlayOptions = MkPlayOptions
     format :: Maybe Text.Text,
     -- | How large the game may grow.
     limits :: Limits.Limits,
-    -- | How hard the search bot looks.
-    budget :: SearchBudget.SearchBudget,
-    -- | What the search bot values in a position it cuts a playout off at.
-    weights :: Weights.Weights,
     -- | The meta file whose decks the search bot infers an opponent's unseen
     -- cards from.
     meta :: Maybe FilePath,
@@ -44,10 +43,18 @@ data PlayOptions = MkPlayOptions
 
 -- | A game keyed from the operating system's entropy, no seat the bot's and
 -- none over the line protocol, the seat to play first asked for, under the
--- standard limits, the search bot looking at 2 samples cut off as the next
--- turn begins or after 40 prompts, a budget a browser turn stays responsive
--- at and making no mistakes, weighing the neutral weights, played out by
--- the random bot, dealing an opponent's unseen cards from the game's
--- format's pool.
+-- standard limits, the search bot dealing an opponent's unseen cards from
+-- the game's format's pool.
 none :: PlayOptions
-none = MkPlayOptions {seed = Nothing, first = Nothing, bots = Set.empty, json = False, save = Nothing, arrangesGraveyard = Set.empty, format = Nothing, limits = Limits.standard, budget = SearchBudget.MkSearchBudget {SearchBudget.samples = 2, SearchBudget.turns = 0, SearchBudget.prompts = 40, SearchBudget.candidates = 0, SearchBudget.playout = Playout.Random, SearchBudget.mistakes = 0, SearchBudget.method = SearchMethod.Flat}, weights = Weights.neutral, meta = Nothing, pool = Nothing}
+none = MkPlayOptions {seed = Nothing, first = Nothing, bots = Map.empty, json = False, save = Nothing, arrangesGraveyard = Set.empty, format = Nothing, limits = Limits.standard, meta = Nothing, pool = Nothing}
+
+-- | A seat the search bot plays unless told otherwise: its 'budget', weighing
+-- the neutral weights.
+bot :: (SearchBudget.SearchBudget, Weights.Weights)
+bot = (budget, Weights.neutral)
+
+-- | The search bot's budget unless told otherwise: 2 samples cut off as the
+-- next turn begins or after 40 prompts, a budget a browser turn stays
+-- responsive at, making no mistakes, played out by the random bot.
+budget :: SearchBudget.SearchBudget
+budget = SearchBudget.MkSearchBudget {SearchBudget.samples = 2, SearchBudget.turns = 0, SearchBudget.prompts = 40, SearchBudget.candidates = 0, SearchBudget.playout = Playout.Random, SearchBudget.mistakes = 0, SearchBudget.method = SearchMethod.Flat}

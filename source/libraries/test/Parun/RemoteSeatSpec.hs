@@ -99,7 +99,7 @@ spec s registry = Spec.describe s "RemoteSeat" $ do
     Spec.assertBool s (case outcome of Right (Result.Won _, _) -> True; _ -> False) ("finished: " <> show (fmap fst outcome))
     Spec.assertEqWith s "both seats asked on the one page" (ListUtils.nubOrd seats) [S.alice, S.bob]
     Spec.assertBool s (elem (Text.pack "Pass the screen to Player 2.Ready") handed && elem (Text.pack "Pass the screen to Player 1.Ready") handed) "handed each way"
-    Spec.assertEqWith s "no bot seated" (PlayOptions.bots options) Set.empty
+    Spec.assertEqWith s "no bot seated" (PlayOptions.bots options) Map.empty
 
   Spec.it s "a whole goldfish game, both seats played by the one person at the screen: never handed over, each question naming its seat" $ do
     (outcome, inOrder, _) <- onOneScreen s registry
@@ -204,7 +204,7 @@ wholeGame s matchup guests = do
 onOneScreen :: (Monad m) => Spec.Spec m n -> Registry.Registry m -> m (Either Text.Text (Result.Result, GameState.GameState), [Request.Request], PlayOptions.PlayOptions)
 onOneScreen s registry = do
   matchup <- BotSpec.bears s registry
-  let options = Lobby.playOptions (Difficulty.MkEasy, Persona.MkBalanced) 2 (Set.singleton S.bob)
+  let options = Lobby.playOptions (Map.singleton 0 (Difficulty.MkEasy, Persona.MkBalanced)) 2 (Set.singleton S.bob)
       onScreen request = State.modify' (request :) >> pure (Just (Right (answer request)))
   (outcome, requests) <- State.runStateT (Game.run (S.fixtureRegistry []) Nothing Limits.standard [] (Map.fromList [(Command.idOf n, Command.answerer (S.fixtureRegistry []) onScreen (pure Nothing) (const (pure ())) (pure Map.empty) Search.unkept options Search.known n) | n <- [1, 2]]) (S.seeded 1) Map.empty matchup) []
   pure (outcome, reverse requests, options)
