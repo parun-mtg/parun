@@ -347,6 +347,13 @@ for (const type of events) {
       openSettings(settings.hidden);
       return;
     }
+    // A Copy button copies its box (Parun.Web.Element's copyable); the
+    // engine has nothing to do with it.
+    const copying = type === "click" ? event.target.closest("[data-copy]") : null;
+    if (copying) {
+      copy(copying);
+      return;
+    }
     // An auto-pass level tapped is kept for the next game, and closes its
     // menu.
     const chosen = type === "click" ? event.target.closest("[data-level]") : null;
@@ -363,6 +370,30 @@ for (const type of events) {
     // (an "input" handler) keeps what is typed.
     if (type === "change" && event.target.dataset.clear !== undefined) event.target.value = "";
   });
+}
+
+// A read-only box (a link or code to send) is selected whole when focused
+// or tapped, so one copy takes all of it; selecting on the click too keeps
+// Safari, which clears a selection made on focus, from dropping it.
+for (const type of ["focusin", "click"]) {
+  root.addEventListener(type, (event) => {
+    if (event.target.matches?.("input[readonly]")) event.target.select();
+  });
+}
+
+// Copies the box a Copy button names, and says so on the button for a
+// moment; where the clipboard is refused, the box is left selected.
+async function copy(button) {
+  const box = document.getElementById(button.dataset.copy);
+  if (box === null) return;
+  box.select();
+  try {
+    await navigator.clipboard.writeText(box.value);
+  } catch {
+    if (!document.execCommand("copy")) return;
+  }
+  button.dataset.copied = "";
+  setTimeout(() => delete button.dataset.copied, 1500);
 }
 
 // A pointer resting on a card (a mouse, not a finger) previews its sheet

@@ -102,7 +102,7 @@ view screen =
                       ]
                     Just code ->
                       [ Element.el "label" [] [Element.attr "for" (Text.pack "join-reply")] [Element.string "Send this code back to the host, who pastes it in:"],
-                        Element.el "input" ["invite-link"] [Element.attr "id" (Text.pack "join-reply"), Element.attr "type" (Text.pack "text"), Element.attr "readonly" Text.empty, Element.attr "value" code] [],
+                        Element.copyable "join-reply" code,
                         Element.el "p" [] [] [Element.string "Waiting for the host to connect\x2026"]
                       ]
             )

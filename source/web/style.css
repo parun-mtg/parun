@@ -1784,12 +1784,33 @@ main.lobby.new-game {
   gap: 0.5em;
 }
 
+/* A box stretches across its column: inputs' width of 100% would add the
+   seat's side margins to it and overflow. */
 .invite input,
 .join-status input {
-  width: 100%;
+  width: auto;
   min-width: 0;
   font-family: ui-monospace, monospace;
   font-size: 0.8rem;
+}
+
+/* A link or code to send, with its Copy button beside it (Parun.Web.Element). */
+.copyable {
+  display: flex;
+  gap: 0.5em;
+  min-width: 0;
+}
+
+.copyable input {
+  flex: 1;
+}
+
+.copyable .copy {
+  flex: none;
+}
+
+.copyable .copy[data-copied]::after {
+  content: " \2713";
 }
 
 .invite-warning {

@@ -35,3 +35,16 @@ string = Html.text . Text.pack
 -- | A button sending the message when tapped, with these classes.
 button :: [String] -> msg -> [Html.Html msg] -> Html.Html msg
 button classes msg = el "button" classes [attr "type" (Text.pack "button"), on "click" msg]
+
+-- | A read-only box holding `value`, with a Copy button beside it: the page
+-- selects the whole of it on focus and copies it on the button (page.js's
+-- data-copy).
+copyable :: String -> Text.Text -> Html.Html msg
+copyable name value =
+  el
+    "div"
+    ["copyable"]
+    []
+    [ el "input" ["invite-link"] [attr "id" (Text.pack name), attr "type" (Text.pack "text"), attr "readonly" Text.empty, attr "autocomplete" (Text.pack "off"), attr "spellcheck" (Text.pack "false"), attr "value" value] [],
+      el "button" ["copy"] [attr "type" (Text.pack "button"), attr "data-copy" (Text.pack name)] [string "Copy"]
+    ]
