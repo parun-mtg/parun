@@ -93,11 +93,12 @@ encode build message =
         MkAnswer reply -> ("answer", [Value.pair "reply" (Codec.Reply.toValue reply)])
         MkEnd ending' ->
           ( "end",
-            [ Value.pair "verdict" (Value.string (verdictName (Ending.verdict ending'))),
+            [ Value.pair "verdict" (Codec.encode Ending.verdictCodec (Ending.verdict ending')),
               Value.pair "said" (Value.array (fmap Value.text (Ending.said ending'))),
               Value.pair "scenario" (Value.text (Ending.scenario ending')),
               Value.pair "log" (Value.array (fmap entryValue (Foldable.toList (Ending.witnessed ending')))),
               Value.pair "seat" (Codec.encode Codec.PlayerId.codec (Ending.viewer ending')),
+              Value.pair "shared" (Value.boolean (Ending.shared ending')),
               Value.pair "trail" (Codec.encode trail (Ending.trail ending'))
             ]
           )
@@ -124,11 +125,12 @@ decode build line = do
     "end" ->
       fmap MkEnd $
         Ending.MkEnding
-          <$> (text "verdict" >>= verdictNamed)
+          <$> (Common.field "verdict" pairs >>= Codec.decode Ending.verdictCodec)
           <*> (Common.field "said" pairs >>= Common.asArray >>= traverse Common.asText)
           <*> text "scenario"
           <*> (Common.field "log" pairs >>= Common.asArray >>= fmap Seq.fromList . traverse entryOf)
           <*> (Common.field "seat" pairs >>= Codec.decode Codec.PlayerId.codec)
+          <*> (Common.field "shared" pairs >>= Common.asBoolean)
           <*> (Common.field "trail" pairs >>= Codec.decode trail)
     other -> Left (Text.pack ("not a message: " <> other))
   where
@@ -192,21 +194,6 @@ marks = Common.list (Common.tuple (Common.tuple Codec.PlayerId.codec Common.natu
 trail :: Codec.Codec [(Natural, [(PlayerId.PlayerId, Integer)])]
 trail = Common.list (Common.tuple Common.natural (Common.list (Common.tuple Codec.PlayerId.codec Common.integer)))
 
-verdictName :: Ending.Verdict -> String
-verdictName verdict = case verdict of
-  Ending.MkWon -> "won"
-  Ending.MkLost -> "lost"
-  Ending.MkDrawn -> "drawn"
-  Ending.MkStopped -> "stopped"
-
-verdictNamed :: Text.Text -> Either Text.Text Ending.Verdict
-verdictNamed name = case Text.unpack name of
-  "won" -> Right Ending.MkWon
-  "lost" -> Right Ending.MkLost
-  "drawn" -> Right Ending.MkDrawn
-  "stopped" -> Right Ending.MkStopped
-  _ -> Left (Text.pack "not a verdict: " <> name)
-
 -- | One end of a data channel: a message out, and the next one in, Nothing
 -- once the channel closed or sent a line that does not read.
 data Channel m = MkChannel
@@ -247,9 +234,10 @@ seeing :: (Monad m) => (PlayerView.PlayerView -> m ()) -> Protocol.Exchange m ->
 seeing sent ask request = ask request <* mapM_ sent (Request.view request)
 
 -- | The ending of seat `seat`, from what it was shown, `seen`, and its view
--- of the end (endView), the killing blow, say.
-ending :: Ending.Verdict -> [Text.Text] -> Text.Text -> PlayerId.PlayerId -> Either a (b, GameState.GameState) -> Ending.Seen -> Ending.Ending
-ending verdict said scenario seat outcome seen = Ending.endingOf verdict said scenario seat (maybe id Ending.see (endView seat outcome) seen)
+-- of the end (endView), the killing blow, say, taking no seat's side where
+-- `shared`.
+ending :: Ending.Verdict -> [Text.Text] -> Text.Text -> PlayerId.PlayerId -> Bool -> Either a (b, GameState.GameState) -> Ending.Seen -> Ending.Ending
+ending verdict said scenario seat shared outcome seen = Ending.endingOf verdict said scenario seat shared (maybe id Ending.see (endView seat outcome) seen)
 
 -- | Tells each guest, over its channel in `guests`, of every seat the game
 -- asks but its own as the seat asked changes, `told` holding the seat each

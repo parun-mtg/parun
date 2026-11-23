@@ -95,7 +95,7 @@ spec s registry = Spec.describe s "Record" $ do
     matchup <- BotSpec.sevens s registry
     let (outcome, timeline) = recorded bots matchup
         file = Command.rendered (Record.scenario PrintingTable.empty Text.empty Nothing (fmap (\(pid, deck) -> (pid, Record.labelOf labels pid, GraveyardOrder.Indifferent, deck)) matchup) timeline)
-        kept = History.recordOf 0 0 (Text.pack "build") [] (Ending.MkFinished (Ending.MkEnding Ending.MkWon [] file Seq.empty S.alice []))
+        kept = History.recordOf 0 0 (Text.pack "build") [] (Ending.MkFinished (Ending.MkEnding Ending.MkWon [] file Seq.empty S.alice False []))
     case (outcome, kept) of
       (Right (_, final), Just (game, stored)) -> do
         Spec.assertEqWith s "the summary reads back" (History.decode (History.encode game)) (Right game)

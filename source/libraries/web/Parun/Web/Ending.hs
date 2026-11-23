@@ -15,6 +15,9 @@ import qualified Data.Sequence as Seq
 import qualified Data.Text as Text
 import qualified Data.Text.Encoding as Encoding
 import Numeric.Natural (Natural)
+import qualified Parun.Codec.PlayerId as Codec.PlayerId
+import qualified Parun.JsonCodec.Arm as Arm
+import qualified Parun.JsonCodec.Codec as Codec
 import qualified Parun.Play.Wording as Wording
 import qualified Parun.Types.PlayerId as PlayerId
 import qualified Parun.Types.PlayerView as PlayerView
@@ -33,14 +36,37 @@ data Event
     MkNewGame
   deriving (Eq, Show)
 
--- | How the game ended for the player the page plays.
+-- | How the game ended for the player the page plays, or who won where
+-- more than one person played at its screen.
 data Verdict
   = MkWon
   | MkLost
   | MkDrawn
+  | -- | Won by this seat, at a screen more than one person played (shared).
+    MkWonBy PlayerId.PlayerId
   | -- | Play stopped before the game ended.
     MkStopped
-  deriving (Bounded, Enum, Eq, Show)
+  deriving (Eq, Show)
+
+-- | A verdict: a bare tag, or a seat's win at a shared screen as
+-- @{"MkWonBy": seat}@.
+verdictCodec :: Codec.Codec Verdict
+verdictCodec =
+  Arm.keyed
+    tagOf
+    [ Arm.nullary "MkWon" MkWon,
+      Arm.nullary "MkLost" MkLost,
+      Arm.nullary "MkDrawn" MkDrawn,
+      Arm.payload "MkWonBy" Codec.PlayerId.codec MkWonBy (\v -> case v of MkWonBy pid -> Just pid; _ -> Nothing),
+      Arm.nullary "MkStopped" MkStopped
+    ]
+  where
+    tagOf v = case v of
+      MkWon -> "MkWon"
+      MkLost -> "MkLost"
+      MkDrawn -> "MkDrawn"
+      MkWonBy _ -> "MkWonBy"
+      MkStopped -> "MkStopped"
 
 -- | How a game the page played came out.
 data Played
@@ -58,8 +84,11 @@ data Ending = MkEnding
     scenario :: Text.Text,
     -- | What the player saw happen, oldest first (Log.unseen).
     witnessed :: Seq.Seq Log.Entry,
-    -- | The seat the page plays.
+    -- | The seat the page plays, whose log this is.
     viewer :: PlayerId.PlayerId,
+    -- | More than one person played at this screen, so the ending takes no
+    -- seat's side: it names every seat, the viewer's too.
+    shared :: Bool,
     -- | Each seat's life as the game went, a sample whenever it or the turn
     -- changed (sampled), each beside the turn it was in.
     trail :: [(Natural, [(PlayerId.PlayerId, Integer)])]
@@ -99,24 +128,37 @@ see shown seen =
 loggedFor :: PlayerId.PlayerId -> Seen -> Seq.Seq Log.Entry
 loggedFor seat seen = Map.findWithDefault Seq.empty seat (logged seen)
 
--- | The ending seat `seat` is shown, from what it saw.
-endingOf :: Verdict -> [Text.Text] -> Text.Text -> PlayerId.PlayerId -> Seen -> Ending
-endingOf verdict' said' scenario' seat seen = MkEnding verdict' said' scenario' (loggedFor seat seen) seat (Foldable.toList (sampledLives seen))
+-- | The ending seat `seat` is shown, from what it saw, taking no seat's side
+-- where `shared'`.
+endingOf :: Verdict -> [Text.Text] -> Text.Text -> PlayerId.PlayerId -> Bool -> Seen -> Ending
+endingOf verdict' said' scenario' seat shared' seen = MkEnding verdict' said' scenario' (loggedFor seat seen) seat shared' (Foldable.toList (sampledLives seen))
+
+-- | The seat the ending speaks to as "You": none where shared.
+reader :: Ending -> Maybe PlayerId.PlayerId
+reader ending = if shared ending then Nothing else Just (viewer ending)
 
 view :: Ending -> Html.Html Event
 view ending =
-  let (headline, tone) = case verdict ending of
-        MkWon -> ("You win!", "won")
-        MkLost -> ("You lose", "lost")
-        MkDrawn -> ("A draw", "drawn")
-        MkStopped -> ("Game over", "stopped")
+  let -- The headline says the result, so the lines under it leave it out
+      -- (said holds it first), but for why play stopped.
+      (headline, tone, told) = case verdict ending of
+        MkWon -> ("You win!", "won", drop 1 (said ending))
+        MkLost -> ("You lose", "lost", drop 1 (said ending))
+        MkDrawn -> ("A draw", "drawn", drop 1 (said ending))
+        MkWonBy pid -> (Text.unpack (Wording.player pid) <> " wins!", "won", drop 1 (said ending))
+        MkStopped -> ("Game over", "stopped", said ending)
+      won = case verdict ending of
+        MkWon -> True
+        MkWonBy _ -> True
+        _ -> False
+      entries = Seq.mapWithIndex (,) (witnessed ending)
    in Element.el
         "main"
         ["ending"]
         []
-        $ [confetti | verdict ending == MkWon]
+        $ [confetti | won]
           <> [ Element.el "section" ["verdict", tone] [] $
-                 Element.el "h1" [] [] [Element.string headline] : [Element.el "p" [] [] (Mana.rich line) | line <- said ending],
+                 Element.el "h1" [] [] [Element.string headline] : [Element.el "p" [] [] (Mana.rich line) | line <- told],
                Element.el
                  "div"
                  ["ending-actions"]
@@ -126,16 +168,20 @@ view ending =
                    Element.el "a" [] [Element.attr "href" (download (scenario ending)), Element.attr "download" (Text.pack "parun-game.json")] [Element.string "Save as a scenario"]
                  ],
                Element.el "h2" [] [] [Element.string "How it went"],
-               summary (viewer ending) (trail ending),
-               Element.el "h2" [] [] [Element.string "Game log"],
-               -- Newest first, as the log reads during play.
-               Element.el "ul" ["game-log"] [] (fmap (Log.item (viewer ending) Nothing False . snd) (Foldable.toList (Log.newestFirst (Seq.fromList (fmap ((,) ()) (Log.headed id (Foldable.toList (witnessed ending))))))))
+               summary (reader ending) (trail ending),
+               -- A shared screen's log is the seat the page plays's, so its
+               -- "You" is that seat.
+               Element.el "h2" [] [] [Element.string (if shared ending then "Game log, as " <> Text.unpack (Wording.player (viewer ending)) <> " saw it" else "Game log")],
+               -- Newest first under each turn's heading, as the log reads
+               -- during play (Log.grouped).
+               Element.el "section" ["game-log"] [] [Log.grouped (viewer ending) (const Nothing) (const False) (Log.newestFirst entries)]
              ]
 
--- | Each seat's life through the game as a line chart, its scale and each
--- seat's final life written on it, and the numbers it tells: turns played,
--- and each seat's final and lowest life and biggest single loss.
-summary :: PlayerId.PlayerId -> [(Natural, [(PlayerId.PlayerId, Integer)])] -> Html.Html msg
+-- | Each seat's life through the game as a line chart, its scale, its turns
+-- and each seat's final life written on it, and the numbers it tells: turns
+-- played, and each seat's final and lowest life and biggest single loss;
+-- the seat `me` called "You", its line bolder.
+summary :: Maybe PlayerId.PlayerId -> [(Natural, [(PlayerId.PlayerId, Integer)])] -> Html.Html msg
 summary me samples =
   let seats = ListUtils.nubOrd (concatMap (fmap fst . snd) samples)
       lifeOf pid sample = Maybe.fromMaybe 0 (lookup pid (snd sample))
@@ -150,9 +196,9 @@ summary me samples =
       count = length samples
       x i = if count <= 1 then 0 else div (toInteger i * width) (toInteger (count - 1))
       y life = height - div ((life - lo) * height) (max 1 (hi - lo))
-      name pid = if pid == me then Text.pack "You" else Wording.player pid
+      name pid = if Just pid == me then Text.pack "You" else Wording.player pid
       -- Each seat its own colour, by its seat; the viewer's line drawn bolder.
-      hue pid = ["seat-" <> show (mod (PlayerId.unwrap pid) 6)] <> ["you" | pid == me]
+      hue pid = ["seat-" <> show (mod (PlayerId.unwrap pid) 6)] <> ["you" | Just pid == me]
       line pid =
         Element.el
           "polyline"
@@ -172,7 +218,15 @@ summary me samples =
       spread _ [] = []
       spread at ((life, whose) : rest) = let here = max at (y life) in (here, life, whose) : spread (here + 12) rest
       endLabel (ly, life, whose) = label ("value" : case whose of [pid] -> hue pid; _ -> []) (width + 6, ly) "start" (show life)
-      turnAxis = [label ["axis"] (0, height + 16) "start" "Start", label ["axis"] (width, height + 16) "end" ("Turn " <> show turns)]
+      -- Between "Start" and the last turn, the turns at a round step that
+      -- keeps them to a handful, each where the turn's first sample is, each
+      -- clear of its neighbours' labels.
+      step = Maybe.fromMaybe 1 (List.find (\s -> div turns s <= 5) (concatMap (\p -> fmap (* p) [1, 2, 5]) (iterate (* 10) 1)))
+      starts = [(turn, x i) | (i, turn, before) <- List.zip3 [0 :: Int ..] (fmap fst samples) (Nothing : fmap (Just . fst) samples), Just turn /= before]
+      clear _ [] = []
+      clear at ((turn, tx) : rest) = if tx >= at && tx <= width - 60 then (turn, tx) : clear (tx + 24) rest else clear at rest
+      between = clear 44 [(turn, tx) | (turn, tx) <- starts, turn /= turns, mod turn step == 0]
+      turnAxis = [label ["axis"] (0, height + 16) "start" "Start"] <> [label ["axis"] (tx, height + 16) "middle" (show turn) | (turn, tx) <- between] <> [label ["axis"] (width, height + 16) "end" ("Turn " <> show turns)]
       drops pid = [lifeOf pid a - lifeOf pid b | (a, b) <- zip samples (drop 1 samples)]
       stat pid =
         Element.el

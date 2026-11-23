@@ -41,7 +41,8 @@ data Game = MkGame
     offset :: Integer,
     -- | The build that played it (Parun.Web.Link), whose rules replay it.
     build :: Text.Text,
-    -- | How it ended for the player: won, lost or drawn.
+    -- | How it ended for the player: won, lost or drawn, or who won a
+    -- shared screen's game.
     verdict :: Ending.Verdict,
     -- | The turn it ended in.
     turns :: Natural,
@@ -83,7 +84,7 @@ codec = Fields.object $ do
   ended' <- Fields.required "ended" Common.integer ended
   offset' <- Fields.required "offset" Common.integer offset
   build' <- Fields.required "build" Common.text build
-  verdict' <- Fields.required "verdict" Arm.enum verdict
+  verdict' <- Fields.required "verdict" Ending.verdictCodec verdict
   turns' <- Fields.required "turns" Common.natural turns
   said' <- Fields.required "said" (Common.list Common.text) said
   seats' <- Fields.required "seats" (Common.list seatCodec) seats
@@ -179,12 +180,14 @@ whoName w = case w of
   MkBot -> "Bot"
   MkPerson -> "Player"
 
--- | How the game ended for the player, as a word.
+-- | How the game ended for the player, as a word, or who won a shared
+-- screen's game.
 outcome :: Game -> String
 outcome game = case verdict game of
   Ending.MkWon -> "Won"
   Ending.MkLost -> "Lost"
   Ending.MkDrawn -> "Draw"
+  Ending.MkWonBy pid -> Text.unpack (Wording.player pid) <> " won"
   Ending.MkStopped -> "Stopped"
 
 -- | The decks played, "Ajani (M19) vs Liliana (M19)".
