@@ -170,7 +170,7 @@ exchange lookUp page seatRef leave request = do
               Browser.display page (fmap Screen.MkQuestion board)
           pure reply
         conceded = if Set.member seat (conceding state) && kind == Text.pack "Concede" then Just (R.Text (Text.pack "Concedes")) else Nothing
-    reply <- case (Monad.mplus conceded (Web.Question.automatic (level state) request), auto, skipped) of
+    case (Monad.mplus conceded (Web.Question.automatic (level state) request), auto, skipped) of
       (Just reply, _, _) -> watch reply
       (_, Just reply, _) -> watch reply
       (_, _, Just reply) -> watch reply
@@ -184,9 +184,12 @@ exchange lookUp page seatRef leave request = do
         keepLevel
         -- The question replaces the watched board, which is drawn afresh after.
         IORef.modifyIORef' seatRef $ \st -> st {watched = Nothing}
-        answer request (Web.Question.initial request)
-    IORef.modifyIORef' seatRef $ \s -> s {decided = Map.insert seat (Seq.length (loggedFor seat s)) (decided s)}
-    pure reply
+        reply <- answer request (Web.Question.initial request)
+        -- Only what the seat decided itself, so the log's new entries and
+        -- a turn begun since (Web.Question.turnBegun) outlast a pass made
+        -- for it.
+        IORef.modifyIORef' seatRef $ \s -> s {decided = Map.insert seat (Seq.length (loggedFor seat s)) (decided s)}
+        pure reply
   where
     -- The last auto-pass level tapped while the seat watched, kept, and the
     -- watched board drawn afresh to show it; every other tap dropped.
@@ -333,7 +336,7 @@ data Seat = MkSeat
     -- | The entries each seat has read so far, oldest first: the seat the
     -- page plays's is the game log the end shows.
     logged :: Map.Map PlayerId.PlayerId (Seq.Seq Log.Entry),
-    -- | How many entries each seat had logged when it last answered.
+    -- | How many entries each seat had logged when it last answered itself.
     decided :: Map.Map PlayerId.PlayerId Int,
     -- | The request each seat the page plays was last asked.
     latest :: Map.Map PlayerId.PlayerId Request.Request

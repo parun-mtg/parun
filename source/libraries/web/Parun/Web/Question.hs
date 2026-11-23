@@ -329,10 +329,40 @@ view :: Request.Request -> Screen -> Html.Html Event
 view request screen =
   table request screen (autoPass (level screen)) (barControls True (MkConcede <$ passIndex request)) (cues request (selected screen) (focus screen)) $
     foldMap (pure . eyebrow) (Request.view request)
+      <> turnBegun (viewerOf request) screen
       <> [Element.el "p" ["problem"] [Element.attr "role" (Text.pack "alert")] (Mana.rich problem) | problem <- Maybe.maybeToList (Request.problem request)]
       <> [Element.el "p" ["playing"] [Element.attr "role" (Text.pack "note")] [Html.text (Text.pack "You're playing " <> Wording.player (Question.seat (Request.question request)) <> Text.pack ".")] | naming screen]
       <> [Element.el "p" ["controlling"] [Element.attr "role" (Text.pack "note")] [Html.text (Text.pack "You're deciding for " <> Wording.player p <> Text.pack ", whom you control.")] | p <- Maybe.maybeToList (Question.for (Request.question request))]
       <> form request (selected screen) (focus screen)
+
+-- | The newest turn begun since the seat last decided, unless it never has:
+-- passing for the seat can carry it into the next turn, which this says
+-- before its next tap.
+turnBegun :: PlayerId.PlayerId -> Screen -> [Html.Html msg]
+turnBegun viewer screen =
+  [ Element.el "p" ["nudge", "turned"] [Element.attr "role" (Text.pack "status")] [Element.text (Text.pack ("Turn " <> show n <> " began. It's ") <> (if active == viewer then Text.pack "your" else Wording.player active <> Text.pack "'s") <> Text.pack " turn.")]
+  | total > newest,
+    Log.MkTurn n active : _ <- [reverse (filter Log.isTurn (Foldable.toList (Seq.drop (total - newest) (logged screen))))]
+  ]
+  where
+    total = Seq.length (logged screen)
+    newest = Natural.toIntSaturating (fresh screen)
+
+-- | Once blocks are declared, each attacker and the creatures blocking it,
+-- or that it is unblocked (CR 509.1h), a line each.
+combatPairs :: PlayerView.PlayerView -> [Html.Html msg]
+combatPairs shown =
+  [ nudge (Wording.choosable shown attacker <> maybe (Text.pack " is unblocked.") blockedBy (Map.lookup attacker (PlayerView.blockers shown)))
+  | PlayerView.phase shown > Phase.Combat CombatStep.DeclareAttackers,
+    PlayerView.phase shown <= Phase.Combat CombatStep.EndOfCombat,
+    attacker <- Map.keys (PlayerView.attackers shown)
+  ]
+  where
+    -- CR 509.1h: still blocked once every blocker is removed from combat.
+    blockedBy bs
+      | Set.null bs = Text.pack " is blocked."
+      | otherwise = Text.pack " is blocked by " <> Wording.listing (fmap (lowered . Wording.choosable shown) (Set.toList bs)) <> Text.pack "."
+    lowered t = maybe t (Text.pack "your " <>) (Text.stripPrefix (Text.pack "Your ") t)
 
 -- | Above a prompt, whose turn it is and its step, in the turn's colour
 -- while it is the seat's.
@@ -894,9 +924,6 @@ form request picked focused = case Text.unpack (Question.kind question) of
         let (passes, others) = List.partition (isPass . snd) (Offer.distinct shown options')
             -- A mana ability is in its permanent's sheet, not the list.
             rest = filter (not . isManaAbility . snd) others
-            -- What passing gives up, the offer's `lapses`; two abilities of
-            -- one source read alike as phrases.
-            reminders = ListUtils.nubOrd [Offer.actionPhrase shown option | (_, option) <- rest, lapses option]
             controlled = Question.for question
             -- CR 724.1: a turn the seat controls is played as its own.
             yours = PlayerView.active shown == PlayerView.viewer shown || controlled == Just (PlayerView.active shown)
@@ -909,6 +936,8 @@ form request picked focused = case Text.unpack (Question.kind question) of
                 <> [(Phase.Ending EndingStep.EndStep, if yours then "Pass to end step" else "Pass to their end step")]
             prompt
               | not settled = "Respond, or pass to let the top of the stack resolve."
+              -- CR 509: standard stops here to show the blocks (blocksShown).
+              | PlayerView.phase shown == Phase.Combat CombatStep.DeclareBlockers, not (Map.null (PlayerView.blockers shown)) = "Blocks are declared. Respond, or pass to go on to combat damage."
               | Just p <- controlled, yours = Text.unpack (Wording.player p) <> "'s turn, which you control. Play something for them, or pass to move on."
               | yours = "Your turn. Play something, or pass to move on."
               | otherwise = "Their turn. Respond, or pass."
@@ -919,14 +948,18 @@ form request picked focused = case Text.unpack (Question.kind question) of
               [ nudge (Text.pack "You have " <> foldMap (\u -> Text.pack "{" <> Wording.manaType (ManaUnit.manaType u) <> Text.pack "}") floating <> Text.pack " unspent. It empties when this step ends.")
               | not (null floating)
               ]
-                <> [ nudge (Text.pack "Before you pass: you can still " <> Wording.listing (take 3 reminders) <> (if length reminders > 3 then Text.pack ", and more." else Text.pack "."))
-                   | yours,
-                     settled,
-                     not (null reminders)
-                   ]
+            -- What passing gives up, the offer's `lapses`, under a heading of
+            -- its own above the rest, so the buttons are the reminder; passing
+            -- to the turn's end gives up at least as much.
+            (lapsing, kept) = if yours && settled then List.partition (lapses . snd) rest else ([], rest)
+            actionGroup title' group =
+              [Element.el "h3" ["subhead"] [] [Element.string title'] | not (null lapsing), not (null group)]
+                <> [Element.el "div" ["actions"] [] [button (MkAnswer $ R.Number i) (Offer.actionName shown option) | (i, option) <- group] | not (null group)]
          in heading prompt
-              : nudges
-                <> [Element.el "div" ["actions"] [] [button (MkAnswer $ R.Number i) (Offer.actionName shown option) | (i, option) <- rest] | not (null rest)]
+              : combatPairs shown
+                <> nudges
+                <> actionGroup "Gone once you pass or end the turn" lapsing
+                <> actionGroup "Still yours after you pass" kept
                 <> [ Element.el "div" ["passes"] [] $
                        [primary (MkAnswer $ R.Number i) (Text.pack (if settled then "Pass" else "Pass and resolve")) | (i, _) <- passes]
                          <> [shortcut ["turn"] "E" (MkSkip (MkTurnEnds turn)) (Text.pack (if yours then "End turn" else "Pass to my turn")) | settled, not (null passes)]
@@ -942,7 +975,8 @@ form request picked focused = case Text.unpack (Question.kind question) of
       Just shown <- Request.view request,
       Just sources <- Protocol.field "sources" offer >>= Protocol.arrayOf >>= traverse Offer.manaSource ->
         Html.element (Text.pack "h2") [] (Mana.rich $ foldMap (\cost -> Text.pack "Paying " <> Wording.manaCost cost <> Text.pack ". ") (Protocol.field "cost" offer >>= Offer.decoded Codec.ManaCost.codec) <> Text.pack (if kind == "ChooseManaSource" then "Choose a source." else "The cost is covered. Activate another source, or pay now."))
-          : [primary MkAuto (Text.pack "Pay automatically") | Maybe.isJust (auto request)]
+          -- With one source, paying automatically is tapping it.
+          : [primary MkAuto (Text.pack "Pay automatically") | Maybe.isJust (auto request), length sources > 1]
             -- Sources the seat can't tell apart are one button, for the first.
             <> [button (MkAnswer source) (label <> many count) | (source : _, label, count) <- collapsed (const True) [(source, Offer.listedName shown source <> makes yields) | (source, yields) <- sources]]
             -- CR 734.1: where stopping takes the cast back, it is its Cancel.
@@ -1054,7 +1088,7 @@ form request picked focused = case Text.unpack (Question.kind question) of
               Element.el "div" ["actions"] [] (toggles 0 (Natural.length attackers) [(i, Offer.listedName shown option) | (i, option) <- zip [0 ..] attackers]),
               Element.el "div" ["passes"] [] $
                 [primary MkSubmit (Text.pack (if count == 0 then "No attack" else "Attack with " <> show count))]
-                  <> [shortcut [] "A" (MkAnswer (R.Array attackers)) (Text.pack "Attack with all") | not (null attackers)]
+                  <> [shortcut [] "A" (MkAnswer (R.Array attackers)) (Text.pack "Attack with all") | count < length attackers]
             ]
   kind
     | amounted request || kind `elem` ["ChooseRedistribution", "DividePiles"] || (kind == "ChooseWordSwap" && maybe False (all ((<= 12) . length . options) . groups) (picker request)),
