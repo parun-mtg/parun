@@ -18,6 +18,7 @@ import qualified Data.Word as Word
 import Numeric.Natural (Natural)
 import qualified Parun.Benchmark.Harness as Harness
 import qualified Parun.DeckList as DeckList
+import qualified Parun.Decks as Decks
 import qualified Parun.Engine.Action as Action
 import qualified Parun.Engine.Cast as Cast
 import qualified Parun.Engine.Cost as Cost
@@ -526,7 +527,8 @@ main = do
   root <- Registry.defaultRoot
   registry <- Registry.fileRegistry root
   reference <- Registry.loadRoot root >>= Registry.defaultRegistry
-  temper <- Command.load reference "data/decks/sets/10e/kamahls-temper.txt" >>= either (Exception.throwIO . userError . show) (pure . DeckList.deck)
+  decks <- Decks.defaultRoot
+  temper <- Command.load reference (decks <> "/sets/10e/kamahls-temper.txt") >>= either (Exception.throwIO . userError . show) (pure . DeckList.deck)
   decided <- decisionIn reference temper
   deck <- loadRedDeck registry
   controlDeck <- loadControlDeck registry
