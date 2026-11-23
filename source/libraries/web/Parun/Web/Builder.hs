@@ -48,7 +48,9 @@ data Builder = MkBuilder
     -- | The format the list's header names; empty for a casual deck, which
     -- names none and so meets any deck naming none.
     format :: Text.Text,
-    -- | Every shipped format, by name.
+    -- | Every shipped format a deck is built for ahead of time, by name
+    -- (Parun.Legality.builtFormats); the format chosen is offered beside
+    -- them.
     formats :: [Text.Text],
     -- | The fewest cards the format allows, and whether a commander counts
     -- toward them, once known.
@@ -512,7 +514,7 @@ view builder =
             Element.el "div" ["builder-top"] [] $
               [ Element.button ["home-button"] MkBack [Element.string "Back"],
                 Element.el "label" ["sr-only"] [Element.attr "for" (Text.pack "builder-format")] [Element.string "Format"],
-                Element.el "select" ["format"] [Element.attr "id" (Text.pack "builder-format"), Element.on "change" MkFormat] (option (format builder) (Text.empty, Text.pack "Casual (no format)") : [option (format builder) (f, DeckBrowser.titled f) | f <- formats builder]),
+                Element.el "select" ["format"] [Element.attr "id" (Text.pack "builder-format"), Element.on "change" MkFormat] (option (format builder) (Text.empty, Text.pack "Casual (no format)") : [option (format builder) (f, DeckBrowser.formatTitle f) | f <- formats builder <> [format builder | not (Text.null (format builder)), format builder `notElem` formats builder]]),
                 Element.el "label" ["sr-only"] [Element.attr "for" (Text.pack "builder-pool")] [Element.string "Card pool"],
                 Element.el "select" ["pool"] [Element.attr "id" (Text.pack "builder-pool"), Element.on "change" MkPoolChoice] $
                   [option poolValue (Text.empty, Text.pack "Every card")]

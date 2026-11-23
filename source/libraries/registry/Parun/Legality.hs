@@ -573,6 +573,15 @@ shippedFormats = do
   files <- if present then Directory.listDirectory root else pure []
   pure (List.sort [name | file <- files, Just name <- [Text.stripSuffix (Text.pack ".json") (Text.pack file)]])
 
+-- | CR 100.2a / 100.2b: every shipped format a deck is built for ahead of
+-- time, in order: 'shippedFormats' but a drafted one's, whose deck comes from
+-- its draft (RuleFamily.Engine.drafted), and one that does not load.
+builtFormats :: IO [Text.Text]
+builtFormats = do
+  names <- shippedFormats
+  found <- traverse shipped names
+  pure [name | (name, Right format) <- zip names found, not (RuleFamily.Engine.drafted (Format.rules format))]
+
 -- | The format a name means, the file of that name under a formats root:
 -- Nothing when there is none.
 loadFormat :: FilePath -> Text.Text -> IO (Maybe (Either Text.Text Format.Format))
