@@ -76,6 +76,10 @@ for (const [name, value] of Object.entries(chosen)) {
   if (input) input.checked = true;
 }
 settings.addEventListener("change", async ({ target }) => {
+  // The focus follows the choice a click makes, as the arrow keys move it,
+  // so the ring never marks a choice but the one made (Safari leaves the
+  // focus where it was on a click).
+  target.focus();
   if (target.name === "notify") {
     // Turning notifications on asks the browser's permission, once.
     const allowed = target.value === "on" && "Notification" in window && (Notification.permission === "granted" || (await Notification.requestPermission()) === "granted");
@@ -213,8 +217,10 @@ function lives() {
   return new Map(Array.from(root.querySelectorAll("[data-seat-life]"), (box) => [box.dataset.seatLife, Number(box.textContent)]));
 }
 
-// A life total that changed floats its difference up from the total.
+// A life total that changed floats its difference up from the total. A
+// screen with no totals (the hand-off) takes away those still floating.
 function floatChanges(before) {
+  if (root.querySelector("[data-seat-life]") === null) for (const delta of document.querySelectorAll(".float-delta")) delta.remove();
   for (const box of root.querySelectorAll("[data-seat-life]")) {
     const was = before.get(box.dataset.seatLife);
     const now = Number(box.textContent);
@@ -438,6 +444,18 @@ function unpeek(card) {
   const path = pathOf(card);
   if (path !== null) engine.postMessage({ type: "unpeek", path, value: "" });
 }
+// Ends whatever preview shows, through its card or, where a patch replaced
+// that, any card; whether one showed.
+function endPeek() {
+  if (root.querySelector(".sheet-backdrop.peek") === null) {
+    peeking = null;
+    return false;
+  }
+  const from = peeking?.isConnected ? peeking : cards()[0];
+  if (from) unpeek(from);
+  else peeking = null;
+  return true;
+}
 root.addEventListener("pointerover", (event) => {
   const card = event.target.closest?.(".card, .stack-item");
   if (!hovering.matches || event.pointerType === "touch" || !card || card === resting) return;
@@ -457,7 +475,21 @@ root.addEventListener("pointerout", (event) => {
   const card = event.target.closest?.(".card, .stack-item");
   if (!card || card.contains(event.relatedTarget)) return;
   if (resting === card) resting = null;
-  if (peeking === card && pointer !== null) unpeek(card);
+  // The card previewed, or the one a patch put in its place.
+  if (pointer !== null && (peeking === card || (peeking !== null && !peeking.isConnected))) unpeek(card);
+});
+// A press elsewhere, or a pointer the browser takes over (a long press, a
+// drag), ends a preview; a tap on the card opens its sheet in its place.
+root.addEventListener("pointerdown", (event) => {
+  if (pointer !== null && !peeking?.contains(event.target)) endPeek();
+});
+root.addEventListener("pointercancel", () => {
+  if (pointer !== null) endPeek();
+});
+// The pointer's preview sat beside where the pointer was before the window
+// changed size.
+window.addEventListener("resize", () => {
+  if (pointer !== null) endPeek();
 });
 root.addEventListener("focusin", (event) => {
   const card = event.target.closest?.(".card, .stack-item");
@@ -485,9 +517,7 @@ function syncSheet() {
 inspecting.addEventListener("change", () => {
   syncSheet();
   if (inspecting.matches || peeking === null || pointer !== null) return;
-  const from = peeking.isConnected ? peeking : cards()[0];
-  if (from) unpeek(from);
-  else peeking = null;
+  endPeek();
 });
 
 // A preview sits beside the pointer, as a tooltip would, or beside the card
@@ -625,6 +655,7 @@ document.addEventListener("keydown", (event) => {
   const sheet = modalSheet();
   if (key === "Escape") {
     const levels = root.querySelector("details.auto-pass[open], details.log[open]");
+    if (endPeek()) return;
     if (levels) {
       levels.open = false;
       levels.querySelector("summary").focus();

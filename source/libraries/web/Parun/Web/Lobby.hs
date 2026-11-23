@@ -1,7 +1,8 @@
 -- | The web client's lobby (#9421): the seats at the table, the seat being
--- chosen for, which only a tap on a seat changes, and Start at their foot;
--- the decks that seat may play, filtered by what is typed, by colour, by set
--- and by whether they are saved; and the chosen deck's detail.
+-- chosen for, which a tap on a seat or a seat added changes, and Start at
+-- their foot; the decks that seat may play, filtered by what is typed, by
+-- colour, by set and by whether they are saved; and the chosen deck's
+-- detail.
 module Parun.Web.Lobby where
 
 import qualified Control.Monad as Monad
@@ -49,7 +50,8 @@ data Lobby = MkLobby
     -- otherwise. There are at most 'mostOthers' such seats, and none is a
     -- game of yours alone (goldfish).
     theirs :: [Maybe Text.Text],
-    -- | The seat a tapped deck goes to, which only a tap on a seat changes.
+    -- | The seat a tapped deck goes to, which a tap on a seat or a seat
+    -- added changes, never a pick.
     choosing :: Slot,
     -- | Each seat taken by a player invited from another browser, by its
     -- place in 'theirs' (Parun.Web.Link).
@@ -117,10 +119,13 @@ data Event
     -- picks it.
     MkRandom
   | -- | Adds a seat past the last, up to 'mostOthers', played by this
-    -- occupant, with a random deck; the shell makes an invite's link.
+    -- occupant, with a random deck, and chooses for it unless it is
+    -- invited; the shell makes an invite's link.
     MkAdd Occupant
-  | -- | Unseats the last seat but yours; the shell closes an invite's link.
-    MkDrop
+  | -- | Unseats the seat at this place in 'theirs', those after it moving
+    -- up, where no invited seat comes after it ('removable'); the shell
+    -- closes an invite's link.
+    MkDrop Int
   | -- | Starts the game.
     MkStart
   | -- | Opens the deck builder; the shell does it.
@@ -326,18 +331,25 @@ updated event typed lobby = case event of
   MkRandom -> lobby
   MkAdd occupant
     | i < mostOthers ->
-        let added = lobby {theirs = theirs lobby <> [Nothing]}
+        let added = lobby {theirs = theirs lobby <> [Nothing], choosing = MkTheirs i}
          in case occupant of
               MkBot -> added
-              MkInvited -> added {invites = Map.insert i newInvite (invites lobby)}
+              MkInvited -> added {choosing = choosing lobby, invites = Map.insert i newInvite (invites lobby)}
               MkHere sitting -> added {locals = Map.insert i sitting (locals lobby)}
     | otherwise -> lobby
     where
       i = length (theirs lobby)
-  MkDrop
-    | not (null (theirs lobby)) ->
-        let kept = take (length (theirs lobby) - 1) (theirs lobby)
-         in lobby {theirs = kept, choosing = if choosing lobby == MkTheirs (length kept) then MkMine else choosing lobby, invites = Map.delete (length kept) (invites lobby), locals = Map.delete (length kept) (locals lobby)}
+  MkDrop i
+    | removable lobby i ->
+        let moved j = if j > i then j - 1 else j
+         in lobby
+              { theirs = [deck | (j, deck) <- zip [0 ..] (theirs lobby), j /= i],
+                choosing = case choosing lobby of
+                  MkTheirs j | j == i -> MkMine | otherwise -> MkTheirs (moved j)
+                  MkMine -> MkMine,
+                invites = Map.delete i (invites lobby),
+                locals = Map.mapKeys moved (Map.delete i (locals lobby))
+              }
     | otherwise -> lobby
   MkStart -> lobby
   MkOpenBuilder -> lobby
@@ -347,6 +359,15 @@ updated event typed lobby = case event of
   MkReady -> lobby {ready = not (ready lobby)}
   MkDifficulty -> maybe lobby (\d -> lobby {difficulty = d}) (Opponent.named Opponent.difficultyName (Text.unpack typed))
   MkPersona -> maybe lobby (\p -> lobby {persona = p}) (Opponent.named Opponent.personaName (Text.unpack typed))
+
+-- | Whether the seat at this place in 'theirs' may be unseated: it is
+-- seated, and no invited seat comes after it, since the invites' links are
+-- numbered by seat.
+--
+-- Unseating a seat before an invited one, which would renumber a live
+-- link, is not implemented (#9674).
+removable :: Lobby -> Int -> Bool
+removable lobby i = i >= 0 && i < length (theirs lobby) && all (<= i) (Map.keys (invites lobby))
 
 -- | The lobby once the page of the player invited to this slot said this
 -- (Parun.Web.Link): their deck, and whether they are ready.
@@ -480,8 +501,9 @@ view lobby =
     ]
 
 -- | The seats: yours, then each bot's, invited player's, player's here or
--- one you play too; the way to unseat the last; a seat to add, by who fills
--- it, while there is room; and Start at the foot, saying what it waits on.
+-- one you play too; the way to unseat each that is 'removable'; a seat to
+-- add, by who fills it, while there is room; and Start at the foot, saying
+-- what it waits on.
 seatsView :: Lobby -> Html.Html Event
 seatsView lobby =
   Element.el "section" ["seats"] [Element.attr "aria-label" (Text.pack "Seats")] $
@@ -519,9 +541,7 @@ seatsView lobby =
       <> [startView lobby]
   where
     others = theirs lobby
-    -- Only the last seat is unseated: the invites' links are numbered by
-    -- seat, so unseating another would renumber a live connection.
-    remove i = [Element.button ["quiet", "drop-seat"] MkDrop [Element.string "Remove"] | i == length others - 1]
+    remove i = [Element.el "button" ["quiet", "drop-seat"] [Element.attr "type" (Text.pack "button"), Element.on "click" (MkDrop i), Element.attr "aria-label" (Text.pack ("Remove " <> seatName lobby (MkTheirs i)))] [Element.string "Remove"] | removable lobby i]
     seat which avatar held extra =
       let on = choosing lobby == which
        in Element.el

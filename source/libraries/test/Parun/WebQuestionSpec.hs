@@ -112,6 +112,7 @@ import qualified Parun.Types.RoomHalf as RoomHalf
 import qualified Parun.Types.Scratch as Scratch
 import qualified Parun.Types.SeatView as SeatView
 import qualified Parun.Types.Settle as Settle
+import qualified Parun.Types.Sickness as Sickness
 import qualified Parun.Types.SlotName as SlotName
 import qualified Parun.Types.Stop as Stop
 import qualified Parun.Types.Subtype as Subtype
@@ -141,7 +142,7 @@ spec s registry = Spec.describe s "WebQuestion" $ do
     Spec.assertEqWith s "skip" (fmap (\event -> Question.Web.step request Set.empty event Text.empty) (tap "End turn")) (Just (Question.Web.MkReplied (R.Number 0)))
     Spec.assertEqWith s "not automatic" (Question.Web.automatic Question.Web.MkStandard request) Nothing
     Spec.assertBool s (Text.pack "<button class=\"turn\" type=\"button\" aria-keyshortcuts=\"E\">End turn</button>" `Text.isInfixOf` page) "E ends the turn, a button in the turn's colour"
-    Spec.assertBool s (Text.pack "Before you pass: you can still play Mountain." `Text.isInfixOf` Html.content view) "a card keeps its name's case"
+    Spec.assertBool s (Text.pack "<h3 class=\"subhead\">Gone once you pass or end the turn</h3><div class=\"actions\"><button type=\"button\">Play Mountain</button>" `Text.isInfixOf` page) "the land play lapses, under its heading, and keeps its name's case"
     -- The hand's Mountain is lit, since the seat may play it, and tapping it reads it.
     Spec.assertBool s (Text.pack "<section class=\"hand\"" `Text.isInfixOf` page) "hand"
     Spec.assertBool s (Text.pack "class=\"card c-land playable\"" `Text.isInfixOf` page) "playable"
@@ -332,6 +333,7 @@ spec s registry = Spec.describe s "WebQuestion" $ do
     Spec.assertBool s (Text.isInfixOf (Text.pack "You're deciding for Player 2, whom you control.") page) "banner"
     Spec.assertBool s (Text.isInfixOf (Text.pack "Player 2's turn, which you control.") page) "the turn is the seat's to play"
     Spec.assertBool s (Text.isInfixOf (Text.pack "Pass the screen to Player 1, deciding for Player 2.") (Html.content (Question.Web.handOff request))) "the hand-off says so"
+    Spec.assertBool s (Text.pack "<main class=\"handoff\"><div class=\"handoff-bar\"><button class=\"settings-button\"" `Text.isPrefixOf` Html.toText (Question.Web.handOff request)) "the hand-off's settings head it, as a bar's do"
     -- Odric, Master Tactician's chooser decides blocks for a player it does
     -- not control.
     Spec.assertEqWith s "chosen for, not controlled" (Question.for (Request.question (requestFor gs0 (Prompt.DeclareBlockers (Decider.MkDecider S.alice) S.bob [] [])))) Nothing
@@ -563,18 +565,20 @@ spec s registry = Spec.describe s "WebQuestion" $ do
     -- The tap symbol is drawn, so the text around it is matched.
     Spec.assertBool s (Text.pack ": Prodigal Sorcerer deals 1 damage to any target." `Text.isInfixOf` Html.content (Question.Web.view request Question.Web.blank)) "labelled"
     -- CR 117.4: the next step offers it again, so passing gives nothing up.
-    Spec.assertBool s (not (Text.pack "Before you pass" `Text.isInfixOf` Html.content (Question.Web.view request Question.Web.blank))) "not reminded"
+    Spec.assertBool s (not (Text.pack "Gone once you pass or end the turn" `Text.isInfixOf` Html.content (Question.Web.view request Question.Web.blank))) "not reminded"
 
-  Spec.it s "CR 117.4 the reminder before a pass names only what the step's end gives up" $ do
+  Spec.it s "CR 117.4 only what the step's end gives up is headed as gone once the seat passes" $ do
     shock <- S.printingOf s registry "Shock"
     mountain <- S.printingOf s registry "Mountain"
     let (bolt, g1) = S.addObjectIn Zone.Hand shock S.alice (inMain (Setup.emptyGame S.bothPlayers))
         (_, g2) = S.addPermanent mountain S.alice g1
         (land, gs) = S.addObjectIn Zone.Hand mountain S.alice g2
-        reminder menu = Html.content (Question.Web.view (requestFor gs (Prompt.ChooseAction (Decider.MkDecider S.alice) S.alice (Action.Pass : menu))) Question.Web.blank)
+        reminder menu = Html.toText (Question.Web.view (requestFor gs (Prompt.ChooseAction (Decider.MkDecider S.alice) S.alice (Action.Pass : menu))) Question.Web.blank)
         cast = Action.Cast bolt (CardName.MkCardName (Text.pack "Shock")) Facing.FaceUp
-    Spec.assertBool s (not (Text.pack "Before you pass" `Text.isInfixOf` reminder [cast])) "CR 117.1a: an instant is castable in the next step too"
-    Spec.assertBool s (Text.pack "Before you pass: you can still play Mountain." `Text.isInfixOf` reminder [cast, Action.Play land Nothing]) "CR 305.1: the land play lapses, and the instant goes unnamed"
+    Spec.assertBool s (not (Text.pack "Gone once you pass or end the turn" `Text.isInfixOf` reminder [cast])) "CR 117.1a: an instant is castable in the next step too"
+    Spec.assertBool s (not (Text.pack "Still yours after you pass" `Text.isInfixOf` reminder [cast])) "and with nothing lapsing, nothing is headed"
+    Spec.assertBool s (Text.pack "Gone once you pass or end the turn</h3><div class=\"actions\"><button type=\"button\">Play Mountain</button></div><h3 class=\"subhead\">Still yours after you pass</h3><div class=\"actions\"><button type=\"button\">Cast Shock</button>" `Text.isInfixOf` reminder [cast, Action.Play land Nothing]) "CR 305.1: the land play lapses, the instant under the other heading"
+    Spec.assertBool s (not (Text.pack "you can still" `Text.isInfixOf` reminder [cast, Action.Play land Nothing])) "the buttons are the reminder: no banner repeats them"
 
   -- CR 601.3: The Holodeck's and Wish's permissions both reach a card outside
   -- the game, and each option says where its permission opens.
@@ -630,6 +634,8 @@ spec s registry = Spec.describe s "WebQuestion" $ do
     let alone = request {Request.question = (Request.question request) {Question.offer = R.Array [PromptOffer.object Protocol.namer one]}}
         attackAll = Html.labelled (Text.pack "button") (Text.pack "Attack with all") (Question.Web.view alone Question.Web.blank)
     Spec.assertBool s (Maybe.isJust attackAll) "offered for a lone attacker too"
+    Spec.assertBool s (Maybe.isNothing (Html.labelled (Text.pack "button") (Text.pack "Attack with all") (Question.Web.view alone Question.Web.blank {Question.Web.selected = Set.singleton (0, 0)}))) "but not once every attacker is picked"
+    Spec.assertBool s (Maybe.isJust (Html.labelled (Text.pack "button") (Text.pack "Attack with all") (Question.Web.view request Question.Web.blank {Question.Web.selected = Set.singleton (0, 0)}))) "and still while one is left"
 
   Spec.it s "a shared button at the group's most drops a pick, and Start over drops them all" $ do
     forest <- S.printingOf s registry "Forest"
@@ -707,6 +713,57 @@ spec s registry = Spec.describe s "WebQuestion" $ do
     Spec.assertEqWith s "no block passes" (Question.Web.automatic Question.Web.MkStandard (priority S.alice (fought (Phase.Combat CombatStep.DeclareBlockers) Map.empty))) (Just (R.Number 0))
     Spec.assertEqWith s "nor any other step" (Question.Web.automatic Question.Web.MkStandard (priority S.alice (fought (Phase.Combat CombatStep.CombatDamage) blocked))) (Just (R.Number 0))
     Spec.assertEqWith s "auto passes it" (Question.Web.automatic Question.Web.MkAutoPass (priority S.alice blocking)) (Just (R.Number 0))
+
+  Spec.it s "CR 302.6 a tile says summoning sick where it can matter: its controller's turn, or a {T} ability" $ do
+    bears <- S.printingOf s registry "Grizzly Bears"
+    elves <- S.printingOf s registry "Llanowar Elves"
+    let (mine, b1) = S.addPermanent bears S.alice (Setup.emptyGame S.bothPlayers)
+        (theirs, b2) = S.addPermanent bears S.bob b1
+        (elf, b3) = S.addPermanent elves S.bob b2
+        -- Each new this turn (S.addPermanent settles them).
+        view = PlayerView.viewFor S.alice b3 {GameState.objects = fmap (\o -> o {Object.sickness = Sickness.Sick}) (GameState.objects b3)}
+        sick oid = maybe False (Text.isInfixOf (Text.pack "badge state sick") . Html.toText . Card.tile view (Card.MkCue [] () Nothing)) (List.find ((== oid) . ObjectView.object) (PlayerView.Type.battlefield view))
+    Spec.assertEqWith s "the active player" (PlayerView.Type.active view) S.alice
+    Spec.assertBool s (sick mine) "on its controller's turn"
+    Spec.assertBool s (not (sick theirs)) "not on another's, where it can't attack"
+    Spec.assertBool s (sick elf) "but where it can't use {T} abilities"
+
+  Spec.it s "CR 509.1h once blocks are declared, the prompt pairs each attacker with its blockers" $ do
+    bears <- S.printingOf s registry "Grizzly Bears"
+    elves <- S.printingOf s registry "Llanowar Elves"
+    sorcerer <- S.printingOf s registry "Prodigal Sorcerer"
+    wall <- S.printingOf s registry "Wall of Fortune"
+    let (first', b1) = S.addPermanent bears S.alice (Setup.emptyGame S.bothPlayers)
+        (second', b2) = S.addPermanent sorcerer S.alice b1
+        (third, b3) = S.addPermanent wall S.alice b2
+        (elf, b4) = S.addPermanent elves S.bob b3
+        (bear, b5) = S.addPermanent bears S.bob b4
+        fought phase =
+          b5
+            { GameState.turn =
+                (GameState.turn b5)
+                  { TurnRegisters.phase = phase,
+                    TurnRegisters.combat = (TurnRegisters.combat (GameState.turn b5)) {Combat.attackers = Map.fromList [(o, AttackTarget.OfPlayer S.bob) | o <- [first', second', third]], Combat.blockers = Map.fromList [(first', Set.singleton elf), (second', Set.singleton bear)]}
+                  }
+            }
+        said seat phase = Html.content (Question.Web.view (requestFor (fought phase) (Prompt.ChooseAction (Decider.MkDecider seat) seat [Action.Pass])) Question.Web.blank)
+        blocking = Phase.Combat CombatStep.DeclareBlockers
+    Spec.assertBool s (Text.pack "Your Grizzly Bears 2/2 is blocked by Player 2's Llanowar Elves 1/1." `Text.isInfixOf` said S.alice blocking) "the first pairing"
+    Spec.assertBool s (Text.pack "Your Prodigal Sorcerer 1/1 is blocked by Player 2's Grizzly Bears 2/2." `Text.isInfixOf` said S.alice blocking) "the second pairing"
+    Spec.assertBool s (Text.pack "Your Wall of Fortune 0/4 is unblocked." `Text.isInfixOf` said S.alice blocking) "an unblocked attacker"
+    Spec.assertBool s (Text.pack "Player 1's Grizzly Bears 2/2 is blocked by your Llanowar Elves 1/1." `Text.isInfixOf` said S.bob blocking) "the defender sees it too"
+    Spec.assertBool s (Text.pack "Blocks are declared." `Text.isInfixOf` said S.bob blocking) "the stop says why it stops"
+    Spec.assertBool s (Text.pack "is blocked by" `Text.isInfixOf` said S.alice (Phase.Combat CombatStep.CombatDamage)) "until combat ends"
+    Spec.assertBool s (not (Text.pack "is unblocked" `Text.isInfixOf` said S.alice (Phase.Combat CombatStep.DeclareAttackers))) "but not before blocks are declared"
+
+  Spec.it s "a turn begun since the seat last decided is said above the prompt" $ do
+    let request = requestFor (Setup.emptyGame S.bothPlayers) (Prompt.ChooseAction (Decider.MkDecider S.alice) S.alice [Action.Pass])
+        turns = Seq.fromList [Log.MkTurn 1 S.bob, Log.MkTurn 2 S.alice, Log.MkTurn 3 S.bob]
+        said fresh' = Html.content (Question.Web.view request Question.Web.blank {Question.Web.logged = turns, Question.Web.fresh = fresh'})
+    Spec.assertBool s (Text.pack "Turn 3 began. It's Player 2's turn." `Text.isInfixOf` said 2) "the newest turn begun"
+    Spec.assertBool s (not (Text.pack "Turn 2 began." `Text.isInfixOf` said 2)) "only the newest"
+    Spec.assertBool s (not (Text.pack "began." `Text.isInfixOf` said 0)) "none since"
+    Spec.assertBool s (not (Text.pack "began." `Text.isInfixOf` said 3)) "nor before the seat ever decided"
 
   Spec.it s "CR 103.1 full control asks who of three seats takes the first turn, each seat a button" $ do
     let asked = bare (Text.pack "ChooseStarter") starters
@@ -788,6 +845,15 @@ spec s registry = Spec.describe s "WebQuestion" $ do
     Spec.assertEqWith s "and is the only way to" (clicked "Stop paying" withdrawing) Nothing
     Spec.assertEqWith s "elsewhere it is Stop paying" (clicked "Stop paying" nested) (Just (Question.Web.MkAnswer R.Null))
     Spec.assertEqWith s "with no Cancel" (clicked "Cancel" nested) Nothing
+
+  Spec.it s "a payment with one source offers no Pay automatically, which would be the same tap" $ do
+    mountain <- S.printingOf s registry "Mountain"
+    let (one, g1) = S.addPermanent mountain S.alice (Setup.emptyGame S.bothPlayers)
+        (two, gs) = S.addPermanent mountain S.alice g1
+        paying sources = Question.Web.view (requestFor gs (Prompt.ChooseManaSource (Decider.MkDecider S.alice) S.alice (ManaCost.MkManaCost [ManaSymbol.OfType (ManaType.Colored Color.Red)]) sources Nothing)) Question.Web.blank
+        offersAuto = Maybe.isJust . Html.labelled (Text.pack "button") (Text.pack "Pay automatically")
+    Spec.assertBool s (not (offersAuto (paying (one NonEmpty.:| [])))) "one source"
+    Spec.assertBool s (offersAuto (paying (one NonEmpty.:| [two]))) "two sources"
 
   Spec.it s "a bottom pick toggles cards and answers with exactly the count picked" $ do
     let request = asking (Text.pack "Bottom") (R.Object [(Text.pack "from", R.Array [R.Text (Text.pack "$1"), R.Text (Text.pack "$2")]), (Text.pack "count", R.Number 1)])
