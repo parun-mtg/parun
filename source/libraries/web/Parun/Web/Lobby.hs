@@ -670,7 +670,7 @@ inviteView i invite extra =
                Nothing -> [Element.el "p" ["invite-step"] [] [Element.string "Making the link\x2026"]]
                Just url ->
                  [ Element.el "label" [] [Element.attr "for" (field "invite-link")] [Element.string "1. Send them this link"],
-                   Element.el "input" ["invite-link"] [Element.attr "id" (field "invite-link"), Element.attr "type" (Text.pack "text"), Element.attr "readonly" Text.empty, Element.attr "value" url] [],
+                   Element.copyable ("invite-link-" <> show i) url,
                    Element.el "label" [] [Element.attr "for" (field "invite-reply")] [Element.string "2. Paste the code they send back"],
                    Element.el "input" ["invite-reply"] [Element.attr "id" (field "invite-reply"), Element.attr "type" (Text.pack "text"), Element.attr "autocomplete" (Text.pack "off"), Element.attr "spellcheck" (Text.pack "false"), Element.on "input" (MkReplyCode i)] [],
                    Element.el "button" ["connect"] ([Element.attr "type" (Text.pack "button"), Element.on "click" (MkConnect i)] <> [Element.attr "disabled" Text.empty | Text.null (Text.strip (replyCode invite))]) [Element.string "Connect"]

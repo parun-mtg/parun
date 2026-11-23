@@ -339,6 +339,11 @@ spec s = Spec.describe s "Parun.Web.Lobby" $ do
       Spec.assertBool s (Text.isInfixOf (Text.pack "4 Exported Card") (Html.toText (Lobby.view exported))) "its own"
       Spec.assertBool s (not (Text.isInfixOf (Text.pack "4 Exported Card") (Html.toText (Lobby.view elsewhere)))) "not the bot's"
 
+    Spec.it s "gives an invited seat's link a Copy button naming its box" $ do
+      let offered = Lobby.linked 0 (\invite -> invite {Lobby.link = Just (Text.pack "https://parun.example/#xyz")}) (Lobby.update (Lobby.MkOccupy Lobby.MkInvited 0) Text.empty flaggedMine)
+          shown = Html.toText (Lobby.view offered)
+      Spec.assertBool s (all ((`Text.isInfixOf` shown) . Text.pack) ["id=\"invite-link-0\"", "data-copy=\"invite-link-0\""]) "the box and its button"
+
     Spec.it s "keeps Ready off, with players invited, while your deck breaks its format" $ do
       let invited = Lobby.linked 0 (\invite -> invite {Lobby.connected = True}) (Lobby.update (Lobby.MkOccupy Lobby.MkInvited 0) Text.empty flaggedMine)
           fixed = Lobby.browsed (\b' -> b' {DeckBrowser.illegal = Map.empty}) invited
