@@ -4853,7 +4853,8 @@ main.scenarios h2 {
 /* ---------- Deck builder (Parun.Web.Builder) ---------- */
 
 /* Laid out as the Decks screen is: a heading row, the deck's settings,
-   then the cards beside the deck from 900px and above it narrower. */
+   then the cards beside the deck from 900px, and narrower one or the other
+   under a summary of the deck. */
 main.builder {
   max-width: 1400px;
   margin: 0 auto;
@@ -4920,7 +4921,7 @@ main.builder {
   font-size: 13px;
 }
 
-/* Cards and deck side by side where there is room, stacked otherwise. */
+/* Cards and deck side by side where there is room. */
 .builder-body {
   display: grid;
   grid-template-columns: minmax(0, 1fr);
@@ -5064,7 +5065,8 @@ main.builder .filters,
 }
 
 #app .filters button.toggle.on,
-#app .targets button.toggle.on {
+#app .targets button.toggle.on,
+#app .search-row button.filters-toggle.on {
   background: var(--act-soft);
   border-color: var(--act-line);
   box-shadow: inset 0 0 0 1px var(--act-line);
