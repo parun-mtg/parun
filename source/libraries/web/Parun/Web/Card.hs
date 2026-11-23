@@ -8,6 +8,7 @@ import qualified Control.Applicative as Applicative
 import qualified Control.Monad as Monad
 import qualified Data.Char as Char
 import qualified Data.Containers.ListUtils as ListUtils
+import qualified Data.Either as Either
 import qualified Data.Foldable as Foldable
 import qualified Data.List as List
 import qualified Data.List.NonEmpty as NonEmpty
@@ -22,7 +23,9 @@ import qualified Parun.Oracle as Oracle
 import qualified Parun.Oracle.Cost as Oracle.Cost
 import qualified Parun.Oracle.Face as Oracle.Face
 import qualified Parun.Oracle.Keyword as Oracle.Keyword
+import qualified Parun.Oracle.Normalise as Normalise
 import qualified Parun.Play.Wording as Wording
+import qualified Parun.Types.AbilityView as AbilityView
 import qualified Parun.Types.ActivatedAbility as ActivatedAbility
 import qualified Parun.Types.Card as Card
 import qualified Parun.Types.CardName as CardName
@@ -474,9 +477,10 @@ data Reading = MkReading
   deriving (Eq, Show)
 
 -- | The sheet a tapped tile opens: the object large, its full type line,
--- status and Oracle text, and these buttons, the seat's options for it.
-sheet :: PlayerView.PlayerView -> ObjectView.ObjectView -> Reading -> [Html.Html msg] -> msg -> Html.Html msg
-sheet view o reading actions close =
+-- status and Oracle text, and these buttons, the seat's options for it; an
+-- ability's text as `texts` words it (quoted).
+sheet :: Map.Map ObjectId.ObjectId [Text.Text] -> PlayerView.PlayerView -> ObjectView.ObjectView -> Reading -> [Html.Html msg] -> msg -> Html.Html msg
+sheet texts view o reading actions close =
   Element.el
     "div"
     ["sheet-backdrop", if pinned reading then "" else "peek"]
@@ -491,7 +495,7 @@ sheet view o reading actions close =
                      <> foldMap (pure . Mana.cost) (ObjectView.characteristics o >>= ProjectedCharacteristics.manaCost),
                  Element.el "p" ["type-line"] [] [Element.text (fullType o)]
                ]
-               <> [Element.el "p" ["status"] [] (Mana.rich line) | line <- status view o]
+               <> [Element.el "p" ["status"] [] (Mana.rich line) | line <- status texts view o]
                <> [Element.el "div" ["oracle"] [] [Element.el "p" [] [] (Mana.rich line) | line <- text reading, not (Text.null line)] | not (null (text reading))]
                <> [Element.el "div" ["stats-row"] [] (badges o <> stats o) | not (null (badges o <> stats o))]
                <> [Element.el "div" ["sheet-actions"] [] actions | pinned reading, not (null actions)]
@@ -512,8 +516,8 @@ fullType o = case (ObjectView.ability o, ObjectView.characteristics o) of
 
 -- | What the tile cannot fit: tapped, what it is attached to, what an
 -- ability says and what it targets, and the card behind a face-down one.
-status :: PlayerView.PlayerView -> ObjectView.ObjectView -> [Text.Text]
-status view o =
+status :: Map.Map ObjectId.ObjectId [Text.Text] -> PlayerView.PlayerView -> ObjectView.ObjectView -> [Text.Text]
+status texts view o =
   [Text.pack "Tapped" | ObjectView.tapped o == TapState.Tapped]
     <> [Text.pack "Attacking" | Map.member (ObjectView.object o) (PlayerView.attackers view)]
     <> [Text.pack "Blocking" | any (Set.member (ObjectView.object o)) (PlayerView.blockers view)]
@@ -521,7 +525,7 @@ status view o =
     <> [Text.pack tip | (_, tip) <- marked o]
     <> [Text.pack "Keyword abilities: " <> Text.intercalate (Text.pack ", ") (keywords o) | not (null (keywords o))]
     <> [Text.pack "Attached to " <> Wording.recipientName view r | r <- Maybe.maybeToList (ObjectView.attachedTo o)]
-    <> quoted view o
+    <> quoted texts view o
     <> targeting view o
     <> faceDown o
 
@@ -531,21 +535,39 @@ status view o =
 -- spell.
 stackDetail :: Map.Map ObjectId.ObjectId [Text.Text] -> PlayerView.PlayerView -> ObjectView.ObjectView -> [Text.Text]
 stackDetail texts view o =
-  ( case ObjectView.ability o of
-      Just _ -> quoted view o
-      Nothing -> Map.findWithDefault (foldMap abilityLines (ObjectView.characteristics o)) (ObjectView.object o) texts
+  ( case (ObjectView.ability o, Map.lookup (ObjectView.object o) texts) of
+      (Just _, _) -> quoted texts view o
+      (Nothing, Just t) | not (null t) -> t
+      _ -> foldMap abilityLines (ObjectView.characteristics o)
   )
     <> targeting view o
     <> faceDown o
 
--- | The Oracle text (oracle) of each spell on the stack that the card data
--- can say, by its object, for its stack entry (stackDetail).
+-- | The Oracle text (oracle) of each object the seat sees, by its object,
+-- for a spell's stack entry (stackDetail) and for wording an ability as its
+-- source's sheet does (asShown); empty where the card data can't say. Each
+-- is worked out only when read.
 written :: (CardName.CardName -> Either e (Maybe Card.Card)) -> PlayerView.PlayerView -> Map.Map ObjectId.ObjectId [Text.Text]
-written lookUp view = Map.fromList [(ObjectView.object o, t) | o <- PlayerView.stack view, Maybe.isNothing (ObjectView.ability o), Right t <- [oracle lookUp o], not (null t)]
+written lookUp view = fmap (Either.fromRight [] . oracle lookUp) (Wording.objects view)
 
--- | An ability's text, quoted.
-quoted :: PlayerView.PlayerView -> ObjectView.ObjectView -> [Text.Text]
-quoted view o = [Text.pack "\"" <> t <> Text.pack "\"" | t <- Maybe.maybeToList (ObjectView.ability o >>= Wording.abilityText view)]
+-- | An ability of the object `source`, worded as the renderer words it, as
+-- that object's text in `texts` (written) words it instead where a line of it
+-- reads as the same ability (Normalise.normalise): a button or a stack entry
+-- then says "This creature" where its card does.
+asShown :: Map.Map ObjectId.ObjectId [Text.Text] -> PlayerView.PlayerView -> ObjectId.ObjectId -> Text.Text -> Text.Text
+asShown texts view source rendered = Maybe.fromMaybe rendered $ do
+  o <- Map.lookup source (Wording.objects view)
+  lines' <- Map.lookup source texts
+  let alike name line = Normalise.normalise name line == Normalise.normalise name rendered
+  List.find (\line -> any (`alike` line) (Wording.cardNames o)) lines'
+
+-- | An ability's text, quoted, as its source's text words it (asShown).
+quoted :: Map.Map ObjectId.ObjectId [Text.Text] -> PlayerView.PlayerView -> ObjectView.ObjectView -> [Text.Text]
+quoted texts view o =
+  [ Text.pack "\"" <> maybe t (\source -> asShown texts view source t) (AbilityView.source a) <> Text.pack "\""
+  | a <- Maybe.maybeToList (ObjectView.ability o),
+    t <- Maybe.maybeToList (Wording.abilityText view a)
+  ]
 
 targeting :: PlayerView.PlayerView -> ObjectView.ObjectView -> [Text.Text]
 targeting view o = [Text.pack "Targeting " <> Wording.listing (fmap (Wording.recipientName view) (ObjectView.targets o)) | not (null (ObjectView.targets o))]
