@@ -250,6 +250,14 @@ spec s registry = Spec.describe s "Play" $ do
          in Spec.assertEq s (Wording.departures Nothing gs) [Wording.player loser <> Text.pack " lost the game: drew from an empty library."]
       outcome -> Spec.assertBool s False ("won: " <> show (fmap fst outcome))
 
+  Spec.it s "CR 104.4a a game of one seat runs until that player leaves, a draw" $ do
+    alone <- NonEmpty.fromList . NonEmpty.take 1 <$> BotSpec.sevens s registry
+    let bots :: Map.Map PlayerId.PlayerId (Answerer.Answerer (Asked.Asked GameState.GameState) (Game.Play Identity.Identity))
+        bots = Map.singleton S.alice (Game.bot (S.fixtureRegistry []))
+    case Identity.runIdentity (Game.run (S.fixtureRegistry []) Nothing Limits.standard [] bots (S.seeded 1) Map.empty alone) of
+      Right (Result.Drawn, gs) -> Spec.assertEq s (Wording.departures Nothing gs) [Wording.player S.alice <> Text.pack " lost the game: drew from an empty library."]
+      outcome -> Spec.assertBool s False ("drawn: " <> show (fmap fst outcome))
+
   Spec.it s "CR 704.5 a player who lost is told by every state-based action they met" $ do
     let board = Setup.emptyGame S.bothPlayers
         dying player = player {Player.life = -2, Player.counters = Map.singleton PlayerCounterKind.Poison 10}

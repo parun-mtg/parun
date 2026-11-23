@@ -53,7 +53,7 @@ spec s registry = Spec.describe s "RemoteSeat" $ do
         two = Text.pack "sets/a/two"
         pick name = Lobby.update (Lobby.MkPick name) Text.empty
         picked = pick one (Lobby.withDecks (Seq.fromList [one, two]) Map.empty Map.empty Lobby.new)
-        invited = Lobby.update (Lobby.MkOccupy Lobby.MkInvited 0) Text.empty picked
+        invited = Lobby.update (Lobby.MkAdd Lobby.MkInvited) Text.empty picked
         connected = Lobby.linked 0 (\invite -> invite {Lobby.connected = True}) invited
         chosen = Lobby.heard 0 (Link.MkHello two (Text.pack "20 Forest\n")) connected
         hostReady = Lobby.update Lobby.MkReady Text.empty chosen
@@ -68,8 +68,8 @@ spec s registry = Spec.describe s "RemoteSeat" $ do
   Spec.it s "a game with two invited players starts only once all three are ready, and each guest is shown its own seat as its own" $ do
     let one = Text.pack "sets/a/one"
         two = Text.pack "sets/a/two"
-        added = Lobby.update Lobby.MkAddBot Text.empty (Lobby.update (Lobby.MkPick one) Text.empty (Lobby.withDecks (Seq.fromList [one, two]) Map.empty Map.empty Lobby.new))
-        invited = Lobby.update (Lobby.MkOccupy Lobby.MkInvited 1) Text.empty (Lobby.update (Lobby.MkOccupy Lobby.MkInvited 0) Text.empty added)
+        picked = Lobby.update (Lobby.MkPick one) Text.empty (Lobby.withDecks (Seq.fromList [one, two]) Map.empty Map.empty Lobby.new)
+        invited = Lobby.update (Lobby.MkAdd Lobby.MkInvited) Text.empty (Lobby.update (Lobby.MkAdd Lobby.MkInvited) Text.empty picked)
         joined i = Lobby.heard i (Link.MkHello two (Text.pack "20 Forest\n")) . Lobby.linked i (\invite -> invite {Lobby.connected = True})
         chosen = joined 1 (joined 0 invited)
         hostReady = Lobby.update Lobby.MkReady Text.empty chosen

@@ -140,8 +140,6 @@ data Next
     MkToDecks (Maybe Text.Text)
   | -- | The lobby on these decks: yours, then each bot's.
     MkToMatchup (NonEmpty.NonEmpty Text.Text)
-  | -- | The lobby, a bot's seat given to a player invited by link.
-    MkToInvite
   | -- | The builder, on this deck if any, its Back leading here.
     MkToBuilder (Maybe Text.Text) Next
   | MkToReplays
@@ -215,7 +213,6 @@ routeOf next = case next of
   MkToLobby _ -> Route.MkPlay
   MkToDecks deck -> Route.MkDecks deck
   MkToMatchup _ -> Route.MkPlay
-  MkToInvite -> Route.MkPlay
   MkToBuilder deck _ -> Route.MkBuild deck
   MkToReplays -> Route.MkReplays
   MkToReplay source at -> Route.MkReplay Route.MkWatching source at
@@ -237,7 +234,6 @@ follow shell next =
     MkToDecks deck -> decksScreen shell deck >>= follow shell
     -- Only an invited slot reads its deck's list (Lobby.rematch), and none is.
     MkToMatchup decks -> lobby shell (Lobby.rematch (fmap (\name -> (name, Text.empty)) decks) Set.empty Map.empty) [] >>= follow shell
-    MkToInvite -> Browser.linkHost 0 >> lobby shell (Lobby.update (Lobby.MkOccupy Lobby.MkInvited 0) Text.empty Lobby.new) [] >>= follow shell
     MkToBuilder deck back -> builder shell deck back >>= follow shell
     MkToReplays -> replays shell >>= follow shell
     MkToReplay source at -> replay shell source at >>= follow shell
@@ -248,8 +244,7 @@ follow shell next =
 -- | Where the home screen leads.
 afterHome :: Home.Outcome -> Next
 afterHome outcome = case outcome of
-  Home.MkGo (Home.MkPlayBots deck) -> MkToLobby deck
-  Home.MkGo Home.MkPlayFriend -> MkToInvite
+  Home.MkGo (Home.MkNewGame deck) -> MkToLobby deck
   Home.MkGo Home.MkBuildDeck -> MkToBuilder Nothing MkToHome
   Home.MkGo (Home.MkEditDeck name) -> MkToBuilder (Just name) MkToHome
   Home.MkGo (Home.MkBrowseDecks deck) -> MkToDecks deck
@@ -338,7 +333,7 @@ lobby shell initial said = do
                     case sequence others >>= traverse (\name -> (,) name <$> Map.lookup name files) . (mine NonEmpty.:|) of
                       Just seats -> listsOf seats >>= \lists -> play shell lists Set.empty (Lobby.locals current) Nothing
                       Nothing -> go current
-              Lobby.MkOccupy Lobby.MkInvited i -> Browser.linkHost i >> go (Lobby.update event value current)
+              Lobby.MkAdd Lobby.MkInvited | length (Lobby.theirs current) < Lobby.mostOthers -> Browser.linkHost (length (Lobby.theirs current)) >> go (Lobby.update event value current)
               Lobby.MkConnect i | Just invite <- Map.lookup i (Lobby.invites current) -> do
                 Browser.linkAccept i (Text.strip (Lobby.replyCode invite))
                 go current
@@ -1038,8 +1033,7 @@ leaveFor shell chosen board = go paused
       MkToBuilder deck back -> located next >> builder shell deck back >>= visit
       MkToPlayOn source at -> go paused {Home.confirming = Just (Home.MkPlayOn source at)}
       MkToDecks deck -> located next >> decksScreen shell deck >>= visit
-      MkToLobby deck -> go paused {Home.confirming = Just (Home.MkPlayBots deck)}
-      MkToInvite -> go paused {Home.confirming = Just Home.MkPlayFriend}
+      MkToLobby deck -> go paused {Home.confirming = Just (Home.MkNewGame deck)}
       _ -> go paused
 
 -- | The replays screen, the scenarios fetched first, until a replay is

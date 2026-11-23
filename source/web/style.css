@@ -1271,13 +1271,20 @@ main.lobby.new-game {
   font-size: 13px;
 }
 
+/* A seat to add, by who fills it: its label above the choices. */
 .seat-tools {
+  display: grid;
+  gap: 6px;
+}
+
+.seat-choices {
   display: flex;
+  flex-wrap: wrap;
   gap: 8px;
 }
 
-.seat-tools button {
-  flex: 1;
+.seat-choices button {
+  flex: 1 1 auto;
 }
 
 /* How every bot plays: a label above each menu, the two side by side. */
