@@ -424,18 +424,23 @@ table request screen passing controls marks prompt =
         foldMap (\b -> [Board.turnBar [passing] (subgameChip (Request.depth request) <> controls) b]) board
           <> [Element.el "div" ["play-area"] [] (foldMap (\b -> [Board.view marks (written screen) b]) board)]
           <> foldMap (Board.hand marks) board
-          <> [side (Text.pack "Your decision") prompt (do b <- board; r <- reading screen; sheetFor request b marks r) (logView board (viewerOf request) screen)]
+          <> side (Text.pack "Your decision") prompt (reading screen) (\r -> board >>= \b -> sheetFor request b marks r) (logView board (viewerOf request) screen)
 
--- | The side column, top to bottom: the prompt, labelled; the card being
--- read, which on a phone opens over the table instead (style.css); and the
--- log.
-side :: Text.Text -> [Html.Html msg] -> Maybe (Html.Html msg) -> [Html.Html msg] -> Html.Html msg
-side label prompt card entries =
-  Element.el "aside" ["side"] [] $
-    [ Element.el "section" ["prompt"] [Element.attr "aria-label" label] prompt,
-      Element.el "section" (["inspector"] <> ["empty" | Maybe.isNothing card]) [Element.attr "aria-label" (Text.pack "Card")] [Maybe.fromMaybe (Element.el "p" ["inspector-hint"] [] [Element.string "Tap a card, or rest on it, to read it here."]) card]
-    ]
-      <> entries
+-- | The side column, top to bottom: the prompt, labelled; the card tapped,
+-- which on a phone opens over the table instead (style.css); and the log.
+-- Then, beside the column, the card previewed, which floats by the pointer
+-- (page.js's placePeek) and leaves the column as it was.
+side :: Text.Text -> [Html.Html msg] -> Maybe Card.Reading -> (Card.Reading -> Maybe (Html.Html msg)) -> [Html.Html msg] -> [Html.Html msg]
+side label prompt opened sheetOf entries =
+  let shown tapped = do r <- opened; Monad.guard (Card.pinned r == tapped); sheetOf r
+      card = shown True
+   in [ Element.el "aside" ["side"] [] $
+          [ Element.el "section" ["prompt"] [Element.attr "aria-label" label] prompt,
+            Element.el "section" (["inspector"] <> ["empty" | Maybe.isNothing card]) [Element.attr "aria-label" (Text.pack "Card")] [Maybe.fromMaybe (Element.el "p" ["inspector-hint"] [] [Element.string "Tap a card to read it here."]) card]
+          ]
+            <> entries
+      ]
+        <> Maybe.maybeToList (shown False)
 
 -- | The log: a heading saying how many entries are new and opening the
 -- whole log, under its own heading, over the table below the turn bar (L),
