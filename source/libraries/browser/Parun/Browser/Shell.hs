@@ -1060,9 +1060,9 @@ joinGame shell offer = do
 -- screen first, and one from the lobby at its Start. What the game's data
 -- channels say meanwhile is kept for it (Browser.aside).
 leaveFor :: Shell -> IORef.IORef Next -> [Text.Text] -> Maybe PlayerView.PlayerView -> IO Hotseat.Leave
-leaveFor shell chosen decks board = Browser.aside (page shell) (go paused)
+leaveFor shell chosen played board = Browser.aside (page shell) (go paused)
   where
-    paused = Home.new {Home.paused = Just (Home.pausedOn decks board)}
+    paused = Home.new {Home.paused = Just (Home.pausedOn played board)}
     go shown = do
       located MkToHome
       outcome <- home shell shown
