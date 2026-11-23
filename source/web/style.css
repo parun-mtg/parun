@@ -2052,7 +2052,7 @@ main.game {
   height: 100dvh;
   display: grid;
   grid-template-columns: minmax(0, 1fr);
-  grid-template-rows: auto minmax(0, 1fr) auto auto;
+  grid-template-rows: auto minmax(min(420px, 45dvh), 1fr) auto minmax(0, auto);
   grid-template-areas:
     "bar"
     "play"
@@ -2335,13 +2335,28 @@ main.game {
   -webkit-overflow-scrolling: touch;
 }
 
-/* The other seats at the top, yours at the foot, and the stack between
-   taking the room they leave. The table fits the screen: a board too tall
-   for it shrinks each zone and scrolls each in its own box, so every zone
-   stays in view and no seat's head covers a permanent. */
+/* The board's constraints, every one kept by any change to its height
+   (#9517, #9629, #9650):
+   1. No permanent is hidden or overlapped: a zone short of height scrolls
+      in its own box, its lines never shrinking under their tiles.
+   2. Creatures are the line nearest the middle of the table, the lands and
+      the other permanents behind them, nearest their seat.
+   3. A phone, upright or sideways, shows both battlefields, the stack and
+      the life totals, the names and phases readable.
+   4. The board gets a usable height (main.game's play row) before the
+      prompt does; the prompt and the hand take only what they show.
+   Rejected: one scrolling play area under sticky heads (a scroll moves
+   every zone, and a seat's head could cover a permanent); fixed heights
+   per zone (two lines of tiles overflow them); the stack lane taking the
+   seats' room (it is capped and scrolls instead).
+
+   The other seats at the top, yours at the foot, and the stack between,
+   as tall as its items up to a cap. The table fits the screen: a board
+   too tall for it shrinks the seats, each scrolling in its own box. */
 .table {
   display: flex;
   flex-direction: column;
+  justify-content: space-between;
   height: 100%;
 }
 
@@ -2378,7 +2393,8 @@ main.game {
 
 /* The other seats, in turn order from yours: side by side where they fit,
    each battlefield capped so yours stays on screen, all of them scrolling
-   together under their heads. */
+   together under their heads. A lone seat's box opens at its foot, its
+   creatures (nearest the middle) in view before its lands. */
 .opponents {
   flex: 0 1 auto;
   min-height: 0;
@@ -2388,6 +2404,11 @@ main.game {
   overscroll-behavior: contain;
   scrollbar-width: thin;
   border-bottom: 1px solid var(--line);
+}
+
+.opponents:not(.several) {
+  display: flex;
+  flex-direction: column-reverse;
 }
 
 .opponents.several .seat .battlefield {
@@ -2612,13 +2633,15 @@ details.pile[open] {
   border-bottom: 1px dashed var(--line);
 }
 
+/* Never shorter than its tiles (no min-height of 0): a battlefield short
+   of height scrolls its lines in its box rather than drawing one over
+   another. */
 .row {
   display: flex;
   flex: 0 1 auto;
   flex-wrap: wrap;
   gap: var(--gap);
   max-width: 100%;
-  min-height: 0;
   /* Room for a tapped tile's turned corners. */
   padding-block: 8px;
 }
@@ -2716,12 +2739,14 @@ details.pile[open] {
   display: none;
 }
 
-/* The stack: a lane between the seats, a quiet rule while it is empty. */
+/* The stack: a lane between the seats, a quiet rule while it is empty;
+   as tall as its items up to 30% of the table, then scrolling. */
 .stack-lane {
-  flex: 1 1 auto;
+  flex: 1 0 auto;
   display: flex;
   flex-direction: column;
   min-height: 44px;
+  max-height: 30%;
   padding: 8px 12px;
   overflow-y: auto;
   scrollbar-width: thin;
@@ -2869,12 +2894,12 @@ details.pile[open] {
   translate: 0 -20px;
 }
 
-/* On a phone the seats and their chips tighten, a seat's chips one line
-   beside its life that scrolls sideways, so its head stays short enough to
-   keep in view; and the hand's tiles narrow as far as fits a hand of five
-   or so before they overlap, all one height, each name wrapping onto a
-   second line and its cost below it. */
-@media (max-width: 599px) {
+/* On a phone, upright or sideways, the seats and their chips tighten, a
+   seat's chips one line beside its life that scrolls sideways, so its head
+   stays short enough to keep in view; and the hand's tiles narrow as far as
+   fits a hand of five or so before they overlap, all one height, each name
+   wrapping onto a second line and its cost below it. */
+@media (max-width: 599px), (max-width: 899px) and (max-height: 520px) {
   .seat-head .counts {
     flex: 1 1 0;
     flex-wrap: nowrap;
@@ -2885,6 +2910,17 @@ details.pile[open] {
 
   .hand-cards {
     align-items: stretch;
+  }
+
+  /* The seat's chips count the hand already; its heading stays for a
+     screen reader, unseen. */
+  .hand .zone-title {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
   }
 
   #app .hand-cards > .card {
@@ -3209,7 +3245,9 @@ details.pile[open] {
   grid-area: side;
   display: flex;
   flex-direction: column;
+  min-height: 0;
   max-height: 44dvh;
+  overflow: hidden;
   background: var(--surface);
   border-top: 1px solid var(--control);
   border-radius: 18px 18px 0 0;
@@ -3669,6 +3707,42 @@ details.log[open] + .log-recent {
     padding: 20px 24px;
     border-bottom: 0;
     border-right: 1px solid var(--control);
+  }
+}
+
+/* A phone held sideways: the prompt beside the table as from 900px, the
+   hand under it in a wider side column, so the table keeps the screen's
+   height but the turn bar's; tiles at a phone's size. The card read still
+   opens over the table. */
+@media (min-width: 600px) and (max-width: 899px) and (max-height: 520px) {
+  :root {
+    --card-w-size: 92px;
+  }
+
+  main.game {
+    --side-w: min(45vw, 400px);
+    grid-template-columns: minmax(0, 1fr) var(--side-w);
+    grid-template-rows: auto minmax(0, 1fr) auto;
+    grid-template-areas:
+      "bar bar"
+      "play side"
+      "play hand";
+  }
+
+  .side {
+    max-height: none;
+    border-top: 0;
+    border-left: 1px solid var(--line);
+    border-radius: 0;
+    box-shadow: none;
+  }
+
+  .side::before {
+    content: none;
+  }
+
+  .hand {
+    border-left: 1px solid var(--line);
   }
 }
 
