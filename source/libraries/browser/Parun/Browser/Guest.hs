@@ -45,7 +45,7 @@ play page lookUp levelRef channel rejoin seat leave = do
           case heard of
             Nothing -> do
               back <- rejoin
-              if back then loop else Ending.ending Ending.MkStopped [Text.pack "The game stopped: the connection to the host closed."] Text.empty seat . Hotseat.sighted <$> IORef.readIORef seatRef
+              if back then loop else Ending.endingOf Ending.MkStopped [Text.pack "The game stopped: the connection to the host closed."] Text.empty seat . Hotseat.sighted <$> IORef.readIORef seatRef
             Just message -> do
               answered <- Link.guest local message
               case answered of

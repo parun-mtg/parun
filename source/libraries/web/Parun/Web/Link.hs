@@ -203,7 +203,7 @@ seeing sent ask request = mapM_ sent (Request.view request) >> ask request
 -- | The ending of seat `seat`, from what it was shown, `seen`, and its view
 -- of the end (endView), the killing blow, say.
 ending :: Ending.Verdict -> [Text.Text] -> Text.Text -> PlayerId.PlayerId -> Either a (b, GameState.GameState) -> Ending.Seen -> Ending.Ending
-ending verdict said scenario seat outcome seen = Ending.ending verdict said scenario seat (maybe id Ending.see (endView seat outcome) seen)
+ending verdict said scenario seat outcome seen = Ending.endingOf verdict said scenario seat (maybe id Ending.see (endView seat outcome) seen)
 
 -- | Tells each guest, over its channel in `guests`, of every seat the game
 -- asks but its own as the seat asked changes, `told` holding the seat each

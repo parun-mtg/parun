@@ -113,7 +113,7 @@ spec s registry = Spec.describe s "RemoteSeat" $ do
 
   Spec.it s "a guest whose connection drops mid-game rejoins, is sent the match-up, its seat and the request again, and the game finishes" $ do
     matchup <- BotSpec.bears s registry
-    (outcome, wire) <- State.runStateT (hosted [S.bob] matchup) (MkWire Map.empty Map.empty Map.empty (Map.singleton S.bob 5) 0 [] Map.empty Map.empty [] Map.empty Map.empty)
+    (outcome, wire) <- State.runStateT (hosted [S.bob] matchup) (MkWire Map.empty Map.empty Map.empty (Map.singleton S.bob 40) 0 [] Map.empty Map.empty [] Map.empty Map.empty)
     Spec.assertEqWith s "finished" (Monad.void outcome) (Right ())
     Spec.assertEqWith s "rejoined once" (rejoins wire) 1
     Spec.assertEqWith s "the guest is sent the match-up, then its seat, again" (sentAgain wire) [Link.MkMatchup played, Link.MkStart S.bob]
@@ -124,7 +124,7 @@ spec s registry = Spec.describe s "RemoteSeat" $ do
         firstTurn = fmap fst . Maybe.listToMaybe
     case Map.lookup S.bob (ended told) of
       Just (Link.MkEnded ending) -> do
-        Spec.assertBool s (firstTurn (Foldable.toList (Ending.lives own)) > Just 1) ("setup: the reloaded page saw only the game since turn " <> show (firstTurn (Foldable.toList (Ending.lives own))))
+        Spec.assertBool s (firstTurn (Foldable.toList (Ending.sampledLives own)) > Just 1) ("setup: the reloaded page saw only the game since turn " <> show (firstTurn (Foldable.toList (Ending.sampledLives own))))
         Spec.assertEqWith s "the guest's life chart starts on turn 1" (firstTurn (Ending.trail ending)) (Just 1)
         Spec.assertEqWith s "the guest's log opens on turn 1" (Seq.lookup 0 (Ending.witnessed ending)) (Just (Log.MkTurn 1 S.alice))
       other -> Spec.assertBool s False ("the guest is told no ending: " <> show other)

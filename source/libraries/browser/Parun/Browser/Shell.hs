@@ -799,7 +799,7 @@ play shell seats invited here resuming = do
   down <- IORef.newIORef (if Maybe.isJust resuming then invited else Set.empty)
   let channelOf i = tracked down i (Browser.channel (page shell) (build shell) i)
       tellAll endingFor = Monad.forM_ invited $ \i -> Link.send (channelOf i) (Link.MkEnd (endingFor (seatOf i)))
-      stopped said = tellAll (\seat -> Ending.ending Ending.MkStopped said Text.empty seat Ending.unseen) >> mapM_ Browser.linkClose invited
+      stopped said = tellAll (\seat -> Ending.endingOf Ending.MkStopped said Text.empty seat Ending.unseen) >> mapM_ Browser.linkClose invited
       keeping = not (Set.null invited)
   case built of
     Left problem -> stopped [problem] >> notice shell [problem]

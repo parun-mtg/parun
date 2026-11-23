@@ -79,7 +79,7 @@ data Seen = MkSeen
     -- | The entries each seat has read so far, oldest first.
     logged :: Map.Map PlayerId.PlayerId (Seq.Seq Log.Entry),
     -- | Each seat's life whenever it or the turn changed (sampled).
-    lives :: Seq.Seq (Natural, [(PlayerId.PlayerId, Integer)])
+    sampledLives :: Seq.Seq (Natural, [(PlayerId.PlayerId, Integer)])
   }
   deriving (Eq, Show)
 
@@ -90,18 +90,18 @@ unseen = MkSeen Map.empty Map.empty Seq.empty
 -- | What was seen, with the entries of the view its seat has not read yet
 -- logged for that seat, and each seat's life sampled.
 see :: PlayerView.PlayerView -> Seen -> Seen
-see view seen =
-  let (moved, unread) = Log.unseen (marks seen) view
-      now = [(SeatView.player seat, SeatView.life seat) | seat <- PlayerView.seats view]
-   in MkSeen moved (Map.insertWith (flip (<>)) (PlayerView.viewer view) (Seq.fromList unread) (logged seen)) (sampled (PlayerView.turn view) now (lives seen))
+see shown seen =
+  let (moved, unread) = Log.unseen (marks seen) shown
+      now = [(SeatView.player seat, SeatView.life seat) | seat <- PlayerView.seats shown]
+   in MkSeen moved (Map.insertWith (flip (<>)) (PlayerView.viewer shown) (Seq.fromList unread) (logged seen)) (sampled (PlayerView.turn shown) now (sampledLives seen))
 
 -- | The entries a seat has read so far, oldest first.
 loggedFor :: PlayerId.PlayerId -> Seen -> Seq.Seq Log.Entry
 loggedFor seat seen = Map.findWithDefault Seq.empty seat (logged seen)
 
 -- | The ending seat `seat` is shown, from what it saw.
-ending :: Verdict -> [Text.Text] -> Text.Text -> PlayerId.PlayerId -> Seen -> Ending
-ending verdict' said' scenario' seat seen = MkEnding verdict' said' scenario' (loggedFor seat seen) seat (Foldable.toList (lives seen))
+endingOf :: Verdict -> [Text.Text] -> Text.Text -> PlayerId.PlayerId -> Seen -> Ending
+endingOf verdict' said' scenario' seat seen = MkEnding verdict' said' scenario' (loggedFor seat seen) seat (Foldable.toList (sampledLives seen))
 
 view :: Ending -> Html.Html Event
 view ending =
