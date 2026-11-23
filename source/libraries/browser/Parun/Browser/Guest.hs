@@ -7,6 +7,7 @@ module Parun.Browser.Guest where
 import qualified Control.Exception as Exception
 import qualified Data.Foldable as Foldable
 import qualified Data.IORef as IORef
+import qualified Data.Maybe as Maybe
 import qualified Data.Text as Text
 import qualified Parun.Browser as Browser
 import qualified Parun.Browser.Hotseat as Hotseat
@@ -15,6 +16,8 @@ import qualified Parun.Types.Card as Card
 import qualified Parun.Types.CardName as CardName
 import qualified Parun.Types.PlayerId as PlayerId
 import qualified Parun.Types.PlayerView as PlayerView
+import qualified Parun.Types.Request as Request
+import qualified Parun.Types.SeatView as SeatView
 import qualified Parun.Web.Ending as Ending
 import qualified Parun.Web.Link as Link
 import qualified Parun.Web.Question as Web.Question
@@ -31,8 +34,11 @@ play page lookUp levelRef channel rejoin seat leave = do
   seatRef <- IORef.newIORef . Hotseat.newSeat seat =<< IORef.readIORef levelRef
   Hotseat.keepingLevel levelRef seatRef . Exception.handle (\Hotseat.MkAbandonedGame -> pure Ending.MkAbandoned) $ do
     let local = Hotseat.exchange lookUp page seatRef leave
+        -- While the host's game goes on, the page stays live, waiting on
+        -- every other seat: the host does not say whose decision it is.
+        others state = [SeatView.player s | request <- Maybe.maybeToList (Hotseat.lastAsked state), shown <- Maybe.maybeToList (Request.view request), s <- PlayerView.seats shown, SeatView.player s /= seat]
         loop = do
-          heard <- Link.receive channel
+          heard <- Hotseat.awaiting lookUp page seatRef others (Link.receive channel)
           case heard of
             Nothing -> do
               back <- rejoin
