@@ -263,6 +263,13 @@ releaseCodec = Fields.object $ do
 setTitle :: DeckBrowser -> Text.Text -> Text.Text
 setTitle browser code = maybe code setName (Map.lookup code (releases browser))
 
+-- | A shipped format's name, by its file's: "commanderdraft" as "Commander
+-- Draft", and a one-word name 'titled'.
+formatTitle :: Text.Text -> Text.Text
+formatTitle key = Map.findWithDefault (titled key) key spelled
+  where
+    spelled = Map.fromList [(Text.pack k, Text.pack v) | (k, v) <- [("commanderdraft", "Commander Draft"), ("oldschool", "Old School"), ("penny", "Penny Dreadful")]]
+
 -- | "entangling-webs" as "Entangling Webs".
 titled :: Text.Text -> Text.Text
 titled = Text.unwords . fmap capital . Text.split (\c -> c == '-' || c == '_')
@@ -475,7 +482,7 @@ filtersView wrap extra browser =
           Element.el "input" ["search"] [Element.attr "id" (Text.pack "deck-search"), Element.attr "type" (Text.pack "search"), Element.attr "placeholder" (Text.pack "Filter decks"), Element.attr "autocomplete" (Text.pack "off"), Element.on "input" MkSearch] [],
           Element.el "div" ["colour-toggles"] [Element.attr "role" (Text.pack "group"), Element.attr "aria-label" (Text.pack "Colours")] (fmap toggle [minBound .. maxBound])
         ]
-          <> menu "deck-format" "Format" MkFormat (formatFilter browser) ((Text.empty, Text.pack "Any format") : [(f, titled f) | f <- formatsOf browser])
+          <> menu "deck-format" "Format" MkFormat (formatFilter browser) ((Text.empty, Text.pack "Any format") : [(f, formatTitle f) | f <- formatsOf browser])
           <> menu "deck-order" "Order" MkOrder (Just (orderKey (order browser))) [(orderKey o, Text.pack (orderTitle o)) | o <- [minBound .. maxBound]]
           <> (if shelf browser == MkPrecons then menu "deck-set" "Set" MkSet (setFilter browser) ((Text.empty, Text.pack "Any set") : [(code, setTitle browser code) | code <- setsOf browser]) else [])
       )
@@ -516,7 +523,7 @@ resultsView pick picked none offered browser =
 tile :: (Text.Text -> msg) -> Bool -> DeckBrowser -> Text.Text -> Html.Html msg
 tile pick picked browser name =
   let own = snd (describe (titles browser) name)
-      format = [Element.el "span" ["deck-format"] [] [Element.text (titled f)] | f <- Maybe.maybeToList (Map.lookup name (formats browser))] <> [Element.el "span" ["not-legal"] [] [Element.string "Not legal"] | Map.member name (illegal browser)]
+      format = [Element.el "span" ["deck-format"] [] [Element.text (formatTitle f)] | f <- Maybe.maybeToList (Map.lookup name (formats browser))] <> [Element.el "span" ["not-legal"] [] [Element.string "Not legal"] | Map.member name (illegal browser)]
    in Element.el
         "button"
         (["deck"] <> ["picked" | picked])
@@ -533,7 +540,7 @@ tile pick picked browser name =
 detailBody :: DeckBrowser -> Text.Text -> [Html.Html msg]
 detailBody browser name =
   [ Element.el "div" ["detail-name"] [] [pips colours, Element.el "h2" [] [] [Element.text (snd (describe (titles browser) name))]],
-    Element.el "p" ["muted"] [] [Element.string (List.intercalate " \x00b7 " ([counted browser name] <> [colourWords colours | Map.member name (palette browser)] <> [Text.unpack (titled f) | f <- Maybe.maybeToList (Map.lookup name (formats browser))]))]
+    Element.el "p" ["muted"] [] [Element.string (List.intercalate " \x00b7 " ([counted browser name] <> [colourWords colours | Map.member name (palette browser)] <> [Text.unpack (formatTitle f) | f <- Maybe.maybeToList (Map.lookup name (formats browser))]))]
   ]
     <> case Map.lookup name (previews browser) of
       Nothing -> [Element.el "p" ["empty"] [] [Element.string "Reading the list\x2026"]]

@@ -630,7 +630,7 @@ builder shell deck back = do
     -- leads.
     go shown lastChecked leaving = do
       now <- IORef.readIORef (loaded shell)
-      named <- if null (Builder.formats shown) then Legality.shippedFormats else pure (Builder.formats shown)
+      named <- if null (Builder.formats shown) then Legality.builtFormats else pure (Builder.formats shown)
       least <- maybe (Legality.minimumFor (Builder.format shown)) (pure . Just) (Builder.least shown)
       let indexed = if Maybe.isNothing (Builder.index shown) then maybe id Builder.withIndex (cardIndex now) shown else shown
           filled = indexed {Builder.formats = named, Builder.least = least, Builder.sets = Map.keys (setLists now), Builder.loadProblem = Loading.problem (loading now)}

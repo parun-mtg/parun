@@ -59,6 +59,11 @@ spec s = Spec.describe s "Parun.Web.Builder" $ do
       let shown = Html.toText (Builder.view fresh)
       Spec.assertBool s (Text.isInfixOf (Text.pack "<option value=\"\" selected=\"\">Casual (no format)</option>") shown) "casual chosen"
 
+    Spec.it s "offers each format by its name, and the format chosen though no other is built for it" $ do
+      let opened = Builder.open Nothing Text.empty (Text.pack "Format: commanderdraft\n1 Island\n") (Builder.new [Text.pack "commander", Text.pack "oldschool"])
+          shown = Html.toText (Builder.view opened)
+      Spec.assertEq s (fmap (`Text.isInfixOf` shown) [Text.pack "<option value=\"oldschool\">Old School</option>", Text.pack "<option value=\"commanderdraft\" selected=\"\">Commander Draft</option>"]) [True, True]
+
     Spec.it s "writes the format header, then the main deck by name" $ do
       let built = (tap (Builder.MkAdd DeckList.Main bolt) . tap (Builder.MkAdd DeckList.Main mountain) . tap (Builder.MkAdd DeckList.Main bolt)) constructed
       Spec.assertEq s (Builder.listText built) (Text.pack "Format: constructed\n2 Lightning Bolt\n1 Mountain\n")

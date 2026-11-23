@@ -166,6 +166,11 @@ spec s registry reference = Spec.describe s "Parun.Legality" $ do
     named <- Legality.shippedFormats
     Spec.assertEqWith s "constructed and limited among them, sorted" (all (`elem` named) [Text.pack "constructed", Text.pack "limited"], named == List.sort named) (True, True)
 
+  Spec.it s "CR 100.2a / 100.2b: builtFormats lists the shipped formats but the drafted ones, in order" $ do
+    named <- Legality.builtFormats
+    shipped <- Legality.shippedFormats
+    Spec.assertEqWith s "the formats" named (filter (`notElem` [Text.pack "commanderdraft", Text.pack "limited"]) shipped)
+
   Spec.it s "CR 100.2a / 903.5a: minimumFor gives each format's minimum and whether a commander counts toward it, and nothing for no format" $ do
     sizes <- traverse (Legality.minimumFor . Text.pack) ["constructed", "commander", "nonsense"]
     Spec.assertEqWith s "the minimums" sizes [Just (60, False), Just (100, True), Nothing]
