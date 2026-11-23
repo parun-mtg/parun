@@ -208,6 +208,9 @@ nextOf :: Route.Route -> Next
 nextOf route = case route of
   Route.MkHome -> MkToHome
   Route.MkPlay -> MkToLobby Nothing
+  -- The offer is the fragment, so a query naming the join screen without
+  -- one has nothing to join.
+  Route.MkJoin -> MkToHome
   Route.MkDecks deck -> MkToDecks deck
   Route.MkBuild deck -> MkToBuilder deck MkToHome
   Route.MkReplays -> MkToReplays
@@ -216,7 +219,8 @@ nextOf route = case route of
 
 -- | The route naming where a screen leads: a game's, the screen it is
 -- reloaded into (the lobby, else the home screen, which picks up a game
--- with guests the page kept).
+-- with guests the page kept); the join screen's, its own, so page.js keeps
+-- the host's offer in the fragment until the guest leaves it.
 routeOf :: Next -> Route.Route
 routeOf next = case next of
   MkToHome -> Route.MkHome
@@ -227,7 +231,7 @@ routeOf next = case next of
   MkToReplays -> Route.MkReplays
   MkToReplay source at -> Route.MkReplay Route.MkWatching source at
   MkToPlayOn source at -> Route.MkReplay Route.MkPlayingOn source at
-  MkToJoin _ -> Route.MkHome
+  MkToJoin _ -> Route.MkJoin
   MkToRestore _ -> Route.MkHome
   MkToAbandoned _ _ -> Route.MkPlay
   MkToPaused -> Route.MkHome
@@ -1048,6 +1052,8 @@ joinGame shell offer = do
     -- Rematch tells the match-up again, the player's Rematch goes back to
     -- it, or the player goes home.
     guestGame current seat seen = do
+      -- The offer is answered, so a reload goes home rather than reply again.
+      Browser.locate Browser.MkReplace (Route.render Route.MkHome)
       Browser.display (page shell) (message ["Loading the cards\x2026"])
       built <- untilBuilt shell (loadingScreen shell) [Loading.MkCards, Loading.MkRules] (registry <$> IORef.readIORef (loaded shell))
       case built of

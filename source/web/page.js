@@ -22,9 +22,6 @@ const engine = new Worker(engineUrl, { type: "module" });
 const deckKey = "parun-deck:";
 const gameKey = "parun-game";
 engine.postMessage({ saved: Object.fromEntries(Object.keys(localStorage).filter((key) => key.startsWith(deckKey)).map((key) => [key.slice(deckKey.length), localStorage.getItem(key)])), game: offered ? "" : (localStorage.getItem(gameKey) ?? "") });
-// The host's code is read once, by the engine at its start
-// (Parun.Browser.Shell's opening); the page moves on without it.
-if (offered) history.replaceState(null, "", location.pathname + location.search);
 // Safari runs WebAssembly far slower outside a secure context (#8419), and
 // plain http from a network address is not one.
 if (!isSecureContext) document.getElementById("insecure").hidden = false;
@@ -756,12 +753,16 @@ engine.onmessage = ({ data }) => {
 // The engine names each screen it shows by a query (Parun.Web.Route), which
 // the address bar shows; back and forward load the page afresh at the query
 // they reach, since the engine opens a screen only from its start. A move
-// within the page that keeps the query (a fragment's) is left alone.
+// within the page that keeps the query (a fragment's) is left alone. The
+// join screen's query (Parun.Web.Route's MkJoin) keeps the fragment carrying
+// the host's code, so a reload there makes a fresh reply to it; every other
+// screen's drops it.
+const joining = "?join";
 let located = location.search;
 function locate({ search, push }) {
   located = search;
-  if (search === location.search) return;
-  const url = location.pathname + search;
+  const url = location.pathname + search + (search === joining ? location.hash : "");
+  if (url === location.pathname + location.search + location.hash) return;
   if (push) history.pushState(null, "", url);
   else history.replaceState(null, "", url);
 }

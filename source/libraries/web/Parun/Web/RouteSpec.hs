@@ -10,6 +10,7 @@ spec s = Spec.describe s "Parun.Web.Route" $ do
   let routes =
         [ Route.MkHome,
           Route.MkPlay,
+          Route.MkJoin,
           Route.MkDecks Nothing,
           Route.MkDecks (Just (Text.pack "saved/My deck")),
           Route.MkBuild Nothing,
@@ -30,6 +31,9 @@ spec s = Spec.describe s "Parun.Web.Route" $ do
 
     Spec.it s "names a game played on from a position by branch" $ do
       Spec.assertEq s (Route.render (Route.MkReplay Route.MkPlayingOn (Web.Replay.MkPlayed (Text.pack "17")) 2)) (Text.pack "?game=17&at=2&branch")
+
+    Spec.it s "names the join screen by join, the offer left to the fragment" $ do
+      Spec.assertEq s (Route.render Route.MkJoin) (Text.pack "?join")
 
   Spec.describe s "parse" $ do
     Spec.it s "reads back every route rendered" $ do
