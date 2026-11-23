@@ -446,7 +446,7 @@ report asked cardPool listed = do
 assess :: (Text.Text -> IO (Either Text.Text Checker)) -> Maybe Text.Text -> Maybe CardPool -> DeckList.Listed -> IO (Maybe Text.Text, [Text.Text], [Violation.Violation])
 assess lookUp asked cardPool listed = do
   let (format, disagreement) = DeckList.formatFor asked listed
-      lines' = fmap DeckList.explain (DeckList.problems listed <> disagreement)
+      lines' = fmap (DeckList.explain (const Nothing)) (DeckList.problems listed <> disagreement)
   checked <- traverse lookUp format
   pure $ case checked of
     Nothing -> (format, lines', [])

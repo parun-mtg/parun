@@ -175,7 +175,7 @@ deck format poolPath path = do
   registry <- Registry.defaultRoot >>= Registry.loadRoot >>= Registry.defaultRegistry
   listed <- readDeckList registry path
   pool <- traverse (readDeckList registry) poolPath
-  let poolProblems = [Text.pack (file <> ": ") <> DeckList.explain problem | (file, held) <- Maybe.maybeToList ((,) <$> poolPath <*> pool), problem <- DeckList.problems held]
+  let poolProblems = [Text.pack (file <> ": ") <> DeckList.explain (const Nothing) problem | (file, held) <- Maybe.maybeToList ((,) <$> poolPath <*> pool), problem <- DeckList.problems held]
   (checked, problems) <- Legality.report format (fmap (Legality.poolOf . DeckList.deck) pool) listed
   case poolProblems <> fmap (Text.pack (path <> ": ") <>) problems of
     [] -> TextIO.putStr (DeckList.render (Registry.printings registry) checked (DeckList.deck listed))

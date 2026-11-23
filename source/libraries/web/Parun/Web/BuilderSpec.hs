@@ -333,6 +333,11 @@ spec s = Spec.describe s "Parun.Web.Builder" $ do
           shown = Builder.view chosen
       Spec.assertEq s (Html.labelled (Text.pack "button") (Text.pack "Add Lightning Bolt") shown >>= \path -> Html.handler (Text.pack "click") path shown) (Just (Builder.MkAdd DeckList.Side bolt))
 
+    Spec.it s "says which zone its counts are of: the header the deck's, a result's badge the zone chosen" $ do
+      let built = tap (Builder.MkAdd DeckList.Side bolt) (tap (Builder.MkTarget DeckList.Side) (tap (Builder.MkAdd DeckList.Main bolt) indexed))
+      Spec.assertBool s (Text.isInfixOf (Text.pack "<h2>1 card in the deck</h2>") (page built)) "header"
+      Spec.assertBool s (Text.isInfixOf (Text.pack "class=\"copies\">1 in sideboard<") (page built)) "badge"
+
     Spec.it s "a sideboard edit is a change to save" $ do
       Spec.assertEq s (Builder.dirty (tap (Builder.MkAdd DeckList.Side bolt) fresh)) True
 

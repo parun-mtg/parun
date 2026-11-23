@@ -45,7 +45,7 @@ spec s registry = do
 
     Monad.forM_ decks $ \path -> Spec.it s (drop (length root + 1) path <> " reads") $ do
       contents <- Decks.loadFile path
-      parsed <- either (pure . Left . (: []) . Text.unpack) (fmap (either (Left . (: []) . Exception.displayException) (either (Left . fmap (Text.unpack . DeckList.explain)) Right . DeckList.sound)) . DeckList.parse registry) contents
+      parsed <- either (pure . Left . (: []) . Text.unpack) (fmap (either (Left . (: []) . Exception.displayException) (either (Left . fmap (Text.unpack . DeckList.explain (const Nothing))) Right . DeckList.sound)) . DeckList.parse registry) contents
       Spec.assertEqWith s (path <> ": problems") (Either.fromLeft [] parsed) []
 
     -- The web client's lobby starts a game under the format the lists'

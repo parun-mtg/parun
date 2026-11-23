@@ -577,7 +577,7 @@ spec s registry = Spec.describe s "Sticker" $ do
     let names = ["Night Brushwagg Ringmaster", "Slimy Burrito Illusion", "Contortionist Otter Storm", "Ancestral Hot Dog Minotaur"]
         text = unlines ["10 Mountain", "", "Stickers", "1 Night Brushwagg Ringmaster", "1 Slimy Burrito Illusion", "1 contortionist-otter-storm", "1 Ancestral Hot Dog Minotaur"]
     listed <- DeckList.parse registry (Text.pack text) >>= either (S.brokenCorpus s) pure
-    deck <- either (Spec.assertFailure s . show . fmap DeckList.explain) pure (DeckList.sound listed)
+    deck <- either (Spec.assertFailure s . show . fmap (DeckList.explain (const Nothing))) pure (DeckList.sound listed)
     mountain <- S.printingOf s registry "Mountain"
     let (gs, asked) = startedWith ((S.alice, deck) NonEmpty.:| [(S.bob, Deck.fromCards (Map.singleton mountain 10))])
         brought = foldMap (fmap StickerSheet.name . Foldable.toList . Player.stickerSheets) (Map.lookup S.alice (GameState.players gs))
