@@ -651,6 +651,11 @@ function locate({ search, push }) {
 addEventListener("popstate", () => {
   if (location.search !== located) location.reload();
 });
+// A host's link pasted over the address changes only its fragment, so the
+// page loads afresh to read its code.
+addEventListener("hashchange", () => {
+  if (new URLSearchParams(location.hash.slice(1)).has("offer")) location.reload();
+});
 // The game with guests: its first line once it starts, each reply's line
 // added as it is made, and all of it forgotten once it is over. A reply
 // with no game kept to add to is dropped.
@@ -678,6 +683,12 @@ const iceServers = [{ urls: "stun:stun.l.google.com:19302" }];
 // A line goes in pieces small enough for every browser's channel, each
 // marked with whether more of the line follows.
 const piece = 16000;
+// An open channel sends an empty "~" piece every `beat` ms, and one that
+// hears nothing for `silence` ms is dropped. A browser can leave a dead
+// connection `disconnected` with its channel open, its page never told; the
+// other page's channel then falls silent, so both pages see the drop.
+const beat = 5000;
+const silence = 30000;
 function linked(seat, kind, text = "") {
   engine.postMessage({ linked: { seat, kind, text } });
 }
@@ -701,14 +712,30 @@ function gathered(connection) {
   });
 }
 // A link's channel says only while it is the seat's current one; a dropped
-// connection closes it, and only a new link, its codes swapped by hand again
-// (Parun.Web.Rejoin), reconnects.
+// or silent connection closes it, and only a new link, its codes swapped by
+// hand again (Parun.Web.Rejoin), reconnects.
 function listen(seat, link, channel) {
   const current = () => links.get(seat) === link;
   let partial = "";
+  let heard = Date.now();
+  let begun = false;
   link.channel = channel;
-  channel.onopen = () => current() && linked(seat, "open");
+  // A joining page's channel can be open as it arrives and say so again.
+  const begin = () => {
+    if (begun) return;
+    begun = true;
+    heard = Date.now();
+    const beating = setInterval(() => {
+      if (!current() || channel.readyState !== "open") clearInterval(beating);
+      else if (Date.now() - heard > silence) drop(seat, link);
+      else channel.send("~");
+    }, beat);
+    linked(seat, "open");
+  };
+  channel.onopen = () => current() && begin();
   channel.onmessage = ({ data }) => {
+    heard = Date.now();
+    if (data[0] === "~") return;
     partial += data.slice(1);
     if (data[0] === "." && current()) {
       linked(seat, "message", partial);
@@ -716,7 +743,7 @@ function listen(seat, link, channel) {
     }
   };
   channel.onclose = () => current() && drop(seat, link);
-  if (channel.readyState === "open") linked(seat, "open");
+  if (channel.readyState === "open") begin();
 }
 function drop(seat, link) {
   links.delete(seat);
