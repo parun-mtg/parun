@@ -70,9 +70,12 @@ data Who
   = -- | The player this page plays.
     MkYou
   | MkBot
-  | -- | A player invited from another browser or on this screen, or the
-    -- host who invited you.
+  | -- | A player invited from another browser, one the player also played
+    -- on this screen, or the host who invited you.
     MkPerson
+  | -- | Another player on this screen, handed it before each question
+    -- (Link.MkHandedOver).
+    MkHere
   deriving (Bounded, Enum, Eq, Show)
 
 -- | The game's key: when it ended.
@@ -165,13 +168,18 @@ viewerLabel game = do
   fmap Label.unwrap (Map.lookup (Command.idOf (Int.toNaturalSaturating at + 1)) (Command.labels (Natural.length (seats game))))
 
 -- | What the replay calls each seat, by the label the game's scenario gives
--- it (Command.labels): what the game called it, "You" for the player's and
--- "Player 2" by seat for any other, whoever played it.
+-- it (Command.labels): what the game called it, "You" for the player's but
+-- in a shared game, and "Player 2" by seat for any other, whoever played it.
 seatNames :: Game -> Map.Map Text.Text Text.Text
 seatNames game =
   let count = Natural.length (seats game)
-      named (n, seat) = (Label.unwrap <$> Map.lookup (Command.idOf n) (Command.labels count), if who seat == MkYou then Text.pack "You" else Wording.player (Command.idOf n))
+      named (n, seat) = (Label.unwrap <$> Map.lookup (Command.idOf n) (Command.labels count), if who seat == MkYou && not (shared game) then Text.pack "You" else Wording.player (Command.idOf n))
    in Map.fromList [(label, name) | (Just label, name) <- fmap named (zip [1 :: Natural ..] (seats game))]
+
+-- | Whether another player played on this screen, so the game takes no
+-- seat's side.
+shared :: Game -> Bool
+shared = any ((== MkHere) . who) . seats
 
 -- | Who played a seat, as a word.
 whoName :: Who -> String
@@ -179,6 +187,7 @@ whoName w = case w of
   MkYou -> "You"
   MkBot -> "Bot"
   MkPerson -> "Player"
+  MkHere -> "Player"
 
 -- | How the game ended for the player, as a word, or who won a shared
 -- screen's game.
@@ -194,9 +203,14 @@ outcome game = case verdict game of
 matchup :: Game -> Text.Text
 matchup = Text.intercalate (Text.pack " vs ") . fmap deck . seats
 
--- | Who played, "You vs Bot".
+-- | Who played, "You vs Bot"; in a shared game, each person by seat,
+-- "Player 1 vs Player 2".
 players :: Game -> Text.Text
-players = Text.intercalate (Text.pack " vs ") . fmap (Text.pack . whoName . who) . seats
+players game = Text.intercalate (Text.pack " vs ") (zipWith named [1 ..] (seats game))
+  where
+    named n seat
+      | shared game && who seat /= MkBot = Wording.player (Command.idOf n)
+      | otherwise = Text.pack (whoName (who seat))
 
 -- | When the game ended on the page's clock then: "21 Nov 2026, 14:05".
 date :: Game -> String

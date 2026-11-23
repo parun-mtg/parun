@@ -396,7 +396,7 @@ lineOf names begun asked timed =
       -- The seat named "You" (History.seatNames) takes the verb as given.
       by phrase = seat <> Text.pack " " <> (if seat == Text.pack "You" then phrase else thirdPerson phrase)
       kind = fmap (Question.kind . Request.question) asked
-      asKind = by (maybe (Text.pack "decide") verbOf kind)
+      asKind = by (maybe (Text.pack "decide") Web.Question.verbOf kind)
       did = case Timed.entry timed of
         Entry.Expect _ -> Text.pack "the scenario checks the game"
         -- CR 734.1.
@@ -409,7 +409,7 @@ lineOf names begun asked timed =
           Move.Activate _ -> by (Text.pack "activate an ability")
           Move.Answer answer -> case asked of
             Nothing -> chanceOf (Answer.prompt answer)
-            Just r -> by (Maybe.fromMaybe (verbOf (Answer.prompt answer)) (actionOf r (Answer.with answer)))
+            Just r -> by (Maybe.fromMaybe (Web.Question.verbOf (Answer.prompt answer)) (actionOf r (Answer.with answer)))
           Move.Attack _ -> asKind
           Move.Block _ -> asKind
           Move.AssignDamage _ -> asKind
@@ -445,20 +445,6 @@ actionOf r reply = do
   i <- Protocol.naturalOf reply >>= Natural.toInt
   option <- Protocol.arrayOf (Question.offer q) >>= Maybe.listToMaybe . drop i
   if Web.Question.isPass option then pure (Text.pack "pass") else fmap (`Offer.actionPhrase` option) (Request.view r)
-
--- | A question's kind as what its seat does: "ChooseTargets" as
--- "choose targets".
-verbOf :: Text.Text -> Text.Text
-verbOf kind = case Text.unpack kind of
-  "ChooseAction" -> Text.pack "take an action"
-  "DeclareMulligan" -> Text.pack "decide whether to mulligan"
-  "MulliganAction" -> Text.pack "use a card before a mulligan"
-  "OpeningHandAction" -> Text.pack "use a card in the opening hand"
-  "OfferedCast" -> Text.pack "decide whether to cast"
-  "OfferedMiracleReveal" -> Text.pack "decide whether to reveal a miracle"
-  "OfferedExtra" -> Text.pack "decide whether to take an offer"
-  "Bottom" -> Text.pack "put cards on the bottom"
-  _ -> Wording.spaced kind
 
 -- | A phrase's leading verb in the third person: "cast Shock" as "casts Shock".
 thirdPerson :: Text.Text -> Text.Text

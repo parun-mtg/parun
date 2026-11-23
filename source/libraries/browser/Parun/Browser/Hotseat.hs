@@ -88,7 +88,7 @@ instance Exception.Exception Abandoned
 -- (Link.MkHandedOver).
 game :: Browser.Page Screen.Event -> Registry.Registry Identity.Identity -> [Either Text.Text Card.Card] -> IO (Either Text.Text LegalityTable.LegalityTable) -> IORef.IORef Web.Question.Level -> Map.Map Int (Difficulty.Difficulty, Persona.Persona) -> NonEmpty.NonEmpty (FilePath, Text.Text) -> Map.Map PlayerId.PlayerId (IO Ending.Seen -> Protocol.Exchange IO) -> Map.Map PlayerId.PlayerId Link.Sitting -> Key.Type.Key -> [R.Reply] -> (R.Reply -> IO ()) -> (PlayerId.PlayerId -> IO ()) -> ((PlayerId.PlayerId -> Ending.Ending) -> IO ()) -> (Maybe PlayerView.PlayerView -> IO Leave) -> IO (Either [Text.Text] Ending.Played)
 game page registry cards table levelRef bots seats remotes locals seed stored kept decides tell leave = do
-  seatRef <- IORef.newIORef . (\s -> s {yours = Set.insert player (Map.keysSet (Map.filter (== Link.MkYours) locals))}) . newSeat player Ending.unseen =<< IORef.readIORef levelRef
+  seatRef <- IORef.newIORef . (\s -> s {yours = Set.insert player (Map.keysSet (Map.filter (== Link.MkYours) locals)), handed = Link.MkHandedOver `elem` locals}) . newSeat player Ending.unseen =<< IORef.readIORef levelRef
   keepingLevel levelRef seatRef . Exception.handle (\MkAbandonedGame -> pure (Right Ending.MkAbandoned)) $ do
     let listed = fmap (uncurry (Command.loadText registry)) seats
     case sequenceA listed of
@@ -213,7 +213,7 @@ exchange lookUp page seatRef leave request = do
     asking pending picked reading focus = do
       state <- IORef.readIORef seatRef
       let asked = Question.seat (Request.question pending)
-          screen = Web.Question.MkScreen picked reading (loggedFor asked state) (freshOf asked state) focus (level state) (foldMap (Web.Card.written lookUp) (Request.view pending)) (Set.size (yours state) > 1 && Set.member asked (yours state))
+          screen = Web.Question.MkScreen picked reading (loggedFor asked state) (freshOf asked state) focus (level state) (foldMap (Web.Card.written lookUp) (Request.view pending)) (naming asked state)
       Browser.display page . fmap Screen.MkQuestion $ Web.Question.view pending screen
       (event, value) <- Browser.next page
       case event of
@@ -273,7 +273,12 @@ readingOf lookUp request object pinned = do
 -- | The screen a seat watches the board `shown` with: its log, and the
 -- level it plays at.
 watchedScreen :: (CardName.CardName -> Either InvalidCorpus.InvalidCorpus (Maybe Card.Card)) -> PlayerId.PlayerId -> Seat -> PlayerView.PlayerView -> Web.Question.Screen
-watchedScreen lookUp seat state shown = Web.Question.blank {Web.Question.logged = loggedFor seat state, Web.Question.fresh = freshOf seat state, Web.Question.level = level state, Web.Question.written = Web.Card.written lookUp shown}
+watchedScreen lookUp seat state shown = Web.Question.blank {Web.Question.logged = loggedFor seat state, Web.Question.fresh = freshOf seat state, Web.Question.level = level state, Web.Question.written = Web.Card.written lookUp shown, Web.Question.naming = naming seat state}
+
+-- | Whether the screen names the seat it shows (Web.Question.naming): the
+-- person at it plays that seat and another, or it is handed between people.
+naming :: PlayerId.PlayerId -> Seat -> Bool
+naming seat state = handed state || (Set.size (yours state) > 1 && Set.member seat (yours state))
 
 -- | Runs `decide`, waiting on another browser's seat, the page meanwhile
 -- showing the board the seat the screen faces was last asked about, the seats
@@ -323,14 +328,17 @@ lastAsked :: Seat -> Maybe Request.Request
 lastAsked state = facing state >>= (`Map.lookup` latest state)
 
 -- | What the page keeps between request lines: the seat the screen last
--- showed, the seats one person plays, the seats that chose auto for the
--- payment under way, what each seat has seen happen, and when it last
--- answered.
+-- showed, the seats one person plays, whether another plays here, the
+-- seats that chose auto for the payment under way, what each seat has seen
+-- happen, and when it last answered.
 data Seat = MkSeat
   { facing :: Maybe PlayerId.PlayerId,
     -- | The seats the person at the screen plays, never handed the screen
     -- between them (Web.Question.handsOver).
     yours :: Set.Set PlayerId.PlayerId,
+    -- | Whether another person plays at this screen, handed it before each
+    -- of their questions (Link.MkHandedOver).
+    handed :: Bool,
     paying :: Set.Set PlayerId.PlayerId,
     -- | How much the page answers for every seat it plays (Web.Question.Level).
     level :: Web.Question.Level,
@@ -350,11 +358,11 @@ data Seat = MkSeat
   }
 
 -- | The page's state before its first request line, facing the seat it
--- plays and playing only that one, at that auto-pass level, the seat having
--- read what was `seen` already: a rejoining guest's game before its page
--- reloaded (Link.MkStart).
+-- plays and playing only that one, no one else at the screen, at that
+-- auto-pass level, the seat having read what was `seen` already: a
+-- rejoining guest's game before its page reloaded (Link.MkStart).
 newSeat :: PlayerId.PlayerId -> Ending.Seen -> Web.Question.Level -> Seat
-newSeat seat seen initial = MkSeat (Just seat) (Set.singleton seat) Set.empty initial Map.empty Set.empty Nothing seen (Map.singleton seat (Seq.length (Ending.loggedFor seat seen))) Map.empty
+newSeat seat seen initial = MkSeat (Just seat) (Set.singleton seat) False Set.empty initial Map.empty Set.empty Nothing seen (Map.singleton seat (Seq.length (Ending.loggedFor seat seen))) Map.empty
 
 -- | The entries a seat has read so far, oldest first.
 loggedFor :: PlayerId.PlayerId -> Seat -> Seq.Seq Log.Entry
