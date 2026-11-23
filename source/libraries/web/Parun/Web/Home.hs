@@ -84,7 +84,7 @@ data Choice
 data Event
   = MkChoose Choice
   | MkResume
-  | -- | Concedes the paused game for the choice asked about.
+  | -- | Abandons the paused game for the choice asked about.
     MkConfirm
   | MkCancel
   deriving (Eq, Show)
@@ -93,7 +93,7 @@ data Event
 data Outcome
   = -- | Shows this home screen.
     MkStay Home
-  | -- | Leaves for this choice, conceding any paused game for a new one.
+  | -- | Leaves for this choice, abandoning any paused game for a new one.
     MkGo Choice
   | -- | Returns to the paused game.
     MkBack
@@ -116,8 +116,8 @@ pausedOn decks board = case board of
         let p = SeatView.player s
       ]
 
--- | Whether a choice starts a game at once, and so concedes a paused one;
--- the lobby asks at its Start instead (Lobby.concedes).
+-- | Whether a choice starts a game at once, and so abandons a paused one;
+-- the lobby asks at its Start instead (Lobby.abandons).
 starts :: Choice -> Bool
 starts choice = case choice of
   MkNewGame _ -> False
@@ -155,8 +155,8 @@ view home =
           [ Element.el
               "section"
               ["panel", "confirm"]
-              [Element.attr "role" (Text.pack "alertdialog"), Element.attr "aria-label" (Text.pack "Concede the game in progress?")]
-              [ Element.el "p" [] [] [Element.string "Starting a new game concedes the one in progress."],
+              [Element.attr "role" (Text.pack "alertdialog"), Element.attr "aria-label" (Text.pack "Abandon the game in progress?")]
+              [ Element.el "p" [] [] [Element.string "Starting a new game abandons the one in progress, which Replays won't keep."],
                 Element.el
                   "div"
                   ["choices"]
@@ -183,8 +183,8 @@ view home =
       <> [legal]
   where
     confirmLabel choice = case choice of
-      MkPlayOn _ _ -> "Concede and play on"
-      _ -> "Concede and play"
+      MkPlayOn _ _ -> "Abandon and play on"
+      _ -> "Abandon and play"
     tile classes choice title said =
       Element.button
         ("tile" : classes)
@@ -205,7 +205,7 @@ pausedView game =
         []
         [ Element.el "span" ["eyebrow"] [] [Element.string "Game in progress"],
           Element.el "h1" [] [] [Element.string (maybe "Waiting for you" (\n -> "Turn " <> show n) (turn game))],
-          Element.el "p" ["muted"] [] [Element.string "Starting another game concedes this one."]
+          Element.el "p" ["muted"] [] [Element.string "Starting another game abandons this one, which Replays won't keep."]
         ],
       Element.el
         "dl"
