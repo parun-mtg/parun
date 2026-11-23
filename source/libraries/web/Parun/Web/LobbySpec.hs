@@ -395,6 +395,13 @@ spec s = Spec.describe s "Parun.Web.Lobby" $ do
       Spec.assertEqWith s "only the guest awaited" (Lobby.pressable fixed, Lobby.waiting fixed) (True, Just "Player 2 is choosing a deck.")
       Spec.assertBool s (Text.isInfixOf (Text.pack "disabled=\"\">Ready") (Html.toText (Lobby.view invited))) "drawn disabled"
 
+    Spec.it s "calls Ready Start game once every player invited is ready, since it starts the game" $ do
+      let invited = Lobby.browsed (\b' -> b' {DeckBrowser.illegal = Map.empty}) (Lobby.update (Lobby.MkAdd Lobby.MkInvited) Text.empty flaggedMine)
+          guest ready' = Lobby.heard 0 (Link.MkReady ready') (Lobby.linked 0 (\invite -> invite {Lobby.connected = True, Lobby.guestDeck = Just (c, Text.pack "list c")}) invited)
+          label lobby' = [Html.content button | button <- Html.elements (Text.pack "button") (Lobby.view lobby'), propertyOf "class" button == Just (Text.pack "primary start ready")]
+      Spec.assertEqWith s "the guest not ready" (label (guest False)) [Text.pack "Ready"]
+      Spec.assertEqWith s "the guest ready" (label (guest True)) [Text.pack "Start game"]
+
     Spec.it s "names a deck's format" $ do
       Spec.assertBool s (Text.isInfixOf (Text.pack "Commander") . Html.toText $ Lobby.view lobby) "format"
 

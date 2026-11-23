@@ -1,11 +1,11 @@
 -- | The screen a link from a host opens (#9185): the guest picks their own
--- deck, sends back the reply code it makes, and once connected sees the
--- whole match-up and says when they are ready.
+-- deck in the browser the lobby shares (Parun.Web.DeckBrowser), sends back
+-- the reply code it makes, and once connected sees the whole match-up and
+-- says when they are ready.
 module Parun.Web.Join where
 
 import qualified Data.Foldable as Foldable
 import qualified Data.List as List
-import qualified Data.Map.Strict as Map
 import qualified Data.Maybe as Maybe
 import qualified Data.Sequence as Seq
 import qualified Data.Text as Text
@@ -16,14 +16,9 @@ import qualified Parun.Web.Link as Link
 import qualified Parun.Web.Lobby as Lobby
 
 data Join = MkJoin
-  { -- | Whether the deck lists are still to read.
-    reading :: Bool,
-    -- | Every deck, by its path beneath the deck root, less ".txt".
-    decks :: Seq.Seq Text.Text,
-    -- | The name each deck's header gives it (DeckBrowser.titles).
-    titles :: Map.Map Text.Text Text.Text,
-    -- | What the deck list is filtered by.
-    search :: Text.Text,
+  { -- | The decks, what is read of them, and what they are filtered by, as
+    -- the lobby's are (Parun.Web.Lobby.browser).
+    browser :: DeckBrowser.DeckBrowser,
     -- | The deck chosen.
     picked :: Maybe Text.Text,
     -- | The code to send the host, once made.
@@ -40,8 +35,8 @@ data Join = MkJoin
 data Event
   = -- | Makes this deck yours.
     MkPick Text.Text
-  | -- | Filters the decks by the text typed.
-    MkSearch
+  | -- | Something done in the deck browser.
+    MkBrowse DeckBrowser.Event
   | -- | Makes the reply code; the shell does it.
     MkMakeReply
   | -- | Toggles whether you are ready; the shell tells the host.
@@ -50,14 +45,25 @@ data Event
 
 -- | A join screen whose decks are still to read.
 new :: Join
-new = MkJoin True Seq.empty Map.empty Text.empty Nothing Nothing False [] Nothing
+new = MkJoin DeckBrowser.new Nothing Nothing False [] Nothing
 
 -- | The screen after an event, the value typed being `typed`.
 update :: Event -> Text.Text -> Join -> Join
 update event typed screen = case event of
-  MkPick name | Foldable.elem name (decks screen) -> screen {picked = Just name}
-  MkSearch -> screen {search = typed}
+  MkPick name | Foldable.elem name (DeckBrowser.decks (browser screen)) -> screen {picked = Just name}
+  MkBrowse browsing -> screen {browser = DeckBrowser.update browsing typed (browser screen)}
   _ -> screen
+
+-- | The decks a guest may play: every one to play (Lobby.playable).
+offered :: Join -> Seq.Seq Text.Text
+offered = Seq.filter Lobby.playable . DeckBrowser.decks . browser
+
+-- | Your deck as the host holds it: the one chosen here, else the one the
+-- host last said you play, as after a Rematch of a game rejoined.
+yourDeck :: Join -> Maybe Text.Text
+yourDeck screen = case picked screen of
+  Just name -> Just (snd (DeckBrowser.describe (DeckBrowser.titles (browser screen)) name))
+  Nothing -> List.find (/= Link.unchosen) [Link.deck p | p <- places screen, Link.who p == Text.pack "You"]
 
 -- | The screen a Rematch returns to, still connected: the match-up just
 -- played, nobody ready, until the host tells it afresh.
@@ -70,9 +76,7 @@ isReady screen = Maybe.fromMaybe False (List.find ((== Text.pack "You") . Link.w
 
 view :: Join -> Html.Html Event
 view screen =
-  let shown = filter (DeckBrowser.matches (titles screen) (search screen)) (filter Lobby.playable (Foldable.toList (decks screen)))
-      deck name = (name, Element.button (["deck"] <> ["picked" | picked screen == Just name]) (MkPick name) [Element.el "span" ["deck-name"] [] [Element.text (DeckBrowser.label (titles screen) name)]])
-      place p =
+  let place p =
         Element.el
           "li"
           ["place"]
@@ -86,7 +90,7 @@ view screen =
         Element.el
           "button"
           (["primary", "start", "ready"] <> ["is-ready" | isReady screen])
-          ([Element.attr "type" (Text.pack "button"), Element.attr "aria-pressed" (Text.pack (if isReady screen then "true" else "false")), Element.on "click" MkReady] <> [Element.attr "disabled" Text.empty | not (connected screen) || Maybe.isNothing (picked screen) || null (places screen)])
+          ([Element.attr "type" (Text.pack "button"), Element.attr "aria-pressed" (Text.pack (if isReady screen then "true" else "false")), Element.on "click" MkReady] <> [Element.attr "disabled" Text.empty | not (connected screen) || Maybe.isNothing (yourDeck screen) || null (places screen)])
           [Element.string (if isReady screen then "Ready \x2713 \x00b7 waiting for every player" else "Ready")]
    in Element.keyed
         "main"
@@ -100,7 +104,7 @@ view screen =
                   else case reply screen of
                     Nothing ->
                       [ Element.el "p" [] [] [Element.string "Choose your deck and make the code to send back to the host. A game under way picks up where it stopped, whatever deck you choose."],
-                        Element.el "button" ["primary", "make-reply"] [Element.attr "type" (Text.pack "button"), Element.on "click" MkMakeReply] [Element.string "Make my reply code"]
+                        Element.el "button" ["primary", "make-reply"] ([Element.attr "type" (Text.pack "button"), Element.on "click" MkMakeReply] <> [Element.attr "disabled" Text.empty | Maybe.isNothing (picked screen)]) [Element.string "Make my reply code"]
                       ]
                     Just code ->
                       [ Element.el "label" [] [Element.attr "for" (Text.pack "join-reply")] [Element.string "Send this code back to the host, who pastes it in:"],
@@ -113,19 +117,19 @@ view screen =
           <> [ ( Text.pack "picker",
                  Element.el
                    "section"
-                   ["deck-picker"]
-                   []
-                   [ Element.el
-                       "div"
-                       ["deck-tools"]
-                       []
-                       [ Element.el "label" ["sr-only"] [Element.attr "for" (Text.pack "deck-search")] [Element.string "Filter decks"],
-                         Element.el "input" ["search"] [Element.attr "id" (Text.pack "deck-search"), Element.attr "type" (Text.pack "search"), Element.attr "placeholder" (Text.pack "Filter decks or sets"), Element.attr "autocomplete" (Text.pack "off"), Element.on "input" MkSearch] []
-                       ],
-                     Element.el "p" ["choosing-for"] [] [Element.string (maybe "Choose your deck." (\name -> "Your deck: " <> Text.unpack (DeckBrowser.label (titles screen) name) <> ".") (picked screen))],
-                     if null shown
-                       then Element.el "p" ["empty"] [] [Element.string (if reading screen then "Reading the decks\x2026" else "No deck matches.")]
-                       else Element.keyed "div" ["deck-list"] [] (fmap deck shown)
+                   ["browser"]
+                   [Element.attr "aria-label" (Text.pack "Decks")]
+                   [ Element.el "h2" [] [] [Element.string (maybe "Choose your deck" (\name -> "Your deck: " <> Text.unpack name) (yourDeck screen))],
+                     fmap MkBrowse (DeckBrowser.shelvesView browsing),
+                     DeckBrowser.filtersView MkBrowse [] browsing,
+                     DeckBrowser.resultsView MkPick ((== picked screen) . Just) [Element.el "p" ["empty"] [] [Element.string "No saved decks in this browser."]] (offered screen) browsing
                    ]
+               ),
+               ( Text.pack "detail",
+                 Element.el "aside" ["detail"] [Element.attr "aria-label" (Text.pack "Deck chosen")] $
+                   Element.el "span" ["eyebrow"] [] [Element.string "Your deck"]
+                     : maybe [Element.el "p" ["muted"] [] [Element.string "Pick one of the decks to see it here."]] (DeckBrowser.detailBody browsing) (picked screen)
                )
              ]
+  where
+    browsing = browser screen

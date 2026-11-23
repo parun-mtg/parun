@@ -556,6 +556,19 @@ catalogued shell wanted browsed = do
         DeckBrowser.played = History.lastPlayed games
       }
 
+-- | A card's colours, of the cards read; none for a card not read.
+colourIn :: FilePath -> LazyMap.Map FilePath (Either Text.Text Card.Card) -> CardName.CardName -> Set.Set Color.Color
+colourIn root byFile name = case LazyMap.lookup (Registry.cardPath root (Registry.slugFor name)) byFile of
+  Just (Right card) -> Lobby.cardColours card
+  _ -> Set.empty
+
+-- | A deck list's colours, of the cards read so far (Lobby.deckColours).
+listColours :: Shell -> IO (Text.Text -> Set.Set Color.Color)
+listColours shell = do
+  now <- IORef.readIORef (loaded shell)
+  root <- Registry.defaultRoot
+  pure (maybe (const Set.empty) (Lobby.deckColours . colourIn root) (cards now))
+
 -- | A card of a deck's list, as the lobby previews it.
 lineOf :: FilePath -> LazyMap.Map FilePath (Either Text.Text Card.Card) -> Natural -> CardName.CardName -> DeckBrowser.Line
 lineOf root byFile n name = case LazyMap.lookup (Registry.cardPath root (Registry.slugFor name)) byFile of
@@ -880,9 +893,12 @@ play shell seats invited here resuming = do
         Right Ending.MkAbandoned -> stopped [Text.pack "The host gave the game up."] >> IORef.readIORef chosen
         Right played@(Ending.MkFinished ending) -> do
           palette' <- palette <$> IORef.readIORef (loaded shell)
-          let seatOf' (i, seat@(name, _))
+          colouring <- listColours shell
+          let seatOf' (i, seat@(name, contents))
                 | i == 0 = History.MkSeat History.MkYou (DeckBrowser.label (DeckBrowser.titleIn seat) name) (Just name) (Map.findWithDefault Set.empty name palette')
-                | Map.member (i - 1) invited = History.MkSeat History.MkPerson (DeckBrowser.label (DeckBrowser.titleIn seat) name) Nothing Set.empty
+                -- A guest's deck, which may share a name with another of
+                -- this browser's, is coloured by its own list.
+                | Map.member (i - 1) invited = History.MkSeat History.MkPerson (DeckBrowser.label (DeckBrowser.titleIn seat) name) Nothing (colouring contents)
                 | Just sitting <- Map.lookup (i - 1) here = History.MkSeat (if sitting == Link.MkHandedOver then History.MkHere else History.MkPerson) (DeckBrowser.label (DeckBrowser.titleIn seat) name) (Just name) (Map.findWithDefault Set.empty name palette')
                 | otherwise = History.MkSeat History.MkBot (DeckBrowser.label (DeckBrowser.titleIn seat) name) (Just name) (Map.findWithDefault Set.empty name palette')
           remember shell (fmap seatOf' (zip [0 :: Int ..] (NonEmpty.toList seats))) played
@@ -990,9 +1006,11 @@ joinGame shell offer = do
     hostChannel = Browser.channel (page shell) (build shell) n
     go shown = do
       loaded' <- IORef.readIORef (loaded shell)
-      let current = case deckFiles loaded' of
-            Just named | Join.reading shown -> shown {Join.reading = False, Join.decks = Seq.fromList (Map.keys named), Join.titles = titles loaded'}
+      let withDecks = case deckFiles loaded' of
+            Just named | DeckBrowser.reading (Join.browser shown) -> shown {Join.browser = DeckBrowser.withDecks (Seq.fromList (Map.keys named)) (formats loaded') (titles loaded') (Join.browser shown)}
             _ -> shown
+      browsed <- catalogued shell (Maybe.maybeToList (Join.picked withDecks)) (Join.browser withDecks)
+      let current = withDecks {Join.browser = browsed}
       Browser.display (page shell) (framed Bar.MkPlay (fmap Screen.MkJoin (Join.view current)))
       woke <- await shell
       case woke of
@@ -1009,7 +1027,7 @@ joinGame shell offer = do
           "closed" -> go (lost hostClosed current)
           _ -> go current
         MkTapped (Screen.MkJoin event) value -> case event of
-          Join.MkMakeReply -> Browser.linkJoin n offer >> go current
+          Join.MkMakeReply | Maybe.isJust (Join.picked current) -> Browser.linkJoin n offer >> go current
           Join.MkReady | Join.connected current -> Link.send hostChannel (Link.MkReady (not (Join.isReady current))) >> go current
           _ -> do
             let next = Join.update event value current
@@ -1279,9 +1297,7 @@ work shell = do
         (Just byFile, _ : _) -> Just $ do
           root <- Registry.defaultRoot
           let (batch, rest) = splitAt 8 (unread now)
-              colours name = case LazyMap.lookup (Registry.cardPath root (Registry.slugFor name)) byFile of
-                Just (Right card) -> Lobby.cardColours card
-                _ -> Set.empty
+              colours = colourIn root byFile
           read' <- Monad.forM batch $ \(name, path) -> do
             contents <- Encoding.decodeUtf8Lenient <$> ByteString.readFile path
             size <- Exception.evaluate (Lobby.mainCount contents)
