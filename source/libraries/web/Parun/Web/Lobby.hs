@@ -56,6 +56,9 @@ data Lobby = MkLobby
     -- | Each seat taken by a player invited from another browser, by its
     -- place in 'theirs' (Parun.Web.Link).
     invites :: Map.Map Int Invite,
+    -- | The link number the next invite takes, never one an invite took
+    -- before, so a closed link's late word reaches no other.
+    nextLink :: Int,
     -- | Each seat played on this screen, by its place in 'theirs', which
     -- holds its deck, and how it is played there; a bot plays every seat in
     -- neither map.
@@ -71,7 +74,10 @@ data Lobby = MkLobby
 
 -- | A slot a player from another browser takes.
 data Invite = MkInvite
-  { -- | The link to send them, once made.
+  { -- | The page's number for its link (Parun.Browser.linkHost), its own
+    -- rather than its seat's, so unseating a seat before it keeps it.
+    linkNumber :: Int,
+    -- | The link to send them, once made.
     link :: Maybe Text.Text,
     -- | The reply code they sent back, as typed.
     replyCode :: Text.Text,
@@ -86,9 +92,13 @@ data Invite = MkInvite
   }
   deriving (Eq, Show)
 
--- | An invite just made: no link yet, nothing typed.
-newInvite :: Invite
-newInvite = MkInvite Nothing Text.empty False Nothing False Nothing
+-- | An invite just made over link number `n`: no link yet, nothing typed.
+newInvite :: Int -> Invite
+newInvite n = MkInvite n Nothing Text.empty False Nothing False Nothing
+
+-- | The seat whose invite has link number `n`.
+seatOfLink :: Int -> Lobby -> Maybe Int
+seatOfLink n lobby = Maybe.listToMaybe [i | (i, invite) <- Map.toList (invites lobby), linkNumber invite == n]
 
 -- | A side of the match-up.
 data Slot
@@ -120,11 +130,10 @@ data Event
     MkRandom
   | -- | Adds a seat past the last, up to 'mostOthers', played by this
     -- occupant, with a random deck, and chooses for it unless it is
-    -- invited; the shell makes an invite's link.
+    -- invited; the shell makes an invite's link, numbered 'nextLink'.
     MkAdd Occupant
   | -- | Unseats the seat at this place in 'theirs', those after it moving
-    -- up, where no invited seat comes after it ('removable'); the shell
-    -- closes an invite's link.
+    -- up; the shell closes an invite's link.
     MkDrop Int
   | -- | Starts the game.
     MkStart
@@ -157,6 +166,7 @@ new =
       theirs = [],
       choosing = MkMine,
       invites = Map.empty,
+      nextLink = 0,
       locals = Map.empty,
       ready = False,
       difficulty = Difficulty.MkHard,
@@ -334,7 +344,7 @@ updated event typed lobby = case event of
         let added = lobby {theirs = theirs lobby <> [Nothing], choosing = MkTheirs i}
          in case occupant of
               MkBot -> added
-              MkInvited -> added {choosing = choosing lobby, invites = Map.insert i newInvite (invites lobby)}
+              MkInvited -> added {choosing = choosing lobby, invites = Map.insert i (newInvite (nextLink lobby)) (invites lobby), nextLink = nextLink lobby + 1}
               MkHere sitting -> added {locals = Map.insert i sitting (locals lobby)}
     | otherwise -> lobby
     where
@@ -347,7 +357,7 @@ updated event typed lobby = case event of
                 choosing = case choosing lobby of
                   MkTheirs j | j == i -> MkMine | otherwise -> MkTheirs (moved j)
                   MkMine -> MkMine,
-                invites = Map.delete i (invites lobby),
+                invites = Map.mapKeys moved (Map.delete i (invites lobby)),
                 locals = Map.mapKeys moved (Map.delete i (locals lobby))
               }
     | otherwise -> lobby
@@ -361,13 +371,9 @@ updated event typed lobby = case event of
   MkPersona -> maybe lobby (\p -> lobby {persona = p}) (Opponent.named Opponent.personaName (Text.unpack typed))
 
 -- | Whether the seat at this place in 'theirs' may be unseated: it is
--- seated, and no invited seat comes after it, since the invites' links are
--- numbered by seat.
---
--- Unseating a seat before an invited one, which would renumber a live
--- link, is not implemented (#9674).
+-- seated.
 removable :: Lobby -> Int -> Bool
-removable lobby i = i >= 0 && i < length (theirs lobby) && all (<= i) (Map.keys (invites lobby))
+removable lobby i = i >= 0 && i < length (theirs lobby)
 
 -- | The lobby once the page of the player invited to this slot said this
 -- (Parun.Web.Link): their deck, and whether they are ready.
@@ -398,18 +404,19 @@ unready lobby = lobby {ready = False, invites = fmap (\invite -> invite {guestRe
 
 -- | The lobby a Rematch of a game with players invited returns to: the
 -- decks played, your own first, each bot's slot in `invited` held by its
--- player, still connected over the channel the game used, each in `here`
--- played on this screen as it was, and nobody ready.
-rematch :: NonEmpty.NonEmpty (Text.Text, Text.Text) -> Set.Set Int -> Map.Map Int Link.Sitting -> Lobby
+-- player, still connected over the link the game used (its number there),
+-- each in `here` played on this screen as it was, and nobody ready.
+rematch :: NonEmpty.NonEmpty (Text.Text, Text.Text) -> Map.Map Int Int -> Map.Map Int Link.Sitting -> Lobby
 rematch (yours NonEmpty.:| rest) invited here =
   new
     { mine = Just (fst yours),
-      theirs = [if Set.member i invited then Nothing else Just name | (i, (name, _)) <- zip [0 ..] rest],
-      invites = Map.fromList [(i, newInvite {connected = True, guestDeck = Just seat}) | (i, seat) <- zip [0 ..] rest, Set.member i invited],
-      locals = Map.withoutKeys here invited,
+      theirs = [if Map.member i invited then Nothing else Just name | (i, (name, _)) <- zip [0 ..] rest],
+      invites = Map.fromList [(i, (newInvite n) {connected = True, guestDeck = Just seat}) | (i, seat) <- zip [0 ..] rest, Just n <- [Map.lookup i invited]],
+      nextLink = foldr (max . (+ 1)) 0 invited,
+      locals = Map.withoutKeys here (Map.keysSet invited),
       -- Your deck's and each bot's name, as their lists give them, until
       -- the decks are read again.
-      browser = (browser new) {DeckBrowser.titles = foldMap DeckBrowser.titleIn (yours : [seat | (i, seat) <- zip [0 ..] rest, Set.notMember i invited])}
+      browser = (browser new) {DeckBrowser.titles = foldMap DeckBrowser.titleIn (yours : [seat | (i, seat) <- zip [0 ..] rest, Map.notMember i invited])}
     }
 
 -- | Whether a game with the players invited starts: there is one, your

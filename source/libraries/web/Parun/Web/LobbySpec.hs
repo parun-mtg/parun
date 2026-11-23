@@ -168,16 +168,18 @@ spec s = Spec.describe s "Parun.Web.Lobby" $ do
       Spec.assertEqWith s "the guest is shown them as a player" (fmap Link.who (Lobby.placesFor 1 (Lobby.update (Lobby.MkAdd Lobby.MkInvited) Text.empty chosen))) [Text.pack "Host", Text.pack "Player 2", Text.pack "You"]
       Spec.assertEqWith s "a change clears ready" (Lobby.ready (Lobby.update (Lobby.MkAdd (Lobby.MkHere Link.MkHandedOver)) Text.empty (Lobby.update Lobby.MkReady Text.empty lobby))) False
 
-    Spec.it s "unseats no seat before an invited one, and with a seat its invite or its place here" $ do
+    Spec.it s "unseats any seat, with it its invite or its place here, an invite after it keeping its link" $ do
       let added = Lobby.update (Lobby.MkAdd (Lobby.MkHere Link.MkYours)) Text.empty (Lobby.update (Lobby.MkAdd Lobby.MkInvited) Text.empty lobby)
           page = Lobby.view added
           removes = length (Text.breakOnAll (Text.pack ">Remove<") (Html.toText page))
           once = Lobby.update (Lobby.MkDrop 2) Text.empty added
           twice = Lobby.update (Lobby.MkDrop 1) Text.empty once
-      Spec.assertEqWith s "a Remove on the invite and after it" (removes, Html.labelled (Text.pack "button") (Text.pack "Remove") page >>= \path -> Html.handler (Text.pack "click") path page) (2, Just (Lobby.MkDrop 1))
-      Spec.assertEqWith s "the bot before the invite stays" (Lobby.update (Lobby.MkDrop 0) Text.empty added) added
+          botGone = Lobby.update (Lobby.MkDrop 0) Text.empty added
+      Spec.assertEqWith s "a Remove on every seat" (removes, Html.search (\node -> Text.isPrefixOf (Text.pack "<button") (Html.toText node) && Html.spoken node == Text.pack "Remove Bot 1") page >>= \path -> Html.handler (Text.pack "click") path page) (3, Just (Lobby.MkDrop 0))
+      Spec.assertEqWith s "the bot before the invite unseated, the invite moving up on its link" (length (Lobby.theirs botGone), fmap Lobby.linkNumber (Lobby.invites botGone), Lobby.locals botGone, Lobby.seatOfLink 0 botGone) (2, Map.singleton 0 0, Map.singleton 1 Link.MkYours, Just 0)
       Spec.assertEqWith s "the seat you play too" (Lobby.locals once, Map.keys (Lobby.invites once)) (Map.empty, [1])
-      Spec.assertEqWith s "the invite" (Lobby.theirs twice, Map.keys (Lobby.invites twice)) ([Nothing], [])
+      Spec.assertEqWith s "the invite" (Lobby.theirs twice, Map.keys (Lobby.invites twice), Lobby.seatOfLink 0 twice) ([Nothing], [], Nothing)
+      Spec.assertEqWith s "an invite added after takes a link number no invite took" (fmap Lobby.linkNumber (Lobby.invites (Lobby.update (Lobby.MkAdd Lobby.MkInvited) Text.empty twice))) (Map.singleton 1 1)
 
   Spec.describe s "pairing" $ do
     Spec.it s "offers a Limited deck the decks naming no format that a Limited game takes" $ do
@@ -292,14 +294,15 @@ spec s = Spec.describe s "Parun.Web.Lobby" $ do
 
   Spec.describe s "rematch" $ do
     Spec.it s "returns to the decks played, the invited slot still connected, and nobody ready" $ do
-      let back = Lobby.rematch ((a, Text.pack "list a") NonEmpty.:| [(b, Text.pack "list b"), (c, Text.pack "list c")]) (Set.singleton 1) Map.empty
+      let back = Lobby.rematch ((a, Text.pack "list a") NonEmpty.:| [(b, Text.pack "list b"), (c, Text.pack "list c")]) (Map.singleton 1 5) Map.empty
       Spec.assertEq s (Lobby.mine back, Lobby.theirs back) (Just a, [Just b, Nothing])
-      Spec.assertEq s (Map.toList (fmap (\i -> (Lobby.connected i, Lobby.guestDeck i, Lobby.guestReady i)) (Lobby.invites back))) [(1, (True, Just (c, Text.pack "list c"), False))]
+      Spec.assertEq s (Map.toList (fmap (\i -> (Lobby.linkNumber i, Lobby.connected i, Lobby.guestDeck i, Lobby.guestReady i)) (Lobby.invites back))) [(1, (5, True, Just (c, Text.pack "list c"), False))]
+      Spec.assertEqWith s "a new invite takes a link number of its own" (fmap Lobby.linkNumber (Map.lookup 2 (Lobby.invites (Lobby.update (Lobby.MkAdd Lobby.MkInvited) Text.empty back)))) (Just 6)
       Spec.assertBool s (not (Lobby.ready back) && not (Lobby.starts back)) "nobody ready"
       Spec.assertBool s (Lobby.starts (Lobby.heard 1 (Link.MkReady True) (Lobby.update Lobby.MkReady Text.empty back))) "starts once both are ready"
 
     Spec.it s "returns a player on this screen to their slot and their deck" $ do
-      let back = Lobby.rematch ((a, Text.pack "list a") NonEmpty.:| [(b, Text.pack "list b"), (c, Text.pack "list c")]) (Set.singleton 1) (Map.fromList [(0, Link.MkYours), (1, Link.MkHandedOver)])
+      let back = Lobby.rematch ((a, Text.pack "list a") NonEmpty.:| [(b, Text.pack "list b"), (c, Text.pack "list c")]) (Map.singleton 1 1) (Map.fromList [(0, Link.MkYours), (1, Link.MkHandedOver)])
       Spec.assertEq s (Lobby.theirs back, Lobby.locals back, Map.keys (Lobby.invites back)) ([Just b, Nothing], Map.singleton 0 Link.MkYours, [1])
 
   Spec.describe s "withDecks" $ do
