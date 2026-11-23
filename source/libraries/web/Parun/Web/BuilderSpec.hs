@@ -9,6 +9,7 @@ import qualified Data.Text as Text
 import qualified Parun.DeckList as DeckList
 import qualified Parun.Spec as Spec
 import qualified Parun.Types.CardName as CardName
+import qualified Parun.Types.CardType as CardType
 import qualified Parun.Types.Color as Color
 import qualified Parun.Web.Builder as Builder
 import qualified Parun.Web.CardIndex as CardIndex
@@ -133,6 +134,28 @@ spec s = Spec.describe s "Parun.Web.Builder" $ do
     Spec.it s "adds a result when its name's button is tapped" $ do
       let shown = Builder.view indexed
       Spec.assertEq s (Html.labelled (Text.pack "button") (Text.pack "Add Lightning Bolt") shown >>= \path -> Html.handler (Text.pack "click") path shown) (Just (Builder.MkAdd DeckList.Main bolt))
+
+    Spec.it s "folds a narrow screen's filters behind a toggle that counts those set" $ do
+      let tapped label builder = let shown' = Builder.view builder in Html.labelled (Text.pack "button") (Text.pack label) shown' >>= \path -> Html.handler (Text.pack "click") path shown'
+          narrowed = tap (Builder.MkToggleKind CardType.Creature) (tap (Builder.MkToggleColour Color.Red) indexed)
+          opened = tap Builder.MkToggleFilters narrowed
+      Spec.assertEqWith s "folded" (Text.isInfixOf (Text.pack "class=\"filters\"") (page indexed), tapped "Filters" indexed) (True, Just Builder.MkToggleFilters)
+      Spec.assertEqWith s "counted" (tapped "Filters \x00b7 2" narrowed) (Just Builder.MkToggleFilters)
+      Spec.assertEqWith s "open" (fmap (`Text.isInfixOf` page opened) [Text.pack "class=\"filters open\"", Text.pack "aria-expanded=\"true\""]) [True, True]
+      Spec.assertEqWith s "closed" (Builder.filtersOpen (tap Builder.MkToggleFilters opened)) False
+
+    Spec.it s "holds the deck's count and latest cards in a narrow screen's summary" $ do
+      let added = (tap (Builder.MkAdd DeckList.Side mountain) . tap (Builder.MkAdd DeckList.Main (named "Shock")) . tap (Builder.MkAdd DeckList.Main bolt)) indexed
+          summaryOf builder = let shown' = Builder.view builder in maybe Text.empty Html.content (Html.search (Text.isPrefixOf (Text.pack "<div class=\"deck-summary panel\"") . Html.toText) shown' >>= \path -> Html.at path shown')
+      Spec.assertEqWith s "latest" (Text.isInfixOf (Text.pack "Latest: Mountain (in sideboard), Shock, Lightning Bolt") (page added)) True
+      Spec.assertEqWith s "count" (Text.isInfixOf (Text.pack "2 cards in the deck") (summaryOf added)) True
+      Spec.assertEqWith s "removed" (Text.isInfixOf (Text.pack "Latest: Mountain (in sideboard), Lightning Bolt") (page (tap (Builder.MkRemove DeckList.Main (named "Shock")) added))) True
+
+    Spec.it s "switches a narrow screen between the search and the deck" $ do
+      let shown = Builder.view indexed
+          switched = tap Builder.MkToggleDeck indexed
+      Spec.assertEqWith s "offered" (Html.labelled (Text.pack "button") (Text.pack "See deck") shown >>= \path -> Html.handler (Text.pack "click") path shown) (Just Builder.MkToggleDeck)
+      Spec.assertEqWith s "shown" (fmap (`Text.isInfixOf` page switched) [Text.pack "class=\"builder-body deck-shown\"", Text.pack "Back to cards"]) [True, True]
 
     Spec.it s "shows the rules text of the card being read" $ do
       Spec.assertBool s (Text.isInfixOf (Text.pack "deals 3 damage") (page (Builder.update (Builder.MkRead bolt) Text.empty indexed))) "rules"

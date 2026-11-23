@@ -93,7 +93,14 @@ data Builder = MkBuilder
     -- | Each card of the index by its name, and the card each way of naming
     -- one means, case-folded: its name, each face's, and its faces joined.
     byName :: Map.Map CardName.CardName CardIndex.Entry,
-    aliases :: Map.Map Text.Text CardName.CardName
+    aliases :: Map.Map Text.Text CardName.CardName,
+    -- | The cards last added, newest first, each with its zone, for a narrow
+    -- screen's summary of the deck.
+    recent :: [(DeckList.Section, CardName.CardName)],
+    -- | Whether a narrow screen shows the search's filters.
+    filtersOpen :: Bool,
+    -- | Whether a narrow screen shows the deck in place of the search.
+    deckShown :: Bool
   }
   deriving (Eq, Show)
 
@@ -167,6 +174,10 @@ data Event
   | MkClosePool
   | -- | Forgets the pool, its caps and its sideboard.
     MkDropPool
+  | -- | Shows or hides a narrow screen's filters.
+    MkToggleFilters
+  | -- | Switches a narrow screen between the search and the deck.
+    MkToggleDeck
   deriving (Eq, Show)
 
 -- | An empty casual deck, among these formats, its cards not yet indexed.
@@ -202,7 +213,10 @@ new named =
       poolProblems = [],
       sets = [],
       byName = Map.empty,
-      aliases = Map.empty
+      aliases = Map.empty,
+      recent = [],
+      filtersOpen = False,
+      deckShown = False
     }
 
 -- | The builder after an event, the value typed being `typed`. Save, Leave,
@@ -218,7 +232,7 @@ update event typed builder = case event of
     | section == DeckList.Side, pooledSide builder -> builder
     | section == DeckList.Main, Just most <- capOf builder card, Map.findWithDefault 0 card (deck builder) >= most -> builder
     -- A card added answers a save refused for want of any.
-    | otherwise -> withZone section (Map.insertWith (+) card 1 (zoneOf section builder)) builder {saveProblems = []}
+    | otherwise -> withZone section (Map.insertWith (+) card 1 (zoneOf section builder)) builder {saveProblems = [], recent = take recentShown ((section, card) : List.delete (section, card) (recent builder))}
   MkRemove section card -> withZone section (Map.update (\n -> if n <= 1 then Nothing else Just (n - 1)) card (zoneOf section builder)) builder
   MkTarget section -> builder {target = section}
   MkChoose section card colour -> case choiceOf builder section card of
@@ -284,10 +298,16 @@ update event typed builder = case event of
     Nothing -> builder
   MkClosePool -> builder {pasting = Nothing, poolProblems = []}
   MkDropPool -> builder {pool = Nothing, scope = if scope builder == MkPoolCards then MkEveryCard else scope builder}
+  MkToggleFilters -> builder {filtersOpen = not (filtersOpen builder)}
+  MkToggleDeck -> builder {deckShown = not (deckShown builder)}
   where
     withQuery f = builder {query = f (query builder), showing = CardIndex.cap}
     toggle :: (Ord a) => a -> Set.Set a -> Set.Set a
     toggle x xs = if Set.member x xs then Set.delete x xs else Set.insert x xs
+
+-- | How many of the cards last added a narrow screen's summary names.
+recentShown :: Int
+recentShown = 3
 
 -- | The deck as a deck list: its format's header, if it names one, its
 -- commander under its own header, the main deck by name, its sideboard (a
@@ -490,6 +510,20 @@ view builder =
           )
         | Maybe.isJust (pasting builder)
         ]
+      -- How many filters narrow the search, its text aside.
+      filtering = Set.size (CardIndex.wanted q) + Set.size (CardIndex.kinds q) + length (Maybe.maybeToList (CardIndex.valued q))
+      -- A narrow screen's deck, held at the top of the screen over the search
+      -- or the deck it switches between: the count, the colours, the cards
+      -- last added that are still in, and the switch.
+      latest = [named card <> (if section == DeckList.Main then Text.empty else Text.pack " (" <> Text.pack (whereIn section) <> Text.singleton ')') | (section, card) <- recent builder, Map.member card (zoneOf section builder)]
+      summary =
+        Element.el "div" ["deck-summary", "panel"] [] $
+          [ Element.el "div" ["summary-head"] [] $
+              [Element.el "strong" ["summary-count"] [Element.attr "aria-live" (Text.pack "polite")] [Element.string counted], Element.el "span" ["pips"] [Element.attr "aria-label" (Text.pack "Colours")] [Mana.symbol (Text.pack (Web.Card.letterUpper c)) | c <- Set.toList (deckColours builder)]]
+                <> [Element.el "span" ["summary-problems"] [] [Element.string (show (length (problems builder)) <> (if length (problems builder) == 1 then " problem" else " problems"))] | not (null (problems builder))]
+                <> [Element.button ["deck-toggle"] MkToggleDeck [Element.string (if deckShown builder then "Back to cards" else "See deck")]]
+          ]
+            <> [Element.el "p" ["summary-latest"] [] [Element.string "Latest: ", Element.text (Text.intercalate (Text.pack ", ") latest)] | not (null latest)]
       -- The main deck's, as the sideboard's and commander's blocks count theirs.
       counted = case least builder of
         Nothing -> show total <> (if total == 1 then " card" else " cards") <> " in the deck"
@@ -554,12 +588,19 @@ view builder =
           ( Text.pack "body",
             Element.el
               "div"
-              ["builder-body"]
+              (["builder-body"] <> ["deck-shown" | deckShown builder])
               []
-              [ Element.el "section" ["builder-search"] [Element.attr "aria-label" (Text.pack "Cards")] $
-                  [ Element.el "label" ["sr-only"] [Element.attr "for" (Text.pack "card-search")] [Element.string "Search cards"],
-                    Element.el "input" ["search"] [Element.attr "id" (Text.pack "card-search"), Element.attr "type" (Text.pack "search"), Element.attr "placeholder" (Text.pack "Search names and rules text"), Element.attr "autocomplete" (Text.pack "off"), Element.on "input" MkSearch] [],
-                    Element.el "div" ["filters"] [] $
+              [ summary,
+                Element.el "section" ["builder-search"] [Element.attr "aria-label" (Text.pack "Cards")] $
+                  [ Element.el
+                      "div"
+                      ["search-row"]
+                      []
+                      [ Element.el "label" ["sr-only"] [Element.attr "for" (Text.pack "card-search")] [Element.string "Search cards"],
+                        Element.el "input" ["search"] [Element.attr "id" (Text.pack "card-search"), Element.attr "type" (Text.pack "search"), Element.attr "placeholder" (Text.pack "Search names and rules text"), Element.attr "autocomplete" (Text.pack "off"), Element.on "input" MkSearch] [],
+                        Element.el "button" (toggled (filtersOpen builder) <> ["filters-toggle"]) [Element.attr "type" (Text.pack "button"), Element.attr "aria-expanded" (Text.pack (if filtersOpen builder then "true" else "false")), Element.attr "aria-controls" (Text.pack "builder-filters"), Element.on "click" MkToggleFilters] [Element.string ("Filters" <> (if filtering > 0 then " \x00b7 " <> show filtering else ""))]
+                      ],
+                    Element.el "div" (["filters"] <> ["open" | filtersOpen builder]) [Element.attr "id" (Text.pack "builder-filters"), Element.attr "role" (Text.pack "group"), Element.attr "aria-label" (Text.pack "Filters")] $
                       [Element.el "div" ["colour-toggles"] [Element.attr "role" (Text.pack "group"), Element.attr "aria-label" (Text.pack "Colours")] [DeckBrowser.colourToggle (Set.member c (CardIndex.wanted q)) (MkToggleColour c) c | c <- [minBound .. maxBound]]]
                         <> [Element.el "select" ["mana-value", "deck-menu"] [Element.attr "aria-label" (Text.pack "Mana value"), Element.on "change" MkValue] (fmap (option chosenValue) valueChoices)]
                         <> [Element.el "button" (toggled (Set.member k (CardIndex.kinds q))) [Element.attr "type" (Text.pack "button"), Element.attr "aria-pressed" (Text.pack (if Set.member k (CardIndex.kinds q) then "true" else "false")), Element.on "click" (MkToggleKind k)] [Element.string (show k)] | k <- searchKinds],

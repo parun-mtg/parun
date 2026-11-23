@@ -4861,7 +4861,8 @@ main.scenarios h2 {
 /* ---------- Deck builder (Parun.Web.Builder) ---------- */
 
 /* Laid out as the Decks screen is: a heading row, the deck's settings,
-   then the cards beside the deck from 900px and above it narrower. */
+   then the cards beside the deck from 900px, and narrower one or the other
+   under a summary of the deck. */
 main.builder {
   max-width: 1400px;
   margin: 0 auto;
@@ -4928,7 +4929,7 @@ main.builder {
   font-size: 13px;
 }
 
-/* Cards and deck side by side where there is room, stacked otherwise. */
+/* Cards and deck side by side where there is room. */
 .builder-body {
   display: grid;
   grid-template-columns: minmax(0, 1fr);
@@ -4953,6 +4954,77 @@ main.builder {
   display: flex;
   flex-direction: column;
   gap: 12px;
+}
+
+/* A narrow screen holds a summary of the deck at its top and shows the
+   search or the deck beneath it, the search's filters folded away until
+   asked for; a wide one shows both whole and needs neither. */
+.deck-summary {
+  position: sticky;
+  top: env(safe-area-inset-top);
+  z-index: 5;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 8px 8px 8px 16px;
+  box-shadow: var(--shadow);
+}
+
+.summary-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+}
+
+.summary-count {
+  font-variant-numeric: tabular-nums;
+}
+
+.summary-problems {
+  color: var(--danger);
+  font-size: 13px;
+}
+
+#app .deck-summary button.deck-toggle {
+  margin-left: auto;
+}
+
+.summary-latest {
+  color: var(--muted);
+  font-size: 13px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.search-row {
+  display: flex;
+  gap: 8px;
+}
+
+.search-row .search {
+  flex: 1;
+  min-width: 0;
+}
+
+#app .search-row button.filters-toggle {
+  flex: none;
+}
+
+@media (max-width: 899px) {
+  main.builder .filters:not(.open),
+  .builder-body.deck-shown .builder-search,
+  .builder-body:not(.deck-shown) .builder-deck {
+    display: none;
+  }
+}
+
+@media (min-width: 900px) {
+  .deck-summary,
+  #app .search-row button.filters-toggle {
+    display: none;
+  }
 }
 
 .builder-deck {
@@ -5001,7 +5073,8 @@ main.builder .filters,
 }
 
 #app .filters button.toggle.on,
-#app .targets button.toggle.on {
+#app .targets button.toggle.on,
+#app .search-row button.filters-toggle.on {
   background: var(--act-soft);
   border-color: var(--act-line);
   box-shadow: inset 0 0 0 1px var(--act-line);
