@@ -46,10 +46,10 @@ data Snapshot = MkSnapshot
     cantPayKeywordCost :: Map KeywordCostPart (Set ObjectId)
   }
 
--- The snapshot of `gs` over a board and grant list the caller already took of
--- that same `gs`.
-given :: Map ObjectId ProjectedCharacteristics -> [Projection.ControlGrant] -> GameState -> Snapshot
-given pcs grants_ gs =
+-- The snapshot of `gs` over a board, off-battlefield map and grant list the
+-- caller already took of that same `gs`.
+given :: Map ObjectId ProjectedCharacteristics -> Map ObjectId ProjectedCharacteristics -> [Projection.ControlGrant] -> GameState -> Snapshot
+given pcs offBoard_ grants_ gs =
   let fresh = Projection.viewsOf gs
       battlefield = Set.toList (GameState.battlefield gs)
       -- One view per projected object, each built when first read and then
@@ -58,7 +58,7 @@ given pcs grants_ gs =
       viewed = Map.Lazy.fromSet (\oid -> Projection.viewOfObjectGiven pcs grants_ oid gs) (Map.keysSet pcs)
    in MkSnapshot
         { projected = pcs,
-          offBoard = Projection.projectEach (Set.difference (Map.keysSet (GameState.objects gs)) (GameState.battlefield gs)) gs,
+          offBoard = offBoard_,
           grants = grants_,
           views = \oid -> Maybe.fromMaybe (fresh oid) (Map.lookup oid viewed),
           unsacrificeable = ObjectRestriction.restricted RestrictedAction.Sacrifice battlefield gs,
@@ -68,9 +68,9 @@ given pcs grants_ gs =
 -- The whole board projected at once: for a caller about to ask about most of
 -- the battlefield.
 whole :: GameState -> Snapshot
-whole gs = given (Projection.projectAll gs) (Projection.controlGrants gs) gs
+whole gs = let (pcs, offBoard_) = Projection.projectBoard gs in given pcs offBoard_ (Projection.controlGrants gs) gs
 
 -- Each object projected only when asked about: for a caller asking about one
 -- object, where projecting the rest would be waste.
 onDemand :: GameState -> Snapshot
-onDemand gs = given Map.empty (Projection.controlGrants gs) gs
+onDemand gs = given Map.empty (Projection.projectOffBoard gs) (Projection.controlGrants gs) gs

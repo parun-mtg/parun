@@ -418,10 +418,13 @@ candidateCostsFor = candidateCostsGiven False
 --
 -- Here rather than in Parun.Engine.Cast, whose gates read it, because
 -- candidateCostsGiven's graveyard arm prices a permission that names its cost.
-permissionsOf :: ObjectId -> Face.Face Card.Type.Card -> GameState -> [CastingPermission.CastingPermission]
-permissionsOf oid face gs =
-  filter (PlayerEffect.permissionHolds oid gs) (PC.castingPermissions (Projection.project oid gs))
-    <> Keyword.castingPermissionsOf (TypeLine.types (Face.typeLine face)) (Map.keysSet (Projection.keywordsOf oid gs))
+--
+-- `projected` is the card's projection on `gs`, which candidateCostsGiven
+-- shares with its other readers (#9709).
+permissionsOf :: PC.ProjectedCharacteristics -> ObjectId -> Face.Face Card.Type.Card -> GameState -> [CastingPermission.CastingPermission]
+permissionsOf projected oid face gs =
+  filter (PlayerEffect.permissionHolds oid gs) (PC.castingPermissions projected)
+    <> Keyword.castingPermissionsOf (TypeLine.types (Face.typeLine face)) (Map.keysSet (PC.keywords projected))
 
 -- CR 601.3 / 113.6f: does this permission the card carries for itself open
 -- `zone` to its owner, whichever cost it admits? candidateCostsGiven prices
@@ -438,7 +441,7 @@ permitsFromZone zone permission = case permission of
 -- its owner?
 ownPermissionOpens :: Zone.Zone -> PlayerId -> ObjectId -> Face.Face Card.Type.Card -> GameState -> Bool
 ownPermissionOpens zone pid oid face gs =
-  fmap Object.owner (Game.lookupObject oid gs) == Just pid && any (permitsFromZone zone) (permissionsOf oid face gs)
+  fmap Object.owner (Game.lookupObject oid gs) == Just pid && any (permitsFromZone zone) (permissionsOf (Projection.project oid gs) oid face gs)
 
 -- CR 118.8 / 118.9 / 614.1d: a graveyard permission the card carries for itself
 -- that prices or adds to a cast made under it -- an additional cost (Demonic
@@ -509,10 +512,11 @@ withChoices choices cost =
 -- through this as the board's candidates do. The victim is named outright for
 -- `emerged`'s reason (CR 702.48b), and its mana cost is read off the
 -- projection, so a Clone reduces by what it copied; CR 702.48c sends that
--- through CR 118.7. The offering keyword is `spellKeywords`', rule 702.48a's
--- ability functioning while the spell is on the stack.
-withOffering :: PlayerId -> ObjectId -> GameState -> CandidateCost.CandidateCost -> [CandidateCost.CandidateCost]
-withOffering pid oid gs candidate =
+-- through CR 118.7. The offering keyword is read off `onStack`, the spell's
+-- keywords (`spellKeywords`'), rule 702.48a's ability functioning while the
+-- spell is on the stack.
+withOffering :: Set.Set Keyword.Type.Keyword -> PlayerId -> ObjectId -> GameState -> CandidateCost.CandidateCost -> [CandidateCost.CandidateCost]
+withOffering onStack pid oid gs candidate =
   candidate
     : [ CandidateCost.widened
           Nothing
@@ -520,7 +524,7 @@ withOffering pid oid gs candidate =
             { CandidateCost.cost = (CandidateCost.cost candidate) {Cost.components = Cost.components (CandidateCost.cost candidate) <> [CostComponent.Sacrifice (Sacrifice.MkSacrifice (ObjectCount.Exactly (CostAmount.Fixed 1)) (Filter.Type.IsObject vid) Set.empty)]},
               CandidateCost.reductions = CandidateCost.reductions candidate <> [AppliedReduction.MkAppliedReduction (Maybe.fromMaybe (ManaCost.MkManaCost []) (Filter.manaCost (Projection.viewOfObject vid gs))) 0 Nothing]
             }
-      | quality <- Keyword.offeringQualities (Map.keysSet (spellKeywords pid oid gs)),
+      | quality <- Keyword.offeringQualities onStack,
         vid <- Replacement.sacrificeCandidates (Just pid) Map.empty pid (Just oid) quality gs
       ]
 
@@ -578,13 +582,13 @@ withOptionalAdditions pid oid gs candidate =
 -- the caster's to say (docs/decisions.md, "Who says which permission a cast of
 -- Spider Climb used"). Parun.Engine.Cast.windowedCandidates keeps it only
 -- where CR 307.5a's test holds.
-withFlashPermission :: PlayerId -> ObjectId -> Face.Face Card.Type.Card -> GameState -> CandidateCost.CandidateCost -> [CandidateCost.CandidateCost]
-withFlashPermission pid oid face gs =
+withFlashPermission :: PC.ProjectedCharacteristics -> PlayerId -> ObjectId -> Face.Face Card.Type.Card -> GameState -> CandidateCost.CandidateCost -> [CandidateCost.CandidateCost]
+withFlashPermission projected pid oid face gs =
   let -- CR 107.3g: the card's {X} is 0 off the stack.
       atZero o = o {Object.bindings = Map.union (Object.bindings o) (Binding.fromChoices Map.empty (Just 0) Seq.empty)}
       board = Game.withoutBeingCast gs
       holds = ActivationRestriction.onlyIfHolds pid oid (if manaHasVariable (Cost.MkCost (Face.manaCost face) []) then board {GameState.objects = Map.adjust atZero oid (GameState.objects board)} else board)
-      permitted = [(((additional, components), arms), condition) | CastingPermission.CastAsThoughItHadFlash condition additional components arms <- permissionsOf oid face gs, all holds condition]
+      permitted = [(((additional, components), arms), condition) | CastingPermission.CastAsThoughItHadFlash condition additional components arms <- permissionsOf projected oid face gs, all holds condition]
       unpaid = ((Nothing, []), Nothing)
       -- An absent mana part adds {0}, not CR 118.6's unpayable Nothing.
       addition (additional, components) cost = plus cost Cost.MkCost {Cost.mana = Just (Maybe.fromMaybe (ManaCost.MkManaCost []) additional), Cost.components = components}
@@ -688,7 +692,9 @@ candidateCostsGiven permitted pid name oid gs =
   let -- CR 613.1: the keywords the card HAS where it lies (CR 113.6f), read
       -- once for every keyword-offered cost below rather than once per keyword
       -- -- each read projects the card, and that gathers the whole board (#435).
-      keywords = Map.keysSet (Projection.keywordsOf oid gs)
+      -- Its casting permissions are read off the same projection (#9709).
+      projected = Projection.project oid gs
+      keywords = Map.keysSet (PC.keywords projected)
       -- CR 113.6d / 601.2a: what the SPELL has once it is on the stack, which
       -- is where an ability offering an alternative cost functions -- so a
       -- grant to "spells you cast" (Hunting Velociraptor) reaches it. Read by
@@ -1070,7 +1076,7 @@ candidateCostsGiven permitted pid name oid gs =
               -- Game.zoneOf's, so a CR 707.13 copy outside the game (CR 400.11)
               -- takes the `_` arm. A regression fence: none of Garth One-Eye's
               -- six cards prints a cost the graveyard arm offers.
-              concatMap (withOptionalAdditions pid oid gs) . concatMap (withOffering pid oid gs) . concatMap (withFlashPermission pid oid face gs) . concatMap (choiceVariants face) . orConverted $ case Game.zoneOf oid gs of
+              concatMap (withOptionalAdditions pid oid gs) . concatMap (withOffering onStack pid oid gs) . concatMap (withFlashPermission projected pid oid face gs) . concatMap (choiceVariants face) . orConverted $ case Game.zoneOf oid gs of
                 -- Three shapes, differing in what they do to the printed cost, plus
                 -- an effect's permission. Flashback (CR 702.34a) REPLACES the mana
                 -- cost, so it is wrapped by `withAdditional`, and escape (CR
@@ -1209,7 +1215,7 @@ candidateCostsGiven permitted pid name oid gs =
                       -- keyword of that family offers, never the printed cost.
                       -- Parun.CastSpec's "Blitz from a graveyard" group proves
                       -- both halves.
-                      usingFamilies = [family | CastingPermission.CastFrom Zone.Graveyard _ (Just family) _ _ _ <- permissionsOf oid face gs]
+                      usingFamilies = [family | CastingPermission.CastFrom Zone.Graveyard _ (Just family) _ _ _ <- permissionsOf projected oid face gs]
                       usingPermitted candidate = any (\family -> (CandidateCost.keyword candidate >>= Keyword.familyOf) == Just family) usingFamilies
                       -- CR 118.8 / 614.1d: a permission stating an additional
                       -- cost or entry counters admits the printed cost and its
@@ -1218,7 +1224,7 @@ candidateCostsGiven permitted pid name oid gs =
                       -- stating an alternative cost (Squee, Dubious Monarch)
                       -- admits the printed cost alone, which that cost replaces
                       -- (CR 118.9a, Parun.Engine.Cast.underAlternative).
-                      payingPermitted = any (\permission -> addsToItsCast permission && namesNoFamily permission) (permissionsOf oid face gs)
+                      payingPermitted = any (\permission -> addsToItsCast permission && namesNoFamily permission) (permissionsOf projected oid face gs)
                       namesNoFamily permission = case permission of
                         CastingPermission.CastFrom Zone.Graveyard _ Nothing _ _ _ -> True
                         _ -> False
@@ -4349,9 +4355,9 @@ lifeTotalOf pid gs = case Map.lookup pid (GameState.players gs) of
 -- the cost's own half alone; `canPayReading` asks the latter's the same way.
 canPaySomeCompletion :: Map.Map SlotName.SlotName (Set.Set Recipient.Recipient) -> PaymentSubject.PaymentSubject -> ManaSpending.ManaSpending -> PlayerId -> ObjectId -> (ManaCost.ManaCost -> [ManaCost.ManaCost]) -> (ManaCost.ManaCost -> [(ManaCost.ManaCost, [(Keyword.Substitute, Natural)])]) -> Cost Keyword.Type.Keyword -> GameState -> Bool
 canPaySomeCompletion slots subject spending pid oid total_ substitute cost gs =
-  let pcs = Projection.projectAll gs
+  let (pcs, offBoard) = Projection.projectBoard gs
       grants = Projection.controlGrants gs
-   in canPaySomeCompletionGiven slots subject spending (supplyManaSourcesGiven (manaActivationsFor grants (ActivationProhibition.gathered gs) (PlayerEffect.applying pid gs) pcs pid gs) grants pcs pid gs) (Snapshot.given pcs grants gs) pid oid total_ substitute cost gs
+   in canPaySomeCompletionGiven slots subject spending (supplyManaSourcesGiven (manaActivationsFor grants (ActivationProhibition.gathered gs) (PlayerEffect.applying pid gs) pcs pid gs) grants pcs pid gs) (Snapshot.given pcs offBoard grants gs) pid oid total_ substitute cost gs
 
 -- CR 116.2c / 119.4: the life `pid` may pay for mana right now, off the same list
 -- at priority (Action.legalActions) and in a payment (`payManaWindowThen`).

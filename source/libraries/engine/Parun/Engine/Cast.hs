@@ -237,12 +237,15 @@ timingWith flash pid oid name gs = case proposedFace oid name gs of
 -- sneak widens the window as a printed one does. Offering's window reads the
 -- stack's for rule 702.48a's
 -- same reason.
-cardTimingOk :: PlayerId -> ObjectId -> CardName.CardName -> GameState -> Bool
-cardTimingOk pid oid name gs = cardTimingWith (timingOk pid oid name gs) pid oid name gs
+--
+-- `spell` is Cost.asSpellProjected's answer on `gs`, which cardGatesOk shares
+-- among its conjuncts (#9709).
+cardTimingOk :: PC.ProjectedCharacteristics -> PlayerId -> ObjectId -> CardName.CardName -> GameState -> Bool
+cardTimingOk spell pid oid name gs = cardTimingWith spell (timingOk pid oid name gs) pid oid name gs
 
 -- cardTimingOk over a card window the caller has already answered.
-cardTimingWith :: Bool -> PlayerId -> ObjectId -> CardName.CardName -> GameState -> Bool
-cardTimingWith window pid oid name gs = case proposedFace oid name gs of
+cardTimingWith :: PC.ProjectedCharacteristics -> Bool -> PlayerId -> ObjectId -> CardName.CardName -> GameState -> Bool
+cardTimingWith spell window pid oid name gs = case proposedFace oid name gs of
   Nothing -> False
   Just face ->
     window
@@ -251,7 +254,7 @@ cardTimingWith window pid oid name gs = case proposedFace oid name gs of
       -- the projection fold behind the second limb then never runs.
       || ( Turn.declareBlockersWindow pid gs
              && ( Keyword.hasSneak (Face.keywordSet face)
-                    || Keyword.hasSneak (Map.keysSet (Cost.spellKeywords pid oid gs))
+                    || Keyword.hasSneak (Map.keysSet (PC.keywords spell))
                     -- Ninja Teen's "creature cards in your graveyard have
                     -- sneak": a grant confined to the zone the card lies in.
                     || Keyword.hasSneak (projectedKeywords oid gs)
@@ -260,8 +263,8 @@ cardTimingWith window pid oid name gs = case proposedFace oid name gs of
       -- CR 702.48a: offering's window, and CR 601.3c / 601.3d's card's own
       -- flash permission, open only while some candidate carrying the window
       -- exists, and to those candidates only (windowedCandidates).
-      || ( ( not (null (Keyword.offeringQualities (Map.keysSet (Cost.spellKeywords pid oid gs))))
-               || any isFlashPermission (Cost.permissionsOf oid face gs)
+      || ( ( not (null (Keyword.offeringQualities (Map.keysSet (PC.keywords spell))))
+               || any isFlashPermission (Cost.permissionsOf (Projection.project oid gs) oid face gs)
            )
              && any CandidateCost.instantSpeed (Cost.candidateCostsFor pid name oid gs)
          )
@@ -422,8 +425,9 @@ instantSpeed oid face gs = Card.isInstant face || flashOn oid face gs
 -- would separate the limbs, and nothing in CR 305 or CR 702.8 forbids one.
 flashOn :: ObjectId -> Face.Face Card.Type.Card -> GameState -> Bool
 flashOn oid face gs =
-  (Keyword.hasFlash (Face.keywordSet face) && not (PC.lostAllAbilities (Projection.project oid gs)))
-    || Keyword.hasFlash (Map.keysSet (Projection.keywordsOf oid gs))
+  let projected = Projection.project oid gs
+   in (Keyword.hasFlash (Face.keywordSet face) && not (PC.lostAllAbilities projected))
+        || Keyword.hasFlash (Map.keysSet (PC.keywords projected))
 
 -- CR 601.2c / 700.2a: castable when the fillable modes admit some selection at
 -- all (Modal.selectionPossible) -- ordinarily at least as many fillable modes as
@@ -738,7 +742,7 @@ payableCountedAtGiven modes pcs sources x extra spending narrowing pid oid gs co
         let totalled = Cost.plusComponents adjustments substituted
             slots = Binding.withAnnouncedTargets aiming
             totals m = fmap (assisted . Cost.confineX (xConfinement oid gs) confinedX adjustments m) (Cost.totalManas adjustments m)
-         in Cost.canPaySomeCompletionGiven slots subject spending sources (Snapshot.given pcs (Projection.controlGrants gs) gs) pid oid totals (Cost.manaSubstitutions (Cost.Type.components totalled) slots pid oid gs) totalled gs
+         in Cost.canPaySomeCompletionGiven slots subject spending sources (Snapshot.given pcs (Projection.projectOffBoard gs) (Projection.controlGrants gs) gs) pid oid totals (Cost.manaSubstitutions (Cost.Type.components totalled) slots pid oid gs) totalled gs
       -- The adjustments with nothing aimed at, which are the adjustments under
       -- EVERY aiming unless they read the targets (readsTargets below), so the
       -- components they add are inspected for a criterion naming a slot exactly as
@@ -1957,12 +1961,13 @@ inCastableZone pid oid name gs =
 -- 205.4e sees a supertype the spell gains on the stack"). The scenario
 -- synthetic-storied-decree/cr-205-4e-a-bolt-made-legendary-needs-a-legendary-creature
 -- proves it.
-legendaryRestrictionOk :: PlayerId -> ObjectId -> CardName.CardName -> GameState -> Bool
-legendaryRestrictionOk pid oid name gs = case proposedFace oid name gs of
+--
+-- `spell` is Cost.asSpellProjected's answer on `gs`, as cardTimingOk takes it.
+legendaryRestrictionOk :: PC.ProjectedCharacteristics -> PlayerId -> ObjectId -> CardName.CardName -> GameState -> Bool
+legendaryRestrictionOk spell pid oid name gs = case proposedFace oid name gs of
   Nothing -> False
   Just _ ->
-    let spell = Cost.asSpellProjected pid oid gs
-        types = PC.cardTypes spell
+    let types = PC.cardTypes spell
      in not (Set.member Supertype.Legendary (PC.supertypes spell) && (Set.member CardType.Instant types || Set.member CardType.Sorcery types))
           || controlsLegendaryCreatureOrPlaneswalker pid gs
 
@@ -2004,10 +2009,12 @@ controlsLegendaryCreatureOrPlaneswalker pid gs =
 -- absent mana cost stops a land cast, and a CR 118.9 waiver prices that at zero.
 -- The exile scenario "CR 305.9 a hidden Forest is played as the turn's land and
 -- never cast for free" proves it.
-printedRestrictionsOk :: PlayerId -> ObjectId -> CardName.CardName -> GameState -> Bool
-printedRestrictionsOk pid oid name gs = case proposedFace oid name gs of
+--
+-- `spell` is Cost.asSpellProjected's answer on `gs`, as cardTimingOk takes it.
+printedRestrictionsOk :: PC.ProjectedCharacteristics -> PlayerId -> ObjectId -> CardName.CardName -> GameState -> Bool
+printedRestrictionsOk spell pid oid name gs = case proposedFace oid name gs of
   Nothing -> False
-  Just face -> not (Card.isLand face) && all (restrictionMet pid oid gs) (Face.castingRestrictions (Projection.wipedFace (Cost.asSpellProjected pid oid gs) face))
+  Just face -> not (Card.isLand face) && all (restrictionMet pid oid gs) (Face.castingRestrictions (Projection.wipedFace spell face))
 
 -- The symbol a printed "Spend only [colour] mana on X" pays the spell's X as
 -- (CastingRestriction.SpendOnlyOnX), read as `printedRestrictionsOk` reads the
@@ -2277,19 +2284,21 @@ castableUnderHeld shared pid oid name facing gs =
 -- half being proposed off it.
 cardGatesOk :: PlayerId -> ObjectId -> CardName.CardName -> GameState -> Bool
 cardGatesOk pid oid name proposed =
-  -- CR 601.3e / 719.3a: on the card as printed or as a prototyped spell, a
-  -- lookahead; candidateInZone narrows the candidates to the reading each one
-  -- makes. Asked before the timing window, which projects the card several
-  -- times over, since most candidates are cards no permission names (#4698).
-  any (inCastableZone pid oid name) (proposed : PlayerEffect.prototypedReading oid proposed)
-    && cardTimingOk pid oid name proposed
-    -- CR 601.3's prohibit half from a different CARRIER: a spell on the stack
-    -- (CR 702.61a) rather than a continuous effect on a player. It names
-    -- neither a player nor a quality of the spell, so no candidate can escape
-    -- it and it stays out of `candidateOk` in `castable` above.
-    && not (SplitSecond.inForce proposed)
-    && printedRestrictionsOk pid oid name proposed
-    && legendaryRestrictionOk pid oid name proposed
+  let -- The spell's projection, one gather shared by three conjuncts (#9709).
+      spell = Cost.asSpellProjected pid oid proposed
+   in -- CR 601.3e / 719.3a: on the card as printed or as a prototyped spell, a
+      -- lookahead; candidateInZone narrows the candidates to the reading each one
+      -- makes. Asked before the timing window, which projects the card several
+      -- times over, since most candidates are cards no permission names (#4698).
+      any (inCastableZone pid oid name) (proposed : PlayerEffect.prototypedReading oid proposed)
+        && cardTimingOk spell pid oid name proposed
+        -- CR 601.3's prohibit half from a different CARRIER: a spell on the stack
+        -- (CR 702.61a) rather than a continuous effect on a player. It names
+        -- neither a player nor a quality of the spell, so no candidate can escape
+        -- it and it stays out of `candidateOk` in `castable` above.
+        && not (SplitSecond.inForce proposed)
+        && printedRestrictionsOk spell pid oid name proposed
+        && legendaryRestrictionOk spell pid oid name proposed
 
 -- CR 116.2f: "could they begin to cast that card by putting it onto the stack",
 -- the test CR 702.62a's special action is gated on, and CR 702.62c is what puts
@@ -2407,11 +2416,14 @@ castFacings oid face gs =
 -- AND ONE MORE FOR A HAND'S FUSE CARD, rule 702.102a's own permission, offered
 -- the same way for the same reason -- see `fusedProposals` below.
 castableSpells :: PlayerId -> GameState -> [(ObjectId, CardName.CardName, Facing.Facing)]
-castableSpells pid gs =
-  let -- ONE control-grant walk and one projection for the whole enumeration
-      -- (#435).
-      shared = (Projection.controlGrants gs, Projection.projectAll gs)
-      buried = unpermittedInGraveyard gs
+castableSpells pid gs = castableSpellsGiven (Projection.controlGrants gs, Projection.projectAll gs) pid gs
+
+-- castableSpells over ONE control-grant walk and one projection of `gs` for the
+-- whole enumeration (#435), which Action.legalActions shares with its other
+-- offers (#9709).
+castableSpellsGiven :: ([Projection.ControlGrant], Map.Map ObjectId PC.ProjectedCharacteristics) -> PlayerId -> GameState -> [(ObjectId, CardName.CardName, Facing.Facing)]
+castableSpellsGiven shared pid gs =
+  let buried = unpermittedInGraveyard gs
       othersHand = unpermittedInOthersHand pid gs
    in filter (\(oid, name, facing) -> castableGiven (Just shared) pid oid name facing gs) (castProposals (\oid -> not (buried oid || othersHand oid)) pid gs)
 
@@ -2547,7 +2559,7 @@ fusedFaceOf oid gs = do
 -- permissions -- a classification, never card identity.
 permitsCastWhileSearching :: ObjectId -> Face.Face Card.Type.Card -> GameState -> Bool
 permitsCastWhileSearching oid face gs =
-  elem CastingPermission.CastFromLibraryWhileSearching (Cost.permissionsOf oid face gs)
+  elem CastingPermission.CastFromLibraryWhileSearching (Cost.permissionsOf (Projection.project oid gs) oid face gs)
 
 -- CR 601.3c / 601.3d: does this card carry a permission to be cast as though
 -- it had flash? Cost.candidateCostsGiven asks its condition and prices it.
@@ -2582,7 +2594,7 @@ isFlashPermission permission = case permission of
 -- to say "for this player".
 permitsCastFromGraveyard :: PlayerId -> ObjectId -> Face.Face Card.Type.Card -> GameState -> Bool
 permitsCastFromGraveyard pid oid face gs =
-  (ownedBy pid oid gs && (any (Cost.permitsFromZone Zone.Graveyard) (Cost.permissionsOf oid face gs) || permitsDisturb oid face gs))
+  (ownedBy pid oid gs && (any (Cost.permitsFromZone Zone.Graveyard) (Cost.permissionsOf (Projection.project oid gs) oid face gs) || permitsDisturb oid face gs))
     || PlayerEffect.mayCastFrom pid Zone.Graveyard oid gs
     || permitsCastUnderPermission pid oid face gs
 
@@ -2786,8 +2798,8 @@ castableWhenOffered spending pid oid name candidates proposed =
               (CandidateCost.cost candidate)
       )
       candidates
-    && printedRestrictionsOk pid oid name proposed
-    && legendaryRestrictionOk pid oid name proposed
+    && printedRestrictionsOk (Cost.asSpellProjected pid oid proposed) pid oid name proposed
+    && legendaryRestrictionOk (Cost.asSpellProjected pid oid proposed) pid oid name proposed
 
 -- CR 601.3 (Panglacial): while a player searches their own library, offer them
 -- the chance to cast a castable-while-searching card from it, before any card is
@@ -3416,7 +3428,7 @@ entryRewriting slot rewrite = ReplacementEffect.EntryR (EntryR.MkEntryR (Filter.
 -- blitz ability") opens the zone for that cost alone.
 castWays :: (ObjectId -> Bool) -> PlayerId -> ObjectId -> CastOrigin.CastOrigin -> Face.Face Card.Type.Card -> GameState -> Maybe Keyword -> [Maybe (ObjectId, CastFromZone.CastFromZone)]
 castWays rides pid oid origin face gs castFor =
-  let named = ownedBy pid oid gs && any (\family -> (castFor >>= Keyword.familyOf) == Just family) [family | CastingPermission.CastFrom Zone.Graveyard _ (Just family) [] Nothing Nothing <- Cost.permissionsOf oid face gs]
+  let named = ownedBy pid oid gs && any (\family -> (castFor >>= Keyword.familyOf) == Just family) [family | CastingPermission.CastFrom Zone.Graveyard _ (Just family) [] Nothing Nothing <- Cost.permissionsOf (Projection.project oid gs) oid face gs]
       ownOpen = case origin of
         CastOrigin.FromZone Zone.Exile -> exileOpen pid oid face gs
         CastOrigin.FromZone Zone.Graveyard -> permitsCastUnderPermission pid oid face gs || PlayerEffect.mayPlayFromOwnGraveyard Map.empty PermissionVerb.Cast pid oid gs || named
@@ -3456,7 +3468,7 @@ ownPayingWays oid face gs =
           CastFromZone.outsideTheGame = False
         }
     )
-  | permission@(CastingPermission.CastFrom Zone.Graveyard _ _ additional entersWith alternative) <- Cost.permissionsOf oid face gs,
+  | permission@(CastingPermission.CastFrom Zone.Graveyard _ _ additional entersWith alternative) <- Cost.permissionsOf (Projection.project oid gs) oid face gs,
     Cost.addsToItsCast permission
   ]
 

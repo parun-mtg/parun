@@ -48,6 +48,8 @@ import qualified Parun.Types.Object as Object
 import Parun.Types.ObjectId (ObjectId)
 import qualified Parun.Types.PaymentSubject as PaymentSubject
 import Parun.Types.PlayerId (PlayerId)
+import Parun.Types.ProjectedCharacteristics (ProjectedCharacteristics)
+import qualified Parun.Types.ProjectedCharacteristics as PC
 import qualified Parun.Types.TurnRegisters as TurnRegisters
 import qualified Parun.Types.Zone as Zone
 
@@ -66,12 +68,15 @@ import qualified Parun.Types.Zone as Zone
 -- Parun.SpecialActionSpec's "CR 613.1f a Djinn of Fool's Fall that perpetually
 -- lost all abilities cannot be plotted" proves it. A member with no card behind
 -- it has no plot cost.
-plotCostsOf :: PlayerId -> ObjectId -> GameState -> [Cost Keyword]
-plotCostsOf pid oid gs = case Game.cardOfHandMember oid gs of
+--
+-- `offBoard` is a Projection.projectOffBoard map of `gs`, or empty to project
+-- the card afresh (#9709).
+plotCostsOf :: Map.Map ObjectId ProjectedCharacteristics -> PlayerId -> ObjectId -> GameState -> [Cost Keyword]
+plotCostsOf offBoard pid oid gs = case Game.cardOfHandMember oid gs of
   Nothing -> []
   Just card ->
     let face = Card.combined card
-        own = Keyword.plotCosts (Map.keysSet (Projection.keywordsOf oid gs))
+        own = Keyword.plotCosts (Map.keysSet (PC.keywords (Projection.projectEachGiven offBoard oid gs)))
         granted = Cost.Type.MkCost (Face.manaCost face) []
         inHand = elem oid (Game.zoneMembers Zone.Hand pid gs)
         fromPile =
@@ -106,9 +111,9 @@ plotCostsOf pid oid gs = case Game.cardOfHandMember oid gs of
 --
 -- The PRIORITY clause has no conjunct, for the reason CR 116.2a's land play has
 -- none: legalActions is asked only of the priority holder.
-canPlot :: PlayerId -> ObjectId -> Cost Keyword -> GameState -> Bool
-canPlot pid oid printed gs =
-  elem printed (plotCostsOf pid oid gs)
+canPlot :: Map.Map ObjectId ProjectedCharacteristics -> PlayerId -> ObjectId -> Cost Keyword -> GameState -> Bool
+canPlot offBoard pid oid printed gs =
+  elem printed (plotCostsOf offBoard pid oid gs)
     && Turn.sorcerySpeedWindow pid gs
     && let (adjustments, cost) = plotCost pid oid printed gs
            payableWith manaCost = Cost.actionPayableAt PaymentSubject.ForNeither 0 pid oid cost {Cost.Type.mana = manaCost} gs
@@ -134,14 +139,14 @@ plotCost pid oid printed gs =
 -- from, and the shape Room.unlockable and FaceDown.turnableFaceUp have. The
 -- candidates are the player's hand and the cards Cast.pileCandidates offers of
 -- each pile a PlotFrom grant opens.
-plottable :: PlayerId -> GameState -> [(ObjectId, Cost Keyword)]
-plottable pid gs =
+plottable :: Map.Map ObjectId ProjectedCharacteristics -> PlayerId -> GameState -> [(ObjectId, Cost Keyword)]
+plottable offBoard pid gs =
   let candidates =
         ListUtils.nubOrd
           ( Game.zoneMembers Zone.Hand pid gs
               <> concat [Cast.pileCandidates zone owner gs | (zone, owner) <- PlayerEffect.plotPiles pid gs]
           )
-   in [(oid, cost) | oid <- candidates, cost <- plotCostsOf pid oid gs, canPlot pid oid cost gs]
+   in [(oid, cost) | oid <- candidates, cost <- plotCostsOf offBoard pid oid gs, canPlot offBoard pid oid cost gs]
 
 -- CR 702.170a, in the rule's own order: exile the card from where it is (the hand,
 -- or CR 702.170f's other zone) and pay the cost, leaving it a plotted card.
@@ -179,7 +184,7 @@ plottable pid gs =
 plot :: ManaAbilityPerformer.ManaAbilityPerformer -> PlayerId -> ObjectId -> Cost Keyword -> Game ()
 plot perform pid oid printed = do
   before <- State.get
-  Monad.when (canPlot pid oid printed before) $ do
+  Monad.when (canPlot Map.empty pid oid printed before) $ do
     let (adjustments, cost) = plotCost pid oid printed before
     exiled <- Event.changeZoneReturning (ManaAbilityPerformer.settle perform) oid Zone.Exile
     -- The payment names the card by `oid`, as `before` -- the board its X and

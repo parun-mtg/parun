@@ -1740,7 +1740,7 @@ aloeAlchemistSpec s registry =
               (maidenId, g2) = S.addPermanent maiden S.bob g1
               (aloeId, g3) = S.addHandCard aloe S.alice g2
               gs = sorcerySpeed g3
-              plotted = S.runPure (aimAt pikerId) gs (mapM_ (Plot.plot S.manaPerformer S.alice aloeId) (Plot.plotCostsOf S.alice aloeId gs))
+              plotted = S.runPure (aimAt pikerId) gs (mapM_ (Plot.plot S.manaPerformer S.alice aloeId) (Plot.plotCostsOf Map.empty S.alice aloeId gs))
               after = S.runPure (aimAt pikerId) plotted Engine.priorityLoop
           Spec.assertEqWith s "the Piker started 2/1" (S.powerToughnessOf pikerId gs) (Just (2, 1))
           Spec.assertBool s (any isPlotted (S.eventsOf after)) "CR 702.170a the plot recorded its event"

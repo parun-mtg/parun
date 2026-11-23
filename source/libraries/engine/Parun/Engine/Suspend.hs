@@ -36,6 +36,8 @@ import qualified Parun.Types.ManaAbilityPerformer as ManaAbilityPerformer
 import Parun.Types.ObjectId (ObjectId)
 import qualified Parun.Types.PaymentSubject as PaymentSubject
 import Parun.Types.PlayerId (PlayerId)
+import Parun.Types.ProjectedCharacteristics (ProjectedCharacteristics)
+import qualified Parun.Types.ProjectedCharacteristics as PC
 import qualified Parun.Types.Suspend as Suspend
 import qualified Parun.Types.SuspendCounters as SuspendCounters
 import qualified Parun.Types.Zone as Zone
@@ -49,10 +51,13 @@ import qualified Parun.Types.Zone as Zone
 -- "loses all abilities" follows the card back to its owner's hand.
 -- Parun.SpecialActionSpec's "CR 613.1f a Durkwood Baloth that perpetually lost
 -- all abilities cannot be suspended" proves it.
-suspendOf :: ObjectId -> GameState -> Maybe (Suspend.Suspend Keyword)
-suspendOf oid gs = do
+--
+-- `offBoard` is a Projection.projectOffBoard map of `gs`, or empty to project
+-- the card afresh (#9709).
+suspendOf :: Map.Map ObjectId ProjectedCharacteristics -> ObjectId -> GameState -> Maybe (Suspend.Suspend Keyword)
+suspendOf offBoard oid gs = do
   _ <- Game.cardOfHandMember oid gs
-  Keyword.suspend (Map.keysSet (Projection.keywordsOf oid gs))
+  Keyword.suspend (Map.keysSet (PC.keywords (Projection.projectEachGiven offBoard oid gs)))
 
 -- CR 702.62a / 116.2f: may this player suspend this card right now? Three
 -- conjuncts, each a clause of the rule:
@@ -86,8 +91,8 @@ suspendOf oid gs = do
 --
 -- ONE HALF, the combined card's own name: rule 116.2f's subject is a card rather
 -- than a half, and no printing has suspend on a multi-faced card.
-canSuspend :: PlayerId -> ObjectId -> GameState -> Bool
-canSuspend pid oid gs = case suspendOf oid gs of
+canSuspend :: Map.Map ObjectId ProjectedCharacteristics -> PlayerId -> ObjectId -> GameState -> Bool
+canSuspend offBoard pid oid gs = case suspendOf offBoard oid gs of
   Nothing -> False
   Just ability ->
     elem oid (Game.zoneMembers Zone.Hand pid gs)
@@ -96,8 +101,8 @@ canSuspend pid oid gs = case suspendOf oid gs of
 
 -- Every card this player may suspend right now -- what Action.Suspend is built
 -- from, and the shape Plot.plottable and Foretell.foretellable have.
-suspendable :: PlayerId -> GameState -> [ObjectId]
-suspendable pid gs = filter (\oid -> canSuspend pid oid gs) (Game.zoneMembers Zone.Hand pid gs)
+suspendable :: Map.Map ObjectId ProjectedCharacteristics -> PlayerId -> GameState -> [ObjectId]
+suspendable offBoard pid gs = filter (\oid -> canSuspend offBoard pid oid gs) (Game.zoneMembers Zone.Hand pid gs)
 
 -- CR 702.62a: pay the suspend cost and exile the card from hand with N time
 -- counters on it, leaving it a suspended card (CR 702.62b).
@@ -137,8 +142,8 @@ suspendable pid gs = filter (\oid -> canSuspend pid oid gs) (Game.zoneMembers Zo
 suspend :: ManaAbilityPerformer.ManaAbilityPerformer -> PlayerId -> ObjectId -> Game ()
 suspend perform pid oid = do
   before <- State.get
-  Monad.when (canSuspend pid oid before) $ do
-    let ability = Maybe.fromMaybe (Suspend.MkSuspend (SuspendCounters.Literal 0) Cost.unpayable) (suspendOf oid before)
+  Monad.when (canSuspend Map.empty pid oid before) $ do
+    let ability = Maybe.fromMaybe (Suspend.MkSuspend (SuspendCounters.Literal 0) Cost.unpayable) (suspendOf Map.empty oid before)
     -- CR 107.3d: the taker of the special action names X, at least CR 101.1's
     -- floor. The X prompt TERMINATES for the reason Cost.greatestPayableX needs
     -- one -- a suspend cost's X is a generic mana symbol, so its demand grows
