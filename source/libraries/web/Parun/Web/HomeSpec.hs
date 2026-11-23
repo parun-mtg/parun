@@ -74,6 +74,7 @@ spec s = Spec.describe s "Parun.Web.Home" $ do
       let asked = paused {Home.confirming = Just (Home.MkNewGame Nothing)}
       Spec.assertEqWith s "asks" (Home.update (Home.MkChoose (Home.MkNewGame Nothing)) paused) (Home.MkStay asked)
       Spec.assertEqWith s "the question shows" (has "Starting a new game concedes the one in progress." asked) True
+      Spec.assertEqWith s "the game offered back" (tapping "Resume" asked) (Just Home.MkResume)
       Spec.assertEqWith s "confirmed" (Home.update Home.MkConfirm asked) (Home.MkGo (Home.MkNewGame Nothing))
       Spec.assertEqWith s "cancelled" (Home.update Home.MkCancel asked) (Home.MkStay paused)
 

@@ -3,6 +3,7 @@
 -- batch at a time while no tap waits.
 module Parun.Browser.Shell where
 
+import Control.Applicative ((<|>))
 import qualified Control.Exception as Exception
 import qualified Control.Monad as Monad
 import qualified Data.Bifunctor as Bifunctor
@@ -84,7 +85,10 @@ data Shell = MkShell
     finished :: IORef.IORef [History.Game],
     -- | How every bot plays, as the lobby last left it: its difficulty and
     -- its persona (Parun.Play.Opponent).
-    opponent :: IORef.IORef (Difficulty.Difficulty, Persona.Persona)
+    opponent :: IORef.IORef (Difficulty.Difficulty, Persona.Persona),
+    -- | Your deck as the lobby last left it, which a lobby opened on no deck
+    -- holds.
+    yourDeck :: IORef.IORef (Maybe Text.Text)
   }
 
 -- | The data so far: which chunks arrived, and what has been built from
@@ -169,7 +173,7 @@ start = do
   -- A summary that does not read, or a game past the cap, is forgotten.
   (games, gone) <- History.loaded <$> Browser.playedGames
   mapM_ Browser.forgetPlayed gone
-  shell <- MkShell <$> Browser.mount <*> IORef.newIORef (MkLoaded Loading.new Nothing Map.empty Map.empty Nothing Map.empty [] Nothing Nothing Nothing False Nothing Map.empty [] Nothing Map.empty Map.empty Map.empty Map.empty) <*> IORef.newIORef chosen <*> pure built <*> IORef.newIORef games <*> IORef.newIORef (Lobby.difficulty Lobby.new, Lobby.persona Lobby.new)
+  shell <- MkShell <$> Browser.mount <*> IORef.newIORef (MkLoaded Loading.new Nothing Map.empty Map.empty Nothing Map.empty [] Nothing Nothing Nothing False Nothing Map.empty [] Nothing Map.empty Map.empty Map.empty Map.empty) <*> IORef.newIORef chosen <*> pure built <*> IORef.newIORef games <*> IORef.newIORef (Lobby.difficulty Lobby.new, Lobby.persona Lobby.new) <*> IORef.newIORef Nothing
   Exception.catch (opening built >>= \next -> Browser.locate Browser.MkReplace (Route.render (routeOf next)) >> follow shell next) $ \problem ->
     Browser.display (page shell) $ message ["The page stopped on an error:", Exception.displayException (problem :: Exception.SomeException)]
 
@@ -230,7 +234,9 @@ follow :: Shell -> Next -> IO ()
 follow shell next =
   located next >> case next of
     MkToHome -> home shell Home.new >>= follow shell . afterHome
-    MkToLobby deck -> lobby shell (maybe Lobby.new Lobby.holding deck) [] >>= follow shell
+    MkToLobby deck -> do
+      last' <- IORef.readIORef (yourDeck shell)
+      lobby shell (maybe Lobby.new Lobby.holding (deck <|> last')) [] >>= follow shell
     MkToDecks deck -> decksScreen shell deck >>= follow shell
     -- Only an invited slot reads its deck's list (Lobby.rematch), and none is.
     MkToMatchup decks -> lobby shell (Lobby.rematch (fmap (\name -> (name, Text.empty)) decks) Set.empty Map.empty) [] >>= follow shell
@@ -306,6 +312,7 @@ lobby shell initial said = do
     go' shown told = do
       current <- refreshed shell shown
       IORef.writeIORef (opponent shell) (Lobby.difficulty current, Lobby.persona current)
+      IORef.writeIORef (yourDeck shell) (Lobby.mine current)
       told' <- tellPlaces current told
       if Lobby.starts current
         then startWith current told'
@@ -474,6 +481,7 @@ rememberSaved shell name typed listed = do
 forgetSaved :: Shell -> Text.Text -> IO ()
 forgetSaved shell name = do
   Browser.forgetDeck (Text.drop (Text.length DeckBrowser.savedPrefix) name)
+  IORef.modifyIORef' (yourDeck shell) (Monad.mfilter (/= name))
   IORef.modifyIORef' (loaded shell) $ \l -> l {deckFiles = fmap (Map.delete name) (deckFiles l), formats = Map.delete name (formats l), titles = Map.delete name (titles l), palette = Map.delete name (palette l), deckCurves = Map.delete name (deckCurves l), deckSizes = Map.delete name (deckSizes l), unread = filter ((/= name) . fst) (unread l), illegal = Map.delete name (illegal l), unchecked = filter ((/= name) . fst) (unchecked l)}
 
 -- | A deck's list, as its file holds it, if the deck is held.
