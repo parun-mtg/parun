@@ -2411,7 +2411,9 @@ castableSpells pid gs =
   let -- ONE control-grant walk and one projection for the whole enumeration
       -- (#435).
       shared = (Projection.controlGrants gs, Projection.projectAll gs)
-   in filter (\(oid, name, facing) -> castableGiven (Just shared) pid oid name facing gs) (castProposals (not . unpermittedInGraveyard gs) pid gs)
+      buried = unpermittedInGraveyard gs
+      othersHand = unpermittedInOthersHand pid gs
+   in filter (\(oid, name, facing) -> castableGiven (Just shared) pid oid name facing gs) (castProposals (\oid -> not (buried oid || othersHand oid)) pid gs)
 
 -- Every cast castableSpells asks `castable` about, in castZones' order: each
 -- castable face of each card `among` admits in a zone this player could cast
@@ -2479,7 +2481,7 @@ unpermittedInGraveyard gs =
   let ungated = Projection.gatherUngated gs
       opensNothing g = let l = Projection.layer (Projection.gModification g) in l == Layer.Color || (l >= Layer.CharacteristicPT && l <= Layer.SwitchPT)
       reached = Set.unions [Projection.candidatesFor (Projection.gAffected g) gs | g <- ungated, not (opensNothing g)]
-      quiet = not (PlayerEffect.anyCastFromRow gs) && not (any (Projection.grantsPlayerAbility . Projection.gModification) ungated)
+      quiet = castFromQuiet ungated gs
       keywordsPermitNothing face =
         let keywords = Face.keywordSet face
          in null (Keyword.castingPermissionsOf (TypeLine.types (Face.typeLine face)) keywords) && null (Keyword.disturbCosts keywords)
@@ -2492,6 +2494,36 @@ unpermittedInGraveyard gs =
             && all printsNothing (Card.Type.faces card)
             && quiet
             && not (Set.member oid reached)
+        _ -> False
+
+-- No CastFrom row exists, printed or stored, and no effect `ungated` gathers
+-- grants a player ability that could carry one (CR 601.3, 613.10): the
+-- condition under which no permission opens a zone a player could not
+-- already cast from.
+castFromQuiet :: [Projection.Gathered] -> GameState -> Bool
+castFromQuiet ungated gs = not (PlayerEffect.anyCastFromRow gs) && not (any (Projection.grantsPlayerAbility . Projection.gModification) ungated)
+
+-- CR 304.1 / 601.3: is `oid` a card in a hand `pid` does not own that no
+-- permission can open to them on this board? Decided without projecting it,
+-- as unpermittedInGraveyard decides a graveyard card (#9687): permittedFrom
+-- opens another's hand only through a CastFrom row (castFromQuiet), and a card
+-- printing no static or player ability on any face, with no copy stamp (CR
+-- 707.2), adds none under any proposal. permittedOutside needs such a row too,
+-- or the copy-cast stand-in the card is not. False wherever any of that
+-- fails, leaving the card to `castable`. Parun.CastSpec's differential test of
+-- castableSpells against `castable` over every proposal holds the two equal.
+unpermittedInOthersHand :: PlayerId -> GameState -> ObjectId -> Bool
+unpermittedInOthersHand pid gs =
+  let quiet = castFromQuiet (Projection.gatherUngated gs) gs
+      printsNothing face = null (Face.staticAbilities face) && null (Face.playerAbilities face)
+   in \oid -> case (Game.lookupObject oid gs, Game.cardOf oid gs) of
+        (Just obj, Just card) ->
+          Object.zone obj == Zone.Hand
+            && Object.owner obj /= pid
+            && Maybe.isNothing (Game.copyStampOf obj)
+            && Maybe.isNothing (Game.copyCastOf oid gs)
+            && all printsNothing (Card.Type.faces card)
+            && quiet
         _ -> False
 
 -- CR 702.102a: the fused spell this card in a hand may be cast as, or Nothing
