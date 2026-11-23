@@ -332,7 +332,7 @@ view request screen =
       <> [Element.el "p" ["problem"] [Element.attr "role" (Text.pack "alert")] (Mana.rich problem) | problem <- Maybe.maybeToList (Request.problem request)]
       <> [Element.el "p" ["playing"] [Element.attr "role" (Text.pack "note")] [Html.text (Text.pack "You're playing " <> Wording.player (Question.seat (Request.question request)) <> Text.pack ".")] | naming screen]
       <> [Element.el "p" ["controlling"] [Element.attr "role" (Text.pack "note")] [Html.text (Text.pack "You're deciding for " <> Wording.player p <> Text.pack ", whom you control.")] | p <- Maybe.maybeToList (Question.for (Request.question request))]
-      <> form request (selected screen)
+      <> form request (selected screen) (focus screen)
 
 -- | Above a prompt, whose turn it is and its step, in the turn's colour
 -- while it is the seat's.
@@ -389,11 +389,7 @@ autoPass current =
         "div"
         ["segmented"]
         [Element.attr "role" (Text.pack "group"), Element.attr "aria-label" (Text.pack "Automatic passing")]
-        [ Element.el
-            "button"
-            ["on" | l == current]
-            [Element.attr "type" (Text.pack "button"), Element.attr "data-level" (Text.pack (fst (levelName l))), Element.attr "aria-pressed" (Text.pack (if l == current then "true" else "false")), Element.on "click" (MkLevel l)]
-            [Element.string (snd (levelName l))]
+        [ pressable ["on" | l == current] [Element.attr "data-level" (Text.pack (fst (levelName l)))] (pressedIf (l == current)) (MkLevel l) [Element.string (snd (levelName l))]
         | l <- [minBound .. maxBound]
         ]
     ]
@@ -866,7 +862,7 @@ capitalized kind = case Text.uncons (Wording.spaced kind) of
 -- | Whether the request has no form of its own, and is answered by a reply
 -- typed as JSON.
 answersTyped :: Request.Request -> Bool
-answersTyped request = fmap Html.toText (form request Set.empty) == fmap Html.toText (typedReply request)
+answersTyped request = fmap Html.toText (form request Set.empty Nothing) == fmap Html.toText (typedReply request)
 
 -- | The offer shown as it is sent, and a field for a reply typed as JSON.
 typedReply :: Request.Request -> [Html.Html Event]
@@ -878,8 +874,8 @@ typedReply request =
   where
     question = Request.question request
 
-form :: Request.Request -> Set.Set (Natural, Natural) -> [Html.Html Event]
-form request picked = case Text.unpack (Question.kind question) of
+form :: Request.Request -> Set.Set (Natural, Natural) -> Maybe Natural -> [Html.Html Event]
+form request picked focused = case Text.unpack (Question.kind question) of
   "PlayOrDraw" -> heading "Play first or draw?" : [button (MkAnswer option) (Offer.tagName word) | option@(R.Text word) <- Foldable.fold (Protocol.arrayOf offer)]
   -- CR 103.1: among three or more seats, the seat to take the first turn.
   "ChooseStarter" -> heading "Who takes the first turn?" : [button (MkAnswer option) (if option == R.Text (Text.pack (show (PlayerId.unwrap (Question.seat question)))) then Text.pack "You" else Offer.playerName option) | option <- Foldable.fold (Protocol.arrayOf offer)]
@@ -991,7 +987,10 @@ form request picked = case Text.unpack (Question.kind question) of
   _
     | Just (title', items) <- ordering request ->
         Html.element (Text.pack "h2") [] (Mana.rich title')
-          : [button (MkToggle 0 i) (foldMap (\(k, _) -> Text.pack (show (k + 1) <> ". ")) (List.find ((== i) . snd) (Set.toList picked)) <> label) | (i, label) <- zip [0 ..] items]
+          : [ let place = List.find ((== i) . snd) (Set.toList picked)
+               in pressable [] [] (pressedIf (Maybe.isJust place)) (MkToggle 0 i) (Mana.rich (foldMap (\(k, _) -> Text.pack (show (k + 1) <> ". ")) place <> label))
+            | (i, label) <- zip [0 ..] items
+            ]
             <> [Element.el "div" ["passes"] [] $ primary MkSubmit (Text.pack (if Set.null picked then "Keep this order" else "Done")) : [button MkClear (Text.pack "Start over") | not (Set.null picked)]]
   _
     | Just ((title', other), from) <- piles request,
@@ -1001,10 +1000,11 @@ form request picked = case Text.unpack (Question.kind question) of
             at j = lookup j [(j', (p, n)) | p <- [0, 1], (n, j') <- zip [1 :: Int ..] [c | (p', c) <- placed, p' == p]]
             choice j p label =
               let on = fmap fst (at j) == Just p
-               in Element.el
-                    "button"
+               in pressable
                     ["on" | on]
-                    [Element.attr "type" (Text.pack "button"), Element.attr "aria-pressed" (Text.pack (if on then "true" else "false")), Element.on "click" (MkToggle p j)]
+                    []
+                    (pressedIf on)
+                    (MkToggle p j)
                     [Element.text (label <> (if on then foldMap (\(_, n) -> Text.pack (" " <> show n)) (at j) else Text.empty))]
             row j card =
               let name = Offer.listedName shown card
@@ -1086,13 +1086,14 @@ form request picked = case Text.unpack (Question.kind question) of
               Nothing -> []
             sectionOf g = Monad.join (Maybe.listToMaybe (drop g sections))
             row g group =
-              Element.el
-                "div"
-                ["amount-row"]
-                []
-                [ Element.el "span" ["amount-label"] [] (Mana.rich (title group)),
-                  Element.el "div" ["segmented"] [] [Element.button (["on" | Set.member (Int.toNaturalSaturating g, i) picked]) (MkToggle (Int.toNaturalSaturating g) i) (Mana.rich label) | (i, (_, label)) <- zip [0 ..] (options group)]
-                ]
+              let on i = Set.member (Int.toNaturalSaturating g, i) picked
+               in Element.el
+                    "div"
+                    ["amount-row"]
+                    [Element.attr "role" (Text.pack "group"), Element.attr "aria-label" (foldMap Html.spoken (Mana.rich (title group)))]
+                    [ Element.el "span" ["amount-label"] [] (Mana.rich (title group)),
+                      Element.el "div" ["segmented"] [] [pressable ["on" | on i] [] (pressedIf (on i)) (MkToggle (Int.toNaturalSaturating g) i) (Mana.rich label) | (i, (_, label)) <- zip [0 ..] (options group)]
+                    ]
             rows = concat [[Element.el "h3" ["subhead"] [] (Mana.rich t) | Just t <- [sectionOf g], g == 0 || sectionOf (g - 1) /= Just t] <> [row g group] | (g, group) <- zip [0 ..] (groups chooser)]
          in Html.element (Text.pack "h2") [] (Mana.rich title')
               : fmap nudge context
@@ -1111,7 +1112,10 @@ form request picked = case Text.unpack (Question.kind question) of
     | Just chooser <- picker request ->
         heading "Declare blockers: choose a creature of yours, then the attacker it blocks."
           : concat
-            [ Element.el "h3" ["subhead"] [] (Mana.rich (title group))
+            [ ( if focused == Just g
+                  then Element.el "h3" ["subhead", "focused"] [Element.attr "aria-current" (Text.pack "true")] (Mana.rich (title group <> Text.pack ": choose the attacker it blocks"))
+                  else Element.el "h3" ["subhead"] [] (Mana.rich (title group))
+              )
                 : toggles g (most group) [(i, label) | (i, (_, label)) <- zip [0 ..] (options group)]
             | (g, group) <- zip [0 ..] (groups chooser)
             ]
@@ -1136,7 +1140,10 @@ form request picked = case Text.unpack (Question.kind question) of
     offer = Question.offer question
     -- CR 734.1: takes back the spell or ability being announced.
     cancel withdrawal = button (MkAnswer withdrawal) (Text.pack "Cancel")
-    toggle g i label = button (MkToggle g i) $ (if Set.member (g, i) picked then Text.pack "\x2713 " else Text.empty) <> label
+    -- The check mark is drawn only: aria-pressed says it.
+    toggle g i label =
+      let on = Set.member (g, i) picked
+       in pressable [] [] (pressedIf on) (MkToggle g i) ([Element.el "span" [] [Element.attr "aria-hidden" (Text.pack "true")] [Element.string "\x2713 "] | on] <> Mana.rich label)
     -- Options the seat can't tell apart share a button: a tap picks the
     -- first unpicked while the group has room, else drops the last picked.
     toggles g room labelled =
@@ -1148,7 +1155,7 @@ form request picked = case Text.unpack (Question.kind question) of
                 next = case filter (\i -> not (Set.member (g, i) picked)) indices of
                   i : _ | null chosen || not full -> i
                   _ -> List.last chosen
-             in button (MkToggle g next) ((if null chosen then Text.empty else Text.pack (show (length chosen) <> " of ")) <> label <> many (length indices))
+             in pressable [] [] (if null chosen then "false" else if length chosen == length indices then "true" else "mixed") (MkToggle g next) $ Mana.rich ((if null chosen then Text.empty else Text.pack (show (length chosen) <> " of ")) <> label <> many (length indices))
       | (indices, label, _) <- collapsed (const True) labelled
       ]
     many n = if n > 1 then Text.pack (" \x00d7" <> show n) else Text.empty
@@ -1296,6 +1303,16 @@ asSeat shown who label = case who of
 -- | A word of information beside a question, which answers nothing.
 nudge :: Text.Text -> Html.Html msg
 nudge t = Element.el "p" ["nudge"] [Element.attr "role" (Text.pack "note")] (Mana.rich t)
+
+-- | A button that is on or off, its state read aloud as aria-pressed (a
+-- string, "mixed" where it stands for several options, some on), its
+-- classes and attributes besides.
+pressable :: [String] -> [Attribute.Attribute Event] -> String -> Event -> [Html.Html Event] -> Html.Html Event
+pressable classes attrs state event = Element.el "button" classes ([Element.attr "type" (Text.pack "button")] <> attrs <> [Element.attr "aria-pressed" (Text.pack state), Element.on "click" event])
+
+-- | A two-state button's aria-pressed.
+pressedIf :: Bool -> String
+pressedIf on = if on then "true" else "false"
 
 button :: Event -> Text.Text -> Html.Html Event
 button event label = Element.button [] event (Mana.rich label)
