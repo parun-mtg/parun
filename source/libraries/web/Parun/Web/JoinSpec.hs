@@ -2,6 +2,7 @@ module Parun.Web.JoinSpec where
 
 import qualified Data.Map.Strict as Map
 import qualified Data.Sequence as Seq
+import qualified Data.Set as Set
 import qualified Data.Text as Text
 import qualified Parun.Spec as Spec
 import qualified Parun.Web.DeckBrowser as DeckBrowser
@@ -24,7 +25,7 @@ spec s = Spec.describe s "Parun.Web.Join" $ do
   Spec.describe s "yourDeck" $ do
     Spec.it s "is the deck chosen, else the one the host says you play" $ do
       let held = (Join.new Route.MkGathering) {Join.places = [place "Player 1" (Just False) False, place "You" (Just False) False]}
-          unchosen = (Join.new Route.MkGathering) {Join.places = [Link.MkPlace (Text.pack "You") Link.unchosen (Just False) False]}
+          unchosen = (Join.new Route.MkGathering) {Join.places = [Link.MkPlace (Text.pack "You") Link.unchosen (Just False) False Set.empty]}
       Spec.assertEqWith s "the host's" (Join.yourDeck held) (Just (Text.pack "A deck"))
       Spec.assertEqWith s "none chosen anywhere" (Join.yourDeck unchosen) Nothing
       Spec.assertEqWith s "chosen here" (Join.yourDeck (Join.update (Join.MkPick mine) Text.empty decked)) (Just (Text.pack "Mine"))
@@ -60,4 +61,4 @@ spec s = Spec.describe s "Parun.Web.Join" $ do
   where
     mine = Text.pack "saved/mine"
     decked = (Join.new Route.MkGathering) {Join.browser = DeckBrowser.withDecks (Seq.fromList [mine, Text.pack "sets/fdc/calling-all-angels"]) Map.empty Map.empty DeckBrowser.new}
-    place who = Link.MkPlace (Text.pack who) (Text.pack "A deck")
+    place who ready bot = Link.MkPlace (Text.pack who) (Text.pack "A deck") ready bot Set.empty

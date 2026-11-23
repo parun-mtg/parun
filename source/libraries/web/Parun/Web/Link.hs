@@ -10,8 +10,10 @@ import qualified Data.Foldable as Foldable
 import qualified Data.List.NonEmpty as NonEmpty
 import qualified Data.Map.Strict as Map
 import qualified Data.Sequence as Seq
+import qualified Data.Set as Set
 import qualified Data.Text as Text
 import Numeric.Natural (Natural)
+import qualified Parun.Codec.Color as Codec.Color
 import qualified Parun.Codec.PlayerId as Codec.PlayerId
 import qualified Parun.Codec.PlayerView as Codec.PlayerView
 import qualified Parun.Codec.Reply as Codec.Reply
@@ -27,6 +29,7 @@ import qualified Parun.Play.Key as Key
 import qualified Parun.Play.Opponent as Opponent
 import qualified Parun.Play.Protocol as Protocol
 import qualified Parun.Types.Asked as Asked
+import qualified Parun.Types.Color as Color
 import qualified Parun.Types.Difficulty as Difficulty
 import qualified Parun.Types.GameState as GameState
 import qualified Parun.Types.Key as Key.Type
@@ -78,7 +81,10 @@ data Place = MkPlace
     -- seat played on the host's screen.
     ready :: Maybe Bool,
     -- | Whether a bot plays it.
-    bot :: Bool
+    bot :: Bool,
+    -- | Its deck's colours, as the host reads them, for the guest's
+    -- history; none while it is not chosen.
+    colours :: Set.Set Color.Color
   }
   deriving (Eq, Show)
 
@@ -108,7 +114,7 @@ encode build message =
               Value.pair "trail" (Codec.encode trail (Ending.trail ending'))
             ]
           )
-      place p = Value.object [Value.pair "who" (Value.text (who p)), Value.pair "deck" (Value.text (deck p)), Value.pair "ready" (maybe Value.null Value.boolean (ready p)), Value.pair "bot" (Value.boolean (bot p))]
+      place p = Value.object [Value.pair "who" (Value.text (who p)), Value.pair "deck" (Value.text (deck p)), Value.pair "ready" (maybe Value.null Value.boolean (ready p)), Value.pair "bot" (Value.boolean (bot p)), Value.pair "colours" (Codec.encode (Common.set Codec.Color.codec) (colours p))]
    in Common.render (Value.object (Value.pair "type" (Value.string tag) : Value.pair "build" (Value.text build) : fields))
 
 -- | A line's message, or why it does not read: one from another build is
@@ -147,6 +153,7 @@ decode build line = do
         <*> (Common.field "deck" fields >>= Common.asText)
         <*> maybe (Right Nothing) (\v -> if v == Value.null then Right Nothing else Just <$> Common.asBoolean v) (Common.optionalField "ready" fields)
         <*> (Common.field "bot" fields >>= Common.asBoolean)
+        <*> (Common.field "colours" fields >>= Codec.decode (Common.set Codec.Color.codec))
     natural :: Integer -> Either Text.Text PlayerId.PlayerId
     natural = maybe (Left (Text.pack "not a seat")) (Right . PlayerId.MkPlayerId) . Integer.toNatural
 

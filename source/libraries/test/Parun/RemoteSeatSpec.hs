@@ -25,6 +25,7 @@ import qualified Parun.Spec as Spec
 import qualified Parun.Support as S
 import qualified Parun.Types.Answerer as Answerer
 import qualified Parun.Types.Asked as Asked
+import qualified Parun.Types.Color as Color
 import qualified Parun.Types.Deck as Deck
 import qualified Parun.Types.Difficulty as Difficulty
 import qualified Parun.Types.GameState as GameState
@@ -65,7 +66,7 @@ spec s registry = Spec.describe s "RemoteSeat" $ do
         changed = pick two bothReady
         guestFlag = fmap Lobby.guestReady . Map.lookup 0 . Lobby.invites
     Spec.assertEqWith s "starts" (fmap Lobby.starts [invited, connected, chosen, hostReady, guestReady, bothReady, changed]) [False, False, False, False, False, True, False]
-    Spec.assertEqWith s "the guest is shown who is ready" (fmap (fmap Link.ready . Lobby.placesFor 0) [hostReady, guestReady]) [[Just True, Just False], [Just False, Just True]]
+    Spec.assertEqWith s "the guest is shown who is ready" (fmap (fmap Link.ready . Lobby.placesFor uncoloured uncoloured 0) [hostReady, guestReady]) [[Just True, Just False], [Just False, Just True]]
     Spec.assertEqWith s "a change of deck clears every ready flag" (Lobby.ready changed, guestFlag changed) (False, Just False)
 
   Spec.it s "a game with two invited players starts only once all three are ready, and each guest is shown its own seat as its own" $ do
@@ -83,7 +84,7 @@ spec s registry = Spec.describe s "RemoteSeat" $ do
         shown = Html.toText (Lobby.view offered)
     Spec.assertBool s (all (\i -> Text.isInfixOf (Text.pack ("id=\"invite-reply-" <> show i <> "\"")) shown && Text.isInfixOf (Text.pack ("#offer=" <> show i)) shown) [0 :: Int, 1]) "each invited seat has its own link and its own reply box"
     Spec.assertEqWith s "starts" (fmap Lobby.starts [invited, chosen, hostReady, firstReady, allReady, dropped]) [False, False, False, False, True, False]
-    Spec.assertEqWith s "each guest is shown itself as You and the other as a player" (fmap (fmap Link.who . (`Lobby.placesFor` allReady)) [0, 1]) [[Text.pack "Player 1", Text.pack "You", Text.pack "Player 3"], [Text.pack "Player 1", Text.pack "Player 2", Text.pack "You"]]
+    Spec.assertEqWith s "each guest is shown itself as You and the other as a player" (fmap (fmap Link.who . (\i -> Lobby.placesFor uncoloured uncoloured i allReady)) [0, 1]) [[Text.pack "Player 1", Text.pack "You", Text.pack "Player 3"], [Text.pack "Player 1", Text.pack "Player 2", Text.pack "You"]]
     Spec.assertEqWith s "a guest dropping clears every ready flag" (Lobby.ready dropped, fmap Lobby.guestReady (Lobby.invites dropped)) (False, Map.fromList [(0, False), (1, False)])
 
   Spec.it s "a whole game in which the guest's seat is answered only through the remote exchange, and the guest sees only its own view" $ do
@@ -147,13 +148,17 @@ spec s registry = Spec.describe s "RemoteSeat" $ do
         Spec.assertEqWith s "the guest's log opens before the first turn" (Seq.lookup 0 (Ending.witnessed ending)) (Just Log.MkPregame)
       other -> Spec.assertBool s False ("the guest is told no ending: " <> show other)
 
-  Spec.it s "the match-up a game's guests are told again names every seat and every bot's deck drawn" $ do
+  Spec.it s "the match-up a game's guests are told again names every seat and every bot's deck drawn, each deck coloured" $ do
     let seat name = (Text.pack name, Text.pack "20 Forest\n")
         seats = seat "sets/a/one" NonEmpty.:| [(Text.pack "sets/a/two", Text.pack "Name: Kamahl's Temper\n20 Forest\n"), seat "sets/a/three"]
         rematched = Lobby.rematch seats (Map.singleton 1 1) Map.empty
-        told = Lobby.placesFor 1 rematched
+        -- Decks this browser holds are coloured by name, a guest's by its list.
+        named name = Map.findWithDefault Set.empty name (Map.fromList [(Text.pack "sets/a/one", Set.singleton Color.White), (Text.pack "sets/a/two", Set.singleton Color.Blue), (Text.pack "sets/a/three", Set.singleton Color.Black)])
+        listed contents = if contents == Text.pack "20 Forest\n" then Set.singleton Color.Green else Set.empty
+        told = Lobby.placesFor named listed 1 rematched
     Spec.assertEqWith s "every seat named" (fmap (\p -> (Link.who p, Link.bot p)) told) [(Text.pack "Player 1", False), (Text.pack "Player 2", True), (Text.pack "You", False)]
     Spec.assertEqWith s "every deck named, the bot's among them" (fmap Link.deck told) [Text.pack "One (A)", Text.pack "Kamahl's Temper (A)", Text.pack "Three (A)"]
+    Spec.assertEqWith s "every deck coloured, the guest's by its list" (fmap Link.colours told) (fmap Set.singleton [Color.White, Color.Blue, Color.Green])
 
   Spec.it s "a game picked up from its seed and the replies so far asks what the game played through asked, and ends the same" $ do
     matchup <- BotSpec.bears s registry
@@ -278,9 +283,13 @@ hosted guests matchup = Game.run (S.fixtureRegistry []) Nothing Limits.standard 
       now <- State.gets lastTold >>= Link.telling (Map.fromList [(g, channel g) | g <- guests]) seat gs depth
       State.modify' (\w -> w {lastTold = now})
 
+-- No deck's colours known.
+uncoloured :: Text.Text -> Set.Set Color.Color
+uncoloured = const Set.empty
+
 -- The match-up a rejoining guest is told.
 played :: [Link.Place]
-played = [Link.MkPlace (Text.pack "Player 1") (Text.pack "Bears") (Just True) False, Link.MkPlace (Text.pack "You") (Text.pack "Bears") (Just True) False]
+played = [Link.MkPlace (Text.pack "Player 1") (Text.pack "Bears") (Just True) False Set.empty, Link.MkPlace (Text.pack "You") (Text.pack "Bears") (Just True) False Set.empty]
 
 -- A guest rejoining, which connects the first time and not again, its page
 -- reloaded.
