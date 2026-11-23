@@ -2187,6 +2187,13 @@ senTripletsSpec s registry =
           Spec.assertEqWith s "and not in alice's" (Game.zoneMembers Zone.Graveyard S.alice resolved) []
           Spec.assertBool s (notElem (A.Cast bobSpell name Facing.FaceUp) (offeredTo S.alice open)) "before the trigger, bob's card is not offered to alice"
           Spec.assertBool s (elem (A.Cast bobSpell name Facing.FaceUp) (offeredTo S.alice after)) "with the grant, bob's card is offered to alice"
+        -- #9687: castableSpells rules bob's card out for alice unprojected
+        -- (Cast.unpermittedInOthersHand) only while no CastFrom row exists.
+        Spec.it s "#9687 bob's card is ruled out for alice unprojected until the grant" $ do
+          ((_, bobSpell, _, open), _) <- board
+          Spec.assertEqWith s "before the trigger it is ruled out" (Cast.unpermittedInOthersHand S.alice open bobSpell) True
+          Spec.assertEqWith s "with the grant it is not" (Cast.unpermittedInOthersHand S.alice (senTripletsResolved open) bobSpell) False
+          Spec.assertEqWith s "nor for bob, its owner" (Cast.unpermittedInOthersHand S.bob open bobSpell) False
         -- CR 109.5 / PlayerScope.Related You: the grant is alice's, and the hand it names
         -- is bob's. Two copies of one card in the two opponents' hands differ in
         -- nothing but whose hand they are in.
