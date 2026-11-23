@@ -2557,18 +2557,35 @@ details.pile[open] {
   gap: 4px;
 }
 
-/* The creatures, the other permanents and the lands, each group a row of
-   its own only where they do not fit side by side, so a small board takes
-   one line. */
+/* The creatures a line of their own nearest the middle of the table; behind
+   them the other permanents and the lands, sharing a line where they fit,
+   the lands otherwise the line nearest the seat (Parun.Web.Board orders
+   them). */
 .battlefield {
   display: flex;
-  flex-wrap: wrap;
+  flex-direction: column;
   align-items: flex-start;
-  gap: 0 28px;
 }
 
 .battlefield > .back {
-  display: contents;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  align-self: stretch;
+  gap: 0 28px;
+}
+
+.seat.opponent .battlefield > .back {
+  flex-wrap: wrap-reverse;
+}
+
+/* A faint line between the creatures and what stands behind them. */
+.battlefield > .row.front + .back {
+  border-top: 1px dashed var(--line);
+}
+
+.seat.opponent .battlefield > .back:has(+ .row.front) {
+  border-bottom: 1px dashed var(--line);
 }
 
 .row {
