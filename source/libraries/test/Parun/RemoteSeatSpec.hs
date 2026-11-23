@@ -39,12 +39,12 @@ import qualified Parun.Types.Request as Request
 import qualified Parun.Types.Result as Result
 import qualified Parun.Types.SearchBudget as SearchBudget
 import qualified Parun.Types.SearchMethod as SearchMethod
-import qualified Parun.Types.SeatView as SeatView
 import qualified Parun.Types.Weights as Weights
 import qualified Parun.Web.Ending as Ending
 import qualified Parun.Web.Html as Html
 import qualified Parun.Web.Link as Link
 import qualified Parun.Web.Lobby as Lobby
+import qualified Parun.Web.Log as Log
 import qualified Parun.Web.Question as Question.Web
 
 spec :: (Monad m, Monad n) => Spec.Spec m n -> Registry.Registry m -> n ()
@@ -162,16 +162,14 @@ wholeGame s matchup guests = do
     Right (Result.Won _, _) -> do
       told <- State.execStateT (Monad.forM_ guests $ \g -> Link.send (channel g) (Link.MkEnd Ending.MkStopped [Text.pack "over"] (Link.endView g outcome) Text.empty)) wire
       Spec.assertEqWith s "each guest is told how it ended" (ended told) (Map.fromList [(g, Link.MkEnded Ending.MkStopped [Text.pack "over"] (Link.endView g outcome) Text.empty) | g <- guests])
-      -- The game ends on combat damage, which no request follows (#9658).
-      let lifeIn shown pid = [SeatView.life seat | seat <- PlayerView.seats shown, SeatView.player seat == pid]
-          losers = [pid | (pid, _) <- NonEmpty.toList matchup, Right (Result.Won winner, _) <- [outcome], pid /= winner]
-      Monad.forM_ guests $ \g -> do
-        Spec.assertBool s (maybe False (\shown -> all (all (> 0) . lifeIn shown) losers) (Map.lookup g (lastSeen wire))) ("guest " <> show g <> "'s last request shows every loser alive")
-        case Map.lookup g (ended told) of
-          Just (Link.MkEnded _ _ (Just shown) _) -> do
-            Spec.assertEqWith s ("guest " <> show g <> " is told the end as its seat sees it") (PlayerView.viewer shown) g
-            Spec.assertBool s (not (null losers) && all (all (<= 0) . lifeIn shown) losers) ("guest " <> show g <> " is told of the final blow")
-          other -> Spec.assertBool s False ("guest " <> show g <> " told no view of the end: " <> show other)
+      -- The game ends on something no request follows: a guest's ending
+      -- shows it only as its end's view does (#9658).
+      Monad.forM_ guests $ \g -> case (Map.lookup g (lastSeen wire), Map.lookup g (ended told)) of
+        (Just before, Just (Link.MkEnded _ _ (Just shown) _)) -> do
+          let unread = snd (Log.unseen (fst (Log.unseen Map.empty before)) shown)
+          Spec.assertEqWith s ("guest " <> show g <> " is told the end as its seat sees it") (PlayerView.viewer shown) g
+          Spec.assertBool s (any (\entry -> case entry of Log.MkEvent _ _ -> True; Log.MkTurn {} -> False) unread) ("guest " <> show g <> " is told what happened after its last request: " <> show unread)
+        other -> Spec.assertBool s False ("guest " <> show g <> " told no view of the end: " <> show (snd other))
     _ -> Spec.assertBool s False ("finished: " <> show (fmap fst outcome))
   let host = [pid | (pid, _) <- NonEmpty.toList matchup, pid `notElem` guests]
       askedOf which = Map.findWithDefault [] which (asked wire)
