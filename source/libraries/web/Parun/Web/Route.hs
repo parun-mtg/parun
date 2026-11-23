@@ -22,7 +22,7 @@ data Route
   | -- | The lobby.
     MkPlay
   | -- | Another browser's game joined, the host's offer in the page's fragment.
-    MkJoin
+    MkJoin Stage
   | -- | The Decks screen, this deck selected if any.
     MkDecks (Maybe Text.Text)
   | -- | The builder, on this deck if any.
@@ -31,6 +31,14 @@ data Route
     MkReplays
   | -- | A replay at this position, watched or played on from there.
     MkReplay Way Web.Replay.Source Natural
+  deriving (Eq, Show)
+
+-- | Whether the game a host's link joins has started.
+data Stage
+  = -- | Still in the host's lobby, so the guest brings a deck.
+    MkGathering
+  | -- | Under way, so it picks up where it stopped, its decks already set.
+    MkUnderWay
   deriving (Eq, Show)
 
 -- | What a replay's route does at its position.
@@ -48,7 +56,8 @@ fields route =
    in case route of
         MkHome -> []
         MkPlay -> [(Text.pack "play", Text.empty)]
-        MkJoin -> [(Text.pack "join", Text.empty)]
+        MkJoin MkGathering -> [(Text.pack "join", Text.empty)]
+        MkJoin MkUnderWay -> [(Text.pack "rejoin", Text.empty)]
         MkDecks deck -> named "decks" deck
         MkBuild deck -> named "build" deck
         MkReplays -> [(Text.pack "replays", Text.empty)]
@@ -89,7 +98,8 @@ parse query =
             MkReplays <$ field "replays",
             named "game" >>= fmap (replay . Web.Replay.MkPlayed),
             MkPlay <$ field "play",
-            MkJoin <$ field "join",
+            MkJoin MkGathering <$ field "join",
+            MkJoin MkUnderWay <$ field "rejoin",
             MkDecks <$> named "decks",
             MkBuild <$> named "build"
           ]

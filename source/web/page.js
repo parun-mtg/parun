@@ -9,7 +9,8 @@ const engineUrl = new URL("./engine.js", import.meta.url);
 // reads once as its query's "query".
 if (location.search) engineUrl.searchParams.set("query", location.search);
 // A host's link (Parun.Web.Link) carries its code as its fragment, which the
-// engine reads once as its query's "offer".
+// engine reads once as its query's "offer", and names the join screen for
+// its game's stage as its query (Parun.Browser.linkHost).
 const offered = location.hash.slice(1);
 if (offered) engineUrl.searchParams.set("offer", offered);
 // The auto-pass level last chosen (Parun.Web.Question.Level) starts the game.
@@ -754,14 +755,14 @@ engine.onmessage = ({ data }) => {
 // the address bar shows; back and forward load the page afresh at the query
 // they reach, since the engine opens a screen only from its start. A move
 // within the page that keeps the query (a fragment's) is left alone. The
-// join screen's query (Parun.Web.Route's MkJoin) keeps the fragment carrying
+// join screen's queries (Parun.Web.Route's MkJoin) keep the fragment carrying
 // the host's code, so a reload there makes a fresh reply to it; every other
 // screen's drops it.
-const joining = "?join";
+const joining = new Set(["?join", "?rejoin"]);
 let located = location.search;
 function locate({ search, push }) {
   located = search;
-  const url = location.pathname + search + (search === joining ? location.hash : "");
+  const url = location.pathname + search + (joining.has(search) ? location.hash : "");
   if (url === location.pathname + location.search + location.hash) return;
   if (push) history.pushState(null, "", url);
   else history.replaceState(null, "", url);
@@ -1026,6 +1027,7 @@ async function linkStep(step) {
       await link.connection.setLocalDescription(await link.connection.createOffer());
       await gathered(link.connection);
       const url = new URL(location.pathname, location.origin);
+      url.search = step.query;
       url.hash = pack(link.connection.localDescription);
       if (links.get(seat) === link) linked(seat, "offer", url.href);
     } else if (op === "accept") {
