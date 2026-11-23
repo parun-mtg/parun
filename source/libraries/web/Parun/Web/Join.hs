@@ -77,7 +77,9 @@ view screen =
           "li"
           ["place"]
           []
-          ( [Element.el "span" ["slot-title"] [] [Element.text (Link.who p)], Element.el "span" ["slot-deck"] [] [Element.text (Link.deck p)]]
+          ( [Element.el "span" ["slot-title"] [] [Element.text (Link.who p)]]
+              <> [Element.el "span" ["chip", "bot"] [] [Element.string "Bot"] | Link.bot p]
+              <> [Element.el "span" ["slot-deck"] [] [Element.text (Link.deck p)]]
               <> [Element.el "span" ["slot-ready"] [] [Element.string (if on then "Ready" else "Not ready")] | on <- Maybe.maybeToList (Link.ready p)]
           )
       readyButton =

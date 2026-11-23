@@ -2,8 +2,13 @@ module Parun.Web.HomeSpec where
 
 import qualified Data.Set as Set
 import qualified Data.Text as Text
+import qualified Parun.Codec.PlayerViewSpec as PlayerViewSpec
+import qualified Parun.Codec.SeatViewSpec as SeatViewSpec
 import qualified Parun.Spec as Spec
 import qualified Parun.Types.Color as Color
+import qualified Parun.Types.PlayerId as PlayerId
+import qualified Parun.Types.PlayerView as PlayerView
+import qualified Parun.Types.SeatView as SeatView
 import qualified Parun.Web.Bar as Bar
 import qualified Parun.Web.History as History
 import qualified Parun.Web.HistorySpec as HistorySpec
@@ -19,13 +24,22 @@ spec s = Spec.describe s "Parun.Web.Home" $ do
         where
           page = Home.view home
           titled node = Text.isPrefixOf (Text.pack "<button") (Html.toText node) && (Html.content node == Text.pack label || Text.isPrefixOf (Text.pack "<button class=\"tile") (Html.toText node) && Text.isPrefixOf (Text.pack label) (Html.content node))
-      paused = Home.new {Home.paused = Just (Home.MkPaused (Just 11) [(Text.pack "You", 22), (Text.pack "Player 2", 14)])}
+      paused = Home.new {Home.paused = Just (Home.MkPaused (Just 11) [(Text.pack "You", Just (Text.pack "Elves (Decks)"), 22), (Text.pack "Player 2", Nothing, 14)])}
   Spec.describe s "view" $ do
     Spec.it s "offers Resume only while a game is paused, with its turn and life totals" $ do
       Spec.assertEqWith s "unpaused" (tapping "Resume" Home.new) Nothing
       Spec.assertEqWith s "paused" (tapping "Resume" paused) (Just Home.MkResume)
       Spec.assertEqWith s "turn" (has "<h1>Turn 11</h1>" paused) True
       Spec.assertEqWith s "lives" (has "<div class=\"seat-life\"><dt class=\"eyebrow\">Player 2</dt><dd>14</dd></div>" paused) True
+      Spec.assertEqWith s "a deck" (has "<div class=\"seat-life\"><dt class=\"eyebrow\">You</dt><dd>22</dd><dd class=\"seat-deck muted\">Elves (Decks)</dd></div>" paused) True
+
+  Spec.describe s "pausedOn" $ do
+    Spec.it s "names each seat as the game does, with its deck" $ do
+      let board = PlayerViewSpec.testView {PlayerView.seats = [SeatViewSpec.testSeat, SeatViewSpec.testSeat {SeatView.player = PlayerId.MkPlayerId 1, SeatView.life = 14}]}
+          decks = [Text.pack "Elves (Decks)", Text.pack "Goblins (Decks)"]
+      Spec.assertEqWith s "by seat" (Home.pausedOn decks (Just board)) (Home.MkPaused (Just 3) [(Text.pack "You", Just (Text.pack "Elves (Decks)"), 20), (Text.pack "Player 2", Just (Text.pack "Goblins (Decks)"), 14)])
+      Spec.assertEqWith s "a guest's" (Home.pausedOn decks (Just board {PlayerView.viewer = PlayerId.MkPlayerId 1})) (Home.MkPaused (Just 3) [(Text.pack "Player 1", Just (Text.pack "Elves (Decks)"), 20), (Text.pack "You", Just (Text.pack "Goblins (Decks)"), 14)])
+      Spec.assertEqWith s "decks unknown" (Home.pausedOn [] (Just board)) (Home.MkPaused (Just 3) [(Text.pack "You", Nothing, 20), (Text.pack "Player 2", Nothing, 14)])
 
     Spec.it s "leads from its tiles to a game, the builder and the replays" $ do
       Spec.assertEqWith s "a game" (tapping "New game" Home.new) (Just (Home.MkChoose (Home.MkNewGame Nothing)))

@@ -256,7 +256,7 @@ hosted guests matchup = Game.run (S.fixtureRegistry []) Nothing Limits.standard 
 
 -- The match-up a rejoining guest is told.
 played :: [Link.Place]
-played = [Link.MkPlace (Text.pack "Host") (Text.pack "Bears") (Just True), Link.MkPlace (Text.pack "You") (Text.pack "Bears") (Just True)]
+played = [Link.MkPlace (Text.pack "Player 1") (Text.pack "Bears") (Just True) False, Link.MkPlace (Text.pack "You") (Text.pack "Bears") (Just True) False]
 
 -- A guest rejoining, which connects the first time and not again, its page
 -- reloaded.

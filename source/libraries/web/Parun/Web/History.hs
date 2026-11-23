@@ -23,6 +23,7 @@ import qualified Parun.JsonCodec.Codec as Codec
 import qualified Parun.JsonCodec.Common as Common
 import qualified Parun.JsonCodec.Fields as Fields
 import qualified Parun.Play.Command as Command
+import qualified Parun.Play.Wording as Wording
 import qualified Parun.Types.Color as Color
 import qualified Parun.Types.Label as Label
 import qualified Parun.Types.Scenario as Scenario
@@ -163,16 +164,13 @@ viewerLabel game = do
   fmap Label.unwrap (Map.lookup (Command.idOf (Int.toNaturalSaturating at + 1)) (Command.labels (Natural.length (seats game))))
 
 -- | What the replay calls each seat, by the label the game's scenario gives
--- it (Command.labels): who played it, numbered by seat where two kinds
--- match, "You", "Bot 2", "Bot 3".
+-- it (Command.labels): what the game called it, "You" for the player's and
+-- "Player 2" by seat for any other, whoever played it (#9676).
 seatNames :: Game -> Map.Map Text.Text Text.Text
 seatNames game =
   let count = Natural.length (seats game)
-      named (n, seat) =
-        let kind = whoName (who seat)
-            shared = length (filter ((== who seat) . who) (seats game)) > 1
-         in (Label.unwrap <$> Map.lookup (Command.idOf n) (Command.labels count), Text.pack (if shared then kind <> " " <> show n else kind))
-   in Map.fromList [(label, name) | (Just label, name) <- fmap named (zip [1 ..] (seats game))]
+      named (n, seat) = (Label.unwrap <$> Map.lookup (Command.idOf n) (Command.labels count), if who seat == MkYou then Text.pack "You" else Wording.player (Command.idOf n))
+   in Map.fromList [(label, name) | (Just label, name) <- fmap named (zip [1 :: Natural ..] (seats game))]
 
 -- | Who played a seat, as a word.
 whoName :: Who -> String

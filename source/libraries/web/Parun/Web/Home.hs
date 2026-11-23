@@ -5,6 +5,7 @@
 -- notice.
 module Parun.Web.Home where
 
+import qualified Data.List as List
 import qualified Data.List.NonEmpty as NonEmpty
 import qualified Data.Maybe as Maybe
 import qualified Data.Set as Set
@@ -12,6 +13,7 @@ import qualified Data.Text as Text
 import Numeric.Natural (Natural)
 import qualified Parun.Play.Wording as Wording
 import qualified Parun.Types.Color as Color
+import qualified Parun.Types.PlayerId as PlayerId
 import qualified Parun.Types.PlayerView as PlayerView
 import qualified Parun.Types.SeatView as SeatView
 import qualified Parun.Web.Bar as Bar
@@ -41,8 +43,8 @@ data Home = MkHome
 data Paused = MkPaused
   { -- | Nothing where the question showed no board.
     turn :: Maybe Natural,
-    -- | Each seat's name and life, in turn order.
-    lives :: [(Text.Text, Integer)]
+    -- | Each seat's name, its deck where known, and its life, in turn order.
+    lives :: [(Text.Text, Maybe Text.Text, Integer)]
   }
   deriving (Eq, Show)
 
@@ -101,11 +103,18 @@ data Outcome
 new :: Home
 new = MkHome Nothing Nothing Nothing [] []
 
--- | A game paused at the board the question waiting showed, if any.
-pausedOn :: Maybe PlayerView.PlayerView -> Paused
-pausedOn board = case board of
+-- | A game between these decks, in seat order (DeckBrowser.label), paused
+-- at the board the question waiting showed, if any.
+pausedOn :: [Text.Text] -> Maybe PlayerView.PlayerView -> Paused
+pausedOn decks board = case board of
   Nothing -> MkPaused Nothing []
-  Just b -> MkPaused (Just (PlayerView.turn b)) [(if SeatView.player s == PlayerView.viewer b then Text.pack "You" else Wording.player (SeatView.player s), SeatView.life s) | s <- PlayerView.seats b]
+  Just b ->
+    MkPaused
+      (Just (PlayerView.turn b))
+      [ (if p == PlayerView.viewer b then Text.pack "You" else Wording.player p, Maybe.listToMaybe (List.genericDrop (PlayerId.unwrap p) decks), SeatView.life s)
+      | s <- PlayerView.seats b,
+        let p = SeatView.player s
+      ]
 
 -- | Whether a choice starts a game at once, and so concedes a paused one;
 -- the lobby asks at its Start instead (Lobby.concedes).
@@ -182,7 +191,8 @@ view home =
         (MkChoose choice)
         [Element.el "strong" [] [] [Element.string title], Element.el "span" ["muted"] [] [Element.string said]]
 
--- | The game in progress: its turn and life totals, and the way back to it.
+-- | The game in progress: its turn, each seat's life total and deck, and
+-- the way back to it.
 pausedView :: Paused -> Html.Html Event
 pausedView game =
   Element.el
@@ -201,7 +211,11 @@ pausedView game =
         "dl"
         ["lives"]
         []
-        [Element.el "div" ["seat-life"] [] [Element.el "dt" ["eyebrow"] [] [Element.text who], Element.el "dd" [] [] [Element.string (show life)]] | (who, life) <- lives game],
+        [ Element.el "div" ["seat-life"] [] $
+            [Element.el "dt" ["eyebrow"] [] [Element.text who], Element.el "dd" [] [] [Element.string (show life)]]
+              <> [Element.el "dd" ["seat-deck", "muted"] [] [Element.text d] | d <- Maybe.maybeToList deck]
+        | (who, deck, life) <- lives game
+        ],
       Element.button ["primary", "resume"] MkResume [Element.string "Resume"]
     ]
 

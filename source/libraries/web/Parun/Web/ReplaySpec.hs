@@ -142,20 +142,20 @@ spec s = Spec.describe s "Parun.Web.Replay" $ do
   Spec.describe s "lineOf" $ do
     let at turn phase label = When.MkWhen turn phase (Label.MkLabel (Text.pack label)) 0
         answering prompt with = Entry.Do (Move.Answer (Answer.MkAnswer (Text.pack prompt) with False))
-        names = Map.fromList [(Text.pack "player1", Text.pack "You"), (Text.pack "player2", Text.pack "Bot")]
+        names = Map.fromList [(Text.pack "player1", Text.pack "You"), (Text.pack "player2", Text.pack "Player 2")]
         line asked when entry = Replay.lineOf names True asked (Timed.MkTimed when Nothing entry)
     Spec.it s "names the turn, the step, the seat and what it does" $ do
       Spec.assertEqWith s "chance" (line Nothing (at 1 (Phase.Beginning BeginningStep.Untap) "player1") (answering "Shuffle" (Reply.Array []))) (Text.pack "Turn 1 \x00b7 Untap \x00b7 a library is shuffled")
       Spec.assertEqWith s "before the first turn" (Replay.lineOf names False Nothing (Timed.MkTimed (at 1 (Phase.Beginning BeginningStep.Untap) "player1") Nothing (answering "Shuffle" (Reply.Array [])))) (Text.pack "Before the first turn \x00b7 a library is shuffled")
-      Spec.assertEqWith s "a concession" (line Nothing (at 3 Phase.PrecombatMain "player2") (Entry.Do Move.Concede)) (Text.pack "Turn 3 \x00b7 Precombat main \x00b7 Bot concedes")
+      Spec.assertEqWith s "a concession" (line Nothing (at 3 Phase.PrecombatMain "player2") (Entry.Do Move.Concede)) (Text.pack "Turn 3 \x00b7 Precombat main \x00b7 Player 2 concedes")
       Spec.assertEqWith s "a seat unnamed" (Replay.lineOf Map.empty True Nothing (Timed.MkTimed (at 3 Phase.PrecombatMain "player2") Nothing (Entry.Do Move.Pass))) (Text.pack "Turn 3 \x00b7 Precombat main \x00b7 player2 passes")
       Spec.assertEqWith s "you" (line Nothing (at 3 Phase.PrecombatMain "player1") (Entry.Do Move.Pass)) (Text.pack "Turn 3 \x00b7 Precombat main \x00b7 You pass")
 
     Spec.it s "says an answer as the question asked there words it" $ do
       let attacking = at 2 (Phase.Combat CombatStep.DeclareAttackers) "player2"
-      Spec.assertEqWith s "an answer" (line (Just (request 1 "DeclareAttackers" (Reply.Object []))) attacking (answering "DeclareAttackers" (Reply.Object []))) (Text.pack "Turn 2 \x00b7 Declare attackers \x00b7 Bot declares attackers")
-      Spec.assertEqWith s "a scenario's move" (line (Just (request 1 "DeclareAttackers" (Reply.Object []))) attacking (Entry.Do (Move.Attack mempty))) (Text.pack "Turn 2 \x00b7 Declare attackers \x00b7 Bot declares attackers")
-      Spec.assertEqWith s "an action, by its index" (line (Just (request 1 "ChooseAction" (Reply.Array [Reply.Object [(Text.pack "action", Reply.Text (Text.pack "Pass"))]]))) attacking (answering "ChooseAction" (Reply.Number 0))) (Text.pack "Turn 2 \x00b7 Declare attackers \x00b7 Bot passes")
+      Spec.assertEqWith s "an answer" (line (Just (request 1 "DeclareAttackers" (Reply.Object []))) attacking (answering "DeclareAttackers" (Reply.Object []))) (Text.pack "Turn 2 \x00b7 Declare attackers \x00b7 Player 2 declares attackers")
+      Spec.assertEqWith s "a scenario's move" (line (Just (request 1 "DeclareAttackers" (Reply.Object []))) attacking (Entry.Do (Move.Attack mempty))) (Text.pack "Turn 2 \x00b7 Declare attackers \x00b7 Player 2 declares attackers")
+      Spec.assertEqWith s "an action, by its index" (line (Just (request 1 "ChooseAction" (Reply.Array [Reply.Object [(Text.pack "action", Reply.Text (Text.pack "Pass"))]]))) attacking (answering "ChooseAction" (Reply.Number 0))) (Text.pack "Turn 2 \x00b7 Declare attackers \x00b7 Player 2 passes")
 
   Spec.describe s "picker" $ do
     Spec.it s "lists the names holding what is typed, whatever its case" $ do
