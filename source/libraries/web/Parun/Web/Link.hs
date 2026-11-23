@@ -6,10 +6,13 @@
 module Parun.Web.Link where
 
 import qualified Control.Monad as Monad
+import qualified Data.Foldable as Foldable
 import qualified Data.List.NonEmpty as NonEmpty
 import qualified Data.Map.Strict as Map
+import qualified Data.Sequence as Seq
 import qualified Data.Text as Text
-import qualified Parun.Codec.PlayerView as Codec.PlayerView
+import Numeric.Natural (Natural)
+import qualified Parun.Codec.PlayerId as Codec.PlayerId
 import qualified Parun.Codec.Reply as Codec.Reply
 import qualified Parun.Codec.Request as Codec.Request
 import qualified Parun.Engine.Driver as Driver
@@ -34,6 +37,7 @@ import qualified Parun.Types.Question as Question
 import qualified Parun.Types.Reply as R
 import qualified Parun.Types.Request as Request
 import qualified Parun.Web.Ending as Ending
+import qualified Parun.Web.Log as Log
 
 -- | What one page tells the other.
 data Message
@@ -53,10 +57,10 @@ data Message
     MkDeciding PlayerId.PlayerId
   | -- | The guest's reply to the last request.
     MkAnswer R.Reply
-  | -- | The game ended: how for the guest, what is said of it
-    -- (Ending.said), the guest's seat's view of the end (endView), and the
-    -- game as a scenario file (Ending.scenario).
-    MkEnd Ending.Verdict [Text.Text] (Maybe PlayerView.PlayerView) Text.Text
+  | -- | The game ended: the guest's ending, its log and life trail built
+    -- from what the host sent its seat (seeing), which a page that reloaded
+    -- lost.
+    MkEnd Ending.Ending
   deriving (Eq, Show)
 
 -- | A seat of the match-up as the guest is shown it.
@@ -82,8 +86,20 @@ encode build message =
         MkAsk request -> ("ask", [Value.pair "request" (Codec.encode Codec.Request.codec request)])
         MkDeciding seat -> ("deciding", [Value.pair "seat" (Value.integer (toInteger (PlayerId.unwrap seat)))])
         MkAnswer reply -> ("answer", [Value.pair "reply" (Codec.Reply.toValue reply)])
-        MkEnd verdict said shown scenario -> ("end", [Value.pair "verdict" (Value.string (verdictName verdict)), Value.pair "said" (Value.array (fmap Value.text said)), Value.pair "view" (Codec.encode (Common.maybe Codec.PlayerView.codec) shown), Value.pair "scenario" (Value.text scenario)])
+        MkEnd ending' ->
+          ( "end",
+            [ Value.pair "verdict" (Value.string (verdictName (Ending.verdict ending'))),
+              Value.pair "said" (Value.array (fmap Value.text (Ending.said ending'))),
+              Value.pair "scenario" (Value.text (Ending.scenario ending')),
+              Value.pair "log" (Value.array (fmap entry (Foldable.toList (Ending.witnessed ending')))),
+              Value.pair "seat" (Codec.encode Codec.PlayerId.codec (Ending.viewer ending')),
+              Value.pair "trail" (Codec.encode trail (Ending.trail ending'))
+            ]
+          )
       place p = Value.object [Value.pair "who" (Value.text (who p)), Value.pair "deck" (Value.text (deck p)), Value.pair "ready" (maybe Value.null Value.boolean (ready p))]
+      entry e = case e of
+        Log.MkTurn n active -> Value.object [Value.pair "turn" (Value.integer (toInteger n)), Value.pair "active" (Codec.encode Codec.PlayerId.codec active)]
+        Log.MkEvent weight said -> Value.object [Value.pair "event" (Value.text said), Value.pair "minor" (Value.boolean (weight == Log.MkMinor))]
    in Common.render (Value.object (Value.pair "type" (Value.string tag) : Value.pair "build" (Value.text build) : fields))
 
 -- | A line's message, or why it does not read: one from another build is
@@ -103,7 +119,15 @@ decode build line = do
     "ask" -> MkAsk <$> (Common.field "request" pairs >>= Codec.decode Codec.Request.codec)
     "deciding" -> MkDeciding <$> (Common.field "seat" pairs >>= Common.asInteger >>= natural)
     "answer" -> MkAnswer <$> (Common.field "reply" pairs >>= Codec.Reply.fromValue)
-    "end" -> MkEnd <$> (text "verdict" >>= verdictNamed) <*> (Common.field "said" pairs >>= Common.asArray >>= traverse Common.asText) <*> (Common.field "view" pairs >>= Codec.decode (Common.maybe Codec.PlayerView.codec)) <*> text "scenario"
+    "end" ->
+      fmap MkEnd $
+        Ending.MkEnding
+          <$> (text "verdict" >>= verdictNamed)
+          <*> (Common.field "said" pairs >>= Common.asArray >>= traverse Common.asText)
+          <*> text "scenario"
+          <*> (Common.field "log" pairs >>= Common.asArray >>= fmap Seq.fromList . traverse entry)
+          <*> (Common.field "seat" pairs >>= Codec.decode Codec.PlayerId.codec)
+          <*> (Common.field "trail" pairs >>= Codec.decode trail)
     other -> Left (Text.pack ("not a message: " <> other))
   where
     place value = do
@@ -114,6 +138,15 @@ decode build line = do
         <*> maybe (Right Nothing) (\v -> if v == Value.null then Right Nothing else Just <$> Common.asBoolean v) (Common.optionalField "ready" fields)
     natural :: Integer -> Either Text.Text PlayerId.PlayerId
     natural = maybe (Left (Text.pack "not a seat")) (Right . PlayerId.MkPlayerId) . Integer.toNatural
+    entry value = do
+      fields <- Common.asObject value
+      case Common.optionalField "turn" fields of
+        Just n -> Log.MkTurn <$> Codec.decode Common.natural n <*> (Common.field "active" fields >>= Codec.decode Codec.PlayerId.codec)
+        Nothing -> flip Log.MkEvent <$> (Common.field "event" fields >>= Common.asText) <*> (Common.field "minor" fields >>= Common.asBoolean >>= \minor -> pure (if minor then Log.MkMinor else Log.MkMajor))
+
+-- | A life trail (Ending.trail) on the wire.
+trail :: Codec.Codec [(Natural, [(PlayerId.PlayerId, Integer)])]
+trail = Common.list (Common.tuple Common.natural (Common.list (Common.tuple Codec.PlayerId.codec Common.integer)))
 
 verdictName :: Ending.Verdict -> String
 verdictName verdict = case verdict of
@@ -162,6 +195,16 @@ remote rejoin places channel request = asked
 endView :: PlayerId.PlayerId -> Either a (b, GameState.GameState) -> Maybe PlayerView.PlayerView
 endView seat = either (const Nothing) (Just . PlayerView.Engine.viewFor seat . snd)
 
+-- | A seat's exchange, each request's view given to `sent` first: what the
+-- host keeps of a guest's seat, whose page may reload and lose it.
+seeing :: (Monad m) => (PlayerView.PlayerView -> m ()) -> Protocol.Exchange m -> Protocol.Exchange m
+seeing sent ask request = mapM_ sent (Request.view request) >> ask request
+
+-- | The ending of seat `seat`, from what it was shown, `seen`, and its view
+-- of the end (endView), the killing blow, say.
+ending :: Ending.Verdict -> [Text.Text] -> Text.Text -> PlayerId.PlayerId -> Either a (b, GameState.GameState) -> Ending.Seen -> Ending.Ending
+ending verdict said scenario seat outcome seen = Ending.ending verdict said scenario seat (maybe id Ending.see (endView seat outcome) seen)
+
 -- | Tells each guest, over its channel in `guests`, of every seat the game
 -- asks but its own as the seat asked changes, `told` holding the seat each
 -- was last told of: a guest's own seat asked counts, since it is sent the
@@ -183,12 +226,12 @@ deciding decides =
 
 -- | What the guest does with a message from the host once the game is under
 -- way: a request is answered through `local`, its reply what to send back;
--- the end is said, with the seat's view of it; whose decision the game waits
--- on is shown; anything else is ignored.
+-- the end is said; whose decision the game waits on is shown; anything else
+-- is ignored.
 data Heard
   = MkReply Message
   | MkWaitingOn PlayerId.PlayerId
-  | MkEnded Ending.Verdict [Text.Text] (Maybe PlayerView.PlayerView) Text.Text
+  | MkEnded Ending.Ending
   | MkIgnored
   deriving (Eq, Show)
 
@@ -199,7 +242,7 @@ data Heard
 guest :: (Monad m) => Protocol.Exchange m -> Message -> m Heard
 guest local message = case message of
   MkAsk request -> maybe MkIgnored (either (const MkIgnored) (MkReply . MkAnswer)) <$> local request
-  MkEnd verdict said shown scenario -> pure (MkEnded verdict said shown scenario)
+  MkEnd ending' -> pure (MkEnded ending')
   MkDeciding seat -> pure (MkWaitingOn seat)
   _ -> pure MkIgnored
 

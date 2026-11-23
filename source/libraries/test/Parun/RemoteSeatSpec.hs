@@ -7,6 +7,7 @@ module Parun.RemoteSeatSpec where
 import qualified Control.Monad as Monad
 import qualified Control.Monad.Trans.State.Strict as State
 import qualified Data.Containers.ListUtils as ListUtils
+import qualified Data.Foldable as Foldable
 import qualified Data.List as List
 import qualified Data.List.NonEmpty as NonEmpty
 import qualified Data.Map.Strict as Map
@@ -112,10 +113,21 @@ spec s registry = Spec.describe s "RemoteSeat" $ do
 
   Spec.it s "a guest whose connection drops mid-game rejoins, is sent the match-up, its seat and the request again, and the game finishes" $ do
     matchup <- BotSpec.bears s registry
-    (outcome, wire) <- State.runStateT (hosted [S.bob] matchup) (MkWire Map.empty Map.empty Map.empty (Map.singleton S.bob 5) 0 [] Map.empty Map.empty [] Map.empty)
+    (outcome, wire) <- State.runStateT (hosted [S.bob] matchup) (MkWire Map.empty Map.empty Map.empty (Map.singleton S.bob 5) 0 [] Map.empty Map.empty [] Map.empty Map.empty)
     Spec.assertEqWith s "finished" (Monad.void outcome) (Right ())
     Spec.assertEqWith s "rejoined once" (rejoins wire) 1
     Spec.assertEqWith s "the guest is sent the match-up, then its seat, again" (sentAgain wire) [Link.MkMatchup played, Link.MkStart S.bob]
+    -- The guest's page reloaded as it rejoined, losing what it had seen; the
+    -- host's ending holds the game from its start (#9663).
+    told <- State.execStateT (Link.send (channel S.bob) (Link.MkEnd (Link.ending Ending.MkLost [] Text.empty S.bob outcome (Map.findWithDefault Ending.unseen S.bob (hostSeen wire))))) wire
+    let own = Map.findWithDefault Ending.unseen S.bob (pageSeen wire)
+        firstTurn = fmap fst . Maybe.listToMaybe
+    case Map.lookup S.bob (ended told) of
+      Just (Link.MkEnded ending) -> do
+        Spec.assertBool s (firstTurn (Foldable.toList (Ending.lives own)) > Just 1) ("setup: the reloaded page saw only the game since turn " <> show (firstTurn (Foldable.toList (Ending.lives own))))
+        Spec.assertEqWith s "the guest's life chart starts on turn 1" (firstTurn (Ending.trail ending)) (Just 1)
+        Spec.assertEqWith s "the guest's log opens on turn 1" (Seq.lookup 0 (Ending.witnessed ending)) (Just (Log.MkTurn 1 S.alice))
+      other -> Spec.assertBool s False ("the guest is told no ending: " <> show other)
 
   Spec.it s "the match-up a game's guests are told again names every seat and every bot's deck drawn" $ do
     let seat name = (Text.pack name, Text.pack "20 Forest\n")
@@ -157,19 +169,19 @@ spec s registry = Spec.describe s "RemoteSeat" $ do
 -- each guest is told how it ended.
 wholeGame :: (Monad m) => Spec.Spec m n -> NonEmpty.NonEmpty (PlayerId.PlayerId, Deck.Deck) -> [PlayerId.PlayerId] -> m ()
 wholeGame s matchup guests = do
-  (outcome, wire) <- State.runStateT (hosted guests matchup) (MkWire Map.empty Map.empty Map.empty Map.empty 0 [] Map.empty Map.empty [] Map.empty)
+  (outcome, wire) <- State.runStateT (hosted guests matchup) (MkWire Map.empty Map.empty Map.empty Map.empty 0 [] Map.empty Map.empty [] Map.empty Map.empty)
   case outcome of
     Right (Result.Won _, _) -> do
-      told <- State.execStateT (Monad.forM_ guests $ \g -> Link.send (channel g) (Link.MkEnd Ending.MkStopped [Text.pack "over"] (Link.endView g outcome) Text.empty)) wire
-      Spec.assertEqWith s "each guest is told how it ended" (ended told) (Map.fromList [(g, Link.MkEnded Ending.MkStopped [Text.pack "over"] (Link.endView g outcome) Text.empty) | g <- guests])
+      let endingOf g = Link.ending Ending.MkStopped [Text.pack "over"] Text.empty g outcome (Map.findWithDefault Ending.unseen g (hostSeen wire))
+      told <- State.execStateT (Monad.forM_ guests $ \g -> Link.send (channel g) (Link.MkEnd (endingOf g))) wire
+      Spec.assertEqWith s "each guest is told how it ended" (ended told) (Map.fromList [(g, Link.MkEnded (endingOf g)) | g <- guests])
       -- The game ends on something no request follows: a guest's ending
       -- shows it only as its end's view does (#9658).
-      Monad.forM_ guests $ \g -> case (Map.lookup g (lastSeen wire), Map.lookup g (ended told)) of
-        (Just before, Just (Link.MkEnded _ _ (Just shown) _)) -> do
-          let unread = snd (Log.unseen (fst (Log.unseen Map.empty before)) shown)
-          Spec.assertEqWith s ("guest " <> show g <> " is told the end as its seat sees it") (PlayerView.viewer shown) g
-          Spec.assertBool s (any (\entry -> case entry of Log.MkEvent _ _ -> True; Log.MkTurn {} -> False) unread) ("guest " <> show g <> " is told what happened after its last request: " <> show unread)
-        other -> Spec.assertBool s False ("guest " <> show g <> " told no view of the end: " <> show (snd other))
+      Monad.forM_ guests $ \g -> do
+        let own = Ending.loggedFor g (Map.findWithDefault Ending.unseen g (pageSeen wire))
+            (before, after) = Seq.splitAt (Seq.length own) (Ending.witnessed (endingOf g))
+        Spec.assertEqWith s ("guest " <> show g <> " is told the log its page kept") before own
+        Spec.assertBool s (any (\entry -> case entry of Log.MkEvent _ _ -> True; Log.MkTurn {} -> False) after) ("guest " <> show g <> " is told what happened after its last request: " <> show after)
     _ -> Spec.assertBool s False ("finished: " <> show (fmap fst outcome))
   let host = [pid | (pid, _) <- NonEmpty.toList matchup, pid `notElem` guests]
       askedOf which = Map.findWithDefault [] which (asked wire)
@@ -204,8 +216,9 @@ handedOver yours requests = [request | (before, request) <- zip (fmap (Question.
 -- carries before it drops once, how many times a guest rejoined, and each
 -- match-up and seat a guest was sent again; the seat each guest was last
 -- told decides (Link.telling), every seat each was told of, latest first,
--- and every prompt's seat, latest first; and the view of the request each
--- seat was last asked.
+-- and every prompt's seat, latest first; and what each seat's page saw, a
+-- guest's since it last rejoined, as a page reloaded would, and what the
+-- host saw it sent each guest (Link.seeing).
 data Wire = MkWire
   { inbox :: Map.Map PlayerId.PlayerId [Text.Text],
     asked :: Map.Map (Maybe PlayerId.PlayerId) [(PlayerId.PlayerId, Maybe PlayerId.PlayerId)],
@@ -216,7 +229,8 @@ data Wire = MkWire
     lastTold :: Map.Map PlayerId.PlayerId PlayerId.PlayerId,
     waitedOn :: Map.Map PlayerId.PlayerId [PlayerId.PlayerId],
     deciders :: [PlayerId.PlayerId],
-    lastSeen :: Map.Map PlayerId.PlayerId PlayerView.PlayerView
+    pageSeen :: Map.Map PlayerId.PlayerId Ending.Seen,
+    hostSeen :: Map.Map PlayerId.PlayerId Ending.Seen
   }
 
 build :: Text.Text
@@ -227,7 +241,7 @@ build = Text.pack "test"
 -- guest told whose decision the game waits on. A guest whose channel drops
 -- rejoins the first time, and not again.
 hosted :: (Monad m) => [PlayerId.PlayerId] -> NonEmpty.NonEmpty (PlayerId.PlayerId, Deck.Deck) -> State.StateT Wire m (Either Text.Text (Result.Result, GameState.GameState))
-hosted guests matchup = Game.run (S.fixtureRegistry []) Nothing Limits.standard [Link.deciding decides] (Map.fromList [(pid, Game.wired (S.fixtureRegistry []) (Protocol.bySeat (Map.fromList [(g, Link.remote rejoined played (channel g)) | g <- guests]) (page hostPage))) | (pid, _) <- NonEmpty.toList matchup]) (S.seeded 1) Map.empty matchup
+hosted guests matchup = Game.run (S.fixtureRegistry []) Nothing Limits.standard [Link.deciding decides] (Map.fromList [(pid, Game.wired (S.fixtureRegistry []) (Protocol.bySeat (Map.fromList [(g, Link.seeing (\shown -> State.modify' (\w -> w {hostSeen = seenBy shown (hostSeen w)})) (Link.remote (rejoined g) played (channel g))) | g <- guests]) (page hostPage))) | (pid, _) <- NonEmpty.toList matchup]) (S.seeded 1) Map.empty matchup
   where
     decides seat = do
       State.modify' (\w -> w {deciders = seat : deciders w})
@@ -238,10 +252,11 @@ hosted guests matchup = Game.run (S.fixtureRegistry []) Nothing Limits.standard 
 played :: [Link.Place]
 played = [Link.MkPlace (Text.pack "Host") (Text.pack "Bears") (Just True), Link.MkPlace (Text.pack "You") (Text.pack "Bears") (Just True)]
 
--- A guest rejoining, which connects the first time and not again.
-rejoined :: (Monad m) => State.StateT Wire m Bool
-rejoined = do
-  State.modify' (\w -> w {rejoins = rejoins w + 1})
+-- A guest rejoining, which connects the first time and not again, its page
+-- reloaded.
+rejoined :: (Monad m) => PlayerId.PlayerId -> State.StateT Wire m Bool
+rejoined g = do
+  State.modify' (\w -> w {rejoins = rejoins w + 1, pageSeen = Map.delete g (pageSeen w)})
   (<= 1) . rejoins <$> State.get
 
 -- A game the host's page plays every seat of, picked up after the replies
@@ -314,7 +329,11 @@ received g = do
 
 -- A page's own exchange, each request it answers recorded under it.
 page :: (Monad m) => Maybe PlayerId.PlayerId -> Protocol.Exchange (State.StateT Wire m)
-page which request = State.modify' (\w -> w {asked = Map.insertWith (flip (<>)) which [seen request] (asked w), lastSeen = maybe (lastSeen w) (\shown -> Map.insert (PlayerView.viewer shown) shown (lastSeen w)) (Request.view request)}) >> pure (Just (Right (answer request)))
+page which request = State.modify' (\w -> w {asked = Map.insertWith (flip (<>)) which [seen request] (asked w), pageSeen = maybe id seenBy (Request.view request) (pageSeen w)}) >> pure (Just (Right (answer request)))
+
+-- What each seat saw, with this view seen by its seat.
+seenBy :: PlayerView.PlayerView -> Map.Map PlayerId.PlayerId Ending.Seen -> Map.Map PlayerId.PlayerId Ending.Seen
+seenBy shown = Map.alter (Just . Ending.see shown . Maybe.fromMaybe Ending.unseen) (PlayerView.viewer shown)
 
 seen :: Request.Request -> (PlayerId.PlayerId, Maybe PlayerId.PlayerId)
 seen request = (Question.seat (Request.question request), fmap PlayerView.viewer (Request.view request))
