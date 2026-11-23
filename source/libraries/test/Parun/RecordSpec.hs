@@ -116,7 +116,7 @@ spec s registry = Spec.describe s "Record" $ do
   Spec.it s "CR 103.2a a recorded game's first position holds every seat's deck in its library" $ do
     matchup <- BotSpec.sevens s registry
     let (_, timeline) = recorded bots matchup
-    stop <- Scenario.replay registry (Just 0) (saved matchup timeline)
+    (_, stop) <- Scenario.replay registry Scenario.noneFetched (Just 0) (saved matchup timeline)
     case stop of
       Right reached -> Spec.assertEqWith s "each library's size" (fmap length (GameState.library (Stop.state reached))) (Map.fromList [(S.alice, 7), (S.bob, 7)])
       Left failure -> Spec.assertFailure s (Text.unpack (Scenario.render failure))

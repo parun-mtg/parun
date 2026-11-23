@@ -271,14 +271,29 @@ data Halt
 -- proves both. A ReferenceCards prompt halts it likewise, once, for the whole
 -- reference (Registry.cards), which every later run reads.
 run :: (Monad m) => Registry.Registry m -> Scenario.Scenario -> m (Either Failure.ScenarioFailure GameState.GameState)
-run registry = fmap (fmap Stop.state) . replay registry Nothing
+run registry = fmap (fmap Stop.state . snd) . replay registry noneFetched Nothing
+
+-- | CR 108.1: the part of the Oracle card reference runs have fetched: each
+-- name's card and the face it answers to when chosen, and every card once a
+-- run has asked for them all.
+data Fetched = MkFetched
+  { fetchedNames :: Map.Map CardName.CardName (Maybe Card.Card, Maybe (Face.Face Card.Card)),
+    fetchedWhole :: Maybe [Card.Card]
+  }
+
+-- | Nothing fetched yet.
+noneFetched :: Fetched
+noneFetched = MkFetched Map.empty Nothing
 
 -- | `run`, stopped once it has taken that many entries, before it takes
 -- another, or at the end when it is Nothing or more than it takes: the web
 -- client's replay (Parun.Browser.Replay), which reaches a position the way
--- the test runner does. A failure on the way fails the replay.
-replay :: (Monad m) => Registry.Registry m -> Maybe Natural -> Scenario.Scenario -> m (Either Failure.ScenarioFailure Stop.Stop)
-replay registry stop scenario = do
+-- the test runner does. A failure on the way fails the replay. It starts
+-- from the reference `already` fetched and gives back what it holds after,
+-- so the next replay of the game starts over only for a name new to both
+-- (#9655): what was fetched answers the lookups as fetching it again would.
+replay :: (Monad m) => Registry.Registry m -> Fetched -> Maybe Natural -> Scenario.Scenario -> m (Fetched, Either Failure.ScenarioFailure Stop.Stop)
+replay registry already stop scenario = do
   staging <- case Scenario.start scenario of
     Start.FromBoard board -> fmap (fmap (\placed' -> (placed', Driver.drive [] scripted stepBudget finished (Staged.state placed')))) (stage registry board)
     Start.FromDecks format entrants starter -> fmap (fmap (\(seated, matchup) -> (seated, setUp matchup (Staged.state seated)))) (enter registry format entrants starter)
@@ -292,13 +307,15 @@ replay registry stop scenario = do
         Bifunctor.first Failed (settle rehearsal final)
         State.evalStateT (mapM_ (expect Nothing final Nothing) (Scenario.final scenario)) rehearsal {depth = 0}
         pure (Stop.MkEnded final)
-      fetching whole known = case attempt whole known of
-        Left (Fetching name) -> fetchInto registry name known >>= either (pure . Left) (fetching whole)
-        Left Enumerating -> Registry.cards registry >>= either (pure . Left . Failure.MkInvalidCorpus) (\every -> fetching (Just every) known)
-        Left (Failed failure) -> pure (Left failure)
-        Left (Stopped reached) -> pure (Right reached)
-        Right final -> pure (Right final)
-  fetching Nothing Map.empty
+      fetching whole known =
+        let held = MkFetched known whole
+         in case attempt whole known of
+              Left (Fetching name) -> fetchInto registry name known >>= either (pure . (,) held . Left) (fetching whole)
+              Left Enumerating -> Registry.cards registry >>= either (pure . (,) held . Left . Failure.MkInvalidCorpus) (\every -> fetching (Just every) known)
+              Left (Failed failure) -> pure (held, Left failure)
+              Left (Stopped reached) -> pure (held, Right reached)
+              Right final -> pure (held, Right final)
+  fetching (fetchedWhole already) (fetchedNames already)
   where
     setUp matchup gs = do
       (_, set) <- Engine.runGameAsked answerPrompt gs (Setup.newGame (Resolve.performHandAction Engine.playSubgame) matchup)
