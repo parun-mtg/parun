@@ -283,15 +283,14 @@ guest local message = case message of
 -- | A game with guests as the host's page keeps it, to pick it up after a
 -- reload (Protocol.resumed): its seed, each seat's deck as a label and its
 -- list's text (the host's first), the bots' slots players were invited to,
--- those played on the host's screen and how, how every other bot plays
--- (Parun.Play.Opponent), and every reply so far.
+-- those played on the host's screen and how, how each bot plays by its slot
+-- (Parun.Play.Opponent; Lobby.botAt), and every reply so far.
 data Saved = MkSaved
   { seed :: Key.Type.Key,
     seats :: NonEmpty.NonEmpty (Text.Text, Text.Text),
     invited :: [Int],
     locals :: Map.Map Int Sitting,
-    difficulty :: Difficulty.Difficulty,
-    persona :: Persona.Persona,
+    bots :: Map.Map Int (Difficulty.Difficulty, Persona.Persona),
     replies :: [R.Reply]
   }
   deriving (Eq, Show)
@@ -321,8 +320,7 @@ saved build game =
             Value.pair "invited" (Value.array (fmap (Value.integer . toInteger) (invited game))),
             Value.pair "locals" (slots MkHandedOver),
             Value.pair "yours" (slots MkYours),
-            Value.pair "difficulty" (Value.string (fst (Opponent.difficultyName (difficulty game)))),
-            Value.pair "persona" (Value.string (fst (Opponent.personaName (persona game))))
+            Value.pair "bots" (Value.array [Value.object [Value.pair "slot" (Value.integer (toInteger i)), Value.pair "difficulty" (Value.string (fst (Opponent.difficultyName level))), Value.pair "persona" (Value.string (fst (Opponent.personaName style)))] | (i, (level, style)) <- Map.toList (bots game)])
           ]
    in Text.intercalate (Text.pack "\n") (Common.render header : fmap savedReply (replies game))
 
@@ -347,13 +345,18 @@ unsaved build kept = case Text.lines kept of
     handed <- slotsAt "locals"
     yours <- slotsAt "yours"
     let here = Map.fromList (fmap (\i -> (i, MkHandedOver)) handed <> fmap (\i -> (i, MkYours)) yours)
-    level <- Common.field "difficulty" pairs >>= Common.asText >>= named "a difficulty" Opponent.difficultyName
-    style <- Common.field "persona" pairs >>= Common.asText >>= named "a persona" Opponent.personaName
+    styles <- Common.field "bots" pairs >>= Common.asArray >>= traverse styleOf
     answers <- traverse (Common.parse Monad.>=> Codec.Reply.fromValue) (filter (not . Text.null) rest)
-    pure (MkSaved key decks slots here level style answers)
+    pure (MkSaved key decks slots here (Map.fromList styles) answers)
   where
     named :: (Bounded a, Enum a) => String -> (a -> (String, String)) -> Text.Text -> Either Text.Text a
     named what nameOf name = maybe (Left (Text.pack ("not " <> what <> ": ") <> name)) Right (Opponent.named nameOf (Text.unpack name))
     seat value = do
       fields <- Common.asObject value
       (,) <$> (Common.field "deck" fields >>= Common.asText) <*> (Common.field "list" fields >>= Common.asText)
+    styleOf value = do
+      fields <- Common.asObject value
+      i <- Common.field "slot" fields >>= Common.asInteger >>= maybe (Left (Text.pack "not a slot")) Right . Integer.toInt
+      level <- Common.field "difficulty" fields >>= Common.asText >>= named "a difficulty" Opponent.difficultyName
+      style <- Common.field "persona" fields >>= Common.asText >>= named "a persona" Opponent.personaName
+      pure (i, (level, style))

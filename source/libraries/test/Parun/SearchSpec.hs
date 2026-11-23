@@ -336,10 +336,21 @@ spec s registry = Spec.describe s "Search" $ do
   Spec.it s "parun play's bot seat is the search bot, attacking an opponent at 1 life who has nothing untapped" $ do
     (pid, asked) <- openAttack s registry
     let seat = PlayerId.unwrap pid + 1
-        options = PlayOptions.none {PlayOptions.bots = Set.singleton seat}
+        options = PlayOptions.none {PlayOptions.bots = Map.singleton seat PlayOptions.bot}
         answered seed = either (Spec.assertFailure s . Text.unpack) pure =<< Except.runExceptT (State.evalStateT (Answerer.unwrap (Command.answerer (S.fixtureRegistry []) (const (pure Nothing)) (pure Nothing) (const (pure ())) (pure Map.empty) Search.unkept options Search.known seat) asked) (S.seeded seed))
     declared <- traverse answered [1 .. 8]
     Spec.assertBool s (not (any null declared)) "attacked in every seed"
+
+  Spec.it s "parun play's bot seats each search at their own budget: the seat making a mistake at every decision holds back, the other attacking" $ do
+    (pid, asked) <- openAttack s registry
+    let seat = PlayerId.unwrap pid + 1
+        other = seat + 1
+        mistaken = (PlayOptions.budget {SearchBudget.turns = 1000, SearchBudget.mistakes = 100}, Weights.neutral)
+        answered bots seed = either (Spec.assertFailure s . Text.unpack) pure =<< Except.runExceptT (State.evalStateT (Answerer.unwrap (Command.answerer (S.fixtureRegistry []) (const (pure Nothing)) (pure Nothing) (const (pure ())) (pure Map.empty) Search.unkept PlayOptions.none {PlayOptions.bots = Map.fromList bots} Search.known seat) asked) (S.seeded seed))
+    careful <- traverse (answered [(seat, PlayOptions.bot), (other, mistaken)]) [1 .. 4]
+    careless <- traverse (answered [(seat, mistaken), (other, PlayOptions.bot)]) [1 .. 4]
+    Spec.assertBool s (not (any null careful)) ("attacked in every seed at its own budget: " <> show careful)
+    Spec.assertBool s (all null careless) ("held back in every seed at its own budget: " <> show careless)
 
   Spec.it s "the search bot blocks a lone attacker at 1 life" $ do
     (gs, (decider, pid, blockers, attackers)) <- capturing s registry 3 "a declaration of blockers against one attacker" $ \asked -> case Asked.prompt asked of

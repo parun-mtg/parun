@@ -84,9 +84,9 @@ data Shell = MkShell
     build :: Text.Text,
     -- | The games finished in this browser, newest first (Parun.Web.History).
     finished :: IORef.IORef [History.Game],
-    -- | How every bot plays, as the lobby last left it: its difficulty and
-    -- its persona (Parun.Play.Opponent).
-    opponent :: IORef.IORef (Difficulty.Difficulty, Persona.Persona),
+    -- | How each bot plays by its slot, as the lobby last left it: its
+    -- difficulty and its persona (Parun.Play.Opponent).
+    opponent :: IORef.IORef (Map.Map Int (Difficulty.Difficulty, Persona.Persona)),
     -- | Your deck as the lobby last left it, which a lobby opened on no deck
     -- holds.
     yourDeck :: IORef.IORef (Maybe Text.Text)
@@ -179,7 +179,7 @@ start = do
   -- A summary that does not read, or a game past the cap, is forgotten.
   (games, gone) <- History.loaded <$> Browser.playedGames
   mapM_ Browser.forgetPlayed gone
-  shell <- MkShell <$> Browser.mount <*> IORef.newIORef (MkLoaded Loading.new Nothing Map.empty Map.empty Nothing Map.empty [] Nothing Nothing Nothing False Nothing Map.empty [] Nothing Map.empty Map.empty Map.empty Map.empty) <*> IORef.newIORef chosen <*> pure built <*> IORef.newIORef games <*> IORef.newIORef (Lobby.difficulty Lobby.new, Lobby.persona Lobby.new) <*> IORef.newIORef Nothing
+  shell <- MkShell <$> Browser.mount <*> IORef.newIORef (MkLoaded Loading.new Nothing Map.empty Map.empty Nothing Map.empty [] Nothing Nothing Nothing False Nothing Map.empty [] Nothing Map.empty Map.empty Map.empty Map.empty) <*> IORef.newIORef chosen <*> pure built <*> IORef.newIORef games <*> IORef.newIORef (Lobby.bots Lobby.new) <*> IORef.newIORef Nothing
   Exception.catch (opening built >>= \next -> Browser.locate Browser.MkReplace (Route.render (routeOf next)) >> follow shell next) $ \problem ->
     Browser.display (page shell) $ message ["The page stopped on an error:", Exception.displayException (problem :: Exception.SomeException)]
 
@@ -326,14 +326,14 @@ lobby :: Shell -> Lobby.Lobby -> [Browser.Linked] -> Maybe Lobby.Event -> IO Nex
 lobby shell initial said pending = do
   need shell Loading.MkDecks
   need shell Loading.MkCards
-  (difficulty, persona) <- IORef.readIORef (opponent shell)
-  heard' <- Monad.foldM heardBy initial {Lobby.difficulty = difficulty, Lobby.persona = persona} said
+  styles <- IORef.readIORef (opponent shell)
+  heard' <- Monad.foldM heardBy initial {Lobby.bots = styles} said
   go'' heard' Map.empty pending
   where
     go' shown told = go'' shown told Nothing
     go'' shown told first = do
       current <- refreshed shell shown
-      IORef.writeIORef (opponent shell) (Lobby.difficulty current, Lobby.persona current)
+      IORef.writeIORef (opponent shell) (Lobby.bots current)
       IORef.writeIORef (yourDeck shell) (Lobby.mine current)
       told' <- tellPlaces current told
       if Lobby.starts current
@@ -859,9 +859,9 @@ play shell seats invited here resuming = do
       seed <- maybe Key.fresh (pure . Link.seed) resuming
       -- A game picked up plays its bots as it was kept, and the lobby a
       -- Rematch leads to offers that.
-      Monad.forM_ resuming $ \game -> IORef.writeIORef (opponent shell) (Link.difficulty game, Link.persona game)
-      bots@(difficulty, persona) <- IORef.readIORef (opponent shell)
-      Monad.when (keeping && Maybe.isNothing resuming) . Browser.keepGame $ Link.saved (build shell) (Link.MkSaved seed seats (Map.keys invited) here difficulty persona [])
+      Monad.forM_ resuming $ \game -> IORef.writeIORef (opponent shell) (Link.bots game)
+      bots <- IORef.readIORef (opponent shell)
+      Monad.when (keeping && Maybe.isNothing resuming) . Browser.keepGame $ Link.saved (build shell) (Link.MkSaved seed seats (Map.keys invited) here bots [])
       let rejoinSlot i = do
             back <- rejoin shell (linkOf i) (Rejoin.host (Text.pack ("Player " <> show (i + 2))))
             Monad.when back (IORef.modifyIORef' down (Set.delete i))

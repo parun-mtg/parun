@@ -11,7 +11,6 @@ import qualified Control.Monad.Trans.Except as Except
 import qualified Control.Monad.Trans.State.Strict as State
 import qualified Data.List.NonEmpty as NonEmpty
 import qualified Data.Map.Strict as Map
-import qualified Data.Set as Set
 import qualified Data.Text as Text
 import Numeric.Natural (Natural)
 import qualified Parun.Engine.Driver as Driver
@@ -146,7 +145,7 @@ starter tell ask seats options = case PlayOptions.first options of
     chooser <- Generator.Play.pick seats
     Trans.lift (tell (Text.pack ("Seat " <> show chooser <> " was picked at random to choose who plays first.")))
     chosen <-
-      if Set.member chooser (PlayOptions.bots options)
+      if Map.member chooser (PlayOptions.bots options)
         then fmap Just (Bot.starting chooser seats)
         else Trans.lift (ask chooser seats)
     Monad.forM chosen $ \seat -> do

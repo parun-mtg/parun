@@ -36,8 +36,8 @@ flags =
     GetOpt.Option [] ["save"] (GetOpt.ReqArg Save "FILE") "save the game as a scenario, even one cut short",
     GetOpt.Option [] ["arrange-graveyard"] (GetOpt.ReqArg ArrangeGraveyard "SEAT") "a seat asked to order cards put into its graveyard at the same time",
     GetOpt.Option [] ["format"] (GetOpt.ReqArg Format "FORMAT") "play under this format, refusing a deck not legal in it: constructed, limited, or one with a pool, such as vintage",
-    GetOpt.Option [] ["level"] (GetOpt.ReqArg Level "LEVEL") "how strongly the search bot plays, easy, medium or hard (Parun.Play.Opponent); hard when absent",
-    GetOpt.Option [] ["persona"] (GetOpt.ReqArg Persona "PERSONA") "what the search bot values in a position, balanced, aggro or control (Parun.Play.Opponent); balanced when absent",
+    GetOpt.Option [] ["level"] (GetOpt.ReqArg Level "[SEAT=]LEVEL") "how strongly the search bot plays, easy, medium or hard (Parun.Play.Opponent), in every seat it plays or in SEAT alone; hard when absent",
+    GetOpt.Option [] ["persona"] (GetOpt.ReqArg Persona "[SEAT=]PERSONA") "what the search bot values in a position, balanced, aggro or control (Parun.Play.Opponent), in every seat it plays or in SEAT alone; balanced when absent",
     GetOpt.Option [] ["meta"] (GetOpt.ReqArg Meta "META") "the search bot infers each opponent's deck list from this meta file's decks",
     GetOpt.Option [] ["pool"] (GetOpt.ReqArg Pool "FORMAT") "no meta named, the search bot deals each opponent's unseen cards from this format's pool, from every card where it has none; the game's format's when absent",
     GetOpt.Option [] ["object-limit"] (GetOpt.ReqArg ObjectLimit "N") ("the most objects the game may hold before a player with priority may only pass; " <> show (Limits.objects Limits.standard) <> " when absent")

@@ -23,16 +23,16 @@ spec s = Spec.describe s "Parun.Play.Opponent" $ do
             let budgets = fmap (`Opponent.budgetAt` base) levels
             Spec.assertBool s (rising (fmap (negate . toInteger . SearchBudget.mistakes) budgets)) ("fewer mistakes each level up: " <> show (fmap SearchBudget.mistakes budgets))
             Spec.assertEq s (fmap SearchBudget.samples budgets) (List.sort (fmap SearchBudget.samples budgets))
-      ordered (PlayOptions.budget PlayOptions.none)
+      ordered PlayOptions.budget
       ordered MatchOptions.budget
 
     Spec.it s "keeps how far a playout looks" $ do
-      let base = PlayOptions.budget PlayOptions.none
+      let base = PlayOptions.budget
           reach b = (SearchBudget.turns b, SearchBudget.prompts b, SearchBudget.candidates b, SearchBudget.playout b)
       Spec.assertEq s (fmap (reach . (`Opponent.budgetAt` base)) [minBound .. maxBound :: Difficulty.Difficulty]) (reach base <$ [minBound .. maxBound :: Difficulty.Difficulty])
 
     Spec.it s "plays the hardest as parun play's bot and parun match's search bot play unless told otherwise" $ do
-      Spec.assertEq s (Opponent.budgetAt Difficulty.MkHard (PlayOptions.budget PlayOptions.none)) (PlayOptions.budget PlayOptions.none)
+      Spec.assertEq s (Opponent.budgetAt Difficulty.MkHard PlayOptions.budget) PlayOptions.budget
       Spec.assertEq s (Opponent.budgetAt Difficulty.MkHard MatchOptions.budget) MatchOptions.budget
 
     Spec.it s "sets every mistake rate a percent" $ do
