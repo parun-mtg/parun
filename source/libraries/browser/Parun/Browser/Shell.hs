@@ -176,7 +176,7 @@ start = do
     Browser.display (page shell) $ message ["The page stopped on an error:", Exception.displayException (problem :: Exception.SomeException)]
 
 -- | Where the page's link leads, read once (engine.js passes its query on):
--- another browser's game to join (parun_offer, from the link's #offer=); a
+-- another browser's game to join (parun_offer, the link's fragment); a
 -- replay or the list of them, as the page's query names (parun_query,
 -- Parun.Web.Route); else the game with guests the page kept, played on this
 -- build; else the screen the query names. A kept game that does not read is
