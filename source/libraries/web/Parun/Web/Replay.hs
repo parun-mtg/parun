@@ -201,24 +201,43 @@ worded file =
 capitalised :: Text.Text -> Text.Text
 capitalised t = maybe t (\(c, rest) -> Text.cons (Char.toUpper c) rest) (Text.uncons t)
 
--- | The scenario, the scrubber and its steps, and the seats to view as,
--- each by its name and, where the table names it otherwise, that name.
+-- | The scenario; where the run stands, the scrubber and its steps, each an
+-- icon over a word saying how far it goes, its tooltip where to; the ways
+-- to play on and to leave; and the seats to view as, each by its name and,
+-- where the table names it otherwise, that name.
 controls :: Frame -> [Html.Html Event]
 controls frame =
   let at = position frame
       count = positions frame
+      starts = Set.fromList (turns frame)
+      earlier = Maybe.fromMaybe 0 (Maybe.listToMaybe (reverse (filter (< at) (turns frame))))
+      later = List.find (> at) (turns frame)
       -- Punctuation keys, since page.js takes L for the log.
-      step label symbol key target enabled =
-        Element.el "button" [] ([Element.attr "type" (Text.pack "button"), Element.attr "aria-label" (Text.pack label), Element.attr "aria-keyshortcuts" (Text.pack key), Element.on "click" (MkGo target)] <> [Element.attr "disabled" Text.empty | not enabled]) [Element.string symbol]
-   in [ Element.el "h2" ["replay-title"] [] (Mana.rich (name frame)),
-        Element.el "p" ["replay-description"] [] (Mana.rich (description frame)),
+      step label caption icon back hint key target enabled =
+        Element.el
+          "button"
+          []
+          ( [ Element.attr "type" (Text.pack "button"),
+              Element.attr "aria-label" (Text.pack label),
+              Element.attr "aria-keyshortcuts" (Text.pack key),
+              Element.attr "title" (Text.pack (hint <> " (" <> key <> ")")),
+              Element.on "click" (MkGo target)
+            ]
+              <> [Element.attr "disabled" Text.empty | not enabled]
+          )
+          [Icon.icon ["back" | back] icon, Element.el "span" [] [] [Element.string caption]]
+   in [ Element.el
+          "div"
+          ["replay-head"]
+          []
+          [ Element.el "h2" ["replay-title"] [] (Mana.rich (name frame)),
+            Element.el "p" ["replay-description"] [] (Mana.rich (description frame))
+          ],
         Element.el
           "div"
           ["scrubber"]
           []
-          [ step "First position" "\x23EE" "<" 0 (at > 0),
-            step "Previous turn" "\x23EA" "[" (Maybe.fromMaybe 0 (Maybe.listToMaybe (reverse (filter (< at) (turns frame))))) (at > 0),
-            step "Previous position" "\x25C0" "," (Natural.minusSaturating at 1) (at > 0),
+          [ Element.el "p" ["position"] [] [Element.string (if at < count then "Before entry " <> show (at + 1) <> " of " <> show count else "After all " <> show count <> " entries")],
             Element.el
               "input"
               []
@@ -230,11 +249,18 @@ controls frame =
                 Element.on "change" MkScrub
               ]
               [],
-            step "Next position" "\x25B6" "." (min count (at + 1)) (at < count),
-            step "Next turn" "\x23E9" "]" (Maybe.fromMaybe count (List.find (> at) (turns frame))) (at < count),
-            step "Last position" "\x23ED" ">" count (at < count)
+            Element.el
+              "div"
+              ["step-buttons"]
+              []
+              [ step "First position" "Start" Icon.MkSkip True "To the start of the replay" "<" 0 (at > 0),
+                step "Previous turn" "Turn" Icon.MkTurn True (if earlier == 0 then "To the start of the first turn" else if Set.member at starts then "To the start of the turn before" else "To the start of this turn") "[" earlier (at > 0),
+                step "Previous position" "Step" Icon.MkStep True "Back one entry" "," (Natural.minusSaturating at 1) (at > 0),
+                step "Next position" "Step" Icon.MkStep False "On one entry" "." (min count (at + 1)) (at < count),
+                step "Next turn" "Turn" Icon.MkTurn False (if Maybe.isJust later then "To the start of the next turn" else "To the end: no turn begins after this one") "]" (Maybe.fromMaybe count later) (at < count),
+                step "Last position" "End" Icon.MkSkip False "To the end of the replay" ">" count (at < count)
+              ]
           ],
-        Element.el "p" ["position"] [] [Element.string (if at < count then "Before entry " <> show (at + 1) <> " of " <> show count else "After all " <> show count <> " entries")],
         Element.el
           "div"
           ["replay-actions"]
@@ -242,6 +268,7 @@ controls frame =
           [ Element.button ["branch"] MkBranch [Element.string "Play on from here"],
             Element.button ["back"] MkBack [Element.string "All replays"]
           ],
+        Element.el "p" ["subhead"] [] [Element.string "View as"],
         Element.el
           "div"
           ["segmented", "seats"]
@@ -372,17 +399,21 @@ sheet frame r = do
   o <- Wording.recalled b (Card.object r)
   pure (Card.sheet b o r [] (MkTable Web.Question.MkClose))
 
--- | The replays screen: a switch between the games finished here and the
--- scenarios, then the list shown.
+-- | The replays screen, laid out as the Decks screen is: its heading, the
+-- games finished here and the scenarios as tabs, then the list shown.
 picker :: Listing -> Maybe (Map.Map Text.Text [Text.Text], Map.Map Text.Text Text.Text, [Text.Text]) -> Html.Html Event
 picker shown listedScenarios =
-  Element.el "main" ["message", "scenarios"] [] $
-    [ Element.el "h1" [] [] [Element.string "Replays"],
+  Element.el "main" ["scenarios"] [] $
+    [ Element.el "div" ["browser-head"] [] [Element.el "h1" [] [] [Element.string "Replays"]],
       Element.el
         "div"
-        ["segmented", "shelves"]
-        [Element.attr "role" (Text.pack "group"), Element.attr "aria-label" (Text.pack "Replays to list")]
-        [ Element.el "button" ["on" | on] [Element.attr "type" (Text.pack "button"), Element.attr "aria-pressed" (Text.pack (if on then "true" else "false")), Element.on "click" (MkShow which)] [Element.string label]
+        ["shelves"]
+        [Element.attr "role" (Text.pack "tablist"), Element.attr "aria-label" (Text.pack "Replays to list")]
+        [ Element.el
+            "button"
+            (["tab"] <> ["on" | on])
+            [Element.attr "type" (Text.pack "button"), Element.attr "role" (Text.pack "tab"), Element.attr "aria-selected" (Text.pack (if on then "true" else "false")), Element.on "click" (MkShow which)]
+            [Element.string label]
         | (which, label) <- [(MkYourGames, "Your games"), (MkScenarios, "Scenarios")],
           let on = which == shelf shown
         ]
