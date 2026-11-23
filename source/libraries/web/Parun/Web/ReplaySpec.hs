@@ -66,6 +66,16 @@ spec s = Spec.describe s "Parun.Web.Replay" $ do
           stepped label = step label page >>= \path -> Html.handler (Text.pack "click") path page
       Spec.assertEq s (stepped "Next position", stepped "Previous position", tapped "button" "bob (Player 2)") (Just (Replay.MkGo 2), Just (Replay.MkGo 0), Just (Replay.MkSeat (PlayerId.MkPlayerId 1)))
 
+    Spec.it s "plays itself until the end, marking the page for page.js to step it" $ do
+      let page playing at = Replay.view frame {Replay.playing = playing, Replay.position = at}
+          tapped label playing at = step label (page playing at) >>= \path -> Html.handler (Text.pack "click") path (page playing at)
+          marked playing at = Text.isInfixOf (Text.pack "<main class=\"game replay playing\"") (Html.toText (page playing at))
+          off label at = Text.isInfixOf (Text.pack "disabled=\"\"") . Text.takeWhile (/= '>') . snd . Text.breakOn (Text.pack ("aria-label=\"" <> label <> "\"")) . Html.toText $ page False at
+      Spec.assertEqWith s "play" (tapped "Play" False 1) (Just (Replay.MkPlay True))
+      Spec.assertEqWith s "pause" (tapped "Pause" True 1) (Just (Replay.MkPlay False))
+      Spec.assertEqWith s "marked while playing, before the end" (fmap (uncurry marked) [(True, 1), (False, 1), (True, 3)]) [True, False, False]
+      Spec.assertEqWith s "nothing to play at the end" (off "Play" 1, off "Play" 3) (False, True)
+
     Spec.it s "names each seat to view as by its name and the name the table gives it" $ do
       let page = Html.toText (Replay.view frame)
       Spec.assertBool s (Text.isInfixOf (Text.pack ">alice (You)</button>") page) "the seat viewed as"
@@ -211,6 +221,7 @@ frame =
       Replay.position = 0,
       Replay.positions = 3,
       Replay.turns = [0, 2],
+      Replay.playing = False,
       Replay.board = Nothing,
       Replay.depth = 0,
       Replay.entry = Nothing,
