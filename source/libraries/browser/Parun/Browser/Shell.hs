@@ -393,7 +393,7 @@ lobby shell initial said = do
           -- which the history of their game names (Join.places), then their seat.
           Monad.forM_ (Map.keys invited) $ \i -> do
             Link.send (Browser.channel (page shell) (build shell) i) (Link.MkMatchup (Lobby.placesFor i current {Lobby.theirs = others}))
-            Link.send (Browser.channel (page shell) (build shell) i) (Link.MkStart (seatOf i))
+            Link.send (Browser.channel (page shell) (build shell) i) (Link.MkStart (seatOf i) Ending.unseen)
           play shell (mine NonEmpty.:| rest) (Map.keysSet invited) (Lobby.locals current) Nothing
         -- A bot with no deck to play keeps the lobby up.
         _ -> go' current {Lobby.ready = False} told
@@ -826,7 +826,7 @@ play shell seats invited here resuming = do
             Monad.when back (IORef.modifyIORef' down (Set.delete i))
             pure back
           -- A rejoining guest is told the match-up played, every bot's deck drawn.
-          remotes = Map.fromList [(seatOf i, Link.remote (rejoinSlot i) (Lobby.placesFor i (Lobby.rematch seats invited here)) (channelOf i)) | i <- Set.toList invited]
+          remotes = Map.fromList [(seatOf i, \seen -> Link.remote (rejoinSlot i) (Lobby.placesFor i (Lobby.rematch seats invited here)) seen (channelOf i)) | i <- Set.toList invited]
           kept = if keeping then Browser.keepReply . Link.savedReply else const (pure ())
       -- Each guest is told whose decision the game waits on (Link.telling).
       told <- IORef.newIORef Map.empty
@@ -962,7 +962,7 @@ joinGame shell offer = do
           "message" -> case Link.decode (build shell) (Browser.said heard') of
             Left problem -> Browser.linkClose n >> go (lost (capitalised problem <> Text.pack ".") current)
             Right (Link.MkMatchup places) -> go current {Join.places = places}
-            Right (Link.MkStart seat) -> guestGame current seat
+            Right (Link.MkStart seat seen) -> guestGame current seat seen
             Right _ -> go current
           "closed" -> go (lost hostClosed current)
           _ -> go current
@@ -982,18 +982,19 @@ joinGame shell offer = do
       Monad.forM_ (Join.picked current >>= \name -> (,) name <$> Map.lookup name files) $ \(name, path) -> do
         contents <- Encoding.decodeUtf8Lenient <$> ByteString.readFile path
         Link.send hostChannel (Link.MkHello name contents)
-    -- The game as this seat, once the registry is built for the cards'
-    -- text; then its ending, the channel kept open, until the host's
+    -- The game as this seat, its log starting from what the host says it
+    -- has seen, once the registry is built for the cards' text; then its
+    -- ending, the channel kept open, until the host's
     -- Rematch tells the match-up again, the player's Rematch goes back to
     -- it, or the player goes home.
-    guestGame current seat = do
+    guestGame current seat seen = do
       Browser.display (page shell) (message ["Loading the cards\x2026"])
       built <- untilBuilt shell (loadingScreen shell) [Loading.MkCards, Loading.MkRules] (registry <$> IORef.readIORef (loaded shell))
       case built of
         Left problem -> Browser.linkClose n >> notice shell [problem]
         Right reg -> do
           chosen <- IORef.newIORef MkToHome
-          played <- Guest.play (page shell) (Identity.runIdentity . Interpreter.chosenCard reg) (level shell) hostChannel (rejoin shell n Rejoin.guest) seat (leaveFor shell chosen)
+          played <- Guest.play (page shell) (Identity.runIdentity . Interpreter.chosenCard reg) (level shell) hostChannel (rejoin shell n Rejoin.guest) seat seen (leaveFor shell chosen)
           case played of
             Ending.MkAbandoned -> Browser.linkClose n >> IORef.readIORef chosen
             Ending.MkFinished ending -> do

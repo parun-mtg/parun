@@ -26,12 +26,13 @@ import qualified Parun.Web.Screen as Screen
 -- | The game as seat `seat`, over `channel` to the host: each request
 -- answered on the page at the auto-pass level kept in `levelRef`, a card
 -- tapped showing its text through `lookUp`, the home screen through
--- `leave`; how it came out. Once the channel closes, `rejoin` connects it
+-- `leave`, the log starting from what the host says the seat has `seen`;
+-- how it came out. Once the channel closes, `rejoin` connects it
 -- anew, and the game goes on as the host asks again; it stops where `rejoin`
 -- does not connect.
-play :: Browser.Page Screen.Event -> (CardName.CardName -> Either InvalidCorpus.InvalidCorpus (Maybe Card.Card)) -> IORef.IORef Web.Question.Level -> Link.Channel IO -> IO Bool -> PlayerId.PlayerId -> (Maybe PlayerView.PlayerView -> IO Hotseat.Leave) -> IO Ending.Played
-play page lookUp levelRef channel rejoin seat leave = do
-  seatRef <- IORef.newIORef . Hotseat.newSeat seat =<< IORef.readIORef levelRef
+play :: Browser.Page Screen.Event -> (CardName.CardName -> Either InvalidCorpus.InvalidCorpus (Maybe Card.Card)) -> IORef.IORef Web.Question.Level -> Link.Channel IO -> IO Bool -> PlayerId.PlayerId -> Ending.Seen -> (Maybe PlayerView.PlayerView -> IO Hotseat.Leave) -> IO Ending.Played
+play page lookUp levelRef channel rejoin seat seen leave = do
+  seatRef <- IORef.newIORef . Hotseat.newSeat seat seen =<< IORef.readIORef levelRef
   Hotseat.keepingLevel levelRef seatRef . Exception.handle (\Hotseat.MkAbandonedGame -> pure Ending.MkAbandoned) $ do
     -- The seat the host last said decides, until the guest's own is asked.
     decidingRef <- IORef.newIORef Nothing

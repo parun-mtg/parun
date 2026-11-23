@@ -44,6 +44,7 @@ import qualified Parun.Types.Seat as Seat
 import qualified Parun.Types.Start as Start
 import qualified Parun.Types.Stop as Stop
 import qualified Parun.Web.Card as Web.Card
+import qualified Parun.Web.Ending as Ending
 import qualified Parun.Web.History as History
 import qualified Parun.Web.Question as Web.Question
 import qualified Parun.Web.Replay as Web.Replay
@@ -151,7 +152,7 @@ viewer page moved registry name played scenario given = do
 -- (`leave`).
 playOn :: Browser.Page Screen.Event -> Registry.Registry Identity.Identity -> IORef.IORef Web.Question.Level -> Scenario.Type.Scenario -> Natural -> (Maybe PlayerView.PlayerView -> IO Hotseat.Leave) -> IO (Maybe [Text.Text])
 playOn page registry levelRef scenario given leave = do
-  seatRef <- IORef.newIORef . Hotseat.newSeat Hotseat.player =<< IORef.readIORef levelRef
+  seatRef <- IORef.newIORef . Hotseat.newSeat Hotseat.player Ending.unseen =<< IORef.readIORef levelRef
   Hotseat.keepingLevel levelRef seatRef . Exception.handle (\Hotseat.MkAbandonedGame -> pure Nothing) $ do
     key <- Key.fresh
     let at = min (Natural.length (Scenario.Type.timeline scenario)) given

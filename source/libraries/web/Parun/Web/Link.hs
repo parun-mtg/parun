@@ -48,8 +48,10 @@ data Message
     MkMatchup [Place]
   | -- | The guest is ready to start, or no longer.
     MkReady Bool
-  | -- | The game starts, the guest playing this seat.
-    MkStart PlayerId.PlayerId
+  | -- | The game starts, or goes on after a rejoin, the guest playing this
+    -- seat, which has seen this so far (seeing): a page that reloaded starts
+    -- its log from it.
+    MkStart PlayerId.PlayerId Ending.Seen
   | -- | A request the guest's seat answers.
     MkAsk Request.Request
   | -- | The seat whose decision the game now waits on, another's than the
@@ -82,7 +84,7 @@ encode build message =
         MkHello name contents -> ("hello", [Value.pair "name" (Value.text name), Value.pair "list" (Value.text contents)])
         MkMatchup places -> ("matchup", [Value.pair "seats" (Value.array (fmap place places))])
         MkReady on -> ("ready", [Value.pair "ready" (Value.boolean on)])
-        MkStart seat -> ("start", [Value.pair "seat" (Value.integer (toInteger (PlayerId.unwrap seat)))])
+        MkStart seat seen' -> ("start", [Value.pair "seat" (Value.integer (toInteger (PlayerId.unwrap seat))), Value.pair "seen" (seenValue seen')])
         MkAsk request -> ("ask", [Value.pair "request" (Codec.encode Codec.Request.codec request)])
         MkDeciding seat -> ("deciding", [Value.pair "seat" (Value.integer (toInteger (PlayerId.unwrap seat)))])
         MkAnswer reply -> ("answer", [Value.pair "reply" (Codec.Reply.toValue reply)])
@@ -91,15 +93,12 @@ encode build message =
             [ Value.pair "verdict" (Value.string (verdictName (Ending.verdict ending'))),
               Value.pair "said" (Value.array (fmap Value.text (Ending.said ending'))),
               Value.pair "scenario" (Value.text (Ending.scenario ending')),
-              Value.pair "log" (Value.array (fmap entry (Foldable.toList (Ending.witnessed ending')))),
+              Value.pair "log" (Value.array (fmap entryValue (Foldable.toList (Ending.witnessed ending')))),
               Value.pair "seat" (Codec.encode Codec.PlayerId.codec (Ending.viewer ending')),
               Value.pair "trail" (Codec.encode trail (Ending.trail ending'))
             ]
           )
       place p = Value.object [Value.pair "who" (Value.text (who p)), Value.pair "deck" (Value.text (deck p)), Value.pair "ready" (maybe Value.null Value.boolean (ready p))]
-      entry e = case e of
-        Log.MkTurn n active -> Value.object [Value.pair "turn" (Value.integer (toInteger n)), Value.pair "active" (Codec.encode Codec.PlayerId.codec active)]
-        Log.MkEvent weight said -> Value.object [Value.pair "event" (Value.text said), Value.pair "minor" (Value.boolean (weight == Log.MkMinor))]
    in Common.render (Value.object (Value.pair "type" (Value.string tag) : Value.pair "build" (Value.text build) : fields))
 
 -- | A line's message, or why it does not read: one from another build is
@@ -115,7 +114,7 @@ decode build line = do
     "hello" -> MkHello <$> text "name" <*> text "list"
     "matchup" -> MkMatchup <$> (Common.field "seats" pairs >>= Common.asArray >>= traverse place)
     "ready" -> MkReady <$> (Common.field "ready" pairs >>= Common.asBoolean)
-    "start" -> MkStart <$> (Common.field "seat" pairs >>= Common.asInteger >>= natural)
+    "start" -> MkStart <$> (Common.field "seat" pairs >>= Common.asInteger >>= natural) <*> (Common.field "seen" pairs >>= seenOf)
     "ask" -> MkAsk <$> (Common.field "request" pairs >>= Codec.decode Codec.Request.codec)
     "deciding" -> MkDeciding <$> (Common.field "seat" pairs >>= Common.asInteger >>= natural)
     "answer" -> MkAnswer <$> (Common.field "reply" pairs >>= Codec.Reply.fromValue)
@@ -125,7 +124,7 @@ decode build line = do
           <$> (text "verdict" >>= verdictNamed)
           <*> (Common.field "said" pairs >>= Common.asArray >>= traverse Common.asText)
           <*> text "scenario"
-          <*> (Common.field "log" pairs >>= Common.asArray >>= fmap Seq.fromList . traverse entry)
+          <*> (Common.field "log" pairs >>= Common.asArray >>= fmap Seq.fromList . traverse entryOf)
           <*> (Common.field "seat" pairs >>= Codec.decode Codec.PlayerId.codec)
           <*> (Common.field "trail" pairs >>= Codec.decode trail)
     other -> Left (Text.pack ("not a message: " <> other))
@@ -138,11 +137,48 @@ decode build line = do
         <*> maybe (Right Nothing) (\v -> if v == Value.null then Right Nothing else Just <$> Common.asBoolean v) (Common.optionalField "ready" fields)
     natural :: Integer -> Either Text.Text PlayerId.PlayerId
     natural = maybe (Left (Text.pack "not a seat")) (Right . PlayerId.MkPlayerId) . Integer.toNatural
-    entry value = do
-      fields <- Common.asObject value
-      case Common.optionalField "turn" fields of
-        Just n -> Log.MkTurn <$> Codec.decode Common.natural n <*> (Common.field "active" fields >>= Codec.decode Codec.PlayerId.codec)
-        Nothing -> flip Log.MkEvent <$> (Common.field "event" fields >>= Common.asText) <*> (Common.field "minor" fields >>= Common.asBoolean >>= \minor -> pure (if minor then Log.MkMinor else Log.MkMajor))
+
+-- | A log entry on the wire.
+entryValue :: Log.Entry -> Value.Value
+entryValue e = case e of
+  Log.MkTurn n active -> Value.object [Value.pair "turn" (Value.integer (toInteger n)), Value.pair "active" (Codec.encode Codec.PlayerId.codec active)]
+  Log.MkEvent weight said -> Value.object [Value.pair "event" (Value.text said), Value.pair "minor" (Value.boolean (weight == Log.MkMinor))]
+
+-- | A log entry from the wire (entryValue).
+entryOf :: Value.Value -> Either Text.Text Log.Entry
+entryOf value = do
+  fields <- Common.asObject value
+  case Common.optionalField "turn" fields of
+    Just n -> Log.MkTurn <$> Codec.decode Common.natural n <*> (Common.field "active" fields >>= Codec.decode Codec.PlayerId.codec)
+    Nothing -> flip Log.MkEvent <$> (Common.field "event" fields >>= Common.asText) <*> (Common.field "minor" fields >>= Common.asBoolean >>= \minor -> pure (if minor then Log.MkMinor else Log.MkMajor))
+
+-- | What a page has seen (Ending.Seen) on the wire.
+seenValue :: Ending.Seen -> Value.Value
+seenValue seen' =
+  Value.object
+    [ Value.pair "marks" (Codec.encode marks (Map.toAscList (Ending.marks seen'))),
+      Value.pair "logged" (Value.array [Value.array [Codec.encode Codec.PlayerId.codec seat, Value.array (fmap entryValue (Foldable.toList entries))] | (seat, entries) <- Map.toAscList (Ending.logged seen')]),
+      Value.pair "lives" (Codec.encode trail (Foldable.toList (Ending.sampledLives seen')))
+    ]
+
+-- | What a page has seen from the wire (seenValue).
+seenOf :: Value.Value -> Either Text.Text Ending.Seen
+seenOf value = do
+  fields <- Common.asObject value
+  marks' <- Common.field "marks" fields >>= Codec.decode marks
+  logged' <- Common.field "logged" fields >>= Common.asArray >>= traverse seatLog
+  lives' <- Common.field "lives" fields >>= Codec.decode trail
+  pure (Ending.MkSeen (Map.fromList marks') (Map.fromList logged') (Seq.fromList lives'))
+  where
+    seatLog pair = do
+      items <- Common.asArray pair
+      case items of
+        [seat, entries] -> (,) <$> Codec.decode Codec.PlayerId.codec seat <*> (Common.asArray entries >>= fmap Seq.fromList . traverse entryOf)
+        _ -> Left (Text.pack "not a seat's log")
+
+-- | How far each seat has read each game's log (Ending.marks) on the wire.
+marks :: Codec.Codec [((PlayerId.PlayerId, Natural), (Natural, Natural))]
+marks = Common.list (Common.tuple (Common.tuple Codec.PlayerId.codec Common.natural) (Common.tuple Common.natural Common.natural))
 
 -- | A life trail (Ending.trail) on the wire.
 trail :: Codec.Codec [(Natural, [(PlayerId.PlayerId, Integer)])]
@@ -174,11 +210,11 @@ data Channel m = MkChannel
 -- answered by the reply that comes back, any other message (a Ready toggled
 -- as the game began, a rejoining guest's Hello) skipped. Once the channel
 -- closes, `rejoin` connects it anew and the guest is sent `places`, the
--- match-up its history names, its seat and the request again, which a guest
--- whose page reloaded needs all of; the end of input, which stops the game,
--- only where it does not.
-remote :: (Monad m) => m Bool -> [Place] -> Channel m -> Protocol.Exchange m
-remote rejoin places channel request = asked
+-- match-up its history names, its seat with what `seen` says it has seen,
+-- and the request again, which a guest whose page reloaded needs all of; the
+-- end of input, which stops the game, only where it does not.
+remote :: (Monad m) => m Bool -> [Place] -> m Ending.Seen -> Channel m -> Protocol.Exchange m
+remote rejoin places seen channel request = asked
   where
     asked = send channel (MkAsk request) >> replied
     replied = do
@@ -188,17 +224,19 @@ remote rejoin places channel request = asked
         Just _ -> replied
         Nothing -> do
           back <- rejoin
-          if back then send channel (MkMatchup places) >> send channel (MkStart (Question.seat (Request.question request))) >> asked else pure Nothing
+          if back then seen >>= \seen' -> send channel (MkMatchup places) >> send channel (MkStart (Question.seat (Request.question request)) seen') >> asked else pure Nothing
 
 -- | This seat's view of the game as it ended, holding what happened after
 -- its last decision (the killing blow, say); Nothing for a game that stopped.
 endView :: PlayerId.PlayerId -> Either a (b, GameState.GameState) -> Maybe PlayerView.PlayerView
 endView seat = either (const Nothing) (Just . PlayerView.Engine.viewFor seat . snd)
 
--- | A seat's exchange, each request's view given to `sent` first: what the
--- host keeps of a guest's seat, whose page may reload and lose it.
+-- | A seat's exchange, each request's view given to `sent` once answered:
+-- what the host keeps of a guest's seat, whose page may reload and lose it.
+-- Until then the guest rejoining is sent what it saw before the request
+-- (remote), so the request, sent again, shows its news as fresh.
 seeing :: (Monad m) => (PlayerView.PlayerView -> m ()) -> Protocol.Exchange m -> Protocol.Exchange m
-seeing sent ask request = mapM_ sent (Request.view request) >> ask request
+seeing sent ask request = ask request <* mapM_ sent (Request.view request)
 
 -- | The ending of seat `seat`, from what it was shown, `seen`, and its view
 -- of the end (endView), the killing blow, say.
