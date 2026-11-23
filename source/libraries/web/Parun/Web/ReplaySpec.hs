@@ -97,8 +97,8 @@ spec s = Spec.describe s "Parun.Web.Replay" $ do
       Spec.assertBool s (Text.isInfixOf (Text.pack ">You</button>") (Html.toText (Replay.view frame {Replay.seats = [(PlayerId.MkPlayerId 0, Text.pack "You")]}))) "a name the table shares"
 
     Spec.it s "names a scenario's seats as the table does, never by their labels" $ do
-      Spec.assertEqWith s "to view as" (Replay.named Map.empty labelled) [(PlayerId.MkPlayerId 0, Text.pack "Player 1"), (PlayerId.MkPlayerId 1, Text.pack "Player 2")]
-      Spec.assertEqWith s "a game's names" (Replay.named (Map.singleton (Text.pack "alice") (Text.pack "You")) labelled) [(PlayerId.MkPlayerId 0, Text.pack "You"), (PlayerId.MkPlayerId 1, Text.pack "Player 2")]
+      Spec.assertEqWith s "to view as" (Replay.seatsNamed Map.empty labelled) [(PlayerId.MkPlayerId 0, Text.pack "Player 1"), (PlayerId.MkPlayerId 1, Text.pack "Player 2")]
+      Spec.assertEqWith s "a game's names" (Replay.seatsNamed (Map.singleton (Text.pack "alice") (Text.pack "You")) labelled) [(PlayerId.MkPlayerId 0, Text.pack "You"), (PlayerId.MkPlayerId 1, Text.pack "Player 2")]
       let line viewed = Replay.lineOf (Replay.tableNames (PlayerId.MkPlayerId viewed) labelled) True Nothing (Timed.MkTimed (When.MkWhen 3 Phase.PrecombatMain (Label.MkLabel (Text.pack "alice")) 0) Nothing (Entry.Do Move.Pass))
       Spec.assertEqWith s "in a line, to the seat viewed as" (line 0, line 1) (Text.pack "Turn 3 \x00b7 Precombat main \x00b7 You pass", Text.pack "Turn 3 \x00b7 Precombat main \x00b7 Player 1 passes")
 
@@ -246,7 +246,7 @@ frame =
   Replay.MkFrame
     { Replay.name = Text.pack "a-scenario",
       Replay.description = Text.pack "what it shows",
-      Replay.seats = Replay.named Map.empty labelled,
+      Replay.seats = Replay.seatsNamed Map.empty labelled,
       Replay.viewer = PlayerId.MkPlayerId 0,
       Replay.position = 0,
       Replay.positions = 3,

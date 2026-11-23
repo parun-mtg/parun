@@ -105,7 +105,7 @@ viewer page moved registry name played scenario given = do
   let count = Natural.length (Scenario.Type.timeline scenario)
       labelled = seatsOf scenario
       names = foldMap History.seatNames played
-      seats = Web.Replay.named names labelled
+      seats = Web.Replay.seatsNamed names labelled
       -- A game finished here names its seats by who played them; a
       -- scenario's lines name them as the table does to the seat viewed as.
       lineNames viewing = if Maybe.isJust played then names else Web.Replay.tableNames viewing labelled
