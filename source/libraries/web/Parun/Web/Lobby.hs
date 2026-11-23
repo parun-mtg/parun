@@ -293,13 +293,16 @@ mainCount = sum . fmap fst . mainEntries
 -- | A deck list's main deck ('entries'): its lines before any other
 -- section's header, and those under the main deck's.
 mainEntries :: Text.Text -> [(Natural, CardName.CardName)]
-mainEntries contents =
-  let step (inMain, kept) line = case DeckList.sectionNamed (Text.strip line) of
-        Just section -> (section == DeckList.Main, kept)
-        Nothing
-          | inMain -> (inMain, kept <> entries line)
-          | otherwise -> (inMain, kept)
-   in snd (List.foldl' step (True, []) (Text.lines contents))
+mainEntries contents = [(n, card) | (DeckList.Main, n, card) <- sectioned contents]
+
+-- | A deck list's 'entries', each with the section the headers before it
+-- name: the main deck before any.
+sectioned :: Text.Text -> [(DeckList.Section, Natural, CardName.CardName)]
+sectioned contents =
+  let step (section, kept) line = case DeckList.sectionNamed (Text.strip line) of
+        Just next -> (next, kept)
+        Nothing -> (section, kept <> [(section, n, card) | (n, card) <- entries line])
+   in snd (List.foldl' step (DeckList.Main, []) (Text.lines contents))
 
 -- | A deck list's lines that name a card ("4 Forest", "1 Shock (M19) 156"),
 -- each as its count and the card; other lines skipped.

@@ -442,7 +442,7 @@ view builder =
                   [reader (CardIndex.name e)]
                     <> foldMap (pure . Mana.cost) (CardIndex.cost e)
                     <> [Element.el "span" ["type-line"] [] [Element.text (CardIndex.typeLine e)]]
-                    <> [Element.el "span" ["copies"] [] [Element.string (show n)] | n <- Maybe.maybeToList (Map.lookup (CardIndex.name e) (zoneOf (target builder) builder))]
+                    <> [Element.el "span" ["copies"] [] [Element.string (show n <> " " <> whereIn (target builder))] | n <- Maybe.maybeToList (Map.lookup (CardIndex.name e) (zoneOf (target builder) builder))]
                     <> [Element.el "span" ["left"] [] [Element.string (show (most - min most (Map.findWithDefault 0 (CardIndex.name e) (deck builder))) <> " left")] | target builder == DeckList.Main, most <- Maybe.maybeToList (capOf builder (CardIndex.name e))]
                     <> [adding (target builder) (CardIndex.name e)]
            in [Element.el "p" ["empty"] [] [Element.string "No card matches."] | count == 0]
@@ -477,9 +477,14 @@ view builder =
           )
         | Maybe.isJust (pasting builder)
         ]
+      -- The main deck's, as the sideboard's and commander's blocks count theirs.
       counted = case least builder of
-        Nothing -> show total <> " cards"
-        Just (n, withCommander) -> show (if withCommander then total + commanders else total) <> " / " <> show n
+        Nothing -> show total <> (if total == 1 then " card" else " cards") <> " in the deck"
+        Just (n, withCommander) -> show (if withCommander then total + commanders else total) <> " / " <> show n <> " in the deck"
+      whereIn section = case section of
+        DeckList.Side -> "in sideboard"
+        DeckList.Commander -> "as commander"
+        _ -> "in deck"
       -- Draft notes and sticker sheets are not cards, so their lines count none.
       countsCards part = part `notElem` [DeckList.DraftNotes, DeckList.Stickers]
       keptNote = [Element.el "p" ["kept"] [] [Element.string "Also kept: ", Element.text (Text.intercalate (Text.pack ", ") [DeckList.heading part <> (if countsCards part then Text.pack " \x00b7 " <> Text.pack (show n) else Text.empty) | (part, n) <- kept builder])] | not (null (kept builder))]

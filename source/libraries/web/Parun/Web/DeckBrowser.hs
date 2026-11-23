@@ -373,12 +373,20 @@ data Kind
   = MkCreature
   | MkSpell
   | MkLand
+  | -- | Brought beside the main deck, in this section, so not counted in it.
+    MkBeside DeckList.Section
   deriving (Eq, Ord, Show)
+
+-- | Whether a card of a list is in its main deck, which its count counts.
+inDeck :: Line -> Bool
+inDeck l = case kind l of
+  MkBeside _ -> False
+  _ -> True
 
 -- | A deck's spells by mana value, from zero to five, then six and up.
 curveOf :: [Line] -> [Natural]
 curveOf lines' =
-  let spells = [l | l <- lines', kind l /= MkLand]
+  let spells = [l | l <- lines', inDeck l, kind l /= MkLand]
    in [sum [copies l | l <- spells, value l == n] | n <- [0 .. 5]] <> [sum [copies l | l <- spells, value l >= 6]]
 
 -- | A curve as bars, each labelled with its mana value, with these classes:
@@ -394,7 +402,8 @@ curve classes counts =
           [Element.el "span" ["fill"] [Element.attr "style" (Text.pack ("height:" <> show (div (n * 100) tallest) <> "%"))] [], Element.el "span" ["mv"] [] [Element.string mv]]
    in Element.el "span" ("curve" : classes) [Element.attr "aria-hidden" (Text.pack "true")] (fmap bar (zip (fmap show [0 :: Int .. 5] <> ["6+"]) counts))
 
--- | A deck's cards by kind, each kind under its count.
+-- | A deck's cards by kind, each kind under its count, then each section
+-- beside the main deck under its own.
 cardList :: [Line] -> Html.Html msg
 cardList lines' =
   let section title k =
@@ -404,7 +413,12 @@ cardList lines' =
                   : [Element.el "p" ["deck-line"] [] ([Element.el "span" ["copies"] [] [Element.string (show (copies l))], Element.el "span" ["deck-card"] [] [Element.text (CardName.unwrap (card l))]] <> foldMap (pure . Mana.cost) (cost l)) | l <- these]
             | not (null these)
             ]
-   in Element.el "div" ["deck-sections"] [] (foldMap (uncurry section) kinds)
+   in Element.el "div" ["deck-sections"] [] (foldMap (uncurry section) (kinds <> [(Text.unpack (DeckList.heading part), MkBeside part) | part <- besides lines']))
+
+-- | The sections beside the main deck a list's cards are in, in the order
+-- DeckList.Section declares them.
+besides :: [Line] -> [DeckList.Section]
+besides lines' = Set.toList (Set.fromList [part | MkBeside part <- fmap kind lines'])
 
 -- | Each kind of card, as a deck's detail names it.
 kinds :: [(String, Kind)]
@@ -547,7 +561,7 @@ detailBody browser name =
       Just lines' ->
         [ Element.el "div" ["panel", "detail-curve"] [] [Element.el "span" ["eyebrow"] [] [Element.string "Mana curve"], curve [] (curveOf lines')],
           Element.el "dl" ["panel", "kinds"] [] [Element.el "div" [] [] [Element.el "dt" [] [] [Element.string title], Element.el "dd" ["muted"] [] [Element.string (show (sum [copies l | l <- lines', kind l == k]))]] | (title, k) <- kinds],
-          Element.el "details" ["deck-preview"] [] [Element.el "summary" [] [] [Element.string ("See all " <> show (sum (fmap copies lines')) <> " cards")], cardList lines']
+          Element.el "details" ["deck-preview"] [] [Element.el "summary" [] [] [Element.string ("See all " <> show (sum [copies l | l <- lines', inDeck l]) <> " cards" <> foldMap (\part -> ", and the " <> Text.unpack (Text.toLower (DeckList.heading part)) <> "\x2019s " <> show (sum [copies l | l <- lines', kind l == MkBeside part])) (besides lines'))], cardList lines']
         ]
   where
     colours = Map.findWithDefault Set.empty name (palette browser)
@@ -568,7 +582,8 @@ importView panel =
         Element.el "label" [] [Element.attr "for" (Text.pack "import-name")] [Element.string "Name"],
         Element.el "input" ["import-name"] [Element.attr "id" (Text.pack "import-name"), Element.attr "type" (Text.pack "text"), Element.attr "autocomplete" (Text.pack "off"), Element.on "input" MkImportName] [],
         Element.el "label" [] [Element.attr "for" (Text.pack "import-text")] [Element.string "Deck list"],
-        Element.el "textarea" ["import-text"] [Element.attr "id" (Text.pack "import-text"), Element.attr "rows" (Text.pack "12"), Element.attr "spellcheck" (Text.pack "false"), Element.attr "placeholder" (Text.pack "Format: constructed\n24 Forest\n4 Llanowar Elves"), Element.on "input" MkImportText] []
+        Element.el "p" ["muted"] [Element.attr "id" (Text.pack "import-hint")] [Element.string "One card a line, with its count. A line saying \x201cSideboard\x201d starts the sideboard; one saying \x201c\&Format:\x201d and a format names it."],
+        Element.el "textarea" ["import-text"] [Element.attr "id" (Text.pack "import-text"), Element.attr "rows" (Text.pack "12"), Element.attr "spellcheck" (Text.pack "false"), Element.attr "aria-describedby" (Text.pack "import-hint"), Element.on "input" MkImportText] []
       ]
       <> [Element.el "ul" ["problems"] [Element.attr "role" (Text.pack "alert")] [Element.el "li" [] [] [Element.text p] | p <- importProblems panel] | not (null (importProblems panel))]
       <> [ Element.el

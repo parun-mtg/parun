@@ -87,7 +87,7 @@ deckOf s label registry text = do
   result <- DeckList.parse registry (Text.pack text)
   case fmap DeckList.sound result of
     Right (Right deck) -> pure deck
-    Right (Left problems) -> Spec.assertFailure s (label <> ": " <> show (fmap DeckList.explain problems))
+    Right (Left problems) -> Spec.assertFailure s (label <> ": " <> show (fmap (DeckList.explain (const Nothing)) problems))
     Left corpus -> S.brokenCorpus s corpus
 
 -- What a list says, failing the case rather than escaping when the corpus
@@ -463,6 +463,12 @@ spec s = Spec.describe s "Parun.DeckList" $ do
           DeckList.BadNote 5 (Text.pack "type: Forest"),
           DeckList.BadNote 6 (Text.pack "player: 0")
         ]
+
+  Spec.it s "offers the nearest name to one no card has, ignoring case, and none too far" $ do
+    let names = fmap (CardName.MkCardName . Text.pack) ["Goblin Piker", "Goblin Guide", "Shock"]
+        near = fmap CardName.unwrap . DeckList.nearest names . CardName.MkCardName . Text.pack
+    Spec.assertEqWith s "near" (near "goblin pikr", near "Shok", near "Gobbo Guy") (Just (Text.pack "Goblin Piker"), Just (Text.pack "Shock"), Nothing)
+    Spec.assertEqWith s "worded" (DeckList.explain (const (Just (CardName.MkCardName (Text.pack "Shock")))) (DeckList.NoSuchCard 2 (CardName.MkCardName (Text.pack "Shok")))) (Text.pack "line 2: no card is named Shok; did you mean Shock?")
 
   -- A note is a number, so a bare name says none; it is for a card, so a name
   -- no card has is a problem.

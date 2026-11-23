@@ -41,6 +41,7 @@ import qualified Parun.Registry as Registry
 import qualified Parun.Types.Answerer as Answerer
 import qualified Parun.Types.Asked as Asked
 import qualified Parun.Types.Card as Card
+import qualified Parun.Types.CardName as CardName
 import qualified Parun.Types.CardType as CardType
 import qualified Parun.Types.Deck as Deck
 import qualified Parun.Types.Face as Face
@@ -87,21 +88,31 @@ load registry path = do
     Right contents -> loadText registry path contents
 
 -- | A deck list's text with no bad line, as 'load' reads a file, its
--- problems labelled `label`; or every problem with it.
+-- problems labelled `label`, a name no card has with the registry's nearest
+-- (DeckList.nearest); or every problem with it.
 loadText :: Registry.Registry Identity.Identity -> FilePath -> Text.Text -> Either [Text.Text] DeckList.Listed
 loadText registry label contents = case Identity.runIdentity (DeckList.parse registry contents) of
   Left corpus -> Left [Text.pack (Exception.displayException corpus)]
   Right listed -> case DeckList.sound listed of
-    Left problems -> Left (fmap (\p -> Text.pack (label <> ": ") <> DeckList.explain p) problems)
+    Left problems -> Left (fmap (\p -> Text.pack (label <> ": ") <> DeckList.explain near p) problems)
     Right _ -> Right listed
+  where
+    near = DeckList.nearest (either (const []) (fmap (CardName.MkCardName . DeckList.written)) (Identity.runIdentity (Registry.cards registry)))
 
--- | Every problem with a deck list's text, labelled `label`: a bad line, or
--- a breach of the format its header names ('settle'); none for a deck that
--- can start a game.
-check :: Registry.Registry Identity.Identity -> FilePath -> Text.Text -> IO [Text.Text]
-check registry label contents = case loadText registry label contents of
-  Left problems -> pure problems
-  Right listed -> Either.fromLeft [] <$> settle Nothing [(label, listed)]
+-- | Every problem with a deck list's text, unlabelled, as a panel it is
+-- pasted into shows them: a bad line, or a breach of the format its header
+-- names ('settle'); none for a deck that can start a game.
+check :: Registry.Registry Identity.Identity -> Text.Text -> IO [Text.Text]
+check registry contents =
+  fmap (unlabelled label) <$> case loadText registry label contents of
+    Left problems -> pure problems
+    Right listed -> Either.fromLeft [] <$> settle Nothing [(label, listed)]
+  where
+    label = "deck"
+
+-- | A problem without the label 'loadText' or 'settle' put before it.
+unlabelled :: FilePath -> Text.Text -> Text.Text
+unlabelled label problem = Maybe.fromMaybe problem (Text.stripPrefix (Text.pack (label <> ": ")) problem)
 
 -- | The format a game between these lists is under, by name: the one asked
 -- for, else the one their headers name, checking every deck against it; or

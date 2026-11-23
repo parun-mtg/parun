@@ -8,6 +8,7 @@ import qualified Data.Sequence as Seq
 import qualified Data.Set as Set
 import qualified Data.Text as Text
 import Numeric.Natural (Natural)
+import qualified Parun.DeckList as DeckList
 import qualified Parun.Spec as Spec
 import qualified Parun.Types.CardName as CardName
 import qualified Parun.Types.Color as Color
@@ -192,6 +193,10 @@ spec s = Spec.describe s "Parun.Web.Lobby" $ do
   Spec.describe s "mainEntries" $ do
     Spec.it s "keeps the main deck's lines alone" $ do
       Spec.assertEq s (fmap fst (Lobby.mainEntries (Text.pack "Format: commander\nCommander\n1 Sai\nDeck\n4 Island\n2 Shock\nSideboard\n3 Bolt\n"))) [4, 2]
+
+  Spec.describe s "sectioned" $ do
+    Spec.it s "keeps each line's section" $ do
+      Spec.assertEq s ([(section, n) | (section, n, _) <- Lobby.sectioned (Text.pack "4 Island\nSideboard\n3 Bolt\nDeck\n2 Shock\n")]) [(DeckList.Main, 4), (DeckList.Side, 3), (DeckList.Main, 2)]
 
   Spec.describe s "dealt" $ do
     Spec.it s "never deals a bot a deck smaller than its fewest" $ do
@@ -397,6 +402,14 @@ spec s = Spec.describe s "Parun.Web.Lobby" $ do
       Spec.assertEqWith s "curve" (DeckBrowser.curveOf lines') [0, 4, 2, 0, 0, 0, 0]
       Spec.assertBool s (Text.isInfixOf (Text.pack "<dt>Creatures</dt><dd class=\"muted\">2</dd>") page && Text.isInfixOf (Text.pack "<dt>Lands</dt><dd class=\"muted\">17</dd>") page) "kinds"
       Spec.assertBool s (Text.isInfixOf (Text.pack "See all 23 cards") page) "list"
+
+    Spec.it s "counts a deck's main deck alone, its sideboard said apart" $ do
+      let lines' = [DeckBrowser.MkLine 4 (CardName.MkCardName (Text.pack "Shock")) Nothing 1 DeckBrowser.MkSpell, DeckBrowser.MkLine 20 (CardName.MkCardName (Text.pack "Mountain")) Nothing 0 DeckBrowser.MkLand, DeckBrowser.MkLine 2 (CardName.MkCardName (Text.pack "Naturalize")) Nothing 2 (DeckBrowser.MkBeside DeckList.Side)]
+          page = Html.toText (Lobby.view (previewing (Map.singleton a lines') (Lobby.update (Lobby.MkPick a) Text.empty lobby)))
+      Spec.assertEqWith s "curve" (DeckBrowser.curveOf lines') [0, 4, 0, 0, 0, 0, 0]
+      Spec.assertBool s (Text.isInfixOf (Text.pack "<dt>Other spells</dt><dd class=\"muted\">4</dd>") page) "kinds"
+      Spec.assertBool s (Text.isInfixOf (Text.pack "See all 24 cards, and the sideboard\x2019s 2") page) "summary"
+      Spec.assertBool s (Text.isInfixOf (Text.pack "<h3>Sideboard \x00b7 2</h3>") page) "section"
 
 a :: Text.Text
 a = Text.pack "sets/por/demo-a"

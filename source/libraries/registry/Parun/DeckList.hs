@@ -137,13 +137,14 @@ makes within choice card = case choice of
     faces = Card.faces card
     circledMana = (== Just ManaProduction.Circled) . fmap ManaAddition.production . ManaAbility.manaProduced
 
--- | A problem as a line a person can read.
-explain :: Problem -> Text.Text
-explain problem =
+-- | A problem as a line a person can read, a name no card has followed by
+-- the name `near` offers for it ('nearest'), if any.
+explain :: (CardName.CardName -> Maybe CardName.CardName) -> Problem -> Text.Text
+explain near problem =
   let at n = Text.pack ("line " <> show n <> ": ")
    in case problem of
         Unreadable n content -> at n <> Text.pack "not a count and a card name: " <> content
-        NoSuchCard n name -> at n <> Text.pack "no card is named " <> CardName.unwrap name
+        NoSuchCard n name -> at n <> Text.pack "no card is named " <> CardName.unwrap name <> foldMap (\offered -> Text.pack "; did you mean " <> CardName.unwrap offered <> Text.singleton '?') (near name)
         HalvesDisagree n name -> at n <> Text.pack "the halves of " <> CardName.unwrap name <> Text.pack " are different cards"
         FormatRepeated n name -> at n <> Text.pack "the format is already named, so not " <> name
         FormatDisagrees n named asked -> at n <> Text.pack "the list names the format " <> named <> Text.pack ", not " <> asked
@@ -156,6 +157,28 @@ explain problem =
         ChoiceNotMade n name choice -> at n <> CardName.unwrap name <> Text.pack " makes no " <> keyword choice <> Text.pack " choice here"
         ChoiceMissing n name choice -> at n <> CardName.unwrap name <> Text.pack " needs its " <> keyword choice <> Text.pack " choice"
         ChoiceRepeated n name choice -> at n <> CardName.unwrap name <> Text.pack " has its " <> keyword choice <> Text.pack " choice twice"
+
+-- | The one of `names` nearest a name no card has, as a "did you mean"
+-- offers it: the fewest single-character edits away, ignoring case, and no
+-- more than one for every four characters typed (at least one); the first
+-- in order among ties. None where none is that near.
+nearest :: [CardName.CardName] -> CardName.CardName -> Maybe CardName.CardName
+nearest names name =
+  let key = Text.toLower . CardName.unwrap
+      typed = key name
+      most = max 1 (Text.length typed `div` 4)
+      scored = [(d, candidate) | candidate <- names, let k = key candidate, abs (Text.length k - Text.length typed) <= most, let d = editDistance typed k, d <= most]
+   in fmap snd (Maybe.listToMaybe (List.sortOn fst scored))
+
+-- The fewest single-character insertions, deletions and substitutions that
+-- turn one text into the other.
+editDistance :: Text.Text -> Text.Text -> Int
+editDistance from to =
+  let target = Text.unpack to
+      row previous c = case previous of
+        [] -> []
+        above : rest -> List.scanl (\left (t, diagonal, up) -> minimum [left + 1, up + 1, diagonal + if t == c then 0 else 1]) (above + 1) (List.zip3 target previous rest)
+   in Maybe.fromMaybe 0 (Maybe.listToMaybe (List.reverse (List.foldl' row [0 .. length target] (Text.unpack from))))
 
 -- | Which part of what a player brings the lines that follow belong to: the
 -- deck or one of Parun.Types.Deck's fields beside it.

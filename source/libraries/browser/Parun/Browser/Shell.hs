@@ -448,7 +448,7 @@ importDeck shell showing current = case DeckBrowser.importing current of
               Left problem -> pure [problem]
               Right reg
                 | Maybe.isNothing (deckFiles listed) -> pure [Text.pack "The decks did not load: reload to try again."]
-                | null named -> Command.check reg "pasted" contents
+                | null named -> Command.check reg contents
                 | otherwise -> pure named
             case problems of
               _ : _ -> pure (refuse problems)
@@ -518,7 +518,7 @@ catalogued shell wanted browsed = do
       root <- Registry.defaultRoot
       Monad.forM [name | name <- wanted, Map.notMember name (DeckBrowser.previews browsed)] $ \name -> do
         contents <- maybe (pure Text.empty) (fmap Encoding.decodeUtf8Lenient . ByteString.readFile) (Map.lookup name files)
-        pure (name, [lineOf root byFile n card | (n, card) <- Lobby.entries contents])
+        pure (name, [if section == DeckList.Main then line else line {DeckBrowser.kind = DeckBrowser.MkBeside section} | (section, n, card) <- Lobby.sectioned contents, let line = lineOf root byFile n card])
     _ -> pure []
   pure
     browsed
@@ -714,7 +714,7 @@ saveBuilt shell built = do
 -- so the pool is the list's own, and the builder caps each card at it.
 deckProblems :: Shell -> Registry.Registry Identity.Identity -> Text.Text -> IO ([Text.Text], Set.Set CardName.CardName)
 deckProblems shell reg contents = case Command.loadText reg "deck" contents of
-  Left problems -> pure (fmap (\p -> Maybe.fromMaybe p (Text.stripPrefix (Text.pack "deck: ") p)) problems, Set.empty)
+  Left problems -> pure (fmap (Command.unlabelled "deck") problems, Set.empty)
   Right listed -> do
     table <- tableOf shell
     let lookUp = either (const . pure . Left) Legality.namedIn table

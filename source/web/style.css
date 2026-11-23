@@ -5035,6 +5035,7 @@ main.builder .filters,
 
 .builder-search .result .copies {
   min-width: 1.6em;
+  white-space: nowrap;
   padding: 2px 8px;
   border-radius: 999px;
   background: var(--act-soft);

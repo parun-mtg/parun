@@ -143,11 +143,11 @@ spec s registry reference = Spec.describe s "Parun.Legality" $ do
     listed <- DeckList.parse registry (Text.pack text) >>= either (S.brokenCorpus s) pure
     (format, reported) <- Legality.report (Just (Text.pack "constructed")) Nothing listed
     Spec.assertEqWith s "the format" format (Just (Text.pack "constructed"))
-    Spec.assertEqWith s "the bad line, then the violation" reported [DeckList.explain (DeckList.NoSuchCard 3 (nameOf "Lightnin Bolt")), Legality.explain (copies "Grizzly Bears" 5)]
+    Spec.assertEqWith s "the bad line, then the violation" reported [DeckList.explain (const Nothing) (DeckList.NoSuchCard 3 (nameOf "Lightnin Bolt")), Legality.explain (copies "Grizzly Bears" 5)]
     headed <- DeckList.parse registry (Text.pack ("Format: limited\n" <> text)) >>= either (S.brokenCorpus s) pure
     (headerFormat, headerReported) <- Legality.report Nothing Nothing headed
     Spec.assertEqWith s "the header's format" headerFormat (Just (Text.pack "limited"))
-    Spec.assertEqWith s "under which five are legal" headerReported [DeckList.explain (DeckList.NoSuchCard 4 (nameOf "Lightnin Bolt"))]
+    Spec.assertEqWith s "under which five are legal" headerReported [DeckList.explain (const Nothing) (DeckList.NoSuchCard 4 (nameOf "Lightnin Bolt"))]
 
   Spec.it s "CR 100.2a: assess returns a constructed deck's five Lightning Bolts as a violation" $ do
     listed <- DeckList.parse registry (Text.pack "5 Lightning Bolt\n55 Mountain\n") >>= either (S.brokenCorpus s) pure
@@ -396,7 +396,7 @@ spec s registry reference = Spec.describe s "Parun.Legality" $ do
   Spec.it s "CR 902.1: a deck list naming Barrin and Selenia as vanguards is refused" $ do
     listed <- DeckList.parse registry (Text.pack "60 Mountain\nVanguard\n1 Barrin\n1 Selenia\n") >>= either (S.brokenCorpus s) pure
     (_, reported) <- Legality.report (Just (Text.pack "constructed")) Nothing listed
-    Spec.assertEqWith s "the second refused" reported [DeckList.explain (DeckList.VanguardRepeated 4 (nameOf "Selenia"))]
+    Spec.assertEqWith s "the second refused" reported [DeckList.explain (const Nothing) (DeckList.VanguardRepeated 4 (nameOf "Selenia"))]
 
   Spec.it s "CR 123.2a: a Commander player bringing sticker sheets is in constructed play too" $ do
     sheets <- committedSheets s
@@ -705,15 +705,19 @@ spec s registry reference = Spec.describe s "Parun.Legality" $ do
       Spec.assertEqWith s "refused" result (Left (fmap Text.pack [dir <> "/small.txt: 39 cards in the deck, fewer than 40"]))
 
   Spec.it s "a pasted deck list naming a card the pool lacks is refused, naming it" $ do
-    problems <- Command.check reference "pasted" (Text.pack "59 Forest\n1 No Such Card\n")
+    problems <- Command.check reference (Text.pack "59 Forest\n1 No Such Card\n")
     Spec.assertBool s (any (Text.isInfixOf (Text.pack "No Such Card")) problems) (show problems)
 
+  Spec.it s "a pasted deck list's every misspelt name is refused, unlabelled, offering the nearest name" $ do
+    problems <- Command.check reference (Text.pack "20 Forest\n4 Llanowar Elvs\n4 Grizzly Bears\n4 giant grwth\n")
+    Spec.assertEqWith s "both lines" problems [Text.pack "line 2: no card is named Llanowar Elvs; did you mean Llanowar Elves?", Text.pack "line 4: no card is named giant grwth; did you mean Giant Growth?"]
+
   Spec.it s "CR 100.2a a pasted deck list breaking its header's format is refused" $ do
-    problems <- Command.check reference "pasted" (Text.pack "Format: constructed\n40 Forest\n")
-    Spec.assertEqWith s "refused" problems [Text.pack "pasted: 40 cards in the deck, fewer than 60"]
+    problems <- Command.check reference (Text.pack "Format: constructed\n40 Forest\n")
+    Spec.assertEqWith s "refused" problems [Text.pack "40 cards in the deck, fewer than 60"]
 
   Spec.it s "a sound pasted deck list is accepted" $ do
-    problems <- Command.check reference "pasted" (Text.pack "60 Forest\n")
+    problems <- Command.check reference (Text.pack "60 Forest\n")
     Spec.assertEqWith s "accepted" problems []
 
 -- Eighty cards, twenty over constructed's sixty, with Yorion, Sky Nomad as
