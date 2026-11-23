@@ -116,11 +116,13 @@ viewer page moved registry name played scenario given = do
         IORef.modifyIORef' furthest (max (either (const count) (const at) stop))
         pure stop
       reach at = moved at >> run at
-      -- The run a position past the furthest any reached, if one is left:
-      -- whether it ran.
+      -- The run a few positions past the furthest any reached, no further
+      -- than the next turn's start (which it keeps), if one is left:
+      -- whether it ran. Each run resumes at a whole step's start, so one a
+      -- position at a time would run a step's first entries again for each.
       ahead = do
         reached <- IORef.readIORef furthest
-        if reached >= count then pure False else True <$ run (reached + 1)
+        if reached >= count then pure False else True <$ run (min (reached + 8) (Web.Replay.stepTo starts count reached Web.Replay.MkTurnOn))
       -- The next tap, the runs going on ahead while none waits.
       awaiting = do
         waiting <- Browser.pending page
