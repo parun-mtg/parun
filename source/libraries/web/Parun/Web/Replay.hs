@@ -314,7 +314,7 @@ stop frame asked =
             "section"
             ["recorded"]
             [Element.attr "inert" Text.empty, Element.attr "aria-label" (Text.pack "The question as asked")]
-            (Element.el "p" ["recorded-note"] [] [Element.string "The question as asked:"] : fmap Html.inert (Web.Question.form r Set.empty))
+            (Element.el "p" ["recorded-note"] [] [Element.string "The question as asked:"] : fmap Html.inert (Web.Question.form r Set.empty Nothing))
         ]
       (Just r, Nothing) -> [Element.el "p" ["waiting"] [] [Element.text (Text.pack "Waiting on " <> seatName frame (Question.seat (Request.question r)) <> Text.pack ".")]]
       (Nothing, Nothing) -> []

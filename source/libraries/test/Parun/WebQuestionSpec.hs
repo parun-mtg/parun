@@ -841,6 +841,34 @@ spec s registry = Spec.describe s "WebQuestion" $ do
         yours = asking (Text.pack "ChooseTargets") (R.Object [(Text.pack "source", R.Text (Text.pack "$9")), (Text.pack "slots", R.Array [R.Array [R.Text (Text.pack "target"), R.Array [R.Number 1, R.Array [alice, bob]]]])])
     Spec.assertEqWith s "You (20 life)" (fmap (\label -> Maybe.isJust (Html.labelled (Text.pack "button") (Text.pack label) (Question.Web.view yours Question.Web.blank))) ["You (20 life)", "Player 1 (20 life)", "Player 2 (20 life)"]) [True, False, True]
 
+  Spec.it s "a picked option, a placed item and a chosen amount are read aloud as pressed, and a focused blocker as choosing" $ do
+    let pressed request picked = [(Html.spoken b, state) | b@(Html.MkElement node) <- Html.elements (Text.pack "button") (Html.element (Text.pack "div") [] (Question.Web.form request picked Nothing)), Just state <- [Html.propertyOf (Text.pack "aria-pressed") node]]
+        on = Text.pack "true"
+        off = Text.pack "false"
+        search names count = asking (Text.pack "Search") (R.Object [(Text.pack "from", R.Array [R.Text (Text.pack "$1"), R.Text (Text.pack "$2")]), (Text.pack "names", R.Array (fmap (R.Text . Text.pack) names)), (Text.pack "count", R.Number count)])
+        distinct = search ["Forest", "Plains"] 1
+        alike = search ["Forest", "Forest"] 2
+    -- The check mark is drawn, not spoken.
+    Spec.assertEqWith s "choose many" (pressed distinct (picking distinct [Question.Web.MkToggle 0 0])) [(Text.pack "Forest", on), (Text.pack "Plains", off)]
+    Spec.assertEqWith s "some of a shared button" (pressed alike (picking alike [Question.Web.MkToggle 0 0])) [(Text.pack "1 of Forest \x00d7\&2", Text.pack "mixed")]
+    Spec.assertEqWith s "all of a shared button" (pressed alike (picking alike [Question.Web.MkToggle 0 0, Question.Web.MkToggle 0 1])) [(Text.pack "2 of Forest \x00d7\&2", on)]
+    let triggers = asking (Text.pack "OrderTriggers") (R.Array [R.Object [(Text.pack "source", R.Text (Text.pack "$1"))], R.Object [(Text.pack "source", R.Text (Text.pack "$2"))]])
+    Spec.assertEqWith s "ordering" (fmap snd (pressed triggers (picking triggers [Question.Web.MkToggle 0 1]))) [off, on]
+    Spec.assertBool s (any (\(label, state) -> state == on && Text.isPrefixOf (Text.pack "1. ") label) (pressed triggers (picking triggers [Question.Web.MkToggle 0 1]))) "placed first"
+    let damage = asking (Text.pack "AssignCombatDamage") (R.Object [(Text.pack "source", R.Text (Text.pack "$9")), (Text.pack "lethal", R.Array [R.Array [R.Text (Text.pack ("$" <> show n)), R.Number 1] | n <- [1 :: Int, 2]]), (Text.pack "paid", R.Array []), (Text.pack "total", R.Number 3)])
+        rows = Html.elements (Text.pack "div") (Html.element (Text.pack "div") [] (Question.Web.form damage (Question.Web.initial damage) Nothing))
+        grouped = [b | Html.MkElement node <- rows, Html.propertyOf (Text.pack "role") node == Just (Text.pack "group"), Maybe.isJust (Html.propertyOf (Text.pack "aria-label") node), b <- [Html.MkElement node]]
+    Spec.assertEqWith s "amount rows are named groups" (length grouped) 2
+    Spec.assertEqWith s "the amount chosen" [Html.spoken b | Html.MkElement node <- foldMap (Html.elements (Text.pack "button")) grouped, Html.propertyOf (Text.pack "aria-pressed") node == Just on, b <- [Html.MkElement node]] [Text.pack "1", Text.pack "2"]
+    bears <- S.printingOf s registry "Grizzly Bears"
+    let (blocker, gs) = S.addPermanent bears S.alice (Setup.emptyGame S.bothPlayers)
+        blocking = asking (Text.pack "DeclareBlockers") (R.Object [(Text.pack "blockers", R.Array [R.Text (Text.pack "$3"), R.Text (Text.pack "$4")]), (Text.pack "attackers", R.Array [R.Text (Text.pack "$1")])])
+        current focus = [Html.content h | h@(Html.MkElement node) <- Html.elements (Text.pack "h3") (Html.element (Text.pack "div") [] (Question.Web.form blocking Set.empty focus)), Html.propertyOf (Text.pack "aria-current") node == Just on]
+    Spec.assertEqWith s "no blocker focused" (current Nothing) []
+    Spec.assertEqWith s "the focused blocker's section" (current (Just 1)) [heading <> Text.pack ": choose the attacker it blocks" | heading <- take 1 (drop 1 (fmap Html.content (Html.elements (Text.pack "h3") (Html.element (Text.pack "div") [] (Question.Web.form blocking Set.empty Nothing)))))]
+    let shown = PlayerView.viewFor S.alice gs
+    Spec.assertBool s (maybe False (Text.isSuffixOf (Text.pack "blocking with it: choose the attacker it blocks") . Card.summary shown (Card.MkCue ["focused"] () Nothing)) (Wording.recalled shown blocker)) "the focused blocker's tile"
+
   Spec.it s "CR 603.3b triggered abilities are ordered by tapping each in turn, answered by Done" $ do
     let request = asking (Text.pack "OrderTriggers") (R.Array [R.Object [(Text.pack "source", R.Text (Text.pack "$1"))], R.Object [(Text.pack "source", R.Text (Text.pack "$2"))], R.Object [(Text.pack "source", R.Text (Text.pack "$3"))]])
     Spec.assertEqWith s "first" (Question.Web.step request Set.empty (Question.Web.MkToggle 0 1) Text.empty) (Question.Web.MkPicking (Set.singleton (0, 1)))
@@ -865,7 +893,7 @@ spec s registry = Spec.describe s "WebQuestion" $ do
 
   Spec.it s "CR 701.23b a search finds up to its count, none included" $ do
     let request = asking (Text.pack "Search") (R.Object [(Text.pack "from", R.Array [R.Text (Text.pack "$1"), R.Text (Text.pack "$2")]), (Text.pack "names", R.Array [R.Text (Text.pack "Forest"), R.Text (Text.pack "Plains")]), (Text.pack "count", R.Number 1)])
-    Spec.assertBool s (Text.pack "<button type=\"button\">Forest</button><button type=\"button\">Plains</button><div class=\"passes\"><button class=\"primary\" type=\"button\">Find</button></div>" `Text.isInfixOf` Html.toText (Question.Web.view request Question.Web.blank)) "names"
+    Spec.assertBool s (Text.pack "<button type=\"button\" aria-pressed=\"false\">Forest</button><button type=\"button\" aria-pressed=\"false\">Plains</button><div class=\"passes\"><button class=\"primary\" type=\"button\">Find</button></div>" `Text.isInfixOf` Html.toText (Question.Web.view request Question.Web.blank)) "names"
     Spec.assertEqWith s "none" (Question.Web.step request Set.empty Question.Web.MkSubmit Text.empty) (Question.Web.MkReplied (R.Array []))
     Spec.assertBool s (case Question.Web.step request (picking request [Question.Web.MkToggle 0 0, Question.Web.MkToggle 0 1]) Question.Web.MkSubmit Text.empty of Question.Web.MkRefused _ -> True; _ -> False) "too many"
 
@@ -894,7 +922,7 @@ spec s registry = Spec.describe s "WebQuestion" $ do
           Html.handler (Text.pack "click") (row <> within) (page picked)
         pressed picked card label = Text.pack ("aria-pressed=\"true\">" <> label <> "</button>") `Text.isInfixOf` foldMap Html.toText (Html.search (\html -> case html of Html.MkElement node -> Html.propertyOf (Text.pack "aria-label") node == Just (Text.pack card); _ -> False) (page picked) >>= (`Html.at` page picked))
     Spec.assertBool s (Text.pack "Scry 2: put each card on the top or the bottom of your library." `Text.isInfixOf` Html.toText (page Set.empty)) "the heading"
-    Spec.assertBool s (not (Text.pack "tap" `Text.isInfixOf` Text.toLower (Html.content (Html.element (Text.pack "div") [] (Question.Web.form request Set.empty))))) "no tap"
+    Spec.assertBool s (not (Text.pack "tap" `Text.isInfixOf` Text.toLower (Html.content (Html.element (Text.pack "div") [] (Question.Web.form request Set.empty Nothing))))) "no tap"
     Spec.assertEqWith s "top" (side Set.empty "Mountain" "Top") (Just (Question.Web.MkToggle 0 1))
     Spec.assertEqWith s "bottom" (side Set.empty "Grizzly Bears" "Bottom") (Just (Question.Web.MkToggle 1 0))
     Spec.assertEqWith s "nothing placed keeps all on top" (Html.labelled (Text.pack "button") (Text.pack "Keep all on top") (page Set.empty) >>= \path -> Html.handler (Text.pack "click") path (page Set.empty)) (Just Question.Web.MkSubmit)

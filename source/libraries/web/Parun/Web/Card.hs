@@ -185,6 +185,7 @@ summary view cue o =
       action
         | elem "playable" (marks cue) = [Text.pack "you can play or use it"]
         | elem "auto-next" (marks cue) = [Text.pack "can be chosen, and paying automatically taps it next"]
+        | elem "focused" (marks cue) = [Text.pack "blocking with it: choose the attacker it blocks"]
         | elem "chosen" (marks cue) = [Text.pack "chosen"]
         | elem "choosable" (marks cue) = [Text.pack "can be chosen"]
         | otherwise = []
