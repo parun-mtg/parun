@@ -4527,35 +4527,65 @@ main.scenarios h2 {
   color: var(--muted);
 }
 
-/* ---------- Deck builder ---------- */
+/* ---------- Deck builder (Parun.Web.Builder) ---------- */
+
+/* Laid out as the Decks screen is: a heading row, the deck's settings,
+   then the cards beside the deck from 900px and above it narrower. */
+main.builder {
+  max-width: 1400px;
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  padding: 24px max(16px, env(safe-area-inset-right)) calc(24px + env(safe-area-inset-bottom)) max(16px, env(safe-area-inset-left));
+}
+
+@media (min-width: 900px) {
+  main.builder {
+    padding: 24px 28px;
+  }
+}
 
 #app button.home-button {
   flex: none;
 }
 
-main.builder {
-  max-width: 1200px;
-  margin: 0 auto;
-  padding: max(1em, env(safe-area-inset-top)) 1em calc(2em + env(safe-area-inset-bottom));
-}
-
+/* The heading row: Back, the title, whether it is saved, and Save; under
+   it the name, the format and the card pool. */
 .builder-top {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
-  gap: 0.5em;
-  margin-bottom: 1em;
+  gap: 8px;
+}
+
+.builder-head {
+  flex-basis: 100%;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 8px;
+}
+
+.builder-head h1 {
+  flex-grow: 1;
+  font-size: 30px;
+  font-weight: 700;
+  line-height: 1.15;
+}
+
+#app .builder-head button.primary {
+  min-width: 96px;
+}
+
+.builder-head .saved {
+  color: var(--good);
 }
 
 .builder-top .builder-name {
-  flex: 1;
-  min-width: 10em;
+  flex: 1 1 240px;
   width: auto;
-}
-
-.builder-top .saved {
-  color: var(--good);
-  font-size: 0.85rem;
+  min-width: 0;
 }
 
 .builder-top .problems,
@@ -4564,109 +4594,162 @@ main.builder {
   margin: 0;
   padding-left: 1.2em;
   color: var(--text);
-  font-size: 0.88rem;
+  font-size: 13px;
 }
 
 /* Cards and deck side by side where there is room, stacked otherwise. */
 .builder-body {
   display: grid;
-  grid-template-columns: minmax(0, 3fr) minmax(0, 2fr);
-  gap: 1.2em;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 24px;
   align-items: start;
 }
 
-@media (max-width: 760px) {
+@media (min-width: 900px) {
   .builder-body {
-    grid-template-columns: minmax(0, 1fr);
+    grid-template-columns: minmax(0, 3fr) minmax(320px, 2fr);
+  }
+
+  .builder-deck {
+    position: sticky;
+    top: 16px;
+    max-height: calc(100dvh - 32px);
+    overflow-y: auto;
   }
 }
 
-.builder-search,
-.builder-deck {
-  display: grid;
-  gap: 0.6em;
+.builder-search {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
 }
 
 .builder-deck {
-  position: sticky;
-  top: 0.5em;
-  padding: 0.75em;
-  border: 1px solid var(--line);
-  border-radius: var(--radius);
-  background: var(--surface);
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 20px 24px;
+}
+
+@media (max-width: 559px) {
+  .builder-deck {
+    padding: 16px;
+  }
+}
+
+.deck-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
 }
 
 .builder-deck h2 {
-  margin: 0;
-  font-size: 1.1rem;
+  font-size: 22px;
+  font-weight: 700;
   font-variant-numeric: tabular-nums;
 }
 
-.filters,
+/* The search's filters: the colours as the Decks screen draws them, the
+   mana value as its menus, and each card type a chip, pressed in the act's
+   tint. */
+main.builder .filters,
 .basics {
   display: flex;
   flex-wrap: wrap;
-  gap: 0.35em;
+  align-items: center;
+  gap: 8px;
 }
 
-#app .filters button.toggle {
-  padding: 0.25em 0.6em;
-  font-size: 0.82rem;
-}
-
-#app .filters button.toggle.on {
-  background: var(--act);
-  border-color: var(--act);
-  color: var(--on-act);
-}
-
+#app .filters button.toggle,
+#app .targets button.toggle,
 #app .basics button.basic {
-  padding: 0.25em 0.6em;
-  font-size: 0.82rem;
+  padding: 0 14px;
+  border-radius: 999px;
+  font-size: 13px;
+}
+
+#app .filters button.toggle.on,
+#app .targets button.toggle.on {
+  background: var(--act-soft);
+  border-color: var(--act-line);
+  box-shadow: inset 0 0 0 1px var(--act-line);
+  color: var(--act-text);
 }
 
 #app .basics button.basic::before {
   content: "+ ";
+  color: var(--muted);
+}
+
+/* Which zone the search adds to, and the basic lands, a row each. */
+.targets {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+}
+
+.choice-prompt {
+  color: var(--muted);
+  font-size: 13px;
+  font-weight: 600;
 }
 
 .shown-count {
   color: var(--muted);
-  font-size: 0.82rem;
-  margin: 0;
+  font-size: 13px;
 }
 
-.results {
-  display: grid;
+/* The results, a row each in a panel: name, cost, type line, how many
+   are in the deck or left in the pool, and Add. */
+.builder-search .results {
+  display: flex;
+  flex-direction: column;
+  padding: 4px 16px;
 }
 
-.result {
+.builder-search .result {
   display: flex;
   align-items: center;
-  gap: 0.5em;
-  padding: 0.3em 0;
-  border-bottom: 1px solid var(--line);
-  font-size: 0.9rem;
+  gap: 8px;
+  min-height: 52px;
+  padding: 4px 0;
+  border-top: 1px solid var(--line);
 }
 
-.result {
-  min-height: 2.6em;
+.builder-search .result:first-child {
+  border-top: 0;
 }
 
-.result .type-line {
+.builder-search .result .type-line {
   flex: 1;
+  min-width: 0;
   padding-bottom: 0;
-  border-bottom: none;
+  border-bottom: 0;
   color: var(--muted);
-  font-size: 0.8rem;
+  font-size: 13px;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
 }
 
-.result .copies {
+.builder-search .result .copies {
+  min-width: 1.6em;
+  padding: 2px 8px;
+  border-radius: 999px;
+  background: var(--act-soft);
+  color: var(--act-text);
+  font-size: 13px;
+  font-weight: 700;
   font-variant-numeric: tabular-nums;
-  color: var(--act);
-  font-weight: 600;
+  text-align: center;
+}
+
+.builder-search .result .left {
+  color: var(--muted);
+  font-size: 13px;
+  font-variant-numeric: tabular-nums;
 }
 
 #app button.card-name {
@@ -4681,36 +4764,72 @@ main.builder {
   cursor: pointer;
 }
 
-#app button.card-name:hover {
-  text-decoration: underline;
+#app .result button.card-name {
+  font-weight: 600;
+}
+
+@media (hover: hover) {
+  #app button.card-name:hover {
+    background: none;
+    color: var(--act-text);
+    text-decoration: underline;
+  }
+}
+
+/* The deck's sections, its lines ruled as the Home screen's rows are. */
+.builder-deck .deck-section {
+  display: flex;
+  flex-direction: column;
+}
+
+.builder-deck .deck-section h3 {
+  margin: 4px 0;
 }
 
 .builder-deck .deck-line {
+  flex-wrap: wrap;
   align-items: center;
+  gap: 8px;
+  min-height: 44px;
+  padding: 4px 0;
+  border-top: 1px solid var(--line);
+  font-size: 15px;
+}
+
+.builder-deck .deck-line .copies {
+  color: var(--text);
+  font-weight: 700;
 }
 
 .builder-deck .deck-line .card-name {
   flex: 1;
 }
 
-.builder-deck .deck-line.flagged {
-  color: var(--danger);
-}
-
+.builder-deck .deck-line.flagged,
 .builder-deck .deck-line.flagged .copies {
   color: var(--danger);
-  font-weight: 600;
 }
 
+/* Add and remove: a round key a side, 36px on a mouse, 44px to a finger. */
 #app button.add,
 #app button.remove {
   flex: none;
-  width: 1.9em;
-  height: 1.9em;
+  width: 36px;
+  height: 36px;
   min-height: 0;
   padding: 0;
+  border-radius: 50%;
+  font-size: 17px;
   line-height: 1;
   text-align: center;
+}
+
+@media (pointer: coarse) {
+  #app button.add,
+  #app button.remove {
+    width: 44px;
+    height: 44px;
+  }
 }
 
 #app button.add::before {
@@ -4721,36 +4840,100 @@ main.builder {
   content: "\2212";
 }
 
+#app button.add:disabled {
+  opacity: 0.35;
+  cursor: default;
+}
+
+/* A card's deckbuilding choice, its colours as the filters' at a smaller
+   size, under its line. */
+.choice {
+  flex-basis: 100%;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+  padding: 0 0 8px 2em;
+}
+
+#app .choice button.toggle {
+  width: 36px;
+  height: 36px;
+  min-height: 0;
+  padding: 0;
+  border-radius: 50%;
+  display: inline-grid;
+  place-items: center;
+}
+
+#app .choice button.toggle.on {
+  border: 3px solid var(--text);
+  background: var(--raised);
+}
+
+.notices,
+.builder-deck .kept {
+  margin: 0;
+  color: var(--muted);
+  font-size: 13px;
+}
+
+.notices {
+  padding-left: 1.2em;
+}
+
+/* A card read, the question on leaving, and a pool being pasted: a sheet
+   over the foot of the screen, the pasting panel at its top. */
 .card-reading,
-main.builder .leave {
+main.builder .leave,
+.paste-pool {
   position: fixed;
   left: 50%;
-  bottom: 1em;
   transform: translateX(-50%);
-  width: min(32em, calc(100% - 2em));
   display: grid;
-  gap: 0.4em;
-  padding: 1em;
+  gap: 8px;
+  padding: 24px;
   border: 1px solid var(--line);
-  border-radius: var(--radius);
+  border-radius: 16px;
   background: var(--surface);
   box-shadow: var(--sheet-shadow);
+}
+
+.card-reading,
+main.builder .leave {
+  bottom: max(16px, env(safe-area-inset-bottom));
+  width: min(32em, calc(100% - 32px));
   z-index: 10;
 }
 
+@media (max-width: 559px) {
+  .card-reading,
+  main.builder .leave,
+  .paste-pool {
+    padding: 16px;
+  }
+}
+
 .card-reading h2 {
-  margin: 0;
-  font-size: 1.05rem;
+  font-size: 22px;
+  font-weight: 700;
 }
 
 .card-reading .type-line {
-  margin: 0;
   color: var(--muted);
-  font-size: 0.85rem;
+  font-size: 13px;
+  font-weight: 600;
 }
 
-.card-reading .rules {
-  margin: 0;
+.card-reading .face-name {
+  margin-top: 8px;
+  font-size: 15px;
+  font-weight: 700;
+}
+
+#app .card-reading > button {
+  justify-self: end;
+  margin-top: 8px;
 }
 
 main.builder .leave {
@@ -4758,8 +4941,30 @@ main.builder .leave {
   align-items: center;
 }
 
-main.builder .leave p {
-  margin: 0;
+.paste-pool {
+  top: max(32px, env(safe-area-inset-top));
+  width: min(36em, calc(100% - 32px));
+  gap: 12px;
+  z-index: 11;
+}
+
+.paste-pool h2 {
+  font-size: 22px;
+  font-weight: 700;
+}
+
+.paste-pool p {
+  color: var(--muted);
+}
+
+.paste-pool textarea {
+  font-family: ui-monospace, monospace;
+  font-size: 13px;
+  resize: vertical;
+}
+
+.paste-pool .problems:empty {
+  display: none;
 }
 
 /* A saved deck the check found breaking its format, and why Start refused it. */
@@ -4783,106 +4988,4 @@ main.builder .leave p {
   padding-left: 1.2em;
   color: var(--text);
   font-size: 0.88rem;
-}
-
-/* The sections of an opened list the builder keeps but does not edit. */
-.builder-deck .kept {
-  margin: 0;
-  color: var(--muted);
-  font-size: 0.85rem;
-}
-
-/* A card pool pasted in, and how many of a pooled card remain. */
-.paste-pool {
-  position: fixed;
-  left: 50%;
-  top: 2em;
-  transform: translateX(-50%);
-  width: min(36em, calc(100% - 2em));
-  display: grid;
-  gap: 0.5em;
-  padding: 1em;
-  border: 1px solid var(--line);
-  border-radius: var(--radius);
-  background: var(--surface);
-  box-shadow: var(--sheet-shadow);
-  z-index: 11;
-}
-
-.paste-pool h2,
-.paste-pool p {
-  margin: 0;
-}
-
-.paste-pool textarea {
-  font-family: ui-monospace, monospace;
-  font-size: 0.85rem;
-  resize: vertical;
-}
-
-.result .left {
-  color: var(--muted);
-  font-size: 0.8rem;
-  font-variant-numeric: tabular-nums;
-}
-
-#app button.add:disabled {
-  opacity: 0.35;
-  cursor: default;
-}
-
-/* Which zone the search adds to, a card's deckbuilding choice, and notes. */
-.targets,
-.choice {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 0.35em;
-}
-
-.choice {
-  flex-basis: 100%;
-  padding-left: 1.9em;
-}
-
-.choice-prompt {
-  color: var(--muted);
-  font-size: 0.8rem;
-}
-
-#app .targets button.toggle,
-#app .choice button.toggle {
-  min-height: 0;
-  padding: 0.2em 0.55em;
-  font-size: 0.82rem;
-}
-
-#app .targets button.toggle.on,
-#app .choice button.toggle.on {
-  background: var(--act);
-  border-color: var(--act);
-  color: var(--on-act);
-}
-
-.builder-deck .deck-line {
-  flex-wrap: wrap;
-}
-
-.notices {
-  margin: 0;
-  padding-left: 1.2em;
-  color: var(--muted);
-  font-size: 0.85rem;
-}
-
-.deck-head {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 0.5em;
-}
-
-.card-reading .face-name {
-  margin: 0.3em 0 0;
-  font-size: 0.9rem;
 }

@@ -447,7 +447,7 @@ view builder =
                     <> [adding (target builder) (CardIndex.name e)]
            in [Element.el "p" ["empty"] [] [Element.string "No card matches."] | count == 0]
                 <> [Element.el "p" ["shown-count"] [] [Element.string ("Showing " <> show (Seq.length shown) <> " of " <> show count)] | count > Seq.length shown]
-                <> [Element.el "div" ["results"] [] (fmap row (Foldable.toList shown))]
+                <> [Element.el "div" ["results", "panel"] [] (fmap row (Foldable.toList shown))]
       kindBlock title k =
         let these = List.sortOn (\l -> (DeckBrowser.value l, named (DeckBrowser.card l))) [l | l <- lines', DeckBrowser.kind l == k]
          in [ Element.el "div" ["deck-section"] [] $
@@ -512,11 +512,18 @@ view builder =
    in Element.keyed "main" ["builder"] [] $
         [ ( Text.pack "top",
             Element.el "div" ["builder-top"] [] $
-              [ Element.button ["home-button"] MkBack [Element.string "Back"],
+              [ Element.el "div" ["builder-head"] [] $
+                  [ Element.button ["home-button"] MkBack [Element.string "Back"],
+                    Element.el "h1" [] [] [Element.string (if Maybe.isJust (savedAs builder) then "Edit deck" else "New deck")]
+                  ]
+                    <> [Element.el "span" ["saved", "chip"] [] [Element.string "Saved"] | Maybe.isJust (savedAs builder), not (dirty builder)]
+                    <> [Element.button ["primary"] MkSave [Element.string "Save"]],
+                Element.el "label" ["sr-only"] [Element.attr "for" (Text.pack "builder-name")] [Element.string "Deck name"],
+                Element.el "input" ["builder-name"] ([Element.attr "id" (Text.pack "builder-name"), Element.attr "type" (Text.pack "text"), Element.attr "autocomplete" (Text.pack "off"), Element.attr "placeholder" (Text.pack "Deck name"), Element.attr "value" (saveName builder), Element.on "input" MkSaveName] <> [Element.attr "disabled" Text.empty | Maybe.isJust (savedAs builder)]) [],
                 Element.el "label" ["sr-only"] [Element.attr "for" (Text.pack "builder-format")] [Element.string "Format"],
-                Element.el "select" ["format"] [Element.attr "id" (Text.pack "builder-format"), Element.on "change" MkFormat] (option (format builder) (Text.empty, Text.pack "Casual (no format)") : [option (format builder) (f, DeckBrowser.formatTitle f) | f <- formats builder <> [format builder | not (Text.null (format builder)), format builder `notElem` formats builder]]),
+                Element.el "select" ["format", "deck-menu"] [Element.attr "id" (Text.pack "builder-format"), Element.on "change" MkFormat] (option (format builder) (Text.empty, Text.pack "Casual (no format)") : [option (format builder) (f, DeckBrowser.formatTitle f) | f <- formats builder <> [format builder | not (Text.null (format builder)), format builder `notElem` formats builder]]),
                 Element.el "label" ["sr-only"] [Element.attr "for" (Text.pack "builder-pool")] [Element.string "Card pool"],
-                Element.el "select" ["pool"] [Element.attr "id" (Text.pack "builder-pool"), Element.on "change" MkPoolChoice] $
+                Element.el "select" ["pool", "deck-menu"] [Element.attr "id" (Text.pack "builder-pool"), Element.on "change" MkPoolChoice] $
                   [option poolValue (Text.empty, Text.pack "Every card")]
                     <> [option poolValue (Text.pack "set:" <> code, Text.toUpper code) | code <- sets builder]
                     <> [option poolValue (Text.pack "pool", Text.pack "The pool") | Maybe.isJust (pool builder)]
@@ -524,11 +531,6 @@ view builder =
               ]
                 <> [Element.button ["drop-pool"] MkDropPool [Element.string "Drop pool"] | Maybe.isJust (pool builder)]
                 <> [Element.el "ul" ["problems"] [Element.attr "role" (Text.pack "alert")] [Element.el "li" [] [] [Element.text p] | p <- poolProblems builder] | not (null (poolProblems builder)), Maybe.isNothing (pasting builder)]
-                <> [ Element.el "label" ["sr-only"] [Element.attr "for" (Text.pack "builder-name")] [Element.string "Deck name"],
-                     Element.el "input" ["builder-name"] ([Element.attr "id" (Text.pack "builder-name"), Element.attr "type" (Text.pack "text"), Element.attr "autocomplete" (Text.pack "off"), Element.attr "placeholder" (Text.pack "Deck name"), Element.attr "value" (saveName builder), Element.on "input" MkSaveName] <> [Element.attr "disabled" Text.empty | Maybe.isJust (savedAs builder)]) [],
-                     Element.button ["primary"] MkSave [Element.string "Save"]
-                   ]
-                <> [Element.el "span" ["saved"] [] [Element.string "Saved"] | Maybe.isJust (savedAs builder), not (dirty builder)]
                 <> [Element.el "ul" ["problems"] [Element.attr "role" (Text.pack "alert")] [Element.el "li" [] [] [Element.text p] | p <- saveProblems builder] | not (null (saveProblems builder))]
           ),
           ( Text.pack "body",
@@ -540,14 +542,14 @@ view builder =
                   [ Element.el "label" ["sr-only"] [Element.attr "for" (Text.pack "card-search")] [Element.string "Search cards"],
                     Element.el "input" ["search"] [Element.attr "id" (Text.pack "card-search"), Element.attr "type" (Text.pack "search"), Element.attr "placeholder" (Text.pack "Search names and rules text"), Element.attr "autocomplete" (Text.pack "off"), Element.on "input" MkSearch] [],
                     Element.el "div" ["filters"] [] $
-                      [DeckBrowser.colourToggle (Set.member c (CardIndex.wanted q)) (MkToggleColour c) c | c <- [minBound .. maxBound]]
-                        <> [Element.el "button" (toggled (Set.member k (CardIndex.kinds q))) [Element.attr "type" (Text.pack "button"), Element.attr "aria-pressed" (Text.pack (if Set.member k (CardIndex.kinds q) then "true" else "false")), Element.on "click" (MkToggleKind k)] [Element.string (show k)] | k <- searchKinds]
-                        <> [Element.el "select" ["mana-value"] [Element.attr "aria-label" (Text.pack "Mana value"), Element.on "change" MkValue] (fmap (option chosenValue) valueChoices)],
+                      [Element.el "div" ["colour-toggles"] [Element.attr "role" (Text.pack "group"), Element.attr "aria-label" (Text.pack "Colours")] [DeckBrowser.colourToggle (Set.member c (CardIndex.wanted q)) (MkToggleColour c) c | c <- [minBound .. maxBound]]]
+                        <> [Element.el "select" ["mana-value", "deck-menu"] [Element.attr "aria-label" (Text.pack "Mana value"), Element.on "change" MkValue] (fmap (option chosenValue) valueChoices)]
+                        <> [Element.el "button" (toggled (Set.member k (CardIndex.kinds q))) [Element.attr "type" (Text.pack "button"), Element.attr "aria-pressed" (Text.pack (if Set.member k (CardIndex.kinds q) then "true" else "false")), Element.on "click" (MkToggleKind k)] [Element.string (show k)] | k <- searchKinds],
                     targets,
                     Element.el "div" ["basics"] [] [Element.button ["basic"] (MkAdd (target builder) land) [Element.text (named land)] | land <- basics]
                   ]
                     <> results,
-                Element.el "section" ["builder-deck"] [Element.attr "aria-label" (Text.pack "Deck")] $
+                Element.el "section" ["builder-deck", "panel"] [Element.attr "aria-label" (Text.pack "Deck")] $
                   [ Element.el "div" ["deck-head"] [] [Element.el "h2" [] [] [Element.string counted], Element.el "span" ["pips"] [Element.attr "aria-label" (Text.pack "Colours")] [Mana.symbol (Text.pack (Web.Card.letterUpper c)) | c <- Set.toList (deckColours builder)]],
                     DeckBrowser.curve [] (DeckBrowser.curveOf lines')
                   ]
