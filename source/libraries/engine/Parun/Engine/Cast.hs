@@ -2510,8 +2510,9 @@ castFromQuiet ungated gs = not (PlayerEffect.anyCastFromRow gs) && not (any (Pro
 -- printing no static or player ability on any face, with no copy stamp (CR
 -- 707.2), adds none under any proposal. permittedOutside needs such a row too,
 -- or the copy-cast stand-in the card is not. False wherever any of that
--- fails, leaving the card to `castable`. Parun.CastSpec's differential test of
--- castableSpells against `castable` over every proposal holds the two equal.
+-- fails, leaving the card to `castable`. Parun.CastRestrictionSpec's "#9687
+-- bob's card is ruled out for alice unprojected until the grant" proves it,
+-- and its Sen Triplets cases that the grant still opens the card.
 unpermittedInOthersHand :: PlayerId -> GameState -> ObjectId -> Bool
 unpermittedInOthersHand pid gs =
   let quiet = castFromQuiet (Projection.gatherUngated gs) gs
