@@ -90,7 +90,7 @@ spec s = Spec.describe s "Parun.Web.Lobby" $ do
           three = Lobby.update (Lobby.MkPick d) Text.empty . add Lobby.MkBot . add (Lobby.MkHere Link.MkHandedOver) $ add Lobby.MkBot alone
           page = Lobby.view three
           first = Lobby.update (Lobby.MkDrop 0) Text.empty three
-      Spec.assertEqWith s "a Remove on each" (Html.search (\node -> Text.isPrefixOf (Text.pack "<button") (Html.toText node) && Html.spoken node == Text.pack "Remove Bot 1") page >>= \path -> Html.handler (Text.pack "click") path page) (Just (Lobby.MkDrop 0))
+      Spec.assertEqWith s "a Remove on each" (Html.search (\node -> Text.isPrefixOf (Text.pack "<button") (Html.toText node) && Html.spoken node == Text.pack "Remove Player 2") page >>= \path -> Html.handler (Text.pack "click") path page) (Just (Lobby.MkDrop 0))
       Spec.assertEqWith s "the first unseated" (Lobby.theirs first, Lobby.locals first, Lobby.choosing first) ([Nothing, Just d], Map.singleton 0 Link.MkHandedOver, Lobby.MkTheirs 1)
       Spec.assertEqWith s "the one chosen unseated" (Lobby.choosing (Lobby.update (Lobby.MkDrop 2) Text.empty three)) Lobby.MkMine
       Spec.assertEqWith s "none past the last" (Lobby.update (Lobby.MkDrop 3) Text.empty three) three
@@ -163,10 +163,10 @@ spec s = Spec.describe s "Parun.Web.Lobby" $ do
     Spec.it s "seats a player on this screen, their deck chosen there" $ do
       let here = Lobby.update (Lobby.MkAdd (Lobby.MkHere Link.MkHandedOver)) Text.empty (Lobby.update (Lobby.MkPick a) Text.empty alone)
           chosen = botPicks b here
-      Spec.assertEqWith s "seated" (Lobby.locals here, Lobby.seatName here (Lobby.MkTheirs 0)) (Map.singleton 0 Link.MkHandedOver, "Player 2")
+      Spec.assertEqWith s "seated" (Lobby.locals here, Lobby.seatName (Lobby.MkTheirs 0)) (Map.singleton 0 Link.MkHandedOver, "Player 2")
       Spec.assertEqWith s "their deck chosen" (Lobby.theirs chosen) [Just b]
       Spec.assertBool s (not (Text.isInfixOf (Text.pack "bot-settings") (Html.toText (Lobby.view chosen)))) "no bot to set"
-      Spec.assertEqWith s "the guest is shown them as a player" (fmap Link.who (Lobby.placesFor 1 (Lobby.update (Lobby.MkAdd Lobby.MkInvited) Text.empty chosen))) [Text.pack "Host", Text.pack "Player 2", Text.pack "You"]
+      Spec.assertEqWith s "the guest is shown them as a player" (fmap Link.who (Lobby.placesFor 1 (Lobby.update (Lobby.MkAdd Lobby.MkInvited) Text.empty chosen))) [Text.pack "Player 1", Text.pack "Player 2", Text.pack "You"]
       Spec.assertEqWith s "a change clears ready" (Lobby.ready (Lobby.update (Lobby.MkAdd (Lobby.MkHere Link.MkHandedOver)) Text.empty (Lobby.update Lobby.MkReady Text.empty lobby))) False
 
     Spec.it s "unseats any seat, with it its invite or its place here, an invite after it keeping its link" $ do
@@ -176,7 +176,7 @@ spec s = Spec.describe s "Parun.Web.Lobby" $ do
           once = Lobby.update (Lobby.MkDrop 2) Text.empty added
           twice = Lobby.update (Lobby.MkDrop 1) Text.empty once
           botGone = Lobby.update (Lobby.MkDrop 0) Text.empty added
-      Spec.assertEqWith s "a Remove on every seat" (removes, Html.search (\node -> Text.isPrefixOf (Text.pack "<button") (Html.toText node) && Html.spoken node == Text.pack "Remove Bot 1") page >>= \path -> Html.handler (Text.pack "click") path page) (3, Just (Lobby.MkDrop 0))
+      Spec.assertEqWith s "a Remove on every seat" (removes, Html.search (\node -> Text.isPrefixOf (Text.pack "<button") (Html.toText node) && Html.spoken node == Text.pack "Remove Player 2") page >>= \path -> Html.handler (Text.pack "click") path page) (3, Just (Lobby.MkDrop 0))
       Spec.assertEqWith s "the bot before the invite unseated, the invite moving up on its link" (length (Lobby.theirs botGone), fmap Lobby.linkNumber (Lobby.invites botGone), Lobby.locals botGone, Lobby.seatOfLink 0 botGone) (2, Map.singleton 0 0, Map.singleton 1 Link.MkYours, Just 0)
       Spec.assertEqWith s "the seat you play too" (Lobby.locals once, Map.keys (Lobby.invites once)) (Map.empty, [1])
       Spec.assertEqWith s "the invite" (Lobby.theirs twice, Map.keys (Lobby.invites twice), Lobby.seatOfLink 0 twice) ([Nothing], [], Nothing)
@@ -359,8 +359,8 @@ spec s = Spec.describe s "Parun.Web.Lobby" $ do
       let forBot = Lobby.update (Lobby.MkChoose (Lobby.MkTheirs 0)) Text.empty lobby
           marked page = [Html.content seat | seat <- seatPicks page, pressed seat]
       Spec.assertEqWith s "yours" (marked (Lobby.view lobby)) [Text.pack "YYouChoosing a deckNo deck yetChoose one to start"]
-      Spec.assertEqWith s "the bot's" (marked (Lobby.view forBot)) [Text.pack "BotChoosing a deckRandom deckDrawn when the game starts"]
-      Spec.assertBool s (Text.isInfixOf (Text.pack "<h2>Deck for Bot</h2>") (Html.toText (Lobby.view forBot))) "heading"
+      Spec.assertEqWith s "the bot's" (marked (Lobby.view forBot)) [Text.pack "Player 2BotChoosing a deckRandom deckDrawn when the game starts"]
+      Spec.assertBool s (Text.isInfixOf (Text.pack "<h2>Deck for Player 2</h2>") (Html.toText (Lobby.view forBot))) "heading"
       Spec.assertEqWith s "once yours is chosen" (marked (Lobby.view (Lobby.update (Lobby.MkPick a) Text.empty lobby))) [Text.pack "YYouDemo APOR"]
 
     Spec.it s "shows a deck's list to copy only under that deck" $ do
@@ -396,11 +396,14 @@ spec s = Spec.describe s "Parun.Web.Lobby" $ do
       Spec.assertEqWith s "alone" (state (Lobby.update (Lobby.MkPick a) Text.empty alone)) (False, Nothing)
       Spec.assertBool s (Text.isInfixOf (Text.pack "Just you: a goldfish game. Ready to start.") (Html.toText (Lobby.view (Lobby.update (Lobby.MkPick a) Text.empty alone)))) "alone said"
 
-    Spec.it s "names each bot by its seat once there are two" $ do
-      let one = Html.toText (Lobby.view lobby)
-          two = Html.toText (Lobby.view (Lobby.update (Lobby.MkAdd Lobby.MkBot) Text.empty lobby))
-      Spec.assertBool s (Text.isInfixOf (Text.pack ">Bot<") one && not (Text.isInfixOf (Text.pack ">Bot 1<") one)) "one bot"
-      Spec.assertBool s (Text.isInfixOf (Text.pack ">Bot 1<") two && Text.isInfixOf (Text.pack ">Bot 2<") two) "two bots"
+    Spec.it s "names each seat as the game will, a bot's marked as one" $ do
+      let two = Lobby.update (Lobby.MkAdd (Lobby.MkHere Link.MkHandedOver)) Text.empty (Lobby.update (Lobby.MkAdd Lobby.MkBot) Text.empty lobby)
+          page = Html.toText (Lobby.view two)
+          name who = Text.pack ("<strong class=\"seat-name\">" <> who <> "</strong>")
+          bot = Text.pack "<span class=\"chip bot\">Bot</span>"
+      Spec.assertEqWith s "by seat" (fmap ((`Text.isInfixOf` page) . name) ["You", "Player 2", "Player 3", "Player 4"]) [True, True, True, True]
+      Spec.assertEqWith s "the bots alone marked" (Text.count bot page, Text.isInfixOf (name "Player 2" <> bot) page, Text.isInfixOf (name "Player 3" <> bot) page) (2, True, True)
+      Spec.assertEqWith s "the guest is shown the same" (fmap (\p -> (Link.who p, Link.bot p)) (Lobby.placesFor 2 (Lobby.update (Lobby.MkAdd Lobby.MkInvited) Text.empty (Lobby.update (Lobby.MkAdd (Lobby.MkHere Link.MkHandedOver)) Text.empty lobby)))) [(Text.pack "Player 1", False), (Text.pack "Player 2", True), (Text.pack "Player 3", False), (Text.pack "You", False)]
 
     Spec.it s "says the decks are being read until they are" $ do
       let page = Html.toText (Lobby.view Lobby.new)

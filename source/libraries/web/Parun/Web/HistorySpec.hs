@@ -67,10 +67,12 @@ spec s = Spec.describe s "Parun.Web.History" $ do
       Spec.assertEqWith s "a guest" (History.viewerLabel game {History.seats = reverse (History.seats game)}) (Just (Text.pack "player2"))
 
   Spec.describe s "seatNames" $ do
-    Spec.it s "names each seat by who played it, numbered where two match" $ do
+    Spec.it s "names each seat as the game did, whoever played it" $ do
       let bots = game {History.seats = History.seats game <> [History.MkSeat History.MkBot (Text.pack "Vivien (M19)") Nothing Set.empty]}
-      Spec.assertEqWith s "two seats" (History.seatNames game) (Map.fromList [(Text.pack "player1", Text.pack "You"), (Text.pack "player2", Text.pack "Bot")])
-      Spec.assertEqWith s "two bots" (History.seatNames bots) (Map.fromList [(Text.pack "player1", Text.pack "You"), (Text.pack "player2", Text.pack "Bot 2"), (Text.pack "player3", Text.pack "Bot 3")])
+          guest = game {History.seats = History.MkSeat History.MkPerson (Text.pack "Vivien (M19)") Nothing Set.empty : History.seats game}
+      Spec.assertEqWith s "two seats" (History.seatNames game) (Map.fromList [(Text.pack "player1", Text.pack "You"), (Text.pack "player2", Text.pack "Player 2")])
+      Spec.assertEqWith s "two bots" (History.seatNames bots) (Map.fromList [(Text.pack "player1", Text.pack "You"), (Text.pack "player2", Text.pack "Player 2"), (Text.pack "player3", Text.pack "Player 3")])
+      Spec.assertEqWith s "a guest's" (History.seatNames guest) (Map.fromList [(Text.pack "player1", Text.pack "Player 1"), (Text.pack "player2", Text.pack "You"), (Text.pack "player3", Text.pack "Player 3")])
 
   Spec.describe s "date" $ do
     Spec.it s "tells the day and time on the page's clock then" $ do

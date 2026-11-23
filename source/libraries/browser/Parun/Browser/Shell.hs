@@ -873,7 +873,7 @@ play shell seats invited here resuming = do
       told <- IORef.newIORef Map.empty
       let decides seat = IORef.readIORef told >>= Link.telling (Map.fromList [(seatOf i, channelOf i) | i <- Map.keys invited]) seat >>= IORef.writeIORef told
       parsed <- foldMap LazyMap.elems . cards <$> IORef.readIORef (loaded shell)
-      ended <- Hotseat.game (page shell) reg parsed (tableOf shell) (level shell) bots (fmap (Bifunctor.first Text.unpack) seats) remotes (Map.mapKeys seatOf here) seed (foldMap Link.replies resuming) kept decides tellAll (leaveFor shell chosen)
+      ended <- Hotseat.game (page shell) reg parsed (tableOf shell) (level shell) bots (fmap (Bifunctor.first Text.unpack) seats) remotes (Map.mapKeys seatOf here) seed (foldMap Link.replies resuming) kept decides tellAll (leaveFor shell chosen [DeckBrowser.label (DeckBrowser.titleIn seat) name | seat@(name, _) <- NonEmpty.toList seats])
       Monad.when keeping Browser.forgetGame
       case ended of
         Left problems -> stopped problems >> notice shell problems
@@ -1035,14 +1035,14 @@ joinGame shell offer = do
         Left problem -> Browser.linkClose n >> notice shell [problem]
         Right reg -> do
           chosen <- IORef.newIORef MkToHome
-          played <- Guest.play (page shell) (Identity.runIdentity . Interpreter.chosenCard reg) (level shell) hostChannel (rejoin shell n Rejoin.guest) seat seen (leaveFor shell chosen)
+          played <- Guest.play (page shell) (Identity.runIdentity . Interpreter.chosenCard reg) (level shell) hostChannel (rejoin shell n Rejoin.guest) seat seen (leaveFor shell chosen (fmap Link.deck (Join.places current)))
           case played of
             Ending.MkAbandoned -> Browser.linkClose n >> IORef.readIORef chosen
             Ending.MkFinished ending -> do
               palette' <- palette <$> IORef.readIORef (loaded shell)
               let placed place
                     | Link.who place == Text.pack "You" = History.MkSeat History.MkYou (Link.deck place) (Join.picked current) (maybe Set.empty (\name -> Map.findWithDefault Set.empty name palette') (Join.picked current))
-                    | Text.isPrefixOf (Text.pack "Bot") (Link.who place) = History.MkSeat History.MkBot (Link.deck place) Nothing Set.empty
+                    | Link.bot place = History.MkSeat History.MkBot (Link.deck place) Nothing Set.empty
                     | otherwise = History.MkSeat History.MkPerson (Link.deck place) Nothing Set.empty
               remember shell (fmap placed (Join.places current)) played
               let back = Join.rematched current
@@ -1063,16 +1063,16 @@ joinGame shell offer = do
               -- A game stopped on a dropped connection left it closed.
               ended (Ending.verdict ending == Ending.MkStopped)
 
--- | The home screen with a game paused at this board, the replays, the
--- builder and the lobby reachable from it, until the player resumes the
--- game or gives it up for another, recorded in `chosen`; a game played on
--- from a replay is asked about on the home screen first, and one from the
--- lobby at its Start. What the game's data channels say meanwhile is kept
--- for it (Browser.aside).
-leaveFor :: Shell -> IORef.IORef Next -> Maybe PlayerView.PlayerView -> IO Hotseat.Leave
-leaveFor shell chosen board = Browser.aside (page shell) (go paused)
+-- | The home screen with a game between these decks (in seat order) paused
+-- at this board, the replays, the builder and the lobby reachable from it,
+-- until the player resumes the game or gives it up for another, recorded
+-- in `chosen`; a game played on from a replay is asked about on the home
+-- screen first, and one from the lobby at its Start. What the game's data
+-- channels say meanwhile is kept for it (Browser.aside).
+leaveFor :: Shell -> IORef.IORef Next -> [Text.Text] -> Maybe PlayerView.PlayerView -> IO Hotseat.Leave
+leaveFor shell chosen played board = Browser.aside (page shell) (go paused)
   where
-    paused = Home.new {Home.paused = Just (Home.pausedOn board)}
+    paused = Home.new {Home.paused = Just (Home.pausedOn played board)}
     go shown = do
       located MkToHome
       outcome <- home shell shown
@@ -1155,7 +1155,7 @@ replay shell source at = opened shell source $ \reg title seen scenario -> do
 playOnFrom :: Shell -> Web.Replay.Source -> Natural -> IO Next
 playOnFrom shell source at = opened shell source $ \reg _ played scenario -> do
   chosen <- IORef.newIORef MkToHome
-  ended <- Replay.playOn (page shell) reg (level shell) scenario at (leaveFor shell chosen)
+  ended <- Replay.playOn (page shell) reg (level shell) scenario at (leaveFor shell chosen (foldMap (fmap History.deck . History.seats) played))
   case ended of
     Nothing -> IORef.readIORef chosen
     Just said' -> do

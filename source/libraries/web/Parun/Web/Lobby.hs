@@ -469,10 +469,10 @@ starts lobby =
 -- | The match-up as the player invited to this slot is shown it.
 placesFor :: Int -> Lobby -> [Link.Place]
 placesFor i lobby =
-  Link.MkPlace (Text.pack "Host") (maybe (Text.pack "Choosing a deck") (DeckBrowser.label (DeckBrowser.titles (browser lobby))) (mine lobby)) (Just (ready lobby))
+  Link.MkPlace (Text.pack "Player 1") (maybe (Text.pack "Choosing a deck") (DeckBrowser.label (DeckBrowser.titles (browser lobby))) (mine lobby)) (Just (ready lobby)) False
     : [ case Map.lookup j (invites lobby) of
-          Just invite -> Link.MkPlace (if j == i then Text.pack "You" else Text.pack ("Player " <> show (j + 2))) (maybe (Text.pack "Choosing a deck") (\deck -> DeckBrowser.label (DeckBrowser.titleIn deck) (fst deck)) (guestDeck invite)) (Just (guestReady invite))
-          Nothing -> Link.MkPlace (Text.pack (seatName lobby (MkTheirs j))) (maybe (Text.pack "Random deck") (DeckBrowser.label (DeckBrowser.titles (browser lobby))) held) Nothing
+          Just invite -> Link.MkPlace (if j == i then Text.pack "You" else Text.pack (seatName (MkTheirs j))) (maybe (Text.pack "Choosing a deck") (\deck -> DeckBrowser.label (DeckBrowser.titleIn deck) (fst deck)) (guestDeck invite)) (Just (guestReady invite)) False
+          Nothing -> Link.MkPlace (Text.pack (seatName (MkTheirs j))) (maybe (Text.pack "Random deck") (DeckBrowser.label (DeckBrowser.titles (browser lobby))) held) Nothing (Map.notMember j (locals lobby))
       | (j, held) <- zip [0 ..] (theirs lobby)
       ]
 
@@ -498,15 +498,12 @@ offered lobby = if choosing lobby == MkMine then decks lobby else opponents lobb
 shown :: Lobby -> [Text.Text]
 shown lobby = DeckBrowser.shown (offered lobby) (browser lobby)
 
--- | A seat's name: "You", "Bot" alone or "Bot 2" among several, and
--- "Player 2" for one invited or played on this screen.
-seatName :: Lobby -> Slot -> String
-seatName lobby slot = case slot of
+-- | A seat's name, as the game will call it (Parun.Play.Wording.player):
+-- "You", else "Player 2" by its seat, whoever plays it.
+seatName :: Slot -> String
+seatName slot = case slot of
   MkMine -> "You"
-  MkTheirs i
-    | Map.member i (invites lobby) || Map.member i (locals lobby) -> "Player " <> show (i + 2)
-    | length (theirs lobby) == 1 -> "Bot"
-    | otherwise -> "Bot " <> show (i + 1)
+  MkTheirs i -> "Player " <> show (i + 2)
 
 -- | What stops Start, or Ready with players invited: the decks unread, or
 -- your deck unchosen or breaking its format. A bot always has a deck to
@@ -525,9 +522,9 @@ waiting lobby = case blocking lobby of
   Just why -> Just why
   Nothing -> case [(i, invite) | (i, invite) <- Map.toList (invites lobby), not (connected invite && Maybe.isJust (guestDeck invite) && guestReady invite)] of
     (i, invite) : _
-      | not (connected invite) -> Just (seatName lobby (MkTheirs i) <> " is still to connect.")
-      | Maybe.isNothing (guestDeck invite) -> Just (seatName lobby (MkTheirs i) <> " is choosing a deck.")
-      | otherwise -> Just (seatName lobby (MkTheirs i) <> " is not ready yet.")
+      | not (connected invite) -> Just (seatName (MkTheirs i) <> " is still to connect.")
+      | Maybe.isNothing (guestDeck invite) -> Just (seatName (MkTheirs i) <> " is choosing a deck.")
+      | otherwise -> Just (seatName (MkTheirs i) <> " is not ready yet.")
     [] -> Nothing
 
 -- | Whether Start, or Ready with players invited, may be pressed.
@@ -586,7 +583,7 @@ seatsView lobby =
       <> [startView lobby]
   where
     others = theirs lobby
-    remove i = [Element.el "button" ["quiet", "drop-seat"] [Element.attr "type" (Text.pack "button"), Element.on "click" (MkDrop i), Element.attr "aria-label" (Text.pack ("Remove " <> seatName lobby (MkTheirs i)))] [Element.string "Remove"] | removable lobby i]
+    remove i = [Element.el "button" ["quiet", "drop-seat"] [Element.attr "type" (Text.pack "button"), Element.on "click" (MkDrop i), Element.attr "aria-label" (Text.pack ("Remove " <> seatName (MkTheirs i)))] [Element.string "Remove"] | removable lobby i]
     seat which avatar held extra =
       let on = choosing lobby == which
        in Element.el
@@ -601,7 +598,8 @@ seatsView lobby =
                   "span"
                   ["seat-head"]
                   []
-                  ( [Element.el "span" ["avatar"] [] [avatar], Element.el "strong" ["seat-name"] [] [Element.string (seatName lobby which)]]
+                  ( [Element.el "span" ["avatar"] [] [avatar], Element.el "strong" ["seat-name"] [] [Element.string (seatName which)]]
+                      <> [Element.el "span" ["chip", "bot"] [] [Element.string "Bot"] | MkTheirs i <- [which], Map.notMember i (locals lobby)]
                       <> [Element.el "span" ["chip", "choosing"] [] [Element.string "Choosing a deck"] | on, Maybe.isNothing held]
                   ),
                 Element.el "span" ["seat-deck"] [] $ case held of
@@ -689,7 +687,7 @@ browserView lobby =
           "div"
           ["browser-head"]
           []
-          [ Element.el "h2" [] [] [Element.string ("Deck for " <> seatName lobby (choosing lobby))],
+          [ Element.el "h2" [] [] [Element.string ("Deck for " <> seatName (choosing lobby))],
             Element.button ["open-import"] (MkBrowse DeckBrowser.MkOpenImport) [Element.string "Import a deck"],
             Element.button ["open-builder"] MkOpenBuilder [Element.string "Build a deck"]
           ]
@@ -709,7 +707,7 @@ browserView lobby =
 detailView :: Lobby -> Html.Html Event
 detailView lobby =
   Element.el "aside" ["detail"] [Element.attr "aria-label" (Text.pack "Deck chosen")] $
-    Element.el "span" ["eyebrow"] [] [Element.string (if choosing lobby == MkMine then "Your deck" else seatName lobby (choosing lobby) <> "'s deck")]
+    Element.el "span" ["eyebrow"] [] [Element.string (if choosing lobby == MkMine then "Your deck" else seatName (choosing lobby) <> "'s deck")]
       : case chosen lobby (choosing lobby) of
         Nothing ->
           [ Element.el "h2" [] [] [Element.string (if choosing lobby == MkMine then "No deck yet" else "Random deck")],
@@ -742,7 +740,7 @@ inviteView i invite extra =
               "span"
               ["seat-head"]
               []
-              ( [Element.el "span" ["avatar"] [] [Element.string "P"], Element.el "strong" ["seat-name"] [] [Element.string ("Player " <> show (i + 2))]]
+              ( [Element.el "span" ["avatar"] [] [Element.string "P"], Element.el "strong" ["seat-name"] [] [Element.string (seatName (MkTheirs i))]]
                   <> [Element.el "span" ["chip"] [] [Element.string (if guestReady invite then "Ready \x2713" else "Not ready")] | connected invite]
               ),
             Element.el "span" ["seat-deck"] [] [Element.el "span" ["seat-deck-name"] [] [Element.text (maybe (Text.pack (if connected invite then "Choosing a deck\x2026" else "Not connected")) (\deck -> snd (DeckBrowser.describe (DeckBrowser.titleIn deck) (fst deck))) (guestDeck invite))]],

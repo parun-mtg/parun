@@ -67,13 +67,16 @@ data Message
 
 -- | A seat of the match-up as the guest is shown it.
 data Place = MkPlace
-  { -- | Who plays it: "Host", "You", "Bot 2".
+  { -- | Its name, as the game calls it to the guest: "Player 1", "You".
     who :: Text.Text,
     -- | Its deck as the match-up names it (DeckBrowser.label), or what stands for
     -- one not chosen yet.
     deck :: Text.Text,
-    -- | Whether the person playing it is ready; Nothing for a bot.
-    ready :: Maybe Bool
+    -- | Whether the person playing it is ready; Nothing for a bot or a
+    -- seat played on the host's screen.
+    ready :: Maybe Bool,
+    -- | Whether a bot plays it.
+    bot :: Bool
   }
   deriving (Eq, Show)
 
@@ -98,7 +101,7 @@ encode build message =
               Value.pair "trail" (Codec.encode trail (Ending.trail ending'))
             ]
           )
-      place p = Value.object [Value.pair "who" (Value.text (who p)), Value.pair "deck" (Value.text (deck p)), Value.pair "ready" (maybe Value.null Value.boolean (ready p))]
+      place p = Value.object [Value.pair "who" (Value.text (who p)), Value.pair "deck" (Value.text (deck p)), Value.pair "ready" (maybe Value.null Value.boolean (ready p)), Value.pair "bot" (Value.boolean (bot p))]
    in Common.render (Value.object (Value.pair "type" (Value.string tag) : Value.pair "build" (Value.text build) : fields))
 
 -- | A line's message, or why it does not read: one from another build is
@@ -135,6 +138,7 @@ decode build line = do
         <$> (Common.field "who" fields >>= Common.asText)
         <*> (Common.field "deck" fields >>= Common.asText)
         <*> maybe (Right Nothing) (\v -> if v == Value.null then Right Nothing else Just <$> Common.asBoolean v) (Common.optionalField "ready" fields)
+        <*> (Common.field "bot" fields >>= Common.asBoolean)
     natural :: Integer -> Either Text.Text PlayerId.PlayerId
     natural = maybe (Left (Text.pack "not a seat")) (Right . PlayerId.MkPlayerId) . Integer.toNatural
 
