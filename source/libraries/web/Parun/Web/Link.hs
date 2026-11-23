@@ -13,6 +13,7 @@ import qualified Data.Sequence as Seq
 import qualified Data.Text as Text
 import Numeric.Natural (Natural)
 import qualified Parun.Codec.PlayerId as Codec.PlayerId
+import qualified Parun.Codec.PlayerView as Codec.PlayerView
 import qualified Parun.Codec.Reply as Codec.Reply
 import qualified Parun.Codec.Request as Codec.Request
 import qualified Parun.Engine.Driver as Driver
@@ -55,8 +56,9 @@ data Message
   | -- | A request the guest's seat answers.
     MkAsk Request.Request
   | -- | The seat whose decision the game now waits on, another's than the
-    -- guest's (telling).
-    MkDeciding PlayerId.PlayerId
+    -- guest's, and the game as the guest's seat sees it then, at this depth
+    -- (Request.depth), less whose priority it is (telling).
+    MkDeciding PlayerId.PlayerId PlayerView.PlayerView Natural
   | -- | The guest's reply to the last request.
     MkAnswer R.Reply
   | -- | The game ended: the guest's ending, its log and life trail built
@@ -93,7 +95,7 @@ encode build message =
         MkReady on -> ("ready", [Value.pair "ready" (Value.boolean on)])
         MkStart seat seen' -> ("start", [Value.pair "seat" (Value.integer (toInteger (PlayerId.unwrap seat))), Value.pair "seen" (seenValue seen')])
         MkAsk request -> ("ask", [Value.pair "request" (Codec.encode Codec.Request.codec request)])
-        MkDeciding seat -> ("deciding", [Value.pair "seat" (Value.integer (toInteger (PlayerId.unwrap seat)))])
+        MkDeciding seat shown depth -> ("deciding", [Value.pair "seat" (Value.integer (toInteger (PlayerId.unwrap seat))), Value.pair "view" (Codec.encode Codec.PlayerView.codec shown), Value.pair "depth" (Codec.encode Common.natural depth)])
         MkAnswer reply -> ("answer", [Value.pair "reply" (Codec.Reply.toValue reply)])
         MkEnd ending' ->
           ( "end",
@@ -124,7 +126,7 @@ decode build line = do
     "ready" -> MkReady <$> (Common.field "ready" pairs >>= Common.asBoolean)
     "start" -> MkStart <$> (Common.field "seat" pairs >>= Common.asInteger >>= natural) <*> (Common.field "seen" pairs >>= seenOf)
     "ask" -> MkAsk <$> (Common.field "request" pairs >>= Codec.decode Codec.Request.codec)
-    "deciding" -> MkDeciding <$> (Common.field "seat" pairs >>= Common.asInteger >>= natural)
+    "deciding" -> MkDeciding <$> (Common.field "seat" pairs >>= Common.asInteger >>= natural) <*> (Common.field "view" pairs >>= Codec.decode Codec.PlayerView.codec) <*> (Common.field "depth" pairs >>= Codec.decode Common.natural)
     "answer" -> MkAnswer <$> (Common.field "reply" pairs >>= Codec.Reply.fromValue)
     "end" ->
       fmap MkEnd $
@@ -243,32 +245,40 @@ seeing sent ask request = ask request <* mapM_ sent (Request.view request)
 ending :: Ending.Verdict -> [Text.Text] -> Text.Text -> PlayerId.PlayerId -> Bool -> Either a (b, GameState.GameState) -> Ending.Seen -> Ending.Ending
 ending verdict said scenario seat shared outcome seen = Ending.endingOf verdict said scenario seat shared (maybe id Ending.see (endView seat outcome) seen)
 
--- | Tells each guest, over its channel in `guests`, of every seat the game
--- asks but its own as the seat asked changes, `told` holding the seat each
--- was last told of: a guest's own seat asked counts, since it is sent the
--- request. What each was told of then.
-telling :: (Monad m) => Map.Map PlayerId.PlayerId (Channel m) -> PlayerId.PlayerId -> Map.Map PlayerId.PlayerId PlayerId.PlayerId -> m (Map.Map PlayerId.PlayerId PlayerId.PlayerId)
-telling guests seat told = do
-  Monad.forM_ (Map.toList guests) $ \(g, channel) ->
-    Monad.when (g /= seat && Map.lookup g told /= Just seat) (send channel (MkDeciding seat))
-  pure (seat <$ guests)
+-- | What a guest was last told, or shown by a request of its own: the seat
+-- deciding, and the game as the guest's seat saw it then (MkDeciding).
+type Told = (PlayerId.PlayerId, PlayerView.PlayerView, Natural)
+
+-- | Tells each guest, over its channel in `guests`, of the seat `seat`
+-- deciding, another's than its own, with the game `gs` at depth `depth` as
+-- its seat sees it, unless `told` holds that already: a guest's own seat
+-- asked counts, since it is sent the request. What each was told of then.
+telling :: (Monad m) => Map.Map PlayerId.PlayerId (Channel m) -> PlayerId.PlayerId -> GameState.GameState -> Natural -> Map.Map PlayerId.PlayerId Told -> m (Map.Map PlayerId.PlayerId Told)
+telling guests seat gs depth told = Map.traverseWithKey tell guests
+  where
+    tell g channel = do
+      let shown = (PlayerView.Engine.viewFor g gs) {PlayerView.priority = Nothing}
+          now = (seat, shown, depth)
+      Monad.when (g /= seat && Map.lookup g told /= Just now) (send channel (MkDeciding seat shown depth))
+      pure now
 
 -- | Each prompt's deciding seat given to `decides` before it is answered,
--- whoever answers it, a bot included.
-deciding :: (Monad m) => (PlayerId.PlayerId -> m ()) -> Observer.Observer (Game.Play m)
+-- whoever answers it, a bot included, with the game then and its depth
+-- (Protocol.depthOf).
+deciding :: (Monad m) => (PlayerId.PlayerId -> GameState.GameState -> Natural -> m ()) -> Observer.Observer (Game.Play m)
 deciding decides =
   Observer.MkObserver
-    { Observer.before = mapM_ (Game.underneath . decides) . Driver.deciderOf . Asked.prompt,
+    { Observer.before = \asked -> mapM_ (\seat -> Game.underneath (decides seat (Asked.game asked) (Protocol.depthOf asked))) (Driver.deciderOf (Asked.prompt asked)),
       Observer.after = \_ _ -> pure ()
     }
 
 -- | What the guest does with a message from the host once the game is under
 -- way: a request is answered through `local`, its reply what to send back;
--- the end is said; whose decision the game waits on is shown; anything else
--- is ignored.
+-- the end is said; whose decision the game waits on is shown, on the board
+-- as the guest's seat then sees it, at that depth; anything else is ignored.
 data Heard
   = MkReply Message
-  | MkWaitingOn PlayerId.PlayerId
+  | MkWaitingOn PlayerId.PlayerId PlayerView.PlayerView Natural
   | MkEnded Ending.Ending
   | MkIgnored
   deriving (Eq, Show)
@@ -281,7 +291,7 @@ guest :: (Monad m) => Protocol.Exchange m -> Message -> m Heard
 guest local message = case message of
   MkAsk request -> maybe MkIgnored (either (const MkIgnored) (MkReply . MkAnswer)) <$> local request
   MkEnd ending' -> pure (MkEnded ending')
-  MkDeciding seat -> pure (MkWaitingOn seat)
+  MkDeciding seat shown depth -> pure (MkWaitingOn seat shown depth)
   _ -> pure MkIgnored
 
 -- | A game with guests as the host's page keeps it, to pick it up after a
