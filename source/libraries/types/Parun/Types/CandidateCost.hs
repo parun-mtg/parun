@@ -90,6 +90,12 @@ data CandidateCost = MkCandidateCost
 plain :: Maybe Keyword.Keyword -> Cost.Cost Keyword.Keyword -> CandidateCost
 plain k c = MkCandidateCost k c [] False Nothing Nothing Nothing Nothing Nothing
 
+-- | CR 118.6: the unpayable cost, untagged. No gate offers it, so it is also
+-- the answer a cast's or activation's own gate refuses at Prompt.ChooseCost:
+-- its CR 734.1 withdrawal (Parun.Play.Protocol.withdrawalOf).
+unpayable :: CandidateCost
+unpayable = plain Nothing (Cost.MkCost Nothing [])
+
 -- | CR 702.48a / 601.3c / 601.3d: the candidate with a window opened under the
 -- condition (Nothing: unconditionally) beside any it had.
 widened :: Maybe Condition.Condition -> CandidateCost -> CandidateCost

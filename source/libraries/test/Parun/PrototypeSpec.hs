@@ -58,7 +58,7 @@ insetCost = [ManaSymbol.Generic 1, ManaSymbol.OfType (ManaType.Colored Color.Whi
 -- one again after a mutation.
 castingFor :: [ManaSymbol.ManaSymbol] -> Prompt.Prompt r -> r
 castingFor wanted p = case p of
-  Prompt.ChooseCost _ _ _ candidates _ ->
+  Prompt.ChooseCost _ _ _ candidates _ _ ->
     Maybe.fromMaybe (Cost.firstOffered candidates) (List.find ((== Just (ManaCost.MkManaCost wanted)) . Cost.Type.mana . CandidateCost.cost) candidates)
   _ -> S.identityAnswer p
 

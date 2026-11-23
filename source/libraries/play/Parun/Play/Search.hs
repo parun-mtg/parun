@@ -517,7 +517,7 @@ lined prompt = case prompt of
   Prompt.ChooseKicker decider chooser _ keyword which limit ->
     let paid = fmap KickerDecision.Pays [0 .. Maybe.fromMaybe 1 limit]
      in Just (decider, chooser, MkLined [(Kicked keyword which times, times) | times <- paid] (\step -> case step of Kicked k i (KickerDecision.Pays times) | k == keyword && i == which && maybe True (times <=) limit -> Just (KickerDecision.Pays times); _ -> Nothing) False)
-  Prompt.ChooseCost decider chooser _ candidates _ ->
+  Prompt.ChooseCost decider chooser _ candidates _ _ ->
     Just (decider, chooser, MkLined [(Costed candidate, candidate) | candidate <- candidates] (\step -> case step of Costed candidate | elem candidate candidates -> Just candidate; _ -> Nothing) False)
   Prompt.ChooseX decider chooser _ slot least greatest ->
     Just (decider, chooser, MkLined [(Valued slot value, XDecision.Announces value) | value <- [least .. greatest]] (\step -> case step of Valued named value | named == slot && least <= value && value <= greatest -> Just (XDecision.Announces value); _ -> Nothing) False)

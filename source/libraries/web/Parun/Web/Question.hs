@@ -1073,6 +1073,7 @@ form request picked = case Text.unpack (Question.kind question) of
         Html.element (Text.pack "h2") [] (Mana.rich asked)
           : fmap nudge (if kind == "ChooseCost" then Offer.told shown (foldMap (Offer.objectName shown) (Protocol.field "source" offer)) offer else [])
             <> [Element.el "div" ["actions"] [] [button (MkAnswer (R.Number i)) label | (i, label) <- zip [0 ..] labels]]
+            <> [Element.el "div" ["passes"] [] [cancel withdrawal] | Just withdrawal <- [Question.withdraw question]]
   "DeclareBlockers"
     | Just chooser <- picker request ->
         heading "Declare blockers: tap a creature of yours, then the attacker it blocks."

@@ -2184,7 +2184,7 @@ rollickerOn printing gs =
 -- different recipient, and CR 608.2b's re-read drops it silently.
 castingFor :: [ManaSymbol.ManaSymbol] -> ObjectId.ObjectId -> Prompt.Prompt r -> r
 castingFor wanted host p = case p of
-  Prompt.ChooseCost _ _ _ candidates _ ->
+  Prompt.ChooseCost _ _ _ candidates _ _ ->
     Maybe.fromMaybe (Cost.firstOffered candidates) (List.find ((== Just (ManaCost.MkManaCost wanted)) . Cost.Type.mana . CandidateCost.cost) candidates)
   Prompt.ChooseTargets _ _ _ sets -> fmap (Set.filter ((== Just host) . Recipient.objectOf) . snd) sets
   _ -> S.identityAnswer p

@@ -140,6 +140,7 @@ import qualified Parun.Types.CopyRecipient as CopyRecipient
 import qualified Parun.Types.Cost as Cost
 import qualified Parun.Types.CostAmount as CostAmount
 import qualified Parun.Types.CostComponent as CostComponent
+import qualified Parun.Types.CostStep as CostStep
 import qualified Parun.Types.CountedAct as CountedAct
 import qualified Parun.Types.CounterCause as CounterCause
 import qualified Parun.Types.CounterChange as CounterChange
@@ -13259,7 +13260,7 @@ madnessChoice pid oid payloads = do
     [] -> pure Nothing
     [(_, only)] -> pure (Just only)
     offered@((_, first) : _) -> do
-      answer <- Game.choose (Prompt.ChooseCost (Decide.deciderFor pid gs) pid oid (fmap (CandidateCost.plain Nothing . fst) offered) Seq.empty)
+      answer <- Game.choose (Prompt.ChooseCost (Decide.deciderFor pid gs) pid oid (fmap (CandidateCost.plain Nothing . fst) offered) Seq.empty CostStep.Elsewhere)
       -- Reject-not-repair: an answer outside the offer keeps the first.
       pure (Just (Maybe.fromMaybe first (Map.lookup (CandidateCost.cost answer) bySettled)))
 

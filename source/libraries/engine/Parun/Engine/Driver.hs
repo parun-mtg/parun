@@ -230,7 +230,7 @@ subjectOf prompt = case prompt of
   Prompt.ChooseMixedCounterRemoval _ pid _ _ _ _ -> Just pid
   Prompt.ChooseAttachment _ pid _ _ -> Just pid
   Prompt.ChooseTurnUpAttachment _ pid _ -> Just pid
-  Prompt.ChooseCost _ pid _ _ _ -> Just pid
+  Prompt.ChooseCost _ pid _ _ _ _ -> Just pid
   Prompt.ChoosePlayPermission _ pid _ _ -> Just pid
   Prompt.ChooseHeldPermission _ pid _ _ -> Just pid
   Prompt.OrderCostComponents _ pid _ _ -> Just pid
@@ -424,7 +424,7 @@ deciderOf prompt = case prompt of
   Prompt.ChooseExiles decider _ _ _ _ -> Just (Decider.unwrap decider)
   Prompt.ChooseAttachment decider _ _ _ -> Just (Decider.unwrap decider)
   Prompt.ChooseTurnUpAttachment decider _ _ -> Just (Decider.unwrap decider)
-  Prompt.ChooseCost decider _ _ _ _ -> Just (Decider.unwrap decider)
+  Prompt.ChooseCost decider _ _ _ _ _ -> Just (Decider.unwrap decider)
   Prompt.ChoosePlayPermission decider _ _ _ -> Just (Decider.unwrap decider)
   Prompt.ChooseHeldPermission decider _ _ _ -> Just (Decider.unwrap decider)
   Prompt.OrderCostComponents decider _ _ _ -> Just (Decider.unwrap decider)

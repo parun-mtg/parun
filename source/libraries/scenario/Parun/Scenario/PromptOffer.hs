@@ -165,7 +165,7 @@ offerOf namer gs prompt = case prompt of
   -- answered. CR 603.7g: the delayed ability each creates or null, where one
   -- does. CR 118.9: the object whose budgeted grant each spends or null, where
   -- one does.
-  Prompt.ChooseCost _ _ source candidates earlier ->
+  Prompt.ChooseCost _ _ source candidates earlier _ ->
     fields
       ( [ ("source", object namer source),
           ("costs", Reply.encode (Reply.list (Reply.viaCodec (Codec.Cost.codec Codec.Keyword.codec))) namer (fmap CandidateCost.cost candidates)),

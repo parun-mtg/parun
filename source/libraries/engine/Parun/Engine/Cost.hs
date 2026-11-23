@@ -123,6 +123,7 @@ import qualified Parun.Types.CostComponent as CostComponent
 import qualified Parun.Types.CostDirection as CostDirection
 import qualified Parun.Types.CostReduction as CostReduction
 import qualified Parun.Types.CostScale as CostScale
+import qualified Parun.Types.CostStep as CostStep
 import qualified Parun.Types.CounterCause as CounterCause
 import qualified Parun.Types.CounterKind as CounterKind
 import qualified Parun.Types.CounterSpread as CounterSpread
@@ -313,7 +314,7 @@ untagged = CandidateCost.plain Nothing
 firstOffered :: [CandidateCost.CandidateCost] -> CandidateCost.CandidateCost
 firstOffered candidates = case candidates of
   c : _ -> c
-  [] -> untagged unpayable
+  [] -> CandidateCost.unpayable
 
 -- CR 702.37a and CR 702.168a: what a face-down cast pays. Both rules fix it at
 -- {3}, so one value serves both. An alternative cost (CR 118.9) stated by the
@@ -5869,7 +5870,7 @@ announceSubstitutionsReading slots substituting pid oid cost = case Cost.mana co
       [] -> pure (cost, [])
       [only] -> pure only
       first : rest -> do
-        chosen <- Game.choose (Prompt.ChooseCost (Decide.deciderFor pid gs) pid oid (fmap (untagged . whole) (first : rest)) Seq.empty)
+        chosen <- Game.choose (Prompt.ChooseCost (Decide.deciderFor pid gs) pid oid (fmap (untagged . whole) (first : rest)) Seq.empty CostStep.Elsewhere)
         pure (Maybe.fromMaybe first (List.find ((== chosen) . untagged . whole) offered))
 
 -- CR 601.2g then 601.2h: the mana window first, then the payment, whose order is

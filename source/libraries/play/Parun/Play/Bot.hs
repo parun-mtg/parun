@@ -117,7 +117,7 @@ bot names = Answerer.MkAnswerer $ \asked -> case Asked.prompt asked of
   Prompt.ChooseSubtype _ _ _ family among -> pickOr (Replay.defaultAnswer (Asked.prompt asked)) (filter (Subtype.offered family among) [minBound ..])
   -- The printed "and/or": any nonempty group of the places.
   Prompt.ChooseSearchZones _ _ places -> someOf places
-  Prompt.ChooseCost _ _ _ candidates _ -> pickOr (Replay.defaultAnswer (Asked.prompt asked)) candidates
+  Prompt.ChooseCost _ _ _ candidates _ _ -> pickOr (Replay.defaultAnswer (Asked.prompt asked)) candidates
   Prompt.CallCoin {} -> Generator.pick (CoinFace.Heads NonEmpty.:| [CoinFace.Tails])
   -- CR 615.7: every share of the shield, each event taking at most its own
   -- damage (Parun.Engine.Replacement.askAllocation's gate).

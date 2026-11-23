@@ -112,6 +112,7 @@ import qualified Parun.Types.CopyStackObject as CopyStackObject
 import qualified Parun.Types.Cost as Cost.Type
 import qualified Parun.Types.CostBasis as CostBasis
 import qualified Parun.Types.CostChoice as CostChoice
+import qualified Parun.Types.CostStep as CostStep
 import qualified Parun.Types.Count as Count.Type
 import qualified Parun.Types.CountedAct as CountedAct
 import qualified Parun.Types.CountedDiscard as CountedDiscard
@@ -5523,7 +5524,7 @@ payGateAgreed resolving source offer earlier payer gate slots owed options = do
         [] -> pure Nothing
         [only] -> pure (Just only)
         _ -> do
-          answer <- Game.choose (Prompt.ChooseCost (Decide.deciderFor payer gs) payer resolving (fmap Cost.untagged payable) earlier)
+          answer <- Game.choose (Prompt.ChooseCost (Decide.deciderFor payer gs) payer resolving (fmap Cost.untagged payable) earlier CostStep.Elsewhere)
           pure (List.find ((== answer) . Cost.untagged) payable)
       case picked of
         Nothing -> pure Nothing

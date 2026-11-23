@@ -49,9 +49,11 @@ import qualified Parun.JsonCodec.Common as Common
 import qualified Parun.Types.AttackTarget as AttackTarget
 import qualified Parun.Types.BallotChoice as BallotChoice
 import qualified Parun.Types.BuybackDecision as BuybackDecision
+import qualified Parun.Types.CandidateCost as CandidateCost
 import qualified Parun.Types.ClauseIndex as ClauseIndex
 import qualified Parun.Types.CommandZoneDecision as CommandZoneDecision
 import qualified Parun.Types.Concession as Concession
+import qualified Parun.Types.CostStep as CostStep
 import qualified Parun.Types.CounterKind as CounterKind
 import qualified Parun.Types.EntwineDecision as EntwineDecision
 import qualified Parun.Types.ForageMode as ForageMode
@@ -480,7 +482,9 @@ shapeOf prompt = case prompt of
   Prompt.ChooseMixedCounterRemoval {} -> mapOf object (mapOf counterKind natural)
   Prompt.ChooseAttachment {} -> object
   Prompt.ChooseTurnUpAttachment {} -> viaCodec Codec.OptionalDecision.codec
-  Prompt.ChooseCost _ _ _ offered _ -> indexed offered
+  -- CR 734.1: at CR 601.2b's announcement, one past the offer is its
+  -- withdrawal, the unpayable cost (Parun.Play.Protocol.withdrawalOf).
+  Prompt.ChooseCost _ _ _ offered _ step -> indexed (offered <> [CandidateCost.unpayable | step == CostStep.Announcement])
   Prompt.ChoosePlayPermission {} -> maybeOf (pairOf object (viaCodec Codec.CastFromZone.codec))
   Prompt.ChooseHeldPermission _ _ _ offered -> indexed (NonEmpty.toList offered)
   Prompt.OrderCostComponents {} -> list natural

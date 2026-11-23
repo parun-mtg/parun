@@ -3038,7 +3038,7 @@ henzieSpec s registry = Spec.describe s "Henzie" $ do
     -- everything.
     announcingBlitz :: Bool -> Prompt.Prompt r -> r
     announcingBlitz blitz p = case p of
-      Prompt.ChooseCost _ _ _ candidates _ -> case filter ((== blitz) . isBlitz . CandidateCost.keyword) candidates of
+      Prompt.ChooseCost _ _ _ candidates _ _ -> case filter ((== blitz) . isBlitz . CandidateCost.keyword) candidates of
         chosen : _ -> chosen
         [] -> S.identityAnswer p
       Prompt.DeclareAttackers {} -> S.aggressiveAnswer p
@@ -3048,7 +3048,7 @@ henzieSpec s registry = Spec.describe s "Henzie" $ do
     offeredCosts oid board =
       let record :: Prompt.Prompt r -> State.State [CandidateCost.CandidateCost] r
           record p = case p of
-            Prompt.ChooseCost _ _ _ candidates _ -> announcingBlitz True p <$ State.put candidates
+            Prompt.ChooseCost _ _ _ candidates _ _ -> announcingBlitz True p <$ State.put candidates
             _ -> pure (S.identityAnswer p)
        in State.execState (Engine.runGame record board (S.cast S.alice oid)) []
 
@@ -3714,7 +3714,7 @@ candidatePairs = fmap (\candidate -> (CandidateCost.reductions candidate, ManaNa
 -- CR 601.2b's announcement answered by naming a cost's mana.
 payingFor :: [ManaSymbol.ManaSymbol] -> Prompt.Prompt r -> r
 payingFor wanted p = case p of
-  Prompt.ChooseCost _ _ _ candidates _ ->
+  Prompt.ChooseCost _ _ _ candidates _ _ ->
     Maybe.fromMaybe (Cost.firstOffered candidates) (List.find ((== Just (ManaCost.MkManaCost wanted)) . Cost.Type.mana . CandidateCost.cost) candidates)
   _ -> S.identityAnswer p
 
@@ -4054,7 +4054,7 @@ gorgerRunWith answer (reunionId, ready) =
 -- 616.1) by its value rather than by its place in the offer.
 bloodmadAnswer :: ManaCost.ManaCost -> Prompt.Prompt r -> r
 bloodmadAnswer want p = case p of
-  Prompt.ChooseCost _ _ _ candidates _ -> Maybe.fromMaybe (Cost.firstOffered candidates) (List.find ((== Just want) . Cost.Type.mana . CandidateCost.cost) candidates)
+  Prompt.ChooseCost _ _ _ candidates _ _ -> Maybe.fromMaybe (Cost.firstOffered candidates) (List.find ((== Just want) . Cost.Type.mana . CandidateCost.cost) candidates)
   _ -> madnessAnswer p
 
 -- Takes rule 702.35a's offered cast and answers everything else as S.identityAnswer

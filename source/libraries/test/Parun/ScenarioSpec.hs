@@ -50,6 +50,7 @@ import qualified Parun.Types.Choices as Choices
 import qualified Parun.Types.CombatStep as CombatStep
 import qualified Parun.Types.Concession as Concession
 import qualified Parun.Types.Cost as Cost
+import qualified Parun.Types.CostStep as CostStep
 import qualified Parun.Types.Decider as Decider
 import qualified Parun.Types.Discrepancy as Discrepancy
 import qualified Parun.Types.EndingStep as EndingStep
@@ -332,7 +333,7 @@ spec s registry = Spec.describe s "Scenario" $ do
             modePrompt = Prompt.ChooseModes (Decider.MkDecider S.alice) S.alice spellId (Set.singleton mode) (ModeSelection.ChooseExactly 1)
             xPrompt = Prompt.ChooseX (Decider.MkDecider S.alice) S.alice spellId Binding.variableX 0 9
             cost = Cost.MkCost {Cost.mana = Just (ManaCost.MkManaCost []), Cost.components = []}
-            costPrompt = Prompt.ChooseCost (Decider.MkDecider S.alice) S.alice spellId [CandidateCost.plain Nothing cost] Seq.empty
+            costPrompt = Prompt.ChooseCost (Decider.MkDecider S.alice) S.alice spellId [CandidateCost.plain Nothing cost] Seq.empty CostStep.Announcement
             slot = SlotName.MkSlotName (Text.pack "target")
             targetPrompt =
               Prompt.ChooseTargets

@@ -39,6 +39,7 @@ import qualified Parun.Types.CandidateCost as CandidateCost
 import qualified Parun.Types.Card as Card
 import qualified Parun.Types.Completion as Completion
 import qualified Parun.Types.Cost as Cost.Type
+import qualified Parun.Types.CostStep as CostStep
 import qualified Parun.Types.Crewing as Crewing
 import qualified Parun.Types.FacedDilemma as FacedDilemma
 import Parun.Types.Game (Game)
@@ -308,7 +309,7 @@ activateAbilityWith refused runSubgame pid srcId ability = Event.announcing . Ev
       let admitsModes cost = Modal.selectionSatisfiedBy legal (settledGiven Map.empty (const (Natural.length legal)) cost) chosenModes
           offeredCosts = filter (\cost -> admitsModes cost && any (\x -> Activatable.payableCostAt aimableUnannounced x stamp (ActivatedAbility.name ability) spendable pid srcId gs cost) (Activatable.gateXs mCeiling floorX pid srcId gs cost)) (Activatable.costsFor (PlayerEffect.applying pid gs) pid srcId ability gs)
       printedCost <- case offeredCosts of
-        _ : _ : _ -> CandidateCost.cost <$> Game.choose (Prompt.ChooseCost decider pid abilId (fmap Cost.untagged offeredCosts) Seq.empty)
+        _ : _ : _ -> CandidateCost.cost <$> Game.choose (Prompt.ChooseCost decider pid abilId (fmap Cost.untagged offeredCosts) Seq.empty CostStep.Announcement)
         [only] -> pure only
         [] -> pure (Cost.withManaCostsOf srcId gs (Maybe.fromMaybe (ActivatedAbility.cost ability) (Maybe.listToMaybe (Cost.withChoices (ActivatedAbility.costChoices ability) (ActivatedAbility.cost ability)))))
       -- CR 601.2b: a choice that defines X is made as X would be announced

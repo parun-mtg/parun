@@ -741,7 +741,7 @@ linedIn s budget gs seed = either (Spec.assertFailure s . Text.unpack) pure =<< 
             Prompt.ChooseTargets _ chooser _ _ | chooser == S.alice -> fmap (\targets -> Just (reverse (Search.Targeted targets : taken))) (Answerer.unwrap seats asked)
             Prompt.ChooseModes _ chooser _ _ _ | chooser == S.alice -> Answerer.unwrap seats asked >>= \modes -> go (left - 1) (Search.Moded modes : taken) (k modes)
             Prompt.AnnounceTargets _ chooser _ _ | chooser == S.alice -> Answerer.unwrap seats asked >>= \counts -> go (left - 1) (Search.Announced counts : taken) (k counts)
-            Prompt.ChooseCost _ chooser _ _ _ | chooser == S.alice -> Answerer.unwrap seats asked >>= \candidate -> go (left - 1) (Search.Costed candidate : taken) (k candidate)
+            Prompt.ChooseCost _ chooser _ _ _ _ | chooser == S.alice -> Answerer.unwrap seats asked >>= \candidate -> go (left - 1) (Search.Costed candidate : taken) (k candidate)
             Prompt.ChooseKicker _ chooser _ keyword which _ | chooser == S.alice -> Answerer.unwrap seats asked >>= \times -> go (left - 1) (Search.Kicked keyword which times : taken) (k times)
             Prompt.ChooseX _ chooser _ slot _ _ | chooser == S.alice -> Answerer.unwrap seats asked >>= \value -> go (left - 1) ([Search.Valued slot n | XDecision.Announces n <- [value]] <> taken) (k value)
             _ -> Answerer.unwrap seats asked >>= go (left - 1) taken . k

@@ -1025,7 +1025,7 @@ mergingWith answer board spellId =
 -- silently. CR 702.140c's side is the one thing two runs of this differ by.
 mutatingAt :: MutateSide.MutateSide -> ObjectId.ObjectId -> Prompt.Prompt r -> r
 mutatingAt side host p = case p of
-  Prompt.ChooseCost _ _ _ candidates _ ->
+  Prompt.ChooseCost _ _ _ candidates _ _ ->
     Maybe.fromMaybe (Cost.firstOffered candidates) (List.find ((`elem` [Just mutateCost, Just graftCost]) . Cost.Type.mana . CandidateCost.cost) candidates)
   Prompt.ChooseTargets _ _ _ sets -> fmap (Set.filter ((== Just host) . Recipient.objectOf) . snd) sets
   Prompt.ChooseMutateSide {} -> side
@@ -1039,7 +1039,7 @@ mutatingAt side host p = case p of
 -- holds, and rule 702.140c's Cubwarden is the only one there.
 doublingAt :: ObjectId.ObjectId -> Prompt.Prompt r -> r
 doublingAt host p = case p of
-  Prompt.ChooseCost _ _ _ candidates _ ->
+  Prompt.ChooseCost _ _ _ candidates _ _ ->
     Maybe.fromMaybe (Cost.firstOffered candidates) (List.find ((== Just mutateCost) . Cost.Type.mana . CandidateCost.cost) candidates)
   Prompt.ChooseTargets _ _ _ sets ->
     Map.mapWithKey
