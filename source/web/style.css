@@ -2062,6 +2062,7 @@ main.game {
 }
 
 .turn-label {
+  flex: 1 1 0;
   min-width: 0;
   white-space: nowrap;
   overflow: hidden;
@@ -2077,12 +2078,13 @@ main.game {
   color: var(--muted);
 }
 
-/* The phases, labelled, as one track: the current one in the act's tint
-   and ringed. */
+/* The phases, as one track of icons at the bar's far end beside the
+   actions: the current one in the act's tint and ringed, those passed
+   faded. */
 .phases {
   display: flex;
   gap: 2px;
-  margin: 0 auto 0 0;
+  margin: 0 0 0 auto;
   padding: 3px;
   list-style: none;
   border-radius: var(--radius);
@@ -2090,16 +2092,34 @@ main.game {
 }
 
 .phases li {
+  position: relative;
   display: flex;
   align-items: center;
+  justify-content: center;
+  width: 36px;
   height: 32px;
-  padding: 0 12px;
   border-radius: 8px;
   color: var(--muted);
-  font-size: 13px;
-  font-weight: 600;
-  white-space: nowrap;
-  transition: background-color 0.25s, color 0.25s;
+  transition: background-color 0.25s, color 0.25s, opacity 0.25s;
+}
+
+.phases li .icon {
+  width: 18px;
+  height: 18px;
+}
+
+/* The second main phase's card, marked so the two read apart. */
+.phases li.second::after {
+  content: "2";
+  position: absolute;
+  left: calc(50% + 5px);
+  bottom: 3px;
+  font-size: 10px;
+  font-weight: 800;
+}
+
+.phases li.past {
+  opacity: 0.45;
 }
 
 .phases li.now {
@@ -2198,8 +2218,8 @@ main.game {
   height: 22px;
 }
 
-/* On a phone the track takes its own row, its phases in equal shares,
-   still named; and the turn's label wraps rather than being cut short. */
+/* On a phone the track stays beside the actions, and the turn's label
+   takes its own row under them, wrapping rather than cut short. */
 @media (max-width: 599px) {
   .turn-bar {
     gap: 6px 8px;
@@ -2207,7 +2227,8 @@ main.game {
   }
 
   .turn-label {
-    flex: 1 1 0;
+    order: 1;
+    flex-basis: 100%;
     white-space: normal;
     line-height: 1.25;
   }
@@ -2217,20 +2238,21 @@ main.game {
     display: none;
   }
 
+  .phases li {
+    width: 32px;
+    height: 32px;
+    border-radius: 6px;
+  }
+}
+
+/* On the narrowest phones the track narrows so the menu keeps its row. */
+@media (max-width: 359px) {
   .phases {
-    order: 1;
-    flex-basis: 100%;
-    margin: 0;
+    gap: 0;
   }
 
   .phases li {
-    flex: 1 1 0;
-    justify-content: center;
-    min-width: 0;
-    height: 24px;
-    padding: 0 2px;
-    border-radius: 6px;
-    font-size: 11px;
+    width: 26px;
   }
 }
 
