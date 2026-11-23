@@ -6,6 +6,7 @@
 module Parun.Browser.Guest where
 
 import qualified Control.Exception as Exception
+import qualified Control.Monad as Monad
 import qualified Data.Foldable as Foldable
 import qualified Data.IORef as IORef
 import qualified Data.Maybe as Maybe
@@ -52,7 +53,8 @@ play page lookUp levelRef channel rejoin seat leave = do
               case answered of
                 Link.MkReply reply -> Link.send channel reply >> loop
                 Link.MkWaitingOn other -> IORef.writeIORef decidingRef (Just other) >> loop
-                Link.MkEnded verdict said scenario -> pure (verdict, said, scenario)
+                -- What the seat saw after its last decision: the killing blow, say.
+                Link.MkEnded verdict said shown scenario -> Monad.forM_ shown (IORef.modifyIORef' seatRef . Hotseat.witness) >> pure (verdict, said, scenario)
                 Link.MkIgnored -> loop
     (verdict, said, scenario) <- loop
     finished <- IORef.readIORef seatRef

@@ -9,9 +9,11 @@ import qualified Control.Monad as Monad
 import qualified Data.List.NonEmpty as NonEmpty
 import qualified Data.Map.Strict as Map
 import qualified Data.Text as Text
+import qualified Parun.Codec.PlayerView as Codec.PlayerView
 import qualified Parun.Codec.Reply as Codec.Reply
 import qualified Parun.Codec.Request as Codec.Request
 import qualified Parun.Engine.Driver as Driver
+import qualified Parun.Engine.PlayerView as PlayerView.Engine
 import qualified Parun.Extra.Integer as Integer
 import qualified Parun.Json.Value as Value
 import qualified Parun.JsonCodec.Codec as Codec
@@ -22,10 +24,12 @@ import qualified Parun.Play.Opponent as Opponent
 import qualified Parun.Play.Protocol as Protocol
 import qualified Parun.Types.Asked as Asked
 import qualified Parun.Types.Difficulty as Difficulty
+import qualified Parun.Types.GameState as GameState
 import qualified Parun.Types.Key as Key.Type
 import qualified Parun.Types.Observer as Observer
 import qualified Parun.Types.Persona as Persona
 import qualified Parun.Types.PlayerId as PlayerId
+import qualified Parun.Types.PlayerView as PlayerView
 import qualified Parun.Types.Question as Question
 import qualified Parun.Types.Reply as R
 import qualified Parun.Types.Request as Request
@@ -50,8 +54,9 @@ data Message
   | -- | The guest's reply to the last request.
     MkAnswer R.Reply
   | -- | The game ended: how for the guest, what is said of it
-    -- (Ending.said), and the game as a scenario file (Ending.scenario).
-    MkEnd Ending.Verdict [Text.Text] Text.Text
+    -- (Ending.said), the guest's seat's view of the end (endView), and the
+    -- game as a scenario file (Ending.scenario).
+    MkEnd Ending.Verdict [Text.Text] (Maybe PlayerView.PlayerView) Text.Text
   deriving (Eq, Show)
 
 -- | A seat of the match-up as the guest is shown it.
@@ -77,7 +82,7 @@ encode build message =
         MkAsk request -> ("ask", [Value.pair "request" (Codec.encode Codec.Request.codec request)])
         MkDeciding seat -> ("deciding", [Value.pair "seat" (Value.integer (toInteger (PlayerId.unwrap seat)))])
         MkAnswer reply -> ("answer", [Value.pair "reply" (Codec.Reply.toValue reply)])
-        MkEnd verdict said scenario -> ("end", [Value.pair "verdict" (Value.string (verdictName verdict)), Value.pair "said" (Value.array (fmap Value.text said)), Value.pair "scenario" (Value.text scenario)])
+        MkEnd verdict said shown scenario -> ("end", [Value.pair "verdict" (Value.string (verdictName verdict)), Value.pair "said" (Value.array (fmap Value.text said)), Value.pair "view" (Codec.encode (Common.maybe Codec.PlayerView.codec) shown), Value.pair "scenario" (Value.text scenario)])
       place p = Value.object [Value.pair "who" (Value.text (who p)), Value.pair "deck" (Value.text (deck p)), Value.pair "ready" (maybe Value.null Value.boolean (ready p))]
    in Common.render (Value.object (Value.pair "type" (Value.string tag) : Value.pair "build" (Value.text build) : fields))
 
@@ -98,7 +103,7 @@ decode build line = do
     "ask" -> MkAsk <$> (Common.field "request" pairs >>= Codec.decode Codec.Request.codec)
     "deciding" -> MkDeciding <$> (Common.field "seat" pairs >>= Common.asInteger >>= natural)
     "answer" -> MkAnswer <$> (Common.field "reply" pairs >>= Codec.Reply.fromValue)
-    "end" -> MkEnd <$> (text "verdict" >>= verdictNamed) <*> (Common.field "said" pairs >>= Common.asArray >>= traverse Common.asText) <*> text "scenario"
+    "end" -> MkEnd <$> (text "verdict" >>= verdictNamed) <*> (Common.field "said" pairs >>= Common.asArray >>= traverse Common.asText) <*> (Common.field "view" pairs >>= Codec.decode (Common.maybe Codec.PlayerView.codec)) <*> text "scenario"
     other -> Left (Text.pack ("not a message: " <> other))
   where
     place value = do
@@ -152,6 +157,11 @@ remote rejoin places channel request = asked
           back <- rejoin
           if back then send channel (MkMatchup places) >> send channel (MkStart (Question.seat (Request.question request))) >> asked else pure Nothing
 
+-- | This seat's view of the game as it ended, holding what happened after
+-- its last decision (the killing blow, say); Nothing for a game that stopped.
+endView :: PlayerId.PlayerId -> Either a (b, GameState.GameState) -> Maybe PlayerView.PlayerView
+endView seat = either (const Nothing) (Just . PlayerView.Engine.viewFor seat . snd)
+
 -- | Tells each guest, over its channel in `guests`, of every seat the game
 -- asks but its own as the seat asked changes, `told` holding the seat each
 -- was last told of: a guest's own seat asked counts, since it is sent the
@@ -173,12 +183,12 @@ deciding decides =
 
 -- | What the guest does with a message from the host once the game is under
 -- way: a request is answered through `local`, its reply what to send back;
--- the end is said; whose decision the game waits on is shown; anything else
--- is ignored.
+-- the end is said, with the seat's view of it; whose decision the game waits
+-- on is shown; anything else is ignored.
 data Heard
   = MkReply Message
   | MkWaitingOn PlayerId.PlayerId
-  | MkEnded Ending.Verdict [Text.Text] Text.Text
+  | MkEnded Ending.Verdict [Text.Text] (Maybe PlayerView.PlayerView) Text.Text
   | MkIgnored
   deriving (Eq, Show)
 
@@ -189,7 +199,7 @@ data Heard
 guest :: (Monad m) => Protocol.Exchange m -> Message -> m Heard
 guest local message = case message of
   MkAsk request -> maybe MkIgnored (either (const MkIgnored) (MkReply . MkAnswer)) <$> local request
-  MkEnd verdict said scenario -> pure (MkEnded verdict said scenario)
+  MkEnd verdict said shown scenario -> pure (MkEnded verdict said shown scenario)
   MkDeciding seat -> pure (MkWaitingOn seat)
   _ -> pure MkIgnored
 
