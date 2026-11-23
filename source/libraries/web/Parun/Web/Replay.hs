@@ -364,7 +364,7 @@ nameTo :: PlayerId.PlayerId -> PlayerId.PlayerId -> Text.Text
 nameTo viewed pid = if pid == viewed then Text.pack "You" else Board.name pid
 
 -- | Each seat by the name `names` gives its label, else by its number
--- (Parun.Web.Board.name), never by the label a scenario writes (#9696).
+-- (Parun.Web.Board.name), never by the label a scenario writes.
 seatsNamed :: Map.Map Text.Text Text.Text -> [(PlayerId.PlayerId, Text.Text)] -> [(PlayerId.PlayerId, Text.Text)]
 seatsNamed names labelled = [(pid, Map.findWithDefault (Board.name pid) label names) | (pid, label) <- labelled]
 

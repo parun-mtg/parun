@@ -91,9 +91,10 @@ data Exit
 -- it, stepping on by itself while played, until the end; a game finished
 -- here names each seat by who played it (History.seatNames), and says how
 -- it ended at the end; a scenario names each by its number, and its lines
--- name each as the table does (Web.Replay.tableNames). The state at each position a turn begins is kept
--- once reached, for the log of every later position (Web.Replay.earlier),
--- and what each run keeps for the next to resume from (Scenario.replay).
+-- name each as the table does (Web.Replay.tableNames). The state at each
+-- position a turn begins is kept once reached, for the log of every later
+-- position (Web.Replay.earlier), and what each run keeps for the next to
+-- resume from (Scenario.replay).
 -- While no tap waits, the runs go on ahead a position at a time, so a
 -- later position is kept before it is asked for; a step's taps
 -- queued while the engine works add up to one move.
