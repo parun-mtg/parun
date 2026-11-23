@@ -72,11 +72,11 @@ data Lobby = MkLobby
     -- place absent ('botAt').
     bots :: Map.Map Int (Difficulty.Difficulty, Persona.Persona),
     -- | Whether a game is in progress, set aside for this lobby, which
-    -- starting another concedes.
+    -- starting another abandons.
     paused :: Bool,
-    -- | What was tapped that concedes the game in progress, asked about
+    -- | What was tapped that abandons the game in progress, asked about
     -- first.
-    conceding :: Maybe Event
+    abandoning :: Maybe Event
   }
   deriving (Eq, Show)
 
@@ -163,9 +163,9 @@ data Event
   | -- | Sets the persona of the bot at this place in 'theirs' to the one
     -- whose name is chosen.
     MkPersona Int
-  | -- | Concedes the game in progress for what was asked about; the shell
+  | -- | Abandons the game in progress for what was asked about; the shell
     -- does it.
-    MkConcede
+    MkAbandon
   | -- | Returns to the game in progress; the shell does it.
     MkResume
   | -- | Keeps the game in progress, and this lobby.
@@ -188,7 +188,7 @@ new =
       ready = False,
       bots = Map.empty,
       paused = False,
-      conceding = Nothing
+      abandoning = Nothing
     }
 
 -- | A new lobby with this deck yours, on the shelf it is on.
@@ -355,22 +355,22 @@ deckName root path =
 -- 'opponents'.
 update :: Event -> Text.Text -> Lobby -> Lobby
 update event typed lobby
-  | paused lobby && concedes event lobby = lobby {conceding = Just event}
+  | paused lobby && abandons event lobby = lobby {abandoning = Just event}
   | otherwise = settled lobby (updated event typed lobby)
 
--- | Whether this event, done, concedes a game in progress: starting a game,
+-- | Whether this event, done, abandons a game in progress: starting a game,
 -- or inviting a player, whose link needs the data channels the game set
 -- aside holds (Parun.Browser.aside).
-concedes :: Event -> Lobby -> Bool
-concedes event lobby = case event of
+abandons :: Event -> Lobby -> Bool
+abandons event lobby = case event of
   MkStart -> Either.isRight (startable lobby)
   MkAdd MkInvited -> length (theirs lobby) < mostOthers
   _ -> False
 
--- | The lobby once the game in progress is conceded, and the event asked
+-- | The lobby once the game in progress is abandoned, and the event asked
 -- about, to do next; nothing where none was asked about.
-conceded :: Lobby -> Maybe (Lobby, Event)
-conceded lobby = (,) lobby {paused = False, conceding = Nothing} <$> conceding lobby
+abandoned :: Lobby -> Maybe (Lobby, Event)
+abandoned lobby = (,) lobby {paused = False, abandoning = Nothing} <$> abandoning lobby
 
 -- | 'update' before any ready flag is cleared.
 updated :: Event -> Text.Text -> Lobby -> Lobby
@@ -416,9 +416,9 @@ updated event typed lobby = case event of
   MkReady -> lobby {ready = not (ready lobby)}
   MkDifficulty i -> maybe lobby (\d -> styled i (\(_, p) -> (d, p))) (Opponent.named Opponent.difficultyName (Text.unpack typed))
   MkPersona i -> maybe lobby (\p -> styled i (\(d, _) -> (d, p))) (Opponent.named Opponent.personaName (Text.unpack typed))
-  MkConcede -> lobby
+  MkAbandon -> lobby
   MkResume -> lobby
-  MkCancel -> lobby {conceding = Nothing}
+  MkCancel -> lobby {abandoning = Nothing}
   where
     styled i f
       | removable lobby i = lobby {bots = Map.insert i (f (botAt i (bots lobby))) (bots lobby)}
@@ -658,21 +658,21 @@ botView i (level, style) =
         ]
 
 -- | Start, or Ready with players invited, and what it waits on; else,
--- asked about, whether to concede the game in progress.
+-- asked about, whether to abandon the game in progress.
 startView :: Lobby -> Html.Html Event
-startView lobby = case conceding lobby of
+startView lobby = case abandoning lobby of
   Just asked ->
     Element.el
       "section"
       ["panel", "confirm"]
-      [Element.attr "role" (Text.pack "alertdialog"), Element.attr "aria-label" (Text.pack "Concede the game in progress?")]
-      [ Element.el "p" [] [] [Element.string "Starting a new game concedes the one in progress."],
+      [Element.attr "role" (Text.pack "alertdialog"), Element.attr "aria-label" (Text.pack "Abandon the game in progress?")]
+      [ Element.el "p" [] [] [Element.string "Starting a new game abandons the one in progress, which Replays won't keep."],
         Element.el
           "div"
           ["choices"]
           []
           [ Element.button ["primary", "resume"] MkResume [Element.string "Resume"],
-            Element.button [] MkConcede [Element.string (if asked == MkStart then "Concede and play" else "Concede and invite")],
+            Element.button [] MkAbandon [Element.string (if asked == MkStart then "Abandon and play" else "Abandon and invite")],
             Element.button [] MkCancel [Element.string "Cancel"]
           ]
       ]

@@ -156,9 +156,9 @@ data Next
     MkToJoin Text.Text
   | -- | The game with guests the page kept, picked up where it stopped.
     MkToRestore Link.Saved
-  | -- | The lobby as left when the game in progress was conceded for this
+  | -- | The lobby as left when the game in progress was abandoned for this
     -- event of it, done next.
-    MkToConceded Lobby.Lobby Lobby.Event
+    MkToAbandoned Lobby.Lobby Lobby.Event
   | -- | The game in progress, resumed; the home screen where none is.
     MkToPaused
 
@@ -229,7 +229,7 @@ routeOf next = case next of
   MkToPlayOn source at -> Route.MkReplay Route.MkPlayingOn source at
   MkToJoin _ -> Route.MkHome
   MkToRestore _ -> Route.MkHome
-  MkToConceded _ _ -> Route.MkPlay
+  MkToAbandoned _ _ -> Route.MkPlay
   MkToPaused -> Route.MkHome
 
 -- | Puts where a screen leads in the address bar, a new entry of the
@@ -246,7 +246,7 @@ follow shell next =
     MkToLobby deck -> lobbyHolding shell deck >>= \shown -> lobby shell shown [] Nothing >>= follow shell
     MkToDecks deck -> decksScreen shell deck >>= follow shell
     MkToMatchup decks -> lobby shell (matchup decks) [] Nothing >>= follow shell
-    MkToConceded shown event -> lobby shell shown [] (Just event) >>= follow shell
+    MkToAbandoned shown event -> lobby shell shown [] (Just event) >>= follow shell
     MkToBuilder deck back -> builder shell deck back >>= follow shell
     MkToReplays -> replays shell >>= follow shell
     MkToReplay source at -> replay shell source at >>= follow shell
@@ -320,7 +320,7 @@ home shell = go
 -- filling in as decks and cards arrive, and as the players invited from
 -- other browsers connect and choose (Parun.Web.Link), each told the
 -- match-up at every change; where the game, played from here, then leads.
--- A lobby with a game paused leads back to it, or concedes it (MkToConceded)
+-- A lobby with a game paused leads back to it, or abandons it (MkToAbandoned)
 -- before it starts another.
 lobby :: Shell -> Lobby.Lobby -> [Browser.Linked] -> Maybe Lobby.Event -> IO Next
 lobby shell initial said pending = do
@@ -354,7 +354,7 @@ lobby shell initial said pending = do
             MkTapped (Screen.MkLobby event) value -> case event of
               Lobby.MkOpenBuilder -> leaving (MkToBuilder Nothing (MkToLobby Nothing))
               Lobby.MkEdit name -> leaving (MkToBuilder (Just name) (MkToLobby Nothing))
-              Lobby.MkConcede | Just (left, event') <- Lobby.conceded current -> leaving (MkToConceded left event')
+              Lobby.MkAbandon | Just (left, event') <- Lobby.abandoned current -> leaving (MkToAbandoned left event')
               Lobby.MkResume -> leaving MkToPaused
               Lobby.MkStart
                 | not (Lobby.paused current),
@@ -899,7 +899,7 @@ play shell seats invited here resuming = do
                 -- A guest's deck, which may share a name with another of
                 -- this browser's, is coloured by its own list.
                 | Map.member (i - 1) invited = History.MkSeat History.MkPerson (DeckBrowser.label (DeckBrowser.titleIn seat) name) Nothing (colouring contents)
-                | Map.member (i - 1) here = History.MkSeat History.MkPerson (DeckBrowser.label (DeckBrowser.titleIn seat) name) (Just name) (Map.findWithDefault Set.empty name palette')
+                | Just sitting <- Map.lookup (i - 1) here = History.MkSeat (if sitting == Link.MkHandedOver then History.MkHere else History.MkPerson) (DeckBrowser.label (DeckBrowser.titleIn seat) name) (Just name) (Map.findWithDefault Set.empty name palette')
                 | otherwise = History.MkSeat History.MkBot (DeckBrowser.label (DeckBrowser.titleIn seat) name) (Just name) (Map.findWithDefault Set.empty name palette')
           remember shell (fmap seatOf' (zip [0 :: Int ..] (NonEmpty.toList seats))) played
           lost <- IORef.readIORef down
@@ -1108,7 +1108,7 @@ leaveFor shell chosen played board = Browser.aside (page shell) (go paused)
       MkToPlayOn source at -> go paused {Home.confirming = Just (Home.MkPlayOn source at)}
       MkToDecks deck -> located next >> decksScreen shell deck >>= visit
       MkToLobby deck -> located next >> lobbyHolding shell deck >>= \shown -> lobby shell shown {Lobby.paused = True} [] Nothing >>= visit
-      MkToConceded _ _ -> IORef.writeIORef chosen next >> pure Hotseat.MkAbandon
+      MkToAbandoned _ _ -> IORef.writeIORef chosen next >> pure Hotseat.MkAbandon
       MkToPaused -> pure Hotseat.MkResume
       _ -> go paused
 

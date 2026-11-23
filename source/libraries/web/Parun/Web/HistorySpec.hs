@@ -76,8 +76,10 @@ spec s = Spec.describe s "Parun.Web.History" $ do
     Spec.it s "names each seat as the game did, whoever played it" $ do
       let bots = game {History.seats = History.seats game <> [History.MkSeat History.MkBot (Text.pack "Vivien (M19)") Nothing Set.empty]}
           guest = game {History.seats = History.MkSeat History.MkPerson (Text.pack "Vivien (M19)") Nothing Set.empty : History.seats game}
+          shared = bots {History.seats = take 1 (History.seats bots) <> [History.MkSeat History.MkHere (Text.pack "Vivien (M19)") Nothing Set.empty] <> drop 2 (History.seats bots)}
       Spec.assertEqWith s "two seats" (History.seatNames game) (Map.fromList [(Text.pack "player1", Text.pack "You"), (Text.pack "player2", Text.pack "Player 2")])
       Spec.assertEqWith s "two bots" (History.seatNames bots) (Map.fromList [(Text.pack "player1", Text.pack "You"), (Text.pack "player2", Text.pack "Player 2"), (Text.pack "player3", Text.pack "Player 3")])
+      Spec.assertEqWith s "a shared screen's" (History.seatNames shared) (Map.fromList [(Text.pack "player1", Text.pack "Player 1"), (Text.pack "player2", Text.pack "Player 2"), (Text.pack "player3", Text.pack "Player 3")])
       Spec.assertEqWith s "a guest's" (History.seatNames guest) (Map.fromList [(Text.pack "player1", Text.pack "Player 1"), (Text.pack "player2", Text.pack "You"), (Text.pack "player3", Text.pack "Player 3")])
 
   Spec.describe s "date" $ do
@@ -95,9 +97,10 @@ spec s = Spec.describe s "Parun.Web.History" $ do
       has "Liliana (M19)"
       has "You vs Bot \x00b7 Turn 9 \x00b7 21 Nov 2026, 14:05"
 
-    Spec.it s "names a shared screen's winner without taking a seat's side" $ do
-      let page = Html.toText (History.row game {History.verdict = Ending.MkWonBy (PlayerId.MkPlayerId 1)} [])
+    Spec.it s "names a shared screen's winner and players without taking a seat's side" $ do
+      let page = Html.toText (History.row game {History.verdict = Ending.MkWonBy (PlayerId.MkPlayerId 1), History.seats = History.seats game <> [History.MkSeat History.MkHere (Text.pack "Vivien (M19)") Nothing Set.empty]} [])
       Spec.assertBool s (Text.isInfixOf (Text.pack "<span class=\"result drawn\">Player 2 won</span>") page) (Text.unpack page)
+      Spec.assertBool s (Text.isInfixOf (Text.pack "Player 1 vs Bot vs Player 3 \x00b7 Turn 9") page) (Text.unpack page)
 
 game :: History.Game
 game =
