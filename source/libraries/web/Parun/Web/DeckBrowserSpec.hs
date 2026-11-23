@@ -32,14 +32,20 @@ spec s = Spec.describe s "Parun.Web.DeckBrowser" $ do
       Spec.assertEqWith s "bare" (DeckBrowser.titleIn (saved, Text.pack "4 Lightning Bolt\n")) Map.empty
 
   Spec.describe s "tile" $ do
-    Spec.it s "badges a precon with its set's name, a saved deck Saved, and a format deck nothing" $ do
+    Spec.it s "badges a precon with its set's name, and a saved deck and a format deck nothing" $ do
       let page = Html.toText . DeckBrowser.tile id False dated
           badge name = Text.isInfixOf (Text.pack ("<span class=\"set-badge\">" <> name <> "</span>")) . page
       Spec.assertEqWith s "precon" (badge "Tenth Edition" temper) True
       Spec.assertEqWith s "no code" (badge "10E" temper) False
       Spec.assertEqWith s "undated, by code" (badge "POR" a) True
-      Spec.assertEqWith s "saved" (badge "Saved" saved) True
+      Spec.assertEqWith s "saved" (Text.isInfixOf (Text.pack "set-badge") (page saved)) False
       Spec.assertEqWith s "format" (Text.isInfixOf (Text.pack "set-badge") (page pauper)) False
+
+  Spec.describe s "curve" $ do
+    Spec.it s "draws no bar for a mana value no spell has" $ do
+      let page = Html.toText (DeckBrowser.curve [] [0, 2])
+      Spec.assertEqWith s "empty" (Text.isInfixOf (Text.pack "title=\"0 at mana value 0\"><span class=\"mv\">") page) True
+      Spec.assertEqWith s "filled" (Text.isInfixOf (Text.pack "title=\"2 at mana value 1\"><span class=\"fill\" style=\"height:100%\">") page) True
 
   Spec.describe s "shown" $ do
     Spec.it s "filters My decks and the precons by format alike" $ do

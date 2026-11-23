@@ -191,12 +191,17 @@ document.getElementById("concede-yes").addEventListener("click", () => {
 
 const svgNamespace = "http://www.w3.org/2000/svg";
 
+// The elements built by the patch being applied that ask, as they arrive,
+// for the focus (data-focus) or to be scrolled into view (data-reveal).
+let arrived = [];
+
 // A node and its children; an svg and everything in it in SVG's namespace.
 function build(node, svg = false) {
   if ("text" in node) return document.createTextNode(node.text);
   const inSvg = svg || node.tag === "svg";
   const element = inSvg ? document.createElementNS(svgNamespace, node.tag) : document.createElement(node.tag);
   for (const [name, value] of node.props) element.setAttribute(name, value);
+  if (element.hasAttribute("data-focus") || element.hasAttribute("data-reveal")) arrived.push(element);
   for (const child of node.children) element.append(build(child, inSvg));
   return element;
 }
@@ -266,6 +271,7 @@ function apply(json) {
   const before = lives();
   const docked = dockHeight();
   const focused = document.activeElement;
+  arrived = [];
   unkey();
   for (const patch of JSON.parse(json)) {
     const node = at(patch.path);
@@ -305,6 +311,12 @@ function apply(json) {
   announce();
   rekey();
   playOn();
+  for (const element of arrived) {
+    if (!element.isConnected) continue;
+    if (element.hasAttribute("data-reveal")) element.scrollIntoView({ block: "nearest", behavior: "smooth" });
+    if (element.hasAttribute("data-focus")) element.focus({ preventScroll: element.hasAttribute("data-reveal") });
+  }
+  arrived = [];
   // A sheet that just opened takes the focus, on its first action; closed,
   // it gives the focus back to the card that had it.
   const sheet = openSheet();
@@ -394,6 +406,16 @@ for (const type of events) {
     if (type === "change" && event.target.dataset.clear !== undefined) event.target.value = "";
   });
 }
+
+// Enter in a box naming a button (data-enter) presses it, as a form's
+// submit button would.
+root.addEventListener("keydown", (event) => {
+  if (event.key !== "Enter" || event.isComposing || !event.target.matches?.("[data-enter]")) return;
+  const button = document.getElementById(event.target.dataset.enter);
+  if (button === null || button.disabled) return;
+  event.preventDefault();
+  button.click();
+});
 
 // A read-only box (a link or code to send) is selected whole when focused
 // or tapped, so one copy takes all of it; selecting on the click too keeps

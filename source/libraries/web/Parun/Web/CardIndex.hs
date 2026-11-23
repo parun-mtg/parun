@@ -67,7 +67,8 @@ data Query = MkQuery
 everything :: Query
 everything = MkQuery Text.empty Set.empty Set.empty Nothing Nothing
 
--- | The most results shown.
+-- | How many more results each showing adds, and so how many are shown at
+-- first.
 cap :: Int
 cap = 60
 
@@ -110,11 +111,11 @@ typeWords line =
       front = fmap shown (Set.toList (TypeLine.supertypes line)) <> fmap shown (Set.toList (TypeLine.types line))
    in Text.unwords (front <> (if null (TypeLine.subtypes line) then [] else Text.pack "\x2014" : fmap shown (TypeLine.subtypes line)))
 
--- | How many entries match, and the first 'cap' of them: those whose name
+-- | How many entries match, and the first `most` of them: those whose name
 -- starts with the text, then those with it in a face's name, then those
 -- with it anywhere else, each in the order given, which is by name.
-search :: Query -> Seq.Seq Entry -> (Int, Seq.Seq Entry)
-search query entries =
+search :: Int -> Query -> Seq.Seq Entry -> (Int, Seq.Seq Entry)
+search most query entries =
   let needle = Text.toCaseFold (Text.strip (text query))
       rank e
         | Text.isPrefixOf needle (Text.toCaseFold (CardName.unwrap (name e))) = Just (0 :: Int)
@@ -127,4 +128,4 @@ search query entries =
       atValue e = maybe True (\v -> if v >= 7 then value e >= 7 else value e == v) (valued query)
       -- Stable, so each rank keeps the entries' own order.
       ranked = Seq.sortOn fst (Seq.fromList [(r, e) | e <- Foldable.toList entries, pooled e, within e, ofKind e, atValue e, Just r <- [rank e]])
-   in (Seq.length ranked, fmap snd (Seq.take cap ranked))
+   in (Seq.length ranked, fmap snd (Seq.take most ranked))

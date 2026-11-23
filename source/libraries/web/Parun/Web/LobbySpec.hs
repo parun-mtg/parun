@@ -392,6 +392,10 @@ spec s = Spec.describe s "Parun.Web.Lobby" $ do
       let page = Lobby.view lobby
       Spec.assertEq s (Html.search (tileOf (Text.pack "Entangling Webs")) page >>= \path -> Html.handler (Text.pack "click") path page) . Just $ Lobby.MkPick b
 
+    Spec.it s "puts My decks first, as the Decks screen does" $ do
+      let tabs = Text.splitOn (Text.pack "role=\"tab\"") (Html.toText (Lobby.view lobby))
+      Spec.assertEq s (fmap (Text.isInfixOf (Text.pack "My decks")) (drop 1 tabs)) [True, False]
+
     Spec.it s "draws a deck's curve on its tile once read" $ do
       let page = Html.toText (Lobby.view (Lobby.browsed (\b' -> b' {DeckBrowser.curves = Map.singleton b [0, 4, 8, 6, 2, 0, 1]}) lobby))
       Spec.assertBool s (Text.isInfixOf (Text.pack "class=\"curve spark\" aria-hidden=\"true\"><span class=\"bar\" title=\"0 at mana value 0\"") page && Text.isInfixOf (Text.pack "title=\"8 at mana value 2\"") page) "curve"

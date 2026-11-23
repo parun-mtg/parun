@@ -19,42 +19,42 @@ spec :: (Monad m, Monad n) => Spec.Spec m n -> n ()
 spec s = Spec.describe s "Parun.Web.CardIndex" $ do
   Spec.describe s "search" $ do
     Spec.it s "matches a name, any case" $ do
-      Spec.assertEq s (names (CardIndex.search (typed "bolt") pool)) ["Lightning Bolt"]
+      Spec.assertEq s (names (CardIndex.search CardIndex.cap (typed "bolt") pool)) ["Lightning Bolt"]
 
     Spec.it s "matches rules text, any case" $ do
-      Spec.assertEq s (names (CardIndex.search (typed "DEALS 3") pool)) ["Lightning Bolt"]
+      Spec.assertEq s (names (CardIndex.search CardIndex.cap (typed "DEALS 3") pool)) ["Lightning Bolt"]
 
     Spec.it s "orders name prefixes, then names, then rules text" $ do
-      Spec.assertEq s (names (CardIndex.search (typed "elf") pool)) ["Elf Replica", "Wood Elf", "Elvish Champion"]
+      Spec.assertEq s (names (CardIndex.search CardIndex.cap (typed "elf") pool)) ["Elf Replica", "Wood Elf", "Elvish Champion"]
 
     Spec.it s "keeps cards within the chosen colours, colourless ones included" $ do
       let query = CardIndex.everything {CardIndex.wanted = Set.singleton Color.Green}
-      Spec.assertEq s (names (CardIndex.search query pool)) ["Elf Replica", "Elvish Champion", "Llanowar Elves", "Wood Elf"]
+      Spec.assertEq s (names (CardIndex.search CardIndex.cap query pool)) ["Elf Replica", "Elvish Champion", "Llanowar Elves", "Wood Elf"]
 
     Spec.it s "keeps cards of any chosen type" $ do
       let query = CardIndex.everything {CardIndex.kinds = Set.fromList [CardType.Instant, CardType.Artifact]}
-      Spec.assertEq s (names (CardIndex.search query pool)) ["Elf Replica", "Gruul Signet", "Lightning Bolt"]
+      Spec.assertEq s (names (CardIndex.search CardIndex.cap query pool)) ["Elf Replica", "Gruul Signet", "Lightning Bolt"]
 
     Spec.it s "keeps cards of the chosen mana value, the last bucket counting 7 and up" $ do
-      let at n = names (CardIndex.search CardIndex.everything {CardIndex.valued = Just n} pool)
+      let at n = names (CardIndex.search CardIndex.cap CardIndex.everything {CardIndex.valued = Just n} pool)
       Spec.assertEq s (at 1, at 7) (["Lightning Bolt", "Llanowar Elves", "Wood Elf"], ["Big One", "Bigger One"])
 
     Spec.it s "caps the results and counts every match" $ do
       let many = Seq.fromList [entry ("Card " <> show n) [] 1 [] "" | n <- [1 .. 61 :: Int]]
-          (count, shown) = CardIndex.search CardIndex.everything many
+          (count, shown) = CardIndex.search CardIndex.cap CardIndex.everything many
       Spec.assertEq s (count, Seq.length shown) (61, CardIndex.cap)
 
     Spec.it s "finds a split card by either half's name" $ do
       let split = (entry "Fire // Ice" [Color.Red, Color.Blue] 2 [CardType.Instant] "") {CardIndex.faceNames = [Text.pack "Fire", Text.pack "Ice"]}
-      Spec.assertEq s (names (CardIndex.search (typed "ice") (Seq.singleton split))) ["Fire // Ice"]
+      Spec.assertEq s (names (CardIndex.search CardIndex.cap (typed "ice") (Seq.singleton split))) ["Fire // Ice"]
 
     Spec.it s "keeps only the pool's cards, and basic lands" $ do
       let query = CardIndex.everything {CardIndex.among = Just (Set.fromList [Text.pack "lightning bolt"])}
           forest = (entry "Forest" [] 0 [CardType.Land] "") {CardIndex.basic = True}
-      Spec.assertEq s (names (CardIndex.search query (forest Seq.<| pool))) ["Forest", "Lightning Bolt"]
+      Spec.assertEq s (names (CardIndex.search CardIndex.cap query (forest Seq.<| pool))) ["Forest", "Lightning Bolt"]
 
     Spec.it s "matches nothing for text no card holds" $ do
-      Spec.assertEq s (CardIndex.search (typed "zzzz") pool) (0, Seq.empty)
+      Spec.assertEq s (CardIndex.search CardIndex.cap (typed "zzzz") pool) (0, Seq.empty)
 
   Spec.describe s "entryOf" $ do
     Spec.it s "indexes a traditional card" $ do

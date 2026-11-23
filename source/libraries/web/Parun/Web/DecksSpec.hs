@@ -74,6 +74,8 @@ spec s = Spec.describe s "Parun.Web.Decks" $ do
       let exported = Decks.browsed (\b -> b {DeckBrowser.exporting = Just (mine, Text.pack "4 Exported Card")}) (screen (Just mine))
       Spec.assertBool s (has "4 Exported Card" exported) "its own"
       Spec.assertBool s (not (has "4 Exported Card" (Decks.update (Decks.MkSelect other) Text.empty exported))) "not another's"
+      Spec.assertBool s (has "data-reveal" exported && has "data-copy=\"export-text\">Copy" exported) "revealed, to copy"
+      Spec.assertBool s (not (has "4 Exported Card" (Decks.update (Decks.MkAskDelete mine) Text.empty exported))) "not beneath Delete's question"
 
   Spec.describe s "delete" $ do
     Spec.it s "asks before deleting, and deletes only once confirmed" $ do
@@ -97,6 +99,11 @@ spec s = Spec.describe s "Parun.Web.Decks" $ do
       Spec.assertEqWith s "not while one is saved" (has "No decks saved in this browser yet." (screen Nothing)) False
 
   Spec.describe s "rename" $ do
+    Spec.it s "focuses the new name, Enter in it pressing Rename" $ do
+      let opened = Decks.update Decks.MkRename Text.empty (screen (Just mine))
+      Spec.assertEqWith s "focused" (has "data-focus=\"\" data-enter=\"save-rename\"" opened) True
+      Spec.assertEqWith s "pressed" (has "id=\"save-rename\"" opened, tapping "Rename" opened) (True, Just Decks.MkSubmitRename)
+
     Spec.it s "opens on the deck's name and renames it to the name typed" $ do
       let opened = Decks.update Decks.MkRename Text.empty (screen (Just mine))
           typed = Decks.update Decks.MkRenameName (Text.pack "Red Deck Wins") opened
