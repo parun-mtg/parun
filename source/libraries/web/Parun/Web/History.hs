@@ -165,7 +165,7 @@ viewerLabel game = do
 
 -- | What the replay calls each seat, by the label the game's scenario gives
 -- it (Command.labels): what the game called it, "You" for the player's and
--- "Player 2" by seat for any other, whoever played it (#9676).
+-- "Player 2" by seat for any other, whoever played it.
 seatNames :: Game -> Map.Map Text.Text Text.Text
 seatNames game =
   let count = Natural.length (seats game)

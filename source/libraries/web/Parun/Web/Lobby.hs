@@ -499,7 +499,7 @@ shown :: Lobby -> [Text.Text]
 shown lobby = DeckBrowser.shown (offered lobby) (browser lobby)
 
 -- | A seat's name, as the game will call it (Parun.Play.Wording.player):
--- "You", else "Player 2" by its seat, whoever plays it (#9676).
+-- "You", else "Player 2" by its seat, whoever plays it.
 seatName :: Slot -> String
 seatName slot = case slot of
   MkMine -> "You"
