@@ -186,7 +186,7 @@ wholeGame s matchup guests = do
         let own = Ending.loggedFor g (Map.findWithDefault Ending.unseen g (pageSeen wire))
             (before, after) = Seq.splitAt (Seq.length own) (Ending.witnessed (endingOf g))
         Spec.assertEqWith s ("guest " <> show g <> " is told the log its page kept") before own
-        Spec.assertBool s (any (\entry -> case entry of Log.MkEvent _ _ -> True; Log.MkTurn {} -> False; Log.MkPregame -> False) after) ("guest " <> show g <> " is told what happened after its last request: " <> show after)
+        Spec.assertBool s (any (\entry -> case entry of Log.MkEvent _ _ -> True; Log.MkMana _ _ -> True; Log.MkTurn {} -> False; Log.MkPregame -> False) after) ("guest " <> show g <> " is told what happened after its last request: " <> show after)
     _ -> Spec.assertBool s False ("finished: " <> show (fmap fst outcome))
   let host = [pid | (pid, _) <- NonEmpty.toList matchup, pid `notElem` guests]
       askedOf which = Map.findWithDefault [] which (asked wire)

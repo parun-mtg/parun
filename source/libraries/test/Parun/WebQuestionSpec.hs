@@ -124,6 +124,7 @@ import qualified Parun.Types.WordFamily as WordFamily
 import qualified Parun.Types.Zone as Zone
 import qualified Parun.Web.Board as Board
 import qualified Parun.Web.Card as Card
+import qualified Parun.Web.Ending as Ending
 import qualified Parun.Web.Html as Html
 import qualified Parun.Web.Log as Log
 import qualified Parun.Web.Question as Question.Web
@@ -1168,8 +1169,16 @@ replaySpec s registry = Spec.describe s "WebQuestion" . Spec.describe s "replay"
         page = Html.toText (Replay.view frame)
         logged = Replay.logOf (fmap seen starts <> [seen at])
     Spec.assertEqWith s "the turns" [n | Log.MkTurn n _ <- Foldable.toList logged] [2, 3, 4]
-    Spec.assertEqWith s "the events" (Log.events logged) (fmap Text.pack ["Lavaborn Muse's ability triggers: \"At the beginning of each opponent's upkeep, if that player has two or fewer cards in hand, Lavaborn Muse deals 3 damage to that player.\"", "Lavaborn Muse deals 3 damage to you.", "You draw a card.", "Player 1 draws a card.", "You draw a card."])
+    Spec.assertEqWith s "the events" (Log.events S.bob logged) (fmap Text.pack ["Lavaborn Muse's ability triggers: \"At the beginning of each opponent's upkeep, if that player has two or fewer cards in hand, Lavaborn Muse deals 3 damage to that player.\"", "Lavaborn Muse deals 3 damage to you.", "You draw a card.", "Player 1 draws a card.", "You draw a card."])
     Spec.assertBool s (Text.isInfixOf (Text.pack "Turn 2 \x00b7 You") page) "turn 2 on the page"
+
+  Spec.it s "CR 605.1a the log tells the seat's own mana abilities, each tapped in a decision of its own, as one line" $ do
+    let named = "vernal-bloom-adds-an-extra-green-for-each-forest-tapped"
+    -- Entry 0 taps the Forest, entry 2 the Mountain.
+    views <- traverse (fmap (PlayerView.viewFor S.alice . Stop.state) . replayed s registry named) [1, 3]
+    let told = [Text.pack "You get mana from Forest and Mountain."]
+    Spec.assertEqWith s "the replay's log" (Log.events S.alice (Replay.logOf views)) told
+    Spec.assertEqWith s "the ending's log" (Log.events S.alice (Ending.loggedFor S.alice (Foldable.foldl' (flip Ending.see) Ending.unseen views))) told
 
   Spec.it s "CR 603.3 the log tells a trigger, what it says and its targets" $ do
     let named = "cavalry-drillmaster-gives-plus-two-and-first-strike-as-it-enters"
@@ -1178,7 +1187,7 @@ replaySpec s registry = Spec.describe s "WebQuestion" . Spec.describe s "replay"
     Spec.assertEqWith
       s
       "the events"
-      (Log.events (Replay.logOf views))
+      (Log.events S.alice (Replay.logOf views))
       ( fmap
           Text.pack
           [ "You cast Cavalry Drillmaster.",

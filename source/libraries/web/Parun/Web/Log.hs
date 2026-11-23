@@ -34,6 +34,8 @@ data Entry
     MkTurn Natural PlayerId.PlayerId
   | -- | Something happened; minor when the board already shows it.
     MkEvent Weight Text.Text
+  | -- | CR 605.1a: a run of one player's mana abilities, by their sources' names.
+    MkMana PlayerId.PlayerId [Text.Text]
   deriving (Eq, Show)
 
 data Weight
@@ -76,13 +78,26 @@ pregame view
       GameEvent.StepBegan {} -> True
       _ -> False
 
+-- | The log with entries read after it, a run of one player's mana
+-- abilities joined across the reads, as Wording.events joins it in one: the
+-- seat taps each land in a decision of its own, so each tap is read alone.
+appended :: Seq.Seq Entry -> [Entry] -> Seq.Seq Entry
+appended logged later = case (Seq.viewr logged, later) of
+  (earlier Seq.:> MkMana pid sources, MkMana pid' more : rest)
+    | pid == pid' -> earlier <> Seq.fromList (MkMana pid (sources <> more) : rest)
+  _ -> logged <> Seq.fromList later
+
 -- | The entries as Wording.events tells them, each run of minor or major
 -- ones told together so draws still group.
 told :: PlayerView.PlayerView -> [LoggedEvent.LoggedEvent] -> [Entry]
 told view logged =
-  let tell run = case run of
-        first : _ -> fmap (MkEvent (minor first)) (Wording.events (Just (PlayerView.viewer view)) view run)
+  let reader = Just (PlayerView.viewer view)
+      tell run = case run of
+        first : _ -> concatMap (entries (minor first)) (Wording.runs reader view run)
         [] -> []
+      entries weight run = case Wording.manaRun view run of
+        Just (pid, sources) -> [MkMana pid sources]
+        Nothing -> fmap (MkEvent weight) (Wording.sentences reader view run)
    in concatMap tell (List.groupBy (\a b -> minor a == minor b) logged)
 
 -- | Minor: a resolving spell's move off the stack, which the board shows as
@@ -99,6 +114,7 @@ sentence viewer entry = case entry of
   MkPregame -> Text.pack "Before the first turn"
   MkTurn n active -> Text.pack ("Turn " <> show n <> ": ") <> (if active == viewer then Text.pack "your turn" else Wording.player active <> Text.pack "'s turn")
   MkEvent _ t -> t
+  MkMana pid sources -> Wording.gotMana (Just viewer) pid sources
 
 -- | The entries less each heading with no event under it: a turn nothing
 -- has happened in yet, or one whose events a cut left out.
@@ -111,6 +127,7 @@ isTurn entry = case entry of
   MkPregame -> True
   MkTurn _ _ -> True
   MkEvent _ _ -> False
+  MkMana _ _ -> False
 
 -- | An entry as a list item; where `linked` names the objects the seat can
 -- read and what tapping one sends, each name in the entry becomes a link
@@ -119,7 +136,10 @@ item :: PlayerId.PlayerId -> Maybe (Map.Map Text.Text ObjectId.ObjectId, ObjectI
 item viewer linked fresh entry = case entry of
   MkPregame -> Element.el "li" ["turn"] [] [Element.text (sentence viewer entry)]
   MkTurn _ _ -> Element.el "li" ["turn"] [] [Element.text (sentence viewer entry)]
-  MkEvent w t -> Element.el "li" (["fresh" | fresh] <> ["minor" | w == MkMinor]) [] (maybe (Mana.rich t) (\(known, reading) -> linking known reading t) linked)
+  MkEvent w t -> said (w == MkMinor) t
+  MkMana _ _ -> said False (sentence viewer entry)
+  where
+    said isMinor t = Element.el "li" (["fresh" | fresh] <> ["minor" | isMinor]) [] (maybe (Mana.rich t) (\(known, reading) -> linking known reading t) linked)
 
 -- | Entries in the order given, each beside its place in the log, as a list
 -- per turn under that turn's heading ("Turn 5 · You"), a turn with no
@@ -135,6 +155,7 @@ grouped viewer linked lit entries =
         MkPregame -> [Element.el "h3" ["log-turn-heading"] [] [Element.text (sentence viewer e)]]
         MkTurn n active -> [Element.el "h3" ["log-turn-heading"] [] [Element.text (Text.pack ("Turn " <> show n <> " \x00b7 ") <> (if active == viewer then Text.pack "You" else Wording.player active))]]
         MkEvent _ _ -> []
+        MkMana _ _ -> []
       run items = case items of
         (_, i, first) : _ ->
           [ ( Text.pack (show i),
@@ -177,6 +198,6 @@ newestFirst entries =
         _ -> Seq.reverse turn
    in Foldable.fold (fmap ordered turns)
 
--- | The events among the entries, oldest first.
-events :: Seq.Seq Entry -> [Text.Text]
-events = Foldable.foldr (\entry rest -> case entry of MkEvent _ t -> t : rest; MkTurn _ _ -> rest; MkPregame -> rest) []
+-- | The events among the entries, oldest first, to the viewer.
+events :: PlayerId.PlayerId -> Seq.Seq Entry -> [Text.Text]
+events viewer = fmap (sentence viewer) . filter (not . isTurn) . Foldable.toList

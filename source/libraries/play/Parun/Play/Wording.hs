@@ -459,11 +459,15 @@ snapshots view =
 witnessed :: PlayerView.PlayerView -> [LoggedEvent.LoggedEvent]
 witnessed view = PlayerView.witnessedLastTurn view <> PlayerView.witnessed view
 
--- | Witnessed entries as sentences to a reader (objective), as `kept` keeps
--- them, a run of one player's draws, looks or mana abilities (those
--- paying for a spell, CR 601.2g) told as one.
+-- | Witnessed entries as sentences to a reader (objective), each of
+-- `runs` told as one.
 events :: Maybe PlayerId.PlayerId -> PlayerView.PlayerView -> [LoggedEvent.LoggedEvent] -> [Text.Text]
-events reader view = concatMap sentences . List.groupBy (\a b -> Maybe.isJust (runner a) && runner a == runner b) . kept . filter (Maybe.isJust . event reader view)
+events reader view = concatMap (sentences reader view) . runs reader view
+
+-- | Witnessed entries as `kept` keeps them, a run of one player's draws,
+-- looks or mana abilities (those paying for a spell, CR 601.2g) together.
+runs :: Maybe PlayerId.PlayerId -> PlayerView.PlayerView -> [LoggedEvent.LoggedEvent] -> [[LoggedEvent.LoggedEvent]]
+runs reader view = List.groupBy (\a b -> Maybe.isJust (runner a) && runner a == runner b) . kept . filter (Maybe.isJust . event reader view)
   where
     -- The player and the predicate a run of their entries shares.
     runner logged = case LoggedEvent.event logged of
@@ -471,18 +475,40 @@ events reader view = concatMap sentences . List.groupBy (\a b -> Maybe.isJust (r
       GameEvent.Looked l -> Just (Looked.player l, "looks at")
       GameEvent.AbilityActivated a | isManaAbility a -> Just (AbilityWasActivated.player a, "gets mana from")
       _ -> Nothing
-    sentences run = case run of
-      first : _ : _
-        | Just (pid, predicate) <- runner first ->
-            let what = case LoggedEvent.event first of
-                  GameEvent.Drew _ -> count (List.genericLength run) "card"
-                  _ -> listing (fmap object run)
-             in [acts reader pid predicate <> Text.pack " " <> what <> Text.pack "."]
-      _ -> Maybe.mapMaybe (event reader view) run
-    object logged = case LoggedEvent.event logged of
-      GameEvent.Looked l -> PromptOffer.snapshotName (Looked.characteristics l)
-      GameEvent.AbilityActivated a -> named view (AbilityWasActivated.source a)
-      _ -> Text.empty
+
+-- | One of `runs` as sentences to a reader: a run of draws, looks or mana
+-- abilities as one, anything else a sentence an entry.
+sentences :: Maybe PlayerId.PlayerId -> PlayerView.PlayerView -> [LoggedEvent.LoggedEvent] -> [Text.Text]
+sentences reader view run = case run of
+  _ | Just (pid, sources) <- manaRun view run -> [gotMana reader pid sources]
+  first : _ : _
+    | Just (pid, predicate, what) <- together first ->
+        [acts reader pid predicate <> Text.pack " " <> what <> Text.pack "."]
+  _ -> Maybe.mapMaybe (event reader view) run
+  where
+    together logged = case LoggedEvent.event logged of
+      GameEvent.Drew d -> Just (Drew.player d, "draws", count (List.genericLength run) "card")
+      GameEvent.Looked l -> Just (Looked.player l, "looks at", listing (Maybe.mapMaybe looked run))
+      _ -> Nothing
+    looked logged = case LoggedEvent.event logged of
+      GameEvent.Looked l -> Just (PromptOffer.snapshotName (Looked.characteristics l))
+      _ -> Nothing
+
+-- | A run of one player's mana abilities (CR 605.1a): the player and the
+-- names of the abilities' sources.
+manaRun :: PlayerView.PlayerView -> [LoggedEvent.LoggedEvent] -> Maybe (PlayerId.PlayerId, [Text.Text])
+manaRun view run = do
+  activations <- traverse activation run
+  pid : rest <- Just (fmap fst activations)
+  if all (== pid) rest then Just (pid, fmap snd activations) else Nothing
+  where
+    activation logged = case LoggedEvent.event logged of
+      GameEvent.AbilityActivated a | isManaAbility a -> Just (AbilityWasActivated.player a, named view (AbilityWasActivated.source a))
+      _ -> Nothing
+
+-- | A player getting mana from these sources (manaRun), to a reader.
+gotMana :: Maybe PlayerId.PlayerId -> PlayerId.PlayerId -> [Text.Text] -> Text.Text
+gotMana reader pid sources = acts reader pid "gets mana from" <> Text.pack " " <> listing sources <> Text.pack "."
 
 -- | The entries a log tells, less those another entry beside them already
 -- tells or no seat acts on: a search's looks at the cards it searches (CR

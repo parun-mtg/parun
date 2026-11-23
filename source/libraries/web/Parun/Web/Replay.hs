@@ -210,7 +210,7 @@ view frame =
 -- game's keeps it (Parun.Browser.Hotseat): each turn's entries under its
 -- heading, the turn before each view read from its last turn's.
 logOf :: [PlayerView.PlayerView] -> Seq.Seq Log.Entry
-logOf views = snd (List.foldl' (\(seen, logged) v -> let (moved, unread) = Log.unseen seen v in (moved, logged <> Seq.fromList unread)) (Map.empty, Seq.empty) views)
+logOf views = snd (List.foldl' (\(seen, logged) v -> let (moved, unread) = Log.unseen seen v in (moved, Log.appended logged unread)) (Map.empty, Seq.empty) views)
 
 -- | Every tile opens its sheet, and no seat may be tapped.
 readOnly :: Board.Marks Event
