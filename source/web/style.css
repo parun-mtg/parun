@@ -4451,9 +4451,14 @@ body:has(main.game, #app [data-settings], #app .splash, #app main.loading) #sett
   height: 20px;
 }
 
-/* A step's key, under its word rather than beside it. */
-.replay .step-buttons button::after {
+/* A step's key, under its word rather than beside it, at a size it can be
+   read at: the keycap's 0.75em of the step's 12px is too small. */
+#app .replay .step-buttons button::after {
   margin-left: 0;
+  min-width: 18px;
+  font-size: 12px;
+  line-height: 16px;
+  opacity: 0.85;
 }
 
 /* A step back: its icon mirrored. */
@@ -4511,6 +4516,7 @@ body:has(main.game, #app [data-settings], #app .splash, #app main.loading) #sett
 }
 
 .replay-description,
+.replay-outcome,
 .replay .position {
   color: var(--muted);
   font-size: 13px;
@@ -4571,24 +4577,20 @@ body:has(main.game, #app [data-settings], #app .splash, #app main.loading) #sett
 }
 
 /* Beside the table, the log yields to the controls and the recorded
-   question, down to its heading and a few lines. */
+   question, down to its heading and several lines; the card's place,
+   while no card is read, goes to the log too. */
 @media (min-width: 900px) {
   .replay .log-pane {
     flex: 1 1 0;
-    min-height: 120px;
+    min-height: 220px;
+  }
+
+  .replay .inspector.empty {
+    display: none;
   }
 }
 
-.replay pre.entry {
-  white-space: pre-wrap;
-  overflow-wrap: anywhere;
-  font-size: 0.8rem;
-  background: var(--raised);
-  border-radius: 6px;
-  padding: 0.4em 0.55em;
-}
-
-/* The entry in a line, the entry as written behind Details. */
+/* The entry in a line. */
 .replay .entry-line {
   font-weight: 600;
 }
@@ -4609,13 +4611,14 @@ body:has(main.game, #app [data-settings], #app .splash, #app main.loading) #sett
   font-size: 0.85rem;
 }
 
-.replay .entry-details > summary {
-  padding: 12px 0;
-  line-height: 20px;
-  color: var(--act-text);
-  font-size: 13px;
-  font-weight: 600;
-  cursor: pointer;
+/* The recorded question below the controls' sizes, so it reads whole: its
+   heading under the replay's title, its buttons shorter than live ones. */
+#app .replay .recorded h2 {
+  font-size: 15px;
+}
+
+#app .replay .recorded button {
+  min-height: 36px;
 }
 
 /* The replays screen (Parun.Web.Replay.picker), laid out as the Decks

@@ -1120,8 +1120,9 @@ playOnFrom shell source at = opened shell source $ \reg _ played scenario -> do
 -- if it is one, and its scenario, handed on once loaded, a message shown
 -- meanwhile; else why either did not load. A scenario is titled from its
 -- description and described by its rules citation (Web.Replay.titled); a
--- game finished here waits on no scenarios, and is described by how it
--- ended, after a note where another build played it (History.drift).
+-- game finished here waits on no scenarios, and is described by a note
+-- where another build played it (History.drift); how it ended waits for
+-- the replay's end (Replay.viewer).
 opened :: Shell -> Web.Replay.Source -> (Registry.Registry Identity.Identity -> Text.Text -> Maybe History.Game -> Scenario.Type.Scenario -> IO Next) -> IO Next
 opened shell source continue = do
   Browser.display (page shell) (message ["Loading the cards\x2026"])
@@ -1141,7 +1142,7 @@ opened shell source continue = do
         case (game, History.scenarioOf file) of
           (Nothing, _) -> notice shell [Text.pack "That game is no longer kept here."]
           (_, Left problem) -> notice shell [Text.pack "The game kept does not decode:", problem]
-          (Just g, Right scenario) -> continue reg (History.matchup g) (Just g) scenario {Scenario.Type.description = Text.unwords (Maybe.maybeToList (History.drift (build shell) g) <> History.said g)}
+          (Just g, Right scenario) -> continue reg (History.matchup g) (Just g) scenario {Scenario.Type.description = Maybe.fromMaybe Text.empty (History.drift (build shell) g)}
 
 -- | Why a game could not be played, until the player goes home.
 notice :: Shell -> [Text.Text] -> IO Next

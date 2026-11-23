@@ -1070,6 +1070,19 @@ subgameSpec s registry = Spec.describe s "WebQuestion" . Spec.it s "CR 730.1a a 
 -- 500.11) on the turn bar, and a card on an adventure in exile (CR 716.3d).
 replaySpec :: (Monad n) => Spec.Spec IO n -> Registry.Registry IO -> n ()
 replaySpec s registry = Spec.describe s "WebQuestion" . Spec.describe s "replay" $ do
+  Spec.it s "the log holds every turn before the position, as the live game's does" $ do
+    let named = "lavaborn-muse-burns-an-opponent-with-two-or-fewer-cards"
+    -- Entries 0 and 1 open turns 2 and 3; entry 3 is turn 4's.
+    starts <- traverse (replayed s registry named) [0, 1]
+    at <- replayed s registry named 3
+    let seen stop = PlayerView.viewFor S.bob (Stop.state stop)
+        frame = (frameAt at) {Replay.viewer = S.bob, Replay.board = Just (seen at), Replay.earlier = fmap seen starts}
+        page = Html.toText (Replay.view frame)
+        logged = Replay.logOf (fmap seen starts <> [seen at])
+    Spec.assertEqWith s "the turns" [n | Log.MkTurn n _ <- Foldable.toList logged] [2, 3, 4]
+    Spec.assertEqWith s "the events" (Log.events logged) (fmap Text.pack ["Lavaborn Muse deals 3 damage to you.", "You draw a card.", "Player 1 draws a card.", "You draw a card."])
+    Spec.assertBool s (Text.isInfixOf (Text.pack "Turn 2 \x00b7 You") page) "turn 2 on the page"
+
   Spec.it s "CR 730.1a a replayed subgame position is marked as one" $ do
     let named = "game/cr-730-1b-730-3-gameplay-alice-casts-a-subgame-spell-bob-decks-bob-loses-3"
     before <- replayed s registry named 0
@@ -1356,10 +1369,11 @@ frameAt stop =
       Replay.turns = [],
       Replay.playing = False,
       Replay.board = Just (boardOf stop),
+      Replay.earlier = [],
+      Replay.outcome = Text.empty,
       Replay.depth = case stop of
         Stop.MkBefore _ _ asked -> Protocol.depthOf asked
         Stop.MkEnded _ -> 0,
-      Replay.entry = Nothing,
       Replay.entryLine = Nothing,
       Replay.question = Nothing,
       Replay.failure = Nothing,

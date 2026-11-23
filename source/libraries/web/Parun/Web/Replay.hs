@@ -148,13 +148,17 @@ data Frame = MkFrame
     playing :: Bool,
     -- | The table as the viewer sees it; Nothing where the run failed first.
     board :: Maybe PlayerView.PlayerView,
+    -- | The table as the viewer saw it at each earlier position a turn
+    -- begins, oldest first: what the log holds before the board's turn
+    -- (logOf).
+    earlier :: [PlayerView.PlayerView],
+    -- | How the game ended, shown only at the end, so it does not spoil the
+    -- replay; empty for a scenario.
+    outcome :: Text.Text,
     -- | CR 730.1a: how many games the board's game is nested inside, as
     -- Request.depth counts them.
     depth :: Natural,
-    -- | The entry the run takes next, as the scenario writes it, and its
-    -- moment; Nothing at the end.
-    entry :: Maybe Text.Text,
-    -- | That entry in a line (lineOf).
+    -- | The entry the run takes next in a line (lineOf); Nothing at the end.
     entryLine :: Maybe Text.Text,
     -- | The question the entry answers or is checked at, as its seat is sent it.
     question :: Maybe Request.Request,
@@ -171,12 +175,18 @@ data Frame = MkFrame
 view :: Frame -> Html.Html Event
 view frame =
   let asked = question frame >>= \r -> if Question.seat (Request.question r) == viewer frame then Just r {Request.view = board frame} else Nothing
-      logged = foldMap (Seq.fromList . snd . Log.unseen Map.empty) (board frame)
+      logged = logOf (earlier frame <> Maybe.maybeToList (board frame))
    in Element.el "main" (["game", "replay"] <> ["playing" | playing frame && position frame < positions frame]) [] $
         foldMap (\b -> [Board.turnBar [] (Web.Question.subgameChip (depth frame) <> [Bar.settingsButton Icon.MkMenu "Menu" Nothing Nothing]) b]) (board frame)
           <> [Element.el "div" ["play-area"] [] (foldMap (\b -> [Board.view readOnly (written frame) b]) (board frame))]
           <> foldMap (Board.hand readOnly) (board frame)
           <> Web.Question.side (Text.pack "Replay") (controls frame <> stop frame asked) (reading frame) (sheet frame) (fmap (fmap MkTable) (Web.Question.logView (board frame) (viewer frame) Web.Question.blank {Web.Question.logged = logged}))
+
+-- | The log through the last of these views, oldest first, as the live
+-- game's keeps it (Parun.Browser.Hotseat): each turn's entries under its
+-- heading, the turn before each view read from its last turn's.
+logOf :: [PlayerView.PlayerView] -> Seq.Seq Log.Entry
+logOf views = snd (List.foldl' (\(seen, logged) v -> let (moved, unread) = Log.unseen seen v in (moved, logged <> Seq.fromList unread)) (Map.empty, Seq.empty) views)
 
 -- | Every tile opens its sheet, and no seat may be tapped.
 readOnly :: Board.Marks Event
@@ -184,14 +194,15 @@ readOnly = Board.MkMarks (\o -> Card.MkCue [] (MkTable (Web.Question.MkRead (Obj
 
 -- | A scenario's title, and what of its description is left beneath it:
 -- a leading rules citation ("CR 702.9b: flying blocks" as ("Flying
--- blocks", "CR 702.9b")); with no description, its file name in words.
+-- blocks", "CR 702.9b")), less the suite's "gameplay" tag; with no
+-- description, its file name in words.
 titled :: Text.Text -> Text.Text -> (Text.Text, Text.Text)
 titled file said = case Text.breakOn (Text.pack ": ") said of
   (rules, rest)
     | Text.isPrefixOf (Text.pack "CR ") rules,
       let after = Text.strip (Text.drop 2 rest),
       not (Text.null after) ->
-        (capitalised after, rules)
+        (capitalised after, Maybe.fromMaybe rules (Text.stripSuffix (Text.pack " gameplay") rules))
   _
     | Text.null (Text.strip said) -> (worded file, Text.empty)
     | otherwise -> (said, Text.empty)
@@ -216,7 +227,7 @@ controls frame =
   let at = position frame
       count = positions frame
       starts = Set.fromList (turns frame)
-      earlier = Maybe.fromMaybe 0 (Maybe.listToMaybe (reverse (filter (< at) (turns frame))))
+      turnBack = Maybe.fromMaybe 0 (Maybe.listToMaybe (reverse (filter (< at) (turns frame))))
       later = List.find (> at) (turns frame)
       -- Punctuation keys, since page.js takes L for the log.
       step label caption icon back hint key target enabled =
@@ -236,14 +247,17 @@ controls frame =
           "div"
           ["replay-head"]
           []
-          [ Element.el "h2" ["replay-title"] [] (Mana.rich (name frame)),
-            Element.el "p" ["replay-description"] [] (Mana.rich (description frame))
-          ],
+          ( [ Element.el "h2" ["replay-title"] [] (Mana.rich (name frame)),
+              Element.el "p" ["replay-description"] [] (Mana.rich (description frame))
+            ]
+              -- Hidden until the end, so it does not spoil the replay.
+              <> [Element.el "p" ["replay-outcome"] [] [Element.text (outcome frame)] | at >= count, not (Text.null (outcome frame))]
+          ),
         Element.el
           "div"
           ["scrubber"]
           []
-          [ Element.el "p" ["position"] [] [Element.string (if at < count then "Before entry " <> show (at + 1) <> " of " <> show count else "After all " <> show count <> " entries")],
+          [ Element.el "p" ["position"] [] [Element.string ("Step " <> show at <> " of " <> show count)],
             Element.el
               "input"
               []
@@ -260,9 +274,9 @@ controls frame =
               ["step-buttons"]
               []
               [ step "First position" "Start" Icon.MkSkip True "To the start of the replay" "<" 0 (at > 0),
-                step "Previous turn" "Turn" Icon.MkTurn True (if earlier == 0 then "To the start of the first turn" else if Set.member at starts then "To the start of the turn before" else "To the start of this turn") "[" earlier (at > 0),
-                step "Previous position" "Step" Icon.MkStep True "Back one entry" "," (Natural.minusSaturating at 1) (at > 0),
-                step "Next position" "Step" Icon.MkStep False "On one entry" "." (min count (at + 1)) (at < count),
+                step "Previous turn" "Turn" Icon.MkTurn True (if turnBack == 0 then "To the start of the first turn" else if Set.member at starts then "To the start of the turn before" else "To the start of this turn") "[" turnBack (at > 0),
+                step "Previous position" "Step" Icon.MkStep True "Back one step" "," (Natural.minusSaturating at 1) (at > 0),
+                step "Next position" "Step" Icon.MkStep False "On one step" "." (min count (at + 1)) (at < count),
                 step "Next turn" "Turn" Icon.MkTurn False (if Maybe.isJust later then "To the start of the next turn" else "To the end: no turn begins after this one") "]" (Maybe.fromMaybe count later) (at < count),
                 step "Last position" "End" Icon.MkSkip False "To the end of the replay" ">" count (at < count)
               ],
@@ -273,7 +287,7 @@ controls frame =
                   ( [ Element.attr "type" (Text.pack "button"),
                       Element.attr "aria-label" (Text.pack (if on then "Pause" else "Play")),
                       Element.attr "aria-keyshortcuts" (Text.pack "P"),
-                      Element.attr "title" (Text.pack (if on then "Stop playing (P)" else "Step on by itself, an entry a second (P)")),
+                      Element.attr "title" (Text.pack (if on then "Stop playing (P)" else "Step on by itself, a step a second (P)")),
                       Element.on "click" (MkPlay (not on))
                     ]
                       <> [Element.attr "disabled" Text.empty | not on, at >= count]
@@ -298,16 +312,13 @@ controls frame =
           ]
       ]
 
--- | What the run does at the position: the entry it takes, in a line and
--- as written behind Details, then the question it answers there (drawn
--- dead for the seat asked, since a replay only watches), or why it stopped.
+-- | What the run does at the position: the entry it takes, in a line, then
+-- the question it answers there (drawn dead for the seat asked, since a
+-- replay only watches), or why it stopped.
 stop :: Frame -> Maybe Request.Request -> [Html.Html Event]
 stop frame asked =
   [Element.el "p" ["problem"] [Element.attr "role" (Text.pack "alert")] [Element.text problem] | problem <- Maybe.maybeToList (failure frame)]
     <> [Element.el "p" ["entry-line"] [] [Element.text l] | l <- Maybe.maybeToList (entryLine frame)]
-    <> [ Element.el "details" ["entry-details"] [] [Element.el "summary" [] [] [Element.string "Details"], Element.el "pre" ["entry"] [] [Element.text e]]
-       | e <- Maybe.maybeToList (entry frame)
-       ]
     <> case (question frame, asked) of
       (_, Just r) ->
         [ Element.el
@@ -337,9 +348,10 @@ turnStarts timed =
 -- | A timeline entry in a line, its seat named as `names` names it by its
 -- label, else by the label, saying what the entry does as the question
 -- asked there (`asked`, Nothing for chance) words it:
--- "Turn 2 · Declare attackers · alice declares attackers".
-lineOf :: Map.Map Text.Text Text.Text -> Maybe Request.Request -> Timed.Timed -> Text.Text
-lineOf names asked timed =
+-- "Turn 2 · Declare attackers · alice declares attackers"; "Before the
+-- first turn" for its moment where the game has not `begun` (CR 103.8).
+lineOf :: Map.Map Text.Text Text.Text -> Bool -> Maybe Request.Request -> Timed.Timed -> Text.Text
+lineOf names begun asked timed =
   let at = Timed.when timed
       label = Label.unwrap (When.player at)
       seat = Map.findWithDefault label label names
@@ -358,7 +370,7 @@ lineOf names asked timed =
           Move.PlayLand _ -> by (Text.pack "play a land")
           Move.Activate _ -> by (Text.pack "activate an ability")
           Move.Answer answer -> case asked of
-            Nothing -> Text.pack "chance: " <> Wording.spaced (Answer.prompt answer)
+            Nothing -> chanceOf (Answer.prompt answer)
             Just r -> by (Maybe.fromMaybe (verbOf (Answer.prompt answer)) (actionOf r (Answer.with answer)))
           Move.Attack _ -> asKind
           Move.Block _ -> asKind
@@ -373,7 +385,18 @@ lineOf names asked timed =
           Move.ChooseTargets _ -> asKind
           Move.OrderTriggers _ -> asKind
           Move.Take _ -> asKind
-   in Text.intercalate (Text.pack " \x00b7 ") [Text.pack ("Turn " <> show (When.turn at)), Web.Question.capitalized (Text.pack (Codec.Phase.flatName (When.phase at))), did]
+      moment = if begun then [Text.pack ("Turn " <> show (When.turn at)), Web.Question.capitalized (Text.pack (Codec.Phase.flatName (When.phase at)))] else [Text.pack "Before the first turn"]
+   in Text.intercalate (Text.pack " \x00b7 ") (moment <> [did])
+
+-- | What chance decides, by the random prompt's kind (Parun.Play.Chance):
+-- "Shuffle" as "a library is shuffled".
+chanceOf :: Text.Text -> Text.Text
+chanceOf kind = Text.pack $ case Text.unpack kind of
+  "Shuffle" -> "a library is shuffled"
+  "RollDie" -> "a die is rolled"
+  "FlipCoin" -> "a coin is flipped"
+  "RandomFirstPlayer" -> "who goes first is chosen at random"
+  _ -> "something is chosen at random"
 
 -- | The action a ChooseAction answer takes, by its index into the offer:
 -- "pass", "cast Shock".
