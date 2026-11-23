@@ -26,15 +26,28 @@ manifestPath = Paths.getDataFileName "scenario-manifest.json"
 
 -- | Each theme's scenarios, a name beneath the root less its extension.
 parseManifest :: ByteString.ByteString -> Either Text.Text (Map.Map Text.Text [Text.Text])
-parseManifest bytes = do
-  contents <- either (\err -> Left (Text.pack ("not valid UTF-8: " <> show err))) Right (Encoding.decodeUtf8' bytes)
-  Common.parse contents >>= Codec.decode (Common.textMap id Right (Common.list Common.text))
+parseManifest = decodeWith (Common.textMap id Right (Common.list Common.text))
+
+-- | scenario-titles.json, each scenario's description by its name, which
+-- script/build-web.sh writes beside the manifest so the replay lists every
+-- scenario by its title without decoding each.
+titlesPath :: IO FilePath
+titlesPath = Paths.getDataFileName "scenario-titles.json"
+
+-- | Each scenario's description, by a name beneath the root less its
+-- extension.
+parseTitles :: ByteString.ByteString -> Either Text.Text (Map.Map Text.Text Text.Text)
+parseTitles = decodeWith (Common.textMap id Right Common.text)
 
 -- | Decoded as UTF-8 explicitly, for Parun.Registry.parseCard's reason.
 parse :: ByteString.ByteString -> Either Text.Text Scenario.Type.Scenario
-parse bytes = do
+parse = decodeWith Scenario.codec
+
+-- | A file's bytes as UTF-8 JSON, decoded by the codec.
+decodeWith :: Codec.Codec a -> ByteString.ByteString -> Either Text.Text a
+decodeWith codec bytes = do
   contents <- either (\err -> Left (Text.pack ("not valid UTF-8: " <> show err))) Right (Encoding.decodeUtf8' bytes)
-  Common.parse contents >>= Codec.decode Scenario.codec
+  Common.parse contents >>= Codec.decode codec
 
 -- | Every .json file beneath a root, ascending by path, read no further: a
 -- caller decodes each with 'loadFile'.

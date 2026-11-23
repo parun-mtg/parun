@@ -9,6 +9,7 @@ import Control.Applicative ((<|>))
 import qualified Control.Exception as Exception
 import qualified Control.Monad as Monad
 import qualified Data.ByteString as ByteString
+import qualified Data.Either as Either
 import qualified Data.Foldable as Foldable
 import qualified Data.Functor.Identity as Identity
 import qualified Data.IORef as IORef
@@ -52,14 +53,16 @@ import qualified Parun.Web.Screen as Screen
 import qualified Text.Read as Read
 
 -- | The scenarios' names, the manifest's themes (or why it does not
--- decode), and the description of each scenario the manifest names, once
--- the scenarios have arrived.
+-- decode), and each scenario's description from the titles
+-- (Parun.Scenario.Load.titlesPath), none where they are missing or do not
+-- decode, once the scenarios have arrived.
 listing :: IO (Either Text.Text (Map.Map Text.Text [Text.Text]), Map.Map Text.Text Text.Text, [Text.Text])
 listing = do
   root <- Load.defaultRoot
   paths <- Load.listRoot root
   themes <- Load.manifestPath >>= fmap Load.parseManifest . ByteString.readFile
-  described <- fmap (Map.fromList . Maybe.catMaybes) . traverse (\n -> fmap (fmap (\s -> (n, Scenario.Type.description s)) . either (const Nothing) Just) (decode n)) $ foldMap concat (either (const Nothing) (Just . Map.elems) themes)
+  titles <- Load.titlesPath >>= Exception.try . ByteString.readFile
+  let described = either (const Map.empty) (Either.fromRight Map.empty . Load.parseTitles) (titles :: Either Exception.IOException ByteString.ByteString)
   pure (themes, described, fmap (nameOf root) paths)
 
 -- | A path's name beneath the root, less its extension.

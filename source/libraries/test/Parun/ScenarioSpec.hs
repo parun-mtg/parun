@@ -891,6 +891,12 @@ loadSpec s = Spec.describe s "Parun.Scenario.Load" $ do
       pure (fmap (drop (length dir)) listed)
     Spec.assertEqWith s "both .json files, the nested one included" found ["/b.json", "/sub/a.json"]
 
+  -- script/build-web.sh writes them; the replay lists each scenario by its
+  -- description (Parun.Browser.Replay.listing).
+  Spec.it s "the titles decode as each scenario's description by its name" $ do
+    let written = Text.pack "{\"combat/goblin-piker-attacks\":\"CR 506.4: Goblin Piker attacks\",\"shock-kills\":\"Shock's 2 damage\"}"
+    Spec.assertEqWith s "the titles" (Load.parseTitles (Encoding.encodeUtf8 written)) (Right (Map.fromList [(Text.pack "combat/goblin-piker-attacks", Text.pack "CR 506.4: Goblin Piker attacks"), (Text.pack "shock-kills", Text.pack "Shock's 2 damage")]))
+
   -- The web client's replay lists it first (Parun.Web.Replay.picker).
   Spec.it s "the replay's manifest names only scenarios that exist" $ do
     root <- Load.defaultRoot
