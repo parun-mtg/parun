@@ -21,6 +21,8 @@ data Route
   = MkHome
   | -- | The lobby.
     MkPlay
+  | -- | Another browser's game joined, the host's offer in the page's fragment.
+    MkJoin
   | -- | The Decks screen, this deck selected if any.
     MkDecks (Maybe Text.Text)
   | -- | The builder, on this deck if any.
@@ -46,6 +48,7 @@ fields route =
    in case route of
         MkHome -> []
         MkPlay -> [(Text.pack "play", Text.empty)]
+        MkJoin -> [(Text.pack "join", Text.empty)]
         MkDecks deck -> named "decks" deck
         MkBuild deck -> named "build" deck
         MkReplays -> [(Text.pack "replays", Text.empty)]
@@ -86,6 +89,7 @@ parse query =
             MkReplays <$ field "replays",
             named "game" >>= fmap (replay . Web.Replay.MkPlayed),
             MkPlay <$ field "play",
+            MkJoin <$ field "join",
             MkDecks <$> named "decks",
             MkBuild <$> named "build"
           ]
