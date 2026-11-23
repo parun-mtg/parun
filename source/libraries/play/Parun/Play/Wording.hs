@@ -484,7 +484,7 @@ sentences reader view run = case run of
   first : _ : _
     | Just (pid, predicate, what) <- together first ->
         [acts reader pid predicate <> Text.pack " " <> what <> Text.pack "."]
-  _ -> Maybe.mapMaybe (event reader view) run
+  _ -> concatMap (\logged -> foldMap (: announced reader view logged) (event reader view logged)) run
   where
     together logged = case LoggedEvent.event logged of
       GameEvent.Drew d -> Just (Drew.player d, "draws", count (List.genericLength run) "card")
@@ -493,6 +493,23 @@ sentences reader view run = case run of
     looked logged = case LoggedEvent.event logged of
       GameEvent.Looked l -> Just (PromptOffer.snapshotName (Looked.characteristics l))
       _ -> Nothing
+
+-- | A cast spell's (CR 601.2c) or activated ability's (CR 602.2b) targets, to
+-- a reader, a sentence each in the order announced: told after its cast or
+-- activation, logged once the spell becomes cast (CR 601.2i).
+announced :: Maybe PlayerId.PlayerId -> PlayerView.PlayerView -> LoggedEvent.LoggedEvent -> [Text.Text]
+announced reader view logged = case LoggedEvent.event logged of
+  GameEvent.SpellCast c -> toldOf (SpellWasCast.spell c) (PromptOffer.snapshotName (SpellWasCast.characteristics c))
+  GameEvent.AbilityActivated a
+    | Just ability <- AbilityWasActivated.ability a -> toldOf ability (named view (AbilityWasActivated.source a) <> Text.pack "'s ability")
+  _ -> []
+  where
+    toldOf oid what =
+      [ Text.unwords [what, Text.pack "targets", recipientTo reader view (BecameTarget.targeted b)] <> Text.pack "."
+      | GameEvent.BecameTarget b <- fmap LoggedEvent.event (witnessed view),
+        BecameTarget.source b == oid,
+        BecameTarget.kind b /= StackObjectKind.TriggeredAbility
+      ]
 
 -- | A run of one player's mana abilities (CR 605.1a): the player and the
 -- names of the abilities' sources.
@@ -616,7 +633,7 @@ event reader view logged = case LoggedEvent.event logged of
   GameEvent.TriggeredAbilityFinished _ -> Nothing
   -- CR 603.3d: a triggered ability's targets, chosen as it is put on the
   -- stack, which no other entry tells; a spell's and an activated ability's
-  -- are left to the board.
+  -- are told after its cast or activation (announced).
   GameEvent.BecameTarget b
     | BecameTarget.kind b == StackObjectKind.TriggeredAbility -> said [triggeredBy (BecameTarget.source b), Text.pack "targets", recipient (BecameTarget.targeted b)]
     | otherwise -> Nothing
@@ -708,9 +725,14 @@ event reader view logged = case LoggedEvent.event logged of
       AttackTarget.OfPlayer pid -> objective reader pid
       AttackTarget.OfPlaneswalker oid -> name oid
       AttackTarget.OfBattle oid -> name oid
-    recipient r = case r of
-      Recipient.ToPlayer pid -> objective reader pid
-      _ -> recipientName view r
+    recipient = recipientTo reader view
+
+-- | A player or object a damage event, an attachment or a target names, to
+-- a reader, as objective says.
+recipientTo :: Maybe PlayerId.PlayerId -> PlayerView.PlayerView -> Recipient.Recipient -> Text.Text
+recipientTo reader view r = case r of
+  Recipient.ToPlayer pid -> objective reader pid
+  _ -> recipientName view r
 
 -- | Whether an activation is of a mana ability (CR 605.1a).
 isManaAbility :: AbilityWasActivated.AbilityWasActivated -> Bool

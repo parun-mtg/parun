@@ -1197,6 +1197,16 @@ replaySpec s registry = Spec.describe s "WebQuestion" . Spec.describe s "replay"
           ]
       )
 
+  Spec.it s "CR 601.2c / 602.2b the log tells a spell's and an activated ability's targets after the cast or activation" $ do
+    let logOf named = do
+          -- Entry 1 follows the cast or activation, before it resolves.
+          views <- traverse (fmap (PlayerView.viewFor S.alice . Stop.state) . replayed s registry named) [1]
+          pure (Log.events S.alice (Replay.logOf views))
+    shocked <- logOf "cr-120-3-everlasting-torment-deals-damage-to-a-creature-as-minus-one-counters"
+    Spec.assertEqWith s "the spell" shocked (fmap Text.pack ["You cast Shock.", "Shock targets Hill Giant."])
+    fired <- logOf "orcish-artillery-hits-its-target-and-its-controller"
+    Spec.assertEqWith s "the ability" fired (fmap Text.pack ["You activate Orcish Artillery's ability.", "Orcish Artillery's ability targets Player 2."])
+
   Spec.it s "CR 730.1a a replayed subgame position is marked as one" $ do
     let named = "game/cr-730-1b-730-3-gameplay-alice-casts-a-subgame-spell-bob-decks-bob-loses-3"
     before <- replayed s registry named 0
