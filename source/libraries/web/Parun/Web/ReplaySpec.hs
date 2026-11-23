@@ -1,6 +1,8 @@
 module Parun.Web.ReplaySpec where
 
 import qualified Data.Map.Strict as Map
+import qualified Data.Maybe as Maybe
+import qualified Data.Sequence as Seq
 import qualified Data.Text as Text
 import Numeric.Natural (Natural)
 import qualified Parun.Spec as Spec
@@ -31,9 +33,27 @@ spec s = Spec.describe s "Parun.Web.Replay" $ do
       Spec.assertEq s (fmap (\label -> (off label 0, off label 3)) ["First position", "Previous turn", "Previous position", "Next position", "Next turn", "Last position"]) [(True, False), (True, False), (True, False), (False, True), (False, True), (False, True)]
 
     Spec.it s "steps a turn at a time, to the turn's first position or the end" $ do
-      let tapped label at = let page = Replay.view frame {Replay.position = at} in Html.labelled (Text.pack "button") (Text.pack label) page >>= \path -> Html.handler (Text.pack "click") path page
-      Spec.assertEqWith s "next turn" (fmap (tapped "\x23E9") [0, 1, 2]) (fmap (Just . Replay.MkGo) [2, 2, 3])
-      Spec.assertEqWith s "previous turn" (fmap (tapped "\x23EA") [1, 2, 3]) (fmap (Just . Replay.MkGo) [0, 0, 2])
+      let tapped label at = let page = Replay.view frame {Replay.position = at} in step label page >>= \path -> Html.handler (Text.pack "click") path page
+      Spec.assertEqWith s "next turn" (fmap (tapped "Next turn") [0, 1, 2]) (fmap (Just . Replay.MkGo) [2, 2, 3])
+      Spec.assertEqWith s "previous turn" (fmap (tapped "Previous turn") [1, 2, 3]) (fmap (Just . Replay.MkGo) [0, 0, 2])
+
+    Spec.it s "tells its steps apart: an icon over a word, and a tooltip saying where each goes" $ do
+      let page at = Replay.view frame {Replay.position = at, Replay.turns = [0, 2, 4], Replay.positions = 6}
+          shown label at = Maybe.fromMaybe (Text.empty, Nothing) $ do
+            path <- step label (page at)
+            node <- Html.at path (page at)
+            case node of
+              Html.MkElement n -> pure (Html.content node, Html.propertyOf (Text.pack "title") n)
+              Html.MkText _ -> Nothing
+          caption label = fst (shown label 3)
+          tooltip label at = Maybe.fromMaybe Text.empty (snd (shown label at))
+      Spec.assertEqWith s "captions" (fmap caption ["First position", "Previous turn", "Previous position", "Next position", "Next turn", "Last position"]) (fmap Text.pack ["Start", "Turn", "Step", "Step", "Turn", "End"])
+      Spec.assertEqWith s "the start" (tooltip "First position" 3) (Text.pack "To the start of the replay (<)")
+      Spec.assertEqWith s "this turn" (tooltip "Previous turn" 3) (Text.pack "To the start of this turn ([)")
+      Spec.assertEqWith s "the turn before" (tooltip "Previous turn" 4) (Text.pack "To the start of the turn before ([)")
+      Spec.assertEqWith s "the first turn" (tooltip "Previous turn" 1) (Text.pack "To the start of the first turn ([)")
+      Spec.assertEqWith s "no later turn" (tooltip "Next turn" 5) (Text.pack "To the end: no turn begins after this one (])")
+      Spec.assertBool s (not (Text.any (`elem` "\x23EE\x23EA\x25C0\x25B6\x23E9\x23ED") (Html.toText (page 3)))) "no media glyphs, which some browsers draw as emoji"
 
     Spec.it s "says where the run stands, and why it stopped short" $ do
       let page = Html.toText . Replay.view $ frame {Replay.position = 1, Replay.failure = Just (Text.pack "the entry was never reached")}
@@ -43,7 +63,8 @@ spec s = Spec.describe s "Parun.Web.Replay" $ do
     Spec.it s "sends a step's position and a seat when tapped" $ do
       let page = Replay.view frame {Replay.position = 1}
           tapped name label = Html.labelled (Text.pack name) (Text.pack label) page >>= \path -> Html.handler (Text.pack "click") path page
-      Spec.assertEq s (tapped "button" "\x25B6", tapped "button" "\x25C0", tapped "button" "bob (Player 2)") (Just (Replay.MkGo 2), Just (Replay.MkGo 0), Just (Replay.MkSeat (PlayerId.MkPlayerId 1)))
+          stepped label = step label page >>= \path -> Html.handler (Text.pack "click") path page
+      Spec.assertEq s (stepped "Next position", stepped "Previous position", tapped "button" "bob (Player 2)") (Just (Replay.MkGo 2), Just (Replay.MkGo 0), Just (Replay.MkSeat (PlayerId.MkPlayerId 1)))
 
     Spec.it s "names each seat to view as by its name and the name the table gives it" $ do
       let page = Html.toText (Replay.view frame)
@@ -169,6 +190,12 @@ spec s = Spec.describe s "Parun.Web.Replay" $ do
           tapped label = Html.labelled (Text.pack "button") (Text.pack label) view >>= \path -> Html.handler (Text.pack "click") path view
       Spec.assertEqWith s "back" (tapped "Back to the replay") (Just Replay.MkResumeReplay)
       Spec.assertEqWith s "again" (tapped "Play on again") (Just Replay.MkBranch)
+
+-- | The path to the step button a screen reader names this.
+step :: String -> Html.Html msg -> Maybe (Seq.Seq Natural)
+step label = Html.search $ \node -> case node of
+  Html.MkElement n -> Html.tag n == Text.pack "button" && Html.spoken node == Text.pack label
+  Html.MkText _ -> False
 
 -- | A question of this seat's of this kind and offer.
 request :: Natural -> String -> Reply.Reply -> Request.Request

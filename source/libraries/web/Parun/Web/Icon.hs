@@ -23,6 +23,12 @@ data Icon
     MkMenu
   | -- | A bot's seat: a robot's head.
     MkBot
+  | -- | A replay's end, mirrored its start: a triangle against a bar.
+    MkSkip
+  | -- | A replay's next turn, mirrored its previous: two triangles.
+    MkTurn
+  | -- | A replay's next entry, mirrored its previous: a triangle.
+    MkStep
   deriving (Bounded, Enum, Eq, Ord, Show)
 
 -- | The id of an icon's @<symbol>@ in the sprite.
@@ -35,6 +41,9 @@ iconId i = Text.pack . ("ui-" <>) $ case i of
   MkGear -> "gear"
   MkMenu -> "menu"
   MkBot -> "bot"
+  MkSkip -> "skip"
+  MkTurn -> "turn"
+  MkStep -> "step"
 
 -- | An icon, hidden from assistive technology: what it means is said by
 -- the element holding it.

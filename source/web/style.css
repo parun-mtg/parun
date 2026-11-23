@@ -1003,10 +1003,6 @@ main.home .recent-games,
   border-top: 1px solid var(--line);
 }
 
-main.scenarios .shelves {
-  align-self: flex-start;
-}
-
 @media (max-width: 560px) {
   main.home .recent-games,
   .your-games {
@@ -4350,23 +4346,60 @@ body:has(main.game, #app [data-settings], #app .splash, #app main.loading) #sett
   flex-shrink: 0;
 }
 
-/* The steps in a row, the scrubber the whole width beneath them. */
+/* Where the run stands over the scrubber, then the steps beneath it, in a
+   ruled box: the three back, a gap, the three on, each an icon over the
+   word saying how far it goes. */
 .replay .scrubber {
   display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 0.4em;
-}
-
-#app .replay .scrubber button {
-  flex: 1;
-  min-height: 44px;
+  flex-direction: column;
+  gap: 2px;
+  padding: 10px 12px 12px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
 }
 
 .replay .scrubber input[type="range"] {
-  order: 1;
-  flex-basis: 100%;
+  width: 100%;
   min-width: 0;
+}
+
+.replay .step-buttons {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr)) 6px repeat(3, minmax(0, 1fr));
+  gap: 6px;
+}
+
+.replay .step-buttons > :nth-child(4) {
+  grid-column: 5;
+}
+
+#app .replay .step-buttons button {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+  min-width: 0;
+  min-height: 52px;
+  padding: 4px 2px;
+  font-size: 12px;
+  line-height: 16px;
+  text-align: center;
+}
+
+.replay .step-buttons .icon {
+  width: 20px;
+  height: 20px;
+}
+
+/* A step's key, under its word rather than beside it. */
+.replay .step-buttons button::after {
+  margin-left: 0;
+}
+
+/* A step back: its icon mirrored. */
+.icon.back {
+  transform: scaleX(-1);
 }
 
 /* The scrubber drawn from the roles, not the browser's blue: a control-grey
@@ -4377,6 +4410,9 @@ body:has(main.game, #app [data-settings], #app .splash, #app main.loading) #sett
   -webkit-appearance: none;
   height: 44px;
   margin: 0;
+  padding: 0;
+  border: 0;
+  border-radius: 0;
   background: transparent;
   accent-color: var(--act);
   cursor: pointer;
@@ -4418,13 +4454,44 @@ body:has(main.game, #app [data-settings], #app .splash, #app main.loading) #sett
 .replay-description,
 .replay .position {
   color: var(--muted);
-  font-size: 0.85rem;
+  font-size: 13px;
+  line-height: 18px;
+}
+
+.replay .position {
+  font-variant-numeric: tabular-nums;
+}
+
+/* The title over its description, which wraps a long rules citation. */
+.replay-head {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  overflow-wrap: anywhere;
 }
 
 /* The scenario's title at a card's heading size, so the recorded question
    beneath stays the biggest line. */
 #app .replay .replay-title {
   font-size: 17px;
+}
+
+/* Playing on, the act's, beside the way back to the list. */
+.replay-actions {
+  display: grid;
+  grid-template-columns: minmax(0, 2fr) minmax(max-content, 1fr);
+  gap: 8px;
+}
+
+#app .replay .replay-actions button {
+  min-height: 44px;
+  text-align: center;
+}
+
+#app .replay .replay-actions button.branch {
+  background: var(--act-soft);
+  border-color: var(--act-line);
+  color: var(--act-text);
 }
 
 .replay-description:empty {
@@ -4492,38 +4559,76 @@ body:has(main.game, #app [data-settings], #app .splash, #app main.loading) #sett
   cursor: pointer;
 }
 
+/* The replays screen (Parun.Web.Replay.picker), laid out as the Decks
+   screen is: its heading, the lists as tabs, then the list shown, the
+   scenarios as ruled panels of buttons under their themes. */
 main.scenarios {
-  justify-content: flex-start;
-  align-items: stretch;
+  width: 100%;
   max-width: 980px;
   margin: 0 auto;
-  text-align: left;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  padding: 24px max(16px, env(safe-area-inset-right)) calc(24px + env(safe-area-inset-bottom)) max(16px, env(safe-area-inset-left));
+}
+
+main.scenarios .browser-head h1 {
+  flex-grow: 1;
+  font-size: 30px;
+  font-weight: 700;
+  line-height: 1.15;
+}
+
+main.scenarios > .count {
+  align-self: flex-start;
+}
+
+main.scenarios .search {
+  width: 100%;
+}
+
+main.scenarios .theme {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+main.scenarios h2 {
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--muted);
 }
 
 .scenario-list {
   list-style: none;
-  padding: 0;
-  display: flex;
-  flex-direction: column;
-  gap: 0.25em;
-  font-size: 0.9rem;
+  margin: 0;
+  padding: 4px 8px;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 16px;
   overflow-wrap: anywhere;
 }
 
-.scenario-list a {
-  color: var(--act-text);
+.scenario-list li + li {
+  border-top: 1px solid var(--line);
+}
+
+#app .scenario-list button {
+  width: 100%;
+  min-height: 44px;
+  padding: 10px 8px;
+  border: 0;
+  border-radius: 8px;
+  background: transparent;
+  font-size: 15px;
+  font-weight: 500;
 }
 
 /* Playing on from a position (Parun.Browser.Replay.branch). */
 .replay a.branch {
   justify-content: center;
-}
-
-main.scenarios h2 {
-  font-size: 0.8rem;
-  text-transform: uppercase;
-  letter-spacing: 0.06em;
-  color: var(--muted);
 }
 
 /* ---------- Deck builder (Parun.Web.Builder) ---------- */
