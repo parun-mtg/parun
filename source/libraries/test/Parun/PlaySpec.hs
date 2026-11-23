@@ -154,7 +154,7 @@ spec s registry = Spec.describe s "Play" $ do
     Spec.assertEqWith
       s
       "logged for Player 1"
-      (Log.events (Seq.fromList (snd (Log.unseen Map.empty (PlayerView.viewFor S.alice gs)))))
+      (Log.events S.alice (Seq.fromList (snd (Log.unseen Map.empty (PlayerView.viewFor S.alice gs)))))
       [ Text.pack "Your library is shuffled.",
         Text.pack "Player 2's library is shuffled.",
         Text.pack "You draw 7 cards.",

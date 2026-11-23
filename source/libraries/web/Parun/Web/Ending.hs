@@ -93,7 +93,7 @@ see :: PlayerView.PlayerView -> Seen -> Seen
 see shown seen =
   let (moved, unread) = Log.unseen (marks seen) shown
       now = [(SeatView.player seat, SeatView.life seat) | seat <- PlayerView.seats shown]
-   in MkSeen moved (Map.insertWith (flip (<>)) (PlayerView.viewer shown) (Seq.fromList unread) (logged seen)) (sampled (PlayerView.turn shown) now (sampledLives seen))
+   in MkSeen moved (Map.alter (Just . flip Log.appended unread . Maybe.fromMaybe Seq.empty) (PlayerView.viewer shown) (logged seen)) (sampled (PlayerView.turn shown) now (sampledLives seen))
 
 -- | The entries a seat has read so far, oldest first.
 loggedFor :: PlayerId.PlayerId -> Seen -> Seq.Seq Log.Entry

@@ -31,7 +31,7 @@ spec s = Spec.describe s "Parun.Web.Link" $ do
               Link.MkAsk request,
               Link.MkDeciding (PlayerId.MkPlayerId 2),
               Link.MkAnswer (R.Object [(Text.pack "action", R.Text (Text.pack "Pass"))]),
-              Link.MkEnd (Ending.MkEnding Ending.MkLost [Text.pack "Player 1 wins."] (Text.pack "{}\n") (Seq.fromList [Log.MkTurn 1 (PlayerId.MkPlayerId 0), Log.MkEvent Log.MkMajor (Text.pack "Player 1 casts Grizzly Bears."), Log.MkEvent Log.MkMinor (Text.pack "Grizzly Bears enters.")]) (PlayerId.MkPlayerId 1) [(1, [(PlayerId.MkPlayerId 0, 20), (PlayerId.MkPlayerId 1, 20)]), (4, [(PlayerId.MkPlayerId 0, 20), (PlayerId.MkPlayerId 1, -2)])]),
+              Link.MkEnd (Ending.MkEnding Ending.MkLost [Text.pack "Player 1 wins."] (Text.pack "{}\n") (Seq.fromList [Log.MkTurn 1 (PlayerId.MkPlayerId 0), Log.MkMana (PlayerId.MkPlayerId 0) [Text.pack "Forest", Text.pack "Forest"], Log.MkEvent Log.MkMajor (Text.pack "Player 1 casts Grizzly Bears."), Log.MkEvent Log.MkMinor (Text.pack "Grizzly Bears enters.")]) (PlayerId.MkPlayerId 1) [(1, [(PlayerId.MkPlayerId 0, 20), (PlayerId.MkPlayerId 1, 20)]), (4, [(PlayerId.MkPlayerId 0, 20), (PlayerId.MkPlayerId 1, -2)])]),
               Link.MkEnd (Ending.MkEnding Ending.MkWon [] Text.empty Seq.empty (PlayerId.MkPlayerId 2) []),
               Link.MkEnd (Ending.MkEnding Ending.MkDrawn [] Text.empty Seq.empty (PlayerId.MkPlayerId 1) []),
               Link.MkEnd (Ending.MkEnding Ending.MkStopped [Text.pack "The game stopped: a player's connection closed."] Text.empty Seq.empty (PlayerId.MkPlayerId 1) [])
