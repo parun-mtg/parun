@@ -421,7 +421,7 @@ search registry budget weights prior watched recalled aim = Answerer.MkAnswerer 
             Just choices <- NonEmpty.nonEmpty (blocks candidates attacked) -> do
               deal <- dealing pid
               best Engine.resumeTurnBasedAction pid deal choices Blocked
-        Prompt.ChooseManaSource _ pid cost sources
+        Prompt.ChooseManaSource _ pid cost sources _
           | Just source <- paymentSource pid cost sources (Asked.game asked) -> pure (Just source)
         Prompt.ChooseExtraManaSource {} -> pure Nothing
         _ -> Answerer.unwrap (Game.bot registry) asked

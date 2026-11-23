@@ -2574,7 +2574,7 @@ attemptTurnUp :: Int -> OptionalDecision.OptionalDecision -> ObjectId.ObjectId -
 attemptTurnUp taps decision permanent gs =
   let answerer :: Prompt.Prompt r -> State.State (Int, Int) r
       answerer p = case p of
-        Prompt.ChooseManaSource _ player _ candidates
+        Prompt.ChooseManaSource _ player _ candidates _
           | player == S.alice -> do
               (taken, questions) <- State.get
               if taken < taps

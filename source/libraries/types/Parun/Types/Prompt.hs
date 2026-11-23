@@ -295,8 +295,11 @@ data Prompt r where
   -- does not yet cover the cost, once per source; nothing declines (CR
   -- 118.3c). Never elided; the list is collapsed to one source per
   -- interchangeability class (Parun.Engine.Interchangeable). The ManaCost is
-  -- the cost being paid, before the pool is spent on it.
-  ChooseManaSource :: Decider.Decider -> PlayerId.PlayerId -> ManaCost.ManaCost -> NonEmpty.NonEmpty ObjectId.ObjectId -> Prompt (Maybe ObjectId.ObjectId)
+  -- the cost being paid, before the pool is spent on it. The last ObjectId is
+  -- the spell or ability a decline leaves unpaid, so CR 734.1 reverses it: its
+  -- own CR 601.2h / 602.2b payment, with no substitute or assisting player left
+  -- to pay (CR 702.51b, 702.132a); Nothing at any other.
+  ChooseManaSource :: Decider.Decider -> PlayerId.PlayerId -> ManaCost.ManaCost -> NonEmpty.NonEmpty ObjectId.ObjectId -> Maybe ObjectId.ObjectId -> Prompt (Maybe ObjectId.ObjectId)
   -- | CR 605.3a: which further source to activate once the pool already
   -- covers the cost, or Nothing to pay; never elided, floating being
   -- observable, and collapsed as ChooseManaSource is.

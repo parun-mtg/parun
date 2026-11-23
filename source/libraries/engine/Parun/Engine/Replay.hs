@@ -968,7 +968,7 @@ defaultAnswer p = case p of
   -- exactly the way "least eventful" above does not promise against.
   -- Parun.ManaSpec's nine-land case pins both halves -- the taps are these
   -- answers, and an answerer that can see the board taps two.
-  Prompt.ChooseManaSource _ _ _ candidates -> Just (NonEmpty.head candidates)
+  Prompt.ChooseManaSource _ _ _ candidates _ -> Just (NonEmpty.head candidates)
   -- The cost is already covered, so floating more is the eventful answer and
   -- closing the window is the quiet one.
   Prompt.ChooseExtraManaSource {} -> Nothing

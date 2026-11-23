@@ -4828,7 +4828,11 @@ castProposed perform baseSpending pid oid sid printedFace castFrom preparedFor k
                           let assisting c = do
                                 assisted <- maybe (pure c) (\(h, _) -> Cost.payAssist h (PaymentSubject.Casting sid chosenNarrowing) sid c) assist
                                 Cost.announceSubstitutions Cost.manaSubstitutions pid sid assisted
-                          (payment, substitutedBindings) <- Cost.paySubstituting (const False) perform before (foldMap (pure . snd) assist) PaymentMoment.OutsideResolution (PaymentSubject.Casting sid chosenNarrowing) (Just sid) chosenSpending pid sid assisting paidCost
+                              -- CR 734.1: a decline in the window rewinds the
+                              -- cast only where neither could still pay
+                              -- (Prompt.ChooseManaSource).
+                              follows g = Maybe.isJust assist || Cost.substitutesOffered Cost.manaSubstitutions pid sid paidCost g
+                          (payment, substitutedBindings) <- Cost.paySubstituting (const False) perform before (foldMap (pure . snd) assist) PaymentMoment.OutsideResolution (PaymentSubject.Casting sid chosenNarrowing) (Just sid) chosenSpending pid sid assisting follows paidCost
                           case payment of
                             -- CR 601.2h: the payment failed, so the cast is illegal
                             -- and CR 734.1 reverses it -- which is what takes the

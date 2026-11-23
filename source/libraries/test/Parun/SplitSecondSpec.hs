@@ -355,7 +355,7 @@ shadowBoard s registry withShadow = do
 -- Parun.ManaSpec's prefersSource is the same answerer.
 paysWith :: ObjectId.ObjectId -> Prompt.Prompt r -> r
 paysWith wanted p = case p of
-  Prompt.ChooseManaSource _ _ _ candidates ->
+  Prompt.ChooseManaSource _ _ _ candidates _ ->
     Just (if elem wanted (NonEmpty.toList candidates) then wanted else NonEmpty.head candidates)
   _ -> S.identityAnswer p
 

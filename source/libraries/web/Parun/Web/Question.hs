@@ -930,7 +930,11 @@ form request picked = case Text.unpack (Question.kind question) of
           : [primary MkAuto (Text.pack "Pay automatically") | Maybe.isJust (auto request)]
             -- Sources the seat can't tell apart are one button, for the first.
             <> [button (MkAnswer source) (label <> many count) | (source : _, label, count) <- collapsed (const True) [(source, Offer.listedName shown source <> makes yields) | (source, yields) <- sources]]
-            <> [(if kind == "ChooseManaSource" then button else primary) (MkAnswer R.Null) $ Text.pack (if kind == "ChooseManaSource" then "Stop paying" else "Pay now")]
+            -- CR 734.1: where stopping takes the cast back, it is its Cancel.
+            <> [ if kind /= "ChooseManaSource"
+                   then primary (MkAnswer R.Null) (Text.pack "Pay now")
+                   else maybe (button (MkAnswer R.Null) (Text.pack "Stop paying")) cancel (Question.withdraw question)
+               ]
   kind
     | kind `elem` ["ChooseOptional", "ReverseManaAbilities"],
       Just shown <- Request.view request ->

@@ -725,6 +725,13 @@ spec s registry = Spec.describe s "Protocol" $ do
         (_, g2) = S.addPermanent bears S.bob g1
         (card, board) = S.addHandCard mastery S.alice g2
     assertWithdrawn s "ChooseCost" card lands board
+  Spec.it s "CR 734.1 a seat withdraws a spell at its mana payment" $ do
+    gs <- started s registry
+    shock <- S.printingOf s registry "Shock"
+    mountain <- S.printingOf s registry "Mountain"
+    let (land, g1) = S.addPermanent mountain S.alice gs
+        (card, board) = S.addHandCard shock S.alice g1
+    assertWithdrawn s "ChooseManaSource" card [land] board
   Spec.it s "CR 734.1 a seat withdraws a spell at its X" $ do
     gs <- started s registry
     fireball <- S.printingOf s registry "Fireball"
@@ -778,6 +785,14 @@ spec s registry = Spec.describe s "Protocol" $ do
         asked step = fmap Question.withdraw (Protocol.questionOf announcing (Prompt.ChooseCost (Decider.MkDecider S.alice) S.alice card [costOf 7, costOf 6] Seq.empty step))
     Spec.assertEqWith s "a convoke's choice" (asked CostStep.Elsewhere) (Just Nothing)
     Spec.assertEqWith s "where the announcement's is offered one" (asked CostStep.Announcement) (Just (Just (R.Number 2)))
+  Spec.it s "CR 734.1 no withdrawal is offered at a mana payment something else could still pay" $ do
+    gs <- started s registry
+    wurm <- S.printingOf s registry "Siege Wurm"
+    let (card, g1) = S.addHandCard wurm S.alice gs
+        announcing = g1 {GameState.scratch = (GameState.scratch g1) {Scratch.keptFaceDown = Just Map.empty}}
+        asked withdrawn = fmap Question.withdraw (Protocol.questionOf announcing (Prompt.ChooseManaSource (Decider.MkDecider S.alice) S.alice (ManaCost.MkManaCost [ManaSymbol.Generic 7]) (card NonEmpty.:| []) withdrawn))
+    Spec.assertEqWith s "a convoke's or a nested payment's" (asked Nothing) (Just Nothing)
+    Spec.assertEqWith s "where the cast's own is offered one" (asked (Just card)) (Just (Just R.Null))
   Spec.it s "CR 734.1 no withdrawal is offered outside an announcement" $ do
     gs <- started s registry
     let slot = SlotName.MkSlotName (Text.pack "target")

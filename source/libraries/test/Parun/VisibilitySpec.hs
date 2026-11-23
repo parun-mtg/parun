@@ -353,7 +353,7 @@ specialActionTopSpec s registry =
             Prompt.ChooseAction _ pid actions | pid == S.alice -> do
               Monad.when shuffled (note "priority" g)
               pure (Maybe.fromMaybe Action.Type.Pass (List.find (\action -> case action of Action.Type.TurnFaceUp oid _ -> oid == walker; _ -> False) actions))
-            Prompt.ChooseManaSource _ pid _ sources | pid == S.alice -> do
+            Prompt.ChooseManaSource _ pid _ sources _ | pid == S.alice -> do
               note ("payment " <> stage) g
               pure (Just (if not shuffled && elem altar sources then altar else NonEmpty.head (NonEmpty.fromList (filter (/= altar) (NonEmpty.toList sources)))))
             Prompt.ChooseExtraManaSource {} -> pure Nothing

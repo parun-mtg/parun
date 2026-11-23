@@ -750,6 +750,21 @@ spec s registry = Spec.describe s "WebQuestion" $ do
     -- The Mountain's tile on the battlefield pays too.
     Spec.assertEqWith s "tile" (Html.search isCard page >>= \path -> Html.handler (Text.pack "click") path page) (Just (Question.Web.MkAnswer (PromptOffer.object Protocol.namer land)))
 
+  Spec.it s "CR 734.1 a cast's own mana payment offers Cancel in place of Stop paying" $ do
+    shock <- S.printingOf s registry "Shock"
+    mountain <- S.printingOf s registry "Mountain"
+    let (land, g1) = S.addPermanent mountain S.alice (Setup.emptyGame S.bothPlayers)
+        (card, g2) = S.addHandCard shock S.alice g1
+        announcing = g2 {GameState.scratch = (GameState.scratch g2) {Scratch.keptFaceDown = Just Map.empty}}
+        prompt = Prompt.ChooseManaSource (Decider.MkDecider S.alice) S.alice (ManaCost.MkManaCost [ManaSymbol.OfType (ManaType.Colored Color.Red)]) (land NonEmpty.:| [])
+        clicked label request = let view = Question.Web.view request Question.Web.blank in Html.labelled (Text.pack "button") (Text.pack label) view >>= \path -> Html.handler (Text.pack "click") path view
+        withdrawing = requestFor announcing (prompt (Just card))
+        nested = requestFor announcing (prompt Nothing)
+    Spec.assertEqWith s "Cancel stops paying" (clicked "Cancel" withdrawing) (Just (Question.Web.MkAnswer R.Null))
+    Spec.assertEqWith s "and is the only way to" (clicked "Stop paying" withdrawing) Nothing
+    Spec.assertEqWith s "elsewhere it is Stop paying" (clicked "Stop paying" nested) (Just (Question.Web.MkAnswer R.Null))
+    Spec.assertEqWith s "with no Cancel" (clicked "Cancel" nested) Nothing
+
   Spec.it s "a bottom pick toggles cards and answers with exactly the count picked" $ do
     let request = asking (Text.pack "Bottom") (R.Object [(Text.pack "from", R.Array [R.Text (Text.pack "$1"), R.Text (Text.pack "$2")]), (Text.pack "count", R.Number 1)])
         after = picking request

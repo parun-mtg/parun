@@ -94,6 +94,20 @@ defaulted key d c get =
         pure ([Value.pair key (Schema.withDefault (Codec.encode c d) s)], [])
     }
 
+-- | A field written exactly when its value is Just, and absent from the
+-- schema's @required@. Unlike 'defaulted' over 'Common.maybe', a Just whose
+-- payload encodes as @null@ survives the round trip (Parun.Codec.Question's
+-- withdrawal).
+optional :: String -> Codec.Codec a -> (o -> Maybe a) -> Fields o (Maybe a)
+optional key c get =
+  MkFields
+    { encode = foldMap (\x -> [Value.pair key (Codec.encode c x)]) . get,
+      decode = Common.defaultedField key Nothing (fmap Just . Codec.decode c),
+      schema = do
+        s <- Codec.schema c
+        pure ([Value.pair key s], [])
+    }
+
 -- | The fields of one record written into another's object, through the getter
 -- that reaches it: Parun.Codec.Casting spells a Choices' keys beside its own.
 -- Keys must still be distinct across the whole object.

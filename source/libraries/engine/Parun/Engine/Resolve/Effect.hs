@@ -2043,7 +2043,7 @@ activateWhileRolling runSubgame pid oid ability = Common.withEnteringHeldOff . E
       spendable = ActivationRestriction.spendable oid (ActivatedAbility.restrictions ability) before
   (announced, _) <- Cost.announce (PaymentSubject.Activating oid AbilityKind.NonManaAbility (ActivatedAbility.name ability) stamp spendable) ManaSpending.AsProduced pid oid (Cost.substitutedManas (Cost.statedSubstitutions (Cost.Type.components totalled) Map.empty pid oid before) (Cost.totalManas gathered)) totalled
   adjustments <- Cost.announceReductions pid oid before announced gathered
-  (payment, _) <- Cost.paySubstituting (const False) (performManaAbility runSubgame) before [] PaymentMoment.OutsideResolution (PaymentSubject.Activating oid AbilityKind.NonManaAbility (ActivatedAbility.name ability) stamp spendable) Nothing ManaSpending.AsProduced pid oid (Cost.announceSubstitutions Cost.statedSubstitutions pid oid) (Cost.totalWith adjustments announced)
+  (payment, _) <- Cost.paySubstituting (const False) (performManaAbility runSubgame) before [] PaymentMoment.OutsideResolution (PaymentSubject.Activating oid AbilityKind.NonManaAbility (ActivatedAbility.name ability) stamp spendable) Nothing ManaSpending.AsProduced pid oid (Cost.announceSubstitutions Cost.statedSubstitutions pid oid) (Cost.substitutesOffered Cost.statedSubstitutions pid oid (Cost.totalWith adjustments announced)) (Cost.totalWith adjustments announced)
   case payment of
     -- CR 734.1: the payment reversed the activation back to `before` itself.
     Payment.Unpaid -> pure False

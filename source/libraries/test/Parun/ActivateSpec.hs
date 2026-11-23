@@ -2313,7 +2313,7 @@ variableActivationCostSpec s registry = Spec.describe s "VariableActivationCost"
       let (hubId, g2) = S.addPermanent hub S.alice g1
           naming :: Prompt.Prompt r -> r
           naming p = case p of
-            Prompt.ChooseManaSource _ _ _ candidates ->
+            Prompt.ChooseManaSource _ _ _ candidates _ ->
               let wanted c = (c == hubId) == viaHub
                in Just (Maybe.fromMaybe (NonEmpty.head candidates) (List.find wanted (NonEmpty.toList candidates)))
             _ -> answerXMakingBlue 2 S.bob p
@@ -4538,7 +4538,7 @@ scholarAnswer p = case p of
     [] -> case filter isCast options of
       c : _ -> c
       [] -> A.Pass
-  Prompt.ChooseManaSource _ _ _ candidates -> Just (NonEmpty.head candidates)
+  Prompt.ChooseManaSource _ _ _ candidates _ -> Just (NonEmpty.head candidates)
   _ -> S.identityAnswer p
 
 isCast :: A.Action -> Bool
@@ -4606,7 +4606,7 @@ onlyOnceEachTurnAnswer p = case p of
   Prompt.ChooseAction _ _ options -> case filter isOnlyOnceEachTurn options of
     a : _ -> a
     [] -> A.Pass
-  Prompt.ChooseManaSource _ _ _ candidates -> Just (NonEmpty.head candidates)
+  Prompt.ChooseManaSource _ _ _ candidates _ -> Just (NonEmpty.head candidates)
   _ -> S.identityAnswer p
 
 printedActivationOnlyOnceEachTurnSpec :: (Monad m) => Spec.Spec m n -> Registry.Registry m -> n ()

@@ -46,7 +46,7 @@ ventureAbility printing = case concatMap Face.activatedAbilities (Card.faces (Pr
 -- S.identityAnswer -- which answers Prompt.ChooseRoom with the FIRST arrow.
 paying :: Prompt.Prompt r -> r
 paying p = case p of
-  Prompt.ChooseManaSource _ _ _ candidates -> Just (NonEmpty.head candidates)
+  Prompt.ChooseManaSource _ _ _ candidates _ -> Just (NonEmpty.head candidates)
   Prompt.ChooseTargets _ _ _ sets -> fmap (\(n, cands) -> Set.fromList (take (Natural.toIntSaturating n) (Set.toList cands))) sets
   _ -> S.identityAnswer p
 
