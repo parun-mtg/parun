@@ -869,14 +869,38 @@ spec s registry = Spec.describe s "WebQuestion" $ do
     Spec.assertEqWith s "none" (Question.Web.step request Set.empty Question.Web.MkSubmit Text.empty) (Question.Web.MkReplied (R.Array []))
     Spec.assertBool s (case Question.Web.step request (picking request [Question.Web.MkToggle 0 0, Question.Web.MkToggle 0 1]) Question.Web.MkSubmit Text.empty of Question.Web.MkRefused _ -> True; _ -> False) "too many"
 
-  Spec.it s "CR 701.22a a scry places each card on top or bottom in the order tapped, sent as the bottom pile then the top" $ do
+  Spec.it s "CR 701.22a a scry places each card on top or bottom in the order chosen, sent as the bottom pile then the top" $ do
     let one = R.Text (Text.pack "$1")
         two = R.Text (Text.pack "$2")
         request = asking (Text.pack "ChooseScry") (R.Object [(Text.pack "from", R.Array [one, two])])
     Spec.assertEqWith s "placed" (Question.Web.step request (picking request [Question.Web.MkToggle 1 0, Question.Web.MkToggle 0 1]) Question.Web.MkSubmit Text.empty) (Question.Web.MkReplied (R.Array [R.Array [one], R.Array [two]]))
     Spec.assertEqWith s "the last waits for Done" (picking request [Question.Web.MkToggle 1 0, Question.Web.MkToggle 0 1]) (Set.fromList [(1, 0), (2, 1)])
     Spec.assertEqWith s "a placed card is taken out" (picking request [Question.Web.MkToggle 1 0, Question.Web.MkToggle 0 1, Question.Web.MkToggle 1 0]) (Set.singleton (0, 1))
-    Spec.assertEqWith s "the untapped stay on top below those placed there" (Question.Web.step request (Set.singleton (1, 1)) Question.Web.MkSubmit Text.empty) (Question.Web.MkReplied (R.Array [R.Array [two], R.Array [one]]))
+    Spec.assertEqWith s "a card put in the other pile moves there, last" (picking request [Question.Web.MkToggle 1 0, Question.Web.MkToggle 0 1, Question.Web.MkToggle 0 0]) (Set.fromList [(0, 1), (2, 0)])
+    Spec.assertEqWith s "the unplaced stay on top below those placed there" (Question.Web.step request (Set.singleton (1, 1)) Question.Web.MkSubmit Text.empty) (Question.Web.MkReplied (R.Array [R.Array [two], R.Array [one]]))
+
+  Spec.it s "CR 701.22a a scry asks Top or Bottom of each card in a row of its own, the choice pressed and numbered in its pile" $ do
+    bears <- S.printingOf s registry "Grizzly Bears"
+    mountain <- S.printingOf s registry "Mountain"
+    let (one, g1) = S.addObjectIn Zone.Library bears S.alice (Setup.emptyGame S.bothPlayers)
+        (two, g2) = S.addObjectIn Zone.Library mountain S.alice g1
+        look oid = Event.recordEvent (GameEvent.Looked (Looked.MkLooked S.alice oid (Projection.project oid g2) (Set.singleton S.alice)))
+        request = requestFor (look two (look one g2)) (Prompt.ChooseScry (Decider.MkDecider S.alice) S.alice [one, two])
+        page picked = Question.Web.view request Question.Web.blank {Question.Web.selected = picked}
+        -- The button labelled so in the row named so.
+        side picked card label = do
+          row <- Html.search (\html -> case html of Html.MkElement node -> Html.propertyOf (Text.pack "aria-label") node == Just (Text.pack card); _ -> False) (page picked)
+          within <- Html.at row (page picked) >>= Html.labelled (Text.pack "button") (Text.pack label)
+          Html.handler (Text.pack "click") (row <> within) (page picked)
+        pressed picked card label = Text.pack ("aria-pressed=\"true\">" <> label <> "</button>") `Text.isInfixOf` foldMap Html.toText (Html.search (\html -> case html of Html.MkElement node -> Html.propertyOf (Text.pack "aria-label") node == Just (Text.pack card); _ -> False) (page picked) >>= (`Html.at` page picked))
+    Spec.assertBool s (Text.pack "Scry 2: put each card on the top or the bottom of your library." `Text.isInfixOf` Html.toText (page Set.empty)) "the heading"
+    Spec.assertBool s (not (Text.pack "tap" `Text.isInfixOf` Text.toLower (Html.content (Html.element (Text.pack "div") [] (Question.Web.form request Set.empty))))) "no tap"
+    Spec.assertEqWith s "top" (side Set.empty "Mountain" "Top") (Just (Question.Web.MkToggle 0 1))
+    Spec.assertEqWith s "bottom" (side Set.empty "Grizzly Bears" "Bottom") (Just (Question.Web.MkToggle 1 0))
+    Spec.assertEqWith s "nothing placed keeps all on top" (Html.labelled (Text.pack "button") (Text.pack "Keep all on top") (page Set.empty) >>= \path -> Html.handler (Text.pack "click") path (page Set.empty)) (Just Question.Web.MkSubmit)
+    let both = picking request [Question.Web.MkToggle 0 1, Question.Web.MkToggle 0 0]
+    Spec.assertEqWith s "numbered in its pile" (fmap (uncurry (pressed both)) [("Mountain", "Top 1"), ("Grizzly Bears", "Top 2")]) [True, True]
+    Spec.assertEqWith s "the other side pressed, renumbered" (fmap (uncurry (pressed (picking request [Question.Web.MkToggle 0 1, Question.Web.MkToggle 0 0, Question.Web.MkToggle 1 1]))) [("Mountain", "Bottom 1"), ("Grizzly Bears", "Top 1")]) [True, True]
 
   Spec.it s "an offer listing an order is ordered by tapping, an offer listing options is one tap, and a range is a number" $ do
     let ordered = asking (Text.pack "OrderTimestamps") (R.Object [(Text.pack "order", R.Array [R.Text (Text.pack "a"), R.Text (Text.pack "b")])])
