@@ -179,6 +179,7 @@ spec s = Spec.describe s "Parun.Web.Lobby" $ do
       Spec.assertEqWith s "the bot before the invite unseated, the invite moving up on its link" (length (Lobby.theirs botGone), fmap Lobby.linkNumber (Lobby.invites botGone), Lobby.locals botGone, Lobby.seatOfLink 0 botGone) (2, Map.singleton 0 0, Map.singleton 1 Link.MkYours, Just 0)
       Spec.assertEqWith s "the seat you play too" (Lobby.locals once, Map.keys (Lobby.invites once)) (Map.empty, [1])
       Spec.assertEqWith s "the invite" (Lobby.theirs twice, Map.keys (Lobby.invites twice), Lobby.seatOfLink 0 twice) ([Nothing], [], Nothing)
+      Spec.assertEqWith s "an invite added after takes a link number no invite took" (fmap Lobby.linkNumber (Lobby.invites (Lobby.update (Lobby.MkAdd Lobby.MkInvited) Text.empty twice))) (Map.singleton 1 1)
 
   Spec.describe s "pairing" $ do
     Spec.it s "offers a Limited deck the decks naming no format that a Limited game takes" $ do
