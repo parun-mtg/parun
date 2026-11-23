@@ -884,7 +884,7 @@ play shell seats invited here resuming = do
           kept = if keeping then Browser.keepReply . Link.savedReply else const (pure ())
       -- Each guest is told whose decision the game waits on (Link.telling).
       told <- IORef.newIORef Map.empty
-      let decides seat = IORef.readIORef told >>= Link.telling (Map.fromList [(seatOf i, channelOf i) | i <- Map.keys invited]) seat >>= IORef.writeIORef told
+      let decides seat gs depth = IORef.readIORef told >>= Link.telling (Map.fromList [(seatOf i, channelOf i) | i <- Map.keys invited]) seat gs depth >>= IORef.writeIORef told
       parsed <- foldMap LazyMap.elems . cards <$> IORef.readIORef (loaded shell)
       ended <- Hotseat.game (page shell) reg parsed (tableOf shell) (level shell) bots (fmap (Bifunctor.first Text.unpack) seats) remotes (Map.mapKeys seatOf here) seed (foldMap Link.replies resuming) kept decides tellAll (leaveFor shell chosen [DeckBrowser.label (DeckBrowser.titleIn seat) name | seat@(name, _) <- NonEmpty.toList seats])
       Monad.when keeping Browser.forgetGame

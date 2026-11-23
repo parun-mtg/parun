@@ -15,6 +15,7 @@ import qualified Data.Sequence as Seq
 import qualified Data.Set as Set
 import qualified Data.Text as Text
 import qualified Parun.BotSpec as BotSpec
+import qualified Parun.Engine.PlayerView as PlayerView.Engine
 import qualified Parun.Play.Command as Command
 import qualified Parun.Play.Game as Game
 import qualified Parun.Play.Protocol as Protocol
@@ -30,6 +31,7 @@ import qualified Parun.Types.GameState as GameState
 import qualified Parun.Types.Limits as Limits
 import qualified Parun.Types.Persona as Persona
 import qualified Parun.Types.PlayOptions as PlayOptions
+import qualified Parun.Types.Player as Player
 import qualified Parun.Types.PlayerId as PlayerId
 import qualified Parun.Types.PlayerView as PlayerView
 import qualified Parun.Types.Playout as Playout
@@ -92,6 +94,17 @@ spec s registry = Spec.describe s "RemoteSeat" $ do
     matchup <- BotSpec.bears s registry
     wholeGame s (matchup <> pure (S.carol, snd (NonEmpty.head matchup))) [S.bob, S.carol]
 
+  -- A seat deciding again on a board that moved on, which the whole games
+  -- above never reach, every seat always passing (#9704).
+  Spec.it s "a guest is told of a seat deciding again once the board its seat sees changes, and not while it stays the same" $ do
+    let hurt = S.threePlayerGame {GameState.players = Map.adjust (\p -> p {Player.life = 17}) S.alice (GameState.players S.threePlayerGame)}
+        channels :: Map.Map PlayerId.PlayerId (Link.Channel (State.State [(PlayerId.PlayerId, Link.Message)]))
+        channels = Map.fromList [(g, Link.MkChannel (\message -> State.modify' (<> [(g, message)])) (pure Nothing)) | g <- [S.bob, S.carol]]
+        decisions = [(S.alice, S.threePlayerGame), (S.alice, S.threePlayerGame), (S.alice, hurt), (S.bob, hurt)]
+        sent = State.execState (Monad.foldM (\last' (seat, gs) -> Link.telling channels seat gs 0 last') Map.empty decisions) []
+        told g seat gs = (g, Link.MkDeciding seat ((PlayerView.Engine.viewFor g gs) {PlayerView.priority = Nothing}) 0)
+    Spec.assertEq s sent [told S.bob S.alice S.threePlayerGame, told S.carol S.alice S.threePlayerGame, told S.bob S.alice hurt, told S.carol S.alice hurt, told S.carol S.bob hurt]
+
   Spec.it s "a whole game with a player on the host's screen: the lobby's options seat no bot there, and the screen is handed between the seats" $ do
     (outcome, inOrder, options) <- onOneScreen s registry
     let seats = fmap (Question.seat . Request.question) inOrder
@@ -112,7 +125,7 @@ spec s registry = Spec.describe s "RemoteSeat" $ do
 
   Spec.it s "a guest whose connection drops mid-game rejoins, is sent the match-up, its seat and the request again, and the game finishes" $ do
     matchup <- BotSpec.bears s registry
-    (outcome, wire) <- State.runStateT (hosted [S.bob] matchup) (MkWire Map.empty Map.empty Map.empty (Map.singleton S.bob 40) 0 [] Map.empty Map.empty [] Map.empty Map.empty)
+    (outcome, wire) <- State.runStateT (hosted [S.bob] matchup) (MkWire Map.empty Map.empty Map.empty (Map.singleton S.bob 40) 0 [] Map.empty Map.empty [] Map.empty Map.empty Map.empty)
     Spec.assertEqWith s "finished" (Monad.void outcome) (Right ())
     Spec.assertEqWith s "rejoined once" (rejoins wire) 1
     let firstTurn = fmap fst . Maybe.listToMaybe
@@ -174,7 +187,7 @@ spec s registry = Spec.describe s "RemoteSeat" $ do
 -- each guest is told how it ended.
 wholeGame :: (Monad m) => Spec.Spec m n -> NonEmpty.NonEmpty (PlayerId.PlayerId, Deck.Deck) -> [PlayerId.PlayerId] -> m ()
 wholeGame s matchup guests = do
-  (outcome, wire) <- State.runStateT (hosted guests matchup) (MkWire Map.empty Map.empty Map.empty Map.empty 0 [] Map.empty Map.empty [] Map.empty Map.empty)
+  (outcome, wire) <- State.runStateT (hosted guests matchup) (MkWire Map.empty Map.empty Map.empty Map.empty 0 [] Map.empty Map.empty [] Map.empty Map.empty Map.empty)
   case outcome of
     Right (Result.Won _, _) -> do
       let endingOf g = Link.ending Ending.MkStopped [Text.pack "over"] Text.empty g False outcome (Map.findWithDefault Ending.unseen g (hostSeen wire))
@@ -194,10 +207,17 @@ wholeGame s matchup guests = do
   Monad.forM_ guests $ \g -> do
     Spec.assertBool s (not (null (askedOf (Just g))) && all ((== g) . fst) (askedOf (Just g))) ("guest " <> show g <> "'s page answers only its own seat")
     Spec.assertEqWith s ("guest " <> show g <> " is sent only its own seat's view") (ListUtils.nubOrd (Maybe.mapMaybe snd (askedOf (Just g)))) [g]
-    let changes = fmap NonEmpty.head (NonEmpty.group (reverse (deciders wire)))
-        toldOf = reverse (Map.findWithDefault [] g (waitedOn wire))
-    Spec.assertEqWith s ("guest " <> show g <> " is told of each other seat as the seat asked changes to it") toldOf (filter (/= g) changes)
+    let collapsed :: [PlayerId.PlayerId] -> [PlayerId.PlayerId]
+        collapsed = fmap NonEmpty.head . NonEmpty.group
+        changes = collapsed (reverse (deciders wire))
+        heard = reverse (Map.findWithDefault [] g (waitedOn wire))
+        toldOf = [seat | (seat, _, _) <- heard]
+    Spec.assertBool s (not (null heard)) ("guest " <> show g <> " is told whom the game waits on")
+    Spec.assertEqWith s ("guest " <> show g <> " is told of each other seat as the seat asked changes to it") (collapsed toldOf) (collapsed (filter (/= g) changes))
     Spec.assertEqWith s ("guest " <> show g <> " is told of every other seat") (Set.fromList toldOf) (Set.fromList [pid | (pid, _) <- NonEmpty.toList matchup, pid /= g])
+    -- Not the board of the last request it was asked, which the game has
+    -- moved on from (#9704).
+    Spec.assertEqWith s ("guest " <> show g <> " is told the game as its seat sees it at each decision it was not shown") heard (reverse (Maybe.catMaybes (Map.findWithDefault [] g (owed wire))))
 
 -- A whole game with both seats answered on one page, every request in
 -- the order asked, and the lobby's options for it.
@@ -220,8 +240,9 @@ handedOver yours requests = [request | (before, request) <- zip (fmap (Question.
 -- and the end each guest was told; how many more lines each guest's channel
 -- carries before it drops once, how many times a guest rejoined, and each
 -- match-up and seat a guest was sent again; the seat each guest was last
--- told decides (Link.telling), every seat each was told of, latest first,
--- and every prompt's seat, latest first; and what each seat's page saw, a
+-- told decides (Link.telling), everything each was told, latest first, and
+-- every prompt's seat, latest first; each decision's seat and board as each
+-- guest's seat sees it, Nothing at its own, latest first, a repeat dropped; and what each seat's page saw, a
 -- guest's from what it was sent as it last rejoined, as a page reloaded
 -- would (Link.MkStart), and what the host saw it sent each guest
 -- (Link.seeing).
@@ -232,9 +253,10 @@ data Wire = MkWire
     dropping :: Map.Map PlayerId.PlayerId Int,
     rejoins :: Int,
     sentAgain :: [Link.Message],
-    lastTold :: Map.Map PlayerId.PlayerId PlayerId.PlayerId,
-    waitedOn :: Map.Map PlayerId.PlayerId [PlayerId.PlayerId],
+    lastTold :: Map.Map PlayerId.PlayerId Link.Told,
+    waitedOn :: Map.Map PlayerId.PlayerId [Link.Told],
     deciders :: [PlayerId.PlayerId],
+    owed :: Map.Map PlayerId.PlayerId [Maybe Link.Told],
     pageSeen :: Map.Map PlayerId.PlayerId Ending.Seen,
     hostSeen :: Map.Map PlayerId.PlayerId Ending.Seen
   }
@@ -249,9 +271,11 @@ build = Text.pack "test"
 hosted :: (Monad m) => [PlayerId.PlayerId] -> NonEmpty.NonEmpty (PlayerId.PlayerId, Deck.Deck) -> State.StateT Wire m (Either Text.Text (Result.Result, GameState.GameState))
 hosted guests matchup = Game.run (S.fixtureRegistry []) Nothing Limits.standard [Link.deciding decides] (Map.fromList [(pid, Game.wired (S.fixtureRegistry []) (Protocol.bySeat (Map.fromList [(g, Link.seeing (\shown -> State.modify' (\w -> w {hostSeen = seenBy shown (hostSeen w)})) (Link.remote (rejoined g) played (Map.findWithDefault Ending.unseen g . hostSeen <$> State.get) (channel g))) | g <- guests]) (page hostPage))) | (pid, _) <- NonEmpty.toList matchup]) (S.seeded 1) Map.empty matchup
   where
-    decides seat = do
-      State.modify' (\w -> w {deciders = seat : deciders w})
-      now <- State.gets lastTold >>= Link.telling (Map.fromList [(g, channel g) | g <- guests]) seat
+    decides seat gs depth = do
+      let owing g = if g == seat then Nothing else Just (seat, (PlayerView.Engine.viewFor g gs) {PlayerView.priority = Nothing}, depth)
+          owe g due = if take 1 due == [owing g] then due else owing g : due
+      State.modify' (\w -> w {deciders = seat : deciders w, owed = foldr (\g -> Map.alter (Just . owe g . Maybe.fromMaybe []) g) (owed w) guests})
+      now <- State.gets lastTold >>= Link.telling (Map.fromList [(g, channel g) | g <- guests]) seat gs depth
       State.modify' (\w -> w {lastTold = now})
 
 -- The match-up a rejoining guest is told.
@@ -321,7 +345,7 @@ channel g = Link.MkChannel send (received g)
         case heard of
           Link.MkReply reply -> State.modify' (\w -> w {inbox = Map.insertWith (flip (<>)) g [Link.encode build reply] (inbox w)})
           Link.MkEnded {} -> State.modify' (\w -> w {ended = Map.insert g heard (ended w)})
-          Link.MkWaitingOn seat -> State.modify' (\w -> w {waitedOn = Map.insertWith (<>) g [seat] (waitedOn w)})
+          Link.MkWaitingOn seat shown depth -> State.modify' (\w -> w {waitedOn = Map.insertWith (<>) g [(seat, shown, depth)] (waitedOn w)})
           Link.MkIgnored -> pure ()
 
 -- The next line this guest's page sent, read; Nothing once there is none,

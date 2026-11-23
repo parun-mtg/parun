@@ -39,7 +39,7 @@ play page lookUp levelRef channel rejoin seat seen leave = do
     let local request = IORef.writeIORef decidingRef Nothing >> Hotseat.exchange lookUp page seatRef leave request
         -- While the host's game goes on, the page stays live, waiting on
         -- that seat, or every other before the host names one.
-        others state = [SeatView.player s | request <- Maybe.maybeToList (Hotseat.lastAsked state), shown <- Maybe.maybeToList (Request.view request), s <- PlayerView.seats shown, SeatView.player s /= seat]
+        others state = [SeatView.player s | request <- Maybe.maybeToList (Hotseat.current state), shown <- Maybe.maybeToList (Request.view request), s <- PlayerView.seats shown, SeatView.player s /= seat]
         loop = do
           deciding <- IORef.readIORef decidingRef
           heard <- Hotseat.awaiting lookUp page seatRef leave (\state -> maybe (others state) pure deciding) (Link.receive channel)
@@ -51,7 +51,7 @@ play page lookUp levelRef channel rejoin seat seen leave = do
               answered <- Link.guest local message
               case answered of
                 Link.MkReply reply -> Link.send channel reply >> loop
-                Link.MkWaitingOn other -> IORef.writeIORef decidingRef (Just other) >> loop
+                Link.MkWaitingOn other shown depth -> IORef.writeIORef decidingRef (Just other) >> IORef.modifyIORef' seatRef (Hotseat.stand seat shown depth) >> loop
                 -- The host's, which holds what this page did not see: the
                 -- killing blow, and the game before a reload.
                 Link.MkEnded ending -> pure ending

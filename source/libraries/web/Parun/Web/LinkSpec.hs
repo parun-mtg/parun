@@ -4,6 +4,7 @@ import qualified Data.List.NonEmpty as NonEmpty
 import qualified Data.Map.Strict as Map
 import qualified Data.Sequence as Seq
 import qualified Data.Text as Text
+import qualified Parun.Codec.PlayerViewSpec as PlayerViewSpec
 import qualified Parun.Spec as Spec
 import qualified Parun.Types.Difficulty as Difficulty
 import qualified Parun.Types.Key as Key.Type
@@ -29,7 +30,7 @@ spec s = Spec.describe s "Parun.Web.Link" $ do
               Link.MkStart (PlayerId.MkPlayerId 2) Ending.unseen,
               Link.MkStart (PlayerId.MkPlayerId 1) (Ending.MkSeen (Map.fromList [((PlayerId.MkPlayerId 1, 0), (3, 2))]) (Map.singleton (PlayerId.MkPlayerId 1) (Seq.fromList [Log.MkPregame, Log.MkTurn 3 (PlayerId.MkPlayerId 0), Log.MkEvent Log.MkMinor (Text.pack "Grizzly Bears enters.")])) (Seq.fromList [(1, [(PlayerId.MkPlayerId 0, 20), (PlayerId.MkPlayerId 1, 20)]), (3, [(PlayerId.MkPlayerId 0, 18), (PlayerId.MkPlayerId 1, 20)])])),
               Link.MkAsk request,
-              Link.MkDeciding (PlayerId.MkPlayerId 2),
+              Link.MkDeciding (PlayerId.MkPlayerId 2) PlayerViewSpec.testView 1,
               Link.MkAnswer (R.Object [(Text.pack "action", R.Text (Text.pack "Pass"))]),
               Link.MkEnd (Ending.MkEnding Ending.MkLost [Text.pack "Player 1 wins."] (Text.pack "{}\n") (Seq.fromList [Log.MkTurn 1 (PlayerId.MkPlayerId 0), Log.MkMana (PlayerId.MkPlayerId 0) [Text.pack "Forest", Text.pack "Forest"], Log.MkEvent Log.MkMajor (Text.pack "Player 1 casts Grizzly Bears."), Log.MkEvent Log.MkMinor (Text.pack "Grizzly Bears enters.")]) (PlayerId.MkPlayerId 1) False [(1, [(PlayerId.MkPlayerId 0, 20), (PlayerId.MkPlayerId 1, 20)]), (4, [(PlayerId.MkPlayerId 0, 20), (PlayerId.MkPlayerId 1, -2)])]),
               Link.MkEnd (Ending.MkEnding Ending.MkWon [] Text.empty Seq.empty (PlayerId.MkPlayerId 2) False []),
