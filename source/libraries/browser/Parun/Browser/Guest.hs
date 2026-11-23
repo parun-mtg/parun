@@ -38,7 +38,7 @@ play page lookUp levelRef channel rejoin seat leave = do
         -- every other seat: the host does not say whose decision it is.
         others state = [SeatView.player s | request <- Maybe.maybeToList (Hotseat.lastAsked state), shown <- Maybe.maybeToList (Request.view request), s <- PlayerView.seats shown, SeatView.player s /= seat]
         loop = do
-          heard <- Hotseat.awaiting lookUp page seatRef others (Link.receive channel)
+          heard <- Hotseat.awaiting lookUp page seatRef leave others (Link.receive channel)
           case heard of
             Nothing -> do
               back <- rejoin

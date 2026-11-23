@@ -1018,9 +1018,10 @@ joinGame shell offer = do
 -- | The home screen with a game paused at this board, the replays and the
 -- builder reachable from it, until the player resumes the game or gives it
 -- up for another, recorded in `chosen`; a new game chosen elsewhere is
--- asked about on the home screen first.
+-- asked about on the home screen first. What the game's data channels say
+-- meanwhile is kept for it (Browser.aside).
 leaveFor :: Shell -> IORef.IORef Next -> Maybe PlayerView.PlayerView -> IO Hotseat.Leave
-leaveFor shell chosen board = go paused
+leaveFor shell chosen board = Browser.aside (page shell) (go paused)
   where
     paused = Home.new {Home.paused = Just (Home.pausedOn board)}
     go shown = do
