@@ -6,8 +6,6 @@
 module Parun.Browser.Guest where
 
 import qualified Control.Exception as Exception
-import qualified Control.Monad as Monad
-import qualified Data.Foldable as Foldable
 import qualified Data.IORef as IORef
 import qualified Data.Maybe as Maybe
 import qualified Data.Text as Text
@@ -47,15 +45,14 @@ play page lookUp levelRef channel rejoin seat leave = do
           case heard of
             Nothing -> do
               back <- rejoin
-              if back then loop else pure (Ending.MkStopped, [Text.pack "The game stopped: the connection to the host closed."], Text.empty)
+              if back then loop else Ending.endingOf Ending.MkStopped [Text.pack "The game stopped: the connection to the host closed."] Text.empty seat . Hotseat.sighted <$> IORef.readIORef seatRef
             Just message -> do
               answered <- Link.guest local message
               case answered of
                 Link.MkReply reply -> Link.send channel reply >> loop
                 Link.MkWaitingOn other -> IORef.writeIORef decidingRef (Just other) >> loop
-                -- What the seat saw after its last decision: the killing blow, say.
-                Link.MkEnded verdict said shown scenario -> Monad.forM_ shown (IORef.modifyIORef' seatRef . Hotseat.witness) >> pure (verdict, said, scenario)
+                -- The host's, which holds what this page did not see: the
+                -- killing blow, and the game before a reload.
+                Link.MkEnded ending -> pure ending
                 Link.MkIgnored -> loop
-    (verdict, said, scenario) <- loop
-    finished <- IORef.readIORef seatRef
-    pure (Ending.MkFinished (Ending.MkEnding verdict said scenario (Hotseat.loggedFor seat finished) seat (Foldable.toList (Hotseat.lives finished))))
+    Ending.MkFinished <$> loop

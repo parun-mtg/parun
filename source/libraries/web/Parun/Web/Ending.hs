@@ -9,6 +9,7 @@ import qualified Data.Containers.ListUtils as ListUtils
 import qualified Data.Foldable as Foldable
 import qualified Data.List as List
 import qualified Data.List.NonEmpty as NonEmpty
+import qualified Data.Map.Strict as Map
 import qualified Data.Maybe as Maybe
 import qualified Data.Sequence as Seq
 import qualified Data.Text as Text
@@ -16,6 +17,8 @@ import qualified Data.Text.Encoding as Encoding
 import Numeric.Natural (Natural)
 import qualified Parun.Play.Wording as Wording
 import qualified Parun.Types.PlayerId as PlayerId
+import qualified Parun.Types.PlayerView as PlayerView
+import qualified Parun.Types.SeatView as SeatView
 import qualified Parun.Uri.Fragment as Fragment
 import qualified Parun.Web.Element as Element
 import qualified Parun.Web.Html as Html
@@ -68,6 +71,37 @@ data Ending = MkEnding
 -- seen though no life changed in it.
 sampled :: Natural -> [(PlayerId.PlayerId, Integer)] -> Seq.Seq (Natural, [(PlayerId.PlayerId, Integer)]) -> Seq.Seq (Natural, [(PlayerId.PlayerId, Integer)])
 sampled turn now trail' = if Seq.lookup (Seq.length trail' - 1) trail' == Just (turn, now) then trail' else trail' Seq.|> (turn, now)
+
+-- | What a page has seen of a game, from the views its seats were shown.
+data Seen = MkSeen
+  { -- | How far each seat has read each game's log (Log.unseen).
+    marks :: Map.Map (PlayerId.PlayerId, Natural) (Natural, Natural),
+    -- | The entries each seat has read so far, oldest first.
+    logged :: Map.Map PlayerId.PlayerId (Seq.Seq Log.Entry),
+    -- | Each seat's life whenever it or the turn changed (sampled).
+    sampledLives :: Seq.Seq (Natural, [(PlayerId.PlayerId, Integer)])
+  }
+  deriving (Eq, Show)
+
+-- | Nothing seen yet.
+unseen :: Seen
+unseen = MkSeen Map.empty Map.empty Seq.empty
+
+-- | What was seen, with the entries of the view its seat has not read yet
+-- logged for that seat, and each seat's life sampled.
+see :: PlayerView.PlayerView -> Seen -> Seen
+see shown seen =
+  let (moved, unread) = Log.unseen (marks seen) shown
+      now = [(SeatView.player seat, SeatView.life seat) | seat <- PlayerView.seats shown]
+   in MkSeen moved (Map.insertWith (flip (<>)) (PlayerView.viewer shown) (Seq.fromList unread) (logged seen)) (sampled (PlayerView.turn shown) now (sampledLives seen))
+
+-- | The entries a seat has read so far, oldest first.
+loggedFor :: PlayerId.PlayerId -> Seen -> Seq.Seq Log.Entry
+loggedFor seat seen = Map.findWithDefault Seq.empty seat (logged seen)
+
+-- | The ending seat `seat` is shown, from what it saw.
+endingOf :: Verdict -> [Text.Text] -> Text.Text -> PlayerId.PlayerId -> Seen -> Ending
+endingOf verdict' said' scenario' seat seen = MkEnding verdict' said' scenario' (loggedFor seat seen) seat (Foldable.toList (sampledLives seen))
 
 view :: Ending -> Html.Html Event
 view ending =
