@@ -244,28 +244,28 @@ spec s = Spec.describe s "Parun.Web.Lobby" $ do
       Spec.assertEq s (Html.labelled (Text.pack "button") (Text.pack "Build a deck") page >>= \path -> Html.handler (Text.pack "click") path page) (Just Lobby.MkOpenBuilder)
 
   Spec.describe s "a game paused" $ do
-    Spec.it s "asks at Start before conceding it" $ do
+    Spec.it s "asks at Start before abandoning it" $ do
       let chosen = Lobby.update (Lobby.MkPick a) Text.empty lobby {Lobby.paused = True}
           asked = Lobby.update Lobby.MkStart Text.empty chosen
           page = Lobby.view asked
           tapping label = Html.labelled (Text.pack "button") (Text.pack label) page >>= \path -> Html.handler (Text.pack "click") path page
-      Spec.assertEqWith s "asks" (Lobby.conceding asked) (Just Lobby.MkStart)
-      Spec.assertBool s (Text.isInfixOf (Text.pack "Starting a new game concedes the one in progress.") (Html.toText page)) "the question shows"
+      Spec.assertEqWith s "asks" (Lobby.abandoning asked) (Just Lobby.MkStart)
+      Spec.assertBool s (Text.isInfixOf (Text.pack "Starting a new game abandons the one in progress, which Replays won't keep.") (Html.toText page)) "the question shows"
       Spec.assertEqWith s "the game offered back" (tapping "Resume") (Just Lobby.MkResume)
-      Spec.assertEqWith s "conceded" (tapping "Concede and play") (Just Lobby.MkConcede)
-      Spec.assertEqWith s "conceded, then started" (Lobby.conceded asked) (Just (chosen {Lobby.paused = False}, Lobby.MkStart))
+      Spec.assertEqWith s "abandoned" (tapping "Abandon and play") (Just Lobby.MkAbandon)
+      Spec.assertEqWith s "abandoned, then started" (Lobby.abandoned asked) (Just (chosen {Lobby.paused = False}, Lobby.MkStart))
       Spec.assertEqWith s "cancelled" (Lobby.update Lobby.MkCancel Text.empty asked) chosen
 
     Spec.it s "asks before inviting a player, whose link the game holds" $ do
       let asked = Lobby.update (Lobby.MkAdd Lobby.MkInvited) Text.empty lobby {Lobby.paused = True}
-      Spec.assertEq s (Lobby.conceding asked, Lobby.invites asked) (Just (Lobby.MkAdd Lobby.MkInvited), Map.empty)
+      Spec.assertEq s (Lobby.abandoning asked, Lobby.invites asked) (Just (Lobby.MkAdd Lobby.MkInvited), Map.empty)
 
     Spec.it s "picks decks and seats bots without asking" $ do
       let picked = Lobby.update (Lobby.MkAdd Lobby.MkBot) Text.empty (Lobby.update (Lobby.MkPick a) Text.empty lobby {Lobby.paused = True})
-      Spec.assertEq s (Lobby.conceding picked, Lobby.mine picked, length (Lobby.theirs picked)) (Nothing, Just a, 2)
+      Spec.assertEq s (Lobby.abandoning picked, Lobby.mine picked, length (Lobby.theirs picked)) (Nothing, Just a, 2)
 
     Spec.it s "starts at once with no game paused" $ do
-      Spec.assertEq s (Lobby.conceding (Lobby.update Lobby.MkStart Text.empty (Lobby.update (Lobby.MkPick a) Text.empty lobby))) Nothing
+      Spec.assertEq s (Lobby.abandoning (Lobby.update Lobby.MkStart Text.empty (Lobby.update (Lobby.MkPick a) Text.empty lobby))) Nothing
 
   Spec.describe s "edit" $ do
     Spec.it s "offers Edit under a saved deck shown" $ do

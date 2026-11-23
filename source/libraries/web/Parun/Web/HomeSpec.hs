@@ -84,12 +84,12 @@ spec s = Spec.describe s "Parun.Web.Home" $ do
     Spec.it s "goes where chosen while no game is paused" $ do
       Spec.assertEq s (Home.update (Home.MkChoose (Home.MkNewGame Nothing)) Home.new) (Home.MkGo (Home.MkNewGame Nothing))
 
-    Spec.it s "asks before conceding a paused game to play on from a replay" $ do
+    Spec.it s "asks before abandoning a paused game to play on from a replay" $ do
       let choice = Home.MkPlayOn (Replay.MkScenario (Text.pack "a-scenario")) 3
           asked = paused {Home.confirming = Just choice}
       Spec.assertEqWith s "asks" (Home.update (Home.MkChoose choice) paused) (Home.MkStay asked)
-      Spec.assertEqWith s "the question shows" (has "Starting a new game concedes the one in progress." asked) True
-      Spec.assertEqWith s "labelled" (has "Concede and play on" asked) True
+      Spec.assertEqWith s "the question shows" (has "Starting a new game abandons the one in progress, which Replays won't keep." asked) True
+      Spec.assertEqWith s "labelled" (has "Abandon and play on" asked) True
       Spec.assertEqWith s "the game offered back" (tapping "Resume" asked) (Just Home.MkResume)
       Spec.assertEqWith s "confirmed" (Home.update Home.MkConfirm asked) (Home.MkGo choice)
       Spec.assertEqWith s "cancelled" (Home.update Home.MkCancel asked) (Home.MkStay paused)
