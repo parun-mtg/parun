@@ -103,7 +103,7 @@ game page registry cards table levelRef bots seats remotes locals seed stored ke
             let lookUp = Identity.runIdentity . Interpreter.chosenCard registry
                 here = exchange lookUp page seatRef leave
                 -- The page stays live while another browser's seat decides.
-                elsewhere = Map.mapWithKey (\seat ask -> awaiting lookUp page seatRef (const [seat]) . ask) remotes
+                elsewhere = Map.mapWithKey (\seat ask -> awaiting lookUp page seatRef leave (const [seat]) . ask) remotes
                 next = IORef.atomicModifyIORef' storedRef $ \left -> maybe ([], Nothing) (\(reply, rest) -> (rest, Just reply)) (List.uncons left)
                 -- What a seat this page plays sees as its reply is made again,
                 -- and what it was asked.
@@ -166,7 +166,7 @@ exchange lookUp page seatRef leave request = do
             now <- IORef.readIORef seatRef
             let seen = shown {PlayerView.priority = Nothing}
                 facingNow = if Web.Question.handsOver (yours now) (facing now) seat then facing now else Just seat
-            Monad.when (watched now /= Just seen) . Monad.forM_ (Web.Question.watching facingNow [] request (watchedScreen lookUp seat now shown)) $ \board -> do
+            Monad.when (watched now /= Just seen) . Monad.forM_ (Web.Question.watching facingNow [] False request (watchedScreen lookUp seat now shown)) $ \board -> do
               IORef.writeIORef seatRef now {watched = Just seen}
               Browser.display page (fmap Screen.MkQuestion board)
           pure reply
@@ -265,9 +265,11 @@ watchedScreen lookUp seat state shown = Web.Question.blank {Web.Question.logged 
 -- | Runs `decide`, waiting on another browser's seat, the page meanwhile
 -- showing the board the seat the screen faces was last asked about, the seats
 -- `deciders` names as those the game waits on: a card tapped there shows
--- its text through `lookUp`, and an auto-pass level tapped is kept.
-awaiting :: (CardName.CardName -> Either InvalidCorpus.InvalidCorpus (Maybe Card.Card)) -> Browser.Page Screen.Event -> IORef.IORef Seat -> (Seat -> [PlayerId.PlayerId]) -> IO a -> IO a
-awaiting lookUp page seatRef deciders decide = do
+-- its text through `lookUp`, an auto-pass level tapped is kept, the menu
+-- leaves for the home screen through `leave`, and a concession is kept for
+-- that seat's next concession question (exchange).
+awaiting :: (CardName.CardName -> Either InvalidCorpus.InvalidCorpus (Maybe Card.Card)) -> Browser.Page Screen.Event -> IORef.IORef Seat -> (Maybe PlayerView.PlayerView -> IO Leave) -> (Seat -> [PlayerId.PlayerId]) -> IO a -> IO a
+awaiting lookUp page seatRef leave deciders decide = do
   readingRef <- IORef.newIORef Nothing
   let draw = do
         state <- IORef.readIORef seatRef
@@ -277,7 +279,7 @@ awaiting lookUp page seatRef deciders decide = do
         let board = do
               request <- lastAsked state
               shown <- Request.view request
-              Web.Question.watching (facing state) (deciders state) request (watchedScreen lookUp (Question.seat (Request.question request)) state shown) {Web.Question.reading = reading}
+              Web.Question.watching (facing state) (deciders state) (any (`Set.member` conceding state) (facing state)) request (watchedScreen lookUp (Question.seat (Request.question request)) state shown) {Web.Question.reading = reading}
         Browser.display page (maybe (message [Text.pack (Web.Question.waitingOn (deciders state))]) (fmap Screen.MkQuestion) board)
       -- Every tap redraws the page, which a tap shows busy until then.
       tap (event, _) = do
@@ -286,6 +288,14 @@ awaiting lookUp page seatRef deciders decide = do
           Screen.MkQuestion (Web.Question.MkRead object) -> IORef.writeIORef readingRef (lastAsked state >>= \request -> readingOf lookUp request object True)
           Screen.MkQuestion Web.Question.MkClose -> IORef.writeIORef readingRef Nothing
           Screen.MkQuestion (Web.Question.MkLevel l) -> IORef.writeIORef seatRef state {level = l}
+          -- Conceding at once, before the seat's next priority, is not
+          -- implemented (#9646).
+          Screen.MkQuestion Web.Question.MkConcede -> IORef.writeIORef seatRef state {conceding = foldr Set.insert (conceding state) (facing state)}
+          -- The home screen runs here, the game's channels held for it;
+          -- giving the game up unwinds it (game).
+          Screen.MkQuestion Web.Question.MkHome -> do
+            left <- leave (lastAsked state >>= Request.view)
+            Monad.when (left == MkAbandon) (Exception.throwIO MkAbandonedGame)
           _ -> pure ()
         draw
   draw

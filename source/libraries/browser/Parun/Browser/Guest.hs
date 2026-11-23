@@ -42,7 +42,7 @@ play page lookUp levelRef channel rejoin seat leave = do
         others state = [SeatView.player s | request <- Maybe.maybeToList (Hotseat.lastAsked state), shown <- Maybe.maybeToList (Request.view request), s <- PlayerView.seats shown, SeatView.player s /= seat]
         loop = do
           deciding <- IORef.readIORef decidingRef
-          heard <- Hotseat.awaiting lookUp page seatRef (\state -> maybe (others state) pure deciding) (Link.receive channel)
+          heard <- Hotseat.awaiting lookUp page seatRef leave (\state -> maybe (others state) pure deciding) (Link.receive channel)
           case heard of
             Nothing -> do
               back <- rejoin

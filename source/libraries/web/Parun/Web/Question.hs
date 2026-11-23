@@ -346,20 +346,22 @@ eyebrow board = Element.el "p" (["eyebrow", "moment"] <> ["yours" | Board.yours 
 -- offered, so a card's sheet carries no action; in place of a question
 -- what the game is waiting on, the seats of `deciding` if any; and
 -- the auto-pass level, which Hotseat keeps for the seat's next request.
--- Nothing unless the screen faces (the first) the seat asked, since the
--- board shows that seat's hidden cards.
-watching :: Maybe PlayerId.PlayerId -> [PlayerId.PlayerId] -> Request.Request -> Screen -> Maybe (Html.Html Event)
-watching facing deciding request screen = do
+-- While those seats decide, the menu leaves for the home screen, and
+-- concedes (CR 104.3a) unless the seat has, `conceded`, which it then does
+-- at its next priority. Nothing unless the screen faces (the first) the
+-- seat asked, since the board shows that seat's hidden cards.
+watching :: Maybe PlayerId.PlayerId -> [PlayerId.PlayerId] -> Bool -> Request.Request -> Screen -> Maybe (Html.Html Event)
+watching facing deciding conceded request screen = do
   Monad.guard $ facing == Just (Question.seat (Request.question request))
   let status = case (deciding, Request.view request) of
-        (_ : _, _) -> waitingOn deciding
+        (_ : _, _) -> waitingOn deciding <> (if conceded then " You concede when you next have priority." else "")
         (_, Just b)
           | not (PlayerView.begun b) -> "Waiting for the game to begin\x2026"
           | not (null (PlayerView.stack b)) -> "Resolving\x2026"
           | PlayerView.active b /= PlayerView.viewer b -> Text.unpack (Wording.player (PlayerView.active b)) <> " is taking their turn\x2026"
         _ -> "Moving on\x2026"
       shown = request {Request.view = fmap (\b -> b {PlayerView.priority = Nothing}) (Request.view request), Request.question = (Request.question request) {Question.offer = R.Null}}
-  pure . table shown screen (autoPass (level screen)) (barControls False Nothing) (Board.MkMarks (\o -> Card.MkCue [] (MkRead (ObjectView.object o)) Nothing) (const Nothing)) $
+  pure . table shown screen (autoPass (level screen)) (if null deciding then barControls False Nothing else barControls True (if conceded then Nothing else Just MkConcede)) (Board.MkMarks (\o -> Card.MkCue [] (MkRead (ObjectView.object o)) Nothing) (const Nothing)) $
     foldMap (pure . eyebrow) (Request.view request) <> [Element.el "p" ["waiting"] [] [Icon.loading ["small"], Element.string status]]
 
 -- | What the game waits on while these seats decide, or the other
@@ -395,8 +397,8 @@ autoPass current =
     ]
 
 -- | The turn bar's controls: the menu button, whose menu (page.js) leaves
--- the game for the home screen while the seat is asked, and concedes
--- (CR 104.3a) by the event given where the seat may.
+-- the game for the home screen where `asked`, and concedes (CR 104.3a) by
+-- the event given where the seat may.
 barControls :: Bool -> Maybe Event -> [Html.Html Event]
 barControls asked concede = [Bar.settingsButton Icon.MkMenu "Menu" (if asked then Just MkHome else Nothing) concede]
 
