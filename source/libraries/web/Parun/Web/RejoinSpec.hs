@@ -11,12 +11,12 @@ spec :: (Applicative m, Monad n) => Spec.Spec m n -> n ()
 spec s = Spec.describe s "Parun.Web.Rejoin" $ do
   Spec.describe s "offerIn" $ do
     Spec.it s "reads the host's code from its link, or the code alone" $ do
-      Spec.assertEq s (fmap (Rejoin.offerIn . Text.pack) ["https://parun.example/play/#offer=AbC-_9", " AbC-_9\n", "https://parun.example/#offer=AbC-_9&x=1"]) (replicate 3 (Text.pack "AbC-_9"))
+      Spec.assertEq s (fmap (Rejoin.offerIn . Text.pack) ["https://parun.example/play/#ab3z9", " ab3z9\n", "https://parun.example/#ab3z9 "]) (replicate 3 (Text.pack "ab3z9"))
 
   Spec.describe s "view" $ do
     Spec.it s "shows the host the new link to send and a box for the code that comes back" $ do
-      let shown = Html.toText (Rejoin.view (Rejoin.host (Text.pack "Player 2")) {Rejoin.code = Just (Text.pack "https://parun.example/#offer=xyz")})
-      Spec.assertBool s (all ((`Text.isInfixOf` shown) . Text.pack) ["Player 2", "#offer=xyz", "id=\"rejoin-reply\""]) "the link and the reply box"
+      let shown = Html.toText (Rejoin.view (Rejoin.host (Text.pack "Player 2")) {Rejoin.code = Just (Text.pack "https://parun.example/#xyz")})
+      Spec.assertBool s (all ((`Text.isInfixOf` shown) . Text.pack) ["Player 2", "#xyz", "id=\"rejoin-reply\""]) "the link and the reply box"
 
     Spec.it s "shows the guest a box for the host's new link, then the code to send back" $ do
       let asking = Html.toText (Rejoin.view Rejoin.guest)

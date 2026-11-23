@@ -8,9 +8,9 @@ const engineUrl = new URL("./engine.js", import.meta.url);
 // The query names the screen to open (Parun.Web.Route), which the engine
 // reads once as its query's "query".
 if (location.search) engineUrl.searchParams.set("query", location.search);
-// A host's link (Parun.Web.Link) carries its code after #offer=, which the
+// A host's link (Parun.Web.Link) carries its code as its fragment, which the
 // engine reads once as its query's "offer".
-const offered = new URLSearchParams(location.hash.slice(1)).get("offer");
+const offered = location.hash.slice(1);
 if (offered) engineUrl.searchParams.set("offer", offered);
 // The auto-pass level last chosen (Parun.Web.Question.Level) starts the game.
 const level = localStorage.getItem("parun-level");
@@ -670,7 +670,7 @@ addEventListener("popstate", () => {
 // A host's link pasted over the address changes only its fragment, so the
 // page loads afresh to read its code.
 addEventListener("hashchange", () => {
-  if (new URLSearchParams(location.hash.slice(1)).has("offer")) location.reload();
+  if (location.hash.length > 1) location.reload();
 });
 // The game with guests: its first line once it starts, each reply's line
 // added as it is made, and all of it forgotten once it is over. A reply
@@ -692,8 +692,8 @@ engine.onerror = (error) => note(`engine failed: ${error.message}`);
 // and one reliable, ordered data channel each, by the engine's number for
 // it (Parun.Browser.linkHost). Two codes, swapped by hand, connect them: the
 // host's offer, as a link, and the guest's reply. Each is a session
-// description, deflated and base64url-encoded, made once ICE gathering is
-// done, so one code goes each way. Only the STUN server sees either page.
+// description, packed (`pack`) once ICE gathering is done, so one code goes
+// each way. Only the STUN server sees either page.
 const links = new Map();
 const iceServers = [{ urls: "stun:stun.l.google.com:19302" }];
 // A line goes in pieces small enough for every browser's channel, each
@@ -708,17 +708,151 @@ const silence = 30000;
 function linked(seat, kind, text = "") {
   engine.postMessage({ linked: { seat, kind, text } });
 }
-async function pack(description) {
-  const deflated = new Blob([JSON.stringify({ type: description.type, sdp: description.sdp })]).stream().pipeThrough(new CompressionStream("deflate-raw"));
-  const bytes = new Uint8Array(await new Response(deflated).arrayBuffer());
-  let binary = "";
-  for (const byte of bytes) binary += String.fromCharCode(byte);
-  return btoa(binary).replaceAll("+", "-").replaceAll("/", "_").replace(/=+$/, "");
+// What a code carries, in the order it carries it: the format's version,
+// the DTLS role and fingerprint hash, the ICE credentials six bits a
+// character, the fingerprint, and each candidate of component 1. The rest of
+// the description is the same on every page and rebuilt (`described`).
+const format = 1;
+const alphabet = "0123456789abcdefghjkmnpqrstvwxyz";
+const iceChars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
+const roles = ["actpass", "active", "passive"];
+const hashes = [
+  ["sha-256", 32],
+  ["sha-1", 20],
+  ["sha-384", 48],
+  ["sha-512", 64],
+];
+const kinds = ["host", "srflx", "prflx", "relay"];
+const transports = ["udp", "tcp active", "tcp passive", "tcp so"];
+const uuidHost = /^([0-9a-f]{8})-([0-9a-f]{4})-([0-9a-f]{4})-([0-9a-f]{4})-([0-9a-f]{12})\.local$/;
+// An IPv6 address's eight groups, or null for any other text.
+function groupsOf(address) {
+  if (!/^[0-9a-f:]+$/i.test(address)) return null;
+  const halves = address.split("::");
+  if (halves.length > 2) return null;
+  const [head, tail] = halves.map((half) => (half === "" ? [] : half.split(":")));
+  const gap = 8 - head.length - (tail?.length ?? 0);
+  if (tail === undefined ? gap !== 0 : gap < 1) return null;
+  const groups = [...head, ...Array(tail === undefined ? 0 : gap).fill("0"), ...(tail ?? [])];
+  return groups.every((group) => group.length >= 1 && group.length <= 4) ? groups.map((group) => parseInt(group, 16)) : null;
 }
-async function unpack(code) {
-  const base64 = code.trim().replaceAll("-", "+").replaceAll("_", "/");
-  const bytes = Uint8Array.from(atob(base64 + "=".repeat((4 - (base64.length % 4)) % 4)), (c) => c.charCodeAt(0));
-  return JSON.parse(await new Response(new Blob([bytes]).stream().pipeThrough(new DecompressionStream("deflate-raw"))).text());
+// A session description as a code: Crockford's base32 of a bit string, so
+// a code is letters and digits only, read in either case.
+function pack(description) {
+  const lines = description.sdp.split(/\r?\n/);
+  const value = (name) => lines.find((line) => line.startsWith(`a=${name}:`))?.slice(name.length + 3);
+  const [hashName, print = ""] = (value("fingerprint") ?? "").split(" ");
+  const role = roles.indexOf(value("setup"));
+  const hash = hashes.findIndex(([name]) => name === hashName);
+  const fingerprint = print.split(":").map((pair) => parseInt(pair, 16));
+  const credentials = [value("ice-ufrag") ?? "", value("ice-pwd") ?? ""];
+  const unpackable = value("mid") !== "0" || (value("sctp-port") ?? "5000") !== "5000" || role < 0 || (role === 0) !== (description.type === "offer") || hash < 0 || fingerprint.length !== hashes[hash][1] || fingerprint.some(Number.isNaN) || credentials.some((text) => text.length === 0 || text.length > 255 || [...text].some((c) => !iceChars.includes(c)));
+  if (unpackable) throw new Error(`a session description no code carries: ${description.sdp}`);
+  const digits = [];
+  let held = 0;
+  let width = 0;
+  const put = (number, bits) => {
+    for (let at = bits - 1; at >= 0; at -= 1) {
+      held = held * 2 + (Math.floor(number / 2 ** at) % 2);
+      width += 1;
+      if (width === 5) {
+        digits.push(alphabet[held]);
+        held = 0;
+        width = 0;
+      }
+    }
+  };
+  put(format, 4);
+  put(role, 2);
+  put(hash, 2);
+  for (const text of credentials) put(text.length, 8);
+  for (const text of credentials) for (const c of text) put(iceChars.indexOf(c), 6);
+  for (const byte of fingerprint) put(byte, 8);
+  for (const line of lines) {
+    const [, component, protocol, , address, port, , kindName, ...rest] = line.startsWith("a=candidate:") ? line.split(" ") : [];
+    const tcpType = rest[rest.indexOf("tcptype") + 1];
+    const transport = transports.indexOf(protocol?.toLowerCase() === "udp" ? "udp" : `tcp ${tcpType}`);
+    const kind = kinds.indexOf(kindName);
+    if (component !== "1" || transport < 0 || kind < 0) continue;
+    const groups = groupsOf(address);
+    const uuid = address.match(uuidHost);
+    const name = new TextEncoder().encode(address);
+    const form = /^(25[0-5]|2[0-4]\d|1?\d?\d)(\.(25[0-5]|2[0-4]\d|1?\d?\d)){3}$/.test(address) ? 0 : groups ? 1 : uuid ? 2 : name.length <= 255 ? 3 : -1;
+    if (form < 0) continue;
+    put(kind, 2);
+    put(transport, 2);
+    put(form, 2);
+    if (form === 0) for (const part of address.split(".")) put(Number(part), 8);
+    else if (form === 1) for (const group of groups) put(group, 16);
+    else if (form === 2) for (const pair of uuid.slice(1).join("").match(/../g)) put(parseInt(pair, 16), 8);
+    else {
+      put(name.length, 8);
+      for (const byte of name) put(byte, 8);
+    }
+    put(Number(port), 16);
+  }
+  if (width > 0) put(0, 5 - width);
+  return digits.join("");
+}
+// A code's session description; whatever is not a letter or digit is
+// skipped, as a chat app's mangling.
+function unpack(code) {
+  const digits = [...code.toLowerCase().replace(/[^0-9a-z]/g, "").replaceAll("o", "0").replace(/[il]/g, "1")].map((c) => alphabet.indexOf(c));
+  if (digits.includes(-1)) throw new Error(`not a code: ${code}`);
+  let at = 0;
+  const take = (bits) => {
+    let number = 0;
+    for (let end = at + bits; at < end; at += 1) {
+      if (at >= digits.length * 5) throw new Error(`a code cut short: ${code}`);
+      number = number * 2 + (Math.floor(digits[Math.floor(at / 5)] / 2 ** (4 - (at % 5))) % 2);
+    }
+    return number;
+  };
+  if (take(4) !== format) throw new Error(`a code from another build: ${code}`);
+  const role = roles[take(2)];
+  const [hashName, hashBytes] = hashes[take(2)];
+  if (role === undefined) throw new Error(`not a code: ${code}`);
+  const lengths = [take(8), take(8)];
+  const [ufrag, pwd] = lengths.map((length) => Array.from({ length }, () => iceChars[take(6)]).join(""));
+  const fingerprint = Array.from({ length: hashBytes }, () => take(8).toString(16).toUpperCase().padStart(2, "0")).join(":");
+  const candidates = [];
+  // A candidate takes more than 8 bits, and the padding fewer.
+  while (digits.length * 5 - at >= 8) {
+    const kind = kinds[take(2)];
+    const [protocol, tcpType] = transports[take(2)].split(" ");
+    const form = take(2);
+    const bytes = (length) => Array.from({ length }, () => take(8));
+    const address = [() => bytes(4).join("."), () => Array.from({ length: 8 }, () => take(16).toString(16)).join(":"), () => `${bytes(16).map((byte) => byte.toString(16).padStart(2, "0")).join("").replace(/^(.{8})(.{4})(.{4})(.{4})/, "$1-$2-$3-$4-")}.local`, () => new TextDecoder().decode(new Uint8Array(bytes(take(8))))][form]();
+    const port = take(16);
+    // A candidate's priority, not carried, ranks host over reflexive over
+    // relayed, then UDP over TCP, then the order sent (RFC 8445 5.1.2).
+    const preference = { host: 126, prflx: 110, srflx: 100, relay: 0 }[kind] * 2 ** 24 + ((protocol === "udp" ? 32768 : 0) + 32767 - candidates.length) * 256 + 255;
+    candidates.push(`a=candidate:${candidates.length + 1} 1 ${protocol} ${preference} ${address} ${port} typ ${kind}${kind === "host" ? "" : " raddr 0.0.0.0 rport 0"}${tcpType ? ` tcptype ${tcpType}` : ""}`);
+  }
+  return { type: role === "actpass" ? "offer" : "answer", sdp: described({ ufrag, pwd, hashName, fingerprint, role, candidates }) };
+}
+// The session description every page makes for its one data channel, with
+// what a code carries put in.
+function described({ ufrag, pwd, hashName, fingerprint, role, candidates }) {
+  return [
+    "v=0",
+    "o=- 1 1 IN IP4 0.0.0.0",
+    "s=-",
+    "t=0 0",
+    "a=group:BUNDLE 0",
+    "m=application 9 UDP/DTLS/SCTP webrtc-datachannel",
+    "c=IN IP4 0.0.0.0",
+    `a=ice-ufrag:${ufrag}`,
+    `a=ice-pwd:${pwd}`,
+    "a=ice-options:trickle",
+    `a=fingerprint:${hashName} ${fingerprint}`,
+    `a=setup:${role}`,
+    "a=mid:0",
+    "a=sctp-port:5000",
+    ...candidates,
+    "a=end-of-candidates",
+    "",
+  ].join("\r\n");
 }
 function gathered(connection) {
   return new Promise((resolve) => {
@@ -790,17 +924,17 @@ async function linkStep(step) {
       await link.connection.setLocalDescription(await link.connection.createOffer());
       await gathered(link.connection);
       const url = new URL(location.pathname, location.origin);
-      url.hash = `offer=${await pack(link.connection.localDescription)}`;
+      url.hash = pack(link.connection.localDescription);
       if (links.get(seat) === link) linked(seat, "offer", url.href);
     } else if (op === "accept") {
-      await links.get(seat)?.connection.setRemoteDescription(await unpack(step.code));
+      await links.get(seat)?.connection.setRemoteDescription(unpack(step.code));
     } else if (op === "join") {
       const link = opened(seat);
       link.connection.addEventListener("datachannel", ({ channel }) => listen(seat, link, channel));
-      await link.connection.setRemoteDescription(await unpack(step.code));
+      await link.connection.setRemoteDescription(unpack(step.code));
       await link.connection.setLocalDescription(await link.connection.createAnswer());
       await gathered(link.connection);
-      if (links.get(seat) === link) linked(seat, "reply", await pack(link.connection.localDescription));
+      if (links.get(seat) === link) linked(seat, "reply", pack(link.connection.localDescription));
     } else if (op === "send") {
       const channel = links.get(seat)?.channel;
       if (channel?.readyState === "open") for (let at = 0; at < step.text.length || at === 0; at += piece) channel.send((at + piece >= step.text.length ? "." : "+") + step.text.slice(at, at + piece));

@@ -53,12 +53,10 @@ update event value screen = case event of
   MkTyped -> screen {typed = value}
   _ -> screen
 
--- | The host's code in what the guest pasted: the link's #offer= part, or
--- the code itself.
+-- | The host's code in what the guest pasted: the link's fragment, or the
+-- code itself.
 offerIn :: Text.Text -> Text.Text
-offerIn pasted =
-  let (before, after) = Text.breakOnEnd (Text.pack "offer=") (Text.strip pasted)
-   in Text.strip (if Text.null before then after else Text.takeWhile (/= '&') after)
+offerIn = Text.strip . snd . Text.breakOnEnd (Text.pack "#") . Text.strip
 
 view :: Rejoin -> Html.Html Event
 view screen =
