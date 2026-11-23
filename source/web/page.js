@@ -422,7 +422,7 @@ root.addEventListener("keydown", (event) => {
 // Safari, which clears a selection made on focus, from dropping it.
 for (const type of ["focusin", "click"]) {
   root.addEventListener(type, (event) => {
-    if (event.target.matches?.("input[readonly]")) event.target.select();
+    if (event.target.matches?.("input[readonly], textarea[readonly]")) event.target.select();
   });
 }
 
