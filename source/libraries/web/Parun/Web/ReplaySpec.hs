@@ -78,7 +78,7 @@ spec s = Spec.describe s "Parun.Web.Replay" $ do
       let page = Replay.view frame {Replay.position = 1}
           tapped name label = Html.labelled (Text.pack name) (Text.pack label) page >>= \path -> Html.handler (Text.pack "click") path page
           stepped label = step label page >>= \path -> Html.handler (Text.pack "click") path page
-      Spec.assertEq s (stepped "Next position", stepped "Previous position", tapped "button" "bob (Player 2)") (Just (Replay.MkStep Replay.MkStepOn), Just (Replay.MkStep Replay.MkStepBack), Just (Replay.MkSeat (PlayerId.MkPlayerId 1)))
+      Spec.assertEq s (stepped "Next position", stepped "Previous position", tapped "button" "Player 2") (Just (Replay.MkStep Replay.MkStepOn), Just (Replay.MkStep Replay.MkStepBack), Just (Replay.MkSeat (PlayerId.MkPlayerId 1)))
 
     Spec.it s "plays itself until the end, marking the page for page.js to step it" $ do
       let page playing at = Replay.view frame {Replay.playing = playing, Replay.position = at}
@@ -92,9 +92,15 @@ spec s = Spec.describe s "Parun.Web.Replay" $ do
 
     Spec.it s "names each seat to view as by its name and the name the table gives it" $ do
       let page = Html.toText (Replay.view frame)
-      Spec.assertBool s (Text.isInfixOf (Text.pack ">alice (You)</button>") page) "the seat viewed as"
-      Spec.assertBool s (Text.isInfixOf (Text.pack ">bob (Player 2)</button>") page) "another"
+      Spec.assertBool s (Text.isInfixOf (Text.pack ">Player 1 (You)</button>") page) "the seat viewed as"
+      Spec.assertBool s (Text.isInfixOf (Text.pack ">Player 2</button>") page) "another"
       Spec.assertBool s (Text.isInfixOf (Text.pack ">You</button>") (Html.toText (Replay.view frame {Replay.seats = [(PlayerId.MkPlayerId 0, Text.pack "You")]}))) "a name the table shares"
+
+    Spec.it s "names a scenario's seats as the table does, never by their labels" $ do
+      Spec.assertEqWith s "to view as" (Replay.seatsNamed Map.empty labelled) [(PlayerId.MkPlayerId 0, Text.pack "Player 1"), (PlayerId.MkPlayerId 1, Text.pack "Player 2")]
+      Spec.assertEqWith s "a game's names" (Replay.seatsNamed (Map.singleton (Text.pack "alice") (Text.pack "You")) labelled) [(PlayerId.MkPlayerId 0, Text.pack "You"), (PlayerId.MkPlayerId 1, Text.pack "Player 2")]
+      let line viewed = Replay.lineOf (Replay.tableNames (PlayerId.MkPlayerId viewed) labelled) True Nothing (Timed.MkTimed (When.MkWhen 3 Phase.PrecombatMain (Label.MkLabel (Text.pack "alice")) 0) Nothing (Entry.Do Move.Pass))
+      Spec.assertEqWith s "in a line, to the seat viewed as" (line 0, line 1) (Text.pack "Turn 3 \x00b7 Precombat main \x00b7 You pass", Text.pack "Turn 3 \x00b7 Precombat main \x00b7 Player 1 passes")
 
     Spec.it s "offers to play on from the position, and to go back to the list" $ do
       let page = Replay.view frame {Replay.position = 1}
@@ -114,7 +120,7 @@ spec s = Spec.describe s "Parun.Web.Replay" $ do
 
     Spec.it s "names the seat asked elsewhere without the question's kind" $ do
       let page = Html.toText (Replay.view frame {Replay.question = Just (request 1 "ChooseAction" (Reply.Array []))})
-      Spec.assertBool s (Text.isInfixOf (Text.pack ">Waiting on bob.</p>") page) "waiting"
+      Spec.assertBool s (Text.isInfixOf (Text.pack ">Waiting on Player 2.</p>") page) "waiting"
       Spec.assertBool s (not (Text.isInfixOf (Text.pack "ChooseAction") page)) "no kind"
 
     Spec.it s "draws the question asked of the seat viewed as, and nothing in it answers" $ do
@@ -231,12 +237,16 @@ step label = Html.search $ \node -> case node of
 request :: Natural -> String -> Reply.Reply -> Request.Request
 request seat kind offer = Request.MkRequest Nothing (Question.MkQuestion (PlayerId.MkPlayerId seat) (Text.pack kind) offer Nothing Nothing) Nothing 0
 
+-- | Two seats, as a scenario labels them.
+labelled :: [(PlayerId.PlayerId, Text.Text)]
+labelled = [(PlayerId.MkPlayerId 0, Text.pack "alice"), (PlayerId.MkPlayerId 1, Text.pack "bob")]
+
 frame :: Replay.Frame
 frame =
   Replay.MkFrame
     { Replay.name = Text.pack "a-scenario",
       Replay.description = Text.pack "what it shows",
-      Replay.seats = [(PlayerId.MkPlayerId 0, Text.pack "alice"), (PlayerId.MkPlayerId 1, Text.pack "bob")],
+      Replay.seats = Replay.seatsNamed Map.empty labelled,
       Replay.viewer = PlayerId.MkPlayerId 0,
       Replay.position = 0,
       Replay.positions = 3,

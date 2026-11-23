@@ -90,9 +90,11 @@ data Exit
 -- position the page goes to, each told to `moved`, until the page leaves
 -- it, stepping on by itself while played, until the end; a game finished
 -- here names each seat by who played it (History.seatNames), and says how
--- it ended at the end. The state at each position a turn begins is kept
--- once reached, for the log of every later position (Web.Replay.earlier),
--- and what each run keeps for the next to resume from (Scenario.replay).
+-- it ended at the end; a scenario names each by its number, and its lines
+-- name each as the table does (Web.Replay.tableNames). The state at each
+-- position a turn begins is kept once reached, for the log of every later
+-- position (Web.Replay.earlier), and what each run keeps for the next to
+-- resume from (Scenario.replay).
 -- While no tap waits, the runs go on ahead a position at a time, so a
 -- later position is kept before it is asked for; a step's taps
 -- queued while the engine works add up to one move.
@@ -104,7 +106,10 @@ viewer page moved registry name played scenario given = do
   let count = Natural.length (Scenario.Type.timeline scenario)
       labelled = seatsOf scenario
       names = foldMap History.seatNames played
-      seats = [(pid, Map.findWithDefault label label names) | (pid, label) <- labelled]
+      seats = Web.Replay.seatsNamed names labelled
+      -- A game finished here names its seats by who played them; a
+      -- scenario's lines name them as the table does to the seat viewed as.
+      lineNames viewing = if Maybe.isJust played then names else Web.Replay.tableNames viewing labelled
       seen = played >>= History.viewerLabel
       lookUp = Identity.runIdentity . Interpreter.chosenCard registry
       starts = Web.Replay.turnStarts (Foldable.toList (Scenario.Type.timeline scenario))
@@ -141,7 +146,7 @@ viewer page moved registry name played scenario given = do
         maybe (fmap (either (const Nothing) (Just . Stop.state)) (run s)) (pure . Just) known
       go playing at stop viewing reading = do
         earlier <- earlierOf at
-        let frame = (frameOf lookUp names name scenario seats count playing at stop viewing reading) {Web.Replay.earlier = fmap (PlayerView.Engine.viewFor viewing) earlier, Web.Replay.outcome = outcome}
+        let frame = (frameOf lookUp (lineNames viewing) name scenario seats count playing at stop viewing reading) {Web.Replay.earlier = fmap (PlayerView.Engine.viewFor viewing) earlier, Web.Replay.outcome = outcome}
         Browser.display page . fmap Screen.MkReplay $ Web.Replay.view frame
         (tapped, value) <- awaiting
         let moveTo target = if target == at then go playing at stop viewing Nothing else reach target >>= \next -> go (playing && target < count) target next viewing Nothing
