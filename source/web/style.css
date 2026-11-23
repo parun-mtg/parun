@@ -4947,6 +4947,77 @@ main.builder {
   gap: 12px;
 }
 
+/* A narrow screen holds a summary of the deck at its top and shows the
+   search or the deck beneath it, the search's filters folded away until
+   asked for; a wide one shows both whole and needs neither. */
+.deck-summary {
+  position: sticky;
+  top: env(safe-area-inset-top);
+  z-index: 5;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 8px 8px 8px 16px;
+  box-shadow: var(--shadow);
+}
+
+.summary-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+}
+
+.summary-count {
+  font-variant-numeric: tabular-nums;
+}
+
+.summary-problems {
+  color: var(--danger);
+  font-size: 13px;
+}
+
+#app .deck-summary button.deck-toggle {
+  margin-left: auto;
+}
+
+.summary-latest {
+  color: var(--muted);
+  font-size: 13px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.search-row {
+  display: flex;
+  gap: 8px;
+}
+
+.search-row .search {
+  flex: 1;
+  min-width: 0;
+}
+
+#app .search-row button.filters-toggle {
+  flex: none;
+}
+
+@media (max-width: 899px) {
+  main.builder .filters:not(.open),
+  .builder-body.deck-shown .builder-search,
+  .builder-body:not(.deck-shown) .builder-deck {
+    display: none;
+  }
+}
+
+@media (min-width: 900px) {
+  .deck-summary,
+  #app .search-row button.filters-toggle {
+    display: none;
+  }
+}
+
 .builder-deck {
   display: flex;
   flex-direction: column;
