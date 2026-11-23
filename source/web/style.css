@@ -639,6 +639,14 @@ body.busy #app .step-buttons button {
   pointer-events: auto;
 }
 
+/* And the builder's Add buttons on the search's rows and the basic lands,
+   whose rows keep their shape as cards are added (Parun.Web.Builder's
+   "copies"), so a quick tap queued meanwhile adds its card too. */
+body.busy #app .builder-search .result button.add,
+body.busy #app .builder-search .basics button {
+  pointer-events: auto;
+}
+
 /* The settings button, the page's, a bar's or the hand-off's, turns
    while the engine works, once it takes a moment. */
 body.busy #settings-button > svg,
@@ -1599,6 +1607,7 @@ main.lobby.new-game {
 }
 
 .deck-count {
+  margin-top: 12px;
   font-size: 13px;
 }
 
@@ -1691,6 +1700,19 @@ main.lobby.new-game {
 }
 
 .detail-curve .curve .bar {
+  flex: 1;
+  width: auto;
+  gap: 4px;
+}
+
+/* The builder's curve, at the size of a deck's detail. */
+.curve.builder-curve {
+  display: flex;
+  gap: 8px;
+  height: 90px;
+}
+
+.curve.builder-curve .bar {
   flex: 1;
   width: auto;
   gap: 4px;
@@ -1834,7 +1856,7 @@ main.lobby.new-game {
   flex: none;
 }
 
-.copyable .copy[data-copied]::after {
+.copy[data-copied]::after {
   content: " \2713";
 }
 
@@ -5046,6 +5068,10 @@ main.builder .filters,
   font-weight: 700;
   font-variant-numeric: tabular-nums;
   text-align: center;
+}
+
+.builder-search .result .copies:empty {
+  display: none;
 }
 
 .builder-search .result .left {

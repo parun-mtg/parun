@@ -99,13 +99,16 @@ update event typed screen = case event of
   MkNewDeck -> screen
   MkPlay _ -> screen
   MkEdit _ -> screen
-  MkRename -> screen {renaming = fmap (\name -> (snd (DeckBrowser.describe (DeckBrowser.titles (browser screen)) name), [])) (selected screen), deleting = Nothing}
+  MkRename -> unexported screen {renaming = fmap (\name -> (snd (DeckBrowser.describe (DeckBrowser.titles (browser screen)) name), [])) (selected screen), deleting = Nothing}
   MkRenameName -> screen {renaming = fmap (\(_, problems) -> (typed, problems)) (renaming screen)}
   MkSubmitRename -> screen
   MkCancelRename -> screen {renaming = Nothing}
   MkDuplicate _ -> screen
-  MkAskDelete name -> screen {deleting = Just name, renaming = Nothing}
+  MkAskDelete name -> unexported screen {deleting = Just name, renaming = Nothing}
   MkCancelDelete -> screen {deleting = Nothing}
+  where
+    -- The list shown to copy gives way to the panel opened.
+    unexported = browsed (\b -> b {DeckBrowser.exporting = Nothing})
 
 -- | The selected deck and the name it is to be renamed to, or why it may
 -- not be: the name is empty or another saved deck's. Its own name is no
@@ -180,7 +183,7 @@ browserView screen =
       )
     ]
       <> foldMap (pure . (,) (Text.pack "import") . fmap MkBrowse . DeckBrowser.importView) (DeckBrowser.importing browsing)
-      <> [ (Text.pack "shelves", fmap MkBrowse (DeckBrowser.shelvesView [DeckBrowser.MkSaved, DeckBrowser.MkPrecons] browsing)),
+      <> [ (Text.pack "shelves", fmap MkBrowse (DeckBrowser.shelvesView browsing)),
            (Text.pack "filters", DeckBrowser.filtersView MkBrowse [] browsing),
            (Text.pack "decks", DeckBrowser.resultsView MkSelect ((== selected screen) . Just) none (DeckBrowser.decks browsing) browsing)
          ]
@@ -244,14 +247,16 @@ detailView screen =
       | Just (typed, problems) <- renaming screen =
           [ Element.el "div" ["rename"] [] $
               [ Element.el "label" [] [Element.attr "for" (Text.pack "rename-name")] [Element.string "New name"],
-                Element.el "input" ["rename-name"] [Element.attr "id" (Text.pack "rename-name"), Element.attr "type" (Text.pack "text"), Element.attr "autocomplete" (Text.pack "off"), Element.attr "value" typed, Element.on "input" MkRenameName] []
+                -- Focused as it opens, and Enter in it renames (page.js's
+                -- data-focus and data-enter).
+                Element.el "input" ["rename-name"] [Element.attr "id" (Text.pack "rename-name"), Element.attr "type" (Text.pack "text"), Element.attr "autocomplete" (Text.pack "off"), Element.attr "value" typed, Element.attr "data-focus" Text.empty, Element.attr "data-enter" (Text.pack "save-rename"), Element.on "input" MkRenameName] []
               ]
                 <> [Element.el "ul" ["problems"] [Element.attr "role" (Text.pack "alert")] [Element.el "li" [] [] [Element.text p] | p <- problems] | not (null problems)]
                 <> [ Element.el
                        "div"
                        ["saved-tools"]
                        []
-                       [ Element.button ["save-rename"] MkSubmitRename [Element.string "Rename"],
+                       [ Element.el "button" ["save-rename"] [Element.attr "id" (Text.pack "save-rename"), Element.attr "type" (Text.pack "button"), Element.on "click" MkSubmitRename] [Element.string "Rename"],
                          Element.button ["cancel-rename"] MkCancelRename [Element.string "Cancel"]
                        ]
                    ]

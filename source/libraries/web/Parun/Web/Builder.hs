@@ -27,6 +27,9 @@ data Builder = MkBuilder
   { -- | Every card the deck may draw on, once indexed.
     index :: Maybe (Seq.Seq CardIndex.Entry),
     query :: CardIndex.Query,
+    -- | How many of the search's results are shown, a showing more at a time
+    -- (CardIndex.cap).
+    showing :: Int,
     -- | The main deck: how many of each card.
     deck :: Map.Map CardName.CardName Natural,
     -- | CR 100.4a: the sideboard, unless a pool makes it (CR 100.4b).
@@ -84,8 +87,9 @@ data Builder = MkBuilder
     pasting :: Maybe Text.Text,
     -- | Why the last pool pasted, or set chosen, was refused.
     poolProblems :: [Text.Text],
-    -- | The codes of the sets whose cards the search may draw on.
-    sets :: [Text.Text],
+    -- | The sets whose cards the search may draw on, by code, each with its
+    -- name.
+    sets :: [(Text.Text, Text.Text)],
     -- | Each card of the index by its name, and the card each way of naming
     -- one means, case-folded: its name, each face's, and its faces joined.
     byName :: Map.Map CardName.CardName CardIndex.Entry,
@@ -139,6 +143,8 @@ data Event
   | MkToggleColour Color.Color
   | MkToggleKind CardType.CardType
   | MkValue
+  | -- | Shows more of the search's results.
+    MkMore
   | MkAdd DeckList.Section CardName.CardName
   | MkRemove DeckList.Section CardName.CardName
   | -- | Sends the search's cards to this zone.
@@ -169,6 +175,7 @@ new named =
   MkBuilder
     { index = Nothing,
       query = CardIndex.everything,
+      showing = CardIndex.cap,
       deck = Map.empty,
       side = Map.empty,
       command = Map.empty,
@@ -206,10 +213,12 @@ update event typed builder = case event of
   MkToggleColour c -> withQuery (\q -> q {CardIndex.wanted = toggle c (CardIndex.wanted q)})
   MkToggleKind k -> withQuery (\q -> q {CardIndex.kinds = toggle k (CardIndex.kinds q)})
   MkValue -> withQuery (\q -> q {CardIndex.valued = Read.readMaybe (Text.unpack typed)})
+  MkMore -> builder {showing = showing builder + CardIndex.cap}
   MkAdd section card
     | section == DeckList.Side, pooledSide builder -> builder
     | section == DeckList.Main, Just most <- capOf builder card, Map.findWithDefault 0 card (deck builder) >= most -> builder
-    | otherwise -> withZone section (Map.insertWith (+) card 1 (zoneOf section builder)) builder
+    -- A card added answers a save refused for want of any.
+    | otherwise -> withZone section (Map.insertWith (+) card 1 (zoneOf section builder)) builder {saveProblems = []}
   MkRemove section card -> withZone section (Map.update (\n -> if n <= 1 then Nothing else Just (n - 1)) card (zoneOf section builder)) builder
   MkTarget section -> builder {target = section}
   MkChoose section card colour -> case choiceOf builder section card of
@@ -244,8 +253,8 @@ update event typed builder = case event of
   MkStay -> builder {leaving = False}
   MkLeave -> builder
   MkPoolChoice
-    | Text.null typed -> builder {scope = MkEveryCard, pasting = Nothing, poolProblems = []}
-    | typed == Text.pack "pool", Maybe.isJust (pool builder) -> builder {scope = MkPoolCards, pasting = Nothing, poolProblems = []}
+    | Text.null typed -> builder {scope = MkEveryCard, showing = CardIndex.cap, pasting = Nothing, poolProblems = []}
+    | typed == Text.pack "pool", Maybe.isJust (pool builder) -> builder {scope = MkPoolCards, showing = CardIndex.cap, pasting = Nothing, poolProblems = []}
     | typed == Text.pack "paste" -> builder {pasting = Just (Maybe.fromMaybe Text.empty (pasting builder)), poolProblems = []}
     | otherwise -> builder
   MkPoolText -> builder {pasting = Just typed}
@@ -262,6 +271,7 @@ update event typed builder = case event of
                   builder
                     { pool = Just (Map.fromListWith (+) [(canonical builder card, n) | (card, n) <- named]),
                       scope = MkPoolCards,
+                      showing = CardIndex.cap,
                       format = Text.pack "limited",
                       least = Nothing,
                       side = Map.empty,
@@ -275,7 +285,7 @@ update event typed builder = case event of
   MkClosePool -> builder {pasting = Nothing, poolProblems = []}
   MkDropPool -> builder {pool = Nothing, scope = if scope builder == MkPoolCards then MkEveryCard else scope builder}
   where
-    withQuery f = builder {query = f (query builder)}
+    withQuery f = builder {query = f (query builder), showing = CardIndex.cap}
     toggle :: (Ord a) => a -> Set.Set a -> Set.Set a
     toggle x xs = if Set.member x xs then Set.delete x xs else Set.insert x xs
 
@@ -436,18 +446,21 @@ view builder =
       results = case index builder of
         Nothing -> [Element.el "p" ["empty"] [] [Element.string "Preparing the cards\x2026"]]
         Just entries ->
-          let (count, shown) = CardIndex.search q entries
+          let (count, shown) = CardIndex.search (showing builder) q entries
               row e =
                 Element.el "div" (["result"] <> ["in-deck" | Map.member (CardIndex.name e) (zoneOf (target builder) builder)]) [] $
                   [reader (CardIndex.name e)]
                     <> foldMap (pure . Mana.cost) (CardIndex.cost e)
                     <> [Element.el "span" ["type-line"] [] [Element.text (CardIndex.typeLine e)]]
-                    <> [Element.el "span" ["copies"] [] [Element.string (show n <> " " <> whereIn (target builder))] | n <- Maybe.maybeToList (Map.lookup (CardIndex.name e) (zoneOf (target builder) builder))]
+                    -- Empty while none are, so a card added keeps its row's
+                    -- buttons where a tap queued meanwhile finds them.
+                    <> [Element.el "span" ["copies"] [] [Element.string (show n <> " " <> whereIn (target builder)) | n <- Maybe.maybeToList (Map.lookup (CardIndex.name e) (zoneOf (target builder) builder))]]
                     <> [Element.el "span" ["left"] [] [Element.string (show (most - min most (Map.findWithDefault 0 (CardIndex.name e) (deck builder))) <> " left")] | target builder == DeckList.Main, most <- Maybe.maybeToList (capOf builder (CardIndex.name e))]
                     <> [adding (target builder) (CardIndex.name e)]
            in [Element.el "p" ["empty"] [] [Element.string "No card matches."] | count == 0]
-                <> [Element.el "p" ["shown-count"] [] [Element.string ("Showing " <> show (Seq.length shown) <> " of " <> show count)] | count > Seq.length shown]
-                <> [Element.el "div" ["results", "panel"] [] (fmap row (Foldable.toList shown))]
+                <> [Element.el "p" ["shown-count"] [] [Element.string ("Showing " <> show (Seq.length shown) <> " of " <> show count <> "; narrow the search, or show more.")] | count > Seq.length shown]
+                <> [Element.el "div" ["results", "panel"] [] (fmap row (Foldable.toList shown)) | count > 0]
+                <> [Element.button ["show-more"] MkMore [Element.string ("Show " <> show (min CardIndex.cap (count - Seq.length shown)) <> " more")] | count > Seq.length shown]
       kindBlock title k =
         let these = List.sortOn (\l -> (DeckBrowser.value l, named (DeckBrowser.card l))) [l | l <- lines', DeckBrowser.kind l == k]
          in [ Element.el "div" ["deck-section"] [] $
@@ -530,7 +543,7 @@ view builder =
                 Element.el "label" ["sr-only"] [Element.attr "for" (Text.pack "builder-pool")] [Element.string "Card pool"],
                 Element.el "select" ["pool", "deck-menu"] [Element.attr "id" (Text.pack "builder-pool"), Element.on "change" MkPoolChoice] $
                   [option poolValue (Text.empty, Text.pack "Every card")]
-                    <> [option poolValue (Text.pack "set:" <> code, Text.toUpper code) | code <- sets builder]
+                    <> [option poolValue (Text.pack "set:" <> code, title) | (code, title) <- sets builder]
                     <> [option poolValue (Text.pack "pool", Text.pack "The pool") | Maybe.isJust (pool builder)]
                     <> [option poolValue (Text.pack "paste", Text.pack "Paste a pool\x2026")]
               ]
@@ -555,9 +568,8 @@ view builder =
                   ]
                     <> results,
                 Element.el "section" ["builder-deck", "panel"] [Element.attr "aria-label" (Text.pack "Deck")] $
-                  [ Element.el "div" ["deck-head"] [] [Element.el "h2" [] [] [Element.string counted], Element.el "span" ["pips"] [Element.attr "aria-label" (Text.pack "Colours")] [Mana.symbol (Text.pack (Web.Card.letterUpper c)) | c <- Set.toList (deckColours builder)]],
-                    DeckBrowser.curve [] (DeckBrowser.curveOf lines')
-                  ]
+                  [Element.el "div" ["deck-head"] [] [Element.el "h2" [] [] [Element.string counted], Element.el "span" ["pips"] [Element.attr "aria-label" (Text.pack "Colours")] [Mana.symbol (Text.pack (Web.Card.letterUpper c)) | c <- Set.toList (deckColours builder)]]]
+                    <> [DeckBrowser.curve ["builder-curve"] spread | let spread = DeckBrowser.curveOf lines', any (> 0) spread]
                     <> [Element.el "p" ["problem"] [Element.attr "role" (Text.pack "alert")] [Element.text p] | p <- Maybe.maybeToList (loadProblem builder)]
                     <> [Element.el "ul" ["notices"] [] [Element.el "li" [] [] [Element.text n] | n <- notices builder] | not (null (notices builder))]
                     <> keptNote
@@ -659,7 +671,7 @@ open savedName offered text builder =
 
 -- | The builder searching a set's cards, by its code, as its list names them.
 setPool :: Text.Text -> [CardName.CardName] -> Builder -> Builder
-setPool code names builder = builder {scope = MkSetCards code names, pasting = Nothing, poolProblems = []}
+setPool code names builder = builder {scope = MkSetCards code names, showing = CardIndex.cap, pasting = Nothing, poolProblems = []}
 
 -- | The builder with its cards indexed, and every way of naming one known.
 withIndex :: Seq.Seq CardIndex.Entry -> Builder -> Builder

@@ -696,7 +696,7 @@ browserView lobby =
       )
     ]
       <> foldMap (pure . (,) (Text.pack "import") . fmap MkBrowse . DeckBrowser.importView) (DeckBrowser.importing browsing)
-      <> [ (Text.pack "shelves", fmap MkBrowse (DeckBrowser.shelvesView [DeckBrowser.MkPrecons, DeckBrowser.MkSaved] browsing)),
+      <> [ (Text.pack "shelves", fmap MkBrowse (DeckBrowser.shelvesView browsing)),
            (Text.pack "filters", DeckBrowser.filtersView MkBrowse [Element.button ["random"] MkRandom [Element.string "Surprise me"]] browsing),
            (Text.pack "decks", DeckBrowser.resultsView MkPick ((== held) . Just) [Element.el "p" ["empty"] [] [Element.string "No saved decks yet: build or import one."]] (offered lobby) browsing)
          ]

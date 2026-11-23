@@ -17,6 +17,7 @@ import qualified Data.List.NonEmpty as NonEmpty
 import qualified Data.Map.Lazy as LazyMap
 import qualified Data.Map.Strict as Map
 import qualified Data.Maybe as Maybe
+import qualified Data.Ord as Ord
 import qualified Data.Sequence as Seq
 import qualified Data.Set as Set
 import qualified Data.Text as Text
@@ -664,7 +665,7 @@ builder shell deck back = do
       named <- if null (Builder.formats shown) then Legality.builtFormats else pure (Builder.formats shown)
       least <- maybe (Legality.minimumFor (Builder.format shown)) (pure . Just) (Builder.least shown)
       let indexed = if Maybe.isNothing (Builder.index shown) then maybe id Builder.withIndex (cardIndex now) shown else shown
-          filled = indexed {Builder.formats = named, Builder.least = least, Builder.sets = Map.keys (setLists now), Builder.loadProblem = Loading.problem (loading now)}
+          filled = indexed {Builder.formats = named, Builder.least = least, Builder.sets = setsNamed now, Builder.loadProblem = Loading.problem (loading now)}
           -- Checked again whenever the list it saves would change.
           key = Builder.listText filled
       -- Taps waiting go first: the list is checked once they are done.
@@ -709,6 +710,15 @@ builder shell deck back = do
                   leaving
           _ -> go (Builder.update event value shownNow) (snd current) leaving
         _ -> go shownNow (snd current) leaving
+
+-- | The sets a deck may be built from, by code, each with its name, newest
+-- first, as the deck browser's set menu orders them (DeckBrowser.setsOf).
+setsNamed :: Loaded -> [(Text.Text, Text.Text)]
+setsNamed now =
+  let release code = Map.lookup (Text.toUpper code) (releases now)
+   in [ (code, maybe (Text.toUpper code) DeckBrowser.setName (release code))
+      | code <- List.sortOn (\code -> (Ord.Down (fmap DeckBrowser.released (release code)), code)) (Map.keys (setLists now))
+      ]
 
 -- | Where leaving the builder for `next` leads: the Decks screen on the
 -- deck it saved, where it leads there at all.

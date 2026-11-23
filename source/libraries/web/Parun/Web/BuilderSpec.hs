@@ -97,6 +97,28 @@ spec s = Spec.describe s "Parun.Web.Builder" $ do
       let many = fresh {Builder.index = Just (Seq.fromList [card ("Card " <> show n) | n <- [1 .. 61 :: Int]])}
       Spec.assertBool s (Text.isInfixOf (Text.pack "Showing 60 of 61") (page many)) "beyond"
 
+    Spec.it s "shows more on a tap, and the first again once the search changes" $ do
+      let many = fresh {Builder.index = Just (Seq.fromList [card ("Card " <> show n) | n <- [1 .. 130 :: Int]])}
+          more = tap Builder.MkMore many
+          tapped label builder = let shown' = Builder.view builder in Html.labelled (Text.pack "button") (Text.pack label) shown' >>= \path -> Html.handler (Text.pack "click") path shown'
+      Spec.assertEqWith s "offered" (tapped "Show 60 more" many) (Just Builder.MkMore)
+      Spec.assertEqWith s "shown" (Text.isInfixOf (Text.pack "Showing 120 of 130") (page more), tapped "Show 10 more" more) (True, Just Builder.MkMore)
+      Spec.assertEqWith s "reset" (Builder.showing (Builder.update Builder.MkSearch (Text.pack "card") more)) CardIndex.cap
+
+    Spec.it s "keeps a result's Add where it was as its card is added" $ do
+      let addAt builder = Html.labelled (Text.pack "button") (Text.pack "Add Shock") (Builder.view builder)
+          added = tap (Builder.MkAdd DeckList.Main (named "Shock")) indexed
+      Spec.assertEqWith s "in deck" (Text.isInfixOf (Text.pack "1 in deck") (page added)) True
+      Spec.assertEqWith s "same place" (addAt added) (addAt indexed)
+
+    Spec.it s "drops a save refused for want of cards once a card is added" $ do
+      let refused = indexed {Builder.saveProblems = [Text.pack "Add some cards before saving."]}
+      Spec.assertEq s (Builder.saveProblems (tap (Builder.MkAdd DeckList.Main bolt) refused)) []
+
+    Spec.it s "draws the curve only once the deck holds a spell" $ do
+      Spec.assertEqWith s "empty" (Text.isInfixOf (Text.pack "curve") (page indexed)) False
+      Spec.assertEqWith s "a spell" (Text.isInfixOf (Text.pack "curve builder-curve") (page (tap (Builder.MkAdd DeckList.Main bolt) indexed))) True
+
     Spec.it s "says no card matches" $ do
       Spec.assertBool s (Text.isInfixOf (Text.pack "No card matches.") (page (Builder.update Builder.MkSearch (Text.pack "zzzz") indexed))) "none"
 
@@ -239,15 +261,15 @@ spec s = Spec.describe s "Parun.Web.Builder" $ do
 
     Spec.it s "finds a double-faced card a set's list names by both faces" $ do
       let scoped = Builder.setPool (Text.pack "neo") [named "Front Face // Back Face"] indexed
-      Spec.assertEq s (fmap (CardName.unwrap . CardIndex.name) (Foldable.toList (snd (CardIndex.search (Builder.searchQuery scoped) (Maybe.fromMaybe Seq.empty (Builder.index scoped)))))) [Text.pack "Front Face", Text.pack "Mountain"]
+      Spec.assertEq s (fmap (CardName.unwrap . CardIndex.name) (Foldable.toList (snd (CardIndex.search CardIndex.cap (Builder.searchQuery scoped) (Maybe.fromMaybe Seq.empty (Builder.index scoped)))))) [Text.pack "Front Face", Text.pack "Mountain"]
 
     Spec.it s "a set's cards narrow the search without capping" $ do
       let scoped = Builder.setPool (Text.pack "m10") [bolt] indexed
       Spec.assertEq s (CardIndex.among (Builder.searchQuery scoped), Builder.deck (iterate (tap (Builder.MkAdd DeckList.Main bolt)) scoped !! 5)) (Just (Set.singleton (Text.pack "lightning bolt")), Map.singleton bolt 5)
 
     Spec.it s "offers every card, each set, and pasting a pool" $ do
-      let shown = page indexed {Builder.sets = [Text.pack "m10"]}
-      Spec.assertBool s (all (`Text.isInfixOf` shown) [Text.pack "<option value=\"\" selected=\"\">Every card</option>", Text.pack "<option value=\"set:m10\">M10</option>", Text.pack "<option value=\"paste\">Paste a pool"]) "options"
+      let shown = page indexed {Builder.sets = [(Text.pack "m10", Text.pack "Magic 2010")]}
+      Spec.assertBool s (all (`Text.isInfixOf` shown) [Text.pack "<option value=\"\" selected=\"\">Every card</option>", Text.pack "<option value=\"set:m10\">Magic 2010</option>", Text.pack "<option value=\"paste\">Paste a pool"]) "options"
 
     Spec.it s "uses the pool pasted into its panel" $ do
       let shown = Builder.view (Builder.update Builder.MkPoolChoice (Text.pack "paste") indexed)

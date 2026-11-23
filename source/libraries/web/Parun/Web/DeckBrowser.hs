@@ -389,8 +389,8 @@ curveOf lines' =
   let spells = [l | l <- lines', inDeck l, kind l /= MkLand]
    in [sum [copies l | l <- spells, value l == n] | n <- [0 .. 5]] <> [sum [copies l | l <- spells, value l >= 6]]
 
--- | A curve as bars, each labelled with its mana value, with these classes:
--- "spark" draws it small, unlabelled.
+-- | A curve as bars, each labelled with its mana value, an empty one drawing
+-- no bar, with these classes: "spark" draws it small, unlabelled.
 curve :: [String] -> [Natural] -> Html.Html msg
 curve classes counts =
   let tallest = maximum (1 : counts)
@@ -399,7 +399,7 @@ curve classes counts =
           "span"
           ["bar"]
           [Element.attr "title" (Text.pack (show n <> " at mana value " <> mv))]
-          [Element.el "span" ["fill"] [Element.attr "style" (Text.pack ("height:" <> show (div (n * 100) tallest) <> "%"))] [], Element.el "span" ["mv"] [] [Element.string mv]]
+          ([Element.el "span" ["fill"] [Element.attr "style" (Text.pack ("height:" <> show (div (n * 100) tallest) <> "%"))] [] | n > 0] <> [Element.el "span" ["mv"] [] [Element.string mv]])
    in Element.el "span" ("curve" : classes) [Element.attr "aria-hidden" (Text.pack "true")] (fmap bar (zip (fmap show [0 :: Int .. 5] <> ["6+"]) counts))
 
 -- | A deck's cards by kind, each kind under its count, then each section
@@ -455,10 +455,11 @@ counted browser name =
   List.intercalate " \x00b7 " (fmap Text.unpack (Maybe.maybeToList (provenance browser name)) <> [show n <> " cards" | n <- Maybe.maybeToList (Map.lookup name (sizes browser))])
 
 -- | Where a deck comes from, as its tile's badge says: a precon's set by
--- name, or "Saved"; a shipped format deck says nothing.
+-- name; a saved deck, which its shelf already says is one, and a shipped
+-- format deck say nothing.
 provenance :: DeckBrowser -> Text.Text -> Maybe Text.Text
 provenance browser name
-  | isSaved name = Just (Text.pack "Saved")
+  | isSaved name = Nothing
   | otherwise = fmap (setTitle browser) (fst (describe (titles browser) name))
 
 -- | A shelf's name on its tab.
@@ -467,14 +468,15 @@ shelfTitle which = case which of
   MkPrecons -> "Precons"
   MkSaved -> "My decks"
 
--- | The shelves as tabs, in this order, the one shown marked.
-shelvesView :: [Shelf] -> DeckBrowser -> Html.Html Event
-shelvesView tabs browser =
+-- | The shelves as tabs, My decks first wherever they are shown, the one
+-- shown marked.
+shelvesView :: DeckBrowser -> Html.Html Event
+shelvesView browser =
   Element.el
     "div"
     ["shelves"]
     [Element.attr "role" (Text.pack "tablist"), Element.attr "aria-label" (Text.pack "Which decks")]
-    (fmap tab tabs)
+    (fmap tab [MkSaved, MkPrecons])
   where
     tab which =
       let on = shelf browser == which
@@ -595,14 +597,21 @@ importView panel =
              ]
          ]
 
--- | A deck's list, to copy.
+-- | A deck's list, to copy with its Copy button (page.js's data-copy),
+-- scrolled into view as it opens (page.js's data-reveal).
 exportView :: Map.Map Text.Text Text.Text -> (Text.Text, Text.Text) -> Html.Html Event
 exportView named (name, contents) =
   Element.el
     "section"
     ["export"]
-    [Element.attr "aria-label" (Text.pack "Export a deck")]
+    [Element.attr "aria-label" (Text.pack "Export a deck"), Element.attr "data-reveal" Text.empty]
     [ Element.el "h2" [] [] [Element.text (snd (describe named name))],
-      Element.el "textarea" ["export-text"] [Element.attr "readonly" Text.empty, Element.attr "rows" (Text.pack "12"), Element.attr "aria-label" (Text.pack "Deck list")] [Element.text contents],
-      Element.button [] MkCloseExport [Element.string "Close"]
+      Element.el "textarea" ["export-text"] [Element.attr "id" (Text.pack "export-text"), Element.attr "readonly" Text.empty, Element.attr "rows" (Text.pack "12"), Element.attr "aria-label" (Text.pack "Deck list")] [Element.text contents],
+      Element.el
+        "div"
+        ["import-tools"]
+        []
+        [ Element.el "button" ["primary", "copy"] [Element.attr "type" (Text.pack "button"), Element.attr "data-copy" (Text.pack "export-text")] [Element.string "Copy"],
+          Element.button [] MkCloseExport [Element.string "Close"]
+        ]
     ]
