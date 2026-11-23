@@ -1,7 +1,8 @@
 -- | A seat of another browser's game, played on this page (#9185): no engine
 -- runs here, only the requests the host sends the seat, each answered on the
--- page as the hotseat answers its own (Hotseat.exchange), until the host
--- says how the game ended.
+-- page as the hotseat answers its own (Hotseat.exchange), the page naming
+-- the seat the host says decides meanwhile, until the host says how the game
+-- ended.
 module Parun.Browser.Guest where
 
 import qualified Control.Exception as Exception
@@ -33,12 +34,15 @@ play :: Browser.Page Screen.Event -> (CardName.CardName -> Either InvalidCorpus.
 play page lookUp levelRef channel rejoin seat leave = do
   seatRef <- IORef.newIORef . Hotseat.newSeat seat =<< IORef.readIORef levelRef
   Hotseat.keepingLevel levelRef seatRef . Exception.handle (\Hotseat.MkAbandonedGame -> pure Ending.MkAbandoned) $ do
-    let local = Hotseat.exchange lookUp page seatRef leave
+    -- The seat the host last said decides, until the guest's own is asked.
+    decidingRef <- IORef.newIORef Nothing
+    let local request = IORef.writeIORef decidingRef Nothing >> Hotseat.exchange lookUp page seatRef leave request
         -- While the host's game goes on, the page stays live, waiting on
-        -- every other seat: the host does not say whose decision it is.
+        -- that seat, or every other before the host names one.
         others state = [SeatView.player s | request <- Maybe.maybeToList (Hotseat.lastAsked state), shown <- Maybe.maybeToList (Request.view request), s <- PlayerView.seats shown, SeatView.player s /= seat]
         loop = do
-          heard <- Hotseat.awaiting lookUp page seatRef leave others (Link.receive channel)
+          deciding <- IORef.readIORef decidingRef
+          heard <- Hotseat.awaiting lookUp page seatRef leave (\state -> maybe (others state) pure deciding) (Link.receive channel)
           case heard of
             Nothing -> do
               back <- rejoin
@@ -47,6 +51,7 @@ play page lookUp levelRef channel rejoin seat leave = do
               answered <- Link.guest local message
               case answered of
                 Link.MkReply reply -> Link.send channel reply >> loop
+                Link.MkWaitingOn other -> IORef.writeIORef decidingRef (Just other) >> loop
                 Link.MkEnded verdict said scenario -> pure (verdict, said, scenario)
                 Link.MkIgnored -> loop
     (verdict, said, scenario) <- loop

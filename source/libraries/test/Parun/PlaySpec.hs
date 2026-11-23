@@ -415,5 +415,5 @@ gameSpec s = Spec.describe s "Play.Command" $ do
   Spec.it s "a game's saved scenario names what it was played with" $ do
     let seed = Generator.key (S.seeded 7)
         deck = Deck.fromCards Map.empty
-    (_, recorded) <- Command.game (Text.pack "the web client") (const (pure Nothing)) (pure Nothing) (const (pure ())) PlayOptions.none Search.known (S.fixtureRegistry []) Nothing (deck NonEmpty.:| [deck]) seed
+    (_, recorded) <- Command.game (Text.pack "the web client") (const (pure Nothing)) (pure Nothing) (const (pure ())) [] PlayOptions.none Search.known (S.fixtureRegistry []) Nothing (deck NonEmpty.:| [deck]) seed
     Spec.assertEqWith s "description" (Scenario.description recorded) (Text.pack "Played with the web client, seed " <> Key.toHex seed <> Text.pack ".")

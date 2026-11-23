@@ -11,15 +11,19 @@ import qualified Data.Map.Strict as Map
 import qualified Data.Text as Text
 import qualified Parun.Codec.Reply as Codec.Reply
 import qualified Parun.Codec.Request as Codec.Request
+import qualified Parun.Engine.Driver as Driver
 import qualified Parun.Extra.Integer as Integer
 import qualified Parun.Json.Value as Value
 import qualified Parun.JsonCodec.Codec as Codec
 import qualified Parun.JsonCodec.Common as Common
+import qualified Parun.Play.Game as Game
 import qualified Parun.Play.Key as Key
 import qualified Parun.Play.Opponent as Opponent
 import qualified Parun.Play.Protocol as Protocol
+import qualified Parun.Types.Asked as Asked
 import qualified Parun.Types.Difficulty as Difficulty
 import qualified Parun.Types.Key as Key.Type
+import qualified Parun.Types.Observer as Observer
 import qualified Parun.Types.Persona as Persona
 import qualified Parun.Types.PlayerId as PlayerId
 import qualified Parun.Types.Question as Question
@@ -40,6 +44,9 @@ data Message
     MkStart PlayerId.PlayerId
   | -- | A request the guest's seat answers.
     MkAsk Request.Request
+  | -- | The seat whose decision the game now waits on, another's than the
+    -- guest's (telling).
+    MkDeciding PlayerId.PlayerId
   | -- | The guest's reply to the last request.
     MkAnswer R.Reply
   | -- | The game ended: how for the guest, what is said of it
@@ -68,6 +75,7 @@ encode build message =
         MkReady on -> ("ready", [Value.pair "ready" (Value.boolean on)])
         MkStart seat -> ("start", [Value.pair "seat" (Value.integer (toInteger (PlayerId.unwrap seat)))])
         MkAsk request -> ("ask", [Value.pair "request" (Codec.encode Codec.Request.codec request)])
+        MkDeciding seat -> ("deciding", [Value.pair "seat" (Value.integer (toInteger (PlayerId.unwrap seat)))])
         MkAnswer reply -> ("answer", [Value.pair "reply" (Codec.Reply.toValue reply)])
         MkEnd verdict said scenario -> ("end", [Value.pair "verdict" (Value.string (verdictName verdict)), Value.pair "said" (Value.array (fmap Value.text said)), Value.pair "scenario" (Value.text scenario)])
       place p = Value.object [Value.pair "who" (Value.text (who p)), Value.pair "deck" (Value.text (deck p)), Value.pair "ready" (maybe Value.null Value.boolean (ready p))]
@@ -88,6 +96,7 @@ decode build line = do
     "ready" -> MkReady <$> (Common.field "ready" pairs >>= Common.asBoolean)
     "start" -> MkStart <$> (Common.field "seat" pairs >>= Common.asInteger >>= natural)
     "ask" -> MkAsk <$> (Common.field "request" pairs >>= Codec.decode Codec.Request.codec)
+    "deciding" -> MkDeciding <$> (Common.field "seat" pairs >>= Common.asInteger >>= natural)
     "answer" -> MkAnswer <$> (Common.field "reply" pairs >>= Codec.Reply.fromValue)
     "end" -> MkEnd <$> (text "verdict" >>= verdictNamed) <*> (Common.field "said" pairs >>= Common.asArray >>= traverse Common.asText) <*> text "scenario"
     other -> Left (Text.pack ("not a message: " <> other))
@@ -143,11 +152,32 @@ remote rejoin places channel request = asked
           back <- rejoin
           if back then send channel (MkMatchup places) >> send channel (MkStart (Question.seat (Request.question request))) >> asked else pure Nothing
 
+-- | Tells each guest, over its channel in `guests`, of every seat the game
+-- asks but its own as the seat asked changes, `told` holding the seat each
+-- was last told of: a guest's own seat asked counts, since it is sent the
+-- request. What each was told of then.
+telling :: (Monad m) => Map.Map PlayerId.PlayerId (Channel m) -> PlayerId.PlayerId -> Map.Map PlayerId.PlayerId PlayerId.PlayerId -> m (Map.Map PlayerId.PlayerId PlayerId.PlayerId)
+telling guests seat told = do
+  Monad.forM_ (Map.toList guests) $ \(g, channel) ->
+    Monad.when (g /= seat && Map.lookup g told /= Just seat) (send channel (MkDeciding seat))
+  pure (seat <$ guests)
+
+-- | Each prompt's deciding seat given to `decides` before it is answered,
+-- whoever answers it, a bot included.
+deciding :: (Monad m) => (PlayerId.PlayerId -> m ()) -> Observer.Observer (Game.Play m)
+deciding decides =
+  Observer.MkObserver
+    { Observer.before = mapM_ (Game.underneath . decides) . Driver.deciderOf . Asked.prompt,
+      Observer.after = \_ _ -> pure ()
+    }
+
 -- | What the guest does with a message from the host once the game is under
 -- way: a request is answered through `local`, its reply what to send back;
--- the end is said; anything else is ignored.
+-- the end is said; whose decision the game waits on is shown; anything else
+-- is ignored.
 data Heard
   = MkReply Message
+  | MkWaitingOn PlayerId.PlayerId
   | MkEnded Ending.Verdict [Text.Text] Text.Text
   | MkIgnored
   deriving (Eq, Show)
@@ -160,6 +190,7 @@ guest :: (Monad m) => Protocol.Exchange m -> Message -> m Heard
 guest local message = case message of
   MkAsk request -> maybe MkIgnored (either (const MkIgnored) (MkReply . MkAnswer)) <$> local request
   MkEnd verdict said scenario -> pure (MkEnded verdict said scenario)
+  MkDeciding seat -> pure (MkWaitingOn seat)
   _ -> pure MkIgnored
 
 -- | A game with guests as the host's page keeps it, to pick it up after a

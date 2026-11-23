@@ -820,8 +820,11 @@ play shell seats invited here resuming = do
           -- A rejoining guest is told the match-up played, every bot's deck drawn.
           remotes = Map.fromList [(seatOf i, Link.remote (rejoinSlot i) (Lobby.placesFor i (Lobby.rematch seats invited here)) (channelOf i)) | i <- Set.toList invited]
           kept = if keeping then Browser.keepReply . Link.savedReply else const (pure ())
+      -- Each guest is told whose decision the game waits on (Link.telling).
+      told <- IORef.newIORef Map.empty
+      let decides seat = IORef.readIORef told >>= Link.telling (Map.fromList [(seatOf i, channelOf i) | i <- Set.toList invited]) seat >>= IORef.writeIORef told
       parsed <- foldMap LazyMap.elems . cards <$> IORef.readIORef (loaded shell)
-      ended <- Hotseat.game (page shell) reg parsed (tableOf shell) (level shell) bots (fmap (Bifunctor.first Text.unpack) seats) remotes (Map.mapKeys seatOf here) seed (foldMap Link.replies resuming) kept tellAll (leaveFor shell chosen)
+      ended <- Hotseat.game (page shell) reg parsed (tableOf shell) (level shell) bots (fmap (Bifunctor.first Text.unpack) seats) remotes (Map.mapKeys seatOf here) seed (foldMap Link.replies resuming) kept decides tellAll (leaveFor shell chosen)
       Monad.when keeping Browser.forgetGame
       case ended of
         Left problems -> stopped problems >> notice shell problems
