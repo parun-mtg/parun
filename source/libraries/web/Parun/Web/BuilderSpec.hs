@@ -46,6 +46,10 @@ spec s = Spec.describe s "Parun.Web.Builder" $ do
       Spec.assertEqWith s "colours" (filter (`elem` fmap (Text.pack . show) [minBound .. maxBound :: Color.Color]) names) (fmap Text.pack ["White", "Blue", "Black", "Red", "Green"])
       Spec.assertEqWith s "unnamed" (filter (Text.null . Text.strip) names) []
 
+    Spec.it s "draws its colour filters and menus as the decks screen does" $ do
+      let shown = page fresh
+      Spec.assertBool s (all (`Text.isInfixOf` shown) [Text.pack "class=\"colour-toggles\"", Text.pack "class=\"mana-value deck-menu\"", Text.pack "class=\"format deck-menu\""]) "restyled"
+
   Spec.describe s "checked" $ do
     Spec.it s "holds the check's problems and the cards they name" $ do
       let found = Builder.checked [Text.pack "5 copies"] (Set.singleton bolt) fresh
