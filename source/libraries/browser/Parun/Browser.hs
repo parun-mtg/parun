@@ -8,6 +8,7 @@ import qualified Control.Exception as Exception
 import qualified Control.Monad as Monad
 import qualified Data.Foldable as Foldable
 import qualified Data.IORef as IORef
+import qualified Data.Maybe as Maybe
 import qualified Data.Sequence as Seq
 import qualified Data.Text as Text
 import qualified Parun.Extra.Integer as Integer
@@ -284,6 +285,16 @@ pending page = not . Seq.null <$> IORef.readIORef (taken page)
 -- | Gives the page a turn: its events reach the handlers before this returns.
 pause :: IO ()
 pause = pausePromise >>= \() -> pure ()
+
+-- | The events taken that `wanted` takes, from the first on until one it
+-- does not, without waiting: the page given a turn first, so the taps sent
+-- while the engine worked have arrived.
+takeQueued :: Page msg -> (msg -> Maybe a) -> IO [a]
+takeQueued page wanted = do
+  pause
+  IORef.atomicModifyIORef' (taken page) $ \events ->
+    let (front, rest) = Seq.spanl (Maybe.isJust . wanted . fst) events
+     in (rest, Maybe.mapMaybe (wanted . fst) (Foldable.toList front))
 
 -- | Drops the events taken that no one has waited for yet, giving them in
 -- the order taken.
