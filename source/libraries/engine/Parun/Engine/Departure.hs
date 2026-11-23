@@ -753,9 +753,14 @@ exileOrphanedByEndedControl = do
 -- they are. CR 104.4d's draw is the empty case. CR 809.5a is this too: an
 -- emperor wins only when every opponent has left, CR 104.3h's effect being the
 -- opponents losing (Parun.Engine.Resolve.Arms.Zones's WinGame arm).
+--
+-- Implementation-defined: CR 100.1 seats two players or more, so a game
+-- seated with one (the web client's goldfish) is outside it; its player
+-- never wins by having no opponents, and their leaving is CR 104.4a's draw.
 outcomeAfterLeaving :: [PlayerId] -> GameState -> Maybe Result
 outcomeAfterLeaving leaving gs = case Game.stillPlaying gs of
   [] -> if null leaving then Nothing else Just Result.Drawn
+  _ | length (GameState.seating gs) < 2 -> Nothing
   survivors@(first : rest) -> case Teams.teamOf (Game.teams gs) first of
     Just team | all (\pid -> Teams.teamOf (Game.teams gs) pid == Just team) rest -> Just (Result.TeamWon team)
     _ -> case survivors of

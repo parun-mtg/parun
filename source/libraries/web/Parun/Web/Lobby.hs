@@ -46,15 +46,17 @@ data Lobby = MkLobby
     -- | The player's deck, once chosen.
     mine :: Maybe Text.Text,
     -- | Each other seat's deck, in seat order, once chosen; a random one
-    -- otherwise. There is at least one such seat and at most 'mostBots'.
+    -- otherwise. There are at most 'mostOthers' such seats, and none is a
+    -- game of yours alone (goldfish).
     theirs :: [Maybe Text.Text],
     -- | The seat a tapped deck goes to, which only a tap on a seat changes.
     choosing :: Slot,
-    -- | Each bot's slot switched to a player invited from another browser,
-    -- by its place in 'theirs' (Parun.Web.Link).
+    -- | Each seat taken by a player invited from another browser, by its
+    -- place in 'theirs' (Parun.Web.Link).
     invites :: Map.Map Int Invite,
-    -- | Each bot's slot switched to a seat played on this screen, by its
-    -- place in 'theirs', which holds its deck, and how it is played there.
+    -- | Each seat played on this screen, by its place in 'theirs', which
+    -- holds its deck, and how it is played there; a bot plays every seat in
+    -- neither map.
     locals :: Map.Map Int Link.Sitting,
     -- | Whether you are ready to start a game with the players invited.
     ready :: Bool,
@@ -89,11 +91,11 @@ newInvite = MkInvite Nothing Text.empty False Nothing False Nothing
 -- | A side of the match-up.
 data Slot
   = MkMine
-  | -- | The bot at this place in 'theirs', from zero.
+  | -- | The seat at this place in 'theirs', from zero.
     MkTheirs Int
   deriving (Eq, Show)
 
--- | Who plays a slot other than yours.
+-- | Who plays a seat other than yours, chosen as it is added.
 data Occupant
   = -- | The search bot (Parun.Play.Opponent).
     MkBot
@@ -114,10 +116,11 @@ data Event
   | -- | A random deck of those shown, for the slot being chosen; the shell
     -- picks it.
     MkRandom
-  | -- | Seats another bot, with a random deck, up to 'mostBots'.
-    MkAddBot
-  | -- | Unseats the last bot, while there are two or more.
-    MkDropBot
+  | -- | Adds a seat past the last, up to 'mostOthers', played by this
+    -- occupant, with a random deck; the shell makes an invite's link.
+    MkAdd Occupant
+  | -- | Unseats the last seat but yours; the shell closes an invite's link.
+    MkDrop
   | -- | Starts the game.
     MkStart
   | -- | Opens the deck builder; the shell does it.
@@ -125,9 +128,6 @@ data Event
   | -- | Opens this deck in the builder, a saved one to save over, any other
     -- as a copy; the shell does it.
     MkEdit Text.Text
-  | -- | Gives this slot, or a new one past the last, to this occupant; the
-    -- shell makes an invite's link and closes one dropped.
-    MkOccupy Occupant Int
   | -- | The reply code typed for this invited slot.
     MkReplyCode Int
   | -- | Connects this invited slot with the reply code typed; the shell
@@ -141,14 +141,15 @@ data Event
     MkPersona
   deriving (Eq, Show)
 
--- | A lobby whose decks are still to read, nothing chosen yet, every bot
--- playing as `parun play`'s does unless told otherwise.
+-- | A lobby whose decks are still to read, nothing chosen yet, your seat
+-- alone, and any bot added playing as `parun play`'s does unless told
+-- otherwise.
 new :: Lobby
 new =
   MkLobby
     { browser = DeckBrowser.new,
       mine = Nothing,
-      theirs = [Nothing],
+      theirs = [],
       choosing = MkMine,
       invites = Map.empty,
       locals = Map.empty,
@@ -194,9 +195,9 @@ deleted name lobby =
 withDecks :: Seq.Seq Text.Text -> Map.Map Text.Text Text.Text -> Map.Map Text.Text Text.Text -> Lobby -> Lobby
 withDecks names named titled = browsed (DeckBrowser.withDecks names named titled)
 
--- | The most bots a game seats: a table of four.
-mostBots :: Int
-mostBots = 3
+-- | The most seats a game has besides yours: a table of four.
+mostOthers :: Int
+mostOthers = 3
 
 -- | Of so many seats, the player's (seat 1) and each in `people` speak the
 -- line protocol; the search bot plays every other, at this difficulty and
@@ -323,24 +324,24 @@ updated event typed lobby = case event of
     | otherwise -> lobby {choosing = slot}
   MkBrowse e -> browsed (DeckBrowser.update e typed) lobby
   MkRandom -> lobby
-  MkAddBot
-    | length (theirs lobby) < mostBots -> lobby {theirs = theirs lobby <> [Nothing]}
+  MkAdd occupant
+    | i < mostOthers ->
+        let added = lobby {theirs = theirs lobby <> [Nothing]}
+         in case occupant of
+              MkBot -> added
+              MkInvited -> added {invites = Map.insert i newInvite (invites lobby)}
+              MkHere sitting -> added {locals = Map.insert i sitting (locals lobby)}
     | otherwise -> lobby
-  MkDropBot
-    | length (theirs lobby) > 1 ->
+    where
+      i = length (theirs lobby)
+  MkDrop
+    | not (null (theirs lobby)) ->
         let kept = take (length (theirs lobby) - 1) (theirs lobby)
          in lobby {theirs = kept, choosing = if choosing lobby == MkTheirs (length kept) then MkMine else choosing lobby, invites = Map.delete (length kept) (invites lobby), locals = Map.delete (length kept) (locals lobby)}
     | otherwise -> lobby
   MkStart -> lobby
   MkOpenBuilder -> lobby
   MkEdit _ -> lobby
-  MkOccupy occupant i
-    | i >= 0 && i < length (theirs lobby) -> case occupant of
-        MkBot -> lobby {invites = Map.delete i (invites lobby), locals = Map.delete i (locals lobby)}
-        MkInvited -> lobby {invites = Map.insertWith (\_ old -> old) i newInvite (invites lobby), locals = Map.delete i (locals lobby), choosing = if choosing lobby == MkTheirs i then MkMine else choosing lobby}
-        MkHere sitting -> lobby {invites = Map.delete i (invites lobby), locals = Map.insert i sitting (locals lobby)}
-    | i == length (theirs lobby) && i < mostBots -> updated event typed lobby {theirs = theirs lobby <> [Nothing]}
-    | otherwise -> lobby
   MkReplyCode i -> lobby {invites = Map.adjust (\invite -> invite {replyCode = typed}) i (invites lobby)}
   MkConnect _ -> lobby
   MkReady -> lobby {ready = not (ready lobby)}
@@ -431,17 +432,6 @@ offered lobby = if choosing lobby == MkMine then decks lobby else opponents lobb
 shown :: Lobby -> [Text.Text]
 shown lobby = DeckBrowser.shown (offered lobby) (browser lobby)
 
--- | The bot's slot Invite a player, Add a player here or Add a seat you
--- play gives to its occupant: the first bot's left to a random deck, else
--- a new seat while there is room.
-openSlot :: Lobby -> Maybe Int
-openSlot lobby =
-  case [i | (i, Nothing) <- zip [0 ..] (theirs lobby), Map.notMember i (invites lobby), Map.notMember i (locals lobby)] of
-    i : _ -> Just i
-    []
-      | length (theirs lobby) < mostBots -> Just (length (theirs lobby))
-      | otherwise -> Nothing
-
 -- | A seat's name: "You", "Bot" alone or "Bot 2" among several, and
 -- "Player 2" for one invited or played on this screen.
 seatName :: Lobby -> Slot -> String
@@ -489,9 +479,9 @@ view lobby =
       (Text.pack "detail", detailView lobby)
     ]
 
--- | The seats: yours, each bot's, invited player's, player's here or one
--- you play too, the ways to add one, and Start at the foot, saying what it
--- waits on.
+-- | The seats: yours, then each bot's, invited player's, player's here or
+-- one you play too; the way to unseat the last; a seat to add, by who fills
+-- it, while there is room; and Start at the foot, saying what it waits on.
 seatsView :: Lobby -> Html.Html Event
 seatsView lobby =
   Element.el "section" ["seats"] [Element.attr "aria-label" (Text.pack "Seats")] $
@@ -504,25 +494,34 @@ seatsView lobby =
             : case Map.lookup i (invites lobby) of
               Just invite -> [inviteView i invite (remove i)]
               Nothing -> case Map.lookup i (locals lobby) of
-                Just sitting -> [seat (MkTheirs i) (Element.string (if sitting == Link.MkYours then "Y" else "P")) held (Element.button ["quiet", "bot-slot"] (MkOccupy MkBot i) [Element.string "Play a bot instead"] : remove i)]
-                Nothing -> [seat (MkTheirs i) (Icon.icon [] Icon.MkBot) held ([Element.button ["quiet", "invite-seat"] (MkOccupy MkInvited i) [Element.string "Invite a player instead"], Element.button ["quiet", "here-seat"] (MkOccupy (MkHere Link.MkHandedOver) i) [Element.string "A player here instead"], Element.button ["quiet", "yours-seat"] (MkOccupy (MkHere Link.MkYours) i) [Element.string "Play it yourself instead"]] <> remove i)]
-        | (i, held) <- zip [0 ..] bots
+                Just sitting -> [seat (MkTheirs i) (Element.string (if sitting == Link.MkYours then "Y" else "P")) held (remove i)]
+                Nothing -> [seat (MkTheirs i) (Icon.icon [] Icon.MkBot) held (remove i)]
+        | (i, held) <- zip [0 ..] others
         ]
       <> [ Element.el
              "div"
              ["seat-tools"]
-             []
-             ( [Element.button ["add-bot"] MkAddBot [Element.string "Add a bot"] | length bots < mostBots]
-                 <> concat [[Element.button ["invite-slot"] (MkOccupy MkInvited i) [Element.string "Invite a player"], Element.button ["here-slot"] (MkOccupy (MkHere Link.MkHandedOver) i) [Element.string "Add a player here"], Element.button ["yours-slot"] (MkOccupy (MkHere Link.MkYours) i) [Element.string "Add a seat you play"]] | i <- Maybe.maybeToList (openSlot lobby)]
-             )
+             [Element.attr "role" (Text.pack "group"), Element.attr "aria-labelledby" (Text.pack "add-seat")]
+             [ Element.el "span" ["eyebrow"] [Element.attr "id" (Text.pack "add-seat")] [Element.string (if null others then "Add a seat, or play alone" else "Add a seat")],
+               Element.el
+                 "div"
+                 ["seat-choices"]
+                 []
+                 [ Element.button ["add-bot"] (MkAdd MkBot) [Element.string "Bot"],
+                   Element.button ["add-here"] (MkAdd (MkHere Link.MkHandedOver)) [Element.string "Player here"],
+                   Element.button ["add-invite"] (MkAdd MkInvited) [Element.string "Invite a player"],
+                   Element.button ["add-yours"] (MkAdd (MkHere Link.MkYours)) [Element.string "Yourself"]
+                 ]
+             ]
+         | length others < mostOthers
          ]
-      <> [botView lobby | length bots > Map.size (invites lobby) + Map.size (locals lobby)]
+      <> [botView lobby | length others > Map.size (invites lobby) + Map.size (locals lobby)]
       <> [startView lobby]
   where
-    bots = theirs lobby
+    others = theirs lobby
     -- Only the last seat is unseated: the invites' links are numbered by
     -- seat, so unseating another would renumber a live connection.
-    remove i = [Element.button ["quiet", "drop-bot"] MkDropBot [Element.string "Remove"] | i == length bots - 1, length bots > 1]
+    remove i = [Element.button ["quiet", "drop-seat"] MkDrop [Element.string "Remove"] | i == length others - 1]
     seat which avatar held extra =
       let on = choosing lobby == which
        in Element.el
@@ -590,7 +589,7 @@ startView lobby =
             (["primary", "start", "ready"] <> ["is-ready" | ready lobby])
             ([Element.attr "type" (Text.pack "button"), Element.attr "aria-pressed" (Text.pack (if ready lobby then "true" else "false")), Element.on "click" MkReady, Element.attr "aria-describedby" (Text.pack "start-note")] <> [Element.attr "disabled" Text.empty | not (pressable lobby)])
             [Element.string (if ready lobby then "Ready \x2713 \x00b7 waiting for every player" else "Ready")],
-      Element.el "p" ["start-note", "muted"] [Element.attr "id" (Text.pack "start-note"), Element.attr "aria-live" (Text.pack "polite")] [Element.string (Maybe.fromMaybe "Every seat has a deck. Ready to start." (waiting lobby))]
+      Element.el "p" ["start-note", "muted"] [Element.attr "id" (Text.pack "start-note"), Element.attr "aria-live" (Text.pack "polite")] [Element.string (Maybe.fromMaybe (if null (theirs lobby) then "Just you: a goldfish game. Ready to start." else "Every seat has a deck. Ready to start.") (waiting lobby))]
     ]
       <> [Element.el "ul" ["problems", "refusal"] [] [Element.el "li" [] [] [Element.text p] | p <- problems] | Left problems@(_ : _) <- [startable lobby]]
 
@@ -641,8 +640,8 @@ detailView lobby =
 
 -- | A slot a player from another browser takes: the link to send them, the
 -- box their reply code goes in, and once connected their deck and whether
--- they are ready; the warning that the host sees every card; the way back
--- to a bot; and `extra`, the way to unseat it where there is one.
+-- they are ready; the warning that the host sees every card; and `extra`,
+-- the way to unseat it where there is one.
 inviteView :: Int -> Invite -> [Html.Html Event] -> Html.Html Event
 inviteView i invite extra =
   Element.el
@@ -677,8 +676,7 @@ inviteView i invite extra =
                  ]
          )
       <> [Element.el "p" ["problem"] [Element.attr "role" (Text.pack "alert")] [Element.text p] | p <- Maybe.maybeToList (inviteProblem invite)]
-      <> [ Element.el "p" ["invite-warning"] [] [Element.string "Your browser runs the game, so you could see their hidden cards: invite only friends."],
-           Element.el "div" ["seat-actions"] [] (Element.button ["quiet", "bot-slot"] (MkOccupy MkBot i) [Element.string "Play a bot instead"] : extra)
-         ]
+      <> [Element.el "p" ["invite-warning"] [] [Element.string "Your browser runs the game, so you could see their hidden cards: invite only friends."]]
+      <> [Element.el "div" ["seat-actions"] [] extra | not (null extra)]
   where
     field name = Text.pack (name <> "-" <> show i)

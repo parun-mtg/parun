@@ -1,6 +1,6 @@
 -- | The web client's first screen: what to do, drawn before any data has
 -- loaded (#9075). A game left for here comes first, to resume; then the
--- ways to play, to build a deck and to watch a replay; then the games
+-- way to start a game, to build a deck and to watch a replay; then the games
 -- finished lately and the decks saved in this browser; then the legal
 -- notice.
 module Parun.Web.Home where
@@ -61,10 +61,8 @@ data Deck = MkDeck
 
 -- | Where the home screen leads.
 data Choice
-  = -- | The lobby, with this deck yours if any.
-    MkPlayBots (Maybe Text.Text)
-  | -- | The lobby, with a bot's seat given to a player invited by link.
-    MkPlayFriend
+  = -- | The lobby, your seat alone, with this deck yours if any.
+    MkNewGame (Maybe Text.Text)
   | -- | The deck builder, on a new deck.
     MkBuildDeck
   | -- | The deck builder, on this saved deck.
@@ -112,8 +110,7 @@ pausedOn board = case board of
 -- | Whether a choice starts a game, and so concedes a paused one.
 starts :: Choice -> Bool
 starts choice = case choice of
-  MkPlayBots _ -> True
-  MkPlayFriend -> True
+  MkNewGame _ -> True
   MkBuildDeck -> False
   MkEditDeck _ -> False
   MkBrowseDecks _ -> False
@@ -126,7 +123,7 @@ starts choice = case choice of
 navigate :: Bar.Section -> Event
 navigate section = case section of
   Bar.MkHome -> MkCancel
-  Bar.MkPlay -> MkChoose (MkPlayBots Nothing)
+  Bar.MkPlay -> MkChoose (MkNewGame Nothing)
   Bar.MkDecks -> MkChoose (MkBrowseDecks Nothing)
   Bar.MkReplays -> MkChoose MkReplays
 
@@ -165,8 +162,7 @@ view home =
                    "nav"
                    ["tiles"]
                    [Element.attr "aria-label" (Text.pack "What to do")]
-                   [ tile ["lead" | Maybe.isNothing (paused home)] (MkPlayBots Nothing) "Play a bot" "Pick a deck for each seat and start.",
-                     tile [] MkPlayFriend "Play a friend" "Invite someone in another browser with a link.",
+                   [ tile ["lead" | Maybe.isNothing (paused home)] (MkNewGame Nothing) "New game" "Pick your deck, then add a seat for each bot or player, or play alone.",
                      tile [] MkBuildDeck "Build a deck" "Start from a blank list, then save it to play.",
                      tile [] MkReplays "Replays" "Watch your games again, or the scenarios the rules are tested on."
                    ]
