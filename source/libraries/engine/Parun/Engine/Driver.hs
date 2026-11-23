@@ -109,7 +109,7 @@ subjectOf prompt = case prompt of
   Prompt.ChooseFateseal _ pid _ _ -> Just pid
   Prompt.ChooseExplore _ pid _ _ -> Just pid
   Prompt.ChooseDefender _ pid _ -> Just pid
-  Prompt.ChooseManaSource _ pid _ _ -> Just pid
+  Prompt.ChooseManaSource _ pid _ _ _ -> Just pid
   Prompt.ChooseExtraManaSource _ pid _ -> Just pid
   Prompt.ReverseManaAbilities _ pid _ -> Just pid
   Prompt.PayLifeForMana _ pid _ _ -> Just pid
@@ -303,7 +303,7 @@ deciderOf prompt = case prompt of
   Prompt.AdjustDieRoll decider _ _ _ _ -> Just (Decider.unwrap decider)
   Prompt.ChooseRollModifier decider _ _ -> Just (Decider.unwrap decider)
   Prompt.ChooseDefender decider _ _ -> Just (Decider.unwrap decider)
-  Prompt.ChooseManaSource decider _ _ _ -> Just (Decider.unwrap decider)
+  Prompt.ChooseManaSource decider _ _ _ _ -> Just (Decider.unwrap decider)
   Prompt.ChooseExtraManaSource decider _ _ -> Just (Decider.unwrap decider)
   Prompt.ReverseManaAbilities decider _ _ -> Just (Decider.unwrap decider)
   Prompt.PayLifeForMana decider _ _ _ -> Just (Decider.unwrap decider)

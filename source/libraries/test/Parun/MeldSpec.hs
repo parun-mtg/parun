@@ -126,7 +126,7 @@ aimedAt oid p = case p of
 -- it decided about its other prompts.
 sparing :: ObjectId.ObjectId -> (forall a. Prompt.Prompt a -> a) -> Prompt.Prompt r -> r
 sparing oid inner p = case p of
-  Prompt.ChooseManaSource _ _ _ candidates -> List.find (/= oid) (NonEmpty.toList candidates)
+  Prompt.ChooseManaSource _ _ _ candidates _ -> List.find (/= oid) (NonEmpty.toList candidates)
   _ -> inner p
 
 spec :: (Monad m, Monad n) => Spec.Spec m n -> Registry.Registry m -> n ()

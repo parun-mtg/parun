@@ -136,13 +136,13 @@ import qualified Parun.Types.ZoneChange as ZoneChange
 -- order Mana.manaSources happens to return (#12).
 prefersSource :: ObjectId.ObjectId -> Prompt.Prompt r -> r
 prefersSource wanted p = case p of
-  Prompt.ChooseManaSource _ _ _ candidates ->
+  Prompt.ChooseManaSource _ _ _ candidates _ ->
     Just (if elem wanted (NonEmpty.toList candidates) then wanted else NonEmpty.head candidates)
   _ -> S.identityAnswer p
 
 avoidsSource :: ObjectId.ObjectId -> Prompt.Prompt r -> r
 avoidsSource unwanted p = case p of
-  Prompt.ChooseManaSource _ _ _ candidates -> Just $ case filter (/= unwanted) (NonEmpty.toList candidates) of
+  Prompt.ChooseManaSource _ _ _ candidates _ -> Just $ case filter (/= unwanted) (NonEmpty.toList candidates) of
     h : _ -> h
     [] -> NonEmpty.head candidates
   _ -> S.identityAnswer p
@@ -634,7 +634,7 @@ manaSpec s registry = Spec.describe s "Mana" $ do
     let green = ManaCost.MkManaCost [ManaSymbol.OfType (ManaType.Colored Color.Green)]
         countingAnswer :: Prompt.Prompt r -> State.State (Int, Int) r
         countingAnswer p = case p of
-          Prompt.ChooseManaSource _ _ _ candidates -> do
+          Prompt.ChooseManaSource _ _ _ candidates _ -> do
             State.modify' (\(short, extra) -> (short + 1, extra))
             pure (Just (NonEmpty.head candidates))
           Prompt.ChooseExtraManaSource {} -> do
@@ -702,12 +702,12 @@ manaSpec s registry = Spec.describe s "Mana" $ do
         theForest = firstNamed "Forest"
         naming :: Prompt.Prompt r -> r
         naming p = case p of
-          Prompt.ChooseManaSource _ _ _ candidates -> List.find (`elem` NonEmpty.toList candidates) [theForest, theIsland]
+          Prompt.ChooseManaSource _ _ _ candidates _ -> List.find (`elem` NonEmpty.toList candidates) [theForest, theIsland]
           _ -> S.identityAnswer p
         (paid, chosen) = S.runPureWith naming gs (Cost.payMana S.manaPerformer PaymentSubject.ForNeither ManaSpending.AsProduced S.alice cost)
         heading :: Prompt.Prompt r -> State.State (Set.Set ObjectId.ObjectId) r
         heading p = case p of
-          Prompt.ChooseManaSource _ _ _ candidates -> do
+          Prompt.ChooseManaSource _ _ _ candidates _ -> do
             State.modify' (Set.insert (NonEmpty.head candidates))
             pure (Just (NonEmpty.head candidates))
           _ -> pure (S.identityAnswer p)
@@ -950,7 +950,7 @@ upwellingSpec s registry = Spec.describe s "Upwelling" $ do
         -- Forest is tapped next and the {U} is left over.
         floatBlue :: Prompt.Prompt r -> r
         floatBlue p = case p of
-          Prompt.ChooseManaSource _ _ _ candidates ->
+          Prompt.ChooseManaSource _ _ _ candidates _ ->
             Just (if elem birdsId (NonEmpty.toList candidates) then birdsId else NonEmpty.head candidates)
           _ -> prefersColor Color.Blue p
         cast = S.runPure floatBlue board (S.cast S.alice elvesId)
@@ -1295,7 +1295,7 @@ nimbusMazeSpec s registry = Spec.describe s "Nimbus Maze" $ do
 -- {W} pays nothing rather than being repaired here.
 paysWithWhite :: Prompt.Prompt r -> r
 paysWithWhite p = case p of
-  Prompt.ChooseManaSource _ _ _ candidates -> Just (NonEmpty.head candidates)
+  Prompt.ChooseManaSource _ _ _ candidates _ -> Just (NonEmpty.head candidates)
   Prompt.ChooseManaYield _ _ _ candidates ->
     S.optionYielding
       (Mana.Type.MkMana [ManaUnit.MkManaUnit {ManaUnit.manaType = ManaType.Colored Color.White, ManaUnit.tags = Set.empty, ManaUnit.retention = ManaRetention.Ordinary, ManaUnit.restriction = Nothing, ManaUnit.rider = Nothing, ManaUnit.spendTrigger = Nothing, ManaUnit.sourceChoices = Nothing, ManaUnit.sourceLastExiled = Nothing, ManaUnit.producer = Nothing}])
@@ -3223,7 +3223,7 @@ takesAltar altarId birdsId p = case p of
   Prompt.ChooseAction _ _ actions -> case filter (== Action.Type.ActivateManaAbility altarId) actions of
     h : _ -> h
     [] -> Action.Type.Pass
-  Prompt.ChooseManaSource _ _ _ candidates -> Just (if elem birdsId (NonEmpty.toList candidates) then birdsId else NonEmpty.head candidates)
+  Prompt.ChooseManaSource _ _ _ candidates _ -> Just (if elem birdsId (NonEmpty.toList candidates) then birdsId else NonEmpty.head candidates)
   Prompt.ChooseExtraManaSource {} -> Nothing
   _ -> prefersColor Color.Black p
 
@@ -3235,7 +3235,7 @@ recordsSources altarId birdsId p = case p of
     (taken, _) <- State.get
     State.modify' (\(n, seen) -> (n + 1, seen))
     pure (if taken == 0 then takesAltar altarId birdsId p else Action.Type.Pass)
-  Prompt.ChooseManaSource _ _ _ candidates -> do
+  Prompt.ChooseManaSource _ _ _ candidates _ -> do
     State.modify' (\(n, seen) -> (n, seen <> [NonEmpty.toList candidates]))
     pure (takesAltar altarId birdsId p)
   _ -> pure (takesAltar altarId birdsId p)
@@ -3467,7 +3467,7 @@ takesElfRoute elfId p = case p of
     pure (Maybe.fromMaybe (NonEmpty.head candidates) (List.find ((==) wanted . yieldTypes) (NonEmpty.toList candidates)))
   -- The Elf is the only source the window has, and taking it is the line under
   -- test; an unrecognised id would read as declining (Cost.chooseSource).
-  Prompt.ChooseManaSource _ _ _ candidates -> pure (List.find (elfId ==) (NonEmpty.toList candidates))
+  Prompt.ChooseManaSource _ _ _ candidates _ -> pure (List.find (elfId ==) (NonEmpty.toList candidates))
   _ -> pure (S.identityAnswer p)
 
 -- The colours one offered route would add, in printed order.
@@ -3830,7 +3830,7 @@ takesSourceOnce sourceId p = case p of
     pure $ case (taken :: Int, filter (== Action.Type.ActivateManaAbility sourceId) actions) of
       (0, offer : _) -> offer
       _ -> Action.Type.Pass
-  Prompt.ChooseManaSource _ _ _ candidates -> pure (Just (NonEmpty.head candidates))
+  Prompt.ChooseManaSource _ _ _ candidates _ -> pure (Just (NonEmpty.head candidates))
   Prompt.ChooseExtraManaSource {} -> pure Nothing
   _ -> pure (S.identityAnswer p)
 
@@ -3843,7 +3843,7 @@ alicePermanents = foldr (\p gs -> snd (S.addPermanent p S.alice gs)) (Setup.empt
 -- Prompt.ChooseExtraManaSource is a different question and is not recorded.
 recordingManaSources :: Prompt.Prompt r -> State.State [[ObjectId.ObjectId]] r
 recordingManaSources p = case p of
-  Prompt.ChooseManaSource _ _ _ candidates -> do
+  Prompt.ChooseManaSource _ _ _ candidates _ -> do
     State.modify' (<> [NonEmpty.toList candidates])
     pure (Replay.defaultAnswer p)
   _ -> pure (S.identityAnswer p)
@@ -4278,7 +4278,7 @@ searchlightAnswer :: PlayerId.PlayerId -> (PlayerId.PlayerId -> Color.Color) -> 
 searchlightAnswer chosen colourFor source p = case p of
   Prompt.ChoosePlayer _ _ _ offered -> Maybe.fromMaybe (NonEmpty.head offered) (List.find (== chosen) (NonEmpty.toList offered))
   Prompt.ChooseManaYield _ asked _ candidates -> Maybe.fromMaybe (NonEmpty.head candidates) (List.find (\option -> fmap ManaUnit.manaType (Mana.yieldUnits option) == [ManaType.Colored (colourFor asked)]) (NonEmpty.toList candidates))
-  Prompt.ChooseManaSource _ _ _ candidates -> List.find (`elem` NonEmpty.toList candidates) source
+  Prompt.ChooseManaSource _ _ _ candidates _ -> List.find (`elem` NonEmpty.toList candidates) source
   Prompt.ChooseExtraManaSource {} -> Nothing
   _ -> S.identityAnswer p
 
@@ -4490,7 +4490,7 @@ yurlokSpec s registry = Spec.describe s "Yurlok of Scorch Thrash" $ do
 -- left closes instead of looping.
 tapsYurlok :: ObjectId.ObjectId -> ObjectId.ObjectId -> Prompt.Prompt r -> r
 tapsYurlok yurlokId forestId p = case p of
-  Prompt.ChooseManaSource _ _ _ candidates
+  Prompt.ChooseManaSource _ _ _ candidates _
     | elem yurlokId (NonEmpty.toList candidates) -> Just yurlokId
     | elem forestId (NonEmpty.toList candidates) -> Just forestId
     | otherwise -> Nothing

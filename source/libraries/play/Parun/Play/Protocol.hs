@@ -186,14 +186,13 @@ questionOf gs prompt =
 -- substitute its payment asks; for a splice, the first card offered twice (CR
 -- 702.47b); for entwine (CR 702.42a), buyback (CR 702.27a), an optional cost's
 -- count (CR 702.33a, 702.33c) and a variable's value (CR 107.3a), their typed
--- withdrawal. Offered only to the announcing player's own choice: another
--- chooser's (Parun.Types.TargetSlot's `chooser`, CR 700.2e's mode chooser) is
--- not theirs to withdraw; and for a variable, only to the spell's or ability's
--- own, on the stack, and not to a mana ability's or a special action's X its
--- payment asks.
---
--- Not implemented: a withdrawal at CR 601.2h's mana payment, whose decline
--- does not provably rewind the cast (#9614).
+-- withdrawal; and for CR 601.2h's mana payment, shutting the window short
+-- where nothing else could pay (Prompt.ChooseManaSource's last field), and not
+-- at a nested mana ability's own payment. Offered only to the announcing
+-- player's own choice: another chooser's (Parun.Types.TargetSlot's `chooser`,
+-- CR 700.2e's mode chooser) is not theirs to withdraw; and for a variable,
+-- only to the spell's or ability's own, on the stack, and not to a mana
+-- ability's or a special action's X its payment asks.
 withdrawalOf :: GameState.GameState -> Prompt.Prompt r -> Maybe r
 withdrawalOf gs prompt
   | Maybe.isNothing (Scratch.keptFaceDown (GameState.scratch gs)) = Nothing
@@ -213,6 +212,8 @@ withdrawalOf gs prompt
             Just (Seq.singleton (ModeIndex.MkModeIndex (maybe 0 ((+ 1) . ModeIndex.unwrap) (Set.lookupMax legal))))
       Prompt.ChooseCost _ caster oid _ _ CostStep.Announcement
         | own caster oid -> Just CandidateCost.unpayable
+      Prompt.ChooseManaSource _ payer _ _ (Just oid)
+        | own payer oid -> Just Nothing
       Prompt.ChooseSplice _ caster oid ((card, _) : _)
         | own caster oid -> Just [card, card]
       Prompt.ChooseKicker _ caster oid _ _ _

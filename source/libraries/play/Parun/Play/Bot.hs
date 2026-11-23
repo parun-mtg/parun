@@ -78,7 +78,7 @@ bot names = Answerer.MkAnswerer $ \asked -> case Asked.prompt asked of
     fmap (Map.fromList . Maybe.catMaybes) . Traversable.for blockers $ \blocker ->
       fmap (fmap (\attacker -> (blocker, Set.singleton attacker))) (Generator.pick (Nothing NonEmpty.:| fmap Just attackers))
   Prompt.ChooseTargets _ _ _ slots -> traverse (\(count, legal) -> fmap (Set.fromList . List.genericTake count) (Generator.shuffle (Set.toList legal))) slots
-  Prompt.ChooseManaSource _ _ _ sources -> fmap Just (Generator.pick sources)
+  Prompt.ChooseManaSource _ _ _ sources _ -> fmap Just (Generator.pick sources)
   Prompt.ChooseExtraManaSource _ _ sources -> Generator.pick (Nothing NonEmpty.<| fmap Just sources)
   Prompt.ChooseManaToSpend _ _ units -> Generator.pick units
   Prompt.ChooseManaSpentOnX _ _ _ shares -> Generator.pick shares

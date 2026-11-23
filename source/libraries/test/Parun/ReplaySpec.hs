@@ -1150,7 +1150,7 @@ combatReplaySpec s =
         Spec.it s "ChooseManaSource round-trips through the transcript" $ do
           let a = ObjectId.MkObjectId 7
               b = ObjectId.MkObjectId 9
-              p = Prompt.ChooseManaSource decider S.alice (ManaCost.MkManaCost [ManaSymbol.Generic 1]) (a NonEmpty.:| [b])
+              p = Prompt.ChooseManaSource decider S.alice (ManaCost.MkManaCost [ManaSymbol.Generic 1]) (a NonEmpty.:| [b]) Nothing
           Spec.assertEqWith s "the second source round trips" (Replay.decode p (Replay.encode p (Just b))) (Just (Just b))
           -- Discriminating for the same reason ChooseDefender's pair is: a
           -- decode that ignored the response and returned the head would
@@ -1178,13 +1178,13 @@ combatReplaySpec s =
         Spec.it s "a discard choice does not decode as a mana-source choice" $ do
           -- Discriminating: this fails if ChooseManaSource reuses another
           -- ObjectId-shaped response instead of getting its own constructor.
-          let p = Prompt.ChooseManaSource decider S.alice (ManaCost.MkManaCost [ManaSymbol.Generic 1]) (ObjectId.MkObjectId 7 NonEmpty.:| [ObjectId.MkObjectId 9])
+          let p = Prompt.ChooseManaSource decider S.alice (ManaCost.MkManaCost [ManaSymbol.Generic 1]) (ObjectId.MkObjectId 7 NonEmpty.:| [ObjectId.MkObjectId 9]) Nothing
           Spec.assertEqWith s "mismatch" (Replay.decode p (Response.ChoseDiscard [ObjectId.MkObjectId 7])) Nothing
         Spec.it s "a short transcript taps the first offered source" $
           Spec.assertEqWith
             s
             "the head"
-            (Replay.defaultAnswer (Prompt.ChooseManaSource decider S.alice (ManaCost.MkManaCost [ManaSymbol.Generic 1]) (ObjectId.MkObjectId 7 NonEmpty.:| [ObjectId.MkObjectId 9])))
+            (Replay.defaultAnswer (Prompt.ChooseManaSource decider S.alice (ManaCost.MkManaCost [ManaSymbol.Generic 1]) (ObjectId.MkObjectId 7 NonEmpty.:| [ObjectId.MkObjectId 9]) Nothing))
             (Just (ObjectId.MkObjectId 7))
         -- CR 605.3b / 105.4: the mana an any-colour source was tapped for is a
         -- decision, so it has to survive a transcript like any other.

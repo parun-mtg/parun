@@ -213,7 +213,7 @@ meldedBoard base battlements garrison mountain =
 -- {T} the ability still needs (CR 107.5). Duplicated from Parun.SetupSpec.
 sparing :: ObjectId.ObjectId -> Prompt.Prompt r -> r
 sparing oid p = case p of
-  Prompt.ChooseManaSource _ _ _ candidates -> List.find (/= oid) (NonEmpty.toList candidates)
+  Prompt.ChooseManaSource _ _ _ candidates _ -> List.find (/= oid) (NonEmpty.toList candidates)
   _ -> S.identityAnswer p
 
 -- alice's Extrapolate the Impossible on a three-seat board with two Swamps,

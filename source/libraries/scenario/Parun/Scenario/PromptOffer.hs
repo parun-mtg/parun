@@ -152,7 +152,7 @@ offerOf namer gs prompt = case prompt of
       [ ("source", object namer source),
         ("slots", Reply.encode (Reply.mapOf (Reply.viaCodec Codec.SlotName.codec) (Reply.pairOf Reply.natural (Reply.setOf Reply.recipient))) namer slots)
       ]
-  Prompt.ChooseManaSource _ payer cost sources ->
+  Prompt.ChooseManaSource _ payer cost sources _ ->
     fields
       ( [("payer", Reply.encode Reply.player namer payer), ("cost", Reply.encode (Reply.viaCodec Codec.ManaCost.codec) namer cost), ("sources", manaSources namer gs sources)]
           <> [("substitutes", Reply.encode (Reply.list (Reply.viaCodec Codec.Keyword.codec)) namer keywords) | let keywords = substitutingKeywords gs payer cost, not (null keywords)]

@@ -829,7 +829,7 @@ spec s registry = Spec.describe s "Mutate" $ do
               sick = board {GameState.objects = Map.adjust (\o -> o {Object.sickness = Sickness.Sick}) h (GameState.objects board)}
               servantFirst :: Prompt.Prompt r -> r
               servantFirst p = case p of
-                Prompt.ChooseManaSource _ _ _ candidates | elem servantId candidates -> Just servantId
+                Prompt.ChooseManaSource _ _ _ candidates _ | elem servantId candidates -> Just servantId
                 _ -> mutatingAt side h p
               merged = mergingWith servantFirst sick sp
            in (h, merged, S.runPure S.aggressiveAnswer (intoCombat merged) (Combat.declareAttackers S.manaPerformer S.alice))

@@ -553,7 +553,7 @@ activateAbilityWith refused runSubgame pid srcId ability = Event.announcing . Ev
                   -- (Cost.paySubstituting). The bindings the substitution makes are
                   -- dropped -- no printing reads back which permanents a waterbend
                   -- cost tapped, where CR 702.51c's convoke does.
-                  (payment, _) <- Cost.paySubstituting (refused . completedBy) (Resolve.performManaAbility runSubgame) before [] PaymentMoment.OutsideResolution (PaymentSubject.Activating srcId AbilityKind.NonManaAbility (ActivatedAbility.name ability) stamp spendable) (Just abilId) ManaSpending.AsProduced pid srcId (Cost.announceSubstitutions Cost.statedSubstitutions pid srcId) paidCost
+                  (payment, _) <- Cost.paySubstituting (refused . completedBy) (Resolve.performManaAbility runSubgame) before [] PaymentMoment.OutsideResolution (PaymentSubject.Activating srcId AbilityKind.NonManaAbility (ActivatedAbility.name ability) stamp spendable) (Just abilId) ManaSpending.AsProduced pid srcId (Cost.announceSubstitutions Cost.statedSubstitutions pid srcId) (Cost.substitutesOffered Cost.statedSubstitutions pid srcId paidCost) paidCost
                   completed <- State.gets completedBy
                   case payment of
                     -- CR 602.2b / 601.2i: record that the ability has become

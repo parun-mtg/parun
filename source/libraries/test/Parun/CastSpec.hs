@@ -4523,7 +4523,7 @@ announcedTopSpec s registry = Spec.describe s "CR 401.5" $ do
       idOf alias built = maybe (Spec.assertFailure s ("no " <> alias)) pure (Map.lookup (Label.MkLabel (Text.pack alias)) (Staged.objects built))
       answerer :: ObjectId.ObjectId -> ObjectId.ObjectId -> Prompt.Prompt r -> r
       answerer snoop other p = case p of
-        Prompt.ChooseManaSource _ _ _ sources -> Just (if snoop `elem` sources then snoop else NonEmpty.head (NonEmpty.fromList (filter (/= other) (NonEmpty.toList sources))))
+        Prompt.ChooseManaSource _ _ _ sources _ -> Just (if snoop `elem` sources then snoop else NonEmpty.head (NonEmpty.fromList (filter (/= other) (NonEmpty.toList sources))))
         Prompt.ChooseExtraManaSource {} -> Nothing
         _ -> S.identityAnswer p
       cast library held = do
@@ -4554,7 +4554,7 @@ announcedTopSpec s registry = Spec.describe s "CR 401.5" $ do
          in S.board (alice NonEmpty.:| [S.playerSetup S.bob]) S.alice S.precombatMain
       leafkinFirst :: ObjectId.ObjectId -> Prompt.Prompt r -> r
       leafkinFirst leafkin p = case p of
-        Prompt.ChooseManaSource _ _ _ sources -> Just (if leafkin `elem` sources then leafkin else NonEmpty.head sources)
+        Prompt.ChooseManaSource _ _ _ sources _ -> Just (if leafkin `elem` sources then leafkin else NonEmpty.head sources)
         Prompt.ChooseExtraManaSource {} -> Nothing
         _ -> S.identityAnswer p
       castBears library held = do
@@ -4593,7 +4593,7 @@ keptFaceDownSpec s registry = Spec.describe s "KeptFaceDown" $ do
       -- mana abilities of a reversed cast whenever it is asked.
       answerer :: ObjectId.ObjectId -> (ObjectId.ObjectId -> Bool) -> Prompt.Prompt r -> r
       answerer source pick p = case p of
-        Prompt.ChooseManaSource _ _ _ sources -> if source `elem` sources then Just source else Nothing
+        Prompt.ChooseManaSource _ _ _ sources _ -> if source `elem` sources then Just source else Nothing
         Prompt.ChooseDiscard _ _ cards n _ -> take (Natural.toIntSaturating n) (filter pick cards <> filter (not . pick) cards)
         Prompt.ChooseTargets _ _ _ slots -> fmap (Set.take 1 . snd) slots
         Prompt.OfferedMiracleReveal {} -> OptionalDecision.Exercises

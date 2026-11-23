@@ -1233,6 +1233,6 @@ manaSourceAnswer s registry named flagged = do
   built <- S.buildBoardOrFail s registry setup
   case (Map.lookup (Label.MkLabel (Text.pack "f1")) (Staged.objects built), Map.lookup (Label.MkLabel (Text.pack "f2")) (Staged.objects built)) of
     (Just first, Just second) -> do
-      let prompt = Prompt.ChooseManaSource (Decider.MkDecider S.alice) S.alice (ManaCost.MkManaCost []) (first NonEmpty.:| [])
+      let prompt = Prompt.ChooseManaSource (Decider.MkDecider S.alice) S.alice (ManaCost.MkManaCost []) (first NonEmpty.:| []) Nothing
       pure (fmap (\(chosen, _) -> (chosen, second)) (Scenario.rehearse script built (Game.ask prompt)))
     _ -> Spec.assertFailure s "the board omitted an alias"

@@ -2942,6 +2942,7 @@ spec s registry = Spec.describe s "Parun.Engine.Cost" $ do
   chiefEngineerSpec s registry
   veneratedLoxodonSpec s registry
   convokeWindowSpec s registry
+  manaPaymentWithdrawalSpec s registry
   assistSpec s registry
   partialReversalSpec s registry
   groupedActivationSpec s
@@ -4941,7 +4942,7 @@ carnosaurBoard carnosaur bloom mountain piker =
 -- Bloom has been named yet, so the second source is the Mountain.
 bloomExiling :: ObjectId.ObjectId -> ObjectId.ObjectId -> ObjectId.ObjectId -> Prompt.Prompt r -> State.State Bool r
 bloomExiling bloomId fuel victim p = case p of
-  Prompt.ChooseManaSource _ _ _ candidates -> do
+  Prompt.ChooseManaSource _ _ _ candidates _ -> do
     used <- State.get
     let offered = NonEmpty.toList candidates
     if not used && elem bloomId offered
@@ -5025,7 +5026,7 @@ altarBoard subject altar land piker n =
 -- anything BUT the Altar, and Nothing once the Altar is all that is offered.
 sparing :: ObjectId.ObjectId -> ObjectId.ObjectId -> Prompt.Prompt r -> r
 sparing altarId victim p = case p of
-  Prompt.ChooseManaSource _ _ _ candidates -> List.find (/= altarId) (NonEmpty.toList candidates)
+  Prompt.ChooseManaSource _ _ _ candidates _ -> List.find (/= altarId) (NonEmpty.toList candidates)
   _ -> targeting victim p
 
 ashnodsAltarSpec :: (Monad m) => Spec.Spec m n -> Registry.Registry m -> n ()
@@ -5053,7 +5054,7 @@ poolSize pid gs = case Game.poolOf pid gs of
 -- goes to `rest`.
 keepingOrNot :: OptionalDecision.OptionalDecision -> [ObjectId.ObjectId] -> (forall a. Prompt.Prompt a -> a) -> Prompt.Prompt r -> State.State Int r
 keepingOrNot decision wanted rest p = case p of
-  Prompt.ChooseManaSource _ _ _ candidates -> pure (List.find (`elem` NonEmpty.toList candidates) wanted)
+  Prompt.ChooseManaSource _ _ _ candidates _ -> pure (List.find (`elem` NonEmpty.toList candidates) wanted)
   Prompt.ReverseManaAbilities _ player _ | player == S.alice -> do
     State.modify' (+ 1)
     pure decision
@@ -5243,7 +5244,7 @@ convokeWindowSpec s registry = Spec.describe s "Siege Wurm" $ do
         note tag = State.modify' (<> [Text.pack tag])
         answer :: Prompt.Prompt r -> State.State [Text.Text] r
         answer p = case p of
-          Prompt.ChooseManaSource _ _ _ candidates -> do
+          Prompt.ChooseManaSource _ _ _ candidates _ -> do
             note "window"
             pure (if elem birdsId (NonEmpty.toList candidates) then Just birdsId else Nothing)
           Prompt.ChooseManaYield _ _ _ candidates -> pure (S.optionYielding green candidates)
@@ -5262,6 +5263,64 @@ convokeWindowSpec s registry = Spec.describe s "Siege Wurm" $ do
     -- And the Birds is NOT among the convokers: the window tapped it, so the
     -- offer made afterwards no longer counts it as an untapped creature.
     Spec.assertEqWith s "every other creature was tapped to convoke the rest" (S.tappedCount S.alice after) 7
+
+-- CR 734.1 at CR 601.2h: which spell or ability a decline in the mana window
+-- leaves unpaid (Prompt.ChooseManaSource's last field), recorded per prompt.
+manaPaymentWithdrawalSpec :: (Monad m, Monad n) => Spec.Spec m n -> Registry.Registry m -> n ()
+manaPaymentWithdrawalSpec s registry = Spec.describe s "Mana payment withdrawal" $ do
+  let mainPhase g =
+        g
+          { GameState.turn =
+              (GameState.turn g)
+                { TurnRegisters.phase = Phase.PrecombatMain,
+                  TurnRegisters.activePlayer = S.alice,
+                  TurnRegisters.priority = Just S.alice
+                }
+          }
+      -- Taps the first of `preferred` on offer, declining where none is.
+      recording :: [ObjectId.ObjectId] -> Prompt.Prompt r -> State.State [Maybe ObjectId.ObjectId] r
+      recording preferred p = case p of
+        Prompt.ChooseManaSource _ _ _ candidates withdrawn -> do
+          State.modify' (<> [withdrawn])
+          pure (List.find (`elem` NonEmpty.toList candidates) preferred)
+        Prompt.ChooseExtraManaSource {} -> pure Nothing
+        _ -> pure (S.identityAnswer p)
+  -- Izzet Signet {2} Artifact: "{1}, {T}: Add {U}{R}." Its own {1} is a nested
+  -- payment, whose decline reverses only the Signet's ability.
+  Spec.it s "CR 601.2h a cast's own payment names the spell, and a mana ability's nested one nothing" $ do
+    bears <- S.printingOf s registry "Grizzly Bears"
+    signet <- S.printingOf s registry "Izzet Signet"
+    mountain <- S.printingOf s registry "Mountain"
+    forest <- S.printingOf s registry "Forest"
+    let (signetId, g1) = S.addPermanent signet S.alice (Setup.emptyGame S.bothPlayers)
+        (mountainId, g2) = S.addPermanent mountain S.alice g1
+        (forestId, g3) = S.addPermanent forest S.alice g2
+        (spell, gs) = S.addHandCard bears S.alice (mainPhase g3)
+        ((_, after), asked) = State.runState (Engine.runGame (recording [signetId, mountainId, forestId]) gs (S.cast S.alice spell)) []
+    -- CR 400.7: the spell is a new object on the stack.
+    case asked of
+      [Just paid, Nothing, again] -> do
+        Spec.assertEqWith s "the spell's twice, the Signet's between" again (Just paid)
+        Spec.assertEqWith s "and it is the spell cast" (Game.zoneMembers Zone.Stack S.alice after) [paid]
+      _ -> Spec.assertFailure s ("asked " <> show asked)
+  -- Siege Wurm {5}{G}{G} Creature -- Wurm 5/5: "Convoke. Trample."
+  Spec.it s "CR 702.51b a cast an untapped creature could still convoke names nothing" $ do
+    wurm <- S.printingOf s registry "Siege Wurm"
+    piker <- S.printingOf s registry "Goblin Piker"
+    forest <- S.printingOf s registry "Forest"
+    let (_, g1) = addPermanents piker 5 (Setup.emptyGame S.bothPlayers)
+        (_, g2) = addPermanents forest 2 g1
+        (spell, gs) = S.addHandCard wurm S.alice (mainPhase g2)
+        asked = State.execState (Engine.runGame (recording []) gs (S.cast S.alice spell)) []
+    Spec.assertEqWith s "the window's first offer" (take 1 asked) [Nothing]
+  -- Shivan Dragon: "{R}: Shivan Dragon gets +1/+0 until end of turn."
+  Spec.it s "CR 602.2b an activation's own payment names the ability" $ do
+    dragon <- S.printingOf s registry "Shivan Dragon"
+    mountain <- S.printingOf s registry "Mountain"
+    let (dragonId, g1) = S.addPermanent dragon S.alice (Setup.emptyGame S.bothPlayers)
+        (_, gs) = S.addPermanent mountain S.alice (mainPhase g1)
+        asked = State.execState (Engine.runGame (recording []) gs (Activate.activateAbility S.alice dragonId (theAbility dragon))) []
+    Spec.assertEqWith s "one offer, naming an ability object" (fmap (fmap (/= dragonId)) asked) [Just True]
 
 -- Venerated Loxodon {4}{W} Creature -- Elephant Cleric 4/4: "Convoke. When this
 -- creature enters, put a +1/+1 counter on each creature that convoked it."
@@ -6102,6 +6161,23 @@ assistSpec s registry = Spec.describe s "Charging Binox" $ do
     Spec.assertEqWith s "both reversing: nothing tapped" (S.tappedCount S.bob neither + S.tappedCount S.alice neither) 0
     Spec.assertEqWith s "CR 601.2a the Binox is back in alice's hand whatever they answered" (fmap (\g -> (TurnRegisters.stack (GameState.turn g), Game.zoneMembers Zone.Hand S.alice g)) [bobKeeps, aliceKeeps, bothKeep, neither]) (replicate 4 ([], [spell]))
     Spec.assertEqWith s "CR 101.4 alice then bob, bob once per Plains" asked [S.alice, S.bob, S.bob, S.bob]
+  -- CR 734.1: alice shutting her window short leaves the cast unpaid only
+  -- where bob, chosen, cannot still pay some of it.
+  Spec.it s "CR 702.132a a cast its helper could still pay names nothing at its mana payment" $ do
+    binox <- S.printingOf s registry "Charging Binox"
+    forest <- S.printingOf s registry "Forest"
+    mountain <- S.printingOf s registry "Mountain"
+    plains <- S.printingOf s registry "Plains"
+    let (spell, _, _, gs) = assistBoard 7 7 forest mountain plains binox
+        answer :: Maybe PlayerId.PlayerId -> Prompt.Prompt r -> State.State [Maybe ObjectId.ObjectId] r
+        answer helper p = case p of
+          Prompt.ChooseAssistant {} -> pure helper
+          Prompt.ChooseManaSource _ payer _ _ withdrawn | payer == S.alice -> State.modify' (<> [withdrawn]) >> pure Nothing
+          Prompt.ChooseExtraManaSource {} -> pure Nothing
+          _ -> pure (S.identityAnswer p)
+        asked helper = State.execState (Engine.runGame (answer helper) gs (S.cast S.alice spell)) []
+    Spec.assertEqWith s "with bob chosen" (asked (Just S.bob)) [Nothing]
+    Spec.assertEqWith s "and with no one, the spell" (fmap Maybe.isJust (asked Nothing)) [True]
   -- CR 101.4b: bob answers second, knowing alice's answer. The pair differs
   -- only in what alice answered; the board bob is asked on is what shows it.
   Spec.it s "CR 101.4b the helper is asked on the board the caster's answer left" $ do
@@ -6170,7 +6246,7 @@ assisting helper amount forestId plainsIds p =
           Just who | elem who (NonEmpty.toList candidates) -> Just who
           _ -> Nothing
         Prompt.ChooseAssistAmount {} -> amount
-        Prompt.ChooseManaSource _ who _ candidates -> pick who candidates
+        Prompt.ChooseManaSource _ who _ candidates _ -> pick who candidates
         Prompt.ChooseExtraManaSource _ who candidates -> pick who candidates
         _ -> S.identityAnswer p
 
@@ -6351,7 +6427,7 @@ partialReversalBoard mountain first second card =
 -- asked before and the first source named, and recorded in order.
 reversingSome :: [ManaType.ManaType] -> (Int -> ObjectId.ObjectId -> OptionalDecision.OptionalDecision) -> Prompt.Prompt r -> State.State ([ObjectId.ObjectId], [[ObjectId.ObjectId]]) r
 reversingSome wanted decide p = case p of
-  Prompt.ChooseManaSource _ _ _ candidates -> next candidates
+  Prompt.ChooseManaSource _ _ _ candidates _ -> next candidates
   Prompt.ChooseExtraManaSource _ _ candidates -> next candidates
   Prompt.ReverseManaAbilities _ _ sources -> do
     (queue, asked) <- State.get
