@@ -21,13 +21,15 @@ import qualified Parun.Web.Wire as Wire
 
 -- | The view the page shows, the events its handlers took that no one
 -- has waited for yet, each with the value of the element it came from, the
--- data chunks that arrived since last read, and what the page's data
--- channels said since.
+-- data chunks that arrived since last read, what the page's data
+-- channels said since, and what takes a tap while a channel is waited on
+-- (meanwhile).
 data Page msg = MkPage
   { shown :: IORef.IORef (Maybe (Html.Html msg)),
     taken :: IORef.IORef (Seq.Seq (msg, Text.Text)),
     arrived :: IORef.IORef (Seq.Seq Arrival),
-    heard :: IORef.IORef (Seq.Seq Linked)
+    heard :: IORef.IORef (Seq.Seq Linked),
+    tapped :: IORef.IORef (Maybe ((msg, Text.Text) -> IO ()))
   }
 
 -- | What a data channel to another browser said (page.js), by the number
@@ -57,7 +59,7 @@ data Input msg
 -- | A page showing nothing yet, its events listened for.
 mount :: IO (Page msg)
 mount = do
-  page <- MkPage <$> IORef.newIORef Nothing <*> IORef.newIORef Seq.empty <*> IORef.newIORef Seq.empty <*> IORef.newIORef Seq.empty
+  page <- MkPage <$> IORef.newIORef Nothing <*> IORef.newIORef Seq.empty <*> IORef.newIORef Seq.empty <*> IORef.newIORef Seq.empty <*> IORef.newIORef Nothing
   listen =<< wrap (dispatch page)
   pure page
 
@@ -190,9 +192,26 @@ takeLinked :: Page msg -> IO (Maybe Linked)
 takeLinked page = takeLinkedWith page (const True)
 
 -- | What this data channel said first since last asked, waiting for it;
--- what the others say stays for later.
+-- what the others say stays for later, and each tap taken meanwhile goes to
+-- the handler 'meanwhile' gives, if any.
 nextLinked :: Page msg -> Int -> IO Linked
-nextLinked page n = takeLinkedWith page ((== n) . link) >>= maybe (wait >> nextLinked page n) pure
+nextLinked page n = takeLinkedWith page ((== n) . link) >>= maybe waiting pure
+  where
+    waiting = do
+      handler <- IORef.readIORef (tapped page)
+      queued <- pending page
+      case handler of
+        Just handle | queued -> next page >>= handle
+        _ -> wait
+      nextLinked page n
+
+-- | Runs `action`, each tap taken while it waits on a data channel
+-- (nextLinked) given to `handle`: the page stays live while another
+-- browser decides.
+meanwhile :: Page msg -> ((msg, Text.Text) -> IO ()) -> IO a -> IO a
+meanwhile page handle action = do
+  before <- IORef.atomicModifyIORef' (tapped page) $ \h -> (Just handle, h)
+  action `Exception.finally` IORef.writeIORef (tapped page) before
 
 takeLinkedWith :: Page msg -> (Linked -> Bool) -> IO (Maybe Linked)
 takeLinkedWith page wanted = do

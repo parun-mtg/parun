@@ -341,24 +341,34 @@ eyebrow :: PlayerView.PlayerView -> Html.Html msg
 eyebrow board = Element.el "p" (["eyebrow", "moment"] <> ["yours" | Board.yours board]) [] [Element.text (Board.moment board)]
 
 -- | The page while the game goes on without the seat: a request it was not
--- asked (Hotseat answers it), its board shown as it stands, less whose
--- priority it is, since the board is not redrawn as priority passes; in
--- place of a question what the game is waiting on; and the auto-pass level,
--- which Hotseat keeps for the seat's next request. Nothing unless the screen
--- faces (the first) the seat asked, since the board shows that seat's
--- hidden cards.
-watching :: Maybe PlayerId.PlayerId -> Request.Request -> Screen -> Maybe (Html.Html Event)
-watching facing request screen = do
+-- asked (Hotseat answers it), or the last it was while another browser's
+-- seat decides; its board shown as it stands, less whose priority it is,
+-- since the board is not redrawn as priority passes, and less what it
+-- offered, so a card's sheet carries no action; in place of a question
+-- what the game is waiting on, the seats of `deciding` if any; and
+-- the auto-pass level, which Hotseat keeps for the seat's next request.
+-- Nothing unless the screen faces (the first) the seat asked, since the
+-- board shows that seat's hidden cards.
+watching :: Maybe PlayerId.PlayerId -> [PlayerId.PlayerId] -> Request.Request -> Screen -> Maybe (Html.Html Event)
+watching facing deciding request screen = do
   Monad.guard $ facing == Just (Question.seat (Request.question request))
-  let status = case Request.view request of
-        Just b
+  let status = case (deciding, Request.view request) of
+        (_ : _, _) -> waitingOn deciding
+        (_, Just b)
           | not (PlayerView.begun b) -> "Waiting for the game to begin\x2026"
           | not (null (PlayerView.stack b)) -> "Resolving\x2026"
           | PlayerView.active b /= PlayerView.viewer b -> Text.unpack (Wording.player (PlayerView.active b)) <> " is taking their turn\x2026"
         _ -> "Moving on\x2026"
-      shown = request {Request.view = fmap (\b -> b {PlayerView.priority = Nothing}) (Request.view request)}
+      shown = request {Request.view = fmap (\b -> b {PlayerView.priority = Nothing}) (Request.view request), Request.question = (Request.question request) {Question.offer = R.Null}}
   pure . table shown screen (autoPass (level screen)) (barControls False Nothing) (Board.MkMarks (\o -> Card.MkCue [] (MkRead (ObjectView.object o)) Nothing) (const Nothing)) $
     foldMap (pure . eyebrow) (Request.view request) <> [Element.el "p" ["waiting"] [] [Icon.loading ["small"], Element.string status]]
+
+-- | What the game waits on while these seats decide, or the other
+-- players if none is named.
+waitingOn :: [PlayerId.PlayerId] -> String
+waitingOn deciding = case deciding of
+  [] -> "Waiting for the other players\x2026"
+  _ -> "Waiting for " <> List.intercalate " or " (fmap (Text.unpack . Wording.player) deciding) <> " to decide\x2026"
 
 -- | A subgame's mark on the turn bar (CR 730.1a), and how deep it is.
 subgameChip :: Natural -> [Html.Html msg]
