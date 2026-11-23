@@ -157,13 +157,15 @@ spec s registry = Spec.describe s "WebQuestion" $ do
           path <- Html.labelled (Text.pack "button") (Text.pack "Play Mountain") inner
           Html.handler (Text.pack "click") (at <> path) reading
     Spec.assertEqWith s "sheet action" action (Just (Question.Web.MkAnswer (R.Number 1)))
-    -- The card read is the side column's inspector, after the prompt, as is
-    -- one previewed; with none, the inspector is empty.
+    -- The card tapped is the side column's inspector, after the prompt; one
+    -- previewed floats outside it, which stays empty, as with none read.
     let inspector html = Html.search (\node -> Text.pack "<section class=\"inspector" `Text.isPrefixOf` Html.toText node) html >>= \path -> Html.at path html
         previewed = Question.Web.view request Question.Web.blank {Question.Web.reading = Just (Card.MkReading land [] False)}
         inspected html = maybe False (\i -> Text.pack "<section class=\"sheet c-land\"><header><h2>Mountain</h2>" `Text.isInfixOf` Html.toText i) (inspector html)
     Spec.assertBool s (inspected reading) "the card tapped, in the inspector"
-    Spec.assertBool s (inspected previewed) "the card previewed, in the inspector"
+    Spec.assertBool s (not (inspected previewed)) "the card previewed, not in the inspector"
+    Spec.assertBool s (Text.pack "<div class=\"sheet-backdrop peek\"" `Text.isInfixOf` Html.toText previewed) "the card previewed, shown"
+    Spec.assertBool s (maybe False (Text.isPrefixOf (Text.pack "<section class=\"inspector empty\"") . Html.toText) (inspector previewed)) "empty while one is previewed"
     Spec.assertBool s (Text.pack "<section class=\"prompt\"" `Text.isInfixOf` fst (Text.breakOn (Text.pack "<section class=\"inspector") (Html.toText reading))) "under the prompt"
     Spec.assertBool s (maybe False (Text.isPrefixOf (Text.pack "<section class=\"inspector empty\"") . Html.toText) (inspector view)) "empty while none is read"
     -- The seat's zones are chips in words, its turn too.

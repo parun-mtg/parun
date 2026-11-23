@@ -366,42 +366,58 @@ for (const type of events) {
 }
 
 // A pointer resting on a card (a mouse, not a finger) previews its sheet
-// after a moment, and leaving the card ends the preview (Parun.Web.Card's
-// "peek" and "unpeek"). Where the side column has room for the card being
-// read (style.css's inspector), a card the keyboard focuses previews too,
-// and a preview stays until the next.
+// almost at once, and leaving the card ends the preview (Parun.Web.Card's
+// "peek" and "unpeek"). Where the side column has room for the card tapped
+// (style.css's inspector), a card the keyboard focuses previews too, until
+// the focus leaves the cards.
 const hovering = matchMedia("(hover: hover) and (pointer: fine)");
 const inspecting = matchMedia("(min-width: 900px)");
 let resting = null;
 let peeking = null;
-function peek(card) {
+// Where the pointer last was on the card previewed (placePeek); null for a
+// card focused.
+let pointer = null;
+function peek(card, at) {
   if (!card.isConnected || root.querySelector(".sheet-backdrop:not(.peek)")) return;
   const path = pathOf(card);
   if (path === null) return;
   peeking = card;
+  pointer = at;
   engine.postMessage({ type: "peek", path, value: "" });
+}
+function unpeek(card) {
+  peeking = null;
+  const path = pathOf(card);
+  if (path !== null) engine.postMessage({ type: "unpeek", path, value: "" });
 }
 root.addEventListener("pointerover", (event) => {
   const card = event.target.closest?.(".card, .stack-item");
-  if (!hovering.matches || !card || card === resting) return;
+  if (!hovering.matches || event.pointerType === "touch" || !card || card === resting) return;
   resting = card;
+  const at = { x: event.clientX, y: event.clientY };
+  // A moment, so a pointer sweeping across the hand previews less of it.
   setTimeout(() => {
-    if (resting === card) peek(card);
-  }, 450);
+    if (resting === card) peek(card, at);
+  }, 60);
+});
+root.addEventListener("pointermove", (event) => {
+  if (peeking === null || pointer === null || !peeking.contains(event.target)) return;
+  pointer = { x: event.clientX, y: event.clientY };
+  placePeek();
 });
 root.addEventListener("pointerout", (event) => {
   const card = event.target.closest?.(".card, .stack-item");
   if (!card || card.contains(event.relatedTarget)) return;
   if (resting === card) resting = null;
-  if (peeking === card && !inspecting.matches) {
-    peeking = null;
-    const path = pathOf(card);
-    if (path !== null) engine.postMessage({ type: "unpeek", path, value: "" });
-  }
+  if (peeking === card && pointer !== null) unpeek(card);
 });
 root.addEventListener("focusin", (event) => {
   const card = event.target.closest?.(".card, .stack-item");
-  if (inspecting.matches && card && card !== peeking && !card.closest(".sheet-backdrop") && card.matches(":focus-visible")) peek(card);
+  if (inspecting.matches && card && card !== peeking && !card.closest(".sheet-backdrop") && card.matches(":focus-visible")) peek(card, null);
+});
+root.addEventListener("focusout", (event) => {
+  const card = event.target.closest?.(".card, .stack-item");
+  if (card && peeking === card && pointer === null && !event.relatedTarget?.closest?.(".card, .stack-item")) unpeek(card);
 });
 
 // The open card sheet where it is a dialog over the table, as on a phone,
@@ -416,33 +432,33 @@ function syncSheet() {
   if (inspecting.matches) backdrop.removeAttribute("aria-modal");
   else backdrop.setAttribute("aria-modal", "true");
 }
-// A preview left in the inspector would float unplaced over the table once
-// the window narrows, so narrowing withdraws it.
+// A focused card's preview, which only the inspector's width allows, ends
+// when the window narrows.
 inspecting.addEventListener("change", () => {
   syncSheet();
-  if (inspecting.matches || peeking === null) return;
+  if (inspecting.matches || peeking === null || pointer !== null) return;
   const from = peeking.isConnected ? peeking : cards()[0];
-  peeking = null;
-  const path = from ? pathOf(from) : null;
-  if (path !== null) engine.postMessage({ type: "unpeek", path, value: "" });
+  if (from) unpeek(from);
+  else peeking = null;
 });
 
-// A preview sits beside the card it previews, as a tooltip would: to its
-// right where it fits, else to its left, level with it as far as the window
-// allows; in the inspector, where it is.
+// A preview sits beside the pointer, as a tooltip would, or beside the card
+// focused: to its right where it fits, else to its left, level with it as
+// far as the window allows.
 function placePeek() {
   const sheet = root.querySelector(".sheet-backdrop.peek .sheet");
-  if (sheet && inspecting.matches) sheet.removeAttribute("style");
-  if (!sheet || !peeking?.isConnected || inspecting.matches) return;
-  const card = peeking.getBoundingClientRect();
+  if (!sheet || !peeking?.isConnected) return;
+  const at = pointer === null ? peeking.getBoundingClientRect() : { left: pointer.x, right: pointer.x, top: pointer.y, width: 0, height: 0 };
   const box = sheet.getBoundingClientRect();
   const width = document.documentElement.clientWidth;
   const height = document.documentElement.clientHeight;
   const gap = 12;
-  let left = card.right + gap;
-  if (left + box.width > width - gap) left = card.left - gap - box.width;
-  if (left < gap) left = Math.max(gap, Math.min(width - gap - box.width, card.left + card.width / 2 - box.width / 2));
-  const top = Math.max(gap, Math.min(height - gap - box.height, card.top + card.height / 2 - box.height / 2));
+  const off = pointer === null ? gap : 2 * gap;
+  let left = at.right + off;
+  if (left + box.width > width - gap) left = at.left - off - box.width;
+  if (left < gap) left = Math.max(gap, Math.min(width - gap - box.width, at.left + at.width / 2 - box.width / 2));
+  const level = pointer === null ? at.top + at.height / 2 - box.height / 2 : at.top - 2 * gap;
+  const top = Math.max(gap, Math.min(height - gap - box.height, level));
   sheet.style.position = "fixed";
   sheet.style.margin = "0";
   sheet.style.left = `${left}px`;

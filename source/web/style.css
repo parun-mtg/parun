@@ -3578,8 +3578,7 @@ details.log[open] + .log-recent {
   }
 
   /* The sheet, as the column's section rather than a dialog over the table. */
-  .inspector .sheet-backdrop,
-  .inspector .sheet-backdrop.peek {
+  .inspector .sheet-backdrop {
     position: static;
     display: block;
     padding: 0;
@@ -3589,8 +3588,7 @@ details.log[open] + .log-recent {
     display: none;
   }
 
-  .inspector .sheet,
-  .inspector .sheet-backdrop.peek .sheet {
+  .inspector .sheet {
     max-width: none;
     max-height: none;
     overflow: visible;
@@ -3675,7 +3673,8 @@ details.log[open] + .log-recent {
   animation: rise 0.24s cubic-bezier(0.2, 0.9, 0.3, 1.1);
 }
 
-/* A preview: the sheet beside the table, not over it, and not in the way. */
+/* A preview: the sheet floating by the pointer (page.js's placePeek), not
+   over the table, and not in the way. */
 .sheet-backdrop.peek {
   pointer-events: none;
   align-items: flex-start;

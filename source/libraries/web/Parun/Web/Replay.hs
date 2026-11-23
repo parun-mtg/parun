@@ -171,7 +171,7 @@ view frame =
         foldMap (\b -> [Board.turnBar [] (Web.Question.subgameChip (depth frame) <> [Bar.settingsButton Icon.MkMenu "Menu" Nothing Nothing]) b]) (board frame)
           <> [Element.el "div" ["play-area"] [] (foldMap (\b -> [Board.view readOnly (written frame) b]) (board frame))]
           <> foldMap (Board.hand readOnly) (board frame)
-          <> [Web.Question.side (Text.pack "Replay") (controls frame <> stop frame asked) (sheet frame) (fmap (fmap MkTable) (Web.Question.logView (board frame) (viewer frame) Web.Question.blank {Web.Question.logged = logged}))]
+          <> Web.Question.side (Text.pack "Replay") (controls frame <> stop frame asked) (reading frame) (sheet frame) (fmap (fmap MkTable) (Web.Question.logView (board frame) (viewer frame) Web.Question.blank {Web.Question.logged = logged}))
 
 -- | Every tile opens its sheet, and no seat may be tapped.
 readOnly :: Board.Marks Event
@@ -365,11 +365,10 @@ thirdPerson phrase =
         | otherwise = verb <> Text.pack "s"
    in conjugated <> rest
 
--- | The sheet of the card being read.
-sheet :: Frame -> Maybe (Html.Html Event)
-sheet frame = do
+-- | The sheet of a card read.
+sheet :: Frame -> Card.Reading -> Maybe (Html.Html Event)
+sheet frame r = do
   b <- board frame
-  r <- reading frame
   o <- Wording.recalled b (Card.object r)
   pure (Card.sheet b o r [] (MkTable Web.Question.MkClose))
 
