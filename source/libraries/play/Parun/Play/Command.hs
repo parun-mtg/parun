@@ -52,6 +52,7 @@ import qualified Parun.Types.Key as Key.Type
 import qualified Parun.Types.Label as Label
 import qualified Parun.Types.Legality as Legality.Type
 import qualified Parun.Types.LegalityTable as LegalityTable
+import qualified Parun.Types.Observer as Observer
 import qualified Parun.Types.PlayOptions as PlayOptions
 import qualified Parun.Types.PlayerId as PlayerId
 import qualified Parun.Types.Printing as Printing
@@ -189,7 +190,7 @@ play :: Protocol.Exchange IO -> PlayOptions.PlayOptions -> Search.Prior -> Regis
 play send options prior registry format decks = do
   IO.hSetBuffering IO.stdout IO.LineBuffering
   seed <- maybe Key.fresh pure (PlayOptions.seed options)
-  (outcome, recorded) <- game (Text.pack "parun play") send (pure Nothing) (const (pure ())) options prior registry format decks seed
+  (outcome, recorded) <- game (Text.pack "parun play") send (pure Nothing) (const (pure ())) [] options prior registry format decks seed
   Monad.forM_ (PlayOptions.save options) (`save` recorded)
   case outcome of
     Right (result, _) -> (if PlayOptions.json options then TextIO.hPutStrLn IO.stderr else TextIO.putStrLn) (Wording.result Nothing result)
@@ -205,9 +206,10 @@ play send options prior registry format decks = do
 -- `send` and its reply comes back: over standard input and output in `parun
 -- play` ('exchange'), as values in the web client. Each bot seat deals what
 -- it cannot see by `prior`, and its answer is taken from `stored` while it
--- has one, and otherwise given to `kept` ('answerer').
-game :: Text.Text -> Protocol.Exchange IO -> IO (Maybe R.Reply) -> (R.Reply -> IO ()) -> PlayOptions.PlayOptions -> Search.Prior -> Registry.Registry Identity.Identity -> Maybe Format.Format -> NonEmpty.NonEmpty Deck.Deck -> Key.Type.Key -> IO (Either Text.Text (Result.Result, GameState.GameState), Scenario.Scenario)
-game client send stored kept options prior registry format decks seed = do
+-- has one, and otherwise given to `kept` ('answerer'). `watchers` see every
+-- prompt too.
+game :: Text.Text -> Protocol.Exchange IO -> IO (Maybe R.Reply) -> (R.Reply -> IO ()) -> [Observer.Observer (Game.Play IO)] -> PlayOptions.PlayOptions -> Search.Prior -> Registry.Registry Identity.Identity -> Maybe Format.Format -> NonEmpty.NonEmpty Deck.Deck -> Key.Type.Key -> IO (Either Text.Text (Result.Result, GameState.GameState), Scenario.Scenario)
+game client send stored kept watchers options prior registry format decks seed = do
   let reference :: Registry.Registry IO
       reference = Registry.hoist (pure . Identity.runIdentity) registry
   let count = Natural.length decks
@@ -225,7 +227,7 @@ game client send stored kept options prior registry format decks seed = do
       let matchup = seated first decks
           seats = Map.fromList [(idOf n, answerer reference send stored kept (IORef.readIORef memories) (Search.keptBy (IORef.readIORef aims) (IORef.modifyIORef' aims) (idOf n)) options prior n) | n <- NonEmpty.toList numbers]
       entries <- IORef.newIORef Seq.empty
-      let observers = [Record.recording (labels count) (Game.underneath . IORef.modifyIORef' entries . flip (Seq.|>)), Search.remembering (IORef.modifyIORef' memories)]
+      let observers = [Record.recording (labels count) (Game.underneath . IORef.modifyIORef' entries . flip (Seq.|>)), Search.remembering (IORef.modifyIORef' memories)] <> watchers
           interrupted e = case e of
             Exception.UserInterrupt -> pure (Left (Text.pack "interrupted"))
             _ -> Exception.throwIO e

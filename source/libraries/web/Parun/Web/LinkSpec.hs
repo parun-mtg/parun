@@ -27,6 +27,7 @@ spec s = Spec.describe s "Parun.Web.Link" $ do
               Link.MkReady False,
               Link.MkStart (PlayerId.MkPlayerId 2),
               Link.MkAsk request,
+              Link.MkDeciding (PlayerId.MkPlayerId 2),
               Link.MkAnswer (R.Object [(Text.pack "action", R.Text (Text.pack "Pass"))]),
               Link.MkEnd Ending.MkLost [Text.pack "Player 1 wins."] (Text.pack "{}\n"),
               Link.MkEnd Ending.MkWon [] Text.empty,
