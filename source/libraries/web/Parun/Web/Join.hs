@@ -1,7 +1,8 @@
 -- | The screen a link from a host opens (#9185): the guest picks their own
 -- deck in the browser the lobby shares (Parun.Web.DeckBrowser), sends back
 -- the reply code it makes, and once connected sees the whole match-up and
--- says when they are ready.
+-- says when they are ready. A link to a game under way skips the deck, the
+-- game's decks already set.
 module Parun.Web.Join where
 
 import qualified Data.Foldable as Foldable
@@ -14,6 +15,7 @@ import qualified Parun.Web.Element as Element
 import qualified Parun.Web.Html as Html
 import qualified Parun.Web.Link as Link
 import qualified Parun.Web.Lobby as Lobby
+import qualified Parun.Web.Route as Route
 
 data Join = MkJoin
   { -- | The decks, what is read of them, and what they are filtered by, as
@@ -28,7 +30,9 @@ data Join = MkJoin
     -- | The match-up as the host last sent it.
     places :: [Link.Place],
     -- | Why the connection failed or ended.
-    problem :: Maybe Text.Text
+    problem :: Maybe Text.Text,
+    -- | Whether the game joined has started, as the host's link says.
+    stage :: Route.Stage
   }
   deriving (Eq, Show)
 
@@ -43,9 +47,14 @@ data Event
     MkReady
   deriving (Eq, Show)
 
--- | A join screen whose decks are still to read.
-new :: Join
+-- | A join screen for a game at this stage, its decks still to read.
+new :: Route.Stage -> Join
 new = MkJoin DeckBrowser.new Nothing Nothing False [] Nothing
+
+-- | Whether the reply code may be made: once a deck is chosen, or at once
+-- for a game under way.
+canReply :: Join -> Bool
+canReply screen = stage screen == Route.MkUnderWay || Maybe.isJust (picked screen)
 
 -- | The screen after an event, the value typed being `typed`.
 update :: Event -> Text.Text -> Join -> Join
@@ -66,9 +75,9 @@ yourDeck screen = case picked screen of
   Nothing -> List.find (/= Link.unchosen) [Link.deck p | p <- places screen, Link.who p == Text.pack "You"]
 
 -- | The screen a Rematch returns to, still connected: the match-up just
--- played, nobody ready, until the host tells it afresh.
+-- played, nobody ready, until the host tells it afresh, in the lobby.
 rematched :: Join -> Join
-rematched screen = screen {connected = True, problem = Nothing, places = fmap (\p -> p {Link.ready = False <$ Link.ready p}) (places screen)}
+rematched screen = screen {connected = True, problem = Nothing, places = fmap (\p -> p {Link.ready = False <$ Link.ready p}) (places screen), stage = Route.MkGathering}
 
 -- | Whether the host last said you are ready.
 isReady :: Join -> Bool
@@ -103,8 +112,8 @@ view screen =
                   then [Element.el "p" [] [] [Element.string "Connected to the host."], Element.el "ul" ["places"] [] (fmap place (places screen)), readyButton]
                   else case reply screen of
                     Nothing ->
-                      [ Element.el "p" [] [] [Element.string "Choose your deck and make the code to send back to the host. A game under way picks up where it stopped, whatever deck you choose."],
-                        Element.el "button" ["primary", "make-reply"] ([Element.attr "type" (Text.pack "button"), Element.on "click" MkMakeReply] <> [Element.attr "disabled" Text.empty | Maybe.isNothing (picked screen)]) [Element.string "Make my reply code"]
+                      [ Element.el "p" [] [] [Element.string (if underWay then "This game is under way: make the code to send back to the host, and it picks up where it stopped." else "Choose your deck and make the code to send back to the host.")],
+                        Element.el "button" ["primary", "make-reply"] ([Element.attr "type" (Text.pack "button"), Element.on "click" MkMakeReply] <> [Element.attr "disabled" Text.empty | not (canReply screen)]) [Element.string "Make my reply code"]
                       ]
                     Just code ->
                       [ Element.el "label" [] [Element.attr "for" (Text.pack "join-reply")] [Element.string "Send this code back to the host, who pastes it in:"],
@@ -114,22 +123,27 @@ view screen =
             )
           ]
           <> [(Text.pack "problem", Element.el "p" ["problem"] [Element.attr "role" (Text.pack "alert")] [Element.text p]) | p <- Maybe.maybeToList (problem screen)]
-          <> [ ( Text.pack "picker",
-                 Element.el
-                   "section"
-                   ["browser"]
-                   [Element.attr "aria-label" (Text.pack "Decks")]
-                   [ Element.el "h2" [] [] [Element.string (maybe "Choose your deck" (\name -> "Your deck: " <> Text.unpack name) (yourDeck screen))],
-                     fmap MkBrowse (DeckBrowser.shelvesView browsing),
-                     DeckBrowser.filtersView MkBrowse [] browsing,
-                     DeckBrowser.resultsView MkPick ((== picked screen) . Just) [Element.el "p" ["empty"] [] [Element.string "No saved decks in this browser."]] (offered screen) browsing
-                   ]
-               ),
-               ( Text.pack "detail",
-                 Element.el "aside" ["detail"] [Element.attr "aria-label" (Text.pack "Deck chosen")] $
-                   Element.el "span" ["eyebrow"] [] [Element.string "Your deck"]
-                     : maybe [Element.el "p" ["muted"] [] [Element.string "Pick one of the decks to see it here."]] (DeckBrowser.detailBody browsing) (picked screen)
-               )
-             ]
+          <> picker
   where
     browsing = browser screen
+    underWay = stage screen == Route.MkUnderWay
+    picker
+      | underWay = []
+      | otherwise =
+          [ ( Text.pack "picker",
+              Element.el
+                "section"
+                ["browser"]
+                [Element.attr "aria-label" (Text.pack "Decks")]
+                [ Element.el "h2" [] [] [Element.string (maybe "Choose your deck" (\name -> "Your deck: " <> Text.unpack name) (yourDeck screen))],
+                  fmap MkBrowse (DeckBrowser.shelvesView browsing),
+                  DeckBrowser.filtersView MkBrowse [] browsing,
+                  DeckBrowser.resultsView MkPick ((== picked screen) . Just) [Element.el "p" ["empty"] [] [Element.string "No saved decks in this browser."]] (offered screen) browsing
+                ]
+            ),
+            ( Text.pack "detail",
+              Element.el "aside" ["detail"] [Element.attr "aria-label" (Text.pack "Deck chosen")] $
+                Element.el "span" ["eyebrow"] [] [Element.string "Your deck"]
+                  : maybe [Element.el "p" ["muted"] [] [Element.string "Pick one of the decks to see it here."]] (DeckBrowser.detailBody browsing) (picked screen)
+            )
+          ]

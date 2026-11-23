@@ -18,6 +18,7 @@ import qualified Parun.Web.Diff as Diff
 import qualified Parun.Web.Html as Html
 import qualified Parun.Web.Link as Link
 import qualified Parun.Web.Patch as Patch
+import qualified Parun.Web.Route as Route
 import qualified Parun.Web.Wire as Wire
 
 -- | The view the page shows, the events its handlers took that no one
@@ -256,10 +257,11 @@ channel page build n = Link.MkChannel (linkSend n . Link.encode build) receive
         "closed" -> pure Nothing
         _ -> receive
 
--- | Opens data channel `n`, for a seat a guest plays: page.js says
--- "offer" with the link to send them once it is made.
-linkHost :: Int -> IO ()
-linkHost = hostJs
+-- | Opens data channel `n`, for a seat a guest plays in a game at this
+-- stage: page.js says "offer" with the link to send them once it is made,
+-- naming the join screen for that stage (Parun.Web.Route).
+linkHost :: Int -> Route.Stage -> IO ()
+linkHost n stage = hostJs n (Prim.toJSString (Text.unpack (Route.render (Route.MkJoin stage))))
 
 -- | Connects data channel `n` with the code its guest sent back.
 linkAccept :: Int -> Text.Text -> IO ()
@@ -355,8 +357,8 @@ foreign import javascript unsafe "globalThis.parunForget($1)"
 foreign import javascript unsafe "globalThis.parunTakeLinks()"
   takeLinks :: IO Prim.JSString
 
-foreign import javascript unsafe "globalThis.parunLink({ op: 'host', seat: $1 })"
-  hostJs :: Int -> IO ()
+foreign import javascript unsafe "globalThis.parunLink({ op: 'host', seat: $1, query: $2 })"
+  hostJs :: Int -> Prim.JSString -> IO ()
 
 foreign import javascript unsafe "globalThis.parunLink({ op: 'accept', seat: $1, code: $2 })"
   acceptJs :: Int -> Prim.JSString -> IO ()

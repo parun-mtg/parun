@@ -152,8 +152,9 @@ data Next
     MkToReplay Web.Replay.Source Natural
   | -- | A game played on from this position of this replay.
     MkToPlayOn Web.Replay.Source Natural
-  | -- | Another browser's game, joined with this code from its link.
-    MkToJoin Text.Text
+  | -- | Another browser's game at this stage, joined with the code its link
+    -- carries.
+    MkToJoin Route.Stage Text.Text
   | -- | The game with guests the page kept, picked up where it stopped.
     MkToRestore Link.Saved
   | -- | The lobby as left when the game in progress was abandoned for this
@@ -184,18 +185,19 @@ start = do
     Browser.display (page shell) $ message ["The page stopped on an error:", Exception.displayException (problem :: Exception.SomeException)]
 
 -- | Where the page's link leads, read once (engine.js passes its query on):
--- another browser's game to join (parun_offer, the link's fragment); a
--- replay or the list of them, as the page's query names (parun_query,
--- Parun.Web.Route); else the game with guests the page kept, played on this
--- build; else the screen the query names. A kept game that does not read is
--- forgotten.
+-- another browser's game to join (parun_offer, the link's fragment), at the
+-- stage its query names; a replay or the list of them, as the page's query
+-- names (parun_query, Parun.Web.Route); else the game with guests the page
+-- kept, played on this build; else the screen the query names. A kept game
+-- that does not read is forgotten.
 opening :: Text.Text -> IO Next
 opening build' = do
   offered <- Environment.lookupEnv "parun_offer"
   route <- maybe Route.MkHome (Route.parse . Text.pack) <$> Environment.lookupEnv "parun_query"
   kept <- Browser.keptGame
   case (offered, route) of
-    (Just code, _) | not (null code) -> pure (MkToJoin (Text.pack code))
+    (Just code, Route.MkJoin stage) | not (null code) -> pure (MkToJoin stage (Text.pack code))
+    (Just code, _) | not (null code) -> pure (MkToJoin Route.MkGathering (Text.pack code))
     (_, Route.MkReplays) -> pure MkToReplays
     (_, Route.MkReplay Route.MkWatching source at) -> pure (MkToReplay source at)
     (_, Route.MkReplay Route.MkPlayingOn source at) -> pure (MkToPlayOn source at)
@@ -210,7 +212,7 @@ nextOf route = case route of
   Route.MkPlay -> MkToLobby Nothing
   -- The offer is the fragment, so a query naming the join screen without
   -- one has nothing to join.
-  Route.MkJoin -> MkToHome
+  Route.MkJoin _ -> MkToHome
   Route.MkDecks deck -> MkToDecks deck
   Route.MkBuild deck -> MkToBuilder deck MkToHome
   Route.MkReplays -> MkToReplays
@@ -231,7 +233,7 @@ routeOf next = case next of
   MkToReplays -> Route.MkReplays
   MkToReplay source at -> Route.MkReplay Route.MkWatching source at
   MkToPlayOn source at -> Route.MkReplay Route.MkPlayingOn source at
-  MkToJoin _ -> Route.MkJoin
+  MkToJoin stage _ -> Route.MkJoin stage
   MkToRestore _ -> Route.MkHome
   MkToAbandoned _ _ -> Route.MkPlay
   MkToPaused -> Route.MkHome
@@ -255,7 +257,7 @@ follow shell next =
     MkToReplays -> replays shell >>= follow shell
     MkToReplay source at -> replay shell source at >>= follow shell
     MkToPlayOn source at -> playOnFrom shell source at >>= follow shell
-    MkToJoin code -> joinGame shell code >>= follow shell
+    MkToJoin stage code -> joinGame shell stage code >>= follow shell
     -- Every link of a game picked up is down, so any number serves.
     MkToRestore kept -> play shell (Link.seats kept) (Map.fromList [(i, i) | i <- Link.invited kept]) (Link.locals kept) (Just kept) >>= follow shell
 
@@ -370,7 +372,7 @@ lobby shell initial said pending = do
                     case sequence others >>= traverse (\name -> (,) name <$> Map.lookup name files) . (mine NonEmpty.:|) of
                       Just seats -> listsOf seats >>= \lists -> play shell lists Map.empty (Lobby.locals current) Nothing
                       Nothing -> go current
-              Lobby.MkAdd Lobby.MkInvited | not (Lobby.paused current), length (Lobby.theirs current) < Lobby.mostOthers -> Browser.linkHost (Lobby.nextLink current) >> go (Lobby.update event value current)
+              Lobby.MkAdd Lobby.MkInvited | not (Lobby.paused current), length (Lobby.theirs current) < Lobby.mostOthers -> Browser.linkHost (Lobby.nextLink current) Route.MkGathering >> go (Lobby.update event value current)
               Lobby.MkConnect i | Just invite <- Map.lookup i (Lobby.invites current) -> do
                 Browser.linkAccept (Lobby.linkNumber invite) (Text.strip (Lobby.replyCode invite))
                 go current
@@ -435,7 +437,7 @@ reinvite :: Int -> Text.Text -> Lobby.Lobby -> IO Lobby.Lobby
 reinvite i problem current = case Map.lookup i (Lobby.invites current) of
   Nothing -> pure current
   Just invite -> do
-    Browser.linkHost (Lobby.linkNumber invite)
+    Browser.linkHost (Lobby.linkNumber invite) Route.MkGathering
     pure (Lobby.linked i (const (Lobby.newInvite (Lobby.linkNumber invite)) {Lobby.inviteProblem = Just problem}) current)
 
 -- | Why an invited slot was made afresh once its channel closed.
@@ -963,7 +965,7 @@ tracked down i channel =
 rejoin :: Shell -> Int -> Rejoin.Rejoin -> IO Bool
 rejoin shell n initial = do
   before <- IORef.readIORef (Browser.shown (page shell))
-  Monad.when hosting (Browser.linkHost n)
+  Monad.when hosting (Browser.linkHost n Route.MkUnderWay)
   let go shown = do
         Browser.display (page shell) (fmap Screen.MkRejoin (Rejoin.view shown))
         woke <- awaitLink shell n
@@ -972,7 +974,7 @@ rejoin shell n initial = do
             kind | kind == (if hosting then "offer" else "reply") -> go shown {Rejoin.code = Just (Browser.said heard')}
             "open" -> mapM_ (Browser.display (page shell)) before >> pure True
             "closed" -> do
-              Monad.when hosting (Browser.linkHost n)
+              Monad.when hosting (Browser.linkHost n Route.MkUnderWay)
               go shown {Rejoin.code = Nothing, Rejoin.typed = Text.empty, Rejoin.problem = Just (Text.pack (if hosting then "That code did not connect: send them the new link." else "That link did not connect: ask the host for a new one."))}
             _ -> go shown
           MkTapped (Screen.MkRejoin Rejoin.MkConnect) _
@@ -995,15 +997,15 @@ awaitLink shell n = do
     else Browser.takeLinkedWith (page shell) ((== n) . Browser.link) >>= maybe (Browser.idle >> awaitLink shell n) (pure . MkHeard)
 
 -- | The screen another browser's link opens, joining its game over channel
--- 0 with the code the link carries: the player's deck chosen and sent, the
--- reply code made, and the match-up shown as the host tells it, until the
--- game starts or the player goes home.
-joinGame :: Shell -> Text.Text -> IO Next
-joinGame shell offer = do
+-- 0 with the code the link carries: the player's deck chosen and sent
+-- unless the game is under way, the reply code made, and the match-up shown
+-- as the host tells it, until the game starts or the player goes home.
+joinGame :: Shell -> Route.Stage -> Text.Text -> IO Next
+joinGame shell stage offer = do
   need shell Loading.MkDecks
   need shell Loading.MkCards
   need shell Loading.MkRules
-  go Join.new
+  go (Join.new stage)
   where
     n :: Int
     n = 0
@@ -1031,7 +1033,7 @@ joinGame shell offer = do
           "closed" -> go (lost hostClosed current)
           _ -> go current
         MkTapped (Screen.MkJoin event) value -> case event of
-          Join.MkMakeReply | Maybe.isJust (Join.picked current) -> Browser.linkJoin n offer >> go current
+          Join.MkMakeReply | Join.canReply current -> Browser.linkJoin n offer >> go current
           Join.MkReady | Join.connected current -> Link.send hostChannel (Link.MkReady (not (Join.isReady current))) >> go current
           _ -> do
             let next = Join.update event value current
