@@ -19,6 +19,7 @@ import qualified Data.Text as Text
 import Numeric.Natural (Natural)
 import qualified Parun.DeckList as DeckList
 import qualified Parun.Engine.RuleFamily as RuleFamily.Engine
+import qualified Parun.Extra.Natural as Natural
 import qualified Parun.Play.Command as Command
 import qualified Parun.Play.Opponent as Opponent
 import qualified Parun.Types.Card as Card
@@ -66,10 +67,10 @@ data Lobby = MkLobby
     locals :: Map.Map Int Link.Sitting,
     -- | Whether you are ready to start a game with the players invited.
     ready :: Bool,
-    -- | How strongly every bot plays (Parun.Play.Opponent).
-    difficulty :: Difficulty.Difficulty,
-    -- | What every bot values in a position (Parun.Play.Opponent).
-    persona :: Persona.Persona,
+    -- | How strongly each bot plays and what it values in a position
+    -- (Parun.Play.Opponent), by its place in 'theirs'; 'defaultBot' in a
+    -- place absent ('botAt').
+    bots :: Map.Map Int (Difficulty.Difficulty, Persona.Persona),
     -- | Whether a game is in progress, set aside for this lobby, which
     -- starting another concedes.
     paused :: Bool,
@@ -156,10 +157,12 @@ data Event
     MkConnect Int
   | -- | Toggles whether you are ready to start with the players invited.
     MkReady
-  | -- | Sets every bot's difficulty to the one whose name is chosen.
-    MkDifficulty
-  | -- | Sets every bot's persona to the one whose name is chosen.
-    MkPersona
+  | -- | Sets the difficulty of the bot at this place in 'theirs' to the one
+    -- whose name is chosen.
+    MkDifficulty Int
+  | -- | Sets the persona of the bot at this place in 'theirs' to the one
+    -- whose name is chosen.
+    MkPersona Int
   | -- | Concedes the game in progress for what was asked about; the shell
     -- does it.
     MkConcede
@@ -183,8 +186,7 @@ new =
       nextLink = 0,
       locals = Map.empty,
       ready = False,
-      difficulty = Difficulty.MkHard,
-      persona = Persona.MkBalanced,
+      bots = Map.empty,
       paused = False,
       conceding = Nothing
     }
@@ -192,6 +194,14 @@ new =
 -- | A new lobby with this deck yours, on the shelf it is on.
 holding :: Text.Text -> Lobby
 holding name = browsed (\b -> b {DeckBrowser.shelf = DeckBrowser.shelfOf name}) new {mine = Just name}
+
+-- | How a bot plays unless told otherwise: as `parun play`'s does.
+defaultBot :: (Difficulty.Difficulty, Persona.Persona)
+defaultBot = (Difficulty.MkHard, Persona.MkBalanced)
+
+-- | How the bot at this place in 'theirs' plays, of these 'bots'.
+botAt :: Int -> Map.Map Int (Difficulty.Difficulty, Persona.Persona) -> (Difficulty.Difficulty, Persona.Persona)
+botAt = Map.findWithDefault defaultBot
 
 -- | The lobby with its deck browser changed.
 browsed :: (DeckBrowser.DeckBrowser -> DeckBrowser.DeckBrowser) -> Lobby -> Lobby
@@ -231,16 +241,17 @@ mostOthers :: Int
 mostOthers = 3
 
 -- | Of so many seats, the player's (seat 1) and each in `people` speak the
--- line protocol; the search bot plays every other, at this difficulty and
--- persona (Parun.Play.Opponent).
-playOptions :: (Difficulty.Difficulty, Persona.Persona) -> Natural -> Set.Set PlayerId.PlayerId -> PlayOptions.PlayOptions
-playOptions (level, style) count people =
-  PlayOptions.none
-    { PlayOptions.json = True,
-      PlayOptions.bots = Set.fromList [n | n <- [2 .. count], Set.notMember (Command.idOf n) people],
-      PlayOptions.budget = Opponent.budgetAt level (PlayOptions.budget PlayOptions.none),
-      PlayOptions.weights = Opponent.weightsOf style
-    }
+-- line protocol; the search bot plays every other, at the difficulty and
+-- persona (Parun.Play.Opponent) its place in 'theirs' has in `styles`
+-- ('botAt').
+playOptions :: Map.Map Int (Difficulty.Difficulty, Persona.Persona) -> Natural -> Set.Set PlayerId.PlayerId -> PlayOptions.PlayOptions
+playOptions styles count people =
+  let settings n = case botAt (Natural.toIntSaturating n - 2) styles of
+        (level, style) -> (Opponent.budgetAt level PlayOptions.budget, Opponent.weightsOf style)
+   in PlayOptions.none
+        { PlayOptions.json = True,
+          PlayOptions.bots = Map.fromList [(n, settings n) | n <- [2 .. count], Set.notMember (Command.idOf n) people]
+        }
 
 -- | Whether two decks are under one format, and so may meet: the game's
 -- format is the one their headers name (Parun.Play.Command.settle).
@@ -393,7 +404,8 @@ updated event typed lobby = case event of
                   MkTheirs j | j == i -> MkMine | otherwise -> MkTheirs (moved j)
                   MkMine -> MkMine,
                 invites = Map.mapKeys moved (Map.delete i (invites lobby)),
-                locals = Map.mapKeys moved (Map.delete i (locals lobby))
+                locals = Map.mapKeys moved (Map.delete i (locals lobby)),
+                bots = Map.mapKeys moved (Map.delete i (bots lobby))
               }
     | otherwise -> lobby
   MkStart -> lobby
@@ -402,11 +414,15 @@ updated event typed lobby = case event of
   MkReplyCode i -> lobby {invites = Map.adjust (\invite -> invite {replyCode = typed}) i (invites lobby)}
   MkConnect _ -> lobby
   MkReady -> lobby {ready = not (ready lobby)}
-  MkDifficulty -> maybe lobby (\d -> lobby {difficulty = d}) (Opponent.named Opponent.difficultyName (Text.unpack typed))
-  MkPersona -> maybe lobby (\p -> lobby {persona = p}) (Opponent.named Opponent.personaName (Text.unpack typed))
+  MkDifficulty i -> maybe lobby (\d -> styled i (\(_, p) -> (d, p))) (Opponent.named Opponent.difficultyName (Text.unpack typed))
+  MkPersona i -> maybe lobby (\p -> styled i (\(d, _) -> (d, p))) (Opponent.named Opponent.personaName (Text.unpack typed))
   MkConcede -> lobby
   MkResume -> lobby
   MkCancel -> lobby {conceding = Nothing}
+  where
+    styled i f
+      | removable lobby i = lobby {bots = Map.insert i (f (botAt i (bots lobby))) (bots lobby)}
+      | otherwise = lobby
 
 -- | Whether the seat at this place in 'theirs' may be unseated: it is
 -- seated.
@@ -542,24 +558,24 @@ view lobby =
       (Text.pack "detail", detailView lobby)
     ]
 
--- | The seats: yours, then each bot's, invited player's, player's here or
--- one you play too; the way to unseat each that is 'removable'; a seat to
--- add, by who fills it, while there is room; and Start at the foot, saying
--- what it waits on.
+-- | The seats: yours, then each bot's with how it plays, invited player's,
+-- player's here or one you play too; the way to unseat each that is
+-- 'removable'; a seat to add, by who fills it, while there is room; and
+-- Start at the foot, saying what it waits on.
 seatsView :: Lobby -> Html.Html Event
 seatsView lobby =
   Element.el "section" ["seats"] [Element.attr "aria-label" (Text.pack "Seats")] $
     [ Element.el "h1" [] [] [Element.string "New game"],
       Element.el "span" ["eyebrow"] [] [Element.string "At the table"],
-      seat MkMine (Element.string "Y") (mine lobby) []
+      seat MkMine (Element.string "Y") (mine lobby) [] []
     ]
       <> concat
         [ Element.el "span" ["eyebrow", "versus"] [] [Element.string "versus"]
             : case Map.lookup i (invites lobby) of
               Just invite -> [inviteView i invite (remove i)]
               Nothing -> case Map.lookup i (locals lobby) of
-                Just sitting -> [seat (MkTheirs i) (Element.string (if sitting == Link.MkYours then "Y" else "P")) held (remove i)]
-                Nothing -> [seat (MkTheirs i) (Icon.icon [] Icon.MkBot) held (remove i)]
+                Just sitting -> [seat (MkTheirs i) (Element.string (if sitting == Link.MkYours then "Y" else "P")) held [] (remove i)]
+                Nothing -> [seat (MkTheirs i) (Icon.icon [] Icon.MkBot) held [botView i (botAt i (bots lobby))] (remove i)]
         | (i, held) <- zip [0 ..] others
         ]
       <> [ Element.el
@@ -579,12 +595,11 @@ seatsView lobby =
              ]
          | length others < mostOthers
          ]
-      <> [botView lobby | length others > Map.size (invites lobby) + Map.size (locals lobby)]
       <> [startView lobby]
   where
     others = theirs lobby
     remove i = [Element.el "button" ["quiet", "drop-seat"] [Element.attr "type" (Text.pack "button"), Element.on "click" (MkDrop i), Element.attr "aria-label" (Text.pack ("Remove " <> seatName (MkTheirs i)))] [Element.string "Remove"] | removable lobby i]
-    seat which avatar held extra =
+    seat which avatar held below extra =
       let on = choosing lobby == which
        in Element.el
             "div"
@@ -607,27 +622,30 @@ seatsView lobby =
                   Nothing -> [Element.el "span" ["seat-deck-name"] [] [Element.string (if which == MkMine then "No deck yet" else "Random deck")]],
                 Element.el "span" ["seat-note", "muted"] [] [Element.string (maybe (if which == MkMine then "Choose one to start" else "Drawn when the game starts") (DeckBrowser.counted (browser lobby)) held)]
               ]
-              : [Element.el "div" ["seat-actions"] [] extra | not (null extra)]
+              : below
+                <> [Element.el "div" ["seat-actions"] [] extra | not (null extra)]
 
--- | How every bot plays: its difficulty and its persona, each a choice of
--- those named (Parun.Play.Opponent).
-botView :: Lobby -> Html.Html Event
-botView lobby =
+-- | How the bot at this place in 'theirs' plays: its difficulty and its
+-- persona, each a choice of those named (Parun.Play.Opponent).
+botView :: Int -> (Difficulty.Difficulty, Persona.Persona) -> Html.Html Event
+botView i (level, style) =
   Element.el
     "div"
     ["bot-settings"]
     []
-    [ Element.el "label" [] [Element.attr "for" (Text.pack "bot-difficulty")] [Element.string "Bot level"],
-      choice "bot-difficulty" MkDifficulty Opponent.difficultyName (difficulty lobby),
-      Element.el "label" [] [Element.attr "for" (Text.pack "bot-persona")] [Element.string "Bot style"],
-      choice "bot-persona" MkPersona Opponent.personaName (persona lobby)
+    [ Element.el "label" [] [Element.attr "for" (Text.pack levelId)] [Element.string "Level"],
+      choice levelId "bot-difficulty" (MkDifficulty i) Opponent.difficultyName level,
+      Element.el "label" [] [Element.attr "for" (Text.pack styleId)] [Element.string "Style"],
+      choice styleId "bot-persona" (MkPersona i) Opponent.personaName style
     ]
   where
-    choice :: (Bounded a, Enum a, Eq a) => String -> Event -> (a -> (String, String)) -> a -> Html.Html Event
-    choice field event nameOf current =
+    levelId = "bot-difficulty-" <> show i
+    styleId = "bot-persona-" <> show i
+    choice :: (Bounded a, Enum a, Eq a) => String -> String -> Event -> (a -> (String, String)) -> a -> Html.Html Event
+    choice field kind event nameOf current =
       Element.el
         "select"
-        [field]
+        [kind, "deck-menu"]
         [Element.attr "id" (Text.pack field), Element.on "change" event]
         [ Element.el "option" [] ([Element.attr "value" (Text.pack value)] <> [Element.attr "selected" Text.empty | option == current]) [Element.string label]
         | option <- [minBound .. maxBound],

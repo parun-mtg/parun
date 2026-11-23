@@ -359,7 +359,7 @@ spec s registry = Spec.describe s "Play" $ do
     Spec.assertEqWith s "the seat answered plays first" (fmap (fst . fst . run [third]) seeds) (fmap (const (Just 3)) seeds)
     Spec.assertEqWith s "any seat may be picked to choose" (Set.fromList (fmap chooserOf seeds)) (Set.fromList (fmap Just [1, 2, 3]))
     Spec.assertEqWith s "the picked seat is asked" (fmap (asks . snd . run [third]) seeds) (fmap (Maybe.maybeToList . chooserOf) seeds)
-    let bots = fmap (startingAmong three PlayOptions.none {PlayOptions.bots = Set.fromList [1, 2, 3]} []) seeds
+    let bots = fmap (startingAmong three PlayOptions.none {PlayOptions.bots = Map.fromList [(n, PlayOptions.bot) | n <- [1, 2, 3]]} []) seeds
     Spec.assertEqWith s "a bot chooses any seat" (Set.fromList (fmap (fst . fst) bots)) (Set.fromList (fmap Just [1, 2, 3]))
     let choices = Map.fromListWith Set.union [(picked, Set.singleton first) | ((first, _), heard) <- bots, picked <- pickedIn heard]
     Spec.assertBool s (any ((> 1) . Set.size) choices) "a bot does not always choose the same seat"
@@ -371,7 +371,7 @@ spec s registry = Spec.describe s "Play" $ do
     Spec.assertEqWith s "told and asked" (said heard, asks heard) ([], [])
 
   Spec.it s "CR 103.1 a bot picked to choose answers for itself" $ do
-    let bots = PlayOptions.none {PlayOptions.bots = Set.fromList [1, 2]}
+    let bots = PlayOptions.none {PlayOptions.bots = Map.fromList [(n, PlayOptions.bot) | n <- [1, 2]]}
         runs = fmap (starting bots []) [0 .. 15 :: Word.Word32]
     Spec.assertEqWith s "first" (Set.fromList (fmap (fst . fst) runs)) (Set.fromList [Just 1, Just 2])
     Spec.assertEqWith s "asked" (fmap (asks . snd) runs) (fmap (const []) runs)
@@ -379,8 +379,8 @@ spec s registry = Spec.describe s "Play" $ do
 
   Spec.it s "parun play refuses a seat neither the bot nor the line protocol plays" $ do
     Spec.assertEqWith s "no seat the bot's" (Config.unplayed PlayOptions.none 2) (Just 1)
-    Spec.assertEqWith s "one seat the bot's" (Config.unplayed PlayOptions.none {PlayOptions.bots = Set.singleton 1} 3) (Just 2)
-    Spec.assertEqWith s "every seat the bot's" (Config.unplayed PlayOptions.none {PlayOptions.bots = Set.fromList [1, 2]} 2) Nothing
+    Spec.assertEqWith s "one seat the bot's" (Config.unplayed PlayOptions.none {PlayOptions.bots = Map.singleton 1 PlayOptions.bot} 3) (Just 2)
+    Spec.assertEqWith s "every seat the bot's" (Config.unplayed PlayOptions.none {PlayOptions.bots = Map.fromList [(n, PlayOptions.bot) | n <- [1, 2]]} 2) Nothing
     Spec.assertEqWith s "over the line protocol" (Config.unplayed PlayOptions.none {PlayOptions.json = True} 2) Nothing
 
 -- A game after setup: alice red, bob green, hands drawn.
