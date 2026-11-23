@@ -7,6 +7,7 @@ module Parun.Browser.Replay where
 
 import Control.Applicative ((<|>))
 import qualified Control.Exception as Exception
+import qualified Control.Monad as Monad
 import qualified Data.ByteString as ByteString
 import qualified Data.Foldable as Foldable
 import qualified Data.Functor.Identity as Identity
@@ -42,7 +43,6 @@ import qualified Parun.Types.ScenarioFailure as ScenarioFailure
 import qualified Parun.Types.Seat as Seat
 import qualified Parun.Types.Start as Start
 import qualified Parun.Types.Stop as Stop
-import qualified Parun.Types.Timed as Timed
 import qualified Parun.Web.Card as Web.Card
 import qualified Parun.Web.History as History
 import qualified Parun.Web.Question as Web.Question
@@ -85,19 +85,33 @@ data Exit
 -- finished here, `played`, else the first), replayed afresh at each
 -- position the page goes to, each told to `moved`, until the page leaves
 -- it, stepping on by itself while played, until the end; a game finished
--- here names each seat by who played it (History.seatNames).
+-- here names each seat by who played it (History.seatNames), and says how
+-- it ended at the end. The state at each position a turn begins is kept
+-- once reached, for the log of every later position (Web.Replay.earlier).
 viewer :: Browser.Page Screen.Event -> (Natural -> IO ()) -> Registry.Registry Identity.Identity -> Text.Text -> Maybe History.Game -> Scenario.Type.Scenario -> Natural -> IO Exit
 viewer page moved registry name played scenario given = do
+  kept <- IORef.newIORef Map.empty
   let count = Natural.length (Scenario.Type.timeline scenario)
       labelled = seatsOf scenario
       names = foldMap History.seatNames played
       seats = [(pid, Map.findWithDefault label label names) | (pid, label) <- labelled]
       seen = played >>= History.viewerLabel
       lookUp = Identity.runIdentity . Interpreter.chosenCard registry
-      -- The run to a position.
-      reach at = moved at >> Exception.evaluate (Identity.runIdentity $ Scenario.replay registry (Just at) scenario)
+      starts = Web.Replay.turnStarts (Foldable.toList (Scenario.Type.timeline scenario))
+      outcome = foldMap (Text.unwords . History.said) played
+      -- The run to a position, its state kept where a turn begins.
+      run at = do
+        stop <- Exception.evaluate (Identity.runIdentity $ Scenario.replay registry (Just at) scenario)
+        Monad.when (at `elem` starts) (either (const (pure ())) (IORef.modifyIORef' kept . Map.insert at . Stop.state) stop)
+        pure stop
+      reach at = moved at >> run at
+      -- The states at the positions before this one where a turn begins.
+      earlierOf at = fmap Maybe.catMaybes . Monad.forM (filter (< at) starts) $ \s -> do
+        known <- Map.lookup s <$> IORef.readIORef kept
+        maybe (fmap (either (const Nothing) (Just . Stop.state)) (run s)) (pure . Just) known
       go playing at stop viewing reading = do
-        let frame = frameOf lookUp names name scenario seats count playing at stop viewing reading
+        earlier <- earlierOf at
+        let frame = (frameOf lookUp names name scenario seats count playing at stop viewing reading) {Web.Replay.earlier = fmap (PlayerView.Engine.viewFor viewing) earlier, Web.Replay.outcome = outcome}
         Browser.display page . fmap Screen.MkReplay $ Web.Replay.view frame
         (tapped, value) <- Browser.next page
         let moveTo target = if target == at then go playing at stop viewing Nothing else reach target >>= \next -> go (playing && target < count) target next viewing Nothing
@@ -157,15 +171,15 @@ seatsOf scenario =
 -- `names` names it by its label, stepping on by itself where `playing`.
 frameOf :: (CardName.CardName -> Either e (Maybe Card.Card)) -> Map.Map Text.Text Text.Text -> Text.Text -> Scenario.Type.Scenario -> [(PlayerId.PlayerId, Text.Text)] -> Natural -> Bool -> Natural -> Either ScenarioFailure.ScenarioFailure Stop.Stop -> PlayerId.PlayerId -> Maybe Web.Card.Reading -> Web.Replay.Frame
 frameOf lookUp names name scenario seats count playing at stop seen reading =
-  let base = Web.Replay.MkFrame name (Scenario.Type.description scenario) seats seen at count (Web.Replay.turnStarts (Foldable.toList (Scenario.Type.timeline scenario))) playing Nothing 0 Nothing Nothing Nothing Nothing reading Map.empty
+  let base = Web.Replay.MkFrame name (Scenario.Type.description scenario) seats seen at count (Web.Replay.turnStarts (Foldable.toList (Scenario.Type.timeline scenario))) playing Nothing [] Text.empty 0 Nothing Nothing Nothing reading Map.empty
       shown board = base {Web.Replay.board = Just board, Web.Replay.written = Web.Card.written lookUp board}
    in case stop of
         Left failure -> base {Web.Replay.failure = Just (Scenario.render failure)}
         Right reached@(Stop.MkBefore _ timed asked) ->
-          (shown (PlayerView.Engine.viewFor seen (Stop.state reached)))
-            { Web.Replay.depth = Protocol.depthOf asked,
-              Web.Replay.entry = Just (Scenario.renderWhen (Timed.when timed) <> Text.pack ": " <> Scenario.renderEntry (Timed.entry timed)),
-              Web.Replay.entryLine = Just (Web.Replay.lineOf names (Protocol.requestFor asked) timed),
-              Web.Replay.question = Protocol.requestFor asked
-            }
+          let board = PlayerView.Engine.viewFor seen (Stop.state reached)
+           in (shown board)
+                { Web.Replay.depth = Protocol.depthOf asked,
+                  Web.Replay.entryLine = Just (Web.Replay.lineOf names (PlayerView.begun board) (Protocol.requestFor asked) timed),
+                  Web.Replay.question = Protocol.requestFor asked
+                }
         Right reached@(Stop.MkEnded _) -> shown (PlayerView.Engine.viewFor seen (Stop.state reached))

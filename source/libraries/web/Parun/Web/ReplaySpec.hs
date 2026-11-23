@@ -57,7 +57,7 @@ spec s = Spec.describe s "Parun.Web.Replay" $ do
 
     Spec.it s "says where the run stands, and why it stopped short" $ do
       let page = Html.toText . Replay.view $ frame {Replay.position = 1, Replay.failure = Just (Text.pack "the entry was never reached")}
-      Spec.assertBool s (Text.isInfixOf (Text.pack "Before entry 2 of 3") page) "position"
+      Spec.assertBool s (Text.isInfixOf (Text.pack ">Step 1 of 3<") page) "position"
       Spec.assertBool s (Text.isInfixOf (Text.pack "role=\"alert\">the entry was never reached") page) "failure"
 
     Spec.it s "sends a step's position and a seat when tapped" $ do
@@ -89,10 +89,14 @@ spec s = Spec.describe s "Parun.Web.Replay" $ do
       Spec.assertEqWith s "back" (tapped "All replays") (Just Replay.MkBack)
       Spec.assertBool s (not (Text.isInfixOf (Text.pack "&amp;branch") (Html.toText page))) "no branch link"
 
-    Spec.it s "says the entry in a line, the entry as written behind Details" $ do
-      let page = Html.toText . Replay.view $ frame {Replay.entry = Just (Text.pack "raw"), Replay.entryLine = Just (Text.pack "Turn 1 \x00b7 Untap \x00b7 chance: shuffle")}
-      Spec.assertBool s (Text.isInfixOf (Text.pack "<p class=\"entry-line\">Turn 1 \x00b7 Untap \x00b7 chance: shuffle</p><details class=\"entry-details\"><summary>Details</summary><pre class=\"entry\">raw</pre></details>") page) "line, then details"
-      Spec.assertBool s (Text.isInfixOf (Text.pack "<details class=\"entry-details\"><summary>Details</summary><pre class=\"entry\">raw</pre></details>") (Html.toText (Replay.view frame {Replay.entry = Just (Text.pack "raw")}))) "raw behind details without a line"
+    Spec.it s "says the entry in a line, and nothing as the engine writes it" $ do
+      let page = Html.toText . Replay.view $ frame {Replay.entryLine = Just (Text.pack "Turn 1 \x00b7 Untap \x00b7 a library is shuffled")}
+      Spec.assertBool s (Text.isInfixOf (Text.pack "<p class=\"entry-line\">Turn 1 \x00b7 Untap \x00b7 a library is shuffled</p>") page) "line"
+      Spec.assertBool s (not (Text.isInfixOf (Text.pack "<details") page)) "no details"
+
+    Spec.it s "says how the game ended only at the end" $ do
+      let page at = Html.toText (Replay.view frame {Replay.position = at, Replay.outcome = Text.pack "You win."})
+      Spec.assertEqWith s "shown" (fmap (Text.isInfixOf (Text.pack ">You win.<") . page) [0, 2, 3]) [False, False, True]
 
     Spec.it s "names the seat asked elsewhere without the question's kind" $ do
       let page = Html.toText (Replay.view frame {Replay.question = Just (request 1 "ChooseAction" (Reply.Array []))})
@@ -112,6 +116,7 @@ spec s = Spec.describe s "Parun.Web.Replay" $ do
     Spec.it s "titles a scenario by its description less a leading rules citation" $ do
       Spec.assertEqWith s "cited" (Replay.titled (Text.pack "x") (Text.pack "CR 702.9b, 509.1: flying blocks")) (Text.pack "Flying blocks", Text.pack "CR 702.9b, 509.1")
       Spec.assertEqWith s "uncited" (Replay.titled (Text.pack "x") (Text.pack "Grizzly Bears attacks: it hits")) (Text.pack "Grizzly Bears attacks: it hits", Text.empty)
+      Spec.assertEqWith s "the suite's tag" (Replay.titled (Text.pack "x") (Text.pack "CR 305.2a gameplay: Word of Command makes bob play a land")) (Text.pack "Word of Command makes bob play a land", Text.pack "CR 305.2a")
       Spec.assertEqWith s "undescribed" (Replay.titled (Text.pack "game/cr-305-2a-a-land-is-played") Text.empty) (Text.pack "CR 305 2a a land is played", Text.empty)
 
   Spec.describe s "turnStarts" $ do
@@ -124,11 +129,12 @@ spec s = Spec.describe s "Parun.Web.Replay" $ do
     let at turn phase label = When.MkWhen turn phase (Label.MkLabel (Text.pack label)) 0
         answering prompt with = Entry.Do (Move.Answer (Answer.MkAnswer (Text.pack prompt) with False))
         names = Map.fromList [(Text.pack "player1", Text.pack "You"), (Text.pack "player2", Text.pack "Bot")]
-        line asked when entry = Replay.lineOf names asked (Timed.MkTimed when Nothing entry)
+        line asked when entry = Replay.lineOf names True asked (Timed.MkTimed when Nothing entry)
     Spec.it s "names the turn, the step, the seat and what it does" $ do
-      Spec.assertEqWith s "chance" (line Nothing (at 1 (Phase.Beginning BeginningStep.Untap) "player1") (answering "Shuffle" (Reply.Array []))) (Text.pack "Turn 1 \x00b7 Untap \x00b7 chance: shuffle")
+      Spec.assertEqWith s "chance" (line Nothing (at 1 (Phase.Beginning BeginningStep.Untap) "player1") (answering "Shuffle" (Reply.Array []))) (Text.pack "Turn 1 \x00b7 Untap \x00b7 a library is shuffled")
+      Spec.assertEqWith s "before the first turn" (Replay.lineOf names False Nothing (Timed.MkTimed (at 1 (Phase.Beginning BeginningStep.Untap) "player1") Nothing (answering "Shuffle" (Reply.Array [])))) (Text.pack "Before the first turn \x00b7 a library is shuffled")
       Spec.assertEqWith s "a concession" (line Nothing (at 3 Phase.PrecombatMain "player2") (Entry.Do Move.Concede)) (Text.pack "Turn 3 \x00b7 Precombat main \x00b7 Bot concedes")
-      Spec.assertEqWith s "a seat unnamed" (Replay.lineOf Map.empty Nothing (Timed.MkTimed (at 3 Phase.PrecombatMain "player2") Nothing (Entry.Do Move.Pass))) (Text.pack "Turn 3 \x00b7 Precombat main \x00b7 player2 passes")
+      Spec.assertEqWith s "a seat unnamed" (Replay.lineOf Map.empty True Nothing (Timed.MkTimed (at 3 Phase.PrecombatMain "player2") Nothing (Entry.Do Move.Pass))) (Text.pack "Turn 3 \x00b7 Precombat main \x00b7 player2 passes")
       Spec.assertEqWith s "you" (line Nothing (at 3 Phase.PrecombatMain "player1") (Entry.Do Move.Pass)) (Text.pack "Turn 3 \x00b7 Precombat main \x00b7 You pass")
 
     Spec.it s "says an answer as the question asked there words it" $ do
@@ -223,8 +229,9 @@ frame =
       Replay.turns = [0, 2],
       Replay.playing = False,
       Replay.board = Nothing,
+      Replay.earlier = [],
+      Replay.outcome = Text.empty,
       Replay.depth = 0,
-      Replay.entry = Nothing,
       Replay.entryLine = Nothing,
       Replay.question = Nothing,
       Replay.failure = Nothing,
