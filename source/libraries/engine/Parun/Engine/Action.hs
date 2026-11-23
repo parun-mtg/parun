@@ -217,7 +217,7 @@ legalActions pid gs =
       -- an action and the engine never asks which one. CR 702.37d adds one more
       -- per half with morph, for the same reason: casting face down is a second
       -- cast of the same card, not a rider on the first.
-      spells = fmap (\(oid, name, facing) -> Action.Cast oid name facing) (Cast.castableSpells pid gs)
+      spells = fmap (\(oid, name, facing) -> Action.Cast oid name facing) (Cast.castableSpellsGiven (grants, pcs) pid gs)
       -- CR 116.2b / 702.37e: turning a face-down permanent face up is a special
       -- action a player may take any time they have priority, so it joins the
       -- menu beside CR 116.2a's land play rather than going through the stack.
@@ -286,12 +286,12 @@ legalActions pid gs =
       -- priority during your main phase while the stack is empty". That gate is
       -- Turn.sorcerySpeedWindow, asked inside Plot.canPlot beside the cost, so
       -- the clauses of one rule stay together.
-      plots = fmap (uncurry Action.Plot) (Plot.plottable pid gs)
+      plots = fmap (uncurry Action.Plot) (Plot.plottable offBoard pid gs)
       -- CR 116.2h / 702.143a: the seventh special action, and a THIRD window --
       -- "any time a player has priority during their turn", which is neither CR
       -- 116.2b's (any priority at all) nor CR 116.2a's sorcery speed. The gate is
       -- asked inside Foretell.canForetell beside the {2}, for plots' reason.
-      foretells = fmap Action.Foretell (Foretell.foretellable pid gs)
+      foretells = fmap Action.Foretell (Foretell.foretellable offBoard pid gs)
       -- CR 116.2f / 702.62a: the ninth special action, and a FOURTH window --
       -- "any time they have priority, but only if they could begin to cast that
       -- card by putting it onto the stack". Neither CR 116.2b's bare priority
@@ -299,7 +299,7 @@ legalActions pid gs =
       -- so a sorcery with suspend is offered at sorcery speed and an instant
       -- with suspend whenever it could be cast. Asked inside Suspend.canSuspend
       -- beside the cost, for plots' reason.
-      suspends = fmap Action.Suspend (Suspend.suspendable pid gs)
+      suspends = fmap Action.Suspend (Suspend.suspendable offBoard pid gs)
       -- CR 116.2g / 702.139a: the eighth special action, back on CR 116.2a's
       -- window -- "any time they have priority and the stack is empty during a
       -- main phase of their turn" -- plus a once-per-game clause no other
@@ -361,7 +361,7 @@ legalActions pid gs =
       -- every slot's whole legal set. The benchmark's `legal actions N signet`
       -- and `joint modes` legs measure both against their controls.
       grants = Projection.controlGrants gs
-      pcs = Projection.projectAll gs
+      (pcs, offBoard) = Projection.projectBoard gs
       -- ONE mana-source sweep of each kind for the whole enumeration. Each is a
       -- walk of everything this player controls, asking each what mana routes it
       -- offers, and neither depends on which permanent's ability is being gated
@@ -396,7 +396,7 @@ legalActions pid gs =
       -- (Target.Pools), so building one per slot per ability walked the
       -- battlefield once per permanent. Lazy per pool, so an enumeration that
       -- targets only creatures pays for the creature walk alone (#1073).
-      snapshot = Snapshot.given pcs grants gs
+      snapshot = Snapshot.given pcs offBoard grants gs
       pools = Target.poolsOf snapshot gs
       activations =
         let forObject oid =

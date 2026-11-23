@@ -780,14 +780,14 @@ checkOnce instead boards = do
   let -- CR 704.5f/g are checked against the state BEFORE any of them apply: SBAs
       -- are simultaneous. Project the whole board once (one gather) and judge each
       -- object against it, rather than re-projecting per object.
-      pcs = Projection.projectAll gs
+      (pcs, offBoard) = Projection.projectBoard gs
       -- The other two whole-board walks the pass shares, beside `pcs` and for the
       -- same CR 704.3 reason: the filtered-enchant fallthrough in fallsOff below
       -- took a fresh gather, control-grant walk and base-pool build PER Aura --
       -- see #430. Both stay THUNKS -- a board with no filtered Aura on it forces
       -- neither -- which is the posture Target.legalRecipientsGiven argues for.
       grants = Projection.controlGrants gs
-      pools = Target.poolsOf (Snapshot.given pcs grants gs) gs
+      pools = Target.poolsOf (Snapshot.given pcs offBoard grants gs) gs
       classify oid = case Map.lookup oid pcs of
         Nothing -> Nothing
         Just pc

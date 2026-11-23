@@ -6371,12 +6371,27 @@ decisionsUpTo bound cands oid gs = snd (projectDeciding (<= bound) cands oid gs)
 -- Project every battlefield object against ONE gather: O(gather + P*fold) rather
 -- than O(P*(gather+fold)). The hot path for SBA sweeps and combat.
 projectAll :: GameState -> Map ObjectId ProjectedCharacteristics
-projectAll gs =
+projectAll = fst . projectBoard
+
+-- projectAll, and projectEach of every object off the battlefield, against
+-- ONE gather: the two maps one board's legal actions read (#9709).
+projectBoard :: GameState -> (Map ObjectId ProjectedCharacteristics, Map ObjectId ProjectedCharacteristics)
+projectBoard gs =
   let cands = gather gs
       -- Bound separately, NOT inlined: projectWith does its candidate-only work
       -- when applied to `cands`, so this sharing spans every object on the board.
       forObject = projectFrom cands
-   in Map.fromSet (\oid -> forObject oid gs) (GameState.battlefield gs)
+   in ( Map.fromSet (\oid -> forObject oid gs) (GameState.battlefield gs),
+        Map.Lazy.fromSet (\oid -> forObject oid gs) (offBattlefield gs)
+      )
+
+-- projectBoard's second map alone.
+projectOffBoard :: GameState -> Map ObjectId ProjectedCharacteristics
+projectOffBoard = snd . projectBoard
+
+-- Every object's id but the battlefield's.
+offBattlefield :: GameState -> Set ObjectId
+offBattlefield gs = Set.difference (Map.keysSet (GameState.objects gs)) (GameState.battlefield gs)
 
 -- projectAll for the objects `oids` names, wherever they are, against one gather
 -- too, but each value a thunk until read: for an enumeration that may ask about

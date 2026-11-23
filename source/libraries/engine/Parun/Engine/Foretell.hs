@@ -51,6 +51,8 @@ import qualified Parun.Types.PaymentSubject as PaymentSubject
 import qualified Parun.Types.PlayerActed as PlayerActed
 import qualified Parun.Types.PlayerAction as PlayerAction
 import Parun.Types.PlayerId (PlayerId)
+import Parun.Types.ProjectedCharacteristics (ProjectedCharacteristics)
+import qualified Parun.Types.ProjectedCharacteristics as PC
 import qualified Parun.Types.TurnRegisters as TurnRegisters
 import qualified Parun.Types.Zone as Zone
 
@@ -80,10 +82,13 @@ actionCost =
 -- Returns the CAST costs the keywords carry, though this module spends it only
 -- as foretell's stamp: what it answers for canForetell is "is the keyword
 -- there".
-foretellCostsOf :: ObjectId -> GameState -> [ForetellCost Keyword]
-foretellCostsOf oid gs = case Game.cardOfHandMember oid gs of
+--
+-- `offBoard` is a Projection.projectOffBoard map of `gs`, or empty to project
+-- the card afresh (#9709).
+foretellCostsOf :: Map.Map ObjectId ProjectedCharacteristics -> ObjectId -> GameState -> [ForetellCost Keyword]
+foretellCostsOf offBoard oid gs = case Game.cardOfHandMember oid gs of
   Nothing -> []
-  Just _ -> Keyword.foretellCosts (Map.keysSet (Projection.keywordsOf oid gs))
+  Just _ -> Keyword.foretellCosts (Map.keysSet (PC.keywords (Projection.projectEachGiven offBoard oid gs)))
 
 -- CR 702.143a / 116.2h: may this player foretell this card right now? Three
 -- conjuncts, each a clause of the rule:
@@ -107,17 +112,17 @@ foretellCostsOf oid gs = case Game.cardOfHandMember oid gs of
 --
 -- The PRIORITY clause has no conjunct, for the reason CR 116.2a's land play has
 -- none: legalActions is asked only of the priority holder.
-canForetell :: PlayerId -> ObjectId -> GameState -> Bool
-canForetell pid oid gs =
-  not (null (foretellCostsOf oid gs))
+canForetell :: Map.Map ObjectId ProjectedCharacteristics -> PlayerId -> ObjectId -> GameState -> Bool
+canForetell offBoard pid oid gs =
+  not (null (foretellCostsOf offBoard oid gs))
     && elem oid (Game.zoneMembers Zone.Hand pid gs)
     && Turn.hasTurnRunning gs pid
     && Cost.canPay PaymentSubject.ForNeither pid oid actionCost gs
 
 -- Every card this player may foretell right now -- what Action.Foretell is built
 -- from, and the shape Plot.plottable has.
-foretellable :: PlayerId -> GameState -> [ObjectId]
-foretellable pid gs = filter (\oid -> canForetell pid oid gs) (Game.zoneMembers Zone.Hand pid gs)
+foretellable :: Map.Map ObjectId ProjectedCharacteristics -> PlayerId -> GameState -> [ObjectId]
+foretellable offBoard pid gs = filter (\oid -> canForetell offBoard pid oid gs) (Game.zoneMembers Zone.Hand pid gs)
 
 -- CR 702.143a: pay {2} and exile the card from hand face down, leaving it a
 -- foretold card.
@@ -152,14 +157,14 @@ foretellable pid gs = filter (\oid -> canForetell pid oid gs) (Game.zoneMembers 
 foretell :: ManaAbilityPerformer.ManaAbilityPerformer -> PlayerId -> ObjectId -> Game ()
 foretell perform pid oid = do
   before <- State.get
-  Monad.when (canForetell pid oid before) $ do
+  Monad.when (canForetell Map.empty pid oid before) $ do
     paid <- Cost.payAction perform before PaymentSubject.ForNeither 0 pid oid actionCost
     Monad.forM_ paid $ \_ -> do
       -- One stamp per arrival, Parun.Engine.Plot's reason: the funnel answers
       -- with more than one only for a melded permanent leaving the battlefield
       -- (CR 713.8), and this action exiles a card from a hand.
       exiled <- Event.changeZoneEntering (ManaAbilityPerformer.settle perform) oid Zone.Exile LibraryPosition.defaultValue riders Nothing
-      Monad.forM_ exiled (State.modify' . becomeForetold (Maybe.listToMaybe (Maybe.mapMaybe reductionOf (foretellCostsOf oid before))))
+      Monad.forM_ exiled (State.modify' . becomeForetold (Maybe.listToMaybe (Maybe.mapMaybe reductionOf (foretellCostsOf Map.empty oid before))))
       -- CR 702.143c: "foretelling a card" is this special action.
       Monad.unless (null exiled) (State.modify' (Event.recordEvent (GameEvent.PlayerActed (PlayerActed.MkPlayerActed PlayerAction.Foretell pid))))
 

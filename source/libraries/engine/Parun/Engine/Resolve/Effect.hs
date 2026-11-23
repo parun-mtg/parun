@@ -372,7 +372,7 @@ offerCastOnce runSubgame context fits named caster optionality verb retake offer
             appliedOne
               | CastOffer.withoutPayingManaCost offer = Just (CandidateCost.plain (CastOffer.offeredBy offer) (Cost.withoutPayingManaCost priced))
               | otherwise = fmap (\c -> CandidateCost.plain (CastOffer.offeredBy offer) (c {Cost.Type.components = Cost.Type.components c <> Face.additionalCosts priced})) (CastOffer.payingInstead offer)
-            applied = concatMap (Cost.withOptionalAdditions caster oid proposed) . concatMap (Cost.withOffering caster oid proposed) $ concatMap (Cost.choiceVariants priced) (Maybe.maybeToList appliedOne)
+            applied = concatMap (Cost.withOptionalAdditions caster oid proposed) . concatMap (Cost.withOffering (Map.keysSet (Cost.spellKeywords caster oid proposed)) caster oid proposed) $ concatMap (Cost.choiceVariants priced) (Maybe.maybeToList appliedOne)
             -- CR 708.4: a cast proposed face down is measured against the
             -- face-down characteristics, so it is the stamped state's face that
             -- prices it and carries the additional costs -- none, CR 708.2a's 2/2
