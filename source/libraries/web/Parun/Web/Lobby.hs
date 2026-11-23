@@ -7,6 +7,7 @@ module Parun.Web.Lobby where
 
 import qualified Control.Monad as Monad
 import qualified Data.Char as Char
+import qualified Data.Either as Either
 import qualified Data.Foldable as Foldable
 import qualified Data.List as List
 import qualified Data.List.NonEmpty as NonEmpty
@@ -68,7 +69,13 @@ data Lobby = MkLobby
     -- | How strongly every bot plays (Parun.Play.Opponent).
     difficulty :: Difficulty.Difficulty,
     -- | What every bot values in a position (Parun.Play.Opponent).
-    persona :: Persona.Persona
+    persona :: Persona.Persona,
+    -- | Whether a game is in progress, set aside for this lobby, which
+    -- starting another concedes.
+    paused :: Bool,
+    -- | What was tapped that concedes the game in progress, asked about
+    -- first.
+    conceding :: Maybe Event
   }
   deriving (Eq, Show)
 
@@ -153,6 +160,13 @@ data Event
     MkDifficulty
   | -- | Sets every bot's persona to the one whose name is chosen.
     MkPersona
+  | -- | Concedes the game in progress for what was asked about; the shell
+    -- does it.
+    MkConcede
+  | -- | Returns to the game in progress; the shell does it.
+    MkResume
+  | -- | Keeps the game in progress, and this lobby.
+    MkCancel
   deriving (Eq, Show)
 
 -- | A lobby whose decks are still to read, nothing chosen yet, your seat
@@ -170,7 +184,9 @@ new =
       locals = Map.empty,
       ready = False,
       difficulty = Difficulty.MkHard,
-      persona = Persona.MkBalanced
+      persona = Persona.MkBalanced,
+      paused = False,
+      conceding = Nothing
     }
 
 -- | A new lobby with this deck yours, on the shelf it is on.
@@ -327,7 +343,23 @@ deckName root path =
 -- each bot's deck under another format, and a bot is offered only its
 -- 'opponents'.
 update :: Event -> Text.Text -> Lobby -> Lobby
-update event typed lobby = settled lobby (updated event typed lobby)
+update event typed lobby
+  | paused lobby && concedes event lobby = lobby {conceding = Just event}
+  | otherwise = settled lobby (updated event typed lobby)
+
+-- | Whether this event, done, concedes a game in progress: starting a game,
+-- or inviting a player, whose link needs the data channels the game set
+-- aside holds (Parun.Browser.aside).
+concedes :: Event -> Lobby -> Bool
+concedes event lobby = case event of
+  MkStart -> Either.isRight (startable lobby)
+  MkAdd MkInvited -> length (theirs lobby) < mostOthers
+  _ -> False
+
+-- | The lobby once the game in progress is conceded, and the event asked
+-- about, to do next; nothing where none was asked about.
+conceded :: Lobby -> Maybe (Lobby, Event)
+conceded lobby = (,) lobby {paused = False, conceding = Nothing} <$> conceding lobby
 
 -- | 'update' before any ready flag is cleared.
 updated :: Event -> Text.Text -> Lobby -> Lobby
@@ -372,6 +404,9 @@ updated event typed lobby = case event of
   MkReady -> lobby {ready = not (ready lobby)}
   MkDifficulty -> maybe lobby (\d -> lobby {difficulty = d}) (Opponent.named Opponent.difficultyName (Text.unpack typed))
   MkPersona -> maybe lobby (\p -> lobby {persona = p}) (Opponent.named Opponent.personaName (Text.unpack typed))
+  MkConcede -> lobby
+  MkResume -> lobby
+  MkCancel -> lobby {conceding = Nothing}
 
 -- | Whether the seat at this place in 'theirs' may be unseated: it is
 -- seated.
@@ -601,9 +636,30 @@ botView lobby =
           let (value, label) = nameOf option
         ]
 
--- | Start, or Ready with players invited, and what it waits on.
+-- | Start, or Ready with players invited, and what it waits on; else,
+-- asked about, whether to concede the game in progress.
 startView :: Lobby -> Html.Html Event
-startView lobby =
+startView lobby = case conceding lobby of
+  Just asked ->
+    Element.el
+      "section"
+      ["panel", "confirm"]
+      [Element.attr "role" (Text.pack "alertdialog"), Element.attr "aria-label" (Text.pack "Concede the game in progress?")]
+      [ Element.el "p" [] [] [Element.string "Starting a new game concedes the one in progress."],
+        Element.el
+          "div"
+          ["choices"]
+          []
+          [ Element.button ["primary", "resume"] MkResume [Element.string "Resume"],
+            Element.button [] MkConcede [Element.string (if asked == MkStart then "Concede and play" else "Concede and invite")],
+            Element.button [] MkCancel [Element.string "Cancel"]
+          ]
+      ]
+  Nothing -> starting lobby
+
+-- | Start, or Ready with players invited, and what it waits on.
+starting :: Lobby -> Html.Html Event
+starting lobby =
   Element.el "div" ["lobby-start"] [] $
     [ if Map.null (invites lobby)
         then

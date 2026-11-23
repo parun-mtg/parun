@@ -155,6 +155,11 @@ data Next
     MkToJoin Text.Text
   | -- | The game with guests the page kept, picked up where it stopped.
     MkToRestore Link.Saved
+  | -- | The lobby as left when the game in progress was conceded for this
+    -- event of it, done next.
+    MkToConceded Lobby.Lobby Lobby.Event
+  | -- | The game in progress, resumed; the home screen where none is.
+    MkToPaused
 
 -- | What woke a screen's loop.
 data Woke
@@ -223,6 +228,8 @@ routeOf next = case next of
   MkToPlayOn source at -> Route.MkReplay Route.MkPlayingOn source at
   MkToJoin _ -> Route.MkHome
   MkToRestore _ -> Route.MkHome
+  MkToConceded _ _ -> Route.MkPlay
+  MkToPaused -> Route.MkHome
 
 -- | Puts where a screen leads in the address bar, a new entry of the
 -- browser's history.
@@ -234,12 +241,11 @@ follow :: Shell -> Next -> IO ()
 follow shell next =
   located next >> case next of
     MkToHome -> home shell Home.new >>= follow shell . afterHome
-    MkToLobby deck -> do
-      last' <- IORef.readIORef (yourDeck shell)
-      lobby shell (maybe Lobby.new Lobby.holding (deck <|> last')) [] >>= follow shell
+    MkToPaused -> home shell Home.new >>= follow shell . afterHome
+    MkToLobby deck -> lobbyHolding shell deck >>= \shown -> lobby shell shown [] Nothing >>= follow shell
     MkToDecks deck -> decksScreen shell deck >>= follow shell
-    -- Only an invited slot reads its deck's list (Lobby.rematch), and none is.
-    MkToMatchup decks -> lobby shell (Lobby.rematch (fmap (\name -> (name, Text.empty)) decks) Map.empty Map.empty) [] >>= follow shell
+    MkToMatchup decks -> lobby shell (matchup decks) [] Nothing >>= follow shell
+    MkToConceded shown event -> lobby shell shown [] (Just event) >>= follow shell
     MkToBuilder deck back -> builder shell deck back >>= follow shell
     MkToReplays -> replays shell >>= follow shell
     MkToReplay source at -> replay shell source at >>= follow shell
@@ -247,6 +253,17 @@ follow shell next =
     MkToJoin code -> joinGame shell code >>= follow shell
     -- Every link of a game picked up is down, so any number serves.
     MkToRestore kept -> play shell (Link.seats kept) (Map.fromList [(i, i) | i <- Link.invited kept]) (Link.locals kept) (Just kept) >>= follow shell
+
+-- | A new lobby with this deck yours, else the deck you chose last, if any.
+lobbyHolding :: Shell -> Maybe Text.Text -> IO Lobby.Lobby
+lobbyHolding shell deck = do
+  last' <- IORef.readIORef (yourDeck shell)
+  pure (maybe Lobby.new Lobby.holding (deck <|> last'))
+
+-- | A new lobby on these decks: yours, then each bot's. Only an invited
+-- slot reads its deck's list (Lobby.rematch), and none is.
+matchup :: NonEmpty.NonEmpty Text.Text -> Lobby.Lobby
+matchup decks = Lobby.rematch (fmap (\name -> (name, Text.empty)) decks) Map.empty Map.empty
 
 -- | Where the home screen leads.
 afterHome :: Home.Outcome -> Next
@@ -297,20 +314,23 @@ home shell = go
         MkTapped (Screen.MkNav section) _ -> tapped (Home.navigate section)
         _ -> go current
 
--- | The lobby, from this one once the invited slots' channels said these,
--- until it goes home or starts a game, filling in as decks and cards
--- arrive, and as the players invited from other browsers connect and
--- choose (Parun.Web.Link), each told the match-up at every change; where
--- the game, played from here, then leads.
-lobby :: Shell -> Lobby.Lobby -> [Browser.Linked] -> IO Next
-lobby shell initial said = do
+-- | The lobby, from this one once the invited slots' channels said these
+-- and this event, if any, is done, until it goes home or starts a game,
+-- filling in as decks and cards arrive, and as the players invited from
+-- other browsers connect and choose (Parun.Web.Link), each told the
+-- match-up at every change; where the game, played from here, then leads.
+-- A lobby with a game paused leads back to it, or concedes it (MkToConceded)
+-- before it starts another.
+lobby :: Shell -> Lobby.Lobby -> [Browser.Linked] -> Maybe Lobby.Event -> IO Next
+lobby shell initial said pending = do
   need shell Loading.MkDecks
   need shell Loading.MkCards
   (difficulty, persona) <- IORef.readIORef (opponent shell)
   heard' <- Monad.foldM heardBy initial {Lobby.difficulty = difficulty, Lobby.persona = persona} said
-  go' heard' Map.empty
+  go'' heard' Map.empty pending
   where
-    go' shown told = do
+    go' shown told = go'' shown told Nothing
+    go'' shown told first = do
       current <- refreshed shell shown
       IORef.writeIORef (opponent shell) (Lobby.difficulty current, Lobby.persona current)
       IORef.writeIORef (yourDeck shell) (Lobby.mine current)
@@ -319,7 +339,7 @@ lobby shell initial said = do
         then startWith current told'
         else do
           Browser.display (page shell) (framed Bar.MkPlay (fmap Screen.MkLobby (Lobby.view current)))
-          woke <- await shell
+          woke <- maybe (await shell) (\event -> pure (MkTapped (Screen.MkLobby event) Text.empty)) first
           -- Every invite the lobby drops has its channel closed.
           let linksOf = Set.fromList . fmap Lobby.linkNumber . Map.elems . Lobby.invites
               go next = do
@@ -333,8 +353,11 @@ lobby shell initial said = do
             MkTapped (Screen.MkLobby event) value -> case event of
               Lobby.MkOpenBuilder -> leaving (MkToBuilder Nothing (MkToLobby Nothing))
               Lobby.MkEdit name -> leaving (MkToBuilder (Just name) (MkToLobby Nothing))
+              Lobby.MkConcede | Just (left, event') <- Lobby.conceded current -> leaving (MkToConceded left event')
+              Lobby.MkResume -> leaving MkToPaused
               Lobby.MkStart
-                | Map.null (Lobby.invites current),
+                | not (Lobby.paused current),
+                  Map.null (Lobby.invites current),
                   Right mine <- Lobby.startable current -> do
                     others <- dealtFor shell current
                     files <- Maybe.fromMaybe Map.empty <$> decksRead shell
@@ -342,7 +365,7 @@ lobby shell initial said = do
                     case sequence others >>= traverse (\name -> (,) name <$> Map.lookup name files) . (mine NonEmpty.:|) of
                       Just seats -> listsOf seats >>= \lists -> play shell lists Map.empty (Lobby.locals current) Nothing
                       Nothing -> go current
-              Lobby.MkAdd Lobby.MkInvited | length (Lobby.theirs current) < Lobby.mostOthers -> Browser.linkHost (Lobby.nextLink current) >> go (Lobby.update event value current)
+              Lobby.MkAdd Lobby.MkInvited | not (Lobby.paused current), length (Lobby.theirs current) < Lobby.mostOthers -> Browser.linkHost (Lobby.nextLink current) >> go (Lobby.update event value current)
               Lobby.MkConnect i | Just invite <- Map.lookup i (Lobby.invites current) -> do
                 Browser.linkAccept (Lobby.linkNumber invite) (Text.strip (Lobby.replyCode invite))
                 go current
@@ -864,7 +887,7 @@ play shell seats invited here resuming = do
                     | otherwise -> do
                         -- A slot whose channel closed in the game is invited afresh.
                         back <- Monad.foldM (\l i -> reinvite i connectionClosed l) (Lobby.rematch seats invited here) (Set.toList lost)
-                        lobby shell back (reverse said)
+                        lobby shell back (reverse said) Nothing
                   MkTapped (Screen.MkEnding Ending.MkNewGame) _ -> closeAll >> pure MkToHome
                   MkHeard heard' -> go (heard' : said)
                   _ -> go said
@@ -1030,11 +1053,12 @@ joinGame shell offer = do
               -- A game stopped on a dropped connection left it closed.
               ended (Ending.verdict ending == Ending.MkStopped)
 
--- | The home screen with a game paused at this board, the replays and the
--- builder reachable from it, until the player resumes the game or gives it
--- up for another, recorded in `chosen`; a new game chosen elsewhere is
--- asked about on the home screen first. What the game's data channels say
--- meanwhile is kept for it (Browser.aside).
+-- | The home screen with a game paused at this board, the replays, the
+-- builder and the lobby reachable from it, until the player resumes the
+-- game or gives it up for another, recorded in `chosen`; a game played on
+-- from a replay is asked about on the home screen first, and one from the
+-- lobby at its Start. What the game's data channels say meanwhile is kept
+-- for it (Browser.aside).
 leaveFor :: Shell -> IORef.IORef Next -> Maybe PlayerView.PlayerView -> IO Hotseat.Leave
 leaveFor shell chosen board = Browser.aside (page shell) (go paused)
   where
@@ -1050,11 +1074,13 @@ leaveFor shell chosen board = Browser.aside (page shell) (go paused)
     visit next = case next of
       MkToReplays -> located next >> replays shell >>= visit
       MkToReplay source at -> located next >> replay shell source at >>= visit
-      MkToMatchup decks -> go paused {Home.confirming = Just (Home.MkPlayAgain decks)}
+      MkToMatchup decks -> located next >> lobby shell (matchup decks) {Lobby.paused = True} [] Nothing >>= visit
       MkToBuilder deck back -> located next >> builder shell deck back >>= visit
       MkToPlayOn source at -> go paused {Home.confirming = Just (Home.MkPlayOn source at)}
       MkToDecks deck -> located next >> decksScreen shell deck >>= visit
-      MkToLobby deck -> go paused {Home.confirming = Just (Home.MkNewGame deck)}
+      MkToLobby deck -> located next >> lobbyHolding shell deck >>= \shown -> lobby shell shown {Lobby.paused = True} [] Nothing >>= visit
+      MkToConceded _ _ -> IORef.writeIORef chosen next >> pure Hotseat.MkAbandon
+      MkToPaused -> pure Hotseat.MkResume
       _ -> go paused
 
 -- | The replays screen, the scenarios fetched first, until a replay is
