@@ -589,14 +589,16 @@ blocks request = do
   pure (blockers, attackers)
 
 -- | Before a seat's question when the screen last showed another seat's,
--- saying whom the seat decides for while it controls them (CR 724.1).
+-- saying whom the seat decides for while it controls them (CR 724.1); the
+-- settings at the top right, as every other screen has them.
 handOff :: Request.Request -> Html.Html Event
 handOff request =
   Element.el
     "main"
     ["handoff"]
     []
-    [ Element.el "p" [] [] [Html.text $ Text.pack "Pass the screen to " <> Wording.player seat <> foldMap (\p -> Text.pack ", deciding for " <> Wording.player p) (Question.for (Request.question request)) <> Text.pack "."],
+    [ Element.el "div" ["handoff-bar"] [] [Bar.settingsButton Icon.MkGear "Settings" Nothing Nothing],
+      Element.el "p" [] [] [Html.text $ Text.pack "Pass the screen to " <> Wording.player seat <> foldMap (\p -> Text.pack ", deciding for " <> Wording.player p) (Question.for (Request.question request)) <> Text.pack "."],
       primary MkReady $ Text.pack "Ready"
     ]
   where

@@ -23,12 +23,15 @@ import qualified Parun.Oracle.Cost as Oracle.Cost
 import qualified Parun.Oracle.Face as Oracle.Face
 import qualified Parun.Oracle.Keyword as Oracle.Keyword
 import qualified Parun.Play.Wording as Wording
+import qualified Parun.Types.ActivatedAbility as ActivatedAbility
 import qualified Parun.Types.Card as Card
 import qualified Parun.Types.CardName as CardName
 import qualified Parun.Types.CardType as CardType
 import qualified Parun.Types.CharacteristicColors as CharacteristicColors
 import qualified Parun.Types.ClassLevel as ClassLevel
 import qualified Parun.Types.Color as Color
+import qualified Parun.Types.Cost as Cost
+import qualified Parun.Types.CostComponent as CostComponent
 import qualified Parun.Types.CounterKind as CounterKind
 import qualified Parun.Types.Defense as Defense
 import qualified Parun.Types.Designation as Designation
@@ -68,7 +71,7 @@ tile view cue o = case ObjectView.characteristics o of
   _ ->
     Element.el
       "button"
-      (["card", colour o] <> marks cue <> tapped o <> combat view o <> ["sick" | ObjectView.summoningSick o] <> ["targeted" | not (null (targetedBy view (ObjectView.object o)))])
+      (["card", colour o] <> marks cue <> tapped o <> combat view o <> ["sick" | sickNow view o] <> ["targeted" | not (null (targetedBy view (ObjectView.object o)))])
       ([Element.attr "type" (Text.pack "button"), Element.attr "aria-label" (summary view cue o), Element.on "click" (tap cue)] <> peeking cue)
       [ Element.el "span" ["top"] [] $ [Element.el "span" ["name"] [] [Element.text (Wording.nameOf view o)]] <> foldMap (pure . Mana.cost) (ObjectView.characteristics o >>= ProjectedCharacteristics.manaCost),
         -- Every tile has the same lines, each empty or cut short rather than
@@ -84,6 +87,18 @@ combat view o =
   let oid = ObjectView.object o
    in ["attacking" | Map.member oid (PlayerView.attackers view)] <> ["blocking" | any (Set.member oid) (PlayerView.blockers view)]
 
+-- | Whether the object is summoning sick where that can matter (CR 302.6):
+-- on its controller's turn, when it could attack, and otherwise only while
+-- it has an ability with {T} or {Q} in its cost.
+sickNow :: PlayerView.PlayerView -> ObjectView.ObjectView -> Bool
+sickNow view o =
+  ObjectView.summoningSick o
+    && (ObjectView.controller o == Just (PlayerView.active view) || any tapAbility (ObjectView.characteristics o))
+  where
+    tapAbility c =
+      not (null (Subtype.intrinsicManaOf c))
+        || any (any (`elem` [CostComponent.TapThis, CostComponent.UntapThis]) . Cost.components . ActivatedAbility.cost) (ProjectedCharacteristics.activatedAbilities c)
+
 -- | The states a tile spells out: attacking, blocking, summoning sick.
 states :: PlayerView.PlayerView -> ObjectView.ObjectView -> [Html.Html msg]
 states view o =
@@ -93,7 +108,7 @@ states view o =
    in [shown "target" "Target" ("Targeted by " <> Text.unpack (Wording.listing by)) | not (null by)]
         <> [shown "attack" "Attacking" "Attacking" | elem "attacking" kinds]
         <> [shown "block" "Blocking" "Blocking" | elem "blocking" kinds]
-        <> [shown "sick" "Sick" "Summoning sick: can't attack or tap yet (CR 302.6)" | ObjectView.summoningSick o]
+        <> [shown "sick" "Sick" "Summoning sick: can't attack or tap yet (CR 302.6)" | sickNow view o]
         <> [shown "marked" label tip | (label, tip) <- marked o]
 
 -- | The designations an object has, short and spelled out: the
@@ -179,7 +194,7 @@ summary view cue o =
         [Text.pack "tapped" | ObjectView.tapped o == TapState.Tapped]
           <> [Text.pack "attacking" | elem "attacking" (combat view o)]
           <> [Text.pack "blocking" | elem "blocking" (combat view o)]
-          <> [Text.pack "summoning sick" | ObjectView.summoningSick o]
+          <> [Text.pack "summoning sick" | sickNow view o]
           <> [Text.pack "targeted by " <> Wording.listing by | let by = targetedBy view (ObjectView.object o), not (null by)]
           <> [Text.pack (show (ObjectView.damage o) <> " damage") | ObjectView.damage o > 0]
       action
