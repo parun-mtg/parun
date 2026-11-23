@@ -1051,11 +1051,17 @@ replaySpec s registry = Spec.describe s "WebQuestion" . Spec.describe s "replay"
     -- and postcombat main phase are still to come.
     stop <- replayed s registry "sphinx-of-the-second-sun-adds-a-beginning-phase-that-neither-settles-nor-grants-a-land" 10
     let bar = turnBarOf stop
-        ahead = ["<li title=\"Combat phase\">Combat</li>", "<li title=\"Postcombat main phase\">Main 2</li>", "<li title=\"Ending phase\">End</li>"]
     Spec.assertEqWith s "the step" (PlayerView.Type.phase (boardOf stop)) (Phase.Beginning BeginningStep.Upkeep)
-    Spec.assertBool s (Text.isInfixOf (Text.pack "<li class=\"now extra\" title=\"An extra phase or step this turn (CR 500.8, 500.9, 514.3a)\" aria-current=\"step\">Beginning</li>") bar) ("lit as extra: " <> Text.unpack bar)
-    Spec.assertBool s (Text.isInfixOf (Text.pack "<li class=\"past\" title=\"Precombat main phase\">Main</li>") bar) "the precombat main phase passed"
-    Spec.assertEqWith s "still to come" [li | li <- ahead, Text.isInfixOf (Text.pack li) bar] ahead
+    Spec.assertEqWith s "lit as extra" (phaseOf stop "Beginning phase") (Just (Text.pack "<li class=\"now extra\" title=\"An extra phase or step this turn (CR 500.8, 500.9, 514.3a)\" aria-current=\"step\">", Text.pack "ui-beginning"))
+    Spec.assertEqWith s "the precombat main phase passed" (phaseOf stop "Precombat main phase") (Just (Text.pack "<li class=\"past\" title=\"Precombat main phase\">", Text.pack "ui-main"))
+    Spec.assertEqWith
+      s
+      "still to come"
+      (fmap (phaseOf stop) ["Combat phase", "Postcombat main phase", "Ending phase"])
+      [ Just (Text.pack "<li title=\"Combat phase\">", Text.pack "ui-combat"),
+        Just (Text.pack "<li class=\"second\" title=\"Postcombat main phase\">", Text.pack "ui-main"),
+        Just (Text.pack "<li title=\"Ending phase\">", Text.pack "ui-ending")
+      ]
     Spec.assertBool s (Text.isInfixOf (Text.pack "<span class=\"extra\"") bar) "said beside the turn"
 
   Spec.it s "CR 500.11 a skipped combat phase shows as passed and nothing as extra" $ do
@@ -1063,8 +1069,8 @@ replaySpec s registry = Spec.describe s "WebQuestion" . Spec.describe s "replay"
     stop <- replayed s registry "blinding-angel-makes-the-player-it-hits-skip-their-next-combat" 2
     let bar = turnBarOf stop
     Spec.assertEqWith s "the step" (PlayerView.Type.phase (boardOf stop)) Phase.PostcombatMain
-    Spec.assertBool s (Text.isInfixOf (Text.pack "<li class=\"past\" title=\"Combat phase\">") bar) ("combat passed: " <> Text.unpack bar)
-    Spec.assertBool s (Text.isInfixOf (Text.pack "<li class=\"now\" title=\"Postcombat main phase\" aria-current=\"step\">Main 2</li>") bar) "the main phase lit"
+    Spec.assertEqWith s "combat passed" (phaseOf stop "Combat phase") (Just (Text.pack "<li class=\"past\" title=\"Combat phase\">", Text.pack "ui-combat"))
+    Spec.assertEqWith s "the main phase lit" (phaseOf stop "Postcombat main phase") (Just (Text.pack "<li class=\"now second\" title=\"Postcombat main phase\" aria-current=\"step\">", Text.pack "ui-main"))
     Spec.assertBool s (not (Text.isInfixOf (Text.pack "extra") bar)) "nothing extra"
 
   Spec.it s "CR 205.3a a tile and sheet list subtypes as printed, a gained one after" $ do
@@ -1287,6 +1293,15 @@ frameAt stop =
 -- | The turn bar of the replay page at the stop.
 turnBarOf :: Stop.Stop -> Text.Text
 turnBarOf stop = fst (Text.breakOn (Text.pack "<div class=\"play-area\"") (Html.toText (Replay.view (frameAt stop))))
+
+-- | The opening tag and the icon of the turn bar's phase a screen reader
+-- names so; Nothing where none is.
+phaseOf :: Stop.Stop -> String -> Maybe (Text.Text, Text.Text)
+phaseOf stop full = do
+  let page = Replay.view (frameAt stop)
+  li <- Html.search (\node -> Text.pack "<li" `Text.isPrefixOf` Html.toText node && Html.spoken node == Text.pack full) page >>= \path -> Html.at path page
+  let markup = Html.toText li
+  pure (Text.takeWhile (/= '>') markup <> Text.pack ">", Text.takeWhile (/= '"') (snd (Text.breakOnEnd (Text.pack "href=\"#") markup)))
 
 -- | The prompt kinds a scenario's text names in its answers.
 kindsIn :: Text.Text -> [Text.Text]

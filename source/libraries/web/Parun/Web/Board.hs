@@ -33,6 +33,7 @@ import qualified Parun.Types.Status as Status
 import qualified Parun.Web.Card as Card
 import qualified Parun.Web.Element as Element
 import qualified Parun.Web.Html as Html
+import qualified Parun.Web.Icon as Icon
 import qualified Parun.Web.Mana as Web.Mana
 
 -- | How each tile and each seat looks and what tapping it sends.
@@ -42,10 +43,11 @@ data Marks msg = MkMarks
     seat :: PlayerId.PlayerId -> Maybe (Card.Cue msg)
   }
 
--- | The turn bar: the turn and its step; the phases as a labelled track,
--- the current one marked (and marked as an extra one, CR 500.8) and those
--- with no step still scheduled passed, none marked before the first turn
--- (CR 103.8); then what is given for after them and the controls given.
+-- | The turn bar: the turn and its step; the phases as a track of icons,
+-- each named for assistive technology and in a tooltip, beside what is
+-- given for after them and the controls given; the current one marked (and
+-- marked as an extra one, CR 500.8) and those with no step still scheduled
+-- passed, none marked before the first turn (CR 103.8).
 turnBar :: [Html.Html msg] -> [Html.Html msg] -> PlayerView.PlayerView -> Html.Html msg
 turnBar after controls board =
   let current = phaseIndex (PlayerView.phase board)
@@ -75,8 +77,8 @@ turnBar after controls board =
               "ol"
               ["phases"]
               [Element.attr "aria-label" (Text.pack "Phases")]
-              [ Element.el "li" (shown i) ([Element.attr "title" (if i == current && extra then extraTip else Text.pack tip)] <> [Element.attr "aria-current" (Text.pack "step") | i == current, PlayerView.begun board]) [Element.string name']
-              | (i, (name', tip)) <- zip [0 :: Integer ..] phaseNames
+              [ Element.el "li" (shown i <> cls) ([Element.attr "title" (if i == current && extra then extraTip else Text.pack full)] <> [Element.attr "aria-current" (Text.pack "step") | i == current, PlayerView.begun board]) [Icon.icon [] glyph, Element.el "span" ["sr-only"] [] [Element.string full]]
+              | (i, (glyph, cls, full)) <- zip [0 :: Integer ..] phaseIcons
               ]
           ]
           <> after
@@ -98,14 +100,14 @@ moment board
   | not (PlayerView.begun board) = Text.pack "Before the first turn"
   | otherwise = (if yours board then Text.pack "Your " else possessive (PlayerView.active board)) <> Wording.phase (PlayerView.phase board)
 
--- | Each phase's name on the track, and in full (CR 500.1).
-phaseNames :: [(String, String)]
-phaseNames =
-  [ ("Beginning", "Beginning phase"),
-    ("Main", "Precombat main phase"),
-    ("Combat", "Combat phase"),
-    ("Main 2", "Postcombat main phase"),
-    ("End", "Ending phase")
+-- | Each phase's icon on the track, its classes and its name (CR 500.1).
+phaseIcons :: [(Icon.Icon, [String], String)]
+phaseIcons =
+  [ (Icon.MkBeginning, [], "Beginning phase"),
+    (Icon.MkMain, [], "Precombat main phase"),
+    (Icon.MkCombat, [], "Combat phase"),
+    (Icon.MkMain, ["second"], "Postcombat main phase"),
+    (Icon.MkEnding, [], "Ending phase")
   ]
 
 -- | Day or night (CR 732.1), beside the turn.

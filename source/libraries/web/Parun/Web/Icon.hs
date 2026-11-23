@@ -9,7 +9,15 @@ import qualified Parun.Web.Html as Html
 
 -- | An icon the sprite draws; Parun.Web.IconSpec proves the two lists equal.
 data Icon
-  = -- | The settings: a cog.
+  = -- | The beginning phase: a sunrise.
+    MkBeginning
+  | -- | A main phase: a card.
+    MkMain
+  | -- | The combat phase: crossed swords.
+    MkCombat
+  | -- | The ending phase: a sunset.
+    MkEnding
+  | -- | The settings: a cog.
     MkGear
   | -- | The game's menu: three lines.
     MkMenu
@@ -20,6 +28,10 @@ data Icon
 -- | The id of an icon's @<symbol>@ in the sprite.
 iconId :: Icon -> Text.Text
 iconId i = Text.pack . ("ui-" <>) $ case i of
+  MkBeginning -> "beginning"
+  MkMain -> "main"
+  MkCombat -> "combat"
+  MkEnding -> "ending"
   MkGear -> "gear"
   MkMenu -> "menu"
   MkBot -> "bot"
