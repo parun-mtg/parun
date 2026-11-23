@@ -88,11 +88,11 @@ data Exit
 -- here names each seat by who played it (History.seatNames), and says how
 -- it ended at the end. The state at each position a turn begins is kept
 -- once reached, for the log of every later position (Web.Replay.earlier),
--- and the card reference once fetched, for every later run.
+-- and what each run keeps for the next to resume from (Scenario.replay).
 viewer :: Browser.Page Screen.Event -> (Natural -> IO ()) -> Registry.Registry Identity.Identity -> Text.Text -> Maybe History.Game -> Scenario.Type.Scenario -> Natural -> IO Exit
 viewer page moved registry name played scenario given = do
   kept <- IORef.newIORef Map.empty
-  fetched <- IORef.newIORef Scenario.noneFetched
+  resumable <- IORef.newIORef Scenario.keeping
   let count = Natural.length (Scenario.Type.timeline scenario)
       labelled = seatsOf scenario
       names = foldMap History.seatNames played
@@ -101,12 +101,12 @@ viewer page moved registry name played scenario given = do
       lookUp = Identity.runIdentity . Interpreter.chosenCard registry
       starts = Web.Replay.turnStarts (Foldable.toList (Scenario.Type.timeline scenario))
       outcome = foldMap (Text.unwords . History.said) played
-      -- The run to a position, its state kept where a turn begins, from
-      -- the reference the runs before it fetched.
+      -- The run to a position, its state kept where a turn begins, resumed
+      -- from what the runs before it kept.
       run at = do
-        already <- IORef.readIORef fetched
-        (held, stop) <- Exception.evaluate (Identity.runIdentity $ Scenario.replay registry already (Just at) scenario)
-        IORef.writeIORef fetched held
+        before <- IORef.readIORef resumable
+        (after, stop) <- Exception.evaluate (Identity.runIdentity $ Scenario.replay registry before (Just at) scenario)
+        IORef.writeIORef resumable after
         Monad.when (at `elem` starts) (either (const (pure ())) (IORef.modifyIORef' kept . Map.insert at . Stop.state) stop)
         pure stop
       reach at = moved at >> run at

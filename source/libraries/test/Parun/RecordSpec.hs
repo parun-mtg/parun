@@ -19,6 +19,7 @@ import qualified Parun.Codec.Scenario as Codec.Scenario
 import qualified Parun.CompanionSpec as CompanionSpec
 import qualified Parun.Engine.Event as Event
 import qualified Parun.Engine.Setup as Setup
+import qualified Parun.Extra.Natural as Natural
 import qualified Parun.JsonCodec.Codec as Codec
 import qualified Parun.Play.Command as Command
 import qualified Parun.Play.Game as Game
@@ -116,10 +117,31 @@ spec s registry = Spec.describe s "Record" $ do
   Spec.it s "CR 103.2a a recorded game's first position holds every seat's deck in its library" $ do
     matchup <- BotSpec.sevens s registry
     let (_, timeline) = recorded bots matchup
-    (_, stop) <- Scenario.replay registry Scenario.noneFetched (Just 0) (saved matchup timeline)
+    (_, stop) <- Scenario.replay registry Scenario.unkept (Just 0) (saved matchup timeline)
     case stop of
       Right reached -> Spec.assertEqWith s "each library's size" (fmap length (GameState.library (Stop.state reached))) (Map.fromList [(S.alice, 7), (S.bob, 7)])
       Left failure -> Spec.assertFailure s (Text.unpack (Scenario.render failure))
+
+  -- The web client's replay (Parun.Browser.Replay) resumes each run from
+  -- what the runs before it kept (#9655).
+  Spec.it s "a replay resumed from the steps kept stops where a fresh one does" $ do
+    matchup <- BotSpec.sevens s registry
+    let (_, timeline) = recorded bots matchup
+        scenario = saved matchup timeline
+        count = Natural.length timeline
+        positions = [0, count `div` 2, count `div` 2 + 1, count `div` 4, count, count + 1, 1, count - 1]
+        reached :: [Either e Stop.Stop] -> [Either e GameState.GameState]
+        reached = fmap (fmap Stop.state)
+        visit (before, stops) at = do
+          (kept, stop) <- Scenario.replay registry before (Just at) scenario
+          pure (kept, stops <> [stop])
+    (held, resumed) <- Monad.foldM visit (Scenario.keeping, []) positions
+    fresh <- traverse (\at -> snd <$> Scenario.replay registry Scenario.unkept (Just at) scenario) positions
+    Spec.assertEqWith s "each position, resumed and fresh" (reached resumed) (reached fresh)
+    -- A run that resumed never reads the timeline past the step it resumed at.
+    (_, blind) <- Scenario.replay registry held (Just (count - 1)) scenario {Scenario.Type.timeline = Seq.empty}
+    (_, freshLast) <- Scenario.replay registry Scenario.unkept (Just (count - 1)) scenario
+    Spec.assertEqWith s "the last position but one, resumed with no timeline to read" (reached [blind]) (reached [freshLast])
 
   Spec.it s "CR 404.3: a seat arranging its graveyard is asked again on replay" $ do
     matchup <- scours s registry

@@ -846,7 +846,7 @@ spec s registry = Spec.describe s "Scenario" $ do
     scenario <- either (Spec.assertFailure s . Text.unpack) pure pikerReplay
     let entry k = Foldable.toList (Seq.lookup k (Scenario.Type.timeline scenario))
         priority = Text.pack "ChooseAction"
-    stops <- traverse (\k -> snd <$> Scenario.replay registry Scenario.noneFetched k scenario) [Just 0, Just 1, Just 2, Just 3, Nothing]
+    stops <- traverse (\k -> snd <$> Scenario.replay registry Scenario.unkept k scenario) [Just 0, Just 1, Just 2, Just 3, Nothing]
     Spec.assertEqWith
       s
       "each stop's entry, its question, and the Piker on the battlefield"
@@ -857,19 +857,6 @@ spec s registry = Spec.describe s "Scenario" $ do
         Right (Nothing, 1),
         Right (Nothing, 1)
       ]
-
-  -- The web client's replay (Parun.Browser.Replay) hands each run what the
-  -- runs before it fetched (#9655).
-  Spec.it s "a replay given an earlier one's reference fetches nothing it holds and stops where a fresh one does" $ do
-    scenario <- either (Spec.assertFailure s . Text.unpack) pure pikerReplay
-    let counting = (Registry.hoist Trans.lift registry) {Registry.fetchCard = \name -> State.modify' (+ (1 :: Int)) >> Trans.lift (Registry.fetchCard registry name)}
-        replayed held at = State.runStateT (Scenario.replay counting held at scenario) 0
-    ((held, fresh), freshFetches) <- replayed Scenario.noneFetched (Just 2)
-    ((_, again), againFetches) <- replayed held (Just 2)
-    ((_, further), _) <- replayed held Nothing
-    ((_, furtherFresh), _) <- replayed Scenario.noneFetched Nothing
-    Spec.assertEqWith s "the fresh replay's fetches, and the one given its reference" (freshFetches > 0, againFetches) (True, 0)
-    Spec.assertEqWith s "the same stops either way" (fmap (fmap Stop.state) [again, further]) (fmap (fmap Stop.state) [fresh, furtherFresh])
 
   -- The web client's branch (Parun.Browser.Replay.branch) plays on by hand
   -- from where the replay stops: the question the stop shows, or past the
@@ -884,7 +871,7 @@ spec s registry = Spec.describe s "Scenario" $ do
             Seq.empty
         handed (outcome, asked) = (fmap GameState.result outcome, Seq.lookup 0 asked)
         described gs = (TurnRegisters.phase (GameState.turn gs), S.countOnBattlefieldByName piker S.alice gs)
-    (_, stop) <- Scenario.replay registry Scenario.noneFetched (Just 1) scenario
+    (_, stop) <- Scenario.replay registry Scenario.unkept (Just 1) scenario
     (atOne, atEnd) <- (,) <$> fmap handed (played 1) <*> fmap handed (played 3)
     Spec.assertEqWith s "the first question the hand answers is the stop's" (snd atOne) (either (const Nothing) (Just . Stop.state) stop)
     Spec.assertEqWith s "past the last entry, the hand starts in the next step" (fmap described (snd atEnd)) (Just (Phase.Combat CombatStep.BeginningOfCombat, 1))

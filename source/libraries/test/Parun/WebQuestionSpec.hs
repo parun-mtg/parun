@@ -1033,7 +1033,7 @@ corpusSpec s registry = Spec.describe s "WebQuestion" . Spec.it s "every kind of
         let entries = Maybe.fromMaybe [] (Protocol.field "timeline" raw >>= Protocol.arrayOf)
             answering entry = (Protocol.field "do" entry >>= Protocol.field "Answer" >>= Protocol.field "prompt") == Just (R.Text kind)
             at = maybe 0 Int.toNaturalSaturating (List.findIndex answering entries)
-        stops <- Monad.forM [Natural.minusSaturating at 2 .. at + 3] $ \i -> snd <$> Scenario.replay registry Scenario.noneFetched (Just i) scenario
+        stops <- Monad.forM [Natural.minusSaturating at 2 .. at + 3] $ \i -> snd <$> Scenario.replay registry Scenario.unkept (Just i) scenario
         pure
           [ (Question.kind (Request.question request), path, if Question.Web.answersTyped request then Text.pack "typed as JSON" else Text.take 160 (snd (Text.breakOn (Text.pack "{\"") (Html.content (Question.Web.view request Question.Web.blank)))))
           | Right (Stop.MkBefore _ _ asked) <- stops,
@@ -1054,7 +1054,7 @@ subgameSpec s registry = Spec.describe s "WebQuestion" . Spec.it s "CR 730.1a a 
     Left problem -> Spec.assertFailure s (Text.unpack problem)
     Right scenario -> do
       let at i = do
-            (_, stop) <- Scenario.replay registry Scenario.noneFetched (Just i) scenario
+            (_, stop) <- Scenario.replay registry Scenario.unkept (Just i) scenario
             pure $ case stop of
               Right (Stop.MkBefore _ _ asked) -> Protocol.requestFor asked
               _ -> Nothing
@@ -1341,7 +1341,7 @@ replayed s registry name at = do
   case Load.parse bytes of
     Left problem -> Spec.assertFailure s (Text.unpack problem)
     Right scenario -> do
-      (_, stopped) <- Scenario.replay registry Scenario.noneFetched (Just at) scenario
+      (_, stopped) <- Scenario.replay registry Scenario.unkept (Just at) scenario
       either (Spec.assertFailure s . Text.unpack . Scenario.render) pure stopped
 
 -- | Answers the as-enters copy choice with ONE PINNED object, and every other
