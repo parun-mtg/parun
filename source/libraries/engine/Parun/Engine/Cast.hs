@@ -560,8 +560,12 @@ chosenBy chooser face = case Face.modeChooser face of
 -- `among` narrows those values to the ones the rest of the announcement
 -- admits: `const id` once the targets are not in question, fillableXs at an
 -- offer gate.
-payableCost :: (Cost Keyword -> [Natural] -> [Natural]) -> Maybe (Seq.Seq ModeIndex.ModeIndex) -> [AppliedReduction.AppliedReduction] -> ManaSpending -> ManaNarrowing.ManaNarrowing -> PlayerId -> ObjectId -> GameState -> Cost Keyword -> Bool
-payableCost among modes extra spending narrowing pid oid gs cost = any (\x -> payableCostAt modes x extra spending narrowing pid oid gs cost) (among cost (gateXs pid oid gs cost))
+--
+-- `spell` is Cost.asSpellProjected's answer on `gs`, which payableDeclaring
+-- shares among this gate's readers of the spell (#9713); so do gateXs,
+-- readsAnnouncedX and the payableCostAt family below.
+payableCost :: (Cost Keyword -> [Natural] -> [Natural]) -> Maybe (Seq.Seq ModeIndex.ModeIndex) -> [AppliedReduction.AppliedReduction] -> ManaSpending -> ManaNarrowing.ManaNarrowing -> PC.ProjectedCharacteristics -> PlayerId -> ObjectId -> GameState -> Cost Keyword -> Bool
+payableCost among modes extra spending narrowing spell pid oid gs cost = any (\x -> payableCostAt modes x extra spending narrowing spell pid oid gs cost) (among cost (gateXs spell pid oid gs cost))
 
 -- The values of X a gate asks a cost at, in ascending order: Activatable.gateXs',
 -- the least X and, where a component's criterion compares against X (Nahiri's
@@ -575,14 +579,14 @@ payableCost among modes extra spending narrowing pid oid gs cost = any (\x -> pa
 -- with X (Cost.componentDemandGrowsWith, an announced sacrifice's past the
 -- matching permanents) or at CR 101.1's ceiling. A cost with neither keeps the
 -- least X, the only value the climb could not overrun.
-gateXs :: PlayerId -> ObjectId -> GameState -> Cost Keyword -> [Natural]
-gateXs pid oid gs cost =
+gateXs :: PC.ProjectedCharacteristics -> PlayerId -> ObjectId -> GameState -> Cost Keyword -> [Natural]
+gateXs spell pid oid gs cost =
   let least = leastX (Game.faceOf oid gs) cost
       ceiling_ = (\face -> Cost.maximumX pid oid face gs) =<< Game.faceOf oid gs
       componentsAt x = Cost.componentsPayable Map.empty pid oid (Cost.Type.components (Cost.substituteCounts (Map.fromSet (const 0) (Set.fromList (Cost.announcedCounts cost))) (Cost.substituteX x cost))) gs
       bounded = Maybe.isJust ceiling_ || any (Cost.componentDemandGrowsWith Binding.variableX) (Cost.Type.components cost)
       climbed
-        | readsAnnouncedX pid oid cost gs && bounded = takeWhile (\x -> all (x <=) ceiling_ && componentsAt x) [least + 1 ..]
+        | readsAnnouncedX spell pid oid cost gs && bounded = takeWhile (\x -> all (x <=) ceiling_ && componentsAt x) [least + 1 ..]
         | otherwise = []
    in Set.toAscList (Set.fromList (Activatable.gateXs ceiling_ least pid oid gs cost <> climbed))
 
@@ -598,9 +602,9 @@ leastX face cost = max (maybe 0 Face.minimumX face) (Cost.variableFloor cost)
 -- reduction reads (Cost.selfSentences, a perEach naming Binding.variableX).
 -- False once the X is substituted, so a measure of the announced cost reads
 -- the announced binding rather than one of its own.
-readsAnnouncedX :: PlayerId -> ObjectId -> Cost Keyword -> GameState -> Bool
-readsAnnouncedX pid oid cost gs =
-  Cost.hasVariable cost && any (Quantity.hasRead StaticRead.ReadsX . CostReduction.perEach) (Cost.selfSentences pid oid gs)
+readsAnnouncedX :: PC.ProjectedCharacteristics -> PlayerId -> ObjectId -> Cost Keyword -> GameState -> Bool
+readsAnnouncedX spell pid oid cost gs =
+  Cost.hasVariable cost && any (Quantity.hasRead StaticRead.ReadsX . CostReduction.perEach) (Cost.selfSentences spell pid oid gs)
 
 -- The same question asked at some OTHER value of X. `payableCost` is this at CR
 -- 601.2b's floor, and `affordableX` is this climbed; one predicate, so what the
@@ -668,15 +672,15 @@ readsAnnouncedX pid oid cost gs =
 -- and ahead of the substitutes, which is where castProposed pays them
 -- (Cost.assistable): a caster with one Forest may propose Charging Binox beside a
 -- player holding seven Plains. Off Cost.spellKeywords, as castProposed reads it.
-payableCostAt :: Maybe (Seq.Seq ModeIndex.ModeIndex) -> Natural -> [AppliedReduction.AppliedReduction] -> ManaSpending -> ManaNarrowing.ManaNarrowing -> PlayerId -> ObjectId -> GameState -> Cost Keyword -> Bool
-payableCostAt modes x extra spending narrowing pid oid gs =
+payableCostAt :: Maybe (Seq.Seq ModeIndex.ModeIndex) -> Natural -> [AppliedReduction.AppliedReduction] -> ManaSpending -> ManaNarrowing.ManaNarrowing -> PC.ProjectedCharacteristics -> PlayerId -> ObjectId -> GameState -> Cost Keyword -> Bool
+payableCostAt modes x extra spending narrowing spell pid oid gs =
   let pcs = Projection.projectAll gs
-   in payableCostAtGiven modes pcs (Cost.supplyManaSourcesGiven (Cost.manaActivationsGiven (PlayerEffect.applying pid gs)) (Projection.controlGrants gs) pcs pid gs) x extra spending narrowing pid oid gs
+   in payableCostAtGiven modes pcs (Cost.supplyManaSourcesGiven (Cost.manaActivationsGiven (PlayerEffect.applying pid gs)) (Projection.controlGrants gs) pcs pid gs) x extra spending narrowing spell pid oid gs
 
 -- `payableCost` with the board's projection and CR 601.2g supply sweep handed
 -- in, so an enumeration over a hand builds the projection once (#435).
-payableCostGiven :: (Cost Keyword -> [Natural] -> [Natural]) -> Map.Map ObjectId PC.ProjectedCharacteristics -> Mana.Sources -> [AppliedReduction.AppliedReduction] -> ManaSpending -> ManaNarrowing.ManaNarrowing -> PlayerId -> ObjectId -> GameState -> Cost Keyword -> Bool
-payableCostGiven among pcs sources extra spending narrowing pid oid gs cost = any (\x -> payableCostAtGiven Nothing pcs sources x extra spending narrowing pid oid gs cost) (among cost (gateXs pid oid gs cost))
+payableCostGiven :: (Cost Keyword -> [Natural] -> [Natural]) -> Map.Map ObjectId PC.ProjectedCharacteristics -> Mana.Sources -> [AppliedReduction.AppliedReduction] -> ManaSpending -> ManaNarrowing.ManaNarrowing -> PC.ProjectedCharacteristics -> PlayerId -> ObjectId -> GameState -> Cost Keyword -> Bool
+payableCostGiven among pcs sources extra spending narrowing spell pid oid gs cost = any (\x -> payableCostAtGiven Nothing pcs sources x extra spending narrowing spell pid oid gs cost) (among cost (gateXs spell pid oid gs cost))
 
 -- `payableCostAt` with the projection and sweep handed in.
 --
@@ -689,11 +693,14 @@ payableCostGiven among pcs sources extra spending narrowing pid oid gs cost = an
 -- names, bound on the spell as castProposed binds the announced one: the cast is
 -- legal if SOME announcement complies (CR 601.2), and a reduction reading the
 -- count makes its least value its dearest.
-payableCostAtGiven :: Maybe (Seq.Seq ModeIndex.ModeIndex) -> Map.Map ObjectId PC.ProjectedCharacteristics -> Mana.Sources -> Natural -> [AppliedReduction.AppliedReduction] -> ManaSpending -> ManaNarrowing.ManaNarrowing -> PlayerId -> ObjectId -> GameState -> Cost Keyword -> Bool
-payableCostAtGiven modes pcs sources x extra spending narrowing pid oid gs cost =
-  any
-    ((\counts -> payableCountedAtGiven modes pcs sources x extra spending narrowing pid oid (bindAnnounced counts oid gs) (Cost.substituteCounts counts cost)) . Map.fromList)
-    (traverse (\slot -> fmap ((,) slot) (countValues pid oid gs x cost slot)) (Cost.announcedCounts cost))
+payableCostAtGiven :: Maybe (Seq.Seq ModeIndex.ModeIndex) -> Map.Map ObjectId PC.ProjectedCharacteristics -> Mana.Sources -> Natural -> [AppliedReduction.AppliedReduction] -> ManaSpending -> ManaNarrowing.ManaNarrowing -> PC.ProjectedCharacteristics -> PlayerId -> ObjectId -> GameState -> Cost Keyword -> Bool
+payableCostAtGiven modes pcs sources x extra spending narrowing spell pid oid gs cost =
+  let -- A count bound on the spell changes its board, so its projection is taken afresh.
+      spellOn counts bound = if Map.null counts then spell else Cost.asSpellProjected pid oid bound
+      countedAt counts = let bound = bindAnnounced counts oid gs in payableCountedAtGiven modes pcs sources x extra spending narrowing (spellOn counts bound) pid oid bound (Cost.substituteCounts counts cost)
+   in any
+        (countedAt . Map.fromList)
+        (traverse (\slot -> fmap ((,) slot) (countValues pid oid gs x cost slot)) (Cost.announcedCounts cost))
 
 -- CR 601.2b: the values a gate asks one count announced beside X at -- every
 -- value up to the first whose COMPONENTS alone cannot be paid, `gateXs`' climb
@@ -724,14 +731,19 @@ candidateNarrowing :: ObjectId -> GameState -> CandidateCost.CandidateCost -> Ma
 candidateNarrowing oid gs = maybe ManaNarrowing.none (\specified -> ActivationRestriction.narrowingFor oid specified gs) . CandidateCost.spendOnly
 
 -- `payableCostAtGiven` once every count beside X is announced.
-payableCountedAtGiven :: Maybe (Seq.Seq ModeIndex.ModeIndex) -> Map.Map ObjectId PC.ProjectedCharacteristics -> Mana.Sources -> Natural -> [AppliedReduction.AppliedReduction] -> ManaSpending -> ManaNarrowing.ManaNarrowing -> PlayerId -> ObjectId -> GameState -> Cost Keyword -> Bool
-payableCountedAtGiven modes pcs sources x extra spending narrowing pid oid gs cost =
+payableCountedAtGiven :: Maybe (Seq.Seq ModeIndex.ModeIndex) -> Map.Map ObjectId PC.ProjectedCharacteristics -> Mana.Sources -> Natural -> [AppliedReduction.AppliedReduction] -> ManaSpending -> ManaNarrowing.ManaNarrowing -> PC.ProjectedCharacteristics -> PlayerId -> ObjectId -> GameState -> Cost Keyword -> Bool
+payableCountedAtGiven modes pcs sources x extra spending narrowing spell pid oid gs cost =
   let substituted = Cost.substituteX x cost
       subject = PaymentSubject.Casting oid narrowing
-      assisted = Cost.assistable subject pid oid gs
+      assisted = Cost.assistable spell subject pid oid gs
       withX o = o {Object.bindings = Map.union (Binding.fromChoices Map.empty (Just x) Seq.empty) (Object.bindings o)}
-      priced = if readsAnnouncedX pid oid cost gs then gs {GameState.objects = Map.adjust withX oid (GameState.objects gs)} else gs
-      adjustmentsFor aiming = CostAdjustments.Engine.plusReductions extra (Cost.spellAdjustments (Cost.announcedRecords cost) aiming pid oid priced)
+      -- The X bound on the spell changes its board, so its projection is taken
+      -- afresh there.
+      (priced, pricedSpell) =
+        if readsAnnouncedX spell pid oid cost gs
+          then let bound = gs {GameState.objects = Map.adjust withX oid (GameState.objects gs)} in (bound, Cost.asSpellProjected pid oid bound)
+          else (gs, spell)
+      adjustmentsFor aiming = CostAdjustments.Engine.plusReductions extra (Cost.spellAdjustments pricedSpell (Cost.announcedRecords cost) aiming pid oid priced)
       -- The X CR 601.2h's "Spend only black mana on X" confines: `x` while the
       -- cost still carries its {X}, and the X announced on the spell once
       -- castSpell has substituted it (its `announcedBoard`).
@@ -742,7 +754,7 @@ payableCountedAtGiven modes pcs sources x extra spending narrowing pid oid gs co
         let totalled = Cost.plusComponents adjustments substituted
             slots = Binding.withAnnouncedTargets aiming
             totals m = fmap (assisted . Cost.confineX (xConfinement oid gs) confinedX adjustments m) (Cost.totalManas adjustments m)
-         in Cost.canPaySomeCompletionGiven slots subject spending sources (Snapshot.given pcs (Projection.projectOffBoard gs) (Projection.controlGrants gs) gs) pid oid totals (Cost.manaSubstitutions (Cost.Type.components totalled) slots pid oid gs) totalled gs
+         in Cost.canPaySomeCompletionGiven slots subject spending sources (Snapshot.given pcs (Projection.projectOffBoard gs) (Projection.controlGrants gs) gs) pid oid totals (Cost.manaSubstitutions spell (Cost.Type.components totalled) slots pid oid gs) totalled gs
       -- The adjustments with nothing aimed at, which are the adjustments under
       -- EVERY aiming unless they read the targets (readsTargets below), so the
       -- components they add are inspected for a criterion naming a slot exactly as
@@ -750,7 +762,7 @@ payableCountedAtGiven modes pcs sources x extra spending narrowing pid oid gs co
       blind = adjustmentsFor Map.empty
       blindCost = Cost.plusComponents blind substituted
       (aimable, beyond) = castAimable (Cost.aimingKey pid oid gs blindCost) modes x pid oid gs
-   in if Cost.readsBoundSlot blindCost || Cost.readsTargets pid oid gs
+   in if Cost.readsBoundSlot blindCost || Cost.readsTargets spell pid oid gs
         then any (\aiming -> askWith (adjustmentsFor aiming) aiming) aimable || beyond
         else askWith blind Map.empty
 
@@ -945,10 +957,11 @@ castAimable key announced x pid oid gs = case Game.faceOf oid gs of
 -- greatest payable X among `gateXs`.
 affordableX :: Seq.Seq ModeIndex.ModeIndex -> Maybe Natural -> [AppliedReduction.AppliedReduction] -> ManaSpending -> ManaNarrowing.ManaNarrowing -> PlayerId -> ObjectId -> GameState -> Cost Keyword -> Natural
 affordableX modes mCeiling extra spending narrowing pid oid gs cost
-  | readsAnnouncedX pid oid cost gs || Activatable.criterionReadsX cost = Maybe.fromMaybe 0 (Maybe.listToMaybe (reverse (filter payableAt (gateXs pid oid gs cost))))
+  | readsAnnouncedX spell pid oid cost gs || Activatable.criterionReadsX cost = Maybe.fromMaybe 0 (Maybe.listToMaybe (reverse (filter payableAt (gateXs spell pid oid gs cost))))
   | otherwise = Cost.greatestPayableX mCeiling payableAt cost
   where
-    payableAt x = payableCostAt (Just modes) x extra spending narrowing pid oid gs cost
+    spell = Cost.asSpellProjected pid oid gs
+    payableAt x = payableCostAt (Just modes) x extra spending narrowing spell pid oid gs cost
 
 -- CR 118.8a: "Any number of additional costs may be applied to a spell as it's
 -- being cast", summed into the total by CR 601.2f. So a card printing two entwine
@@ -1040,11 +1053,12 @@ entwineOffer :: ManaSpending -> PlayerId -> ObjectId -> [([AppliedReduction.Appl
 entwineOffer spending pid oid candidates gs = case Game.faceOf oid gs of
   Nothing -> Nothing
   Just face -> do
-    cost <- costTotal (Keyword.entwineCosts (Map.keysSet (Cost.spellKeywords pid oid gs)))
+    let spell = Cost.asSpellProjected pid oid gs
+    cost <- costTotal (Keyword.entwineCosts (Map.keysSet (PC.keywords spell)))
     let modal = Face.spell face
         legal = Target.fillableModes StackObjectKind.Spell Nothing (Just pid) Map.empty oid (Card.enchantSlotMap face) modal gs
     Monad.guard (Natural.length legal == Modal.modeCount modal)
-    Monad.guard (any (\(extra, narrowing, candidate) -> payableCost (const id) (Just (Seq.fromList (Set.toAscList legal))) extra spending narrowing pid oid gs (Cost.plus candidate cost)) candidates)
+    Monad.guard (any (\(extra, narrowing, candidate) -> payableCost (const id) (Just (Seq.fromList (Set.toAscList legal))) extra spending narrowing spell pid oid gs (Cost.plus candidate cost)) candidates)
     pure cost
 
 -- CR 601.2f: one candidate cost with every optional additional payment announced
@@ -1106,7 +1120,7 @@ announceOptionalCosts held modes spending pid sid candidates offers gs =
       -- One more declaration, for the instance asked about or, for a cost
       -- asked once, the next of the object's own.
       declared keyword which paid = Map.insertWith Map.union keyword (Map.singleton (Maybe.fromMaybe (KeywordInstance.Own (Natural.length (Map.findWithDefault Map.empty keyword paid) + 1)) which) 1) paid
-      payable keyword which paid cost = any (\(castFor, (extra, narrowing, candidate)) -> payableCost (const id) (Just modes) extra spending narrowing pid sid (stampPaidCosts (declared keyword which paid) sid (proposedUnder held pid sid castFor gs)) (Cost.plus (withOptionalPayments paid candidate) cost)) candidates
+      payable keyword which paid cost = any (\(castFor, (extra, narrowing, candidate)) -> let board = stampPaidCosts (declared keyword which paid) sid (proposedUnder held pid sid castFor gs) in payableCost (const id) (Just modes) extra spending narrowing (Cost.asSpellProjected pid sid board) pid sid board (Cost.plus (withOptionalPayments paid candidate) cost)) candidates
       choose keyword which limit = Game.choose (Prompt.ChooseKicker (Decide.deciderFor pid gs) pid sid keyword which limit)
       -- An instance asked nothing, its cost unpayable, still holds its place.
       answer keyword which limit cost paid = if payable keyword (Just which) paid cost then choose keyword (Just which) limit else pure (KickerDecision.Pays 0)
@@ -1142,17 +1156,28 @@ announceOptionalCosts held modes spending pid sid candidates offers gs =
 --
 -- Unprinted: a reduction read off two optional costs declared together, or one
 -- declared more than once, would need those combinations here too.
-gateDeclarations :: PlayerId -> ObjectId -> GameState -> [Map.Map Keyword (Map.Map KeywordInstance.KeywordInstance Natural)]
-gateDeclarations pid oid gs =
-  Map.empty : fmap (\keyword -> Map.singleton keyword (Map.singleton (KeywordInstance.Own 1) 1)) (Keyword.optionalCosts (Map.keysSet (Cost.spellKeywords pid oid gs)))
+--
+-- `spell` is Cost.asSpellProjected's answer on the board asked.
+gateDeclarations :: PC.ProjectedCharacteristics -> [Map.Map Keyword (Map.Map KeywordInstance.KeywordInstance Natural)]
+gateDeclarations spell =
+  Map.empty : fmap (\keyword -> Map.singleton keyword (Map.singleton (KeywordInstance.Own 1) 1)) (Keyword.optionalCosts (Map.keysSet (PC.keywords spell)))
 
 -- CR 601.2b/601.2f: `payable` on `board` and `cost` under SOME optional
 -- additional cost's declaration (gateDeclarations), priced on the board it
 -- stamps, so a reduction "if it's bargained" lowers the total a cast is gated
 -- at. The one wrapper castableUnderHeld and castableWhenOffered both ask.
-payableDeclaring :: (GameState -> Cost Keyword -> Bool) -> PlayerId -> ObjectId -> GameState -> Cost Keyword -> Bool
+--
+-- `payable` is handed the spell's projection on the board it is asked on
+-- (Cost.asSpellProjected): `board`'s own one where no declaration stamps
+-- anything new, so the readers on that board share one gather (#9713).
+payableDeclaring :: (PC.ProjectedCharacteristics -> GameState -> Cost Keyword -> Bool) -> PlayerId -> ObjectId -> GameState -> Cost Keyword -> Bool
 payableDeclaring payable pid oid board cost =
-  any (\paid -> payable (stampPaidCosts paid oid board) (withOptionalPayments paid cost)) (gateDeclarations pid oid board)
+  let spell = Cost.asSpellProjected pid oid board
+      unpaid = maybe False (Map.null . Object.paidCosts) (Game.lookupObject oid board)
+      declaring paid =
+        let stamped = stampPaidCosts paid oid board
+         in payable (if Map.null paid && unpaid then spell else Cost.asSpellProjected pid oid stamped) stamped (withOptionalPayments paid cost)
+   in any declaring (gateDeclarations spell)
 
 -- CR 601.2b's record, written onto the spell's own stack incarnation -- CR
 -- 702.33d's "that spell has been kicked" among it. Read back by Quantity.TimesPaid
@@ -2218,9 +2243,9 @@ castableGiven shared pid oid name facing gs = any (castableUnderHeld shared pid 
 castableUnderHeld :: Maybe ([Projection.ControlGrant], Map.Map ObjectId PC.ProjectedCharacteristics) -> PlayerId -> ObjectId -> CardName.CardName -> Facing.Facing -> GameState -> Bool
 castableUnderHeld shared pid oid name facing gs =
   let proposed = asProposed oid name facing gs
-      payable among extra spending narrowing board cost = case shared of
-        Just (grants, pcs) -> payableCostGiven among pcs (Cost.supplyManaSourcesGiven (Cost.manaActivationsGiven (PlayerEffect.applying pid board)) grants pcs pid board) extra spending narrowing pid oid board cost
-        Nothing -> payableCost among Nothing extra spending narrowing pid oid board cost
+      payable among extra spending narrowing spell board cost = case shared of
+        Just (grants, pcs) -> payableCostGiven among pcs (Cost.supplyManaSourcesGiven (Cost.manaActivationsGiven (PlayerEffect.applying pid board)) grants pcs pid board) extra spending narrowing spell pid oid board cost
+        Nothing -> payableCost among Nothing extra spending narrowing spell pid oid board cost
       -- CR 601.3, CR 601.2c and CR 601.2b, asked TOGETHER and per candidate,
       -- because CR 702.103d makes them one question: a candidate is one this
       -- player may announce when the board its own choice produces neither
@@ -2791,7 +2816,7 @@ castableWhenOffered spending pid oid name candidates proposed =
           candidateAllowed pid oid proposed candidate
             && candidateFillable Map.empty pid oid name proposed candidate
             && payableDeclaring
-              (payableCost (fillableXs pid oid name proposed candidate) Nothing (CandidateCost.reductions candidate) (spendingWith spending pid oid proposed) (candidateNarrowing oid proposed candidate) pid oid)
+              (\spell -> payableCost (fillableXs pid oid name proposed candidate) Nothing (CandidateCost.reductions candidate) (spendingWith spending pid oid proposed) (candidateNarrowing oid proposed candidate) spell pid oid)
               pid
               oid
               (proposedFor pid oid (CandidateCost.keyword candidate) proposed)
@@ -4286,7 +4311,7 @@ castProposed perform baseSpending pid oid sid printedFace castFrom preparedFor k
       -- Carried as the additional Cost itself rather than as a flag, entwine's
       -- reason: the candidate costs below and the CR 702.27a stamp read one value.
       let buybackAffordable extra =
-            any (\(castFor, (reduced, narrowing, candidate)) -> payableCost (const id) (Just chosenModes) reduced spending narrowing pid sid (stampPaidCosts paid sid (proposedUnder held pid sid castFor gs)) (Cost.plus (withOptionalPayments paid candidate) extra)) keyedCandidates
+            any (\(castFor, (reduced, narrowing, candidate)) -> let board = stampPaidCosts paid sid (proposedUnder held pid sid castFor gs) in payableCost (const id) (Just chosenModes) reduced spending narrowing (Cost.asSpellProjected pid sid board) pid sid board (Cost.plus (withOptionalPayments paid candidate) extra)) keyedCandidates
       --
       -- A withdrawal (CR 734.1) asks nothing further and rewinds the cast below.
       buybackAnswer <- traverse (\extra -> (,) extra <$> Game.choose (Prompt.ChooseBuyback decider pid sid extra)) (Monad.mfilter (\extra -> not kickerWithdrawn && buybackAffordable extra) (Keyword.buybackCost keywords))
@@ -4310,7 +4335,7 @@ castProposed perform baseSpending pid oid sid printedFace castFrom preparedFor k
       -- is offered, and where one is, the player answers.
       let withBoughtBack candidate = maybe candidate (Cost.plus candidate) boughtBack
           spliceAffordable extra =
-            any (\(castFor, (reduced, narrowing, candidate)) -> payableCost (const id) (Just chosenModes) reduced spending narrowing pid sid (stampPaidCosts paid sid (proposedUnder held pid sid castFor gs)) (Cost.plus (withBoughtBack (withOptionalPayments paid candidate)) extra)) keyedCandidates
+            any (\(castFor, (reduced, narrowing, candidate)) -> let board = stampPaidCosts paid sid (proposedUnder held pid sid castFor gs) in payableCost (const id) (Just chosenModes) reduced spending narrowing (Cost.asSpellProjected pid sid board) pid sid board (Cost.plus (withBoughtBack (withOptionalPayments paid candidate)) extra)) keyedCandidates
           spliceOffers = filter (spliceAffordable . snd) (Maybe.mapMaybe (spliceOffer pid sid gs) (Game.zoneMembers Zone.Hand pid gs))
       spliced <- if null spliceOffers || withdrawn then pure [] else Game.choose (Prompt.ChooseSplice decider pid sid spliceOffers)
       -- CR 702.47b: "you can't splice any one card onto the same spell more than
@@ -4380,7 +4405,9 @@ castProposed perform baseSpending pid oid sid printedFace castFrom preparedFor k
           withFolded = fmap (\candidate -> (candidate {CandidateCost.cost = folded (CandidateCost.cost candidate)}, candidate)) candidateCosts
           payableUnder candidate (extra, less, wayGives, alternative) = case underAlternative allowed face alternative candidate of
             Nothing -> False
-            Just cost -> payableCost (const id) (Just chosenModes) (CandidateCost.reductions candidate <> less) (widerSpending baseSpending wayGives) (candidateNarrowing sid gs candidate) pid sid (stampPaidCosts paid sid (proposedUnder held pid sid (CandidateCost.keyword candidate) gs)) (withPermissionCosts extra (folded cost))
+            Just cost ->
+              let board = stampPaidCosts paid sid (proposedUnder held pid sid (CandidateCost.keyword candidate) gs)
+               in payableCost (const id) (Just chosenModes) (CandidateCost.reductions candidate <> less) (widerSpending baseSpending wayGives) (candidateNarrowing sid gs candidate) (Cost.asSpellProjected pid sid board) pid sid board (withPermissionCosts extra (folded cost))
           payableCandidates =
             [ shown
             | (shown, candidate) <- withFolded,
@@ -4621,12 +4648,15 @@ castProposed perform baseSpending pid oid sid printedFace castFrom preparedFor k
                   -- CR 601.2f total will.
                   withX o = o {Object.bindings = Map.union (Binding.fromChoices Map.empty mAmount Seq.empty) (Object.bindings o)}
                   announcedBoard = bestowedGs {GameState.objects = Map.adjust withX sid (GameState.objects bestowedGs)}
+                  -- The spell's projection on that board, one gather for every
+                  -- reader of it below (#9713).
+                  announcedSpell = Cost.asSpellProjected pid sid announcedBoard
                   -- CR 601.3d: the chosen candidate's window re-asked of the
                   -- spell with X announced, on the board Cost.withFlashPermission
                   -- asked it of as the cast began, the card now on the stack.
                   lapsed = maybe False (not . ActivationRestriction.onlyIfHolds pid sid announcedBoard) (CandidateCost.windowIf chosenCandidate)
                   refused = Maybe.isJust mAmount && maybe False (refusedAt chosenCandidate permissionUsed lapsed) (Filter.manaValue (Projection.viewOfObject sid announcedBoard))
-              if xWithdrawn || overCeiling || underFloor || refused || not (payableCost (const id) (Just chosenModes) chosenReductions chosenSpending chosenNarrowing pid sid announcedBoard announcedAtX)
+              if xWithdrawn || overCeiling || underFloor || refused || not (payableCost (const id) (Just chosenModes) chosenReductions chosenSpending chosenNarrowing announcedSpell pid sid announcedBoard announcedAtX)
                 then reject
                 else do
                   -- CR 601.2b's own order puts the hybrid and Phyrexian
@@ -4664,7 +4694,7 @@ castProposed perform baseSpending pid oid sid printedFace castFrom preparedFor k
                   -- 601.2f Dismember under Hinata offers both mana routes" proves
                   -- it.
                   let aimedSets = Target.legalSets StackObjectKind.Spell Nothing (Just pid) False (Binding.fromChoices Map.empty mAmount Seq.empty) sid slots announcedBoard
-                      gatheredFor targets = CostAdjustments.Engine.plusReductions chosenReductions (Cost.spellAdjustments (Cost.announcedRecords announcedAtX) targets pid sid announcedBoard)
+                      gatheredFor targets = CostAdjustments.Engine.plusReductions chosenReductions (Cost.spellAdjustments announcedSpell (Cost.announcedRecords announcedAtX) targets pid sid announcedBoard)
                       gathered = gatheredFor Map.empty
                       -- Merged by value: aimings counting alike total alike. The
                       -- empty aiming is among them only where every slot may take
@@ -4674,7 +4704,7 @@ castProposed perform baseSpending pid oid sid printedFace castFrom preparedFor k
                       -- a Merfolk under Kopala is priced with its target" proves it.
                       aimed = Set.toList . Set.fromList $ fmap gatheredFor (Target.aimingsBy Cost.aimedReferent (Cost.aimingKey pid sid announcedBoard announcedAtX) (Target.aimingRanges Nothing (Just pid) sid (Just (Maybe.fromMaybe 0 mAmount)) slots aimedSets announcedBoard) aimedSets)
                       aimedGathers
-                        | Cost.readsTargets pid sid announcedBoard && not (null aimed) = aimed
+                        | Cost.readsTargets announcedSpell pid sid announcedBoard && not (null aimed) = aimed
                         | otherwise = [gathered]
                       -- CR 601.2h's confined X (Cost.confineX), so the routes
                       -- offered are the ones the gate measured. A FENCE:
@@ -4684,8 +4714,8 @@ castProposed perform baseSpending pid oid sid printedFace castFrom preparedFor k
                       confinement = xConfinement sid announcedBoard
                       routeTotals mana = concatMap (\g -> fmap (Cost.confineX confinement (Maybe.fromMaybe 0 mAmount) g mana) (Cost.totalManas g mana)) aimedGathers
                   let totalledCost = Cost.plusComponents gathered announcedAtX
-                      assistedTotal = Cost.assistable (PaymentSubject.Casting sid chosenNarrowing) pid sid announcedBoard
-                  (announcedCost, phyrexianLifePaid) <- Cost.announce (PaymentSubject.Casting sid chosenNarrowing) chosenSpending pid sid (Cost.substitutedManas (Cost.manaSubstitutions (Cost.Type.components totalledCost) Map.empty pid sid announcedBoard) (fmap assistedTotal . routeTotals)) totalledCost
+                      assistedTotal = Cost.assistable announcedSpell (PaymentSubject.Casting sid chosenNarrowing) pid sid announcedBoard
+                  (announcedCost, phyrexianLifePaid) <- Cost.announce (PaymentSubject.Casting sid chosenNarrowing) chosenSpending pid sid (Cost.substitutedManas (Cost.manaSubstitutions announcedSpell (Cost.Type.components totalledCost) Map.empty pid sid announcedBoard) (fmap assistedTotal . routeTotals)) totalledCost
                   -- CR 400.7d's cost record, stamped on the SPELL and carried
                   -- onto the permanent it becomes by
                   -- Parun.Engine.Event.changeZoneAttaching, `Object.paidCosts`'s
@@ -4821,7 +4851,7 @@ castProposed perform baseSpending pid oid sid printedFace castFrom preparedFor k
                           pricedGs <- State.get
                           -- CR 601.2c's targets are fixed by now, so an adjustment
                           -- reading them (Bury in Books, Hinata) is asked here.
-                          adjustments <- Cost.announceReductions pid sid pricedGs announcedCost (CostAdjustments.Engine.plusReductions chosenReductions (Cost.spellAdjustments (Cost.announcedRecords announcedCost) chosen pid sid pricedGs))
+                          adjustments <- Cost.announceReductions pid sid pricedGs announcedCost (CostAdjustments.Engine.plusReductions chosenReductions (Cost.spellAdjustments (Cost.asSpellProjected pid sid pricedGs) (Cost.announcedRecords announcedCost) chosen pid sid pricedGs))
                           -- CR 601.2f's "plus all additional costs", gathered NOW
                           -- that the targets are fixed, where `gathered` at CR
                           -- 601.2b above could not see them: a component read off
@@ -4872,11 +4902,14 @@ castProposed perform baseSpending pid oid sid printedFace castFrom preparedFor k
                           assist <- Cost.offerAssist perform (PaymentSubject.Casting sid chosenNarrowing) pid sid paidCost
                           let assisting c = do
                                 assisted <- maybe (pure c) (\(h, _) -> Cost.payAssist h (PaymentSubject.Casting sid chosenNarrowing) sid c) assist
-                                Cost.announceSubstitutions Cost.manaSubstitutions pid sid assisted
+                                Cost.announceSubstitutions substituting pid sid assisted
                               -- CR 734.1: a decline in the window rewinds the
                               -- cast only where neither could still pay
                               -- (Prompt.ChooseManaSource).
-                              follows g = Maybe.isJust assist || Cost.substitutesOffered Cost.manaSubstitutions pid sid paidCost g
+                              follows g = Maybe.isJust assist || Cost.substitutesOffered substituting pid sid paidCost g
+                              -- The spell's keywords on the board each is asked on,
+                              -- which a mana ability in CR 601.2g's window may change.
+                              substituting components named p o g = Cost.manaSubstitutions (Cost.asSpellProjected p o g) components named p o g
                           (payment, substitutedBindings) <- Cost.paySubstituting (const False) perform before (foldMap (pure . snd) assist) PaymentMoment.OutsideResolution (PaymentSubject.Casting sid chosenNarrowing) (Just sid) chosenSpending pid sid assisting follows paidCost
                           case payment of
                             -- CR 601.2h: the payment failed, so the cast is illegal

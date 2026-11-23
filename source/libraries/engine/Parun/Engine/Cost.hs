@@ -1400,7 +1400,7 @@ candidateCostsGiven permitted pid name oid gs =
 -- additional cost is the cost reducer, so a re-read after CR 601.2h's sacrifice
 -- costs a mana more.
 total :: PlayerId -> ObjectId -> Cost Keyword.Type.Keyword -> GameState -> Cost Keyword.Type.Keyword
-total pid oid cost gs = totalWith (spellAdjustments (announcedRecords cost) Map.empty pid oid gs) cost
+total pid oid cost gs = totalWith (spellAdjustments (asSpellProjected pid oid gs) (announcedRecords cost) Map.empty pid oid gs) cost
 
 -- CR 601.2f's increases and reductions for a SPELL being cast: the ones CARDS
 -- generate (Parun.Engine.PlayerEffect, plus the spell's own text through
@@ -1418,10 +1418,13 @@ total pid oid cost gs = totalWith (spellAdjustments (announcedRecords cost) Map.
 -- `announced` is the records the cost being totalled will bind
 -- (announcedRecords), which the spell's own sentence may also read
 -- (selfReductions).
-spellAdjustments :: Set.Set SlotName.SlotName -> Map.Map SlotName.SlotName (Set.Set Recipient.Recipient) -> PlayerId -> ObjectId -> GameState -> CostAdjustments.CostAdjustments
-spellAdjustments announced aiming pid oid gs =
+--
+-- `spell` is asSpellProjected's answer on `gs`, which a caller reading the spell
+-- several times on one board projects once (#9713).
+spellAdjustments :: PC.ProjectedCharacteristics -> Set.Set SlotName.SlotName -> Map.Map SlotName.SlotName (Set.Set Recipient.Recipient) -> PlayerId -> ObjectId -> GameState -> CostAdjustments.CostAdjustments
+spellAdjustments spell announced aiming pid oid gs =
   let adjustments = PlayerEffect.spellCostAdjustments (Set.unions (Map.elems aiming)) pid oid gs
-      self = selfReductions announced aiming pid oid gs
+      self = selfReductions spell announced aiming pid oid gs
       withSelf =
         adjustments
           { CostAdjustments.reductions =
@@ -1543,8 +1546,10 @@ raiseCandidate pid oid gs cost =
 -- printed and granted alike (CR 702.41a, CR 702.125a), so a spell given
 -- affinity is reduced by it -- Parun.CostSpec's Mycosynth Golem group proves
 -- it.
-selfReductions :: Set.Set SlotName.SlotName -> Map.Map SlotName.SlotName (Set.Set Recipient.Recipient) -> PlayerId -> ObjectId -> GameState -> [(CostDirection.CostDirection, ManaCost.ManaCost)]
-selfReductions announced aiming pid oid gs =
+--
+-- `spell` is asSpellProjected's answer on `gs`, as spellAdjustments takes it.
+selfReductions :: PC.ProjectedCharacteristics -> Set.Set SlotName.SlotName -> Map.Map SlotName.SlotName (Set.Set Recipient.Recipient) -> PlayerId -> ObjectId -> GameState -> [(CostDirection.CostDirection, ManaCost.ManaCost)]
+selfReductions spell announced aiming pid oid gs =
   let -- CR 109.5: the perspective is the would-be controller, `pid` -- not
       -- Projection.controllerOf, which answers Nothing for a card in a hand.
       -- The source is the spell itself, the reduction being printed on it.
@@ -1563,20 +1568,19 @@ selfReductions announced aiming pid oid gs =
             -- A negative saturates to 0, the floor the header states.
             times n = concat (replicate (max 0 (Integer.toIntSaturating n)) (ManaCost.unwrap (CostReduction.amount reduction)))
          in fmap ((,) (CostReduction.direction reduction) . ManaCost.MkManaCost . times) copies
-   in Maybe.mapMaybe scaled (filter applies (selfSentences pid oid gs))
+   in Maybe.mapMaybe scaled (filter applies (selfSentences spell pid oid gs))
 
 -- The sentences selfReductions reads, printed, granted and keyword alike. The
--- granted and keyword ones are `asSpellProjected`'s, so the keywords are
--- `spellKeywords`' reading.
-selfSentences :: PlayerId -> ObjectId -> GameState -> [CostReduction.CostReduction]
-selfSentences pid oid gs = case (Game.lookupLayerOne oid gs, Game.cardOf oid gs, Game.faceOf oid gs) of
+-- granted and keyword ones are read off `spell`, asSpellProjected's answer on
+-- `gs`, so the keywords are `spellKeywords`' reading.
+selfSentences :: PC.ProjectedCharacteristics -> PlayerId -> ObjectId -> GameState -> [CostReduction.CostReduction]
+selfSentences spell pid oid gs = case (Game.lookupLayerOne oid gs, Game.cardOf oid gs, Game.faceOf oid gs) of
   (Just obj, Just card, Just printedFace) ->
     let face = Game.castingFaceOf obj card printedFace
-        projected = asSpellProjected pid oid gs
-        printed = if PC.lostAllAbilities projected then [] else Face.costReductions face
+        printed = if PC.lostAllAbilities spell then [] else Face.costReductions face
         -- The permission's own, off the card before the move or the spell after it.
         permitted = Object.castCostChanges obj <> foldMap permissionCostChanges (castPermission [Zone.Exile, Zone.Graveyard] pid oid gs)
-     in printed <> PC.grantedCostReductions projected <> Keyword.selfCostReductionsOf (PC.keywords projected) <> permitted
+     in printed <> PC.grantedCostReductions spell <> Keyword.selfCostReductionsOf (PC.keywords spell) <> permitted
   _ -> []
 
 -- CR 601.2a / 613.1f: the keywords of the spell `pid` is casting, printed and
@@ -1621,9 +1625,11 @@ asSpell pid oid gs
 -- The count is a REGRESSION FENCE: Fireball's only raises its cost, and its
 -- slot may take no target, so the empty aiming is its cheapest and measuring
 -- with nothing bound would answer alike.
-readsTargets :: PlayerId -> ObjectId -> GameState -> Bool
-readsTargets pid oid gs =
-  any (\sentence -> Maybe.isJust (CostReduction.whichTargets sentence) || not (Set.null (QuantitySlot.slots (CostReduction.perEach sentence)))) (selfSentences pid oid gs)
+--
+-- `spell` is asSpellProjected's answer on `gs`, as spellAdjustments takes it.
+readsTargets :: PC.ProjectedCharacteristics -> PlayerId -> ObjectId -> GameState -> Bool
+readsTargets spell pid oid gs =
+  any (\sentence -> Maybe.isJust (CostReduction.whichTargets sentence) || not (Set.null (QuantitySlot.slots (CostReduction.perEach sentence)))) (selfSentences spell pid oid gs)
     || PlayerEffect.spellCostReadsTargets pid oid gs
 
 -- CR 601.2f's adjustments for an ACTIVATION cost, which CR 602.2b routes
@@ -1853,17 +1859,18 @@ recordXShares subject pid oid readsIt split = Monad.forM_ split $ \(rest, onX) -
 -- unsatisfiable set -- but an enumeration bound: a {8} cost beside two creatures
 -- offers three entries rather than nine.
 --
--- The keywords are `spellKeywords`', so a granted convoke (Chief Engineer)
--- substitutes as a printed one does.
+-- The keywords are `spell`'s, asSpellProjected's answer on `gs` (`spellKeywords`'
+-- reading), so a granted convoke (Chief Engineer) substitutes as a printed one
+-- does.
 --
 -- The OFFERS come in two provenances and this function holds only the keywords'.
 -- CR 701.67a's waterbend is the other, and it rides the COST (CostComponent.Waterbend)
 -- rather than the object, which is what lets rule 701.67b scope it to one
 -- component of the total: `statedOffers` caps it at the waterbend cost's own
 -- generic amount where a keyword's offer is capped only by the symbol.
-manaSubstitutions :: [CostComponent.CostComponent Keyword.Type.Keyword] -> Map.Map SlotName.SlotName (Set.Set Recipient.Recipient) -> PlayerId -> ObjectId -> GameState -> ManaCost.ManaCost -> [(ManaCost.ManaCost, [(Keyword.Substitute, Natural)])]
-manaSubstitutions components slots pid oid gs =
-  let keywords = Map.keysSet (spellKeywords pid oid gs)
+manaSubstitutions :: PC.ProjectedCharacteristics -> [CostComponent.CostComponent Keyword.Type.Keyword] -> Map.Map SlotName.SlotName (Set.Set Recipient.Recipient) -> PlayerId -> ObjectId -> GameState -> ManaCost.ManaCost -> [(ManaCost.ManaCost, [(Keyword.Substitute, Natural)])]
+manaSubstitutions spell components slots pid oid gs =
+  let keywords = Map.keysSet (PC.keywords spell)
    in substitutionsOffering (\symbol -> fmap (\substitute -> (substitute, Nothing)) (Keyword.manaSubstitutesFor symbol keywords) <> statedOffers components symbol) slots pid oid gs
 
 -- The COST's half of the offer alone (CR 701.67a's waterbend, CR 602.1e's
@@ -5320,7 +5327,7 @@ aimingSignature pid oid gs cost
   | Set.size (Set.fromList (concatMap excludedSlots criteria)) > 1 || any ((> 1) . length . excludedSlots) criteria = Nothing
   | otherwise =
       let context = Projection.sourceContext gs (Just pid) oid
-          wanted = Maybe.mapMaybe CostReduction.whichTargets (selfSentences pid oid gs)
+          wanted = Maybe.mapMaybe CostReduction.whichTargets (selfSentences (asSpellProjected pid oid gs) pid oid gs)
           claims = claimsOf Map.empty pid oid (Cost.components cost) gs
           computed = any targetComputed (Cost.components cost)
           ofObject r f = maybe 0 f (Recipient.objectOf r)
@@ -7258,9 +7265,11 @@ offerAssist perform subject pid sid cost = do
 -- pays from their own pool and the mana abilities of what they control, so
 -- neither payment can spend what the other's needs, and paying more of the
 -- generic only makes the caster's residual easier.
-assistable :: PaymentSubject.PaymentSubject -> PlayerId -> ObjectId -> GameState -> ManaCost.ManaCost -> ManaCost.ManaCost
-assistable subject pid oid gs manaCost
-  | not (Map.member Keyword.Type.Assist (spellKeywords pid oid gs)) = manaCost
+--
+-- `spell` is asSpellProjected's answer on `gs`, as spellAdjustments takes it.
+assistable :: PC.ProjectedCharacteristics -> PaymentSubject.PaymentSubject -> PlayerId -> ObjectId -> GameState -> ManaCost.ManaCost -> ManaCost.ManaCost
+assistable spell subject pid oid gs manaCost
+  | not (Map.member Keyword.Type.Assist (PC.keywords spell)) = manaCost
   | otherwise =
       let generic = sum (fmap genericOf (ManaCost.unwrap manaCost))
           pays helper n = canPaySomeCompletion Map.empty subject ManaSpending.AsProduced helper oid pure (\mc -> [(mc, [])]) (Cost.MkCost (Just (ManaCost.MkManaCost [ManaSymbol.Generic n])) []) gs
