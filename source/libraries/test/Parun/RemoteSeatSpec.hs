@@ -81,7 +81,7 @@ spec s registry = Spec.describe s "RemoteSeat" $ do
         shown = Html.toText (Lobby.view offered)
     Spec.assertBool s (all (\i -> Text.isInfixOf (Text.pack ("id=\"invite-reply-" <> show i <> "\"")) shown && Text.isInfixOf (Text.pack ("#offer=" <> show i)) shown) [0 :: Int, 1]) "each invited seat has its own link and its own reply box"
     Spec.assertEqWith s "starts" (fmap Lobby.starts [invited, chosen, hostReady, firstReady, allReady, dropped]) [False, False, False, False, True, False]
-    Spec.assertEqWith s "each guest is shown itself as You and the other as a player" (fmap (fmap Link.who . (`Lobby.placesFor` allReady)) [0, 1]) [[Text.pack "Host", Text.pack "You", Text.pack "Player 3"], [Text.pack "Host", Text.pack "Player 2", Text.pack "You"]]
+    Spec.assertEqWith s "each guest is shown itself as You and the other as a player" (fmap (fmap Link.who . (`Lobby.placesFor` allReady)) [0, 1]) [[Text.pack "Player 1", Text.pack "You", Text.pack "Player 3"], [Text.pack "Player 1", Text.pack "Player 2", Text.pack "You"]]
     Spec.assertEqWith s "a guest dropping clears every ready flag" (Lobby.ready dropped, fmap Lobby.guestReady (Lobby.invites dropped)) (False, Map.fromList [(0, False), (1, False)])
 
   Spec.it s "a whole game in which the guest's seat is answered only through the remote exchange, and the guest sees only its own view" $ do
@@ -139,7 +139,7 @@ spec s registry = Spec.describe s "RemoteSeat" $ do
         seats = seat "sets/a/one" NonEmpty.:| [(Text.pack "sets/a/two", Text.pack "Name: Kamahl's Temper\n20 Forest\n"), seat "sets/a/three"]
         rematched = Lobby.rematch seats (Map.singleton 1 1) Map.empty
         told = Lobby.placesFor 1 rematched
-    Spec.assertEqWith s "every seat named" (fmap Link.who told) [Text.pack "Host", Text.pack "Bot 1", Text.pack "You"]
+    Spec.assertEqWith s "every seat named" (fmap (\p -> (Link.who p, Link.bot p)) told) [(Text.pack "Player 1", False), (Text.pack "Player 2", True), (Text.pack "You", False)]
     Spec.assertEqWith s "every deck named, the bot's among them" (fmap Link.deck told) [Text.pack "One (A)", Text.pack "Kamahl's Temper (A)", Text.pack "Three (A)"]
 
   Spec.it s "a game picked up from its seed and the replies so far asks what the game played through asked, and ends the same" $ do
