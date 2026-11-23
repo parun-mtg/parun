@@ -5,7 +5,6 @@
 module Parun.Web.Question where
 
 import qualified Control.Monad as Monad
-import qualified Data.Bifunctor as Bifunctor
 import qualified Data.Char as Char
 import qualified Data.Containers.ListUtils as ListUtils
 import qualified Data.Foldable as Foldable
@@ -436,7 +435,7 @@ side label prompt opened sheetOf entries =
       card = shown True
    in [ Element.el "aside" ["side"] [] $
           [ Element.el "section" ["prompt"] [Element.attr "aria-label" label] prompt,
-            Element.el "section" (["inspector"] <> ["empty" | Maybe.isNothing card]) [Element.attr "aria-label" (Text.pack "Card")] [Maybe.fromMaybe (Element.el "p" ["inspector-hint"] [] [Element.string "Tap a card to read it here."]) card]
+            Element.el "section" (["inspector"] <> ["empty" | Maybe.isNothing card]) [Element.attr "aria-label" (Text.pack "Card")] [Maybe.fromMaybe (Element.el "p" ["inspector-hint"] [] [Element.string "Select a card to read it here."]) card]
           ]
             <> entries
       ]
@@ -590,9 +589,12 @@ step request picked event typed = case event of
     | Just _ <- ordering request ->
         let placed = fmap snd (Set.toAscList picked)
          in MkPicking . Set.fromList . zip [0 ..] $ if i `elem` placed then filter (/= i) placed else placed <> [i]
+    -- A card put where it is taken out again; put in the other pile, it
+    -- moves there, last.
     | Just _ <- piles request ->
-        let placed = Set.toAscList picked
-            kept = if i `elem` fmap snd placed then [(k `mod` 2, j) | (k, j) <- placed, j /= i] else fmap (\(k, j) -> (k `mod` 2, j)) placed <> [(g, i)]
+        let placed = [(k `mod` 2, j) | (k, j) <- Set.toAscList picked]
+            others = filter ((/= i) . snd) placed
+            kept = if (g, i) `elem` placed then others else others <> [(g, i)]
          in MkPicking $ Set.fromList [(n * 2 + p, j) | (n, (p, j)) <- zip [0 ..] kept]
     | Set.member (g, i) picked -> MkPicking $ Set.delete (g, i) picked
     | Just True <- exclusive <$> (picker request >>= \chooser -> Maybe.listToMaybe (List.genericDrop g (groups chooser))) -> MkPicking . Set.insert (g, i) $ Set.filter ((/= g) . fst) picked
@@ -841,17 +843,17 @@ ordering request = do
     offer = Question.offer question
 
 -- | A scry, surveil or fateseal: its heading, the other pile's name, and the
--- cards, each placed on top or in the other pile in the order tapped, sent
+-- cards, each placed on top or in the other pile in the order chosen, sent
 -- as (other, top) (CR 701.22a, 701.25a, 701.29a).
 piles :: Request.Request -> Maybe ((Text.Text, Text.Text), [R.Reply])
 piles request = do
-  words' <- case Text.unpack (Question.kind question) of
-    "ChooseScry" -> Just ("Scry", "Bottom")
-    "ChooseSurveil" -> Just ("Surveil", "Graveyard")
-    "ChooseFateseal" -> Just ("Fateseal", "Bottom")
+  (what, other, whither) <- case Text.unpack (Question.kind question) of
+    "ChooseScry" -> Just ("Scry", "Bottom", "on the top or the bottom of your library")
+    "ChooseSurveil" -> Just ("Surveil", "Graveyard", "on top of your library or into your graveyard")
+    "ChooseFateseal" -> Just ("Fateseal", "Bottom", "on the top or the bottom of the library")
     _ -> Nothing
   from <- Protocol.field "from" (Question.offer question) >>= Protocol.arrayOf
-  pure (Bifunctor.bimap Text.pack Text.pack words', from)
+  pure ((Text.pack (what <> " " <> show (length from) <> ": put each card " <> whither <> "."), Text.pack other), from)
   where
     question = Request.question request
 
@@ -992,17 +994,29 @@ form request picked = case Text.unpack (Question.kind question) of
           : [button (MkToggle 0 i) (foldMap (\(k, _) -> Text.pack (show (k + 1) <> ". ")) (List.find ((== i) . snd) (Set.toList picked)) <> label) | (i, label) <- zip [0 ..] items]
             <> [Element.el "div" ["passes"] [] $ primary MkSubmit (Text.pack (if Set.null picked then "Keep this order" else "Done")) : [button MkClear (Text.pack "Start over") | not (Set.null picked)]]
   _
-    | Just ((what, other), from) <- piles request,
+    | Just ((title', other), from) <- piles request,
       Just shown <- Request.view request ->
-        let placed = Set.toAscList picked
-            at j = List.find ((== j) . snd) placed
-         in Html.element (Text.pack "h2") [] [Html.text $ what <> Text.pack ": tap each card for the top or the " <> Text.toLower other <> Text.pack " pile, in order. The first tapped for the top stays on top; any left untapped stay on top below those."]
-              : concat
-                [ case at j of
-                    Just (k, _) -> [button (MkToggle 0 j) (Text.pack (show (k `div` 2 + 1) <> ". ") <> (if even k then Text.pack "Top: " else other <> Text.pack ": ") <> Offer.listedName shown card)]
-                    Nothing -> [button (MkToggle 0 j) (Text.pack "Top: " <> Offer.listedName shown card), button (MkToggle 1 j) (other <> Text.pack ": " <> Offer.listedName shown card)]
-                | (j, card) <- zip [0 ..] from
-                ]
+        let placed = [(k `mod` 2, j) | (k, j) <- Set.toAscList picked]
+            -- The card's place in its pile, counted from 1 in the order chosen.
+            at j = lookup j [(j', (p, n)) | p <- [0, 1], (n, j') <- zip [1 :: Int ..] [c | (p', c) <- placed, p' == p]]
+            choice j p label =
+              let on = fmap fst (at j) == Just p
+               in Element.el
+                    "button"
+                    ["on" | on]
+                    [Element.attr "type" (Text.pack "button"), Element.attr "aria-pressed" (Text.pack (if on then "true" else "false")), Element.on "click" (MkToggle p j)]
+                    [Element.text (label <> (if on then foldMap (\(_, n) -> Text.pack (" " <> show n)) (at j) else Text.empty))]
+            row j card =
+              let name = Offer.listedName shown card
+               in Element.el
+                    "div"
+                    ["amount-row"]
+                    [Element.attr "role" (Text.pack "group"), Element.attr "aria-label" name]
+                    [Element.el "span" ["amount-label"] [] (Mana.rich name), Element.el "div" ["segmented"] [] [choice j 0 (Text.pack "Top"), choice j 1 other]]
+            order = Text.pack "Each pile takes the cards in the order you choose them: the first on top is the top card" <> (if other == Text.pack "Bottom" then Text.pack ", the last on the bottom the bottom card" else Text.empty) <> Text.pack ". Any you leave stay on top, below those."
+         in Html.element (Text.pack "h2") [] [Html.text title']
+              : [nudge order | length from > 1]
+                <> zipWith row [0 ..] from
                 <> [Element.el "div" ["passes"] [] $ primary MkSubmit (Text.pack (if Set.null picked then "Keep all on top" else "Done")) : [button MkClear (Text.pack "Start over") | not (Set.null picked)]]
   "ChooseCardName" -> [heading "Name a card.", Html.element (Text.pack "input") [Attribute.MkProperty (Text.pack "placeholder") (Text.pack "A card's name"), Attribute.MkProperty (Text.pack "data-clear") Text.empty, Attribute.MkOn (Text.pack "change") MkTyped] []]
   -- A yes or no about paying a cost (CR 118.12), Channel's life for mana
@@ -1034,7 +1048,7 @@ form request picked = case Text.unpack (Question.kind question) of
     | Just attackers <- Protocol.arrayOf offer,
       Just shown <- Request.view request ->
         let count = Set.size picked
-         in [ heading "Declare attackers: tap your creatures to attack with them.",
+         in [ heading "Declare attackers: choose the creatures to attack with.",
               Element.el "div" ["actions"] [] (toggles 0 (Natural.length attackers) [(i, Offer.listedName shown option) | (i, option) <- zip [0 ..] attackers]),
               Element.el "div" ["passes"] [] $
                 [primary MkSubmit (Text.pack (if count == 0 then "No attack" else "Attack with " <> show count))]
@@ -1095,7 +1109,7 @@ form request picked = case Text.unpack (Question.kind question) of
             <> [Element.el "div" ["passes"] [] [cancel withdrawal] | Just withdrawal <- [Question.withdraw question]]
   "DeclareBlockers"
     | Just chooser <- picker request ->
-        heading "Declare blockers: tap a creature of yours, then the attacker it blocks."
+        heading "Declare blockers: choose a creature of yours, then the attacker it blocks."
           : concat
             [ Element.el "h3" ["subhead"] [] (Mana.rich (title group))
                 : toggles g (most group) [(i, label) | (i, (_, label)) <- zip [0 ..] (options group)]
