@@ -107,17 +107,18 @@ pausedOn board = case board of
   Nothing -> MkPaused Nothing []
   Just b -> MkPaused (Just (PlayerView.turn b)) [(if SeatView.player s == PlayerView.viewer b then Text.pack "You" else Wording.player (SeatView.player s), SeatView.life s) | s <- PlayerView.seats b]
 
--- | Whether a choice starts a game, and so concedes a paused one.
+-- | Whether a choice starts a game at once, and so concedes a paused one;
+-- the lobby asks at its Start instead (Lobby.concedes).
 starts :: Choice -> Bool
 starts choice = case choice of
-  MkNewGame _ -> True
+  MkNewGame _ -> False
   MkBuildDeck -> False
   MkEditDeck _ -> False
   MkBrowseDecks _ -> False
   MkReplays -> False
   MkWatch _ -> False
   MkPlayOn _ _ -> True
-  MkPlayAgain _ -> True
+  MkPlayAgain _ -> False
 
 -- | What a tap on the top bar's section means here.
 navigate :: Bar.Section -> Event

@@ -63,25 +63,26 @@ spec s = Spec.describe s "Parun.Web.Home" $ do
     Spec.it s "takes the top bar's sections where the tiles go, and Home to itself" $ do
       Spec.assertEq s (fmap Home.navigate [minBound .. maxBound]) [Home.MkCancel, Home.MkChoose (Home.MkNewGame Nothing), Home.MkChoose (Home.MkBrowseDecks Nothing), Home.MkChoose Home.MkReplays]
 
-    Spec.it s "asks before Play concedes a paused game" $ do
-      Spec.assertEq s (Home.update (Home.navigate Bar.MkPlay) paused) (Home.MkStay paused {Home.confirming = Just (Home.MkNewGame Nothing)})
+    Spec.it s "opens the lobby from a paused game, which asks at Start" $ do
+      Spec.assertEq s (Home.update (Home.navigate Bar.MkPlay) paused) (Home.MkGo (Home.MkNewGame Nothing))
 
   Spec.describe s "update" $ do
     Spec.it s "goes where chosen while no game is paused" $ do
       Spec.assertEq s (Home.update (Home.MkChoose (Home.MkNewGame Nothing)) Home.new) (Home.MkGo (Home.MkNewGame Nothing))
 
-    Spec.it s "asks before conceding a paused game for a new one" $ do
-      let asked = paused {Home.confirming = Just (Home.MkNewGame Nothing)}
-      Spec.assertEqWith s "asks" (Home.update (Home.MkChoose (Home.MkNewGame Nothing)) paused) (Home.MkStay asked)
+    Spec.it s "asks before conceding a paused game to play on from a replay" $ do
+      let choice = Home.MkPlayOn (Replay.MkScenario (Text.pack "a-scenario")) 3
+          asked = paused {Home.confirming = Just choice}
+      Spec.assertEqWith s "asks" (Home.update (Home.MkChoose choice) paused) (Home.MkStay asked)
       Spec.assertEqWith s "the question shows" (has "Starting a new game concedes the one in progress." asked) True
+      Spec.assertEqWith s "labelled" (has "Concede and play on" asked) True
       Spec.assertEqWith s "the game offered back" (tapping "Resume" asked) (Just Home.MkResume)
-      Spec.assertEqWith s "confirmed" (Home.update Home.MkConfirm asked) (Home.MkGo (Home.MkNewGame Nothing))
+      Spec.assertEqWith s "confirmed" (Home.update Home.MkConfirm asked) (Home.MkGo choice)
       Spec.assertEqWith s "cancelled" (Home.update Home.MkCancel asked) (Home.MkStay paused)
 
-    Spec.it s "asks before conceding a paused game to play on from a replay" $ do
-      let asked = paused {Home.confirming = Just (Home.MkPlayOn (Replay.MkScenario (Text.pack "a-scenario")) 3)}
-      Spec.assertEqWith s "the question shows" (has "Concede and play on" asked) True
-      Spec.assertEqWith s "confirmed" (Home.update Home.MkConfirm asked) (Home.MkGo (Home.MkPlayOn (Replay.MkScenario (Text.pack "a-scenario")) 3))
+    Spec.it s "opens the lobby from a paused game without asking, which asks at Start" $ do
+      Spec.assertEqWith s "new game" (Home.update (Home.MkChoose (Home.MkNewGame Nothing)) paused) (Home.MkGo (Home.MkNewGame Nothing))
+      Spec.assertEqWith s "play again" (Home.update (Home.MkChoose (Home.MkPlayAgain (pure (Text.pack "a-deck")))) paused) (Home.MkGo (Home.MkPlayAgain (pure (Text.pack "a-deck"))))
 
     Spec.it s "opens replays and the builder from a paused game without asking" $ do
       Spec.assertEqWith s "replays" (Home.update (Home.MkChoose Home.MkReplays) paused) (Home.MkGo Home.MkReplays)

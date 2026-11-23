@@ -1030,7 +1030,8 @@ main.home .recent-games,
   }
 }
 
-main.home .confirm {
+main.home .confirm,
+main.lobby .confirm {
   padding: 24px;
   display: flex;
   flex-direction: column;
@@ -1038,7 +1039,8 @@ main.home .confirm {
   text-align: center;
 }
 
-main.home .confirm .choices {
+main.home .confirm .choices,
+main.lobby .confirm .choices {
   display: flex;
   flex-wrap: wrap;
   justify-content: center;
