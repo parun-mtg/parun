@@ -28,7 +28,9 @@ import qualified Parun.Web.Mana as Mana
 
 -- | A line of the log.
 data Entry
-  = -- | A turn began: its number, and whose it is.
+  = -- | CR 103: the game began, before its first turn.
+    MkPregame
+  | -- | A turn began: its number, and whose it is.
     MkTurn Natural PlayerId.PlayerId
   | -- | Something happened; minor when the board already shows it.
     MkEvent Weight Text.Text
@@ -42,19 +44,37 @@ data Weight
 -- | The entries of the view the seat has not read yet, and its marks (how
 -- far it has read each game's log: the turn, and how many of that turn's
 -- entries) moved past them: the rest of last turn's, where the seat last read during it,
--- then a heading for this turn and its entries.
+-- then a heading for this turn and its entries, those the turn's log holds
+-- from before the first turn (CR 103) under a heading of their own.
 unseen :: Map.Map (PlayerId.PlayerId, Natural) (Natural, Natural) -> PlayerView.PlayerView -> (Map.Map (PlayerId.PlayerId, Natural) (Natural, Natural), [Entry])
 unseen seen view =
   let mark = (PlayerView.viewer view, PlayerView.game view)
       turn = PlayerView.turn view
       entries = PlayerView.witnessed view
-      heading = MkTurn turn (PlayerView.active view)
+      before = pregame view
+      (opening, played) = List.genericSplitAt before entries
+      -- This turn's entries from the nth on, its heading where the turn began.
+      from n = told view (List.genericDrop n opening) <> [MkTurn turn (PlayerView.active view) | PlayerView.begun view, n <= before] <> told view (List.genericDrop (n `less` before) played)
       missed = case Map.lookup mark seen of
         Just (t, n)
-          | t == turn -> told view (List.genericDrop n entries)
-          | t + 1 == turn -> told view (List.genericDrop n (PlayerView.witnessedLastTurn view)) <> [heading] <> told view entries
-        _ -> heading : told view entries
+          | t == turn -> from n
+          | t + 1 == turn -> told view (List.genericDrop n (PlayerView.witnessedLastTurn view)) <> from 0
+        _ -> [MkPregame | before > 0 || not (PlayerView.begun view)] <> from 0
    in (Map.insert mark (turn, Natural.length entries) seen, missed)
+  where
+    less a b = if a > b then a - b else 0
+
+-- | How many of the turn's entries are from before the first turn (CR 103.8,
+-- as Turn.pregame reads it): all of them until it begins, then those ahead
+-- of its first step's.
+pregame :: PlayerView.PlayerView -> Natural
+pregame view
+  | not (PlayerView.begun view) = Natural.length (PlayerView.witnessed view)
+  | otherwise = Natural.length (takeWhile (not . isStep . LoggedEvent.event) (PlayerView.witnessed view))
+  where
+    isStep e = case e of
+      GameEvent.StepBegan {} -> True
+      _ -> False
 
 -- | The entries as Wording.events tells them, each run of minor or major
 -- ones told together so draws still group.
@@ -76,6 +96,7 @@ minor logged = case LoggedEvent.event logged of
 -- summary; headings as "Turn 5: Player 2".
 sentence :: PlayerId.PlayerId -> Entry -> Text.Text
 sentence viewer entry = case entry of
+  MkPregame -> Text.pack "Before the first turn"
   MkTurn n active -> Text.pack ("Turn " <> show n <> ": ") <> (if active == viewer then Text.pack "your turn" else Wording.player active <> Text.pack "'s turn")
   MkEvent _ t -> t
 
@@ -87,6 +108,7 @@ headed entry xs = [x | (x, next) <- zip xs (fmap Just (drop 1 xs) <> [Nothing]),
 -- | Whether an entry is a heading.
 isTurn :: Entry -> Bool
 isTurn entry = case entry of
+  MkPregame -> True
   MkTurn _ _ -> True
   MkEvent _ _ -> False
 
@@ -95,6 +117,7 @@ isTurn entry = case entry of
 -- to that object's sheet.
 item :: PlayerId.PlayerId -> Maybe (Map.Map Text.Text ObjectId.ObjectId, ObjectId.ObjectId -> msg) -> Bool -> Entry -> Html.Html msg
 item viewer linked fresh entry = case entry of
+  MkPregame -> Element.el "li" ["turn"] [] [Element.text (sentence viewer entry)]
   MkTurn _ _ -> Element.el "li" ["turn"] [] [Element.text (sentence viewer entry)]
   MkEvent w t -> Element.el "li" (["fresh" | fresh] <> ["minor" | w == MkMinor]) [] (maybe (Mana.rich t) (\(known, reading) -> linking known reading t) linked)
 
@@ -109,6 +132,7 @@ grouped viewer linked lit entries =
       -- Runs each starting at a heading, the first perhaps without one.
       runs = List.groupBy (\_ (_, _, e) -> not (isTurn e)) numbered
       heading e = case e of
+        MkPregame -> [Element.el "h3" ["log-turn-heading"] [] [Element.text (sentence viewer e)]]
         MkTurn n active -> [Element.el "h3" ["log-turn-heading"] [] [Element.text (Text.pack ("Turn " <> show n <> " \x00b7 ") <> (if active == viewer then Text.pack "You" else Wording.player active))]]
         MkEvent _ _ -> []
       run items = case items of
@@ -155,4 +179,4 @@ newestFirst entries =
 
 -- | The events among the entries, oldest first.
 events :: Seq.Seq Entry -> [Text.Text]
-events = Foldable.foldr (\entry rest -> case entry of MkEvent _ t -> t : rest; MkTurn _ _ -> rest) []
+events = Foldable.foldr (\entry rest -> case entry of MkEvent _ t -> t : rest; MkTurn _ _ -> rest; MkPregame -> rest) []

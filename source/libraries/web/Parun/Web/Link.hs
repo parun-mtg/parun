@@ -141,6 +141,7 @@ decode build line = do
 -- | A log entry on the wire.
 entryValue :: Log.Entry -> Value.Value
 entryValue e = case e of
+  Log.MkPregame -> Value.object [Value.pair "pregame" (Value.boolean True)]
   Log.MkTurn n active -> Value.object [Value.pair "turn" (Value.integer (toInteger n)), Value.pair "active" (Codec.encode Codec.PlayerId.codec active)]
   Log.MkEvent weight said -> Value.object [Value.pair "event" (Value.text said), Value.pair "minor" (Value.boolean (weight == Log.MkMinor))]
 
@@ -148,9 +149,10 @@ entryValue e = case e of
 entryOf :: Value.Value -> Either Text.Text Log.Entry
 entryOf value = do
   fields <- Common.asObject value
-  case Common.optionalField "turn" fields of
-    Just n -> Log.MkTurn <$> Codec.decode Common.natural n <*> (Common.field "active" fields >>= Codec.decode Codec.PlayerId.codec)
-    Nothing -> flip Log.MkEvent <$> (Common.field "event" fields >>= Common.asText) <*> (Common.field "minor" fields >>= Common.asBoolean >>= \minor -> pure (if minor then Log.MkMinor else Log.MkMajor))
+  case (Common.optionalField "pregame" fields, Common.optionalField "turn" fields) of
+    (Just _, _) -> Right Log.MkPregame
+    (Nothing, Just n) -> Log.MkTurn <$> Codec.decode Common.natural n <*> (Common.field "active" fields >>= Codec.decode Codec.PlayerId.codec)
+    (Nothing, Nothing) -> flip Log.MkEvent <$> (Common.field "event" fields >>= Common.asText) <*> (Common.field "minor" fields >>= Common.asBoolean >>= \minor -> pure (if minor then Log.MkMinor else Log.MkMajor))
 
 -- | What a page has seen (Ending.Seen) on the wire.
 seenValue :: Ending.Seen -> Value.Value

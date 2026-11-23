@@ -27,7 +27,7 @@ spec s = Spec.describe s "Parun.Web.Link" $ do
               Link.MkReady True,
               Link.MkReady False,
               Link.MkStart (PlayerId.MkPlayerId 2) Ending.unseen,
-              Link.MkStart (PlayerId.MkPlayerId 1) (Ending.MkSeen (Map.fromList [((PlayerId.MkPlayerId 1, 0), (3, 2))]) (Map.singleton (PlayerId.MkPlayerId 1) (Seq.fromList [Log.MkTurn 3 (PlayerId.MkPlayerId 0), Log.MkEvent Log.MkMinor (Text.pack "Grizzly Bears enters.")])) (Seq.fromList [(1, [(PlayerId.MkPlayerId 0, 20), (PlayerId.MkPlayerId 1, 20)]), (3, [(PlayerId.MkPlayerId 0, 18), (PlayerId.MkPlayerId 1, 20)])])),
+              Link.MkStart (PlayerId.MkPlayerId 1) (Ending.MkSeen (Map.fromList [((PlayerId.MkPlayerId 1, 0), (3, 2))]) (Map.singleton (PlayerId.MkPlayerId 1) (Seq.fromList [Log.MkPregame, Log.MkTurn 3 (PlayerId.MkPlayerId 0), Log.MkEvent Log.MkMinor (Text.pack "Grizzly Bears enters.")])) (Seq.fromList [(1, [(PlayerId.MkPlayerId 0, 20), (PlayerId.MkPlayerId 1, 20)]), (3, [(PlayerId.MkPlayerId 0, 18), (PlayerId.MkPlayerId 1, 20)])])),
               Link.MkAsk request,
               Link.MkDeciding (PlayerId.MkPlayerId 2),
               Link.MkAnswer (R.Object [(Text.pack "action", R.Text (Text.pack "Pass"))]),

@@ -633,7 +633,7 @@ spec s registry = Spec.describe s "PlayerView" $ do
               S.on S.precombatMain S.alice (answering "Shuffle" (fmap (\n -> "$bears" <> show n) [1 :: Int .. 29]))
             ]
     gs <- S.play s registry setup script S.priorityGame
-    Spec.assertEqWith s "alice's log" (loggedFor S.alice gs) (fmap Text.pack ["You get mana from Forest, Forest and Forest.", "You cast Civic Wayfinder.", "Civic Wayfinder moves from the stack to the battlefield.", "You search your library.", "You reveal Forest.", "Forest moves from your library to your hand.", "Your library is shuffled."])
+    Spec.assertEqWith s "alice's log" (loggedFor S.alice gs) (fmap Text.pack ["You get mana from Forest, Forest and Forest.", "You cast Civic Wayfinder.", "Civic Wayfinder moves from the stack to the battlefield.", "Civic Wayfinder's ability triggers: \"When Civic Wayfinder enters, you may search your library for a basic land card, reveal it, put it into your hand, then shuffle.\"", "You search your library.", "You reveal Forest.", "Forest moves from your library to your hand.", "Your library is shuffled."])
   Spec.it s "CR 400.2 / 701.23a a land searched out onto the battlefield is witnessed by both seats as it arrives, the rest of the library by neither" $ do
     let mine =
           (S.battlefield S.alice (fmap (uncurry S.settled) [("f1", "Forest"), ("f2", "Forest"), ("f3", "Forest")]))

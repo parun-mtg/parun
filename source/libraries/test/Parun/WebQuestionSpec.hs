@@ -652,7 +652,8 @@ spec s registry = Spec.describe s "WebQuestion" $ do
   Spec.it s "the log heads each turn the seat reads into, once" $ do
     let view = PlayerView.viewFor S.alice (Setup.emptyGame S.bothPlayers)
         (marks, first) = Log.unseen Map.empty view
-    Spec.assertEqWith s "heading" (take 1 first) [Log.MkTurn (PlayerView.Type.turn view) (PlayerView.Type.active view)]
+    -- An empty game has yet to begin its first turn (CR 103.8).
+    Spec.assertEqWith s "heading" (take 1 first) [Log.MkPregame]
     Spec.assertEqWith s "read" (snd (Log.unseen marks view)) []
     let event = Log.MkEvent Log.MkMajor . Text.pack
         turn n = Log.MkTurn n S.alice
@@ -1146,8 +1147,25 @@ replaySpec s registry = Spec.describe s "WebQuestion" . Spec.describe s "replay"
         page = Html.toText (Replay.view frame)
         logged = Replay.logOf (fmap seen starts <> [seen at])
     Spec.assertEqWith s "the turns" [n | Log.MkTurn n _ <- Foldable.toList logged] [2, 3, 4]
-    Spec.assertEqWith s "the events" (Log.events logged) (fmap Text.pack ["Lavaborn Muse deals 3 damage to you.", "You draw a card.", "Player 1 draws a card.", "You draw a card."])
+    Spec.assertEqWith s "the events" (Log.events logged) (fmap Text.pack ["Lavaborn Muse's ability triggers: \"At the beginning of each opponent's upkeep, if that player has two or fewer cards in hand, Lavaborn Muse deals 3 damage to that player.\"", "Lavaborn Muse deals 3 damage to you.", "You draw a card.", "Player 1 draws a card.", "You draw a card."])
     Spec.assertBool s (Text.isInfixOf (Text.pack "Turn 2 \x00b7 You") page) "turn 2 on the page"
+
+  Spec.it s "CR 603.3 the log tells a trigger, what it says and its targets" $ do
+    let named = "cavalry-drillmaster-gives-plus-two-and-first-strike-as-it-enters"
+    -- Entry 2 asks for the trigger's target; entry 4 follows its resolution.
+    views <- traverse (fmap (PlayerView.viewFor S.alice . Stop.state) . replayed s registry named) [2, 4]
+    Spec.assertEqWith
+      s
+      "the events"
+      (Log.events (Replay.logOf views))
+      ( fmap
+          Text.pack
+          [ "You cast Cavalry Drillmaster.",
+            "Cavalry Drillmaster moves from the stack to the battlefield.",
+            "Cavalry Drillmaster's ability triggers: \"When Cavalry Drillmaster enters, target creature gets +2/+0 and gains first strike until end of turn.\"",
+            "Cavalry Drillmaster's ability targets Grizzly Bears."
+          ]
+      )
 
   Spec.it s "CR 730.1a a replayed subgame position is marked as one" $ do
     let named = "game/cr-730-1b-730-3-gameplay-alice-casts-a-subgame-spell-bob-decks-bob-loses-3"
