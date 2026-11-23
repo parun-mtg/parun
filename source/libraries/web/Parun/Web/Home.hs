@@ -151,7 +151,8 @@ view home =
                   "div"
                   ["choices"]
                   []
-                  [ Element.button ["primary"] MkConfirm [Element.string (confirmLabel choice)],
+                  [ Element.button ["primary", "resume"] MkResume [Element.string "Resume"],
+                    Element.button [] MkConfirm [Element.string (confirmLabel choice)],
                     Element.button [] MkCancel [Element.string "Cancel"]
                   ]
               ]
