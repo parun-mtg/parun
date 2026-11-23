@@ -633,6 +633,12 @@ body.busy #app {
   pointer-events: none;
 }
 
+/* But a replay's steps, which the engine reads from where it then stands,
+   so taps queued meanwhile add up (Parun.Web.Replay's MkStep). */
+body.busy #app .step-buttons button {
+  pointer-events: auto;
+}
+
 /* The settings button, the page's, a bar's or the hand-off's, turns
    while the engine works, once it takes a moment. */
 body.busy #settings-button > svg,

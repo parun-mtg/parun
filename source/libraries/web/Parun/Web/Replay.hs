@@ -45,8 +45,9 @@ import qualified Parun.Web.Question as Web.Question
 
 -- | What the replay page sends.
 data Event
-  = -- | Goes to this position.
-    MkGo Natural
+  = -- | Steps this way from the position shown when the engine reads it, so
+    -- taps queued while it works add up (`stepTo`).
+    MkStep Step
   | -- | Goes to the position the scrubber's value names.
     MkScrub
   | -- | Lets the replay step on by itself (True), or pauses it.
@@ -76,6 +77,29 @@ data Event
   | MkConfirmForget
   | MkCancelForget
   deriving (Eq, Show)
+
+-- | Where a step button goes from a position.
+data Step
+  = MkToStart
+  | -- | To the start of the turn the position is in, or of the one before at its start.
+    MkTurnBack
+  | MkStepBack
+  | MkStepOn
+  | -- | To the start of the next turn, or the end when no turn begins after.
+    MkTurnOn
+  | MkToEnd
+  deriving (Bounded, Enum, Eq, Show)
+
+-- | The position a step goes to from `at`, of `count` positions, turns
+-- beginning at `starts`.
+stepTo :: [Natural] -> Natural -> Natural -> Step -> Natural
+stepTo starts count at way = case way of
+  MkToStart -> 0
+  MkTurnBack -> Maybe.fromMaybe 0 (Maybe.listToMaybe (reverse (filter (< at) starts)))
+  MkStepBack -> Natural.minusSaturating at 1
+  MkStepOn -> min count (at + 1)
+  MkTurnOn -> Maybe.fromMaybe count (List.find (> at) starts)
+  MkToEnd -> count
 
 -- | What a replay replays.
 data Source
@@ -227,10 +251,10 @@ controls frame =
   let at = position frame
       count = positions frame
       starts = Set.fromList (turns frame)
-      turnBack = Maybe.fromMaybe 0 (Maybe.listToMaybe (reverse (filter (< at) (turns frame))))
+      turnBack = stepTo (turns frame) count at MkTurnBack
       later = List.find (> at) (turns frame)
       -- Punctuation keys, since page.js takes L for the log.
-      step label caption icon back hint key target enabled =
+      step label caption icon back hint key way enabled =
         Element.el
           "button"
           []
@@ -238,7 +262,7 @@ controls frame =
               Element.attr "aria-label" (Text.pack label),
               Element.attr "aria-keyshortcuts" (Text.pack key),
               Element.attr "title" (Text.pack (hint <> " (" <> key <> ")")),
-              Element.on "click" (MkGo target)
+              Element.on "click" (MkStep way)
             ]
               <> [Element.attr "disabled" Text.empty | not enabled]
           )
@@ -273,12 +297,12 @@ controls frame =
               "div"
               ["step-buttons"]
               []
-              [ step "First position" "Start" Icon.MkSkip True "To the start of the replay" "<" 0 (at > 0),
-                step "Previous turn" "Turn" Icon.MkTurn True (if turnBack == 0 then "To the start of the first turn" else if Set.member at starts then "To the start of the turn before" else "To the start of this turn") "[" turnBack (at > 0),
-                step "Previous position" "Step" Icon.MkStep True "Back one step" "," (Natural.minusSaturating at 1) (at > 0),
-                step "Next position" "Step" Icon.MkStep False "On one step" "." (min count (at + 1)) (at < count),
-                step "Next turn" "Turn" Icon.MkTurn False (if Maybe.isJust later then "To the start of the next turn" else "To the end: no turn begins after this one") "]" (Maybe.fromMaybe count later) (at < count),
-                step "Last position" "End" Icon.MkSkip False "To the end of the replay" ">" count (at < count)
+              [ step "First position" "Start" Icon.MkSkip True "To the start of the replay" "<" MkToStart (at > 0),
+                step "Previous turn" "Turn" Icon.MkTurn True (if turnBack == 0 then "To the start of the first turn" else if Set.member at starts then "To the start of the turn before" else "To the start of this turn") "[" MkTurnBack (at > 0),
+                step "Previous position" "Step" Icon.MkStep True "Back one step" "," MkStepBack (at > 0),
+                step "Next position" "Step" Icon.MkStep False "On one step" "." MkStepOn (at < count),
+                step "Next turn" "Turn" Icon.MkTurn False (if Maybe.isJust later then "To the start of the next turn" else "To the end: no turn begins after this one") "]" MkTurnOn (at < count),
+                step "Last position" "End" Icon.MkSkip False "To the end of the replay" ">" MkToEnd (at < count)
               ],
             let on = playing frame && at < count
              in Element.el

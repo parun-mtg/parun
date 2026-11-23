@@ -1,5 +1,6 @@
 module Parun.Web.ReplaySpec where
 
+import qualified Data.Foldable as Foldable
 import qualified Data.Map.Strict as Map
 import qualified Data.Maybe as Maybe
 import qualified Data.Sequence as Seq
@@ -34,8 +35,21 @@ spec s = Spec.describe s "Parun.Web.Replay" $ do
 
     Spec.it s "steps a turn at a time, to the turn's first position or the end" $ do
       let tapped label at = let page = Replay.view frame {Replay.position = at} in step label page >>= \path -> Html.handler (Text.pack "click") path page
-      Spec.assertEqWith s "next turn" (fmap (tapped "Next turn") [0, 1, 2]) (fmap (Just . Replay.MkGo) [2, 2, 3])
-      Spec.assertEqWith s "previous turn" (fmap (tapped "Previous turn") [1, 2, 3]) (fmap (Just . Replay.MkGo) [0, 0, 2])
+          going label at =
+            tapped label at >>= \event -> case event of
+              Replay.MkStep way -> Just (Replay.stepTo (Replay.turns frame) (Replay.positions frame) at way)
+              _ -> Nothing
+      Spec.assertEqWith s "next turn" (fmap (going "Next turn") [0, 1, 2]) (fmap Just [2, 2, 3])
+      Spec.assertEqWith s "previous turn" (fmap (going "Previous turn") [1, 2, 3]) (fmap Just [0, 0, 2])
+
+    Spec.it s "steps from where it stands when read, so taps queued meanwhile add up" $ do
+      let from :: Natural -> [Replay.Step] -> Natural
+          from = Foldable.foldl' (Replay.stepTo [0, 2, 4] 6)
+      Spec.assertEqWith s "three steps on" (from 1 (replicate 3 Replay.MkStepOn)) 4
+      Spec.assertEqWith s "two turns on" (from 1 [Replay.MkTurnOn, Replay.MkTurnOn]) 4
+      Spec.assertEqWith s "two turns back" (from 5 [Replay.MkTurnBack, Replay.MkTurnBack]) 2
+      Spec.assertEqWith s "held at the ends" (from 5 [Replay.MkStepOn, Replay.MkStepOn], from 1 [Replay.MkStepBack, Replay.MkStepBack]) (6, 0)
+      Spec.assertEqWith s "the ends" (from 3 [Replay.MkToEnd], from 3 [Replay.MkToStart]) (6, 0)
 
     Spec.it s "tells its steps apart: an icon over a word, and a tooltip saying where each goes" $ do
       let page at = Replay.view frame {Replay.position = at, Replay.turns = [0, 2, 4], Replay.positions = 6}
@@ -60,11 +74,11 @@ spec s = Spec.describe s "Parun.Web.Replay" $ do
       Spec.assertBool s (Text.isInfixOf (Text.pack ">Step 1 of 3<") page) "position"
       Spec.assertBool s (Text.isInfixOf (Text.pack "role=\"alert\">the entry was never reached") page) "failure"
 
-    Spec.it s "sends a step's position and a seat when tapped" $ do
+    Spec.it s "sends a step's way and a seat when tapped" $ do
       let page = Replay.view frame {Replay.position = 1}
           tapped name label = Html.labelled (Text.pack name) (Text.pack label) page >>= \path -> Html.handler (Text.pack "click") path page
           stepped label = step label page >>= \path -> Html.handler (Text.pack "click") path page
-      Spec.assertEq s (stepped "Next position", stepped "Previous position", tapped "button" "bob (Player 2)") (Just (Replay.MkGo 2), Just (Replay.MkGo 0), Just (Replay.MkSeat (PlayerId.MkPlayerId 1)))
+      Spec.assertEq s (stepped "Next position", stepped "Previous position", tapped "button" "bob (Player 2)") (Just (Replay.MkStep Replay.MkStepOn), Just (Replay.MkStep Replay.MkStepBack), Just (Replay.MkSeat (PlayerId.MkPlayerId 1)))
 
     Spec.it s "plays itself until the end, marking the page for page.js to step it" $ do
       let page playing at = Replay.view frame {Replay.playing = playing, Replay.position = at}

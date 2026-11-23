@@ -90,10 +90,14 @@ data Exit
 -- it ended at the end. The state at each position a turn begins is kept
 -- once reached, for the log of every later position (Web.Replay.earlier),
 -- and what each run keeps for the next to resume from (Scenario.replay).
+-- While no tap waits, the runs go on ahead a position at a time, so a
+-- later position is kept before it is asked for; a step's taps
+-- queued while the engine works add up to one move.
 viewer :: Browser.Page Screen.Event -> (Natural -> IO ()) -> Registry.Registry Identity.Identity -> Text.Text -> Maybe History.Game -> Scenario.Type.Scenario -> Natural -> IO Exit
 viewer page moved registry name played scenario given = do
   kept <- IORef.newIORef Map.empty
   resumable <- IORef.newIORef Scenario.keeping
+  furthest <- IORef.newIORef 0
   let count = Natural.length (Scenario.Type.timeline scenario)
       labelled = seatsOf scenario
       names = foldMap History.seatNames played
@@ -109,8 +113,25 @@ viewer page moved registry name played scenario given = do
         (after, stop) <- Exception.evaluate (Identity.runIdentity $ Scenario.replay registry before (Just at) scenario)
         IORef.writeIORef resumable after
         Monad.when (at `elem` starts) (either (const (pure ())) (IORef.modifyIORef' kept . Map.insert at . Stop.state) stop)
+        -- A failure fails every later position too: none is left to run.
+        IORef.modifyIORef' furthest (max (either (const count) (const at) stop))
         pure stop
       reach at = moved at >> run at
+      -- The run a few positions past the furthest any reached, no further
+      -- than the next turn's start (which it keeps), if one is left:
+      -- whether it ran. Each run resumes at a whole step's start, so one a
+      -- position at a time would run a step's first entries again for each.
+      ahead = do
+        reached <- IORef.readIORef furthest
+        if reached >= count then pure False else True <$ run (min (reached + 8) (Web.Replay.stepTo starts count reached Web.Replay.MkTurnOn))
+      -- The next tap, the runs going on ahead while none waits.
+      awaiting = do
+        waiting <- Browser.pending page
+        ran <- if waiting then pure False else ahead
+        if ran then Browser.pause >> awaiting else Browser.next page
+      stepOf event = case event of
+        Screen.MkReplay (Web.Replay.MkStep way) -> Just way
+        _ -> Nothing
       -- The states at the positions before this one where a turn begins.
       earlierOf at = fmap Maybe.catMaybes . Monad.forM (filter (< at) starts) $ \s -> do
         known <- Map.lookup s <$> IORef.readIORef kept
@@ -119,7 +140,7 @@ viewer page moved registry name played scenario given = do
         earlier <- earlierOf at
         let frame = (frameOf lookUp names name scenario seats count playing at stop viewing reading) {Web.Replay.earlier = fmap (PlayerView.Engine.viewFor viewing) earlier, Web.Replay.outcome = outcome}
         Browser.display page . fmap Screen.MkReplay $ Web.Replay.view frame
-        (tapped, value) <- Browser.next page
+        (tapped, value) <- awaiting
         let moveTo target = if target == at then go playing at stop viewing Nothing else reach target >>= \next -> go (playing && target < count) target next viewing Nothing
             readingOf object pinned = do
               board <- Web.Replay.board frame
@@ -128,7 +149,9 @@ viewer page moved registry name played scenario given = do
             held = maybe False Web.Card.pinned reading
         case tapped of
           Screen.MkReplay event -> case event of
-            Web.Replay.MkGo target -> moveTo (min count target)
+            Web.Replay.MkStep way -> do
+              queued <- Browser.takeQueued page stepOf
+              moveTo (Foldable.foldl' (Web.Replay.stepTo starts count) at (way : queued))
             Web.Replay.MkScrub -> maybe (go playing at stop viewing reading) (moveTo . min count) (Read.readMaybe (Text.unpack value))
             Web.Replay.MkPlay on -> go (on && at < count) at stop viewing reading
             Web.Replay.MkSeat pid -> go playing at stop pid reading
