@@ -158,7 +158,7 @@ data Frame = MkFrame
   { -- | The replay's title, a scenario's from its description (titled).
     name :: Text.Text,
     description :: Text.Text,
-    -- | Each seat, and the name the scenario gives it.
+    -- | Each seat, and its name (named).
     seats :: [(PlayerId.PlayerId, Text.Text)],
     viewer :: PlayerId.PlayerId,
     -- | How many entries the run has taken: from 0 to `positions`.
@@ -357,7 +357,21 @@ stop frame asked =
 -- | A seat's name as the table shows it to the seat viewed as: "You" for
 -- that seat, else its number (Parun.Web.Board.name).
 tableName :: Frame -> PlayerId.PlayerId -> Text.Text
-tableName frame pid = if pid == viewer frame then Text.pack "You" else Board.name pid
+tableName frame = nameTo (viewer frame)
+
+-- | A seat's name as the table shows it to the seat `viewed`.
+nameTo :: PlayerId.PlayerId -> PlayerId.PlayerId -> Text.Text
+nameTo viewed pid = if pid == viewed then Text.pack "You" else Board.name pid
+
+-- | Each seat by the name `names` gives its label, else by its number
+-- (Parun.Web.Board.name), never by the label a scenario writes (#9696).
+named :: Map.Map Text.Text Text.Text -> [(PlayerId.PlayerId, Text.Text)] -> [(PlayerId.PlayerId, Text.Text)]
+named names labelled = [(pid, Map.findWithDefault (Board.name pid) label names) | (pid, label) <- labelled]
+
+-- | Each seat's label, mapped to its name as the table shows it to the seat
+-- `viewed` (nameTo): what a scenario's entry lines call it (lineOf).
+tableNames :: PlayerId.PlayerId -> [(PlayerId.PlayerId, Text.Text)] -> Map.Map Text.Text Text.Text
+tableNames viewed labelled = Map.fromList [(label, nameTo viewed pid) | (pid, label) <- labelled]
 
 seatName :: Frame -> PlayerId.PlayerId -> Text.Text
 seatName frame pid = maybe (Wording.player pid) snd (List.find ((== pid) . fst) (seats frame))
