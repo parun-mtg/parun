@@ -22,14 +22,16 @@ import qualified Parun.Web.Wire as Wire
 -- | The view the page shows, the events its handlers took that no one
 -- has waited for yet, each with the value of the element it came from, the
 -- data chunks that arrived since last read, what the page's data
--- channels said since, and what takes a tap while a channel is waited on
--- (meanwhile).
+-- channels said since, what takes a tap while a channel is waited on
+-- (meanwhile), and whether what they say is held for a game set aside
+-- (aside).
 data Page msg = MkPage
   { shown :: IORef.IORef (Maybe (Html.Html msg)),
     taken :: IORef.IORef (Seq.Seq (msg, Text.Text)),
     arrived :: IORef.IORef (Seq.Seq Arrival),
     heard :: IORef.IORef (Seq.Seq Linked),
-    tapped :: IORef.IORef (Maybe ((msg, Text.Text) -> IO ()))
+    tapped :: IORef.IORef (Maybe ((msg, Text.Text) -> IO ())),
+    held :: IORef.IORef Bool
   }
 
 -- | What a data channel to another browser said (page.js), by the number
@@ -59,7 +61,7 @@ data Input msg
 -- | A page showing nothing yet, its events listened for.
 mount :: IO (Page msg)
 mount = do
-  page <- MkPage <$> IORef.newIORef Nothing <*> IORef.newIORef Seq.empty <*> IORef.newIORef Seq.empty <*> IORef.newIORef Seq.empty <*> IORef.newIORef Nothing
+  page <- MkPage <$> IORef.newIORef Nothing <*> IORef.newIORef Seq.empty <*> IORef.newIORef Seq.empty <*> IORef.newIORef Seq.empty <*> IORef.newIORef Nothing <*> IORef.newIORef False
   listen =<< wrap (dispatch page)
   pure page
 
@@ -187,9 +189,12 @@ collect page = do
   let arrival n = maybe (MkArrived n) MkFailed (Text.stripPrefix (Text.pack "!") n)
   Monad.unless (null names) . IORef.atomicModifyIORef' (arrived page) $ \cs -> (cs <> Seq.fromList (fmap arrival names), ())
 
--- | What a data channel said first since last asked, without waiting.
+-- | What a data channel said first since last asked, without waiting;
+-- nothing while a game is set aside (aside).
 takeLinked :: Page msg -> IO (Maybe Linked)
-takeLinked page = takeLinkedWith page (const True)
+takeLinked page = do
+  holding <- IORef.readIORef (held page)
+  if holding then pure Nothing else takeLinkedWith page (const True)
 
 -- | What this data channel said first since last asked, waiting for it;
 -- what the others say stays for later, and each tap taken meanwhile goes to
@@ -212,6 +217,15 @@ meanwhile :: Page msg -> ((msg, Text.Text) -> IO ()) -> IO a -> IO a
 meanwhile page handle action = do
   before <- IORef.atomicModifyIORef' (tapped page) $ \h -> (Just handle, h)
   action `Exception.finally` IORef.writeIORef (tapped page) before
+
+-- | Runs `action` with a game set aside: what every data channel says is
+-- held for the game (takeLinked), and no tap goes to its waiting
+-- (meanwhile), so the home screen can run while another browser decides.
+aside :: Page msg -> IO a -> IO a
+aside page action = do
+  before <- IORef.atomicModifyIORef' (held page) (\h -> (True, h))
+  waiter <- IORef.atomicModifyIORef' (tapped page) (\h -> (Nothing, h))
+  action `Exception.finally` (IORef.writeIORef (held page) before >> IORef.writeIORef (tapped page) waiter)
 
 takeLinkedWith :: Page msg -> (Linked -> Bool) -> IO (Maybe Linked)
 takeLinkedWith page wanted = do
