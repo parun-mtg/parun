@@ -116,16 +116,16 @@ spec s registry = Spec.describe s "RemoteSeat" $ do
     Spec.assertEqWith s "finished" (Monad.void outcome) (Right ())
     Spec.assertEqWith s "rejoined once" (rejoins wire) 1
     let firstTurn = fmap fst . Maybe.listToMaybe
-    case sentAgain wire of
-      [Link.MkMatchup again, Link.MkStart seat before] -> do
-        Spec.assertEqWith s "the guest is sent the match-up, then its seat, again" (again, seat) (played, S.bob)
-        Spec.assertBool s (fmap fst (Seq.lookup (Seq.length (Ending.sampledLives before) - 1) (Ending.sampledLives before)) > Just 1) "setup: the guest rejoins past turn 1"
-      other -> Spec.assertBool s False ("the guest is sent again: " <> show other)
     -- The guest's page reloaded as it rejoined and starts its log from what
     -- its seat was sent (#9669): the whole game, each entry once.
     let own = Map.findWithDefault Ending.unseen S.bob (pageSeen wire)
     Spec.assertEqWith s "the rejoined guest's log opens on turn 1" (Seq.lookup 0 (Ending.loggedFor S.bob own)) (Just (Log.MkTurn 1 S.alice))
     Spec.assertEqWith s "the rejoined guest's log is everything its seat was sent" (Ending.loggedFor S.bob own) (Ending.loggedFor S.bob (Map.findWithDefault Ending.unseen S.bob (hostSeen wire)))
+    case sentAgain wire of
+      [Link.MkMatchup again, Link.MkStart seat before] -> do
+        Spec.assertEqWith s "the guest is sent the match-up, then its seat, again" (again, seat) (played, S.bob)
+        Spec.assertBool s (fmap fst (Seq.lookup (Seq.length (Ending.sampledLives before) - 1) (Ending.sampledLives before)) > Just 1) "setup: the guest rejoins past turn 1"
+      other -> Spec.assertBool s False ("the guest is sent again: " <> show other)
     -- The host's ending holds the game from its start (#9663).
     told <- State.execStateT (Link.send (channel S.bob) (Link.MkEnd (Link.ending Ending.MkLost [] Text.empty S.bob outcome (Map.findWithDefault Ending.unseen S.bob (hostSeen wire))))) wire
     case Map.lookup S.bob (ended told) of
