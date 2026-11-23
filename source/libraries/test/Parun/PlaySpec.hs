@@ -41,6 +41,7 @@ import qualified Parun.Types.Answerer as Answerer
 import qualified Parun.Types.Asked as Asked
 import qualified Parun.Types.BecameAttached as BecameAttached
 import qualified Parun.Types.BecameUnattached as BecameUnattached
+import qualified Parun.Types.BeginningStep as BeginningStep
 import qualified Parun.Types.CardName as CardName
 import qualified Parun.Types.CoinFlipped as CoinFlipped
 import qualified Parun.Types.Convoking as Convoking
@@ -67,6 +68,7 @@ import qualified Parun.Types.MulliganDecision as MulliganDecision
 import qualified Parun.Types.MulliganOffer as MulliganOffer
 import qualified Parun.Types.Object as Object
 import qualified Parun.Types.ObjectId as ObjectId
+import qualified Parun.Types.Phase as Phase
 import qualified Parun.Types.PlayOptions as PlayOptions
 import qualified Parun.Types.Player as Player
 import qualified Parun.Types.PlayerActed as PlayerActed
@@ -81,6 +83,7 @@ import qualified Parun.Types.Recipient as Recipient
 import qualified Parun.Types.Result as Result
 import qualified Parun.Types.RollReading as RollReading
 import qualified Parun.Types.Scenario as Scenario
+import qualified Parun.Types.StepBegan as StepBegan
 import qualified Parun.Types.TurnRegisters as TurnRegisters
 import qualified Parun.Types.Zone as Zone
 import qualified Parun.Types.ZoneChange as ZoneChange
@@ -118,6 +121,28 @@ spec s registry = Spec.describe s "Play" $ do
         Text.pack "Player 1 draws 7 cards.",
         Text.pack "Player 1 keeps."
       ]
+
+  Spec.it s "CR 103.5 a goldfish game's opening hand is told as one draw before the first turn" $ do
+    matchup <- BotSpec.bears s registry
+    let alone = NonEmpty.head matchup NonEmpty.:| []
+        gs = snd (Engine.runGamePure S.castAnswer (Setup.gameWith GameSettings.plain (fmap fst alone)) (Setup.newGame (Resolve.performHandAction Engine.playSubgame) alone))
+    Spec.assertEqWith
+      s
+      "logged for Player 1"
+      (snd (Log.unseen Map.empty (PlayerView.viewFor S.alice gs)))
+      [ Log.MkPregame,
+        Log.MkEvent Log.MkMajor (Text.pack "Your library is shuffled."),
+        Log.MkEvent Log.MkMajor (Text.pack "You draw 7 cards."),
+        Log.MkEvent Log.MkMajor (Text.pack "You keep.")
+      ]
+    -- Turn 1 begins at its first step (Turn.pregame), under its own heading.
+    let opening = PlayerView.viewFor S.alice gs
+        (marks, _) = Log.unseen Map.empty opening
+        logged = inOneGroup [GameEvent.StepBegan (StepBegan.MkStepBegan (Phase.Beginning BeginningStep.Untap) S.alice), GameEvent.Drew (Drew.MkDrew S.alice 1)]
+        begun = opening {PlayerView.Type.begun = True, PlayerView.Type.witnessed = PlayerView.Type.witnessed opening <> logged}
+        drawn = [Log.MkTurn 1 S.alice, Log.MkEvent Log.MkMajor (Text.pack "You draw a card.")]
+    Spec.assertEqWith s "read on into turn 1" (snd (Log.unseen marks begun)) drawn
+    Spec.assertEqWith s "read first in turn 1" (snd (Log.unseen Map.empty begun)) (take 4 (snd (Log.unseen Map.empty opening)) <> drawn)
 
   Spec.it s "CR 103.5 the web client's log tells its own seat's mulligans to it as You" $ do
     matchup <- BotSpec.bears s registry

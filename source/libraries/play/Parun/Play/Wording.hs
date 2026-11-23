@@ -23,6 +23,7 @@ import qualified Parun.Oracle.Keyword as Oracle.Keyword
 import qualified Parun.Scenario.PromptOffer as PromptOffer
 import qualified Parun.Types.AbilityFacts as AbilityFacts
 import qualified Parun.Types.AbilityKind as AbilityKind
+import qualified Parun.Types.AbilityTriggered as AbilityTriggered
 import qualified Parun.Types.AbilityView as AbilityView
 import qualified Parun.Types.AbilityWasActivated as AbilityWasActivated
 import qualified Parun.Types.AttackTarget as AttackTarget
@@ -32,6 +33,7 @@ import qualified Parun.Types.BallotChoice as BallotChoice
 import qualified Parun.Types.BecameAttached as BecameAttached
 import qualified Parun.Types.BecameBlocking as BecameBlocking
 import qualified Parun.Types.BecameDesignated as BecameDesignated
+import qualified Parun.Types.BecameTarget as BecameTarget
 import qualified Parun.Types.BecameUnattached as BecameUnattached
 import qualified Parun.Types.BeginningStep as BeginningStep
 import qualified Parun.Types.Card as Card
@@ -115,12 +117,14 @@ import qualified Parun.Types.SideDeck as SideDeck
 import qualified Parun.Types.SlotName as SlotName
 import qualified Parun.Types.SpellWasCast as SpellWasCast
 import qualified Parun.Types.SpellWasCopied as SpellWasCopied
+import qualified Parun.Types.StackObjectKind as StackObjectKind
 import qualified Parun.Types.StackedAbility as StackedAbility
 import qualified Parun.Types.Status as Status
 import qualified Parun.Types.StickerKind as StickerKind
 import qualified Parun.Types.StickerPut as StickerPut
 import qualified Parun.Types.TapState as TapState
 import qualified Parun.Types.Transformed as Transformed
+import qualified Parun.Types.TriggerSource as TriggerSource
 import qualified Parun.Types.TurnedFaceUp as TurnedFaceUp
 import qualified Parun.Types.TurnedUpOffDeck as TurnedUpOffDeck
 import qualified Parun.Types.VentureMarkerEntered as VentureMarkerEntered
@@ -169,11 +173,14 @@ describe view o =
 -- abilities of one source, its source called by the name the seat knows it
 -- by, else "this object"; Nothing for one Parun.Oracle does not render yet.
 abilityText :: PlayerView.PlayerView -> AbilityView.AbilityView -> Maybe Text.Text
-abilityText view a = Maybe.listToMaybe $ case AbilityView.ability a of
+abilityText view a = stackedText view (AbilityView.source a) (AbilityView.ability a)
+
+-- | An ability's Oracle text, its source as abilityText calls it.
+stackedText :: PlayerView.PlayerView -> Maybe ObjectId.ObjectId -> StackedAbility.StackedAbility -> Maybe Text.Text
+stackedText view source stacked = Maybe.listToMaybe $ case stacked of
   StackedAbility.Activated activated -> Oracle.activated context activated
   StackedAbility.Triggered triggered -> Oracle.triggered context creature triggered
   where
-    source = AbilityView.source a
     context = Oracle.contextOf (Maybe.fromMaybe (Text.pack "this object") (source >>= knownName view)) []
     creature = any (isA CardType.Creature) (source >>= (`Map.lookup` objects view))
 
@@ -479,7 +486,9 @@ events reader view = concatMap sentences . List.groupBy (\a b -> Maybe.isJust (r
 
 -- | The entries a log tells, less those another entry beside them already
 -- tells or no seat acts on: a search's looks at the cards it searches (CR
--- 701.23a), told by the search; the life a player loses to damage just
+-- 701.23a), told by the search; a drawn card's move to its owner's hand,
+-- which a seat sees where every player sees that hand (Visibility.witnessed),
+-- told by the draw after it (CR 121.1); the life a player loses to damage just
 -- dealt them (CR 120.3a), told by the damage; and the crime committed (CR
 -- 700.13) and mana spent on spells (CR 700.14), which only an ability
 -- reading them asks after.
@@ -494,6 +503,13 @@ kept = go Nothing Map.empty
         GameEvent.Expended _ -> go searcher dealt rest
         GameEvent.CommittedCrime _ -> go searcher dealt rest
         GameEvent.Looked l | searcher == Just (Looked.player l) -> go searcher dealt rest
+        GameEvent.Moved m
+          | ZoneChange.from (Moved.change m) == Zone.Library,
+            ZoneChange.to (Moved.change m) == Zone.Hand,
+            next : _ <- rest,
+            GameEvent.Drew d <- LoggedEvent.event next,
+            fmap ObjectSnapshot.owner (Moved.arrived m) == Just (Drew.player d) ->
+              go searcher dealt rest
         GameEvent.LifeLost l
           | Just n <- Map.lookup (LifeChange.player l) dealt,
             n >= LifeChange.amount l ->
@@ -506,7 +522,7 @@ kept = go Nothing Map.empty
 
 -- | A witnessed entry as a sentence naming its cards, players and amounts, or
 -- nothing for the bookkeeping a seat can read off the board (a step, a tap,
--- mana, a trigger) or another entry already tells (a die roll, a spell's move
+-- mana) or another entry already tells (a die roll, a spell's move
 -- to the stack, a land play's, discard's or mill's move, a block's
 -- per-attacker records, a mana ability's tap and mana, told by its
 -- activation); to a reader, as objective says.
@@ -560,11 +576,24 @@ event reader view logged = case LoggedEvent.event logged of
   GameEvent.TappedForMana {} -> Nothing
   GameEvent.ManaAdded {} -> Nothing
   GameEvent.ManaAbilityResolved {} -> Nothing
-  GameEvent.AbilityTriggered {} -> Nothing
+  -- CR 603.3: a triggered ability put on the stack, with what it says; a
+  -- sourceless one (TriggerSource.Sourceless) is told by what it does.
+  GameEvent.AbilityTriggered t
+    | TriggerSource.OfObject source <- AbilityTriggered.source t,
+      Just _ <- AbilityTriggered.stackObject t ->
+        Just $ case stackedText view (Just source) (StackedAbility.Triggered (AbilityTriggered.ability t)) of
+          Just text -> name source <> Text.pack "'s ability triggers: \"" <> text <> Text.pack "\""
+          Nothing -> name source <> Text.pack "'s ability triggers."
+    | otherwise -> Nothing
   GameEvent.ActivatedAbilityResolved {} -> Nothing
   GameEvent.TriggeredAbilityResolved {} -> Nothing
   GameEvent.TriggeredAbilityFinished _ -> Nothing
-  GameEvent.BecameTarget {} -> Nothing
+  -- CR 603.3d: a triggered ability's targets, chosen as it is put on the
+  -- stack, which no other entry tells; a spell's and an activated ability's
+  -- are left to the board.
+  GameEvent.BecameTarget b
+    | BecameTarget.kind b == StackObjectKind.TriggeredAbility -> said [triggeredBy (BecameTarget.source b), Text.pack "targets", recipient (BecameTarget.targeted b)]
+    | otherwise -> Nothing
   GameEvent.PermanentActed {} -> Nothing
   GameEvent.PlayerActed a -> playerActed reader (PlayerActed.player a) (PlayerActed.action a)
   GameEvent.CountedAct d -> case CountedAct.action d of
@@ -633,6 +662,10 @@ event reader view logged = case LoggedEvent.event logged of
   GameEvent.StickerPut p -> said [acts reader (StickerPut.placer p) "puts", sticker (StickerPut.kind p), Text.pack "on", name (StickerPut.object p)]
   where
     name = named view
+    -- A triggered ability on the stack by its source, which outlasts it.
+    triggeredBy oid = case [source | GameEvent.AbilityTriggered t <- fmap LoggedEvent.event (witnessed view), AbilityTriggered.stackObject t == Just oid, TriggerSource.OfObject source <- [AbilityTriggered.source t]] of
+      source : _ -> name source <> Text.pack "'s ability"
+      [] -> name oid
     said parts = Just (Text.unwords parts <> Text.pack ".")
     less a b = if a > b then a - b else 0
     by actors one many object =

@@ -119,7 +119,7 @@ spec s registry = Spec.describe s "RemoteSeat" $ do
     -- The guest's page reloaded as it rejoined and starts its log from what
     -- its seat was sent (#9669): the whole game, each entry once.
     let own = Map.findWithDefault Ending.unseen S.bob (pageSeen wire)
-    Spec.assertEqWith s "the rejoined guest's log opens on turn 1" (Seq.lookup 0 (Ending.loggedFor S.bob own)) (Just (Log.MkTurn 1 S.alice))
+    Spec.assertEqWith s "the rejoined guest's log opens before the first turn" (Seq.lookup 0 (Ending.loggedFor S.bob own)) (Just Log.MkPregame)
     Spec.assertEqWith s "the rejoined guest's log is everything its seat was sent" (Ending.loggedFor S.bob own) (Ending.loggedFor S.bob (Map.findWithDefault Ending.unseen S.bob (hostSeen wire)))
     case sentAgain wire of
       [Link.MkMatchup again, Link.MkStart seat before] -> do
@@ -131,7 +131,7 @@ spec s registry = Spec.describe s "RemoteSeat" $ do
     case Map.lookup S.bob (ended told) of
       Just (Link.MkEnded ending) -> do
         Spec.assertEqWith s "the guest's life chart starts on turn 1" (firstTurn (Ending.trail ending)) (Just 1)
-        Spec.assertEqWith s "the guest's log opens on turn 1" (Seq.lookup 0 (Ending.witnessed ending)) (Just (Log.MkTurn 1 S.alice))
+        Spec.assertEqWith s "the guest's log opens before the first turn" (Seq.lookup 0 (Ending.witnessed ending)) (Just Log.MkPregame)
       other -> Spec.assertBool s False ("the guest is told no ending: " <> show other)
 
   Spec.it s "the match-up a game's guests are told again names every seat and every bot's deck drawn" $ do
@@ -186,7 +186,7 @@ wholeGame s matchup guests = do
         let own = Ending.loggedFor g (Map.findWithDefault Ending.unseen g (pageSeen wire))
             (before, after) = Seq.splitAt (Seq.length own) (Ending.witnessed (endingOf g))
         Spec.assertEqWith s ("guest " <> show g <> " is told the log its page kept") before own
-        Spec.assertBool s (any (\entry -> case entry of Log.MkEvent _ _ -> True; Log.MkTurn {} -> False) after) ("guest " <> show g <> " is told what happened after its last request: " <> show after)
+        Spec.assertBool s (any (\entry -> case entry of Log.MkEvent _ _ -> True; Log.MkTurn {} -> False; Log.MkPregame -> False) after) ("guest " <> show g <> " is told what happened after its last request: " <> show after)
     _ -> Spec.assertBool s False ("finished: " <> show (fmap fst outcome))
   let host = [pid | (pid, _) <- NonEmpty.toList matchup, pid `notElem` guests]
       askedOf which = Map.findWithDefault [] which (asked wire)
