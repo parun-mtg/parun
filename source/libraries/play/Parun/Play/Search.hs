@@ -374,22 +374,23 @@ sample (MkPrior prior) memory viewer gs =
 -- 'sample', which deals
 -- every card its seat cannot see now and does not remember by the memory
 -- `recalled` gives ('remembering'), and the opponents' plays `watched` gives
--- ('watching') only through 'plausibility'.
+-- ('watching') only through 'plausibility'. Each prompt a playout answers
+-- waits on `breathe` first, which lets the caller's other work run.
 --
 -- Not implemented: searching a line past a buyback, entwine, splice or
 -- assist announcement (CR 601.2b, 702.132a), more than 'widest' lines, or any
 -- choice of targets but the first an action leads to; the random bot answers
 -- them (#9488).
-search :: forall m. (Monad m) => Registry.Registry m -> SearchBudget.SearchBudget -> Weights.Weights -> Prior -> Game.Play m [Watched] -> Game.Play m Memory -> Aim m -> Answerer.Answerer (Asked.Asked GameState.GameState) (Game.Play m)
-search registry budget weights prior watched recalled aim = Answerer.MkAnswerer $ \asked ->
+search :: forall m. (Monad m) => Registry.Registry m -> SearchBudget.SearchBudget -> Weights.Weights -> Prior -> Game.Play m [Watched] -> Game.Play m Memory -> Aim m -> Game.Play m () -> Answerer.Answerer (Asked.Asked GameState.GameState) (Game.Play m)
+search registry budget weights prior watched recalled aim breathe = Answerer.MkAnswerer $ \asked ->
   let dealing pid = do
         plays <- watched
         memory <- recalled
         worlds budget prior memory plays pid (Asked.game asked)
       best :: Game.Type.Game Result.Result -> PlayerId.PlayerId -> Game.Play m GameState.GameState -> NonEmpty.NonEmpty a -> (a -> Move) -> Game.Play m a
       best restart pid deal choices move = case SearchBudget.method budget of
-        SearchMethod.Flat -> flat registry budget weights restart pid deal choices (picking pid . move)
-        SearchMethod.InformationSet -> informationSet registry budget weights restart pid (Asked.game asked) deal choices move
+        SearchMethod.Flat -> flat registry budget weights breathe restart pid deal choices (picking pid . move)
+        SearchMethod.InformationSet -> informationSet registry budget weights breathe restart pid (Asked.game asked) deal choices move
       unaimed = hold aim Nothing >> Answerer.unwrap (Game.bot registry) asked
       kept pid = do
         line <- held aim
@@ -570,12 +571,12 @@ fitting offered chosen =
 -- | Flat Monte Carlo: each of `pid`'s choices played out ('rollout') in
 -- `SearchBudget.samples` worlds `deal` deals, every option in each world from
 -- the same random stream, the best total taken ('slipping').
-flat :: (Monad m) => Registry.Registry m -> SearchBudget.SearchBudget -> Weights.Weights -> Game.Type.Game Result.Result -> PlayerId.PlayerId -> Game.Play m GameState.GameState -> NonEmpty.NonEmpty a -> (a -> [Pick]) -> Game.Play m a
-flat registry budget weights restart pid deal choices pick = do
+flat :: (Monad m) => Registry.Registry m -> SearchBudget.SearchBudget -> Weights.Weights -> Game.Play m () -> Game.Type.Game Result.Result -> PlayerId.PlayerId -> Game.Play m GameState.GameState -> NonEmpty.NonEmpty a -> (a -> [Pick]) -> Game.Play m a
+flat registry budget weights breathe restart pid deal choices pick = do
   rounds <- Monad.replicateM (Natural.toIntSaturating (SearchBudget.samples budget)) $ do
     world <- deal
     shared <- State.get
-    traverse (\option -> State.put shared >> rollout registry budget weights restart pid (pick option) world) choices
+    traverse (\option -> State.put shared >> rollout registry budget weights breathe restart pid (pick option) world) choices
   slipping budget (NonEmpty.zip (foldr (NonEmpty.zipWith (+)) (0 <$ choices) rounds) choices)
 
 -- | Single-observer information-set Monte Carlo tree search (Cowling, Powley
@@ -587,8 +588,8 @@ flat registry budget weights restart pid deal choices pick = do
 -- tell apart rather than in each as if it could see it. Taken: the choice
 -- whose tries scored best on average ('slipping').
 -- Parun.SearchSpec's attack into a pump spell is the proof.
-informationSet :: (Monad m) => Registry.Registry m -> SearchBudget.SearchBudget -> Weights.Weights -> Game.Type.Game Result.Result -> PlayerId.PlayerId -> GameState.GameState -> Game.Play m GameState.GameState -> NonEmpty.NonEmpty a -> (a -> Move) -> Game.Play m a
-informationSet registry budget weights restart viewer gs deal choices move = do
+informationSet :: (Monad m) => Registry.Registry m -> SearchBudget.SearchBudget -> Weights.Weights -> Game.Play m () -> Game.Type.Game Result.Result -> PlayerId.PlayerId -> GameState.GameState -> Game.Play m GameState.GameState -> NonEmpty.NonEmpty a -> (a -> Move) -> Game.Play m a
+informationSet registry budget weights breathe restart viewer gs deal choices move = do
   let edgeFor option = edgeOf viewer gs viewer (move option)
       forcing option = MkForced (edgeFor option) (edgeOf viewer gs viewer (opening (move option))) (drop 1 (picking viewer (move option)))
       once tree = do
@@ -597,7 +598,7 @@ informationSet registry budget weights restart viewer gs deal choices move = do
         Monad.foldM
           ( \grown option -> do
               State.put shared
-              (path, value) <- descend registry budget weights restart viewer (Just (forcing option)) grown world
+              (path, value) <- descend registry budget weights breathe restart viewer (Just (forcing option)) grown world
               pure (backup value path grown)
           )
           tree
@@ -719,30 +720,31 @@ data Branch = MkBranch
 -- it and cut off as one is. The edges walked, each beside the edges legal at
 -- its node, and the reward for each player: 'score' at a result, else
 -- 'evaluate' short of a win or a loss.
-descend :: forall m. (Monad m) => Registry.Registry m -> SearchBudget.SearchBudget -> Weights.Weights -> Game.Type.Game Result.Result -> PlayerId.PlayerId -> Maybe Forced -> Tree -> GameState.GameState -> Game.Play m ([([Edge], Edge)], PlayerId.PlayerId -> Integer)
-descend registry budget weights restart viewer forced (MkTree root range) world =
+descend :: forall m. (Monad m) => Registry.Registry m -> SearchBudget.SearchBudget -> Weights.Weights -> Game.Play m () -> Game.Type.Game Result.Result -> PlayerId.PlayerId -> Maybe Forced -> Tree -> GameState.GameState -> Game.Play m ([([Edge], Edge)], PlayerId.PlayerId -> Integer)
+descend registry budget weights breathe restart viewer forced (MkTree root range) world =
   let scale = maybe 1 (\(lowest, highest) -> max 1 (highest - lowest)) range
       seats = Game.consulting registry (Map.fromList [(seat, policyOf registry budget) | seat <- Map.keys (GameState.players world)])
       final = TurnRegisters.turnNumber (GameState.turn world) + SearchBudget.turns budget
       go :: Natural -> Maybe Node -> [([Edge], Edge)] -> [Pick] -> Program.Program (Asked.Asked GameState.GameState) (Result.Result, GameState.GameState) -> Game.Play m ([([Edge], Edge)], PlayerId.PlayerId -> Integer)
-      go left at path picks program = case program of
-        Program.Return (result, _) -> pure (reverse path, (`score` result))
-        Program.Then asked k
-          | left == 0 || TurnRegisters.turnNumber (GameState.turn (Asked.game asked)) > final -> pure (reverse path, \pid -> cut weights pid (Asked.game asked))
-          | Just (MkNode branches) <- at,
-            Just (mover, choices) <- decisionOf asked -> do
-              let keyed = ListUtils.nubOrdOn fst [(edgeOf viewer (Asked.game asked) mover move, answer) | (move, answer) <- NonEmpty.toList choices]
-                  legal = fmap fst keyed
-                  pending = lapsing picks (Asked.prompt asked)
-              case (null path, [(taken, answer, rest) | MkForced taken opened rest <- Foldable.toList forced, (edge, answer) <- keyed, edge == opened], NonEmpty.nonEmpty [choice | choice@(edge, _) <- keyed, Map.notMember edge branches]) of
-                (True, (taken, answer, rest) : _, _) -> go (left - 1) (fmap child (Map.lookup taken branches)) ((legal, taken) : path) rest (k answer)
-                (_, _, Just untried) -> do
-                  (edge, answer) <- Generator.pick untried
-                  go (left - 1) Nothing ((legal, edge) : path) pending (k answer)
-                _ -> do
-                  let (edge, answer) = select scale branches keyed
-                  go (left - 1) (fmap child (Map.lookup edge branches)) ((legal, edge) : path) pending (k answer)
-          | otherwise -> answering seats picks asked >>= \(answer, rest) -> go (left - 1) at path rest (k answer)
+      go left at path picks program =
+        breathe >> case program of
+          Program.Return (result, _) -> pure (reverse path, (`score` result))
+          Program.Then asked k
+            | left == 0 || TurnRegisters.turnNumber (GameState.turn (Asked.game asked)) > final -> pure (reverse path, \pid -> cut weights pid (Asked.game asked))
+            | Just (MkNode branches) <- at,
+              Just (mover, choices) <- decisionOf asked -> do
+                let keyed = ListUtils.nubOrdOn fst [(edgeOf viewer (Asked.game asked) mover move, answer) | (move, answer) <- NonEmpty.toList choices]
+                    legal = fmap fst keyed
+                    pending = lapsing picks (Asked.prompt asked)
+                case (null path, [(taken, answer, rest) | MkForced taken opened rest <- Foldable.toList forced, (edge, answer) <- keyed, edge == opened], NonEmpty.nonEmpty [choice | choice@(edge, _) <- keyed, Map.notMember edge branches]) of
+                  (True, (taken, answer, rest) : _, _) -> go (left - 1) (fmap child (Map.lookup taken branches)) ((legal, taken) : path) rest (k answer)
+                  (_, _, Just untried) -> do
+                    (edge, answer) <- Generator.pick untried
+                    go (left - 1) Nothing ((legal, edge) : path) pending (k answer)
+                  _ -> do
+                    let (edge, answer) = select scale branches keyed
+                    go (left - 1) (fmap child (Map.lookup edge branches)) ((legal, edge) : path) pending (k answer)
+            | otherwise -> answering seats picks asked >>= \(answer, rest) -> go (left - 1) at path rest (k answer)
    in go (SearchBudget.prompts budget) (Just root) [] [] (State.runStateT restart world)
 
 -- | The decision a prompt asks that the tree holds: a 'searchable' priority
@@ -1053,16 +1055,17 @@ restartable asked decider pid =
 -- win, minus it a loss, 0 a draw; a playout cut off once it begins `SearchBudget.turns` turns after the
 -- decision's, or after `SearchBudget.prompts` prompts, is scored by
 -- 'evaluate' at the prompt it stopped at, short of a win or a loss.
-rollout :: forall m. (Monad m) => Registry.Registry m -> SearchBudget.SearchBudget -> Weights.Weights -> Game.Type.Game Result.Result -> PlayerId.PlayerId -> [Pick] -> GameState.GameState -> Game.Play m Integer
-rollout registry budget weights restart pid picked world =
+rollout :: forall m. (Monad m) => Registry.Registry m -> SearchBudget.SearchBudget -> Weights.Weights -> Game.Play m () -> Game.Type.Game Result.Result -> PlayerId.PlayerId -> [Pick] -> GameState.GameState -> Game.Play m Integer
+rollout registry budget weights breathe restart pid picked world =
   let seats = Game.consulting registry (Map.fromList [(seat, policyOf registry budget) | seat <- Map.keys (GameState.players world)])
       final = TurnRegisters.turnNumber (GameState.turn world) + SearchBudget.turns budget
       go :: Natural -> [Pick] -> Program.Program (Asked.Asked GameState.GameState) (Result.Result, GameState.GameState) -> Game.Play m Integer
-      go left picks program = case program of
-        Program.Return (result, _) -> pure (score pid result)
-        Program.Then asked k
-          | left == 0 || TurnRegisters.turnNumber (GameState.turn (Asked.game asked)) > final -> pure (cut weights pid (Asked.game asked))
-          | otherwise -> answering seats picks asked >>= \(answer, rest) -> go (left - 1) rest (k answer)
+      go left picks program =
+        breathe >> case program of
+          Program.Return (result, _) -> pure (score pid result)
+          Program.Then asked k
+            | left == 0 || TurnRegisters.turnNumber (GameState.turn (Asked.game asked)) > final -> pure (cut weights pid (Asked.game asked))
+            | otherwise -> answering seats picks asked >>= \(answer, rest) -> go (left - 1) rest (k answer)
    in go (SearchBudget.prompts budget) picked (State.runStateT restart world)
 
 -- | The budget's 'Playout.Playout' policy.
