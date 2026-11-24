@@ -298,6 +298,13 @@ takeQueued page wanted = do
     let (front, rest) = Seq.spanl (Maybe.isJust . wanted . fst) events
      in (rest, Maybe.mapMaybe (wanted . fst) (Foldable.toList front))
 
+-- | Each event taken that no one has waited for yet given to `handle`, in
+-- the order taken, without waiting.
+drain :: Page msg -> ((msg, Text.Text) -> IO ()) -> IO ()
+drain page handle = do
+  queued <- pending page
+  Monad.when queued (next page >>= handle >> drain page handle)
+
 -- | Drops the events taken that no one has waited for yet, giving them in
 -- the order taken.
 flush :: Page msg -> IO [msg]
