@@ -54,6 +54,7 @@ import qualified Parun.Types.TypeLine as TypeLine
 import qualified Parun.Web.Attribute as Attribute
 import qualified Parun.Web.Element as Element
 import qualified Parun.Web.Html as Html
+import qualified Parun.Web.Icon as Icon
 import qualified Parun.Web.Mana as Mana
 
 -- | How a tile looks beyond the object itself, and what tapping it sends.
@@ -244,10 +245,10 @@ letter c = case c of
 isLegendary :: ObjectView.ObjectView -> Bool
 isLegendary = any (Set.member Supertype.Legendary . ProjectedCharacteristics.supertypes) . ObjectView.characteristics
 
--- | A crown ahead of a legendary tile's type line (CR 205.4d), which the
--- short type line leaves out.
+-- | A crown ahead of a legendary tile's type line, which leaves out the
+-- supertype (CR 205.4d).
 legendMark :: ObjectView.ObjectView -> [Html.Html msg]
-legendMark o = [Element.el "span" ["legend"] [Element.attr "title" (Text.pack "Legendary (CR 205.4d)")] [Element.string "\x2654"] | isLegendary o]
+legendMark o = [Element.el "span" ["legend"] [Element.attr "title" (Text.pack "Legendary (CR 205.4d)")] [Icon.icon [] Icon.MkCrown] | isLegendary o]
 
 -- | The type line, short: subtypes where there are any, else card types.
 typeLine :: ObjectView.ObjectView -> Text.Text
