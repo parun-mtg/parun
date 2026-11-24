@@ -3131,6 +3131,19 @@ details.pile[open] {
   text-overflow: ellipsis;
 }
 
+/* A legendary tile's crown, ahead of its type line (CR 205.4d). */
+.card .legend {
+  margin-right: 0.25em;
+  color: var(--turn);
+}
+
+/* A crown on a line of text sits on its baseline: the legendary tile's
+   and the monarch's. */
+.card .legend .icon,
+.count.monarch .k .icon {
+  vertical-align: -0.125em;
+}
+
 /* At the tile's bottom, however few lines above it are filled. */
 .card .foot {
   display: flex;

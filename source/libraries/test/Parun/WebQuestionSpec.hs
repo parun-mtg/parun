@@ -1320,6 +1320,18 @@ replaySpec s registry = Spec.describe s "WebQuestion" . Spec.describe s "replay"
         Spec.assertEqWith s "the sheet" (Card.fullType o) (Text.pack "Creature \8212 Elf Druid")
       other -> Spec.assertFailure s ("expected the Clone beside the Elves, got " <> show (length other))
 
+  Spec.it s "CR 205.4d a legendary tile wears a crown, and Shore Leave Planet's nonlegendary copy of one does not" $ do
+    -- Entry 5 follows the copy ability's resolution.
+    stop <- replayed s registry "shore-leave-planet-enters-tapped-and-becomes-a-nonlegendary-robot-artifact-copy-until-end-of" 5
+    let board = boardOf stop
+        hounds = [o | o <- PlayerView.Type.battlefield board, Wording.nameOf board o == Text.pack "Isamaru, Hound of Konda"]
+        cue = Card.MkCue [] () Nothing
+        crowned = Text.isInfixOf (Text.pack "<span class=\"legend\"") . Html.toText . Card.tile board cue
+        readAloud = Text.isInfixOf (Text.pack ", legendary, ") . Card.summary board cue
+    Spec.assertEqWith s "the Hound and the Planet copying it" (length hounds) 2
+    Spec.assertEqWith s "only the Hound is crowned" (length (filter crowned hounds)) 1
+    Spec.assertEqWith s "only the Hound is read aloud as legendary" (length (filter readAloud hounds)) 1
+
   Spec.it s "CR 716.3d a card exiled as its Adventure resolved is marked on its tile and sheet" $ do
     -- Entry 10 follows Can't Wake Up's resolution.
     after <- replayed s registry "chancellor-of-tales-copies-an-adventure-onto-a-new-target" 9

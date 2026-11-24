@@ -32,6 +32,8 @@ data Icon
     MkStep
   | -- | Pausing a replay: two bars.
     MkPause
+  | -- | A legendary permanent (CR 205.4d), and the monarch (CR 726): a crown.
+    MkCrown
   deriving (Bounded, Enum, Eq, Ord, Show)
 
 -- | The id of an icon's @<symbol>@ in the sprite.
@@ -48,6 +50,7 @@ iconId i = Text.pack . ("ui-" <>) $ case i of
   MkTurn -> "turn"
   MkStep -> "step"
   MkPause -> "pause"
+  MkCrown -> "crown"
 
 -- | An icon, hidden from assistive technology: what it means is said by
 -- the element holding it.

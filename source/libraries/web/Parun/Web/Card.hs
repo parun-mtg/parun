@@ -48,11 +48,13 @@ import qualified Parun.Types.ProjectedCharacteristics as ProjectedCharacteristic
 import qualified Parun.Types.Recipient as Recipient
 import qualified Parun.Types.RoomHalf as RoomHalf
 import qualified Parun.Types.RoomIndex as RoomIndex
+import qualified Parun.Types.Supertype as Supertype
 import qualified Parun.Types.TapState as TapState
 import qualified Parun.Types.TypeLine as TypeLine
 import qualified Parun.Web.Attribute as Attribute
 import qualified Parun.Web.Element as Element
 import qualified Parun.Web.Html as Html
+import qualified Parun.Web.Icon as Icon
 import qualified Parun.Web.Mana as Mana
 
 -- | How a tile looks beyond the object itself, and what tapping it sends.
@@ -79,7 +81,7 @@ tile view cue o = case ObjectView.characteristics o of
       [ Element.el "span" ["top"] [] $ [Element.el "span" ["name"] [] [Element.text (Wording.nameOf view o)]] <> foldMap (pure . Mana.cost) (ObjectView.characteristics o >>= ProjectedCharacteristics.manaCost),
         -- Every tile has the same lines, each empty or cut short rather than
         -- moved or wrapped, so a row of them is one height.
-        Element.el "span" ["type"] [] [Element.text (typeLine o)],
+        Element.el "span" ["type"] [] (legendMark o <> [Element.text (typeLine o)]),
         Element.el "span" ["keywords"] [] [Element.text (Text.intercalate (Text.pack ", ") (tileKeywords o))],
         Element.el "span" ["foot"] [] (states view o <> badges o <> stats o)
       ]
@@ -207,9 +209,10 @@ summary view cue o =
         | elem "chosen" (marks cue) = [Text.pack "chosen"]
         | elem "choosable" (marks cue) = [Text.pack "can be chosen"]
         | otherwise = []
+      typed = [Text.pack "legendary" | isLegendary o] <> [typeLine o]
       kind = case tileKeywords o of
-        [] -> [typeLine o]
-        words' -> [typeLine o, Text.intercalate (Text.pack ", ") words']
+        [] -> typed
+        words' -> typed <> [Text.intercalate (Text.pack ", ") words']
    in Text.intercalate (Text.pack ", ") ([Wording.nameOf view o] <> kind <> pt <> doing <> action)
 
 tapped :: ObjectView.ObjectView -> [String]
@@ -237,6 +240,15 @@ letter c = case c of
   Color.Black -> "b"
   Color.Red -> "r"
   Color.Green -> "g"
+
+-- | CR 205.4d: whether the object is legendary, so subject to the legend rule.
+isLegendary :: ObjectView.ObjectView -> Bool
+isLegendary = any (Set.member Supertype.Legendary . ProjectedCharacteristics.supertypes) . ObjectView.characteristics
+
+-- | A crown ahead of a legendary tile's type line, which leaves out the
+-- supertype (CR 205.4d).
+legendMark :: ObjectView.ObjectView -> [Html.Html msg]
+legendMark o = [Element.el "span" ["legend"] [Element.attr "title" (Text.pack "Legendary (CR 205.4d)")] [Icon.icon [] Icon.MkCrown] | isLegendary o]
 
 -- | The type line, short: subtypes where there are any, else card types.
 typeLine :: ObjectView.ObjectView -> Text.Text

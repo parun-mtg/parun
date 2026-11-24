@@ -278,7 +278,7 @@ seatHead marks board own s =
       -- The seat's designations (CR 726.1, 727.1, 701.54c, 702.179b,
       -- 702.131c, 702.195b, 309.7) and player counters (CR 122.1).
       designations =
-        [chip "monarch" "\x265B Monarch" "" "The monarch draws a card at the beginning of their end step (CR 726)" | PlayerView.monarch board == Just pid]
+        [Element.el "span" ["count", "monarch"] [Element.attr "title" (Text.pack "The monarch draws a card at the beginning of their end step (CR 726)")] [Element.el "span" ["k"] [] [Icon.icon [] Icon.MkCrown, Element.string " Monarch"]] | PlayerView.monarch board == Just pid]
           <> [chip "initiative" "Initiative" "" "Has the initiative: ventures into Undercity on taking it and at their upkeep (CR 727)" | PlayerView.initiative board == Just pid]
           <> [chip "ring" "The Ring" (show (SeatView.ringTemptations s)) "Times the Ring has tempted this player (CR 701.54)" | SeatView.ringTemptations s > 0]
           <> [chip "speed" "Speed" (show n) "Speed (CR 702.179)" | Just n <- [SeatView.speed s]]
