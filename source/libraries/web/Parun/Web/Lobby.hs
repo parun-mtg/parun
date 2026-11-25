@@ -46,6 +46,7 @@ import qualified Parun.Types.PlayOptions as PlayOptions
 import qualified Parun.Types.PlayerId as PlayerId
 import qualified Parun.Types.RangeOfInfluence as RangeOfInfluence
 import qualified Parun.Types.RuleFamily as RuleFamily
+import qualified Parun.Web.Clock as Clock
 import qualified Parun.Web.DeckBrowser as DeckBrowser
 import qualified Parun.Web.Element as Element
 import qualified Parun.Web.Html as Html
@@ -103,14 +104,17 @@ data Options = MkOptions
     attackOption :: AttackOption.AttackOption,
     -- | CR 806.2a: every player's range of influence in a game of three or
     -- more seats, in seats; unlimited where absent (CR 801.1).
-    rangeOfInfluence :: Maybe Natural
+    rangeOfInfluence :: Maybe Natural,
+    -- | The minutes each seat a person plays has on its clock
+    -- (Parun.Web.Clock), which no rule sets; untimed where absent.
+    clock :: Maybe Natural
   }
   deriving (Eq, Show)
 
 -- | No option in use: CR 802's attack multiple players, which needs no
 -- seating agreed ('GameSettings.plain').
 noOptions :: Options
-noOptions = MkOptions {ante = False, singlePlanarDeck = False, attackOption = AttackOption.MultiplePlayers, rangeOfInfluence = Nothing}
+noOptions = MkOptions {ante = False, singlePlanarDeck = False, attackOption = AttackOption.MultiplePlayers, rangeOfInfluence = Nothing, clock = Nothing}
 
 -- | The attack options a game may choose (CR 806.2b), each with its value
 -- and its label; CR 809.3c's is the Emperor variant's.
@@ -250,6 +254,9 @@ data Event
   | -- | Sets the range of influence to the one whose value is chosen
     -- ('ranges').
     MkRangeOfInfluence
+  | -- | Sets each seat's time to the one whose value is chosen
+    -- (Clock.choices).
+    MkClock
   deriving (Eq, Show)
 
 -- | A lobby whose decks are still to read, nothing chosen yet, your seat
@@ -505,6 +512,7 @@ updated event typed lobby = case event of
   MkSinglePlanarDeck -> optioned (\o -> o {singlePlanarDeck = not (singlePlanarDeck o)})
   MkAttackOption -> maybe lobby (\a -> optioned (\o -> o {attackOption = a})) (valued attackOptions)
   MkRangeOfInfluence -> maybe lobby (\r -> optioned (\o -> o {rangeOfInfluence = r})) (valued ranges)
+  MkClock -> maybe lobby (\c -> optioned (\o -> o {clock = c})) (valued Clock.choices)
   where
     optioned f = lobby {options = f (options lobby)}
     valued :: [(a, (String, String))] -> Maybe a
@@ -747,14 +755,16 @@ botView i (level, style) =
           let (value, label) = nameOf option
         ]
 
--- | The game's options: ante, the single planar deck, and at three seats or
--- more CR 806.2's attack option and range of influence.
+-- | The game's options: ante, the single planar deck, each seat's clock,
+-- and at three seats or more CR 806.2's attack option and range of
+-- influence.
 optionsView :: Lobby -> Html.Html Event
 optionsView lobby =
   Element.el "fieldset" ["game-options"] [] $
     [ Element.el "legend" ["eyebrow"] [] [Element.string "Game options"],
       toggle "option-ante" MkAnte (ante chosen') "Play for ante" "Each player antes a random card from their library; the winner owns them all.",
-      toggle "option-single-planar-deck" MkSinglePlanarDeck (singlePlanarDeck chosen') "Single planar deck" "In Planechase, every planar deck the lists bring is shuffled into one."
+      toggle "option-single-planar-deck" MkSinglePlanarDeck (singlePlanarDeck chosen') "Single planar deck" "In Planechase, every planar deck the lists bring is shuffled into one.",
+      menu "option-clock" MkClock "Clock" [(value, label, option == clock chosen') | (option, (value, label)) <- Clock.choices]
     ]
       <> ( if multiplayer (seatCount lobby)
              then

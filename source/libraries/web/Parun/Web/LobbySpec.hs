@@ -195,6 +195,18 @@ spec s = Spec.describe s "Parun.Web.Lobby" $ do
       Spec.assertBool s (Text.isInfixOf (Text.pack "id=\"option-ante\" type=\"checkbox\" aria-describedby=\"option-ante-note\" checked=\"\"") (Html.toText page)) "ante checked"
       Spec.assertEqWith s "a change clears ready" (Lobby.ready (set Lobby.MkAnte "" (Lobby.update Lobby.MkReady Text.empty lobby))) False
 
+    Spec.it s "sets each seat's clock from its menu, untimed unless told otherwise, at any count of seats" $ do
+      let set value = Lobby.update Lobby.MkClock (Text.pack value)
+          timed = set "10" lobby
+          handled l = Html.search (Text.isPrefixOf (Text.pack "<select class=\"deck-menu\" id=\"option-clock\"") . Html.toText) (Lobby.view l) >>= \path -> Html.handler (Text.pack "change") path (Lobby.view l)
+      Spec.assertEqWith s "untimed" (Lobby.clock (Lobby.options lobby)) Nothing
+      Spec.assertEqWith s "ten minutes" (Lobby.clock (Lobby.options timed)) (Just 10)
+      Spec.assertEqWith s "off again" (Lobby.clock (Lobby.options (set "off" timed))) Nothing
+      Spec.assertEqWith s "unknown" (set "7" timed) timed
+      Spec.assertEqWith s "no rule's option" (Lobby.settings timed) (Lobby.settings lobby)
+      Spec.assertEqWith s "the menu" (handled lobby) (Just Lobby.MkClock)
+      Spec.assertBool s (Text.isInfixOf (Text.pack "<option value=\"10\" selected=\"\">10 minutes</option>") (Html.toText (Lobby.view timed))) "the time chosen in its menu"
+
     Spec.it s "shows the saved decks apart from the shipped" $ do
       let holding = Lobby.withDecks (Seq.fromList [a, saved]) Map.empty Map.empty Lobby.new
       Spec.assertEqWith s "precons" (Lobby.shown holding) [a]
