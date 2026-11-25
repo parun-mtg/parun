@@ -17,6 +17,7 @@ import qualified Parun.Types.CardType as CardType
 import qualified Parun.Types.Color as Color
 import qualified Parun.Types.Face as Face
 import qualified Parun.Types.ManaCost as ManaCost
+import qualified Parun.Types.SideDeck as SideDeck
 import qualified Parun.Types.Supertype as Supertype
 import qualified Parun.Types.TypeLine as TypeLine
 import qualified Parun.Web.Lobby as Lobby
@@ -59,22 +60,25 @@ data Query = MkQuery
     valued :: Maybe Integer,
     -- | The names, case-folded, a card's must be among; a basic land is
     -- always kept.
-    among :: Maybe (Set.Set Text.Text)
+    among :: Maybe (Set.Set Text.Text),
+    -- | The supplementary deck a card must fit (pileOf); nothing for a
+    -- traditional card.
+    pile :: Maybe SideDeck.SideDeck
   }
   deriving (Eq, Show)
 
 -- | A query filtering nothing.
 everything :: Query
-everything = MkQuery Text.empty Set.empty Set.empty Nothing Nothing
+everything = MkQuery Text.empty Set.empty Set.empty Nothing Nothing Nothing
 
 -- | How many more results each showing adds, and so how many are shown at
 -- first.
 cap :: Int
 cap = 60
 
--- | The card as the builder indexes it; nothing for a card no deck holds:
--- a synthetic one, a nontraditional one (CR 108.2a, 311.1-314.1), a dungeon
--- (CR 309.2) or a conspiracy (CR 315.3).
+-- | The card as the builder indexes it; nothing for a card no deck the
+-- builder edits holds: a synthetic one, a vanguard or scheme card (CR
+-- 313.1, 314.1), a dungeon (CR 309.2) or a conspiracy (CR 315.3).
 entryOf :: Card.Card -> Maybe Entry
 entryOf c
   | Card.synthetic c || any (`Set.member` kindsOf) outside = Nothing
@@ -100,7 +104,14 @@ entryOf c
     named = fmap (CardName.unwrap . Face.name) faces
     said = foldMap (foldMap Text.lines . Face.oracleText) faces
     kindsOf = foldMap (TypeLine.types . Face.typeLine) faces
-    outside = [CardType.Conspiracy, CardType.Dungeon, CardType.Phenomenon, CardType.Plane, CardType.Scheme, CardType.Vanguard]
+    outside = [CardType.Conspiracy, CardType.Dungeon, CardType.Scheme, CardType.Vanguard]
+
+-- | The supplementary deck a card belongs in: a plane or phenomenon card's
+-- planar deck (CR 901.3); nothing for a traditional card.
+pileOf :: Entry -> Maybe SideDeck.SideDeck
+pileOf e
+  | Set.member CardType.Plane (types e) || Set.member CardType.Phenomenon (types e) = Just SideDeck.Planar
+  | otherwise = Nothing
 
 -- | A type line as words: supertypes and card types, then a dash and the
 -- subtypes, if any.
@@ -127,5 +138,5 @@ search most query entries =
       pooled e = basic e || maybe True (Set.member (Text.toCaseFold (CardName.unwrap (name e)))) (among query)
       atValue e = maybe True (\v -> if v >= 7 then value e >= 7 else value e == v) (valued query)
       -- Stable, so each rank keeps the entries' own order.
-      ranked = Seq.sortOn fst (Seq.fromList [(r, e) | e <- Foldable.toList entries, pooled e, within e, ofKind e, atValue e, Just r <- [rank e]])
+      ranked = Seq.sortOn fst (Seq.fromList [(r, e) | e <- Foldable.toList entries, pileOf e == pile query, pooled e, within e, ofKind e, atValue e, Just r <- [rank e]])
    in (Seq.length ranked, fmap snd (Seq.take most ranked))
