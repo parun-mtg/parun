@@ -13,6 +13,7 @@ import qualified Parun.Types.Card as Card
 import qualified Parun.Types.CardName as CardName
 import qualified Parun.Types.CardType as CardType
 import qualified Parun.Types.Color as Color
+import qualified Parun.Types.SideDeck as SideDeck
 import qualified Parun.Web.CardIndex as CardIndex
 
 spec :: (Monad m, Monad n) => Spec.Spec m n -> n ()
@@ -53,6 +54,12 @@ spec s = Spec.describe s "Parun.Web.CardIndex" $ do
           forest = (entry "Forest" [] 0 [CardType.Land] "") {CardIndex.basic = True}
       Spec.assertEq s (names (CardIndex.search CardIndex.cap query (forest Seq.<| pool))) ["Forest", "Lightning Bolt"]
 
+    Spec.it s "CR 901.3 keeps a planar deck's cards for its search, and only there" $ do
+      let akoum = entry "Akoum" [] 0 [CardType.Plane] ""
+          forest = (entry "Forest" [] 0 [CardType.Land] "") {CardIndex.basic = True}
+          among = Seq.fromList [akoum, forest]
+      Spec.assertEq s (names (CardIndex.search CardIndex.cap CardIndex.everything {CardIndex.pile = Just SideDeck.Planar} among), names (CardIndex.search CardIndex.cap CardIndex.everything among)) (["Akoum"], ["Forest"])
+
     Spec.it s "matches nothing for text no card holds" $ do
       Spec.assertEq s (CardIndex.search CardIndex.cap (typed "zzzz") pool) (0, Seq.empty)
 
@@ -79,8 +86,11 @@ spec s = Spec.describe s "Parun.Web.CardIndex" $ do
     Spec.it s "leaves out a synthetic card" $ do
       Spec.assertEq s (fmap CardIndex.name (CardIndex.entryOf (card True "Instant"))) Nothing
 
-    Spec.it s "CR 108.2a leaves out a nontraditional card" $ do
-      Spec.assertEq s (fmap CardIndex.name (CardIndex.entryOf (card False "Plane"))) Nothing
+    Spec.it s "CR 314.1 leaves out a scheme card" $ do
+      Spec.assertEq s (fmap CardIndex.name (CardIndex.entryOf (card False "Scheme"))) Nothing
+
+    Spec.it s "CR 901.3 indexes a plane and a phenomenon card for a planar deck" $ do
+      Spec.assertEq s (fmap (fmap CardIndex.pileOf . CardIndex.entryOf . card False) ["Plane", "Phenomenon", "Instant"]) [Just (Just SideDeck.Planar), Just (Just SideDeck.Planar), Just Nothing]
 
     Spec.it s "CR 315.3 leaves out a conspiracy card" $ do
       Spec.assertEq s (fmap CardIndex.name (CardIndex.entryOf (card False "Conspiracy"))) Nothing

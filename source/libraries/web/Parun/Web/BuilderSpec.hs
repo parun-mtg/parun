@@ -386,6 +386,23 @@ spec s = Spec.describe s "Parun.Web.Builder" $ do
     Spec.it s "a sideboard edit is a change to save" $ do
       Spec.assertEq s (Builder.dirty (tap (Builder.MkAdd DeckList.Side bolt) fresh)) True
 
+    Spec.it s "CR 901.3 opens a planar deck into its zone, edits it, and writes it back" $ do
+      let opened = Builder.open Nothing Text.empty (Text.pack "1 Island\n\nPlanar Deck\n1 Akoum\n1 Chaotic Aether\n") planechase
+          edited = tap (Builder.MkAdd Builder.planar (named "Bant")) (tap (Builder.MkRemove Builder.planar (named "Chaotic Aether")) opened)
+      Spec.assertEq s (Builder.zoneOf Builder.planar opened, Builder.rest opened) (Map.fromList [(named "Akoum", 1), (named "Chaotic Aether", 1)], [])
+      Spec.assertEq s (Builder.listText edited, Builder.dirty edited) (Text.pack "1 Island\n\nPlanar Deck\n1 Akoum\n1 Bant\n", True)
+      Spec.assertBool s (Text.isInfixOf (Text.pack "Planar deck \x00b7 2") (page edited)) "shown"
+
+    Spec.it s "CR 901.3 holds one card of a name in a planar deck" $ do
+      let once = tap (Builder.MkAdd Builder.planar (named "Akoum")) (tap (Builder.MkTarget Builder.planar) planechase)
+          shown = Builder.view once
+      Spec.assertEq s (Builder.zoneOf Builder.planar (tap (Builder.MkAdd Builder.planar (named "Akoum")) once)) (Map.singleton (named "Akoum") 1)
+      Spec.assertEq s (fmap (Text.isInfixOf (Text.pack "disabled") . Html.toText) (Html.labelled (Text.pack "button") (Text.pack "Add Akoum") shown >>= (`Html.at` shown))) (Just True)
+
+    Spec.it s "CR 901.3 searches a planar deck's cards for it, and only for it" $ do
+      let offered builder = [card' | card' <- ["Akoum", "Chaotic Aether", "Lightning Bolt", "Mountain"], Maybe.isJust (Html.labelled (Text.pack "button") (Text.pack ("Add " <> card')) (Builder.view builder))]
+      Spec.assertEq s (offered (tap (Builder.MkTarget Builder.planar) planechase), offered planechase) (["Akoum", "Chaotic Aether"], ["Lightning Bolt", "Mountain"])
+
   Spec.describe s "choices" $ do
     Spec.it s "CR 207.5 reads a circled choice into colours, and writes it back" $ do
       let opened = Builder.open Nothing Text.empty (Text.pack "2 Cryptic Spires {circled: U B}\n") indexed
@@ -426,6 +443,7 @@ spec s = Spec.describe s "Parun.Web.Builder" $ do
     card name = CardIndex.MkEntry (CardName.MkCardName (Text.pack name)) [Text.pack name] Nothing 1 Set.empty Set.empty (Text.pack "Instant") [] (Text.toCaseFold (Text.pack name)) False Set.empty
     spires = named "Cryptic Spires"
     indexed = Builder.withIndex (Seq.fromList [(card "Cryptic Spires") {CardIndex.choices = Set.fromList [(section, DeckList.CircledColors) | section <- [DeckList.Main, DeckList.Side, DeckList.Commander]]}, (card "Lightning Bolt") {CardIndex.rules = [(Text.pack "Lightning Bolt", [Text.pack "Lightning Bolt deals 3 damage to any target."])]}, (card "Mountain") {CardIndex.basic = True}, card "Shock", (card "Front Face") {CardIndex.faceNames = [Text.pack "Front Face", Text.pack "Back Face"]}]) fresh
+    planechase = Builder.withIndex (Seq.fromList [(card "Akoum") {CardIndex.types = Set.singleton CardType.Plane}, (card "Bant") {CardIndex.types = Set.singleton CardType.Plane}, (card "Chaotic Aether") {CardIndex.types = Set.singleton CardType.Phenomenon}, card "Lightning Bolt", (card "Mountain") {CardIndex.basic = True}]) fresh
     pooled text = Builder.update Builder.MkUsePool Text.empty (Builder.update Builder.MkPoolText (Text.pack text) (Builder.update Builder.MkPoolChoice (Text.pack "paste") indexed))
     constructed = Builder.update Builder.MkFormat (Text.pack "constructed") fresh
     fresh = Builder.new [Text.pack "constructed", Text.pack "pauper"]
