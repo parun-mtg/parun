@@ -27,6 +27,7 @@ import qualified Parun.Play.Search as Search
 import qualified Parun.Registry as Registry
 import qualified Parun.Types.Deck as Deck
 import qualified Parun.Types.Format as Format
+import qualified Parun.Types.GameSettings as GameSettings
 import qualified Parun.Types.GameState as GameState
 import qualified Parun.Types.Key as Key.Type
 import qualified Parun.Types.MatchOptions as MatchOptions
@@ -45,7 +46,7 @@ main arguments = do
     versions <- traverse (\path -> (,) path <$> Command.orExit (Command.load registry path)) paths
     opponents <- Command.loadMeta registry metaPath
     prior <- Match.priorOf registry options
-    format <- Command.orExit (Command.settle Nothing (NonEmpty.toList versions <> NonEmpty.toList (fmap (\(_, (name, list)) -> (Text.unpack name, list)) opponents)))
+    format <- Command.orExit (Command.settle GameSettings.plain Nothing (NonEmpty.toList versions <> NonEmpty.toList (fmap (\(_, (name, list)) -> (Text.unpack name, list)) opponents)))
     searchers <- Command.orExit (fmap (Bifunctor.first pure) (Match.searchersOf options))
     run options searchers prior registry format (fmap (Bifunctor.bimap Text.pack DeckList.deck) versions) (fmap (\(share, (name, list)) -> (share, (name, DeckList.deck list))) opponents)
 

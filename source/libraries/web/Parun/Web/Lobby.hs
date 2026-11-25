@@ -1,8 +1,15 @@
 -- | The web client's lobby (#9421): the seats at the table, the seat being
--- chosen for, which a tap on a seat or a seat added changes, and Start at
--- their foot; the decks that seat may play, filtered by what is typed, by
--- colour, by set and by whether they are saved; and the chosen deck's
--- detail.
+-- chosen for, which a tap on a seat or a seat added changes, the game's
+-- options, and Start at their foot; the decks that seat may play, filtered
+-- by what is typed, by colour, by set and by whether they are saved; and the
+-- chosen deck's detail.
+--
+-- WHAT IS NOT IMPLEMENTED:
+--
+--   * Deploying creatures, the multiplayer variants but Free-for-All (CR 804,
+--     807 to 811) and Archenemy (CR 904) (#9749).
+--   * A planar deck dealt to a seat whose list brings none (#9750).
+--   * An invited player told the options (#9751).
 module Parun.Web.Lobby where
 
 import qualified Control.Monad as Monad
@@ -22,11 +29,13 @@ import qualified Parun.Engine.RuleFamily as RuleFamily.Engine
 import qualified Parun.Extra.Natural as Natural
 import qualified Parun.Play.Command as Command
 import qualified Parun.Play.Opponent as Opponent
+import qualified Parun.Types.AttackOption as AttackOption
 import qualified Parun.Types.Card as Card
 import qualified Parun.Types.CardName as CardName
 import qualified Parun.Types.Color as Color
 import qualified Parun.Types.Difficulty as Difficulty
 import qualified Parun.Types.Face as Face
+import qualified Parun.Types.GameSettings as GameSettings
 import qualified Parun.Types.Hybrid as Hybrid
 import qualified Parun.Types.HybridPhyrexian as HybridPhyrexian
 import qualified Parun.Types.ManaCost as ManaCost
@@ -35,6 +44,7 @@ import qualified Parun.Types.ManaType as ManaType
 import qualified Parun.Types.Persona as Persona
 import qualified Parun.Types.PlayOptions as PlayOptions
 import qualified Parun.Types.PlayerId as PlayerId
+import qualified Parun.Types.RangeOfInfluence as RangeOfInfluence
 import qualified Parun.Types.RuleFamily as RuleFamily
 import qualified Parun.Web.DeckBrowser as DeckBrowser
 import qualified Parun.Web.Element as Element
@@ -76,9 +86,69 @@ data Lobby = MkLobby
     paused :: Bool,
     -- | What was tapped that abandons the game in progress, asked about
     -- first.
-    abandoning :: Maybe Event
+    abandoning :: Maybe Event,
+    -- | The options the game is started with.
+    options :: Options
   }
   deriving (Eq, Show)
+
+-- | The options of CR 800.2, and the variants' (CR 407, 901), a game started
+-- here is played with ('settings'): those no team plays (CR 808.1).
+data Options = MkOptions
+  { -- | CR 407.1: whether the game is played for ante.
+    ante :: Bool,
+    -- | CR 901.15: whether a Planechase game uses one communal planar deck.
+    singlePlanarDeck :: Bool,
+    -- | CR 806.2b: the attack option a game of three or more seats uses.
+    attackOption :: AttackOption.AttackOption,
+    -- | CR 806.2a: every player's range of influence in a game of three or
+    -- more seats, in seats; unlimited where absent (CR 801.1).
+    rangeOfInfluence :: Maybe Natural
+  }
+  deriving (Eq, Show)
+
+-- | No option in use: CR 802's attack multiple players, which needs no
+-- seating agreed ('GameSettings.plain').
+noOptions :: Options
+noOptions = MkOptions {ante = False, singlePlanarDeck = False, attackOption = AttackOption.MultiplePlayers, rangeOfInfluence = Nothing}
+
+-- | The attack options a game may choose (CR 806.2b), each with its value
+-- and its label; CR 809.3c's is the Emperor variant's.
+attackOptions :: [(AttackOption.AttackOption, (String, String))]
+attackOptions =
+  [ (AttackOption.MultiplePlayers, ("multiple", "Attack any opponents")),
+    (AttackOption.Leftward, ("left", "Attack left")),
+    (AttackOption.Rightward, ("right", "Attack right"))
+  ]
+
+-- | The limited ranges of influence offered (CR 801.2a's commonest), each
+-- with its value and label, after an unlimited one.
+ranges :: [(Maybe Natural, (String, String))]
+ranges = (Nothing, ("unlimited", "Unlimited")) : [(Just n, (show n, show n <> (if n == 1 then " seat" else " seats"))) | n <- [1, 2]]
+
+-- | Whether a game of so many seats is multiplayer, and so chooses CR 806.2's
+-- options (CR 800.1).
+multiplayer :: Natural -> Bool
+multiplayer count = count >= 3
+
+-- | How many seats the game has: yours and each other.
+seatCount :: Lobby -> Natural
+seatCount lobby = 1 + Natural.length (theirs lobby)
+
+-- | The options the game is started with (CR 800.2), its format aside, which
+-- the lists' headers name: the lobby's, CR 806.2's at three seats or more
+-- only, a range of influence being every seat's (CR 806.2a).
+settings :: Lobby -> GameSettings.GameSettings
+settings lobby =
+  let chosen' = options lobby
+      count = seatCount lobby
+      everyone n = RangeOfInfluence.MkRangeOfInfluence (Map.fromList [(Command.idOf k, n) | k <- [1 .. count]])
+   in GameSettings.plain
+        { GameSettings.ante = ante chosen',
+          GameSettings.singlePlanarDeck = singlePlanarDeck chosen',
+          GameSettings.attackOption = if multiplayer count then Just (attackOption chosen') else GameSettings.attackOption GameSettings.plain,
+          GameSettings.rangeOfInfluence = if multiplayer count then maybe RangeOfInfluence.unlimited everyone (rangeOfInfluence chosen') else RangeOfInfluence.unlimited
+        }
 
 -- | A slot a player from another browser takes.
 data Invite = MkInvite
@@ -170,6 +240,16 @@ data Event
     MkResume
   | -- | Keeps the game in progress, and this lobby.
     MkCancel
+  | -- | Toggles whether the game is played for ante (CR 407.1).
+    MkAnte
+  | -- | Toggles whether a Planechase game uses one planar deck (CR 901.15).
+    MkSinglePlanarDeck
+  | -- | Sets the attack option to the one whose value is chosen
+    -- ('attackOptions').
+    MkAttackOption
+  | -- | Sets the range of influence to the one whose value is chosen
+    -- ('ranges').
+    MkRangeOfInfluence
   deriving (Eq, Show)
 
 -- | A lobby whose decks are still to read, nothing chosen yet, your seat
@@ -188,7 +268,8 @@ new =
       ready = False,
       bots = Map.empty,
       paused = False,
-      abandoning = Nothing
+      abandoning = Nothing,
+      options = noOptions
     }
 
 -- | A new lobby with this deck yours, on the shelf it is on.
@@ -246,11 +327,11 @@ mostOthers = 3
 -- ('botAt').
 playOptions :: Map.Map Int (Difficulty.Difficulty, Persona.Persona) -> Natural -> Set.Set PlayerId.PlayerId -> PlayOptions.PlayOptions
 playOptions styles count people =
-  let settings n = case botAt (Natural.toIntSaturating n - 2) styles of
+  let seatPlay n = case botAt (Natural.toIntSaturating n - 2) styles of
         (level, style) -> (Opponent.budgetAt level PlayOptions.budget, Opponent.weightsOf style)
    in PlayOptions.none
         { PlayOptions.json = True,
-          PlayOptions.bots = Map.fromList [(n, settings n) | n <- [2 .. count], Set.notMember (Command.idOf n) people]
+          PlayOptions.bots = Map.fromList [(n, seatPlay n) | n <- [2 .. count], Set.notMember (Command.idOf n) people]
         }
 
 -- | Whether two decks are under one format, and so may meet: the game's
@@ -419,7 +500,14 @@ updated event typed lobby = case event of
   MkAbandon -> lobby
   MkResume -> lobby
   MkCancel -> lobby {abandoning = Nothing}
+  MkAnte -> optioned (\o -> o {ante = not (ante o)})
+  MkSinglePlanarDeck -> optioned (\o -> o {singlePlanarDeck = not (singlePlanarDeck o)})
+  MkAttackOption -> maybe lobby (\a -> optioned (\o -> o {attackOption = a})) (valued attackOptions)
+  MkRangeOfInfluence -> maybe lobby (\r -> optioned (\o -> o {rangeOfInfluence = r})) (valued ranges)
   where
+    optioned f = lobby {options = f (options lobby)}
+    valued :: [(a, (String, String))] -> Maybe a
+    valued among = Maybe.listToMaybe [option | (option, (value, _)) <- among, value == Text.unpack typed]
     styled i f
       | removable lobby i = lobby {bots = Map.insert i (f (botAt i (bots lobby))) (bots lobby)}
       | otherwise = lobby
@@ -444,13 +532,13 @@ linked :: Int -> (Invite -> Invite) -> Lobby -> Lobby
 linked i f lobby = settled lobby lobby {invites = Map.adjust f i (invites lobby)}
 
 -- | The lobby after a change, every ready flag cleared where the match-up
--- changed: a deck, a seat or an invite.
+-- changed: a deck, a seat, an invite or an option.
 settled :: Lobby -> Lobby -> Lobby
 settled before after
   | matchupOf before == matchupOf after = after
   | otherwise = unready after
   where
-    matchupOf l = (mine l, theirs l, locals l, fmap (\invite -> (connected invite, fmap fst (guestDeck invite), fmap snd (guestDeck invite))) (invites l))
+    matchupOf l = (mine l, theirs l, locals l, options l, fmap (\invite -> (connected invite, fmap fst (guestDeck invite), fmap snd (guestDeck invite))) (invites l))
 
 -- | The lobby with every ready flag cleared.
 unready :: Lobby -> Lobby
@@ -566,8 +654,8 @@ view lobby =
 
 -- | The seats: yours, then each bot's with how it plays, invited player's,
 -- player's here or one you play too; the way to unseat each that is
--- 'removable'; a seat to add, by who fills it, while there is room; and
--- Start at the foot, saying what it waits on.
+-- 'removable'; a seat to add, by who fills it, while there is room; the
+-- game's options; and Start at the foot, saying what it waits on.
 seatsView :: Lobby -> Html.Html Event
 seatsView lobby =
   Element.el "section" ["seats"] [Element.attr "aria-label" (Text.pack "Seats")] $
@@ -601,7 +689,7 @@ seatsView lobby =
              ]
          | length others < mostOthers
          ]
-      <> [startView lobby]
+      <> [optionsView lobby, startView lobby]
   where
     others = theirs lobby
     remove i = [Element.el "button" ["quiet", "drop-seat"] [Element.attr "type" (Text.pack "button"), Element.on "click" (MkDrop i), Element.attr "aria-label" (Text.pack ("Remove " <> seatName (MkTheirs i)))] [Element.string "Remove"] | removable lobby i]
@@ -656,6 +744,48 @@ botView i (level, style) =
         [ Element.el "option" [] ([Element.attr "value" (Text.pack value)] <> [Element.attr "selected" Text.empty | option == current]) [Element.string label]
         | option <- [minBound .. maxBound],
           let (value, label) = nameOf option
+        ]
+
+-- | The game's options: ante, the single planar deck, and at three seats or
+-- more CR 806.2's attack option and range of influence.
+optionsView :: Lobby -> Html.Html Event
+optionsView lobby =
+  Element.el "fieldset" ["game-options"] [] $
+    [ Element.el "legend" ["eyebrow"] [] [Element.string "Game options"],
+      toggle "option-ante" MkAnte (ante chosen') "Play for ante" "Each player antes a random card from their library; the winner owns them all.",
+      toggle "option-single-planar-deck" MkSinglePlanarDeck (singlePlanarDeck chosen') "Single planar deck" "In Planechase, every planar deck the lists bring is shuffled into one."
+    ]
+      <> ( if multiplayer (seatCount lobby)
+             then
+               [ menu "option-attack" MkAttackOption "Attacks" [(value, label, option == attackOption chosen') | (option, (value, label)) <- attackOptions],
+                 menu "option-range" MkRangeOfInfluence "Range of influence" [(value, label, option == rangeOfInfluence chosen') | (option, (value, label)) <- ranges]
+               ]
+             else []
+         )
+  where
+    chosen' = options lobby
+    toggle :: String -> Event -> Bool -> String -> String -> Html.Html Event
+    toggle field event on label note =
+      Element.el
+        "div"
+        ["game-option"]
+        []
+        [ Element.el "input" [] ([Element.attr "id" (Text.pack field), Element.attr "type" (Text.pack "checkbox"), Element.attr "aria-describedby" (Text.pack (field <> "-note")), Element.on "change" event] <> [Element.attr "checked" Text.empty | on]) [],
+          Element.el "label" [] [Element.attr "for" (Text.pack field)] [Element.string label],
+          Element.el "p" ["muted"] [Element.attr "id" (Text.pack (field <> "-note"))] [Element.string note]
+        ]
+    menu :: String -> Event -> String -> [(String, String, Bool)] -> Html.Html Event
+    menu field event label choices =
+      Element.el
+        "div"
+        ["game-option"]
+        []
+        [ Element.el "label" [] [Element.attr "for" (Text.pack field)] [Element.string label],
+          Element.el
+            "select"
+            ["deck-menu"]
+            [Element.attr "id" (Text.pack field), Element.on "change" event]
+            [Element.el "option" [] ([Element.attr "value" (Text.pack value)] <> [Element.attr "selected" Text.empty | on]) [Element.string text] | (value, text, on) <- choices]
         ]
 
 -- | Start, or Ready with players invited, and what it waits on; else,

@@ -74,9 +74,9 @@ main arguments = do
     let options = Config.options config
     registry <- Registry.defaultRoot >>= Registry.loadRoot >>= Registry.defaultRegistry
     lists <- traverse (orExit . load registry) paths
-    format <- orExit (settle (PlayOptions.format options) (NonEmpty.toList (NonEmpty.zip paths lists)))
+    format <- orExit (settle GameSettings.plain (PlayOptions.format options) (NonEmpty.toList (NonEmpty.zip paths lists)))
     prior <- priorOf registry options format
-    play (Protocol.overLines exchange) options prior registry format (fmap DeckList.deck lists)
+    play (Protocol.overLines exchange) options prior registry GameSettings.plain {GameSettings.format = format} (fmap DeckList.deck lists)
 
 -- | A deck list file with no bad line, as `parun deck` reads it; or every
 -- problem with it.
@@ -106,7 +106,7 @@ check :: Registry.Registry Identity.Identity -> Text.Text -> IO [Text.Text]
 check registry contents =
   fmap (unlabelled label) <$> case loadText registry label contents of
     Left problems -> pure problems
-    Right listed -> Either.fromLeft [] <$> settle Nothing [(label, listed)]
+    Right listed -> Either.fromLeft [] <$> settle GameSettings.plain Nothing [(label, listed)]
   where
     label = "deck"
 
@@ -118,12 +118,13 @@ unlabelled label problem = Maybe.fromMaybe problem (Text.stripPrefix (Text.pack 
 -- for, else the one their headers name, checking every deck against it; or
 -- why the game can't start, which it can't when two headers name different
 -- formats and none is asked for (see docs/decisions.md, "The format of a game
--- whose lists' headers disagree").
-settle :: Maybe Text.Text -> [(FilePath, DeckList.Listed)] -> IO (Either [Text.Text] (Maybe Format.Format))
-settle asked lists = case gameFormat asked lists of
+-- whose lists' headers disagree"). The decks are judged for a game with
+-- `settings`' options (CR 800.2); its format is the one found.
+settle :: GameSettings.GameSettings -> Maybe Text.Text -> [(FilePath, DeckList.Listed)] -> IO (Either [Text.Text] (Maybe Format.Format))
+settle settings asked lists = case gameFormat asked lists of
   Left problem -> pure (Left [problem])
   Right name -> do
-    violations <- refusals name lists
+    violations <- refusals settings name lists
     if null violations
       then fmap (maybe (Right Nothing) (Bifunctor.bimap pure Just)) (traverse Legality.shipped name)
       else pure (Left violations)
@@ -142,13 +143,14 @@ gameFormat asked lists = case (asked, headers) of
 
 -- | Why the game can't start: a list's header names a format other than the
 -- one asked for, or its deck breaks the rules or pool of the format asked for
--- or its header names, in a game not for ante, naming every violation of
--- every deck as `parun deck` does; and, under a format, every violation of
--- the rules a game states of its decks together (Parun.Legality.checkGame).
-refusals :: Maybe Text.Text -> [(FilePath, DeckList.Listed)] -> IO [Text.Text]
-refusals format lists = do
-  reports <- traverse (\(path, listed) -> fmap (fmap (Text.pack (path <> ": ") <>) . snd) (Legality.report format Nothing listed)) lists
-  let together = if Maybe.isJust format then fmap Legality.explain (Legality.checkGame GameSettings.plain (fmap (DeckList.deck . snd) lists)) else []
+-- or its header names, in a game with `settings`' options, naming every
+-- violation of every deck as `parun deck` does; and, under a format, every
+-- violation of the rules a game states of its decks together
+-- (Parun.Legality.checkGame).
+refusals :: GameSettings.GameSettings -> Maybe Text.Text -> [(FilePath, DeckList.Listed)] -> IO [Text.Text]
+refusals settings format lists = do
+  reports <- traverse (\(path, listed) -> fmap (fmap (Text.pack (path <> ": ") <>) . snd) (Legality.report settings format Nothing listed)) lists
+  let together = if Maybe.isJust format then fmap Legality.explain (Legality.checkGame settings (fmap (DeckList.deck . snd) lists)) else []
   pure (concat reports <> together)
 
 -- | How `parun play`'s search bot deals what it cannot see: as 'inferring'
@@ -197,11 +199,11 @@ poolOf table format cards = do
 
 -- | `parun play`'s game ('game'), its result said, its seed drawn where none
 -- is given and said, and its scenario saved where asked.
-play :: Protocol.Exchange IO -> PlayOptions.PlayOptions -> Search.Prior -> Registry.Registry Identity.Identity -> Maybe Format.Format -> NonEmpty.NonEmpty Deck.Deck -> IO ()
-play send options prior registry format decks = do
+play :: Protocol.Exchange IO -> PlayOptions.PlayOptions -> Search.Prior -> Registry.Registry Identity.Identity -> GameSettings.GameSettings -> NonEmpty.NonEmpty Deck.Deck -> IO ()
+play send options prior registry settings decks = do
   IO.hSetBuffering IO.stdout IO.LineBuffering
   seed <- maybe Key.fresh pure (PlayOptions.seed options)
-  (outcome, recorded) <- game (Text.pack "parun play") send (pure Nothing) (const (pure ())) [] (pure ()) options prior registry format decks seed
+  (outcome, recorded) <- game (Text.pack "parun play") send (pure Nothing) (const (pure ())) [] (pure ()) options prior registry settings decks seed
   Monad.forM_ (PlayOptions.save options) (`save` recorded)
   case outcome of
     Right (result, _) -> (if PlayOptions.json options then TextIO.hPutStrLn IO.stderr else TextIO.putStrLn) (Wording.result Nothing result)
@@ -209,8 +211,8 @@ play send options prior registry format decks = do
   TextIO.hPutStrLn IO.stderr (Text.pack "Seed " <> Key.toHex seed <> Text.pack ".")
 
 -- | A game played with `client` among the decks, seat 1's first, under
--- `format`, the one 'settle' names (CR 100.2), from the generator keyed by
--- `seed`, its scenario's description naming both: its result and final state,
+-- `settings`' options and format, the one 'settle' names (CR 800.2, 100.2),
+-- from the generator keyed by `seed`, its scenario's description naming both: its result and final state,
 -- or why it stopped first (Game.run), the end of input before a seat chose
 -- who plays first among them; and the scenario it replays as, up to where it
 -- stopped. With --json, each line protocol request goes out through
@@ -219,8 +221,8 @@ play send options prior registry format decks = do
 -- it cannot see by `prior`, and its answer is taken from `stored` while it
 -- has one, and otherwise given to `kept` ('answerer'), its search waiting
 -- on `breathe` at each step. `watchers` see every prompt too.
-game :: Text.Text -> Protocol.Exchange IO -> IO (Maybe R.Reply) -> (R.Reply -> IO ()) -> [Observer.Observer (Game.Play IO)] -> IO () -> PlayOptions.PlayOptions -> Search.Prior -> Registry.Registry Identity.Identity -> Maybe Format.Format -> NonEmpty.NonEmpty Deck.Deck -> Key.Type.Key -> IO (Either Text.Text (Result.Result, GameState.GameState), Scenario.Scenario)
-game client send stored kept watchers breathe options prior registry format decks seed = do
+game :: Text.Text -> Protocol.Exchange IO -> IO (Maybe R.Reply) -> (R.Reply -> IO ()) -> [Observer.Observer (Game.Play IO)] -> IO () -> PlayOptions.PlayOptions -> Search.Prior -> Registry.Registry Identity.Identity -> GameSettings.GameSettings -> NonEmpty.NonEmpty Deck.Deck -> Key.Type.Key -> IO (Either Text.Text (Result.Result, GameState.GameState), Scenario.Scenario)
+game client send stored kept watchers breathe options prior registry settings decks seed = do
   let reference :: Registry.Registry IO
       reference = Registry.hoist (pure . Identity.runIdentity) registry
   let count = Natural.length decks
@@ -228,7 +230,7 @@ game client send stored kept watchers breathe options prior registry format deck
       ask chooser among = fmap (fmap ((+ 1) . PlayerId.unwrap)) (Protocol.playOrDraw send (idOf chooser) (fmap idOf among))
   (starter, generator) <- State.runStateT (Game.starter (TextIO.hPutStrLn IO.stderr) ask numbers options) (Generator.fromKey seed)
   let orders = Map.fromList [(idOf n, GraveyardOrder.Matters) | n <- Set.toList (PlayOptions.arrangesGraveyard options)]
-      record = saved (Registry.printings registry) (Text.pack "Played with " <> client <> Text.pack ", seed " <> Key.toHex seed <> Text.pack ".") format orders
+      record = saved (Registry.printings registry) (Text.pack "Played with " <> client <> Text.pack ", seed " <> Key.toHex seed <> Text.pack ".") settings orders
   case starter of
     -- No seat chose who plays first: the game never began.
     Nothing -> pure (Left (Text.pack "end of input"), record (seated 1 decks) Seq.empty)
@@ -242,7 +244,7 @@ game client send stored kept watchers breathe options prior registry format deck
           interrupted e = case e of
             Exception.UserInterrupt -> pure (Left (Text.pack "interrupted"))
             _ -> Exception.throwIO e
-      outcome <- Exception.catch (Game.run reference format (PlayOptions.limits options) observers seats generator orders matchup) interrupted
+      outcome <- Exception.catch (Game.run reference settings (PlayOptions.limits options) observers seats generator orders matchup) interrupted
       timeline <- IORef.readIORef entries
       pure (outcome, record matchup timeline)
 
@@ -318,11 +320,11 @@ relativeTo meta path = case (path, List.dropWhileEnd (/= '/') meta) of
 labels :: Natural -> Map.Map PlayerId.PlayerId Label.Label
 labels count = Map.fromList [(idOf n, Label.MkLabel (Text.pack ("player" <> show n))) | n <- [1 .. count]]
 
--- | The scenario a game played from this matchup under `format`, each seat at
+-- | The scenario a game played from this matchup under `settings`, each seat at
 -- its graveyard order in `orders` and its answers' entries recorded in
 -- `timeline`, replays as.
-saved :: PrintingTable.PrintingTable -> Text.Text -> Maybe Format.Format -> Map.Map PlayerId.PlayerId GraveyardOrder.GraveyardOrder -> NonEmpty.NonEmpty (PlayerId.PlayerId, Deck.Deck) -> Seq.Seq Timed.Timed -> Scenario.Scenario
-saved table description format orders matchup = Record.scenario table description format (fmap (\(pid, deck) -> (pid, Record.labelOf (labels (Natural.length matchup)) pid, Map.findWithDefault GraveyardOrder.Indifferent pid orders, deck)) matchup)
+saved :: PrintingTable.PrintingTable -> Text.Text -> GameSettings.GameSettings -> Map.Map PlayerId.PlayerId GraveyardOrder.GraveyardOrder -> NonEmpty.NonEmpty (PlayerId.PlayerId, Deck.Deck) -> Seq.Seq Timed.Timed -> Scenario.Scenario
+saved table description settings orders matchup = Record.scenario table description settings (fmap (\(pid, deck) -> (pid, Record.labelOf (labels (Natural.length matchup)) pid, Map.findWithDefault GraveyardOrder.Indifferent pid orders, deck)) matchup)
 
 -- | Writes a scenario to `path`.
 save :: FilePath -> Scenario.Scenario -> IO ()

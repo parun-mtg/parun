@@ -1336,6 +1336,41 @@ main.lobby.new-game {
   width: 100%;
 }
 
+/* The game's options, under the seats: each switch beside its label, its
+   note beneath; each menu under its label. */
+.game-options {
+  margin: 0;
+  padding: 0;
+  border: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.game-option {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: 2px 8px;
+  align-items: center;
+}
+
+.game-option input[type="checkbox"] {
+  width: 18px;
+  height: 18px;
+  margin: 0;
+}
+
+.game-option p,
+.game-option select {
+  grid-column: 1 / -1;
+  margin: 0;
+  font-size: 13px;
+}
+
+.game-option select {
+  width: 100%;
+}
+
 /* An invited player's seat: the link to send, the box their code goes in. */
 .lobby-seat.invite {
   border-style: dashed;

@@ -518,7 +518,7 @@ decisionIn registry deck =
               Play.Game.underneath (State.put (Just (Asked.game asked)))
               Play.Game.stop (Text.pack "found")
         _ -> Answerer.unwrap (Play.Game.bot lifted) asked
-      taken = snd (Identity.runIdentity (State.runStateT (Play.Game.run lifted Nothing Limits.standard [] (Map.fromList [(Command.idOf 1, capture), (Command.idOf 2, capture)]) (seeded 3) Map.empty (Command.seated 1 (deck NonEmpty.:| [deck]))) Nothing))
+      taken = snd (Identity.runIdentity (State.runStateT (Play.Game.run lifted GameSettings.plain Limits.standard [] (Map.fromList [(Command.idOf 1, capture), (Command.idOf 2, capture)]) (seeded 3) Map.empty (Command.seated 1 (deck NonEmpty.:| [deck]))) Nothing))
    in maybe (Exception.throwIO (userError "no decision from turn 3 on")) pure taken
 
 main :: IO ()

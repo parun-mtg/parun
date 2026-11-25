@@ -14,6 +14,7 @@ import qualified Parun.Types.AttackOption as AttackOption.Type
 import qualified Parun.Types.Board as Board.Type
 import qualified Parun.Types.Entrant as Entrant.Type
 import qualified Parun.Types.Format as Format.Type
+import qualified Parun.Types.GameSettings as GameSettings.Type
 import qualified Parun.Types.GraveyardOrder as GraveyardOrder.Type
 import qualified Parun.Types.Label as Label.Type
 import qualified Parun.Types.Phase as Phase.Type
@@ -58,7 +59,7 @@ spec s = Spec.describe s "Parun.Codec.Scenario" $ do
       Scenario.codec
       Scenario.Type.MkScenario
         { Scenario.Type.description = Text.pack "a game",
-          Scenario.Type.start = Start.Type.FromDecks Nothing (Entrant.Type.MkEntrant (Label.Type.MkLabel (Text.pack "alice")) [Text.pack "20 Forest"] GraveyardOrder.Type.Indifferent NonEmpty.:| []) Nothing,
+          Scenario.Type.start = Start.Type.FromDecks GameSettings.Type.plain (Entrant.Type.MkEntrant (Label.Type.MkLabel (Text.pack "alice")) [Text.pack "20 Forest"] GraveyardOrder.Type.Indifferent NonEmpty.:| []) Nothing,
           Scenario.Type.timeline = Seq.empty,
           Scenario.Type.final = Seq.empty
         }
@@ -69,18 +70,31 @@ spec s = Spec.describe s "Parun.Codec.Scenario" $ do
       Scenario.codec
       Scenario.Type.MkScenario
         { Scenario.Type.description = Text.pack "a game",
-          Scenario.Type.start = Start.Type.FromDecks (Just (Format.Type.MkFormat RuleFamily.Type.Constructed Nothing Set.empty)) (Entrant.Type.MkEntrant (Label.Type.MkLabel (Text.pack "alice")) [Text.pack "60 Forest"] GraveyardOrder.Type.Indifferent NonEmpty.:| []) Nothing,
+          Scenario.Type.start = Start.Type.FromDecks GameSettings.Type.plain {GameSettings.Type.format = Just (Format.Type.MkFormat RuleFamily.Type.Constructed Nothing Set.empty)} (Entrant.Type.MkEntrant (Label.Type.MkLabel (Text.pack "alice")) [Text.pack "60 Forest"] GraveyardOrder.Type.Indifferent NonEmpty.:| []) Nothing,
           Scenario.Type.timeline = Seq.empty,
           Scenario.Type.final = Seq.empty
         }
       " {\"description\":\"a game\",\"game\":[{\"name\":\"alice\",\"deck\":[\"60 Forest\"]}],\"format\":{\"rules\":\"Constructed\"}} "
+  Spec.it s "CR 800.2: a new game carries the options it was played with beside its format" $
+    Common.assertCodec
+      s
+      Scenario.codec
+      Scenario.Type.MkScenario
+        { Scenario.Type.description = Text.pack "a game",
+          Scenario.Type.start = Start.Type.FromDecks GameSettings.Type.plain {GameSettings.Type.ante = True, GameSettings.Type.format = Just (Format.Type.MkFormat RuleFamily.Type.Constructed Nothing Set.empty)} (Entrant.Type.MkEntrant (Label.Type.MkLabel (Text.pack "alice")) [Text.pack "60 Forest"] GraveyardOrder.Type.Indifferent NonEmpty.:| []) Nothing,
+          Scenario.Type.timeline = Seq.empty,
+          Scenario.Type.final = Seq.empty
+        }
+      " {\"description\":\"a game\",\"game\":[{\"name\":\"alice\",\"deck\":[\"60 Forest\"]}],\"format\":{\"rules\":\"Constructed\"},\"settings\":{\"brawl\":false,\"attackOption\":\"MultiplePlayers\",\"teams\":{},\"sharedTeamTurns\":false,\"sharedTeamLife\":false,\"rangeOfInfluence\":{},\"deployCreatures\":false,\"emperors\":{},\"twoHeadedGiant\":false,\"alternatingTeams\":false,\"grandMelee\":false,\"ante\":true,\"singlePlanarDeck\":false,\"format\":null}} "
+  Spec.it s "a game's settings naming a format of their own do not decode" $
+    Spec.assertBool s (Either.isLeft (Common.parse (Text.pack "{\"description\":\"x\",\"game\":[{\"name\":\"a\",\"deck\":[]}],\"settings\":{\"brawl\":false,\"attackOption\":null,\"teams\":{},\"sharedTeamTurns\":false,\"sharedTeamLife\":false,\"rangeOfInfluence\":{},\"deployCreatures\":false,\"emperors\":{},\"twoHeadedGiant\":false,\"alternatingTeams\":false,\"grandMelee\":false,\"ante\":true,\"singlePlanarDeck\":false,\"format\":{\"rules\":\"Constructed\"}}}") >>= Codec.decode Scenario.codec)) "settings with a format"
   Spec.it s "CR 103.1: a new game names its starting player where not the first seat" $
     Common.assertCodec
       s
       Scenario.codec
       Scenario.Type.MkScenario
         { Scenario.Type.description = Text.pack "a game",
-          Scenario.Type.start = Start.Type.FromDecks Nothing (Entrant.Type.MkEntrant (Label.Type.MkLabel (Text.pack "alice")) [Text.pack "20 Forest"] GraveyardOrder.Type.Indifferent NonEmpty.:| [Entrant.Type.MkEntrant (Label.Type.MkLabel (Text.pack "bob")) [Text.pack "20 Forest"] GraveyardOrder.Type.Indifferent]) (Just (Label.Type.MkLabel (Text.pack "bob"))),
+          Scenario.Type.start = Start.Type.FromDecks GameSettings.Type.plain (Entrant.Type.MkEntrant (Label.Type.MkLabel (Text.pack "alice")) [Text.pack "20 Forest"] GraveyardOrder.Type.Indifferent NonEmpty.:| [Entrant.Type.MkEntrant (Label.Type.MkLabel (Text.pack "bob")) [Text.pack "20 Forest"] GraveyardOrder.Type.Indifferent]) (Just (Label.Type.MkLabel (Text.pack "bob"))),
           Scenario.Type.timeline = Seq.empty,
           Scenario.Type.final = Seq.empty
         }

@@ -269,7 +269,7 @@ spec s registry = Spec.describe s "Play" $ do
     matchup <- BotSpec.sevens s registry
     let bots :: Map.Map PlayerId.PlayerId (Answerer.Answerer (Asked.Asked GameState.GameState) (Game.Play Identity.Identity))
         bots = Map.fromList [(S.alice, Game.bot (S.fixtureRegistry [])), (S.bob, Game.bot (S.fixtureRegistry []))]
-    case Identity.runIdentity (Game.run (S.fixtureRegistry []) Nothing Limits.standard [] bots (S.seeded 1) Map.empty matchup) of
+    case Identity.runIdentity (Game.run (S.fixtureRegistry []) GameSettings.plain Limits.standard [] bots (S.seeded 1) Map.empty matchup) of
       Right (Result.Won winner, gs) ->
         let loser = if winner == S.alice then S.bob else S.alice
          in Spec.assertEq s (Wording.departures Nothing gs) [Wording.player loser <> Text.pack " lost the game: drew from an empty library."]
@@ -279,7 +279,7 @@ spec s registry = Spec.describe s "Play" $ do
     alone <- NonEmpty.fromList . NonEmpty.take 1 <$> BotSpec.sevens s registry
     let bots :: Map.Map PlayerId.PlayerId (Answerer.Answerer (Asked.Asked GameState.GameState) (Game.Play Identity.Identity))
         bots = Map.singleton S.alice (Game.bot (S.fixtureRegistry []))
-    case Identity.runIdentity (Game.run (S.fixtureRegistry []) Nothing Limits.standard [] bots (S.seeded 1) Map.empty alone) of
+    case Identity.runIdentity (Game.run (S.fixtureRegistry []) GameSettings.plain Limits.standard [] bots (S.seeded 1) Map.empty alone) of
       Right (Result.Drawn, gs) -> Spec.assertEq s (Wording.departures Nothing gs) [Wording.player S.alice <> Text.pack " lost the game: drew from an empty library."]
       outcome -> Spec.assertBool s False ("drawn: " <> show (fmap fst outcome))
 
@@ -440,5 +440,5 @@ gameSpec s = Spec.describe s "Play.Command" $ do
   Spec.it s "a game's saved scenario names what it was played with" $ do
     let seed = Generator.key (S.seeded 7)
         deck = Deck.fromCards Map.empty
-    (_, recorded) <- Command.game (Text.pack "the web client") (const (pure Nothing)) (pure Nothing) (const (pure ())) [] (pure ()) PlayOptions.none Search.known (S.fixtureRegistry []) Nothing (deck NonEmpty.:| [deck]) seed
+    (_, recorded) <- Command.game (Text.pack "the web client") (const (pure Nothing)) (pure Nothing) (const (pure ())) [] (pure ()) PlayOptions.none Search.known (S.fixtureRegistry []) GameSettings.plain (deck NonEmpty.:| [deck]) seed
     Spec.assertEqWith s "description" (Scenario.description recorded) (Text.pack "Played with the web client, seed " <> Key.toHex seed <> Text.pack ".")
