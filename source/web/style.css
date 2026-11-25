@@ -2516,7 +2516,8 @@ main.game {
   padding: var(--seat-pad-y) var(--seat-pad-x);
 }
 
-.seat.opponent {
+.seat.opponent,
+.seat.teammate {
   flex: none;
 }
 
@@ -2538,11 +2539,13 @@ main.game {
   scrollbar-width: thin;
 }
 
-/* The other seats, in turn order from yours: side by side where they fit,
+/* The other seats, in turn order from yours, teammates (CR 808.1) in a row
+   of their own beside yours: side by side where they fit,
    each battlefield capped so yours stays on screen, all of them scrolling
    together under their heads. A lone seat's box opens at its foot, its
    creatures (nearest the middle) in view before its lands. */
-.opponents {
+.opponents,
+.teammates {
   flex: 0 1 auto;
   min-height: 0;
   display: grid;
@@ -2553,7 +2556,8 @@ main.game {
   border-bottom: 1px solid var(--line);
 }
 
-.opponents:not(.several) {
+.opponents:not(.several),
+.teammates:not(.several) {
   display: flex;
   flex-direction: column-reverse;
 }
@@ -2561,27 +2565,33 @@ main.game {
 /* Several seats' boxes open at their foot too: column-reverse starts a
    scroll box at its end, and the orders put the lines back as the markup
    has them, the creatures lowest. */
-.opponents.several .seat .battlefield {
+.opponents.several .seat .battlefield,
+.teammates.several .seat .battlefield {
   max-height: 28vh;
   overflow-y: auto;
   overscroll-behavior: contain;
   flex-direction: column-reverse;
 }
 
-.opponents.several .seat .battlefield > .row.front {
+.opponents.several .seat .battlefield > .row.front,
+.teammates.several .seat .battlefield > .row.front {
   order: 1;
 }
 
-.opponents.several .seat .battlefield > .back {
+.opponents.several .seat .battlefield > .back,
+.teammates.several .seat .battlefield > .back {
   order: 2;
 }
 
 .opponents.several .seat .battlefield > .row.phased,
-.opponents.several .seat .battlefield > .row.command {
+.teammates.several .seat .battlefield > .row.phased,
+.opponents.several .seat .battlefield > .row.command,
+.teammates.several .seat .battlefield > .row.command {
   order: 3;
 }
 
-.opponents.several .seat .seat-head {
+.opponents.several .seat .seat-head,
+.teammates.several .seat .seat-head {
   position: static;
 }
 
@@ -2602,7 +2612,8 @@ main.game {
   background: var(--bg);
 }
 
-.seat.opponent .seat-head {
+.seat.opponent .seat-head,
+.seat.teammate .seat-head {
   top: 0;
 }
 
@@ -2784,7 +2795,8 @@ details.pile[open] {
   gap: 0 28px;
 }
 
-.seat.opponent .battlefield > .back {
+.seat.opponent .battlefield > .back,
+.seat.teammate .battlefield > .back {
   flex-wrap: wrap-reverse;
 }
 
@@ -2793,7 +2805,8 @@ details.pile[open] {
   border-top: 1px dashed var(--line);
 }
 
-.seat.opponent .battlefield > .back:has(+ .row.front) {
+.seat.opponent .battlefield > .back:has(+ .row.front),
+.seat.teammate .battlefield > .back:has(+ .row.front) {
   border-bottom: 1px dashed var(--line);
 }
 

@@ -1,16 +1,35 @@
 module Parun.Web.EndingSpec where
 
 import qualified Data.Foldable as Foldable
+import qualified Data.List.NonEmpty as NonEmpty
+import qualified Data.Map.Strict as Map
 import qualified Data.Sequence as Seq
 import qualified Data.Text as Text
+import qualified Parun.Engine.Setup as Setup
 import qualified Parun.Spec as Spec
+import qualified Parun.Types.GameSettings as GameSettings
+import qualified Parun.Types.GameState as GameState
 import qualified Parun.Types.PlayerId as PlayerId
+import qualified Parun.Types.Result as Result
+import qualified Parun.Types.TeamId as TeamId
+import qualified Parun.Types.Teams as Teams
 import qualified Parun.Web.Ending as Ending
 import qualified Parun.Web.Html as Html
 import qualified Parun.Web.Log as Log
 
 spec :: (Monad m, Monad n) => Spec.Spec m n -> n ()
 spec s = Spec.describe s "Parun.Web.Ending" $ do
+  Spec.describe s "verdictOf" $ do
+    Spec.it s "CR 104.2c: a team's win is each member's, and names the team at a shared screen" $ do
+      let teams = Teams.MkTeams (Map.fromList [(PlayerId.MkPlayerId k, TeamId.MkTeamId n) | (k, n) <- [(0, 0), (1, 0), (2, 1), (3, 1)]])
+          gs = Setup.gameWith GameSettings.plain {GameSettings.teams = teams} (NonEmpty.fromList (fmap PlayerId.MkPlayerId [0 .. 3]))
+          won :: Either () (Result.Result, GameState.GameState)
+          won = Right (Result.TeamWon (TeamId.MkTeamId 1), gs)
+      Spec.assertEqWith s "each seat" (fmap (\k -> Ending.verdictOf (Just (PlayerId.MkPlayerId k)) won) [0 .. 3]) [Ending.MkLost, Ending.MkLost, Ending.MkWon, Ending.MkWon]
+      Spec.assertEqWith s "no seat" (Ending.verdictOf Nothing won) (Ending.MkTeamWonBy (TeamId.MkTeamId 1))
+      let page = Html.toText (Ending.view False ending {Ending.verdict = Ending.MkTeamWonBy (TeamId.MkTeamId 1), Ending.said = [Text.pack "Team 2 wins."], Ending.shared = True})
+      Spec.assertBool s (Text.isInfixOf (Text.pack "<section class=\"verdict won\"><h1>Team 2 wins!</h1></section>") page) (Text.unpack page)
+
   Spec.describe s "leftEarly" $ do
     Spec.it s "loses the game for the seat out of time and wins it for the other of two" $ do
       Spec.assertEqWith s "the seat out of time" (Ending.leftEarly 2 outOfTime two (Just two)) (Ending.MkLost, [Text.pack "Player 2 ran out of time."])

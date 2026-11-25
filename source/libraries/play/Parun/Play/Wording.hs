@@ -127,6 +127,7 @@ import qualified Parun.Types.Status as Status
 import qualified Parun.Types.StickerKind as StickerKind
 import qualified Parun.Types.StickerPut as StickerPut
 import qualified Parun.Types.TapState as TapState
+import qualified Parun.Types.TeamId as TeamId
 import qualified Parun.Types.Transformed as Transformed
 import qualified Parun.Types.TriggerSource as TriggerSource
 import qualified Parun.Types.TurnedFaceUp as TurnedFaceUp
@@ -139,6 +140,10 @@ import qualified Parun.Types.ZoneChange as ZoneChange
 -- | Seats are numbered from one on screen.
 player :: PlayerId.PlayerId -> Text.Text
 player pid = Text.pack ("Player " <> show (PlayerId.unwrap pid + 1))
+
+-- | A team's name (CR 808.1), "Team 1" for the first, as the lobby names it.
+team :: TeamId.TeamId -> Text.Text
+team t = Text.pack ("Team " <> show (TeamId.unwrap t + 1))
 
 -- | A hand's cards, lands first, then spells, each by `ordered`.
 handOrder :: PlayerView.PlayerView -> [ObjectView.ObjectView] -> [ObjectView.ObjectView]
@@ -867,7 +872,7 @@ sticker k = Text.pack $ case k of
 result :: Maybe PlayerId.PlayerId -> Result.Result -> Text.Text
 result reader r = case r of
   Result.Won pid -> acts reader pid "wins" <> Text.pack "."
-  Result.TeamWon _ -> Text.pack "A team wins."
+  Result.TeamWon t -> team t <> Text.pack " wins."
   Result.Drawn -> Text.pack "The game is a draw."
 
 -- | How each player who left the game left, to the sentence's reader, in

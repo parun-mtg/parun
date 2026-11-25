@@ -197,6 +197,7 @@ outcome game = case verdict game of
   Ending.MkLost -> "Lost"
   Ending.MkDrawn -> "Draw"
   Ending.MkWonBy pid -> Text.unpack (Wording.player pid) <> " won"
+  Ending.MkTeamWonBy team -> Text.unpack (Wording.team team) <> " won"
   Ending.MkStopped -> "Stopped"
 
 -- | The decks played, "Ajani (M19) vs Liliana (M19)".

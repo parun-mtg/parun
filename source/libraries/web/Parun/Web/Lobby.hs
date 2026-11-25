@@ -1,13 +1,14 @@
--- | The web client's lobby (#9421): the seats at the table, the seat being
--- chosen for, which a tap on a seat or a seat added changes, the game's
--- options, and Start at their foot; the decks that seat may play, filtered
--- by what is typed, by colour, by set and by whether they are saved; and the
--- chosen deck's detail.
+-- | The web client's lobby (#9421): the seats at the table, each on a team
+-- where the variant has teams, the seat being chosen for, which a tap on a
+-- seat or a seat added changes, the game's options, and Start at their foot;
+-- the decks that seat may play, filtered by what is typed, by colour, by set
+-- and by whether they are saved; and the chosen deck's detail.
 --
 -- WHAT IS NOT IMPLEMENTED:
 --
---   * Deploying creatures, the multiplayer variants but Free-for-All (CR 804,
---     807 to 811) and Archenemy (CR 904) (#9749).
+--   * Deploying creatures (CR 804) (#9794).
+--   * The Emperor and Grand Melee variants (CR 807, 809) (#9788).
+--   * Archenemy (CR 904) (#9789).
 module Parun.Web.Lobby where
 
 import qualified Control.Monad as Monad
@@ -24,11 +25,17 @@ import qualified Data.Text as Text
 import qualified Data.Traversable as Traversable
 import Numeric.Natural (Natural)
 import qualified Parun.DeckList as DeckList
+import qualified Parun.Engine.AlternatingTeams as AlternatingTeams
 import qualified Parun.Engine.Card as EngineCard
 import qualified Parun.Engine.RuleFamily as RuleFamily.Engine
+import qualified Parun.Engine.Seating as Seating
+import qualified Parun.Engine.Setup as Setup
+import qualified Parun.Extra.Int as Int
+import qualified Parun.Extra.Integer as Integer
 import qualified Parun.Extra.Natural as Natural
 import qualified Parun.Play.Command as Command
 import qualified Parun.Play.Opponent as Opponent
+import qualified Parun.Play.Wording as Wording
 import qualified Parun.Types.AttackOption as AttackOption
 import qualified Parun.Types.Card as Card
 import qualified Parun.Types.CardName as CardName
@@ -37,17 +44,21 @@ import qualified Parun.Types.Color as Color
 import qualified Parun.Types.Difficulty as Difficulty
 import qualified Parun.Types.Face as Face
 import qualified Parun.Types.GameSettings as GameSettings
+import qualified Parun.Types.GameState as GameState
 import qualified Parun.Types.Hybrid as Hybrid
 import qualified Parun.Types.HybridPhyrexian as HybridPhyrexian
 import qualified Parun.Types.ManaCost as ManaCost
 import qualified Parun.Types.ManaSymbol as ManaSymbol
 import qualified Parun.Types.ManaType as ManaType
+import qualified Parun.Types.MatchScope as MatchScope
 import qualified Parun.Types.Persona as Persona
 import qualified Parun.Types.PlayOptions as PlayOptions
 import qualified Parun.Types.PlayerId as PlayerId
 import qualified Parun.Types.RangeOfInfluence as RangeOfInfluence
 import qualified Parun.Types.RuleFamily as RuleFamily
 import qualified Parun.Types.SideDeck as SideDeck
+import qualified Parun.Types.TeamId as TeamId
+import qualified Parun.Types.Teams as Teams
 import qualified Parun.Types.TypeLine as TypeLine
 import qualified Parun.Web.BotSettings as BotSettings
 import qualified Parun.Web.Clock as Clock
@@ -94,6 +105,9 @@ data Lobby = MkLobby
     abandoning :: Maybe Event,
     -- | The options the game is started with.
     options :: Options,
+    -- | The team each seat chose (CR 808.1), by its place at the table,
+    -- yours first; 'defaultTeam' in a place absent ('teamAt').
+    teams :: Map.Map Int Natural,
     -- | Why Start last refused the seats' lists ('planarDealt'), until the
     -- match-up changes.
     refusal :: Maybe Text.Text
@@ -101,9 +115,11 @@ data Lobby = MkLobby
   deriving (Eq, Show)
 
 -- | The options of CR 800.2, and the variants' (CR 407, 901), a game started
--- here is played with ('settings'): those no team plays (CR 808.1).
+-- here is played with ('settings').
 data Options = MkOptions
-  { -- | CR 407.1: whether the game is played for ante.
+  { -- | CR 800.2: the multiplayer variant, the one a game may use.
+    variant :: Variant,
+    -- | CR 407.1: whether the game is played for ante.
     ante :: Bool,
     -- | CR 901: whether the game is a Planechase game, each seat whose list
     -- brings no planar deck dealt one ('planarDealt').
@@ -124,7 +140,63 @@ data Options = MkOptions
 -- | No option in use: CR 802's attack multiple players, which needs no
 -- seating agreed ('GameSettings.plain').
 noOptions :: Options
-noOptions = MkOptions {ante = False, planechase = False, singlePlanarDeck = False, attackOption = AttackOption.MultiplePlayers, rangeOfInfluence = Nothing, clock = Nothing}
+noOptions = MkOptions {variant = MkFreeForAll, ante = False, planechase = False, singlePlanarDeck = False, attackOption = AttackOption.MultiplePlayers, rangeOfInfluence = Nothing, clock = Nothing}
+
+-- | A multiplayer variant a game started here may use (CR 800.2).
+data Variant
+  = -- | CR 806.
+    MkFreeForAll
+  | -- | CR 808.
+    MkTeamVsTeam
+  | -- | CR 810.
+    MkTwoHeadedGiant
+  | -- | CR 811.
+    MkAlternatingTeams
+  deriving (Eq, Show)
+
+-- | The variants a game may choose, each with its value and its label.
+variants :: [(Variant, (String, String))]
+variants =
+  [ (MkFreeForAll, ("free-for-all", "Free-for-All")),
+    (MkTeamVsTeam, ("team-vs-team", "Team vs. Team")),
+    (MkTwoHeadedGiant, ("two-headed-giant", "Two-Headed Giant")),
+    (MkAlternatingTeams, ("alternating-teams", "Alternating Teams"))
+  ]
+
+-- | The variant the game is played as: the one chosen at three seats or
+-- more, Free-for-All's no team at two (CR 800.1).
+variantOf :: Lobby -> Variant
+variantOf lobby = if multiplayer (seatCount lobby) then variant (options lobby) else MkFreeForAll
+
+-- | Whether the game is played between teams (CR 808.1), so each seat
+-- chooses one.
+teamed :: Lobby -> Bool
+teamed lobby = variantOf lobby /= MkFreeForAll
+
+-- | How many teams a seat may choose among: CR 810.1's two, else as many
+-- as there are seats.
+teamChoices :: Lobby -> Natural
+teamChoices lobby = if variantOf lobby == MkTwoHeadedGiant then 2 else seatCount lobby
+
+-- | The team a seat at this place at the table is on until it chooses, of
+-- so many: the table halved, yours and the seats after it first, a team
+-- sitting together (CR 808.2, 810.3); or, in Alternating Teams, the teams
+-- taking turns round the table (CR 811.3), two where the table splits
+-- evenly and one seat each otherwise.
+defaultTeam :: Variant -> Natural -> Int -> Natural
+defaultTeam variant' count place = case variant' of
+  MkAlternatingTeams -> Int.toNaturalSaturating place `mod` (if even count then 2 else count)
+  _ -> Int.toNaturalSaturating place * 2 `div` max 1 count
+
+-- | The team the seat at this place at the table is on, yours first.
+teamAt :: Lobby -> Int -> Natural
+teamAt lobby place = Map.findWithDefault (defaultTeam (variantOf lobby) (seatCount lobby) place) place (teams lobby)
+
+-- | Each seat's team (CR 808.1), none where the game has no teams.
+seatTeams :: Lobby -> Teams.Teams
+seatTeams lobby
+  | teamed lobby = Teams.MkTeams (Map.fromList [(Command.idOf (Int.toNaturalSaturating place + 1), TeamId.MkTeamId (teamAt lobby place)) | place <- [0 .. Natural.toIntSaturating (seatCount lobby) - 1]])
+  | otherwise = Teams.none
 
 -- | The attack options a game may choose (CR 806.2b), each with its value
 -- and its label; CR 809.3c's is the Emperor variant's.
@@ -145,24 +217,52 @@ ranges = (Nothing, ("unlimited", "Unlimited")) : [(Just n, (show n, show n <> (i
 multiplayer :: Natural -> Bool
 multiplayer count = count >= 3
 
+-- | Whether the game chooses CR 806.2's attack option and range of
+-- influence: at three seats or more, but in Two-Headed Giant, whose teams
+-- attack as CR 805.10 has it.
+chosesAttacks :: Lobby -> Bool
+chosesAttacks lobby = multiplayer (seatCount lobby) && variantOf lobby /= MkTwoHeadedGiant
+
 -- | How many seats the game has: yours and each other.
 seatCount :: Lobby -> Natural
 seatCount lobby = 1 + Natural.length (theirs lobby)
 
 -- | The options the game is started with (CR 800.2), its format aside, which
 -- the lists' headers name: the lobby's, CR 806.2's at three seats or more
--- only, a range of influence being every seat's (CR 806.2a).
-settings :: Lobby -> GameSettings.GameSettings
+-- only, a range of influence being every seat's (CR 806.2a); and the
+-- variant's over each seat's team. Or why the table can't play the variant:
+-- a seating Parun.Engine.Seating.misseated refuses (CR 808.2, 810.3), fewer
+-- than two teams (CR 808.1), Two-Headed Giant's two teams of two (CR 810.1),
+-- or what Parun.Engine.AlternatingTeams.setUp refuses (CR 811.1, 811.3).
+settings :: Lobby -> Either String GameSettings.GameSettings
 settings lobby =
   let chosen' = options lobby
       count = seatCount lobby
       everyone n = RangeOfInfluence.MkRangeOfInfluence (Map.fromList [(Command.idOf k, n) | k <- [1 .. count]])
-   in GameSettings.plain
-        { GameSettings.ante = ante chosen',
-          GameSettings.singlePlanarDeck = planechase chosen' && singlePlanarDeck chosen',
-          GameSettings.attackOption = if multiplayer count then Just (attackOption chosen') else GameSettings.attackOption GameSettings.plain,
-          GameSettings.rangeOfInfluence = if multiplayer count then maybe RangeOfInfluence.unlimited everyone (rangeOfInfluence chosen') else RangeOfInfluence.unlimited
-        }
+      plain =
+        GameSettings.plain
+          { GameSettings.ante = ante chosen',
+            GameSettings.singlePlanarDeck = planechase chosen' && singlePlanarDeck chosen'
+          }
+      free =
+        plain
+          { GameSettings.attackOption = if multiplayer count then Just (attackOption chosen') else GameSettings.attackOption GameSettings.plain,
+            GameSettings.rangeOfInfluence = if multiplayer count then maybe RangeOfInfluence.unlimited everyone (rangeOfInfluence chosen') else RangeOfInfluence.unlimited
+          }
+      teams' = seatTeams lobby
+      sizes = Map.elems (Map.fromListWith (+) [(team, 1 :: Int) | team <- Map.elems (Teams.unwrap teams')])
+      seats = Command.idOf 1 NonEmpty.:| [Command.idOf k | k <- [2 .. count]]
+      together' settings'
+        | length sizes < 2 = Left "Put the seats on two teams or more."
+        | Maybe.isJust (Seating.misseated (Setup.gameWith settings' seats)) = Left "Seat each team together: teammates side by side."
+        | otherwise = Right settings'
+   in case variantOf lobby of
+        MkFreeForAll -> Right free
+        MkTeamVsTeam -> together' free {GameSettings.teams = teams'}
+        MkTwoHeadedGiant
+          | sizes /= [2, 2] -> Left "Two-Headed Giant is two teams of two: four seats, two on each team."
+          | otherwise -> together' plain {GameSettings.teams = teams', GameSettings.twoHeadedGiant = True, GameSettings.sharedTeamTurns = True, GameSettings.sharedTeamLife = True}
+        MkAlternatingTeams -> maybe (Left "Alternating Teams is teams of equal size, no one beside a teammate.") (Right . MatchScope.settings . GameState.match) (AlternatingTeams.setUp teams' (Setup.gameWith free seats))
 
 -- | A slot a player from another browser takes.
 data Invite = MkInvite
@@ -269,6 +369,12 @@ data Event
   | -- | Sets each seat's time to the one whose value is chosen
     -- (Clock.choices).
     MkClock
+  | -- | Sets the variant to the one whose value is chosen ('variants'),
+    -- each seat back on its 'defaultTeam'.
+    MkVariant
+  | -- | Puts the seat at this place at the table, yours first, on the team
+    -- whose number is chosen, from zero.
+    MkTeam Int
   deriving (Eq, Show)
 
 -- | A lobby whose decks are still to read, nothing chosen yet, your seat
@@ -289,6 +395,7 @@ new =
       paused = False,
       abandoning = Nothing,
       options = noOptions,
+      teams = Map.empty,
       refusal = Nothing
     }
 
@@ -565,7 +672,9 @@ updated event typed lobby = case event of
                   MkMine -> MkMine,
                 invites = Map.mapKeys moved (Map.delete i (invites lobby)),
                 locals = Map.mapKeys moved (Map.delete i (locals lobby)),
-                bots = Map.mapKeys moved (Map.delete i (bots lobby))
+                bots = Map.mapKeys moved (Map.delete i (bots lobby)),
+                -- Yours is the table's first place, before each in 'theirs'.
+                teams = Map.mapKeys (\place -> if place > i + 1 then place - 1 else place) (Map.delete (i + 1) (teams lobby))
               }
     | otherwise -> lobby
   MkStart -> lobby
@@ -585,6 +694,10 @@ updated event typed lobby = case event of
   MkAttackOption -> maybe lobby (\a -> optioned (\o -> o {attackOption = a})) (valued attackOptions)
   MkRangeOfInfluence -> maybe lobby (\r -> optioned (\o -> o {rangeOfInfluence = r})) (valued ranges)
   MkClock -> maybe lobby (\c -> optioned (\o -> o {clock = c})) (valued Clock.choices)
+  MkVariant -> maybe lobby (\v -> (optioned (\o -> o {variant = v})) {teams = Map.empty}) (valued variants)
+  MkTeam place
+    | place >= 0 && Int.toNaturalSaturating place < seatCount lobby, Just n <- Read.readMaybe (Text.unpack typed), Just team <- Integer.toNatural n, team < teamChoices lobby -> lobby {teams = Map.insert place team (teams lobby)}
+    | otherwise -> lobby
   where
     optioned f = lobby {options = f (options lobby)}
     valued :: [(a, (String, String))] -> Maybe a
@@ -619,7 +732,7 @@ settled before after
   | matchupOf before == matchupOf after = after
   | otherwise = (unready after) {refusal = Nothing}
   where
-    matchupOf l = (mine l, theirs l, locals l, options l, fmap (\invite -> (connected invite, fmap fst (guestDeck invite), fmap snd (guestDeck invite))) (invites l))
+    matchupOf l = (mine l, theirs l, locals l, options l, teams l, fmap (\invite -> (connected invite, fmap fst (guestDeck invite), fmap snd (guestDeck invite))) (invites l))
 
 -- | The lobby with every ready flag cleared.
 unready :: Lobby -> Lobby
@@ -642,11 +755,13 @@ rematch (yours NonEmpty.:| rest) invited here =
       browser = (browser new) {DeckBrowser.titles = foldMap DeckBrowser.titleIn (yours : [seat | (i, seat) <- zip [0 ..] rest, Map.notMember i invited])}
     }
 
--- | Whether a game with the players invited starts: there is one, your
--- deck is chosen, and every player is connected, has a deck and is ready.
+-- | Whether a game with the players invited starts: there is one, the
+-- table can play the variant ('settings'), your deck is chosen, and every
+-- player is connected, has a deck and is ready.
 starts :: Lobby -> Bool
 starts lobby =
   not (Map.null (invites lobby))
+    && Either.isRight (settings lobby)
     && ready lobby
     && Maybe.isJust (mine lobby)
     && guestsReady lobby
@@ -656,25 +771,28 @@ starts lobby =
 guestsReady :: Lobby -> Bool
 guestsReady = all (\invite -> connected invite && Maybe.isJust (guestDeck invite) && guestReady invite) . invites
 
--- | The match-up as the player invited to this slot is shown it, each
--- deck coloured by its name (`named`) or, a guest's, by its list (`listed`).
+-- | The match-up as the player invited to this slot is shown it, each seat
+-- with its team where the game has teams (CR 808.1), each deck coloured by its name (`named`) or, a guest's, by its list (`listed`).
 placesFor :: (Text.Text -> Set.Set Color.Color) -> (Text.Text -> Set.Set Color.Color) -> Int -> Lobby -> [Link.Place]
 placesFor named listed i lobby =
-  Link.MkPlace (Text.pack "Player 1") (maybe Link.unchosen (DeckBrowser.label (DeckBrowser.titles (browser lobby))) (mine lobby)) (Just (ready lobby)) False (foldMap named (mine lobby))
+  Link.MkPlace (onTeam 0 (Text.pack "Player 1")) (maybe Link.unchosen (DeckBrowser.label (DeckBrowser.titles (browser lobby))) (mine lobby)) (Just (ready lobby)) False (foldMap named (mine lobby))
     : [ case Map.lookup j (invites lobby) of
-          Just invite -> Link.MkPlace (if j == i then Text.pack "You" else Text.pack (seatName (MkTheirs j))) (maybe Link.unchosen (\deck -> DeckBrowser.label (DeckBrowser.titleIn deck) (fst deck)) (guestDeck invite)) (Just (guestReady invite)) False (foldMap (listed . snd) (guestDeck invite))
-          Nothing -> Link.MkPlace (Text.pack (seatName (MkTheirs j))) (maybe (Text.pack "Random deck") (DeckBrowser.label (DeckBrowser.titles (browser lobby))) held) Nothing (Map.notMember j (locals lobby)) (foldMap named held)
+          Just invite -> Link.MkPlace (onTeam (j + 1) (if j == i then Text.pack "You" else Text.pack (seatName (MkTheirs j)))) (maybe Link.unchosen (\deck -> DeckBrowser.label (DeckBrowser.titleIn deck) (fst deck)) (guestDeck invite)) (Just (guestReady invite)) False (foldMap (listed . snd) (guestDeck invite))
+          Nothing -> Link.MkPlace (onTeam (j + 1) (Text.pack (seatName (MkTheirs j)))) (maybe (Text.pack "Random deck") (DeckBrowser.label (DeckBrowser.titles (browser lobby))) held) Nothing (Map.notMember j (locals lobby)) (foldMap named held)
       | (j, held) <- zip [0 ..] (theirs lobby)
       ]
+  where
+    onTeam place name = if teamed lobby then name <> Text.pack ", " <> Wording.team (TeamId.MkTeamId (teamAt lobby place)) else name
 
 -- | The game's options as an invited player is told them, each a label and
 -- its value as 'optionsView' shows them.
 told :: Lobby -> [(Text.Text, Text.Text)]
 told lobby =
-  [(Text.pack "Play for ante", yesNo (ante chosen')), (Text.pack "Planechase", yesNo (planechase chosen'))]
+  [(Text.pack "Variant", labelIn variants (variantOf lobby)) | multiplayer (seatCount lobby)]
+    <> [(Text.pack "Play for ante", yesNo (ante chosen')), (Text.pack "Planechase", yesNo (planechase chosen'))]
     <> [(Text.pack "Single planar deck", yesNo (singlePlanarDeck chosen')) | planechase chosen']
     <> [(Text.pack "Clock", labelIn Clock.choices (clock chosen'))]
-    <> ( if multiplayer (seatCount lobby)
+    <> ( if chosesAttacks lobby
            then [(Text.pack "Attacks", labelIn attackOptions (attackOption chosen')), (Text.pack "Range of influence", labelIn ranges (rangeOfInfluence chosen'))]
            else []
        )
@@ -713,14 +831,16 @@ seatName slot = case slot of
   MkMine -> "You"
   MkTheirs i -> "Player " <> show (i + 2)
 
--- | What stops Start, or Ready with players invited: the decks unread, or
--- your deck unchosen or breaking its format. A bot always has a deck to
+-- | What stops Start, or Ready with players invited: the decks unread, your
+-- deck unchosen or breaking its format, or a table the variant refuses
+-- ('settings'). A bot always has a deck to
 -- draw, since your deck is among its 'opponents'.
 blocking :: Lobby -> Maybe String
 blocking lobby
   | DeckBrowser.reading (browser lobby) = Just "Reading the decks\x2026"
   | Maybe.isNothing (mine lobby) = Just "Choose your deck to start."
   | Left (_ : _) <- startable lobby = Just "Your deck breaks its format:"
+  | Left why <- settings lobby = Just why
   | otherwise = Nothing
 
 -- | Why the game may not start yet: what is 'blocking', else who invited
@@ -751,7 +871,8 @@ view lobby =
     ]
 
 -- | The seats: yours, then each bot's with how it plays, invited player's,
--- player's here or one you play too; the way to unseat each that is
+-- player's here or one you play too, each with its team where the game has
+-- teams; the way to unseat each that is
 -- 'removable'; a seat to add, by who fills it, while there is room; the
 -- game's options; and Start at the foot, saying what it waits on.
 seatsView :: Lobby -> Html.Html Event
@@ -759,15 +880,15 @@ seatsView lobby =
   Element.el "section" ["seats"] [Element.attr "aria-label" (Text.pack "Seats")] $
     [ Element.el "h1" [] [] [Element.string "New game"],
       Element.el "span" ["eyebrow"] [] [Element.string "At the table"],
-      seat MkMine (Element.string "Y") (mine lobby) [] []
+      seat MkMine (Element.string "Y") (mine lobby) (teamMenu 0) []
     ]
       <> concat
         [ Element.el "span" ["eyebrow", "versus"] [] [Element.string "versus"]
             : case Map.lookup i (invites lobby) of
-              Just invite -> [inviteView i invite (remove i)]
+              Just invite -> [inviteView i invite (teamMenu (i + 1) <> remove i)]
               Nothing -> case Map.lookup i (locals lobby) of
-                Just sitting -> [seat (MkTheirs i) (Element.string (if sitting == Link.MkYours then "Y" else "P")) held [] (remove i)]
-                Nothing -> [seat (MkTheirs i) (Icon.icon [] Icon.MkBot) held [BotSettings.botView (show i) (MkDifficulty i) (MkPersona i) (botAt i (bots lobby))] (remove i)]
+                Just sitting -> [seat (MkTheirs i) (Element.string (if sitting == Link.MkYours then "Y" else "P")) held (teamMenu (i + 1)) (remove i)]
+                Nothing -> [seat (MkTheirs i) (Icon.icon [] Icon.MkBot) held (BotSettings.botView (show i) (MkDifficulty i) (MkPersona i) (botAt i (bots lobby)) : teamMenu (i + 1)) (remove i)]
         | (i, held) <- zip [0 ..] others
         ]
       <> [ Element.el
@@ -790,6 +911,21 @@ seatsView lobby =
       <> [optionsView lobby, startView lobby]
   where
     others = theirs lobby
+    -- The seat's team where the game has teams, by its place at the table.
+    teamMenu place =
+      [ Element.el
+          "div"
+          ["seat-team"]
+          []
+          [ Element.el "label" [] [Element.attr "for" (Text.pack ("team-" <> show place))] [Element.string "Team"],
+            Element.el
+              "select"
+              ["deck-menu"]
+              [Element.attr "id" (Text.pack ("team-" <> show place)), Element.on "change" (MkTeam place)]
+              [Element.el "option" [] ([Element.attr "value" (Text.pack (show n))] <> [Element.attr "selected" Text.empty | n == teamAt lobby place]) [Element.text (Wording.team (TeamId.MkTeamId n))] | n <- [0 .. teamChoices lobby - 1]]
+          ]
+      | teamed lobby
+      ]
     remove i = [Element.el "button" ["quiet", "drop-seat"] [Element.attr "type" (Text.pack "button"), Element.on "click" (MkDrop i), Element.attr "aria-label" (Text.pack ("Remove " <> seatName (MkTheirs i)))] [Element.string "Remove"] | removable lobby i]
     seat which avatar held below extra =
       let on = choosing lobby == which
@@ -817,19 +953,21 @@ seatsView lobby =
               : below
                 <> [Element.el "div" ["seat-actions"] [] extra | not (null extra)]
 
--- | The game's options: ante, Planechase and, while it is on, the single
--- planar deck, each seat's clock, and at three seats or more CR 806.2's
+-- | The game's options: at three seats or more the variant; ante,
+-- Planechase and, while it is on, the single planar deck, each seat's
+-- clock, and where the game chooses them ('chosesAttacks') CR 806.2's
 -- attack option and range of influence.
 optionsView :: Lobby -> Html.Html Event
 optionsView lobby =
   Element.el "fieldset" ["game-options"] [] $
-    [ Element.el "legend" ["eyebrow"] [] [Element.string "Game options"],
-      toggle "option-ante" MkAnte (ante chosen') "Play for ante" "Each player antes a random card from their library; the winner owns them all.",
-      toggle "option-planechase" MkPlanechase (planechase chosen') "Planechase" "Each seat plays its list's planar deck, or one dealt from the planes and phenomena."
-    ]
+    [Element.el "legend" ["eyebrow"] [] [Element.string "Game options"]]
+      <> [menu "option-variant" MkVariant "Variant" [(value, label, option == variant chosen') | (option, (value, label)) <- variants] | multiplayer (seatCount lobby)]
+      <> [ toggle "option-ante" MkAnte (ante chosen') "Play for ante" "Each player antes a random card from their library; the winner owns them all.",
+           toggle "option-planechase" MkPlanechase (planechase chosen') "Planechase" "Each seat plays its list's planar deck, or one dealt from the planes and phenomena."
+         ]
       <> [toggle "option-single-planar-deck" MkSinglePlanarDeck (singlePlanarDeck chosen') "Single planar deck" "Every seat's planar deck is shuffled into one." | planechase chosen']
       <> [menu "option-clock" MkClock "Clock" [(value, label, option == clock chosen') | (option, (value, label)) <- Clock.choices]]
-      <> ( if multiplayer (seatCount lobby)
+      <> ( if chosesAttacks lobby
              then
                [ menu "option-attack" MkAttackOption "Attacks" [(value, label, option == attackOption chosen') | (option, (value, label)) <- attackOptions],
                  menu "option-range" MkRangeOfInfluence "Range of influence" [(value, label, option == rangeOfInfluence chosen') | (option, (value, label)) <- ranges]

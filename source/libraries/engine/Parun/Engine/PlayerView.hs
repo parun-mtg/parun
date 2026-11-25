@@ -33,6 +33,7 @@ import qualified Parun.Types.ComponentCard as ComponentCard
 import qualified Parun.Types.ExilePlayPermission as ExilePlayPermission
 import qualified Parun.Types.Face as Face
 import qualified Parun.Types.Facing as Facing
+import qualified Parun.Types.GameSettings as GameSettings
 import qualified Parun.Types.GameState as GameState
 import qualified Parun.Types.InherentTriggerSource as InherentTriggerSource
 import qualified Parun.Types.LoggedEvent as LoggedEvent
@@ -52,6 +53,7 @@ import qualified Parun.Types.SeatView as SeatView
 import qualified Parun.Types.ShownComponent as ShownComponent
 import qualified Parun.Types.Source as Source
 import qualified Parun.Types.StackedAbility as StackedAbility
+import qualified Parun.Types.Teams as Teams
 import qualified Parun.Types.TriggeredAbilitySource as TriggeredAbilitySource
 import qualified Parun.Types.TurnRegisters as TurnRegisters
 import qualified Parun.Types.Visibility as Visibility.Type
@@ -120,6 +122,7 @@ seatView pid gs seat = do
     SeatView.MkSeatView
       { SeatView.player = seat,
         SeatView.status = Player.status player,
+        SeatView.team = Teams.teamOf (GameSettings.teams (MatchScope.settings (GameState.match gs))) seat,
         SeatView.life = Player.life player,
         SeatView.counters = Player.counters player,
         SeatView.handSize = Natural.length (members Zone.Hand),

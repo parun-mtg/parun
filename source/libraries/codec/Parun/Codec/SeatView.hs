@@ -12,6 +12,7 @@ import qualified Parun.Codec.PlayerCounterKind as PlayerCounterKind
 import qualified Parun.Codec.PlayerDesignation as PlayerDesignation
 import qualified Parun.Codec.PlayerId as PlayerId
 import qualified Parun.Codec.Status as Status
+import qualified Parun.Codec.TeamId as TeamId
 import qualified Parun.JsonCodec.Codec as Codec
 import qualified Parun.JsonCodec.Common as Common
 import qualified Parun.JsonCodec.Fields as Fields
@@ -38,10 +39,12 @@ codec = Fields.object $ do
   draftNotes <- Fields.defaulted "draftNotes" Map.empty (Common.keyedList (Common.keyValue CardName.codec (Common.seq DraftNote.codec))) SeatView.draftNotes
   commanderDamage <- Fields.defaulted "commanderDamage" Map.empty (Common.naturalMap PlayerId.codec (Common.multiset CardName.codec)) SeatView.commanderDamage
   status <- Fields.defaulted "status" Status.Type.Playing Status.codec SeatView.status
+  team <- Fields.defaulted "team" Nothing (Common.maybe TeamId.codec) SeatView.team
   pure
     SeatView.MkSeatView
       { SeatView.player = player,
         SeatView.status = status,
+        SeatView.team = team,
         SeatView.life = life,
         SeatView.counters = counters,
         SeatView.handSize = handSize,

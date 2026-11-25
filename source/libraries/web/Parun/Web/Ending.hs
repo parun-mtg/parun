@@ -12,13 +12,20 @@ import qualified Data.Sequence as Seq
 import qualified Data.Text as Text
 import Numeric.Natural (Natural)
 import qualified Parun.Codec.PlayerId as Codec.PlayerId
+import qualified Parun.Codec.TeamId as Codec.TeamId
 import qualified Parun.JsonCodec.Arm as Arm
 import qualified Parun.JsonCodec.Codec as Codec
 import qualified Parun.Play.Command as Command
 import qualified Parun.Play.Wording as Wording
+import qualified Parun.Types.GameSettings as GameSettings
+import qualified Parun.Types.GameState as GameState
+import qualified Parun.Types.MatchScope as MatchScope
 import qualified Parun.Types.PlayerId as PlayerId
 import qualified Parun.Types.PlayerView as PlayerView
+import qualified Parun.Types.Result as Result
 import qualified Parun.Types.SeatView as SeatView
+import qualified Parun.Types.TeamId as TeamId
+import qualified Parun.Types.Teams as Teams
 import qualified Parun.Web.Element as Element
 import qualified Parun.Web.Html as Html
 import qualified Parun.Web.Log as Log
@@ -42,12 +49,15 @@ data Verdict
   | MkDrawn
   | -- | Won by this seat, at a screen more than one person played (shared).
     MkWonBy PlayerId.PlayerId
+  | -- | Won by this team (CR 104.2c), at a screen more than one person
+    -- played (shared).
+    MkTeamWonBy TeamId.TeamId
   | -- | Play stopped before the game ended.
     MkStopped
   deriving (Eq, Show)
 
--- | A verdict: a bare tag, or a seat's win at a shared screen as
--- @{"MkWonBy": seat}@.
+-- | A verdict: a bare tag, or a seat's or a team's win at a shared screen
+-- as @{"MkWonBy": seat}@ or @{"MkTeamWonBy": team}@.
 verdictCodec :: Codec.Codec Verdict
 verdictCodec =
   Arm.keyed
@@ -56,6 +66,7 @@ verdictCodec =
       Arm.nullary "MkLost" MkLost,
       Arm.nullary "MkDrawn" MkDrawn,
       Arm.payload "MkWonBy" Codec.PlayerId.codec MkWonBy (\v -> case v of MkWonBy pid -> Just pid; _ -> Nothing),
+      Arm.payload "MkTeamWonBy" Codec.TeamId.codec MkTeamWonBy (\v -> case v of MkTeamWonBy team -> Just team; _ -> Nothing),
       Arm.nullary "MkStopped" MkStopped
     ]
   where
@@ -64,7 +75,17 @@ verdictCodec =
       MkLost -> "MkLost"
       MkDrawn -> "MkDrawn"
       MkWonBy _ -> "MkWonBy"
+      MkTeamWonBy _ -> "MkTeamWonBy"
       MkStopped -> "MkStopped"
+
+-- | How the game ended for this seat, or for no seat in particular: a
+-- team's win is each member's (CR 104.2c).
+verdictOf :: Maybe PlayerId.PlayerId -> Either a (Result.Result, GameState.GameState) -> Verdict
+verdictOf told outcome = case outcome of
+  Left _ -> MkStopped
+  Right (Result.Won pid, _) -> maybe (MkWonBy pid) (\seat -> if pid == seat then MkWon else MkLost) told
+  Right (Result.TeamWon team, gs) -> maybe (MkTeamWonBy team) (\seat -> if Teams.teamOf (GameSettings.teams (MatchScope.settings (GameState.match gs))) seat == Just team then MkWon else MkLost) told
+  Right (Result.Drawn, _) -> MkDrawn
 
 -- | How a game ended for `told`, of so many seats, or for no seat in
 -- particular, as seat `leaver` left it before it was over, for the reason
@@ -161,10 +182,12 @@ view kept ending =
         MkLost -> ("You lose", "lost", drop 1 (said ending))
         MkDrawn -> ("A draw", "drawn", drop 1 (said ending))
         MkWonBy pid -> (Text.unpack (Wording.player pid) <> " wins!", "won", drop 1 (said ending))
+        MkTeamWonBy team -> (Text.unpack (Wording.team team) <> " wins!", "won", drop 1 (said ending))
         MkStopped -> ("Game over", "stopped", said ending)
       won = case verdict ending of
         MkWon -> True
         MkWonBy _ -> True
+        MkTeamWonBy _ -> True
         _ -> False
       entries = Seq.mapWithIndex (,) (witnessed ending)
    in Element.el
