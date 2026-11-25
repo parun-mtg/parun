@@ -907,7 +907,7 @@ play shell seats settings clock invited here resuming = do
       -- Rematch leads to offers that.
       Monad.forM_ resuming $ \game -> IORef.writeIORef (opponent shell) (Link.bots game)
       bots <- IORef.readIORef (opponent shell)
-      Monad.when (Maybe.isNothing resuming) . Browser.keepGame $ Link.saved (build shell) (Link.MkSaved seed (Link.MkLobby (Link.MkDealt seats (Map.keys invited) here settings clock)) bots [])
+      Monad.when (Maybe.isNothing resuming) . Browser.keepGame $ Link.saved (build shell) (Link.MkSaved seed (Link.MkLobby (Link.MkDealt seats (Map.keys invited) here settings clock)) bots [] Nothing)
       (named, listed) <- deckColouring shell
       let rejoinSlot i = do
             back <- rejoin shell (linkOf i) (Rejoin.host (Text.pack ("Player " <> show (i + 2))))
@@ -919,7 +919,7 @@ play shell seats settings clock invited here resuming = do
       told <- IORef.newIORef Map.empty
       let decides seat gs depth clocks = IORef.readIORef told >>= Link.telling (Map.fromList [(seatOf i, channelOf i) | i <- Map.keys invited]) seat gs depth clocks >>= IORef.writeIORef told
       parsed <- foldMap LazyMap.elems . cards <$> IORef.readIORef (loaded shell)
-      ended <- Hotseat.game (page shell) reg parsed (tableOf shell) (level shell) bots settings clock (fmap (Bifunctor.first Text.unpack) seats) remotes (Map.mapKeys seatOf here) seed (foldMap Link.replies resuming) (\reply clocks -> Browser.keepReply (Link.savedReply (reply, clocks))) decides tellAll (leaveFor shell chosen [DeckBrowser.label (DeckBrowser.titleIn seat) name | seat@(name, _) <- NonEmpty.toList seats])
+      ended <- Hotseat.game (page shell) reg parsed (tableOf shell) (level shell) bots settings clock (fmap (Bifunctor.first Text.unpack) seats) remotes (Map.mapKeys seatOf here) seed (foldMap Link.replies resuming) (resuming >>= Link.running) (\reply clocks -> Browser.keepReply (Link.savedReply (reply, clocks))) (Browser.keepRunning . Link.savedRunning) decides tellAll (leaveFor shell chosen [DeckBrowser.label (DeckBrowser.titleIn seat) name | seat@(name, _) <- NonEmpty.toList seats])
       Browser.forgetGame
       case ended of
         Left problems -> stopped problems >> notice shell problems
@@ -1221,7 +1221,7 @@ playOnFrom :: Shell -> Web.Replay.Source -> Natural -> Map.Map PlayerId.PlayerId
 playOnFrom shell source at filled resuming = opened shell source $ \reg _ played scenario -> do
   chosen <- IORef.newIORef MkToHome
   key <- maybe Key.fresh (pure . Link.seed) resuming
-  Monad.when (Maybe.isNothing resuming) . Browser.keepGame $ Link.saved (build shell) (Link.MkSaved key (Link.MkReplayed source at filled) Map.empty [])
+  Monad.when (Maybe.isNothing resuming) . Browser.keepGame $ Link.saved (build shell) (Link.MkSaved key (Link.MkReplayed source at filled) Map.empty [] Nothing)
   parsed <- foldMap LazyMap.elems . cards <$> IORef.readIORef (loaded shell)
   ended <- Replay.playOn (page shell) reg parsed (tableOf shell) (level shell) filled scenario at key (foldMap (fmap fst . Link.replies) resuming) (\reply -> Browser.keepReply (Link.savedReply (reply, Map.empty))) (leaveFor shell chosen (foldMap (fmap History.deck . History.seats) played))
   Browser.forgetGame

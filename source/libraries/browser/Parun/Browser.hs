@@ -138,6 +138,12 @@ keepGame = keepGameJs . Prim.toJSString . Text.unpack
 keepReply :: Text.Text -> IO ()
 keepReply = keepReplyJs . Prim.toJSString . Text.unpack
 
+-- | Tells the page the running clock's line (Parun.Web.Link.savedRunning),
+-- which it adds to the game kept, stamped, as it hides or unloads, until
+-- the next reply is kept.
+keepRunning :: Text.Text -> IO ()
+keepRunning = keepRunningJs . Prim.toJSString . Text.unpack
+
 -- | Forgets the game kept, once it is over.
 forgetGame :: IO ()
 forgetGame = forgetGameJs
@@ -452,6 +458,9 @@ foreign import javascript unsafe "globalThis.parunKeepGame({ start: $1 })"
 
 foreign import javascript unsafe "globalThis.parunKeepGame({ reply: $1 })"
   keepReplyJs :: Prim.JSString -> IO ()
+
+foreign import javascript unsafe "globalThis.parunKeepGame({ running: $1 })"
+  keepRunningJs :: Prim.JSString -> IO ()
 
 foreign import javascript unsafe "globalThis.parunKeepGame({})"
   forgetGameJs :: IO ()

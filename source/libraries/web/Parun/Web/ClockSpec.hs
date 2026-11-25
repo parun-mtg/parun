@@ -20,8 +20,20 @@ spec s = Spec.describe s "Parun.Web.Clock" $ do
   Spec.describe s "resumed" $ do
     Spec.it s "reads each seat's time left as the last reply kept found it, or as the game started with none kept" $ do
       let fresh = Clock.starting (Just 5) (Set.fromList [one, two])
-      Spec.assertEqWith s "kept" (Clock.resumed fresh [Map.fromList [(one, 290), (two, 300)], Map.fromList [(one, 290), (two, 281.5)]]) fresh {Clock.left = Map.fromList [(one, 290), (two, 281.5)]}
-      Spec.assertEqWith s "none kept" (Clock.resumed fresh []) fresh
+      Spec.assertEqWith s "kept" (Clock.resumed fresh [Map.fromList [(one, 290), (two, 300)], Map.fromList [(one, 290), (two, 281.5)]] Nothing) fresh {Clock.left = Map.fromList [(one, 290), (two, 281.5)]}
+      Spec.assertEqWith s "none kept" (Clock.resumed fresh [] Nothing) fresh
+    Spec.it s "charges the seat whose clock ran as the page was left the time it ran, from its time left as it started, never below none" $ do
+      let fresh = Clock.starting (Just 5) (Set.fromList [one, two])
+          kept = [Map.fromList [(one, 290), (two, 300 :: Double)]]
+      Spec.assertEqWith s "charged" (Clock.left (Clock.resumed fresh kept (Just (Clock.MkKept two 280 1000000 (Just 1012500))))) (Map.fromList [(one, 290), (two, 267.5)])
+      Spec.assertEqWith s "unstamped" (Clock.left (Clock.resumed fresh kept (Just (Clock.MkKept two 280 1000000 Nothing)))) (Map.fromList [(one, 290), (two, 280)])
+      Spec.assertEqWith s "never below none" (Clock.left (Clock.resumed fresh kept (Just (Clock.MkKept two 280 1000000 (Just 9000000))))) (Map.fromList [(one, 290), (two, 0)])
+
+  Spec.describe s "keeping" $ do
+    Spec.it s "keeps the running clock's seat, its time left as it started, and its start in epoch time" $ do
+      let started = Clock.start one 100 (Clock.starting (Just 1) (Set.fromList [one, two]))
+      Spec.assertEqWith s "running" (Clock.keeping 112.5 1000000 started) (Just (Clock.MkKept one 60 987500 Nothing))
+      Spec.assertEqWith s "stopped" (Clock.keeping 112.5 1000000 (Clock.stop 112.5 started)) Nothing
 
   Spec.describe s "stop" $ do
     Spec.it s "charges only the seat whose clock ran, never below none" $ do

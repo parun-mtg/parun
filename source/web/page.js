@@ -868,13 +868,21 @@ addEventListener("hashchange", () => {
 // added as it is made, and all of it forgotten once it is over. A reply
 // with no game kept to add to is dropped, and a game that cannot be kept
 // whole (storage full, say) is forgotten, since a reply missing would
-// replay another game.
-function keepGame({ start, reply }) {
+// replay another game. The clock running (Parun.Web.Link.savedRunning) is
+// held until the next reply, and added last, stamped, as the page hides or
+// unloads (stampRunning), for a reload to charge its seat the time it ran.
+let running = null;
+function keepGame({ start, reply, running: clock }) {
+  if (clock !== undefined) {
+    running = clock;
+    return;
+  }
+  running = null;
   try {
     const kept = localStorage.getItem(gameKey);
     if (start !== undefined) localStorage.setItem(gameKey, start);
     else if (reply !== undefined) {
-      if (kept !== null) localStorage.setItem(gameKey, `${kept}\n${reply}`);
+      if (kept !== null) localStorage.setItem(gameKey, `${unstamped(kept)}\n${reply}`);
     } else localStorage.removeItem(gameKey);
   } catch (problem) {
     console.warn(problem);
@@ -885,6 +893,26 @@ function keepGame({ start, reply }) {
     }
   }
 }
+// The game kept without a running clock's line, which is only ever last.
+function unstamped(kept) {
+  const last = kept.lastIndexOf("\n");
+  return kept.startsWith('{"running"', last + 1) ? kept.slice(0, last) : kept;
+}
+function stampRunning() {
+  if (running === null) return;
+  try {
+    const kept = localStorage.getItem(gameKey);
+    const line = JSON.parse(running);
+    line.running.left = Date.now();
+    if (kept !== null) localStorage.setItem(gameKey, `${unstamped(kept)}\n${JSON.stringify(line)}`);
+  } catch (problem) {
+    console.warn(problem);
+  }
+}
+addEventListener("pagehide", stampRunning);
+addEventListener("visibilitychange", () => {
+  if (document.visibilityState === "hidden") stampRunning();
+});
 engine.onerror = (error) => note(`engine failed: ${error.message}`);
 
 // Seats played from another browser (Parun.Web.Link): one peer connection

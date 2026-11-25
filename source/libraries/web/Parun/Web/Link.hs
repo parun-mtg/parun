@@ -7,6 +7,7 @@ module Parun.Web.Link where
 
 import qualified Control.Monad as Monad
 import qualified Data.Foldable as Foldable
+import qualified Data.List as List
 import qualified Data.List.NonEmpty as NonEmpty
 import qualified Data.Map.Strict as Map
 import qualified Data.Sequence as Seq
@@ -43,6 +44,7 @@ import qualified Parun.Types.PlayerView as PlayerView
 import qualified Parun.Types.Question as Question
 import qualified Parun.Types.Reply as R
 import qualified Parun.Types.Request as Request
+import qualified Parun.Web.Clock as Clock
 import qualified Parun.Web.Ending as Ending
 import qualified Parun.Web.Log as Log
 import qualified Parun.Web.Replay as Web.Replay
@@ -329,13 +331,15 @@ guest local message = case message of
 -- | A game as the page playing it keeps it (the host's, for a game with
 -- guests), to pick it up after a reload (Protocol.resumed): its seed, where
 -- it began, how each bot plays by its slot (Parun.Play.Opponent;
--- Lobby.botAt), and every reply so far, each with every timed seat's time
--- left once it was made (Parun.Web.Clock.resumed).
+-- Lobby.botAt), every reply so far, each with every timed seat's time
+-- left once it was made, and the clock running as the page was left, if
+-- one was and no reply followed (Parun.Web.Clock.resumed).
 data Saved = MkSaved
   { seed :: Key.Type.Key,
     origin :: Origin,
     bots :: Map.Map Int (Difficulty.Difficulty, Persona.Persona),
-    replies :: [(R.Reply, Banks)]
+    replies :: [(R.Reply, Banks)],
+    running :: Maybe Clock.Kept
   }
   deriving (Eq, Show)
 
@@ -375,8 +379,8 @@ data Sitting
 
 -- | A saved game as the page keeps it, stamped with the build that played
 -- it: a line for the game, then one per reply (savedReply), so a reply is
--- kept by adding its line. A replay played on is kept as its route
--- (Parun.Web.Route).
+-- kept by adding its line, and last the clock running (savedRunning), if
+-- any. A replay played on is kept as its route (Parun.Web.Route).
 saved :: Text.Text -> Saved -> Text.Text
 saved build game =
   let seat (name, contents) = Value.object [Value.pair "deck" (Value.text name), Value.pair "list" (Value.text contents)]
@@ -399,11 +403,23 @@ saved build game =
             ]
               <> begun
           )
-   in Text.intercalate (Text.pack "\n") (Common.render header : fmap savedReply (replies game))
+   in Text.intercalate (Text.pack "\n") (Common.render header : fmap savedReply (replies game) <> foldMap (pure . savedRunning) (running game))
 
 -- | A reply's line in a saved game, with the time banks then.
 savedReply :: (R.Reply, Banks) -> Text.Text
 savedReply (reply, clocks) = Common.render (Value.object [Value.pair "reply" (Codec.Reply.toValue reply), Value.pair "clocks" (Codec.encode banksCodec clocks)])
+
+-- | The running clock's line in a saved game (Parun.Web.Clock.Kept), which
+-- the page adds, stamped with when it was left, as it hides or unloads
+-- (page.js), and drops as the next reply is added.
+savedRunning :: Clock.Kept -> Text.Text
+savedRunning kept =
+  Common.render . Value.object . pure . Value.pair "running" . Value.object $
+    [ Value.pair "seat" (Codec.encode Codec.PlayerId.codec (Clock.deciding kept)),
+      Value.pair "bank" (Codec.encode Common.natural (round (1000 * max 0 (Clock.bankThen kept)))),
+      Value.pair "started" (Value.integer (Clock.startedAt kept))
+    ]
+      <> foldMap (pure . Value.pair "left" . Value.integer) (Clock.leftAt kept)
 
 -- | The game a page kept, or why it does not read: one another build played
 -- is refused, since its replies may not replay the same game.
@@ -417,11 +433,23 @@ unsaved build kept = case Text.lines kept of
     key <- Common.field "seed" pairs >>= Common.asText >>= maybe (Left (Text.pack "not a seed")) Right . Key.fromHex
     begun <- maybe (dealt pairs) replayed (Common.optionalField "replay" pairs)
     styles <- Common.field "bots" pairs >>= Common.asArray >>= traverse styleOf
-    answers <- traverse (Common.parse Monad.>=> Common.asObject Monad.>=> replyOf) (filter (not . Text.null) rest)
-    pure (MkSaved key begun (Map.fromList styles) answers)
+    lines' <- traverse (Common.parse Monad.>=> Common.asObject) (filter (not . Text.null) rest)
+    let (answered, final) = case List.unsnoc lines' of
+          Just (before, end) | Just ran <- Common.optionalField "running" end -> (before, Just ran)
+          _ -> (lines', Nothing)
+    answers <- traverse replyOf answered
+    pending <- traverse runningOf final
+    pure (MkSaved key begun (Map.fromList styles) answers pending)
   where
     named :: (Bounded a, Enum a) => String -> (a -> (String, String)) -> Text.Text -> Either Text.Text a
     named what nameOf name = maybe (Left (Text.pack ("not " <> what <> ": ") <> name)) Right (Opponent.named nameOf (Text.unpack name))
+    runningOf value = do
+      fields <- Common.asObject value
+      seat' <- Common.field "seat" fields >>= Codec.decode Codec.PlayerId.codec
+      bank <- Common.field "bank" fields >>= Codec.decode Common.natural
+      started <- Common.field "started" fields >>= Common.asInteger
+      leaving <- traverse Common.asInteger (Common.optionalField "left" fields)
+      pure (Clock.MkKept seat' (Natural.toDouble bank / 1000) started leaving)
     replyOf fields = (,) <$> (Common.field "reply" fields >>= Codec.Reply.fromValue) <*> (Common.field "clocks" fields >>= Codec.decode banksCodec)
     seat value = do
       fields <- Common.asObject value
