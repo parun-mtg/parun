@@ -616,7 +616,7 @@ spec s registry = Spec.describe s "WebQuestion" $ do
     shock <- S.printingOf s registry "Shock"
     let (card, gs) = S.addObjectIn Zone.Hand shock S.alice (inMain (Setup.emptyGame S.bothPlayers))
         page = Html.toText (Question.Web.view (requestFor gs (Prompt.ChooseAction (Decider.MkDecider S.alice) S.alice [Action.Pass, Action.Suspend card])) Question.Web.blank)
-    Spec.assertBool s (Text.pack "<button type=\"button\">Suspend Shock</button>" `Text.isInfixOf` page) (Text.unpack page)
+    Spec.assertBool s (Text.pack "<button type=\"button\">Suspend Shock</button>" `Text.isInfixOf` page) "the fallthrough label capitalises its first word"
 
   -- CR 601.3: The Holodeck's and Wish's permissions both reach a card outside
   -- the game, and each option says where its permission opens.
