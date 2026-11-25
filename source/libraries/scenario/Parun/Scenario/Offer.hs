@@ -18,9 +18,11 @@ import qualified Parun.Extra.Int as Int
 import qualified Parun.Extra.Natural as Natural
 import qualified Parun.JsonCodec.Common as Common
 import qualified Parun.Oracle as Oracle
+import qualified Parun.Oracle.Keyword as Oracle.Keyword
 import qualified Parun.Scenario.Reply as Reply
 import qualified Parun.Types.AbilityName as AbilityName
 import qualified Parun.Types.Action as Action
+import qualified Parun.Types.ActivatedAbility as ActivatedAbility
 import qualified Parun.Types.CardName as CardName
 import qualified Parun.Types.FaceDownState as FaceDownState
 import qualified Parun.Types.Facing as Facing
@@ -33,7 +35,8 @@ import qualified Parun.Types.Reply as R
 -- tells it from the constructor's other offers on that object: the face or
 -- half a Play, Cast or Unlock names, a face-down Cast's reason (CR 708.6), an
 -- Activate's place among its source's abilities (Projection.abilitiesOf, as a
--- scenario's Activation names it) and its Oracle text where that renders, and
+-- scenario's Activation names it) and its Oracle text where that renders (a
+-- keyword's ability as its keyword), and
 -- the choice a TurnFaceUp, Ignore or Plot
 -- carries. An EndEffect's `offer` is its 1-based place among one source's
 -- offers to one seat (CR 116.2c).
@@ -44,7 +47,7 @@ offer namer gs action = R.Object ((Text.pack "action", R.Text (Text.pack kind)) 
       Action.Pass -> ("Pass", [])
       Action.Play oid name -> ("PlayLand", on oid <> foldMap named name)
       Action.Cast oid name facing -> ("Cast", on oid <> named name <> faceDown facing)
-      Action.Activate oid ability -> ("Activate", on oid <> [("ability", natural (Natural.length (takeWhile (/= ability) abilities))) | let { abilities = Projection.abilitiesOf oid gs }, ability `elem` abilities] <> [("text", R.Text text) | text <- take 1 (Oracle.activated (Oracle.contextOf (nameOf oid) []) ability)])
+      Action.Activate oid ability -> let abilities = Projection.abilitiesOf oid gs in ("Activate", on oid <> [("ability", natural (Natural.length (takeWhile (/= ability) abilities))) | ability `elem` abilities] <> [("text", R.Text text) | text <- take 1 (Oracle.activated (Oracle.contextOf (nameOf oid) []) ability <> keyworded oid abilities ability)])
       Action.ActivateManaAbility oid -> ("ActivateManaAbility", on oid)
       Action.TurnFaceUp oid procedure -> ("TurnFaceUp", on oid <> [("procedure", Reply.encode (Reply.viaCodec Codec.TurnUpProcedure.codec) namer procedure)])
       Action.TurnConspiracyFaceUp oid -> ("TurnConspiracyFaceUp", on oid)
@@ -60,6 +63,15 @@ offer namer gs action = R.Object ((Text.pack "action", R.Text (Text.pack kind)) 
       Action.PayLifeForMana life mana -> ("PayLifeForMana", [("life", natural life), ("mana", Reply.encode (Reply.viaCodec Codec.ManaType.codec) namer mana)])
       Action.RollPlanarDie -> ("RollPlanarDie", [])
       Action.RerollShownDie stated die -> ("RerollShownDie", on stated <> [("die", Reply.encode Reply.object namer die)])
+    -- CR 702.1: a keyword's ability as the keyword prints, "Cycling {2}",
+    -- where that keyword mints no other ability of the source; reconfigure's
+    -- two (CR 702.151a) keep their places instead.
+    keyworded oid abilities ability =
+      [ text
+      | Just k <- [ActivatedAbility.keyword ability],
+        all (\other -> other == ability || ActivatedAbility.keyword other /= Just k) abilities,
+        text <- Oracle.Keyword.printed (nameOf oid) k
+      ]
     -- What the ability's Oracle text calls its source.
     nameOf oid = case Set.toList (ProjectedCharacteristics.names (Projection.project oid gs)) of
       [] -> Text.pack "this object"
