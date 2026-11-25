@@ -2,10 +2,11 @@
 
 -- Covers Parun.Play.Game, Parun.Play.Wording and Parun.Play.Command.game:
 -- who plays first, the card names a seat may choose, how a seat's view and a
--- finished game are worded for people, and what a saved game says it was
--- played with.
+-- finished game are worded for people, what a saved game says it was played
+-- with, and when a bot's decision clock runs out (Command.timed).
 module Parun.PlaySpec where
 
+import qualified Control.Monad as Monad
 import qualified Control.Monad.Trans.Except as Except
 import qualified Control.Monad.Trans.State.Strict as State
 import qualified Data.Functor.Identity as Identity
@@ -16,6 +17,7 @@ import qualified Data.Sequence as Seq
 import qualified Data.Set as Set
 import qualified Data.Text as Text
 import qualified Data.Word as Word
+import qualified GHC.Clock as Clock
 import Numeric.Natural (Natural)
 import qualified Parun.BotSpec as BotSpec
 import qualified Parun.CastProhibitionSpec as CastProhibitionSpec
@@ -435,10 +437,25 @@ pickedIn :: Heard -> [Natural]
 pickedIn heard = [n | n <- [1, 2, 3], Text.pack ("Seat " <> show n <> " was picked at random to choose who plays first.") `elem` said heard]
 
 -- | Command.game, which runs in IO.
-gameSpec :: Spec.Spec IO n -> n ()
+gameSpec :: (Monad n) => Spec.Spec IO n -> n ()
 gameSpec s = Spec.describe s "Play.Command" $ do
   Spec.it s "a game's saved scenario names what it was played with" $ do
     let seed = Generator.key (S.seeded 7)
         deck = Deck.fromCards Map.empty
     (_, recorded) <- Command.game (Text.pack "the web client") (const (pure Nothing)) (pure Nothing) (const (pure ())) [] (pure ()) PlayOptions.none Search.known (S.fixtureRegistry []) GameSettings.plain (deck NonEmpty.:| [deck]) seed
     Spec.assertEqWith s "description" (Scenario.description recorded) (Text.pack "Played with the web client, seed " <> Key.toHex seed <> Text.pack ".")
+
+  Spec.it s "a bot's decision clock runs out once its think limit has passed, and never at 0" $ do
+    let asked limit = do
+          expired <- Command.timed limit
+          before <- expired
+          Game.underneath (Clock.getMonotonicTimeNSec >>= waitPast)
+          after <- expired
+          pure (before, after)
+        -- Until 20 milliseconds have passed since `start`.
+        waitPast start = Clock.getMonotonicTimeNSec >>= \now -> Monad.when (now - start < 20000000) (waitPast start)
+        run limit = Except.runExceptT (State.evalStateT (asked limit) (S.seeded 1))
+    unlimited <- run 0
+    Spec.assertEqWith s "at 0, never out" unlimited (Right (False, False))
+    limited <- run 10
+    Spec.assertEqWith s "at 10 milliseconds, out 20 milliseconds on" (fmap snd limited) (Right True)

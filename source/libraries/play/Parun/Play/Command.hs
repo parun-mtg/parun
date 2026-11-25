@@ -19,6 +19,7 @@ import qualified Data.Set as Set
 import qualified Data.Text as Text
 import qualified Data.Text.Encoding as Encoding
 import qualified Data.Text.IO as TextIO
+import qualified GHC.Clock as Clock
 import Numeric.Natural (Natural)
 import qualified Parun.Codec.Scenario as Codec.Scenario
 import qualified Parun.CommandLine as CommandLine
@@ -220,7 +221,8 @@ play send options prior registry settings decks = do
 -- play` ('exchange'), as values in the web client. Each bot seat deals what
 -- it cannot see by `prior`, and its answer is taken from `stored` while it
 -- has one, and otherwise given to `kept` ('answerer'), its search waiting
--- on `breathe` at each step. `watchers` see every prompt too.
+-- on `breathe` at each step and timed by 'timed' at the think limit.
+-- `watchers` see every prompt too.
 game :: Text.Text -> Protocol.Exchange IO -> IO (Maybe R.Reply) -> (R.Reply -> IO ()) -> [Observer.Observer (Game.Play IO)] -> IO () -> PlayOptions.PlayOptions -> Search.Prior -> Registry.Registry Identity.Identity -> GameSettings.GameSettings -> NonEmpty.NonEmpty Deck.Deck -> Key.Type.Key -> IO (Either Text.Text (Result.Result, GameState.GameState), Scenario.Scenario)
 game client send stored kept watchers breathe options prior registry settings decks seed = do
   let reference :: Registry.Registry IO
@@ -238,7 +240,7 @@ game client send stored kept watchers breathe options prior registry settings de
       memories <- IORef.newIORef Map.empty
       aims <- IORef.newIORef Map.empty
       let matchup = seated first decks
-          seats = Map.fromList [(idOf n, answerer reference send stored kept (IORef.readIORef memories) (Search.keptBy (IORef.readIORef aims) (IORef.modifyIORef' aims) (idOf n)) breathe options prior n) | n <- NonEmpty.toList numbers]
+          seats = Map.fromList [(idOf n, answerer reference send stored kept (IORef.readIORef memories) (Search.keptBy (IORef.readIORef aims) (IORef.modifyIORef' aims) (idOf n)) breathe (timed (PlayOptions.thinkLimit options)) options prior n) | n <- NonEmpty.toList numbers]
       entries <- IORef.newIORef Seq.empty
       let observers = [Record.recording (labels count) (Game.underneath . IORef.modifyIORef' entries . flip (Seq.|>)), Search.remembering (IORef.modifyIORef' memories)] <> watchers
           interrupted e = case e of
@@ -251,13 +253,22 @@ game client send stored kept watchers breathe options prior registry settings de
 -- | Who answers seat `n`: the search bot at its seat's budget and weights,
 -- dealing what it cannot see by `prior`, remembering what its seat's memory
 -- in `memories` holds (Search.remembering), keeping its line in `aim`, if
--- it is a bot's, its search waiting on `breathe` at each step (Search.search),
--- its answers taken from `stored` and given to `kept` (Game.remembered);
--- otherwise `send`.
-answerer :: (Monad m) => Registry.Registry m -> Protocol.Exchange m -> m (Maybe R.Reply) -> (R.Reply -> m ()) -> m (Map.Map PlayerId.PlayerId Search.Memory) -> Search.Aim m -> m () -> PlayOptions.PlayOptions -> Search.Prior -> Natural -> Answerer.Answerer (Asked.Asked GameState.GameState) (Game.Play m)
-answerer registry send stored kept memories aim breathe options prior n
-  | Just (budget, weights) <- Map.lookup n (PlayOptions.bots options) = Game.remembered stored kept (Search.search registry budget weights prior (pure []) (Game.underneath (fmap (Map.findWithDefault Search.blank (idOf n)) memories)) aim (Game.underneath breathe))
+-- it is a bot's, its search waiting on `breathe` at each step and timed by
+-- `clock` (Search.search), its answers taken from `stored` and given to
+-- `kept` (Game.remembered); otherwise `send`.
+answerer :: (Monad m) => Registry.Registry m -> Protocol.Exchange m -> m (Maybe R.Reply) -> (R.Reply -> m ()) -> m (Map.Map PlayerId.PlayerId Search.Memory) -> Search.Aim m -> m () -> Search.Clock m -> PlayOptions.PlayOptions -> Search.Prior -> Natural -> Answerer.Answerer (Asked.Asked GameState.GameState) (Game.Play m)
+answerer registry send stored kept memories aim breathe clock options prior n
+  | Just (budget, weights) <- Map.lookup n (PlayOptions.bots options) = Game.remembered stored kept (Search.search registry budget weights prior (pure []) (Game.underneath (fmap (Map.findWithDefault Search.blank (idOf n)) memories)) aim (Game.underneath breathe) clock)
   | otherwise = Game.wired registry send
+
+-- | A decision's clock running out once `limit` milliseconds have passed
+-- since it started; at 0, never.
+timed :: Natural -> Search.Clock IO
+timed limit
+  | limit == 0 = Search.unhurried
+  | otherwise = do
+      start <- Game.underneath Clock.getMonotonicTimeNSec
+      pure (Game.underneath (fmap (\now -> toInteger (now - start) >= toInteger limit * 1000000) Clock.getMonotonicTimeNSec))
 
 idOf :: Natural -> PlayerId.PlayerId
 idOf n = PlayerId.MkPlayerId (n - 1)

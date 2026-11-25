@@ -24,7 +24,7 @@ spec s = Spec.describe s "Parun.Play.Command.Config" $ do
     Spec.it s "reads every flag" $
       Spec.assertEq
         s
-        (fmap Config.options $ configured [Flag.Seed key, Flag.First "3", Flag.Bot "1", Flag.Json True, Flag.Save "g.json", Flag.ArrangeGraveyard "2", Flag.Format "pauper", Flag.Level "easy", Flag.Persona "aggro", Flag.Meta "m.txt", Flag.Pool "vintage", Flag.ObjectLimit "9"] ["a.txt", "b.txt", "c.txt"])
+        (fmap Config.options $ configured [Flag.Seed key, Flag.First "3", Flag.Bot "1", Flag.Json True, Flag.Save "g.json", Flag.ArrangeGraveyard "2", Flag.Format "pauper", Flag.Level "easy", Flag.Persona "aggro", Flag.Meta "m.txt", Flag.Pool "vintage", Flag.ObjectLimit "9", Flag.ThinkLimit "0"] ["a.txt", "b.txt", "c.txt"])
         ( Right
             PlayOptions.none
               { PlayOptions.seed = Key.fromHex (Text.pack key),
@@ -36,7 +36,8 @@ spec s = Spec.describe s "Parun.Play.Command.Config" $ do
                 PlayOptions.format = Just (Text.pack "pauper"),
                 PlayOptions.meta = Just "m.txt",
                 PlayOptions.pool = Just (Text.pack "vintage"),
-                PlayOptions.limits = Limits.standard {Limits.objects = 9}
+                PlayOptions.limits = Limits.standard {Limits.objects = 9},
+                PlayOptions.thinkLimit = 0
               }
         )
     Spec.it s "sets each bot's level and style in its seat alone, or in every bot's seat, before or after the seat is named" $
@@ -65,7 +66,7 @@ spec s = Spec.describe s "Parun.Play.Command.Config" $ do
     Spec.it s "refuses each flag's bad argument in its own words" $
       Spec.assertEq
         s
-        (fmap (\f -> Either.fromLeft "accepted" (configured [Flag.Json True, f] ["a.txt", "b.txt"])) [Flag.Seed "x", Flag.First "0", Flag.Bot "one", Flag.ArrangeGraveyard "", Flag.Level "impossible", Flag.Persona "timid", Flag.Level "x=easy", Flag.ObjectLimit "many"])
+        (fmap (\f -> Either.fromLeft "accepted" (configured [Flag.Json True, f] ["a.txt", "b.txt"])) [Flag.Seed "x", Flag.First "0", Flag.Bot "one", Flag.ArrangeGraveyard "", Flag.Level "impossible", Flag.Persona "timid", Flag.Level "x=easy", Flag.ObjectLimit "many", Flag.ThinkLimit "-1"])
         [ "not a seed: x",
           "not a seat: 0",
           "not a seat: one",
@@ -73,7 +74,8 @@ spec s = Spec.describe s "Parun.Play.Command.Config" $ do
           "not a level, easy, medium or hard: impossible",
           "not a persona, balanced, aggro or control: timid",
           "not a seat: x",
-          "not a number of objects: many"
+          "not a number of objects: many",
+          "not a number of milliseconds: -1"
         ]
   where
     configured :: [Flag.Flag] -> [String] -> Either String Config.Config

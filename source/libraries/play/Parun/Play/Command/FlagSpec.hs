@@ -11,9 +11,9 @@ spec s = Spec.describe s "Parun.Play.Command.Flag" $ do
     Spec.it s "reads each flag, in order, its argument as given, in any order beside the decks" $
       Spec.assertEq
         s
-        (parsed ["--seed", "x", "a.txt", "--first=2", "--bot", "1", "--json", "--no-json", "--save", "g.json", "b.txt", "--arrange-graveyard", "2", "--format", "pauper", "--level", "easy", "--persona", "aggro", "--meta", "m.txt", "--pool", "vintage", "--object-limit", "9", "-h", "--no-help"])
+        (parsed ["--seed", "x", "a.txt", "--first=2", "--bot", "1", "--json", "--no-json", "--save", "g.json", "b.txt", "--arrange-graveyard", "2", "--format", "pauper", "--level", "easy", "--persona", "aggro", "--meta", "m.txt", "--pool", "vintage", "--object-limit", "9", "--think-limit", "0", "-h", "--no-help"])
         ( Right
-            ( [Flag.Seed "x", Flag.First "2", Flag.Bot "1", Flag.Json True, Flag.Json False, Flag.Save "g.json", Flag.ArrangeGraveyard "2", Flag.Format "pauper", Flag.Level "easy", Flag.Persona "aggro", Flag.Meta "m.txt", Flag.Pool "vintage", Flag.ObjectLimit "9", Flag.Help True, Flag.Help False],
+            ( [Flag.Seed "x", Flag.First "2", Flag.Bot "1", Flag.Json True, Flag.Json False, Flag.Save "g.json", Flag.ArrangeGraveyard "2", Flag.Format "pauper", Flag.Level "easy", Flag.Persona "aggro", Flag.Meta "m.txt", Flag.Pool "vintage", Flag.ObjectLimit "9", Flag.ThinkLimit "0", Flag.Help True, Flag.Help False],
               ["a.txt", "b.txt"]
             )
         )

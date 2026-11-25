@@ -37,16 +37,19 @@ data PlayOptions = MkPlayOptions
     meta :: Maybe FilePath,
     -- | The name of the format whose pool the search bot deals an opponent's
     -- unseen cards from, absent a meta; the game's format's when absent.
-    pool :: Maybe Text.Text
+    pool :: Maybe Text.Text,
+    -- | The milliseconds the search bot may think over a decision before it
+    -- takes the best option its playouts found so far; 0, no limit.
+    thinkLimit :: Natural.Natural
   }
   deriving (Eq, Show)
 
 -- | A game keyed from the operating system's entropy, no seat the bot's and
 -- none over the line protocol, the seat to play first asked for, under the
 -- standard limits, the search bot dealing an opponent's unseen cards from
--- the game's format's pool.
+-- the game's format's pool and thinking 5 seconds at most over a decision.
 none :: PlayOptions
-none = MkPlayOptions {seed = Nothing, first = Nothing, bots = Map.empty, json = False, save = Nothing, arrangesGraveyard = Set.empty, format = Nothing, limits = Limits.standard, meta = Nothing, pool = Nothing}
+none = MkPlayOptions {seed = Nothing, first = Nothing, bots = Map.empty, json = False, save = Nothing, arrangesGraveyard = Set.empty, format = Nothing, limits = Limits.standard, meta = Nothing, pool = Nothing, thinkLimit = 5000}
 
 -- | A seat the search bot plays unless told otherwise: its 'budget', weighing
 -- the neutral weights.
