@@ -8,11 +8,11 @@
 --
 --   * Deploying creatures (CR 804) (#9794).
 --   * The Emperor and Grand Melee variants (CR 807, 809) (#9788).
---   * Archenemy (CR 904) (#9789).
 module Parun.Web.Lobby where
 
 import qualified Control.Monad as Monad
 import qualified Data.Char as Char
+import qualified Data.Containers.ListUtils as ListUtils
 import qualified Data.Either as Either
 import qualified Data.Foldable as Foldable
 import qualified Data.List as List
@@ -108,13 +108,13 @@ data Lobby = MkLobby
     -- | The team each seat chose (CR 808.1), by its place at the table,
     -- yours first; 'defaultTeam' in a place absent ('teamAt').
     teams :: Map.Map Int Natural,
-    -- | Why Start last refused the seats' lists ('planarDealt'), until the
-    -- match-up changes.
+    -- | Why Start last refused the seats' lists ('planarDealt',
+    -- 'schemeDealt'), until the match-up changes.
     refusal :: Maybe Text.Text
   }
   deriving (Eq, Show)
 
--- | The options of CR 800.2, and the variants' (CR 407, 901), a game started
+-- | The options of CR 800.2, and the variants' (CR 407, 901, 904), a game started
 -- here is played with ('settings').
 data Options = MkOptions
   { -- | CR 800.2: the multiplayer variant, the one a game may use.
@@ -126,6 +126,9 @@ data Options = MkOptions
     planechase :: Bool,
     -- | CR 901.15: whether a Planechase game uses one communal planar deck.
     singlePlanarDeck :: Bool,
+    -- | CR 904.2a: the archenemy's place at the table, yours first, in an
+    -- Archenemy game ('schemeDealt'); none in any other.
+    archenemy :: Maybe Int,
     -- | CR 806.2b: the attack option a game of three or more seats uses.
     attackOption :: AttackOption.AttackOption,
     -- | CR 806.2a: every player's range of influence in a game of three or
@@ -140,7 +143,7 @@ data Options = MkOptions
 -- | No option in use: CR 802's attack multiple players, which needs no
 -- seating agreed ('GameSettings.plain').
 noOptions :: Options
-noOptions = MkOptions {variant = MkFreeForAll, ante = False, planechase = False, singlePlanarDeck = False, attackOption = AttackOption.MultiplePlayers, rangeOfInfluence = Nothing, clock = Nothing}
+noOptions = MkOptions {variant = MkFreeForAll, ante = False, planechase = False, singlePlanarDeck = False, archenemy = Nothing, attackOption = AttackOption.MultiplePlayers, rangeOfInfluence = Nothing, clock = Nothing}
 
 -- | A multiplayer variant a game started here may use (CR 800.2).
 data Variant
@@ -164,9 +167,15 @@ variants =
   ]
 
 -- | The variant the game is played as: the one chosen at three seats or
--- more, and Free-for-All at two, a game that is not multiplayer (CR 800.1).
+-- more, and Free-for-All at two, a game that is not multiplayer (CR 800.1),
+-- or in an Archenemy game, whose teams Parun.Engine.Archenemy.setUp makes
+-- (CR 904.2).
 variantOf :: Lobby -> Variant
-variantOf lobby = if multiplayer (seatCount lobby) then variant (options lobby) else MkFreeForAll
+variantOf lobby = if multiplayer (seatCount lobby) && not (archenemyGame lobby) then variant (options lobby) else MkFreeForAll
+
+-- | Whether the game is an Archenemy game (CR 904).
+archenemyGame :: Lobby -> Bool
+archenemyGame = Maybe.isJust . archenemy . options
 
 -- | Whether the game is played between teams (CR 808.1), so each seat
 -- chooses one.
@@ -219,9 +228,10 @@ multiplayer count = count >= 3
 
 -- | Whether the game chooses CR 806.2's attack option and range of
 -- influence: at three seats or more, but in Two-Headed Giant, whose teams
--- attack as CR 805.10 has it.
+-- attack as CR 805.10 has it, and in an Archenemy game, which uses no
+-- option but CR 904.2's.
 chosesAttacks :: Lobby -> Bool
-chosesAttacks lobby = multiplayer (seatCount lobby) && variantOf lobby /= MkTwoHeadedGiant
+chosesAttacks lobby = multiplayer (seatCount lobby) && variantOf lobby /= MkTwoHeadedGiant && not (archenemyGame lobby)
 
 -- | How many seats the game has: yours and each other.
 seatCount :: Lobby -> Natural
@@ -233,7 +243,10 @@ seatCount lobby = 1 + Natural.length (theirs lobby)
 -- variant's over each seat's team. Or why the table can't play the variant:
 -- a seating Parun.Engine.Seating.misseated refuses (CR 808.2, 810.3), fewer
 -- than two teams (CR 808.1), Two-Headed Giant's two teams of two (CR 810.1),
--- or what Parun.Engine.AlternatingTeams.setUp refuses (CR 811.1, 811.3).
+-- or what Parun.Engine.AlternatingTeams.setUp refuses (CR 811.1, 811.3). An
+-- Archenemy game's teams and options are Parun.Engine.Archenemy.setUp's,
+-- which the archenemy's scheme deck turns on; it needs a seat against the
+-- archenemy (CR 904.2).
 settings :: Lobby -> Either String GameSettings.GameSettings
 settings lobby =
   let chosen' = options lobby
@@ -256,13 +269,15 @@ settings lobby =
         | length sizes < 2 = Left "Put the seats on two teams or more."
         | Maybe.isJust (Seating.misseated (Setup.gameWith settings' seats)) = Left "Seat each team together: teammates side by side."
         | otherwise = Right settings'
-   in case variantOf lobby of
-        MkFreeForAll -> Right free
-        MkTeamVsTeam -> together' free {GameSettings.teams = teams'}
-        MkTwoHeadedGiant
-          | sizes /= [2, 2] -> Left "Two-Headed Giant is two teams of two: four seats, two on each team."
-          | otherwise -> together' plain {GameSettings.teams = teams', GameSettings.twoHeadedGiant = True, GameSettings.sharedTeamTurns = True, GameSettings.sharedTeamLife = True}
-        MkAlternatingTeams -> maybe (Left "Alternating Teams is teams of equal size, no one beside a teammate.") (Right . MatchScope.settings . GameState.match) (AlternatingTeams.setUp teams' (Setup.gameWith free seats))
+   in if archenemyGame lobby
+        then if count < 2 then Left "Archenemy needs a seat against the archenemy: add one." else Right plain
+        else case variantOf lobby of
+          MkFreeForAll -> Right free
+          MkTeamVsTeam -> together' free {GameSettings.teams = teams'}
+          MkTwoHeadedGiant
+            | sizes /= [2, 2] -> Left "Two-Headed Giant is two teams of two: four seats, two on each team."
+            | otherwise -> together' plain {GameSettings.teams = teams', GameSettings.twoHeadedGiant = True, GameSettings.sharedTeamTurns = True, GameSettings.sharedTeamLife = True}
+          MkAlternatingTeams -> maybe (Left "Alternating Teams is teams of equal size, no one beside a teammate.") (Right . MatchScope.settings . GameState.match) (AlternatingTeams.setUp teams' (Setup.gameWith free seats))
 
 -- | A slot a player from another browser takes.
 data Invite = MkInvite
@@ -360,6 +375,12 @@ data Event
     MkPlanechase
   | -- | Toggles whether a Planechase game uses one planar deck (CR 901.15).
     MkSinglePlanarDeck
+  | -- | Toggles whether the game is an Archenemy game (CR 904), yours the
+    -- archenemy's seat.
+    MkArchenemy
+  | -- | Sets the archenemy's seat to the place at the table whose number is
+    -- chosen, yours first, from zero (CR 904.2a).
+    MkArchenemySeat
   | -- | Sets the attack option to the one whose value is chosen
     -- ('attackOptions').
     MkAttackOption
@@ -524,9 +545,19 @@ planarHand = go [] (0 :: Int) []
             | phenomenon && phenomena >= 2 -> go hand phenomena (card : passed) more
             | otherwise -> go (name : hand) (if phenomenon then phenomena + 1 else phenomena) passed more
 
--- | The names of the planar deck a deck list brings (CR 901.3).
-planarNames :: Text.Text -> [CardName.CardName]
-planarNames contents = [card | (DeckList.Supplementary SideDeck.Planar, _, card) <- sectioned contents]
+-- | The names of the supplementary deck of this kind a deck list brings,
+-- one per card.
+sideNames :: SideDeck.SideDeck -> Text.Text -> [CardName.CardName]
+sideNames kind contents = [card | (DeckList.Supplementary kind', n, card) <- sectioned contents, kind' == kind, _ <- [1 .. n]]
+
+-- | A seat's list with a supplementary deck of this kind added: these
+-- cards, one line each.
+withSide :: SideDeck.SideDeck -> [CardName.CardName] -> (Text.Text, Text.Text) -> (Text.Text, Text.Text)
+withSide kind cards (name, contents) = (name, Text.unlines (Text.stripEnd contents : Text.empty : DeckList.heading (DeckList.Supplementary kind) : [Text.pack "1 " <> CardName.unwrap card | card <- cards]))
+
+-- | A seat's deck as Start's refusals name it.
+seatLabel :: (Text.Text, Text.Text) -> Text.Text
+seatLabel seat@(name, _) = DeckBrowser.label (DeckBrowser.titleIn seat) name
 
 -- | The seats' lists, each a deck's name and its list, as Start deals them.
 -- With Planechase off, refused where one brings a planar deck.
@@ -538,20 +569,59 @@ planarNames contents = [card | (DeckList.Supplementary SideDeck.Planar, _, card)
 planarDealt :: (Monad m) => ([(CardName.CardName, Bool)] -> m [(CardName.CardName, Bool)]) -> Options -> [(CardName.CardName, Bool)] -> NonEmpty.NonEmpty (Text.Text, Text.Text) -> m (Either Text.Text (NonEmpty.NonEmpty (Text.Text, Text.Text)))
 planarDealt shuffle chosen' pool seats
   | not (planechase chosen') = pure $ case [seat | seat <- NonEmpty.toList seats, brings seat] of
-      seat@(name, _) : _ -> Left (Text.concat [Text.pack "Planechase is off, but ", DeckBrowser.label (DeckBrowser.titleIn seat) name, Text.pack " brings a planar deck: turn Planechase on, or drop its Planar Deck section."])
+      seat : _ -> Left (Text.concat [Text.pack "Planechase is off, but ", seatLabel seat, Text.pack " brings a planar deck: turn Planechase on, or drop its Planar Deck section."])
       [] -> Right seats
   | singlePlanarDeck chosen' = do
-      let brought = Set.fromList (foldMap (planarNames . snd) seats)
+      let brought = Set.fromList (foldMap (sideNames SideDeck.Planar . snd) seats)
           step left seat
             | brings seat = (left, Right seat)
-            | otherwise = maybe (left, Left short) (\(hand, rest) -> (rest, Right (with hand seat))) (planarHand left)
+            | otherwise = maybe (left, Left short) (\(hand, rest) -> (rest, Right (withSide SideDeck.Planar hand seat))) (planarHand left)
       order <- shuffle [card | card@(name, _) <- pool, Set.notMember name brought]
       pure (sequence (snd (Traversable.mapAccumL step order seats)))
-  | otherwise = sequence <$> traverse (\seat -> if brings seat then pure (Right seat) else maybe (Left short) (\(hand, _) -> Right (with hand seat)) . planarHand <$> shuffle pool) seats
+  | otherwise = sequence <$> traverse (\seat -> if brings seat then pure (Right seat) else maybe (Left short) (\(hand, _) -> Right (withSide SideDeck.Planar hand seat)) . planarHand <$> shuffle pool) seats
   where
-    brings = not . null . planarNames . snd
-    with hand (name, contents) = (name, Text.unlines (Text.stripEnd contents : Text.empty : DeckList.heading (DeckList.Supplementary SideDeck.Planar) : [Text.pack "1 " <> CardName.unwrap card | card <- hand]))
+    brings = not . null . sideNames SideDeck.Planar . snd
     short = Text.pack ("The pool's " <> show (length pool) <> " planes and phenomena can't deal " <> (if singlePlanarDeck chosen' then "one planar deck for " <> show (length seats) <> " players" else "every seat a planar deck") <> ": turn the single planar deck off, or seat fewer players.")
+
+-- | A card a scheme deck may hold (CR 904.3): its name; nothing for any
+-- other card, or a synthetic one.
+schemeCardOf :: Card.Card -> Maybe CardName.CardName
+schemeCardOf c =
+  let face = EngineCard.combined c
+   in if not (Card.synthetic c) && Set.member CardType.Scheme (TypeLine.types (Face.typeLine face)) then Just (Face.name face) else Nothing
+
+-- | CR 904.3: how many cards a dealt scheme deck holds, at most two of a
+-- name.
+schemeDeckSize :: Int
+schemeDeckSize = 20
+
+-- | The seats' lists, each a deck's name and its list, as Start deals them.
+-- With Archenemy off, refused where one brings a scheme deck. With it on,
+-- refused where a seat but the archenemy's brings one, since the engine
+-- makes an archenemy of the one player bringing a scheme deck
+-- (Parun.Engine.Archenemy.sole); and the archenemy's list, bringing none,
+-- given the first 'schemeDeckSize' of two of each name in `pool`, in the
+-- order `shuffle` puts them (CR 904.3). Refused, saying why, where the pool
+-- runs short.
+schemeDealt :: (Monad m) => ([CardName.CardName] -> m [CardName.CardName]) -> Options -> [CardName.CardName] -> NonEmpty.NonEmpty (Text.Text, Text.Text) -> m (Either Text.Text (NonEmpty.NonEmpty (Text.Text, Text.Text)))
+schemeDealt shuffle chosen' pool seats = case archenemy chosen' of
+  Nothing -> pure $ case filter brings (NonEmpty.toList seats) of
+    seat : _ -> Left (Text.concat [Text.pack "Archenemy is off, but ", seatLabel seat, Text.pack " brings a scheme deck: turn Archenemy on, or drop its Scheme Deck section."])
+    [] -> Right seats
+  Just place -> case [seat | (i, seat) <- zip [0 ..] (NonEmpty.toList seats), i /= place, brings seat] of
+    seat : _ -> pure (Left (Text.concat [Text.pack "Only the archenemy plays a scheme deck, but ", seatLabel seat, Text.pack " brings one: make it the archenemy, or drop its Scheme Deck section."]))
+    [] -> do
+      order <- shuffle (names <> names)
+      let deck = take schemeDeckSize order
+          deal i seat
+            | i /= place || brings seat = Right seat
+            | length deck < schemeDeckSize = Left short
+            | otherwise = Right (withSide SideDeck.Scheme deck seat)
+      pure (traverse (uncurry deal) (NonEmpty.zip (0 NonEmpty.:| [1 ..]) seats))
+  where
+    names = ListUtils.nubOrd pool
+    brings = not . null . sideNames SideDeck.Scheme . snd
+    short = Text.pack ("The pool's " <> show (length names) <> " schemes can't deal a scheme deck of " <> show schemeDeckSize <> ", two of a name at most: bring one in the archenemy's list.")
 
 -- | A card's colours as a deck shows them: those of the mana symbols in
 -- its faces' costs.
@@ -665,6 +735,7 @@ updated event typed lobby = case event of
   MkDrop i
     | removable lobby i ->
         let moved j = if j > i then j - 1 else j
+            placed place = if place > i + 1 then place - 1 else place
          in lobby
               { theirs = [deck | (j, deck) <- zip [0 ..] (theirs lobby), j /= i],
                 choosing = case choosing lobby of
@@ -674,7 +745,9 @@ updated event typed lobby = case event of
                 locals = Map.mapKeys moved (Map.delete i (locals lobby)),
                 bots = Map.mapKeys moved (Map.delete i (bots lobby)),
                 -- Yours is the table's first place, before each in 'theirs'.
-                teams = Map.mapKeys (\place -> if place > i + 1 then place - 1 else place) (Map.delete (i + 1) (teams lobby))
+                teams = Map.mapKeys placed (Map.delete (i + 1) (teams lobby)),
+                -- The archenemy unseated, yours is the archenemy's seat.
+                options = (options lobby) {archenemy = (\place -> if place == i + 1 then 0 else placed place) <$> archenemy (options lobby)}
               }
     | otherwise -> lobby
   MkStart -> lobby
@@ -691,6 +764,10 @@ updated event typed lobby = case event of
   MkAnte -> optioned (\o -> o {ante = not (ante o)})
   MkPlanechase -> optioned (\o -> o {planechase = not (planechase o)})
   MkSinglePlanarDeck -> optioned (\o -> o {singlePlanarDeck = not (singlePlanarDeck o)})
+  MkArchenemy -> optioned (\o -> o {archenemy = maybe (Just 0) (const Nothing) (archenemy o)})
+  MkArchenemySeat
+    | archenemyGame lobby, Just place <- Read.readMaybe (Text.unpack typed), place >= 0, Int.toNaturalSaturating place < seatCount lobby -> optioned (\o -> o {archenemy = Just place})
+    | otherwise -> lobby
   MkAttackOption -> maybe lobby (\a -> optioned (\o -> o {attackOption = a})) (valued attackOptions)
   MkRangeOfInfluence -> maybe lobby (\r -> optioned (\o -> o {rangeOfInfluence = r})) (valued ranges)
   MkClock -> maybe lobby (\c -> optioned (\o -> o {clock = c})) (valued Clock.choices)
@@ -789,9 +866,10 @@ placesFor named listed i lobby =
 -- its value as 'optionsView' shows them.
 told :: Lobby -> [(Text.Text, Text.Text)]
 told lobby =
-  [(Text.pack "Variant", labelIn variants (variantOf lobby)) | multiplayer (seatCount lobby)]
+  [(Text.pack "Variant", labelIn variants (variantOf lobby)) | multiplayer (seatCount lobby), not (archenemyGame lobby)]
     <> [(Text.pack "Play for ante", yesNo (ante chosen')), (Text.pack "Planechase", yesNo (planechase chosen'))]
     <> [(Text.pack "Single planar deck", yesNo (singlePlanarDeck chosen')) | planechase chosen']
+    <> [(Text.pack "Archenemy", maybe (Text.pack "No") (\place -> Text.pack ("Player " <> show (place + 1))) (archenemy chosen'))]
     <> [(Text.pack "Clock", labelIn Clock.choices (clock chosen'))]
     <> ( if chosesAttacks lobby
            then [(Text.pack "Attacks", labelIn attackOptions (attackOption chosen')), (Text.pack "Range of influence", labelIn ranges (rangeOfInfluence chosen'))]
@@ -954,19 +1032,24 @@ seatsView lobby =
               : below
                 <> [Element.el "div" ["seat-actions"] [] extra | not (null extra)]
 
--- | The game's options: at three seats or more the variant; ante,
--- Planechase and, while it is on, the single planar deck, each seat's
+-- | The game's options: at three seats or more the variant, but in an
+-- Archenemy game; ante, Planechase and, while it is on, the single planar
+-- deck, Archenemy and, while it is on, the archenemy's seat, each seat's
 -- clock, and where the game chooses them ('chosesAttacks') CR 806.2's
 -- attack option and range of influence.
 optionsView :: Lobby -> Html.Html Event
 optionsView lobby =
   Element.el "fieldset" ["game-options"] [] $
     [Element.el "legend" ["eyebrow"] [] [Element.string "Game options"]]
-      <> [menu "option-variant" MkVariant "Variant" [(value, label, option == variant chosen') | (option, (value, label)) <- variants] | multiplayer (seatCount lobby)]
+      <> [menu "option-variant" MkVariant "Variant" [(value, label, option == variant chosen') | (option, (value, label)) <- variants] | multiplayer (seatCount lobby), not (archenemyGame lobby)]
       <> [ toggle "option-ante" MkAnte (ante chosen') "Play for ante" "Each player antes a random card from their library; the winner owns them all.",
            toggle "option-planechase" MkPlanechase (planechase chosen') "Planechase" "Each seat plays its list's planar deck, or one dealt from the planes and phenomena."
          ]
       <> [toggle "option-single-planar-deck" MkSinglePlanarDeck (singlePlanarDeck chosen') "Single planar deck" "Every seat's planar deck is shuffled into one." | planechase chosen']
+      <> [toggle "option-archenemy" MkArchenemy (archenemyGame lobby) "Archenemy" "One seat, the archenemy, plays its list's scheme deck, or one dealt from the schemes, against every other."]
+      <> [ menu "option-archenemy-seat" MkArchenemySeat "The archenemy" [(show place, seatName (if place == 0 then MkMine else MkTheirs (place - 1)), Just place == archenemy chosen') | place <- [0 .. Natural.toIntSaturating (seatCount lobby) - 1]]
+         | archenemyGame lobby
+         ]
       <> [menu "option-clock" MkClock "Clock" [(value, label, option == clock chosen') | (option, (value, label)) <- Clock.choices]]
       <> ( if chosesAttacks lobby
              then
@@ -1043,7 +1126,7 @@ starting lobby =
       Element.el "p" ["start-note", "muted"] [Element.attr "id" (Text.pack "start-note"), Element.attr "aria-live" (Text.pack "polite")] [Element.string (Maybe.fromMaybe (if null (theirs lobby) then "Just you: a goldfish game. Ready to start." else "Every seat has a deck. Ready to start.") (waiting lobby))]
     ]
       <> [Element.el "ul" ["problems", "refusal"] [] [Element.el "li" [] [] [Element.text p] | p <- problems] | Left problems@(_ : _) <- [startable lobby]]
-      <> [Element.el "p" ["problem", "planar-refusal"] [Element.attr "role" (Text.pack "alert")] [Element.text why] | why <- Maybe.maybeToList (refusal lobby)]
+      <> [Element.el "p" ["problem", "deal-refusal"] [Element.attr "role" (Text.pack "alert")] [Element.text why] | why <- Maybe.maybeToList (refusal lobby)]
 
 -- | The decks the seat being chosen for may play: the ways to add one, the
 -- shelves, the filters, and the decks shown as tiles.
