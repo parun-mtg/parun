@@ -1,7 +1,8 @@
 -- Covers Parun.Web.Link, Parun.Play.Protocol's bySeat and Parun.Web.Lobby's
 -- invites and players here: games whose guests' seats are played from other
 -- pages, each over its own channel held in memory, the agreement that starts
--- them, and a game whose seats share the host's page.
+-- them, a game whose seats share the host's page, and a game on the
+-- clocks (Parun.Web.Clock).
 module Parun.RemoteSeatSpec where
 
 import qualified Control.Monad as Monad
@@ -44,6 +45,7 @@ import qualified Parun.Types.Result as Result
 import qualified Parun.Types.SearchBudget as SearchBudget
 import qualified Parun.Types.SearchMethod as SearchMethod
 import qualified Parun.Types.Weights as Weights
+import qualified Parun.Web.Clock as Clock
 import qualified Parun.Web.Ending as Ending
 import qualified Parun.Web.Html as Html
 import qualified Parun.Web.Link as Link
@@ -124,6 +126,23 @@ spec s registry = Spec.describe s "RemoteSeat" $ do
     Spec.assertEqWith s "both seats asked on the one page" (ListUtils.nubOrd seats) [S.alice, S.bob]
     Spec.assertEqWith s "no hand-off" (length (handedOver (Set.fromList [S.alice, S.bob]) inOrder)) 0
     Spec.assertBool s (all (Text.isInfixOf (Text.pack "You're playing Player 2.")) (named S.bob) && all (Text.isInfixOf (Text.pack "You're playing Player 1.")) (named S.alice)) "each question names its seat"
+
+  Spec.it s "a whole game on the clocks: each seat charged only while it decides, and the game stopping as Player 2's runs out, lost to Player 1" $ do
+    matchup <- BotSpec.bears s registry
+    let options = Lobby.playOptions Map.empty 2 (Set.singleton S.bob)
+        seatOf = Question.seat . Request.question
+        -- Player 2 takes half a minute over each decision, Player 1 none.
+        onScreen request = do
+          Monad.when (seatOf request == S.bob) (State.modify' (\(at, clocks) -> (at + 30, clocks)))
+          pure (Just (Right (answer request)))
+        -- Waiting gives up once the deadline passed (Browser.within).
+        within deadline decide = decide >>= \answered -> State.gets fst >>= \at -> pure (if at >= deadline then Nothing else Just answered)
+        timed request = Clock.timed (State.gets fst) within (State.gets snd) (State.modify' . fmap) (seatOf request) onScreen request
+    (outcome, (_, after)) <- State.runStateT (Game.run (S.fixtureRegistry []) GameSettings.plain Limits.standard [] (Map.fromList [(Command.idOf n, Command.answerer (S.fixtureRegistry []) timed (pure Nothing) (const (pure ())) (pure Map.empty) Search.unkept (pure ()) Search.unhurried options Search.known n) | n <- [1, 2]]) (S.seeded 1) Map.empty matchup) (0 :: Double, Clock.starting (Just 2) (Set.fromList [S.alice, S.bob]))
+    Spec.assertEqWith s "the game stops" (fmap fst outcome) (Left (Text.pack "end of input"))
+    Spec.assertEqWith s "Player 2 out of time" (Clock.out after) (Just S.bob)
+    Spec.assertEqWith s "each seat charged its own time" (Clock.left after, Clock.running after) (Map.fromList [(S.alice, 120), (S.bob, 0)], Nothing)
+    Spec.assertEqWith s "lost to Player 1" (fmap (fst . Clock.ending 2 S.bob . Just) [S.alice, S.bob]) [Ending.MkWon, Ending.MkLost]
 
   Spec.it s "a guest whose connection drops mid-game rejoins, is sent the match-up, its seat and the request again, and the game finishes" $ do
     matchup <- BotSpec.bears s registry

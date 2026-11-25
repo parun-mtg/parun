@@ -308,8 +308,9 @@ guest local message = case message of
 -- list's text (the host's first), the bots' slots players were invited to,
 -- those played on the host's screen and how, how each bot plays by its slot
 -- (Parun.Play.Opponent; Lobby.botAt), the options the game is played with
--- (CR 800.2) but its format, which its lists' headers name, and every reply
--- so far.
+-- (CR 800.2) but its format, which its lists' headers name, the minutes
+-- each seat a person plays has on its clock (Parun.Web.Clock), if timed,
+-- and every reply so far.
 data Saved = MkSaved
   { seed :: Key.Type.Key,
     seats :: NonEmpty.NonEmpty (Text.Text, Text.Text),
@@ -317,6 +318,7 @@ data Saved = MkSaved
     locals :: Map.Map Int Sitting,
     bots :: Map.Map Int (Difficulty.Difficulty, Persona.Persona),
     settings :: GameSettings.GameSettings,
+    clock :: Maybe Natural,
     replies :: [R.Reply]
   }
   deriving (Eq, Show)
@@ -347,7 +349,8 @@ saved build game =
             Value.pair "locals" (slots MkHandedOver),
             Value.pair "yours" (slots MkYours),
             Value.pair "bots" (Value.array [Value.object [Value.pair "slot" (Value.integer (toInteger i)), Value.pair "difficulty" (Value.string (fst (Opponent.difficultyName level))), Value.pair "persona" (Value.string (fst (Opponent.personaName style)))] | (i, (level, style)) <- Map.toList (bots game)]),
-            Value.pair "settings" (Codec.encode Codec.GameSettings.codec (settings game))
+            Value.pair "settings" (Codec.encode Codec.GameSettings.codec (settings game)),
+            Value.pair "clock" (Codec.encode (Common.maybe Common.natural) (clock game))
           ]
    in Text.intercalate (Text.pack "\n") (Common.render header : fmap savedReply (replies game))
 
@@ -374,8 +377,9 @@ unsaved build kept = case Text.lines kept of
     let here = Map.fromList (fmap (\i -> (i, MkHandedOver)) handed <> fmap (\i -> (i, MkYours)) yours)
     styles <- Common.field "bots" pairs >>= Common.asArray >>= traverse styleOf
     options <- Common.field "settings" pairs >>= Codec.decode Codec.GameSettings.codec
+    minutes <- Common.field "clock" pairs >>= Codec.decode (Common.maybe Common.natural)
     answers <- traverse (Common.parse Monad.>=> Codec.Reply.fromValue) (filter (not . Text.null) rest)
-    pure (MkSaved key decks slots here (Map.fromList styles) options answers)
+    pure (MkSaved key decks slots here (Map.fromList styles) options minutes answers)
   where
     named :: (Bounded a, Enum a) => String -> (a -> (String, String)) -> Text.Text -> Either Text.Text a
     named what nameOf name = maybe (Left (Text.pack ("not " <> what <> ": ") <> name)) Right (Opponent.named nameOf (Text.unpack name))

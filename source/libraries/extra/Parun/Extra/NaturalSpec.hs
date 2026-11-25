@@ -17,6 +17,10 @@ spec s = Spec.describe s "Parun.Extra.Natural" $ do
     Spec.it s "works with more than one element" $ do
       Spec.assertEq s (Natural.length "bc") 2
 
+  Spec.describe s "toDouble" $ do
+    Spec.it s "converts exactly" $ do
+      Spec.assertEq s (fmap Natural.toDouble [0, 1, 300, 2 ^ (53 :: Int)]) [0, 1, 300, 9007199254740992]
+
   Spec.describe s "toInt" $ do
     Spec.it s "succeeds with zero" $ do
       Spec.assertEq s (Natural.toInt 0) $ Just 0

@@ -44,6 +44,7 @@ import qualified Parun.Types.Reply as R
 import qualified Parun.Types.Request as Request
 import qualified Parun.Types.Result as Result
 import qualified Parun.Web.Card as Web.Card
+import qualified Parun.Web.Clock as Web.Clock
 import qualified Parun.Web.DeckBrowser as DeckBrowser
 import qualified Parun.Web.Element as Element
 import qualified Parun.Web.Ending as Ending
@@ -78,7 +79,9 @@ instance Exception.Exception Abandoned
 -- (Web.Question.handOff) unless the player plays it too (Link.MkYours),
 -- and every other by the search bot at the difficulty and persona its slot
 -- has in `bots` (Lobby.botAt), with `settings`' options (CR 800.2) under the
--- format the lists' headers name, the page live while a remote seat decides
+-- format the lists' headers name, every seat a person plays given `clock`'s
+-- minutes, if timed, a seat out of time losing (Web.Clock.timed), the
+-- page live while a remote seat decides
 -- (awaiting) or a search bot does (breathing); leaving for the home
 -- screen through `leave`. The game picks up after the replies in
 -- `stored`, each made again (Protocol.resumed) and each bot's given back
@@ -92,9 +95,10 @@ instance Exception.Exception Abandoned
 -- loses to a reload: how it came out, or why it could not start, taking
 -- no seat's side where another person plays at this screen
 -- (Link.MkHandedOver).
-game :: Browser.Page Screen.Event -> Registry.Registry Identity.Identity -> [Either Text.Text Card.Card] -> IO (Either Text.Text LegalityTable.LegalityTable) -> IORef.IORef Web.Question.Level -> Map.Map Int (Difficulty.Difficulty, Persona.Persona) -> GameSettings.GameSettings -> NonEmpty.NonEmpty (FilePath, Text.Text) -> Map.Map PlayerId.PlayerId (IO Ending.Seen -> Protocol.Exchange IO) -> Map.Map PlayerId.PlayerId Link.Sitting -> Key.Type.Key -> [R.Reply] -> (R.Reply -> IO ()) -> (PlayerId.PlayerId -> GameState.GameState -> Natural -> IO ()) -> ((PlayerId.PlayerId -> Ending.Ending) -> IO ()) -> (Maybe PlayerView.PlayerView -> IO Leave) -> IO (Either [Text.Text] Ending.Played)
-game page registry cards table levelRef bots settings seats remotes locals seed stored kept decides tell leave = do
-  seatRef <- IORef.newIORef . (\s -> s {yours = Set.insert player (Map.keysSet (Map.filter (== Link.MkYours) locals)), handed = Link.MkHandedOver `elem` locals}) . newSeat player Ending.unseen =<< IORef.readIORef levelRef
+game :: Browser.Page Screen.Event -> Registry.Registry Identity.Identity -> [Either Text.Text Card.Card] -> IO (Either Text.Text LegalityTable.LegalityTable) -> IORef.IORef Web.Question.Level -> Map.Map Int (Difficulty.Difficulty, Persona.Persona) -> GameSettings.GameSettings -> Maybe Natural -> NonEmpty.NonEmpty (FilePath, Text.Text) -> Map.Map PlayerId.PlayerId (IO Ending.Seen -> Protocol.Exchange IO) -> Map.Map PlayerId.PlayerId Link.Sitting -> Key.Type.Key -> [R.Reply] -> (R.Reply -> IO ()) -> (PlayerId.PlayerId -> GameState.GameState -> Natural -> IO ()) -> ((PlayerId.PlayerId -> Ending.Ending) -> IO ()) -> (Maybe PlayerView.PlayerView -> IO Leave) -> IO (Either [Text.Text] Ending.Played)
+game page registry cards table levelRef bots settings clock seats remotes locals seed stored kept decides tell leave = do
+  let people = Set.insert player (Map.keysSet remotes <> Map.keysSet locals)
+  seatRef <- IORef.newIORef . (\s -> s {yours = Set.insert player (Map.keysSet (Map.filter (== Link.MkYours) locals)), handed = Link.MkHandedOver `elem` locals, clocks = Web.Clock.starting clock people}) . newSeat player Ending.unseen =<< IORef.readIORef levelRef
   keepingLevel levelRef seatRef . Exception.handle (\MkAbandonedGame -> pure (Right Ending.MkAbandoned)) $ do
     let listed = fmap (uncurry (Command.loadText registry)) seats
     case sequenceA listed of
@@ -111,10 +115,12 @@ game page registry cards table levelRef bots settings seats remotes locals seed 
             breathRef <- IORef.newIORef Nothing
             botReading <- IORef.newIORef Nothing
             let lookUp = Identity.runIdentity . Interpreter.chosenCard registry
-                here = exchange lookUp page seatRef leave
+                -- Each seat a person plays on its clock, if timed.
+                timed = Web.Clock.timed Clock.getMonotonicTime (Browser.within page) (clocks <$> IORef.readIORef seatRef) (\f -> IORef.modifyIORef' seatRef (\s -> s {clocks = f (clocks s)}))
+                here request = timed (Question.seat (Request.question request)) (exchange lookUp page seatRef leave) request
                 -- The page stays live while another browser's seat decides,
                 -- and while a search bot does.
-                elsewhere = Map.mapWithKey (\seat ask -> awaiting lookUp page seatRef leave (const [seat]) . Link.seeing (sentTo seat) (ask (Map.findWithDefault Ending.unseen seat <$> IORef.readIORef guestsRef))) remotes
+                elsewhere = Map.mapWithKey (\seat ask -> timed seat (awaiting lookUp page seatRef leave (const [seat]) . Link.seeing (sentTo seat) (ask (Map.findWithDefault Ending.unseen seat <$> IORef.readIORef guestsRef)))) remotes
                 sentTo seat shown = IORef.modifyIORef' guestsRef (Map.adjust (Ending.see shown) seat)
                 next = IORef.atomicModifyIORef' storedRef $ \left -> maybe ([], Nothing) (\(reply, rest) -> (rest, Just reply)) (List.uncons left)
                 -- What a seat sees as its reply is made again, and what a
@@ -138,12 +144,15 @@ game page registry cards table levelRef bots settings seats remotes locals seed 
             (outcome, recorded) <- Command.game (Text.pack "the web client") (Protocol.resumed next replayed kept (Protocol.bySeat elsewhere here)) next kept [Link.deciding movedOn] (breathing lookUp page seatRef leave botReading breathRef) (Lobby.playOptions bots (Natural.length seats) (Map.keysSet remotes <> Map.keysSet locals)) pooled registry settings {GameSettings.format = format} (fmap DeckList.deck lists) seed
             finished <- IORef.readIORef seatRef
             sent <- IORef.readIORef guestsRef
-            let said reader = either (\reason -> [Text.pack "The game stopped: " <> stopped reason <> Text.pack "."]) (\(result, gs) -> Wording.result reader result : Wording.departures reader gs) outcome
+            let late = Web.Clock.out (clocks finished)
+                -- A seat out of time ends the game as its clock says.
+                timedOut reader = fmap (\seat -> Web.Clock.ending (Natural.length seats) seat reader) late
+                said reader = maybe (either (\reason -> [Text.pack "The game stopped: " <> stopped reason <> Text.pack "."]) (\(result, gs) -> Wording.result reader result : Wording.departures reader gs) outcome) snd (timedOut reader)
                 -- A remote seat's exchange ends only when its channel closes.
                 stopped reason = if not (Map.null remotes) && reason == Text.pack "end of input" then Text.pack "a player's connection closed" else reason
                 scenario = Command.rendered recorded
                 -- Told to `reader`, or to no seat in particular.
-                endingAs reader seat = Link.ending (verdictOf reader outcome) (said reader) scenario seat (Maybe.isNothing reader) outcome (Map.findWithDefault (sighted finished) seat sent)
+                endingAs reader seat = Link.ending (maybe (verdictOf reader outcome) fst (timedOut reader)) (said reader) scenario seat (Maybe.isNothing reader) outcome (Map.findWithDefault (sighted finished) seat sent)
                 endingFor seat = endingAs (Just seat) seat
                 -- Another person plays at this screen, so its ending takes
                 -- no seat's side.
@@ -196,7 +205,8 @@ exchange lookUp page seatRef leave request = do
             now <- IORef.readIORef seatRef
             let seen = shown {PlayerView.priority = Nothing}
                 facingNow = if Web.Question.handsOver (yours now) (facing now) seat then facing now else Just seat
-            Monad.when (watched now /= Just seen) . Monad.forM_ (Web.Question.watching facingNow [] False request (watchedScreen lookUp seat now shown)) $ \board -> do
+            shownClocks <- facesOf now
+            Monad.when (watched now /= Just seen) . Monad.forM_ (Web.Question.watching facingNow [] False request (watchedScreen lookUp seat now shownClocks shown)) $ \board -> do
               IORef.writeIORef seatRef now {watched = Just seen}
               Browser.display page (fmap Screen.MkQuestion board)
           pure reply
@@ -232,8 +242,9 @@ exchange lookUp page seatRef leave request = do
     answer pending picked = asking pending picked Nothing Nothing
     asking pending picked reading focus = do
       state <- IORef.readIORef seatRef
+      shownClocks <- facesOf state
       let asked = Question.seat (Request.question pending)
-          screen = Web.Question.MkScreen picked reading (loggedFor asked state) (freshOf asked state) focus (level state) (foldMap (Web.Card.written lookUp) (Request.view pending)) (naming asked state)
+          screen = Web.Question.MkScreen picked reading (loggedFor asked state) (freshOf asked state) focus (level state) (foldMap (Web.Card.written lookUp) (Request.view pending)) (naming asked state) shownClocks
       Browser.display page . fmap Screen.MkQuestion $ Web.Question.view pending screen
       (event, value) <- Browser.next page
       case event of
@@ -290,10 +301,17 @@ readingOf lookUp request object pinned = do
   o <- Wording.recalled shown object
   pure (Web.Card.MkReading object (either (pure . Text.pack . Exception.displayException) id (Web.Card.oracle lookUp o)) pinned)
 
--- | The screen a seat watches the board `shown` with: its log, and the
--- level it plays at.
-watchedScreen :: (CardName.CardName -> Either InvalidCorpus.InvalidCorpus (Maybe Card.Card)) -> PlayerId.PlayerId -> Seat -> PlayerView.PlayerView -> Web.Question.Screen
-watchedScreen lookUp seat state shown = Web.Question.blank {Web.Question.logged = loggedFor seat state, Web.Question.fresh = freshOf seat state, Web.Question.level = level state, Web.Question.written = Web.Card.written lookUp shown, Web.Question.naming = naming seat state}
+-- | The screen a seat watches the board `shown` with: its log, the level
+-- it plays at, and these clocks.
+watchedScreen :: (CardName.CardName -> Either InvalidCorpus.InvalidCorpus (Maybe Card.Card)) -> PlayerId.PlayerId -> Seat -> [Web.Clock.Face] -> PlayerView.PlayerView -> Web.Question.Screen
+watchedScreen lookUp seat state shownClocks shown = Web.Question.blank {Web.Question.logged = loggedFor seat state, Web.Question.fresh = freshOf seat state, Web.Question.level = level state, Web.Question.written = Web.Card.written lookUp shown, Web.Question.naming = naming seat state, Web.Question.clocks = shownClocks}
+
+-- | Every timed seat's clock as it reads now.
+facesOf :: Seat -> IO [Web.Clock.Face]
+facesOf state = do
+  at <- Clock.getMonotonicTime
+  (epoch, _) <- Browser.clock
+  pure (Web.Clock.faces at epoch (clocks state))
 
 -- | Whether the screen names the seat it shows (Web.Question.naming): the
 -- person at it plays that seat and another, or it is handed between people.
@@ -321,13 +339,14 @@ watcher lookUp page seatRef leave readingRef deciders = (draw, tap)
     draw = do
       state <- IORef.readIORef seatRef
       reading <- IORef.readIORef readingRef
+      shownClocks <- facesOf state
       -- The board watched next is drawn afresh, over this one; its log
       -- is read.
       IORef.writeIORef seatRef (maybe id witness (current state >>= Request.view) state) {watched = Nothing}
       let board = do
             request <- current state
             shown <- Request.view request
-            Web.Question.watching (facing state) (deciders state) (any (`Set.member` conceding state) (facing state)) request (watchedScreen lookUp (Question.seat (Request.question request)) state shown) {Web.Question.reading = reading}
+            Web.Question.watching (facing state) (deciders state) (any (`Set.member` conceding state) (facing state)) request (watchedScreen lookUp (Question.seat (Request.question request)) state shownClocks shown) {Web.Question.reading = reading}
       Browser.display page (maybe (message [Text.pack (Web.Question.waitingOn (deciders state))]) (fmap Screen.MkQuestion) board)
     -- Every tap redraws the page, which a tap shows busy until then.
     tap (event, _) = do
@@ -401,7 +420,7 @@ current state = do
 -- | What the page keeps between request lines: the seat the screen last
 -- showed, the seats one person plays, whether another plays here, the
 -- seats that chose auto for the payment under way, what each seat has seen
--- happen, and when it last answered.
+-- happen, when it last answered, and the clocks.
 data Seat = MkSeat
   { facing :: Maybe PlayerId.PlayerId,
     -- | The seats the person at the screen plays, never handed the screen
@@ -428,15 +447,17 @@ data Seat = MkSeat
     latest :: Map.Map PlayerId.PlayerId Request.Request,
     -- | The game as each seat the page plays sees it at a decision another
     -- seat makes since, and its depth (stand).
-    standing :: Map.Map PlayerId.PlayerId (PlayerView.PlayerView, Natural)
+    standing :: Map.Map PlayerId.PlayerId (PlayerView.PlayerView, Natural),
+    -- | Every timed seat's clock (Web.Clock), kept by the host only.
+    clocks :: Web.Clock.Clocks
   }
 
 -- | The page's state before its first request line, facing the seat it
--- plays and playing only that one, no one else at the screen, at that
--- auto-pass level, the seat having read what was `seen` already: a
+-- plays and playing only that one, no one else at the screen, no seat
+-- timed, at that auto-pass level, the seat having read what was `seen` already: a
 -- rejoining guest's game before its page reloaded (Link.MkStart).
 newSeat :: PlayerId.PlayerId -> Ending.Seen -> Web.Question.Level -> Seat
-newSeat seat seen initial = MkSeat (Just seat) (Set.singleton seat) False Set.empty initial Map.empty Set.empty Nothing seen (Map.singleton seat (Seq.length (Ending.loggedFor seat seen))) Map.empty Map.empty
+newSeat seat seen initial = MkSeat (Just seat) (Set.singleton seat) False Set.empty initial Map.empty Set.empty Nothing seen (Map.singleton seat (Seq.length (Ending.loggedFor seat seen))) Map.empty Map.empty Web.Clock.none
 
 -- | The entries a seat has read so far, oldest first.
 loggedFor :: PlayerId.PlayerId -> Seat -> Seq.Seq Log.Entry
