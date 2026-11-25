@@ -1408,6 +1408,14 @@ replaySpec s registry = Spec.describe s "WebQuestion" . Spec.describe s "replay"
     sheet <- sheetText s registry stop "Cubwarden"
     Spec.assertBool s (Text.pack "Misthoof Kirin (merged under it):" `elem` sheet) ("alice's sheet: " <> show sheet)
 
+  Spec.it s "CR 707.2 Shore Leave Planet copying Isamaru is marked a copy to every seat, naming the Planet beneath" $ do
+    -- Entry 5 follows the Planet's copy ability resolving.
+    stop <- replayed s registry "shore-leave-planet-enters-tapped-and-becomes-a-nonlegendary-robot-artifact-copy-until-end-of" 5
+    let copies seat = [(n, fmap fst (Card.marked o)) | o <- PlayerView.Type.battlefield (PlayerView.viewFor seat (Stop.state stop)), Just n <- [ObjectView.beneathCopy o]]
+        planet = CardName.MkCardName (Text.pack "Shore Leave Planet")
+    Spec.assertEqWith s "alice" (copies S.alice) [(planet, ["Copy"])]
+    Spec.assertEqWith s "bob" (copies S.bob) [(planet, ["Copy"])]
+
   Spec.it s "CR 709.3b a Room spell's sheet checks the half cast" $ do
     -- Entry 1 has Bottomless Pool cast, its half alone on the stack.
     stop <- replayed s registry "bottomless-pool-returns-up-to-one-creature-to-its-owners-hand-and-locker-room-draws-on-combat" 1

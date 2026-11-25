@@ -44,6 +44,8 @@ data ObjectView = MkObjectView
     ownEffects :: Maybe ProjectedCharacteristics.ProjectedCharacteristics,
     -- | CR 731.2 / 702.140e: the cards and tokens under a merged permanent's topmost one, top to bottom, each by the face it shows, and Nothing for a face-down one the seat may not look at (CR 708.5).
     merged :: Seq.Seq (Maybe CardName.CardName),
+    -- | CR 707.2 / 613.2a: the name of what a permanent a copy effect changed is beneath that effect, for a seat that sees it face up.
+    beneathCopy :: Maybe CardName.CardName,
     -- | CR 702.143d / 702.143e: what a granted foretell cost takes off the card's mana cost, for a seat that may look at it.
     foretellCostReduction :: Maybe ManaCost.ManaCost,
     -- | CR 113.7a / 602.2a: what an ability on the stack came from, and Nothing for anything else.

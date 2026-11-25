@@ -35,7 +35,8 @@ import qualified Parun.Types.ObjectView as ObjectView
 -- card given a foretell cost the seat may look at; `ability` is null for
 -- anything but an ability on the stack; `targets` is empty for anything but a
 -- spell or ability on the stack with a target; `merged` lists a hidden
--- component as null; it and each chosen field are omitted when empty,
+-- component as null; `beneathCopy` is omitted for anything but a permanent a
+-- copy effect changed; it and each chosen field are omitted when empty,
 -- Parun.Codec.Object's keys and shapes otherwise.
 codec :: Codec.Codec ObjectView.ObjectView
 codec = Fields.object $ do
@@ -69,6 +70,7 @@ codec = Fields.object $ do
   chosenObjects <- Fields.defaulted "chosenObjects" Map.empty (Common.keyedList (Common.keyValue Acquisition.codec (Common.set ObjectId.codec))) ObjectView.chosenObjects
   ownEffects <- Fields.defaulted "ownEffects" Nothing (Common.maybe ProjectedCharacteristics.codec) ObjectView.ownEffects
   merged <- Fields.defaulted "merged" Seq.empty (Common.seq (Common.maybe CardName.codec)) ObjectView.merged
+  beneathCopy <- Fields.defaulted "beneathCopy" Nothing (Common.maybe CardName.codec) ObjectView.beneathCopy
   commanderTax <- Fields.defaulted "commanderTax" 0 Common.natural ObjectView.commanderTax
   pure
     ObjectView.MkObjectView
@@ -83,6 +85,7 @@ codec = Fields.object $ do
         ObjectView.face = face,
         ObjectView.ownEffects = ownEffects,
         ObjectView.merged = merged,
+        ObjectView.beneathCopy = beneathCopy,
         ObjectView.foretellCostReduction = foretellCostReduction,
         ObjectView.ability = ability,
         ObjectView.targets = targets,
