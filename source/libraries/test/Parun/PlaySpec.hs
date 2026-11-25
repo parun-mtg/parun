@@ -514,25 +514,27 @@ gameSpec s registry = Spec.describe s "Play.Command" $ do
       Left failure -> Spec.assertBool s False ("the replay takes the concession where it was made: " <> Text.unpack (Scenario.Runner.render failure))
 
   Spec.it s "the goldfish answers each seat the options give it, the exchange asked nothing, and a game played on from its recording's start ends as it did" $ do
+    matchup <- BotSpec.bears s registry
+    reference <- fmap S.fixtureRegistry (traverse (S.cardOf s registry) ["Grizzly Bears", "Forest"])
     let seed = Generator.key (S.seeded 7)
-        deck = Deck.fromCards Map.empty
         options = PlayOptions.none {PlayOptions.first = Just 1, PlayOptions.goldfish = Set.fromList [1, 2]}
     askedRef <- IORef.newIORef (0 :: Int)
     let exchange _ = Nothing <$ IORef.modifyIORef' askedRef (+ 1)
-    (outcome, recorded) <- Command.game (Text.pack "the web client") exchange (pure Nothing) (const (pure ())) [] (pure ()) options Search.known (S.fixtureRegistry []) GameSettings.plain (deck NonEmpty.:| [deck]) seed
-    branched <- Command.branch exchange (pure Nothing) (const (pure ())) [] (pure ()) options Search.known (S.fixtureRegistry []) recorded 0 seed
+    (outcome, recorded) <- Command.game (Text.pack "the web client") exchange (pure Nothing) (const (pure ())) [] (pure ()) options Search.known (S.fixtureRegistry []) GameSettings.plain (fmap snd matchup) seed
+    branched <- Command.branch exchange (pure Nothing) (const (pure ())) [] (pure ()) options Search.known reference recorded 0 seed
     asked <- IORef.readIORef askedRef
     Spec.assertEqWith s "the exchange asked" asked 0
     Spec.assertBool s (Either.isRight outcome) ("the game has a result: " <> show (fmap fst outcome))
     Spec.assertEqWith s "the game played on's result" (fmap fst branched) (fmap fst outcome)
 
   Spec.it s "CR 104.3a a concession while a game played on from a position is pending ends it there" $ do
+    matchup <- BotSpec.bears s registry
+    reference <- fmap S.fixtureRegistry (traverse (S.cardOf s registry) ["Grizzly Bears", "Forest"])
     let seed = Generator.key (S.seeded 7)
-        deck = Deck.fromCards Map.empty
         options = PlayOptions.none {PlayOptions.first = Just 1, PlayOptions.goldfish = Set.fromList [1, 2]}
-    (_, recorded) <- Command.game (Text.pack "the web client") (const (pure Nothing)) (pure Nothing) (const (pure ())) [] (pure ()) options Search.known (S.fixtureRegistry []) GameSettings.plain (deck NonEmpty.:| [deck]) seed
+    (_, recorded) <- Command.game (Text.pack "the web client") (const (pure Nothing)) (pure Nothing) (const (pure ())) [] (pure ()) options Search.known (S.fixtureRegistry []) GameSettings.plain (fmap snd matchup) seed
     let exchange request = Exception.throwIO (Command.MkConceded (Question.seat (Request.question request)))
-    branched <- Command.branch exchange (pure Nothing) (const (pure ())) [] (pure ()) PlayOptions.none {PlayOptions.goldfish = Set.singleton 1} Search.known (S.fixtureRegistry []) recorded 0 seed
+    branched <- Command.branch exchange (pure Nothing) (const (pure ())) [] (pure ()) PlayOptions.none {PlayOptions.goldfish = Set.singleton 1} Search.known reference recorded 0 seed
     Spec.assertEqWith s "the game stops" (fmap fst branched) (Left (Text.pack "conceded"))
 
   Spec.it s "a bot's decision clock runs out once its think limit has passed, and never at 0" $ do
