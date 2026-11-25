@@ -50,8 +50,10 @@ data Message
   = -- | The guest's deck, by its name and its list's text; sent again on a
     -- change of deck.
     MkHello Text.Text Text.Text
-  | -- | The match-up as it stands, sent to the guest at every change.
-    MkMatchup [Place]
+  | -- | The match-up as it stands and the game's options, each a label and
+    -- its value as the host's lobby shows them (Lobby.told), sent to the
+    -- guest at every change.
+    MkMatchup [Place] [(Text.Text, Text.Text)]
   | -- | The guest is ready to start, or no longer.
     MkReady Bool
   | -- | The game starts, or goes on after a rejoin, the guest playing this
@@ -99,7 +101,7 @@ encode :: Text.Text -> Message -> Text.Text
 encode build message =
   let (tag, fields) = case message of
         MkHello name contents -> ("hello", [Value.pair "name" (Value.text name), Value.pair "list" (Value.text contents)])
-        MkMatchup places -> ("matchup", [Value.pair "seats" (Value.array (fmap place places))])
+        MkMatchup places options -> ("matchup", [Value.pair "seats" (Value.array (fmap place places)), Value.pair "options" (Codec.encode (Common.list (Common.tuple Common.text Common.text)) options)])
         MkReady on -> ("ready", [Value.pair "ready" (Value.boolean on)])
         MkStart seat seen' -> ("start", [Value.pair "seat" (Value.integer (toInteger (PlayerId.unwrap seat))), Value.pair "seen" (seenValue seen')])
         MkAsk request -> ("ask", [Value.pair "request" (Codec.encode Codec.Request.codec request)])
@@ -130,7 +132,7 @@ decode build line = do
   let text key = Common.field key pairs >>= Common.asText
   case Text.unpack tag of
     "hello" -> MkHello <$> text "name" <*> text "list"
-    "matchup" -> MkMatchup <$> (Common.field "seats" pairs >>= Common.asArray >>= traverse place)
+    "matchup" -> MkMatchup <$> (Common.field "seats" pairs >>= Common.asArray >>= traverse place) <*> (Common.field "options" pairs >>= Codec.decode (Common.list (Common.tuple Common.text Common.text)))
     "ready" -> MkReady <$> (Common.field "ready" pairs >>= Common.asBoolean)
     "start" -> MkStart <$> (Common.field "seat" pairs >>= Common.asInteger >>= natural) <*> (Common.field "seen" pairs >>= seenOf)
     "ask" -> MkAsk <$> (Common.field "request" pairs >>= Codec.decode Codec.Request.codec)
@@ -220,8 +222,9 @@ data Channel m = MkChannel
 -- answered by the reply that comes back, any other message (a Ready toggled
 -- as the game began, a rejoining guest's Hello) skipped. Once the channel
 -- closes, `rejoin` connects it anew and the guest is sent `places`, the
--- match-up its history names, its seat with what `seen` says it has seen,
--- and the request again, which a guest whose page reloaded needs all of; the
+-- match-up its history names, without the options, which a game under way
+-- has no use for, its seat with what `seen` says it has seen, and the
+-- request again, which a guest whose page reloaded needs all of; the
 -- end of input, which stops the game, only where it does not.
 remote :: (Monad m) => m Bool -> [Place] -> m Ending.Seen -> Channel m -> Protocol.Exchange m
 remote rejoin places seen channel request = asked
@@ -234,7 +237,7 @@ remote rejoin places seen channel request = asked
         Just _ -> replied
         Nothing -> do
           back <- rejoin
-          if back then seen >>= \seen' -> send channel (MkMatchup places) >> send channel (MkStart (Question.seat (Request.question request)) seen') >> asked else pure Nothing
+          if back then seen >>= \seen' -> send channel (MkMatchup places []) >> send channel (MkStart (Question.seat (Request.question request)) seen') >> asked else pure Nothing
 
 -- | This seat's view of the game as it ended, holding what happened after
 -- its last decision (the killing blow, say); Nothing for a game that stopped.

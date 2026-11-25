@@ -156,7 +156,7 @@ spec s registry = Spec.describe s "RemoteSeat" $ do
     Spec.assertEqWith s "the rejoined guest's log opens before the first turn" (Seq.lookup 0 (Ending.loggedFor S.bob own)) (Just Log.MkPregame)
     Spec.assertEqWith s "the rejoined guest's log is everything its seat was sent" (Ending.loggedFor S.bob own) (Ending.loggedFor S.bob (Map.findWithDefault Ending.unseen S.bob (hostSeen wire)))
     case sentAgain wire of
-      [Link.MkMatchup again, Link.MkStart seat before] -> do
+      [Link.MkMatchup again _, Link.MkStart seat before] -> do
         Spec.assertEqWith s "the guest is sent the match-up, then its seat, again" (again, seat) (played, S.bob)
         Spec.assertBool s (fmap fst (Seq.lookup (Seq.length (Ending.sampledLives before) - 1) (Ending.sampledLives before)) > Just 1) "setup: the guest rejoins past turn 1"
       other -> Spec.assertBool s False ("the guest is sent again: " <> show other)
@@ -368,7 +368,7 @@ channel g = Link.MkChannel send (received g)
       Left _ -> pure ()
       -- A reloaded page starts from what its seat has seen (Guest.play).
       Right again@(Link.MkStart _ seen') -> State.modify' (\w -> w {sentAgain = sentAgain w <> [again], pageSeen = Map.insert g seen' (pageSeen w)})
-      Right again@(Link.MkMatchup _) -> State.modify' (\w -> w {sentAgain = sentAgain w <> [again]})
+      Right again@(Link.MkMatchup _ _) -> State.modify' (\w -> w {sentAgain = sentAgain w <> [again]})
       Right line -> do
         heard <- Link.guest (page (Just g)) line
         case heard of

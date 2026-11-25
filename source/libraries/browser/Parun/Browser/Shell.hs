@@ -329,7 +329,8 @@ home shell = go
 -- and this event, if any, is done, until it goes home or starts a game,
 -- filling in as decks and cards arrive, and as the players invited from
 -- other browsers connect and choose (Parun.Web.Link), each told the
--- match-up at every change; where the game, played from here, then leads.
+-- match-up and the game's options at every change; where the game, played
+-- from here, then leads.
 -- A lobby with a game paused leads back to it, or abandons it (MkToAbandoned)
 -- before it starts another.
 lobby :: Shell -> Lobby.Lobby -> [Browser.Linked] -> Maybe Lobby.Event -> IO Next
@@ -408,13 +409,13 @@ lobby shell initial said pending = do
           Left problem -> reinvite i (capitalised problem <> Text.pack ".") current
         "closed" -> reinvite i connectionClosed current
         _ -> pure current
-    -- Each connected player told the match-up where it changed since, by
-    -- link number.
+    -- Each connected player told the match-up and the game's options where
+    -- they changed since, by link number.
     tellPlaces current told = do
       (named, listed) <- deckColouring shell
-      fmap Map.fromList . Monad.forM [(Lobby.linkNumber invite, Lobby.placesFor named listed i current) | (i, invite) <- Map.toList (Lobby.invites current), Lobby.connected invite] $ \(n, places) -> do
-        Monad.when (Map.lookup n told /= Just places) $ Link.send (Browser.channel (page shell) (build shell) n) (Link.MkMatchup places)
-        pure (n, places)
+      fmap Map.fromList . Monad.forM [(Lobby.linkNumber invite, Link.MkMatchup (Lobby.placesFor named listed i current) (Lobby.told current)) | (i, invite) <- Map.toList (Lobby.invites current), Lobby.connected invite] $ \(n, news) -> do
+        Monad.when (Map.lookup n told /= Just news) $ Link.send (Browser.channel (page shell) (build shell) n) news
+        pure (n, news)
     -- Every player is ready: the game starts, each player invited told
     -- their seat, each bot without a deck given one at random.
     startWith current told = do
@@ -433,7 +434,7 @@ lobby shell initial said pending = do
           (named, listed) <- deckColouring shell
           Monad.forM_ (Map.toList invited) $ \(i, invite) -> do
             let channel = Browser.channel (page shell) (build shell) (Lobby.linkNumber invite)
-            Link.send channel (Link.MkMatchup (Lobby.placesFor named listed i current {Lobby.theirs = others}))
+            Link.send channel (Link.MkMatchup (Lobby.placesFor named listed i current {Lobby.theirs = others}) (Lobby.told current))
             Link.send channel (Link.MkStart (seatOf i) Ending.unseen)
           play shell (mine NonEmpty.:| rest) (Lobby.settings current) (Lobby.clock (Lobby.options current)) (fmap Lobby.linkNumber invited) (Lobby.locals current) Nothing
         -- A bot with no deck to play keeps the lobby up.
@@ -1051,7 +1052,7 @@ joinGame shell stage offer = do
           "open" -> hello current >> go current {Join.connected = True, Join.problem = Nothing}
           "message" -> case Link.decode (build shell) (Browser.said heard') of
             Left problem -> Browser.linkClose n >> go (lost (capitalised problem <> Text.pack ".") current)
-            Right (Link.MkMatchup places) -> go current {Join.places = places}
+            Right (Link.MkMatchup places options) -> go current {Join.places = places, Join.options = options}
             Right (Link.MkStart seat seen) -> guestGame current seat seen
             Right _ -> go current
           "closed" -> go (lost hostClosed current)
@@ -1065,7 +1066,7 @@ joinGame shell stage offer = do
             go next
         _ -> go current
     hostClosed = Text.pack "The connection to the host closed: ask them for a new link."
-    lost problem current = current {Join.connected = False, Join.reply = Nothing, Join.places = [], Join.problem = Just problem}
+    lost problem current = current {Join.connected = False, Join.reply = Nothing, Join.places = [], Join.options = [], Join.problem = Just problem}
     -- The deck chosen, sent to the host.
     hello current = do
       files <- Maybe.fromMaybe Map.empty . deckFiles <$> IORef.readIORef (loaded shell)
@@ -1103,7 +1104,7 @@ joinGame shell stage offer = do
                     case woke of
                       MkTapped (Screen.MkNav section) _ -> Browser.linkClose n >> pure (sectionNext section)
                       MkHeard heard' | Browser.link heard' == n -> case Text.unpack (Browser.kind heard') of
-                        "message" | Right (Link.MkMatchup places) <- Link.decode (build shell) (Browser.said heard') -> go back {Join.places = places}
+                        "message" | Right (Link.MkMatchup places options) <- Link.decode (build shell) (Browser.said heard') -> go back {Join.places = places, Join.options = options}
                         "closed" -> ended True
                         _ -> ended closed
                       MkTapped (Screen.MkEnding Ending.MkRematch) _

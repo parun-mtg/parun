@@ -1,8 +1,8 @@
 -- | The screen a link from a host opens (#9185): the guest picks their own
 -- deck in the browser the lobby shares (Parun.Web.DeckBrowser), sends back
 -- the reply code it makes, and once connected sees the whole match-up and
--- says when they are ready. A link to a game under way skips the deck, the
--- game's decks already set.
+-- the game's options and says when they are ready. A link to a game under
+-- way skips the deck, the game's decks already set.
 module Parun.Web.Join where
 
 import qualified Data.Foldable as Foldable
@@ -29,6 +29,9 @@ data Join = MkJoin
     connected :: Bool,
     -- | The match-up as the host last sent it.
     places :: [Link.Place],
+    -- | The game's options as the host last sent them (Lobby.told), each a
+    -- label and its value; none for a game under way.
+    options :: [(Text.Text, Text.Text)],
     -- | Why the connection failed or ended.
     problem :: Maybe Text.Text,
     -- | Whether the game joined has started, as the host's link says.
@@ -49,7 +52,7 @@ data Event
 
 -- | A join screen for a game at this stage, its decks still to read.
 new :: Route.Stage -> Join
-new = MkJoin DeckBrowser.new Nothing Nothing False [] Nothing
+new = MkJoin DeckBrowser.new Nothing Nothing False [] [] Nothing
 
 -- | Whether the reply code may be made: once a deck is chosen, or at once
 -- for a game under way.
@@ -95,6 +98,8 @@ view screen =
               <> [Element.el "span" ["slot-deck"] [] [Element.text (Link.deck p)]]
               <> [Element.el "span" ["slot-ready"] [] [Element.string (if on then "Ready" else "Not ready")] | on <- Maybe.maybeToList (Link.ready p)]
           )
+      option (label, value) = Element.el "li" ["place"] [] [Element.el "span" ["slot-title"] [] [Element.text label], Element.el "span" ["slot-deck"] [] [Element.text value]]
+      optionsList = [Element.el "ul" ["places", "told-options"] [Element.attr "aria-label" (Text.pack "Game options")] (fmap option (options screen)) | not (null (options screen))]
       readyButton =
         Element.el
           "button"
@@ -109,7 +114,7 @@ view screen =
             ( Text.pack "status",
               Element.el "section" ["join-status"] [Element.attr "aria-label" (Text.pack "Connection")] $
                 if connected screen
-                  then [Element.el "p" [] [] [Element.string "Connected to the host."], Element.el "ul" ["places"] [] (fmap place (places screen)), readyButton]
+                  then [Element.el "p" [] [] [Element.string "Connected to the host."], Element.el "ul" ["places"] [] (fmap place (places screen))] <> optionsList <> [readyButton]
                   else case reply screen of
                     Nothing ->
                       [ Element.el "p" [] [] [Element.string (if underWay then "This game is under way: make the code to send back to the host, and it picks up where it stopped." else "Choose your deck and make the code to send back to the host.")],

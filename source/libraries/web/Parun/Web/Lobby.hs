@@ -9,7 +9,6 @@
 --   * Deploying creatures, the multiplayer variants but Free-for-All (CR 804,
 --     807 to 811) and Archenemy (CR 904) (#9749).
 --   * A planar deck dealt to a seat whose list brings none (#9750).
---   * An invited player told the options (#9751).
 module Parun.Web.Lobby where
 
 import qualified Control.Monad as Monad
@@ -594,6 +593,24 @@ placesFor named listed i lobby =
           Nothing -> Link.MkPlace (Text.pack (seatName (MkTheirs j))) (maybe (Text.pack "Random deck") (DeckBrowser.label (DeckBrowser.titles (browser lobby))) held) Nothing (Map.notMember j (locals lobby)) (foldMap named held)
       | (j, held) <- zip [0 ..] (theirs lobby)
       ]
+
+-- | The game's options as an invited player is told them, each a label and
+-- its value as 'optionsView' shows them.
+told :: Lobby -> [(Text.Text, Text.Text)]
+told lobby =
+  [ (Text.pack "Play for ante", yesNo (ante chosen')),
+    (Text.pack "Single planar deck", yesNo (singlePlanarDeck chosen')),
+    (Text.pack "Clock", labelIn Clock.choices (clock chosen'))
+  ]
+    <> ( if multiplayer (seatCount lobby)
+           then [(Text.pack "Attacks", labelIn attackOptions (attackOption chosen')), (Text.pack "Range of influence", labelIn ranges (rangeOfInfluence chosen'))]
+           else []
+       )
+  where
+    chosen' = options lobby
+    yesNo on = Text.pack (if on then "Yes" else "No")
+    labelIn :: (Eq a) => [(a, (String, String))] -> a -> Text.Text
+    labelIn choices option = Text.pack (maybe "" snd (List.lookup option choices))
 
 -- | Your deck, to start a game with; or why it may not: the problems a
 -- check found with it, or none while there is no deck.

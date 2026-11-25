@@ -1,5 +1,6 @@
 module Parun.Web.LobbySpec where
 
+import qualified Data.Bifunctor as Bifunctor
 import qualified Data.Foldable as Foldable
 import qualified Data.List.NonEmpty as NonEmpty
 import qualified Data.Map.Strict as Map
@@ -194,6 +195,16 @@ spec s = Spec.describe s "Parun.Web.Lobby" $ do
       Spec.assertBool s (Text.isInfixOf (Text.pack "<option value=\"left\" selected=\"\">Attack left</option>") (Html.toText page)) "the attack option chosen in its menu"
       Spec.assertBool s (Text.isInfixOf (Text.pack "id=\"option-ante\" type=\"checkbox\" aria-describedby=\"option-ante-note\" checked=\"\"") (Html.toText page)) "ante checked"
       Spec.assertEqWith s "a change clears ready" (Lobby.ready (set Lobby.MkAnte "" (Lobby.update Lobby.MkReady Text.empty lobby))) False
+
+    Spec.it s "tells an invited player the game's options, CR 806.2's at three seats or more only" $ do
+      let set event value = Lobby.update event (Text.pack value)
+          three = Lobby.update (Lobby.MkChoose Lobby.MkMine) Text.empty (Lobby.update (Lobby.MkAdd Lobby.MkBot) Text.empty lobby)
+          chosen l = set Lobby.MkClock "10" (set Lobby.MkRangeOfInfluence "1" (set Lobby.MkAttackOption "left" (set Lobby.MkAnte "" l)))
+          pairs :: [(Text.Text, Text.Text)] -> [(String, String)]
+          pairs = fmap (Bifunctor.bimap Text.unpack Text.unpack)
+      Spec.assertEqWith s "none chosen" (pairs (Lobby.told lobby)) [("Play for ante", "No"), ("Single planar deck", "No"), ("Clock", "Off")]
+      Spec.assertEqWith s "two seats" (pairs (Lobby.told (chosen lobby))) [("Play for ante", "Yes"), ("Single planar deck", "No"), ("Clock", "10 minutes")]
+      Spec.assertEqWith s "three seats" (pairs (Lobby.told (chosen three))) [("Play for ante", "Yes"), ("Single planar deck", "No"), ("Clock", "10 minutes"), ("Attacks", "Attack left"), ("Range of influence", "1 seat")]
 
     Spec.it s "sets each seat's clock from its menu, untimed unless told otherwise, at any count of seats" $ do
       let set value = Lobby.update Lobby.MkClock (Text.pack value)

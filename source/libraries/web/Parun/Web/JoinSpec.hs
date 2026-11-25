@@ -55,6 +55,11 @@ spec s = Spec.describe s "Parun.Web.Join" $ do
           bot = Text.pack "<span class=\"chip bot\">Bot</span>"
       Spec.assertEqWith s "the host" (Text.isInfixOf (slot "Player 1") shown) True
       Spec.assertEqWith s "one bot, after its name" (Text.count bot shown, Text.isInfixOf (slot "Player 3" <> bot) shown) (1, True)
+    Spec.it s "shows the game's options as the host sent them" $ do
+      let connected = (Join.new Route.MkGathering) {Join.connected = True, Join.places = [place "Player 1" (Just True) False, place "You" (Just False) False]}
+          shown = Html.toText (Join.view connected {Join.options = [(Text.pack "Play for ante", Text.pack "Yes")]})
+      Spec.assertBool s (Text.isInfixOf (Text.pack "<ul class=\"places told-options\" aria-label=\"Game options\"><li class=\"place\"><span class=\"slot-title\">Play for ante</span><span class=\"slot-deck\">Yes</span></li></ul>") shown) "ante played for"
+      Spec.assertBool s (not (Text.isInfixOf (Text.pack "told-options") (Html.toText (Join.view connected)))) "no options sent, none shown"
     Spec.it s "gives the reply code a Copy button naming its box" $ do
       let shown = Html.toText (Join.view (Join.new Route.MkGathering) {Join.reply = Just (Text.pack "reply-code")})
       Spec.assertBool s (all ((`Text.isInfixOf` shown) . Text.pack) ["reply-code", "id=\"join-reply\"", "data-copy=\"join-reply\""]) "the code and its button"
