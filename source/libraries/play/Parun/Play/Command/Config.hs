@@ -69,6 +69,7 @@ applyFlag config flag = case flag of
   Flag.Pool s -> set o {PlayOptions.pool = Just (Text.pack s)}
   Flag.Save s -> set o {PlayOptions.save = Just s}
   Flag.Seed s -> CommandLine.orInvalid ("not a seed: " <> s) (Key.fromHex (Text.pack s)) >>= \k -> set o {PlayOptions.seed = Just k}
+  Flag.ThinkLimit s -> CommandLine.orInvalid ("not a number of milliseconds: " <> s) (Read.readMaybe s) >>= \n -> set o {PlayOptions.thinkLimit = n}
   where
     o = options config
     set x = pure config {options = x}

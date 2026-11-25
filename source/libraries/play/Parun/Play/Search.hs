@@ -375,22 +375,26 @@ sample (MkPrior prior) memory viewer gs =
 -- every card its seat cannot see now and does not remember by the memory
 -- `recalled` gives ('remembering'), and the opponents' plays `watched` gives
 -- ('watching') only through 'plausibility'. Each prompt a playout answers
--- waits on `breathe` first, which lets the caller's other work run.
+-- waits on `breathe` first, which lets the caller's other work run. Each
+-- searched decision starts `clock`, and stops playing out once it runs out
+-- ('spending').
 --
 -- Not implemented: searching a line past a buyback, entwine, splice or
 -- assist announcement (CR 601.2b, 702.132a), more than 'widest' lines, or any
 -- choice of targets but the first an action leads to; the random bot answers
 -- them (#9488).
-search :: forall m. (Monad m) => Registry.Registry m -> SearchBudget.SearchBudget -> Weights.Weights -> Prior -> Game.Play m [Watched] -> Game.Play m Memory -> Aim m -> Game.Play m () -> Answerer.Answerer (Asked.Asked GameState.GameState) (Game.Play m)
-search registry budget weights prior watched recalled aim breathe = Answerer.MkAnswerer $ \asked ->
+search :: forall m. (Monad m) => Registry.Registry m -> SearchBudget.SearchBudget -> Weights.Weights -> Prior -> Game.Play m [Watched] -> Game.Play m Memory -> Aim m -> Game.Play m () -> Clock m -> Answerer.Answerer (Asked.Asked GameState.GameState) (Game.Play m)
+search registry budget weights prior watched recalled aim breathe clock = Answerer.MkAnswerer $ \asked ->
   let dealing pid = do
         plays <- watched
         memory <- recalled
         worlds budget prior memory plays pid (Asked.game asked)
       best :: Game.Type.Game Result.Result -> PlayerId.PlayerId -> Game.Play m GameState.GameState -> NonEmpty.NonEmpty a -> (a -> Move) -> Game.Play m a
-      best restart pid deal choices move = case SearchBudget.method budget of
-        SearchMethod.Flat -> flat registry budget weights breathe restart pid deal choices (picking pid . move)
-        SearchMethod.InformationSet -> informationSet registry budget weights breathe restart pid (Asked.game asked) deal choices move
+      best restart pid deal choices move = do
+        expired <- clock
+        case SearchBudget.method budget of
+          SearchMethod.Flat -> flat registry budget weights breathe expired restart pid deal choices (picking pid . move)
+          SearchMethod.InformationSet -> informationSet registry budget weights breathe expired restart pid (Asked.game asked) deal choices move
       unaimed = hold aim Nothing >> Answerer.unwrap (Game.bot registry) asked
       kept pid = do
         line <- held aim
@@ -568,44 +572,76 @@ fitting offered chosen =
   Map.keysSet offered == Map.keysSet chosen
     && and (Map.intersectionWith (\(count, legal) taken -> Set.isSubsetOf taken legal && Natural.length taken == min count (Natural.length legal)) offered chosen)
 
+-- | Starts a searched decision's clock, giving whether its time has run out.
+type Clock m = Game.Play m (Game.Play m Bool)
+
+-- | A clock that never runs out: every decision spends its whole budget, so
+-- a seeded game plays alike however fast it is played.
+unhurried :: (Monad m) => Clock m
+unhurried = pure (pure False)
+
+-- | `samples` rounds, each in a world `deal` deals playing each of `choices`
+-- out from the same random stream, folded by `play` from `start`; cut short
+-- once `expired` says so, asked before every playout but the first.
+spending :: (Monad m) => Game.Play m Bool -> Natural -> Game.Play m GameState.GameState -> (GameState.GameState -> s -> a -> Game.Play m s) -> s -> [a] -> Game.Play m s
+spending expired samples deal play start choices = rounds samples False start
+  where
+    rounds left asking folded
+      | left == 0 = pure folded
+      | otherwise = do
+          over <- if asking then expired else pure False
+          if over
+            then pure folded
+            else do
+              world <- deal
+              shared <- State.get
+              let each acc rest = case rest of
+                    [] -> rounds (left - 1) True acc
+                    option : later -> do
+                      State.put shared
+                      played <- play world acc option
+                      stop <- if null later then pure False else expired
+                      if stop then pure played else each played later
+              each folded choices
+
+-- | The choices scored, less every one never scored where one was.
+scoredOnly :: NonEmpty.NonEmpty (Maybe s, a) -> NonEmpty.NonEmpty (Maybe s, a)
+scoredOnly scored = Maybe.fromMaybe scored (NonEmpty.nonEmpty (NonEmpty.filter (Maybe.isJust . fst) scored))
+
 -- | Flat Monte Carlo: each of `pid`'s choices played out ('rollout') in
 -- `SearchBudget.samples` worlds `deal` deals, every option in each world from
--- the same random stream, the best total taken ('slipping').
-flat :: (Monad m) => Registry.Registry m -> SearchBudget.SearchBudget -> Weights.Weights -> Game.Play m () -> Game.Type.Game Result.Result -> PlayerId.PlayerId -> Game.Play m GameState.GameState -> NonEmpty.NonEmpty a -> (a -> [Pick]) -> Game.Play m a
-flat registry budget weights breathe restart pid deal choices pick = do
-  rounds <- Monad.replicateM (Natural.toIntSaturating (SearchBudget.samples budget)) $ do
-    world <- deal
-    shared <- State.get
-    traverse (\option -> State.put shared >> rollout registry budget weights breathe restart pid (pick option) world) choices
-  slipping budget (NonEmpty.zip (foldr (NonEmpty.zipWith (+)) (0 <$ choices) rounds) choices)
+-- the same random stream, until `expired` ('spending'); the best average
+-- taken among those played out ('slipping').
+flat :: (Monad m) => Registry.Registry m -> SearchBudget.SearchBudget -> Weights.Weights -> Game.Play m () -> Game.Play m Bool -> Game.Type.Game Result.Result -> PlayerId.PlayerId -> Game.Play m GameState.GameState -> NonEmpty.NonEmpty a -> (a -> [Pick]) -> Game.Play m a
+flat registry budget weights breathe expired restart pid deal choices pick = do
+  let indexed = NonEmpty.zip (NonEmpty.iterate (+ 1) (0 :: Int)) choices
+      play world tallies (index, option) = do
+        scored <- rollout registry budget weights breathe restart pid (pick option) world
+        pure (Map.insertWith (\(total, tries) (total', tries') -> (total + total', tries + tries')) index (scored, 1 :: Integer) tallies)
+  tallies <- spending expired (SearchBudget.samples budget) deal play Map.empty (NonEmpty.toList indexed)
+  let averaged index = (\(total, tries) -> toRational total / toRational tries) <$> Map.lookup index tallies
+  slipping budget (scoredOnly (fmap (Bifunctor.first averaged) indexed))
 
 -- | Single-observer information-set Monte Carlo tree search (Cowling, Powley
 -- & Whitehouse 2012, "Information Set Monte Carlo Tree Search", SO-ISMCTS):
 -- in each of `SearchBudget.samples` worlds `deal` deals, an iteration for
 -- each of `viewer`'s choices, all from the same random stream as 'flat'
--- plays its options, each descending one 'Node' tree shared by every world
--- ('descend'), so a later decision is valued over the worlds `viewer` cannot
--- tell apart rather than in each as if it could see it. Taken: the choice
+-- plays its options and until `expired` ('spending'), each descending one
+-- 'Node' tree shared by every world ('descend'), so a later decision is
+-- valued over the worlds `viewer` cannot tell apart rather than in each as
+-- if it could see it. Taken: the choice
 -- whose tries scored best on average ('slipping').
 -- Parun.SearchSpec's attack into a pump spell is the proof.
-informationSet :: (Monad m) => Registry.Registry m -> SearchBudget.SearchBudget -> Weights.Weights -> Game.Play m () -> Game.Type.Game Result.Result -> PlayerId.PlayerId -> GameState.GameState -> Game.Play m GameState.GameState -> NonEmpty.NonEmpty a -> (a -> Move) -> Game.Play m a
-informationSet registry budget weights breathe restart viewer gs deal choices move = do
+informationSet :: (Monad m) => Registry.Registry m -> SearchBudget.SearchBudget -> Weights.Weights -> Game.Play m () -> Game.Play m Bool -> Game.Type.Game Result.Result -> PlayerId.PlayerId -> GameState.GameState -> Game.Play m GameState.GameState -> NonEmpty.NonEmpty a -> (a -> Move) -> Game.Play m a
+informationSet registry budget weights breathe expired restart viewer gs deal choices move = do
   let edgeFor option = edgeOf viewer gs viewer (move option)
       forcing option = MkForced (edgeFor option) (edgeOf viewer gs viewer (opening (move option))) (drop 1 (picking viewer (move option)))
-      once tree = do
-        world <- deal
-        shared <- State.get
-        Monad.foldM
-          ( \grown option -> do
-              State.put shared
-              (path, value) <- descend registry budget weights breathe restart viewer (Just (forcing option)) grown world
-              pure (backup value path grown)
-          )
-          tree
-          choices
-  MkTree (MkNode root) _ <- Monad.foldM (const . once) (MkTree (MkNode Map.empty) Nothing) (replicate (Natural.toIntSaturating (SearchBudget.samples budget)) ())
+      play world grown option = do
+        (path, value) <- descend registry budget weights breathe restart viewer (Just (forcing option)) grown world
+        pure (backup value path grown)
+  MkTree (MkNode root) _ <- spending expired (SearchBudget.samples budget) deal play (MkTree (MkNode Map.empty) Nothing) (NonEmpty.toList choices)
   let tried option = (\branch -> toRational (reward branch) / toRational (max 1 (visits branch))) <$> Map.lookup (edgeFor option) root
-  slipping budget (fmap (\option -> (tried option, option)) choices)
+  slipping budget (scoredOnly (fmap (\option -> (tried option, option)) choices))
 
 -- | A choice at a decision the tree holds, whatever its prompt answers.
 data Move

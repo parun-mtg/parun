@@ -231,7 +231,7 @@ onOneScreen s registry = do
   matchup <- BotSpec.bears s registry
   let options = Lobby.playOptions (Map.singleton 0 (Difficulty.MkEasy, Persona.MkBalanced)) 2 (Set.singleton S.bob)
       onScreen request = State.modify' (request :) >> pure (Just (Right (answer request)))
-  (outcome, requests) <- State.runStateT (Game.run (S.fixtureRegistry []) Nothing Limits.standard [] (Map.fromList [(Command.idOf n, Command.answerer (S.fixtureRegistry []) onScreen (pure Nothing) (const (pure ())) (pure Map.empty) Search.unkept (pure ()) options Search.known n) | n <- [1, 2]]) (S.seeded 1) Map.empty matchup) []
+  (outcome, requests) <- State.runStateT (Game.run (S.fixtureRegistry []) Nothing Limits.standard [] (Map.fromList [(Command.idOf n, Command.answerer (S.fixtureRegistry []) onScreen (pure Nothing) (const (pure ())) (pure Map.empty) Search.unkept (pure ()) Search.unhurried options Search.known n) | n <- [1, 2]]) (S.seeded 1) Map.empty matchup) []
   pure (outcome, reverse requests, options)
 
 -- The requests of these, in order, before which the screen is handed
@@ -324,7 +324,7 @@ againstSearch matchup =
 searching :: (Monad m) => Answerer.Answerer (Asked.Asked GameState.GameState) (Game.Play (State.StateT Resumed m))
 searching = Answerer.MkAnswerer $ \prompted -> do
   Monad.when (Maybe.isJust (Protocol.requestFor prompted)) $ Game.underneath (State.modify' (\r -> r {searches = length (kept r) : searches r}))
-  Answerer.unwrap (Search.search (S.fixtureRegistry []) budget Weights.neutral Search.known (pure []) (pure Search.blank) Search.unkept (pure ())) prompted
+  Answerer.unwrap (Search.search (S.fixtureRegistry []) budget Weights.neutral Search.known (pure []) (pure Search.blank) Search.unkept (pure ()) Search.unhurried) prompted
   where
     budget = SearchBudget.MkSearchBudget {SearchBudget.samples = 2, SearchBudget.turns = 1000, SearchBudget.prompts = 40, SearchBudget.candidates = 0, SearchBudget.playout = Playout.Random, SearchBudget.mistakes = 0, SearchBudget.method = SearchMethod.Flat}
 
