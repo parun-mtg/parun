@@ -3500,9 +3500,11 @@ details.pile[open] {
   width: 100%;
 }
 
+/* Each action as tall as its own label, not its row's tallest. */
 .actions {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(170px, 1fr));
+  align-items: start;
   gap: 8px;
 }
 
