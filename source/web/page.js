@@ -520,6 +520,69 @@ root.addEventListener("focusout", (event) => {
   if (card && peeking === card && pointer === null && !event.relatedTarget?.closest?.(".card, .stack-item")) unpeek(card);
 });
 
+// A long press on a card (a finger can't rest on one) or a right click
+// opens its sheet without what a tap does (Parun.Web.Card's "read", on a
+// tile marked data-read), so a card a prompt picks is read before it is
+// picked; the click ending the press is dropped, wherever the sheet put it.
+const holdTime = 450;
+const holdSlop = 10;
+// The press under way: where it began, and its timer.
+let hold = null;
+let dropClick = false;
+function readCard(card) {
+  const path = card.isConnected ? pathOf(card) : null;
+  if (path === null) return;
+  endPeek();
+  engine.postMessage({ type: "read", path, value: "" });
+}
+function letGo() {
+  if (hold === null) return;
+  clearTimeout(hold.timer);
+  hold = null;
+}
+root.addEventListener("pointerdown", (event) => {
+  letGo();
+  const card = event.target.closest?.("[data-read]");
+  if (event.pointerType === "mouse" || !card || card.closest(".sheet-backdrop")) return;
+  const timer = setTimeout(() => {
+    hold = null;
+    dropClick = true;
+    readCard(card);
+  }, holdTime);
+  hold = { id: event.pointerId, x: event.clientX, y: event.clientY, timer };
+});
+root.addEventListener("pointermove", (event) => {
+  if (hold !== null && event.pointerId === hold.id && Math.hypot(event.clientX - hold.x, event.clientY - hold.y) > holdSlop) letGo();
+});
+for (const type of ["pointerup", "pointercancel"]) {
+  root.addEventListener(type, (event) => {
+    if (hold !== null && event.pointerId === hold.id) letGo();
+    // A browser that sends no click after a long press drops none later.
+    if (dropClick) setTimeout(() => (dropClick = false), 400);
+  });
+}
+root.addEventListener(
+  "click",
+  (event) => {
+    if (!dropClick) return;
+    dropClick = false;
+    event.preventDefault();
+    event.stopImmediatePropagation();
+  },
+  true,
+);
+// A long press some browsers end in a context menu, and a right click.
+root.addEventListener("contextmenu", (event) => {
+  const card = event.target.closest?.("[data-read]");
+  if (!card || card.closest(".sheet-backdrop")) return;
+  event.preventDefault();
+  // The press's timer read it already.
+  if (dropClick) return;
+  if (hold !== null) dropClick = true;
+  letGo();
+  readCard(card);
+});
+
 // The open card sheet where it is a dialog over the table, as on a phone,
 // rather than the side column's inspector; only then does it take the
 // keys from the prompt.

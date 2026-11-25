@@ -669,6 +669,17 @@ spec s registry = Spec.describe s "WebQuestion" $ do
     Spec.assertBool s (Maybe.isNothing (Html.labelled (Text.pack "button") (Text.pack "Attack with all") (Question.Web.view alone Question.Web.blank {Question.Web.selected = Set.singleton (0, 0)}))) "but not once every attacker is picked"
     Spec.assertBool s (Maybe.isJust (Html.labelled (Text.pack "button") (Text.pack "Attack with all") (Question.Web.view request Question.Web.blank {Question.Web.selected = Set.singleton (0, 0)}))) "and still while one is left"
 
+  Spec.it s "a tile a tap picks is read by a long press, which leaves it unpicked" $ do
+    bears <- S.printingOf s registry "Grizzly Bears"
+    let (one, gs) = S.addPermanent bears S.alice (Setup.emptyGame S.bothPlayers)
+        request = (requestFor gs (Prompt.ChooseAction (Decider.MkDecider S.alice) S.alice [Action.Pass])) {Request.question = Question.MkQuestion S.alice (Text.pack "DeclareAttackers") (R.Array [PromptOffer.object Protocol.namer one]) Nothing Nothing}
+        view = Question.Web.view request Question.Web.blank
+        on name = Html.search isCard view >>= \path -> Html.handler (Text.pack name) path view
+    Spec.assertEqWith s "a tap picks it" (on "click") (Just (Question.Web.MkToggle 0 0))
+    Spec.assertEqWith s "a long press reads it" (on "read") (Just (Question.Web.MkRead one))
+    Spec.assertEqWith s "and picks nothing" (fmap (\event -> Question.Web.step request Set.empty event Text.empty) (on "read")) (Just (Question.Web.MkPicking Set.empty))
+    Spec.assertBool s (Text.pack "data-read=\"\"" `Text.isInfixOf` Html.toText view) "the tile is marked for page.js"
+
   Spec.it s "a shared button at the group's most drops a pick, and Start over drops them all" $ do
     forest <- S.printingOf s registry "Forest"
     let (one, g1) = S.addObjectIn Zone.Library forest S.alice (Setup.emptyGame S.bothPlayers)
