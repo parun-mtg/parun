@@ -5,6 +5,7 @@
 -- scenario by label, each through its own 'Reply.Namer'.
 module Parun.Scenario.PromptOffer where
 
+import qualified Control.Monad as Monad
 import qualified Data.Bifunctor as Bifunctor
 import qualified Data.Char as Char
 import qualified Data.Containers.ListUtils as ListUtils
@@ -60,9 +61,13 @@ import qualified Parun.Oracle.Target as Oracle.Target
 import qualified Parun.Scenario.Offer as Offer
 import qualified Parun.Scenario.Reply as Reply
 import qualified Parun.Types.Action as Action
+import qualified Parun.Types.ActivatedAbility as ActivatedAbility
+import qualified Parun.Types.ActivatedAbilitySource as ActivatedAbilitySource
 import qualified Parun.Types.BallotChoice as BallotChoice
+import qualified Parun.Types.Bookkeeping as Bookkeeping
 import qualified Parun.Types.BuybackDecision as BuybackDecision
 import qualified Parun.Types.CandidateCost as CandidateCost
+import qualified Parun.Types.Card as Card
 import qualified Parun.Types.CardName as CardName
 import qualified Parun.Types.CardTally as CardTally
 import qualified Parun.Types.CardType as CardType
@@ -81,7 +86,9 @@ import qualified Parun.Types.Face as Face
 import qualified Parun.Types.ForageMode as ForageMode
 import qualified Parun.Types.GameEvent as GameEvent
 import qualified Parun.Types.GameState as GameState
+import qualified Parun.Types.GrantedAbility as GrantedAbility
 import qualified Parun.Types.HandActionIndex as HandActionIndex
+import qualified Parun.Types.InherentTriggerSource as InherentTriggerSource
 import qualified Parun.Types.Keyword as Keyword.Type
 import qualified Parun.Types.LandOrNonland as LandOrNonland
 import qualified Parun.Types.LastKnown as LastKnown
@@ -91,11 +98,13 @@ import qualified Parun.Types.LoopMembers as LoopMembers
 import qualified Parun.Types.Mana as Mana.Type
 import qualified Parun.Types.ManaCost as ManaCost
 import qualified Parun.Types.ManaUnit as ManaUnit
+import qualified Parun.Types.Modal as Modal.Type
 import qualified Parun.Types.Mode as Mode
 import qualified Parun.Types.ModeIndex as ModeIndex
 import qualified Parun.Types.MoveSpread as MoveSpread
 import qualified Parun.Types.MulliganOffer as MulliganOffer
 import qualified Parun.Types.MutateSide as MutateSide
+import qualified Parun.Types.Object as Object
 import qualified Parun.Types.ObjectId as ObjectId
 import qualified Parun.Types.OptionalDecision as OptionalDecision
 import qualified Parun.Types.OutsideCard as OutsideCard
@@ -105,6 +114,7 @@ import qualified Parun.Types.PayOffer as PayOffer
 import qualified Parun.Types.PayerAnswer as PayerAnswer
 import qualified Parun.Types.PlayerId as PlayerId
 import qualified Parun.Types.PrintedReplacement as PrintedReplacement
+import qualified Parun.Types.Printing as Printing
 import qualified Parun.Types.PrintingId as PrintingId
 import qualified Parun.Types.ProjectedCharacteristics as ProjectedCharacteristics
 import qualified Parun.Types.Prompt as Prompt
@@ -114,11 +124,14 @@ import qualified Parun.Types.Reply as R
 import qualified Parun.Types.RollAdjustment as RollAdjustment
 import qualified Parun.Types.SearchPlace as SearchPlace
 import qualified Parun.Types.Snapshots as Snapshots
+import qualified Parun.Types.Source as Source
 import qualified Parun.Types.SpellWasCast as SpellWasCast
 import qualified Parun.Types.TargetCount as TargetCount
 import qualified Parun.Types.ThrowResult as ThrowResult
 import qualified Parun.Types.TriggerEntry as TriggerEntry
 import qualified Parun.Types.TriggerSource as TriggerSource
+import qualified Parun.Types.TriggeredAbility as TriggeredAbility
+import qualified Parun.Types.TriggeredAbilitySource as TriggeredAbilitySource
 import qualified Parun.Types.TurnRegisters as TurnRegisters
 import qualified Parun.Types.Visibility as Visibility.Type
 import qualified Parun.Types.Zone as Zone
@@ -599,13 +612,32 @@ replacementEntry namer gs entry =
 
 -- | CR 700.2a: a mode as its Oracle text, as it reads now
 -- (Resolve.resolvingMode) or, for a spell whose modes are not yet chosen, as
--- its face prints it; null where it does not render or renders empty.
+-- its face prints it; where that does not render, its bullet in the Oracle
+-- text of the card printing its modal ('printedBullet'); else null.
 modeName :: GameState.GameState -> ObjectId.ObjectId -> ModeIndex.ModeIndex -> R.Reply
 modeName gs source idx = maybe R.Null R.Text (List.find (not . Text.null) texts)
   where
     self = snapshotName (Projection.project source gs)
-    printed = Projection.View.spellFaceOf source gs >>= Modal.modeAtIndex idx . Face.spell
-    texts = foldMap (Oracle.Effect.mode (Oracle.contextOf self [])) (Foldable.asum [Resolve.resolvingMode source idx gs, printed])
+    face = Projection.View.spellFaceOf source gs
+    printed = face >>= Modal.modeAtIndex idx . Face.spell
+    texts = foldMap (Oracle.Effect.mode (Oracle.contextOf self [])) (Foldable.asum [Resolve.resolvingMode source idx gs, printed]) <> Foldable.toList (printedBullet gs idx =<< modalOf)
+    modalOf = case fmap Object.source (Game.lookupObject source gs) of
+      Just (Source.OfAbility src) -> Just (ActivatedAbility.modal (ActivatedAbilitySource.ability src))
+      Just (Source.OfTrigger src) -> Just (TriggeredAbility.modal (TriggeredAbilitySource.ability src))
+      Just (Source.OfInherentTrigger src) -> Just (TriggeredAbility.modal (InherentTriggerSource.ability src))
+      _ -> fmap Face.spell face
+
+-- | A mode as the Oracle text of a card in the game prints it: the bullet at
+-- its index, on the face holding that very modal and no other of several
+-- modes, whose bullets number its modes.
+printedBullet :: GameState.GameState -> ModeIndex.ModeIndex -> Modal.Type.Modal Card.Card (GrantedAbility.GrantedAbility Card.Card) -> Maybe Text.Text
+printedBullet gs idx modal = Maybe.listToMaybe $ do
+  printing <- Map.elems (Bookkeeping.printings (GameState.bookkeeping gs))
+  face <- NonEmpty.toList (Card.faces (Printing.card printing))
+  let modals = filter ((> 1) . Seq.length . Modal.Type.modes) (Face.spell face : fmap ActivatedAbility.modal (Face.activatedAbilities face) <> fmap TriggeredAbility.modal (Face.triggeredAbilities face))
+      bullets = Maybe.mapMaybe (Text.stripPrefix (Text.pack "\8226 ")) (foldMap Text.lines (Face.oracleText face))
+  Monad.guard (modals == [modal] && length bullets == Seq.length (Modal.Type.modes modal))
+  take 1 (drop (Natural.toIntSaturating (ModeIndex.unwrap idx)) bullets)
 
 -- | CR 608.2d: a branch as the Oracle text of its clause, its riders aside,
 -- in the resolving object's mode as it reads now (Resolve.resolvingMode), or
