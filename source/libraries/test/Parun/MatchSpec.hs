@@ -27,6 +27,7 @@ import qualified Parun.Spec as Spec
 import qualified Parun.Support as S
 import qualified Parun.Types.Deck as Deck
 import qualified Parun.Types.Difficulty as Difficulty
+import qualified Parun.Types.GameSettings as GameSettings
 import qualified Parun.Types.GameState as GameState
 import qualified Parun.Types.Generator as Generator
 import qualified Parun.Types.Key as Key
@@ -137,4 +138,4 @@ firstToAct = fmap (When.player . Timed.when) . Foldable.find ((== 1) . When.turn
 
 -- The scenario a match game saves as, read back.
 saved :: NonEmpty.NonEmpty (PlayerId.PlayerId, Deck.Deck) -> Seq.Seq Timed.Timed -> Scenario.Type.Scenario
-saved matchup timeline = Either.either (error . Text.unpack) id (Codec.decode Codec.Scenario.codec (Codec.encode Codec.Scenario.codec (Command.saved PrintingTable.empty Text.empty Nothing Map.empty matchup timeline)))
+saved matchup timeline = Either.either (error . Text.unpack) id (Codec.decode Codec.Scenario.codec (Codec.encode Codec.Scenario.codec (Command.saved PrintingTable.empty Text.empty GameSettings.plain Map.empty matchup timeline)))

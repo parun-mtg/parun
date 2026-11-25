@@ -23,6 +23,7 @@ import qualified Parun.RecordSpec as RecordSpec
 import qualified Parun.Registry as Registry
 import qualified Parun.Spec as Spec
 import qualified Parun.Support as S
+import qualified Parun.Types.GameSettings as GameSettings
 import qualified Parun.Types.GameState as GameState
 import qualified Parun.Types.Player as Player
 import qualified Parun.Types.Zone as Zone
@@ -53,7 +54,7 @@ spec s registry = do
     Monad.forM_ decks $ \path -> Spec.it s (drop (length root + 1) path <> " is legal under the format its header names") $ do
       listed <- readListed path
       case listed of
-        Right one | Just _ <- DeckList.format one -> Command.settle Nothing [(path, one)] >>= \settled -> Spec.assertEqWith s (path <> ": refusals") (Either.fromLeft [] settled) []
+        Right one | Just _ <- DeckList.format one -> Command.settle GameSettings.plain Nothing [(path, one)] >>= \settled -> Spec.assertEqWith s (path <> ": refusals") (Either.fromLeft [] settled) []
         Right _ -> pure ()
         Left problem -> Spec.assertFailure s problem
 
@@ -64,11 +65,11 @@ spec s registry = do
       lists <- (,) <$> readListed (path "calling-all-angels") <*> readListed (path "wretched-ranks")
       case lists of
         (Right one, Right two) -> do
-          settled <- Command.settle Nothing [(path "calling-all-angels", one), (path "wretched-ranks", two)]
+          settled <- Command.settle GameSettings.plain Nothing [(path "calling-all-angels", one), (path "wretched-ranks", two)]
           case settled of
             Right format -> do
               let matchup = (S.alice, DeckList.deck one) NonEmpty.:| [(S.bob, DeckList.deck two)]
-                  (_, (_, opened)) = RecordSpec.watched (Just 1) 1 format RecordSpec.bots Map.empty matchup
+                  (_, (_, opened)) = RecordSpec.watched (Just 1) 1 GameSettings.plain {GameSettings.format = format} RecordSpec.bots Map.empty matchup
                   seen gs = [(Player.life p, length (Game.zoneMembers Zone.Command pid gs)) | (pid, p) <- Map.toList (GameState.players gs)]
               Spec.assertEqWith s "each seat's life and command zone" (fmap seen opened) (Just [(40, 1), (40, 1)])
             Left problems -> Spec.assertFailure s (show problems)
@@ -92,6 +93,6 @@ spec s registry = do
     -- play would not survive.
     played seatOne seatTwo = do
       let matchup = seatOne NonEmpty.:| [seatTwo]
-          (_, (timeline, _)) = RecordSpec.watched (Just 6) 1 Nothing RecordSpec.bots Map.empty matchup
+          (_, (timeline, _)) = RecordSpec.watched (Just 6) 1 GameSettings.plain RecordSpec.bots Map.empty matchup
       Spec.assertBool s (not (null timeline)) "played"
       RecordSpec.replaysClean s registry (RecordSpec.saved matchup timeline)

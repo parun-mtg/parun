@@ -32,6 +32,7 @@ import qualified Parun.Registry as Registry
 import qualified Parun.Trustworthy.Directory as Directory
 import qualified Parun.Types.Deck as Deck
 import qualified Parun.Types.Format as Format
+import qualified Parun.Types.GameSettings as GameSettings
 import qualified Parun.Types.GameState as GameState
 import qualified Parun.Types.Key as Key.Type
 import qualified Parun.Types.Limits as Limits
@@ -54,7 +55,7 @@ main arguments = do
     let options = Config.options config
     registry <- Registry.defaultRoot >>= Registry.loadRoot >>= Registry.defaultRegistry
     lists <- (,) <$> Command.orExit (Command.load registry one) <*> Command.orExit (Command.load registry two)
-    format <- Command.orExit (Command.settle Nothing [(one, fst lists), (two, snd lists)])
+    format <- Command.orExit (Command.settle GameSettings.plain Nothing [(one, fst lists), (two, snd lists)])
     searchers <- Command.orExit (fmap (Bifunctor.first pure) (searchersOf options))
     prior <- priorOf registry options
     match options searchers prior registry format (Bifunctor.bimap DeckList.deck DeckList.deck lists)
@@ -97,7 +98,7 @@ match options searchers prior registry format decks = do
           let (outcome, timeline) = Identity.runIdentity (game registry format searchers prior seed index (both decks))
           TextIO.hPutStrLn IO.stderr (Text.pack ("Game " <> show (index + 1) <> ", seed ") <> Key.toHex (seedAt seed index) <> Text.pack (", seat " <> show (firstAt index) <> " first: ") <> ended outcome)
           Monad.forM_ (MatchOptions.save options) $ \directory ->
-            Command.save (directory <> "/game-" <> show (index + 1) <> ".json") (Command.saved (Registry.printings registry) (Text.pack "Played with parun match, seed " <> Key.toHex (seedAt seed index) <> Text.pack (", seat " <> show (firstAt index) <> " first.")) format Map.empty (Command.seated (firstAt index) (both decks)) timeline)
+            Command.save (directory <> "/game-" <> show (index + 1) <> ".json") (Command.saved (Registry.printings registry) (Text.pack "Played with parun match, seed " <> Key.toHex (seedAt seed index) <> Text.pack (", seat " <> show (firstAt index) <> " first.")) GameSettings.plain {GameSettings.format = format} Map.empty (Command.seated (firstAt index) (both decks)) timeline)
           -- Forced, so no game's final state outlives its game.
           pure $! tallied outcome tally
       )
@@ -122,7 +123,7 @@ game :: (Monad m) => Registry.Registry m -> Maybe Format.Format -> Map.Map Natur
 game registry format searchers prior seed index decks =
   let count = Natural.length decks
       seat n = maybe (Game.bot (lifted registry)) (\(budget, weights) -> Game.remembered (pure Nothing) (const (pure ())) (Search.search (lifted registry) budget weights prior (Game.underneath (State.gets (\(_, plays, _, _) -> plays))) (Game.underneath (State.gets (\(_, _, memories, _) -> Map.findWithDefault Search.blank (Command.idOf n) memories))) (Search.keptBy (State.gets (\(_, _, _, aims) -> aims)) (\f -> State.modify' (\(timeline, plays, memories, aims) -> (timeline, plays, memories, f aims))) (Command.idOf n)) (pure ()) Search.unhurried)) (Map.lookup n searchers)
-   in fmap (fmap (\(timeline, _, _, _) -> timeline)) (State.runStateT (Game.run (lifted registry) format Limits.standard [Record.recording (Command.labels count) sink, Search.watching (\f -> State.modify' (\(timeline, plays, memories, aims) -> let kept = f plays in kept `seq` (timeline, kept, memories, aims))), Search.remembering (\f -> State.modify' (\(timeline, plays, memories, aims) -> let kept = f memories in kept `seq` (timeline, plays, kept, aims)))] (Map.fromList [(Command.idOf n, seat n) | n <- [1 .. count]]) (Generator.fromKey (seedAt seed index)) Map.empty (Command.seated (firstAt index) decks)) (Seq.empty, [], Map.empty, Map.empty))
+   in fmap (fmap (\(timeline, _, _, _) -> timeline)) (State.runStateT (Game.run (lifted registry) GameSettings.plain {GameSettings.format = format} Limits.standard [Record.recording (Command.labels count) sink, Search.watching (\f -> State.modify' (\(timeline, plays, memories, aims) -> let kept = f plays in kept `seq` (timeline, kept, memories, aims))), Search.remembering (\f -> State.modify' (\(timeline, plays, memories, aims) -> let kept = f memories in kept `seq` (timeline, plays, kept, aims)))] (Map.fromList [(Command.idOf n, seat n) | n <- [1 .. count]]) (Generator.fromKey (seedAt seed index)) Map.empty (Command.seated (firstAt index) decks)) (Seq.empty, [], Map.empty, Map.empty))
 
 -- | A pair of decks, seat 1's first.
 both :: (Deck.Deck, Deck.Deck) -> NonEmpty.NonEmpty Deck.Deck

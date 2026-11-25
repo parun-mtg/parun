@@ -432,26 +432,26 @@ basicLand card =
 
 -- | Everything wrong with a deck list, as lines a person can read: its bad
 -- lines, then its deck's violations of the format asked for or its header
--- names, against the card pool given, in a game not for ante. Beside them,
--- the format checked.
-report :: Maybe Text.Text -> Maybe CardPool -> DeckList.Listed -> IO (Maybe Text.Text, [Text.Text])
-report asked cardPool listed = do
-  (format, lines', violations) <- assess named asked cardPool listed
+-- names, against the card pool given, in a game with `settings`' options
+-- (CR 800.2), such as ante (CR 407.3). Beside them, the format checked.
+report :: GameSettings.GameSettings -> Maybe Text.Text -> Maybe CardPool -> DeckList.Listed -> IO (Maybe Text.Text, [Text.Text])
+report settings asked cardPool listed = do
+  (format, lines', violations) <- assess named settings asked cardPool listed
   pure (format, lines' <> fmap explain violations)
 
 -- | 'report' with its violations unexplained, each format's check found by
 -- `lookUp` ('named', or 'namedIn' a table already loaded): the format
 -- checked, the list's own problems and a format that would not load, then
 -- the violations.
-assess :: (Text.Text -> IO (Either Text.Text Checker)) -> Maybe Text.Text -> Maybe CardPool -> DeckList.Listed -> IO (Maybe Text.Text, [Text.Text], [Violation.Violation])
-assess lookUp asked cardPool listed = do
+assess :: (Text.Text -> IO (Either Text.Text Checker)) -> GameSettings.GameSettings -> Maybe Text.Text -> Maybe CardPool -> DeckList.Listed -> IO (Maybe Text.Text, [Text.Text], [Violation.Violation])
+assess lookUp settings asked cardPool listed = do
   let (format, disagreement) = DeckList.formatFor asked listed
       lines' = fmap (DeckList.explain (const Nothing)) (DeckList.problems listed <> disagreement)
   checked <- traverse lookUp format
   pure $ case checked of
     Nothing -> (format, lines', [])
     Just (Left problem) -> (format, lines' <> [problem], [])
-    Just (Right known) -> (format, lines', known GameSettings.plain cardPool (DeckList.deck listed))
+    Just (Right known) -> (format, lines', known settings cardPool (DeckList.deck listed))
 
 -- | The card a violation is about; none for one about the deck as a whole.
 namedCard :: Violation.Violation -> Maybe CardName.CardName

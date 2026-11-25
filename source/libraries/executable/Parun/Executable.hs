@@ -63,6 +63,7 @@ import qualified Parun.Types.Card as Card.Type
 import qualified Parun.Types.CardName as CardName
 import qualified Parun.Types.Entry as Entry
 import qualified Parun.Types.Face as Face
+import qualified Parun.Types.GameSettings as GameSettings
 import qualified Parun.Types.LegalityTable as LegalityTable
 import qualified Parun.Types.Scenario as Scenario.Type
 import qualified Parun.Types.StickerSheet as StickerSheet.Type
@@ -176,7 +177,7 @@ deck format poolPath path = do
   listed <- readDeckList registry path
   pool <- traverse (readDeckList registry) poolPath
   let poolProblems = [Text.pack (file <> ": ") <> DeckList.explain (const Nothing) problem | (file, held) <- Maybe.maybeToList ((,) <$> poolPath <*> pool), problem <- DeckList.problems held]
-  (checked, problems) <- Legality.report format (fmap (Legality.poolOf . DeckList.deck) pool) listed
+  (checked, problems) <- Legality.report GameSettings.plain format (fmap (Legality.poolOf . DeckList.deck) pool) listed
   case poolProblems <> fmap (Text.pack (path <> ": ") <>) problems of
     [] -> TextIO.putStr (DeckList.render (Registry.printings registry) checked (DeckList.deck listed))
     reported -> do

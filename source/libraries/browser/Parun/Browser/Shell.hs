@@ -45,6 +45,7 @@ import qualified Parun.Types.CardType as CardType
 import qualified Parun.Types.Color as Color
 import qualified Parun.Types.Difficulty as Difficulty
 import qualified Parun.Types.Face as Face
+import qualified Parun.Types.GameSettings as GameSettings
 import qualified Parun.Types.Key as Key
 import qualified Parun.Types.LegalityTable as LegalityTable
 import qualified Parun.Types.Persona as Persona
@@ -89,7 +90,9 @@ data Shell = MkShell
     opponent :: IORef.IORef (Map.Map Int (Difficulty.Difficulty, Persona.Persona)),
     -- | Your deck as the lobby last left it, which a lobby opened on no deck
     -- holds.
-    yourDeck :: IORef.IORef (Maybe Text.Text)
+    yourDeck :: IORef.IORef (Maybe Text.Text),
+    -- | The game's options as the lobby last left them (Lobby.Options).
+    gameOptions :: IORef.IORef Lobby.Options
   }
 
 -- | The data so far: which chunks arrived, and what has been built from
@@ -180,7 +183,7 @@ start = do
   -- A summary that does not read, or a game past the cap, is forgotten.
   (games, gone) <- History.loaded <$> Browser.playedGames
   mapM_ Browser.forgetPlayed gone
-  shell <- MkShell <$> Browser.mount <*> IORef.newIORef (MkLoaded Loading.new Nothing Map.empty Map.empty Nothing Map.empty [] Nothing Nothing Nothing False Nothing Map.empty [] Nothing Map.empty Map.empty Map.empty Map.empty) <*> IORef.newIORef chosen <*> pure built <*> IORef.newIORef games <*> IORef.newIORef (Lobby.bots Lobby.new) <*> IORef.newIORef Nothing
+  shell <- MkShell <$> Browser.mount <*> IORef.newIORef (MkLoaded Loading.new Nothing Map.empty Map.empty Nothing Map.empty [] Nothing Nothing Nothing False Nothing Map.empty [] Nothing Map.empty Map.empty Map.empty Map.empty) <*> IORef.newIORef chosen <*> pure built <*> IORef.newIORef games <*> IORef.newIORef (Lobby.bots Lobby.new) <*> IORef.newIORef Nothing <*> IORef.newIORef (Lobby.options Lobby.new)
   Exception.catch (opening built >>= \next -> Browser.locate Browser.MkReplace (Route.render (routeOf next)) >> follow shell next) $ \problem ->
     Browser.display (page shell) $ message ["The page stopped on an error:", Exception.displayException (problem :: Exception.SomeException)]
 
@@ -259,7 +262,7 @@ follow shell next =
     MkToPlayOn source at -> playOnFrom shell source at >>= follow shell
     MkToJoin stage code -> joinGame shell stage code >>= follow shell
     -- Every link of a game picked up is down, so any number serves.
-    MkToRestore kept -> play shell (Link.seats kept) (Map.fromList [(i, i) | i <- Link.invited kept]) (Link.locals kept) (Just kept) >>= follow shell
+    MkToRestore kept -> play shell (Link.seats kept) (Link.settings kept) (Map.fromList [(i, i) | i <- Link.invited kept]) (Link.locals kept) (Just kept) >>= follow shell
 
 -- | A new lobby with this deck yours, else the deck you chose last, if any.
 lobbyHolding :: Shell -> Maybe Text.Text -> IO Lobby.Lobby
@@ -333,13 +336,15 @@ lobby shell initial said pending = do
   need shell Loading.MkDecks
   need shell Loading.MkCards
   styles <- IORef.readIORef (opponent shell)
-  heard' <- Monad.foldM heardBy initial {Lobby.bots = styles} said
+  chosenOptions <- IORef.readIORef (gameOptions shell)
+  heard' <- Monad.foldM heardBy initial {Lobby.bots = styles, Lobby.options = chosenOptions} said
   go'' heard' Map.empty pending
   where
     go' shown told = go'' shown told Nothing
     go'' shown told first = do
       current <- refreshed shell shown
       IORef.writeIORef (opponent shell) (Lobby.bots current)
+      IORef.writeIORef (gameOptions shell) (Lobby.options current)
       IORef.writeIORef (yourDeck shell) (Lobby.mine current)
       told' <- tellPlaces current told
       if Lobby.starts current
@@ -370,7 +375,7 @@ lobby shell initial said pending = do
                     files <- Maybe.fromMaybe Map.empty <$> decksRead shell
                     -- A bot with no deck to play keeps the lobby up.
                     case sequence others >>= traverse (\name -> (,) name <$> Map.lookup name files) . (mine NonEmpty.:|) of
-                      Just seats -> listsOf seats >>= \lists -> play shell lists Map.empty (Lobby.locals current) Nothing
+                      Just seats -> listsOf seats >>= \lists -> play shell lists (Lobby.settings current) Map.empty (Lobby.locals current) Nothing
                       Nothing -> go current
               Lobby.MkAdd Lobby.MkInvited | not (Lobby.paused current), length (Lobby.theirs current) < Lobby.mostOthers -> Browser.linkHost (Lobby.nextLink current) Route.MkGathering >> go (Lobby.update event value current)
               Lobby.MkConnect i | Just invite <- Map.lookup i (Lobby.invites current) -> do
@@ -429,7 +434,7 @@ lobby shell initial said pending = do
             let channel = Browser.channel (page shell) (build shell) (Lobby.linkNumber invite)
             Link.send channel (Link.MkMatchup (Lobby.placesFor named listed i current {Lobby.theirs = others}))
             Link.send channel (Link.MkStart (seatOf i) Ending.unseen)
-          play shell (mine NonEmpty.:| rest) (fmap Lobby.linkNumber invited) (Lobby.locals current) Nothing
+          play shell (mine NonEmpty.:| rest) (Lobby.settings current) (fmap Lobby.linkNumber invited) (Lobby.locals current) Nothing
         -- A bot with no deck to play keeps the lobby up.
         _ -> go' current {Lobby.ready = False} told
 
@@ -780,7 +785,7 @@ deckProblems shell reg contents = case Command.loadText reg "deck" contents of
   Right listed -> do
     table <- tableOf shell
     let lookUp = either (const . pure . Left) Legality.namedIn table
-    (_, lines', violations) <- Legality.assess lookUp Nothing Nothing listed
+    (_, lines', violations) <- Legality.assess lookUp GameSettings.plain Nothing Nothing listed
     pure (lines' <> fmap Legality.explain violations, Set.fromList (Maybe.mapMaybe Legality.namedCard violations))
 
 -- | The legality table, loaded at the first ask and kept.
@@ -851,8 +856,9 @@ quiet = const (pure ())
 loadingScreen :: Shell -> Loading.Loading -> IO ()
 loadingScreen shell = Browser.display (page shell) . Loading.view
 
--- | A game between these decks, each a name and its list's text, once the
--- registry is built, shown while it builds, every bot playing as the lobby
+-- | A game between these decks, each a name and its list's text, with
+-- `settings`' options (CR 800.2), once the registry is built, shown while it
+-- builds, every bot playing as the lobby
 -- last left it (opponent), each bot's slot in `invited`
 -- played from another browser over the link of its number there
 -- (Parun.Web.Link) and each
@@ -867,8 +873,8 @@ loadingScreen shell = Browser.display (page shell) . Loading.view
 -- with them goes back to the lobby on the match-up played (Lobby.rematch),
 -- their channels kept open and what they said meanwhile heard there, and a
 -- new game closes them.
-play :: Shell -> NonEmpty.NonEmpty (Text.Text, Text.Text) -> Map.Map Int Int -> Map.Map Int Link.Sitting -> Maybe Link.Saved -> IO Next
-play shell seats invited here resuming = do
+play :: Shell -> NonEmpty.NonEmpty (Text.Text, Text.Text) -> GameSettings.GameSettings -> Map.Map Int Int -> Map.Map Int Link.Sitting -> Maybe Link.Saved -> IO Next
+play shell seats settings invited here resuming = do
   let starting = Browser.display (page shell) (if Maybe.isJust resuming then message ["Picking the game up where it stopped\x2026"] else Hotseat.starting seats)
   starting
   built <- untilBuilt shell (loadingScreen shell) [Loading.MkCards, Loading.MkRules] (registry <$> IORef.readIORef (loaded shell))
@@ -890,7 +896,7 @@ play shell seats invited here resuming = do
       -- Rematch leads to offers that.
       Monad.forM_ resuming $ \game -> IORef.writeIORef (opponent shell) (Link.bots game)
       bots <- IORef.readIORef (opponent shell)
-      Monad.when (Maybe.isNothing resuming) . Browser.keepGame $ Link.saved (build shell) (Link.MkSaved seed seats (Map.keys invited) here bots [])
+      Monad.when (Maybe.isNothing resuming) . Browser.keepGame $ Link.saved (build shell) (Link.MkSaved seed seats (Map.keys invited) here bots settings [])
       (named, listed) <- deckColouring shell
       let rejoinSlot i = do
             back <- rejoin shell (linkOf i) (Rejoin.host (Text.pack ("Player " <> show (i + 2))))
@@ -902,7 +908,7 @@ play shell seats invited here resuming = do
       told <- IORef.newIORef Map.empty
       let decides seat gs depth = IORef.readIORef told >>= Link.telling (Map.fromList [(seatOf i, channelOf i) | i <- Map.keys invited]) seat gs depth >>= IORef.writeIORef told
       parsed <- foldMap LazyMap.elems . cards <$> IORef.readIORef (loaded shell)
-      ended <- Hotseat.game (page shell) reg parsed (tableOf shell) (level shell) bots (fmap (Bifunctor.first Text.unpack) seats) remotes (Map.mapKeys seatOf here) seed (foldMap Link.replies resuming) (Browser.keepReply . Link.savedReply) decides tellAll (leaveFor shell chosen [DeckBrowser.label (DeckBrowser.titleIn seat) name | seat@(name, _) <- NonEmpty.toList seats])
+      ended <- Hotseat.game (page shell) reg parsed (tableOf shell) (level shell) bots settings (fmap (Bifunctor.first Text.unpack) seats) remotes (Map.mapKeys seatOf here) seed (foldMap Link.replies resuming) (Browser.keepReply . Link.savedReply) decides tellAll (leaveFor shell chosen [DeckBrowser.label (DeckBrowser.titleIn seat) name | seat@(name, _) <- NonEmpty.toList seats])
       Browser.forgetGame
       case ended of
         Left problems -> stopped problems >> notice shell problems
@@ -924,7 +930,7 @@ play shell seats invited here resuming = do
                 case woke of
                   MkTapped (Screen.MkNav section) _ -> closeAll >> pure (sectionNext section)
                   MkTapped (Screen.MkEnding Ending.MkRematch) _
-                    | Map.null invited -> play shell seats invited here Nothing
+                    | Map.null invited -> play shell seats settings invited here Nothing
                     | otherwise -> do
                         -- A slot whose channel closed in the game is invited afresh.
                         back <- Monad.foldM (\l i -> reinvite i connectionClosed l) (Lobby.rematch seats invited here) (Set.toList lost)

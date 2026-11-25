@@ -37,6 +37,7 @@ import qualified Parun.Types.Deck as Deck
 import qualified Parun.Types.Entry as Entry
 import qualified Parun.Types.Existence as Existence
 import qualified Parun.Types.Format as Format
+import qualified Parun.Types.GameSettings as GameSettings
 import qualified Parun.Types.GameState as GameState
 import qualified Parun.Types.GraveyardOrder as GraveyardOrder
 import qualified Parun.Types.Label as Label
@@ -94,7 +95,7 @@ spec s registry = Spec.describe s "Record" $ do
   Spec.it s "a game the web client keeps replays to the state it ended in" $ do
     matchup <- BotSpec.sevens s registry
     let (outcome, timeline) = recorded bots matchup
-        file = Command.rendered (Record.scenario PrintingTable.empty Text.empty Nothing (fmap (\(pid, deck) -> (pid, Record.labelOf labels pid, GraveyardOrder.Indifferent, deck)) matchup) timeline)
+        file = Command.rendered (Record.scenario PrintingTable.empty Text.empty GameSettings.plain (fmap (\(pid, deck) -> (pid, Record.labelOf labels pid, GraveyardOrder.Indifferent, deck)) matchup) timeline)
         kept = History.recordOf 0 0 (Text.pack "build") [] (Ending.MkFinished (Ending.MkEnding Ending.MkWon [] file Seq.empty S.alice False []))
     case (outcome, kept) of
       (Right (_, final), Just (game, stored)) -> do
@@ -106,7 +107,7 @@ spec s registry = Spec.describe s "Record" $ do
 
   Spec.it s "a game cut short replays to where it stopped" $ do
     matchup <- BotSpec.bears s registry
-    let (outcome, (timeline, cut)) = watched (Just 2) 1 Nothing bots Map.empty matchup
+    let (outcome, (timeline, cut)) = watched (Just 2) 1 GameSettings.plain bots Map.empty matchup
     replayed <- Scenario.run registry (saved matchup timeline)
     Spec.assertEqWith s "cut" (fmap fst outcome) (Left (Text.pack "curfew"))
     case replayed of
@@ -146,7 +147,7 @@ spec s registry = Spec.describe s "Record" $ do
   Spec.it s "CR 404.3: a seat arranging its graveyard is asked again on replay" $ do
     matchup <- scours s registry
     let orders = Map.fromList [(S.alice, GraveyardOrder.Matters), (S.bob, GraveyardOrder.Matters)]
-        (_, (timeline, _)) = watched (Just 3) 1 Nothing bots orders matchup
+        (_, (timeline, _)) = watched (Just 3) 1 GameSettings.plain bots orders matchup
         arranged = Seq.filter ((== Just (Text.pack "ArrangeGraveyardArrivals")) . answered) timeline
     Spec.assertBool s (not (Seq.null arranged)) "a seat arranged a batch"
     replaysClean s registry (savedWith orders matchup timeline)
@@ -154,7 +155,7 @@ spec s registry = Spec.describe s "Record" $ do
   Spec.it s "CR 405.2: a seat targeting a trigger names it by its place on the stack" $ do
     matchup <- stifles s registry
     -- Seed 5's game has a Stifle cast at a trigger on turn 9.
-    let (_, (timeline, _)) = watched (Just 9) 5 Nothing bots Map.empty matchup
+    let (_, (timeline, _)) = watched (Just 9) 5 GameSettings.plain bots Map.empty matchup
     Spec.assertBool s (any targetsStack timeline) "a seat targeted the stack"
     replaysClean s registry (saved matchup timeline)
 
@@ -176,18 +177,31 @@ spec s registry = Spec.describe s "Record" $ do
     Spec.assertEqWith s "described" (fmap (Scenario.referenceTo Map.empty gs) [first, second, live]) expected
   Spec.it s "CR 100.2 a game played under a format offers Yorion, and replays under it" $ do
     matchup <- yorions s registry
-    let limited = Just (Format.MkFormat RuleFamily.Limited Nothing Set.empty)
+    let limited = GameSettings.plain {GameSettings.format = Just (Format.MkFormat RuleFamily.Limited Nothing Set.empty)}
         (_, (timeline, _)) = watched (Just 1) 1 limited bots Map.empty matchup
-        (_, (unformatted, _)) = watched (Just 1) 1 Nothing bots Map.empty matchup
+        (_, (unformatted, _)) = watched (Just 1) 1 GameSettings.plain bots Map.empty matchup
         offers = Seq.length . Seq.filter ((== Just (Text.pack "ChooseCompanion")) . answered)
     Spec.assertEqWith s "CR 103.2b: each seat is offered Yorion" (offers timeline) 2
     Spec.assertEqWith s "CR 100.2: under no format, neither is" (offers unformatted) 0
     replaysClean s registry (savedUnder limited Map.empty matchup timeline)
 
+  -- The lobby's options reach the game through Game.run and its saved game
+  -- through Record.scenario, as the format does above.
+  Spec.it s "CR 407.2 a game played for ante antes a card from each library, and replays for ante" $ do
+    matchup <- BotSpec.bears s registry
+    let ante = GameSettings.plain {GameSettings.ante = True}
+        anted = maybe 0 (Set.size . GameState.ante)
+        (_, (timeline, played)) = watched (Just 1) 1 ante bots Map.empty matchup
+        (_, (_, unplayed)) = watched (Just 1) 1 GameSettings.plain bots Map.empty matchup
+    Spec.assertEqWith s "CR 407.2: one card from each seat's library" (anted played) 2
+    Spec.assertEqWith s "CR 407.1: none in a game not for ante" (anted unplayed) 0
+    replayed <- Scenario.run registry (savedUnder ante Map.empty matchup timeline)
+    either (Spec.assertFailure s . Text.unpack . Scenario.render) (\final -> Spec.assertEqWith s "the replay antes too" (anted (Just final)) 2) replayed
+
   Spec.it s "a timeline missing an answer fails to replay" $ do
     matchup <- BotSpec.bears s registry
     -- Seed 3's game attacks on turn 5.
-    let (_, (timeline, _)) = watched (Just 6) 3 Nothing bots Map.empty matchup
+    let (_, (timeline, _)) = watched (Just 6) 3 GameSettings.plain bots Map.empty matchup
         half = Seq.length timeline `div` 2
     -- An attack from the second half on: a passed priority left out replays
     -- the same, the runner passing for a seat with nothing scheduled.
@@ -266,13 +280,13 @@ type Base = State.State (Seq.Seq Timed.Timed, Maybe GameState.GameState)
 -- A game seeded 1 between these seats, and every entry its answers recorded,
 -- however it ended.
 recorded :: Map.Map PlayerId.PlayerId (Answerer.Answerer (Asked.Asked GameState.GameState) (Game.Play Base)) -> NonEmpty.NonEmpty (PlayerId.PlayerId, Deck.Deck) -> (Either Text.Text (Result.Result, GameState.GameState), Seq.Seq Timed.Timed)
-recorded seats matchup = fmap fst (watched Nothing 1 Nothing seats Map.empty matchup)
+recorded seats matchup = fmap fst (watched Nothing 1 GameSettings.plain seats Map.empty matchup)
 
--- recorded's game at a seed under a format, each seat at its graveyard order
+-- recorded's game at a seed under these options and format, each seat at its graveyard order
 -- in `orders`.
-watched :: Maybe Natural -> Word.Word32 -> Maybe Format.Format -> Map.Map PlayerId.PlayerId (Answerer.Answerer (Asked.Asked GameState.GameState) (Game.Play Base)) -> Map.Map PlayerId.PlayerId GraveyardOrder.GraveyardOrder -> NonEmpty.NonEmpty (PlayerId.PlayerId, Deck.Deck) -> (Either Text.Text (Result.Result, GameState.GameState), (Seq.Seq Timed.Timed, Maybe GameState.GameState))
-watched curfew seed format seats orders matchup =
-  let played = Game.run (S.fixtureRegistry []) format Limits.standard ([Record.recording labels sink, lastAsked] <> foldMap (pure . after) curfew) seats (S.seeded seed) orders matchup
+watched :: Maybe Natural -> Word.Word32 -> GameSettings.GameSettings -> Map.Map PlayerId.PlayerId (Answerer.Answerer (Asked.Asked GameState.GameState) (Game.Play Base)) -> Map.Map PlayerId.PlayerId GraveyardOrder.GraveyardOrder -> NonEmpty.NonEmpty (PlayerId.PlayerId, Deck.Deck) -> (Either Text.Text (Result.Result, GameState.GameState), (Seq.Seq Timed.Timed, Maybe GameState.GameState))
+watched curfew seed settings seats orders matchup =
+  let played = Game.run (S.fixtureRegistry []) settings Limits.standard ([Record.recording labels sink, lastAsked] <> foldMap (pure . after) curfew) seats (S.seeded seed) orders matchup
    in State.runState played (Seq.empty, Nothing)
 
 -- Stops play, as a seat out of input does, at the first question of a turn
@@ -298,12 +312,12 @@ saved = savedWith Map.empty
 
 -- The scenario a game recorded at these graveyard orders saves as, read back.
 savedWith :: Map.Map PlayerId.PlayerId GraveyardOrder.GraveyardOrder -> NonEmpty.NonEmpty (PlayerId.PlayerId, Deck.Deck) -> Seq.Seq Timed.Timed -> Scenario.Type.Scenario
-savedWith = savedUnder Nothing
+savedWith = savedUnder GameSettings.plain
 
--- savedWith's scenario of a game played under a format.
-savedUnder :: Maybe Format.Format -> Map.Map PlayerId.PlayerId GraveyardOrder.GraveyardOrder -> NonEmpty.NonEmpty (PlayerId.PlayerId, Deck.Deck) -> Seq.Seq Timed.Timed -> Scenario.Type.Scenario
-savedUnder format orders matchup timeline =
-  let scenario = Record.scenario PrintingTable.empty Text.empty format (fmap (\(pid, deck) -> (pid, Record.labelOf labels pid, Map.findWithDefault GraveyardOrder.Indifferent pid orders, deck)) matchup) timeline
+-- savedWith's scenario of a game played under these options and format.
+savedUnder :: GameSettings.GameSettings -> Map.Map PlayerId.PlayerId GraveyardOrder.GraveyardOrder -> NonEmpty.NonEmpty (PlayerId.PlayerId, Deck.Deck) -> Seq.Seq Timed.Timed -> Scenario.Type.Scenario
+savedUnder settings orders matchup timeline =
+  let scenario = Record.scenario PrintingTable.empty Text.empty settings (fmap (\(pid, deck) -> (pid, Record.labelOf labels pid, Map.findWithDefault GraveyardOrder.Indifferent pid orders, deck)) matchup) timeline
    in Either.either (error . Text.unpack) id (Codec.decode Codec.Scenario.codec (Codec.encode Codec.Scenario.codec scenario))
 
 labels :: Map.Map PlayerId.PlayerId Label.Label
