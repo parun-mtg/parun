@@ -40,6 +40,7 @@ import qualified Parun.Play.Record as Record
 import qualified Parun.Play.Search as Search
 import qualified Parun.Play.Wording as Wording
 import qualified Parun.Registry as Registry
+import qualified Parun.Scenario as Scenario.Runner
 import qualified Parun.Types.Answerer as Answerer
 import qualified Parun.Types.Asked as Asked
 import qualified Parun.Types.Card as Card
@@ -257,6 +258,29 @@ game client send stored kept watchers breathe options prior registry settings de
       timeline <- IORef.readIORef entries
       pure (outcome, record matchup timeline)
 
+-- | The scenario played on from its stop at `at` (Scenario.branch), past
+-- the timeline's end no further than its end, from the generator keyed by
+-- `seed`, every later question put to the seats as 'game' puts them: its
+-- result and final state, or why it stopped first: the scenario failing
+-- before the stop, the game running out of steps first, or a concession
+-- that decides it (MkConceded).
+branch :: Protocol.Exchange IO -> IO (Maybe R.Reply) -> (R.Reply -> IO ()) -> [Observer.Observer (Game.Play IO)] -> IO () -> PlayOptions.PlayOptions -> Search.Prior -> Registry.Registry Identity.Identity -> Scenario.Scenario -> Natural -> Key.Type.Key -> IO (Either Text.Text (Result.Result, GameState.GameState))
+branch send stored kept watchers breathe options prior registry scenario at seed = do
+  let reference :: Registry.Registry IO
+      reference = Registry.hoist (pure . Identity.runIdentity) registry
+  memories <- IORef.newIORef Map.empty
+  aims <- IORef.newIORef Map.empty
+  let seats = Map.fromList [(idOf n, answerer reference send stored kept (IORef.readIORef memories) (Search.keptBy (IORef.readIORef aims) (IORef.modifyIORef' aims) (idOf n)) breathe (timed (PlayOptions.thinkLimit options)) options prior n) | n <- [1 .. Natural.length (Scenario.Runner.seatsOf scenario)]]
+      observers = Search.remembering (IORef.modifyIORef' memories) : watchers
+      onward = Answerer.MkAnswerer (Driver.ask observers (Game.consulting reference seats))
+      stop = min (Natural.length (Scenario.timeline scenario)) at
+      conceded (MkConceded _) = pure (Left (Text.pack "conceded"))
+  outcome <- Game.playing (Generator.fromKey seed) (Scenario.Runner.branch (Game.reference reference) stop onward scenario) `Exception.catch` conceded
+  pure $ case outcome of
+    Left reason -> Left reason
+    Right (Left failure) -> Left (Text.pack "the scenario failed before the position: " <> Scenario.Runner.render failure)
+    Right (Right gs) -> maybe (Left (Text.pack "the game ran out of steps")) (\result -> Right (result, gs)) (GameState.result gs)
+
 -- | CR 104.3a: this seat conceding while a prompt is pending, which ends a
 -- game of two at once (Parun.Web.Question.decisive), thrown from whatever
 -- waits on that prompt: 'game' stops there, the concession its recording's
@@ -282,10 +306,12 @@ asking asked =
 -- in `memories` holds (Search.remembering), keeping its line in `aim`, if
 -- it is a bot's, its search waiting on `breathe` at each step and timed by
 -- `clock` (Search.search), its answers taken from `stored` and given to
--- `kept` (Game.remembered); otherwise `send`.
+-- `kept` (Game.remembered); the goldfish, if it is the goldfish's
+-- (Game.goldfish); otherwise `send`.
 answerer :: (Monad m) => Registry.Registry m -> Protocol.Exchange m -> m (Maybe R.Reply) -> (R.Reply -> m ()) -> m (Map.Map PlayerId.PlayerId Search.Memory) -> Search.Aim m -> m () -> Search.Clock m -> PlayOptions.PlayOptions -> Search.Prior -> Natural -> Answerer.Answerer (Asked.Asked GameState.GameState) (Game.Play m)
 answerer registry send stored kept memories aim breathe clock options prior n
   | Just (budget, weights) <- Map.lookup n (PlayOptions.bots options) = Game.remembered stored kept (Search.search registry budget weights prior (pure []) (Game.underneath (fmap (Map.findWithDefault Search.blank (idOf n)) memories)) aim (Game.underneath breathe) clock)
+  | Set.member n (PlayOptions.goldfish options) = Game.goldfish registry
   | otherwise = Game.wired registry send
 
 -- | A decision's clock running out once `limit` milliseconds have passed

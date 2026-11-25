@@ -39,6 +39,7 @@ import qualified Parun.Legality as Legality
 import qualified Parun.Play.Command as Command
 import qualified Parun.Play.Key as Key
 import qualified Parun.Registry as Registry
+import qualified Parun.Scenario as Scenario
 import qualified Parun.Types.Card as Card
 import qualified Parun.Types.CardName as CardName
 import qualified Parun.Types.CardType as CardType
@@ -958,7 +959,7 @@ play shell seats settings clock invited here resuming = do
       told <- IORef.newIORef Map.empty
       let decides seat gs depth clocks = IORef.readIORef told >>= Link.telling (Map.fromList [(seatOf i, channelOf i) | i <- Map.keys invited]) seat gs depth clocks >>= IORef.writeIORef told
       parsed <- foldMap LazyMap.elems . cards <$> IORef.readIORef (loaded shell)
-      ended <- Hotseat.game (page shell) reg parsed (tableOf shell) (level shell) bots settings clock (fmap (Bifunctor.first Text.unpack) seats) remotes heeds (Map.mapKeys seatOf here) seed (foldMap Link.replies resuming) (resuming >>= Link.running) (\reply clocks -> Browser.keepReply (Link.savedReply (reply, clocks))) (Browser.keepRunning . Link.savedRunning) decides tellAll (leaveFor shell chosen [DeckBrowser.label (DeckBrowser.titleIn seat) name | seat@(name, _) <- NonEmpty.toList seats])
+      ended <- Hotseat.game (page shell) reg parsed (tableOf shell) (level shell) bots (Hotseat.MkDealt settings (fmap (Bifunctor.first Text.unpack) seats)) clock (PlayerId.MkPlayerId 0) Set.empty remotes heeds (Map.mapKeys seatOf here) seed (foldMap Link.replies resuming) (resuming >>= Link.running) (\reply clocks -> Browser.keepReply (Link.savedReply (reply, clocks))) (Browser.keepRunning . Link.savedRunning) decides tellAll (leaveFor shell chosen [DeckBrowser.label (DeckBrowser.titleIn seat) name | seat@(name, _) <- NonEmpty.toList seats])
       Browser.forgetGame
       case ended of
         Left problems -> stopped problems >> notice shell problems
@@ -1250,32 +1251,46 @@ replay shell source at = opened shell source $ \reg title seen scenario -> do
     Replay.MkToList -> MkToReplays
     Replay.MkPlayOn from filled -> MkToPlayOn source from filled
 
--- | A game played on from a position of the replay, each seat filled as
--- `filled` fills it, or that game picked up where `resuming` stopped, then
--- how it ended, with the way back to the position and to play on again;
--- given up from the home screen for another game, that one. The game is
--- kept until it is over (Link.saved), for a reload to pick up; its route
--- holds how each seat is filled, so it keeps no lobby bots.
+-- | A game played on from a position of the replay (Hotseat.MkBranched),
+-- each seat filled as `filled` fills it, the first filled here the host's,
+-- or that game picked up where `resuming` stopped, then how it ended, with
+-- the way back to the position and to play on again; given up from the
+-- home screen for another game, that one. The game is kept until it is
+-- over (Link.saved), for a reload to pick up; its route holds how each seat
+-- is filled, so it keeps no lobby bots.
 playOnFrom :: Shell -> Web.Replay.Source -> Natural -> Map.Map PlayerId.PlayerId Web.Replay.Filling -> Maybe Link.Saved -> IO Next
 playOnFrom shell source at filled resuming = opened shell source $ \reg _ played scenario -> do
   chosen <- IORef.newIORef MkToHome
   key <- maybe Key.fresh (pure . Link.seed) resuming
   Monad.when (Maybe.isNothing resuming) . Browser.keepGame $ Link.saved (build shell) (Link.MkSaved key (Link.MkReplayed source at filled) Map.empty [] Nothing)
   parsed <- foldMap LazyMap.elems . cards <$> IORef.readIORef (loaded shell)
-  ended <- Replay.playOn (page shell) reg parsed (tableOf shell) (level shell) filled scenario at key (foldMap (fmap fst . Link.replies) resuming) (\reply -> Browser.keepReply (Link.savedReply (reply, Map.empty))) (leaveFor shell chosen (foldMap (fmap History.deck . History.seats) played))
+  let seats = zipWith const (fmap PlayerId.MkPlayerId [0 ..]) (Scenario.seatsOf scenario)
+      fillingOf pid = Map.findWithDefault Web.Replay.MkHere pid filled
+      mine = filter ((== Web.Replay.MkHere) . fillingOf) seats
+      host = Maybe.fromMaybe (PlayerId.MkPlayerId 0) (Maybe.listToMaybe mine)
+      -- Filling a seat by another person, at this screen or another
+      -- browser, is not implemented (#9785): every seat filled here is the
+      -- host's.
+      locals = Map.fromList [(pid, Link.MkYours) | pid <- mine, pid /= host]
+      goldfish = Set.fromList (filter ((== Web.Replay.MkGoldfish) . fillingOf) seats)
+      -- Each bot in its slot, as the lobby numbers them (Lobby.botAt).
+      bots = Map.fromList [(slot, (difficulty, persona)) | (slot, pid) <- zip [0 :: Int ..] (filter (/= host) seats), Web.Replay.MkBot difficulty persona <- [fillingOf pid]]
+  ended <- Hotseat.game (page shell) reg parsed (tableOf shell) (level shell) bots (Hotseat.MkBranched scenario at) Nothing host goldfish Map.empty Map.empty locals key (foldMap Link.replies resuming) (resuming >>= Link.running) (\reply clocks -> Browser.keepReply (Link.savedReply (reply, clocks))) (Browser.keepRunning . Link.savedRunning) (\_ _ _ _ -> pure ()) (const (pure ())) (leaveFor shell chosen (foldMap (fmap History.deck . History.seats) played))
   Browser.forgetGame
+  let over said' = do
+        let said = foldMap (Maybe.maybeToList . History.drift (build shell)) played <> said'
+            go = do
+              Browser.display (page shell) . fmap Screen.MkReplay $ Web.Replay.ended filled said
+              woke <- await shell
+              case woke of
+                MkTapped (Screen.MkReplay Web.Replay.MkResumeReplay) _ -> pure (MkToReplay source at)
+                MkTapped (Screen.MkReplay (Web.Replay.MkBranch again)) _ -> pure (MkToPlayOn source at again)
+                _ -> go
+        go
   case ended of
-    Nothing -> IORef.readIORef chosen
-    Just said' -> do
-      let said = foldMap (Maybe.maybeToList . History.drift (build shell)) played <> said'
-      let go = do
-            Browser.display (page shell) . fmap Screen.MkReplay $ Web.Replay.ended filled said
-            woke <- await shell
-            case woke of
-              MkTapped (Screen.MkReplay Web.Replay.MkResumeReplay) _ -> pure (MkToReplay source at)
-              MkTapped (Screen.MkReplay (Web.Replay.MkBranch again)) _ -> pure (MkToPlayOn source at again)
-              _ -> go
-      go
+    Right Ending.MkAbandoned -> IORef.readIORef chosen
+    Right (Ending.MkFinished ending) -> over (Ending.said ending)
+    Left problems -> over problems
 
 -- | The registry and the replay, its title, the game finished here it is,
 -- if it is one, and its scenario, handed on once loaded, a message shown
