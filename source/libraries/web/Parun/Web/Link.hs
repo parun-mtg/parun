@@ -20,18 +20,17 @@ import qualified Parun.Codec.PlayerId as Codec.PlayerId
 import qualified Parun.Codec.PlayerView as Codec.PlayerView
 import qualified Parun.Codec.Reply as Codec.Reply
 import qualified Parun.Codec.Request as Codec.Request
-import qualified Parun.Engine.Driver as Driver
 import qualified Parun.Engine.PlayerView as PlayerView.Engine
 import qualified Parun.Extra.Integer as Integer
 import qualified Parun.Extra.Natural as Natural
 import qualified Parun.Json.Value as Value
 import qualified Parun.JsonCodec.Codec as Codec
 import qualified Parun.JsonCodec.Common as Common
+import qualified Parun.Play.Command as Command
 import qualified Parun.Play.Game as Game
 import qualified Parun.Play.Key as Key
 import qualified Parun.Play.Opponent as Opponent
 import qualified Parun.Play.Protocol as Protocol
-import qualified Parun.Types.Asked as Asked
 import qualified Parun.Types.Color as Color
 import qualified Parun.Types.Difficulty as Difficulty
 import qualified Parun.Types.GameSettings as GameSettings
@@ -75,6 +74,9 @@ data Message
     MkDeciding PlayerId.PlayerId PlayerView.PlayerView Natural Banks
   | -- | The guest's reply to the last request.
     MkAnswer R.Reply
+  | -- | The guest's seat concedes at once, which ends a game of two
+    -- (Parun.Web.Question.decisive), whoever is asked.
+    MkConcede
   | -- | The game ended: the guest's ending, its log and life trail built
     -- from what the host sent its seat (seeing), which a page that reloaded
     -- lost.
@@ -124,6 +126,7 @@ encode build message =
         MkAsk request clocks -> ("ask", [Value.pair "request" (Codec.encode Codec.Request.codec request), Value.pair "clocks" (Codec.encode banksCodec clocks)])
         MkDeciding seat shown depth clocks -> ("deciding", [Value.pair "seat" (Value.integer (toInteger (PlayerId.unwrap seat))), Value.pair "view" (Codec.encode Codec.PlayerView.codec shown), Value.pair "depth" (Codec.encode Common.natural depth), Value.pair "clocks" (Codec.encode banksCodec clocks)])
         MkAnswer reply -> ("answer", [Value.pair "reply" (Codec.Reply.toValue reply)])
+        MkConcede -> ("concede", [])
         MkEnd ending' ->
           ( "end",
             [ Value.pair "verdict" (Codec.encode Ending.verdictCodec (Ending.verdict ending')),
@@ -156,6 +159,7 @@ decode build line = do
     "ask" -> MkAsk <$> (Common.field "request" pairs >>= Codec.decode Codec.Request.codec) <*> clocks
     "deciding" -> MkDeciding <$> (Common.field "seat" pairs >>= Common.asInteger >>= natural) <*> (Common.field "view" pairs >>= Codec.decode Codec.PlayerView.codec) <*> (Common.field "depth" pairs >>= Codec.decode Common.natural) <*> clocks
     "answer" -> MkAnswer <$> (Common.field "reply" pairs >>= Codec.Reply.fromValue)
+    "concede" -> Right MkConcede
     "end" ->
       fmap MkEnd $
         Ending.MkEnding
@@ -238,21 +242,23 @@ data Channel m = MkChannel
 
 -- | The host's side of a guest's seat (Protocol.Exchange): each request sent
 -- with the time banks `clocks` reads then, answered by the reply that comes
--- back, any other message (a Ready toggled
+-- back, or by `conceded` where the guest concedes instead, any other
+-- message (a Ready toggled
 -- as the game began, a rejoining guest's Hello) skipped. Once the channel
 -- closes, `rejoin` connects it anew and the guest is sent `places`, the
 -- match-up its history names, without the options, which a game under way
 -- has no use for, its seat with what `seen` says it has seen, and the
 -- request again, which a guest whose page reloaded needs all of; the
 -- end of input, which stops the game, only where it does not.
-remote :: (Monad m) => m Bool -> [Place] -> m Ending.Seen -> m Banks -> Channel m -> Protocol.Exchange m
-remote rejoin places seen clocks channel request = asked
+remote :: (Monad m) => m Bool -> [Place] -> m Ending.Seen -> m Banks -> m (Maybe (Either Text.Text R.Reply)) -> Channel m -> Protocol.Exchange m
+remote rejoin places seen clocks conceded channel request = asked
   where
     asked = clocks >>= send channel . MkAsk request >> replied
     replied = do
       heard <- receive channel
       case heard of
         Just (MkAnswer reply) -> pure (Just (Right reply))
+        Just MkConcede -> conceded
         Just _ -> replied
         Nothing -> do
           back <- rejoin
@@ -298,11 +304,7 @@ telling guests seat gs depth clocks told = Map.traverseWithKey tell guests
 -- whoever answers it, a bot included, with the game then and its depth
 -- (Protocol.depthOf).
 deciding :: (Monad m) => (PlayerId.PlayerId -> GameState.GameState -> Natural -> m ()) -> Observer.Observer (Game.Play m)
-deciding decides =
-  Observer.MkObserver
-    { Observer.before = \asked -> mapM_ (\seat -> Game.underneath (decides seat (Asked.game asked) (Protocol.depthOf asked))) (Driver.deciderOf (Asked.prompt asked)),
-      Observer.after = \_ _ -> pure ()
-    }
+deciding decides = Command.asking (\decider gs depth -> mapM_ (\seat -> Game.underneath (decides seat gs depth)) decider)
 
 -- | What the guest does with a message from the host once the game is under
 -- way: a request is answered through `local`, its reply what to send back;

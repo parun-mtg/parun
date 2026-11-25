@@ -10,6 +10,7 @@ import qualified Data.Map.Strict as Map
 import qualified Data.Maybe as Maybe
 import qualified Data.Sequence as Seq
 import qualified Data.Text as Text
+import Numeric.Natural (Natural)
 import qualified Parun.DeckList as DeckList
 import qualified Parun.Engine.Driver as Driver
 import qualified Parun.Engine.Game as Game
@@ -70,7 +71,19 @@ entryFor seats asked answer = case prompt of
   where
     prompt = Asked.prompt asked
     gs = Asked.game asked
-    at pid move = Timed.MkTimed (When.MkWhen (TurnRegisters.turnNumber (GameState.turn gs)) (TurnRegisters.phase (GameState.turn gs)) (labelOf seats pid) (Natural.length (Asked.enclosing asked))) Nothing (Entry.Do move)
+    at = timedAt seats gs (Natural.length (Asked.enclosing asked))
+
+-- | CR 104.3a: seat `pid` conceding while a prompt is pending, asked in `gs`
+-- at that depth (CR 730.1a), which ends a game of two at once
+-- (Parun.Web.Question.decisive): a Concede move at `pid`'s moment then, the
+-- recording's last entry, which a replay takes at that prompt
+-- (Parun.Scenario.answerPrompt).
+conceding :: Map.Map PlayerId.PlayerId Label.Label -> GameState.GameState -> Natural -> PlayerId.PlayerId -> Timed.Timed
+conceding seats gs depth pid = timedAt seats gs depth pid Move.Concede
+
+-- | A move made for seat `pid` at its moment in `gs`, at that depth.
+timedAt :: Map.Map PlayerId.PlayerId Label.Label -> GameState.GameState -> Natural -> PlayerId.PlayerId -> Move.Move -> Timed.Timed
+timedAt seats gs depth pid move = Timed.MkTimed (When.MkWhen (TurnRegisters.turnNumber (GameState.turn gs)) (TurnRegisters.phase (GameState.turn gs)) (labelOf seats pid) depth) Nothing (Entry.Do move)
 
 -- | Objects by card name and creation order, as the runner reads them back
 -- on the same state, a departed one (CR 400.7) among the departed, and an

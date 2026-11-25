@@ -30,7 +30,8 @@ import qualified Parun.Web.Screen as Screen
 -- host: each request answered on the page at the auto-pass level kept in
 -- `levelRef`, given up should the host say anything first (the game ended
 -- as the seat's time ran out, say), a card tapped showing its text through
--- `lookUp`, the home screen through `leave`, the log starting from what the
+-- `lookUp`, the home screen through `leave`, a concession that decides the
+-- game sent to the host at once, the log starting from what the
 -- host says the seat has `seen`, the clocks running as the host last said;
 -- how it came out. Once the channel closes, `rejoin` connects it anew, and
 -- the game goes on as the host asks again; it stops where `rejoin` does not
@@ -41,13 +42,16 @@ play page lookUp levelRef channel link rejoin seat seen leave = do
   Hotseat.keepingLevel levelRef seatRef . Exception.handle (\Hotseat.MkAbandonedGame -> pure Ending.MkAbandoned) $ do
     -- The seat the host last said decides, until the guest's own is asked.
     decidingRef <- IORef.newIORef Nothing
-    let -- The clocks as the host says they read, the seat's own running
+    let -- A concession that decides the game (Web.Question.decisive) is
+        -- the host's to end it with.
+        concede _ = Link.send channel Link.MkConcede
+        -- The clocks as the host says they read, the seat's own running
         -- until it answers.
         clocked deciding banks = Clock.getMonotonicTime >>= \at -> IORef.modifyIORef' seatRef (\s -> s {Hotseat.clocks = Web.Clock.heard at deciding banks})
         local banks request = do
           IORef.writeIORef decidingRef Nothing
           clocked seat banks
-          answered <- Browser.heeding page link (Hotseat.exchange lookUp page seatRef leave request)
+          answered <- Browser.heeding page link (Hotseat.exchange lookUp page seatRef leave concede request)
           at <- Clock.getMonotonicTime
           IORef.modifyIORef' seatRef (\s -> s {Hotseat.clocks = Web.Clock.stop at (Hotseat.clocks s)})
           pure (Monad.join answered)
@@ -56,7 +60,7 @@ play page lookUp levelRef channel link rejoin seat seen leave = do
         others state = [SeatView.player s | request <- Maybe.maybeToList (Hotseat.current state), shown <- Maybe.maybeToList (Request.view request), s <- PlayerView.seats shown, SeatView.player s /= seat]
         loop = do
           deciding <- IORef.readIORef decidingRef
-          heard <- Hotseat.awaiting lookUp page seatRef leave (\state -> maybe (others state) pure deciding) (Link.receive channel)
+          heard <- Hotseat.awaiting lookUp page seatRef leave concede (\state -> maybe (others state) pure deciding) (Link.receive channel)
           case heard of
             Nothing -> do
               back <- rejoin

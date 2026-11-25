@@ -11,6 +11,17 @@ import qualified Parun.Web.Log as Log
 
 spec :: (Monad m, Monad n) => Spec.Spec m n -> n ()
 spec s = Spec.describe s "Parun.Web.Ending" $ do
+  Spec.describe s "leftEarly" $ do
+    Spec.it s "loses the game for the seat out of time and wins it for the other of two" $ do
+      Spec.assertEqWith s "the seat out of time" (Ending.leftEarly 2 outOfTime two (Just two)) (Ending.MkLost, [Text.pack "Player 2 ran out of time."])
+      Spec.assertEqWith s "the other" (fmap fst [Ending.leftEarly 2 outOfTime two (Just one), Ending.leftEarly 2 outOfTime two Nothing]) [Ending.MkWon, Ending.MkWonBy one]
+    Spec.it s "stops a game of three for the rest (#9757)" $ do
+      Spec.assertEqWith s "the rest" (Ending.leftEarly 3 outOfTime two (Just one)) (Ending.MkStopped, [Text.pack "The game stopped: Player 2 ran out of time."])
+      Spec.assertEqWith s "the seat out of time" (fst (Ending.leftEarly 3 outOfTime two (Just two))) Ending.MkLost
+    Spec.it s "CR 104.3a / 104.2a a concession in a game of two loses it for the seat conceding, saying so" $ do
+      Spec.assertEqWith s "the seat conceding" (Ending.leftEarly 2 (Text.pack "conceded") one (Just one)) (Ending.MkLost, [Text.pack "Player 1 conceded."])
+      Spec.assertEqWith s "the other" (Ending.leftEarly 2 (Text.pack "conceded") one (Just two)) (Ending.MkWon, [Text.pack "Player 1 conceded."])
+
   Spec.describe s "view" $ do
     Spec.it s "says how the game ended once, offers a rematch, a new game and the replay, and lists the log newest first, as play does" $ do
       let page = Html.toText (Ending.view True ending)
@@ -112,3 +123,12 @@ ending =
   where
     you = PlayerId.MkPlayerId 0
     bot = PlayerId.MkPlayerId 1
+
+one :: PlayerId.PlayerId
+one = PlayerId.MkPlayerId 0
+
+two :: PlayerId.PlayerId
+two = PlayerId.MkPlayerId 1
+
+outOfTime :: Text.Text
+outOfTime = Text.pack "ran out of time"

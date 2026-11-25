@@ -500,7 +500,7 @@ spec s registry = Spec.describe s "WebQuestion" $ do
     Spec.assertEqWith s "given flashback" (sheetIn Zone.Graveyard withLier) (Just (Right (Text.pack "Its abilities have changed; this text may be out of date." : printedText)))
 
   Spec.it s "CR 104.3a the turn bar carries the auto-pass level and the settings button, whose concession passes while the seat may" $ do
-    let request = requestFor (Setup.emptyGame S.bothPlayers) (Prompt.ChooseAction (Decider.MkDecider S.alice) S.alice [Action.Pass])
+    let request = requestFor S.threePlayerGame (Prompt.ChooseAction (Decider.MkDecider S.alice) S.alice [Action.Pass])
         asked = Question.Web.view request Question.Web.blank
         watched = Maybe.fromMaybe (Html.text Text.empty) (Question.Web.watching (Just S.alice) [] False request Question.Web.blank)
         within prefix = Html.search (\node -> Text.pack prefix `Text.isPrefixOf` Html.toText node)
@@ -514,6 +514,19 @@ spec s registry = Spec.describe s "WebQuestion" $ do
     Spec.assertEqWith s "and while watching" (level watched) (Just (Question.Web.MkLevel Question.Web.MkAutoPass))
     Spec.assertBool s (maybe False (Text.isInfixOf (Text.pack "aria-pressed=\"false\">Auto</button>") . Html.toText) (bar watched)) "not disabled while watching"
     Spec.assertBool s (maybe False (\p -> not (any (`Text.isInfixOf` Html.content p) [Text.pack "Auto-pass", Text.pack "Concede"])) prompt) "the prompt carries neither"
+
+  Spec.it s "CR 104.3a / 104.2a in a game of two the menu concedes at once at any question, which ends the game" $ do
+    let choosing gs = requestFor gs (Prompt.DeclareMulligan (Decider.MkDecider S.alice) S.alice (MulliganOffer.MkMulliganOffer 0 1))
+        menu = Html.search (\node -> Text.pack "<button class=\"settings-button\"" `Text.isPrefixOf` Html.toText node)
+        conceding request = let html = Question.Web.view request Question.Web.blank in menu html >>= \path -> Html.handler (Text.pack "concede") path html
+        stepped request = fmap (\event -> Question.Web.step request Set.empty event Text.empty) (conceding request)
+        waiting gs conceded = maybe Text.empty Html.toText (Question.Web.watching (Just S.alice) [S.bob] conceded (requestFor gs (Prompt.ChooseAction (Decider.MkDecider S.alice) S.alice [Action.Pass])) Question.Web.blank)
+    Spec.assertEqWith s "at priority" (stepped (requestFor (Setup.emptyGame S.bothPlayers) (Prompt.ChooseAction (Decider.MkDecider S.alice) S.alice [Action.Pass]))) (Just Question.Web.MkConceded)
+    Spec.assertEqWith s "at another question" (stepped (choosing (Setup.emptyGame S.bothPlayers))) (Just Question.Web.MkConceded)
+    Spec.assertEqWith s "not offered at another question of a game of three" (conceding (choosing S.threePlayerGame)) Nothing
+    Spec.assertEqWith s "nor of a subgame (CR 730.1a)" (conceding (choosing (Setup.emptyGame S.bothPlayers)) {Request.depth = 1}) Nothing
+    Spec.assertBool s (not (Text.isInfixOf (Text.pack "You concede when") (waiting (Setup.emptyGame S.bothPlayers) True))) "nothing left to wait for"
+    Spec.assertBool s (Text.isInfixOf (Text.pack "You concede when you next have priority.") (waiting S.threePlayerGame True)) "but in a game of three"
 
   Spec.it s "CR 117.1 the board watched says no one holds priority, not redrawn as it passes" $ do
     let gs = inMain (Setup.emptyGame S.bothPlayers)
@@ -553,7 +566,7 @@ spec s registry = Spec.describe s "WebQuestion" $ do
     Spec.assertBool s (not (Text.isInfixOf (Text.pack "Play Mountain") (waiting [S.bob]))) "its sheet offers nothing"
 
   Spec.it s "CR 104.3a while another browser's seat decides, the menu leaves the game and concedes" $ do
-    let request = requestFor (Setup.emptyGame S.bothPlayers) (Prompt.ChooseAction (Decider.MkDecider S.alice) S.alice [Action.Pass])
+    let request = requestFor S.threePlayerGame (Prompt.ChooseAction (Decider.MkDecider S.alice) S.alice [Action.Pass])
         waiting conceded = Maybe.fromMaybe (Html.text Text.empty) (Question.Web.watching (Just S.alice) [S.bob] conceded request Question.Web.blank)
         menu = Html.search (\node -> Text.pack "<button class=\"settings-button\"" `Text.isPrefixOf` Html.toText node)
         on name html = menu html >>= \path -> Html.handler (Text.pack name) path html
@@ -1731,3 +1744,4 @@ tapping request = go (Question.Web.initial request)
           Question.Web.MkReplied reply -> Right reply
           Question.Web.MkPicking now -> go now rest
           Question.Web.MkRefused problem -> Left problem
+          Question.Web.MkConceded -> Left (Text.pack "conceded")

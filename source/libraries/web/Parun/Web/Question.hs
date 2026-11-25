@@ -84,8 +84,9 @@ data Event
     MkRead ObjectId.ObjectId
   | -- | Hides the card shown.
     MkClose
-  | -- | Concedes the game (CR 104.3a): passes now, and the hotseat answers
-    -- its next concession question yes.
+  | -- | Concedes the game (CR 104.3a): at once where that decides it
+    -- (decisive), else passes now, and the hotseat answers its next
+    -- concession question yes.
     MkConcede
   | -- | Leaves the game for the home screen, to resume it later.
     MkHome
@@ -109,6 +110,9 @@ data Outcome
     MkReplied R.Reply
   | -- | Not answered, and why.
     MkRefused Text.Text
+  | -- | Not answered: the seat asked conceded, which ends the game at once
+    -- (decisive).
+    MkConceded
   deriving (Eq, Show)
 
 -- | A question answered by picking among groups of options: its groups, the
@@ -353,7 +357,7 @@ blank = MkScreen Set.empty Nothing Seq.empty 0 Nothing MkStandard Map.empty Fals
 -- the card being read and the log.
 view :: Request.Request -> Screen -> Html.Html Event
 view request screen =
-  table request screen (autoPass (level screen)) (barControls True (MkConcede <$ passIndex request)) (cues request (selected screen) (focus screen)) $
+  table request screen (autoPass (level screen)) (barControls True (if decisive request then Just MkConcede else MkConcede <$ passIndex request)) (cues request (selected screen) (focus screen)) $
     foldMap (pure . eyebrow) (Request.view request)
       <> turnBegun (viewerOf request) screen
       <> [Element.el "p" ["problem"] [Element.attr "role" (Text.pack "alert")] (Mana.rich problem) | problem <- Maybe.maybeToList (Request.problem request)]
@@ -404,13 +408,14 @@ eyebrow board = Element.el "p" (["eyebrow", "moment"] <> ["yours" | Board.yours 
 -- the auto-pass level, which Hotseat keeps for the seat's next request.
 -- While those seats decide, the menu leaves for the home screen, and
 -- concedes (CR 104.3a) unless the seat has, `conceded`, which it then does
--- at its next priority. Nothing unless the screen faces (the first) the
+-- at once where that decides the game (decisive), else at its next
+-- priority. Nothing unless the screen faces (the first) the
 -- seat asked, since the board shows that seat's hidden cards.
 watching :: Maybe PlayerId.PlayerId -> [PlayerId.PlayerId] -> Bool -> Request.Request -> Screen -> Maybe (Html.Html Event)
 watching facing deciding conceded request screen = do
   Monad.guard $ facing == Just (Question.seat (Request.question request))
   let status = case (deciding, Request.view request) of
-        (_ : _, _) -> waitingOn deciding <> (if conceded then " You concede when you next have priority." else "")
+        (_ : _, _) -> waitingOn deciding <> (if conceded && not (decisive request) then " You concede when you next have priority." else "")
         (_, Just b)
           | not (PlayerView.begun b) -> "Waiting for the game to begin\x2026"
           | not (null (PlayerView.stack b)) -> "Resolving\x2026"
@@ -679,6 +684,17 @@ verbOf kind = case Text.unpack kind of
 handsOver :: Set.Set PlayerId.PlayerId -> Maybe PlayerId.PlayerId -> PlayerId.PlayerId -> Bool
 handsOver yours facing seat = facing /= Just seat && not (Set.member seat yours && any (`Set.member` yours) facing)
 
+-- | Whether conceding while this request is pending decides the game, so
+-- it ends at once, whoever is asked: a main game seated with two, which
+-- the other wins (CR 104.3a, 104.2a). The game stands still while a
+-- request is pending, so leaving then is leaving as it was asked.
+--
+-- A seat leaving a game of three or more at once is not implemented
+-- (#9757, #9646), nor a subgame (CR 730.1a), whose end the main game
+-- outlasts (#9791): the seat concedes at its next priority.
+decisive :: Request.Request -> Bool
+decisive request = Request.depth request == 0 && maybe False ((== 2) . length . PlayerView.seats) (Request.view request)
+
 -- | What an event does, the options picked so far being `picked`.
 step :: Request.Request -> Set.Set (Natural, Natural) -> Event -> Text.Text -> Outcome
 step request picked event typed = case event of
@@ -735,7 +751,9 @@ step request picked event typed = case event of
   MkPeek _ -> MkPicking picked
   MkUnpeek -> MkPicking picked
   MkLevel _ -> MkPicking picked
-  MkConcede -> maybe (MkRefused $ Text.pack "Concede when you have priority.") (MkReplied . R.Number) $ passIndex request
+  MkConcede
+    | decisive request -> MkConceded
+    | otherwise -> maybe (MkRefused $ Text.pack "Concede when you have priority.") (MkReplied . R.Number) $ passIndex request
   MkSkip _ -> maybe (MkRefused $ Text.pack "There is no pass to make.") (MkReplied . R.Number) $ passIndex request
   MkAuto -> maybe (MkRefused $ Text.pack "Auto can't pay the rest of this cost. Choose a source.") MkReplied $ auto request
 

@@ -851,6 +851,7 @@ scripted = Answerer.MkAnswerer answerPrompt
 answerPrompt :: Asked.Asked GameState.GameState r -> Run r
 answerPrompt asked = do
   State.modify' (\rehearsal -> rehearsal {stopHere = Just (\index timed -> Stop.MkBefore index timed asked)})
+  concededNow asked
   rehearsal <- State.get
   -- A replayed recording ends at the first prompt past its last entry; the
   -- run answers quietly to the end of the step and checks that state.
@@ -859,6 +860,31 @@ answerPrompt asked = do
       Monad.when (Maybe.isNothing (ended rehearsal)) (State.put rehearsal {ended = Just (Asked.game asked)})
       pure (quietAnswer (Asked.prompt asked))
     else answerScheduled asked
+
+-- | CR 104.3a: a replayed recording's last entry a seat's concession at its
+-- moment now, taken at this prompt, which the recording holds no answer
+-- for: the seat conceded while it was pending (Record.conceding), which
+-- ends a game of two, and the run ends here. A concession made at the
+-- seat's own concession question is taken there, before any prompt the
+-- recording answers: the game is the recording's, so a prompt it answers
+-- never comes while its last entry is that concession. PlaySpec's "a
+-- concession while the other seat decides" is the proof.
+concededNow :: Asked.Asked GameState.GameState r -> Run ()
+concededNow asked = do
+  rehearsal <- State.get
+  let gs = Asked.game asked
+      nesting = Natural.length (Asked.enclosing asked)
+      now key = When.MkWhen (TurnRegisters.turnNumber (GameState.turn gs)) (TurnRegisters.phase (GameState.turn gs)) (When.player key) nesting == key
+  case Map.toList (queues rehearsal) of
+    [(key, entries)]
+      | replaying rehearsal,
+        recorded (Asked.prompt asked),
+        [timed] <- Foldable.toList entries,
+        Timed.entry timed == Entry.Do Move.Concede,
+        Maybe.isNothing (Timed.source timed),
+        now key ->
+          popAt key 0
+    _ -> pure ()
 
 -- | Whether a recording of a played game holds this prompt's answer: not a
 -- seat's standing refusal to concede (CR 104.3a), nor the interpreter's

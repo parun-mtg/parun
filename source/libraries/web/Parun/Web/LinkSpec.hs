@@ -42,6 +42,7 @@ spec s = Spec.describe s "Parun.Web.Link" $ do
               Link.MkAsk request (Map.fromList [(PlayerId.MkPlayerId 0, 59.25), (PlayerId.MkPlayerId 1, 300)]),
               Link.MkDeciding (PlayerId.MkPlayerId 2) PlayerViewSpec.testView 1 (Map.singleton (PlayerId.MkPlayerId 2) 0.5),
               Link.MkAnswer (R.Object [(Text.pack "action", R.Text (Text.pack "Pass"))]),
+              Link.MkConcede,
               Link.MkEnd (Ending.MkEnding Ending.MkLost [Text.pack "Player 1 wins."] (Text.pack "{}\n") (Seq.fromList [Log.MkTurn 1 (PlayerId.MkPlayerId 0), Log.MkMana (PlayerId.MkPlayerId 0) [Text.pack "Forest", Text.pack "Forest"], Log.MkEvent Log.MkMajor (Text.pack "Player 1 casts Grizzly Bears."), Log.MkEvent Log.MkMinor (Text.pack "Grizzly Bears enters.")]) (PlayerId.MkPlayerId 1) False [(1, [(PlayerId.MkPlayerId 0, 20), (PlayerId.MkPlayerId 1, 20)]), (4, [(PlayerId.MkPlayerId 0, 20), (PlayerId.MkPlayerId 1, -2)])]),
               Link.MkEnd (Ending.MkEnding Ending.MkWon [] Text.empty Seq.empty (PlayerId.MkPlayerId 2) False []),
               Link.MkEnd (Ending.MkEnding (Ending.MkWonBy (PlayerId.MkPlayerId 1)) [] Text.empty Seq.empty (PlayerId.MkPlayerId 0) True []),

@@ -2341,7 +2341,7 @@ spec s reference corpus = do
   Parun.RemoteSeatSpec.spec s registry
   Parun.BotSpec.spec s registry
   Parun.PlaySpec.spec s registry
-  Parun.PlaySpec.gameSpec s
+  Parun.PlaySpec.gameSpec s registry
   Parun.RecordSpec.spec s registry
   Parun.MatchSpec.spec s registry
   Parun.MetaSpec.spec s registry

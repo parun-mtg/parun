@@ -124,9 +124,17 @@ spec s registry = Spec.describe s "RemoteSeat" $ do
           Link.MkAsk {} -> True
           _ -> False
         wire = Link.MkChannel (\message -> State.modify' (fmap (<> [message]))) replies
-        (answered, (_, sent)) = State.runState (Link.remote (pure True) played (pure Ending.unseen) clocks wire request) (0, [])
+        (answered, (_, sent)) = State.runState (Link.remote (pure True) played (pure Ending.unseen) clocks (pure Nothing) wire request) (0, [])
     Spec.assertEqWith s "answered" answered (Just (Right (R.Text (Text.pack "Play"))))
     Spec.assertEqWith s "the clocks with each request" sent [Link.MkAsk request (Map.fromList [(S.alice, 300), (S.bob, 60)]), Link.MkMatchup played [], Link.MkStart S.bob Ending.unseen, Link.MkAsk request (Map.fromList [(S.alice, 290), (S.bob, 60)])]
+
+  Spec.it s "CR 104.3a a guest conceding instead of replying ends the request as the host says" $ do
+    let request = Request.MkRequest Nothing (Question.MkQuestion S.bob (Text.pack "PlayOrDraw") (R.Array [R.Text (Text.pack "Play"), R.Text (Text.pack "Draw")]) Nothing Nothing) Nothing 0
+        wire :: Link.Channel (State.State [Link.Message])
+        wire = Link.MkChannel (const (pure ())) (State.state (\heard -> (Maybe.listToMaybe heard, drop 1 heard)))
+        answered = State.evalState (Link.remote (pure False) [] (pure Ending.unseen) (pure Map.empty) (pure (Just (Left (Text.pack "conceded")))) wire request)
+    Spec.assertEqWith s "conceded" (answered [Link.MkReady True, Link.MkConcede, Link.MkAnswer (R.Text (Text.pack "Play"))]) (Just (Left (Text.pack "conceded")))
+    Spec.assertEqWith s "replied" (answered [Link.MkAnswer (R.Text (Text.pack "Play")), Link.MkConcede]) (Just (Right (R.Text (Text.pack "Play"))))
 
   Spec.it s "a whole game with a player on the host's screen: the lobby's options seat no bot there, and the screen is handed between the seats" $ do
     (outcome, inOrder, options) <- onOneScreen s registry
@@ -161,7 +169,7 @@ spec s registry = Spec.describe s "RemoteSeat" $ do
     Spec.assertEqWith s "the game stops" (fmap fst outcome) (Left (Text.pack "end of input"))
     Spec.assertEqWith s "Player 2 out of time" (Clock.out after) (Just S.bob)
     Spec.assertEqWith s "each seat charged its own time" (Clock.left after, Clock.running after) (Map.fromList [(S.alice, 120), (S.bob, 0)], Nothing)
-    Spec.assertEqWith s "lost to Player 1" (fmap (fst . Clock.ending 2 S.bob . Just) [S.alice, S.bob]) [Ending.MkWon, Ending.MkLost]
+    Spec.assertEqWith s "lost to Player 1" (fmap (fst . Ending.leftEarly 2 (Text.pack "ran out of time") S.bob . Just) [S.alice, S.bob]) [Ending.MkWon, Ending.MkLost]
 
   Spec.it s "a guest whose connection drops mid-game rejoins, is sent the match-up, its seat and the request again, and the game finishes" $ do
     matchup <- BotSpec.bears s registry
@@ -313,7 +321,7 @@ build = Text.pack "test"
 -- guest told whose decision the game waits on. A guest whose channel drops
 -- rejoins the first time, and not again.
 hosted :: (Monad m) => [PlayerId.PlayerId] -> NonEmpty.NonEmpty (PlayerId.PlayerId, Deck.Deck) -> State.StateT Wire m (Either Text.Text (Result.Result, GameState.GameState))
-hosted guests matchup = Game.run (S.fixtureRegistry []) GameSettings.plain Limits.standard [Link.deciding decides] (Map.fromList [(pid, Game.wired (S.fixtureRegistry []) (Protocol.bySeat (Map.fromList [(g, Link.seeing (\shown -> State.modify' (\w -> w {hostSeen = seenBy shown (hostSeen w)})) (Link.remote (rejoined g) played (Map.findWithDefault Ending.unseen g . hostSeen <$> State.get) (pure Map.empty) (channel g))) | g <- guests]) (page hostPage))) | (pid, _) <- NonEmpty.toList matchup]) (S.seeded 1) Map.empty matchup
+hosted guests matchup = Game.run (S.fixtureRegistry []) GameSettings.plain Limits.standard [Link.deciding decides] (Map.fromList [(pid, Game.wired (S.fixtureRegistry []) (Protocol.bySeat (Map.fromList [(g, Link.seeing (\shown -> State.modify' (\w -> w {hostSeen = seenBy shown (hostSeen w)})) (Link.remote (rejoined g) played (Map.findWithDefault Ending.unseen g . hostSeen <$> State.get) (pure Map.empty) (pure Nothing) (channel g))) | g <- guests]) (page hostPage))) | (pid, _) <- NonEmpty.toList matchup]) (S.seeded 1) Map.empty matchup
   where
     decides seat gs depth = do
       let owing g = if g == seat then Nothing else Just (seat, (PlayerView.Engine.viewFor g gs) {PlayerView.priority = Nothing}, depth)

@@ -14,6 +14,7 @@ import Numeric.Natural (Natural)
 import qualified Parun.Codec.PlayerId as Codec.PlayerId
 import qualified Parun.JsonCodec.Arm as Arm
 import qualified Parun.JsonCodec.Codec as Codec
+import qualified Parun.Play.Command as Command
 import qualified Parun.Play.Wording as Wording
 import qualified Parun.Types.PlayerId as PlayerId
 import qualified Parun.Types.PlayerView as PlayerView
@@ -64,6 +65,21 @@ verdictCodec =
       MkDrawn -> "MkDrawn"
       MkWonBy _ -> "MkWonBy"
       MkStopped -> "MkStopped"
+
+-- | How a game ended for `told`, of so many seats, or for no seat in
+-- particular, as seat `leaver` left it before it was over, for the reason
+-- `why` gives (a clock run out, Parun.Web.Clock; a concession that decides
+-- the game, Parun.Web.Question.decisive): lost for that seat, won for the
+-- other of two, and stopped for the rest; and what is said of it.
+leftEarly :: Natural -> Text.Text -> PlayerId.PlayerId -> Maybe PlayerId.PlayerId -> (Verdict, [Text.Text])
+leftEarly count why leaver told =
+  let others = [p | n <- [1 .. count], let p = Command.idOf n, p /= leaver]
+      left = Wording.player leaver <> Text.pack " " <> why <> Text.pack "."
+   in case (others, told) of
+        (_, Just r) | r == leaver -> (MkLost, [if count == 2 then left else Text.pack "The game stopped: " <> left])
+        ([winner], Nothing) -> (MkWonBy winner, [left])
+        ([_], Just _) -> (MkWon, [left])
+        _ -> (MkStopped, [Text.pack "The game stopped: " <> left])
 
 -- | How a game the page played came out.
 data Played
