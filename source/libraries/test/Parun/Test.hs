@@ -1167,6 +1167,7 @@ import qualified Parun.Web.AppSpec
 import qualified Parun.Web.BarSpec
 import qualified Parun.Web.BuilderSpec
 import qualified Parun.Web.CardIndexSpec
+import qualified Parun.Web.ClockSpec
 import qualified Parun.Web.DeckBrowserSpec
 import qualified Parun.Web.DecksSpec
 import qualified Parun.Web.DiffSpec
@@ -2393,6 +2394,7 @@ spec s reference corpus = do
   Parun.Web.LoadingSpec.spec s
   Parun.Web.BuilderSpec.spec s
   Parun.Web.CardIndexSpec.spec s
+  Parun.Web.ClockSpec.spec s
   Parun.Web.LobbySpec.spec s
   Parun.Web.DeckBrowserSpec.spec s
   Parun.Web.DecksSpec.spec s

@@ -11,6 +11,7 @@ import qualified Data.IORef as IORef
 import qualified Data.Maybe as Maybe
 import qualified Data.Sequence as Seq
 import qualified Data.Text as Text
+import qualified GHC.Clock as Clock
 import qualified Parun.Extra.Integer as Integer
 import qualified Parun.JsonCodec.Common as Common
 import qualified Parun.Trustworthy.Wasm as Prim
@@ -25,15 +26,17 @@ import qualified Parun.Web.Wire as Wire
 -- has waited for yet, each with the value of the element it came from, the
 -- data chunks that arrived since last read, what the page's data
 -- channels said since, what takes a tap while a channel is waited on
--- (meanwhile), and whether what they say is held for a game set aside
--- (aside).
+-- (meanwhile), whether what they say is held for a game set aside
+-- (aside), and when, on the monotonic clock in seconds, waiting gives up
+-- (within).
 data Page msg = MkPage
   { shown :: IORef.IORef (Maybe (Html.Html msg)),
     taken :: IORef.IORef (Seq.Seq (msg, Text.Text)),
     arrived :: IORef.IORef (Seq.Seq Arrival),
     heard :: IORef.IORef (Seq.Seq Linked),
     tapped :: IORef.IORef (Maybe ((msg, Text.Text) -> IO ())),
-    held :: IORef.IORef Bool
+    held :: IORef.IORef Bool,
+    due :: IORef.IORef (Maybe Double)
   }
 
 -- | What a data channel to another browser said (page.js), by the number
@@ -63,7 +66,7 @@ data Input msg
 -- | A page showing nothing yet, its events listened for.
 mount :: IO (Page msg)
 mount = do
-  page <- MkPage <$> IORef.newIORef Nothing <*> IORef.newIORef Seq.empty <*> IORef.newIORef Seq.empty <*> IORef.newIORef Seq.empty <*> IORef.newIORef Nothing <*> IORef.newIORef False
+  page <- MkPage <$> IORef.newIORef Nothing <*> IORef.newIORef Seq.empty <*> IORef.newIORef Seq.empty <*> IORef.newIORef Seq.empty <*> IORef.newIORef Nothing <*> IORef.newIORef False <*> IORef.newIORef Nothing
   listen =<< wrap (dispatch page)
   pure page
 
@@ -82,7 +85,7 @@ next page = do
   queued <- IORef.atomicModifyIORef' (taken page) $ \events -> case Seq.viewl events of
     event Seq.:< rest -> (rest, Just event)
     Seq.EmptyL -> (events, Nothing)
-  maybe (wait >> next page) pure queued
+  maybe (waitOn page >> next page) pure queued
 
 -- | The next chunk arrived, else the next tap, else what a data channel
 -- said, waiting for any.
@@ -98,7 +101,7 @@ nextInput page = do
       queued <- pending page
       if queued
         then fmap (uncurry MkTap) (next page)
-        else takeLinked page >>= maybe (wait >> nextInput page) (pure . MkLink)
+        else takeLinked page >>= maybe (waitOn page >> nextInput page) (pure . MkLink)
 
 -- | The chunks arrived since last asked, without waiting.
 arrivals :: Page msg -> IO [Arrival]
@@ -209,7 +212,7 @@ nextLinked page n = takeLinkedWith page ((== n) . link) >>= maybe waiting pure
       queued <- pending page
       case handler of
         Just handle | queued -> next page >>= handle
-        _ -> wait
+        _ -> waitOn page
       nextLinked page n
 
 -- | Runs `action`, each tap taken while it waits on a data channel
@@ -320,8 +323,35 @@ dispatch page event path value = do
     _ -> pure ()
 
 -- | Waits for the next tap or chunk without taking it.
-idle :: IO ()
-idle = wait
+idle :: Page msg -> IO ()
+idle = waitOn
+
+-- | Waiting given up at the deadline 'within' set.
+data Expired = MkExpired
+  deriving (Show)
+
+instance Exception.Exception Expired
+
+-- | Runs `action`, Nothing once the monotonic clock reaches `deadline`, in
+-- seconds, while it waits on the page (waitOn): a timer wakes the wait
+-- then, which gives up.
+within :: Page msg -> Double -> IO a -> IO (Maybe a)
+within page deadline action = do
+  now <- Clock.getMonotonicTime
+  before <- IORef.atomicModifyIORef' (due page) (\d -> (Just deadline, d))
+  -- A little after, so the wait it wakes finds the deadline passed.
+  timer <- armJs (max 0 (deadline - now) * 1000 + 10)
+  Exception.handle (\MkExpired -> pure Nothing) (fmap Just action) `Exception.finally` (disarmJs timer >> IORef.writeIORef (due page) before)
+
+-- | Waits as 'wait' does, giving up (Expired) where the deadline 'within'
+-- set has passed, before or after.
+waitOn :: Page msg -> IO ()
+waitOn page = expire >> wait >> expire
+  where
+    expire = do
+      deadline <- IORef.readIORef (due page)
+      now <- Clock.getMonotonicTime
+      Monad.when (any (now >=) deadline) (Exception.throwIO MkExpired)
 
 -- | Waits until 'wake' is called: the waiting thread is suspended, and the
 -- page goes on. The import's result is a thunk, forced here.
@@ -345,6 +375,12 @@ foreign import javascript safe "await new Promise((resolve) => setTimeout(resolv
 
 foreign import javascript unsafe "globalThis.parunWake?.()"
   wake :: IO ()
+
+foreign import javascript unsafe "setTimeout(() => globalThis.parunWake?.(), $1)"
+  armJs :: Double -> IO Int
+
+foreign import javascript unsafe "clearTimeout($1)"
+  disarmJs :: Int -> IO ()
 
 foreign import javascript unsafe "globalThis.parunTakeArrivals()"
   takeArrivals :: IO Prim.JSString

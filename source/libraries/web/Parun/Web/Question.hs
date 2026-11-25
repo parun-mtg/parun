@@ -53,6 +53,7 @@ import qualified Parun.Web.Attribute as Attribute
 import qualified Parun.Web.Bar as Bar
 import qualified Parun.Web.Board as Board
 import qualified Parun.Web.Card as Card
+import qualified Parun.Web.Clock as Clock
 import qualified Parun.Web.Element as Element
 import qualified Parun.Web.Html as Html
 import qualified Parun.Web.Icon as Icon
@@ -315,13 +316,15 @@ data Screen = MkScreen
     -- | Whether the screen names the seat it shows, on the turn bar and
     -- in the prompt: the person at it plays several seats, or it is handed
     -- between people (handsOver).
-    naming :: Bool
+    naming :: Bool,
+    -- | Every timed seat's clock, on the turn bar (Parun.Web.Clock).
+    clocks :: [Clock.Face]
   }
   deriving (Eq, Show)
 
 -- | A screen with nothing picked, read or logged.
 blank :: Screen
-blank = MkScreen Set.empty Nothing Seq.empty 0 Nothing MkStandard Map.empty False
+blank = MkScreen Set.empty Nothing Seq.empty 0 Nothing MkStandard Map.empty False []
 
 -- | The page for a request: the turn bar, the table with each tile marked
 -- for what tapping it does, and beside it the question with its answers,
@@ -450,13 +453,13 @@ viewerOf :: Request.Request -> PlayerId.PlayerId
 viewerOf request = maybe (Question.seat (Request.question request)) PlayerView.viewer (Request.view request)
 
 -- | The game screen around a prompt's contents: the turn bar carrying the
--- auto-pass control and the controls given, the table, the hand, and the
--- side column (side).
+-- auto-pass control, the clocks and the controls given, the table, the
+-- hand, and the side column (side).
 table :: Request.Request -> Screen -> Html.Html Event -> [Html.Html Event] -> Board.Marks Event -> [Html.Html Event] -> Html.Html Event
 table request screen passing controls marks prompt =
   let board = Request.view request
    in Element.el "main" ["game"] [] $
-        foldMap (\b -> [Board.turnBar [passing] (seatChip (naming screen) b <> subgameChip (Request.depth request) <> controls) b]) board
+        foldMap (\b -> [Board.turnBar [passing] (seatChip (naming screen) b <> subgameChip (Request.depth request) <> Clock.view (viewerOf request) (naming screen) (clocks screen) <> controls) b]) board
           <> [Element.el "div" ["play-area"] [] (foldMap (\b -> [Board.view marks (written screen) b]) board)]
           <> foldMap (Board.hand marks) board
           <> side (Text.pack "Your decision") prompt (reading screen) (\r -> board >>= \b -> sheetFor request (written screen) b marks r) (logView board (viewerOf request) screen)

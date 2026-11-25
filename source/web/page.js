@@ -309,6 +309,7 @@ function apply(json) {
   announce();
   rekey();
   playOn();
+  tickClocks();
   for (const element of arrived) {
     if (!element.isConnected) continue;
     if (element.hasAttribute("data-reveal")) element.scrollIntoView({ block: "nearest", behavior: "smooth" });
@@ -326,6 +327,20 @@ function apply(json) {
     returnTo = null;
   }
 }
+
+// A running clock (Parun.Web.Clock) counts down to its data-ends, in
+// milliseconds since the epoch, between the views the engine sends; a part
+// second counts whole, as the engine shows it.
+function tickClocks() {
+  for (const clock of root.querySelectorAll(".clock[data-ends]")) {
+    const left = Math.ceil(Math.max(0, Number(clock.dataset.ends) - Date.now()) / 1000);
+    const time = clock.querySelector(".clock-time");
+    const shown = `${Math.floor(left / 60)}:${String(left % 60).padStart(2, "0")}`;
+    if (time !== null && time.textContent !== shown) time.textContent = shown;
+    clock.classList.toggle("low", left < 60);
+  }
+}
+setInterval(tickClocks, 250);
 
 // A replay playing by itself (Parun.Web.Replay's "playing") presses its
 // next step a second after each position shows, holding while a card is

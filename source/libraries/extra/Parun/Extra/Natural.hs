@@ -34,3 +34,8 @@ minusSaturating x y = if x >= y then x - y else 0
 -- large, this will return 'Nothing'.
 toWord64 :: Natural.Natural -> Maybe Word.Word64
 toWord64 = Bits.toIntegralSized
+
+-- | Converts a 'Natural.Natural' into a 'Double', exactly below @2^53@ and
+-- to the nearest otherwise.
+toDouble :: Natural.Natural -> Double
+toDouble n = encodeFloat (toInteger n) 0
