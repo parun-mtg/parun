@@ -1,6 +1,7 @@
 module Parun.Web.LobbySpec where
 
 import qualified Data.Bifunctor as Bifunctor
+import qualified Data.Either as Either
 import qualified Data.Foldable as Foldable
 import qualified Data.Functor.Identity as Identity
 import qualified Data.List.NonEmpty as NonEmpty
@@ -22,6 +23,7 @@ import qualified Parun.Types.Persona as Persona
 import qualified Parun.Types.PlayOptions as PlayOptions
 import qualified Parun.Types.PlayerId as PlayerId
 import qualified Parun.Types.RangeOfInfluence as RangeOfInfluence
+import qualified Parun.Types.SideDeck as SideDeck
 import qualified Parun.Types.TeamId as TeamId
 import qualified Parun.Types.Teams as Teams
 import qualified Parun.Web.Attribute as Attribute
@@ -261,10 +263,10 @@ spec s = Spec.describe s "Parun.Web.Lobby" $ do
           chosen l = set Lobby.MkClock "10" (set Lobby.MkRangeOfInfluence "1" (set Lobby.MkAttackOption "left" (set Lobby.MkAnte "" l)))
           pairs :: [(Text.Text, Text.Text)] -> [(String, String)]
           pairs = fmap (Bifunctor.bimap Text.unpack Text.unpack)
-      Spec.assertEqWith s "none chosen" (pairs (Lobby.told lobby)) [("Play for ante", "No"), ("Planechase", "No"), ("Clock", "Off")]
-      Spec.assertEqWith s "two seats" (pairs (Lobby.told (chosen lobby))) [("Play for ante", "Yes"), ("Planechase", "No"), ("Clock", "10 minutes")]
-      Spec.assertEqWith s "three seats" (pairs (Lobby.told (chosen three))) [("Variant", "Free-for-All"), ("Play for ante", "Yes"), ("Planechase", "No"), ("Clock", "10 minutes"), ("Attacks", "Attack left"), ("Range of influence", "1 seat")]
-      Spec.assertEqWith s "Planechase" (pairs (Lobby.told (set Lobby.MkPlanechase "" lobby))) [("Play for ante", "No"), ("Planechase", "Yes"), ("Single planar deck", "No"), ("Clock", "Off")]
+      Spec.assertEqWith s "none chosen" (pairs (Lobby.told lobby)) [("Play for ante", "No"), ("Planechase", "No"), ("Archenemy", "No"), ("Clock", "Off")]
+      Spec.assertEqWith s "two seats" (pairs (Lobby.told (chosen lobby))) [("Play for ante", "Yes"), ("Planechase", "No"), ("Archenemy", "No"), ("Clock", "10 minutes")]
+      Spec.assertEqWith s "three seats" (pairs (Lobby.told (chosen three))) [("Variant", "Free-for-All"), ("Play for ante", "Yes"), ("Planechase", "No"), ("Archenemy", "No"), ("Clock", "10 minutes"), ("Attacks", "Attack left"), ("Range of influence", "1 seat")]
+      Spec.assertEqWith s "Planechase" (pairs (Lobby.told (set Lobby.MkPlanechase "" lobby))) [("Play for ante", "No"), ("Planechase", "Yes"), ("Single planar deck", "No"), ("Archenemy", "No"), ("Clock", "Off")]
 
     Spec.it s "sets each seat's clock from its menu, untimed unless told otherwise, at any count of seats" $ do
       let set value = Lobby.update Lobby.MkClock (Text.pack value)
@@ -338,7 +340,7 @@ spec s = Spec.describe s "Parun.Web.Lobby" $ do
         seats n lists = NonEmpty.fromList [(Text.pack ("seat " <> show i), contents) | (i, contents) <- zip [1 .. n :: Int] lists]
         deal chosen' planes = Identity.runIdentity . Lobby.planarDealt pure chosen' (pool planes)
         decksOf :: Either Text.Text (NonEmpty.NonEmpty (Text.Text, Text.Text)) -> Either Text.Text [[CardName.CardName]]
-        decksOf = fmap (fmap (Lobby.planarNames . snd) . NonEmpty.toList)
+        decksOf = fmap (fmap (Lobby.sideNames SideDeck.Planar . snd) . NonEmpty.toList)
         hand = [phenomenon 1, phenomenon 2] <> fmap planar [1 .. 8]
     Spec.it s "leaves the lists alone with Planechase off" $ do
       Spec.assertEq s (deal (options False False) 30 (seats 2 (repeat list))) (Right (seats 2 (repeat list)))
@@ -366,6 +368,56 @@ spec s = Spec.describe s "Parun.Web.Lobby" $ do
       Spec.assertBool s (Text.isInfixOf (Text.pack "Too few planes.") (Html.toText (Lobby.view refused))) "shown"
       Spec.assertEq s (Lobby.refusal (Lobby.update (Lobby.MkBrowse DeckBrowser.MkSearch) Text.empty refused)) (Just (Text.pack "Too few planes."))
       Spec.assertEq s (Lobby.refusal (Lobby.update Lobby.MkPlanechase Text.empty refused)) Nothing
+
+  Spec.describe s "schemeDealt" $ do
+    let scheme :: Int -> CardName.CardName
+        scheme n = CardName.MkCardName (Text.pack ("Scheme " <> show n))
+        list = Text.pack "Deck\n20 Forest\n"
+        bringing = Text.pack "20 Forest\nScheme Deck\n2 Scheme 1\n"
+        options archenemy = Lobby.noOptions {Lobby.archenemy = archenemy}
+        seats lists = NonEmpty.fromList [(Text.pack ("seat " <> show i), contents) | (i, contents) <- zip [1 :: Int ..] lists]
+        deal chosen' schemes = Identity.runIdentity . Lobby.schemeDealt pure chosen' (fmap scheme [1 .. schemes])
+        decksOf :: Either Text.Text (NonEmpty.NonEmpty (Text.Text, Text.Text)) -> Either Text.Text [[CardName.CardName]]
+        decksOf = fmap (fmap (Lobby.sideNames SideDeck.Scheme . snd) . NonEmpty.toList)
+        refused phrase = either (Text.isInfixOf (Text.pack phrase)) (const False)
+    Spec.it s "leaves the lists alone with Archenemy off, and refuses one bringing a scheme deck" $ do
+      Spec.assertEq s (deal (options Nothing) 30 (seats [list, list])) (Right (seats [list, list]))
+      Spec.assertBool s (refused "turn Archenemy on" (deal (options Nothing) 30 (seats [list, bringing]))) "refused, saying why"
+
+    Spec.it s "CR 904.3 deals the archenemy alone twenty schemes, two of a name at most, its main deck kept" $ do
+      let dealt = deal (options (Just 1)) 12 (seats [list, list, list])
+      Spec.assertEq s (decksOf dealt) (Right [[], fmap scheme ([1 .. 12] <> [1 .. 8]), []])
+      Spec.assertEq s (fmap (fmap (Lobby.mainEntries . snd) . NonEmpty.toList) dealt) (Right (replicate 3 [(20, CardName.MkCardName (Text.pack "Forest"))]))
+
+    Spec.it s "keeps the scheme deck the archenemy's list brings" $ do
+      Spec.assertEq s (decksOf (deal (options (Just 0)) 0 (seats [bringing, list]))) (Right [[scheme 1, scheme 1], []])
+
+    Spec.it s "CR 904.2a refuses a scheme deck another seat brings" $ do
+      Spec.assertBool s (refused "Only the archenemy" (deal (options (Just 0)) 30 (seats [list, bringing]))) "refused, saying why"
+
+    Spec.it s "refuses what the pool can't deal" $ do
+      Spec.assertBool s (refused "can't deal" (deal (options (Just 0)) 9 (seats [list, list]))) "twenty from nine names"
+      Spec.assertEq s (decksOf (deal (options (Just 0)) 10 (seats [list, list]))) (Right [fmap scheme ([1 .. 10] <> [1 .. 10]), []])
+
+    Spec.it s "CR 904.2 turns Archenemy on, the archenemy's seat chosen, the variant and CR 806.2's options left to it" $ do
+      let set event value = Lobby.update event (Text.pack value)
+          four = Lobby.update (Lobby.MkAdd Lobby.MkBot) Text.empty (Lobby.update (Lobby.MkAdd Lobby.MkBot) Text.empty lobby)
+          on = set Lobby.MkArchenemy "" (set Lobby.MkVariant "team-vs-team" four)
+          handled prefix l = Html.search (Text.isPrefixOf (Text.pack prefix) . Html.toText) (Lobby.view l) >>= \path -> Html.handler (Text.pack "change") path (Lobby.view l)
+          pairs :: [(Text.Text, Text.Text)] -> [(String, String)]
+          pairs = fmap (Bifunctor.bimap Text.unpack Text.unpack)
+      Spec.assertEqWith s "yours the archenemy's seat" (Lobby.archenemy (Lobby.options on)) (Just 0)
+      Spec.assertEqWith s "the switch and the seat menu" (fmap (`handled` on) ["<input id=\"option-archenemy\"", "<select class=\"deck-menu\" id=\"option-archenemy-seat\""]) [Just Lobby.MkArchenemy, Just Lobby.MkArchenemySeat]
+      Spec.assertEqWith s "no seat menu with Archenemy off" (handled "<select class=\"deck-menu\" id=\"option-archenemy-seat\"" four) Nothing
+      Spec.assertEqWith s "no variant, team or attack option" (fmap (`handled` on) ["<select class=\"deck-menu\" id=\"option-variant\"", "<select class=\"deck-menu\" id=\"team-0\"", "<select class=\"deck-menu\" id=\"option-attack\""]) [Nothing, Nothing, Nothing]
+      Spec.assertEqWith s "CR 904.2: no option but Parun.Engine.Archenemy.setUp's" (Lobby.settings on) (Right GameSettings.plain)
+      Spec.assertEqWith s "a seat chosen" (Lobby.archenemy (Lobby.options (set Lobby.MkArchenemySeat "2" on))) (Just 2)
+      Spec.assertEqWith s "a seat past the table" (set Lobby.MkArchenemySeat "4" on) on
+      Spec.assertEqWith s "told the archenemy" (lookup "Archenemy" (pairs (Lobby.told (set Lobby.MkArchenemySeat "2" on)))) (Just "Player 3")
+      Spec.assertEqWith s "the seats after one unseated move up" (Lobby.archenemy (Lobby.options (Lobby.update (Lobby.MkDrop 0) Text.empty (set Lobby.MkArchenemySeat "3" on)))) (Just 2)
+      Spec.assertEqWith s "the archenemy unseated, yours" (Lobby.archenemy (Lobby.options (Lobby.update (Lobby.MkDrop 1) Text.empty (set Lobby.MkArchenemySeat "2" on)))) (Just 0)
+      Spec.assertEqWith s "toggled off" (Lobby.archenemy (Lobby.options (set Lobby.MkArchenemy "" on))) Nothing
+      Spec.assertBool s (Either.isLeft (Lobby.settings (set Lobby.MkArchenemy "" alone))) "CR 904.2: a seat against the archenemy"
 
   Spec.describe s "dealt" $ do
     Spec.it s "never deals a bot a deck smaller than its fewest" $ do
