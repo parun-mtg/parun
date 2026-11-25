@@ -7,6 +7,7 @@ module Parun.Web.Home where
 
 import qualified Data.List as List
 import qualified Data.List.NonEmpty as NonEmpty
+import qualified Data.Map.Strict as Map
 import qualified Data.Maybe as Maybe
 import qualified Data.Set as Set
 import qualified Data.Text as Text
@@ -74,9 +75,9 @@ data Choice
   | MkReplays
   | -- | This replay, from its start.
     MkWatch Replay.Source
-  | -- | Plays on from this position of this replay, as this seat or every
-    -- seat (Replay.MkBranch).
-    MkPlayOn Replay.Source Natural (Maybe PlayerId.PlayerId)
+  | -- | Plays on from this position of this replay, each seat filled so
+    -- (Replay.MkBranch).
+    MkPlayOn Replay.Source Natural (Map.Map PlayerId.PlayerId Replay.Filling)
   | -- | The lobby, on these decks: yours, then each bot's.
     MkPlayAgain (NonEmpty.NonEmpty Text.Text)
   deriving (Eq, Show)

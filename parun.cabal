@@ -4183,6 +4183,7 @@ library web
     Parun.Web.Bar
     Parun.Web.BarSpec
     Parun.Web.Board
+    Parun.Web.BotSettings
     Parun.Web.Builder
     Parun.Web.BuilderSpec
     Parun.Web.Card

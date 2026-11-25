@@ -22,6 +22,7 @@ import qualified Parun.Types.PlayOptions as PlayOptions
 import qualified Parun.Types.PlayerId as PlayerId
 import qualified Parun.Types.RangeOfInfluence as RangeOfInfluence
 import qualified Parun.Web.Attribute as Attribute
+import qualified Parun.Web.BotSettings as BotSettings
 import qualified Parun.Web.DeckBrowser as DeckBrowser
 import qualified Parun.Web.Diff as Diff
 import qualified Parun.Web.Html as Html
@@ -147,7 +148,7 @@ spec s = Spec.describe s "Parun.Web.Lobby" $ do
           styled = set (Lobby.MkPersona 1) "control" (set (Lobby.MkDifficulty 0) "easy" (set (Lobby.MkPersona 0) "aggro" two))
           page = Lobby.view styled
           changed field = Html.search (Text.isPrefixOf (Text.pack ("<select class=\"" <> field)) . Html.toText) page >>= \path -> Html.handler (Text.pack "change") path page
-      Spec.assertEqWith s "unless told otherwise" (Lobby.botAt 0 (Lobby.bots two), Lobby.botAt 1 (Lobby.bots two)) (Lobby.defaultBot, Lobby.defaultBot)
+      Spec.assertEqWith s "unless told otherwise" (Lobby.botAt 0 (Lobby.bots two), Lobby.botAt 1 (Lobby.bots two)) (BotSettings.defaultBot, BotSettings.defaultBot)
       Spec.assertEqWith s "each its own" (Lobby.botAt 0 (Lobby.bots styled), Lobby.botAt 1 (Lobby.bots styled)) ((Difficulty.MkEasy, Persona.MkAggro), (Difficulty.MkHard, Persona.MkControl))
       Spec.assertEqWith s "unknown" (set (Lobby.MkDifficulty 0) "impossible" styled) styled
       Spec.assertEqWith s "no such seat" (set (Lobby.MkDifficulty 2) "easy" styled) styled

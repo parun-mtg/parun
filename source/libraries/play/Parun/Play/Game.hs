@@ -14,6 +14,7 @@ import qualified Data.Map.Strict as Map
 import qualified Data.Text as Text
 import Numeric.Natural (Natural)
 import qualified Parun.Engine.Driver as Driver
+import qualified Parun.Engine.Script as Script
 import qualified Parun.Exceptions.InvalidCorpus as InvalidCorpus
 import qualified Parun.Interpreter as Interpreter
 import qualified Parun.Play.Bot as Bot
@@ -49,6 +50,14 @@ bot registry = Answerer.MkAnswerer $ \asked -> do
     Prompt.ChooseCardName {} -> Interpreter.fetched halted (Interpreter.cardNames (reference registry))
     _ -> pure []
   Answerer.unwrap (Driver.seated (Bot.bot names) Chance.chance) asked
+
+-- | The goldfish: passes priority every time and takes the least eventful
+-- answer to every other prompt its seat decides (Script.passing), naming a
+-- card as the random bot does ('bot'); chance answers the rest.
+goldfish :: (Monad m) => Registry.Registry m -> Answerer.Answerer (Asked.Asked GameState.GameState) (Play m)
+goldfish registry = Answerer.MkAnswerer $ \asked -> case Asked.prompt asked of
+  Prompt.ChooseCardName {} -> Answerer.unwrap (bot registry) asked
+  _ -> Answerer.unwrap (Driver.seated (Answerer.MkAnswerer (pure . Script.passing . Asked.prompt)) Chance.chance) asked
 
 -- | A program speaking the protocol (Protocol.Exchange): each request out,
 -- its reply back, Nothing at the end of input.

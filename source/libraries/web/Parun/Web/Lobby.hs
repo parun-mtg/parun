@@ -45,6 +45,7 @@ import qualified Parun.Types.PlayOptions as PlayOptions
 import qualified Parun.Types.PlayerId as PlayerId
 import qualified Parun.Types.RangeOfInfluence as RangeOfInfluence
 import qualified Parun.Types.RuleFamily as RuleFamily
+import qualified Parun.Web.BotSettings as BotSettings
 import qualified Parun.Web.Clock as Clock
 import qualified Parun.Web.DeckBrowser as DeckBrowser
 import qualified Parun.Web.Element as Element
@@ -78,7 +79,7 @@ data Lobby = MkLobby
     -- | Whether you are ready to start a game with the players invited.
     ready :: Bool,
     -- | How strongly each bot plays and what it values in a position
-    -- (Parun.Play.Opponent), by its place in 'theirs'; 'defaultBot' in a
+    -- (Parun.Play.Opponent), by its place in 'theirs'; 'BotSettings.defaultBot' in a
     -- place absent ('botAt').
     bots :: Map.Map Int (Difficulty.Difficulty, Persona.Persona),
     -- | Whether a game is in progress, set aside for this lobby, which
@@ -282,13 +283,9 @@ new =
 holding :: Text.Text -> Lobby
 holding name = browsed (\b -> b {DeckBrowser.shelf = DeckBrowser.shelfOf name}) new {mine = Just name}
 
--- | How a bot plays unless told otherwise: as `parun play`'s does.
-defaultBot :: (Difficulty.Difficulty, Persona.Persona)
-defaultBot = (Difficulty.MkHard, Persona.MkBalanced)
-
 -- | How the bot at this place in 'theirs' plays, of these 'bots'.
 botAt :: Int -> Map.Map Int (Difficulty.Difficulty, Persona.Persona) -> (Difficulty.Difficulty, Persona.Persona)
-botAt = Map.findWithDefault defaultBot
+botAt = Map.findWithDefault BotSettings.defaultBot
 
 -- | The lobby with its deck browser changed.
 browsed :: (DeckBrowser.DeckBrowser -> DeckBrowser.DeckBrowser) -> Lobby -> Lobby
@@ -333,8 +330,7 @@ mostOthers = 3
 -- ('botAt'), the seats but the player's taking the places in seating order.
 playOptions :: Map.Map Int (Difficulty.Difficulty, Persona.Persona) -> Natural -> PlayerId.PlayerId -> Set.Set PlayerId.PlayerId -> PlayOptions.PlayOptions
 playOptions styles count you people =
-  let seatPlay place = case botAt place styles of
-        (level, style) -> (Opponent.budgetAt level PlayOptions.budget, Opponent.weightsOf style)
+  let seatPlay place = BotSettings.botPlay (botAt place styles)
       others = filter ((/= you) . Command.idOf) [1 .. count]
    in PlayOptions.none
         { PlayOptions.json = True,
@@ -695,7 +691,7 @@ seatsView lobby =
               Just invite -> [inviteView i invite (remove i)]
               Nothing -> case Map.lookup i (locals lobby) of
                 Just sitting -> [seat (MkTheirs i) (Element.string (if sitting == Link.MkYours then "Y" else "P")) held [] (remove i)]
-                Nothing -> [seat (MkTheirs i) (Icon.icon [] Icon.MkBot) held [botView i (botAt i (bots lobby))] (remove i)]
+                Nothing -> [seat (MkTheirs i) (Icon.icon [] Icon.MkBot) held [BotSettings.botView (show i) (MkDifficulty i) (MkPersona i) (botAt i (bots lobby))] (remove i)]
         | (i, held) <- zip [0 ..] others
         ]
       <> [ Element.el
@@ -744,33 +740,6 @@ seatsView lobby =
               ]
               : below
                 <> [Element.el "div" ["seat-actions"] [] extra | not (null extra)]
-
--- | How the bot at this place in 'theirs' plays: its difficulty and its
--- persona, each a choice of those named (Parun.Play.Opponent).
-botView :: Int -> (Difficulty.Difficulty, Persona.Persona) -> Html.Html Event
-botView i (level, style) =
-  Element.el
-    "div"
-    ["bot-settings"]
-    []
-    [ Element.el "label" [] [Element.attr "for" (Text.pack levelId)] [Element.string "Level"],
-      choice levelId "bot-difficulty" (MkDifficulty i) Opponent.difficultyName level,
-      Element.el "label" [] [Element.attr "for" (Text.pack styleId)] [Element.string "Style"],
-      choice styleId "bot-persona" (MkPersona i) Opponent.personaName style
-    ]
-  where
-    levelId = "bot-difficulty-" <> show i
-    styleId = "bot-persona-" <> show i
-    choice :: (Bounded a, Enum a, Eq a) => String -> String -> Event -> (a -> (String, String)) -> a -> Html.Html Event
-    choice field kind event nameOf current =
-      Element.el
-        "select"
-        [kind, "deck-menu"]
-        [Element.attr "id" (Text.pack field), Element.on "change" event]
-        [ Element.el "option" [] ([Element.attr "value" (Text.pack value)] <> [Element.attr "selected" Text.empty | option == current]) [Element.string label]
-        | option <- [minBound .. maxBound],
-          let (value, label) = nameOf option
-        ]
 
 -- | The game's options: ante, the single planar deck, each seat's clock,
 -- and at three seats or more CR 806.2's attack option and range of

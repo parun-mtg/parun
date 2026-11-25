@@ -277,6 +277,24 @@ spec s registry = Spec.describe s "Play" $ do
          in Spec.assertEq s (Wording.departures Nothing gs) [Wording.player loser <> Text.pack " lost the game: drew from an empty library."]
       outcome -> Spec.assertBool s False ("won: " <> show (fmap fst outcome))
 
+  Spec.it s "the goldfish never casts a spell or plays a land" $ do
+    matchup <- BotSpec.bears s registry
+    let seats :: Map.Map PlayerId.PlayerId (Answerer.Answerer (Asked.Asked GameState.GameState) (Game.Play Identity.Identity))
+        seats = Map.fromList [(S.alice, Game.goldfish (S.fixtureRegistry [])), (S.bob, Game.bot (S.fixtureRegistry []))]
+        ownedBy pid gs = [oid | oid <- Set.toList (GameState.battlefield gs), Just o <- [Map.lookup oid (GameState.objects gs)], Object.owner o == pid]
+    case Identity.runIdentity (Game.run (S.fixtureRegistry []) GameSettings.plain Limits.standard [] seats (S.seeded 1) Map.empty matchup) of
+      Right (_, gs) -> Spec.assertEqWith s "the goldfish's permanents, and the bot's" (null (ownedBy S.alice gs), null (ownedBy S.bob gs)) (True, False)
+      Left reason -> Spec.assertBool s False ("finished: " <> Text.unpack reason)
+
+  Spec.it s "CR 201.4 the goldfish names a card the reference holds and the choice allows" $ do
+    reference <- mapM (S.cardOf s registry) ["Forest", "Goblin Piker"]
+    let fixture :: Registry.Registry Identity.Identity
+        fixture = S.fixtureRegistry reference
+        naming = Prompt.ChooseCardName (Decider.MkDecider S.alice) S.alice (ObjectId.MkObjectId 7) CastProhibitionSpec.nonBasicLandName Seq.empty
+        asked = Asked.MkAsked {Asked.enclosing = [], Asked.game = Setup.emptyGame S.bothPlayers, Asked.prompt = naming}
+        named = Identity.runIdentity (Game.playing (S.seeded 1) (Answerer.unwrap (Game.consulting fixture (Map.singleton S.alice (Game.goldfish fixture))) asked))
+    Spec.assertEq s named (Right (CardName.MkCardName (Text.pack "Goblin Piker")))
+
   Spec.it s "CR 104.4a a game of one seat runs until that player leaves, a draw" $ do
     alone <- NonEmpty.fromList . NonEmpty.take 1 <$> BotSpec.sevens s registry
     let bots :: Map.Map PlayerId.PlayerId (Answerer.Answerer (Asked.Asked GameState.GameState) (Game.Play Identity.Identity))

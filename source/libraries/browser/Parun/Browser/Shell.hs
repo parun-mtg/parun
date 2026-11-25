@@ -153,9 +153,9 @@ data Next
   | MkToReplays
   | -- | This replay, at this position.
     MkToReplay Web.Replay.Source Natural
-  | -- | A game played on from this position of this replay, as this seat or
-    -- every seat (Web.Replay.MkBranch).
-    MkToPlayOn Web.Replay.Source Natural (Maybe PlayerId.PlayerId)
+  | -- | A game played on from this position of this replay, each seat
+    -- filled so (Web.Replay.MkBranch).
+    MkToPlayOn Web.Replay.Source Natural (Map.Map PlayerId.PlayerId Web.Replay.Filling)
   | -- | Another browser's game at this stage, joined with the code its link
     -- carries.
     MkToJoin Route.Stage Text.Text
@@ -202,7 +202,7 @@ opening build' = do
   kept <- Browser.keptGame
   let -- A replay played on picks up the game kept only if it is that one.
       restoring game = case route of
-        Route.MkReplay (Route.MkPlayingOn seat) source at | Link.origin game /= Link.MkReplayed source at seat -> MkToPlayOn source at seat
+        Route.MkReplay (Route.MkPlayingOn filled) source at | Link.origin game /= Link.MkReplayed source at filled -> MkToPlayOn source at filled
         _ -> MkToRestore game
   case (offered, route) of
     (Just code, Route.MkJoin stage) | not (null code) -> pure (MkToJoin stage (Text.pack code))
@@ -225,7 +225,7 @@ nextOf route = case route of
   Route.MkBuild deck -> MkToBuilder deck MkToHome
   Route.MkReplays -> MkToReplays
   Route.MkReplay Route.MkWatching source at -> MkToReplay source at
-  Route.MkReplay (Route.MkPlayingOn seat) source at -> MkToPlayOn source at seat
+  Route.MkReplay (Route.MkPlayingOn filled) source at -> MkToPlayOn source at filled
 
 -- | The route naming where a screen leads: a game's, the screen it is
 -- reloaded into (the lobby, else the home screen, which picks up a game
@@ -240,11 +240,11 @@ routeOf next = case next of
   MkToBuilder deck _ -> Route.MkBuild deck
   MkToReplays -> Route.MkReplays
   MkToReplay source at -> Route.MkReplay Route.MkWatching source at
-  MkToPlayOn source at seat -> Route.MkReplay (Route.MkPlayingOn seat) source at
+  MkToPlayOn source at filled -> Route.MkReplay (Route.MkPlayingOn filled) source at
   MkToJoin stage _ -> Route.MkJoin stage
   MkToRestore kept -> case Link.origin kept of
     Link.MkLobby _ -> Route.MkHome
-    Link.MkReplayed source at seat -> Route.MkReplay (Route.MkPlayingOn seat) source at
+    Link.MkReplayed source at filled -> Route.MkReplay (Route.MkPlayingOn filled) source at
   MkToAbandoned _ _ -> Route.MkPlay
   MkToPaused -> Route.MkHome
 
@@ -266,12 +266,12 @@ follow shell next =
     MkToBuilder deck back -> builder shell deck back >>= follow shell
     MkToReplays -> replays shell >>= follow shell
     MkToReplay source at -> replay shell source at >>= follow shell
-    MkToPlayOn source at seat -> playOnFrom shell source at seat Nothing >>= follow shell
+    MkToPlayOn source at filled -> playOnFrom shell source at filled Nothing >>= follow shell
     MkToJoin stage code -> joinGame shell stage code >>= follow shell
     -- Every link of a game picked up is down, so any number serves.
     MkToRestore kept -> case Link.origin kept of
       Link.MkLobby dealt -> play shell (Link.seats dealt) (Link.settings dealt) (Link.clock dealt) (Map.fromList [(i, i) | i <- Link.invited dealt]) (Link.locals dealt) (Just kept) >>= follow shell
-      Link.MkReplayed source at seat -> playOnFrom shell source at seat (Just kept) >>= follow shell
+      Link.MkReplayed source at filled -> playOnFrom shell source at filled (Just kept) >>= follow shell
 
 -- | A new lobby with this deck yours, else the deck you chose last, if any.
 lobbyHolding :: Shell -> Maybe Text.Text -> IO Lobby.Lobby
@@ -293,7 +293,7 @@ afterHome outcome = case outcome of
   Home.MkGo (Home.MkBrowseDecks deck) -> MkToDecks deck
   Home.MkGo Home.MkReplays -> MkToReplays
   Home.MkGo (Home.MkWatch source) -> MkToReplay source 0
-  Home.MkGo (Home.MkPlayOn source at seat) -> MkToPlayOn source at seat
+  Home.MkGo (Home.MkPlayOn source at filled) -> MkToPlayOn source at filled
   Home.MkGo (Home.MkPlayAgain decks) -> MkToMatchup decks
   _ -> MkToHome
 
@@ -1147,7 +1147,7 @@ leaveFor shell chosen played board = Browser.aside (page shell) (go paused)
       MkToReplay source at -> located next >> replay shell source at >>= visit
       MkToMatchup decks -> located next >> lobby shell (matchup decks) {Lobby.paused = True} [] Nothing >>= visit
       MkToBuilder deck back -> located next >> builder shell deck back >>= visit
-      MkToPlayOn source at seat -> go paused {Home.confirming = Just (Home.MkPlayOn source at seat)}
+      MkToPlayOn source at filled -> go paused {Home.confirming = Just (Home.MkPlayOn source at filled)}
       MkToDecks deck -> located next >> decksScreen shell deck >>= visit
       MkToLobby deck -> located next >> lobbyHolding shell deck >>= \shown -> lobby shell shown {Lobby.paused = True} [] Nothing >>= visit
       MkToAbandoned _ _ -> IORef.writeIORef chosen next >> pure Hotseat.MkAbandon
@@ -1209,30 +1209,28 @@ replay shell source at = opened shell source $ \reg title seen scenario -> do
   exit <- Replay.viewer (page shell) moved reg title seen scenario at
   pure $ case exit of
     Replay.MkToList -> MkToReplays
-    Replay.MkPlayOn from seat -> MkToPlayOn source from seat
+    Replay.MkPlayOn from filled -> MkToPlayOn source from filled
 
--- | A game played on from a position of the replay as `seat`, the bots
--- playing as the lobby last left them (opponent), or every seat here, or
--- that game picked up where `resuming` stopped, its bots playing as it was
--- kept, then how it ended, with the way back to the position and to play
--- on again; given up from the home screen for another game, that one. The
--- game is kept until it is over (Link.saved), for a reload to pick up.
-playOnFrom :: Shell -> Web.Replay.Source -> Natural -> Maybe PlayerId.PlayerId -> Maybe Link.Saved -> IO Next
-playOnFrom shell source at seat resuming = opened shell source $ \reg _ played scenario -> do
+-- | A game played on from a position of the replay, each seat filled as
+-- `filled` fills it, or that game picked up where `resuming` stopped, then
+-- how it ended, with the way back to the position and to play on again;
+-- given up from the home screen for another game, that one. The game is
+-- kept until it is over (Link.saved), for a reload to pick up; its route
+-- holds how each seat is filled, so it keeps no lobby bots.
+playOnFrom :: Shell -> Web.Replay.Source -> Natural -> Map.Map PlayerId.PlayerId Web.Replay.Filling -> Maybe Link.Saved -> IO Next
+playOnFrom shell source at filled resuming = opened shell source $ \reg _ played scenario -> do
   chosen <- IORef.newIORef MkToHome
-  Monad.forM_ resuming $ \game -> IORef.writeIORef (opponent shell) (Link.bots game)
-  bots <- IORef.readIORef (opponent shell)
   key <- maybe Key.fresh (pure . Link.seed) resuming
-  Monad.when (Maybe.isNothing resuming) . Browser.keepGame $ Link.saved (build shell) (Link.MkSaved key (Link.MkReplayed source at seat) bots [])
+  Monad.when (Maybe.isNothing resuming) . Browser.keepGame $ Link.saved (build shell) (Link.MkSaved key (Link.MkReplayed source at filled) Map.empty [])
   parsed <- foldMap LazyMap.elems . cards <$> IORef.readIORef (loaded shell)
-  ended <- Replay.playOn (page shell) reg parsed (tableOf shell) (level shell) bots seat scenario at key (foldMap Link.replies resuming) (Browser.keepReply . Link.savedReply) (leaveFor shell chosen (foldMap (fmap History.deck . History.seats) played))
+  ended <- Replay.playOn (page shell) reg parsed (tableOf shell) (level shell) filled scenario at key (foldMap Link.replies resuming) (Browser.keepReply . Link.savedReply) (leaveFor shell chosen (foldMap (fmap History.deck . History.seats) played))
   Browser.forgetGame
   case ended of
     Nothing -> IORef.readIORef chosen
     Just said' -> do
       let said = foldMap (Maybe.maybeToList . History.drift (build shell)) played <> said'
       let go = do
-            Browser.display (page shell) . fmap Screen.MkReplay $ Web.Replay.ended seat said
+            Browser.display (page shell) . fmap Screen.MkReplay $ Web.Replay.ended filled said
             woke <- await shell
             case woke of
               MkTapped (Screen.MkReplay Web.Replay.MkResumeReplay) _ -> pure (MkToReplay source at)

@@ -17,14 +17,17 @@ import Numeric.Natural (Natural)
 import qualified Parun.Codec.Phase as Codec.Phase
 import qualified Parun.Extra.Natural as Natural
 import qualified Parun.Play.Offer as Offer
+import qualified Parun.Play.Opponent as Opponent
 import qualified Parun.Play.Protocol as Protocol
 import qualified Parun.Play.Wording as Wording
 import qualified Parun.Types.Answer as Answer
+import qualified Parun.Types.Difficulty as Difficulty
 import qualified Parun.Types.Entry as Entry
 import qualified Parun.Types.Label as Label
 import qualified Parun.Types.Move as Move
 import qualified Parun.Types.ObjectId as ObjectId
 import qualified Parun.Types.ObjectView as ObjectView
+import qualified Parun.Types.Persona as Persona
 import qualified Parun.Types.PlayerId as PlayerId
 import qualified Parun.Types.PlayerView as PlayerView
 import qualified Parun.Types.Question as Question
@@ -34,6 +37,7 @@ import qualified Parun.Types.Timed as Timed
 import qualified Parun.Types.When as When
 import qualified Parun.Web.Bar as Bar
 import qualified Parun.Web.Board as Board
+import qualified Parun.Web.BotSettings as BotSettings
 import qualified Parun.Web.Card as Card
 import qualified Parun.Web.Element as Element
 import qualified Parun.Web.History as History
@@ -60,9 +64,14 @@ data Event
     MkSearch
   | -- | Opens this scenario.
     MkOpen Text.Text
-  | -- | Plays on from the position shown as this seat, the search bot
-    -- playing every other, else every seat by hand at this screen.
-    MkBranch (Maybe PlayerId.PlayerId)
+  | -- | Plays on from the position shown, each seat filled so.
+    MkBranch (Map.Map PlayerId.PlayerId Filling)
+  | -- | Fills this seat as the value chosen names (fillingNamed).
+    MkFill PlayerId.PlayerId
+  | -- | Sets the difficulty of the bot filling this seat to the one named.
+    MkLevel PlayerId.PlayerId
+  | -- | Sets the persona of the bot filling this seat to the one named.
+    MkStyle PlayerId.PlayerId
   | -- | Back from a replay to the list of scenarios.
     MkBack
   | -- | Back from a game played on to the replay where it began.
@@ -80,6 +89,60 @@ data Event
   | MkConfirmForget
   | MkCancelForget
   deriving (Eq, Show)
+
+-- | How a seat is filled when the replay is played on from a position.
+--
+-- Not implemented: a seat filled by a player invited from another browser
+-- (#9777).
+data Filling
+  = -- | By the person at this screen.
+    MkHere
+  | -- | By the search bot at this difficulty and persona (Parun.Play.Opponent).
+    MkBot Difficulty.Difficulty Persona.Persona
+  | -- | By a goldfish that only passes (Parun.Play.Game.goldfish).
+    MkGoldfish
+  deriving (Eq, Show)
+
+-- | Each kind of filling as the seat's menu values and shows it, a bot as
+-- the lobby's default one ('BotSettings.defaultBot').
+fillings :: [(Filling, (String, String))]
+fillings =
+  [ (MkHere, ("here", "This screen")),
+    (uncurry MkBot BotSettings.defaultBot, ("bot", "Bot")),
+    (MkGoldfish, ("goldfish", "Goldfish (only passes)"))
+  ]
+
+-- | The kind of filling the seat's menu value names.
+fillingNamed :: Text.Text -> Maybe Filling
+fillingNamed value = fst <$> List.find ((== Text.unpack value) . fst . snd) fillings
+
+-- | Whether two fillings are of one kind, whatever a bot's settings.
+sameKind :: Filling -> Filling -> Bool
+sameKind one two = case (one, two) of
+  (MkBot {}, MkBot {}) -> True
+  _ -> one == two
+
+-- | How a seat is filled to play on: as chosen, else by the person at this
+-- screen if it is the seat viewed as, else by the lobby's default bot.
+fillingOf :: Frame -> PlayerId.PlayerId -> Filling
+fillingOf frame pid = Map.findWithDefault (if pid == viewer frame then MkHere else uncurry MkBot BotSettings.defaultBot) pid (chosenFillings frame)
+
+-- | How every seat is filled to play on ('fillingOf').
+plan :: Frame -> Map.Map PlayerId.PlayerId Filling
+plan frame = Map.fromList [(pid, fillingOf frame pid) | (pid, _) <- seats frame]
+
+-- | The fillings chosen once a seat's filling, or its bot's difficulty or
+-- persona, is chosen as `value` names; any other tap changes none.
+refilled :: Event -> Text.Text -> Frame -> Map.Map PlayerId.PlayerId Filling
+refilled event value frame =
+  let chosen = chosenFillings frame
+      set pid f = Map.insert pid f chosen
+      named nameOf = Opponent.named nameOf (Text.unpack value)
+   in case event of
+        MkFill pid -> maybe chosen (\f -> if sameKind f (fillingOf frame pid) then chosen else set pid f) (fillingNamed value)
+        MkLevel pid | MkBot _ style <- fillingOf frame pid -> maybe chosen (\level -> set pid (MkBot level style)) (named Opponent.difficultyName)
+        MkStyle pid | MkBot level _ <- fillingOf frame pid -> maybe chosen (set pid . MkBot level) (named Opponent.personaName)
+        _ -> chosen
 
 -- | Where a step button goes from a position.
 data Step
@@ -196,7 +259,10 @@ data Frame = MkFrame
     written :: Map.Map ObjectId.ObjectId [Text.Text],
     -- | The key of the game finished here replayed (History.key), to
     -- download; Nothing for a scenario.
-    kept :: Maybe Text.Text
+    kept :: Maybe Text.Text,
+    -- | How each seat was chosen to be filled to play on; 'fillingOf' a
+    -- seat absent.
+    chosenFillings :: Map.Map PlayerId.PlayerId Filling
   }
 
 -- | The page for a frame: the table, and beside it the replay's controls.
@@ -328,12 +394,20 @@ controls frame =
           "div"
           ["replay-actions"]
           []
-          ( [ Element.button ["branch"] (MkBranch (Just (viewer frame))) [Element.text (Text.pack "Play on as " <> Board.name (viewer frame))],
-              Element.button ["branch"] (MkBranch Nothing) [Element.string "Play on, every seat"]
+          ( [ let anyHere = MkHere `elem` plan frame
+               in Element.el
+                    "button"
+                    ["branch"]
+                    ( [Element.attr "type" (Text.pack "button"), Element.on "click" (MkBranch (plan frame))]
+                        <> [Element.attr "disabled" Text.empty | not anyHere]
+                        <> [Element.attr "title" (Text.pack "Fill at least one seat at this screen") | not anyHere]
+                    )
+                    [Element.string "Play on from here"]
             ]
               <> [Element.button ["download"] (MkDownload k) [Element.string "Download"] | k <- Maybe.maybeToList (kept frame)]
               <> [Element.button ["back"] MkBack [Element.string "All replays"]]
           ),
+        fillingsView frame,
         Element.el "p" ["subhead"] [] [Element.string "View as"],
         Element.el
           "div"
@@ -344,6 +418,33 @@ controls frame =
             let table = tableName frame pid
           ]
       ]
+
+-- | How each seat is filled to play on: a menu of the kinds of filling
+-- under the seat's name, and a bot's difficulty and persona beneath it.
+fillingsView :: Frame -> Html.Html Event
+fillingsView frame =
+  Element.el "fieldset" ["play-on-seats"] [] $
+    Element.el "legend" ["subhead"] [] [Element.string "Play on with"]
+      : concat
+        [ Element.el
+            "div"
+            ["play-on-seat"]
+            []
+            [ Element.el "label" [] [Element.attr "for" (Text.pack field)] [Element.text label],
+              Element.el
+                "select"
+                ["play-on-filling", "deck-menu"]
+                [Element.attr "id" (Text.pack field), Element.on "change" (MkFill pid)]
+                [ Element.el "option" [] ([Element.attr "value" (Text.pack value)] <> [Element.attr "selected" Text.empty | sameKind kind filling]) [Element.string shown]
+                | (kind, (value, shown)) <- fillings
+                ]
+            ]
+            : [BotSettings.botView ("seat-" <> show seat) (MkLevel pid) (MkStyle pid) (level, style) | MkBot level style <- [filling]]
+        | (pid, label) <- seats frame,
+          let seat = PlayerId.unwrap pid + 1
+              field = "play-on-" <> show seat
+              filling = fillingOf frame pid
+        ]
 
 -- | What the run does at the position: the entry it takes, in a line, then
 -- the question it answers there (drawn dead for the seat asked, since a
@@ -562,9 +663,9 @@ scenarioList typed' listedScenarios =
 
 -- | How a game played on from a position ended (Parun.Browser.Replay.playOn),
 -- with buttons back to that position and to play on from it again, as
--- `seat` played on (MkBranch).
-ended :: Maybe PlayerId.PlayerId -> [Text.Text] -> Html.Html Event
-ended seat said =
+-- each seat filled as `filled` (MkBranch).
+ended :: Map.Map PlayerId.PlayerId Filling -> [Text.Text] -> Html.Html Event
+ended filled said =
   Element.el
     "main"
     ["message", "branch-ended"]
@@ -575,7 +676,7 @@ ended seat said =
                ["ending-actions"]
                []
                [ Element.button [] MkResumeReplay [Element.string "Back to the replay"],
-                 Element.button ["primary"] (MkBranch seat) [Element.string "Play on again"]
+                 Element.button ["primary"] (MkBranch filled) [Element.string "Play on again"]
                ]
            ]
     )

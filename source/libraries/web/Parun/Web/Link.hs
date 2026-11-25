@@ -342,9 +342,9 @@ data Saved = MkSaved
 data Origin
   = -- | Dealt from the lobby.
     MkLobby Dealt
-  | -- | Played on from this position of this replay, as this seat or every
-    -- seat (Parun.Browser.Replay.playOn).
-    MkReplayed Web.Replay.Source Natural (Maybe PlayerId.PlayerId)
+  | -- | Played on from this position of this replay, each seat filled so
+    -- (Parun.Browser.Replay.playOn).
+    MkReplayed Web.Replay.Source Natural (Map.Map PlayerId.PlayerId Web.Replay.Filling)
   deriving (Eq, Show)
 
 -- | A game dealt from the lobby: each seat's deck as a label and its list's

@@ -17,7 +17,6 @@ import qualified Data.List as List
 import qualified Data.List.NonEmpty as NonEmpty
 import qualified Data.Map.Strict as Map
 import qualified Data.Maybe as Maybe
-import qualified Data.Set as Set
 import qualified Data.Text as Text
 import Numeric.Natural (Natural)
 import qualified Parun.Browser as Browser
@@ -39,14 +38,12 @@ import qualified Parun.Types.Answerer as Answerer
 import qualified Parun.Types.Board as Board
 import qualified Parun.Types.Card as Card
 import qualified Parun.Types.CardName as CardName
-import qualified Parun.Types.Difficulty as Difficulty
 import qualified Parun.Types.Entrant as Entrant
 import qualified Parun.Types.GameSettings as GameSettings
 import qualified Parun.Types.GameState as GameState
 import qualified Parun.Types.Key as Key.Type
 import qualified Parun.Types.Label as Label
 import qualified Parun.Types.LegalityTable as LegalityTable
-import qualified Parun.Types.Persona as Persona
 import qualified Parun.Types.PlayOptions as PlayOptions
 import qualified Parun.Types.PlayerId as PlayerId
 import qualified Parun.Types.PlayerView as PlayerView
@@ -57,11 +54,11 @@ import qualified Parun.Types.ScenarioFailure as ScenarioFailure
 import qualified Parun.Types.Seat as Seat
 import qualified Parun.Types.Start as Start
 import qualified Parun.Types.Stop as Stop
+import qualified Parun.Web.BotSettings as BotSettings
 import qualified Parun.Web.Card as Web.Card
 import qualified Parun.Web.Ending as Ending
 import qualified Parun.Web.History as History
 import qualified Parun.Web.Link as Link
-import qualified Parun.Web.Lobby as Lobby
 import qualified Parun.Web.Question as Web.Question
 import qualified Parun.Web.Replay as Web.Replay
 import qualified Parun.Web.Screen as Screen
@@ -97,9 +94,9 @@ decode name = do
 -- | Where the replay was left for.
 data Exit
   = MkToList
-  | -- | Plays on from this position, as this seat or every seat
+  | -- | Plays on from this position, each seat filled so
     -- (Web.Replay.MkBranch).
-    MkPlayOn Natural (Maybe PlayerId.PlayerId)
+    MkPlayOn Natural (Map.Map PlayerId.PlayerId Web.Replay.Filling)
 
 -- | The scenario at a position as a seat sees it (the player's of a game
 -- finished here, `played`, else the first), replayed afresh at each
@@ -113,7 +110,8 @@ data Exit
 -- resume from (Scenario.replay).
 -- While no tap waits, the runs go on ahead a position at a time, so a
 -- later position is kept before it is asked for; a step's taps
--- queued while the engine works add up to one move.
+-- queued while the engine works add up to one move. How each seat is to be
+-- filled to play on is kept as its menus choose (Web.Replay.refilled).
 viewer :: Browser.Page Screen.Event -> (Natural -> IO ()) -> Registry.Registry Identity.Identity -> Text.Text -> Maybe History.Game -> Scenario.Type.Scenario -> Natural -> IO Exit
 viewer page moved registry name played scenario given = do
   kept <- IORef.newIORef Map.empty
@@ -160,12 +158,12 @@ viewer page moved registry name played scenario given = do
       earlierOf at = fmap Maybe.catMaybes . Monad.forM (filter (< at) starts) $ \s -> do
         known <- Map.lookup s <$> IORef.readIORef kept
         maybe (fmap (either (const Nothing) (Just . Stop.state)) (run s)) (pure . Just) known
-      go playing at stop viewing reading = do
+      go playing at stop viewing reading fills = do
         earlier <- earlierOf at
-        let frame = (frameOf lookUp (lineNames viewing) name scenario seats count playing at stop viewing reading) {Web.Replay.earlier = fmap (PlayerView.Engine.viewFor viewing) earlier, Web.Replay.outcome = outcome, Web.Replay.kept = fmap History.key played}
+        let frame = (frameOf lookUp (lineNames viewing) name scenario seats count playing at stop viewing reading) {Web.Replay.earlier = fmap (PlayerView.Engine.viewFor viewing) earlier, Web.Replay.outcome = outcome, Web.Replay.kept = fmap History.key played, Web.Replay.chosenFillings = fills}
         Browser.display page . fmap Screen.MkReplay $ Web.Replay.view frame
         (tapped, value) <- awaiting
-        let moveTo target = if target == at then go playing at stop viewing Nothing else reach target >>= \next -> go (playing && target < count) target next viewing Nothing
+        let moveTo target = if target == at then go playing at stop viewing Nothing fills else reach target >>= \next -> go (playing && target < count) target next viewing Nothing fills
             readingOf object pinned = do
               board <- Web.Replay.board frame
               o <- Wording.recalled board object
@@ -176,21 +174,22 @@ viewer page moved registry name played scenario given = do
             Web.Replay.MkStep way -> do
               queued <- Browser.takeQueued page stepOf
               moveTo (Foldable.foldl' (Web.Replay.stepTo starts count) at (way : queued))
-            Web.Replay.MkScrub -> maybe (go playing at stop viewing reading) (moveTo . min count) (Read.readMaybe (Text.unpack value))
-            Web.Replay.MkPlay on -> go (on && at < count) at stop viewing reading
-            Web.Replay.MkSeat pid -> go playing at stop pid reading
-            Web.Replay.MkTable (Web.Question.MkRead object) -> go playing at stop viewing (readingOf object True <|> reading)
-            Web.Replay.MkTable (Web.Question.MkPeek object) | not held -> go playing at stop viewing (readingOf object False <|> reading)
-            Web.Replay.MkTable Web.Question.MkUnpeek | not held -> go playing at stop viewing Nothing
-            Web.Replay.MkTable Web.Question.MkClose -> go playing at stop viewing Nothing
-            Web.Replay.MkDownload k -> mapM_ (downloadPlayed k) played >> go playing at stop viewing reading
-            Web.Replay.MkBranch seat -> pure (MkPlayOn at seat)
+            Web.Replay.MkScrub -> maybe (go playing at stop viewing reading fills) (moveTo . min count) (Read.readMaybe (Text.unpack value))
+            Web.Replay.MkPlay on -> go (on && at < count) at stop viewing reading fills
+            Web.Replay.MkSeat pid -> go playing at stop pid reading fills
+            Web.Replay.MkTable (Web.Question.MkRead object) -> go playing at stop viewing (readingOf object True <|> reading) fills
+            Web.Replay.MkTable (Web.Question.MkPeek object) | not held -> go playing at stop viewing (readingOf object False <|> reading) fills
+            Web.Replay.MkTable Web.Question.MkUnpeek | not held -> go playing at stop viewing Nothing fills
+            Web.Replay.MkTable Web.Question.MkClose -> go playing at stop viewing Nothing fills
+            Web.Replay.MkDownload k -> mapM_ (downloadPlayed k) played >> go playing at stop viewing reading fills
+            Web.Replay.MkBranch filled -> pure (MkPlayOn at filled)
             Web.Replay.MkBack -> pure MkToList
-            _ -> go playing at stop viewing reading
-          _ -> go playing at stop viewing reading
+            -- A seat's filling, or its bot's settings, chosen.
+            _ -> go playing at stop viewing reading (Web.Replay.refilled event value frame)
+          _ -> go playing at stop viewing reading fills
       first = min count given
   stop <- reach first
-  go False first stop (maybe (PlayerId.MkPlayerId 0) fst (Maybe.listToMaybe (filter ((`elem` seen) . snd) labelled <> labelled))) Nothing
+  go False first stop (maybe (PlayerId.MkPlayerId 0) fst (Maybe.listToMaybe (filter ((`elem` seen) . snd) labelled <> labelled))) Nothing Map.empty
 
 -- | Saves the scenario file of the game finished here of this key to the
 -- player's device, named by when it ended (History.fileName).
@@ -198,27 +197,31 @@ downloadPlayed :: Text.Text -> History.Game -> IO ()
 downloadPlayed k game = Browser.download (History.fileName game) =<< Browser.playedScenario k
 
 -- | Plays on from a position of the scenario: the run takes the timeline
--- to that stop (Scenario.branch), then the seat `chosen` is answered on the
--- page as the hotseat answers one (Hotseat.exchange), and every other by
--- the search bot at the difficulty and persona its place has in `styles`
--- (Lobby.playOptions), dealing what it cannot see from the scenario's
--- format's pool among `cards` by the legality table `table` gives
--- (Command.pooled), the page live while it decides (Hotseat.breathing);
--- with no seat chosen, every seat is answered on the page. Chance comes
--- from `key`, the page plays at the auto-pass level kept in
--- `levelRef`, until the game ends; how it ended, told to the seat chosen,
--- why the bots could not deal, or nothing when it was given up from the
--- home screen (`leave`). Each bot remembers what the game's log shows it,
--- from the start (Search.remembering). The game picks up after the replies
--- in `stored`, each made again (Protocol.resumed), a bot's given back to it
--- (Game.remembered), and every reply made from there is given to `kept`.
-playOn :: Browser.Page Screen.Event -> Registry.Registry Identity.Identity -> [Either Text.Text Card.Card] -> IO (Either Text.Text LegalityTable.LegalityTable) -> IORef.IORef Web.Question.Level -> Map.Map Int (Difficulty.Difficulty, Persona.Persona) -> Maybe PlayerId.PlayerId -> Scenario.Type.Scenario -> Natural -> Key.Type.Key -> [R.Reply] -> (R.Reply -> IO ()) -> (Maybe PlayerView.PlayerView -> IO Hotseat.Leave) -> IO (Maybe [Text.Text])
-playOn page registry cards table levelRef styles chosen scenario given key stored kept leave = do
-  let you = Maybe.fromMaybe Hotseat.player chosen
-      numbered = seatsOf scenario
-      options = case chosen of
-        Nothing -> PlayOptions.none
-        Just _ -> Lobby.playOptions styles (Natural.length numbered) you Set.empty
+-- to that stop (Scenario.branch), then each seat is answered as `filled`
+-- fills it (Web.Replay.Filling), a seat absent at this screen: there, on
+-- the page as the hotseat answers one (Hotseat.exchange); by the search
+-- bot at its difficulty and persona (BotSettings.botPlay), dealing what it cannot
+-- see from the scenario's format's pool among `cards` by the legality table
+-- `table` gives (Command.pooled), the page live while it decides
+-- (Hotseat.breathing); or by the goldfish (Game.goldfish). Chance comes
+-- from `key`, the page plays at the auto-pass level kept in `levelRef`,
+-- until the game ends; how it ended, told to the seat at this screen
+-- where it is the only one, why the bots could not deal, or nothing when
+-- it was given up from the home screen (`leave`). Each bot remembers what
+-- the game's log shows it, from the start (Search.remembering). The game
+-- picks up after the replies in `stored`, each made again
+-- (Protocol.resumed), a bot's given back to it (Game.remembered), and
+-- every reply made from there is given to `kept`.
+playOn :: Browser.Page Screen.Event -> Registry.Registry Identity.Identity -> [Either Text.Text Card.Card] -> IO (Either Text.Text LegalityTable.LegalityTable) -> IORef.IORef Web.Question.Level -> Map.Map PlayerId.PlayerId Web.Replay.Filling -> Scenario.Type.Scenario -> Natural -> Key.Type.Key -> [R.Reply] -> (R.Reply -> IO ()) -> (Maybe PlayerView.PlayerView -> IO Hotseat.Leave) -> IO (Maybe [Text.Text])
+playOn page registry cards table levelRef filled scenario given key stored kept leave = do
+  let numbered = seatsOf scenario
+      fillingOf pid = Map.findWithDefault Web.Replay.MkHere pid filled
+      mine = [pid | (pid, _) <- numbered, fillingOf pid == Web.Replay.MkHere]
+      you = Maybe.fromMaybe Hotseat.player (Maybe.listToMaybe mine)
+      reader = case mine of
+        [only] -> Just only
+        _ -> Nothing
+      options = PlayOptions.none {PlayOptions.bots = Map.fromList [(PlayerId.unwrap pid + 1, BotSettings.botPlay (level, style)) | (pid, _) <- numbered, Web.Replay.MkBot level style <- [fillingOf pid]]}
       bot seat = Map.member (PlayerId.unwrap seat + 1) (PlayOptions.bots options)
       format = case Scenario.Type.start scenario of
         Start.FromDecks settings _ _ -> GameSettings.format settings
@@ -244,17 +247,18 @@ playOn page registry cards table levelRef styles chosen scenario given key store
               IORef.modifyIORef' seatRef (Hotseat.keepAsked request)
             here = Protocol.resumed next replayed kept (Hotseat.exchange lookUp page seatRef leave)
             breathe = Hotseat.breathing lookUp page seatRef leave botReading breathRef
-            answererOf pid = case prior of
-              Nothing -> Game.wired reference here
-              Just p -> Command.answerer reference here next kept (IORef.readIORef memories) (Search.keptBy (IORef.readIORef aims) (IORef.modifyIORef' aims) pid) breathe (Command.timed (PlayOptions.thinkLimit options)) options p (PlayerId.unwrap pid + 1)
+            answererOf pid = case (fillingOf pid, prior) of
+              (Web.Replay.MkGoldfish, _) -> Game.goldfish reference
+              (_, Nothing) -> Game.wired reference here
+              (_, Just p) -> Command.answerer reference here next kept (IORef.readIORef memories) (Search.keptBy (IORef.readIORef aims) (IORef.modifyIORef' aims) pid) breathe (Command.timed (PlayOptions.thinkLimit options)) options p (PlayerId.unwrap pid + 1)
             seats = Game.consulting reference (Map.fromList [(pid, answererOf pid) | (pid, _) <- numbered])
-            observers = [Search.remembering (IORef.modifyIORef' memories), Link.deciding (Hotseat.moving seatRef breathRef botReading [you] bot)]
+            observers = [Search.remembering (IORef.modifyIORef' memories), Link.deciding (Hotseat.moving seatRef breathRef botReading mine bot)]
             onward = Answerer.MkAnswerer (Driver.ask observers seats)
         outcome <- Game.playing (Generator.fromKey key) (Scenario.branch (Game.reference reference) at onward scenario)
         pure . Just $ case outcome of
           Left reason -> [Text.pack "The game stopped: " <> reason <> Text.pack "."]
           Right (Left failure) -> [Text.pack "The scenario failed before the position:", Scenario.render failure]
-          Right (Right gs) -> maybe [Text.pack "The game ran out of steps."] (\result -> Wording.result chosen result : Wording.departures chosen gs) (GameState.result gs)
+          Right (Right gs) -> maybe [Text.pack "The game ran out of steps."] (\result -> Wording.result reader result : Wording.departures reader gs) (GameState.result gs)
 
 -- | Each seat and the name the scenario gives it, in seating order.
 seatsOf :: Scenario.Type.Scenario -> [(PlayerId.PlayerId, Text.Text)]
@@ -268,7 +272,7 @@ seatsOf scenario =
 -- `names` names it by its label, stepping on by itself where `playing`.
 frameOf :: (CardName.CardName -> Either e (Maybe Card.Card)) -> Map.Map Text.Text Text.Text -> Text.Text -> Scenario.Type.Scenario -> [(PlayerId.PlayerId, Text.Text)] -> Natural -> Bool -> Natural -> Either ScenarioFailure.ScenarioFailure Stop.Stop -> PlayerId.PlayerId -> Maybe Web.Card.Reading -> Web.Replay.Frame
 frameOf lookUp names name scenario seats count playing at stop seen reading =
-  let base = Web.Replay.MkFrame name (Scenario.Type.description scenario) seats seen at count (Web.Replay.turnStarts (Foldable.toList (Scenario.Type.timeline scenario))) playing Nothing [] Text.empty 0 Nothing Nothing Nothing reading Map.empty Nothing
+  let base = Web.Replay.MkFrame name (Scenario.Type.description scenario) seats seen at count (Web.Replay.turnStarts (Foldable.toList (Scenario.Type.timeline scenario))) playing Nothing [] Text.empty 0 Nothing Nothing Nothing reading Map.empty Nothing Map.empty
       shown board = base {Web.Replay.board = Just board, Web.Replay.written = Web.Card.written lookUp board}
    in case stop of
         Left failure -> base {Web.Replay.failure = Just (Scenario.render failure)}

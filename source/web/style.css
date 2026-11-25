@@ -4825,6 +4825,26 @@ body:has(main.game, #app [data-settings], #app .splash, #app main.loading) #sett
   color: var(--act-text);
 }
 
+/* How each seat is filled to play on (Parun.Web.Replay.fillingsView): its
+   name above its menu, a bot's level and style beneath. */
+.play-on-seats {
+  margin: 0;
+  padding: 0;
+  border: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.play-on-seat {
+  display: grid;
+  gap: 4px;
+}
+
+.play-on-seats .bot-settings {
+  margin: 0;
+}
+
 .replay-description:empty {
   display: none;
 }
