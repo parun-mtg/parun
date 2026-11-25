@@ -301,8 +301,8 @@ guest local message = case message of
   MkDeciding seat shown depth -> pure (MkWaitingOn seat shown depth)
   _ -> pure MkIgnored
 
--- | A game with guests as the host's page keeps it, to pick it up after a
--- reload (Protocol.resumed): its seed, each seat's deck as a label and its
+-- | A game as the page playing it keeps it (the host's, for a game with
+-- guests), to pick it up after a reload (Protocol.resumed): its seed, each seat's deck as a label and its
 -- list's text (the host's first), the bots' slots players were invited to,
 -- those played on the host's screen and how, how each bot plays by its slot
 -- (Parun.Play.Opponent; Lobby.botAt), and every reply so far.

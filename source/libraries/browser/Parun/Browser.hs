@@ -125,7 +125,7 @@ logLine = logJs . Prim.toJSString . Text.unpack
 forgetDeck :: Text.Text -> IO ()
 forgetDeck = forgetJs . Prim.toJSString . Text.unpack
 
--- | Keeps a game with guests as Parun.Web.Link.saved writes it, in place of
+-- | Keeps a game as Parun.Web.Link.saved writes it, in place of
 -- any kept before: the page keeps it for a reload to pick up (engine.js).
 keepGame :: Text.Text -> IO ()
 keepGame = keepGameJs . Prim.toJSString . Text.unpack
