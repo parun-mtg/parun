@@ -936,7 +936,7 @@ play shell seats settings invited here resuming = do
                         back <- Monad.foldM (\l i -> reinvite i connectionClosed l) (Lobby.rematch seats invited here) (Set.toList lost)
                         lobby shell back (reverse said) Nothing
                   MkTapped (Screen.MkEnding Ending.MkNewGame) _ -> closeAll >> pure MkToHome
-                  MkTapped (Screen.MkEnding Ending.MkWatchReplay) _ -> closeAll >> pure (maybe MkToReplays watching kept)
+                  MkTapped (Screen.MkEnding Ending.MkWatchReplay) _ -> closeAll >> pure (maybe MkToReplays replayOf kept)
                   MkHeard heard' -> go (heard' : said)
                   _ -> go said
           go []
@@ -947,8 +947,8 @@ endingScreen :: Maybe Text.Text -> Ending.Ending -> Html.Html Screen.Event
 endingScreen kept = Bar.framed Screen.MkNav (Just Bar.MkPlay) . fmap Screen.MkEnding . Ending.view (Maybe.isJust kept)
 
 -- | The replay of the game kept by this key (History.key), from its start.
-watching :: Text.Text -> Next
-watching k = MkToReplay (Web.Replay.MkPlayed k) 0
+replayOf :: Text.Text -> Next
+replayOf k = MkToReplay (Web.Replay.MkPlayed k) 0
 
 -- | Keeps a game this page played among these seats, once it is over with
 -- a result (History.recordOf), dropping the oldest kept past the cap; the
@@ -1107,7 +1107,7 @@ joinGame shell stage offer = do
                       MkTapped (Screen.MkEnding Ending.MkRematch) _
                         | closed -> go (lost hostClosed back)
                         | otherwise -> go back
-                      MkTapped (Screen.MkEnding Ending.MkWatchReplay) _ -> Browser.linkClose n >> pure (maybe MkToReplays watching kept)
+                      MkTapped (Screen.MkEnding Ending.MkWatchReplay) _ -> Browser.linkClose n >> pure (maybe MkToReplays replayOf kept)
                       MkTapped (Screen.MkEnding Ending.MkNewGame) _ -> Browser.linkClose n >> pure MkToHome
                       _ -> ended closed
               -- A game stopped on a dropped connection left it closed.
