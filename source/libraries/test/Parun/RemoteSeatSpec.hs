@@ -104,10 +104,29 @@ spec s registry = Spec.describe s "RemoteSeat" $ do
     let hurt = S.threePlayerGame {GameState.players = Map.adjust (\p -> p {Player.life = 17}) S.alice (GameState.players S.threePlayerGame)}
         channels :: Map.Map PlayerId.PlayerId (Link.Channel (State.State [(PlayerId.PlayerId, Link.Message)]))
         channels = Map.fromList [(g, Link.MkChannel (\message -> State.modify' (<> [(g, message)])) (pure Nothing)) | g <- [S.bob, S.carol]]
-        decisions = [(S.alice, S.threePlayerGame), (S.alice, S.threePlayerGame), (S.alice, hurt), (S.bob, hurt)]
-        sent = State.execState (Monad.foldM (\last' (seat, gs) -> Link.telling channels seat gs 0 last') Map.empty decisions) []
-        told g seat gs = (g, Link.MkDeciding seat ((PlayerView.Engine.viewFor g gs) {PlayerView.priority = Nothing}) 0)
-    Spec.assertEq s sent [told S.bob S.alice S.threePlayerGame, told S.carol S.alice S.threePlayerGame, told S.bob S.alice hurt, told S.carol S.alice hurt, told S.carol S.bob hurt]
+        -- The clocks moving on alone tell no one again.
+        banks :: Double -> Link.Banks
+        banks n = Map.fromList [(S.bob, n), (S.carol, 60)]
+        decisions = [(S.alice, S.threePlayerGame, banks 300), (S.alice, S.threePlayerGame, banks 290), (S.alice, hurt, banks 280), (S.bob, hurt, banks 270)]
+        sent = State.execState (Monad.foldM (\last' (seat, gs, clocks) -> Link.telling channels seat gs 0 clocks last') Map.empty decisions) []
+        told g seat gs n = (g, Link.MkDeciding seat ((PlayerView.Engine.viewFor g gs) {PlayerView.priority = Nothing}) 0 (banks n))
+    Spec.assertEq s sent [told S.bob S.alice S.threePlayerGame 300, told S.carol S.alice S.threePlayerGame 300, told S.bob S.alice hurt 280, told S.carol S.alice hurt 280, told S.carol S.bob hurt 270]
+
+  Spec.it s "a guest is sent the clocks with each request, read as it is sent, again once it rejoins" $ do
+    let request = Request.MkRequest Nothing (Question.MkQuestion S.bob (Text.pack "PlayOrDraw") (R.Array [R.Text (Text.pack "Play"), R.Text (Text.pack "Draw")]) Nothing Nothing) Nothing 0
+        -- Each read of the clocks finds Player 1's ten seconds lower; the
+        -- channel closes before the first reply, which the second brings.
+        clocks :: State.State (Double, [Link.Message]) Link.Banks
+        clocks = State.state (\(n, sent') -> (Map.fromList [(S.alice, 300 - 10 * n), (S.bob, 60)], (n + 1, sent')))
+        replies :: State.State (Double, [Link.Message]) (Maybe Link.Message)
+        replies = State.state (\(n, sent') -> (if any isAsk (drop 1 sent') then Just (Link.MkAnswer (R.Text (Text.pack "Play"))) else Nothing, (n, sent')))
+        isAsk message = case message of
+          Link.MkAsk {} -> True
+          _ -> False
+        wire = Link.MkChannel (\message -> State.modify' (fmap (<> [message]))) replies
+        (answered, (_, sent)) = State.runState (Link.remote (pure True) played (pure Ending.unseen) clocks wire request) (0, [])
+    Spec.assertEqWith s "answered" answered (Just (Right (R.Text (Text.pack "Play"))))
+    Spec.assertEqWith s "the clocks with each request" sent [Link.MkAsk request (Map.fromList [(S.alice, 300), (S.bob, 60)]), Link.MkMatchup played [], Link.MkStart S.bob Ending.unseen, Link.MkAsk request (Map.fromList [(S.alice, 290), (S.bob, 60)])]
 
   Spec.it s "a whole game with a player on the host's screen: the lobby's options seat no bot there, and the screen is handed between the seats" $ do
     (outcome, inOrder, options) <- onOneScreen s registry
@@ -294,13 +313,13 @@ build = Text.pack "test"
 -- guest told whose decision the game waits on. A guest whose channel drops
 -- rejoins the first time, and not again.
 hosted :: (Monad m) => [PlayerId.PlayerId] -> NonEmpty.NonEmpty (PlayerId.PlayerId, Deck.Deck) -> State.StateT Wire m (Either Text.Text (Result.Result, GameState.GameState))
-hosted guests matchup = Game.run (S.fixtureRegistry []) GameSettings.plain Limits.standard [Link.deciding decides] (Map.fromList [(pid, Game.wired (S.fixtureRegistry []) (Protocol.bySeat (Map.fromList [(g, Link.seeing (\shown -> State.modify' (\w -> w {hostSeen = seenBy shown (hostSeen w)})) (Link.remote (rejoined g) played (Map.findWithDefault Ending.unseen g . hostSeen <$> State.get) (channel g))) | g <- guests]) (page hostPage))) | (pid, _) <- NonEmpty.toList matchup]) (S.seeded 1) Map.empty matchup
+hosted guests matchup = Game.run (S.fixtureRegistry []) GameSettings.plain Limits.standard [Link.deciding decides] (Map.fromList [(pid, Game.wired (S.fixtureRegistry []) (Protocol.bySeat (Map.fromList [(g, Link.seeing (\shown -> State.modify' (\w -> w {hostSeen = seenBy shown (hostSeen w)})) (Link.remote (rejoined g) played (Map.findWithDefault Ending.unseen g . hostSeen <$> State.get) (pure Map.empty) (channel g))) | g <- guests]) (page hostPage))) | (pid, _) <- NonEmpty.toList matchup]) (S.seeded 1) Map.empty matchup
   where
     decides seat gs depth = do
       let owing g = if g == seat then Nothing else Just (seat, (PlayerView.Engine.viewFor g gs) {PlayerView.priority = Nothing}, depth)
           owe g due = if take 1 due == [owing g] then due else owing g : due
       State.modify' (\w -> w {deciders = seat : deciders w, owed = foldr (\g -> Map.alter (Just . owe g . Maybe.fromMaybe []) g) (owed w) guests})
-      now <- State.gets lastTold >>= Link.telling (Map.fromList [(g, channel g) | g <- guests]) seat gs depth
+      now <- State.gets lastTold >>= Link.telling (Map.fromList [(g, channel g) | g <- guests]) seat gs depth Map.empty
       State.modify' (\w -> w {lastTold = now})
 
 -- No deck's colours known.
@@ -370,11 +389,11 @@ channel g = Link.MkChannel send (received g)
       Right again@(Link.MkStart _ seen') -> State.modify' (\w -> w {sentAgain = sentAgain w <> [again], pageSeen = Map.insert g seen' (pageSeen w)})
       Right again@(Link.MkMatchup _ _) -> State.modify' (\w -> w {sentAgain = sentAgain w <> [again]})
       Right line -> do
-        heard <- Link.guest (page (Just g)) line
+        heard <- Link.guest (const (page (Just g))) line
         case heard of
           Link.MkReply reply -> State.modify' (\w -> w {inbox = Map.insertWith (flip (<>)) g [Link.encode build reply] (inbox w)})
           Link.MkEnded {} -> State.modify' (\w -> w {ended = Map.insert g heard (ended w)})
-          Link.MkWaitingOn seat shown depth -> State.modify' (\w -> w {waitedOn = Map.insertWith (<>) g [(seat, shown, depth)] (waitedOn w)})
+          Link.MkWaitingOn seat shown depth _ -> State.modify' (\w -> w {waitedOn = Map.insertWith (<>) g [(seat, shown, depth)] (waitedOn w)})
           Link.MkIgnored -> pure ()
 
 -- The next line this guest's page sent, read; Nothing once there is none,

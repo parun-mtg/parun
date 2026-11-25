@@ -914,10 +914,10 @@ play shell seats settings clock invited here resuming = do
             Monad.when back (IORef.modifyIORef' down (Set.delete i))
             pure back
           -- A rejoining guest is told the match-up played, every bot's deck drawn.
-          remotes = Map.fromList [(seatOf i, \seen -> Link.remote (rejoinSlot i) (Lobby.placesFor named listed i (Lobby.rematch seats invited here)) seen (channelOf i)) | i <- Map.keys invited]
+          remotes = Map.fromList [(seatOf i, \seen clocks -> Link.remote (rejoinSlot i) (Lobby.placesFor named listed i (Lobby.rematch seats invited here)) seen clocks (channelOf i)) | i <- Map.keys invited]
       -- Each guest is told whose decision the game waits on (Link.telling).
       told <- IORef.newIORef Map.empty
-      let decides seat gs depth = IORef.readIORef told >>= Link.telling (Map.fromList [(seatOf i, channelOf i) | i <- Map.keys invited]) seat gs depth >>= IORef.writeIORef told
+      let decides seat gs depth clocks = IORef.readIORef told >>= Link.telling (Map.fromList [(seatOf i, channelOf i) | i <- Map.keys invited]) seat gs depth clocks >>= IORef.writeIORef told
       parsed <- foldMap LazyMap.elems . cards <$> IORef.readIORef (loaded shell)
       ended <- Hotseat.game (page shell) reg parsed (tableOf shell) (level shell) bots settings clock (fmap (Bifunctor.first Text.unpack) seats) remotes (Map.mapKeys seatOf here) seed (foldMap Link.replies resuming) (Browser.keepReply . Link.savedReply) decides tellAll (leaveFor shell chosen [DeckBrowser.label (DeckBrowser.titleIn seat) name | seat@(name, _) <- NonEmpty.toList seats])
       Browser.forgetGame
@@ -1095,7 +1095,7 @@ joinGame shell stage offer = do
         Left problem -> Browser.linkClose n >> notice shell [problem]
         Right reg -> do
           chosen <- IORef.newIORef MkToHome
-          played <- Guest.play (page shell) (Identity.runIdentity . Interpreter.chosenCard reg) (level shell) hostChannel (rejoin shell n Rejoin.guest) seat seen (leaveFor shell chosen (fmap Link.deck (Join.places current)))
+          played <- Guest.play (page shell) (Identity.runIdentity . Interpreter.chosenCard reg) (level shell) hostChannel n (rejoin shell n Rejoin.guest) seat seen (leaveFor shell chosen (fmap Link.deck (Join.places current)))
           case played of
             Ending.MkAbandoned -> Browser.linkClose n >> IORef.readIORef chosen
             Ending.MkFinished ending -> do

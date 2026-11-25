@@ -27,8 +27,8 @@ import qualified Parun.Web.Wire as Wire
 -- data chunks that arrived since last read, what the page's data
 -- channels said since, what takes a tap while a channel is waited on
 -- (meanwhile), whether what they say is held for a game set aside
--- (aside), and when, on the monotonic clock in seconds, waiting gives up
--- (within).
+-- (aside), when, on the monotonic clock in seconds, waiting gives up
+-- (within), and the data channel whose word gives it up (heeding).
 data Page msg = MkPage
   { shown :: IORef.IORef (Maybe (Html.Html msg)),
     taken :: IORef.IORef (Seq.Seq (msg, Text.Text)),
@@ -36,7 +36,8 @@ data Page msg = MkPage
     heard :: IORef.IORef (Seq.Seq Linked),
     tapped :: IORef.IORef (Maybe ((msg, Text.Text) -> IO ())),
     held :: IORef.IORef Bool,
-    due :: IORef.IORef (Maybe Double)
+    due :: IORef.IORef (Maybe Double),
+    heeded :: IORef.IORef (Maybe Int)
   }
 
 -- | What a data channel to another browser said (page.js), by the number
@@ -66,7 +67,7 @@ data Input msg
 -- | A page showing nothing yet, its events listened for.
 mount :: IO (Page msg)
 mount = do
-  page <- MkPage <$> IORef.newIORef Nothing <*> IORef.newIORef Seq.empty <*> IORef.newIORef Seq.empty <*> IORef.newIORef Seq.empty <*> IORef.newIORef Nothing <*> IORef.newIORef False <*> IORef.newIORef Nothing
+  page <- MkPage <$> IORef.newIORef Nothing <*> IORef.newIORef Seq.empty <*> IORef.newIORef Seq.empty <*> IORef.newIORef Seq.empty <*> IORef.newIORef Nothing <*> IORef.newIORef False <*> IORef.newIORef Nothing <*> IORef.newIORef Nothing
   listen =<< wrap (dispatch page)
   pure page
 
@@ -238,12 +239,18 @@ aside page action = do
 
 takeLinkedWith :: Page msg -> (Linked -> Bool) -> IO (Maybe Linked)
 takeLinkedWith page wanted = do
-  received <- fmap (Text.lines . Text.pack . Prim.fromJSString) takeLinks
-  let parsed = foldMap (either (const []) pure . (Common.parse Monad.>=> linkedOf)) received
-  Monad.unless (null parsed) . IORef.atomicModifyIORef' (heard page) $ \ls -> (ls <> Seq.fromList parsed, ())
+  gather page
   IORef.atomicModifyIORef' (heard page) $ \ls -> case Seq.findIndexL wanted ls of
     Just i -> (Seq.deleteAt i ls, Seq.lookup i ls)
     Nothing -> (ls, Nothing)
+
+-- | Moves what the data channels said since last asked onto the page's own
+-- queue.
+gather :: Page msg -> IO ()
+gather page = do
+  received <- fmap (Text.lines . Text.pack . Prim.fromJSString) takeLinks
+  let parsed = foldMap (either (const []) pure . (Common.parse Monad.>=> linkedOf)) received
+  Monad.unless (null parsed) . IORef.atomicModifyIORef' (heard page) $ \ls -> (ls <> Seq.fromList parsed, ())
   where
     linkedOf value = do
       fields <- Common.asObject value
@@ -347,8 +354,23 @@ within page deadline action = do
   timer <- armJs (max 0 (deadline - now) * 1000 + 10)
   Exception.handle (\MkExpired -> pure Nothing) (fmap Just action) `Exception.finally` (disarmJs timer >> IORef.writeIORef (due page) before)
 
+-- | Waiting given up for what the data channel 'heeding' names said.
+data Interrupted = MkInterrupted
+  deriving (Show)
+
+instance Exception.Exception Interrupted
+
+-- | Runs `action`, Nothing once data channel `n` says something while it
+-- waits on the page (waitOn), what it said kept for its next read; not
+-- while a game is set aside (aside).
+heeding :: Page msg -> Int -> IO a -> IO (Maybe a)
+heeding page n action = do
+  before <- IORef.atomicModifyIORef' (heeded page) (\h -> (Just n, h))
+  Exception.handle (\MkInterrupted -> pure Nothing) (fmap Just action) `Exception.finally` IORef.writeIORef (heeded page) before
+
 -- | Waits as 'wait' does, giving up (Expired) where the deadline 'within'
--- set has passed, before or after.
+-- set has passed, before or after, and (Interrupted) where the data
+-- channel 'heeding' names said something.
 waitOn :: Page msg -> IO ()
 waitOn page = expire >> wait >> expire
   where
@@ -356,6 +378,12 @@ waitOn page = expire >> wait >> expire
       deadline <- IORef.readIORef (due page)
       now <- Clock.getMonotonicTime
       Monad.when (any (now >=) deadline) (Exception.throwIO MkExpired)
+      heed <- IORef.readIORef (heeded page)
+      holding <- IORef.readIORef (held page)
+      Monad.forM_ heed $ \n -> Monad.unless holding $ do
+        gather page
+        said' <- any ((== n) . link) <$> IORef.readIORef (heard page)
+        Monad.when said' (Exception.throwIO MkInterrupted)
 
 -- | Waits until 'wake' is called: the waiting thread is suspended, and the
 -- page goes on. The import's result is a thunk, forced here.
