@@ -19,7 +19,7 @@ globalThis.parunListen = (listener) => {
   dispatch = listener;
 };
 // The page's first message holds the decks it saved (page.js), mounted
-// before the deck list is read, and the game with guests it kept, read
+// before the deck list is read, and the game in progress it kept, read
 // before the engine starts; every other is an event.
 let savedDecks;
 const savedArrived = new Promise((resolve) => {
@@ -45,8 +45,8 @@ globalThis.parunTakeLinks = () => {
 };
 globalThis.parunLink = (op) => postMessage({ link: op });
 
-// A game with guests is kept by the page (Parun.Browser.keepGame) to pick up
-// after a reload, as parunKeptGame.
+// The game in progress is kept by the page (Parun.Browser.keepGame) to pick
+// up after a reload, as parunKeptGame.
 globalThis.parunKeepGame = (op) => postMessage({ game: op });
 
 // The screen shown, as its query (Parun.Browser.locate), goes to the page's

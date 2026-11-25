@@ -18,7 +18,7 @@ const level = localStorage.getItem("parun-level");
 if (level !== null) engineUrl.searchParams.set("level", level);
 const engine = new Worker(engineUrl, { type: "module" });
 // The decks saved in this browser go to the engine first (engine.js), each
-// kept as parun-deck:<slug>, with the game with guests kept as parun-game
+// kept as parun-deck:<slug>, with the game in progress kept as parun-game
 // (Parun.Web.Link.saved), unless a link joins another browser's game.
 const deckKey = "parun-deck:";
 const gameKey = "parun-game";
@@ -775,9 +775,11 @@ addEventListener("popstate", () => {
 addEventListener("hashchange", () => {
   if (location.hash.length > 1) location.reload();
 });
-// The game with guests: its first line once it starts, each reply's line
+// The game in progress: its first line once it starts, each reply's line
 // added as it is made, and all of it forgotten once it is over. A reply
-// with no game kept to add to is dropped.
+// with no game kept to add to is dropped, and a game that cannot be kept
+// whole (storage full, say) is forgotten, since a reply missing would
+// replay another game.
 function keepGame({ start, reply }) {
   try {
     const kept = localStorage.getItem(gameKey);
@@ -787,6 +789,11 @@ function keepGame({ start, reply }) {
     } else localStorage.removeItem(gameKey);
   } catch (problem) {
     console.warn(problem);
+    try {
+      localStorage.removeItem(gameKey);
+    } catch (again) {
+      console.warn(again);
+    }
   }
 }
 engine.onerror = (error) => note(`engine failed: ${error.message}`);

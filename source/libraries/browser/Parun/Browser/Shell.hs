@@ -158,7 +158,7 @@ data Next
   | -- | Another browser's game at this stage, joined with the code its link
     -- carries.
     MkToJoin Route.Stage Text.Text
-  | -- | The game with guests the page kept, picked up where it stopped.
+  | -- | The game the page kept, picked up where it stopped.
     MkToRestore Link.Saved
   | -- | The lobby as left when the game in progress was abandoned for this
     -- event of it, done next.
@@ -190,8 +190,8 @@ start = do
 -- | Where the page's link leads, read once (engine.js passes its query on):
 -- another browser's game to join (parun_offer, the link's fragment), at the
 -- stage its query names; a replay or the list of them, as the page's query
--- names (parun_query, Parun.Web.Route); else the game with guests the page
--- kept, played on this build; else the screen the query names. A kept game
+-- names (parun_query, Parun.Web.Route); else the game the page kept,
+-- played on this build; else the screen the query names. A kept game
 -- that does not read is forgotten.
 opening :: Text.Text -> IO Next
 opening build' = do
@@ -224,7 +224,7 @@ nextOf route = case route of
 
 -- | The route naming where a screen leads: a game's, the screen it is
 -- reloaded into (the lobby, else the home screen, which picks up a game
--- with guests the page kept); the join screen's, its own, so page.js keeps
+-- the page kept); the join screen's, its own, so page.js keeps
 -- the host's offer in the fragment until the guest leaves it.
 routeOf :: Next -> Route.Route
 routeOf next = case next of
@@ -864,9 +864,10 @@ loadingScreen shell = Browser.display (page shell) . Loading.view
 -- (Parun.Web.Link) and each
 -- in `here` on this screen as it sits there, or that
 -- game picked up where `resuming` stopped, its bots playing as it was
--- kept; its ending, and the games its Rematch starts; then where it leads. A game with guests is kept until it
--- is over (Link.saved), and a guest whose connection drops, or every guest
--- of a game picked up, is asked to rejoin (rejoin) when next asked. Home
+-- kept; its ending, and the games its Rematch starts; then where it leads.
+-- Every game is kept until it is over (Link.saved), for a reload to pick
+-- up, and a guest whose connection drops, or every guest of a game picked
+-- up, is asked to rejoin (rejoin) when next asked. Home
 -- from the game shows the home screen with the game kept; a new game chosen
 -- there gives it up. Every player invited is told how it ended; a Rematch
 -- with them goes back to the lobby on the match-up played (Lobby.rematch),
@@ -884,7 +885,6 @@ play shell seats settings invited here resuming = do
       tellAll endingFor = Monad.forM_ (Map.keys invited) $ \i -> Link.send (channelOf i) (Link.MkEnd (endingFor (seatOf i)))
       closeAll = mapM_ Browser.linkClose invited
       stopped said = tellAll (\seat -> Ending.endingOf Ending.MkStopped said Text.empty seat False Ending.unseen) >> closeAll
-      keeping = not (Map.null invited)
   case built of
     Left problem -> stopped [problem] >> notice shell [problem]
     Right reg -> do
@@ -896,7 +896,7 @@ play shell seats settings invited here resuming = do
       -- Rematch leads to offers that.
       Monad.forM_ resuming $ \game -> IORef.writeIORef (opponent shell) (Link.bots game)
       bots <- IORef.readIORef (opponent shell)
-      Monad.when (keeping && Maybe.isNothing resuming) . Browser.keepGame $ Link.saved (build shell) (Link.MkSaved seed seats (Map.keys invited) here bots settings [])
+      Monad.when (Maybe.isNothing resuming) . Browser.keepGame $ Link.saved (build shell) (Link.MkSaved seed seats (Map.keys invited) here bots settings [])
       (named, listed) <- deckColouring shell
       let rejoinSlot i = do
             back <- rejoin shell (linkOf i) (Rejoin.host (Text.pack ("Player " <> show (i + 2))))
@@ -904,13 +904,12 @@ play shell seats settings invited here resuming = do
             pure back
           -- A rejoining guest is told the match-up played, every bot's deck drawn.
           remotes = Map.fromList [(seatOf i, \seen -> Link.remote (rejoinSlot i) (Lobby.placesFor named listed i (Lobby.rematch seats invited here)) seen (channelOf i)) | i <- Map.keys invited]
-          kept = if keeping then Browser.keepReply . Link.savedReply else const (pure ())
       -- Each guest is told whose decision the game waits on (Link.telling).
       told <- IORef.newIORef Map.empty
       let decides seat gs depth = IORef.readIORef told >>= Link.telling (Map.fromList [(seatOf i, channelOf i) | i <- Map.keys invited]) seat gs depth >>= IORef.writeIORef told
       parsed <- foldMap LazyMap.elems . cards <$> IORef.readIORef (loaded shell)
-      ended <- Hotseat.game (page shell) reg parsed (tableOf shell) (level shell) bots settings (fmap (Bifunctor.first Text.unpack) seats) remotes (Map.mapKeys seatOf here) seed (foldMap Link.replies resuming) kept decides tellAll (leaveFor shell chosen [DeckBrowser.label (DeckBrowser.titleIn seat) name | seat@(name, _) <- NonEmpty.toList seats])
-      Monad.when keeping Browser.forgetGame
+      ended <- Hotseat.game (page shell) reg parsed (tableOf shell) (level shell) bots settings (fmap (Bifunctor.first Text.unpack) seats) remotes (Map.mapKeys seatOf here) seed (foldMap Link.replies resuming) (Browser.keepReply . Link.savedReply) decides tellAll (leaveFor shell chosen [DeckBrowser.label (DeckBrowser.titleIn seat) name | seat@(name, _) <- NonEmpty.toList seats])
+      Browser.forgetGame
       case ended of
         Left problems -> stopped problems >> notice shell problems
         Right Ending.MkAbandoned -> stopped [Text.pack "The host gave the game up."] >> IORef.readIORef chosen
